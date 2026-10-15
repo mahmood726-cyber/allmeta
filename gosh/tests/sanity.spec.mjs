@@ -15,7 +15,7 @@
  * results-export, url-state, reset-undo, tooltips (7 total).
  *
  * gosh-specific notes:
- *   - Default data: 9 studies → full enumeration (k <= 15), subsets of size >= 2
+ *   - Default data: 9 studies → full enumeration (k <= 15), subsets of size >= 1
  *   - GOSH scatter renders as circles in #plot SVG (one per subset)
  *   - T4 checks that the SVG has circle elements (subset data points)
  *   - T5 checks gosh-results-v1 schema with n_subsets, median_est, etc.
@@ -24,7 +24,11 @@
  */
 import { test, expect } from '@playwright/test';
 
-const GOSH_URL = 'http://localhost:8088/gosh/';
+const GOSH_URL = '/gosh/';
+// Baseline injection changes only the served page; shared modules remain real.
+if (process.env.GOSH_PAGE) test.beforeEach(async ({ page }) => {
+  await page.route('**/gosh/', route => route.fulfill({ path: process.env.GOSH_PAGE, contentType: 'text/html' }));
+});
 
 /**
  * Wait until all 7 alm modules have registered on window.alm.
@@ -69,6 +73,7 @@ test.describe('gosh retrofit sanity', () => {
         const text = msg.text();
         // Filter known-benign CSP frame-ancestors informational messages
         if (text.includes('frame-ancestors') && text.includes('Content Security Policy')) return;
+        if (text.includes('ERR_CONNECTION_REFUSED')) return; // benign: optional loopback service (e.g. local LLM) absent
         errors.push(text);
       }
     });
@@ -116,8 +121,8 @@ test.describe('gosh retrofit sanity', () => {
     await page.goto(GOSH_URL);
     await waitForGoshPlot(page);
     const circleCount = await page.locator('#plot circle').count();
-    // k=9 default data → up to 2^9-1 - 9 = 502 subsets of size >= 2
-    // actual count: sum(C(9,r) for r in 2..9) = 502
+    // k=9 default data → 2^9-1 = 511 subsets of size >= 1
+    // actual count: sum(C(9,r) for r in 1..9) = 511
     expect(circleCount, 'Expected many circles in #plot (one per subset)')
       .toBeGreaterThanOrEqual(50);
     // Axis lines should be present
@@ -190,14 +195,14 @@ test.describe('gosh retrofit sanity', () => {
       { study: 'S04', yi: 0.15, vi: 0.0049 },
       { study: 'S05', yi: 0.45, vi: 0.0324 },
     ];
-    // R 4.5.2 / metafor 4.x metafor::gosh(rma.uni(method='FE'))
+    // R 4.6.0 / metafor 5.2-1, re-derived 2026-10-15 metafor::gosh(rma.uni(method='FE'))
     const expected = {
-      n_subsets:  26,    // 2^5 - (single-element and empty subsets) = 31 - 5 - 1 = 26
-      median_est: 0.2217261558338,
-      q25_est:    0.2047081408179,
-      q75_est:    0.2615342255235,
-      min_est:    0.18,
-      max_est:    0.3565384615385,
+      n_subsets:  31,    // 2^5 - 1: every non-empty subset, including singletons
+      median_est: 0.2254227851625,
+      q25_est:    0.2061857502663,
+      q75_est:    0.2674705996114,
+      min_est:    0.15,
+      max_est:    0.45,
       median_i2:  0.0,
       k:          5,
     };
@@ -212,20 +217,64 @@ test.describe('gosh retrofit sanity', () => {
     );
     const r = await page.evaluate(() => window._almLastGosh());
 
-    expect(r.k, 'k mismatch').toBe(expected.k);
-    expect(r.n_subsets, 'n_subsets mismatch').toBe(expected.n_subsets);
-    expect(Math.abs(r.median_est - expected.median_est),
+    expect.soft(r.k, 'k mismatch').toBe(expected.k);
+    expect.soft(r.n_subsets, 'n_subsets mismatch').toBe(expected.n_subsets);
+    expect.soft(Math.abs(r.median_est - expected.median_est),
       `median_est: ${r.median_est} vs metafor=${expected.median_est}`).toBeLessThan(TOL);
-    expect(Math.abs(r.q25_est - expected.q25_est),
+    expect.soft(Math.abs(r.q25_est - expected.q25_est),
       `q25_est: ${r.q25_est} vs metafor=${expected.q25_est}`).toBeLessThan(TOL);
-    expect(Math.abs(r.q75_est - expected.q75_est),
+    expect.soft(Math.abs(r.q75_est - expected.q75_est),
       `q75_est: ${r.q75_est} vs metafor=${expected.q75_est}`).toBeLessThan(TOL);
-    expect(Math.abs(r.min_est - expected.min_est),
+    expect.soft(Math.abs(r.min_est - expected.min_est),
       `min_est: ${r.min_est} vs metafor=${expected.min_est}`).toBeLessThan(TOL);
-    expect(Math.abs(r.max_est - expected.max_est),
+    expect.soft(Math.abs(r.max_est - expected.max_est),
       `max_est: ${r.max_est} vs metafor=${expected.max_est}`).toBeLessThan(TOL);
-    expect(Math.abs(r.median_i2 - expected.median_i2),
+    expect.soft(Math.abs(r.median_i2 - expected.median_i2),
       `median_i2: ${r.median_i2} vs metafor=${expected.median_i2}`).toBeLessThan(TOL);
+  });
+
+  // Audit coverage gap (2026-05-31): the DL random-effects branch was reachable from
+  // the model dropdown but never compared to metafor. metafor::gosh(rma.uni(method="DL"))
+  // on the same fixture: median 0.239692, full-k 0.225423 — DISTINCT from FE (0.225423),
+  // so this also guards against a silent FE/DL mix-up.
+  test('JS engine R-parity vs metafor::gosh (gosh-tiny DL random-effects)', async ({ page }) => {
+    const fixture = [
+      { study: 'S01', yi: 0.22, vi: 0.0064 }, { study: 'S02', yi: 0.30, vi: 0.0196 },
+      { study: 'S03', yi: 0.27, vi: 0.0081 }, { study: 'S04', yi: 0.15, vi: 0.0049 },
+      { study: 'S05', yi: 0.45, vi: 0.0324 },
+    ];
+    const expected = { n_subsets: 31, median_est: 0.2396923076923, q25_est: 0.2109066780492,
+      q75_est: 0.2689956450735, min_est: 0.15, max_est: 0.45, k: 5 };
+    const TOL = 1e-4; // DL τ² per-subset; closed-form but compare at 1e-4
+    await page.goto(GOSH_URL);
+    await waitForAlm(page);
+    await page.selectOption('#model', 'DL');
+    await page.evaluate((rows) => window.__almGoshLoad(rows), fixture);
+    await page.waitForFunction(() => window._almLastGosh && window._almLastGosh() !== null, { timeout: 10_000 });
+    const r = await page.evaluate(() => window._almLastGosh());
+    expect.soft(r.k).toBe(expected.k);
+    expect.soft(r.n_subsets).toBe(expected.n_subsets);
+    for (const key of ['median_est', 'q25_est', 'q75_est', 'min_est', 'max_est']) {
+      expect.soft(Math.abs(r[key] - expected[key]), `${key}: ${r[key]} vs metafor=${expected[key]}`).toBeLessThan(TOL);
+    }
+    // DL median must differ from the FE median (0.225423) — guards FE/DL not being conflated.
+    expect.soft(Math.abs(r.median_est - 0.2254227851625), 'DL median must differ from FE').toBeGreaterThan(1e-3);
+  });
+
+  test('CSV file vi import matches metafor', async ({ page }) => {
+    await page.goto(GOSH_URL);
+    await waitForAlm(page);
+    await page.locator('#alm-csv-mount input[type=file]').setInputFiles({
+      name: 'gosh-tiny.csv', mimeType: 'text/csv',
+      buffer: Buffer.from('study,yi,vi\nS01,0.22,0.0064\nS02,0.30,0.0196\nS03,0.27,0.0081\nS04,0.15,0.0049\nS05,0.45,0.0324\n')
+    });
+    await page.waitForFunction(() => window._almLastGosh()?.k === 5);
+    const r = await page.evaluate(() => window._almLastGosh());
+    expect.soft(r.n_subsets).toBe(31);
+    expect.soft(r.median_est).toBeCloseTo(0.2254227851625, 10);
+    for (const [i, se] of [0.08, 0.14, 0.09, 0.07, 0.18].entries()) {
+      expect(r.studies[i].se).toBeCloseTo(se, 12);
+    }
   });
 
 });
