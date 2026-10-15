@@ -1,4 +1,4 @@
-"""Metafor reference checks plus actual-page assertions.
+"""R-parity test: gosh vs metafor::gosh(rma.uni(...)), with actual-page assertions.
 
 Pinned values were re-derived with R 4.6.0 / metafor 5.2-1 on 2026-10-15
 using fixtures/gosh-tiny.R without filtering singleton subsets. The Python
