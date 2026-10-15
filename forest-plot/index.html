@@ -147,7 +147,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
-          <span class="hint">Headers, blank lines, and lines starting with <code>#</code> are ignored. Estimate and SE must be numeric; SE must be positive.</span>
+          <span class="hint">One recognised header, blank lines, and lines starting with <code>#</code> are ignored. All other rows must be valid: malformed rows block the analysis instead of silently changing the study set.</span>
         </label>
         <div id="alm-csv-mount"></div>
       </fieldset>
@@ -178,6 +178,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         <div id="alm-axis-mount" style="margin-top:.5rem"></div>
       </fieldset>
 
+      <p class="hint" id="forest-method-note">Both models are shown: fixed-effect inverse variance with a normal CI, and Paule–Mandel random effects with <strong>modified Hartung–Knapp (variance floor 1)</strong>, matching metafor <code>test="adhoc"</code>. I² uses τ² and the typical sampling variance; the historical Q-based I² is also retained in JSON. Prediction intervals are approximations and can be unstable with few studies. Numerical table entries remain on the input scale; exponentiation changes axis labels only.</p>
       <div id="stats-wrap"></div>
       <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
       <div id="alm-export-mount" style="margin-top:.5rem"></div>
@@ -253,28 +254,34 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
     }
 
     function parseStudies(text) {
-      const studies = [];
-      const warnings = [];
+      const studies = [], warnings = [];
       const lines = String(text || "").split(/\r?\n/);
+      let firstRecord = true;
       for (let i = 0; i < lines.length; i++) {
         const raw = lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
         const parts = raw.split(/\s*[,\t]\s*/);
-        if (parts.length < 3) { warnings.push("Line " + (i+1) + ": fewer than 3 columns"); continue; }
-        const seStr = parts[parts.length - 1];
-        const estStr = parts[parts.length - 2];
-        const est = parseFloat(estStr);
-        const se = parseFloat(seStr);
-        if (!isFinite(est) || !isFinite(se)) {
-          // Might be a header row — skip silently on first line only
-          if (studies.length === 0 && i < 3) continue;
-          warnings.push("Line " + (i+1) + ": non-numeric estimate or SE"); continue;
+        const estStr = (parts[parts.length - 2] || "").trim();
+        const seStr = (parts[parts.length - 1] || "").trim();
+        const header = firstRecord && parts.length >= 3 &&
+          /^(estimate|est|effect|yi)$/i.test(estStr) && /^(se|sei|standard[ _-]?error)$/i.test(seStr);
+        firstRecord = false;
+        if (header) continue;
+        if (parts.length < 3) { warnings.push("Line " + (i + 1) + ": need label, estimate, SE"); continue; }
+        // Number, not parseFloat: '0.2junk', empty cells and arbitrary headers are not data.
+        const est = Number(estStr), se = Number(seStr), v = se * se;
+        if (!estStr || !seStr || !Number.isFinite(est) || !Number.isFinite(se)) {
+          warnings.push("Line " + (i + 1) + ": estimate and SE must be complete finite numbers"); continue;
         }
-        if (se <= 0) { warnings.push("Line " + (i+1) + ": SE must be > 0"); continue; }
-        const label = parts.slice(0, parts.length - 2).join(", ") || ("Study " + (studies.length + 1));
-        studies.push({ label: label, est: est, se: se, v: se * se });
+        if (!(se > 0 && Number.isFinite(v) && v > 0 && Number.isFinite(1 / v) && Number.isFinite(est / v))) {
+          warnings.push("Line " + (i + 1) + ": SE must be positive and numerically representable"); continue;
+        }
+        const label = parts.slice(0, -2).join(", ") || ("Study " + (studies.length + 1));
+        studies.push({ label: label, est: est, se: se, v: v });
       }
-      return { studies: studies, warnings: warnings };
+      // No silently selected subset. Correct every malformed study before pooling/exporting.
+      if (warnings.length) warnings.unshift("Analysis blocked: correct all invalid study rows; no partial dataset has been pooled.");
+      return { studies: warnings.length ? [] : studies, warnings: warnings };
     }
 
     // Two-sided 95% t-quantile for df 1..30 (4 d.p., enough for forest-plot CI).
@@ -304,7 +311,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       for (const s of studies) { sw += 1 / s.v; swy += s.est / s.v; }
       const mu = swy / sw;
       const se = Math.sqrt(1 / sw);
-      // FE CI uses normal — large k by definition.
+      // Fixed-effect normal/Wald CI; this model does not imply a large study count.
       return { mu: mu, se: se, lo: mu - Z975 * se, hi: mu + Z975 * se };
     }
 
@@ -335,10 +342,9 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
     // floor at 1 (per advanced-stats.md) prevents HKSJ from NARROWING the CI
     // when Q < k-1.
     //
-    // PI rationale (Higgins et al. 2009): the prediction interval tells the reader
-    // where the *next* study's true effect is likely to fall — the most-asked
-    // clinical question. We use t_{k-1} per Cochrane Handbook v6.5 (matches metafor
-    // predict v4+); the older IntHout-2016 t_{k-2} is superseded. Defined for k>=2.
+    // PI: a t_(k-1) approximation for a future true study effect, matching
+    // metafor::predict(rma(...,test="adhoc")). Other conventions are not
+    // universally superseded; none is exact, especially with very small k.
     function poolRE_PM(studies) {
       const k = studies.length;
       if (k < 2) return null;
@@ -362,10 +368,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       const qFloored = Math.max(1, qStar);
       const seHKSJ = seBase * Math.sqrt(qFloored);
 
-      // Prediction interval: μ ± t_{k-1} · sqrt(seHKSJ² + τ²). Uses t_{k-1} per
-      // Cochrane Handbook v6.5 (matches metafor predict v4+, verified to 1e-5);
-      // the older IntHout-2016 t_{k-2} is superseded and gives a PI ~3x too wide
-      // at k=3 (see advanced-stats.md + heterogeneity app). Defined for k>=2.
+      // Match the documented modified-HK model, not an unqualified exact PI.
       let piLo = NaN, piHi = NaN;
       if (k >= 2) {
         const tPI = window.AlmMaCore._qt(0.975, k - 1);
@@ -374,7 +377,12 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         piHi = fin.mu + tPI * sePI;
       }
 
-      const I2 = Math.max(0, 100 * (res0.Q - target) / Math.max(res0.Q, 1e-12));
+      // Keep the historical Q definition, but use model-based I2 beside the
+      // tau2-derived Q-profile limits and in the metafor comparison.
+      const I2Q = Math.max(0, 100 * (res0.Q - target) / Math.max(res0.Q, 1e-12));
+      const sumW2 = studies.reduce((a, study) => a + (1 / study.v) ** 2, 0);
+      const vTypical = target / (res0.sw - sumW2 / res0.sw);
+      const I2 = tau2 === 0 ? 0 : 100 * tau2 / (tau2 + vTypical);
 
       return {
         tau2: tau2,
@@ -385,7 +393,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         lo: fin.mu - tCrit * seHKSJ,
         hi: fin.mu + tCrit * seHKSJ,
         piLo: piLo, piHi: piHi,
-        I2: I2,
+        I2: I2, I2Q: I2Q, vTypical: vTypical,
         Q: res0.Q,
         k: k,
         tCrit: tCrit
@@ -451,6 +459,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       if (hasPooled) {
         if (fe.lo < lo) lo = fe.lo; if (fe.hi > hi) hi = fe.hi;
         if (re && re.lo < lo) lo = re.lo; if (re && re.hi > hi) hi = re.hi;
+        if (reHasPI) { lo = Math.min(lo, re.piLo); hi = Math.max(hi, re.piHi); }
       }
       const nullV = parseFloat(state.nullVal);
       if (isFinite(nullV)) {
@@ -465,8 +474,8 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       // partial/inverted override cannot flip the domain.
       var _ax = window.__almAxis;
       if (_ax && Array.isArray(_ax.x)) {
-        var _lo = isFinite(_ax.x[0]) ? _ax.x[0] : lo;
-        var _hi = isFinite(_ax.x[1]) ? _ax.x[1] : hi;
+        var _lo = Number.isFinite(_ax.x[0]) ? _ax.x[0] : lo;
+        var _hi = Number.isFinite(_ax.x[1]) ? _ax.x[1] : hi;
         if (_lo < _hi) { lo = _lo; hi = _hi; }
       }
 
@@ -508,8 +517,8 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       p.push("<text x=\"" + (LEFT - 8) + "\" y=\"58\" text-anchor=\"end\" font-size=\"11\" font-weight=\"600\" fill=\"#5c6470\">Study</text>");
       p.push("<text x=\"" + (LEFT + PLOT_W + 10) + "\" y=\"58\" font-size=\"11\" font-weight=\"600\" fill=\"#5c6470\">Est [95% CI]</text>");
 
-      // Null line
-      if (isFinite(nullV)) {
+      // Null line (do not draw outside a user-selected domain)
+      if (Number.isFinite(nullV) && nullV >= lo && nullV <= hi) {
         p.push("<line x1=\"" + x(nullV) + "\" y1=\"" + (TOP - 5) + "\" x2=\"" + x(nullV) + "\" y2=\"" + (TOP + bodyH - 20) + "\" stroke=\"#7a8294\" stroke-dasharray=\"3 3\" stroke-width=\"1\"/>");
       }
 
@@ -569,7 +578,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       }
 
       // X-axis
-      const axisY = TOP + bodyH - 12;
+      const axisY = TOP + bodyH + 14; // Always below pooled diamonds and PI.
       p.push("<line x1=\"" + LEFT + "\" y1=\"" + axisY + "\" x2=\"" + (LEFT + PLOT_W) + "\" y2=\"" + axisY + "\" stroke=\"#15181d\" stroke-width=\"1\"/>");
       const ticks = niceTicks(lo, hi, 5);
       for (const t of ticks) {
@@ -632,9 +641,17 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
+      let fe = null, re = null;
+      try {
+        fe = poolFE(parsed.studies);
+        re = poolRE_PM(parsed.studies);
+        if (fe && ![fe.mu, fe.se, fe.lo, fe.hi].every(Number.isFinite)) throw new Error('Fixed-effect calculation overflow');
+        if (re && ![re.mu, re.se, re.lo, re.hi, re.tau2, re.I2, re.piLo, re.piHi].every(Number.isFinite)) throw new Error('Random-effects calculation overflow');
+      } catch (error) {
+        fe = null; re = null; parsed.studies = [];
+        parsed.warnings.push('Analysis blocked: ' + (error.message || String(error)));
+      }
       renderWarnings(parsed.warnings);
-      const fe = poolFE(parsed.studies);
-      const re = poolRE_PM(parsed.studies);
       _lastFE = fe; _lastRE = re; _lastStudies = parsed.studies;
       // 2026-05-25: expose the most recent computed state on window so
       // helpers like AlmReport.exportBundle and AlmWebR.attachLiveButton
@@ -649,7 +666,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
           re: re,
           pool: { mu: re.mu, se: re.se, ci_lb: re.lo, ci_ub: re.hi,
                   tau2: re.tau2, I2: re.I2, k: parsed.studies.length },
-          opts: { method: "PM", test: "knha", title: state.title || "" },
+          opts: { method: "PM", test: "adhoc", title: state.title || "" },
         };
       };
       renderStats(parsed.studies, fe, re);
@@ -1005,7 +1022,12 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       var fe = window._almLastFE ? window._almLastFE() : null;
       var re = window._almLastRE ? window._almLastRE() : null;
       var studies = window._almLastStudies ? window._almLastStudies() : [];
-      var out = { _schema: 'forest-plot-results-v1', k: studies.length };
+      var out = { _schema: 'forest-plot-results-v1', k: studies.length,
+        re_method: 'PM', re_test: 'adhoc', confidence_level: 0.95,
+        inference: 'Modified Hartung-Knapp: variance factor max(1,Qstar/(k-1)); t_(k-1)',
+        I2_definition: '100*tau2/(tau2+v_typical)',
+        prediction_interval: 't_(k-1)*sqrt(tau2+SE_modified_HK^2); an approximation',
+        analysis_scale: 'input', studies: studies.map(function (x) { return Object.assign({}, x); }) };
       if (fe) {
         out.fe_mu = fe.mu;
         out.fe_ci_lb = fe.lo;
@@ -1019,6 +1041,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         out.re_se_hksj = re.se;
         out.tau2 = re.tau2;
         out.I2 = re.I2;
+        out.I2_Q = re.I2Q;
         out.Q = re.Q;
         out.pi_lb = re.piLo;
         out.pi_ub = re.piHi;
@@ -1096,6 +1119,10 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       },
     });
 
+    // The input scale already contains signed/logged effects; do not offer a
+    // second logarithm. Natural ratio labels use the explicit Axis scale selector.
+    var forestLogToggle = document.querySelector('#alm-axis-mount [data-edge="log"]');
+    if (forestLogToggle) { forestLogToggle.disabled = true; forestLogToggle.title = 'Use the Axis scale selector for exponentiated labels'; }
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'forest-plot-results',
@@ -1147,7 +1174,7 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
       // the modal can show |Δ| between R and JS for each field.
       AlmWebR.attachLiveButton({
         btn: "#btn-verify-live",
-        method: "PM", test: "knha",
+        method: "PM", test: "adhoc",
         getJsResult: function () {
           var s = (typeof window._almForestState === "function") ? window._almForestState() : null;
           return s && s.pool ? {
@@ -1182,14 +1209,18 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
           var pool = s.pool || {};
           var opts = s.opts || {};
           var rScript =
-            "# Reproduce in R with the 'metafor' package\n" +
+            "# Reproduce the displayed PM + modified Hartung-Knapp model\n" +
+            "# R metafor: test='adhoc' is the q >= 1 floor, NOT raw test='knha'.\n" +
             "library(metafor)\n" +
             "dat <- data.frame(\n" +
-            "  yi = c(" + (s.studies || []).map(function(x){return x.est;}).join(", ") + "),\n" +
-            "  vi = c(" + (s.studies || []).map(function(x){var se=x.se;return (se*se).toFixed(10);}).join(", ") + "),\n" +
-            "  label = c(" + (s.studies || []).map(function(x){return '\"' + String(x.label||'').replace(/\"/g,'\\\\\"') + '\"';}).join(", ") + ")\n" +
+            "  yi = c(" + s.studies.map(function(x) { return String(x.est); }).join(", ") + "),\n" +
+            "  vi = c(" + s.studies.map(function(x) { return String(x.se * x.se); }).join(", ") + "),\n" +
+            "  label = c(" + s.studies.map(function(x) { return JSON.stringify(String(x.label || '')); }).join(", ") + ")\n" +
             ")\n" +
-            "rma(yi, vi, data=dat, method=" + JSON.stringify(opts.method || "REML") + ", test=" + JSON.stringify(opts.test || "knha") + ")";
+            "res <- rma(yi, vi, data=dat, method='PM', test='adhoc', control=list(tol=1e-15,maxiter=10000))\n" +
+            "print(res)\npredict(res)\n" +
+            "# I2 shown is tau2/(tau2+v_typical); I2_Q is separately retained in JSON.\n" +
+            "# Prediction intervals use t_(k-1) and are approximations, especially with few studies.\n";
           return {
             appKey: "forest-plot",
             title: "Random-effects meta-analysis (forest plot)",
