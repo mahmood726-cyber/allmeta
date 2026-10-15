@@ -1,0 +1,1290 @@
+{
+  "schema": "allmeta-app-repair-register-v1",
+  "catalog_sha256": "88f496a54fccb0a1656267cc8e386aae23753ed75d432de3962bce24e82bf223",
+  "base_commit": "bdf777fb074804e09de59ac63db55f0ad90b2241",
+  "catalog_entries": 128,
+  "repository_entries": 122,
+  "definition_of_complete": "All declared model, numerical, input/output, browser, accessibility and reproducibility gates individually reviewed, with evidence and no unresolved blocking issue. A scoped repair or smoke pass is not completion.",
+  "apps": [
+    {
+      "name": "RoB (automated)",
+      "path": "./rob/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "RCT Extractor",
+      "path": "./rct-extractor/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "RevMan Importer",
+      "path": "./revman-importer/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Cross-network synthesis (NMA + IPD + obs)",
+      "path": "./cross-network/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Everything model (outcome \u00d7 time \u00d7 RoB)",
+      "path": "./everything-model/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Sequential MA (\u03b1-spending)",
+      "path": "./sequential-ma/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Personalised TE (subgroup shrinkage)",
+      "path": "./personalised-te/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Rare-events GLMM",
+      "path": "./rare-events-glmm/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Living RoB pool",
+      "path": "./living-rob-pool/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Network meta-regression",
+      "path": "./nma-meta-reg/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Multi-outcome NMA (Achana 2014)",
+      "path": "./multi-outcome-nma/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Multi-outcome MA (bivariate REML)",
+      "path": "./multi-outcome-ma/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Cross-design synthesis",
+      "path": "./cross-design/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "PROSPERO Templater",
+      "path": "./prospero-templater/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "BMA across \u03c4\u00b2 priors",
+      "path": "./bma-tau-priors/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "RVE Meta-Regression",
+      "path": "./rve-meta/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "EvidenceOS",
+      "path": "./evidenceos/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Local AI setup",
+      "path": "./local-ai/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "WebR Studio",
+      "path": "./webr-studio/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Annualised Outcome Plot (R/Shinylive)",
+      "path": "./r-shiny/annualised-plot/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Diagnostic Test Accuracy (R/Shinylive)",
+      "path": "./r-shiny/dta-diagnostic/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Mean Single-Group Meta-Analysis (R/Shinylive)",
+      "path": "./r-shiny/mean-single-group/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Local R Install",
+      "path": "./local-install/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "NMA Global Inconsistency",
+      "path": "./nma-global-inconsistency/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "p-curve / p-uniform",
+      "path": "./p-curve/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Limit meta-analysis",
+      "path": "./limit-ma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "GOSH Meta-Regression",
+      "path": "./gosh-metareg/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "PowerMA / RIS",
+      "path": "./powerma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "GRADE-CERQual",
+      "path": "./cerqual/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "ROBINS-E",
+      "path": "./robins-e/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Citation Chaser",
+      "path": "./citation-chaser/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "NMA Inconsistency",
+      "path": "./nma-inconsistency/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Bucher Indirect",
+      "path": "./bucher/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Multi-level MA",
+      "path": "./multilevel-ma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Pub-bias Tests",
+      "path": "./pubbias-tests/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Copas selection",
+      "path": "./copas/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Reporting-bias cockpit (ROB-ME)",
+      "path": "./reporting-bias/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Registry publication bias",
+      "path": "./registry-pubbias/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Influence Diagnostics",
+      "path": "./influence/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Bayesian MA \u2014 MCMC",
+      "path": "./bayesian-mcmc/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "MH / Peto pooling",
+      "path": "./mh-peto/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Thematic Synthesis",
+      "path": "./thematic-synthesis/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Network MA (SUCRA)",
+      "path": "./bayesian-nma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "POTH (hierarchy certainty)",
+      "path": "./poth/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Component NMA",
+      "path": "./component-nma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "MCID & NI margin",
+      "path": "./mcid/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "E-value",
+      "path": "./evalue/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Transportability",
+      "path": "./transportability/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Benefit-risk MCDA",
+      "path": "./benefit-risk/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Transitivity & representativeness",
+      "path": "./transitivity/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Surrogate validation",
+      "path": "./surrogate-validation/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Umbrella overlap (CCA)",
+      "path": "./umbrella-overlap/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Quantile meta-analysis",
+      "path": "./quantile-ma/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Benford screen",
+      "path": "./benford-screen/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Transported NMA",
+      "path": "./transported-nma/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Fragility index (MA)",
+      "path": "./fragility/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Spec-collapse",
+      "path": "./spec-collapse/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Reverse-Bayes (Analysis of Credibility)",
+      "path": "./reverse-bayes/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Network meta-interpolation (NMI)",
+      "path": "./nmi/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Non-PH survival NMA",
+      "path": "./nma-survival-nph/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Group-sequential design",
+      "path": "./gsdesign/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "ROBINS-I",
+      "path": "./robins-i/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "INSPECT-SR",
+      "path": "./inspect-sr/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "QUADAS-2",
+      "path": "./quadas-2/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "AMSTAR-2",
+      "path": "./amstar-2/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "CINeMA (NMA confidence)",
+      "path": "./cinema/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "HSROC / Bivariate DTA",
+      "path": "./hsroc/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "GOSH Plot",
+      "path": "./gosh/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "PICO Formulator",
+      "path": "./pico/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "PRISMA 2020 Checklist",
+      "path": "./prisma-checklist/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Search Strategy Translator",
+      "path": "./search-translator/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Search completeness",
+      "path": "./search-completeness/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Median \u2192 Mean/SD",
+      "path": "./median-to-mean/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "RoB 2",
+      "path": "./rob2/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "PET-PEESE + Trim-and-Fill",
+      "path": "./pet-peese/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Proportion MA",
+      "path": "./proportion-ma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "K-M IPD Reconstructor",
+      "path": "./km-reconstructor/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Registry-native survival IPD",
+      "path": "./registry-survival/",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Citation Dedup",
+      "path": "./citation-dedup/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Effect-Size Converter",
+      "path": "./effect-size-converter/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "scoped_fix_merged",
+      "pull_request": 111,
+      "complete": false,
+      "scope": "PR111 scoped converter repair; broader audit pending"
+    },
+    {
+      "name": "Screenr",
+      "path": "https://mahmood726-cyber.github.io/rayyanreplacement/",
+      "hosted_in_repository": false,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Dose Response Pro",
+      "path": "./dosehtml/dose-response-pro.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "TruthCert Pairwise Pro",
+      "path": "./Truthcert1/TruthCert-PairwisePro-v1.0-production.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "AdaptSim",
+      "path": "https://mahmood726-cyber.github.io/adaptsim/e156-submission/assets/adaptsim.html",
+      "hosted_in_repository": false,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Al-Mizan",
+      "path": "https://mahmood726-cyber.github.io/al-mizan/e156-submission/assets/al-mizan.html",
+      "hosted_in_repository": false,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "CardioOracle",
+      "path": "https://mahmood726-cyber.github.io/cardiooracle/e156-submission/assets/CardioOracle.html",
+      "hosted_in_repository": false,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "CardioSynth Phase 0",
+      "path": "https://mahmood726-cyber.github.io/cardiosynth/phase0/colchicine-stemi.html",
+      "hosted_in_repository": false,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "NICE Cardiology",
+      "path": "https://mahmood726-cyber.github.io/nice-cardiology-guidance/",
+      "hosted_in_repository": false,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Focus Studio",
+      "path": "./focus-studio/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Kanban Lab",
+      "path": "./kanban-lab/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Evidence Board",
+      "path": "./evidence-board/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "HTA Pro",
+      "path": "./HTA/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "IPD Meta-Pro",
+      "path": "./IPD-Meta-Pro/ipd-meta-pro.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Pairwise AI",
+      "path": "./Pairwiseai/main-screen.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Living Meta",
+      "path": "./living-meta/living-meta-complete.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "NMA Pro v8",
+      "path": "./nma-pro-v2/nma-pro-v8.0.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "NMA Dose-Response",
+      "path": "./nma-dose-response-app/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "PRISMA Flow",
+      "path": "./prisma-flow/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "PRISMA-NMA Checklist",
+      "path": "./prisma-nma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Forest Plot Viewer",
+      "path": "./forest-plot/index.html",
+      "hosted_in_repository": true,
+      "review_status": "under_review",
+      "repair_status": "fixes_proposed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Forest model/export/plot/input integrity; tests pending"
+    },
+    {
+      "name": "Funnel Plot Explorer",
+      "path": "./funnel-plot/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "RoB Traffic Light",
+      "path": "./rob-traffic-light/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Heterogeneity Explorer",
+      "path": "./heterogeneity/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "TSA Calculator",
+      "path": "./tsa/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "GRADE SoF Builder",
+      "path": "./grade-sof/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "DTA SROC Explorer",
+      "path": "./dta-sroc/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "MA Workbench",
+      "path": "./workbench/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Meta-Regression",
+      "path": "./meta-regression/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Cumulative + Subgroup",
+      "path": "./cumulative-subgroup/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "WebR Validator",
+      "path": "./webr-validator/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Bayesian MA",
+      "path": "./bayesian-ma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "PRISMA Screening",
+      "path": "./prisma-screen/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Design",
+      "path": "./design/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Search",
+      "path": "./search/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Screen",
+      "path": "./screen/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Extract",
+      "path": "./extract/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Paper Studio",
+      "path": "./paper/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Correlation MA",
+      "path": "./correlation-ma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "UWLS (multiplicative heterogeneity)",
+      "path": "./multiplicative-ma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Multiplicative-heterogeneity NMA",
+      "path": "./multiplicative-nma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Dose-Response MA",
+      "path": "./dose-response-ma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "RMST Meta-Analysis",
+      "path": "./rmst-ma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "RoBMA",
+      "path": "./robma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Project Workspace",
+      "path": "./project/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Review project (signed pipeline)",
+      "path": "./review-project/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Synth\u0113sis Journal PDF",
+      "path": "./synthesis-journal/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Multivariate MA",
+      "path": "./multivariate-ma/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    },
+    {
+      "name": "Parity Ledger",
+      "path": "./parity/index.html",
+      "hosted_in_repository": true,
+      "review_status": "queued",
+      "repair_status": "not_assessed",
+      "pull_request": null,
+      "complete": false,
+      "scope": "Not yet individually assessed in this programme"
+    }
+  ]
+}
