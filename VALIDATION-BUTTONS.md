@@ -40,6 +40,7 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 
 | App | Tier 1 | Tier 2 | Integration status |
 |---|---|---|---|
+| Limit MA | meta 8.3-0 / metasens 1.5-3; paper meta 8.5-0 / metasens 1.5-3 | Full 169 configurations; 55524/55525, one named R refusal | validate-limit-ma + integration; hashes, same-origin, restored navigation |
 | Influence | metafor 4.8-0; paper 5.2-1; all current per-study diagnostics | 142 configurations, full 164802-check primary comparison | validate-influence + integration specs; same-origin, hashes, exact flags and restored history |
 | Multilevel MA | metafor 4.8-0; paper 5.2-1 | 44 configurations, 528 checks including MoM-share and UI contracts | validate-multilevel-ma + integration specs |
 | Heterogeneity | metafor 4.8-0; paper 5.2-1 | Numerical replay and separate rendered audit | See integration report |
