@@ -16,6 +16,32 @@ the section is renamed to that version and dated, and a fresh
 
 ---
 
+## [1.4.0] — 2026-10-15
+
+Limit meta-analysis validated against the R package metasens, with the faults that validation found corrected and a one-click
+**Validate in R** panel added; scientific-integrity fixes for the effect-size converter, forest plot and heterogeneity apps.
+
+### Added
+- **Validate in R** for `limit-ma` (#117): a live check that runs `meta::metagen` (DL) and `metasens::limitmeta(beta0)` in the
+  self-hosted webR on the current data, and an offline replay of the paper's corpus through the page's own code against the
+  hash-pinned R reference (55,524/55,525; the single documented exception is metasens' internal REML refit not converging for
+  `dat.hartmannboyce2018`, shown as a failure, not a pass). Vendors the metasens 1.5-3 webR binary (SHA-256 pinned).
+
+### Fixed
+- **limit-ma** (#115): the funnel regression curve is drawn as βᵣ + αᵣ√(SE² + τ²) (it was a straight line); axis overrides respect
+  the SE minimum and clip in data space (points outside the range are omitted with a visible count; invalid ranges keep the fitted
+  results); undefined diagnostics (G² when the regression total sum of squares is zero) are exported as `null` instead of discarding
+  a valid fit; stale results are cleared on refusal; unsupported log-axis toggles are disabled with a visible explanation; the header
+  citation names *Biostatistics*. No estimator formula changed; validated on 169 configurations from 113 metadat datasets
+  (44,772 → 55,524 of 55,525 checks).
+- **effect-size converter** (#111): exact Hedges' g and SMD conversions, valid SMD from t/F, rejected bad SEs, R-parity CSV ingestion
+  and persisted estimator state, with frozen metafor regression gates.
+- **forest** (#112, #114): consistent modified Hartung–Knapp reproduction and I²; CSV studies are validated atomically, so a partly
+  invalid file no longer silently excludes studies.
+- **heterogeneity** (#113): strict imports, explicit I² conventions and diagnostic/display integrity.
+
+---
+
 ## [1.3.0] — 2026-10-13
 
 Validation against R for five more apps validated in F1000Research Software Tool Articles (publication bias,
