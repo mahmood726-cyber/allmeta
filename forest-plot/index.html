@@ -1005,13 +1005,27 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
     // textarea using the app's native "label, estimate, SE" line format, then
     // dispatch 'input' so render() fires.
     window.__almLoad = function (rows) {
-      var lines = rows.filter(function (r) {
-        return r.study != null && isFinite(r.yi) && isFinite(r.vi) && r.vi > 0;
-      }).map(function (r) {
-        return r.study + ', ' + r.yi + ', ' + Math.sqrt(r.vi);
+      if (!Array.isArray(rows) || !rows.length)
+        throw new Error('CSV contains no study rows');
+      // Validate all rows before changing the study set; never select a subset.
+      var lines = rows.map(function (r, i) {
+        var label = r && r.study != null ? String(r.study) : '';
+        var yi = r && typeof r.yi === 'number' ? r.yi : NaN;
+        var vi = r && typeof r.vi === 'number' ? r.vi : NaN;
+        // These labels would be skipped or split by the native textarea parser.
+        if (!label.trim() || label.trim().startsWith('#') || /[\r\n\t]/.test(label))
+          throw new Error('CSV row ' + (i + 1) + ': a single-line, non-comment study label is required');
+        if (!Number.isFinite(yi) || !Number.isFinite(vi) || vi <= 0 ||
+            !Number.isFinite(1 / vi) || !Number.isFinite(yi / vi))
+          throw new Error('CSV row ' + (i + 1) + ': finite yi and positive, representable vi are required');
+        var se = Math.sqrt(vi), reconstructedVi = se * se;
+        if (!(se > 0 && reconstructedVi > 0 && Number.isFinite(1 / reconstructedVi) &&
+              Number.isFinite(yi / reconstructedVi)))
+          throw new Error('CSV row ' + (i + 1) + ': vi cannot be represented as an SE');
+        return label + ', ' + String(yi) + ', ' + String(se);
       });
       var ta = document.getElementById('f-data');
-      if (!ta) return;
+      if (!ta) throw new Error('Forest study input is unavailable');
       ta.value = lines.join('\n');
       ta.dispatchEvent(new Event('input', { bubbles: true }));
     };
@@ -1100,8 +1114,30 @@ Study C, 0.05, 0.18" aria-label="Studies"></textarea>
         { name: 'vi',    required: true,  type: 'float',  example: '0.04' },
       ],
       onParse: function (result) {
-        window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
-        window.__almLoad(result.rows);
+        window.alm.resetUndo.snapshot();  // preserve pre-import input for Undo
+        try {
+          var headers = result.headers || [];
+          var required = ['study', 'yi', 'vi'];
+          if (headers.length !== 3 || !required.every(function (name) {
+                return headers.filter(function (h) { return h === name; }).length === 1;
+              }) || (result.warnings || []).length)
+            throw new Error('use unique, exact study/yi/vi headers, no extra columns, and valid cells. ' +
+              (result.warnings || []).slice(0, 5).join('; '));
+          window.__almLoad(result.rows);
+        } catch (error) {
+          // Rejected CSV cannot leave an old valid forest as if it represented
+          // the uploaded file. Undo restores the pre-import input if requested.
+          var ta = document.getElementById('f-data');
+          if (ta) {
+            ta.value = '';
+            ta.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+          var banner = document.getElementById('warn-banner');
+          if (banner) {
+            banner.textContent = 'Analysis blocked: CSV rejected: ' + (error.message || String(error));
+            banner.classList.add('is-visible');
+          }
+        }
       },
     });
 
