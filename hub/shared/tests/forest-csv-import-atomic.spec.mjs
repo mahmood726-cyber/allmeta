@@ -26,7 +26,9 @@ for (const [name,csv] of [
   await paste(page,csv);
   expect(await count(page)).toBe(0);
   await expect(page.locator('#warn-banner')).toContainText('CSV rejected');
+  await expect(page.locator('#alm-csv-mount textarea')).toHaveValue(csv);
   expect(await page.evaluate(() => window._almLastRE())).toBeNull();
+  expect(await page.evaluate(() => window._almLastFE())).toBeNull();
   await page.locator('#alm-undo-mount [data-action="undo"]').click();
   await expect(page.locator('#f-data')).toHaveValue(VALID);
   expect(await count(page)).toBe(3);
@@ -38,6 +40,8 @@ test('Forest file import keeps quoted labels and full precision in valid analyse
     name:'forest.csv',mimeType:'text/csv',
     buffer:Buffer.from('study,yi,vi\n"Trial, Alpha",-0.2,0.010000000000001\nB,0.1,0.16\nC,1.2,0.04')
   });
+  // The pre-import fixture also has k=3; that alone cannot prove FileReader completed.
+  await expect(page.locator('#f-data')).toHaveValue(/^Trial, Alpha, /);
   await expect.poll(() => count(page)).toBe(3);
   const out = await page.evaluate(() => window.__almResults());
   expect(out.studies[0].label).toBe('Trial, Alpha');
