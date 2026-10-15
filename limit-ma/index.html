@@ -74,7 +74,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>Limit meta-analysis (R&#252;cker)</h1>
-    <p>Adjusts the pooled effect for small-study effects by extrapolating to the zero-variance limit via a shrunken random-effects model. R&#252;cker et al., Stat Med 2011. R-parity: verified against <code>metasens::limitmeta(metagen(...))</code>.</p>
+    <p>Adjusts the pooled effect for small-study effects by extrapolating to the zero-variance limit via a shrunken random-effects model. R&#252;cker et al., Biostatistics 2011. R-parity: verified against <code>metasens::limitmeta(metagen(...))</code>.</p>
   </header>
   <main id="main">
     <section class="panel">
@@ -108,14 +108,18 @@
     </section>
     <section class="panel">
       <h2>Pooled vs limit</h2>
+      <div id="limit-error" role="alert"></div>
+      <div id="limit-range-note" aria-live="polite"></div>
       <table>
         <thead><tr><th>Method</th><th>Estimate</th><th>SE</th><th>95% CI</th></tr></thead>
         <tbody id="body"></tbody>
       </table>
+      <div id="limit-diagnostics" aria-live="polite"></div>
       <h2 style="margin-top:0.6rem">Funnel + R&#252;cker regression</h2>
 
       <!-- axis-controls mount -->
       <div id="alm-axis-mount"></div>
+      <p id="limit-log-note">Log axes are not supported for this plot; effect and SE axes are linear.</p>
 
       <svg id="plot" viewBox="0 0 600 340" role="img" aria-label="Funnel plot with R&#252;cker limit extrapolation line"></svg>
 
@@ -124,6 +128,10 @@
 
       <div class="note"><strong>Interpretation:</strong> the limit estimate is the value the random-effects model would return if all studies had zero sampling error. A large gap between the standard random-effects estimate and the limit estimate indicates small-study effects (possibly pub bias).</div>
 
+      <p>Export schema <code>limit-ma-results-v2</code>: unavailable diagnostics
+        (<code>Q</code>, <code>Q_small</code>, <code>Q_resid</code>, <code>G_squared</code>)
+        are exported as <code>null</code>, with the reason shown above. In particular, G&#178; is undefined
+        when the shrunken radial regression total sum of squares is zero.</p>
       <!-- results-export mount -->
       <div class="actions">
         <div id="alm-export-mount"></div>
@@ -209,7 +217,7 @@
         sst += (y[j] - yb) * (y[j] - yb);
       }
       var sigma = Math.sqrt(sse / (k - 2));
-      var rsq = 1 - sse / sst;
+      var rsq = sst === 0 ? null : 1 - sse / sst;
       var invSe = se.map(function (s) { return 1 / s; }); // sqrt(1/se^2)
       var seSlope = 1 / Math.sqrt(_varS(invSe)) / Math.sqrt(k - 1);
       var seInt = seSlope * _mean(se.map(function (s) { return 1 / (s * s); }));
@@ -254,19 +262,33 @@
       var Q = pool(rows, 0).Q;            // FE Cochran Q (= metagen $Q)
       var Qresid = regF.sigma * regF.sigma * (k - 2);
       var Qsmall = Q - Qresid;
-      var Gsquared = 1 - regL.r_squared;
+      var Gsquared = regL.r_squared === null ? null : 1 - regL.r_squared;
 
       return {
         limit: TEadjust, seLimit: seAdjust, slope: betaR,
         alpha_r: alphaR, beta_r: betaR, te_limit: teLimit,
         Q: Q, Q_small: Qsmall, Q_resid: Qresid, G_squared: Gsquared,
         tau2: tau2,
+        gReason: regL.r_squared === null ? 'shrunken radial regression total sum of squares is zero' : 'diagnostic arithmetic is non-finite',
       };
     }
 
+    function refuse(message) {
+      _lastResults = null;
+      document.getElementById('body').innerHTML = '';
+      document.getElementById('plot').innerHTML = '';
+      document.getElementById('limit-error').textContent = message;
+    }
+
     function run() {
+      document.getElementById('limit-error').textContent = '';
+      document.getElementById('limit-range-note').textContent = '';
+      document.getElementById('limit-diagnostics').textContent = '';
       var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3) { _lastResults = null; return; }
+      if (rows.length < 3) { refuse('At least three valid studies are required.'); return; }
+      if (rows.every(function (r) { return r.se === rows[0].se; })) {
+        refuse('Limit meta-analysis requires variation in study SEs.'); return;
+      }
       var d = dl(rows);
       var fe = pool(rows, 0);
       var re = pool(rows, d.tau2);
@@ -300,6 +322,25 @@
         te_limit:  lim.te_limit,
       };
 
+      // Diagnostics can be undefined without invalidating the fitted model.
+      var diagnosticKeys = ['Q', 'Q_small', 'Q_resid', 'G_squared'];
+      var valid = Object.keys(_lastResults).every(function (key) {
+        if (key === '_schema' || diagnosticKeys.indexOf(key) !== -1) return true;
+        var values = Array.isArray(_lastResults[key]) ? _lastResults[key] : [_lastResults[key]];
+        return values.every(Number.isFinite);
+      });
+      if (!valid) { refuse('Limit meta-analysis is numerically undefined for these studies.'); return; }
+
+      var diagnosticNotes = [];
+      diagnosticKeys.forEach(function (key) {
+        if (!Number.isFinite(_lastResults[key])) {
+          _lastResults[key] = null;
+          var reason = key === 'G_squared' ? lim.gReason : 'diagnostic arithmetic is non-finite';
+          diagnosticNotes.push(key + ': undefined (' + reason + ').');
+        }
+      });
+      document.getElementById('limit-diagnostics').textContent = diagnosticNotes.join(' ');
+
       var body = document.getElementById('body');
       var __bodyParts = [''];
       __bodyParts.push('<tr><td><code>Fixed effect</code></td><td>' + fmt(fe.mean) + '</td><td>' + fmt(fe.seMean) + '</td><td>[' + fmt(fe.mean - Z975 * fe.seMean) + ', ' + fmt(fe.mean + Z975 * fe.seMean) + ']</td></tr>');
@@ -332,29 +373,127 @@
       var teMin = xMin !== null ? xMin : (Math.min(lim.limit, Math.min.apply(null, rows.map(function (r) { return r.te; }))) - 0.1);
       var teMax = xMax !== null ? xMax : (Math.max(lim.limit, Math.max.apply(null, rows.map(function (r) { return r.te; }))) + 0.1);
       var seMax = yMax !== null ? yMax : (Math.max.apply(null, rows.map(function (r) { return r.se; })) * 1.1);
-      var X = function (v) { return padL + (v - teMin) / (teMax - teMin) * plotW; };
-      var Y = function (s) { return padT + (s / seMax) * plotH; };
-
-      __svgParts.push('<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT + plotH) + '" stroke="currentColor" opacity="0.5"/>');
-      __svgParts.push('<line x1="' + padL + '" y1="' + (padT + plotH) + '" x2="' + (padL + plotW) + '" y2="' + (padT + plotH) + '" stroke="currentColor" opacity="0.5"/>');
-      // zero reference
-      __svgParts.push('<line x1="' + X(0) + '" y1="' + padT + '" x2="' + X(0) + '" y2="' + (padT + plotH) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.3"/>');
-      // RE pooled line
-      __svgParts.push('<line x1="' + X(re.mean) + '" y1="' + padT + '" x2="' + X(re.mean) + '" y2="' + (padT + plotH) + '" stroke="var(--accent)" stroke-width="1.5" opacity="0.75"/>');
-      // Rücker limit (vertical)
-      __svgParts.push('<line x1="' + X(lim.limit) + '" y1="' + padT + '" x2="' + X(lim.limit) + '" y2="' + (padT + plotH) + '" stroke="var(--warn)" stroke-width="1.5" opacity="0.85"/>');
-      // Rücker regression line: te = limit + slope * SE
-      var e1 = lim.limit, e2 = lim.limit + lim.slope * seMax;
-      __svgParts.push('<line x1="' + X(e1) + '" y1="' + Y(0) + '" x2="' + X(e2) + '" y2="' + Y(seMax) + '" stroke="var(--warn)" stroke-dasharray="4 3" opacity="0.7"/>');
-
-      for (var i = 0; i < rows.length; i++) {
-        __svgParts.push('<circle cx="' + X(rows[i].te) + '" cy="' + Y(rows[i].se) + '" r="4" fill="var(--accent)" opacity="0.8"/>');
+      var seMin = yMin !== null ? yMin : 0;
+      // Validate the effective ranges after combining automatic and explicit bounds.
+      // Plot errors must not discard the valid fitted table or exported results.
+      if (![teMin, teMax, seMin, seMax].every(Number.isFinite) ||
+          teMin >= teMax || seMin >= seMax) {
+        svg.innerHTML = '';
+        document.getElementById('limit-error').textContent =
+          'Plot range error: effective X and SE bounds must be finite, with min < max. Clear or adjust the axis overrides.';
+        return;
       }
-      __svgParts.push('<text x="' + (X(re.mean) + 4) + '" y="' + (padT + 14) + '" font-size="10" fill="var(--accent)" opacity="0.9">RE mean</text>');
-      __svgParts.push('<text x="' + (X(lim.limit) + 4) + '" y="' + (padT + 28) + '" font-size="10" fill="var(--warn)" opacity="0.9">Rücker limit</text>');
-      __svgParts.push('<text x="' + (padL + plotW / 2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Effect</text>');
-      __svgParts.push('<text x="18" y="' + (padT + plotH / 2) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ' + (padT + plotH / 2) + ')">SE</text>');
-      svg.innerHTML = __svgParts.join('');
+      // Only data inside the resolved rectangle reaches pixel mapping.
+      var coordinates = [];
+      function point(x, y) { coordinates.push([x, y]); return x + ',' + y; }
+      function fraction(v, lo, hi) {
+        var span = hi - lo;
+        return Number.isFinite(span) ? (v - lo) / span :
+          (v / 2 - lo / 2) / (hi / 2 - lo / 2);
+      }
+      var X = function (v) { return padL + fraction(v, teMin, teMax) * plotW; };
+      var Y = function (s) { return padT + fraction(s, seMin, seMax) * plotH; };
+      function inside(x, lo, hi) { return x >= lo && x <= hi; }
+      function line(x1, y1, x2, y2, style) {
+        point(x1, y1); point(x2, y2);
+        __svgParts.push('<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" ' + style + '/>');
+      }
+      function label(x, y, text, color) {
+        point(x, y);
+        __svgParts.push('<text x="' + x + '" y="' + y + '" font-size="10" fill="' + color + '">' + text + '</text>');
+      }
+      __svgParts.push('<defs><clipPath id="limit-plot-clip"><rect x="60" y="20" width="520" height="280"/></clipPath></defs><g clip-path="url(#limit-plot-clip)">');
+      point(padL, padT); point(padL + plotW, padT + plotH);
+      line(padL, padT, padL, padT + plotH, 'stroke="currentColor" opacity="0.5"');
+      line(padL, padT + plotH, padL + plotW, padT + plotH, 'stroke="currentColor" opacity="0.5"');
+      if (inside(0, teMin, teMax)) line(X(0), padT, X(0), padT + plotH, 'stroke="currentColor" stroke-dasharray="3 3" opacity="0.3"');
+      if (inside(re.mean, teMin, teMax)) {
+        line(X(re.mean), padT, X(re.mean), padT + plotH, 'stroke="var(--accent)" stroke-width="1.5" opacity="0.75"');
+        label(Math.min(X(re.mean) + 4, padL + plotW), padT + 14, 'RE mean', 'var(--accent)');
+      }
+      if (inside(lim.limit, teMin, teMax)) {
+        line(X(lim.limit), padT, X(lim.limit), padT + plotH, 'stroke="var(--warn)" stroke-width="1.5" opacity="0.85"');
+        label(Math.min(X(lim.limit) + 4, padL + plotW), padT + 28, 'Rücker limit', 'var(--warn)');
+      }
+      // Sample only the visible SE interval. Clip segment endpoints in data
+      // space before X/Y; normalized arithmetic avoids overflowing differences.
+      function interpolate(a, b, t) { return a * (1 - t) + b * t; }
+      function clip(a, b) {
+        if ((a.x < teMin && b.x < teMin) || (a.x > teMax && b.x > teMax)) return null;
+        function endpoint(p, q) {
+          if (inside(p.x, teMin, teMax)) return p;
+          var edge = p.x < teMin ? teMin : teMax;
+          var t = fraction(edge, p.x, q.x);
+          return {x: edge, y: interpolate(p.y, q.y, t)};
+        }
+        return [endpoint(a, b), endpoint(b, a)];
+      }
+      var curve = [], previous = null, last = null;
+      function flush() {
+        if (curve.length) __svgParts.push('<polyline data-regression="true" points="' + curve.join(' ') + '" fill="none" stroke="var(--warn)" stroke-dasharray="4 3" opacity="0.7"/>');
+        curve = []; last = null;
+      }
+      for (var j = 0; j <= 64; j++) {
+        var s = interpolate(seMin, seMax, j / 64);
+        var fitted = lim.beta_r + (lim.alpha_r === 0 ? 0 : lim.alpha_r * Math.hypot(s, Math.sqrt(lim.tau2)));
+        // Overflowing extrapolation is outside any finite bound. A scaled
+        // representation retains its magnitude for data-space intersections.
+        var current = {x: fitted, y: s};
+        if (previous) {
+          var pair;
+          if (Number.isFinite(previous.x) && Number.isFinite(current.x)) {
+            pair = clip(previous, current);
+          } else {
+            var scale = Math.max(Math.abs(previous.y), Math.abs(s), Math.sqrt(lim.tau2), Math.abs(teMin), Math.abs(teMax), Math.abs(lim.beta_r), 1);
+            var scaled = function (v) { return lim.beta_r / scale + (lim.alpha_r === 0 ? 0 : lim.alpha_r * (Math.hypot(v, Math.sqrt(lim.tau2)) / scale)); };
+            var ax = scaled(previous.y), bx = scaled(s), lo = teMin / scale, hi = teMax / scale;
+            pair = null;
+            if (!((ax < lo && bx < lo) || (ax > hi && bx > hi))) {
+              var end = function (x, y, otherX, otherY) {
+                if (inside(x, lo, hi)) return {x: x * scale, y: y};
+                var edge = x < lo ? teMin : teMax;
+                return {x: edge, y: interpolate(y, otherY, fraction(edge / scale, x, otherX))};
+              };
+              pair = [end(ax, previous.y, bx, s), end(bx, s, ax, previous.y)];
+            }
+          }
+          if (!pair) flush();
+          else {
+            var first = point(X(pair[0].x), Y(pair[0].y));
+            var next = point(X(pair[1].x), Y(pair[1].y));
+            if (last !== first) { flush(); curve.push(first); }
+            curve.push(next); last = next;
+          }
+        }
+        previous = current;
+      }
+      flush();
+      var omitted = 0;
+      for (var i = 0; i < rows.length; i++) {
+        if (!inside(rows[i].te, teMin, teMax) || !inside(rows[i].se, seMin, seMax)) { omitted++; continue; }
+        var cx = X(rows[i].te), cy = Y(rows[i].se);
+        point(cx, cy);
+        __svgParts.push('<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="var(--accent)" opacity="0.8"/>');
+      }
+      label(padL + plotW / 2, padT + plotH - 6, 'Effect', 'currentColor');
+      label(padL + 4, padT + plotH / 2, 'SE', 'currentColor');
+      __svgParts.push('</g>');
+      var markup = __svgParts.join('');
+      // Single pre-install coordinate gate; tolerance covers floating-point
+      // rounding and subpixel strokes, never off-screen source values.
+      var tolerance = 1e-6;
+      if (!coordinates.every(function (p) {
+        return p.every(Number.isFinite) && inside(p[0], padL - tolerance, padL + plotW + tolerance) &&
+          inside(p[1], padT - tolerance, padT + plotH + tolerance);
+      })) {
+        svg.innerHTML = '';
+        document.getElementById('limit-error').textContent =
+          'Plot range error: coordinates cannot be represented inside the plot area. Clear or adjust the axis overrides.';
+        return;
+      }
+      document.getElementById('limit-range-note').textContent = omitted ?
+        omitted + (omitted === 1 ? ' study outside the axis range is' : ' studies outside the axis range are') + ' not shown.' : '';
+      svg.innerHTML = markup;
     }
 
     // ---- snapshot/restore for reset-undo ----
@@ -444,6 +583,13 @@
         _axisState = state;
         run();
       },
+    });
+
+    // This plot implements linear effect/SE axes only.
+    document.querySelectorAll('#alm-axis-mount [data-edge="log"]').forEach(function (input) {
+      input.disabled = true;
+      input.setAttribute('aria-describedby', 'limit-log-note');
+      input.parentNode.title = 'Log axes are not supported for this plot.';
     });
 
     window.alm.resultsExport({
