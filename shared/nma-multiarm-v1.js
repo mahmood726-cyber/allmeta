@@ -280,9 +280,10 @@
     // Refuse, as netmeta's chkmultiarm() does, rather than fitting a network with a study left out
     // or mis-specified: every study must supply each of its m(m-1)/2 comparisons exactly once, a
     // multi-arm study's estimates must be internally consistent (A-C = (A-B) + (B-C), tolerance 0.001,
-    // netmeta's tol.multiarm), and the arm variances implied by its standard errors must be >= 0.
+    // netmeta's tol.multiarm). The independent-arm model additionally requires nonnegative arm
+    // variances that reproduce every supplied pairwise variance (relative tolerance 1e-8).
     var problems = checkStudies(rows);
-    if (problems.length) return { ok: false, error: "Problem" + (problems.length > 1 ? "s" : "") + " in multi-arm or duplicated studies (netmeta refuses these too): " + problems.join("; ") };
+    if (problems.length) return { ok: false, error: "Problem" + (problems.length > 1 ? "s" : "") + " in multi-arm or duplicated studies: " + problems.join("; ") };
     var built = buildStudies(rows);
     if (built.errors.length) {
       return { ok: false, error: built.errors.join("; ") };
@@ -349,7 +350,30 @@
       for (var i = 0; i < m; i++) for (var j = i + 1; j < m; j++) worst = Math.max(worst, Math.abs(d[i][j] - (mu[i] - mu[j])));
       if (worst > 0.001) { problems.push("study '" + id + "' has inconsistent treatment effects (A-C differs from (A-B) + (B-C) by " + worst.toPrecision(3) + ")"); return; }
       var T = 0; for (i = 0; i < m; i++) for (j = i + 1; j < m; j++) T += s2[i][j];
-      for (i = 0; i < m; i++) { var rsum = 0; for (j = 0; j < m; j++) rsum += s2[i][j]; if ((rsum - T / (m - 1)) / (m - 2) < 0) { problems.push("study '" + id + "': its standard errors imply a negative variance for arm '" + arms[i] + "'"); return; } }
+      var armV = new Array(m), varianceScale = 0;
+      for (i = 0; i < m; i++) {
+        var rsum = 0;
+        for (j = 0; j < m; j++) { rsum += s2[i][j]; varianceScale = Math.max(varianceScale, s2[i][j]); }
+        armV[i] = (rsum - T / (m - 1)) / (m - 2);
+        if (armV[i] < 0) { problems.push("study '" + id + "': its standard errors imply a negative variance for arm '" + arms[i] + "'"); return; }
+      }
+      // Nonnegative recovered arm variances are necessary but not sufficient
+      // for >=4 arms: the overdetermined system v_ij = v_i + v_j must reproduce
+      // EVERY supplied contrast variance. Otherwise buildStudies would silently
+      // project the data onto an independent-arm model and alter the reported SEs.
+      // Scale-relative 1e-8 is a numerical allowance, not a claim of clinical
+      // equivalence or a tolerance for substantially rounded/incompatible input.
+      // Correlated-arm models can be valid but are not implemented by this engine.
+      for (i = 0; i < m; i++) for (j = i + 1; j < m; j++) {
+        var reconstructed = armV[i] + armV[j];
+        if (Math.abs(s2[i][j] - reconstructed) > 1e-8 * varianceScale) {
+          problems.push("study '" + id + "': supplied variances do not fit the independent-arm covariance model (" +
+            arms[i] + " / " + arms[j] + ": supplied " + s2[i][j].toPrecision(6) +
+            ", reconstructed " + reconstructed.toPrecision(6) +
+            "). Check SE precision or use a correlated-arm model; no network has been fitted.");
+          return;
+        }
+      }
     });
     return problems;
   }
