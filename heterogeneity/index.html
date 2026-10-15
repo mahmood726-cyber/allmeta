@@ -70,6 +70,9 @@
     .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
                    padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
     .file-input-hidden { display:none; }
+    #alm-axis-mount .alm-axis-row { grid-template-columns: auto auto minmax(3rem,1fr) auto minmax(3rem,1fr) auto; }
+    #alm-axis-mount .alm-axis input[type=number] { width:100%; min-width:3rem; }
+    @media (max-width:600px) { #alm-axis-mount .alm-axis-row>label:first-child { grid-column:1/-1; } }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <!-- Cycle 2.2 shared UX modules — wired per RETROFIT_AUDIT.md:
@@ -116,7 +119,7 @@
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
-          <span class="hint">Lines starting with <code>#</code> or blanks are ignored.</span>
+          <span class="hint">Blank/comment lines and one recognised estimate/SE header are ignored. Every study row must be valid; malformed rows block pooling. Uploaded CSV requires exact <code>study,yi,vi</code> headers.</span>
         </label>
       </fieldset>
 
@@ -140,6 +143,7 @@
       <!-- axis-controls mount: axis range + log-scale toggle -->
       <div id="alm-axis-mount"></div>
 
+      <p id="het-method-note" class="hint">The normal CI uses <code>test="z"</code>; the modified Hartung–Knapp CI uses a variance floor of 1 (<code>test="adhoc"</code>). The prediction interval uses the unadjusted model SE and t<sub>k−1</sub> (<code>test="t"</code>). These are distinct approximations. Q-based I² and model-based I² are labelled separately; Q-profile intervals refer to model-based I².</p>
       <div id="stats-wrap"></div>
       <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
 
@@ -174,6 +178,7 @@
     <section class="panel preview-wrap" aria-label="Diagnostics">
       <h2>Baujat plot</h2>
       <div id="svg-host"></div>
+      <p id="baujat-range-note" class="hint" role="status" aria-live="polite"></p>
       <h2>Leave-one-out</h2>
       <div id="loo-table"></div>
     
@@ -204,23 +209,28 @@
 
     function parseStudies(text) {
       const studies=[], warnings=[];
-      const lines = String(text||"").split(/\r?\n/);
+      let first=true;
+      const lines=String(text||"").split(/\r?\n/);
       for (let i=0;i<lines.length;i++) {
-        const raw = lines[i].trim();
+        const raw=lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
-        const parts = raw.split(/\s*[,\t]\s*/);
-        if (parts.length < 3) { warnings.push("Line "+(i+1)+": <3 columns"); continue; }
-        const est = parseFloat(parts[parts.length-2]);
-        const se = parseFloat(parts[parts.length-1]);
-        if (!isFinite(est) || !isFinite(se)) {
-          if (studies.length === 0 && i < 3) continue;
-          warnings.push("Line "+(i+1)+": non-numeric"); continue;
+        const parts=raw.split(/\s*[,\t]\s*/);
+        const ys=(parts[parts.length-2]||"").trim(), ss=(parts[parts.length-1]||"").trim();
+        const header=first && parts.length>=3 && /^(yi|est|effect|estimate)$/i.test(ys) && /^(se|sei|standard[ _-]?error)$/i.test(ss);
+        first=false;
+        if (header) continue;
+        const est=Number(ys),se=Number(ss),v=se*se;
+        if (parts.length<3 || !ys || !ss || !Number.isFinite(est) || !Number.isFinite(se)) {
+          warnings.push("Line "+(i+1)+": need label and complete finite estimate/SE values"); continue;
         }
-        if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }
-        const label = parts.slice(0, parts.length-2).join(", ") || ("Study "+(studies.length+1));
-        studies.push({ label, est, se, v: se*se });
+        if (!(se>0 && Number.isFinite(v) && v>0 && Number.isFinite(1/v) && Number.isFinite(est/v))) {
+          warnings.push("Line "+(i+1)+": positive, numerically representable SE required"); continue;
+        }
+        const label=parts.slice(0,-2).join(", ") || ("Study "+(studies.length+1));
+        studies.push({label,est,se,v});
       }
-      return { studies, warnings };
+      if (warnings.length) warnings.unshift("Analysis blocked: correct all study rows; no partial dataset was pooled.");
+      return {studies:warnings.length?[]:studies,warnings};
     }
 
     function weightedSums(studies, tau2) {
@@ -268,13 +278,17 @@
       const se = Math.sqrt(1/sums.sw);
       const Q0 = weightedSums(studies, 0).Q;
       const df = k - 1;
-      const I2 = df > 0 ? Math.max(0, 100*(Q0 - df)/Q0) : 0;
+      // Q-based I2 is the historical output convention; retain it explicitly.
+      const I2 = df > 0 && Q0 > df ? 100*(Q0-df)/Q0 : 0;
+      const fixed=weightedSums(studies,0);
+      const typical=df>0 ? df/(fixed.sw-fixed.sw2/fixed.sw) : NaN;
+      const I2Model=df>0 && tau2>0 ? 100*tau2/(tau2+typical) : 0;
       const pQ = df > 0 ? 1 - chiSqCDF(Q0, df) : NaN;
       // V6-04: HKSJ small-sample correction (Hartung-Knapp-Sidik-Jonkman) on
       // the RE pooled estimate. q-statistic with floor at 1 to avoid CI
       // narrowing when Q < df (per Cochrane Handbook §10.10.4 + advanced-stats.md).
       let seHKSJ = se;
-      let tCrit = Z975; // z for k>=30
+      let tCrit = Z975; // Single-study fallback; otherwise use the exact t quantile.
       if (df > 0) {
         const wRE = studies.map(s => 1 / (s.v + tau2));
         const wSum = wRE.reduce((a,b)=>a+b,0);
@@ -287,7 +301,7 @@
       return {
         k, mu, se, ciLo: mu-Z975 *se, ciHi: mu+Z975 *se,
         seHKSJ, ciLoHKSJ: mu - tCrit*seHKSJ, ciHiHKSJ: mu + tCrit*seHKSJ, tCrit,
-        Q:Q0, df, pQ, I2, tau2
+        Q:Q0, df, pQ, I2, I2Model, vTypical:typical, tau2
       };
     }
     // ---- Numerical support ----
@@ -423,24 +437,41 @@
       if (xMax <= 0) xMax = 1;
       if (yMax <= 0) yMax = 1;
       xMax *= 1.1; yMax *= 1.15;
-      function x(v) { return L + v/xMax * plotW; }
-      function y(v) { return T + plotH - v/yMax * plotH; }
+      const axis=window.__almAxis||{};
+      function limits(key,automaticMax) {
+        const a=Array.isArray(axis[key])?axis[key]:[null,null];
+        const lo=Number.isFinite(a[0])?a[0]:0;
+        const hi=Number.isFinite(a[1])?a[1]:Math.max(automaticMax,lo+Math.max(1,Math.abs(lo)*0.1));
+        return lo>=0 && hi>lo ? [lo,hi] : [0,automaticMax];
+      }
+      const [xMin,xHi]=limits('x',xMax),[yMin,yHi]=limits('y',yMax);
+      xMax=xHi;yMax=yHi;
+      const visible=p=>p.x>=xMin && p.x<=xMax && p.y>=yMin && p.y<=yMax;
+      const cropped=points.filter(p=>!visible(p)).length;
+      const cropNote=document.getElementById('baujat-range-note');
+      if (cropNote) cropNote.textContent=cropped ? cropped+' study point(s) outside the selected axis range. The analysis and exports still include every study.' : '';
+      function x(v) { return L+(v-xMin)/(xMax-xMin)*plotW; }
+      function y(v) { return T+plotH-(v-yMin)/(yMax-yMin)*plotH; }
 
       const parts = [];
       parts.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
       parts.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\">");
+      parts[parts.length-1]=parts[parts.length-1].replace('<svg ', '<svg role="img" aria-labelledby="baujat-title baujat-description" ');
+      parts.push('<title id="baujat-title">Baujat plot for '+studies.length+' studies</title>');
+      parts.push('<desc id="baujat-description">Squared Pearson residuals at fitted tau squared on the horizontal axis; influence from leave-one-out refits on the vertical axis. '+
+        escapeXml('Estimator '+(info&&info.estimator?info.estimator:'specified')+'. '+cropped+' points outside the selected view; all studies retained in analysis.')+'</desc>');
       parts.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
       parts.push("<text x=\""+(W/2)+"\" y=\"26\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"700\" fill=\"#15181d\">Baujat plot — heterogeneity vs influence</text>");
       // Frame
       parts.push("<rect x=\""+L+"\" y=\""+T+"\" width=\""+plotW+"\" height=\""+plotH+"\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
       // Axes
       const axisY = T+plotH;
-      const xTicks = niceTicks(0, xMax, 5);
+      const xTicks = niceTicks(xMin, xMax, 5);
       for (const t of xTicks) {
         parts.push("<line x1=\""+x(t)+"\" y1=\""+axisY+"\" x2=\""+x(t)+"\" y2=\""+(axisY+4)+"\" stroke=\"#15181d\"/>");
         parts.push("<text x=\""+x(t)+"\" y=\""+(axisY+18)+"\" text-anchor=\"middle\" font-size=\"13\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
       }
-      const yTicks = niceTicks(0, yMax, 5);
+      const yTicks = niceTicks(yMin, yMax, 5);
       for (const t of yTicks) {
         parts.push("<line x1=\""+L+"\" y1=\""+y(t)+"\" x2=\""+(L-4)+"\" y2=\""+y(t)+"\" stroke=\"#15181d\"/>");
         parts.push("<text x=\""+(L-8)+"\" y=\""+(y(t)+4)+"\" text-anchor=\"end\" font-size=\"13\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
@@ -454,7 +485,8 @@
       const order = points.map((p, i) => i).sort((a, b) => points[b].y - points[a].y || points[b].x - points[a].x);
       const labelled = new Set();
       for (const i of order) {
-        const p = points[i], px = x(p.x), py = y(p.y), w = 7.2 * String(p.label).length;
+        const p = points[i]; if (!visible(p)) continue;
+        const px = x(p.x), py = y(p.y), w = 7.2 * String(p.label).length;
         const left = px + 8 + w > L + plotW;
         const box = { x0: left ? px - 8 - w : px + 8, x1: left ? px - 8 : px + 8 + w, y0: py - 9, y1: py + 5 };
         const hitsPoint = points.some((q, j) => j !== i && x(q.x) + 6 > box.x0 && x(q.x) - 6 < box.x1 && y(q.y) + 6 > box.y0 && y(q.y) - 6 < box.y1);
@@ -462,6 +494,7 @@
         placed.push(box); labelled.add(i); p._left = left;
       }
       points.forEach((p, i) => {
+        if (!visible(p)) return;
         parts.push("<circle cx=\""+x(p.x)+"\" cy=\""+y(p.y)+"\" r=\"5\" fill=\"#2c5e8a\" stroke=\"#15181d\" stroke-width=\"0.8\"><title>"+escapeXml(p.label)+"</title></circle>");
         if (labelled.has(i))
           parts.push("<text x=\""+(x(p.x)+(p._left ? -8 : 8))+"\" y=\""+(y(p.y)+4)+"\" font-size=\"13\" fill=\"#15181d\""+(p._left ? " text-anchor=\"end\"" : "")+">"+escapeXml(p.label)+"</text>");
@@ -486,8 +519,8 @@
       const chosenKey = dlRefused ? "pm" : (chosen || "pm");
       const tau2 = tau2For(chosenKey, studies);
       const sum = poolSummary(studies, tau2);
-      // Prediction interval (k ≥ 2). Uses t_{k-1} per Cochrane Handbook v6.5; the older IntHout-2016 t_{k-2} is
-      // superseded and gives a PI that is too wide — ~3x at k=3 (t_1=12.7 vs t_2=4.3).
+      // Prediction interval uses unadjusted model SE and t_(k-1), matching
+      // predict(rma(...,test="t")). This is an approximation, not a universally exact convention.
       const piT = tQuantile975(k-1);
       const piSE = Math.sqrt(tau2 + sum.se*sum.se);
       const pi = { lo: sum.mu - piT*piSE, hi: sum.mu + piT*piSE, t: piT, df: k-1 };
@@ -532,8 +565,9 @@
       parts.push(statCard("k", String(k)));
       // a p-value is never 0: below 0.0005 it is shown as p<0.001
       parts.push(statCard("Q (df=" + sum.df + ")", fmt(sum.Q, 2) + "  " + (sum.pQ < 0.0005 ? "p<0.001" : "p=" + fmt(sum.pQ, 3))));
-      parts.push(statCard("I²", fmt(sum.I2, 1) + "%" +
-        (qpci ? " [" + fmt(qpci.I2Lo, 1) + ", " + fmt(qpci.I2Hi, 1) + "]" : "")));
+      parts.push(statCard("I² (Q-based)",fmt(sum.I2,1)+"%"));
+      parts.push(statCard("I² (model-based)",fmt(sum.I2Model,1)+"%"+
+        (qpci ? " ["+fmt(qpci.I2Lo,1)+", "+fmt(qpci.I2Hi,1)+"] (Q-profile)" : "")));
       if (qpci) parts.push(statCard("τ² 95% CI (Q-profile)",
         "[" + fmt(qpci.tau2Lo, 4) + ", " + fmt(qpci.tau2Hi, 4) + "]"));
       parts.push(statCard("τ² (PM)", fmt(tauEstimates.pm, 4)));
@@ -542,8 +576,8 @@
       // the tau^2 the pooled estimate and intervals below actually use, and its estimator (DL below k=10 falls back to PM)
       parts.push(statCard("τ² used", fmt(tau2, 4) + " (" + ({pm:"PM",reml:"REML",ml:"ML",eb:"EB",sj:"SJ",he:"HE",hs:"HS",dl:"DL"})[res.estimator] + ")"));
       parts.push(statCard("RE pooled (z)", fmt(sum.mu, 3) + " [" + fmt(sum.ciLo, 3) + ", " + fmt(sum.ciHi, 3) + "]"));
-      parts.push(statCard("RE pooled (HKSJ + t)", fmt(sum.mu, 3) + " [" + fmt(sum.ciLoHKSJ, 3) + ", " + fmt(sum.ciHiHKSJ, 3) + "]"));
-      parts.push(statCard("95% PI", "[" + fmt(piLo, 3) + ", " + fmt(piHi, 3) + "]"));
+      parts.push(statCard("RE pooled (modified HK + t)", fmt(sum.mu, 3) + " [" + fmt(sum.ciLoHKSJ, 3) + ", " + fmt(sum.ciHiHKSJ, 3) + "]"));
+      parts.push(statCard("95% PI (model SE + t)", "[" + fmt(piLo, 3) + ", " + fmt(piHi, 3) + "]"));
 
       statsWrap.innerHTML = "<div class=\"stats\">" + parts.join("") + "</div>";
 
@@ -578,13 +612,25 @@
       if (state.tau2 === "dl" && parsed.studies.length < 10) {
         extras.push("DerSimonian-Laird is not offered for fewer than 10 studies (it is biased for small k); Paule-Mandel is used instead.");
       }
-      const info = renderStats(parsed.studies, state.tau2);
-      _lastInfo = info; _lastStudies = parsed.studies;
+      _lastInfo=null; _lastStudies=[];
+      let info=null;
+      try {
+        info=renderStats(parsed.studies,state.tau2);
+        if (info && ![info.sum.mu,info.sum.se,info.sum.ciLo,info.sum.ciHi,info.sum.seHKSJ,
+            info.sum.ciLoHKSJ,info.sum.ciHiHKSJ,info.sum.Q,info.sum.I2,info.sum.I2Model,
+            info.tau2,info.pi.lo,info.pi.hi].every(Number.isFinite)) throw new Error('Non-finite numerical result');
+      } catch (error) {
+        parsed.studies=[];info=null;
+        statsWrap.innerHTML="";looTable.innerHTML="";
+        extras.push("Analysis blocked: "+(error.message||String(error)));
+      }
+      _lastInfo=info;_lastStudies=parsed.studies;
       renderWarnings(parsed.warnings, extras);
       const svg = (parsed.studies.length >= 2 && info)
         ? buildSvg(parsed.studies, info.sum, info)
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need ≥2 study rows.</text></svg>";
       svgHost.innerHTML = svg;
+      if (!info) document.getElementById("baujat-range-note").textContent="";
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
       // url-state write (after each render so the link is always shareable)
       try {
@@ -593,6 +639,12 @@
         }
       } catch(e) {}
     }
+
+    window.__almRejectImport=function(message) {
+      document.getElementById('f-data').value='';
+      render();
+      renderWarnings([String(message), 'No analysis retained. Use Undo to recover the previous input.']);
+    };
 
     function loadSaved() {
       try {
@@ -779,15 +831,21 @@
     // textarea using the app's native "label, estimate, SE" line format, then
     // dispatch 'input' so render() fires.
     window.__almLoad = function (rows) {
-      var lines = rows.filter(function (r) {
-        return r.study != null && isFinite(r.yi) && isFinite(r.vi) && r.vi > 0;
-      }).map(function (r) {
-        return r.study + ', ' + r.yi + ', ' + Math.sqrt(r.vi);
-      });
-      var ta = document.getElementById('f-data');
-      if (!ta) return;
-      ta.value = lines.join('\n');
-      ta.dispatchEvent(new Event('input', { bubbles: true }));
+      if (window.alm && window.alm.resetUndo) window.alm.resetUndo.snapshot();
+      try {
+        if (!Array.isArray(rows) || !rows.length) throw new Error('CSV has no study rows');
+        const number=v=>typeof v==='number'?v:(typeof v==='string' && v.trim()!==''?Number(v):NaN);
+        const lines=rows.map(function(r,i) {
+          if (!r || typeof r!=='object' || r.study==null || !String(r.study).trim() || /[\r\n\t]/.test(String(r.study)))
+            throw new Error('CSV row '+(i+1)+': a single-line study label is required');
+          const yi=number(r.yi),vi=number(r.vi);
+          if (!Number.isFinite(yi) || !Number.isFinite(vi) || vi<=0 || !Number.isFinite(1/vi) || !Number.isFinite(yi/vi))
+            throw new Error('CSV row '+(i+1)+': finite yi and positive, representable vi are required');
+          return String(r.study)+', '+String(yi)+', '+String(Math.sqrt(vi));
+        });
+        const ta=document.getElementById('f-data');ta.value=lines.join('\n');
+        ta.dispatchEvent(new Event('input',{bubbles:true}));
+      } catch(error) { window.__almRejectImport('CSV rejected: '+(error.message||String(error))); }
     };
 
     // Return the last pooled result as a flat object for results-export.
@@ -795,7 +853,13 @@
     window.__almResults = function () {
       var info = window._almLastFE ? window._almLastFE() : null;
       var studies = window._almLastStudies ? window._almLastStudies() : [];
-      var out = { _schema: 'heterogeneity-results-v1', k: studies.length };
+      var out = { _schema: 'heterogeneity-results-v1', k: studies.length,
+        I2_definition:'Q-based; retained for backwards compatibility',
+        I2_model_definition:'100*tau2/(tau2+v_typical)',
+        I2_ci_definition:'Model-based I2 obtained by transforming Q-profile tau2 limits',
+        normal_interval_test:'z', modified_HK_test:'adhoc', prediction_interval_test:'t',
+        prediction_interval_SE:'unadjusted model SE',
+        studies:studies.map(function(x){return Object.assign({},x);}) };
       if (info && info.sum) {
         var s = info.sum;
         out.mu = s.mu;
@@ -808,6 +872,7 @@
         out.Q_df = s.df;
         out.Q_p = s.pQ;
         out.I2 = s.I2;
+        out.I2_Q=s.I2;out.I2_model=s.I2Model;out.se_modified_hk=s.seHKSJ;
         out.tau2 = s.tau2;
         out.tau2_estimator = info.estimator;
         out.tau2_pm = info.tauEstimates.pm;
@@ -859,22 +924,31 @@
         { name: 'vi',    required: true,  type: 'float',  example: '0.04' },
       ],
       onParse: function (result) {
-        window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
+        const headers=result.headers||[];
+        const exact=['study','yi','vi'].every(n=>headers.filter(h=>h===n).length===1);
+        if (!exact || new Set(headers).size!==headers.length || (result.warnings||[]).length) {
+          window.alm.resetUndo.snapshot();
+          window.__almRejectImport('CSV rejected: use unique, exact study/yi/vi headers and valid numeric fields. '+(result.warnings||[]).join('; '));
+          return;
+        }
         window.__almLoad(result.rows);
       },
     });
 
     window.alm.axisControls({
-      target: '#alm-axis-mount',
-      axes: [{ key: 'x', label: 'Baujat X axis', range: [null, null], log: false }],
-      onChange: function (state) {
-        window.__almAxis = state;
-        // NOTE: axis-controls renders min/max inputs but does NOT yet drive
-        // the Baujat plot axis domain. buildSvg() auto-computes its domain
-        // from point extents; wiring __almAxis requires threading lo/hi
-        // overrides through render() — deferred to a future cycle.
-        // The controls are functional UI but domain override is no-op.
-      },
+      target:'#alm-axis-mount',
+      axes:[{key:'x',label:'Baujat X',range:[null,null],log:false},
+            {key:'y',label:'Baujat Y',range:[null,null],log:false}],
+      onChange:function(state) {
+        const invalid=['x','y'].some(key=>(state[key]||[]).some(v=>v!=null && (!Number.isFinite(v)||v<0)));
+        const error=document.querySelector('#alm-axis-mount [data-error]');
+        if (invalid) { if(error)error.textContent='Baujat axis limits must be finite and nonnegative.'; return; }
+        window.__almAxis=state;
+        const ta=document.getElementById('f-data');if(ta)ta.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+    });
+    document.querySelectorAll('#alm-axis-mount [data-edge="log"]').forEach(function(el){
+      el.disabled=true;el.title='Baujat diagnostics can be zero; logarithmic axes are not supported';
     });
 
     window.alm.resultsExport({
