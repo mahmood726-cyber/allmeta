@@ -47,7 +47,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "Everything model (outcome \u00d7 time \u00d7 RoB)",
+      "name": "Everything model (outcome × time × RoB)",
       "path": "./everything-model/",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -57,7 +57,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "Sequential MA (\u03b1-spending)",
+      "name": "Sequential MA (α-spending)",
       "path": "./sequential-ma/",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -147,7 +147,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "BMA across \u03c4\u00b2 priors",
+      "name": "BMA across τ² priors",
       "path": "./bma-tau-priors/",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -397,7 +397,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "Bayesian MA \u2014 MCMC",
+      "name": "Bayesian MA — MCMC",
       "path": "./bayesian-mcmc/index.html",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -727,7 +727,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "Median \u2192 Mean/SD",
+      "name": "Median → Mean/SD",
       "path": "./median-to-mean/index.html",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -800,11 +800,20 @@
       "name": "Effect-Size Converter",
       "path": "./effect-size-converter/index.html",
       "hosted_in_repository": true,
-      "review_status": "queued",
+      "review_status": "partial_review_done",
       "repair_status": "scoped_fix_merged",
       "pull_request": 111,
       "complete": false,
-      "scope": "PR111 scoped converter repair; broader audit pending"
+      "scope": "PR #111 corrected identified effect-scale interpretation, rounding and unsupported cross-scale conversions; not comprehensive certification",
+      "merge_state": "merged",
+      "merge_commit": "bdf777fb074804e09de59ac63db55f0ad90b2241",
+      "test_evidence": "PR #111 current-head lint, shared tests, Playwright and focused app scientific checks passed; bounded metafor SMD and CSV references.",
+      "remaining_gates": [
+        "full workflow review",
+        "accessibility and mobile",
+        "independent methodological review",
+        "stress/performance"
+      ]
     },
     {
       "name": "Screenr",
@@ -1000,11 +1009,22 @@
       "name": "Forest Plot Viewer",
       "path": "./forest-plot/index.html",
       "hosted_in_repository": true,
-      "review_status": "under_review",
-      "repair_status": "fixes_proposed",
-      "pull_request": null,
+      "review_status": "partial_review_done",
+      "repair_status": "scoped_fixes_merged",
+      "pull_request": 114,
       "complete": false,
-      "scope": "Forest model/export/plot/input integrity; tests pending"
+      "scope": "PR #112 statistical and graphical corrections; PR #114 atomic Forest CSV import; both merged, remaining comprehensive gates open",
+      "merge_state": "merged",
+      "merge_commit": "431f30350eb50415ed600dc0ddc90330bee3d218",
+      "test_evidence": "PR #112: 22 affected Forest browser tests and 5 fresh pinned webR/metafor comparisons; PR #114: 31 focused tests incl. 9 new CSV cases, 826 full Playwright passed (26 skips), all four CI workflows success.",
+      "remaining_gates": [
+        "shared CSV tokenizer grammar and extra row cells",
+        "native JSON import and state round-trip",
+        "TruthCert receipt verification",
+        "accessibility/mobile",
+        "numerical extremes",
+        "independent methodological review"
+      ]
     },
     {
       "name": "Funnel Plot Explorer",
@@ -1030,11 +1050,24 @@
       "name": "Heterogeneity Explorer",
       "path": "./heterogeneity/index.html",
       "hosted_in_repository": true,
-      "review_status": "queued",
-      "repair_status": "not_assessed",
-      "pull_request": null,
+      "review_status": "partial_review_done",
+      "repair_status": "scoped_fix_merged_followup_candidate_uncommitted",
+      "pull_request": 113,
       "complete": false,
-      "scope": "Not yet individually assessed in this programme"
+      "scope": "PR #113 partial statistical and CSV integrity; separate unmerged/uncommitted JSON-import candidate; further silent-subset CSV risk identified.",
+      "merge_state": "merged",
+      "merge_commit": "815aebc839779bec1d8781c8095c3797c1907aae",
+      "test_evidence": "PR #113: 39 focused cases, fresh webR/metafor comparisons; 131781 stored reference numerical comparisons and 121424 display checks; all four PR checks passed. Proposed JSON-import fix is not tested in browser nor committed.",
+      "remaining_gates": [
+        "native JSON import has unvalidated estimator/schema and no Undo",
+        "CSV leading-# label may silently drop a study",
+        "bus import labels starting #",
+        "receipt/state round-trip",
+        "small-k DL estimator fallback review",
+        "mobile/accessibility",
+        "numerical extremes",
+        "independent methodological review"
+      ]
     },
     {
       "name": "TSA Calculator",
@@ -1257,7 +1290,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "Synth\u0113sis Journal PDF",
+      "name": "Synthēsis Journal PDF",
       "path": "./synthesis-journal/index.html",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -1286,5 +1319,7 @@
       "complete": false,
       "scope": "Not yet individually assessed in this programme"
     }
-  ]
+  ],
+  "last_reconciled_main_commit": "431f30350eb50415ed600dc0ddc90330bee3d218",
+  "last_reconciled_date": "2026-10-15"
 }
