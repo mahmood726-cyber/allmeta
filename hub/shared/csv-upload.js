@@ -200,7 +200,8 @@
     const warnEl = target.querySelector('[data-section="warnings"]');
     function _emit(text) {
       const result = parse(text, columns);
-      warnEl.innerHTML = result.warnings.map(w => '<div>' + String.fromCharCode(8226) + ' ' + w + '</div>').join('');
+      warnEl.textContent = result.warnings.map(w => String.fromCharCode(8226) + ' ' + w).join('\n');
+      warnEl.style.whiteSpace = 'pre-wrap';
       onParse(result);
     }
     fileInput.addEventListener('change', () => {

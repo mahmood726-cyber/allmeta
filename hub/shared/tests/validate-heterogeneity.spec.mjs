@@ -4,7 +4,7 @@ import { resolve, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const ROOT=fileURLToPath(new globalThis.URL('../../../',import.meta.url));
 const URL='http://localhost:8088/heterogeneity/index.html';
-test('published corpus: 131781 numerical checks and separate 120720 rendered numbers',async({page,context})=>{
+test('published corpus: 131781 numerical checks and separate 121424 rendered numbers',async({page,context})=>{
   test.setTimeout(180000);
   const outside=[];context.on('request',r=>{if(new globalThis.URL(r.url()).origin!=='http://localhost:8088')outside.push(r.url());});
   await page.goto(URL);
@@ -16,7 +16,8 @@ test('published corpus: 131781 numerical checks and separate 120720 rendered num
   console.log('CORPUS',JSON.stringify({checks:result.checks,passed:result.passed,displayed:result.displayed,displayFailures:result.displayFails.length,maxima:result.maxima}));
   expect(result.checks).toBe(131781);expect(result.passed).toBe(131781);expect(result.failed).toEqual([]);
   expect(result.refusals).toEqual({configurations:704,refused:28,compared:676});
-  expect(result.displayed).toBe(120720);expect(result.displayFails.slice(0,3)).toEqual([]);
+  // Original 120720 rendered quantities plus one newly displayed model I2 in each of 704 configurations.
+  expect(result.displayed).toBe(121424);expect(result.displayFails).toEqual([]);
   await expect(page.locator('#f-data')).toHaveValue(before);expect(outside).toEqual([]);
 });
 test('built-in example agrees with pinned metafor; session versions shown @slow',async({page,context})=>{
