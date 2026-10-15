@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/heterogeneity-repair-bootstrap.yml'
       - 'scripts/heterogeneity_integrity_patch.py'
+      - 'scripts/heterogeneity_display_contract_patch.py'
       - 'hub/shared/tests/heterogeneity-integrity.spec.mjs'
 permissions:
   contents: read
@@ -47,7 +48,9 @@ jobs:
           tail -120 artifacts/heterogeneity-repair/before.log
           test "$status" -ne 0
       - name: Apply bounded source repair
-        run: python scripts/heterogeneity_integrity_patch.py
+        run: |
+          python scripts/heterogeneity_integrity_patch.py
+          python scripts/heterogeneity_display_contract_patch.py
       - name: Run affected browser, numerical and CSV gates
         working-directory: hub/shared/tests
         shell: bash
@@ -59,11 +62,11 @@ jobs:
         run: |
           test "${GITHUB_REF}" = 'refs/heads/fix/heterogeneity-integrity-20261015'
           git diff --check
-          git diff -- heterogeneity/index.html hub/shared/csv-upload.js > hub/shared/tests/artifacts/heterogeneity-repair/source.patch
+          git diff -- heterogeneity/index.html hub/shared/csv-upload.js heterogeneity/validate/adapter.js hub/shared/tests/validate-heterogeneity.spec.mjs > hub/shared/tests/artifacts/heterogeneity-repair/source.patch
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- heterogeneity/index.html hub/shared/csv-upload.js
-          git commit -m 'fix(heterogeneity): block invalid imports, expose I2 conventions and restore diagnostic axes'
+          git add -- heterogeneity/index.html hub/shared/csv-upload.js heterogeneity/validate/adapter.js hub/shared/tests/validate-heterogeneity.spec.mjs
+          git commit -m 'fix(heterogeneity): strict imports, honest I2 display, real axes and safe CSV warnings'
           git push origin HEAD:refs/heads/fix/heterogeneity-integrity-20261015
           git rev-parse HEAD
       - if: always()
