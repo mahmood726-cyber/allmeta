@@ -197,11 +197,18 @@
 
     function parseStudies(text) {
       const studies=[], warnings=[];
-      const lines = String(text||"").split(/\r?\n/);
+      const lines = String(text||"").match(/(?:[^"\r\n]|"(?:[^"]|"")*")+/g) || [];
       for (let i=0;i<lines.length;i++) {
         const raw = lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
-        const parts = raw.split(/\s*[,\t]\s*/);
+        const parts = []; let field = "", quoted = false, fieldWasQuoted = false;
+        for (let j=0;j<raw.length;j++) {
+          const ch=raw[j];
+          if(ch==='"') { if(quoted && raw[j+1]==='"') { field+='"'; j++; } else { if(!quoted) { if(!field.trim()) field=""; fieldWasQuoted=true; } quoted=!quoted; } }
+          else if((ch===',' || ch==='\t') && !quoted) { parts.push(fieldWasQuoted ? field : field.trim()); field=""; fieldWasQuoted=false; }
+          else if(quoted || !fieldWasQuoted || !/\s/.test(ch)) field+=ch;
+        }
+        parts.push(fieldWasQuoted ? field : field.trim());
         if (parts.length < 3) { warnings.push("Line "+(i+1)+": <3 columns"); continue; }
         // Last column can be group (non-numeric) or year (numeric) or SE.
         // Strategy: rightmost numeric column is either SE or year; classify by pattern.
@@ -278,7 +285,7 @@
 
     // Subgroup: pool per group, then between-group Q test
     function subgroup(studies) {
-      const byGroup = {};
+      const byGroup = Object.create(null);
       for (const s of studies) {
         const g = s.group || "(ungrouped)";
         if (!byGroup[g]) byGroup[g] = [];
@@ -377,6 +384,10 @@
       if (yLo > 0) yLo = Math.min(yLo, 0);
       if (yHi < 0) yHi = Math.max(yHi, 0);
 
+      const effectRange = _axisState.x || [];
+      if (Number.isFinite(effectRange[0])) yLo=effectRange[0];
+      if (Number.isFinite(effectRange[1])) yHi=effectRange[1];
+      if (!(yHi>yLo)) throw new Error("Effect axis maximum must exceed minimum");
       function x(v) { return L + (v-xLo)/(xHi-xLo || 1) * plotW; }
       function y(v) { return T + plotH - (v-yLo)/(yHi-yLo) * plotH; }
 
@@ -430,7 +441,7 @@
     function buildSubgroupSvg(state, data) {
       const groups = data.groups;
       const G = groups.length;
-      const W=720, rowH=36, L=200, R=30, T=state.title?60:40, B=80;
+      const W=900, rowH=36, L=200, R=210, T=state.title?60:40, B=80;
       const bodyH = (G + 1) * rowH + 30;  // +1 for overall
       const H = T + bodyH + B;
       const plotW = W - L - R;
@@ -443,6 +454,10 @@
       if (xLo > 0) xLo = Math.min(xLo, 0);
       if (xHi < 0) xHi = Math.max(xHi, 0);
 
+      const effectRange = _axisState.x || [];
+      if (Number.isFinite(effectRange[0])) xLo=effectRange[0];
+      if (Number.isFinite(effectRange[1])) xHi=effectRange[1];
+      if (!(xHi>xLo)) throw new Error("Effect axis maximum must exceed minimum");
       function x(v) { return L + (v-xLo)/(xHi-xLo) * plotW; }
 
       const p = [];
@@ -585,23 +600,28 @@
         "",
         "yi <- c(" + studies.map(s => s.est).join(", ") + ")",
         "se <- c(" + studies.map(s => s.se).join(", ") + ")",
-        "labels <- c(" + studies.map(s => '"' + String(s.label).replace(/"/g, '\\"') + '"').join(", ") + ")",
+        "labels <- c(" + studies.map(s => JSON.stringify(String(s.label))).join(", ") + ")",
       ];
       if (studies.every(s => s.year != null)) {
         lines.push("year <- c(" + studies.map(s => s.year).join(", ") + ")");
       }
       if (studies.some(s => s.group)) {
-        lines.push("grp <- c(" + studies.map(s => '"' + (s.group || "") + '"').join(", ") + ")");
+        lines.push("grp <- c(" + studies.map(s => JSON.stringify(s.group || "")).join(", ") + ")");
       }
       lines.push("");
       if (state.view === "subgroup" && studies.some(s => s.group)) {
-        lines.push("# Subgroup analysis");
-        lines.push("res <- rma(yi, sei = se, method = \"PM\", slab = labels, subset = grp != \"\")");
-        lines.push("res.sub <- rma(yi, sei = se, mods = ~ factor(grp), method = \"PM\")");
-        lines.push("print(res.sub)");
+        lines.push("# Separate PM tau-squared per subgroup; missing group retained as (ungrouped)");
+        lines.push('grp[grp == ""] <- "(ungrouped)"');
+        lines.push('fits <- lapply(split(seq_along(yi), grp), function(ix) rma(yi[ix], sei=se[ix], method="PM", control=list(tol=1e-12)))');
+        lines.push('mu <- vapply(fits, function(x) as.numeric(x[["b", exact=TRUE]]), 0.0)');
+        lines.push('vars <- vapply(fits, function(x) x[["se", exact=TRUE]]^2, 0.0)');
+        lines.push('between <- rma(mu, vi=vars, method="FE")');
+        lines.push('print(fits)');
+        lines.push('print(c(Q_bw=between[["QE", exact=TRUE]], df=length(fits)-1, p=if(length(fits)>1) pchisq(between[["QE", exact=TRUE]], length(fits)-1, lower.tail=FALSE) else NA_real_))');
+        lines.push('print(rma(yi, sei=se, method="PM", control=list(tol=1e-12)))');
       } else {
         lines.push("# Cumulative MA (order by year if available)");
-        lines.push("res <- rma(yi, sei = se, method = \"PM\", slab = labels)");
+        lines.push("res <- rma(yi, sei = se, method = \"PM\", control=list(tol=1e-12), slab = labels)");
         lines.push(studies.every(s => s.year != null) ? "cum <- cumul(res, order = year)" : "cum <- cumul(res)");
         lines.push("print(cum)");
       }
@@ -714,10 +734,10 @@
     // ---- CSV upload bridge ----
     window.__almLoad = function (rows) {
       const lines = rows.map(function (r) {
-        const cols = [r.label || r.study || "", r.est !== undefined ? r.est : (r.yi !== undefined ? r.yi : ""), r.se !== undefined ? r.se : ""];
+        const cols = [r.label || r.study || "", r.est !== undefined ? r.est : (r.yi !== undefined ? r.yi : (r.estimate !== undefined ? r.estimate : "")), r.se !== undefined ? r.se : (r.SE !== undefined ? r.SE : "")];
         if (r.year != null) cols.push(r.year);
         if (r.group) { if (r.year == null) cols.push(""); cols.push(r.group); }
-        return cols.join(", ");
+        return cols.map(value => /[",\t\r\n]|^\s|\s$/.test(String(value)) ? '"' + String(value).replace(/"/g, '""') + '"' : String(value)).join(", ");
       });
       document.getElementById("f-data").value = lines.join("\n");
       render();
@@ -735,7 +755,7 @@
           const cols = [s.label, s.est, s.se];
           if (s.year != null) cols.push(s.year);
           if (s.group) { if (s.year == null) cols.push(""); cols.push(s.group); }
-          return cols.join(", ");
+          return cols.map(value => /[",\t\r\n]|^\s|\s$/.test(String(value)) ? '"' + String(value).replace(/"/g, '""') + '"' : String(value)).join(", ");
         });
         document.getElementById("f-data").value = lines.join("\n");
         render();
@@ -802,7 +822,7 @@
         if (!_lastResults) return null;
         return {
           studies: [], // bind only the current results below — never the (possibly stale) shared bus
-          method: 'Cumulative + subgroup meta-analysis (DL/PM, between-subgroup Q)',
+          method: 'Cumulative + subgroup meta-analysis (PM, separate subgroup tau2, between-subgroup Q)',
           label: 'cumsub-plot',
           results: _lastResults,
         };
@@ -812,13 +832,16 @@
     window.alm.axisControls({
       target: '#alm-axis-mount',
       axes: [
-        { key: 'x', label: 'X axis (effect)', range: [null, null], log: false },
+        { key: 'x', label: 'Effect axis', range: [null, null], log: false },
       ],
       onChange: function (state) {
         _axisState = state;
         render();
       },
     });
+
+    const logAxisControl=document.querySelector('#alm-axis-mount [data-edge="log"]');
+    if(logAxisControl) { logAxisControl.disabled=true; logAxisControl.parentElement.title="Only linear effect coordinates are supported"; }
 
     window.alm.resultsExport({
       target: '#alm-export-mount',
