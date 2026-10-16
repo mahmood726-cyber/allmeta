@@ -1,7 +1,7 @@
 {
   "schema": "allmeta-app-repair-register-v1",
   "catalog_sha256": "88f496a54fccb0a1656267cc8e386aae23753ed75d432de3962bce24e82bf223",
-  "base_commit": "bdf777fb074804e09de59ac63db55f0ad90b2241",
+  "base_commit": "8ac07a6e912f0d105285e9a25d0432786f8f1f3d",
   "catalog_entries": 128,
   "repository_entries": 122,
   "definition_of_complete": "All declared model, numerical, input/output, browser, accessibility and reproducibility gates individually reviewed, with evidence and no unresolved blocking issue. A scoped repair or smoke pass is not completion.",
@@ -47,7 +47,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "Everything model (outcome \u00d7 time \u00d7 RoB)",
+      "name": "Everything model (outcome × time × RoB)",
       "path": "./everything-model/",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -57,7 +57,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "Sequential MA (\u03b1-spending)",
+      "name": "Sequential MA (α-spending)",
       "path": "./sequential-ma/",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -147,7 +147,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "BMA across \u03c4\u00b2 priors",
+      "name": "BMA across τ² priors",
       "path": "./bma-tau-priors/",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -260,11 +260,11 @@
       "name": "Limit meta-analysis",
       "path": "./limit-ma/index.html",
       "hosted_in_repository": true,
-      "review_status": "queued",
-      "repair_status": "not_assessed",
-      "pull_request": null,
+      "review_status": "scoped_review_completed",
+      "repair_status": "scoped_fixes_merged",
+      "pull_request": 117,
       "complete": false,
-      "scope": "Not yet individually assessed in this programme"
+      "scope": "PRs #115/#117 merged: metasens curve parity/plot/refusals and Validate-in-R. Review scope not whole-app certification; audit full design and performance gates."
     },
     {
       "name": "GOSH Meta-Regression",
@@ -330,11 +330,11 @@
       "name": "Bucher Indirect",
       "path": "./bucher/index.html",
       "hosted_in_repository": true,
-      "review_status": "queued",
-      "repair_status": "not_assessed",
-      "pull_request": null,
+      "review_status": "under_review",
+      "repair_status": "draft_PR_unmerged",
+      "pull_request": 123,
       "complete": false,
-      "scope": "Not yet individually assessed in this programme"
+      "scope": "Draft PR #123 corrects treatment-direction mislabelling, transitivity/independence imports and unsupported trial-count t inference; new scoped browser regressions and R script. PR CI pending. Remaining scientific and workflow gates unresolved."
     },
     {
       "name": "Multi-level MA",
@@ -397,7 +397,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "Bayesian MA \u2014 MCMC",
+      "name": "Bayesian MA — MCMC",
       "path": "./bayesian-mcmc/index.html",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -680,11 +680,11 @@
       "name": "GOSH Plot",
       "path": "./gosh/index.html",
       "hosted_in_repository": true,
-      "review_status": "queued",
-      "repair_status": "not_assessed",
-      "pull_request": null,
+      "review_status": "scoped_review_completed",
+      "repair_status": "scoped_fixes_merged",
+      "pull_request": 121,
       "complete": false,
-      "scope": "Not yet individually assessed in this programme"
+      "scope": "PRs #119/#121 merged: reported metafor singleton/subset parity and Validate-in-R. Broader validation/edge cases remain unreviewed."
     },
     {
       "name": "PICO Formulator",
@@ -727,7 +727,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "Median \u2192 Mean/SD",
+      "name": "Median → Mean/SD",
       "path": "./median-to-mean/index.html",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -800,11 +800,11 @@
       "name": "Effect-Size Converter",
       "path": "./effect-size-converter/index.html",
       "hosted_in_repository": true,
-      "review_status": "queued",
+      "review_status": "scoped_review_completed",
       "repair_status": "scoped_fix_merged",
       "pull_request": 111,
       "complete": false,
-      "scope": "PR111 scoped converter repair; broader audit pending"
+      "scope": "PR #111 merged: Hedges g/d, safer effect-size conversions and precision. All-method R parity and full user/accessibility audits remain open."
     },
     {
       "name": "Screenr",
@@ -960,11 +960,11 @@
       "name": "NMA Pro v8",
       "path": "./nma-pro-v2/nma-pro-v8.0.html",
       "hosted_in_repository": true,
-      "review_status": "queued",
-      "repair_status": "not_assessed",
-      "pull_request": null,
+      "review_status": "under_review",
+      "repair_status": "draft_PR_unmerged",
+      "pull_request": 120,
       "complete": false,
-      "scope": "Not yet individually assessed in this programme"
+      "scope": "Draft PR #120 flags unsupported multi-arm covariance; remains under review, without full-model certification."
     },
     {
       "name": "NMA Dose-Response",
@@ -1000,11 +1000,11 @@
       "name": "Forest Plot Viewer",
       "path": "./forest-plot/index.html",
       "hosted_in_repository": true,
-      "review_status": "under_review",
-      "repair_status": "fixes_proposed",
-      "pull_request": null,
+      "review_status": "scoped_review_completed",
+      "repair_status": "scoped_fixes_merged",
+      "pull_request": 114,
       "complete": false,
-      "scope": "Forest model/export/plot/input integrity; tests pending"
+      "scope": "PRs #112 and #114 merged: modified HK/R parity, geometry, statistical annotations, atomic CSV imports. Full CSV grammar, JSON/receipt roundtrips, extreme input and accessibility gates remain open."
     },
     {
       "name": "Funnel Plot Explorer",
@@ -1030,11 +1030,11 @@
       "name": "Heterogeneity Explorer",
       "path": "./heterogeneity/index.html",
       "hosted_in_repository": true,
-      "review_status": "queued",
-      "repair_status": "not_assessed",
-      "pull_request": null,
+      "review_status": "scoped_review_completed",
+      "repair_status": "scoped_fix_merged_more_blockers",
+      "pull_request": 113,
       "complete": false,
-      "scope": "Not yet individually assessed in this programme"
+      "scope": "PR #113 merged: strict numerical inputs, diagnostic axes and descriptions. Known unresolved JSON estimator substitution and comment-prefixed study label omission still need code+browser review."
     },
     {
       "name": "TSA Calculator",
@@ -1060,11 +1060,11 @@
       "name": "DTA SROC Explorer",
       "path": "./dta-sroc/index.html",
       "hosted_in_repository": true,
-      "review_status": "queued",
-      "repair_status": "not_assessed",
-      "pull_request": null,
+      "review_status": "under_review",
+      "repair_status": "open_PR_unmerged",
+      "pull_request": 116,
       "complete": false,
-      "scope": "Not yet individually assessed in this programme"
+      "scope": "Open PR #116 addressing invalid study set import; current checks, scope and full R/UX gates require review. Do not mark complete."
     },
     {
       "name": "MA Workbench",
@@ -1257,7 +1257,7 @@
       "scope": "Not yet individually assessed in this programme"
     },
     {
-      "name": "Synth\u0113sis Journal PDF",
+      "name": "Synthēsis Journal PDF",
       "path": "./synthesis-journal/index.html",
       "hosted_in_repository": true,
       "review_status": "queued",
@@ -1286,5 +1286,6 @@
       "complete": false,
       "scope": "Not yet individually assessed in this programme"
     }
-  ]
+  ],
+  "last_reconciled": "2026-10-16 (PR #123 candidate; not merged)"
 }
