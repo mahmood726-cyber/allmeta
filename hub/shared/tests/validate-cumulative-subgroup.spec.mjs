@@ -20,7 +20,7 @@ test('cumulative-subgroup declared replay passes and preserves input, storage an
  expect(manifest.checks).toBe(609398);expect(manifest.configurations).toBe(1816);expect(ALL).toBe(manifest.configurations);expect(REFUSED).toBe(6);
  await page.locator('#f-title').fill('Pending title');await page.locator('#f-data').fill('A, 0.1, 0.1, 2001, G1\nB, 0.3, 0.2, 2002, G2\nC, 0.2, 0.15, 2003, G1');
  await page.waitForFunction(()=>!!localStorage.getItem('alm-autosave:cumulative-subgroup'));
- const snap=()=>({page:__almCumSubValidationSnapshot(),href:location.href,length:history.length,state:history.state,storage:{...localStorage},svg:document.getElementById('svg-host').innerHTML});
+ const snap=()=>({page:__almCumSubValidationSnapshot(),href:location.href,length:history.length,state:history.state,storage:{...localStorage},svg:document.getElementById('svg-host').innerHTML,disabled:[...document.querySelectorAll('input,select,textarea,button')].filter(x=>!x.closest('#alm-validate')).map(x=>[x.id||x.tagName,x.disabled,x.readOnly])});
  const before=await page.evaluate(snap),r=await replay(page);
  expect(r.checks).toBe(manifest.checks);expect(r.passed).toBe(r.checks);expect(r.failed).toEqual([]);expect(r.refusals).toHaveLength(6);
  expect(await page.evaluate(snap)).toEqual(before);
@@ -182,4 +182,66 @@ test('cumulative-subgroup live refuses fewer than two studies and a subgroup vie
  await page.locator('#f-data').fill('A, 0.1, 0.1');await expect(live(page)).rejects.toThrow(/need at least 2 valid studies/);
  await page.locator('#f-data').fill('A, 0.1, 0.1\nB, 0.2, 0.1');await page.locator('#f-view').selectOption('subgroup');
  await expect(live(page)).rejects.toThrow(/subgroup view needs a group column/);
+});
+
+// Review round 1: draft-banner age, analysis-control state, and group names whose UTF-16 and UTF-8 orders differ.
+async function draftAged(page,hours){
+ await open(page);await page.locator('#f-data').fill((await page.locator('#f-data').inputValue())+'\n');
+ await page.waitForFunction(()=>!!localStorage.getItem('alm-autosave:cumulative-subgroup'));
+ await page.evaluate(h=>{const k='alm-autosave:cumulative-subgroup',d=JSON.parse(localStorage.getItem(k));d.savedAt=new Date(Date.now()-h*3600e3).toISOString();localStorage.setItem(k,JSON.stringify(d));},hours);
+ await page.reload();await page.waitForFunction(()=>!!window.AlmCumSubValidation);
+ await page.waitForFunction(()=>[...document.body.children].some(e=>/^Draft from /.test(e.textContent)));
+}
+const bannerSpan=page=>page.evaluate(()=>[...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]')).firstElementChild.textContent);
+test('cumulative-subgroup draft banner of a 3 h old draft passes replay and live, including after time passes',async({page})=>{
+ test.setTimeout(400000);await draftAged(page,3);
+ expect(await bannerSpan(page)).toBe('Draft from 3 h ago found. Restore?');
+ await page.waitForTimeout(1500);
+ const r=await replay(page);expect(r.checks).toBe(manifest.checks);expect(r.failed).toEqual([]);
+ const l=await live(page);expect(l.rows.filter(x=>!x.pass)).toEqual([]);
+});
+for(const [name,text] of [['number','Draft from 4 h ago found. Restore?'],['unit','Draft from 3 min ago found. Restore?'],['large age','Draft from 999 h ago found. Restore?']])test('cumulative-subgroup draft banner with an altered age '+name+' fails replay and live',async({page})=>{
+ test.setTimeout(400000);await draftAged(page,3);
+ await page.evaluate(t=>{[...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]')).firstElementChild.textContent=t;},text);
+ const bad=await replay(page);expect(bad.failed).toHaveLength(ALL);expect(bad.failed.every(x=>x.quantity==='page_text')).toBe(true);
+ expect(failedLabels(await live(page))).toEqual(['display.page_text']);
+});
+test('cumulative-subgroup draft banner at 1 min: an altered number fails',async({page})=>{
+ test.setTimeout(400000);await draftAged(page,0);
+ expect(await bannerSpan(page)).toBe('Draft from 1 min ago found. Restore?');
+ await page.evaluate(()=>{[...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]')).firstElementChild.textContent='Draft from 2 min ago found. Restore?';});
+ expect(failedLabels(await live(page))).toEqual(['display.page_text']);
+});
+
+for(const [name,body] of [
+ ['disabled view selector','document.getElementById("f-view").disabled=true;'],
+ ['read-only data box','document.getElementById("f-data").readOnly=true;'],
+ ['disabled title','document.getElementById("f-title").disabled=true;'],
+ ['disabled axis maximum','document.querySelector("#alm-axis-mount [data-edge=max]").disabled=true;'],
+ ['disabled data fieldset','document.querySelector("#f-data").closest("fieldset").disabled=true;'],
+])test('cumulative-subgroup live catches a '+name,async({page})=>{
+ test.setTimeout(300000);await open(page);await page.locator('#f-view').selectOption('subgroup');await afterRun(page,body);
+ const r=await live(page);expect(failedLabels(r)).toEqual(['display.controls']);
+});
+test('cumulative-subgroup replay expects its own disabled controls: a control left enabled fails',async({page})=>{
+ test.setTimeout(180000);await open(page);
+ await afterRun(page,'document.getElementById("f-view").disabled=false;');
+ const r=await replay(page);expect(r.failed).toHaveLength(ALL);expect(r.failed.every(x=>x.quantity==='controls')).toBe(true);
+ expect(await page.evaluate(()=>document.getElementById('f-view').disabled)).toBe(false);
+});
+
+for(const [name,data,groups] of [
+ ['astral and full-width group names (UTF-16 vs UTF-8 order)','A, 0.1, 0.1, 2001, \u{1F600}\nB, 0.5, 0.2, 2002, ｚ\nC, 0.2, 0.3, 2003, \u{1F600}\nD, -0.1, 0.2, 2004, ｚ',['\u{1F600}','ｚ']],
+ ['mixed-case and accented group names','A, 0.1, 0.1, 2001, b\nB, 0.5, 0.2, 2002, B\nC, 0.2, 0.3, 2003, a\nD, -0.1, 0.2, 2004, é\nE, 0.3, 0.25, 2005, b\nF, 0.05, 0.15, 2006, B\nG, 0.4, 0.3, 2007, é',['B','a','b','é']],
+])test('cumulative-subgroup live passes with '+name,async({page})=>{
+ test.setTimeout(300000);await open(page);await page.locator('#f-view').selectOption('subgroup');await page.locator('#f-data').fill(data);
+ expect(await page.evaluate(()=>window.__almCumSubValidationRun().sub.groups.map(g=>g.name))).toEqual(groups);
+ const r=await live(page);expect(r.rows.filter(x=>!x.pass)).toEqual([]);
+ for(const q of ['group_coverage','group_order'])expect(r.rows.find(x=>x.label===q).ref).toBe(true);
+});
+test('cumulative-subgroup live R order check rejects a page group order that breaks the page sort rule',async({page})=>{
+ test.setTimeout(300000);await open(page);await page.locator('#f-view').selectOption('subgroup');
+ await page.locator('#f-data').fill('A, 0.1, 0.1, 2001, \u{1F600}\nB, 0.5, 0.2, 2002, ｚ\nC, 0.2, 0.3, 2003, \u{1F600}\nD, -0.1, 0.2, 2004, ｚ');
+ await afterRun(page,'if(a.sub){a.sub.groups.reverse();a.pools.splice(0,2,a.pools[1],a.pools[0]);}');
+ const r=await live(page);expect(failedLabels(r)).toContain('group_order');
 });

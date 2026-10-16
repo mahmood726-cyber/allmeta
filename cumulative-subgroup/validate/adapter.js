@@ -153,9 +153,20 @@ function bannerOk(notes) {
 }
 function axisErrorText() { const e = document.querySelector('#alm-axis-mount [data-error]'); return e ? e.textContent : null; }
 function statusOk(notes) { return bannerOk(notes) && axisErrorText() === ''; }
-function controlsOk(view, title) {
+// Analysis controls: data, view, title and the two effect-axis bounds. On the live page every one must be usable (enabled, not
+// read-only, inside no disabled fieldset); during replay they are all disabled by the replay itself and restored afterwards.
+// The axis log checkbox is always disabled by the page (linear coordinates only); axisOk checks it.
+const ANALYSIS_CONTROLS = ['#f-data', '#f-view', '#f-title', '#alm-axis-mount [data-axis=x][data-edge=min]', '#alm-axis-mount [data-axis=x][data-edge=max]'];
+function controlStateOk(replaying) {
+  return ANALYSIS_CONTROLS.every(s => {
+    const els = document.querySelectorAll(s); if (els.length !== 1) return false;
+    const el = els[0];
+    return el.matches(':disabled') === replaying && el.disabled === replaying && !el.readOnly && !el.hasAttribute('aria-disabled') && !el.closest('[inert]');
+  });
+}
+function controlsOk(view, title, replaying) {
   const sel = document.getElementById('f-view'), chosen = [...sel.selectedOptions];
-  return JSON.stringify([...sel.options].map(o => [o.value, o.textContent])) === JSON.stringify(VIEW_OPTIONS) && sel.value === view && chosen.length === 1 &&
+  return controlStateOk(replaying) && JSON.stringify([...sel.options].map(o => [o.value, o.textContent])) === JSON.stringify(VIEW_OPTIONS) && sel.value === view && chosen.length === 1 &&
     chosen[0].value === view && chosen[0].textContent === VIEW_OPTIONS.find(o => o[0] === view)[1] && (title === null || document.getElementById('f-title').value === title);
 }
 // One effect axis (y of the cumulative plot, x of the subgroup plot); log is disabled (linear only).
@@ -199,8 +210,21 @@ function draftBannerOk() {
   if (banners.length === 0) return true;
   if (banners.length !== 1) return false;
   const c = [...banners[0].children];
-  return c.length === 3 && c[0].tagName === 'SPAN' && /^Draft from [1-9]\d* (min|h) ago found\. Restore\?$/.test(c[0].textContent) && c[1].tagName === 'BUTTON' && c[1].textContent === 'Restore' &&
+  return c.length === 3 && c[0].tagName === 'SPAN' && draftTexts(banners[0]).includes(c[0].textContent) && c[1].tagName === 'BUTTON' && c[1].textContent === 'Restore' &&
     c[2].tagName === 'BUTTON' && c[2].textContent === 'Discard' && banners[0].textContent === c[0].textContent + 'RestoreDiscard';
+}
+// The banner's age is fixed when shared/autosave.js creates it: max(1, round(age/1 min)) minutes, shown as "N min" below an hour and
+// round(N/60) "h" above. The page records the stored draft timestamp and the time it observed the new banner (within milliseconds
+// of creation); the displayed sentence must be the one that rule gives for a creation time in the second before that observation.
+// A banner the page did not observe being created (injected or replaced) has no evidence and fails.
+function draftSentence(savedAt, at) {
+  const mins = Math.max(1, Math.round((at - Date.parse(savedAt)) / 60000));
+  return `Draft from ${mins < 60 ? mins + ' min' : Math.round(mins / 60) + ' h'} ago found. Restore?`;
+}
+function draftTexts(node) {
+  const rec = (window.__almCumSubDraftBanners || []).filter(r => r.node === node);
+  if (rec.length !== 1 || typeof rec[0].savedAt !== 'string' || !Number.isFinite(Date.parse(rec[0].savedAt)) || !Number.isFinite(rec[0].observedAt)) return [];
+  return [draftSentence(rec[0].savedAt, rec[0].observedAt - 1000), draftSentence(rec[0].savedAt, rec[0].observedAt)];
 }
 // CSV import warnings (hub/shared/csv-upload.js) equal the importer's own records for the last import exactly, as it renders them.
 function csvWarningsOk() {
@@ -255,7 +279,7 @@ function compareConfig(c, r, a, check) {
     check('heading', headingOk(c.view), true, 'exact');
     check('summary_cards', cardsOk([['k', String(c.k)]]), true, 'exact');
     check('status_messages', statusOk([NOGROUP]), true, 'exact');
-    check('controls', controlsOk(c.view, ''), true, 'exact');
+    check('controls', controlsOk(c.view, '', true), true, 'exact');
     check('axis_controls', axisOk(['', '']), true, 'exact');
     check('page_text', pageTextOk(), true, 'exact');
     return;
@@ -287,7 +311,7 @@ function compareConfig(c, r, a, check) {
     check('heading', headingOk('cumulative'), true, 'exact');
     check('summary_cards', cardsOk(cardsExpected('cumulative', a)), true, 'exact');
     check('status_messages', statusOk([]), true, 'exact');
-    check('controls', controlsOk('cumulative', ''), true, 'exact');
+    check('controls', controlsOk('cumulative', '', true), true, 'exact');
     check('axis_controls', axisOk(['', '']), true, 'exact');
     check('page_text', pageTextOk(), true, 'exact');
     cumulativePlot(series, '', [null, null], check);
@@ -318,7 +342,7 @@ function compareConfig(c, r, a, check) {
   check('heading', headingOk('subgroup'), true, 'exact');
   check('summary_cards', cardsOk(cardsExpected('subgroup', a)), true, 'exact');
   check('status_messages', statusOk([]), true, 'exact');
-  check('controls', controlsOk('subgroup', ''), true, 'exact');
+  check('controls', controlsOk('subgroup', '', true), true, 'exact');
   check('axis_controls', axisOk(['', '']), true, 'exact');
   check('page_text', pageTextOk(), true, 'exact');
   subgroupPlot(sub, '', [null, null], check);
@@ -437,8 +461,8 @@ function currentState() {
     ta = series.map(p => p.tau2); am = a.pools.map(p => p.members.join(','));
   } else {
     const sub = a.sub; groups = sub.groups.map(g => g.name);
-    add('group_count', sub.groups.length, 'exact');
-    sub.groups.forEach((g, j) => { add('group.' + (j + 1) + '.pos', j + 1, 'exact'); pool('group.' + (j + 1), g, a.pools[j].members.join(',')); });
+    add('group_count', sub.groups.length, 'exact'); add('group_coverage', true, 'exact'); add('group_order', true, 'exact');
+    sub.groups.forEach((g, j) => { pool('group.' + (j + 1), g, a.pools[j].members.join(',')); });
     pool('overall', sub.overall, a.pools[a.pools.length - 1].members.join(','));
     add('df_bw', sub.df_bw, 'exact'); add('Q_bw', sub.Q_bw); add('M_bw', sub.M_bw); add('pQ', nanNull(sub.pQ), 'abs'); add('I2_bw_fraction', sub.I2_bw / 100, 'abs');
     add('export.fields', JSON.stringify(Object.keys(ex)) === JSON.stringify(SUB_EXPORT) && ex._schema === 'cumsub-results-v1' && ex.view === 'subgroup', 'exact');
@@ -451,7 +475,7 @@ function currentState() {
   add('display.heading', headingOk(view), 'exact');
   add('display.summary_cards', cardsOk(cardsExpected(view, a)), 'exact');
   add('display.status_messages', statusOk(notes), 'exact');
-  add('display.controls', controlsOk(view, null), 'exact');
+  add('display.controls', controlsOk(view, null, false), 'exact');
   add('display.axis_controls', axisOk(null), 'exact');
   add('display.page_text', pageTextOk(), 'exact');
   let plotOk = true; const plotCheck = (q, app, ref, how) => { if (!(how === 'exact' ? app === ref : near(app, ref))) plotOk = false; };
@@ -491,11 +515,19 @@ if(view=='cumulative'){
  for(j in seq_len(k)) for(q in c('tau2','mu','se','lo','hi')) out[[paste0('export.step.',j,'.',q)]] <- out[[paste0('step.',j,'.',q)]]
 } else {
  g <- ifelse(is.na(grp)|grp=='','(ungrouped)',grp); names_app <- c(${(s.groups || []).map(rstr).join(',')})
- rn <- sort(unique(g),method='radix'); out[['group_count']] <- length(rn); mus <- ses <- numeric(length(rn))
- for(j in seq_along(rn)){ix<-which(g==rn[j]);p<-match(rn[j],names_app);out[[paste0('group.',j,'.pos')]]<-if(is.na(p)) 0L else p
-  v<-pool(paste0('group.',j),fit(yi[ix],vi[ix]),ix,if(is.na(p)) NA_real_ else ta[p],if(is.na(p)) '' else am[p]);mus[j]<-v$mu;ses[j]<-v$se}
+ # R's own groups (exact string equality) must be exactly the page's groups; outputs are keyed by the page's group names.
+ rn <- unique(g); out[['group_count']] <- length(rn)
+ out[['group_coverage']] <- length(rn)==length(names_app) && !anyDuplicated(names_app) && all(rn %in% names_app)
+ # The page orders groups by JavaScript's default sort: UTF-16 code units, compared lexicographically.
+ u16 <- function(s){cp<-utf8ToInt(s);unlist(lapply(cp,function(c) if(c>65535) c(55296+(c-65536)%/%1024,56320+(c-65536)%%1024) else c))}
+ before <- function(a,b){x<-u16(a);y<-u16(b);n<-min(length(x),length(y));for(i in seq_len(n)) if(x[i]!=y[i]) return(x[i]<y[i]);length(x)<length(y)}
+ out[['group_order']] <- length(names_app)<2 || all(vapply(seq_len(length(names_app)-1),function(j) before(names_app[j],names_app[j+1]),TRUE))
+ mus <- ses <- rep(NA_real_,length(names_app))
+ for(j in seq_along(names_app)){ix<-which(g==names_app[j])
+  if(!length(ix)){out[[paste0('group.',j,'.members')]]<-'';out[[paste0('group.',j,'.k')]]<-0;for(q in c('tau2','mu','se','lo','hi','Q','piLo','piHi')) out[[paste0('group.',j,'.',q)]]<-NA_real_;conditioned[[length(conditioned)+1]]<-FALSE;next}
+  v<-pool(paste0('group.',j),fit(yi[ix],vi[ix]),ix,ta[j],am[j]);mus[j]<-v$mu;ses[j]<-v$se}
  allc <- all(conditioned)
- if(!allc){for(j in seq_along(rn)){ix<-which(g==rn[j]);s<-strict(fit(yi[ix],vi[ix]),yi[ix],vi[ix]);mus[j]<-s$mu;ses[j]<-s$se}}
+ if(!allc){for(j in seq_along(names_app)){ix<-which(g==names_app[j]);if(length(ix)){s<-strict(fit(yi[ix],vi[ix]),yi[ix],vi[ix]);mus[j]<-s$mu;ses[j]<-s$se}}}
  ov <- pool('overall',fit(yi,vi),seq_len(k),ta[length(ta)],am[length(am)])
  df <- length(rn)-1; w <- 1/ses^2; M <- sum(w*mus)/sum(w); Q <- sum(w*(mus-M)^2)
  if(!allc){b<-metafor::rma(yi=mus,vi=ses^2,method='FE');Q<-get(b,'QE');M<-as.numeric(coef(b))}
