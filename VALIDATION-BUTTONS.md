@@ -1,5 +1,7 @@
 # Validation buttons
 
+Cumulative + subgroup: live PM checks the current cumulative steps (in the page's year/row order), or each separately fitted subgroup, the overall pool and the FE-pooled between-subgroup Q/df/p/I² difference, against self-hosted metafor 4.8-0 (paper 5.2-1), with tau2 at 1e-6 and every other computed, displayed or exported value at 1e-9 under the declared conditional rule (RESULTS_Q.md); exact cards, notes, controls, plot geometry and page-template text; refuses in the axis-error state. Declared replay: 609,398 checks over 1,816 configurations (all k <= 100, all 6 page refusals, every adjudicated residual-Q configuration); full archived comparison: 1,615,408 checks. See [cumulative-subgroup/validate/README.md](cumulative-subgroup/validate/README.md), `validate-cumulative-subgroup.spec.mjs` and integration cases.
+
 GOSH: live FE/DL checks every current subset against self-hosted metafor 4.8-0 (paper 5.2-1), including exact membership, engine values, exported summaries and exact displayed headings/labels/values. Declared replay: 876,760 checks over 178 model configurations (all k <= 12, two fixed sampled configurations, all cap refusals); full archived paper: 12,813,556 checks. See [gosh/validate/README.md](gosh/validate/README.md), `validate-gosh.spec.mjs` and integration cases.
 
 The shared `AlmValidate.mount(el, adapter)` widget supplies accessible controls, a results table, hash verification, version reporting and evidence links. Missing values and invalid hashes fail closed.

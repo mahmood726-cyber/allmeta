@@ -1,0 +1,34 @@
+# Cumulative + subgroup validation
+
+**Validate this analysis in R** checks the CURRENT page analysis in self-hosted webR 0.5.5 with metafor **4.8-0**. The paper used R **4.6.0**, metafor **5.2-1** and metadat **1.6-0**; the panel shows both. No remote package requests are made. Invalid inputs, missing evidence and R errors are refusals, never passes.
+
+- **Cumulative view.** R orders the page's parsed rows by year (ties and missing years keep row order, as the page does), then fits `rma(yi, vi, method="PM", test="z")` on each cumulative prefix with the source reference's convergence controls. Membership, k, tau2, estimate, SE, normal CI, residual Q (evaluated with the PM weights) and the t(k-1) prediction interval are compared at every step, with every exported results field (final summary and series).
+- **Subgroup view.** Each subgroup is fitted separately with PM (missing groups become `(ungrouped)`); the subgroup estimates are then pooled with a fixed-effect model to give Q_bw, its centre, df and p, and I² of differences. The overall PM pool and every exported field are compared. R matches its group names to the page's names exactly.
+- **Tolerances.** tau2: `abs(App-R)/max(1,|R|) <= 1e-6`. Others: `1e-9` relative to `max(1,|R|)`; pQ and I² difference (fraction scale) absolute `1e-9`; counts, membership, labels and display exact.
+- **Declared conditional rule (RESULTS_Q.md).** When a pool's tau2 agrees with R's PM tau2 to 1e-6 and membership matches, R evaluates the tau2-dependent closed forms (mu, SE, CI, residual Q, PI) at the page's own tau2; between-subgroup statistics are conditional only when every group is. Otherwise the strict R values apply. This separates solver agreement (tau2, 1e-6) from formula agreement (1e-9).
+- **Displayed state.** Exact preview heading; exact summary-card structure, labels and values; the notes banner exactly equal to the parser's own warnings for the current input; empty axis error; exact view options and selection; exact effect-axis labels with log disabled; every plotted mark, CI line/band, diamond, tick and SVG text against the page's plotting rule (including a user title and user axis limits, read as the page reads them, `Number` of the trimmed value); and the page-template text contract below.
+- **Refusals.** The live tier refuses (rather than fails) while the axis controls show an error or the page has refused the plot for invalid effect-axis limits (including an equal or reversed pair), with fewer than two valid rows, or in the subgroup view without a group column.
+
+The R-script export is covered separately by `cumulative-subgroup-rexport-parity.spec.mjs`, which runs the downloaded script in R.
+
+## Declared deterministic replay subset
+
+**Re-run full validation** replays **1,816 configurations / 609,398 checks**: every one of the 1,815 configurations with k <= 100 (311 cumulative, 1,498 subgroup and all 6 page-policy refusals), plus `dat.mccurdy2020::001::subgroup::pairing` (k = 1,653, 804 groups), the one configuration holding residual-Q pools adjudicated under the conditional rule that has k > 100. All 34 adjudicated pools (23 configurations) are therefore included. 28,473 pools are compared. Corpus and reference are LF bytes, SHA-256 pinned in MANIFEST.json and the adapter, and covered by `.gitattributes`; changed bytes are refused. The full archived comparison is **1,615,408/1,615,408** over 1,991 configurations; this button does not replay it.
+
+The subset is derived by `k <= 100` plus the adjudication list, in corpus order, from the codex16 archive (configurations.json, reference/, reference-q-patched/, q-input-patched.json). Each pool carries the strict metafor 5.2-1 reference and, where the archive adjudicated it eligible, the conditional closed forms with the tau2 they were evaluated at. Replay uses the conditional references only when the page reproduces that tau2 exactly and agrees with R's tau2 to 1e-6; otherwise strict. The check count is derived from the reference structure (29k + 22 per cumulative configuration, 16G + 49 per subgroup configuration, 10 per refusal), and the browser must produce exactly that count. Headless Chromium replays it in about 15 seconds.
+
+Per configuration replay checks: the exact parsed input rows and an empty parser-warning list; every pool as above; every exported field and the exact export field list; heading, summary cards, notes banner and axis error, view controls and an empty plot title, the default effect-axis controls (the replay renders with automatic limits and restores the user's own values, error text and refusal display afterwards); every plotted coordinate at absolute 1e-9; every SVG text in order; and the page-template text. Refused configurations check the null summary and export, the exact refusal plot, the exact refusal note and the same display contracts. Preflight schema, key, membership and coverage assertions refuse invalid evidence; they are not counted as checks.
+
+Replay does not write URL state or history, restores pending input, results, plot, saved state and the draft, and works offline after preparation or by selecting the two manifest-listed files on file URLs. The shared widget and R runner are unchanged; the page gained only the mount, observation hooks (`__almCumSubValidationRun/Snapshot/Restore`) and a one-line record of the CSV importer's warnings.
+
+## Page-template text contract
+
+Every visible text node (with its element path from the landmark, so text moved between cells or containers fails) and every aria-label and title inside the skip link, navigation, header, main content and footer, outside the validation panel, must equal the list embedded in the adapter, generated from the live page and verified identical across the cumulative, subgroup, refused and single-row states. Regions with their own exact checks (summary cards, preview heading, notes banner, plot, view selector, axis-row label and error, CSV warnings) and the user's data are excluded. Overlays that shared scripts append at run time (citation dialog, glossary tooltips, toasts) are not template. The returning-user draft banner is accepted only in its exact form; CSV import warnings must equal the importer's own records for the last import exactly.
+
+Limits: PM only (the page has no other estimator); normal CIs; 2 or more valid rows. Dataset rows are numerical software tests, not clinical evidence.
+
+| Item | Static contract | Dynamic evidence |
+|---|---|---|
+| Corpus | Pinned subset rule, strict and conditional R references, check-count formula | Page parser, engine, renderer and exports in replay |
+| Live | PM model, controls, tolerances, pinned package binaries | Current R fits, versions and every comparison |
+| Display | Exact headings, labels, formatting, plotting rule and template text | Rendered DOM and SVG |

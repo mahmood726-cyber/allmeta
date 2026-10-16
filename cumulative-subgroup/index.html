@@ -172,6 +172,7 @@
     
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
+    <div style="grid-column:1/-1"><section id="alm-validate"></section></div>
   </main>
 
   <p class="footer-note">Subgroup between-group Q compares <strong>random-effects</strong> pooled estimates across groups (each group pooled with Paule-Mandel τ², per Borenstein 2009 §19); Q_bw = Σ w_g (μ_g − M)², df = G − 1, where w_g = 1/SE(μ_g)² and the centre M = Σ w_g μ_g / Σ w_g is the inverse-variance-weighted mean of the subgroup estimates (matches <code>meta::metagen</code> Q.b.random). I² of differences = max(0, 100·(Q − df)/Q).</p>
@@ -770,6 +771,33 @@
     // Expose last results for export
     window._almLastCumSub = function () { return _lastResults; };
 
+    // Validation observes calls to the unchanged parser and pooling engine.
+    window.__almCumSubValidationRun = function (text, view, title, axes) {
+      if (text !== undefined) document.getElementById("f-data").value = text;
+      if (view !== undefined) document.getElementById("f-view").value = view;
+      if (title !== undefined) document.getElementById("f-title").value = title;
+      if (axes !== undefined) _axisState = axes;
+      const originalParse = parseStudies, originalPool = pool, originalCumulative = cumulative, originalSubgroup = subgroup;
+      let parsed = null, cum = null, sub = null; const pools = [];
+      parseStudies = function (t) { const r = originalParse(t); if (!parsed) parsed = r; return r; };
+      pool = function (rows) { const p = originalPool(rows); pools.push(Object.assign({ members: rows.map(function (r) { return parsed.studies.indexOf(r) + 1; }) }, p)); return p; };
+      cumulative = function (rows) { cum = originalCumulative(rows); return cum; };
+      subgroup = function (rows) { sub = originalSubgroup(rows); return sub; };
+      try { render(); return { summary: _lastResults, parsed: parsed, pools: pools, cum: cum, sub: sub, axisRefusal: _axisRefusal }; }
+      finally { parseStudies = originalParse; pool = originalPool; cumulative = originalCumulative; subgroup = originalSubgroup; }
+    };
+    window.__almCumSubValidationSnapshot = function () {
+      return { controls: ["f-data", "f-view", "f-title"].map(function (id) { return [id, document.getElementById(id).value]; }),
+        dom: ["stats-wrap", "warn-banner", "svg-host", "preview-heading"].map(function (id) { return [id, document.getElementById(id).innerHTML]; }),
+        warnClass: warnEl.className, results: _lastResults, axes: _axisState, axisRefusal: _axisRefusal, saved: localStorage.getItem(LS_KEY) };
+    };
+    window.__almCumSubValidationRestore = function (s) {
+      s.controls.forEach(function (x) { document.getElementById(x[0]).value = x[1]; });
+      s.dom.forEach(function (x) { document.getElementById(x[0]).innerHTML = x[1]; });
+      warnEl.className = s.warnClass; _lastResults = s.results; _axisState = s.axes; _axisRefusal = s.axisRefusal;
+      try { if (s.saved === null) localStorage.removeItem(LS_KEY); else localStorage.setItem(LS_KEY, s.saved); } catch (e) {}
+    };
+
     // ---- Shared MA bus (ma-studies-v1) — delegated to shared/ma-studies-v1.js ----
     function onBusLoad() {
       try {
@@ -830,6 +858,8 @@
         { name: 'group',    required: false, type: 'string', example: 'Low-risk' },
       ],
       onParse: function (result) {
+        // Validation observes the importer's own warning records (shown above the format table).
+        window.__almCumSubImportWarnings = result.warnings.slice();
         window.alm.resetUndo.snapshot();
         window.__almLoad(result.rows);
       },
@@ -1018,5 +1048,7 @@
     else document.addEventListener("DOMContentLoaded", init);
   })();
 </script>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>
