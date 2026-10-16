@@ -284,11 +284,11 @@
 
       var X = function (v) { return padL + (v - lo) / (hi - lo) * plotW; };
 
-      __svgParts.push('<line x1="' + X(0) + '" y1="10" x2="' + X(0) + '" y2="' + (H - 20) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
+      if (lo <= 0 && hi >= 0) __svgParts.push('<line x1="' + X(0) + '" y1="10" x2="' + X(0) + '" y2="' + (H - 20) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
         var y = 30 + i * 40;
-        __svgParts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + r.name + '</text>');
+        __svgParts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + escapeHTML(r.name) + '</text>');
         var l = r.est - rcrit(r) * r.se, h = r.est + rcrit(r) * r.se;
         __svgParts.push('<line x1="' + X(l) + '" y1="' + y + '" x2="' + X(h) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>');
         var isIndirect = r.name.indexOf('indirect') !== -1;
@@ -307,72 +307,69 @@
         dBC: document.getElementById('dBC').value,
         seBC: document.getElementById('seBC').value,
         scale: document.getElementById('scale').value,
+        treatA: document.getElementById('treatA').value,
+        treatB: document.getElementById('treatB').value,
+        treatC: document.getElementById('treatC').value,
       };
     }
-
     function restore(snap) {
       if (!snap) return;
-      if (snap.dAC  !== undefined) document.getElementById('dAC').value  = snap.dAC;
-      if (snap.seAC !== undefined) document.getElementById('seAC').value = snap.seAC;
-      if (snap.dBC  !== undefined) document.getElementById('dBC').value  = snap.dBC;
-      if (snap.seBC !== undefined) document.getElementById('seBC').value = snap.seBC;
-      if (snap.scale !== undefined) document.getElementById('scale').value = snap.scale;
+      ['dAC','seAC','dBC','seBC','scale','treatA','treatB','treatC'].forEach(id => {
+        if (snap[id] !== undefined) document.getElementById(id).value = snap[id];
+      });
+      _nStudies = 2;
+      _importMeta = null;
+      document.getElementById('import-status').textContent =
+        'Restored input estimates. Confirm original study independence before inference.';
       run();
     }
 
-    // ---- load CSV rows: pool by arm pair, then populate fields ----
-    // CSV columns: treat1, treat2, TE, seTE  (+ optional study)
-    // Expects a triangle network with a common comparator.
-    // User convention: treat1=A, treat2=B means d(AB).
-    // We identify the two direct arms feeding the indirect comparison:
-    //   arm1 = AC or CA, arm2 = BC or CB (common = C inferred by exclusion).
+    function refuseImport(message) {
+      _lastResults = null;
+      _nStudies = 2;
+      _importMeta = null;
+      document.getElementById('body').innerHTML =
+        '<tr><td colspan="5">Import rejected. No results are available for the rejected data.</td></tr>';
+      document.getElementById('plot').replaceChildren();
+      document.getElementById('import-status').textContent =
+        'Import rejected: ' + message + '. Previous form values were retained; click Compute to return to them.';
+      return false;
+    }
+
+    // Full-data, directional, independence-checked Bucher import.
+    // The target A/B and common C are explicit, so row order cannot change
+    // the estimand. Direct A–B trials in a triangle are disclosed and excluded.
     window.__almBucherLoad = function (rows) {
-      if (!rows || rows.length < 2) return;
-
-      // Group rows by (treat1,treat2) pair (normalise to sorted order)
-      var groups = {};
-      rows.forEach(function (r) {
-        var t1 = (r.treat1 || '').trim();
-        var t2 = (r.treat2 || '').trim();
-        var te = parseFloat(r.TE !== undefined ? r.TE : (r.te !== undefined ? r.te : r.yi));
-        var se = parseFloat(r.seTE !== undefined ? r.seTE : (r.se !== undefined ? r.se : r.sei));
-        if (!t1 || !t2 || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return;
-        // Canonical key: alphabetical
-        var key = t1 < t2 ? (t1 + '|' + t2) : (t2 + '|' + t1);
-        var flip = t1 > t2; // if we flip, negate TE
-        if (!groups[key]) groups[key] = [];
-        groups[key].push({ te: flip ? -te : te, se: se });
-      });
-
-      // Pool each group by FE / IV weighting
-      var pairs = {};
-      Object.keys(groups).forEach(function (key) {
-        var g = groups[key];
-        var wi = g.map(function (r) { return 1 / (r.se * r.se); });
-        var sw = wi.reduce(function (a, b) { return a + b; }, 0);
-        var mu = g.reduce(function (a, r, i) { return a + wi[i] * r.te; }, 0) / sw;
-        var se = 1 / Math.sqrt(sw);
-        pairs[key] = { mu: mu, se: se, n: g.length };
-      });
-
-      var keys = Object.keys(pairs);
-      if (keys.length < 2) return;
-
-      // Find two arms that share a common node (indirect via Bucher)
-      // For a connected triangle pick the two arms, using the first two arms found.
-      // Convention: first arm = AC, second arm = BC (so indirect = AB).
-      var k0 = keys[0], k1 = keys[1];
-      var p0 = pairs[k0], p1 = pairs[k1];
-
-      // Total trials feeding the two direct arms — drives the t-vs-z choice.
-      _nStudies = (p0.n || 1) + (p1.n || 1);
-
-      // Populate fields: arm0 -> AC fields, arm1 -> BC fields
-      document.getElementById('dAC').value  = p0.mu.toFixed(6);
-      document.getElementById('seAC').value = p0.se.toFixed(6);
-      document.getElementById('dBC').value  = p1.mu.toFixed(6);
-      document.getElementById('seBC').value = p1.se.toFixed(6);
-      run();
+      try {
+        if (!window.AlmBucherCore) throw new Error('Bucher validation engine not available');
+        const chosen = {
+          A: document.getElementById('treatA').value,
+          B: document.getElementById('treatB').value,
+          C: document.getElementById('treatC').value,
+        };
+        const fit = AlmBucherCore.compute(rows, chosen);
+        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot)
+          window.alm.resetUndo.snapshot();
+        // No rounding: the CSV-to-SE calculations must retain full precision.
+        document.getElementById('dAC').value = String(fit.AC.mu);
+        document.getElementById('seAC').value = String(fit.AC.se);
+        document.getElementById('dBC').value = String(fit.BC.mu);
+        document.getElementById('seBC').value = String(fit.BC.se);
+        _nStudies = fit.contributingTrials;
+        _importMeta = fit;
+        document.getElementById('import-status').textContent =
+          'Imported ' + fit.AC.n + ' ' + fit.A + '–' + fit.C + ' and ' +
+          fit.BC.n + ' ' + fit.B + '–' + fit.C + ' independent-link contrast(s). ' +
+          (fit.excludedDirectAB ? fit.excludedDirectAB + ' direct ' +
+           fit.A + '–' + fit.B + ' record(s) explicitly excluded from the indirect fit. ' : '') +
+          (fit.independentStudyIdsUnverified
+            ? 'Missing trial IDs: independence cannot be checked. ' : '') +
+          'Normal/Wald inference; transitivity must be judged independently.';
+        run();
+        return true;
+      } catch (err) {
+        return refuseImport(err && err.message ? err.message : String(err));
+      }
     };
 
     // Expose last results for export
