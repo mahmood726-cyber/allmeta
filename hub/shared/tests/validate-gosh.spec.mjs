@@ -211,3 +211,16 @@ test('gosh live accepts an equivalent spelling of the draw count',async({page})=
  expect(await page.locator('#m-n').textContent()).toBe('37');
  const live=await page.evaluate(()=>AlmGoshValidation.runLive());expect(live.rows.filter(x=>!x.pass)).toEqual([]);
 });
+
+for(const [name,csv,warning] of [
+ ['multiline bad row','yi,sei,study\n0.1,0.1,A\n"x\ny",0.2,B\n0.3,0.3,C\n0.4,0.4,D\n0.5,0.5,E','not float: x\ny'],
+ ['quoted header','yi,"se""",study\n0.1,0.1,A\n0.2,0.2,B\n0.3,0.3,C\n0.4,0.4,D','Header "se"" mapped to "sei"'],
+ ['trailing-comma header','yi,sei,study,\n0.1,0.1,A,\n0.2,0.2,B,\n0.3,0.3,C,\n0.4,0.4,D,','Header ""'],
+])test('gosh CSV import with a '+name+' warning passes replay and live',async({page})=>{
+ test.setTimeout(400000);await page.goto(url);
+ const mount=page.locator('#alm-csv-mount');
+ await mount.locator('textarea').fill(csv);await mount.locator('[data-action=parse-paste]').click();
+ expect(await mount.locator('[data-section=warnings]').textContent()).toContain(warning);
+ const r=await page.evaluate(()=>AlmGoshValidation.runCorpus());expect(r.checks).toBe(manifest.checks);expect(r.failed).toEqual([]);
+ const live=await page.evaluate(()=>AlmGoshValidation.runLive());expect(live.rows.length).toBeGreaterThan(0);expect(live.rows.filter(x=>!x.pass)).toEqual([]);
+});
