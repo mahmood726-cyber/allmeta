@@ -135,7 +135,7 @@ test('gosh replay shows default axis controls and restores the user axis control
  expect(await page.evaluate(()=>[...document.querySelectorAll('#alm-axis-mount input')].map(x=>[x.value,x.checked]))).toEqual(user);
 });
 
-for(const mutation of ['bound labels','log label','sampling label','threshold hint','button title','interpretation'])test('gosh replay rejects altered page text: '+mutation,async({page})=>{
+for(const mutation of ['bound labels','log label','sampling label','threshold hint','button title','interpretation','benchmark scale','undo label','schema cell merge','schema column move'])test('gosh replay rejects altered page text: '+mutation,async({page})=>{
  test.setTimeout(180000);await page.goto(url);
  await page.evaluate(m=>{
   const original=__almGoshValidationRun;
@@ -146,6 +146,10 @@ for(const mutation of ['bound labels','log label','sampling label','threshold hi
    if(m==='sampling label')document.querySelector('#sample-label > span').textContent='Studies included (k > 999)';
    if(m==='threshold hint'){const h=document.querySelector('#src').closest('label').querySelector('.hint');h.textContent=h.textContent.replace('k \u2264 15','k \u2264 99');}
    if(m==='button title')document.getElementById('btn-run').title='999';
+   if(m==='benchmark scale')document.querySelector('#alm-hero-mount option[value=bcg]').textContent='BCG vaccine (Berkey 1995, risk difference)';
+   if(m==='undo label')document.querySelector('#alm-undo-mount button').textContent='Undo 999';
+   if(m==='schema cell merge'){const row=document.querySelector('main table tbody tr');if(row.children.length===4){const req=row.children[2],ex=row.children[3];while(ex.firstChild)req.append(ex.firstChild);ex.remove();}}
+   if(m==='schema column move'){const row=document.querySelector('main table tbody tr');if(row.children.length===4&&row.children[2].textContent==='yes'){const a=row.children[2],b=row.children[3];const ta=a.innerHTML;a.innerHTML=b.innerHTML;b.innerHTML=ta;}}
    if(m==='interpretation'){const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode()))if(n.textContent.includes('low <30%')){n.textContent=n.textContent.replace('low <30%','low <99%');break;}}
    return a;
   };
@@ -157,4 +161,53 @@ test('gosh live rejects altered page text',async({page})=>{
  test.setTimeout(300000);await page.goto(url);
  await page.evaluate(()=>{document.querySelector('#sample-label > span').textContent='Studies included (k > 999)';});
  const r=await page.evaluate(()=>AlmGoshValidation.runLive());expect(r.rows.filter(x=>!x.pass).map(x=>x.label)).toEqual(['display']);
+});
+
+test('gosh live rejects altered benchmark scale label',async({page})=>{
+ test.setTimeout(300000);await page.goto(url);
+ await page.evaluate(()=>{document.querySelector('#alm-hero-mount option[value=bcg]').textContent='BCG vaccine (Berkey 1995, risk difference)';});
+ const r=await page.evaluate(()=>AlmGoshValidation.runLive());expect(r.rows.filter(x=>!x.pass).map(x=>x.label)).toEqual(['display']);
+});
+test('gosh returning user: draft banner passes replay and live, altered banner fails',async({page})=>{
+ test.setTimeout(400000);await page.goto(url);
+ await page.locator('#src').fill((await page.locator('#src').inputValue())+'\n');
+ await page.waitForFunction(()=>!!localStorage.getItem('alm-autosave:gosh'));
+ await page.reload();
+ await page.waitForFunction(()=>[...document.body.children].some(e=>/^Draft from /.test(e.textContent)));
+ const r=await page.evaluate(()=>AlmGoshValidation.runCorpus());expect(r.checks).toBe(manifest.checks);expect(r.failed).toEqual([]);
+ const live=await page.evaluate(()=>AlmGoshValidation.runLive());expect(live.rows.filter(x=>!x.pass)).toEqual([]);
+ await page.evaluate(()=>{for(const e of [...document.body.children])if(/^Draft from /.test(e.textContent))e.remove();const b=document.createElement('div');b.setAttribute('role','status');b.setAttribute('aria-live','polite');b.innerHTML='<span>Draft from 999 min ago found. Restore? Results verified.</span><button type=button>Restore</button><button type=button>Discard</button>';document.body.append(b);});
+ const bad=await page.evaluate(()=>AlmGoshValidation.runCorpus());expect(bad.failed).toHaveLength(manifest.model_configurations);expect(bad.failed.every(x=>x.quantity==='page_text')).toBe(true);
+});
+
+test('gosh live rejects a schema table cell merge',async({page})=>{
+ test.setTimeout(300000);await page.goto(url);
+ await page.evaluate(()=>{const row=document.querySelector('main table tbody tr');const req=row.children[2],ex=row.children[3];while(ex.firstChild)req.append(ex.firstChild);ex.remove();});
+ const r=await page.evaluate(()=>AlmGoshValidation.runLive());expect(r.rows.filter(x=>!x.pass).map(x=>x.label)).toEqual(['display']);
+});
+
+test('gosh CSV import with warnings passes replay and live; an invented warning fails',async({page})=>{
+ test.setTimeout(400000);await page.goto(url);
+ const mount=page.locator('#alm-csv-mount');
+ await mount.locator('textarea').fill('yi,se,study\n0.1,0.05,A\n0.3,0.1,B\nx,0.1,C\n0.2,0.08,D\n0.25,0.12,E');
+ await mount.locator('[data-action=parse-paste]').click();
+ await expect(mount.locator('[data-section=warnings]')).toContainText('mapped to "sei"');
+ await expect(mount.locator('[data-section=warnings]')).toContainText('not float: x');
+ const r=await page.evaluate(()=>AlmGoshValidation.runCorpus());expect(r.checks).toBe(manifest.checks);expect(r.failed).toEqual([]);
+ const live=await page.evaluate(()=>AlmGoshValidation.runLive());expect(live.rows.length).toBeGreaterThan(0);expect(live.rows.filter(x=>!x.pass)).toEqual([]);
+ await page.evaluate(()=>{const w=document.querySelector('#alm-csv-mount [data-section=warnings]');w.textContent+='\n\u2022 Results verified';});
+ const bad=await page.evaluate(()=>AlmGoshValidation.runCorpus());expect(bad.failed).toHaveLength(manifest.model_configurations);expect(bad.failed.every(x=>x.quantity==='page_text')).toBe(true);
+});
+test('gosh live refuses while the axis controls show an invalid-limits error',async({page})=>{
+ test.setTimeout(120000);await page.goto(url);
+ const min=page.locator('[data-axis=y][data-edge=min]'),max=page.locator('[data-axis=y][data-edge=max]');
+ await max.fill('10');await max.dispatchEvent('change');await min.fill('50');await min.dispatchEvent('change');
+ await expect(page.locator('#alm-axis-mount [data-error]')).not.toHaveText('');
+ await expect(page.evaluate(()=>AlmGoshValidation.runLive())).rejects.toThrow(/Axis limits are invalid/);
+});
+test('gosh live accepts an equivalent spelling of the draw count',async({page})=>{
+ test.setTimeout(300000);await page.goto(url);
+ await page.evaluate(()=>{const rows=Array.from({length:16},(_, i)=>`${(i%5)/10+0.05}, ${0.05+i/100}, S${i+1}`).join('\n');document.getElementById('src').value=rows;document.getElementById('n-sample').value='37.0';__almGoshValidationRun();});
+ expect(await page.locator('#m-n').textContent()).toBe('37');
+ const live=await page.evaluate(()=>AlmGoshValidation.runLive());expect(live.rows.filter(x=>!x.pass)).toEqual([]);
 });
