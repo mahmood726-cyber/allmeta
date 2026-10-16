@@ -216,6 +216,7 @@
     <aside aria-label="Project setup">
       <section class="panel">
         <h2>Project</h2>
+        <button type="button" id="btn-train" class="primary">Train &amp; rank</button>
         <label><span class="lbl">Review title</span>
           <input type="text" id="f-title" placeholder="e.g. SGLT2i in heart failure"></label>
         <label><span class="lbl">Include terms (relevance &amp; highlighting)</span>
@@ -308,7 +309,7 @@
       <section class="panel">
         <h2>Local ML ranking</h2>
         <p class="hint" style="margin-top:0">Label a few records with <kbd>i</kbd>/<kbd>e</kbd>, then train an in-browser classifier (TF-IDF + Naive Bayes, ASReview's default ranker, with class-balanced weighting) to rank the rest by predicted relevance. Retrain after each small batch for continuous active learning. 100% local, no key, reproducible.</p>
-        <button type="button" id="btn-train" class="primary">Train &amp; rank</button>
+
         <div id="ml-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--muted)">Not trained yet.</div>
         <div id="ml-terms" style="margin-top:0.5rem;font-size:0.76rem"></div>
         <div id="ml-perf" style="margin-top:0.4rem;font-size:0.76rem;color:var(--muted)"></div>

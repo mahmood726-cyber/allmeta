@@ -14,6 +14,7 @@
  *  7. Subgroup estimate/CI text was drawn past the right edge of the SVG viewBox.
  */
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 const APP = '/cumulative-subgroup/index.html';
 
@@ -193,34 +194,27 @@ for (const view of ['cumulative', 'subgroup']) {
  * reversed pair made the shared axis widget show "min must be < max" and return WITHOUT calling
  * onChange, so the page kept the old [-2, 2] plot on screen and still exported it. The page must
  * see the raw entered pair, replace the plot with a refusal, and refuse SVG / PNG / PDF export.
- * Controls: in the valid state the same download paths do produce a file (PDF: the export path
- * gets past getSvg and stops only at the absent jsPDF vendor), so "no download" is measured.
+ * Controls: in the valid state every download path produces a file, including PDF via the
+ * lazily loaded vendored jsPDF. Invalid axes must prevent every download.
  */
-const DOWNLOADS = ['#btn-svg', '#btn-png', '#alm-chart-mount [data-fmt="svg"]', '#alm-chart-mount [data-fmt="png"]'];
+const DOWNLOADS = ['#btn-svg', '#btn-png', '#alm-chart-mount [data-fmt="svg"]', '#alm-chart-mount [data-fmt="png"]', '#alm-chart-mount [data-fmt="pdf"]'];
 
 async function clickExpectDownload(page, sel, expected) {
-  const dl = page.waitForEvent('download', { timeout: expected ? 10_000 : 2_000 }).then(() => true, () => false);
+  const pending = page.waitForEvent('download', { timeout: expected ? 10_000 : 2_000 }).catch(() => null);
   await page.click(sel);
-  return (await dl) === expected;
-}
-
-async function pdfReachedExport(page) {
-  // Which branch the chart PDF button took: 'no-svg' (refused at getSvg) or 'past-getSvg' (it was
-  // handed a plot and stopped only because this page does not load the jsPDF vendor).
-  const msgs = [];
-  const h = m => msgs.push(m.text());
-  page.on('console', h);
-  await page.click('#alm-chart-mount [data-fmt="pdf"]');
-  await page.waitForTimeout(500);
-  page.off('console', h);
-  if (msgs.some(t => t.includes('[alm.chartDownload] no SVG'))) return 'no-svg';
-  if (msgs.some(t => t.includes('[alm.chartDownload] jspdf not loaded'))) return 'past-getSvg';
-  return 'unknown: ' + msgs.join('|');
+  const download = await pending;
+  if (download && sel.includes('"pdf"')) {
+    expect(download.suggestedFilename()).toMatch(/\.pdf$/);
+    expect(readFileSync(await download.path()).subarray(0, 5).toString()).toBe('%PDF-');
+  }
+  return Boolean(download) === expected;
 }
 
 for (const view of ['cumulative', 'subgroup']) {
   for (const [name, edge, raw] of [['equal [2, 2]', 'min', '2'], ['reversed [-2, -3]', 'max', '-3']]) {
     test(`fault 4c: ${view} plot, valid [-2, 2] then ${name}: refusal replaces plot, no stale export`, async ({ page }) => {
+      // Five real downloads (including lazy-loaded PDF) plus five no-download windows.
+      test.setTimeout(120000);
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
       await ready(page);
@@ -235,7 +229,6 @@ for (const view of ['cumulative', 'subgroup']) {
       expect(await tickTexts(page)).toContain('-2.00');
       // Controls: every export path works in the valid state.
       for (const sel of DOWNLOADS) expect(await clickExpectDownload(page, sel, true), sel + ' downloads in the valid state').toBe(true);
-      expect(await pdfReachedExport(page), 'PDF path reaches export in the valid state').toBe('past-getSvg');
 
       await setEdge(page, edge, raw);
       await expect(page.locator('#alm-axis-mount [data-error]')).toHaveText(/min must be < max/);
@@ -245,7 +238,6 @@ for (const view of ['cumulative', 'subgroup']) {
       await expect(page.locator('#svg-host')).toContainText('Plot cannot be displayed');
       await expect(page.locator('#warn-banner')).toContainText('Effect axis');
       for (const sel of DOWNLOADS) expect(await clickExpectDownload(page, sel, false), sel + ' must not export a stale plot').toBe(true);
-      expect(await pdfReachedExport(page), 'PDF export refused').toBe('no-svg');
       expect(errors, 'no uncaught page error').toEqual([]);
     });
   }

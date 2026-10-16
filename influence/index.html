@@ -80,6 +80,7 @@
   <script src="../shared/hero-examples.js"></script>
   <script src="../shared/citation.js"></script>
   <script src="../shared/autosave.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -92,7 +93,7 @@
       <h2>Input</h2>
 
       <!-- csv-upload mount: file picker for study,yi,vi CSV files -->
-      <div id="alm-csv-mount"></div>
+
 
       <fieldset>
         <legend>Data</legend>
@@ -107,12 +108,16 @@
 0.22, 0.08, Chen
 0.32, 0.12, Garcia
 0.45, 0.17, Ahmed
-0.28, 0.10, Brown</textarea>
+0.28, 0.10, Brown</textarea></label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="alm-csv-mount"></div>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
           <span class="hint">Paste <code>effect, SE[, label]</code> rows, or upload a CSV above.</span>
-        </label>
+
       </fieldset>
 
       <!-- axis-controls mount: axis range inputs (domain override for LOO plot) -->
@@ -122,7 +127,6 @@
       <div id="alm-export-mount"></div>
 
       <div class="actions">
-        <button type="button" id="btn-run" class="primary">Compute diagnostics</button>
         <button type="button" id="btn-bus-load" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
         <button type="button" id="btn-bus-save" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
         <!-- reset-undo mount: undo-stack dialog replaces bare confirm() -->
@@ -149,6 +153,7 @@
       <p class="hint">Precision (1/SE) vs standardised effect (effect/SE). The slope of the through-origin line is the fixed-effect estimate; points outside the ±2 band are outliers. Matches <code>metafor::radial</code>.</p>
       <svg id="radial-plot" viewBox="0 0 600 300" role="img" aria-label="Radial Galbraith plot of precision vs standardised effect"></svg>
 
+      <div id="alm-plot-mount"></div>
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
@@ -511,6 +516,30 @@
       },
     });
 
+    window.alm.plotExport({
+      target: "#alm-plot-mount", basename: "influence",
+      plots: [
+        { id: "loo", name: "Leave-one-out forest", getSvg: function () { return document.querySelector("#loo-plot"); } },
+        { id: "influence", name: "Influence plot", getSvg: function () { return document.querySelector("#influence-plot"); } },
+        { id: "baujat", name: "Baujat plot", getSvg: function () { return document.querySelector("#baujat-plot"); } },
+        { id: "radial", name: "Radial plot", getSvg: function () { return document.querySelector("#radial-plot"); } }
+      ],
+      getReceiptInput: function () {
+        var s = (window._almStudies && window._almStudies()) || [];
+        if (s.length < 3) return null;
+        return { studies: s.map(function (r) { return { est: r.te, se: r.se }; }),
+          method: "Influence diagnostics (Cook's distance, leave-one-out, DFFITS)",
+          label: "influence-results", results: window.__almResults() };
+      }
+    });
+    document.getElementById("btn-run").addEventListener("click", function () {
+      document.getElementById("analysis-status").hidden = false;
+      document.getElementById("analysis-stale").hidden = true;
+    });
+    document.getElementById("src").addEventListener("input", function () {
+      document.getElementById("analysis-stale").hidden = false;
+      document.getElementById("analysis-status").hidden = true;
+    });
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'influence-results',

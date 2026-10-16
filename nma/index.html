@@ -91,6 +91,7 @@
   <script src="example-datasets.js"></script>
   <script src="../shared/ma-methods-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -109,9 +110,11 @@
           <legend>Data</legend>
           <label>
             <span class="lbl">CSV: <code>study, treatment1, treatment2, estimate, SE</code></span>
-            <textarea id="f-data" spellcheck="false" aria-label="Contrasts"></textarea>
+            <textarea id="f-data" spellcheck="false" aria-label="Contrasts"></textarea></label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
             <span class="hint">Each row is one pairwise contrast. Effect is <code>treatment2 − treatment1</code> on the analysis scale (e.g. log OR). A multi-arm study needs a row for every pair of its arms.</span>
-          </label>
+
           <label>
             <span class="lbl">Example data (datasets shipped with the R package netmeta)</span>
             <select id="f-example" aria-label="Example data (datasets shipped with the R package netmeta)">
@@ -176,7 +179,7 @@
         <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
 
         <div class="actions">
-          <button type="button" id="btn-svg" class="primary">Download network SVG</button>
+          <div id="alm-plot-mount"></div>
           <button type="button" id="btn-league">Download league CSV</button>
           <button type="button" id="btn-json">Download JSON</button>
           <button type="button" id="btn-import">Import JSON</button>
@@ -209,7 +212,7 @@
         <h2>League table: row treatment versus column treatment</h2>
         <div id="league-host" style="overflow-x:auto"></div>
       </div>
-    
+
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
@@ -702,9 +705,21 @@
     }
 
     function attach() {
+      document.getElementById("btn-run").addEventListener("click", render);
+      window.alm.plotExport({
+        target: "#alm-plot-mount", basename: "nma",
+        plots: [
+          { id: "network", name: "Network graph", getSvg: function () { return document.querySelector("#svg-host svg"); } }
+        ]
+      });
+      document.getElementById("btn-run").addEventListener("click", function () {
+        document.getElementById("analysis-status").hidden = false;
+      });
+      document.getElementById("f-data").addEventListener("input", function () {
+        document.getElementById("analysis-status").hidden = false;
+      });
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) { el.addEventListener("input", render); if (el.tagName === "SELECT") el.addEventListener("change", render); } }
       document.getElementById("f-ref").addEventListener("change", render);
-      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
       document.getElementById("btn-league").addEventListener("click", onDownloadLeague);
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
       document.getElementById("btn-reset").addEventListener("click", onReset);

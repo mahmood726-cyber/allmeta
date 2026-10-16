@@ -92,6 +92,7 @@
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/autosave.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -106,15 +107,18 @@
       <h2>Study data</h2>
 
       <!-- csv-upload mount: RFC-4180 file picker for study, TP, FP, FN, TN -->
-      <div id="alm-csv-mount" style="margin-bottom:0.75rem;"></div>
+
 
       <fieldset>
         <legend>Data</legend>
         <label>
           <span class="lbl">CSV: <code>label, <abbr data-gloss="TP">TP</abbr>, <abbr data-gloss="FP">FP</abbr>, <abbr data-gloss="FN">FN</abbr>, <abbr data-gloss="TN">TN</abbr></code></span>
-          <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
+          <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea></label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="alm-csv-mount" style="margin-bottom:0.75rem;"></div>
           <span class="hint"><abbr data-gloss="TP">TP</abbr> = true positives, <abbr data-gloss="FP">FP</abbr> = false positives, <abbr data-gloss="FN">FN</abbr> = false negatives, <abbr data-gloss="TN">TN</abbr> = true negatives. With a covariate, add it as a last column.</span>
-        </label>
+
         <label>
           <span class="lbl">Example data (datasets shipped with the R package mada)</span>
           <select id="f-example" aria-label="Example data (datasets shipped with the R package mada)">
@@ -181,8 +185,7 @@
       <div id="alm-export-mount" style="margin-bottom:0.5rem;"></div>
 
       <div class="actions">
-        <button type="button" id="btn-svg" class="primary">Download SVG</button>
-        <button type="button" id="btn-png">Download PNG</button>
+        <div id="alm-plot-mount"></div>
         <button type="button" id="btn-json">Download JSON</button>
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
@@ -647,9 +650,22 @@
       render();
     }
     function attach() {
+      document.getElementById("btn-run").addEventListener("click", render);
+      window.alm.plotExport({
+        target: "#alm-plot-mount", basename: "dta-sroc",
+        plots: [
+          { id: "sroc", name: "SROC plot", getSvg: function () { return document.querySelector("#svg-host svg"); } },
+          { id: "fagan", name: "Fagan plot", getSvg: function () { return document.querySelector("#fagan-host svg"); } },
+          { id: "deeks", name: "Deeks plot", getSvg: function () { return document.querySelector("#deeks-host svg"); } }
+        ]
+      });
+      document.getElementById("btn-run").addEventListener("click", function () {
+        document.getElementById("analysis-status").hidden = false;
+      });
+      document.getElementById("f-data").addEventListener("input", function () {
+        document.getElementById("analysis-status").hidden = false;
+      });
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) { el.addEventListener("input", render); if (el.tagName === "SELECT") el.addEventListener("change", render); } }
-      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
-      document.getElementById("btn-png").addEventListener("click", onDownloadPng);
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){

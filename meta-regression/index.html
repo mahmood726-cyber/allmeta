@@ -86,6 +86,7 @@
   <script src="../shared/hero-examples.js"></script>
   <script src="../shared/citation.js"></script>
   <script src="../shared/autosave.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -101,15 +102,18 @@
 
       <fieldset>
         <legend>Data</legend>
-        <div id="alm-csv-mount"></div>
+
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE, moderator</code></span>
-          <textarea id="f-data" spellcheck="false" aria-label="Studies"></textarea>
+          <textarea id="f-data" spellcheck="false" aria-label="Studies"></textarea></label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="alm-csv-mount"></div>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
           <span class="hint">Four columns required. Lines starting with <code>#</code> are ignored. One numeric moderator only; use the four-column format shown above.</span>
-        </label>
+
         <div id="alm-undo-mount" style="display:inline-flex;margin-top:.4rem"></div>
       </fieldset>
 
@@ -139,8 +143,7 @@
       <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
 
       <div class="actions">
-        <button type="button" id="btn-svg" class="primary">Download SVG</button>
-        <button type="button" id="btn-png">Download PNG</button>
+        <div id="alm-plot-mount"></div>
         <button type="button" id="btn-json">Download JSON</button>
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
@@ -156,7 +159,7 @@
     <section class="panel preview-wrap" aria-label="Preview">
       <h2>Bubble plot</h2>
       <div id="svg-host"></div>
-    
+
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
@@ -725,10 +728,22 @@
     }
 
     function attach() {
+      document.getElementById("btn-run").addEventListener("click", render);
+      window.alm.plotExport({
+        target: "#alm-plot-mount", basename: "meta-regression",
+        plots: [
+          { id: "bubble", name: "Bubble plot", getSvg: function () { return document.querySelector("#svg-host svg"); } }
+        ],
+        getReceiptInput: function () { const r = currentSvg(); return r ? exportReceiptInput(r) : null; }
+      });
+      document.getElementById("btn-run").addEventListener("click", function () {
+        document.getElementById("analysis-status").hidden = false;
+      });
+      document.getElementById("f-data").addEventListener("input", function () {
+        document.getElementById("analysis-status").hidden = false;
+      });
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
       document.getElementById("f-scale").addEventListener("change", render);
-      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
-      document.getElementById("btn-png").addEventListener("click", onDownloadPng);
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
       document.getElementById("btn-rscript").addEventListener("click", onExportR);
       document.getElementById("btn-reset").addEventListener("click", onReset);
