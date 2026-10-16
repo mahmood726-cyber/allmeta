@@ -1,5 +1,7 @@
 # Validation buttons
 
+GOSH: live FE/DL checks every current subset against self-hosted metafor 4.8-0 (paper 5.2-1), including exact membership, engine values, exported summaries and exact displayed headings/labels/values. Declared replay: 876,760 checks over 178 model configurations (all k <= 12, two fixed sampled configurations, all cap refusals); full archived paper: 12,813,556 checks. See [gosh/validate/README.md](gosh/validate/README.md), `validate-gosh.spec.mjs` and integration cases.
+
 The shared `AlmValidate.mount(el, adapter)` widget supplies accessible controls, a results table, hash verification, version reporting and evidence links. Missing values and invalid hashes fail closed.
 
 ## Tier 1: current analysis in R
