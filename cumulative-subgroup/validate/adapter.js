@@ -210,21 +210,17 @@ function draftBannerOk() {
   if (banners.length === 0) return true;
   if (banners.length !== 1) return false;
   const c = [...banners[0].children];
-  return c.length === 3 && c[0].tagName === 'SPAN' && draftTexts(banners[0]).includes(c[0].textContent) && c[1].tagName === 'BUTTON' && c[1].textContent === 'Restore' &&
+  return c.length === 3 && c[0].tagName === 'SPAN' && c[0].textContent === draftText(banners[0]) && c[1].tagName === 'BUTTON' && c[1].textContent === 'Restore' &&
     c[2].tagName === 'BUTTON' && c[2].textContent === 'Discard' && banners[0].textContent === c[0].textContent + 'RestoreDiscard';
 }
-// The banner's age is fixed when shared/autosave.js creates it: max(1, round(age/1 min)) minutes, shown as "N min" below an hour and
-// round(N/60) "h" above. The page records the stored draft timestamp and the time it observed the new banner (within milliseconds
-// of creation); the displayed sentence must be the one that rule gives for a creation time in the second before that observation.
-// A banner the page did not observe being created (injected or replaced) has no evidence and fails.
-function draftSentence(savedAt, at) {
-  const mins = Math.max(1, Math.round((at - Date.parse(savedAt)) / 60000));
-  return `Draft from ${mins < 60 ? mins + ' min' : Math.round(mins / 60) + ' h'} ago found. Restore?`;
-}
-function draftTexts(node) {
+// The draft banner's sentence (including its age) is exactly the text shared/autosave.js built: the page records the first span's
+// text when it observes autosave insert the banner, and marks the banner changed if anything inside it mutates afterwards. No
+// recomputation and no tolerance: the recorded sentence never changes, so a correct banner keeps passing as time passes, and any
+// later edit (or a banner the page did not see inserted) fails. autosave.js never updates the banner in place.
+function draftText(node) {
   const rec = (window.__almCumSubDraftBanners || []).filter(r => r.node === node);
-  if (rec.length !== 1 || typeof rec[0].savedAt !== 'string' || !Number.isFinite(Date.parse(rec[0].savedAt)) || !Number.isFinite(rec[0].observedAt)) return [];
-  return [draftSentence(rec[0].savedAt, rec[0].observedAt - 1000), draftSentence(rec[0].savedAt, rec[0].observedAt)];
+  if (rec.length !== 1 || rec[0].changed !== false || typeof rec[0].text !== 'string' || !/^Draft from [1-9]\d* (min|h) ago found\. Restore\?$/.test(rec[0].text)) return null;
+  return rec[0].text;
 }
 // CSV import warnings (hub/shared/csv-upload.js) equal the importer's own records for the last import exactly, as it renders them.
 function csvWarningsOk() {

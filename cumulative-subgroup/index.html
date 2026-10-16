@@ -786,17 +786,23 @@
       try { render(); return { summary: _lastResults, parsed: parsed, pools: pools, cum: cum, sub: sub, axisRefusal: _axisRefusal }; }
       finally { parseStudies = originalParse; pool = originalPool; cumulative = originalCumulative; subgroup = originalSubgroup; }
     };
-    // Validation observes the autosave draft banner when shared/autosave.js creates it: the node, the
-    // stored draft timestamp it was built from, and the time it was observed.
+    // Validation observes the autosave draft banner: shared/autosave.js builds the whole banner before it
+    // appends it to <body>, so the text seen when the insertion is observed is autosave's own output. The
+    // page records that exact sentence, and marks the banner changed if anything inside it mutates later
+    // (records are delivered in order, so an edit made in the same task as the insertion is also seen).
     window.__almCumSubDraftBanners = [];
     new MutationObserver(function (records) {
-      const t = Date.now();
-      records.forEach(function (r) { r.addedNodes.forEach(function (n) {
-        if (n.nodeType !== 1 || n.tagName !== "DIV" || n.getAttribute("role") !== "status" || n.getAttribute("aria-live") !== "polite") return;
-        let savedAt = null; try { savedAt = JSON.parse(localStorage.getItem("alm-autosave:cumulative-subgroup")).savedAt; } catch (e) {}
-        window.__almCumSubDraftBanners.push({ node: n, savedAt: savedAt, observedAt: t });
-      }); });
-    }).observe(document.body, { childList: true });
+      const list = window.__almCumSubDraftBanners;
+      records.forEach(function (r) {
+        for (const rec of list) if (rec.node.contains(r.target)) rec.changed = true;
+        if (r.type !== "childList" || r.target !== document.body) return;
+        r.addedNodes.forEach(function (n) {
+          if (n.nodeType !== 1 || n.tagName !== "DIV" || n.getAttribute("role") !== "status" || n.getAttribute("aria-live") !== "polite") return;
+          const s = n.firstElementChild;
+          list.push({ node: n, text: s ? s.textContent : null, changed: false });
+        });
+      });
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
     window.__almCumSubValidationSnapshot = function () {
       return { controls: ["f-data", "f-view", "f-title"].map(function (id) { return [id, document.getElementById(id).value]; }),
         dom: ["stats-wrap", "warn-banner", "svg-host", "preview-heading"].map(function (id) { return [id, document.getElementById(id).innerHTML]; }),

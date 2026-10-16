@@ -8,6 +8,8 @@ const url='/cumulative-subgroup/index.html';
 const ALL=refs.length,ACCEPTED=refs.filter(r=>r.status==='ok').length,REFUSED=ALL-ACCEPTED;
 const CUM=refs.filter(r=>r.view==='cumulative').length,SUB=refs.filter(r=>r.view==='subgroup').length;
 const PI_POOLS=refs.reduce((n,r)=>n+(r.view==='cumulative'?r.steps.filter(s=>s.k>=2).length:r.view==='subgroup'?r.groups.filter(g=>g.k>=2).length+2:0),0);
+// The autosave banner dismisses itself after 30 s; hold only that timer so slow webR start-up cannot remove the evidence.
+const holdBannerTimer=page=>page.addInitScript(()=>{const t=window.setTimeout;window.setTimeout=(f,ms,...a)=>ms===30000?0:t(f,ms,...a);});
 async function open(page){await page.goto(url);await page.waitForFunction(()=>!!window.AlmCumSubValidation);}
 // Wrap the page's observation hook so a mutation is applied after every page render.
 async function afterRun(page,body,arg){await page.evaluate(([body,arg])=>{const original=__almCumSubValidationRun,fn=new Function('a','arg',body);window.__almCumSubValidationRun=(...args)=>{const a=original(...args);fn(a,arg);return a;};},[body,arg]);}
@@ -130,7 +132,7 @@ test('cumulative-subgroup returning user: draft banner passes replay and live, a
  test.setTimeout(400000);await open(page);
  await page.locator('#f-data').fill((await page.locator('#f-data').inputValue())+'\n');
  await page.waitForFunction(()=>!!localStorage.getItem('alm-autosave:cumulative-subgroup'));
- await page.reload();await page.waitForFunction(()=>!!window.AlmCumSubValidation);
+ await holdBannerTimer(page);await page.reload();await page.waitForFunction(()=>!!window.AlmCumSubValidation);
  await page.waitForFunction(()=>[...document.body.children].some(e=>/^Draft from /.test(e.textContent)));
  const r=await replay(page);expect(r.checks).toBe(manifest.checks);expect(r.failed).toEqual([]);
  const l=await live(page);expect(l.rows.filter(x=>!x.pass)).toEqual([]);
@@ -189,7 +191,7 @@ async function draftAged(page,hours){
  await open(page);await page.locator('#f-data').fill((await page.locator('#f-data').inputValue())+'\n');
  await page.waitForFunction(()=>!!localStorage.getItem('alm-autosave:cumulative-subgroup'));
  await page.evaluate(h=>{const k='alm-autosave:cumulative-subgroup',d=JSON.parse(localStorage.getItem(k));d.savedAt=new Date(Date.now()-h*3600e3).toISOString();localStorage.setItem(k,JSON.stringify(d));},hours);
- await page.reload();await page.waitForFunction(()=>!!window.AlmCumSubValidation);
+ await holdBannerTimer(page);await page.reload();await page.waitForFunction(()=>!!window.AlmCumSubValidation);
  await page.waitForFunction(()=>[...document.body.children].some(e=>/^Draft from /.test(e.textContent)));
 }
 const bannerSpan=page=>page.evaluate(()=>[...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]')).firstElementChild.textContent);
@@ -244,4 +246,52 @@ test('cumulative-subgroup live R order check rejects a page group order that bre
  await page.locator('#f-data').fill('A, 0.1, 0.1, 2001, \u{1F600}\nB, 0.5, 0.2, 2002, ｚ\nC, 0.2, 0.3, 2003, \u{1F600}\nD, -0.1, 0.2, 2004, ｚ');
  await afterRun(page,'if(a.sub){a.sub.groups.reverse();a.pools.splice(0,2,a.pools[1],a.pools[0]);}');
  const r=await live(page);expect(failedLabels(r)).toContain('group_order');
+});
+
+// Review round 2: the banner sentence is recorded exactly at insertion; boundary ages, adjacent numbers and unit flips.
+// A banner is created by shared/autosave.js itself (AlmAutosave.install) with Date.now fixed at T and a draft saved ageMs before T.
+async function bannerAt(page,ageMs){
+ await holdBannerTimer(page);await open(page);
+ return page.evaluate(async ageMs=>{
+  const realNow=Date.now,t=realNow();Date.now=()=>t;
+  localStorage.setItem('alm-autosave:cumulative-subgroup',JSON.stringify({version:1,savedAt:new Date(t-ageMs).toISOString(),values:{'f-data':document.getElementById('f-data').value}}));
+  try{AlmAutosave.install({appKey:'cumulative-subgroup',selectors:['#f-data']});await Promise.resolve();}finally{Date.now=realNow;}
+  return [...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]')).firstElementChild.textContent;
+ },ageMs);
+}
+const setBanner=(page,text)=>page.evaluate(t=>{[...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]')).firstElementChild.textContent=t;},text);
+async function bothTiersFail(page){
+ const bad=await replay(page);expect(bad.failed).toHaveLength(ALL);expect(bad.failed.every(x=>x.quantity==='page_text')).toBe(true);
+ expect(failedLabels(await live(page))).toEqual(['display.page_text']);
+}
+for(const [name,ageMs,shown,altered] of [
+ ['minute boundary 90.5 s: 2 -> 1 min',90500,'Draft from 2 min ago found. Restore?','Draft from 1 min ago found. Restore?'],
+ ['minute boundary 89.5 s: 1 -> 2 min',89500,'Draft from 1 min ago found. Restore?','Draft from 2 min ago found. Restore?'],
+ ['150.5 s: 3 -> 2 min',150500,'Draft from 3 min ago found. Restore?','Draft from 2 min ago found. Restore?'],
+ ['hour boundary 59.5 min: 1 h -> 60 min',3570000,'Draft from 1 h ago found. Restore?','Draft from 60 min ago found. Restore?'],
+ ['hour rounding 89.4 min: 1 -> 2 h',5364000,'Draft from 1 h ago found. Restore?','Draft from 2 h ago found. Restore?'],
+ ['hour rounding boundary 89.5 min: 2 -> 1 h',5370000,'Draft from 2 h ago found. Restore?','Draft from 1 h ago found. Restore?'],
+ ['unit flip 2 min -> 2 h',90500,'Draft from 2 min ago found. Restore?','Draft from 2 h ago found. Restore?'],
+ ['unit flip 1 h -> 1 min',3600000,'Draft from 1 h ago found. Restore?','Draft from 1 min ago found. Restore?'],
+])test('cumulative-subgroup draft banner '+name+' fails both tiers',async({page})=>{
+ test.setTimeout(400000);expect(await bannerAt(page,ageMs)).toBe(shown);
+ await setBanner(page,altered);await bothTiersFail(page);
+});
+test('cumulative-subgroup boundary banner passes both tiers and keeps passing after time crosses the next boundary',async({page})=>{
+ test.setTimeout(400000);expect(await bannerAt(page,90500)).toBe('Draft from 2 min ago found. Restore?');
+ const r=await replay(page);expect(r.failed).toEqual([]);expect(failedLabels(await live(page))).toEqual([]);
+ // Advance the clock 60 s: recomputing would now give "3 min"; the banner autosave built still says 2 min and must still pass.
+ await page.evaluate(()=>{const n=Date.now,o=n();Date.now=()=>n()+60000;window.__realNow=n;});
+ const r2=await replay(page);expect(r2.failed).toEqual([]);expect(failedLabels(await live(page))).toEqual([]);
+ expect(await page.evaluate(()=>[...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]')).firstElementChild.textContent)).toBe('Draft from 2 min ago found. Restore?');
+});
+test('cumulative-subgroup draft banner rewritten with its own sentence still fails (any later edit is evidence of change)',async({page})=>{
+ test.setTimeout(400000);const shown=await bannerAt(page,90500);await setBanner(page,shown);await bothTiersFail(page);
+});
+for(const action of ['Restore','Discard'])test('cumulative-subgroup draft banner '+action+' removes it and both tiers pass',async({page})=>{
+ test.setTimeout(400000);await bannerAt(page,90500);
+ await page.evaluate(a=>{const b=[...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]'));[...b.querySelectorAll('button')].find(x=>x.textContent===a).click();},action);
+ expect(await page.evaluate(()=>[...document.body.children].filter(e=>e.matches('div[role=status][aria-live=polite]')).length)).toBe(0);
+ if(action==='Discard')expect(await page.evaluate(()=>localStorage.getItem('alm-autosave:cumulative-subgroup'))).toBeNull();
+ const r=await replay(page);expect(r.failed).toEqual([]);expect(failedLabels(await live(page))).toEqual([]);
 });
