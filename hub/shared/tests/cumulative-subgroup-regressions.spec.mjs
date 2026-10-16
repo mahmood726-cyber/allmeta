@@ -122,3 +122,69 @@ test('fault 7: subgroup estimate/CI text stays inside the SVG viewBox', async ({
   });
   expect(out, 'text overflowing the viewBox: ' + JSON.stringify(out)).toEqual([]);
 });
+
+/*
+ * Fault 4b (introduced by the fault-4 fix): with only ONE effect-axis bound set past the other
+ * AUTOMATIC limit (e.g. min above the data-driven max), buildCumulativeSvg/buildSubgroupSvg threw
+ * "Effect axis maximum must exceed minimum" out of render(), leaving a stale plot and an uncaught
+ * page error. Every one-sided / invalid state must now either apply the limit or refuse VISIBLY
+ * (as gosh/index.html does), never throw. The page has one user axis (effect); it is the y axis of
+ * the cumulative plot and the x axis of the subgroup plot, so both plot orientations are covered.
+ */
+const AXIS_CASES = [
+  // [name, min, max, expectation]  min/max: undefined = leave untouched, '' = cleared
+  ['min only', '-2', undefined, { ticks: ['-2.00'] }],
+  ['max only', undefined, '2', { ticks: ['2.00'] }],
+  ['min > automatic max', '5', undefined, { refused: true }],
+  ['max < automatic min', undefined, '-5', { refused: true }],
+  // The widget refuses min == max itself (visible message, no emit); the page keeps its last
+  // state, which here is the one-sided min = 1 above the automatic max, so either outcome is a
+  // visible refusal. Only "visible message + no throw" is asserted.
+  ['min == max', '1', '1', { widgetError: /min must be < max/, refusalOptional: true }],
+  ['non-numeric', 'abc', 'xyz', { auto: true }],
+  // A type=number input sanitises '1e999' (Infinity) to '', so it reaches the page as cleared;
+  // the page's own non-finite refusal is defence in depth for programmatic state.
+  ['non-finite', '1e999', undefined, { auto: true }],
+  ['cleared', '', '', { auto: true, setFirst: ['-2', '2'] }],
+];
+
+async function setEdge(page, edge, raw) {
+  await page.evaluate(([edge, raw]) => {
+    const el = document.querySelector(`#alm-axis-mount input[data-edge="${edge}"]`);
+    el.value = raw; // a type=number input sanitises non-numeric text to ''
+    el.dispatchEvent(new Event('change'));
+  }, [edge, raw]);
+}
+
+for (const view of ['cumulative', 'subgroup']) {
+  for (const [name, min, max, want] of AXIS_CASES) {
+    test(`fault 4b: ${view} plot, effect axis ${name}: applies or refuses visibly, never throws`, async ({ page }) => {
+      const errors = [];
+      page.on('pageerror', e => errors.push(e.message));
+      await ready(page);
+      if (view === 'subgroup') {
+        await page.selectOption('#f-view', 'subgroup');
+        await page.waitForFunction(() => window._almLastCumSub() && window._almLastCumSub().view === 'subgroup');
+      }
+      const autoTicks = await tickTexts(page);
+      if (want.setFirst) { await setEdge(page, 'min', want.setFirst[0]); await setEdge(page, 'max', want.setFirst[1]); }
+      if (min !== undefined) await setEdge(page, 'min', min);
+      if (max !== undefined) await setEdge(page, 'max', max);
+      expect(errors, 'no uncaught page error').toEqual([]);
+      const texts = await tickTexts(page);
+      const refusal = page.locator('#svg-host', { hasText: 'Plot cannot be displayed' });
+      if (want.refused) {
+        await expect(refusal, 'plot area shows a refusal').toHaveCount(1);
+        await expect(page.locator('#warn-banner')).toBeVisible();
+        await expect(page.locator('#warn-banner')).toContainText('Effect axis');
+        // Computed results are retained (only the plot is refused).
+        expect(await page.evaluate(() => window._almLastCumSub())).not.toBeNull();
+      } else if (!want.refusalOptional) {
+        await expect(refusal).toHaveCount(0);
+      }
+      if (want.ticks) for (const t of want.ticks) expect(texts).toContain(t);
+      if (want.auto) expect(texts, 'automatic limits restored').toEqual(autoTicks);
+      if (want.widgetError) await expect(page.locator('#alm-axis-mount [data-error]')).toHaveText(want.widgetError);
+    });
+  }
+}

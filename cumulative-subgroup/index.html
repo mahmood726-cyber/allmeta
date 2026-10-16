@@ -366,6 +366,29 @@
       return t;
     }
 
+    // Effect-axis limits from the axis controls. A user bound replaces only its own side; the
+    // other side stays automatic. An invalid combination (e.g. a minimum above the automatic
+    // maximum, or a non-finite bound) is REFUSED visibly, as gosh/index.html does: the plot is
+    // replaced by a message and computed results are retained. Never throws.
+    let _axisRefusal = null;
+    function resolveEffectAxis(autoLo, autoHi) {
+      const range = (_axisState && Array.isArray(_axisState.x)) ? _axisState.x : [];
+      const userLo = range[0], userHi = range[1];
+      for (const [v, side] of [[userLo, "minimum"], [userHi, "maximum"]]) {
+        if (v != null && !Number.isFinite(v)) return { error: "Effect axis " + side + " is not a finite number." };
+      }
+      const lo = userLo != null ? userLo : autoLo, hi = userHi != null ? userHi : autoHi;
+      if (!(hi > lo)) {
+        const d = (v, user) => fmt(v, 3) + (user ? "" : " (automatic)");
+        return { error: "Effect axis minimum " + d(lo, userLo != null) + " must be below the maximum " + d(hi, userHi != null) + "." };
+      }
+      return { lo: lo, hi: hi };
+    }
+    function axisRefusalSvg(msg) {
+      _axisRefusal = msg + " Widen or clear the axis limits. Computed results are retained.";
+      return "<svg xmlns=\"http://www.w3.org/2000/svg\" data-axis-refusal=\"1\" viewBox=\"0 0 720 120\" width=\"720\" height=\"120\"><rect width=\"720\" height=\"120\" fill=\"#fff\"/><text x=\"360\" y=\"52\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" font-weight=\"600\" fill=\"#b91c1c\">Plot cannot be displayed: effect-axis limits are invalid.</text><text x=\"360\" y=\"76\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"12\" fill=\"#5c6470\">"+escapeXml(msg)+"</text></svg>";
+    }
+
     function buildCumulativeSvg(state, data) {
       const W=720, H=520, L=180, R=30, T=state.title?60:40, B=70;
       const plotW=W-L-R, plotH=H-T-B;
@@ -384,10 +407,9 @@
       if (yLo > 0) yLo = Math.min(yLo, 0);
       if (yHi < 0) yHi = Math.max(yHi, 0);
 
-      const effectRange = _axisState.x || [];
-      if (Number.isFinite(effectRange[0])) yLo=effectRange[0];
-      if (Number.isFinite(effectRange[1])) yHi=effectRange[1];
-      if (!(yHi>yLo)) throw new Error("Effect axis maximum must exceed minimum");
+      const effAxis = resolveEffectAxis(yLo, yHi);
+      if (effAxis.error) return axisRefusalSvg(effAxis.error);
+      yLo = effAxis.lo; yHi = effAxis.hi;
       function x(v) { return L + (v-xLo)/(xHi-xLo || 1) * plotW; }
       function y(v) { return T + plotH - (v-yLo)/(yHi-yLo) * plotH; }
 
@@ -454,10 +476,9 @@
       if (xLo > 0) xLo = Math.min(xLo, 0);
       if (xHi < 0) xHi = Math.max(xHi, 0);
 
-      const effectRange = _axisState.x || [];
-      if (Number.isFinite(effectRange[0])) xLo=effectRange[0];
-      if (Number.isFinite(effectRange[1])) xHi=effectRange[1];
-      if (!(xHi>xLo)) throw new Error("Effect axis maximum must exceed minimum");
+      const effAxis = resolveEffectAxis(xLo, xHi);
+      if (effAxis.error) return axisRefusalSvg(effAxis.error);
+      xLo = effAxis.lo; xHi = effAxis.hi;
       function x(v) { return L + (v-xLo)/(xHi-xLo) * plotW; }
 
       const p = [];
@@ -519,6 +540,7 @@
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
+      _axisRefusal = null;
       heading.textContent = state.view === "subgroup" ? "Subgroup analysis" : "Cumulative meta-analysis";
 
       const parts = [];
@@ -581,6 +603,7 @@
       }
 
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
+      if (_axisRefusal) extras.push(_axisRefusal);
       const all = parsed.warnings.concat(extras);
       if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
       else { warnEl.innerHTML = "<strong>Notes</strong><ul>"+all.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>"; warnEl.classList.add("is-visible"); }
@@ -653,6 +676,7 @@
       } else {
         svg = buildCumulativeSvg(state, cumulative(parsed.studies));
       }
+      if (svg.indexOf("data-axis-refusal") !== -1) return null;
       return { state, svg };
     }
     function onDownloadSvg() {
@@ -816,7 +840,7 @@
       basename: 'cumsub-plot',
       getSvg: function () {
         const el = document.querySelector('#svg-host svg');
-        return el || null;
+        return el && !el.hasAttribute('data-axis-refusal') ? el : null;
       },
       getReceiptInput: function () {
         if (!_lastResults) return null;
