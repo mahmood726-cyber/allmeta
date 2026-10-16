@@ -16,6 +16,31 @@ the section is renamed to that version and dated, and a fresh
 
 ---
 
+## [1.5.0] — 2026-10-16
+
+GOSH plot corrected to agree with `metafor::gosh`, with the faults that validation found fixed, and a one-click
+**Validate in R** panel added.
+
+### Added
+- **Validate in R** for `gosh` (#121): a live check that runs self-hosted `metafor` (4.8-0) in webR on the current data and
+  compares every subset estimate, I², Q (and τ² for DL) the page computes, matched by exact subset membership, plus counts,
+  medians and quartiles, at 1e-9 relative; and an offline replay of a declared, SHA-256-pinned subset of the paper's corpus
+  (89 effect configurations × FE/DL = 178 model runs, 876,760 checks) through the page's own code, comparing every displayed
+  number, label, control, status message and the page's static text, in accepted and refused states. Adapter, tests and
+  documentation only; the GOSH numerical engine is unchanged.
+
+### Fixed
+- **gosh** (#119): every non-empty subset (2^k − 1) is now enumerated, including single-study subsets, as `metafor::gosh`
+  does (previously singletons were skipped, e.g. 26 rather than 31 subsets for five studies); the sampling text no longer
+  claims to match metafor's defaults, the default draw count shown equals the number drawn, and invalid draw counts are
+  refused visibly; refused inputs now clear the plot, medians and notices, so a stale plot is no longer left on screen after
+  a refusal; X-axis (and Y-axis) limits are handled in data space — explicit limits are honoured, points outside the range
+  are omitted with a visible count, and bounds are overflow-safe. Validated against `metafor::gosh` on every metadat dataset
+  with effects and variances (222 effect configurations × FE/DL): 12,813,556 of 12,813,556 checks. Tests that asserted the
+  old, incorrect values were replaced with values re-derived from `metafor` 5.2-1.
+
+---
+
 ## [1.4.0] — 2026-10-15
 
 Limit meta-analysis validated against the R package metasens, with the faults that validation found corrected and a one-click
