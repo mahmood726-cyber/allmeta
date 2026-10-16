@@ -137,10 +137,9 @@ const AXIS_CASES = [
   ['max only', undefined, '2', { ticks: ['2.00'] }],
   ['min > automatic max', '5', undefined, { refused: true }],
   ['max < automatic min', undefined, '-5', { refused: true }],
-  // The widget refuses min == max itself (visible message, no emit); the page keeps its last
-  // state, which here is the one-sided min = 1 above the automatic max, so either outcome is a
-  // visible refusal. Only "visible message + no throw" is asserted.
-  ['min == max', '1', '1', { widgetError: /min must be < max/, refusalOptional: true }],
+  // The shared widget shows its own message and does not emit for min >= max; the page reads the
+  // raw inputs itself, so it must ALSO refuse the plot.
+  ['min == max', '1', '1', { widgetError: /min must be < max/, refused: true }],
   ['non-numeric', 'abc', 'xyz', { auto: true }],
   // A type=number input sanitises '1e999' (Infinity) to '', so it reaches the page as cleared;
   // the page's own non-finite refusal is defence in depth for programmatic state.
@@ -179,12 +178,75 @@ for (const view of ['cumulative', 'subgroup']) {
         await expect(page.locator('#warn-banner')).toContainText('Effect axis');
         // Computed results are retained (only the plot is refused).
         expect(await page.evaluate(() => window._almLastCumSub())).not.toBeNull();
-      } else if (!want.refusalOptional) {
+      } else {
         await expect(refusal).toHaveCount(0);
       }
       if (want.ticks) for (const t of want.ticks) expect(texts).toContain(t);
       if (want.auto) expect(texts, 'automatic limits restored').toEqual(autoTicks);
       if (want.widgetError) await expect(page.locator('#alm-axis-mount [data-error]')).toHaveText(want.widgetError);
+    });
+  }
+}
+
+/*
+ * Fault 4c (Codex review P1 on 5f920fe): from VALID explicit limits [-2, 2], entering an equal or
+ * reversed pair made the shared axis widget show "min must be < max" and return WITHOUT calling
+ * onChange, so the page kept the old [-2, 2] plot on screen and still exported it. The page must
+ * see the raw entered pair, replace the plot with a refusal, and refuse SVG / PNG / PDF export.
+ * Controls: in the valid state the same download paths do produce a file (PDF: the export path
+ * gets past getSvg and stops only at the absent jsPDF vendor), so "no download" is measured.
+ */
+const DOWNLOADS = ['#btn-svg', '#btn-png', '#alm-chart-mount [data-fmt="svg"]', '#alm-chart-mount [data-fmt="png"]'];
+
+async function clickExpectDownload(page, sel, expected) {
+  const dl = page.waitForEvent('download', { timeout: expected ? 10_000 : 2_000 }).then(() => true, () => false);
+  await page.click(sel);
+  return (await dl) === expected;
+}
+
+async function pdfReachedExport(page) {
+  // Which branch the chart PDF button took: 'no-svg' (refused at getSvg) or 'past-getSvg' (it was
+  // handed a plot and stopped only because this page does not load the jsPDF vendor).
+  const msgs = [];
+  const h = m => msgs.push(m.text());
+  page.on('console', h);
+  await page.click('#alm-chart-mount [data-fmt="pdf"]');
+  await page.waitForTimeout(500);
+  page.off('console', h);
+  if (msgs.some(t => t.includes('[alm.chartDownload] no SVG'))) return 'no-svg';
+  if (msgs.some(t => t.includes('[alm.chartDownload] jspdf not loaded'))) return 'past-getSvg';
+  return 'unknown: ' + msgs.join('|');
+}
+
+for (const view of ['cumulative', 'subgroup']) {
+  for (const [name, edge, raw] of [['equal [2, 2]', 'min', '2'], ['reversed [-2, -3]', 'max', '-3']]) {
+    test(`fault 4c: ${view} plot, valid [-2, 2] then ${name}: refusal replaces plot, no stale export`, async ({ page }) => {
+      const errors = [];
+      page.on('pageerror', e => errors.push(e.message));
+      await ready(page);
+      if (view === 'subgroup') {
+        await page.selectOption('#f-view', 'subgroup');
+        await page.waitForFunction(() => window._almLastCumSub() && window._almLastCumSub().view === 'subgroup');
+      }
+      await setEdge(page, 'min', '-2');
+      await setEdge(page, 'max', '2');
+      const valid = await page.locator('#svg-host').innerHTML();
+      expect(valid).not.toContain('data-axis-refusal');
+      expect(await tickTexts(page)).toContain('-2.00');
+      // Controls: every export path works in the valid state.
+      for (const sel of DOWNLOADS) expect(await clickExpectDownload(page, sel, true), sel + ' downloads in the valid state').toBe(true);
+      expect(await pdfReachedExport(page), 'PDF path reaches export in the valid state').toBe('past-getSvg');
+
+      await setEdge(page, edge, raw);
+      await expect(page.locator('#alm-axis-mount [data-error]')).toHaveText(/min must be < max/);
+      const after = await page.locator('#svg-host').innerHTML();
+      expect(after, 'old plot must not stay on screen').not.toBe(valid);
+      await expect(page.locator('#svg-host svg[data-axis-refusal]'), 'refusal panel replaces the plot').toHaveCount(1);
+      await expect(page.locator('#svg-host')).toContainText('Plot cannot be displayed');
+      await expect(page.locator('#warn-banner')).toContainText('Effect axis');
+      for (const sel of DOWNLOADS) expect(await clickExpectDownload(page, sel, false), sel + ' must not export a stale plot').toBe(true);
+      expect(await pdfReachedExport(page), 'PDF export refused').toBe('no-svg');
+      expect(errors, 'no uncaught page error').toEqual([]);
     });
   }
 }

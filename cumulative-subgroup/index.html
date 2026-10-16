@@ -859,9 +859,31 @@
         { key: 'x', label: 'Effect axis', range: [null, null], log: false },
       ],
       onChange: function (state) {
-        _axisState = state;
+        _axisState = Object.assign({}, state, { x: readAxisInputs() });
         render();
       },
+    });
+
+    // The shared widget validates min < max itself and, on a non-increasing pair, shows its
+    // message and returns WITHOUT calling onChange. Left alone, the page would keep the previous
+    // limits, the previous plot, and export it. So the page reads the raw entered values itself
+    // and, when the widget withholds the change, renders them; resolveEffectAxis() then refuses
+    // the plot visibly and currentSvg()/getSvg() refuse every export.
+    function readAxisInputs() {
+      return ["min", "max"].map(function (edge) {
+        const el = document.querySelector('#alm-axis-mount input[data-axis="x"][data-edge="' + edge + '"]');
+        if (!el || el.value === "") return null;
+        return Number(el.value);
+      });
+    }
+    document.querySelectorAll('#alm-axis-mount input[data-axis="x"][data-edge="min"], #alm-axis-mount input[data-axis="x"][data-edge="max"]').forEach(function (el) {
+      el.addEventListener("change", function () {
+        const raw = readAxisInputs();
+        if (raw[0] != null && raw[1] != null && !(raw[1] > raw[0])) {
+          _axisState = Object.assign({}, _axisState, { x: raw });
+          render();
+        }
+      });
     });
 
     const logAxisControl=document.querySelector('#alm-axis-mount [data-edge="log"]');
