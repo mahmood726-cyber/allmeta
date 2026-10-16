@@ -385,11 +385,17 @@
     });
     document.getElementById('scale').addEventListener('change', run);
 
-    // Manually editing any of the four direct-arm boxes means a single
-    // user-supplied estimate per arm (no pooled trial set) — reset the
-    // contributing-trial count so the indirect CI honestly falls back to z.
-    ['dAC', 'seAC', 'dBC', 'seBC'].forEach(function (id) {
-      document.getElementById(id).addEventListener('input', function () { _nStudies = 2; });
+    // Manual changes invalidate the imported grouping/provenance; labels must
+    // never be quietly repurposed to describe old imported numerical inputs.
+    ['dAC','seAC','dBC','seBC','treatA','treatB','treatC'].forEach(function (id) {
+      document.getElementById(id).addEventListener('input', function () {
+        _nStudies = 2; _importMeta = null; _lastResults = null;
+        document.getElementById('body').innerHTML =
+          '<tr><td colspan="5">Inputs changed. Click Compute after checking the treatment labels and effects.</td></tr>';
+        document.getElementById('plot').replaceChildren();
+        document.getElementById('import-status').textContent =
+          'Manual change: imported grouping no longer applies. Verify the comparison before Compute.';
+      });
     });
 
     window.alm.csvUpload({
@@ -402,8 +408,18 @@
         { name: 'study',  required: false, type: 'string', example: 'S1' },
       ],
       onParse: function (result) {
-        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
-          window.alm.resetUndo.snapshot();
+        const headers = result.headers || [];
+        const required = ['treat1','treat2','TE','seTE'];
+        const allowed = required.concat(['study']);
+        if ((result.warnings || []).length ||
+            headers.some(h => !allowed.includes(h)) ||
+            new Set(headers).size !== headers.length ||
+            required.some(h => headers.filter(x => x === h).length !== 1) ||
+            !Array.isArray(result.rows) || result.rows.length < 2) {
+          refuseImport('exact, unique treat1/treat2/TE/seTE headers (optional study), ' +
+            'at least two rows, and no CSV warnings are required. ' +
+            (result.warnings || []).slice(0, 3).join('; '));
+          return;
         }
         window.__almBucherLoad(result.rows);
       },
@@ -487,12 +503,8 @@
 </script>
 
 <script>
-// ma-comparisons-v1 reader: import the shared arm-level network as pairwise
-// contrasts via toContrasts (log-OR/RR), then reuse the app's existing
-// __almBucherLoad (which groups/pools by pair and fills the AC/BC triangle from
-// the first two arms). For a star network (all-vs-control), those two arms share
-// the comparator and give the natural A-vs-B-via-control indirect estimate; the
-// user can edit the four fields to pick a different triangle.
+// ma-comparisons-v1: use explicit A/B/C contrasts, preserving study IDs to
+// reject multi-arm dependence and disclosing any excluded direct A-B evidence.
 (function () {
   function ready(fn) {
     if (document.readyState !== "loading") fn();
@@ -507,7 +519,7 @@
     btn.type = "button";
     btn.id = "btn-bus-load";
     btn.textContent = "Load from bus";
-    btn.title = "Import the shared ma-comparisons-v1 network (arm-level events/n), converted to contrast log-OR/RR. Fills the Bucher triangle from the first two arms sharing a comparator; edit the fields to choose a different one.";
+    btn.title = "Import log-OR/RR contrasts using explicit treatment A, B and comparator C labels. Refuses multi-arm/overlapping study IDs and invalid pairs.";
     btn.style.cssText = "width:100%;margin-top:0.5rem;border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit";
     runBtn.insertAdjacentElement("afterend", btn);
     function notify(msg) { if (window.Toast && typeof Toast.show === "function") Toast.show(msg, "warn"); }
@@ -525,13 +537,16 @@
       var contrasts = MaComparisons.toContrasts(env);
       if (contrasts.length < 2) { notify("Need >= 2 contrasts (OR/RR only) to form a Bucher triangle."); return; }
       var rows = contrasts.map(function (c) {
-        return { treat1: c.treatment1, treat2: c.treatment2, TE: c.te, seTE: c.se };
+        return { study: c.study, treat1: c.treatment1, treat2: c.treatment2,
+          TE: c.te, seTE: c.se };
       });
-      // toContrasts emits log-scale effects for OR/RR — display back-transformed.
+      // Carry study identity forward: repeated IDs across selected contrasts
+      // reveal multi-arm covariance which ordinary Bucher cannot ignore.
+      var loaded = window.__almBucherLoad(rows);
+      if (!loaded) { notify("Bucher rejected this network. Check treatment labels, paired designs, and trial IDs."); return; }
       var sc = document.getElementById("scale");
-      if (sc) sc.value = "log";
-      window.__almBucherLoad(rows);
-      notify("Loaded " + rows.length + " contrasts; filled the triangle from the first two arms.");
+      if (sc) { sc.value = "log"; sc.dispatchEvent(new Event('change')); }
+      notify("Imported verified direct links; A-B direct records (if present) were separately disclosed.");
     });
   });
 })();
