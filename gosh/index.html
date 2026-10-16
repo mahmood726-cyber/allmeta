@@ -157,6 +157,7 @@
     </section>
   
       <div id="alm-flow-mount" aria-live="polite"></div>
+<section id="alm-validate"></section>
 </main>
   <footer>
     Olkin I, Dahabreh IJ, Trikalinos TA. GOSH &#8212; a graphical display of study heterogeneity. <em>Res Synth Methods</em> 2012;3(3):214&#8211;23. Subgroup structure interpretation aligns with <em>Cochrane Handbook v6.5 &#167;10.10.2</em> on detecting influential studies; <span data-gloss="i2">I&#178;</span> interpretation per &#167;10.10.2 (low &lt;30%, moderate 30&#8211;60%, substantial 50&#8211;90%, considerable 75&#8211;100%). For k &gt; 15 this app draws 5,000 subsets by default, choosing sizes uniformly from 2 to k, with replacement, using a fixed seed. This differs from <code>metafor::gosh()</code>, which enumerates all non-empty subsets when 2^k - 1 is at most 1,000,000 (k up to 19), and otherwise draws 1,000,000 subsets by default with binomial size probabilities. Full enumeration here includes single-study subsets.
@@ -511,6 +512,30 @@
     // Expose last results for export
     window._almLastGosh = function () { return _lastResults; };
 
+
+    // Validation observes calls to the unchanged parser and pooling engine.
+    window.__almGoshValidationRun = function(text, model, draws, axes) {
+      if (text !== undefined) document.getElementById('src').value=text;
+      if (model !== undefined) document.getElementById('model').value=model;
+      if (draws !== undefined) document.getElementById('n-sample').value=draws;
+      if (axes !== undefined) _axisState=axes;
+      var originalParse=parse, originalPool=pool, rows, points=[];
+      parse=function(text){rows=originalParse(text);return rows;};
+      pool=function(subset,model){var p=originalPool(subset,model);points.push(Object.assign({members:subset.map(function(r){return rows.indexOf(r)+1;})},p));return p;};
+      try {run();return {summary:_lastResults,points:points};}
+      finally {parse=originalParse;pool=originalPool;}
+    };
+    window.__almGoshValidationSnapshot = function() {
+      return {controls:['src','model','n-sample'].map(function(id){return [id,document.getElementById(id).value];}),
+        dom:['plot','m-n','m-est','m-i2','plot-error','plot-note','sample-error'].map(function(id){return [id,document.getElementById(id).innerHTML];}),
+        sampleStyle:document.getElementById('sample-label').style.cssText,results:_lastResults,axes:_axisState};
+    };
+    window.__almGoshValidationRestore = function(s) {
+      s.controls.forEach(function(x){document.getElementById(x[0]).value=x[1];});
+      s.dom.forEach(function(x){document.getElementById(x[0]).innerHTML=x[1];});
+      document.getElementById('sample-label').style.cssText=s.sampleStyle;_lastResults=s.results;_axisState=s.axes;
+    };
+
     // ---- module init ----
 
     document.getElementById('btn-run').addEventListener('click', function () {
@@ -681,5 +706,7 @@
   });
 })();
 </script>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>
