@@ -224,3 +224,23 @@ for(const [name,csv,warning] of [
  const r=await page.evaluate(()=>AlmGoshValidation.runCorpus());expect(r.checks).toBe(manifest.checks);expect(r.failed).toEqual([]);
  const live=await page.evaluate(()=>AlmGoshValidation.runLive());expect(live.rows.length).toBeGreaterThan(0);expect(live.rows.filter(x=>!x.pass)).toEqual([]);
 });
+
+for(const [name,from,to] of [
+ ['mapped column','mapped to "sei"','mapped to "yi"'],
+ ['Levenshtein distance','(Levenshtein 1)','(Levenshtein 2)'],
+])test('gosh CSV warning with an altered '+name+' fails replay and live',async({page})=>{
+ test.setTimeout(400000);await page.goto(url);
+ const mount=page.locator('#alm-csv-mount');
+ await mount.locator('textarea').fill('yi,"se""",study\n0.1,0.1,A\n0.2,0.2,B\n0.3,0.3,C\n0.4,0.4,D');await mount.locator('[data-action=parse-paste]').click();
+ await page.evaluate(([from,to])=>{const el=document.querySelector('#alm-csv-mount [data-section=warnings]');if(!el.textContent.includes(from))throw Error('mutation target missing');el.textContent=el.textContent.replace(from,to);},[from,to]);
+ const r=await page.evaluate(()=>AlmGoshValidation.runCorpus());expect(r.failed).toHaveLength(manifest.model_configurations);expect(r.failed.every(x=>x.quantity==='page_text')).toBe(true);
+ const live=await page.evaluate(()=>AlmGoshValidation.runLive());expect(live.rows.filter(x=>!x.pass).map(x=>x.label)).toEqual(['display']);
+});
+test('gosh CSV import whose cell contains a bulleted line passes replay and live',async({page})=>{
+ test.setTimeout(400000);await page.goto(url);
+ const mount=page.locator('#alm-csv-mount');
+ await mount.locator('textarea').fill('yi,sei,study\n0.1,0.1,A\n"x\n• Results verified",0.2,B\n0.3,0.3,C\n0.4,0.4,D\n0.5,0.5,E');await mount.locator('[data-action=parse-paste]').click();
+ expect(await mount.locator('[data-section=warnings]').textContent()).toContain('not float: x\n• Results verified');
+ const r=await page.evaluate(()=>AlmGoshValidation.runCorpus());expect(r.checks).toBe(manifest.checks);expect(r.failed).toEqual([]);
+ const live=await page.evaluate(()=>AlmGoshValidation.runLive());expect(live.rows.filter(x=>!x.pass)).toEqual([]);
+});

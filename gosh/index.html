@@ -562,6 +562,8 @@
         { name: 'study', required: false, type: 'string', example: 'S1'     },
       ],
       onParse: function (result) {
+        // Validation observes the importer's own warning records (shown above the format table).
+        window.__almGoshImportWarnings = result.warnings.slice();
         if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
           window.alm.resetUndo.snapshot();
         }
