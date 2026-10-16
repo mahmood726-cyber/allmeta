@@ -1,10 +1,10 @@
 const fs=require('fs'),vm=require('vm');
 const matrix=require('./numeric-matrix.cjs');
 const html=fs.readFileSync(process.argv[2],'utf8'),nodes={};
-for(const m of html.matchAll(/<[^>]+\bid="([^"]+)"[^>]*>/g))nodes[m[1]]={value:m[0].match(/\bvalue="([^"]*)"/)?.[1]||'',textContent:'',innerHTML:'',style:{},addEventListener(e,f){this[e==='click'?'clickHandler':e]=f;},click(){this.clickHandler?.();}};
+for(const m of html.matchAll(/<[^>]+\bid="([^"]+)"[^>]*>/g))nodes[m[1]]={value:m[0].match(/\bvalue="([^"]*)"/)?.[1]||'',textContent:'',innerHTML:'',style:{},addEventListener(e,f){const key=e==='click'?'clickHandler':e,previous=this[key];this[key]=(...args)=>{previous?.(...args);f(...args);};},click(){this.clickHandler?.();}};
 nodes.src.value='0,1\n2,1\n4,1';nodes.model.value='FE';
 const noop=()=>{};let axis;
-const window={alm:{csvUpload:noop,chartDownload:noop,axisControls:o=>axis=o.onChange,resultsExport:noop,resetUndo:noop,tooltips:noop,urlState:Object.assign(noop,{read:()=>null,write:noop})}};
+const window={alm:{csvUpload:noop,plotExport:noop,axisControls:o=>axis=o.onChange,resultsExport:noop,resetUndo:noop,tooltips:noop,urlState:Object.assign(noop,{read:()=>null,write:noop})}};
 let code=html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
 const hook=`
 const originalAll=allSubsets,originalSample=sampledSubsets;

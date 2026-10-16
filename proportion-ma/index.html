@@ -55,7 +55,7 @@
   <!-- Cycle 2.6 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
   <script src="../hub/shared/csv-upload.js"></script>
-  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
@@ -80,7 +80,7 @@
       <h2>Input</h2>
 
       <!-- csv-upload mount: file picker for events,total,label CSV files -->
-      <div id="alm-csv-mount"></div>
+
 
       <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem; margin-top:0.6rem">
         <span>Studies — <code>events, total, label (optional)</code></span>
@@ -90,8 +90,12 @@
 5, 60, Study D
 15, 180, Study E
 3, 40, Study F
-25, 300, Study G</textarea>
-      </label>
+25, 300, Study G</textarea></label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="alm-csv-mount"></div>
+
       <label>
         <span>Transformation</span>
         <select id="trans" aria-label="Trans">
@@ -110,7 +114,6 @@
         </select>
         <span class="hint">Per advanced-stats.md, DL is biased low for k&lt;10 — Paule-Mandel is the safer default.</span>
       </label>
-      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.25rem">Pool</button>
 
       <!-- axis-controls mount -->
       <div id="alm-axis-mount" style="margin-top:0.75rem"></div>
@@ -131,10 +134,10 @@
       <h2 style="margin-top:0.8rem">Forest plot</h2>
       <svg id="forest" viewBox="0 0 600 280" role="img" aria-label="Forest plot of proportions"></svg>
 
-      <!-- chart-download mount -->
+      <!-- plot-export mount -->
       <div class="actions">
-        <span style="font-size:0.8rem;color:var(--muted)">Download chart:</span>
-        <div id="alm-chart-mount"></div>
+        <span style="font-size:0.8rem;color:var(--muted)">Download plots:</span>
+        <div id="alm-plot-mount"></div>
       </div>
 
       <!-- results-export mount -->
@@ -523,6 +526,15 @@
       window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot && window.alm.resetUndo.snapshot();
       run();
     });
+    document.getElementById('src').addEventListener('input', function () {
+      document.getElementById('analysis-stale').hidden = false;
+      document.getElementById('analysis-status').hidden = true;
+    });
+    document.getElementById('btn-run').addEventListener('click', function () {
+      document.getElementById('analysis-stale').hidden = true;
+      document.getElementById('analysis-status').hidden = false;
+    });
+
     document.getElementById('trans').addEventListener('change', run);
     document.getElementById('tau-est').addEventListener('change', run);
 
@@ -598,10 +610,10 @@
       },
     });
 
-    window.alm.chartDownload({
-      target: '#alm-chart-mount',
+    window.alm.plotExport({
+      target: '#alm-plot-mount',
       basename: 'propma-forest',
-      getSvg: function () { return document.getElementById('forest'); },
+      plots: [{ id: 'forest', name: 'Forest plot', getSvg: function () { return document.getElementById('forest'); } }],
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {

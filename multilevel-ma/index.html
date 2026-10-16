@@ -51,7 +51,7 @@
   <!-- Cycle 2.6 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
   <script src="../hub/shared/csv-upload.js"></script>
-  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
@@ -79,7 +79,7 @@
       <h2>Input</h2>
 
       <!-- csv-upload mount: file picker for study,effect,SE,label CSV files -->
-      <div id="alm-csv-mount"></div>
+
 
       <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem; margin-top:0.6rem">Effect sizes &mdash; <code>study, effect, SE, label(optional)</code></label>
       <textarea id="src" aria-label="Studies — cluster, effect, SE, outcome (one per line)">1, 0.35, 0.12, outcome A
@@ -95,7 +95,10 @@
 5, 0.30, 0.13, sub
 6, 0.42, 0.13, main
 6, 0.38, 0.14, follow-up</textarea>
-      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Fit</button>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="alm-csv-mount"></div>
 
       <!-- axis-controls mount -->
       <div id="alm-axis-mount" style="margin-top:0.75rem"></div>
@@ -114,10 +117,10 @@
       <h2 style="margin-top:0.4rem">Forest (grouped by study)</h2>
       <svg id="forest" viewBox="0 0 600 400" role="img" aria-label="Forest plot with per-study grouping"></svg>
 
-      <!-- chart-download mount -->
+      <!-- plot-export mount -->
       <div class="actions">
-        <span style="font-size:0.8rem;color:var(--muted)">Download chart:</span>
-        <div id="alm-chart-mount"></div>
+        <span style="font-size:0.8rem;color:var(--muted)">Download plots:</span>
+        <div id="alm-plot-mount"></div>
       </div>
 
       <!-- results-export mount -->
@@ -429,6 +432,15 @@
       window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot && window.alm.resetUndo.snapshot();
       run();
     });
+    document.getElementById('src').addEventListener('input', function () {
+      document.getElementById('analysis-stale').hidden = false;
+      document.getElementById('analysis-status').hidden = true;
+    });
+    document.getElementById('btn-run').addEventListener('click', function () {
+      document.getElementById('analysis-stale').hidden = true;
+      document.getElementById('analysis-status').hidden = false;
+    });
+
 
     // ---- snapshot/restore helpers for reset-undo ----
     function snapshot() {
@@ -468,10 +480,10 @@
       },
     });
 
-    window.alm.chartDownload({
-      target: '#alm-chart-mount',
+    window.alm.plotExport({
+      target: '#alm-plot-mount',
       basename: 'mlma-forest',
-      getSvg: function () { return document.getElementById('forest'); },
+      plots: [{ id: 'forest', name: 'Forest plot', getSvg: function () { return document.getElementById('forest'); } }],
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {

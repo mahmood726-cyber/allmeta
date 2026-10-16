@@ -144,7 +144,7 @@ for(const mutation of ['bound labels','log label','sampling label','threshold hi
    if(m==='bound labels')for(const row of document.querySelectorAll('.alm-axis-row')){const s=row.querySelectorAll('span');s[0].textContent='max';s[1].textContent='min';}
    if(m==='log label')for(const row of document.querySelectorAll('.alm-axis-row'))row.querySelectorAll('label')[1].lastChild.textContent=' linear';
    if(m==='sampling label')document.querySelector('#sample-label > span').textContent='Studies included (k > 999)';
-   if(m==='threshold hint'){const h=document.querySelector('#src').closest('label').querySelector('.hint');h.textContent=h.textContent.replace('k \u2264 15','k \u2264 99');}
+   if(m==='threshold hint'){const h=document.querySelector('#src').closest('section').querySelector(':scope > .hint');h.textContent=h.textContent.replace('k \u2264 15','k \u2264 99');}
    if(m==='button title')document.getElementById('btn-run').title='999';
    if(m==='benchmark scale')document.querySelector('#alm-hero-mount option[value=bcg]').textContent='BCG vaccine (Berkey 1995, risk difference)';
    if(m==='undo label')document.querySelector('#alm-undo-mount button').textContent='Undo 999';
