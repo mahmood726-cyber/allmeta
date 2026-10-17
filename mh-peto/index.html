@@ -159,6 +159,7 @@ StudyE, 4, 600, 10, 600</textarea>
     <span data-gloss="peto-or">Peto OR</span>: exp(&Sigma;(O&minus;E) / &Sigma;V).
     Cochrane Handbook 10.4.4 recommends MH or Peto for rare events over DerSimonian-Laird; Peto requires roughly balanced arms.
   </footer>
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
   (function () {
     'use strict';
@@ -325,6 +326,8 @@ StudyE, 4, 600, 10, 600</textarea>
 
     // ---- results storage for export ----
     var _lastResults = null;
+
+    run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #measure");
 
     function run() {
       var rows = parse(document.getElementById('src').value);
@@ -494,14 +497,6 @@ StudyE, 4, 600, 10, 600</textarea>
     document.getElementById('btn-run').addEventListener('click', function () {
       window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot && window.alm.resetUndo.snapshot();
       run();
-    });
-    document.getElementById('src').addEventListener('input', function () {
-      document.getElementById('analysis-stale').hidden = false;
-      document.getElementById('analysis-status').hidden = true;
-    });
-    document.getElementById('btn-run').addEventListener('click', function () {
-      document.getElementById('analysis-stale').hidden = true;
-      document.getElementById('analysis-status').hidden = false;
     });
 
     document.getElementById('measure').addEventListener('change', run);

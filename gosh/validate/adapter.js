@@ -40,10 +40,13 @@ function templateRoots(){return [...document.body.children].filter(e=>TEMPLATE_R
 // text moved between cells, rows or containers fails even when the reading order is unchanged.
 function path(e,root){const p=[];for(;e&&e!==root;e=e.parentElement)p.push(e.tagName+[...e.parentElement.children].indexOf(e));return [root.tagName,...p.reverse()].join('>');}
 function pageText(){
+ const panel=document.querySelector('#alm-plot-mount > fieldset');
+ if(!window.alm?.plotExport?.statusContract(panel))return 'Invalid plot export panel/status';
+ const exportStatus=panel.lastElementChild;
  const texts=[],attrs=[];
  for(const root of templateRoots()){
   const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
-  while((n=w.nextNode())){if(n.parentElement.closest(TEXT_SKIP))continue;const t=n.textContent.replace(/\s+/g,' ').trim();if(t)texts.push([path(n.parentElement,root),t]);}
+  while((n=w.nextNode())){if(n.parentElement===exportStatus||n.parentElement.closest(TEXT_SKIP))continue;const t=n.textContent.replace(/\s+/g,' ').trim();if(t)texts.push([path(n.parentElement,root),t]);}
   for(const e of [root,...root.querySelectorAll('[aria-label],[title]')])if((e.hasAttribute('aria-label')||e.hasAttribute('title'))&&!e.closest('#alm-validate,#plot'))attrs.push([e.id||e.tagName,e.getAttribute('aria-label'),e.getAttribute('title')]);
  }
  return JSON.stringify({roots:templateRoots().map(e=>e.tagName),texts,attrs});

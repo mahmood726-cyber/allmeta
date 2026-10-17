@@ -14,7 +14,7 @@ nodes.src.value = html.match(/<textarea[^>]*>([\s\S]*?)<\/textarea>/)[1];
 nodes.model.value = html.match(/<option value="([^"]+)" selected/)[1];
 const noop = () => {};
 let axisChange, points = [], memberships = [], pooled = [];
-const window = {alm: {csvUpload: noop, plotExport: noop,
+const window = {alm: {analysisLifecycle: run => run, csvUpload: noop, plotExport: noop,
   axisControls: options => { axisChange = options.onChange; },
   resultsExport: noop, resetUndo: noop, tooltips: noop,
   urlState: Object.assign(noop, {read: () => null, write: noop})}};

@@ -31,7 +31,8 @@ for (const [app, plots] of Object.entries(apps)) {
       await expect(page.locator('#analysis-stale')).toHaveText('Results out of date — press Run analysis');
       expect(await plot.innerHTML()).toBe(before);
     } else {
-      await expect(page.locator('#analysis-stale')).toHaveCount(0);
+      await expect(page.locator('#analysis-stale')).toBeHidden();
+      await expect(page.locator('#analysis-status')).toBeVisible();
       expect(await plot.innerHTML()).not.toBe(before); // auto-run is retained
       // Set the original data without input events: the button must really run,
       // rather than merely announce that the earlier auto-run completed.

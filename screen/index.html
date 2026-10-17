@@ -217,6 +217,8 @@
       <section class="panel">
         <h2>Project</h2>
         <button type="button" id="btn-train" class="primary">Train &amp; rank</button>
+        <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+        <div id="analysis-stale" hidden>Results out of date — press Train &amp; rank</div>
         <label><span class="lbl">Review title</span>
           <input type="text" id="f-title" placeholder="e.g. SGLT2i in heart failure"></label>
         <label><span class="lbl">Include terms (relevance &amp; highlighting)</span>
@@ -409,6 +411,7 @@
   <script src="../shared/sr-collab-v1.js"></script>
   <script src="../shared/rct-classifier-v1.js"></script>
   <script src="assets/rct-classifier-weights-v1.js"></script>
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
   (function () {
     "use strict";
@@ -1804,6 +1807,13 @@
       var buscarP = (screened > 0 && scored.length > screened) ? mlBuscarP(seq, scored.length, 0.95) : 1;
       return { total: scored.length, screened: screened, found: found, since: since, lastIncludeAt: last, buscarP: buscarP };
     }
+    mlTrain = window.alm.analysisLifecycle(mlTrain, function (result) { return result && result.ok; }, '#f-dual', function () {
+      return [S.mode, S.records.map(function (r) { return [r.id, r.title, r.abstract, r.dup, r.r1, r.r2]; })];
+    });
+    render = (function (original) {
+      return function () { const result = original.apply(this, arguments); mlTrain.refresh(); return result; };
+    })(render);
+
     function mlTrain() {
       var res = mlTrainOn(S.records, mlLabelDefault, {});
       if (!res.ok) return res;

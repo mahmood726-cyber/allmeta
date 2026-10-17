@@ -164,6 +164,7 @@
   <footer>
     Olkin I, Dahabreh IJ, Trikalinos TA. GOSH &#8212; a graphical display of study heterogeneity. <em>Res Synth Methods</em> 2012;3(3):214&#8211;23. Subgroup structure interpretation aligns with <em>Cochrane Handbook v6.5 &#167;10.10.2</em> on detecting influential studies; <span data-gloss="i2">I&#178;</span> interpretation per &#167;10.10.2 (low &lt;30%, moderate 30&#8211;60%, substantial 50&#8211;90%, considerable 75&#8211;100%). For k &gt; 15 this app draws 5,000 subsets by default, choosing sizes uniformly from 2 to k, with replacement, using a fixed seed. This differs from <code>metafor::gosh()</code>, which enumerates all non-empty subsets when 2^k - 1 is at most 1,000,000 (k up to 19), and otherwise draws 1,000,000 subsets by default with binomial size probabilities. Full enumeration here includes single-study subsets.
   </footer>
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
   (function () {
     'use strict';
@@ -254,6 +255,8 @@
 
     // ---- last results storage for export ----
     var _lastResults = null;
+
+    run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #model, #n-sample");
 
     function run() {
       document.getElementById('plot-note').textContent = '';
@@ -545,14 +548,6 @@
         window.alm.resetUndo.snapshot();
       }
       run();
-    });
-    document.getElementById('src').addEventListener('input', function () {
-      document.getElementById('analysis-stale').hidden = false;
-      document.getElementById('analysis-status').hidden = true;
-    });
-    document.getElementById('btn-run').addEventListener('click', function () {
-      document.getElementById('analysis-stale').hidden = true;
-      document.getElementById('analysis-status').hidden = false;
     });
 
 

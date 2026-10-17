@@ -119,6 +119,7 @@
           <textarea id="f-data" spellcheck="false" aria-label="Studies"></textarea></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount"></div>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
@@ -191,6 +192,7 @@
 
   <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> estimators per <abbr data-gloss="DL">DerSimonian</abbr> &amp; Laird (1986), Paule &amp; Mandel (1982), <abbr data-gloss="REML">REML</abbr> (Viechtbauer 2005). <abbr data-gloss="HKSJ">HKSJ</abbr> correction applied to RE pooled CI. <abbr data-gloss="I2">I²</abbr> via Q-statistic with 95% Q-profile CI (Viechtbauer 2007; matches <code>metafor::confint</code>); 95% <abbr data-gloss="PI">PI</abbr> uses t<sub>k-1</sub> (Cochrane Handbook v6.5). Baujat after Baujat et&nbsp;al. (2002).</p>
 
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
@@ -608,6 +610,8 @@
     window._almLastFE = function () { return _lastInfo; };   // alm-init reads this to know render() ran
     window._almLastStudies = function () { return _lastStudies; };
 
+    render = window.alm.analysisLifecycle(render, function (result) { return !!_lastInfo; }, "[id^=\"f-\"]");
+
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
@@ -797,12 +801,6 @@
           return { studies: parsed.studies, method: "Heterogeneity: Q, I², τ², prediction interval (+ Baujat)",
             label: "heterogeneity", results: (info && info.sum) || null };
         }
-      });
-      document.getElementById("btn-run").addEventListener("click", function () {
-        document.getElementById("analysis-status").hidden = false;
-      });
-      document.getElementById("f-data").addEventListener("input", function () {
-        document.getElementById("analysis-status").hidden = false;
       });
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);

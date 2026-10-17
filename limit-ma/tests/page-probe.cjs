@@ -22,7 +22,7 @@ const document = {getElementById: id => nodes[id] || null,
     return logs;
   }};
 const noop = () => {};
-const alm = {csvUpload: noop, plotExport: noop, axisControls: noop,
+const alm = {analysisLifecycle: run => run, csvUpload: noop, plotExport: noop, axisControls: noop,
   resultsExport: noop, urlState: Object.assign(noop, {read: () => null}),
   resetUndo: noop, tooltips: noop};
 const window = {alm};

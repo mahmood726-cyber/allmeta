@@ -108,6 +108,7 @@
           <textarea id="f-data" spellcheck="false" aria-label="Studies"></textarea></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount"></div>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
@@ -166,6 +167,7 @@
 
   <p class="footer-note"><abbr data-gloss="tau2">τ²</abbr> via <abbr data-gloss="PM">Paule-Mandel</abbr> bisection; CIs use <abbr data-gloss="HKSJ">Knapp-Hartung</abbr> <code>t(k−2)</code> with <code>q = max(1, <abbr data-gloss="QE">RSS</abbr>/(k−2))</code> floor (<abbr data-gloss="HKSJ">HKSJ</abbr>). <abbr data-gloss="R2">R²</abbr> measures the proportion of <abbr data-gloss="tau2">τ²</abbr> explained by the moderator; <abbr data-gloss="QE">Q_E</abbr> tests residual heterogeneity (df = k−2). Export the R script to replicate with <code>metafor::rma(yi, vi, mods=~x, method="<abbr data-gloss="PM">PM</abbr>", test="adhoc")</code>.</p>
 
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
@@ -482,6 +484,8 @@
     window._almLastQE      = function () { return _lastQE; };
     window._almLastPI      = function () { return _lastPI; };
 
+    render = window.alm.analysisLifecycle(render, function (result) { return !!_lastFitted; }, "[id^=\"f-\"]");
+
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
@@ -735,12 +739,6 @@
           { id: "bubble", name: "Bubble plot", getSvg: function () { return document.querySelector("#svg-host svg"); } }
         ],
         getReceiptInput: function () { const r = currentSvg(); return r ? exportReceiptInput(r) : null; }
-      });
-      document.getElementById("btn-run").addEventListener("click", function () {
-        document.getElementById("analysis-status").hidden = false;
-      });
-      document.getElementById("f-data").addEventListener("input", function () {
-        document.getElementById("analysis-status").hidden = false;
       });
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
       document.getElementById("f-scale").addEventListener("change", render);

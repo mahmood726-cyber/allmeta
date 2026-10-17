@@ -60,6 +60,7 @@
     <textarea id="f-data" spellcheck="false"></textarea>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
 
     <h2>Model</h2>
     <label for="f-shape">Curve</label>
@@ -130,7 +131,8 @@
   <p>Verification: every multi-study binary dataset shipped with dosresmeta (16 datasets, 724 model × covariance × approach × method combinations) is reproduced within numerical tolerance, and every fit dosresmeta refuses is refused (<code>hub/shared/tests/dose-response-dosresmeta-parity.spec.mjs</code>).</p>
   <p>References: Greenland &amp; Longnecker 1992, <em>Am J Epidemiol</em> 135:1301; Orsini, Bellocco &amp; Greenland 2006, <em>Stata J</em> 6:40; Hamling et al. 2008, <em>Stat Med</em> 27:954; Orsini et al. 2012, <em>Am J Epidemiol</em> 175:66; Gasparrini, Armstrong &amp; Kenward 2012, <em>Stat Med</em> 31:3821; Crippa &amp; Orsini 2016, <em>J Stat Softw</em> 72(c01); Harrell 2015, <em>Regression Modeling Strategies</em>.</p>
 </footer>
-<script>
+<script src="../hub/shared/analysis-lifecycle.js"></script>
+  <script>
   (function () {
     "use strict";
     // Example: alcohol intake and cardiovascular disease, dosresmeta::alcohol_cvd (Liu et al. 2009),
@@ -186,6 +188,8 @@
       $("msgs").innerHTML = msg ? "<div class='msg " + (kind || "err") + "' role='status'>" + esc(msg) + "</div>" : "";
       _last = null;
     }
+
+    run = window.alm.analysisLifecycle(run, function (result) { return !!_last; }, "[id^=\"f-\"]");
 
     function run() {
       syncControls();
@@ -349,12 +353,6 @@
         { id: "curve", name: "Dose-response curve", getSvg: function () { return document.querySelector("#curve-host svg"); } },
         { id: "residuals", name: "Residual plot", getSvg: function () { return document.querySelector("#resid-host svg"); } }
       ]
-    });
-    document.getElementById("btn-run").addEventListener("click", function () {
-      document.getElementById("analysis-status").hidden = false;
-    });
-    document.getElementById("f-data").addEventListener("input", function () {
-      document.getElementById("analysis-status").hidden = false;
     });
     ["f-data", "f-knots", "f-xref", "f-modval", "f-pdoses"].forEach(function (id) { $(id).addEventListener("input", run); });
     ["f-shape", "f-cov", "f-proc", "f-method", "f-mod"].forEach(function (id) { $(id).addEventListener("change", run); });

@@ -156,6 +156,7 @@
   <footer>
     Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp with multiplicative dispersion. See Sterne JAC, Sutton AJ, Ioannidis JPA, et al. <em>BMJ</em> 2011;343:d4002 for funnel-plot recommendations and power comparisons. Egger reports a t statistic, not a z statistic. The selection model uses ML and is experimental, not validated against metafor.
   </footer>
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
   (function () {
     'use strict';
@@ -577,6 +578,8 @@
     // ---- last results ----
     var _lastResults = null;
 
+    run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #format");
+
     function run() {
       _lastResults = null;
       try { runAnalysis(); }
@@ -748,14 +751,6 @@
         window.alm.resetUndo.snapshot();
       }
       run();
-    });
-    document.getElementById('src').addEventListener('input', function () {
-      document.getElementById('analysis-stale').hidden = false;
-      document.getElementById('analysis-status').hidden = true;
-    });
-    document.getElementById('btn-run').addEventListener('click', function () {
-      document.getElementById('analysis-stale').hidden = true;
-      document.getElementById('analysis-status').hidden = false;
     });
 
 

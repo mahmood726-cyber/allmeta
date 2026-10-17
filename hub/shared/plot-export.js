@@ -238,6 +238,7 @@
     return pngDpi(png, dpi);
   }
 
+  const panelContracts = new WeakMap();
   let panelId = 0;
   function init(opts) {
     const target = typeof opts.target === 'string' ? document.querySelector(opts.target) : opts.target;
@@ -281,15 +282,19 @@
     const width = select('Physical width', [['85', '85 mm'], ['170', '170 mm']], '170');
     const status = document.createElement('p'); status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite'); status.setAttribute('aria-atomic', 'true');
     format.addEventListener('change', () => { resolution.disabled = !['png', 'tiff'].includes(format.value); });
+    // Keep the emitted message in closure state: neither arbitrary counts nor
+    // edited error text can pass the validation contract.
+    let emittedStatus = '';
+    function report(message) { emittedStatus = message; status.textContent = message; }
     let busy = false;
     async function run(selected) {
       if (busy) return;
-      if (!selected.length) { status.textContent = 'Select at least one plot.'; return; }
+      if (!selected.length) { report('Select at least one plot.'); return; }
       busy = true;
       const fmt = format.value, dpi = fmt === 'pdf' ? 300 : Number(resolution.value), mm = Number(width.value);
       const controls = Array.from(group.querySelectorAll('input, select, button'));
       const disabled = controls.map(c => c.disabled); controls.forEach(c => { c.disabled = true; });
-      status.textContent = 'Preparing downloads…';
+      report('Preparing downloads…');
       let count = 0;
       try {
         for (const plot of selected) {
@@ -297,16 +302,34 @@
           _download(blob, basename + '-' + plot.id + '.' + fmt); count++;
           if (count < selected.length) await new Promise(resolve => setTimeout(resolve, 200));
         }
-        status.textContent = 'Downloaded ' + count + ' file(s)';
-      } catch (error) { status.textContent = 'Downloaded ' + count + ' file(s). Export failed: ' + error.message; }
+        report('Downloaded ' + count + ' file(s)');
+      } catch (error) { report('Downloaded ' + count + ' file(s). Export failed: ' + error.message); }
       finally { controls.forEach((c, i) => { c.disabled = disabled[i]; }); busy = false; }
     }
     button('Download selected', () => run(plots.filter((_, i) => checks[i].checked)));
     plots.forEach(plot => button('Download ' + (plot.name || plot.id), () => run([plot])));
     group.appendChild(status); target.replaceChildren(group);
+    function staticPanel() {
+      const clone = group.cloneNode(true);
+      clone.lastElementChild.textContent = '';
+      // Disabled and autosave's positional field key are runtime bookkeeping.
+      // Neither changes visible text or the export controls' identity. All other
+      // structure, attributes, labels and controls retain exact equality.
+      clone.querySelectorAll('input, select, button').forEach(el => el.removeAttribute('disabled'));
+      clone.querySelectorAll('input, select').forEach(el => el.removeAttribute('data-autosave-index'));
+      return clone.outerHTML;
+    }
+    const originalPanel = staticPanel();
+    panelContracts.set(group, () => group.lastElementChild === status &&
+      status.children.length === 0 && status.textContent === emittedStatus &&
+      staticPanel() === originalPanel);
     return group;
   }
   // Binary codec hooks allow independent conformance tests without a DOM canvas.
+  init.statusContract = function (group) {
+    const check = panelContracts.get(group);
+    return !!check && check();
+  };
   init._lzw = lzw;
   init._tiff = tiff;
   window.alm = window.alm || {};
