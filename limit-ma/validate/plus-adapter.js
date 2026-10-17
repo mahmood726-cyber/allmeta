@@ -123,6 +123,8 @@ function paintContract(reference,failures){
     channels[channel]=channelPaints(ref.values,channel)||channelPaints(values,channel);
    }
    for(const property of actual){
+    // Pointer interaction does not affect plot paint.
+    if(property==='cursor')continue;
     if(!(property in ref.values)){failures.push(id+' '+i+' unexpected style property '+property);return;}
     // Ignore a channel only when neither style can paint it. Straight lines
     // and the renderer's single-segment tick paths have no fill area.

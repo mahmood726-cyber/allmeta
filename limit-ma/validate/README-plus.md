@@ -63,8 +63,7 @@ are cached only for the same result object, toggles, viewport and color scheme.
 Each SVG node (including the plot root and ancestors of marks) is matched in
 render order and compared using **all properties enumerated by getComputedStyle**.
 There is no hand-maintained list of paint properties or stored browser-specific
-style values. Extra/missing nodes or changed roles fail closed. This intentionally
-also rejects differences in non-paint properties rather than assuming them safe.
+style values. Extra/missing nodes or changed roles fail closed. Cursor differences are ignored because they affect interaction, not plot paint.
 Fill properties on straight lines and one-segment tick paths are immaterial
 because these roles have no fill area. Other channel properties are compared
 only if the reference or actual channel paints: `none`, zero opacity, transparent
@@ -139,3 +138,9 @@ The corpus demonstrates parity on these configurations. It does not show that
 any publication-bias method is more accurate, identify bias causally, or validate
 arbitrary zero-cell corrections. Small-study tests have low power with few studies.
 Implementation sources: [metasens limitmeta](https://github.com/guido-s/metasens/blob/master/R/limitmeta.R) and [meta metabias](https://github.com/guido-s/meta/blob/master/R/metabias.R). Runtime parity uses the installed versions named above, not the moving upstream branches.
+
+## Scope and limits
+
+The Validate panel checks numbers, text, labels, effective on-screen geometry, and painted style against a clean same-browser reference render to catch regressions in the app data path and renderer. It does not prove pixels or detect CSS deliberately injected into the page. Visual regressions are caught by the CI pixel test.
+
+The `limit-ma-plus-pixels.spec.mjs` suite pins ten corpus/control configurations and captures every new plot at 1280 x 900, device scale 1, with animations disabled. Playwright `toHaveScreenshot` uses `threshold: 0.2` (per-pixel colour distance) and `maxDiffPixelRatio: 0.005` (at most 0.5% differing pixels), allowing small font rasterisation differences without skipping other browser builds. Reference PNGs are generated locally using Microsoft Edge 155.0.4283.45 (Chromium) on Windows; the same references run in CI. An expected-failure test hides a rendered plot and must fail the same screenshot assertion; an unexpected pass fails the suite. Update references only after reviewing the images.

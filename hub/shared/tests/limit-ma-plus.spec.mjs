@@ -344,3 +344,14 @@ test('limit-ma-plus reference style contract rejects paint effects and accepts e
  expect(result.missed).toEqual([]);expect(result.clean).toEqual([]);
  console.log('FIX5 STYLE CONTRACT',JSON.stringify(result));
 });
+
+test('limit-ma-plus cursor-only styles preserve a correct display',async({page})=>{
+ await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ expect(await page.evaluate(async()=>{
+  const loaded=await AlmLimitPlusValidation.prepare(),c=loaded[AlmLimitPlusValidationAdapter.corpus.files[0].path][0];
+  __almLimitValidationRun(c.te.map((x,i)=>x+','+c.se[i]).join('\n'),true);
+  const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);AlmLimitPlusUI.render(r,c,limit);
+  document.querySelectorAll('#plus-funnel circle').forEach(n=>n.style.cursor='crosshair');
+  return AlmLimitPlusContract.geometry(r,c,limit);
+ })).toEqual([]);
+});
