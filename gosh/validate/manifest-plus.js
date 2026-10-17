@@ -1,0 +1,37 @@
+window.AlmGoshPlusManifest = {
+  "files": [
+    {
+      "path": "validate/plus/corpus.json",
+      "sha256": "5a4d93568089f8c72b5b1f9adf6c2dfdde26d7286ae649c4fb721d150cc9fc22",
+      "bytes": 39106
+    },
+    {
+      "path": "validate/plus/reference.json",
+      "sha256": "bdb0a8e09b27ad1a7ac4f7842cc95d2a7ba4b6327e7d57f517c0936de91d3e12",
+      "bytes": 16728013
+    }
+  ],
+  "configurations": 75,
+  "model_configurations": 150,
+  "checks": 1153536,
+  "referenceVersions": {
+    "R": "4.6.0",
+    "metafor": "5.2-1"
+  },
+  "source_files": [
+    {
+      "path": "validate/corpus/corpus.json",
+      "sha256": "2c4ece4f9c4e49d281f860ba5850b441d9f220ff0ce75c82ffbc69963972150a",
+      "bytes": 267665
+    },
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "13b575fb42ca8c198da5bbcaa92919631e1490fe9013d7b435bddb8c92053ee7",
+      "bytes": 14037575
+    }
+  ],
+  "sampling": "Archived R fits on the app's exact memberships, including repeated draws; no new sampled fits.",
+  "enumeration": "metafor::gosh; membership-key match to the existing pinned reference",
+  "quantities": "11 displayed per-study quantities; membership; estimate/I2/H2/Q and DL tau2/tau; plotted coordinates/classes/counts; displayed highlight counts",
+  "tolerance": "1e-9 relative to max(1, abs(R)); counts and membership exact"
+};
