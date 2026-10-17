@@ -16,6 +16,32 @@ the section is renamed to that version and dated, and a fresh
 
 ---
 
+## [1.6.0] — 2026-10-17
+
+Figure export and a visible Run analysis step across the 13 papered apps; no computation changed.
+
+### Added
+- **Plot export** (#126) in `screen`, `dose-response-ma`, `dta-sroc`, `nma`, `heterogeneity`, `pubbias-tests`,
+  `multilevel-ma`, `meta-regression`, `proportion-ma`, `mh-peto`, `influence`, `limit-ma` and `gosh`: a plot selector
+  (one plot or all) and export as PNG, SVG, PDF, or TIFF at 300 or 600 dpi (RGB, LZW-compressed), via the shared
+  `hub/shared/plot-export.js`; the download status reports the exact number of files written, and zero on failure.
+- **Run analysis** button, visible in every one of these apps, with a shared analysis lifecycle
+  (`hub/shared/analysis-lifecycle.js`): editing inputs shows a "results out of date" notice until the analysis is run
+  again; a completed run shows "Analysis updated". Apps that already re-ran on edit still do so.
+
+### Fixed
+- **cumulative-subgroup** (#124): the R export now reproduces the page's analysis (separate Paule–Mandel fit per
+  subgroup plus a fixed-effect between-subgroup Q) instead of a common-τ² moderator model; quoted CSV fields are parsed
+  correctly and R string literals are escaped; subgroup names such as `__proto__` no longer fail; effect-axis limits
+  are applied in both plots; the chart receipt no longer names DerSimonian–Laird.
+
+### Verification
+- No numerical function changed: every named numerical function in the 13 apps matches its pre-change SHA-256, and
+  each app's offline Validate-in-R replay gives the same check count and result before and after the change
+  (for example `gosh` 876,760 of 876,760; `heterogeneity` 131,781; `mh-peto` 68,461; `proportion-ma` 298,116).
+
+---
+
 ## [1.5.0] — 2026-10-16
 
 GOSH plot corrected to agree with `metafor::gosh`, with the faults that validation found fixed, and a one-click
