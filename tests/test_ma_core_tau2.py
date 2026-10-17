@@ -69,3 +69,17 @@ def test_ma_core_tau2_estimators_match_metafor():
 def test_eb_equals_pm():
     got = _ma_core_tau2()
     assert abs(got["EB"] - got["PM"]) < 1e-12, "EB must equal PM"
+
+
+@pytest.mark.parametrize('case', json.loads(
+    (ROOT / 'tests' / 'fixtures' / 'reml_nonconvergence.json').read_text()
+)['reviews'], ids=lambda case: case['review_id'])
+def test_reml_unbalanced_real_data_matches_profile_likelihood(case):
+    """A zero-boundary iterate can miss a better interior likelihood mode."""
+    script = f"""
+        const M = require({json.dumps(str(MODULE))});
+        console.log(M.tau2REML({json.dumps(case['yi'])}, {json.dumps(case['vi'])}));
+    """
+    result = subprocess.run([NODE, '-e', script], capture_output=True,
+                            text=True, timeout=30, check=True, cwd=str(ROOT))
+    assert float(result.stdout) == pytest.approx(case['expected_tau2'], abs=2e-7)

@@ -1,0 +1,28 @@
+{
+  "seed": 84084,
+  "cases": 3000,
+  "scipy_version": "1.17.0",
+  "numpy_version": "2.3.5",
+  "reference": "orthogonal contrasts; 2048-point score isolation and scipy.optimize.brentq",
+  "likelihood_tolerance": 1e-07,
+  "nonunimodal_cases": 63,
+  "maximum_loglik_loss": 1.4210854715202004e-14,
+  "failures": [],
+  "input_sha256": "7974559407d19088a15b68985355bf928ff376c927a60d7e38d3e206e5f64449",
+  "module_sha256": "37f8878f1d0120ff5f0aa3ec0c923466d6f2b559b61df0efa0956ad916204101",
+  "comparison_module_sha256": "f90188c1f9ac58929a923338c06d49d374f04ff819cd680fd379075bd800782c",
+  "comparison_failures": [
+    {
+      "id": "seed84084-1530",
+      "tau2": 7.21279805554463e-06,
+      "reference_tau2": 0.060387118607540674,
+      "loglik_loss": 0.12975547073187776
+    },
+    {
+      "id": "seed84084-1917",
+      "tau2": 0.02871909419270089,
+      "reference_tau2": 0.7633768741081433,
+      "loglik_loss": 0.09552888315011643
+    }
+  ]
+}
