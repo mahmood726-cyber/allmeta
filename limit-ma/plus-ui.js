@@ -51,24 +51,24 @@ function tick(svg,axis,value,x,y){
  const title=document.createElementNS(svg.namespaceURI,'title');title.textContent=String(value);n.append(title);
  const label=svgNode(svg,'text',{x:axis==='x'?x:x-7,y:axis==='x'?y+17:y+4,'font-size':10,'text-anchor':axis==='x'?'middle':'end','data-plus-tick-label':axis});label.textContent=value.toPrecision(3);
 }
-function draw(){
- if(!state)return;const {results:r,c,limit}=state;
- const forest=el('plus-forest');forest.replaceChildren();const fits=methods.filter(k=>r[k].status==='ok');
+function draw(plotState=state,lookup=el){
+ if(!plotState)return;const {results:r,c,limit}=plotState;
+ const forest=lookup('plus-forest');forest.replaceChildren();const fits=methods.filter(k=>r[k].status==='ok');
  let lo=Math.min(0,...fits.map(k=>r[k].values.ciLo)),hi=Math.max(0,...fits.map(k=>r[k].values.ciHi));if(lo===hi)hi=lo+1;
  const X=x=>220+450*(x-lo)/(hi-lo);
  svgNode(forest,'line',{x1:X(0),x2:X(0),y1:5,y2:240,stroke:'gray','stroke-dasharray':'3 3'});
  fits.forEach((key,i)=>{const v=r[key].values,y=25+i*30;svgNode(forest,'text',{x:5,y:y+4,fill:'currentColor','font-size':12}).textContent=names[key];svgNode(forest,'line',{x1:X(v.ciLo),x2:X(v.ciHi),y1:y,y2:y,stroke:'#0072B2','stroke-width':2});svgNode(forest,'circle',{cx:X(v.mu),cy:y,r:4,fill:'#0072B2'});});
  tick(forest,'x',lo,220,245);tick(forest,'x',hi,670,245);
- const svg=el('plus-funnel');svg.replaceChildren();
+ const svg=lookup('plus-funnel');svg.replaceChildren();
  const maxS=Math.max(...c.se)*1.1;
  const points=c.te.map((x,i)=>[x,c.se[i]]),curves=[];
- if(el('plus-limit-toggle').checked&&limit&&r.limit.status==='ok'){
+ if(lookup('plus-limit-toggle').checked&&limit&&r.limit.status==='ok'){
   curves.push({color:'#0072B2',points:Array.from({length:65},(_,i)=>{const s=maxS*i/64;return[limit.beta_r+limit.alpha_r*Math.sqrt(s*s+limit.tau2_dl),s];})});
   limit.te_limit.forEach((x,i)=>points.push([x,c.se[i],'#0072B2']));
  }
- if(el('plus-fill-toggle').checked&&r.trimfill.status==='ok')r.trimfill.values.imputed.forEach((x,i)=>points.push([x,r.trimfill.values.imputedSE[i],'#D55E00']));
- for(const [key,power,color] of [['PET',1,'#009E73'],['PEESE',2,'#CC79A7']])if(el('plus-reg-toggle').checked&&r[key].status==='ok')curves.push({color,points:Array.from({length:65},(_,i)=>{const s=maxS*i/64;return[r[key].values.mu+r[key].values.slope*s**power,s];})});
- if(el('plus-contour-toggle').checked)for(const sign of [-1,1])curves.push({color:'#999',points:[[0,0],[sign*1.959963984540054*maxS,maxS]],dash:true});
+ if(lookup('plus-fill-toggle').checked&&r.trimfill.status==='ok')r.trimfill.values.imputed.forEach((x,i)=>points.push([x,r.trimfill.values.imputedSE[i],'#D55E00']));
+ for(const [key,power,color] of [['PET',1,'#009E73'],['PEESE',2,'#CC79A7']])if(lookup('plus-reg-toggle').checked&&r[key].status==='ok')curves.push({color,points:Array.from({length:65},(_,i)=>{const s=maxS*i/64;return[r[key].values.mu+r[key].values.slope*s**power,s];})});
+ if(lookup('plus-contour-toggle').checked)for(const sign of [-1,1])curves.push({color:'#999',points:[[0,0],[sign*1.959963984540054*maxS,maxS]],dash:true});
  const xs=[...points,...curves.flatMap(x=>x.points)].map(x=>x[0]);let min=Math.min(...xs),max=Math.max(...xs);const pad=(max-min)*.05||.1;min-=pad;max+=pad;
  const xx=x=>60+600*(x-min)/(max-min),yy=s=>20+290*s/maxS;
  tick(svg,'x',min,60,310);tick(svg,'x',max,660,310);tick(svg,'y',0,60,20);tick(svg,'y',maxS,60,310);
@@ -89,8 +89,8 @@ function run(){
   render(AlmLimitPlus.compute(c,limit,+el('plus-alpha').value),c,limit);el('plus-status').textContent='Sensitivity calculations complete. Check the independent validation panel before interpreting results.';
  }catch(e){state=null;for(const id of ['plus-body','plus-details','plus-forest','plus-funnel','plus-interpretation'])el(id).replaceChildren();el('plus-status').textContent='Refused: '+e.message;}
 }
-root.querySelectorAll('input[type=checkbox]').forEach(n=>n.addEventListener('change',draw));
+root.querySelectorAll('input[type=checkbox]').forEach(n=>n.addEventListener('change',()=>draw()));
 el('plus-run').addEventListener('click',run);
 el('plus-alpha').addEventListener('change',()=>{if(state)run();});
-window.AlmLimitPlusUI={render,run,snapshot:()=>state,restore:s=>{if(s)render(s.results,s.c,s.limit);else {state=null;for(const id of ['plus-body','plus-details','plus-forest','plus-funnel','plus-interpretation'])el(id).replaceChildren();}}};
+window.AlmLimitPlusUI={render,run,drawReference:(results,c,limit,lookup)=>draw({results,c,limit},lookup),snapshot:()=>state,restore:s=>{if(s)render(s.results,s.c,s.limit);else {state=null;for(const id of ['plus-body','plus-details','plus-forest','plus-funnel','plus-interpretation'])el(id).replaceChildren();}}};
 })();

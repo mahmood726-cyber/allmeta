@@ -50,11 +50,28 @@ inverts coordinates, and checks effect/SE values at normalized relative toleranc
 1e-9 (unit floor). It also compares effective screen positions (element CTMs,
 rendered bounds/endpoints, and text character positions) to the axes' rendered
 numeric ticks and source values, within 0.02 CSS pixels for browser rounding.
-Paint checks additionally require visible computed styles, positive cumulative ancestor opacity,
-nontransparent fill/stroke and positive radii/stroke widths. Clips and masks on
-marks or ancestors fail closed because this renderer does not use them. Mark
-bounds must intersect the SVG viewport and data plot; labels use the margins,
-and forest method labels must fit their 30-unit row and label column.
+Paint is checked against a fresh reference rendering of the same configuration and
+layer toggles in an offscreen shadow tree in the same page/browser. The
+validator captures the clean page template, stylesheets and plot-renderer function
+before replay; document CSS selectors cannot enter the shadow tree. HTTP mode
+copies the accessible stylesheet rules. In file mode, where linked `cssRules`
+are security-restricted, the reference loads clean copies of stylesheet links and
+captures the initial document-root custom properties. It awaits
+stylesheet loading and finite page entrance animations before enabling validation. No HTTP request is required for
+the file-mode path. Document language is preserved in both modes. References
+are cached only for the same result object, toggles, viewport and color scheme.
+Each SVG node (including the plot root and ancestors of marks) is matched in
+render order and compared using **all properties enumerated by getComputedStyle**.
+There is no hand-maintained list of paint properties or stored browser-specific
+style values. Extra/missing nodes or changed roles fail closed. This intentionally
+also rejects differences in non-paint properties rather than assuming them safe.
+Fill properties on straight lines and one-segment tick paths are immaterial
+because these roles have no fill area. Other channel properties are compared
+only if the reference or actual channel paints: `none`, zero opacity, transparent
+color and (for strokes) zero width disable a channel. Enabling visible ink on a
+reference-disabled channel still fails. Class, inline and presentation-attribute styles with identical computed
+values pass. Geometry, inherited visibility, HTML ancestor opacity/clipping,
+viewport intersection and forest row-bound checks remain independent.
 These are DOM/style contracts, not pixel-occlusion detection.
 This includes independent CSS transforms and SVG text/tspan offsets. The
 existing transform and raw-coordinate guards remain. Node and coordinate deletion fail closed. Tests exercise all
@@ -116,7 +133,7 @@ not the pinned desktop R oracle used here.
 | R reference | Version-checked generator output; SHA-256 on LF bytes | Re-executable with the scripts above |
 | Browser results | No cached estimates or dataset-ID branches | Current effect/SE rows, optional counts, selected alpha |
 | Numerical controls | R defaults, alpha default, tolerances, plotting samples | Optimizer, Hessian, regressions, pooling and tests |
-| Plots and interpretation | Labels and visual styles | Current computed results |
+| Plots and interpretation | Clean renderer/template/CSS; no browser-specific style values | Current results, isolated reference render and all computed properties |
 
 The corpus demonstrates parity on these configurations. It does not show that
 any publication-bias method is more accurate, identify bias causally, or validate

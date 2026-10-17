@@ -51,11 +51,96 @@ function displayed(expected){
  for(const type of ['category','refusal'])if(document.querySelectorAll('#alm-plus [data-plus-'+type+']').length!==required.filter(x=>x[0]===type).length)failures.push(type+' cardinality');
  return failures;
 }
+// Freeze the clean template and renderer before replay mutations. Shadow DOM
+// isolates the reference from document selectors; never clone the tested marks.
+const referenceTemplate=document.body.cloneNode(true);
+referenceTemplate.lang=document.body.lang||document.documentElement.lang;
+referenceTemplate.querySelectorAll('script').forEach(n=>n.remove());
+referenceTemplate.querySelectorAll('button,input,select,textarea,a').forEach(n=>n.tabIndex=-1);
+const drawReference=AlmLimitPlusUI.drawReference;
+const referenceHost=document.createElement('div');referenceHost.setAttribute('aria-hidden','true');
+referenceHost.style.all='initial';
+const referenceRoot=referenceHost.attachShadow({mode:'closed'});
+let referenceKey,referenceResult,referenceStyles;
+// file:// deliberately denies cssRules for linked stylesheets. Load clean link
+// copies in that case and freeze root custom properties before mutation.
+const referenceLoads=[];
+try {
+ const css=document.createElement('style');
+ css.textContent=[...document.styleSheets].map(s=>[...s.cssRules].map(r=>r.cssText).join('\n')).join('\n').replaceAll(':root',':host');
+ referenceRoot.append(css);
+}catch(error){
+ if(location.protocol!=='file:'||error.name!=='SecurityError')throw error;
+ const rootStyle=getComputedStyle(document.documentElement);
+ for(const property of rootStyle)if(property.startsWith('--'))referenceHost.style.setProperty(property,rootStyle.getPropertyValue(property));
+ for(const original of document.querySelectorAll('style,link[rel="stylesheet"]')){
+  const copy=original.cloneNode(true);
+  if(copy.localName==='style')copy.textContent=copy.textContent.replaceAll(':root',':host');
+  else {copy.href=original.href;referenceLoads.push(new Promise((resolve,reject)=>{copy.onload=resolve;copy.onerror=()=>reject(Error('Reference stylesheet unavailable'));}));}
+  referenceRoot.append(copy);
+ }
+}
+referenceHost.style.position='fixed';referenceHost.style.left='-100000px';referenceHost.style.top='0';
+referenceRoot.append(referenceTemplate);document.body.append(referenceHost);
+const referenceReady=Promise.all(referenceLoads);
+function paintReference(r,c,limit){
+ const toggles=['limit','fill','reg','contour'].map(k=>document.getElementById('plus-'+k+'-toggle').checked);
+ const key=JSON.stringify([toggles,innerWidth,innerHeight,matchMedia('(prefers-color-scheme:dark)').matches]);
+ if(referenceResult===r&&referenceKey===key)return referenceStyles;
+ referenceHost.style.width=document.documentElement.clientWidth+'px';
+ const lookup=id=>referenceRoot.querySelector('#'+id);
+ ['limit','fill','reg','contour'].forEach((k,i)=>lookup('plus-'+k+'-toggle').checked=toggles[i]);
+ drawReference(r,c,limit,lookup);
+ // Finish template entrance animations, without changing declared style values.
+ referenceRoot.getAnimations().forEach(a=>a.finish());
+ referenceStyles={};
+ for(const id of ['plus-forest','plus-funnel']){
+  const svg=lookup(id);
+  referenceStyles[id]=[svg,...svg.querySelectorAll('*')].map(n=>{
+   const computed=getComputedStyle(n),values={};
+   for(const property of computed)values[property]=computed.getPropertyValue(property);
+   return {tag:n.localName,values,count:computed.length,noFillArea:n.localName==='line'||(n.localName==='path'&&n.hasAttribute('data-plus-axis'))};
+  });
+ }
+ referenceResult=r;referenceKey=key;return referenceStyles;
+}
+function channelPaints(values,channel){
+ const color=values[channel],opacity=Number(values[channel+'-opacity']);
+ const alpha=color.match(/\/\s*([\d.]+)%?\s*\)$/)||color.match(/^rgba\([^)]*,\s*([\d.]+)\s*\)$/);
+ return color!=='none'&&color!=='transparent'&&(!alpha||Number(alpha[1])>0)&&opacity>0&&
+  (channel!=='stroke'||parseFloat(values['stroke-width'])>0);
+}
+function paintContract(reference,failures){
+ for(const id of ['plus-forest','plus-funnel']){
+  const svg=document.getElementById(id),nodes=[svg,...svg.querySelectorAll('*')],expected=reference[id];
+  if(nodes.length!==expected.length){failures.push(id+' style structure');continue;}
+  for(const [i,n] of nodes.entries()){
+   const ref=expected[i];if(n.localName!==ref.tag){failures.push(id+' style role');return;}
+   const actual=getComputedStyle(n),channels={};
+   if(actual.length!==ref.count){failures.push(id+' '+i+' style property count');return;}
+   for(const channel of ['fill','stroke']){
+    const values={};for(const p of [channel,channel+'-opacity','stroke-width'])values[p]=actual.getPropertyValue(p);
+    channels[channel]=channelPaints(ref.values,channel)||channelPaints(values,channel);
+   }
+   for(const property of actual){
+    if(!(property in ref.values)){failures.push(id+' '+i+' unexpected style property '+property);return;}
+    // Ignore a channel only when neither style can paint it. Straight lines
+    // and the renderer's single-segment tick paths have no fill area.
+    if((ref.noFillArea||!channels.fill)&&(property==='fill'||property.startsWith('fill-')))continue;
+    if(!channels.stroke&&(property==='stroke'||property.startsWith('stroke-')))continue;
+    if(actual.getPropertyValue(property)!==ref.values[property]){
+     failures.push(id+' '+i+' style '+property+': '+actual.getPropertyValue(property)+' != '+ref.values[property]);return;
+    }
+   }
+  }
+ }
+}
 // Independently invert SVG coordinates into entered effect/SE units. The gate
 // uses source results (already compared to the pinned oracle), never SVG metadata.
 // Relative tolerance 1e-9 with unit floor; SVG layout coordinates use the same bound.
 function geometry(r,c,limit){
- const failures=[],close=(a,b)=>finite(a)&&finite(b)&&Math.abs(a-b)<=1e-9*Math.max(1,Math.abs(b));
+ const failures=[];
+ const close=(a,b)=>finite(a)&&finite(b)&&Math.abs(a-b)<=1e-9*Math.max(1,Math.abs(b));
  function eq(a,b,key){if(!close(a,b))failures.push(key);}
  function attr(n,k){const s=n?.getAttribute(k);return s===null||s===undefined||s.trim()===''?NaN:Number(s);}
  function count(nodes,n,key){if(nodes.length!==n)failures.push(key+' count');}
@@ -85,22 +170,14 @@ function geometry(r,c,limit){
    s.clipPath==='none'&&s.maskImage==='none'};
   ancestry.set(n,value);return value;
  }
- function ink(value){
-  if(!value||value==='none'||value==='transparent'||value.startsWith('url('))return false;
-  // Computed colors serialize alpha either after a slash or as rgba's fourth channel.
-  const alpha=value.match(/\/\s*([\d.]+)%?\s*\)$/)||value.match(/^rgba\([^)]*,\s*([\d.]+)\s*\)$/);
-  return !alpha||Number(alpha[1])>0;
- }
  const intersects=(a,b)=>a.right>=b.left&&a.left<=b.right&&a.bottom>=b.top&&a.top<=b.bottom;
  function rect(svg,x1,y1,x2,y2){const a=screen(svg,x1,y1),b=screen(svg,x2,y2);return {left:Math.min(a.x,b.x),right:Math.max(a.x,b.x),top:Math.min(a.y,b.y),bottom:Math.max(a.y,b.y)};}
  for(const id of ['plus-forest','plus-funnel']){
   const svg=document.getElementById(id),viewport=svg.getBoundingClientRect();
   for(const n of svg.querySelectorAll('circle,line,polyline,path,text,tspan')){
-   const s=style(n),stroke=['line','polyline','path'].includes(n.localName),b=n.getBoundingClientRect();
+   const s=style(n),b=n.getBoundingClientRect();
    const key=id+' '+n.localName+' paint';
-   if(!visible(n).ok||s.visibility!=='visible'||!ink(stroke?s.stroke:s.fill)||
-    !(Number(stroke?s.strokeOpacity:s.fillOpacity)>0)||
-    (stroke&&!(parseFloat(s.strokeWidth)>0))||
+   if(!visible(n).ok||s.visibility!=='visible'||
     (n.localName==='circle'&&!(parseFloat(s.r)>0))||
     (['text','tspan'].includes(n.localName)&&!(parseFloat(s.fontSize)>0))||
     !(viewport.width>0&&viewport.height>0)||!intersects(b,viewport))failures.push(key);
@@ -178,9 +255,14 @@ function geometry(r,c,limit){
   count(pairs,curve.length,'curve '+i);
   curve.forEach(([x,se],j)=>{const p=pairs[j]||[];screenEq(screen(paths[i],p[0],p[1]),funnelPoint(x,se),'curve '+i+':'+j);if(p.length!==2)failures.push('curve coordinate arity');eq(invertX(p[0]),x,'curve effect '+i+':'+j);eq(invertY(p[1]),se,'curve SE '+i+':'+j);});
  });
+ // A geometry failure already fails the render. Only clean geometry needs
+ // the more expensive full-property comparison; no checks are relaxed.
+ if(!failures.length)paintContract(paintReference(r,c,limit),failures);
  return failures;
 }
 async function mount(){
+ await referenceReady;
+ await Promise.all(document.getAnimations().filter(a=>a.effect?.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{})));
  const manifest=window.AlmLimitPlusManifest;if(!manifest)throw Error('Sensitivity pins unavailable');
  const files=manifest.files;
  async function replay(loaded,progress){
@@ -197,6 +279,7 @@ async function mount(){
     const af=flatten(a),rf=flatten(ref);
     for(const [q,v] of Object.entries(rf))check(c.id,q,af[q],v,typeof v!=='number'||/\.(df|k0|length)$/.test(q));
     const renderFailures=displayed(af).concat(geometry(a,c,limit));check(c.id,'render',renderFailures.length,0,true);
+    if(renderFailures.length)failed[failed.length-1].details=renderFailures;
     progress('Sensitivity replay '+(i+1)+'/'+corpus.length+'; '+checks+' checks');await new Promise(r=>setTimeout(r,0));
    }
   }finally{__almLimitValidationRestore(snap);AlmLimitPlusUI.restore(ui);document.getElementById('plus-status').textContent=status;locks.forEach(([n,d])=>n.disabled=d);}

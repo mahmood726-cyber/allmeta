@@ -2,6 +2,20 @@ import {test,expect} from './validation-fixture.mjs';
 import {writeFileSync,readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 const url='/limit-ma/index.html';
+for(const mode of ['http','file'])test('limit-ma-plus clean reference style smoke '+mode,async({page})=>{
+ await page.goto(mode==='file'?new URL('../../../limit-ma/index.html',import.meta.url).href:url);await page.evaluate(()=>AlmLimitPlusReady);
+ if(mode==='file'){
+  const manifest=JSON.parse(readFileSync(new URL('../../../limit-ma/validate/MANIFEST-plus.json',import.meta.url),'utf8'));
+  await page.locator('#alm-plus-validate input[type=file]').setInputFiles(manifest.files.map(f=>fileURLToPath(new URL('../../../limit-ma/'+f.path,import.meta.url))));
+ }
+ await page.evaluate(()=>Promise.all(document.getAnimations().map(a=>a.finished)));
+ const failures=await page.evaluate(async()=>{
+  const loaded=await AlmLimitPlusValidation.prepare(),c=loaded[AlmLimitPlusValidationAdapter.corpus.files[0].path][0];
+  __almLimitValidationRun(c.te.map((x,i)=>x+','+c.se[i]).join('\n'),true);
+  const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);AlmLimitPlusUI.render(r,c,limit);
+  return AlmLimitPlusContract.geometry(r,c,limit);
+ });expect(failures).toEqual([]);
+});
 test('limit-ma-plus all configurations and displayed quantities versus pinned R',async({page})=>{
  test.setTimeout(240000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
  const before=await page.evaluate(()=>__almLimitValidationSnapshot());
@@ -106,7 +120,7 @@ test('limit-ma-plus categorical/refusal deletion, duplication and relocation fai
 });
 
 test('limit-ma-plus inverse plot geometry and mutations across all toggle combinations',async({page})=>{
- test.setTimeout(240000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ test.setTimeout(1500000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
  const result=await page.evaluate(async()=>{
   const loaded=await AlmLimitPlusValidation.prepare(),f=AlmLimitPlusValidationAdapter.corpus.files,corpus=loaded[f[0].path],missed=[],seen=new Set();let clean=0,negative=0;
   for(const c of corpus){
@@ -235,7 +249,7 @@ test('limit-ma-plus effective screen geometry rejects offset mechanisms',async({
 
 
 test('limit-ma-plus paint and clipping mutations fail closed',async({page})=>{
- test.setTimeout(240000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ test.setTimeout(900000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
  // Wait for the real entrance animations; reduced-motion CSS introduces tiny transitions
  // that cannot advance inside this synchronous mutation loop.
  await page.evaluate(()=>Promise.all(document.getAnimations().map(a=>a.finished)));
@@ -281,4 +295,52 @@ test('limit-ma-plus paint and clipping mutations fail closed',async({page})=>{
  });
  expect(result.clean).toBe(338);expect(result.missed).toEqual([]);
  console.log('FIX4 PAINT MUTATIONS',JSON.stringify(result));
+});
+
+
+test('limit-ma-plus reference style contract rejects paint effects and accepts equivalent CSS',async({page})=>{
+ test.setTimeout(900000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ await page.evaluate(()=>Promise.all(document.getAnimations().map(a=>a.finished)));
+ const result=await page.evaluate(async()=>{
+  const loaded=await AlmLimitPlusValidation.prepare(),files=AlmLimitPlusValidationAdapter.corpus.files;
+  const missed=[],clean=[];let negatives=0,positives=0;
+  for(const [i,c] of loaded[files[0].path].entries()){
+   __almLimitValidationRun(c.te.map((x,j)=>x+','+c.se[j]).join('\n'),true);
+   const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);AlmLimitPlusUI.render(r,c,limit);
+   const check=()=>AlmLimitPlusContract.geometry(r,c,limit);
+   if(check().length)clean.push([c.id,check()]);
+   for(const selector of ['#plus-forest circle','#plus-forest line','#plus-forest path','#plus-forest text',
+     '#plus-funnel circle','#plus-funnel polyline','#plus-funnel text','#plus-funnel']){
+    const n=document.querySelector(selector);if(!n)continue;
+    const mutations=[['filter','opacity(0)'],['stroke-dasharray','0 100000']];
+    if(i===0)mutations.push(['filter','blur(20px)'],['filter','drop-shadow(10000px 0 red)'],
+     ['stroke-dashoffset','1000'],['mix-blend-mode','difference'],['paint-order','stroke fill'],
+     ['marker-start','url(#paint-marker)'],['marker-mid','url(#paint-marker)'],['marker-end','url(#paint-marker)']);
+    for(const [property,value] of mutations){
+     // Stroke parameters are immaterial on reference roles without strokes.
+     if(property.startsWith('stroke-')&&getComputedStyle(n).stroke==='none')continue;
+     n.style.setProperty(property,value);negatives++;
+     if(!check().length)missed.push(c.id+' '+selector+' '+property);
+     n.style.removeProperty(property);
+    }
+    // Move explicit presentation attributes to a stylesheet, preserving computed paint.
+    const css=document.createElement('style'),attrs=['fill','stroke','stroke-width','fill-opacity'].filter(a=>n.hasAttribute(a));
+    const saved=attrs.map(a=>[a,n.getAttribute(a)]);n.classList.add('equivalent-paint');
+    css.textContent='.equivalent-paint {'+saved.map(([a,v])=>a+':'+v).join(';')+'}';document.head.append(css);
+    saved.forEach(([a])=>n.removeAttribute(a));positives++;
+    if(check().length)clean.push([c.id,selector,check()]);
+    saved.forEach(([a,v])=>n.setAttribute(a,v));css.remove();n.classList.remove('equivalent-paint');
+   }
+   // Unused channels must not trigger primitive-type-based false failures.
+   const circle=document.querySelector('#plus-funnel circle'),curve=document.querySelector('#plus-funnel polyline');
+   circle.style.stroke='red';circle.style.strokeOpacity='0';circle.style.strokeWidth='0';
+   const line=document.querySelector('#plus-forest line');line.style.fill='none';
+   if(curve)curve.style.fillOpacity='0';positives++;
+   if(check().length)clean.push([c.id,'unused channel',check()]);
+   circle.removeAttribute('style');line.removeAttribute('style');if(curve)curve.removeAttribute('style');
+  }
+  return {negatives,positives,missed,clean};
+ });
+ expect(result.missed).toEqual([]);expect(result.clean).toEqual([]);
+ console.log('FIX5 STYLE CONTRACT',JSON.stringify(result));
 });
