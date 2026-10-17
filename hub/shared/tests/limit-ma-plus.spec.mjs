@@ -156,3 +156,48 @@ test('limit-ma-plus corpus gate rejects deleted labels and corrupted plots',asyn
  });expect(result.checks).toBe(16097);expect(result.failed).toHaveLength(169);expect(result.failed.every(x=>x.quantity==='render')).toBe(true);
  console.log('CORRUPTED RENDER REPLAY',result.failed.length,'of 169 configurations rejected');
 });
+
+
+test('limit-ma-plus rejects SVG transforms and forest label mutations',async({page})=>{
+ test.setTimeout(240000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ const result=await page.evaluate(async()=>{
+  const loaded=await AlmLimitPlusValidation.prepare(),f=AlmLimitPlusValidationAdapter.corpus.files;
+  const missed=[],counts={clean:0,transform:0,label:0};
+  for(const id of ['limit','fill','reg','contour'])document.getElementById('plus-'+id+'-toggle').checked=true;
+  for(const c of loaded[f[0].path]){
+   __almLimitValidationRun(c.te.map((x,i)=>x+','+c.se[i]).join('\n'),true);
+   const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);AlmLimitPlusUI.render(r,c,limit);
+   const check=()=>AlmLimitPlusContract.geometry(r,c,limit);
+   const reject=kind=>{counts[kind]++;if(!check().length)missed.push(c.id+' '+kind);};
+   counts.clean++;if(check().length)missed.push(c.id+' clean');
+   for(const selector of ['#plus-forest circle','#plus-forest line','#plus-forest text','#plus-funnel circle','#plus-funnel polyline']){
+    const node=document.querySelector(selector);if(!node)continue;
+    for(const transform of ['translate(100 0)','scale(2)']){
+     node.setAttribute('transform',transform);reject('transform');node.removeAttribute('transform');
+     const parent=node.parentNode,next=node.nextSibling,g=document.createElementNS('http://www.w3.org/2000/svg','g');
+     parent.insertBefore(g,node);g.append(node);g.setAttribute('transform',transform);reject('transform');
+     parent.insertBefore(node,next);g.remove();
+    }
+   }
+   for(const svg of document.querySelectorAll('#plus-forest,#plus-funnel')){
+    svg.setAttribute('transform','translate(100 0)');reject('transform');svg.removeAttribute('transform');
+    svg.style.transform='scale(2)';reject('transform');svg.style.removeProperty('transform');
+   }
+   const labels=[...document.querySelectorAll('#plus-forest text')];
+   for(const node of labels){
+    const parent=node.parentNode,next=node.nextSibling,text=node.textContent;
+    node.remove();reject('label');parent.insertBefore(node,next);
+    node.textContent='Wrong method';reject('label');node.textContent=text;
+    const clone=node.cloneNode(true);parent.append(clone);reject('label');clone.remove();
+    for(const attr of ['x','y']){const old=node.getAttribute(attr);node.setAttribute(attr,String(+old+30));reject('label');node.setAttribute(attr,old);}
+   }
+   if(labels.length>1){
+    const texts=labels.map(n=>n.textContent);labels.forEach((n,i)=>n.textContent=texts[(i+1)%texts.length]);reject('label');labels.forEach((n,i)=>n.textContent=texts[i]);
+    const rows=labels.map(n=>n.getAttribute('y'));labels.forEach((n,i)=>n.setAttribute('y',rows[(i+1)%rows.length]));reject('label');labels.forEach((n,i)=>n.setAttribute('y',rows[i]));
+   }
+   counts.clean++;if(check().length)missed.push(c.id+' restored');
+  }return {counts,missed};
+ });
+ expect(result.counts.clean).toBe(338);expect(result.counts.transform).toBeGreaterThan(3000);expect(result.counts.label).toBeGreaterThan(4000);expect(result.missed).toEqual([]);
+ console.log('FIX2 MUTATIONS',JSON.stringify(result));
+});

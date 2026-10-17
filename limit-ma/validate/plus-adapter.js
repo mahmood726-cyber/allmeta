@@ -30,6 +30,8 @@ function flatten(r){const out={};for(const [key,m] of Object.entries(r)){
 }
 function tolerance(key){return key.startsWith('selection.')?(/\.(se|ciLo|ciHi)$/.test(key)?1e-4:1e-6):1e-9;}
 const fitMethods=['RE','limit','trimfill','PET','PEESE','conditional','selection'];
+// Independent display contract; do not derive expected names from rendered text.
+const forestNames={RE:'Random effects (DL)',limit:'Limit (R\u00fccker)',trimfill:'Trim-and-fill \u2014 sensitivity only',PET:'PET',PEESE:'PEESE',conditional:'Conditional PET\u2013PEESE',selection:'3PSM (ML, step .025)'};
 function displayed(expected){
  const failures=[];
  for(const n of document.querySelectorAll('#alm-plus [data-plus-number]')){const key=n.dataset.plusNumber,v=expected[key];if(!finite(v)||n.textContent!==v.toPrecision(12))failures.push(key);}
@@ -57,13 +59,24 @@ function geometry(r,c,limit){
  function eq(a,b,key){if(!close(a,b))failures.push(key);}
  function attr(n,k){const s=n?.getAttribute(k);return s===null||s===undefined||s.trim()===''?NaN:Number(s);}
  function count(nodes,n,key){if(nodes.length!==n)failures.push(key+' count');}
+ // This renderer emits root-coordinate SVG only. Fail closed on transforms,
+ // including ancestor groups and CSS transforms, before using raw coordinates.
+ for(const id of ['plus-forest','plus-funnel']){
+  const svg=document.getElementById(id);
+  for(const node of [svg,...svg.querySelectorAll('*')]){
+   if(node.hasAttribute('transform')||getComputedStyle(node).transform!=='none')failures.push(id+' unexpected transform');
+  }
+ }
  const fits=fitMethods.filter(k=>r[k].status==='ok');
  let low=Math.min(0,...fits.map(k=>r[k].values.ciLo)),high=Math.max(0,...fits.map(k=>r[k].values.ciHi));if(low===high)high=low+1;
  const effect=x=>low+(x-220)*(high-low)/450;
  const forest=document.getElementById('plus-forest'),dots=forest.querySelectorAll('circle'),lines=forest.querySelectorAll('line');
+ const labels=forest.querySelectorAll('text');count(labels,fits.length,'forest method labels');
  count(dots,fits.length,'forest estimates');count(lines,fits.length+1,'forest intervals');
  eq(effect(attr(lines[0],'x1')),0,'forest null x1');eq(effect(attr(lines[0],'x2')),0,'forest null x2');eq(attr(lines[0],'y1'),5,'forest null y1');eq(attr(lines[0],'y2'),240,'forest null y2');
  fits.forEach((key,i)=>{const v=r[key].values,y=25+30*i;
+  if(labels[i]?.textContent!==forestNames[key])failures.push(key+' forest label');
+  eq(attr(labels[i],'x'),5,key+' label x');eq(attr(labels[i],'y'),y+4,key+' label row');
   eq(effect(attr(dots[i],'cx')),v.mu,key+' estimate');eq(attr(dots[i],'cy'),y,key+' row');
   for(const [attrName,value] of [['x1',v.ciLo],['x2',v.ciHi]])eq(effect(attr(lines[i+1],attrName)),value,key+' '+attrName);
   for(const a of ['y1','y2'])eq(attr(lines[i+1],a),y,key+' '+a);
