@@ -140,9 +140,41 @@
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
     <section id="alm-validate" aria-label="Independent R validation" style="grid-column:1/-1"></section>
+    <section id="alm-plus" class="panel" aria-labelledby="plus-title" style="grid-column:1/-1">
+      <h2 id="plus-title">Bias sensitivity comparisons</h2>
+      <p>Compare assumptions, not proof of publication bias. Trim-and-fill is a sensitivity analysis only. All effects use the entered scale.</p>
+      <label for="plus-alpha">Conditional PET&ndash;PEESE two-sided alpha</label>
+      <input id="plus-alpha" type="number" min="0.001" max="0.999" step="0.01" value="0.10" aria-describedby="plus-alpha-note">
+      <p id="plus-alpha-note">Select PEESE when the PET intercept p-value is below alpha, otherwise PET. Differences below 1e-8 are refused as ties.</p>
+      <details><summary>Optional binary arm counts for Peters</summary>
+        <label for="plus-binary-measure">Binary effect scale</label>
+        <select id="plus-binary-measure"><option value="">Generic effects (Peters unavailable)</option><option value="OR">Log odds ratio</option><option value="RR">Log risk ratio</option></select>
+        <label for="plus-binary-counts">One row per study: events treated, total treated, events control, total control</label>
+        <textarea id="plus-binary-counts" rows="4" aria-describedby="plus-binary-note"></textarea>
+        <p id="plus-binary-note">Counts must match the effect/SE rows in order. All four event/non-event cells must be positive integers; zero cells and mismatched effects are refused. Peters requires at least ten studies.</p>
+      </details>
+      <button id="plus-run" type="button">Calculate sensitivity comparisons</button>
+      <p id="plus-status" role="status" aria-live="polite">Run comparisons using the current input. Independent validation is separate below.</p>
+      <table aria-label="Bias-adjusted comparison estimates"><thead><tr><th>Method</th><th>Estimate</th><th>SE</th><th>95% CI lower</th><th>95% CI upper</th></tr></thead><tbody id="plus-body"></tbody></table>
+      <svg id="plus-forest" viewBox="0 0 700 250" role="img" aria-label="Comparison forest plot; numerical values in the preceding table"></svg>
+      <h3>Combined funnel</h3>
+      <fieldset><legend>Visible layers</legend>
+        <label><input id="plus-limit-toggle" type="checkbox" checked> Limit curve and shrunken effects (blue)</label>
+        <label><input id="plus-fill-toggle" type="checkbox" checked> Trim-and-fill imputed studies (orange)</label>
+        <label><input id="plus-reg-toggle" type="checkbox" checked> PET (green) and PEESE (purple)</label>
+        <label><input id="plus-contour-toggle" type="checkbox"> Two-sided 5% significance contours about zero</label>
+      </fieldset>
+      <svg id="plus-funnel" viewBox="0 0 700 350" role="img" aria-label="Combined sensitivity funnel; controls toggle each layer"></svg>
+      <h3>Small-study tests and fit details</h3>
+      <p>Small-study tests have low power with few studies. Egger requires at least ten studies. Peters requires binary arm counts; effect/SE input alone is insufficient. A small p-value does not identify the cause of asymmetry.</p>
+      <div id="plus-details"></div>
+      <p id="plus-interpretation"></p>
+      <h3>Validate sensitivity comparisons</h3>
+      <div id="alm-plus-validate" aria-label="Independent sensitivity R validation"></div>
+    </section>
   </main>
   <footer>
-    R&#252;cker G, Schwarzer G, Carpenter JR, Binder H, Schumacher M. Treatment-effect estimates adjusted for small-study effects via a limit meta-analysis. Biostatistics 2011;12:122&#8211;142. Browser implementation: the full Rücker limit meta-analysis &mdash; DL &tau;&#178;, radial (Galbraith) regression of TE on the &tau;-inflated SE, limit estimate <code>&beta;<sub>r</sub> + &tau;&middot;&alpha;<sub>r</sub></code> (<code>method.adjust='beta0'</code>) with closed-form SE and the small-study/residual Q decomposition. R-parity: matches <code>metasens::limitmeta(metagen(TE=yi, seTE=sei, method.tau='DL'))</code> to 1e-6 on TE.adjust, seTE.adjust, &alpha;<sub>r</sub>, &beta;<sub>r</sub>, Q.small, Q.resid and G&#178; (<code>tests/copas-parity</code>-style oracle; see <code>hub/shared/tests/limit-ma-parity.spec.mjs</code>).
+    R&#252;cker G, Schwarzer G, Carpenter JR, Binder H, Schumacher M. Treatment-effect estimates adjusted for small-study effects via a limit meta-analysis. Biostatistics 2011;12:122&#8211;142. Browser implementation: the full Rücker limit meta-analysis &mdash; DL &tau;&#178;, radial (Galbraith) regression of TE on the &tau;-inflated SE, limit estimate <code>&beta;<sub>r</sub> + &tau;&middot;&alpha;<sub>r</sub></code> (<code>method.adjust='beta0'</code>) with closed-form SE and the small-study/residual Q decomposition. R-parity: matches <code>metasens::limitmeta(metagen(TE=yi, seTE=sei, method.tau='DL'))</code> to 1e-9 on TE.adjust, seTE.adjust, &alpha;<sub>r</sub>, &beta;<sub>r</sub>, Q.small, Q.resid and G&#178; (pinned <code>meta 8.5-0 / metasens 1.5-3</code> oracle; see <code>limit-ma/validate/README.md</code>).
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -716,5 +748,13 @@
 </script>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
+<script src="../shared/ma-core.js"></script>
+<script src="../shared/trimfill.js"></script>
+<script src="../shared/selmodel.js"></script>
+<script src="plus-opt.js"></script>
+<script src="plus.js"></script>
+<script src="plus-ui.js"></script>
+<script src="validate/plus-pins.js"></script>
+<script src="validate/plus-adapter.js"></script>
 </body>
 </html>

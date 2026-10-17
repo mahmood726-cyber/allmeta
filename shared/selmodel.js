@@ -16,8 +16,9 @@
  * (μ, τ², δ₂…) by Nelder-Mead; SE from the inverse numerical Hessian; LRT vs the
  * unadjusted ML (δ all = 1).
  *
- * Experimental, not validated against metafor across the corpus.
- * The numerical optimiser and Hessian remain approximate.
+ * The default Nelder-Mead path remains experimental. The injected optimizer
+ * path used by limit-ma/plus.js has an independent pinned R corpus; see
+ * limit-ma/validate/README-plus.md. Numerical Hessians remain approximate.
  *
  * Reference: Vevea JL, Hedges LV (1995), Psychometrika 60:419-435.
  */
@@ -29,9 +30,13 @@
     var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
     return x >= 0 ? y : -y;
   }
-  function _Phi(z) { return 0.5 * (1 + _erf(z / Math.SQRT2)); }
+  function _Phi(z) {
+    if (global.AlmLimitPlus && Number.isFinite(z)) { var tail=0.5*global.AlmLimitPlus.chisqSF(z*z,1); return z<0?tail:1-tail; }
+    return 0.5 * (1 + _erf(z / Math.SQRT2));
+  }
   // Acklam inverse-normal (for the p-cutpoint → y-boundary map).
   function _qnorm(p) {
+    if(global.AlmLimitPlus && p===0.975)return 1.959963984540054;
     if (global.AlmMaCore && global.AlmMaCore._qnorm) return global.AlmMaCore._qnorm(p);
     if (p <= 0) return -Infinity; if (p >= 1) return Infinity;
     var a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
@@ -107,7 +112,8 @@
     return { x: simplex[0], f: fv[0] };
   }
 
-  // Experimental ML fit; opts.method controls starting values only.
+  // ML fit; opts.method controls starting values only. opts.start/optimize
+  // permit an independently validated parent and deterministic optimizer.
   // Fit. opts: { steps:[0.025], method:'ML' (τ² estimator for the unadjusted ref) }.
   // Returns { mu, se, tau2, delta:[1,...], LRT, LRTdf, LRTp, unadjusted:{mu,tau2} }.
   function fit(yi, vi, opts) {
@@ -115,9 +121,9 @@
     var steps = (opts.steps || [0.025]).slice().sort(function (a, b) { return a - b; });
     var nInt = steps.length + 1, nDelta = nInt - 1; // δ_2..δ_nInt estimated
     // Unadjusted ML start (μ, τ²) via ma-core REML/ML pool (use ML-ish: PM≈ML start ok).
-    var start = global.AlmMaCore ? global.AlmMaCore.pool(yi, vi, { method: opts.method || "REML" })
-      : { mu: yi.reduce(function (a, b) { return a + b; }, 0) / yi.length, tau2: 0 };
-    var mu0 = start.mu, t20 = Math.max(1e-6, start.tau2);
+    var start = opts.start || (global.AlmMaCore ? global.AlmMaCore.pool(yi, vi, { method: opts.method || "ML" })
+      : { mu: yi.reduce(function (a, b) { return a + b; }, 0) / yi.length, tau2: 0 });
+    var mu0 = start.mu, t20 = opts.optimize ? start.tau2 + .001 : Math.max(1e-6, start.tau2);
     // Parameterise: [μ, log τ², log δ_2 ...]. Objective in that space.
     function unpack(x) {
       var mu = x[0], tau2 = Math.exp(x[1]);
@@ -125,10 +131,10 @@
       return { mu: mu, tau2: tau2, delta: delta };
     }
     function obj(x) { var u = unpack(x); return _negLL(yi, vi, steps, u.mu, u.tau2, u.delta); }
-    var x0 = [mu0, Math.log(t20)]; for (var d = 0; d < nDelta; d++) x0.push(Math.log(1 / 99));
-    var opt = _nelderMead(obj, x0, { step: 0.3, maxit: 6000 });
+    var x0 = [mu0, Math.log(t20)]; for (var d = 0; d < nDelta; d++) x0.push(Math.log(.8 / 99.2));
+    var opt = opts.optimize ? opts.optimize(obj, x0) : _nelderMead(obj, x0, { step: 0.3, maxit: 6000 });
     // polish with a tighter restart
-    opt = _nelderMead(obj, opt.x, { step: 0.05, maxit: 6000 });
+    if(!opts.optimize)opt = _nelderMead(obj, opt.x, { step: 0.05, maxit: 6000 });
     var u = unpack(opt.x);
 
     // SE(μ): numerical Hessian of negLL in NATURAL params (μ, τ², δ_2..) at the optimum.
@@ -137,7 +143,9 @@
       var dl = [1]; for (var d = 0; d < nDelta; d++) dl.push(th[2 + d]);
       return _negLL(yi, vi, steps, th[0], th[1], dl);
     }
-    var H = _hessian(nllNat, theta);
+    var active = theta.map(function(_,i){return i;}).filter(function(i){return i!==1 || u.tau2 >= Math.min(1e-4,Math.min.apply(null,vi)/10);});
+    function reduced(th){var full=theta.slice();active.forEach(function(j,i){full[j]=th[i];});return nllNat(full);}
+    var H = _hessian(reduced, active.map(function(i){return theta[i];}), !!opts.optimize);
     var cov = _inv(H);
     var se = (cov && cov[0][0] > 0) ? Math.sqrt(cov[0][0]) : NaN;
 
@@ -147,7 +155,7 @@
     var unadj = _fitUnadjusted(yi, vi, mu0, t20);
     var LRT = 2 * (llSel - unadj.ll);
     return {
-      mu: u.mu, se: se, tau2: u.tau2, delta: u.delta,
+      mu: u.mu, se: se, tau2: u.tau2, delta: u.delta, logLik: llSel,
       LRT: LRT, LRTdf: nDelta, LRTp: 1 - _chi2cdf(Math.max(0, LRT), nDelta),
       unadjusted: { mu: unadj.mu, tau2: unadj.tau2 },
     };
@@ -164,8 +172,8 @@
     return { mu: o.x[0], tau2: Math.exp(o.x[1]), ll: -o.f };
   }
 
-  function _hessian(f, x) {
-    var n = x.length, h = x.map(function (v) { return Math.max(1e-4, Math.abs(v) * 1e-3); });
+  function _hessian(f, x, precise) {
+    var n = x.length, h = x.map(function (v) { return precise ? Math.max(1e-6, Math.abs(v) * 1e-4) : Math.max(1e-4, Math.abs(v) * 1e-3); });
     var H = []; for (var i = 0; i < n; i++) H.push(new Array(n).fill(0));
     for (var i2 = 0; i2 < n; i2++) for (var j = i2; j < n; j++) {
       var xpp = x.slice(), xpm = x.slice(), xmp = x.slice(), xmm = x.slice();
