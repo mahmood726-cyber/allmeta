@@ -86,3 +86,73 @@ test('limit-ma-plus offline file picker replays its separate pins',async({page,c
  await page.getByRole('button',{name:'Re-run sensitivity validation',exact:true}).click();
  await expect(page.locator('#alm-plus-validate [role=status]')).toContainText(`${manifest.checks}/${manifest.checks} passed; 0 failed`,{timeout:180000});
 });
+
+test('limit-ma-plus categorical/refusal deletion, duplication and relocation fail closed',async({page})=>{
+ await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ const result=await page.evaluate(async()=>{
+  const loaded=await AlmLimitPlusValidation.prepare(),f=AlmLimitPlusValidationAdapter.corpus.files,seen=new Set(),missed=[];let checks=0;
+  for(const c of loaded[f[0].path]){
+   __almLimitValidationRun(c.te.map((x,i)=>x+','+c.se[i]).join('\n'),true);const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);AlmLimitPlusUI.render(r,c,limit);const expected=AlmLimitPlusContract.flatten(r);
+   if(AlmLimitPlusContract.displayed(expected).length)missed.push('clean '+c.id);
+   for(const n of document.querySelectorAll('#alm-plus [data-plus-category],#alm-plus [data-plus-refusal]')){
+    const key=n.outerHTML+'@'+(n.closest('[data-plus-method]')?'table':'detail');if(seen.has(key))continue;seen.add(key);
+    const parent=n.parentNode,next=n.nextSibling;
+    n.remove();checks++;if(!AlmLimitPlusContract.displayed(expected).length)missed.push('deletion '+key);parent.insertBefore(n,next);
+    const clone=n.cloneNode(true);parent.append(clone);checks++;if(!AlmLimitPlusContract.displayed(expected).length)missed.push('duplicate '+key);clone.remove();
+    document.getElementById('plus-interpretation').append(n);checks++;if(!AlmLimitPlusContract.displayed(expected).length)missed.push('relocation '+key);parent.insertBefore(n,next);
+   }
+  }return {checks,missed};
+ });expect(result.checks).toBeGreaterThan(20);expect(result.missed).toEqual([]);console.log('LABEL NEGATIVES',result.checks);
+});
+
+test('limit-ma-plus inverse plot geometry and mutations across all toggle combinations',async({page})=>{
+ test.setTimeout(240000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ const result=await page.evaluate(async()=>{
+  const loaded=await AlmLimitPlusValidation.prepare(),f=AlmLimitPlusValidationAdapter.corpus.files,corpus=loaded[f[0].path],missed=[],seen=new Set();let clean=0,negative=0;
+  for(const c of corpus){
+   __almLimitValidationRun(c.te.map((x,i)=>x+','+c.se[i]).join('\n'),true);const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);
+   for(let mask=0;mask<16;mask++){
+    ['limit','fill','reg','contour'].forEach((id,i)=>document.getElementById('plus-'+id+'-toggle').checked=!!(mask&(1<<i)));
+    AlmLimitPlusUI.render(r,c,limit);const check=()=>AlmLimitPlusContract.geometry(r,c,limit);
+    const errors=check();clean++;if(errors.length)missed.push('clean '+c.id+' '+mask+' '+errors.join(','));
+    for(const selector of ['#plus-forest circle','#plus-forest line','#plus-funnel circle','#plus-funnel polyline']){
+     const all=[...document.querySelectorAll(selector)];
+     let sample=all.map((node,i)=>[i,node]);
+     if(selector==='#plus-funnel circle'){
+      sample=[['study first',all[0]],['study last',all[c.k-1]]];let offset=c.k;
+      if((mask&1)&&limit&&r.limit.status==='ok'){sample.push(['shrunken first',all[offset]],['shrunken last',all[offset+c.k-1]]);offset+=c.k;}
+      if((mask&2)&&r.trimfill.status==='ok'&&r.trimfill.values.k0)sample.push(['imputed first',all[offset]],['imputed last',all[all.length-1]]);
+     }
+     for(const [i,node] of sample){
+      // Exercise each positional role and layer combination once; clean geometry
+      // is checked for every configuration and all 16 combinations.
+      const key=mask+selector+i;if(seen.has(key))continue;seen.add(key);
+      const attrs=node.tagName==='circle'?['cx','cy']:node.tagName==='line'?['x1','x2','y1','y2']:['points'];
+      for(const attr of attrs){const old=node.getAttribute(attr);
+       for(const value of [null,attr==='points'?'0,0 700,350':String(Number(old)+100)]){
+        if(value===null)node.removeAttribute(attr);else node.setAttribute(attr,value);negative++;if(!check().length)missed.push('coordinate '+key+' '+attr);node.setAttribute(attr,old);
+       }
+      }
+      const parent=node.parentNode,next=node.nextSibling;node.remove();negative++;if(!check().length)missed.push('node deletion '+key);parent.insertBefore(node,next);
+     }
+    }
+   }
+  }
+  return {clean,negative,missed};
+ });expect(result.clean).toBe(169*16);expect(result.negative).toBeGreaterThan(100);expect(result.missed).toEqual([]);console.log('PLOT GEOMETRY',JSON.stringify(result));
+});
+
+test('limit-ma-plus corpus gate rejects deleted labels and corrupted plots',async({page})=>{
+ test.setTimeout(240000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ const result=await page.evaluate(async()=>{
+  for(const id of ['limit','fill','reg','contour'])document.getElementById('plus-'+id+'-toggle').checked=true;
+  const original=AlmLimitPlusUI.render;let calls=0;
+  AlmLimitPlusUI.render=(...args)=>{original(...args);const mode=calls++%3;
+   if(mode===0)document.querySelectorAll('#alm-plus [data-plus-category],#alm-plus [data-plus-refusal]').forEach(n=>n.remove());
+   if(mode===1)document.querySelectorAll('#plus-forest circle').forEach(n=>n.setAttribute('cx','0'));
+   if(mode===2)document.querySelectorAll('#plus-funnel polyline').forEach(n=>n.setAttribute('points','0,0 700,350'));
+  };
+  try{return await AlmLimitPlusValidation.runCorpus();}finally{AlmLimitPlusUI.render=original;}
+ });expect(result.checks).toBe(16097);expect(result.failed).toHaveLength(169);expect(result.failed.every(x=>x.quantity==='render')).toBe(true);
+ console.log('CORRUPTED RENDER REPLAY',result.failed.length,'of 169 configurations rejected');
+});

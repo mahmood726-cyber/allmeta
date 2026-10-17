@@ -35,3 +35,28 @@ test('pubbias-tests wires the selection model into its results', async ({ page }
   expect(o.sel_delta2).toBeGreaterThan(0);
   expect(o.sel_LRTp).toBeGreaterThanOrEqual(0);
 });
+
+// Legacy callers must retain every bit of the base result, including NaNs.
+// Keep this corpus regression alongside the independent R accuracy test above.
+test('selmodel legacy is exactly origin/main across the complete plus corpus', async () => {
+  test.setTimeout(180000);
+  const {readFileSync}=await import('node:fs'),{execFileSync}=await import('node:child_process'),vm=await import('node:vm');
+  const root=new globalThis.URL('../../../',import.meta.url),{fileURLToPath}=await import('node:url');
+  const read=p=>readFileSync(new globalThis.URL(p,root),'utf8');
+  const base=p=>execFileSync('git',['show','origin/main:'+p],{cwd:fileURLToPath(root),encoding:'utf8',maxBuffer:8*1024*1024});
+  expect(read('shared/selmodel.js')).toBe(base('shared/selmodel.js'));
+  function env(old,plus=false){const ctx=vm.createContext({});ctx.window=ctx;
+    for(const p of ['shared/ma-core.js','shared/selmodel.js'])vm.runInContext(old?base(p):read(p),ctx);
+    if(plus)for(const p of ['shared/trimfill.js','limit-ma/plus-opt.js','limit-ma/plus-selmodel.js','limit-ma/plus.js'])vm.runInContext(read(p),ctx);
+    return ctx;
+  }
+  const a=env(true),b=env(false),withPlus=env(false,true),corpus=JSON.parse(read('limit-ma/validate/plus/corpus.json'));
+  let leaves=0;
+  function identical(x,y,path){if(x&&typeof x==='object'){
+    expect(Object.keys(y),path).toEqual(Object.keys(x));for(const key of Object.keys(x))identical(x[key],y[key],path+'.'+key);
+  }else{leaves++;expect(x===y||(Number.isNaN(x)&&Number.isNaN(y)),path).toBe(true);}}
+  for(const c of corpus){const vi=c.se.map(s=>s*s),opts={steps:[.025],method:'REML'},ref=a.AlmSelModel.fit(c.te,vi,opts);
+    identical(ref,b.AlmSelModel.fit(c.te,vi,opts),c.id);identical(ref,withPlus.AlmSelModel.fit(c.te,vi,opts),c.id+' with plus loaded');
+  }
+  console.log('SELMODEL EXACT',corpus.length,'configurations; two contexts;',leaves,'scalar comparisons');
+});

@@ -108,7 +108,7 @@ function compute(c,limit,alpha=.1){
  const groups=y.map((a,i)=>a/s[i]>Z);
  if(groups.every(Boolean)||groups.every(x=>!x))r.selection=refusal('empty-interval');
  else {
-  try {const f=g.AlmSelModel.fit(y,v,{method:'ML',steps:[.025],optimize:g.AlmLimitPlusOptimize,start:g.AlmLimitPlusMLStart(y,v)});
+  try {const f=g.AlmLimitPlusSelModel.fit(y,v,{method:'ML',steps:[.025],optimize:g.AlmLimitPlusOptimize,start:g.AlmLimitPlusMLStart(y,v)});
    r.selection=[f.mu,f.tau2,f.se,f.logLik,...f.delta].every(Number.isFinite)?ok({mu:f.mu,tau2:f.tau2,delta:f.delta[1],se:f.se,ciLo:f.mu-Z*f.se,ciHi:f.mu+Z*f.se,logLik:f.logLik}):refusal('selection-fit-undefined');
   }catch(e){r.selection=refusal(e.message);}
  }

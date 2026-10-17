@@ -38,7 +38,24 @@ matching the primary replay's convention. Counts, sides, branches, statuses and
 refusal reasons compare exactly. Selection mu/tau-squared/delta/logLik use 1e-6;
 SE and confidence endpoints use 1e-4. Every scalar and imputed effect/SE is
 compared. Each configuration also checks the rendered numerical output.
-A matching refusal is a pass only when its reason also matches.
+A matching refusal is a pass only when its reason also matches. Required refusal
+nodes must occur once in each applicable table row and detail block. Branch and
+side labels must occur once in their method's detail block; deletion, relocation,
+and duplication fail validation.
+
+The rendered forest estimates, CI endpoints and row positions, and funnel study,
+shrunken and imputed points, regression curves and contours are read from SVG.
+The validator independently derives axis domains from the computed source values,
+inverts coordinates, and checks effect/SE values at normalized relative tolerance
+1e-9 (unit floor). Node and coordinate deletion fail closed. Tests exercise all
+16 layer-toggle combinations on all 169 configurations and corrupt/delete
+coordinates and nodes for each plotted role and toggle combination.
+
+`shared/selmodel.js` preserves the origin/main legacy implementation byte-for-byte.
+Only limit-ma loads `plus-selmodel.js` and calls `AlmLimitPlusSelModel`; its ML
+start, BFGS optimizer and boundary Hessian cannot alter legacy callers, even when
+both engines are loaded. The permanent selmodel corpus test compares every
+legacy result field with origin/main using strict equality, including NaN placement.
 
 The existing primary `dat.hartmannboyce2018::001` mismatch remains unchanged.
 The new panel independently runs the convergence check for the internal REML
