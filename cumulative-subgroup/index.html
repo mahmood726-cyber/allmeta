@@ -788,7 +788,8 @@
     };
     // Validation observes the autosave draft banner: shared/autosave.js builds the whole banner before it
     // appends it to <body>, so the text seen when the insertion is observed is autosave's own output. The
-    // page records that exact sentence, and marks the banner changed if anything inside it mutates later
+    // page records only the first banner node and its exact sentence; later insertions never re-baseline it.
+    // Autosave shows at most one banner per page load. Mark it changed if anything inside it mutates later
     // (records are delivered in order, so an edit made in the same task as the insertion is also seen).
     window.__almCumSubDraftBanners = [];
     new MutationObserver(function (records) {
@@ -797,6 +798,7 @@
         for (const rec of list) if (rec.node.contains(r.target)) rec.changed = true;
         if (r.type !== "childList" || r.target !== document.body) return;
         r.addedNodes.forEach(function (n) {
+          if (list.length) return;
           if (n.nodeType !== 1 || n.tagName !== "DIV" || n.getAttribute("role") !== "status" || n.getAttribute("aria-live") !== "polite") return;
           const s = n.firstElementChild;
           list.push({ node: n, text: s ? s.textContent : null, changed: false });

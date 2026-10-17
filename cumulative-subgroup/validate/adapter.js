@@ -214,9 +214,9 @@ function draftBannerOk() {
     c[2].tagName === 'BUTTON' && c[2].textContent === 'Discard' && banners[0].textContent === c[0].textContent + 'RestoreDiscard';
 }
 // The draft banner's sentence (including its age) is exactly the text shared/autosave.js built: the page records the first span's
-// text when it observes autosave insert the banner, and marks the banner changed if anything inside it mutates afterwards. No
+// text only for the first observed banner node, and marks that banner changed if anything inside it mutates afterwards. No
 // recomputation and no tolerance: the recorded sentence never changes, so a correct banner keeps passing as time passes, and any
-// later edit (or a banner the page did not see inserted) fails. autosave.js never updates the banner in place.
+// later edit or replacement node fails, even with identical text. Removal without replacement passes. autosave.js never updates the banner in place.
 function draftText(node) {
   const rec = (window.__almCumSubDraftBanners || []).filter(r => r.node === node);
   if (rec.length !== 1 || rec[0].changed !== false || typeof rec[0].text !== 'string' || !/^Draft from [1-9]\d* (min|h) ago found\. Restore\?$/.test(rec[0].text)) return null;

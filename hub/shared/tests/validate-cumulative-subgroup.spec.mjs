@@ -21,7 +21,8 @@ test('cumulative-subgroup declared replay passes and preserves input, storage an
  test.setTimeout(240000);await open(page);
  expect(manifest.checks).toBe(609398);expect(manifest.configurations).toBe(1816);expect(ALL).toBe(manifest.configurations);expect(REFUSED).toBe(6);
  await page.locator('#f-title').fill('Pending title');await page.locator('#f-data').fill('A, 0.1, 0.1, 2001, G1\nB, 0.3, 0.2, 2002, G2\nC, 0.2, 0.15, 2003, G1');
- await page.waitForFunction(()=>!!localStorage.getItem('alm-autosave:cumulative-subgroup'));
+ // Wait for the debounced autosave of THIS input (an entry written at load holds the default data).
+ await page.waitForFunction(()=>(localStorage.getItem('alm-autosave:cumulative-subgroup')||'').includes('C, 0.2, 0.15, 2003, G1'));
  const snap=()=>({page:__almCumSubValidationSnapshot(),href:location.href,length:history.length,state:history.state,storage:{...localStorage},svg:document.getElementById('svg-host').innerHTML,disabled:[...document.querySelectorAll('input,select,textarea,button')].filter(x=>!x.closest('#alm-validate')).map(x=>[x.id||x.tagName,x.disabled,x.readOnly])});
  const before=await page.evaluate(snap),r=await replay(page);
  expect(r.checks).toBe(manifest.checks);expect(r.passed).toBe(r.checks);expect(r.failed).toEqual([]);expect(r.refusals).toHaveLength(6);
@@ -260,6 +261,30 @@ async function bannerAt(page,ageMs){
  },ageMs);
 }
 const setBanner=(page,text)=>page.evaluate(t=>{[...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]')).firstElementChild.textContent=t;},text);
+// Review round 4: a replacement node must never establish a new trusted sentence.
+for(const [name,ageMs,shown,replacement] of [
+ ['2 -> 1 min',90500,'Draft from 2 min ago found. Restore?','Draft from 1 min ago found. Restore?'],
+ ['1 -> 2 h',5364000,'Draft from 1 h ago found. Restore?','Draft from 2 h ago found. Restore?'],
+ ['identical sentence',90500,'Draft from 2 min ago found. Restore?','Draft from 2 min ago found. Restore?'],
+])test('cumulative-subgroup draft banner replacement '+name+' fails both tiers',async({page})=>{
+ test.setTimeout(400000);expect(await bannerAt(page,ageMs)).toBe(shown);
+ await page.evaluate(async text=>{
+  const original=[...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]'));
+  const clone=original.cloneNode(true);clone.firstElementChild.textContent=text;original.replaceWith(clone);
+  await Promise.resolve();
+ },replacement);
+ const l=await live(page),r=await replay(page);
+ expect.soft(failedLabels(l)).toEqual(['display.page_text']);
+ expect.soft(r.failed).toHaveLength(ALL);
+ expect.soft([...new Set(r.failed.map(x=>x.quantity))]).toEqual(['page_text']);
+ expect(await bannerSpan(page)).toBe(replacement);
+});
+test('cumulative-subgroup draft banner removal without replacement passes both tiers',async({page})=>{
+ test.setTimeout(400000);await bannerAt(page,90500);
+ await page.evaluate(()=>[...document.body.children].find(e=>e.matches('div[role=status][aria-live=polite]')).remove());
+ expect(failedLabels(await live(page))).toEqual([]);
+ const r=await replay(page);expect(r.checks).toBe(manifest.checks);expect(r.failed).toEqual([]);
+});
 async function bothTiersFail(page){
  const bad=await replay(page);expect(bad.failed).toHaveLength(ALL);expect(bad.failed.every(x=>x.quantity==='page_text')).toBe(true);
  expect(failedLabels(await live(page))).toEqual(['display.page_text']);
