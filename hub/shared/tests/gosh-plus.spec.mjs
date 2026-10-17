@@ -21,6 +21,30 @@ async function render(page,c=corpus[0],model='DL') {
 async function failures(page,c=corpus[0],model='DL') {
   return page.evaluate(({r,k,model})=>{const failures=[];AlmGoshPlusAdapter.compareDisplay(r,k,model,(q,a,b,kind)=>{if(!AlmValidate.compare(a,b,kind,1e-9).pass)failures.push(q);});return failures;},{r:refs.find(r=>r.key===c.id+'::'+model),k:c.k,model});
 }
+for(const variation of ['zero-width stroke','unfilled tick','class colour'])test('extras legal style '+variation,async({page})=>{
+  await page.goto(url);await render(page);
+  await page.locator('#plus-plot').evaluate((svg,v)=>{
+    const c=svg.querySelector('circle');
+    if(v==='zero-width stroke'){c.style.stroke='red';c.style.strokeWidth='0';}
+    if(v==='unfilled tick')svg.querySelector('path').style.fill='none';
+    if(v==='class colour'){
+      const css=document.createElement('style');css.textContent='.legal-colour {fill:rgb(0,114,178)}';document.head.append(css);
+      svg.querySelector('[data-includes="true"]').classList.add('legal-colour');
+    }
+  },variation);expect(await failures(page)).toEqual([]);
+});
+
+test('extras clean reference resists a global stylesheet mutation',async({page})=>{
+  await page.goto(url);await render(page);expect(await failures(page)).toEqual([]);
+  await page.addStyleTag({content:'#plus-plot circle {filter:opacity(0) !important}'});
+  await expect(failures(page)).rejects.toThrow('style contract');
+});
+test('extras clean reference follows responsive layout',async({page})=>{
+  await page.goto(url);await render(page);
+  await page.setViewportSize({width:1000,height:800});
+  expect(await failures(page)).toEqual([]);
+});
+
 test('extras every quantity against pinned R corpus, offline',async({page,context})=>{
   test.setTimeout(300000);await page.goto(url);
   const before=await page.evaluate(()=>({snapshot:__almGoshValidationSnapshot(),href:location.href,storage:{...localStorage}}));
@@ -86,10 +110,14 @@ for(const model of ['FE','DL'])test('extras live webR '+model+' @slow',async({pa
   console.log('GOSH PLUS LIVE',model,r.rows.length+'/'+r.rows.length);
 });
 
-for(const [i,quantity] of [[2,'xmin'],[3,'xmax'],[4,'ymin'],[5,'ymax']])test('extras axis mutation fails only '+quantity,async({page})=>{
-  await page.goto(url);await render(page);
+for(const [i,quantity] of [[2,'xmin'],[3,'xmax'],[4,'ymin'],[5,'ymax']])test('extras axis mutation is refused '+quantity,async({page})=>{
+  await page.goto(url);await render(page);expect(await failures(page)).toEqual([]);
   await page.locator('#plus-plot text').nth(i).evaluate(e=>e.textContent=String(Number(e.textContent)+1));
-  expect(await failures(page)).toEqual([quantity]);
+  // Changed glyph bounds can change computed perspective-origin before the
+  // numerical callback runs. Both are valid refusals under the style contract.
+  const result=await failures(page).then(values=>({values}),error=>({error:String(error)}));
+  if(result.error)expect(result.error).toContain('Extra style contract');
+  else expect(result.values).toEqual([quantity]);
 });
 test('extras live sampled DL uses the same memberships @slow',async({page})=>{
   test.setTimeout(300000);await page.goto(url);const c=corpus.find(c=>c.k>15);
@@ -120,13 +148,13 @@ for(const mutation of ['translate','ancestor translate','zero radius','CSS radiu
   },mutation);
   await expect(failures(page)).rejects.toThrow();
 });
-test('extras root coordinates accept equivalent transformed geometry',async({page})=>{
+test('extras style contract refuses compensated transforms',async({page})=>{
   await page.goto(url);await render(page);
   await page.locator('#plus-plot').evaluate(svg=>{
     const g=document.createElementNS(svg.namespaceURI,'g');svg.append(g);g.append(...svg.querySelectorAll('circle'));g.setAttribute('transform','translate(10 20)');
     for(const c of g.children){c.setAttribute('cx',Number(c.getAttribute('cx'))-10);c.setAttribute('cy',Number(c.getAttribute('cy'))-20);}
   });
-  expect(await failures(page)).toEqual([]);
+  await expect(failures(page)).rejects.toThrow('style');
 });
 for(const q of ['study',...fields])test('extras sort contract '+q,async({page})=>{
   await page.goto(url);await render(page);
@@ -150,9 +178,9 @@ for(const mutation of ['missing','multiple','invalid','wrong key'])test('extras 
   await expect(failures(page)).rejects.toThrow('Invalid extra sort declaration');
 });
 for(const i of [2,3,4,5])for(const blank of ['', '   '])test(`extras rejects empty numeric axis ${i} length ${blank.length}`,async({page})=>{
-  await page.goto(url);await render(page);
+  await page.goto(url);await render(page);expect(await failures(page)).toEqual([]);
   await page.locator('#plus-plot text').nth(i).evaluate((e,t)=>e.textContent=t,blank);
-  await expect(failures(page)).rejects.toThrow('Missing extra axis value');
+  await expect(failures(page)).rejects.toThrow(/Missing extra axis value|Extra style contract/);
 });
 for(const model of ['FE','DL'])for(const id of ['plus-study','plus-het'])for(const mutation of ['rename','delete','duplicate','value','label'])test(`extras selector rejects ${model} ${id} ${mutation}`,async({page})=>{
   await page.goto(url);await render(page,corpus[0],model);
@@ -207,8 +235,24 @@ for(const mutation of ['ancestor display','ancestor visibility','overflow ancest
     if(m==='hidden tspan'){const span=document.createElementNS(svg.namespaceURI,'tspan');span.textContent=t.textContent;span.style.visibility='hidden';t.replaceChildren(span);}
   },mutation);await expect(failures(page)).rejects.toThrow();
 });
-test('extras equivalent computed colours and root translation remain valid',async({page})=>{
+test('extras equivalent computed colours remain valid',async({page})=>{
   await page.goto(url);await render(page);
-  await page.locator('#plus-plot').evaluate(svg=>{svg.setAttribute('transform','translate(10 20)');for(const c of svg.querySelectorAll('circle')){c.setAttribute('fill',c.dataset.includes==='true'?'rgb(0, 114, 178)':'rgb(213, 94, 0)');c.style.stroke=c.getAttribute('fill');}});
+  await page.locator('#plus-plot').evaluate(svg=>{for(const c of svg.querySelectorAll('circle')){c.setAttribute('fill',c.dataset.includes==='true'?'rgb(0, 114, 178)':'rgb(213, 94, 0)');}});
   expect(await failures(page)).toEqual([]);
+});
+
+for(const [target,property,value] of [
+  ['circle','filter','blur(2px)'],['circle','filter','opacity(0)'],
+  ['circle','filter','drop-shadow(100px 0 red)'],['circle','filter','hue-rotate(180deg)'],
+  ['svg','filter','opacity(0)'],['text','filter','blur(2px)'],
+  ['path','stroke-dasharray','0 1000'],['path','stroke-dashoffset','10px'],
+  ['circle','mix-blend-mode','multiply'],['circle','paint-order','stroke fill'],
+  ['path','marker-start','url(#bad)'],['path','marker-mid','url(#bad)'],['path','marker-end','url(#bad)'],
+  ['text','letter-spacing','2px'],['text','font-weight','900'],['text','dominant-baseline','hanging']
+])test(`extras full style rejects ${target} ${property} ${value}`,async({page})=>{
+  await page.goto(url);await render(page);expect(await failures(page)).toEqual([]);
+  await page.locator('#plus-plot').evaluate((svg,[target,p,v])=>{
+    (target==='svg'?svg:svg.querySelector(target)).style.setProperty(p,v);
+  },[target,property,value]);
+  await expect(failures(page)).rejects.toThrow('style contract');
 });

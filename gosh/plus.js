@@ -51,9 +51,9 @@
     });
     return {rows,points,k,model:a.summary.model,sampled:a.summary.sampled,labels:a.summary.studies.map(s=>s.label)};
   }
-  function draw() {
-    if (!state) return;
-    const q=el('plus-het').value, svg=el('plus-plot');svg.replaceChildren();
+  // Shared pure plot renderer: the validator renders fresh nodes in an isolated root.
+  function drawPlot(svg,state,selected,q) {
+    svg.replaceChildren();
     const xs=state.points.map(p=>p.mu),ys=state.points.map(p=>p[q]);
     const xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(0,...ys),ymax=Math.max(...ys);
     function coord(v,lo,hi,offset,size) {if(lo===hi)return offset+size/2;const s=Math.max(Math.abs(lo),Math.abs(hi));return offset+size*((v/s-lo/s)/(hi/s-lo/s));}
@@ -61,6 +61,10 @@
     state.points.forEach((p,i)=>{const c=document.createElementNS(ns,'circle');c.setAttribute('cx',coord(p.mu,xmin,xmax,60,520));c.setAttribute('cy',400-coord(p[q],ymin,ymax,30,350));c.setAttribute('r','2');c.setAttribute('fill',p.members.includes(selected)?'#0072b2':'#d55e00');c.dataset.index=i;c.dataset.includes=String(p.members.includes(selected));svg.append(c);});
     for(const [i,x,y,dx,dy] of [[0,60,370,0,5],[1,580,370,0,5],[2,60,370,-5,0],[3,60,20,-5,0]]) {const t=document.createElementNS(ns,'path');t.dataset.plusTick=i;t.setAttribute('d',`M ${x} ${y} l ${dx} ${dy}`);t.setAttribute('stroke','currentColor');svg.append(t);}
     for(const [text,x,y] of [['Pooled effect',240,415],[axes[q],5,15],[format(xmin),60,390],[format(xmax),580,390],[format(ymin),5,370],[format(ymax),5,30]]) {const t=document.createElementNS(ns,'text');t.textContent=text;t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('font-size','12');if(x===580)t.setAttribute('text-anchor','end');t.setAttribute('fill','currentColor');svg.append(t);}
+  }
+  function draw() {
+    if (!state) return;
+    drawPlot(el('plus-plot'),state,selected,el('plus-het').value);
     const row=state.rows[selected-1];el('plus-counts').textContent=`Includes study ${selected}: ${row.with_n} (blue); excludes study ${selected}: ${row.without_n} (orange).`;
     for (const tr of el('plus-table').tBodies[0].rows) tr.setAttribute('aria-selected',String(Number(tr.dataset.study)===selected));
   }
@@ -101,5 +105,5 @@
   el('plus-refresh').onclick=refresh;
   el('plus-study').onchange=()=>{selected=Number(el('plus-study').value);draw();};el('plus-het').onchange=draw;
   for(const id of ['src','model','n-sample'])el(id).addEventListener('input',()=>{el('plus-status').textContent='Inputs changed. Refresh extras before interpreting them.';});
-  window.AlmGoshPlus={fields,columnLabels:['Study',...labels],axes,derive,capture,render,refresh,clear,get state(){return state;}};
+  window.AlmGoshPlus={drawPlot,fields,columnLabels:['Study',...labels],axes,derive,capture,render,refresh,clear,get state(){return state;}};
 })();

@@ -1,5 +1,40 @@
 # GOSH extras validation
 
+## Rendered style contract
+
+Each comparison calls the same pure plot renderer with the current analysis,
+study selection and axis in a temporary closed shadow root. Clean ancestor
+elements and authored stylesheets are captured at adapter initialization,
+before replay mutations. The original CSS cascade (including unitless inherited
+values) lays out fresh reference nodes at the current viewport width. `:root`
+rules target the isolated host, preserving media rules and theme variables.
+Computed values come from this browser, not stored browser constants. The
+host is offscreen and removed in `finally`.
+
+Every property enumerated by `getComputedStyle` is compared on the SVG root,
+points, ticks and labels. Unexpected wrappers or label descendants fail closed;
+the renderer emits direct children only. This covers filters, blending, dashes,
+markers, transforms and text painting without a paint-property allowlist.
+Equivalent class/inline/attribute styles pass when their computed values match.
+Compensated transforms are outside this strict style contract and are refused.
+
+Both layout trees are flushed before computed-style reads. Resolved left/right
+root margins and their logical aliases are excluded: these place the viewport,
+not paint inside it, and Chromium reports different auto-margin values after
+harmless mark mutations in live/offscreen contexts. Dimensions, transforms and
+all mark styles remain checked.
+
+Other exceptions are limited to Chromium app-region (native window dragging), fill
+on straight open ticks (no fill area), and stroke colour/width/opacity when
+both reference and actual strokes contribute no paint. A newly painted stroke
+still fails. Numerical comparisons and corpus cardinalities are unchanged.
+
+| Item | Static or dynamic | Source |
+| --- | --- | --- |
+| Mark topology and ineffective-paint exceptions | Static renderer contract | `plus.js`, adapter |
+| Reference computed styles | Dynamic, same browser/page | Isolated clean render |
+| Numerical output | Dynamic | Captured analysis and pinned R reference files |
+
 The extras are isolated in `#alm-plus`. Refresh captures the existing GOSH
 engine through its existing validation hook, restores the original page state,
 and draws a separate scatter. The original engine, plot, summary, export and

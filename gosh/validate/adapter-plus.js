@@ -26,7 +26,52 @@
     const expected=[...a.rows].sort((x,y)=>sign*(x[key]-y[key])||x.study-y.study).map(r=>r.study);
     if(ids.some((id,i)=>id!==expected[i]))throw Error('Invalid extra table order');
   }
+  // Capture clean DOM context and authored CSS, not resolved inherited lengths
+  // (e.g. unitless line-height must scale with each label's font size).
+  const cleanRoot=document.getElementById('plus-plot'),rootTemplate=cleanRoot.cloneNode(false),ancestors=[];
+  for(let n=cleanRoot.parentElement;n;n=n.parentElement)ancestors.unshift(n.cloneNode(false));
+  const cleanSheets=[...document.styleSheets].map(sheet=>[...sheet.cssRules].map(r=>r.cssText).join('\n')).join('\n');
+  function styleContract(svg,a) {
+    const host=document.createElement('div');
+    host.style.cssText='position:fixed;left:-100000px;top:0;width:'+document.documentElement.clientWidth+'px';
+    const shadow=host.attachShadow({mode:'closed'}),css=document.createElement('style');
+    // Root variables/media rules belong to the isolated host, not the live page.
+    css.textContent=':host {all:initial}\n'+cleanSheets.replace(/:root\b/g,':host');
+    shadow.append(css);
+    let parent=shadow;
+    for(const template of ancestors){const n=template.cloneNode(false);parent.append(n);parent=n;}
+    const ref=rootTemplate.cloneNode(false);parent.append(ref);document.body.append(host);
+    try {
+      P.drawPlot(ref,a,Number(document.getElementById('plus-study').value),document.getElementById('plus-het').value);
+      // Flush both layout trees before reading resolved SVG box properties.
+      svg.getBoundingClientRect();ref.getBoundingClientRect();
+      const actual=[svg,...svg.querySelectorAll('*')],expected=[ref,...ref.querySelectorAll('*')];
+      if(actual.length!==expected.length)throw Error('Extra style role coverage mismatch');
+      for(let i=0;i<actual.length;i++) {
+        const n=actual[i],r=expected[i],s=getComputedStyle(n),t=getComputedStyle(r);
+        if(n.tagName!==r.tagName|| (i&&n.parentElement!==svg)||n.children.length&&i)throw Error('Extra style ancestry mismatch');
+        const noStroke=z=>z.stroke==='none'||parseFloat(z.strokeWidth)===0||Number(z.strokeOpacity)===0;
+        const unpaintedStroke=i&&noStroke(t)&&noStroke(s),differences=[],properties=Array.from(t);
+        // Enumerate ALL browser properties; no paint-property allowlist.
+        for(const p of properties) {
+          // Outer SVG margins place the viewport, not paint within it. Chromium
+          // resolves auto margins differently after harmless mark mutations in
+          // the live/offscreen contexts. Dimensions and transforms stay checked.
+          if(!i&&['margin-left','margin-right','margin-inline-start','margin-inline-end'].includes(p))continue;
+          // App-region controls native window dragging, never SVG paint.
+          if(p==='app-region'||p==='-webkit-app-region')continue;
+          // A straight open tick has no fill area. Unpainted strokes may vary
+          // only if the actual stroke also contributes no paint.
+          if(r.tagName==='path'&&(p==='fill'||p==='fill-opacity'))continue;
+          if(unpaintedStroke&&['stroke','stroke-width','stroke-opacity'].includes(p))continue;
+          if(s.getPropertyValue(p)!==t.getPropertyValue(p))differences.push(p+': '+s.getPropertyValue(p)+' != '+t.getPropertyValue(p));
+        }
+        if(differences.length)throw Error('Extra style contract '+n.tagName+' '+differences.join('; '));
+      }
+    } finally {host.remove();}
+  }
   function plotGeometry(svg,circles,a) {
+    styleContract(svg,a);
     const view=svg.viewBox.baseVal, root=svg.getScreenCTM(), box=svg.getBoundingClientRect();
     if(!root||box.width<=0||box.height<=0||view.x!==0||view.y!==0||view.width!==600||view.height!==420)throw Error('Invalid extra plot viewport');
     const inverse=root.inverse(),seen=new Set(),styles=new Map();
@@ -48,7 +93,7 @@
       }
       const s=style(n);
       if(n.tagName==='path'&&(s.stroke==='none'||s.stroke==='transparent'||/rgba\([^)]*,\s*0\s*\)/.test(s.stroke)||Number(s.strokeOpacity)<=0||!(parseFloat(s.strokeWidth)>0)))throw Error('Invisible extra tick');
-      if(Number(s.fillOpacity)<=0||s.fill==='none'||s.fill==='transparent'||/rgba\([^)]*,\s*0\s*\)/.test(s.fill))throw Error('Invisible extra paint');
+      if(n.tagName!=='path'&&(Number(s.fillOpacity)<=0||s.fill==='none'||s.fill==='transparent'||/rgba\([^)]*,\s*0\s*\)/.test(s.fill)))throw Error('Invisible extra paint');
       return b;
     }
     const ticks=[...svg.querySelectorAll('[data-plus-tick]')],coords=[[60,370],[580,370],[60,370],[60,20]];
@@ -78,7 +123,7 @@
       const u=fraction(xs[i],lo,hi),v=fraction(ys[i],yl,yh);
       near(screen(c,b.x+b.width/2,b.y+b.height/2),{x:anchors[0].x+u*(anchors[1].x-anchors[0].x)+v*(anchors[3].x-anchors[2].x),y:anchors[0].y+u*(anchors[1].y-anchors[0].y)+v*(anchors[3].y-anchors[2].y)});
       const colour=a.points[i].members.includes(Number(document.getElementById('plus-study').value))?'rgb(0, 114, 178)':'rgb(213, 94, 0)';
-      if(s.fill!==colour||(s.stroke!=='none'&&s.stroke!==colour))throw Error('Invalid extra computed colour');
+      if(s.fill!==colour)throw Error('Invalid extra computed colour');
       // Retain the pinned 1e-9 numeric contract separately from the .02 CSS-pixel
       // screen guard (browser SVG bounding boxes are float-rounded).
       return new DOMPoint(Number(c.getAttribute('cx')),Number(c.getAttribute('cy'))).matrixTransform(inverse.multiply(m));
