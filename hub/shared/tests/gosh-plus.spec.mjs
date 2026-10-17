@@ -1,5 +1,14 @@
 import {test,expect} from './validation-fixture.mjs';
 import {readFileSync} from 'node:fs';
+// Validate settled rendering, not the shared panel entrance animation's zero-opacity frame.
+test.use({reducedMotion:'reduce'});
+test.beforeEach(async({page})=>{
+  await page.addInitScript(()=>document.addEventListener('DOMContentLoaded',()=>{
+    const style=document.createElement('style');
+    style.textContent='main, .panel { animation: none !important; }';
+    document.head.append(style);
+  },{once:true}));
+});
 const root=new URL('../../../gosh/validate/',import.meta.url);
 const corpus=JSON.parse(readFileSync(new URL('plus/corpus.json',root),'utf8'));
 const refs=JSON.parse(readFileSync(new URL('plus/reference.json',root),'utf8'));
@@ -88,4 +97,72 @@ test('extras live sampled DL uses the same memberships @slow',async({page})=>{
   await page.locator('#model').selectOption('DL');await page.locator('#btn-run').click();await page.locator('#n-sample').fill('37');
   const r=await page.evaluate(()=>AlmGoshPlusValidation.runLive());expect(r.rows.filter(x=>!x.pass)).toEqual([]);expect(r.versions.metafor).toBe('4.8-0');
   console.log('GOSH PLUS LIVE SAMPLED DL',r.rows.length+'/'+r.rows.length);
+});
+
+
+for(const mutation of ['translate','ancestor translate','zero radius','CSS radius','hidden','display','opacity','ancestor opacity','fill opacity','collapsed transform','viewport','duplicate subset','missing subset'])test('extras geometry rejects '+mutation,async({page})=>{
+  await page.goto(url);await render(page);
+  await page.locator('#plus-plot').evaluate((svg,m)=>{
+    const c=svg.querySelector('circle');
+    if(m==='translate')c.setAttribute('transform','translate(1000 1000)');
+    if(m==='ancestor translate'){const g=document.createElementNS(svg.namespaceURI,'g');svg.append(g);g.append(...svg.querySelectorAll('circle'));g.setAttribute('transform','translate(1000 1000)');}
+    if(m==='zero radius')c.setAttribute('r','0');
+    if(m==='CSS radius')c.style.r='0px';
+    if(m==='hidden')c.style.visibility='hidden';
+    if(m==='display')c.style.display='none';
+    if(m==='opacity')c.style.opacity='0';
+    if(m==='ancestor opacity')svg.style.opacity='0';
+    if(m==='fill opacity')c.style.fillOpacity='0';
+    if(m==='collapsed transform')c.setAttribute('transform','scale(0)');
+    if(m==='viewport')svg.setAttribute('viewBox','1000 1000 600 420');
+    if(m==='duplicate subset')svg.querySelectorAll('circle')[1].replaceWith(c.cloneNode(true));
+    if(m==='missing subset')c.remove();
+  },mutation);
+  await expect(failures(page)).rejects.toThrow();
+});
+test('extras root coordinates accept equivalent transformed geometry',async({page})=>{
+  await page.goto(url);await render(page);
+  await page.locator('#plus-plot').evaluate(svg=>{
+    const g=document.createElementNS(svg.namespaceURI,'g');svg.append(g);g.append(...svg.querySelectorAll('circle'));g.setAttribute('transform','translate(10 20)');
+    for(const c of g.children){c.setAttribute('cx',Number(c.getAttribute('cx'))-10);c.setAttribute('cy',Number(c.getAttribute('cy'))-20);}
+  });
+  expect(await failures(page)).toEqual([]);
+});
+for(const q of ['study',...fields])test('extras sort contract '+q,async({page})=>{
+  await page.goto(url);await render(page);
+  for(let i=0;i<2;i++){
+    await page.locator(`#plus-table [data-sort="${q}"]`).click();
+    expect(await failures(page)).toEqual([]);
+    await page.locator('#plus-table tbody').evaluate(b=>b.append(b.firstElementChild));
+    await expect(failures(page)).rejects.toThrow('Invalid extra table order');
+    await render(page);
+  }
+});
+for(const mutation of ['missing','multiple','invalid','wrong key'])test('extras sort declaration rejects '+mutation,async({page})=>{
+  await page.goto(url);await render(page);
+  await page.locator('#plus-table thead').evaluate((head,m)=>{
+    const h=head.querySelector('th');
+    if(m==='missing')h.setAttribute('aria-sort','none');
+    if(m==='multiple')head.querySelectorAll('th')[1].setAttribute('aria-sort','ascending');
+    if(m==='invalid')h.setAttribute('aria-sort','sideways');
+    if(m==='wrong key')h.querySelector('button').dataset.sort='wrong';
+  },mutation);
+  await expect(failures(page)).rejects.toThrow('Invalid extra sort declaration');
+});
+for(const i of [2,3,4,5])for(const blank of ['', '   '])test(`extras rejects empty numeric axis ${i} length ${blank.length}`,async({page})=>{
+  await page.goto(url);await render(page);
+  await page.locator('#plus-plot text').nth(i).evaluate((e,t)=>e.textContent=t,blank);
+  await expect(failures(page)).rejects.toThrow('Missing extra axis value');
+});
+for(const model of ['FE','DL'])for(const id of ['plus-study','plus-het'])for(const mutation of ['rename','delete','duplicate','value','label'])test(`extras selector rejects ${model} ${id} ${mutation}`,async({page})=>{
+  await page.goto(url);await render(page,corpus[0],model);
+  await page.locator('#'+id).evaluate((select,m)=>{
+    const o=select.options[select.options.length-1];
+    if(m==='rename')o.textContent='Wrong label';
+    if(m==='delete')o.remove();
+    if(m==='duplicate')select.append(o.cloneNode(true));
+    if(m==='value')o.value='wrong';
+    if(m==='label')o.label='Wrong displayed label';
+  },mutation);
+  await expect(failures(page,corpus[0],model)).rejects.toThrow('Invalid extra selector');
 });

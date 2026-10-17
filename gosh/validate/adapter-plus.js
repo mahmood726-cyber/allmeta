@@ -5,19 +5,59 @@
   const memberKey=p=>{if(!Array.isArray(p.members)||!p.members.length||p.members.some(x=>!Number.isInteger(x)||x<1)||new Set(p.members).size!==p.members.length)throw Error('Invalid membership');return [...p.members].sort((a,b)=>a-b).join(',');};
   // Generated pins are loaded by manifest-plus.js; no downloaded manifest can replace them.
   const manifest=window.AlmGoshPlusManifest;
+  // Structural display guards do not add numerical comparisons to the pinned corpus.
+  function controls(a) {
+    for(const [id,expected] of [
+      ['plus-study',a.labels.map((label,i)=>[String(i+1),`${i+1}: ${label}`])],
+      ['plus-het',Object.entries(P.axes).filter(([q])=>a.model==='DL'||!q.startsWith('tau'))]
+    ]) {
+      const select=document.getElementById(id), options=[...select.options];
+      if(options.length!==expected.length||options.some((o,i)=>o.value!==expected[i][0]||o.textContent!==expected[i][1]||o.label!==expected[i][1]||o.disabled||o.hidden)||!expected.some(([v])=>v===select.value))throw Error('Invalid extra selector '+id);
+    }
+  }
+  function tableOrder(a,rows) {
+    const headers=[...document.querySelectorAll('#plus-table thead th')],keys=['study',...P.fields];
+    if(headers.length!==keys.length||headers.some((h,i)=>h.querySelector('button')?.dataset.sort!==keys[i]||!['none','ascending','descending'].includes(h.getAttribute('aria-sort'))))throw Error('Invalid extra sort declaration');
+    const active=headers.filter(h=>h.getAttribute('aria-sort')!=='none');
+    if(active.length!==1)throw Error('Invalid extra sort declaration');
+    const key=active[0].querySelector('button').dataset.sort,sign=active[0].getAttribute('aria-sort')==='ascending'?1:-1;
+    const ids=rows.map(r=>Number(r.dataset.study));
+    if(ids.length!==a.k||new Set(ids).size!==a.k)throw Error('Extra quantity coverage mismatch');
+    const expected=[...a.rows].sort((x,y)=>sign*(x[key]-y[key])||x.study-y.study).map(r=>r.study);
+    if(ids.some((id,i)=>id!==expected[i]))throw Error('Invalid extra table order');
+  }
+  function plotGeometry(svg,circles,a) {
+    const view=svg.viewBox.baseVal, root=svg.getScreenCTM(), box=svg.getBoundingClientRect();
+    if(!root||box.width<=0||box.height<=0||view.x!==0||view.y!==0||view.width!==600||view.height!==420)throw Error('Invalid extra plot viewport');
+    const inverse=root.inverse(),seen=new Set(),styles=new Map();
+    const style=e=>{if(!styles.has(e))styles.set(e,getComputedStyle(e));return styles.get(e);};
+    return circles.map((c,i)=>{
+      if(c.dataset.index!==String(i)||seen.has(c.dataset.index)||i>=a.points.length)throw Error('Invalid extra subset coverage');
+      seen.add(c.dataset.index);
+      for(let e=c;e;e=e.parentElement){const s=style(e);if(s.display==='none'||s.visibility!=='visible'||Number(s.opacity)<=0)throw Error('Invisible extra point: '+e.tagName+'#'+e.id+' display='+s.display+' visibility='+s.visibility+' opacity='+s.opacity);}
+      const s=style(c),m=c.getScreenCTM();
+      if(!m||!(parseFloat(s.r)>0)||Number(s.fillOpacity)<=0||s.fill==='none'||s.fill==='transparent'||/rgba\([^)]*,\s*0\s*\)/.test(s.fill))throw Error('Invisible extra point');
+      const t=inverse.multiply(m),p=new DOMPoint(Number(c.getAttribute('cx')),Number(c.getAttribute('cy'))).matrixTransform(t);
+      if(!finite(t.a*t.d-t.b*t.c)||t.a*t.d-t.b*t.c===0||!finite(p.x)||!finite(p.y)||p.x<0||p.x>600||p.y<0||p.y>420)throw Error('Invalid extra point geometry');
+      return p;
+    });
+  }
   function values() {
     const a=P.state;if(!a)throw Error('No extras to validate');const out=[];
+    controls(a);
     const add=(key,value,exact=false)=>{if(!exact&&!finite(value))throw Error('Invalid displayed '+key);out.push({key,label:key,value,exact});};
     const headings=[...document.querySelectorAll('#plus-table thead button')].map(e=>e.textContent);
     if(JSON.stringify(headings)!==JSON.stringify(P.columnLabels))throw Error('Invalid extra table headers');
     const rows=[...document.querySelectorAll('#plus-table tbody tr')];
+    tableOrder(a,rows);
     add('row_count',rows.length,true);
     for(const row of rows){const i=Number(row.dataset.study);if(!Number.isInteger(i)||i<1||i>a.k||row.querySelector('th button')?.textContent!==`${i}: ${a.labels[i-1]}`)throw Error('Invalid extra study label');for(const q of P.fields){const cells=row.querySelectorAll(`[data-quantity="${q}"]`);if(cells.length!==1||!cells[0].textContent.trim())throw Error('Missing displayed '+q);add(`study.${i}.${q}`,Number(cells[0].textContent),q.endsWith('_n'));}}
     a.points.forEach((p,i)=>{add('members.'+i,memberKey(p),true);for(const q of pointFields)if(a.model==='DL'||!q.startsWith('tau'))add(q+'.'+i,p[q]);});
     const circles=[...document.querySelectorAll('#plus-plot circle')];add('plot_count',circles.length,true);
-    circles.forEach((c,i)=>{add('plot_x.'+i,Number(c.getAttribute('cx')));add('plot_y.'+i,Number(c.getAttribute('cy')));add('included.'+i,c.dataset.includes,true);add('colour.'+i,c.getAttribute('fill'),true);});
+    const positions=plotGeometry(document.getElementById('plus-plot'),circles,a);
+    circles.forEach((c,i)=>{add('plot_x.'+i,positions[i].x);add('plot_y.'+i,positions[i].y);add('included.'+i,c.dataset.includes,true);add('colour.'+i,c.getAttribute('fill'),true);});
     add('highlight_counts',document.getElementById('plus-counts').textContent,true);
-    const ticks=[...document.querySelectorAll('#plus-plot text')];if(ticks.length!==6)throw Error('Missing extra axes');['x_title','y_title','xmin','xmax','ymin','ymax'].forEach((q,i)=>add(q,i<2?ticks[i].textContent:Number(ticks[i].textContent),i<2));
+    const ticks=[...document.querySelectorAll('#plus-plot text')];if(ticks.length!==6)throw Error('Missing extra axes');['x_title','y_title','xmin','xmax','ymin','ymax'].forEach((q,i)=>{const text=ticks[i].textContent.trim();if(i>=2&&!text)throw Error('Missing extra axis value '+q);add(q,i<2?ticks[i].textContent:Number(text),i<2);});
     return out;
   }
   function referenceValues(r,k,model) {
