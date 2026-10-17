@@ -32,7 +32,7 @@ async function waitForAlm(page) {
   await page.waitForFunction(() =>
     window.alm &&
     typeof window.alm.csvUpload      === 'function' &&
-    typeof window.alm.chartDownload  === 'function' &&
+    typeof window.alm.plotExport  === 'function' &&
     typeof window.alm.axisControls   === 'function' &&
     typeof window.alm.resultsExport  === 'function' &&
     typeof window.alm.urlState       === 'function' &&
@@ -83,7 +83,7 @@ test.describe('limit-ma retrofit sanity', () => {
     await waitForAlm(page);
     const modules = await page.evaluate(() => ({
       csvUpload:     typeof window.alm.csvUpload      === 'function',
-      chartDownload: typeof window.alm.chartDownload  === 'function',
+      plotExport: typeof window.alm.plotExport  === 'function',
       axisControls:  typeof window.alm.axisControls   === 'function',
       resultsExport: typeof window.alm.resultsExport  === 'function',
       urlState:      typeof window.alm.urlState       === 'function',
