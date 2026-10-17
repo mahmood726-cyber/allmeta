@@ -133,7 +133,9 @@ test('accessible SVG export names the actual model and matches the selected view
   await open(page);await input(page,DATA);
   await expect(page.locator('#svg-host svg')).toHaveAttribute('role','img');
   await expect(page.locator('#baujat-description')).toContainText('Estimator pm');
-  const [dl]=await Promise.all([page.waitForEvent('download'),page.locator('#btn-svg').click()]);
+  const panel=page.getByRole('group',{name:'Download plots',exact:true});
+  await panel.getByLabel('Format',{exact:true}).selectOption('svg');
+  const [dl]=await Promise.all([page.waitForEvent('download'),panel.getByRole('button',{name:'Download Baujat plot',exact:true}).click()]);
   const txt=readFileSync(await dl.path(),'utf8');
   const parsed=await page.evaluate(text=>{
     const doc=new DOMParser().parseFromString(text,'image/svg+xml');

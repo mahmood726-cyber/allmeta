@@ -53,7 +53,7 @@
   <!-- Cycle 2.8 Task 4 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
   <script src="../hub/shared/csv-upload.js"></script>
-  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
@@ -81,7 +81,7 @@
       <h2>Input</h2>
 
       <!-- csv-upload mount -->
-      <div id="alm-csv-mount"></div>
+
 
       <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem">Studies &#8212; <code>effect, SE, label (optional)</code></label>
       <textarea id="src" aria-label="Studies — effect, SE, label (one per line)">0.55, 0.08, S01
@@ -94,10 +94,12 @@
 0.65, 0.12, S08
 0.45, 0.17, S09
 0.58, 0.10, S10</textarea>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="alm-csv-mount"></div>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
-
-      <button type="button" id="btn-run" class="primary" style="width:100%; margin-top:0.3rem">Fit</button>
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
         <button type="button" id="btn-bus-load" style="flex:1" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
         <button type="button" id="btn-bus-save" style="flex:1" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
@@ -123,8 +125,8 @@
 
       <svg id="plot" viewBox="0 0 600 340" role="img" aria-label="Funnel plot with R&#252;cker limit extrapolation line"></svg>
 
-      <!-- chart-download mount -->
-      <div id="alm-chart-mount"></div>
+      <!-- plot-export mount -->
+      <div id="alm-plot-mount"></div>
 
       <div class="note"><strong>Interpretation:</strong> the limit estimate is the value the random-effects model would return if all studies had zero sampling error. A large gap between the standard random-effects estimate and the limit estimate indicates small-study effects (possibly pub bias).</div>
 
@@ -136,7 +138,7 @@
       <div class="actions">
         <div id="alm-export-mount"></div>
       </div>
-    
+
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
     <section id="alm-validate" aria-label="Independent R validation" style="grid-column:1/-1"></section>
@@ -176,6 +178,7 @@
   <footer>
     R&#252;cker G, Schwarzer G, Carpenter JR, Binder H, Schumacher M. Treatment-effect estimates adjusted for small-study effects via a limit meta-analysis. Biostatistics 2011;12:122&#8211;142. Browser implementation: the full Rücker limit meta-analysis &mdash; DL &tau;&#178;, radial (Galbraith) regression of TE on the &tau;-inflated SE, limit estimate <code>&beta;<sub>r</sub> + &tau;&middot;&alpha;<sub>r</sub></code> (<code>method.adjust='beta0'</code>) with closed-form SE and the small-study/residual Q decomposition. R-parity: matches <code>metasens::limitmeta(metagen(TE=yi, seTE=sei, method.tau='DL'))</code> to 1e-9 on TE.adjust, seTE.adjust, &alpha;<sub>r</sub>, &beta;<sub>r</sub>, Q.small, Q.resid and G&#178; (pinned <code>meta 8.5-0 / metasens 1.5-3</code> oracle; see <code>limit-ma/validate/README.md</code>).
   </footer>
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
@@ -312,6 +315,8 @@
       document.getElementById('plot').innerHTML = '';
       document.getElementById('limit-error').textContent = message;
     }
+
+    run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src");
 
     function run() {
       document.getElementById('limit-error').textContent = '';
@@ -581,6 +586,7 @@
       run();
     });
 
+
     if (window.MaStudies && MaStudies.attachButtons) {
       MaStudies.attachButtons({
         btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
@@ -605,10 +611,10 @@
       },
     });
 
-    window.alm.chartDownload({
-      target: '#alm-chart-mount',
+    window.alm.plotExport({
+      target: '#alm-plot-mount',
       basename: 'limit-ma-funnel',
-      getSvg: function () { return document.getElementById('plot'); },
+      plots: [{ id: 'plot', name: 'Funnel and limit line', getSvg: function () { return document.getElementById('plot'); } }],
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {

@@ -8,13 +8,13 @@ const nodes = {};
 for (const m of html.matchAll(/<[^>]+\bid="([^"]+)"[^>]*>/g)) {
   nodes[m[1]] = {value: m[0].match(/\bvalue="([^"]*)"/)?.[1] || '',
     textContent: '', innerHTML: '', style: {},
-    addEventListener(event, fn) { this[event] = fn; }};
+    addEventListener(event, fn) { const previous = this[event]; this[event] = (...args) => { if (previous) previous(...args); fn(...args); }; }};
 }
 nodes.src.value = html.match(/<textarea[^>]*>([\s\S]*?)<\/textarea>/)[1];
 nodes.model.value = html.match(/<option value="([^"]+)" selected/)[1];
 const noop = () => {};
 let axisChange, points = [], memberships = [], pooled = [];
-const window = {alm: {csvUpload: noop, chartDownload: noop,
+const window = {alm: {analysisLifecycle: run => run, csvUpload: noop, plotExport: noop,
   axisControls: options => { axisChange = options.onChange; },
   resultsExport: noop, resetUndo: noop, tooltips: noop,
   urlState: Object.assign(noop, {read: () => null, write: noop})}};
