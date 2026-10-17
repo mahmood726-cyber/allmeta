@@ -1,0 +1,39 @@
+name: Bucher integrity
+on:
+  pull_request:
+    paths:
+      - 'bucher/**'
+      - 'hub/shared/tests/bucher*'
+      - '.github/workflows/bucher-integrity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-contrasts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+        working-directory: hub/shared/tests
+      - run: npx playwright install --with-deps chromium
+        working-directory: hub/shared/tests
+      - name: Browser input, direction, refusal and export regressions
+        run: npx playwright test bucher --reporter=line
+        working-directory: hub/shared/tests
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bucher-integrity-evidence
+          path: |
+            hub/shared/tests/test-results/
+            hub/shared/tests/artifacts/
+          if-no-files-found: ignore
