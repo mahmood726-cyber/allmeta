@@ -1,0 +1,9 @@
+ metafor     meta metasens  metadat 
+ "5.2.1"  "8.5.0"  "1.5.3"  "1.6.0" 
+PLUS R EVIDENCE VERIFIED 169 configurations; scripts parse; hashes match; host PC2 
+During startup - Warning messages:
+1: Setting LC_COLLATE=C.UTF-8 failed 
+2: Setting LC_CTYPE=C.UTF-8 failed 
+3: Setting LC_MONETARY=C.UTF-8 failed 
+4: Setting LC_TIME=C.UTF-8 failed 
+exit_code=0
