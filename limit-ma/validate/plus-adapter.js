@@ -74,6 +74,43 @@ function geometry(r,c,limit){
  const center=n=>{if(!n)return {x:NaN,y:NaN};const b=n.getBBox();return screen(n,b.x+b.width/2,b.y+b.height/2);};
  const endpoint=(n,end)=>{if(!n)return {x:NaN,y:NaN};const p=n.getPointAtLength(end?n.getTotalLength():0);return screen(n,p.x,p.y);};
  function screenEq(a,b,key){if(!a||!b||![a.x,a.y,b.x,b.y].every(finite)||Math.hypot(a.x-b.x,a.y-b.y)>.02)failures.push(key+' screen');}
+ // Paint is a separate contract from position. This renderer uses no clips or
+ // masks: reject them conservatively, including on HTML ancestors.
+ const styles=new WeakMap(),ancestry=new WeakMap();
+ const style=n=>{if(!styles.has(n))styles.set(n,getComputedStyle(n));return styles.get(n);};
+ function visible(n){
+  if(!n)return {ok:true,opacity:1};if(ancestry.has(n))return ancestry.get(n);
+  const s=style(n),parent=visible(n.parentElement),opacity=parent.opacity*Number(s.opacity);
+  const value={opacity,ok:parent.ok&&s.display!=='none'&&opacity>0&&
+   s.clipPath==='none'&&s.maskImage==='none'};
+  ancestry.set(n,value);return value;
+ }
+ function ink(value){
+  if(!value||value==='none'||value==='transparent'||value.startsWith('url('))return false;
+  // Computed colors serialize alpha either after a slash or as rgba's fourth channel.
+  const alpha=value.match(/\/\s*([\d.]+)%?\s*\)$/)||value.match(/^rgba\([^)]*,\s*([\d.]+)\s*\)$/);
+  return !alpha||Number(alpha[1])>0;
+ }
+ const intersects=(a,b)=>a.right>=b.left&&a.left<=b.right&&a.bottom>=b.top&&a.top<=b.bottom;
+ function rect(svg,x1,y1,x2,y2){const a=screen(svg,x1,y1),b=screen(svg,x2,y2);return {left:Math.min(a.x,b.x),right:Math.max(a.x,b.x),top:Math.min(a.y,b.y),bottom:Math.max(a.y,b.y)};}
+ for(const id of ['plus-forest','plus-funnel']){
+  const svg=document.getElementById(id),viewport=svg.getBoundingClientRect();
+  for(const n of svg.querySelectorAll('circle,line,polyline,path,text,tspan')){
+   const s=style(n),stroke=['line','polyline','path'].includes(n.localName),b=n.getBoundingClientRect();
+   const key=id+' '+n.localName+' paint';
+   if(!visible(n).ok||s.visibility!=='visible'||!ink(stroke?s.stroke:s.fill)||
+    !(Number(stroke?s.strokeOpacity:s.fillOpacity)>0)||
+    (stroke&&!(parseFloat(s.strokeWidth)>0))||
+    (n.localName==='circle'&&!(parseFloat(s.r)>0))||
+    (['text','tspan'].includes(n.localName)&&!(parseFloat(s.fontSize)>0))||
+    !(viewport.width>0&&viewport.height>0)||!intersects(b,viewport))failures.push(key);
+   // Labels occupy the margins; marks must intersect the actual data plot.
+   if(['circle','line','polyline'].includes(n.localName)){
+    const plot=id==='plus-forest'?rect(svg,220,5,670,240):rect(svg,60,20,660,310);
+    if(!intersects(b,plot))failures.push(key+' outside plot');
+   }
+  }
+ }
  function axis(svg,name,values,coords){
   const ticks=[...svg.querySelectorAll('[data-plus-axis="'+name+'"]')];count(ticks,2,name+' ticks');
   const labels=[...svg.querySelectorAll('[data-plus-tick-label="'+name+'"]')];count(labels,2,name+' tick labels');
@@ -100,6 +137,8 @@ function geometry(r,c,limit){
   if(labels[i]?.textContent!==forestNames[key])failures.push(key+' forest label');
   // SVG text character positions include dx/dy and descendant tspan positioning.
   const label=labels[i];
+  if(label){const b=label.getBoundingClientRect(),row=rect(forest,0,y-15,215,y+15);
+   if(!(b.width>0&&b.height>0)||b.left<row.left-.02||b.right>row.right+.02||b.top<row.top-.02||b.bottom>row.bottom+.02)failures.push(key+' label row bounds');}
   if(label?.getNumberOfChars()){
    const first=label.getStartPositionOfChar(0);screenEq(screen(label,first.x,first.y),forestPoint(low+(5-220)*(high-low)/450,y+4),key+' label baseline');
    for(let j=0;j<label.getNumberOfChars();j++){
@@ -162,7 +201,7 @@ async function mount(){
    }
   }finally{__almLimitValidationRestore(snap);AlmLimitPlusUI.restore(ui);document.getElementById('plus-status').textContent=status;locks.forEach(([n,d])=>n.disabled=d);}
   if(checks!==manifest.checks)throw Error('Sensitivity check cardinality mismatch: '+checks+' != '+manifest.checks);
-  return {checks,passed,failed,maxima,summaryLines:['Independent sensitivity oracle: meta 8.5-0, metafor 5.2-1, metasens 1.5-3.','Refusals pass only when both implementations refuse for the same reason.','Effective rendered geometry checked against rendered axis ticks within 0.02 CSS px; text character positions included.','Rendered forest/funnel coordinates inverted to effect/SE units: 1e-9 relative tolerance with unit floor.','Closed-form tolerance 1e-9 relative; selection parameters/logLik 1e-6 and SE/CI 1e-4.']};
+  return {checks,passed,failed,maxima,summaryLines:['Independent sensitivity oracle: meta 8.5-0, metafor 5.2-1, metasens 1.5-3.','Refusals pass only when both implementations refuse for the same reason.','Effective rendered geometry checked against rendered axis ticks within 0.02 CSS px; text character positions, paint visibility, viewport intersection and forest label row bounds included.','Rendered forest/funnel coordinates inverted to effect/SE units: 1e-9 relative tolerance with unit floor.','Closed-form tolerance 1e-9 relative; selection parameters/logLik 1e-6 and SE/CI 1e-4.']};
   });
  }
  const adapter={app:'limit-ma-plus',paper:{checks:manifest.checks,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'Sensitivity oracle protocol',runUrl:'validate/README-plus.md'},corpus:{files,run:replay}};

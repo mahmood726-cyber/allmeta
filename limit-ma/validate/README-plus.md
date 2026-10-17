@@ -50,6 +50,12 @@ inverts coordinates, and checks effect/SE values at normalized relative toleranc
 1e-9 (unit floor). It also compares effective screen positions (element CTMs,
 rendered bounds/endpoints, and text character positions) to the axes' rendered
 numeric ticks and source values, within 0.02 CSS pixels for browser rounding.
+Paint checks additionally require visible computed styles, positive cumulative ancestor opacity,
+nontransparent fill/stroke and positive radii/stroke widths. Clips and masks on
+marks or ancestors fail closed because this renderer does not use them. Mark
+bounds must intersect the SVG viewport and data plot; labels use the margins,
+and forest method labels must fit their 30-unit row and label column.
+These are DOM/style contracts, not pixel-occlusion detection.
 This includes independent CSS transforms and SVG text/tspan offsets. The
 existing transform and raw-coordinate guards remain. Node and coordinate deletion fail closed. Tests exercise all
 16 layer-toggle combinations on all 169 configurations and corrupt/delete

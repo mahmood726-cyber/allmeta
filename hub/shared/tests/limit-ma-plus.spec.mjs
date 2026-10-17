@@ -232,3 +232,53 @@ test('limit-ma-plus effective screen geometry rejects offset mechanisms',async({
  expect(result.clean).toBe(338);expect(result.missed).toEqual([]);
  console.log('FIX3 SCREEN MUTATIONS',JSON.stringify(result));
 });
+
+
+test('limit-ma-plus paint and clipping mutations fail closed',async({page})=>{
+ test.setTimeout(240000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ // Wait for the real entrance animations; reduced-motion CSS introduces tiny transitions
+ // that cannot advance inside this synchronous mutation loop.
+ await page.evaluate(()=>Promise.all(document.getAnimations().map(a=>a.finished)));
+ const result=await page.evaluate(async()=>{
+  const loaded=await AlmLimitPlusValidation.prepare(),files=AlmLimitPlusValidationAdapter.corpus.files;
+  const counts={},missed=[];let clean=0;
+  for(const id of ['limit','fill','reg','contour'])document.getElementById('plus-'+id+'-toggle').checked=true;
+  for(const c of loaded[files[0].path]){
+   __almLimitValidationRun(c.te.map((x,i)=>x+','+c.se[i]).join('\n'),true);
+   const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);AlmLimitPlusUI.render(r,c,limit);
+   const check=()=>AlmLimitPlusContract.geometry(r,c,limit);
+   const reject=kind=>{counts[kind]=(counts[kind]||0)+1;if(!check().length)missed.push(c.id+' '+kind);};
+   clean++;if(check().length)missed.push(c.id+' clean '+check().join(','));
+   // Sample every primitive/label role; clean contracts still inspect every mark.
+   for(const selector of ['#plus-forest circle','#plus-forest line','#plus-forest text','#plus-forest path',
+     '#plus-forest [data-plus-tick-label]','#plus-funnel circle','#plus-funnel line','#plus-funnel polyline','#plus-funnel text','#plus-funnel path']){
+    const node=document.querySelector(selector);if(!node)continue;
+    const stroke=['line','polyline','path'].includes(node.localName),paint=stroke?'stroke':'fill';
+    const mutations=[['opacity','0'],['visibility','hidden'],['clip-path','inset(100%)'],['mask-image','linear-gradient(transparent,transparent)'],
+     [paint,'none'],[paint,'transparent'],[paint,'rgba(0,0,0,0)'],[paint+'-opacity','0']];
+    if(stroke)mutations.push(['stroke-width','0']);
+    if(node.localName==='circle')mutations.push(['r','0']);
+    if(node.localName==='text')mutations.push(['font-size','0']);
+    for(const [property,value] of mutations){node.style.setProperty(property,value);reject(selector+' '+property+' '+value);node.style.removeProperty(property);}
+    const parent=node.parentNode,next=node.nextSibling,g=document.createElementNS(node.namespaceURI,'g');parent.insertBefore(g,node);g.append(node);
+    for(const [property,value] of [['opacity','0'],['display','none'],['visibility','hidden'],['clip-path','inset(100%)'],['mask-image','linear-gradient(transparent,transparent)']]){
+     g.style.setProperty(property,value);reject(selector+' parent '+property);g.style.removeProperty(property);
+    }
+    parent.insertBefore(node,next);g.remove();
+   }
+   for(const svg of document.querySelectorAll('#plus-forest,#plus-funnel')){
+    const old=svg.getAttribute('viewBox');svg.setAttribute('viewBox','0 0 70 35');reject(svg.id+' viewBox');svg.setAttribute('viewBox',old);
+   }
+   for(const node of document.querySelectorAll('#plus-forest text:not([data-plus-tick-label])')){
+    node.style.fontSize='100px';reject('label row font-size 100px');node.style.removeProperty('font-size');
+   }
+   // The panel has a forwards-filled entrance animation; important makes the mutation effective.
+   const host=document.getElementById('alm-plus');host.style.setProperty('opacity','0','important');
+   if(getComputedStyle(host).opacity!=='0')throw Error('HTML opacity mutation did not take effect');
+   reject('HTML ancestor opacity');host.style.removeProperty('opacity');
+   clean++;if(check().length)missed.push(c.id+' restored');
+  }return {clean,counts,missed};
+ });
+ expect(result.clean).toBe(338);expect(result.missed).toEqual([]);
+ console.log('FIX4 PAINT MUTATIONS',JSON.stringify(result));
+});
