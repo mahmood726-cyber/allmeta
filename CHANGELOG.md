@@ -21,13 +21,14 @@ the section is renamed to that version and dated, and a fresh
 Figure export and a visible Run analysis step across the 13 papered apps; no computation changed.
 
 ### Added
-- **Plot export** (#126) in `screen`, `dose-response-ma`, `dta-sroc`, `nma`, `heterogeneity`, `pubbias-tests`,
+- **Plot export** (#126) in `dose-response-ma`, `dta-sroc`, `nma`, `heterogeneity`, `pubbias-tests`,
   `multilevel-ma`, `meta-regression`, `proportion-ma`, `mh-peto`, `influence`, `limit-ma` and `gosh`: a plot selector
   (one plot or all) and export as PNG, SVG, PDF, or TIFF at 300 or 600 dpi (RGB, LZW-compressed), via the shared
   `hub/shared/plot-export.js`; the download status reports the exact number of files written, and zero on failure.
-- **Run analysis** button, visible in every one of these apps, with a shared analysis lifecycle
+- **Run analysis** button, visible in each of these 12 apps, with a shared analysis lifecycle
   (`hub/shared/analysis-lifecycle.js`): editing inputs shows a "results out of date" notice until the analysis is run
-  again; a completed run shows "Analysis updated". Apps that already re-ran on edit still do so.
+  again; a completed run shows "Analysis updated". Apps that already re-ran on edit still do so. `screen` has no plots;
+  it gains the same out-of-date and updated notices on its existing Train & rank button.
 
 ### Fixed
 - **cumulative-subgroup** (#124): the R export now reproduces the page's analysis (separate Paule–Mandel fit per
