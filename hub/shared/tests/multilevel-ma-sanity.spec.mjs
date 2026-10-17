@@ -22,7 +22,7 @@ async function waitForAlm(page) {
   await page.waitForFunction(() =>
     window.alm &&
     typeof window.alm.csvUpload      === 'function' &&
-    typeof window.alm.chartDownload  === 'function' &&
+    typeof window.alm.plotExport  === 'function' &&
     typeof window.alm.axisControls   === 'function' &&
     typeof window.alm.resultsExport  === 'function' &&
     typeof window.alm.urlState       === 'function' &&
@@ -68,7 +68,7 @@ test.describe('multilevel-ma retrofit sanity', () => {
     await waitForAlm(page);
     const present = await page.evaluate(() => ({
       csvUpload:     typeof window.alm.csvUpload,
-      chartDownload: typeof window.alm.chartDownload,
+      plotExport: typeof window.alm.plotExport,
       axisControls:  typeof window.alm.axisControls,
       resultsExport: typeof window.alm.resultsExport,
       urlState:      typeof window.alm.urlState,
@@ -76,7 +76,7 @@ test.describe('multilevel-ma retrofit sanity', () => {
       tooltips:      typeof window.alm.tooltips,
     }));
     expect(present.csvUpload,     'alm.csvUpload not a function')     .toBe('function');
-    expect(present.chartDownload, 'alm.chartDownload not a function') .toBe('function');
+    expect(present.plotExport, 'alm.plotExport not a function') .toBe('function');
     expect(present.axisControls,  'alm.axisControls not a function')  .toBe('function');
     expect(present.resultsExport, 'alm.resultsExport not a function') .toBe('function');
     expect(present.urlState,      'alm.urlState not a function')      .toBe('function');
@@ -95,7 +95,7 @@ test.describe('multilevel-ma retrofit sanity', () => {
     // reset-undo widget
     await expect(page.locator('#alm-undo-mount .alm-undo')).toBeVisible();
     // chart-download widget
-    await expect(page.locator('#alm-chart-mount .alm-dl')).toBeVisible();
+    await expect(page.locator('#alm-plot-mount fieldset')).toBeVisible();
   });
 
   // T4 — forest SVG renders with content for default data
