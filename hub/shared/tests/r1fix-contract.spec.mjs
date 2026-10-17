@@ -3,7 +3,11 @@ import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../../../',import.meta.url));
 const cases=[['pubbias-tests','AlmPubbiasValidationAdapter'],['multilevel-ma','AlmMultilevelValidationAdapter'],['proportion-ma','AlmProportionValidationAdapter'],['mh-peto','AlmMhPetoValidationAdapter'],['limit-ma','AlmLimitValidationAdapter'],['gosh','AlmGoshValidationAdapter'],['dose-response-ma','AlmDoseValidate'],['dta-sroc','AlmDTAValidateAdapter'],['nma','AlmNmaValidateAdapter'],['heterogeneity','AlmHetValidationAdapter'],['influence','AlmInfluenceValidationAdapter'],['screen','ScreenValidationAdapter']];
+// Local review proof against the pre-fix commit 14e042c. Shallow CI checkouts lack that commit, so the proof is
+// skipped there; per-app corpus replays in the validate-* specs remain the permanent CI gate.
+const hasBaseline=(()=>{try{execFileSync('git',['cat-file','-e','14e042c^{commit}'],{cwd:root,stdio:'ignore'});return true;}catch{return false;}})();
 for(const [app,adapter] of cases) test(`baseline/current replay ${app}`,async({browser})=>{
+ test.skip(!hasBaseline,'baseline commit 14e042c not in this checkout (shallow clone)');
  test.setTimeout(app==='screen'?1800000:360000);
  const outcomes=[];
  for(const baseline of [true,false]) {
