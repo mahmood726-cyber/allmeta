@@ -172,6 +172,7 @@
     
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
+    <div style="grid-column:1/-1"><section id="alm-validate"></section></div>
   </main>
 
   <p class="footer-note">Subgroup between-group Q compares <strong>random-effects</strong> pooled estimates across groups (each group pooled with Paule-Mandel τ², per Borenstein 2009 §19); Q_bw = Σ w_g (μ_g − M)², df = G − 1, where w_g = 1/SE(μ_g)² and the centre M = Σ w_g μ_g / Σ w_g is the inverse-variance-weighted mean of the subgroup estimates (matches <code>meta::metagen</code> Q.b.random). I² of differences = max(0, 100·(Q − df)/Q).</p>
@@ -770,6 +771,52 @@
     // Expose last results for export
     window._almLastCumSub = function () { return _lastResults; };
 
+    // Validation observes calls to the unchanged parser and pooling engine.
+    window.__almCumSubValidationRun = function (text, view, title, axes) {
+      if (text !== undefined) document.getElementById("f-data").value = text;
+      if (view !== undefined) document.getElementById("f-view").value = view;
+      if (title !== undefined) document.getElementById("f-title").value = title;
+      if (axes !== undefined) _axisState = axes;
+      const originalParse = parseStudies, originalPool = pool, originalCumulative = cumulative, originalSubgroup = subgroup;
+      let parsed = null, cum = null, sub = null; const pools = [];
+      parseStudies = function (t) { const r = originalParse(t); if (!parsed) parsed = r; return r; };
+      pool = function (rows) { const p = originalPool(rows); pools.push(Object.assign({ members: rows.map(function (r) { return parsed.studies.indexOf(r) + 1; }) }, p)); return p; };
+      cumulative = function (rows) { cum = originalCumulative(rows); return cum; };
+      subgroup = function (rows) { sub = originalSubgroup(rows); return sub; };
+      try { render(); return { summary: _lastResults, parsed: parsed, pools: pools, cum: cum, sub: sub, axisRefusal: _axisRefusal }; }
+      finally { parseStudies = originalParse; pool = originalPool; cumulative = originalCumulative; subgroup = originalSubgroup; }
+    };
+    // Validation observes the autosave draft banner: shared/autosave.js builds the whole banner before it
+    // appends it to <body>, so the text seen when the insertion is observed is autosave's own output. The
+    // page records only the first banner node and its exact sentence; later insertions never re-baseline it.
+    // Autosave shows at most one banner per page load. Mark it changed if anything inside it mutates later
+    // (records are delivered in order, so an edit made in the same task as the insertion is also seen).
+    window.__almCumSubDraftBanners = [];
+    new MutationObserver(function (records) {
+      const list = window.__almCumSubDraftBanners;
+      records.forEach(function (r) {
+        for (const rec of list) if (rec.node.contains(r.target)) rec.changed = true;
+        if (r.type !== "childList" || r.target !== document.body) return;
+        r.addedNodes.forEach(function (n) {
+          if (list.length) return;
+          if (n.nodeType !== 1 || n.tagName !== "DIV" || n.getAttribute("role") !== "status" || n.getAttribute("aria-live") !== "polite") return;
+          const s = n.firstElementChild;
+          list.push({ node: n, text: s ? s.textContent : null, changed: false });
+        });
+      });
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+    window.__almCumSubValidationSnapshot = function () {
+      return { controls: ["f-data", "f-view", "f-title"].map(function (id) { return [id, document.getElementById(id).value]; }),
+        dom: ["stats-wrap", "warn-banner", "svg-host", "preview-heading"].map(function (id) { return [id, document.getElementById(id).innerHTML]; }),
+        warnClass: warnEl.className, results: _lastResults, axes: _axisState, axisRefusal: _axisRefusal, saved: localStorage.getItem(LS_KEY) };
+    };
+    window.__almCumSubValidationRestore = function (s) {
+      s.controls.forEach(function (x) { document.getElementById(x[0]).value = x[1]; });
+      s.dom.forEach(function (x) { document.getElementById(x[0]).innerHTML = x[1]; });
+      warnEl.className = s.warnClass; _lastResults = s.results; _axisState = s.axes; _axisRefusal = s.axisRefusal;
+      try { if (s.saved === null) localStorage.removeItem(LS_KEY); else localStorage.setItem(LS_KEY, s.saved); } catch (e) {}
+    };
+
     // ---- Shared MA bus (ma-studies-v1) — delegated to shared/ma-studies-v1.js ----
     function onBusLoad() {
       try {
@@ -830,6 +877,8 @@
         { name: 'group',    required: false, type: 'string', example: 'Low-risk' },
       ],
       onParse: function (result) {
+        // Validation observes the importer's own warning records (shown above the format table).
+        window.__almCumSubImportWarnings = result.warnings.slice();
         window.alm.resetUndo.snapshot();
         window.__almLoad(result.rows);
       },
@@ -1018,5 +1067,7 @@
     else document.addEventListener("DOMContentLoaded", init);
   })();
 </script>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>
