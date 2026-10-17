@@ -25,7 +25,7 @@ harmless mark mutations in live/offscreen contexts. Dimensions, transforms and
 all mark styles remain checked.
 
 Other exceptions are limited to Chromium app-region (native window dragging), fill
-on straight open ticks (no fill area), and stroke colour/width/opacity when
+on straight open ticks (no fill area), cursor (pointer interaction), and all stroke properties when
 both reference and actual strokes contribute no paint. A newly painted stroke
 still fails. Numerical comparisons and corpus cardinalities are unchanged.
 
@@ -104,3 +104,9 @@ Tests: `gosh-plus.spec.mjs` checks pinned replay, interaction, keyboard controls
 FE/DL axis availability, isolated plot behavior, per-quantity mutations,
 evidence/input refusals, and live webR. The original `validate-gosh.spec.mjs`
 and `validate-integration.spec.mjs` remain separate regression gates.
+
+## Scope and limits
+
+The Validate panel checks numbers, text, labels, effective on-screen geometry, and painted style against a clean same-browser reference render to catch regressions in the app data path and renderer. It does not prove pixels or detect CSS deliberately injected into the page. Visual regressions are caught by the CI pixel test.
+
+The `gosh-plus-pixels.spec.mjs` suite pins ten corpus/control configurations and captures every new plot at 1280 x 900, device scale 1, with animations disabled. Playwright `toHaveScreenshot` uses `threshold: 0.2` (per-pixel colour distance) and `maxDiffPixelRatio: 0.005` (at most 0.5% differing pixels), allowing small font rasterisation differences without skipping other browser builds. Reference PNGs are generated locally using Microsoft Edge 155.0.4283.45 (Chromium) on Windows; the same references run in CI. An expected-failure test hides a rendered plot and must fail the same screenshot assertion; an unexpected pass fails the suite. Update references only after reviewing the images.

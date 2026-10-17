@@ -59,11 +59,11 @@
           // the live/offscreen contexts. Dimensions and transforms stay checked.
           if(!i&&['margin-left','margin-right','margin-inline-start','margin-inline-end'].includes(p))continue;
           // App-region controls native window dragging, never SVG paint.
-          if(p==='app-region'||p==='-webkit-app-region')continue;
+          if(p==='app-region'||p==='-webkit-app-region'||p==='cursor')continue;
           // A straight open tick has no fill area. Unpainted strokes may vary
           // only if the actual stroke also contributes no paint.
           if(r.tagName==='path'&&(p==='fill'||p==='fill-opacity'))continue;
-          if(unpaintedStroke&&['stroke','stroke-width','stroke-opacity'].includes(p))continue;
+          if(unpaintedStroke&&(p==='stroke'||p.startsWith('stroke-')))continue;
           if(s.getPropertyValue(p)!==t.getPropertyValue(p))differences.push(p+': '+s.getPropertyValue(p)+' != '+t.getPropertyValue(p));
         }
         if(differences.length)throw Error('Extra style contract '+n.tagName+' '+differences.join('; '));

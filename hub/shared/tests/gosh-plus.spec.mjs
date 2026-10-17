@@ -21,10 +21,13 @@ async function render(page,c=corpus[0],model='DL') {
 async function failures(page,c=corpus[0],model='DL') {
   return page.evaluate(({r,k,model})=>{const failures=[];AlmGoshPlusAdapter.compareDisplay(r,k,model,(q,a,b,kind)=>{if(!AlmValidate.compare(a,b,kind,1e-9).pass)failures.push(q);});return failures;},{r:refs.find(r=>r.key===c.id+'::'+model),k:c.k,model});
 }
-for(const variation of ['zero-width stroke','unfilled tick','class colour'])test('extras legal style '+variation,async({page})=>{
+for(const variation of ['zero-width stroke','unfilled tick','class colour','cursor','stroke-linecap','stroke-dasharray'])test('extras legal style '+variation,async({page})=>{
   await page.goto(url);await render(page);
   await page.locator('#plus-plot').evaluate((svg,v)=>{
     const c=svg.querySelector('circle');
+    if(v==='cursor')c.style.cursor='crosshair';
+    if(v==='stroke-linecap')c.style.strokeLinecap='round';
+    if(v==='stroke-dasharray')c.style.strokeDasharray='2 2';
     if(v==='zero-width stroke'){c.style.stroke='red';c.style.strokeWidth='0';}
     if(v==='unfilled tick')svg.querySelector('path').style.fill='none';
     if(v==='class colour'){
