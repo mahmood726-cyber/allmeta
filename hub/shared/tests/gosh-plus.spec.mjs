@@ -60,7 +60,7 @@ for(const q of fields)test('extras displayed mutation fails only '+q,async({page
 for(const [attr,quantity] of [['cx','plot_x.0'],['cy','plot_y.0'],['data-includes','included.0'],['fill','colour.0']])test('extras graphical mutation fails only '+quantity,async({page})=>{
   await page.goto(url);await render(page);
   await page.locator('#plus-plot circle').first().evaluate((c,attr)=>c.setAttribute(attr,attr==='data-includes'?'tampered':attr==='fill'?'#000000':String(Number(c.getAttribute(attr))+1)),attr);
-  expect(await failures(page)).toEqual([quantity]);
+  if(attr==='data-includes')expect(await failures(page)).toEqual([quantity]);else await expect(failures(page)).rejects.toThrow();
 });
 test('extras count mutation and evidence refusal',async({page})=>{
   await page.goto(url);await render(page);await page.locator('#plus-counts').evaluate(e=>e.textContent+='1');
@@ -165,4 +165,50 @@ for(const model of ['FE','DL'])for(const id of ['plus-study','plus-het'])for(con
     if(m==='label')o.label='Wrong displayed label';
   },mutation);
   await expect(failures(page,corpus[0],model)).rejects.toThrow('Invalid extra selector');
+});
+
+for(const mutation of ['cx','cy','clip point','clip parent','mask','slice','dx','dy','tspan','font zero','label hidden','label clip','fill style','fill class','base colour','stroke','css transform','css translate','css rotate','css scale','svg node','svg parent','root collapse','tick move','tick hidden'])test('extras screen contract '+mutation,async({page})=>{
+  await page.goto(url);await render(page);expect(await failures(page)).toEqual([]);
+  await page.locator('#plus-plot').evaluate((svg,m)=>{
+    const c=svg.querySelector('circle'),label=svg.querySelectorAll('text')[4];
+    if(m==='cx')c.style.cx='300px';if(m==='cy')c.style.cy='200px';
+    if(m==='clip point')c.style.clipPath='circle(0px)';
+    if(m==='clip parent'||m==='svg parent'){const g=document.createElementNS(svg.namespaceURI,'g');svg.append(g);g.append(...svg.querySelectorAll('circle'));if(m==='clip parent')g.style.clipPath='circle(0px)';else g.setAttribute('transform','translate(50 0)');}
+    if(m==='mask')c.style.maskImage='linear-gradient(transparent,transparent)';
+    if(m==='slice'){svg.style.width='600px';svg.style.height='100px';svg.style.overflow='hidden';svg.setAttribute('preserveAspectRatio','xMidYMid slice');}
+    if(m==='dx'||m==='dy')label.setAttribute(m,'1000');
+    if(m==='tspan'){const t=document.createElementNS(svg.namespaceURI,'tspan');t.textContent=label.textContent;t.setAttribute('dx','1000');label.replaceChildren(t);}
+    if(m==='font zero')label.style.fontSize='0px';if(m==='label hidden')label.style.visibility='hidden';if(m==='label clip')label.style.clipPath='circle(0px)';
+    if(m==='fill style')c.style.fill='red';
+    if(m==='fill class'){const s=document.createElement('style');s.textContent='.wrong-point {fill:red !important}';document.head.append(s);c.classList.add('wrong-point');}
+    if(m==='base colour')svg.querySelector('[data-includes="false"]').style.fill='blue';if(m==='stroke')c.style.stroke='red';
+    if(m==='css transform')c.style.transform='translateX(100px)';if(m==='css translate')c.style.translate='100px 0';if(m==='css rotate')c.style.rotate='30deg';if(m==='css scale')c.style.scale='0';
+    if(m==='svg node')c.setAttribute('transform','rotate(30)');if(m==='root collapse')svg.setAttribute('transform','scale(0)');
+    if(m==='tick move')svg.querySelector('path').setAttribute('transform','translate(10 0)');if(m==='tick hidden')svg.querySelector('path').style.opacity='0';
+  },mutation);
+  await expect(failures(page)).rejects.toThrow();
+});
+
+for(const mutation of ['ancestor display','ancestor visibility','overflow ancestor','root CSS scale','root SVG scale','point paint none','label CSS transform','label CSS translate','label CSS rotate','label CSS scale','label opacity','label display','parent mask','SVG clip URL','tick stroke none','hidden tspan','transparent tick'])test('extras paint ancestors '+mutation,async({page})=>{
+  await page.goto(url);await render(page);expect(await failures(page)).toEqual([]);
+  await page.locator('#plus-plot').evaluate((svg,m)=>{
+    const c=svg.querySelector('circle'),t=svg.querySelectorAll('text')[4];
+    if(m==='ancestor display')svg.parentElement.style.display='none';
+    if(m==='ancestor visibility')svg.parentElement.style.visibility='hidden';
+    if(m==='overflow ancestor'){const p=svg.parentElement;p.style.height='100px';p.style.overflow='hidden';}
+    if(m==='root CSS scale')svg.style.scale='0';if(m==='root SVG scale')svg.setAttribute('transform','scale(0)');
+    if(m==='point paint none'){c.style.fill='none';c.style.stroke='none';}
+    if(m==='label CSS transform')t.style.transform='translateX(100px)';if(m==='label CSS translate')t.style.translate='100px 0';if(m==='label CSS rotate')t.style.rotate='30deg';if(m==='label CSS scale')t.style.scale='0';
+    if(m==='label opacity')t.style.opacity='0';if(m==='label display')t.style.display='none';
+    if(m==='parent mask')svg.style.maskImage='linear-gradient(transparent,transparent)';
+    if(m==='SVG clip URL'){const ns=svg.namespaceURI,clip=document.createElementNS(ns,'clipPath'),r=document.createElementNS(ns,'rect');clip.id='empty-clip';r.setAttribute('width','0');r.setAttribute('height','0');clip.append(r);svg.append(clip);c.setAttribute('clip-path','url(#empty-clip)');}
+    if(m==='tick stroke none')svg.querySelector('path').style.stroke='none';
+    if(m==='transparent tick')svg.querySelector('path').style.stroke='transparent';
+    if(m==='hidden tspan'){const span=document.createElementNS(svg.namespaceURI,'tspan');span.textContent=t.textContent;span.style.visibility='hidden';t.replaceChildren(span);}
+  },mutation);await expect(failures(page)).rejects.toThrow();
+});
+test('extras equivalent computed colours and root translation remain valid',async({page})=>{
+  await page.goto(url);await render(page);
+  await page.locator('#plus-plot').evaluate(svg=>{svg.setAttribute('transform','translate(10 20)');for(const c of svg.querySelectorAll('circle')){c.setAttribute('fill',c.dataset.includes==='true'?'rgb(0, 114, 178)':'rgb(213, 94, 0)');c.style.stroke=c.getAttribute('fill');}});
+  expect(await failures(page)).toEqual([]);
 });

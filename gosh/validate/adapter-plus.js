@@ -31,17 +31,60 @@
     if(!root||box.width<=0||box.height<=0||view.x!==0||view.y!==0||view.width!==600||view.height!==420)throw Error('Invalid extra plot viewport');
     const inverse=root.inverse(),seen=new Set(),styles=new Map();
     const style=e=>{if(!styles.has(e))styles.set(e,getComputedStyle(e));return styles.get(e);};
+    const screen=(n,x,y)=>new DOMPoint(x,y).matrixTransform(n.getScreenCTM());
+    const near=(p,q)=>{if(![p.x,p.y,q.x,q.y].every(finite)||Math.hypot(p.x-q.x,p.y-q.y)>.02)throw Error('Invalid extra screen geometry');};
+    // Arbitrary masks/clip paths cannot establish full paint coverage: fail closed.
+    // Overflow rectangles are checked in screen space, including the SVG viewport.
+    function painted(n) {
+      const b=n.getBoundingClientRect();
+      if(!(b.width>0&&b.height>0)&&!(n.tagName==='path'&&b.width+b.height>0))throw Error('Invisible extra geometry');
+      for(let e=n;e;e=e.parentElement){const s=style(e);
+        if(s.display==='none'||s.visibility!=='visible'||Number(s.opacity)<=0||s.clipPath!=='none'||(s.maskImage&&s.maskImage!=='none')||(s.mask&&s.mask!=='none'&&s.maskImage!=='none'))throw Error('Invisible or clipped extra geometry');
+        if(e!==n&&e!==document.body&&e!==document.documentElement){
+          const r=e.getBoundingClientRect();
+          if((e===svg||['hidden','clip','scroll','auto'].includes(s.overflowX))&&(b.left<r.left-.02||b.right>r.right+.02))throw Error('Clipped extra geometry '+n.tagName+' '+n.textContent+' by '+e.tagName+'#'+e.id+' '+JSON.stringify({paint:[b.left,b.top,b.right,b.bottom],clip:[r.left,r.top,r.right,r.bottom]}));
+          if((e===svg||['hidden','clip','scroll','auto'].includes(s.overflowY))&&(b.top<r.top-.02||b.bottom>r.bottom+.02))throw Error('Clipped extra geometry '+n.tagName+' '+n.textContent+' by '+e.tagName+'#'+e.id+' '+JSON.stringify({paint:[b.left,b.top,b.right,b.bottom],clip:[r.left,r.top,r.right,r.bottom]}));
+        }
+      }
+      const s=style(n);
+      if(n.tagName==='path'&&(s.stroke==='none'||s.stroke==='transparent'||/rgba\([^)]*,\s*0\s*\)/.test(s.stroke)||Number(s.strokeOpacity)<=0||!(parseFloat(s.strokeWidth)>0)))throw Error('Invisible extra tick');
+      if(Number(s.fillOpacity)<=0||s.fill==='none'||s.fill==='transparent'||/rgba\([^)]*,\s*0\s*\)/.test(s.fill))throw Error('Invisible extra paint');
+      return b;
+    }
+    const ticks=[...svg.querySelectorAll('[data-plus-tick]')],coords=[[60,370],[580,370],[60,370],[60,20]];
+    if(ticks.length!==4)throw Error('Missing extra ticks');
+    const anchors=ticks.map((n,i)=>{painted(n);const p=n.getPointAtLength(0),q=screen(n,p.x,p.y);near(q,screen(svg,...coords[i]));return q;});
+    const labels=[...svg.querySelectorAll('text')],labelCoords=[[240,415],[5,15],[60,390],[580,390],[5,370],[5,30]];
+    if(labels.length!==6)throw Error('Missing extra axes');
+    labels.forEach((n,i)=>{
+      if(!n.textContent.trim())throw Error('Missing extra axis value');
+      painted(n);for(const child of n.querySelectorAll('*'))painted(child);
+      if(!(parseFloat(style(n).fontSize)>0)||!n.getNumberOfChars())throw Error('Invisible extra label');
+      // Character positions include dx/dy, tspan offsets and text transforms.
+      for(let j=0;j<n.getNumberOfChars();j++){
+        const p=n.getStartPositionOfChar(j),q=n.getEndPositionOfChar(j),[anchor,y]=labelCoords[i],x=anchor-(i===3?n.getComputedTextLength():0);
+        near(screen(n,p.x,p.y),screen(svg,x+(j?n.getSubStringLength(0,j):0),y));
+        near(screen(n,q.x,q.y),screen(svg,x+n.getSubStringLength(0,j+1),y));
+      }
+    });
+    const het=document.getElementById('plus-het').value,xs=a.points.map(p=>p.mu),ys=a.points.map(p=>p[het]);
+    const lo=Math.min(...xs),hi=Math.max(...xs),yl=Math.min(0,...ys),yh=Math.max(...ys);
+    const fraction=(v,l,h)=>l===h?.5:(v/Math.max(Math.abs(l),Math.abs(h))-l/Math.max(Math.abs(l),Math.abs(h)))/(h/Math.max(Math.abs(l),Math.abs(h))-l/Math.max(Math.abs(l),Math.abs(h)));
     return circles.map((c,i)=>{
       if(c.dataset.index!==String(i)||seen.has(c.dataset.index)||i>=a.points.length)throw Error('Invalid extra subset coverage');
-      seen.add(c.dataset.index);
-      for(let e=c;e;e=e.parentElement){const s=style(e);if(s.display==='none'||s.visibility!=='visible'||Number(s.opacity)<=0)throw Error('Invisible extra point: '+e.tagName+'#'+e.id+' display='+s.display+' visibility='+s.visibility+' opacity='+s.opacity);}
-      const s=style(c),m=c.getScreenCTM();
-      if(!m||!(parseFloat(s.r)>0)||Number(s.fillOpacity)<=0||s.fill==='none'||s.fill==='transparent'||/rgba\([^)]*,\s*0\s*\)/.test(s.fill))throw Error('Invisible extra point');
-      const t=inverse.multiply(m),p=new DOMPoint(Number(c.getAttribute('cx')),Number(c.getAttribute('cy'))).matrixTransform(t);
-      if(!finite(t.a*t.d-t.b*t.c)||t.a*t.d-t.b*t.c===0||!finite(p.x)||!finite(p.y)||p.x<0||p.x>600||p.y<0||p.y>420)throw Error('Invalid extra point geometry');
-      return p;
+      seen.add(c.dataset.index);painted(c);
+      const s=style(c),m=c.getScreenCTM(),b=c.getBBox();
+      if(!m||!(parseFloat(s.r)>0)||!finite(m.a*m.d-m.b*m.c)||m.a*m.d-m.b*m.c===0)throw Error('Invisible extra point');
+      const u=fraction(xs[i],lo,hi),v=fraction(ys[i],yl,yh);
+      near(screen(c,b.x+b.width/2,b.y+b.height/2),{x:anchors[0].x+u*(anchors[1].x-anchors[0].x)+v*(anchors[3].x-anchors[2].x),y:anchors[0].y+u*(anchors[1].y-anchors[0].y)+v*(anchors[3].y-anchors[2].y)});
+      const colour=a.points[i].members.includes(Number(document.getElementById('plus-study').value))?'rgb(0, 114, 178)':'rgb(213, 94, 0)';
+      if(s.fill!==colour||(s.stroke!=='none'&&s.stroke!==colour))throw Error('Invalid extra computed colour');
+      // Retain the pinned 1e-9 numeric contract separately from the .02 CSS-pixel
+      // screen guard (browser SVG bounding boxes are float-rounded).
+      return new DOMPoint(Number(c.getAttribute('cx')),Number(c.getAttribute('cy'))).matrixTransform(inverse.multiply(m));
     });
   }
+
   function values() {
     const a=P.state;if(!a)throw Error('No extras to validate');const out=[];
     controls(a);
@@ -55,7 +98,7 @@
     a.points.forEach((p,i)=>{add('members.'+i,memberKey(p),true);for(const q of pointFields)if(a.model==='DL'||!q.startsWith('tau'))add(q+'.'+i,p[q]);});
     const circles=[...document.querySelectorAll('#plus-plot circle')];add('plot_count',circles.length,true);
     const positions=plotGeometry(document.getElementById('plus-plot'),circles,a);
-    circles.forEach((c,i)=>{add('plot_x.'+i,positions[i].x);add('plot_y.'+i,positions[i].y);add('included.'+i,c.dataset.includes,true);add('colour.'+i,c.getAttribute('fill'),true);});
+    circles.forEach((c,i)=>{add('plot_x.'+i,positions[i].x);add('plot_y.'+i,positions[i].y);add('included.'+i,c.dataset.includes,true);add('colour.'+i,getComputedStyle(c).fill==='rgb(0, 114, 178)'?'#0072b2':'#d55e00',true);});
     add('highlight_counts',document.getElementById('plus-counts').textContent,true);
     const ticks=[...document.querySelectorAll('#plus-plot text')];if(ticks.length!==6)throw Error('Missing extra axes');['x_title','y_title','xmin','xmax','ymin','ymax'].forEach((q,i)=>{const text=ticks[i].textContent.trim();if(i>=2&&!text)throw Error('Missing extra axis value '+q);add(q,i<2?ticks[i].textContent:Number(text),i<2);});
     return out;
