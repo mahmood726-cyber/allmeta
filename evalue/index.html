@@ -81,7 +81,7 @@
       </div>
       <label class="check"><input id="rare" type="checkbox"> Rare outcome (&lt;~15%) — affects OR/HR → RR mapping</label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.6rem">Compute E-value</button>
-      <div class="note"><strong>Scope:</strong> the E-value is for <em>observational</em> estimates where residual confounding is plausible. It says nothing about selection bias, measurement error, or model misspecification — report it as one sensitivity input, not a verdict.</div>
+      <div class="note"><strong>Scope:</strong> the E-value is for <em>observational</em> estimates where residual confounding is plausible. A confidence interval is optional, but must contain the point estimate when supplied; incomplete or inconsistent intervals are refused. A missing CI never implies that the null is included. This sensitivity measure does not address selection bias, measurement error, or model misspecification.</div>
     </section>
     <section class="panel">
       <h2>E-value</h2>
@@ -104,7 +104,10 @@
     <code>hub/shared/tests/evalue-parity.spec.mjs</code>.
   </footer>
   <script>
-    function num(id) { var v = parseFloat(document.getElementById(id).value); return isFinite(v) ? v : null; }
+    function num(id) {
+      var raw = document.getElementById(id).value.trim();
+      return raw === "" ? null : Number(raw);
+    }
     function fmt(x) { return (x == null || !isFinite(x)) ? "—" : x.toFixed(4).replace(/\.?0+$/, ""); }
 
     function run() {
@@ -114,22 +117,40 @@
       var tbody = document.getElementById("tbody");
       // Ratio measures (RR/OR/HR) must be positive; SMD/d is a difference (any sign).
       var ratio = (measure !== "SMD");
-      if (point == null || (ratio && point <= 0)) {
-        tbody.innerHTML = "<tr><td colspan='2'>Enter " + (ratio ? "a positive" : "an") + " effect estimate.</td></tr>";
+      var hasLo = lo !== null, hasHi = hi !== null;
+      window.__almLastEValue = function () { return null; };
+      function refuse(reason) {
+        tbody.textContent = "Analysis refused: " + reason;
         document.getElementById("interp").textContent = "";
-        document.getElementById("plot").innerHTML = "";
+        document.getElementById("plot").replaceChildren();
+      }
+      if (!["RR", "OR", "HR", "SMD"].includes(measure) ||
+          point === null || !Number.isFinite(point) || (ratio && point <= 0) ||
+          hasLo !== hasHi ||
+          (hasLo && (!Number.isFinite(lo) || !Number.isFinite(hi) ||
+                     lo > point || point > hi || (ratio && (lo <= 0 || hi <= 0))))) {
+        refuse("provide a finite estimate and either a complete positive-scale CI containing the estimate or no CI.");
         return;
       }
       var r = window.AlmEValue.eValues(measure, point, lo, hi, { rare: rare });
+      if (!Number.isFinite(r.point) || !Number.isFinite(r.rr.point) ||
+          (hasLo && (!Number.isFinite(r.ci) || !Number.isFinite(r.rr.lo) || !Number.isFinite(r.rr.hi)))) {
+        refuse("derived risk ratio or E-value was non-finite.");
+        return;
+      }
+      if (!hasLo) r.ci = null; // Missing uncertainty must not masquerade as CI crossing the null.
+      window.__almLastEValue = function () { return r; };
       tbody.innerHTML =
         "<tr><td>E-value (point estimate)</td><td class='big'>" + fmt(r.point) + "</td></tr>"
         + "<tr><td>E-value (CI limit nearest null)</td><td class='big'>" + fmt(r.ci) + "</td></tr>"
         + "<tr><td>Approx. risk ratio used</td><td><code>" + fmt(r.rr.point) + "</code>"
         + (r.rr.lo != null ? " (CI <code>" + fmt(r.rr.lo) + "</code>–<code>" + fmt(r.rr.hi) + "</code>)" : "") + "</td></tr>";
 
-      var ciTxt = (r.ci <= 1)
-        ? "the confidence interval already includes the null, so no unmeasured confounding is required to move the bound to it (CI E-value = 1)."
-        : "a confounder associated with both exposure and outcome by a risk ratio of <strong>" + fmt(r.ci) + "</strong>-fold each (above measured covariates) could shift the CI limit nearest the null to 1.";
+      var ciTxt = !hasLo
+        ? "no confidence interval was supplied; a CI E-value cannot be assessed."
+        : (r.ci <= 1)
+          ? "the supplied confidence interval includes the null, so the CI E-value is 1."
+          : "a confounder associated with both exposure and outcome by a risk ratio of <strong>" + fmt(r.ci) + "</strong>-fold each (above measured covariates) could shift the CI limit nearest the null to 1.";
       document.getElementById("interp").innerHTML =
         "To fully explain away the point estimate, an unmeasured confounder would need to be associated with both the exposure and the outcome by a risk ratio of <strong>" + fmt(r.point)
         + "</strong>-fold each, above and beyond the measured covariates. For the interval: " + ciTxt;
