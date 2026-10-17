@@ -67,15 +67,50 @@ function geometry(r,c,limit){
    if(node.hasAttribute('transform')||getComputedStyle(node).transform!=='none')failures.push(id+' unexpected transform');
   }
  }
+ // Screen-space comparisons tolerate browser float/layout rounding (0.02 CSS px).
+ // CTMs include SVG transforms, CSS transforms and independent transform properties.
+ const matrices=new WeakMap();
+ const screen=(n,x,y)=>{if(!n)return {x:NaN,y:NaN};if(!matrices.has(n))matrices.set(n,n.getScreenCTM());const m=matrices.get(n);return m?new DOMPoint(x,y).matrixTransform(m):{x:NaN,y:NaN};};
+ const center=n=>{if(!n)return {x:NaN,y:NaN};const b=n.getBBox();return screen(n,b.x+b.width/2,b.y+b.height/2);};
+ const endpoint=(n,end)=>{if(!n)return {x:NaN,y:NaN};const p=n.getPointAtLength(end?n.getTotalLength():0);return screen(n,p.x,p.y);};
+ function screenEq(a,b,key){if(!a||!b||![a.x,a.y,b.x,b.y].every(finite)||Math.hypot(a.x-b.x,a.y-b.y)>.02)failures.push(key+' screen');}
+ function axis(svg,name,values,coords){
+  const ticks=[...svg.querySelectorAll('[data-plus-axis="'+name+'"]')];count(ticks,2,name+' ticks');
+  const labels=[...svg.querySelectorAll('[data-plus-tick-label="'+name+'"]')];count(labels,2,name+' tick labels');
+  return values.map((v,i)=>{const n=ticks[i];if(n?.querySelector('title')?.textContent!==String(v))failures.push(name+' tick value');
+   const label=labels[i];if(label?.textContent!==v.toPrecision(3))failures.push(name+' tick label value');
+   if(label?.getNumberOfChars()){
+    const p=label.getStartPositionOfChar(0),width=label.getComputedTextLength(),[x,y]=coords[i];
+    screenEq(screen(label,p.x,p.y),screen(svg,name==='x'?x-width/2:x-7-width,name==='x'?y+17:y+4),name+' tick label');
+   }else failures.push(name+' tick label geometry');
+   if(!n)return {x:NaN,y:NaN};const p=n.getPointAtLength(0),actual=screen(n,p.x,p.y);
+   screenEq(actual,screen(svg,...coords[i]),name+' tick');return actual;});
+ }
+ const mix=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
  const fits=fitMethods.filter(k=>r[k].status==='ok');
  let low=Math.min(0,...fits.map(k=>r[k].values.ciLo)),high=Math.max(0,...fits.map(k=>r[k].values.ciHi));if(low===high)high=low+1;
  const effect=x=>low+(x-220)*(high-low)/450;
  const forest=document.getElementById('plus-forest'),dots=forest.querySelectorAll('circle'),lines=forest.querySelectorAll('line');
- const labels=forest.querySelectorAll('text');count(labels,fits.length,'forest method labels');
+ const fx=axis(forest,'x',[low,high],[[220,245],[670,245]]);
+ const forestPoint=(x,y)=>{const p=mix(...fx,(x-low)/(high-low)),a=screen(forest,0,245),b=screen(forest,0,y);return {x:p.x+b.x-a.x,y:p.y+b.y-a.y};};
+ const labels=forest.querySelectorAll('text:not([data-plus-tick-label])');count(labels,fits.length,'forest method labels');
  count(dots,fits.length,'forest estimates');count(lines,fits.length+1,'forest intervals');
  eq(effect(attr(lines[0],'x1')),0,'forest null x1');eq(effect(attr(lines[0],'x2')),0,'forest null x2');eq(attr(lines[0],'y1'),5,'forest null y1');eq(attr(lines[0],'y2'),240,'forest null y2');
  fits.forEach((key,i)=>{const v=r[key].values,y=25+30*i;
   if(labels[i]?.textContent!==forestNames[key])failures.push(key+' forest label');
+  // SVG text character positions include dx/dy and descendant tspan positioning.
+  const label=labels[i];
+  if(label?.getNumberOfChars()){
+   const first=label.getStartPositionOfChar(0);screenEq(screen(label,first.x,first.y),forestPoint(low+(5-220)*(high-low)/450,y+4),key+' label baseline');
+   for(let j=0;j<label.getNumberOfChars();j++){
+    const p=label.getStartPositionOfChar(j),end=label.getEndPositionOfChar(j);
+    const advance=j?label.getSubStringLength(0,j):0;
+    screenEq(screen(label,p.x,p.y),screen(forest,5+advance,y+4),key+' label character '+j);
+    screenEq(screen(label,end.x,end.y),screen(forest,5+label.getSubStringLength(0,j+1),y+4),key+' label end '+j);
+   }
+  }else failures.push(key+' empty label geometry');
+  screenEq(center(dots[i]),forestPoint(v.mu,y),key+' estimate');
+  for(const [a,value] of [['1',v.ciLo],['2',v.ciHi]])screenEq(endpoint(lines[i+1],a==='2'),forestPoint(value,y),key+' interval '+a);
   eq(attr(labels[i],'x'),5,key+' label x');eq(attr(labels[i],'y'),y+4,key+' label row');
   eq(effect(attr(dots[i],'cx')),v.mu,key+' estimate');eq(attr(dots[i],'cy'),y,key+' row');
   for(const [attrName,value] of [['x1',v.ciLo],['x2',v.ciHi]])eq(effect(attr(lines[i+1],attrName)),value,key+' '+attrName);
@@ -93,12 +128,16 @@ function geometry(r,c,limit){
  const values=points.concat(curves.flat()).map(p=>p[0]);let min=Math.min(...values),max=Math.max(...values);const padding=(max-min)*.05||.1;min-=padding;max+=padding;
  const invertX=x=>min+(x-60)*(max-min)/600,invertY=y=>(y-20)*maxSE/290;
  const funnel=document.getElementById('plus-funnel'),studies=funnel.querySelectorAll('circle'),paths=funnel.querySelectorAll('polyline');
+ const tx=axis(funnel,'x',[min,max],[[60,310],[660,310]]),ty=axis(funnel,'y',[0,maxSE],[[60,20],[60,310]]);
+ const funnelPoint=(x,se)=>{const a=mix(...tx,(x-min)/(max-min)),b=mix(...ty,se/maxSE);return {x:a.x+b.x-ty[1].x,y:a.y+b.y-ty[1].y};};
+ for(const n of funnel.querySelectorAll('line'))for(const a of ['1','2'])screenEq(screen(n,attr(n,'x'+a),attr(n,'y'+a)),screen(funnel,attr(n,'x'+a),attr(n,'y'+a)),'funnel axis line');
+ for(const a of ['1','2'])screenEq(endpoint(lines[0],a==='2'),forestPoint(0,a==='1'?5:240),'forest null');
  count(studies,points.length,'funnel points');count(paths,curves.length,'funnel curves');
- points.forEach(([x,se],i)=>{eq(invertX(attr(studies[i],'cx')),x,'funnel effect '+i);eq(invertY(attr(studies[i],'cy')),se,'funnel SE '+i);});
+ points.forEach(([x,se],i)=>{screenEq(center(studies[i]),funnelPoint(x,se),'funnel point '+i);eq(invertX(attr(studies[i],'cx')),x,'funnel effect '+i);eq(invertY(attr(studies[i],'cy')),se,'funnel SE '+i);});
  curves.forEach((curve,i)=>{
   const raw=paths[i]?.getAttribute('points')?.trim(),pairs=raw?raw.split(/\s+/).map(p=>p.split(',').map(Number)):[];
   count(pairs,curve.length,'curve '+i);
-  curve.forEach(([x,se],j)=>{const p=pairs[j]||[];if(p.length!==2)failures.push('curve coordinate arity');eq(invertX(p[0]),x,'curve effect '+i+':'+j);eq(invertY(p[1]),se,'curve SE '+i+':'+j);});
+  curve.forEach(([x,se],j)=>{const p=pairs[j]||[];screenEq(screen(paths[i],p[0],p[1]),funnelPoint(x,se),'curve '+i+':'+j);if(p.length!==2)failures.push('curve coordinate arity');eq(invertX(p[0]),x,'curve effect '+i+':'+j);eq(invertY(p[1]),se,'curve SE '+i+':'+j);});
  });
  return failures;
 }
@@ -123,7 +162,7 @@ async function mount(){
    }
   }finally{__almLimitValidationRestore(snap);AlmLimitPlusUI.restore(ui);document.getElementById('plus-status').textContent=status;locks.forEach(([n,d])=>n.disabled=d);}
   if(checks!==manifest.checks)throw Error('Sensitivity check cardinality mismatch: '+checks+' != '+manifest.checks);
-  return {checks,passed,failed,maxima,summaryLines:['Independent sensitivity oracle: meta 8.5-0, metafor 5.2-1, metasens 1.5-3.','Refusals pass only when both implementations refuse for the same reason.','Rendered forest/funnel coordinates inverted to effect/SE units: 1e-9 relative tolerance with unit floor.','Closed-form tolerance 1e-9 relative; selection parameters/logLik 1e-6 and SE/CI 1e-4.']};
+  return {checks,passed,failed,maxima,summaryLines:['Independent sensitivity oracle: meta 8.5-0, metafor 5.2-1, metasens 1.5-3.','Refusals pass only when both implementations refuse for the same reason.','Effective rendered geometry checked against rendered axis ticks within 0.02 CSS px; text character positions included.','Rendered forest/funnel coordinates inverted to effect/SE units: 1e-9 relative tolerance with unit floor.','Closed-form tolerance 1e-9 relative; selection parameters/logLik 1e-6 and SE/CI 1e-4.']};
   });
  }
  const adapter={app:'limit-ma-plus',paper:{checks:manifest.checks,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'Sensitivity oracle protocol',runUrl:'validate/README-plus.md'},corpus:{files,run:replay}};

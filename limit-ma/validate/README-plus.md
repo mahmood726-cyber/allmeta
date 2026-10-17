@@ -47,15 +47,23 @@ The rendered forest estimates, CI endpoints and row positions, and funnel study,
 shrunken and imputed points, regression curves and contours are read from SVG.
 The validator independently derives axis domains from the computed source values,
 inverts coordinates, and checks effect/SE values at normalized relative tolerance
-1e-9 (unit floor). Node and coordinate deletion fail closed. Tests exercise all
+1e-9 (unit floor). It also compares effective screen positions (element CTMs,
+rendered bounds/endpoints, and text character positions) to the axes' rendered
+numeric ticks and source values, within 0.02 CSS pixels for browser rounding.
+This includes independent CSS transforms and SVG text/tspan offsets. The
+existing transform and raw-coordinate guards remain. Node and coordinate deletion fail closed. Tests exercise all
 16 layer-toggle combinations on all 169 configurations and corrupt/delete
 coordinates and nodes for each plotted role and toggle combination.
 
-`shared/selmodel.js` preserves the origin/main legacy implementation byte-for-byte.
+`shared/selmodel.js` preserves the legacy implementation byte-for-byte (LF).
 Only limit-ma loads `plus-selmodel.js` and calls `AlmLimitPlusSelModel`; its ML
 start, BFGS optimizer and boundary Hessian cannot alter legacy callers, even when
 both engines are loaded. The permanent selmodel corpus test compares every
-legacy result field with origin/main using strict equality, including NaN placement.
+legacy result field with `fixtures/selmodel-legacy-plus.json` using `Object.is`,
+including NaN placement and signed zero, in standalone and plus-loaded contexts.
+The spec pins the legacy source SHA-256; tests need neither Git history nor network.
+The fixture is generated explicitly with `node scripts/build-selmodel-legacy-fixture.mjs`
+from the unchanged legacy engine and the existing plus corpus, never during tests.
 
 The existing primary `dat.hartmannboyce2018::001` mismatch remains unchanged.
 The new panel independently runs the convergence check for the internal REML

@@ -183,7 +183,7 @@ test('limit-ma-plus rejects SVG transforms and forest label mutations',async({pa
     svg.setAttribute('transform','translate(100 0)');reject('transform');svg.removeAttribute('transform');
     svg.style.transform='scale(2)';reject('transform');svg.style.removeProperty('transform');
    }
-   const labels=[...document.querySelectorAll('#plus-forest text')];
+   const labels=[...document.querySelectorAll('#plus-forest text:not([data-plus-tick-label])')];
    for(const node of labels){
     const parent=node.parentNode,next=node.nextSibling,text=node.textContent;
     node.remove();reject('label');parent.insertBefore(node,next);
@@ -200,4 +200,35 @@ test('limit-ma-plus rejects SVG transforms and forest label mutations',async({pa
  });
  expect(result.counts.clean).toBe(338);expect(result.counts.transform).toBeGreaterThan(3000);expect(result.counts.label).toBeGreaterThan(4000);expect(result.missed).toEqual([]);
  console.log('FIX2 MUTATIONS',JSON.stringify(result));
+});
+
+test('limit-ma-plus effective screen geometry rejects offset mechanisms',async({page})=>{
+ test.setTimeout(240000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ const result=await page.evaluate(async()=>{
+  const loaded=await AlmLimitPlusValidation.prepare(),files=AlmLimitPlusValidationAdapter.corpus.files;
+  const counts={},missed=[];let clean=0;
+  for(const id of ['limit','fill','reg','contour'])document.getElementById('plus-'+id+'-toggle').checked=true;
+  for(const c of loaded[files[0].path]){
+   __almLimitValidationRun(c.te.map((x,i)=>x+','+c.se[i]).join('\n'),true);
+   const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);AlmLimitPlusUI.render(r,c,limit);
+   const check=()=>AlmLimitPlusContract.geometry(r,c,limit);
+   const reject=kind=>{counts[kind]=(counts[kind]||0)+1;if(!check().length)missed.push(c.id+' '+kind);};
+   clean++;if(check().length)missed.push(c.id+' clean '+check().join(','));
+   for(const selector of ['#plus-forest circle','#plus-forest line','#plus-forest text:not([data-plus-tick-label])','#plus-funnel circle','#plus-funnel polyline']){
+    const node=document.querySelector(selector);if(!node)continue;
+    for(const [property,value] of [['translate','100px 30px'],['rotate','25deg'],['scale','1.4'],['transform','translate(100px,30px)']]){
+     node.style.setProperty(property,value);reject('CSS '+property);node.style.removeProperty(property);
+     const parent=node.parentNode,next=node.nextSibling,g=document.createElementNS(node.namespaceURI,'g');parent.insertBefore(g,node);g.append(node);
+     g.style.setProperty(property,value);reject('parent CSS '+property);parent.insertBefore(node,next);g.remove();
+    }
+   }
+   for(const node of document.querySelectorAll('#plus-forest text:not([data-plus-tick-label])')){
+    for(const attr of ['dx','dy']){node.setAttribute(attr,'30');reject('text '+attr);node.removeAttribute(attr);}
+    const text=node.textContent;node.textContent='';const span=document.createElementNS(node.namespaceURI,'tspan');span.textContent=text;span.setAttribute('dy','30');node.append(span);reject('text tspan');node.textContent=text;
+   }
+   clean++;if(check().length)missed.push(c.id+' restored');
+  }return {clean,counts,missed};
+ });
+ expect(result.clean).toBe(338);expect(result.missed).toEqual([]);
+ console.log('FIX3 SCREEN MUTATIONS',JSON.stringify(result));
 });

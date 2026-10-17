@@ -1567,6 +1567,7 @@
   "summaryLines": [
     "Independent sensitivity oracle: meta 8.5-0, metafor 5.2-1, metasens 1.5-3.",
     "Refusals pass only when both implementations refuse for the same reason.",
+    "Effective rendered geometry checked against rendered axis ticks within 0.02 CSS px; text character positions included.",
     "Rendered forest/funnel coordinates inverted to effect/SE units: 1e-9 relative tolerance with unit floor.",
     "Closed-form tolerance 1e-9 relative; selection parameters/logLik 1e-6 and SE/CI 1e-4."
   ]

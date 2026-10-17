@@ -45,6 +45,12 @@ function render(results,c,limit){
  draw();
 }
 function svgNode(svg,tag,attrs){const n=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,String(v));svg.append(n);return n;}
+// Tick paths start at the calibrated value; titles expose the exact value.
+function tick(svg,axis,value,x,y){
+ const n=svgNode(svg,'path',{'data-plus-axis':axis,d:`M ${x} ${y} l ${axis==='x'?'0 5':'-5 0'}`,stroke:'currentColor'});
+ const title=document.createElementNS(svg.namespaceURI,'title');title.textContent=String(value);n.append(title);
+ const label=svgNode(svg,'text',{x:axis==='x'?x:x-7,y:axis==='x'?y+17:y+4,'font-size':10,'text-anchor':axis==='x'?'middle':'end','data-plus-tick-label':axis});label.textContent=value.toPrecision(3);
+}
 function draw(){
  if(!state)return;const {results:r,c,limit}=state;
  const forest=el('plus-forest');forest.replaceChildren();const fits=methods.filter(k=>r[k].status==='ok');
@@ -52,6 +58,7 @@ function draw(){
  const X=x=>220+450*(x-lo)/(hi-lo);
  svgNode(forest,'line',{x1:X(0),x2:X(0),y1:5,y2:240,stroke:'gray','stroke-dasharray':'3 3'});
  fits.forEach((key,i)=>{const v=r[key].values,y=25+i*30;svgNode(forest,'text',{x:5,y:y+4,fill:'currentColor','font-size':12}).textContent=names[key];svgNode(forest,'line',{x1:X(v.ciLo),x2:X(v.ciHi),y1:y,y2:y,stroke:'#0072B2','stroke-width':2});svgNode(forest,'circle',{cx:X(v.mu),cy:y,r:4,fill:'#0072B2'});});
+ tick(forest,'x',lo,220,245);tick(forest,'x',hi,670,245);
  const svg=el('plus-funnel');svg.replaceChildren();
  const maxS=Math.max(...c.se)*1.1;
  const points=c.te.map((x,i)=>[x,c.se[i]]),curves=[];
@@ -64,6 +71,7 @@ function draw(){
  if(el('plus-contour-toggle').checked)for(const sign of [-1,1])curves.push({color:'#999',points:[[0,0],[sign*1.959963984540054*maxS,maxS]],dash:true});
  const xs=[...points,...curves.flatMap(x=>x.points)].map(x=>x[0]);let min=Math.min(...xs),max=Math.max(...xs);const pad=(max-min)*.05||.1;min-=pad;max+=pad;
  const xx=x=>60+600*(x-min)/(max-min),yy=s=>20+290*s/maxS;
+ tick(svg,'x',min,60,310);tick(svg,'x',max,660,310);tick(svg,'y',0,60,20);tick(svg,'y',maxS,60,310);
  svgNode(svg,'line',{x1:60,x2:660,y1:310,y2:310,stroke:'currentColor'});svgNode(svg,'line',{x1:60,x2:60,y1:20,y2:310,stroke:'currentColor'});
  svgNode(svg,'text',{x:300,y:340,fill:'currentColor'}).textContent='Effect (entered scale)';svgNode(svg,'text',{x:8,y:20,fill:'currentColor'}).textContent='SE';
  for(const [x,s,color] of points)svgNode(svg,'circle',{cx:xx(x),cy:yy(s),r:3,fill:color||'currentColor','fill-opacity':color?.65:.45});
