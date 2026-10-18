@@ -1,0 +1,47 @@
+{
+  "title": "DTA validation buttons render and corpus widget passes without off-origin requests",
+  "status": "passed",
+  "panels": [
+    {
+      "url": "http://127.0.0.1:8103/dta-sroc/index.html#eyJ2IjoxLCJkYXRhIjoiIyBFeGFtcGxlOiBUUCwgRlAsIEZOLCBUTiBwZXIgc3R1ZHlcblN0dWR5IEEsIDg1LCAxMCwgMTUsIDE0MFxuU3R1ZHkgQiwgNjIsIDEyLCAxOCwgMTA4XG5TdHVkeSBDLCAxMTAsIDI1LCA0MCwgMjAwXG5TdHVkeSBELCA1NSwgNiwgOCwgOTBcblN0dWR5IEUsIDEzMCwgNDAsIDMwLCAzMDBcblN0dWR5IEYsIDkyLCAxOCwgMjUsIDE4NVxuU3R1ZHkgRywgNzQsIDgsIDEyLCAxMzAiLCJ0aXRsZSI6IkV4YW1wbGUgU1JPQyAtIGRpYWdub3N0aWMgdGVzdCIsIm1ldGhvZCI6InJlbWwiLCJjYyI6ImFsbCIsImNvdiI6IiJ9",
+      "panel": "Independent validation\nValidate this analysis in RRe-run full validation\n\n855/855 passed; 0 failed. Paper: 855 checks.\n\nAllmeta build d2e5d201e05ff59e321d9471010e35fd0418e17a; elapsed 0.52 s\n\nSHA-256 verified: validate/corpus/paper_values.json a3cc58b2018720d0467fc40bd673edd6259277802293d5c7b7e5438937a4dfbd\n\nSHA-256 verified: validate/corpus/reference.json c27829827ad9772c8a9886c682ad13ef8ff80a8016372052bbc0b91a48105d29\n\n855/855 checks passed; 105 configurations (80 fits + 25 identical refusals); 105 configuration checks + 732 quantity checks + 18 Moses-Littenberg checks.\n\nMaxima: {\"coef\":1.488565759544258e-8,\"vcov\":2.5364350259016177e-8,\"Psi\":1.8834767390174534e-7,\"logLik\":4.547473508864641e-13,\"AIC\":9.094947017729282e-13,\"BIC\":9.094947017729282e-13,\"summary\":2.7295742055510885e-10,\"corRandom\":6.756919912476178e-9,\"hsroc\":2.2936993193667377e-8,\"auc\":4.317357582550585e-10,\"sroc\":1.4034896189674129e-8,\"confRegion\":3.2030069421773864e-8,\"predRegion\":2.9023277055287068e-8}\nRefusals: {\"reference\":25,\"app\":25,\"matched\":25}\nQuantity\tApp\tR\tDifference\tTolerance\tPASS/FAIL\nAll numerical checks\t855\t855\t0\t0\tPASS\n\nFull R re-execution (GitHub Actions) · Open Codespaces · Reproducible repository ·"
+    }
+  ],
+  "requests": [
+    "http://127.0.0.1:8103/dta-sroc/index.html",
+    "http://127.0.0.1:8103/shared/forced-colors.css",
+    "http://127.0.0.1:8103/hub/app-style.css",
+    "http://127.0.0.1:8103/hub/shared/csv-upload.js",
+    "http://127.0.0.1:8103/hub/shared/axis-controls.js",
+    "http://127.0.0.1:8103/hub/shared/results-export.js",
+    "http://127.0.0.1:8103/hub/shared/url-state.js",
+    "http://127.0.0.1:8103/hub/shared/reset-undo.js",
+    "http://127.0.0.1:8103/hub/shared/tooltips.js",
+    "http://127.0.0.1:8103/shared/dta-bivariate.js",
+    "http://127.0.0.1:8103/dta-sroc/example-datasets.js",
+    "http://127.0.0.1:8103/shared/build-info.js",
+    "http://127.0.0.1:8103/shared/ma-studies-v1.js",
+    "http://127.0.0.1:8103/shared/autosave.js",
+    "http://127.0.0.1:8103/hub/shared/plot-export.js",
+    "http://127.0.0.1:8103/hub/shared/analysis-lifecycle.js",
+    "http://127.0.0.1:8103/hub/shared/glossary.json",
+    "http://127.0.0.1:8103/shared/toast.js",
+    "http://127.0.0.1:8103/hub/shared/a11y-landmarks.js",
+    "http://127.0.0.1:8103/shared/alm-validate.js",
+    "http://127.0.0.1:8103/shared/webr-runner.js",
+    "http://127.0.0.1:8103/dta-sroc/validate/adapter.js",
+    "http://127.0.0.1:8103/dta-sroc/plus-bivariate.js",
+    "http://127.0.0.1:8103/dta-sroc/plus.js",
+    "http://127.0.0.1:8103/dta-sroc/validate/plus-pins.js",
+    "http://127.0.0.1:8103/dta-sroc/validate/plus-core.js",
+    "http://127.0.0.1:8103/dta-sroc/plus-ui.js",
+    "http://127.0.0.1:8103/dta-sroc/validate/plus-render-reference.js",
+    "http://127.0.0.1:8103/dta-sroc/validate/plus-adapter.js",
+    "http://127.0.0.1:8103/dta-sroc/validate/corpus/plus-reference.json",
+    "http://127.0.0.1:8103/dta-sroc/validate/corpus/paper_values.json",
+    "http://127.0.0.1:8103/dta-sroc/validate/corpus/reference.json"
+  ],
+  "hosts": [
+    "127.0.0.1:8103"
+  ]
+}

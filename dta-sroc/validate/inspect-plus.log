@@ -1,0 +1,585 @@
+During startup - Warning messages:
+1: Setting LC_COLLATE=C.UTF-8 failed 
+2: Setting LC_CTYPE=C.UTF-8 failed 
+3: Setting LC_MONETARY=C.UTF-8 failed 
+4: Setting LC_TIME=C.UTF-8 failed 
+[1] "C:/Users/mahmo/allmeta-offload-stage/Rlib_extra"                                                                
+[2] "F:/claude-temp/claude/C--Projects-rapidmeta-staging/9c59d82a-a422-4f19-ba4c-3921424ae079/scratchpad/re/Rlib_dta"
+[3] "C:/Program Files/R/R-4.6.0/library"                                                                             
+mada : [1] '0.5.12'
+metadat : [1] '1.6.0'
+mvmeta : [1] '1.0.3'
+jsonlite : [1] '2.0.0'
+
+DOCUMENTATION dat.kearon1998 
+_S_t_u_d_i_e_s _o_n _t_h_e _A_c_c_u_r_a_c_y _o_f _V_e_n_o_u_s _U_l_t_r_a_s_o_n_o_g_r_a_p_h_y _f_o_r _t_h_e _D_i_a_g_n_o_s_i_s _o_f
+_D_e_e_p _V_e_n_o_u_s _T_h_r_o_m_b_o_s_i_s
+
+_D_e_s_c_r_i_p_t_i_o_n:
+
+     Results from diagnostic accuracy studies examining the accuracy of
+     venous ultrasonography for the diagnosis of deep venous
+     thrombosis.
+
+_U_s_a_g_e:
+
+     dat.kearon1998
+     
+_F_o_r_m_a_t:
+
+     The data frame contains the following columns:
+
+       *id*        'numeric'    study id                                                    
+       *author*    'character'  study author(s)                                             
+       *year*      'numeric'    publication year                                            
+       *patients*  'character'  patient group (either symptomatic or asymptomatic patients) 
+       *tp*        'numeric'    number of true positives                                    
+       *np*        'numeric'    number of positive patients (cases)                         
+       *tn*        'numeric'    number of true negatives                                    
+       *nn*        'numeric'    number of negative patients (non-cases)                     
+      
+_D_e_t_a_i_l_s:
+
+     The studies included in the dataset examined the accuracy of
+     venous ultrasonography for the diagnossis of a first deep venous
+     thrombosis in symptomatic and asymptomatic patients. Cases and
+     non-cases were determined based on contrast venography. Venous
+     ultrasonography was then used to make a diagnosis, leading to a
+     given number of true positives and negatives.
+
+     A subset of this dataset (using only the studies with asymptomatic
+     patients) was used by Deeks et al. (2005) to illustrate methods
+     for detecting publication bias (or small-study effects) in
+     meta-analyses of diagnostic accuracy studies.
+
+_C_o_n_c_e_p_t_s:
+
+     medicine, odds ratios, diagnostic accuracy studies, multivariate
+     models, publication bias
+
+_A_u_t_h_o_r(_s):
+
+     Wolfgang Viechtbauer, <mailto:wvb@metafor-project.org>,
+     <https://www.metafor-project.org>
+
+_S_o_u_r_c_e:
+
+     Kearon, C., Julian, J. A., Math, M., Newman, T. E., & Ginsberg, J.
+     S. (1998). Noninvasive diagnosis of deep venous thrombosis.
+     _Annals of Internal Medicine_, *128*(8), 663-677.
+     https://doi.org/10.7326/0003-4819-128-8-199804150-00011
+
+_R_e_f_e_r_e_n_c_e_s:
+
+     Deeks, J. J., Macaskill, P., & Irwig, L. (2005). The performance
+     of tests of publication bias and other sample size effects in
+     systematic reviews of diagnostic test accuracy was assessed.
+     _Journal of Clinical Epidemiology_, *58*(9), 882-893.
+     https://doi.org/10.1016/j.jclinepi.2005.01.016
+
+_E_x_a_m_p_l_e_s:
+
+     ### copy data into 'dat' and examine data
+     dat <- dat.kearon1998
+     head(dat)
+     
+     ## Not run:
+     
+     ### load metafor package
+     library(metafor)
+     
+     ### calculate diagnostic log odds ratios and corresponding sampling variances
+     dat <- escalc(measure="OR", ai=tp, n1i=np, ci=nn-tn, n2i=nn, data=dat, add=1/2, to="all")
+     head(dat)
+     
+     ### fit random-effects model for the symptomatic patients
+     res <- rma(yi, vi, data=dat, subset=patients=="symptomatic")
+     res
+     
+     ### fit random-effects model for the asymptomatic patients
+     res <- rma(yi, vi, data=dat, subset=patients=="asymptomatic")
+     res
+     
+     ### estimated average diagnostic odds ratio (with 95% CI)
+     predict(res, transf=exp, digits=2)
+     
+     ### regression test for funnel plot asymmetry using SE as predictor
+     reg <- regtest(res, model="lm")
+     reg
+     
+     ### corresponding funnel plot
+     funnel(res, atransf=exp, xlim=c(0,7), at=log(c(1,10,100,1000)), ylim=c(0,1.5), steps=4)
+     ys <- seq(0, 2, length=100)
+     lines(coef(reg$fit)[1] + coef(reg$fit)[2]*ys, ys, lwd=2, lty=3)
+     
+     ### regression test for funnel plot asymmetry using total sample size as predictor
+     reg <- regtest(res, model="lm", predictor="ni")
+     reg
+     
+     ### corresponding funnel plot
+     funnel(res, yaxis="ni", atransf=exp, xlim=c(0,7), at=log(c(1,10,100,1000)), ylim=c(0,300), steps=4)
+     ys <- seq(0, 300, length=100)
+     lines(coef(reg$fit)[1] + coef(reg$fit)[2]*ys, ys, lwd=2, lty=3)
+     
+     ### regression test for funnel plot asymmetry using 1/sqrt(ESS) as predictor (Deeks et al., 2005)
+     dat$invessi <- 1/(4*dat$np) + 1/(4*dat$nn)
+     tmp <- rma(yi, invessi, data=dat, subset=patients=="asymptomatic")
+     reg <- regtest(tmp, model="lm")
+     reg
+     
+     ### corresponding funnel plot
+     funnel(tmp, atransf=exp, xlim=c(0,7), at=log(c(1,10,100,1000)), ylim=c(0,0.15), steps=4,
+            refline=coef(res), level=0, ylab="1/root(ess)")
+     ys <- seq(0, 0.2, length=100)
+     lines(coef(reg$fit)[1] + coef(reg$fit)[2]*ys, ys, lwd=2, lty=3)
+     
+     ### convert data to long format
+     dat <- to.long(measure="OR", ai=tp, n1i=np, ci=tn, n2i=nn,
+                    data=dat.kearon1998, subset=patients=="asymptomatic", append=FALSE)
+     dat$group <- factor(dat$group, levels=c(1,2), labels=c("sensitivity", "specificity"))
+     dat
+     
+     ### calculate logit-transformed sensitivities
+     dat <- escalc(measure="PLO", xi=out1, mi=out2, data=dat, add=1/2, to="all",
+                   include=group=="sensitivity")
+     dat
+     
+     ### calculate logit-transformed specificities
+     dat <- escalc(measure="PLO", xi=out1, mi=out2, data=dat, add=1/2, to="all",
+                   include=group=="specificity")
+     dat
+     
+     ### bivariate random-effects model for logit sensitivity and specificity
+     res <- rma.mv(yi, vi, mods = ~ 0 + group, random = ~ group | study, struct="UN", data=dat)
+     res
+     
+     ### estimated average sensitivity and specificity based on the model
+     predict(res, newmods = rbind(c(1,0),c(0,1)), transf=transf.ilogit, tau2.levels=c(1,2), digits=2)
+     
+     ### estimated average diagnostic odds ratio based on the model
+     predict(res, newmods = c(1,1), transf=exp, digits=2)
+     ## End(Not run)
+     
+  id           study year    patients  tp  np  tn  nn
+1  1    Elias et al. 1987 symptomatic 325 333 483 505
+2  2 Appleman et al. 1987 symptomatic  NA  NA  47  49
+3  3    Vogel et al. 1987 symptomatic  20  25  29  29
+4  4   Cronan et al. 1987 symptomatic  25  28  23  23
+5  5  O'Leary et al. 1988 symptomatic  22  25  24  25
+6  6  Lensing et al. 1989 symptomatic  70  77 142 143
+       id              study         year           patients        tp        
+ Min.   : 1.00   Length   :34   Min.   :1987   Length   :34   Min.   :  5.00  
+ 1st Qu.: 9.25   N.unique :29   1st Qu.:1989   N.unique : 2   1st Qu.: 15.50  
+ Median :17.50   N.blank  : 0   Median :1992   N.blank  : 0   Median : 22.00  
+ Mean   :17.50   Min.nchar:11   Mean   :1992   Min.nchar:11   Mean   : 37.26  
+ 3rd Qu.:25.75   Max.nchar:20   3rd Qu.:1994   Max.nchar:12   3rd Qu.: 36.00  
+ Max.   :34.00                  Max.   :1997                  Max.   :325.00  
+                                                              NAs    :3       
+       np               tn               nn        
+ Min.   : 14.00   Min.   : 18.00   Min.   : 19.00  
+ 1st Qu.: 25.00   1st Qu.: 32.50   1st Qu.: 39.00  
+ Median : 32.00   Median : 55.00   Median : 56.00  
+ Mean   : 50.55   Mean   : 90.97   Mean   : 94.58  
+ 3rd Qu.: 49.50   3rd Qu.: 94.50   3rd Qu.: 97.50  
+ Max.   :333.00   Max.   :483.00   Max.   :505.00  
+ NAs    :3        NAs    :3        NAs    :3       
+
+DOCUMENTATION dat.rivera2025 
+_C_o_m_p_a_r_i_s_o_n _o_f _T_w_o _D_i_a_g_n_o_s_t_i_c _T_e_s_t_s _f_o_r _t_h_e _D_e_t_e_c_t_i_o_n _o_f
+_T_e_m_p_o_r_o_m_a_n_d_i_b_u_l_a_r _D_i_s_o_r_d_e_r_s
+
+_D_e_s_c_r_i_p_t_i_o_n:
+
+     Studies evaluating the diagnostic accuracy of the IAF and 3Q-TMD
+     instruments based on the reference tests RDC and DC-TMD for the
+     diagnosis of temporomandibular disorders.
+
+_U_s_a_g_e:
+
+     dat.rivera2025
+     
+_F_o_r_m_a_t:
+
+     The data frame contains the following columns:
+
+       *Author*       'character'  study author(s)                      
+       *Year*         'integer'    year of the study                    
+       *Title*        'character'  title of the article                 
+       *DOI*          'character'  DOI for the article                  
+       *TP*           'integer'    number of true positives             
+       *FP*           'integer'    number of false positives            
+       *FN*           'integer'    number of false negatives            
+       *TN*           'integer'    number of true negatives             
+       *Sensitivity*  'numeric'    sensitivity                          
+       *Specificity*  'numeric'    specificity                          
+       *PPV*          'numeric'    positive predictive value            
+       *NPV*          'numeric'    negative predictive value            
+       *Sample.size*  'integer'    sample size                          
+       *n1*           'integer'    number of people with the disease    
+       *n2*           'integer'    number of people without the disease 
+       *Prevalence*   'numeric'    prevalence                           
+       *AUC*          'numeric'    area under the curve                 
+       *SampleID*     'character'  sample identifier                    
+      
+_D_e_t_a_i_l_s:
+
+     Results of 10 studies that evaluated the diagnostic accuracy of
+     the IAF and 3Q-TMD instruments based on the reference tests RDC
+     and DC-TMD were included. The search period ranged from 1992 to
+     April 2022 in six electronic databases. Two independent reviewers
+     selected the studies. Risk of bias and applicability were assessed
+     using the QUADAS 2 instrument.
+
+_C_o_n_c_e_p_t_s:
+
+     medicine, dentistry, diagnostic accuracy studies
+
+_A_u_t_h_o_r(_s):
+
+     <c3><81>lvarez-Vaz, Ram<c3><b3>n, <mailto:ramon.alvarez@fcea.edu.uy>
+
+_S_o_u_r_c_e:
+
+     Rivera, Hugo Daniel; <c3><81>lvarez-Vaz, Ram<c3><b3>n, 2025, "Conjunto de datos
+     de: Comparaci<c3><b3>n de dos pruebas diagn<c3><b3>sticas para la detecci<c3><b3>n de
+     trastornos t<c3><a9>mporomandibulares. Una revisi<c3><b3>n sistem<c3><a1>tica y
+     metaan<c3><a1>lisis.", https://doi.org/10.60895/redata/YIEGLZ,
+     Repositorio de datos abiertos de investigaci<c3><b3>n de Uruguay, V1
+
+_R_e_f_e_r_e_n_c_e_s:
+
+     Rivera, H. D., Rodr<c3><ad>guez, C. I., <c3><81>lvarez Vaz, R., & Kreiner, M.
+     (2025). Comparison of two diagnostic tests for the detection of
+     temporomandibular disorders: A systematic review and
+     meta-analysis. Odontoestomatolog<c3><ad>a, 27(45).
+     https://doi.org/10.22592/ode2025n45e338
+
+_E_x_a_m_p_l_e_s:
+
+     ### copy data into 'dat' and examine data
+     dat <- dat.rivera2025
+     dat
+     
+     ## Not run:
+     
+     suppressPackageStartupMessages(library(meta))
+     
+     ### sensitivity
+     round(dat$TP / dat$n1, 4)
+     report1 <- metaprop(TP, n1, data=dat, common=TRUE, random=TRUE, studlab=paste(Author, Year))
+     report1
+     summary(report1)
+     forest(report1)
+     
+     ### specificity
+     round(dat$TN / dat$n2, 4)
+     report2 <- metaprop(TN, n2, data=dat, common=TRUE, random=TRUE, studlab=paste(Author, Year))
+     summary(report2)
+     forest(report2)
+     
+     ### diagnostic odds ratio
+     report3 <- metabin(TP, n1, n2-TN, n2, data=dat, sm="OR",common=FALSE, random=TRUE,
+                        studlab=paste(Author, Year), allstudies=TRUE)
+     summary(report3)
+     ## End(Not run)
+     
+      Author Year
+1    Lovgren 2016
+2    Lovgren 2018
+3    Stasiak 2020
+4     Besime 2020
+5       Zhan 2019
+6 Dos Santos 2014
+                                                                                                                             Title
+1                                                         Validity of three screening questions (3Q/TMD) in relation to the DC/TMD
+2       Diagnostic accuracy of three screening questions (3Q/TMD) in relation to the DC/TMD in a specialized orofacial pain clinic
+3                                                       TMD diagnosis: Sensitivity and specificity of the Fonseca Anamnestic Index
+4               The accuracy and reliability of the Turkish version of the Fonseca anamnestic index in temporomandibular disorders
+5                   Psychometric evaluation of the Chinese version of the Fonseca anamnestic index for temporomandibular disorders
+6 Accuracy of the Fonseca anamnestic index in the identification of myogenous temporomandibular disorder in female community cases
+                            DOI  TP  FP FN  TN Sensitivity Specificity  PPV
+1            10.1111/joor.12428 103  36 24 137        0.81        0.79 0.74
+2 10.1080/00016357.2018.1439528 237 133 10  69        0.96        0.34 0.64
+3 10.1080/08869634.2020.1839724 146  85  4  30        0.97        0.26 0.63
+4 10.1080/08869634.2020.1812808 131   9 11  54        0.94        0.83 0.94
+5            10.1111/joor.12893 588  16 25  41        0.96        0.72 0.97
+6    10.1016/j.jbmt.2014.08.001 103   7 17  76        0.86        0.92 0.94
+   NPV Sample.size  n1  n2 Prevalence  AUC       SampleID
+1 0.84         300 127 173      0.425   NA    Lovgren2016
+2 0.86         449 247 202      0.550   NA    Lovgren2018
+3 0.86         265 150 115      0.565   NA    Stasiak2020
+4 0.83         205 142  63      0.725 0.93     Besime2020
+5 0.62         670 613  57      0.915   NA       Zhan2019
+6 0.83         203 120  83      0.593 0.94 Dos Santos2014
+       Author        Year            Title            DOI           TP       
+ Length   :10   Min.   :2014   Length   : 10   Length   :10   Min.   : 39.0  
+ N.unique : 8   1st Qu.:2018   N.unique : 10   N.unique :10   1st Qu.:103.0  
+ N.blank  : 0   Median :2020   N.blank  :  0   N.blank  : 0   Median :138.5  
+ Min.nchar: 4   Mean   :2019   Min.nchar: 72   Min.nchar:18   Mean   :298.1  
+ Max.nchar:13   3rd Qu.:2021   Max.nchar:154   Max.nchar:30   3rd Qu.:500.2  
+                Max.   :2021                                  Max.   :812.0  
+                                                                             
+       FP              FN              TN          Sensitivity    
+ Min.   :  3.0   Min.   : 4.00   Min.   : 30.00   Min.   :0.7800  
+ 1st Qu.:  8.0   1st Qu.:10.25   1st Qu.: 44.25   1st Qu.:0.8600  
+ Median : 10.0   Median :14.00   Median : 60.50   Median :0.9450  
+ Mean   : 31.6   Mean   :19.40   Mean   : 67.20   Mean   :0.9040  
+ 3rd Qu.: 31.0   3rd Qu.:24.75   3rd Qu.: 74.25   3rd Qu.:0.9575  
+ Max.   :133.0   Max.   :43.00   Max.   :137.00   Max.   :0.9700  
+                                                                  
+  Specificity          PPV              NPV          Sample.size   
+ Min.   :0.2600   Min.   :0.6300   Min.   :0.4200   Min.   :102.0  
+ 1st Qu.:0.7375   1st Qu.:0.7500   1st Qu.:0.6625   1st Qu.:203.5  
+ Median :0.8100   Median :0.9400   Median :0.8300   Median :282.5  
+ Mean   :0.7410   Mean   :0.8560   Mean   :0.7450   Mean   :416.3  
+ 3rd Qu.:0.9100   3rd Qu.:0.9625   3rd Qu.:0.8550   3rd Qu.:614.8  
+ Max.   :0.9500   Max.   :0.9900   Max.   :0.8900   Max.   :923.0  
+                                                                   
+       n1              n2           Prevalence          AUC        
+ Min.   : 50.0   Min.   : 52.00   Min.   :0.4250   Min.   :0.8500  
+ 1st Qu.:121.8   1st Qu.: 63.25   1st Qu.:0.5035   1st Qu.:0.9325  
+ Median :146.0   Median : 75.50   Median :0.5790   Median :0.9500  
+ Mean   :317.5   Mean   : 98.80   Mean   :0.6543   Mean   :0.9367  
+ 3rd Qu.:521.5   3rd Qu.:114.00   3rd Qu.:0.8405   3rd Qu.:0.9675  
+ Max.   :855.0   Max.   :202.00   Max.   :0.9260   Max.   :0.9700  
+                                                   NAs    :4       
+      SampleID 
+ Length   :10  
+ N.unique : 9  
+ N.blank  : 0  
+ Min.nchar: 8  
+ Max.nchar:16  
+               
+               
+
+DATASET TITLES
+       Item                   
+  [1,] dat.aloe2013           
+  [2,] dat.anand1999          
+  [3,] dat.anker2025          
+  [4,] dat.assink2016         
+  [5,] dat.axfors2021         
+  [6,] dat.bakdash2021        
+  [7,] dat.baker2009          
+  [8,] dat.bangertdrowns2004  
+  [9,] dat.bartos2023         
+ [10,] dat.baskerville2012    
+ [11,] dat.bassler2004        
+ [12,] dat.bauer2002          
+ [13,] dat.bcg                
+ [14,] dat.begg1989           
+ [15,] dat.berkey1998         
+ [16,] dat.berkey1998r        
+ [17,] dat.besson2016         
+ [18,] dat.bonett2010         
+ [19,] dat.bornmann2007       
+ [20,] dat.bourassa1996       
+ [21,] dat.cannon2006         
+ [22,] dat.chiarito2020       
+ [23,] dat.cohen1981          
+ [24,] dat.colditz1994        
+ [25,] dat.collins1985a       
+ [26,] dat.collins1985b       
+ [27,] dat.craft2003          
+ [28,] dat.crede2010          
+ [29,] dat.crisafulli2020     
+ [30,] dat.curtin2002         
+ [31,] dat.curtis1998         
+ [32,] dat.dagostino1998      
+ [33,] dat.damico2009         
+ [34,] dat.debruin2009        
+ [35,] dat.demir2022          
+ [36,] dat.dogliotti2014      
+ [37,] dat.dong2013           
+ [38,] dat.dorn2007           
+ [39,] dat.dumouchel1994      
+ [40,] dat.egger2001          
+ [41,] dat.feng2019           
+ [42,] dat.fine1993           
+ [43,] dat.franchini2012      
+ [44,] dat.frank2008          
+ [45,] dat.furukawa2003       
+ [46,] dat.gibson2002         
+ [47,] dat.graves2010         
+ [48,] dat.greb2008           
+ [49,] dat.greenland1992      
+ [50,] dat.gurusamy2011       
+ [51,] dat.hackshaw1998       
+ [52,] dat.hahn2001           
+ [53,] dat.hannum2020         
+ [54,] dat.hart1999           
+ [55,] dat.hartmannboyce2018  
+ [56,] dat.hasselblad1998     
+ [57,] dat.higgins2008        
+ [58,] dat.hine1989           
+ [59,] dat.huber2000          
+ [60,] dat.ishak2007          
+ [61,] dat.kalaian1996        
+ [62,] dat.karner2014         
+ [63,] dat.kearon1998         
+ [64,] dat.knapp2017          
+ [65,] dat.konstantopoulos2011
+ [66,] dat.landenberger2005   
+ [67,] dat.laopaiboon2015     
+ [68,] dat.lau1992            
+ [69,] dat.lee2004            
+ [70,] dat.lehmann2018        
+ [71,] dat.li2007             
+ [72,] dat.lim2014            
+ [73,] dat.linde2005          
+ [74,] dat.linde2015          
+ [75,] dat.linde2016          
+ [76,] dat.lloyd2010          
+ [77,] dat.lopez2019          
+ [78,] dat.maire2019          
+ [79,] dat.mccurdy2020        
+ [80,] dat.mcdaniel1994       
+ [81,] dat.meeker2017         
+ [82,] dat.metap              
+ [83,] dat.michael2013        
+ [84,] dat.molloy2014         
+ [85,] dat.moore1998          
+ [86,] dat.moura2021          
+ [87,] dat.nakagawa2007       
+ [88,] dat.nielweise2007      
+ [89,] dat.nielweise2008      
+ [90,] dat.nissen2007         
+ [91,] dat.normand1999        
+ [92,] dat.obrien2003         
+ [93,] dat.pagliaro1992       
+ [94,] dat.pignon2000         
+ [95,] dat.poole2003          
+ [96,] dat.pritz1997          
+ [97,] dat.quan2000           
+ [98,] dat.raudenbush1985     
+ [99,] dat.riley2003          
+[100,] dat.rivera2025         
+[101,] dat.roever2022         
+[102,] dat.senn2013           
+[103,] dat.spooner2002        
+[104,] dat.steurer2006        
+[105,] dat.stowe2010          
+[106,] dat.tannersmith2016    
+[107,] dat.thompson1999       
+[108,] dat.tian2009           
+[109,] dat.ursino2021         
+[110,] dat.vanhowe1999        
+[111,] dat.viechtbauer2021    
+[112,] dat.white2020          
+[113,] dat.woods2010          
+[114,] dat.yusuf1985          
+       Title                                                                                                                                            
+  [1,] Studies on the Association Between Supervision Quality and Various Outcomes in Social, Mental Health, and Child Welfare Workers                  
+  [2,] Studies on the Effectiveness of Oral Anticoagulants in Patients with Coronary Artery Disease                                                     
+  [3,] Cardiology Example Data with Subgroup and Interaction Effects                                                                                    
+  [4,] Studies on the Association between Recidivism and Mental Health                                                                                  
+  [5,] Mortality Outcomes with Hydroxychloroquine and Chloroquine in COVID-19 from an International Collaborative Meta-Analysis of Randomized Trials    
+  [6,] Dataset on Situation Awareness and Task Performance Associations                                                                                 
+  [7,] Studies on Pharmacologic Treatments for Chronic Obstructive Pulmonary Disease                                                                    
+  [8,] Studies on the Effectiveness of Writing-to-Learn Interventions                                                                                   
+  [9,] Results of 350,757 Coin Flips to Examine Same-Side Bias                                                                                          
+ [10,] Studies on the Effectiveness of Practice Facilitation Interventions                                                                              
+ [11,] Studies on Ketotifen Alone or as Additional Medication for Long-Term Control of Asthma and Wheeze in Children                                    
+ [12,] Studies on OM-89 (Uro-Vaxom) in Urinary Tract Infections                                                                                         
+ [13,] Studies on the Effectiveness of the BCG Vaccine Against Tuberculosis                                                                             
+ [14,] Studies on Bone-Marrow Transplantation versus Chemotherapy for the Treatment of Leukemia                                                         
+ [15,] Studies on Treatments for Periodontal Disease                                                                                                    
+ [16,] Studies on Treatments for Periodontal Disease                                                                                                    
+ [17,] Dataset on How Maternal Diet Impacts Copying Styles in Rodents                                                                                   
+ [18,] Studies on the Reliability of the CES-D Scale                                                                                                    
+ [19,] Studies on Gender Differences in Grant and Fellowship Awards                                                                                     
+ [20,] Studies on the Association between Handedness and Eye-Dominance                                                                                  
+ [21,] Studies on the Effectiveness of Intensive Versus Moderate Statin Therapy for Preventing Coronary Death or Myocardial Infarction                  
+ [22,] Studies Investigating the Efficacy of P2Y12-Inhibitors in Atherosclerosis                                                                        
+ [23,] Studies on the Relationship between Course Instructor Ratings and Student Achievement                                                            
+ [24,] Studies on the Effectiveness of the BCG Vaccine Against Tuberculosis                                                                             
+ [25,] Studies on the Treatment of Upper Gastrointestinal Bleeding by a Histamine H2 Antagonist                                                         
+ [26,] Studies on the Effects of Diuretics in Pregnancy                                                                                                 
+ [27,] Studies on the Relationship between the Competitive State Anxiety Inventory-2 and Sport Performance                                              
+ [28,] Studies on the Relationship between Class Attendance and Grades in College Students                                                              
+ [29,] Duchenne Muscular Dystrophy (DMD) Prevalence Data                                                                                                
+ [30,] Studies on Potassium Supplementation to Reduce Diastolic Blood Pressure                                                                          
+ [31,] Studies on the Effects of Elevated CO2 Levels on Woody Plant Mass                                                                                
+ [32,] Studies on the Effectiveness of Antihistamines in Reducing Symptoms of the Common Cold                                                           
+ [33,] Studies on Topical plus Systemic Antibiotics to Prevent Respiratory Tract Infections                                                             
+ [34,] Studies on Standard Care Quality and HAART-Adherence                                                                                             
+ [35,] Studies on the Reliability of the MIBS Scale                                                                                                     
+ [36,] Studies on Antithrombotic Treatments to Prevent Strokes                                                                                          
+ [37,] Studies on Safety of Inhaled Medications for Chronic Obstructive Pulmonary Disease                                                               
+ [38,] Studies on Complementary and Alternative Medicine for Irritable Bowel Syndrome                                                                   
+ [39,] Nitrogen dioxide data set                                                                                                                        
+ [40,] Studies on the Effectiveness of Intravenous Magnesium in Acute Myocardial Infarction                                                             
+ [41,] Studies on the Prevalence of Depression After Myocardial Infarction                                                                              
+ [42,] Studies on Radiation Therapy with or without Adjuvant Chemotherapy in Patients with Malignant Gliomas                                            
+ [43,] Studies on Dopamine Agonists to Reduce "Off-Time" in Patients with Advanced Parkinson Disease                                                    
+ [44,] Studies on the Association Between the CASP8 -652 6N del Promoter Polymorphism and Breast Cancer Risk                                            
+ [45,] Studies on Low Dosage Tricyclic Antidepressants for the Treatment of Depression                                                                  
+ [46,] Studies on the Effectiveness of Self-Management Education and Regular Medical Review for Adults with Asthma                                      
+ [47,] Studies on the Effectiveness of Injected Cholera Vaccines                                                                                        
+ [48,] Trials on High-Dose Chemotherapy with Autologous Stem Cell Transplantation in Aggressive Non-Hodgkin Lymphoma                                    
+ [49,] Case-Control Studies on the Impact of Alcohol Consumption on Breast Cancer Risk                                                                  
+ [50,] Studies on Interventions to Reduce Mortality after Liver Transplantation                                                                         
+ [51,] Studies on the Risk of Lung Cancer in Women Exposed to Environmental Tobacco Smoke                                                               
+ [52,] Studies on the Effectiveness of Different Rehydration Solutions for the Prevention of Unscheduled Intravenous Infusion in Children with Diarrhoea
+ [53,] Studies Comparing Objective and Subjective Olfactory Loss in COVID-19 Patients                                                                   
+ [54,] Studies on the Effectiveness of Warfarin for Preventing Strokes                                                                                  
+ [55,] Studies on the Effectiveness of Nicotine Replacement Therapy for Smoking Cessation                                                               
+ [56,] Studies on the Effectiveness of Counseling for Smoking Cessation                                                                                 
+ [57,] Trials on Haloperidol in Schizophrenia                                                                                                           
+ [58,] Studies on Prophylactic Use of Lidocaine After a Heart Attack                                                                                    
+ [59,] Individual Participant Data (IPD) from Five Studies on Uro-Vaxom in Urinary Tract Infections                                                     
+ [60,] Studies on Deep-Brain Stimulation in Patients with Parkinson's disease                                                                           
+ [61,] Studies on the Effectiveness of Coaching for the SAT                                                                                             
+ [62,] Studies on Tiotropium in Patients with COPD                                                                                                      
+ [63,] Studies on the Accuracy of Venous Ultrasonography for the Diagnosis of Deep Venous Thrombosis                                                    
+ [64,] Studies on Differences in Planning Performance in Schizophrenia Patients versus Healthy Controls                                                 
+ [65,] Studies on the Effects of Modified School Calendars on Student Achievement                                                                       
+ [66,] Studies on the Effectiveness of CBT for Reducing Recidivism                                                                                      
+ [67,] Studies on the Effectiveness of Azithromycin for Treating Lower Respiratory Tract Infections                                                     
+ [68,] Studies on Intravenous Streptokinase for Acute Myocardial Infarction                                                                             
+ [69,] Studies on Acupoint P6 Stimulation for Preventing Nausea                                                                                         
+ [70,] The Effect of Red on Perceived Attractiveness                                                                                                    
+ [71,] Studies on the Effectiveness of Intravenous Magnesium in Acute Myocardial Infarction                                                             
+ [72,] Studies on the Association Between Maternal Size, Offspring Size, and Number of Offsprings                                                       
+ [73,] Studies on the Effectiveness of St. John's Wort for Treating Depression                                                                          
+ [74,] Studies on Classes of Antidepressants for the Primary Care Setting                                                                               
+ [75,] Studies on Antidepressants for the Primary Care Setting                                                                                          
+ [76,] Studies on Anti-TNF-alpha Inhibitors in Rheumatoid Arthritis                                                                                     
+ [77,] Studies on the Effectiveness of CBT for Depression                                                                                               
+ [78,] Studies on Temporal Trends in Fish Community Structures in French Rivers                                                                         
+ [79,] Studies on the Generation Effect                                                                                                                 
+ [80,] Studies on the Validity of Employment Interviews                                                                                                 
+ [81,] Baseball Batting Averages                                                                                                                        
+ [82,] Example Data for the Meta-Analysis of Significance Values                                                                                        
+ [83,] The Non-Persuasive Power of a Brain Image                                                                                                        
+ [84,] Studies on the Relationship between Conscientiousness and Medication Adherence                                                                   
+ [85,] Trials on Non-Steroidal Anti-Inflammatory Drugs in Acute Pain                                                                                    
+ [86,] Studies on Assortative Mating                                                                                                                    
+ [87,] Assessing the Function of House Sparrows' Bib Size Using a Flexible Meta-Analysis Method                                                         
+ [88,] Studies on Anti-Infective-Treated Central Venous Catheters for Prevention of Catheter-Related Bloodstream Infections                             
+ [89,] Studies on Anti-Infective-Treated Central Venous Catheters for Prevention of Catheter-Related Bloodstream Infections                             
+ [90,] Studies on the Effect of Rosiglitazone on the Risk of Myocardial Infarction and Death from Cardiovascular Causes                                 
+ [91,] Studies on the Length of Hospital Stay of Stroke Patients                                                                                        
+ [92,] Studies on the Relationship Between BMI and Risk of Preeclampsia                                                                                 
+ [93,] Studies on the Effectiveness of Nonsurgical Treatments in Cirrhosis                                                                              
+ [94,] Studies on the Effectiveness of Locoregional Treatment plus Chemotherapy for Head and Neck Squamous-Cell Carcinoma                               
+ [95,] Trials on Mucolytic Agents in Chronic Bronchitis or Chronic Obstructive Pulmonary Disease                                                        
+ [96,] Studies on the Effectiveness of Hyperdynamic Therapy for Treating Cerebral Vasospasm                                                             
+ [97,] Studies on Pharmacotherapy for Hypertension                                                                                                      
+ [98,] Studies on Assessing the Effects of Teacher Expectations on Pupil IQ                                                                             
+ [99,] Studies on MYC-N as a Prognostic Marker for Neuroblastoma                                                                                        
+[100,] Comparison of Two Diagnostic Tests for the Detection of Temporomandibular Disorders                                                              
+[101,] Irinotecan / S-1 Toxicity Dataset                                                                                                                
+[102,] Studies on the Effectiveness of Glucose-Lowering Agents                                                                                          
+[103,] Studies on Nedocromil Sodium for Preventing Exercise-Induced Bronchoconstriction                                                                 
+[104,] Trials on Single-Agent Purine Analogues for the Treatment of Chronic Lymphocytic Leukaemia                                                       
+[105,] Studies on Adjuvant Treatments to Levodopa Therapy for Parkinson disease                                                                         
+[106,] Studies on the Relationship between School Motivation and Criminal Behavior                                                                      
+[107,] Trials on Serum Cholesterin Concentration Lowering and Risk of Ischaemic Heart Disease                                                           
+[108,] Studies on the Effect of Rosiglitazone on the Risk of Myocardial Infarction and Death from Cardiovascular Causes                                 
+[109,] Sorafenib Toxicity Dataset                                                                                                                       
+[110,] Studies on the Association between Circumcision and HIV Infection                                                                                
+[111,] Studies to Illustrate Model Checking Methods                                                                                                     
+[112,] Studies on the Relationship between Sexual Signal Expression and Individual Quality                                                              
+[113,] Studies on Treatments for Chronic Obstructive Pulmonary Disease                                                                                  
+[114,] Studies of Beta Blockers During and After Myocardial Infarction                                                                                  

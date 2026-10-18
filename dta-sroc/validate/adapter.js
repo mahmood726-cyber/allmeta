@@ -1,3 +1,4 @@
+/* #alm-plus is outside this original numerical contract. This base has no page-text collector. */
 /* DTA validation: comparison definitions copied from _dta_parity_check.mjs. */
 (function () {
 "use strict";
