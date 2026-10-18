@@ -109,3 +109,52 @@ def test_no_placeholder_or_hardcoded_key():
     h = _h()
     for bad in ("{{", "REPLACE_ME", "__PLACEHOLDER__", "sk-proj-", "sk-SECRET"):
         assert bad not in h
+
+
+# ---- Paper-1 (Screen) audit, 18 Oct 2026: findings 4, 11a, 11b, 23, 25 ----
+
+def test_toast_uses_shared_global():
+    # 11a: shared/toast.js defines window.Toast; window.AlmToast is defined nowhere,
+    # so every notice used to fall through to console.log.
+    h = _h()
+    assert "window.AlmToast &&" not in h and "AlmToast.show" not in h
+    assert "window.Toast && Toast.show" in h
+
+
+def test_stopping_panel_is_experimental_and_uses_screening_order():
+    # 4: buscar runs on the order records were screened (screenSeq), never re-sorted
+    # by the current model score; the old certification wording is gone.
+    h = _h()
+    assert "statistically safe to stop" not in h
+    body = h[h.index("function mlStopping()"):h.index("mlTrain = window.alm.analysisLifecycle(")]
+    assert "screenSeq" in body
+    assert "mlScore" not in body
+    assert "<strong>Experimental</strong> stopping test" in h
+
+
+def test_prisma_push_does_not_fold_pending_into_excluded():
+    # 11b: undecided/maybe/conflict are not "excluded at screening", and full-text
+    # fields are not filled with title/abstract counts.
+    h = _h()
+    body = h[h.index("function pushPrisma()"):h.index("// ================= collaboration")]
+    assert "excludedScreen: c.excluded," in body
+    assert "c.excluded + pending" not in body
+    assert 'sought: "", notRetrieved: "", assessed: ""' in body
+    assert 'studies: "", reports: ""' in body
+    assert "sought: c.included" not in body
+
+
+def test_ranker_description_matches_code():
+    # 23: ASReview 2.x defaults to an SVM; NB+TF-IDF was the 1.x default.
+    h = _h()
+    assert "ASReview's default ranker" not in h
+    assert 'var ML_MODEL_MODE = "nb";' in h
+    assert "the default ranker of ASReview 1.x; ASReview 2.x defaults to an SVM" in h
+    assert "The published benchmark corpora carry no keywords" in h
+
+
+def test_no_upload_claim_qualified_for_ai():
+    # 25: the opt-in bring-your-own-key AI path sends titles/abstracts to a provider.
+    h = _h()
+    assert "no account, no upload." not in h
+    assert "with AI assistance off, no upload" in h

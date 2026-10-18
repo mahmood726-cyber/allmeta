@@ -175,7 +175,7 @@
 
   <header>
     <h1>Screen <span style="font-size:0.8rem;color:var(--muted);font-weight:400;">· local citation screening</span></h1>
-    <p>Keyboard-driven title/abstract screening that runs entirely in your browser — no account, no upload. Import RIS / PubMed&nbsp;.nbib / CSV / JSON, screen one record at a time, run dual-reviewer with Cohen's&nbsp;&kappa; and conflict resolution, and push PRISMA counts straight into the flow generator.</p>
+    <p>Keyboard-driven title/abstract screening that runs entirely in your browser — no account, and with AI assistance off, no upload (the optional bring-your-own-key AI assist sends titles and abstracts to the provider you choose). Import RIS / PubMed&nbsp;.nbib / CSV / JSON, screen one record at a time, run dual-reviewer with Cohen's&nbsp;&kappa; and conflict resolution, and push PRISMA counts straight into the flow generator.</p>
     <details class="alm-task" open>
       <summary>What to do on this page — decide which records to include</summary>
       <div class="alm-task-body">
@@ -310,12 +310,12 @@
 
       <section class="panel">
         <h2>Local ML ranking</h2>
-        <p class="hint" style="margin-top:0">Label a few records with <kbd>i</kbd>/<kbd>e</kbd>, then train an in-browser classifier (TF-IDF + Naive Bayes, ASReview's default ranker, with class-balanced weighting) to rank the rest by predicted relevance. Retrain after each small batch for continuous active learning. 100% local, no key, reproducible.</p>
+        <p class="hint" style="margin-top:0">Label a few records with <kbd>i</kbd>/<kbd>e</kbd>, then train an in-browser classifier (unigram TF-IDF + multinomial Naive Bayes — the default ranker of ASReview 1.x; ASReview 2.x defaults to an SVM — with sample weights that give the labelled includes, in total, twice the weight of the labelled excludes) to rank the rest by predicted relevance. Retrain after each small batch for continuous active learning. 100% local, no key, reproducible.</p>
 
         <div id="ml-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--muted)">Not trained yet.</div>
         <div id="ml-terms" style="margin-top:0.5rem;font-size:0.76rem"></div>
         <div id="ml-perf" style="margin-top:0.4rem;font-size:0.76rem;color:var(--muted)"></div>
-        <p class="hint" style="margin-top:0.5rem">Features: unigrams + MeSH/keywords (TF-IDF). In dual-reviewer mode both reviewers' labels train the model. Held-out AUC is 5-fold cross-validated; the stopping rule is the buscar target-recall criterion (Callaghan &amp; Müller-Hansen 2020) — it reports the statistical confidence that 95% recall has been reached.</p>
+        <p class="hint" style="margin-top:0.5rem">Features: unigram TF-IDF over the title (counted twice), the abstract, and any keyword/MeSH terms in your import. The published benchmark corpora carry no keywords, so the benchmark measured title + abstract only. In dual-reviewer mode both reviewers' labels train the model. Held-out AUC is 5-fold cross-validated. The stopping panel is <strong>experimental</strong>: it applies the buscar target-recall test (Callaghan &amp; Müller-Hansen 2020) to the order in which you actually screened records, treating maybe/conflict as not yet screened; it has not yet been validated against the reference implementation, so treat it as an indication, not a guarantee.</p>
       </section>
 
       <section class="panel">
@@ -426,8 +426,11 @@
       "Conference abstract", "Wrong language", "Full text unavailable"
     ];
 
-    var toast = function (m) {
-      try { if (window.AlmToast && AlmToast.show) return AlmToast.show(m); } catch (e) {}
+    // shared/toast.js defines window.Toast (used by 30+ apps). This app used to
+    // call window.AlmToast, which nothing defines, so every notice fell through
+    // to console.log and the user never saw it.
+    var toast = function (m, level, ms) {
+      try { if (window.Toast && Toast.show) return Toast.show(m, level, ms); } catch (e) {}
       try { console.log(m); } catch (e) {}
     };
 
@@ -439,7 +442,7 @@
         reasons: DEFAULT_REASONS.slice(), labels: [],
         mode: "single", active: "r1", blind: false,
         filter: "all", sort: "order", kw: "",
-        cursor: 0, records: []
+        cursor: 0, records: [], screenSeqNext: 0
       };
     }
 
@@ -663,7 +666,11 @@
         mlScore: null,
         aiSuggestion: ["include", "exclude", "maybe"].indexOf(r.aiSuggestion) >= 0 ? r.aiSuggestion : "",
         aiRationale: clean(r.aiRationale, 400),
-        aiConfidence: (typeof r.aiConfidence === "number") ? r.aiConfidence : null
+        aiConfidence: (typeof r.aiConfidence === "number") ? r.aiConfidence : null,
+        // Order in which this record received its decisive (include/exclude)
+        // effective decision; null = not screened, or order unknown (merged /
+        // imported / made before order was recorded). Used by the stopping test.
+        screenSeq: (typeof r.screenSeq === "number" && r.screenSeq > 0 && Math.floor(r.screenSeq) === r.screenSeq) ? r.screenSeq : null
       };
       return rec;
     }
@@ -788,7 +795,11 @@
       // de-id-collision: ensure unique ids vs existing
       var existing = {}; S.records.forEach(function (r) { existing[r.id] = 1; });
       newRecs.forEach(function (r) { while (existing[r.id]) r.id = freshId(); existing[r.id] = 1; });
+      // Screening-order stamps from another project cannot be interleaved with
+      // this project's; keep them only when importing into an empty project.
+      if (S.records.length) newRecs.forEach(function (r) { r.screenSeq = null; });
       S.records = S.records.concat(newRecs);
+      syncScreenSeq();
       runDedup(); rescoreAll();
       var dups = S.records.filter(function (r) { return r.dup; }).length;
       toast("Imported " + newRecs.length + " record(s). " + (dups ? dups + " duplicate(s) flagged." : "No duplicates."));
@@ -803,6 +814,22 @@
       var a = r.r1.d, b = r.r2.d;
       if (a && b) return a === b ? a : "conflict";
       return a || b || "";
+    }
+    // ---- screening order (feeds the buscar stopping test) ----
+    // A record is stamped with the next sequence number when its effective
+    // decision BECOMES include/exclude through an action in this app. Maybe /
+    // conflict / cleared records are not screened, so the stamp is removed.
+    // orderKnown=false (merged reviewer files) never invents an order.
+    function noteScreened(r, orderKnown) {
+      var d = effDecision(r);
+      if (d === "duplicate") return;
+      if (d === "include" || d === "exclude") {
+        if (!r.screenSeq && orderKnown !== false) r.screenSeq = ++S.screenSeqNext;
+      } else r.screenSeq = null;
+    }
+    function syncScreenSeq() {
+      var mx = 0; S.records.forEach(function (r) { if (r.screenSeq > mx) mx = r.screenSeq; });
+      S.screenSeqNext = Math.max(+S.screenSeqNext || 0, mx);
     }
     function activeSlot(r) { return (S.mode === "dual" && S.active === "r2") ? r.r2 : r.r1; }
     function isUndecidedForActive(r) {
@@ -1077,6 +1104,7 @@
       var r = currentRecord(); if (!r) return;
       if (val === "duplicate") { r.dup = !r.dup; r.dupManual = r.dup; r.dupOf = r.dup ? "(manual)" : null; }
       else { activeSlot(r).d = val; if (val !== "exclude") activeSlot(r).reason = ""; r.dup = false; r.dupManual = false; }
+      noteScreened(r);
       save(); render();
       if (val !== "duplicate") autoAdvance();
     }
@@ -1084,6 +1112,7 @@
       var r = currentRecord(); if (!r || i < 0 || i >= S.reasons.length) return;
       var slot = activeSlot(r);
       slot.d = "exclude"; slot.reason = S.reasons[i]; r.dup = false;
+      noteScreened(r);
       save(); render(); autoAdvance();
     }
     function toggleLabel(lb) {
@@ -1095,12 +1124,13 @@
     function clearDecision() {
       var r = currentRecord(); if (!r) return;
       activeSlot(r).d = ""; activeSlot(r).reason = ""; r.resolved = "";
+      noteScreened(r);
       save(); render();
     }
     function resolveConflict(id, val) {
       var r = null; for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) { r = S.records[i]; break; }
       if (!r) return;
-      r.resolved = val; save(); render();
+      r.resolved = val; noteScreened(r); save(); render();
     }
     function move(d) {
       if (!VIEW.length) return;
@@ -1137,6 +1167,7 @@
         if (p && p._schema === LS_KEY && Array.isArray(p.records)) {
           S = Object.assign(blankState(), p);
           S.records = p.records.map(normalizeImported);
+          syncScreenSeq();
           // preserve decisions from stored (normalizeImported keeps r1/r2/resolved/labels/dup)
           return true;
         }
@@ -1229,29 +1260,38 @@
     }
     function pushPrisma() {
       var c = computeCounts(S.records);
-      // Records still in progress (undecided / maybe / conflict) are folded into the
-      // "excluded at screening" box so the flow numbers reconcile. That is only
-      // correct once screening is COMPLETE — make the composition explicit and warn
-      // if it is not, so undecided records are never silently reported as excluded.
+      // Screen only knows the IDENTIFICATION and TITLE/ABSTRACT stages, so it
+      // exports only those counts. Records still in progress (maybe / unresolved
+      // conflict / not yet screened) are NOT excluded and are never counted as
+      // such; they are reported separately (screenPending) and in the notice.
+      // Full-text fields (sought, not retrieved, assessed, excluded with
+      // reasons, studies, reports) are left blank: a title/abstract include is
+      // not a report sought or a study included, and this app has no full-text
+      // data. The user fills them in PRISMA Flow.
       var pending = c.maybe + c.conflict + c.undecided;
-      var breakdownBits = ["Excluded at title/abstract (n=" + c.excluded + ")"];
-      if (c.maybe) breakdownBits.push("maybe (n=" + c.maybe + ")");
-      if (c.conflict) breakdownBits.push("unresolved conflicts (n=" + c.conflict + ")");
-      if (c.undecided) breakdownBits.push("not yet screened (n=" + c.undecided + ")");
       var payload = {
         db: c.identified, reg: 0, removed: c.duplicates,
         removedBreakdown: "Duplicates flagged in Screen (n=" + c.duplicates + ")",
-        screened: c.screened, excludedScreen: c.excluded + pending,
-        sought: c.included, notRetrieved: 0, assessed: c.included,
-        excludedEligible: 0, excludedBreakdown: breakdownBits.join("; "),
-        studies: c.included, reports: c.included,
+        screened: c.screened, excludedScreen: c.excluded,
+        sought: "", notRetrieved: "", assessed: "",
+        excludedEligible: "", excludedBreakdown: "",
+        studies: "", reports: "",
+        includedAtScreen: c.included,
+        screenPending: { maybe: c.maybe, conflict: c.conflict, undecided: c.undecided },
+        notProvided: ["sought", "notRetrieved", "assessed", "excludedEligible", "excludedBreakdown", "studies", "reports"],
         title: (S.title || "Screen") + " (" + new Date().toISOString().slice(0, 10) + ")"
       };
       try {
         localStorage.setItem(PRISMA_FLOW_KEY, JSON.stringify(payload));
-        if (pending) toast("Pushed to PRISMA Flow — but " + pending + " record(s) are still undecided/maybe/conflict and are counted as excluded. Finish screening for accurate counts.");
-        else toast("Pushed counts to PRISMA Flow. Open ../prisma-flow/index.html to render the diagram.");
-      } catch (e) { toast("Could not save: " + e.message); }
+        var msg = "Pushed title/abstract counts to PRISMA Flow: " + c.screened + " screened, " + c.excluded + " excluded at title/abstract, " + c.included + " included at title/abstract. Full-text fields are left blank for you to complete.";
+        if (pending) {
+          var bits = [];
+          if (c.maybe) bits.push(c.maybe + " maybe");
+          if (c.conflict) bits.push(c.conflict + " unresolved conflict(s)");
+          if (c.undecided) bits.push(c.undecided + " not yet screened");
+          toast(msg + " Screening is not finished: " + bits.join(", ") + " — these are NOT counted as excluded.", "warn", 8000);
+        } else toast(msg + " Open ../prisma-flow/index.html to render the diagram.", "info", 6000);
+      } catch (e) { toast("Could not save: " + e.message, "error"); }
     }
 
     // ================= collaboration (serverless reviewer exchange) =================
@@ -1307,6 +1347,7 @@
         slot.d = d.d; slot.reason = clean(d.reason, 200) || "";
         if (Array.isArray(d.labels)) d.labels.forEach(function (lb) { lb = clean(lb, 120); if (lb && r.labels.indexOf(lb) < 0) r.labels.push(lb); });
         res.filled++;
+        noteScreened(r, false);
         if (other.d && other.d !== slot.d) res.conflicts++;
       });
       S.mode = "dual"; // an incoming second opinion makes this a dual-reviewer project
@@ -1628,7 +1669,7 @@
     }
     // Shared trainer. Builds (a) a class-balanced logistic regression and/or (b) a
     // multinomial Naive Bayes that matches scikit-learn's MultinomialNB on the tf-idf
-    // matrix (ASReview's default ranker): Laplace-smoothed log p(t|inc) − log p(t|exc)
+    // matrix (the ASReview 1.x default ranker): Laplace-smoothed log p(t|inc) − log p(t|exc)
     // per term, plus the class log-prior, with balanced sample weights folded into the
     // counts. NB is cheap to refit, which is what makes per-record (continuous) active
     // learning affordable — the lever that drives WSS@95. ML_MODEL_MODE selects nb / lr
@@ -1747,9 +1788,10 @@
     // "Statistical stopping criteria for automated screening in systematic reviews",
     // Syst Rev 9:273; the `buscar` biased-urn criterion). Given the relevant/irrelevant
     // sequence screened in ML-rank order, it returns a p-value for H0 = "the recall
-    // target has NOT been reached". Reject (safe to stop) when p < 1−confidence.
-    // This is a real statistical guarantee, replacing the eyeballed "long irrelevant
-    // run" heuristic. Faithful port of buscarR::calculate_h0 (bias=1, exact urn).
+    // target has NOT been reached"; reject when p < 1−confidence. Its guarantee
+    // holds only for the sequence in the order records were actually screened.
+    // Intended as a port of buscarR::calculate_h0 (bias=1, exact urn); not yet
+    // validated against the reference implementation, so the UI labels it experimental.
     function _lgamma(x) {
       var c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
       var y = x, tmp = x + 5.5, ser = 1.000000000190015, j;
@@ -1788,24 +1830,41 @@
       }
       return best;
     }
-    // Live data-driven stopping signal over the ML-ranked order: how many records
-    // the reviewer has screened, how many relevant were found, and the run of
-    // consecutive non-relevant decisions since the last include (ASReview-style:
-    // a long irrelevant run high in the ranking ⇒ safe to stop near 95 % recall).
+    // Live stopping signal (EXPERIMENTAL). buscar assumes the 0/1 sequence is the
+    // order in which records were ACTUALLY screened. An earlier version re-sorted
+    // the screened records by the CURRENT model score, which pulls every relevant
+    // record found so far to the front and manufactures a long irrelevant tail —
+    // anti-conservative (paper-1 audit: Kwok seed 101 certified at 943 instead of
+    // 1,759). It also counted "maybe" as irrelevant. Now:
+    //  - sequence = include/exclude records in screenSeq (screening) order;
+    //  - maybe / unresolved conflict count as NOT YET SCREENED: they stay in the
+    //    unscreened pool (could still be relevant), never in the irrelevant count;
+    //  - N = every non-duplicate record (scored or not);
+    //  - if any decisive record has no recorded order (merged reviewer file,
+    //    import, or a project from before order was recorded) the test refuses.
+    // Not yet validated against the reference buscar implementation.
     function mlStopping() {
-      var scored = S.records.filter(function (r) { return !r.dup && r.mlScore != null; });
-      scored.sort(function (a, b) { return b.mlScore - a.mlScore; });
-      var screened = 0, found = 0, since = 0, last = 0, i, seq = [];
-      for (i = 0; i < scored.length; i++) {
-        var d = effDecision(scored[i]);
-        if (d === "include" || d === "exclude" || d === "maybe") {
-          screened++; seq.push(d === "include" ? 1 : 0);
-          if (d === "include") { found++; last = screened; since = 0; } else since++;
-        }
+      var pool = S.records.filter(function (r) { return !r.dup; });
+      var ordered = [], unordered = 0, unorderedInc = 0, pending = 0, i;
+      for (i = 0; i < pool.length; i++) {
+        var d = effDecision(pool[i]);
+        if (d === "include" || d === "exclude") {
+          if (pool[i].screenSeq > 0) ordered.push(pool[i]);
+          else { unordered++; if (d === "include") unorderedInc++; }
+        } else if (d === "maybe" || d === "conflict") pending++;
       }
-      // buscar p for H0("<95% recall"); <0.05 ⇒ statistically safe to stop.
-      var buscarP = (screened > 0 && scored.length > screened) ? mlBuscarP(seq, scored.length, 0.95) : 1;
-      return { total: scored.length, screened: screened, found: found, since: since, lastIncludeAt: last, buscarP: buscarP };
+      ordered.sort(function (a, b) { return a.screenSeq - b.screenSeq; });
+      var found = 0, since = 0, last = 0, seq = [];
+      for (i = 0; i < ordered.length; i++) {
+        var inc = effDecision(ordered[i]) === "include";
+        seq.push(inc ? 1 : 0);
+        if (inc) { found++; last = i + 1; since = 0; } else since++;
+      }
+      var screened = ordered.length + unordered;
+      // buscar p for H0("recall < 95%") on the screening-order sequence.
+      var buscarP = (!unordered && ordered.length > 0 && pool.length > ordered.length) ? mlBuscarP(seq, pool.length, 0.95) : 1;
+      return { total: pool.length, screened: screened, found: found + unorderedInc, since: since, lastIncludeAt: last,
+        buscarP: buscarP, order: "screening", unordered: unordered, pending: pending };
     }
     mlTrain = window.alm.analysisLifecycle(mlTrain, function (result) { return result && result.ok; }, '#f-dual', function () {
       return [S.mode, S.records.map(function (r) { return [r.id, r.title, r.abstract, r.dup, r.r1, r.r2]; })];
@@ -1857,13 +1916,17 @@
       var bits = [];
       if (ML.cv) bits.push('Held-out quality: <strong>5-fold CV AUC ' + ML.cv.auc.toFixed(2) + '</strong> (' + ML.cv.pos + ' incl / ' + ML.cv.neg + ' excl labelled). 1.0 = perfect ranking, 0.5 = chance.');
       var st = mlStopping();
-      if (st.screened > 0) {
+      var tag = '<strong>Experimental</strong> stopping test (buscar, 95% recall target; not yet validated against the reference implementation): ';
+      if (st.unordered > 0) {
+        bits.push(tag + 'not applied — the screening order of <strong>' + st.unordered + '</strong> decision(s) is not recorded (merged reviewer file, import, or a project from an earlier version), and buscar needs the order records were actually screened in.');
+      } else if (st.screened > 0) {
         var stop = st.buscarP < 0.05;
-        bits.push('Stopping rule (buscar, 95% target): screened <strong>' + st.screened + '/' + st.total + '</strong> in rank order, found <strong>' + st.found + '</strong> relevant; <strong>' + st.since + '</strong> since the last include. ' +
-          'Confidence ≥95% recall reached: <strong>' + (st.buscarP <= 0 ? '>99.9' : (100 * (1 - st.buscarP)).toFixed(1)) + '%</strong>' +
-          (stop ? ' — <strong>statistically safe to stop</strong> (p&lt;0.05).' : ' — keep screening to reach the 95% confidence threshold.'));
+        bits.push(tag + 'screened <strong>' + st.screened + '/' + st.total + '</strong> in the order you screened them, found <strong>' + st.found + '</strong> relevant; <strong>' + st.since + '</strong> since the last include.' +
+          (st.pending ? ' ' + st.pending + ' maybe/conflict record(s) are treated as not yet screened.' : '') +
+          ' Confidence that ≥95% recall has been reached: <strong>' + (st.buscarP <= 0 ? '>99.9' : (100 * (1 - st.buscarP)).toFixed(1)) + '%</strong>' +
+          (stop ? ' — the test rejects "recall below 95%" (p&lt;0.05). This is an experimental indication, not a guarantee; the decision to stop is yours.' : ' — below the 95% confidence threshold; keep screening.'));
       } else {
-        bits.push('Stopping signal: screen down the ML ranking; this panel shows the relevant-found curve and the irrelevant run length so you can stop near 95% recall.');
+        bits.push('Stopping signal (experimental): screen down the ML ranking; this panel then applies the buscar test to the order you screened records in.');
       }
       el.innerHTML = bits.map(function (b) { return '<div style="margin-top:0.35rem">' + b + '</div>'; }).join("");
     }
@@ -2031,6 +2094,7 @@
     function acceptAI() {
       var r = currentRecord(); if (!r || !r.aiSuggestion) return;
       activeSlot(r).d = r.aiSuggestion; r.dup = false; r.dupManual = false;
+      noteScreened(r);
       save(); render(); autoAdvance();
     }
     // BYO-key (fallback): calls the user's own provider account; key never leaves localStorage.
@@ -2098,7 +2162,7 @@
     // ---- test hook (deterministic, for behavioural specs) ----
     window.__almScreenpro = {
       blankState: blankState,
-      setState: function (s) { S = Object.assign(blankState(), s); S.records = (s.records || []).map(normalizeImported); rescoreAll(); runDedup(); render(); },
+      setState: function (s) { S = Object.assign(blankState(), s); S.records = (s.records || []).map(normalizeImported); syncScreenSeq(); rescoreAll(); runDedup(); render(); },
       counts: function () { return computeCounts(S.records); },
       kappa: function () { return cohensKappa(S.records); },
       effDecision: effDecision,
