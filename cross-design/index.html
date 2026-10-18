@@ -138,6 +138,7 @@ Obs cohort D, -0.52, 0.011, obs</textarea>
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
 
     function rowHtml(result, methodLabel) {
+      if (result.mu === null) methodLabel += "<br><small>Not estimable: no poolable studies.</small>";
       return "<tr><td><strong>" + methodLabel + "</strong></td>" +
         "<td>" + fmt(result.mu, 4) + "</td>" +
         "<td>" + fmt(result.sePost, 4) + "</td>" +
@@ -153,7 +154,8 @@ Obs cohort D, -0.52, 0.011, obs</textarea>
       var W = 700, H = Math.max(220, 28 * rows.length + 80), pad = 100, padR = 30;
       var all = [];
       rows.forEach(function (r) { all.push(r.yi - 1.96 * Math.sqrt(r.vi)); all.push(r.yi + 1.96 * Math.sqrt(r.vi)); });
-      Object.values(fits).forEach(function (f) { all.push(f.ci_lo); all.push(f.ci_hi); });
+      function estimable(f) { return Number.isFinite(f.mu) && Number.isFinite(f.ci_lo) && Number.isFinite(f.ci_hi); }
+      Object.values(fits).forEach(function (f) { if (estimable(f)) { all.push(f.ci_lo); all.push(f.ci_hi); } });
       var xMin = Math.min.apply(null, all), xMax = Math.max.apply(null, all);
       var dx = (xMax - xMin) * 0.06 || 0.1;
       xMin -= dx; xMax += dx;
@@ -182,8 +184,12 @@ Obs cohort D, -0.52, 0.011, obs</textarea>
       ];
       methods.forEach(function (m, idx) {
         var y = 50 + 28 * rows.length + 12 + 22 * idx;
-        var cx = xpos(m.fit.mu), cxL = xpos(m.fit.ci_lo), cxR = xpos(m.fit.ci_hi);
         svg.push('<text x="' + (pad - 10) + '" y="' + (y + 4) + '" text-anchor="end" fill="' + m.col + '" font-weight="bold">' + m.label + '</text>');
+        if (!estimable(m.fit)) {
+          svg.push('<text x="' + pad + '" y="' + (y + 4) + '" fill="currentColor">Not estimable</text>');
+          return;
+        }
+        var cx = xpos(m.fit.mu), cxL = xpos(m.fit.ci_lo), cxR = xpos(m.fit.ci_hi);
         svg.push('<polygon points="' + cxL + ',' + y + ' ' + cx + ',' + (y - 6) + ' ' + cxR + ',' + y + ' ' + cx + ',' + (y + 6) + '" fill="' + m.col + '"/>');
         svg.push('<text x="' + (cxR + 6) + '" y="' + (y + 4) + '" fill="currentColor" font-size="11">' + m.fit.mu.toFixed(3) + ' (' + m.fit.ci_lo.toFixed(3) + ', ' + m.fit.ci_hi.toFixed(3) + ')</text>');
       });

@@ -717,5 +717,25 @@
 <section id="alm-validate" aria-label="Independent validation"></section>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
+<!-- GLMM extras are separate from the original transformed-scale engine. -->
+<section id="alm-plus" aria-label="GLMM extras" style="margin:1rem;padding:1rem;border:1px solid #888;overflow-x:auto">
+  <h2>Binomial-normal GLMM</h2>
+  <p>Fit the event counts directly with a random intercept on the logit scale. The existing result is shown alongside it. Variances and standard errors use each method's analysis scale and are not directly comparable across transformations.</p>
+  <p>Maximum likelihood; seven adaptive quadrature points; bobyqa with maxfun 100000 and rhoend 1e-9. Normal Wald confidence limits; t-based prediction limits with k−1 degrees of freedom, available from three studies. Convergence warnings cause refusal.</p>
+  <button type="button" id="plus-run">Fit GLMM in R</button>
+  <button type="button" id="plus-export" disabled>Export GLMM JSON</button>
+  <p id="plus-status" role="status" aria-live="polite">Run the GLMM for the current inputs.</p>
+  <p id="plus-provenance"></p>
+  <p id="plus-parity" role="note"></p>
+  <div id="plus-result"></div>
+  <p>The offline validation tier checks archived native R fits and their presentation. It does not rerun the optimiser. Live fitting requires the bundled R packages.</p>
+  <section id="alm-validate-plus" aria-label="Validate the extras in R"></section>
+</section>
+<script src="../shared/webr-runner.js"></script>
+<script src="plus-core.js"></script>
+<script src="plus-parity.js"></script>
+<script src="plus-ui.js"></script>
+<script src="validate/plus-pins.js"></script>
+<script src="validate/plus-adapter.js"></script>
 </body>
 </html>

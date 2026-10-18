@@ -1,0 +1,35 @@
+name: E-value input integrity
+
+on:
+  pull_request:
+    paths:
+      - 'evalue/**'
+      - 'shared/evalue.js'
+      - 'tests/test_evalue.py'
+      - 'tests/fixtures/evalue-input-*'
+      - 'hub/shared/tests/evalue*'
+      - '.github/workflows/evalue-integrity.yml'
+
+jobs:
+  input-integrity:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - run: python -m pytest tests/test_evalue.py -q
+      - run: npm ci
+        working-directory: hub/shared/tests
+      - run: npx playwright install --with-deps chromium
+        working-directory: hub/shared/tests
+      - run: npx playwright test --config=evalue.config.mjs --reporter=line
+        working-directory: hub/shared/tests
