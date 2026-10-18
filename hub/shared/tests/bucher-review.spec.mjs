@@ -118,3 +118,62 @@ test('Bucher file upload preserves quoted labels and complete record structure',
   await expect(page.locator('#body')).toContainText('Drug, "A" vs B');
   expect((await last(page)).d_indirect_AB).toBeCloseTo(.3,12);
 });
+
+test('Bucher legacy saved link cannot silently relabel unidentified estimates',async({page})=>{
+  const snap={v:1,dAC:-.290950,seAC:.073994,dBC:-.491529,seBC:.091111,scale:'raw'};
+  const url=new URL('/bucher/',test.info().project.use.baseURL);
+  url.hash=Buffer.from(JSON.stringify(snap)).toString('base64');
+  await page.goto(url.href);
+  await page.waitForFunction(()=>!!window._almLastBucher);
+  await refused(page);
+  await expect(page.locator('#import-status')).toContainText('saved inputs lack treatment names');
+  await page.locator('#btn-run').click();
+  await refused(page);
+  // These old numbers described AB and AC, so the supplied direction below is C-B via A.
+  await page.locator('#treatA').fill('C');
+  await page.locator('#treatB').fill('B');
+  await page.locator('#treatC').fill('A');
+  await page.locator('#dAC').fill('0.491529');
+  await page.locator('#seAC').fill('0.091111');
+  await page.locator('#dBC').fill('0.290950');
+  await page.locator('#seBC').fill('0.073994');
+  await page.locator('#btn-run').click();
+  await expect(page.locator('#body')).toContainText('C vs B (indirect, Bucher)');
+  expect((await last(page)).d_indirect_AB).toBeCloseTo(.200579,9);
+});
+
+test('Bucher named saved link preserves its estimand across reload',async({page})=>{
+  await open(page);
+  await page.locator('#treatA').fill('Drug A');
+  await paste(page,'study,treat1,treat2,TE,seTE\ns1,Drug A,C,.2,.1\ns2,B,C,-.1,.2');
+  const before=await last(page);
+  await page.reload();
+  await page.waitForFunction(()=>!!window._almLastBucher);
+  const restored=await last(page);
+  expect(restored.A).toBe('Drug A');
+  expect(restored.d_indirect_AB).toBeCloseTo(before.d_indirect_AB,12);
+  expect(restored.missing_study_ids).toBe(true);
+  expect(restored.n_studies).toBeNull();
+});
+
+test('Bucher failed network mapping preserves previous raw inputs and scale',async({page})=>{
+  await open(page);
+  await page.locator('#scale').selectOption('raw');
+  await page.locator('#treatC').fill('different control');
+  await page.locator('#btn-run').click();
+  const before=await page.locator('#dAC').inputValue();
+  await page.evaluate(s=>window.MaComparisons.write(s),seed);
+  await page.locator('#btn-bus-load').click();
+  await refused(page);
+  await expect(page.locator('#scale')).toHaveValue('raw');
+  await expect(page.locator('#dAC')).toHaveValue(before);
+});
+
+test('Bucher failed ratio representation rolls back imported fields',async({page})=>{
+  await open(page);
+  const before=await page.locator('#dAC').inputValue();
+  await paste(page,'study,treat1,treat2,TE,seTE\ns1,A,C,700,10\ns2,B,C,700,10');
+  await refused(page);
+  await expect(page.locator('#import-status')).toContainText('Import rejected');
+  await expect(page.locator('#dAC')).toHaveValue(before);
+});

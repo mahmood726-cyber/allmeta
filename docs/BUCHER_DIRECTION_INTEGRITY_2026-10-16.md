@@ -48,15 +48,17 @@ Additional scoped corrections:
 - Validate the entire network envelope before conversion, rejecting malformed counts, absent/duplicate IDs, multi-arm studies and unsupported measures; require exactly one converted contrast per two-arm study. Set log scale before analysis and disclose the shared 0.5 zero-cell convention.
 - Reject malformed CSV quotations, extra/missing columns, fuzzy/duplicate headers and nondecimal numeric tokens. A small optional parser callback in the shared upload widget selects Bucher's strict parser; other apps retain the original parser.
 - Clear results and plot on every refused import. Scale/axis changes cannot resurrect rejected results; the user must explicitly Compute retained inputs or import valid data.
+- Failed imports restore all prior form fields and scale together. A refused OR/RR network cannot switch retained raw-scale summaries into ratio interpretation.
 - Check all direct and indirect interval endpoints and back-transformed ratios for overflow/underflow. Evaluate the normal tail without subtracting a tiny tail from one, and format small nonzero values in scientific notation.
 - Manual summaries do not establish the source trial count: it is now unknown, rather than asserted to be two. Correct the visible/accessibility label mismatches.
+- Legacy saved links without treatment names must have their mapping supplied and source estimates checked before Compute; unnamed old fields are never automatically relabelled as A-C/B-C. Named saved links retain the selected estimand on reload.
 - Preserve current main's repair register; the original branch's unrelated register edits are excluded from this repair.
 
 ## Executable verification
 
 Fresh R 4.6.0 execution used installed `netmeta` 3.5.0, `metafor` 5.0.1 and `jsonlite` 2.0.0. `bucher/tests/fixtures/bucher-reference.R` pins these versions and regenerates `bucher-reference.json`. Seven synthetic cases cover the triangle, reversed arms, null, positive, unequal weights, named treatments and a small tail probability. Each compares independent fixed-effect link fits from `metafor::rma.uni(method="FE")` with `netmeta`'s common-effect A-B estimate on the AC/BC-only network (direct AB excluded). R's normal quantile/tail produce the CI/p reference. No random-effects or multi-arm parity is claimed.
 
-`tests/test_bucher.py` compares the production JavaScript core against these outputs and independent 50-digit Python Decimal pooling, plus malformed-input and CSV regressions. Twenty local cases passed. The 46 focused Chromium scenarios include actual HTTP pages, pasted/file CSV, native number fields, network import, refusal/recovery, legacy sanity and JSON export. Local Chromium setup was denied localhost access before app load; no local browser pass is claimed. GitHub Actions must execute the focused suite and wider suites on the final head before merge.
+`tests/test_bucher.py` compares the production JavaScript core against these outputs and independent 50-digit Python Decimal pooling, plus malformed-input and CSV regressions. Twenty local cases passed. The 50 focused Chromium scenarios include actual HTTP pages, pasted/file CSV, native number fields, network import, refusal/recovery, legacy sanity and JSON export. Local Chromium setup was denied localhost access before app load; no local browser pass is claimed. GitHub Actions must execute the focused suite and wider suites on the final head before merge.
 
 Commands from repository root:
 

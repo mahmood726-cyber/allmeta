@@ -326,6 +326,14 @@
       });
       _nStudies = null;
       _importMeta = null;
+      // Older saved URLs did not record treatment identity. Their importer may
+      // have stored different pairs under the AC/BC field names.
+      if (['treatA','treatB','treatC'].some(id =>
+          typeof snap[id] !== 'string' || !snap[id].trim())) {
+        ['treatA','treatB','treatC'].forEach(id => { document.getElementById(id).value = ''; });
+        refuseImport('saved inputs lack treatment names. Enter A, B and C and verify which source estimates belong to each link before Compute');
+        return;
+      }
       document.getElementById('import-status').textContent =
         'Restored input estimates. Confirm original study independence before inference.';
       run(true);
@@ -348,7 +356,8 @@
     // Full-data, directional, independence-checked Bucher import.
     // The target A/B and common C are explicit, so row order cannot change
     // the estimand. Direct A–B trials in a triangle are disclosed and excluded.
-    window.__almBucherLoad = function (rows) {
+    window.__almBucherLoad = function (rows, options) {
+      const previous = snapshot();
       try {
         if (!window.AlmBucherCore) throw new Error('Bucher validation engine not available');
         const chosen = {
@@ -364,6 +373,7 @@
         document.getElementById('seAC').value = String(fit.AC.se);
         document.getElementById('dBC').value = String(fit.BC.mu);
         document.getElementById('seBC').value = String(fit.BC.se);
+        if (options && options.scale) document.getElementById('scale').value = options.scale;
         _nStudies = fit.contributingTrials;
         _importMeta = fit;
         document.getElementById('import-status').textContent =
@@ -374,8 +384,10 @@
           (fit.independentStudyIdsUnverified
             ? 'Missing trial IDs: independence cannot be checked. ' : '') +
           'Normal/Wald inference; transitivity must be judged independently.';
-        return run(true);
+        if (!run(true)) throw new RangeError('confidence intervals or ratios cannot be represented on the selected scale');
+        return true;
       } catch (err) {
+        Object.keys(previous).forEach(id => { document.getElementById(id).value = previous[id]; });
         return refuseImport(err && err.message ? err.message : String(err));
       }
     };
@@ -549,8 +561,7 @@
       // Carry study identity forward: repeated IDs across selected contrasts
       // reveal multi-arm covariance which ordinary Bucher cannot ignore.
       // Ratio scale must be set before computing the imported log effects.
-      document.getElementById("scale").value = "log";
-      var loaded = window.__almBucherLoad(rows);
+      var loaded = window.__almBucherLoad(rows, { scale: 'log' });
       if (!loaded) { notify("Bucher rejected this network. Check treatment labels, paired designs, and trial IDs."); return; }
       document.getElementById('import-status').textContent +=
         ' Network uses log-' + env.effectMeasure + '; 0.5 is added to all four cells only when a study has a zero event/non-event cell.';
