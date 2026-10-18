@@ -59,3 +59,12 @@ benchmark/_research_notes.md
 benchmark/*.log
 # Claude Code local session config
 .claude/
+
+# Local limit-ma oracle and verification environment
+/re/
+**/.npm-cache/
+/limit-ma/preflight.R
+PROGRESS.md
+
+/integration-evidence/
+/limit-ma/inspect-plus.R

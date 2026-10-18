@@ -46,11 +46,15 @@
   }
 
   // rank(|c|) with ties broken by order of appearance ("first").
-  function _rankAbsFirst(c) {
+  function _rankAbsFirst(c, average) {
     var idx = c.map(function (v, i) { return { a: Math.abs(v), i: i }; });
     idx.sort(function (p, q) { return p.a - q.a || p.i - q.i; });
     var r = new Array(c.length);
     for (var j = 0; j < idx.length; j++) r[idx[j].i] = j + 1;
+    if(average) {
+      for(var start=0;start<idx.length;){var end=start+1;while(end<idx.length&&idx[end].a===idx[start].a)end++;
+        for(var q=start;q<end;q++)r[idx[q].i]=(start+1+end)/2;start=end;}
+    }
     return r;
   }
 
@@ -59,12 +63,15 @@
   function trimAndFill(yi, vi, opts) {
     opts = opts || {};
     var method = opts.method || "DL";
+    // meta::trimfill(ma.common=TRUE) trims about the common-effect mean,
+    // then pools the filled studies with the requested random-effects method.
+    var trimMethod = opts.maCommon === true ? "FE" : method;
     var k = yi.length;
     if (k < 3) return { k0: 0, side: opts.side || "left", kOrig: k, imputed: [],
       _pooled: _pool(yi, vi, method) };
 
     var slope = _eggerSlope(yi, vi);
-    var side = opts.side || (slope < 0 ? "right" : "left");
+    var side = opts.side || (opts.maCommon === true ? (slope > 0 ? "left" : "right") : (slope < 0 ? "right" : "left"));
     var s = (side === "left") ? 1 : -1;
 
     // z = s·yi sorted ascending (carry vi).
@@ -73,18 +80,19 @@
     var z = order.map(function (i) { return s * yi[i]; });
     var vz = order.map(function (i) { return vi[i]; });
 
-    var k0 = 0, k0sav = -1, iter = 0, betaZ = 0, maxiter = opts.maxiter || 100;
-    while (Math.abs(k0 - k0sav) > 0 && iter < maxiter) {
+    var k0 = 0, k0sav = -1, iter = 0, betaZ = 0, maxiter = opts.maxiter || (opts.maCommon === true ? 50 : 100);
+    while (Math.abs(k0 - k0sav) > 0 && k0 < k && iter < maxiter) {
       k0sav = k0; iter++;
       var nt = k - k0;
-      betaZ = _poolMu(z.slice(0, nt), vz.slice(0, nt), method);
-      var ranks = _rankAbsFirst(z.map(function (v) { return v - betaZ; }));
+      betaZ = _poolMu(z.slice(0, nt), vz.slice(0, nt), trimMethod);
+      var ranks = _rankAbsFirst(z.map(function (v) { return v - betaZ; }), opts.maCommon === true);
       var Sr = 0;
       for (var i = 0; i < k; i++) if (z[i] - betaZ > 0) Sr += ranks[i];
       var L0 = (4 * Sr - k * (k + 1)) / (2 * k - 1);
       k0 = Math.max(0, Math.round(L0));
     }
 
+    k0 = Math.min(k0, k - 1);
     // Impute k0 reflections of the most-extreme studies about the trimmed mean.
     var imputed = [];
     var fillY = yi.slice(), fillV = vi.slice();
