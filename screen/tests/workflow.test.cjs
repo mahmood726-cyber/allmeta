@@ -47,3 +47,12 @@ test('full-text evidence refuses unsafe URLs and preserves identifiers', () => {
   W.evidence(s,r,{url:'https://example.org/open',retrieval:'not-retrieved'});
   assert.equal(r.id,'a'); assert.equal(W.flow(s).notRetrieved,1);
 });
+test('retrieved reports partition into pending, excluded and included without double counting',()=>{
+  const s=state('single');s.records=['include','exclude','maybe'].map((d,i)=>({id:'fixture-'+i,r1:{d:'include'},fullText:{r1:{d,reason:'__proto__'},r2:{d:''},retrieval:'retrieved'}}));
+  const f=W.flow(s);assert.equal(f.assessed,3);assert.equal(f.included,1);assert.equal(f.excludedFull,1);assert.equal(f.pendingFull,1);assert.equal(f.reasons.__proto__,1);
+});
+test('undo is append-only and refuses to overwrite a newer peer decision',()=>{
+  const s=state(),r=s.records[0];W.decide(s,r,'include','');W.decide(s,r,'exclude','',{reviewer:'r2'});
+  assert.throws(()=>W.undo(s),/changed/);assert.equal(r.r1.d,'include');
+  s.active='r2';W.undo(s);assert.equal(r.r2.d,'');assert.equal(s.audit.length,3);assert.equal(s.audit[2].action,'undo');
+});

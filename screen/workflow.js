@@ -61,9 +61,11 @@
     reason=String(reason || '').trim();
     if (stage==='ft' && d==='exclude' && !reason) throw Error('Choose an exclusion reason for the full-text decision.');
     var before=snapshot(r,stage);
-    data[who]={d:d,reason:d==='exclude' ? reason : '',at:new Date().toISOString()};
+    if(opts.at && !Number.isFinite(Date.parse(opts.at))) throw Error('Invalid reviewer decision timestamp.');
+    data[who]={d:d,reason:d==='exclude' ? reason : '',at:opts.imported ? String(opts.at || '') : new Date().toISOString()};
     data.resolved=''; data.resolution=null;
-    audit(s,'decision',r,stage,before,snapshot(r,stage),who);
+    var event=audit(s,'decision',r,stage,before,snapshot(r,stage),who);
+    if(opts.imported) event.source='reviewer-file (identity not authenticated)';
   }
   function resolve(s,r,d,rationale,actor) {
     if (s.blind) throw Error('Turn off blind mode to adjudicate.');
@@ -102,7 +104,7 @@
     throw Error('No unchanged decision by this reviewer is available to undo.');
   }
   function flow(s) {
-    var c={identified:s.records.length,duplicates:0,screened:0,excludedScreen:0,pendingScreen:0,sought:0,notRetrieved:0,assessed:0,pendingFull:0,excludedFull:0,included:0,reasons:{}};
+    var c={identified:s.records.length,duplicates:0,screened:0,excludedScreen:0,pendingScreen:0,sought:0,notRetrieved:0,assessed:0,pendingFull:0,excludedFull:0,included:0,reasons:Object.create(null)};
     s.records.forEach(function(r){
       if(r.dup){c.duplicates++;return;}
       var ta=effective(r,s,'ta');

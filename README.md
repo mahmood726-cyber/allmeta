@@ -50,6 +50,11 @@ single `localStorage` envelope so the user never re-types data. See
 - Playwright pre-flight (`tests/playwright/`) screenshots every internal app
   and checks for a rendered plot surface. CI runs on every push.
 
+Screen's staged review workflow has a focused browser suite and an explicit
+[capability comparison, decision contract and limitations](screen/UPGRADE-2026-10-18.md).
+Run it from `tests/playwright` with
+`node node_modules/@playwright/test/cli.js test --config screen-workflow.config.mjs`.
+
 ## Roadmap
 
 See [`ROADMAP.md`](ROADMAP.md) for the phased plan toward best-in-class
