@@ -53,6 +53,7 @@ Additional scoped corrections:
 - Manual summaries do not establish the source trial count: it is now unknown, rather than asserted to be two. Correct the visible/accessibility label mismatches.
 - Legacy saved links without treatment names must have their mapping supplied and source estimates checked before Compute; unnamed old fields are never automatically relabelled as A-C/B-C. Named saved links retain the selected estimand on reload.
 - Preserve current main's repair register; the original branch's unrelated register edits are excluded from this repair.
+- The shared CI checkout fetches history so current main's historical baseline replay can read its pinned commit. The integrated run exposed a missing-object failure in the newly merged proportion test; no test assertion or proportion code is changed or skipped.
 
 ## Executable verification
 
