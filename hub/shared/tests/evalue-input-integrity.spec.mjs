@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 const reference = JSON.parse(readFileSync(new URL('../../../tests/fixtures/evalue-input-oracle.json', import.meta.url)));
-const URL = '/evalue/index.html';
+const APP_URL = '/evalue/index.html';
 const errors = new WeakMap();
 test.beforeEach(async ({page}) => {
   errors.set(page, []);
@@ -9,7 +9,7 @@ test.beforeEach(async ({page}) => {
 });
 test.afterEach(async ({page}) => expect(errors.get(page)).toEqual([]));
 async function configure(page, point, lo, hi, measure='RR', rare=false) {
-  await page.goto(URL);
+  await page.goto(APP_URL);
   await page.locator('#measure').selectOption(measure);
   await page.locator('#point').fill(point);
   await page.locator('#lo').fill(lo);
