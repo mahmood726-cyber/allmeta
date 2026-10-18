@@ -121,7 +121,11 @@ for(const model of ['FE','DL'])test('extras live webR '+model+' @slow',async({pa
 
 for(const [i,quantity] of [[2,'xmin'],[3,'xmax'],[4,'ymin'],[5,'ymax']])test('extras axis mutation is refused '+quantity,async({page})=>{
   await page.goto(url);await render(page);expect(await failures(page)).toEqual([]);
-  await page.locator('#plus-plot text').nth(i).evaluate(e=>e.textContent=String(Number(e.textContent)+1));
+  const axis=i<4?'extra x':'extra y';
+  const calibration=await page.evaluate(axis=>AlmGoshPlusAdapter.axisLabels.find(r=>r.axis===axis),axis);
+  expect(calibration.checked).toBe(true);
+  // A one-unit change can lie within half a tick; use an eligible full step.
+  await page.locator('#plus-plot text').nth(i).evaluate((e,step)=>e.textContent=String(Number(e.textContent)+step),calibration.step);
   // Changed glyph bounds can change computed perspective-origin before the
   // numerical callback runs. Both are valid refusals under the style contract.
   const result=await failures(page).then(values=>({values}),error=>({error:String(error)}));
@@ -347,6 +351,7 @@ for(const [name,values,labels,status] of [
  ['swap',[0,10],['10','0'],'fail'],
  ['one step',[0,10],['-10','10'],'fail'],
  ['duplicate corruption',[0,10],['10','10'],'coarse'],
+ ['finite unknown resolution',[0,10],['0x0','10'],'coarse'],
  ['non numeric',[0,10],['oops','10'],'fail'],
  ['non finite',[0,10],['1e309','10'],'fail'],
  ['overflow zero',[0,10],['0e309','10'],'coarse'],
@@ -362,6 +367,8 @@ for(const [name,values,labels,status] of [
  ['small scientific',[1e-8,2e-8],['1.00e-8','2.00e-8'],'checked'],
  ['large scientific',[1e22,2e22],['1.00e22','2.00e22'],'checked'],
  ['review6 limit',[9.995000000000002e-8,9.994999999999997e-7],['9.99e-8','9.99e-7'],'checked'],
+ ['review7 coarse',[10000000000047,10000000000053],['10000000000000','10000000000100'],'coarse'],
+ ['resolvable large wrong',[1e13,1e13+1000],['10000000001000','10000000002000'],'fail'],
  ['review6 gosh',[9999999999995,19999999999990],['10000000000000','20000000000000'],'checked'],
  ['median spacing',[0,10,30],['0','17.4','30'],'checked'],
  ['median spacing reject',[0,10,30],['0','18','30'],'fail'],
@@ -371,4 +378,38 @@ for(const [name,values,labels,status] of [
  const run=new Function(source.slice(start,end)+"return (values,labels)=>{calibratedTicks(values.map(v=>[v,v*10]),labels.map((text,i)=>({text,position:values[i]*10})),12,'test');return axisLabels[0];};")();
  if(status==='fail')expect(()=>run(values,labels)).toThrow(/calibrated axis/);
  else {const row=run(values,labels);expect(row.checked).toBe(status==='checked');if(status==='coarse')expect(row.message).toBe('axis labels: not checked (labels coarser than tick spacing)');}
+});
+
+// Synthetic narrow-range regression fixtures, rendered without source/DOM edits.
+for(const values of [
+ [10000000000047,10000000000050,10000000000053],
+ [10000000000042,10000000000050,10000000000058],
+ [-100000000000053,-100000000000050,-100000000000047],
+])test('extras coarse integer clean '+values[0],async({page})=>{
+ await page.goto(url);
+ const result=await page.evaluate(values=>{
+  const input=values.map(v=>v+',1').join('\n');
+  document.getElementById('src').value=input;document.getElementById('model').value='FE';
+  AlmGoshPlus.render(AlmGoshPlus.capture(input,'FE',5000));
+  document.getElementById('plus-het').value='Q';document.getElementById('plus-het').dispatchEvent(new Event('change'));
+  AlmGoshPlusAdapter.live.currentState();
+  return AlmGoshPlusAdapter.axisLabels;
+ },values);
+ expect(result.find(r=>r.axis==='extra x').checked).toBe(false);
+ expect(result.find(r=>r.axis==='extra x').message).toContain('not checked');
+});
+
+for(const [name,values,positions,tickPositions] of [
+ ['overflow span',[-1e308,1e308],[0,100],[0,100]],
+ ['overflow position span',[0,10],[-1e308,1e308],[-1e308,0]],
+ ['overflow mean',[0,10],[1e308,1.1e308],[1e308,1.1e308]],
+ ['overflow inference',[1e308,1.1e308],[0,100],[0,1000]],
+ ['collapsed inferred endpoints',[1e13,1e13+10],[0,100],[0,.001]],
+ ['underflow half step',[0,Number.MIN_VALUE],[0,100],[0,100]],
+])arithmeticTest('axis total scale '+name,()=>{
+ const source=readFileSync(new URL('../../../gosh/validate/adapter-plus.js',import.meta.url),'utf8');
+ const start=source.indexOf('// Axis-label coverage'),end=source.indexOf('  function plotGeometry',start);
+ const run=new Function(source.slice(start,end)+"return (values,positions,tickPositions)=>{calibratedTicks(values.map((v,i)=>[v,positions[i]]),tickPositions.map((position,i)=>({text:String(values[i]),position})),12,'test');return axisLabels[0];};")();
+ const row=run(values,positions,tickPositions);
+ expect(row.checked).toBe(false);expect(row.message).toContain('not checked');
 });

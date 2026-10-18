@@ -84,36 +84,43 @@ function calibratedTicks(samples,ticks,digits,name,domain) {
  const fail=message=>{throw Error(name+' calibrated axis '+message);};
  const length=Math.abs(ticks[1]?.position-ticks[0]?.position);
  if(samples.length<2||samples.some(p=>!p.every(Number.isFinite))||!Number.isFinite(length)||length===0)return;
- const values=samples.map(p=>p[0]),lo=Math.min(...values),hi=Math.max(...values),span=hi-lo;
+ const values=samples.map(p=>p[0]),lo=values.reduce((a,b)=>Math.min(a,b),Infinity),hi=values.reduce((a,b)=>Math.max(a,b),-Infinity),span=hi-lo;
  const positions=samples.map(p=>p[1]);
- row.coverage=(Math.max(...positions)-Math.min(...positions))/length;
- if(span===0||row.coverage<.2)return;
+ row.coverage=(positions.reduce((a,b)=>Math.max(a,b),-Infinity)-positions.reduce((a,b)=>Math.min(a,b),Infinity))/length;
+ if(!Number.isFinite(span)||span===0||!Number.isFinite(row.coverage)||row.coverage<.2)return;
  const sum=xs=>{let s=0,c=0;for(const x of xs){const t=s+x;c+=Math.abs(s)>=Math.abs(x)?(s-t)+x:(x-t)+s;s=t;}return s+c;};
  const z=values.map(v=>(v-lo)/span),zm=sum(z)/z.length;
  const pm=sum(positions)/samples.length,variance=sum(z.map(v=>(v-zm)**2));
  const slope=sum(z.map((v,i)=>(v-zm)*(positions[i]-pm)))/variance,intercept=pm-slope*zm;
- row.residual=Math.max(...samples.map((p,i)=>Math.abs(p[1]-(intercept+slope*z[i]))));
+ row.residual=samples.reduce((r,p,i)=>Math.max(r,Math.abs(p[1]-(intercept+slope*z[i]))),0);
  if(!Number.isFinite(slope)||slope===0||!Number.isFinite(row.residual)||row.residual>1e-7)return;
- row.checked=true;row.message='axis labels: checked';
  const labels=ticks.map(t=>Number(t.text));
- if(ticks.length<2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
+ if(ticks.some(t=>!Number.isFinite(t.position)))return;
+ if(ticks.some(t=>!t.text.trim())||!labels.every(Number.isFinite))fail('tick coverage');
  const inferred=ticks.map(t=>lo+span*(t.position-intercept)/slope);
- if(!inferred.every(Number.isFinite))fail('invalid inferred endpoints');
+ if(!inferred.every(Number.isFinite))return;
  const ordered=ticks.map((t,i)=>({position:t.position,value:inferred[i],label:labels[i]})).sort((a,b)=>a.position-b.position);
  const spacings=ordered.slice(1).map((t,i)=>Math.abs(t.value-ordered[i].value)).sort((a,b)=>a-b);
  const middle=Math.floor(spacings.length/2);
  const step=spacings.length%2?spacings[middle]:spacings[middle-1]/2+spacings[middle]/2;
- if(!Number.isFinite(step)||step<=0)fail('invalid inferred tick step');
+ if(!Number.isFinite(step)||step<=0||step/2===0)return;
  row.step=step;
  // Shown resolution is only an eligibility gate, never an error allowance.
- const units=ticks.map(t=>{
+ const units=ticks.map((t,i)=>{
   const match=t.text.trim().match(/^[+-]?(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i);
-  if(!match)fail('invalid numeric label');
-  return 10**(Number(match[3]||0)-(match[2]||'').length);
+  if(!match)return Infinity; // Finite numeric syntax with unknown decimal resolution.
+  const shown=10**(Number(match[3]||0)-(match[2]||'').length);
+  // Number(toPrecision(digits)) strips trailing zeroes in ordinary integers.
+  // Recover the formatter's quantum from the inferred value, independently of
+  // the displayed label. This is eligibility only, never an error tolerance.
+  const exponent=inferred[i]===0?0:Number(Math.abs(inferred[i]).toExponential().split('e')[1]);
+  const formatted=inferred[i]===0?0:10**(exponent-digits+1);
+  return Math.max(shown,formatted);
  });
- if(ordered.slice(1).some((t,i)=>t.label===ordered[i].label)||units.some(unit=>unit>step/2)){
+ if(ordered.slice(1).some((t,i)=>t.label===ordered[i].label)||units.some(unit=>!Number.isFinite(unit)||unit>step/2)){
   row.checked=false;row.message='axis labels: not checked (labels coarser than tick spacing)';return;
  }
+ row.checked=true;row.message='axis labels: checked';
  for(let i=0;i<labels.length;i++)if(Math.abs(labels[i]-inferred[i])>step/2)fail('label does not match mark scale');
 }
 
