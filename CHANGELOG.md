@@ -11,6 +11,12 @@ the section is renamed to that version and dated, and a fresh
 
 ## [Unreleased]
 
+### Fixed
+- Cross-design power-prior pooling at alpha=0 now estimates heterogeneity from
+  RCTs alone. Observational-only input at alpha=0 displays a non-estimable result
+  without crashing the plot or leaving stale export state. Earlier alpha=0
+  results with mixed designs should be rerun; positive-alpha behavior is unchanged.
+
 ### Added
 - _(items added since the most recent tag will be listed here)_
 
