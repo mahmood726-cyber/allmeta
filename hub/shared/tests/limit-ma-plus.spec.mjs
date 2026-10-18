@@ -20,7 +20,12 @@ test('limit-ma-plus all configurations and displayed quantities versus pinned R'
  test.setTimeout(240000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
  const before=await page.evaluate(()=>__almLimitValidationSnapshot());
  const r=await page.evaluate(()=>AlmLimitPlusValidation.runCorpus());
+ expect(r.axisCoverage).toHaveLength(169*3);
+ const checked=r.axisCoverage.filter(a=>a.checked).length;
+ await expect(page.locator('#alm-plus-validate')).toContainText(`Axis labels: ${checked} checked; ${r.axisCoverage.length-checked} not checked.`);
+ for(const a of r.axisCoverage)if(a.checked){expect(a.coverage).toBeGreaterThanOrEqual(.2);expect(a.residual).toBeLessThanOrEqual(1e-7);}else expect(a.message).toBe('axis labels: not checked (scale not determined by validated marks)');
  writeFileSync(new URL('../../../limit-ma/validate/plus/evidence-replay.json',import.meta.url),JSON.stringify(r,null,2)+'\n');
+ console.log('AXIS COVERAGE',JSON.stringify(r.axisCoverage));
  console.log('LIMIT PLUS',r.passed+'/'+r.checks,'failed',r.failed.length);
  expect(await page.evaluate(()=>__almLimitValidationSnapshot())).toEqual(before);
  expect(r.failed).toEqual([]);
@@ -393,6 +398,7 @@ for(const [before,after] of [["textContent='SE'","textContent='SD'"],["textConte
 
 // Synthetic regression inputs exercise degenerate calibration, not research findings.
 for(const [name,te,se] of [
+ ['near effects',[0,.000001,0],[.25,.25,.25]],
  ['equal SE and coincident estimates',[.1,.3,.5],[.2,.2,.2]],
  ['equal effects',[.5,.5,.5],[.5,1,2]],
  ['equal effects and SE',[.5,.5,.5],[1,1,1]],
@@ -408,10 +414,10 @@ for(const [name,te,se] of [
   for(const id of ['limit','fill','reg','contour'])document.getElementById('plus-'+id+'-toggle').checked=overlays;
   const c={te,se};__almLimitValidationRun(te.map((v,i)=>v+','+se[i]).join('\n'),true);
   const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);AlmLimitPlusUI.render(r,c,limit);
-  return AlmLimitPlusContract.geometry(r,c,limit);
+  const errors=AlmLimitPlusContract.geometry(r,c,limit);return {errors,axes:AlmLimitPlusContract.axisLabels};
  },{te,se,overlays});
  if(corrupt){
-  for(const axis of ['plus-forest x','plus-funnel x','plus-funnel y'])expect(errors.some(e=>e.includes(axis+' calibrated axis'))).toBe(true);
+  for(const axis of errors.axes){expect(errors.errors.some(e=>e.includes(axis.axis+' calibrated axis'))).toBe(axis.checked);}
  }
- else expect(errors).toEqual([]);
+ else expect(errors.errors).toEqual([]);
 });

@@ -1564,7 +1564,4066 @@
     "trimfill.imputedSE.735": 2.0816681711721685e-17,
     "trimfill.imputedSE.736": 4.85722573273506e-17
   },
+  "axisCoverage": [
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.aloe2013::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.398349053968802,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.aloe2013::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.26079854055314416,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.aloe2013::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.aloe2013::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.28095386163892155,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.aloe2013::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.32700837030639046,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.aloe2013::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.aloe2013::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.44571539891703227,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.aloe2013::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.2543670819599057,
+      "residual": 9.094947017729282e-13,
+      "id": "dat.aloe2013::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.anand1999::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909093,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.anand1999::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8586583660696212,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.anand1999::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 3.410605131648481e-13,
+      "id": "dat.anker2025::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.3729897802532914,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.anker2025::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7624633431085037,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.anker2025::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.anker2025::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6716386071621901,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.anker2025::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6906207546646704,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.anker2025::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.anker2025::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.46924402861651593,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.anker2025::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7233404046153047,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.anker2025::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.anker2025::004"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.3413281057126255,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.anker2025::004"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7872411211843966,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.anker2025::004"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.assink2016::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.552625067947771,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.assink2016::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.841578367218126,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.assink2016::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.axfors2021::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.axfors2021::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8813708661337365,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.axfors2021::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5323967267652331,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bakdash2021::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909093,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bakdash2021::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7724279890320709,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bakdash2021::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.baker2009::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4743684856562871,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.baker2009::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8686465495006658,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.baker2009::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bangertdrowns2004::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.739169551197058,
+      "residual": 3.410605131648481e-13,
+      "id": "dat.bangertdrowns2004::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7613388990232722,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bangertdrowns2004::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": false,
+      "message": "axis labels: not checked (scale not determined by validated marks)",
+      "coverage": 0.05627776699819246,
+      "id": "dat.bartos2023::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.861256455671902,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bartos2023::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7393217904781676,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bartos2023::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": false,
+      "message": "axis labels: not checked (scale not determined by validated marks)",
+      "coverage": 0.05604078302922656,
+      "id": "dat.bartos2023::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8583284043713548,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.bartos2023::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7393180372629374,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bartos2023::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": false,
+      "message": "axis labels: not checked (scale not determined by validated marks)",
+      "coverage": 0.02171067664695638,
+      "id": "dat.bartos2023::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909094,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bartos2023::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7392423743627018,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bartos2023::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": false,
+      "message": "axis labels: not checked (scale not determined by validated marks)",
+      "coverage": 0.0282256800257751,
+      "id": "dat.bartos2023::004"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909088,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.bartos2023::004"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7393217904781676,
+      "residual": 9.094947017729282e-13,
+      "id": "dat.bartos2023::004"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.baskerville2012::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6053999826118465,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.baskerville2012::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6698564593301435,
+      "residual": 9.094947017729282e-13,
+      "id": "dat.baskerville2012::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.bassler2004::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.41272542595203765,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.bassler2004::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7530406391903361,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bassler2004::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8702855563369982,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bauer2002::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909087,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.bauer2002::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4105154105154107,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bauer2002::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bauer2002::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5540455897564001,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.bauer2002::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.43578322923918367,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bauer2002::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.bcg::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.639135553905367,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.bcg::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8306794921393483,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bcg::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4942031701515754,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.begg1989::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5170880301672797,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.begg1989::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7944664031620549,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.begg1989::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.begg1989::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9002905174558729,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.begg1989::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5241000617847802,
+      "residual": 0,
+      "id": "dat.begg1989::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.berkey1998::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4560149650761967,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.berkey1998::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7616168898811242,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.berkey1998::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.berkey1998r::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4560149650761967,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.berkey1998r::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7616168898811242,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.berkey1998r::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.besson2016::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.85387184519644,
+      "residual": 3.410605131648481e-13,
+      "id": "dat.besson2016::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7386522004828688,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.besson2016::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": false,
+      "message": "axis labels: not checked (scale not determined by validated marks)",
+      "coverage": 0.10502317567104202,
+      "id": "dat.bonett2010::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7318625931332777,
+      "residual": 5.684341886080802e-14,
+      "id": "dat.bonett2010::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6477456479199684,
+      "residual": 0,
+      "id": "dat.bonett2010::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.264985967808962,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bonett2010::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909093,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bonett2010::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6291823930813158,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bonett2010::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.3594154061340937,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bonett2010::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9017868484044861,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bonett2010::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6216111218028746,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bonett2010::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bornmann2007::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8839599556101339,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bornmann2007::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8847061867488576,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bornmann2007::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.354329521704793,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.bourassa1996::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 1.7053025658242404e-13,
+      "id": "dat.bourassa1996::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.876693816066946,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.bourassa1996::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.cannon2006::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909093,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.cannon2006::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.35400047674270163,
+      "residual": 0,
+      "id": "dat.cannon2006::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.chiarito2020::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909093,
+      "residual": 5.684341886080802e-14,
+      "id": "dat.chiarito2020::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8379626440442793,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.chiarito2020::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.chiarito2020::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.909090909090909,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.chiarito2020::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8379626440442793,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.chiarito2020::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8720068260392291,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.cohen1981::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.cohen1981::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6876716816147931,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.cohen1981::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.colditz1994::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.639135553905367,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.colditz1994::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8306794921393483,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.colditz1994::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.collins1985a::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8136857901132486,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.collins1985a::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8083921374070694,
+      "residual": 9.094947017729282e-13,
+      "id": "dat.collins1985a::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.collins1985a::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7050448431746801,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.collins1985a::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7938889049146419,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.collins1985a::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.collins1985a::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8588429726151784,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.collins1985a::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.779639557706781,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.collins1985a::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.collins1985b::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909093,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.collins1985b::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7763501167672104,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.collins1985b::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.collins1985b::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.909090909090909,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.collins1985b::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7571960375331865,
+      "residual": 0,
+      "id": "dat.collins1985b::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.collins1985b::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5348319880368837,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.collins1985b::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7721348446664275,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.collins1985b::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.collins1985b::004"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.713168091931164,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.collins1985b::004"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6774162547083102,
+      "residual": 0,
+      "id": "dat.collins1985b::004"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.collins1985b::005"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6627628455878133,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.collins1985b::005"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6831070436316233,
+      "residual": 0,
+      "id": "dat.collins1985b::005"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.craft2003::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909091,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.craft2003::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6533523244471264,
+      "residual": 0,
+      "id": "dat.craft2003::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5722190383510151,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.crede2010::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8968919787570347,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.crede2010::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8439561458937171,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.crede2010::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": false,
+      "message": "axis labels: not checked (scale not determined by validated marks)",
+      "coverage": 0.03339519648017131,
+      "id": "dat.crisafulli2020::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5182630646658439,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.crisafulli2020::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8445672507851469,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.crisafulli2020::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.curtin2002::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6480413071028664,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.curtin2002::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.748663101604278,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.curtin2002::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5198862084360306,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.curtis1998::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.688774296862861,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.curtis1998::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8820945865352863,
+      "residual": 9.094947017729282e-13,
+      "id": "dat.curtis1998::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.dagostino1998::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6636763799187814,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.dagostino1998::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7070267210979763,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.dagostino1998::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9954990625700323,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.dagostino1998::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6761618892163084,
+      "residual": 3.410605131648481e-13,
+      "id": "dat.dagostino1998::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8545280018244074,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.dagostino1998::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 3.410605131648481e-13,
+      "id": "dat.damico2009::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.40811558490149696,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.damico2009::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8005999700154152,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.damico2009::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7796492633156961,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.debruin2009::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7473086114677384,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.debruin2009::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7021371918590716,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.debruin2009::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.3404623316025519,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.demir2022::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.demir2022::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8455126063926415,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.demir2022::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.dogliotti2014::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6562924636345555,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.dogliotti2014::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8109215641149352,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.dogliotti2014::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9445920153168507,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.dong2013::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8063140498512754,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.dong2013::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8668872743996078,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.dong2013::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.dorn2007::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5882310710518477,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.dorn2007::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6530331248708771,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.dorn2007::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.dorn2007::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6491450260857246,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.dorn2007::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6530331248708771,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.dorn2007::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.dumouchel1994::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6987195207206472,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.dumouchel1994::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8039533925030039,
+      "residual": 0,
+      "id": "dat.dumouchel1994::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.egger2001::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.33519783914856305,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.egger2001::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8889946000522175,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.egger2001::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.feng2019::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7866277783534549,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.feng2019::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6854351568665722,
+      "residual": 9.094947017729282e-13,
+      "id": "dat.feng2019::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.fine1993::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.fine1993::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8188890670066303,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.fine1993::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.franchini2012::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8518551698782395,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.franchini2012::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5616949056350218,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.franchini2012::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.frank2008::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8615731253855613,
+      "residual": 2.842170943040401e-14,
+      "id": "dat.frank2008::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4773966013759864,
+      "residual": 0,
+      "id": "dat.frank2008::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.frank2008::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.522655781601899,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.frank2008::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.47441023392197623,
+      "residual": 0,
+      "id": "dat.frank2008::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.frank2008::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909091,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.frank2008::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.48079460004841995,
+      "residual": 0,
+      "id": "dat.frank2008::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.frank2008::004"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 5.684341886080802e-14,
+      "id": "dat.frank2008::004"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.47917645954083454,
+      "residual": 0,
+      "id": "dat.frank2008::004"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.furukawa2003::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4967529447123685,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.furukawa2003::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6409079442512333,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.furukawa2003::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.gibson2002::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7039558493516999,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.gibson2002::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5641019041760899,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.gibson2002::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.gibson2002::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4973676775544234,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.gibson2002::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8330469508245294,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.gibson2002::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.gibson2002::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.600532163824605,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.gibson2002::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7447932309853924,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.gibson2002::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.graves2010::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5155350158024082,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.graves2010::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7223286577861379,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.graves2010::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.greb2008::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.greb2008::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8078772009100708,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.greb2008::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.greenland1992::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.32192484654879533,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.greenland1992::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8853546031135879,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.greenland1992::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.gurusamy2011::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.gurusamy2011::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5303239483385066,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.gurusamy2011::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.hackshaw1998::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7123973045512577,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hackshaw1998::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7852222233839667,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.hackshaw1998::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.hahn2001::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hahn2001::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8027704725989625,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.hahn2001::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8604470221759272,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hannum2020::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5202667521145985,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hannum2020::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8566521883080996,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.hannum2020::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5492983934551126,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.hannum2020::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.43396462327190793,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.hannum2020::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7551145253853875,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.hannum2020::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9120416700638823,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hannum2020::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5177000025110043,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.hannum2020::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8507927779450658,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.hannum2020::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.hart1999::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909093,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.hart1999::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5335747354123112,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.hart1999::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.hart1999::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7029588724001132,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.hart1999::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5146805877476165,
+      "residual": 0,
+      "id": "dat.hart1999::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6871966353877726,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hartmannboyce2018::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7955509977144912,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hartmannboyce2018::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8544744724151913,
+      "residual": 0,
+      "id": "dat.hartmannboyce2018::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5067700292659216,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hasselblad1998::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5486805931797134,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hasselblad1998::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8643358302373715,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.hasselblad1998::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hasselblad1998::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8257440517560037,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.hasselblad1998::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8241742338234975,
+      "residual": 0,
+      "id": "dat.hasselblad1998::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.higgins2008::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5095571699050221,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.higgins2008::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6904407842988366,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.higgins2008::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.hine1989::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5451220986111883,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.hine1989::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5417971935195234,
+      "residual": 0,
+      "id": "dat.hine1989::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9614229203331368,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.huber2000::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6096319080221201,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.huber2000::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4445555059981593,
+      "residual": 0,
+      "id": "dat.huber2000::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.3834908743232824,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.ishak2007::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909093,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.ishak2007::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7866481764179134,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.ishak2007::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.39999342978973823,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.ishak2007::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8417183890901204,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.ishak2007::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8244259427895755,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.ishak2007::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4068333402959961,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.ishak2007::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6169460363197853,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.ishak2007::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8238719581205005,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.ishak2007::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7010073158581271,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.ishak2007::004"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.806839191271405,
+      "residual": 1.7053025658242404e-13,
+      "id": "dat.ishak2007::004"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.750956285755384,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.ishak2007::004"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8596180282037376,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.kalaian1996::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8754308331516646,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.kalaian1996::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7612681136292203,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.kalaian1996::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9891514566349022,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.karner2014::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5779533888233693,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.karner2014::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8771478447256792,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.karner2014::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6831620506778846,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.karner2014::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.39898710240332835,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.karner2014::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7899686520376177,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.karner2014::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7158127967143599,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.kearon1998::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.61968458770548,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.kearon1998::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6832506648586032,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.kearon1998::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5714337718993607,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.kearon1998::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6983509840509733,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.kearon1998::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.698320544075313,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.kearon1998::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.kearon1998::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.664891358078417,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.kearon1998::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.477251114851613,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.kearon1998::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.kearon1998::004"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.38045909531814226,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.kearon1998::004"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7374519463775018,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.kearon1998::004"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9593619973104708,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.knapp2017::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.589875230968273,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.knapp2017::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6324633547953701,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.knapp2017::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.konstantopoulos2011::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6441081261528512,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.konstantopoulos2011::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8333333333333327,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.konstantopoulos2011::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.961830652245599,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.landenberger2005::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6020758109544901,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.landenberger2005::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8404204994662601,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.landenberger2005::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.laopaiboon2015::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6437188138818317,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.laopaiboon2015::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8028534854874453,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.laopaiboon2015::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8202499199619898,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.lau1992::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.713033097594116,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.lau1992::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8786644054845022,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.lau1992::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.lee2004::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5370226855777028,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.lee2004::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.841778867498113,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.lee2004::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.lehmann2018::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6653590532114739,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.lehmann2018::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8660404186075252,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.lehmann2018::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.lehmann2018::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6690835694881203,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.lehmann2018::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8660404186075252,
+      "residual": 9.094947017729282e-13,
+      "id": "dat.lehmann2018::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.lehmann2018::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6790527464142158,
+      "residual": 1.7053025658242404e-13,
+      "id": "dat.lehmann2018::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7602223197849457,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.lehmann2018::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.li2007::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5814926157579845,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.li2007::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8916883688298378,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.li2007::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.lim2014::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.lim2014::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8664720699146816,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.lim2014::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.linde2005::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.29587731676161083,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.linde2005::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8388860553286365,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.linde2005::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.linde2015::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6827596875596118,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.linde2015::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7533351374821975,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.linde2015::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.linde2015::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5499316853031031,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.linde2015::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7812153205330725,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.linde2015::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.linde2016::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.linde2016::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.802868443490299,
+      "residual": 9.094947017729282e-13,
+      "id": "dat.linde2016::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5013371815828211,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.lloyd2010::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.45443104327376205,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.lloyd2010::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7235621521335807,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.lloyd2010::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7137512303637005,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.lloyd2010::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.3194627510824602,
+      "residual": 5.684341886080802e-14,
+      "id": "dat.lloyd2010::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7692307692307688,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.lloyd2010::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.lopez2019::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.4464111368496419,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.lopez2019::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8975525696703267,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.lopez2019::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.maire2019::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.3706395990790637,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.maire2019::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7352123584748184,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.maire2019::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5851529990353854,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.mccurdy2020::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.46291738560276147,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.mccurdy2020::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8535390797667853,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.mccurdy2020::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5516067988174131,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.mcdaniel1994::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5172626105238565,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.mcdaniel1994::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8847712599429627,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.mcdaniel1994::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7858422415083932,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.mcdaniel1994::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.3651664774131679,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.mcdaniel1994::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.880617697581956,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.mcdaniel1994::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.24396069727969255,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.meeker2017::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7473472067224368,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.meeker2017::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.659856996935648,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.meeker2017::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.michael2013::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5157945352857668,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.michael2013::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6855223157053815,
+      "residual": 0,
+      "id": "dat.michael2013::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.michael2013::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5157945352857666,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.michael2013::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6855223157053815,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.michael2013::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.molloy2014::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7747813307832974,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.molloy2014::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.672537954606121,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.molloy2014::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.moore1998::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.506889029398413,
+      "residual": 1.7053025658242404e-13,
+      "id": "dat.moore1998::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7614997724358665,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.moore1998::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.3358391040114687,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.moura2021::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909091,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.moura2021::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9068641024606383,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.moura2021::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.nakagawa2007::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nakagawa2007::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6536584150231743,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.nakagawa2007::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.nielweise2007::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8145740502061635,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nielweise2007::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6220410567746237,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.nielweise2007::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nielweise2008::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8505181899275691,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nielweise2008::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6813729850599456,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.nielweise2008::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nissen2007::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.576979088082453,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nissen2007::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7996635931303411,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.nissen2007::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.nissen2007::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6474618203981611,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nissen2007::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7556372443306069,
+      "residual": 9.094947017729282e-13,
+      "id": "dat.nissen2007::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nissen2007::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6056020081064981,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nissen2007::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7712763331612784,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.nissen2007::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nissen2007::004"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9064255438076391,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.nissen2007::004"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6709203784000836,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.nissen2007::004"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.normand1999::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5338902664452395,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.normand1999::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.828952784733288,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.normand1999::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.normand1999::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7689521720575708,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.normand1999::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7637633891674569,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.normand1999::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5361414241697222,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.obrien2003::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909091,
+      "residual": 3.410605131648481e-13,
+      "id": "dat.obrien2003::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8862924013956955,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.obrien2003::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 3.410605131648481e-13,
+      "id": "dat.obrien2003::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.2458647117187471,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.obrien2003::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9048214575764602,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.obrien2003::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.pagliaro1992::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.909090909090909,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.pagliaro1992::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7293911802864828,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.pagliaro1992::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.pagliaro1992::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.582114569993084,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.pagliaro1992::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7802740263649208,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.pagliaro1992::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.pignon2000::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7364797469412057,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.pignon2000::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7353214834578444,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.pignon2000::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.poole2003::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": false,
+      "message": "axis labels: not checked (scale not determined by validated marks)",
+      "coverage": 0.1534788642512591,
+      "id": "dat.poole2003::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8998177348046242,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.poole2003::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.39277482988933693,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.pritz1997::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5724779842100985,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.pritz1997::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6908264852235911,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.pritz1997::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5027770981333433,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.pritz1997::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8636363636363639,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.pritz1997::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6625790252060723,
+      "residual": 0,
+      "id": "dat.pritz1997::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.3833096874811395,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.pritz1997::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5531838330994109,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.pritz1997::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6908264852235911,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.pritz1997::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.pritz1997::004"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5431536209248389,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.pritz1997::004"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7207586293897207,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.pritz1997::004"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.quan2000::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5322143563969218,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.quan2000::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7215745073099289,
+      "residual": 0,
+      "id": "dat.quan2000::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.raudenbush1985::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5905614067038454,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.raudenbush1985::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6804336012398424,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.raudenbush1985::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5395778015841866,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.riley2003::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6856534716806143,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.riley2003::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8460325801366259,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.riley2003::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6662568839682745,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.rivera2025::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7630733937979975,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.rivera2025::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6283931640244682,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.rivera2025::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.rivera2025::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.42336033588006083,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.rivera2025::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6810208938485968,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.rivera2025::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.rivera2025::003"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6774746094641235,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.rivera2025::003"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5289142406524687,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.rivera2025::003"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.911572446313034,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.roever2022::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.roever2022::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6912467100831717,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.roever2022::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.senn2013::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9082658604628253,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.senn2013::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7666500903267174,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.senn2013::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7976637637273684,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.senn2013::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909093,
+      "residual": 3.410605131648481e-13,
+      "id": "dat.senn2013::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.743889192623657,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.senn2013::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8666224928007155,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.spooner2002::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6236281089354334,
+      "residual": 3.410605131648481e-13,
+      "id": "dat.spooner2002::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6583724396410675,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.spooner2002::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.steurer2006::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7009616108571207,
+      "residual": 5.684341886080802e-14,
+      "id": "dat.steurer2006::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7017127799736488,
+      "residual": 0,
+      "id": "dat.steurer2006::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.steurer2006::002"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7009572333926586,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.steurer2006::002"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7017780460728087,
+      "residual": 0,
+      "id": "dat.steurer2006::002"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.stowe2010::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5289198797438707,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.stowe2010::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7773672100716945,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.stowe2010::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8796254996846118,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.tannersmith2016::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6764275055996526,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.tannersmith2016::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6661261437159776,
+      "residual": 0,
+      "id": "dat.tannersmith2016::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.thompson1999::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.thompson1999::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8755610313366642,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.thompson1999::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.tian2009::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9064255438076392,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.tian2009::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6709203784000836,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.tian2009::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.ursino2021::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909093,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.ursino2021::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.6659801750843808,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.ursino2021::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.vanhowe1999::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5076012759191832,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.vanhowe1999::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7994612616839879,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.vanhowe1999::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.viechtbauer2021::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.viechtbauer2021::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7326735850047275,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.viechtbauer2021::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9613016287612864,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.white2020::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.787488075175561,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.white2020::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8157382255440706,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.white2020::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 1,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.woods2010::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.9090909090909092,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.woods2010::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5042455814068776,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.woods2010::001"
+    },
+    {
+      "axis": "plus-forest x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.5193453363891023,
+      "residual": 1.1368683772161603e-13,
+      "id": "dat.yusuf1985::001"
+    },
+    {
+      "axis": "plus-funnel x",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.7905298952779581,
+      "residual": 2.2737367544323206e-13,
+      "id": "dat.yusuf1985::001"
+    },
+    {
+      "axis": "plus-funnel y",
+      "checked": true,
+      "message": "axis labels: checked",
+      "coverage": 0.8615404489730344,
+      "residual": 4.547473508864641e-13,
+      "id": "dat.yusuf1985::001"
+    }
+  ],
   "summaryLines": [
+    "Axis labels: 500 checked; 7 not checked.",
+    "dat.bartos2023::001 plus-forest x: axis labels: not checked (scale not determined by validated marks)",
+    "dat.bartos2023::002 plus-forest x: axis labels: not checked (scale not determined by validated marks)",
+    "dat.bartos2023::003 plus-forest x: axis labels: not checked (scale not determined by validated marks)",
+    "dat.bartos2023::004 plus-forest x: axis labels: not checked (scale not determined by validated marks)",
+    "dat.bonett2010::001 plus-forest x: axis labels: not checked (scale not determined by validated marks)",
+    "dat.crisafulli2020::001 plus-forest x: axis labels: not checked (scale not determined by validated marks)",
+    "dat.poole2003::001 plus-funnel x: axis labels: not checked (scale not determined by validated marks)",
     "Independent sensitivity oracle: meta 8.5-0, metafor 5.2-1, metasens 1.5-3.",
     "Refusals pass only when both implementations refuse for the same reason.",
     "Effective rendered geometry checked against rendered axis ticks within 0.02 CSS px; text character positions, paint visibility, viewport intersection and forest label row bounds included.",

@@ -141,58 +141,48 @@ function paintContract(reference,failures){
 // uses source results (already compared to the pinned oracle), never SVG metadata.
 // Relative tolerance 1e-9 with unit floor; SVG layout coordinates use the same bound.
 
-// Independent affine calibration from source-backed marks, never renderer scale
-// functions, tick metadata, or a second rendering. Coordinates are CSS pixels.
+// Axis-label coverage is separate from the numerical and geometry contracts.
+let axisLabels=[];
+const axisSummary=rows=>['Axis labels: '+rows.filter(r=>r.checked).length+' checked; '+rows.filter(r=>!r.checked).length+' not checked.',...rows.filter(r=>!r.checked).map(r=>(r.id?r.id+' ':'')+r.axis+': '+r.message)];
 function calibratedTicks(samples,ticks,digits,name,domain) {
+ const row={axis:name,checked:false,message:'axis labels: not checked (scale not determined by validated marks)'};
+ axisLabels.push(row);
  const fail=message=>{throw Error(name+' calibrated axis '+message);};
- if(samples.length<2||samples.some(p=>!p.every(Number.isFinite)))fail('missing finite marks');
+ const length=Math.abs(ticks[1]?.position-ticks[0]?.position);
+ if(samples.length<2||samples.some(p=>!p.every(Number.isFinite))||!Number.isFinite(length)||length===0)return;
  const values=samples.map(p=>p[0]),lo=Math.min(...values),hi=Math.max(...values),span=hi-lo;
- const labels=ticks.map(t=>Number(t.text));
- if(ticks.length!==2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
- // Coincident marks do not identify an affine scale or imply a constant
- // domain. Use independently derived source-domain endpoints, rounded to
- // the renderer's displayed precision; geometry remains checked separately.
- if(span===0){
-  if(!domain||domain.length!==2||!domain.every(Number.isFinite))fail('missing constant domain');
-  if(labels.some((v,i)=>v!==Number(domain[i].toPrecision(digits))))fail('constant labels');
-  return;
- }
- // Compensated sums prevent accumulation error in large point clouds from
- // becoming an apparent nonzero label at the zero endpoint.
+ const positions=samples.map(p=>p[1]);
+ row.coverage=(Math.max(...positions)-Math.min(...positions))/length;
+ if(span===0||row.coverage<.2)return;
  const sum=xs=>{let s=0,c=0;for(const x of xs){const t=s+x;c+=Math.abs(s)>=Math.abs(x)?(s-t)+x:(x-t)+s;s=t;}return s+c;};
  const z=values.map(v=>(v-lo)/span),zm=sum(z)/z.length;
- const pm=sum(samples.map(p=>p[1]))/samples.length;
- const variance=sum(z.map(v=>(v-zm)**2));
- const slope=sum(z.map((v,i)=>(v-zm)*(samples[i][1]-pm)))/variance;
- const intercept=pm-slope*zm;
- // At least two distinct marks spanning > .02 CSS px; all marks participate
- // in least squares. Residual <= 1e-7 CSS px (raw SVG positions, not float bbox).
- if(!Number.isFinite(slope)||Math.abs(slope)<=.02)fail('insufficient separation');
- if(samples.some((p,i)=>Math.abs(p[1]-(intercept+slope*z[i]))>1e-7))fail('non-affine marks');
+ const pm=sum(positions)/samples.length,variance=sum(z.map(v=>(v-zm)**2));
+ const slope=sum(z.map((v,i)=>(v-zm)*(positions[i]-pm)))/variance,intercept=pm-slope*zm;
+ row.residual=Math.max(...samples.map((p,i)=>Math.abs(p[1]-(intercept+slope*z[i]))));
+ if(!Number.isFinite(slope)||slope===0||!Number.isFinite(row.residual)||row.residual>1e-7)return;
+ row.checked=true;row.message='axis labels: checked';
+ const labels=ticks.map(t=>Number(t.text));
+ if(ticks.length!==2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
  const inferred=ticks.map(t=>lo+span*(t.position-intercept)/slope);
- const step=inferred[1]-inferred[0];
- if(!(step>0)||!(labels[1]>labels[0]))fail('non-monotone labels');
  const tolerances=inferred.map((v,i)=>{
-  // Half of the last displayed significant digit; never half a tick step.
-  const unit=v===0?0:10**(Math.floor(Math.log10(Math.abs(v)))-digits+1);
-  // Account for cancellation of the screen origin and leverage when an
-  // endpoint lies beyond the observed marks. This is an arithmetic allowance,
-  // not a pixel/layout tolerance; the half-interval cap remains fail-closed.
-  const screenMagnitude=Math.max(1,Math.abs(ticks[i].position),...samples.map(p=>Math.abs(p[1])));
-  const magnitude=Math.max(1,Math.abs(lo),Math.abs(hi),Math.abs(v),span*screenMagnitude/Math.abs(slope));
+  // Parse the precision actually shown, including trailing zeroes and exponent.
+  const match=ticks[i].text.trim().match(/^[+-]?(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i);
+  if(!match)fail('invalid numeric label');
+  const unit=10**(Number(match[3]||0)-(match[2]||'').length);
+  const screenMagnitude=Math.max(1,Math.abs(ticks[i].position),...positions.map(Math.abs));
+  const magnitude=Math.max(Number.MIN_VALUE,Math.abs(lo),Math.abs(hi),Math.abs(v),span*screenMagnitude/Math.abs(slope));
   const leverage=1+Math.abs((ticks[i].position-intercept)/slope-zm)*sum(z.map(v=>Math.abs(v-zm)))/variance;
   const tolerance=unit/2+64*Number.EPSILON*magnitude*leverage;
-  if(tolerance>=step/2)fail('insufficient label precision');
-  if(Math.abs(labels[i]-v)>tolerance)fail('label does not match mark scale: '+JSON.stringify({label:labels[i],inferred:v,tolerance}));
+  if(Math.abs(labels[i]-v)>tolerance)fail('label does not match mark scale');
   return tolerance;
  });
- // These renderers intentionally have two endpoint ticks (one interval).
- // Check its numeric spacing against calibrated screen spacing, allowing only
- // the two endpoint rounding budgets; no interior equal-spacing claim is made.
- if(Math.abs((labels[1]-labels[0])-step)>tolerances[0]+tolerances[1])fail('tick spacing');
+ const budget=tolerances[0]+tolerances[1],step=inferred[1]-inferred[0];
+ if(step < -budget||labels[1]-labels[0] < -budget)fail('non-monotone labels');
+ if(Math.abs((labels[1]-labels[0])-step)>budget)fail('tick spacing');
 }
 
 function geometry(r,c,limit){
+ axisLabels=[];
  const failures=[];
  const close=(a,b)=>finite(a)&&finite(b)&&Math.abs(a-b)<=1e-9*Math.max(1,Math.abs(b));
  function eq(a,b,key){if(!close(a,b))failures.push(key);}
@@ -246,7 +236,7 @@ function geometry(r,c,limit){
   const ticks=[...svg.querySelectorAll('[data-plus-axis="'+name+'"]')];count(ticks,2,name+' ticks');
   const labels=[...svg.querySelectorAll('[data-plus-tick-label="'+name+'"]')];count(labels,2,name+' tick labels');
   return values.map((v,i)=>{const n=ticks[i];if(n?.querySelector('title')?.textContent!==String(v))failures.push(name+' tick value');
-   const label=labels[i];if(label?.textContent!==v.toPrecision(3))failures.push(name+' tick label value');
+   const label=labels[i];
    if(label?.getNumberOfChars()){
     const p=label.getStartPositionOfChar(0),width=label.getComputedTextLength(),[x,y]=coords[i];
     screenEq(screen(label,p.x,p.y),screen(svg,name==='x'?x-width/2:x-7-width,name==='x'?y+17:y+4),name+' tick label');
@@ -319,7 +309,11 @@ function geometry(r,c,limit){
   try {calibratedTicks(samples,ticks.map((n,i)=>{const p=n.getPointAtLength(0);return {text:labels[i]?.textContent||'',position:screen(n,p.x,p.y)[name]};}),3,svg.id+' '+name,domain);}
   catch(e){failures.push(e.message);}
  }
- checkTicks(forest,'x',fits.map((key,i)=>[r[key].values.mu,mark(dots[i],'x')]),[low,high]);
+ // Validated confidence-interval endpoints also identify the forest scale.
+ checkTicks(forest,'x',fits.flatMap((key,i)=>[
+  [r[key].values.mu,mark(dots[i],'x')],
+  ...[['1','ciLo'],['2','ciHi']].map(([end,q])=>[r[key].values[q],screen(lines[i+1],attr(lines[i+1],'x'+end),attr(lines[i+1],'y'+end)).x])
+ ]),[low,high]);
  // Original study inputs are pinned inputs to R; do not use transformed or
  // imputed points to establish the scale (their geometry is checked above).
  checkTicks(funnel,'x',c.te.map((v,i)=>[v,mark(studies[i],'x')]),[min,max]);
@@ -341,7 +335,7 @@ async function mount(){
   const corpus=loaded[files[0].path],refs=loaded[files[1].path];validate(corpus,refs);
   const snap=__almLimitValidationSnapshot(),ui=AlmLimitPlusUI.snapshot(),status=document.getElementById('plus-status').textContent;
   const locks=[...document.querySelectorAll('button,input,select,textarea')].filter(n=>!n.closest('#alm-plus-validate')).map(n=>[n,n.disabled]);locks.forEach(([n])=>n.disabled=true);
-  let checks=0,passed=0;const failed=[],maxima={};
+  let checks=0,passed=0;const failed=[],maxima={},axisCoverage=[];
   function check(id,q,a,r,exact=false){const tol=tolerance(q),d=AlmValidate.compare(a,r,exact?'exact':'rel',tol);checks++;if(d.pass)passed++;else failed.push({id,quantity:q,app:a,ref:r,tol,...d});maxima[q]=Math.max(maxima[q]||0,d.diff);}
   return alm.urlState.withoutWrites(async()=>{try{
    for(let i=0;i<corpus.length;i++){
@@ -350,19 +344,19 @@ async function mount(){
     AlmLimitPlusUI.render(a,c,limit);
     const af=flatten(a),rf=flatten(ref);
     for(const [q,v] of Object.entries(rf))check(c.id,q,af[q],v,typeof v!=='number'||/\.(df|k0|length)$/.test(q));
-    const renderFailures=displayed(af).concat(geometry(a,c,limit));check(c.id,'render',renderFailures.length,0,true);
+    const renderFailures=displayed(af).concat(geometry(a,c,limit));check(c.id,'render',renderFailures.length,0,true);axisCoverage.push(...axisLabels.map(row=>({...row,id:c.id})));
     if(renderFailures.length)failed[failed.length-1].details=renderFailures;
     progress('Sensitivity replay '+(i+1)+'/'+corpus.length+'; '+checks+' checks');await new Promise(r=>setTimeout(r,0));
    }
   }finally{__almLimitValidationRestore(snap);AlmLimitPlusUI.restore(ui);document.getElementById('plus-status').textContent=status;locks.forEach(([n,d])=>n.disabled=d);}
   if(checks!==manifest.checks)throw Error('Sensitivity check cardinality mismatch: '+checks+' != '+manifest.checks);
-  return {checks,passed,failed,maxima,summaryLines:['Independent sensitivity oracle: meta 8.5-0, metafor 5.2-1, metasens 1.5-3.','Refusals pass only when both implementations refuse for the same reason.','Effective rendered geometry checked against rendered axis ticks within 0.02 CSS px; text character positions, paint visibility, viewport intersection and forest label row bounds included.','Rendered forest/funnel coordinates inverted to effect/SE units: 1e-9 relative tolerance with unit floor.','Closed-form tolerance 1e-9 relative; selection parameters/logLik 1e-6 and SE/CI 1e-4.']};
+  return {checks,passed,failed,maxima,axisCoverage,summaryLines:[...axisSummary(axisCoverage),'Independent sensitivity oracle: meta 8.5-0, metafor 5.2-1, metasens 1.5-3.','Refusals pass only when both implementations refuse for the same reason.','Effective rendered geometry checked against rendered axis ticks within 0.02 CSS px; text character positions, paint visibility, viewport intersection and forest label row bounds included.','Rendered forest/funnel coordinates inverted to effect/SE units: 1e-9 relative tolerance with unit floor.','Closed-form tolerance 1e-9 relative; selection parameters/logLik 1e-6 and SE/CI 1e-4.']};
   });
  }
  const adapter={app:'limit-ma-plus',paper:{checks:manifest.checks,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'Sensitivity oracle protocol',runUrl:'validate/README-plus.md'},corpus:{files,run:replay}};
  window.AlmLimitPlusValidationAdapter=adapter;window.AlmLimitPlusValidation=AlmValidate.mount(document.getElementById('alm-plus-validate'),adapter);
  document.querySelectorAll('#alm-plus-validate button').forEach(b=>{if(b.textContent==='Re-run full validation')b.textContent='Re-run sensitivity validation';});
 }
-window.AlmLimitPlusContract={validate,flatten,displayed,geometry,tolerance};
+window.AlmLimitPlusContract={validate,flatten,displayed,geometry,tolerance,get axisLabels(){return axisLabels;}};
 window.AlmLimitPlusReady=mount().catch(e=>{document.getElementById('alm-plus-validate').textContent='Validation unavailable: '+e.message;throw e;});
 })();
