@@ -173,6 +173,14 @@
         </label>
       </fieldset>
 
+      <fieldset>
+        <legend>Clinical interpretation scenario</legend>
+        <label for="f-pretest">Assumed pre-test probability (%)</label>
+        <input id="f-pretest" type="number" value="20" min="0" max="100" step="any" inputmode="decimal"
+          aria-describedby="f-pretest-hint f-pretest-error" aria-invalid="false">
+        <span class="hint" id="f-pretest-hint">A user-specified hypothetical probability, not study prevalence or individual risk. Summary likelihood ratios are used without uncertainty propagation.</span>
+        <span id="f-pretest-error" role="alert" class="hint" hidden></span>
+      </fieldset>
       <!-- axis-controls mount: ROC [0,1]×[0,1] domain; override deferred -->
       <div id="alm-axis-mount" style="margin-bottom:0.5rem;"></div>
 
@@ -198,7 +206,7 @@
     <section class="panel preview-wrap" aria-label="Preview">
       <h2>ROC space + Moses &amp; bivariate SROC</h2>
       <div id="svg-host"></div>
-      <h2 style="margin-top:1rem">Fagan nomogram (bivariate LR±)</h2>
+      <h2 style="margin-top:1rem">Illustrative post-test probabilities (Bayes scenario)</h2>
       <div id="fagan-host"></div>
       <h2 style="margin-top:1rem">Deeks' funnel (small-study bias)</h2>
       <div id="deeks-host"></div>
@@ -213,7 +221,7 @@
     "use strict";
     const LS_KEY = "dta-sroc-v1";
 
-    const fields = { data:"f-data", title:"f-title", method:"f-method", cc:"f-cc", cov:"f-cov" };
+    const fields = { data:"f-data", title:"f-title", method:"f-method", cc:"f-cc", cov:"f-cov", pretest:"f-pretest" };
     const METHOD_LABEL = { reml:"REML", ml:"ML", mm:"method of moments", vc:"variance components", fixed:"fixed effect" };
     const EXAMPLE = "# Example: TP, FP, FN, TN per study\nStudy A, 85, 10, 15, 140\nStudy B, 62, 12, 18, 108\nStudy C, 110, 25, 40, 200\nStudy D, 55, 6, 8, 90\nStudy E, 130, 40, 30, 300\nStudy F, 92, 18, 25, 185\nStudy G, 74, 8, 12, 130";
     const EXAMPLE_TITLE = "Example SROC - diagnostic test";  // ASCII-safe for btoa/url-state
@@ -225,14 +233,23 @@
     window.__almMetaRegression = function () { return _lastMetareg; };
     window.__almDeeks = function () { return _lastDeeks; };
 
-    // Fagan nomogram: pre-test prob (left axis) → LR line → post-test prob (right axis).
-    function faganSvg(b) {
+    // Illustrative Bayes probability display; not a calibrated individual patient
+    // prediction or a traditional three-axis logarithmic Fagan nomogram.
+    function scenarioPretest(raw) {
+      const str = String(raw == null ? "" : raw).trim();
+      if (!/^(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/.test(str)) return null;
+      const n = Number(str);
+      return Number.isFinite(n) && n > 0 && n < 100 ? n / 100 : null;
+    }
+    function faganSvg(b, pre) {
       const W = 360, H = 260, T = 24, B = 24, L = 70, R = 70, ph = H - T - B;
       const dark = matchMedia('(prefers-color-scheme:dark)').matches, fg = dark ? "#e7e4dc" : "#15181d";
-      const pre = 0.20, fp = window.AlmDTABivariate.fagan(b.lrPos, b.lrNeg, pre);
+      const fp = window.AlmDTABivariate.fagan(b.lrPos, b.lrNeg, pre);
+      if (![fp.postPos, fp.postNeg].every(v => Number.isFinite(v) && v >= 0 && v <= 1)) return "";
       const yPre = T + ph * (1 - pre);                      // pre-test on a 0..1 linear axis
       const yPos = p => T + ph * (1 - p);
       const p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      p.push("<title>Illustrative post-test probabilities at assumed pre-test probability " + (pre * 100).toFixed(1) + " percent; uncertainty not propagated</title>");
       p.push("<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>");
       p.push("<line x1='" + L + "' y1='" + T + "' x2='" + L + "' y2='" + (T + ph) + "' stroke='" + fg + "'/>");
       p.push("<line x1='" + (W - R) + "' y1='" + T + "' x2='" + (W - R) + "' y2='" + (T + ph) + "' stroke='" + fg + "'/>");
@@ -241,7 +258,7 @@
       p.push("<text x='" + (W - R) + "' y='" + (T - 8) + "' text-anchor='middle' font-size='9' fill='" + fg + "'>post-test %</text>");
       p.push("<line x1='" + L + "' y1='" + yPre + "' x2='" + (W - R) + "' y2='" + yPos(fp.postPos) + "' stroke='#2c5e8a' stroke-width='1.6'/>");
       p.push("<line x1='" + L + "' y1='" + yPre + "' x2='" + (W - R) + "' y2='" + yPos(fp.postNeg) + "' stroke='#b04444' stroke-width='1.6' stroke-dasharray='4,2'/>");
-      p.push("<text x='" + (W / 2) + "' y='" + (H - 6) + "' text-anchor='middle' font-size='10' fill='" + fg + "'>pre 20% → +test " + (fp.postPos * 100).toFixed(0) + "%, −test " + (fp.postNeg * 100).toFixed(0) + "%</text>");
+      p.push("<text x='" + (W / 2) + "' y='" + (H - 6) + "' text-anchor='middle' font-size='10' fill='" + fg + "'>pre " + (pre * 100).toFixed(1) + "% → +test " + (fp.postPos * 100).toFixed(1) + "%, −test " + (fp.postNeg * 100).toFixed(1) + "%</text>");
       p.push("</svg>"); return p.join("");
     }
 
@@ -272,6 +289,7 @@
       if (isEmpty) {
         document.getElementById('f-data').value = '';
         document.getElementById('f-title').value = '';
+        document.getElementById('f-pretest').value = '20';
       } else {
         writeState(snap);
       }
@@ -280,7 +298,7 @@
 
     // Results accessor for results-export
     window.__almResults = function () {
-      const a = analyse(readState());
+      const state = readState(), a = analyse(state);
       const r6 = v => (v == null || !isFinite(v)) ? null : +v.toFixed(6);
       const r10 = v => (v == null || !isFinite(v)) ? null : +v.toPrecision(10);
       const rows = a.studies.map(function (s) {
@@ -293,10 +311,17 @@
         };
       });
       const b = a.bivar, mr = a.metareg;
+      const pre = scenarioPretest(state.pretest);
+      const post = b && b.converged !== false && pre != null ? window.AlmDTABivariate.fagan(b.lrPos, b.lrNeg, pre) : null;
       return {
         _schema: "dta-sroc-results-v2",
         _savedAt: new Date().toISOString(),
         k: a.studies.length,
+        post_test_scenario: post && [post.postPos, post.postNeg].every(v => Number.isFinite(v) && v >= 0 && v <= 1) ? {
+          pretest_probability: r10(pre), post_positive: r10(post.postPos),
+          post_negative: r10(post.postNeg),
+          note: "Hypothetical Bayes scenario from model mean likelihood ratios; uncertainty not propagated; not calibrated individual risk."
+        } : null,
         correction_control: a.opts.correctionControl,
         alpha: a.moses ? +a.moses.A1.toFixed(8) : null,
         beta:  a.moses ? +a.moses.B1.toFixed(8) : null,
@@ -320,7 +345,16 @@
     };
 
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
-    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+    function writeState(s) {
+      for (const [k,id] of Object.entries(fields)) {
+        const el = document.getElementById(id);
+        if (el && k in s) el.value = s[k];
+      }
+      // Legacy JSON/URL states lack an assumed pre-test probability.
+      // Never inherit the previous dataset's assumption during import.
+      if (!Object.prototype.hasOwnProperty.call(s, "pretest"))
+        document.getElementById("f-pretest").value = "20";
+    }
 
     // Rows: label, TP, FP, FN, TN [, covariate]. Labels may contain commas (all leading fields).
     function parseStudies(text, covMode) {
@@ -533,6 +567,11 @@
       const state = readState();
       const a = analyse(state);
       const studies = a.studies, b = a.bivar;
+      const pre = scenarioPretest(state.pretest);
+      const input = document.getElementById("f-pretest"), error = document.getElementById("f-pretest-error");
+      input.setAttribute("aria-invalid", pre == null ? "true" : "false");
+      error.hidden = pre != null;
+      error.textContent = pre == null ? "Enter a probability strictly between 0 and 100 to see a post-test scenario." : "";
       const parts = [];
       parts.push(statCard("k", String(studies.length)));
       if (b) {
@@ -560,10 +599,12 @@
       if (a.metareg) tables += coefTableHtml(a.metareg);
       statsWrap.innerHTML = "<div class=\"stats\">" + parts.join("") + "</div>" + tables;
       const fh = document.getElementById("fagan-host"), dh = document.getElementById("deeks-host");
-      if (fh) fh.innerHTML = b ? faganSvg(b) : "";
+      if (fh) fh.innerHTML = b && b.converged !== false && pre != null ? faganSvg(b, pre) : "";
       if (dh) dh.innerHTML = a.deeks ? deeksSvg(a.deeks) : "";
 
       const extras = a.errors.slice();
+      if (pre == null) extras.push("Invalid pre-test probability: the post-test probability plot is withheld.");
+      if (b && b.converged === false) extras.push("Bivariate fit did not converge: post-test probabilities are withheld.");
       if (a.rho != null && Math.abs(a.rho) > 0.6) extras.push("Spearman |ρ| > 0.6 — threshold effect likely. Report the SROC curve rather than a single pooled Se/Sp pair.");
       const nz = studies.filter(s => s.zero).length;
       if (nz && a.opts.correctionControl === "all") extras.push(nz + " stud" + (nz === 1 ? "y has" : "ies have") + " a zero cell, so 0.5 was added to every cell of every study (mada's default rule).");
@@ -659,6 +700,7 @@
       document.getElementById("f-data").value = ex ? ex.data : EXAMPLE;
       document.getElementById("f-title").value = ex ? key + ": " + ex.title : EXAMPLE_TITLE;
       document.getElementById("f-cov").value = ex && ex.covariate ? "last" : "";
+      document.getElementById("f-pretest").value = "20";
       render();
     }
     function attach() {
