@@ -1,5 +1,8 @@
 (function(){
 'use strict';
+// Sensitivity UI is outside the frozen primary contract.
+const TEXT_SKIP='#alm-plus';
+const contractAll=selector=>[...document.querySelectorAll(selector)].filter(n=>!n.closest(TEXT_SKIP));
 const files=[{"path": "validate/corpus/corpus.json", "sha256": "a9232d92c3b777c09033b327e8b7df5e332e8b68aadb130d8e164fa4cc437744", "bytes": 638350}, {"path": "validate/corpus/reference.json", "sha256": "5efb8a571a600db2c117d57413b745104089bdef34e7a8410d096883f4081237", "bytes": 1609819}];
 const scalar=['k','fe_est','fe_se','fe_ci_lo','fe_ci_hi','re_est','re_se','re_ci_lo','re_ci_hi','tau2_dl','tau_dl','limit_est','limit_se','limit_ci_lo','limit_ci_hi','slope','alpha_r','beta_r','Q','Q_small','Q_resid','G_squared'];
 const refusalId='dat.hartmannboyce2018::001';
@@ -16,7 +19,7 @@ function capture(c){const r=window._almLastLimit();
    const invalid=[]; validateValues(r,c.te.length,'app');
    const xmin=Math.min(r.limit_est,...c.te)-.1, xmax=Math.max(r.limit_est,...c.te)+.1, ymax=Math.max(...c.se)*1.1;
    const X=x=>xmin+(x-60)/520*(xmax-xmin),Y=y=>(y-20)/280*ymax;
-   const points=[...document.querySelectorAll('#plot circle')].map(n=>({x:X(+n.getAttribute('cx')),y:Y(+n.getAttribute('cy'))}));
+   const points=contractAll('#plot circle').map(n=>({x:X(+n.getAttribute('cx')),y:Y(+n.getAttribute('cy'))}));
    const curve=document.querySelector('#plot polyline[data-regression]');
    let regression=[];
    if(curve) regression=curve.getAttribute('points').trim().split(/\s+/).map(p=>{const [x,y]=p.split(',').map(Number);return{x:X(x),y:Y(y)}});
@@ -26,7 +29,7 @@ function capture(c){const r=window._almLastLimit();
    }
    // Corpus probes stay at 65 positions on the visible rendered polyline.
    // No estimator equation is used to reconstruct missing/off-screen geometry.
-   if(document.querySelectorAll('#plot polyline[data-regression]').length!==1) throw new Error('Expected one connected automatic-bound curve');
+   if(contractAll('#plot polyline[data-regression]').length!==1) throw new Error('Expected one connected automatic-bound curve');
    const vertices=regression;
    if(vertices.length<2) throw new Error('Missing visible regression');
    regression=Array.from({length:65},(_,i)=>{
@@ -36,7 +39,7 @@ function capture(c){const r=window._almLastLimit();
      const t=(y-a.y)/(b.y-a.y);
      return {x:a.x+(b.x-a.x)*t,y};
    });
-   const table=[...document.querySelectorAll('#body tr')];
+   const table=contractAll('#body tr');
    const expected=[['Fixed effect','fe'],['Random effects (DL)','re'],['Limit (R\u00fccker)','limit']];
    const fmt=x=>Number.isFinite(x)?x.toFixed(3):'\u2014';
    const headerRows=document.getElementById('body').closest('table').tHead?.rows;
@@ -101,7 +104,7 @@ v<-get(l,'TE.limit');stopifnot(length(v)==length(te));for(i in seq_along(v))out[
 emit <- function(q){x<-out[[q,exact=TRUE]];stopifnot(is.numeric(x),length(x)==1);if(q=='G_squared'&&is.na(x))'null' else {stopifnot(is.finite(x));sprintf('%.17g',x)}}
 cat('ALMJSON:{',paste(paste0('"',names(out),'":',vapply(names(out),emit,'')),collapse=','),'}\\n',sep='')
 `;}
-const adapter={app:'limit-ma',paper:{checks:55525,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'R re-execution instructions',runUrl:'validate/README.md'},live:{packages:['meta','metasens'],paperVersions:{meta:'8.5-0',metasens:'1.5-3'},currentState,buildScript,appValues:s=>s.values,compare:{tolerance:{default:1e-9},kind:{}}},corpus:{files,run:replay}};
+const adapter={app:'limit-ma',contract:{excludedRoots:[TEXT_SKIP]},paper:{checks:55525,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'R re-execution instructions',runUrl:'validate/README.md'},live:{packages:['meta','metasens'],paperVersions:{meta:'8.5-0',metasens:'1.5-3'},currentState,buildScript,appValues:s=>s.values,compare:{tolerance:{default:1e-9},kind:{}}},corpus:{files,run:replay}};
 window.AlmLimitValidationAdapter=adapter;
 window.AlmLimitValidation=AlmValidate.mount(document.getElementById('alm-validate'),adapter);
 })();

@@ -34,7 +34,7 @@ function setAxisDefault(){const rows=[...document.querySelectorAll('#alm-axis-mo
 // and the user's own data (textarea) are excluded. Overlays that shared scripts append to <body> at runtime (citation dialog, glossary
 // tooltips) are not part of the template; the autosave draft banner has its own exact contract below.
 const TEMPLATE_ROOTS=['A','NAV','HEADER','MAIN','FOOTER'];
-const TEXT_SKIP='#alm-validate,#plot,.metrics,section:has(.metrics) > h2,#plot-error,#plot-note,#sample-error,textarea,script,style,#model,#alm-axis-mount [data-error],.alm-axis-row > label:first-of-type,#alm-csv-mount [data-section=warnings]';
+const TEXT_SKIP='#alm-plus,#alm-validate,#plot,.metrics,section:has(.metrics) > h2,#plot-error,#plot-note,#sample-error,textarea,script,style,#model,#alm-axis-mount [data-error],.alm-axis-row > label:first-of-type,#alm-csv-mount [data-section=warnings]';
 function templateRoots(){return [...document.body.children].filter(e=>TEMPLATE_ROOTS.includes(e.tagName));}
 // Each text is recorded with its element path from the landmark (tag and position among element siblings at every level), so
 // text moved between cells, rows or containers fails even when the reading order is unchanged.
@@ -47,7 +47,7 @@ function pageText(){
  for(const root of templateRoots()){
   const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
   while((n=w.nextNode())){if(n.parentElement===exportStatus||n.parentElement.closest(TEXT_SKIP))continue;const t=n.textContent.replace(/\s+/g,' ').trim();if(t)texts.push([path(n.parentElement,root),t]);}
-  for(const e of [root,...root.querySelectorAll('[aria-label],[title]')])if((e.hasAttribute('aria-label')||e.hasAttribute('title'))&&!e.closest('#alm-validate,#plot'))attrs.push([e.id||e.tagName,e.getAttribute('aria-label'),e.getAttribute('title')]);
+  for(const e of [root,...root.querySelectorAll('[aria-label],[title]')])if((e.hasAttribute('aria-label')||e.hasAttribute('title'))&&!e.closest('#alm-validate,#plot,#alm-plus'))attrs.push([e.id||e.tagName,e.getAttribute('aria-label'),e.getAttribute('title')]);
  }
  return JSON.stringify({roots:templateRoots().map(e=>e.tagName),texts,attrs});
 }

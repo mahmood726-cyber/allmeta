@@ -11,8 +11,41 @@ the section is renamed to that version and dated, and a fresh
 
 ## [Unreleased]
 
+### Fixed
+- E-value input validation distinguishes malformed number text from omitted
+  confidence limits, rejects incomplete or inconsistent intervals, and clears
+  stale results on refusal. Missing uncertainty no longer implies a null-crossing CI.
+- Cross-design power-prior pooling at alpha=0 now estimates heterogeneity from
+  RCTs alone. Observational-only input at alpha=0 displays a non-estimable result
+  without crashing the plot or leaving stale export state. Earlier alpha=0
+  results with mixed designs should be rerun; positive-alpha behavior is unchanged.
+
 ### Added
 - _(items added since the most recent tag will be listed here)_
+
+---
+
+## [1.7.0] — 2026-10-18
+
+New features for `limit-ma` and `gosh`, each in a separate "extras" section with its own Validate-in-R panel. The
+original computation and each paper's validation replay are unchanged (`limit-ma` 55,524 of 55,525 with the one
+documented status mismatch; `gosh` 876,760 of 876,760).
+
+### Added
+- **limit-ma** (#131): a comparison table and forest plot of bias-adjusted estimates - random effects (DL), limit
+  meta-analysis, trim-and-fill (labelled a sensitivity analysis), PET, PEESE, conditional PET-PEESE and the
+  three-parameter selection model (ML); a combined funnel plot with switchable layers; Egger, Peters, Q.small and
+  Q.resid tests with p-values and a low-power caveat; interpretation text computed from the results. Its own validation
+  corpus: 169 configurations, 16,097 checks against metafor 5.2-1, meta 8.5-0 and metasens 1.5-3. The existing
+  selection-model code used by `pubbias-tests` is unchanged; the new fitting path is used only by these extras.
+- **gosh** (#132): highlighting of the subsets that include chosen studies, a sortable per-study table comparing
+  subsets with and without each study (no p-values), and a choice of y-axis (I², H², Q, DL τ², τ). Its own validation
+  corpus: 75 input configurations, 150 FE/DL cases, 1,153,536 checks against metafor 5.2-1 `gosh`.
+- **Validate-the-extras panels** check the numbers, text, labels, table structure, on-screen geometry and painted style
+  of the new plots against a clean same-browser reference render. Axis labels are checked only where the scale is fixed
+  by values already validated against R, and fail when more than half a tick step from their position; other axes are
+  reported "not checked". The panels do not prove pixels and do not resist CSS injected into the page; a Windows Edge
+  pixel test in CI covers the new plots.
 
 ---
 
