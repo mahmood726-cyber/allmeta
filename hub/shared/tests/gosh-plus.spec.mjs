@@ -1,4 +1,5 @@
 import {test,expect} from './validation-fixture.mjs';
+import {test as arithmeticTest} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 // Validate settled rendering, not the shared panel entrance animation's zero-opacity frame.
 test.use({reducedMotion:'reduce'});
@@ -267,7 +268,7 @@ for(const [target,property,value] of [
 
 
 for(const model of ['FE','DL'])for(const axis of ['x','y'])
-for(const mutation of ['one label','swap labels','shift labels','scale'])test(`extras independent axis ${model} ${axis} ${mutation}`,async({page})=>{
+for(const mutation of ['one label','swap labels','shift labels','scale','0e309','1e-400','0e999999999999999999999','0e-999999999999999999999','0e308'])test(`extras independent axis ${model} ${axis} ${mutation}`,async({page})=>{
  let intercepted=false;
  await page.route('**/gosh/plus.js',async route=>{
   let body=(await(await route.fetch()).text()).replace(/\r\n/g,'\n');
@@ -276,7 +277,7 @@ for(const mutation of ['one label','swap labels','shift labels','scale'])test(`e
    body=body.replace(before,`return offset+(offset===${axis==='x'?60:30}?5:0)+size*((v/s-lo/s)/(hi/s-lo/s));`);
   }else{
    const hook='\n  }\n  function draw() {';expect(body).toContain(hook);
-   const edit=mutation==='one label'?"ns[0].textContent=String(v[0]+step);":mutation==='swap labels'?"ns[0].textContent=old[1];ns[1].textContent=old[0];":"ns.forEach((n,i)=>n.textContent=String(v[i]+step));";
+   const edit=mutation.includes('e')&&/^\d+e/.test(mutation)?`ns.forEach(n=>n.textContent=${JSON.stringify(mutation)});`:mutation==='one label'?"ns[0].textContent=String(v[0]+step);":mutation==='swap labels'?"ns[0].textContent=old[1];ns[1].textContent=old[0];":"ns.forEach((n,i)=>n.textContent=String(v[i]+step));";
    body=body.replace(hook,`\n{const ns=[...svg.querySelectorAll('text')].slice(${axis==='x'?'2,4':'4,6'}),old=ns.map(n=>n.textContent),v=old.map(Number),step=v[1]-v[0];${edit}}`+hook);
   }
   intercepted=true;await route.fulfill({contentType:'application/javascript',body});
@@ -331,4 +332,37 @@ for(const het of ['Q','H2'])for(const axis of ['clean','x','y'])test(`extras con
  if(axis==='clean')expect(result.error).toBeNull();
  else if(result.axes.find(r=>r.axis==='extra '+axis)?.checked)expect(result.error).toMatch(/calibrated axis/);
  else {expect(result.error).toBeNull();expect(result.axes.find(r=>r.axis==='extra '+axis)?.message).toContain('not checked');}
+});
+
+// Synthetic arithmetic counterexamples: no corpus or renderer changes.
+for(const [name,labels,valid] of [
+ ['clean',['0','10'],true],['impossible finite exponent',['0e0','1e1'],false],
+ ['moderate impossible exponent',['0e2','0e2'],false],
+ ['ordinary wrong',['0','20'],false],['overflow',['0e309','0e309'],false],
+ ['underflow',['1e-400','1e-400'],false],
+ ['huge positive',['0e999999999999999999999','0'],false],
+ ['huge negative',['0e-999999999999999999999','10'],false],
+ ['exponent outside axis range',['0e308','0e308'],false],
+ ['zero unit',['0.'+'0'.repeat(400),'10'],false]
+])arithmeticTest('axis precision arithmetic '+name,()=>{
+ const source=readFileSync(new URL('../../../gosh/validate/adapter-plus.js',import.meta.url),'utf8');
+ const start=source.indexOf('// Axis-label coverage'),end=source.indexOf('  function plotGeometry',start);
+ expect(start).toBeGreaterThanOrEqual(0);expect(end).toBeGreaterThan(start);
+ const run=new Function(source.slice(start,end)+"return labels=>calibratedTicks([[0,0],[10,100]],labels.map((text,i)=>({text,position:i*100})),12,'test');")();
+ if(valid)expect(()=>run(labels)).not.toThrow();else expect(()=>run(labels)).toThrow(/calibrated axis/);
+});
+
+for(const [name,values,labels,valid] of [
+ ['rounded collision',[1,1.0000000000002],['1','1'],true],
+ ['small scientific',[1e-8,2e-8],['1.00e-8','2.00e-8'],true],
+ ['large scientific',[1e22,2e22],['1.00e22','2.00e22'],true],
+ ['finite exponent beyond magnitude',[1,2],['0e308','0e308'],false],
+ ['exponent below positive axis',[1,2],['1e-100','2'],false],
+ ['rounding exponent boundary',[9.99999999999999e-8,2e-7],['1.00e-7','2.00e-7'],true]
+])arithmeticTest('axis precision arithmetic '+name,()=>{
+ const source=readFileSync(new URL('../../../gosh/validate/adapter-plus.js',import.meta.url),'utf8');
+ const start=source.indexOf('// Axis-label coverage'),end=source.indexOf('  function plotGeometry',start);
+ expect(start).toBeGreaterThanOrEqual(0);expect(end).toBeGreaterThan(start);
+ const run=new Function(source.slice(start,end)+"return (values,labels)=>calibratedTicks(values.map((v,i)=>[v,i*100]),labels.map((text,i)=>({text,position:i*100})),12,'test');")();
+ if(valid)expect(()=>run(values,labels)).not.toThrow();else expect(()=>run(values,labels)).toThrow(/calibrated axis/);
 });
