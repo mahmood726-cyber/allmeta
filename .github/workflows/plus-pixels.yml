@@ -1,0 +1,24 @@
+name: Plus pixels
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  dta-sroc-pixels:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: npm ci
+      - run: npx playwright install msedge
+      - run: npx playwright test --config ../../../dta-sroc/validate/playwright.pixels.config.mjs --workers=1
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: dta-sroc-pixel-diffs
+          path: hub/shared/tests/test-results/

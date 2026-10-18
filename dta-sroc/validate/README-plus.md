@@ -31,13 +31,17 @@ The iterative p/z rule was set by the host on 18 October **after observing six p
 | dat.kearon1998/year/ml/single/p/3 | 0.44916479584294045 | 0.44916479208773802 | 3.75520242679e-09 |
 | dat.kearon1998/patients/ml/single/p/3 | 0.54386907749720637 | 0.54386907890210001 | 1.40489364586e-09 |
 
-## What the panels check
+## Scope and limits
+
+The panel checks the numbers, text, labels and structure the renderer emits; it does not prove pixels. Visual/presentation regressions, including native HTML direction overrides that preserve parsed text, are caught by the CI pixel suite. The panel does not resist CSS deliberately injected into the page.
+
+### What the panels check
 
 The offline extras panel SHA-256 verifies the LF-byte corpus before reading it. `MANIFEST-plus.json` and `plus-pins.js` contain the same pins; `.gitattributes` preserves LF on checkout. It recomputes every reference fit and prediction, compares all exported numeric fields and labels, visible numeric cells and result labels (including the exact ordered element/label/key structure, binding each coefficient to its outcome/term row and column heading, and each summary value to its label; numeric comparisons use independent reference positions rather than UI-supplied keys), exact refusal text, and export availability. Only effectively visible cells and text participate: hidden attributes, display:none, visibility:hidden/collapse, zero-size elements, aria-hidden and transparent elements are rejected on values or their ancestors. The visible ordered structure must match the reference, including headers, row labels and summary containers. Inputs are restored after replay. The numerical-only replay has 195,291 checks; many are repeated across prevalence values and include shape checks. These are not independent research findings.
 
 For the plot, a separate fixed reference renderer draws the R-validated coordinates in a clean iframe in the same browser. The contract compares path/point geometry, effective screen matrices and local SVG bounds transformed into screen coordinates relative to the SVG, text, computed stroke/fill/dashes/opacity/visibility and text styles. The reference scales to the actual SVG width so legitimate responsive sizing does not fail. Screen bounds are derived from getBBox() and getScreenCTM(), avoiding origin-dependent rounding in getBoundingClientRect() on a long page versus an iframe. Geometry retains the existing 1e-7 comparison tolerance; numerical tolerances are unchanged. The ROC axes have a fixed unit scale linked to the validated marks, so their labels are checked. This is a geometry/painted-style contract, not a screenshot pixel-diff claim. The panel **does not resist CSS deliberately injected into the page**, or JavaScript that modifies the validator/reference renderer itself. Renderer-produced hidden structure is in scope; CSS deliberately injected after rendering remains out of scope. It is not a security boundary.
 
-The live panel uses the same-origin bundled webR mada 0.5.12 (with metafor 4.8-0 as a package dependency). It checks 28 coefficient and summary/post-test values for current inputs against a fresh R fit. Region coordinates, export and DOM painting are covered by the offline corpus panel, not this live check. Missing packages/resources, unexpected versions, missing fields and R failures produce an explicit failure/unavailability, never a pass. No network package download is required by these scripts.
+The live panel uses the same-origin bundled webR mada 0.5.12 (with metafor 4.8-0 as a package dependency). It checks 28 coefficient and summary/post-test values for current inputs against a fresh R fit. Region coordinates, export and DOM structure are covered by the offline corpus panel, not this live check. Missing packages/resources, unexpected versions, missing fields and R failures produce an explicit failure/unavailability, never a pass. No network package download is required by these scripts.
 
 The original adapter in the recorded base has no page-text collector; its numerical contract excludes the extras by construction and remains at 855 checks. A comment records #alm-plus as out of scope. The named limit-ma plus templates were absent from the base; no original page-text collector or check count was invented.
 
@@ -62,3 +66,15 @@ node allmeta/dta-sroc/validate/replay-original-plus.mjs
 | Tolerances, convergence, labels and plot scale | Static protocol | Host decision and declared UI contract |
 | Fits, regions, probabilities and exports | Dynamic | JavaScript engines and current inputs |
 | Validation outcomes | Dynamic | Replays and tests on each run |
+
+## Windows Edge pixel regression suite
+
+`hub/shared/tests/dta-sroc-plus-pixels.spec.mjs` pins ten configurations from the unchanged R corpus: both datasets, all three covariates and fit methods, all/single/none correction, prevalence boundaries and interior values, and two 390 x 844 mobile layouts. Each checks the coefficients table, summary cards and ROC plot separately against the 30 PNGs in `pixel-references/`. Desktop viewport is 1280 x 900; DPR 1, light colour scheme and reduced motion are fixed. The pixel colour threshold is 0.2 and maximum differing-pixel ratio 0.0001. Coverage is limited to these configurations and Windows Edge rendering; this is not proof of every possible presentation.
+
+Three expected-failure tests first verify a clean baseline, then require the real screenshot matcher to reject table/card `<bdo dir="rtl">` renderer wrappers or a changed prediction-region stroke. An undetected mutation is an unexpected pass and fails the suite. CI never updates snapshots. Reference updates require visual review on Windows Edge; run with `--update-snapshots --grep-invert negative` only when intentionally regenerating them.
+
+```text
+npx playwright test --config ../../../dta-sroc/validate/playwright.pixels.config.mjs --workers=1
+```
+
+Run from `hub/shared/tests`. The app-specific config uses port 8000 in CI; the lane scratch override uses 8103. The workflow job is `dta-sroc-pixels`, to coexist with other apps' pixel jobs.
