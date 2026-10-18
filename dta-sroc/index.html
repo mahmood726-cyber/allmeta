@@ -395,7 +395,18 @@
           if (d.error) errors.push("Meta-regression: " + d.error + ".");
           else { try { out.metareg = B.fit(rows, Object.assign({}, opts, { X: d.X, covariateNames: d.names })); } catch (e) { errors.push("Meta-regression: " + e.message); } }
         }
-        try { out.deeks = B.deeksTest(rows); } catch (e) { out.deeks = null; }
+        try {
+          const d = B.deeksTest(rows);
+          // A Deeks slope/p-value is not identified when effective sample sizes are
+          // constant, or when the weighted regression gives non-finite inference.
+          const valid = d && [d.slope, d.intercept, d.t, d.p, d.df].every(Number.isFinite) &&
+            d.p >= 0 && d.p <= 1 && Array.isArray(d.x) && Array.isArray(d.y) &&
+            d.x.length === rows.length && d.y.length === rows.length &&
+            d.x.every(Number.isFinite) && d.y.every(Number.isFinite) &&
+            Math.max(...d.x) > Math.min(...d.x);
+          if (valid) out.deeks = d;
+          else errors.push("Deeks' test not estimable: the effective sample sizes lack variation or the weighted regression produced non-finite inference.");
+        } catch (e) { errors.push("Deeks' test unavailable: " + e.message); }
       }
       return out;
     }
