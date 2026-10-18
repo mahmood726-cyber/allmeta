@@ -3268,47 +3268,42 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     }, 50)), (e.ctrlKey || e.metaKey) && "d" === e.key && (e.preventDefault(), document.getElementById("loadDemoBtn").click()), "?" !== e.key || e.ctrlKey || e.metaKey || ["INPUT", "TEXTAREA"].includes(e.target.tagName) || (e.preventDefault(), showKeyboardShortcutsHelp()), "Escape" === e.key && (document.getElementById("forestSettingsPanel")?.classList.add("hidden"), document.getElementById("funnelSettingsPanel")?.classList.add("hidden"), closeKeyboardShortcutsHelp())
   }), document.getElementById("importCsvBtn").addEventListener("click", () => {
-    const e = document.createElement("input");
-    e.type = "file", e.accept = ".csv,.tsv,.txt", e.onchange = e => {
-      const t = e.target.files[0];
-      if (!t) return;
-      const n = new FileReader;
-      n.onload = e => {
+    const chooser = document.createElement("input");
+    chooser.type = "file";
+    chooser.accept = ".csv,.tsv,.txt";
+    chooser.onchange = event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = event => {
         try {
-          const n = e.target.result,
-            a = n.split("\n").filter(e => e.trim());
-          if (a.length < 2) return void alert("CSV must have header row and at least one data row");
-          const s = n.includes("\t") ? "\t" : ",";
+          // Validate ALL rows before any existing user data is replaced.
+          const imported = parsePairwiseBinaryCSV(event.target.result);
+          if (canUseUndoManager()) UndoManager.saveState("Import CSV");
+          AppState.settings.dataType = "binary";
+          document.getElementById("dataTypeSelect").value = "binary";
+          updateEffectMeasures();
+          updateTableHeaders();
           document.getElementById("studyTableBody").innerHTML = "";
-          const i = a[0].split(s).map(e => e.trim().toLowerCase().replace(/"/g, "")),
-            r = i.findIndex(e => e.includes("study") || e.includes("name") || e.includes("author")),
-            o = i.findIndex(e => e.includes("event") && e.includes("t") || "events_t" === e || "ai" === e),
-            l = i.findIndex(e => e.includes("n") && e.includes("t") || "n_t" === e || "n1" === e),
-            d = i.findIndex(e => e.includes("event") && e.includes("c") || "events_c" === e || "bi" === e),
-            c = i.findIndex(e => e.includes("n") && e.includes("c") || "n_c" === e || "n2" === e);
-          let u = 0;
-          a.slice(1).forEach(e => {
-            const t = e.split(s).map(e => e.trim().replace(/"/g, ""));
-            if (t.length >= 5) {
-              const e = r >= 0 ? t[r] : t[0],
-                n = parseInt(o >= 0 ? t[o] : t[1]) || 0,
-                a = parseInt(l >= 0 ? t[l] : t[2]) || 0,
-                s = parseInt(d >= 0 ? t[d] : t[3]) || 0,
-                i = parseInt(c >= 0 ? t[c] : t[4]) || 0;
-              (a > 0 || i > 0) && (addStudyRow({
-                name: e,
-                events_t: n,
-                n_t: a,
-                events_c: s,
-                n_c: i
-              }), u++)
-            }
-          }), updateDataSummary(), alert(`Imported ${u} studies from ${t.name}`)
-        } catch (e) {
-          log.error("CSV import failed:", e), alert("Failed to parse CSV: " + e.message)
+          imported.forEach(study => addStudyRow(study, false));
+          AppState.studies = imported;
+          AppState.results = null;
+          for (const id of ["panel-analysis", "panel-heterogeneity", "panel-bias"]) {
+            const panel = document.getElementById(id);
+            if (panel) panel.innerHTML = '<div class="card"><div class="card__body" role="status">Previous results cleared after importing new study data. Run analysis again.</div></div>';
+          }
+          updateFloatingNav();
+          _updateDataSummary();
+          alert("Imported " + imported.length + " validated binary studies from " + file.name + ". Re-run the analysis.");
+        } catch (error) {
+          log.error("CSV import refused:", error);
+          alert("CSV import refused; existing studies were preserved. " + error.message);
         }
-      }, n.readAsText(t)
-    }, e.click()
+      };
+      reader.onerror = () => alert("CSV import failed to read; existing studies were preserved.");
+      reader.readAsText(file);
+    };
+    chooser.click();
   }), document.getElementById("exportCsvBtn").addEventListener("click", () => {
     const e = getStudyData().filter(e => e.valid);
     if (0 === e.length) return void alert("No valid studies to export.");
@@ -3372,6 +3367,93 @@ function getStudyTableSnapshot() {
     }), n.push(a)
   }), n
 }
+
+/**
+ * Strict, atomic binary CSV/TSV import. This parser does not infer denominators
+ * from broad substring matches (for example "events_t" contains both n and t).
+ * It refuses missing, duplicate, malformed and fractional counts before
+ * changing the on-screen study table.
+ */
+function parsePairwiseBinaryCSV(text) {
+  if (typeof text !== "string") throw new Error("CSV must be text");
+  const data = text.replace(/^\uFEFF/, "");
+  const delimiter = data.split(/\r?\n/, 1)[0].includes("\t") ? "\t" : ",";
+  const rows = [];
+  let row = [], field = "", quoted = false, closedQuote = false;
+  for (let i = 0; i < data.length; i++) {
+    const ch = data[i];
+    if (quoted) {
+      if (ch === '"' && data[i + 1] === '"') { field += '"'; i++; }
+      else if (ch === '"') { quoted = false; closedQuote = true; }
+      else field += ch;
+    } else if (ch === '"') {
+      if (field.trim() || closedQuote) throw new Error("Unexpected quote in CSV field");
+      quoted = true;
+    } else if (ch === delimiter || ch === "\r" || ch === "\n") {
+      row.push(field.trim());
+      field = "";
+      closedQuote = false;
+      if (ch === "\r" || ch === "\n") {
+        if (ch === "\r" && data[i + 1] === "\n") i++;
+        if (row.some(v => v !== "")) rows.push(row);
+        row = [];
+      }
+    } else {
+      if (closedQuote && !/\s/.test(ch)) throw new Error("Characters after quoted CSV field");
+      field += ch;
+    }
+  }
+  if (quoted) throw new Error("Unterminated quoted CSV field");
+  row.push(field.trim());
+  if (row.some(v => v !== "")) rows.push(row);
+  if (rows.length < 2) throw new Error("CSV needs a header and at least one study");
+  const normalize = s => s.toLowerCase().replace(/[()]/g, "").replace(/[\s-]+/g, "_");
+  const headers = rows[0].map(normalize);
+  if (new Set(headers).size !== headers.length) throw new Error("Duplicate CSV column names");
+  const aliases = {
+    name: ["study", "study_name", "study_id", "name", "author"],
+    events_t: ["events_t", "event_t", "treatment_events", "events_treatment", "ai", "a"],
+    n_t: ["n_t", "nt", "n1", "total_t", "treatment_total"],
+    events_c: ["events_c", "event_c", "control_events", "events_control", "bi", "c"],
+    n_c: ["n_c", "nc", "n2", "total_c", "control_total"],
+    subgroup: ["subgroup"]
+  };
+  const positions = {};
+  for (const [key, names] of Object.entries(aliases)) {
+    const matches = headers.map((header, i) => names.includes(header) ? i : -1).filter(i => i >= 0);
+    if (matches.length > 1) throw new Error("Multiple columns match " + key);
+    positions[key] = matches.length ? matches[0] : -1;
+  }
+  const required = ["events_t", "n_t", "events_c", "n_c"];
+  for (const key of required) if (positions[key] < 0) {
+    throw new Error("Missing required CSV column: " + key);
+  }
+  const count = (value, line, key) => {
+    if (!/^\d+$/.test(value)) throw new Error("Row " + line + ": " + key + " must be a complete non-negative integer");
+    const n = Number(value);
+    if (!Number.isSafeInteger(n)) throw new Error("Row " + line + ": " + key + " exceeds safe integer range");
+    return n;
+  };
+  return rows.slice(1).map((cells, index) => {
+    const line = index + 2;
+    if (cells.length !== headers.length) throw new Error("Row " + line + ": expected " + headers.length + " columns; found " + cells.length);
+    const v = key => positions[key] < 0 ? "" : cells[positions[key]];
+    const study = {
+      name: v("name") || "Study " + (index + 1),
+      events_t: count(v("events_t"), line, "events_t"),
+      n_t: count(v("n_t"), line, "n_t"),
+      events_c: count(v("events_c"), line, "events_c"),
+      n_c: count(v("n_c"), line, "n_c"),
+      subgroup: v("subgroup")
+    };
+    if (study.n_t === 0 || study.n_c === 0) throw new Error("Row " + line + ": both arm denominators must be positive");
+    if (study.events_t > study.n_t || study.events_c > study.n_c) {
+      throw new Error("Row " + line + ": events cannot exceed their arm denominator");
+    }
+    return study;
+  });
+}
+
 function bindEventListeners() {
   document.getElementById("addStudyBtn").addEventListener("click", () => {
     addStudyRow()
