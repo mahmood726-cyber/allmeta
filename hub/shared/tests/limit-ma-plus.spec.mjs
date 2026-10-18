@@ -355,3 +355,38 @@ test('limit-ma-plus cursor-only styles preserve a correct display',async({page})
   return AlmLimitPlusContract.geometry(r,c,limit);
  })).toEqual([]);
 });
+
+
+// Intercept renderer source BEFORE initialization: the isolated renderer receives
+// the same regression, so it cannot act as the semantic/numeric oracle.
+for(const [plot,axis] of [['forest','x'],['funnel','x'],['funnel','y']])
+for(const mutation of ['one label','swap labels','shift labels','scale'])test(`limit-ma-plus independent axis ${plot} ${axis} ${mutation}`,async({page})=>{
+ let intercepted=false;
+ await page.route('**/limit-ma/plus-ui.js',async route=>{
+  let body=await (await route.fetch()).text();
+  if(mutation==='scale'){
+   const pair=plot==='forest'?['const X=x=>220+450*','const X=x=>225+450*']:axis==='x'?['const xx=x=>60+600*','const xx=x=>65+600*']:['yy=s=>20+290*','yy=s=>25+290*'];
+   expect(body).toContain(pair[0]);body=body.replace(...pair);
+  }else{
+   const hook='\n}\nfunction current(){';expect(body).toContain(hook);
+   const edit=mutation==='one label'?"ns[0].textContent=String(v[0]+step);":mutation==='swap labels'?"ns[0].textContent=old[1];ns[1].textContent=old[0];":"ns.forEach((n,i)=>n.textContent=String(v[i]+step));";
+   body=body.replace(hook,`\n{const ns=[...lookup('plus-${plot}').querySelectorAll('[data-plus-tick-label="${axis}"]')],old=ns.map(n=>n.textContent),v=old.map(Number),step=v[1]-v[0];${edit}}`+hook);
+  }
+  intercepted=true;await route.fulfill({contentType:'application/javascript',body});
+ });
+ await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ const errors=await page.evaluate(async()=>{
+  const loaded=await AlmLimitPlusValidation.prepare(),f=AlmLimitPlusValidationAdapter.corpus.files,c=loaded[f[0].path][0],ref=loaded[f[1].path][0].methods;
+  __almLimitValidationRun(c.te.map((v,i)=>v+','+c.se[i]).join('\n'),true);
+  const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);AlmLimitPlusUI.render(r,c,limit);
+  const a=AlmLimitPlusContract.flatten(r),b=AlmLimitPlusContract.flatten(ref);
+  for(const [q,v] of Object.entries(b))if(!AlmValidate.compare(a[q],v,typeof v==='number'?'rel':'exact',AlmLimitPlusContract.tolerance(q)).pass)throw Error('Unvalidated calibration source '+q);
+  return AlmLimitPlusContract.geometry(r,c,limit);
+ });
+ expect(intercepted).toBe(true);expect(errors.some(e=>e.includes(`plus-${plot} ${axis} calibrated axis`))).toBe(true);
+});
+for(const [before,after] of [["textContent='SE'","textContent='SD'"],["textContent='Effect (entered scale)'","textContent='Wrong effect'"]])test('limit-ma-plus independent title '+before,async({page})=>{
+ await page.route('**/limit-ma/plus-ui.js',async route=>{const body=await(await route.fetch()).text();expect(body).toContain(before);await route.fulfill({contentType:'application/javascript',body:body.replace(before,after)});});
+ await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);await page.locator('#plus-run').click();
+ expect(await page.evaluate(()=>{const {results,c,limit}=AlmLimitPlusUI.snapshot();return AlmLimitPlusContract.geometry(results,c,limit);})).toContain('funnel axis titles');
+});

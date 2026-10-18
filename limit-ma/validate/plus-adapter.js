@@ -140,6 +140,54 @@ function paintContract(reference,failures){
 // Independently invert SVG coordinates into entered effect/SE units. The gate
 // uses source results (already compared to the pinned oracle), never SVG metadata.
 // Relative tolerance 1e-9 with unit floor; SVG layout coordinates use the same bound.
+
+// Independent affine calibration from source-backed marks, never renderer scale
+// functions, tick metadata, or a second rendering. Coordinates are CSS pixels.
+function calibratedTicks(samples,ticks,digits,name) {
+ const fail=message=>{throw Error(name+' calibrated axis '+message);};
+ if(samples.length<2||samples.some(p=>!p.every(Number.isFinite)))fail('missing finite marks');
+ const values=samples.map(p=>p[0]),lo=Math.min(...values),hi=Math.max(...values),span=hi-lo;
+ const labels=ticks.map(t=>Number(t.text));
+ if(ticks.length!==2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
+ // A constant quantity has no identifiable scale. Check it exactly rather than
+ // inventing a second calibration mark; the independent geometry gate checks
+ // the renderer's constant-axis midpoint convention.
+ if(span===0){if(labels.some(v=>v!==lo))fail('constant labels');return;}
+ // Compensated sums prevent accumulation error in large point clouds from
+ // becoming an apparent nonzero label at the zero endpoint.
+ const sum=xs=>{let s=0,c=0;for(const x of xs){const t=s+x;c+=Math.abs(s)>=Math.abs(x)?(s-t)+x:(x-t)+s;s=t;}return s+c;};
+ const z=values.map(v=>(v-lo)/span),zm=sum(z)/z.length;
+ const pm=sum(samples.map(p=>p[1]))/samples.length;
+ const variance=sum(z.map(v=>(v-zm)**2));
+ const slope=sum(z.map((v,i)=>(v-zm)*(samples[i][1]-pm)))/variance;
+ const intercept=pm-slope*zm;
+ // At least two distinct marks spanning > .02 CSS px; all marks participate
+ // in least squares. Residual <= 1e-7 CSS px (raw SVG positions, not float bbox).
+ if(!Number.isFinite(slope)||Math.abs(slope)<=.02)fail('insufficient separation');
+ if(samples.some((p,i)=>Math.abs(p[1]-(intercept+slope*z[i]))>1e-7))fail('non-affine marks');
+ const inferred=ticks.map(t=>lo+span*(t.position-intercept)/slope);
+ const step=inferred[1]-inferred[0];
+ if(!(step>0)||!(labels[1]>labels[0]))fail('non-monotone labels');
+ const tolerances=inferred.map((v,i)=>{
+  // Half of the last displayed significant digit; never half a tick step.
+  const unit=v===0?0:10**(Math.floor(Math.log10(Math.abs(v)))-digits+1);
+  // Account for cancellation of the screen origin and leverage when an
+  // endpoint lies beyond the observed marks. This is an arithmetic allowance,
+  // not a pixel/layout tolerance; the half-interval cap remains fail-closed.
+  const screenMagnitude=Math.max(1,Math.abs(ticks[i].position),...samples.map(p=>Math.abs(p[1])));
+  const magnitude=Math.max(1,Math.abs(lo),Math.abs(hi),Math.abs(v),span*screenMagnitude/Math.abs(slope));
+  const leverage=1+Math.abs((ticks[i].position-intercept)/slope-zm)*sum(z.map(v=>Math.abs(v-zm)))/variance;
+  const tolerance=unit/2+64*Number.EPSILON*magnitude*leverage;
+  if(tolerance>=step/2)fail('insufficient label precision');
+  if(Math.abs(labels[i]-v)>tolerance)fail('label does not match mark scale: '+JSON.stringify({label:labels[i],inferred:v,tolerance}));
+  return tolerance;
+ });
+ // These renderers intentionally have two endpoint ticks (one interval).
+ // Check its numeric spacing against calibrated screen spacing, allowing only
+ // the two endpoint rounding budgets; no interior equal-spacing claim is made.
+ if(Math.abs((labels[1]-labels[0])-step)>tolerances[0]+tolerances[1])fail('tick spacing');
+}
+
 function geometry(r,c,limit){
  const failures=[];
  const close=(a,b)=>finite(a)&&finite(b)&&Math.abs(a-b)<=1e-9*Math.max(1,Math.abs(b));
@@ -257,6 +305,24 @@ function geometry(r,c,limit){
   count(pairs,curve.length,'curve '+i);
   curve.forEach(([x,se],j)=>{const p=pairs[j]||[];screenEq(screen(paths[i],p[0],p[1]),funnelPoint(x,se),'curve '+i+':'+j);if(p.length!==2)failures.push('curve coordinate arity');eq(invertX(p[0]),x,'curve effect '+i+':'+j);eq(invertY(p[1]),se,'curve SE '+i+':'+j);});
  });
+
+ // Calibrate each independent axis from entered studies / validated estimates.
+ // Use the source SVG point and its CTM to avoid getBBox float truncation.
+ const mark=(n,axis)=>screen(n,attr(n,'cx'),attr(n,'cy'))[axis];
+ function checkTicks(svg,name,samples){
+  const ticks=[...svg.querySelectorAll('[data-plus-axis="'+name+'"]')];
+  const labels=[...svg.querySelectorAll('[data-plus-tick-label="'+name+'"]')];
+  try {calibratedTicks(samples,ticks.map((n,i)=>{const p=n.getPointAtLength(0);return {text:labels[i]?.textContent||'',position:screen(n,p.x,p.y)[name]};}),3,svg.id+' '+name);}
+  catch(e){failures.push(e.message);}
+ }
+ checkTicks(forest,'x',fits.map((key,i)=>[r[key].values.mu,mark(dots[i],'x')]));
+ // Original study inputs are pinned inputs to R; do not use transformed or
+ // imputed points to establish the scale (their geometry is checked above).
+ checkTicks(funnel,'x',c.te.map((v,i)=>[v,mark(studies[i],'x')]));
+ checkTicks(funnel,'y',c.se.map((v,i)=>[v,mark(studies[i],'y')]));
+ const titles=[...funnel.querySelectorAll('text:not([data-plus-tick-label])')];
+ if(titles.length!==2||titles[0]?.textContent!=='Effect (entered scale)'||titles[1]?.textContent!=='SE')failures.push('funnel axis titles');
+
  // A geometry failure already fails the render. Only clean geometry needs
  // the more expensive full-property comparison; no checks are relaxed.
  if(!failures.length)paintContract(paintReference(r,c,limit),failures);
