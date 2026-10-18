@@ -1,0 +1,21 @@
+Local oracle session record, 2026-10-16 (selected verbatim output, not complete stdout)
+Host: PC2. R 4.6.0. Local archived libraries; no offload execution.
+metafor 5.2.1; meta 8.5.0; metasens 1.5.3; metadat 1.6.0.
+
+PLUS ORACLE COMPLETE 169 configurations; host PC2
+Error: unexpected end of input
+Execution halted
+
+The generator wrote all 169 records before this trailing parse error. Its file
+was edited during that run. The final source subsequently parsed successfully
+in a clean R process; the completed reference was retained, not fabricated or
+replaced with browser outputs. See generator-verification.log for the clean
+version, syntax, identifier-coverage and SHA-256 checks (exit_code=0).
+
+PETERS SOURCE-VERIFIED 1 existing configuration; host PC2
+PETERS OR SOURCE-VERIFIED dat.bornmann2007::001 host PC2
+Both binary enrichment commands exited 0 and verified effect/SE alignment
+against the original source-row-indexed configurations before writing counts.
+
+All source and reference JSON bytes are canonical UTF-8 with LF. See
+MANIFEST-plus.json and the browser pins for the final SHA-256 values.
