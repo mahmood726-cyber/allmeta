@@ -19,6 +19,17 @@ function screenBox(n,origin,m){
 }
 function painted(svg){const origin=svg.getBoundingClientRect();let opacity=1;for(let a=svg;a;a=a.parentElement)opacity*=Number(a.ownerDocument.defaultView.getComputedStyle(a).opacity);const result=[{effectiveOpacity:opacity}];for(const n of [svg,...svg.querySelectorAll('*')]){const s=n.ownerDocument.defaultView.getComputedStyle(n),r=n.getBoundingClientRect(),m=n.getScreenCTM?.();result.push({tag:n.tagName,text:n.tagName==='text'?n.textContent:'',attributes:['d','cx','cy','r','viewBox','transform'].map(k=>n.getAttribute(k)),box:screenBox(n,origin,m),matrix:m?[m.a,m.b,m.c,m.d,m.e-origin.x,m.f-origin.y]:null,style:['display','visibility','opacity','fill','fillOpacity','stroke','strokeOpacity','strokeWidth','strokeDasharray','strokeLinecap','strokeLinejoin','clipPath','filter'].concat(n.tagName==='text'?['fontFamily','fontSize','fontWeight']:[]).map(k=>s[k])});}return result;}
 function compareObjects(check,id,a,b,t){const aa=flatten(a),bb=flatten(b);check(id+'/keys',JSON.stringify(Object.keys(aa).sort()),JSON.stringify(Object.keys(bb).sort()));for(const [k,v]of Object.entries(bb))check(id+'/'+k,aa[k],v,typeof v==='number'?t:0,k.endsWith('.p'));}
+// Preserve the ordered label/element/key tree, excluding only numeric text and
+// SVG (checked separately). This binds each key to its row, column and label,
+// and rejects missing, repeated, relocated or unexpected cells and containers.
+function displayStructure(root){
+ function visit(n){
+  if(n.nodeType===3)return n.textContent.replace(/\s+/g,' ').trim()||null;
+  if(n.nodeType!==1||n.tagName==='svg')return null;
+  return {tag:n.tagName,key:n.getAttribute('data-value'),colspan:n.getAttribute('colspan'),rowspan:n.getAttribute('rowspan'),children:n.hasAttribute('data-value')?[]:Array.from(n.childNodes,visit).filter(v=>v!==null)};
+ }
+ return Array.from(root.childNodes,visit).filter(v=>v!==null);
+}
 async function replay(){const c=await load(),saved={data:el('data').value,method:el('method').value,correction:el('correction').value,at:el('at').value,prevalence:el('prevalence').value,source:el('source').textContent,example:el('example').value};
  const frame=document.createElement('iframe');frame.title='Clean extras plot reference';frame.style.cssText='position:fixed;left:-10000px;top:0;width:600px;height:600px;border:0';const loaded=new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Clean reference frame unavailable')),15000);frame.onload=()=>{clearTimeout(timer);resolve();};frame.onerror=()=>{clearTimeout(timer);reject(Error('Clean reference frame unavailable'));};});frame.src=new URL('validate/plus-reference-frame.html',location.href).href;document.body.append(frame);
  try{await loaded;const doc=frame.contentDocument;if(!doc?.body)throw Error('Clean reference frame unavailable');return AlmDTAPlusCore.replay(c,(r,q,p,check)=>{const id=r.id+'/display';el('example').value=String(c.cases.indexOf(r));choose(c);check(id+'/source',el('source').textContent,r.dataset+' / '+r.covariate+': x = (raw - '+r.transformation.centre+') / '+r.transformation.scale+'. Source rows: '+r.source_rows.join(', ')+'.');check(id+'/options',JSON.stringify(Array.from(el('example').options,o=>o.textContent)),JSON.stringify(c.cases.map(v=>v.id)));if(!r.ok){ui().set({rows:r.rows,method:r.method,correction:r.correction,at:0,prevalence:.1});check(id+'/refusal',el('error').textContent,r.refusal);check(id+'/empty',el('results').textContent,'');check(id+'/export-disabled',el('export').disabled,true);return;}
@@ -26,8 +37,12 @@ async function replay(){const c=await load(),saved={data:el('data').value,method
  check(id+'/error',el('error').textContent,'');if(!actual){check(id+'/result',false,true);return;}
  let exported;try{exported=JSON.parse(ui().exportJSON());}catch(e){check(id+'/export',false,true);return;}
  compareObjects(check,id+'/export',exported,ref,t);
- const nums=el('results').querySelectorAll('[data-value]');check(id+'/number-count',nums.length,29);const ff=flatten(ref);for(const n of nums)check(id+'/'+n.dataset.value,Number(n.textContent),ff[n.dataset.value],n.dataset.value==='studies'?0:t,n.dataset.value.endsWith('.p'));
- const clean=document.createElement('div');clean.innerHTML=AlmDTAPlusReference.html(ref);const text=n=>{const copy=n.cloneNode(true);copy.querySelectorAll('[data-value],svg').forEach(e=>e.remove());return copy.textContent.replace(/\s+/g,' ').trim();};check(id+'/labels',text(el('results')),text(clean));
+ const clean=document.createElement('div');clean.innerHTML=AlmDTAPlusReference.html(ref);
+ check(id+'/semantic-mapping',JSON.stringify(displayStructure(el('results'))),JSON.stringify(displayStructure(clean)));
+ const nums=el('results').querySelectorAll('[data-value]'),expectedNums=clean.querySelectorAll('[data-value]');check(id+'/number-count',nums.length,expectedNums.length);const ff=flatten(ref);
+ // Values are looked up by the independent reference position, never the UI key.
+ expectedNums.forEach((n,i)=>{const key=n.dataset.value;check(id+'/'+key,nums[i]?.textContent.trim()?Number(nums[i].textContent):NaN,ff[key],key==='studies'?0:t,key.endsWith('.p'));});
+ const text=n=>{const copy=n.cloneNode(true);copy.querySelectorAll('[data-value],svg').forEach(e=>e.remove());return copy.textContent.replace(/\s+/g,' ').trim();};check(id+'/labels',text(el('results')),text(clean));
  doc.body.innerHTML=AlmDTAPlusReference.plot(actual.prediction);const svg=el('results').querySelector('svg'),reference=doc.querySelector('svg');if(!svg){check(id+'/plot',false,true);return;}reference.style.width=svg.getBoundingClientRect().width+'px';
  compareObjects(check,id+'/paint',painted(svg),painted(reference),1e-7);
  });}finally{frame.remove();for(const k of ['data','method','correction','at','prevalence','example'])el(k).value=saved[k];el('source').textContent=saved.source;ui().render();}}

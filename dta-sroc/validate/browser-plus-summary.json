@@ -1,21 +1,24 @@
 {
   "date": "2026-10-18",
-  "log": "browser-cycle3.log",
-  "sha256": "da504cd42f4536a53173b989f21de661eaff0c2e600d96595695b0e47d511cc0",
+  "host_update": 3,
+  "entry_head": "2982ee8a957c7106a7842de24349fcf4164d9b4a",
+  "log": "browser-host3-cycle2.log",
+  "sha256": "71b5cb26d43b5d9a9c225d6c1d05f9d11d5f0553fb51eb15548bf56a564fa21c",
   "browser_tests": {
-    "passed": 17,
+    "passed": 25,
     "failed": 0,
     "skipped": 0,
-    "extras": 14,
-    "original_offline": 3
+    "extras": 22,
+    "original_offline": 3,
+    "new_semantic_negatives": 8
   },
   "desktop_display": {
-    "passed": 505011,
-    "checks": 505011
+    "passed": 505326,
+    "checks": 505326
   },
   "responsive_display": {
-    "passed": 505011,
-    "checks": 505011
+    "passed": 505326,
+    "checks": 505326
   },
   "live_R": {
     "passed": 28,
@@ -23,5 +26,5 @@
   },
   "port": 8103,
   "exit_code": 0,
-  "note": "Runner completed after targeted termination of its verified lane-private Python server during stalled teardown."
+  "note": "Final source fixed before run. Runner reused an explicitly managed lane-private server; the owning wrapper terminated only that server after completion."
 }

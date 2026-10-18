@@ -12,3 +12,29 @@ test('invalid inputs clear results and disable export',async({page})=>{await ope
 test('live R reports checked coefficients and post-test values or explicit unavailability @slow',async({page})=>{test.setTimeout(180000);await open(page);await page.locator('#plus-live').click();await expect(page.locator('#plus-validation')).toContainText(/PASS: 28\/28|FAIL: Live R unavailable/,{timeout:170000});console.log('Live extras:',await page.locator('#plus-validation').textContent());});
 
 test('responsive plot remains valid',async({page})=>{test.setTimeout(240000);await page.setViewportSize({width:390,height:844});await open(page);const r=await replay(page);console.log('Responsive display replay:',r.passed+'/'+r.checks,'failures:',r.failures.length);expect(r.failures.slice(0,12)).toEqual([]);});
+
+for(const mutation of ['swap-cells','swap-rows','move-column','duplicate-cell','replace-cell','swap-summary','move-study-count','span-column'])test('extras semantic mapping detects '+mutation,async({page})=>{
+ await open(page);
+ await page.evaluate(kind=>{
+  const original=AlmDTAPlusUI.set;
+  AlmDTAPlusUI.set=s=>{
+   const model=original(s),root=document.querySelector('#plus-results');
+   if(!model)return model;
+   const body=root.querySelector('tbody'),row=body.rows[0],cells=row.querySelectorAll('td');
+   if(kind==='swap-cells')row.insertBefore(cells[1],cells[0]);
+   if(kind==='swap-rows')body.insertBefore(body.rows[1],body.rows[0]);
+   if(kind==='move-column')row.append(cells[0]);
+   if(kind==='span-column')cells[0].setAttribute('colspan','2');
+   if(kind==='duplicate-cell')row.append(cells[0].cloneNode(true));
+   if(kind==='replace-cell')cells[1].replaceWith(cells[0].cloneNode(true));
+   if(kind==='swap-summary'){
+    const values=root.querySelectorAll('dd'),marker=document.createTextNode('');
+    values[0].replaceWith(marker);values[1].replaceWith(values[0]);marker.replaceWith(values[1]);
+   }
+   if(kind==='move-study-count')root.querySelector('dt').append(root.querySelector('[data-value="studies"]'));
+   return model;
+  };
+ },mutation);
+ const r=await replay(page);
+ expect(r.failures.some(f=>f.id.endsWith('/display/semantic-mapping'))).toBe(true);
+});
