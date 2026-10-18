@@ -1,0 +1,37 @@
+{
+  "protocol": "Native R GLMM presentation replay; no offline optimiser execution",
+  "checks": 7248,
+  "configurations": 240,
+  "files": [
+    {
+      "path": "validate/plus-corpus/comparison-plus.json",
+      "sha256": "d176b2191f2dbbe76574575fd069fa1b27d49a5087445dbad8b4ee5a8cf9b5ad",
+      "bytes": 101621
+    },
+    {
+      "path": "validate/plus-corpus/corpus.json",
+      "sha256": "23bf51d1343e49fdcbd08ed612844f25418767ed5b9a9a5af43adddbf792e249",
+      "bytes": 263440
+    },
+    {
+      "path": "validate/plus-corpus/manifest.json",
+      "sha256": "b984b2ae740aedcd7320fe11fd3339f97a2dcc868f7689cae8ca837c2546d00d",
+      "bytes": 46045
+    },
+    {
+      "path": "validate/plus-corpus/reference-plus.json",
+      "sha256": "fea923fffac087d15fbdda573210d2859a361710ab15777735bbb8a14e3e25f1",
+      "bytes": 132823
+    },
+    {
+      "path": "validate/plus-corpus/row-audit.json",
+      "sha256": "bd64bb073d5fa08103caf7def08ca47c63654022cb778bfcca38c82d5eac0318",
+      "bytes": 51195
+    },
+    {
+      "path": "validate/plus-corpus/versions-plus.json",
+      "sha256": "9de0af278c9696f46ba6747bb8c283754cc5031becc6a7f7352e7c2696f765cf",
+      "bytes": 333
+    }
+  ]
+}

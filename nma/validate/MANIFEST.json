@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "source": "https://github.com/mahmood726-cyber/nma-reproducible",
+  "files": [
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "bda47f60cfd148ebcc511103ab8a61558b5cde1daffc593e8b02b1c9eff9d74f"
+    },
+    {
+      "path": "validate/corpus/paper-values.json",
+      "sha256": "3b364ca7fccf23636df2386eb6e5bb22f62e58b9d6d0246f1a54f26d3af00595"
+    }
+  ],
+  "provenance": [
+    {
+      "path": "results/full/corpus.csv",
+      "sha256": "22e773a6fa7a77872c5d20d0563ae3483cbed9e964d34629c9eeee319481316c"
+    },
+    {
+      "path": "results/full/netmeta.jsonl",
+      "sha256": "f4415db2b83d7e542bd064a62d91622487a307bcc2e26308e466398c42da46a3"
+    },
+    {
+      "path": "expected/paper_values.json",
+      "sha256": "6af1c32eaa5856d205c44b912cac3c2d173611039d2593f475676912ee48ce9b"
+    },
+    {
+      "path": "analysis/make_outputs.py",
+      "sha256": "f0359681112a1c53a5459589eab6b81447e6a1a464095c3028defe66140a886f"
+    }
+  ],
+  "note": "Lossless JSON packaging of archived contrasts and R references; no analyses regenerated. Source repository has no data directory. Study labels preserved verbatim."
+}

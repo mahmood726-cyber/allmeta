@@ -25,64 +25,105 @@
 (function (global) {
   "use strict";
 
-  // ---- Bootstrap caching state ------------------------------------------
-
-  var _bootPromise = null;
-  var _webR = null;
+  // Same-origin only; resolve relative to this script (also works below /allmeta/).
+  var _scriptURL = typeof document !== "undefined" && document.currentScript ? document.currentScript.src : null;
+  var _bootPromise = null, _webR = null, _manifest = null;
   var _packagesInstalled = new Set();
-
+  var _queue = Promise.resolve();
   function _resolveBaseUrl() {
-    // Mirror the lookup logic in webr-studio: prefer the same-origin
-    // self-hosted bundle, then the public webr CDN as a fallback. Apps
-    // calling us from /forest-plot/ need the URL to be absolute to the
-    // hub root, so we use location.origin + a discovery path.
-    var bases = [];
-    var origin = (typeof location !== "undefined") ? location.origin : "";
-    if (origin) bases.push(origin + "/r-shiny/shinylive/webr/");
-    bases.push("https://webr.r-wasm.org/latest/");
-    return bases;
+    if (!_scriptURL) return [];
+    return [new URL('../r-shiny/shinylive/webr/', _scriptURL).href];
   }
-
-  function _ensureWebR(onStatus) {
-    if (_webR) return Promise.resolve(_webR);
-    if (_bootPromise) return _bootPromise;
-    if (typeof onStatus === "function") onStatus("Booting WebR (one-time, ~30 MB)…");
-
-    _bootPromise = new Promise(function (resolve, reject) {
-      var bases = _resolveBaseUrl();
-      function tryNext(i) {
-        if (i >= bases.length) {
-          return reject(new Error("WebR module not reachable at any candidate URL"));
-        }
-        var url = bases[i] + "webr.mjs";
-        import(/* @vite-ignore */ url).then(function (mod) {
-          var WebR = mod.WebR;
-          if (!WebR) { tryNext(i + 1); return; }
-          var w = new WebR({ interactive: false, baseUrl: bases[i] });
-          w.init().then(function () { _webR = w; resolve(w); }, function (err) {
-            console.warn("[allmeta-webr] init failed at " + bases[i] + ":", err);
-            tryNext(i + 1);
-          });
-        }, function (err) {
-          console.warn("[allmeta-webr] import failed at " + bases[i] + ":", err);
-          tryNext(i + 1);
-        });
-      }
-      tryNext(0);
-    });
+  async function _get(url) {
+    if (new URL(url).origin !== location.origin) throw new Error('Off-origin R resource refused');
+    var r = await fetch(url, { redirect: 'error' });
+    if (!r.ok) throw new Error('R resource unavailable: ' + url + ' (HTTP ' + r.status + ')');
+    return r;
+  }
+  async function _ensureWebR(onStatus) {
+    if (_webR) return _webR;
+    if (!_bootPromise) _bootPromise = (async function () {
+      var base = _resolveBaseUrl()[0];
+      if (!base) throw new Error('A browser with a same-origin webR bundle is required');
+      onStatus('Booting local webR 0.5.5...');
+      var mod = await import(/* @vite-ignore */ base + 'webr.mjs');
+      var w = new mod.WebR({ interactive: false, baseUrl: base, repoUrl: base + 'repo/', channelType: mod.ChannelType.PostMessage });
+      await w.init();
+      if (w.version !== '0.5.5') throw new Error('Unexpected webR version: ' + w.version);
+      _webR = w;
+      return w;
+    })().catch(function (e) { _bootPromise = null; throw e; });
     return _bootPromise;
   }
-
-  function _ensurePackages(packages, onStatus) {
-    return _ensureWebR(onStatus).then(function (webR) {
-      var todo = packages.filter(function (p) { return !_packagesInstalled.has(p); });
-      if (!todo.length) return webR;
-      if (typeof onStatus === "function") onStatus("Installing R packages: " + todo.join(", ") + "…");
-      return webR.installPackages(todo, { quiet: true }).then(function () {
-        todo.forEach(function (p) { _packagesInstalled.add(p); });
-        return webR;
-      });
-    });
+  async function _ensurePackages(packages, onStatus) {
+    var base = _resolveBaseUrl()[0];
+    if (!base) throw new Error('Local webR bundle unavailable');
+    if (!_manifest) _manifest = await (await _get(base + 'repo/manifest.json')).json();
+    var records = new Map(_manifest.packages.map(function (p) { return [p.package, p]; }));
+    var required = new Map();
+    function visit(name) {
+      if (_packagesInstalled.has(name) || required.has(name)) return;
+      var p = records.get(name);
+      if (!p) throw new Error('Package not in pinned repository: ' + name);
+      required.set(name, p);
+      (p.dependencies || []).forEach(function (dep) { if (records.has(dep)) visit(dep); });
+    }
+    packages.forEach(visit);
+    // Verify bytes BEFORE exposing any archive to R. Never verify then refetch:
+    // the exact verified bytes are staged in the VFS, avoiding a TOCTOU gap.
+    var archives = [];
+    for (var p of required.values()) {
+      if (!/^[A-Za-z][A-Za-z0-9.]*$/.test(p.package) || !/^[A-Za-z0-9_.+-]+\.tgz$/.test(p.file)) throw new Error('Invalid package manifest entry');
+      onStatus('Verifying SHA-256: ' + p.file);
+      var archivePath = p.path || ('repo/' + _manifest.layout + p.file);
+      if (p.path && p.path !== 'packages/' + p.package + '/' + p.file) throw new Error('Invalid package archive path');
+      var bytes = new Uint8Array(await (await _get(new URL(archivePath, base).href)).arrayBuffer());
+      if (!global.crypto || !crypto.subtle) throw new Error('SHA-256 requires HTTPS or localhost');
+      var hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      if (hash !== p.sha256 || bytes.length !== p.bytes) throw new Error('SHA-256/size mismatch; package refused: ' + p.file);
+      archives.push({ record: p, bytes: bytes });
+    }
+    var webR = await _ensureWebR(onStatus);
+    await webR.evalRVoid('dir.create("/tmp/alm-library", showWarnings=FALSE); .libPaths(c("/tmp/alm-library", .libPaths()))');
+    // These are built binary tarballs: extract, do not compile or invoke a remote
+    // dependency resolver. All dependency archives above are pinned and verified.
+    for (var archive of archives) {
+      var path = '/tmp/' + archive.record.file;
+      await webR.FS.writeFile(path, archive.bytes);
+      await webR.evalRVoid('utils::untar(' + JSON.stringify(path) + ', exdir="/tmp/alm-library", tar="internal"); unlink(' + JSON.stringify(path) + ')');
+      var version = await webR.evalRString('as.character(packageVersion(' + JSON.stringify(archive.record.package) + '))');
+      if (version.replace(/-/g, '.') !== archive.record.version.replace(/-/g, '.')) throw new Error('Installed version mismatch: ' + archive.record.package);
+      _packagesInstalled.add(archive.record.package);
+    }
+    return webR;
+  }
+  function runR(opts) {
+    opts = opts || {};
+    var task = async function () {
+      var shelter;
+      try {
+        var packages = opts.packages || [], status = opts.onStatus || function () {};
+        if (typeof opts.script !== 'string' || !opts.script.trim()) throw new Error('R script is required');
+        if (!packages.every(function (p) { return /^[A-Za-z][A-Za-z0-9.]*$/.test(p); })) throw new Error('Invalid R package name');
+        var w = await _ensurePackages(packages, status);
+        status('Running R...');
+        shelter = await new w.Shelter();
+        var cap = await shelter.captureR(opts.script, { captureStreams: true, captureConditions: false, captureGraphics: false, withAutoprint: false });
+        var stdout = cap.output.filter(function (o) { return o.type === 'stdout'; }).map(function (o) { return o.data; }).join('\n');
+        var versions = { R: await w.evalRString('R.version.string'), webR: w.version };
+        for (var p of packages) versions[p] = await w.evalRString('as.character(packageVersion(' + JSON.stringify(p) + '))');
+        // R normalizes 4.8-0 to 4.8.0; report the verified DESCRIPTION spelling.
+        for (var p of packages) {
+          var record = _manifest.packages.find(function (x) { return x.package === p; });
+          if (record.version.replace(/-/g, '.') !== versions[p].replace(/-/g, '.')) throw new Error('Session package version differs: ' + p);
+          versions[p] = record.version;
+        }
+        status('R finished.');
+        return { ok: true, stdout: stdout, versions: versions };
+      } catch (e) { return { ok: false, error: e.message || String(e) }; }
+      finally { if (shelter) await shelter.purge(); }
+    };
+    var result = _queue.then(task, task); _queue = result.catch(function () {}); return result;
   }
 
   // ---- The metafor runner -----------------------------------------------
@@ -126,78 +167,46 @@
     return txt;
   }
 
-  function _buildRScript(studies, method, test) {
-    var yi = studies.map(function (s) { return s.est; }).join(", ");
-    var sei = studies.map(function (s) { return s.se; }).join(", ");
-    var labels = studies.map(function (s) {
-      return '"' + String(s.label || "Study").replace(/"/g, '\\"') + '"';
-    }).join(", ");
-    return [
-      "library(metafor)",
-      "yi  <- c(" + yi + ")",
-      "sei <- c(" + sei + ")",
-      "labs <- c(" + labels + ")",
-      "fit <- rma(yi = yi, sei = sei, method = '" + method + "', test = '" + test + "', slab = labs)",
-      "out <- list(",
-      "  mu = unname(fit$beta[1, 1]),",
-      "  se = unname(fit$se),",
-      "  ci_lb = unname(fit$ci.lb),",
-      "  ci_ub = unname(fit$ci.ub),",
-      "  tau2 = unname(fit$tau2),",
-      "  QE = unname(fit$QE),",
-      "  I2 = unname(fit$I2),",
-      "  k = fit$k",
-      ")",
-      "jsonlite::toJSON(out, auto_unbox = TRUE, digits = 12)",
-    ].join("\n");
+  function buildMetaforScript(studies, method, test, extended) {
+    method = method || 'REML'; test = test || 'z';
+    if (!['PM','REML','ML','EB','SJ','HE','HS','DL'].includes(method)) throw new Error('Unsupported tau2 estimator');
+    if (!['z','knha','adhoc','t'].includes(test)) throw new Error('Unsupported inference test');
+    if (!Array.isArray(studies) || studies.length < 2 || studies.some(function (s) { return !Number.isFinite(s.est) || !Number.isFinite(s.se) || s.se <= 0; })) throw new Error('Need >= 2 studies with finite effects and positive SEs');
+    var lines = [
+      'suppressPackageStartupMessages(library(metafor))',
+      'yi <- c(' + studies.map(function (s) { return s.est; }).join(',') + ')',
+      'vi <- c(' + studies.map(function (s) { return s.se; }).join(',') + ')^2',
+      'fit <- function(m, test="z") {',
+      ' f <- rma(yi, vi, method=m, test=test, control=list(tol=1e-15, threshold=1e-12, maxiter=10000))',
+      ' if (m %in% c("REML","ML","EB") && f$tau2 < 1e-3) f <- rma(yi, vi, method=m, test=test, control=list(tol=1e-15, threshold=max(1e-24,1e-12*f$tau2),maxiter=100000))',
+      ' f',
+      '}',
+      'f <- fit("' + method + '", "' + test + '")',
+      'out <- list(mu=as.numeric(f$beta[1]), se=f$se, ci_lb=f$ci.lb, ci_ub=f$ci.ub, tau2=f$tau2, QE=f$QE, I2=f$I2, k=f$k)'
+    ];
+    if (extended) lines.push(
+      'hk <- fit("' + method + '", "adhoc"); pr <- predict(fit("' + method + '", "t"))',
+      'dl <- fit("DL"); qp <- confint(fit("PM"), control=list(tol=1e-15,maxiter=100000,tau2.max=1e9))$random',
+      'out$I2 <- dl$I2; out$pQ <- f$QEp; out$df <- f$k-1',
+      'out$hk_lo <- hk$ci.lb; out$hk_hi <- hk$ci.ub; out$pi_lo <- pr$pi.lb; out$pi_hi <- pr$pi.ub',
+      'out$tau2_lo <- qp["tau^2","ci.lb"]; out$tau2_hi <- qp["tau^2","ci.ub"]; out$I2_lo <- qp["I^2(%)","ci.lb"]; out$I2_hi <- qp["I^2(%)","ci.ub"]'
+    );
+    lines.push(
+      'num <- function(x) if (length(x)!=1 || is.na(x) || !is.finite(x)) "null" else sprintf("%.17g",x)',
+      `cat('ALMJSON:{', paste(sprintf('"%s":%s', names(out), vapply(out,num,"")),collapse=","), '}\\n', sep="")`
+    );
+    return lines.join('\n');
   }
-
-  function runMetafor(opts) {
+  async function runMetafor(opts) {
     opts = opts || {};
-    var studies = opts.studies || [];
-    var method = opts.method || "REML";
-    var test = opts.test || "z";
-    var onStatus = opts.onStatus || function () {};
-    if (!Array.isArray(studies) || studies.length < 2) {
-      return Promise.resolve({ ok: false, error: "Need ≥ 2 studies" });
-    }
-
-    return _ensurePackages(["metafor", "jsonlite"], onStatus).then(function (webR) {
-      onStatus("Running rma(method='" + method + "', test='" + test + "')…");
-      var rScript = _buildRScript(studies, method, test);
-      var shelter = null;
-      return new webR.Shelter().then(function (s) {
-        shelter = s;
-        return shelter.captureR(rScript, { captureStreams: true, withAutoprint: false });
-      }).then(function (cap) {
-        // cap.result is an R character with the JSON; cap.output is stream
-        // chunks. Extract the JSON.
-        return cap.result.toString().then(function (jsonStr) {
-          // The result of jsonlite::toJSON inside captureR comes back as
-          // a length-1 R character. Sometimes it's wrapped in [".."].
-          if (typeof jsonStr === "string") {
-            var parsed;
-            try { parsed = JSON.parse(jsonStr); }
-            catch (_) {
-              // Try wrapped form: ["{...}"]
-              try { parsed = JSON.parse(JSON.parse(jsonStr)); }
-              catch (e2) { throw new Error("Could not parse R JSON: " + jsonStr.slice(0, 80)); }
-            }
-            var outputText = (cap.output || []).map(function (c) { return c.data || ""; }).join("");
-            return { ok: true, result: parsed, rOutput: outputText, rScript: rScript };
-          }
-          throw new Error("Unexpected R result type");
-        });
-      }).catch(function (e) {
-        return { ok: false, error: e.message || String(e), rScript: rScript };
-      }).then(function (final) {
-        if (shelter) shelter.purge().catch(function () {});
-        onStatus("Done.");
-        return final;
-      });
-    }).catch(function (e) {
-      return { ok: false, error: e.message || String(e) };
-    });
+    try {
+      var script = buildMetaforScript(opts.studies || [], opts.method, opts.test, opts.extended);
+      var r = await runR({ script: script, packages: ['metafor'], onStatus: opts.onStatus });
+      if (!r.ok) return r;
+      var line = r.stdout.split(/\r?\n/).find(function (l) { return l.startsWith('ALMJSON:'); });
+      if (!line) throw new Error('R result record missing');
+      return { ok: true, result: JSON.parse(line.slice(8)), rOutput: r.stdout, rScript: script, versions: r.versions };
+    } catch (e) { return { ok: false, error: e.message }; }
   }
 
   // ---- Bus interop convenience ------------------------------------------
@@ -370,6 +379,8 @@
   }
 
   var api = {
+    runR: runR,
+    buildMetaforScript: buildMetaforScript,
     runMetafor: runMetafor,
     runMetaforFromBus: runMetaforFromBus,
     attachLiveButton: attachLiveButton,

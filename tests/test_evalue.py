@@ -47,3 +47,35 @@ def test_smd_accepts_negative_protective_effect():
 def test_ratio_measure_still_rejects_nonpositive():
     o = _run("E.eValues('RR',-1.0,null,null)")
     assert o["point"] is None or (isinstance(o["point"], float) and math.isnan(o["point"])) or o["rr"]["point"] is None
+
+
+@pytest.mark.parametrize("rr", [0.01, 0.2, 0.6, 0.999999, 1, 1.000001, 2, 100])
+def test_independent_rr_bound_and_reciprocal_symmetry(rr):
+    # Independently solve the equal-strength confounding bound x^2/(2*x-1)=RR.
+    from decimal import Decimal, localcontext
+    with localcontext() as ctx:
+        ctx.prec = 50
+        ratio = Decimal(str(rr))
+        ratio = max(ratio, 1 / ratio)
+        expected = ratio + (ratio * (ratio - 1)).sqrt()
+        assert abs(expected**2 / (2*expected-1) - ratio) < Decimal('1e-40')
+    actual = _run(f"[E.eValue({rr}), E.eValue(1/{rr})]")
+    for value in actual:
+        assert value == pytest.approx(float(expected), abs=1e-6, rel=0)
+
+
+def test_fresh_pinned_evalue_source_reference():
+    reference = json.loads((ROOT / 'tests/fixtures/evalue-input-oracle.json').read_text(encoding='utf-8'))
+    for case in reference['cases']:
+        args = ','.join(json.dumps(case[k]) for k in ('measure', 'point', 'lo', 'hi'))
+        actual = _run(f"E.eValues({args}, {{rare: {json.dumps(case['rare'])}}})")
+        assert actual['point'] == pytest.approx(case['expected']['point'], abs=1e-6, rel=0)
+        # The UI overrides legacy engine CI=1 when both limits are absent.
+        if case['lo'] is not None:
+            assert actual['ci'] == pytest.approx(case['expected']['ci'], abs=1e-6, rel=0)
+        for field in ('point', 'lo', 'hi'):
+            expected = case['expected']['rr'][field]
+            if expected is None:
+                assert actual['rr'][field] is None
+            else:
+                assert actual['rr'][field] == pytest.approx(expected, abs=1e-6, rel=0)

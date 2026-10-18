@@ -28,13 +28,18 @@
   }
 
   // Baujat plot coordinates (RE / DL fit, matching metafor::baujat default for rma DL).
-  function baujat(yi, vi) {
-    var k = yi.length, fit = _dl(yi, vi), x = [], y = [], i, j;
+  function baujat(yi, vi, method) {
+    function fitModel(y, v) {
+      if (!method || method === "DL") return _dl(y, v);
+      var p = global.AlmMaCore.pool(y, v, { method: method });
+      return { mu: p.mu, se: p.se, tau2: p.tau2 };
+    }
+    var k = yi.length, fit = fitModel(yi, vi), x = [], y = [], i, j;
     for (i = 0; i < k; i++) {
       x.push((yi[i] - fit.mu) * (yi[i] - fit.mu) / (vi[i] + fit.tau2));
       var yLoo = [], vLoo = [];
       for (j = 0; j < k; j++) if (j !== i) { yLoo.push(yi[j]); vLoo.push(vi[j]); }
-      var f2 = _dl(yLoo, vLoo);
+      var f2 = fitModel(yLoo, vLoo);
       y.push((f2.mu - fit.mu) * (f2.mu - fit.mu) / (f2.se * f2.se));
     }
     return { x: x, y: y, mu: fit.mu, tau2: fit.tau2, k: k };

@@ -1,4 +1,23 @@
 (function () {
+  const selfScript = document.currentScript;
+  const pdfUrl = selfScript && selfScript.src ? new URL('vendor/jspdf.min.js', selfScript.src).href : null;
+  const scriptNonce = selfScript && selfScript.nonce;
+  let pdfLoading;
+  function loadPdf() {
+    const available = () => (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (available()) return Promise.resolve(available());
+    if (!pdfUrl) return Promise.reject(new Error('Cannot locate vendored jsPDF'));
+    if (!pdfLoading) pdfLoading = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = pdfUrl;
+      if (scriptNonce) script.nonce = scriptNonce;
+      script.onload = () => available() ? resolve(available()) : reject(new Error('jsPDF unavailable'));
+      script.onerror = () => { script.remove(); reject(new Error('Could not load vendored jsPDF')); };
+      document.head.appendChild(script);
+    }).catch(error => { pdfLoading = null; throw error; });
+    return pdfLoading;
+  }
+
   const _STYLE = `.alm-dl{display:inline-flex;gap:.5rem;font:13px/1.4 system-ui,sans-serif}.alm-dl button{padding:.3rem .6rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--panel,#fff);color:var(--ink,#15181d);cursor:pointer}@media (prefers-color-scheme:dark){.alm-dl button{background:var(--panel,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}}`;
   const PAD = 12;
   let _stylesInjected = false;
@@ -139,10 +158,8 @@
     });
     target.querySelector('[data-fmt="pdf"]').addEventListener('click', async () => {
       const src = getSvg(); if (!src) { console.warn('[alm.chartDownload] no SVG'); return; }
-      if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
-        console.warn('[alm.chartDownload] jspdf not loaded; include hub/shared/vendor/jspdf.min.js before chart-download.js');
-        return;
-      }
+      try { await loadPdf(); }
+      catch (error) { console.warn('[alm.chartDownload] PDF unavailable:', error); return; }
       const prepared = _prepareSvg(src);
       const svgText = await _stamp(_serialize(prepared), getReceiptInput);
       const vb = prepared.getAttribute('viewBox').split(/\s+/).map(Number);

@@ -79,6 +79,16 @@ def test_resolveBaseUrl_includes_self_hosted_or_cdn():
           hasCdn: bases.some(b => b.includes("webr.r-wasm.org")),
         }}));
     """)
-    # In Node `location` is undefined → only the CDN fallback is present.
-    assert out["hasCdn"] is True
-    assert out["n"] >= 1
+    # No unpinned CDN: without a browser script URL, resolution fails closed.
+    # The browser case below verifies same-origin resolution under a Pages prefix.
+    assert out["hasCdn"] is False
+    assert out["n"] == 0
+
+
+def test_resolveBaseUrl_uses_same_origin_project_prefix():
+    out = _run_node(f"""
+        global.document = {{ currentScript: {{ src: "https://example.test/allmeta/shared/webr-runner.js" }} }};
+        const M = require({json.dumps(str(MODULE))});
+        console.log(JSON.stringify(M._resolveBaseUrl()));
+    """)
+    assert out == ["https://example.test/allmeta/r-shiny/shinylive/webr/"]

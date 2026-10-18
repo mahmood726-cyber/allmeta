@@ -1,0 +1,429 @@
+Package: digest
+Version: 0.6.39
+Depends: R (>= 3.3.0)
+Imports: utils
+NeedsCompilation: yes
+
+Package: ellipse
+Version: 0.5.0
+Depends: R (>= 2.0.0),graphics,stats
+NeedsCompilation: no
+
+Package: mada
+Version: 0.5.12
+Depends: R (>= 3.5.0), stats, mvtnorm, ellipse, mvmeta, metafor
+Imports: methods
+NeedsCompilation: no
+
+Package: mixmeta
+Version: 1.2.2
+Depends: R (>= 3.5.0)
+Imports: stats, graphics, grDevices, utils
+NeedsCompilation: no
+
+Package: mvmeta
+Version: 1.0.3
+Depends: R (>= 2.13.0)
+Imports: mixmeta, stats, graphics, grDevices, utils
+NeedsCompilation: no
+
+Package: dosresmeta
+Version: 2.2.0
+Depends: mixmeta
+NeedsCompilation: no
+
+Package: CompQuadForm
+Version: 1.4.4
+NeedsCompilation: yes
+
+Package: R6
+Version: 2.6.1
+Depends: R (>= 3.6)
+NeedsCompilation: no
+
+Package: Rcpp
+Version: 1.1.1-1.1
+Depends: R (>= 3.5.0)
+Imports: methods, utils
+NeedsCompilation: yes
+
+Package: RcppEigen
+Version: 0.3.4.0.2
+Depends: R (>= 3.6.0)
+Imports: Rcpp (>= 0.11.0), stats, utils
+LinkingTo: Rcpp
+NeedsCompilation: yes
+
+Package: Rdpack
+Version: 2.6.6
+Depends: R (>= 2.15.0), methods
+Imports: tools, utils, rbibutils (> 2.4)
+NeedsCompilation: no
+
+Package: abind
+Version: 1.4-8
+Depends: R (>= 1.5.0)
+Imports: methods, utils
+NeedsCompilation: no
+
+Package: cli
+Version: 3.6.6
+Depends: R (>= 3.4)
+Imports: utils
+NeedsCompilation: yes
+
+Package: colorspace
+Version: 2.1-2
+Depends: R (>= 3.0.0), methods
+Imports: graphics, grDevices, stats
+NeedsCompilation: yes
+
+Package: cpp11
+Version: 0.5.4
+Depends: R (>= 4.0.0)
+NeedsCompilation: no
+
+Package: glue
+Version: 1.8.1
+Depends: R (>= 4.1)
+Imports: methods
+NeedsCompilation: yes
+
+Package: igraph
+Version: 2.1.4
+Depends: methods, R (>= 3.5.0)
+Imports: cli, graphics, grDevices, lifecycle, magrittr, Matrix,
+        pkgconfig (>= 2.0.0), rlang, stats, utils, vctrs
+LinkingTo: cpp11 (>= 0.5.0)
+
+Package: lifecycle
+Version: 1.0.5
+Depends: R (>= 3.6)
+Imports: cli (>= 3.4.0), rlang (>= 1.1.0)
+NeedsCompilation: no
+
+Package: lme4
+Version: 2.0-1
+Depends: R (>= 3.6), Matrix, methods, stats
+Imports: MASS, Rdpack, boot, graphics, grid, lattice, minqa (>=
+        1.1.15), nlme (>= 3.1-123), nloptr (>= 1.0.4), parallel,
+        reformulas (>= 0.4.3.1), rlang, splines, utils
+LinkingTo: Matrix (>= 1.5-0), Rcpp (>= 0.10.5), RcppEigen (>=
+        0.3.3.9.4)
+NeedsCompilation: yes
+
+Package: magic
+Version: 1.6-1
+Depends: R (>= 2.10), abind
+NeedsCompilation: no
+
+Package: magrittr
+Version: 2.0.5
+Depends: R (>= 3.4.0)
+NeedsCompilation: yes
+
+Package: meta
+Version: 8.3-0
+Depends: R (>= 4.0.0), metabook (>= 0.2-0), metadat
+Imports: metafor (>= 3.0-0), grid, ggplot2, lme4, CompQuadForm, xml2,
+        methods, readr, dplyr, magrittr, purrr, stringr, rlang, tibble,
+        scales
+NeedsCompilation: no
+
+Package: metabook
+Version: 0.2-0
+Depends: R (>= 4.0.0)
+NeedsCompilation: no
+
+Package: minqa
+Version: 1.2.8
+Imports: Rcpp (>= 0.9.10)
+LinkingTo: Rcpp
+NeedsCompilation: yes
+
+Package: netmeta
+Version: 3.4-0
+Depends: R (>= 4.0.0), meta (>= 8.3-0)
+Imports: Matrix, metafor, MASS, mvtnorm, magic, igraph, ggplot2,
+        colorspace, grid, dplyr, magrittr, methods
+NeedsCompilation: no
+
+Package: nloptr
+Version: 2.2.1.9000
+NeedsCompilation: yes
+
+Package: prettyunits
+Version: 1.2.0
+Depends: R(>= 2.10)
+NeedsCompilation: no
+
+Package: progress
+Version: 1.2.3
+Depends: R (>= 3.6)
+Imports: crayon, hms, prettyunits, R6
+NeedsCompilation: no
+
+Package: rbibutils
+Version: 2.4.1
+Depends: R (>= 2.10)
+Imports: utils, tools
+NeedsCompilation: yes
+
+Package: reformulas
+Version: 0.4.4
+Imports: stats, methods, Matrix, Rdpack
+NeedsCompilation: no
+
+Package: rlang
+Version: 1.2.0
+Depends: R (>= 4.0.0)
+Imports: utils
+NeedsCompilation: yes
+
+Package: withr
+Version: 3.0.2
+Depends: R (>= 3.6.0)
+Imports: graphics, grDevices
+NeedsCompilation: no
+
+Package: metafor
+Version: 4.8-0
+Depends: R (>= 4.0.0), methods, Matrix, metadat, numDeriv
+Imports: stats, utils, graphics, grDevices, nlme, mathjaxr, pbapply,
+        digest
+NeedsCompilation: no
+
+Package: mvtnorm
+Version: 1.2-4
+Depends: R(>= 3.5.0)
+Imports: stats
+NeedsCompilation: yes
+
+Package: Matrix
+Version: 1.7-5
+Depends: R (>= 4.4), methods
+Imports: grDevices, graphics, grid, lattice, stats, utils
+NeedsCompilation: yes
+
+Package: pkgconfig
+Version: 2.0.3
+Imports: utils
+NeedsCompilation: no
+
+Package: vctrs
+Version: 0.6.5
+Depends: R (>= 3.5.0)
+Imports: cli (>= 3.4.0), glue, lifecycle (>= 1.0.3), rlang (>= 1.1.0)
+NeedsCompilation: yes
+
+Package: MASS
+Version: 7.3-65
+Depends: R (>= 4.4.0), grDevices, graphics, stats, utils
+Imports: methods
+NeedsCompilation: yes
+
+Package: boot
+Version: 1.3-32
+Depends: R (>= 3.0.0), graphics, stats
+NeedsCompilation: no
+
+Package: lattice
+Version: 0.22-9
+Depends: R (>= 4.0.0)
+Imports: grid, grDevices, graphics, stats, utils
+NeedsCompilation: yes
+
+Package: nlme
+Version: 3.1-169
+Depends: R (>= 3.6.0)
+Imports: graphics, stats, utils, lattice
+NeedsCompilation: yes
+
+Package: metadat
+Version: 1.4-0
+Depends: R (>= 4.0.0)
+Imports: utils, tools, mathjaxr
+NeedsCompilation: no
+
+Package: ggplot2
+Version: 4.0.3
+Depends: R (>= 4.1)
+Imports: cli, grDevices, grid, gtable (>= 0.3.6), isoband, lifecycle (>
+        1.0.1), rlang (>= 1.1.0), S7, scales (>= 1.4.0), stats, vctrs
+        (>= 0.6.0), withr (>= 2.5.0)
+NeedsCompilation: no
+
+Package: xml2
+Version: 1.5.2
+Depends: R (>= 3.6.0)
+Imports: cli, methods, rlang (>= 1.1.0)
+NeedsCompilation: yes
+
+Package: readr
+Version: 2.2.0
+Depends: R (>= 4.1)
+Imports: cli, clipr, crayon, glue, hms (>= 0.4.1), lifecycle, methods,
+        R6, rlang, tibble, utils, vroom (>= 1.7.0), withr
+LinkingTo: cpp11, tzdb (>= 0.1.1)
+NeedsCompilation: yes
+
+Package: dplyr
+Version: 1.1.4
+Depends: R (>= 3.5.0)
+Imports: cli (>= 3.4.0), generics, glue (>= 1.3.2), lifecycle (>=
+        1.0.3), magrittr (>= 1.5), methods, pillar (>= 1.9.0), R6,
+        rlang (>= 1.1.0), tibble (>= 3.2.0), tidyselect (>= 1.2.0),
+        utils, vctrs (>= 0.6.4)
+NeedsCompilation: yes
+
+Package: purrr
+Version: 1.2.2
+Depends: R (>= 4.1)
+Imports: cli (>= 3.6.1), lifecycle (>= 1.0.3), magrittr (>= 1.5.0),
+        rlang (>= 1.1.1), vctrs (>= 0.6.3)
+LinkingTo: cli
+NeedsCompilation: yes
+
+Package: stringr
+Version: 1.6.0
+Depends: R (>= 4.1.0)
+Imports: cli, glue (>= 1.6.1), lifecycle (>= 1.0.3), magrittr, rlang
+        (>= 1.0.0), stringi (>= 1.5.3), vctrs (>= 0.4.0)
+NeedsCompilation: no
+
+Package: tibble
+Version: 3.3.1
+Depends: R (>= 3.4.0)
+Imports: cli, lifecycle (>= 1.0.0), magrittr, methods, pillar (>=
+        1.8.1), pkgconfig, rlang (>= 1.0.2), utils, vctrs (>= 0.5.0)
+NeedsCompilation: yes
+
+Package: scales
+Version: 1.4.0
+Depends: R (>= 4.1)
+Imports: cli, farver (>= 2.0.3), glue, labeling, lifecycle, R6,
+        RColorBrewer, rlang (>= 1.1.0), viridisLite
+NeedsCompilation: no
+
+Package: crayon
+Version: 1.5.3
+Imports: grDevices, methods, utils
+NeedsCompilation: no
+
+Package: hms
+Version: 1.1.4
+Imports: cli, lifecycle, methods, pkgconfig, rlang (>= 1.0.2), vctrs
+        (>= 0.3.8)
+NeedsCompilation: no
+
+Package: numDeriv
+Version: 2016.8-1.1
+Depends: R (>= 2.11.1)
+NeedsCompilation: no
+
+Package: mathjaxr
+Version: 2.0-0
+NeedsCompilation: no
+
+Package: pbapply
+Version: 1.7-4
+Depends: R (>= 3.2.0)
+Imports: parallel
+NeedsCompilation: no
+
+Package: gtable
+Version: 0.3.6
+Depends: R (>= 4.0)
+Imports: cli, glue, grid, lifecycle, rlang (>= 1.1.0), stats
+NeedsCompilation: no
+
+Package: isoband
+Version: 0.3.0
+Imports: cli, grid, rlang, utils
+LinkingTo: cpp11
+NeedsCompilation: yes
+
+Package: S7
+Version: 0.2.2
+Depends: R (>= 3.5.0)
+Imports: utils
+NeedsCompilation: yes
+
+Package: clipr
+Version: 0.8.0
+Imports: utils
+NeedsCompilation: no
+
+Package: vroom
+Version: 1.6.5.9000
+Depends: R (>= 3.6)
+Imports: bit64, cli (>= 3.2.0), crayon, glue, hms, lifecycle (>=
+        1.0.3), methods, rlang (>= 0.4.2), stats, tibble (>= 2.0.0),
+        tidyselect, tzdb (>= 0.1.1), vctrs (>= 0.2.0), withr
+LinkingTo: cpp11 (>= 0.2.0), progress (>= 1.2.3), tzdb (>= 0.1.1)
+
+Package: tzdb
+Version: 0.5.0
+Depends: R (>= 4.0.0)
+LinkingTo: cpp11 (>= 0.5.2)
+NeedsCompilation: yes
+
+Package: generics
+Version: 0.1.4
+Depends: R (>= 3.6)
+Imports: methods
+NeedsCompilation: no
+
+Package: pillar
+Version: 1.11.1
+Imports: cli (>= 2.3.0), glue, lifecycle, rlang (>= 1.0.2), utf8 (>=
+        1.1.0), utils, vctrs (>= 0.5.0)
+NeedsCompilation: no
+
+Package: tidyselect
+Version: 1.2.1
+Depends: R (>= 3.4)
+Imports: cli (>= 3.3.0), glue (>= 1.3.0), lifecycle (>= 1.0.3), rlang
+        (>= 1.0.4), vctrs (>= 0.5.2), withr
+NeedsCompilation: yes
+
+Package: stringi
+Version: 1.8.7
+Depends: R (>= 3.4)
+Imports: tools, utils, stats
+NeedsCompilation: yes
+
+Package: farver
+Version: 2.1.2
+NeedsCompilation: yes
+
+Package: labeling
+Version: 0.4.3
+Imports: stats, graphics
+NeedsCompilation: no
+
+Package: RColorBrewer
+Version: 1.1-3
+Depends: R (>= 2.0.0)
+NeedsCompilation: no
+
+Package: viridisLite
+Version: 0.4.3
+Depends: R (>= 2.10)
+NeedsCompilation: no
+
+Package: bit64
+Version: 4.8.0
+Depends: R (>= 3.5.0)
+Imports: bit (>= 4.0.0), graphics, methods, stats, utils
+NeedsCompilation: yes
+
+Package: utf8
+Version: 1.2.6
+Depends: R (>= 2.10)
+NeedsCompilation: yes
+
+Package: bit
+Version: 4.6.0
+Depends: R (>= 3.4.0)
+NeedsCompilation: yes

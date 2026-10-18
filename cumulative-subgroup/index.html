@@ -172,6 +172,7 @@
     
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
+    <div style="grid-column:1/-1"><section id="alm-validate"></section></div>
   </main>
 
   <p class="footer-note">Subgroup between-group Q compares <strong>random-effects</strong> pooled estimates across groups (each group pooled with Paule-Mandel τ², per Borenstein 2009 §19); Q_bw = Σ w_g (μ_g − M)², df = G − 1, where w_g = 1/SE(μ_g)² and the centre M = Σ w_g μ_g / Σ w_g is the inverse-variance-weighted mean of the subgroup estimates (matches <code>meta::metagen</code> Q.b.random). I² of differences = max(0, 100·(Q − df)/Q).</p>
@@ -197,11 +198,18 @@
 
     function parseStudies(text) {
       const studies=[], warnings=[];
-      const lines = String(text||"").split(/\r?\n/);
+      const lines = String(text||"").match(/(?:[^"\r\n]|"(?:[^"]|"")*")+/g) || [];
       for (let i=0;i<lines.length;i++) {
         const raw = lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
-        const parts = raw.split(/\s*[,\t]\s*/);
+        const parts = []; let field = "", quoted = false, fieldWasQuoted = false;
+        for (let j=0;j<raw.length;j++) {
+          const ch=raw[j];
+          if(ch==='"') { if(quoted && raw[j+1]==='"') { field+='"'; j++; } else { if(!quoted) { if(!field.trim()) field=""; fieldWasQuoted=true; } quoted=!quoted; } }
+          else if((ch===',' || ch==='\t') && !quoted) { parts.push(fieldWasQuoted ? field : field.trim()); field=""; fieldWasQuoted=false; }
+          else if(quoted || !fieldWasQuoted || !/\s/.test(ch)) field+=ch;
+        }
+        parts.push(fieldWasQuoted ? field : field.trim());
         if (parts.length < 3) { warnings.push("Line "+(i+1)+": <3 columns"); continue; }
         // Last column can be group (non-numeric) or year (numeric) or SE.
         // Strategy: rightmost numeric column is either SE or year; classify by pattern.
@@ -278,7 +286,7 @@
 
     // Subgroup: pool per group, then between-group Q test
     function subgroup(studies) {
-      const byGroup = {};
+      const byGroup = Object.create(null);
       for (const s of studies) {
         const g = s.group || "(ungrouped)";
         if (!byGroup[g]) byGroup[g] = [];
@@ -359,6 +367,29 @@
       return t;
     }
 
+    // Effect-axis limits from the axis controls. A user bound replaces only its own side; the
+    // other side stays automatic. An invalid combination (e.g. a minimum above the automatic
+    // maximum, or a non-finite bound) is REFUSED visibly, as gosh/index.html does: the plot is
+    // replaced by a message and computed results are retained. Never throws.
+    let _axisRefusal = null;
+    function resolveEffectAxis(autoLo, autoHi) {
+      const range = (_axisState && Array.isArray(_axisState.x)) ? _axisState.x : [];
+      const userLo = range[0], userHi = range[1];
+      for (const [v, side] of [[userLo, "minimum"], [userHi, "maximum"]]) {
+        if (v != null && !Number.isFinite(v)) return { error: "Effect axis " + side + " is not a finite number." };
+      }
+      const lo = userLo != null ? userLo : autoLo, hi = userHi != null ? userHi : autoHi;
+      if (!(hi > lo)) {
+        const d = (v, user) => fmt(v, 3) + (user ? "" : " (automatic)");
+        return { error: "Effect axis minimum " + d(lo, userLo != null) + " must be below the maximum " + d(hi, userHi != null) + "." };
+      }
+      return { lo: lo, hi: hi };
+    }
+    function axisRefusalSvg(msg) {
+      _axisRefusal = msg + " Widen or clear the axis limits. Computed results are retained.";
+      return "<svg xmlns=\"http://www.w3.org/2000/svg\" data-axis-refusal=\"1\" viewBox=\"0 0 720 120\" width=\"720\" height=\"120\"><rect width=\"720\" height=\"120\" fill=\"#fff\"/><text x=\"360\" y=\"52\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" font-weight=\"600\" fill=\"#b91c1c\">Plot cannot be displayed: effect-axis limits are invalid.</text><text x=\"360\" y=\"76\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"12\" fill=\"#5c6470\">"+escapeXml(msg)+"</text></svg>";
+    }
+
     function buildCumulativeSvg(state, data) {
       const W=720, H=520, L=180, R=30, T=state.title?60:40, B=70;
       const plotW=W-L-R, plotH=H-T-B;
@@ -377,6 +408,9 @@
       if (yLo > 0) yLo = Math.min(yLo, 0);
       if (yHi < 0) yHi = Math.max(yHi, 0);
 
+      const effAxis = resolveEffectAxis(yLo, yHi);
+      if (effAxis.error) return axisRefusalSvg(effAxis.error);
+      yLo = effAxis.lo; yHi = effAxis.hi;
       function x(v) { return L + (v-xLo)/(xHi-xLo || 1) * plotW; }
       function y(v) { return T + plotH - (v-yLo)/(yHi-yLo) * plotH; }
 
@@ -430,7 +464,7 @@
     function buildSubgroupSvg(state, data) {
       const groups = data.groups;
       const G = groups.length;
-      const W=720, rowH=36, L=200, R=30, T=state.title?60:40, B=80;
+      const W=900, rowH=36, L=200, R=210, T=state.title?60:40, B=80;
       const bodyH = (G + 1) * rowH + 30;  // +1 for overall
       const H = T + bodyH + B;
       const plotW = W - L - R;
@@ -443,6 +477,9 @@
       if (xLo > 0) xLo = Math.min(xLo, 0);
       if (xHi < 0) xHi = Math.max(xHi, 0);
 
+      const effAxis = resolveEffectAxis(xLo, xHi);
+      if (effAxis.error) return axisRefusalSvg(effAxis.error);
+      xLo = effAxis.lo; xHi = effAxis.hi;
       function x(v) { return L + (v-xLo)/(xHi-xLo) * plotW; }
 
       const p = [];
@@ -504,6 +541,7 @@
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
+      _axisRefusal = null;
       heading.textContent = state.view === "subgroup" ? "Subgroup analysis" : "Cumulative meta-analysis";
 
       const parts = [];
@@ -566,6 +604,7 @@
       }
 
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
+      if (_axisRefusal) extras.push(_axisRefusal);
       const all = parsed.warnings.concat(extras);
       if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
       else { warnEl.innerHTML = "<strong>Notes</strong><ul>"+all.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>"; warnEl.classList.add("is-visible"); }
@@ -585,23 +624,28 @@
         "",
         "yi <- c(" + studies.map(s => s.est).join(", ") + ")",
         "se <- c(" + studies.map(s => s.se).join(", ") + ")",
-        "labels <- c(" + studies.map(s => '"' + String(s.label).replace(/"/g, '\\"') + '"').join(", ") + ")",
+        "labels <- c(" + studies.map(s => JSON.stringify(String(s.label))).join(", ") + ")",
       ];
       if (studies.every(s => s.year != null)) {
         lines.push("year <- c(" + studies.map(s => s.year).join(", ") + ")");
       }
       if (studies.some(s => s.group)) {
-        lines.push("grp <- c(" + studies.map(s => '"' + (s.group || "") + '"').join(", ") + ")");
+        lines.push("grp <- c(" + studies.map(s => JSON.stringify(s.group || "")).join(", ") + ")");
       }
       lines.push("");
       if (state.view === "subgroup" && studies.some(s => s.group)) {
-        lines.push("# Subgroup analysis");
-        lines.push("res <- rma(yi, sei = se, method = \"PM\", slab = labels, subset = grp != \"\")");
-        lines.push("res.sub <- rma(yi, sei = se, mods = ~ factor(grp), method = \"PM\")");
-        lines.push("print(res.sub)");
+        lines.push("# Separate PM tau-squared per subgroup; missing group retained as (ungrouped)");
+        lines.push('grp[grp == ""] <- "(ungrouped)"');
+        lines.push('fits <- lapply(split(seq_along(yi), grp), function(ix) rma(yi[ix], sei=se[ix], method="PM", control=list(tol=1e-12)))');
+        lines.push('mu <- vapply(fits, function(x) as.numeric(x[["b", exact=TRUE]]), 0.0)');
+        lines.push('vars <- vapply(fits, function(x) x[["se", exact=TRUE]]^2, 0.0)');
+        lines.push('between <- rma(mu, vi=vars, method="FE")');
+        lines.push('print(fits)');
+        lines.push('print(c(Q_bw=between[["QE", exact=TRUE]], df=length(fits)-1, p=if(length(fits)>1) pchisq(between[["QE", exact=TRUE]], length(fits)-1, lower.tail=FALSE) else NA_real_))');
+        lines.push('print(rma(yi, sei=se, method="PM", control=list(tol=1e-12)))');
       } else {
         lines.push("# Cumulative MA (order by year if available)");
-        lines.push("res <- rma(yi, sei = se, method = \"PM\", slab = labels)");
+        lines.push("res <- rma(yi, sei = se, method = \"PM\", control=list(tol=1e-12), slab = labels)");
         lines.push(studies.every(s => s.year != null) ? "cum <- cumul(res, order = year)" : "cum <- cumul(res)");
         lines.push("print(cum)");
       }
@@ -633,6 +677,7 @@
       } else {
         svg = buildCumulativeSvg(state, cumulative(parsed.studies));
       }
+      if (svg.indexOf("data-axis-refusal") !== -1) return null;
       return { state, svg };
     }
     function onDownloadSvg() {
@@ -714,10 +759,10 @@
     // ---- CSV upload bridge ----
     window.__almLoad = function (rows) {
       const lines = rows.map(function (r) {
-        const cols = [r.label || r.study || "", r.est !== undefined ? r.est : (r.yi !== undefined ? r.yi : ""), r.se !== undefined ? r.se : ""];
+        const cols = [r.label || r.study || "", r.est !== undefined ? r.est : (r.yi !== undefined ? r.yi : (r.estimate !== undefined ? r.estimate : "")), r.se !== undefined ? r.se : (r.SE !== undefined ? r.SE : "")];
         if (r.year != null) cols.push(r.year);
         if (r.group) { if (r.year == null) cols.push(""); cols.push(r.group); }
-        return cols.join(", ");
+        return cols.map(value => /[",\t\r\n]|^\s|\s$/.test(String(value)) ? '"' + String(value).replace(/"/g, '""') + '"' : String(value)).join(", ");
       });
       document.getElementById("f-data").value = lines.join("\n");
       render();
@@ -725,6 +770,52 @@
 
     // Expose last results for export
     window._almLastCumSub = function () { return _lastResults; };
+
+    // Validation observes calls to the unchanged parser and pooling engine.
+    window.__almCumSubValidationRun = function (text, view, title, axes) {
+      if (text !== undefined) document.getElementById("f-data").value = text;
+      if (view !== undefined) document.getElementById("f-view").value = view;
+      if (title !== undefined) document.getElementById("f-title").value = title;
+      if (axes !== undefined) _axisState = axes;
+      const originalParse = parseStudies, originalPool = pool, originalCumulative = cumulative, originalSubgroup = subgroup;
+      let parsed = null, cum = null, sub = null; const pools = [];
+      parseStudies = function (t) { const r = originalParse(t); if (!parsed) parsed = r; return r; };
+      pool = function (rows) { const p = originalPool(rows); pools.push(Object.assign({ members: rows.map(function (r) { return parsed.studies.indexOf(r) + 1; }) }, p)); return p; };
+      cumulative = function (rows) { cum = originalCumulative(rows); return cum; };
+      subgroup = function (rows) { sub = originalSubgroup(rows); return sub; };
+      try { render(); return { summary: _lastResults, parsed: parsed, pools: pools, cum: cum, sub: sub, axisRefusal: _axisRefusal }; }
+      finally { parseStudies = originalParse; pool = originalPool; cumulative = originalCumulative; subgroup = originalSubgroup; }
+    };
+    // Validation observes the autosave draft banner: shared/autosave.js builds the whole banner before it
+    // appends it to <body>, so the text seen when the insertion is observed is autosave's own output. The
+    // page records only the first banner node and its exact sentence; later insertions never re-baseline it.
+    // Autosave shows at most one banner per page load. Mark it changed if anything inside it mutates later
+    // (records are delivered in order, so an edit made in the same task as the insertion is also seen).
+    window.__almCumSubDraftBanners = [];
+    new MutationObserver(function (records) {
+      const list = window.__almCumSubDraftBanners;
+      records.forEach(function (r) {
+        for (const rec of list) if (rec.node.contains(r.target)) rec.changed = true;
+        if (r.type !== "childList" || r.target !== document.body) return;
+        r.addedNodes.forEach(function (n) {
+          if (list.length) return;
+          if (n.nodeType !== 1 || n.tagName !== "DIV" || n.getAttribute("role") !== "status" || n.getAttribute("aria-live") !== "polite") return;
+          const s = n.firstElementChild;
+          list.push({ node: n, text: s ? s.textContent : null, changed: false });
+        });
+      });
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+    window.__almCumSubValidationSnapshot = function () {
+      return { controls: ["f-data", "f-view", "f-title"].map(function (id) { return [id, document.getElementById(id).value]; }),
+        dom: ["stats-wrap", "warn-banner", "svg-host", "preview-heading"].map(function (id) { return [id, document.getElementById(id).innerHTML]; }),
+        warnClass: warnEl.className, results: _lastResults, axes: _axisState, axisRefusal: _axisRefusal, saved: localStorage.getItem(LS_KEY) };
+    };
+    window.__almCumSubValidationRestore = function (s) {
+      s.controls.forEach(function (x) { document.getElementById(x[0]).value = x[1]; });
+      s.dom.forEach(function (x) { document.getElementById(x[0]).innerHTML = x[1]; });
+      warnEl.className = s.warnClass; _lastResults = s.results; _axisState = s.axes; _axisRefusal = s.axisRefusal;
+      try { if (s.saved === null) localStorage.removeItem(LS_KEY); else localStorage.setItem(LS_KEY, s.saved); } catch (e) {}
+    };
 
     // ---- Shared MA bus (ma-studies-v1) — delegated to shared/ma-studies-v1.js ----
     function onBusLoad() {
@@ -735,7 +826,7 @@
           const cols = [s.label, s.est, s.se];
           if (s.year != null) cols.push(s.year);
           if (s.group) { if (s.year == null) cols.push(""); cols.push(s.group); }
-          return cols.join(", ");
+          return cols.map(value => /[",\t\r\n]|^\s|\s$/.test(String(value)) ? '"' + String(value).replace(/"/g, '""') + '"' : String(value)).join(", ");
         });
         document.getElementById("f-data").value = lines.join("\n");
         render();
@@ -786,6 +877,8 @@
         { name: 'group',    required: false, type: 'string', example: 'Low-risk' },
       ],
       onParse: function (result) {
+        // Validation observes the importer's own warning records (shown above the format table).
+        window.__almCumSubImportWarnings = result.warnings.slice();
         window.alm.resetUndo.snapshot();
         window.__almLoad(result.rows);
       },
@@ -796,13 +889,13 @@
       basename: 'cumsub-plot',
       getSvg: function () {
         const el = document.querySelector('#svg-host svg');
-        return el || null;
+        return el && !el.hasAttribute('data-axis-refusal') ? el : null;
       },
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
           studies: [], // bind only the current results below — never the (possibly stale) shared bus
-          method: 'Cumulative + subgroup meta-analysis (DL/PM, between-subgroup Q)',
+          method: 'Cumulative + subgroup meta-analysis (PM, separate subgroup tau2, between-subgroup Q)',
           label: 'cumsub-plot',
           results: _lastResults,
         };
@@ -812,13 +905,38 @@
     window.alm.axisControls({
       target: '#alm-axis-mount',
       axes: [
-        { key: 'x', label: 'X axis (effect)', range: [null, null], log: false },
+        { key: 'x', label: 'Effect axis', range: [null, null], log: false },
       ],
       onChange: function (state) {
-        _axisState = state;
+        _axisState = Object.assign({}, state, { x: readAxisInputs() });
         render();
       },
     });
+
+    // The shared widget validates min < max itself and, on a non-increasing pair, shows its
+    // message and returns WITHOUT calling onChange. Left alone, the page would keep the previous
+    // limits, the previous plot, and export it. So the page reads the raw entered values itself
+    // and, when the widget withholds the change, renders them; resolveEffectAxis() then refuses
+    // the plot visibly and currentSvg()/getSvg() refuse every export.
+    function readAxisInputs() {
+      return ["min", "max"].map(function (edge) {
+        const el = document.querySelector('#alm-axis-mount input[data-axis="x"][data-edge="' + edge + '"]');
+        if (!el || el.value === "") return null;
+        return Number(el.value);
+      });
+    }
+    document.querySelectorAll('#alm-axis-mount input[data-axis="x"][data-edge="min"], #alm-axis-mount input[data-axis="x"][data-edge="max"]').forEach(function (el) {
+      el.addEventListener("change", function () {
+        const raw = readAxisInputs();
+        if (raw[0] != null && raw[1] != null && !(raw[1] > raw[0])) {
+          _axisState = Object.assign({}, _axisState, { x: raw });
+          render();
+        }
+      });
+    });
+
+    const logAxisControl=document.querySelector('#alm-axis-mount [data-edge="log"]');
+    if(logAxisControl) { logAxisControl.disabled=true; logAxisControl.parentElement.title="Only linear effect coordinates are supported"; }
 
     window.alm.resultsExport({
       target: '#alm-export-mount',
@@ -949,5 +1067,7 @@
     else document.addEventListener("DOMContentLoaded", init);
   })();
 </script>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>
