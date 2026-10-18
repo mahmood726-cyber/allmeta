@@ -105,7 +105,11 @@
   </footer>
   <script>
     function num(id) {
-      var raw = document.getElementById(id).value.trim();
+      var input = document.getElementById(id);
+      // Browsers expose malformed number text (e.g. "1e") as an empty value.
+      // Keep that invalid state distinct from deliberately omitted uncertainty.
+      if (input.validity.badInput) return NaN;
+      var raw = input.value.trim();
       return raw === "" ? null : Number(raw);
     }
     function fmt(x) { return (x == null || !isFinite(x)) ? "—" : x.toFixed(4).replace(/\.?0+$/, ""); }

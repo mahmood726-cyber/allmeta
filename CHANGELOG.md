@@ -11,8 +11,56 @@ the section is renamed to that version and dated, and a fresh
 
 ## [Unreleased]
 
+### Fixed
+- E-value input validation distinguishes malformed number text from omitted
+  confidence limits, rejects incomplete or inconsistent intervals, and clears
+  stale results on refusal. Missing uncertainty no longer implies a null-crossing CI.
+- Cross-design power-prior pooling at alpha=0 now estimates heterogeneity from
+  RCTs alone. Observational-only input at alpha=0 displays a non-estimable result
+  without crashing the plot or leaving stale export state. Earlier alpha=0
+  results with mixed designs should be rerun; positive-alpha behavior is unchanged.
+
 ### Added
 - _(items added since the most recent tag will be listed here)_
+
+---
+
+## [1.6.1] — 2026-10-17
+
+### Added
+- **Validate in R** for `cumulative-subgroup` (#129): a live check that runs self-hosted `metafor` (4.8-0) in webR on the
+  current data, and an offline replay of a declared, SHA-256-pinned corpus (1,816 configurations, 609,398 checks; 6
+  documented refusals) through the page's own code, comparing every displayed number, label, control, status message
+  and the page's static text. Adapter, tests and documentation only; the numerical engine is unchanged.
+
+The `cumulative-subgroup` fixes (#124: R-export parity, CSV quoting, axis limits, refusals) shipped in 1.6.0.
+
+---
+
+## [1.6.0] — 2026-10-17
+
+Figure export and a visible Run analysis step across the 13 papered apps; no computation changed.
+
+### Added
+- **Plot export** (#126) in `dose-response-ma`, `dta-sroc`, `nma`, `heterogeneity`, `pubbias-tests`,
+  `multilevel-ma`, `meta-regression`, `proportion-ma`, `mh-peto`, `influence`, `limit-ma` and `gosh`: a plot selector
+  (one plot or all) and export as PNG, SVG, PDF, or TIFF at 300 or 600 dpi (RGB, LZW-compressed), via the shared
+  `hub/shared/plot-export.js`; the download status reports the exact number of files written, and zero on failure.
+- **Run analysis** button, visible in each of these 12 apps, with a shared analysis lifecycle
+  (`hub/shared/analysis-lifecycle.js`): editing inputs shows a "results out of date" notice until the analysis is run
+  again; a completed run shows "Analysis updated". Apps that already re-ran on edit still do so. `screen` has no plots;
+  it gains the same out-of-date and updated notices on its existing Train & rank button.
+
+### Fixed
+- **cumulative-subgroup** (#124): the R export now reproduces the page's analysis (separate Paule–Mandel fit per
+  subgroup plus a fixed-effect between-subgroup Q) instead of a common-τ² moderator model; quoted CSV fields are parsed
+  correctly and R string literals are escaped; subgroup names such as `__proto__` no longer fail; effect-axis limits
+  are applied in both plots; the chart receipt no longer names DerSimonian–Laird.
+
+### Verification
+- No numerical function changed: every named numerical function in the 13 apps matches its pre-change SHA-256, and
+  each app's offline Validate-in-R replay gives the same check count and result before and after the change
+  (for example `gosh` 876,760 of 876,760; `heterogeneity` 131,781; `mh-peto` 68,461; `proportion-ma` 298,116).
 
 ---
 

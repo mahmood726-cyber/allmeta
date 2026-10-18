@@ -3,14 +3,14 @@ function installExports(w) {
  const registrations={};
  const wrap=(name,fn)=>function(opts){registrations[name]=opts;return fn(opts);};
  const target=w.alm||{};
- for(const name of ['chartDownload','resultsExport'])if(target[name])target[name]=wrap(name,target[name]);
- const proxy=new Proxy(target,{set(o,k,v){o[k]=['chartDownload','resultsExport'].includes(k)?wrap(k,v):v;return true;}});
+ for(const name of ['plotExport','resultsExport'])if(target[name])target[name]=wrap(name,target[name]);
+ const proxy=new Proxy(target,{set(o,k,v){o[k]=['plotExport','resultsExport'].includes(k)?wrap(k,v):v;return true;}});
  Object.defineProperty(w,'alm',{configurable:true,get:()=>proxy,set:v=>{if(v!==proxy)Object.assign(proxy,v);}});
  w.__readExports=function(){
   const safe=fn=>{try{return fn();}catch(e){return {callback_error:String(e)};}};
   const result=safe(()=>registrations.resultsExport.getResults());
-  const receipt=safe(()=>registrations.chartDownload.getReceiptInput());
-  const chart=safe(()=>registrations.chartDownload.getSvg());
+  const receipt=safe(()=>registrations.plotExport.getReceiptInput());
+  const chart=safe(()=>registrations.plotExport.plots[0].getSvg());
   let signed=[];
   const original=w.MaStudies.toTruthCert;
   w.TruthCertUI.setKey('test-only-not-a-real-signing-key');
