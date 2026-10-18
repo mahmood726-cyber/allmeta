@@ -430,20 +430,50 @@
   // (ESS = 4·n₁·n₀/(n₁+n₀)), weighted by ESS; t-test on the slope. +0.5 to studies with a zero cell.
   function deeksTest(rows) {
     var x = [], y = [], w = [], n = rows.length;
+    if (n < 3) return null;
     rows.forEach(function (r) {
       var tp = r.tp, fp = r.fp, fn = r.fn, tn = r.tn;
       if (tp === 0 || fp === 0 || fn === 0 || tn === 0) { tp += 0.5; fp += 0.5; fn += 0.5; tn += 0.5; }
       var n1 = tp + fn, n0 = fp + tn, ess = 4 * n1 * n0 / (n1 + n0);
       x.push(1 / Math.sqrt(ess)); y.push(Math.log((tp * tn) / (fp * fn))); w.push(ess);
     });
-    var sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
-    for (var i = 0; i < n; i++) { sw += w[i]; swx += w[i] * x[i]; swy += w[i] * y[i]; swxx += w[i] * x[i] * x[i]; swxy += w[i] * x[i] * y[i]; }
-    var det = sw * swxx - swx * swx; if (det === 0) return null;
-    var slope = (sw * swxy - swx * swy) / det, intercept = (swxx * swy - swx * swxy) / det;
-    var rs = 0; for (var j = 0; j < n; j++) { var e = y[j] - intercept - slope * x[j]; rs += w[j] * e * e; }
-    var df = n - 2; if (df <= 0) return null;
-    var sigma2 = rs / df, seSlope = Math.sqrt(sigma2 * sw / det);
+    var xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+    var xscale = 0, yscale = 1;
+    for (var i = 0; i < n; i++) {
+      if (!Number.isFinite(x[i]) || !Number.isFinite(y[i]) || !(w[i] > 0) || !Number.isFinite(w[i]))
+        return null;
+      xmin = Math.min(xmin, x[i]); xmax = Math.max(xmax, x[i]); xscale = Math.max(xscale, Math.abs(x[i]));
+      ymin = Math.min(ymin, y[i]); ymax = Math.max(ymax, y[i]); yscale = Math.max(yscale, Math.abs(y[i]));
+    }
+    // No estimable t statistic when all log DORs are equal (or indistinguishable
+    // from floating-point roundoff). A constant ESS predictor is also singular.
+    if (ymax - ymin <= 64 * Number.EPSILON * yscale ||
+        xmax - xmin <= 64 * Number.EPSILON * xscale) return null;
+
+    // Weighted centred cross-products avoid cancellation in the uncentred
+    // regression. Shift log DOR by y[0] before computing its weighted mean.
+    var sw = 0, sx = 0, sy = 0;
+    for (i = 0; i < n; i++) { sw += w[i]; sx += w[i] * x[i]; sy += w[i] * (y[i] - y[0]); }
+    var xm = sx / sw, ym = sy / sw, sxx = 0, sxy = 0, syy = 0;
+    for (i = 0; i < n; i++) {
+      var dx = x[i] - xm, dy = (y[i] - y[0]) - ym;
+      sxx += w[i] * dx * dx; sxy += w[i] * dx * dy; syy += w[i] * dy * dy;
+    }
+    if (!(sxx > 0) || !(syy > 0) || !Number.isFinite(sxx) || !Number.isFinite(sxy)) return null;
+    var slope = sxy / sxx, intercept = y[0] + ym - slope * xm;
+    var rs = 0;
+    for (i = 0; i < n; i++) {
+      var e = ((y[i] - y[0]) - ym) - slope * (x[i] - xm);
+      rs += w[i] * e * e;
+    }
+    var df = n - 2, sigma2 = rs / df;
+    // A numerically exact regression line has no measurable residual variance
+    // from which to estimate the slope standard error; refuse a spurious p.
+    if (!(sigma2 > 64 * Number.EPSILON * syy / df) || !Number.isFinite(sigma2)) return null;
+    var seSlope = Math.sqrt(sigma2 / sxx);
+    if (!(seSlope > 0) || !Number.isFinite(seSlope)) return null;
     var t = slope / seSlope, pv = 2 * (1 - _tcdf(Math.abs(t), df));
+    if (!Number.isFinite(t) || !Number.isFinite(pv)) return null;
     return { slope: slope, intercept: intercept, t: t, df: df, p: pv, x: x, y: y };
   }
   function _lnGamma(x) { var c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6]; var y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t); var s = 1.000000000190015; for (var j = 0; j < 6; j++) { y++; s += c[j] / y; } return -t + Math.log(2.5066282746310005 * s / x); }
