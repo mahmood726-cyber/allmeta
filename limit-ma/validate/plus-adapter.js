@@ -143,16 +143,20 @@ function paintContract(reference,failures){
 
 // Independent affine calibration from source-backed marks, never renderer scale
 // functions, tick metadata, or a second rendering. Coordinates are CSS pixels.
-function calibratedTicks(samples,ticks,digits,name) {
+function calibratedTicks(samples,ticks,digits,name,domain) {
  const fail=message=>{throw Error(name+' calibrated axis '+message);};
  if(samples.length<2||samples.some(p=>!p.every(Number.isFinite)))fail('missing finite marks');
  const values=samples.map(p=>p[0]),lo=Math.min(...values),hi=Math.max(...values),span=hi-lo;
  const labels=ticks.map(t=>Number(t.text));
  if(ticks.length!==2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
- // A constant quantity has no identifiable scale. Check it exactly rather than
- // inventing a second calibration mark; the independent geometry gate checks
- // the renderer's constant-axis midpoint convention.
- if(span===0){if(labels.some(v=>v!==lo))fail('constant labels');return;}
+ // Coincident marks do not identify an affine scale or imply a constant
+ // domain. Use independently derived source-domain endpoints, rounded to
+ // the renderer's displayed precision; geometry remains checked separately.
+ if(span===0){
+  if(!domain||domain.length!==2||!domain.every(Number.isFinite))fail('missing constant domain');
+  if(labels.some((v,i)=>v!==Number(domain[i].toPrecision(digits))))fail('constant labels');
+  return;
+ }
  // Compensated sums prevent accumulation error in large point clouds from
  // becoming an apparent nonzero label at the zero endpoint.
  const sum=xs=>{let s=0,c=0;for(const x of xs){const t=s+x;c+=Math.abs(s)>=Math.abs(x)?(s-t)+x:(x-t)+s;s=t;}return s+c;};
@@ -309,17 +313,17 @@ function geometry(r,c,limit){
  // Calibrate each independent axis from entered studies / validated estimates.
  // Use the source SVG point and its CTM to avoid getBBox float truncation.
  const mark=(n,axis)=>screen(n,attr(n,'cx'),attr(n,'cy'))[axis];
- function checkTicks(svg,name,samples){
+ function checkTicks(svg,name,samples,domain){
   const ticks=[...svg.querySelectorAll('[data-plus-axis="'+name+'"]')];
   const labels=[...svg.querySelectorAll('[data-plus-tick-label="'+name+'"]')];
-  try {calibratedTicks(samples,ticks.map((n,i)=>{const p=n.getPointAtLength(0);return {text:labels[i]?.textContent||'',position:screen(n,p.x,p.y)[name]};}),3,svg.id+' '+name);}
+  try {calibratedTicks(samples,ticks.map((n,i)=>{const p=n.getPointAtLength(0);return {text:labels[i]?.textContent||'',position:screen(n,p.x,p.y)[name]};}),3,svg.id+' '+name,domain);}
   catch(e){failures.push(e.message);}
  }
- checkTicks(forest,'x',fits.map((key,i)=>[r[key].values.mu,mark(dots[i],'x')]));
+ checkTicks(forest,'x',fits.map((key,i)=>[r[key].values.mu,mark(dots[i],'x')]),[low,high]);
  // Original study inputs are pinned inputs to R; do not use transformed or
  // imputed points to establish the scale (their geometry is checked above).
- checkTicks(funnel,'x',c.te.map((v,i)=>[v,mark(studies[i],'x')]));
- checkTicks(funnel,'y',c.se.map((v,i)=>[v,mark(studies[i],'y')]));
+ checkTicks(funnel,'x',c.te.map((v,i)=>[v,mark(studies[i],'x')]),[min,max]);
+ checkTicks(funnel,'y',c.se.map((v,i)=>[v,mark(studies[i],'y')]),[0,maxSE]);
  const titles=[...funnel.querySelectorAll('text:not([data-plus-tick-label])')];
  if(titles.length!==2||titles[0]?.textContent!=='Effect (entered scale)'||titles[1]?.textContent!=='SE')failures.push('funnel axis titles');
 

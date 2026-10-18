@@ -390,3 +390,28 @@ for(const [before,after] of [["textContent='SE'","textContent='SD'"],["textConte
  await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);await page.locator('#plus-run').click();
  expect(await page.evaluate(()=>{const {results,c,limit}=AlmLimitPlusUI.snapshot();return AlmLimitPlusContract.geometry(results,c,limit);})).toContain('funnel axis titles');
 });
+
+// Synthetic regression inputs exercise degenerate calibration, not research findings.
+for(const [name,te,se] of [
+ ['equal SE and coincident estimates',[.1,.3,.5],[.2,.2,.2]],
+ ['equal effects',[.5,.5,.5],[.5,1,2]],
+ ['equal effects and SE',[.5,.5,.5],[1,1,1]],
+])for(const overlays of [false,true])for(const corrupt of [false,true])test(`limit-ma-plus constant calibration ${name} overlays=${overlays} corrupt=${corrupt}`,async({page})=>{
+ if(corrupt)await page.route('**/limit-ma/plus-ui.js',async route=>{
+  const body=await(await route.fetch()).text(),hook='label.textContent=value.toPrecision(3);';
+  expect(body).toContain(hook);
+  await route.fulfill({contentType:'application/javascript',body:body.replace(hook,"label.textContent=(value+1).toPrecision(3);")});
+ });
+ await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+ await page.evaluate(()=>Promise.all(document.getAnimations().map(a=>a.finished)));
+ const errors=await page.evaluate(({te,se,overlays})=>{
+  for(const id of ['limit','fill','reg','contour'])document.getElementById('plus-'+id+'-toggle').checked=overlays;
+  const c={te,se};__almLimitValidationRun(te.map((v,i)=>v+','+se[i]).join('\n'),true);
+  const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit);AlmLimitPlusUI.render(r,c,limit);
+  return AlmLimitPlusContract.geometry(r,c,limit);
+ },{te,se,overlays});
+ if(corrupt){
+  for(const axis of ['plus-forest x','plus-funnel x','plus-funnel y'])expect(errors.some(e=>e.includes(axis+' calibrated axis'))).toBe(true);
+ }
+ else expect(errors).toEqual([]);
+});
