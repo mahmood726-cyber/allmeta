@@ -28,3 +28,5 @@ hub/shared/vendor/*.js binary
 
 # Validation manifests pin exact JSON bytes across Windows and Unix checkouts.
 **/validate/corpus/*.json text eol=lf
+nma-inconsistency/validate/corpus/*.json text eol=lf
+nma-inconsistency/validate/corpus/reference.json text eol=lf

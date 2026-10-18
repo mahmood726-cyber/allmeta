@@ -66,13 +66,13 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>NMA Inconsistency</h1>
-    <p>Detect inconsistency between direct and indirect evidence in network meta-analysis. Performs node-splitting (Dias et al. 2010) on every comparison with a closed loop, and a global design-by-treatment test (Higgins et al. 2012).</p>
+    <p>Detect inconsistency between direct and indirect evidence in network meta-analysis. Performs node-splitting (Dias et al. 2010) on every comparison with a closed loop, and a global design-by-treatment test (Higgins et al. 2012), restricted to independent two-arm studies.</p>
   </header>
   <main id="main">
     <section class="panel">
       <h2>Input</h2>
       <label>
-        <span>Contrasts — <code>A, B, effect, SE</code></span>
+        <span>Contrasts — <code>A, B, effect, SE[, study ID]</code></span>
         <textarea id="src" aria-label="Input">A, B, -0.30, 0.10
 A, B, -0.32, 0.08
 A, B, -0.28, 0.09
@@ -84,7 +84,7 @@ A, D, -0.50, 0.15
 B, D, -0.25, 0.18
 C, D, -0.35, 0.14
 A, D, -0.48, 0.14</textarea>
-        <span class="hint">Multiple rows per comparison allowed.</span>
+        <span class="hint">Independent two-arm studies only. Multiple rows per comparison allowed. Supply study IDs to detect repeated or multi-arm studies; correlated contrasts are unsupported.</span>
       </label>
       <label style="margin-top:0.5rem;display:block">
         <span style="font-size:0.85rem;color:var(--muted)">Model</span>
@@ -94,7 +94,7 @@ A, D, -0.48, 0.14</textarea>
           <option value="DL">Random-effects (DerSimonian-Laird τ²)</option>
         </select>
         <span class="hint" style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.25rem">
-          RE models pool heterogeneity across designs (shared τ²) before testing inconsistency — addresses the "FE Q-statistics inflated under heterogeneity" caveat below.
+          RE models estimate shared τ² from consistency-model residuals before testing inconsistency — addresses the "FE Q-statistics inflated under heterogeneity" caveat below.
         </span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run tests</button>
@@ -113,21 +113,67 @@ A, D, -0.48, 0.14</textarea>
     </section>
   
       <div id="alm-flow-mount" aria-live="polite"></div>
+      <section id="alm-validate" style="grid-column:1/-1"></section>
 </main>
   <footer>
-    Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-4 on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-06-03):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. The DL path matches <code>netmeta(random=TRUE, method.tau="DL")</code> τ², network estimates and <code>netsplit()</code> to ≤1e-8 via the generalized DerSimonian-Kacker/Jackson moment denominator (see <code>hub/shared/tests/nma-inconsistency-re-parity.spec.mjs</code>); PM uses the generalized Paule-Mandel <code>Q(τ²)=df</code> moment condition. Recommended k≥5 per design.
+    For independent two-arm studies, removing each direct comparison gives the same split as netmeta back-calculation / SIDE at a fixed shared τ². RE global Q uses this consistency-model τ² as a preset; it is not the default within-design τ² test from decomp.design. Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-4 on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-06-03):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. The DL path matches <code>netmeta(random=TRUE, method.tau="DL")</code> τ², network estimates and <code>netsplit()</code> using the generalized DerSimonian-Kacker/Jackson moment denominator (see <code>hub/shared/tests/nma-inconsistency-re-parity.spec.mjs</code>); PM uses the generalized Paule-Mandel <code>Q(τ²)=df</code> moment condition. Recommended k≥5 per design.
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
 
     function parse(text) {
-      return text.trim().split(/\n/).map(l => {
-        const parts = l.split(/,/).map(s => s.trim());
-        const te = parseFloat(parts[2]), se = parseFloat(parts[3]);
-        if (!parts[0] || !parts[1] || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        return { A: parts[0], B: parts[1], te, se };
+      // Preserve quoted treatment/study labels and optional study identifiers.
+      const records = []; let row = [], field = "", quoted = false;
+      for (let i = 0; i <= text.length; i++) {
+        const c = i === text.length ? "\n" : text[i];
+        if (c === '"') {
+          if (quoted && text[i + 1] === '"') { field += '"'; i++; }
+          else quoted = !quoted;
+        } else if (!quoted && (c === ',' || c === '\n')) {
+          row.push(field.trim()); field = "";
+          if (c === '\n') { records.push(row); row = []; }
+        } else if (c !== '\r' || quoted) field += c;
+      }
+      if (quoted) return [];
+      return records.map((parts, i) => {
+        const te = Number(parts[2]), se = Number(parts[3]);
+        if (!parts[0] || !parts[1] || parts[0] === parts[1] ||
+            !parts[2] || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
+        return { A: parts[0], B: parts[1], te, se, study: parts[4] || `row_${i + 1}` };
       }).filter(Boolean);
+    }
+    function escapeMarkup(value) {
+      return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+    function refuse(reason) {
+      _lastInco = { status: "refused", reason };
+      document.getElementById("ns-body").innerHTML = "";
+      document.getElementById("ns-plot").innerHTML = "";
+      document.getElementById("dbt").textContent = reason;
+    }
+    function inputIssue(rows) {
+      if (rows.length < 3) return "At least 3 valid contrasts are required.";
+      const studies = new Map();
+      for (const r of rows) {
+        if (!studies.has(r.study)) studies.set(r.study, []);
+        studies.get(r.study).push(r);
+      }
+      for (const group of studies.values()) {
+        if (new Set(group.flatMap(r => [r.A, r.B])).size > 2)
+          return "Multi-arm studies are unsupported: correlated contrasts require study covariance.";
+      }
+      if ([...studies.values()].some(group => group.length > 1))
+        return "Repeated study IDs are unsupported: enter one independent contrast per study.";
+      const all = new Set(rows.flatMap(r => [r.A, r.B]));
+      const seen = new Set([rows[0].A]);
+      for (let old = -1; old !== seen.size;) {
+        old = seen.size;
+        for (const r of rows) if (seen.has(r.A) || seen.has(r.B)) { seen.add(r.A); seen.add(r.B); }
+      }
+      if (seen.size !== all.size) return "The treatment network is disconnected.";
+      return null;
     }
 
     // --- math utils (shared) ---
@@ -158,7 +204,7 @@ A, D, -0.48, 0.14</textarea>
       const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
       return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
     }
-    function pz(z) { return 2 * (1 - pnorm(Math.abs(z))); }
+    function pz(z) { return 1 - chiSqCDF(z * z, 1); }
 
     // Inverse-variance pool of a set of rows. tau2 ≥ 0 enables RE weights;
     // default (omitted) is FE (τ²=0).
@@ -240,10 +286,10 @@ A, D, -0.48, 0.14</textarea>
       let lo = 0, hi = Math.max(0.001, fit0.Q / fit0.df);
       // expand until Q(hi) ≤ df
       for (let g = 0; g < 50 && Qat(hi) > fit0.df; g++) hi *= 2;
-      for (let i = 0; i < 60; i++) {
+      for (let i = 0; i < 100; i++) {
         const mid = 0.5 * (lo + hi);
         if (Qat(mid) > fit0.df) lo = mid; else hi = mid;
-        if (hi - lo < 1e-10) break;
+        if (hi - lo < 1e-13 * Math.max(1, mid)) break;
       }
       return 0.5 * (lo + hi);
     }
@@ -257,10 +303,10 @@ A, D, -0.48, 0.14</textarea>
 
     function nodeSplit(rows, refTrt, tau2) {
       const pairs = new Set();
-      for (const r of rows) { pairs.add([r.A, r.B].sort().join("|")); }
+      for (const r of rows) { pairs.add(JSON.stringify([r.A, r.B].sort())); }
       const results = [];
       for (const key of pairs) {
-        const [a, b] = key.split("|");
+        const [a, b] = JSON.parse(key);
         const direct = rows.filter(r => (r.A === a && r.B === b) || (r.A === b && r.B === a)).map(r => ({
           ...r,
           te: r.A === a ? r.te : -r.te,
@@ -268,6 +314,16 @@ A, D, -0.48, 0.14</textarea>
         }));
         const others = rows.filter(r => !((r.A === a && r.B === b) || (r.A === b && r.B === a)));
         if (direct.length === 0 || others.length === 0) continue;
+        // Check graph connectivity before solving: floating-point elimination
+        // can invert a disconnected Laplacian with a tiny nonzero pivot.
+        const reachable = new Set([a]);
+        for (let old = -1; old !== reachable.size;) {
+          old = reachable.size;
+          for (const r of others) if (reachable.has(r.A) || reachable.has(r.B)) {
+            reachable.add(r.A); reachable.add(r.B);
+          }
+        }
+        if (!reachable.has(b)) continue;
         let ind = null;
         try {
           const fit = fitNMA(others, a, tau2);
@@ -306,10 +362,10 @@ A, D, -0.48, 0.14</textarea>
       const t2 = (typeof tau2 === "number" && Number.isFinite(tau2) && tau2 > 0) ? tau2 : 0;
       try {
         const cons = fitNMA(rows, null, t2);
-        const tagged = rows.map(r => ({ ...r, __design: [r.A, r.B].sort().join("|") }));
+        const tagged = rows.map(r => ({ ...r, __design: JSON.stringify([r.A, r.B].sort()) }));
         const designs = [...new Set(tagged.map(r => r.__design))];
         if (designs.length <= cons.nBasic) {
-          return { Q: cons.Q, df: cons.df, p: NaN, note: "inconsistency model unidentifiable (designs ≤ basic parameters)" };
+          return { Q: 0, df: 0, p: NaN, note: "No closed loops: inconsistency is not testable." };
         }
         const n = tagged.length;
         const nCols = designs.length;
@@ -335,7 +391,8 @@ A, D, -0.48, 0.14</textarea>
         const fit_ = y.map((yi, i) => X[i].reduce((s, x, j) => s + x * beta[j], 0));
         const Qfull = y.reduce((s, yi, i) => s + w[i] * (yi - fit_[i]) ** 2, 0);
         const dfFull = Math.max(0, n - nCols);
-        const dQ = Math.max(0, cons.Q - Qfull);
+        // Nested weighted projections: avoid cancellation of large residual sums.
+        const dQ = y.reduce((sum, _, i) => sum + w[i] * (fit_[i] - cons.X[i].reduce((v, x, j) => v + x * cons.beta[j], 0)) ** 2, 0);
         const dDf = Math.max(0, cons.df - dfFull);
         const p = dDf > 0 ? 1 - chiSqCDF(dQ, dDf) : NaN;
         return { Q: dQ, df: dDf, p };
@@ -388,17 +445,20 @@ A, D, -0.48, 0.14</textarea>
 
     function run() {
       const rows = parse(document.getElementById("src").value);
-      if (rows.length < 3) return;
+      const issue = inputIssue(rows);
+      if (issue) { refuse(issue); return; }
       const modelSel = document.getElementById("f-model");
       const method = modelSel ? modelSel.value : "FE";
-      const tau2 = estimateTau2(rows, method);
+      let tau2;
+      try { tau2 = estimateTau2(rows, method); fitNMA(rows, undefined, tau2); }
+      catch (_) { refuse("Network fit is singular or numerically invalid."); return; }
       const ns = nodeSplit(rows, undefined, tau2);
       const body = document.getElementById("ns-body");
       const __bodyParts = [""];
       for (const r of ns) {
         const flag = r.p < 0.05 ? "incon" : "cons";
         const label = r.p < 0.05 ? "inconsistent" : "consistent";
-        __bodyParts.push(`<tr><td><code>${r.comparison}</code></td>
+        __bodyParts.push(`<tr><td><code>${escapeMarkup(r.comparison)}</code></td>
           <td>${fmt(r.direct.mean)} (${fmt(r.direct.se)})</td>
           <td>${fmt(r.indirect.mean)} (${fmt(r.indirect.se)})</td>
           <td>${fmt(r.diff)} (${fmt(r.seDiff)})</td>
@@ -410,7 +470,7 @@ A, D, -0.48, 0.14</textarea>
       const tauTxt = method === "FE" ? "fixed-effect (τ²=0)" : `${method} τ² = ${fmt(tau2, 4)}`;
       document.getElementById("dbt").innerHTML = `
         <p>Design-by-treatment Q = <code>${fmt(g.Q, 2)}</code>, df = <code>${g.df}</code>, p = <code>${fmt(g.p, 3)}</code>.
-        <span class="chip ${g.p < 0.05 ? 'incon' : 'cons'}">${g.p < 0.05 ? "evidence of inconsistency" : "no evidence of inconsistency"}</span></p>
+        <span class="chip ${g.p < 0.05 ? 'incon' : 'cons'}">${!Number.isFinite(g.p) ? "inconsistency is not testable" : g.p < 0.05 ? "evidence of inconsistency" : "no evidence of inconsistency"}</span></p>
         <p style="font-size:0.83rem;color:var(--muted);margin-top:0.3rem">Model: ${tauTxt}.</p>`;
       drawNS(ns);
       body.innerHTML = __bodyParts.join("");
@@ -418,7 +478,7 @@ A, D, -0.48, 0.14</textarea>
       // Engine-state exposure for R-parity tests (do-no-harm).
       try {
         const net = fitNMA(rows);
-        const estimates = {};
+        const estimates = Object.create(null);
         net.trts.forEach((t, i) => {
           estimates[t] = i === 0
             ? { est: 0, se: 0 }
@@ -427,7 +487,7 @@ A, D, -0.48, 0.14</textarea>
         // RE-refit network estimates under the selected τ² (== FE when τ²=0),
         // for netmeta(random=TRUE) parity checks.
         const netRE = fitNMA(rows, undefined, tau2);
-        const estimatesRandom = {};
+        const estimatesRandom = Object.create(null);
         netRE.trts.forEach((t, i) => {
           estimatesRandom[t] = i === 0
             ? { est: 0, se: 0 }
@@ -443,9 +503,9 @@ A, D, -0.48, 0.14</textarea>
             indirect: { mean: r.indirect.mean, se: r.indirect.se },
             diff: r.diff, seDiff: r.seDiff, z: r.z, p: r.p,
           })),
-          dbt: { Q: g.Q, df: g.df, p: g.p },
+          dbt: { Q: g.Q, df: g.df, p: Number.isFinite(g.p) ? g.p : null },
         };
-      } catch (_) { /* leave _lastInco as-is on degenerate input */ }
+      } catch (_) { refuse("Network fit is singular or numerically invalid."); }
     }
 
     window.__almIncoLoad = function (text) {
@@ -461,13 +521,13 @@ A, D, -0.48, 0.14</textarea>
       const __svgParts = [""];
       const padL = 120, padR = 30;
       const plotW = W - padL - padR;
-      const allMeans = ns.flatMap(r => [r.direct.mean, r.indirect.mean]);
-      const lo = Math.min(0, ...allMeans) - 0.3, hi = Math.max(0, ...allMeans) + 0.3;
+      const allLimits = ns.flatMap(r => [r.direct.mean - Z975 * r.direct.se, r.direct.mean + Z975 * r.direct.se, r.indirect.mean - Z975 * r.indirect.se, r.indirect.mean + Z975 * r.indirect.se]);
+      const lo = Math.min(0, ...allLimits) - 0.3, hi = Math.max(0, ...allLimits) + 0.3;
       const X = v => padL + (v - lo) / (hi - lo) * plotW;
       __svgParts.push(`<line x1="${X(0)}" y1="${10}" x2="${X(0)}" y2="${10 + ns.length * 30}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.35"/>`);
       ns.forEach((r, i) => {
         const y = 30 + i * 30;
-        __svgParts.push(`<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${r.comparison}</text>`);
+        __svgParts.push(`<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${escapeMarkup(r.comparison)}</text>`);
         // direct
         const dLo = r.direct.mean - Z975 * r.direct.se, dHi = r.direct.mean + Z975 * r.direct.se;
         __svgParts.push(`<line x1="${X(dLo)}" y1="${y - 6}" x2="${X(dHi)}" y2="${y - 6}" stroke="var(--accent)" stroke-width="1.3"/>`);
@@ -484,6 +544,8 @@ A, D, -0.48, 0.14</textarea>
 
     }
 
+    // Observation-only restoration for corpus replay; no calculation is replaced.
+    window.__almIncoValidationRestore = function (state) { _lastInco = state; };
     document.getElementById("btn-run").addEventListener("click", run);
     run();
   </script>
@@ -547,10 +609,12 @@ A, D, -0.48, 0.14</textarea>
     function notify(msg) { if (window.Toast && typeof Toast.show === "function") Toast.show(msg, "warn"); }
     btn.addEventListener("click", function () {
       var env = MaComparisons.read();
-      if (!env || !Array.isArray(env.studies) || !env.studies.length) { notify("Shared network bus is empty."); return; }
+      if (!env || !Array.isArray(env.studies) || !env.studies.length) { refuse("Shared network bus is empty."); notify("Shared network bus is empty."); return; }
+      if (env.studies.some(function (s) { return Array.isArray(s.arms) && s.arms.length > 2; })) { refuse("Multi-arm studies are unsupported: correlated contrasts require study covariance."); return; }
       var rows = MaComparisons.toContrasts(env);
-      if (!rows.length) { notify("Bus measure " + (env.effectMeasure || "?") + " yielded no contrasts (needs OR/RR with events/n, or MD/SMD with mean/sd/n)."); return; }
-      ta.value = rows.map(function (r) { return r.treatment1 + ", " + r.treatment2 + ", " + r.te + ", " + r.se; }).join("\n");
+      if (!rows.length) { refuse("The shared network has no supported contrasts."); notify("Bus measure " + (env.effectMeasure || "?") + " yielded no contrasts (needs OR/RR with events/n, or MD/SMD with mean/sd/n)."); return; }
+      function csv(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }
+      ta.value = rows.map(function (r) { return [r.treatment1, r.treatment2, r.te, r.se, r.study].map(csv).join(","); }).join("\n");
       ta.dispatchEvent(new Event("input", { bubbles: true }));
       runBtn.click();
       notify("Loaded " + rows.length + " contrasts from the shared bus.");
@@ -558,5 +622,8 @@ A, D, -0.48, 0.14</textarea>
   });
 })();
 </script>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
+<script src="validate/live.js"></script>
 </body>
 </html>
