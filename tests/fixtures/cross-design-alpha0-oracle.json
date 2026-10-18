@@ -1,0 +1,394 @@
+{
+  "R": "4.6.0",
+  "packages": {
+    "metafor": "5.0.1",
+    "metadat": "1.6.0",
+    "jsonlite": "2.0.0"
+  },
+  "estimator": "DerSimonian-Laird, inverse-variance random effects, normal 95% CI; k=1 uses EE",
+  "source": "metadat::dat.bcg, alloc == random; log risk ratios recomputed with metafor::escalc(RR)",
+  "source_url": "https://wviechtb.github.io/metadat/reference/dat.bcg.html",
+  "disclosure": "All added observational rows and non-BCG cases are synthetic regression fixtures, not clinical findings.",
+  "bcg_source_rows": [
+    {
+      "trial": 1,
+      "author": "Aronson",
+      "year": 1948,
+      "tpos": 4,
+      "tneg": 119,
+      "cpos": 11,
+      "cneg": 128,
+      "ablat": 44,
+      "alloc": "random"
+    },
+    {
+      "trial": 2,
+      "author": "Ferguson & Simes",
+      "year": 1949,
+      "tpos": 6,
+      "tneg": 300,
+      "cpos": 29,
+      "cneg": 274,
+      "ablat": 55,
+      "alloc": "random"
+    },
+    {
+      "trial": 3,
+      "author": "Rosenthal et al",
+      "year": 1960,
+      "tpos": 3,
+      "tneg": 228,
+      "cpos": 11,
+      "cneg": 209,
+      "ablat": 42,
+      "alloc": "random"
+    },
+    {
+      "trial": 4,
+      "author": "Hart & Sutherland",
+      "year": 1977,
+      "tpos": 62,
+      "tneg": 13536,
+      "cpos": 248,
+      "cneg": 12619,
+      "ablat": 52,
+      "alloc": "random"
+    },
+    {
+      "trial": 7,
+      "author": "Vandiviere et al",
+      "year": 1973,
+      "tpos": 8,
+      "tneg": 2537,
+      "cpos": 10,
+      "cneg": 619,
+      "ablat": 19,
+      "alloc": "random"
+    },
+    {
+      "trial": 8,
+      "author": "TPT Madras",
+      "year": 1980,
+      "tpos": 505,
+      "tneg": 87886,
+      "cpos": 499,
+      "cneg": 87892,
+      "ablat": 13,
+      "alloc": "random"
+    },
+    {
+      "trial": 9,
+      "author": "Coetzee & Berjak",
+      "year": 1968,
+      "tpos": 29,
+      "tneg": 7470,
+      "cpos": 45,
+      "cneg": 7232,
+      "ablat": 27,
+      "alloc": "random"
+    }
+  ],
+  "cases": [
+    {
+      "id": "synthetic-heterogeneous-alpha0",
+      "alpha": 0,
+      "rows": [
+        {
+          "label": "Synthetic RCT A",
+          "yi": -0.20000000000000001,
+          "vi": 0.01,
+          "design": "rct"
+        },
+        {
+          "label": "Synthetic RCT B",
+          "yi": 0.5,
+          "vi": 0.25,
+          "design": "rct"
+        },
+        {
+          "label": "Synthetic Obs A",
+          "yi": -4,
+          "vi": 0.01,
+          "design": "obs"
+        },
+        {
+          "label": "Synthetic Obs B",
+          "yi": 6,
+          "vi": 0.02,
+          "design": "obs"
+        }
+      ],
+      "expected": {
+        "mu": -0.021428571428571491,
+        "sePost": 0.30514299090419744,
+        "ci_lo": -0.61949784373563166,
+        "ci_hi": 0.57664070087848873,
+        "tau2": 0.11499999999999994
+      }
+    },
+    {
+      "id": "synthetic-single-rct-alpha0",
+      "alpha": 0,
+      "rows": [
+        {
+          "label": "Synthetic RCT A",
+          "yi": -0.20000000000000001,
+          "vi": 0.01,
+          "design": "rct"
+        },
+        {
+          "label": "Synthetic Obs A",
+          "yi": -4,
+          "vi": 0.01,
+          "design": "obs"
+        },
+        {
+          "label": "Synthetic Obs B",
+          "yi": 6,
+          "vi": 0.02,
+          "design": "obs"
+        }
+      ],
+      "expected": {
+        "mu": -0.20000000000000007,
+        "sePost": 0.10000000000000001,
+        "ci_lo": -0.39599639845400547,
+        "ci_hi": -0.0040036015459946617,
+        "tau2": 0
+      }
+    },
+    {
+      "id": "synthetic-null-alpha0",
+      "alpha": 0,
+      "rows": [
+        {
+          "label": "Synthetic RCT A",
+          "yi": 0,
+          "vi": 0.01,
+          "design": "rct"
+        },
+        {
+          "label": "Synthetic RCT B",
+          "yi": 0,
+          "vi": 0.25,
+          "design": "rct"
+        },
+        {
+          "label": "Synthetic Obs A",
+          "yi": -4,
+          "vi": 0.01,
+          "design": "obs"
+        },
+        {
+          "label": "Synthetic Obs B",
+          "yi": 6,
+          "vi": 0.02,
+          "design": "obs"
+        }
+      ],
+      "expected": {
+        "mu": 0,
+        "sePost": 0.098058067569092036,
+        "ci_lo": -0.19219028082901546,
+        "ci_hi": 0.19219028082901546,
+        "tau2": 0
+      }
+    },
+    {
+      "id": "synthetic-alpha1",
+      "alpha": 1,
+      "rows": [
+        {
+          "label": "Synthetic RCT A",
+          "yi": -0.20000000000000001,
+          "vi": 0.01,
+          "design": "rct"
+        },
+        {
+          "label": "Synthetic RCT B",
+          "yi": 0.5,
+          "vi": 0.25,
+          "design": "rct"
+        },
+        {
+          "label": "Synthetic Obs A",
+          "yi": -4,
+          "vi": 0.01,
+          "design": "obs"
+        },
+        {
+          "label": "Synthetic Obs B",
+          "yi": 6,
+          "vi": 0.02,
+          "design": "obs"
+        }
+      ],
+      "expected": {
+        "mu": 0.57454887557983825,
+        "sePost": 2.2535783431158469,
+        "ci_lo": -3.8423835132666699,
+        "ci_hi": 4.991481264426346,
+        "tau2": 20.242476190476193
+      }
+    },
+    {
+      "id": "synthetic-all-obs-alpha1",
+      "alpha": 1,
+      "rows": [
+        {
+          "label": "Synthetic Obs A",
+          "yi": -4,
+          "vi": 0.01,
+          "design": "obs"
+        },
+        {
+          "label": "Synthetic Obs B",
+          "yi": 6,
+          "vi": 0.02,
+          "design": "obs"
+        }
+      ],
+      "expected": {
+        "mu": 0.99949999999999894,
+        "sePost": 4.9999999749999988,
+        "ci_lo": -8.8003198737011683,
+        "ci_hi": 10.799319873701167,
+        "tau2": 49.984999999999999
+      }
+    },
+    {
+      "id": "bcg-random-plus-synthetic-obs-alpha0",
+      "alpha": 0,
+      "rows": [
+        {
+          "label": "Aronson 1948",
+          "yi": -0.88931133392020545,
+          "vi": 0.32558476500396133,
+          "design": "rct"
+        },
+        {
+          "label": "Ferguson & Simes 1949",
+          "yi": -1.5853886572014306,
+          "vi": 0.19458112139814385,
+          "design": "rct"
+        },
+        {
+          "label": "Rosenthal et al 1960",
+          "yi": -1.3480731482996933,
+          "vi": 0.41536796536796539,
+          "design": "rct"
+        },
+        {
+          "label": "Hart & Sutherland 1977",
+          "yi": -1.4415511900213054,
+          "vi": 0.020010031902247573,
+          "design": "rct"
+        },
+        {
+          "label": "Vandiviere et al 1973",
+          "yi": -1.6208982235983918,
+          "vi": 0.22301724757231517,
+          "design": "rct"
+        },
+        {
+          "label": "TPT Madras 1980",
+          "yi": 0.011952333523840508,
+          "vi": 0.0039615792978177295,
+          "design": "rct"
+        },
+        {
+          "label": "Coetzee & Berjak 1968",
+          "yi": -0.4694176487381494,
+          "vi": 0.056434210463248966,
+          "design": "rct"
+        },
+        {
+          "label": "Synthetic Obs A",
+          "yi": -4,
+          "vi": 0.01,
+          "design": "obs"
+        },
+        {
+          "label": "Synthetic Obs B",
+          "yi": 6,
+          "vi": 0.02,
+          "design": "obs"
+        }
+      ],
+      "expected": {
+        "mu": -1.004161353998235,
+        "sePost": 0.36210679874100876,
+        "ci_lo": -1.7138776380877059,
+        "ci_hi": -0.29444506990876418,
+        "tau2": 0.76306275437095272
+      }
+    },
+    {
+      "id": "bcg-random-plus-synthetic-obs-alpha1",
+      "alpha": 1,
+      "rows": [
+        {
+          "label": "Aronson 1948",
+          "yi": -0.88931133392020545,
+          "vi": 0.32558476500396133,
+          "design": "rct"
+        },
+        {
+          "label": "Ferguson & Simes 1949",
+          "yi": -1.5853886572014306,
+          "vi": 0.19458112139814385,
+          "design": "rct"
+        },
+        {
+          "label": "Rosenthal et al 1960",
+          "yi": -1.3480731482996933,
+          "vi": 0.41536796536796539,
+          "design": "rct"
+        },
+        {
+          "label": "Hart & Sutherland 1977",
+          "yi": -1.4415511900213054,
+          "vi": 0.020010031902247573,
+          "design": "rct"
+        },
+        {
+          "label": "Vandiviere et al 1973",
+          "yi": -1.6208982235983918,
+          "vi": 0.22301724757231517,
+          "design": "rct"
+        },
+        {
+          "label": "TPT Madras 1980",
+          "yi": 0.011952333523840508,
+          "vi": 0.0039615792978177295,
+          "design": "rct"
+        },
+        {
+          "label": "Coetzee & Berjak 1968",
+          "yi": -0.4694176487381494,
+          "vi": 0.056434210463248966,
+          "design": "rct"
+        },
+        {
+          "label": "Synthetic Obs A",
+          "yi": -4,
+          "vi": 0.01,
+          "design": "obs"
+        },
+        {
+          "label": "Synthetic Obs B",
+          "yi": 6,
+          "vi": 0.02,
+          "design": "obs"
+        }
+      ],
+      "expected": {
+        "mu": -0.58607323802708011,
+        "sePost": 1.0977593731157866,
+        "ci_lo": -2.7376420730252891,
+        "ci_hi": 1.5654955969711288,
+        "tau2": 10.706627910475918
+      }
+    }
+  ]
+}

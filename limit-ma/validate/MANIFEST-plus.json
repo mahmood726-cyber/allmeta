@@ -1,0 +1,23 @@
+{
+  "schema": "limit-ma-plus-v1",
+  "configurations": 169,
+  "checks": 16097,
+  "versions": {
+    "metafor": "5.2-1",
+    "meta": "8.5-0",
+    "metasens": "1.5-3"
+  },
+  "source_sha256": "a9232d92c3b777c09033b327e8b7df5e332e8b68aadb130d8e164fa4cc437744",
+  "files": [
+    {
+      "path": "validate/plus/corpus.json",
+      "bytes": 644751,
+      "sha256": "bf68cae8b7f7ae93ed6d5621851858346908c47bc7d1480111bb7485af4f03ca"
+    },
+    {
+      "path": "validate/plus/reference.json",
+      "bytes": 636047,
+      "sha256": "e4caaee58963a1fe4535c1f7ae681aa6d2277018a28dcfdb90ee7eeaec999df7"
+    }
+  ]
+}

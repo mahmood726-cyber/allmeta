@@ -35,3 +35,31 @@ test('pubbias-tests wires the selection model into its results', async ({ page }
   expect(o.sel_delta2).toBeGreaterThan(0);
   expect(o.sel_LRTp).toBeGreaterThanOrEqual(0);
 });
+
+// Legacy callers must retain every bit of the base result, including NaNs.
+// Keep this corpus regression alongside the independent R accuracy test above.
+test('selmodel legacy matches pinned bytes and fixture across the complete plus corpus', async () => {
+  test.setTimeout(180000);
+  const {readFileSync}=await import('node:fs'),{createHash}=await import('node:crypto'),vm=await import('node:vm');
+  const root=new globalThis.URL('../../../',import.meta.url);
+  const read=p=>readFileSync(new globalThis.URL(p,root),'utf8').replace(/\r\n/g,'\n');
+  const legacySHA='a220342e16b8b23f6eb75f41b3262470044a8283ab3cc77cf731e8077b91e343';
+  expect(createHash('sha256').update(read('shared/selmodel.js')).digest('hex')).toBe(legacySHA);
+  const fixture=JSON.parse(read('hub/shared/tests/fixtures/selmodel-legacy-plus.json'),(_,x)=>x&&typeof x==='object'&&'$number' in x?Number(x.$number):x);
+  expect(fixture.sha256).toBe(legacySHA);
+  function env(plus=false){const ctx=vm.createContext({});ctx.window=ctx;
+    for(const p of ['shared/ma-core.js','shared/selmodel.js'])vm.runInContext(read(p),ctx);
+    if(plus)for(const p of ['shared/trimfill.js','limit-ma/plus-opt.js','limit-ma/plus-selmodel.js','limit-ma/plus.js'])vm.runInContext(read(p),ctx);
+    return ctx;
+  }
+  const b=env(),withPlus=env(true),corpus=JSON.parse(read('limit-ma/validate/plus/corpus.json'));
+  expect(fixture.outputs.map(x=>x.id)).toEqual(corpus.map(x=>x.id));
+  let leaves=0;
+  function identical(x,y,path){if(x&&typeof x==='object'){
+    expect(Object.keys(y),path).toEqual(Object.keys(x));for(const key of Object.keys(x))identical(x[key],y[key],path+'.'+key);
+  }else{leaves++;expect(Object.is(x,y),path).toBe(true);}}
+  for(const [i,c] of corpus.entries()){const vi=c.se.map(s=>s*s),opts={steps:[.025],method:'REML'},ref=fixture.outputs[i].result;
+    identical(ref,b.AlmSelModel.fit(c.te,vi,opts),c.id);identical(ref,withPlus.AlmSelModel.fit(c.te,vi,opts),c.id+' with plus loaded');
+  }
+  console.log('SELMODEL EXACT',corpus.length,'configurations; two contexts;',leaves,'scalar comparisons');
+});
