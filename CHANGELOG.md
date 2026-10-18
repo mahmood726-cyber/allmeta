@@ -11,8 +11,26 @@ the section is renamed to that version and dated, and a fresh
 
 ## [Unreleased]
 
+### Fixed
+- Cross-design power-prior pooling at alpha=0 now estimates heterogeneity from
+  RCTs alone. Observational-only input at alpha=0 displays a non-estimable result
+  without crashing the plot or leaving stale export state. Earlier alpha=0
+  results with mixed designs should be rerun; positive-alpha behavior is unchanged.
+
 ### Added
 - _(items added since the most recent tag will be listed here)_
+
+---
+
+## [1.6.1] — 2026-10-17
+
+### Added
+- **Validate in R** for `cumulative-subgroup` (#129): a live check that runs self-hosted `metafor` (4.8-0) in webR on the
+  current data, and an offline replay of a declared, SHA-256-pinned corpus (1,816 configurations, 609,398 checks; 6
+  documented refusals) through the page's own code, comparing every displayed number, label, control, status message
+  and the page's static text. Adapter, tests and documentation only; the numerical engine is unchanged.
+
+The `cumulative-subgroup` fixes (#124: R-export parity, CSV quoting, axis limits, refusals) shipped in 1.6.0.
 
 ---
 

@@ -63,3 +63,10 @@ benchmark/*.log
 hub/shared/tests/.npm-cache/
 
 integration-evidence/
+# Local limit-ma oracle and verification environment
+/re/
+**/.npm-cache/
+/limit-ma/preflight.R
+
+/integration-evidence/
+/limit-ma/inspect-plus.R

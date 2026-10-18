@@ -1,0 +1,142 @@
+[
+  {
+    "title": "dose-response-ma file picker offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "dose-response-ma HTTP preparation then offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "dta-sroc file picker offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "dta-sroc HTTP preparation then offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "gosh file picker offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "gosh HTTP preparation then offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "influence file picker offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "influence HTTP preparation then offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma file picker offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma full primary replay preserves pending input, results and navigation",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma HTTP preparation then offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma invalid current rows are not silently dropped",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma malformed evidence and changed refusal fail closed",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma refuses changed corpus bytes",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma replay restores after engine failure",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects add header",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects append digit",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects body whitespace",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects change row label",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects extra header row",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects header whitespace",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects remove column",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects rename header",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects reverse CI endpoints",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects swap estimate/SE",
+    "status": "passed"
+  },
+  {
+    "title": "limit-ma table replay detects swap headers",
+    "status": "passed"
+  },
+  {
+    "title": "mh-peto file picker offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "mh-peto HTTP preparation then offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "multilevel-ma file picker offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "multilevel-ma HTTP preparation then offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "nma HTTP preparation then offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "proportion-ma file picker offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "proportion-ma HTTP preparation then offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "pubbias-tests file picker offline widget replay",
+    "status": "passed"
+  },
+  {
+    "title": "pubbias-tests HTTP preparation then offline widget replay",
+    "status": "passed"
+  }
+]
