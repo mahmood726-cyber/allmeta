@@ -42,6 +42,8 @@ node nma-inconsistency/validate/build-fixtures.cjs <extracted-P16-validation-dir
 
 The builder requires linkedom 0.18.12. It declares its selection, consumes final R references, checks bus transformations against R, writes LF corpus bytes and derives the check count by executing the adapter. Regeneration changes pins and requires review of both evidence and contracts.
 
+**Browser re-pin (2026-10-18).** The first browser run (Edge/Chromium) failed 196 of 4,627 checks against the linkedom-built contract, and every failure was a linkedom artefact, not a page or R difference: linkedom nests siblings inside non-void SVG `<line/>` elements (68 plot trees), splits `|z| &gt; 1.96` into three text nodes (122 page-text checks), and Node's V8 returned the OR bus log-odds one ulp from R (`1.960835799271989` vs R `1.9608357992719891`; the browser equals R), changing the exact parsed-row and input-text contract in three bus cases. The page-text, input-text, parsed-row and display parts of `reference.json` were therefore re-derived in the browser from the same corpus; every R numerical reference, refusal reason and the check count (4,627) are unchanged, and the bus rows were re-checked against R to 1e-9. The display contract is now browser evidence, so the linkedom builder and Node DOM tests no longer reproduce it exactly.
+
 Node DOM tests, from the repository root:
 
 ```powershell

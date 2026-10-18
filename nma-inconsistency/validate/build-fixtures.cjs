@@ -1,5 +1,6 @@
 // Usage: NODE_PATH=<linkedom modules> node build-fixtures.cjs <extracted P16-validation>
 // Deliberate fixture maintenance only: never regenerate references during a test.
+// NOTE: the shipped display/page-text/parsed contract was re-pinned in a browser (see README, "Browser re-pin"); linkedom output differs.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {harness,root}=require('../../hub/shared/tests/nma-inconsistency-dom.cjs');
 const source=process.argv[2]; if(!source)throw Error('Pass the extracted P16-validation directory');

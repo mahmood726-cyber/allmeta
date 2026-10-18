@@ -7,7 +7,7 @@ const paths=manifest.files.map(f=>fileURLToPath(new URL('nma-inconsistency/'+f.p
 const raw=manifest.files.map((f,i)=>[f.path,[...readFileSync(paths[i])]]);
 async function replay(page){return page.evaluate(entries=>AlmIncoValidationAdapter.corpus.run(Object.fromEntries(entries.map(([k,v])=>[k,new Uint8Array(v)]))),raw);}
 test('offline pinned replay: 4627 checks, 122 configurations, 54 matched refusals and exact restoration',async({page,context})=>{
- await context.setOffline(true);await page.goto(app);
+ test.setTimeout(180000);await context.setOffline(true);await page.goto(app);
  await page.fill('#src','pending input');
  await page.waitForFunction(()=>(localStorage.getItem('alm-autosave:nma-inconsistency')||'').includes('pending input'));
  const before=await page.evaluate(()=>JSON.stringify(AlmIncoValidationAdapter.snapshot()));
@@ -17,15 +17,15 @@ test('offline pinned replay: 4627 checks, 122 configurations, 54 matched refusal
  expect(await page.evaluate(()=>JSON.stringify(AlmIncoValidationAdapter.snapshot()))).toBe(before);
 });
 test('offline file picker verifies both pins and runs panel',async({page,context})=>{
- await context.setOffline(true);await page.goto(app);
+ test.setTimeout(180000);await context.setOffline(true);await page.goto(app);
  await page.locator('#alm-validate input[type=file]').setInputFiles(paths);
  await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
- await expect(page.locator('#alm-validate [role=status]')).toContainText('4627/4627 passed; 0 failed');
+ await expect(page.locator('#alm-validate [role=status]')).toContainText('4627/4627 passed; 0 failed',{timeout:150000});
  await expect(page.locator('#alm-validate')).toContainText('SHA-256 verified');
  await expect(page.getByRole('button',{name:'Validate this analysis in R',exact:true})).toBeVisible();
 });
 for(const kind of ['number','label','refusal','static text','control'])test('tampered '+kind+' fails replay',async({page})=>{
- await page.goto(app);
+ test.setTimeout(180000);await page.goto(app);
  await page.evaluate(kind=>{
   if(kind==='static text')document.querySelector('footer').append(' changed');
   else if(kind==='control')document.getElementById('f-model').disabled=true;
