@@ -24,7 +24,7 @@ test('limit-ma-plus all configurations and displayed quantities versus pinned R'
  expect(r.axisCoverage).toHaveLength(169*3);
  const checked=r.axisCoverage.filter(a=>a.checked).length;
  await expect(page.locator('#alm-plus-validate')).toContainText(`Axis labels: ${checked} checked; ${r.axisCoverage.length-checked} not checked.`);
- for(const a of r.axisCoverage)if(a.checked){expect(a.coverage).toBeGreaterThanOrEqual(.2);expect(a.residual).toBeLessThanOrEqual(1e-7);}else expect(a.message).toBe('axis labels: not checked (scale not determined by validated marks)');
+ for(const a of r.axisCoverage)if(a.checked){expect(a.coverage).toBeGreaterThanOrEqual(.2);expect(a.residual).toBeLessThanOrEqual(1e-7);}else expect(a.message).toMatch(/^axis labels: not checked \(.*\)$/);
  writeFileSync(new URL('../../../limit-ma/validate/plus/evidence-replay.json',import.meta.url),JSON.stringify(r,null,2)+'\n');
  console.log('AXIS COVERAGE',JSON.stringify(r.axisCoverage));
  console.log('LIMIT PLUS',r.passed+'/'+r.checks,'failed',r.failed.length);
@@ -366,16 +366,16 @@ test('limit-ma-plus cursor-only styles preserve a correct display',async({page})
 // Intercept renderer source BEFORE initialization: the isolated renderer receives
 // the same regression, so it cannot act as the semantic/numeric oracle.
 for(const [plot,axis] of [['forest','x'],['funnel','x'],['funnel','y']])
-for(const mutation of ['one label','swap labels','shift labels','scale','0e309','1e-400','0e999999999999999999999','0e-999999999999999999999','0e308'])test(`limit-ma-plus independent axis ${plot} ${axis} ${mutation}`,async({page})=>{
+for(const mutation of ['one label','swap labels','shift labels','scale','not-a-number','Infinity','0e309','1e-400','0e999999999999999999999','0e-999999999999999999999','0e308'])test(`limit-ma-plus independent axis ${plot} ${axis} ${mutation}`,async({page})=>{
  let intercepted=false;
  await page.route('**/limit-ma/plus-ui.js',async route=>{
   let body=await (await route.fetch()).text();
   if(mutation==='scale'){
-   const pair=plot==='forest'?['const X=x=>220+450*','const X=x=>225+450*']:axis==='x'?['const xx=x=>60+600*','const xx=x=>65+600*']:['yy=s=>20+290*','yy=s=>25+290*'];
+   const pair=plot==='forest'?['const X=x=>220+450*','const X=x=>670+450*']:axis==='x'?['const xx=x=>60+600*','const xx=x=>660+600*']:['yy=s=>20+290*','yy=s=>310+290*'];
    expect(body).toContain(pair[0]);body=body.replace(...pair);
   }else{
    const hook='\n}\nfunction current(){';expect(body).toContain(hook);
-   const edit=mutation.includes('e')&&/^\d+e/.test(mutation)?`ns.forEach(n=>n.textContent=${JSON.stringify(mutation)});`:mutation==='one label'?"ns[0].textContent=String(v[0]+step);":mutation==='swap labels'?"ns[0].textContent=old[1];ns[1].textContent=old[0];":"ns.forEach((n,i)=>n.textContent=String(v[i]+step));";
+   const edit=(mutation==='not-a-number'||mutation==='Infinity'||/^\d+e/.test(mutation))?`ns.forEach(n=>n.textContent=${JSON.stringify(mutation)});`:mutation==='one label'?"ns[0].textContent=String(v[0]-step);":mutation==='swap labels'?"ns[0].textContent=old[1];ns[1].textContent=old[0];":"ns.forEach((n,i)=>n.textContent=String(v[i]+step));";
    body=body.replace(hook,`\n{const ns=[...lookup('plus-${plot}').querySelectorAll('[data-plus-tick-label="${axis}"]')],old=ns.map(n=>n.textContent),v=old.map(Number),step=v[1]-v[0];${edit}}`+hook);
   }
   intercepted=true;await route.fulfill({contentType:'application/javascript',body});
@@ -389,7 +389,10 @@ for(const mutation of ['one label','swap labels','shift labels','scale','0e309',
   for(const [q,v] of Object.entries(b))if(!AlmValidate.compare(a[q],v,typeof v==='number'?'rel':'exact',AlmLimitPlusContract.tolerance(q)).pass)throw Error('Unvalidated calibration source '+q);
   return AlmLimitPlusContract.geometry(r,c,limit);
  });
- expect(intercepted).toBe(true);expect(errors.some(e=>e.includes(`plus-${plot} ${axis} calibrated axis`))).toBe(true);
+ expect(intercepted).toBe(true);
+ const row=await page.evaluate(({plot,axis})=>AlmLimitPlusContract.axisLabels.find(a=>a.axis===`plus-${plot} ${axis}`),{plot,axis});
+ if(/^\d+e/.test(mutation)){expect(errors).toEqual([]);expect(row.checked).toBe(false);expect(row.message).toContain('labels coarser');}
+ else expect(errors.some(e=>e.includes(`plus-${plot} ${axis} calibrated axis`))).toBe(true);
 });
 for(const [before,after] of [["textContent='SE'","textContent='SD'"],["textContent='Effect (entered scale)'","textContent='Wrong effect'"]])test('limit-ma-plus independent title '+before,async({page})=>{
  await page.route('**/limit-ma/plus-ui.js',async route=>{const body=await(await route.fetch()).text();expect(body).toContain(before);await route.fulfill({contentType:'application/javascript',body:body.replace(before,after)});});
@@ -399,6 +402,7 @@ for(const [before,after] of [["textContent='SE'","textContent='SD'"],["textConte
 
 // Synthetic regression inputs exercise degenerate calibration, not research findings.
 for(const [name,te,se] of [
+ ['review6 boundary',[1.4083863636363634e-7,5.497249999999998e-7,9.586113636363634e-7],[1e-7,1e-7,1e-7]],
  ['near effects',[0,.000001,0],[.25,.25,.25]],
  ['equal SE and coincident estimates',[.1,.3,.5],[.2,.2,.2]],
  ['equal effects',[.5,.5,.5],[.5,1,2]],
@@ -407,7 +411,7 @@ for(const [name,te,se] of [
  if(corrupt)await page.route('**/limit-ma/plus-ui.js',async route=>{
   const body=await(await route.fetch()).text(),hook='label.textContent=value.toPrecision(3);';
   expect(body).toContain(hook);
-  await route.fulfill({contentType:'application/javascript',body:body.replace(hook,"label.textContent=(value+1).toPrecision(3);")});
+  await route.fulfill({contentType:'application/javascript',body:body.replace(hook,"label.textContent=(value+100).toPrecision(3);")});
  });
  await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
  await page.evaluate(()=>Promise.all(document.getAnimations().map(a=>a.finished)));
@@ -423,35 +427,36 @@ for(const [name,te,se] of [
  else expect(errors.errors).toEqual([]);
 });
 
-// Synthetic arithmetic counterexamples: no corpus or renderer changes.
-for(const [name,labels,valid] of [
- ['clean',['0','10'],true],['impossible finite exponent',['0e0','1e1'],false],
- ['moderate impossible exponent',['0e2','0e2'],false],
- ['ordinary wrong',['0','20'],false],['overflow',['0e309','0e309'],false],
- ['underflow',['1e-400','1e-400'],false],
- ['huge positive',['0e999999999999999999999','0'],false],
- ['huge negative',['0e-999999999999999999999','10'],false],
- ['exponent outside axis range',['0e308','0e308'],false],
- ['zero unit',['0.'+'0'.repeat(400),'10'],false]
-])arithmeticTest('axis precision arithmetic '+name,()=>{
- const source=readFileSync(new URL('../../../limit-ma/validate/plus-adapter.js',import.meta.url),'utf8');
- const start=source.indexOf('// Axis-label coverage'),end=source.indexOf('function geometry',start);
- expect(start).toBeGreaterThanOrEqual(0);expect(end).toBeGreaterThan(start);
- const run=new Function(source.slice(start,end)+"return labels=>calibratedTicks([[0,0],[10,100]],labels.map((text,i)=>({text,position:i*100})),12,'test');")();
- if(valid)expect(()=>run(labels)).not.toThrow();else expect(()=>run(labels)).toThrow(/calibrated axis/);
-});
 
-for(const [name,values,labels,valid] of [
- ['rounded collision',[1,1.0000000000002],['1','1'],true],
- ['small scientific',[1e-8,2e-8],['1.00e-8','2.00e-8'],true],
- ['large scientific',[1e22,2e22],['1.00e22','2.00e22'],true],
- ['finite exponent beyond magnitude',[1,2],['0e308','0e308'],false],
- ['exponent below positive axis',[1,2],['1e-100','2'],false],
- ['rounding exponent boundary',[9.99999999999999e-8,2e-7],['1.00e-7','2.00e-7'],true]
-])arithmeticTest('axis precision arithmetic '+name,()=>{
+// Synthetic arithmetic fixtures; no research outputs or corpus changes.
+for(const [name,values,labels,status] of [
+ ['clean',[0,10],['0','10'],'checked'],
+ ['shift',[0,10],['10','20'],'fail'],
+ ['swap',[0,10],['10','0'],'fail'],
+ ['one step',[0,10],['-10','10'],'fail'],
+ ['duplicate corruption',[0,10],['10','10'],'coarse'],
+ ['non numeric',[0,10],['oops','10'],'fail'],
+ ['non finite',[0,10],['1e309','10'],'fail'],
+ ['overflow zero',[0,10],['0e309','10'],'coarse'],
+ ['underflow',[0,10],['1e-400','1e-400'],'coarse'],
+ ['huge positive',[0,10],['0e999999999999999999999','10'],'coarse'],
+ ['huge negative',[0,10],['0e-999999999999999999999','10'],'checked'],
+ ['zero unit',[0,10],['0.'+'0'.repeat(400),'10'],'checked'],
+ ['ordinary exponent',[0,10],['0e0','1e1'],'coarse'],
+ ['half step',[0,10],['5','15'],'checked'],
+ ['beyond half step',[0,10],['5.01','15'],'fail'],
+ ['rounded collision',[1,1.0000000000002],['1','1'],'coarse'],
+ ['coarse distinct',[1,2],['1','2'],'coarse'],
+ ['small scientific',[1e-8,2e-8],['1.00e-8','2.00e-8'],'checked'],
+ ['large scientific',[1e22,2e22],['1.00e22','2.00e22'],'checked'],
+ ['review6 limit',[9.995000000000002e-8,9.994999999999997e-7],['9.99e-8','9.99e-7'],'checked'],
+ ['review6 gosh',[9999999999995,19999999999990],['10000000000000','20000000000000'],'checked'],
+ ['median spacing',[0,10,30],['0','17.4','30'],'checked'],
+ ['median spacing reject',[0,10,30],['0','18','30'],'fail'],
+])arithmeticTest('axis tick-step arithmetic '+name,()=>{
  const source=readFileSync(new URL('../../../limit-ma/validate/plus-adapter.js',import.meta.url),'utf8');
  const start=source.indexOf('// Axis-label coverage'),end=source.indexOf('function geometry',start);
- expect(start).toBeGreaterThanOrEqual(0);expect(end).toBeGreaterThan(start);
- const run=new Function(source.slice(start,end)+"return (values,labels)=>calibratedTicks(values.map((v,i)=>[v,i*100]),labels.map((text,i)=>({text,position:i*100})),12,'test');")();
- if(valid)expect(()=>run(values,labels)).not.toThrow();else expect(()=>run(values,labels)).toThrow(/calibrated axis/);
+ const run=new Function(source.slice(start,end)+"return (values,labels)=>{calibratedTicks(values.map(v=>[v,v*10]),labels.map((text,i)=>({text,position:values[i]*10})),12,'test');return axisLabels[0];};")();
+ if(status==='fail')expect(()=>run(values,labels)).toThrow(/calibrated axis/);
+ else {const row=run(values,labels);expect(row.checked).toBe(status==='checked');if(status==='coarse')expect(row.message).toBe('axis labels: not checked (labels coarser than tick spacing)');}
 });

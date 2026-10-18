@@ -1571,6 +1571,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 5.02463081286234,
       "id": "dat.aloe2013::001"
     },
     {
@@ -1579,6 +1580,7 @@
       "message": "axis labels: checked",
       "coverage": 0.398349053968802,
       "residual": 1.1368683772161603e-13,
+      "step": 1.0609443883676122,
       "id": "dat.aloe2013::001"
     },
     {
@@ -1587,6 +1589,7 @@
       "message": "axis labels: checked",
       "coverage": 0.26079854055314416,
       "residual": 4.547473508864641e-13,
+      "step": 0.08082859930701153,
       "id": "dat.aloe2013::001"
     },
     {
@@ -1595,6 +1598,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 2.782150564246583,
       "id": "dat.aloe2013::002"
     },
     {
@@ -1603,6 +1607,7 @@
       "message": "axis labels: checked",
       "coverage": 0.28095386163892155,
       "residual": 2.2737367544323206e-13,
+      "step": 1.5770555200600205,
       "id": "dat.aloe2013::002"
     },
     {
@@ -1611,6 +1616,7 @@
       "message": "axis labels: checked",
       "coverage": 0.32700837030639046,
       "residual": 4.547473508864641e-13,
+      "step": 0.09041944301794654,
       "id": "dat.aloe2013::002"
     },
     {
@@ -1619,6 +1625,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 3.3943256589263573,
       "id": "dat.aloe2013::003"
     },
     {
@@ -1627,6 +1634,7 @@
       "message": "axis labels: checked",
       "coverage": 0.44571539891703227,
       "residual": 2.2737367544323206e-13,
+      "step": 0.7595143140454792,
       "id": "dat.aloe2013::003"
     },
     {
@@ -1635,6 +1643,7 @@
       "message": "axis labels: checked",
       "coverage": 0.2543670819599057,
       "residual": 9.094947017729282e-13,
+      "step": 0.06409058283602792,
       "id": "dat.aloe2013::003"
     },
     {
@@ -1643,6 +1652,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.4254897489573353,
       "id": "dat.anand1999::001"
     },
     {
@@ -1651,6 +1661,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909093,
       "residual": 2.2737367544323206e-13,
+      "step": 5.722667585306864,
       "id": "dat.anand1999::001"
     },
     {
@@ -1659,6 +1670,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8586583660696212,
       "residual": 4.547473508864641e-13,
+      "step": 2.2157385757118178,
       "id": "dat.anand1999::001"
     },
     {
@@ -1667,6 +1679,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 3.410605131648481e-13,
+      "step": 0.6050758221814021,
       "id": "dat.anker2025::001"
     },
     {
@@ -1675,6 +1688,7 @@
       "message": "axis labels: checked",
       "coverage": 0.3729897802532914,
       "residual": 1.1368683772161603e-13,
+      "step": 1.9579624929778638,
       "id": "dat.anker2025::001"
     },
     {
@@ -1683,6 +1697,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7624633431085037,
       "residual": 4.547473508864641e-13,
+      "step": 0.5353700000000003,
       "id": "dat.anker2025::001"
     },
     {
@@ -1691,6 +1706,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.1994310558540315,
       "id": "dat.anker2025::002"
     },
     {
@@ -1699,6 +1715,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6716386071621901,
       "residual": 1.1368683772161603e-13,
+      "step": 1.101783000722145,
       "id": "dat.anker2025::002"
     },
     {
@@ -1707,6 +1724,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6906207546646704,
       "residual": 4.547473508864641e-13,
+      "step": 0.7213800000000001,
       "id": "dat.anker2025::002"
     },
     {
@@ -1715,6 +1733,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.8221916601489996,
       "id": "dat.anker2025::003"
     },
     {
@@ -1723,6 +1742,7 @@
       "message": "axis labels: checked",
       "coverage": 0.46924402861651593,
       "residual": 1.1368683772161603e-13,
+      "step": 1.5744473130073127,
       "id": "dat.anker2025::003"
     },
     {
@@ -1731,6 +1751,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7233404046153047,
       "residual": 4.547473508864641e-13,
+      "step": 0.7730800000000002,
       "id": "dat.anker2025::003"
     },
     {
@@ -1739,6 +1760,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.7113821847057631,
       "id": "dat.anker2025::004"
     },
     {
@@ -1747,6 +1769,7 @@
       "message": "axis labels: checked",
       "coverage": 0.3413281057126255,
       "residual": 1.1368683772161603e-13,
+      "step": 2.4155643388305426,
       "id": "dat.anker2025::004"
     },
     {
@@ -1755,6 +1778,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7872411211843966,
       "residual": 4.547473508864641e-13,
+      "step": 0.7213800000000001,
       "id": "dat.anker2025::004"
     },
     {
@@ -1763,6 +1787,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.7998352772458743,
       "id": "dat.assink2016::001"
     },
     {
@@ -1771,6 +1796,7 @@
       "message": "axis labels: checked",
       "coverage": 0.552625067947771,
       "residual": 1.1368683772161603e-13,
+      "step": 5.650304666047305,
       "id": "dat.assink2016::001"
     },
     {
@@ -1779,6 +1805,7 @@
       "message": "axis labels: checked",
       "coverage": 0.841578367218126,
       "residual": 4.547473508864641e-13,
+      "step": 0.7406031325885677,
       "id": "dat.assink2016::001"
     },
     {
@@ -1787,6 +1814,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.286566016468976,
       "id": "dat.axfors2021::001"
     },
     {
@@ -1795,6 +1823,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 1.1368683772161603e-13,
+      "step": 3.3489746814957657,
       "id": "dat.axfors2021::001"
     },
     {
@@ -1803,6 +1832,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8813708661337365,
       "residual": 4.547473508864641e-13,
+      "step": 2.540341184434354,
       "id": "dat.axfors2021::001"
     },
     {
@@ -1811,6 +1841,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5323967267652331,
       "residual": 2.2737367544323206e-13,
+      "step": 0.27216382998760935,
       "id": "dat.bakdash2021::001"
     },
     {
@@ -1819,6 +1850,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909093,
       "residual": 2.2737367544323206e-13,
+      "step": 2.5902416110999997,
       "id": "dat.bakdash2021::001"
     },
     {
@@ -1827,6 +1859,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7724279890320709,
       "residual": 4.547473508864641e-13,
+      "step": 0.55,
       "id": "dat.bakdash2021::001"
     },
     {
@@ -1835,6 +1868,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.36809696453970864,
       "id": "dat.baker2009::001"
     },
     {
@@ -1843,6 +1877,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4743684856562871,
       "residual": 2.2737367544323206e-13,
+      "step": 6.41246946525848,
       "id": "dat.baker2009::001"
     },
     {
@@ -1851,6 +1886,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8686465495006658,
       "residual": 4.547473508864641e-13,
+      "step": 1.816000697527361,
       "id": "dat.baker2009::001"
     },
     {
@@ -1859,6 +1895,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.5454595916604432,
       "id": "dat.bangertdrowns2004::001"
     },
     {
@@ -1867,6 +1904,7 @@
       "message": "axis labels: checked",
       "coverage": 0.739169551197058,
       "residual": 3.410605131648481e-13,
+      "step": 2.989841770972555,
       "id": "dat.bangertdrowns2004::001"
     },
     {
@@ -1875,6 +1913,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7613388990232722,
       "residual": 4.547473508864641e-13,
+      "step": 0.566259657754285,
       "id": "dat.bangertdrowns2004::001"
     },
     {
@@ -1890,6 +1929,7 @@
       "message": "axis labels: checked",
       "coverage": 0.861256455671902,
       "residual": 2.2737367544323206e-13,
+      "step": 0.13145246687987094,
       "id": "dat.bartos2023::001"
     },
     {
@@ -1898,6 +1938,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7393217904781676,
       "residual": 4.547473508864641e-13,
+      "step": 0.020772684876726268,
       "id": "dat.bartos2023::001"
     },
     {
@@ -1913,6 +1954,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8583284043713548,
       "residual": 1.1368683772161603e-13,
+      "step": 0.13190089613451,
       "id": "dat.bartos2023::002"
     },
     {
@@ -1921,6 +1963,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7393180372629374,
       "residual": 4.547473508864641e-13,
+      "step": 0.020770752291548865,
       "id": "dat.bartos2023::002"
     },
     {
@@ -1936,6 +1979,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909094,
       "residual": 2.2737367544323206e-13,
+      "step": 0.04589133648728566,
       "id": "dat.bartos2023::003"
     },
     {
@@ -1944,6 +1988,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7392423743627018,
       "residual": 4.547473508864641e-13,
+      "step": 0.02076388991457083,
       "id": "dat.bartos2023::003"
     },
     {
@@ -1959,6 +2004,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909088,
       "residual": 1.1368683772161603e-13,
+      "step": 0.13553571428571437,
       "id": "dat.bartos2023::004"
     },
     {
@@ -1967,6 +2013,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7393217904781676,
       "residual": 9.094947017729282e-13,
+      "step": 0.02077268487672627,
       "id": "dat.bartos2023::004"
     },
     {
@@ -1975,6 +2022,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.9338829067745981,
       "id": "dat.baskerville2012::001"
     },
     {
@@ -1983,6 +2031,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6053999826118465,
       "residual": 2.2737367544323206e-13,
+      "step": 2.097786647632369,
       "id": "dat.baskerville2012::001"
     },
     {
@@ -1991,6 +2040,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6698564593301435,
       "residual": 9.094947017729282e-13,
+      "step": 0.627,
       "id": "dat.baskerville2012::001"
     },
     {
@@ -1999,6 +2049,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.6988984686553668,
       "id": "dat.bassler2004::001"
     },
     {
@@ -2007,6 +2058,7 @@
       "message": "axis labels: checked",
       "coverage": 0.41272542595203765,
       "residual": 1.1368683772161603e-13,
+      "step": 4.416840548313071,
       "id": "dat.bassler2004::001"
     },
     {
@@ -2015,6 +2067,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7530406391903361,
       "residual": 4.547473508864641e-13,
+      "step": 1.081511288275193,
       "id": "dat.bassler2004::001"
     },
     {
@@ -2023,6 +2076,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8702855563369982,
       "residual": 2.2737367544323206e-13,
+      "step": 1.1033352517281823,
       "id": "dat.bauer2002::001"
     },
     {
@@ -2031,6 +2085,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909087,
       "residual": 1.1368683772161603e-13,
+      "step": 0.1474000000000001,
       "id": "dat.bauer2002::001"
     },
     {
@@ -2039,6 +2094,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4105154105154107,
       "residual": 4.547473508864641e-13,
+      "step": 0.07722000000000001,
       "id": "dat.bauer2002::001"
     },
     {
@@ -2047,6 +2103,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 3.07116142394084,
       "id": "dat.bauer2002::002"
     },
     {
@@ -2055,6 +2112,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5540455897564001,
       "residual": 1.1368683772161603e-13,
+      "step": 1.1400950996306507,
       "id": "dat.bauer2002::002"
     },
     {
@@ -2063,6 +2121,7 @@
       "message": "axis labels: checked",
       "coverage": 0.43578322923918367,
       "residual": 4.547473508864641e-13,
+      "step": 0.3456100541106649,
       "id": "dat.bauer2002::002"
     },
     {
@@ -2071,6 +2130,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.3792098584345511,
       "id": "dat.bcg::001"
     },
     {
@@ -2079,6 +2139,7 @@
       "message": "axis labels: checked",
       "coverage": 0.639135553905367,
       "residual": 1.1368683772161603e-13,
+      "step": 3.2337609941126684,
       "id": "dat.bcg::001"
     },
     {
@@ -2087,6 +2148,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8306794921393483,
       "residual": 4.547473508864641e-13,
+      "step": 0.8027029791225302,
       "id": "dat.bcg::001"
     },
     {
@@ -2095,6 +2157,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4942031701515754,
       "residual": 2.2737367544323206e-13,
+      "step": 0.420467318834707,
       "id": "dat.begg1989::001"
     },
     {
@@ -2103,6 +2166,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5170880301672797,
       "residual": 1.1368683772161603e-13,
+      "step": 0.9476142772855974,
       "id": "dat.begg1989::001"
     },
     {
@@ -2111,6 +2175,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7944664031620549,
       "residual": 4.547473508864641e-13,
+      "step": 0.25300000000000017,
       "id": "dat.begg1989::001"
     },
     {
@@ -2119,6 +2184,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.8849086758019273,
       "id": "dat.begg1989::002"
     },
     {
@@ -2127,6 +2193,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9002905174558729,
       "residual": 1.1368683772161603e-13,
+      "step": 0.24436556393118208,
       "id": "dat.begg1989::002"
     },
     {
@@ -2135,6 +2202,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5241000617847802,
       "residual": 0,
+      "step": 0.3126574643279769,
       "id": "dat.begg1989::002"
     },
     {
@@ -2143,6 +2211,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.5377425977886856,
       "id": "dat.berkey1998::001"
     },
     {
@@ -2151,6 +2220,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4560149650761967,
       "residual": 1.1368683772161603e-13,
+      "step": 2.543776167096122,
       "id": "dat.berkey1998::001"
     },
     {
@@ -2159,6 +2229,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7616168898811242,
       "residual": 4.547473508864641e-13,
+      "step": 0.19179155351578975,
       "id": "dat.berkey1998::001"
     },
     {
@@ -2167,6 +2238,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.537742597788686,
       "id": "dat.berkey1998r::001"
     },
     {
@@ -2175,6 +2247,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4560149650761967,
       "residual": 1.1368683772161603e-13,
+      "step": 2.543776167096122,
       "id": "dat.berkey1998r::001"
     },
     {
@@ -2183,6 +2256,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7616168898811242,
       "residual": 4.547473508864641e-13,
+      "step": 0.19179155351578975,
       "id": "dat.berkey1998r::001"
     },
     {
@@ -2191,6 +2265,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.4786458485986158,
       "id": "dat.besson2016::001"
     },
     {
@@ -2199,6 +2274,7 @@
       "message": "axis labels: checked",
       "coverage": 0.85387184519644,
       "residual": 3.410605131648481e-13,
+      "step": 9.286745433492829,
       "id": "dat.besson2016::001"
     },
     {
@@ -2207,6 +2283,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7386522004828688,
       "residual": 4.547473508864641e-13,
+      "step": 1.1116413038359783,
       "id": "dat.besson2016::001"
     },
     {
@@ -2222,6 +2299,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7318625931332777,
       "residual": 5.684341886080802e-14,
+      "step": 0.1093101365619753,
       "id": "dat.bonett2010::001"
     },
     {
@@ -2230,6 +2308,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6477456479199684,
       "residual": 0,
+      "step": 0.025080750360946126,
       "id": "dat.bonett2010::001"
     },
     {
@@ -2238,6 +2317,7 @@
       "message": "axis labels: checked",
       "coverage": 0.264985967808962,
       "residual": 2.2737367544323206e-13,
+      "step": 0.6094215262894495,
       "id": "dat.bonett2010::002"
     },
     {
@@ -2246,6 +2326,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909093,
       "residual": 2.2737367544323206e-13,
+      "step": 0.1405389106750463,
       "id": "dat.bonett2010::002"
     },
     {
@@ -2254,6 +2335,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6291823930813158,
       "residual": 4.547473508864641e-13,
+      "step": 0.03621081933486895,
       "id": "dat.bonett2010::002"
     },
     {
@@ -2262,6 +2344,7 @@
       "message": "axis labels: checked",
       "coverage": 0.3594154061340937,
       "residual": 4.547473508864641e-13,
+      "step": 2.6364667538970488,
       "id": "dat.bonett2010::003"
     },
     {
@@ -2270,6 +2353,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9017868484044861,
       "residual": 2.2737367544323206e-13,
+      "step": 0.9395766437338389,
       "id": "dat.bonett2010::003"
     },
     {
@@ -2278,6 +2362,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6216111218028746,
       "residual": 4.547473508864641e-13,
+      "step": 0.22800682146314655,
       "id": "dat.bonett2010::003"
     },
     {
@@ -2286,6 +2371,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.27587244748235984,
       "id": "dat.bornmann2007::001"
     },
     {
@@ -2294,6 +2380,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8839599556101339,
       "residual": 2.2737367544323206e-13,
+      "step": 3.3872561511600265,
       "id": "dat.bornmann2007::001"
     },
     {
@@ -2302,6 +2389,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8847061867488576,
       "residual": 4.547473508864641e-13,
+      "step": 1.1572089174528852,
       "id": "dat.bornmann2007::001"
     },
     {
@@ -2310,6 +2398,7 @@
       "message": "axis labels: checked",
       "coverage": 0.354329521704793,
       "residual": 2.2737367544323206e-13,
+      "step": 1.6071651786323082,
       "id": "dat.bourassa1996::001"
     },
     {
@@ -2318,6 +2407,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 1.7053025658242404e-13,
+      "step": 6.113604451289667,
       "id": "dat.bourassa1996::001"
     },
     {
@@ -2326,6 +2416,7 @@
       "message": "axis labels: checked",
       "coverage": 0.876693816066946,
       "residual": 4.547473508864641e-13,
+      "step": 2.2701370591236296,
       "id": "dat.bourassa1996::001"
     },
     {
@@ -2334,6 +2425,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.4450453276471245,
       "id": "dat.cannon2006::001"
     },
     {
@@ -2342,6 +2434,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909093,
       "residual": 1.1368683772161603e-13,
+      "step": 0.12156173151740571,
       "id": "dat.cannon2006::001"
     },
     {
@@ -2350,6 +2443,7 @@
       "message": "axis labels: checked",
       "coverage": 0.35400047674270163,
       "residual": 0,
+      "step": 0.12855320443358154,
       "id": "dat.cannon2006::001"
     },
     {
@@ -2358,6 +2452,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.4496434619953441,
       "id": "dat.chiarito2020::001"
     },
     {
@@ -2366,6 +2461,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909093,
       "residual": 5.684341886080802e-14,
+      "step": 1.1370904550140564,
       "id": "dat.chiarito2020::001"
     },
     {
@@ -2374,6 +2470,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8379626440442793,
       "residual": 4.547473508864641e-13,
+      "step": 0.9603890797916009,
       "id": "dat.chiarito2020::001"
     },
     {
@@ -2382,6 +2479,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.44964346199534416,
       "id": "dat.chiarito2020::002"
     },
     {
@@ -2390,6 +2488,7 @@
       "message": "axis labels: checked",
       "coverage": 0.909090909090909,
       "residual": 2.2737367544323206e-13,
+      "step": 1.137090455014056,
       "id": "dat.chiarito2020::002"
     },
     {
@@ -2398,6 +2497,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8379626440442793,
       "residual": 4.547473508864641e-13,
+      "step": 0.9603890797916009,
       "id": "dat.chiarito2020::002"
     },
     {
@@ -2406,6 +2506,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8720068260392291,
       "residual": 4.547473508864641e-13,
+      "step": 0.578157425542202,
       "id": "dat.cohen1981::001"
     },
     {
@@ -2414,6 +2515,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 1.0335170495010497,
       "id": "dat.cohen1981::001"
     },
     {
@@ -2422,6 +2524,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6876716816147931,
       "residual": 4.547473508864641e-13,
+      "step": 0.41576092031014966,
       "id": "dat.cohen1981::001"
     },
     {
@@ -2430,6 +2533,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.3792098584345511,
       "id": "dat.colditz1994::001"
     },
     {
@@ -2438,6 +2542,7 @@
       "message": "axis labels: checked",
       "coverage": 0.639135553905367,
       "residual": 1.1368683772161603e-13,
+      "step": 3.2337609941126684,
       "id": "dat.colditz1994::001"
     },
     {
@@ -2446,6 +2551,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8306794921393483,
       "residual": 4.547473508864641e-13,
+      "step": 0.8027029791225302,
       "id": "dat.colditz1994::001"
     },
     {
@@ -2454,6 +2560,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.2576789831077502,
       "id": "dat.collins1985a::001"
     },
     {
@@ -2462,6 +2569,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8136857901132486,
       "residual": 2.2737367544323206e-13,
+      "step": 3.7464150611488183,
       "id": "dat.collins1985a::001"
     },
     {
@@ -2470,6 +2578,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8083921374070694,
       "residual": 9.094947017729282e-13,
+      "step": 2.2000000000000006,
       "id": "dat.collins1985a::001"
     },
     {
@@ -2478,6 +2587,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.3875414882940829,
       "id": "dat.collins1985a::002"
     },
     {
@@ -2486,6 +2596,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7050448431746801,
       "residual": 2.2737367544323206e-13,
+      "step": 4.0212536391982505,
       "id": "dat.collins1985a::002"
     },
     {
@@ -2494,6 +2605,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7938889049146419,
       "residual": 4.547473508864641e-13,
+      "step": 2.202498581157319,
       "id": "dat.collins1985a::002"
     },
     {
@@ -2502,6 +2614,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.4209167532735314,
       "id": "dat.collins1985a::003"
     },
     {
@@ -2510,6 +2623,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8588429726151784,
       "residual": 2.2737367544323206e-13,
+      "step": 3.4145285428221115,
       "id": "dat.collins1985a::003"
     },
     {
@@ -2518,6 +2632,7 @@
       "message": "axis labels: checked",
       "coverage": 0.779639557706781,
       "residual": 4.547473508864641e-13,
+      "step": 2.2011455350945495,
       "id": "dat.collins1985a::003"
     },
     {
@@ -2526,6 +2641,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.8428260504799878,
       "id": "dat.collins1985b::001"
     },
     {
@@ -2534,6 +2650,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909093,
       "residual": 2.2737367544323206e-13,
+      "step": 2.8182723033680803,
       "id": "dat.collins1985b::001"
     },
     {
@@ -2542,6 +2659,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7763501167672104,
       "residual": 4.547473508864641e-13,
+      "step": 0.9113229997012634,
       "id": "dat.collins1985b::001"
     },
     {
@@ -2550,6 +2668,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.967678280450746,
       "id": "dat.collins1985b::002"
     },
     {
@@ -2558,6 +2677,7 @@
       "message": "axis labels: checked",
       "coverage": 0.909090909090909,
       "residual": 2.2737367544323206e-13,
+      "step": 2.5736703700930157,
       "id": "dat.collins1985b::002"
     },
     {
@@ -2566,6 +2686,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7571960375331865,
       "residual": 0,
+      "step": 0.791336659379229,
       "id": "dat.collins1985b::002"
     },
     {
@@ -2574,6 +2695,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.3641146273365288,
       "id": "dat.collins1985b::003"
     },
     {
@@ -2582,6 +2704,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5348319880368837,
       "residual": 2.2737367544323206e-13,
+      "step": 2.6553822439035253,
       "id": "dat.collins1985b::003"
     },
     {
@@ -2590,6 +2713,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7721348446664275,
       "residual": 4.547473508864641e-13,
+      "step": 2.244640712425477,
       "id": "dat.collins1985b::003"
     },
     {
@@ -2598,6 +2722,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 2.799202144534247,
       "id": "dat.collins1985b::004"
     },
     {
@@ -2606,6 +2731,7 @@
       "message": "axis labels: checked",
       "coverage": 0.713168091931164,
       "residual": 1.1368683772161603e-13,
+      "step": 1.1383903736568892,
       "id": "dat.collins1985b::004"
     },
     {
@@ -2614,6 +2740,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6774162547083102,
       "residual": 0,
+      "step": 2.2446407124254772,
       "id": "dat.collins1985b::004"
     },
     {
@@ -2622,6 +2749,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 2.5434287608487405,
       "id": "dat.collins1985b::005"
     },
     {
@@ -2630,6 +2758,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6627628455878133,
       "residual": 1.1368683772161603e-13,
+      "step": 2.7385986419445123,
       "id": "dat.collins1985b::005"
     },
     {
@@ -2638,6 +2767,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6831070436316233,
       "residual": 0,
+      "step": 2.2446407124254777,
       "id": "dat.collins1985b::005"
     },
     {
@@ -2646,6 +2776,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.7274209978454778,
       "id": "dat.craft2003::001"
     },
     {
@@ -2654,6 +2785,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909091,
       "residual": 2.2737367544323206e-13,
+      "step": 1.8677196876065532,
       "id": "dat.craft2003::001"
     },
     {
@@ -2662,6 +2794,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6533523244471264,
       "residual": 0,
+      "step": 0.3316624790355402,
       "id": "dat.craft2003::001"
     },
     {
@@ -2670,6 +2803,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5722190383510151,
       "residual": 2.2737367544323206e-13,
+      "step": 0.6177693843039885,
       "id": "dat.crede2010::001"
     },
     {
@@ -2678,6 +2812,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8968919787570347,
       "residual": 2.2737367544323206e-13,
+      "step": 1.9973761049802436,
       "id": "dat.crede2010::001"
     },
     {
@@ -2686,6 +2821,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8439561458937171,
       "residual": 4.547473508864641e-13,
+      "step": 0.24596747752497686,
       "id": "dat.crede2010::001"
     },
     {
@@ -2701,6 +2837,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5182630646658439,
       "residual": 1.1368683772161603e-13,
+      "step": 1.3839149870870084,
       "id": "dat.crisafulli2020::001"
     },
     {
@@ -2709,6 +2846,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8445672507851469,
       "residual": 4.547473508864641e-13,
+      "step": 0.7777396736697957,
       "id": "dat.crisafulli2020::001"
     },
     {
@@ -2717,6 +2855,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 12.677332611456956,
       "id": "dat.curtin2002::001"
     },
     {
@@ -2725,6 +2864,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6480413071028664,
       "residual": 2.2737367544323206e-13,
+      "step": 24.844095312344606,
       "id": "dat.curtin2002::001"
     },
     {
@@ -2733,6 +2873,7 @@
       "message": "axis labels: checked",
       "coverage": 0.748663101604278,
       "residual": 4.547473508864641e-13,
+      "step": 3.7400000000000007,
       "id": "dat.curtin2002::001"
     },
     {
@@ -2741,6 +2882,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5198862084360306,
       "residual": 2.2737367544323206e-13,
+      "step": 0.2880859607923644,
       "id": "dat.curtis1998::001"
     },
     {
@@ -2749,6 +2891,7 @@
       "message": "axis labels: checked",
       "coverage": 0.688774296862861,
       "residual": 2.2737367544323206e-13,
+      "step": 2.497309008639636,
       "id": "dat.curtis1998::001"
     },
     {
@@ -2757,6 +2900,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8820945865352863,
       "residual": 9.094947017729282e-13,
+      "step": 0.47448394344789246,
       "id": "dat.curtis1998::001"
     },
     {
@@ -2765,6 +2909,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.3177753018239793,
       "id": "dat.dagostino1998::001"
     },
     {
@@ -2773,6 +2918,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6636763799187814,
       "residual": 2.2737367544323206e-13,
+      "step": 1.7675808365630519,
       "id": "dat.dagostino1998::001"
     },
     {
@@ -2781,6 +2927,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7070267210979763,
       "residual": 4.547473508864641e-13,
+      "step": 0.5035583669606161,
       "id": "dat.dagostino1998::001"
     },
     {
@@ -2789,6 +2936,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9954990625700323,
       "residual": 2.2737367544323206e-13,
+      "step": 0.35451798596287426,
       "id": "dat.dagostino1998::002"
     },
     {
@@ -2797,6 +2945,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6761618892163084,
       "residual": 3.410605131648481e-13,
+      "step": 5.7318926759980044,
       "id": "dat.dagostino1998::002"
     },
     {
@@ -2805,6 +2954,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8545280018244074,
       "residual": 4.547473508864641e-13,
+      "step": 1.8648403764477088,
       "id": "dat.dagostino1998::002"
     },
     {
@@ -2813,6 +2963,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 3.410605131648481e-13,
+      "step": 1.6005217658400785,
       "id": "dat.damico2009::001"
     },
     {
@@ -2821,6 +2972,7 @@
       "message": "axis labels: checked",
       "coverage": 0.40811558490149696,
       "residual": 1.1368683772161603e-13,
+      "step": 6.989852938253428,
       "id": "dat.damico2009::001"
     },
     {
@@ -2829,6 +2981,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8005999700154152,
       "residual": 4.547473508864641e-13,
+      "step": 1.6564881175902197,
       "id": "dat.damico2009::001"
     },
     {
@@ -2837,6 +2990,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7796492633156961,
       "residual": 2.2737367544323206e-13,
+      "step": 0.5616315595949297,
       "id": "dat.debruin2009::001"
     },
     {
@@ -2845,6 +2999,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7473086114677384,
       "residual": 2.2737367544323206e-13,
+      "step": 0.7390988611177487,
       "id": "dat.debruin2009::001"
     },
     {
@@ -2853,6 +3008,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7021371918590716,
       "residual": 4.547473508864641e-13,
+      "step": 0.1331636072871245,
       "id": "dat.debruin2009::001"
     },
     {
@@ -2861,6 +3017,7 @@
       "message": "axis labels: checked",
       "coverage": 0.3404623316025519,
       "residual": 2.2737367544323206e-13,
+      "step": 1.7210022141130057,
       "id": "dat.demir2022::001"
     },
     {
@@ -2869,6 +3026,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 2.2873856958478203,
       "id": "dat.demir2022::001"
     },
     {
@@ -2877,6 +3035,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8455126063926415,
       "residual": 4.547473508864641e-13,
+      "step": 0.5014265364224072,
       "id": "dat.demir2022::001"
     },
     {
@@ -2885,6 +3044,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.7052739384076635,
       "id": "dat.dogliotti2014::001"
     },
     {
@@ -2893,6 +3053,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6562924636345555,
       "residual": 2.2737367544323206e-13,
+      "step": 2.882803243223788,
       "id": "dat.dogliotti2014::001"
     },
     {
@@ -2901,6 +3062,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8109215641149352,
       "residual": 4.547473508864641e-13,
+      "step": 0.8157729155441786,
       "id": "dat.dogliotti2014::001"
     },
     {
@@ -2909,6 +3071,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9445920153168507,
       "residual": 2.2737367544323206e-13,
+      "step": 0.19775682209597045,
       "id": "dat.dong2013::001"
     },
     {
@@ -2917,6 +3080,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8063140498512754,
       "residual": 2.2737367544323206e-13,
+      "step": 5.087446717727319,
       "id": "dat.dong2013::001"
     },
     {
@@ -2925,6 +3089,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8668872743996078,
       "residual": 4.547473508864641e-13,
+      "step": 1.8087247783891722,
       "id": "dat.dong2013::001"
     },
     {
@@ -2933,6 +3098,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.4074401071979885,
       "id": "dat.dorn2007::001"
     },
     {
@@ -2941,6 +3107,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5882310710518477,
       "residual": 2.2737367544323206e-13,
+      "step": 3.593979953001617,
       "id": "dat.dorn2007::001"
     },
     {
@@ -2949,6 +3116,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6530331248708771,
       "residual": 4.547473508864641e-13,
+      "step": 0.5921061928317792,
       "id": "dat.dorn2007::001"
     },
     {
@@ -2957,6 +3125,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.342543430159923,
       "id": "dat.dorn2007::002"
     },
     {
@@ -2965,6 +3134,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6491450260857246,
       "residual": 1.1368683772161603e-13,
+      "step": 3.5212881538685155,
       "id": "dat.dorn2007::002"
     },
     {
@@ -2973,6 +3143,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6530331248708771,
       "residual": 4.547473508864641e-13,
+      "step": 0.5921061928317792,
       "id": "dat.dorn2007::002"
     },
     {
@@ -2981,6 +3152,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.37408212919359485,
       "id": "dat.dumouchel1994::001"
     },
     {
@@ -2989,6 +3161,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6987195207206472,
       "residual": 1.1368683772161603e-13,
+      "step": 0.9824517163927915,
       "id": "dat.dumouchel1994::001"
     },
     {
@@ -2997,6 +3170,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8039533925030039,
       "residual": 0,
+      "step": 0.4299755287372792,
       "id": "dat.dumouchel1994::001"
     },
     {
@@ -3005,6 +3179,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.3689446746641485,
       "id": "dat.egger2001::001"
     },
     {
@@ -3013,6 +3188,7 @@
       "message": "axis labels: checked",
       "coverage": 0.33519783914856305,
       "residual": 1.1368683772161603e-13,
+      "step": 6.015840879645179,
       "id": "dat.egger2001::001"
     },
     {
@@ -3021,6 +3197,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8889946000522175,
       "residual": 4.547473508864641e-13,
+      "step": 1.574008426853512,
       "id": "dat.egger2001::001"
     },
     {
@@ -3029,6 +3206,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.7843453843471715,
       "id": "dat.feng2019::001"
     },
     {
@@ -3037,6 +3215,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7866277783534549,
       "residual": 1.1368683772161603e-13,
+      "step": 3.7512103006966586,
       "id": "dat.feng2019::001"
     },
     {
@@ -3045,6 +3224,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6854351568665722,
       "residual": 9.094947017729282e-13,
+      "step": 0.2059156716305604,
       "id": "dat.feng2019::001"
     },
     {
@@ -3053,6 +3233,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.8909970753314906,
       "id": "dat.fine1993::001"
     },
     {
@@ -3061,6 +3242,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 3.83421633375074,
       "id": "dat.fine1993::001"
     },
     {
@@ -3069,6 +3251,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8188890670066303,
       "residual": 4.547473508864641e-13,
+      "step": 2.233574194260732,
       "id": "dat.fine1993::001"
     },
     {
@@ -3077,6 +3260,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 4.049455336021961,
       "id": "dat.franchini2012::001"
     },
     {
@@ -3085,6 +3269,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8518551698782395,
       "residual": 1.1368683772161603e-13,
+      "step": 4.343461342764243,
       "id": "dat.franchini2012::001"
     },
     {
@@ -3093,6 +3278,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5616949056350218,
       "residual": 4.547473508864641e-13,
+      "step": 0.7895206435255518,
       "id": "dat.franchini2012::001"
     },
     {
@@ -3101,6 +3287,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.6261549770851836,
       "id": "dat.frank2008::001"
     },
     {
@@ -3109,6 +3296,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8615731253855613,
       "residual": 2.842170943040401e-14,
+      "step": 0.14711668707169956,
       "id": "dat.frank2008::001"
     },
     {
@@ -3117,6 +3305,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4773966013759864,
       "residual": 0,
+      "step": 0.11964297785623249,
       "id": "dat.frank2008::001"
     },
     {
@@ -3125,6 +3314,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.2742899537639238,
       "id": "dat.frank2008::002"
     },
     {
@@ -3133,6 +3323,7 @@
       "message": "axis labels: checked",
       "coverage": 0.522655781601899,
       "residual": 1.1368683772161603e-13,
+      "step": 0.5267752238263488,
       "id": "dat.frank2008::002"
     },
     {
@@ -3141,6 +3332,7 @@
       "message": "axis labels: checked",
       "coverage": 0.47441023392197623,
       "residual": 0,
+      "step": 0.13892924764687437,
       "id": "dat.frank2008::002"
     },
     {
@@ -3149,6 +3341,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.8010510717326402,
       "id": "dat.frank2008::003"
     },
     {
@@ -3157,6 +3350,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909091,
       "residual": 1.1368683772161603e-13,
+      "step": 0.16428340517938264,
       "id": "dat.frank2008::003"
     },
     {
@@ -3165,6 +3359,7 @@
       "message": "axis labels: checked",
       "coverage": 0.48079460004841995,
       "residual": 0,
+      "step": 0.113657226952815,
       "id": "dat.frank2008::003"
     },
     {
@@ -3173,6 +3368,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.6853864061642996,
       "id": "dat.frank2008::004"
     },
     {
@@ -3181,6 +3377,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 5.684341886080802e-14,
+      "step": 0.14583419557233965,
       "id": "dat.frank2008::004"
     },
     {
@@ -3189,6 +3386,7 @@
       "message": "axis labels: checked",
       "coverage": 0.47917645954083454,
       "residual": 0,
+      "step": 0.06958242451192559,
       "id": "dat.frank2008::004"
     },
     {
@@ -3197,6 +3395,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.7933880141937626,
       "id": "dat.furukawa2003::001"
     },
     {
@@ -3205,6 +3404,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4967529447123685,
       "residual": 1.1368683772161603e-13,
+      "step": 6.713921416542319,
       "id": "dat.furukawa2003::001"
     },
     {
@@ -3213,6 +3413,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6409079442512333,
       "residual": 4.547473508864641e-13,
+      "step": 0.6129639002381546,
       "id": "dat.furukawa2003::001"
     },
     {
@@ -3221,6 +3422,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.0576551913942411,
       "id": "dat.gibson2002::001"
     },
     {
@@ -3229,6 +3431,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7039558493516999,
       "residual": 1.1368683772161603e-13,
+      "step": 1.5643926633651897,
       "id": "dat.gibson2002::001"
     },
     {
@@ -3237,6 +3440,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5641019041760899,
       "residual": 4.547473508864641e-13,
+      "step": 0.3531971952547611,
       "id": "dat.gibson2002::001"
     },
     {
@@ -3245,6 +3449,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.7392771517068539,
       "id": "dat.gibson2002::002"
     },
     {
@@ -3253,6 +3458,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4973676775544234,
       "residual": 1.1368683772161603e-13,
+      "step": 5.545675905576415,
       "id": "dat.gibson2002::002"
     },
     {
@@ -3261,6 +3467,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8330469508245294,
       "residual": 4.547473508864641e-13,
+      "step": 1.5377477605128538,
       "id": "dat.gibson2002::002"
     },
     {
@@ -3269,6 +3476,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.8405752755140403,
       "id": "dat.gibson2002::003"
     },
     {
@@ -3277,6 +3485,7 @@
       "message": "axis labels: checked",
       "coverage": 0.600532163824605,
       "residual": 1.1368683772161603e-13,
+      "step": 3.4183858297110543,
       "id": "dat.gibson2002::003"
     },
     {
@@ -3285,6 +3494,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7447932309853924,
       "residual": 4.547473508864641e-13,
+      "step": 0.7416364633673647,
       "id": "dat.gibson2002::003"
     },
     {
@@ -3293,6 +3503,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.2368196677892123,
       "id": "dat.graves2010::001"
     },
     {
@@ -3301,6 +3512,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5155350158024082,
       "residual": 2.2737367544323206e-13,
+      "step": 5.21334272044017,
       "id": "dat.graves2010::001"
     },
     {
@@ -3309,6 +3521,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7223286577861379,
       "residual": 4.547473508864641e-13,
+      "step": 0.8398868569948598,
       "id": "dat.graves2010::001"
     },
     {
@@ -3317,6 +3530,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.44851009230118866,
       "id": "dat.greb2008::001"
     },
     {
@@ -3325,6 +3539,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 0.5413083331868225,
       "id": "dat.greb2008::001"
     },
     {
@@ -3333,6 +3548,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8078772009100708,
       "residual": 4.547473508864641e-13,
+      "step": 0.7784719124788763,
       "id": "dat.greb2008::001"
     },
     {
@@ -3341,6 +3557,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.03243961296385467,
       "id": "dat.greenland1992::001"
     },
     {
@@ -3349,6 +3566,7 @@
       "message": "axis labels: checked",
       "coverage": 0.32192484654879533,
       "residual": 1.1368683772161603e-13,
+      "step": 0.651487458170491,
       "id": "dat.greenland1992::001"
     },
     {
@@ -3357,6 +3575,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8853546031135879,
       "residual": 4.547473508864641e-13,
+      "step": 0.10406000000000003,
       "id": "dat.greenland1992::001"
     },
     {
@@ -3365,6 +3584,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 4.418032028965352,
       "id": "dat.gurusamy2011::001"
     },
     {
@@ -3373,6 +3593,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 4.281002327921689,
       "id": "dat.gurusamy2011::001"
     },
     {
@@ -3381,6 +3602,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5303239483385066,
       "residual": 4.547473508864641e-13,
+      "step": 1.8379511734888492,
       "id": "dat.gurusamy2011::001"
     },
     {
@@ -3389,6 +3611,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.5201279662495606,
       "id": "dat.hackshaw1998::001"
     },
     {
@@ -3397,6 +3620,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7123973045512577,
       "residual": 2.2737367544323206e-13,
+      "step": 1.7366691929492533,
       "id": "dat.hackshaw1998::001"
     },
     {
@@ -3405,6 +3629,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7852222233839667,
       "residual": 4.547473508864641e-13,
+      "step": 0.8084781982616253,
       "id": "dat.hackshaw1998::001"
     },
     {
@@ -3413,6 +3638,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.9180520633931022,
       "id": "dat.hahn2001::001"
     },
     {
@@ -3421,6 +3647,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 2.5487283548637247,
       "id": "dat.hahn2001::001"
     },
     {
@@ -3429,6 +3656,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8027704725989625,
       "residual": 4.547473508864641e-13,
+      "step": 2.2295315227219397,
       "id": "dat.hahn2001::001"
     },
     {
@@ -3437,6 +3665,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8604470221759272,
       "residual": 2.2737367544323206e-13,
+      "step": 0.6283617392560213,
       "id": "dat.hannum2020::001"
     },
     {
@@ -3445,6 +3674,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5202667521145985,
       "residual": 2.2737367544323206e-13,
+      "step": 1.7912570049626766,
       "id": "dat.hannum2020::001"
     },
     {
@@ -3453,6 +3683,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8566521883080996,
       "residual": 4.547473508864641e-13,
+      "step": 0.10733590309747248,
       "id": "dat.hannum2020::001"
     },
     {
@@ -3461,6 +3692,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5492983934551126,
       "residual": 4.547473508864641e-13,
+      "step": 1.283748967750677,
       "id": "dat.hannum2020::002"
     },
     {
@@ -3469,6 +3701,7 @@
       "message": "axis labels: checked",
       "coverage": 0.43396462327190793,
       "residual": 1.1368683772161603e-13,
+      "step": 1.0788478900697647,
       "id": "dat.hannum2020::002"
     },
     {
@@ -3477,6 +3710,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7551145253853875,
       "residual": 4.547473508864641e-13,
+      "step": 0.10733590309747255,
       "id": "dat.hannum2020::002"
     },
     {
@@ -3485,6 +3719,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9120416700638823,
       "residual": 2.2737367544323206e-13,
+      "step": 0.5951464162174754,
       "id": "dat.hannum2020::003"
     },
     {
@@ -3493,6 +3728,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5177000025110043,
       "residual": 1.1368683772161603e-13,
+      "step": 1.5544006854388326,
       "id": "dat.hannum2020::003"
     },
     {
@@ -3501,6 +3737,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8507927779450658,
       "residual": 4.547473508864641e-13,
+      "step": 0.09654781966197624,
       "id": "dat.hannum2020::003"
     },
     {
@@ -3509,6 +3746,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 2.78500778408031,
       "id": "dat.hart1999::001"
     },
     {
@@ -3517,6 +3755,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909093,
       "residual": 1.1368683772161603e-13,
+      "step": 1.309579529538161,
       "id": "dat.hart1999::001"
     },
     {
@@ -3525,6 +3764,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5335747354123112,
       "residual": 4.547473508864641e-13,
+      "step": 0.7045638767423839,
       "id": "dat.hart1999::001"
     },
     {
@@ -3533,6 +3773,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.13475329778495093,
       "id": "dat.hart1999::002"
     },
     {
@@ -3541,6 +3782,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7029588724001132,
       "residual": 1.1368683772161603e-13,
+      "step": 0.10239733581883827,
       "id": "dat.hart1999::002"
     },
     {
@@ -3549,6 +3791,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5146805877476165,
       "residual": 0,
+      "step": 0.022868191150713483,
       "id": "dat.hart1999::002"
     },
     {
@@ -3557,6 +3800,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6871966353877726,
       "residual": 2.2737367544323206e-13,
+      "step": 0.5158344223742088,
       "id": "dat.hartmannboyce2018::001"
     },
     {
@@ -3565,6 +3809,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7955509977144912,
       "residual": 2.2737367544323206e-13,
+      "step": 5.14655197967772,
       "id": "dat.hartmannboyce2018::001"
     },
     {
@@ -3573,6 +3818,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8544744724151913,
       "residual": 0,
+      "step": 1.3179284820774486,
       "id": "dat.hartmannboyce2018::001"
     },
     {
@@ -3581,6 +3827,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5067700292659216,
       "residual": 2.2737367544323206e-13,
+      "step": 2.194770674692927,
       "id": "dat.hasselblad1998::001"
     },
     {
@@ -3589,6 +3836,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5486805931797134,
       "residual": 2.2737367544323206e-13,
+      "step": 7.7244616591088935,
       "id": "dat.hasselblad1998::001"
     },
     {
@@ -3597,6 +3845,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8643358302373715,
       "residual": 4.547473508864641e-13,
+      "step": 1.5744917879252032,
       "id": "dat.hasselblad1998::001"
     },
     {
@@ -3605,6 +3854,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.3285774407517321,
       "id": "dat.hasselblad1998::002"
     },
     {
@@ -3613,6 +3863,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8257440517560037,
       "residual": 2.2737367544323206e-13,
+      "step": 4.648648404365111,
       "id": "dat.hasselblad1998::002"
     },
     {
@@ -3621,6 +3872,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8241742338234975,
       "residual": 0,
+      "step": 1.6466967549008173,
       "id": "dat.hasselblad1998::002"
     },
     {
@@ -3629,6 +3881,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 3.8581504718388544,
       "id": "dat.higgins2008::001"
     },
     {
@@ -3637,6 +3890,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5095571699050221,
       "residual": 2.2737367544323206e-13,
+      "step": 9.175695473614184,
       "id": "dat.higgins2008::001"
     },
     {
@@ -3645,6 +3899,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6904407842988366,
       "residual": 4.547473508864641e-13,
+      "step": 1.862598502887135,
       "id": "dat.higgins2008::001"
     },
     {
@@ -3653,6 +3908,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.19892001862008257,
       "id": "dat.hine1989::001"
     },
     {
@@ -3661,6 +3917,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5451220986111883,
       "residual": 1.1368683772161603e-13,
+      "step": 0.0807733006362753,
       "id": "dat.hine1989::001"
     },
     {
@@ -3669,6 +3926,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5417971935195234,
       "residual": 0,
+      "step": 0.06741998624632425,
       "id": "dat.hine1989::001"
     },
     {
@@ -3677,6 +3935,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9614229203331368,
       "residual": 2.2737367544323206e-13,
+      "step": 2.3280755778703135,
       "id": "dat.huber2000::001"
     },
     {
@@ -3685,6 +3944,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6096319080221201,
       "residual": 1.1368683772161603e-13,
+      "step": 0.8879453723076705,
       "id": "dat.huber2000::001"
     },
     {
@@ -3693,6 +3953,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4445555059981593,
       "residual": 0,
+      "step": 0.37715941196458935,
       "id": "dat.huber2000::001"
     },
     {
@@ -3701,6 +3962,7 @@
       "message": "axis labels: checked",
       "coverage": 0.3834908743232824,
       "residual": 1.1368683772161603e-13,
+      "step": 28.715139022201143,
       "id": "dat.ishak2007::001"
     },
     {
@@ -3709,6 +3971,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909093,
       "residual": 2.2737367544323206e-13,
+      "step": 27.05999999999999,
       "id": "dat.ishak2007::001"
     },
     {
@@ -3717,6 +3980,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7866481764179134,
       "residual": 4.547473508864641e-13,
+      "step": 10.330634056049034,
       "id": "dat.ishak2007::001"
     },
     {
@@ -3725,6 +3989,7 @@
       "message": "axis labels: checked",
       "coverage": 0.39999342978973823,
       "residual": 1.1368683772161603e-13,
+      "step": 31.121002453368828,
       "id": "dat.ishak2007::002"
     },
     {
@@ -3733,6 +3998,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8417183890901204,
       "residual": 2.2737367544323206e-13,
+      "step": 34.69093746610973,
       "id": "dat.ishak2007::002"
     },
     {
@@ -3741,6 +4007,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8244259427895755,
       "residual": 4.547473508864641e-13,
+      "step": 15.400000000000002,
       "id": "dat.ishak2007::002"
     },
     {
@@ -3749,6 +4016,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4068333402959961,
       "residual": 1.1368683772161603e-13,
+      "step": 31.926025736114692,
       "id": "dat.ishak2007::003"
     },
     {
@@ -3757,6 +4025,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6169460363197853,
       "residual": 1.1368683772161603e-13,
+      "step": 33.06610108347621,
       "id": "dat.ishak2007::003"
     },
     {
@@ -3765,6 +4034,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8238719581205005,
       "residual": 4.547473508864641e-13,
+      "step": 14.371743109310028,
       "id": "dat.ishak2007::003"
     },
     {
@@ -3773,6 +4043,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7010073158581271,
       "residual": 1.1368683772161603e-13,
+      "step": 46.1469901033705,
       "id": "dat.ishak2007::004"
     },
     {
@@ -3781,6 +4052,7 @@
       "message": "axis labels: checked",
       "coverage": 0.806839191271405,
       "residual": 1.7053025658242404e-13,
+      "step": 26.52325299949572,
       "id": "dat.ishak2007::004"
     },
     {
@@ -3789,6 +4061,7 @@
       "message": "axis labels: checked",
       "coverage": 0.750956285755384,
       "residual": 4.547473508864641e-13,
+      "step": 15.618450627382995,
       "id": "dat.ishak2007::004"
     },
     {
@@ -3797,6 +4070,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8596180282037376,
       "residual": 2.2737367544323206e-13,
+      "step": 0.23486832513710565,
       "id": "dat.kalaian1996::001"
     },
     {
@@ -3805,6 +4079,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8754308331516646,
       "residual": 2.2737367544323206e-13,
+      "step": 1.450714267657029,
       "id": "dat.kalaian1996::001"
     },
     {
@@ -3813,6 +4088,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7612681136292203,
       "residual": 4.547473508864641e-13,
+      "step": 0.5537273697407419,
       "id": "dat.kalaian1996::001"
     },
     {
@@ -3821,6 +4097,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9891514566349022,
       "residual": 2.2737367544323206e-13,
+      "step": 0.3503099854483086,
       "id": "dat.karner2014::001"
     },
     {
@@ -3829,6 +4106,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5779533888233693,
       "residual": 1.1368683772161603e-13,
+      "step": 3.712282961932349,
       "id": "dat.karner2014::001"
     },
     {
@@ -3837,6 +4115,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8771478447256792,
       "residual": 4.547473508864641e-13,
+      "step": 1.7280417447210066,
       "id": "dat.karner2014::001"
     },
     {
@@ -3845,6 +4124,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6831620506778846,
       "residual": 1.1368683772161603e-13,
+      "step": 3.351452829861702,
       "id": "dat.karner2014::002"
     },
     {
@@ -3853,6 +4133,7 @@
       "message": "axis labels: checked",
       "coverage": 0.39898710240332835,
       "residual": 2.2737367544323206e-13,
+      "step": 10.576782995190868,
       "id": "dat.karner2014::002"
     },
     {
@@ -3861,6 +4142,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7899686520376177,
       "residual": 4.547473508864641e-13,
+      "step": 3.19,
       "id": "dat.karner2014::002"
     },
     {
@@ -3869,6 +4151,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7158127967143599,
       "residual": 2.2737367544323206e-13,
+      "step": 4.840578458708864,
       "id": "dat.kearon1998::001"
     },
     {
@@ -3877,6 +4160,7 @@
       "message": "axis labels: checked",
       "coverage": 0.61968458770548,
       "residual": 2.2737367544323206e-13,
+      "step": 10.52777094927709,
       "id": "dat.kearon1998::001"
     },
     {
@@ -3885,6 +4169,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6832506648586032,
       "residual": 4.547473508864641e-13,
+      "step": 1.8107491708455834,
       "id": "dat.kearon1998::001"
     },
     {
@@ -3893,6 +4178,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5714337718993607,
       "residual": 2.2737367544323206e-13,
+      "step": 8.610053436721161,
       "id": "dat.kearon1998::002"
     },
     {
@@ -3901,6 +4187,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6983509840509733,
       "residual": 2.2737367544323206e-13,
+      "step": 9.341860395637841,
       "id": "dat.kearon1998::002"
     },
     {
@@ -3909,6 +4196,7 @@
       "message": "axis labels: checked",
       "coverage": 0.698320544075313,
       "residual": 4.547473508864641e-13,
+      "step": 0.16746137784548654,
       "id": "dat.kearon1998::002"
     },
     {
@@ -3917,6 +4205,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 5.4538548998740595,
       "id": "dat.kearon1998::003"
     },
     {
@@ -3925,6 +4214,7 @@
       "message": "axis labels: checked",
       "coverage": 0.664891358078417,
       "residual": 1.1368683772161603e-13,
+      "step": 4.289495531582892,
       "id": "dat.kearon1998::003"
     },
     {
@@ -3933,6 +4223,7 @@
       "message": "axis labels: checked",
       "coverage": 0.477251114851613,
       "residual": 4.547473508864641e-13,
+      "step": 0.6197797868009124,
       "id": "dat.kearon1998::003"
     },
     {
@@ -3941,6 +4232,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 6.575885601000509,
       "id": "dat.kearon1998::004"
     },
     {
@@ -3949,6 +4241,7 @@
       "message": "axis labels: checked",
       "coverage": 0.38045909531814226,
       "residual": 1.1368683772161603e-13,
+      "step": 17.52314823685361,
       "id": "dat.kearon1998::004"
     },
     {
@@ -3957,6 +4250,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7374519463775018,
       "residual": 4.547473508864641e-13,
+      "step": 1.5593520921743176,
       "id": "dat.kearon1998::004"
     },
     {
@@ -3965,6 +4259,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9593619973104708,
       "residual": 2.2737367544323206e-13,
+      "step": 0.7445216127602344,
       "id": "dat.knapp2017::001"
     },
     {
@@ -3973,6 +4268,7 @@
       "message": "axis labels: checked",
       "coverage": 0.589875230968273,
       "residual": 2.2737367544323206e-13,
+      "step": 4.47552272311294,
       "id": "dat.knapp2017::001"
     },
     {
@@ -3981,6 +4277,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6324633547953701,
       "residual": 4.547473508864641e-13,
+      "step": 0.5112338016993787,
       "id": "dat.knapp2017::001"
     },
     {
@@ -3989,6 +4286,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.5725038911927733,
       "id": "dat.konstantopoulos2011::001"
     },
     {
@@ -3997,6 +4295,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6441081261528512,
       "residual": 4.547473508864641e-13,
+      "step": 2.654833762482614,
       "id": "dat.konstantopoulos2011::001"
     },
     {
@@ -4005,6 +4304,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8333333333333327,
       "residual": 4.547473508864641e-13,
+      "step": 0.4174206511422262,
       "id": "dat.konstantopoulos2011::001"
     },
     {
@@ -4013,6 +4313,7 @@
       "message": "axis labels: checked",
       "coverage": 0.961830652245599,
       "residual": 2.2737367544323206e-13,
+      "step": 0.6917903083073422,
       "id": "dat.landenberger2005::001"
     },
     {
@@ -4021,6 +4322,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6020758109544901,
       "residual": 2.2737367544323206e-13,
+      "step": 4.626480712885241,
       "id": "dat.landenberger2005::001"
     },
     {
@@ -4029,6 +4331,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8404204994662601,
       "residual": 4.547473508864641e-13,
+      "step": 1.115173130554674,
       "id": "dat.landenberger2005::001"
     },
     {
@@ -4037,6 +4340,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 2.6624023406026627,
       "id": "dat.laopaiboon2015::001"
     },
     {
@@ -4045,6 +4349,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6437188138818317,
       "residual": 2.2737367544323206e-13,
+      "step": 6.420006537247479,
       "id": "dat.laopaiboon2015::001"
     },
     {
@@ -4053,6 +4358,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8028534854874453,
       "residual": 4.547473508864641e-13,
+      "step": 1.679420251441665,
       "id": "dat.laopaiboon2015::001"
     },
     {
@@ -4061,6 +4367,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8202499199619898,
       "residual": 1.1368683772161603e-13,
+      "step": 0.38199733275473957,
       "id": "dat.lau1992::001"
     },
     {
@@ -4069,6 +4376,7 @@
       "message": "axis labels: checked",
       "coverage": 0.713033097594116,
       "residual": 2.2737367544323206e-13,
+      "step": 5.4889700439827225,
       "id": "dat.lau1992::001"
     },
     {
@@ -4077,6 +4385,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8786644054845022,
       "residual": 4.547473508864641e-13,
+      "step": 1.6421201388474687,
       "id": "dat.lau1992::001"
     },
     {
@@ -4085,6 +4394,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.7836998960594111,
       "id": "dat.lee2004::001"
     },
     {
@@ -4093,6 +4403,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5370226855777028,
       "residual": 1.1368683772161603e-13,
+      "step": 5.2442175375009406,
       "id": "dat.lee2004::001"
     },
     {
@@ -4101,6 +4412,7 @@
       "message": "axis labels: checked",
       "coverage": 0.841778867498113,
       "residual": 4.547473508864641e-13,
+      "step": 1.529487931738376,
       "id": "dat.lee2004::001"
     },
     {
@@ -4109,6 +4421,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.3317384350364554,
       "id": "dat.lehmann2018::001"
     },
     {
@@ -4117,6 +4430,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6653590532114739,
       "residual": 1.1368683772161603e-13,
+      "step": 3.9812521618979813,
       "id": "dat.lehmann2018::001"
     },
     {
@@ -4125,6 +4439,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8660404186075252,
       "residual": 4.547473508864641e-13,
+      "step": 0.8034846298008891,
       "id": "dat.lehmann2018::001"
     },
     {
@@ -4133,6 +4448,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.4291435548878249,
       "id": "dat.lehmann2018::002"
     },
     {
@@ -4141,6 +4457,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6690835694881203,
       "residual": 2.2737367544323206e-13,
+      "step": 3.959090149326418,
       "id": "dat.lehmann2018::002"
     },
     {
@@ -4149,6 +4466,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8660404186075252,
       "residual": 9.094947017729282e-13,
+      "step": 0.8034846298008894,
       "id": "dat.lehmann2018::002"
     },
     {
@@ -4157,6 +4475,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.6184146092233953,
       "id": "dat.lehmann2018::003"
     },
     {
@@ -4165,6 +4484,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6790527464142158,
       "residual": 1.7053025658242404e-13,
+      "step": 2.2396848914250174,
       "id": "dat.lehmann2018::003"
     },
     {
@@ -4173,6 +4493,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7602223197849457,
       "residual": 4.547473508864641e-13,
+      "step": 0.5976586744471094,
       "id": "dat.lehmann2018::003"
     },
     {
@@ -4181,6 +4502,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 4.547473508864641e-13,
+      "step": 0.7842755196481612,
       "id": "dat.li2007::001"
     },
     {
@@ -4189,6 +4511,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5814926157579845,
       "residual": 2.2737367544323206e-13,
+      "step": 5.852984952801545,
       "id": "dat.li2007::001"
     },
     {
@@ -4197,6 +4520,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8916883688298378,
       "residual": 4.547473508864641e-13,
+      "step": 1.8182439134950377,
       "id": "dat.li2007::001"
     },
     {
@@ -4205,6 +4529,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.299400146955781,
       "id": "dat.lim2014::001"
     },
     {
@@ -4213,6 +4538,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 3.193624690035757,
       "id": "dat.lim2014::001"
     },
     {
@@ -4221,6 +4547,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8664720699146816,
       "residual": 4.547473508864641e-13,
+      "step": 0.6350852961085883,
       "id": "dat.lim2014::001"
     },
     {
@@ -4229,6 +4556,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.4356254807469102,
       "id": "dat.linde2005::001"
     },
     {
@@ -4237,6 +4565,7 @@
       "message": "axis labels: checked",
       "coverage": 0.29587731676161083,
       "residual": 1.1368683772161603e-13,
+      "step": 10.86609272641813,
       "id": "dat.linde2005::001"
     },
     {
@@ -4245,6 +4574,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8388860553286365,
       "residual": 4.547473508864641e-13,
+      "step": 1.562741556419734,
       "id": "dat.linde2005::001"
     },
     {
@@ -4253,6 +4583,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.8292190068438838,
       "id": "dat.linde2015::001"
     },
     {
@@ -4261,6 +4592,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6827596875596118,
       "residual": 2.2737367544323206e-13,
+      "step": 4.0409776601717535,
       "id": "dat.linde2015::001"
     },
     {
@@ -4269,6 +4601,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7533351374821975,
       "residual": 4.547473508864641e-13,
+      "step": 0.83463422270734,
       "id": "dat.linde2015::001"
     },
     {
@@ -4277,6 +4610,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.9771657840577848,
       "id": "dat.linde2015::002"
     },
     {
@@ -4285,6 +4619,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5499316853031031,
       "residual": 2.2737367544323206e-13,
+      "step": 4.790577449651081,
       "id": "dat.linde2015::002"
     },
     {
@@ -4293,6 +4628,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7812153205330725,
       "residual": 4.547473508864641e-13,
+      "step": 0.9574271077563381,
       "id": "dat.linde2015::002"
     },
     {
@@ -4301,6 +4637,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.841163059069318,
       "id": "dat.linde2016::001"
     },
     {
@@ -4309,6 +4646,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 5.319910097646626,
       "id": "dat.linde2016::001"
     },
     {
@@ -4317,6 +4655,7 @@
       "message": "axis labels: checked",
       "coverage": 0.802868443490299,
       "residual": 9.094947017729282e-13,
+      "step": 1.014149890302217,
       "id": "dat.linde2016::001"
     },
     {
@@ -4325,6 +4664,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5013371815828211,
       "residual": 1.1368683772161603e-13,
+      "step": 2.5286856355724034,
       "id": "dat.lloyd2010::001"
     },
     {
@@ -4333,6 +4673,7 @@
       "message": "axis labels: checked",
       "coverage": 0.45443104327376205,
       "residual": 1.1368683772161603e-13,
+      "step": 1.7604431119774033,
       "id": "dat.lloyd2010::001"
     },
     {
@@ -4341,6 +4682,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7235621521335807,
       "residual": 4.547473508864641e-13,
+      "step": 0.27500505328238867,
       "id": "dat.lloyd2010::001"
     },
     {
@@ -4349,6 +4691,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7137512303637005,
       "residual": 2.2737367544323206e-13,
+      "step": 0.6790535491616794,
       "id": "dat.lloyd2010::002"
     },
     {
@@ -4357,6 +4700,7 @@
       "message": "axis labels: checked",
       "coverage": 0.3194627510824602,
       "residual": 5.684341886080802e-14,
+      "step": 0.8451689565845729,
       "id": "dat.lloyd2010::002"
     },
     {
@@ -4365,6 +4709,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7692307692307688,
       "residual": 4.547473508864641e-13,
+      "step": 0.14592104868045105,
       "id": "dat.lloyd2010::002"
     },
     {
@@ -4373,6 +4718,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.6003612545152524,
       "id": "dat.lopez2019::001"
     },
     {
@@ -4381,6 +4727,7 @@
       "message": "axis labels: checked",
       "coverage": 0.4464111368496419,
       "residual": 1.1368683772161603e-13,
+      "step": 19.0514960267771,
       "id": "dat.lopez2019::001"
     },
     {
@@ -4389,6 +4736,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8975525696703267,
       "residual": 4.547473508864641e-13,
+      "step": 0.737947885964856,
       "id": "dat.lopez2019::001"
     },
     {
@@ -4397,6 +4745,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 336.58454418986275,
       "id": "dat.maire2019::001"
     },
     {
@@ -4405,6 +4754,7 @@
       "message": "axis labels: checked",
       "coverage": 0.3706395990790637,
       "residual": 1.1368683772161603e-13,
+      "step": 914.6351357014221,
       "id": "dat.maire2019::001"
     },
     {
@@ -4413,6 +4763,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7352123584748184,
       "residual": 4.547473508864641e-13,
+      "step": 124.52822543503947,
       "id": "dat.maire2019::001"
     },
     {
@@ -4421,6 +4772,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5851529990353854,
       "residual": 2.2737367544323206e-13,
+      "step": 0.5745559721553962,
       "id": "dat.mccurdy2020::001"
     },
     {
@@ -4429,6 +4781,7 @@
       "message": "axis labels: checked",
       "coverage": 0.46291738560276147,
       "residual": 2.2737367544323206e-13,
+      "step": 2.0910858613347907,
       "id": "dat.mccurdy2020::001"
     },
     {
@@ -4437,6 +4790,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8535390797667853,
       "residual": 4.547473508864641e-13,
+      "step": 0.08485850538612626,
       "id": "dat.mccurdy2020::001"
     },
     {
@@ -4445,6 +4799,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5516067988174131,
       "residual": 2.2737367544323206e-13,
+      "step": 0.2730224128546216,
       "id": "dat.mcdaniel1994::001"
     },
     {
@@ -4453,6 +4808,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5172626105238565,
       "residual": 2.2737367544323206e-13,
+      "step": 5.448526567595092,
       "id": "dat.mcdaniel1994::001"
     },
     {
@@ -4461,6 +4817,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8847712599429627,
       "residual": 4.547473508864641e-13,
+      "step": 0.6350852961085887,
       "id": "dat.mcdaniel1994::001"
     },
     {
@@ -4469,6 +4826,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7858422415083932,
       "residual": 2.2737367544323206e-13,
+      "step": 0.7401739351728188,
       "id": "dat.mcdaniel1994::002"
     },
     {
@@ -4477,6 +4835,7 @@
       "message": "axis labels: checked",
       "coverage": 0.3651664774131679,
       "residual": 1.1368683772161603e-13,
+      "step": 3.1766333213755473,
       "id": "dat.mcdaniel1994::002"
     },
     {
@@ -4485,6 +4844,7 @@
       "message": "axis labels: checked",
       "coverage": 0.880617697581956,
       "residual": 4.547473508864641e-13,
+      "step": 0.31255872024309295,
       "id": "dat.mcdaniel1994::002"
     },
     {
@@ -4493,6 +4853,7 @@
       "message": "axis labels: checked",
       "coverage": 0.24396069727969255,
       "residual": 2.2737367544323206e-13,
+      "step": 0.3026596686272461,
       "id": "dat.meeker2017::001"
     },
     {
@@ -4501,6 +4862,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7473472067224368,
       "residual": 2.2737367544323206e-13,
+      "step": 0.05887491062282313,
       "id": "dat.meeker2017::001"
     },
     {
@@ -4509,6 +4871,7 @@
       "message": "axis labels: checked",
       "coverage": 0.659856996935648,
       "residual": 4.547473508864641e-13,
+      "step": 0.04895000000000001,
       "id": "dat.meeker2017::001"
     },
     {
@@ -4517,6 +4880,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.37471217785248706,
       "id": "dat.michael2013::001"
     },
     {
@@ -4525,6 +4889,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5157945352857668,
       "residual": 1.1368683772161603e-13,
+      "step": 0.7367274641431935,
       "id": "dat.michael2013::001"
     },
     {
@@ -4533,6 +4898,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6855223157053815,
       "residual": 0,
+      "step": 0.21594567769299236,
       "id": "dat.michael2013::001"
     },
     {
@@ -4541,6 +4907,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.37471217785248745,
       "id": "dat.michael2013::002"
     },
     {
@@ -4549,6 +4916,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5157945352857666,
       "residual": 2.2737367544323206e-13,
+      "step": 0.7367274641431938,
       "id": "dat.michael2013::002"
     },
     {
@@ -4557,6 +4925,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6855223157053815,
       "residual": 4.547473508864641e-13,
+      "step": 0.21594567769299244,
       "id": "dat.michael2013::002"
     },
     {
@@ -4565,6 +4934,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.2792634809603636,
       "id": "dat.molloy2014::001"
     },
     {
@@ -4573,6 +4943,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7747813307832974,
       "residual": 4.547473508864641e-13,
+      "step": 0.6178095270965223,
       "id": "dat.molloy2014::001"
     },
     {
@@ -4581,6 +4952,7 @@
       "message": "axis labels: checked",
       "coverage": 0.672537954606121,
       "residual": 4.547473508864641e-13,
+      "step": 0.15254255396193805,
       "id": "dat.molloy2014::001"
     },
     {
@@ -4589,6 +4961,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 2.265494621900385,
       "id": "dat.moore1998::001"
     },
     {
@@ -4597,6 +4970,7 @@
       "message": "axis labels: checked",
       "coverage": 0.506889029398413,
       "residual": 1.7053025658242404e-13,
+      "step": 10.424231582535967,
       "id": "dat.moore1998::001"
     },
     {
@@ -4605,6 +4979,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7614997724358665,
       "residual": 4.547473508864641e-13,
+      "step": 1.762389682023913,
       "id": "dat.moore1998::001"
     },
     {
@@ -4613,6 +4988,7 @@
       "message": "axis labels: checked",
       "coverage": 0.3358391040114687,
       "residual": 2.2737367544323206e-13,
+      "step": 0.288481966482786,
       "id": "dat.moura2021::001"
     },
     {
@@ -4621,6 +4997,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909091,
       "residual": 2.2737367544323206e-13,
+      "step": 5.385657135951858,
       "id": "dat.moura2021::001"
     },
     {
@@ -4629,6 +5006,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9068641024606383,
       "residual": 4.547473508864641e-13,
+      "step": 1.1000000000000003,
       "id": "dat.moura2021::001"
     },
     {
@@ -4637,6 +5015,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.2376462436579627,
       "id": "dat.nakagawa2007::001"
     },
     {
@@ -4645,6 +5024,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 1.5200949690232546,
       "id": "dat.nakagawa2007::001"
     },
     {
@@ -4653,6 +5033,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6536584150231743,
       "residual": 4.547473508864641e-13,
+      "step": 0.6350852961085882,
       "id": "dat.nakagawa2007::001"
     },
     {
@@ -4661,6 +5042,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 2.829757608648798,
       "id": "dat.nielweise2007::001"
     },
     {
@@ -4669,6 +5051,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8145740502061635,
       "residual": 2.2737367544323206e-13,
+      "step": 5.634144464463734,
       "id": "dat.nielweise2007::001"
     },
     {
@@ -4677,6 +5060,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6220410567746237,
       "residual": 4.547473508864641e-13,
+      "step": 1.806896030626807,
       "id": "dat.nielweise2007::001"
     },
     {
@@ -4685,6 +5069,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 2.6110331515830305,
       "id": "dat.nielweise2008::001"
     },
     {
@@ -4693,6 +5078,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8505181899275691,
       "residual": 2.2737367544323206e-13,
+      "step": 2.4936480679954007,
       "id": "dat.nielweise2008::001"
     },
     {
@@ -4701,6 +5087,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6813729850599456,
       "residual": 4.547473508864641e-13,
+      "step": 1.5556349186104053,
       "id": "dat.nielweise2008::001"
     },
     {
@@ -4709,6 +5096,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.077623040466484,
       "id": "dat.nissen2007::001"
     },
     {
@@ -4717,6 +5105,7 @@
       "message": "axis labels: checked",
       "coverage": 0.576979088082453,
       "residual": 2.2737367544323206e-13,
+      "step": 5.8098373195716775,
       "id": "dat.nissen2007::001"
     },
     {
@@ -4725,6 +5114,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7996635931303411,
       "residual": 4.547473508864641e-13,
+      "step": 2.3668705162398007,
       "id": "dat.nissen2007::001"
     },
     {
@@ -4733,6 +5123,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.9186519562508177,
       "id": "dat.nissen2007::002"
     },
     {
@@ -4741,6 +5132,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6474618203981611,
       "residual": 2.2737367544323206e-13,
+      "step": 5.053391498679824,
       "id": "dat.nissen2007::002"
     },
     {
@@ -4749,6 +5141,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7556372443306069,
       "residual": 9.094947017729282e-13,
+      "step": 2.7842533409635473,
       "id": "dat.nissen2007::002"
     },
     {
@@ -4757,6 +5150,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.0547803875599753,
       "id": "dat.nissen2007::003"
     },
     {
@@ -4765,6 +5159,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6056020081064981,
       "residual": 2.2737367544323206e-13,
+      "step": 5.772744242268756,
       "id": "dat.nissen2007::003"
     },
     {
@@ -4773,6 +5168,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7712763331612784,
       "residual": 4.547473508864641e-13,
+      "step": 1.8137044438176286,
       "id": "dat.nissen2007::003"
     },
     {
@@ -4781,6 +5177,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 2.2165588069988917,
       "id": "dat.nissen2007::004"
     },
     {
@@ -4789,6 +5186,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9064255438076391,
       "residual": 2.2737367544323206e-13,
+      "step": 3.0783315175848465,
       "id": "dat.nissen2007::004"
     },
     {
@@ -4797,6 +5195,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6709203784000836,
       "residual": 4.547473508864641e-13,
+      "step": 1.8014979281371146,
       "id": "dat.nissen2007::004"
     },
     {
@@ -4805,6 +5204,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 42.85906555265157,
       "id": "dat.normand1999::001"
     },
     {
@@ -4813,6 +5213,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5338902664452395,
       "residual": 1.1368683772161603e-13,
+      "step": 153.5896141092332,
       "id": "dat.normand1999::001"
     },
     {
@@ -4821,6 +5222,7 @@
       "message": "axis labels: checked",
       "coverage": 0.828952784733288,
       "residual": 4.547473508864641e-13,
+      "step": 13.482169294623514,
       "id": "dat.normand1999::001"
     },
     {
@@ -4829,6 +5231,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.0822906412195752,
       "id": "dat.normand1999::002"
     },
     {
@@ -4837,6 +5240,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7689521720575708,
       "residual": 2.2737367544323206e-13,
+      "step": 1.2957475008450166,
       "id": "dat.normand1999::002"
     },
     {
@@ -4845,6 +5249,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7637633891674569,
       "residual": 4.547473508864641e-13,
+      "step": 0.29008268481403104,
       "id": "dat.normand1999::002"
     },
     {
@@ -4853,6 +5258,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5361414241697222,
       "residual": 2.2737367544323206e-13,
+      "step": 1.0144808338992353,
       "id": "dat.obrien2003::001"
     },
     {
@@ -4861,6 +5267,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909091,
       "residual": 3.410605131648481e-13,
+      "step": 2.6662513539442556,
       "id": "dat.obrien2003::001"
     },
     {
@@ -4869,6 +5276,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8862924013956955,
       "residual": 4.547473508864641e-13,
+      "step": 0.8658451539899219,
       "id": "dat.obrien2003::001"
     },
     {
@@ -4877,6 +5285,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 3.410605131648481e-13,
+      "step": 0.126721420776985,
       "id": "dat.obrien2003::002"
     },
     {
@@ -4885,6 +5294,7 @@
       "message": "axis labels: checked",
       "coverage": 0.2458647117187471,
       "residual": 1.1368683772161603e-13,
+      "step": 0.6619152403956317,
       "id": "dat.obrien2003::002"
     },
     {
@@ -4893,6 +5303,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9048214575764602,
       "residual": 4.547473508864641e-13,
+      "step": 0.046417220991334725,
       "id": "dat.obrien2003::002"
     },
     {
@@ -4901,6 +5312,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 2.1959397304700157,
       "id": "dat.pagliaro1992::001"
     },
     {
@@ -4909,6 +5321,7 @@
       "message": "axis labels: checked",
       "coverage": 0.909090909090909,
       "residual": 1.1368683772161603e-13,
+      "step": 5.8438590444894745,
       "id": "dat.pagliaro1992::001"
     },
     {
@@ -4917,6 +5330,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7293911802864828,
       "residual": 4.547473508864641e-13,
+      "step": 1.7003341473441582,
       "id": "dat.pagliaro1992::001"
     },
     {
@@ -4925,6 +5339,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.5157727297061445,
       "id": "dat.pagliaro1992::002"
     },
     {
@@ -4933,6 +5348,7 @@
       "message": "axis labels: checked",
       "coverage": 0.582114569993084,
       "residual": 2.2737367544323206e-13,
+      "step": 8.348549675400516,
       "id": "dat.pagliaro1992::002"
     },
     {
@@ -4941,6 +5357,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7802740263649208,
       "residual": 4.547473508864641e-13,
+      "step": 1.5754527228867523,
       "id": "dat.pagliaro1992::002"
     },
     {
@@ -4949,6 +5366,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.37707349813057833,
       "id": "dat.pignon2000::001"
     },
     {
@@ -4957,6 +5375,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7364797469412057,
       "residual": 2.2737367544323206e-13,
+      "step": 3.0658302497687333,
       "id": "dat.pignon2000::001"
     },
     {
@@ -4965,6 +5384,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7353214834578444,
       "residual": 4.547473508864641e-13,
+      "step": 0.5128776445321725,
       "id": "dat.pignon2000::001"
     },
     {
@@ -4973,6 +5393,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.16825664396591936,
       "id": "dat.poole2003::001"
     },
     {
@@ -4988,6 +5409,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8998177348046242,
       "residual": 4.547473508864641e-13,
+      "step": 1.1900691856638705,
       "id": "dat.poole2003::001"
     },
     {
@@ -4996,6 +5418,7 @@
       "message": "axis labels: checked",
       "coverage": 0.39277482988933693,
       "residual": 2.2737367544323206e-13,
+      "step": 1.1153647239581201,
       "id": "dat.pritz1997::001"
     },
     {
@@ -5004,6 +5427,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5724779842100985,
       "residual": 1.1368683772161603e-13,
+      "step": 0.7706435579299484,
       "id": "dat.pritz1997::001"
     },
     {
@@ -5012,6 +5436,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6908264852235911,
       "residual": 4.547473508864641e-13,
+      "step": 0.1967739820199815,
       "id": "dat.pritz1997::001"
     },
     {
@@ -5020,6 +5445,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5027770981333433,
       "residual": 2.2737367544323206e-13,
+      "step": 0.9104808053046111,
       "id": "dat.pritz1997::002"
     },
     {
@@ -5028,6 +5454,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8636363636363639,
       "residual": 2.2737367544323206e-13,
+      "step": 0.5789473684210525,
       "id": "dat.pritz1997::002"
     },
     {
@@ -5036,6 +5463,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6625790252060723,
       "residual": 0,
+      "step": 0.2116911147913366,
       "id": "dat.pritz1997::002"
     },
     {
@@ -5044,6 +5472,7 @@
       "message": "axis labels: checked",
       "coverage": 0.3833096874811395,
       "residual": 2.2737367544323206e-13,
+      "step": 1.164817844725907,
       "id": "dat.pritz1997::003"
     },
     {
@@ -5052,6 +5481,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5531838330994109,
       "residual": 1.1368683772161603e-13,
+      "step": 0.8343310739081559,
       "id": "dat.pritz1997::003"
     },
     {
@@ -5060,6 +5490,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6908264852235911,
       "residual": 4.547473508864641e-13,
+      "step": 0.19677398201998147,
       "id": "dat.pritz1997::003"
     },
     {
@@ -5068,6 +5499,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 2.145565315332399,
       "id": "dat.pritz1997::004"
     },
     {
@@ -5076,6 +5508,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5431536209248389,
       "residual": 2.2737367544323206e-13,
+      "step": 5.9262715019506915,
       "id": "dat.pritz1997::004"
     },
     {
@@ -5084,6 +5517,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7207586293897207,
       "residual": 4.547473508864641e-13,
+      "step": 1.592243101802642,
       "id": "dat.pritz1997::004"
     },
     {
@@ -5092,6 +5526,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.55745445312995,
       "id": "dat.quan2000::001"
     },
     {
@@ -5100,6 +5535,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5322143563969218,
       "residual": 2.2737367544323206e-13,
+      "step": 4.701198127233741,
       "id": "dat.quan2000::001"
     },
     {
@@ -5108,6 +5544,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7215745073099289,
       "residual": 0,
+      "step": 1.7985555169931442,
       "id": "dat.quan2000::001"
     },
     {
@@ -5116,6 +5553,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 0.6450100907331013,
       "id": "dat.raudenbush1985::001"
     },
     {
@@ -5124,6 +5562,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5905614067038454,
       "residual": 1.1368683772161603e-13,
+      "step": 2.539956019767847,
       "id": "dat.raudenbush1985::001"
     },
     {
@@ -5132,6 +5571,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6804336012398424,
       "residual": 4.547473508864641e-13,
+      "step": 0.4102572363773733,
       "id": "dat.raudenbush1985::001"
     },
     {
@@ -5140,6 +5580,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5395778015841866,
       "residual": 2.2737367544323206e-13,
+      "step": 1.7398684155884157,
       "id": "dat.riley2003::001"
     },
     {
@@ -5148,6 +5589,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6856534716806143,
       "residual": 4.547473508864641e-13,
+      "step": 9.538345928548601,
       "id": "dat.riley2003::001"
     },
     {
@@ -5156,6 +5598,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8460325801366259,
       "residual": 4.547473508864641e-13,
+      "step": 1.9029999999999994,
       "id": "dat.riley2003::001"
     },
     {
@@ -5164,6 +5607,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6662568839682745,
       "residual": 2.2737367544323206e-13,
+      "step": 4.701209780977107,
       "id": "dat.rivera2025::001"
     },
     {
@@ -5172,6 +5616,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7630733937979975,
       "residual": 1.1368683772161603e-13,
+      "step": 3.0555984603945046,
       "id": "dat.rivera2025::001"
     },
     {
@@ -5180,6 +5625,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6283931640244682,
       "residual": 4.547473508864641e-13,
+      "step": 0.5574833371795764,
       "id": "dat.rivera2025::001"
     },
     {
@@ -5188,6 +5634,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 5.9182839089604204,
       "id": "dat.rivera2025::002"
     },
     {
@@ -5196,6 +5643,7 @@
       "message": "axis labels: checked",
       "coverage": 0.42336033588006083,
       "residual": 1.1368683772161603e-13,
+      "step": 9.57509503554861,
       "id": "dat.rivera2025::002"
     },
     {
@@ -5204,6 +5652,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6810208938485968,
       "residual": 4.547473508864641e-13,
+      "step": 0.6505147184400246,
       "id": "dat.rivera2025::002"
     },
     {
@@ -5212,6 +5661,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 7.520294919479808,
       "id": "dat.rivera2025::003"
     },
     {
@@ -5220,6 +5670,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6774746094641235,
       "residual": 2.2737367544323206e-13,
+      "step": 4.398941727498128,
       "id": "dat.rivera2025::003"
     },
     {
@@ -5228,6 +5679,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5289142406524687,
       "residual": 4.547473508864641e-13,
+      "step": 0.7733982732739859,
       "id": "dat.rivera2025::003"
     },
     {
@@ -5236,6 +5688,7 @@
       "message": "axis labels: checked",
       "coverage": 0.911572446313034,
       "residual": 2.2737367544323206e-13,
+      "step": 1.6103435228525311,
       "id": "dat.roever2022::001"
     },
     {
@@ -5244,6 +5697,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 4.029917810742612,
       "id": "dat.roever2022::001"
     },
     {
@@ -5252,6 +5706,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6912467100831717,
       "residual": 4.547473508864641e-13,
+      "step": 1.6630436812406013,
       "id": "dat.roever2022::001"
     },
     {
@@ -5260,6 +5715,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 5.845970354217021,
       "id": "dat.senn2013::001"
     },
     {
@@ -5268,6 +5724,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9082658604628253,
       "residual": 2.2737367544323206e-13,
+      "step": 11.846751560734676,
       "id": "dat.senn2013::001"
     },
     {
@@ -5276,6 +5733,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7666500903267174,
       "residual": 4.547473508864641e-13,
+      "step": 0.3740089806224002,
       "id": "dat.senn2013::001"
     },
     {
@@ -5284,6 +5742,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7976637637273684,
       "residual": 1.1368683772161603e-13,
+      "step": 1.3734786589490504,
       "id": "dat.senn2013::002"
     },
     {
@@ -5292,6 +5751,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909093,
       "residual": 3.410605131648481e-13,
+      "step": 2.2439999999999998,
       "id": "dat.senn2013::002"
     },
     {
@@ -5300,6 +5760,7 @@
       "message": "axis labels: checked",
       "coverage": 0.743889192623657,
       "residual": 4.547473508864641e-13,
+      "step": 0.5136444196565086,
       "id": "dat.senn2013::002"
     },
     {
@@ -5308,6 +5769,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8666224928007155,
       "residual": 2.2737367544323206e-13,
+      "step": 19.50782985469535,
       "id": "dat.spooner2002::001"
     },
     {
@@ -5316,6 +5778,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6236281089354334,
       "residual": 3.410605131648481e-13,
+      "step": 36.399898713273394,
       "id": "dat.spooner2002::001"
     },
     {
@@ -5324,6 +5787,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6583724396410675,
       "residual": 4.547473508864641e-13,
+      "step": 10.794021493400876,
       "id": "dat.spooner2002::001"
     },
     {
@@ -5332,6 +5796,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 1.3593817079357577,
       "id": "dat.steurer2006::001"
     },
     {
@@ -5340,6 +5805,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7009616108571207,
       "residual": 5.684341886080802e-14,
+      "step": 1.077091795479074,
       "id": "dat.steurer2006::001"
     },
     {
@@ -5348,6 +5814,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7017127799736488,
       "residual": 0,
+      "step": 0.3795000000000003,
       "id": "dat.steurer2006::001"
     },
     {
@@ -5356,6 +5823,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.358826862716076,
       "id": "dat.steurer2006::002"
     },
     {
@@ -5364,6 +5832,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7009572333926586,
       "residual": 1.1368683772161603e-13,
+      "step": 1.0771049523455578,
       "id": "dat.steurer2006::002"
     },
     {
@@ -5372,6 +5841,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7017780460728087,
       "residual": 0,
+      "step": 0.379532473651929,
       "id": "dat.steurer2006::002"
     },
     {
@@ -5380,6 +5850,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 2.1711966791127484,
       "id": "dat.stowe2010::001"
     },
     {
@@ -5388,6 +5859,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5289198797438707,
       "residual": 2.2737367544323206e-13,
+      "step": 8.470091920480357,
       "id": "dat.stowe2010::001"
     },
     {
@@ -5396,6 +5868,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7773672100716945,
       "residual": 4.547473508864641e-13,
+      "step": 1.606931196115011,
       "id": "dat.stowe2010::001"
     },
     {
@@ -5404,6 +5877,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8796254996846118,
       "residual": 2.2737367544323206e-13,
+      "step": 0.1695989547993875,
       "id": "dat.tannersmith2016::001"
     },
     {
@@ -5412,6 +5886,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6764275055996526,
       "residual": 2.2737367544323206e-13,
+      "step": 0.9535389892642052,
       "id": "dat.tannersmith2016::001"
     },
     {
@@ -5420,6 +5895,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6661261437159776,
       "residual": 0,
+      "step": 0.1301537552281915,
       "id": "dat.tannersmith2016::001"
     },
     {
@@ -5428,6 +5904,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 0.33802624213382426,
       "id": "dat.thompson1999::001"
     },
     {
@@ -5436,6 +5913,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 3.325177106524599,
       "id": "dat.thompson1999::001"
     },
     {
@@ -5444,6 +5922,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8755610313366642,
       "residual": 4.547473508864641e-13,
+      "step": 1.8224876936750458,
       "id": "dat.thompson1999::001"
     },
     {
@@ -5452,6 +5931,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 2.2165588069988917,
       "id": "dat.tian2009::001"
     },
     {
@@ -5460,6 +5940,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9064255438076392,
       "residual": 2.2737367544323206e-13,
+      "step": 3.0783315175848456,
       "id": "dat.tian2009::001"
     },
     {
@@ -5468,6 +5949,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6709203784000836,
       "residual": 4.547473508864641e-13,
+      "step": 1.8014979281371146,
       "id": "dat.tian2009::001"
     },
     {
@@ -5476,6 +5958,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 1.1368683772161603e-13,
+      "step": 2.1033818194209633,
       "id": "dat.ursino2021::001"
     },
     {
@@ -5484,6 +5967,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909093,
       "residual": 1.1368683772161603e-13,
+      "step": 5.9178870888945045,
       "id": "dat.ursino2021::001"
     },
     {
@@ -5492,6 +5976,7 @@
       "message": "axis labels: checked",
       "coverage": 0.6659801750843808,
       "residual": 4.547473508864641e-13,
+      "step": 1.6630436812406009,
       "id": "dat.ursino2021::001"
     },
     {
@@ -5500,6 +5985,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.9470481710487149,
       "id": "dat.vanhowe1999::001"
     },
     {
@@ -5508,6 +5994,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5076012759191832,
       "residual": 2.2737367544323206e-13,
+      "step": 7.072900796319136,
       "id": "dat.vanhowe1999::001"
     },
     {
@@ -5516,6 +6003,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7994612616839879,
       "residual": 4.547473508864641e-13,
+      "step": 1.1513684546297673,
       "id": "dat.vanhowe1999::001"
     },
     {
@@ -5524,6 +6012,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 1.65122999576062,
       "id": "dat.viechtbauer2021::001"
     },
     {
@@ -5532,6 +6021,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 2.642132694894869,
       "id": "dat.viechtbauer2021::001"
     },
     {
@@ -5540,6 +6030,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7326735850047275,
       "residual": 4.547473508864641e-13,
+      "step": 0.7552203561595695,
       "id": "dat.viechtbauer2021::001"
     },
     {
@@ -5548,6 +6039,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9613016287612864,
       "residual": 2.2737367544323206e-13,
+      "step": 0.23802490737566728,
       "id": "dat.white2020::001"
     },
     {
@@ -5556,6 +6048,7 @@
       "message": "axis labels: checked",
       "coverage": 0.787488075175561,
       "residual": 2.2737367544323206e-13,
+      "step": 5.388615025283498,
       "id": "dat.white2020::001"
     },
     {
@@ -5564,6 +6057,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8157382255440706,
       "residual": 4.547473508864641e-13,
+      "step": 0.4490731195102492,
       "id": "dat.white2020::001"
     },
     {
@@ -5572,6 +6066,7 @@
       "message": "axis labels: checked",
       "coverage": 1,
       "residual": 2.2737367544323206e-13,
+      "step": 5.913104891663942,
       "id": "dat.woods2010::001"
     },
     {
@@ -5580,6 +6075,7 @@
       "message": "axis labels: checked",
       "coverage": 0.9090909090909092,
       "residual": 2.2737367544323206e-13,
+      "step": 2.279302418079642,
       "id": "dat.woods2010::001"
     },
     {
@@ -5588,6 +6084,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5042455814068776,
       "residual": 4.547473508864641e-13,
+      "step": 1.5590577281950613,
       "id": "dat.woods2010::001"
     },
     {
@@ -5596,6 +6093,7 @@
       "message": "axis labels: checked",
       "coverage": 0.5193453363891023,
       "residual": 1.1368683772161603e-13,
+      "step": 0.38408662815104033,
       "id": "dat.yusuf1985::001"
     },
     {
@@ -5604,6 +6102,7 @@
       "message": "axis labels: checked",
       "coverage": 0.7905298952779581,
       "residual": 2.2737367544323206e-13,
+      "step": 3.9482238977095263,
       "id": "dat.yusuf1985::001"
     },
     {
@@ -5612,6 +6111,7 @@
       "message": "axis labels: checked",
       "coverage": 0.8615404489730344,
       "residual": 4.547473508864641e-13,
+      "step": 2.4349537983296528,
       "id": "dat.yusuf1985::001"
     }
   ],
