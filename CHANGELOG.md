@@ -12,6 +12,9 @@ the section is renamed to that version and dated, and a fresh
 ## [Unreleased]
 
 ### Fixed
+- E-value input validation distinguishes malformed number text from omitted
+  confidence limits, rejects incomplete or inconsistent intervals, and clears
+  stale results on refusal. Missing uncertainty no longer implies a null-crossing CI.
 - Cross-design power-prior pooling at alpha=0 now estimates heterogeneity from
   RCTs alone. Observational-only input at alpha=0 displays a non-estimable result
   without crashing the plot or leaving stale export state. Earlier alpha=0
