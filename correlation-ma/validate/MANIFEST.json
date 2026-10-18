@@ -1,0 +1,24 @@
+{
+  "files": [
+    {
+      "path": "validate/corpus/corpus.json",
+      "sha256": "26f62b8a6abe61ff4a110135ad2f30614ade0df49d355d6fab21ef2f00f28b13",
+      "bytes": 30186
+    },
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "24e9d41466f5092669316178c1d5b47132d7a86fe0d2394a3edfad64839fe992",
+      "bytes": 379944
+    }
+  ],
+  "checks": 17716,
+  "archived_checks": 149379,
+  "configurations": 72,
+  "refused_configurations": 8,
+  "rule": "All eight P17 corpus inputs with at most 100 supplied rows, under REML, PM, DL and FE (32 configurations); all focused P17 probes except the 2,001-row capacity probe (36); four additional empty-field/label probes sharing the two-study R reference.",
+  "referenceVersions": {
+    "R": "4.6.0",
+    "metafor": "5.2-1",
+    "metadat": "1.6-0"
+  }
+}

@@ -28,3 +28,6 @@ hub/shared/vendor/*.js binary
 
 # Validation manifests pin exact JSON bytes across Windows and Unix checkouts.
 **/validate/corpus/*.json text eol=lf
+# Correlation replay pins are calculated over LF bytes, including reference.json.
+correlation-ma/validate/corpus/*.json text eol=lf
+correlation-ma/validate/corpus/reference.json text eol=lf
