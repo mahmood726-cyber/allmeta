@@ -164,19 +164,34 @@ function calibratedTicks(samples,ticks,digits,name,domain) {
  const labels=ticks.map(t=>Number(t.text));
  if(ticks.length!==2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
  const inferred=ticks.map(t=>lo+span*(t.position-intercept)/slope);
+ const axisSpan=Math.abs(inferred[1]-inferred[0]);
+ if(!inferred.every(Number.isFinite)||!Number.isFinite(axisSpan)||axisSpan===0)fail('invalid inferred endpoints');
+ // Bound scientific notation by the independently inferred axis and renderer rounding.
+ // plus-ui uses value.toPrecision(3).
+ const maxMagnitude=Math.max(...inferred.map(Math.abs));
+ const minMagnitude=Math.min(...inferred)<=0&&Math.max(...inferred)>=0
+  ? Number.MIN_VALUE : Math.min(...inferred.map(Math.abs));
+ const roundedExponent=v=>Number(v.toExponential(2).split('e')[1]);
+ const minExponent=roundedExponent(minMagnitude),maxExponent=roundedExponent(maxMagnitude);
  const tolerances=inferred.map((v,i)=>{
   // Parse the precision actually shown, including trailing zeroes and exponent.
   const match=ticks[i].text.trim().match(/^[+-]?(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i);
   if(!match)fail('invalid numeric label');
-  const unit=10**(Number(match[3]||0)-(match[2]||'').length);
+  const exponent=Number(match[3]||0);
+  if(match[3]!==undefined&&(!Number.isInteger(exponent)||exponent<minExponent||exponent>maxExponent||
+   (exponent>=-6&&exponent<3)))fail('invalid label exponent');
+  const unit=10**(exponent-(match[2]||'').length);
+  if(!Number.isFinite(unit)||unit<=0)fail('invalid label precision');
   const screenMagnitude=Math.max(1,Math.abs(ticks[i].position),...positions.map(Math.abs));
   const magnitude=Math.max(Number.MIN_VALUE,Math.abs(lo),Math.abs(hi),Math.abs(v),span*screenMagnitude/Math.abs(slope));
   const leverage=1+Math.abs((ticks[i].position-intercept)/slope-zm)*sum(z.map(v=>Math.abs(v-zm)))/variance;
   const tolerance=unit/2+64*Number.EPSILON*magnitude*leverage;
+  if(!Number.isFinite(tolerance)||tolerance<0)fail('invalid label tolerance');
   if(Math.abs(labels[i]-v)>tolerance)fail('label does not match mark scale');
   return tolerance;
  });
  const budget=tolerances[0]+tolerances[1],step=inferred[1]-inferred[0];
+ if(!Number.isFinite(budget)||!Number.isFinite(step))fail('invalid label budget');
  if(step < -budget||labels[1]-labels[0] < -budget)fail('non-monotone labels');
  if(Math.abs((labels[1]-labels[0])-step)>budget)fail('tick spacing');
 }
