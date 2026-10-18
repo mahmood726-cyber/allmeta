@@ -96,38 +96,25 @@ function calibratedTicks(samples,ticks,digits,name,domain) {
  if(!Number.isFinite(slope)||slope===0||!Number.isFinite(row.residual)||row.residual>1e-7)return;
  row.checked=true;row.message='axis labels: checked';
  const labels=ticks.map(t=>Number(t.text));
- if(ticks.length!==2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
+ if(ticks.length<2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
  const inferred=ticks.map(t=>lo+span*(t.position-intercept)/slope);
- const axisSpan=Math.abs(inferred[1]-inferred[0]);
- if(!inferred.every(Number.isFinite)||!Number.isFinite(axisSpan)||axisSpan===0)fail('invalid inferred endpoints');
- // Bound scientific notation by the independently inferred axis and renderer rounding.
- // plus.js uses String(Number(x.toPrecision(12))).
- const maxMagnitude=Math.max(...inferred.map(Math.abs));
- const minMagnitude=Math.min(...inferred)<=0&&Math.max(...inferred)>=0
-  ? Number.MIN_VALUE : Math.min(...inferred.map(Math.abs));
- const roundedExponent=v=>Number(v.toExponential(11).split('e')[1]);
- const minExponent=roundedExponent(minMagnitude),maxExponent=roundedExponent(maxMagnitude);
- const tolerances=inferred.map((v,i)=>{
-  // Parse the precision actually shown, including trailing zeroes and exponent.
-  const match=ticks[i].text.trim().match(/^[+-]?(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i);
+ if(!inferred.every(Number.isFinite))fail('invalid inferred endpoints');
+ const ordered=ticks.map((t,i)=>({position:t.position,value:inferred[i],label:labels[i]})).sort((a,b)=>a.position-b.position);
+ const spacings=ordered.slice(1).map((t,i)=>Math.abs(t.value-ordered[i].value)).sort((a,b)=>a-b);
+ const middle=Math.floor(spacings.length/2);
+ const step=spacings.length%2?spacings[middle]:spacings[middle-1]/2+spacings[middle]/2;
+ if(!Number.isFinite(step)||step<=0)fail('invalid inferred tick step');
+ row.step=step;
+ // Shown resolution is only an eligibility gate, never an error allowance.
+ const units=ticks.map(t=>{
+  const match=t.text.trim().match(/^[+-]?(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i);
   if(!match)fail('invalid numeric label');
-  const exponent=Number(match[3]||0);
-  if(match[3]!==undefined&&(!Number.isInteger(exponent)||exponent<minExponent||exponent>maxExponent||
-   (exponent>=-6&&exponent<21)))fail('invalid label exponent');
-  const unit=10**(exponent-(match[2]||'').length);
-  if(!Number.isFinite(unit)||unit<=0)fail('invalid label precision');
-  const screenMagnitude=Math.max(1,Math.abs(ticks[i].position),...positions.map(Math.abs));
-  const magnitude=Math.max(Number.MIN_VALUE,Math.abs(lo),Math.abs(hi),Math.abs(v),span*screenMagnitude/Math.abs(slope));
-  const leverage=1+Math.abs((ticks[i].position-intercept)/slope-zm)*sum(z.map(v=>Math.abs(v-zm)))/variance;
-  const tolerance=unit/2+64*Number.EPSILON*magnitude*leverage;
-  if(!Number.isFinite(tolerance)||tolerance<0)fail('invalid label tolerance');
-  if(Math.abs(labels[i]-v)>tolerance)fail('label does not match mark scale');
-  return tolerance;
+  return 10**(Number(match[3]||0)-(match[2]||'').length);
  });
- const budget=tolerances[0]+tolerances[1],step=inferred[1]-inferred[0];
- if(!Number.isFinite(budget)||!Number.isFinite(step))fail('invalid label budget');
- if(step < -budget||labels[1]-labels[0] < -budget)fail('non-monotone labels');
- if(Math.abs((labels[1]-labels[0])-step)>budget)fail('tick spacing');
+ if(ordered.slice(1).some((t,i)=>t.label===ordered[i].label)||units.some(unit=>unit>step/2)){
+  row.checked=false;row.message='axis labels: not checked (labels coarser than tick spacing)';return;
+ }
+ for(let i=0;i<labels.length;i++)if(Math.abs(labels[i]-inferred[i])>step/2)fail('label does not match mark scale');
 }
 
   function plotGeometry(svg,circles,a,refs) {

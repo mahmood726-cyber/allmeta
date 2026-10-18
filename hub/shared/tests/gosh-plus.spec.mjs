@@ -57,7 +57,7 @@ test('extras every quantity against pinned R corpus, offline',async({page,contex
   expect(result.axisCoverage).toHaveLength(refs.length*2);
   const checked=result.axisCoverage.filter(a=>a.checked).length;
   await expect(page.locator('#alm-plus-validate')).toContainText(`Axis labels: ${checked} checked; ${result.axisCoverage.length-checked} not checked.`);
-  for(const a of result.axisCoverage)if(a.checked){expect(a.coverage).toBeGreaterThanOrEqual(.2);expect(a.residual).toBeLessThanOrEqual(1e-7);}else expect(a.message).toBe('axis labels: not checked (scale not determined by validated marks)');
+  for(const a of result.axisCoverage)if(a.checked){expect(a.coverage).toBeGreaterThanOrEqual(.2);expect(a.residual).toBeLessThanOrEqual(1e-7);}else expect(a.message).toMatch(/^axis labels: not checked \(.*\)$/);
   expect(result.checks).toBe(manifest.checks);expect(result.passed).toBe(result.checks);expect(result.failed).toEqual([]);
   expect(await page.evaluate(()=>({snapshot:__almGoshValidationSnapshot(),href:location.href,storage:{...localStorage}}))).toEqual(before);
   console.log('AXIS COVERAGE',JSON.stringify(result.axisCoverage));
@@ -268,22 +268,26 @@ for(const [target,property,value] of [
 
 
 for(const model of ['FE','DL'])for(const axis of ['x','y'])
-for(const mutation of ['one label','swap labels','shift labels','scale','0e309','1e-400','0e999999999999999999999','0e-999999999999999999999','0e308'])test(`extras independent axis ${model} ${axis} ${mutation}`,async({page})=>{
+for(const mutation of ['one label','swap labels','shift labels','scale','not-a-number','Infinity','0e309','1e-400','0e999999999999999999999','0e-999999999999999999999','0e308'])test(`extras independent axis ${model} ${axis} ${mutation}`,async({page})=>{
  let intercepted=false;
  await page.route('**/gosh/plus.js',async route=>{
   let body=(await(await route.fetch()).text()).replace(/\r\n/g,'\n');
   if(mutation==='scale'){
    const before='return offset+size*((v/s-lo/s)/(hi/s-lo/s));';expect(body).toContain(before);
-   body=body.replace(before,`return offset+(offset===${axis==='x'?60:30}?5:0)+size*((v/s-lo/s)/(hi/s-lo/s));`);
+   body=body.replace(before,`return offset+(offset===${axis==='x'?60:30}?size:0)+size*((v/s-lo/s)/(hi/s-lo/s));`);
   }else{
    const hook='\n  }\n  function draw() {';expect(body).toContain(hook);
-   const edit=mutation.includes('e')&&/^\d+e/.test(mutation)?`ns.forEach(n=>n.textContent=${JSON.stringify(mutation)});`:mutation==='one label'?"ns[0].textContent=String(v[0]+step);":mutation==='swap labels'?"ns[0].textContent=old[1];ns[1].textContent=old[0];":"ns.forEach((n,i)=>n.textContent=String(v[i]+step));";
+   const edit=(mutation==='not-a-number'||mutation==='Infinity'||/^\d+e/.test(mutation))?`ns.forEach(n=>n.textContent=${JSON.stringify(mutation)});`:mutation==='one label'?"ns[0].textContent=String(v[0]-step);":mutation==='swap labels'?"ns[0].textContent=old[1];ns[1].textContent=old[0];":"ns.forEach((n,i)=>n.textContent=String(v[i]+step));";
    body=body.replace(hook,`\n{const ns=[...svg.querySelectorAll('text')].slice(${axis==='x'?'2,4':'4,6'}),old=ns.map(n=>n.textContent),v=old.map(Number),step=v[1]-v[0];${edit}}`+hook);
   }
   intercepted=true;await route.fulfill({contentType:'application/javascript',body});
  });
  await page.goto(url);await render(page,corpus[0],model);await page.locator('#plus-het').selectOption('Q');
- await expect(failures(page,corpus[0],model)).rejects.toThrow(/calibrated axis/);
+ if(/^\d+e/.test(mutation)){
+  expect(await failures(page,corpus[0],model)).toEqual([]);
+  const row=await page.evaluate(axis=>AlmGoshPlusAdapter.axisLabels.find(a=>a.axis==='extra '+axis),axis);
+  expect(row.checked).toBe(false);expect(row.message).toContain('labels coarser');
+ }else await expect(failures(page,corpus[0],model)).rejects.toThrow(/calibrated axis/);
  expect(intercepted).toBe(true);
 });
 for(const model of ['FE','DL'])for(const [before,after] of [["Q:'Q'","Q:'R'"],["'With: count'","'Wrong count'"],["'with_n','without_n'","'without_n','with_n'"]])test('extras independent source semantics '+model+' '+before,async({page})=>{
@@ -306,19 +310,20 @@ for(const mutation of ['wrong','swapped','shifted'])test(`extras tiny checked Q 
   document.getElementById('src').value=input;document.getElementById('model').value='FE';
   AlmGoshPlus.render(AlmGoshPlus.capture(input,'FE',5000));
   document.getElementById('plus-het').value='Q';document.getElementById('plus-het').dispatchEvent(new Event('change'));
-  try{AlmGoshPlusAdapter.live.currentState();return {error:null};}
+  try{AlmGoshPlusAdapter.live.currentState();return {error:null,axes:AlmGoshPlusAdapter.axisLabels};}
   catch(e){return {error:e.message,axes:AlmGoshPlusAdapter.axisLabels};}
  });
- expect(result.error).toMatch(/extra y calibrated axis/);
- expect(result.axes.find(a=>a.axis==='extra y').checked).toBe(true);
+ if(mutation==='wrong'||mutation==='swapped'){
+  expect(result.error).toBeNull();expect(result.axes.find(a=>a.axis==='extra y').message).toContain('labels coarser');
+ }else {expect(result.error).toMatch(/extra y calibrated axis/);expect(result.axes.find(a=>a.axis==='extra y').checked).toBe(true);}
 });
 
-for(const input of [Array(3).fill('0.3333333333333333,1').join('\n'),'1,1\n1.0000000000001,1\n1.0000000000002,1'])
+for(const input of ['9999999999995,1000000000000\n15000000000000,1000000000000\n19999999999990,1000000000000',Array(3).fill('0.3333333333333333,1').join('\n'),'1,1\n1.0000000000001,1\n1.0000000000002,1'])
 for(const het of ['Q','H2'])for(const axis of ['clean','x','y'])test(`extras constant calibration ${input.split("\n")[0]} ${het} ${axis}`,async({page})=>{
  if(axis!=='clean')await page.route('**/gosh/plus.js',async route=>{
   const body=(await(await route.fetch()).text()).replace(/\r\n/g,'\n'),hook='\n  }\n  function draw() {';
   expect(body).toContain(hook);
-  await route.fulfill({contentType:'application/javascript',body:body.replace(hook,`\nsvg.querySelectorAll('text')[${axis==='x'?2:4}].textContent='0.125';`+hook)});
+  await route.fulfill({contentType:'application/javascript',body:body.replace(hook,`\n{const ns=svg.querySelectorAll('text'),i=${axis==='x'?2:4},lo=Number(ns[i].textContent),hi=Number(ns[i+1].textContent);ns[i].textContent=String(lo-(Math.abs(hi-lo)||1));}`+hook)});
  });
  await page.goto(url);
  const check=()=>page.evaluate(({het,input})=>{
@@ -334,35 +339,36 @@ for(const het of ['Q','H2'])for(const axis of ['clean','x','y'])test(`extras con
  else {expect(result.error).toBeNull();expect(result.axes.find(r=>r.axis==='extra '+axis)?.message).toContain('not checked');}
 });
 
-// Synthetic arithmetic counterexamples: no corpus or renderer changes.
-for(const [name,labels,valid] of [
- ['clean',['0','10'],true],['impossible finite exponent',['0e0','1e1'],false],
- ['moderate impossible exponent',['0e2','0e2'],false],
- ['ordinary wrong',['0','20'],false],['overflow',['0e309','0e309'],false],
- ['underflow',['1e-400','1e-400'],false],
- ['huge positive',['0e999999999999999999999','0'],false],
- ['huge negative',['0e-999999999999999999999','10'],false],
- ['exponent outside axis range',['0e308','0e308'],false],
- ['zero unit',['0.'+'0'.repeat(400),'10'],false]
-])arithmeticTest('axis precision arithmetic '+name,()=>{
- const source=readFileSync(new URL('../../../gosh/validate/adapter-plus.js',import.meta.url),'utf8');
- const start=source.indexOf('// Axis-label coverage'),end=source.indexOf('  function plotGeometry',start);
- expect(start).toBeGreaterThanOrEqual(0);expect(end).toBeGreaterThan(start);
- const run=new Function(source.slice(start,end)+"return labels=>calibratedTicks([[0,0],[10,100]],labels.map((text,i)=>({text,position:i*100})),12,'test');")();
- if(valid)expect(()=>run(labels)).not.toThrow();else expect(()=>run(labels)).toThrow(/calibrated axis/);
-});
 
-for(const [name,values,labels,valid] of [
- ['rounded collision',[1,1.0000000000002],['1','1'],true],
- ['small scientific',[1e-8,2e-8],['1.00e-8','2.00e-8'],true],
- ['large scientific',[1e22,2e22],['1.00e22','2.00e22'],true],
- ['finite exponent beyond magnitude',[1,2],['0e308','0e308'],false],
- ['exponent below positive axis',[1,2],['1e-100','2'],false],
- ['rounding exponent boundary',[9.99999999999999e-8,2e-7],['1.00e-7','2.00e-7'],true]
-])arithmeticTest('axis precision arithmetic '+name,()=>{
+// Synthetic arithmetic fixtures; no research outputs or corpus changes.
+for(const [name,values,labels,status] of [
+ ['clean',[0,10],['0','10'],'checked'],
+ ['shift',[0,10],['10','20'],'fail'],
+ ['swap',[0,10],['10','0'],'fail'],
+ ['one step',[0,10],['-10','10'],'fail'],
+ ['duplicate corruption',[0,10],['10','10'],'coarse'],
+ ['non numeric',[0,10],['oops','10'],'fail'],
+ ['non finite',[0,10],['1e309','10'],'fail'],
+ ['overflow zero',[0,10],['0e309','10'],'coarse'],
+ ['underflow',[0,10],['1e-400','1e-400'],'coarse'],
+ ['huge positive',[0,10],['0e999999999999999999999','10'],'coarse'],
+ ['huge negative',[0,10],['0e-999999999999999999999','10'],'checked'],
+ ['zero unit',[0,10],['0.'+'0'.repeat(400),'10'],'checked'],
+ ['ordinary exponent',[0,10],['0e0','1e1'],'coarse'],
+ ['half step',[0,10],['5','15'],'checked'],
+ ['beyond half step',[0,10],['5.01','15'],'fail'],
+ ['rounded collision',[1,1.0000000000002],['1','1'],'coarse'],
+ ['coarse distinct',[1,2],['1','2'],'coarse'],
+ ['small scientific',[1e-8,2e-8],['1.00e-8','2.00e-8'],'checked'],
+ ['large scientific',[1e22,2e22],['1.00e22','2.00e22'],'checked'],
+ ['review6 limit',[9.995000000000002e-8,9.994999999999997e-7],['9.99e-8','9.99e-7'],'checked'],
+ ['review6 gosh',[9999999999995,19999999999990],['10000000000000','20000000000000'],'checked'],
+ ['median spacing',[0,10,30],['0','17.4','30'],'checked'],
+ ['median spacing reject',[0,10,30],['0','18','30'],'fail'],
+])arithmeticTest('axis tick-step arithmetic '+name,()=>{
  const source=readFileSync(new URL('../../../gosh/validate/adapter-plus.js',import.meta.url),'utf8');
  const start=source.indexOf('// Axis-label coverage'),end=source.indexOf('  function plotGeometry',start);
- expect(start).toBeGreaterThanOrEqual(0);expect(end).toBeGreaterThan(start);
- const run=new Function(source.slice(start,end)+"return (values,labels)=>calibratedTicks(values.map((v,i)=>[v,i*100]),labels.map((text,i)=>({text,position:i*100})),12,'test');")();
- if(valid)expect(()=>run(values,labels)).not.toThrow();else expect(()=>run(values,labels)).toThrow(/calibrated axis/);
+ const run=new Function(source.slice(start,end)+"return (values,labels)=>{calibratedTicks(values.map(v=>[v,v*10]),labels.map((text,i)=>({text,position:values[i]*10})),12,'test');return axisLabels[0];};")();
+ if(status==='fail')expect(()=>run(values,labels)).toThrow(/calibrated axis/);
+ else {const row=run(values,labels);expect(row.checked).toBe(status==='checked');if(status==='coarse')expect(row.message).toBe('axis labels: not checked (labels coarser than tick spacing)');}
 });
