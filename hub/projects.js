@@ -1505,7 +1505,7 @@ window.HTML_APPS_PROJECTS = [
     category: "Evidence Synthesis",
     summary: "Local title/abstract and full-text screening: keyboard-driven cards, independent reviewer decisions, blind UI and ranking, reasoned adjudication, dated history, RIS/NBIB/CSV/JSON import, and complete JSON project backups. Local TF-IDF/Naive Bayes ranking prioritizes records; it never makes eligibility decisions or guarantees recall. Full-text evidence uses open-access links and notes; PDF storage is not included. Optional AI requires explicit opt-in.",
     note: "Final full-text includes feed Extract and RIS export. PRISMA export refuses pending decisions. Reviewer files are stage-specific; differing existing decisions are never silently overwritten. Local reviewer slots and history are not authenticated. See screen/UPGRADE-2026-10-18.md for the tested scope and remaining gaps.",
-    tags: ["screening", "rayyan", "active-learning", "dual-reviewer", "kappa", "dedup", "prisma", "ris", "local-first", "ai-optional", "collaboration", "wss95"]
+    tags: ["screening", "rayyan", "active-learning", "dual-reviewer", "kappa", "dedup", "prisma", "ris", "local-first", "ai-optional", "collaboration"]
   },
   {
     name: "Extract",
