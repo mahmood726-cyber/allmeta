@@ -53,7 +53,7 @@ for (const cc of ['all','single','none']) {
     await enter(page,C.ordinary);
     const refused = await enter(page,C.fprConstant,cc);
     expect(refused.alpha).toBeNull(); expect(refused.beta).toBeNull(); expect(refused.spearman_rho).toBeNull();
-    expect(refused.errors.join(' ')).toMatch(/Moses SROC unavailable.*slope is indistinguishable from one/);
+    expect(refused.errors.join(' ')).toMatch(/Moses SROC unavailable.*identical false-positive rates/);
     expect(refused.errors.join(' ')).toContain('Spearman threshold correlation is undefined');
     await expect(page.locator('#warn-banner')).toContainText('Spearman threshold correlation is undefined');
     await expect(page.locator('#stats-wrap')).not.toContainText('Moses α');
@@ -74,6 +74,19 @@ for (const cc of ['all','single','none']) {
     expect(JSON.parse(await download(page,page.locator('[data-action="json"]'))).alpha).toBe(recovered.alpha);
   });
 }
+test('constant FPR with extremely close sensitivities refuses and recovers in the app', async ({page}) => {
+  const refused = await enter(page,C.fprConstantCloseSe);
+  expect(refused.alpha).toBeNull(); expect(refused.beta).toBeNull(); expect(refused.spearman_rho).toBeNull();
+  await expect(page.locator('#warn-banner')).toContainText('identical false-positive rates');
+  await expect(page.locator(blueCurve)).toHaveCount(0);
+  const result = JSON.parse(await download(page,page.locator('[data-action="json"]')));
+  expect(result.alpha).toBeNull(); expect(result.beta).toBeNull(); expect(result.spearman_rho).toBeNull();
+  const svg = await exportSvg(page);
+  expect(svg).toContain('Moses SROC unavailable'); expect(svg).not.toMatch(/NaN|Infinity/);
+  const recovered = await enter(page,C.ordinary);
+  expect(recovered.alpha).toBeCloseTo(5.965318230250773,6);
+  await expect(page.locator(blueCurve)).toHaveCount(1);
+});
 test('constant S refuses the curve while preserving a defined Spearman value', async ({page}) => {
   const r = await enter(page,C.sConstant);
   expect(r.alpha).toBeNull(); expect(r.spearman_rho).toBe(-1);

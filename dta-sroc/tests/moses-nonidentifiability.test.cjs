@@ -11,8 +11,17 @@ test('constant FPR refuses the SROC conversion and returns undefined correlation
     // Six rows give a slope one ulp below 1 in the original engine; three give
     // exactly 1 and infinite A2/B2. Both geometries must refuse.
     for (const rows of [cases.fprConstant, cases.fprConstant.slice(0,3)]) {
-      assert.throws(() => B.mosesLittenberg(rows, {correctionControl}), /slope is indistinguishable from one/);
+      assert.throws(() => B.mosesLittenberg(rows, {correctionControl}), /identical false-positive rates/);
       assert.equal(B.thresholdSpearman(rows, {correctionControl}), null);
+    }
+  }
+});
+test('constant FPR refuses even when tiny sensitivity variation amplifies slope roundoff', () => {
+  for (const correctionControl of ['all','single','none']) {
+    for (const scale of [1e6,1e9,1e12,1e14]) {
+      const rows = cases.fprConstantCloseSe.map((r,i) => ({...r,tp:scale+i,fn:scale-i}));
+      assert.throws(() => B.mosesLittenberg(rows,{correctionControl}), /identical false-positive rates/);
+      assert.equal(B.thresholdSpearman(rows,{correctionControl}), null);
     }
   }
 });

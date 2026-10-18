@@ -12,11 +12,13 @@ regression fits D = A1+B1*S. Solving for y gives
 `y = A1/(1-B1) + (1+B1)/(1-B1)*z`.
 If FPR is constant, z=c, so D=S-2c and B1=1 exactly. The transformed SROC
 coefficients are undefined. Floating-point calculations can instead yield a slope
-one ulp below one and huge finite coefficients. Constant S also makes the OLS
+one ulp below one and huge finite coefficients. With extremely close sensitivities,
+slope roundoff can be much larger, so constant prepared FPR is also checked directly.
+Constant S also makes the OLS
 regression unidentified. Rank correlation is undefined if either rank vector has
 zero variance; returning zero wrongly describes an absence of association.
 
-The engine raises DTAError on unresolved S variation, a slope indistinguishable
+The engine raises DTAError on identical prepared FPR, unresolved S variation, a slope indistinguishable
 from one, or nonfinite transformed coefficients. Undefined Spearman correlation
 returns null. The UI catches refusals, shows their reasons and exports them in
 `errors`, with null alpha/beta/rho as applicable. The refused curve and its numeric
@@ -42,7 +44,7 @@ host; this repair was reconstructed from inspected main bytes.
 - `python dta-sroc/tests/moses-geometry.py`: independent 60-digit Decimal identity
   and zero rank-variance derivation. This does not call the JavaScript estimator.
 - From `hub/shared/tests`, `npx playwright test --config dta-moses.config.mjs`:
-  seven genuine app-URL Chromium cases, using visible controls and real JSON,
+  eight genuine app-URL Chromium cases, using visible controls and real JSON,
   CSV and SVG downloads; valid/refused/recovered states and absence of stale
   estimates/curves are asserted. No injected DOM or replacement engine.
 - From `hub/shared/tests`, `npx playwright test dta --workers=1`: existing stored
@@ -74,9 +76,11 @@ The existing hourly schedules are untouched. There is no release operation.
 
 Focused CI, shared-tests, full playwright and lint must pass at the proposed head.
 `docs/ALLMETA_APP_BY_APP_QUALITY_GATES.md` also requires manual methodological
-review and owner approval for a statistical merge. Owner approval is present in
-the task; no human review is asserted. Agent source review, mathematical checks
-and CI do not manufacture that review. A merge, if eligible, must be a single
+review and owner approval for a statistical merge. The owner reviewed PR #139
+and approved its methodology in the task chat; the PR records the reviewed revision
+and subsequent validation status. This is owner review, not independent third-party
+review. Agent source review, mathematical checks and CI do not manufacture human
+review. A merge, if eligible, must be a single
 normal merge guarded by the exact expected head. Any OpenAI safety rejection of
 a GitHub write ends all GitHub mutations for the cycle.
 

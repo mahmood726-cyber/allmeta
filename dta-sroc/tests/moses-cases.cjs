@@ -1,6 +1,7 @@
 'use strict';
 // Constructed mathematical counterexamples, not clinical study data.
 const fprConstant = [50, 60, 70, 80, 85, 90].map(tp => ({ tp, fn: 100 - tp, fp: 10, tn: 90 }));
+const fprConstantCloseSe = Array.from({length:6}, (_,i) => ({tp:1e14+i, fn:1e14-i, fp:10, tn:90}));
 const seConstant = [5, 10, 15, 20, 25, 30].map(fp => ({ tp: 80, fn: 20, fp, tn: 100 - fp }));
 const sConstant = [50, 60, 70, 80, 85, 90].map(tp => ({ tp, fn: 100 - tp, fp: 100 - tp, tn: tp }));
 const identical = Array.from({ length: 6 }, () => ({ tp: 80, fn: 20, fp: 10, tn: 90 }));
@@ -21,4 +22,4 @@ function ordinaryCorpus() {
   }
   return cases;
 }
-module.exports = { fprConstant, seConstant, sConstant, identical, ordinary, zeroCell, ordinaryCorpus };
+module.exports = { fprConstant, fprConstantCloseSe, seConstant, sConstant, identical, ordinary, zeroCell, ordinaryCorpus };

@@ -411,6 +411,10 @@
     var scale = Math.max(1, ...S.map(Math.abs)), span = Math.max(...S) - Math.min(...S);
     if (!(sxx > 0) || span <= 64 * Number.EPSILON * scale)
       throw new DTAError("not estimable: logit sensitivity + logit false-positive rate has no resolvable variation");
+    // Check the data geometry directly: with tiny sensitivity variation, slope
+    // roundoff can be much larger than the near-one tolerance below.
+    if (st.every(function (s) { return s.y[1] === st[0].y[1]; }))
+      throw new DTAError("not estimable: identical false-positive rates do not identify a Moses SROC");
     var B1 = sxy / sxx, A1 = my - B1 * mx;
     // Constant FPR gives D = S - 2*logit(FPR), hence B1 = 1: no function
     // logit(Se) = A2 + B2*logit(FPR) is identified. Catch rounding about 1 too.
