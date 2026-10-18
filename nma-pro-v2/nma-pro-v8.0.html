@@ -6475,6 +6475,43 @@ const UndoRedo={
 history:[],
 future:[],
 maxSteps:50,
+invalidateAfterRestore(action){
+  // Undo/Redo restores study data, not the fitted network model.
+  clearAnalysisOutputs();
+  AppState.guardian=null;
+  AppState.analysisFingerprint=null;
+  AppState.rankingSeed=null;
+  updateReferenceSelect();
+  const ids=['networkPlot','forestPlot','caterpillarPlotContainer','comparisonHeatmapPlot',
+    'rankogramPlot','sucraCurvePlot','classicRankogramPlot','funnelPlot','consistencyPlot'];
+  const plots=new Set([...document.querySelectorAll('.js-plotly-plot'),
+    ...ids.map(id=>document.getElementById(id)).filter(Boolean)]);
+  plots.forEach(el=>{
+    if(typeof Plotly!=='undefined' && typeof Plotly.purge==='function' &&
+       el.classList?.contains('js-plotly-plot'))Plotly.purge(el);
+    el.replaceChildren();
+  });
+  ['forestTableContainer','leagueTableContainer','rankingTableBody','rankProbMatrixContainer',
+   'nodeSplitOuterContainer','pothResults','midRankingResults','hasseResults',
+   'cinemaMatrix','gradeMatrix','sofContainer','manuscriptTextOutput'].forEach(id=>{
+    document.getElementById(id)?.replaceChildren();
+  });
+  ['hetTau2','hetTau','hetI2','hetH2','hetTau2CI','cinemaHighCount','cinemaModCount',
+   'cinemaLowCount','gradeHighCount','gradeModCount','gradeLowCount','gradeVLCount'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.textContent='—';
+  });
+  for(const id of ['networkPlot','forestPlot']){
+    const el=document.getElementById(id);
+    if(!el)continue;
+    const notice=document.createElement('p');
+    notice.className='text-secondary text-center';
+    notice.setAttribute('role','status');
+    notice.textContent='Study data changed. Run Analysis to refresh these results.';
+    el.appendChild(notice);
+  }
+  recordAudit('undo_redo_invalidated_analysis',{action,studies:AppState.studies.length});
+},
 snapshot(){
 this.history.push(JSON.stringify(AppState.studies));
 if(this.history.length>this.maxSteps)this.history.shift();
@@ -6485,6 +6522,7 @@ if(this.history.length===0)return;
 this.future.push(JSON.stringify(AppState.studies));
 AppState.studies=JSON.parse(this.history.pop());
 renderStudyTable();
+this.invalidateAfterRestore('undo');
 announce('Undo: '+AppState.studies.length+' studies');
 },
 redo(){
@@ -6492,6 +6530,7 @@ if(this.future.length===0)return;
 this.history.push(JSON.stringify(AppState.studies));
 AppState.studies=JSON.parse(this.future.pop());
 renderStudyTable();
+this.invalidateAfterRestore('redo');
 announce('Redo: '+AppState.studies.length+' studies');
 }
 };
