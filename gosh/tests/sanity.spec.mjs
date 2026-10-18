@@ -37,7 +37,7 @@ async function waitForAlm(page) {
   await page.waitForFunction(() =>
     window.alm &&
     typeof window.alm.csvUpload      === 'function' &&
-    typeof window.alm.chartDownload  === 'function' &&
+    typeof window.alm.plotExport  === 'function' &&
     typeof window.alm.axisControls   === 'function' &&
     typeof window.alm.resultsExport  === 'function' &&
     typeof window.alm.urlState       === 'function' &&
@@ -90,7 +90,7 @@ test.describe('gosh retrofit sanity', () => {
     await waitForAlm(page);
     const present = await page.evaluate(() => ({
       csvUpload:     typeof window.alm.csvUpload,
-      chartDownload: typeof window.alm.chartDownload,
+      plotExport: typeof window.alm.plotExport,
       axisControls:  typeof window.alm.axisControls,
       resultsExport: typeof window.alm.resultsExport,
       urlState:      typeof window.alm.urlState,
@@ -98,7 +98,7 @@ test.describe('gosh retrofit sanity', () => {
       tooltips:      typeof window.alm.tooltips,
     }));
     expect(present.csvUpload,     'alm.csvUpload not a function')     .toBe('function');
-    expect(present.chartDownload, 'alm.chartDownload not a function') .toBe('function');
+    expect(present.plotExport, 'alm.plotExport not a function') .toBe('function');
     expect(present.axisControls,  'alm.axisControls not a function')  .toBe('function');
     expect(present.resultsExport, 'alm.resultsExport not a function') .toBe('function');
     expect(present.urlState,      'alm.urlState not a function')      .toBe('function');
@@ -113,7 +113,7 @@ test.describe('gosh retrofit sanity', () => {
     await expect(page.locator('#alm-csv-mount .alm-csv')).toBeVisible();
     await expect(page.locator('#alm-export-mount .alm-export')).toBeVisible();
     await expect(page.locator('#alm-undo-mount .alm-undo')).toBeVisible();
-    await expect(page.locator('#alm-chart-mount .alm-dl')).toBeVisible();
+    await expect(page.locator('#alm-plot-mount fieldset')).toBeVisible();
   });
 
   // T4 — GOSH scatter SVG renders with data-point circles for default data (9 studies)

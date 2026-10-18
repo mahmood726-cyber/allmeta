@@ -9,7 +9,7 @@ INDEX = ROOT / "index.html"
 
 EXPECTED_IDS = (
     "f-data", "f-title", "f-modlabel", "f-effectlabel",
-    "btn-svg", "btn-png", "btn-json", "btn-import", "btn-example",
+    "alm-plot-mount", "btn-run", "btn-json", "btn-import", "btn-example",
     "btn-reset", "btn-rscript", "btn-bus-load", "btn-bus-save",
     "svg-host", "warn-banner",
 )
