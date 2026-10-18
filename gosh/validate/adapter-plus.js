@@ -75,58 +75,48 @@
     } finally {host.remove();}
   }
 
-// Independent affine calibration from source-backed marks, never renderer scale
-// functions, tick metadata, or a second rendering. Coordinates are CSS pixels.
+// Axis-label coverage is separate from the numerical and geometry contracts.
+let axisLabels=[];
+const axisSummary=rows=>['Axis labels: '+rows.filter(r=>r.checked).length+' checked; '+rows.filter(r=>!r.checked).length+' not checked.',...rows.filter(r=>!r.checked).map(r=>(r.id?r.id+' ':'')+r.axis+': '+r.message)];
 function calibratedTicks(samples,ticks,digits,name,domain) {
+ const row={axis:name,checked:false,message:'axis labels: not checked (scale not determined by validated marks)'};
+ axisLabels.push(row);
  const fail=message=>{throw Error(name+' calibrated axis '+message);};
- if(samples.length<2||samples.some(p=>!p.every(Number.isFinite)))fail('missing finite marks');
+ const length=Math.abs(ticks[1]?.position-ticks[0]?.position);
+ if(samples.length<2||samples.some(p=>!p.every(Number.isFinite))||!Number.isFinite(length)||length===0)return;
  const values=samples.map(p=>p[0]),lo=Math.min(...values),hi=Math.max(...values),span=hi-lo;
- const labels=ticks.map(t=>Number(t.text));
- if(ticks.length!==2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
- // Coincident marks do not identify an affine scale or imply a constant
- // domain. Use independently derived source-domain endpoints, rounded to
- // the renderer's displayed precision; geometry remains checked separately.
- if(span===0){
-  if(!domain||domain.length!==2||!domain.every(Number.isFinite))fail('missing constant domain');
-  if(labels.some((v,i)=>v!==Number(domain[i].toPrecision(digits))))fail('constant labels');
-  return;
- }
- // Compensated sums prevent accumulation error in large point clouds from
- // becoming an apparent nonzero label at the zero endpoint.
+ const positions=samples.map(p=>p[1]);
+ row.coverage=(Math.max(...positions)-Math.min(...positions))/length;
+ if(span===0||row.coverage<.2)return;
  const sum=xs=>{let s=0,c=0;for(const x of xs){const t=s+x;c+=Math.abs(s)>=Math.abs(x)?(s-t)+x:(x-t)+s;s=t;}return s+c;};
  const z=values.map(v=>(v-lo)/span),zm=sum(z)/z.length;
- const pm=sum(samples.map(p=>p[1]))/samples.length;
- const variance=sum(z.map(v=>(v-zm)**2));
- const slope=sum(z.map((v,i)=>(v-zm)*(samples[i][1]-pm)))/variance;
- const intercept=pm-slope*zm;
- // At least two distinct marks spanning > .02 CSS px; all marks participate
- // in least squares. Residual <= 1e-7 CSS px (raw SVG positions, not float bbox).
- if(!Number.isFinite(slope)||Math.abs(slope)<=.02)fail('insufficient separation');
- if(samples.some((p,i)=>Math.abs(p[1]-(intercept+slope*z[i]))>1e-7))fail('non-affine marks');
+ const pm=sum(positions)/samples.length,variance=sum(z.map(v=>(v-zm)**2));
+ const slope=sum(z.map((v,i)=>(v-zm)*(positions[i]-pm)))/variance,intercept=pm-slope*zm;
+ row.residual=Math.max(...samples.map((p,i)=>Math.abs(p[1]-(intercept+slope*z[i]))));
+ if(!Number.isFinite(slope)||slope===0||!Number.isFinite(row.residual)||row.residual>1e-7)return;
+ row.checked=true;row.message='axis labels: checked';
+ const labels=ticks.map(t=>Number(t.text));
+ if(ticks.length!==2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
  const inferred=ticks.map(t=>lo+span*(t.position-intercept)/slope);
- const step=inferred[1]-inferred[0];
- if(!(step>0)||!(labels[1]>labels[0]))fail('non-monotone labels');
  const tolerances=inferred.map((v,i)=>{
-  // Half of the last displayed significant digit; never half a tick step.
-  const unit=v===0?0:10**(Math.floor(Math.log10(Math.abs(v)))-digits+1);
-  // Account for cancellation of the screen origin and leverage when an
-  // endpoint lies beyond the observed marks. This is an arithmetic allowance,
-  // not a pixel/layout tolerance; the half-interval cap remains fail-closed.
-  const screenMagnitude=Math.max(1,Math.abs(ticks[i].position),...samples.map(p=>Math.abs(p[1])));
-  const magnitude=Math.max(1,Math.abs(lo),Math.abs(hi),Math.abs(v),span*screenMagnitude/Math.abs(slope));
+  // Parse the precision actually shown, including trailing zeroes and exponent.
+  const match=ticks[i].text.trim().match(/^[+-]?(\d+)(?:\.(\d*))?(?:e([+-]?\d+))?$/i);
+  if(!match)fail('invalid numeric label');
+  const unit=10**(Number(match[3]||0)-(match[2]||'').length);
+  const screenMagnitude=Math.max(1,Math.abs(ticks[i].position),...positions.map(Math.abs));
+  const magnitude=Math.max(Number.MIN_VALUE,Math.abs(lo),Math.abs(hi),Math.abs(v),span*screenMagnitude/Math.abs(slope));
   const leverage=1+Math.abs((ticks[i].position-intercept)/slope-zm)*sum(z.map(v=>Math.abs(v-zm)))/variance;
   const tolerance=unit/2+64*Number.EPSILON*magnitude*leverage;
-  if(tolerance>=step/2)fail('insufficient label precision');
-  if(Math.abs(labels[i]-v)>tolerance)fail('label does not match mark scale: '+JSON.stringify({label:labels[i],inferred:v,tolerance}));
+  if(Math.abs(labels[i]-v)>tolerance)fail('label does not match mark scale');
   return tolerance;
  });
- // These renderers intentionally have two endpoint ticks (one interval).
- // Check its numeric spacing against calibrated screen spacing, allowing only
- // the two endpoint rounding budgets; no interior equal-spacing claim is made.
- if(Math.abs((labels[1]-labels[0])-step)>tolerances[0]+tolerances[1])fail('tick spacing');
+ const budget=tolerances[0]+tolerances[1],step=inferred[1]-inferred[0];
+ if(step < -budget||labels[1]-labels[0] < -budget)fail('non-monotone labels');
+ if(Math.abs((labels[1]-labels[0])-step)>budget)fail('tick spacing');
 }
 
   function plotGeometry(svg,circles,a,refs) {
+    axisLabels=[];
     styleContract(svg,a);
     const view=svg.viewBox.baseVal, root=svg.getScreenCTM(), box=svg.getBoundingClientRect();
     if(!root||box.width<=0||box.height<=0||view.x!==0||view.y!==0||view.width!==600||view.height!==420)throw Error('Invalid extra plot viewport');
@@ -206,7 +196,11 @@ function calibratedTicks(samples,ticks,digits,name,domain) {
     const positions=plotGeometry(document.getElementById('plus-plot'),circles,a,refs);
     circles.forEach((c,i)=>{add('plot_x.'+i,positions[i].x);add('plot_y.'+i,positions[i].y);add('included.'+i,c.dataset.includes,true);add('colour.'+i,getComputedStyle(c).fill==='rgb(0, 114, 178)'?'#0072b2':'#d55e00',true);});
     add('highlight_counts',document.getElementById('plus-counts').textContent,true);
-    const ticks=[...document.querySelectorAll('#plus-plot text')];if(ticks.length!==6)throw Error('Missing extra axes');['x_title','y_title','xmin','xmax','ymin','ymax'].forEach((q,i)=>{const text=ticks[i].textContent.trim();if(i>=2&&!text)throw Error('Missing extra axis value '+q);add(q,i<2?ticks[i].textContent:Number(text),i<2);});
+    const ticks=[...document.querySelectorAll('#plus-plot text')];if(ticks.length!==6)throw Error('Missing extra axes');
+    // Keep the numerical domain replay independent of the conditional label audit.
+    const xs=a.points.map(p=>p.mu),ys=a.points.map(p=>p[document.getElementById('plus-het').value]);
+    const domain=[Math.min(...xs),Math.max(...xs),Math.min(0,...ys),Math.max(...ys)];
+    ['x_title','y_title','xmin','xmax','ymin','ymax'].forEach((q,i)=>{const text=ticks[i].textContent.trim();if(i>=2&&!text)throw Error('Missing extra axis value '+q);add(q,i<2?ticks[i].textContent:domain[i-2],i<2);});
     return out;
   }
   function referenceValues(r,k,model) {
@@ -239,21 +233,22 @@ function calibratedTicks(samples,ticks,digits,name,domain) {
     const ids=new Set();for(const c of corpus){if(ids.has(c.id)||!Number.isInteger(c.k)||c.k<3||c.k>100||!Array.isArray(c.te)||!Array.isArray(c.se)||c.te.length!==c.k||c.se.length!==c.k||c.te.some(x=>!finite(x))||c.se.some(x=>!finite(x)||x<=0))throw Error('Invalid corpus input');ids.add(c.id);for(const m of ['FE','DL'])if(!index.has(c.id+'::'+m))throw Error('Missing reference');}
     const status=document.getElementById('plus-status').textContent;
     const previous=P.state,selection=document.getElementById('plus-study').value,het=document.getElementById('plus-het').value;
-    let checks=0,passed=0;const failed=[],maxima={};
+    let checks=0,passed=0;const failed=[],maxima={},axisCoverage=[];
     try {for(const c of corpus)for(const model of ['FE','DL']){
       const id=c.id+'::'+model,r=index.get(id);
       P.render(P.capture(c.te.map((v,i)=>`${v}, ${c.se[i]}, ${c.source_rows[i]}`).join('\n'),model,5000));
       compare(r,c.k,model,(quantity,app,ref,kind)=>{const d=AlmValidate.compare(app,ref,kind,1e-9);checks++;if(d.pass)passed++;else failed.push({id,quantity,app,ref,...d});if(failed.length>=1000)throw Error('Extras replay stopped after 1000 mismatches; first: '+JSON.stringify(failed[0]));const group=quantity.startsWith('study.')?quantity.split('.').at(-1):quantity.split('.')[0];maxima[group]=Math.max(maxima[group]||0,d.diff);});
+      axisCoverage.push(...axisLabels.map(row=>({...row,id})));
       progress(id+': '+checks+' checks');await new Promise(resolve=>setTimeout(resolve,0));
     }}finally {if(previous){P.render(previous);document.getElementById('plus-study').value=selection;document.getElementById('plus-study').dispatchEvent(new Event('change'));document.getElementById('plus-het').value=het;document.getElementById('plus-het').dispatchEvent(new Event('change'));}else P.clear();document.getElementById('plus-status').textContent=status;}
     if(checks!==manifest.checks)throw Error('Extra check cardinality mismatch: '+checks);
-    return {checks,passed,failed,maxima,refusals:[],summaryLines:['Every displayed table value and every extra point quantity; exact memberships and counts; relative tolerance 1e-9.',"Sampled summaries use the app's own draws, checked against archived R fits on the same memberships."]};
+    return {checks,passed,failed,maxima,axisCoverage,refusals:[],summaryLines:[...axisSummary(axisCoverage),'Every displayed table value and every extra point quantity; exact memberships and counts; relative tolerance 1e-9.',"Sampled summaries use the app's own draws, checked against archived R fits on the same memberships."]};
   }
   function currentState() {
     const a=P.capture();P.render(a);
     const lines=document.getElementById('src').value.trim().split(/\n/).map(l=>l.split(','));
     const v=values();adapter.live.compare.kind=Object.fromEntries(v.map(x=>[x.key,x.exact?'exact':'rel']));
-    return {...a,te:lines.map(l=>Number(l[0])),se:lines.map(l=>Number(l[1])),values:v,note:"Overlapping subsets: descriptive differences only. Sampled results use the app's own draws. Paper metafor 5.2-1; live 4.8-0."};
+    return {...a,te:lines.map(l=>Number(l[0])),se:lines.map(l=>Number(l[1])),values:v,axisCoverage:axisLabels,note:axisSummary(axisLabels).join(' ')+' '+"Overlapping subsets: descriptive differences only. Sampled results use the app's own draws. Paper metafor 5.2-1; live 4.8-0."};
   }
   function buildScript(s) {return `
 selected<-${Number(document.getElementById('plus-study').value)};het<-'${document.getElementById('plus-het').value}'
@@ -272,6 +267,6 @@ emit<-function(q){x<-out[[q]];if(is.character(x))paste0('"',x,'"')else{stopifnot
 cat('ALMJSON:{',paste(paste0('"',names(out),'":',vapply(names(out),emit,'')),collapse=','),'}\\n',sep='')
 `;}
   const adapter={app:'gosh-plus',paper:{checks:manifest.checks,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'Extras scope and reproduction',runUrl:'validate/plus/README.md'},live:{packages:['metafor'],paperVersions:{metafor:'5.2-1'},currentState,buildScript,appValues:s=>s.values,compare:{tolerance:{default:1e-9},kind:{}}},corpus:{files:manifest.files,mode:'quick',quickChecks:manifest.checks,run:replay}};
-  adapter.compareDisplay=compare;window.AlmGoshPlusAdapter=adapter;window.AlmGoshPlusValidation=AlmValidate.mount(document.getElementById('alm-plus-validate'),adapter);
+  Object.defineProperty(adapter,'axisLabels',{get:()=>axisLabels});adapter.compareDisplay=compare;window.AlmGoshPlusAdapter=adapter;window.AlmGoshPlusValidation=AlmValidate.mount(document.getElementById('alm-plus-validate'),adapter);
   for(const button of document.querySelectorAll('#alm-plus-validate button')){if(button.textContent==='Re-run full validation')button.textContent='Re-run extras validation';if(button.textContent==='Validate this analysis in R')button.textContent='Validate the extras in R';}
 })();

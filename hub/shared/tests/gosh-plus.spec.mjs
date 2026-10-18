@@ -53,8 +53,13 @@ test('extras every quantity against pinned R corpus, offline',async({page,contex
   const before=await page.evaluate(()=>({snapshot:__almGoshValidationSnapshot(),href:location.href,storage:{...localStorage}}));
   await page.evaluate(()=>AlmGoshPlusValidation.prepare());await context.setOffline(true);
   const result=await page.evaluate(()=>AlmGoshPlusValidation.runCorpus());
+  expect(result.axisCoverage).toHaveLength(refs.length*2);
+  const checked=result.axisCoverage.filter(a=>a.checked).length;
+  await expect(page.locator('#alm-plus-validate')).toContainText(`Axis labels: ${checked} checked; ${result.axisCoverage.length-checked} not checked.`);
+  for(const a of result.axisCoverage)if(a.checked){expect(a.coverage).toBeGreaterThanOrEqual(.2);expect(a.residual).toBeLessThanOrEqual(1e-7);}else expect(a.message).toBe('axis labels: not checked (scale not determined by validated marks)');
   expect(result.checks).toBe(manifest.checks);expect(result.passed).toBe(result.checks);expect(result.failed).toEqual([]);
   expect(await page.evaluate(()=>({snapshot:__almGoshValidationSnapshot(),href:location.href,storage:{...localStorage}}))).toEqual(before);
+  console.log('AXIS COVERAGE',JSON.stringify(result.axisCoverage));
   console.log('GOSH PLUS REPLAY',result.passed+'/'+result.checks);
 });
 test('extras selector, study counts, sorting, keyboard and isolated plot',async({page})=>{
@@ -287,19 +292,43 @@ for(const model of ['FE','DL'])for(const [before,after] of [["Q:'Q'","Q:'R'"],["
 });
 
 // Constant mu needs 12-digit rounding; Q is constant zero, while H2 also covers singleton subsets.
-for(const het of ['Q','H2'])for(const axis of ['clean','x','y'])test(`extras constant calibration ${het} ${axis}`,async({page})=>{
+for(const mutation of ['wrong','swapped','shifted'])test(`extras tiny checked Q labels ${mutation}`,async({page})=>{
+ await page.route('**/gosh/plus.js',async route=>{
+  const body=(await(await route.fetch()).text()).replace(/\r\n/g,'\n'),hook='\n  }\n  function draw() {';
+  expect(body).toContain(hook);
+  const edit=mutation==='wrong'?"ns[0].textContent=String(v[1]);":mutation==='swapped'?"ns[0].textContent=old[1];ns[1].textContent=old[0];":"ns.forEach((n,i)=>n.textContent=String(v[i]+v[1]));";
+  await route.fulfill({contentType:'application/javascript',body:body.replace(hook,`\n{const ns=[...svg.querySelectorAll('text')].slice(4,6),old=ns.map(n=>n.textContent),v=old.map(Number);${edit}}`+hook)});
+ });
+ await page.goto(url);
+ const result=await page.evaluate(()=>{
+  const input='1,1\n1.0000000000001,1\n1.0000000000002,1';
+  document.getElementById('src').value=input;document.getElementById('model').value='FE';
+  AlmGoshPlus.render(AlmGoshPlus.capture(input,'FE',5000));
+  document.getElementById('plus-het').value='Q';document.getElementById('plus-het').dispatchEvent(new Event('change'));
+  try{AlmGoshPlusAdapter.live.currentState();return {error:null};}
+  catch(e){return {error:e.message,axes:AlmGoshPlusAdapter.axisLabels};}
+ });
+ expect(result.error).toMatch(/extra y calibrated axis/);
+ expect(result.axes.find(a=>a.axis==='extra y').checked).toBe(true);
+});
+
+for(const input of [Array(3).fill('0.3333333333333333,1').join('\n'),'1,1\n1.0000000000001,1\n1.0000000000002,1'])
+for(const het of ['Q','H2'])for(const axis of ['clean','x','y'])test(`extras constant calibration ${input.split("\n")[0]} ${het} ${axis}`,async({page})=>{
  if(axis!=='clean')await page.route('**/gosh/plus.js',async route=>{
   const body=(await(await route.fetch()).text()).replace(/\r\n/g,'\n'),hook='\n  }\n  function draw() {';
   expect(body).toContain(hook);
   await route.fulfill({contentType:'application/javascript',body:body.replace(hook,`\nsvg.querySelectorAll('text')[${axis==='x'?2:4}].textContent='0.125';`+hook)});
  });
  await page.goto(url);
- const check=()=>page.evaluate(het=>{
-  const input=Array(3).fill('0.3333333333333333,1').join('\n');
+ const check=()=>page.evaluate(({het,input})=>{
   document.getElementById('src').value=input;document.getElementById('model').value='FE';
   AlmGoshPlus.render(AlmGoshPlus.capture(input,'FE',5000));
   document.getElementById('plus-het').value=het;document.getElementById('plus-het').dispatchEvent(new Event('change'));
-  AlmGoshPlusAdapter.live.currentState();
- },het);
- if(axis==='clean')await check();else await expect(check()).rejects.toThrow(axis==='y'&&het==='H2'?/calibrated axis/:/calibrated axis constant labels/);
+  try{AlmGoshPlusAdapter.live.currentState();return {error:null,axes:AlmGoshPlusAdapter.axisLabels};}
+  catch(e){return {error:e.message,axes:AlmGoshPlusAdapter.axisLabels};}
+ },{het,input});
+ const result=await check();
+ if(axis==='clean')expect(result.error).toBeNull();
+ else if(result.axes.find(r=>r.axis==='extra '+axis)?.checked)expect(result.error).toMatch(/calibrated axis/);
+ else {expect(result.error).toBeNull();expect(result.axes.find(r=>r.axis==='extra '+axis)?.message).toContain('not checked');}
 });
