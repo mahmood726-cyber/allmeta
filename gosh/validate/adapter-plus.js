@@ -77,16 +77,20 @@
 
 // Independent affine calibration from source-backed marks, never renderer scale
 // functions, tick metadata, or a second rendering. Coordinates are CSS pixels.
-function calibratedTicks(samples,ticks,digits,name) {
+function calibratedTicks(samples,ticks,digits,name,domain) {
  const fail=message=>{throw Error(name+' calibrated axis '+message);};
  if(samples.length<2||samples.some(p=>!p.every(Number.isFinite)))fail('missing finite marks');
  const values=samples.map(p=>p[0]),lo=Math.min(...values),hi=Math.max(...values),span=hi-lo;
  const labels=ticks.map(t=>Number(t.text));
  if(ticks.length!==2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
- // A constant quantity has no identifiable scale. Check it exactly rather than
- // inventing a second calibration mark; the independent geometry gate checks
- // the renderer's constant-axis midpoint convention.
- if(span===0){if(labels.some(v=>v!==lo))fail('constant labels');return;}
+ // Coincident marks do not identify an affine scale or imply a constant
+ // domain. Use independently derived source-domain endpoints, rounded to
+ // the renderer's displayed precision; geometry remains checked separately.
+ if(span===0){
+  if(!domain||domain.length!==2||!domain.every(Number.isFinite))fail('missing constant domain');
+  if(labels.some((v,i)=>v!==Number(domain[i].toPrecision(digits))))fail('constant labels');
+  return;
+ }
  // Compensated sums prevent accumulation error in large point clouds from
  // becoming an apparent nonzero label at the zero endpoint.
  const sum=xs=>{let s=0,c=0;for(const x of xs){const t=s+x;c+=Math.abs(s)>=Math.abs(x)?(s-t)+x:(x-t)+s;s=t;}return s+c;};
@@ -168,7 +172,7 @@ function calibratedTicks(samples,ticks,digits,name) {
 
     for(const [axis,quantity,indices] of [['x','mu',[0,1]],['y',het,[2,3]]]){
       const samples=circles.map((c,i)=>[refs?refs[quantity+'.'+i]:a.points[i][quantity],screen(c,Number(c.getAttribute('cx')),Number(c.getAttribute('cy')))[axis]]);
-      calibratedTicks(samples,indices.map((j,i)=>({text:labels[2+j].textContent,position:anchors[j][axis]})),12,'extra '+axis);
+      calibratedTicks(samples,indices.map((j,i)=>({text:labels[2+j].textContent,position:anchors[j][axis]})),12,'extra '+axis,axis==='x'?[samples[0][0],samples[0][0]]:[Math.min(0,samples[0][0]),samples[0][0]]);
     }
     const lo=Math.min(...xs),hi=Math.max(...xs),yl=Math.min(0,...ys),yh=Math.max(...ys);
     const fraction=(v,l,h)=>l===h?.5:(v/Math.max(Math.abs(l),Math.abs(h))-l/Math.max(Math.abs(l),Math.abs(h)))/(h/Math.max(Math.abs(l),Math.abs(h))-l/Math.max(Math.abs(l),Math.abs(h)));

@@ -285,3 +285,21 @@ for(const model of ['FE','DL'])for(const [before,after] of [["Q:'Q'","Q:'R'"],["
  await page.goto(url);await render(page,corpus[0],model);await page.locator('#plus-het').selectOption('Q');
  await expect(failures(page,corpus[0],model)).rejects.toThrow(/selector|table headers|sort declaration/);
 });
+
+// Constant mu needs 12-digit rounding; Q is constant zero, while H2 also covers singleton subsets.
+for(const het of ['Q','H2'])for(const axis of ['clean','x','y'])test(`extras constant calibration ${het} ${axis}`,async({page})=>{
+ if(axis!=='clean')await page.route('**/gosh/plus.js',async route=>{
+  const body=(await(await route.fetch()).text()).replace(/\r\n/g,'\n'),hook='\n  }\n  function draw() {';
+  expect(body).toContain(hook);
+  await route.fulfill({contentType:'application/javascript',body:body.replace(hook,`\nsvg.querySelectorAll('text')[${axis==='x'?2:4}].textContent='0.125';`+hook)});
+ });
+ await page.goto(url);
+ const check=()=>page.evaluate(het=>{
+  const input=Array(3).fill('0.3333333333333333,1').join('\n');
+  document.getElementById('src').value=input;document.getElementById('model').value='FE';
+  AlmGoshPlus.render(AlmGoshPlus.capture(input,'FE',5000));
+  document.getElementById('plus-het').value=het;document.getElementById('plus-het').dispatchEvent(new Event('change'));
+  AlmGoshPlusAdapter.live.currentState();
+ },het);
+ if(axis==='clean')await check();else await expect(check()).rejects.toThrow(axis==='y'&&het==='H2'?/calibrated axis/:/calibrated axis constant labels/);
+});
