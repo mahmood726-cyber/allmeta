@@ -92,12 +92,15 @@
 
   function fit_powerPrior(rows, alpha) {
     if (!isFinite(alpha) || alpha < 0 || alpha > 1) alpha = 0.5;
-    var yi = rows.map(function (r) { return r.yi; });
-    var vi = rows.map(function (r) { return r.vi; });
+    // 2026-10-18: zero borrowing excludes obs from both DL heterogeneity
+    // and pooling. Preserve the existing estimator for every positive alpha.
+    var activeRows = alpha === 0 ? rows.filter(function (r) { return r.design === "rct"; }) : rows;
+    var yi = activeRows.map(function (r) { return r.yi; });
+    var vi = activeRows.map(function (r) { return r.vi; });
     var tau2 = _tau2_DL(yi, vi);
     var sw = 0, swy = 0;
-    for (var i = 0; i < rows.length; i++) {
-      var mult = rows[i].design === "obs" ? alpha : 1;
+    for (var i = 0; i < activeRows.length; i++) {
+      var mult = activeRows[i].design === "obs" ? alpha : 1;
       var w = mult / (vi[i] + tau2);
       sw += w; swy += w * yi[i];
     }

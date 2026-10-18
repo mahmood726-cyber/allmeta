@@ -20,7 +20,7 @@ const expected = {
   hi:-0.020522551255471755, p:0.03398813391948854
 };
 async function open(page) {
-  await page.goto(url,{waitUntil:'load'});
+  await page.goto(new URL(url, test.info().project.use.baseURL).href,{waitUntil:'load'});
   await page.waitForFunction(() => !!window.AlmBucherCore && !!window.__almBucherLoad && !!window._almLastBucher);
 }
 function last(page) {return page.evaluate(() => window._almLastBucher());}
@@ -136,7 +136,7 @@ test('manual editing invalidates provenance and stale results; explicit compute 
   await page.locator('#btn-run').click();
   const out=await last(page);
   expect(out.dAC).toBe(0.25);
-  expect(out.n_studies).toBe(2);
+  expect(out.n_studies).toBeNull();
   expect(out.excluded_direct_AB_rows).toBe(0);
 });
 

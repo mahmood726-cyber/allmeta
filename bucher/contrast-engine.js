@@ -8,6 +8,10 @@
     if (raw == null || (typeof raw === 'string' && !raw.trim())) {
       throw new RangeError(name + ' is missing');
     }
+    if (!['number', 'string'].includes(typeof raw) ||
+        (typeof raw === 'string' && !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(raw.trim()))) {
+      throw new RangeError(name + ' must be a decimal number');
+    }
     const n = Number(raw);
     if (!Number.isFinite(n)) throw new RangeError(name + ' must be a finite number');
     return n;
@@ -84,7 +88,74 @@
       contributingTrials: ac.n + bc.n,
     };
   }
-  const api = Object.freeze({ compute });
+  // Strict CSV is opt-in for this app; preserve raw numeric tokens until validation.
+  function parseCSV(text) {
+    try {
+      text = String(text).replace(/^\uFEFF/, '');
+      const matrix = [];
+      let row = [], field = '', quoted = false, closed = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (quoted) {
+          if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+          else if (c === '"') { quoted = false; closed = true; }
+          else field += c;
+        } else if (c === ',' || c === '\n' || c === '\r') {
+          row.push(field); field = ''; closed = false;
+          if (c !== ',') {
+            matrix.push(row); row = [];
+            if (c === '\r' && text[i + 1] === '\n') i++;
+          }
+        } else if (c === '"' && field === '' && !closed) quoted = true;
+        else {
+          if (closed || c === '"') throw new RangeError('Malformed CSV quotation');
+          field += c;
+        }
+      }
+      if (quoted) throw new RangeError('Unclosed CSV quotation');
+      if (field.length || row.length || closed) { row.push(field); matrix.push(row); }
+      if (matrix.length < 3) throw new RangeError('At least two CSV records are required');
+      const headers = matrix.shift().map(h => h.trim());
+      const required = ['treat1', 'treat2', 'TE', 'seTE'];
+      if (new Set(headers).size !== headers.length ||
+          headers.some(h => !required.concat(['study']).includes(h)) ||
+          required.some(h => !headers.includes(h))) {
+        throw new RangeError('Use exact, unique treat1/treat2/TE/seTE headers (optional study)');
+      }
+      const rows = matrix.map((cells, i) => {
+        if (cells.length !== headers.length) throw new RangeError('CSV row ' + (i + 2) + ': column count differs from header');
+        return Object.fromEntries(headers.map((h, j) => [h, cells[j].trim()]));
+      });
+      return { headers, rows, warnings: [] };
+    } catch (err) {
+      return { headers: [], rows: [], warnings: [err.message] };
+    }
+  }
+  function validateNetwork(env) {
+    if (!env || env._schema !== 'ma-comparisons-v1' ||
+        !['OR', 'RR'].includes(env.effectMeasure) ||
+        !Array.isArray(env.studies) || env.studies.length < 2) {
+      throw new RangeError('Supply at least two OR/RR network studies');
+    }
+    const ids = new Set();
+    for (const s of env.studies) {
+      if (!s || typeof s.id !== 'string' || !s.id.trim() || ids.has(s.id.trim())) {
+        throw new RangeError('Network study IDs must be present and unique');
+      }
+      ids.add(s.id.trim());
+      if (!Array.isArray(s.arms) || s.arms.length !== 2) {
+        throw new RangeError('Only independent two-arm studies are supported; multi-arm dependence requires covariance-aware NMA');
+      }
+      const labels = s.arms.map(a => a && typeof a.treatment === 'string' ? a.treatment.trim() : '');
+      if (labels.some(t => !t) || labels[0] === labels[1]) throw new RangeError('Each study needs two distinct treatments');
+      for (const a of s.arms) {
+        if (!Number.isSafeInteger(a.n) || a.n <= 0 || !Number.isSafeInteger(a.events) ||
+            a.events < 0 || a.events > a.n) throw new RangeError('Network events and totals must be valid integer counts');
+      }
+    }
+    return true;
+  }
+  const api = Object.freeze({ compute, parseCSV, validateNetwork });
   root.AlmBucherCore = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

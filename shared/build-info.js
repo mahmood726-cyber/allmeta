@@ -21,10 +21,10 @@
   'use strict';
   var info = {
     app: "allmeta",
-    version: "v1.5.0",
-    sha: "5e20358918c9366eb10c1a368f2ca1b0480faa84",
-    shortSha: "5e20358",
-    builtAt: "2026-10-16T07:52:14Z",
+    version: "v1.7.0",
+    sha: "7899ce599bfdedecd4d13b8f35540d129906fb95",
+    shortSha: "7899ce5",
+    builtAt: "2026-10-18T13:18:54Z",
     url: "https://mahmood726-cyber.github.io/allmeta/"
   };
   global.AlmBuildInfo = info;

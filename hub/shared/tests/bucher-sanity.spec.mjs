@@ -4,7 +4,7 @@
  * Run from hub/shared/tests/ (mirror copied to bucher-sanity.spec.mjs there so
  * playwright.config.mjs picks it up and starts the webserver at port 8088):
  *
- *   cd C:\Projects\allmeta\hub\shared\tests
+ *   cd hub/shared/tests
  *   copy ..\..\bucher\tests\sanity.spec.mjs .\bucher-sanity.spec.mjs
  *   npx playwright test bucher-sanity.spec.mjs --reporter=list
  *
@@ -13,7 +13,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const APP_URL = 'http://localhost:8088/bucher/';
+const appURL = () => new URL('/bucher/', test.info().project.use.baseURL).href;
 
 /**
  * Wait until all 7 alm modules have registered on window.alm
@@ -56,7 +56,7 @@ test.describe('bucher retrofit sanity', () => {
       }
     });
     page.on('pageerror', err => errors.push(err.message));
-    await page.goto(APP_URL);
+    await page.goto(appURL());
     await waitForAlm(page);
     await waitForResults(page);
     expect(errors, 'Unexpected console errors: ' + errors.join('; ')).toEqual([]);
@@ -64,7 +64,7 @@ test.describe('bucher retrofit sanity', () => {
 
   // T2 — all 7 wired alm.* modules expose their init function
   test('all 7 wired alm.* modules expose their init function', async ({ page }) => {
-    await page.goto(APP_URL);
+    await page.goto(appURL());
     await waitForAlm(page);
     const present = await page.evaluate(() => ({
       csvUpload:     typeof window.alm.csvUpload,
@@ -86,7 +86,7 @@ test.describe('bucher retrofit sanity', () => {
 
   // T3 — mount points are initialised
   test('key mount points have been initialised', async ({ page }) => {
-    await page.goto(APP_URL);
+    await page.goto(appURL());
     await waitForAlm(page);
     // csv-upload widget
     await expect(page.locator('#alm-csv-mount .alm-csv')).toBeVisible();
@@ -100,7 +100,7 @@ test.describe('bucher retrofit sanity', () => {
 
   // T4 — forest SVG renders with content for default data
   test('forest SVG renders with content for default data', async ({ page }) => {
-    await page.goto(APP_URL);
+    await page.goto(appURL());
     await waitForResults(page);
     // SVG should have rect elements (study squares and indirect square)
     const rectCount = await page.locator('#plot rect').count();
@@ -112,7 +112,7 @@ test.describe('bucher retrofit sanity', () => {
 
   // T5 — results-export JSON download contains bucher schema
   test('results-export JSON download contains bucher schema', async ({ page }) => {
-    await page.goto(APP_URL);
+    await page.goto(appURL());
     await waitForAlm(page);
     await waitForResults(page);
     await page.waitForFunction(() =>
@@ -152,7 +152,7 @@ test.describe('bucher retrofit sanity', () => {
     ];
     // Same A-C fixed-effect reference as tests/fixtures/bucher-tiny.R;
     // B-C direct row comes from that fixture. Normal Bucher AB=AC-BC.
-    await page.goto(APP_URL);
+    await page.goto(appURL());
     await waitForAlm(page);
     expect(await page.evaluate(rows=>window.__almBucherLoad(rows), fixture)).toBe(true);
     const r=await page.evaluate(()=>window._almLastBucher());

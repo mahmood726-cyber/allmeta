@@ -57,7 +57,7 @@
   <!-- Cycle 2.8 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
   <script src="../hub/shared/csv-upload.js"></script>
-  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
@@ -85,7 +85,7 @@
       <h2>Input</h2>
 
       <!-- csv-upload mount -->
-      <div id="alm-csv-mount"></div>
+
 
       <label>
         <span>Studies &#8212; <code>effect, SE, label</code> (per line)</span>
@@ -97,12 +97,16 @@
 0.10, 0.06, Study F
 0.35, 0.16, Study G
 0.22, 0.10, Study H
-0.40, 0.20, Study I</textarea>
+0.40, 0.20, Study I</textarea></label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="alm-csv-mount"></div>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
         <span class="hint">k &#8804; 15 studies: full enumeration (2&#7505; &#8722; 1 subsets). k &gt; 15: random sampling (Olkin &amp; Dahabreh 2012 recommendation).</span>
-      </label>
+
       <label>
         <span>Pooling model</span>
         <select id="model" aria-label="Model">
@@ -116,8 +120,6 @@
         <span class="hint">App default: 5,000 draws; enter a whole number from 1 to 100,000 (cap limits browser workload). Uniform subset size from 2 to k, with replacement. This differs from metafor.</span>
         <span id="sample-error" role="alert"></span>
       </label>
-
-      <button type="button" id="btn-run" class="primary" style="width:100%">Compute</button>
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
         <button type="button" id="btn-bus-load" style="flex:1" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
         <button type="button" id="btn-bus-save" style="flex:1" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
@@ -141,10 +143,10 @@
       <p id="plot-note" role="status"></p>
       <svg id="plot" viewBox="0 0 600 420" role="img" aria-label="GOSH plot &#8212; pooled effect vs I&#178; across all subsets"></svg>
 
-      <!-- chart-download mount -->
+      <!-- plot-export mount -->
       <div class="actions">
-        <span style="font-size:0.8rem;color:var(--muted)">Download chart:</span>
-        <div id="alm-chart-mount"></div>
+        <span style="font-size:0.8rem;color:var(--muted)">Download plots:</span>
+        <div id="alm-plot-mount"></div>
       </div>
 
       <!-- results-export mount -->
@@ -155,13 +157,15 @@
 
       <div class="note"><strong>Interpretation:</strong> multimodal clustering indicates subgroup heterogeneity (the meta-analysis averages two or more distinct populations). A thick &#8220;horizontal band&#8221; at one estimate means most subsets converge on the same answer &#8212; homogeneous evidence. Streaks along the <span data-gloss="i2">I&#178;</span> axis often indicate one or two highly influential outliers.</div>
     </section>
-  
+
       <div id="alm-flow-mount" aria-live="polite"></div>
 <section id="alm-validate"></section>
+<section id="alm-plus"></section>
 </main>
   <footer>
     Olkin I, Dahabreh IJ, Trikalinos TA. GOSH &#8212; a graphical display of study heterogeneity. <em>Res Synth Methods</em> 2012;3(3):214&#8211;23. Subgroup structure interpretation aligns with <em>Cochrane Handbook v6.5 &#167;10.10.2</em> on detecting influential studies; <span data-gloss="i2">I&#178;</span> interpretation per &#167;10.10.2 (low &lt;30%, moderate 30&#8211;60%, substantial 50&#8211;90%, considerable 75&#8211;100%). For k &gt; 15 this app draws 5,000 subsets by default, choosing sizes uniformly from 2 to k, with replacement, using a fixed seed. This differs from <code>metafor::gosh()</code>, which enumerates all non-empty subsets when 2^k - 1 is at most 1,000,000 (k up to 19), and otherwise draws 1,000,000 subsets by default with binomial size probabilities. Full enumeration here includes single-study subsets.
   </footer>
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
   (function () {
     'use strict';
@@ -252,6 +256,8 @@
 
     // ---- last results storage for export ----
     var _lastResults = null;
+
+    run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #model, #n-sample");
 
     function run() {
       document.getElementById('plot-note').textContent = '';
@@ -545,6 +551,7 @@
       run();
     });
 
+
     if (window.MaStudies && MaStudies.attachButtons) {
       MaStudies.attachButtons({
         btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
@@ -571,10 +578,10 @@
       },
     });
 
-    window.alm.chartDownload({
-      target: '#alm-chart-mount',
+    window.alm.plotExport({
+      target: '#alm-plot-mount',
       basename: 'gosh-plot',
-      getSvg: function () { return document.getElementById('plot'); },
+      plots: [{ id: 'plot', name: 'GOSH scatter', getSvg: function () { return document.getElementById('plot'); } }],
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
@@ -710,5 +717,8 @@
 </script>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
+<script src="plus.js"></script>
+<script src="validate/manifest-plus.js"></script>
+<script src="validate/adapter-plus.js"></script>
 </body>
 </html>

@@ -4,6 +4,9 @@ on:
     paths:
       - 'bucher/**'
       - 'hub/shared/tests/bucher*'
+      - 'hub/shared/tests/nma-bus-reader.spec.mjs'
+      - 'hub/shared/csv-upload.js'
+      - 'tests/test_bucher.py'
       - '.github/workflows/bucher-integrity.yml'
   workflow_dispatch:
 permissions:
@@ -24,10 +27,13 @@ jobs:
           python-version: '3.12'
       - run: npm ci
         working-directory: hub/shared/tests
+      - run: python -m pip install pytest
+      - name: Independent arithmetic and frozen R reference
+        run: python -m pytest tests/test_bucher.py -q
       - run: npx playwright install --with-deps chromium
         working-directory: hub/shared/tests
       - name: Browser input, direction, refusal and export regressions
-        run: npx playwright test bucher --reporter=line
+        run: npx playwright test --config=bucher.config.mjs --reporter=line
         working-directory: hub/shared/tests
       - if: always()
         uses: actions/upload-artifact@v4
