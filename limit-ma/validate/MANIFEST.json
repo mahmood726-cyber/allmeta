@@ -1,0 +1,27 @@
+{
+  "files": [
+    {
+      "path": "validate/corpus/corpus.json",
+      "sha256": "a9232d92c3b777c09033b327e8b7df5e332e8b68aadb130d8e164fa4cc437744",
+      "bytes": 638350
+    },
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "5efb8a571a600db2c117d57413b745104089bdef34e7a8410d096883f4081237",
+      "bytes": 1609819
+    }
+  ],
+  "configurations": 169,
+  "checks": 55525,
+  "passed": 55524,
+  "referenceVersions": {
+    "R": "4.6.0",
+    "meta": "8.5-0",
+    "metasens": "1.5-3",
+    "metadat": "1.6-0"
+  },
+  "source_sha256": {
+    "corpus.json": "46e9f85758326b61c7a6f5f87ce6ccbcd32fe611d6e39f6754b1e283393b2c55",
+    "reference.json": "0ab187fc6a305c7f17cf1b5e1b6a1ae5e18b82797a7f221491469c26d4bea298"
+  }
+}

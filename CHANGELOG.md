@@ -11,8 +11,131 @@ the section is renamed to that version and dated, and a fresh
 
 ## [Unreleased]
 
+### Fixed
+- E-value input validation distinguishes malformed number text from omitted
+  confidence limits, rejects incomplete or inconsistent intervals, and clears
+  stale results on refusal. Missing uncertainty no longer implies a null-crossing CI.
+- Cross-design power-prior pooling at alpha=0 now estimates heterogeneity from
+  RCTs alone. Observational-only input at alpha=0 displays a non-estimable result
+  without crashing the plot or leaving stale export state. Earlier alpha=0
+  results with mixed designs should be rerun; positive-alpha behavior is unchanged.
+
 ### Added
 - _(items added since the most recent tag will be listed here)_
+
+---
+
+## [1.7.0] — 2026-10-18
+
+New features for `limit-ma` and `gosh`, each in a separate "extras" section with its own Validate-in-R panel. The
+original computation and each paper's validation replay are unchanged (`limit-ma` 55,524 of 55,525 with the one
+documented status mismatch; `gosh` 876,760 of 876,760).
+
+### Added
+- **limit-ma** (#131): a comparison table and forest plot of bias-adjusted estimates - random effects (DL), limit
+  meta-analysis, trim-and-fill (labelled a sensitivity analysis), PET, PEESE, conditional PET-PEESE and the
+  three-parameter selection model (ML); a combined funnel plot with switchable layers; Egger, Peters, Q.small and
+  Q.resid tests with p-values and a low-power caveat; interpretation text computed from the results. Its own validation
+  corpus: 169 configurations, 16,097 checks against metafor 5.2-1, meta 8.5-0 and metasens 1.5-3. The existing
+  selection-model code used by `pubbias-tests` is unchanged; the new fitting path is used only by these extras.
+- **gosh** (#132): highlighting of the subsets that include chosen studies, a sortable per-study table comparing
+  subsets with and without each study (no p-values), and a choice of y-axis (I², H², Q, DL τ², τ). Its own validation
+  corpus: 75 input configurations, 150 FE/DL cases, 1,153,536 checks against metafor 5.2-1 `gosh`.
+- **Validate-the-extras panels** check the numbers, text, labels, table structure, on-screen geometry and painted style
+  of the new plots against a clean same-browser reference render. Axis labels are checked only where the scale is fixed
+  by values already validated against R, and fail when more than half a tick step from their position; other axes are
+  reported "not checked". The panels do not prove pixels and do not resist CSS injected into the page; a Windows Edge
+  pixel test in CI covers the new plots.
+
+---
+
+## [1.6.1] — 2026-10-17
+
+### Added
+- **Validate in R** for `cumulative-subgroup` (#129): a live check that runs self-hosted `metafor` (4.8-0) in webR on the
+  current data, and an offline replay of a declared, SHA-256-pinned corpus (1,816 configurations, 609,398 checks; 6
+  documented refusals) through the page's own code, comparing every displayed number, label, control, status message
+  and the page's static text. Adapter, tests and documentation only; the numerical engine is unchanged.
+
+The `cumulative-subgroup` fixes (#124: R-export parity, CSV quoting, axis limits, refusals) shipped in 1.6.0.
+
+---
+
+## [1.6.0] — 2026-10-17
+
+Figure export and a visible Run analysis step across the 13 papered apps; no computation changed.
+
+### Added
+- **Plot export** (#126) in `dose-response-ma`, `dta-sroc`, `nma`, `heterogeneity`, `pubbias-tests`,
+  `multilevel-ma`, `meta-regression`, `proportion-ma`, `mh-peto`, `influence`, `limit-ma` and `gosh`: a plot selector
+  (one plot or all) and export as PNG, SVG, PDF, or TIFF at 300 or 600 dpi (RGB, LZW-compressed), via the shared
+  `hub/shared/plot-export.js`; the download status reports the exact number of files written, and zero on failure.
+- **Run analysis** button, visible in each of these 12 apps, with a shared analysis lifecycle
+  (`hub/shared/analysis-lifecycle.js`): editing inputs shows a "results out of date" notice until the analysis is run
+  again; a completed run shows "Analysis updated". Apps that already re-ran on edit still do so. `screen` has no plots;
+  it gains the same out-of-date and updated notices on its existing Train & rank button.
+
+### Fixed
+- **cumulative-subgroup** (#124): the R export now reproduces the page's analysis (separate Paule–Mandel fit per
+  subgroup plus a fixed-effect between-subgroup Q) instead of a common-τ² moderator model; quoted CSV fields are parsed
+  correctly and R string literals are escaped; subgroup names such as `__proto__` no longer fail; effect-axis limits
+  are applied in both plots; the chart receipt no longer names DerSimonian–Laird.
+
+### Verification
+- No numerical function changed: every named numerical function in the 13 apps matches its pre-change SHA-256, and
+  each app's offline Validate-in-R replay gives the same check count and result before and after the change
+  (for example `gosh` 876,760 of 876,760; `heterogeneity` 131,781; `mh-peto` 68,461; `proportion-ma` 298,116).
+
+---
+
+## [1.5.0] — 2026-10-16
+
+GOSH plot corrected to agree with `metafor::gosh`, with the faults that validation found fixed, and a one-click
+**Validate in R** panel added.
+
+### Added
+- **Validate in R** for `gosh` (#121): a live check that runs self-hosted `metafor` (4.8-0) in webR on the current data and
+  compares every subset estimate, I², Q (and τ² for DL) the page computes, matched by exact subset membership, plus counts,
+  medians and quartiles, at 1e-9 relative; and an offline replay of a declared, SHA-256-pinned subset of the paper's corpus
+  (89 effect configurations × FE/DL = 178 model runs, 876,760 checks) through the page's own code, comparing every displayed
+  number, label, control, status message and the page's static text, in accepted and refused states. Adapter, tests and
+  documentation only; the GOSH numerical engine is unchanged.
+
+### Fixed
+- **gosh** (#119): every non-empty subset (2^k − 1) is now enumerated, including single-study subsets, as `metafor::gosh`
+  does (previously singletons were skipped, e.g. 26 rather than 31 subsets for five studies); the sampling text no longer
+  claims to match metafor's defaults, the default draw count shown equals the number drawn, and invalid draw counts are
+  refused visibly; refused inputs now clear the plot, medians and notices, so a stale plot is no longer left on screen after
+  a refusal; X-axis (and Y-axis) limits are handled in data space — explicit limits are honoured, points outside the range
+  are omitted with a visible count, and bounds are overflow-safe. Validated against `metafor::gosh` on every metadat dataset
+  with effects and variances (222 effect configurations × FE/DL): 12,813,556 of 12,813,556 checks. Tests that asserted the
+  old, incorrect values were replaced with values re-derived from `metafor` 5.2-1.
+
+---
+
+## [1.4.0] — 2026-10-15
+
+Limit meta-analysis validated against the R package metasens, with the faults that validation found corrected and a one-click
+**Validate in R** panel added; scientific-integrity fixes for the effect-size converter, forest plot and heterogeneity apps.
+
+### Added
+- **Validate in R** for `limit-ma` (#117): a live check that runs `meta::metagen` (DL) and `metasens::limitmeta(beta0)` in the
+  self-hosted webR on the current data, and an offline replay of the paper's corpus through the page's own code against the
+  hash-pinned R reference (55,524/55,525; the single documented exception is metasens' internal REML refit not converging for
+  `dat.hartmannboyce2018`, shown as a failure, not a pass). Vendors the metasens 1.5-3 webR binary (SHA-256 pinned).
+
+### Fixed
+- **limit-ma** (#115): the funnel regression curve is drawn as βᵣ + αᵣ√(SE² + τ²) (it was a straight line); axis overrides respect
+  the SE minimum and clip in data space (points outside the range are omitted with a visible count; invalid ranges keep the fitted
+  results); undefined diagnostics (G² when the regression total sum of squares is zero) are exported as `null` instead of discarding
+  a valid fit; stale results are cleared on refusal; unsupported log-axis toggles are disabled with a visible explanation; the header
+  citation names *Biostatistics*. No estimator formula changed; validated on 169 configurations from 113 metadat datasets
+  (44,772 → 55,524 of 55,525 checks).
+- **effect-size converter** (#111): exact Hedges' g and SMD conversions, valid SMD from t/F, rejected bad SEs, R-parity CSV ingestion
+  and persisted estimator state, with frozen metafor regression gates.
+- **forest** (#112, #114): consistent modified Hartung–Knapp reproduction and I²; CSV studies are validated atomically, so a partly
+  invalid file no longer silently excludes studies.
+- **heterogeneity** (#113): strict imports, explicit I² conventions and diagnostic/display integrity.
 
 ---
 

@@ -5,7 +5,7 @@ const html = fs.readFileSync(process.argv[2], 'utf8');
 const nodes = {};
 function node() {
   return {value: '', innerHTML: '', textContent: '', attrs: {}, parentNode: {},
-    addEventListener(event, fn) { this[event] = fn; },
+    addEventListener(event, fn) { const previous = this[event]; this[event] = (...args) => { if (previous) previous(...args); fn(...args); }; },
     setAttribute(key, value) { this.attrs[key] = value; },
     getAttribute(key) { return this.attrs[key]; }};
 }
@@ -22,7 +22,7 @@ const document = {getElementById: id => nodes[id] || null,
     return logs;
   }};
 const noop = () => {};
-const alm = {csvUpload: noop, chartDownload: noop, axisControls: noop,
+const alm = {analysisLifecycle: run => run, csvUpload: noop, plotExport: noop, axisControls: noop,
   resultsExport: noop, urlState: Object.assign(noop, {read: () => null}),
   resetUndo: noop, tooltips: noop};
 const window = {alm};
