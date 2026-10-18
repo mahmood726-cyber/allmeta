@@ -100,20 +100,25 @@ class ThresholdAnalysisEngine {
         let thresholdExists = thresholdResult !== null;
 
         if (thresholdExists) {
-            // Evaluate just below and above threshold
-            const eps = stepSize * 0.01;
-            const belowParams = baseParams
-                ? Object.assign({}, baseParams, { [paramName]: thresholdResult - eps })
-                : { [paramName]: thresholdResult - eps };
-            const aboveParams = baseParams
-                ? Object.assign({}, baseParams, { [paramName]: thresholdResult + eps })
-                : { [paramName]: thresholdResult + eps };
-            const belowResult = modelFn(belowParams);
-            const aboveResult = modelFn(aboveParams);
-            const nmbBelow = this._computeNMB(belowResult, wtp);
-            const nmbAbove = this._computeNMB(aboveResult, wtp);
-            optimalBelow = nmbBelow >= 0 ? 'New' : 'Current';
-            optimalAbove = nmbAbove >= 0 ? 'New' : 'Current';
+            // Only classify strategies on parameter values inside the stated
+            // analysis range. At a boundary, the outside strategy is undefined.
+            const eps = Math.min(Math.abs(hi - lo) / 2,
+                Math.max(Math.abs(hi - lo) / (Math.max(steps, 1) * 100),
+                    Number.EPSILON * Math.max(1, Math.abs(thresholdResult))));
+            const belowValue = Math.max(lo, thresholdResult - eps);
+            const aboveValue = Math.min(hi, thresholdResult + eps);
+            if (belowValue < thresholdResult) {
+                const params = baseParams
+                    ? Object.assign({}, baseParams, { [paramName]: belowValue })
+                    : { [paramName]: belowValue };
+                optimalBelow = this._computeNMB(modelFn(params), wtp) >= 0 ? 'New' : 'Current';
+            }
+            if (aboveValue > thresholdResult) {
+                const params = baseParams
+                    ? Object.assign({}, baseParams, { [paramName]: aboveValue })
+                    : { [paramName]: aboveValue };
+                optimalAbove = this._computeNMB(modelFn(params), wtp) >= 0 ? 'New' : 'Current';
+            }
         } else {
             // No crossing: determine which strategy is always optimal
             const firstNMB = nmbArr[0];
@@ -292,8 +297,19 @@ class ThresholdAnalysisEngine {
         const loNMB = this._computeNMB(loResult, wtp);
         const hiNMB = this._computeNMB(hiResult, wtp);
 
-        // No sign change → no threshold in range
-        if ((loNMB >= 0) === (hiNMB >= 0)) {
+        if (!Number.isFinite(loNMB) || !Number.isFinite(hiNMB)) {
+            throw new Error('Cannot determine threshold: non-finite endpoint NMB');
+        }
+        // Equality at either endpoint is an actual break-even, not "no root".
+        if (loNMB === 0 && hiNMB === 0) {
+            if (lo === hi) return lo;
+            throw new Error('Cannot identify a unique threshold: NMB is zero at both endpoints');
+        }
+        if (loNMB === 0) return lo;
+        if (hiNMB === 0) return hi;
+        // Bisection brackets only roots with opposite endpoint signs. Tangential
+        // and multiple interior roots need an explicitly supported search.
+        if ((loNMB > 0) === (hiNMB > 0)) {
             return null;
         }
 
@@ -302,6 +318,9 @@ class ThresholdAnalysisEngine {
             const mid = (lo + hi) / 2;
             const midResult = modelFn(_makeParams(mid));
             const midNMB = this._computeNMB(midResult, wtp);
+            if (!Number.isFinite(midNMB)) {
+                throw new Error('Cannot determine threshold: non-finite intermediate NMB');
+            }
 
             if (Math.abs(midNMB) < tolerance || (hi - lo) / 2 < tolerance) {
                 return mid;
