@@ -1,0 +1,7 @@
+{
+  "status": "blocked",
+  "checks": null,
+  "passed": null,
+  "error": "browserType.launch: spawn EPERM",
+  "reason": "The before-integration Playwright attempt on the original page could not launch msedge. No browser replay checks ran. Recorded from the tool output; this is not a replay result."
+}
