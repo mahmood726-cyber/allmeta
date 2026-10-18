@@ -385,8 +385,12 @@
       }
       if (studies.length && !finite) errors.push("At least one study has a zero cell and the continuity correction is set to none, so its logit sensitivity or false-positive rate is infinite; mada refuses this fit too. Choose 'All studies' or 'Only studies with a zero cell'.");
       if (B && finite && rows.length >= 3) {
-        try { out.moses = B.mosesLittenberg(rows, opts); } catch (e) { out.moses = null; }
-        try { out.rho = B.thresholdSpearman(rows, opts); } catch (e) { out.rho = null; }
+        try { out.moses = B.mosesLittenberg(rows, opts); }
+        catch (e) { errors.push("Moses SROC unavailable: " + e.message); }
+        try {
+          out.rho = B.thresholdSpearman(rows, opts);
+          if (out.rho == null) errors.push("Spearman threshold correlation is undefined: sensitivity or false-positive rate has no rank variation.");
+        } catch (e) { errors.push("Spearman threshold correlation unavailable: " + e.message); }
       }
       if (B && finite && rows.length >= 4) {
         try { out.bivar = B.fit(rows, opts); } catch (e) { errors.push("Bivariate model: " + e.message); }
@@ -467,11 +471,15 @@
         const lx = L + plotW - 206, ly = T + 14;
         p.push("<g font-size=\"12\" fill=\"#15181d\">");
         p.push("<rect x=\""+(lx-8)+"\" y=\""+(ly-10)+"\" width=\"206\" height=\"66\" fill=\"#fff\" fill-opacity=\"0.82\" stroke=\"#d9d5cc\" rx=\"4\"/>");
-        p.push("<line x1=\""+lx+"\" y1=\""+ly+"\" x2=\""+(lx+22)+"\" y2=\""+ly+"\" stroke=\"#2c5e8a\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+4)+"\">Moses SROC</text>");
+        if (fit) p.push("<line x1=\""+lx+"\" y1=\""+ly+"\" x2=\""+(lx+22)+"\" y2=\""+ly+"\" stroke=\"#2c5e8a\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+4)+"\">Moses SROC</text>");
+        else p.push("<text x=\""+lx+"\" y=\""+(ly+4)+"\">Moses SROC unavailable</text>");
         p.push("<line x1=\""+lx+"\" y1=\""+(ly+18)+"\" x2=\""+(lx+22)+"\" y2=\""+(ly+18)+"\" stroke=\"#b23a48\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+22)+"\">Bivariate SROC</text>");
         p.push("<rect x=\""+lx+"\" y=\""+(ly+31)+"\" width=\"22\" height=\"10\" fill=\"#b23a48\" fill-opacity=\"0.12\" stroke=\"#b23a48\"/><text x=\""+(lx+28)+"\" y=\""+(ly+40)+"\">95% conf / pred (dashed)</text>");
         p.push("</g>");
       }
+
+      if (!fit && !bivar && studies.length >= 3)
+        p.push("<text x=\""+L+"\" y=\""+(T+16)+"\" font-size=\"12\" fill=\"#15181d\">Moses SROC unavailable</text>");
 
       // Points with size proportional to total N
       let maxN = 0;
