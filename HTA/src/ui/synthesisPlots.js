@@ -130,7 +130,12 @@
         forest(body,'hta-beginner-cumulative','Cumulative meta-analysis',cumulative.results.map(r=>({name:`${r.nStudies}: ${r.lastStudy}`,effect:r.effect,lo:r.ci_lower,hi:r.ci_upper})));
         funnel(body,'hta-beginner-funnel','Funnel plot',dataset.studies.map((s,i)=>({name:label(s,i),effect:s.effect,se:s.se})),result.random.effect);
         element('p','Funnel asymmetry is not specific to publication bias. A symmetric-looking plot or non-significant test does not establish its absence.',body);
+        // Keep the pre-existing result actions: copy-to-clipboard and the printable
+        // HTML report (BeginnerMode.generateReport opens it in a new window).
+        footer.style.flexWrap='wrap';footer.style.gap='8px';
+        button(footer,'Copy Results',()=>owner.copyToClipboard('text'));
         button(footer,'Export results CSV',()=>owner.exportToCSV());
+        button(footer,'Generate Report',()=>owner.generateReport());
         button(footer,'Check publication bias',()=>owner.runPublicationBias());
     }
     function bias(owner,dataset) {

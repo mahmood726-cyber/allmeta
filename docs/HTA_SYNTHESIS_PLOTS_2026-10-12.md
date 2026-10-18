@@ -37,7 +37,12 @@ The beginner pairwise view explicitly uses and labels random-effects REML with n
 
 The final suite includes exact displayed effects/weights/intervals, cumulative-fit agreement, actual observed/imputed funnel points, fitted network-node/contrast/P-score data, byte-exact selected-SVG export, CSV consistency, finite geometry, full mobile-panel visibility, stale-input removal and no refitting on resize. The four numerical references match to seven decimal places. Desktop/mobile screenshots were inspected.
 
-The retained tests use synthetic or built-in example data only. Temporary write-enabled branch workflows and patch-generation scripts were removed after validation. The normal Playwright workflow discovers the retained tests.
+The retained tests use synthetic or built-in example data only. Patch-generation scripts were removed after validation. A temporary write-enabled branch workflow (`.github/workflows/hta-export-controls-temp.yml`, `permissions: contents: write`, which patched source and pushed to this branch) was added in commit 2f36b08 and was deleted in the 2026-10-19 review follow-up; its proposed controls were never committed by it. The normal Playwright workflow discovers the retained tests.
+
+## Review follow-up (2026-10-19)
+
+- **Restored result actions.** The plotted results modal had dropped the pre-existing **Copy Results** and **Generate Report** buttons. Both are back in the modal footer, wired to the unchanged `BeginnerMode.copyToClipboard('text')` and `BeginnerMode.generateReport()`. `generateReport()` writes a printable HTML report into a new window (`window.open` + `document.write`); it does not trigger a file download, so its test waits for the popup and reads the report it contains (pooled effect, CI, tau-squared, each study's random-effects weight). The footer wraps so no action is clipped at phone width.
+- **Prediction interval.** `MetaAnalysisMethods.calculatePooledEffect` previously switched the prediction interval to the normal quantile for k >= 10 unless HKSJ was requested. It now uses `mu +/- t(0.975, k-1) * sqrt(tau2 + SE^2)` at every k (Cochrane Handbook v6.5) and reports it for k >= 3 (null for k <= 2, as the existing unit test requires). For k < 10 the numbers are unchanged. For the 13-trial BCG data (`escalc("RR", data = dat.bcg)`, REML) the interval moves from the z-based [-1.8666922, 0.4376275] to [-1.9953420, 0.5662773]; references were recomputed in R 4.6.0 / metafor 5.0.1 from the explicit formula.
 
 ## Reproduction
 

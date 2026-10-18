@@ -155,37 +155,25 @@ class MetaAnalysisMethods {
         // Confidence interval for I²
         const I2CI = this.calculateI2CI(Q, df, n);
 
-        // Prediction interval
-        // Reference: Higgins et al. (2009), IntHout et al. (2016)
-        //
-        // DECISION RULE FOR t vs NORMAL DISTRIBUTION:
-        // - Uses t(k-2) distribution when:
-        //   1. HKSJ adjustment is applied (useHKSJ = true)
-        //   2. Explicitly requested (predictionUseT = true)
-        //   3. Small meta-analysis (k < 10 studies)
-        //
-        // - Uses normal approximation (z = 1.96) when:
-        //   k >= 10 and neither HKSJ nor explicit t-distribution requested
-        //
-        // RATIONALE: t(k-1) per Cochrane Handbook v6.5 (matches metafor::predict
-        // v4+, verified to ~1e-5). The earlier IntHout-2016 t(k-2) is superseded —
-        // it gives a PI ~3x too wide at k=3 and is undefined at k=2.
-        // The normal approximation is acceptable for larger meta-analyses.
-        //
-        // FORMULA: PI = θ̂ ± t_{1-α/2,k-1} × √(SE² + τ²)
+        // Prediction interval (Cochrane Handbook v6.5, section 10.10.4.3):
+        //   PI = mu_hat +/- t_{1-alpha/2, k-1} * sqrt(tau^2 + SE(mu_hat)^2)
+        // t_{k-1} is used at EVERY k. There is deliberately no switch to the
+        // normal quantile for large k and no dependence on HKSJ: a z-based PI
+        // collapses onto the CI whenever tau^2 = 0. The superseded IntHout-2016
+        // t_{k-2} is not used. Reported only for k >= 3 studies; with k <= 2
+        // the between-study distribution cannot be meaningfully predicted.
+        // Reference check: R 4.6.0 / metafor 5.0.1,
+        //   predict(rma(yi, sei = se, method = ..., test = "knha")) uses the same
+        //   t_{k-1} quantile; metafor's KNHA SE differs, so compare against the
+        //   explicit formula with the unadjusted RE SE (see tests).
         let predictionInterval = null;
-        if (this.options.predictionInterval && n > 1) {
+        if (this.options.predictionInterval && n >= 3) {
             const predSE = Math.sqrt(seRE ** 2 + tauSq);
-            // Use t-distribution for HKSJ or when explicitly requested
-            // Otherwise use normal (z) for standard RE model
-            const useT = this.options.useHKSJ || this.options.predictionUseT || n < 10;
-            const critValue = useT ?
-                this.tQuantile(1 - this.options.alpha / 2, n - 1) :
-                this.normalQuantile(1 - this.options.alpha / 2);
+            const critValue = this.tQuantile(1 - this.options.alpha / 2, n - 1);
             predictionInterval = {
                 lower: thetaRE - critValue * predSE,
                 upper: thetaRE + critValue * predSE,
-                method: useT ? `t-distribution (df=${n-1})` : 'normal approximation'
+                method: `t-distribution (df=${n - 1})`
             };
         }
 
