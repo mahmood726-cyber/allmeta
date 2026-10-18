@@ -60,11 +60,13 @@ benchmark/*.log
 # Claude Code local session config
 .claude/
 
+hub/shared/tests/.npm-cache/
+
+integration-evidence/
 # Local limit-ma oracle and verification environment
 /re/
 **/.npm-cache/
 /limit-ma/preflight.R
-PROGRESS.md
 
 /integration-evidence/
 /limit-ma/inspect-plus.R

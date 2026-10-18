@@ -31,8 +31,11 @@ z <- c(mu_re=as.numeric(coef(f)),seRE=as.numeric(f$se),tau2=f$tau2,Q=f$QE,df=k-1
 cat('ALMJSON:{',paste(sprintf('"%s":%s',names(z),ifelse(is.na(z),'null',sprintf('%.17g',z))),collapse=','),'}\\n',sep='')`;
   }
   function display() {
-    return {rows:document.querySelectorAll('#res-body tr').length,forest:document.querySelectorAll('#forest polygon').length,
-      pooled:document.querySelector('.pooled-row')?.innerText || '',heterogeneity:document.getElementById('het').innerText};
+    // This adapter has element-specific text contracts, not a whole-page scan.
+    // Exclude the independent extras just as whole-page adapters exclude them.
+    const original = selector => [...document.querySelectorAll(selector)].filter(e=>!e.closest('#alm-plus'));
+    return {rows:original('#res-body tr').length,forest:original('#forest polygon').length,
+      pooled:original('.pooled-row')[0]?.innerText || '',heterogeneity:original('#het')[0].innerText};
   }
   async function replay(loaded,progress) {
     const corpus=loaded[files[0].path],refs=loaded[files[1].path];
