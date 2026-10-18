@@ -330,9 +330,13 @@ class BudgetImpactEngine {
         for (const [name, overrides] of Object.entries(scenarios)) {
             const merged = mergeConfig(baseConfig, overrides);
             const result = this.run(merged);
+            const delta = result.netBudgetImpact - baseResult.netBudgetImpact;
+            if (!Number.isFinite(delta)) {
+                throw new Error('BIA numerical overflow in scenario "' + name + '" incremental budget difference');
+            }
             scenarioResults[name] = {
                 result,
-                delta: result.netBudgetImpact - baseResult.netBudgetImpact
+                delta
             };
         }
 
@@ -364,8 +368,16 @@ class BudgetImpactEngine {
                 name: subpop.name || 'Unnamed',
                 result
             });
-            totalNetBudgetImpact += result.netBudgetImpact;
-            totalCumulativePatients += result.summary.cumulativePatients;
+            const nextNetBudgetImpact = totalNetBudgetImpact + result.netBudgetImpact;
+            const nextCumulativePatients = totalCumulativePatients + result.summary.cumulativePatients;
+            if (!Number.isFinite(nextNetBudgetImpact)) {
+                throw new Error('BIA numerical overflow in total subpopulation budget impact');
+            }
+            if (!Number.isSafeInteger(nextCumulativePatients)) {
+                throw new Error('BIA total subpopulation patient count exceeds safe integer precision');
+            }
+            totalNetBudgetImpact = nextNetBudgetImpact;
+            totalCumulativePatients = nextCumulativePatients;
         }
 
         return {
