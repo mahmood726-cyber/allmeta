@@ -1,5 +1,6 @@
 import base from '../../hub/shared/tests/playwright.config.mjs';
 export default {...base,testDir:'../../hub/shared/tests',testMatch:'dta-sroc-plus-pixels.spec.mjs',
+ testIgnore:[], // Override the ordinary shared suite's pixel exclusion.
  timeout:120000,expect:{timeout:15000},updateSnapshots:'none',
  snapshotPathTemplate:'{testDir}/../../../dta-sroc/validate/pixel-references/{arg}{ext}',
  projects:[{name:'windows-edge',use:{channel:'msedge'}}],
