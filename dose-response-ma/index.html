@@ -22,6 +22,9 @@
     h2 { font-size:1.05rem; margin:1.1rem 0 .5rem; } h2:first-child { margin-top:0; }
     textarea { width:100%; min-height:13rem; font-family:ui-monospace,Consolas,monospace; font-size:.8rem; background:var(--input-bg); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.5rem; }
     label { display:block; font-size:.85rem; margin-top:.6rem; }
+    button { padding:.45rem .85rem; border:1px solid var(--border); border-radius:6px; font:inherit; font-size:.85rem; cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
     select, input[type=text] { background:var(--input-bg); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:.35rem .5rem; margin-top:.25rem; font:inherit; font-size:.85rem; }
     input[type=text] { width:100%; } select { max-width:100%; }
     .row2 { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
@@ -41,7 +44,7 @@
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/dose-response.js"></script>
   <script src="../shared/build-info.js"></script>
-  <script src="../hub/shared/chart-export-auto.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px'">Skip to main content</a>
@@ -55,6 +58,9 @@
     <h2 id="h-input">Studies</h2>
     <label for="f-data">One row per dose level: <code>study, dose, cases, n, logRR, SE, type[, covariate]</code>. Each study's reference level has blank SE (its logRR is 0). <code>type</code> is <code>cc</code> (case-control), <code>ir</code> (incidence rate; <code>n</code> = person-time) or <code>ci</code> (cumulative incidence). The optional covariate is a study-level number for meta-regression.</label>
     <textarea id="f-data" spellcheck="false"></textarea>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
 
     <h2>Model</h2>
     <label for="f-shape">Curve</label>
@@ -111,6 +117,7 @@
     <div class="scroll"><table><thead><tr><th scope="col" class="num">Dose</th><th scope="col" class="num">RR</th><th scope="col" class="num">95% CI</th><th scope="col" class="num">log RR</th><th scope="col" class="num">SE</th></tr></thead><tbody id="pred-body"></tbody></table></div>
 
     <h2>Plots</h2>
+    <div id="alm-plot-mount"></div>
     <div class="charts"><div id="curve-host"></div><div id="resid-host"></div></div>
 
     <h2>Studies</h2>
@@ -124,7 +131,8 @@
   <p>Verification: every multi-study binary dataset shipped with dosresmeta (16 datasets, 724 model × covariance × approach × method combinations) is reproduced within numerical tolerance, and every fit dosresmeta refuses is refused (<code>hub/shared/tests/dose-response-dosresmeta-parity.spec.mjs</code>).</p>
   <p>References: Greenland &amp; Longnecker 1992, <em>Am J Epidemiol</em> 135:1301; Orsini, Bellocco &amp; Greenland 2006, <em>Stata J</em> 6:40; Hamling et al. 2008, <em>Stat Med</em> 27:954; Orsini et al. 2012, <em>Am J Epidemiol</em> 175:66; Gasparrini, Armstrong &amp; Kenward 2012, <em>Stat Med</em> 31:3821; Crippa &amp; Orsini 2016, <em>J Stat Softw</em> 72(c01); Harrell 2015, <em>Regression Modeling Strategies</em>.</p>
 </footer>
-<script>
+<script src="../hub/shared/analysis-lifecycle.js"></script>
+  <script>
   (function () {
     "use strict";
     // Example: alcohol intake and cardiovascular disease, dosresmeta::alcohol_cvd (Liu et al. 2009),
@@ -180,6 +188,8 @@
       $("msgs").innerHTML = msg ? "<div class='msg " + (kind || "err") + "' role='status'>" + esc(msg) + "</div>" : "";
       _last = null;
     }
+
+    run = window.alm.analysisLifecycle(run, function (result) { return !!_last; }, "[id^=\"f-\"]");
 
     function run() {
       syncControls();
@@ -336,6 +346,14 @@
     }
 
     $("f-data").value = EXAMPLE;
+    document.getElementById("btn-run").addEventListener("click", run);
+    window.alm.plotExport({
+      target: "#alm-plot-mount", basename: "dose-response-ma",
+      plots: [
+        { id: "curve", name: "Dose-response curve", getSvg: function () { return document.querySelector("#curve-host svg"); } },
+        { id: "residuals", name: "Residual plot", getSvg: function () { return document.querySelector("#resid-host svg"); } }
+      ]
+    });
     ["f-data", "f-knots", "f-xref", "f-modval", "f-pdoses"].forEach(function (id) { $(id).addEventListener("input", run); });
     ["f-shape", "f-cov", "f-proc", "f-method", "f-mod"].forEach(function (id) { $(id).addEventListener("change", run); });
     run();

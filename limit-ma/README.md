@@ -25,3 +25,9 @@ Click **📑 Cite as** inside the app for ready-to-paste Vancouver + BibTeX cita
 - Click **📝 Verify in R** to open a Shinylive R session with the current data pre-loaded for independent re-computation (where supported).
 
 <!-- ALM-AUTO-README-END -->
+
+## Sensitivity comparisons
+
+The separate `#alm-plus` panel compares RE(DL), limit, trim-and-fill, PET, PEESE, conditional PET-PEESE, and a three-parameter selection model. It includes small-study tests with p-values, a combined funnel, and a second pinned validation panel. See [the sensitivity validation protocol](validate/README-plus.md) for sources, limits, and reproduction commands.
+
+The original R replay remains 55,524/55,525, including its documented refusal mismatch, at 1e-9 normalized relative tolerance. The sensitivity corpus has 169 configurations and its own manifest; it does not change the paper corpus.

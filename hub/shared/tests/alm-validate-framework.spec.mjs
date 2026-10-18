@@ -34,6 +34,7 @@ test('comparison fails closed on absent or nonfinite values; unavailable R links
   const result=await page.evaluate(()=>{
     const absent=AlmValidate.compare(undefined,undefined,'abs',1e-6);
     const nan=AlmValidate.compare(NaN,NaN,'abs',1e-6);
+    if(!AlmValidate.compare('left','left','exact',0).pass || AlmValidate.compare('left','right','exact',0).pass || AlmValidate.compare(undefined,undefined,'exact',0).pass)throw new Error('Exact categorical comparison failed');
     AlmValidate.mount(document.getElementById('alm-validate'),{...AlmHetValidationAdapter,live:null});
     return {absent:absent.pass,nan:nan.pass};
   });
@@ -58,4 +59,20 @@ test('file protocol verifies selected corpus files and replays without a server'
   ]);
   const result=await page.evaluate(()=>AlmHetValidation.runCorpus());
   expect(result.checks).toBe(131781);expect(result.passed).toBe(131781);expect(result.displayFails.slice(0,3)).toEqual([]);
+});
+
+// Explicit runner stub: exercises fail-closed UI plumbing, not R numerical parity.
+test('framework snapshot preserves nonfinite values instead of turning them into unavailable nulls', async ({page}) => {
+  await page.goto(URL);
+  const result = await page.evaluate(async () => {
+    const live = {
+      currentState: () => ({value:NaN}), appValues: s => [{key:'x', label:'invalid', value:s.value}],
+      buildScript: () => '', packages:[], compare:{tolerance:{default:0}}
+    };
+    window.AlmWebR = {runR:async () => ({ok:true, stdout:'ALMJSON:{"x":null}', versions:{}})};
+    return AlmValidate.mount(document.getElementById('alm-validate'), {...AlmHetValidationAdapter, live}).runLive();
+  });
+  expect(result.rows[0].pass).toBe(false);
+  expect(Number.isNaN(result.rows[0].app)).toBe(true);
+  await expect(page.locator('#alm-validate tbody tr td').last()).toHaveText('FAIL');
 });

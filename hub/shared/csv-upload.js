@@ -199,8 +199,10 @@
     const ta = target.querySelector('textarea');
     const warnEl = target.querySelector('[data-section="warnings"]');
     function _emit(text) {
-      const result = parse(text, columns);
-      warnEl.innerHTML = result.warnings.map(w => '<div>' + String.fromCharCode(8226) + ' ' + w + '</div>').join('');
+      // Apps needing stricter schemas may supply their own parser; default unchanged.
+      const result = (typeof opts.parse === 'function' ? opts.parse : parse)(text, columns);
+      warnEl.textContent = result.warnings.map(w => String.fromCharCode(8226) + ' ' + w).join('\n');
+      warnEl.style.whiteSpace = 'pre-wrap';
       onParse(result);
     }
     fileInput.addEventListener('change', () => {

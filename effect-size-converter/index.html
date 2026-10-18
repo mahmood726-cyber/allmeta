@@ -53,6 +53,7 @@
       border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer;
     }
     button.primary:hover { filter: brightness(1.05); }
+     .smd-kind[hidden] { display: none; }
     .results table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
     .results th, .results td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
     .results th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -85,6 +86,7 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/evalue.js"></script>
+  <script src="../shared/effect-size-accuracy.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/autosave.js"></script>
@@ -94,7 +96,7 @@
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <h1>Effect-Size Converter</h1>
-    <p>Convert between OR, RR, RD, SMD, MD, and HR. Derive standard errors from t-statistic, F-statistic, p-value, or confidence interval. Everything runs in your browser.</p>
+    <p>Convert OR, RR, RD, SMD and MD with explicit assumptions. HR and IRR remain on their own time-to-event/rate scales instead of receiving unsupported binary-outcome conversions. Derive standard errors using design-appropriate inputs. Everything runs in your browser.</p>
   </header>
   <main id="main-content">
     <section class="panel" aria-label="Inputs">
@@ -112,6 +114,14 @@
             <option value="HR">Hazard ratio (HR)</option>
             <option value="IRR">Incidence rate ratio (IRR)</option>
           </select>
+        </label>
+        <label id="smd-kind-field" class="smd-kind" hidden>
+          <span class="lbl">SMD entered as</span>
+          <select id="in-smd-kind" aria-label="SMD entered as">
+            <option value="d">Cohen's d (uncorrected)</option>
+            <option value="g">Hedges' g (already corrected)</option>
+          </select>
+          <span class="hint">Imported mean/SD studies use Hedges' g as in metafor::escalc; never correct it twice.</span>
         </label>
         <div class="grid-2">
           <label>
@@ -131,12 +141,12 @@
         <div class="grid-2">
           <label>
             <span class="lbl">Baseline risk p₀</span>
-            <input id="ctx-p0" type="number" step="any" min="0" max="1" value="0.20">
+            <input id="ctx-p0" type="number" step="any" min="0" max="1" placeholder="Enter observed baseline risk">
             <span class="hint">OR ↔ RR ↔ RD.</span>
           </label>
           <label>
             <span class="lbl">Pooled SD</span>
-            <input id="ctx-sd" type="number" step="any" value="1">
+            <input id="ctx-sd" type="number" step="any" placeholder="Enter pooled study SD">
             <span class="hint">MD ↔ SMD.</span>
           </label>
         </div>
@@ -155,19 +165,23 @@
           </label>
           <label>
             <span class="lbl">F-statistic (2 groups)</span>
-            <input id="der-f" type="number" step="any" placeholder="e.g. 4.41">
+            <input id="der-f" type="number" min="0" step="any" placeholder="e.g. 4.41">
+          </label>
+          <label>
+            <span class="lbl">Direction for F (required)</span>
+            <select id="der-f-sign" aria-label="Direction for F (required)">
+              <option value="">Choose group difference</option>
+              <option value="1">Group 1 greater (+)</option>
+              <option value="-1">Group 1 less (-)</option>
+            </select>
           </label>
           <label>
             <span class="lbl">n₂</span>
             <input id="der-n2" type="number" step="1" placeholder="group 2 n">
           </label>
           <label>
-            <span class="lbl">Two-sided p-value</span>
+            <span class="lbl">Two-sided Wald p-value (uses current estimate)</span>
             <input id="der-p" type="number" step="any" min="0" max="1" placeholder="e.g. 0.031">
-          </label>
-          <label>
-            <span class="lbl">|point estimate| (for p→SE)</span>
-            <input id="der-pointabs" type="number" step="any" placeholder="ln(OR) or MD">
           </label>
           <label>
             <span class="lbl">CI lower</span>
@@ -185,7 +199,8 @@
             <option value="raw">raw scale (e.g. MD)</option>
           </select>
         </label>
-        <button type="button" id="btn-derive" class="primary">Derive & fill SE</button>
+        <p class="hint" style="margin:0 0 0.7rem">t/F: independent two-sample pooled-variance design only; derives Hedges' g and its SE, not the SE of an OR, RR or HR. F must have numerator df=1 and needs the group direction. CI/p: normal/Wald approximation on the analysis scale.</p>
+        <button type="button" id="btn-derive" class="primary">Derive estimate / SE</button>
       </fieldset>
 
       <!-- csv-upload mount: SMD-from-means batch input (m1,sd1,n1,m2,sd2,n2) -->
@@ -205,14 +220,14 @@
         <tbody id="results-body"></tbody>
       </table>
       <div class="plot-wrap">
-        <h2 style="margin-top:1rem">Forest comparison (SMD scale)</h2>
+        <h2 style="margin-top:1rem">Alternative representations of one estimate (SMD scale)</h2>
         <svg id="forest-plot" viewBox="0 0 600 260" role="img" aria-label="Forest plot of converted effect sizes on SMD scale">
           <g id="forest-bg"></g>
           <g id="forest-points"></g>
           <g id="forest-labels"></g>
           <g id="forest-axis"></g>
         </svg>
-        <p class="note">All conversions are mapped to the SMD scale for visual comparison (binary ratios converted via Cox's constant √3/π ≈ 0.5513). The plot area is always rendered so automated checks can confirm the canvas is live; the dot + whisker show each scale's estimate with its 95% CI after conversion.</p>
+        <p class="note">These points are <strong>correlated representations of one input</strong>, not separate studies or independent evidence. OR-to-SMD uses Cox's distributional approximation; RR, HR and IRR are not directly mapped to an SMD. Intervals use the delta method where applicable.</p>
       </div>
       <div class="plot-wrap" style="margin-top:1rem">
         <h2>E-value (sensitivity to unmeasured confounding)</h2>
@@ -226,7 +241,7 @@
         </div>
         <p id="ev-out" style="margin-top:0.6rem;font-size:0.95rem" role="status" aria-live="polite"></p>
       </div>
-      <!-- axis-controls mount: axis range for the SMD forest plot (override deferred — renders, no-op) -->
+      <!-- axis-controls mount: numeric axis range for the SMD representation plot -->
       <div id="alm-axis-mount" style="margin-top:0.75rem;"></div>
       <!-- results-export mount: CSV + JSON export of the conversion table -->
       <div id="alm-export-mount" style="margin-top:0.5rem;"></div>
@@ -234,23 +249,17 @@
     </section>
   </main>
   <footer>
-    Formulas follow Borenstein et al., <em>Introduction to Meta-Analysis</em> (Wiley, 2009). Cox constant <code>√3/π ≈ 0.5513</code>. <abbr data-gloss="HR">HR</abbr> → <abbr data-gloss="OR">OR</abbr> approximation valid only when event rate is low and follow-up balanced. Hedges' <em>g</em> correction applied when df is known. Effect sizes: <abbr data-gloss="SMD">SMD</abbr>, <abbr data-gloss="RR">RR</abbr>, <abbr data-gloss="RD">RD</abbr>, <abbr data-gloss="OR">OR</abbr>. <abbr data-gloss="CI">CI</abbr> = 95% confidence interval; <abbr data-gloss="Effect">SE</abbr> = standard error on the log scale for ratios.
+    References: Borenstein et al., <em>Introduction to Meta-Analysis</em> (2009); Hedges (1981); <a href="https://wviechtb.github.io/metafor/reference/escalc.html">metafor::escalc(SMD, vtype="LS")</a> and <a href="https://wviechtb.github.io/metafor/reference/cmicalc.html">metafor::cmicalc(exact)</a>. Cox constant <code>√3/π ≈ 0.5513</code> relates OR and a latent continuous SMD under distributional assumptions. There is <strong>no general HR/IRR-to-OR conversion</strong>. SE is on the log scale for ratios.
   </footer>
   <script>
     // --- math helpers ---
     const Z95 = 1.959963984540054;
     const COX = Math.sqrt(3) / Math.PI;  // 0.5513288954...
 
-    // Abramowitz & Stegun 26.2.23 approximation for qnorm (inverse std normal CDF).
-    // Accurate to ~4.5e-4 over the tails we use. Good enough for two-sided p in [1e-6, 1].
+    // R-grade inverse normal quantiles, also stable for small p-values.
     function qnorm(p) {
-      if (p <= 0 || p >= 1) return NaN;
-      const q = p < 0.5 ? p : 1 - p;
-      const t = Math.sqrt(-2 * Math.log(q));
-      const c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
-      const d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
-      const x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
-      return p < 0.5 ? -x : x;
+      try { return AlmEffectAccuracy.qnorm(p); }
+      catch (_) { return NaN; }
     }
 
     // CDF of std normal (Abramowitz & Stegun 7.1.26 via erf approximation).
@@ -262,8 +271,8 @@
     }
 
     function hedgesJ(df) {
-      if (!Number.isFinite(df) || df <= 1) return 1;
-      return 1 - 3 / (4 * df - 1);
+      try { return AlmEffectAccuracy.hedgesJ(df); }
+      catch (_) { return NaN; }
     }
 
     // --- conversion core ---
@@ -329,60 +338,51 @@
           }
         }
       } else if (type === "SMD") {
-        push("SMD (Cohen's d)", est, se);
-        push("OR (Cox)", Math.exp(est / COX), se / COX, "inverse Cox's constant; log-scale SE");
-        if (Number.isFinite(pooledSd) && pooledSd > 0) {
-          push("MD", est * pooledSd, se * pooledSd, "multiply by pooled SD");
+        // Explicit estimator identity: g is already corrected; never apply J twice.
+        const kind = document.getElementById("in-smd-kind").value;
+        const n1 = Number(document.getElementById("der-n1").value);
+        const n2 = Number(document.getElementById("der-n2").value);
+        const df = Number.isSafeInteger(n1) && Number.isSafeInteger(n2) && n1 >= 2 && n2 >= 2
+          ? n1 + n2 - 2 : NaN;
+        const J = hedgesJ(df);
+        if (kind === "g") {
+          push("SMD (Hedges' g)", est, se, "already bias-corrected (metafor::escalc SMD); no second J applied");
+          if (Number.isFinite(J) && J > 0) {
+            push("SMD (Cohen's d, recovered)", est / J, se / J,
+              "inverse of exact Hedges correction; requires independent group sizes");
+            if (Number.isFinite(pooledSd) && pooledSd > 0)
+              push("MD", est / J * pooledSd, se / J * pooledSd,
+                "recovered raw MD from d = g / J and the pooled SD");
+          }
+        } else {
+          push("SMD (Cohen's d)", est, se, "uncorrected; specify n1/n2 for Hedges' g");
+          if (Number.isFinite(J) && J > 0)
+            push("SMD (Hedges' g)", est * J, se * J, "exact small-sample correction J(df=" + df + ")");
+          if (Number.isFinite(pooledSd) && pooledSd > 0)
+            push("MD", est * pooledSd, se * pooledSd, "raw MD assumes entered SMD is uncorrected Cohen's d");
         }
-        // Hedges' g: only informative when df is known (i.e. user entered n1 + n2)
-        const n1 = parseFloat(document.getElementById("der-n1").value);
-        const n2 = parseFloat(document.getElementById("der-n2").value);
-        if (Number.isFinite(n1) && Number.isFinite(n2) && n1 > 1 && n2 > 1) {
-          const df = n1 + n2 - 2;
-          const J = hedgesJ(df);
-          push("SMD (Hedges' g)", est * J, se * J, `small-sample correction J(df=${df}) = ${J.toFixed(4)}`);
-        }
+        // Cox maps a standardized latent continuous contrast to a log odds ratio.
+        // It is a model-dependent approximation, NOT an empirical 2x2 OR.
+        push("OR (Cox approximation)", Math.exp(est / COX), se / COX,
+          "latent-logistic distributional assumption; not an observed binary odds ratio");
       } else if (type === "MD") {
         push("MD", est, se);
         if (Number.isFinite(pooledSd) && pooledSd > 0) {
           push("SMD", est / pooledSd, se / pooledSd, "divide by pooled SD");
         }
       } else if (type === "HR") {
-        const logHR = Math.log(est);
-        push("HR",     est, se, "log-scale SE");
-        push("ln(HR)", logHR, se);
-        // HR -> OR rare-events approximation: OR ~ HR when event rate is low. Compute the
-        // implied bias at user-supplied p0 if given; only warn loudly when |bias|/OR > 10%.
-        let hrCaveat = "HR -> OR approximation assumes low event rate and balanced follow-up";
-        if (Number.isFinite(p0) && p0 > 0 && p0 < 1) {
-          // Under rare-events the OR that would EXACTLY match the HR point follows
-          // OR = HR * (1-p0) / (1 - HR*p0). Fractional bias at the user's p0:
-          const exactOR = est * (1 - p0) / (1 - est * p0);
-          const biasFrac = Math.abs(exactOR - est) / Math.max(exactOR, 1e-9);
-          if (biasFrac > 0.10) {
-            hrCaveat = `event rate p0 = ${p0.toFixed(2)} implies |bias| = ${(biasFrac * 100).toFixed(0)}% between HR and exact OR — DO NOT use the OR (approx) row; compute OR from the 2x2 table instead`;
-          } else {
-            hrCaveat = `at p0 = ${p0.toFixed(2)} the HR-as-OR approximation has |bias| = ${(biasFrac * 100).toFixed(0)}% (<10%); acceptable for rare events + balanced follow-up`;
-          }
-        }
-        push("OR (approx)", est, se, hrCaveat);
-        push("SMD (Cox-ish)", logHR * COX, se * COX, "valid only for rare events (<10% per arm) and balanced follow-up; uses HR->OR->SMD chain");
+        push("HR", est, se, "log-scale SE; requires a specified follow-up estimand");
+        push("ln(HR)", Math.log(est), se, "no general mapping to OR, RR, RD or SMD");
       } else if (type === "IRR") {
-        const logIRR = Math.log(est);
-        push("IRR",     est, se, "log-scale SE");
-        push("ln(IRR)", logIRR, se);
-        // IRR -> OR -> SMD is a double-approximation. Only meaningful under rare events
-        // AND approximately equal follow-up time per arm. The note makes both conditions
-        // explicit so the user doesn't silently use the SMD row outside its domain.
-        push("SMD (Cox-ish, via IRR->OR approx)", logIRR * COX, se * COX,
-          "valid ONLY if event rate < 10% per arm AND follow-up time is approximately equal between arms -- double approximation (IRR -> OR -> SMD)");
+        push("IRR", est, se, "log-scale SE; ratio of event rates per person-time");
+        push("ln(IRR)", Math.log(est), se, "no general mapping to OR or SMD");
       }
       return rows;
     }
 
     function withCI(row) {
       const out = { ...row };
-      if (Number.isFinite(row.se)) {
+      if (Number.isFinite(row.se) && row.se > 0 && Number.isFinite(row.point)) {
         // Tight word-boundary regex: matches "OR", "OR (approx)", "RR (implied)", "HR" —
         // but NOT "ORA", "HRZ", or arbitrary prefixes. Also requires row.point > 0 for
         // log-space back-transform (otherwise Math.log yields NaN silently).
@@ -401,40 +401,37 @@
 
     // --- derive SE from one of several sources ---
     function deriveSE() {
-      const t = parseFloat(document.getElementById("der-t").value);
-      const F = parseFloat(document.getElementById("der-f").value);
-      const p = parseFloat(document.getElementById("der-p").value);
-      const ptAbs = parseFloat(document.getElementById("der-pointabs").value);
-      const n1 = parseFloat(document.getElementById("der-n1").value);
-      const n2 = parseFloat(document.getElementById("der-n2").value);
       const lo = parseFloat(document.getElementById("der-lo").value);
       const hi = parseFloat(document.getElementById("der-hi").value);
       const scale = document.getElementById("der-scale").value;
-
-      // Priority: explicit CI > t + n + n > F + n + n > p + |point|
-      // lo == hi yields SE=0 which collapses downstream CIs — reject here so any
-      // caller (not just btn-derive's handler) gets NaN + a chance to warn.
-      if (Number.isFinite(lo) && Number.isFinite(hi) && lo < hi) {
-        if (scale === "log") {
-          if (lo > 0 && hi > 0) return (Math.log(hi) - Math.log(lo)) / (2 * Z95);
-        } else {
-          return (hi - lo) / (2 * Z95);
+      const p = parseFloat(document.getElementById("der-p").value);
+      const type = document.getElementById("in-type").value;
+      const est = parseFloat(document.getElementById("in-est").value);
+      const ratio = ["OR", "RR", "HR", "IRR"].includes(type);
+      if (Number.isFinite(lo) || Number.isFinite(hi)) {
+        if (!(Number.isFinite(lo) && Number.isFinite(hi) && lo < hi))
+          throw new RangeError("Enter both CI bounds with lower < upper.");
+        if (ratio && scale !== "log")
+          throw new RangeError("For ratios, choose log-scale SE and enter positive CI bounds on the ratio scale.");
+        if (!ratio && scale !== "raw")
+          throw new RangeError("For MD, RD or SMD, use raw-scale CI bounds.");
+        if (ratio) {
+          if (!(lo > 0 && hi > 0)) throw new RangeError("Ratio CI bounds must be strictly positive.");
+          if (!(est >= lo && est <= hi))
+            throw new RangeError("The ratio estimate must lie between the entered CI bounds.");
+          return (Math.log(hi) - Math.log(lo)) / (2 * Z95);
         }
+        if (!(est >= lo && est <= hi))
+          throw new RangeError("The estimate must lie between the entered CI bounds.");
+        return (hi - lo) / (2 * Z95);
       }
-      if (Number.isFinite(t) && Number.isFinite(n1) && Number.isFinite(n2) && n1 > 0 && n2 > 0) {
-        // t → SMD: d = t * sqrt((n1+n2)/(n1*n2)); SE(d) ≈ sqrt((n1+n2)/(n1*n2) + d^2/(2*(n1+n2)))
-        const d = t * Math.sqrt((n1 + n2) / (n1 * n2));
-        return Math.sqrt((n1 + n2) / (n1 * n2) + d * d / (2 * (n1 + n2)));
+      if (Number.isFinite(p)) {
+        if (!(Number.isFinite(est) && (!ratio || est > 0)))
+          throw new RangeError("Enter a valid point estimate before recovering SE from p.");
+        const effect = ratio ? Math.abs(Math.log(est)) : Math.abs(est);
+        return AlmEffectAccuracy.seFromTwoSidedWaldP(p, effect);
       }
-      if (Number.isFinite(F) && Number.isFinite(n1) && Number.isFinite(n2) && n1 > 0 && n2 > 0) {
-        const d = Math.sqrt(F * (n1 + n2) / (n1 * n2));
-        return Math.sqrt((n1 + n2) / (n1 * n2) + d * d / (2 * (n1 + n2)));
-      }
-      if (Number.isFinite(p) && p > 0 && p < 1 && Number.isFinite(ptAbs) && ptAbs > 0) {
-        const z = Math.abs(qnorm(1 - p / 2));
-        return ptAbs / z;
-      }
-      return NaN;
+      throw new RangeError("Provide a complete CI, a valid independent-sample t/F statistic, or a Wald p-value.");
     }
 
     // --- render ---
@@ -446,11 +443,14 @@
 
     function render(rows, warn) {
       const warnSlot = document.getElementById("warn-slot");
-      warnSlot.innerHTML = warn ? `<div class="note"><strong>Note:</strong> ${warn}</div>` : "";
+      const escapeHTML = x => String(x).replace(/[&<>"']/g, ch =>
+        ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+      warnSlot.innerHTML = warn ? '<div class="note"><strong>Note:</strong> ' + escapeHTML(warn) + '</div>' : "";
 
       const tbody = document.getElementById("results-body");
       tbody.innerHTML = "";
-      for (const r of rows.map(withCI)) {
+      window.__almResultRows = rows.map(withCI);
+      for (const r of window.__almResultRows) {
         const ci = Number.isFinite(r.lo) && Number.isFinite(r.hi)
           ? `[${fmt(r.lo)}, ${fmt(r.hi)}]`
           : "—";
@@ -464,27 +464,23 @@
 
     // --- forest plot on SMD scale ---
     function toSmdView(r) {
-      // Convert (row) to SMD-scale point + SE for plotting.
-      // Returns { pt, se, lo, hi } or null if not plottable.
+      // Only a true SMD, MD/known SD, OR/Cox, or log(OR)/Cox can be shown.
+      // RR, HR and IRR have NO generic SMD conversion.
       let pt, se;
       if (/^SMD/.test(r.scale)) { pt = r.point; se = r.se; }
       else if (/^MD\b/.test(r.scale)) {
         const sd = parseFloat(document.getElementById("ctx-sd").value);
-        if (!Number.isFinite(sd) || sd <= 0) return null;
+        if (!(Number.isFinite(sd) && sd > 0)) return null;
         pt = r.point / sd; se = r.se / sd;
-      } else if (/^OR\b/.test(r.scale) || /^HR\b/.test(r.scale)) {
+      } else if (/^OR\b/.test(r.scale)) {
+        if (!(r.point > 0 && Number.isFinite(r.point))) return null;
         pt = Math.log(r.point) * COX; se = r.se * COX;
-      } else if (/^ln\(/.test(r.scale)) {
+      } else if (r.scale === "ln(OR)") {
         pt = r.point * COX; se = r.se * COX;
-      } else if (/^RR\b/.test(r.scale)) {
-        pt = Math.log(r.point) * COX; se = r.se * COX;
-      } else {
-        return null;
-      }
+      } else return null;
       if (!Number.isFinite(pt)) return null;
-      const lo = Number.isFinite(se) ? pt - Z95 * se : NaN;
-      const hi = Number.isFinite(se) ? pt + Z95 * se : NaN;
-      return { pt, se, lo, hi };
+      return { pt, se, lo: Number.isFinite(se) ? pt - Z95 * se : NaN,
+        hi: Number.isFinite(se) ? pt + Z95 * se : NaN };
     }
 
     function renderForest(rows) {
@@ -508,10 +504,13 @@
       const xs = views.flatMap(v => [v.pt, v.lo, v.hi].filter(Number.isFinite));
       const maxAbs = Math.max(1, ...xs.map(Math.abs));
       const xPad = maxAbs * 1.15;
+      const limits = window.__almAxis && Array.isArray(window.__almAxis.x) ? window.__almAxis.x : [null, null];
+      const xMin = Number.isFinite(limits[0]) ? limits[0] : -xPad;
+      const xMax = Number.isFinite(limits[1]) ? limits[1] : xPad;
       const leftPad = narrow ? 90 : 160, rightPad = 30;
       const truncLabel = s => narrow && s && s.length > 14 ? s.slice(0, 12) + "…" : s;
       const plotW = W - leftPad - rightPad;
-      const X = x => leftPad + (x + xPad) / (2 * xPad) * plotW;
+      const X = x => leftPad + (x - xMin) / (xMax - xMin) * plotW;
       const y0 = 30;
       const rowH = 28;
 
@@ -525,11 +524,12 @@
       // axis
       axParts.push(`<line x1="${leftPad}" y1="${y0 + views.length * rowH + 10}" x2="${W - rightPad}" y2="${y0 + views.length * rowH + 10}" stroke="currentColor" opacity="0.5"/>`);
       for (const t of [-2, -1, 0, 1, 2]) {
-        if (Math.abs(t) > xPad) continue;
+        if (t < xMin || t > xMax) continue;
         axParts.push(`<line x1="${X(t)}" y1="${y0 + views.length * rowH + 6}" x2="${X(t)}" y2="${y0 + views.length * rowH + 14}" stroke="currentColor" opacity="0.5"/>`);
         axParts.push(`<text x="${X(t)}" y="${y0 + views.length * rowH + 28}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t}</text>`);
       }
-      axParts.push(`<text x="${(leftPad + W - rightPad) / 2}" y="${y0 + views.length * rowH + 46}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">SMD scale</text>`);
+      axParts.push(`<text x="${(leftPad + W - rightPad) / 2}" y="${y0 + views.length * rowH + 46}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">SMD scale (approximations labelled)</text>`);
+      if (!views.length) axParts.push('<text x="300" y="90" text-anchor="middle" font-size="14" fill="currentColor">No defensible SMD representation for this input</text>');
 
       views.forEach((v, i) => {
         const y = y0 + i * rowH;
@@ -558,46 +558,62 @@
     }
 
     document.getElementById("btn-derive").addEventListener("click", () => {
-      const lo = parseFloat(document.getElementById("der-lo").value);
-      const hi = parseFloat(document.getElementById("der-hi").value);
-      const scale = document.getElementById("der-scale").value;
-
-      // Pre-flight: CI on log scale with non-positive bounds produces silent NaN.
-      // Surface a specific message so the user can correct the scale selection.
-      if (Number.isFinite(lo) && Number.isFinite(hi) && scale === "log" && (lo <= 0 || hi <= 0)) {
-        setWarn(`CI bounds for log-scale effects must be strictly positive. Got [${lo}, ${hi}]. Switch to "raw (linear)" if your effect is a mean difference or SMD.`, "err");
-        return;
-      }
-      if (Number.isFinite(lo) && Number.isFinite(hi) && lo >= hi) {
-        setWarn(`CI lower bound (${lo}) must be less than upper (${hi}).`, "err");
-        return;
-      }
-
-      const se = deriveSE();
-      if (Number.isFinite(se) && se > 0) {
-        document.getElementById("in-se").value = se.toFixed(6);
-        setWarn(null);
-      } else {
-        setWarn("Could not derive SE. Provide either CI bounds, t+n₁+n₂, F+n₁+n₂, or p + |point estimate|.", "err");
+      const el = id => document.getElementById(id);
+      const entered = id => el(id).value.trim() !== "";
+      const type = el("in-type").value;
+      try {
+        // Priority: complete 95% CI > independent two-sample t > F > Wald p.
+        if (!entered("der-lo") && !entered("der-hi") &&
+            (entered("der-t") || entered("der-f"))) {
+          if (type !== "SMD")
+            throw new RangeError("t/F with n1,n2 derives SMD only. Select SMD; it is NOT a valid log(OR), log(RR), HR or MD standard error.");
+          const n1 = Number(el("der-n1").value), n2 = Number(el("der-n2").value);
+          const stat = entered("der-t")
+            ? AlmEffectAccuracy.fromT(Number(el("der-t").value), n1, n2)
+            : AlmEffectAccuracy.fromF(Number(el("der-f").value), n1, n2,
+                Number(el("der-f-sign").value));
+          el("in-smd-kind").value = "g";
+          el("in-est").value = String(stat.g);
+          el("in-se").value = String(stat.se);
+          runConvert();
+          setWarn("Derived Hedges' g and its large-sample SE from an independent two-sample pooled-variance test (df=" + stat.df + ").", "info");
+          return;
+        }
+        const se = deriveSE();
+        if (!(Number.isFinite(se) && se > 0))
+          throw new RangeError("The derived SE is invalid; check the effect estimate and its CI or Wald p-value.");
+        el("in-se").value = String(se);
+        runConvert();
+      } catch (error) {
+        render([], null); // Never retain apparently valid results after bad inputs.
+        setWarn(error && error.message ? error.message : String(error), "err");
       }
     });
 
     document.getElementById("btn-convert").addEventListener("click", runConvert);
     document.getElementById("in-type").addEventListener("change", runConvert);
+    document.getElementById("in-smd-kind").addEventListener("change", runConvert);
 
     function runConvert() {
       const type = document.getElementById("in-type").value;
+      document.getElementById("smd-kind-field").hidden = type !== "SMD";
       const est = parseFloat(document.getElementById("in-est").value);
       const se = parseFloat(document.getElementById("in-se").value);
       const p0 = parseFloat(document.getElementById("ctx-p0").value);
       const sd = parseFloat(document.getElementById("ctx-sd").value);
       if (!Number.isFinite(est)) { render([], "Enter a point estimate."); return; }
       if (["OR", "RR", "HR", "IRR"].includes(type) && !(est > 0)) { render([], "Ratio estimates (OR/RR/HR/IRR) must be greater than 0."); return; }
+      if (!(Number.isFinite(se) && se > 0)) { render([], "Enter a finite, strictly positive standard error on the appropriate analysis scale."); return; }
+      if (type === "RD" && !(est >= -1 && est <= 1)) { render([], "Risk difference must be between -1 and +1."); return; }
+      if (Number.isFinite(p0) && !(p0 > 0 && p0 < 1)) { render([], "Baseline risk must be strictly between 0 and 1, or left blank."); return; }
+      if (Number.isFinite(sd) && !(sd > 0)) { render([], "Pooled SD must be strictly positive, or left blank."); return; }
       const rows = convert(type, est, se, p0, sd);
-      const warn = type === "HR"
-        ? "HR ↔ OR / SMD conversions assume proportional hazards (a single constant HR is meaningful) plus low event rate and balanced follow-up. They are exact only as the baseline risk → 0; the implied OR/SMD also depends on the (often unstated) baseline-risk and censoring pattern. If hazards are non-proportional (e.g. crossing survival curves, delayed effects) a single HR — and hence any converted OR/SMD — is undefined; report RMST or time-specific effects instead. For non-rare events the approximation overstates the OR; use caution for survival data with many events."
-        : type === "OR" && Number.isFinite(p0) && p0 > 0.1
-        ? "At baseline risk p₀ > 0.10 the OR can materially differ from RR. Report the metric as specified in the protocol."
+      const warn = type === "HR" || type === "IRR"
+        ? "No general mathematically valid conversion from a hazard/rate ratio to an odds ratio, risk ratio or SMD. A specified time horizon and data-generating model would be needed; use the original effect measure."
+        : type === "OR" || type === "RR" || type === "RD"
+        ? "Baseline risk is treated as fixed (its sampling uncertainty is not propagated). OR/RR conversions are conditional on a common p0; Cox OR-to-SMD is a separate distributional approximation."
+        : type === "SMD"
+        ? "Cox OR conversion assumes an unobserved logistic distribution. An imported Hedges' g is already bias-corrected; do not correct it again."
         : "";
       render(rows, warn);
     }
@@ -685,8 +701,8 @@
 
     // Snapshot: capture every relevant form field into a flat object.
     window.__almSnapshot = function () {
-      var ids = ['in-type','in-est','in-se','ctx-p0','ctx-sd',
-                 'der-t','der-n1','der-f','der-n2','der-p','der-pointabs',
+      var ids = ['in-type','in-smd-kind','in-est','in-se','ctx-p0','ctx-sd',
+                 'der-t','der-n1','der-f','der-f-sign','der-n2','der-p',
                  'der-lo','der-hi','der-scale'];
       var snap = {};
       ids.forEach(function (id) {
@@ -699,15 +715,15 @@
     // Restore: apply snapshot back to form controls and re-render.
     window.__almRestore = function (snap) {
       var isEmpty = !snap || Object.keys(snap).length === 0;
-      var ids = ['in-type','in-est','in-se','ctx-p0','ctx-sd',
-                 'der-t','der-n1','der-f','der-n2','der-p','der-pointabs',
+      var ids = ['in-type','in-smd-kind','in-est','in-se','ctx-p0','ctx-sd',
+                 'der-t','der-n1','der-f','der-f-sign','der-n2','der-p',
                  'der-lo','der-hi','der-scale'];
       ids.forEach(function (id) {
         var el = document.getElementById(id);
         if (!el) return;
         if (isEmpty) {
           // restore defaults by clearing derive fields; keep type/est at current
-          if (['der-t','der-n1','der-f','der-n2','der-p','der-pointabs','der-lo','der-hi'].includes(id)) el.value = '';
+          if (['der-t','der-n1','der-f','der-f-sign','der-n2','der-p','der-lo','der-hi'].includes(id)) el.value = '';
         } else {
           if (snap[id] != null) el.value = snap[id];
         }
@@ -740,68 +756,68 @@
     })();
 
     window.__almResults = function () {
-      // Re-sync the results table from the live inputs so the export never
-      // mixes a stale table with fresh input_estimate/input_se (same epoch).
       if (typeof runConvert === 'function') runConvert();
-      var type = (document.getElementById('in-type') || {}).value || '';
-      var est  = parseFloat((document.getElementById('in-est') || {}).value);
-      var se   = parseFloat((document.getElementById('in-se')  || {}).value);
-      var rows = document.querySelectorAll('#results-body tr');
-      var tableRows = [];
-      rows.forEach(function (tr) {
-        var cells = tr.querySelectorAll('td');
-        if (cells.length >= 4) {
-          tableRows.push({
-            scale: cells[0].textContent,
-            point: cells[1].textContent,
-            se:    cells[2].textContent,
-            ci95:  cells[3].textContent,
-          });
-        }
+      var type = document.getElementById('in-type').value;
+      var est = parseFloat(document.getElementById('in-est').value);
+      var se = parseFloat(document.getElementById('in-se').value);
+      var rows = (window.__almResultRows || []).map(function (r) {
+        return {
+          scale: r.scale,
+          point: Number.isFinite(r.point) ? r.point : null,
+          se: Number.isFinite(r.se) ? r.se : null,
+          ci_lower: Number.isFinite(r.lo) ? r.lo : null,
+          ci_upper: Number.isFinite(r.hi) ? r.hi : null,
+          note: r.note || ""
+        };
       });
       return {
         _schema: 'esc-results-v1',
         type: type,
-        input_estimate: isFinite(est) ? est : null,
-        input_se: isFinite(se) ? se : null,
-        rows: tableRows,
+        smd_estimator: type === 'SMD' ? document.getElementById('in-smd-kind').value : null,
+        input_estimate: Number.isFinite(est) ? est : null,
+        input_se: Number.isFinite(se) ? se : null,
+        baseline_risk: document.getElementById('ctx-p0').value.trim() !== '' ?
+          Number(document.getElementById('ctx-p0').value) : null,
+        pooled_sd: document.getElementById('ctx-sd').value.trim() !== '' ?
+          Number(document.getElementById('ctx-sd').value) : null,
+        assumptions: 'Normal/Wald 95% CI; fixed p0 for OR/RR/RD; Cox OR/SMD assumes latent logistic distribution; no generic HR/IRR conversion.',
+        numerical_reference: 'metafor::escalc(measure="SMD",correct=TRUE,vtype="LS"); metafor::cmicalc(method="exact")',
+        rows: rows
       };
     };
 
     // CSV-upload onParse: set type to SMD, populate means/SD derive fields,
     // run Derive then Convert for the first row.
     window.__almLoadCSV = function (rows) {
-      if (!rows || rows.length === 0) return;
-      window.alm.resetUndo.snapshot();  // snapshot BEFORE loading new data
-      var r = rows[0];
-      var set = function (id, v) {
-        var el = document.getElementById(id);
-        if (el && v != null && String(v) !== '') el.value = String(v);
-      };
-      // Switch to SMD mode for means-based input
-      set('in-type', 'SMD');
-      // Place group stats into the derive-SE section (n1, n2 already used by t/F derivation)
-      // We compute the SMD ourselves and put it directly into in-est + in-se via escalc formula.
-      var m1 = parseFloat(r.m1), sd1 = parseFloat(r.sd1), n1 = parseInt(r.n1, 10);
-      var m2 = parseFloat(r.m2), sd2 = parseFloat(r.sd2), n2 = parseInt(r.n2, 10);
-      if ([m1,sd1,n1,m2,sd2,n2].every(isFinite) && n1 > 1 && n2 > 1 && sd1 > 0 && sd2 > 0) {
-        var df = n1 + n2 - 2;
-        var Sp = Math.sqrt(((n1 - 1) * sd1 * sd1 + (n2 - 1) * sd2 * sd2) / df);
-        var d  = (m1 - m2) / Sp;
-        var J  = 1 - 3 / (4 * df - 1);  // Hedges correction
-        var g  = d * J;
-        // Cycle 7.16: metafor::escalc(SMD).vi = (n1+n2)/(n1*n2) + g^2 / (2*(n1+n2))
-        // was previously written as `g*g / (2*df)` which gave a ~1.3e-4 drift
-        // vs metafor.  The Python pytest fixture (test_smd_formula_matches_escalc_row0)
-        // correctly documents the metafor formula.
-        var vi = (n1 + n2) / (n1 * n2) + g * g / (2 * (n1 + n2));
-        var se = Math.sqrt(vi);
-        set('in-est', g.toFixed(6));
-        set('in-se',  se.toFixed(6));
-        // Also populate n1/n2 for Hedges' g branch in convert()
-        set('der-n1', String(n1));
-        set('der-n2', String(n2));
-        if (typeof runConvert === 'function') runConvert();
+      if (!rows || !rows.length) return;
+      try {
+        var r = rows[0];
+        var stat = AlmEffectAccuracy.fromMeans(Number(r.m1), Number(r.sd1), Number(r.n1),
+          Number(r.m2), Number(r.sd2), Number(r.n2));
+        if (window.alm && window.alm.resetUndo) window.alm.resetUndo.snapshot();
+        var set = function (id, value) {
+          var el = document.getElementById(id);
+          if (el) el.value = String(value);
+        };
+        set('in-type', 'SMD');
+        set('in-smd-kind', 'g');
+        set('in-est', stat.g);   // Never round internal values to 6 digits.
+        set('in-se', stat.se);
+        set('ctx-sd', stat.pooledSd);
+        set('der-n1', Number(r.n1));
+        set('der-n2', Number(r.n2));
+        ['der-t','der-f','der-f-sign','der-p','der-lo','der-hi'].forEach(function (id) {
+          var el = document.getElementById(id); if (el) el.value = '';
+        });
+        runConvert();
+        if (window.alm && window.alm.urlState)
+          window.alm.urlState.write(window.__almSnapshot());
+        setWarn('Imported metafor-compatible Hedges g and LS variance from the first means/SDs CSV row (n1=' +
+          r.n1 + ', n2=' + r.n2 + ', df=' + stat.df + '). No additional J correction applied.' +
+          (rows.length > 1 ? ' This single-estimate tool imported only the first of ' + rows.length + ' rows.' : ''));
+      } catch (error) {
+        render([], null);
+        setWarn('CSV rejected: ' + (error && error.message ? error.message : String(error)), 'err');
       }
     };
 
@@ -824,15 +840,16 @@
 
     window.alm.axisControls({
       target: '#alm-axis-mount',
-      axes: [{ key: 'x', label: 'Forest X axis (SMD scale)', range: [null, null], log: false }],
+      axes: [{ key: 'x', label: 'SMD axis', range: [null, null], log: false }],
       onChange: function (state) {
         window.__almAxis = state;
-        // NOTE: axis-controls renders min/max inputs but does NOT yet drive
-        // renderForest() domain — auto-computed from xPad = maxAbs * 1.15.
-        // Wiring lo/hi requires threading overrides through renderForest(); deferred.
+        renderForest(window.__almResultRows || []);
       },
     });
 
+    // An SMD scale is signed and can include 0; a logarithmic X axis is invalid.
+    var axisLog = document.querySelector('#alm-axis-mount [data-edge="log"]');
+    if (axisLog) { axisLog.disabled = true; axisLog.title = 'Log scale is invalid for signed SMD'; }
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'effect-size-converter-results',

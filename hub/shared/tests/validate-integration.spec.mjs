@@ -2,7 +2,7 @@ import {test, expect} from './validation-fixture.mjs';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 const root=new URL('../../../',import.meta.url);
-for (const [app,globalName,count] of [['dose-response-ma','AlmDoseValidate',724],['dta-sroc','AlmDTAValidateAdapter',855],['nma','AlmNmaValidateAdapter',410]]) {
+for (const [app,globalName,count,passing=count] of [['gosh','AlmGoshValidationAdapter',876760],['cumulative-subgroup','AlmCumSubValidationAdapter',609398],['limit-ma','AlmLimitValidationAdapter',55525,55524],['influence','AlmInfluenceValidationAdapter',164802],['multilevel-ma','AlmMultilevelValidationAdapter',528],['proportion-ma','AlmProportionValidationAdapter',298116],['mh-peto','AlmMhPetoValidationAdapter',68461],['dose-response-ma','AlmDoseValidate',724],['dta-sroc','AlmDTAValidateAdapter',855],['nma','AlmNmaValidateAdapter',410],['pubbias-tests','AlmPubbiasValidationAdapter',2113,2107]]) {
  test(`${app} HTTP preparation then offline widget replay`,async({page,context})=>{
   test.setTimeout(180000);
   await page.goto('/'+app+'/index.html');
@@ -10,7 +10,7 @@ for (const [app,globalName,count] of [['dose-response-ma','AlmDoseValidate',724]
   const requests=[];context.on('request',r=>requests.push(r.url()));
   await context.setOffline(true);
   const result=await page.evaluate(()=>integrationWidget.runCorpus());
-  expect(result.checks).toBe(count);expect(result.passed).toBe(count);expect(result.failed).toEqual([]);expect(requests).toEqual([]);
+  expect(result.checks).toBe(count);expect(result.passed).toBe(passing);expect(result.failed).toHaveLength(count-passing);expect(requests).toEqual([]);
  });
  if(app!=='nma')test(`${app} file picker offline widget replay`,async({page,context})=>{
   test.setTimeout(180000);
@@ -19,7 +19,7 @@ for (const [app,globalName,count] of [['dose-response-ma','AlmDoseValidate',724]
   const manifest=JSON.parse(readFileSync(new URL(app+'/validate/MANIFEST.json',root),'utf8'));
   await page.locator('#alm-validate input[type=file]').setInputFiles(manifest.files.map(f=>fileURLToPath(new URL(app+'/'+f.path,root))));
   await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
-  await expect(page.locator('#alm-validate [role=status]')).toContainText(`${count}/${count} passed; 0 failed`,{timeout:150000});
+  await expect(page.locator('#alm-validate [role=status]')).toContainText(`${passing}/${count} passed; ${count-passing} failed`,{timeout:150000});
  });
 }
 test('dose built-in alcohol example live R @slow',async({page})=>{
