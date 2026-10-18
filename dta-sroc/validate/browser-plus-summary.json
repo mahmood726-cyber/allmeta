@@ -1,30 +1,48 @@
 {
   "date": "2026-10-18",
-  "host_update": 3,
-  "entry_head": "2982ee8a957c7106a7842de24349fcf4164d9b4a",
-  "log": "browser-host3-cycle2.log",
-  "sha256": "71b5cb26d43b5d9a9c225d6c1d05f9d11d5f0553fb51eb15548bf56a564fa21c",
+  "host_update": 4,
+  "entry_head": "c3763b26b92ade4d98cb782f176f70c06198b0d9",
+  "logs": [
+    {
+      "path": "browser-host4-cycle3.log",
+      "sha256": "543d6d15ab9f6da0d7ca93f28a5d43ffa2f02c5d45020e69b2b6acadf2a428b3"
+    },
+    {
+      "path": "browser-host4-final.log",
+      "sha256": "5085aa1e1beef47a8071cf8f06d7af6fc615f6f33ec70c5689d1db7fcb5cba83"
+    }
+  ],
   "browser_tests": {
-    "passed": 25,
-    "failed": 0,
-    "skipped": 0,
-    "extras": 22,
+    "unique_passed": 40,
+    "non_live_passed": 36,
+    "live_rerun_passed": 4,
+    "new_visibility_negatives": 12,
     "original_offline": 3,
-    "new_semantic_negatives": 8
+    "original_live_revision": 2,
+    "remaining_failures": 0,
+    "skipped": 0
   },
   "desktop_display": {
-    "passed": 505326,
-    "checks": 505326
+    "checks": 505326,
+    "passed": 505326
   },
   "responsive_display": {
-    "passed": 505326,
-    "checks": 505326
+    "checks": 505326,
+    "passed": 505326
+  },
+  "extras_numerical": {
+    "checks": 195291,
+    "passed": 195291
+  },
+  "original_numerical": {
+    "checks": 855,
+    "passed": 855,
+    "baseline_identical": true
   },
   "live_R": {
-    "passed": 28,
-    "checks": 28
+    "checks": 28,
+    "passed": 28
   },
   "port": 8103,
-  "exit_code": 0,
-  "note": "Final source fixed before run. Runner reused an explicitly managed lane-private server; the owning wrapper terminated only that server after completion."
+  "note": "Main run: 37 passed, 3 webR MIME failures, extras live explicitly unavailable. After lane-only server MIME correction, all four live tests passed (exit 0). Coverage is the union of 36 non-live and 4 live tests, not a single 40/40 run. No application/test changes between these runs."
 }

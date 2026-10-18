@@ -1,7 +1,7 @@
 import {test,expect} from './validation-fixture.mjs';
 // Set before fixture setup; a timeout inside the test body cannot cover newPage.
 test.setTimeout(240000);
-async function open(page){await page.goto('/dta-sroc/index.html');await expect(page.locator('#plus-example option')).toHaveCount(27,{timeout:60000});}
+async function open(page){await page.goto('/dta-sroc/index.html');await expect(page.locator('#plus-example option')).toHaveCount(28,{timeout:60000});await page.locator('#plus-load').click();}
 async function replay(page){return page.evaluate(()=>AlmDTAPlusValidate.replay());}
 test('extras corpus, values, exports, labels and clean-browser painted geometry pass',async({page})=>{test.setTimeout(240000);await open(page);const before=await page.locator('#plus-data').inputValue();const r=await replay(page);console.log('Extras display replay:',r.passed+'/'+r.checks,'failures:',r.failures.length);expect(r.failures.slice(0,12)).toEqual([]);expect(r.passed).toBe(r.checks);expect(await page.locator('#plus-data').inputValue()).toBe(before);});
 test('second panel passes independently of original validation',async({page})=>{test.setTimeout(240000);await open(page);await page.locator('#plus-validate').click();await expect(page.locator('#plus-validation')).toContainText(/^PASS:/,{timeout:220000});await expect(page.locator('#alm-validate')).toBeVisible();});
@@ -37,4 +37,45 @@ for(const mutation of ['swap-cells','swap-rows','move-column','duplicate-cell','
  },mutation);
  const r=await replay(page);
  expect(r.failures.some(f=>f.id.endsWith('/display/semantic-mapping'))).toBe(true);
+});
+
+for(const mutation of ['cell-hidden','heading-hidden','row-label-hidden','summary-hidden','container-hidden','cell-display','cell-visibility','cell-zero','cell-aria','ancestor-aria','ancestor-zero','nested-hidden-text'])test('extras visible mapping detects '+mutation,async({page})=>{
+ await open(page);
+ await page.evaluate(kind=>{
+  const original=AlmDTAPlusUI.set;
+  AlmDTAPlusUI.set=s=>{
+   const model=original(s);if(!model)return model;
+   const root=document.querySelector('#plus-results'),cell=root.querySelector('td');
+   if(kind==='cell-hidden')cell.hidden=true;
+   if(kind==='heading-hidden')root.querySelector('thead th').hidden=true;
+   if(kind==='row-label-hidden')root.querySelector('tbody th').hidden=true;
+   if(kind==='summary-hidden')root.querySelector('dd').hidden=true;
+   if(kind==='container-hidden')root.querySelector('dl').hidden=true;
+   if(kind==='cell-display')cell.style.display='none';
+   if(kind==='cell-visibility')cell.style.visibility='hidden';
+   if(kind==='cell-zero')cell.style.cssText='display:block;width:0;height:0;padding:0;border:0;overflow:hidden';
+   if(kind==='cell-aria')cell.setAttribute('aria-hidden','true');
+   if(kind==='ancestor-aria')root.querySelector('tbody').setAttribute('aria-hidden','true');
+   if(kind==='ancestor-zero')root.style.cssText='width:0;height:0;overflow:hidden';
+   if(kind==='nested-hidden-text')cell.innerHTML='<span hidden>'+cell.textContent+'</span>';
+   return model;
+  };
+ },mutation);
+ const r=await replay(page);
+ expect(r.failures.some(f=>f.id.includes(mutation==='nested-hidden-text'?'/display/coefficients.0.estimate':'/display/semantic-mapping'))).toBe(true);
+});
+
+test('delayed extras initialisation preserves original live R verdict @slow',async({page})=>{
+ let release;const gate=new Promise(resolve=>{release=resolve;});
+ await page.route('**/dta-sroc/validate/corpus/plus-reference.json',async route=>{await gate;await route.continue();});
+ await page.goto('/dta-sroc/index.html');
+ await page.evaluate(()=>{window.revisionWidget=AlmValidate.mount(document.getElementById('alm-validate'),AlmDTAValidateAdapter);window.pendingOriginal=revisionWidget.runLive();});
+ await expect(page.locator('#alm-validate [role=status]')).not.toHaveText('');
+ release();
+ await expect(page.locator('#plus-example option')).toHaveCount(28);
+ const r=await page.evaluate(()=>pendingOriginal);
+ expect(r.rows.length).toBeGreaterThan(0);expect(r.rows.filter(x=>!x.pass)).toEqual([]);
+ await page.locator('#f-data').fill((await page.locator('#f-data').inputValue())+'\n');
+ await expect(page.locator('#alm-validate [role=status]')).toContainText('out of date');
+ await expect(page.locator('#alm-validate table')).toHaveCount(0);
 });

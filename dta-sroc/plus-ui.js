@@ -3,7 +3,7 @@
 const host=document.getElementById('alm-plus');
 host.innerHTML=`<h2>Bivariate meta-regression extras</h2>
 <p>One study-level covariate. Conditional summary point and 95% confidence and prediction regions in ROC space. No SROC curve is drawn for meta-regression, as in mada.</p>
-<label>Reference configuration <select id="plus-example"></select></label> <button id="plus-load" type="button">Load reference data</button>
+<label>Reference configuration <select id="plus-example"><option value="">Choose reference data</option></select></label> <button id="plus-load" type="button">Load reference data</button>
 <p id="plus-source"></p>
 <label>Study data: TP,FN,FP,TN,x (one row per study; x in the units supplied)<textarea id="plus-data" rows="7" style="width:100%"></textarea></label>
 <label>Method <select id="plus-method"><option value="reml">REML</option><option value="ml">ML</option><option value="fixed">Fixed effect</option></select></label>
