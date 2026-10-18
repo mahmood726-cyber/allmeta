@@ -71,6 +71,7 @@
     return runnerPromise;
   }
   const mounts = new WeakMap();
+  let activeRuns = 0;
   function mount(el, adapter) {
     if (typeof el === 'string') el = document.querySelector(el);
     if (!el) throw new Error('Validation mount missing');
@@ -119,7 +120,7 @@
     let revision = 0, activeLive = null, completedLive = false, running = false;
     function fingerprint() {
       return JSON.stringify([
-        [...document.querySelectorAll('input,select,textarea')].filter(n => !el.contains(n))
+        [...document.querySelectorAll('input,select,textarea')].filter(n => !el.contains(n) && !n.closest('[data-alm-addon]'))
           .map(n => [n.id, n.value, n.checked, n.type === 'file' ? [...n.files].map(f => [f.name, f.size, f.lastModified]) : null]),
         adapter.live && adapter.live.revision ? adapter.live.revision() : null
       ]);
@@ -142,10 +143,10 @@
       }
     }
     function onEdit(event) {
-      if (!el.contains(event.target)) changed(true);
+      if (!el.contains(event.target) && !event.target.closest('[data-alm-addon]')) changed(true);
     }
     function onAction(event) {
-      if (!el.contains(event.target) && event.target.closest('button,input[type=submit]')) changed(true);
+      if (!el.contains(event.target) && !event.target.closest('[data-alm-addon]') && event.target.closest('button,input[type=submit]')) changed(true);
     }
     document.addEventListener('input', onEdit, true);
     document.addEventListener('change', onEdit, true);
@@ -163,11 +164,11 @@
     });
     async function busy(fn) {
       if (running) throw new Error('Validation already running');
-      running = true; completedLive = false;
+      running = true; activeRuns++; completedLive = false;
       corpusButton.disabled = true; if (adapter.live) live.disabled = true;
       details.replaceChildren(); results.replaceChildren();
       try { return await fn(); } catch (e) { status.textContent = 'Validation refused: ' + e.message; throw e; }
-      finally { running = false; corpusButton.disabled = false; if (adapter.live) live.disabled = false; }
+      finally { running = false; activeRuns--; corpusButton.disabled = false; if (adapter.live) live.disabled = false; }
     }
     async function prepare() {
       if (!cached) {
@@ -238,5 +239,5 @@
     if (adapter.live) live.onclick = () => runLive().catch(() => {});
     return { prepare, runCorpus, runLive };
   }
-  global.AlmValidate = { mount, digest, verify, loadFiles, compare };
+  global.AlmValidate = { mount, digest, verify, loadFiles, compare, isRunning: () => activeRuns > 0 };
 })(typeof window !== 'undefined' ? window : globalThis);
