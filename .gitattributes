@@ -34,7 +34,7 @@ nma-inconsistency/validate/corpus/reference.json text eol=lf
 **/validate/plus/*.json text eol=lf
 
 # Screen's hashes identify exact upstream model/data bytes on every platform.
-screen/vendor/semantic/** -text
-screen/benchmark/** text eol=lf
-screen/benchmark/data/*.csv -text
+screen/vendor/semantic/** -text -whitespace
+screen/vendor/semantic/manifest.json text eol=lf
+screen/benchmark/** -text -whitespace
 screen/hybrid-core.js text eol=lf

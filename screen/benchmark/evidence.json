@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "source_code_sha256": {
+    "../hybrid-core.js": "7ec7dc47f24740c2ad97e692faa2708cb0a41036ff5b6f372fbe3d2c0eda6d20",
+    "run_js.cjs": "64efb2dd44f7d0afb7ce34b80fd22c07151b0858c481ef82f51a1b85cc71204b",
+    "run.py": "1a4330152f653db92c21acfef049e2a9d5ba9859c8f8506252addded3002a7a2",
+    "requirements.txt": "410ac9dc8a4e8cadd7ff1b2bd1fb556b973b0df3730255ce244ba71a682b86f4",
+    "sources.json": "2789e7c25ac132e101072b7584eeab06c80979fc1ec5321a21bd371fb6d87787",
+    "PROTOCOL.md": "6fc07edb6f8bf614ad2ebc48b80658e74c002ba06496a2fb150ee0c3d0689d20"
+  },
+  "validated_runs": [
+    {
+      "path": "results/Appenzeller-Herzog_2020-101-allmeta-lr.json",
+      "sha256": "06c9ffab709e7ca1c75fb2e10a8170912488ed13daeeb874eeca701e0a47a8cc"
+    },
+    {
+      "path": "results/Appenzeller-Herzog_2020-202-allmeta-lr.json",
+      "sha256": "f4c5c4dc6ac919f4a249e6cddaa474f5d46fee1c2cabb12f3f69b255f6c31334"
+    },
+    {
+      "path": "results/Appenzeller-Herzog_2020-303-allmeta-lr.json",
+      "sha256": "992b2e3eda7ef02b57d141f1d18af9cf8bc0f2b215c59e4c9afb193d465a24c4"
+    },
+    {
+      "path": "repeatability/Appenzeller-Herzog_2020-101-allmeta-lr.json",
+      "sha256": "fa323c0bd6a8ce0baaa4c0dbe8a4239d9e7cc40b9a9c564fadd305a58b567a9f",
+      "identical_order_to_seed_101": true
+    },
+    {
+      "path": "results/Appenzeller-Herzog_2020-101-asreview-u4.json",
+      "sha256": "496bcee75e463f5fd84a86e143a33299df3c07953b10f171f9d099fba146e64e"
+    },
+    {
+      "path": "results/Appenzeller-Herzog_2020-202-asreview-u4.json",
+      "sha256": "57ff26776a944d94bc99981d4e26807abb7953cb43c2d35a1776cf26928c5a85"
+    },
+    {
+      "path": "results/Appenzeller-Herzog_2020-303-asreview-u4.json",
+      "sha256": "420ed86183a19671eef4856211ac127840c8b7535701665ac1cafb3ac698a5cb"
+    },
+    {
+      "path": "repeatability/Appenzeller-Herzog_2020-101-asreview-u4.json",
+      "sha256": "1350e81e272db19806197638d114b255fe725885b15368c6811a08671ac2ddb7",
+      "identical_order_to_seed_101": true
+    },
+    {
+      "path": "results/Kwok_2020-101-allmeta-lr.json",
+      "sha256": "5e1e274b7b8f1999e6d17661f4bad7758143bd4ae32647c089185e677c4e7b30"
+    },
+    {
+      "path": "results/Kwok_2020-202-allmeta-lr.json",
+      "sha256": "f77c8c8f4e00fbeb8a57a661899fccb2802cd167f988718ba2362a6ab040d433"
+    },
+    {
+      "path": "results/Kwok_2020-303-allmeta-lr.json",
+      "sha256": "90cf551f7d0baf808a11b3d4c48c12fb0e2b13e11a097212ca3b742d9137d2ec"
+    },
+    {
+      "path": "repeatability/Kwok_2020-101-allmeta-lr.json",
+      "sha256": "d58aa0144137738fc6e783a8125b06472b20dd6aac39044b7f743483de98961c",
+      "identical_order_to_seed_101": true
+    },
+    {
+      "path": "results/Kwok_2020-101-asreview-u4.json",
+      "sha256": "f85730cb980bad267822d869f3aa41dd6cb1b3ff74c9117ab2d79df1f532f577"
+    },
+    {
+      "path": "results/Kwok_2020-202-asreview-u4.json",
+      "sha256": "dbb5ee80bdf56c6349812e4749e14792a06afae06a27833e9acf0444daafd9c5"
+    },
+    {
+      "path": "results/Kwok_2020-303-asreview-u4.json",
+      "sha256": "390f5de13575bcb832adc616cb68b1bff0f7779a11597bb803a264e9b08d824a"
+    },
+    {
+      "path": "repeatability/Kwok_2020-101-asreview-u4.json",
+      "sha256": "88fa6ad226900ab3ad10e864e360625d9f7012289b5742e394f8fc2db14a133f",
+      "identical_order_to_seed_101": true
+    }
+  ],
+  "repeatability": "Seed 101 exact full-order, metrics and config equality for both engines on both datasets.",
+  "environment": {
+    "python": "3.13.13",
+    "node": "v24.16.0",
+    "asreview": "3.0.8",
+    "platform": "Windows-11-10.0.26200-SP0"
+  }
+}
