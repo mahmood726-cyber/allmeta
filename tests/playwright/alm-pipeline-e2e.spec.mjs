@@ -87,10 +87,17 @@ test("Screen → PRISMA: decisions propagate into prisma-flow-v1 counts", async 
   expect(flow.db).toBe(4);            // identified
   expect(flow.removed).toBe(0);       // no duplicates in this set
   expect(flow.screened).toBe(4);
-  expect(flow.sought).toBe(1);        // 1 included -> sought for retrieval
-  expect(flow.studies).toBe(1);
-  // excludedScreen = excluded(1) + maybe(0) + conflict(0) + undecided(2)
-  expect(flow.excludedScreen).toBe(3);
+  // Rewritten 2026-10-18 (Paper-1 audit, finding 11b). This test used to assert
+  // excludedScreen = excluded(1) + undecided(2) = 3 and sought = studies = 1, i.e.
+  // it pinned the defect: unscreened records reported as excluded, and title/
+  // abstract includes reported as full-text reports sought and studies included.
+  // Requirement: only decisive title/abstract excludes count as excluded at
+  // screening; pending records are reported separately; full-text fields are
+  // left blank because Screen has no full-text data.
+  expect(flow.excludedScreen).toBe(1);
+  expect(flow.includedAtScreen).toBe(1);
+  expect(flow.screenPending).toEqual({ maybe: 0, conflict: 0, undecided: 2 });
+  for (const k of ["sought", "notRetrieved", "assessed", "excludedEligible", "studies", "reports"]) expect(flow[k]).toBe("");
 });
 
 test("missing sr-records-v1 envelope: import is a no-op, no crash", async ({ page }) => {
