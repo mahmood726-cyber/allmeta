@@ -119,7 +119,7 @@ for(const [i,quantity] of [[2,'xmin'],[3,'xmax'],[4,'ymin'],[5,'ymax']])test('ex
   // Changed glyph bounds can change computed perspective-origin before the
   // numerical callback runs. Both are valid refusals under the style contract.
   const result=await failures(page).then(values=>({values}),error=>({error:String(error)}));
-  if(result.error)expect(result.error).toContain('Extra style contract');
+  if(result.error)expect(result.error).toMatch(/Extra style contract|calibrated axis/);
   else expect(result.values).toEqual([quantity]);
 });
 test('extras live sampled DL uses the same memberships @slow',async({page})=>{
@@ -258,4 +258,30 @@ for(const [target,property,value] of [
     (target==='svg'?svg:svg.querySelector(target)).style.setProperty(p,v);
   },[target,property,value]);
   await expect(failures(page)).rejects.toThrow('style contract');
+});
+
+
+for(const model of ['FE','DL'])for(const axis of ['x','y'])
+for(const mutation of ['one label','swap labels','shift labels','scale'])test(`extras independent axis ${model} ${axis} ${mutation}`,async({page})=>{
+ let intercepted=false;
+ await page.route('**/gosh/plus.js',async route=>{
+  let body=(await(await route.fetch()).text()).replace(/\r\n/g,'\n');
+  if(mutation==='scale'){
+   const before='return offset+size*((v/s-lo/s)/(hi/s-lo/s));';expect(body).toContain(before);
+   body=body.replace(before,`return offset+(offset===${axis==='x'?60:30}?5:0)+size*((v/s-lo/s)/(hi/s-lo/s));`);
+  }else{
+   const hook='\n  }\n  function draw() {';expect(body).toContain(hook);
+   const edit=mutation==='one label'?"ns[0].textContent=String(v[0]+step);":mutation==='swap labels'?"ns[0].textContent=old[1];ns[1].textContent=old[0];":"ns.forEach((n,i)=>n.textContent=String(v[i]+step));";
+   body=body.replace(hook,`\n{const ns=[...svg.querySelectorAll('text')].slice(${axis==='x'?'2,4':'4,6'}),old=ns.map(n=>n.textContent),v=old.map(Number),step=v[1]-v[0];${edit}}`+hook);
+  }
+  intercepted=true;await route.fulfill({contentType:'application/javascript',body});
+ });
+ await page.goto(url);await render(page,corpus[0],model);await page.locator('#plus-het').selectOption('Q');
+ await expect(failures(page,corpus[0],model)).rejects.toThrow(/calibrated axis/);
+ expect(intercepted).toBe(true);
+});
+for(const model of ['FE','DL'])for(const [before,after] of [["Q:'Q'","Q:'R'"],["'With: count'","'Wrong count'"],["'with_n','without_n'","'without_n','with_n'"]])test('extras independent source semantics '+model+' '+before,async({page})=>{
+ await page.route('**/gosh/plus.js',async route=>{const body=await(await route.fetch()).text();expect(body).toContain(before);await route.fulfill({contentType:'application/javascript',body:body.replace(before,after)});});
+ await page.goto(url);await render(page,corpus[0],model);await page.locator('#plus-het').selectOption('Q');
+ await expect(failures(page,corpus[0],model)).rejects.toThrow(/selector|table headers|sort declaration/);
 });

@@ -1,6 +1,10 @@
 (function () {
   'use strict';
   const P=AlmGoshPlus, pointFields=['mu','I2','H2','Q','tau2','tau'];
+  // Semantic expectations belong to the validator, not P.axes/columnLabels.
+  const axisNames={I2:'I² (%)',H2:'H²',Q:'Q',tau2:'τ²',tau:'τ'};
+  const tableFields=['with_n','without_n','with_mean','without_mean','diff_mean','with_median','without_median','diff_median','with_i2','without_i2','diff_i2'];
+  const columnNames=['Study','With: count','Without: count','With: mean estimate','Without: mean estimate','Difference: mean estimate','With: median estimate','Without: median estimate','Difference: median estimate','With: mean I²','Without: mean I²','Difference: mean I²'];
   const finite=x=>typeof x==='number'&&Number.isFinite(x);
   const memberKey=p=>{if(!Array.isArray(p.members)||!p.members.length||p.members.some(x=>!Number.isInteger(x)||x<1)||new Set(p.members).size!==p.members.length)throw Error('Invalid membership');return [...p.members].sort((a,b)=>a-b).join(',');};
   // Generated pins are loaded by manifest-plus.js; no downloaded manifest can replace them.
@@ -9,14 +13,14 @@
   function controls(a) {
     for(const [id,expected] of [
       ['plus-study',a.labels.map((label,i)=>[String(i+1),`${i+1}: ${label}`])],
-      ['plus-het',Object.entries(P.axes).filter(([q])=>a.model==='DL'||!q.startsWith('tau'))]
+      ['plus-het',Object.entries(axisNames).filter(([q])=>a.model==='DL'||!q.startsWith('tau'))]
     ]) {
       const select=document.getElementById(id), options=[...select.options];
       if(options.length!==expected.length||options.some((o,i)=>o.value!==expected[i][0]||o.textContent!==expected[i][1]||o.label!==expected[i][1]||o.disabled||o.hidden)||!expected.some(([v])=>v===select.value))throw Error('Invalid extra selector '+id);
     }
   }
   function tableOrder(a,rows) {
-    const headers=[...document.querySelectorAll('#plus-table thead th')],keys=['study',...P.fields];
+    const headers=[...document.querySelectorAll('#plus-table thead th')],keys=['study',...tableFields];
     if(headers.length!==keys.length||headers.some((h,i)=>h.querySelector('button')?.dataset.sort!==keys[i]||!['none','ascending','descending'].includes(h.getAttribute('aria-sort'))))throw Error('Invalid extra sort declaration');
     const active=headers.filter(h=>h.getAttribute('aria-sort')!=='none');
     if(active.length!==1)throw Error('Invalid extra sort declaration');
@@ -70,7 +74,55 @@
       }
     } finally {host.remove();}
   }
-  function plotGeometry(svg,circles,a) {
+
+// Independent affine calibration from source-backed marks, never renderer scale
+// functions, tick metadata, or a second rendering. Coordinates are CSS pixels.
+function calibratedTicks(samples,ticks,digits,name) {
+ const fail=message=>{throw Error(name+' calibrated axis '+message);};
+ if(samples.length<2||samples.some(p=>!p.every(Number.isFinite)))fail('missing finite marks');
+ const values=samples.map(p=>p[0]),lo=Math.min(...values),hi=Math.max(...values),span=hi-lo;
+ const labels=ticks.map(t=>Number(t.text));
+ if(ticks.length!==2||ticks.some(t=>!t.text.trim()||!Number.isFinite(t.position))||!labels.every(Number.isFinite))fail('tick coverage');
+ // A constant quantity has no identifiable scale. Check it exactly rather than
+ // inventing a second calibration mark; the independent geometry gate checks
+ // the renderer's constant-axis midpoint convention.
+ if(span===0){if(labels.some(v=>v!==lo))fail('constant labels');return;}
+ // Compensated sums prevent accumulation error in large point clouds from
+ // becoming an apparent nonzero label at the zero endpoint.
+ const sum=xs=>{let s=0,c=0;for(const x of xs){const t=s+x;c+=Math.abs(s)>=Math.abs(x)?(s-t)+x:(x-t)+s;s=t;}return s+c;};
+ const z=values.map(v=>(v-lo)/span),zm=sum(z)/z.length;
+ const pm=sum(samples.map(p=>p[1]))/samples.length;
+ const variance=sum(z.map(v=>(v-zm)**2));
+ const slope=sum(z.map((v,i)=>(v-zm)*(samples[i][1]-pm)))/variance;
+ const intercept=pm-slope*zm;
+ // At least two distinct marks spanning > .02 CSS px; all marks participate
+ // in least squares. Residual <= 1e-7 CSS px (raw SVG positions, not float bbox).
+ if(!Number.isFinite(slope)||Math.abs(slope)<=.02)fail('insufficient separation');
+ if(samples.some((p,i)=>Math.abs(p[1]-(intercept+slope*z[i]))>1e-7))fail('non-affine marks');
+ const inferred=ticks.map(t=>lo+span*(t.position-intercept)/slope);
+ const step=inferred[1]-inferred[0];
+ if(!(step>0)||!(labels[1]>labels[0]))fail('non-monotone labels');
+ const tolerances=inferred.map((v,i)=>{
+  // Half of the last displayed significant digit; never half a tick step.
+  const unit=v===0?0:10**(Math.floor(Math.log10(Math.abs(v)))-digits+1);
+  // Account for cancellation of the screen origin and leverage when an
+  // endpoint lies beyond the observed marks. This is an arithmetic allowance,
+  // not a pixel/layout tolerance; the half-interval cap remains fail-closed.
+  const screenMagnitude=Math.max(1,Math.abs(ticks[i].position),...samples.map(p=>Math.abs(p[1])));
+  const magnitude=Math.max(1,Math.abs(lo),Math.abs(hi),Math.abs(v),span*screenMagnitude/Math.abs(slope));
+  const leverage=1+Math.abs((ticks[i].position-intercept)/slope-zm)*sum(z.map(v=>Math.abs(v-zm)))/variance;
+  const tolerance=unit/2+64*Number.EPSILON*magnitude*leverage;
+  if(tolerance>=step/2)fail('insufficient label precision');
+  if(Math.abs(labels[i]-v)>tolerance)fail('label does not match mark scale: '+JSON.stringify({label:labels[i],inferred:v,tolerance}));
+  return tolerance;
+ });
+ // These renderers intentionally have two endpoint ticks (one interval).
+ // Check its numeric spacing against calibrated screen spacing, allowing only
+ // the two endpoint rounding budgets; no interior equal-spacing claim is made.
+ if(Math.abs((labels[1]-labels[0])-step)>tolerances[0]+tolerances[1])fail('tick spacing');
+}
+
+  function plotGeometry(svg,circles,a,refs) {
     styleContract(svg,a);
     const view=svg.viewBox.baseVal, root=svg.getScreenCTM(), box=svg.getBoundingClientRect();
     if(!root||box.width<=0||box.height<=0||view.x!==0||view.y!==0||view.width!==600||view.height!==420)throw Error('Invalid extra plot viewport');
@@ -113,6 +165,11 @@
       }
     });
     const het=document.getElementById('plus-het').value,xs=a.points.map(p=>p.mu),ys=a.points.map(p=>p[het]);
+
+    for(const [axis,quantity,indices] of [['x','mu',[0,1]],['y',het,[2,3]]]){
+      const samples=circles.map((c,i)=>[refs?refs[quantity+'.'+i]:a.points[i][quantity],screen(c,Number(c.getAttribute('cx')),Number(c.getAttribute('cy')))[axis]]);
+      calibratedTicks(samples,indices.map((j,i)=>({text:labels[2+j].textContent,position:anchors[j][axis]})),12,'extra '+axis);
+    }
     const lo=Math.min(...xs),hi=Math.max(...xs),yl=Math.min(0,...ys),yh=Math.max(...ys);
     const fraction=(v,l,h)=>l===h?.5:(v/Math.max(Math.abs(l),Math.abs(h))-l/Math.max(Math.abs(l),Math.abs(h)))/(h/Math.max(Math.abs(l),Math.abs(h))-l/Math.max(Math.abs(l),Math.abs(h)));
     return circles.map((c,i)=>{
@@ -130,19 +187,19 @@
     });
   }
 
-  function values() {
+  function values(refs) {
     const a=P.state;if(!a)throw Error('No extras to validate');const out=[];
     controls(a);
     const add=(key,value,exact=false)=>{if(!exact&&!finite(value))throw Error('Invalid displayed '+key);out.push({key,label:key,value,exact});};
     const headings=[...document.querySelectorAll('#plus-table thead button')].map(e=>e.textContent);
-    if(JSON.stringify(headings)!==JSON.stringify(P.columnLabels))throw Error('Invalid extra table headers');
+    if(JSON.stringify(headings)!==JSON.stringify(columnNames))throw Error('Invalid extra table headers');
     const rows=[...document.querySelectorAll('#plus-table tbody tr')];
     tableOrder(a,rows);
     add('row_count',rows.length,true);
     for(const row of rows){const i=Number(row.dataset.study);if(!Number.isInteger(i)||i<1||i>a.k||row.querySelector('th button')?.textContent!==`${i}: ${a.labels[i-1]}`)throw Error('Invalid extra study label');for(const q of P.fields){const cells=row.querySelectorAll(`[data-quantity="${q}"]`);if(cells.length!==1||!cells[0].textContent.trim())throw Error('Missing displayed '+q);add(`study.${i}.${q}`,Number(cells[0].textContent),q.endsWith('_n'));}}
     a.points.forEach((p,i)=>{add('members.'+i,memberKey(p),true);for(const q of pointFields)if(a.model==='DL'||!q.startsWith('tau'))add(q+'.'+i,p[q]);});
     const circles=[...document.querySelectorAll('#plus-plot circle')];add('plot_count',circles.length,true);
-    const positions=plotGeometry(document.getElementById('plus-plot'),circles,a);
+    const positions=plotGeometry(document.getElementById('plus-plot'),circles,a,refs);
     circles.forEach((c,i)=>{add('plot_x.'+i,positions[i].x);add('plot_y.'+i,positions[i].y);add('included.'+i,c.dataset.includes,true);add('colour.'+i,getComputedStyle(c).fill==='rgb(0, 114, 178)'?'#0072b2':'#d55e00',true);});
     add('highlight_counts',document.getElementById('plus-counts').textContent,true);
     const ticks=[...document.querySelectorAll('#plus-plot text')];if(ticks.length!==6)throw Error('Missing extra axes');['x_title','y_title','xmin','xmax','ymin','ymax'].forEach((q,i)=>{const text=ticks[i].textContent.trim();if(i>=2&&!text)throw Error('Missing extra axis value '+q);add(q,i<2?ticks[i].textContent:Number(text),i<2);});
@@ -158,16 +215,16 @@
     for(const row of r.rows){if(!Number.isInteger(row.study)||row.study<1||row.study>k||seen.has(row.study))throw Error('Invalid study coverage');seen.add(row.study);for(const q of P.fields){if(!finite(row[q]))throw Error('Missing reference '+q);v[`study.${row.study}.${q}`]=row[q];}}
     r.points.forEach((p,i)=>{if(p.members.some(m=>m>k))throw Error('Invalid reference membership');v['members.'+i]=memberKey(p);for(const q of pointFields)if(model==='DL'||!q.startsWith('tau')){if(!finite(p[q]))throw Error('Missing reference '+q);v[q+'.'+i]=p[q];}});
     const selected=Number(document.getElementById('plus-study').value),het=document.getElementById('plus-het').value;
-    if(!Number.isInteger(selected)||selected<1||selected>k||!Object.hasOwn(P.axes,het)||(model!=='DL'&&het.startsWith('tau')))throw Error('Invalid extra controls');
+    if(!Number.isInteger(selected)||selected<1||selected>k||!Object.hasOwn(axisNames,het)||(model!=='DL'&&het.startsWith('tau')))throw Error('Invalid extra controls');
     const xs=r.points.map(p=>p.mu),ys=r.points.map(p=>p[het]),lo=Math.min(...xs),hi=Math.max(...xs),yl=Math.min(0,...ys),yh=Math.max(...ys);
     const pos=(x,l,h,o,n)=>{if(l===h)return o+n/2;const s=Math.max(Math.abs(l),Math.abs(h));return o+n*((x/s-l/s)/(h/s-l/s));};
-    v.plot_count=r.points.length;Object.assign(v,{x_title:'Pooled effect',y_title:P.axes[het],xmin:lo,xmax:hi,ymin:yl,ymax:yh});
+    v.plot_count=r.points.length;Object.assign(v,{x_title:'Pooled effect',y_title:axisNames[het],xmin:lo,xmax:hi,ymin:yl,ymax:yh});
     r.points.forEach((p,i)=>{v['plot_x.'+i]=pos(p.mu,lo,hi,60,520);v['plot_y.'+i]=400-pos(p[het],yl,yh,30,350);v['included.'+i]=String(p.members.includes(selected));v['colour.'+i]=p.members.includes(selected)?'#0072b2':'#d55e00';});
     const row=r.rows.find(x=>x.study===selected);v.highlight_counts=`Includes study ${selected}: ${row.with_n} (blue); excludes study ${selected}: ${row.without_n} (orange).`;
     return v;
   }
   function compare(r,k,model,check) {
-    const refs=referenceValues(r,k,model), actual=values();
+    const refs=referenceValues(r,k,model), actual=values(refs);
     if(actual.length!==Object.keys(refs).length||new Set(actual.map(v=>v.key)).size!==actual.length)throw Error('Extra quantity coverage mismatch');
     for(const v of actual){if(!Object.hasOwn(refs,v.key))throw Error('Unknown extra quantity');check(v.key,v.value,refs[v.key],v.exact?'exact':'rel');}
   }
@@ -204,7 +261,7 @@ if(length(yi)<=15){sav<-metafor::gosh(base,progbar=FALSE);keys<-apply(sav$incl,1
 out<-list(row_count=length(yi));for(i in seq_along(yi)){a<-incl[,i];stopifnot(any(a),any(!a));v<-list(with_n=sum(a),without_n=sum(!a));for(q in c('mean','median','i2')){x<-if(q=='i2')res$I2 else res$estimate;f<-if(q=='median')median else mean;v[[paste0('with_',q)]]<-f(x[a]);v[[paste0('without_',q)]]<-f(x[!a]);v[[paste0('diff_',q)]]<-f(x[a])-f(x[!a])};for(q in names(v))out[[paste0('study.',i,'.',q)]]<-v[[q]]}
 for(i in seq_along(members)){out[[paste0('members.',i-1)]]<-paste(sort(members[[i]]),collapse=',');v<-list(mu=res$estimate[i],I2=res$I2[i],H2=res$H2[i],Q=res$QE[i]);if(method=='DL'){v$tau2<-res$tau2[i];v$tau<-res$tau[i]};for(q in names(v))out[[paste0(q,'.',i-1)]]<-v[[q]]}
 xx<-res$estimate;yy<-res[[if(het=='Q')'QE' else het]];pos<-function(x,l,h,o,n){if(l==h)return(o+n/2);s<-max(abs(l),abs(h));o+n*((x/s-l/s)/(h/s-l/s))}
-out$plot_count<-nrow(res);out$x_title<-'Pooled effect';out$y_title<-'${P.axes[document.getElementById('plus-het').value]}';out$xmin<-min(xx);out$xmax<-max(xx);out$ymin<-min(0,yy);out$ymax<-max(yy)
+out$plot_count<-nrow(res);out$x_title<-'Pooled effect';out$y_title<-'${axisNames[document.getElementById('plus-het').value]}';out$xmin<-min(xx);out$xmax<-max(xx);out$ymin<-min(0,yy);out$ymax<-max(yy)
 for(i in seq_along(members)){out[[paste0('plot_x.',i-1)]]<-pos(xx[i],min(xx),max(xx),60,520);out[[paste0('plot_y.',i-1)]]<-400-pos(yy[i],min(0,yy),max(yy),30,350);out[[paste0('included.',i-1)]]<-if(selected%in%members[[i]])'true' else 'false';out[[paste0('colour.',i-1)]]<-if(selected%in%members[[i]])'#0072b2' else '#d55e00'}
 out$highlight_counts<-paste0('Includes study ',selected,': ',sum(incl[,selected]),' (blue); excludes study ',selected,': ',sum(!incl[,selected]),' (orange).')
 emit<-function(q){x<-out[[q]];if(is.character(x))paste0('"',x,'"')else{stopifnot(is.numeric(x),length(x)==1,is.finite(x));sprintf('%.17g',x)}}
