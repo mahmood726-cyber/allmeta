@@ -405,9 +405,22 @@
     var mx = 0, my = 0, sxx = 0, sxy = 0, i;
     for (i = 0; i < n; i++) { mx += S[i] / n; my += D[i] / n; }
     for (i = 0; i < n; i++) { sxx += (S[i] - mx) * (S[i] - mx); sxy += (S[i] - mx) * (D[i] - my); }
-    if (!(sxx > 0)) return null;
+    // A constant S is rank-deficient even if summation roundoff leaves sxx > 0.
+    // The 64-epsilon relative floor detects unresolved floating-point geometry;
+    // it is not a clinical threshold or a replacement estimator.
+    var scale = Math.max(1, ...S.map(Math.abs)), span = Math.max(...S) - Math.min(...S);
+    if (!(sxx > 0) || span <= 64 * Number.EPSILON * scale)
+      throw new DTAError("not estimable: logit sensitivity + logit false-positive rate has no resolvable variation");
     var B1 = sxy / sxx, A1 = my - B1 * mx;
-    return { A1: A1, B1: B1, A2: A1 / (1 - B1), B2: (1 + B1) / (1 - B1) };
+    // Constant FPR gives D = S - 2*logit(FPR), hence B1 = 1: no function
+    // logit(Se) = A2 + B2*logit(FPR) is identified. Catch rounding about 1 too.
+    var den = 1 - B1;
+    if (Math.abs(den) <= 64 * Number.EPSILON * Math.max(1, Math.abs(B1)))
+      throw new DTAError("not estimable: Moses slope is indistinguishable from one (for example, identical false-positive rates)");
+    var A2 = A1 / den, B2 = (1 + B1) / den;
+    if (![A1, B1, A2, B2].every(Number.isFinite))
+      throw new DTAError("not estimable: non-finite Moses SROC coefficients");
+    return { A1: A1, B1: B1, A2: A2, B2: B2 };
   }
 
   // Spearman threshold-effect correlation between logit(TPR) and logit(FPR).
@@ -417,7 +430,7 @@
     var r1 = rank(st.map(function (s) { return s.y[0]; })), r2 = rank(st.map(function (s) { return s.y[1]; }));
     var mb = (n + 1) / 2, sxy = 0, sxx = 0, syy = 0;
     for (var i = 0; i < n; i++) { var dx = r1[i] - mb, dy = r2[i] - mb; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
-    return (sxx > 0 && syy > 0) ? sxy / Math.sqrt(sxx * syy) : 0;
+    return (sxx > 0 && syy > 0) ? sxy / Math.sqrt(sxx * syy) : null;
   }
 
   // Fagan nomogram: post-test probabilities from a pre-test probability + LR± (exact Bayes).
