@@ -87,8 +87,8 @@ test('NMA live script snapshots current smoking cessation options', async ({page
 test('NMA smoking cessation live R @slow', async ({page}) => {
   test.setTimeout(180_000);
   test.skip(!framework, 'Shared validation framework has not been integrated');
-  // Run with a server bound to localhost:8088, including the vendored webR repository.
-  const origin='http://localhost:8088';
+  // Use the configured server, including the vendored webR repository.
+  const origin=new URL(test.info().project.use.baseURL).origin;
   const external=watch(page,origin);
   await page.goto(origin+'/nma/index.html');
   await page.selectOption('#f-example','smokingcessation');

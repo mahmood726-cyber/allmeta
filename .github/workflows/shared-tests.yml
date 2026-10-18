@@ -17,6 +17,9 @@ jobs:
         working-directory: hub/shared/tests
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Baseline replay uses git show at a pinned pre-GLMM commit.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -29,13 +32,16 @@ jobs:
           python-version: "3.12"
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test --reporter=line
+      - run: npx playwright test --reporter=line,json
         env:
           CI: "true"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/results.json
       - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: shared-tests-artifacts
-          path: hub/shared/tests/artifacts/
+          path: |
+            hub/shared/tests/artifacts/
+            hub/shared/tests/test-results/
           if-no-files-found: ignore
           retention-days: 14

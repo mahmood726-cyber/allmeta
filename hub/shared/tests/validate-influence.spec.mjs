@@ -5,6 +5,8 @@ test('influence full primary replay restores inputs, results and navigation',asy
   await page.goto(url);
   // Corpus validation must preserve pending edits and the prior rendered result independently.
   await page.locator('#src').fill('not yet valid');
+  // Let the pending user edit reach autosave before checking replay restoration.
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('alm-autosave:influence')||'null')?.values.src==='not yet valid');
   const before=await page.evaluate(()=>({data:__almSnapshot(),href:location.href,length:history.length,state:history.state,full:_almLastInfluence(),storage:{...localStorage}}));
   const result=await page.evaluate(()=>AlmInfluenceValidation.runCorpus());
   expect(result.checks).toBe(164802);expect(result.passed).toBe(164802);expect(result.failed).toEqual([]);
