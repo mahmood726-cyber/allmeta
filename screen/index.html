@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
   <link rel="stylesheet" href="../shared/alm-task.css">
   <meta name="description" content="Local title/abstract and full-text screening, fully local: keyboard-driven cards, dual-reviewer with conflict resolution and Cohen's kappa, RIS/.nbib/CSV/JSON import, inline dedup, transparent local relevance ranking, customizable exclusion reasons and labels, and one-click PRISMA flow counts.">
@@ -180,6 +180,10 @@
     body #alm-auth { position:static;transform:none;z-index:auto; }
     @media(max-width:1000px){.layout>.cardwrap{grid-row:1;}.layout>aside{grid-row:2;}input[type="url"]{font-size:16px;}}
     @media(max-width:640px){.workflow-strip>* { max-width:100%; } #save-status{margin-left:0;} .toolbar{position:static;} }
+    .pico-hit {background:var(--hl-inc);color:var(--ink);border-bottom:2px solid var(--accent);}
+    .pico-hit[data-negated="true"] {background:var(--maybe-soft);border-bottom-style:dashed;}
+    .pico-evidence {padding:.7rem;border:1px solid var(--border);margin:.7rem 0;}
+    #hy-audit-card {white-space:pre-wrap;margin:.7rem 0;}
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
 </head>
@@ -315,7 +319,7 @@
           <label><span class="lbl">Sort</span>
             <select id="f-sort">
               <option value="order">Import order</option>
-              <option value="ml">ML relevance ↓</option><option value="uncertainty">ML uncertainty first</option>
+              <option value="hybrid">Hybrid local ranking ↓</option><option value="ml">Legacy ML relevance ↓</option><option value="uncertainty">ML uncertainty first</option>
               <option value="relevance">Term score ↓</option>
               <option value="rct">RCT likelihood ↓</option>
               <option value="year">Year ↓</option>
@@ -325,13 +329,42 @@
           <input type="text" id="f-kw" placeholder="filter…"></label>
       </section>
 
+      <section class="panel" id="hybrid-panel">
+        <h2>Browser-local hybrid AI</h2>
+        <p class="hint">Protocol evidence + TF-IDF logistic regression; optional MiniLM semantics. Ranking assists your decisions. It never excludes a record.</p>
+        <details><summary>Protocol concepts and synonyms</summary><p class="hint">One concept per line. Synonyms use |. Prefix require:, exclude: or prefer:. Matching uses literal phrases and visible negation cues; missing text is not proof of ineligibility.</p>
+        <label for="hy-population">Population</label><textarea id="hy-population" rows="2"></textarea>
+        <label for="hy-intervention">Intervention</label><textarea id="hy-intervention" rows="2"></textarea>
+        <label for="hy-comparator">Comparator</label><textarea id="hy-comparator" rows="2"></textarea>
+        <label for="hy-outcome">Outcome</label><textarea id="hy-outcome" rows="2"></textarea>
+        <label for="hy-design">Design</label><textarea id="hy-design" rows="2"></textarea>
+        <button type="button" id="hy-save-rules">Save protocol rules</button></details>
+        <label class="toggle"><input type="checkbox" id="hy-auto"> Retrain locally after decisions</label>
+        <button type="button" id="hy-train">Train local hybrid ranker</button>
+        <div id="hy-status" role="status" aria-live="polite">Label two includes and two excludes to train.</div>
+        <div id="hy-terms" class="hint"></div>
+        <label class="toggle"><input type="checkbox" id="hy-semantic"> Add optional semantic ranking (about 46 MB)</label>
+        <label for="hy-backend">Semantic processor</label><select id="hy-backend"><option value="auto">WebGPU if available, otherwise WASM</option><option value="wasm">WASM CPU</option></select>
+        <button type="button" id="hy-embed">Cache model and embed records</button>
+        <div id="hy-semantic-status" role="status" aria-live="polite">Off. No model download until requested.</div>
+        <button type="button" id="hy-offline">Prepare offline use</button><div id="hy-offline-status" role="status"></div>
+        <p class="hint">Full-text ranking still uses title/abstract text. Read the full report. Semantic text is truncated at 256 tokens. GPU and CPU scores can differ.</p>
+      </section>
+      <section class="panel" id="hy-audit-panel"><h2>Independent random audit</h2>
+        <p class="hint">Freeze a random sample of the remaining records. Ask a separate reviewer to assess it without rankings. Complete the fixed sample before viewing its recall bound. No records are excluded automatically; the bound assumes correct human labels.</p>
+        <label for="hy-auditor">Independent auditor name (self-declared)</label><input id="hy-auditor" type="text">
+        <label for="hy-sample-size">Fixed sample size</label><input id="hy-sample-size" type="number" min="1" step="1" value="100">
+        <button type="button" id="hy-start-audit">Freeze audit sample</button>
+        <div id="hy-audit-card"></div><div id="hy-audit-buttons" hidden><button type="button" id="hy-audit-include">Audit: eligible</button><button type="button" id="hy-audit-exclude">Audit: ineligible</button></div>
+        <div id="hy-audit-status" role="status" aria-live="polite"></div>
+      </section>
       <section class="panel">
         <h2>Cold-start RCT classifier</h2>
         <p class="hint" style="margin-top:0">Every card shows a <strong>RCT&nbsp;%</strong> badge — a study-design likelihood from an offline, transparent bag-of-words logistic model trained on real PubMed abstracts (labelled by Publication Type). It needs <em>no</em> labels from you, so it helps from record&nbsp;one; sort by <em>RCT likelihood</em> to triage trials first. <span id="rct-meta"></span></p>
       </section>
 
       <section class="panel">
-        <h2>Local ML ranking</h2>
+        <h2>Legacy Naive Bayes baseline</h2>
         <p class="hint" style="margin-top:0">Label a few records with <kbd>i</kbd>/<kbd>e</kbd>, then train an in-browser classifier (TF-IDF + Naive Bayes, with class-balanced weighting) to rank the rest by predicted relevance. Retrain after each small batch for continuous active learning. 100% local, no key, reproducible.</p>
 
         <label class="toggle"><input id="f-auto-rank" type="checkbox"> Retrain after each 10 new decisions</label>
@@ -348,7 +381,7 @@
           <label><span class="lbl">Mode</span>
             <select id="ai-mode">
               <option value="handoff">Local-agent handoff (no cost)</option>
-              <option value="byokey">Bring your own API key</option>
+              
             </select></label>
           <div id="ai-handoff">
             <p class="hint" style="margin-top:0">Export a ready-to-run task for the agent you already pay for (Claude&nbsp;Code / Codex / Gemini&nbsp;CLI). Nothing is sent from here — you run it, then re-import the JSON.</p>
@@ -357,20 +390,6 @@
               <button type="button" id="btn-ai-import">Import AI results</button>
             </div>
             <input type="file" id="ai-file" class="file-input-hidden" accept=".json,application/json" aria-label="AI results">
-          </div>
-          <div id="ai-byokey" style="display:none">
-            <label><span class="lbl">Provider</span>
-              <select id="ai-provider">
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="gemini">Google Gemini</option>
-              </select></label>
-            <label><span class="lbl">Model (optional)</span>
-              <input type="text" id="ai-model" placeholder="e.g. gpt-4o-mini / claude-haiku-4-5-20251001"></label>
-            <label><span class="lbl">API key (this browser only)</span>
-              <input type="text" id="ai-key" placeholder="sk-…" autocomplete="off" spellcheck="false"></label>
-            <button type="button" id="btn-ai-run">Run AI on undecided</button>
-            <p class="hint">Key is saved to localStorage on this device only and is <strong>never</strong> included in project exports. Calls bill your own account.</p>
           </div>
           <p class="hint" style="margin-top:0.5rem">AI output is a <em>suggestion</em> shown on each card — press <kbd>a</kbd> to accept it as your decision. Never auto-applied.</p>
         </div>
@@ -407,7 +426,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: DOI exact + trigram-Jaccard title similarity (≥0.85), with a multi-field assist (relaxed title threshold when first-author surname AND year both match) that catches reformatted titles and same-work/different-DOI duplicates. Candidate pairs come from blocking + a sorted-neighbourhood window, to reduce pair comparisons; this upgrade does not claim measured 100k-record throughput; earliest-imported record wins. Agreement: Cohen's &kappa; over records both reviewers decided. Effective decision in dual mode: adjudication, agreement, conflict, or pending until both reviewers decide. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
+  <p class="footer-note">Screening and AI inference run in this browser. Optional semantic assets are downloaded from this site's origin and cached; review text is never sent to an inference service. Export portable project backups regularly. Duplicate matches, protocol matches and rankings require human assessment. Local reviewer slots are not authenticated accounts. PRISMA counts represent reports; reconcile multiple reports of one study before publication.</p>
 
   <!-- Help modal -->
   <div class="modal-bg" id="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
@@ -432,10 +451,11 @@
   </div>
 
   <script src="../shared/toast.js"></script>
-  <script src="../shared/alm-auth-config.js"></script>
-  <script src="../shared/alm-auth.js" defer></script>
   <script src="../shared/sr-collab-v1.js"></script>
   <script src="workflow.js"></script>
+  <script src="hybrid-core.js"></script>
+  <script src="pico.js"></script>
+  <script src="offline.js"></script>
   <script src="../shared/rct-classifier-v1.js"></script>
   <script src="assets/rct-classifier-weights-v1.js"></script>
   <script src="../hub/shared/analysis-lifecycle.js"></script>
@@ -644,6 +664,7 @@
 
     // ---- highlighting ----
     function highlight(text) {
+      if(window.ScreenHybridUI && S.hybrid && S.hybrid.rules.length)return ScreenHybridUI.highlight(text,S.hybrid.rules);
       var esc = escapeHtml(text);
       var terms = [];
       S.incTerms.forEach(function (t) { if (t.length > 1) terms.push({ t: t, c: "inc" }); });
@@ -886,7 +907,8 @@
         if (kw && (r.title + " " + r.abstract).toLowerCase().indexOf(kw) < 0) return false;
         return true;
       });
-      if (S.sort === "uncertainty") out.sort(function(a,b){return (a.mlScore == null ? 2 : Math.abs(a.mlScore-0.5)) - (b.mlScore == null ? 2 : Math.abs(b.mlScore-0.5));});
+      if (S.sort === "hybrid") out.sort(function(a,b){return (b.hybridScore==null?-1:b.hybridScore)-(a.hybridScore==null?-1:a.hybridScore);});
+      else if (S.sort === "uncertainty") out.sort(function(a,b){return (a.mlScore == null ? 2 : Math.abs(a.mlScore-0.5)) - (b.mlScore == null ? 2 : Math.abs(b.mlScore-0.5));});
       else if (S.sort === "ml") out.sort(function (a, b) { return (b.mlScore == null ? -1 : b.mlScore) - (a.mlScore == null ? -1 : a.mlScore); });
       else if (S.sort === "relevance") out.sort(function (a, b) { return (b.score == null ? -1e9 : b.score) - (a.score == null ? -1e9 : a.score); });
       else if (S.sort === "rct") out.sort(function (a, b) { var ra = rctScore(a), rb = rctScore(b); return (rb == null ? -1 : rb) - (ra == null ? -1 : ra); });
@@ -1103,6 +1125,7 @@
       renderCard();
       renderStatsAndConflicts();
       renderWorkflow();
+      window.dispatchEvent(new Event("screen-state"));
     }
 
     // ---- actions ----
@@ -1533,6 +1556,13 @@
       ['incTerms','excTerms','reasons','labels'].forEach(function(k){if(p[k]!==undefined && (!Array.isArray(p[k]) || p[k].some(function(v){return typeof v!=="string";})))throw Error("Invalid project settings: "+k);});
       if(p.mode && !['single','dual'].includes(p.mode))throw Error("Invalid reviewer mode.");
       if(p.stage && !['ta','ft'].includes(p.stage))throw Error("Invalid screening stage.");
+      if(p.hybrid){
+        ScreenHybrid.validateRules(p.hybrid.rules);
+        if(typeof p.hybrid.auto!=="boolean" || typeof p.hybrid.semantic!=="boolean" || !['auto','wasm'].includes(p.hybrid.backend) || !Array.isArray(p.hybrid.audits))throw Error("Invalid hybrid settings.");
+        p.hybrid.audits.forEach(function(a,i){
+          if(!a || a.round!==i+1 || !Number.isSafeInteger(a.N) || !Number.isSafeInteger(a.n) || a.n<1 || a.N<a.n || !Number.isSafeInteger(a.found) || a.found<0 || !Number.isInteger(a.seed) || !Array.isArray(a.ids) || a.ids.length!==a.n || new Set(a.ids).size!==a.n || !Array.isArray(a.population) || a.population.length!==a.N || new Set(a.population).size!==a.N || a.ids.some(function(id){return !a.population.includes(id);}) || !Array.isArray(a.labels) || a.labels.length>a.n || a.labels.some(function(x){return x!==0&&x!==1;}) || typeof a.signature!=="string" || !a.auditor)throw Error("Invalid fixed-sample audit history.");
+        });
+      }
       var next=Object.assign(blankState(),p);next.records=p.records.map(normalizeImported);
       next.stage=next.stage==="ft" ? "ft":"ta";next.mode=next.mode==="dual" ? "dual":"single";next.active=next.active==="r2" ? "r2":"r1";
       return next;
@@ -1602,58 +1632,23 @@
       $("btn-undo").onclick=function(){action(function(){var r=W.undo(S);S.filter="all";$("f-filter").value="all";VIEW=filteredRecords();S.cursor=Math.max(0,VIEW.indexOf(r));});};
       // AI assist
       $("ai-on").addEventListener("change", function () { $("ai-controls").style.display = this.checked ? "" : "none"; });
-      $("ai-mode").addEventListener("change", function () {
-        var byo = this.value === "byokey";
-        $("ai-handoff").style.display = byo ? "none" : "";
-        $("ai-byokey").style.display = byo ? "" : "none";
-      });
       $("btn-ai-export").addEventListener("click", aiExportTask);
       $("btn-ai-import").addEventListener("click", function () { $("ai-file").click(); });
       $("ai-file").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) aiImportResults(f); e.target.value = ""; });
-      $("btn-ai-run").addEventListener("click", aiRunByoKey);
-      $("ai-key").addEventListener("change", function () { aiKeySet(this.value.trim()); });
-      var savedKey = aiKeyGet(); if (savedKey) $("ai-key").value = savedKey;
 
       document.addEventListener("keydown", onKey);
     }
 
-    // ================= local ML classifier (TF-IDF + logistic regression) =================
-    // Fully client-side active learning: the reviewer labels records with i/e, we
-    // train a transparent logistic-regression model over TF-IDF features (unigrams
-    // + bigrams + MeSH keywords) and re-rank the rest. No backend, no key,
-    // deterministic given the same labels. In dual-reviewer mode BOTH reviewers'
-    // labels are used (was R1-only before). 5-fold cross-validated AUC and a
-    // data-driven stopping signal are surfaced so quality is measurable, not asserted.
+    // Legacy local ranker retained for saved projects and historical experiments.
+    // New, independently benchmarked worker implementation: hybrid-core.js.
     var ML = { model: null, V: null, topPos: [], topNeg: [], trained: false, cv: null };
     var ML_STOP = new Set(("a an the of and or to in for on with without via using study trial we our this that these those is are was were be been being as at by from into results methods method background conclusion conclusions objective objectives aim aims patients patient effect effects group groups versus compared comparison between among also can may use used using based both than then there their which while".split(/\s+/)));
-    // ---- ranker configuration (overridable; benchmark ablation reads these) ----
-    // ML_TF: "sublinear" (1+log tf, default) damps repeated-term dominance, the
-    //   standard Salton TF for screening; "raw" = plain counts (pre-upgrade).
-    // ML_MODEL_MODE: "ens" (default) averages logistic regression with a
-    //   complement-Naive-Bayes log-ratio scorer — NB is one supported local alternative
-    //   and is very robust under heavy class imbalance, so the ensemble lifts the
-    //   hardest low-prevalence sets; "lr"/"nb" select a single ranker (ablation).
+    // Historical configuration; no current comparative performance claim.
     var ML_TF = "raw";
     var ML_MODEL_MODE = "nb";
-    // Unigram-only vocabulary by default (ML_NGRAM_MAX=1, matching ASReview's
-    // TfidfVectorizer default). Kaizen ablation (2026-06-09, full 19-set, multi-seed)
-    // found adjacent bigrams add no measured WSS@95 over unigrams here and roughly
-    // double per-record retraining cost, so unigrams are shipped. Set 2 to re-enable.
     var ML_NGRAM_MAX = 1;
-    // Multinomial-NB Laplace smoothing (sklearn MultinomialNB `alpha`). ASReview's
-    // published default is 3.822, but under per-record continuous AL on this 19-set
-    // suite a lighter alpha=2 measured best (all-19 WSS@95 0.4507 vs 0.4427 at 3.822,
-    // 3-seed) — with more training data accumulating each retrain, less smoothing wins.
     var ML_NB_ALPHA = 2.0;
-    // Balanced sample-weighting ratio (ASReview "balanced" balancer / the successor
-    // to v1 dynamic-resampling). Positives get weight 1; negatives get
-    // nPos/(ratio·nNeg), so the positive:negative weight ratio is ratio·(nNeg/nPos).
-    // ratio=1 reproduces plain class-balancing; ASReview tunes 1.2 (NB) / 9.8 (SVM).
-    // Kaizen (2026-06-09): ratio=2 measured the best single-lever gain on the 19-set
-    // suite (all-19 +0.010 WSS@95 over ratio=1), so the shipped default is 2.
     var ML_BALANCE_RATIO = 2.0;
-    // Max document-frequency cut as a fraction of N (terms in >this share of docs are
-    // dropped as too-common). Kaizen: 0.4 measured marginally better than 0.6 here.
     var ML_DF_MAX_FRAC = 0.4;
     function mlUnigrams(s) {
       var m = String(s || "").toLowerCase().match(/[a-z0-9]+/g) || [], out = [], i, w;
@@ -1832,13 +1827,9 @@
       if (!scores.length) return null;
       return { auc: aucScore(scores, labels), n: labelled.length, folds: k, pos: pos.length, neg: neg.length };
     }
-    // ---- principled target-recall stopping rule (Callaghan & Müller-Hansen 2020,
-    // "Statistical stopping criteria for automated screening in systematic reviews",
-    // Syst Rev 9:273; the `buscar` biased-urn criterion). Given the relevant/irrelevant
-    // sequence screened in ML-rank order, it returns a p-value for H0 = "the recall
-    // target has NOT been reached". Reject (safe to stop) when p < 1−confidence.
-    // This is a real statistical guarantee, replacing the eyeballed "long irrelevant
-    // run" heuristic. Faithful port of buscarR::calculate_h0 (bias=1, exact urn).
+    // Historical exploratory statistic, kept for compatibility with old experiments.
+    // Rank-ordered labels and repeated windows do not provide a random-sample
+    // stopping guarantee. The live audit uses the separate fixed-sample procedure.
     function _lgamma(x) {
       var c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
       var y = x, tmp = x + 5.5, ser = 1.000000000190015, j;
@@ -1856,7 +1847,7 @@
       return s > 1 ? 1 : s;
     }
     // seq = 0/1 labels screened IN RANK ORDER; N = total records (screened+unseen).
-    // Returns the minimum p over all look-back windows (most conservative baseline).
+    // Returns the minimum p over all look-back windows (uncorrected selection).
     // nUse (optional) = consider only the first nUse entries of seq (avoids slicing
     // when sweeping the criterion over a growing prefix).
     function mlBuscarP(seq, N, recallTarget, nUse) {
@@ -1971,15 +1962,7 @@
       if (!labelled.some(function (p) { return p[1] === 0; })) { for (k = 0; k < N; k++) if (!recs[k]._gold) { reveal(k); break; } }
       var curve = [{ screened: screened, found: found }];
       var guard = 0;
-      // Active-learning cadence. Default = PER-RECORD continuous AL (n_query=1):
-      // retrain after revealing each single record, exactly as ASReview's simulation
-      // does. Kaizen (2026-06-09, full 19-set, multi-seed) found this is the single
-      // biggest WSS@95 lever — per-record vs the older AutoTAR batch-that-grows-10%
-      // lifted all-19 WSS@95 from 0.39 to 0.45 — because growing batches screen the
-      // mid/late pool in near-random order before the next retrain. Each NB refit is
-      // O(labelled·nnz) and cheap, which is what makes per-record affordable. Overrides:
-      //   opts.cadence="auto"  → AutoTAR batch starting at 1, growing ~10%/round (faster, lower WSS);
-      //   opts.cadence="fixed" → reveal a constant opts.batch each round.
+      // Historical simulation cadence; not used by the new comparison protocol.
       var cad = opts.cadence || "perrecord";
       var auto = (cad === "auto");
       var B = cad === "fixed" ? (batch || 100) : (auto ? (opts.batch0 || 1) : 1);
@@ -2012,10 +1995,7 @@
         for (var c = 0; c < curve.length; c++) if (curve[c].screened <= lim) best = curve[c].found;
         return totalPos ? best / totalPos : 0;
       }
-      // Buscar stopping rule applied to the actual screening order: the first curve
-      // point at which H0("missed 95% recall") is rejected at 95% confidence (p<0.05),
-      // and the TRUE recall already achieved there. Quantifies the real, defensible
-      // stopping cost — reading past s95 buys statistical certainty, not just luck.
+      // Exploratory legacy output only; no validated confidence or stopping claim.
       var conf = opts.stopConfidence || 0.95, tgt = opts.stopTarget || 0.95, alpha = 1 - conf;
       var buscarStopAt = N, buscarRecall = 1, buscarP = 1, prevScr = 0, ci;
       // Evaluate the criterion on a coarse grid of screening depths (≤~200 points) —
@@ -2037,7 +2017,6 @@
     }
 
     // ================= optional AI assist (default OFF) =================
-    var AI_KEY_LS = "screen-ai-key";
     function aiUndecidedBatch(cap) {
       if(S.stage==="ft")return [];
       return S.records.filter(isUndecidedForActive).slice(0, cap || 200);
@@ -2110,68 +2089,6 @@
       if(S.stage==="ft"){workflowMessage("Abstract-only AI suggestions cannot decide full-text eligibility.");return;}
       decide(r.aiSuggestion);
     }
-    // BYO-key (fallback): calls the user's own provider account; key never leaves localStorage.
-    function aiKeyGet() { try { return localStorage.getItem(AI_KEY_LS) || ""; } catch (e) { return ""; } }
-    function aiKeySet(v) { try { if (v) localStorage.setItem(AI_KEY_LS, v); else localStorage.removeItem(AI_KEY_LS); } catch (e) {} }
-    function aiParse(text) {
-      var m = String(text || "").match(/\{[\s\S]*\}/);
-      var o = JSON.parse(m ? m[0] : text);
-      return {
-        suggestion: ["include", "exclude", "maybe"].indexOf(o.suggestion) >= 0 ? o.suggestion : "maybe",
-        confidence: (typeof o.confidence === "number") ? o.confidence : null,
-        rationale: clean(o.rationale, 400)
-      };
-    }
-    function aiCallProvider(prov, key, model, rec) {
-      var sys = "You screen records for a systematic review. Include topics: " + (S.incTerms.join(", ") || "n/a") +
-        ". Exclude topics: " + (S.excTerms.join(", ") || "n/a") +
-        ". From the title/abstract only, decide include, exclude, or maybe. Respond ONLY as JSON: {\"suggestion\":\"include|exclude|maybe\",\"confidence\":0..1,\"rationale\":\"one sentence\"}.";
-      var user = "Title: " + rec.title + "\n\nAbstract: " + (rec.abstract || "(none)");
-      if (prov === "openai") {
-        return fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
-          body: JSON.stringify({ model: model || "gpt-4o-mini", temperature: 0, response_format: { type: "json_object" },
-            messages: [{ role: "system", content: sys }, { role: "user", content: user }] })
-        }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-          .then(function (j) { return aiParse(j.choices[0].message.content); });
-      }
-      if (prov === "anthropic") {
-        return fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST", headers: { "Content-Type": "application/json", "x-api-key": key,
-            "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-          body: JSON.stringify({ model: model || "claude-haiku-4-5-20251001", max_tokens: 300, system: sys,
-            messages: [{ role: "user", content: user }] })
-        }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-          .then(function (j) { return aiParse(j.content[0].text); });
-      }
-      var mdl = model || "gemini-1.5-flash";
-      return fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(mdl) + ":generateContent?key=" + encodeURIComponent(key), {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: [{ role: "user", parts: [{ text: user }] }] })
-      }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-        .then(function (j) { return aiParse(j.candidates[0].content.parts[0].text); });
-    }
-    function aiRunByoKey() {
-      var key = $("ai-key").value.trim() || aiKeyGet();
-      if (!key) { toast("Enter an API key first."); return; }
-      aiKeySet(key);
-      var prov = $("ai-provider").value, model = $("ai-model").value.trim();
-      var batch = aiUndecidedBatch(200).filter(function(r){return !r.aiSuggestion;}).slice(0,50);
-      if (!batch.length) { toast("No undecided records without a suggestion."); return; }
-      toast("Calling " + prov + " for " + batch.length + " records…");
-      var i = 0, done = 0;
-      function step() {
-        if (i >= batch.length) { save(); render(); toast("AI done: " + done + "/" + batch.length + " records."); return; }
-        var rec = batch[i++];
-        aiCallProvider(prov, key, model, rec).then(function (res) {
-          rec.aiSuggestion = res.suggestion; rec.aiRationale = res.rationale; rec.aiConfidence = res.confidence;
-          done++; if (done % 5 === 0) { save(); render(); }
-          step();
-        }).catch(function (e) { save(); render(); toast("AI stopped at record " + i + ": " + e.message); });
-      }
-      step();
-    }
-
     function workflowMessage(msg) { $("workflow-status").textContent=msg; }
     function invalidateRanking(keepQueue) {
       if(S.modelRun)S.modelRun.stale=true;
@@ -2209,6 +2126,9 @@
       var conflictOption=$("f-filter").querySelector('option[value="conflict"]');if(conflictOption)conflictOption.disabled=blind;
     }
 
+    window.ScreenBridge={state:function(){return S;},save:save,render:render,current:currentRecord,
+      eligible:stageRecords,notify:workflowMessage,audit:W.audit,
+      label:function(r){if(r.dup)return null;var d=W.visible(r,S);return d==="include"?1:d==="exclude"?0:null;}};
     // ---- test hook (deterministic, for behavioural specs) ----
     window.__almScreenpro = {
       blankState: blankState,
@@ -2258,6 +2178,7 @@
     try { if (/[?&]import=sr-records-v1/.test(location.search)) importFromSearch(); } catch (e) {}
   })();
   </script>
+  <script src="hybrid-ui.js"></script>
   <script src="../hub/shared/a11y-landmarks.js"></script>
   <div id="alm-validate"></div>
   <script src="../shared/build-info.js"></script>

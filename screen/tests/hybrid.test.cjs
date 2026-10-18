@@ -1,5 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const H=require('../hybrid-core.js');
+test('PICO extraction returns literal structural snippets, never invented fields',()=>{const P=require('../pico.js'),text='Adults with asthma received inhaled therapy versus placebo. The primary outcome was symptom control.';const e=P.extract(text);assert.deepEqual(new Set(e.map(x=>x.field)),new Set(['population','intervention','comparator','outcome']));for(const x of e)assert.equal(x.text,text.slice(x.start,x.end));assert.deepEqual(P.extract('No structured clinical description.'),[]);});
 test('protocol matches synonyms with evidence offsets, boundaries and escaped literal regex',()=>{
  const rules=[{id:'p',field:'population',terms:['heart failure','HF'],mode:'require'},{id:'x',field:'design',terms:['animal'],mode:'exclude'}];
  const text='HF in adults; no animal experiment. CHF is different.';const r=H.match(text,rules);

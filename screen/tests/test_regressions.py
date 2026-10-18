@@ -41,10 +41,12 @@ def test_kappa_degenerate_case_flagged():
     assert "κ undefined" in h
 
 
-def test_ai_hosts_allowlisted_in_csp():
+def test_ai_inference_is_same_origin_only():
     h = _h()
     for host in ("api.openai.com", "api.anthropic.com", "generativelanguage.googleapis.com"):
-        assert host in h, f"missing AI connect-src host: {host}"
+        assert host not in h, f"external inference host remains: {host}"
+    assert "connect-src 'self';" in h
+    assert "'wasm-unsafe-eval'" in h
 
 
 def test_footer_does_not_overstate_locality():
@@ -57,8 +59,7 @@ def test_footer_does_not_overstate_locality():
 
 def test_no_hardcoded_api_key():
     h = _h()
-    # only the visible placeholder may contain the sk- hint
-    assert 'placeholder="sk-' in h
+    assert 'id="ai-key"' not in h
     # no real-looking secret committed
     assert "sk-SECRET" not in h
     assert "sk-proj-" not in h
