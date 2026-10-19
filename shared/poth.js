@@ -24,16 +24,29 @@
   // sucras: array of SUCRA or P-score values in [0,1] (one per treatment).
   // Returns { poth, n, s2, s2max, meanSucra } or null if n < 2 / invalid.
   function poth(sucras) {
-    var s = (sucras || []).filter(function (v) { return typeof v === "number" && isFinite(v); });
-    var n = s.length;
-    if (n < 2) return null;
-    var sumSq = 0, sum = 0;
-    for (var i = 0; i < n; i++) { sumSq += (s[i] - 0.5) * (s[i] - 0.5); sum += s[i]; }
+    // A complete connected NMA ranking must contain one finite SUCRA/P-score
+    // in [0,1] per treatment, and the values must average 0.5.
+    if (!Array.isArray(sucras) || sucras.length < 2) return null;
+    var n = sucras.length, sum = 0, sumSq = 0, i, v;
+    for (i = 0; i < n; i++) {
+      v = sucras[i];
+      if (typeof v !== "number" || !isFinite(v) || v < 0 || v > 1) return null;
+      sum += v;
+    }
+    var mean = sum / n;
+    // Allow half a percentage point due to rounded NMA reporting.
+    if (Math.abs(mean - 0.5) > 0.0050000001) return null;
+    for (i = 0; i < n; i++) {
+      v = sucras[i] - 0.5;
+      sumSq += v * v;
+    }
     var s2 = sumSq / n;
     var s2max = (n + 1) / (12 * (n - 1));
-    var val = s2 / s2max;            // == 12(n-1)/(n+1) * s2
-    if (val < 0) val = 0; if (val > 1) val = 1; // guard tiny float overshoot
-    return { poth: val, n: n, s2: s2, s2max: s2max, meanSucra: sum / n };
+    var val = s2 / s2max;
+    // Never clamp mathematically impossible rankings to certain POTH=1.
+    if (!isFinite(val) || val < 0 || val > 1 + 1e-12) return null;
+    if (val > 1) val = 1; // Floating-point boundary only.
+    return { poth: val, n: n, s2: s2, s2max: s2max, meanSucra: mean };
   }
 
   // SUCRA from a rank-probability matrix P (treatments × ranks; P[i][r] =
