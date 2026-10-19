@@ -1,3 +1,4 @@
 validate/plus-corpus/*.json text eol=lf
 validate/MANIFEST-plus.json text eol=lf
 validate/plus-pins.js text eol=lf
+validate/numerical-plus.json text eol=lf

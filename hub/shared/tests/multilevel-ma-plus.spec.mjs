@@ -1,6 +1,6 @@
 // multilevel-ma extras (#alm-plus): CR2 cluster-robust inference and profile-likelihood
 // intervals. Engine checks run in Node against the pinned native R references; browser
-// checks replay the original 528-check contract and the 7,272-check extras contract, and
+// checks replay the original 528-check contract and the 10,749-check extras contract, and
 // show that every check can fail (planted negatives).
 import {test, expect} from './validation-fixture.mjs';
 import {test as nodeTest} from '@playwright/test';
@@ -18,28 +18,118 @@ const evidence = (name, value) => {
   mkdirSync(new URL('validate/plus-evidence/', root), {recursive: true});
   writeFileSync(new URL('validate/plus-evidence/' + name, root), JSON.stringify(value, null, 2) + '\n');
 };
-const near = (a, b, tol, absolute = false) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) / (absolute ? 1 : Math.max(1, Math.abs(b))) <= tol;
+// null on both sides is a declared unavailable quantity: a profile limit the bounded search did
+// not reach. null on one side only must fail. Same convention as AlmValidate.compare.
+const near = (a, b, tol, absolute = false) => (a === null && b === null) ||
+  (Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) / (absolute ? 1 : Math.max(1, Math.abs(b))) <= tol);
+// The 44 metadat configurations and the 21 few-cluster regime configurations.
+const corpora = () => [
+  {corpus: read('validate/corpus/corpus.json'), reference: read('validate/plus-corpus/reference-plus.json'), count: 44},
+  {corpus: read('validate/plus-corpus/regime-corpus-plus.json'), reference: read('validate/plus-corpus/regime-reference-plus.json'), count: 21}
+];
 
-nodeTest('multilevel-ma-plus engine: all 44 R references, 2,596 numerical checks', () => {
-  nodeTest.setTimeout(900000); // 44 profile-likelihood fits in Node take several minutes.
-  const corpus = read('validate/corpus/corpus.json'), reference = read('validate/plus-corpus/reference-plus.json');
-  expect(Object.keys(reference)).toHaveLength(44);
-  let checks = 0; const failed = [];
+// The engine must not sit at a worse restricted-likelihood optimum than R. The slack is 1e-12
+// relative to max(1,|R|) - the same scale convention as the numerical tolerances - because the
+// rounding noise of a sum over a hundred rows is relative, not absolute: the largest observed
+// shortfall is 2.6e-12 on a log-likelihood of 442.66 (dat.mccurdy2020), i.e. 5.8e-15 relative.
+// Real differences here are 1e-9 and larger, and the engine must be the higher side, because R's
+// reported estimates are its optimiser's stopping point.
+const notLower = (engine, r) => engine + 1e-12 * Math.max(1, Math.abs(r)) >= r;
+
+nodeTest('multilevel-ma-plus engine: all 65 R references, 3,835 numerical checks', () => {
+  nodeTest.setTimeout(1500000); // 65 profile-likelihood fits in Node take several minutes.
+  let checks = 0, configurations = 0; const failed = [], lower = [];
+  expect(notLower(-8.462230559363343, -8.462230559363341)).toBe(true); // observed float noise
+  expect(notLower(442.65858944379346, 442.658589443796)).toBe(true); // the largest observed, 5.8e-15 relative
+  expect(notLower(-8.46223056 - 1e-9, -8.46223056)).toBe(false); // a real drop is detected
+  expect(notLower(442.65858944 - 1e-7, 442.65858944)).toBe(false); // ... at the larger scale too
   const check = (id, key, a, b, tol, absolute) => { checks++; if (!near(a, b, tol, absolute)) failed.push({id, key, a, b, tol}); };
-  for (const [name, r] of Object.entries(reference)) {
-    expect(r.status, name).toBe('ok');
-    const a = AlmMultilevelPlusEngine.fit(corpus[name]);
-    checks++; if (a.rows !== r.rows) failed.push({id: name, key: 'rows'});
-    checks++; if (a.clusters !== r.clusters) failed.push({id: name, key: 'clusters'});
-    check(name, 'logLik', a.logLik, r.logLik, 1e-6);
-    for (const k of Object.keys(r.robust)) check(name, 'robust.' + k, a.robust[k], r.robust[k], k === 'p' ? 1e-9 : 1e-6, k === 'p');
-    const cr = AlmMultilevelPlusEngine.cr2(corpus[name], ...r.cr2Sigma2);
-    for (const k of Object.keys(r.robust)) check(name, 'closed.' + k, cr[k], r.robust[k], 1e-9, k === 'p');
-    for (let j = 0; j < 2; j++) for (const k of ['estimate', 'lower', 'upper', 'x', 'll'])
-      [r.profiles[j][k]].flat().forEach((v, i) => check(name, `profile.${j}.${k}.${i}`, [a.profiles[j][k]].flat()[i], v, 1e-6));
+  for (const set of corpora()) {
+    expect(Object.keys(set.reference)).toHaveLength(set.count);
+    for (const [name, r] of Object.entries(set.reference)) {
+      configurations++;
+      expect(r.status, name).toBe('ok');
+      const a = AlmMultilevelPlusEngine.fit(set.corpus[name]);
+      checks++; if (a.rows !== r.rows) failed.push({id: name, key: 'rows'});
+      checks++; if (a.clusters !== r.clusters) failed.push({id: name, key: 'clusters'});
+      check(name, 'logLik', a.logLik, r.logLik, 1e-6);
+      if (!notLower(a.logLik, r.logLik)) lower.push({id: name, engine: a.logLik, r: r.logLik});
+      for (const k of Object.keys(r.robust)) check(name, 'robust.' + k, a.robust[k], r.robust[k], k === 'p' ? 1e-9 : 1e-6, k === 'p');
+      const cr = AlmMultilevelPlusEngine.cr2(set.corpus[name], ...r.cr2Sigma2);
+      for (const k of Object.keys(r.robust)) check(name, 'closed.' + k, cr[k], r.robust[k], 1e-9, k === 'p');
+      for (let j = 0; j < 2; j++) for (const k of ['estimate', 'lower', 'upper', 'x', 'll'])
+        [r.profiles[j][k]].flat().forEach((v, i) => check(name, `profile.${j}.${k}.${i}`, [a.profiles[j][k]].flat()[i], v, 1e-6));
+    }
   }
-  console.log('MULTILEVEL PLUS ENGINE', (checks - failed.length) + '/' + checks);
-  expect(failed).toEqual([]); expect(checks).toBe(2596);
+  console.log('MULTILEVEL PLUS ENGINE', (checks - failed.length) + '/' + checks,
+    '; restricted log-likelihood never below R in', configurations - lower.length + '/' + configurations);
+  expect(failed).toEqual([]); expect(lower).toEqual([]); expect(configurations).toBe(65); expect(checks).toBe(3835);
+});
+
+// metafor:::confint.rma.mv searches sigma^2 in [0, max(10, 100*estimate)] and, when the
+// likelihood-ratio cutoff is not crossed inside that interval, returns the bound itself as the
+// limit; it reports that only in ub.sign (">") of the returned object, with no warning and no
+// message, so reading $random[1,] alone pins a truncated search bound as a reference value. The
+// generators widen the bound until the limit is interior, so no reference limit may sit at the
+// default bound - and the recorded divergences must show that the widened limit, not metafor's
+// default-bound value, is the one that satisfies the defining criterion.
+nodeTest('multilevel-ma-plus references: no pinned profile limit is metafor\'s own search bound', () => {
+  let limits = 0, interior = 0; const atBound = [];
+  for (const set of corpora()) for (const [id, r] of Object.entries(set.reference)) r.profiles.forEach((p, j) => {
+    const bound = Math.max(10, 100 * p.estimate);
+    limits++;
+    if (typeof p.upper === 'number' && Math.abs(p.upper - bound) <= 1e-8 * Math.max(1, bound)) atBound.push({id, j, upper: p.upper, bound});
+    else interior++;
+  });
+  console.log('MULTILEVEL PLUS LIMITS INTERIOR', interior + '/' + limits);
+  expect(atBound).toEqual([]); expect(limits).toBe(130);
+  // The guard can fail: a limit equal to the default bound is detected.
+  const planted = {profiles: [{estimate: 0.05, upper: 10}, {estimate: 1, upper: 2}]};
+  expect(planted.profiles.filter((p, j) => Math.abs(p.upper - Math.max(10, 100 * p.estimate)) <= 1e-8 * Math.max(1, Math.max(10, 100 * p.estimate)))).toHaveLength(1);
+});
+
+nodeTest('multilevel-ma-plus divergences: the widened limit meets the criterion and metafor\'s default bound does not', () => {
+  nodeTest.setTimeout(900000);
+  const divergences = read('validate/plus-corpus/divergences-plus.json');
+  const reference = read('validate/plus-corpus/regime-reference-plus.json');
+  const corpus = read('validate/plus-corpus/regime-corpus-plus.json');
+  expect(divergences.length).toBeGreaterThan(0);
+  for (const d of divergences) {
+    // metafor returned its own bound, flagged only by ub.sign.
+    expect(d.metafor_default_ub_sign, d.id).toBe('>');
+    expect(near(d.metafor_default_upper, d.default_vc_max, 1e-10), d.id).toBe(true);
+    // The engine agrees with the widened reference limit, not with the truncated bound.
+    const a = AlmMultilevelPlusEngine.fit(corpus[d.id]);
+    expect(near(a.profiles[d.component - 1].upper, d.reference_upper, 1e-6), d.id).toBe(true);
+    expect(near(a.profiles[d.component - 1].upper, d.metafor_default_upper, 1e-6), d.id).toBe(false);
+    expect(reference[d.id].profiles[d.component - 1].upper).toBe(d.reference_upper);
+    // Adjudicated with metafor's own profile likelihood: the reference limit sits on the cutoff,
+    // the truncated bound sits above it, i.e. the search stopped before reaching the limit.
+    expect(Math.abs(d.gap_reference), d.id).toBeLessThan(1e-7);
+    expect(d.gap_default, d.id).toBeGreaterThan(1e-3);
+  }
+  console.log('MULTILEVEL PLUS DIVERGENCES', divergences.length, divergences.map(d => `${d.id}/${d.component} default ${d.metafor_default_upper} gap ${d.gap_default.toPrecision(4)} -> widened ${d.reference_upper} gap ${d.gap_reference.toPrecision(3)}`).join('; '));
+});
+
+nodeTest('multilevel-ma-plus engine: an unreached profile limit is null, never the search bound', () => {
+  nodeTest.setTimeout(300000);
+  const rows = read('validate/corpus/corpus.json')['dat.konstantopoulos2011'];
+  const full = AlmMultilevelPlusEngine.fit(rows);
+  expect(full.profiles[0].upper).toBeGreaterThan(0.2);
+  // searchBound is the analogue of metafor's control vc.max. Below the limit, the engine reports
+  // the limit as unavailable rather than returning the bound, and the nine marks still end at
+  // 1.5 times the estimate so both sides evaluate the same abscissae.
+  const bounded = AlmMultilevelPlusEngine.fit(rows, {searchBound: 0.1});
+  expect(bounded.profiles[0].upper).toBeNull();
+  expect(bounded.profiles[0].upper).not.toBe(0.1);
+  expect(bounded.profiles[0].x.at(-1)).toBeCloseTo(bounded.profiles[0].estimate * 1.5, 12);
+  expect(bounded.profiles[0].ll.every(Number.isFinite)).toBe(true);
+  expect(bounded.profiles[0].lower).toBeCloseTo(full.profiles[0].lower, 10);
+  expect(() => AlmMultilevelPlusEngine.fit(rows, {searchBound: 0})).toThrow(/searchBound/);
+  // A null limit must not pass against a numeric reference, nor the reverse.
+  expect(near(null, null, 1e-6)).toBe(true);
+  expect(near(null, full.profiles[0].upper, 1e-6)).toBe(false);
+  expect(near(full.profiles[0].upper, null, 1e-6)).toBe(false);
 });
 
 nodeTest('multilevel-ma-plus engine: the tolerance check fails on planted errors', () => {
@@ -68,7 +158,7 @@ nodeTest('multilevel-ma-plus engine: prototype-key cluster labels do not change 
   expect(b).toEqual(a);
 });
 
-nodeTest('multilevel-ma-plus pins: four LF corpus files verify and every changed byte is refused', async () => {
+nodeTest('multilevel-ma-plus pins: seven LF corpus files verify and every changed byte is refused', async () => {
   nodeTest.setTimeout(180000);
   const context = vm.createContext({crypto: webcrypto, TextDecoder, TextEncoder});
   vm.runInContext(readFileSync(new URL('../../../shared/alm-validate.js', import.meta.url), 'utf8'), context);
@@ -76,7 +166,8 @@ nodeTest('multilevel-ma-plus pins: four LF corpus files verify and every changed
   const pinContext = vm.createContext({window: {}});
   vm.runInContext(readFileSync(new URL('validate/plus-pins.js', root), 'utf8'), pinContext);
   const pins = pinContext.window.AlmMultilevelPlusPins;
-  expect(manifest.files).toHaveLength(4); expect(manifest.checks).toBe(7272); expect(pins.checks).toBe(7272);
+  expect(manifest.files).toHaveLength(7); expect(manifest.checks).toBe(10749); expect(pins.checks).toBe(10749);
+  expect(manifest.configurations).toBe(65); expect(manifest.numericalChecks).toBe(3835);
   expect(pins.files.map(f => f.sha256)).toEqual(manifest.files.map(f => f.sha256));
   for (const f of manifest.files) {
     const bytes = readFileSync(new URL(f.path, root)); expect(bytes.length).toBe(f.bytes); expect(bytes.includes(13)).toBe(false);
@@ -95,8 +186,8 @@ async function loadExample(page) {
   });
 }
 
-test('multilevel-ma-plus original 528 replay unchanged and extras replay 7,272/7,272', async ({page}) => {
-  test.setTimeout(900000);
+test('multilevel-ma-plus original 528 replay unchanged and extras replay 10,749/10,749', async ({page}) => {
+  test.setTimeout(1800000);
   await page.goto(url);
   const before = await page.locator('#src').inputValue();
   const navigation = await page.evaluate(() => ({href: location.href, state: history.state, length: history.length}));
@@ -106,8 +197,8 @@ test('multilevel-ma-plus original 528 replay unchanged and extras replay 7,272/7
   const plus = await page.evaluate(() => AlmMultilevelPlusValidation.runCorpus());
   console.log('MULTILEVEL PLUS', plus.passed + '/' + plus.checks, 'failed', plus.failed.length);
   evidence('replay-plus.json', {original: {checks: old.checks, passed: old.passed, failed: old.failed}, extras: {checks: plus.checks, passed: plus.passed, failed: plus.failed, summaryLines: plus.summaryLines}, userAgent: await page.evaluate(() => navigator.userAgent)});
-  expect(plus.checks).toBe(7272); expect(plus.passed).toBe(7272); expect(plus.failed).toEqual([]);
-  await expect(page.locator('#alm-plus-validate [role=status]')).toContainText('7272/7272 passed; 0 failed');
+  expect(plus.checks).toBe(10749); expect(plus.passed).toBe(10749); expect(plus.failed).toEqual([]);
+  await expect(page.locator('#alm-plus-validate [role=status]')).toContainText('10749/10749 passed; 0 failed');
   await expect(page.locator('#alm-plus-validate h2')).toHaveText('Validate the extras in R');
   expect(await page.locator('#src').inputValue()).toBe(before);
   expect(await page.evaluate(() => ({href: location.href, state: history.state, length: history.length}))).toEqual(navigation);
@@ -189,7 +280,7 @@ test('multilevel-ma-plus each plot fails on geometry, paint and axis-label chang
   expect(checks).toEqual([false, false, false, false, false, false, true]);
 });
 
-test('multilevel-ma-plus all four refusals pass and each reason/display/export check can fail', async ({page}) => {
+test('multilevel-ma-plus all eight refusals pass and each reason/display/export check can fail', async ({page}) => {
   await page.goto(url);
   const outcome = await page.evaluate(() => {
     const checks = [];
@@ -204,7 +295,116 @@ test('multilevel-ma-plus all four refusals pass and each reason/display/export c
     }
     return checks;
   });
-  expect(outcome).toHaveLength(24); expect(outcome.every(Boolean)).toBe(true);
+  expect(outcome).toHaveLength(48); expect(outcome.every(Boolean)).toBe(true);
+});
+
+// Number() reads hexadecimal, binary and octal literals, so '0x1F' would be analysed as 31
+// instead of refused. The extras row contract promises a finite effect and a positive standard
+// error, so only decimal and exponent forms are accepted.
+test('multilevel-ma-plus the extras parser refuses radix literals and keeps decimal forms', async ({page}) => {
+  await page.goto(url);
+  const outcome = await page.evaluate(() => {
+    const refused = [], accepted = [];
+    const run = text => {
+      document.getElementById('src').value = text;
+      try { return {rows: AlmMultilevelPlus.rows()}; } catch (e) { return {reason: e.message}; }
+    };
+    for (const bad of ['0x1F', '0b101', '0o17', '0X1f', 'Infinity', '-Infinity', 'NaN', '1_000', '', ' ']) {
+      const effect = run(`A,${bad},0.1\nA,2,0.1\nB,3,0.1`), se = run(`A,1,${bad}\nA,2,0.1\nB,3,0.1`);
+      refused.push([bad, !!effect.reason, !!se.reason]);
+    }
+    for (const good of ['-.5', '1e-1', '+2.5', '0.0', '3', '2E2']) {
+      const r = run(`A,${good},0.1\nA,2,0.1\nB,3,0.1`);
+      accepted.push([good, r.rows ? r.rows[0].y : 'refused: ' + r.reason]);
+    }
+    const zero = run('A,1,0\nA,2,0.1\nB,3,0.1'), negative = run('A,1,-0.1\nA,2,0.1\nB,3,0.1');
+    return {refused, accepted, zero: !!zero.reason, negative: !!negative.reason};
+  });
+  expect(outcome.refused.filter(([, effect, se]) => !effect || !se)).toEqual([]);
+  expect(outcome.accepted).toEqual([['-.5', -0.5], ['1e-1', 0.1], ['+2.5', 2.5], ['0.0', 0], ['3', 3], ['2E2', 200]]);
+  expect(outcome.zero).toBe(true); expect(outcome.negative).toBe(true);
+  console.log('MULTILEVEL PLUS PARSER', outcome.refused.length * 2, 'radix/non-finite forms refused;', outcome.accepted.length, 'decimal forms accepted');
+});
+
+// Keys the original app saves on main (measured independently on main's index.html with the
+// same page and the same one-edit-then-debounce procedure). #alm-plus must not change this list:
+// shared/autosave.js keys controls without an id positionally as idx:N, so a single <select> or
+// <input> inside the extras would both write extras state into the original app's storage key and
+// shift every later positional key, silently mis-restoring older drafts.
+const MAIN_AUTOSAVE_KEYS = ['src', 'idx:1', 'alm-plot-1-format', 'alm-plot-1-resolution', 'alm-plot-1-physical-width', 'idx:5', 'idx:6', 'idx:7', 'idx:8', 'idx:9', 'idx:10'];
+const PLUS_SELECTORS = ['textarea', 'select', 'input[type=text]', 'input[type=number]', 'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'];
+
+test('multilevel-ma-plus the extras stay out of the original autosave', async ({page}) => {
+  test.setTimeout(120000);
+  await page.goto(url);
+  const saved = await page.evaluate(async () => {
+    localStorage.clear();
+    const el = document.getElementById('src');
+    el.value = el.value + '\n';
+    el.dispatchEvent(new Event('input', {bubbles: true}));
+    await new Promise(r => setTimeout(r, 1200)); // the installed debounce is 600 ms
+    const stored = AlmAutosave.peek('multilevel-ma');
+    return {keys: stored && Object.keys(stored.values), src: stored && stored.values.src};
+  });
+  expect(saved.keys).toEqual(MAIN_AUTOSAVE_KEYS);
+  // shared/autosave.js swallows a rejected selector in a try/catch, so also prove it still saves.
+  expect(saved.src).toContain('outcome A');
+  // Planted negative: controls inside #alm-plus, snapshotted with the two selector sets on a
+  // fresh page each time so the positional dataset indices are not carried over.
+  const measure = async selectors => {
+    await page.reload();
+    return page.evaluate(sel => {
+      const plus = document.getElementById('alm-plus');
+      const area = document.createElement('textarea'); area.id = 'plus-data'; plus.append(area);
+      const box = document.createElement('input'); box.type = 'checkbox'; box.id = 'plus-interaction'; plus.append(box);
+      const grid = document.createElement('input'); grid.type = 'number'; grid.value = '9'; plus.append(grid);
+      const seen = new Set(), els = [];
+      sel.forEach(s => document.querySelectorAll(s).forEach(el => { if (!seen.has(el)) { seen.add(el); els.push(el); } }));
+      return Object.keys(AlmAutosave._snapshot(els));
+    }, selectors);
+  };
+  const withDefaults = await measure(PLUS_SELECTORS);
+  const withExclusion = await measure(PLUS_SELECTORS.map(s => s + ':not(#alm-plus *)'));
+  expect(withExclusion).toEqual(MAIN_AUTOSAVE_KEYS);
+  expect(withDefaults).toContain('plus-data');
+  expect(withDefaults).toContain('plus-interaction');
+  expect(withDefaults).not.toEqual(MAIN_AUTOSAVE_KEYS);
+  console.log('MULTILEVEL PLUS AUTOSAVE', withExclusion.length, 'keys, equal to main; default selectors would save', withDefaults.length);
+});
+
+// A profile limit the bounded search did not reach is shown as text and exported as null, never
+// as the search bound. The pinned corpora never reach the default bound, so the state is forced
+// here with the engine's searchBound option, the analogue of metafor's control vc.max.
+test('multilevel-ma-plus an unavailable profile limit is displayed and exported as not estimable', async ({page}) => {
+  test.setTimeout(300000);
+  await page.goto(url);
+  const outcome = await page.evaluate(async () => {
+    const c = await (await fetch('validate/corpus/corpus.json')).json();
+    const rows = c['dat.konstantopoulos2011'];
+    document.getElementById('src').value = rows.map(r => [r.cluster, r.y, Math.sqrt(r.v)].join(',')).join('\n');
+    const result = AlmMultilevelPlusEngine.fit(AlmMultilevelPlus.rows(), {searchBound: 0.1});
+    AlmMultilevelPlus.render(result);
+    const cell = document.querySelector('#alm-plus-output [data-quantity="profile.0.upper"]');
+    const numeric = document.querySelector('#alm-plus-output [data-quantity="profile.1.upper"]');
+    return {
+      value: result.profiles[0].upper,
+      text: cell.textContent,
+      expected: AlmMultilevelPlus.display(null),
+      label: cell.previousElementSibling.textContent,
+      numericText: numeric.textContent,
+      numericValue: result.profiles[1].upper,
+      cells: document.querySelectorAll('#alm-plus-output [data-quantity]').length,
+      quantities: Object.keys(AlmMultilevelPlus.quantities(result)).length,
+      exported: JSON.stringify(result.profiles[0].upper)
+    };
+  });
+  expect(outcome.value).toBeNull();
+  expect(outcome.text).toBe('not estimable (> upper search bound)');
+  expect(outcome.text).toBe(outcome.expected);
+  expect(outcome.label).toBe('Between-study variance 95% profile CI upper');
+  expect(outcome.numericText).toBe(String(outcome.numericValue));
+  expect(outcome.cells).toBe(outcome.quantities);
+  expect(outcome.exported).toBe('null');
 });
 
 test('multilevel-ma-plus edited inputs invalidate extras and exports', async ({page}) => {

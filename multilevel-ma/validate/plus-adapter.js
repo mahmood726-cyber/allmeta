@@ -2,6 +2,10 @@
   'use strict';
   const api=window.AlmMultilevelPlus,pins=window.AlmMultilevelPlusPins;
   const sourcePath='validate/plus-corpus/corpus-plus.json',refPath='validate/plus-corpus/reference-plus.json';
+  // The few-cluster regime corpus: two- and three-cluster designs and one double-boundary design
+  // metafor's default optimiser refuses. The metadat corpus has at least four clusters, so this is
+  // the only part of the replay that reaches the regime where confint.rma.mv's search bound bites.
+  const regimeSourcePath='validate/plus-corpus/regime-corpus-plus.json',regimeRefPath='validate/plus-corpus/regime-reference-plus.json';
   const numerical=(a,r,key)=>AlmValidate.compare(a,r,key==='robust.p'?'abs':'rel',key==='rows'||key==='clusters'?0:key==='robust.p'?1e-9:1e-6);
   const liveKeys=r=>Object.keys(api.quantities(r)).filter(k=>k==='logLik'||k.startsWith('profile.'));
   function buildScript(s){
@@ -78,7 +82,10 @@ cat('ALMJSON:{',paste(sprintf('"%s":%.17g',names(ans),ans),collapse=','),'}\\n',
     out.push({quantity:'display.count',pass:cells.length===Object.keys(rv).length});
     for(const [key,value] of Object.entries(rv)){
       const c=cells.filter(el=>el.dataset.quantity===key);
-      out.push({quantity:'display.'+key,pass:c.length===1&&c[0].textContent===String(av[key])&&c[0].previousElementSibling?.textContent===api.label(key)&&numerical(Number(c[0].textContent),value,key).pass});
+      // An unavailable quantity is displayed as text, so read the cell back as null in that
+      // case: the displayed text and the reference must then both say not estimable.
+      const text=c.length===1?c[0].textContent:null,parsed=text===api.notEstimable?null:Number(text);
+      out.push({quantity:'display.'+key,pass:c.length===1&&text===api.display(av[key])&&c[0].previousElementSibling?.textContent===api.label(key)&&numerical(parsed,value,key).pass});
     }
     let exported;try{exported=JSON.parse(api.exportText());}catch{}
     const keys=(obj,expected)=>obj&&typeof obj==='object'&&JSON.stringify(Object.keys(obj).sort())===JSON.stringify(expected.slice().sort());
@@ -90,11 +97,18 @@ cat('ALMJSON:{',paste(sprintf('"%s":%.17g',names(ans),ans),collapse=','),'}\\n',
     const marksOK=Object.keys(rv).filter(k=>/^profile\.[01]\.(x|ll)\./.test(k)).every(k=>numerical(av[k],rv[k],k).pass);
     out.push(...(await plotChecks(a)).map(c=>({...c,pass:c.pass&&marksOK})));return out;
   }
+  const rowRefusal='Row 1: need a study label, a finite effect and a positive standard error';
   const refusalCases=[
     {text:'A,1,0.1',reason:'Need at least three valid effect rows'},
     {text:'A,1,0.1\nA,2,0.1\nA,3,0.1',reason:'Need at least two clusters'},
     {text:'A,1,0.1\nB,2,0.1\nC,3,0.1',reason:'Variance components are not identifiable without repeated effects'},
-    {text:'A,1,0\nA,2,0.1\nB,3,0.1',reason:'Row 1: need a study label, a finite effect and a positive standard error'}
+    {text:'A,1,0\nA,2,0.1\nB,3,0.1',reason:rowRefusal},
+    // Decimal and exponent forms only: Number() also reads radix literals, so '0x1F' would
+    // otherwise be analysed as 31 instead of refused.
+    {text:'A,0x1F,0.1\nA,2,0.1\nB,3,0.1',reason:rowRefusal},
+    {text:'A,0b101,0.1\nA,2,0.1\nB,3,0.1',reason:rowRefusal},
+    {text:'A,1,0o17\nA,2,0.1\nB,3,0.1',reason:rowRefusal},
+    {text:'A,Infinity,0.1\nA,2,0.1\nB,3,0.1',reason:rowRefusal}
   ];
   function refusalChecks(reason,expected){return [
     {quantity:'reason',pass:reason===expected},
@@ -102,24 +116,28 @@ cat('ALMJSON:{',paste(sprintf('"%s":%.17g',names(ans),ans),collapse=','),'}\\n',
     {quantity:'export',pass:(()=>{try{api.exportText();return false;}catch{return true;}})()}
   ];}
   async function replay(files,progress){
-    const corpus=files[sourcePath],refs=files[refPath],names=Object.keys(corpus);
-    if(names.length!==44||Object.keys(refs).length!==44||names.some(n=>refs[n]?.status!=='ok'))throw Error('Incomplete plus reference corpus');
+    const entries=[];
+    for(const [sp,rp,count] of [[sourcePath,refPath,44],[regimeSourcePath,regimeRefPath,21]]){
+      const corpus=files[sp],refs=files[rp],names=Object.keys(corpus);
+      if(names.length!==count||Object.keys(refs).length!==count||names.some(n=>refs[n]?.status!=='ok'))throw Error('Incomplete plus reference corpus');
+      for(const id of names)entries.push([id,corpus[id],refs[id]]);
+    }
     const original=api.capture(),input=document.getElementById('src'),text=input.value;
     let checks=0,passed=0;const failed=[];
     function record(id,rows){for(const row of rows){checks++;if(row.pass)passed++;else failed.push({id,...row});}}
     try {
-      for(const [i,id] of names.entries()){
-        const clusters=[...new Set(corpus[id].map(r=>r.cluster))];
-        input.value=corpus[id].map(r=>[clusters.indexOf(r.cluster),r.y,Math.sqrt(r.v)].join(',')).join('\n');
-        const a=api.calculate();record(id,await audit(a,refs[id]));
-        progress(`Extras: ${i+1}/44 configurations; ${passed}/${checks} passed`);await new Promise(r=>setTimeout(r,0));
+      for(const [i,[id,rows,ref]] of entries.entries()){
+        const clusters=[...new Set(rows.map(r=>r.cluster))];
+        input.value=rows.map(r=>[clusters.indexOf(r.cluster),r.y,Math.sqrt(r.v)].join(',')).join('\n');
+        const a=api.calculate();record(id,await audit(a,ref));
+        progress(`Extras: ${i+1}/${entries.length} configurations; ${passed}/${checks} passed`);await new Promise(r=>setTimeout(r,0));
       }
       for(const [i,c] of refusalCases.entries()){
         input.value=c.text;let reason='';try{api.calculate();}catch(e){reason=e.message;}
         record('refusal.'+i,refusalChecks(reason,c.reason));
       }
     } finally {input.value=text;api.restore(original);}
-    return {checks,passed,failed,maxima:{},refusals:refusalCases.map(x=>x.reason),summaryLines:['44 configurations. Numerical values, displayed cells, JSON exports, two profile plots and four refusals. CR2 references: clubSandwich 0.7.0; profiles: metafor 5.2-1.','Iterative tolerance 1e-6 relative to max(1,|R|); p-values 1e-9 absolute. Counts, labels and refusals exact. Plot geometry: 0.05 CSS px versus a clean same-browser render; painted styles exact.']};
+    return {checks,passed,failed,maxima:{},refusals:refusalCases.map(x=>x.reason),summaryLines:['65 configurations: 44 from metadat and 21 few-cluster regime designs. Numerical values, displayed cells, JSON exports, two profile plots and eight refusals. CR2 references: clubSandwich 0.7.0; profiles: metafor 5.2-1 with its upper search bound widened until each limit is interior.','Iterative tolerance 1e-6 relative to max(1,|R|); p-values 1e-9 absolute. Counts, labels and refusals exact. Plot geometry: 0.05 CSS px versus a clean same-browser render; painted styles exact.']};
   }
   const adapter={app:'multilevel-ma-plus',paper:{checks:pins.checks,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'Extras R reproduction instructions',runUrl:'validate/README-plus.md'},
     live:{packages:['metafor'],paperVersions:{metafor:'5.2-1'},currentState:()=>{const rows=api.rows(),result=api.calculate();return {rows,result,note:'Live webR checks variance profiles and REML log-likelihood only. CR2 is checked against pinned native clubSandwich references in the full extras replay.'};},buildScript,

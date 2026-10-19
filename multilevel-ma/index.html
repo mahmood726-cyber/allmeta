@@ -537,7 +537,10 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'multilevel-ma' });
+      // The #alm-plus extras are kept out of the original autosave so its keys and
+      // positional idx:N indices stay exactly as before the extras were added.
+      AlmAutosave.install({ appKey: 'multilevel-ma', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *)'; }) });
     }
   });
 })();

@@ -3,6 +3,12 @@
   const mount=document.getElementById('alm-plus');
   const labels={rows:'Effect rows',clusters:'Clusters',logLik:'REML log-likelihood','robust.estimate':'Estimate','robust.se':'CR2 standard error','robust.df':'Satterthwaite degrees of freedom','robust.t':'t statistic','robust.p':'Two-sided p-value','robust.lower':'95% CI lower','robust.upper':'95% CI upper'};
   const names=['Between-study variance','Within-study variance'];
+  const DECIMAL=/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  // A profile limit that the bounded search did not reach is reported as unavailable, never
+  // as the search bound itself. See plus-engine.js (SEARCH_DOUBLINGS, the searchBound option)
+  // and validate/README-plus.md.
+  const NOT_ESTIMABLE='not estimable (> upper search bound)';
+  const display=value=>value===null?NOT_ESTIMABLE:String(value);
   function quantities(r){
     const out={rows:r.rows,clusters:r.clusters,logLik:r.logLik};
     for(const [key,v] of Object.entries(r.robust))out['robust.'+key]=v;
@@ -31,16 +37,19 @@
     node('h3','CR2 cluster-robust inference',target);
     const wrap=node('div',undefined,target);wrap.style.overflowX='auto';const table=node('table',undefined,wrap);node('caption','CR2 cluster-robust inference for the pooled effect (full precision)',table);const head=node('tr',undefined,node('thead',undefined,table));for(const h of ['Quantity','Value'])node('th',h,head).scope='col';
     const tbody=node('tbody',undefined,table);
-    for(const [key,value] of Object.entries(quantities(r)).filter(([k])=>!/^profile\.[01]\.(x|ll)\./.test(k))){const tr=node('tr',undefined,tbody);node('th',label(key),tr).scope='row';const td=node('td',String(value),tr);td.dataset.quantity=key;}
+    for(const [key,value] of Object.entries(quantities(r)).filter(([k])=>!/^profile\.[01]\.(x|ll)\./.test(k))){const tr=node('tr',undefined,tbody);node('th',label(key),tr).scope='row';const td=node('td',display(value),tr);td.dataset.quantity=key;}
     r.profiles.forEach((p,j)=>{const figure=node('figure',undefined,target);figure.style.margin='1rem 0';figure.append(plot(document,p,j));node('figcaption',names[j]+': the other component is re-estimated at each point. The interval uses the profile likelihood-ratio cutoff.',figure);});
     const details=node('details',undefined,target);node('summary','Profile coordinates',details);
     const pwrap=node('div',undefined,details);pwrap.style.overflowX='auto';const pt=node('table',undefined,pwrap);
-    for(const [key,value] of Object.entries(quantities(r)).filter(([k])=>/^profile\.[01]\.(x|ll)\./.test(k))){const tr=node('tr',undefined,pt);node('th',label(key),tr).scope='row';const td=node('td',String(value),tr);td.dataset.quantity=key;}
+    for(const [key,value] of Object.entries(quantities(r)).filter(([k])=>/^profile\.[01]\.(x|ll)\./.test(k))){const tr=node('tr',undefined,pt);node('th',label(key),tr).scope='row';const td=node('td',display(value),tr);td.dataset.quantity=key;}
   }
   function rows(){
     // Strict parsing for extras: do not silently discard malformed input rows.
+    // Decimal and exponent forms only. Number() also accepts hexadecimal, binary and octal
+    // literals ('0x1F' -> 31), so a pasted radix literal would be analysed instead of refused;
+    // the same pattern is used by the meta-regression extras parser.
     const lines=document.getElementById('src').value.trim().split(/\r?\n/).filter(x=>x.trim());
-    return lines.map((line,i)=>{const a=line.split(',').map(x=>x.trim());if(a.length<3||!a[0]||!a[1]||!a[2]||!Number.isFinite(Number(a[1]))||!Number.isFinite(Number(a[2]))||Number(a[2])<=0)throw Error(`Row ${i+1}: need a study label, a finite effect and a positive standard error`);return {cluster:a[0],y:Number(a[1]),v:Number(a[2])**2};});
+    return lines.map((line,i)=>{const a=line.split(',').map(x=>x.trim());if(a.length<3||!a[0]||!a[1]||!a[2]||!DECIMAL.test(a[1])||!DECIMAL.test(a[2])||!Number.isFinite(Number(a[1]))||!Number.isFinite(Number(a[2]))||Number(a[2])<=0)throw Error(`Row ${i+1}: need a study label, a finite effect and a positive standard error`);return {cluster:a[0],y:Number(a[1]),v:Number(a[2])**2};});
   }
   let result=null,source=null;
   node('h2','Cluster-robust inference and variance profiles',mount);
@@ -67,5 +76,5 @@
   document.getElementById('src').addEventListener('input',stale);setInterval(stale,150);
   function capture(){return {result,source,status:status.textContent,html:document.getElementById('alm-plus-output').innerHTML,disabled:download.disabled};}
   function restore(s){result=s.result;source=s.source;status.textContent=s.status;document.getElementById('alm-plus-output').innerHTML=s.html;download.disabled=s.disabled;}
-  window.AlmMultilevelPlus={quantities,label,plot,render,rows,calculate,exportText,capture,restore};
+  window.AlmMultilevelPlus={quantities,label,display,notEstimable:NOT_ESTIMABLE,plot,render,rows,calculate,exportText,capture,restore};
 })();

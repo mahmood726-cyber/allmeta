@@ -5,6 +5,7 @@ print(.libPaths())
 for(p in c('metafor','metadat','clubSandwich','jsonlite')) cat(p, as.character(packageVersion(p)), '\n')
 library(metafor)
 library(clubSandwich)
+source('validate/profile-limit-plus.R')
 options(warn=1)
 corpus <- jsonlite::fromJSON('validate/corpus/corpus.json', simplifyVector=FALSE)
 old <- jsonlite::fromJSON('validate/corpus/reference.json', simplifyVector=FALSE)
@@ -31,16 +32,19 @@ for(name in names(corpus)) {
     robust <- list(estimate=unname(cr$beta[1]),se=cr$SE[1],df=cr$df_Satt[1],t=cr$tstat[1],p=cr$p_Satt[1],lower=ci$CI_L[1],upper=ci$CI_U[1])
     profiles <- lapply(1:2,function(j) {
       fp <- f
-      ci <- confint(fp,sigma2=j,control=list(tol=1e-8,maxiter=1000))$random[1,]
-      if(any(!is.finite(ci))) {
+      # profile_limit widens metafor's own upper search bound until the limit is interior, so a
+      # truncated bound (confint.rma.mv returns vc.max itself, flagged only by ub.sign) can never
+      # become a pinned reference; an unreached limit is recorded as null, not as a number.
+      lim <- profile_limit(fp,j)
+      if(!lim$ok) {
         fp$control <- list(optimizer='optim',optmethod='Nelder-Mead',reltol=1e-12,maxit=10000)
-        ci <- confint(fp,sigma2=j,control=list(tol=1e-8,maxiter=1000))$random[1,]
+        lim <- profile_limit(fp,j)
       }
-      stopifnot(all(is.finite(ci)))
-      grid <- seq(0,max(ci[3],f$sigma2[j]*1.5,1e-8),length.out=9)
+      stopifnot(lim$ok,is.finite(lim$lower),lim$bounded||is.na(lim$upper))
+      grid <- profile_grid(unname(f$sigma2[j]),lim$upper)
       pr <- profile(fp,sigma2=j,steps=grid,plot=FALSE,progbar=FALSE)
       stopifnot(all(is.finite(pr$ll)))
-      list(estimate=unname(f$sigma2[j]),lower=unname(ci[2]),upper=unname(ci[3]),x=as.list(grid),ll=as.list(pr$ll),control=fp$control)
+      list(estimate=unname(f$sigma2[j]),lower=lim$lower,upper=lim$upper,x=as.list(grid),ll=as.list(pr$ll),control=fp$control)
     })
     list(status='ok',rows=nrow(d),clusters=length(unique(d$cluster)),robust=robust,
       logLik=as.numeric(logLik(f)),profiles=profiles)

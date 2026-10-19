@@ -137,7 +137,17 @@
     const df=sum(diagonal)**2/den,t=fit.mu/se,q=critical(df);
     return {estimate:fit.mu,se,df,t,p:pvalue(t,df),lower:fit.mu-q*se,upper:fit.mu+q*se};
   }
-  function profiles(g,fit){
+  // Bracketing an upper profile limit starts at max(2*estimate, scale) and doubles. The search
+  // is bounded two ways: at most SEARCH_DOUBLINGS doublings (about 2.3e18 times the start) and
+  // at most options.searchBound, the largest component value searched, which is the analogue of
+  // metafor's confint.rma.mv control vc.max and is unbounded by default. A limit that the search
+  // does not reach is reported as unavailable (null), never as the bound itself: confint.rma.mv
+  // returns max(10, 100*estimate) as the limit when the cutoff is not crossed inside it, and
+  // flags that only through ub.sign in the returned object, with no warning or message. The
+  // restricted likelihood here falls to minus infinity as a component grows (there are always at
+  // least two clusters), so with the default bound the limit is finite for every admissible input.
+  const SEARCH_DOUBLINGS=60;
+  function profiles(g,fit,bound){
     return [0,1].map(j=>{
       const estimate=j===0?fit.b:fit.w;
       const prof=x=>scalar(z=>{const r=evaluate(g,j===0?x:z,j===0?z:x);return {...r,derivative:r.gradient[1-j]};},fit.scale);
@@ -151,18 +161,26 @@
         return (lo+hi)/2;
       }
       const lower=prof(0).value<=target?0:root(0,estimate,true);
-      let high=Math.max(estimate*2,fit.scale);
-      let iterations=0;while(prof(high).value<target){high*=2;if(++iterations>60)throw Error('Profile interval could not be bracketed');}
-      const upper=root(estimate,high,false),end=Math.max(upper,estimate*1.5,1e-8);
+      let high=Math.min(Math.max(estimate*2,fit.scale),bound),iterations=0,bounded=high>estimate;
+      while(bounded&&prof(high).value<target){
+        if(high>=bound||++iterations>SEARCH_DOUBLINGS){bounded=false;break;}
+        high=Math.min(high*2,bound);
+      }
+      const upper=bounded?root(estimate,high,false):null;
+      const end=Math.max(bounded?upper:0,estimate*1.5,1e-8);
       const x=Array.from({length:9},(_,i)=>end*i/8),ll=x.map(v=>prof(v).logLik);
       return {estimate,lower,upper,x,ll};
     });
   }
-  function fit(rows){
+  function fit(rows,options){
+    const bound=options&&options.searchBound!==undefined?options.searchBound:Infinity;
+    if(!(bound>0))throw Error('searchBound must be a positive number');
     const g=groups(rows),f=fitted(g);
-    const result={status:'ok',rows:rows.length,clusters:g.length,robust:cr2(g,f.b,f.w),logLik:f.logLik,profiles:profiles(g,f)};
-    if(!finite(result.logLik)||result.profiles.some(p=>Object.values(p).flat().some(x=>!finite(x))))throw Error('Variance profile did not converge');
+    const result={status:'ok',rows:rows.length,clusters:g.length,robust:cr2(g,f.b,f.w),logLik:f.logLik,profiles:profiles(g,f,bound)};
+    // A null upper limit is a declared unavailable quantity, not a failed fit.
+    const unfinished=p=>![p.estimate,p.lower,...p.x,...p.ll].every(finite)||(p.upper!==null&&!finite(p.upper));
+    if(!finite(result.logLik)||result.profiles.some(unfinished))throw Error('Variance profile did not converge');
     return result;
   }
-  root.AlmMultilevelPlusEngine={fit,cr2:(rows,b,w)=>cr2(groups(rows),b,w),pvalue,critical};
+  root.AlmMultilevelPlusEngine={fit,cr2:(rows,b,w)=>cr2(groups(rows),b,w),pvalue,critical,searchDoublings:SEARCH_DOUBLINGS};
 })(typeof window==='undefined'?globalThis:window);
