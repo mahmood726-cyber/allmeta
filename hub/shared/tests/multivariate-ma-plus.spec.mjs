@@ -1,6 +1,7 @@
 // multivariate-ma plus panel: usability, exports, refusals and the full pinned R corpus replay.
 import { test, expect } from './multivariate-ma-fixture.mjs';
 import { readFileSync } from 'node:fs';
+import AxeBuilder from '@axe-core/playwright';
 const url = '/multivariate-ma/index.html';
 const manifest = JSON.parse(readFileSync(new URL('../../../multivariate-ma/validate/MANIFEST-plus.json', import.meta.url), 'utf8'));
 const settle = page => page.waitForFunction(() => window._almLastMultivariate && window._almLastMultivariate() && window.AlmMvPlusUI);
@@ -101,7 +102,7 @@ test('altered reference bytes fail closed', async ({ page }) => {
   await expect(page.evaluate(() => window.AlmMvPlusValidation.runCorpus())).rejects.toThrow('SHA-256 mismatch');
   const errs = await page.evaluate(() => {
     const out = [];
-    for (const m of [x => x.configurations.pop(), x => { x.configurations[1].id = x.configurations[0].id; }, x => { x.configurations[0].sweep[0].mu[0] = null; }, x => { x.grid = [0]; }]) {
+    for (const m of [x => x.configurations.pop(), x => { x.configurations[1].id = x.configurations[0].id; }, x => { x.configurations[0].sweep[0].mu[0] = null; }, x => { x.grid = [0.5]; }]) {
       const c = { schema: 'multivariate-ma-plus-corpus-v1', grid: [0], configurations: [{ id: 'a', rows: [] }, { id: 'b', rows: [] }] };
       const r = { schema: 'multivariate-ma-plus-reference-v1', grid: [0], pnormGrid: [{ z: 0, p: 1 }], metaforBerkeySweep: [{}], configurations: [
         { id: 'a', supplied: { status: 'refused' }, univariate: [{}, {}], sweep: [{ rhoW: 0, status: 'ok', mu: [0, 0], muSE: [1, 1], z: [0, 0], p: [1, 1], G: [[0, 0], [0, 0]], muVcov: [[1, 0], [0, 1]], rho: null, logLik: 0 }] },
@@ -111,4 +112,13 @@ test('altered reference bytes fail closed', async ({ page }) => {
     return out;
   });
   expect(errs).not.toContain('UNSAFE PASS');
+});
+
+test('axe WCAG 2.1 AA: no violations on the page with the sweep shown', async ({ page }) => {
+  await page.goto(url); await settle(page); await page.locator('#plus-run').click();
+  await expect(page.locator('#plus-status')).toContainText('19 of 19');
+  await page.locator('#derived-wrap summary').click();
+  const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  console.log('AXE', JSON.stringify(r.violations.map(v => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, target: v.nodes.slice(0, 3).map(n => n.target.join(' ')) }))));
+  expect(r.violations.map(v => v.id)).toEqual([]);
 });

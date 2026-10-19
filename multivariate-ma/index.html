@@ -38,6 +38,8 @@
     h3{font-size:.95rem;margin:1rem 0 .3rem}
     caption{text-align:left;caption-side:top;padding:.2rem 0}
     tr[data-flag] td{color:#b23a48;font-weight:600}
+    /* shared validation widget dims its unavailable-live link to opacity .75, which fails WCAG contrast here */
+    #alm-plus-validate a{opacity:1!important}
     footer{padding:1rem clamp(1rem,3vw,3rem) 2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);max-width:92ch}
   </style>
   <script src="../shared/multivariate-ma.js"></script>
