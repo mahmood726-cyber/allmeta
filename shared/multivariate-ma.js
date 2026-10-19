@@ -45,6 +45,9 @@
     function order() { var idx = fv.map(function (v, k) { return k; }).sort(function (a, b) { return fv[a] - fv[b]; }); simplex = idx.map(function (k) { return simplex[k]; }); fv = idx.map(function (k) { return fv[k]; }); }
     for (var it = 0; it < (maxit || 1000); it++) {
       order();
+      var spread = 0;
+      for (i = 1; i <= n; i++) for (j = 0; j < n; j++) spread = Math.max(spread, Math.abs(simplex[i][j] - simplex[0][j]) / Math.max(1, Math.abs(simplex[0][j])));
+      if (spread < 1e-10 && Math.abs(fv[n] - fv[0]) < 1e-12 * Math.max(1, Math.abs(fv[0]))) break;
       var c = new Array(n).fill(0); for (i = 0; i < n; i++) for (j = 0; j < n; j++) c[j] += simplex[i][j] / n;
       var xr = c.map(function (cc, k) { return cc + (cc - simplex[n][k]); }), fr = f(xr);
       if (fr < fv[0]) { var xe = c.map(function (cc, k) { return cc + 2 * (xr[k] - cc); }), fe = f(xe); if (fe < fr) { simplex[n] = xe; fv[n] = fe; } else { simplex[n] = xr; fv[n] = fr; } }
@@ -90,7 +93,19 @@
     if (!Array.isArray(studies) || studies.length < 2) {
       throw new Error("multivariate MA requires k>=2 studies (between-study covariance G is unidentifiable with k<2)");
     }
-    var k = studies.length, m = studies[0].y.length, i, a, b;
+    var k = studies.length, m = studies[0].y && studies[0].y.length, i, a, b;
+    if (!m) throw new Error("Outcomes must be finite and covariance matrices conformable.");
+    studies.forEach(function (s) {
+      if (!Array.isArray(s.y) || s.y.length !== m || !s.y.every(Number.isFinite) || !Array.isArray(s.S) || s.S.length !== m || !s.S.every(function (r) { return Array.isArray(r) && r.length === m && r.every(Number.isFinite); })) throw new Error("Outcomes must be finite and covariance matrices conformable.");
+      var L = s.S.map(function (r) { return r.slice(); });
+      for (var a = 0; a < m; a++) for (var b = 0; b <= a; b++) {
+        if (s.S[a][b] !== s.S[b][a]) throw new Error("Within-study covariance must be symmetric.");
+        var v = s.S[a][b];
+        for (var d = 0; d < b; d++) v -= L[a][d] * L[b][d];
+        if (a === b) { if (!(v > 0)) throw new Error("Within-study covariance must be positive definite."); L[a][b] = Math.sqrt(v); }
+        else L[a][b] = v / L[b][b];
+      }
+    });
     // warm-start G: diag = max(0, between-study var − mean within var), off-diag 0.
     var ybar = new Array(m).fill(0); studies.forEach(function (s) { for (a = 0; a < m; a++) ybar[a] += s.y[a] / k; });
     var G0 = []; for (a = 0; a < m; a++) G0.push(new Array(m).fill(0));
@@ -107,9 +122,75 @@
       for (var ii = 0; ii < k; ii++) { var dv = studies[ii].y.map(function (v, j) { return v - pr.mu[j]; }); ll += dv.reduce(function (acc, dj, j) { return acc + dj * _matVec(pr.Ws[ii], dv)[j]; }, 0); }
       return 0.5 * ll;
     };
-    var opt = _nelderMead(obj, x0, 0.05, 2000);
-    opt = _nelderMead(obj, opt.x, 0.005, 1000);
-    var G = _fromChol(opt.x, m), pr = _profile(studies, G);
+    var opt, G, pr;
+    if (k === 2) {
+      // REML is the likelihood of the single difference d, with variance S1+S2+2G.
+      // Whiten by S1+S2: the constrained optimum is rank one (or exactly zero).
+      var delta = studies[0].y.map(function (v, j) { return v - studies[1].y[j]; });
+      var wd = _matVec(_matInv(_add(studies[0].S, studies[1].S)), delta);
+      var q = delta.reduce(function (s, v, j) { return s + v * wd[j]; }, 0);
+      var factor = q > 1 ? 0.5 * (1 - 1 / q) : 0;
+      G = delta.map(function (v) { return delta.map(function (w) { return factor * v * w; }); });
+      pr = _profile(studies, G);
+      var value = pr.logdetV + _logdet(pr.sumW);
+      studies.forEach(function (s, i) { var dv = s.y.map(function (v, j) { return v - pr.mu[j]; }), w = _matVec(pr.Ws[i], dv); value += dv.reduce(function (t, v, j) { return t + v * w[j]; }, 0); });
+      opt = { f: 0.5 * value };
+    } else {
+      opt = _nelderMead(obj, x0, 0.05, 2000);
+      opt = _nelderMead(obj, opt.x, 0.005, 1000);
+      G = _fromChol(opt.x, m);
+      // At a rank-one boundary, the redundant Cholesky direction can collapse
+      // the simplex before the two identifiable directions are stationary.
+      if (m === 2 && G[0][0] > 0 && G[1][1] > 0 && G[0][0] * G[1][1] - G[0][1] * G[0][1] < 1e-8 * G[0][0] * G[1][1]) {
+        var v = [Math.sqrt(G[0][0]), G[0][1] / Math.sqrt(G[0][0])];
+        function rankGradient(v) {
+          var g = v.map(function (a) { return v.map(function (b) { return a * b; }); }), p = _profile(studies, g), sc = [[0, 0], [0, 0]];
+          studies.forEach(function (s, i) {
+            var w = p.Ws[i], dr = s.y.map(function (y, j) { return y - p.mu[j]; }), wr = _matVec(w, dr);
+            for (var a = 0; a < 2; a++) for (var b = 0; b < 2; b++) {
+              var t = 0;
+              for (var u = 0; u < 2; u++) for (var z = 0; z < 2; z++) t += w[a][u] * p.sumWinv[u][z] * w[z][b];
+              sc[a][b] += w[a][b] - t - wr[a] * wr[b];
+            }
+          });
+          return _matVec(sc, v);
+        }
+        for (var iter = 0; iter < 12; iter++) {
+          var grad = rankGradient(v), h = [[], []];
+          if (Math.max(Math.abs(grad[0]), Math.abs(grad[1])) < 1e-10) break;
+          for (var j = 0; j < 2; j++) {
+            var left = v.slice(), right = v.slice(), step = 1e-4 * Math.max(1, Math.abs(v[j]));
+            left[j] -= step; right[j] += step;
+            var gl = rankGradient(left), gr = rankGradient(right);
+            for (var i = 0; i < 2; i++) h[i][j] = (gr[i] - gl[i]) / (2 * step);
+          }
+          if (!(h[0][0] > 0 && h[1][1] > 0 && h[0][0] * h[1][1] > h[0][1] * h[1][0])) break;
+          var delta = _matVec(_matInv(h), grad), accepted = false;
+          for (var rate = 1; rate >= 1 / 1024; rate /= 2) {
+            var next = v.map(function (x, j) { return x - rate * delta[j]; }), val = obj([next[0], next[1], 0]), ng = rankGradient(next);
+            if (val <= opt.f + 1e-12 * Math.max(1, Math.abs(opt.f)) && Math.hypot(ng[0], ng[1]) < Math.hypot(grad[0], grad[1])) { v = next; opt.f = val; accepted = true; break; }
+          }
+          if (!accepted) break;
+        }
+        var rankValue = obj([v[0], v[1], 0]);
+        if (rankValue <= opt.f + 1e-12 * Math.max(1, Math.abs(opt.f))) { G = _fromChol([v[0], v[1], 0], 2); opt.f = rankValue; }
+      }
+      // Confirm the exact zero boundary by its covariance score, not an arbitrary rho.
+      var zero = G.map(function (row) { return row.map(function () { return 0; }); });
+      var zp = _profile(studies, zero), score = zero.map(function (row) { return row.slice(); });
+      studies.forEach(function (s, i) {
+        var W = zp.Ws[i], dv = s.y.map(function (v, j) { return v - zp.mu[j]; }), wr = _matVec(W, dv);
+        for (var a = 0; a < m; a++) for (var b = 0; b < m; b++) {
+          var correction = 0;
+          for (var u = 0; u < m; u++) for (var v = 0; v < m; v++) correction += W[a][u] * zp.sumWinv[u][v] * W[v][b];
+          score[a][b] += W[a][b] - correction - wr[a] * wr[b];
+        }
+      });
+      var zeroValue = obj(new Array(x0.length).fill(0));
+      if (m === 2 && score[0][0] >= 0 && score[1][1] >= 0 && score[0][0] * score[1][1] >= score[0][1] * score[1][0] && zeroValue <= opt.f + 1e-12 * Math.max(1, Math.abs(opt.f))) { G = zero; opt.f = zeroValue; }
+      pr = _profile(studies, G);
+    }
+    if (!pr || !Number.isFinite(opt.f)) throw new Error("REML fit did not produce finite results.");
     var muSE = pr.sumWinv.map(function (row, j) { return Math.sqrt(Math.max(0, row[j])); });
     // REML constant: -((k-m)/2)·m? metafor's logLik includes the full constant; we report
     // the comparable value: ll = -0.5(Σ logdetV + (y−μ)'W(y−μ) + logdet ΣW) − ((N−p)/2)log(2π)
@@ -118,7 +199,7 @@
     // for balanced data, so ½log|X'X| = (m/2)·log(k).
     var N = k * m, p = m;
     var logLik = -opt.f - 0.5 * (N - p) * Math.log(2 * Math.PI) + 0.5 * m * Math.log(k);
-    var rho = (m === 2) ? G[0][1] / Math.sqrt(G[0][0] * G[1][1]) : null;
+    var rho = (m === 2 && G[0][0] > 0 && G[1][1] > 0) ? Math.max(-1, Math.min(1, G[0][1] / Math.sqrt(G[0][0] * G[1][1]))) : null;
     return { mu: pr.mu, muSE: muSE, muVcov: pr.sumWinv, G: G, rho: rho, logLik: logLik, m: m, k: k };
   }
 
