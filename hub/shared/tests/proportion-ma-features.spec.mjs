@@ -55,28 +55,31 @@ test('proportion plot selector: every plot as PNG 600 dpi, PDF and TIFF 300/600 
   exportNegatives(last, expect);
 });
 
-// The caution sits in the input panel next to the transformation selector. Visible text of that panel
-// is what a user sees while choosing options (the footer method notes are a separate, static section).
+// The caution sits in the input panel next to the transformation selector (P09 Figure 1 panel 2:
+// "the app's caution about the double-arcsine back-transformation is shown"). Visible text of that
+// panel is what a user sees while choosing options; the footer method notes are a separate section.
 const CAUTION = /back-?\)?-?\s?transformation[\s\S]{0,200}seriously misleading/i;
 async function inputPanelText(page) {
   return page.locator('section.panel').filter({ has: page.locator('#trans') }).innerText();
 }
+function checkCaution(panelText) {
+  if (!/Freeman-Tukey/.test(panelText)) fail('caution does not name Freeman-Tukey (double arcsine)');
+  if (!CAUTION.test(panelText)) fail('no visible back-transformation caution in the input panel');
+}
 
-test('double-arcsine caution is visible when Freeman-Tukey is selected', async ({ page }) => {
+test('double-arcsine back-transformation caution is visible when Freeman-Tukey is selected', async ({ page }) => {
   await load(page, 'ft', 'PM');
-  const text = await inputPanelText(page);
-  expect(text).toMatch(CAUTION);
-  expect(text).toMatch(/Schwarzer/);
-  // The check can fail: the same pattern does not match text without the caution.
-  expect(text.replace(/seriously misleading/g, '')).not.toMatch(CAUTION);
-});
-
-test('double-arcsine caution is NOT shown when logit or raw is selected', async ({ page }) => {
-  // KNOWN GAP (lane fc, 19 Oct 2026): the caution is a static <span class="hint"> under the selector, so
-  // it is shown for every transformation, not only for FT. Remove test.fail() once it is made conditional.
-  test.fail();
-  for (const trans of ['logit', 'raw']) {
-    await load(page, trans, 'PM');
-    expect(await inputPanelText(page), trans).not.toMatch(CAUTION);
-  }
+  await expect(page.locator('#trans')).toHaveValue('ft');
+  await expect(page.locator('#trans option:checked')).toHaveText('Freeman-Tukey double arcsine');
+  const hint = page.locator('label:has(#trans) .hint');
+  await expect(hint).toBeVisible();
+  const hintText = await hint.innerText();
+  expect(hintText).toMatch(/Freeman-Tukey/);
+  expect(hintText).toMatch(/inverse \(back-\)transformation/);
+  expect(hintText).toMatch(/Schwarzer/);
+  checkCaution(await inputPanelText(page));
+  // Planted negative: with the hint removed from the page the check fails.
+  await hint.evaluate(el => el.remove());
+  const without = await inputPanelText(page);
+  expect(() => checkCaution(without)).toThrow(/no visible back-transformation caution/);
 });
