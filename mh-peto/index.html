@@ -884,13 +884,15 @@ StudyE, 4, 600, 10, 600</textarea>
       L.push('dat$bi <- dat$n1i - dat$ai; dat$di <- dat$n2i - dat$ci');
       L.push('measure <- ' + rString(measure));
       L.push('# Settings used by the page (metafor conventions; no continuity correction in the pooled estimate):');
-      L.push('fit_mh <- rma.mh(ai = ai, bi = bi, ci = ci, di = di, data = dat, slab = study, measure = measure,');
-      L.push('                 add = c(0.5, 0), to = c("only0", "none"), drop00 = c(FALSE, FALSE), correct = FALSE)');
-      if (measure === 'OR') L.push('fit_peto <- rma.peto(ai = ai, bi = bi, ci = ci, di = di, data = dat, slab = study, add = 0, to = "none", drop00 = TRUE)');
+      L.push('# An R error (for example rma.peto with no informative table) counts as NA, matching a "not estimable" page row.');
+      L.push('fit_mh <- tryCatch(rma.mh(ai = ai, bi = bi, ci = ci, di = di, data = dat, slab = study, measure = measure,');
+      L.push('                 add = c(0.5, 0), to = c("only0", "none"), drop00 = c(FALSE, FALSE), correct = FALSE), error = function(e) e)');
+      if (measure === 'OR') L.push('fit_peto <- tryCatch(rma.peto(ai = ai, bi = bi, ci = ci, di = di, data = dat, slab = study, add = 0, to = "none", drop00 = TRUE), error = function(e) e)');
       L.push('print(fit_mh)');
       if (measure === 'OR') L.push('print(fit_peto)');
       L.push('rvals <- function(f) {');
       L.push('  tr <- if (measure == "RD") identity else exp');
+      L.push('  if (inherits(f, "error")) f <- list()');
       L.push('  g <- function(x) if (is.null(x) || length(x) != 1) NA_real_ else as.numeric(x)');
       L.push('  c(est = tr(g(f$beta)), ci.lb = tr(g(f$ci.lb)), ci.ub = tr(g(f$ci.ub)), zval = g(f$zval), pval = g(f$pval),');
       L.push('    QE = g(f$QE), QEp = g(f$QEp), I2 = g(f$I2), H2 = g(f$H2), MH = g(f$MH), MHp = g(f$MHp),');

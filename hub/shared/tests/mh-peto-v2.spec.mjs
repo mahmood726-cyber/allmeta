@@ -189,7 +189,7 @@ test.describe('outputs and wording', () => {
     expect(text).toContain('ci = c(7, 4, 2)');
     expect(text).toContain('n2i = c(52, 41, 29)');
     expect(text).toContain('add = c(0.5, 0), to = c("only0", "none"), drop00 = c(FALSE, FALSE), correct = FALSE');
-    expect(text).toContain('rma.peto(ai = ai, bi = bi, ci = ci, di = di, data = dat, slab = study, add = 0, to = "none", drop00 = TRUE)');
+    expect(text).toContain('tryCatch(rma.peto(ai = ai, bi = bi, ci = ci, di = di, data = dat, slab = study, add = 0, to = "none", drop00 = TRUE), error = function(e) e)');
     expect(text).toContain('`est` = ' + r.mh_est.toPrecision(17));
     expect(text).toContain('`TA` = ' + r.tarone.toPrecision(17));
     expect(text).toContain('`QE` = ' + r.peto_QE.toPrecision(17));
