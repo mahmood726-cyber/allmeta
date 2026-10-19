@@ -111,7 +111,7 @@
     state.base = P.fitAll(E, state.rows, state.model);
     state.compare = state.base.status === 'ok' ? P.compare3(E, state.rows) : null;
     state.loo = null;
-    renderInterpret(); renderCompare(); renderLoo(); renderMethods();
+    renderInterpret(); renderGraph(); renderCompare(); renderLoo(); renderMethods();
     if (state.base.status !== 'ok') { setStatus('Sensitivity analysis not available: ' + state.base.reason); settle(); return; }
     state.busy = true;
     const plan = P.looPlan(E, state.rows, state.model), drops = [];
@@ -132,6 +132,26 @@
   function renderInterpret() {
     const ul = $('plus-interpret-list'); if (!ul) return;
     ul.innerHTML = P.interpret({ base: state.base, loo: state.loo }).map(t => `<li>${esc(t)}</li>`).join('');
+  }
+  function renderGraph() {
+    const svg = $('plus-graph'), status = $('plus-graph-status'); if (!svg) return;
+    const b = state.base, title = '<title id="plus-graph-t">Network of treatments and direct comparisons</title>';
+    if (!b || b.status !== 'ok') { svg.innerHTML = title + '<desc>Not available.</desc>'; if (status) status.textContent = ''; return; }
+    const edges = P.graphEdges(b, state.rows), trts = b.trts, n = trts.length, W = 600, H = 360, cx = W / 2, cy = H / 2, R = 125;
+    const pos = Object.fromEntries(trts.map((t, i) => [t, [cx + R * Math.sin(2 * Math.PI * i / n), cy - R * Math.cos(2 * Math.PI * i / n)]]));
+    const kmax = Math.max(...edges.map(e => e.k));
+    const parts = [title, `<desc>${esc(n)} treatments and ${esc(edges.length)} directly compared pairs. Line width is proportional to the number of studies; red dashed lines are node-splits with p &lt; 0.05, blue solid lines node-splits with p ≥ 0.05 and grey dotted lines comparisons that cannot be split.</desc>`];
+    for (const e of edges) {
+      const [x1, y1] = pos[e.a], [x2, y2] = pos[e.b], cls = e.p === null ? 'nosplit' : P.sig(e.p) ? 'flagged' : 'split';
+      const label = `${e.comparison}: ${e.k} stud${e.k === 1 ? 'y' : 'ies'}; ` + (e.p === null ? 'cannot be split (no indirect path)' : `node-split p = ${fmtP(e.p)}`);
+      parts.push(`<g class="plus-edge ${cls}" tabindex="0" role="img" aria-label="${esc(label)}" data-label="${esc(label)}"><line class="hit" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><line class="ln" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke-width="${(1.5 + 6 * e.k / kmax).toFixed(2)}"/></g>`);
+    }
+    for (const t of trts) {
+      const [x, y] = pos[t], anchor = Math.abs(x - cx) < 1 ? 'middle' : x > cx ? 'start' : 'end', dx = anchor === 'start' ? 10 : anchor === 'end' ? -10 : 0, dy = y < cy - 1 ? -10 : y > cy + 1 ? 18 : 4;
+      parts.push(`<circle class="plus-node" cx="${x}" cy="${y}" r="6"/><text x="${x + dx}" y="${y + dy}" text-anchor="${anchor}" font-size="11" fill="currentColor">${esc(t.length > 28 ? t.slice(0, 27) + '…' : t)}</text>`);
+    }
+    svg.innerHTML = parts.join('');
+    if (status) status.textContent = 'Focus or point at a line to read its comparison.';
   }
   function renderCompare() {
     const body = $('plus-cmp-body'), sum = $('plus-cmp-summary'); if (!body) return;
@@ -217,6 +237,12 @@
     box.textContent = P.methodsText({ base: state.base, loo: state.loo, compare: state.compare }) || 'Run an accepted analysis to generate the text.';
   }
 
+  // Graph edges: focus or hover announces the comparison.
+  const gsvg = $('plus-graph');
+  if (gsvg) for (const ev of ['focusin', 'mouseover']) gsvg.addEventListener(ev, e => {
+    const g = e.target.closest ? e.target.closest('.plus-edge') : null, s = $('plus-graph-status');
+    if (g && s) s.textContent = g.dataset.label;
+  });
   // Delegated interaction (survives re-render).
   $('alm-plus').addEventListener('click', ev => {
     const t = ev.target.closest ? ev.target.closest('button,rect') : null;

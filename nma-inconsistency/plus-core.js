@@ -94,16 +94,37 @@
     for (let i = 0; i < plan.n; i++) drops.push(looDrop(E, plan, i));
     return looFinish(plan, drops);
   }
+  // D: network graph edges. One edge per directly compared pair; k = number of studies,
+  // p = node-split p of that pair (null when the pair cannot be split).
+  function graphEdges(base, rows) {
+    const m = new Map();
+    for (const r of rows) { const [a, b] = [r.A, r.B].sort(), c = a + ' vs ' + b; if (!m.has(c)) m.set(c, { comparison: c, a, b, k: 0 }); m.get(c).k++; }
+    const sp = new Map(base.nodeSplit.map(x => [x.comparison, x.p]));
+    return [...m.values()].sort(byLabel).map(e => Object.assign(e, { p: sp.has(e.comparison) ? sp.get(e.comparison) : null }));
+  }
+  function pRange(ps) {
+    const xs = ps.filter(finite);
+    if (!xs.length) return null;
+    return [Math.min(...xs), Math.max(...xs)];
+  }
   function looSummary(L) {
     if (!L || L.status !== 'ok') return L ? 'Sensitivity analysis not available: ' + L.reason : '';
-    const parts = [];
-    if (!L.globalFlips.length) parts.push('The global design-by-treatment conclusion (p < 0.05 or not) is unchanged by removing any single study.');
-    else parts.push('The global design-by-treatment conclusion changes when removing: ' + L.globalFlips.join(', ') + '.');
-    if (L.base.nodeSplit.length) {
-      if (!L.splitFlipStudies.length) parts.push('No node-split conclusion changes when any single study is removed.');
-      else parts.push(`At least one node-split conclusion changes when removing ${L.splitFlipStudies.length === L.drops.length ? 'any one' : L.splitFlipStudies.length} of the ${L.drops.length} studies: ` + L.splitFlipStudies.join(', ') + '.');
+    const parts = [], ok = L.drops.filter(d => d.status === 'ok'), b = L.base;
+    const gr = pRange(ok.map(d => d.dbt.p));
+    const range = gr ? ` (global p ranged from ${fmtP(gr[0])} to ${fmtP(gr[1])} across single-study removals)` : '';
+    if (b.dbt.p !== null) {
+      if (!L.globalFlips.length) parts.push(`Removing any single study leaves the global test on the same side of 0.05${range}; this concerns the stability of the test result, not evidence of consistency.`);
+      else parts.push(`The global test result is fragile: p crosses 0.05 (full data p = ${fmtP(b.dbt.p)}) after removing ${L.globalFlips.join(', ')}${range}.`);
     }
-    if (L.untestableDrops.length) parts.push('Inconsistency becomes untestable (no closed loop left) when removing: ' + L.untestableDrops.join(', ') + '.');
+    if (b.nodeSplit.length) {
+      if (!L.splitFlipStudies.length) parts.push('No node-split p-value crosses 0.05 when any single study is removed.');
+      else {
+        const near = b.nodeSplit.filter(s => finite(s.p) && Math.abs(s.p - ALPHA) < 0.01);
+        parts.push(`At least one node-split p-value crosses 0.05 after removing ${L.splitFlipStudies.length === L.drops.length ? 'any one' : L.splitFlipStudies.length} of the ${L.drops.length} studies: ` + L.splitFlipStudies.join(', ') + '.' +
+          (near.length ? ` With full-data p close to 0.05 (${near.map(s => `${s.comparison}, p = ${fmtP(s.p)}`).join('; ')}), such crossings are expected and do not by themselves identify influential studies.` : ''));
+      }
+    }
+    if (L.untestableDrops.length) parts.push('Inconsistency becomes untestable (no closed loop left) after removing: ' + L.untestableDrops.join(', ') + '.');
     if (L.refusedDrops.length) parts.push('Not analysable after removing: ' + L.refusedDrops.map(d => d.study + ' (' + d.reason.replace(/\.$/, '') + ')').join('; ') + '.');
     return parts.join(' ');
   }
@@ -132,27 +153,31 @@
   }
   function compareSummary(C) {
     if (!C || C.status !== 'ok') return C ? 'Estimator comparison not available: ' + C.reason : '';
-    const g = C.global;
-    const s = ['Global test p: FE ' + fmtP(g.FE.p) + ', DL ' + fmtP(g.DL.p) + ', PM ' + fmtP(g.PM.p) + ' (τ²: DL ' + fmt(g.DL.tau2, 4) + ', PM ' + fmt(g.PM.tau2, 4) + ').'];
-    s.push(C.globalAgree ? 'All three models reach the same global conclusion at the 0.05 level.' : 'The models disagree on the global conclusion at the 0.05 level.');
-    if (C.splits.length) s.push(C.nDisagree ? C.nDisagree + ' of ' + C.splits.length + ' node-splits change conclusion with the choice of model.' : 'All ' + C.splits.length + ' node-splits reach the same conclusion under all three models.');
+    const g = C.global, het = g.DL.tau2 > 0 || g.PM.tau2 > 0;
+    const s = [`Global design-by-treatment p was ${fmtP(g.FE.p)} with fixed-effect, ${fmtP(g.DL.p)} with DerSimonian-Laird (τ² = ${fmt(g.DL.tau2, 4)}) and ${fmtP(g.PM.p)} with Paule-Mandel (τ² = ${fmt(g.PM.tau2, 4)}) weights.`];
+    if (!C.globalAgree) s.push('The models fall on different sides of 0.05' + (het ? '; with τ² > 0 the fixed-effect result is sensitive to unmodelled heterogeneity.' : '.'));
+    else if (g.FE.p !== null) s.push('All three models fall on the same side of 0.05.');
+    if (C.splits.length) s.push(C.nDisagree ? `${C.nDisagree} of ${C.splits.length} node-split p-values fall on different sides of 0.05 depending on the model.` : `Each of the ${C.splits.length} node-split p-values falls on the same side of 0.05 under all three models.`);
     return s.join(' ');
   }
 
-  // Plain-language reading. Must never claim consistency is proven.
+  // Plain-language reading. Must never claim consistency is shown or proven.
+  // Wording revised after an independent second reading (claude-sonnet-5-5, 2026-10-19).
   function interpret(state) {
     const b = state && state.loo && state.loo.status === 'ok' ? state.loo.base : state && state.base;
     if (!b || b.status !== 'ok') return [];
-    const out = [], nS = b.nodeSplit.length, nI = b.nodeSplit.filter(s => sig(s.p)).length;
-    if (b.dbt.p === null) out.push('This network has no closed loop, so direct and indirect evidence cannot be compared: inconsistency is not testable here.');
-    else if (sig(b.dbt.p)) out.push(`The global design-by-treatment test found evidence of inconsistency (p = ${fmtP(b.dbt.p)}): direct and indirect evidence disagree somewhere in the network more than chance alone would usually explain. Investigate the flagged loops and study characteristics before relying on network estimates.`);
-    else out.push(`The global design-by-treatment test did not find evidence of inconsistency (p = ${fmtP(b.dbt.p)}). This is not evidence that the network is consistent: with ${b.k} studies the test has limited power, and real disagreement can go undetected.`);
-    if (nS) {
-      out.push(`${nI} of ${nS} node-split comparisons had p < 0.05. With ${nS} tests at the 0.05 level, about ${fmt(ALPHA * nS, 1)} false flags would be expected by chance alone; the splits share data, so they are not independent tests.`);
-    }
-    if (b.model === 'FE') out.push('Fixed-effect weights ignore between-study heterogeneity, which inflates Q statistics and can make inconsistency look stronger; compare with the random-effects rows below.');
-    else out.push(`Random-effects weights use the consistency-model ${b.model} τ² = ${fmt(b.tau2, 4)} as a preset for every test, including the global Q.`);
-    out.push('Only independent two-arm studies are supported; multi-arm studies would need their within-study correlation.');
+    const out = [], nS = b.nodeSplit.length, nI = b.nodeSplit.filter(s => sig(s.p)).length, p = b.dbt.p;
+    if (p === null) out.push('This network has no closed loop, so direct and indirect evidence cannot be compared: inconsistency is not testable here.');
+    else if (sig(p)) out.push(`The global design-by-treatment test rejected the hypothesis of no inconsistency (p = ${fmtP(p)}).` +
+      (b.model === 'FE' ? ' Under a fixed-effect model this can reflect unmodelled between-study heterogeneity as well as disagreement between direct and indirect evidence, so read it alongside the random-effects results.' : '') +
+      ' Examine the node-split results, the designs involved and study characteristics before relying on network estimates.');
+    else out.push(`The global design-by-treatment test did not reject the hypothesis of no inconsistency (p = ${fmtP(p)}). This is not evidence that the network is consistent: the test may have low power, particularly with few studies per design, so a non-significant result does not exclude important inconsistency.` +
+      (p < 0.10 ? ' The p-value is close to 0.05; some authors use 0.10 for this test because of its low power.' : ''));
+    if (nS) out.push(`${nI} of ${nS} node-split comparisons had p < 0.05. These p-values are unadjusted: if there were no inconsistency, about ${fmt(ALPHA * nS, 1)} of ${nS} would be expected to reach p < 0.05 by chance, and the splits are correlated (several re-test the same loops). Treat isolated flags as hypothesis-generating, and look at the size of each direct–indirect difference, not only its p-value.`);
+    if (b.model === 'FE') out.push('Fixed-effect weights ignore between-study heterogeneity; when heterogeneity is present this inflates Q and makes node-split p-values too small. Compare with the random-effects results.');
+    else out.push(`Random-effects weights fix τ² at the consistency-model ${b.model} estimate (${fmt(b.tau2, 4)}) for every test, including the global Q. That estimate can absorb inconsistency and its uncertainty is ignored, which tends to make the random-effects tests conservative.`);
+    out.push('The comparison of fixed-effect and random-effects results below is a sensitivity analysis: prespecify the primary model rather than choosing it from these results.');
+    out.push('Inconsistency tests do not check transitivity (whether effect modifiers are balanced across comparisons). Only independent two-arm studies are supported; multi-arm studies would need their within-study correlation, and excluding them changes the network.');
     return out;
   }
 
@@ -161,8 +186,8 @@
     const b = L && L.status === 'ok' ? L.base : state && state.base;
     if (!b || b.status !== 'ok') return '';
     const m = b.model, M = [], R = [];
-    M.push(`Inconsistency in the network of ${b.k} independent two-arm studies and ${b.trts.length} treatments was assessed with node-splitting by back-calculation (Dias et al. 2010) for every comparison with direct evidence and an independent indirect path, and with the global design-by-treatment interaction test (Higgins et al. 2012), using a ${MODEL_NAME[m]} model${m === 'FE' ? '' : '; τ² was estimated from the consistency model and used as a preset for all tests'}.`);
-    if (L && L.status === 'ok') M.push(`Sensitivity of the inconsistency conclusions was assessed by removing each study in turn${m === 'FE' ? '' : ' and re-estimating τ²'}, and all analyses were repeated under fixed-effect, DerSimonian-Laird and Paule-Mandel models. Analyses used the allmeta nma-inconsistency browser tool; its computations are checked against R (netmeta 3.7-0, metafor 5.2-1).`);
+    M.push(`Inconsistency in the network of ${b.k} independent two-arm studies and ${b.trts.length} treatments was assessed with node-splitting (Dias et al. 2010), computed by back-calculation (König et al. 2013), for every comparison with both direct evidence and an indirect path, and with the global design-by-treatment interaction test (Higgins et al. 2012), using a ${MODEL_NAME[m]} model${m === 'FE' ? '' : '; τ² was estimated from the consistency model and fixed at that value for all tests, which ignores its uncertainty'}. Node-split p-values were not adjusted for multiplicity.`);
+    if (L && L.status === 'ok') M.push(`Sensitivity of the inconsistency conclusions was assessed by removing each study in turn${m === 'FE' ? '' : ' and re-estimating τ²'}, and all analyses were repeated under fixed-effect, DerSimonian-Laird and Paule-Mandel models. Analyses used the allmeta nma-inconsistency browser tool, whose node-split, design-by-treatment and leave-one-out results are validated against R netmeta 3.7-0 netsplit() and decomp.design() (relative tolerance 1e-9, 1e-6 for Paule-Mandel; p-values 1e-9 absolute).`);
     R.push(`The global design-by-treatment test gave Q = ${fmt(b.dbt.Q, 2)} on ${b.dbt.df} df (p = ${fmtP(b.dbt.p)})${m === 'FE' ? '' : ` with τ² = ${fmt(b.tau2, 4)}`}; ${b.nodeSplit.filter(s => sig(s.p)).length} of ${b.nodeSplit.length} node-split comparisons had p < 0.05${b.nodeSplit.filter(s => sig(s.p)).length ? ' (' + b.nodeSplit.filter(s => sig(s.p)).map(s => `${s.comparison}, p = ${fmtP(s.p)}`).join('; ') + ')' : ''}.`);
     if (L && L.status === 'ok') R.push(looSummary(L));
     if (C && C.status === 'ok') R.push(compareSummary(C));
@@ -296,5 +321,5 @@ if (n_ok != n_checks) { cat("Mismatches:\\n", paste(bad, collapse = "\\n"), "\\n
 `;
   }
 
-  return { ALPHA, MODELS, MODEL_NAME, SINGULAR, fmt, fmtP, sig, fitAll, normalizeFit, summarizeDrop, compareFits, looPlan, looDrop, looFinish, loo, looSummary, compare3, compareSummary, interpret, methodsText, buildRScript };
+  return { ALPHA, MODELS, MODEL_NAME, SINGULAR, fmt, fmtP, sig, fitAll, graphEdges, normalizeFit, summarizeDrop, compareFits, looPlan, looDrop, looFinish, loo, looSummary, compare3, compareSummary, interpret, methodsText, buildRScript };
 });

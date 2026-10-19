@@ -74,6 +74,14 @@
     .plus-bar.flip { fill: var(--incon); }
     .plus-bar.sel { stroke: var(--ink); stroke-width: 1.5; }
     #plus-methods-text { white-space: pre-wrap; background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.84rem; }
+    .plus-edge .hit { stroke: transparent; stroke-width: 14; }
+    .plus-edge .ln { stroke: var(--accent); }
+    .plus-edge.flagged .ln { stroke: var(--incon); stroke-dasharray: 7 3; }
+    .plus-edge.nosplit .ln { stroke: var(--muted); stroke-dasharray: 2 3; }
+    .plus-edge:focus { outline: none; }
+    .plus-edge:focus .ln, .plus-edge:hover .ln { stroke: var(--ink); }
+    .plus-edge:focus-visible .hit { stroke: var(--accent-soft); }
+    .plus-node { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
     #alm-plus ul { margin: 0.2rem 0 0.4rem 1.1rem; padding: 0; font-size: 0.88rem; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
@@ -139,6 +147,9 @@ A, D, -0.48, 0.14</textarea>
       <h2 id="alm-plus-h">Interpretation, sensitivity and reporting</h2>
       <h3>What the results mean</h3>
       <ul id="plus-interpret-list"></ul>
+      <h3>Network graph</h3>
+      <svg id="plus-graph" viewBox="0 0 600 360" role="group" aria-labelledby="plus-graph-t" data-alm-export="nma-inconsistency-network"><title id="plus-graph-t">Network of treatments and direct comparisons</title></svg>
+      <p id="plus-graph-status" class="plus-sub" role="status" aria-live="polite"></p>
       <h3>Leave-one-study-out sensitivity</h3>
       <p class="plus-sub">Each study is removed in turn and the whole analysis is refitted with the selected model (random-effects &tau;&sup2; is re-estimated for every refit).</p>
       <p id="plus-loo-status" role="status" aria-live="polite"></p>

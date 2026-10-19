@@ -48,7 +48,7 @@
       if (!Array.isArray(corpus) || corpus.length !== manifest.configurations || !reference || !Array.isArray(reference.cases) || reference.cases.length !== corpus.length ||
           !corpus.every((c, i) => c.key === reference.cases[i].key && reference.cases[i].drops.length === c.rows.length) ||
           !Array.isArray(estimators) || estimators.length !== manifest.estimator_triples) throw Error('Plus evidence cardinality or keys differ');
-      let checks = 0, passed = 0; const failed = [], maxima = {}, boundary = [], groups = { loo: 0, estimators: 0, text: 0 };
+      let checks = 0, passed = 0; const failed = [], maxima = {}, boundary = [], groups = { loo: 0, estimators: 0, text: 0, graph: 0 };
       function check(id, quantity, app, ref, kind, tol, group) {
         let diff;
         if (kind === 'exact') diff = JSON.stringify(app) === JSON.stringify(ref) ? 0 : Infinity;
@@ -74,6 +74,14 @@
         check(c.key, 'parsed_rows', rows, c.rows, 'exact', 0, 'loo');
         const app = P.loo(E, rows, c.model), ref = refLoo(c, x);
         compareTree(c.key, app, ref, c.model, 'loo');
+        // Network graph: every edge's study count against R kDirect and its colour class against R p.
+        const edges = new Map(P.graphEdges(app.base, rows).map(e => [e.comparison, e]));
+        check(c.key, 'graph.splitEdges', P.graphEdges(app.base, rows).filter(e => e.p !== null).map(e => e.comparison), ref.base.nodeSplit.map(s => s.comparison), 'exact', 0, 'graph');
+        for (const s of ref.base.nodeSplit) {
+          const e = edges.get(s.comparison) || {};
+          check(c.key, 'graph.k.' + s.comparison, e.k, s.kDirect, 'exact', 0, 'graph');
+          check(c.key, 'graph.flag.' + s.comparison, P.sig(e.p), P.sig(s.p), 'exact', 0, 'graph');
+        }
         check(c.key, 'text.looSummary', P.looSummary(app), P.looSummary(ref), 'exact', 0, 'text');
         check(c.key, 'text.interpret', P.interpret({ loo: app }), P.interpret({ loo: ref }), 'exact', 0, 'text');
         check(c.key, 'text.methods', P.methodsText({ loo: app }), P.methodsText({ loo: ref }), 'exact', 0, 'text');
@@ -92,7 +100,7 @@
       }
       if (manifest.checks && checks !== manifest.checks) throw Error('Plus replay check cardinality mismatch: ' + checks);
       return { checks, passed, failed, maxima, groups, boundary,
-        summaryLines: [manifest.rule, `${corpus.length} configurations / ${manifest.drop_fits} leave-one-out refits and ${estimators.length} FE/DL/PM triples against native R; ${groups.loo} LOO, ${groups.estimators} estimator and ${groups.text} sentence checks.` + (boundary.length ? ` ${boundary.length} R p-values lie within 1e-6 of 0.05.` : '')] };
+        summaryLines: [manifest.rule, `${corpus.length} configurations / ${manifest.drop_fits} leave-one-out refits and ${estimators.length} FE/DL/PM triples against native R; ${groups.loo} LOO, ${groups.estimators} estimator, ${groups.graph} graph and ${groups.text} sentence checks.` + (boundary.length ? ` ${boundary.length} R p-values lie within 1e-6 of 0.05.` : '')] };
     } finally { running = false; }
   }
   const adapter = {

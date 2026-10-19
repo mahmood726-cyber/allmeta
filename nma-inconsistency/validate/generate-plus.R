@@ -8,6 +8,9 @@
 # The full-network fit of every configuration must match the archived final P16
 # reference (same membership; numbers within 1e-12 relative); otherwise the script stops.
 suppressPackageStartupMessages({library(netmeta); library(metafor); library(jsonlite)})
+# The archived P16 references were produced in the C collation (their session asked for an
+# unavailable C.UTF-8 locale); netmeta orders treatments and splits by locale collation, so use C.
+invisible(Sys.setlocale("LC_COLLATE","C"))
 G<-function(x,n)x[[n,exact=TRUE]]
 # Speed: meta's internal settings lookup gs() dominates netmeta run time (~70%,
 # repeated setchar/tolower over the argument list). It is a pure function of the
@@ -18,7 +21,8 @@ G<-function(x,n)x[[n,exact=TRUE]]
 gs_memo<-Sys.getenv("PLUS_MEMO_GS","1")!="0"
 if(gs_memo) for(ns in c("meta","netmeta")) if(exists("gs",envir=asNamespace(ns),inherits=FALSE)) local({
  orig<-get("gs",envir=asNamespace(ns)); memo<-new.env(hash=TRUE)
- f<-function(x=NULL,unname=NULL){key<-paste0(paste(x,collapse=""),"|",if(is.null(unname))"N" else unname);hit<-memo[[key]];if(!is.null(hit))return(hit$v);v<-orig(x,unname);memo[[key]]<-list(v=v);v}
+ f<-function(x=NULL,unname=NULL){key<-paste0(paste(x,collapse="
+"),"|",if(is.null(unname))"N" else unname);hit<-memo[[key]];if(!is.null(hit))return(hit$v);v<-orig(x,unname);memo[[key]]<-list(v=v);v}
  assignInNamespace("gs",f,ns)
 })
 write_json17 <- function(x, file) {
