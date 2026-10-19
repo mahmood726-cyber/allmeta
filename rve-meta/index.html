@@ -5,49 +5,75 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Robust variance estimation (RVE) for dependent effect sizes — Hedges-Tipton-Johnson 2010 cluster-robust sandwich.">
+  <meta name="description" content="Robust variance estimation (RVE) meta-regression for dependent effect sizes: CORR working model, CR2 standard errors, Satterthwaite degrees of freedom, conditioning check and R-script export.">
   <meta name="color-scheme" content="light dark">
   <title>Robust Variance Estimation (RVE)</title>
   <style>
     :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
-            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
-            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#9a4a12;
+            --warn-soft:#fbeedd; --err:#a12f2f; --err-soft:#fbe5e5; --border:#d9d5cc; --input-bg:#fbfaf6; }
     @media (prefers-color-scheme:dark) {
-      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
-              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
-              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#a3abb8;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e8b07a;
+              --warn-soft:#3a2d1c; --err:#f0a0a0; --err-soft:#3a1f22; --border:#2f343a; --input-bg:#23272c; }
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
            background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
-    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    /* Top padding keeps the fixed "allmeta" back link clear of the title. */
+    header { padding: 3.4rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    /* hub/app-style.css sets header padding with !important; this more specific rule keeps the title below the back link. */
+    body > header { padding-top: 58px !important; }
     header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
     header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
     main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
-           grid-template-columns: minmax(320px, 28rem) 1fr; align-items: start; }
-    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
-    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+           grid-template-columns: minmax(320px, 30rem) minmax(0, 1fr); align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: minmax(0, 1fr); } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; min-width: 0; }
     .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
                 text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
     textarea { width: 100%; min-height: 13rem; padding: 0.5rem 0.65rem;
                border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
                border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
-    input, select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+    input[type=text], input[type=number] { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
       background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
-    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
-    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
-                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    .field { margin-bottom: 0.8rem; }
+    .field > label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .help { display: block; color: var(--muted); font-size: 0.8rem; margin: 0.25rem 0 0; }
+    .check { display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.88rem; font-weight: 600; }
+    .check input { margin-top: 0.25rem; }
+    button { font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.55rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; width: 100%; }
+    button.secondary { background: var(--accent-soft); color: var(--ink); border: 1px solid var(--border);
+                       padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.84rem; cursor: pointer; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .examples { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.9rem; }
+    .table-wrap { overflow-x: auto; max-width: 100%; }
+    .table-wrap:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.87rem; margin-top: 0.5rem; }
-    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
-    th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    caption { text-align: left; font-size: 0.82rem; color: var(--muted); padding-bottom: 0.3rem; }
+    th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+    thead th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    tbody th { font-weight: 600; white-space: normal; min-width: 8rem; }
     .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
-            border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
-    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+            border-radius: 4px; font-size: 0.84rem; margin-top: 0.6rem; }
+    .note.info { background: var(--accent-soft); border-left-color: var(--accent); }
+    .err { background: var(--err-soft); border-left: 3px solid var(--err); padding: 0.55rem 0.8rem; border-radius: 4px; font-size: 0.88rem; margin: 0; }
+    .inline-warn { color: var(--warn); font-size: 0.8rem; margin: 0.25rem 0 0; font-weight: 600; }
+    #meta-row { font-size: 0.9rem; }
+    #meta-row .summary-line { margin: 0; }
+    #alm-export-mount { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.82rem; max-width: 110ch; }
+    footer p { margin: 0 0 0.6rem; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/stats-qt.js"></script>
   <script src="../shared/rve.js"></script>
+  <script src="../shared/rve-extras.js"></script>
+  <script src="../shared/build-info.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/autosave.js"></script>
 </head>
@@ -55,135 +81,351 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Robust Variance Estimation (RVE)</h1>
-    <p>Cluster-robust meta-regression for dependent effects using the Hedges-Tipton-Johnson CORR working model, CR2 bias-reduced standard errors and per-coefficient Satterthwaite degrees of freedom. Inference can be unreliable with very low degrees of freedom; inspect the coefficient-specific df and sensitivity to the working correlation.</p>
+    <p>Meta-regression for dependent effect sizes (several effects per study) using the Hedges-Tipton-Johnson CORR working model, CR2 bias-reduced standard errors and per-coefficient Satterthwaite degrees of freedom, as in R's <code>robumeta</code>. Inference can be unreliable with few degrees of freedom; check the df column and how results change with the working correlation ρ.</p>
   </header>
   <main>
-    <section class="panel">
-      <h2>Studies</h2>
-      <label>
-        <span>One row per effect: <code>cluster, yi, vi, x1, x2, …</code></span>
-        <textarea id="src" aria-label="Studies">study1, 0.45, 0.04, 1, 6
-study1, 0.38, 0.05, 1, 6
-study1, 0.55, 0.06, 1, 6
-study2, 0.22, 0.03, 1, 12
-study2, 0.31, 0.04, 1, 12
-study3, 0.18, 0.02, 0, 18
-study3, 0.25, 0.03, 0, 18
-study3, 0.30, 0.04, 0, 18
-study4, 0.60, 0.05, 1, 4
-study4, 0.55, 0.06, 1, 4
-study5, 0.12, 0.02, 0, 24
-study5, 0.20, 0.03, 0, 24
-study5, 0.16, 0.025, 0, 24</textarea>
-        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">
-          <code>cluster</code> = study or any grouping that nests dependent effects. <code>yi</code> = effect size, <code>vi</code> = its sampling variance. The remaining columns are predictors (the intercept is added automatically).
-        </span>
-      </label>
+    <section class="panel" aria-labelledby="h-data">
+      <h2 id="h-data">Data</h2>
+      <div class="examples">
+        <button type="button" class="secondary" id="btn-example" data-example="corrdat">Load example: robumeta corrdat (39 studies)</button>
+        <button type="button" class="secondary" id="btn-example-small" data-example="small">Load small example (5 studies, low df)</button>
+      </div>
+      <form id="fit-form" novalidate>
+        <div class="field">
+          <label for="src">Studies: one row per effect size</label>
+          <textarea id="src" spellcheck="false" aria-describedby="src-help">studyid,effectsize,var,males,college,binge
+1,0.224463492631912,0.0324493087828159,67,0,1
+1,0.315174281597137,0.0327869690954685,67,0,1
+1,0.208638265728951,0.0324646830558777,67,0,1
+2,0.301957160234451,0.0202279463410378,79,1,0
+2,0.222092851996422,0.0197287388145924,81,1,0
+2,-0.474989205598831,0.0205640383064747,80,1,0
+2,-0.145928665995598,0.0200532395392656,79,1,0
+2,0.327310919761658,0.0198704209178686,81,1,0
+2,-0.192262798547745,0.0203139334917068,86,1,0
+2,-0.401333808898926,0.0206273291260004,86,1,0
+2,-0.132004618644714,0.0200435630977154,79,1,0
+2,0.433961778879166,0.0204708073288202,80,1,0
+2,-0.329060554504395,0.0202707014977932,79,1,0
+3,0.62699419260025,0.100001715123653,76.1999969482422,0,1
+3,0.838450491428375,0.104883559048176,76.1999969482422,0,0
+4,0.216049581766129,0.0655024871230125,80,1,0
+4,0.258915692567825,0.0602150745689869,80,1,0
+4,0.644643783569336,0.0621874891221523,80,1,0
+4,0.474608659744263,0.0678636580705643,80,1,0
+4,0.0194698125123978,0.0651280581951141,80,1,0
+4,0.782012283802032,0.0707565546035767,80,1,0
+5,-0.148170411586761,0.0351948104798794,79,0,0
+5,-0.0343227870762348,0.0351040288805962,79,0,0
+6,-1.00031232833862,0.0212805140763521,54,0,0
+6,-0.601435959339142,0.014242640696466,84,0,0
+6,-0.164186477661133,0.0137162758037448,84,0,0
+7,0.135150894522667,0.0581227727234364,82,1,0
+8,0.110506631433964,0.0486432611942291,71,0,0
+9,0.716426014900208,0.185308203101158,60,0,0
+9,0.80304890871048,0.355934172868729,60,0,0
+9,0.831583440303802,0.36790332198143,60,0,1
+9,0.92769855260849,0.191610097885132,60,0,0
+10,1.09102821350098,0.176737353205681,77,1,1
+10,1.35982501506805,0.198933318257332,77,1,1
+11,1.09102821350098,0.176737353205681,69,1,1
+11,1.26404333114624,0.18457318842411,69,1,1
+12,1.09102821350098,0.176737353205681,62,1,1
+12,1.27020156383514,0.184873297810555,62,1,1
+13,0.163793072104454,0.0323746390640736,75,1,0
+13,-0.267202496528625,0.033355139195919,75,1,0
+13,-0.431015282869339,0.0332948639988899,75,1,0
+13,0.131233543157578,0.0320873335003853,75,1,0
+13,-0.398471236228943,0.0329319052398205,75,1,0
+13,-0.0325710102915764,0.031502190977335,75,1,0
+14,0.0859321132302284,0.0477712266147137,81,0,0
+14,-0.0601001568138599,0.0477487705647945,81,0,0
+14,-0.0289181526750326,0.0477322489023209,81,0,0
+14,-0.526294231414795,0.0493759959936142,81,0,0
+14,0.41623517870903,0.0487585365772247,81,0,0
+14,-0.0343236513435841,0.0477342866361141,81,0,0
+15,0.454897403717041,0.0672875642776489,80,0,0
+15,-0.410464912652969,0.0681448355317116,81,0,0
+15,1.03981566429138,0.0756768062710762,80,0,0
+15,0.995254218578339,0.0762104168534279,76,0,0
+15,0.0955326780676842,0.0656661987304688,81,0,0
+15,0.974933564662933,0.0745874643325806,80,0,0
+15,0.781683146953583,0.0705998241901398,80,0,0
+15,0.585151135921478,0.0683979615569115,81,0,0
+15,0.488274037837982,0.0698365271091461,76,0,0
+15,-0.360108941793442,0.0678214728832245,81,0,0
+16,0.141015470027924,0.0134349744766951,46,0,1
+16,0.220330983400345,0.0152434576302767,46,0,0
+16,0.292774319648743,0.013553005643189,46,0,1
+16,0.2843237221241,0.0136035289615393,46,0,1
+16,0.186442151665688,0.0152173498645425,46,0,1
+16,0.207560390233994,0.013474615290761,46,0,1
+16,0.335782408714294,0.0153650576248765,46,0,1
+17,0.773593306541443,0.118523962795734,71,1,0
+17,0.237380981445312,0.108791679143906,71,1,1
+17,1.35982501506805,0.139261022210121,71,1,0
+17,0.744018852710724,0.11653546243906,71,1,1
+17,0.747525930404663,0.11666963249445,71,1,0
+17,0.92528635263443,0.122404903173447,71,1,0
+17,0.57097864151001,0.112513042986393,71,1,0
+17,-0.298982948064804,0.108870387077332,71,1,1
+18,-0.0657529830932617,0.0678586736321449,41,0,1
+18,0.848819017410278,0.0724670365452766,41,0,1
+18,0.480822563171387,0.0705344900488853,41,0,1
+18,0.737350583076477,0.0709727630019188,41,0,1
+19,0.079598180949688,0.0331405773758888,82,0,0
+19,0.22023993730545,0.040322557091713,82,0,0
+19,0.386703312397003,0.0408237613737583,82,0,0
+19,0.0352963656187057,0.0401556305587292,82,0,1
+19,0.443744152784348,0.0409400053322315,82,0,0
+20,0.224701941013336,0.074897825717926,46,0,1
+20,0.446850150823593,0.0761303156614304,46,0,1
+20,0.193061128258705,0.0905417129397392,46,0,1
+20,0.265843331813812,0.0750709176063538,46,0,1
+20,-0.058830738067627,0.095584511756897,46,0,1
+20,0.100620076060295,0.0956400185823441,46,0,1
+20,-0.19344824552536,0.0959418639540672,46,0,1
+20,0.408860176801682,0.0918573588132858,46,0,1
+20,0.284100383520126,0.091126911342144,46,0,1
+21,0.375328958034515,0.170141488313675,60,0,1
+21,-0.163312897086143,0.160606011748314,60,0,1
+21,-0.377790182828903,0.162429481744766,60,0,1
+21,0.0333876833319664,0.160279482603073,60,0,1
+21,0.62949812412262,0.177757576107979,60,0,1
+21,-0.626143991947174,0.171340987086296,60,0,1
+21,-0.143795520067215,0.160678789019585,60,0,1
+21,-0.964415669441223,0.179113283753395,60,0,1
+21,0.469395577907562,0.163609698414803,60,0,1
+22,0.0883523598313332,0.0436965711414814,57,0,0
+23,0,0.0258591920137405,64,0,0
+23,0.0164766255766153,0.0254190117120743,64,0,0
+23,0.201566830277443,0.0255333241075277,64,0,0
+23,-0.110389605164528,0.0258965864777565,64,0,0
+24,0.455795347690582,0.0631782412528992,41,0,0
+24,-0.00817876495420933,0.0647861957550049,40,0,1
+24,0.196865394711494,0.0654033198952675,40,0,1
+24,0.389787584543228,0.0658407434821129,40,0,0
+24,-0.304078310728073,0.0619223415851593,41,0,1
+24,0,0.061553031206131,41,0,1
+25,-0.338925331830978,0.0197484232485294,84,0,1
+26,0.532649874687195,0.052501704543829,67,0,1
+26,0.481902003288269,0.0521758422255516,67,0,1
+26,0.814993262290955,0.0522010587155819,67,0,1
+26,-0.396616339683533,0.051108468323946,67,0,1
+26,-0.328368455171585,0.0507992208003998,67,0,1
+26,0.838553309440613,0.0524357408285141,67,0,1
+27,0.450458824634552,0.164314657449722,72,0,0
+27,0.450458824634552,0.164314657449722,72,0,0
+28,-0.0736289620399475,0.0377680361270905,67.4000015258789,0,0
+29,0.317641258239746,0.0396564528346062,89.5,0,1
+29,0.00496314465999603,0.0391714908182621,89.5,0,0
+30,0.0281804818660021,0.0594072788953781,83,0,1
+30,0.169018939137459,0.0581695474684238,83,0,0
+30,0.0272022150456905,0.0667586550116539,83,0,0
+30,1.35982501506805,0.150341764092445,83,0,0
+30,0.120759464800358,0.0669029876589775,83,0,1
+30,0.187000527977943,0.0670151486992836,83,0,1
+30,0.128856807947159,0.0578567609190941,83,0,1
+30,0.47843861579895,0.0659712329506874,83,0,0
+30,0.350728571414948,0.0653952434659004,83,0,1
+30,0.0407197996973991,0.0594565384089947,83,0,1
+30,1.35982501506805,0.0677626132965088,83,0,0
+30,0.207550004124641,0.0577078014612198,83,0,0
+30,0.375316470861435,0.0663718283176422,83,0,0
+30,0.293401718139648,0.0590428821742535,83,0,1
+30,0.0165788568556309,0.0668056905269623,83,0,0
+30,-0.123959824442863,0.0594765022397041,83,0,0
+30,-0.0270322635769844,0.059817086905241,83,0,0
+30,0.589445292949677,0.066535085439682,83,0,1
+31,0.222135171294212,0.0427604205906391,51,0,1
+31,0.0126133877784014,0.0425540618598461,51,0,1
+31,0.479385554790497,0.043503362685442,51,0,1
+31,0.353577852249146,0.0431465990841389,51,0,1
+32,0.153314471244812,0.125367283821106,90,0,0
+32,0.950826585292816,0.139126107096672,90,0,0
+32,1.35982501506805,0.172760739922523,90,0,0
+33,-0.0627345964312553,0.0889765396714211,72,0,0
+33,-0.08248470723629,0.0889875292778015,72,0,0
+34,0.457683145999908,0.0315749011933804,76,0,0
+34,0.0896798670291901,0.0308001637458801,76,0,1
+34,0.128962516784668,0.0308331958949566,76,0,0
+34,1.23172605037689,0.0366044193506241,76,0,0
+35,0.189179807901382,0.114670753479004,48,0,1
+35,0.111629344522953,0.114445514976978,48,0,1
+35,0.35278782248497,0.106149293482304,48,0,1
+35,0.29948428273201,0.11694547533989,48,0,1
+35,-0.27829584479332,0.115413554012775,48,0,1
+35,0.503094434738159,0.105384513735771,48,0,1
+36,0.0381299220025539,0.0670011788606644,85,0,1
+37,1.30000174045563,0.0622506327927113,72,1,0
+37,0.863952159881592,0.0530898906290531,72,1,0
+38,0.441509425640106,0.0977751389145851,47.5999984741211,0,0
+38,0.196226418018341,0.0959129333496094,47.5999984741211,0,1
+38,0.421886801719666,0.0975734516978264,47.5999984741211,0,1
+39,-0.103936441242695,0.0834458619356155,87.5,0,0
+39,-0.484980493783951,0.113556072115898,87.5,0,0
+39,-0.539799451828003,0.114187233150005,87.5,0,0
+39,-0.413202494382858,0.0851118266582489,87.5,0,0</textarea>
+          <span class="help" id="src-help">Columns: <code>cluster, yi, vi</code>, then any numeric predictors (the intercept is added automatically). <code>cluster</code> = study or other grouping of dependent effects; <code>yi</code> = effect size; <code>vi</code> = its sampling variance (vi = SE²). Comma, semicolon or tab separated (paste from Excel works). An optional header row is recognised (e.g. <code>study, yi, vi</code> or <code>study, yi, se</code>; an <code>se</code> column is squared to give vi). Quote labels that contain the separator, e.g. <code>"Smith, 2010"</code>. Missing values are not allowed.</span>
+        </div>
 
-      <label style="margin-top:0.5rem">
-        <span>Working correlation ρ</span>
-        <input id="f-rho" type="number" step="0.05" min="0" max="1" value="0.8" aria-label="F rho">
-        <span style="color:var(--muted);font-size:0.78rem">Typical 0.6–0.8 in education / public-health reviews. Result is robust to mis-specification — sensitivity analysis recommended.</span>
-      </label>
+        <div class="field">
+          <label for="f-rho">Working correlation ρ (0 to 1)</label>
+          <input id="f-rho" type="number" step="0.05" min="0" max="1" value="0.8" inputmode="decimal" aria-describedby="rho-help">
+          <span class="help" id="rho-help">Assumed correlation between effects in the same cluster; it affects the weights and τ². 0.8 is the robumeta default. CR2 standard errors protect against a wrong ρ only as the number of clusters grows; with few clusters, check that conclusions hold at other values (e.g. 0.2 and 0.5).</span>
+        </div>
 
-      <label>
-        <span>Predictor names (comma-separated; one per data column after vi)</span>
-        <input id="f-names" type="text" value="intervention, dose_weeks" aria-label="F names">
-      </label>
+        <div class="field">
+          <label for="f-names">Predictor names</label>
+          <input id="f-names" type="text" value="males, college, binge" aria-describedby="names-help names-warning">
+          <span class="help" id="names-help">Comma-separated, one per predictor column after vi. Filled in automatically from a header row.</span>
+          <p class="inline-warn" id="names-warning" hidden></p>
+        </div>
 
-      <button type="button" id="btn-run" class="primary" style="width:100%; margin-top:0.5rem">Fit RVE meta-regression</button>
+        <div class="field">
+          <label class="check"><input type="checkbox" id="f-centre" aria-describedby="centre-help"> Centre predictors at their means</label>
+          <span class="help" id="centre-help">Subtracts each predictor's mean before fitting. Slopes, their SEs, df and τ² are unchanged; the intercept becomes the expected effect at the predictor means. Recommended when the condition number κ is large (e.g. an uncentred year).</span>
+        </div>
+
+        <button type="submit" id="btn-run" class="primary">Fit RVE meta-regression</button>
+      </form>
+      <p class="note info" id="stale-note" role="status" hidden>Inputs changed since the last fit. Press <strong>Fit</strong> to update the results and exports.</p>
       <div class="note">
-        <strong>When to use:</strong> any time you have ≥2 effect sizes per study (multiple endpoints, time-points, sub-scales, control comparisons), and there's no IPD to model the within-study covariance explicitly. RVE doesn't need the true covariance matrix — that's the whole point. References: <a href="https://doi.org/10.1002/jrsm.5" target="_blank" rel="noopener">Hedges, Tipton &amp; Johnson 2010</a>; <a href="https://doi.org/10.1037/met0000011" target="_blank" rel="noopener">Tipton 2015 small-sample correction</a>; R package <code>robumeta</code>.
+        <strong>When to use:</strong> when studies contribute more than one effect size (several outcomes, time points, sub-scales or comparisons) and the within-study covariances are unknown. RVE does not need the true covariance matrix. References: <a href="https://doi.org/10.1002/jrsm.5" target="_blank" rel="noopener">Hedges, Tipton &amp; Johnson 2010<span aria-hidden="true"> ↗</span><span class="sr-only"> (opens in new tab)</span></a>; <a href="https://doi.org/10.1037/met0000011" target="_blank" rel="noopener">Tipton 2015 small-sample correction<span aria-hidden="true"> ↗</span><span class="sr-only"> (opens in new tab)</span></a>; R package <code>robumeta</code>.
       </div>
     </section>
-    <section class="panel">
-      <h2>Results</h2>
-      <div id="meta-row" style="font-size:0.88rem;color:var(--muted)">Run a fit to see clusters, k, τ², and the coefficient table here.</div>
-      <h2 style="margin-top:1rem">Coefficients (CR2 cluster-robust SE, Satterthwaite df)</h2>
-      <table>
-        <thead><tr><th>Predictor</th><th>β̂</th><th>SE (robust)</th><th>t</th><th>df</th><th>95% CI</th><th>p</th></tr></thead>
-        <tbody id="coef-body"></tbody>
-      </table>
+    <section class="panel" aria-labelledby="h-results">
+      <h2 id="h-results">Results</h2>
+      <div id="meta-row" role="status" aria-live="polite" aria-atomic="true">Run a fit to see clusters, k, τ², the condition number and the coefficient table here.</div>
+      <h2 style="margin-top:1rem" id="h-coef">Coefficients (CR2 cluster-robust SE, Satterthwaite df)</h2>
+      <div class="table-wrap" role="region" aria-labelledby="h-coef" tabindex="0">
+        <table id="coef-table">
+          <caption id="coef-caption">Coefficient estimates with CR2 standard errors, Satterthwaite degrees of freedom, 95% confidence intervals and two-sided p-values.</caption>
+          <thead><tr><th scope="col">Predictor</th><th scope="col">β̂</th><th scope="col">SE (robust)</th><th scope="col">t</th><th scope="col">df</th><th scope="col">95% CI</th><th scope="col">p</th></tr></thead>
+          <tbody id="coef-body"></tbody>
+        </table>
+      </div>
+      <div id="alm-export-mount" role="group" aria-label="Export results">
+        <button type="button" class="secondary" data-action="report-md" title="Methods, results table, warnings and input data (Markdown)">Report (.md)</button>
+        <button type="button" class="secondary" data-action="csv" title="One row per coefficient">Coefficients (.csv)</button>
+        <button type="button" class="secondary" data-action="input-csv" title="The data exactly as fitted, with a header row">Input data (.csv)</button>
+        <button type="button" class="secondary" data-action="json" title="Inputs, coefficients and full fit object">JSON</button>
+        <button type="button" class="secondary" data-action="r-script" title="Script that refits this model with robumeta and clubSandwich">R script (.R)</button>
+      </div>
     </section>
-  
-      <div id="alm-flow-mount" aria-live="polite"></div>
-</main>
+
+    <div id="alm-flow-mount" aria-live="polite"></div>
+  </main>
   <footer>
-    Engine: <code>shared/rve.js</code> — Hedges-Tipton-Johnson 2010 correlated-effects working model with the <strong>CR2 bias-reduced small-sample correction</strong> (Tipton 2015; Pustejovsky-Tipton 2018) and per-coefficient <strong>Satterthwaite degrees of freedom</strong>, with potentially unreliable inference at very low degrees of freedom. τ² is the HTJ CORR moment estimator (not a plain DerSimonian-Laird across rows). t-quantiles via safeguarded inversion of the Student-t CDF. Reference implementation: <code>robumeta::robu(modelweights="CORR", small=TRUE)</code>. Check numerical conditioning and coefficient-specific degrees of freedom before interpreting inference. Because the CORR weights are constant within a cluster, the within-cluster annihilator block is symmetric, so A<sub>j</sub> is a true symmetric inverse-square-root. CR1 (a single scalar correction, anticonservative at small m) remains available via <code>fitCORR(rows,{method:"CR1"})</code>. The HIER working model is not yet implemented; for hierarchical effects use <code>robumeta::robu(model="HIER")</code> in R.
+    <p>Engine: <code>shared/rve.js</code>: Hedges-Tipton-Johnson 2010 correlated-effects (CORR) working model; τ² from the CORR method-of-moments estimator; <strong>CR2 bias-reduced</strong> cluster-robust standard errors (Tipton 2015; Pustejovsky and Tipton 2018) and per-coefficient <strong>Satterthwaite degrees of freedom</strong>; Student-t confidence intervals and p-values. Reference implementation: <code>robumeta::robu(modelweights = "CORR", small = TRUE)</code>, cross-checked with <code>clubSandwich::coef_test(vcov = "CR2", test = "Satterthwaite")</code>. Designs with no more clusters than coefficients, or with collinear predictors, are refused.</p>
+    <p>Conditioning: each fit reports κ₂(XᵀWX), the condition number of the weighted cross-product matrix at the fitted weights. When κ exceeds 9.0×10⁶ (κ·u &gt; 10⁻⁹, u = 2⁻⁵³), the first-order rounding-error bound κ·u exceeds 10⁻⁹, so agreement to the ninth significant digit is no longer guaranteed, and the app offers to centre the predictors. robumeta itself gives no such warning. The hierarchical (HIER) working model is not implemented; use <code>robumeta::robu(modelweights = "HIER")</code> in R.</p>
   </footer>
 
   <script>
   (function () {
     "use strict";
+    var E = window.AlmRVEExtras;
+    var SMALL_EXAMPLE = "study1, 0.45, 0.04, 1, 6\nstudy1, 0.38, 0.05, 1, 6\nstudy1, 0.55, 0.06, 1, 6\nstudy2, 0.22, 0.03, 1, 12\nstudy2, 0.31, 0.04, 1, 12\nstudy3, 0.18, 0.02, 0, 18\nstudy3, 0.25, 0.03, 0, 18\nstudy3, 0.30, 0.04, 0, 18\nstudy4, 0.60, 0.05, 1, 4\nstudy4, 0.55, 0.06, 1, 4\nstudy5, 0.12, 0.02, 0, 24\nstudy5, 0.20, 0.03, 0, 24\nstudy5, 0.16, 0.025, 0, 24";
+    var $ = function (id) { return document.getElementById(id); };
+    var lastResult = null, lastState = null;
 
-    function parseInput(text, predictorNames) {
-      var rows = [];
-      var width = null;
-      var warnings = [];
-      var lines = text.split(/\r?\n/);
-      for (var i = 0; i < lines.length; i++) {
-        var line = lines[i].trim();
-        if (!line || line.charAt(0) === "#") continue;
-        var parts = line.split(/\s*,\s*/);
-        if (parts.length < 3) throw new Error("Row " + (i + 1) + ": needs at least cluster, yi, vi");
-        if (width === null) width = parts.length;
-        if (parts.length !== width) throw new Error("Row " + (i + 1) + ": inconsistent predictor count");
-        var cluster = parts[0];
-        if (!cluster) throw new Error("Row " + (i + 1) + ": empty cluster");
-        var yi = Number(parts[1]);
-        var vi = Number(parts[2]);
-        if (!parts[1].trim() || !parts[2].trim() || !isFinite(yi) || !isFinite(vi) || vi <= 0) {
-          throw new Error("Row " + (i + 1) + ": invalid yi/vi");
-        }
-        var xs = [1]; // intercept
-        for (var j = 3; j < parts.length; j++) {
-          var v = Number(parts[j]);
-          if (!parts[j].trim() || !isFinite(v)) throw new Error("Row " + (i + 1) + ": invalid predictor");
-          xs.push(v);
-        }
-        rows.push({ cluster: cluster, yi: yi, vi: vi, X: xs });
-      }
-      return { rows: rows, warnings: warnings };
+    function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+    function kappaHtml(k) {
+      if (!isFinite(k)) return "∞";
+      if (k < 1e4) return k.toFixed(k < 10 ? 2 : 0);
+      var e = Math.floor(Math.log10(k)), m = k / Math.pow(10, e);
+      if (m >= 9.995) { m = 1; e += 1; }
+      return m.toFixed(2) + "×10<sup>" + e + "</sup>";
     }
 
-    function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+    function setExportsEnabled(on) {
+      Array.prototype.forEach.call(document.querySelectorAll("#alm-export-mount button"), function (b) { b.disabled = !on; });
+    }
+
+    function clearResults() {
+      window.__almLastRVE = null; lastResult = null; lastState = null;
+      $("coef-body").innerHTML = "";
+      setExportsEnabled(false);
+    }
+
+    function showError(msg) {
+      clearResults();
+      $("meta-row").innerHTML = '<p class="err" role="alert"><strong>Fit failed:</strong> ' + esc(msg) + "</p>";
+    }
+
+    function friendlyEngineError(e, m, p) {
+      var s = String(e && e.message || e);
+      if (/m<=p/.test(s)) return m + " cluster" + (m === 1 ? "" : "s") + " cannot support " + p + " coefficient" + (p === 1 ? "" : "s") + " (intercept + " + (p - 1) + " predictor" + (p === 2 ? "" : "s") + "): robust variance estimation needs more clusters than coefficients. Add clusters or remove predictors.";
+      if (/singular/i.test(s)) return "The coefficients cannot be estimated because the predictors are collinear (for example a constant column, or one predictor equal to a combination of others). Remove or recode a predictor.";
+      if (/rho/.test(s)) return "ρ must be a number between 0 and 1.";
+      return s;
+    }
+
+    function countClusters(rows) { var s = Object.create(null), n = 0; rows.forEach(function (r) { if (!s[r.cluster]) { s[r.cluster] = 1; n++; } }); return n; }
 
     function run() {
-      var text = document.getElementById("src").value;
-      var rho = parseFloat(document.getElementById("f-rho").value);
-      var nameInput = document.getElementById("f-names").value;
-      window.__almLastRVE = null;
+      $("stale-note").hidden = true;
+      $("names-warning").hidden = true; $("names-warning").textContent = "";
+      clearResults();
       var parsed;
-      try { parsed = parseInput(text); } catch (e) {
-        document.getElementById("meta-row").textContent = "Fit failed: " + e.message;
-        document.getElementById("coef-body").innerHTML = "";
-        return;
+      try { parsed = E.parseStudies($("src").value); }
+      catch (e) { showError(e.message); return; }
+
+      var rhoText = String($("f-rho").value).trim();
+      var rho = Number(rhoText);
+      if (!rhoText || !isFinite(rho) || rho < 0 || rho > 1) { showError("Working correlation ρ must be a number between 0 and 1 (got '" + rhoText + "')."); return; }
+
+      var nPred = parsed.nPredictors, names, warnings = [];
+      if (parsed.predictorNames) {
+        names = parsed.predictorNames.slice();
+        $("f-names").value = names.join(", ");
+      } else {
+        names = $("f-names").value.split(/\s*,\s*/).map(function (s) { return s.trim(); }).filter(function (s) { return s.length; });
+        if (names.length !== nPred) {
+          var msg = names.length > nPred
+            ? "You gave " + names.length + " predictor name" + (names.length === 1 ? "" : "s") + " for " + nPred + " predictor column" + (nPred === 1 ? "" : "s") + "; the extra name" + (names.length - nPred === 1 ? " was" : "s were") + " ignored."
+            : "You gave " + names.length + " predictor name" + (names.length === 1 ? "" : "s") + " for " + nPred + " predictor column" + (nPred === 1 ? "" : "s") + "; unnamed predictors are labelled x" + (names.length + 1) + (nPred - names.length > 1 ? " onwards" : "") + ".";
+          $("names-warning").textContent = msg; $("names-warning").hidden = false;
+          warnings.push(msg);
+          names = names.slice(0, nPred);
+          while (names.length < nPred) names.push("x" + (names.length + 1));
+        }
       }
-      if (!parsed.rows.length) {
-        document.getElementById("meta-row").textContent = "No valid rows.";
-        document.getElementById("coef-body").innerHTML = "";
-        return;
-      }
+
+      var centred = $("f-centre").checked && nPred > 0, means = null, fitRows = parsed.rows;
+      if (centred) { var c = E.centreRows(parsed.rows); fitRows = c.rows; means = c.means; }
+
       var fit, summary;
       try {
-        fit = AlmRVE.fitCORR(parsed.rows, { rho: rho });
+        fit = AlmRVE.fitCORR(fitRows, { rho: rho });
         summary = AlmRVE.summary(fit);
       } catch (e) {
-        document.getElementById("meta-row").innerHTML = '<span style="color:#b04444">Fit failed: ' + e.message + '</span>';
-        document.getElementById("coef-body").innerHTML = "";
+        showError(friendlyEngineError(e, countClusters(parsed.rows), nPred + 1));
         return;
       }
-      document.getElementById("meta-row").innerHTML =
-        "k = " + fit.k_total + " effects, m = " + fit.m_clusters + " clusters, " +
-        "p = " + fit.p + " coefficients, τ²(CORR) = <code>" + fmt(fit.tau2, 4) + "</code>, ρ = " + fmt(fit.rho, 2);
-      if (summary.some(function (s) { return s.df < 4; })) document.getElementById("meta-row").appendChild(document.createTextNode(" Warning: df < 4; inference may be unreliable."));
-      var names = ["(intercept)"].concat(
-        nameInput.split(/\s*,\s*/).filter(function (s) { return s.length; }));
-      while (names.length < fit.p) names.push("x" + names.length);
+      var kappa = E.kappaXtWX(fitRows, fit.weights);
+      var coefNames = E.coefficientNames(names, fit.p, centred);
+      var lowDf = summary.map(function (s, j) { return s.df < 4 ? coefNames[j] + " (df " + fmt(s.df, 2) + ")" : null; }).filter(Boolean);
+      if (lowDf.length) warnings.push("df < 4 for " + lowDf.join(", ") + ": inference may be unreliable (Tipton 2015).");
+      var ill = kappa > E.KAPPA_THRESHOLD;
+      if (ill) warnings.push("Ill-conditioned design: κ₂(XᵀWX) = " + E.kappaText(kappa) + " exceeds 9.0×10⁶, so results may be accurate to fewer than 9 significant digits." + (centred ? "" : " Centring the predictors usually fixes this."));
+
+      var html = '<p class="summary-line">k = ' + fit.k_total + " effects, m = " + fit.m_clusters + " clusters, p = " + fit.p + " coefficients, τ²(CORR) = <code>" + fmt(fit.tau2, 4) + "</code>, ρ = " + fmt(fit.rho, 2) +
+        ", condition number κ₂(XᵀWX) = <span id=\"kappa-value\" data-kappa=\"" + kappa + "\">" + kappaHtml(kappa) + "</span>" + (centred ? " (predictors centred)" : "") + ".</p>";
+      if (centred) html += '<p class="note info" id="centre-note">Predictors centred at their means (' + names.map(function (n, i) { return esc(n) + " = " + fmt(means[i], 4); }).join(", ") + "). The intercept is the expected effect at these means.</p>";
+      if (lowDf.length) html += '<p class="note" id="lowdf-warning"><strong>Warning: df &lt; 4</strong> for ' + esc(lowDf.join(", ")) + "; inference may be unreliable. Treat these confidence intervals and p-values with caution.</p>";
+      if (ill) html += '<div class="note" id="kappa-warning"><strong>Ill-conditioned design.</strong> κ₂(XᵀWX) = ' + kappaHtml(kappa) + " is above 9.0×10⁶, so rounding error may reach the ninth significant digit of the results (in R as well as here)." +
+        (centred ? " The design is still ill-conditioned after centring; consider rescaling predictors (e.g. sample size in thousands)." : ' <button type="button" class="secondary" id="btn-centre">Centre predictors and refit</button>') + "</div>";
+      if (warnings.length && warnings[0] && $("names-warning").hidden === false) html += '<p class="note" id="names-note">' + esc(warnings[0]) + "</p>";
+      $("meta-row").innerHTML = html;
+      var b = $("btn-centre");
+      if (b) b.addEventListener("click", function () { $("f-centre").checked = true; run(); });
+
       var rowsHtml = "";
       for (var j = 0; j < summary.length; j++) {
         var s = summary[j];
-        rowsHtml += "<tr><td>" + names[j].replace(/[&<>"']/g, function(c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }) + "</td>" +
+        rowsHtml += '<tr><th scope="row">' + esc(coefNames[j]) + "</th>" +
           "<td>" + fmt(s.estimate, 3) + "</td>" +
           "<td>" + fmt(s.se, 3) + "</td>" +
           "<td>" + fmt(s.t, 2) + "</td>" +
@@ -191,16 +433,59 @@ study5, 0.16, 0.025, 0, 24</textarea>
           "<td>" + fmt(s.ci_lo, 3) + ", " + fmt(s.ci_hi, 3) + "</td>" +
           "<td>" + (s.p < 0.001 ? "&lt;0.001" : fmt(s.p, 3)) + "</td></tr>";
       }
-      document.getElementById("coef-body").innerHTML = rowsHtml;
-      window.__almLastRVE = function () { return { fit: fit, summary: summary }; };
+      $("coef-body").innerHTML = rowsHtml;
+
+      lastState = { rows: parsed.rows, names: names, rho: rho, centred: centred };
+      lastResult = E.buildResult({ rawRows: parsed.rows, names: names, rho: rho, centred: centred, means: means, fit: fit, summary: summary,
+        kappa: kappa, warnings: warnings, parseInfo: parsed, buildInfo: window.AlmBuildInfo });
+      var frozen = lastResult;
+      window.__almLastRVE = function () { return frozen; };
+      setExportsEnabled(true);
     }
 
-    document.getElementById("btn-run").addEventListener("click", run);
+    function download(text, name, type) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], { type: type }));
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    }
+
+    function exportAction(action) {
+      var res = window.__almLastRVE ? window.__almLastRVE() : null;
+      if (!res) return;
+      var bi = window.AlmBuildInfo || {};
+      if (action === "json") download(JSON.stringify(res, null, 2), "rve-meta.json", "application/json");
+      else if (action === "csv") download(E.toCoefficientCSV(res), "rve-meta-coefficients.csv", "text/csv");
+      else if (action === "input-csv") download(E.toInputCSV(res), "rve-meta-input.csv", "text/csv");
+      else if (action === "report-md") download(E.toReportMarkdown(res), "rve-meta-report.md", "text/markdown");
+      else if (action === "r-script") download(E.toRScript({ rows: lastState.rows, names: lastState.names, rho: lastState.rho, centred: lastState.centred, version: bi.version || "" }), "rve-meta.R", "text/plain");
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll("#alm-export-mount button"), function (b) {
+      b.addEventListener("click", function () { exportAction(b.getAttribute("data-action")); });
+    });
+
+    $("fit-form").addEventListener("submit", function (ev) { ev.preventDefault(); run(); });
+    function loadExample(which) {
+      if (which === "small") { $("src").value = SMALL_EXAMPLE; $("f-names").value = "intervention, dose_weeks"; }
+      else { $("src").value = $("src").defaultValue; $("f-names").value = "males, college, binge"; }
+      $("f-rho").value = "0.8"; $("f-centre").checked = false;
+      run();
+    }
+    $("btn-example").addEventListener("click", function () { loadExample("corrdat"); });
+    $("btn-example-small").addEventListener("click", function () { loadExample("small"); });
+    ["src", "f-rho", "f-names", "f-centre"].forEach(function (id) {
+      $(id).addEventListener("input", function () { if (window.__almLastRVE) $("stale-note").hidden = false; });
+      $(id).addEventListener("change", function () { if (window.__almLastRVE) $("stale-note").hidden = false; });
+    });
+    window.__almRveRun = run;
     run();
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
-<script src="../hub/shared/results-export.js"></script>
 
 <script>
 (function () {
@@ -227,11 +512,12 @@ study5, 0.16, 0.025, 0, 24</textarea>
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'rve-meta' });
+      // A restored draft must be refitted, otherwise the table and exports would
+      // still describe the example fit while the inputs show the draft.
+      AlmAutosave.install({ appKey: 'rve-meta', onRestore: function () { if (window.__almRveRun) window.__almRveRun(); } });
     }
   });
 })();
 </script>
-<script>(function(){function b(){if(!(window.alm&&window.alm.resultsExport))return setTimeout(b,200);if(document.getElementById("alm-export-mount"))return;var m=document.createElement("div");m.id="alm-export-mount";m.style.margin="1rem clamp(1rem,3vw,3rem)";var ft=document.querySelector("footer"),mn=document.querySelector("main")||document.body;if(ft&&ft.parentNode)ft.parentNode.insertBefore(m,ft);else mn.appendChild(m);window.alm.resultsExport({target:m,basename:"rve-meta",getResults:function(){var f=window.__almLastRVE;var r=f&&f();return r||{};}});}if(document.readyState!=="loading")b();else document.addEventListener("DOMContentLoaded",b);})();</script>
 </body>
 </html>
