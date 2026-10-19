@@ -218,3 +218,13 @@ test('Mobile 390px: no horizontal page scroll', async ({ page }) => {
   const w = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
   expect(w.sw).toBeLessThanOrEqual(w.cw + 1);
 });
+
+test('U6 @slow: live webR panel prints "R version ..." once, not "R R version"', async ({ page }) => {
+  test.setTimeout(300000);
+  await open(page);
+  const r = await page.evaluate(() => AlmInfluenceValidation.runLive());
+  expect(r.rows.filter(x => !x.pass)).toEqual([]);
+  const text = await page.locator('#alm-validate').textContent();
+  expect(text).toMatch(/R version \d/);
+  expect(text).not.toContain('R R version');
+});

@@ -317,6 +317,7 @@
       let _lastExclusion = null;
       window._almLastExclusion = function () { return _lastExclusion; };
 
+      function pageLocked() { return document.getElementById("src").disabled; }
       function showError(msg) {
         const el = document.getElementById("input-error");
         el.textContent = msg || "";
@@ -389,10 +390,12 @@
 
         const body = document.getElementById("body");
         const __bodyParts = [""];
+        // While the Validate corpus replay has locked the page (input disabled), new controls stay disabled too.
+        const lockAttr = pageLocked() ? " disabled" : "";
         diag.forEach((d, i) => {
           const flag = d.influential ? "flag" : "";
           __bodyParts.push(`<tr class="${flag}" data-i="${i}">
-            <td><input type="checkbox" class="excl" data-i="${i}" aria-label="Exclude ${esc(d.label)} and re-pool"></td>
+            <td><input type="checkbox" class="excl" data-i="${i}" aria-label="Exclude ${esc(d.label)} and re-pool"${lockAttr}></td>
             <td class="study">${esc(d.label)}</td>
             <td>${fmt(d.te)}</td>
             <td>${fmt(d.weight, 2)}</td>
@@ -509,9 +512,10 @@
             ? `${flagged.length} of ${full.k} studies ${flagged.length === 1 ? "meets" : "meet"} metafor's influence rule (${flagged.slice(0, 6).map(i => diag[i].label).join(", ")}${flagged.length > 6 ? ` and ${flagged.length - 6} more` : ""}). Use "Exclude all flagged" to see how the pooled estimate changes without them.`
             : `None of the ${full.k} studies meets metafor's influence rule. Tick "Exclude" on any row to see how the pooled estimate changes without it.`;
         }
-        document.getElementById("btn-excl-flagged").disabled = flagged.length === 0;
-        document.getElementById("btn-excl-clear").disabled = ex.length === 0;
-        document.getElementById("btn-excl-apply").disabled = !kept;
+        const locked = pageLocked();
+        document.getElementById("btn-excl-flagged").disabled = locked || flagged.length === 0;
+        document.getElementById("btn-excl-clear").disabled = locked || ex.length === 0;
+        document.getElementById("btn-excl-apply").disabled = locked || !kept;
       }
 
       // Baujat + radial via the R-verified shared engine (matches metafor).
@@ -577,7 +581,8 @@
         if (ax && Number.isFinite(ax[0]) && Number.isFinite(ax[1]) && ax[0] < ax[1]) { lo = ax[0]; hi = ax[1]; pad = 0; }
         const X = v => padL + (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
         __svgParts.push(`<title>Leave-one-out forest plot: pooled estimate and 95% CI after dropping each study</title>`);
-        __svgParts.push(`<defs><clipPath id="loo-clip"><rect x="${padL}" y="0" width="${plotW}" height="${H}"/></clipPath></defs>`);
+        // Path (not rect) so '#loo-plot rect' still means the study squares.
+        __svgParts.push(`<defs><clipPath id="loo-clip"><path d="M${padL} 0H${padL + plotW}V${H}H${padL}Z"/></clipPath></defs>`);
         __svgParts.push(`<text x="${padL}" y="${H - 8}" font-size="10" fill="currentColor" opacity="0.7">${esc(fmt(lo - pad, 2))}</text><text x="${padL + plotW}" y="${H - 8}" text-anchor="end" font-size="10" fill="currentColor" opacity="0.7">${esc(fmt(hi + pad, 2))}</text>`);
 
         // Full pool reference
