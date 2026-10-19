@@ -15,6 +15,19 @@ globalThis.AlmMaCore = require(path.resolve(arg("--macore", here("../../shared/m
 const P = require(path.resolve(arg("--core", here("../plus-core.js"))));
 const REF = JSON.parse(fs.readFileSync(arg("--ref", here("plus-corpus/reference-plus.json")), "utf8"));
 const TAMPER = has("--tamper");
+// MANIFEST-plus.json pins the evidence files (SHA-256 over committed LF bytes); a mismatch refuses the run.
+{
+  const mf = here("MANIFEST-plus.json");
+  if (fs.existsSync(mf)) {
+    const M = JSON.parse(fs.readFileSync(mf, "utf8"));
+    for (const f of M.files) {
+      const b = fs.readFileSync(here(f.path));
+      const h = require("crypto").createHash("sha256").update(b).digest("hex");
+      if (h !== f.sha256 || b.length !== f.bytes || b.includes(13)) { console.log("PLUS-CHECK: REFUSED " + f.path + " does not match MANIFEST-plus.json"); process.exit(1); }
+    }
+    console.log("MANIFEST-plus: " + M.files.length + " files verified");
+  } else if (!arg("--ref")) { console.log("PLUS-CHECK: REFUSED missing MANIFEST-plus.json"); process.exit(1); }
+}
 
 let checks = 0, fails = [];
 const stat = {};
