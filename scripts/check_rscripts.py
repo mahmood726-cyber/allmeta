@@ -50,7 +50,7 @@ for mf in manifests:
     for entry in json.load(open(mf, encoding='utf-8')):
         rec = {'app': mf.name.replace('.manifest.json', ''), **entry}
         if not entry['exported']:
-            rec['verdict'] = 'REFUSED-AT-EXPORT'
+            rec['verdict'] = 'NOT-OFFERED' if entry.get('notOffered') else 'REFUSED-AT-EXPORT'
             results.append(rec); print('REFUSED', entry['name'], '-', entry['reason'][:100]); continue
         script = root / entry['file']
         good = run(script)
@@ -68,10 +68,17 @@ for mf in manifests:
         ok &= rec['verdict'] == 'PASS'
         print(f"{rec['verdict']:5s} {entry['name']}: {good['agree']} rc={good['rc']}; planted rc={bad['rc']}")
         results.append(rec)
-summary = {'versions': versions, 'scripts': sum(1 for r in results if r['verdict'] != 'REFUSED-AT-EXPORT'),
+SKIP = ('REFUSED-AT-EXPORT', 'NOT-OFFERED')
+apps = sorted({r['app'] for r in results})
+summary = {'versions': versions, 'scripts': sum(1 for r in results if r['verdict'] not in SKIP),
            'pass': sum(1 for r in results if r['verdict'] == 'PASS'),
-           'refused_at_export': sum(1 for r in results if r['verdict'] == 'REFUSED-AT-EXPORT'),
-           'not_pass': [r['name'] for r in results if r['verdict'] not in ('PASS', 'REFUSED-AT-EXPORT')]}
+           'by_app': {a: {'pass': sum(1 for r in results if r['app'] == a and r['verdict'] == 'PASS'),
+                          'scripts': sum(1 for r in results if r['app'] == a and r['verdict'] not in SKIP),
+                          'not_offered': sum(1 for r in results if r['app'] == a and r['verdict'] == 'NOT-OFFERED'),
+                          'refused_at_export': sum(1 for r in results if r['app'] == a and r['verdict'] == 'REFUSED-AT-EXPORT')}
+                      for a in apps},
+           'not_pass': [r['name'] for r in results if r['verdict'] not in ('PASS',) + SKIP]}
+ok &= all(v['pass'] > 0 for v in summary['by_app'].values())   # every app must have at least one passing script
 print(json.dumps(summary, indent=1))
 if a.out:
     Path(a.out).write_text(json.dumps({'summary': summary, 'results': results}, indent=1), encoding='utf-8')

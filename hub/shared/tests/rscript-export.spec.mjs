@@ -10,12 +10,23 @@ import { join } from 'node:path';
 const OUT = process.env.RSCRIPT_OUT || join(process.cwd(), 'test-results', 'rscripts');
 mkdirSync(OUT, { recursive: true });
 
-// Variants: every combination of the listed select values (null = keep the page default).
+// Dose-response has no example selector: feed published corpus datasets (the app's own validation corpus) as text.
+const root = new URL('../../../', import.meta.url);
+const doseCorpus = JSON.parse(readFileSync(new URL('dose-response-ma/validate/corpus/reference.json', root), 'utf8'));
+const doseData = Object.fromEntries(['coffee_mort', 'alcohol_cvd', 'coffee_stroke', 'alcohol_lc'].map(name => {
+  const ds = doseCorpus.datasets.find(d => d.dataset === name);
+  if (!ds) throw new Error('dose corpus dataset missing: ' + name);
+  return [name, '# study,dose,cases,n,logRR,SE,type,covariate\n' + ds.rows.map(r =>
+    [r.id, r.dose, r.cases, r.n, r.logrr, r.se == null ? '' : r.se, r.type, r.mod ?? ''].join(',')).join('\n')];
+}));
+
+// Variants: every combination of the listed values. `data` = text placed in #f-data; `f-example` values are loaded with
+// #btn-example (choosing in the select alone does not load an example). Options the page disables are skipped and listed.
 const APPS = {
-  'dose-response-ma': { page: 'dose-response-ma/index.html', selects: {
+  'dose-response-ma': { page: 'dose-response-ma/index.html', data: doseData, selects: {
     'f-shape': 'all', 'f-proc': 'all', 'f-method': ['REML', 'ML', 'FE', 'MM'] } },
-  'dta-sroc': { page: 'dta-sroc/index.html', selects: { 'f-example': 'all', 'f-method': 'all' } },
-  'nma': { page: 'nma/index.html', selects: { 'f-example': 'all', 'f-model': 'all' } },
+  'dta-sroc': { page: 'dta-sroc/index.html', exampleButton: 'btn-example', selects: { 'f-example': 'all', 'f-method': 'all' } },
+  'nma': { page: 'nma/index.html', exampleButton: 'btn-example', selects: { 'f-example': 'all', 'f-model': 'all' } },
   'heterogeneity': { page: 'heterogeneity/index.html', selects: { 'f-tau2': 'all' } },
 };
 
@@ -31,21 +42,39 @@ function parseList(script, name) {
 for (const [app, spec] of Object.entries(APPS)) {
   test(`${app}: Download R script exports a self-checking script for every example and option`, async ({ page, baseURL }) => {
     test.setTimeout(600_000);
+    page.on('dialog', d => d.accept());   // "replace current data?" confirmations when loading an example
     await page.goto(new URL(spec.page, baseURL).href);
     const widget = page.locator('#alm-validate');
     const button = widget.getByRole('button', { name: 'Download R script (re-run and check in R)', exact: true });
     await expect(button).toBeVisible();
     const lists = [];
+    if (spec.data) lists.push(['__data', Object.keys(spec.data)]);
     for (const [id, want] of Object.entries(spec.selects)) {
       const values = await page.locator('#' + id + ' option').evaluateAll(os => os.map(o => o.value));
       lists.push([id, want === 'all' ? values : want.filter(v => values.includes(v))]);
     }
-    const manifest = [];
-    for (const variant of product(lists)) {
+    const manifest = [], dataBySource = new Map();
+    variants: for (const variant of product(lists)) {
       for (const [id, value] of Object.entries(variant)) {
+        if (id === '__data') {
+          await page.locator('#f-data').fill(spec.data[value]);
+          await page.locator('#f-data').dispatchEvent('input');
+          continue;
+        }
+        const disabled = await page.locator('#' + id).evaluate((el, v) => [...el.options].find(o => o.value === v)?.disabled ?? true, value);
+        if (disabled) { manifest.push({ name: app + '__' + Object.values(variant).join('_'), variant, exported: false, notOffered: true, reason: `#${id}=${value} is disabled for this combination` }); continue variants; }
         await page.locator('#' + id).selectOption(value);
+        if (id === 'f-example' && spec.exampleButton) await page.locator('#' + spec.exampleButton).click();
       }
       await page.locator('#btn-run').click();
+      // Each data source (example or dataset) must really change the analysed data: guards against a harness that
+      // silently re-exports the default example for every variant.
+      const source = variant.__data ?? variant['f-example'];
+      if (source !== undefined) {
+        const text = await page.locator('#f-data').inputValue();
+        if (dataBySource.has(source)) expect(dataBySource.get(source), `${source}: data changed between variants`).toBe(text);
+        else dataBySource.set(source, text);
+      }
       const name = app + '__' + Object.values(variant).join('_').replace(/[^A-Za-z0-9.-]+/g, '-');
       const status = widget.locator('[role=status]');
       const download = page.waitForEvent('download', { timeout: 15_000 }).catch(() => null);
@@ -72,6 +101,7 @@ for (const [app, spec] of Object.entries(APPS)) {
       manifest.push({ name, variant, exported: true, file: name + '.R', quantities: keys.length });
     }
     writeFileSync(join(OUT, app + '.manifest.json'), JSON.stringify(manifest, null, 2));
+    if (dataBySource.size > 1) expect(new Set(dataBySource.values()).size, `${app}: every example/dataset loads different data`).toBe(dataBySource.size);
     expect(manifest.filter(m => m.exported).length, `${app}: exported scripts`).toBeGreaterThan(0);
   });
 }
