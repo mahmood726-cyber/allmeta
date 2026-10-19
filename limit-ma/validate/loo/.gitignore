@@ -1,0 +1,5 @@
+# Regenerated application output is evidence, not a pinned R oracle.
+app.json
+reference-candidate.csv
+__pycache__/
+.mutation-*.json

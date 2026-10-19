@@ -41,6 +41,7 @@
     th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
     td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
     svg { width: 100%; height: auto; display: block; }
+    #loo-plot[hidden] { display: none; }
     .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
             border-radius: 4px; font-size: 0.82rem; margin-top: 0.75rem; }
     .note strong { color: var(--warn); }
@@ -141,6 +142,20 @@
 
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
+    <section id="alm-loo" class="panel" aria-labelledby="loo-title" style="grid-column:1/-1">
+      <h2 id="loo-title">Leave-one-out influence</h2>
+      <p id="loo-note">Optional: remove each study and refit the limit estimate. Available for 4–200 valid studies; off until requested. Effects and 95% normal confidence intervals use the entered scale. Change is relative to the full limit estimate. Refused fits have no numerical results.</p>
+      <button id="loo-run" type="button" aria-describedby="loo-note">Leave-one-out on the limit estimate</button>
+      <button id="loo-csv" type="button" disabled>Download leave-one-out CSV</button>
+      <p id="loo-status" role="status" aria-live="polite">Not calculated.</p>
+      <div style="overflow-x:auto">
+        <table aria-label="Leave-one-out limit estimates">
+          <thead><tr><th scope="col">Study omitted</th><th scope="col">Limit without study</th><th scope="col">Change</th><th scope="col">SE</th><th scope="col">RE without study</th><th scope="col">Tau² (DL)</th><th scope="col">Status</th></tr></thead>
+          <tbody id="loo-body"></tbody>
+        </table>
+      </div>
+      <svg id="loo-plot" role="img" aria-label="Leave-one-out limit estimates and 95% confidence intervals; dashed reference line at the full limit estimate. Refusals are listed in the table." hidden></svg>
+    </section>
     <section id="alm-validate" aria-label="Independent R validation" style="grid-column:1/-1"></section>
     <section id="alm-plus" class="panel" aria-labelledby="plus-title" style="grid-column:1/-1">
       <h2 id="plus-title">Bias sensitivity comparisons</h2>
@@ -188,6 +203,7 @@
 
     var _lastResults = null;
     var _axisState = null;
+    var _validationRun = false;
 
     function parse(text) {
       return text.trim().split(/\n/).map(function (l, i) {
@@ -319,6 +335,7 @@
     run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src");
 
     function run() {
+      if (window.AlmLimitLoo) window.AlmLimitLoo.invalidate(_validationRun);
       document.getElementById('limit-error').textContent = '';
       document.getElementById('limit-range-note').textContent = '';
       document.getElementById('limit-diagnostics').textContent = '';
@@ -570,13 +587,30 @@
     window.__almLimitValidationRestore = function (s) {
       document.getElementById('src').value=s.src;_lastResults=structuredClone(s.result);_axisState=structuredClone(s.axis);
       s.dom.forEach(([id,html])=>{document.getElementById(id).innerHTML=html;});
+      if (window.AlmLimitLoo) window.AlmLimitLoo.restore(_lastResults);
     };
     window.__almLimitValidationRun = function (text,automaticAxes) {
-      document.getElementById('src').value=text;if(automaticAxes)_axisState=null;run();
+      document.getElementById('src').value=text;if(automaticAxes)_axisState=null;
+      _validationRun = true;
+      try { run(); } finally { _validationRun = false; }
     };
 
     // Expose for results-export
     window._almLastLimit = function () { return _lastResults; };
+
+    // Pure access to the SAME limitMA calculation used by run(), without DOM or state mutation.
+    window.AlmLimitEngine = { parse: parse, fit: function (rows) {
+      if (rows.length < 3) throw Error('At least three valid studies are required.');
+      if (!rows.every(r => Number.isFinite(r.te) && Number.isFinite(r.se) && r.se > 0))
+        throw Error('Finite effects and positive finite SEs are required.');
+      if (rows.every(r => r.se === rows[0].se))
+        throw Error('Limit meta-analysis requires variation in study SEs.');
+      var lim = limitMA(rows), re = pool(rows, lim.tau2);
+      var values = [lim.limit, lim.seLimit, re.mean, lim.tau2].concat(lim.te_limit);
+      if (!values.every(Number.isFinite)) throw Error('Limit meta-analysis is numerically undefined for these studies.');
+      return {limit_est: lim.limit, limit_se: lim.seLimit, re_est: re.mean,
+        tau2: lim.tau2, te_limit: lim.te_limit};
+    }};
 
     // ---- events ----
     document.getElementById('btn-run').addEventListener('click', function () {
@@ -758,6 +792,7 @@
 <script src="../shared/trimfill.js"></script>
 <script src="../shared/selmodel.js"></script>
 <script src="plus-opt.js"></script>
+<script src="loo-limit.js"></script>
 <script src="plus-selmodel.js"></script>
 <script src="plus.js"></script>
 <script src="plus-ui.js"></script>
