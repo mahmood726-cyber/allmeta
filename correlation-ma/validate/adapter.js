@@ -24,11 +24,15 @@ function pageText() {
     const attrs = ['aria-label','title','href','type','data-action'].map(a => el.getAttribute(a));
     out.push([path, attrs]);
     if (el.tagName === 'TEXTAREA') return;
-    let index = 0;
+    let index = 0, text = '';
+    // Adjacent text nodes are one run: browsers merge entity-split text that DOM shims may keep separate.
+    const flush = () => { const t = text.replace(/\s+/g,' ').trim(); if (t) out.push([path,t]); text = ''; };
     for (const n of el.childNodes) {
+      if (n.nodeType === 3) { text += n.textContent; continue; }
+      flush();
       if (n.nodeType === 1) visit(n, path + '>' + n.tagName + index++);
-      else if (n.nodeType === 3) { const t = n.textContent.replace(/\s+/g,' ').trim(); if (t) out.push([path,t]); }
     }
+    flush();
   }
   for (const el of document.body.children) if (['A','NAV','HEADER','MAIN','FOOTER'].includes(el.tagName)) visit(el,el.tagName + (el.id ? '#'+el.id : ''));
   return out;
