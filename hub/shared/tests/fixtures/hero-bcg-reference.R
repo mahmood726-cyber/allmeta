@@ -1,5 +1,7 @@
 # R provenance for the one-click BCG example pins (lane P13w2).
 suppressMessages({library(metafor); library(meta); library(metasens); library(metadat)})
+expected <- c(metafor = "5.2.1", meta = "8.5.0", metasens = "1.5.3", metadat = "1.6.0")
+for (pkg in names(expected)) stopifnot(as.character(packageVersion(pkg)) == expected[[pkg]])
 cat("R", R.version.string, "metafor", as.character(packageVersion("metafor")), "meta", as.character(packageVersion("meta")),
     "metasens", as.character(packageVersion("metasens")), "metadat", as.character(packageVersion("metadat")), "\n")
 q7 <- function(x) as.numeric(quantile(x, 0.5, type = 7))
@@ -17,5 +19,6 @@ emit <- function(tag, yi, sei) {
 }
 d <- escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat.bcg)
 emit("EXACT_dat.bcg", as.numeric(d$yi), sqrt(as.numeric(d$vi)))
-h <- read.csv("hero-bcg-input.csv", stringsAsFactors = FALSE, encoding = "UTF-8")
+h <- read.csv("hero-bcg-input.csv", header = FALSE, col.names = c("yi", "se", "label"),
+              strip.white = TRUE, stringsAsFactors = FALSE, encoding = "UTF-8")
 emit("HERO_rounded", h$yi, h$se)
