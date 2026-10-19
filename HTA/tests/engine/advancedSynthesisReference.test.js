@@ -14,6 +14,9 @@ function checkPairwise(result, expected) {
     if (expected.prediction) {
         expect(result.heterogeneity.predictionInterval.lower).toBeCloseTo(expected.prediction[0], 5);
         expect(result.heterogeneity.predictionInterval.upper).toBeCloseTo(expected.prediction[1], 5);
+    } else {
+        // t_{k-1} prediction interval is not reported for k <= 2 (Cochrane Handbook v6.5).
+        expect(result.heterogeneity.predictionInterval).toBeNull();
     }
 }
 

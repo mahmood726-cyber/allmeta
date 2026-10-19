@@ -1,0 +1,43 @@
+name: DTA import integrity
+
+on:
+  pull_request:
+    paths:
+      - 'dta-sroc/**'
+      - 'shared/dta-bivariate.js'
+      - 'hub/shared/csv-upload.js'
+      - 'hub/shared/tests/dta*.spec.mjs'
+      - '.github/workflows/dta-import-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dta-import-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run DTA browser workflows and stored mada-reference comparisons
+        run: npx playwright test dta csv-upload --reporter=line
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dta-import-test-results
+          path: hub/shared/tests/test-results/
+          if-no-files-found: ignore
+          retention-days: 14

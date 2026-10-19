@@ -55,6 +55,7 @@
   <!-- Cycle 2.7 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
   <script src="../hub/shared/csv-upload.js"></script>
+  <script src="./contrast-engine.js"></script>
   <script src="../hub/shared/chart-download.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
@@ -73,25 +74,35 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>Bucher Indirect Comparison</h1>
-    <p>If you have direct estimates for A vs C and B vs C, the Bucher (1997) indirect estimate for A vs B is their difference on the log / raw scale, with SEs combined in quadrature.</p>
+    <p>Compare treatments A and B indirectly through a named common comparator C. Supply independently pooled A–C and B–C effects on the same analysis scale; the A–B estimate is d(A,C) − d(B,C), with variance equal to the sum of the two variances.</p>
     <p style="margin-top:.5rem;padding:.5rem .7rem;border-left:3px solid #b8860b;background:rgba(184,134,11,.08);font-size:.9rem"><strong>Assumes transitivity.</strong> The indirect A-vs-B estimate is valid only if the A-vs-C and B-vs-C trials are similar in effect modifiers (population, dose, follow-up, risk of bias). If those trial sets differ, the estimate is biased — check transitivity before interpreting.</p>
   </header>
   <main id="main">
     <section class="panel">
       <h2>Input</h2>
 
+      <fieldset>
+        <legend>Target comparisons for CSV or network import</legend>
+        <div class="grid-2">
+          <label><span class="lbl">Treatment A</span><input id="treatA" type="text" value="A" aria-label="Treatment A"></label>
+          <label><span class="lbl">Treatment B</span><input id="treatB" type="text" value="B" aria-label="Treatment B"></label>
+          <label><span class="lbl">Common comparator C</span><input id="treatC" type="text" value="C" aria-label="Common comparator C"></label>
+        </div>
+        <p class="hint">CSV effects must be treatment1 minus treatment2; use logged effects for ratios. The importer pools only A–C and B–C, makes direction explicit and reports separately any direct A–B rows excluded from the indirect calculation. Multi-arm/overlapping study IDs are rejected.</p>
+      </fieldset>
+      <p id="import-status" class="hint" role="status" aria-live="polite"></p>
       <!-- csv-upload mount: file picker for pairwise CSV -->
       <div id="alm-csv-mount"></div>
 
       <fieldset>
-        <legend>Trial 1 — A vs C</legend>
+        <legend>A vs C summary</legend>
         <div class="grid-2">
           <label><span class="lbl">Effect d(AC)</span><input id="dAC" type="number" step="any" value="-0.30" aria-label="Effect d(AC)"></label>
           <label><span class="lbl">SE</span><input id="seAC" type="number" step="any" value="0.10" aria-label="SE"></label>
         </div>
       </fieldset>
       <fieldset>
-        <legend>Trial 2 — B vs C</legend>
+        <legend>B vs C summary</legend>
         <div class="grid-2">
           <label><span class="lbl">Effect d(BC)</span><input id="dBC" type="number" step="any" value="-0.18" aria-label="Effect d(BC)"></label>
           <label><span class="lbl">SE</span><input id="seBC" type="number" step="any" value="0.12" aria-label="SE"></label>
@@ -100,7 +111,7 @@
       <label>
         <span class="lbl" data-gloss="scale">Scale</span>
         <select id="scale" aria-label="Scale">
-          <option value="raw">Raw (MD / SMD / log-HR etc.)</option>
+          <option value="raw">Raw (MD / SMD; no exponentiation)</option>
           <option value="log" selected>Log ratio (OR / RR / HR — input on log scale, output back-transformed)</option>
         </select>
       </label>
@@ -137,7 +148,7 @@
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
-  <footer>Bucher HC, Guyatt GH, Griffith LE, Walter SD. The results of direct and indirect treatment comparisons in meta-analysis of randomized controlled trials. <em>J Clin Epidemiol</em> 1997;50:683-691. R-parity: Bucher closed-form matches <code>netmeta::netmeta()</code> indirect-only estimate to tolerance 1e-6 (see <code>tests/fixtures/bucher-tiny.R</code>).</footer>
+  <footer>Bucher HC, Guyatt GH, Griffith LE, Walter SD. <em>J Clin Epidemiol</em> 1997;50:683–691. Adjusted indirect comparison assumes <strong>independent evidence on both links</strong>, identical estimands/scales and transitivity. A normal/Wald 95% CI uses the supplied or fixed-effect inverse-variance summary SEs; a trial-count t distribution is not automatically justified. Multi-arm trials require covariance-aware network meta-analysis. The historical <code>tests/fixtures/bucher-tiny.R</code> validates a differently oriented B-versus-C contrast and must not be treated as verification of arbitrary CSV treatment selection.</footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
@@ -149,57 +160,22 @@
 
     function pnorm(x) {
       var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-      var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
-      return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+      var tail = 0.5 * (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+      return x >= 0 ? 1 - tail : tail;
     }
 
     function fmt(x, d) {
       d = d === undefined ? 3 : d;
-      return Number.isFinite(x) ? x.toFixed(d) : '—';
+      if (!Number.isFinite(x)) return '—';
+      return x !== 0 && (Math.abs(x) < 0.5 * Math.pow(10, -d) || Math.abs(x) >= 1e6)
+        ? x.toExponential(d) : x.toFixed(d);
     }
 
-    // Two-sided Student-t p-value (self-contained; used for the small-k indirect
-    // contrast so the p-value matches the t-based CI). Regularised incomplete
-    // beta via Lentz continued fraction — matches R pt() to ~1e-10.
-    function lnGamma(x) {
-      var cof = [76.18009172947146, -86.50532032941677, 24.01409824083091,
-                 -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6];
-      var y = x, tmp = x + 5.5;
-      tmp -= (x + 0.5) * Math.log(tmp);
-      var ser = 1.000000000190015;
-      for (var j = 0; j < 6; j++) { y += 1; ser += cof[j] / y; }
-      return -tmp + Math.log(2.5066282746310005 * ser / x);
-    }
-    function betaCF(x, a, b) {
-      var MAXIT = 200, EPS = 3e-10, FPMIN = 1e-30;
-      var qab = a + b, qap = a + 1, qam = a - 1;
-      var c = 1, d = 1 - qab * x / qap;
-      if (Math.abs(d) < FPMIN) d = FPMIN;
-      d = 1 / d; var h = d;
-      for (var m = 1; m <= MAXIT; m++) {
-        var m2 = 2 * m;
-        var aa = m * (b - m) * x / ((qam + m2) * (a + m2));
-        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
-        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
-        d = 1 / d; h *= d * c;
-        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
-        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
-        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
-        d = 1 / d; var del = d * c; h *= del;
-        if (Math.abs(del - 1) < EPS) break;
-      }
-      return h;
-    }
-    function betaInc(a, b, x) {
-      if (x <= 0) return 0;
-      if (x >= 1) return 1;
-      var bt = Math.exp(lnGamma(a + b) - lnGamma(a) - lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
-      if (x < (a + 1) / (a + b + 2)) return bt * betaCF(x, a, b) / a;
-      return 1 - bt * betaCF(1 - x, b, a) / b;
-    }
-    function pt2(t, df) {
-      if (!Number.isFinite(t) || df <= 0) return NaN;
-      return betaInc(df / 2, 0.5, df / (df + t * t)); // two-sided
+    // Wald normal inference follows the conventional independent-link Bucher
+    // calculation. Trial-count df = k - 2 is NOT a justified t approximation.
+    function escapeHTML(s) {
+      return String(s).replace(/[&<>"']/g, c =>
+        ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
     }
 
     // ---- axis state (overrideable by axis-controls) ----
@@ -208,120 +184,85 @@
     // ---- results storage for export ----
     var _lastResults = null;
 
-    // Cycle 8: number of trials contributing to the two direct arms. Drives the
-    // t-vs-z choice for the indirect CI (see run()). Manual two-box entry = one
-    // trial per arm = 2; CSV / bus import overwrites this with the real count.
-    var _nStudies = 2;
+    // Contributing trial count is provenance only. It is NOT a t distribution df.
+    var _nStudies = null, _importMeta = null, _requiresCompute = false;
 
-    // Critical value for a (1-alpha) two-sided interval. The Bucher indirect
-    // contrast pools two direct estimates; when only a few trials feed those
-    // arms, treating the contrast as standard normal is anti-conservative.
-    // Use t_{df} with df = (contributing trials) - 2 (two treatment effects
-    // estimated). df <= 0 (e.g. one trial per arm) has no t — fall back to z
-    // and flag the interval as not small-sample-corrected.
-    function qt975(df) {
-      // Prefer the audited shared quantile; fall back to bisecting the local
-      // two-sided t p-value so the t-CI still works if ma-core failed to load.
-      if (window.AlmMaCore && typeof AlmMaCore._qt === 'function') {
-        var t = AlmMaCore._qt(0.975, df);
-        if (Number.isFinite(t)) return t;
+    function run(confirmed) {
+      if (_requiresCompute && confirmed !== true) return false;
+      _requiresCompute = false;
+      var get = id => document.getElementById(id).value;
+      var A = get('treatA').trim(), B = get('treatB').trim(), C = get('treatC').trim();
+      var bodyEl = document.getElementById('body'), svgEl = document.getElementById('plot');
+      var dAC = Number(get('dAC')), seAC = Number(get('seAC'));
+      var dBC = Number(get('dBC')), seBC = Number(get('seBC'));
+      var scale = get('scale');
+
+      // A refused analysis cannot leave old results available for export.
+      _lastResults = null;
+      if (!A || !B || !C || new Set([A, B, C]).size !== 3 ||
+          !['raw','log'].includes(scale) ||
+          [get('dAC'), get('seAC'), get('dBC'), get('seBC')].some(x => x.trim() === '') ||
+          ![dAC, seAC, dBC, seBC].every(Number.isFinite) ||
+          !(seAC > 0 && seBC > 0)) {
+        bodyEl.innerHTML = '<tr><td colspan="5">Enter three distinct treatments, finite estimates, and strictly positive standard errors.</td></tr>';
+        svgEl.replaceChildren();
+        return false;
       }
-      var lo = 0, hi = 1e4;
-      for (var i = 0; i < 200; i++) {
-        var m = (lo + hi) / 2;
-        // pt2 is two-sided: pt2 = 0.05 at the 0.975 quantile.
-        if (pt2(m, df) > 0.05) lo = m; else hi = m;
+      var dAB = dAC - dBC, seAB = Math.hypot(seAC, seBC);
+      if (!(Number.isFinite(dAB) && Number.isFinite(seAB) && seAB > 0)) {
+        bodyEl.innerHTML = '<tr><td colspan="5">Analysis refused: numerical overflow.</td></tr>';
+        svgEl.replaceChildren();
+        return false;
       }
-      return (lo + hi) / 2;
-    }
-
-    function indirectCrit(df) {
-      if (df >= 1) {
-        var t = qt975(df);
-        if (Number.isFinite(t)) return { crit: t, dist: 't', df: df };
-      }
-      return { crit: Z975, dist: 'z', df: df };
-    }
-
-    function run() {
-      var dAC = parseFloat(document.getElementById('dAC').value);
-      var seAC = parseFloat(document.getElementById('seAC').value);
-      var dBC = parseFloat(document.getElementById('dBC').value);
-      var seBC = parseFloat(document.getElementById('seBC').value);
-      var scale = document.getElementById('scale').value;
-
-      if (!Number.isFinite(dAC) || !Number.isFinite(seAC) || seAC <= 0 ||
-          !Number.isFinite(dBC) || !Number.isFinite(seBC) || seBC <= 0) {
-        document.getElementById('body').innerHTML = '<tr><td colspan="5">Enter valid numeric values with SE &gt; 0.</td></tr>';
-        return;
-      }
-
-      // Bucher closed-form
-      var dAB = dAC - dBC;
-      var seAB = Math.sqrt(seAC * seAC + seBC * seBC);
-      var z = dAB / seAB;
-
-      // Small-sample inference: prefer t_{df} over z for the indirect contrast.
-      var df = _nStudies - 2;                 // trials contributing minus 2 effects
-      var ind = indirectCrit(df);
-      var critAB = ind.crit;
-      // p-value on the same reference distribution as the CI.
-      var p = (ind.dist === 't')
-        ? pt2(z, ind.df)
-        : 2 * (1 - pnorm(Math.abs(z)));
-
+      // Fixed-effect Bucher uses a NORMAL Wald interval/p-value on two
+      // independent direct contrast estimates. Counting source trials does
+      // not establish a t_(k-2) reference distribution.
+      var p = Math.max(0, Math.min(1, 2 * pnorm(-Math.abs(dAB / seAB))));
       var rows = [
-        { name: 'A vs C (direct)', est: dAC, se: seAC },
-        { name: 'B vs C (direct)', est: dBC, se: seBC },
-        { name: 'A vs B (indirect, Bucher)', est: dAB, se: seAB, crit: critAB },
+        { name: A + ' vs ' + C + ' (direct)', est: dAC, se: seAC },
+        { name: B + ' vs ' + C + ' (direct)', est: dBC, se: seBC },
+        { name: A + ' vs ' + B + ' (indirect, Bucher)', est: dAB, se: seAB },
       ];
-
-      // Store for export
+      var loAB = dAB - Z975 * seAB, hiAB = dAB + Z975 * seAB;
+      const endpoints = rows.flatMap(r => [r.est, r.est - Z975 * r.se, r.est + Z975 * r.se]);
+      if (!endpoints.concat([p]).every(Number.isFinite) ||
+          !(Math.max(0, ...endpoints) - Math.min(0, ...endpoints) <= Number.MAX_VALUE / 1.2) ||
+          (scale === 'log' && endpoints.some(x => !Number.isFinite(Math.exp(x)) || Math.exp(x) === 0))) {
+        bodyEl.innerHTML = '<tr><td colspan="5">Analysis refused: unrepresentable confidence interval or ratio.</td></tr>';
+        svgEl.replaceChildren();
+        return false;
+      }
       _lastResults = {
         _schema: 'bucher-results-v1',
-        scale: scale,
-        dAC: dAC, seAC: seAC,
-        dBC: dBC, seBC: seBC,
-        d_indirect_AB: dAB,
-        se_indirect_AB: seAB,
-        lo_AB: dAB - critAB * seAB,
-        hi_AB: dAB + critAB * seAB,
-        p_AB: p,
-        crit_AB: critAB,
-        crit_dist: ind.dist,
-        df_AB: ind.df,
+        A, B, commonComparator: C, scale: scale,
+        input_effect_direction: 'treat1 minus treat2 (additive/log scale)',
+        direct_model: 'fixed-effect inverse variance (when imported)',
+        inference: 'independent-link normal Wald; no trial-count t correction',
+        dAC: dAC, seAC: seAC, dBC: dBC, seBC: seBC,
+        d_indirect_AB: dAB, se_indirect_AB: seAB, lo_AB: loAB, hi_AB: hiAB,
+        p_AB: p, crit_AB: Z975, crit_dist: 'normal', df_AB: null,
         n_studies: _nStudies,
+        excluded_direct_AB_rows: _importMeta ? _importMeta.excludedDirectAB : 0,
+        missing_study_ids: _importMeta ? _importMeta.independentStudyIdsUnverified : true,
       };
-
-      var bodyEl = document.getElementById('body');
-      var __bodyParts = [''];
+      var parts = [''];
       for (var i = 0; i < rows.length; i++) {
-        var r = rows[i];
-        // Indirect contrast uses its small-sample t critical value; the two
-        // direct rows are shown as supplied (z reference).
-        var crit = Number.isFinite(r.crit) ? r.crit : Z975;
-        var lo = r.est - crit * r.se;
-        var hi = r.est + crit * r.se;
-        var disp = scale === 'log'
-          ? { est: Math.exp(r.est), lo: Math.exp(lo), hi: Math.exp(hi) }
-          : { est: r.est, lo: lo, hi: hi };
-        var pShow = r.name.indexOf('indirect') !== -1 ? fmt(p, 3) : '';
-        __bodyParts.push('<tr><td><code>' + r.name + '</code></td><td>' + fmt(disp.est) + '</td><td>' + fmt(r.se) + '</td><td>[' + fmt(disp.lo) + ', ' + fmt(disp.hi) + ']</td><td>' + pShow + '</td></tr>');
+        var r = rows[i], lo = r.est - Z975 * r.se, hi = r.est + Z975 * r.se;
+        var disp = scale === 'log' ? {est:Math.exp(r.est),lo:Math.exp(lo),hi:Math.exp(hi)}
+                                   : {est:r.est,lo:lo,hi:hi};
+        var pShow = i === 2 ? fmt(p, 3) : '';
+        parts.push('<tr><td><code>' + escapeHTML(r.name) + '</code></td><td>' + fmt(disp.est) +
+          '</td><td>' + fmt(r.se) + '</td><td>[' + fmt(disp.lo) + ', ' + fmt(disp.hi) +
+          ']</td><td>' + pShow + '</td></tr>');
       }
-      // Reference-distribution / small-k note for the indirect CI.
-      if (ind.dist === 't') {
-        __bodyParts.push('<tr><td colspan="5" style="color:var(--muted);font-size:0.8rem;border-top:1px dashed var(--border)">Indirect 95% CI and p use t<sub>' + ind.df + '</sub> (small-sample correction, ' + _nStudies + ' contributing trials); direct rows use the supplied normal SEs.</td></tr>');
-      } else {
-        __bodyParts.push('<tr><td colspan="5" style="color:var(--warn);font-size:0.8rem;border-top:1px dashed var(--border)"><strong>Low k:</strong> with ' + _nStudies + ' contributing trial(s) the indirect degrees of freedom (' + (_nStudies - 2) + ') are too few for a t correction — the CI falls back to the normal (z) approximation and is likely anti-conservative. Import more trials per arm for small-sample-valid inference.</td></tr>');
-      }
-      bodyEl.innerHTML = __bodyParts.join('');
-
+      parts.push('<tr><td colspan="5" style="color:var(--muted);font-size:0.8rem">' +
+        'Indirect 95% CI and p use a normal/Wald approximation assuming independent source contrasts. ' +
+        'Source trial count: ' + (_nStudies === null ? 'not provided' : _nStudies) + '. Trial count alone does not justify a t_(k−2) reference distribution; ' +
+        'assess transitivity and study-level dependence separately.</td></tr>');
+      bodyEl.innerHTML = parts.join('');
       draw(rows, scale);
-
-      // URL state
-      if (window.alm && window.alm.urlState) {
-        window.alm.urlState.write({ dAC: dAC, seAC: seAC, dBC: dBC, seBC: seBC, scale: scale });
-      }
+      if (window.alm && window.alm.urlState) window.alm.urlState.write(snapshot());
+      return true;
     }
 
     function draw(rows, scale) {
@@ -350,11 +291,11 @@
 
       var X = function (v) { return padL + (v - lo) / (hi - lo) * plotW; };
 
-      __svgParts.push('<line x1="' + X(0) + '" y1="10" x2="' + X(0) + '" y2="' + (H - 20) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
+      if (lo <= 0 && hi >= 0) __svgParts.push('<line x1="' + X(0) + '" y1="10" x2="' + X(0) + '" y2="' + (H - 20) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
         var y = 30 + i * 40;
-        __svgParts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + r.name + '</text>');
+        __svgParts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + escapeHTML(r.name) + '</text>');
         var l = r.est - rcrit(r) * r.se, h = r.est + rcrit(r) * r.se;
         __svgParts.push('<line x1="' + X(l) + '" y1="' + y + '" x2="' + X(h) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>');
         var isIndirect = r.name.indexOf('indirect') !== -1;
@@ -373,72 +314,82 @@
         dBC: document.getElementById('dBC').value,
         seBC: document.getElementById('seBC').value,
         scale: document.getElementById('scale').value,
+        treatA: document.getElementById('treatA').value,
+        treatB: document.getElementById('treatB').value,
+        treatC: document.getElementById('treatC').value,
       };
     }
-
     function restore(snap) {
       if (!snap) return;
-      if (snap.dAC  !== undefined) document.getElementById('dAC').value  = snap.dAC;
-      if (snap.seAC !== undefined) document.getElementById('seAC').value = snap.seAC;
-      if (snap.dBC  !== undefined) document.getElementById('dBC').value  = snap.dBC;
-      if (snap.seBC !== undefined) document.getElementById('seBC').value = snap.seBC;
-      if (snap.scale !== undefined) document.getElementById('scale').value = snap.scale;
-      run();
+      ['dAC','seAC','dBC','seBC','scale','treatA','treatB','treatC'].forEach(id => {
+        if (snap[id] !== undefined) document.getElementById(id).value = snap[id];
+      });
+      _nStudies = null;
+      _importMeta = null;
+      // Older saved URLs did not record treatment identity. Their importer may
+      // have stored different pairs under the AC/BC field names.
+      if (['treatA','treatB','treatC'].some(id =>
+          typeof snap[id] !== 'string' || !snap[id].trim())) {
+        ['treatA','treatB','treatC'].forEach(id => { document.getElementById(id).value = ''; });
+        refuseImport('saved inputs lack treatment names. Enter A, B and C and verify which source estimates belong to each link before Compute');
+        return;
+      }
+      document.getElementById('import-status').textContent =
+        'Restored input estimates. Confirm original study independence before inference.';
+      run(true);
     }
 
-    // ---- load CSV rows: pool by arm pair, then populate fields ----
-    // CSV columns: treat1, treat2, TE, seTE  (+ optional study)
-    // Expects a triangle network with a common comparator.
-    // User convention: treat1=A, treat2=B means d(AB).
-    // We identify the two direct arms feeding the indirect comparison:
-    //   arm1 = AC or CA, arm2 = BC or CB (common = C inferred by exclusion).
-    window.__almBucherLoad = function (rows) {
-      if (!rows || rows.length < 2) return;
+    function refuseImport(message) {
+      _lastResults = null;
+      _nStudies = null;
+      _importMeta = null;
+      _requiresCompute = true;
+      document.getElementById('body').innerHTML =
+        '<tr><td colspan="5">Import rejected. No results are available for the rejected data.</td></tr>';
+      document.getElementById('plot').replaceChildren();
+      document.getElementById('import-status').textContent =
+        'Import rejected: ' + message + '. Previous form values were retained; click Compute to return to them.';
+      return false;
+    }
+    window.__almBucherRefuse = refuseImport;
 
-      // Group rows by (treat1,treat2) pair (normalise to sorted order)
-      var groups = {};
-      rows.forEach(function (r) {
-        var t1 = (r.treat1 || '').trim();
-        var t2 = (r.treat2 || '').trim();
-        var te = parseFloat(r.TE !== undefined ? r.TE : (r.te !== undefined ? r.te : r.yi));
-        var se = parseFloat(r.seTE !== undefined ? r.seTE : (r.se !== undefined ? r.se : r.sei));
-        if (!t1 || !t2 || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return;
-        // Canonical key: alphabetical
-        var key = t1 < t2 ? (t1 + '|' + t2) : (t2 + '|' + t1);
-        var flip = t1 > t2; // if we flip, negate TE
-        if (!groups[key]) groups[key] = [];
-        groups[key].push({ te: flip ? -te : te, se: se });
-      });
-
-      // Pool each group by FE / IV weighting
-      var pairs = {};
-      Object.keys(groups).forEach(function (key) {
-        var g = groups[key];
-        var wi = g.map(function (r) { return 1 / (r.se * r.se); });
-        var sw = wi.reduce(function (a, b) { return a + b; }, 0);
-        var mu = g.reduce(function (a, r, i) { return a + wi[i] * r.te; }, 0) / sw;
-        var se = 1 / Math.sqrt(sw);
-        pairs[key] = { mu: mu, se: se, n: g.length };
-      });
-
-      var keys = Object.keys(pairs);
-      if (keys.length < 2) return;
-
-      // Find two arms that share a common node (indirect via Bucher)
-      // For a connected triangle pick the two arms, using the first two arms found.
-      // Convention: first arm = AC, second arm = BC (so indirect = AB).
-      var k0 = keys[0], k1 = keys[1];
-      var p0 = pairs[k0], p1 = pairs[k1];
-
-      // Total trials feeding the two direct arms — drives the t-vs-z choice.
-      _nStudies = (p0.n || 1) + (p1.n || 1);
-
-      // Populate fields: arm0 -> AC fields, arm1 -> BC fields
-      document.getElementById('dAC').value  = p0.mu.toFixed(6);
-      document.getElementById('seAC').value = p0.se.toFixed(6);
-      document.getElementById('dBC').value  = p1.mu.toFixed(6);
-      document.getElementById('seBC').value = p1.se.toFixed(6);
-      run();
+    // Full-data, directional, independence-checked Bucher import.
+    // The target A/B and common C are explicit, so row order cannot change
+    // the estimand. Direct A–B trials in a triangle are disclosed and excluded.
+    window.__almBucherLoad = function (rows, options) {
+      const previous = snapshot();
+      try {
+        if (!window.AlmBucherCore) throw new Error('Bucher validation engine not available');
+        const chosen = {
+          A: document.getElementById('treatA').value,
+          B: document.getElementById('treatB').value,
+          C: document.getElementById('treatC').value,
+        };
+        const fit = AlmBucherCore.compute(rows, chosen);
+        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot)
+          window.alm.resetUndo.snapshot();
+        // No rounding: the CSV-to-SE calculations must retain full precision.
+        document.getElementById('dAC').value = String(fit.AC.mu);
+        document.getElementById('seAC').value = String(fit.AC.se);
+        document.getElementById('dBC').value = String(fit.BC.mu);
+        document.getElementById('seBC').value = String(fit.BC.se);
+        if (options && options.scale) document.getElementById('scale').value = options.scale;
+        _nStudies = fit.contributingTrials;
+        _importMeta = fit;
+        document.getElementById('import-status').textContent =
+          'Imported ' + fit.AC.n + ' ' + fit.A + '–' + fit.C + ' and ' +
+          fit.BC.n + ' ' + fit.B + '–' + fit.C + ' independent-link contrast(s). ' +
+          (fit.excludedDirectAB ? fit.excludedDirectAB + ' direct ' +
+           fit.A + '–' + fit.B + ' record(s) explicitly excluded from the indirect fit. ' : '') +
+          (fit.independentStudyIdsUnverified
+            ? 'Missing trial IDs: independence cannot be checked. ' : '') +
+          'Normal/Wald inference; transitivity must be judged independently.';
+        if (!run(true)) throw new RangeError('confidence intervals or ratios cannot be represented on the selected scale');
+        return true;
+      } catch (err) {
+        Object.keys(previous).forEach(id => { document.getElementById(id).value = previous[id]; });
+        return refuseImport(err && err.message ? err.message : String(err));
+      }
     };
 
     // Expose last results for export
@@ -450,19 +401,26 @@
       if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
         window.alm.resetUndo.snapshot();
       }
-      run();
+      run(true);
     });
     document.getElementById('scale').addEventListener('change', run);
 
-    // Manually editing any of the four direct-arm boxes means a single
-    // user-supplied estimate per arm (no pooled trial set) — reset the
-    // contributing-trial count so the indirect CI honestly falls back to z.
-    ['dAC', 'seAC', 'dBC', 'seBC'].forEach(function (id) {
-      document.getElementById(id).addEventListener('input', function () { _nStudies = 2; });
+    // Manual changes invalidate the imported grouping/provenance; labels must
+    // never be quietly repurposed to describe old imported numerical inputs.
+    ['dAC','seAC','dBC','seBC','treatA','treatB','treatC'].forEach(function (id) {
+      document.getElementById(id).addEventListener('input', function () {
+        _nStudies = null; _importMeta = null; _lastResults = null; _requiresCompute = true;
+        document.getElementById('body').innerHTML =
+          '<tr><td colspan="5">Inputs changed. Click Compute after checking the treatment labels and effects.</td></tr>';
+        document.getElementById('plot').replaceChildren();
+        document.getElementById('import-status').textContent =
+          'Manual change: imported grouping no longer applies. Verify the comparison before Compute.';
+      });
     });
 
     window.alm.csvUpload({
       target: '#alm-csv-mount',
+      parse: text => AlmBucherCore.parseCSV(text),
       columns: [
         { name: 'treat1', required: true,  type: 'string', example: 'A' },
         { name: 'treat2', required: true,  type: 'string', example: 'B' },
@@ -471,8 +429,18 @@
         { name: 'study',  required: false, type: 'string', example: 'S1' },
       ],
       onParse: function (result) {
-        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
-          window.alm.resetUndo.snapshot();
+        const headers = result.headers || [];
+        const required = ['treat1','treat2','TE','seTE'];
+        const allowed = required.concat(['study']);
+        if ((result.warnings || []).length ||
+            headers.some(h => !allowed.includes(h)) ||
+            new Set(headers).size !== headers.length ||
+            required.some(h => headers.filter(x => x === h).length !== 1) ||
+            !Array.isArray(result.rows) || result.rows.length < 2) {
+          refuseImport('exact, unique treat1/treat2/TE/seTE headers (optional study), ' +
+            'at least two rows, and no CSV warnings are required. ' +
+            (result.warnings || []).slice(0, 3).join('; '));
+          return;
         }
         window.__almBucherLoad(result.rows);
       },
@@ -556,12 +524,8 @@
 </script>
 
 <script>
-// ma-comparisons-v1 reader: import the shared arm-level network as pairwise
-// contrasts via toContrasts (log-OR/RR), then reuse the app's existing
-// __almBucherLoad (which groups/pools by pair and fills the AC/BC triangle from
-// the first two arms). For a star network (all-vs-control), those two arms share
-// the comparator and give the natural A-vs-B-via-control indirect estimate; the
-// user can edit the four fields to pick a different triangle.
+// ma-comparisons-v1: use explicit A/B/C contrasts, preserving study IDs to
+// reject multi-arm dependence and disclosing any excluded direct A-B evidence.
 (function () {
   function ready(fn) {
     if (document.readyState !== "loading") fn();
@@ -576,31 +540,36 @@
     btn.type = "button";
     btn.id = "btn-bus-load";
     btn.textContent = "Load from bus";
-    btn.title = "Import the shared ma-comparisons-v1 network (arm-level events/n), converted to contrast log-OR/RR. Fills the Bucher triangle from the first two arms sharing a comparator; edit the fields to choose a different one.";
+    btn.title = "Import log-OR/RR contrasts using explicit treatment A, B and comparator C labels. Refuses multi-arm/overlapping study IDs and invalid pairs.";
     btn.style.cssText = "width:100%;margin-top:0.5rem;border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit";
     runBtn.insertAdjacentElement("afterend", btn);
     function notify(msg) { if (window.Toast && typeof Toast.show === "function") Toast.show(msg, "warn"); }
     btn.addEventListener("click", function () {
+      try {
       var env = MaComparisons.read();
-      if (!env || !Array.isArray(env.studies) || !env.studies.length) { notify("Shared network bus is empty."); return; }
+      AlmBucherCore.validateNetwork(env);
       // Bucher here sets scale=log and back-transforms via exp() for display, so
       // it only accepts ratio measures (OR/RR). toContrasts can also emit MD/SMD
       // (additive) contrasts, but exponentiating a mean difference is nonsense —
       // reject non-ratio buses explicitly rather than silently mislabel them.
-      if (env.effectMeasure !== "OR" && env.effectMeasure !== "RR") {
-        notify("Bucher import supports ratio measures (OR/RR) only; bus is " + (env.effectMeasure || "?") + ".");
-        return;
-      }
       var contrasts = MaComparisons.toContrasts(env);
-      if (contrasts.length < 2) { notify("Need >= 2 contrasts (OR/RR only) to form a Bucher triangle."); return; }
+      if (contrasts.length !== env.studies.length) throw new Error("Not every network study produced a valid contrast");
       var rows = contrasts.map(function (c) {
-        return { treat1: c.treatment1, treat2: c.treatment2, TE: c.te, seTE: c.se };
+        return { study: c.study, treat1: c.treatment1, treat2: c.treatment2,
+          TE: c.te, seTE: c.se };
       });
-      // toContrasts emits log-scale effects for OR/RR — display back-transformed.
-      var sc = document.getElementById("scale");
-      if (sc) sc.value = "log";
-      window.__almBucherLoad(rows);
-      notify("Loaded " + rows.length + " contrasts; filled the triangle from the first two arms.");
+      // Carry study identity forward: repeated IDs across selected contrasts
+      // reveal multi-arm covariance which ordinary Bucher cannot ignore.
+      // Ratio scale must be set before computing the imported log effects.
+      var loaded = window.__almBucherLoad(rows, { scale: 'log' });
+      if (!loaded) { notify("Bucher rejected this network. Check treatment labels, paired designs, and trial IDs."); return; }
+      document.getElementById('import-status').textContent +=
+        ' Network uses log-' + env.effectMeasure + '; 0.5 is added to all four cells only when a study has a zero event/non-event cell.';
+      notify("Imported direct links; check independence and transitivity.");
+      } catch (err) {
+        window.__almBucherRefuse(err.message || String(err));
+        notify("Bucher rejected this network. See the import status.");
+      }
     });
   });
 })();

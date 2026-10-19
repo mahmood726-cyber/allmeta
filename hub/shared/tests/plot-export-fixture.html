@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:">
+  <title>Plot export test fixture</title>
+  <link rel="stylesheet" href="plot-export-fixture.css">
+</head>
+<body>
+  <svg id="chart" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+    <rect x="10" y="10" width="80" height="30" fill="#14532d"/>
+    <text x="20" y="30">Fixture</text>
+  </svg>
+  <div id="exports"></div>
+  <div id="legacy"></div>
+  <script src="../plot-export.js"></script>
+  <script src="../chart-download.js"></script>
+  <script src="plot-export-fixture.js"></script>
+</body>
+</html>

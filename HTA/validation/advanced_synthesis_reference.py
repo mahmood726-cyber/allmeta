@@ -75,8 +75,9 @@ def pairwise(data, method, level):
                   pValue=float(2*norm.sf(abs(mu/se))), tauSquared=float(tau2),
                   Q=float(q), I2=float(max(0., (q-df)/q*100)) if q > 0 and df else 0.,
                   weights=(wr/wr.sum()*100).tolist())
-    if df:
-        crit = t.ppf((1+level)/2, df) if len(y) < 10 else z
+    if len(y) >= 3:
+        # Cochrane Handbook v6.5: t_{k-1} at every k; undefined/not reported for k <= 2.
+        crit = t.ppf((1+level)/2, df)
         ps = np.sqrt(se**2+tau2)
         result['prediction'] = [float(mu-crit*ps), float(mu+crit*ps)]
     return result

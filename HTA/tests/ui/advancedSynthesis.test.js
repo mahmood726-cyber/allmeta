@@ -57,6 +57,13 @@ describe('advanced synthesis input and saved-fit contracts', () => {
         expect(ui.fits.ma.cumulative.results.at(-1).effect).toBe(ui.fits.ma.results.random.effect);
         expect(ui.fits.ma.results.warnings.every(w=>!w.message.includes('Set useHKSJ'))).toBe(true);
     });
+    test('a requested prediction interval with k = 2 is reported as not estimable, not as not requested', async () => {
+        put('ma',refs.pairwise.find(c=>c.name==='two-study').data);
+        document.getElementById('ma-pred-int').value='true';
+        await ui.runMA();
+        expect(ui.fits.ma.results.heterogeneity.predictionInterval).toBeNull();
+        expect(document.getElementById('ma-pred-interval').textContent).toBe('Not estimable with fewer than 3 studies');
+    });
     test.each([['ma-hksj','true'],['ma-small-study','knha'],['ma-tau-method','EB'],['ma-pub-bias','peters']])('rejects unsupported forced setting %s=%s', async (id,value) => {
         put('ma',pairwise);document.getElementById(id).value=value;await ui.runMA();
         expect(ui.fits.ma).toBeNull();expect(app.showToast).toHaveBeenCalledWith(expect.any(String),'error');

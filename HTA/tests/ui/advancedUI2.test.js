@@ -1983,3 +1983,68 @@ describe('AdvancedFeaturesUI - Extended Coverage', () => {
         });
     });
 });
+
+// ---- Publication bias through the REAL advanced pipeline (no mocked engines) ----
+// AdvancedFeaturesUI.runPublicationBias -> HTAAdvancedSynthesis.runBias ->
+// MetaAnalysisMethods.eggerTest / trimAndFill -> rendered summary cards.
+// Expected numbers: R 4.6.0 / metafor 5.0.1, recorded by
+// HTA/tests/reference/egger_trimfill_reference.R (regtest(model = "lm"),
+// trimfill(rma(method = "FE"), estimator = "L0")). Tolerance 1e-6.
+describe('AdvancedFeaturesUI - publication bias rendered from the real pipeline', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const oracle = require('../reference/egger_trimfill_oracle.json');
+    const { MetaAnalysisMethods } = require('../../src/engine/metaMethods');
+    const { HTAAdvancedSynthesis } = require('../../src/ui/advancedSynthesis');
+    const close = (actual, expected) => expect(Math.abs(actual - expected)).toBeLessThan(1e-6);
+    let ui, app;
+
+    beforeEach(() => {
+        const html = fs.readFileSync(path.join(__dirname, '../../index.html'), 'utf8');
+        const dom = new DOMParser().parseFromString(html, 'text/html');
+        document.body.replaceChildren(...['section-meta-methods', 'section-pub-bias'].map(id => dom.getElementById(id)));
+        global.MetaAnalysisMethods = MetaAnalysisMethods;
+        global.HTAAdvancedSynthesis = HTAAdvancedSynthesis;
+        require('../../src/ui/synthesisPlots');
+        app = createMockApp();
+        ui = new AdvancedFeaturesUI(app);
+        ui.synthesis = new HTAAdvancedSynthesis(app);
+    });
+    afterEach(() => { delete global.MetaAnalysisMethods; delete global.HTAAdvancedSynthesis; });
+
+    test.each(oracle.cases.map(c => [c.name, c]))('%s: Egger and trim-and-fill match metafor and are rendered', async (_name, c) => {
+        document.getElementById('ma-data-input').value = JSON.stringify(c.studies);
+        await ui.runPublicationBias();
+        expect(app.showToast).not.toHaveBeenCalledWith(expect.anything(), 'error');
+        const fit = ui.synthesis.fits.pb;
+
+        // Egger: classical intercept, its SE, t and two-sided p on k - 2 df.
+        close(fit.egger.intercept, c.egger.intercept);
+        close(fit.egger.se, c.egger.se);
+        close(fit.egger.t, c.egger.t);
+        close(fit.egger.pValue, c.egger.p);
+        expect(fit.egger.df).toBe(c.egger.df);
+        const text = id => document.getElementById(id).textContent;
+        expect(text('egger-intercept')).toBe(c.egger.intercept.toFixed(4));
+        expect(text('egger-se')).toBe(c.egger.se.toFixed(4));
+        expect(text('egger-pvalue')).toBe(c.egger.p.toFixed(4));
+
+        // Trim-and-fill (panel default: fixed-effect, L0 estimator).
+        const tf = c.trimfill.find(t => t.estimator === 'L0');
+        expect(fit.trimFill.nMissing).toBe(tf.k0);
+        expect(fit.trimFill.side).toBe(tf.side);
+        close(fit.trimFill.original.effect, tf.original);
+        close(fit.trimFill.adjusted.effect, tf.adjusted);
+        close(fit.trimFill.adjusted.ci_lower, tf.adjusted_ci_lower);
+        close(fit.trimFill.adjusted.ci_upper, tf.adjusted_ci_upper);
+        const imputed = fit.trimFill.imputedStudies.map(s => s.effect).sort((a, b) => a - b);
+        const expectedImputed = [...tf.imputed].sort((a, b) => a - b);
+        expect(imputed).toHaveLength(tf.k0);
+        imputed.forEach((v, i) => close(v, expectedImputed[i]));
+        expect(text('tf-imputed')).toBe(String(tf.k0));
+        expect(text('tf-original')).toBe(tf.original.toFixed(4));
+        expect(text('tf-adjusted')).toBe(tf.adjusted.toFixed(4));
+        expect(text('tf-change')).toBe((fit.trimFill.adjusted.effect - fit.trimFill.original.effect).toFixed(4));
+        close(fit.trimFill.adjusted.effect - fit.trimFill.original.effect, tf.adjusted - tf.original);
+    });
+});

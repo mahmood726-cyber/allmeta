@@ -1,0 +1,236 @@
+{
+  "R": "4.6.0",
+  "EValue": "4.1.4",
+  "jsonlite": "2.0.0",
+  "source": "https://github.com/cran/EValue/tree/44c2dc41ce49444619bc2d97c16d87c7caef6f07",
+  "source_git_blobs": {
+    "R/EValue.R": "13c8b75aef067f6e203e923a2b7342066179dc3b",
+    "R/effect_measures.R": "13af2244f6b1c04d13363fdc2b6a549351933105",
+    "R/utils.R": "83966e9c541da39100487711f54c4895e8ddd7f9"
+  },
+  "method": "Fresh execution of unmodified pinned EValue source functions; not an installed package namespace",
+  "disclosure": "All cases are synthetic software test inputs, not clinical data.",
+  "cases": [
+    {
+      "id": "rr-harmful",
+      "measure": "RR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "rr": {
+          "point": 2,
+          "lo": 1.5,
+          "hi": 2.7000000000000002
+        }
+      }
+    },
+    {
+      "id": "rr-protective",
+      "measure": "RR",
+      "point": 0.59999999999999998,
+      "lo": 0.40000000000000002,
+      "hi": 0.90000000000000002,
+      "rare": false,
+      "expected": {
+        "point": 2.7207592200561264,
+        "ci": 1.4624752955742646,
+        "rr": {
+          "point": 0.59999999999999998,
+          "lo": 0.40000000000000002,
+          "hi": 0.90000000000000002
+        }
+      }
+    },
+    {
+      "id": "rr-null",
+      "measure": "RR",
+      "point": 1,
+      "lo": 1,
+      "hi": 1,
+      "rare": false,
+      "expected": {
+        "point": 1,
+        "ci": 1,
+        "rr": {
+          "point": 1,
+          "lo": 1,
+          "hi": 1
+        }
+      }
+    },
+    {
+      "id": "rr-crossing",
+      "measure": "RR",
+      "point": 2,
+      "lo": 0.90000000000000002,
+      "hi": 3,
+      "rare": false,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 1,
+        "rr": {
+          "point": 2,
+          "lo": 0.90000000000000002,
+          "hi": 3
+        }
+      }
+    },
+    {
+      "id": "rr-missing-ci",
+      "measure": "RR",
+      "point": 2,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": null,
+        "rr": {
+          "point": 2,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "id": "rr-near-null",
+      "measure": "RR",
+      "point": 1.0000009999999999,
+      "lo": 1,
+      "hi": 1.0000020000000001,
+      "rare": false,
+      "expected": {
+        "point": 1.0010010004999585,
+        "ci": 1,
+        "rr": {
+          "point": 1.0000009999999999,
+          "lo": 1,
+          "hi": 1.0000020000000001
+        }
+      }
+    },
+    {
+      "id": "rr-large",
+      "measure": "RR",
+      "point": 100,
+      "lo": 20,
+      "hi": 200,
+      "rare": false,
+      "expected": {
+        "point": 199.49874371066198,
+        "ci": 39.493588689617923,
+        "rr": {
+          "point": 100,
+          "lo": 20,
+          "hi": 200
+        }
+      }
+    },
+    {
+      "id": "or-common",
+      "measure": "OR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "expected": {
+        "point": 2.179580427103275,
+        "ci": 1.7493924946668791,
+        "rr": {
+          "point": 1.4142135623730951,
+          "lo": 1.2247448713915889,
+          "hi": 1.6431676725154984
+        }
+      }
+    },
+    {
+      "id": "or-rare",
+      "measure": "OR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": true,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384,
+        "rr": {
+          "point": 2,
+          "lo": 1.5,
+          "hi": 2.7000000000000002
+        }
+      }
+    },
+    {
+      "id": "or-protective",
+      "measure": "OR",
+      "point": 0.59999999999999998,
+      "lo": 0.40000000000000002,
+      "hi": 0.90000000000000002,
+      "rare": false,
+      "expected": {
+        "point": 1.9039155023233463,
+        "ci": 1.2928781428241061,
+        "rr": {
+          "point": 0.7745966692414834,
+          "lo": 0.63245553203367588,
+          "hi": 0.94868329805051377
+        }
+      }
+    },
+    {
+      "id": "hr-common",
+      "measure": "HR",
+      "point": 1.6000000000000001,
+      "lo": 1.2,
+      "hi": 2.1000000000000001,
+      "rare": false,
+      "expected": {
+        "point": 2.1129439278880713,
+        "ci": 1.5255309175787344,
+        "rr": {
+          "point": 1.3839700082583661,
+          "lo": 1.134653544128738,
+          "hi": 1.6670240587123641
+        }
+      }
+    },
+    {
+      "id": "hr-rare",
+      "measure": "HR",
+      "point": 1.6000000000000001,
+      "lo": 1.2,
+      "hi": 2.1000000000000001,
+      "rare": true,
+      "expected": {
+        "point": 2.5797958971132715,
+        "ci": 1.6898979485566354,
+        "rr": {
+          "point": 1.6000000000000001,
+          "lo": 1.2,
+          "hi": 2.1000000000000001
+        }
+      }
+    },
+    {
+      "id": "hr-protective",
+      "measure": "HR",
+      "point": 0.59999999999999998,
+      "lo": 0.40000000000000002,
+      "hi": 0.90000000000000002,
+      "rare": false,
+      "expected": {
+        "point": 2.1996223956598779,
+        "ci": 1.3612206313389328,
+        "rr": {
+          "point": 0.70256445728368466,
+          "lo": 0.53309108634533575,
+          "hi": 0.92958129259268363
+        }
+      }
+    }
+  ]
+}

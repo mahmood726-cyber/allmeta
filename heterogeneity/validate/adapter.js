@@ -38,14 +38,17 @@
     const used = C["τ² used"] || "";
     chk("tau2used", used, [res.tau2], [4]);
     if (!used.includes(`(${res.estimator.toUpperCase()})`)) fails.push(`tau2used names ${used} for ${res.estimator}`);
-    chk("I2", C["I²"], [S.I2, res.qpci.I2Lo, res.qpci.I2Hi], [1, 1, 1]);
+    // Preserve the historical Q-based point check, and keep checking both
+    // model-based CI endpoints. The additional model point is now also visible.
+    chk("I2_Q",C["I² (Q-based)"],[S.I2],[1]);
+    chk("I2_model",C["I² (model-based)"],[S.I2Model,res.qpci.I2Lo,res.qpci.I2Hi],[1,1,1]);
     chk("tau2CI", C["τ² 95% CI (Q-profile)"], [res.qpci.tau2Lo, res.qpci.tau2Hi], [4, 4]);
     chk("tau2PM", C["τ² (PM)"], [res.tauEstimates.pm], [4]);
     chk("tau2REML", C["τ² (REML)"], [res.tauEstimates.reml], [4]);
     if (res.tauEstimates.dl != null) chk("tau2DL", C["τ² (DL)"], [res.tauEstimates.dl], [4]);
     chk("REz", C["RE pooled (z)"], [S.mu, S.ciLo, S.ciHi], [3, 3, 3]);
-    chk("REhk", C["RE pooled (HKSJ + t)"], [S.mu, S.ciLoHKSJ, S.ciHiHKSJ], [3, 3, 3]);
-    chk("PI", C["95% PI"], [res.pi.lo, res.pi.hi], [3, 3]);
+    chk("REhk", C["RE pooled (modified HK + t)"], [S.mu, S.ciLoHKSJ, S.ciHiHKSJ], [3, 3, 3]);
+    chk("PI", C["95% PI (model SE + t)"], [res.pi.lo, res.pi.hi], [3, 3]);
     res.loo.forEach((r, i) => {
       const t = shown.loo[i] || [];
       if (String(r.k) !== t[1]) fails.push(`loo[${i}].k`);
@@ -53,9 +56,13 @@
       chk(`loo[${i}].I2`, t[4], [r.I2], [1]); chk(`loo[${i}].tau2`, t[5], [r.tau2], [4]);
     });
 
-    return { numbers: 19 + 6 * res.loo.length - (res.tauEstimates.dl == null ? 1 : 0), fails };
+    return { numbers: 20 + 6 * res.loo.length - (res.tauEstimates.dl == null ? 1 : 0), fails };
   }
-  async function replay(loaded, onProgress) {
+  async function replay(loaded, progress) {
+    if (!window.alm || !alm.urlState || !alm.urlState.withoutWrites) throw new Error('URL-state replay guard unavailable');
+    return alm.urlState.withoutWrites(() => replayWithoutWrites(loaded, progress));
+  }
+  async function replayWithoutWrites(loaded, onProgress) {
     const corpus = loaded[files[0].path], refs = loaded[files[1].path];
     const byID = new Map(refs.map(r => [r.analysis,r]));
     if (byID.size !== refs.length || byID.size !== corpus.length || new Set(corpus.map(c => c.id)).size !== corpus.length) throw new Error('Corpus/reference identifiers differ or duplicate');

@@ -261,13 +261,32 @@ describe('MetaAnalysisMethods', () => {
             expect(midpoint).toBeCloseTo(result.random.effect, 5);
         });
 
-        test('two-study prediction interval uses t with one degree of freedom', () => {
+        test('prediction interval uses t(k-1) at k >= 10, not the normal quantile', () => {
+            // Reference: R 4.6.0 / metafor 5.0.1, escalc("RR", data = dat.bcg),
+            // rma(method = "REML"), then mu +/- qt(.975, 12) * sqrt(tau2 + se^2)
+            // (Cochrane Handbook v6.5). Old z-based PI was [-1.8666922, 0.4376275].
+            const y = [-0.889311333920205, -1.585388657201431, -1.348073148299693, -1.441551190021305,
+                -0.217547322211296, -0.786115585818864, -1.620898223598392, 0.011952333523841,
+                -0.469417648738149, -1.371344803472784, -0.339358828338391, 0.445913400571379,
+                -0.017313948216880];
+            const se = [0.570600354892951, 0.441113501718258, 0.644490469571091, 0.141456819921302,
+                0.226296646395016, 0.083100050877895, 0.472247019654243, 0.062941077984236,
+                0.237558856840255, 0.270231000466321, 0.111410116109623, 0.729729981020482,
+                0.267216503390016];
+            const ma = new MetaAnalysisMethods({ method: 'REML', predictionInterval: true, autoHKSJ: false, useHKSJ: false });
+            const result = ma.calculatePooledEffect(y.map((effect, i) => ({ effect, se: se[i] })));
+            const pi = result.heterogeneity.predictionInterval;
+            expect(result.heterogeneity.tauSquared).toBeCloseTo(0.313243258136, 7);
+            expect(pi.lower).toBeCloseTo(-1.9953419585, 7);
+            expect(pi.upper).toBeCloseTo(0.5662772742, 7);
+            expect(pi.method).toBe('t-distribution (df=12)');
+        });
+
+        test('prediction interval is null for k <= 2', () => {
             const ma = new MetaAnalysisMethods({ method: 'DL', predictionInterval: true });
             const result = ma.calculatePooledEffect(studies.slice(0, 2));
 
-            expect(result.heterogeneity.predictionInterval.method).toBe('t-distribution (df=1)');
-            expect(result.heterogeneity.predictionInterval.lower).toBeLessThan(result.random.ci_lower);
-            expect(result.heterogeneity.predictionInterval.upper).toBeGreaterThan(result.random.ci_upper);
+            expect(result.heterogeneity.predictionInterval).toBeNull();
         });
     });
 
@@ -448,7 +467,7 @@ describe('MetaAnalysisMethods', () => {
             // No heterogeneity with one study
             expect(result.heterogeneity.Q).toBeCloseTo(0, 10);
             expect(result.heterogeneity.I2).toBe(0);
-            // Prediction interval requires at least two studies
+            // Prediction interval requires k > 2
             expect(result.heterogeneity.predictionInterval).toBeNull();
         });
 

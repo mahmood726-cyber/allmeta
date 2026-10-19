@@ -39,7 +39,7 @@ jobs:
         working-directory: HTA
       - name: Affected engine and UI unit regressions
         working-directory: HTA
-        run: npx jest tests/engine/advancedSynthesisReference.test.js tests/engine/nma.test.js tests/engine/metaMethods.test.js tests/ui/advancedSynthesis.test.js tests/ui/advancedUI.test.js tests/ui/advancedUI2.test.js tests/ui/beginnerMode.test.js tests/ui/beginnerMode2.test.js --runInBand
+        run: npx jest tests/engine/advancedSynthesisReference.test.js tests/engine/eggerTrimFillReference.test.js tests/engine/nma.test.js tests/engine/metaMethods.test.js tests/ui/advancedSynthesis.test.js tests/ui/advancedUI.test.js tests/ui/advancedUI2.test.js tests/ui/beginnerMode.test.js tests/ui/beginnerMode2.test.js --runInBand
       - run: npm ci
         working-directory: tests/playwright
       - run: npx playwright install --with-deps chromium

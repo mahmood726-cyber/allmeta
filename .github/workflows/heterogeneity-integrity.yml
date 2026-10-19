@@ -1,0 +1,47 @@
+name: Heterogeneity integrity
+on:
+  pull_request:
+    paths:
+      - 'heterogeneity/**'
+      - 'shared/ma-core.js'
+      - 'hub/shared/csv-upload.js'
+      - 'hub/shared/tests/heterogeneity*'
+      - '.github/workflows/heterogeneity-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'heterogeneity/**'
+      - 'hub/shared/csv-upload.js'
+      - 'hub/shared/tests/heterogeneity*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  heterogeneity-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+        working-directory: hub/shared/tests
+      - run: npx playwright install --with-deps chromium
+        working-directory: hub/shared/tests
+      - name: Check Heterogeneity and CSV contracts with fresh pinned R
+        run: npx playwright test heterogeneity csv-upload --reporter=line
+        working-directory: hub/shared/tests
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: heterogeneity-integrity-evidence
+          path: |
+            hub/shared/tests/test-results/
+            hub/shared/tests/artifacts/
+          if-no-files-found: ignore

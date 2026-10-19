@@ -1,6 +1,6 @@
 # HTA advanced synthesis repair
 
-This addresses [issue #100](https://github.com/mahmood726-cyber/allmeta/issues/100) on a separate branch based on PR #101, commit `2f36b081dacfa4817a445bedb8a17f0c99ba97b1`. PR #101 and main were both checked again before publication: #101 remained open, and main remained `6036f3b6c1fd404b6da7916460faa8b3ebaf56bc`. Neither is merged by this work.
+This addresses [issue #100](https://github.com/mahmood726-cyber/allmeta/issues/100). It was first written on a branch stacked on PR #101 (commit `2f36b081dacfa4817a445bedb8a17f0c99ba97b1`). PR #101 has since merged into main together with its follow-up (Copy Results / Generate Report restored, prediction interval t_{k-1} at every k and null for k <= 2, temporary export-controls workflow deleted); this branch now merges `origin/main` and keeps all of that behaviour.
 
 ## Reproduced problem
 
@@ -21,7 +21,7 @@ The previous advanced controller read nonexistent data tables, called `MetaAnaly
 
 HKSJ, small-study interval corrections, the legacy EB-as-DL alias, unsupported Peters/selection-model input, Bayesian/random-effects NMA, survival NMA and multi-arm NMA are not exposed as supported advanced-panel methods. Disabled choices explain the limitation; forced incompatible settings are rejected. Network node-splitting is not presented or exported as a validated diagnostic. P-scores are labelled as scores, with an explicit higher/lower outcome preference, rather than SUCRA or simulated rank probabilities.
 
-Pairwise prediction intervals retain the engine's actual t/normal rule and display the returned method. The optional I² interval is labelled an approximate test-based **95%** interval, independently of the selected primary effect confidence level. Influence diagnostics retain the engine's existing implementation and are not separately certified by these reference fixtures.
+Pairwise prediction intervals use the engine's t_{k-1} rule at every k (Cochrane Handbook v6.5, as merged on main in #101) and display the returned method; no prediction interval is reported for k <= 2. The optional I² interval is labelled an approximate test-based **95%** interval, independently of the selected primary effect confidence level. Influence diagnostics retain the engine's existing implementation and are not separately certified by these reference fixtures.
 
 ## Numerical corrections
 
@@ -29,6 +29,9 @@ Pairwise prediction intervals retain the engine's actual t/normal rule and displ
 2. **Heterogeneity p-values.** The upper incomplete-gamma continued fraction was incorrectly initialised. A zero-event fixture previously returned a negative Q-test p-value (`-0.013508143103726944`); its independent expected value is approximately `0.020694389173826065`. The corrected continued fraction agrees with SciPy.
 3. **P-score variance.** A fixed `0.0001` variance floor distorted scores for precise comparisons. P-scores now use the fitted covariance, with the mathematical deterministic limit only for zero variance. A high-precision fixture catches the former floor.
 4. **Model metadata.** The frequentist fitter still uses within-study-variance weights. Its returned model is now `fixed`, with the requested model recorded separately, fitted τ² = 0, and a flag that its diagnostic heterogeneity estimate is not used in the fit. This is not a random-effects NMA implementation.
+
+5. **Egger's test.** `MetaAnalysisMethods.eggerTest` fitted the standardised effect on precision with an extra `1/se^2` weight, which is not Egger's regression. It now uses the classical unweighted regression of `effect/se` on `1/se` (identical to `metafor::regtest(model = "lm")`). On the `asymmetric_left` fixture the intercept changes from `3.0661` (p = 0.0019) to the metafor value `2.8908` (p = 4.38e-5).
+6. **Trim-and-fill.** The previous routine chose the side with the wrong sign (a positive Egger intercept, i.e. larger effects in small studies, imputed on the *right*), used the L0 formula under the R0 label, never trimmed before re-centring, and silently switched to random effects when tau^2 > 0 although the panels describe a fixed-effect adjustment. It now implements Duval & Tweedie's iterative trim / re-centre / fill on the fixed-effect model, with L0 (default), R0 and Q0 estimators, side from the inverse-variance regression of effect on SE, R-style half-to-even rounding of k0, and an explicit refusal when the Q0 estimator is undefined. On `asymmetric_left` the old result (default REML setting) was 1 study imputed on the right, adjusted 0.3279 from a random-effects 0.3531; metafor and the engine now agree on 5 studies imputed on the left (adjusted 0.1692 from 0.2347).
 
 **Existing HTA binary NMA analyses should be rerun.** This change affects calculated effect direction and rankings, not just drawing. PR #101's canonical REML repair is retained; the shared `AlmMaCore` implementation is unchanged.
 
@@ -45,9 +48,9 @@ Pairwise prediction intervals retain the engine's actual t/normal rule and displ
 
 `HTA/validation/advanced_synthesis_reference.py` runs no application JavaScript. It uses SciPy restricted-profile-likelihood optimisation for REML, independent DL arithmetic, a bracketed PM root, and NumPy linear-system solves for fixed-effect NMA. The committed JSON contains **36 pairwise cases**, **8 network cases**, plus cumulative and leave-one-out references. It covers heterogeneity/boundary/unequal-precision/two-study fits, all three offered primary CI levels, two references, binary and continuous data, zero-event correction and precise-ranking inputs.
 
-Primary estimates/intervals/p-values are checked to six decimal places; P-scores to absolute `1e-5` percentage points, consistent with the engine's normal-CDF approximation. These are scoped synthetic-data checks, not proof of every numerical condition, design or clinical application. No live R run is claimed. The normal/HKSJ distinction is consistent with the [metafor documentation](https://wviechtb.github.io/metafor/reference/rma.uni.html).
+Primary estimates/intervals/p-values are checked to six decimal places; P-scores to absolute `1e-5` percentage points, consistent with the engine's normal-CDF approximation. These are scoped synthetic-data checks, not proof of every numerical condition, design or clinical application. Egger's test and trim-and-fill are additionally pinned at absolute `1e-6` to R 4.6.0 / metafor 5.0.1 (`regtest(model = "lm")`, `trimfill(rma(method = "FE"), estimator = L0/R0/Q0)`) on three fixtures covering both sides and an undefined-Q0 case; the R script is `HTA/tests/reference/egger_trimfill_reference.R` and its output `HTA/tests/reference/egger_trimfill_oracle.json`. Those numbers are checked in the engine (`tests/engine/eggerTrimFillReference.test.js`) and as rendered by the real advanced publication-bias panel (`tests/ui/advancedUI2.test.js`). The normal/HKSJ distinction is consistent with the [metafor documentation](https://wviechtb.github.io/metafor/reference/rma.uni.html).
 
-Final local execution: **412 unit tests passed**, **30 Chromium browser tests passed**, no failures or skipped tests in either run and no browser retries. The browser run includes **20 advanced-panel cases and 10 existing beginner regression cases**, at 1280px and 390px. It uses actual file chooser/import/navigation/run/export actions after loading a valid project. Final mobile forest and network screenshots are inspected.
+Final local execution after merging main (2026-10-19): the nine affected Jest suites listed under Reproduce give **431 unit tests passed**, and the HTA Playwright config gives **34 Chromium browser tests passed** (20 advanced-panel cases plus 14 preserved beginner/#101 regression cases, at 1280px and 390px), with no failures, skips or retries. The full HTA Jest suite shows only the failures already present on main (KahanSum/EVPPI/EVSI/Environment globals, DEFAULT_BISECTION_MAX_ITER, wall-clock benchmarks). It uses actual file chooser/import/navigation/run/export actions after loading a valid project. Final mobile forest and network screenshots are inspected.
 
 Earlier verification found and corrected phone overflow and tooltip corruption of SVG metadata. Initial environment-only browser failures came from bundled Chromium's single-process mode; the local runner used normal process isolation. Those failed attempts are not counted as successful runs. Targeted ESLint completes with zero errors (17 existing warnings); shipped-asset lint, citation grounding and the repository drift gate pass.
 
@@ -58,7 +61,7 @@ python -m pip install numpy==2.3.5 scipy==1.17.0
 python HTA/validation/advanced_synthesis_reference.py
 cd HTA
 npm ci --ignore-scripts
-npx jest tests/engine/advancedSynthesisReference.test.js tests/engine/nma.test.js tests/engine/metaMethods.test.js tests/ui/advancedSynthesis.test.js tests/ui/advancedUI.test.js tests/ui/advancedUI2.test.js tests/ui/beginnerMode.test.js tests/ui/beginnerMode2.test.js --runInBand
+npx jest tests/engine/advancedSynthesisReference.test.js tests/engine/eggerTrimFillReference.test.js tests/engine/nma.test.js tests/engine/metaMethods.test.js tests/ui/advancedSynthesis.test.js tests/ui/advancedUI.test.js tests/ui/advancedUI2.test.js tests/ui/beginnerMode.test.js tests/ui/beginnerMode2.test.js --runInBand
 cd ../tests/playwright
 npm ci
 npx playwright install --with-deps chromium

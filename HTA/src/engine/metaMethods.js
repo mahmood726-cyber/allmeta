@@ -155,37 +155,25 @@ class MetaAnalysisMethods {
         // Confidence interval for I²
         const I2CI = this.calculateI2CI(Q, df, n);
 
-        // Prediction interval
-        // Reference: Higgins et al. (2009), IntHout et al. (2016)
-        //
-        // DECISION RULE FOR t vs NORMAL DISTRIBUTION:
-        // - Uses t(k-2) distribution when:
-        //   1. HKSJ adjustment is applied (useHKSJ = true)
-        //   2. Explicitly requested (predictionUseT = true)
-        //   3. Small meta-analysis (k < 10 studies)
-        //
-        // - Uses normal approximation (z = 1.96) when:
-        //   k >= 10 and neither HKSJ nor explicit t-distribution requested
-        //
-        // RATIONALE: t(k-1) per Cochrane Handbook v6.5 (matches metafor::predict
-        // v4+, verified to ~1e-5). The earlier IntHout-2016 t(k-2) is superseded —
-        // it gives a PI ~3x too wide at k=3 and is undefined at k=2.
-        // The normal approximation is acceptable for larger meta-analyses.
-        //
-        // FORMULA: PI = θ̂ ± t_{1-α/2,k-1} × √(SE² + τ²)
+        // Prediction interval (Cochrane Handbook v6.5, section 10.10.4.3):
+        //   PI = mu_hat +/- t_{1-alpha/2, k-1} * sqrt(tau^2 + SE(mu_hat)^2)
+        // t_{k-1} is used at EVERY k. There is deliberately no switch to the
+        // normal quantile for large k and no dependence on HKSJ: a z-based PI
+        // collapses onto the CI whenever tau^2 = 0. The superseded IntHout-2016
+        // t_{k-2} is not used. Reported only for k >= 3 studies; with k <= 2
+        // the between-study distribution cannot be meaningfully predicted.
+        // Reference check: R 4.6.0 / metafor 5.0.1,
+        //   predict(rma(yi, sei = se, method = ..., test = "knha")) uses the same
+        //   t_{k-1} quantile; metafor's KNHA SE differs, so compare against the
+        //   explicit formula with the unadjusted RE SE (see tests).
         let predictionInterval = null;
-        if (this.options.predictionInterval && n > 1) {
+        if (this.options.predictionInterval && n >= 3) {
             const predSE = Math.sqrt(seRE ** 2 + tauSq);
-            // Use t-distribution for HKSJ or when explicitly requested
-            // Otherwise use normal (z) for standard RE model
-            const useT = this.options.useHKSJ || this.options.predictionUseT || n < 10;
-            const critValue = useT ?
-                this.tQuantile(1 - this.options.alpha / 2, n - 1) :
-                this.normalQuantile(1 - this.options.alpha / 2);
+            const critValue = this.tQuantile(1 - this.options.alpha / 2, n - 1);
             predictionInterval = {
                 lower: thetaRE - critValue * predSE,
                 upper: thetaRE + critValue * predSE,
-                method: useT ? `t-distribution (df=${n-1})` : 'normal approximation'
+                method: `t-distribution (df=${n - 1})`
             };
         }
 
@@ -416,15 +404,17 @@ class MetaAnalysisMethods {
     }
 
     /**
-     * Egger's test for funnel plot asymmetry
-     * Weighted linear regression of standardized effect on precision
+     * Egger's test for funnel plot asymmetry (classical form)
+     * Ordinary least squares of the standardised effect (effect/se) on
+     * precision (1/se); the intercept measures small-study asymmetry.
+     * Algebraically identical to the inverse-variance weighted regression
+     * of effect on se, whose se-coefficient is the Egger intercept; this is
+     * metafor::regtest(model = "lm").
      * Reference: Egger et al. (1997) BMJ 315:629-34
-     *
-     * Uses inverse-variance weighted regression (corrected implementation)
+     * Reference check: R 4.6.0 / metafor 5.0.1 (HTA/tests/reference/egger_trimfill_reference.R)
      *
      * @param {Array} studies - Array of {effect, se} objects
      * @returns {Object} Test results with intercept, t-statistic, and p-value
-     * @throws {Error} If input validation fails
      */
     eggerTest(studies) {
         // Input validation
@@ -432,49 +422,35 @@ class MetaAnalysisMethods {
             return { error: 'Need at least 3 studies', test: 'Egger' };
         }
         for (const s of studies) {
-            if (typeof s.se !== 'number' || s.se <= 0) {
+            if (typeof s.se !== 'number' || !Number.isFinite(s.se) || s.se <= 0 || !Number.isFinite(s.effect)) {
                 return { error: 'All studies must have positive se values', test: 'Egger' };
             }
         }
 
         const n = studies.length;
+        const x = studies.map(s => 1 / s.se);          // precision
+        const y = studies.map(s => s.effect / s.se);   // standardised effect
+        const meanX = x.reduce((acc, v) => acc + v, 0) / n;
+        const meanY = y.reduce((acc, v) => acc + v, 0) / n;
 
-        // Precision (1/se) and standardized effect (effect/se)
-        const precision = studies.map(s => 1 / s.se);
-        const stdEffect = studies.map(s => s.effect / s.se);
-
-        // Inverse-variance weights for WLS regression
-        // Weight = 1/variance of standardized effect ≈ 1 (since var(y/se) ≈ 1)
-        // But proper Egger uses weights = 1/se² for the original regression
-        const weights = studies.map(s => 1 / (s.se ** 2));
-        const sumW = weights.reduce((a, b) => a + b, 0);
-
-        // Weighted means
-        const meanP = weights.reduce((sum, w, i) => sum + w * precision[i], 0) / sumW;
-        const meanY = weights.reduce((sum, w, i) => sum + w * stdEffect[i], 0) / sumW;
-
-        // Weighted covariance and variance
         let sxy = 0, sxx = 0;
         for (let i = 0; i < n; i++) {
-            sxy += weights[i] * (precision[i] - meanP) * (stdEffect[i] - meanY);
-            sxx += weights[i] * (precision[i] - meanP) ** 2;
+            sxy += (x[i] - meanX) * (y[i] - meanY);
+            sxx += (x[i] - meanX) ** 2;
+        }
+        if (!(sxx > 0)) {
+            return { error: 'Egger regression is undefined when all standard errors are equal', test: 'Egger' };
         }
 
         const slope = sxy / sxx;
-        const intercept = meanY - slope * meanP;
+        const intercept = meanY - slope * meanX;
 
-        // Weighted residual variance
         let ssr = 0;
-        for (let i = 0; i < n; i++) {
-            const fitted = intercept + slope * precision[i];
-            ssr += weights[i] * (stdEffect[i] - fitted) ** 2;
-        }
+        for (let i = 0; i < n; i++) ssr += (y[i] - intercept - slope * x[i]) ** 2;
         const mse = ssr / (n - 2);
+        const seIntercept = Math.sqrt(mse * (1 / n + meanX ** 2 / sxx));
 
-        // Standard error of intercept (from weighted regression theory)
-        const seIntercept = Math.sqrt(mse * (1/sumW + meanP**2 / sxx));
-
-        // t-test for intercept = 0
+        // t-test for intercept = 0 on n - 2 degrees of freedom
         const tStat = intercept / seIntercept;
         const pValue = 2 * (1 - this.tCDF(Math.abs(tStat), n - 2));
 
@@ -487,7 +463,7 @@ class MetaAnalysisMethods {
             df: n - 2,
             pValue: pValue,
             significant: pValue < this.options.alpha,
-            method: 'Weighted least squares (inverse-variance)',
+            method: 'Weighted regression of effect on SE (inverse-variance weights); classical Egger intercept',
             interpretation: pValue < this.options.alpha ?
                 'Evidence of funnel plot asymmetry (possible publication bias)' :
                 'No significant funnel plot asymmetry detected'
@@ -581,221 +557,124 @@ class MetaAnalysisMethods {
     }
 
     /**
-     * Trim and Fill method for publication bias adjustment
-     * Supports R0, L0, and Q rank-based estimators from Duval & Tweedie (2000)
+     * Trim-and-fill (Duval & Tweedie 2000), fixed-effect (inverse-variance)
+     * Iterates: trim the k0 most extreme studies on the suppressed side,
+     * re-estimate the centre from the trimmed set, re-estimate k0 from the
+     * signed ranks of ALL studies about that centre, until k0 is stable.
+     * Then mirrors the k0 trimmed studies about the trimmed centre and refits.
+     * Side ('auto'): sign of the se-coefficient of the inverse-variance
+     * weighted regression of effect on se (positive => missing on the left).
+     * Estimators: L0 (default), R0, Q (= metafor Q0). k0 is rounded half to
+     * even, as R round().
      * Reference: Duval & Tweedie (2000) Biometrics 56:455-463
+     * Reference check: R 4.6.0 / metafor 5.0.1,
+     *   trimfill(rma(yi, vi, method = "FE"), estimator = ...)
+     *   (HTA/tests/reference/egger_trimfill_reference.R)
      *
      * @param {Array} studies - Array of {effect, se} objects
      * @param {string} side - 'left', 'right', or 'auto' (default: 'auto')
-     * @param {Object} options - {estimator: 'R0'|'L0'|'Q'} (default: 'R0')
-     * @returns {Object} Adjusted effect with filled studies
+     * @param {Object} options - {estimator: 'L0'|'R0'|'Q', maxIterations: 100}
+     * @returns {Object} Adjusted fixed-effect estimate with imputed studies
      */
     trimAndFill(studies, side = 'auto', options = {}) {
-        const estimator = (options.estimator || 'R0').toUpperCase();
-        // Input validation
+        const estimator = String(options.estimator || 'L0').toUpperCase();
+        if (!['L0', 'R0', 'Q', 'Q0'].includes(estimator)) {
+            return { error: `Unknown trim-and-fill estimator: ${options.estimator}`, method: 'Trim-and-Fill' };
+        }
         if (!Array.isArray(studies) || studies.length < 3) {
             return { error: 'Need at least 3 studies', method: 'Trim-and-Fill' };
         }
+        for (const s of studies) {
+            if (!Number.isFinite(s.effect) || typeof s.se !== 'number' || !Number.isFinite(s.se) || s.se <= 0) {
+                return { error: 'All studies need a finite effect and positive se', method: 'Trim-and-Fill' };
+            }
+        }
+        if (side !== 'auto' && side !== 'left' && side !== 'right') {
+            return { error: `Unknown trim-and-fill side: ${side}`, method: 'Trim-and-Fill' };
+        }
 
-        const n = studies.length;
+        const fixedFit = (ys, vs) => {
+            let sw = 0, swy = 0;
+            for (let i = 0; i < ys.length; i++) { sw += 1 / vs[i]; swy += ys[i] / vs[i]; }
+            const effect = swy / sw, se = Math.sqrt(1 / sw);
+            const z = this.normalQuantile(1 - this.options.alpha / 2);
+            return { effect, se, ci_lower: effect - z * se, ci_upper: effect + z * se };
+        };
+        // R round(): IEC 60559 round half to even.
+        const roundHalfEven = val => {
+            const f = Math.floor(val), d = val - f;
+            if (d > 0.5) return f + 1;
+            if (d < 0.5) return f;
+            return f % 2 === 0 ? f : f + 1;
+        };
 
-        // Initial pooled effect
-        let pooled = this.calculatePooledEffect(studies);
-        let theta = pooled.fixed.effect;
+        const k = studies.length;
+        const yAll = studies.map(s => s.effect), vAll = studies.map(s => s.se * s.se);
 
-        // Determine side if auto
         if (side === 'auto') {
-            const egger = this.eggerTest(studies);
-            side = egger.intercept > 0 ? 'right' : 'left';
+            // Weighted (1/v) regression of effect on se; side from the slope.
+            let sw = 0, sx = 0, sy = 0;
+            for (let i = 0; i < k; i++) { const w = 1 / vAll[i]; sw += w; sx += w * studies[i].se; sy += w * yAll[i]; }
+            const mx = sx / sw, my = sy / sw;
+            let sxy = 0, sxx = 0;
+            for (let i = 0; i < k; i++) { const w = 1 / vAll[i], dx = studies[i].se - mx; sxy += w * dx * (yAll[i] - my); sxx += w * dx * dx; }
+            const slope = sxx > 0 ? sxy / sxx : 0;
+            side = slope < 0 ? 'right' : 'left';
         }
 
-        // Estimate k0 (number of missing studies) using R0 rank-based estimator
-        // Reference: Duval & Tweedie (2000), Biometrics 56:455-463
-        const estimateK0_R0 = (data, theta) => {
-            const n = data.length;
+        // Work on a scale where the missing studies are on the left.
+        const sign = side === 'right' ? -1 : 1;
+        const order = yAll.map((val, i) => ({ y: sign * val, v: vAll[i], i }))
+            .sort((p, q) => (p.y - q.y) || (p.i - q.i));
+        const y = order.map(o => o.y), v = order.map(o => o.v);
 
-            // Calculate deviations from pooled effect
-            const deviations = data.map((s, idx) => ({
-                dev: s.effect - theta,
-                absDeviation: Math.abs(s.effect - theta),
-                se: s.se,
-                index: idx
-            }));
-
-            // Sort by absolute deviation (distance from center)
-            const sorted = [...deviations].sort((a, b) => a.absDeviation - b.absDeviation);
-
-            // Assign ranks (1 = closest to center)
-            sorted.forEach((s, i) => s.rank = i + 1);
-
-            // Calculate T_i = sign(deviation) * rank
-            // For right side suppression, expect more negative T (positive effects missing)
-            // For left side suppression, expect more positive T (negative effects missing)
-            let Sn = 0;  // Sum of ranks on the specified side
-
-            if (side === 'right') {
-                // Right side suppression: positive effects are missing
-                // Count ranks of studies on the positive side
-                for (const s of sorted) {
-                    if (s.dev > 0) Sn += s.rank;
-                }
-            } else {
-                // Left side suppression: negative effects are missing
-                for (const s of sorted) {
-                    if (s.dev < 0) Sn += s.rank;
-                }
-            }
-
-            // R0 estimator: k0 = (4*Sn - n(n+1)) / (2n - 1)
-            // This estimates the number of studies that need to be imputed
-            const k0_raw = (4 * Sn - n * (n + 1)) / (2 * n - 1);
-
-            // Round to nearest non-negative integer
-            return Math.max(0, Math.round(k0_raw));
-        };
-
-        // L0 estimator: based on rank sum on the suppressed side
-        // Reference: Duval & Tweedie (2000), Biometrics 56:455-463, Table 1
-        const estimateK0_L0 = (data, theta) => {
-            const n = data.length;
-
-            const deviations = data.map(s => ({
-                dev: s.effect - theta,
-                absDeviation: Math.abs(s.effect - theta),
-                se: s.se
-            }));
-
-            // Sort by absolute deviation
-            const sorted = [...deviations].sort((a, b) => a.absDeviation - b.absDeviation);
-            sorted.forEach((s, i) => s.rank = i + 1);
-
-            // T = sum of ranks on the suppressed side
-            let T = 0;
-            if (side === 'right') {
-                for (const s of sorted) {
-                    if (s.dev > 0) T += s.rank;
-                }
-            } else {
-                for (const s of sorted) {
-                    if (s.dev < 0) T += s.rank;
-                }
-            }
-
-            // L0 estimator: k0 = (4*T - n*(n+1)) / (2*n - 1)
-            // Note: L0 uses the same formula as R0 but with different asymptotic properties
-            // L0 is the linear estimator variant
-            const k0_raw = (4 * T - n * (n + 1)) / (2 * n - 1);
-            return Math.max(0, Math.round(k0_raw));
-        };
-
-        // Q estimator: uses heterogeneity-adjusted rank test
-        // Reference: Duval & Tweedie (2000), Biometrics 56:455-463
-        const estimateK0_Q = (data, theta) => {
-            const n = data.length;
-
-            // Calculate weights (inverse-variance)
-            const weights = data.map(s => 1 / (s.se * s.se));
-            const sumW = weights.reduce((a, b) => a + b, 0);
-
-            // Q statistic for heterogeneity
-            const Q = data.reduce((sum, s, i) => {
-                return sum + weights[i] * Math.pow(s.effect - theta, 2);
-            }, 0);
-
-            // DerSimonian-Laird tau-squared estimate
-            const C = sumW - weights.reduce((sum, w) => sum + w * w, 0) / sumW;
-            const tau2 = Math.max(0, (Q - (n - 1)) / C);
-
-            // Calculate variance-adjusted ranks
-            const deviations = data.map((s, idx) => ({
-                dev: s.effect - theta,
-                absDeviation: Math.abs(s.effect - theta),
-                totalVar: s.se * s.se + tau2,
-                index: idx
-            }));
-
-            // Standardize by total variance, then rank
-            const standardized = deviations.map(d => ({
-                ...d,
-                standardizedDev: d.absDeviation / Math.sqrt(d.totalVar)
-            }));
-            const sorted = [...standardized].sort((a, b) => a.standardizedDev - b.standardizedDev);
-            sorted.forEach((s, i) => s.rank = i + 1);
-
-            // Sum of ranks on suppressed side
-            let Sn = 0;
-            if (side === 'right') {
-                for (const s of sorted) {
-                    if (s.dev > 0) Sn += s.rank;
-                }
-            } else {
-                for (const s of sorted) {
-                    if (s.dev < 0) Sn += s.rank;
-                }
-            }
-
-            // Q-based estimator: same formula structure but using variance-adjusted ranks
-            const k0_raw = (4 * Sn - n * (n + 1)) / (2 * n - 1);
-            return Math.max(0, Math.round(k0_raw));
-        };
-
-        // Select the estimator function
-        const estimateK0 = estimator === 'L0' ? estimateK0_L0
-                         : estimator === 'Q'  ? estimateK0_Q
-                         :                       estimateK0_R0;
-
-        // Iterative procedure
-        let k0 = 0;
-        let filledStudies = [...studies];
-        let iteration = 0;
-        const maxIterations = 20;
-
-        while (iteration < maxIterations) {
-            // Estimate number of missing studies using selected estimator
-            const newK0 = estimateK0(filledStudies, theta);
-
-            if (newK0 === k0) break;
-            k0 = newK0;
-
-            // Fill in missing studies
-            filledStudies = [...studies];
-
-            // Sort by distance from theta
-            const sorted = [...studies].sort((a, b) =>
-                Math.abs(b.effect - theta) - Math.abs(a.effect - theta)
-            );
-
-            // Add imputed studies (mirror around theta)
-            for (let i = 0; i < k0 && i < sorted.length; i++) {
-                const study = sorted[i];
-                const deviation = study.effect - theta;
-
-                if ((side === 'right' && deviation > 0) || (side === 'left' && deviation < 0)) {
-                    filledStudies.push({
-                        effect: theta - deviation,  // Mirror
-                        se: study.se,
-                        imputed: true
-                    });
-                }
-            }
-
-            // Recalculate pooled effect using random-effects when τ² > 0
-            // Reference: Duval & Tweedie (2000), Biometrics
-            pooled = this.calculatePooledEffect(filledStudies);
-            const useRandom = pooled.heterogeneity.tauSquared > 0;
-            theta = useRandom ? pooled.random.effect : pooled.fixed.effect;
+        const maxIterations = options.maxIterations || 100;
+        let k0 = 0, previous = -1, iteration = 0, beta = NaN;
+        while (k0 !== previous) {
+            previous = k0;
             iteration++;
+            if (iteration > maxIterations) {
+                return { error: 'Trim-and-fill algorithm did not converge', method: 'Trim-and-Fill' };
+            }
+            beta = fixedFit(y.slice(0, k - k0), v.slice(0, k - k0)).effect;
+            const centred = y.map(val => val - beta);
+            // Ranks of |centred|, ties broken by position (R ties.method = "first").
+            const ranks = new Array(k);
+            centred.map((c, i) => ({ m: Math.abs(c), i }))
+                .sort((p, q) => (p.m - q.m) || (p.i - q.i))
+                .forEach((o, r) => { ranks[o.i] = r + 1; });
+            let raw;
+            if (estimator === 'R0') {
+                let maxNeg = 0;
+                for (let i = 0; i < k; i++) if (centred[i] < 0) maxNeg = Math.max(maxNeg, ranks[i]);
+                raw = (k - maxNeg) - 1;
+            } else {
+                let Sr = 0;
+                for (let i = 0; i < k; i++) if (centred[i] > 0) Sr += ranks[i];
+                raw = estimator === 'L0'
+                    ? (4 * Sr - k * (k + 1)) / (2 * k - 1)
+                    : k - 0.5 - Math.sqrt(2 * k * k - 4 * Sr + 0.25);
+            }
+            if (!Number.isFinite(raw)) {
+                return { error: `The ${estimator} estimator of the number of missing studies is undefined for these data`, method: 'Trim-and-Fill' };
+            }
+            k0 = Math.min(k - 1, Math.max(0, roundHalfEven(raw)));
         }
 
-        // Use random-effects estimates when heterogeneity present
-        const originalPooled = this.calculatePooledEffect(studies);
-        const useRandomEffects = pooled.heterogeneity.tauSquared > 0;
-        const modelType = useRandomEffects ? 'random' : 'fixed';
+        const original = fixedFit(yAll, vAll);
+        const imputedStudies = [];
+        for (let i = k - k0; i < k; i++) {
+            // Mirror about the trimmed centre, back on the original scale.
+            imputedStudies.push({ effect: sign * (2 * beta - y[i]), se: Math.sqrt(v[i]), imputed: true });
+        }
+        const adjusted = k0 > 0
+            ? fixedFit(yAll.concat(imputedStudies.map(s => s.effect)), vAll.concat(imputedStudies.map(s => s.se * s.se)))
+            : original;
 
         // High heterogeneity warning for trim-and-fill
         // Reference: Peters et al. (2007) "Performance of the trim and fill method"
         const tfWarnings = [];
-        const I2 = originalPooled.heterogeneity.I2;
+        const I2 = this.calculatePooledEffect(studies).heterogeneity.I2;
         if (I2 > 75) {
             tfWarnings.push({
                 type: 'HIGH_HETEROGENEITY',
@@ -807,24 +686,15 @@ class MetaAnalysisMethods {
         }
 
         return {
-            original: {
-                nStudies: studies.length,
-                effect: originalPooled[modelType].effect,
-                model: modelType
-            },
-            adjusted: {
-                nStudies: filledStudies.length,
-                effect: pooled[modelType].effect,
-                ci_lower: pooled[modelType].ci_lower,
-                ci_upper: pooled[modelType].ci_upper,
-                model: modelType
-            },
+            original: { nStudies: k, effect: original.effect, se: original.se, ci_lower: original.ci_lower, ci_upper: original.ci_upper, model: 'fixed' },
+            adjusted: { nStudies: k + k0, effect: adjusted.effect, se: adjusted.se, ci_lower: adjusted.ci_lower, ci_upper: adjusted.ci_upper, model: 'fixed' },
             nMissing: k0,
             side: side,
-            estimator: estimator,
-            imputedStudies: filledStudies.filter(s => s.imputed),
+            estimator: estimator === 'Q0' ? 'Q' : estimator,
+            iterations: iteration,
+            imputedStudies,
             interpretation: k0 > 0 ?
-                `Estimated ${k0} missing studies on the ${side} side using ${estimator} estimator. Adjusted effect: ${pooled[modelType].effect.toFixed(3)} (${modelType}-effects)` :
+                `Estimated ${k0} missing studies on the ${side} side using ${estimator} estimator. Adjusted effect: ${adjusted.effect.toFixed(3)} (fixed-effect)` :
                 'No evidence of missing studies',
             warnings: tfWarnings.length > 0 ? tfWarnings : null
         };

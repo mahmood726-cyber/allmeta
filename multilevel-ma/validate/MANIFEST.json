@@ -1,0 +1,25 @@
+{
+  "source": "https://github.com/mahmood726-cyber/multilevel-reproducible",
+  "source_files": {
+    "data/corpus.json": "cd030b528ec84628e1c5ec5a27a6d8b5db195d309e7d0552bd4896260d628927",
+    "results/reference.json": "5c200d44d0f0004f3f06e30895d20aaf27b54107a76f2c38d8c79f3402dcaf1e"
+  },
+  "files": [
+    {
+      "path": "validate/corpus/corpus.json",
+      "sha256": "58d8fa87fdc1b83c57c3f278314a4313d047f6d332276ee3902df2f4655aabf3",
+      "bytes": 598582
+    },
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "993942279a48d9244b49e6629b4aa2c08f71bdc9b9a46dea836c8f0fe6c01845",
+      "bytes": 30221
+    }
+  ],
+  "paperChecks": 528,
+  "configurations": 44,
+  "paperVersions": {
+    "metafor": "5.2-1",
+    "metadat": "1.6-0"
+  }
+}

@@ -219,7 +219,7 @@ class HTAAdvancedSynthesis {
         this.text('ma-fixed-effect', `${this.fmt(r.fixed.effect)} [${this.interval(r.fixed)}]`);
         this.text('ma-i2', `${this.fmt(r.heterogeneity.I2)}%`); this.text('ma-tau2', this.fmt(r.heterogeneity.tauSquared));
         const pi = r.heterogeneity.predictionInterval;
-        this.text('ma-pred-interval', pi ? `${this.fmt(pi.lower)} to ${this.fmt(pi.upper)} (${pi.method})` : 'Not requested');
+        this.text('ma-pred-interval', pi ? `${this.fmt(pi.lower)} to ${this.fmt(pi.upper)} (${pi.method})` : (s.predictionInterval ? 'Not estimable with fewer than 3 studies' : 'Not requested'));
         document.getElementById('high-i2-warning')?.style.setProperty('display', r.heterogeneity.I2 > 75 ? 'block' : 'none');
         this.tableBody('ma-heterogeneity-body', [
             ['Q', this.fmt(r.heterogeneity.Q), '—', this.fmt(r.heterogeneity.pValueQ), `df = ${r.heterogeneity.df}`],

@@ -101,9 +101,12 @@ function mergeConfig(base, override) {
 
 function validateConfig(config) {
     const errors = [];
+    if (!config || typeof config !== 'object' || Array.isArray(config)) {
+        return ['config must be a configuration object'];
+    }
 
     // population
-    if (config.population == null || !Number.isInteger(config.population) || config.population <= 0) {
+    if (config.population == null || !Number.isSafeInteger(config.population) || config.population <= 0) {
         errors.push('population must be a positive integer');
     }
 
@@ -114,12 +117,12 @@ function validateConfig(config) {
         errors.push('Either prevalence or incidence must be provided');
     }
     if (hasPrevalence) {
-        if (typeof config.prevalence !== 'number' || config.prevalence < 0 || config.prevalence > 1) {
+        if (!Number.isFinite(config.prevalence) || config.prevalence < 0 || config.prevalence > 1) {
             errors.push('prevalence must be a number between 0 and 1');
         }
     }
     if (hasIncidence) {
-        if (typeof config.incidence !== 'number' || config.incidence < 0) {
+        if (!Number.isFinite(config.incidence) || config.incidence < 0) {
             errors.push('incidence must be a non-negative number');
         }
     }
@@ -138,7 +141,7 @@ function validateConfig(config) {
         }
         for (let i = 0; i < config.uptake.length; i++) {
             const u = config.uptake[i];
-            if (typeof u !== 'number' || u < 0 || u > 1) {
+            if (!Number.isFinite(u) || u < 0 || u > 1) {
                 errors.push(`uptake[${i}] must be a number between 0 and 1`);
             }
         }
@@ -152,8 +155,21 @@ function validateConfig(config) {
         } else {
             for (const costKey of ['drugCost', 'adminCost', 'monitoringCost', 'aeCost']) {
                 const val = tx[costKey];
-                if (val != null && (typeof val !== 'number' || val < 0)) {
+                if (val != null && (!Number.isFinite(val) || val < 0)) {
                     errors.push(`${txKey}.${costKey} must be a non-negative number`);
+                }
+            }
+        }
+    }
+
+    // Negative offsets represent actual savings, but every component must be numeric.
+    if (config.offsets != null) {
+        if (typeof config.offsets !== 'object' || Array.isArray(config.offsets)) {
+            errors.push('offsets must be an object of finite numeric cost adjustments');
+        } else {
+            for (const [key, val] of Object.entries(config.offsets)) {
+                if (!Number.isFinite(val)) {
+                    errors.push(`offsets.${key} must be a finite number`);
                 }
             }
         }
@@ -161,7 +177,7 @@ function validateConfig(config) {
 
     // discountRate
     if (config.discountRate != null) {
-        if (typeof config.discountRate !== 'number' || config.discountRate < 0 || config.discountRate > 1) {
+        if (!Number.isFinite(config.discountRate) || config.discountRate < 0 || config.discountRate > 1) {
             errors.push('discountRate must be a number between 0 and 1');
         }
     }
@@ -197,6 +213,9 @@ class BudgetImpactEngine {
         }
 
         const discountRate = config.discountRate ?? this.options.discountRate;
+        if (!Number.isFinite(discountRate) || discountRate < 0 || discountRate > 1) {
+            throw new Error('BIA validation errors:\n  - discountRate must be a finite number between 0 and 1');
+        }
         const currency = config.currency ?? this.options.currency;
 
         // Eligible population
@@ -218,6 +237,9 @@ class BudgetImpactEngine {
         const newTxPerPatient = sumTreatmentCosts(config.newTx);
         const currentTxPerPatient = sumTreatmentCosts(config.currentTx);
         const offsetPerPatient = sumOffsets(config.offsets);
+        if (![eligiblePopulation, newTxPerPatient, currentTxPerPatient, offsetPerPatient].every(Number.isFinite)) {
+            throw new Error('BIA numerical overflow: eligible population or per-patient costs are not finite; check units and cost magnitudes');
+        }
 
         for (let y = 0; y < config.timeHorizon; y++) {
             const year = y + 1;
@@ -236,6 +258,15 @@ class BudgetImpactEngine {
             const discountFactor = 1 / Math.pow(1 + discountRate, y);
             const discountedIncremental = incremental * discountFactor;
 
+            if (![patients, worldWithoutCost, worldWithCost, newTxCost,
+                currentTxCost, offsetSavings, incremental, discountFactor,
+                discountedIncremental].every(Number.isFinite)) {
+                throw new Error(`BIA numerical overflow in year ${year}; check population, treatment costs and units`);
+            }
+            if (!Number.isSafeInteger(patients)) {
+                throw new Error(`BIA patient count exceeds safe integer precision in year ${year}`);
+            }
+
             yearlyBudget.push({
                 year,
                 patients,
@@ -252,6 +283,10 @@ class BudgetImpactEngine {
             totalIncremental += incremental;
             totalDiscounted += discountedIncremental;
             cumulativePatients += patients;
+            if (![totalIncremental, totalDiscounted].every(Number.isFinite) ||
+                !Number.isSafeInteger(cumulativePatients)) {
+                throw new Error(`BIA numerical overflow in cumulative totals through year ${year}`);
+            }
 
             if (discountedIncremental > peakBudget) {
                 peakBudget = discountedIncremental;
@@ -295,9 +330,13 @@ class BudgetImpactEngine {
         for (const [name, overrides] of Object.entries(scenarios)) {
             const merged = mergeConfig(baseConfig, overrides);
             const result = this.run(merged);
+            const delta = result.netBudgetImpact - baseResult.netBudgetImpact;
+            if (!Number.isFinite(delta)) {
+                throw new Error('BIA numerical overflow in scenario "' + name + '" incremental budget difference');
+            }
             scenarioResults[name] = {
                 result,
-                delta: result.netBudgetImpact - baseResult.netBudgetImpact
+                delta
             };
         }
 
@@ -329,8 +368,16 @@ class BudgetImpactEngine {
                 name: subpop.name || 'Unnamed',
                 result
             });
-            totalNetBudgetImpact += result.netBudgetImpact;
-            totalCumulativePatients += result.summary.cumulativePatients;
+            const nextNetBudgetImpact = totalNetBudgetImpact + result.netBudgetImpact;
+            const nextCumulativePatients = totalCumulativePatients + result.summary.cumulativePatients;
+            if (!Number.isFinite(nextNetBudgetImpact)) {
+                throw new Error('BIA numerical overflow in total subpopulation budget impact');
+            }
+            if (!Number.isSafeInteger(nextCumulativePatients)) {
+                throw new Error('BIA total subpopulation patient count exceeds safe integer precision');
+            }
+            totalNetBudgetImpact = nextNetBudgetImpact;
+            totalCumulativePatients = nextCumulativePatients;
         }
 
         return {

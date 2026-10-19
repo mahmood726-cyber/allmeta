@@ -1,0 +1,79 @@
+{
+  "source": "https://github.com/mahmood726-cyber/pubbias-reproducible",
+  "source_files": {
+    "data/corpus.json": "3677a36cb140cbd9eb844a7243c5af210d54173f73426368fcf3499ffee6345c",
+    "results/reference.json": "42124bf9ea4a127d931800598e9bdb487239b488d7df863da96800ea8e54e6ec",
+    "outputs/table2_failed_checks.csv": "85589bad4e2ff8ed5f2c4540080d2630c20b1fbb6f1b4d1994e4be370e6f3f0d"
+  },
+  "files": [
+    {
+      "path": "validate/corpus/corpus.json",
+      "sha256": "cffcb3de27e0bbcb9b152ff684f014e745306569e1365a43346f45d00b48f00d",
+      "bytes": 278933
+    },
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "bf9f4ed82527b127c96e1ef7d34abbd70b16e58e72ef02fb22aa6276f381c990",
+      "bytes": 79793
+    }
+  ],
+  "paperChecks": 2113,
+  "paperPassing": 2107,
+  "configurations": 152,
+  "paperVersions": {
+    "R": "R version 4.6.0 (2026-04-24 ucrt)",
+    "metafor": "5.2.1",
+    "metadat": "1.6.0",
+    "meta": "8.5.0"
+  },
+  "knownExceptions": [
+    {
+      "dataset_configuration": "dat.baker2009/OR:Placebo:Salmeterol",
+      "method": "Egger",
+      "quantity": "refusal",
+      "app_value": "{\"statistic\": 3.2848876977736947, \"p\": 0.005422919307677673, \"name\": \"Egger (generic)\", \"applicable\": \"any effect scale\", \"b0\": 0.9681152620206563, \"seB0\": 0.29471791765568983, \"limit\": 0.0501080698828416}",
+      "R_value_or_error": "{\"error\": \"Fisher scoring algorithm did not converge. See 'help(rma)' for possible remedies.\"}",
+      "reason": "R parent REML model failed to converge; direct app test returned a numeric result."
+    },
+    {
+      "dataset_configuration": "dat.baker2009/OR:Placebo:Salmeterol",
+      "method": "Peters",
+      "quantity": "refusal",
+      "app_value": "{\"statistic\": 2.9686100214461444, \"p\": 0.01087584200515986, \"name\": \"Peters (binary)\", \"applicable\": \"log-OR, binary outcomes\"}",
+      "R_value_or_error": "{\"error\": \"Fisher scoring algorithm did not converge. See 'help(rma)' for possible remedies.\"}",
+      "reason": "R parent REML model failed to converge; direct app test returned a numeric result."
+    },
+    {
+      "dataset_configuration": "dat.baker2009/OR:Placebo:Salmeterol",
+      "method": "Harbord",
+      "quantity": "refusal",
+      "app_value": "{\"statistic\": 4.091238236195817, \"p\": 0.001273888789328999, \"name\": \"Harbord (binary)\", \"applicable\": \"log-OR with score-test bias correction\"}",
+      "R_value_or_error": "{\"error\": \"Fisher scoring algorithm did not converge. See 'help(rma)' for possible remedies.\"}",
+      "reason": "R parent REML model failed to converge; direct app test returned a numeric result."
+    },
+    {
+      "dataset_configuration": "dat.mccurdy2020",
+      "method": "Begg",
+      "quantity": "tau",
+      "app_value": "-0.006805437056368649",
+      "R_value_or_error": "-0.006809082372186954",
+      "reason": "Variance → SE → variance round trip changes exact tie groups; matched-input R diagnostic agrees."
+    },
+    {
+      "dataset_configuration": "dat.mccurdy2020",
+      "method": "Begg",
+      "quantity": "p",
+      "app_value": "0.6785032665740041",
+      "R_value_or_error": "0.6783399285066687",
+      "reason": "Variance → SE → variance round trip changes exact tie groups; matched-input R diagnostic agrees."
+    },
+    {
+      "dataset_configuration": "dat.mccurdy2020",
+      "method": "Trim-and-fill",
+      "quantity": "refusal",
+      "app_value": "{\"k0\": 122, \"est\": 0.5311608072567502, \"se\": 0.005882624350326765, \"tau2\": 0.060429948703487855, \"side\": \"left\"}",
+      "R_value_or_error": "{\"unavailable\": true, \"error\": \"Independent method attempt exceeded 120 seconds or failed; see bounded/large-trimfill.log\"}",
+      "reason": "R reference unavailable after bounded method attempt; timeout never counts as a matched refusal."
+    }
+  ]
+}
