@@ -75,7 +75,7 @@ async function runCorpus(files, onProgress) {
     throw new Error('Invalid dose-response corpus schema');
   }
   if (!window.AlmDoseResponse || typeof window.AlmDoseResponse.fitDR !== 'function') throw new Error('Dose-response engine unavailable');
-  const result = { checks: 0, passed: 0, failed: [], maxima: {}, refusals: { reference: 0, app: 0, matched: 0 }, summaryLines: [] };
+  const result = { checks: 0, passed: 0, failedChecks: 0, failed: [], coverageFails: [], maxima: {}, refusals: { reference: 0, app: 0, matched: 0 }, summaryLines: [] };
   let fits = 0;
   const total = reference.datasets.reduce((n, ds) => n + ds.fits.length, 0);
   const ids = new Set();
@@ -107,17 +107,17 @@ async function runCorpus(files, onProgress) {
           if (result.failed.length === before) fits++;
         }
       }
-      if (result.failed.length === before) result.passed++;
+      if (result.failed.length === before) result.passed++; else result.failedChecks++;
       if (onProgress) onProgress(result.checks, total);
       if (result.checks % 8 === 0) await new Promise(resolve => setTimeout(resolve, 0));
     }
   }
   for (const [key, actual] of Object.entries({ grid_fits: result.checks, grid_R_fitted: total - result.refusals.reference,
     grid_R_refused: result.refusals.reference, grid_refusals_matched: result.refusals.matched, grid_within_tolerance: result.passed })) {
-    if (!expected[key] || actual !== expected[key].value) result.failed.push({ id: 'paper', quantity: key, app: actual, ref: expected[key]?.value, diff: actual - expected[key]?.value, tol: 0 });
+    if (!expected[key] || actual !== expected[key].value) result.coverageFails.push({ id: 'paper', quantity: key, app: actual, ref: expected[key]?.value, diff: actual - expected[key]?.value, tol: 0 });
   }
   result.summaryLines.push(`${result.checks} combinations: ${fits} fits within tolerance + ${result.refusals.matched} identical refusals (paper 2)`);
-  result.summaryLines.push(`${result.passed}/${result.checks} combinations agree; ${result.failed.length} failures.`);
+  result.summaryLines.push(`${result.passed}/${result.checks} combinations agree; ${result.failedChecks} failed combinations; ${result.failed.length} discrepancy diagnostics; ${result.coverageFails.length} coverage failures.`);
   result.summaryLines.push('Identical refusals means both implementations refuse the same combination; error wording is not compared.');
   return result;
 }
@@ -130,7 +130,7 @@ function currentState() {
   input.dispatchEvent(new Event('input', { bubbles: true }));
   const result = window._almLastDoseResponse();
   if (!result) throw new Error('Enter data that the dose-response app can fit before validating.');
-  if (['PM', 'DL'].includes(result.method)) throw new Error('R check available via the reproducible repo: dosresmeta does not implement the selected PM/DL estimator. ' + repoUrl);
+  if (['PM', 'DL'].includes(result.method)) throw new Error('Live R comparison unavailable; R reference and re-execution are in the reproducible repository: dosresmeta does not implement the selected PM/DL estimator. ' + repoUrl);
   const excluded = new Set(result.excluded.map(x => String(x.id)));
   const groups = new Map();
   for (const line of input.value.split(/\r?\n/)) {
@@ -232,11 +232,11 @@ cat("ALMJSON:{",paste(sprintf('"%s":%.17g',names(values),unlist(values)),collaps
 const adapter = {
   app: 'dose-response-ma',
   paper: { title: 'A browser tool for dose-response meta-analysis, validated against R dosresmeta', doi: '10.5281/zenodo.23135712', checks: 724,
-    runUrl: repoUrl + '/actions/workflows/reproduce.yml', codespacesUrl: 'https://codespaces.new/mahmood726-cyber/dose-response-ma-reproducible?quickstart=1', repoUrl },
+    runUrl: repoUrl + '/actions/workflows/reproduce.yml', codespacesUrl: 'https://codespaces.new/mahmood726-cyber/dose-response-ma-reproducible?quickstart=1', repoUrl, referenceRuntime:'R', referenceLabel:'dosresmeta 2.2.0; published model-combination references' },
   live: { packages: ['dosresmeta', 'mixmeta'], validatedVersions: { dosresmeta: '2.2.0' }, currentState, appValues, buildScript, compare: liveCompare },
   corpus: { files: CORPUS_FILES, run: runCorpus }
 };
 window.AlmDoseValidate = adapter;
 if (window.AlmValidate) window.AlmValidate.mount(document.getElementById('alm-validate'), adapter);
-else document.getElementById('alm-validate').textContent = 'Validation widget unavailable in this checkout. R check available via the reproducible repo: ' + repoUrl;
+else document.getElementById('alm-validate').textContent = 'Validation widget unavailable in this checkout. R reference and re-execution: ' + repoUrl;
 })();

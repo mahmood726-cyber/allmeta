@@ -90,7 +90,7 @@ test('task4 live tail rejects false zero and enforces relative tolerance and exa
 test('mh-peto refuses changed corpus bytes',async({page})=>{
   await page.goto(url);
   await page.route('**/validate/corpus/corpus.json',route=>route.fulfill({contentType:'application/json',body:'[]\n'}));
-  await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
+  await page.getByRole('button',{name:'Replay published corpus (stored references)',exact:true}).click();
   await expect(page.locator('#alm-validate [role=status]')).toContainText('SHA-256 mismatch');
 });
 

@@ -78,7 +78,7 @@ test('screen explicitly has no live R check before or after input changes', asyn
     input.dispatchEvent(new Event('change', {bubbles:true}));
   });
   await expect(page.locator('#alm-validate table')).toHaveCount(0);
-  await expect(page.getByRole('link', {name:'R check available via the reproducible repo', exact:true})).toBeVisible();
+  await expect(page.getByRole('link', {name:'Python reference and re-execution', exact:true})).toBeVisible();
 });
 
 for (const [app, adapter, selector] of apps.slice(0,2)) {

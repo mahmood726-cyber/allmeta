@@ -18,8 +18,8 @@ for (const [app,globalName,count,passing=count] of [['nma-inconsistency','AlmInc
   await page.goto(new URL(app+'/index.html',root).href);
   const manifest=JSON.parse(readFileSync(new URL(app+'/validate/MANIFEST.json',root),'utf8'));
   await page.locator('#alm-validate input[type=file]').setInputFiles(manifest.files.map(f=>fileURLToPath(new URL(app+'/'+f.path,root))));
-  await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
-  await expect(page.locator('#alm-validate [role=status]')).toContainText(`${passing}/${count} passed; ${count-passing} failed`,{timeout:150000});
+  await page.getByRole('button',{name:'Replay published corpus (stored references)',exact:true}).click();
+  await expect(page.locator('#alm-validate [role=status]')).toContainText(`${passing}/${count} passed; ${count-passing} failed checks`,{timeout:150000});
  });
 }
 test('dose built-in alcohol example live R @slow',async({page})=>{
