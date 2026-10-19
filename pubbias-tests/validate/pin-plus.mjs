@@ -20,7 +20,9 @@ const checks = run(raw), failed = checks.filter(c => !c.pass);
 const CLASSES = ['parent-reml-refusal', 'side-regression-refusal'];
 const other = failed.filter(c => !CLASSES.includes(c.cls));
 if (other.length) { for (const f of other.slice(0, 40)) console.error('UNCLASSIFIED', f.id, f.quantity, JSON.stringify(f.app), JSON.stringify(f.ref)); throw Error(other.length + ' failures outside the documented class; not pinned'); }
-const sha = p => createHash('sha256').update(readFileSync(join(here, '..', p))).digest('hex');
+// Pins must equal the bytes git stores (LF; .gitattributes eol=lf) or a fresh clone/CI refuses the files as tampered.
+const lfBytes = p => { const b = readFileSync(join(here, '..', p)); if (b.includes(13)) throw Error('CR byte in pinned file (pin LF bytes only): ' + p); return b; };
+const sha = p => createHash('sha256').update(lfBytes(p)).digest('hex');
 const bytes = p => readFileSync(join(here, '..', p)).length;
 const files = ['validate/corpus/corpus.json', 'validate/plus-corpus/reference-plus.json', 'validate/plus-corpus/dataset-disposition.json', 'validate/plus-corpus/thompson-sharp-reference.json'].map(path => ({ path, sha256: sha(path), bytes: bytes(path) }));
 const loo = Object.values(raw.datasets).filter(d => d.loo.rows);

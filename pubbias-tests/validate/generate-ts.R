@@ -30,5 +30,6 @@ for (d in corpus) {
 res <- list(schema='pubbias-tests-thompson-sharp-reference-v1', versions=versions,
   call="m <- rma(yi, vi, method='REML'); regtest(m, model='rma', predictor='sei', ret.fit=TRUE)", datasets=out)
 dir.create('validate/plus-corpus', showWarnings=FALSE)
-writeLines(js(res), 'validate/plus-corpus/thompson-sharp-reference.json', useBytes=TRUE)
+con <- file('validate/plus-corpus/thompson-sharp-reference.json', 'wb')  # binary mode: LF on every OS (the pin hashes LF bytes)
+writeLines(js(res), con, useBytes=TRUE); close(con)
 cat('DONE', length(out), format(Sys.time()), '\n')

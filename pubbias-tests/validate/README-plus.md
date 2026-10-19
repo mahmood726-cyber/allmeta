@@ -37,7 +37,20 @@ exclusion; the extras use their own nodes and their own validation mount.
 Refusals are explicit: fewer than 3 studies (PET-PEESE), fewer than 4 or more than 100 studies (leave-one-out;
 100 is the validated range), equal standard errors (singular regression), REML or trim-and-fill non-convergence,
 fewer than 3 informative 2x2 rows, and the alpha tie. The selection model on the page remains experimental, does not
-reproduce metafor, and is not part of the extras or their checks. Thompson-Sharp is not compared.
+reproduce metafor, and is not part of the extras or their checks.
+
+**Thompson-Sharp (fixed in this version, page results table).** The previous build tested the intercept of the
+weighted regression of effect on standard error and divided an already dispersion-scaled standard error by
+sqrt(max(1, phi)); it agreed with R in 0 of the paper's 152 configurations and the paper says it must not be used.
+It is now the random-effects meta-regression test of Thompson and Sharp as implemented by
+`metafor::regtest(rma(yi, vi, method="REML"), model="rma", predictor="sei")`: a REML meta-regression of yi on sei
+and a z test of the sei coefficient (a port of metafor 5.2-1's REML Fisher scoring). It refuses with fewer than 3
+studies, equal standard errors, or when the parent REML fit does not converge. The R reference
+(`validate/generate-ts.R` -> `plus-corpus/thompson-sharp-reference.json`) covers all 152 configurations; the replay
+compares statistic, p, slope, limit (intercept) and tau^2 (1e-6 relative with unit floor; p 1e-9 absolute; refusals
+exact): 151 configurations agree (largest differences 6.0e-13 statistic, 4.7e-13 p) and in the 152nd
+(`dat.baker2009/OR:Placebo:Salmeterol`) both refuse because REML does not converge. The reference was generated
+independently on two machines (baseimage and laptop, R 4.6.0, metafor 5.2-1) with byte-identical output.
 
 ## Corpus
 
@@ -45,7 +58,7 @@ The extras reuse the 152 configurations of the paper corpus (`validate/corpus/co
 SHA-256 as the original panel) from the publication archive
 [pubbias-reproducible](https://github.com/mahmood726-cyber/pubbias-reproducible): the installed metadat 1.6-0
 catalogue enumerated 114 datasets, 75 used and 39 excluded; `plus-corpus/dataset-disposition.json` is the archive's
-per-dataset disposition (byte-identical copy), recording for every excluded dataset its columns and the reason
+per-dataset disposition (same content; stored here with LF line endings, the archive file has CRLF), recording for every excluded dataset its columns and the reason
 (no supplied effect/variance or supported paired binary structure with at least three finite positive-variance rows).
 The replay checks that the used datasets' configurations are exactly the corpus.
 
@@ -62,9 +75,11 @@ when both refuse with the same reason. Each configuration also has one display c
 exactly one node whose stored value equals the engine value and whose text is its formatted value; every refusal and
 branch label is shown once with its reason; every flags cell lists exactly the true flags.
 
-The 60,216 checks are 60,063 numerical/categorical comparisons, 152 display checks and 1 disposition check.
+The 60,972 checks are 60,063 numerical/categorical comparisons of the extras, 756 Thompson-Sharp comparisons
+(151 configurations x 5 quantities, plus 1 matched refusal), 152 display checks and 1 disposition check.
+All four pinned files are hashed as the LF bytes git stores (`pin-plus.mjs` refuses a file containing a CR byte).
 
-**Result (offline replay, pinned native R 4.6.0, metafor 5.2-1, meta 8.5-0): 60,122/60,216 checks pass;
+**Result (offline replay, pinned native R 4.6.0, metafor 5.2-1, meta 8.5-0): 60,878/60,972 checks pass;
 94 documented failures, 0 unexpected.**
 
 All documented failures belong to two classes, each decided by a generic rule (no dataset identifiers in the rules);
@@ -104,7 +119,7 @@ versions and stops on other metafor/meta versions):
     node pubbias-tests/validate/check-plus.mjs                     # Node mirror of the replay (page engine extracted from index.html)
 
 Browser tests: `hub/shared/tests/pubbias-tests-plus.spec.mjs` (worked example and keyboard use, base-row identity
-on the corpus, identity negative, refusals, offline replay, 11 planted negatives, SHA-256 tamper, live webR
+on the corpus, identity negative, refusals, offline replay, 13 planted negatives (including the two Thompson-Sharp ones), SHA-256 tamper, live webR
 `@slow`).
 
 | Item | Static or dynamic | Source |

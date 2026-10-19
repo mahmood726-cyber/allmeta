@@ -4,11 +4,12 @@
   "configurations": 152,
   "looConfigurations": 138,
   "omissions": 2885,
-  "numericChecks": 60063,
+  "numericChecks": 60819,
+  "thompsonSharpChecks": 756,
   "displayChecks": 152,
   "dispositionChecks": 1,
-  "checks": 60216,
-  "expectedPassed": 60122,
+  "checks": 60972,
+  "expectedPassed": 60878,
   "versions": {
     "R": "R version 4.6.0 (2026-04-24 ucrt)",
     "metafor": "5.2.1",
@@ -41,8 +42,13 @@
     },
     {
       "path": "validate/plus-corpus/dataset-disposition.json",
-      "sha256": "7fefc704a81648c6bba2d36dce26ac865a5c13039861ab7990c8a44a22572217",
-      "bytes": 53212
+      "sha256": "6545445ae1ad18180acf4cd86eb4cf13e2791c5f00411e4d2aec5b064b533e97",
+      "bytes": 50948
+    },
+    {
+      "path": "validate/plus-corpus/thompson-sharp-reference.json",
+      "sha256": "f4b837fd2ea0fa9e8eed28a62527d1fd6c25c98c3463d4c9c2bf4fdb588e644c",
+      "bytes": 25427
     }
   ],
   "exceptions": {

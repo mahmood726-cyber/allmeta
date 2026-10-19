@@ -14,6 +14,11 @@ leave-one-out table of Egger, Begg, trim-and-fill, PET/PEESE and, for 2x2 data, 
 that move a p-value across 0.05, change trim-and-fill k0 or change the PET-PEESE branch. It has its own
 "Validate the extras in R" panel; see [validate/README-plus.md](validate/README-plus.md).
 
+The Thompson-Sharp row of the main results table is now the REML random-effects meta-regression test of
+`metafor::regtest(rma(yi, vi, method="REML"), model="rma", predictor="sei")`; the previous build tested a different
+quantity and agreed with R in none of the 152 paper configurations. It now agrees in 151 (largest difference 6e-13) and
+refuses together with R in the remaining one; the comparison is part of the extras replay.
+
 <!-- ALM-AUTO-README-BEGIN (regenerate with scripts/gen_app_readmes.py) -->
 
 ## When to use
