@@ -284,9 +284,15 @@
         if (!raw || raw.startsWith("#")) continue;
         const parts = contrastCells(raw);
         const header = parts && parts.map(p => p.toLowerCase());
+        // A header row is the first non-comment row whose five cells are ALL column names. Both this page's own
+        // header and the one netmeta's pairwise() writes (studlab, treat1, treat2, TE, seTE) are accepted, because
+        // pasting that output is the common way to get data in here. Requiring every cell to be a known column
+        // name keeps a malformed first DATA row (e.g. "Trial 1, A, B, oops, oops") a refusal, not a silent skip.
+        const HEADER_NAMES = [/^(study|studlab|study[_ -]?id|trial|id)$/, /^(treatment1|treat1|t1|arm1)$/,
+          /^(treatment2|treat2|t2|arm2)$/, /^(est|estimate|te|yi|effect|mean[_ -]?diff)$/,
+          /^(se|sete|sei|standard[_ -]?error)$/];
         const isHeader = first && header && header.length === 5 &&
-          header[0] === "study" && header[1] === "treatment1" &&
-          header[2] === "treatment2" && /^(est|estimate)$/.test(header[3]) && header[4] === "se";
+          HEADER_NAMES.every((pattern, j) => pattern.test(header[j]));
         first = false;
         if (isHeader) continue;
         const where = "Row " + (i+1) + (parts && parts[0] ? ' (study "' + parts[0] + '")' : "");
