@@ -6,6 +6,7 @@
 // requirement tests below must then FAIL (silent drop, truncation, no axis, no panel, no export).
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const url = '/mh-peto/index.html';
@@ -242,6 +243,57 @@ test.describe('outputs and wording', () => {
   });
 });
 
+test.describe('leave-one-out (native R leave1out reference, validate/plus-corpus/reference-plus.json)', () => {
+  const plus = JSON.parse(readFileSync(new URL('../../../mh-peto/validate/plus-corpus/reference-plus.json', import.meta.url), 'utf8')).configurations;
+  const Q = [['beta', 'beta'], ['se', 'se'], ['z', 'zval'], ['p', 'pval', true], ['lo', 'ci.lb'], ['hi', 'ci.ub'], ['QE', 'QE'], ['QEp', 'QEp', true], ['I2', 'I2'], ['H2', 'H2']];
+  test('one click on the paper example: 21 omissions, every value matches leave1out(rma.mh) and leave1out(rma.peto)', async ({ page }) => {
+    await page.goto(url);
+    await page.locator('#btn-example').click();
+    await page.getByRole('button', { name: 'Run leave-one-out', exact: true }).click();
+    await expect(page.locator('#loo-status')).toContainText('Leave-one-out complete: 21 omissions');
+    await expect(page.locator('#loo-body tr')).toHaveCount(22);
+    await expect(page.locator('#loo-body tr').nth(1)).toContainText('1: Balcon');
+    const L = await page.evaluate(() => window.__mhPetoLoo.last());
+    const r = plus['dat.yusuf1985|binary|6|OR'];
+    let n = 0;
+    for (const [key, rk] of [['mh', 'mh_loo'], ['peto', 'peto_loo']]) L.rows.forEach((row, i) => {
+      for (const [qa, qr, abs] of Q) { expect(close(row[key][qa], r[rk][i][qr], 1e-9, !!abs), `${key} omit ${i + 1} ${qa}`).toBe(true); n++; }
+    });
+    expect(n).toBe(420);
+    // The first row (all tables) is the pooled result shown above.
+    const shown = await page.locator('#pooled-body tr').first().locator('td').nth(1).textContent();
+    expect(await page.locator('#loo-body tr').first().locator('td').first().textContent()).toContain(shown);
+    const csv = await page.evaluate(() => window.__mhPetoLoo.csv());
+    expect(csv.trim().split('\n')).toHaveLength(23);
+    expect(csv.split('\n')[0]).toBe('omitted,label,mh_beta,mh_se,mh_lo,mh_hi,mh_z,mh_p,mh_QE,mh_QEp,mh_I2,mh_H2,peto_beta,peto_se,peto_lo,peto_hi,peto_z,peto_p,peto_QE,peto_QEp,peto_I2,peto_H2,flags');
+  });
+  test('a flagged omission is marked and the filter shows only flagged rows; re-running clears the table', async ({ page }) => {
+    await page.goto(url);
+    // Omitting the large first table removes significance (MH p crosses 0.05).
+    await enter(page, 'Big, 10, 1000, 40, 1000\nS2, 3, 100, 6, 100\nS3, 2, 80, 4, 80\nS4, 5, 120, 4, 120');
+    await page.getByRole('button', { name: 'Run leave-one-out', exact: true }).click();
+    const flagged = page.locator('#loo-body tr[data-flagged="true"]');
+    await expect(flagged.first()).toContainText('1: Big');
+    await expect(flagged.first()).toContainText('MH p<0.05 changes');
+    await page.locator('#loo-only-flagged').check();
+    await expect(page.locator('#loo-body tr:not([hidden])')).toHaveCount(1 + await flagged.count());
+    await page.getByRole('button', { name: 'Run analysis', exact: true }).click();
+    await expect(page.locator('#loo-body tr')).toHaveCount(0);
+    await expect(page.locator('#loo-status')).toContainText('press Run leave-one-out again');
+    await expect(page.locator('#btn-loo-csv')).toBeDisabled();
+  });
+  test('refusals: fewer than 3 tables, and invalid input', async ({ page }) => {
+    await page.goto(url);
+    await enter(page, 'A,1,10,2,10\nB,2,10,3,10');
+    await page.getByRole('button', { name: 'Run leave-one-out', exact: true }).click();
+    await expect(page.locator('#loo-status')).toContainText('needs at least 3 tables');
+    await page.locator('#src').fill('A,1,10,2,10\nB,2.5,10,3,10\nC,1,10,1,10');
+    await page.getByRole('button', { name: 'Run leave-one-out', exact: true }).click();
+    await expect(page.locator('#loo-status')).toContainText('fix the input lines');
+    await expect(page.locator('#loo-body tr')).toHaveCount(0);
+  });
+});
+
 test.describe('usability and accessibility', () => {
   test('phone width 375 px: no horizontal scroll, results reachable by a link', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
@@ -257,9 +309,9 @@ test.describe('usability and accessibility', () => {
     await page.goto(url);
     await expect(page.getByLabel('Effect measure')).toHaveCount(1);
     await expect(page.getByRole('textbox', { name: /Studies/ })).toHaveId('src');
-    for (const id of ['pooled', 'het', 'assoc', 'conv', 'per-study']) await expect(page.locator('#' + id + ' caption')).toHaveCount(1);
+    for (const id of ['pooled', 'het', 'assoc', 'conv', 'loo', 'per-study']) await expect(page.locator('#' + id + ' caption')).toHaveCount(1);
     await expect(page.locator('#alm-csv-mount textarea')).toHaveAttribute('aria-label', /Paste CSV/);
-    for (const id of ['k-note', 'estimability-note', 'fragility-note']) await expect(page.locator('#' + id)).toHaveAttribute('aria-live', 'polite');
+    for (const id of ['k-note', 'estimability-note', 'fragility-note', 'loo-status']) await expect(page.locator('#' + id)).toHaveAttribute('aria-live', 'polite');
     // Measure is reachable before the Run button in keyboard order.
     const order = await page.evaluate(() => { const all = [...document.querySelectorAll('select, textarea, button')]; return [all.indexOf(document.getElementById('measure')), all.indexOf(document.getElementById('btn-run'))]; });
     expect(order[0]).toBeLessThan(order[1]);

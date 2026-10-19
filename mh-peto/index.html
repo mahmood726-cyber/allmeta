@@ -64,6 +64,8 @@
     textarea[aria-invalid="true"] { border-color: var(--warn); outline: 2px solid var(--warn); }
     .note { font-size: 0.8rem; color: var(--muted); margin: 0.3rem 0 0.6rem; }
     .not-estimable td { font-style: italic; color: var(--muted); }
+    tr.loo-flagged { background: var(--warn-soft); }
+    #loo th[scope="row"] { font-weight: normal; text-align: left; white-space: nowrap; }
     .secondary { border: 1px solid var(--border); border-radius: 6px; padding: 0.45rem 0.85rem; cursor: pointer; background: transparent; color: inherit; font: inherit; font-size: 0.85rem; }
     #jump-results { display: none; margin-top: 0.5rem; font-size: 0.85rem; color: var(--accent); }
     @media (max-width: 1000px) { #jump-results { display: inline-block; } }
@@ -175,6 +177,21 @@ StudyE, 4, 600, 10, 600</textarea>
       </table>
       </div>
       <p class="note" id="conv-note" aria-live="polite"></p>
+      <h2 style="margin-top:0.9rem">Leave-one-out</h2>
+      <div class="actions" style="margin-top:0.2rem">
+        <button type="button" id="btn-loo" class="secondary" aria-describedby="loo-hint">Run leave-one-out</button>
+        <button type="button" id="btn-loo-csv" class="secondary" disabled>Download leave-one-out table (CSV)</button>
+        <label style="display:inline-flex;gap:0.35rem;align-items:center;font-size:0.85rem"><input type="checkbox" id="loo-only-flagged"> Show only flagged omissions</label>
+      </div>
+      <p class="note" id="loo-hint">Re-pools the current tables with each one omitted in turn (as metafor leave1out on rma.mh and rma.peto): estimate, 95% CI, p and I&sup2; for each method. An omission is flagged when it moves that method's p-value across 0.05. Needs at least 3 tables.</p>
+      <p id="loo-status" role="status" aria-live="polite" class="note"></p>
+      <div class="table-wrap">
+      <table id="loo">
+        <caption>Each row omits one table (numbered in input order); estimates on the display scale</caption>
+        <thead id="loo-head"></thead>
+        <tbody id="loo-body"></tbody>
+      </table>
+      </div>
       <h2 style="margin-top:0.5rem">Per-study</h2>
       <div class="table-wrap">
       <table id="per-study">
@@ -545,6 +562,46 @@ StudyE, 4, 600, 10, 600</textarea>
       return convPack(swy / sw, 1 / Math.sqrt(sw));
     }
 
+    // Every number the page reports for one set of tables (pure; used by run(), leave-one-out and the
+    // Node cross-check against R). mh/peto are null when not estimable; beta/se are on the analysis scale
+    // (log for OR/RR, identity for RD).
+    function analyse(rows, measure) {
+      var mh = measure === 'OR' ? mhOR(rows) : (measure === 'RR' ? mhRR(rows) : mhRD(rows));
+      var pe = measure === 'OR' ? peto(rows) : null;
+      var mhBeta = mh ? (measure === 'RD' ? mh.est : mh.logEst) : null, mhSe = mh ? (measure === 'RD' ? mh.se : mh.seLog) : null;
+      var em = escalcMH(rows, measure), het = { mh: qStats(em.yi, em.vi, mhBeta) };
+      if (measure === 'OR') {
+        var ep = escalcPeto(rows);
+        // rma.peto stops with an error when no table is informative; report nothing rather than Q = 0.
+        het.peto = pe ? qStats(ep.yi, ep.vi, pe.logEst) : { QE: null, QEp: null, I2: null, H2: null, df: null, k: 0 };
+        het.assoc = cmhTarone(rows, mh ? mh.est : null);
+      }
+      return { measure: measure, mh: mh, peto: pe, het: het, mhFit: convPack(mhBeta, mhSe), petoFit: pe ? convPack(pe.logEst, pe.seLog) : null,
+        conv: { metaDefault: metaDefaultMH(rows, measure), iv: ivFixed(rows, measure) } };
+    }
+
+    // Leave-one-out (metafor leave1out(rma.mh(...)) and leave1out(rma.peto(...))): each table omitted in turn,
+    // in input order. Needs at least 3 tables so that every reduced set can still be pooled (2 or more).
+    // A flag marks an omission that moves the method's p-value across 0.05 relative to all tables.
+    var LOO_MIN = 3;
+    function leaveOneOut(rows, measure) {
+      if (rows.length < LOO_MIN) return { refused: 'leave-one-out needs at least ' + LOO_MIN + ' tables, so that each reduced set still has 2 to pool' };
+      var full = analyse(rows, measure), out = [];
+      var pick = function (a) {
+        var r = { mh: Object.assign({}, a.mhFit, a.het.mh) };
+        if (measure === 'OR') r.peto = Object.assign({}, a.petoFit || convPack(null, null), a.het.peto);
+        return r;
+      };
+      var sig = function (f) { return f.p === null ? null : f.p < 0.05; };
+      var base = pick(full);
+      for (var i = 0; i < rows.length; i++) {
+        var r = pick(analyse(rows.filter(function (_, j) { return j !== i; }), measure)), flags = {};
+        Object.keys(r).forEach(function (m) { var a = sig(base[m]), b = sig(r[m]); flags[m + '_flip'] = a === null || b === null ? null : a !== b; });
+        out.push(Object.assign({ omit: i + 1, label: rows[i].label }, r, { flags: flags }));
+      }
+      return { measure: measure, full: base, rows: out };
+    }
+
     function perStudy(rows, measure) {
       return rows.map(function (r) {
         // 0.5 correction for display
@@ -582,6 +639,15 @@ StudyE, 4, 600, 10, 600</textarea>
       _lastResults = null;
       ['pooled-body', 'per-body', 'forest', 'labbe', 'het-body', 'assoc-body', 'conv-body'].forEach(function (id) { document.getElementById(id).innerHTML = ''; });
       ['k-note', 'estimability-note', 'zero-note', 'conv-note'].forEach(function (id) { document.getElementById(id).textContent = ''; });
+      clearLoo('');
+    }
+    // Leave-one-out output belongs to the input it was run on; any re-analysis clears it.
+    var _lastLoo = null;
+    function clearLoo(message) {
+      _lastLoo = null;
+      document.getElementById('loo-head').innerHTML = ''; document.getElementById('loo-body').innerHTML = '';
+      document.getElementById('loo-status').textContent = message;
+      document.getElementById('btn-loo-csv').disabled = true;
     }
     function showInputErrors(parsed) {
       var box = document.getElementById('input-errors'), src = document.getElementById('src');
@@ -640,18 +706,10 @@ StudyE, 4, 600, 10, 600</textarea>
         return;
       }
 
-      var pooled = [], undefinedMethods = [];
-      if (measure === 'OR') {
-        var mh = mhOR(rows), pe = peto(rows);
-        if (mh) pooled.push(Object.assign({ name: 'MH OR' }, mh)); else undefinedMethods.push('MH OR');
-        if (pe) pooled.push(Object.assign({ name: 'Peto OR' }, pe)); else undefinedMethods.push('Peto OR');
-      } else if (measure === 'RR') {
-        var mrr = mhRR(rows);
-        if (mrr) pooled.push(Object.assign({ name: 'MH RR' }, mrr)); else undefinedMethods.push('MH RR');
-      } else {
-        var mrd = mhRD(rows);
-        if (mrd) pooled.push(Object.assign({ name: 'MH RD' }, mrd)); else undefinedMethods.push('MH RD');
-      }
+      clearLoo(_lastLoo ? 'The analysis was re-run: press Run leave-one-out again for the current tables.' : '');
+      var res = analyse(rows, measure), pooled = [], undefinedMethods = [];
+      if (res.mh) pooled.push(Object.assign({ name: 'MH ' + measure }, res.mh)); else undefinedMethods.push('MH ' + measure);
+      if (measure === 'OR') { if (res.peto) pooled.push(Object.assign({ name: 'Peto OR' }, res.peto)); else undefinedMethods.push('Peto OR'); }
 
       var body = document.getElementById('pooled-body');
       var parts = [];
@@ -687,18 +745,8 @@ StudyE, 4, 600, 10, 600</textarea>
         'R users note: meta::metabin adds 0.5 to zero-cell studies inside its MH estimate by default (MH.exact = FALSE), so its pooled result can differ; set MH.exact = TRUE to match.';
 
       // Heterogeneity (Q, I2, H2) for each method, and CMH / Tarone / Breslow-Day for the OR.
-      var het = {};
+      var het = res.het;
       var mhPooled = pooled.find(function (q) { return q.name.indexOf('MH ') === 0; });
-      var mhBeta = mhPooled ? (measure === 'RD' ? mhPooled.est : mhPooled.logEst) : null;
-      var em = escalcMH(rows, measure);
-      het.mh = qStats(em.yi, em.vi, mhBeta);
-      if (measure === 'OR') {
-        var pePooled = pooled.find(function (q) { return q.name === 'Peto OR'; });
-        var ep = escalcPeto(rows);
-        // rma.peto stops with an error when no table is informative; report nothing rather than Q = 0.
-        het.peto = pePooled ? qStats(ep.yi, ep.vi, pePooled.logEst) : { QE: null, QEp: null, I2: null, H2: null, df: null, k: 0 };
-        het.assoc = cmhTarone(rows, mhPooled ? mhPooled.est : null);
-      }
       var hetRows = [['MH ' + measure, het.mh]].concat(het.peto ? [['Peto OR', het.peto]] : []);
       document.getElementById('het-body').innerHTML = hetRows.map(function (hr) {
         var h = hr[1];
@@ -720,7 +768,7 @@ StudyE, 4, 600, 10, 600</textarea>
       // Rare-event conventions side by side (E2).
       var ratio = measure !== 'RD';
       var back = function (b) { return b === null ? null : (ratio ? Math.exp(b) : b); };
-      var conv = { metaDefault: metaDefaultMH(rows, measure), iv: ivFixed(rows, measure) };
+      var conv = res.conv;
       var convRows = [];
       var mainBeta = mhPooled ? (ratio ? mhPooled.logEst : mhPooled.est) : null;
       var mainSe = mhPooled ? (ratio ? mhPooled.seLog : mhPooled.se) : null;
@@ -942,6 +990,67 @@ StudyE, 4, 600, 10, 600</textarea>
       document.getElementById('measure').value = 'OR';
       run();
     });
+
+    // ---- leave-one-out (one click) ----
+    var LOO_FLAG_TEXT = { mh_flip: 'MH p<0.05 changes', peto_flip: 'Peto p<0.05 changes' };
+    function looFlags(f) { return Object.keys(f || {}).filter(function (k) { return f[k] === true; }).map(function (k) { return LOO_FLAG_TEXT[k]; }); }
+    function runLoo() {
+      var parsed = parseInput(document.getElementById('src').value), measure = document.getElementById('measure').value;
+      if (parsed.errors.length) { clearLoo('Not run: fix the input lines listed above first.'); return null; }
+      var rows = parse(document.getElementById('src').value), res = leaveOneOut(rows, measure);
+      if (res.refused) { clearLoo('Not run: ' + res.refused + ' (' + rows.length + ' entered).'); return res; }
+      var ratio = measure !== 'RD', methods = measure === 'OR' ? [['mh', 'MH OR'], ['peto', 'Peto OR']] : [['mh', 'MH ' + measure]];
+      var back = function (b) { return b === null ? null : (ratio ? Math.exp(b) : b); };
+      var head = '<tr><th scope="col">Omitted table</th>' + methods.map(function (m) {
+        return '<th scope="col">' + m[1] + ' (95% CI)</th><th scope="col">' + m[1] + ' p</th><th scope="col">' + m[1] + ' I&sup2;</th>';
+      }).join('') + '<th scope="col">Flags</th></tr>';
+      var cells = function (r) {
+        return methods.map(function (m) {
+          var f = r[m[0]];
+          if (f.beta === null) return '<td colspan="2">not estimable</td><td>—</td>';
+          return '<td>' + fmt(back(f.beta)) + ' [' + fmt(back(f.lo)) + ', ' + fmt(back(f.hi)) + ']</td><td>' + fmtP(f.p) + '</td><td>' + (f.I2 === null ? '—' : fmt(f.I2, 1) + '%') + '</td>';
+        }).join('');
+      };
+      var body = ['<tr data-omit="none"><th scope="row">none (all ' + rows.length + ' tables)</th>' + cells(res.full) + '<td></td></tr>'];
+      res.rows.forEach(function (r) {
+        var fl = looFlags(r.flags);
+        body.push('<tr data-omit="' + r.omit + '"' + (fl.length ? ' class="loo-flagged" data-flagged="true"' : '') + '><th scope="row">' + r.omit + ': ' + esc(r.label) + '</th>' + cells(r) + '<td>' + esc(fl.join('; ')) + '</td></tr>');
+      });
+      document.getElementById('loo-head').innerHTML = head;
+      document.getElementById('loo-body').innerHTML = body.join('');
+      _lastLoo = res;
+      var nFlag = res.rows.filter(function (r) { return looFlags(r.flags).length; }).length;
+      document.getElementById('loo-status').textContent = 'Leave-one-out complete: ' + res.rows.length + ' omissions; ' + nFlag + ' flagged (p-value crosses 0.05).';
+      document.getElementById('btn-loo-csv').disabled = false;
+      applyLooFilter();
+      return res;
+    }
+    function applyLooFilter() {
+      var only = document.getElementById('loo-only-flagged').checked;
+      Array.prototype.forEach.call(document.querySelectorAll('#loo-body tr'), function (tr) { tr.hidden = only && tr.dataset.omit !== 'none' && tr.dataset.flagged !== 'true'; });
+    }
+    // CSV at full precision on the analysis scale (log for OR/RR), one row per omission.
+    function looCsv() {
+      if (!_lastLoo) return null;
+      var ms = _lastLoo.measure === 'OR' ? ['mh', 'peto'] : ['mh'], q = ['beta', 'se', 'lo', 'hi', 'z', 'p', 'QE', 'QEp', 'I2', 'H2'];
+      var cell = function (v) { return v === null || v === undefined ? 'NA' : String(v); };
+      var lines = [['omitted', 'label'].concat([].concat.apply([], ms.map(function (m) { return q.map(function (k) { return m + '_' + k; }); }))).concat(['flags']).join(',')];
+      [{ omit: 'none', label: '', full: true }].concat(_lastLoo.rows).forEach(function (r) {
+        var src = r.full ? _lastLoo.full : r;
+        lines.push([r.omit, '"' + String(r.label).replace(/"/g, '""') + '"'].concat([].concat.apply([], ms.map(function (m) { return q.map(function (k) { return cell(src[m][k]); }); })))
+          .concat(['"' + (r.full ? '' : looFlags(r.flags).join('; ')) + '"']).join(','));
+      });
+      return lines.join('\n') + '\n';
+    }
+    document.getElementById('btn-loo').addEventListener('click', runLoo);
+    document.getElementById('loo-only-flagged').addEventListener('change', applyLooFilter);
+    document.getElementById('btn-loo-csv').addEventListener('click', function () {
+      var text = looCsv(); if (!text) return;
+      var url = URL.createObjectURL(new Blob([text], { type: 'text/csv' })), a = document.createElement('a');
+      a.href = url; a.download = 'mh-peto-leave-one-out.csv'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    });
+    window.__mhPetoLoo = { run: runLoo, csv: looCsv, last: function () { return _lastLoo; }, restore: function (r) { _lastLoo = r; }, leaveOneOut: leaveOneOut, analyse: analyse };
 
     // ---- self-checking R script export (E3) ----
     function rString(s) {

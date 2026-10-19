@@ -1,0 +1,350 @@
+{
+ "schema": "mh-peto-plus-comparison-v1",
+ "date": "2026-10-19",
+ "machine": "lane p610 (desktop-iljmsi3)",
+ "node_cross_check": {
+  "runner": "node mh-peto/validate/check-plus.mjs (engine extracted verbatim from mh-peto/index.html; analyse() and leaveOneOut())",
+  "reference": "plus-corpus/reference-plus.json (validate/generate-plus.R, native R)",
+  "checks": 120010,
+  "passed": 120000,
+  "documented_failures": 10,
+  "unexpected": 0,
+  "configuration_measures": 1008,
+  "families": {
+   "full.MH.beta": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 3.714910247976432e-15
+   },
+   "full.MH.se": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 4.59540385842928e-15
+   },
+   "full.MH.z": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 3.0786442443627975e-14
+   },
+   "full.MH.p": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 9.936496070395151e-15
+   },
+   "full.MH.lo": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 4.183137719258473e-15
+   },
+   "full.MH.hi": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 4.6431566428475805e-15
+   },
+   "full.MH.QE": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 9.315993178144008e-15
+   },
+   "full.MH.QEp": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 4.9404924595819466e-15
+   },
+   "full.MH.I2": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 2.440679444740012e-13
+   },
+   "full.MH.H2": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 6.5073960630272095e-15
+   },
+   "full.PETO.beta": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 3.860580416056149e-15
+   },
+   "full.PETO.se": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 4.799423353114079e-15
+   },
+   "full.PETO.z": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 4.478776069607428e-15
+   },
+   "full.PETO.p": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 8.326672684688674e-16
+   },
+   "full.PETO.lo": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 4.877617533360472e-15
+   },
+   "full.PETO.hi": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 4.4629648207412375e-15
+   },
+   "full.PETO.QE": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 9.438766039436947e-15
+   },
+   "full.PETO.QEp": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 6.905587213168474e-14
+   },
+   "full.PETO.I2": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 2.1538326677728037e-14
+   },
+   "full.PETO.H2": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 8.31694548556945e-15
+   },
+   "full.OR.MH": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 4.554354336669295e-15
+   },
+   "full.OR.MHp": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 7.216449660063518e-16
+   },
+   "full.OR.TA": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 2.317758911198204e-12
+   },
+   "full.OR.TAp": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 1.3529177778082158e-12
+   },
+   "full.OR.BD": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 2.31755437577494e-12
+   },
+   "full.OR.BDp": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 1.3528067555057532e-12
+   },
+   "conv.metamh.beta": {
+    "passed": 754,
+    "checks": 756,
+    "max_diff": null,
+    "max_diff_note": "not finite: includes the 2 documented R refusals (R null vs app value); all passing checks are within tolerance"
+   },
+   "conv.metamh.se": {
+    "passed": 754,
+    "checks": 756,
+    "max_diff": null,
+    "max_diff_note": "not finite: includes the 2 documented R refusals (R null vs app value); all passing checks are within tolerance"
+   },
+   "conv.metamh.p": {
+    "passed": 754,
+    "checks": 756,
+    "max_diff": null,
+    "max_diff_note": "not finite: includes the 2 documented R refusals (R null vs app value); all passing checks are within tolerance"
+   },
+   "conv.metamh.lo": {
+    "passed": 754,
+    "checks": 756,
+    "max_diff": null,
+    "max_diff_note": "not finite: includes the 2 documented R refusals (R null vs app value); all passing checks are within tolerance"
+   },
+   "conv.metamh.hi": {
+    "passed": 754,
+    "checks": 756,
+    "max_diff": null,
+    "max_diff_note": "not finite: includes the 2 documented R refusals (R null vs app value); all passing checks are within tolerance"
+   },
+   "conv.ivfe.beta": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 5.0113329260805316e-15
+   },
+   "conv.ivfe.se": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 4.577881832093506e-15
+   },
+   "conv.ivfe.p": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 6.8833827526759706e-15
+   },
+   "conv.ivfe.lo": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 4.9379000449738185e-15
+   },
+   "conv.ivfe.hi": {
+    "passed": 756,
+    "checks": 756,
+    "max_diff": 4.7467888913180384e-15
+   },
+   "loo.MH.beta": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 4.854856567386969e-15
+   },
+   "loo.MH.se": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 4.618266368393853e-15
+   },
+   "loo.MH.z": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 6.744604874597826e-14
+   },
+   "loo.MH.p": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 4.8960835385969403e-14
+   },
+   "loo.MH.lo": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 5.009215320298103e-15
+   },
+   "loo.MH.hi": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 4.75268572645452e-15
+   },
+   "loo.MH.QE": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 8.560315385170427e-15
+   },
+   "loo.MH.QEp": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 5.440092820663267e-15
+   },
+   "loo.MH.I2": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 1.5779797597146937e-13
+   },
+   "loo.MH.H2": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 8.872985293633728e-15
+   },
+   "loo.MH.flag": {
+    "passed": 6837,
+    "checks": 6837,
+    "max_diff": 0
+   },
+   "loo.PETO.beta": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 4.6851656442714084e-15
+   },
+   "loo.PETO.se": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 4.799423353114079e-15
+   },
+   "loo.PETO.z": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 4.8839728058422674e-15
+   },
+   "loo.PETO.p": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 7.632783294297951e-16
+   },
+   "loo.PETO.lo": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 5.09503284523761e-15
+   },
+   "loo.PETO.hi": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 4.873509678053366e-15
+   },
+   "loo.PETO.QE": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 1.9086026824223198e-14
+   },
+   "loo.PETO.QEp": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 1.2212453270876722e-14
+   },
+   "loo.PETO.I2": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 7.960305331225054e-14
+   },
+   "loo.PETO.H2": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 1.9086026824223198e-14
+   },
+   "loo.PETO.flag": {
+    "passed": 2279,
+    "checks": 2279,
+    "max_diff": 0
+   },
+   "loo.refusal": {
+    "passed": 165,
+    "checks": 165,
+    "max_diff": 0
+   },
+   "loo.refusal.R": {
+    "passed": 165,
+    "checks": 165,
+    "max_diff": 0
+   },
+   "skip.k<2": {
+    "passed": 252,
+    "checks": 252,
+    "max_diff": 0
+   }
+  },
+  "documented_class": {
+   "metabin-reml-refusal": "meta::metabin(method=\"MH\") with its defaults stops because its REML tau2 fit (computed even with random=FALSE) does not converge (dat.baker2009|exac|Placebo vs Salmeterol, OR and RR: 10 checks). metabin(..., method.tau=\"DL\") agrees with the app on all 5 quantities; tau2 does not enter the common-effect MH estimate. The checks remain FAIL."
+  }
+ },
+ "browser_leave_one_out_ui": {
+  "runner": "every configuration x measure loaded with __almLoad, \"Run leave-one-out\" clicked, __mhPetoLoo.last() compared with leave1out() in Python (headless Chromium via CDP)",
+  "checks": 91577,
+  "passed": 91577,
+  "refusals_k_below_3": 417,
+  "csv_row_count_mismatches": 0
+ },
+ "archived_reference_agreement": "fresh rma.mh/rma.peto QE, QEp, I2, H2, MH, MHp, TA, TAp, BD, BDp, beta, se vs the archive reference.json (metafor 5.2-1): 7,472 values, max relative difference 4.9e-15, no null mismatches",
+ "primary_replay_68461": {
+  "runner": "AlmMhPetoValidation.runCorpus() (Tier 2) in headless Chromium via CDP, local static server",
+  "before_2cd75db": "68461/68461, tails 106/106",
+  "after": "68461/68461, tails 106/106",
+  "export_identity": "all 26,208 exported values of the 1,008 configuration-measures identical before (2cd75db) and after"
+ },
+ "planted_defects": {
+  "tarone": "119550/120010 checks pass over 1008 configuration-measures; 10 documented failures, 450 unexpected",
+  "cmh-continuity-correction": "119532/120010 checks pass over 1008 configuration-measures; 10 documented failures, 468 unexpected",
+  "loo-omits-wrong-table": "36464/120010 checks pass over 1008 configuration-measures; 10 documented failures, 83536 unexpected",
+  "i2-uses-k": "113617/120010 checks pass over 1008 configuration-measures; 10 documented failures, 6383 unexpected",
+  "metamh-keeps-double-zero": "119717/120010 checks pass over 1008 configuration-measures; 5 documented failures, 288 unexpected"
+ }
+}
