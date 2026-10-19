@@ -28,6 +28,7 @@ class AdvancedFeaturesUI {
         this.thresholdEngine = null;
         this.federatedEngine = null;
 
+        this.synthesis = typeof HTAAdvancedSynthesis !== 'undefined' ? new HTAAdvancedSynthesis(app) : null;
         this.initEngines();
         this.setupEventListeners();
     }
@@ -1109,222 +1110,28 @@ class AdvancedFeaturesUI {
         });
     }
 
-    // ============ NETWORK META-ANALYSIS ============
-
+    // Persistent pairwise/network panels share the documented import contract.
     async runNMA() {
-        this.app.showLoading('Running Network Meta-Analysis...');
-        try {
-            // Get NMA data from input
-            const nmaData = this.getNMADataFromInputs();
-            if (!nmaData || nmaData.length < 2) {
-                this.app.showToast('Please enter at least 2 studies for NMA', 'warning');
-                this.app.hideLoading();
-                return;
-            }
-
-            // Initialize NMA engine
-            const nmaEngine = typeof NetworkMetaAnalysis !== 'undefined' ? new NetworkMetaAnalysis() : null;
-            if (!nmaEngine) {
-                this.app.showToast('NMA engine not available', 'error');
-                this.app.hideLoading();
-                return;
-            }
-
-            const results = await nmaEngine.run(nmaData);
-            this.displayNMAResults(results);
-            this.app.hideLoading();
-            this.app.showToast('NMA completed successfully', 'success');
-        } catch (e) {
-            this.app.hideLoading();
-            this.app.showToast(`NMA Error: ${e.message}`, 'error');
-        }
+        if (!this.synthesis) return this.showUnavailableMethod('Advanced synthesis');
+        return this.synthesis.runNMA();
     }
 
     getNMADataFromInputs() {
-        // Get study data from NMA input table
-        const rows = document.querySelectorAll('#nma-data-body tr');
-        const studies = [];
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('input');
-            if (cells.length >= 4) {
-                const study = cells[0]?.value || '';
-                const treatment = cells[1]?.value || '';
-                const effect = parseFloat(cells[2]?.value) || 0;
-                const se = parseFloat(cells[3]?.value) || 0;
-                if (study && treatment && se > 0) {
-                    studies.push({ study, treatment, effect, se });
-                }
-            }
-        });
-        return studies;
+        return this.synthesis ? this.synthesis.networkData() : [];
     }
-
-    displayNMAResults(results) {
-        // Display network graph
-        const networkContainer = document.getElementById('nma-network-graph');
-        if (networkContainer && results.network) {
-            this.renderNetworkGraph(networkContainer, results.network);
-        }
-
-        // Display results table
-        const tbody = document.getElementById('nma-results-body');
-        if (tbody && results.comparisons) {
-            let html = '';
-            results.comparisons.forEach(c => {
-                html += `<tr>
-                    <td>${c.comparison}</td>
-                    <td>${c.effect.toFixed(3)}</td>
-                    <td>${c.ci_lower.toFixed(3)} to ${c.ci_upper.toFixed(3)}</td>
-                    <td>${c.p_value < 0.05 ? '<span class="significant">*</span>' : ''}</td>
-                </tr>`;
-            });
-            tbody.innerHTML = html;
-        }
-
-        // Display forest plot
-        const forestContainer = document.getElementById('nma-forest-plot');
-        if (forestContainer && results.comparisons) {
-            this.renderForestPlot(forestContainer, results.comparisons, 'NMA Forest Plot');
-        }
-    }
-
-    // ============ PAIRWISE META-ANALYSIS ============
 
     async runMetaAnalysis() {
-        this.app.showLoading('Running Meta-Analysis...');
-        try {
-            const maData = this.getMADataFromInputs();
-            if (!maData || maData.length < 2) {
-                this.app.showToast('Please enter at least 2 studies', 'warning');
-                this.app.hideLoading();
-                return;
-            }
-
-            // Get analysis settings
-            const method = document.getElementById('ma-method')?.value || 'REML';
-            const useHKSJ = document.getElementById('ma-hksj')?.checked || false;
-
-            // Initialize meta-analysis engine
-            const maEngine = typeof MetaAnalysisMethods !== 'undefined' ? new MetaAnalysisMethods({ method, useHKSJ }) : null;
-            if (!maEngine) {
-                this.app.showToast('Meta-analysis engine not available', 'error');
-                this.app.hideLoading();
-                return;
-            }
-
-            const results = maEngine.analyze(maData);
-            this.displayMAResults(results);
-            this.app.hideLoading();
-            this.app.showToast('Meta-analysis completed', 'success');
-        } catch (e) {
-            this.app.hideLoading();
-            this.app.showToast(`Error: ${e.message}`, 'error');
-        }
+        if (!this.synthesis) return this.showUnavailableMethod('Advanced synthesis');
+        return this.synthesis.runMA();
     }
 
     getMADataFromInputs() {
-        const rows = document.querySelectorAll('#ma-data-body tr');
-        const studies = [];
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('input');
-            if (cells.length >= 3) {
-                const study = cells[0]?.value || '';
-                const effect = parseFloat(cells[1]?.value);
-                const se = parseFloat(cells[2]?.value);
-                if (study && !isNaN(effect) && !isNaN(se) && se > 0) {
-                    studies.push({ study, yi: effect, sei: se });
-                }
-            }
-        });
-        return studies;
+        return this.synthesis ? this.synthesis.pairwiseData().map(s => ({ ...s, yi: s.effect, sei: s.se })) : [];
     }
-
-    displayMAResults(results) {
-        // Update summary statistics
-        const summaryDiv = document.getElementById('ma-summary');
-        if (summaryDiv && results.pooled) {
-            summaryDiv.innerHTML = `
-                <div class="result-highlight">
-                    <span class="label">Pooled Effect</span>
-                    <span class="value">${results.pooled.effect.toFixed(3)}</span>
-                    <span class="ci">(${results.pooled.ci_lower.toFixed(3)} to ${results.pooled.ci_upper.toFixed(3)})</span>
-                </div>
-                <div class="stat-grid">
-                    <div class="stat"><span class="label">I²</span> ${(results.heterogeneity?.I2 * 100 || 0).toFixed(1)}%</div>
-                    <div class="stat"><span class="label">tau²</span> ${(results.heterogeneity?.tau2 || 0).toFixed(4)}</div>
-                    <div class="stat"><span class="label">Q</span> ${(results.heterogeneity?.Q || 0).toFixed(2)}</div>
-                </div>
-            `;
-        }
-
-        // Render forest plot
-        const forestContainer = document.getElementById('ma-forest-plot');
-        if (forestContainer && results.studies) {
-            this.renderForestPlot(forestContainer, results.studies, 'Forest Plot');
-        }
-    }
-
-    // ============ PUBLICATION BIAS ============
 
     async runPublicationBias() {
-        this.app.showLoading('Running Publication Bias Assessment...');
-        try {
-            const maData = this.getMADataFromInputs();
-            if (!maData || maData.length < 3) {
-                this.app.showToast('Need at least 3 studies for bias assessment', 'warning');
-                this.app.hideLoading();
-                return;
-            }
-
-            const maEngine = typeof MetaAnalysisMethods !== 'undefined' ? new MetaAnalysisMethods() : null;
-            if (!maEngine) {
-                this.app.showToast('Meta-analysis engine not available', 'error');
-                this.app.hideLoading();
-                return;
-            }
-
-            const pooled = maEngine.analyze(maData);
-            const egger = maEngine.eggerTest(maData);
-            const trimFill = maEngine.trimAndFill(maData);
-
-            this.displayPubBiasResults({ pooled, egger, trimFill, studies: maData });
-            this.app.hideLoading();
-            this.app.showToast('Publication bias assessment completed', 'success');
-        } catch (e) {
-            this.app.hideLoading();
-            this.app.showToast(`Error: ${e.message}`, 'error');
-        }
-    }
-
-    displayPubBiasResults(results) {
-        // Display Egger's test
-        const eggerDiv = document.getElementById('pb-egger-results');
-        if (eggerDiv && results.egger) {
-            const significant = results.egger.p < 0.05;
-            eggerDiv.innerHTML = `
-                <p>Intercept: ${results.egger.intercept.toFixed(3)} (SE: ${results.egger.se.toFixed(3)})</p>
-                <p>t = ${results.egger.t.toFixed(2)}, p = ${results.egger.p.toFixed(4)}</p>
-                <p class="${significant ? 'warning' : 'success'}">
-                    ${significant ? 'Evidence of asymmetry (potential publication bias)' : 'No significant asymmetry detected'}
-                </p>
-            `;
-        }
-
-        // Display trim and fill
-        const tfDiv = document.getElementById('pb-trimfill-results');
-        if (tfDiv && results.trimFill) {
-            tfDiv.innerHTML = `
-                <p>Studies imputed: ${results.trimFill.k0 || 0}</p>
-                <p>Original effect: ${results.pooled?.pooled?.effect?.toFixed(3) || 'N/A'}</p>
-                <p>Adjusted effect: ${results.trimFill.adjusted?.effect?.toFixed(3) || 'N/A'}</p>
-            `;
-        }
-
-        // Render funnel plot
-        const funnelContainer = document.getElementById('pb-funnel-plot');
-        if (funnelContainer && results.studies) {
-            this.renderFunnelPlot(funnelContainer, results.studies, results.pooled?.pooled?.effect);
-        }
+        if (!this.synthesis) return this.showUnavailableMethod('Advanced synthesis');
+        return this.synthesis.runBias();
     }
 
     // ============ HELPER CHART METHODS ============

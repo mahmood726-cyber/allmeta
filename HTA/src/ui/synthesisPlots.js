@@ -61,15 +61,16 @@
             const v=domain[0]+i*(domain[1]-domain[0])/4;
             mark(svg,'text',{x:x(v),y:y+18,'text-anchor':'middle',fill:'#172033','font-size':width<500?10:11},v.toFixed(2));
         }
-        mark(svg,'text',{x:left+span/2,y:y+38,'text-anchor':'middle',fill:'#172033','font-size':width<500?10:12},width<500?'Effect (input scale)':description);
+        const descriptions=width<500?description.split(';').map(s=>s.trim()):[description];
+        descriptions.forEach((text,i)=>mark(svg,'text',{x:left+span/2,y:y+38+i*13,'text-anchor':'middle',fill:'#172033','font-size':width<500?10:12},text));
         x.left=left; return x;
     }
-    function forest(parent, id, title, rows, pooled = null) {
+    function forest(parent, id, title, rows, pooled = null, description = 'Effect on the input analysis scale; 95% intervals') {
         const items = pooled ? [...rows, pooled] : rows;
         if (!items.length) { element('p', 'No estimable contrasts are available.', parent); return; }
         const svg = figure(parent,id,title,80+items.length*31);
         const domain = extent(items.flatMap(r=>[r.lo,r.hi]));
-        const x = axis(svg,domain,25+items.length*31,'Effect on the input analysis scale; 95% intervals');
+        const x = axis(svg,domain,25+items.length*31,description);
         mark(svg,'line',{x1:x(0),x2:x(0),y1:8,y2:20+items.length*31,stroke:'#94a3b8','stroke-dasharray':'4 3'});
         items.forEach((r,i)=>{
             const y=21+i*31;
@@ -171,5 +172,23 @@
         table(body,['Treatment','Fitted effect','95% lower','95% upper'],r.effects.map(e=>[e.treatment,fmt(e.mean),fmt(e.ci_lower),fmt(e.ci_upper)]));
     }
     function error(message) {const {body}=modal('hta-synthesis-error','Analysis could not be displayed','No substitute or previous-data plot is shown.');element('p',String(message),body);}
-    root.HTASynthesisPlots={pairwise,bias,nma,error,saveSVG};
+    // Reuse the same native plot geometry in persistent advanced panels.
+    function network(parent,id,title,data) {
+        const svg=figure(parent,id,title,360),nodes=data.nodes;
+        const positions=new Map(nodes.map((n,i)=>[n.id,{x:svg.viewBox.baseVal.width/2+svg.viewBox.baseVal.width*.23*Math.cos(i*2*Math.PI/nodes.length),y:175+120*Math.sin(i*2*Math.PI/nodes.length)}]));
+        for(const edge of data.edges){const a=positions.get(edge.treatment1),b=positions.get(edge.treatment2);mark(svg,'line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:'#64748b','stroke-width':Math.max(1,Math.sqrt(edge.nStudies)*3),'data-first':edge.treatment1,'data-second':edge.treatment2,'data-studies':edge.nStudies});}
+        for(const node of nodes){const p=positions.get(node.id);mark(svg,'circle',{cx:p.x,cy:p.y,r:12,fill:'#176b87','data-treatment':node.id});mark(svg,'text',{x:p.x,y:p.y+30,'text-anchor':'middle',fill:'#172033','font-size':12},node.id);}
+        svg.__plotData=copy(data); return svg;
+    }
+    function ranking(parent,id,title,scores) {
+        const svg=figure(parent,id,title,80+scores.length*30);
+        const width=svg.viewBox.baseVal.width,left=width<500?120:230,span=width-left-55;
+        scores.forEach((s,i)=>{
+            mark(svg,'text',{x:10,y:28+i*30,fill:'#172033','font-size':12},s.treatment.slice(0,width<500?15:40));
+            mark(svg,'rect',{x:left,y:14+i*30,width:s.pScore/100*span,height:17,fill:'#176b87','data-treatment':s.treatment,'data-pscore':s.pScore});
+            mark(svg,'text',{x:width-45,y:28+i*30,fill:'#172033','font-size':11},s.pScore.toFixed(1));
+        });
+        svg.__plotData=copy(scores); return svg;
+    }
+    root.HTASynthesisPlots={pairwise,bias,nma,error,saveSVG,forest,funnel,network,ranking,table};
 })(window);

@@ -4,9 +4,9 @@
 
 'use strict';
 
-const { KahanSum, StatUtils } = require('../../src/utils/mathUtils');
-
+const { KahanSum } = require('../../src/utils/kahan');
 global.KahanSum = KahanSum;
+const { StatUtils } = require('../../src/utils/mathUtils');
 global.StatUtils = StatUtils;
 
 const { MetaAnalysisMethods } = require('../../src/engine/metaMethods');
