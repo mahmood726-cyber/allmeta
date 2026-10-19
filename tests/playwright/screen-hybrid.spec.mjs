@@ -39,6 +39,7 @@ test('audit freezes a random sample, hides ranks and requires completion',async(
  await expect(page.locator('#hy-audit-card')).not.toContainText('score');await expect(page.locator('#hy-audit-status')).toContainText('0 / 2');
  await page.locator('#hy-audit-exclude').click();await expect(page.locator('#hy-audit-status')).toContainText('1 / 2');await page.locator('#hy-audit-include').click();
  await expect(page.locator('#hy-audit-status')).toContainText('Recall lower bound');
+ await expect(page.locator('#hy-audit-status')).toContainText('Title/abstract includes are provisional');
  await expect(page.locator('#hy-audit-card')).toContainText('Audit includes needing human follow-up');
  expect(await page.evaluate(()=>__almScreenpro.state().records.filter(r=>!r.r1.d).length)).toBe(2);
  await page.reload();await expect(page.locator('#hy-audit-status')).toContainText('Recall lower bound');

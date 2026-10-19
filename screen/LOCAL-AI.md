@@ -17,6 +17,8 @@ Freeze a prespecified sample of the remaining records after reconciling conflict
 
 For population size N, sample size n and x eligible sample records, the app inverts `P(X ≤ x | N, M, n)` to obtain an upper bound on the number M of eligible records in the frozen population. With F eligible records already found, the conservative recall lower bound is `F / (F + M_upper)`; newly discovered sample positives are not silently credited to the included set. Audit j uses alpha `0.05 / (j(j+1))`, summing to at most 0.05 across repeated audits. Only a completed sample with lower bound ≥0.95 supports the stated target under the assumptions.
 
+The bound concerns the **current stage’s decision labels**. Title/abstract includes mean provisional retention for full-text review; counting those as F does not establish recall of truly eligible final studies. Full-text audits concern report eligibility, with study-level reconciliation still manual. The interface states this distinction alongside every title/abstract bound.
+
 The assumptions matter: representative sampling without replacement, prespecified sample size, correct reference decisions, complete audit history, no selective seed/project resets and follow-up of sampled eligible records. This does not validate earlier exclusions, the search strategy, duplicate identification, or unseen databases. Identities cannot be enforced locally. It is a statistical aid, not prospective clinical validation or an instruction to auto-exclude the remainder. SciPy oracle and exhaustive small-population coverage tests check the implementation. The hypergeometric sampling rationale is described by [Callaghan and Müller-Hansen](https://pmc.ncbi.nlm.nih.gov/articles/PMC7700715/); the fixed-sample, alpha-spending implementation here is explicitly specified above. The previous rank-sorted stopping heuristic remains excluded from guidance.
 
 ## Benchmark evidence
@@ -25,7 +27,7 @@ See [the prespecified benchmark protocol](benchmark/PROTOCOL.md), [source manife
 
 ## Validation
 
-Local validation of this hybrid milestone: 108 browser/integration tests passed, 40 Python tests passed (including numerical oracles and model-asset checksums), and 14 Node workflow/core tests passed. The 2,500-record synthetic load/filter/render fixture took 162 ms, against an 8-second regression threshold; this is a one-machine synthetic check, not reviewer speed. Two datasets × three seeds × two engines were run, with seed 101 repeated for exact-order equality. Remote CI and Overmind are separate release gates; this document does not imply either passed.
+Local validation of this hybrid milestone: 108 browser/integration tests passed again after integration with current main, 40 Python tests passed (including numerical oracles and model-asset checksums), and 14 Node workflow/core tests passed. The 2,500-record synthetic load/filter/render fixture took 382 ms in that integration run (162 ms in the earlier run), against an 8-second regression threshold; these are one-machine synthetic checks, not reviewer speed. Two datasets × three seeds × two engines were run, with seed 101 repeated for exact-order equality. Remote CI and Overmind are separate release gates; this document does not imply either passed.
 
 Use the environment pinned in `screen/benchmark/requirements.txt`:
 
