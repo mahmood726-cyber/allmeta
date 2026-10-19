@@ -1,0 +1,57 @@
+name: HTA advanced synthesis
+on:
+  pull_request:
+    paths:
+      - 'HTA/**'
+      - 'shared/ma-core.js'
+      - 'tests/playwright/hta-*.mjs'
+      - '.github/workflows/hta-advanced-synthesis.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'HTA/**'
+      - 'shared/ma-core.js'
+      - 'tests/playwright/hta-*.mjs'
+      - '.github/workflows/hta-advanced-synthesis.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            HTA/package-lock.json
+            tests/playwright/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Independently regenerate and compare numerical references
+        run: |
+          python -m pip install numpy==2.3.5 scipy==1.17.0
+          python HTA/validation/advanced_synthesis_reference.py
+      - run: npm ci --ignore-scripts
+        working-directory: HTA
+      - name: Affected engine and UI unit regressions
+        working-directory: HTA
+        run: npx jest tests/engine/advancedSynthesisReference.test.js tests/engine/eggerTrimFillReference.test.js tests/engine/nma.test.js tests/engine/metaMethods.test.js tests/ui/advancedSynthesis.test.js tests/ui/advancedUI.test.js tests/ui/advancedUI2.test.js tests/ui/beginnerMode.test.js tests/ui/beginnerMode2.test.js --runInBand
+      - run: npm ci
+        working-directory: tests/playwright
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/playwright
+      - name: Advanced and preserved beginner workflows on desktop and mobile
+        working-directory: tests/playwright
+        run: npx playwright test --config hta-advanced.config.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hta-advanced-synthesis-evidence
+          path: |
+            tests/playwright/artifacts/hta-advanced-report.json
+            tests/playwright/test-results/
+          retention-days: 14

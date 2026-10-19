@@ -41,7 +41,11 @@
     }
     return files;
   }
+  // Known comparison kinds; anything else fails closed with an explicit reason
+  // rather than silently falling through to an absolute-difference test.
+  const KINDS = ['abs', 'rel', 'exact'];
   function compare(app, ref, kind, tol) {
+    if (!KINDS.includes(kind)) return { diff: Infinity, pass: false, reason: 'Unknown comparison kind: ' + String(kind) };
     if (kind === 'exact') {
       const pass = typeof app === typeof ref && ['string', 'boolean', 'number'].includes(typeof app) && app === ref && (typeof app !== 'number' || Number.isFinite(app));
       return { diff: pass ? 0 : Infinity, pass };
@@ -50,6 +54,7 @@
     const diff = app === null && ref === null ? 0 :
       typeof app === 'number' && typeof ref === 'number' && Number.isFinite(app) && Number.isFinite(ref) ?
         Math.abs(app - ref) / (kind === 'rel' ? Math.max(1, Math.abs(ref)) : 1) : Infinity;
+    if (typeof tol !== 'number' || !Number.isFinite(tol) || tol < 0) return { diff, pass: false, reason: 'Invalid tolerance: ' + String(tol) };
     return { diff, pass: Number.isFinite(diff) && diff <= tol };
   }
   function node(tag, text, parent) {
@@ -77,22 +82,26 @@
     if (mounts.has(el)) mounts.get(el)();
     el.replaceChildren();
     el.style.cssText = 'margin:1rem 0;padding:1rem;border:1px solid var(--border,#bbb);border-radius:8px;background:var(--panel,#fff);color:var(--ink,#15181d)';
-    node('h2', 'Independent validation', el);
+    node('h2', 'Validation checks', el);
+    node('p', 'Current-analysis comparison runs reference software on your data. Corpus replay runs the shipped JavaScript on published benchmark inputs against stored reference values; it does not run R or Python or validate your current data.', el);
     const controls = node('div', undefined, el);
+    const runtime = adapter.paper.referenceRuntime || 'R';
     let live;
     if (adapter.live) {
       live = node('button', 'Validate this analysis in R', controls); live.type = 'button';
+      if (adapter.live.scope) node('p', 'Live R scope: ' + adapter.live.scope, controls);
     } else {
-      live = node('a', 'R check available via the reproducible repo', controls);
+      node('p', 'Live ' + (adapter.paper.referenceRuntime || 'reference-software') + ' comparison is unavailable in this browser.', controls);
+      live = node('a', runtime + ' reference and re-execution', controls);
       live.href = adapter.paper.repoUrl; live.style.opacity = '0.75';
     }
-    const corpusButton = node('button', 'Re-run full validation', controls); corpusButton.type = 'button';
-    const status = node('p', 'Ready. Full validation replays the published reference corpus locally.', el);
+    const corpusButton = node('button', 'Replay published corpus (stored references)', controls); corpusButton.type = 'button';
+    const status = node('p', 'Ready. Corpus replay uses stored references; no reference software is executed.', el);
     status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
     const details = node('div', undefined, el);
     const results = node('div', undefined, el); results.style.overflowX = 'auto';
     const links = node('p', undefined, el);
-    for (const [label, url] of [[adapter.paper.runLabel || 'Full R re-execution (GitHub Actions)', adapter.paper.runUrl], ['Open Codespaces', adapter.paper.codespacesUrl], ['Reproducible repository', adapter.paper.repoUrl], ['Paper DOI', adapter.paper.doi && 'https://doi.org/' + adapter.paper.doi]]) {
+    for (const [label, url] of [[adapter.paper.runLabel || runtime + ' re-execution instructions / runs (GitHub Actions)', adapter.paper.runUrl], ['Open Codespaces', adapter.paper.codespacesUrl], ['Reproducible repository', adapter.paper.repoUrl], ['Paper DOI', adapter.paper.doi && 'https://doi.org/' + adapter.paper.doi]]) {
       if (!url) continue;
       const a = node('a', label, links); a.href = url; links.append(' · ');
     }
@@ -102,15 +111,16 @@
       const input = node('input', undefined, label); input.type = 'file'; input.multiple = true; input.accept = adapter.corpus.fileAccept || '.json';
       input.onchange = () => { selected = [...input.files]; cached = null; };
     }
-    function table(rows) {
+    function table(rows, referenceLabel = 'Live R') {
       results.replaceChildren();
       const t = node('table', undefined, results); t.style.cssText = 'width:100%;text-align:left;border-collapse:collapse';
       const head = node('tr', undefined, node('thead', undefined, t));
-      for (const h of ['Quantity', 'App', 'R', 'Difference', 'Tolerance', 'PASS/FAIL']) { const th = node('th', h, head); th.scope = 'col'; }
+      for (const h of ['Quantity', 'App', referenceLabel, 'Difference', 'Tolerance', 'PASS/FAIL']) { const th = node('th', h, head); th.scope = 'col'; }
       const body = node('tbody', undefined, t);
       for (const r of rows) {
         const tr = node('tr', undefined, body);
-        for (const v of [r.label || r.quantity || r.id, r.app, r.ref, r.diff, r.tol, r.pass ? 'PASS' : 'FAIL']) node('td', String(v), tr);
+        const label = r.label || [r.id, r.quantity].filter(Boolean).join(': ');
+        for (const v of [label, r.app, r.ref, r.diff, r.tol, r.pass ? 'PASS' : 'FAIL' + (r.reason ? ' (' + r.reason + ')' : '')]) node('td', v && typeof v === 'object' ? JSON.stringify(v) : String(v), tr);
       }
     }
     // currentState may refit/render (and write URL state), so never poll it.
@@ -184,15 +194,28 @@
         const start = performance.now(); status.textContent = 'Verifying corpus SHA-256 hashes…';
         const files = await prepare();
         const result = await adapter.corpus.run(files, (progress, total) => { status.textContent = typeof progress === 'object' ? progress.message : total ? progress + '/' + total : progress; });
-        if (!Number.isInteger(result.checks) || result.passed + result.failed.length !== result.checks) throw new Error('Invalid check accounting from adapter');
+        if (!result || !Array.isArray(result.failed)) throw new Error('Invalid corpus result from adapter');
+        // One failed check may carry several diagnostic rows. Render them before
+        // validating the accounting, so invalid accounting never hides evidence.
+        table(result.failed.map(f => ({ ...f, pass: false })), 'Stored reference');
+        const failedChecks = result.failedChecks ?? result.failed.length;
+        if (!Number.isInteger(result.checks) || result.checks < 0 || !Number.isInteger(result.passed) || result.passed < 0 ||
+          !Number.isInteger(failedChecks) || failedChecks < 0 || result.passed + failedChecks !== result.checks ||
+          failedChecks > result.failed.length || (failedChecks === 0 && result.failed.length > 0)) throw new Error('Invalid check accounting from adapter');
+        const coverageFails = result.coverageFails || [];
+        if (!Array.isArray(coverageFails)) throw new Error('Invalid coverage accounting from adapter');
         const expected = adapter.corpus.mode === 'quick' ? adapter.corpus.quickChecks : adapter.paper.checks;
         const countOK = result.checks === expected;
-        status.textContent = result.passed + '/' + result.checks + ' passed; ' + result.failed.length + ' failed. Paper: ' + adapter.paper.checks + ' checks.' + (adapter.corpus.mode === 'quick' ? ' Quick subset: ' + expected + ' checks; not full paper reproduction.' : '') + (countOK ? '' : ' FAIL: check count differs from selected scope.') + (result.displayFails && result.displayFails.length ? ' FAIL: rendered-number audit has failures.' : '');
-        node('p', 'Allmeta build ' + (global.AlmBuildInfo ? global.AlmBuildInfo.sha : 'unavailable') + '; elapsed ' + ((performance.now() - start) / 1000).toFixed(2) + ' s', details);
+        status.textContent = result.passed + '/' + result.checks + ' passed; ' + failedChecks + ' failed checks. Paper: ' + adapter.paper.checks + ' checks.' + (adapter.corpus.mode === 'quick' ? ' Quick subset: ' + expected + ' checks; not full paper reproduction.' : '') + (countOK ? '' : ' FAIL: check count differs from selected scope.') + (coverageFails.length ? ' FAIL: corpus coverage differs from the published contract.' : '') + (result.displayFails && result.displayFails.length ? ' FAIL: rendered-number audit has failures.' : '') + ' JavaScript replay against stored references; ' + runtime + ' not executed.';
+        node('p', 'Allmeta build stamp ' + (global.AlmBuildInfo ? global.AlmBuildInfo.sha : 'unavailable') + ' (generated metadata); elapsed ' + ((performance.now() - start) / 1000).toFixed(2) + ' s', details);
+        if (adapter.paper.referenceLabel) node('p', 'Stored reference: ' + adapter.paper.referenceLabel, details);
         for (const f of adapter.corpus.files) node('p', 'SHA-256 verified: ' + f.path + ' ' + f.sha256, details);
         for (const line of result.summaryLines || []) node('p', line, details);
         node('pre', 'Maxima: ' + JSON.stringify(result.maxima) + '\nRefusals: ' + JSON.stringify(result.refusals), details);
-        table(result.failed.length ? result.failed.map(f => ({ ...f, pass: false })) : [{ label: 'All numerical checks', app: result.passed, ref: expected, diff: Math.abs(result.checks - expected), tol: 0, pass: countOK }]);
+        const rows = [...result.failed, ...coverageFails].map(f => ({ ...f, pass: false }));
+        if (!countOK) rows.push({ label: 'Selected corpus scope: check count', app: result.checks, ref: expected, diff: Math.abs(result.checks - expected), tol: 0, pass: false });
+        if (result.displayFails && result.displayFails.length) rows.push(...result.displayFails.map(f => ({ label: 'Rendered-number audit', app: f, ref: 'Within display rounding tolerance', diff: null, tol: null, pass: false })));
+        table(rows.length ? rows : [{ label: 'Published corpus checks', app: result.passed, ref: expected, diff: 0, tol: 0, pass: true }], 'Stored reference');
         return result;
       });
     }
@@ -224,7 +247,7 @@
           for (const [pkg, version] of Object.entries(r.versions)) node('p', pkg + ' ' + version, details);
           for (const [pkg, version] of Object.entries(a.paperVersions || a.validatedVersions || adapter.paper.packageVersions || {})) if (r.versions[pkg] !== version) node('p', 'Validated version in the paper: ' + pkg + ' ' + version + '. Any differences beyond tolerance are reported as FAIL.', details);
           if (state.note) node('p', state.note, details);
-          table(rows); status.textContent = rows.filter(r => r.pass).length + '/' + rows.length + ' live R quantities passed.';
+          table(rows); status.textContent = rows.filter(r => r.pass).length + '/' + rows.length + ' live R quantities passed.' + (rows.some(r => !r.pass) ? ' FAIL: discrepancies exceed tolerance or quantities are unavailable.' : '');
           completedLive = true;
           return { rows, versions: r.versions };
         } catch (error) {

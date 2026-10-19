@@ -416,6 +416,7 @@
             border-radius: 12px;
             box-shadow: var(--shadow);
             min-height: 600px;
+            min-width: 0;
         }
 
         .content-header {
@@ -1211,6 +1212,23 @@
         }
     </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+
+    <style>
+        #section-meta-methods, #section-nma, #section-pub-bias { min-width: 0; }
+        .hta-synthesis-input textarea { width:100%; max-width:100%; padding:12px; font-family:monospace; resize:vertical; box-sizing:border-box; }
+        .hta-synthesis-input p { margin:12px 0; overflow-wrap:anywhere; }
+        .hta-synthesis-exports { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+        .hta-advanced-plot { width:100%; min-width:0; }
+        .hta-advanced-plot section { max-width:100%; }
+        .hta-synthesis-table { overflow-x:auto; }
+        #section-meta-methods .content-header, #section-nma .content-header { flex-wrap:wrap; gap:12px; }
+        #section-meta-methods .card, #section-nma .card, #section-pub-bias .card { min-width:0; }
+        @media (max-width:700px) {
+            .hta-synthesis-grid { grid-template-columns:minmax(0,1fr) !important; }
+            #section-meta-methods .content-body, #section-nma .content-body, #section-pub-bias .content-body { padding:12px; }
+            #section-meta-methods .content-header > div, #section-nma .content-header > div { display:flex; flex-wrap:wrap; gap:8px; }
+        }
+    </style>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -2365,29 +2383,37 @@
                     <div class="content-body">
                         <input type="file" id="nma-file-input" accept=".csv,.json" style="display: none;" aria-label="Network Meta-Analysis">
 
+
+                        <div class="card hta-synthesis-input" style="margin-bottom:24px;">
+                            <label for="nma-data-input"><strong>Study arms (CSV or JSON)</strong></label>
+                            <p>Exactly two distinct arms per independent study. Binary OR input: <code>study,treatment,n,events</code>. Continuous SMD input: <code>study,treatment,n,mean,sd</code>. JSON arrays or objects with a <code>studies</code> array are accepted. Multi-arm and time-to-event methods are unavailable in this panel.</p>
+                            <textarea id="nma-data-input" rows="7" aria-label="Network study arm data" placeholder="study,treatment,n,events&#10;Trial A,A,100,10&#10;Trial A,B,100,20&#10;Trial B,A,100,15&#10;Trial B,C,100,25"></textarea>
+                        </div>
+                        <p id="nma-analysis-message" role="status" aria-live="polite"></p>
+
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>NMA Settings</h4>
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 12px;">
+                            <div class="hta-synthesis-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>Model</label>
                                     <select id="nma-model" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Model">
-                                        <option value="random">Random Effects</option>
                                         <option value="fixed">Fixed Effects</option>
+                                        <option value="random" disabled>Random Effects — unavailable here</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Method</label>
                                     <select id="nma-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Method">
-                                        <option value="bayesian">Bayesian (MCMC)</option>
                                         <option value="frequentist">Frequentist</option>
+                                        <option value="bayesian" disabled>Bayesian — unavailable in this panel</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Outcome Type</label>
                                     <select id="nma-outcome" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Outcome Type">
-                                        <option value="binary">Binary (OR/RR)</option>
-                                        <option value="continuous">Continuous (MD)</option>
-                                        <option value="survival">Time-to-event (HR)</option>
+                                        <option value="binary">Binary (OR)</option>
+                                        <option value="continuous">Continuous (SMD, Hedges' g)</option>
+                                        <option value="survival" disabled>Time-to-event — unavailable</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
@@ -2397,20 +2423,11 @@
                                     </select>
                                 </div>
                             </div>
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
-                                <div class="info-item">
-                                    <label>MCMC Iterations</label>
-                                    <input type="number" id="nma-iterations" value="10000" min="1000" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="MCMC Iterations">
-                                </div>
-                                <div class="info-item">
-                                    <label>Burn-in</label>
-                                    <input type="number" id="nma-burnin" value="2000" min="100" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Burn-in">
-                                </div>
-                                <div class="info-item">
-                                    <label>Random Seed</label>
-                                    <input type="number" id="nma-seed" value="12345" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Random Seed">
-                                </div>
+                            <div class="info-item" style="margin-top:12px;">
+                                <label for="nma-direction">P-score ranking direction</label>
+                                <select id="nma-direction" aria-label="P-score ranking direction"><option value="higher">Higher outcome values preferred</option><option value="lower">Lower outcome values preferred</option></select>
                             </div>
+                            <p>MCMC controls are unavailable in this frequentist panel. Select the ranking direction for the clinical outcome before interpreting P-scores.</p>
                         </div>
 
                         <div id="nma-data-summary" class="card" style="display: none; margin-bottom: 24px;">
@@ -2429,10 +2446,13 @@
                         </div>
 
                         <div id="nma-results" style="display: none;">
+                            <p id="nma-model-description"></p>
+                            <div class="hta-synthesis-exports"><button class="btn btn-secondary" id="btn-export-nma-fit" disabled>Download network fit JSON</button><button class="btn btn-secondary" id="btn-export-nma-csv" disabled>Download network results CSV</button></div>
+                            <div class="hta-synthesis-table"><table class="data-table"><thead><tr><th>Treatment</th><th>Reference</th><th>Effect (analysis scale)</th><th>95% CI</th><th>SE</th><th>p-value</th></tr></thead><tbody id="nma-study-results-body"></tbody></table></div>
                             <!-- Network Plot -->
                             <div class="card" style="margin-bottom: 24px;">
                                 <h4>Network Geometry</h4>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px;">
+                                <div class="hta-synthesis-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px;">
                                     <div class="chart-container" style="height: 300px;">
                                         <canvas id="nma-network-chart"></canvas>
                                     </div>
@@ -2461,20 +2481,18 @@
 
                             <!-- SUCRA Rankings -->
                             <div class="card" style="margin-bottom: 24px;">
-                                <h4>Treatment Rankings (SUCRA/P-scores)</h4>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px;">
-                                    <table class="data-table">
+                                <h4>Treatment Rankings (P-scores)</h4>
+                                <div class="hta-synthesis-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px;">
+                                    <div class="hta-synthesis-table"><table class="data-table">
                                         <thead>
                                             <tr>
                                                 <th>Rank</th>
                                                 <th>Treatment</th>
-                                                <th>SUCRA</th>
                                                 <th>P-score</th>
-                                                <th>Mean Rank</th>
                                             </tr>
                                         </thead>
                                         <tbody id="nma-sucra-body"></tbody>
-                                    </table>
+                                    </table></div>
                                     <div class="chart-container" style="height: 250px;">
                                         <canvas id="nma-ranking-chart"></canvas>
                                     </div>
@@ -2503,7 +2521,7 @@
                                     <div class="tab" data-tab="heterogeneity">Heterogeneity</div>
                                 </div>
                                 <div class="tab-content active" id="tab-node-split">
-                                    <table class="data-table">
+                                    <div class="hta-synthesis-table"><table class="data-table">
                                         <thead>
                                             <tr>
                                                 <th>Comparison</th>
@@ -2515,9 +2533,10 @@
                                             </tr>
                                         </thead>
                                         <tbody id="nma-consistency-body"></tbody>
-                                    </table>
+                                    </table></div>
                                 </div>
                                 <div class="tab-content" id="tab-heterogeneity">
+                                    <p id="nma-heterogeneity-note"></p>
                                     <div class="summary-grid" style="grid-template-columns: repeat(4, 1fr);">
                                         <div class="summary-card">
                                             <div class="summary-card-label">I² (heterogeneity)</div>
@@ -2562,16 +2581,24 @@
                     <div class="content-body">
                         <input type="file" id="ma-file-input" accept=".csv,.json" style="display: none;" aria-label="Meta-Analysis Methods">
 
+
+                        <div class="card hta-synthesis-input" style="margin-bottom:24px;">
+                            <label for="ma-data-input"><strong>Study estimates (CSV or JSON)</strong></label>
+                            <p>One independent estimate per study: <code>study,effect,se,year</code> (year optional). JSON arrays or objects with a <code>studies</code> array are accepted; <code>yi,sei</code> are aliases for <code>effect,se</code>. OR, RR and HR estimates and SEs must already be on the natural-log scale. The selected measure describes the supplied estimates; no transformation is inferred.</p>
+                            <textarea id="ma-data-input" rows="7" aria-label="Pairwise study data" placeholder="study,effect,se,year&#10;Trial A,0.2,0.1,2020&#10;Trial B,0.5,0.2,2021"></textarea>
+                        </div>
+                        <p id="ma-analysis-message" role="status" aria-live="polite"></p>
+
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Analysis Settings</h4>
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 12px;">
+                            <div class="hta-synthesis-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 12px;">
                                 <div class="info-item">
                                     <label>τ² Estimation <button type="button" class="help-icon" onclick="showTauMethodHelp()" title="Click for guidance" aria-label="Help with tau-squared estimation method">ⓘ</button></label>
                                     <select id="ma-tau-method" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Analysis Settings">
                                         <option value="REML">REML (Recommended)</option>
                                         <option value="DL">DerSimonian-Laird</option>
                                         <option value="PM">Paule-Mandel</option>
-                                        <option value="EB">Empirical Bayes</option>
+                                        <option value="EB" disabled>Empirical Bayes — unavailable</option>
                                     </select>
                                     <small style="color: var(--text-muted); font-size: 11px; display: block; margin-top: 4px;">
                                         REML recommended for k≤20 studies. See Methods Appendix.
@@ -2604,27 +2631,27 @@
                                 </div>
                             </div>
                             <!-- Advanced Options Row -->
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px;">
+                            <div class="hta-synthesis-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px;">
                                 <div class="info-item">
                                     <label>HKSJ Adjustment</label>
                                     <select id="ma-hksj" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="HKSJ Adjustment">
-                                        <option value="true">Yes (Recommended)</option>
-                                        <option value="false">No</option>
+                                        <option value="false">No — normal intervals</option>
+                                        <option value="true" disabled>HKSJ — unavailable here</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>I² Confidence Interval</label>
                                     <select id="ma-i2-ci" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="I² Confidence Interval">
-                                        <option value="true">Yes</option>
                                         <option value="false">No</option>
+                                        <option value="true">Approximate 95% interval</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
                                     <label>Small-study Correction</label>
                                     <select id="ma-small-study" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Small-study Correction">
                                         <option value="none">None</option>
-                                        <option value="knha">Knapp-Hartung</option>
-                                        <option value="sj">Sidik-Jonkman</option>
+                                        <option value="knha" disabled>Knapp-Hartung — unavailable</option>
+                                        <option value="sj" disabled>Sidik-Jonkman — unavailable</option>
                                     </select>
                                 </div>
                                 <div class="info-item">
@@ -2632,7 +2659,7 @@
                                     <select id="ma-pub-bias" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;" aria-label="Publication Bias Test">
                                         <option value="egger">Egger's Test</option>
                                         <option value="begg">Begg's Test</option>
-                                        <option value="peters">Peters' Test</option>
+                                        <option value="peters" disabled>Peters' Test — unavailable for estimate/SE input</option>
                                         <option value="none">None</option>
                                     </select>
                                 </div>
@@ -2643,6 +2670,7 @@
                             <!-- Pooled Estimate -->
                             <div class="result-highlight">
                                 <label>Pooled Effect Estimate (Random Effects)</label>
+                                <p id="ma-model-description"></p>
                                 <div class="value" id="ma-pooled-effect">-</div>
                                 <div class="unit" id="ma-pooled-ci">-</div>
                             </div>
@@ -2682,6 +2710,12 @@
                                 </div>
                             </div>
 
+                            <div class="hta-synthesis-exports">
+                                <button class="btn btn-secondary" id="btn-export-ma-fit" disabled>Download pairwise fit JSON</button>
+                                <button class="btn btn-secondary" id="btn-export-ma-csv" disabled>Download pairwise results CSV</button>
+                            </div>
+                            <div class="hta-synthesis-table"><table class="data-table"><thead><tr><th>Study</th><th>Effect (analysis scale)</th><th>SE</th><th>Random-effects weight</th></tr></thead><tbody id="ma-study-body"></tbody></table></div>
+                            <p id="ma-bias-note"></p>
                             <!-- Forest Plot -->
                             <h4 style="margin: 24px 0 16px;">Forest Plot</h4>
                             <div class="chart-container" style="height: 400px;">
@@ -2690,7 +2724,7 @@
 
                             <!-- Heterogeneity Statistics -->
                             <h4 style="margin: 24px 0 16px;">Heterogeneity Statistics</h4>
-                            <table class="data-table">
+                            <div class="hta-synthesis-table"><table class="data-table">
                                 <thead>
                                     <tr>
                                         <th>Statistic</th>
@@ -2701,7 +2735,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="ma-heterogeneity-body"></tbody>
-                            </table>
+                            </table></div>
 
                             <!-- Sensitivity Analysis Tabs -->
                             <h4 style="margin: 24px 0 16px;">Sensitivity Analyses</h4>
@@ -2712,7 +2746,7 @@
                             </div>
 
                             <div class="tab-content active" id="tab-leave-one-out">
-                                <table class="data-table">
+                                <div class="hta-synthesis-table"><table class="data-table">
                                     <thead>
                                         <tr>
                                             <th>Study Excluded</th>
@@ -2723,11 +2757,11 @@
                                         </tr>
                                     </thead>
                                     <tbody id="ma-loo-body"></tbody>
-                                </table>
+                                </table></div>
                             </div>
 
                             <div class="tab-content" id="tab-influence">
-                                <table class="data-table">
+                                <div class="hta-synthesis-table"><table class="data-table">
                                     <thead>
                                         <tr>
                                             <th>Study</th>
@@ -2739,10 +2773,11 @@
                                         </tr>
                                     </thead>
                                     <tbody id="ma-influence-body"></tbody>
-                                </table>
+                                </table></div>
                             </div>
 
                             <div class="tab-content" id="tab-cumulative">
+                                <p id="ma-cumulative-note"></p>
                                 <div class="chart-container" style="height: 350px;">
                                     <canvas id="ma-cumulative-chart"></canvas>
                                 </div>
@@ -2758,13 +2793,15 @@
                         <button class="btn btn-primary" id="btn-run-pub-bias">Run Assessment</button>
                     </div>
                     <div class="content-body">
+                        <p>Uses the current study estimates and effect measure from the Meta-Analysis Methods panel.</p>
+                        <p id="pb-analysis-message" role="status" aria-live="polite"></p>
                         <div class="card" style="margin-bottom: 24px;">
                             <h4>Tests to Run</h4>
                             <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px;">
                                 <label><input type="checkbox" class="pub-bias-test" value="egger" checked aria-label="Egger&#x27;s Regression Test"> Egger's Regression Test</label>
                                 <label><input type="checkbox" class="pub-bias-test" value="begg" checked aria-label="Begg &amp; Mazumdar&#x27;s Rank Correlation"> Begg & Mazumdar's Rank Correlation</label>
                                 <label><input type="checkbox" class="pub-bias-test" value="trim-fill" checked aria-label="Trim and Fill"> Trim and Fill</label>
-                                <label><input type="checkbox" class="pub-bias-test" value="selection" checked aria-label="Selection Models"> Selection Models</label>
+                                <label><input type="checkbox" class="pub-bias-test" value="selection" disabled aria-label="Selection Models"> Selection Models — unavailable here</label>
                             </div>
                         </div>
 
@@ -2778,7 +2815,7 @@
                             <!-- Funnel Plot -->
                             <div class="card" style="margin-bottom: 24px;">
                                 <h4>Funnel Plot</h4>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px;">
+                                <div class="hta-synthesis-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px;">
                                     <div class="chart-container" style="height: 350px;">
                                         <canvas id="pub-bias-funnel-chart"></canvas>
                                     </div>
@@ -2809,7 +2846,7 @@
                             <!-- Trim and Fill -->
                             <div class="card" style="margin-bottom: 24px;">
                                 <h4>Trim and Fill Analysis</h4>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px;">
+                                <div class="hta-synthesis-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 12px;">
                                     <div class="chart-container" style="height: 350px;">
                                         <canvas id="trim-fill-chart"></canvas>
                                     </div>
@@ -2840,9 +2877,9 @@
                             <div class="card" style="margin-bottom: 24px;">
                                 <h4>Selection Model Analysis</h4>
                                 <p style="color: var(--text-muted); font-size: 13px; margin-top: 8px;">
-                                    Adjusts for p-value based publication selection using step functions at p=0.05, 0.01, 0.001
+                                    Selection models are unavailable in this panel; no adjusted model is fitted.
                                 </p>
-                                <table class="data-table" style="margin-top: 16px;">
+                                <div class="hta-synthesis-table"><table class="data-table" style="margin-top: 16px;">
                                     <thead>
                                         <tr>
                                             <th>Model</th>
@@ -2853,7 +2890,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="selection-model-body"></tbody>
-                                </table>
+                                </table></div>
                             </div>
 
                             <!-- Begg's Test -->
@@ -4452,6 +4489,7 @@
     <script src="src/engine/survival.js"></script>
     <script src="src/engine/des.js"></script>
     <script src="src/engine/nma.js"></script>
+    <script src="../shared/ma-core.js"></script>
     <script src="src/engine/metaMethods.js"></script>
     <script src="src/engine/reporting.js"></script>
     <script src="src/engine/advancedMeta.js"></script>
@@ -4464,7 +4502,9 @@
     <script src="src/engine/performanceWrapper.js"></script>
     <script src="src/engine/advancedPerformance.js"></script>
     <script src="src/ui/app.js"></script>
+    <script src="src/ui/advancedSynthesis.js"></script>
     <script src="src/ui/advancedUI.js"></script>
+    <script src="src/ui/synthesisPlots.js"></script>
     <script src="src/ui/beginnerMode.js"></script>
 
     <!-- World Class Features (v1.0) -->

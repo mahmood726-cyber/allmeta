@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Baseline replay uses git show at a pinned pre-GLMM commit.
+          # Baseline replay tests read pinned historical files with git show.
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:

@@ -876,160 +876,28 @@ describe('AdvancedFeaturesUI - Extended Coverage', () => {
         });
     });
 
-    // ==================== NMA ====================
-
-    describe('runNMA', () => {
-        test('shows warning when fewer than 2 studies', async () => {
-            // No rows in nma-data-body
-            await ui.runNMA();
-            expect(mockApp.showToast).toHaveBeenCalledWith(
-                expect.stringContaining('at least 2 studies'), 'warning'
-            );
+    // Real input and engine contracts are covered in advancedSynthesis tests.
+    describe('persistent synthesis delegation', () => {
+        test('dispatches analysis actions to the shared saved-fit controller', async () => {
+            ui.synthesis = { runMA: jest.fn(), runNMA: jest.fn(), runBias: jest.fn() };
+            await ui.runMetaAnalysis(); await ui.runNMA(); await ui.runPublicationBias();
+            expect(ui.synthesis.runMA).toHaveBeenCalledTimes(1);
+            expect(ui.synthesis.runNMA).toHaveBeenCalledTimes(1);
+            expect(ui.synthesis.runBias).toHaveBeenCalledTimes(1);
         });
-
-        test('shows error when engine not available', async () => {
-            // Add some rows to pass data check
-            const tbody = document.getElementById('nma-data-body');
-            for (let i = 0; i < 2; i++) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><input value="Study${i}" /></td>
-                    <td><input value="Treatment${i}" /></td>
-                    <td><input value="${0.5 + i}" /></td>
-                    <td><input value="0.1" /></td>
-                `;
-                tbody.appendChild(tr);
-            }
-            // No engine defined globally
-            await ui.runNMA();
-            expect(mockApp.showToast).toHaveBeenCalledWith('NMA engine not available', 'error');
+        test('keeps canonical and legacy fields aligned for dependent adapters', () => {
+            ui.synthesis = { pairwiseData: () => [{ study: 'Trial', effect: .8, se: .15 }] };
+            expect(ui.getMADataFromInputs()).toEqual([{ study: 'Trial', effect: .8, se: .15, yi: .8, sei: .15 }]);
         });
-    });
-
-    describe('getNMADataFromInputs', () => {
-        test('returns empty for no rows', () => {
-            expect(ui.getNMADataFromInputs()).toEqual([]);
+        test('passes validated arm-level input to network adapters', () => {
+            const arms = [{ study: 'S1', treatment: 'A', n: 100, events: 10 }, { study: 'S1', treatment: 'B', n: 100, events: 20 }];
+            ui.synthesis = { networkData: () => arms };
+            expect(ui.getNMADataFromInputs()).toEqual(arms);
         });
-
-        test('parses NMA rows correctly', () => {
-            const tbody = document.getElementById('nma-data-body');
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><input value="Smith2020" /></td>
-                <td><input value="DrugA" /></td>
-                <td><input value="0.5" /></td>
-                <td><input value="0.1" /></td>
-            `;
-            tbody.appendChild(tr);
-
-            const data = ui.getNMADataFromInputs();
-            expect(data.length).toBe(1);
-            expect(data[0].study).toBe('Smith2020');
-            expect(data[0].treatment).toBe('DrugA');
-            expect(data[0].effect).toBe(0.5);
-            expect(data[0].se).toBe(0.1);
-        });
-
-        test('skips rows with zero SE', () => {
-            const tbody = document.getElementById('nma-data-body');
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><input value="Study1" /></td>
-                <td><input value="Drug" /></td>
-                <td><input value="0.3" /></td>
-                <td><input value="0" /></td>
-            `;
-            tbody.appendChild(tr);
-            expect(ui.getNMADataFromInputs().length).toBe(0);
-        });
-    });
-
-    // ==================== Pairwise MA ====================
-
-    describe('runMetaAnalysis', () => {
-        test('shows warning with fewer than 2 studies', async () => {
+        test('explains missing controller instead of calling a nonexistent method', async () => {
+            ui.synthesis = null;
             await ui.runMetaAnalysis();
-            expect(mockApp.showToast).toHaveBeenCalledWith(
-                expect.stringContaining('at least 2 studies'), 'warning'
-            );
-        });
-
-        test('shows error when engine not available', async () => {
-            const tbody = document.getElementById('ma-data-body');
-            for (let i = 0; i < 2; i++) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><input value="Study${i}" /></td>
-                    <td><input value="${0.3 + i * 0.1}" /></td>
-                    <td><input value="0.1" /></td>
-                `;
-                tbody.appendChild(tr);
-            }
-            await ui.runMetaAnalysis();
-            expect(mockApp.showToast).toHaveBeenCalledWith('Meta-analysis engine not available', 'error');
-        });
-
-        test('runs engine and displays results', async () => {
-            const tbody = document.getElementById('ma-data-body');
-            for (let i = 0; i < 2; i++) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><input value="Study${i}" /></td>
-                    <td><input value="${0.3 + i * 0.1}" /></td>
-                    <td><input value="0.1" /></td>
-                `;
-                tbody.appendChild(tr);
-            }
-            global.MetaAnalysisMethods = jest.fn(() => ({
-                analyze: jest.fn().mockReturnValue({
-                    pooled: { effect: 0.35, ci_lower: 0.2, ci_upper: 0.5 },
-                    heterogeneity: { I2: 0.3, tau2: 0.01, Q: 2.5 },
-                    studies: [
-                        { study: 'Study0', effect: 0.3, se: 0.1 },
-                        { study: 'Study1', effect: 0.4, se: 0.1 }
-                    ]
-                })
-            }));
-
-            await ui.runMetaAnalysis();
-            expect(mockApp.showToast).toHaveBeenCalledWith('Meta-analysis completed', 'success');
-            const summary = document.getElementById('ma-summary').innerHTML;
-            expect(summary).toContain('0.350');
-            delete global.MetaAnalysisMethods;
-        });
-    });
-
-    describe('getMADataFromInputs', () => {
-        test('returns empty for no rows', () => {
-            expect(ui.getMADataFromInputs()).toEqual([]);
-        });
-
-        test('parses valid MA rows', () => {
-            const tbody = document.getElementById('ma-data-body');
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><input value="Jones2021" /></td>
-                <td><input value="0.8" /></td>
-                <td><input value="0.15" /></td>
-            `;
-            tbody.appendChild(tr);
-
-            const data = ui.getMADataFromInputs();
-            expect(data.length).toBe(1);
-            expect(data[0].study).toBe('Jones2021');
-            expect(data[0].yi).toBe(0.8);
-            expect(data[0].sei).toBe(0.15);
-        });
-    });
-
-    // ==================== Publication Bias ====================
-
-    describe('runPublicationBias', () => {
-        test('shows warning with fewer than 3 studies', async () => {
-            await ui.runPublicationBias();
-            expect(mockApp.showToast).toHaveBeenCalledWith(
-                expect.stringContaining('at least 3 studies'), 'warning'
-            );
+            expect(mockApp.showToast).toHaveBeenCalledWith('Advanced synthesis is not implemented in this build yet', 'warning');
         });
     });
 
@@ -1540,17 +1408,7 @@ describe('AdvancedFeaturesUI - Extended Coverage', () => {
                 threeLevel: jest.fn().mockReturnValue(mockResults)
             }));
 
-            // Add 3 MA data rows
-            const tbody = document.getElementById('ma-data-body');
-            for (let i = 0; i < 3; i++) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><input value="Study${i}" /></td>
-                    <td><input value="${0.3 + i * 0.1}" /></td>
-                    <td><input value="0.1" /></td>
-                `;
-                tbody.appendChild(tr);
-            }
+            ui.synthesis = { pairwiseData: () => [0, 1, 2].map(i => ({ study: `Study${i}`, effect: .3+i*.1, se: .1 })) };
 
             await ui.runThreeLevelMA();
             expect(mockApp.showToast).toHaveBeenCalledWith(
@@ -2056,67 +1914,6 @@ describe('AdvancedFeaturesUI - Extended Coverage', () => {
         });
     });
 
-    // ==================== displayPubBiasResults ====================
-
-    describe('displayPubBiasResults', () => {
-        test('renders Egger test results', () => {
-            const results = {
-                egger: { intercept: 1.5, se: 0.3, t: 5.0, p: 0.002 },
-                trimFill: { k0: 2, adjusted: { effect: 0.4 } },
-                pooled: { pooled: { effect: 0.5 } },
-                studies: [{ yi: 0.5, sei: 0.1 }]
-            };
-            ui.displayPubBiasResults(results);
-            const eggerHtml = document.getElementById('pb-egger-results').innerHTML;
-            expect(eggerHtml).toContain('1.500');
-            expect(eggerHtml).toContain('asymmetry');
-        });
-
-        test('renders trim-and-fill results', () => {
-            const results = {
-                egger: null,
-                trimFill: { k0: 3, adjusted: { effect: 0.45 } },
-                pooled: { pooled: { effect: 0.5 } },
-                studies: []
-            };
-            ui.displayPubBiasResults(results);
-            const tfHtml = document.getElementById('pb-trimfill-results').innerHTML;
-            expect(tfHtml).toContain('3');
-        });
-    });
-
-    // ==================== displayNMAResults ====================
-
-    describe('displayNMAResults', () => {
-        test('renders NMA results table', () => {
-            const results = {
-                comparisons: [
-                    { comparison: 'A vs B', effect: 0.5, ci_lower: 0.2, ci_upper: 0.8, p_value: 0.01 }
-                ]
-            };
-            ui.displayNMAResults(results);
-            const tbody = document.getElementById('nma-results-body');
-            expect(tbody.innerHTML).toContain('A vs B');
-            expect(tbody.innerHTML).toContain('0.500');
-        });
-    });
-
-    // ==================== displayMAResults ====================
-
-    describe('displayMAResults', () => {
-        test('renders MA summary', () => {
-            const results = {
-                pooled: { effect: 0.35, ci_lower: 0.2, ci_upper: 0.5 },
-                heterogeneity: { I2: 0.3, tau2: 0.01, Q: 2.5 },
-                studies: [{ study: 'S1', effect: 0.3, se: 0.1 }]
-            };
-            ui.displayMAResults(results);
-            const summary = document.getElementById('ma-summary').innerHTML;
-            expect(summary).toContain('0.350');
-            expect(summary).toContain('30.0');
-        });
-    });
-
     // ==================== displaySurvivalFitResults ====================
 
     describe('displaySurvivalFitResults', () => {
@@ -2184,5 +1981,70 @@ describe('AdvancedFeaturesUI - Extended Coverage', () => {
             ui.renderSurvivalComparisonChart();
             expect(Chart).not.toHaveBeenCalled();
         });
+    });
+});
+
+// ---- Publication bias through the REAL advanced pipeline (no mocked engines) ----
+// AdvancedFeaturesUI.runPublicationBias -> HTAAdvancedSynthesis.runBias ->
+// MetaAnalysisMethods.eggerTest / trimAndFill -> rendered summary cards.
+// Expected numbers: R 4.6.0 / metafor 5.0.1, recorded by
+// HTA/tests/reference/egger_trimfill_reference.R (regtest(model = "lm"),
+// trimfill(rma(method = "FE"), estimator = "L0")). Tolerance 1e-6.
+describe('AdvancedFeaturesUI - publication bias rendered from the real pipeline', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const oracle = require('../reference/egger_trimfill_oracle.json');
+    const { MetaAnalysisMethods } = require('../../src/engine/metaMethods');
+    const { HTAAdvancedSynthesis } = require('../../src/ui/advancedSynthesis');
+    const close = (actual, expected) => expect(Math.abs(actual - expected)).toBeLessThan(1e-6);
+    let ui, app;
+
+    beforeEach(() => {
+        const html = fs.readFileSync(path.join(__dirname, '../../index.html'), 'utf8');
+        const dom = new DOMParser().parseFromString(html, 'text/html');
+        document.body.replaceChildren(...['section-meta-methods', 'section-pub-bias'].map(id => dom.getElementById(id)));
+        global.MetaAnalysisMethods = MetaAnalysisMethods;
+        global.HTAAdvancedSynthesis = HTAAdvancedSynthesis;
+        require('../../src/ui/synthesisPlots');
+        app = createMockApp();
+        ui = new AdvancedFeaturesUI(app);
+        ui.synthesis = new HTAAdvancedSynthesis(app);
+    });
+    afterEach(() => { delete global.MetaAnalysisMethods; delete global.HTAAdvancedSynthesis; });
+
+    test.each(oracle.cases.map(c => [c.name, c]))('%s: Egger and trim-and-fill match metafor and are rendered', async (_name, c) => {
+        document.getElementById('ma-data-input').value = JSON.stringify(c.studies);
+        await ui.runPublicationBias();
+        expect(app.showToast).not.toHaveBeenCalledWith(expect.anything(), 'error');
+        const fit = ui.synthesis.fits.pb;
+
+        // Egger: classical intercept, its SE, t and two-sided p on k - 2 df.
+        close(fit.egger.intercept, c.egger.intercept);
+        close(fit.egger.se, c.egger.se);
+        close(fit.egger.t, c.egger.t);
+        close(fit.egger.pValue, c.egger.p);
+        expect(fit.egger.df).toBe(c.egger.df);
+        const text = id => document.getElementById(id).textContent;
+        expect(text('egger-intercept')).toBe(c.egger.intercept.toFixed(4));
+        expect(text('egger-se')).toBe(c.egger.se.toFixed(4));
+        expect(text('egger-pvalue')).toBe(c.egger.p.toFixed(4));
+
+        // Trim-and-fill (panel default: fixed-effect, L0 estimator).
+        const tf = c.trimfill.find(t => t.estimator === 'L0');
+        expect(fit.trimFill.nMissing).toBe(tf.k0);
+        expect(fit.trimFill.side).toBe(tf.side);
+        close(fit.trimFill.original.effect, tf.original);
+        close(fit.trimFill.adjusted.effect, tf.adjusted);
+        close(fit.trimFill.adjusted.ci_lower, tf.adjusted_ci_lower);
+        close(fit.trimFill.adjusted.ci_upper, tf.adjusted_ci_upper);
+        const imputed = fit.trimFill.imputedStudies.map(s => s.effect).sort((a, b) => a - b);
+        const expectedImputed = [...tf.imputed].sort((a, b) => a - b);
+        expect(imputed).toHaveLength(tf.k0);
+        imputed.forEach((v, i) => close(v, expectedImputed[i]));
+        expect(text('tf-imputed')).toBe(String(tf.k0));
+        expect(text('tf-original')).toBe(tf.original.toFixed(4));
+        expect(text('tf-adjusted')).toBe(tf.adjusted.toFixed(4));
+        expect(text('tf-change')).toBe((fit.trimFill.adjusted.effect - fit.trimFill.original.effect).toFixed(4));
+        close(fit.trimFill.adjusted.effect - fit.trimFill.original.effect, tf.adjusted - tf.original);
     });
 });

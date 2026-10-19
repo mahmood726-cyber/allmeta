@@ -1,0 +1,41 @@
+name: Screen workflow
+on:
+  pull_request:
+    paths: ['screen/**', 'extract/index.html', 'tests/playwright/**', '.github/workflows/screen-workflow.yml']
+  push:
+    branches: [main]
+    paths: ['screen/**', 'extract/index.html', 'tests/playwright/**', '.github/workflows/screen-workflow.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  screening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tests/playwright/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install pytest
+      - run: python -m pytest screen/tests -q -p no:cacheprovider
+      - run: node --test screen/tests/workflow.test.cjs
+      - run: npm ci
+        working-directory: tests/playwright
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/playwright
+      - run: node node_modules/@playwright/test/cli.js test --config screen-workflow.config.mjs
+        working-directory: tests/playwright
+        env:
+          CI: 'true'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screen-workflow-evidence
+          path: tests/playwright/test-results/
+          if-no-files-found: ignore

@@ -4,6 +4,9 @@
 
 'use strict';
 
+// Renderer dispatch is mocked here; actual SVG geometry is browser-tested.
+global.HTASynthesisPlots = { pairwise: jest.fn(), nma: jest.fn(), error: jest.fn() };
+
 // ---- Mock globals ----
 global.MetaAnalysisMethods = class {
     constructor() {}
@@ -41,6 +44,8 @@ function setupDOM() {
 // Set up DOM before require
 setupDOM();
 
+// index.html loads synthesisPlots.js before beginnerMode.js; mirror that order.
+require('../../src/ui/synthesisPlots');
 const { BeginnerMode } = require('../../src/ui/beginnerMode');
 
 describe('BeginnerMode', () => {

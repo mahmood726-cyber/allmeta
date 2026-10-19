@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://*.supabase.co; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
   <link rel="stylesheet" href="../shared/alm-task.css">
-  <meta name="description" content="Rayyan-class title/abstract screening, fully local: keyboard-driven cards, dual-reviewer with conflict resolution and Cohen's kappa, RIS/.nbib/CSV/JSON import, inline dedup, transparent local relevance ranking, customizable exclusion reasons and labels, and one-click PRISMA flow counts.">
+  <meta name="description" content="Local title/abstract and full-text screening, fully local: keyboard-driven cards, dual-reviewer with conflict resolution and Cohen's kappa, RIS/.nbib/CSV/JSON import, inline dedup, transparent local relevance ranking, customizable exclusion reasons and labels, and one-click PRISMA flow counts.">
   <meta name="color-scheme" content="light dark">
   <title>Screen — local citation screening</title>
   <style>
@@ -52,7 +52,7 @@
     label { display:block; margin-bottom:0.6rem; font-size:0.85rem; }
     label .lbl { display:block; margin-bottom:0.15rem; }
     label .hint { display:block; color:var(--muted); font-size:0.72rem; margin-top:0.1rem; }
-    input[type="text"],textarea,select {
+    input[type="text"],input[type="url"],textarea,select {
       width:100%; padding:0.4rem 0.55rem; border:1px solid var(--border);
       border-radius:6px; background:var(--input-bg); color:var(--ink); font:inherit; font-size:0.88rem;
     }
@@ -167,16 +167,29 @@
     .footer-note { margin:0; color:var(--muted); font-size:0.76rem; padding:0 clamp(1rem,3vw,3rem) 2rem; max-width:90ch; }
     .file-input-hidden { display:none; }
     .toggle { display:inline-flex; align-items:center; gap:0.35rem; font-size:0.84rem; }
+    .workflow-strip { padding:1rem clamp(1rem,3vw,3rem); background:var(--accent-soft); display:flex; gap:.7rem; align-items:center; flex-wrap:wrap; }
+    #workflow-status { flex-basis:100%; margin:0; font-weight:600; }
+    #save-status { font-size:.8rem; margin-left:auto; }
+    .full-text-evidence { padding:1rem; margin:1rem 0; border:1px solid var(--border-strong); border-radius:.6rem; }
+    .full-text-evidence input,.full-text-evidence textarea { width:100%; }
+    #history-panel { margin-top:1rem; } #audit-list { max-height:18rem; overflow:auto; padding-left:1.5rem; font-size:.85rem; }
+    :focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+    .conflict-row { flex-wrap:wrap; }
+    .screen-navigation { display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.6rem clamp(1rem,3vw,3rem); }
+    .screen-navigation #hub-back { position:static; }
+    body #alm-auth { position:static;transform:none;z-index:auto; }
+    @media(max-width:1000px){.layout>.cardwrap{grid-row:1;}.layout>aside{grid-row:2;}input[type="url"]{font-size:16px;}}
+    @media(max-width:640px){.workflow-strip>* { max-width:100%; } #save-status{margin-left:0;} .toolbar{position:static;} }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
 </head>
 <body>
-<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
+<nav class="screen-navigation" aria-label="Screen navigation"><a id="hub-back" href="../" aria-label="Back to allmeta hub">← allmeta</a><div id="alm-auth"></div></nav>
 
   <header>
     <h1>Screen <span style="font-size:0.8rem;color:var(--muted);font-weight:400;">· local citation screening</span></h1>
-    <p>Keyboard-driven title/abstract screening that runs entirely in your browser — no account, no upload. Import RIS / PubMed&nbsp;.nbib / CSV / JSON, screen one record at a time, run dual-reviewer with Cohen's&nbsp;&kappa; and conflict resolution, and push PRISMA counts straight into the flow generator.</p>
-    <details class="alm-task" open>
+    <p>Screen titles and abstracts, then assess retrieved full texts. Review independently, reconcile disagreements, and keep a dated history with your project backup. Local by default; AI assistance is optional.</p>
+    <details class="alm-task">
       <summary>What to do on this page — decide which records to include</summary>
       <div class="alm-task-body">
         <p>Read each record and decide whether it belongs in your review. <strong>This is a human judgement the tool cannot make for you.</strong></p>
@@ -208,9 +221,18 @@
     <button type="button" id="btn-prisma" class="primary" title="Write counts to prisma-flow-v1">→ PRISMA Flow</button>
     <button type="button" id="btn-help" title="Keyboard shortcuts">?</button>
     <button type="button" id="btn-reset">Reset</button>
-    <input type="file" id="file-import" class="file-input-hidden" accept=".ris,.txt,.nbib,.csv,.json,.bib,application/json,text/csv" aria-label="File import">
+    <input type="file" id="file-import" class="file-input-hidden" accept=".ris,.txt,.nbib,.csv,.json,application/json,text/csv" aria-label="File import">
   </div>
 
+  <div class="workflow-strip" aria-label="Review workflow">
+    <label for="f-stage">Screening stage</label>
+    <select id="f-stage"><option value="ta">1 · Title / abstract</option><option value="ft">2 · Full text</option></select>
+    <button type="button" id="btn-undo">Undo last decision</button>
+    <span id="workflow-summary"></span>
+    <span id="save-status" role="status" aria-live="polite">This browser only — export regular backups</span>
+    <button type="button" id="btn-recover" hidden>Download unreadable saved data</button>
+    <p id="workflow-status" role="status" aria-live="polite"></p>
+  </div>
   <main class="layout">
     <!-- LEFT: project setup -->
     <aside aria-label="Project setup">
@@ -241,7 +263,7 @@
 
       <section class="panel">
         <h2>Collaborate (serverless)</h2>
-        <p class="hint" style="margin-top:0">No backend needed: each reviewer screens locally and exchanges a small decisions file. Merging matches records by id → DOI → PMID → title, fills the other reviewer's column, and flags every disagreement as a conflict.</p>
+        <p class="hint" style="margin-top:0">Each reviewer screens locally and exchanges a stage-specific decisions file. Merge checks record identity and refuses differing existing decisions. Share the same project backup before starting. Blind mode hides peer decisions in the UI and ranking; it is not access control. A full backup contains all decisions.</p>
         <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
           <button type="button" id="btn-export-rev">Export my decisions</button>
           <button type="button" id="btn-merge-rev">Merge a reviewer file…</button>
@@ -293,7 +315,7 @@
           <label><span class="lbl">Sort</span>
             <select id="f-sort">
               <option value="order">Import order</option>
-              <option value="ml">ML relevance ↓</option>
+              <option value="ml">ML relevance ↓</option><option value="uncertainty">ML uncertainty first</option>
               <option value="relevance">Term score ↓</option>
               <option value="rct">RCT likelihood ↓</option>
               <option value="year">Year ↓</option>
@@ -310,12 +332,13 @@
 
       <section class="panel">
         <h2>Local ML ranking</h2>
-        <p class="hint" style="margin-top:0">Label a few records with <kbd>i</kbd>/<kbd>e</kbd>, then train an in-browser classifier (TF-IDF + Naive Bayes, ASReview's default ranker, with class-balanced weighting) to rank the rest by predicted relevance. Retrain after each small batch for continuous active learning. 100% local, no key, reproducible.</p>
+        <p class="hint" style="margin-top:0">Label a few records with <kbd>i</kbd>/<kbd>e</kbd>, then train an in-browser classifier (TF-IDF + Naive Bayes, with class-balanced weighting) to rank the rest by predicted relevance. Retrain after each small batch for continuous active learning. 100% local, no key, reproducible.</p>
 
+        <label class="toggle"><input id="f-auto-rank" type="checkbox"> Retrain after each 10 new decisions</label>
         <div id="ml-status" style="margin-top:0.5rem;font-size:0.82rem;color:var(--muted)">Not trained yet.</div>
         <div id="ml-terms" style="margin-top:0.5rem;font-size:0.76rem"></div>
         <div id="ml-perf" style="margin-top:0.4rem;font-size:0.76rem;color:var(--muted)"></div>
-        <p class="hint" style="margin-top:0.5rem">Features: unigrams + MeSH/keywords (TF-IDF). In dual-reviewer mode both reviewers' labels train the model. Held-out AUC is 5-fold cross-validated; the stopping rule is the buscar target-recall criterion (Callaghan &amp; Müller-Hansen 2020) — it reports the statistical confidence that 95% recall has been reached.</p>
+        <p class="hint" style="margin-top:0.5rem">Features: title/abstract unigrams + MeSH/keywords. Blind mode trains only on your labels; unblinded mode can use both reviewers. Scores are not calibrated probabilities. Cross-validation describes the labelled subset, not unseen-record recall. No automatic stopping or exclusion.</p>
       </section>
 
       <section class="panel">
@@ -373,15 +396,18 @@
         <span><kbd>u</kbd> undo</span><span><kbd>f</kbd> exit</span>
       </div>
       <div id="card-host" aria-live="polite"></div>
+      <details class="panel" id="history-panel"><summary>Decision history</summary><p class="hint">Dated local history; editable backup files are not signed or authenticated. Older imported decisions have no reconstructed history.</p><ol id="audit-list"></ol></details>
 
       <section class="panel" id="conflict-panel" style="display:none;margin-top:1rem;">
         <h2>Conflicts to resolve (<span id="conflict-count">0</span>)</h2>
+        <label for="adjudicator">Adjudicator name</label><input id="adjudicator" type="text" autocomplete="off">
+        <label for="adjudication-reason">Rationale / primary exclusion reason</label><textarea id="adjudication-reason"></textarea>
         <div id="conflict-list"></div>
       </section>
     </section>
   </main>
 
-  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: DOI exact + trigram-Jaccard title similarity (≥0.85), with a multi-field assist (relaxed title threshold when first-author surname AND year both match) that catches reformatted titles and same-work/different-DOI duplicates. Candidate pairs come from blocking + a sorted-neighbourhood window, so it stays fast into the 100k-record range instead of the old O(n²) pass; earliest-imported record wins. Agreement: Cohen's &kappa; over records both reviewers decided. Effective decision in dual mode: resolved &gt; agreement &gt; conflict. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
+  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: DOI exact + trigram-Jaccard title similarity (≥0.85), with a multi-field assist (relaxed title threshold when first-author surname AND year both match) that catches reformatted titles and same-work/different-DOI duplicates. Candidate pairs come from blocking + a sorted-neighbourhood window, to reduce pair comparisons; this upgrade does not claim measured 100k-record throughput; earliest-imported record wins. Agreement: Cohen's &kappa; over records both reviewers decided. Effective decision in dual mode: adjudication, agreement, conflict, or pending until both reviewers decide. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
 
   <!-- Help modal -->
   <div class="modal-bg" id="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
@@ -409,6 +435,7 @@
   <script src="../shared/alm-auth-config.js"></script>
   <script src="../shared/alm-auth.js" defer></script>
   <script src="../shared/sr-collab-v1.js"></script>
+  <script src="workflow.js"></script>
   <script src="../shared/rct-classifier-v1.js"></script>
   <script src="assets/rct-classifier-weights-v1.js"></script>
   <script src="../hub/shared/analysis-lifecycle.js"></script>
@@ -416,6 +443,7 @@
   (function () {
     "use strict";
     var LS_KEY = "screen-v1";
+    var W = window.ScreenWorkflow;
     var PRISMA_FLOW_KEY = "prisma-flow-v1";
     var SR_RECORDS_KEY = "sr-records-v1";
     var SR_PROJECT_KEY = "sr-project-v1"; // Design protocol envelope (read for screening terms)
@@ -439,7 +467,7 @@
         reasons: DEFAULT_REASONS.slice(), labels: [],
         mode: "single", active: "r1", blind: false,
         filter: "all", sort: "order", kw: "",
-        cursor: 0, records: []
+        cursor: 0, records: [], stage: "ta", workflowVersion: 2, audit: [], autoRank: false, modelRun: null
       };
     }
 
@@ -665,7 +693,7 @@
         aiRationale: clean(r.aiRationale, 400),
         aiConfidence: (typeof r.aiConfidence === "number") ? r.aiConfidence : null
       };
-      return rec;
+      return W.normalize(rec, r);
     }
 
     function splitCSVLine(line) {
@@ -678,16 +706,16 @@
       out.push(cur); return out;
     }
     function parseCSVRecords(text) {
-      var lines = String(text).split(/\r?\n/).filter(function (l) { return l.trim() !== ""; });
+      var lines = W.csvRows(text);
       if (!lines.length) return [];
-      var header = splitCSVLine(lines[0]).map(function (h) { return h.trim().toLowerCase(); });
+      var header = lines[0].map(function (h) { return h.trim().toLowerCase(); });
       function idx(names) { for (var n = 0; n < names.length; n++) { var i = header.indexOf(names[n]); if (i >= 0) return i; } return -1; }
       var iT = idx(["title", "ti"]), iA = idx(["abstract", "ab"]), iAu = idx(["authors", "author", "au"]),
         iY = idx(["year", "py", "pubyear", "publication year"]), iJ = idx(["journal", "source", "jo", "publication"]),
         iD = idx(["doi"]), iId = idx(["id", "record id", "key", "refid"]), iP = idx(["pmid"]), iK = idx(["keywords", "kw"]);
       var recs = [], start = iT >= 0 ? 1 : 0, r, c;
       for (r = start; r < lines.length; r++) {
-        c = splitCSVLine(lines[r]); if (!c.length) continue;
+        c = lines[r]; if (!c.length) continue;
         function get(i) { return i >= 0 && i < c.length ? c[i].trim() : ""; }
         var rec;
         if (iT >= 0) {
@@ -770,7 +798,7 @@
             // prisma-screen-v1 style {records:[{id,title,tag1,...}]}
             return p.records.map(function (r) { return normalizeImported({ id: r.id, title: r.title, abstract: r.abstract, doi: r.doi, year: r.year, journal: r.journal, authors: r.authors }); });
           }
-        } catch (e) { /* fall through */ }
+        } catch (e) { throw new Error("Invalid JSON import: " + e.message); }
       }
       // RIS: starts with "TY  -"
       if (/^\s*TY\s\s?-\s/m.test(t)) return parseRIS(t);
@@ -786,9 +814,11 @@
     function addRecords(newRecs) {
       if (!newRecs.length) { toast("No records found in that file."); return; }
       // de-id-collision: ensure unique ids vs existing
-      var existing = {}; S.records.forEach(function (r) { existing[r.id] = 1; });
+      var existing = Object.create(null); S.records.forEach(function (r) { existing[r.id] = 1; });
       newRecs.forEach(function (r) { while (existing[r.id]) r.id = freshId(); existing[r.id] = 1; });
       S.records = S.records.concat(newRecs);
+      W.audit(S,"import",null,S.stage,null,{ids:newRecs.map(function(r){return r.id;})});
+      invalidateRanking();
       runDedup(); rescoreAll();
       var dups = S.records.filter(function (r) { return r.dup; }).length;
       toast("Imported " + newRecs.length + " record(s). " + (dups ? dups + " duplicate(s) flagged." : "No duplicates."));
@@ -796,15 +826,11 @@
     }
 
     // ---- effective decision / counts / kappa ----
-    function effDecision(r) {
-      if (r.dup) return "duplicate";
-      if (S.mode === "single") return r.r1.d || "";
-      if (r.resolved) return r.resolved;
-      var a = r.r1.d, b = r.r2.d;
-      if (a && b) return a === b ? a : "conflict";
-      return a || b || "";
-    }
-    function activeSlot(r) { return (S.mode === "dual" && S.active === "r2") ? r.r2 : r.r1; }
+    function effDecision(r) { return W.effective(r, S); }
+    function visibleDecision(r) { return W.visible(r, S); }
+    function activeSlot(r) { return W.stageData(r, S.stage)[reviewerSlotName()]; }
+    function stageRecords() { return S.records.filter(function(r) { return S.stage !== "ft" || W.effective(r,S,"ta") === "include"; }); }
+
     function isUndecidedForActive(r) {
       if (r.dup) return false;
       return !(activeSlot(r).d);
@@ -812,7 +838,7 @@
     function computeCounts(records) {
       var identified = records.length, duplicates = 0, included = 0, excluded = 0, maybe = 0, undecided = 0, conflict = 0;
       for (var i = 0; i < records.length; i++) {
-        var t = effDecision(records[i]);
+        var t = visibleDecision(records[i]);
         if (t === "duplicate") { duplicates++; continue; }
         if (t === "include") included++;
         else if (t === "exclude") excluded++;
@@ -820,11 +846,11 @@
         else if (t === "conflict") conflict++;
         else undecided++;
       }
-      var screened = identified - duplicates;
+      var screened = included + excluded;
       return { identified: identified, duplicates: duplicates, screened: screened, included: included, excluded: excluded, maybe: maybe, conflict: conflict, undecided: undecided };
     }
     function cohensKappa(records) {
-      var pairs = records.filter(function (r) { return !r.dup && r.r1.d && r.r2.d; });
+      var pairs = records.filter(function (r) { return !r.dup; }).map(function(r){return W.stageData(r,S.stage);}).filter(function(r){return r.r1.d && r.r2.d;});
       var n = pairs.length;
       if (n < 2) return null;
       var cats = {}; pairs.forEach(function (r) { cats[r.r1.d] = 1; cats[r.r2.d] = 1; });
@@ -847,9 +873,9 @@
     // ---- filtering / sorting ----
     function filteredRecords() {
       var f = S.filter, kw = (S.kw || "").toLowerCase().trim();
-      var out = S.records.filter(function (r) {
-        var t = effDecision(r);
-        if (f === "undecided" && !(t === "" && !r.dup)) return false;
+      var out = stageRecords().filter(function (r) {
+        var t = visibleDecision(r);
+        if (f === "undecided" && !isUndecidedForActive(r)) return false;
         if (f === "include" && t !== "include") return false;
         if (f === "exclude" && t !== "exclude") return false;
         if (f === "maybe" && t !== "maybe") return false;
@@ -860,7 +886,8 @@
         if (kw && (r.title + " " + r.abstract).toLowerCase().indexOf(kw) < 0) return false;
         return true;
       });
-      if (S.sort === "ml") out.sort(function (a, b) { return (b.mlScore == null ? -1 : b.mlScore) - (a.mlScore == null ? -1 : a.mlScore); });
+      if (S.sort === "uncertainty") out.sort(function(a,b){return (a.mlScore == null ? 2 : Math.abs(a.mlScore-0.5)) - (b.mlScore == null ? 2 : Math.abs(b.mlScore-0.5));});
+      else if (S.sort === "ml") out.sort(function (a, b) { return (b.mlScore == null ? -1 : b.mlScore) - (a.mlScore == null ? -1 : a.mlScore); });
       else if (S.sort === "relevance") out.sort(function (a, b) { return (b.score == null ? -1e9 : b.score) - (a.score == null ? -1e9 : a.score); });
       else if (S.sort === "rct") out.sort(function (a, b) { var ra = rctScore(a), rb = rctScore(b); return (rb == null ? -1 : rb) - (ra == null ? -1 : ra); });
       else if (S.sort === "year") out.sort(function (a, b) { return (parseInt(b.year, 10) || 0) - (parseInt(a.year, 10) || 0); });
@@ -888,20 +915,21 @@
     // real registry / PubMed / DOI page — nothing is fabricated; a button only shows
     // when that identifier was actually captured for the record.
     function ctgovUrlOf(r) {
-      if (r.ctgovUrl) return r.ctgovUrl;
-      if (r.nct) return "https://clinicaltrials.gov/study/" + r.nct;
-      if (/clinicaltrials\.gov/i.test(r.url || "")) return r.url;
+      if (r.ctgovUrl && /^https?:\/\/(www\.)?clinicaltrials\.gov\//i.test(r.ctgovUrl)) return r.ctgovUrl;
+      if (/^NCT\d{8}$/.test(r.nct || "")) return "https://clinicaltrials.gov/study/" + r.nct;
+      if (/^https?:\/\/(www\.)?clinicaltrials\.gov\//i.test(r.url || "")) return r.url;
       return "";
     }
     function recordLinksHtml(r) {
       var out = [];
       var ct = ctgovUrlOf(r);
-      var pm = r.pmid ? "https://pubmed.ncbi.nlm.nih.gov/" + String(r.pmid).replace(/\D/g, "") + "/" : "";
-      var doiUrl = r.doi ? "https://doi.org/" + String(r.doi).replace(/^doi:/i, "") : "";
+      var pm = /^\d+$/.test(r.pmid || "") ? "https://pubmed.ncbi.nlm.nih.gov/" + r.pmid + "/" : "";
+      var doiValue=String(r.doi || "").replace(/^doi:/i, "");
+      var doiUrl = /^10\.\d{4,9}\/\S+$/.test(doiValue) ? "https://doi.org/" + doiValue : "";
       if (ct) out.push('<a class="reclink ct" target="_blank" rel="noopener noreferrer" href="' + escapeHtml(ct) + '">↗ ClinicalTrials.gov' + (r.nct ? " (" + escapeHtml(r.nct) + ")" : "") + "</a>");
       if (pm) out.push('<a class="reclink pm" target="_blank" rel="noopener noreferrer" href="' + escapeHtml(pm) + '">↗ PubMed ' + escapeHtml(r.pmid) + "</a>");
       if (doiUrl) out.push('<a class="reclink doi" target="_blank" rel="noopener noreferrer" href="' + escapeHtml(doiUrl) + '">↗ DOI</a>');
-      if (!ct && !pm && !doiUrl && r.url) out.push('<a class="reclink" target="_blank" rel="noopener noreferrer" href="' + escapeHtml(r.url) + '">↗ Source</a>');
+      if (!ct && !pm && !doiUrl && /^https?:\/\//i.test(r.url || "")) out.push('<a class="reclink" target="_blank" rel="noopener noreferrer" href="' + escapeHtml(r.url) + '">↗ Source</a>');
       return out.length ? '<div class="reclinks">' + out.join("") + "</div>" : "";
     }
 
@@ -913,7 +941,8 @@
           "</div></div>";
         return;
       }
-      var t = effDecision(r);
+      var t = visibleDecision(r);
+      var data = W.stageData(r, S.stage);
       var meta = [];
       if (r.authors && r.authors.length) meta.push(escapeHtml(r.authors.slice(0, 6).join(", ")) + (r.authors.length > 6 ? " et al." : ""));
       var line2 = [];
@@ -923,18 +952,18 @@
       if (r.pmid) line2.push("PMID:" + escapeHtml(r.pmid));
 
       var badges = '<span class="badge b-src">' + escapeHtml(r.source) + "</span>";
-      if (r.mlScore != null) badges += '<span class="badge b-ml">ML ' + Math.round(r.mlScore * 100) + "%</span>";
+      if (r.mlScore != null && S.modelRun) badges += '<span class="badge b-ml">Rank score ' + Math.round(r.mlScore * 100) + "/100" + (S.modelRun.stale ? " (needs retraining)" : "") + "</span>";
       var rct = rctScore(r);
       if (rct != null) badges += '<span class="badge b-rct" title="Cold-start RCT likelihood from the offline classifier — a study-design signal before any screening decisions">RCT ' + Math.round(rct * 100) + "%</span>";
       if (r.score != null) badges += '<span class="badge b-score">term ' + r.score + "</span>";
       if (r.dup) badges += '<span class="badge b-dup">duplicate of ' + escapeHtml(r.dupOf || "?") + "</span>";
       if (r.score != null && r.score < 0 && !t && !r.dup) badges += '<span class="badge b-sugg">auto-exclude suggested</span>';
-      if (r.aiSuggestion) badges += '<span class="badge b-ai-' + r.aiSuggestion + '">AI: ' + r.aiSuggestion +
+      if (S.stage !== "ft" && r.aiSuggestion) badges += '<span class="badge b-ai-' + r.aiSuggestion + '">AI: ' + r.aiSuggestion +
         (r.aiConfidence != null ? " " + Math.round(r.aiConfidence * 100) + "%" : "") + "</span>";
       if (t) badges += decBadge(t);
-      if (S.mode === "dual") {
-        if (r.r1.d) badges += '<span class="badge b-dec-' + r.r1.d + '">R1: ' + r.r1.d + "</span>";
-        if (r.r2.d) badges += '<span class="badge b-dec-' + r.r2.d + '">R2: ' + r.r2.d + "</span>";
+      if (S.mode === "dual" && !S.blind) {
+        if (data.r1.d) badges += '<span class="badge b-dec-' + data.r1.d + '">R1: ' + data.r1.d + "</span>";
+        if (data.r2.d) badges += '<span class="badge b-dec-' + data.r2.d + '">R2: ' + data.r2.d + "</span>";
       }
 
       var slot = activeSlot(r);
@@ -959,13 +988,14 @@
         '<div class="badges">' + badges + "</div>" +
         absNote +
         '<div class="abstract' + (abEmpty ? " empty" : "") + '">' + (abEmpty ? abEmptyMsg : highlight(r.abstract)) + "</div>" +
-        (r.aiRationale ? '<p class="ai-rationale">AI rationale: ' + escapeHtml(r.aiRationale) + "</p>" : "") +
+        (S.stage !== "ft" && r.aiRationale ? '<p class="ai-rationale">AI rationale: ' + escapeHtml(r.aiRationale) + "</p>" : "") +
+        fullTextHtml(r) +
         '<div class="decbtns">' +
         '<button type="button" class="db-inc' + (slot.d === "include" ? " on" : "") + '" data-dec="include">Include <span class="kbd">i</span></button>' +
         '<button type="button" class="db-exc' + (slot.d === "exclude" ? " on" : "") + '" data-dec="exclude">Exclude <span class="kbd">e</span></button>' +
         '<button type="button" class="db-maybe' + (slot.d === "maybe" ? " on" : "") + '" data-dec="maybe">Maybe <span class="kbd">m</span></button>' +
         '<button type="button" class="db-dup' + (r.dup ? " on" : "") + '" data-dec="duplicate">Duplicate <span class="kbd">d</span></button>' +
-        (r.aiSuggestion ? '<button type="button" class="primary" id="btn-accept-ai">Accept AI: ' + r.aiSuggestion + ' <span class="kbd">a</span></button>' : "") +
+        (S.stage !== "ft" && r.aiSuggestion ? '<button type="button" class="primary" id="btn-accept-ai">Accept AI: ' + r.aiSuggestion + ' <span class="kbd">a</span></button>' : "") +
         "</div>";
 
       // reasons
@@ -996,6 +1026,7 @@
         "</div></div>";
 
       cardHost.innerHTML = html;
+      if ($("ft-save")) $("ft-save").onclick = function(){ action(function(){ W.evidence(S,r,{retrieval:$("ft-retrieval").value,url:$("ft-url").value,note:$("ft-note").value}); }); };
 
       // wire card buttons
       Array.prototype.forEach.call(cardHost.querySelectorAll("[data-dec]"), function (b) {
@@ -1023,19 +1054,19 @@
     }
 
     function renderStatsAndConflicts() {
-      var c = computeCounts(S.records);
+      var c = computeCounts(stageRecords());
       var cells = [
         ["Records", c.identified], ["Duplicates", c.duplicates], ["Screened", c.screened],
         ["Included", c.included], ["Excluded", c.excluded], ["Maybe", c.maybe]
       ];
-      if (S.mode === "dual") cells.push(["Conflicts", c.conflict]);
+      if (S.mode === "dual" && !S.blind) cells.push(["Conflicts", c.conflict]);
       cells.push(["Undecided", c.undecided]);
       statsEl.innerHTML = cells.map(function (kv) {
         return '<div class="stat"><span class="k">' + kv[0] + '</span><span class="v">' + kv[1] + "</span></div>";
       }).join("");
 
-      if (S.mode === "dual") {
-        var k = cohensKappa(S.records);
+      if (S.mode === "dual" && !S.blind) {
+        var k = cohensKappa(stageRecords());
         kappaEl.innerHTML = !k
           ? "Cohen's κ needs ≥2 records decided by both reviewers."
           : (k.degenerate
@@ -1044,13 +1075,14 @@
       } else kappaEl.innerHTML = "";
 
       // conflicts panel
-      if (S.mode === "dual") {
-        var conflicts = S.records.filter(function (r) { return effDecision(r) === "conflict"; });
+      if (S.mode === "dual" && !S.blind) {
+        var conflicts = stageRecords().filter(function (r) { return effDecision(r) === "conflict"; });
         conflictPanel.style.display = conflicts.length ? "" : "none";
         conflictCount.textContent = conflicts.length;
         conflictList.innerHTML = conflicts.map(function (r) {
+          var d = W.stageData(r,S.stage);
           return '<div class="conflict-row"><div class="ct" title="' + escapeHtml(r.title) + '">' +
-            escapeHtml(r.title.slice(0, 90)) + ' <span style="color:var(--muted)">(R1 ' + escapeHtml(r.r1.d) + " / R2 " + escapeHtml(r.r2.d) + ")</span></div>" +
+            escapeHtml(r.title.slice(0, 90)) + ' <span style="color:var(--muted)">(R1 ' + escapeHtml(d.r1.d) + " / R2 " + escapeHtml(d.r2.d) + ")</span></div>" +
             '<div><button type="button" class="db-inc" data-res-inc="' + escapeHtml(r.id) + '">Include</button> ' +
             '<button type="button" class="db-exc" data-res-exc="' + escapeHtml(r.id) + '">Exclude</button></div></div>';
         }).join("");
@@ -1070,22 +1102,34 @@
       barFill.style.width = VIEW.length ? ((S.cursor + 1) / VIEW.length * 100) + "%" : "0%";
       renderCard();
       renderStatsAndConflicts();
+      renderWorkflow();
     }
 
     // ---- actions ----
     function decide(val) {
       var r = currentRecord(); if (!r) return;
-      if (val === "duplicate") { r.dup = !r.dup; r.dupManual = r.dup; r.dupOf = r.dup ? "(manual)" : null; }
-      else { activeSlot(r).d = val; if (val !== "exclude") activeSlot(r).reason = ""; r.dup = false; r.dupManual = false; }
-      save(); render();
-      if (val !== "duplicate") autoAdvance();
+      if(val === "duplicate") {
+        action(function(){
+          var before={dup:r.dup,dupManual:r.dupManual,dupOf:r.dupOf};
+          r.dup=!r.dup; r.dupManual=r.dup; r.dupOf=r.dup ? "(manual)" : null;
+          W.audit(S,"duplicate",r,S.stage,before,{dup:r.dup,dupManual:r.dupManual,dupOf:r.dupOf});
+        }); return;
+      }
+      var cursor=S.cursor;
+      if(action(function(){ W.decide(S,r,val,activeSlot(r).reason); })) advanceAfterDecision(cursor,r.id);
     }
     function applyReason(i) {
-      var r = currentRecord(); if (!r || i < 0 || i >= S.reasons.length) return;
-      var slot = activeSlot(r);
-      slot.d = "exclude"; slot.reason = S.reasons[i]; r.dup = false;
-      save(); render(); autoAdvance();
+      var r=currentRecord(); if(!r || i<0 || i>=S.reasons.length)return;
+      var cursor=S.cursor;
+      if(action(function(){W.decide(S,r,"exclude",S.reasons[i]);})) advanceAfterDecision(cursor,r.id);
     }
+    function advanceAfterDecision(cursor,id) {
+      // A decided card may vanish from the undecided filter; stay on its successor.
+      if(!VIEW.some(function(r){return r.id===id;})){ S.cursor=Math.min(cursor,Math.max(0,VIEW.length-1)); render(); }
+      else autoAdvance();
+      scheduleRank();
+    }
+
     function toggleLabel(lb) {
       var r = currentRecord(); if (!r) return;
       var k = r.labels.indexOf(lb);
@@ -1093,15 +1137,13 @@
       save(); render();
     }
     function clearDecision() {
-      var r = currentRecord(); if (!r) return;
-      activeSlot(r).d = ""; activeSlot(r).reason = ""; r.resolved = "";
-      save(); render();
+      var r=currentRecord();if(r)action(function(){W.decide(S,r,"","");});
     }
-    function resolveConflict(id, val) {
-      var r = null; for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) { r = S.records[i]; break; }
-      if (!r) return;
-      r.resolved = val; save(); render();
+    function resolveConflict(id,val) {
+      var r=S.records.find(function(r){return r.id===id;});if(!r)return;
+      action(function(){W.resolve(S,r,val,$("adjudication-reason").value,$("adjudicator").value);});
     }
+
     function move(d) {
       if (!VIEW.length) return;
       S.cursor = Math.min(VIEW.length - 1, Math.max(0, S.cursor + d));
@@ -1125,22 +1167,23 @@
     }
 
     // ---- persistence ----
+    var unreadableSavedData=null;
     function save() {
+      if(unreadableSavedData!==null){$("save-status").textContent="Saving blocked: download unreadable saved data, then restore a valid backup or explicitly reset.";return false;}
       S._savedAt = new Date().toISOString();
-      try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {}
+      try { localStorage.setItem(LS_KEY, JSON.stringify(S)); $("save-status").textContent="Saved in this browser"; return true; } catch (e) { $("save-status").textContent="NOT SAVED — export a JSON backup now. " + e.message; return false; }
     }
     function load() {
       try {
         var raw = localStorage.getItem(LS_KEY);
         if (!raw) return false;
-        var p = JSON.parse(raw);
-        if (p && p._schema === LS_KEY && Array.isArray(p.records)) {
-          S = Object.assign(blankState(), p);
-          S.records = p.records.map(normalizeImported);
-          // preserve decisions from stored (normalizeImported keeps r1/r2/resolved/labels/dup)
-          return true;
-        }
-      } catch (e) {}
+        S = validatedProject(JSON.parse(raw));
+        return true;
+      } catch (e) {
+        unreadableSavedData=raw || "";
+        $("btn-recover").hidden=false;
+        workflowMessage("Saved project could not be read. Its original data is preserved; download it before restoring or resetting. "+e.message);
+      }
       return false;
     }
 
@@ -1154,6 +1197,7 @@
       S.mode = $("f-dual").checked ? "dual" : "single";
       S.active = $("f-active").value;
       S.blind = $("f-blind").checked;
+      S.stage = $("f-stage").value; S.autoRank = $("f-auto-rank").checked;
       S.filter = $("f-filter").value;
       S.sort = $("f-sort").value;
       S.kw = $("f-kw").value;
@@ -1168,15 +1212,27 @@
       $("f-dual").checked = S.mode === "dual";
       $("f-active").value = S.active || "r1";
       $("f-blind").checked = !!S.blind;
+      $("f-stage").value=S.stage || "ta"; $("f-auto-rank").checked=!!S.autoRank;
       $("f-filter").value = S.filter || "all";
       $("f-sort").value = S.sort || "order";
       $("f-kw").value = S.kw || "";
       $("dual-controls").style.display = S.mode === "dual" ? "" : "none";
     }
     function onSetupChange() {
+      var before=[S.mode,S.active,S.blind,S.stage];
       pullSetupToState();
-      rescoreAll();
-      save(); render();
+      if(before[0]!==S.mode && S.mode==="dual") { S.blind=true; $("f-blind").checked=true; }
+      if(before[3]!=="ft" && S.stage==="ft" && (W.flow(S).pendingScreen || (S.mode==="dual" && S.blind))) {
+        S.stage="ta";$("f-stage").value="ta";
+        workflowMessage("Complete title/abstract decisions and unblind the team before opening full text. Re-enable blind mode for independent full-text screening.");
+      }
+      var after=[S.mode,S.active,S.blind,S.stage];
+      if(JSON.stringify(before)!==JSON.stringify(after)) {
+        W.audit(S,"review-settings",null,S.stage,before,after);
+        invalidateRanking(); S.cursor=0;
+      }
+      if(S.mode==="dual" && S.blind && S.filter==="conflict") { S.filter="undecided"; $("f-filter").value=S.filter; }
+      rescoreAll(); save(); render();
     }
 
     // ---- exports ----
@@ -1192,6 +1248,7 @@
       // excluded so legitimate negative numbers (e.g. a negative term_score)
       // are not corrupted into a text cell "'-4". See rules/lessons.md.
       if (/^[=+@\t\r]/.test(v)) v = "'" + v;
+      if (/^-/.test(v) && !/^-\d+(\.\d+)?([eE][+-]?\d+)?$/.test(v)) v="'"+v;
       return '"' + v.replace(/"/g, '""') + '"';
     }
     function exportJSON() {
@@ -1199,20 +1256,22 @@
       downloadBlob(new Blob([JSON.stringify(out, null, 2)], { type: "application/json" }), "screen-project.json");
     }
     function exportCSV() {
-      var header = ["id", "title", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "rct_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate"];
+      if (S.mode === "dual" && S.blind) { workflowMessage("Turn off blind mode before exporting combined decisions, or export your own reviewer file."); return; }
+      var header = ["id", "title", "abstract", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "rct_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate", "ta_decision", "ft_decision", "ft_r1", "ft_r2", "ft_reason_r1", "ft_reason_r2", "ft_resolution", "ft_retrieval", "ft_url", "ft_note"];
       var rows = S.records.map(function (r) {
         var rct = rctScore(r);
-        return [r.id, r.title, (r.authors || []).join("; "), r.year, r.journal, r.doi, r.pmid,
+        return [r.id, r.title, r.abstract, (r.authors || []).join("; "), r.year, r.journal, r.doi, r.pmid,
           effDecision(r), r.r1.d, r.r2.d, r.resolved, (r.r1.reason || r.r2.reason || ""),
           (r.labels || []).join("; "), (r.score == null ? "" : r.score),
           (r.mlScore == null ? "" : r.mlScore.toFixed(4)), (rct == null ? "" : rct.toFixed(4)), r.aiSuggestion || "",
           (r.aiConfidence == null ? "" : r.aiConfidence), r.aiRationale || "",
-          r.dup ? "1" : ""].map(csvCell).join(",");
+          r.dup ? "1" : "", W.effective(r,S,"ta"), W.effective(r,S,"ft"), r.fullText.r1.d, r.fullText.r2.d, r.fullText.r1.reason, r.fullText.r2.reason, r.fullText.resolution ? r.fullText.resolution.reason : "", r.fullText.retrieval, r.fullText.url, r.fullText.note].map(csvCell).join(",");
       });
       downloadBlob(new Blob([[header.map(csvCell).join(",")].concat(rows).join("\n")], { type: "text/csv;charset=utf-8" }), "screen-decisions.csv");
     }
     function exportRIS() {
-      var inc = S.records.filter(function (r) { return effDecision(r) === "include"; });
+      if(S.mode === "dual" && S.blind){workflowMessage("Turn off blind mode to export final includes.");return;}
+      var inc = S.records.filter(function (r) { return W.effective(r,S,"ft") === "include"; });
       if (!inc.length) { toast("No included records to export."); return; }
       var ris = inc.map(function (r) {
         var lines = ["TY  - JOUR"];
@@ -1228,90 +1287,89 @@
       downloadBlob(new Blob([ris], { type: "application/x-research-info-systems" }), "screen-includes.ris");
     }
     function pushPrisma() {
-      var c = computeCounts(S.records);
-      // Records still in progress (undecided / maybe / conflict) are folded into the
-      // "excluded at screening" box so the flow numbers reconcile. That is only
-      // correct once screening is COMPLETE — make the composition explicit and warn
-      // if it is not, so undecided records are never silently reported as excluded.
-      var pending = c.maybe + c.conflict + c.undecided;
-      var breakdownBits = ["Excluded at title/abstract (n=" + c.excluded + ")"];
-      if (c.maybe) breakdownBits.push("maybe (n=" + c.maybe + ")");
-      if (c.conflict) breakdownBits.push("unresolved conflicts (n=" + c.conflict + ")");
-      if (c.undecided) breakdownBits.push("not yet screened (n=" + c.undecided + ")");
-      var payload = {
-        db: c.identified, reg: 0, removed: c.duplicates,
-        removedBreakdown: "Duplicates flagged in Screen (n=" + c.duplicates + ")",
-        screened: c.screened, excludedScreen: c.excluded + pending,
-        sought: c.included, notRetrieved: 0, assessed: c.included,
-        excludedEligible: 0, excludedBreakdown: breakdownBits.join("; "),
-        studies: c.included, reports: c.included,
-        title: (S.title || "Screen") + " (" + new Date().toISOString().slice(0, 10) + ")"
-      };
-      try {
-        localStorage.setItem(PRISMA_FLOW_KEY, JSON.stringify(payload));
-        if (pending) toast("Pushed to PRISMA Flow — but " + pending + " record(s) are still undecided/maybe/conflict and are counted as excluded. Finish screening for accurate counts.");
-        else toast("Pushed counts to PRISMA Flow. Open ../prisma-flow/index.html to render the diagram.");
-      } catch (e) { toast("Could not save: " + e.message); }
+      var c=W.flow(S);
+      if(S.mode==="dual" && S.blind){workflowMessage("Turn off blind mode before exporting team counts.");return;}
+      if(!c.identified || c.pendingScreen || c.pendingFull){workflowMessage("Finish title/abstract and full-text screening before publishing PRISMA counts. Pending work is never counted as excluded.");return;}
+      var payload={db:c.identified,reg:0,removed:c.duplicates,removedBreakdown:"Duplicates flagged in Screen",
+        screened:c.screened,excludedScreen:c.excludedScreen,sought:c.sought,notRetrieved:c.notRetrieved,assessed:c.assessed,
+        excludedEligible:c.excludedFull,excludedBreakdown:Object.keys(c.reasons).map(function(k){return k+" (n="+c.reasons[k]+")";}).join("; "),
+        studies:c.included,reports:c.included,title:S.title || "Screen"};
+      try{localStorage.setItem(PRISMA_FLOW_KEY,JSON.stringify(payload));workflowMessage("PRISMA counts saved. Counts are reports; reconcile multiple reports of the same study in PRISMA Flow before publication.");}
+      catch(e){workflowMessage("Could not save PRISMA counts: "+e.message);}
     }
 
     // ================= collaboration (serverless reviewer exchange) =================
     function reviewerSlotName() { return (S.mode === "dual" && S.active === "r2") ? "r2" : "r1"; }
-    function exportReviewerState() {
-      var who = reviewerSlotName();
-      var decisions = S.records.filter(function (r) { return !r.dup; }).map(function (r) {
-        var slot = who === "r2" ? r.r2 : r.r1;
-        return { id: r.id, doi: r.doi, pmid: r.pmid, title: r.title, d: slot.d, reason: slot.reason, labels: (r.labels || []).slice() };
-      }).filter(function (d) { return d.d; });
-      if (!decisions.length) { toast("No decisions to export yet — screen a few records first."); return; }
-      var env = { _schema: "sr-reviewer-v1", _savedAt: new Date().toISOString(), reviewer: who, project: S.title || "", count: decisions.length, decisions: decisions };
-      downloadBlob(new Blob([JSON.stringify(env, null, 2)], { type: "application/json" }), "screen-reviewer-" + who + ".json");
-      toast("Exported " + decisions.length + " " + who.toUpperCase() + " decision(s). Share this file; your collaborator merges it.");
+    function reviewerEnvelope() {
+      var who=reviewerSlotName();
+      var decisions=stageRecords().filter(function(r){return !r.dup;}).map(function(r){
+        var d=W.stageData(r,S.stage)[who];
+        return {id:r.id,doi:r.doi,pmid:r.pmid,title:r.title,d:d.d,reason:d.reason,at:d.at};
+      }).filter(function(d){return d.d;});
+      return {_schema:"sr-reviewer-v1",workflowVersion:2,stage:S.stage || "ta",reviewer:who,project:S.title || "",count:decisions.length,decisions:decisions};
     }
+    function exportReviewerState() {
+      var env=reviewerEnvelope();
+      downloadBlob(new Blob([JSON.stringify(env,null,2)],{type:"application/json"}),"screen-"+env.stage+"-"+env.reviewer+".json");
+      workflowMessage("Exported this reviewer's decisions for the current stage.");
+    }
+
     function buildMatchIndex() {
-      var ix = { byId: {}, byDoi: {}, byPmid: {}, byTitle: {} };
+      var ix = { byId: Object.create(null), byDoi: Object.create(null), byPmid: Object.create(null), byTitle: Object.create(null) };
+      function add(map,key,r){if(!key)return;map[key]=map[key]===undefined ? r : null;}
       S.records.forEach(function (r) {
-        ix.byId[r.id] = r;
-        var d = (r.doi || "").toLowerCase(); if (d && !ix.byDoi[d]) ix.byDoi[d] = r;
-        if (r.pmid && !ix.byPmid[String(r.pmid)]) ix.byPmid[String(r.pmid)] = r;
-        var nt = normTitle(r.title); if (nt && !ix.byTitle[nt]) ix.byTitle[nt] = r;
+        if(r.dup)return;
+        add(ix.byId,String(r.id),r);
+        add(ix.byDoi,(r.doi || "").toLowerCase(),r);
+        add(ix.byPmid,String(r.pmid || ""),r);
+        add(ix.byTitle,normTitle(r.title),r);
       });
       return ix;
     }
     function matchIncoming(d, ix) {
-      if (d.id && ix.byId[d.id]) return ix.byId[d.id];
-      var doi = (d.doi || "").toLowerCase(); if (doi && ix.byDoi[doi]) return ix.byDoi[doi];
-      if (d.pmid && ix.byPmid[String(d.pmid)]) return ix.byPmid[String(d.pmid)];
-      var nt = normTitle(d.title || ""); if (nt && ix.byTitle[nt]) return ix.byTitle[nt];
+      var keys=[[ix.byId,d.id],[ix.byDoi,String(d.doi||"").replace(/^https?:\/\/(dx\.)?doi\.org\//i,"").toLowerCase()],[ix.byPmid,d.pmid],[ix.byTitle,normTitle(d.title||"")]];
+      for(var i=0;i<keys.length;i++){
+        var key=keys[i][1],map=keys[i][0];if(!key)continue;
+        if(map[key]===null)throw Error("Ambiguous record match: "+key);
+        if(map[key])return map[key];
+      }
       return null;
     }
     // Pure, testable merge of an incoming sr-reviewer-v1 payload into the project.
-    function mergeReviewerState(payload, into) {
-      if (!payload || !Array.isArray(payload.decisions)) throw new Error("not a reviewer file (missing decisions[])");
-      var slotName = into;
-      if (!slotName || slotName === "auto") {
-        // Honour the file's declared reviewer (these ARE that reviewer's decisions);
-        // if undeclared, drop them into whichever slot the local reviewer is NOT using.
-        slotName = (payload.reviewer === "r1" || payload.reviewer === "r2") ? payload.reviewer : (S.active === "r1" ? "r2" : "r1");
-      }
-      if (slotName !== "r1" && slotName !== "r2") slotName = "r2";
-      var ix = buildMatchIndex();
-      var res = { slot: slotName, incoming: payload.decisions.length, matched: 0, unmatched: 0, filled: 0, conflicts: 0 };
-      payload.decisions.forEach(function (d) {
-        if (!d) return;
-        var r = matchIncoming(d, ix);
-        if (!r) { res.unmatched++; return; }
-        res.matched++;
-        if (["include", "exclude", "maybe"].indexOf(d.d) < 0) return;
-        var slot = slotName === "r2" ? r.r2 : r.r1;
-        var other = slotName === "r2" ? r.r1 : r.r2;
-        slot.d = d.d; slot.reason = clean(d.reason, 200) || "";
-        if (Array.isArray(d.labels)) d.labels.forEach(function (lb) { lb = clean(lb, 120); if (lb && r.labels.indexOf(lb) < 0) r.labels.push(lb); });
-        res.filled++;
-        if (other.d && other.d !== slot.d) res.conflicts++;
+    function mergeReviewerState(payload,into) {
+      if(!payload || payload._schema!=="sr-reviewer-v1" || !Array.isArray(payload.decisions))throw Error("Not a supported reviewer file.");
+      var stage=payload.stage || "ta";
+      if(stage!=="ta" && stage!=="ft")throw Error("Unknown screening stage.");
+      var who=into && into!=="auto" ? into : (payload.reviewer || (S.active==="r1" ? "r2":"r1"));
+      if(who!=="r1" && who!=="r2")throw Error("Invalid reviewer slot.");
+      var ix=buildMatchIndex(), seen=new Set(), plan=[];
+      var result={slot:who,incoming:payload.decisions.length,matched:0,unmatched:0,filled:0,conflicts:0,unchanged:0};
+      payload.decisions.forEach(function(d){
+        if(!d || !dec(d.d))throw Error("Invalid decision in reviewer file.");
+        if(d.at && !Number.isFinite(Date.parse(d.at)))throw Error("Invalid reviewer decision timestamp.");
+        var r=matchIncoming(d,ix);
+        if(!r){result.unmatched++;return;}
+        // Refuse ambiguous matches or same-id/different-bibliography collisions.
+        var doi=function(v){return String(v||"").replace(/^https?:\/\/(dx\.)?doi\.org\//i,"").toLowerCase();};
+        if((d.doi && r.doi && doi(d.doi)!==doi(r.doi)) || (d.pmid && r.pmid && String(d.pmid)!==String(r.pmid)) || (d.title && normTitle(d.title)!==normTitle(r.title) && !(d.doi && r.doi && doi(d.doi)===doi(r.doi)) && !(d.pmid && r.pmid && String(d.pmid)===String(r.pmid))))throw Error("Conflicting record identity: "+r.id);
+        if(!d.id && !d.doi && !d.pmid && S.records.filter(function(x){return normTitle(x.title)===normTitle(d.title);}).length!==1)throw Error("Ambiguous title match.");
+        if(seen.has(r.id))throw Error("Repeated record in reviewer file: "+r.id); seen.add(r.id);result.matched++;
+        var slot=W.stageData(r,stage)[who];
+        if(slot.d){
+          if(slot.d===d.d && slot.reason===String(d.reason||"")){result.unchanged++;return;}
+          throw Error("Existing "+who+" decision differs for "+r.id+". Review and clear it explicitly before importing a revision.");
+        }
+        if(stage==="ft" && (W.effective(r,{mode:"dual"},"ta")!=="include" || r.fullText.retrieval!=="retrieved"))throw Error("Full-text import requires title/abstract consensus and retrieved evidence.");
+        if(stage==="ft" && d.d==="exclude" && !String(d.reason||"").trim())throw Error("Full-text exclusions require a reason.");
+        plan.push({r:r,d:d});
       });
-      S.mode = "dual"; // an incoming second opinion makes this a dual-reviewer project
-      return res;
+      // All rows are checked before any decision changes (atomic validation).
+      if(S.mode!=="dual")S.blind=true;
+      S.mode="dual";
+      plan.forEach(function(p){ W.decide(S,p.r,p.d.d,p.d.reason,{reviewer:who,stage:stage,imported:true,at:p.d.at});result.filled++;if(W.effective(p.r,S,stage)==="conflict")result.conflicts++; });
+      invalidateRanking(); return result;
     }
+
     function onMergeReviewerFile(file) {
       var rd = new FileReader();
       rd.onload = function () {
@@ -1325,6 +1383,7 @@
           pushStateToSetup(); save(); render();
           var msg = "Merged into " + res.slot.toUpperCase() + ": " + res.filled + " decision(s) across " + res.matched + " matched record(s)" +
             (res.unmatched ? ", " + res.unmatched + " unmatched" : "") + (res.conflicts ? " — " + res.conflicts + " conflict(s) to resolve." : ".");
+          if(S.blind)msg="Reviewer file merged. Team results remain hidden in blind mode.";
           $("merge-status").textContent = msg; toast(msg);
         } catch (e) { var em = "Merge failed: " + e.message; $("merge-status").textContent = em; toast(em); }
       };
@@ -1361,7 +1420,8 @@
     function publishToFolder() {
       if (!folderHandle) return;
       var who = reviewerSlotName();
-      var env = SrCollab.buildReviewerEnvelope(who, S.records, S.title, new Date().toISOString());
+      if(S.stage==="ft"){folderStatus("Use Export my decisions / Merge for full-text decisions; shared-folder files are title/abstract only.");return;}
+      var env = reviewerEnvelope();
       if (!env.count) { folderStatus("No decisions yet — screen a few records first."); return; }
       SrCollab.publishReviewer(folderHandle, env).then(function (name) {
         folderStatus("Published " + env.count + " " + who.toUpperCase() + " decision(s) to " + name + " — if this folder is synced, your desktop client uploads it.");
@@ -1373,35 +1433,37 @@
       SrCollab.pullFolder(folderHandle).then(function (payloads) {
         if (!payloads.length) { folderStatus("No reviewer files in the folder yet — ask a collaborator to publish."); return; }
         var totFilled = 0, slots = [];
-        payloads.forEach(function (p) {
-          try { var res = mergeReviewerState(p, p.reviewer || "auto"); totFilled += res.filled; if (slots.indexOf(res.slot) < 0) slots.push(res.slot); } catch (e) {}
-        });
+        var backup=JSON.stringify(S);
+        try { payloads.forEach(function(p){var res=mergeReviewerState(p,p.reviewer || "auto");totFilled+=res.filled;if(slots.indexOf(res.slot)<0)slots.push(res.slot);}); }
+        catch(e){S=JSON.parse(backup);throw e;}
         runDedup(); rescoreAll(); pushStateToSetup(); save(); render();
         var sum = SrCollab.summarize(S.records);
         var msg = "Merged " + payloads.length + " reviewer file(s) [" + slots.map(function (s) { return s.toUpperCase(); }).join(", ") + "]: " + totFilled + " decision(s) filled; " + sum.consensusIncluded + " consensus include(s)" + (sum.conflicts ? ", " + sum.conflicts + " conflict(s) to resolve." : ".");
+        if(S.blind)msg="Reviewer files merged. Team results remain hidden in blind mode.";
         folderStatus(msg); toast(msg);
       }).catch(function (e) { folderStatus("Pull failed: " + e.message); });
     }
 
     // ---- example ----
     function loadExample() {
+      // Synthetic teaching material: no claimed publications, identifiers or research results.
       var ex = [
-        { title: "Dapagliflozin in Patients with Heart Failure and Reduced Ejection Fraction (DAPA-HF)", abstract: "In this randomized, controlled trial, patients with HFrEF received dapagliflozin or placebo. The primary outcome of worsening heart failure or cardiovascular death was reduced. SGLT2 inhibition improved outcomes regardless of diabetes status.", authors: ["McMurray JJV", "Solomon SD"], journal: "N Engl J Med", year: "2019", doi: "10.1056/NEJMoa1911303", pmid: "31535829", nct: "NCT03036124", abstractSource: "PubMed/EuropePMC", source: "pubmed", keywords: ["heart failure", "SGLT2", "dapagliflozin"] },
-        { title: "A Study to Evaluate the Effect of Empagliflozin in Heart Failure With Preserved Ejection Fraction", abstract: "Brief Summary: This trial studies empagliflozin versus placebo in adults with chronic heart failure and a preserved ejection fraction. The primary endpoint is the composite of cardiovascular death or hospitalisation for heart failure.", authors: ["Boehringer Ingelheim"], journal: "Interventional · Completed", year: "2017", doi: "", nct: "NCT03057951", abstractSource: "ClinicalTrials.gov", source: "CT.gov", keywords: ["HFpEF", "empagliflozin"] },
-        { title: "Effect of SGLT2 inhibitors on cardiac remodeling in a murine model", abstract: "We studied the effect of SGLT2 inhibition in mice subjected to transverse aortic constriction. This in vitro and animal study examined molecular signaling pathways.", authors: ["Lee K", "Park J"], journal: "J Mol Cell Cardiol", year: "2020", doi: "10.1016/j.yjmcc.2020.01.002", source: "pubmed", keywords: ["animal", "in vitro"] },
-        { title: "Cost-effectiveness analysis of dapagliflozin for heart failure", abstract: "A health-economic model estimated the cost-effectiveness of dapagliflozin in HFrEF from a payer perspective. Incremental cost-effectiveness ratios are reported.", authors: ["Smith A"], journal: "PharmacoEconomics", year: "2021", doi: "10.1007/s40273-021-01010-z", source: "embase", keywords: ["cost-effectiveness"] },
-        { title: "Dapagliflozin in patients with heart failure and reduced ejection fraction", abstract: "Duplicate import of the DAPA-HF primary results from a second database.", authors: ["McMurray JJV"], journal: "NEJM", year: "2019", doi: "10.1056/NEJMoa1911303", source: "embase", keywords: [] },
-        { title: "Canagliflozin and Cardiovascular and Renal Events in Type 2 Diabetes (CANVAS)", abstract: "Randomized trial assessing canagliflozin versus placebo for cardiovascular and renal outcomes in type 2 diabetes. Heart failure hospitalization was a secondary endpoint.", authors: ["Neal B", "Perkovic V"], journal: "N Engl J Med", year: "2017", doi: "10.1056/NEJMoa1611925", source: "pubmed", keywords: ["canagliflozin", "diabetes"] },
-        { title: "A narrative review of cardiorenal protection with SGLT2 inhibitors", abstract: "This review summarizes mechanisms of cardiorenal protection. It is not a primary study and presents no new trial data.", authors: ["Jones P"], journal: "Curr Cardiol Rep", year: "2022", doi: "", source: "pubmed", keywords: ["review"] }
-      ];
+        {title:"Synthetic demo: heart failure randomized trial", abstract:"Demonstration only, not a published study. Imagine a randomized trial comparing an SGLT2 inhibitor with placebo in adults with heart failure.", keywords:["SGLT2","heart failure"]},
+        {title:"Synthetic demo: preserved ejection fraction trial", abstract:"Demonstration only, not a published study. Imagine a trial of empagliflozin versus placebo in adults with HFpEF. No results are supplied.", keywords:["HFpEF","empagliflozin"]},
+        {title:"Synthetic demo: murine cardiac experiment", abstract:"Demonstration only, not a published study. Imagine an animal experiment about molecular signaling in mice; use it to practise excluding a study design.", keywords:["animal","murine"]},
+        {title:"Synthetic demo: economic model", abstract:"Demonstration only, not a published study. Imagine a cost-effectiveness model rather than an original clinical trial.", keywords:["cost-effectiveness"]},
+        {title:"Synthetic demo: heart failure randomized trial", abstract:"Demonstration only. A deliberate duplicate of the first synthetic record to demonstrate title-based deduplication.", keywords:[]},
+        {title:"Synthetic demo: diabetes cardiovascular trial", abstract:"Demonstration only, not a published study. Imagine a randomized comparison of canagliflozin and placebo in diabetes; decide whether the population fits your protocol.", keywords:["canagliflozin","diabetes"]},
+        {title:"Synthetic demo: narrative cardiorenal review", abstract:"Demonstration only, not a published study. Imagine a narrative review presenting no original trial data.", keywords:["review"]}
+      ].map(function(r){r.source="synthetic demo";r.abstractSource="Synthetic teaching text, not a source abstract";return r;});
       S = blankState();
-      S.title = "SGLT2 inhibitors in heart failure (example)";
+      S.title = "Synthetic screening demonstration — not research evidence";
       S.incTerms = ["SGLT2", "dapagliflozin", "empagliflozin", "canagliflozin", "heart failure", "HFpEF", "HFrEF"];
       S.excTerms = ["animal", "in vitro", "murine", "cost-effectiveness", "review"];
       S.records = ex.map(normalizeImported);
       runDedup(); rescoreAll();
       pushStateToSetup(); save(); render();
-      toast("Example loaded: " + S.records.length + " records, duplicates flagged, relevance scored.");
+      toast("Synthetic demonstration loaded: " + S.records.length + " invented records. Do not use as research evidence.");
     }
 
     // ---- keyboard ----
@@ -1462,18 +1524,39 @@
     }
 
     // ---- import flow ----
+    function validatedProject(p) {
+      if(!p || p._schema!==LS_KEY || !Array.isArray(p.records))throw Error("Unsupported project backup.");
+      if(p.workflowVersion && p.workflowVersion!==2)throw Error("Unsupported workflow version.");
+      var ids=new Set();
+      p.records.forEach(function(r){if(!r || !r.id || ids.has(String(r.id)))throw Error("Missing or duplicate record ID in project backup.");ids.add(String(r.id));});
+      if(p.audit && (!Array.isArray(p.audit) || p.audit.some(function(e,i){return !e || e.seq!==i+1 || typeof e.action!=="string" || !Number.isFinite(Date.parse(e.at));})))throw Error("Invalid audit history.");
+      ['incTerms','excTerms','reasons','labels'].forEach(function(k){if(p[k]!==undefined && (!Array.isArray(p[k]) || p[k].some(function(v){return typeof v!=="string";})))throw Error("Invalid project settings: "+k);});
+      if(p.mode && !['single','dual'].includes(p.mode))throw Error("Invalid reviewer mode.");
+      if(p.stage && !['ta','ft'].includes(p.stage))throw Error("Invalid screening stage.");
+      var next=Object.assign(blankState(),p);next.records=p.records.map(normalizeImported);
+      next.stage=next.stage==="ft" ? "ft":"ta";next.mode=next.mode==="dual" ? "dual":"single";next.active=next.active==="r2" ? "r2":"r1";
+      return next;
+    }
+    function restoreProject(p) {
+      var next=validatedProject(p);
+      S=next; unreadableSavedData=null;$("btn-recover").hidden=true;invalidateRanking();rescoreAll();pushStateToSetup();save();render();
+    }
     function onFile(file) {
-      var rd = new FileReader();
-      rd.onload = function () {
-        try { addRecords(detectAndParse(String(rd.result), file.name)); }
-        catch (err) { toast("Import failed: " + err.message); }
-      };
-      rd.readAsText(file);
+      var rd=new FileReader();rd.onload=function(){try{
+        var text=String(rd.result), p=null;
+        if(/^[\s\uFEFF]*[\[{]/.test(text))p=JSON.parse(text.replace(/^\uFEFF/,""));
+        var project=p && p._schema==="sr-bundle-v1" ? p.screen:p;
+        if(project && project._schema===LS_KEY){
+          if(S.records.length && !confirm("Replace this browser's project with the backup? Export the current project first if you need to keep it."))return;
+          restoreProject(project);workflowMessage("Project restored in memory, including stage decisions and history. Check the save status; retrain ranking when needed.");
+        }else addRecords(detectAndParse(text,file.name));
+      }catch(e){workflowMessage("Import failed: "+e.message);}};rd.readAsText(file);
     }
 
     // ---- wire up ----
     function attach() {
       $("btn-import").addEventListener("click", function () { $("file-import").click(); });
+      $("btn-recover").onclick=function(){downloadBlob(new Blob([unreadableSavedData || ""],{type:"text/plain"}),"screen-unreadable-backup.txt");};
       $("file-import").addEventListener("change", function (e) {
         var f = e.target.files && e.target.files[0]; if (f) onFile(f); e.target.value = "";
       });
@@ -1485,7 +1568,8 @@
       $("btn-export-ris").addEventListener("click", exportRIS);
       $("btn-prisma").addEventListener("click", pushPrisma);
       $("btn-to-extract").addEventListener("click", function () {
-        var inc = S.records.filter(function (r) { return effDecision(r) === "include"; }).length;
+        if(S.mode==="dual" && S.blind){workflowMessage("Turn off blind mode before sending final includes to Extract.");return;}
+        var inc = S.records.filter(function (r) { return W.effective(r,S,"ft") === "include"; }).length;
         if (!inc) { toast("No included records to extract yet."); return; }
         save(); // screen-v1 is what Extract reads
         toast("Opening Extract with " + inc + " included record(s)…");
@@ -1506,14 +1590,16 @@
       $("help-modal").addEventListener("click", function (e) { if (e.target === $("help-modal")) closeHelp(); });
       $("btn-reset").addEventListener("click", function () {
         if (!confirm("Clear the whole project (records and decisions)?")) return;
+        unreadableSavedData=null;$("btn-recover").hidden=true;
         S = blankState(); pushStateToSetup(); save(); render();
       });
       ["f-title", "f-inc", "f-exc", "f-reasons", "f-labels"].forEach(function (id) { $(id).addEventListener("input", onSetupChange); });
-      ["f-dual", "f-active", "f-blind", "f-filter", "f-sort"].forEach(function (id) { $(id).addEventListener("change", onSetupChange); });
+      ["f-dual", "f-active", "f-blind", "f-filter", "f-sort", "f-stage", "f-auto-rank"].forEach(function (id) { $(id).addEventListener("change", onSetupChange); });
       $("f-kw").addEventListener("input", onSetupChange);
 
       // ML
       $("btn-train").addEventListener("click", onTrain);
+      $("btn-undo").onclick=function(){action(function(){var r=W.undo(S);S.filter="all";$("f-filter").value="all";VIEW=filteredRecords();S.cursor=Math.max(0,VIEW.indexOf(r));});};
       // AI assist
       $("ai-on").addEventListener("change", function () { $("ai-controls").style.display = this.checked ? "" : "none"; });
       $("ai-mode").addEventListener("change", function () {
@@ -1544,7 +1630,7 @@
     // ML_TF: "sublinear" (1+log tf, default) damps repeated-term dominance, the
     //   standard Salton TF for screening; "raw" = plain counts (pre-upgrade).
     // ML_MODEL_MODE: "ens" (default) averages logistic regression with a
-    //   complement-Naive-Bayes log-ratio scorer — NB is ASReview's strong default
+    //   complement-Naive-Bayes log-ratio scorer — NB is one supported local alternative
     //   and is very robust under heavy class imbalance, so the ensemble lifts the
     //   hardest low-prevalence sets; "lr"/"nb" select a single ranker (ablation).
     var ML_TF = "raw";
@@ -1628,7 +1714,7 @@
     }
     // Shared trainer. Builds (a) a class-balanced logistic regression and/or (b) a
     // multinomial Naive Bayes that matches scikit-learn's MultinomialNB on the tf-idf
-    // matrix (ASReview's default ranker): Laplace-smoothed log p(t|inc) − log p(t|exc)
+    // matrix (the existing local ranker): Laplace-smoothed log p(t|inc) − log p(t|exc)
     // per term, plus the class log-prior, with balanced sample weights folded into the
     // counts. NB is cheap to refit, which is what makes per-record (continuous) active
     // learning affordable — the lever that drives WSS@95. ML_MODEL_MODE selects nb / lr
@@ -1679,7 +1765,10 @@
     // Effective training label using BOTH reviewers (M-5 fix): resolved > agreement
     // > single decisive label. Conflicts and maybe/undecided contribute no label.
     function mlLabelDefault(r) {
-      if (r.dup) return null;
+      if (r.dup || !W.eligible(r,S)) return null;
+      var data=W.stageData(r,S.stage);
+      if(S.mode==="dual" && S.blind){var mine=data[S.active||"r1"].d;return mine==="include" ? 1 : mine==="exclude" ? 0:null;}
+      r=data;
       if (S.mode !== "dual") return r.r1.d === "include" ? 1 : r.r1.d === "exclude" ? 0 : null;
       if (r.resolved === "include") return 1;
       if (r.resolved === "exclude") return 0;
@@ -1791,36 +1880,30 @@
     // Live data-driven stopping signal over the ML-ranked order: how many records
     // the reviewer has screened, how many relevant were found, and the run of
     // consecutive non-relevant decisions since the last include (ASReview-style:
-    // a long irrelevant run high in the ranking ⇒ safe to stop near 95 % recall).
+    // descriptive only; this is not a validated stopping sequence.
     function mlStopping() {
-      var scored = S.records.filter(function (r) { return !r.dup && r.mlScore != null; });
-      scored.sort(function (a, b) { return b.mlScore - a.mlScore; });
-      var screened = 0, found = 0, since = 0, last = 0, i, seq = [];
-      for (i = 0; i < scored.length; i++) {
-        var d = effDecision(scored[i]);
-        if (d === "include" || d === "exclude" || d === "maybe") {
-          screened++; seq.push(d === "include" ? 1 : 0);
-          if (d === "include") { found++; last = screened; since = 0; } else since++;
-        }
-      }
-      // buscar p for H0("<95% recall"); <0.05 ⇒ statistically safe to stop.
-      var buscarP = (screened > 0 && scored.length > screened) ? mlBuscarP(seq, scored.length, 0.95) : 1;
-      return { total: scored.length, screened: screened, found: found, since: since, lastIncludeAt: last, buscarP: buscarP };
+      // Record-order / rank-order is not the order of screening actions. No recall claim.
+      var events=(S.audit||[]).filter(function(e){return e.action==="decision" && e.stage===S.stage && e.actor===reviewerSlotName();});
+      var found=0,screened=0,since=0;
+      events.forEach(function(e){var d=e.after[e.actor] && e.after[e.actor].d;if(d!=="include" && d!=="exclude")return;screened++;if(d==="include"){found++;since=0;}else since++;});
+      return {total:stageRecords().filter(function(r){return !r.dup;}).length,screened:screened,found:found,since:since,buscarP:null};
     }
+
     mlTrain = window.alm.analysisLifecycle(mlTrain, function (result) { return result && result.ok; }, '#f-dual', function () {
-      return [S.mode, S.records.map(function (r) { return [r.id, r.title, r.abstract, r.dup, r.r1, r.r2]; })];
+      return [S.mode,S.active,S.blind,S.stage,S.records.map(function(r){return [r.id,r.title,r.abstract,r.dup,r.r1,r.r2,r.fullText,r.resolved];})];
     });
     render = (function (original) {
       return function () { const result = original.apply(this, arguments); mlTrain.refresh(); return result; };
     })(render);
 
     function mlTrain() {
-      var res = mlTrainOn(S.records, mlLabelDefault, {});
+      var trainingRecords=stageRecords();
+      var res = mlTrainOn(trainingRecords, mlLabelDefault, {});
       if (!res.ok) return res;
       ML.model = res.model; ML.V = res.V; ML.trained = true;
       var ranked = 0;
       S.records.forEach(function (r) {
-        if (r.dup) { r.mlScore = null; return; }
+        if (!W.eligible(r,S)) { r.mlScore = null; return; }
         r.mlScore = mlPredict(r, res.model, res.V); ranked++;
       });
       // Per-term influence for the explainability panel: logistic-regression weights
@@ -1830,11 +1913,13 @@
       pairs.sort(function (a, b2) { return b2[1] - a[1]; });
       ML.topPos = pairs.slice(0, 12).filter(function (p) { return p[1] > 0; });
       ML.topNeg = pairs.slice(-12).reverse().filter(function (p) { return p[1] < 0; });
-      ML.cv = mlCrossVal(S.records, mlLabelDefault, 5);
+      ML.cv = mlCrossVal(trainingRecords, mlLabelDefault, 5);
+      S.modelRun={version:"screen-nb-v2",stage:S.stage,reviewer:S.mode==="dual" && S.blind ? S.active:"consensus",at:new Date().toISOString(),stale:false,config:{tf:ML_TF,mode:ML_MODEL_MODE,ngram:ML_NGRAM_MAX,alpha:ML_NB_ALPHA,balance:ML_BALANCE_RATIO,maxDf:ML_DF_MAX_FRAC},labels:mlCollectLabelled(trainingRecords,mlLabelDefault).map(function(p){return {id:p[0].id,label:p[1]};})};
+      W.audit(S,"ranking",null,S.stage,null,S.modelRun);
       return {
         ok: true, inc: res.pos, exc: res.neg, ranked: ranked, cv: ML.cv,
         msg: "Trained on " + res.pos + " includes / " + res.neg + " excludes (" +
-          (S.mode === "dual" ? "both reviewers" : "R1") + "); ranked " + ranked + " records" +
+          (S.mode === "dual" ? (S.blind ? S.active.toUpperCase()+" only" : "both reviewers") : "R1") + "); ranked " + ranked + " records" +
           (ML.cv ? "; 5-fold CV AUC " + ML.cv.auc.toFixed(2) : "") + "."
       };
     }
@@ -1852,26 +1937,17 @@
       } else { $("ml-terms").innerHTML = ""; $("ml-perf").innerHTML = ""; }
     }
     function renderMlPerf() {
-      var el = $("ml-perf"); if (!el) return;
-      if (!ML.trained) { el.innerHTML = ""; return; }
-      var bits = [];
-      if (ML.cv) bits.push('Held-out quality: <strong>5-fold CV AUC ' + ML.cv.auc.toFixed(2) + '</strong> (' + ML.cv.pos + ' incl / ' + ML.cv.neg + ' excl labelled). 1.0 = perfect ranking, 0.5 = chance.');
-      var st = mlStopping();
-      if (st.screened > 0) {
-        var stop = st.buscarP < 0.05;
-        bits.push('Stopping rule (buscar, 95% target): screened <strong>' + st.screened + '/' + st.total + '</strong> in rank order, found <strong>' + st.found + '</strong> relevant; <strong>' + st.since + '</strong> since the last include. ' +
-          'Confidence ≥95% recall reached: <strong>' + (st.buscarP <= 0 ? '>99.9' : (100 * (1 - st.buscarP)).toFixed(1)) + '%</strong>' +
-          (stop ? ' — <strong>statistically safe to stop</strong> (p&lt;0.05).' : ' — keep screening to reach the 95% confidence threshold.'));
-      } else {
-        bits.push('Stopping signal: screen down the ML ranking; this panel shows the relevant-found curve and the irrelevant run length so you can stop near 95% recall.');
-      }
-      el.innerHTML = bits.map(function (b) { return '<div style="margin-top:0.35rem">' + b + '</div>'; }).join("");
+      var el=$("ml-perf");if(!el)return;
+      if(!ML.trained || !S.modelRun || S.modelRun.stale){el.textContent="";return;}
+      el.textContent=(ML.cv ? "Cross-validation AUC on reviewer-labelled records: "+ML.cv.auc.toFixed(2)+". This is not a recall estimate for the unscreened pool. " : "")+
+        "Ranking scores are uncalibrated priorities. No statistical stopping recommendation is issued; finish screening or use a separately validated stopping protocol.";
     }
+
     // ---- deterministic active-learning simulation (benchmark harness) ----
     // Drives the SHIPPED mlBuildVocab / mlFit / mlPredict over a gold-labelled
     // corpus, mimicking a reviewer who screens the top-ranked batch, reveals the
     // truth, retrains, and repeats. Returns the recall curve + WSS@95 so the
-    // "matches/beats Rayyan-class tools" claim can be measured, not asserted.
+    // ranking regression can be measured without claiming competitor parity.
     function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
     function simulateActiveLearning(opts) {
       opts = opts || {};
@@ -1963,7 +2039,8 @@
     // ================= optional AI assist (default OFF) =================
     var AI_KEY_LS = "screen-ai-key";
     function aiUndecidedBatch(cap) {
-      return S.records.filter(function (r) { return !r.dup && !r.r1.d && !r.r2.d; }).slice(0, cap || 200);
+      if(S.stage==="ft")return [];
+      return S.records.filter(isUndecidedForActive).slice(0, cap || 200);
     }
     function aiPromptText(batch) {
       return [
@@ -2030,8 +2107,8 @@
     }
     function acceptAI() {
       var r = currentRecord(); if (!r || !r.aiSuggestion) return;
-      activeSlot(r).d = r.aiSuggestion; r.dup = false; r.dupManual = false;
-      save(); render(); autoAdvance();
+      if(S.stage==="ft"){workflowMessage("Abstract-only AI suggestions cannot decide full-text eligibility.");return;}
+      decide(r.aiSuggestion);
     }
     // BYO-key (fallback): calls the user's own provider account; key never leaves localStorage.
     function aiKeyGet() { try { return localStorage.getItem(AI_KEY_LS) || ""; } catch (e) { return ""; } }
@@ -2079,7 +2156,7 @@
       if (!key) { toast("Enter an API key first."); return; }
       aiKeySet(key);
       var prov = $("ai-provider").value, model = $("ai-model").value.trim();
-      var batch = S.records.filter(function (r) { return !r.dup && !r.r1.d && !r.r2.d && !r.aiSuggestion; }).slice(0, 50);
+      var batch = aiUndecidedBatch(200).filter(function(r){return !r.aiSuggestion;}).slice(0,50);
       if (!batch.length) { toast("No undecided records without a suggestion."); return; }
       toast("Calling " + prov + " for " + batch.length + " records…");
       var i = 0, done = 0;
@@ -2095,10 +2172,50 @@
       step();
     }
 
+    function workflowMessage(msg) { $("workflow-status").textContent=msg; }
+    function invalidateRanking(keepQueue) {
+      if(S.modelRun)S.modelRun.stale=true;
+      if(!keepQueue) S.records.forEach(function(r){r.mlScore=null;});
+      if(ML){ML.trained=false;ML.cv=null;ML.topPos=[];ML.topNeg=[];}
+      $("ml-status").textContent="Ranking needs training for the current decisions and reviewer.";
+      $("ml-terms").textContent="";$("ml-perf").textContent="";
+    }
+    function action(fn) {
+      try { fn();invalidateRanking(true);var saved=save();render();if(saved)workflowMessage("Saved decision / evidence in this browser.");return true; }
+      catch(e){workflowMessage(e.message);return false;}
+    }
+    var rankTimer=null;
+    function scheduleRank() {
+      if(!S.autoRank)return;
+      var runSeq=0;(S.audit||[]).forEach(function(e){if(e.action==="ranking" && e.stage===S.stage)runSeq=e.seq;});
+      var count=(S.audit||[]).filter(function(e){return e.seq>runSeq && e.action==="decision" && e.stage===S.stage && e.actor===reviewerSlotName();}).length;
+      if(count<10)return;
+      clearTimeout(rankTimer);rankTimer=setTimeout(function(){onTrain();},150);
+    }
+    function fullTextHtml(r) {
+      if(S.stage!=="ft")return "";
+      var f=r.fullText, link=f.url ? '<a target="_blank" rel="noopener noreferrer" href="'+escapeHtml(f.url)+'">Open full text ↗</a>':"";
+      return '<section class="full-text-evidence"><h3>Full-text evidence</h3><p>Use an open-access copy. Read the full report before deciding. PDF storage and annotation are not included.</p>'+link+
+        '<label for="ft-retrieval">Retrieval status</label><select id="ft-retrieval"><option value="pending"'+(f.retrieval==="pending"?' selected':'')+'>Awaiting retrieval</option><option value="retrieved"'+(f.retrieval==="retrieved"?' selected':'')+'>Retrieved / read externally</option><option value="not-retrieved"'+(f.retrieval==="not-retrieved"?' selected':'')+'>Not retrieved</option></select>'+
+        '<label for="ft-url">Open-access full-text URL</label><input id="ft-url" type="url" value="'+escapeHtml(f.url)+'">'+
+        '<label for="ft-note">Evidence notes / page references</label><textarea id="ft-note">'+escapeHtml(f.note)+'</textarea><button type="button" id="ft-save">Save full-text evidence</button></section>';
+    }
+    function renderWorkflow() {
+      var blind=S.mode==="dual" && S.blind;
+      var c=computeCounts(stageRecords());
+      $("workflow-summary").textContent=(S.stage==="ft" ? "Full text":"Title / abstract")+" · "+c.screened+" decided · "+(blind ? S.active.toUpperCase()+" only":"team results");
+      var history=(S.audit||[]).filter(function(e){return e.stage===S.stage && (!blind || (e.actor===reviewerSlotName() && e.action!=="adjudication"));}).slice(-20).reverse();
+      $("audit-list").innerHTML=history.map(function(e){return '<li>'+escapeHtml(e.at+" · "+e.actor+" · "+e.action+" · "+(e.recordId||"project"))+'</li>';}).join("") || '<li>No recorded actions in this stage.</li>';
+      var conflictOption=$("f-filter").querySelector('option[value="conflict"]');if(conflictOption)conflictOption.disabled=blind;
+    }
+
     // ---- test hook (deterministic, for behavioural specs) ----
     window.__almScreenpro = {
       blankState: blankState,
-      setState: function (s) { S = Object.assign(blankState(), s); S.records = (s.records || []).map(normalizeImported); rescoreAll(); runDedup(); render(); },
+      setState: function (s) { S = Object.assign(blankState(), s); S.records = (s.records || []).map(normalizeImported); rescoreAll(); runDedup(); pushStateToSetup(); render(); },
+      state: function(){return JSON.parse(JSON.stringify(S));},
+      restoreProject: restoreProject,
+      flow: function(){return W.flow(S);},
       counts: function () { return computeCounts(S.records); },
       kappa: function () { return cohensKappa(S.records); },
       effDecision: effDecision,
@@ -2120,10 +2237,7 @@
       dupIds: function () { return S.records.filter(function (r) { return r.dup; }).map(function (r) { return r.id; }); },
       // collaboration: merge an incoming reviewer payload; export current reviewer.
       mergeReviewer: function (payload, into) { var res = mergeReviewerState(payload, into); runDedup(); return res; },
-      reviewerExport: function () {
-        var who = reviewerSlotName();
-        return { _schema: "sr-reviewer-v1", reviewer: who, decisions: S.records.filter(function (r) { return !r.dup; }).map(function (r) { var s = who === "r2" ? r.r2 : r.r1; return { id: r.id, doi: r.doi, pmid: r.pmid, title: r.title, d: s.d, reason: s.reason, labels: r.labels }; }).filter(function (d) { return d.d; }) };
-      },
+      reviewerExport: reviewerEnvelope,
       setMode: function (m, active) { S.mode = m; if (active) S.active = active; },
       aiPrompt: function () { return aiPromptText(aiUndecidedBatch(200)); },
       aiApply: function (arr) { var n = applyAiResults(arr); return n; },
@@ -2146,6 +2260,7 @@
   </script>
   <script src="../hub/shared/a11y-landmarks.js"></script>
   <div id="alm-validate"></div>
+  <script src="../shared/build-info.js"></script>
   <script src="../shared/alm-validate.js"></script>
   <script src="validate/adapter.js"></script>
 </body>

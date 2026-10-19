@@ -277,5 +277,5 @@ cat('ALMJSON:{',paste(paste0('"',names(out),'":',vapply(names(out),emit,'')),col
 `;}
   const adapter={app:'gosh-plus',paper:{checks:manifest.checks,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'Extras scope and reproduction',runUrl:'validate/plus/README.md'},live:{packages:['metafor'],paperVersions:{metafor:'5.2-1'},currentState,buildScript,appValues:s=>s.values,compare:{tolerance:{default:1e-9},kind:{}}},corpus:{files:manifest.files,mode:'quick',quickChecks:manifest.checks,run:replay}};
   Object.defineProperty(adapter,'axisLabels',{get:()=>axisLabels});adapter.compareDisplay=compare;window.AlmGoshPlusAdapter=adapter;window.AlmGoshPlusValidation=AlmValidate.mount(document.getElementById('alm-plus-validate'),adapter);
-  for(const button of document.querySelectorAll('#alm-plus-validate button')){if(button.textContent==='Re-run full validation')button.textContent='Re-run extras validation';if(button.textContent==='Validate this analysis in R')button.textContent='Validate the extras in R';}
+  for(const button of document.querySelectorAll('#alm-plus-validate button')){if(button.textContent==='Replay published corpus (stored references)')button.textContent='Re-run extras validation';if(button.textContent==='Validate this analysis in R')button.textContent='Validate the extras in R';}
 })();

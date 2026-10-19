@@ -56,9 +56,12 @@ test('DTA AuditC current-data mada check @slow',async({page})=>{
  const external=await open(page);
  await page.selectOption('#f-example','AuditC');await page.click('#btn-example');
  const mount=await widget(page);await liveButton(mount).click();
- await expect(mount).toContainText(/PASS|unavailable|not available|cannot load|failed to load/i,{timeout:170000});
- await expect(mount).toContainText('0.5.12');
- const rows=mount.locator('tbody tr');expect(await rows.count()).toBeGreaterThanOrEqual(20);
+ // Scope disclosure contains "unavailable" even for a supported intercept-only
+ // fit. Wait for the actual completed verdict, never static panel text or a
+ // loading/refusal message, before inspecting the executed R results.
+ await expect(mount.getByRole('status')).toHaveText('25/25 live R quantities passed.',{timeout:170000});
+ await expect(mount).toContainText('mada 0.5.12');
+ const rows=mount.locator('tbody tr');await expect(rows).toHaveCount(25);
  for(const row of await rows.all())await expect(row.locator('td').last()).toHaveText('PASS');
  expect(external).toEqual([]);
 });

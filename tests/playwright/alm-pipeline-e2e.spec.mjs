@@ -71,26 +71,67 @@ test("Search → Screen: records import AND Design screening terms propagate (SR
   expect(errs).toEqual([]);
 });
 
-test("Screen → PRISMA: decisions propagate into prisma-flow-v1 counts", async ({ page }) => {
+test("Screen → PRISMA: two-stage decisions propagate into prisma-flow-v1 counts; pending work is refused", async ({ page }) => {
   await page.goto("/screen/index.html");
   await page.waitForFunction(() => !!window.__almScreenpro);
   await page.evaluate((rec) => localStorage.setItem("sr-records-v1", JSON.stringify(rec)), RECORDS_ENV);
   await page.goto("/screen/index.html?import=sr-records-v1");
   await page.waitForFunction(() => !!window.__almScreenpro);
+  const prismaFlow = () => page.evaluate(() => JSON.parse(localStorage.getItem("prisma-flow-v1")));
 
-  // Include the first card, then exclude the next (auto-advance moves us along).
+  // Title/abstract: include the first card, then exclude the next (auto-advance moves us along).
   await page.locator('#card-host [data-dec="include"]').click();
   await page.locator('#card-host [data-dec="exclude"]').click();
 
+  // Requirement: with 2 of 4 records still undecided, PRISMA must refuse rather than
+  // count undecided records as excluded (the old behaviour this PR removes).
   await page.locator("#btn-prisma").click();
-  const flow = await page.evaluate(() => JSON.parse(localStorage.getItem("prisma-flow-v1")));
-  expect(flow.db).toBe(4);            // identified
-  expect(flow.removed).toBe(0);       // no duplicates in this set
-  expect(flow.screened).toBe(4);
-  expect(flow.sought).toBe(1);        // 1 included -> sought for retrieval
-  expect(flow.studies).toBe(1);
-  // excludedScreen = excluded(1) + maybe(0) + conflict(0) + undecided(2)
-  expect(flow.excludedScreen).toBe(3);
+  await expect(page.locator("#workflow-status")).toContainText("Pending work is never counted as excluded");
+  expect(await prismaFlow()).toBeNull();
+
+  // Finish title/abstract: 2 includes + 2 excludes in total.
+  await page.locator('#card-host [data-dec="include"]').click();
+  await page.locator('#card-host [data-dec="exclude"]').click();
+  const ta = await page.evaluate(() => window.__almScreenpro.counts());
+  expect(ta.included).toBe(2);
+  expect(ta.excluded).toBe(2);
+
+  // Requirement: full-text screening of the 2 TA includes is still pending -> still refused.
+  await page.evaluate(() => { document.getElementById("workflow-status").textContent = ""; });
+  await page.locator("#btn-prisma").click();
+  await expect(page.locator("#workflow-status")).toContainText("Finish title/abstract and full-text screening");
+  expect(await prismaFlow()).toBeNull();
+
+  // Full text: record the retrieved report, then decide. One include, one exclude with a reason.
+  await page.locator("#f-reasons").fill("Wrong population");
+  await page.locator("#f-reasons").dispatchEvent("input");
+  await page.locator("#f-stage").selectOption("ft");
+  await page.locator("#ft-retrieval").selectOption("retrieved");
+  await page.locator("#ft-save").click();
+  await page.locator('#card-host [data-dec="include"]').click();
+  await page.locator("#ft-retrieval").selectOption("retrieved");
+  await page.locator("#ft-save").click();
+  await page.locator('#card-host [data-reason="0"]').click();
+
+  await page.locator("#btn-prisma").click();
+  await expect(page.locator("#workflow-status")).toContainText("PRISMA counts saved");
+  const flow = await prismaFlow();
+  expect(flow.db).toBe(4);               // identified
+  expect(flow.removed).toBe(0);          // no duplicates in this set
+  expect(flow.screened).toBe(4);         // 4 identified - 0 duplicates
+  expect(flow.excludedScreen).toBe(2);   // 2 TA excludes; no undecided records remain
+  expect(flow.sought).toBe(2);           // screened 4 - excludedScreen 2
+  expect(flow.notRetrieved).toBe(0);
+  expect(flow.assessed).toBe(2);         // sought 2 - notRetrieved 0
+  expect(flow.excludedEligible).toBe(1); // 1 full-text exclude
+  expect(flow.excludedBreakdown).toBe("Wrong population (n=1)");
+  expect(flow.studies).toBe(1);          // assessed 2 - excludedEligible 1
+  expect(flow.reports).toBe(1);
+  // the flow must close arithmetically at every box
+  expect(flow.db - flow.removed).toBe(flow.screened);
+  expect(flow.screened - flow.excludedScreen).toBe(flow.sought);
+  expect(flow.sought - flow.notRetrieved).toBe(flow.assessed);
+  expect(flow.assessed - flow.excludedEligible).toBe(flow.studies);
 });
 
 test("missing sr-records-v1 envelope: import is a no-op, no crash", async ({ page }) => {
