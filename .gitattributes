@@ -32,3 +32,6 @@ nma-inconsistency/validate/corpus/*.json text eol=lf
 nma-inconsistency/validate/corpus/reference.json text eol=lf
 
 **/validate/plus/*.json text eol=lf
+# Correlation replay pins are calculated over LF bytes, including reference.json.
+correlation-ma/validate/corpus/*.json text eol=lf
+correlation-ma/validate/corpus/reference.json text eol=lf
