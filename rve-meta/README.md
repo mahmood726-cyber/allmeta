@@ -22,6 +22,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/rve-meta/
 ## Outputs
 
 - Coefficient table (estimate, CR2 SE, t, Satterthwaite df, 95% CI, p), k, m, τ², ρ and the condition number κ₂(XᵀWX), with a warning and a one-click "centre predictors" refit when κ > 9.0×10⁶.
+- ρ sensitivity: one click refits at ρ = 0, 0.2, …, 1 (robumeta's `sensitivity()` grid) and adds df, confidence intervals and p-values, flagging coefficients whose sign or 5% significance changes; downloadable as CSV.
 - Exports: Markdown report (methods, results, warnings, input data), coefficient CSV, input-data CSV, JSON (inputs, coefficients, full fit), and an **R script** that refits the model with `robumeta::robu()` and `clubSandwich::coef_test()` and prints `sessionInfo()`.
 
 ## Reproducibility

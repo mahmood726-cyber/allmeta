@@ -211,6 +211,44 @@
     return { rows: out, means: means };
   }
 
+  // ----- Working-correlation sensitivity ---------------------------------------
+  // Refits the unchanged engine at each rho of robumeta::sensitivity()'s grid
+  // (0, 0.2, ..., 1) and adds the inferential columns sensitivity() omits (df, CI,
+  // p). Flags coefficients whose sign, or whose p < 0.05 status, changes across rho.
+  var RHO_GRID = [0, 0.2, 0.4, 0.6, 0.8, 1];
+  function rhoSensitivity(rows, grid) {
+    grid = grid || RHO_GRID;
+    var fits = grid.map(function (rho) {
+      try {
+        var f = global.AlmRVE.fitCORR(rows, { rho: rho });
+        return { rho: rho, tau2: f.tau2, summary: global.AlmRVE.summary(f) };
+      } catch (e) { return { rho: rho, error: e.message }; }
+    });
+    var ok = fits.filter(function (f) { return !f.error; });
+    var p = ok.length ? ok[0].summary.length : 0, flags = [];
+    for (var j = 0; j < p; j++) {
+      var est = ok.map(function (f) { return f.summary[j].estimate; });
+      var sig = ok.map(function (f) { return f.summary[j].p < 0.05; });
+      flags.push({
+        coef_index: j,
+        sign_changes: est.some(function (e) { return e > 0; }) && est.some(function (e) { return e < 0; }),
+        significance_changes: sig.some(Boolean) && sig.some(function (x) { return !x; })
+      });
+    }
+    return { grid: grid.slice(), fits: fits, flags: flags };
+  }
+
+  function toRhoSensitivityCSV(sens, coefNames) {
+    var L = [["rho", "term", "estimate", "se", "t", "df", "ci_lo", "ci_hi", "p", "tau2"].join(",")];
+    sens.fits.forEach(function (f) {
+      if (f.error) { L.push([f.rho, csvCell("(refused: " + f.error + ")"), "", "", "", "", "", "", "", ""].join(",")); return; }
+      f.summary.forEach(function (s, j) {
+        L.push([f.rho, csvCell(coefNames[j]), s.estimate, s.se, s.t, s.df, s.ci_lo, s.ci_hi, s.p, f.tau2].map(String).join(","));
+      });
+    });
+    return L.join("\r\n") + "\r\n";
+  }
+
   // ----- R script ----------------------------------------------------------------
 
   function rString(s) {
@@ -446,6 +484,9 @@
     toCoefficientCSV: toCoefficientCSV,
     toInputCSV: toInputCSV,
     toReportMarkdown: toReportMarkdown,
+    RHO_GRID: RHO_GRID,
+    rhoSensitivity: rhoSensitivity,
+    toRhoSensitivityCSV: toRhoSensitivityCSV,
     kappaText: kappaText
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;

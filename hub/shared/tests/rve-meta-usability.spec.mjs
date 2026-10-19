@@ -256,3 +256,25 @@ test('Feature: R script export reproduces the call, escapes labels and records t
   expect(r.text).toContain('"b\\\\x"');
   expect(r.text).toContain('dose_w = "dose \\"w\\""');
 });
+
+test('Feature: rho sensitivity adds inference columns and matches robumeta::sensitivity(corrdat) to its printed digits', async ({ page }) => {
+  await open(page);
+  await page.click('#btn-example');
+  await page.click('#btn-rho-sens');
+  await expect(page.locator('#rho-sens-table tbody tr')).toHaveCount(24);
+  await expect(page.locator('#rho-sens-flag')).toBeVisible();
+  // robumeta 2.1 sensitivity(robu(effectsize ~ males + college + binge, corrdat, rho = .8)), printed values:
+  // rho = 0: binge 0.13770 (SE 0.12711), tau2 0.15336; rho = 1: college 0.41241 (SE 0.19029), tau2 0.15637.
+  const csv = await (async () => {
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btn-rho-csv')]);
+    const fs = await import('node:fs');
+    return fs.readFileSync(await dl.path(), 'utf8').trim().split(/\r?\n/).map(l => l.split(','));
+  })();
+  expect(csv[0]).toEqual(['rho', 'term', 'estimate', 'se', 't', 'df', 'ci_lo', 'ci_hi', 'p', 'tau2']);
+  expect(csv.length).toBe(25);
+  const row = (rho, term) => csv.find(r => Number(r[0]) === rho && r[1] === term).map(Number);
+  const b0 = row(0, 'binge'), c1 = row(1, 'college');
+  expect(b0[2].toFixed(5)).toBe('0.13770'); expect(b0[3].toFixed(5)).toBe('0.12711'); expect(b0[9].toFixed(5)).toBe('0.15336');
+  expect(c1[2].toFixed(5)).toBe('0.41241'); expect(c1[3].toFixed(5)).toBe('0.19029'); expect(c1[9].toFixed(5)).toBe('0.15637');
+  expect(Number.isFinite(b0[5]) && Number.isFinite(b0[8])).toBe(true); // df and p present
+});

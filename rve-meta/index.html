@@ -56,6 +56,7 @@
     caption { text-align: left; font-size: 0.82rem; color: var(--muted); padding-bottom: 0.3rem; }
     th, td { padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
     thead th { color: var(--muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    tr.current td { font-weight: 600; }
     tbody th { font-weight: 600; white-space: normal; min-width: 8rem; }
     .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
             border-radius: 4px; font-size: 0.84rem; margin-top: 0.6rem; }
@@ -64,6 +65,8 @@
     .inline-warn { color: var(--warn); font-size: 0.8rem; margin: 0.25rem 0 0; font-weight: 600; }
     #meta-row { font-size: 0.9rem; }
     #meta-row .summary-line { margin: 0; }
+    .sens-bar { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.3rem; align-items: flex-start; }
+    #rho-sens { margin-top: 0.6rem; }
     #alm-export-mount { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.82rem; max-width: 110ch; }
@@ -305,6 +308,11 @@
           <tbody id="coef-body"></tbody>
         </table>
       </div>
+      <div class="sens-bar">
+        <button type="button" class="secondary" id="btn-rho-sens" aria-describedby="rho-sens-help">ρ sensitivity (ρ = 0 to 1)</button>
+        <span class="help" id="rho-sens-help">Refits at ρ = 0, 0.2, 0.4, 0.6, 0.8 and 1 (robumeta's <code>sensitivity()</code> grid) and adds df, confidence intervals and p-values, flagging any coefficient whose sign or 5% significance changes.</span>
+      </div>
+      <div id="rho-sens" role="region" aria-live="polite" aria-label="Working-correlation sensitivity" hidden></div>
       <div id="alm-export-mount" role="group" aria-label="Export results">
         <button type="button" class="secondary" data-action="report-md" title="Methods, results table, warnings and input data (Markdown)">Report (.md)</button>
         <button type="button" class="secondary" data-action="csv" title="One row per coefficient">Coefficients (.csv)</button>
@@ -327,7 +335,7 @@
     var E = window.AlmRVEExtras;
     var SMALL_EXAMPLE = "study1, 0.45, 0.04, 1, 6\nstudy1, 0.38, 0.05, 1, 6\nstudy1, 0.55, 0.06, 1, 6\nstudy2, 0.22, 0.03, 1, 12\nstudy2, 0.31, 0.04, 1, 12\nstudy3, 0.18, 0.02, 0, 18\nstudy3, 0.25, 0.03, 0, 18\nstudy3, 0.30, 0.04, 0, 18\nstudy4, 0.60, 0.05, 1, 4\nstudy4, 0.55, 0.06, 1, 4\nstudy5, 0.12, 0.02, 0, 24\nstudy5, 0.20, 0.03, 0, 24\nstudy5, 0.16, 0.025, 0, 24";
     var $ = function (id) { return document.getElementById(id); };
-    var lastResult = null, lastState = null;
+    var lastResult = null, lastState = null, lastSens = null;
 
     function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
@@ -341,11 +349,13 @@
 
     function setExportsEnabled(on) {
       Array.prototype.forEach.call(document.querySelectorAll("#alm-export-mount button"), function (b) { b.disabled = !on; });
+      $("btn-rho-sens").disabled = !on;
     }
 
     function clearResults() {
-      window.__almLastRVE = null; lastResult = null; lastState = null;
+      window.__almLastRVE = null; lastResult = null; lastState = null; lastSens = null;
       $("coef-body").innerHTML = "";
+      $("rho-sens").hidden = true; $("rho-sens").innerHTML = "";
       setExportsEnabled(false);
     }
 
@@ -435,13 +445,39 @@
       }
       $("coef-body").innerHTML = rowsHtml;
 
-      lastState = { rows: parsed.rows, names: names, rho: rho, centred: centred };
+      lastState = { rows: parsed.rows, fitRows: fitRows, names: names, coefNames: coefNames, rho: rho, centred: centred };
       lastResult = E.buildResult({ rawRows: parsed.rows, names: names, rho: rho, centred: centred, means: means, fit: fit, summary: summary,
         kappa: kappa, warnings: warnings, parseInfo: parsed, buildInfo: window.AlmBuildInfo });
       var frozen = lastResult;
       window.__almLastRVE = function () { return frozen; };
       setExportsEnabled(true);
     }
+
+    function runSensitivity() {
+      if (!lastState) return;
+      var sens = E.rhoSensitivity(lastState.fitRows), cn = lastState.coefNames;
+      var h = '<table id="rho-sens-table"><caption>Coefficients refitted at each working correlation ρ (CR2 SE, Satterthwaite df).</caption><thead><tr><th scope="col">Predictor</th><th scope="col">ρ</th><th scope="col">β̂</th><th scope="col">SE</th><th scope="col">df</th><th scope="col">95% CI</th><th scope="col">p</th><th scope="col">τ²</th></tr></thead><tbody>';
+      for (var j = 0; j < cn.length; j++) {
+        sens.fits.forEach(function (f, i) {
+          var lab = i === 0 ? '<th scope="row" rowspan="' + sens.fits.length + '">' + esc(cn[j]) + "</th>" : "";
+          if (f.error) { h += "<tr>" + lab + "<td>" + fmt(f.rho, 1) + '</td><td colspan="6">refused: ' + esc(friendlyEngineError({ message: f.error }, 0, 0)) + "</td></tr>"; return; }
+          var s = f.summary[j];
+          h += "<tr" + (f.rho === lastState.rho ? ' class="current"' : "") + ">" + lab + "<td>" + fmt(f.rho, 1) + "</td><td>" + fmt(s.estimate, 4) + "</td><td>" + fmt(s.se, 4) + "</td><td>" + fmt(s.df, 2) + "</td><td>" + fmt(s.ci_lo, 3) + ", " + fmt(s.ci_hi, 3) + "</td><td>" + (s.p < 0.001 ? "&lt;0.001" : fmt(s.p, 3)) + "</td><td>" + fmt(f.tau2, 4) + "</td></tr>";
+        });
+      }
+      h += "</tbody></table>";
+      var changed = sens.flags.filter(function (f) { return f.sign_changes || f.significance_changes; }).map(function (f) {
+        return cn[f.coef_index] + " (" + [f.sign_changes ? "sign" : null, f.significance_changes ? "p < 0.05 status" : null].filter(Boolean).join(" and ") + ")";
+      });
+      var refused = sens.fits.filter(function (f) { return f.error; }).length;
+      var msg = changed.length ? '<p class="note" id="rho-sens-flag"><strong>Conclusion depends on ρ</strong> for ' + esc(changed.join(", ")) + ".</p>"
+        : '<p class="note info" id="rho-sens-flag">No coefficient changes sign or 5% significance across ρ = 0 to 1' + (refused ? " (" + refused + " ρ value" + (refused > 1 ? "s" : "") + " refused)" : "") + ".</p>";
+      $("rho-sens").innerHTML = msg + '<div class="table-wrap" role="region" aria-label="ρ sensitivity table" tabindex="0">' + h + '</div><p><button type="button" class="secondary" id="btn-rho-csv">Download ρ sensitivity (.csv)</button></p>';
+      $("rho-sens").hidden = false;
+      lastSens = sens;
+      $("btn-rho-csv").addEventListener("click", function () { exportAction("rho-csv"); });
+    }
+    $("btn-rho-sens").addEventListener("click", runSensitivity);
 
     function download(text, name, type) {
       var a = document.createElement("a");
@@ -461,6 +497,7 @@
       else if (action === "csv") download(E.toCoefficientCSV(res), "rve-meta-coefficients.csv", "text/csv");
       else if (action === "input-csv") download(E.toInputCSV(res), "rve-meta-input.csv", "text/csv");
       else if (action === "report-md") download(E.toReportMarkdown(res), "rve-meta-report.md", "text/markdown");
+      else if (action === "rho-csv") { if (lastSens) download(E.toRhoSensitivityCSV(lastSens, lastState.coefNames), "rve-meta-rho-sensitivity.csv", "text/csv"); }
       else if (action === "r-script") download(E.toRScript({ rows: lastState.rows, names: lastState.names, rho: lastState.rho, centred: lastState.centred, version: bi.version || "" }), "rve-meta.R", "text/plain");
     }
 
