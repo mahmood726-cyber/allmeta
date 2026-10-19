@@ -60,7 +60,7 @@
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#39;'); }
   function sweepSVG(parsed, sw) {
     var ok = sw.filter(function (s) { return s.status === 'ok'; }); if (!ok.length) return '';
-    var W = 680, H = 300, top = 34, bottom = 46, ph = H - top - bottom, pw = 270, lefts = [62, 62 + pw + 70];
+    var W = 680, H = 314, top = 48, bottom = 46, ph = H - top - bottom, pw = 270, lefts = [62, 62 + pw + 70];
     var dark = window.matchMedia && matchMedia('(prefers-color-scheme:dark)').matches, ink = dark ? '#e7e4dc' : '#15181d', frame = dark ? '#2f343a' : '#d9d5cc';
     var xlo = Math.min.apply(null, sw.map(function (s) { return s.rhoW; }).filter(Number.isFinite)), xhi = Math.max.apply(null, sw.map(function (s) { return s.rhoW; }).filter(Number.isFinite));
     if (!(xhi > xlo)) { xlo -= 0.1; xhi += 0.1; }
