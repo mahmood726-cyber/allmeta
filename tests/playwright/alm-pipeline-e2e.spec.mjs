@@ -8,10 +8,10 @@ const RECORDS_ENV = {
   _schema: "sr-records-v1",
   query: "sglt2 heart failure",
   records: [
-    { id: "p1", title: "Dapagliflozin in heart failure with reduced EF", abstract: "RCT of dapagliflozin.", doi: "10.1/a", year: "2019", journal: "NEJM", authors: ["McMurray"], pmid: "1", source: "EuropePMC" },
-    { id: "p2", title: "Empagliflozin in HFpEF", abstract: "RCT of empagliflozin.", doi: "10.1/b", year: "2021", journal: "NEJM", authors: ["Anker"], pmid: "2", source: "EuropePMC" },
-    { id: "p3", title: "SGLT2 effects in a murine model", abstract: "Animal study in vitro.", doi: "10.1/c", year: "2020", journal: "JMCC", authors: ["Lee"], pmid: "3", source: "Crossref" },
-    { id: "p4", title: "Canagliflozin renal outcomes trial", abstract: "RCT of canagliflozin.", doi: "10.1/d", year: "2017", journal: "NEJM", authors: ["Neal"], pmid: "4", source: "OpenAlex" },
+    { id: "p1", title: "Synthetic heart failure intervention trial", abstract: "Synthetic RCT of dapagliflozin." },
+    { id: "p2", title: "Synthetic preserved ejection fraction cohort", abstract: "Synthetic treatment evaluation." },
+    { id: "p3", title: "Synthetic mouse laboratory investigation", abstract: "Synthetic animal study in vitro." },
+    { id: "p4", title: "Synthetic renal outcomes randomized evaluation", abstract: "Synthetic comparison trial." },
   ],
 };
 const PROJECT_ENV = {

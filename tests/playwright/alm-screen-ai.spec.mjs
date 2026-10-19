@@ -94,23 +94,14 @@ test("non-array AI payload throws (caller surfaces an error, no silent corruptio
   expect(res).toMatch(/array/i);
 });
 
-test("API key is stored in localStorage only and is ABSENT from the project JSON export", async ({ page }) => {
+test("legacy API keys remain absent from portable project exports", async ({ page }) => {
   await hook(page);
-  // Arrange: load example data + enable AI BYO key, then type a recognizable key.
+  // Old keys can remain in browser storage; the local architecture never uses them.
   await page.evaluate(() => {
     document.getElementById("btn-example").click();
-    document.getElementById("ai-on").checked = true;
-    document.getElementById("ai-on").dispatchEvent(new Event("change", { bubbles: true }));
-    const mode = document.getElementById("ai-mode");
-    mode.value = "byokey";
-    mode.dispatchEvent(new Event("change", { bubbles: true }));
-    const key = document.getElementById("ai-key");
-    key.value = "sk-SECRET-NEVER-EXPORT-123456";
-    key.dispatchEvent(new Event("change", { bubbles: true }));
+    localStorage.setItem("screen-ai-key", "sk-SECRET-NEVER-EXPORT-123456");
   });
-  // Assert key persisted to its dedicated localStorage slot...
-  const lsKey = await page.evaluate(() => localStorage.getItem("screen-ai-key"));
-  expect(lsKey).toBe("sk-SECRET-NEVER-EXPORT-123456");
+  await expect(page.locator("#ai-key")).toHaveCount(0);
   // ...and that the project autosave (screen-v1) does NOT contain it.
   const projectLs = await page.evaluate(() => localStorage.getItem("screen-v1") || "");
   expect(projectLs).not.toContain("SECRET");

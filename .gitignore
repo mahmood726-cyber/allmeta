@@ -70,3 +70,8 @@ integration-evidence/
 
 /integration-evidence/
 /limit-ma/inspect-plus.R
+
+# Public benchmark intermediates and ASReview metadata cache.
+/synergy_cache.sqlite
+screen/benchmark/results/*-input.json
+screen/benchmark/repeatability/*-input.json

@@ -1,0 +1,80 @@
+{
+  "python": "3.13.13",
+  "node": "v24.16.0",
+  "asreview": "3.0.8",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "protocol": "PROTOCOL.md",
+  "results": [
+    {
+      "dataset": "Appenzeller-Herzog_2020",
+      "engine": "screen-hybrid-lr-1",
+      "seed": 101,
+      "seconds": 370.7533054,
+      "metrics": {
+        "N": 3453,
+        "eligible": 29,
+        "screened_at_95": 2031,
+        "recall_at_95": 0.9655172413793104,
+        "missed_at_95": 1,
+        "wss95": 0.36181581233709814,
+        "workload_saved_at_95": 0.4118158123370982,
+        "recall_at_20pct": 0.896551724137931,
+        "missed_at_20pct": 3
+      }
+    },
+    {
+      "dataset": "Appenzeller-Herzog_2020",
+      "engine": "ASReview 3.0.8 ELAS u4",
+      "seed": 101,
+      "seconds": 101.12120029999642,
+      "metrics": {
+        "N": 3453,
+        "eligible": 29,
+        "screened_at_95": 1551,
+        "recall_at_95": 0.9655172413793104,
+        "missed_at_95": 1,
+        "wss95": 0.5008253692441356,
+        "workload_saved_at_95": 0.5508253692441356,
+        "recall_at_20pct": 0.896551724137931,
+        "missed_at_20pct": 3
+      }
+    },
+    {
+      "dataset": "Kwok_2020",
+      "engine": "screen-hybrid-lr-1",
+      "seed": 101,
+      "seconds": 1842.9368613,
+      "metrics": {
+        "N": 2481,
+        "eligible": 120,
+        "screened_at_95": 615,
+        "recall_at_95": 0.95,
+        "missed_at_95": 6,
+        "wss95": 0.7021160822249093,
+        "workload_saved_at_95": 0.7521160822249093,
+        "recall_at_20pct": 0.9083333333333333,
+        "missed_at_20pct": 11
+      }
+    },
+    {
+      "dataset": "Kwok_2020",
+      "engine": "ASReview 3.0.8 ELAS u4",
+      "seed": 101,
+      "seconds": 10058.6524832,
+      "metrics": {
+        "N": 2481,
+        "eligible": 120,
+        "screened_at_95": 572,
+        "recall_at_95": 0.95,
+        "missed_at_95": 6,
+        "wss95": 0.7194478033051188,
+        "workload_saved_at_95": 0.7694478033051189,
+        "recall_at_20pct": 0.9166666666666666,
+        "missed_at_20pct": 10
+      }
+    }
+  ],
+  "rayyan": null,
+  "human_usability": null,
+  "human_screening_speed": null
+}

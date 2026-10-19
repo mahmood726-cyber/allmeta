@@ -52,6 +52,10 @@ single `localStorage` envelope so the user never re-types data. See
 
 Screen's staged review workflow has a focused browser suite and an explicit
 [capability comparison, decision contract and limitations](screen/UPGRADE-2026-10-18.md).
+Its [browser-local hybrid architecture](screen/LOCAL-AI.md) adds protocol matching,
+worker-based logistic regression, optional cached MiniLM embeddings and fixed-sample
+audits. The [direct public-dataset comparison](screen/benchmark/README.md) found
+higher WSS@95 for ASReview on both datasets; Rayyan and human usability are unmeasured.
 Run it from `tests/playwright` with
 `node node_modules/@playwright/test/cli.js test --config screen-workflow.config.mjs`.
 

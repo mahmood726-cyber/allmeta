@@ -69,7 +69,7 @@ test("Search result row with abstract is keyboard-expandable", async ({ page }) 
   await page.route("**/europepmc/webservices/**", route => route.fulfill({
     status: 200, contentType: "application/json",
     body: JSON.stringify({ resultList: { result: [
-      { title: "Dapagliflozin in heart failure", abstractText: "A randomized controlled trial of dapagliflozin.", authorString: "McMurray J", journalTitle: "NEJM", pubYear: "2019", doi: "10.1/x", pmid: "111" },
+      { title: "Synthetic heart failure trial fixture", abstractText: "Synthetic randomized trial description for keyboard testing." },
     ]}}),
   }));
   await page.goto("/search/index.html");

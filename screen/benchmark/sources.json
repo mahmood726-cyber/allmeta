@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "source_index_commit": "dc2dadfdbb98eb1b4259604789abd640aa3b693e",
+  "datasets": [
+    {
+      "dataset_id": "Appenzeller-Herzog_2020",
+      "url": "https://raw.githubusercontent.com/asreview/systematic-review-datasets/metadata-v1-final/datasets/Appenzeller-Herzog_2020/output/Appenzeller-Herzog_2020.csv",
+      "reference": "https://doi.org/10.1111/liv.14179",
+      "link": "http://doi.org/10.5281/zenodo.3625931",
+      "license": "CC-BY Attribution 4.0 International",
+      "title": "Comparative effectiveness of common therapies for Wilson disease: A systematic review and meta-analysis of controlled studies",
+      "authors": [
+        "Appenzeller-Herzog , C.",
+        "Mathes, T.",
+        "Heeres, M. L. S.",
+        "Weiss, K. H.",
+        "Houwen, R. H. J.",
+        "Ewald H."
+      ],
+      "year": 2019,
+      "topic": "Wilson disease",
+      "final_inclusions": true,
+      "title_abstract_inclusions": true,
+      "type": "base",
+      "file": "data/Appenzeller-Herzog_2020.csv",
+      "sha256": "456f9306b0ce1aee840ac0244f11df3b2a168aa46007a92f5dcf59916d309a69",
+      "bytes": 5807809,
+      "rows": 3453
+    },
+    {
+      "dataset_id": "Kwok_2020",
+      "url": "https://raw.githubusercontent.com/asreview/systematic-review-datasets/metadata-v1-final/datasets/Kwok_2020/output/Kwok_2020.csv",
+      "reference": "https://doi.org/10.3390/v12010107",
+      "link": "https://doi.org/10.17605/OSF.IO/5S27M",
+      "license": "CC-BY Attribution 4.0 International",
+      "title": "Virus Metagenomics in Farm Animals: A Systematic Review",
+      "authors": [
+        "Kwok, K. T. T.",
+        "Nieuwenhuijse, D. F.",
+        "Phan, M. V. T.",
+        "Koopmans, M. P. G."
+      ],
+      "year": 2020,
+      "topic": "Virus Metagenomics",
+      "final_inclusions": true,
+      "title_abstract_inclusions": false,
+      "type": "base",
+      "file": "data/Kwok_2020.csv",
+      "sha256": "9eec13f67d80b101547036dc3a59d34be975fac3c94f5a765ae46f90391817a1",
+      "bytes": 4411575,
+      "rows": 2481
+    }
+  ]
+}
