@@ -256,7 +256,7 @@
       p.push("<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>");
       // regression line: lnDOR = intercept + slope·(1/√ESS) ⇒ for y-values 0..yhi
       p.push("<line x1='" + x(d.intercept) + "' y1='" + y(0) + "' x2='" + x(d.intercept + d.slope * yhi) + "' y2='" + y(yhi) + "' stroke='#888' stroke-dasharray='4,2'/>");
-      d.x.forEach((xi, i) => p.push("<circle cx='" + x(d.y[i]) + "' cy='" + y(xi) + "' r='3' fill='#2c5e8a'/>"));
+      d.x.forEach((xi, i) => p.push("<circle cx='" + x(d.y[i]) + "' cy='" + y(xi) + "' r='3' fill='#2c5e8a'/>") );
       p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 8) + "' text-anchor='middle' font-size='10' fill='" + fg + "'>ln(DOR)</text>");
       p.push("<text x='12' y='" + (T + ph / 2) + "' transform='rotate(-90 12 " + (T + ph / 2) + ")' text-anchor='middle' font-size='10' fill='" + fg + "'>1/√ESS</text>");
       p.push("<text x='" + (W - R) + "' y='14' text-anchor='end' font-size='10' fill='" + fg + "'>Deeks p = " + d.p.toFixed(3) + "</text>");
@@ -325,24 +325,49 @@
     // Rows: label, TP, FP, FN, TN [, covariate]. Labels may contain commas (all leading fields).
     function parseStudies(text, covMode) {
       const studies = [], warnings = [];
-      const lines = String(text || "").split(/\r?\n/);
-      const nc = covMode === "last" ? 5 : 4;
+      const lines = String(text || '').split(/\r?\n/);
+      const nc = covMode === 'last' ? 5 : 4;
+      let firstRecord = true;
       for (let i = 0; i < lines.length; i++) {
         const raw = lines[i].trim();
-        if (!raw || raw.startsWith("#")) continue;
+        if (!raw || raw.startsWith('#')) continue;
         const parts = raw.split(/\s*[,\t]\s*/);
-        if (parts.length < nc + 1) { warnings.push("Line " + (i + 1) + ": need " + (nc + 1) + " columns"); continue; }
-        const cov = covMode === "last" ? parts[parts.length - 1] : null;
-        const cells = parts.slice(parts.length - nc, parts.length - nc + 4).map(parseFloat);
-        const [tp, fp, fn, tn] = cells;
-        if (![tp, fp, fn, tn].every(v => Number.isFinite(v) && v >= 0)) {
-          if (studies.length === 0 && i < 3) continue;
-          warnings.push("Line " + (i + 1) + ": non-numeric or negative cell"); continue;
+        if (parts.length < nc + 1) {
+          warnings.push(`Line ${i + 1}: need label and ${nc} data columns`);
+          firstRecord = false;
+          continue;
         }
-        const label = parts.slice(0, parts.length - nc).join(", ") || ("Study " + (studies.length + 1));
-        studies.push({ label: label, tp: tp, fp: fp, fn: fn, tn: tn, cov: cov });
+        const offset = parts.length - nc;
+        const numericFields = parts.slice(offset, offset + 4);
+        const cov = covMode === 'last' ? parts[parts.length - 1] : null;
+        const isHeader = firstRecord &&
+          numericFields.every((v, j) => v.toUpperCase() === ['TP', 'FP', 'FN', 'TN'][j]) &&
+          (covMode !== 'last' || /^(cov|covariate)$/i.test(cov));
+        firstRecord = false;
+        if (isHeader) continue;
+        const counts = numericFields.map(v => /^\d+$/.test(v.trim()) ? Number(v.trim()) : NaN);
+        if (!counts.every(Number.isSafeInteger) || counts.some(v => v < 0)) {
+          warnings.push(`Line ${i + 1}: TP, FP, FN and TN must be non-negative whole-person counts`);
+          continue;
+        }
+        const [tp, fp, fn, tn] = counts;
+        if (![tp + fn, fp + tn].every(v => Number.isSafeInteger(v) && v > 0)) {
+          warnings.push(`Line ${i + 1}: both diseased and non-diseased denominators must be positive`);
+          continue;
+        }
+        if (covMode === 'last' && !String(cov).trim()) {
+          warnings.push(`Line ${i + 1}: covariate value is required`);
+          continue;
+        }
+        const label = parts.slice(0, offset).join(', ').trim();
+        if (!label) {
+          warnings.push(`Line ${i + 1}: a study label is required`);
+          continue;
+        }
+        studies.push({label, tp, fp, fn, tn, cov});
       }
-      return { studies, warnings };
+      if (warnings.length) warnings.unshift('Analysis blocked: correct all study rows before fitting any model.');
+      return {studies: warnings.length ? [] : studies, warnings};
     }
 
     // Per-study points after the chosen continuity-correction rule (the same rule as the model).
@@ -714,16 +739,51 @@
         { name: 'TN',    required: true,  type: 'float',  example: '88' },
       ],
       onParse: function (result) {
-        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
-          window.alm.resetUndo.snapshot();
+        // Reject the whole import: a partial study set must never be pooled.
+        // The snapshot supports Undo while stale pooled estimates are cleared.
+        if (window.alm && window.alm.resetUndo) window.alm.resetUndo.snapshot();
+        function reject(reason) {
+          document.getElementById('f-data').value = '';
+          render();
+          warnEl.textContent = 'CSV rejected: ' + reason + '. No partial analysis retained; use Undo to restore the preceding state.';
+          warnEl.classList.add('is-visible');
         }
-        // Convert parsed rows back to textarea CSV format
-        var lines = result.rows.map(function (row) {
-          var label = row.study || '';
-          return [label, row.TP, row.FP, row.FN, row.TN].join(', ');
-        });
-        document.getElementById('f-data').value = lines.join('\n');
-        render();
+        try {
+          const headers = result.headers || [];
+          const cols = ['TP', 'FP', 'FN', 'TN'];
+          const hasStudy = headers.includes('study');
+          const expected = hasStudy ? ['study'].concat(cols) : cols;
+          if (headers.length !== expected.length || new Set(headers).size !== headers.length ||
+              expected.some(name => headers.filter(h => h === name).length !== 1) ||
+              (result.warnings || []).length)
+            throw new Error('Use unique, exact study/TP/FP/FN/TN headers (study may be omitted) and complete cells. ' +
+              (result.warnings || []).slice(0, 5).join('; '));
+          if (readState().cov === 'last')
+            throw new Error('CSV upload has no covariate field; turn off meta-regression or enter labelled study covariates manually');
+          if (!Array.isArray(result.rows) || !result.rows.length)
+            throw new Error('No study rows found');
+          const labels = [];
+          const lines = result.rows.map(function (row, i) {
+            const label = hasStudy ? String(row.study == null ? '' : row.study) : 'Study ' + (i + 1);
+            if (!label.trim() || label.trim().startsWith('#') || /[\r\n\t]/.test(label))
+              throw new Error('Row ' + (i + 1) + ': study labels must be non-comment single-line text');
+            const cells = cols.map(key => row[key]);
+            if (!cells.every(Number.isSafeInteger) || cells.some(x => x < 0) ||
+                ![cells[0] + cells[2], cells[1] + cells[3]].every(x => Number.isSafeInteger(x) && x > 0))
+              throw new Error('Row ' + (i + 1) + ': non-negative whole-person counts and positive denominators required');
+            labels.push(label);
+            return [label].concat(cells).join(', ');
+          });
+          const proposed = lines.join('\n');
+          const check = parseStudies(proposed, '');
+          if (check.warnings.length || check.studies.length !== result.rows.length ||
+              check.studies.some((s, i) => s.label !== labels[i] ||
+                s.tp !== result.rows[i].TP || s.fp !== result.rows[i].FP ||
+                s.fn !== result.rows[i].FN || s.tn !== result.rows[i].TN))
+            throw new Error('Study labels and counts could not be round-tripped losslessly');
+          document.getElementById('f-data').value = proposed;
+          render();
+        } catch (error) { reject(error.message || String(error)); }
       },
     });
 
