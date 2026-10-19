@@ -3,6 +3,9 @@
  const $=id=>document.getElementById(id), escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const fmt=n=>n.toPrecision(12), number=(key,n)=>`<span data-plus-number="${key}">${fmt(n)}</span>`;
  let current=null;
+ const DECIMAL=/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+ const RANK=/not of full rank|rank deficient/;
+ function advise(reason){$('plus-advice').textContent=reason&&RANK.test(reason)?'Hint: if the moderators are on very different scales (for example year and sample size), centre or rescale them (for example year minus 2000, or sample size in thousands) and fit again. If a column repeats another, remove it.':'';}
  function parse(text,interaction){
   const lines=text.trim().split(/\r?\n/).map(l=>l.split(',').map(s=>s.trim()));
   const names=lines.shift();
@@ -10,7 +13,7 @@
   lines.forEach((r,i)=>{
    const where='Row '+(i+1)+' (line '+(i+2)+')';
    if(r.length!==names.length)throw Error(where+' has '+r.length+' values but the header has '+names.length+'. Every cell must contain finite numbers; rows with missing values are refused, not dropped');
-   r.forEach((x,j)=>{if(!x||!Number.isFinite(Number(x)))throw Error(where+', column '+names[j]+': '+(x?'"'+x.slice(0,20)+'" is not a number':'value is missing')+'. Every cell must contain finite numbers; rows with missing values are refused, not dropped');});
+   r.forEach((x,j)=>{if(!x||!DECIMAL.test(x)||!Number.isFinite(Number(x)))throw Error(where+', column '+names[j]+': '+(x?'"'+x.slice(0,20)+'" is not a number':'value is missing')+'. Every cell must contain finite numbers; rows with missing values are refused, not dropped');});
    if(!(Number(r[1])>0))throw Error(where+', column vi: sampling variances must be greater than zero');
   });
   const rows=lines.map(r=>r.map(Number));
@@ -41,6 +44,7 @@
   current={result:structuredClone(r),input:structuredClone(c)};
   $('plus-export').disabled=r.status!=='ok';
   $('plus-status').classList.toggle('plus-refused',r.status!=='ok');
+  advise(r.status!=='ok'?r.reason:'');
   if(r.status!=='ok'){$('plus-status').textContent='Refused: '+r.reason;$('plus-results').replaceChildren();$('plus-plot').replaceChildren();return;}
   $('plus-status').textContent='ML models fitted on the same complete rows. Normal-theory inference; 95% confidence intervals.';
   let html='';
@@ -61,14 +65,14 @@
  }
  function run(){
   try{const c=parse($('plus-data').value,$('plus-interaction').checked);render(AlmMetaPlus.compute(c),c);}
-  catch(e){current=null;$('plus-status').textContent='Refused: '+e.message;$('plus-status').classList.add('plus-refused');$('plus-results').replaceChildren();$('plus-plot').replaceChildren();$('plus-export').disabled=true;}
+  catch(e){current=null;advise(e.message);$('plus-status').textContent='Refused: '+e.message;$('plus-status').classList.add('plus-refused');$('plus-results').replaceChildren();$('plus-plot').replaceChildren();$('plus-export').disabled=true;}
  }
  function exportPayload(){if(!current||current.result.status!=='ok')throw Error('Fit valid inputs before exporting');return structuredClone({schema:'meta-regression-plus-v1',...current});}
  $('plus-run').onclick=run;
  const example=$('plus-data').defaultValue;
  $('plus-example').onclick=()=>{$('plus-data').value=example;$('plus-interaction').checked=false;run();$('plus-status').textContent='Example loaded (metadat::dat.bcg: year and absolute latitude). '+$('plus-status').textContent;};
  $('plus-data').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();run();}});
- for(const id of ['plus-data','plus-interaction'])$(id).addEventListener('input',()=>{current=null;$('plus-status').classList.remove('plus-refused');$('plus-status').textContent='Inputs changed. Fit the models to update results.';$('plus-results').replaceChildren();$('plus-plot').replaceChildren();$('plus-export').disabled=true;});
+ for(const id of ['plus-data','plus-interaction'])$(id).addEventListener('input',()=>{current=null;advise('');$('plus-status').classList.remove('plus-refused');$('plus-status').textContent='Inputs changed. Fit the models to update results.';$('plus-results').replaceChildren();$('plus-plot').replaceChildren();$('plus-export').disabled=true;});
  $('plus-export').onclick=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(exportPayload(),null,2)+'\n'],{type:'application/json'}));a.href=url;a.download='meta-regression-plus.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);};
  window.AlmMetaPlusUI=Object.freeze({parse,render,run,plot,exportPayload,current:()=>structuredClone(current),snapshot:()=>({data:$('plus-data').value,interaction:$('plus-interaction').checked,current:structuredClone(current),status:$('plus-status').textContent}),restore:s=>{$('plus-data').value=s.data;$('plus-interaction').checked=s.interaction;if(s.current)render(s.current.result,s.current.input);else{current=null;$('plus-results').replaceChildren();$('plus-plot').replaceChildren();$('plus-export').disabled=true;}$('plus-status').textContent=s.status;}});
  run();

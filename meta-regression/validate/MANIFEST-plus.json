@@ -8,6 +8,7 @@
     "metadat": "1.6.0",
     "jsonlite": "2.0.0"
   },
+  "documentedDivergences": 3,
   "tolerances": {
     "closed": 1e-9,
     "iterative": 0.000001,
@@ -33,6 +34,11 @@
       "path": "validate/plus/candidates.json",
       "bytes": 152996,
       "sha256": "736a2e4b9a65ee7352a7b8f96776c07d1f88c41de743d6ac72726a5b32a462f8"
+    },
+    {
+      "path": "validate/plus/divergences.json",
+      "bytes": 27362,
+      "sha256": "a1f52648e03c224cbba2ed47270abe68cc356141f334d84156170e151da45375"
     }
   ]
 }

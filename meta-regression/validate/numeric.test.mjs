@@ -71,3 +71,21 @@ test('DOM output and JSON export on every R configuration; numeric/label/refusal
  writeFileSync(new URL('validate/plus/test-evidence.json',base),JSON.stringify(evidence,null,2)+'\n');
  console.log(JSON.stringify(evidence));
 });
+test('documented divergences: mixed-scale designs metafor refuses from eigen rounding noise; the engine fits them as gate-disabled metafor does',()=>{
+ const d=read('validate/plus/divergences.json');
+ assert.equal(d.configs.length,3);assert.equal(manifest.documentedDivergences,3);
+ let checks=0;
+ for(const c of d.configs){
+  assert.equal(c.reference.status,'refused');assert.equal(c.reference.reason,d.expected.reason);
+  assert.ok(c.eigen_min_XtX<=1e-7&&c.svd_min_squared>1e-7,c.id+': gate noise');
+  const a=AlmMetaPlus.compute(c.input);assert.equal(a.status,'ok',c.id);
+  const rows=AlmMetaPlusContract.audit(a,c.gate_disabled);checks+=rows.length;
+  // Compare as JSON: after the DOM test the contract may come from another realm (vm context).
+  assert.equal(JSON.stringify(rows.filter(r=>!r.pass).map(r=>r.key)),'[]',c.id);
+  // Planted negatives: the divergence is detected against the metafor reference, and a changed value fails.
+  assert.ok(AlmMetaPlusContract.audit(a,c.reference).some(r=>!r.pass),c.id+': divergence must show');
+  const bad=structuredClone(c.gate_disabled);bad.full.beta[1]+=1e-4*Math.max(1,Math.abs(bad.full.beta[1]));
+  assert.ok(AlmMetaPlusContract.audit(a,bad).some(r=>!r.pass),c.id+': changed beta must fail');
+ }
+ assert.equal(checks,874);
+});

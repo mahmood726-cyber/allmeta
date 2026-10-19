@@ -1012,7 +1012,10 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'meta-regression' });
+      // The #alm-plus extras are kept out of the original autosave so its keys and
+      // positional idx:N indices stay exactly as before the extras were added.
+      AlmAutosave.install({ appKey: 'meta-regression', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *)'; }) });
     }
   });
 })();
@@ -1022,6 +1025,7 @@
  <h2 id="plus-title">Multiple moderators and model comparison</h2>
  <p>Fit nested maximum-likelihood models with two or three numeric moderators. Enter independent study effects and their sampling variances. For categorical moderators, supply numeric indicator columns. Missing or invalid rows are refused.</p>
  <p>Initial rows: metadat::dat.bcg, log risk ratios and sampling variances, with year and absolute latitude.</p>
+ <p class="plus-hint">Checked against metafor <code>rma(method="ML")</code> run to tight convergence (<code>control=list(threshold=1e-12*max(1,var(yi)), stepadj=0.5, maxiter=10000)</code>). With metafor's default settings, results can differ from these in the third decimal place.</p>
  <label for="plus-data">CSV: yi, vi, then moderator columns</label>
  <p id="plus-data-hint" class="plus-hint">Header line <code>yi,vi,name1,name2</code> (optionally a third moderator). One study per line, comma-separated, numbers only. Press Ctrl+Enter in the box to fit.</p>
  <textarea id="plus-data" spellcheck="false" aria-describedby="plus-data-hint">yi,vi,year,ablat
@@ -1043,6 +1047,7 @@
  <button id="plus-example" type="button">Load BCG example and fit</button>
  <button id="plus-export" type="button" disabled>Export extras as JSON</button>
  <p id="plus-status" role="status" aria-live="polite"></p>
+ <p id="plus-advice" class="plus-hint"></p>
  <div id="plus-results"></div>
  <div id="plus-plot"></div>
  <div id="alm-plus-validate"></div>

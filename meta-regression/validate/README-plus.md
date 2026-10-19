@@ -20,9 +20,14 @@ experimental location-scale checks, and every one of the 1,742 extracted records
 (estimates, cards, SVG coordinates, permutation and LS results) is identical
 across the three trees. The `shared/ma-core.js` REML change on `main` therefore
 does not alter this app's outputs on that corpus (the app uses only
-`predictionInterval` from that file). The original seven inline scripts are
-unchanged, and two computation/serialised-DOM scenarios match exactly before and
-after loading the extension. The existing external Validate (R) button remains.
+`predictionInterval` from that file). Six of the seven original inline scripts
+are unchanged. The seventh, which installs the original autosave, now passes the
+same default selector list restricted to elements outside `#alm-plus`, so the
+original autosave stores exactly the keys and positional `idx:N` indices it
+stored on `main` (checked in `meta-regression-usability.spec.mjs` against the
+key set captured on `main`, with a planted negative). Two computation/serialised
+DOM scenarios match exactly before and after loading the extension. The existing
+external Validate (R) button remains.
 
 ## Reference calculation
 
@@ -39,11 +44,18 @@ plot; it does not reproduce `regplot`'s graphical size defaults.
 Desktop versions: metafor 5.2-1 (printed by `packageVersion` as 5.2.1), metadat
 1.6.0, jsonlite 2.0.0; R 4.6.0. No packages were installed for this task.
 The generator enforces these package versions and logs `.libPaths()` and versions.
-Fisher scoring uses `stepadj=0.5`, `maxiter=10000`, and the absolute tau-squared
-change threshold `1e-12 * max(1, var(yi))`. R's boundary likelihood check and
-raw model-matrix eigenvalue threshold `evtol=1e-7` are retained. A preliminary
-standardised-design rank check refuses redundant columns instead of silently
-dropping coefficients. The JavaScript implementation uses reorthogonalised
+The reference uses **non-default** metafor control settings,
+`control=list(threshold=1e-12*max(1,var(yi)), stepadj=0.5, maxiter=10000)`.
+Default `rma(method="ML")` stops earlier and can differ from these (and from the
+page) in the third decimal place; in the independent review, default-control
+fits had log likelihoods up to 6e-4 lower, that is, they were less converged.
+metafor's boundary likelihood check and raw model-matrix eigenvalue threshold
+`evtol=1e-7` are kept. The engine evaluates that eigenvalue gate accurately
+(Jacobi on X'X); metafor uses LAPACK `eigen(crossprod(X))`, which can return a
+negative rounding-noise eigenvalue for designs mixing very different moderator
+scales (see "Documented divergences"). A preliminary standardised-design rank
+check refuses redundant columns. This is the app's own stricter rule:
+default metafor would instead drop the redundant column with a warning. The JavaScript implementation uses reorthogonalised
 weighted QR, with internal centring/scaling, and separate normal/chi-square tail
 calculations. No fitted results or dataset identifiers enter the estimator.
 
@@ -70,12 +82,21 @@ recommended substantive analyses; some datasets contain dependent effects.
 
 Each configuration retains the first 80 complete finite rows in source order.
 Rows omitted by that bound are listed separately from incomplete/invalid rows.
-There are 194 configurations from 43 datasets, 5,972 configuration-row uses and
+There are 194 configurations from 43 metadat datasets, 5,972 configuration-row uses and
 1,601 distinct dataset/row pairs. Coverage is 54 two-moderator additive, 54
 two-moderator interaction, 43 three-moderator additive and 43 three-moderator
-interaction configurations. R produces 162 fitted results and 32 refusals:
-24 fail the raw model-matrix gate, four lack residual degrees of freedom and
-four have redundant moderator columns. All refusals match exactly.
+interaction configurations. `dat.bcg` and `dat.colditz1994` contain the same
+trials, so their two-moderator additive and interaction configurations are exact
+repeats (corpus entries 35/65 and 36/66, 1-based): the corpus has 42 distinct data
+sources and 192 distinct configurations. The repeats are kept so that the pinned
+bytes and counts stay unchanged. R produces 162 fitted results and 32 refusals.
+Of these, 28 are metafor's own refusals: 24 fail its raw model-matrix gate and
+four lack residual degrees of freedom. The other four are the redundant-column rule
+described above, applied identically by `reference.R` and the engine. Refusals
+match metafor on the pinned corpus; see "Documented divergences" for designs
+outside it. For a rank refusal the page adds a hint to centre or rescale the
+moderators; the 24 gate refusals are interactions of large-valued moderators
+(for example year with sample size), which fit after centring.
 
 The manifest pins **52,573 numerical/structural checks** plus **194 aggregate
 render checks**, giving **52,767** expected panel checks. Numerical tests pass
@@ -95,8 +116,24 @@ In Edge 155 (Playwright 1.64, `--workers=1`) the panel's full replay passes
 corruptions, the SHA-256 tamper rejection and the live webR tier (local webR
 0.5.5 bundle and pinned metafor, served same-origin with no external network).
 `meta-regression-usability.spec.mjs` adds five tests (one-click example,
-row/column-specific refusals, keyboard fitting, axe WCAG 2 A/AA scan and 375 px
-layout), each with a planted negative.
+row/column-specific refusals including hexadecimal/binary/octal literals, keyboard
+fitting, axe WCAG 2 A/AA scan, 375 px layout, and the original autosave key set),
+each with a planted negative.
+
+## Documented divergences
+
+`plus/divergences.json` (SHA-256 pinned in the manifest as `documentedDivergences: 3`)
+holds three synthetic designs from the independent review of PR #149 (`syn138`,
+`syn196`, `syn281`). Each has one moderator near 1e-3 and another near 1e5.
+metafor refuses all three with "Model matrix not of full rank. Cannot fit model."
+(confirmed on metafor 5.2.1 by the reviewer and on 5.0.1 for this file), because
+`eigen(crossprod(X))` returns -5.0e-7, -3.4e-6 and -7.4e-7. The accurate smallest
+squared singular values of X are 6.1e-6, 3.2e-6 and 7.3e-6, above the threshold.
+The engine fits them, and its results agree with the same `reference.R` calculation
+with only the gate disabled (`control evtol=-Inf`) in 874/874 checks, using the
+corpus tolerances. `numeric.test.mjs` asserts the divergence (engine fits, metafor
+refuses) and the agreement, and shows that a changed coefficient fails. These
+designs are not part of the 52,767 panel checks.
 
 ## The validation panel
 
@@ -108,7 +145,8 @@ files, verifies SHA-256 against embedded pins, and then recomputes each fit and
 render. Cached verified files can be replayed without a network connection;
 file mode uses the framework's file picker. Hashes are on UTF-8 LF bytes.
 The replay restores the user's inputs, result and control state in a `finally`
-block. Original inputs, outputs, storage and URL state are not written.
+block. Original inputs, outputs, storage and URL state are not written, and
+the extras' own inputs are excluded from the original app's autosave.
 
 ## Plot contract and scope
 

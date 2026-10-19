@@ -39,6 +39,10 @@ test('refusals name the row, line and column; valid input is not styled as refus
     ['yi,vi,a,b\n1,1,2\n2,1,3,4', 'Row 1 (line 2) has 3 values but the header has 4'],
     ['effect,var,a,b\n1,1,2,3', 'The first line must be the header yi,vi'],
     ['yi,vi,a,b\n1,1,2,3\n2,1,3,4\n3,1,4,5', 'Need more studies than coefficients'],
+    ['yi,vi,a,b\n0x1F,1,2,3\n2,1,3,4\n3,1,4,5\n4,1,5,1', 'Row 1 (line 2), column yi: "0x1F" is not a number'],
+    ['yi,vi,a,b\n1,1,0b101,3\n2,1,3,4\n3,1,4,5\n4,1,5,1', 'Row 1 (line 2), column a: "0b101" is not a number'],
+    ['yi,vi,a,b\n1,1,2,0o17\n2,1,3,4\n3,1,4,5\n4,1,5,1', 'Row 1 (line 2), column b: "0o17" is not a number'],
+    ['yi,vi,a,b\n1,1,2,Infinity\n2,1,3,4\n3,1,4,5\n4,1,5,1', 'Row 1 (line 2), column b: "Infinity" is not a number'],
   ];
   for (const [csv, message] of cases) {
     await page.locator('#plus-data').fill(csv);
@@ -49,6 +53,17 @@ test('refusals name the row, line and column; valid input is not styled as refus
     await expect(page.locator('#plus-export')).toBeDisabled();
   }
   await expect(page.locator('#plus-status')).toHaveAttribute('role', 'status');
+  // Decimal and exponent forms are accepted (contrast to the hex/binary/octal refusals above).
+  const parsed = await page.evaluate(() => AlmMetaPlusUI.parse('yi,vi,a,b\n-.5,1e-3,+2,3E2\n1.,2,3,4', false));
+  expect(parsed.yi).toEqual([-0.5, 1]); expect(parsed.vi).toEqual([0.001, 2]); expect(parsed.mods).toEqual([[2, 300], [3, 4]]);
+  // Rank refusals carry a centring/rescaling hint; other refusals do not.
+  await page.locator('#plus-data').fill('yi,vi,a,b\n1,1,1,1\n2,1,2,2\n3,1,3,3\n4,1,4,4\n5,1,5,5');
+  await page.locator('#plus-run').click();
+  await expect(page.locator('#plus-status')).toContainText('Refused:');
+  await expect(page.locator('#plus-advice')).toContainText('centre or rescale');
+  await page.locator('#plus-data').fill('yi,vi,a,b\n1,1,2,3\n2,1,,4\n3,1,4,5\n4,1,5,1');
+  await page.locator('#plus-run').click();
+  await expect(page.locator('#plus-advice')).toBeEmpty();
   // Planted negative: a valid fit clears the refused styling and message.
   await page.getByRole('button', { name: 'Load BCG example and fit' }).click();
   await expect(page.locator('#plus-status')).not.toHaveClass(/plus-refused/);
@@ -112,4 +127,26 @@ test('375 px layout: no horizontal overflow from the extras; bubble plot screens
   await page.locator('#plus-interaction').uncheck();
   await page.locator('#plus-run').click();
   await page.locator('#plus-plot').screenshot({ path: shot(info, 'u08-bubble-1280px-additive.png') });
+});
+
+// Keys the ORIGINAL app's autosave writes on main (da66b89), captured with the same procedure.
+const MAIN_AUTOSAVE_KEYS = ['alm-plot-1-format', 'alm-plot-1-physical-width', 'alm-plot-1-resolution', 'f-data', 'f-effectlabel',
+  'f-modlabel', 'f-scale', 'f-title', 'idx:1', 'idx:10', 'idx:11', 'idx:12', 'idx:13', 'idx:14', 'idx:15', 'idx:17', 'idx:2', 'idx:6'];
+test('original autosave keys are exactly those on main; the extras are never saved into them', async ({ page }) => {
+  await ready(page);
+  const keysOf = appKey => page.evaluate(k => Object.keys((JSON.parse(localStorage.getItem('alm-autosave:' + k) || '{}').values) || {}).sort(), appKey);
+  await page.evaluate(() => { localStorage.clear(); document.getElementById('f-data').dispatchEvent(new Event('input', { bubbles: true })); });
+  await expect.poll(() => keysOf('meta-regression'), { timeout: 10000 }).toEqual(MAIN_AUTOSAVE_KEYS);
+  // Editing the extras must not write to (or re-index) the original key.
+  await page.evaluate(() => localStorage.clear());
+  await page.locator('#plus-data').fill('yi,vi,a,b\n1,1,2,3');
+  await page.locator('#plus-interaction').check();
+  await page.waitForTimeout(1500);
+  expect(await keysOf('meta-regression')).toEqual([]);
+  await page.evaluate(() => document.getElementById('f-data').dispatchEvent(new Event('input', { bubbles: true })));
+  await expect.poll(() => keysOf('meta-regression'), { timeout: 10000 }).toEqual(MAIN_AUTOSAVE_KEYS);
+  // Planted negative: an autosave installed with the default selectors (as before this fix) picks up the extras.
+  await page.evaluate(() => { AlmAutosave.install({ appKey: 'u08-negative' }); document.getElementById('f-data').dispatchEvent(new Event('input', { bubbles: true })); });
+  await expect.poll(() => keysOf('u08-negative'), { timeout: 10000 }).toContain('plus-data');
+  expect(await keysOf('u08-negative')).not.toEqual(MAIN_AUTOSAVE_KEYS);
 });
