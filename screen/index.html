@@ -151,6 +151,17 @@
     .chip .kbd { opacity:0.6; font-size:0.68rem; margin-left:0.25rem; }
     .nav { display:flex; gap:0.5rem; align-items:center; margin-top:0.5rem; flex-wrap:wrap; }
     .empty-state { text-align:center; color:var(--muted); padding:3rem 1rem; }
+    .first-run { border:2px dashed var(--border-strong); }
+    .first-run h2 { margin-top:0; font-size:1.2rem; }
+    .first-run ol { padding-left:1.3rem; line-height:1.7; }
+    .first-run .fr-actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.4rem 0; }
+    body.drag-over .cardwrap { outline:3px dashed var(--accent); outline-offset:4px; }
+    .ux-strip { display:flex; flex-wrap:wrap; gap:0.4rem 1rem; align-items:center; justify-content:space-between; background:var(--accent-soft); border:1px solid var(--border); border-radius:8px; padding:0.5rem 0.75rem; margin-bottom:0.6rem; font-size:0.86rem; }
+    .ux-strip[hidden], .ux-strip [hidden] { display:none !important; }
+    .ux-strip button:disabled { opacity:0.55; cursor:not-allowed; }
+    .ux-strip .ux-progress { font-variant-numeric:tabular-nums; }
+    .ux-strip .ux-ai { display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center; }
+    .ux-strip .hint { font-size:0.74rem; color:var(--muted); width:100%; margin:0; }
     .conflict-row { display:grid; grid-template-columns:1fr auto; gap:0.5rem; align-items:center;
                     padding:0.5rem 0; border-bottom:1px solid var(--border); font-size:0.85rem; }
     .conflict-row .ct { overflow:hidden; text-overflow:ellipsis; }
@@ -221,6 +232,7 @@
     <button type="button" id="btn-export-json">Export JSON</button>
     <button type="button" id="btn-export-csv">Export CSV</button>
     <button type="button" id="btn-export-ris">Export includes (RIS)</button>
+    <button type="button" id="btn-export-asreview" title="CSV with title, abstract, doi and an included column (1 / 0 / blank) that ASReview LAB can import">Export for ASReview (CSV)</button>
     <button type="button" id="btn-to-extract" class="primary" title="Extract structured data from the included records">→ Extract</button>
     <button type="button" id="btn-prisma" class="primary" title="Write counts to prisma-flow-v1">→ PRISMA Flow</button>
     <button type="button" id="btn-help" title="Keyboard shortcuts">?</button>
@@ -404,6 +416,13 @@
 
     <!-- RIGHT: screening surface -->
     <section class="cardwrap" aria-label="Screening">
+      <div id="ux-strip" class="ux-strip" hidden>
+        <span id="ux-progress" class="ux-progress"></span>
+        <span class="ux-ai"><span id="ux-gate" role="status" aria-live="polite"></span>
+          <button type="button" id="ux-start-ai" class="primary" disabled>Start AI ranking</button>
+          <label class="toggle" id="ux-auto-wrap" hidden><input type="checkbox" id="ux-auto"> Keep ranking updated after each decision</label></span>
+        <p class="hint" id="ux-progress-note">Descriptive counts of your decisions in this stage. They do not estimate how many relevant records remain.</p>
+      </div>
       <div class="progress">
         <span class="pos" id="pos">0 of 0</span>
         <div class="bar"><i id="bar-fill"></i></div>
@@ -412,7 +431,7 @@
       <div class="focus-legend" id="focus-legend" aria-hidden="true">
         <span><kbd>i</kbd> include</span><span><kbd>e</kbd>/<kbd>x</kbd> exclude</span><span><kbd>m</kbd> maybe</span>
         <span><kbd>1</kbd>–<kbd>9</kbd> reason</span><span><kbd>n</kbd> next undecided</span><span><kbd>j</kbd>/<kbd>k</kbd> move</span>
-        <span><kbd>u</kbd> undo</span><span><kbd>f</kbd> exit</span>
+        <span><kbd>u</kbd> clear</span><span><kbd>z</kbd> undo last</span><span><kbd>f</kbd> exit</span>
       </div>
       <div id="card-host" aria-live="polite"></div>
       <details class="panel" id="history-panel"><summary>Decision history</summary><p class="hint">Dated local history; editable backup files are not signed or authenticated. Older imported decisions have no reconstructed history.</p><ol id="audit-list"></ol></details>
@@ -438,7 +457,8 @@
         <tr><td><kbd>m</kbd></td><td>Maybe</td></tr>
         <tr><td><kbd>d</kbd></td><td>Toggle duplicate</td></tr>
         <tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>Exclude with reason #n</td></tr>
-        <tr><td><kbd>u</kbd> / <kbd>Backspace</kbd></td><td>Clear decision (undo)</td></tr>
+        <tr><td><kbd>u</kbd> / <kbd>Backspace</kbd></td><td>Clear this record's decision</td></tr>
+        <tr><td><kbd>z</kbd> / <kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Undo your last decision and return to that record</td></tr>
         <tr><td><kbd>→</kbd> / <kbd>j</kbd></td><td>Next record</td></tr>
         <tr><td><kbd>←</kbd> / <kbd>k</kbd></td><td>Previous record</td></tr>
         <tr><td><kbd>n</kbd> / <kbd>Enter</kbd></td><td>Next undecided</td></tr>
@@ -446,6 +466,7 @@
         <tr><td><kbd>f</kbd></td><td>Focus mode (immersive rapid screening)</td></tr>
         <tr><td><kbd>?</kbd></td><td>This help</td></tr>
       </table>
+      <p class="hint">Coming from ASReview LAB? Here <kbd>i</kbd> means <strong>include</strong> (relevant), not irrelevant; use <kbd>e</kbd> to exclude.</p>
       <p style="margin-top:1rem;"><button type="button" id="help-close" class="primary">Close</button></p>
     </div>
   </div>
@@ -453,6 +474,7 @@
   <script src="../shared/toast.js"></script>
   <script src="../shared/sr-collab-v1.js"></script>
   <script src="workflow.js"></script>
+  <script src="ux.js"></script>
   <script src="hybrid-core.js"></script>
   <script src="pico.js"></script>
   <script src="offline.js"></script>
@@ -464,6 +486,7 @@
     "use strict";
     var LS_KEY = "screen-v1";
     var W = window.ScreenWorkflow;
+    var UX = window.ScreenUX;
     var PRISMA_FLOW_KEY = "prisma-flow-v1";
     var SR_RECORDS_KEY = "sr-records-v1";
     var SR_PROJECT_KEY = "sr-project-v1"; // Design protocol envelope (read for screening terms)
@@ -714,6 +737,7 @@
         aiRationale: clean(r.aiRationale, 400),
         aiConfidence: (typeof r.aiConfidence === "number") ? r.aiConfidence : null
       };
+      if (r.importLabel === 0 || r.importLabel === 1) rec.importLabel = r.importLabel;
       return W.normalize(rec, r);
     }
 
@@ -733,7 +757,7 @@
       function idx(names) { for (var n = 0; n < names.length; n++) { var i = header.indexOf(names[n]); if (i >= 0) return i; } return -1; }
       var iT = idx(["title", "ti"]), iA = idx(["abstract", "ab"]), iAu = idx(["authors", "author", "au"]),
         iY = idx(["year", "py", "pubyear", "publication year"]), iJ = idx(["journal", "source", "jo", "publication"]),
-        iD = idx(["doi"]), iId = idx(["id", "record id", "key", "refid"]), iP = idx(["pmid"]), iK = idx(["keywords", "kw"]);
+        iD = idx(["doi"]), iId = idx(["id", "record id", "key", "refid"]), iP = idx(["pmid"]), iK = idx(["keywords", "kw"]), iL = UX.labelColumn(header);
       var recs = [], start = iT >= 0 ? 1 : 0, r, c;
       for (r = start; r < lines.length; r++) {
         c = lines[r]; if (!c.length) continue;
@@ -743,7 +767,8 @@
           rec = {
             id: get(iId), title: get(iT), abstract: get(iA), authors: splitAuthors(get(iAu)),
             year: get(iY), journal: get(iJ), doi: get(iD), pmid: get(iP),
-            keywords: get(iK) ? get(iK).split(/[;|]/).map(function (s) { return s.trim(); }).filter(Boolean) : []
+            keywords: get(iK) ? get(iK).split(/[;|]/).map(function (s) { return s.trim(); }).filter(Boolean) : [],
+            importLabel: iL >= 0 ? UX.parseLabel(get(iL)) : null
           };
         } else {
           rec = { id: c[0] || "", title: c[1] || "", abstract: c[2] || "" };
@@ -772,6 +797,7 @@
           case "JO": case "JF": case "JA": case "T2": if (!cur.journal) cur.journal = val; break;
           case "DO": cur.doi = val; break;
           case "KW": if (val) cur.keywords.push(val); break;
+          case "N1": if (UX.risNoteLabel(val) !== null) cur.importLabel = UX.risNoteLabel(val); break;
           case "ER": flush(); break;
           default: break;
         }
@@ -832,17 +858,26 @@
       return parseCSVRecords(t);
     }
 
-    function addRecords(newRecs) {
-      if (!newRecs.length) { toast("No records found in that file."); return; }
+    function addRecords(newRecs, formatName) {
+      if (!newRecs.length) { toast("No records found in that file" + (formatName ? " (read as " + formatName + ")." : ".")); return; }
+      // ASReview-style labels (included / label_included / asreview_label columns, RIS N1 notes)
+      // become this reviewer's title/abstract decisions. No timestamps or history are invented.
+      var labelSlot = S.mode === "dual" ? S.active : "r1", labelled = 0;
+      newRecs.forEach(function (r) {
+        if (r.importLabel === 0 || r.importLabel === 1) { r[labelSlot] = { d: UX.decisionFromLabel(r.importLabel), reason: "", at: "" }; labelled++; }
+        delete r.importLabel;
+      });
       // de-id-collision: ensure unique ids vs existing
       var existing = Object.create(null); S.records.forEach(function (r) { existing[r.id] = 1; });
       newRecs.forEach(function (r) { while (existing[r.id]) r.id = freshId(); existing[r.id] = 1; });
       S.records = S.records.concat(newRecs);
-      W.audit(S,"import",null,S.stage,null,{ids:newRecs.map(function(r){return r.id;})});
+      W.audit(S,"import",null,S.stage,null,labelled ? {ids:newRecs.map(function(r){return r.id;}),format:formatName || "",importedLabels:{count:labelled,reviewer:labelSlot,stage:"ta"}} : {ids:newRecs.map(function(r){return r.id;})});
       invalidateRanking();
       runDedup(); rescoreAll();
       var dups = S.records.filter(function (r) { return r.dup; }).length;
-      toast("Imported " + newRecs.length + " record(s). " + (dups ? dups + " duplicate(s) flagged." : "No duplicates."));
+      var importMsg = "Imported " + newRecs.length + " record(s)" + (formatName ? " (" + formatName + " detected)" : "") + ". " + (dups ? dups + " duplicate(s) flagged." : "No duplicates.") +
+        (labelled ? " " + labelled + " existing label(s) applied as " + labelSlot.toUpperCase() + " title/abstract decisions." : "");
+      toast(importMsg); workflowMessage(importMsg);
       S.cursor = 0; save(); render();
     }
 
@@ -958,9 +993,19 @@
     function renderCard() {
       var r = currentRecord();
       if (!r) {
-        cardHost.innerHTML = '<div class="card"><div class="empty-state">' +
-          (S.records.length ? "No records match this filter." : "No records yet — <strong>Import records…</strong> or <strong>Load example</strong>.") +
-          "</div></div>";
+        if (!S.records.length) {
+          cardHost.innerHTML = '<div class="card first-run" id="first-run"><h2>Start screening in three steps</h2><ol>' +
+            '<li><strong>Drop a RIS, PubMed (.nbib), CSV or JSON export anywhere on this page</strong> — the format is detected for you.' +
+            '<div class="fr-actions"><button type="button" class="primary" id="fr-choose">Choose a file…</button>' +
+            '<button type="button" id="fr-demo">Try a 7-record synthetic demo</button></div></li>' +
+            '<li>Label 2 relevant and 2 irrelevant records (<kbd>i</kbd> include, <kbd>e</kbd> exclude).</li>' +
+            '<li>Click <strong>Start AI ranking</strong> above the card to see the most likely relevant records first.</li></ol>' +
+            '<p class="hint">No install and no account. Records stay in this browser. CSV/RIS files exported from ASReview LAB keep their labels.</p></div>';
+          $("fr-choose").addEventListener("click", function () { $("file-import").click(); });
+          $("fr-demo").addEventListener("click", loadExample);
+          return;
+        }
+        cardHost.innerHTML = '<div class="card"><div class="empty-state">No records match this filter.</div></div>';
         return;
       }
       var t = visibleDecision(r);
@@ -1292,6 +1337,14 @@
       });
       downloadBlob(new Blob([[header.map(csvCell).join(",")].concat(rows).join("\n")], { type: "text/csv;charset=utf-8" }), "screen-decisions.csv");
     }
+    function exportASReview() {
+      if (S.mode === "dual" && S.blind) { workflowMessage("Turn off blind mode before exporting combined decisions, or export your own reviewer file."); return; }
+      var recs = S.records.filter(function (r) { return !r.dup; });
+      if (!recs.length) { toast("No records to export."); return; }
+      downloadBlob(new Blob([UX.asreviewCSV(recs, function (r) { return W.effective(r, S, "ta"); })], { type: "text/csv;charset=utf-8" }), "screen-asreview.csv");
+      var omitted = S.records.length - recs.length;
+      workflowMessage("Exported " + recs.length + " record(s) with title/abstract labels in the included column (1 include, 0 exclude, blank undecided or maybe)" + (omitted ? "; " + omitted + " duplicate(s) omitted." : "."));
+    }
     function exportRIS() {
       if(S.mode === "dual" && S.blind){workflowMessage("Turn off blind mode to export final includes.");return;}
       var inc = S.records.filter(function (r) { return W.effective(r,S,"ft") === "include"; });
@@ -1494,6 +1547,8 @@
       if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
       if ($("help-modal").classList.contains("on")) { if (e.key === "Escape") closeHelp(); return; }
       var k = e.key;
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && k.toLowerCase() === "z") { undoLast(); e.preventDefault(); return; }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (k >= "1" && k <= "9") { applyReason(parseInt(k, 10) - 1); e.preventDefault(); return; }
       switch (k.toLowerCase()) {
         case "i": decide("include"); e.preventDefault(); break;
@@ -1501,6 +1556,7 @@
         case "m": decide("maybe"); e.preventDefault(); break;
         case "d": decide("duplicate"); e.preventDefault(); break;
         case "u": case "backspace": clearDecision(); e.preventDefault(); break;
+        case "z": undoLast(); e.preventDefault(); break;
         case "j": case "arrowright": move(1); e.preventDefault(); break;
         case "k": case "arrowleft": move(-1); e.preventDefault(); break;
         case "n": case "enter": nextUndecided(); e.preventDefault(); break;
@@ -1508,6 +1564,9 @@
         case "f": toggleFocus(); e.preventDefault(); break;
         case "?": openHelp(); e.preventDefault(); break;
       }
+    }
+    function undoLast() {
+      action(function(){var r=W.undo(S);S.filter="all";$("f-filter").value="all";VIEW=filteredRecords();S.cursor=Math.max(0,VIEW.indexOf(r));});
     }
     function openHelp() { $("help-modal").classList.add("on"); }
     function closeHelp() { $("help-modal").classList.remove("on"); }
@@ -1579,7 +1638,7 @@
         if(project && project._schema===LS_KEY){
           if(S.records.length && !confirm("Replace this browser's project with the backup? Export the current project first if you need to keep it."))return;
           restoreProject(project);workflowMessage("Project restored in memory, including stage decisions and history. Check the save status; retrain ranking when needed.");
-        }else addRecords(detectAndParse(text,file.name));
+        }else addRecords(detectAndParse(text,file.name),UX.formatName(text,file.name));
       }catch(e){workflowMessage("Import failed: "+e.message);}};rd.readAsText(file);
     }
 
@@ -1596,6 +1655,17 @@
       $("btn-export-json").addEventListener("click", exportJSON);
       $("btn-export-csv").addEventListener("click", exportCSV);
       $("btn-export-ris").addEventListener("click", exportRIS);
+      $("btn-export-asreview").addEventListener("click", exportASReview);
+      // Drag-and-drop a reference file anywhere on the page (read locally; never uploaded).
+      var hasFiles = function (e) { return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") >= 0; };
+      document.addEventListener("dragover", function (e) { if (!hasFiles(e)) return; e.preventDefault(); document.body.classList.add("drag-over"); });
+      document.addEventListener("dragleave", function (e) { if (!e.relatedTarget) document.body.classList.remove("drag-over"); });
+      document.addEventListener("drop", function (e) {
+        document.body.classList.remove("drag-over");
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        var f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) onFile(f);
+      });
       $("btn-prisma").addEventListener("click", pushPrisma);
       $("btn-to-extract").addEventListener("click", function () {
         if(S.mode==="dual" && S.blind){workflowMessage("Turn off blind mode before sending final includes to Extract.");return;}
@@ -1629,7 +1699,7 @@
 
       // ML
       $("btn-train").addEventListener("click", onTrain);
-      $("btn-undo").onclick=function(){action(function(){var r=W.undo(S);S.filter="all";$("f-filter").value="all";VIEW=filteredRecords();S.cursor=Math.max(0,VIEW.indexOf(r));});};
+      $("btn-undo").onclick=undoLast;
       // AI assist
       $("ai-on").addEventListener("change", function () { $("ai-controls").style.display = this.checked ? "" : "none"; });
       $("btn-ai-export").addEventListener("click", aiExportTask);
@@ -2179,6 +2249,7 @@
   })();
   </script>
   <script src="hybrid-ui.js"></script>
+  <script src="ux-ui.js"></script>
   <script src="../hub/shared/a11y-landmarks.js"></script>
   <div id="alm-validate"></div>
   <script src="../shared/build-info.js"></script>
