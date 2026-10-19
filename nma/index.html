@@ -258,28 +258,80 @@
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value; } return o; }
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
 
+    // CSV labels may contain commas or escaped quotes; tabs are also accepted.
+    function contrastCells(raw) {
+      const cells = [];
+      const cell = /\s*(?:"((?:[^"]|"")*)"|([^",\t]*))\s*(,|\t|$)/y;
+      let pos = 0;
+      do {
+        cell.lastIndex = pos;
+        const match = cell.exec(raw);
+        if (!match) return null;
+        cells.push((match[1] === undefined ? match[2] : match[1].replace(/""/g, '"')).trim());
+        pos = cell.lastIndex;
+        if (!match[3]) return cells;
+      } while (pos <= raw.length);
+      return null;
+    }
+
     function parseContrasts(text) {
       const rows=[], warnings=[];
+      const numberToken = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
       const lines = String(text||"").split(/\r?\n/);
+      let first = true;
       for (let i=0;i<lines.length;i++) {
         const raw = lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
-        const parts = raw.split(/\s*[,\t]\s*/);
-        if (parts.length < 5) { warnings.push("Line "+(i+1)+": need 5 columns"); continue; }
-        const study = parts[0];
-        const t1 = parts[1];
-        const t2 = parts[2];
-        const est = parseFloat(parts[3]);
-        const se = parseFloat(parts[4]);
-        if (!isFinite(est) || !isFinite(se)) {
-          if (rows.length === 0 && i < 3) continue;
-          warnings.push("Line "+(i+1)+": non-numeric"); continue;
+        const parts = contrastCells(raw);
+        const header = parts && parts.map(p => p.toLowerCase());
+        const isHeader = first && header && header.length === 5 &&
+          header[0] === "study" && header[1] === "treatment1" &&
+          header[2] === "treatment2" && /^(est|estimate)$/.test(header[3]) && header[4] === "se";
+        first = false;
+        if (isHeader) continue;
+        const where = "Row " + (i+1) + (parts && parts[0] ? ' (study "' + parts[0] + '")' : "");
+        if (!parts) { warnings.push(where + ": invalid CSV quoting in study, treatment or numeric field."); continue; }
+        if (parts.length !== 5) {
+          warnings.push(where + ": need 5 columns: study, treatment1, treatment2, estimate, SE.");
+          continue;
         }
-        if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }
-        if (t1 === t2) { warnings.push("Line "+(i+1)+": self-loop ignored"); continue; }
+        const [study, t1, t2] = parts;
+        const missing = ["study", "treatment1", "treatment2"].filter((field, j) => !parts[j]);
+        if (missing.length) { warnings.push(where + ": " + missing.join(", ") + " is required."); continue; }
+        const bad = ["estimate", "SE"].filter((field, j) =>
+          !numberToken.test(parts[j+3]) || !Number.isFinite(Number(parts[j+3])));
+        if (bad.length) { warnings.push(where + ": " + bad.join(", ") + " must be a finite number (complete numeric token required)."); continue; }
+        const est = Number(parts[3]), se = Number(parts[4]);
+        if (se <= 0) { warnings.push(where + ": SE must be greater than 0."); continue; }
+        if (t1 === t2) { warnings.push(where + ": treatment2 must differ from treatment1."); continue; }
         rows.push({ study, t1, t2, est, se, v: se*se });
       }
-      return { rows, warnings };
+      // Never expose a reduced network to any caller.
+      return { rows: warnings.length ? [] : rows, warnings };
+    }
+
+    function clearResults() {
+      _lastAnalysis = null;
+      for (const host of [statsWrap, svgHost, sucraHost, leagueHost, hetHost, refHost]) host.innerHTML = "";
+    }
+
+    function showWarnings(messages) {
+      warnEl.innerHTML = "<strong>Notes</strong><ul>" +
+        messages.map(w => "<li>" + escapeXml(w) + "</li>").join("") + "</ul>";
+      warnEl.classList.add("is-visible");
+    }
+
+    function canExport() {
+      // Revalidate current fields, including programmatic/imported changes.
+      render();
+      if (_lastAnalysis) return true;
+      if (!warnEl.textContent.includes("No valid results to export")) {
+        const message = document.createElement("p");
+        message.textContent = "No valid results to export";
+        warnEl.appendChild(message);
+      }
+      warnEl.classList.add("is-visible");
+      return false;
     }
 
     function uniqueTreatments(rows) {
@@ -503,6 +555,11 @@
       const state = readState();
       const parsed = parseContrasts(state.data);
       const rows = parsed.rows;
+      if (parsed.warnings.length || !rows.length) {
+        clearResults();
+        showWarnings(parsed.warnings.length ? parsed.warnings : ["Enter contrasts to run the analysis."]);
+        return;
+      }
       const treatments = uniqueTreatments(rows);
 
       populateRef(treatments, _pendingRef || state.ref); _pendingRef = null;
@@ -614,6 +671,7 @@
     function slugify(t,f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
 
     function onDownloadSvg() {
+      if (!canExport()) return;
       const state = readState();
       const parsed = parseContrasts(state.data);
       const treatments = uniqueTreatments(parsed.rows);
@@ -626,10 +684,11 @@
       const state = readState();
       const parsed = parseContrasts(state.data);
       const treatments = uniqueTreatments(parsed.rows);
-      if (!parsed.rows.length || treatments.length < 2) return alert("Need ≥2 treatments.");
-      if (!isConnected(treatments, parsed.rows)) return alert("Network disconnected.");
+      if (parsed.warnings.length || !parsed.rows.length || treatments.length < 2) { canExport(); return; }
+      if (!isConnected(treatments, parsed.rows)) { canExport(); return alert("Network disconnected."); }
       const a = analyseState(parsed.rows, state);
-      if (!a.ok) return alert(a.error);
+      if (!a.ok) { canExport(); return alert(a.error); }
+      if (!canExport()) return;
       const model = state.model === "re" ? "re" : "fe", ex = state.scale === "exp", tv = (v) => fmt(ex ? Math.exp(v) : v, 4);
       const header = ["row vs column"].concat(treatments).map(csvCell).join(",");
       const lines = [header];
@@ -645,6 +704,7 @@
       downloadBlob(new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"}), "nma-league.csv");
     }
     function onDownloadJson() {
+      if (!canExport()) return;
       const state = readState();
       const out = Object.assign({_schema:"nma-v1", _savedAt:new Date().toISOString()}, state);
       downloadBlob(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}), "nma-state.json");
@@ -715,7 +775,10 @@
       window.alm.plotExport({
         target: "#alm-plot-mount", basename: "nma",
         plots: [
-          { id: "network", name: "Network graph", getSvg: function () { return document.querySelector("#svg-host svg"); } }
+          { id: "network", name: "Network graph", getSvg: function () {
+            if (!canExport()) throw new Error("No valid results to export");
+            return document.querySelector("#svg-host svg");
+          } }
         ]
       });
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) { el.addEventListener("input", render); if (el.tagName === "SELECT") el.addEventListener("change", render); } }
@@ -734,7 +797,8 @@
     // Pure-compute hook for R-parity tests: the netmeta-equivalent analysis (deterministic). Effects are
     // versus refTreat (treatment minus reference); P-scores for both directions of benefit.
     window.__almNmaCompute = function (text, refTreat, opts) {
-      const { rows } = parseContrasts(text);
+      const { rows, warnings } = parseContrasts(text);
+      if (warnings.length) return { error: warnings.join(" ") };
       const o = opts || {};
       const a = window.AlmNmaMultiarm.analyse(rows, { randomCi: o.randomCi || "classic" });
       if (!a.ok) return { error: a.error };
