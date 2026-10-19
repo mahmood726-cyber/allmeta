@@ -200,6 +200,40 @@
       return { t: t, ll: -0.5 * (logdet + Math.log(sw) + rss / r),
                a: a, b: b, r: r, sign: a - b * r };
     }
+    // Curvature terms of the restricted profile log-likelihood at p.t, in
+    // units of p.r: c3/r^3 = y'P^3 y and b2/r^2 = trace(P^2), so that
+    // ll''(t) = trace(P^2)/2 - y'P^3 y. In orthogonal contrasts both are
+    // sums of 1/(lambda_j+t)^2 and z_j^2/(lambda_j+t)^3, hence decreasing in
+    // t. Both are formed from nonnegative terms only (no cancellation when one
+    // study dominates). Computed lazily: only the interval test needs them.
+    var pre = [];
+    function curv(p) {
+      if (p.c3 !== undefined) return p;
+      var t = p.t, r = p.r, sw = 0, swy = 0, j;
+      for (j = 0; j < k; j++) {
+        var w = r / (v[j] + t); weights[j] = w; pre[j] = sw; sw += w; swy += w * y[j];
+      }
+      var mu = swy / sw, swu = 0, suf = 0, sq = 0, pair = 0, diag = 0, c3 = 0;
+      for (j = 0; j < k; j++) swu += weights[j] * weights[j] * (y[j] - mu);
+      var ubar = swu / sw;
+      for (j = k - 1; j >= 0; j--) {
+        var wj = weights[j], du = wj * (y[j] - mu) - ubar, others = pre[j] + suf, w2 = wj * wj;
+        c3 += wj * du * du;
+        diag += w2 * others * others;   // P_jj = w_j (sw - w_j) / sw
+        pair += sq * w2; sq += w2;      // sum_{i<j} w_i^2 w_j^2
+        suf += wj;
+      }
+      p.c3 = c3; p.b2 = (diag + 2 * pair) / (sw * sw);
+      return p;
+    }
+    // ll'' <= trace(P(a)^2)/2 - y'P(b)^3 y < 0 certifies that ll is strictly
+    // concave on [a, b]: it has at most one stationary point there, so a
+    // bracketed score root is its maximum on the interval.
+    function concave(a, b) {
+      curv(a); curv(b);
+      var q = b.r / a.r, lhs = 0.5 * a.b2 * q * q * b.r;
+      return lhs * (1 + 1e-10) < b.c3 * (1 - 1e-10);
+    }
     var boundary = at(0), best = boundary;
     function take(p) {
       if (p.ll > best.ll || (best.t === 0 && boundary.sign > 0 && p.t > 0 &&
@@ -215,19 +249,29 @@
         var m = at(mid);
         if (m.sign > 0) a = m; else b = m;
       }
-      take(at(a.t + (b.t - a.t) / 2));
+      var root = at(a.t + (b.t - a.t) / 2); root.root = true; take(root);
     }
-    // Geometric seeds cover all positive scales, including [0, min(v)].
-    // They are an acceleration only; interval refinement supplies the guard.
-    var points = [boundary], t = Math.min(v[imin], upper);
-    for (;;) {
-      var p = at(t); take(p); points.push(p);
-      if (t === upper) break;
-      t = Math.min(t * 2, upper);
-    }
+    function holdsRoot(a, b) { return best.root === true && a.t <= best.t && best.t <= b.t; }
+    // Seed with the previous estimator (fixed point + score-root polish in
+    // original units). On the usual unimodal input it already is the global
+    // maximum, so the brackets around it need no polishing and the interval
+    // bounds below prune quickly. It is a candidate only: the search below
+    // still certifies (or overturns) it.
+    var legacy = _tau2Guarded(yi, vi, true), lt = legacy / scale / scale;
+    var lp = null;
+    if (legacy > 0 && isFinite(legacy) && lt <= upper) { lp = at(lt); lp.root = true; take(lp); }
+    // Initial partition: 0, min(v), the previous estimate and the upper end.
+    // Wide intervals are later split at their geometric mean, so every
+    // positive scale is still reached; this is an acceleration only, the
+    // interval refinement below supplies the guard.
+    var points = [boundary], t = Math.min(v[imin], upper), top = at(upper);
+    take(top); points.push(top);
+    if (t < upper) { var p0 = at(t); take(p0); points.push(p0); }
+    if (lp !== null && lt > 0 && lt < upper && lt !== t) points.push(lp);
+    points.sort(function (x, z) { return x.t - z.t; });
     var stack = [];
     for (i = 0; i < points.length - 1; i++) {
-      polish(points[i], points[i + 1]);
+      if (!holdsRoot(points[i], points[i + 1])) polish(points[i], points[i + 1]);
       stack.push([points[i], points[i + 1], true]);
     }
     while (stack.length) {
@@ -247,8 +291,16 @@
                            b.ll + riseB + roundoff * (Math.abs(b.ll) + Math.abs(riseB)));
       var tol = 1e-11 + roundoff * Math.max(k, Math.abs(best.ll));
       if (bound <= best.ll + tol) continue;
-      if (!interval[2]) polish(a, b);
-      var mid = a.t + width / 2;
+      if (concave(a, b)) {
+        if (!interval[2] && a.sign > 0 && b.sign < 0 && !holdsRoot(a, b)) polish(a, b);
+        continue;
+      }
+      // Polishing is only an acceleration (the bound above is the guard). A
+      // bracket that holds the current best has already been polished to that
+      // root; re-polishing it at every refinement level cost ~50 evaluations
+      // per level for no new candidate.
+      if (!interval[2] && !holdsRoot(a, b)) polish(a, b);
+      var mid = (a.t > 0 && b.t > 4 * a.t) ? Math.sqrt(a.t) * Math.sqrt(b.t) : a.t + width / 2;
       if (mid === a.t || mid === b.t) continue; // adjacent representable values
       var m = at(mid); take(m);
       // Refine new brackets if the first polish selected a different mode.
@@ -266,7 +318,9 @@
     // its ll is within the search's own tolerance of the selected point.
     // A boundary winner (t = 0) is left untouched.
     var tolEnd = 1e-11 + roundoff * Math.max(k, Math.abs(best.ll));
-    if (best.t > 0 && best.sign !== 0) {
+    // The search certified the previous estimator itself: nothing to polish.
+    if (best === lp) return legacy;
+    if (best.t > 0 && best.sign !== 0 && best.root !== true) {
       var lo = null, hi = null, dlt = best.t * Math.pow(2, -40), probe;
       if (best.sign > 0) {
         lo = best;
@@ -301,7 +355,6 @@
       // polish in original units) already lies on the selected mode, keep its
       // exact value: results that were right stay bit-identical, and only
       // inputs where it missed the global maximum change.
-      var legacy = _tau2Guarded(yi, vi, true), lt = legacy / scale / scale;
       if (legacy > 0 && isFinite(legacy) && Math.abs(lt - best.t) <= 1e-8 * best.t &&
           at(lt).ll >= best.ll - tolEnd) return legacy;
     }

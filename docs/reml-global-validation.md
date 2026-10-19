@@ -62,6 +62,26 @@ tolerance; otherwise it is subdivided. This also checks intervals whose two
 endpoint scores have the same sign, where a pair of hidden roots can exist.
 Score bisection supplies candidates; it never substitutes for this interval check.
 
+**Concavity certificate.** The first-order bound above shrinks only
+quadratically next to a maximum, so on its own it needed ~20 halvings on
+each side of the selected root (~750 likelihood evaluations per call). The
+second derivative is `ll''(t) = trace(P²)/2 - y'P³y`; in contrast form these
+are `sum 1/(lambda_j+t)²` and `sum z_j²/(lambda_j+t)³`, both decreasing in
+`t`. Hence on `[a,b]`, `ll'' <= trace(P(a)²)/2 - y'P(b)³y`. When that bound is
+negative, `ll` is strictly concave on the interval: it has at most one
+stationary point there, so a bracketed root (polished by bisection) is the
+interval's maximum and the interval is closed without subdivision. Both terms
+are computed from nonnegative sums only (`trace(P²)` from `P_jj = w_j(sw-w_j)/sw`
+with `sw-w_j` as a sum of the other weights, plus pairwise `w_i²w_j²`;
+`y'P³y` as a weighted sum of squares), so a dominant study causes no
+cancellation. The previous estimator (fixed point + score-root polish) is
+also inserted as a candidate before the search (the initial partition is
+`0, min(v)`, that estimate and the upper end; wide intervals are split at
+their geometric mean so every scale is still reached), and a bracket that already
+holds the best polished root is not re-polished. These are accelerations of
+the same guard: an interval is still only discarded by the likelihood bound,
+sign-definiteness, or the concavity certificate.
+
 The search has a finite upper bound. In an orthonormal basis of residual
 contrasts, diagonalising `H' V H` gives positive eigenvalues `lambda_j` and
 contrast coordinates `z_j`. The score is
@@ -128,7 +148,11 @@ multivariate/multilevel/meta-regression engines.
   Maximum corrected likelihood loss is 7.1e-15 (final core; 1.42e-14 before
   the score-root polish), versus a 1e-7 stress threshold. Provenance is in
   `tests/fixtures/reml_stress_summary.json`; `module_sha256` is the SHA-256
-  of the committed (LF) `shared/ma-core.js` blob.
+  of the committed (LF) `shared/ma-core.js` blob. The concavity-certified
+  search was also compared with the previous exhaustive-refinement search
+  (commit d62edc3) on 40,000 seeded random inputs (k = 3–14, variances over
+  eight decades, four effect generators): identical τ² (within 1e-9
+  relative) on all of them, about 10× faster.
   The finite-grid reference is a stress oracle, not a mathematical proof of
   complete root isolation. Explicit adversarial fixtures complement it.
 - Unit tests cover zero, one and two studies; equal variances; identical effects;

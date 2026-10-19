@@ -9,7 +9,7 @@
   "maximum_loglik_loss": 7.105427357601002e-15,
   "failures": [],
   "input_sha256": "d86a460aecb75094cff8229230e9713e680509803f04946649ff0d12a790d1a5",
-  "module_sha256": "a9d2f4bacfc54429f234fd4fe27a9e235e2c0e1413b418b1abbe1412916bfb11",
+  "module_sha256": "fb8b5d7364089a89d8a37f3ddd195b5e21b405e29a24c53e5f1b13516fb9150b",
   "comparison_module_sha256": "f90188c1f9ac58929a923338c06d49d374f04ff819cd680fd379075bd800782c",
   "comparison_failures": [
     {
