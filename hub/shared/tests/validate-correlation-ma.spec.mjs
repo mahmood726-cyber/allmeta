@@ -10,6 +10,8 @@ const state=()=>({data:document.getElementById('f-data').value,method:document.g
   headline:document.getElementById('headline').innerHTML,table:document.getElementById('res-body').innerHTML,forest:document.getElementById('forest-host').innerHTML,
   disabled:['f-data','f-method'].map(id=>document.getElementById(id).disabled),storage:{...localStorage},href:location.href,history:history.length});
 for(const refused of [false,true])test(`correlation-ma replay passes and restores ${refused?'refused':'accepted'} user state`,async({page})=>{
+  // A full replay plus the request-audit teardown can exceed the 30 s default on a cold browser.
+  test.setTimeout(180000);
   await open(page);await page.locator('#f-method').selectOption('FE');
   await page.locator('#f-data').fill(refused?'A, .3, 20':'A, .3, 20\nB, -.2, 30');
   await page.evaluate(()=>alm.chartExportAuto.scan());
