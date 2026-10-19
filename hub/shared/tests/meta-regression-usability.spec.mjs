@@ -151,7 +151,7 @@ test.describe(`${APP} usability`, () => {
   });
 
   test('5c 375 px: no horizontal page scroll', async ({ page }) => {
-    test.fail(true, 'ISSUE: page is 606 px wide at 375 px (fieldset min-content width, axis-control number inputs, unwrapped export row).');
+    test.fail(true, 'ISSUE: the page scrolls horizontally at 375 px (wider than the viewport; measured 432-606 px depending on browser and fonts; fieldset min-content width, axis-control number inputs, unwrapped export row).');
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(PAGE);
     await coreVisible(page);

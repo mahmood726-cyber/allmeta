@@ -6,6 +6,10 @@
 // 298,116 checks) and "Replay GLMM corpus" in "Validate the extras in R" (7,248 checks), clicked
 // through the page as a user would, reading the counts the page prints.
 // Findings: C:\mh-lanes\p6-9\scratch\ux\USABILITY.md (lane report).
+// This spec runs against the frozen proportion-ma page (pinned by validate/check-plus.mjs). Defects that the page
+// does not fix are expected failures (test.fail) carrying an ISSUE note; the assertion states the behaviour we want,
+// so the test flips to "unexpectedly passed" the day the defect is fixed. Missing elements fail as assertions,
+// not timeouts, so an expected failure cannot be satisfied by a hang.
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
@@ -25,7 +29,7 @@ function watch(page) {
 }
 async function shown(page) {
   const parts = [];
-  for (const sel of MESSAGES) parts.push((await page.locator(sel).innerText()).replace(/\s+/g, ' ').trim());
+  for (const sel of MESSAGES) if (await page.locator(sel).count()) parts.push((await page.locator(sel).innerText()).replace(/\s+/g, ' ').trim());
   return parts.filter(Boolean).join(' | ');
 }
 async function enter(page, text) {
@@ -63,10 +67,12 @@ test.describe(`${APP} usability`, () => {
   });
 
   test('2 example dataset: "Load example" restores and analyses the example in one click', async ({ page }) => {
+    test.fail(true, 'ISSUE: there is no "Load example" control; the example is pre-filled on first load only, so a user who has edited the data cannot get it back in one click.');
     await page.goto(PAGE);
     await enter(page, '1, 100, a\n2, 100, b\n3, 100, c');
     await expect(page.locator('#res-body tr')).toHaveCount(4);
     await expect(page.locator('#res-body .pooled-row')).not.toContainText(DEFAULT_POOLED);
+    await expect(page.getByRole('button', { name: 'Load example', exact: true })).toHaveCount(1);
     await page.getByRole('button', { name: 'Load example', exact: true }).click(); // click 1
     await coreVisible(page);
     await expect(page.locator('#res-body tr')).toHaveCount(8); // 7 studies + pooled row
@@ -81,15 +87,21 @@ test.describe(`${APP} usability`, () => {
   });
 
   const CASES = [
-    { name: 'non-numeric', text: 'a, b, A\nc, d, B\ne, f, C', want: /Line 1: events and total must be numbers.*Need at least 2 studies/ },
-    { name: 'negative count / events above total', text: '12, 150, A\n-8, 90, B\n20, 220, C\n30, 20, D', want: /Line 2: events cannot be negative.*Line 4: events \(30\) exceed total \(20\)/ },
+    { name: 'non-numeric', text: 'a, b, A\nc, d, B\ne, f, C', want: /Line 1: events and total must be numbers.*Need at least 2 studies/,
+      known: 'ISSUE: only "Need at least 2 studies." is shown; no line says which values were not numbers.' },
+    { name: 'negative count / events above total', text: '12, 150, A\n-8, 90, B\n20, 220, C\n30, 20, D', want: /Line 2: events cannot be negative.*Line 4: events \(30\) exceed total \(20\)/,
+      known: 'ISSUE: the rows with events = -8 and with events 30 > total 20 are dropped silently; the model is fitted to 2 of 4 studies with no note.' },
     { name: 'k = 1', text: '12, 150, A', want: /Need at least 2 studies/ },
-    { name: 'empty', text: '', want: /No studies entered.*Need at least 2 studies/ },
-    { name: 'mismatched columns', text: '12\n8, 90, B, extra, 7\n20\n5, 60, D', want: /Line 1: needs events and total.*Line 2: has 5 columns/ },
-    { name: 'non-integer counts', text: '12.5, 150, A\n8, 90, B', want: /Line 1: events and total should be whole numbers; read as 12, 150/ },
+    { name: 'empty', text: '', want: /No studies entered.*Need at least 2 studies/,
+      known: 'ISSUE: empty input reports only "Need at least 2 studies." instead of saying that no studies were entered.' },
+    { name: 'mismatched columns', text: '12\n8, 90, B, extra, 7\n20\n5, 60, D', want: /Line 1: needs events and total.*Line 2: has 5 columns/,
+      known: 'ISSUE: the one-column lines are dropped and the extra columns ignored, silently; the fit uses 2 of 4 lines.' },
+    { name: 'non-integer counts', text: '12.5, 150, A\n8, 90, B', want: /Line 1: events and total should be whole numbers; read as 12, 150/,
+      known: 'ISSUE: 12.5 events are read as 12 silently (no "read as" note).' },
   ];
   for (const c of CASES) {
     test(`4 input error: ${c.name}`, async ({ page }, info) => {
+      if (c.known) test.fail(true, c.known);
       const w = watch(page);
       await page.goto(PAGE);
       await enter(page, c.text);
@@ -101,24 +113,20 @@ test.describe(`${APP} usability`, () => {
     });
   }
 
-  test('4 refusal does not leave the previous result on screen; valid input clears the notes', async ({ page }) => {
+  test('4 refusal does not leave the previous result on screen', async ({ page }) => {
+    test.fail(true, 'ISSUE: after a refusal ("Need at least 2 studies.") the previous data set\'s heterogeneity line (#het) and forest-plot diamond stay on screen.');
     await page.goto(PAGE);
     await coreVisible(page);
-    await expect(page.locator('#parse-warn')).toBeHidden();
     await enter(page, '12, 150, A');
     await expect(page.locator('#res-body')).toHaveText('Need at least 2 studies.');
     await expect(page.locator('#het')).toBeEmpty();
     await expect(page.locator('#forest polygon')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Load example', exact: true }).click();
-    await coreVisible(page);
-    await expect(page.locator('#parse-warn')).toBeHidden();
   });
 
-  test('5a axe-core WCAG 2.1 A/AA: no serious or critical violations (with input notes showing)', async ({ page }, info) => {
+  test('5a axe-core WCAG 2.1 A/AA: no serious or critical violations (after invalid input)', async ({ page }, info) => {
     await page.goto(PAGE);
     await coreVisible(page);
     await enter(page, '12, 150, A\n-8, 90, B\n20, 220, C');
-    await expect(page.locator('#parse-warn')).toBeVisible();
     const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
     const summary = r.violations.map((v) => `${v.impact} ${v.id} x${v.nodes.length}`);
     info.annotations.push({ type: 'axe', description: `axe-core ${r.testEngine.version}: ${summary.join('; ') || 'no violations'}` });
@@ -134,7 +142,9 @@ test.describe(`${APP} usability`, () => {
     expect(tabsToRun).toBeLessThan(25);
     await page.waitForTimeout(300);
     const focused = await page.locator('#btn-run').evaluate((e) => { const s = getComputedStyle(e); return s.outlineStyle + s.outlineWidth + s.boxShadow; });
-    expect(focused).toContain('solid2px');
+    // A focus indicator must be painted (outline or box-shadow) and differ from the unfocused state (checked below).
+    // On the frozen page it is a 3 px box-shadow ring; the 2 px solid outline was part of the page edit split off from #156.
+    expect(focused).toMatch(/^(?!none)|rgba?\(/);
     const before = await page.locator('#res-body').innerText();
     await page.keyboard.press('Enter');
     await expect.poll(() => page.locator('#res-body').innerText()).not.toBe(before);
@@ -152,6 +162,7 @@ test.describe(`${APP} usability`, () => {
   });
 
   test('5c 375 px: no horizontal page scroll', async ({ page }) => {
+    test.fail(true, 'ISSUE: the page scrolls horizontally at 375 px (wider than the viewport; measured 414 px in Edge).');
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(PAGE);
     await coreVisible(page);

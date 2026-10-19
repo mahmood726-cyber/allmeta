@@ -65,6 +65,7 @@ test.describe(`${APP} usability`, () => {
     test.fail(true, 'ISSUE: the example is pre-filled on first load only; there is no "Load example" control, so a user who has edited the data cannot get it back in one click.');
     await page.goto(PAGE);
     await enter(page, '1, 0.5, 0.1, a\n2, 0.4, 0.1, b\n3, 0.3, 0.1, c');
+    expect(await page.getByRole('button', { name: /example/i }).count(), 'an example control exists').toBeGreaterThan(0);
     await page.getByRole('button', { name: /example/i }).first().click({ timeout: 2000 }); // click 1
     await expect(page.locator('#summary')).toContainText(DEFAULT_POOLED);
   });
@@ -146,7 +147,7 @@ test.describe(`${APP} usability`, () => {
   });
 
   test('5c 375 px: no horizontal page scroll', async ({ page }) => {
-    test.fail(true, 'ISSUE: page is 400 px wide at 375 px (export button row does not wrap; grid column sized by content).');
+    test.fail(true, 'ISSUE: the page scrolls horizontally at 375 px (wider than the viewport; export button row does not wrap; grid column sized by content).');
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(PAGE);
     await coreVisible(page);
