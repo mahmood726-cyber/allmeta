@@ -23,13 +23,15 @@
       se:lo===null && hi===null ? null : finite(lo!==null && hi!==null && (measure==='RD'||(lo>0&&hi>0)) ? (measure==='RD' ? hi-lo : Math.log(hi)-Math.log(lo))/(2*Z) : NaN)};
   }
   function currentState() {
+    const parsed=window.__mhValidation.parseInput?window.__mhValidation.parseInput(document.getElementById('src').value):null;
+    if(parsed&&parsed.errors.length)throw new Error('Input line '+parsed.errors[0].line+': '+parsed.errors[0].message+' Fix the input before validating.');
     const rows=window.__mhValidation.parse(document.getElementById('src').value);
     const measure=document.getElementById('measure').value;
     if(rows.length<2)throw new Error('Need at least two valid studies');
     if(!['OR','RR','RD'].includes(measure))throw new Error('Invalid measure');
     window.__mhValidation.run();
     const result=window._almLastMhPeto();
-    return {rows,measure,result,note:'Estimate, CI, z and p are exported on the display scale. Beta and SE are recovered from the full-precision estimate and CI, as in the paper. No MH/Peto heterogeneity statistics are claimed.'};
+    return {rows,measure,result,note:'Estimate, CI, z and p are exported on the display scale. Beta and SE are recovered from the full-precision estimate and CI, as in the paper. Heterogeneity (Q, I2, H2), CMH, Tarone and Breslow-Day are not compared in this live check; they are validated against metafor 5.2-1 in the archive supplemental check and by the exported self-checking R script.'};
   }
   function appValues(s) {
     return (s.measure==='OR'?['mh','peto']:['mh']).flatMap(prefix=>{
@@ -121,7 +123,8 @@ cat('ALMJSON:{',paste(paste0('"',names(v),'":',v),collapse=','),'}\\n',sep='')`;
     const src=document.getElementById('src'),sel=document.getElementById('measure');
     const original={src:src.value,measure:sel.value,result:window._almLastMhPeto(),labbe:window.__almLabbe,
       active:document.activeElement,x:scrollX,y:scrollY,start:src.selectionStart,end:src.selectionEnd,direction:src.selectionDirection};
-    const panels=['pooled-body','per-body','forest','labbe','fragility-note'].map(id=>{const e=document.getElementById(id);return [e,e.innerHTML,e.getAttribute('viewBox')];});
+    const panels=['pooled-body','per-body','forest','labbe','fragility-note','het-body','assoc-body','k-note','estimability-note','zero-note','input-errors','per-effect-h','per-caption'].map(id=>document.getElementById(id)).filter(Boolean).map(e=>[e,e.innerHTML,e.getAttribute('viewBox'),e.hidden]);
+    const srcAria=[src.getAttribute('aria-invalid'),src.getAttribute('aria-describedby')];
     const controls=[...document.querySelectorAll('main input,main textarea,main select,main button')].map(e=>[e,e.disabled]);
     const writer=window.alm&&alm.urlState&&alm.urlState.write;
     if(typeof writer!=='function')throw new Error('URL state write guard unavailable');
@@ -185,7 +188,8 @@ cat('ALMJSON:{',paste(paste0('"',names(v),'":',v),collapse=','),'}\\n',sep='')`;
     } finally {
       src.value=original.src;sel.value=original.measure;
       window.__mhValidation.restoreResult(original.result);window.__almLabbe=original.labbe;
-      for(const [e,html,viewBox] of panels){e.innerHTML=html;if(viewBox!==null)e.setAttribute('viewBox',viewBox);}
+      for(const [e,html,viewBox,hidden] of panels){e.innerHTML=html;if(viewBox!==null)e.setAttribute('viewBox',viewBox);e.hidden=hidden;}
+      [['aria-invalid',srcAria[0]],['aria-describedby',srcAria[1]]].forEach(([k,v])=>{if(v===null)src.removeAttribute(k);else src.setAttribute(k,v);});
       AlmFragility.fragility=fragility;alm.urlState.write=writer;
       controls.forEach(([e,disabled])=>{e.disabled=disabled;});
       src.setSelectionRange(original.start,original.end,original.direction);
@@ -198,7 +202,7 @@ cat('ALMJSON:{',paste(paste0('"',names(v),'":',v),collapse=','),'}\\n',sep='')`;
       'TAIL: '+tailPassed+'/'+tails.length+' relative p-value checks pass; tolerance=1e-9.',
       'Current page recomputed: pooled estimate/CI/z/p, recovered beta/SE, per-study outputs, rounded UI, greedy DL fragility FI/FQ and baseline, L\'Abbe, and single-row refusal/clear checks.',
       'Replayed R oracle: archived metafor 5.2-1 reference and independent R greedy FI/FQ and DL baseline records. R is not executed in Tier 2; its initial/final oracle self-checks are provenance, not extra checks.',
-      'Full precision: relative 1e-9; p absolute 1e-9. Rounded UI: absolute 0.0005000001 (z: 0.0050000001). Undefined matches undefined only. No CMH/Tarone/Q/I2 rows.'
+      'Full precision: relative 1e-9; p absolute 1e-9. Rounded UI: absolute 0.0005000001 (z: 0.0050000001). Undefined matches undefined only. This replay has no CMH/Tarone/Q/I2 rows (those are checked in the archive supplemental check).'
     ]};
   }
   const repo='https://github.com/mahmood726-cyber/mhpeto-reproducible';
