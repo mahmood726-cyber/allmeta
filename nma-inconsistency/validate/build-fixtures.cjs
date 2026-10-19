@@ -15,7 +15,7 @@ for(const c of all) {
   corpus.push({key:c.key,model:c.model,text:c.rows.map(r=>[r.A,r.B,r.te,r.se,r.study].map(quote).join(',')).join('\n'),source:'P16 corpus'});
   numeric.set(c.key,r);
 }
-const reasons={repeated:'Repeated study IDs are unsupported: enter one independent contrast per study.',singular:'Network fit is singular or numerically invalid.',empty:'Shared network bus is empty.',unsupported:'The shared network has no supported contrasts.',multi:'Multi-arm studies are unsupported: correlated contrasts require study covariance.'};
+const reasons={repeated:'Repeated study IDs are unsupported: enter one independent contrast per study.',singular:'Network fit is singular or numerically invalid.',empty:'Load from bus refused: the shared network bus is empty. The input box was left unchanged and nothing was analysed.',unsupported:'Load from bus refused: the shared network has no supported contrasts. The input box was left unchanged and nothing was analysed.',multi:'Load from bus refused: study “s1” (3 arms). Multi-arm studies are unsupported: correlated contrasts require study covariance. The input box was left unchanged and nothing was analysed.'};
 for(const model of ['FE','DL','PM']) {
   for(const [kind,text] of [['repeated','A,B,.2,.1,s1\nA,B,.3,.2,s1\nA,C,.5,.15,s2'],['singular','A,B,.2,1e200\nB,C,.3,1e200\nA,C,.5,1e200']])corpus.push({key:`policy::${kind}::${model}`,model,text,reason:reasons[kind],source:'P16 focused policy; singular is an added defensive fixture'});
   corpus.push({key:`bus::empty::${model}`,model,bus:{empty:true},reason:reasons.empty});
