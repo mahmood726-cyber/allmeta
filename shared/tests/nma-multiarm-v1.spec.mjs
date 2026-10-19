@@ -109,3 +109,82 @@ test('multi-arm study with an incomplete clique is refused and named, as netmeta
   const bad = full.map((r) => (r.study === 'S6' && r.t1 === 'B' && r.t2 === 'C') || (r.study === 'S6' && r.t1 === 'C' && r.t2 === 'B') ? { ...r, est: r.est + 0.5 } : r);
   assert.ok(/inconsistent treatment effects/.test(NM.fit(bad, { model: 'fe' }).error));
 });
+
+// --- Multi-arm variance audit: rounding of supplied SEs vs genuine incompatibility (PR #120) ---
+// Oracle: tests/fixtures/nma-multiarm-rounding-reference.R (R 4.6.0, netmeta 3.6.1).
+import { readFileSync } from 'node:fs';
+const ROUND = JSON.parse(readFileSync(new URL('../../tests/fixtures/nma-multiarm-rounding-oracle.json', import.meta.url), 'utf8'));
+const leagueAgree = (got, want) => { for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) assert.ok(Math.abs(got[i][j] - want[i][j]) <= TOL, `[${i}][${j}] ${got[i][j]} vs ${want[i][j]}`); };
+
+for (const dp of ['dp3', 'dp4', 'dp6']) {
+  test(`four-arm study with SEs rounded to ${dp.slice(2)} dp FITS and matches netmeta to 1e-6 (common + random)`, () => {
+    const o = ROUND[dp], a = NM.analyse(o.rows);
+    assert.strictEqual(a.ok, true, a.error);
+    assert.deepStrictEqual(a.treatments, ['A', 'B', 'C', 'D']);
+    leagueAgree(a.common.TE, o.TE_common); leagueAgree(a.common.seTE, o.seTE_common);
+    leagueAgree(a.random.TE, o.TE_random); leagueAgree(a.random.seTE, o.seTE_random);
+    assert.ok(Math.abs(a.tau2 - o.tau2) <= TOL && Math.abs(a.Q - o.Q) <= TOL);
+    // the supplied SEs enter unchanged (as netmeta): without the two-arm study the fitted
+    // contrast SEs of the four-arm study reproduce every supplied SE
+    const solo = NM.analyse(o.rows.filter(r => r.study === 'Four'));
+    assert.strictEqual(solo.ok, true, solo.error);
+    for (const r of o.rows.slice(0, 6)) assert.ok(Math.abs(solo.common.seTE[solo.treatments.indexOf(r.t1)][solo.treatments.indexOf(r.t2)] - r.se) <= 1e-12);
+    // the rounding discrepancy is DISCLOSED, with the per-contrast SE an independent-arm projection would give
+    assert.strictEqual(a.varianceDisclosures.length, 1);
+    const d = a.varianceDisclosures[0];
+    assert.strictEqual(d.study, 'Four'); assert.strictEqual(d.decimals, dp.slice(2));
+    assert.ok(d.worstRatio > 0 && d.worstRatio <= 1);
+    assert.strictEqual(d.changes.length, 6);
+    assert.match(d.message, /within what that rounding can explain/);
+    assert.match(d.message, /supplied SEs unchanged, as netmeta's multiarm\(\) does/);
+  });
+}
+
+test('PR counterexample (SE 0.2 would be projected to 0.1414) is still REFUSED at full precision; netmeta keeps 0.2', () => {
+  const rows = [];
+  for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) rows.push({ study: 'S', t1: 'ABCD'[i], t2: 'ABCD'[j], est: .3 * (j - i), se: .2 });
+  rows[5].se = Math.sqrt(.10);
+  const a = NM.analyse(rows);
+  assert.strictEqual(a.ok, false);
+  assert.match(a.error, /independent-arm covariance model beyond what rounding of the supplied SEs can explain/);
+  assert.match(a.error, /no network has been fitted/);
+  for (const model of ['fe', 're']) assert.strictEqual(NM.fit(rows, { model }).ok, false);
+  // the netmeta reference that the old engine silently departed from (SE 0.2, not 0.1414213562)
+  assert.ok(Math.abs(ROUND.counterexample.seTE_BA - 0.2) <= TOL);
+  assert.ok(Math.abs(ROUND.counterexample.lower_BA - (-0.0919928)) <= 1e-6 && Math.abs(ROUND.counterexample.upper_BA - 0.6919928) <= 1e-6);
+  // three-decimal transcription of the same inconsistency is also refused
+  const r3 = rows.map((r, k) => ({ ...r, se: k === 5 ? 0.316 : r.se }));
+  assert.strictEqual(NM.analyse(r3).ok, false);
+});
+
+test('borderline: just outside the 3-dp rounding bound is refused, just inside fits', () => {
+  const base = ROUND.dp3.rows.filter(r => r.study === 'Four');
+  const withCD = se => base.map((r, k) => ({ ...r, se: k === 5 ? se : r.se }));
+  const out = NM.auditStudies(withCD(0.278)), ins = NM.auditStudies(withCD(0.281));
+  assert.ok(out.varianceAudit.Four.worstRatio > 1 && out.varianceAudit.Four.worstRatio < 1.01, String(out.varianceAudit.Four.worstRatio));
+  assert.strictEqual(out.problems.length, 1);
+  assert.match(out.problems[0], /exceeds the rounding allowance/);
+  assert.ok(ins.varianceAudit.Four.worstRatio < 1);
+  assert.deepStrictEqual(ins.problems, []);
+  // stating a higher precision than the values carry tightens the bound: 3-dp data stated as 6 dp is refused
+  assert.strictEqual(NM.analyse(ROUND.dp3.rows, { seDecimals: 6 }).ok, false);
+  assert.strictEqual(NM.analyse(ROUND.dp3.rows, { seDecimals: 3 }).ok, true);
+});
+
+test('exactly independent-arm four-arm data: no disclosure and results unchanged by the audit', () => {
+  const v = [.011, .023, .031, .047], rows = [];
+  for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) rows.push({ study: 'Four', t1: 'ABCD'[i], t2: 'ABCD'[j], est: [0, .3, .5, .8][j] - [0, .3, .5, .8][i], se: Math.sqrt(v[i] + v[j]) });
+  const a = NM.analyse(rows);
+  assert.strictEqual(a.ok, true);
+  assert.deepStrictEqual(a.varianceDisclosures, []);
+  for (const r of rows) assert.ok(Math.abs(a.common.seTE[a.treatments.indexOf(r.t1)][a.treatments.indexOf(r.t2)] - r.se) <= 1e-12);
+});
+
+test('decimal-place inference', () => {
+  assert.strictEqual(NM._decimalsOf(0.184), 3);
+  assert.strictEqual(NM._decimalsOf(0.15), 2);
+  assert.strictEqual(NM._decimalsOf(2), 0);
+  assert.strictEqual(NM._decimalsOf(1e-7), 7);
+  assert.strictEqual(NM._decimalsOf(1.5e-7), 8);
+  assert.strictEqual(NM._decimalsOf(Math.sqrt(0.1)), 17);
+});

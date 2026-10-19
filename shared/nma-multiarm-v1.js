@@ -118,6 +118,18 @@
       }
       // Reduce to (m-1) baseline contrasts vs arms[0]; recover est from rows.
       var base = arms[0];
+      // Covariance of the baseline contrasts implied by the SUPPLIED pairwise variances:
+      //   Cov(y_{a,base}, y_{b,base}) = (s2[base][a] + s2[base][b] - s2[a][b]) / 2.
+      // This is exactly what netmeta's multiarm() fits (its Laplacian pseudo-inverse
+      // Lt = -C R C / 2 reproduces every supplied variance), and for variances that
+      // ARE sums of arm variances it equals v_base (+ v_a on the diagonal), i.e. the
+      // independent-arm block. Using it means no supplied SE is ever re-projected.
+      // checkStudies() refuses any study whose variances are incompatible with
+      // independent arms beyond what rounding of the supplied SEs can explain.
+      var cov = zeros(m - 1, m - 1);
+      for (var ca = 1; ca < m; ca++) for (var cb = 1; cb < m; cb++) {
+        cov[ca - 1][cb - 1] = (s2[0][ca] + s2[0][cb] - (ca === cb ? 0 : s2[ca][cb])) / 2;
+      }
       var contrasts = [];
       for (var z = 1; z < m; z++) {
         var toArm = arms[z];
@@ -129,7 +141,7 @@
         else estVal = (prow.t2 === toArm) ? estVal : -estVal;             // generic fallback
         contrasts.push({ to: toArm, from: base, est: estVal });
       }
-      studies.push({ id: id2, arms: arms, multiArm: true, contrasts: contrasts, v: varArm, base: base });
+      studies.push({ id: id2, arms: arms, multiArm: true, contrasts: contrasts, v: varArm, cov: cov, base: base });
     }
     return { studies: studies, errors: errors };
   }
@@ -161,15 +173,7 @@
         var se = st.contrasts[0].se;
         V[start][start] = se * se;
       } else {
-        var vbase = st.v[st.base];
-        for (var a = 0; a < len; a++) {
-          var toA = st.contrasts[a].to;
-          V[start + a][start + a] = st.v[toA] + vbase;
-          for (var b = a + 1; b < len; b++) {
-            V[start + a][start + b] = vbase;
-            V[start + b][start + a] = vbase;
-          }
-        }
+        for (var a = 0; a < len; a++) for (var b = 0; b < len; b++) V[start + a][start + b] = st.cov[a][b];
       }
       blocks.push({ start: start, len: len, multiArm: st.multiArm });
     }
@@ -270,8 +274,9 @@
   /**
    * fit(rows, opts) — contrast-level NMA with multi-arm correction.
    *   rows: [{study, t1, t2, est, se}]   (est = t2 - t1, analysis scale)
-   *   opts: { ref, model: "fe"|"re" }
-   * Returns { ok, nonref, refTreat, d, cov, tau2, Q, df, multiArmStudies, error }.
+   *   opts: { ref, model: "fe"|"re", seDecimals }  (seDecimals: decimal places the SEs were reported
+   *   to; per-row r.seDecimals overrides; default inferred per study, see auditStudies)
+   * Returns { ok, nonref, refTreat, d, cov, tau2, Q, df, multiArmStudies, varianceDisclosures, error }.
    * d[k]/cov are relative to refTreat (ref implicit zero), in nonref order.
    */
   function fit(rows, opts) {
@@ -280,9 +285,11 @@
     // Refuse, as netmeta's chkmultiarm() does, rather than fitting a network with a study left out
     // or mis-specified: every study must supply each of its m(m-1)/2 comparisons exactly once, a
     // multi-arm study's estimates must be internally consistent (A-C = (A-B) + (B-C), tolerance 0.001,
-    // netmeta's tol.multiarm), and the arm variances implied by its standard errors must be >= 0.
-    var problems = checkStudies(rows);
-    if (problems.length) return { ok: false, error: "Problem" + (problems.length > 1 ? "s" : "") + " in multi-arm or duplicated studies (netmeta refuses these too): " + problems.join("; ") };
+    // netmeta's tol.multiarm). The independent-arm model additionally requires nonnegative arm
+    // variances that reproduce every supplied pairwise variance up to the rounding of the supplied
+    // SEs (auditStudies); within that bound the supplied SEs are used unchanged and disclosed.
+    var audit = auditStudies(rows, opts), problems = audit.problems;
+    if (problems.length) return { ok: false, error: "Problem" + (problems.length > 1 ? "s" : "") + " in multi-arm or duplicated studies: " + problems.join("; ") };
     var built = buildStudies(rows);
     if (built.errors.length) {
       return { ok: false, error: built.errors.join("; ") };
@@ -326,12 +333,45 @@
       df: Qinfo ? Qinfo.df : null,
       multiArmStudies: multiArmStudies,
       warnings: built.errors,
+      varianceDisclosures: audit.disclosures,
     };
   }
 
+  // ---- precision of a supplied SE ----------------------------------------
+  // Decimal places in the shortest round-trip representation of x (JS drops trailing zeros, so
+  // 0.150 reads as 2 places; auditStudies() therefore uses the largest count within a study).
+  function decimalsOf(x) {
+    var m = /^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i.exec(String(Math.abs(x)));
+    if (!m) return null;
+    return Math.max(0, (m[2] ? m[2].length : 0) - (m[3] ? parseInt(m[3], 10) : 0));
+  }
+  function explicitDecimals(v) { return typeof v === "number" && isFinite(v) && v >= 0 && Math.floor(v) === v ? v : null; }
+
   // ---- netmeta chkmultiarm(): incomplete / duplicated / inconsistent studies ----
-  function checkStudies(rows) {
-    var byStudy = Object.create(null), order = [], problems = [];
+  // plus the independent-arm variance audit. Returns { problems:[string], disclosures:[{...}],
+  // varianceAudit:{study: {decimals, worstRatio (largest |residual| / allowance), refused}} }.
+  //
+  // Variance audit for an m-arm study (m >= 4; with 3 arms v_ij = v_i + v_j is exactly
+  // determined). The independent-arm model says every supplied contrast variance s2_k
+  // (pair k = arms i,j) equals v_i + v_j. The recovered arm variances are the least-squares
+  // solution, so the residual vector is r = (I - H) s2, H the hat matrix of the arm-incidence
+  // design (closed form: H_kl = (|k n l| - 2/(m-1)) / (m-2), |k n l| = arms shared by pairs k, l).
+  // A truly compatible structure has (I - H) s2_true = 0, hence r = (I - H)(s2 - s2_true).
+  // An SE reported to d decimal places is within delta = 0.5 * 10^-d of the true SE, so its
+  // variance is within b = 2 * se * delta + delta^2 of the true variance, and therefore
+  //     |r_k| <= sum_l |(I - H)_kl| * b_l   (+ 1e-8 * max variance, the numerical allowance).
+  // A residual above that bound CANNOT be explained by rounding of the supplied SEs and the study
+  // is refused (it asserts a correlated-arm covariance this engine does not model). Within the
+  // bound the study is fitted with its supplied SEs unchanged -- exactly what netmeta's
+  // multiarm() does -- and, if the residual is nonzero, a disclosure records by how much an
+  // independent-arm projection would have moved each SE (the pre-guard engine applied it silently).
+  // The bound is necessary for rounding to explain the residual, not sufficient: it never refuses
+  // data that rounding could explain; a study it accepts is fitted exactly as netmeta would.
+  // Precision: row.seDecimals, else opts.seDecimals, else the maximum decimal places among the
+  // study's SEs (one table, one reporting precision; trailing zeros are lost in parsing).
+  function auditStudies(rows, opts) {
+    opts = opts || {};
+    var byStudy = Object.create(null), order = [], problems = [], disclosures = [], varianceAudit = {};
     rows.forEach(function (r) { var id = String(r.study); if (!byStudy[id]) { byStudy[id] = []; order.push(id); } byStudy[id].push(r); });
     order.forEach(function (id) {
       var rs = byStudy[id], armSet = {};
@@ -342,17 +382,84 @@
       if (rs.length !== m * (m - 1) / 2) { problems.push("study '" + id + "' has an incomplete set of comparisons (" + rs.length + " of " + (m * (m - 1) / 2) + " for " + m + " arms)"); return; }
       if (m < 3) return;
       // least-squares arm means (sum zero) from the observed differences d[x][y] = arm x - arm y
-      var d = zeros(m, m), s2 = zeros(m, m), ix = {};
+      var d = zeros(m, m), s2 = zeros(m, m), rowOf = zeros(m, m), ix = {};
       arms.forEach(function (a, i) { ix[a] = i; });
-      rs.forEach(function (r) { var i = ix[r.t2], j = ix[r.t1]; d[i][j] = r.est; d[j][i] = -r.est; s2[i][j] = s2[j][i] = r.se * r.se; });
+      rs.forEach(function (r) { var i = ix[r.t2], j = ix[r.t1]; d[i][j] = r.est; d[j][i] = -r.est; s2[i][j] = s2[j][i] = r.se * r.se; rowOf[i][j] = rowOf[j][i] = r; });
       var mu = arms.map(function (_, i) { var s = 0; for (var j = 0; j < m; j++) s += d[i][j]; return s / m; }), worst = 0;
       for (var i = 0; i < m; i++) for (var j = i + 1; j < m; j++) worst = Math.max(worst, Math.abs(d[i][j] - (mu[i] - mu[j])));
       if (worst > 0.001) { problems.push("study '" + id + "' has inconsistent treatment effects (A-C differs from (A-B) + (B-C) by " + worst.toPrecision(3) + ")"); return; }
       var T = 0; for (i = 0; i < m; i++) for (j = i + 1; j < m; j++) T += s2[i][j];
-      for (i = 0; i < m; i++) { var rsum = 0; for (j = 0; j < m; j++) rsum += s2[i][j]; if ((rsum - T / (m - 1)) / (m - 2) < 0) { problems.push("study '" + id + "': its standard errors imply a negative variance for arm '" + arms[i] + "'"); return; } }
+      var armV = new Array(m), varianceScale = 0;
+      for (i = 0; i < m; i++) {
+        var rsum = 0;
+        for (j = 0; j < m; j++) { rsum += s2[i][j]; varianceScale = Math.max(varianceScale, s2[i][j]); }
+        armV[i] = (rsum - T / (m - 1)) / (m - 2);
+        if (armV[i] < 0) { problems.push("study '" + id + "': its standard errors imply a negative variance for arm '" + arms[i] + "'"); return; }
+      }
+      if (m === 3) return;
+      // pairs, residuals, rounding allowances
+      var studyDec = explicitDecimals(opts.seDecimals), inferred = 0;
+      if (studyDec === null) rs.forEach(function (r) { var dd = decimalsOf(r.se); if (dd !== null) inferred = Math.max(inferred, dd); });
+      var pairs = [];
+      for (i = 0; i < m; i++) for (j = i + 1; j < m; j++) {
+        var row = rowOf[i][j], dec = explicitDecimals(row.seDecimals);
+        if (dec === null) dec = studyDec !== null ? studyDec : inferred;
+        var delta = 0.5 * Math.pow(10, -dec), se = Math.abs(row.se);
+        pairs.push({ i: i, j: j, dec: dec, se: row.se, s2: s2[i][j], b: 2 * se * delta + delta * delta, resid: s2[i][j] - (armV[i] + armV[j]) });
+      }
+      var numerical = 1e-8 * varianceScale, worstRatio = 0, worstPair = null, anyNonzero = false;
+      pairs.forEach(function (pk) {
+        var bound = 0;
+        pairs.forEach(function (pl) {
+          var overlap = (pk.i === pl.i || pk.i === pl.j ? 1 : 0) + (pk.j === pl.i || pk.j === pl.j ? 1 : 0);
+          bound += Math.abs((pk === pl ? 1 : 0) - (overlap - 2 / (m - 1)) / (m - 2)) * pl.b;
+        });
+        pk.allowance = bound + numerical;
+        if (Math.abs(pk.resid) > numerical) anyNonzero = true;
+        var ratio = Math.abs(pk.resid) / pk.allowance;
+        if (ratio > worstRatio) { worstRatio = ratio; worstPair = pk; }
+      });
+      var decs = pairs.map(function (pk) { return pk.dec; }), dMin = Math.min.apply(null, decs), dMax = Math.max.apply(null, decs);
+      var stated = studyDec !== null || pairs.some(function (pk) { return explicitDecimals(rowOf[pk.i][pk.j].seDecimals) !== null; });
+      var decText = (dMin === dMax ? String(dMin) : dMin + "-" + dMax);
+      varianceAudit[id] = { decimals: decText, worstRatio: worstRatio, refused: worstRatio > 1 };
+      if (worstRatio > 1) {
+        var wp = worstPair;
+        problems.push("study '" + id + "': supplied variances do not fit the independent-arm covariance model beyond what rounding of the supplied SEs can explain (" +
+          arms[wp.i] + " / " + arms[wp.j] + ": supplied " + wp.s2.toPrecision(6) + ", reconstructed " + (wp.s2 - wp.resid).toPrecision(6) +
+          ", discrepancy " + Math.abs(wp.resid).toPrecision(3) + " exceeds the rounding allowance " + wp.allowance.toPrecision(3) +
+          " for SEs reported to " + decText + " decimal place(s), " + (stated ? "as stated" : "inferred from the values") + "). Check SE precision (or state it with seDecimals) or use a correlated-arm model; no network has been fitted.");
+        return;
+      }
+      if (!anyNonzero) return;
+      // Within rounding: fitted with the supplied SEs (as netmeta multiarm()); the covariance they imply must be usable.
+      var C = zeros(m - 1, m - 1);
+      for (var a = 1; a < m; a++) for (var b = 1; b < m; b++) C[a - 1][b - 1] = (s2[0][a] + s2[0][b] - (a === b ? 0 : s2[a][b])) / 2;
+      for (var c = 0; c < m - 1; c++) { // Cholesky positive-definiteness check
+        for (var e = 0; e <= c; e++) {
+          var sum = C[c][e]; for (var f = 0; f < e; f++) sum -= C[c][f] * C[e][f];
+          if (c === e) {
+            if (!(sum > 1e-14 * varianceScale)) { problems.push("study '" + id + "': its rounded standard errors imply a within-study covariance that is not positive definite; no network has been fitted."); return; }
+            C[c][c] = Math.sqrt(sum);
+          } else C[c][e] = sum / C[e][e];
+        }
+      }
+      var changes = pairs.map(function (pk) {
+        var seInd = Math.sqrt(Math.max(0, pk.s2 - pk.resid));
+        return { t1: arms[pk.i], t2: arms[pk.j], se: pk.se, seIndependentArm: seInd, sePercentChange: 100 * (seInd - Math.abs(pk.se)) / Math.abs(pk.se),
+          varianceDiscrepancy: pk.resid, roundingAllowance: pk.allowance, decimals: pk.dec };
+      });
+      var big = changes.reduce(function (x, y) { return Math.abs(y.sePercentChange) > Math.abs(x.sePercentChange) ? y : x; });
+      disclosures.push({
+        study: id, decimals: decText, worstRatio: worstRatio, changes: changes,
+        message: "Study '" + id + "': its SEs (reported to " + decText + " decimal place(s), " + (stated ? "as stated" : "inferred from the values") + ") are not exactly compatible with independent arms, but every discrepancy is within what that rounding can explain (largest = " +
+          (100 * worstRatio).toFixed(1) + "% of its rounding allowance). Fitted with the supplied SEs unchanged, as netmeta's multiarm() does; an independent-arm projection would have changed them by up to " +
+          Math.abs(big.sePercentChange).toPrecision(2) + "% (" + big.t1 + " / " + big.t2 + ": SE " + big.se + " to " + big.seIndependentArm.toPrecision(6) + ").",
+      });
     });
-    return problems;
+    return { problems: problems, disclosures: disclosures, varianceAudit: varianceAudit };
   }
+  function checkStudies(rows, opts) { return auditStudies(rows, opts).problems; }
 
   // ---- distribution functions (double precision) ----
   function lgam(x) { // Lanczos (g = 7, n = 9)
@@ -435,7 +542,7 @@
       var blocks = sts.map(function (st) {
         var V = zeros(p, p);
         if (!st.multiArm) V[0][0] = st.contrasts[0].se * st.contrasts[0].se;
-        else for (var a = 0; a < p; a++) for (var b = 0; b < p; b++) V[a][b] = st.v[st.base] + (a === b ? st.v[st.contrasts[a].to] : 0);
+        else for (var a = 0; a < p; a++) for (var b = 0; b < p; b++) V[a][b] = st.cov[a][b];
         return { W: invert(V), y: st.contrasts.map(function (c) { return c.est; }) };
       });
       var SW = zeros(p, p), Sy = new Array(p).fill(0);
@@ -461,9 +568,9 @@
    */
   function analyse(rows, opts) {
     opts = opts || {};
-    var fe = fit(rows, { model: "fe" });
+    var fe = fit(rows, { model: "fe", seDecimals: opts.seDecimals });
     if (!fe.ok) return fe;
-    var re = fit(rows, { model: "re", ref: fe.refTreat }), df = fe.df, Q = fe.Q, tr = fe.treatments, n = tr.length;
+    var re = fit(rows, { model: "re", ref: fe.refTreat, seDecimals: opts.seDecimals }), df = fe.df, Q = fe.Q, tr = fe.treatments, n = tr.length;
     var tDist = opts.randomCi === "t-dist" && df > 0, desirable = opts.smallValues !== "undesirable";
     var tq = tDist ? qtUpper(0.025, df) : Z975, tau2 = df > 0 ? re.tau2 : null;
     function league(f, isRandom) {
@@ -509,6 +616,7 @@
       I2: I.I2, lowerI2: I.lower, upperI2: I.upper, randomCi: tDist ? "t-dist" : "classic", smallValues: desirable ? "desirable" : "undesirable",
       common: common, random: random, predict: predict, decomp: decompDesign(built, Q, df, n),
       pscore: { common: pscores(common), random: pscores(random) }, multiArmStudies: fe.multiArmStudies,
+      varianceDisclosures: fe.varianceDisclosures,
     };
   }
 
@@ -516,6 +624,8 @@
     fit: fit,
     analyse: analyse,
     checkStudies: checkStudies,
+    auditStudies: auditStudies,
+    _decimalsOf: decimalsOf,
     buildStudies: buildStudies,
     assemble: assemble,
     gls: gls,
