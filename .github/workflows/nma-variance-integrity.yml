@@ -8,6 +8,7 @@ on:
       - 'shared/tests/nma-multiarm-v1.spec.mjs'
       - 'nma/**'
       - 'hub/shared/tests/nma*.spec.mjs'
+      - 'tests/fixtures/nma-multiarm-rounding-*'
       - '.github/workflows/nma-variance-integrity.yml'
   workflow_dispatch:
 

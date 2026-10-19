@@ -168,3 +168,39 @@ test('existing archived netmeta corpus retains all 410 checks at unchanged toler
   expect(out.fitted).toBe(24);
   expect(out.refusals.matched).toBe(2);
 });
+
+// Rounded-as-published SEs: the audit separates rounding from genuine incompatibility.
+// Oracle: tests/fixtures/nma-multiarm-rounding-reference.R (R 4.6.0, netmeta 3.6.1).
+const ROUNDING = JSON.parse(readFileSync(new URL('../../../tests/fixtures/nma-multiarm-rounding-oracle.json', import.meta.url), 'utf8'));
+
+test('four-arm study with SEs rounded to 3/4/6 dp fits in the page, matches netmeta and discloses the rounding', async ({ page }) => {
+  await open(page);
+  for (const dp of ['dp3', 'dp4', 'dp6']) {
+    const o = ROUNDING[dp];
+    await page.locator('#f-data').fill(textOf(o.rows));
+    await expect(page.locator('#league-host table')).toBeVisible();
+    await expect(page.locator('#warn-banner')).toContainText('within what that rounding can explain');
+    await expect(page.locator('#warn-banner')).toContainText("supplied SEs unchanged, as netmeta's multiarm() does");
+    await expect(page.locator('#warn-banner')).not.toContainText('no network has been fitted');
+    const a = await page.evaluate(rows => window.AlmNmaMultiarm.analyse(rows), o.rows);
+    expect(a.ok).toBe(true);
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
+      expect(Math.abs(a.common.TE[i][j] - o.TE_common[i][j])).toBeLessThanOrEqual(1e-6);
+      expect(Math.abs(a.common.seTE[i][j] - o.seTE_common[i][j])).toBeLessThanOrEqual(1e-6);
+      expect(Math.abs(a.random.seTE[i][j] - o.seTE_random[i][j])).toBeLessThanOrEqual(1e-6);
+    }
+  }
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#btn-league').click();
+  const csv = readFileSync(await (await downloadPromise).path(), 'utf8');
+  expect(csv).toContain('Note: Study');
+  expect(csv).not.toMatch(/NaN|Infinity|undefined/);
+});
+
+test('one-unit transcription error just outside the 3-dp rounding bound is refused in the page', async ({ page }) => {
+  await open(page);
+  const rows = ROUNDING.dp3.rows.map((r, k) => ({ ...r, se: k === 5 ? 0.278 : r.se }));
+  await page.locator('#f-data').fill(textOf(rows));
+  await assertRefusal(page);
+  await expect(page.locator('#warn-banner')).toContainText('exceeds the rounding allowance');
+});
