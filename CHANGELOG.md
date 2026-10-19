@@ -19,6 +19,14 @@ the section is renamed to that version and dated, and a fresh
   RCTs alone. Observational-only input at alpha=0 displays a non-estimable result
   without crashing the plot or leaving stale export state. Earlier alpha=0
   results with mixed designs should be rerun; positive-alpha behavior is unchanged.
+- Cumulative + subgroup: in the cumulative plot the per-step study labels no
+  longer overlap the effect-axis tick numbers and axis title. The labels moved
+  to a one-row-per-step key below the chart, the step axis is numbered, and the
+  axis title sits left of the widest tick number; the chart frame and every
+  plotted mark are unchanged. Layout only: no number changes. The Validate
+  replay's plot text/position contract was re-pinned to the new layout and still
+  runs 609,398 checks with 6 refusals. Above 300 steps the key lists the first
+  300 and one row naming the rest, so PNG/PDF export keeps working at large k.
 
 ### Added
 - _(items added since the most recent tag will be listed here)_

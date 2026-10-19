@@ -44,7 +44,12 @@ function svgTexts(svg) { return svg ? [...svg.querySelectorAll('text')].map(t =>
 // Cumulative plot. check(quantity, app, expected, kind) records one comparison.
 function cumulativePlot(series, title, user, check) {
   const svg = svgRoot(), k = series.length;
-  const W = 720, H = 520, L = 180, R = 30, T = title ? 60 : 40, B = 70, plotW = W - L - R, plotH = H - T - B;
+  const W = 720, Hc = 520, L = 180, R = 30, T = title ? 60 : 40, B = 70, plotW = W - L - R, plotH = Hc - T - B;
+  // Step key below the chart (page constants CUM_KEY_*): heading, then one row per step.
+  const KEY_HEAD_Y = 508, KEY_TOP = 526, KEY_ROW = 13, KEY_X = 180, KEY_NUM_X = 202, KEY_LABEL_X = 208, KEY_MAX = 300;
+  // At most KEY_MAX key rows, then one row naming how many steps are not listed (page CUM_KEY_MAX / cumKeyMoreText).
+  const keyRows = Math.min(k, KEY_MAX), more = k > KEY_MAX, H = KEY_TOP + (keyRows + (more ? 1 : 0) - 1) * KEY_ROW + 14;
+  const keyed = series.slice(0, keyRows), moreText = '… and ' + (k - KEY_MAX) + ' more steps (all steps are in the results export)';
   let yLo = Infinity, yHi = -Infinity;
   for (const s of series) { if (s.lo < yLo) yLo = s.lo; if (s.hi > yHi) yHi = s.hi; }
   const yPad = (yHi - yLo) * 0.15 || 0.2; yLo -= yPad; yHi += yPad;
@@ -62,11 +67,19 @@ function cumulativePlot(series, title, user, check) {
   const bandExp = series.map(s => [x(s.step), y(s.hi)]).concat(series.map(s => [x(s.step), y(s.lo)]).reverse());
   check('plot_band_count', band.length, 2 * k, 'exact');
   bandExp.forEach((e, j) => { check('plot_band_x', band[j] ? band[j][0] : NaN, e[0], 'abs'); check('plot_band_y', band[j] ? band[j][1] : NaN, e[1], 'abs'); });
-  const ticks = niceTicks(yLo, yHi, 6);
-  const texts = (title ? [title] : []).concat(series.map(s => '+ ' + s.label + (s.year != null ? ' (' + s.year + ')' : '')), ['Cumulative study count'], ticks.map(t => fmt(t, 2)), ['Pooled effect (95% CI)']);
+  const ticks = niceTicks(yLo, yHi, 6), tickText = ticks.map(t => fmt(t, 2));
+  // Step numbers on the x axis: every 'every'-th step, 'every' the smallest 1/2/5 x 10^n with >= 24 units between numbers.
+  const gap = plotW / (k - 1 || 1); let every = 0;
+  for (let p = 1; !every; p *= 10) for (const m of [1, 2, 5]) if (!every && m * p * gap >= 24) every = m * p;
+  const numbered = series.map(s => s.step).filter(st => st % every === 0);
+  // Effect-axis title: 6 units per character of the widest tick number plus a 12-unit gap left of the ticks, at least 12.
+  const titleX = Math.max(12, L - 8 - 6 * tickText.reduce((n, t) => Math.max(n, t.length), 0) - 12);
+  const texts = (title ? [title] : []).concat(numbered.map(String), ['Cumulative study count'], tickText, ['Pooled effect (95% CI)', 'Study added at each step'],
+    ...keyed.map(s => [String(s.step), '+ ' + s.label + (s.year != null ? ' (' + s.year + ')' : '')]), more ? [moreText] : []);
   check('plot_text', JSON.stringify(svgTexts(svg)), JSON.stringify(texts), 'exact');
-  // Axis geometry: viewBox, plot frame, zero line, row labels, step ticks and effect ticks.
-  let ok = !!svg && svg.getAttribute('viewBox') === '0 0 720 520' && !svg.hasAttribute('data-axis-refusal');
+  // Axis geometry: viewBox, plot frame, zero line, step ticks, effect ticks, and the position of every text after the title
+  // (step numbers, count-axis caption, effect ticks, effect-axis title, key heading, key rows).
+  let ok = !!svg && svg.getAttribute('viewBox') === '0 0 720 ' + H && !svg.hasAttribute('data-axis-refusal');
   if (ok) {
     const t = [...svg.querySelectorAll('text')], off = title ? 1 : 0;
     const frame = svg.querySelectorAll('rect')[1];
@@ -74,9 +87,15 @@ function cumulativePlot(series, title, user, check) {
     const lines = [...svg.querySelectorAll('line')], zero = yLo < 0 && yHi > 0;
     const expLines = (zero ? [[L, y(0), L + plotW, y(0)]] : []).concat(series.map(s => [x(s.step), T + plotH, x(s.step), T + plotH + 3]), ticks.map(v => [L, y(v), L - 4, y(v)]));
     ok = ok && lines.length === expLines.length && expLines.every((e, i) => ['x1', 'y1', 'x2', 'y2'].every((n, m) => near(attr(lines[i], n), e[m])));
-    series.forEach((s, j) => { ok = ok && near(attr(t[off + j], 'x'), L - 8) && near(attr(t[off + j], 'y'), T + plotH * (s.step / k) - 8 + 10); });
-    ticks.forEach((v, j) => { const e = t[off + k + 1 + j]; ok = ok && near(attr(e, 'x'), L - 8) && near(attr(e, 'y'), y(v) + 3); });
-    const cap = t[off + k]; ok = ok && near(attr(cap, 'x'), L + plotW / 2) && near(attr(cap, 'y'), T + plotH + 36);
+    // [x, y] per text; null for the rotated effect-axis title, whose translate() is checked instead.
+    const pos = numbered.map(st => [x(st), T + plotH + 14]).concat([[L + plotW / 2, T + plotH + 36]], ticks.map(v => [L - 8, y(v) + 3]), [null, [KEY_X, KEY_HEAD_Y]],
+      ...keyed.map(s => [[KEY_NUM_X, KEY_TOP + (s.step - 1) * KEY_ROW], [KEY_LABEL_X, KEY_TOP + (s.step - 1) * KEY_ROW]]), more ? [[KEY_LABEL_X, KEY_TOP + keyRows * KEY_ROW]] : []);
+    ok = ok && t.length === off + pos.length && pos.every((e, i) => {
+      const el = t[off + i];
+      if (e) return near(attr(el, 'x'), e[0]) && near(attr(el, 'y'), e[1]) && !el.hasAttribute('transform');
+      const m = /^translate\(([^,]+),([^)]+)\) rotate\(-90\)$/.exec(el.getAttribute('transform') || '');
+      return !!m && near(Number(m[1]), titleX) && near(Number(m[2]), T + plotH / 2) && !el.hasAttribute('x') && !el.hasAttribute('y');
+    });
   }
   check('plot_axis', ok, true, 'exact');
 }

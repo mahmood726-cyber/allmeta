@@ -390,9 +390,32 @@
       return "<svg xmlns=\"http://www.w3.org/2000/svg\" data-axis-refusal=\"1\" viewBox=\"0 0 720 120\" width=\"720\" height=\"120\"><rect width=\"720\" height=\"120\" fill=\"#fff\"/><text x=\"360\" y=\"52\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" font-weight=\"600\" fill=\"#b91c1c\">Plot cannot be displayed: effect-axis limits are invalid.</text><text x=\"360\" y=\"76\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"12\" fill=\"#5c6470\">"+escapeXml(msg)+"</text></svg>";
     }
 
+    // Cumulative plot layout. The chart keeps its 720 x 520 frame, marks and axes; the study labels are
+    // NOT drawn beside the effect axis (that margin holds the tick numbers and the axis title, and 100
+    // labels cannot fit in its height). The x axis carries step numbers and a key below the chart gives
+    // one row per step: the step number and the study added at it. The key grows with k, so every text
+    // keeps its own row at a fixed font size for any k, and a long label can only extend rightwards.
+    // validate/adapter.js (cumulativePlot) reproduces these rules exactly.
+    const CUM_KEY_HEAD_Y = 508, CUM_KEY_TOP = 526, CUM_KEY_ROW = 13, CUM_KEY_X = 180, CUM_KEY_NUM_X = 202, CUM_KEY_LABEL_X = 208;
+    // The key lists at most CUM_KEY_MAX steps, then one row naming how many more there are, so the SVG stays
+    // under ~4,500 units tall and PNG/PDF export (2x canvas) stays inside browser canvas limits at any k.
+    const CUM_KEY_MAX = 300;
+    function cumKeyMoreText(k) { return "… and " + (k - CUM_KEY_MAX) + " more steps (all steps are in the results export)"; }
+    // Step-number interval: the smallest 1/2/5 x 10^n step whose numbers are at least 24 units apart.
+    function stepLabelEvery(k, plotW) {
+      const gap = plotW / (k - 1 || 1);
+      for (let p = 1; ; p *= 10) for (const m of [1, 2, 5]) if (m * p * gap >= 24) return m * p;
+    }
+    // Effect-axis title position: left of the widest tick number (6 units per character at font size 9,
+    // a conservative width) with a 12-unit gap, and never closer than 12 units to the left edge.
+    function effectTitleX(L, tickTexts) {
+      const widest = tickTexts.reduce((n, t) => Math.max(n, t.length), 0);
+      return Math.max(12, L - 8 - 6 * widest - 12);
+    }
+
     function buildCumulativeSvg(state, data) {
-      const W=720, H=520, L=180, R=30, T=state.title?60:40, B=70;
-      const plotW=W-L-R, plotH=H-T-B;
+      const W=720, Hc=520, L=180, R=30, T=state.title?60:40, B=70;
+      const plotW=W-L-R, plotH=Hc-T-B;
       const series = data.series;
       const k = series.length;
       if (!k) return "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">No studies.</text></svg>";
@@ -413,6 +436,7 @@
       yLo = effAxis.lo; yHi = effAxis.hi;
       function x(v) { return L + (v-xLo)/(xHi-xLo || 1) * plotW; }
       function y(v) { return T + plotH - (v-yLo)/(yHi-yLo) * plotH; }
+      const keyRows = Math.min(k, CUM_KEY_MAX), H = CUM_KEY_TOP + (keyRows + (k > CUM_KEY_MAX ? 1 : 0) - 1) * CUM_KEY_ROW + 14;
 
       const p = [];
       p.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -432,30 +456,36 @@
       const linePts = series.map(s => x(s.step)+","+y(s.mu));
       p.push("<polyline points=\""+linePts.join(" ")+"\" fill=\"none\" stroke=\"#2c5e8a\" stroke-width=\"2\"/>");
 
-      // Points + study labels
+      // Points
       for (const s of series) {
         p.push("<circle cx=\""+x(s.step)+"\" cy=\""+y(s.mu)+"\" r=\"3\" fill=\"#2c5e8a\" stroke=\"#15181d\" stroke-width=\"0.6\"/>");
       }
 
-      // Row labels on left (study names)
-      for (const s of series) {
-        const rowY = T + plotH * (s.step / k) - 8;
-        const yearTag = s.year != null ? " (" + s.year + ")" : "";
-        p.push("<text x=\""+(L-8)+"\" y=\""+(rowY+10)+"\" text-anchor=\"end\" font-size=\"9\" fill=\"#5c6470\">+ " + escapeXml(s.label + yearTag)+"</text>");
-      }
-
-      // Axes
-      const axisY = T + plotH;
+      // Axes. Step axis: a tick per step, numbered every stepLabelEvery steps.
+      const axisY = T + plotH, every = stepLabelEvery(k, plotW);
       for (let step=1; step<=k; step++) {
         p.push("<line x1=\""+x(step)+"\" y1=\""+axisY+"\" x2=\""+x(step)+"\" y2=\""+(axisY+3)+"\" stroke=\"#15181d\"/>");
       }
-      p.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Cumulative study count</text>");
-      const yTicks = niceTicks(yLo, yHi, 6);
-      for (const t of yTicks) {
-        p.push("<line x1=\""+L+"\" y1=\""+y(t)+"\" x2=\""+(L-4)+"\" y2=\""+y(t)+"\" stroke=\"#15181d\"/>");
-        p.push("<text x=\""+(L-8)+"\" y=\""+(y(t)+3)+"\" text-anchor=\"end\" font-size=\"9\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+      for (let step=1; step<=k; step++) {
+        if (step % every === 0) p.push("<text class=\"cum-step-num\" x=\""+x(step)+"\" y=\""+(axisY+14)+"\" text-anchor=\"middle\" font-size=\"9\" fill=\"#5c6470\">"+step+"</text>");
       }
-      p.push("<text transform=\"translate("+(L-44)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Pooled effect (95% CI)</text>");
+      p.push("<text class=\"cum-axis-title\" x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Cumulative study count</text>");
+      const yTicks = niceTicks(yLo, yHi, 6), yTickText = yTicks.map(t => fmt(t,2));
+      yTicks.forEach((t, i) => {
+        p.push("<line x1=\""+L+"\" y1=\""+y(t)+"\" x2=\""+(L-4)+"\" y2=\""+y(t)+"\" stroke=\"#15181d\"/>");
+        p.push("<text class=\"cum-tick\" x=\""+(L-8)+"\" y=\""+(y(t)+3)+"\" text-anchor=\"end\" font-size=\"9\" fill=\"#5c6470\">"+yTickText[i]+"</text>");
+      });
+      p.push("<text class=\"cum-axis-title\" transform=\"translate("+effectTitleX(L, yTickText)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Pooled effect (95% CI)</text>");
+
+      // Step key: one row per step (step number, then the study added at that step).
+      p.push("<text class=\"cum-key-head\" x=\""+CUM_KEY_X+"\" y=\""+CUM_KEY_HEAD_Y+"\" font-size=\"10\" font-weight=\"600\" fill=\"#15181d\">Study added at each step</text>");
+      for (const s of series.slice(0, keyRows)) {
+        const rowY = CUM_KEY_TOP + (s.step - 1) * CUM_KEY_ROW;
+        const yearTag = s.year != null ? " (" + s.year + ")" : "";
+        p.push("<text class=\"cum-key-num\" x=\""+CUM_KEY_NUM_X+"\" y=\""+rowY+"\" text-anchor=\"end\" font-size=\"9\" fill=\"#5c6470\">"+s.step+"</text>");
+        p.push("<text class=\"cum-step-label\" x=\""+CUM_KEY_LABEL_X+"\" y=\""+rowY+"\" font-size=\"9\" fill=\"#5c6470\">+ " + escapeXml(s.label + yearTag)+"</text>");
+      }
+      if (k > CUM_KEY_MAX) p.push("<text class=\"cum-key-more\" x=\""+CUM_KEY_LABEL_X+"\" y=\""+(CUM_KEY_TOP + keyRows * CUM_KEY_ROW)+"\" font-size=\"9\" font-style=\"italic\" fill=\"#5c6470\">"+cumKeyMoreText(k)+"</text>");
 
       p.push("</svg>");
       return p.join("");
