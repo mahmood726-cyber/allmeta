@@ -1,8 +1,12 @@
 # REML numerical review of PR #84 — 10 October 2026
 
 The defect is confirmed. On the supplied CD006536 inputs, current `main`
-returns τ² = 0, while fresh R/metafor and independent residual-contrast
-calculations select τ² = **0.04495467370154**. Its REML score at zero is
+returns τ² = 0, while an independent residual-contrast calculation (in R,
+`tests/reml_reference.R` selects τ² by its own score grid + `uniroot`, then
+passes that `tau2=` to `metafor::rma`) selects τ² = **0.04495467370154**.
+metafor's own REML iteration, tightly converged
+(`rma(method="REML", control=list(stepadj=0.5, threshold=1e-14))`, R 4.6.0 /
+metafor 5.0.1, `tests/reml_native_reference.R`), gives 0.044954673701545. Its REML score at zero is
 positive (3.41849235); zero is not even a local likelihood maximum in this
 example. The original iteration can oscillate back to zero.
 
@@ -91,7 +95,25 @@ multivariate/multilevel/meta-regression engines.
 - `tests/reml_reference.R` independently diagonalises orthogonal residual
   contrasts, isolates score crossings on 4,096 positive scales, compares every
   root with zero, and obtains pooled/Wald/Hartung–Knapp results from
-  `metafor::rma` at the selected τ².
+  `metafor::rma` at the selected τ². The τ² in that reference is therefore
+  chosen by the script's own grid + `uniroot`, not by metafor's REML
+  estimator; metafor supplies only the quantities conditional on it.
+- Native metafor check: `tests/reml_native_reference.R` runs metafor's own
+  REML iteration (no `tau2=` supplied; `stepadj=0.5`, `threshold=1e-14`) on
+  the three real-review fixtures with native R 4.6.0 / metafor 5.0.1. AllMeta
+  matches it to 1e-12 relative (`tests/fixtures/reml_native_metafor.json`):
+  CD005566 0.0330421359225505, CD006536 0.0449546737015453, CD016031
+  0.364808594777756.
+- After the global mode is selected by likelihood, the estimate is polished to
+  the REML score root. The likelihood is flat at its maximum (Δll ≈ 1e-15 for
+  Δτ² ≈ 1e-8), so likelihood comparison alone leaves ~√ε relative error in τ²
+  (up to 5.3e-9 on BCG leave-one-out against tightly converged metafor 5.2-1);
+  the score root restores agreement to ~1e-15. When the previous estimator
+  (fixed point + score-root polish) already lies on the selected mode, its
+  exact value is returned, so inputs it handled correctly stay bit-identical to
+  `main` (all 169 `limit-ma/validate/plus` corpus inputs; the pinned
+  `selmodel-parity` fixture depends on this). Only inputs where it missed the
+  global maximum change.
 - Default, damped and strict metafor iterative runs are recorded separately.
   Defaults fail to converge on all three real-review fixtures. Damping
   (`stepadj=.5`) resolves them. On the close boundary-winning example,

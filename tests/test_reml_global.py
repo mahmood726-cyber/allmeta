@@ -97,13 +97,20 @@ def test_invalid_variances_and_unrepresentable_ranges_are_refused():
     assert all(json.loads(result.stdout))
 
 
+def _lf_bytes(path):
+    """Bytes as committed to git (LF). The pinned digests are of the git blobs; a Windows
+    checkout with core.autocrlf=true rewrites the working tree to CRLF, which would change
+    the digest without any change to the content."""
+    return path.read_bytes().replace(b"\r\n", b"\n")
+
+
 def test_fresh_metafor_pool_and_hartung_knapp_reference():
     refs = json.loads((ROOT / "tests/fixtures/reml_reference.json").read_text())
     assert refs["metafor_version"] == "4.8.0"
     assert refs["r_version"].startswith("R version 4.5.1")
     for filename, digest in refs["input_sha256"].items():
-        assert hashlib.sha256((ROOT / filename).read_bytes()).hexdigest() == digest
-    assert hashlib.sha256((ROOT / "tests/reml_reference.R").read_bytes()).hexdigest() == refs["source_sha256"]
+        assert hashlib.sha256(_lf_bytes(ROOT / filename)).hexdigest() == digest
+    assert hashlib.sha256(_lf_bytes(ROOT / "tests/reml_reference.R")).hexdigest() == refs["source_sha256"]
     got = run_cases(CASES, "{plain:M.pool(c.yi,c.vi,{method:'REML'}),hk:M.pool(c.yi,c.vi,{method:'REML',knha:true})}")
     for c, result in zip(CASES, got):
         ref = refs["cases"][c["id"]]["reference"]
@@ -140,3 +147,31 @@ def test_seeded_inputs_against_independent_scipy_contrast_profile():
         roots = [optimize.brentq(score, a, b, xtol=np.finfo(float).tiny, rtol=1e-14)
                  for a, b, sa, sb in zip(grid[:-1], grid[1:], scores[:-1], scores[1:]) if sa*sb < 0]
         assert max(map(ll, [0]+roots)) - ll(got) < 1e-7
+
+
+def test_native_metafor_iterative_reml_on_real_reviews():
+    """metafor's OWN REML iteration (tau2 not supplied), tightly converged -- unlike
+    tests/reml_reference.R, which selects tau^2 itself and passes tau2= to rma()."""
+    ref = json.loads((ROOT / "tests/fixtures/reml_native_metafor.json").read_text())
+    assert "threshold=1e-14" in ref["call"] and "tau2=" not in ref["call"]
+    got = run_cases(REAL)
+    assert len(got) == len(REAL) == len(ref["tau2"]) == 3
+    for c, value in zip(REAL, got):
+        assert value == pytest.approx(ref["tau2"][c["review_id"]], rel=1e-12, abs=0), c["review_id"]
+
+
+def test_selected_mode_is_polished_to_the_score_root():
+    """The REML likelihood is flat at its maximum, so choosing tau^2 by comparing
+    log-likelihoods alone leaves ~sqrt(eps) relative error (BCG leave-one-out: 5.3e-9
+    against tightly converged metafor 5.2-1). The estimate must sit on the score root."""
+    fix = json.loads((ROOT / "hub/shared/tests/_heterogeneity_parity_fixture.json").read_text())
+    yi = [s[1] for s in fix["studies"]]
+    vi = [s[2] * s[2] for s in fix["studies"]]
+    ref = fix["configs"]["reml"]
+    cases = [{"yi": yi, "vi": vi}] + [
+        {"yi": yi[:i] + yi[i + 1:], "vi": vi[:i] + vi[i + 1:]} for i in range(len(yi))]
+    got = run_cases(cases)
+    expected = [ref["tau2"]] + ref["loo_tau2"]
+    assert len(got) == len(expected) == len(yi) + 1
+    for i, (value, r) in enumerate(zip(got, expected)):
+        assert abs(value - r) / max(1, abs(r)) <= 1e-12, (i, value, r)

@@ -254,6 +254,57 @@
       // Refine new brackets if the first polish selected a different mode.
       stack.push([a, m, false], [m, b, false]);
     }
+    // The search above SELECTS the mode by log-likelihood, but the REML
+    // likelihood is flat at its maximum (a relative change of 1e-8 in tau^2
+    // moves ll by ~1e-15), so ll comparison cannot place tau^2 more precisely
+    // than ~sqrt(eps): a refinement midpoint whose ll is higher only by
+    // rounding can displace the polished root. Locate the estimate itself on
+    // the score, which crosses zero linearly at the root: bracket the score
+    // sign change tightly around the selected interior mode and bisect it.
+    // The bracket grows from a relative 2^-40 and stops at the first sign
+    // change, so it stays inside the selected mode; the root is kept only if
+    // its ll is within the search's own tolerance of the selected point.
+    // A boundary winner (t = 0) is left untouched.
+    var tolEnd = 1e-11 + roundoff * Math.max(k, Math.abs(best.ll));
+    if (best.t > 0 && best.sign !== 0) {
+      var lo = null, hi = null, dlt = best.t * Math.pow(2, -40), probe;
+      if (best.sign > 0) {
+        lo = best;
+        for (i = 0; i < 80 && hi === null; i++, dlt *= 2) {
+          probe = at(Math.min(best.t + dlt, upper));
+          if (probe.sign <= 0) hi = probe; else lo = probe;
+          if (probe.t === upper) break;
+        }
+      } else {
+        hi = best;
+        for (i = 0; i < 80 && lo === null; i++, dlt *= 2) {
+          probe = at(Math.max(best.t - dlt, 0));
+          if (probe.sign > 0) lo = probe; else hi = probe;
+          if (probe.t === 0) break;
+        }
+      }
+      if (lo !== null && hi !== null) {
+        for (i = 0; i < 200; i++) {
+          var mm = lo.t + (hi.t - lo.t) / 2;
+          if (mm === lo.t || mm === hi.t) break;
+          probe = at(mm);
+          if (probe.sign > 0) lo = probe; else hi = probe;
+        }
+        var root = at(lo.t + (hi.t - lo.t) / 2);
+        if (root.t > 0 && root.ll >= best.ll - tolEnd) best = root;
+      }
+    }
+    if (best.t > 0) {
+      // Near the root the score is evaluated with rounding noise, so two
+      // correct bisections can stop on different adjacent floats (~1e-15
+      // relative). When the previous estimator (fixed point + score-root
+      // polish in original units) already lies on the selected mode, keep its
+      // exact value: results that were right stay bit-identical, and only
+      // inputs where it missed the global maximum change.
+      var legacy = _tau2Guarded(yi, vi, true), lt = legacy / scale / scale;
+      if (legacy > 0 && isFinite(legacy) && Math.abs(lt - best.t) <= 1e-8 * best.t &&
+          at(lt).ll >= best.ll - tolEnd) return legacy;
+    }
     return unscale(best.t);
   }
   function tau2ML(yi, vi) { return _tau2Guarded(yi, vi, false); }
