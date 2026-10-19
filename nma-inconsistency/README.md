@@ -11,7 +11,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/nma-inconsistency/
 ## When to use
 
 - **Category:** Network MA
-- **Data shape:** multi-arm trials in NMA shape — multiple rows per study, one per arm.
+- **Data shape:** independent two-arm contrast rows: A, B, effect, SE, optional study ID. Multi-arm studies are refused because covariance is unsupported.
 - **Purpose:** Node-splitting + design-by-treatment Q.
 
 ## Cite as
@@ -20,7 +20,7 @@ Click **📑 Cite as** inside the app for ready-to-paste Vancouver + BibTeX cita
 
 ## Reproducibility
 
-- Receipts and JSON exports include `producedBy` (app version, git SHA, build timestamp) — see `shared/build-info.js`.
+- This page exports its numerical result state as JSON, CSV and Markdown. Record the source checkout commit separately; the shared `build-info.js` identity is not attached to this page’s result exports.
 - For apps with a parity-checked engine, `shared/specs/` contains the R-reference test vectors. Run `python -m pytest tests/` for the full suite.
 - Click **📝 Verify in R** to open a Shinylive R session with the current data pre-loaded for independent re-computation (where supported).
 
