@@ -240,6 +240,16 @@
     }
     refresh();
   }
-  window.AlmCorrPlusUI = { classify: classify, convertDelimited: convertDelimited, refresh: refresh };
+  // Panel state for the in-page extras replay (validate/plus-adapter.js): it saves the user's choices
+  // before replaying the pinned corpus through this panel and puts them back afterwards.
+  function snapshot() { return { test: state.test, benchmark: state.benchmark, loo: !!state.loo }; }
+  function restore(s) {
+    state.test = s.test; state.benchmark = s.benchmark; state.loo = null;
+    document.querySelectorAll("input[name='alm-plus-test']").forEach(function (r) { r.checked = r.value === s.test; });
+    document.querySelectorAll("input[name='alm-plus-bench']").forEach(function (r) { r.checked = r.value === s.benchmark; });
+    var host = $("alm-plus-loo"); if (host) host.innerHTML = "";
+    renderSensitivity(); if (s.loo) renderLoo();
+  }
+  window.AlmCorrPlusUI = { classify: classify, convertDelimited: convertDelimited, refresh: refresh, snapshot: snapshot, restore: restore };
   if (document.readyState !== "loading") mount(); else document.addEventListener("DOMContentLoaded", mount);
 })();

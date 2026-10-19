@@ -64,6 +64,14 @@ To regenerate the R side, put `generate-plus.R`, `json17.R` and the P17 `corpus.
 
 Browser spec: `hub/shared/tests/correlation-ma-plus.spec.mjs`. It covers rendering, the keyboard path, the R download, the usability tools, axe-core on the new regions in light and dark mode, and the forest stroke contrast.
 
+## In-page replay of the extras evidence
+
+The panel carries its own validation widget (`#alm-plus-validate`, `validate/plus-adapter.js`, a second `AlmValidate` mount). "Replay extras corpus (stored references)" drives the real page for every extras input under all 12 estimator × CI-method configurations (324): it types the rows into the page's textarea, selects the estimator, chooses the CI method and clicks "Run leave-one-out", then compares what the panel computed and shows with `reference-plus.json` (metafor 5.2-1) and with `rscript-results.json` (the R output of the page's own exported scripts). Both files are SHA-256 pinned in `validate/plus-pins.js`; any other bytes refuse the replay. The check count, 235,030, was derived from the two pinned files independently of the adapter, and the adapter refuses any other count. The user's data, estimator, CI method, benchmark and leave-one-out state are restored afterwards. R is not executed by the replay.
+
+`hub/shared/tests/correlation-ma-plus-replay.spec.mjs` (Edge 155, Playwright 1.59.1): the replay passes 235,030/235,030 in about 55 s and restores the user state; a one-byte change to the pinned reference is refused; a planted +1e-7 on the DL × HKSJ ad-hoc pooled z fails exactly the 324 cell checks and 27 R-script checks it touches; a planted pooled-r cell string fails exactly its 324 display checks.
+
+`hub/shared/tests/correlation-ma-walkthrough.spec.mjs`: scripted task on real data (dat.molloy2014, 16 studies, plus one malformed row): fresh load (built-in example analysed, 0 clicks) → Load example → paste own data (pooled result shown; the malformed row is named in the excluded-row notice) → change estimator and CI method → read the result → leave-one-out → R script and JSON export, 7 clicks in total; axe-core WCAG 2.1 A/AA on the whole page, light and dark.
+
 ## Not covered
 
 - No influence diagnostics (`influence()`): they are not shipped.
