@@ -2,19 +2,21 @@
 import {test,expect} from './validation-fixture.mjs';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
 const root=new URL('../../../',import.meta.url),app=new URL('nma-inconsistency/index.html',root).href;
 const manifest=JSON.parse(readFileSync(new URL('nma-inconsistency/validate/MANIFEST-plus.json',root),'utf8'));
 const paths=manifest.files.map(f=>fileURLToPath(new URL('nma-inconsistency/'+f.path,root)));
-const raw=manifest.files.map((f,i)=>[f.path,[...readFileSync(paths[i])]]);
+// Bytes cross into the page as base64: a 20 MB reference as a JSON number array exhausts the worker heap.
+const raw=manifest.files.map((f,i)=>[f.path,readFileSync(paths[i]).toString('base64')]);
 const v1=JSON.parse(readFileSync(new URL('nma-inconsistency/validate/MANIFEST.json',root),'utf8'));
-const v1raw=v1.files.map(f=>[f.path,[...readFileSync(fileURLToPath(new URL('nma-inconsistency/'+f.path,root)))]]);
+const v1raw=v1.files.map(f=>[f.path,readFileSync(fileURLToPath(new URL('nma-inconsistency/'+f.path,root))).toString('base64')]);
 const reference=JSON.parse(readFileSync(paths[1],'utf8'));
 const idle=page=>page.evaluate(()=>AlmIncoPlus.whenIdle());
 
 test('offline plus replay: every LOO refit, FE/DL/PM triple and sentence matches pinned R; page state untouched',async({page,context})=>{
  test.setTimeout(900000);await context.setOffline(true);await page.goto(app);await idle(page);
  const before=await page.evaluate(()=>JSON.stringify(AlmIncoValidationAdapter.snapshot()));
- const r=await page.evaluate(entries=>AlmIncoPlusAdapter.corpus.run(Object.fromEntries(entries.map(([k,v])=>[k,new Uint8Array(v)]))),raw);
+ const r=await page.evaluate(entries=>AlmIncoPlusAdapter.corpus.run(Object.fromEntries(entries.map(([k,v])=>[k,Uint8Array.from(atob(v),c=>c.charCodeAt(0))]))),raw);
  console.log(`plus replay ${r.passed}/${r.checks} groups ${JSON.stringify(r.groups)} boundary ${JSON.stringify(r.boundary)}`);
  expect(r.failed.slice(0,5)).toEqual([]);expect(r.passed).toBe(manifest.checks);expect(r.checks).toBe(manifest.checks);
  expect(await page.evaluate(()=>JSON.stringify(AlmIncoValidationAdapter.snapshot()))).toBe(before);
@@ -22,14 +24,23 @@ test('offline plus replay: every LOO refit, FE/DL/PM triple and sentence matches
 test('pinned 4627-check replay still passes with the plus panel mounted and computed',async({page,context})=>{
  test.setTimeout(300000);await context.setOffline(true);await page.goto(app);
  await page.getByRole('button',{name:/Linde 2015/}).click();await idle(page);
- const r=await page.evaluate(entries=>AlmIncoValidationAdapter.corpus.run(Object.fromEntries(entries.map(([k,v])=>[k,new Uint8Array(v)]))),v1raw);
+ const r=await page.evaluate(entries=>AlmIncoValidationAdapter.corpus.run(Object.fromEntries(entries.map(([k,v])=>[k,Uint8Array.from(atob(v),c=>c.charCodeAt(0))]))),v1raw);
  expect(r.failed).toEqual([]);expect(r.passed).toBe(4627);expect(r.checks).toBe(4627);
 });
 for(const index of [0,1,2])test('tampered plus pin '+index+' refuses before execution',async({page,context})=>{
  await context.setOffline(true);await page.goto(app);
- const bad=raw.map(([k,v],i)=>[k,i===index?[...v,32]:v]);
- const e=await page.evaluate(entries=>AlmIncoPlusAdapter.corpus.run(Object.fromEntries(entries.map(([k,v])=>[k,new Uint8Array(v)]))).then(()=>null,e=>e.message),bad);
+ const bad=raw.map(([k,v],i)=>[k,i===index?Buffer.concat([Buffer.from(v,'base64'),Buffer.from(' ')]).toString('base64'):v]);
+ const e=await page.evaluate(entries=>AlmIncoPlusAdapter.corpus.run(Object.fromEntries(entries.map(([k,v])=>[k,Uint8Array.from(atob(v),c=>c.charCodeAt(0))]))).then(()=>null,e=>e.message),bad);
  expect(e).toContain('SHA-256 mismatch; refused');
+});
+test('tampered plus reference value (re-pinned) fails the replay',async({page,context})=>{
+ test.setTimeout(900000);await context.setOffline(true);await page.goto(app);await idle(page);
+ const ref=JSON.parse(readFileSync(paths[1],'utf8'));const d=ref.cases.find(x=>x.full.model!=='FE').drops.find(d=>d.fit.status==='ok');d.fit.tau2*=1+1e-6;
+ const bytes=Buffer.from(JSON.stringify(ref),'utf8'),sha=createHash('sha256').update(bytes).digest('hex');
+ const bad=raw.map(([k,v],i)=>[k,i===1?bytes.toString('base64'):v]);
+ const r=await page.evaluate(([entries,sha])=>{AlmIncoPlusManifest.files[1].sha256=sha;return AlmIncoPlusAdapter.corpus.run(Object.fromEntries(entries.map(([k,v])=>[k,Uint8Array.from(atob(v),c=>c.charCodeAt(0))])));},[bad,sha]);
+ console.log(`tampered plus replay ${r.passed}/${r.checks} first failure ${JSON.stringify(r.failed[0])}`);
+ expect(r.checks).toBe(manifest.checks);expect(r.failed.length).toBe(1);expect(r.failed[0].quantity).toMatch(/tau2$/);
 });
 for(const model of ['FE','DL','PM'])test('Baker example '+model+': displayed LOO table equals R-formatted values',async({page})=>{
  test.setTimeout(120000);await page.goto(app);await page.selectOption('#f-model',model);
@@ -37,7 +48,7 @@ for(const model of ['FE','DL','PM'])test('Baker example '+model+': displayed LOO
  const ref=reference.cases.find(x=>x.key==='netmeta::Baker2009::exac::OR::two-arm-only::'+model);expect(ref).toBeTruthy();
  const expected=await page.evaluate(([x,model])=>{
   const P=AlmIncoPlusCore,L=AlmIncoPlusAdapter.refLoo({model,rows:[]},x),f=(v,d)=>P.fmt(v,d);
-  return Object.fromEntries(L.drops.map(d=>[d.study,[f(d.tau2,4),f(d.dbt.Q,2),(d.dQ>0?'+':'')+f(d.dQ,2),P.fmtP(d.dbt.p),String(d.nSplits),String(d.nInconsistent)]]));
+  return Object.fromEntries(L.drops.map(d=>[d.study,[f(d.tau2,4),f(d.dbt.Q,2),P.fmtSigned(d.dQ,2),P.fmtP(d.dbt.p),String(d.nSplits),String(d.nInconsistent)]]));
  },[ref,model]);
  const shown=await page.$$eval('#plus-loo-body tr',trs=>trs.map(tr=>[tr.querySelector('th').textContent.trim(),[...tr.querySelectorAll('td')].slice(0,6).map(td=>td.textContent.trim())]));
  expect(shown.length).toBe(29);expect(Object.fromEntries(shown)).toEqual(expected);

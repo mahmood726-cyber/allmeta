@@ -101,7 +101,7 @@
 
   // ---- Plus analyses ---------------------------------------------------------
   const state = { gen: 0, rows: [], model: 'FE', base: null, compare: null, loo: null, busy: false, sort: { key: 'dQ', dir: 1 }, selected: null };
-  let idleWaiters = [];
+  let idleWaiters = [], pending = null; // pending: a refresh scheduled by a change to the validated region
   function settle() { state.busy = false; const w = idleWaiters; idleWaiters = []; w.forEach(f => f()); }
   function refresh() {
     const gen = ++state.gen;
@@ -195,7 +195,7 @@
     });
     body.innerHTML = drops.map(d => {
       const flag = d.status === 'ok' && (d.globalFlip || d.splitFlips.length) ? ' class="plus-flag"' : '';
-      const cells = d.status === 'ok' ? [fmt(d.tau2, 4), fmt(d.dbt.Q, 2), (d.dQ > 0 ? '+' : '') + fmt(d.dQ, 2), fmtP(d.dbt.p), String(d.nSplits), String(d.nInconsistent)] : ['—', '—', '—', '—', '—', '—'];
+      const cells = d.status === 'ok' ? [fmt(d.tau2, 4), fmt(d.dbt.Q, 2), P.fmtSigned(d.dQ, 2), fmtP(d.dbt.p), String(d.nSplits), String(d.nInconsistent)] : ['—', '—', '—', '—', '—', '—'];
       return `<tr${flag} data-index="${d.index}"><th scope="row"><button type="button" class="plus-row" data-index="${d.index}" aria-pressed="${state.selected === d.index}">${esc(d.study)}</button></th>${cells.map(c => `<td>${esc(c)}</td>`).join('')}<td>${esc(changeText(d))}</td></tr>`;
     }).join('');
     drawChart(); renderDetail();
@@ -282,14 +282,14 @@
   }
 
   // Any re-render of the validated global region (run, refusal, replay restore) refreshes the panel.
-  let pending = null;
   const schedule = () => { if (pending !== null) return; pending = later(() => { pending = null; refresh(); }, 30); if (pending === null) refresh(); };
   if (typeof MutationObserver === 'function') new MutationObserver(schedule).observe($('dbt'), { childList: true, subtree: true, characterData: true });
 
   window.AlmIncoPlus = {
     state: () => state, refresh, parseIssues, issueMessage, rScript,
     methodsText: () => P.methodsText({ base: state.base, loo: state.loo, compare: state.compare }),
-    whenIdle: () => new Promise(resolve => { if (!state.busy && state.base) resolve(); else idleWaiters.push(resolve); }),
+    // Idle = no refresh scheduled and no leave-one-out computation running.
+    whenIdle: () => new Promise(resolve => { if (!state.busy && state.base && pending === null) resolve(); else idleWaiters.push(resolve); }),
   };
   refresh();
 })();

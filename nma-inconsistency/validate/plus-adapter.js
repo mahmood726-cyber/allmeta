@@ -44,10 +44,11 @@
     if (running) throw Error('Replay already running');
     running = true;
     try {
-      const [corpus, reference, estimators] = await verified(loaded);
+      const [corpus, reference, estimators, v1corpus, v1reference] = await verified(loaded);
       if (!Array.isArray(corpus) || corpus.length !== manifest.configurations || !reference || !Array.isArray(reference.cases) || reference.cases.length !== corpus.length ||
           !corpus.every((c, i) => c.key === reference.cases[i].key && reference.cases[i].drops.length === c.rows.length) ||
-          !Array.isArray(estimators) || estimators.length !== manifest.estimator_triples) throw Error('Plus evidence cardinality or keys differ');
+          !Array.isArray(estimators) || estimators.length !== manifest.estimator_triples ||
+          !Array.isArray(v1corpus) || !v1reference || !Array.isArray(v1reference.cases) || v1reference.cases.length !== v1corpus.length) throw Error('Plus evidence cardinality or keys differ');
       let checks = 0, passed = 0; const failed = [], maxima = {}, boundary = [], groups = { loo: 0, estimators: 0, text: 0, graph: 0 };
       function check(id, quantity, app, ref, kind, tol, group) {
         let diff;
@@ -97,6 +98,14 @@
         for (const m of P.MODELS) check(t.key, 'text.methods.' + m, P.methodsText({ base: app.fits[m], compare: app }), P.methodsText({ base: ref.fits[m], compare: ref }), 'exact', 0, 'text');
         if (progress) progress(corpus.length + i + 1, corpus.length + estimators.length);
         if (i % 10 === 9) await tick();
+      }
+      // Sentences for every accepted configuration of the 122-configuration base replay, from app vs R values.
+      for (let i = 0; i < v1corpus.length; i++) {
+        const r = v1reference.cases[i].numeric;
+        if (!r || r.status !== 'ok' || v1corpus[i].key !== v1reference.cases[i].key) continue;
+        const app = P.fitAll(E, window.parse(v1corpus[i].text), v1corpus[i].model), ref = P.normalizeFit(r);
+        check(v1corpus[i].key, 'text.base.interpret', P.interpret({ base: app }), P.interpret({ base: ref }), 'exact', 0, 'text');
+        check(v1corpus[i].key, 'text.base.methods', P.methodsText({ base: app }), P.methodsText({ base: ref }), 'exact', 0, 'text');
       }
       if (manifest.checks && checks !== manifest.checks) throw Error('Plus replay check cardinality mismatch: ' + checks);
       return { checks, passed, failed, maxima, groups, boundary,

@@ -24,6 +24,9 @@
   const finite = x => typeof x === 'number' && Number.isFinite(x);
   const sig = p => finite(p) && p < ALPHA;
   function fmt(x, d = 3) { return finite(x) ? x.toFixed(d) : '—'; }
+  // Signed change: a value that rounds to zero is shown as unsigned zero, so floating-point noise
+  // around 0 (e.g. -1e-15) never prints as "-0.00" or "+0.00".
+  function fmtSigned(x, d = 2) { const s = fmt(x, d); return !finite(x) || Number(s) === 0 ? fmt(finite(x) ? 0 : x, d) : (x > 0 ? '+' : '') + s; }
   function fmtP(p) { return p === null || !finite(p) ? 'not testable' : p < 0.001 ? '< 0.001' : fmt(p, 3); }
 
   // Identical sequence to the page's run(): gate, tau2, singular check, splits, global.
@@ -321,5 +324,5 @@ if (n_ok != n_checks) { cat("Mismatches:\\n", paste(bad, collapse = "\\n"), "\\n
 `;
   }
 
-  return { ALPHA, MODELS, MODEL_NAME, SINGULAR, fmt, fmtP, sig, fitAll, graphEdges, normalizeFit, summarizeDrop, compareFits, looPlan, looDrop, looFinish, loo, looSummary, compare3, compareSummary, interpret, methodsText, buildRScript };
+  return { ALPHA, MODELS, MODEL_NAME, SINGULAR, fmt, fmtP, fmtSigned, sig, fitAll, graphEdges, normalizeFit, summarizeDrop, compareFits, looPlan, looDrop, looFinish, loo, looSummary, compare3, compareSummary, interpret, methodsText, buildRScript };
 });

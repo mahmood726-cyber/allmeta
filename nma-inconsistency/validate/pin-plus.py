@@ -123,6 +123,12 @@ def cmd_pin(checks=None):
     for name in ('corpus.json', 'reference.json', 'estimators-reference.json'):
         data = (plus / name).read_bytes()
         files.append(dict(path='validate/plus/' + name, sha256=hashlib.sha256(data).hexdigest(), bytes=len(data)))
+    # The 122-configuration base corpus: its accepted cases are used for sentence checks.
+    v1 = json.loads((root / 'MANIFEST.json').read_text(encoding='utf-8'))['files']
+    for f in v1:
+        data = (root.parent / f['path']).read_bytes()
+        assert hashlib.sha256(data).hexdigest() == f['sha256'] and len(data) == f['bytes'], f['path']
+        files.append(dict(f))
     drops = sum(len(x['drops']) for x in reference['cases'])
     manifest = dict(
         files=files, configurations=len(corpus), loop_configurations=sum(c['loops'] for c in corpus),
