@@ -43,6 +43,8 @@ function setupDOM() {
 // Set up DOM before require
 setupDOM();
 
+// index.html loads synthesisPlots.js before beginnerMode.js; mirror that order.
+require('../../src/ui/synthesisPlots');
 const { BeginnerMode } = require('../../src/ui/beginnerMode');
 
 describe('BeginnerMode — wizard flows and data entry', () => {

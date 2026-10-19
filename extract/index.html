@@ -185,6 +185,7 @@
   <script src="../shared/extract-grounding-v1.js"></script>
   <script src="../shared/vendor/pdfjs/pdf.min.js"></script>
   <script src="../shared/pdf-extract-v1.js"></script>
+  <script src="../screen/workflow.js"></script>
   <script>
   (function () {
     "use strict";
@@ -603,17 +604,9 @@
         var raw = localStorage.getItem(SCREEN_KEY);
         if (!raw) { toast("No Screen project found (screen-v1). Screen some records and mark includes first."); return; }
         var p = JSON.parse(raw);
-        var mode = p.mode || "dual";
-        var recs = (p.records || []).filter(function (r) {
-          if (r.dup) return false;
-          var eff;
-          if (mode === "single") { eff = (r.r1 && r.r1.d) || ""; }
-          else if (r.resolved) { eff = r.resolved; }
-          else {
-            var a = r.r1 && r.r1.d, b = r.r2 && r.r2.d;
-            eff = (a && b) ? (a === b ? a : "conflict") : (a || b || "");
-          }
-          return eff === "include";
+        if(p.mode==="dual" && p.blind)throw Error("Turn off blind mode in Screen before importing team includes.");
+        var recs=(p.records||[]).filter(function(r){
+          return ScreenWorkflow.effective(r,p,p.workflowVersion===2 ? "ft":"ta")==="include";
         });
         if (!recs.length) { toast("No included records in the Screen project yet."); return; }
         setRecords(recs);

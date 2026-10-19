@@ -1,0 +1,38 @@
+name: HTA BIA integrity
+# Scope: local cost arithmetic and real-URL browser engine tests.
+# No GitHub writes, production deployments, or external datasets.
+on:
+  pull_request:
+    paths:
+      - 'HTA/src/engine/budgetImpact.js'
+      - 'HTA/tests/engine/budgetImpactIntegrity.test.js'
+      - 'hub/shared/tests/hta-bia-integrity.spec.mjs'
+      - '.github/workflows/hta-bia-integrity.yml'
+  workflow_dispatch:
+
+jobs:
+  hta-bia-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install HTA dependencies
+        working-directory: HTA
+        run: npm ci
+      - name: Run existing and new BIA Jest tests
+        working-directory: HTA
+        run: npx jest tests/engine/budgetImpact.test.js tests/engine/budgetImpactIntegrity.test.js --runInBand --coverage=false
+      - name: Install browser-suite dependencies
+        working-directory: hub/shared/tests
+        run: npm ci
+      - name: Install Chromium
+        working-directory: hub/shared/tests
+        run: npx playwright install --with-deps chromium
+      - name: Exercise HTA BIA on authentic local HTTP URL
+        working-directory: hub/shared/tests
+        run: npx playwright test hta-bia-integrity.spec.mjs --reporter=line

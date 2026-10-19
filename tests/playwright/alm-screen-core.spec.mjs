@@ -306,20 +306,19 @@ test.describe("Screen · import parsers", () => {
     expect(recs[0].r1.d).toBe("include");
   });
 
-  test("malformed/empty inputs return [] without throwing", async ({ page }) => {
+  test("empty CSV is harmless and malformed JSON fails closed", async ({ page }) => {
     await hook(page);
     const out = await page.evaluate(() => {
       const h = window.__almScreenpro;
       return {
         empty: h.parse("", "x.csv").length,
         garbage: h.parse("not a real format at all", "x.csv").length, // CSV fallback, no title col, single col -> title=field => actually becomes a record
-        brokenJson: h.parse("{ not json", "x.json").length, // falls through to CSV
       };
     });
     expect(out.empty).toBe(0);
     // garbage single line w/o header: parsed as positional CSV (title=col1) -> 1 record is acceptable; assert no crash + numeric
     expect(typeof out.garbage).toBe("number");
-    expect(typeof out.brokenJson).toBe("number");
+    await expect(page.evaluate(() => window.__almScreenpro.parse("{ not json", "x.json"))).rejects.toThrow(/Invalid JSON import/);
   });
 
   test("BOM-prefixed JSON still parses", async ({ page }) => {
