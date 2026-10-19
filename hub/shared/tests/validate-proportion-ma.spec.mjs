@@ -28,7 +28,7 @@ test('proportion live built-in and every current transform estimator @slow',asyn
 for(const file of ['corpus.json','reference.json'])test('proportion refuses changed '+file,async({page})=>{
   await page.goto('/proportion-ma/index.html');
   await page.route('**/validate/corpus/'+file,r=>r.fulfill({contentType:'application/json',body:'{}'}));
-  await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
+  await page.getByRole('button',{name:'Replay published corpus (stored references)',exact:true}).click();
   await expect(page.locator('#alm-validate [role=status]')).toContainText('SHA-256 mismatch');
 });
 test('proportion refuses insufficient current rows',async({page})=>{

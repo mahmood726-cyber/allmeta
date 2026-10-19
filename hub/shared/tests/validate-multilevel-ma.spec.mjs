@@ -29,7 +29,7 @@ test('multilevel built-in example live R and edited current inputs @slow',async(
 test('multilevel refuses changed corpus bytes',async({page})=>{
   await page.goto(url);
   await page.route('**/validate/corpus/corpus.json',r=>r.fulfill({contentType:'application/json',body:'{}'}));
-  await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
+  await page.getByRole('button',{name:'Replay published corpus (stored references)',exact:true}).click();
   await expect(page.locator('#alm-validate [role=status]')).toContainText('SHA-256 mismatch');
 });
 test('multilevel refuses too few current rows',async({page})=>{

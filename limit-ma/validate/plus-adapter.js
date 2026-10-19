@@ -357,7 +357,7 @@ async function mount(){
  }
  const adapter={app:'limit-ma-plus',paper:{checks:manifest.checks,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'Sensitivity oracle protocol',runUrl:'validate/README-plus.md'},corpus:{files,run:replay}};
  window.AlmLimitPlusValidationAdapter=adapter;window.AlmLimitPlusValidation=AlmValidate.mount(document.getElementById('alm-plus-validate'),adapter);
- document.querySelectorAll('#alm-plus-validate button').forEach(b=>{if(b.textContent==='Re-run full validation')b.textContent='Re-run sensitivity validation';});
+ document.querySelectorAll('#alm-plus-validate button').forEach(b=>{if(b.textContent==='Replay published corpus (stored references)')b.textContent='Re-run sensitivity validation';});
 }
 window.AlmLimitPlusContract={validate,flatten,displayed,geometry,tolerance,get axisLabels(){return axisLabels;}};
 window.AlmLimitPlusReady=mount().catch(e=>{document.getElementById('alm-plus-validate').textContent='Validation unavailable: '+e.message;throw e;});

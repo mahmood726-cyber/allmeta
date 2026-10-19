@@ -19,7 +19,7 @@ test('offline pinned replay: 4627 checks, 122 configurations, 54 matched refusal
 test('offline file picker verifies both pins and runs panel',async({page,context})=>{
  test.setTimeout(180000);await context.setOffline(true);await page.goto(app);
  await page.locator('#alm-validate input[type=file]').setInputFiles(paths);
- await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
+ await page.getByRole('button',{name:'Replay published corpus (stored references)',exact:true}).click();
  await expect(page.locator('#alm-validate [role=status]')).toContainText('4627/4627 passed; 0 failed',{timeout:150000});
  await expect(page.locator('#alm-validate')).toContainText('SHA-256 verified');
  await expect(page.getByRole('button',{name:'Validate this analysis in R',exact:true})).toBeVisible();
@@ -41,7 +41,7 @@ for(const index of [0,1])test('tampered pin '+index+' refuses before page execut
  await context.setOffline(true);await page.goto(app);
  await page.evaluate(()=>{window.calls=0;const old=window.__almIncoLoad;window.__almIncoLoad=(...args)=>{calls++;return old(...args);};});
  await page.locator('#alm-validate input[type=file]').setInputFiles(paths.map((p,i)=>({name:p.split(/[\\/]/).pop(),mimeType:'application/json',buffer:Buffer.concat([readFileSync(p),Buffer.from(i===index?' ':'')])})));
- await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
+ await page.getByRole('button',{name:'Replay published corpus (stored references)',exact:true}).click();
  await expect(page.locator('#alm-validate [role=status]')).toContainText('SHA-256 mismatch; refused');expect(await page.evaluate(()=>calls)).toBe(0);
 });
 test('live refuses pending input and a refused input',async({page})=>{

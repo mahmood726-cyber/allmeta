@@ -1,6 +1,6 @@
 # NMA inconsistency validation
 
-The panel has two distinct tiers. **Validate this analysis in R** sends the current parsed independent two-arm contrasts and selected FE, DL or PM model to the self-hosted webR packages. **Re-run full validation** replays the declared pinned subset below through this page's own parser, engine, renderer and bus importer. The shared button name is retained; the panel explicitly identifies this as a subset of the archived paper comparison.
+The panel has two distinct tiers. **Validate this analysis in R** sends the current parsed independent two-arm contrasts and selected FE, DL or PM model to the self-hosted webR packages. **Replay published corpus (stored references)** replays the declared pinned subset below through this page's own parser, engine, renderer and bus importer. The shared button name is retained; the panel explicitly identifies this as a subset of the archived paper comparison.
 
 ## Reference and numerical rules
 

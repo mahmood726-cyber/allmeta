@@ -120,7 +120,7 @@
   }
   const adapter = {
     app:'heterogeneity',
-    paper:{title:'Heterogeneity in meta-analysis in the browser',doi:null,checks:131781,repoUrl:repo,runUrl:repo+'/actions/runs/38088539463',codespacesUrl:'https://codespaces.new/mahmood726-cyber/heterogeneity-reproducible'},
+    paper:{title:'Heterogeneity in meta-analysis in the browser',doi:null,checks:131781,repoUrl:repo,runUrl:repo+'/actions/runs/38088539463',codespacesUrl:'https://codespaces.new/mahmood726-cyber/heterogeneity-reproducible',referenceRuntime:'R',referenceLabel:'metafor 5.2-1 (publication-time corpus)'},
     live:{packages:['metafor'],paperVersions:{metafor:'5.2-1'},currentState:liveState,appValues:values,
       buildScript:state=>AlmWebR.buildMetaforScript(state.studies,state.result.estimator.toUpperCase(),'z',true),
       compare:{tolerance:{default:1e-6,k:0,df:0},kind:{tau2:'rel',mu:'rel',se:'rel',ci_lb:'rel',ci_ub:'rel',hk_lo:'rel',hk_hi:'rel',pi_lo:'rel',pi_hi:'rel',QE:'rel',tau2_lo:'rel',tau2_hi:'rel'}}},

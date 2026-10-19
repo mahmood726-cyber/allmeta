@@ -78,11 +78,11 @@ test('hash mismatch and missing corpus are refused before ranking',async({page,c
  expect(errors.calls).toBe(0);expect(errors.errors[0]).toContain('SHA-256 mismatch');
  expect(errors.errors[1]).toContain('Missing corpus file');expect(errors.errors[2]).toContain('SHA-256 mismatch');expect(external).toEqual([]);
 });
-test('honest unavailable R link @slow',async({page,context})=>{
+test('honest unavailable Python link @slow',async({page,context})=>{
  const external=await open(page,context);
  await page.getByRole('button',{name:'Load example',exact:true}).click();
  expect(await page.evaluate(()=>window.ScreenValidationAdapter.live)).toBeNull();
- const link=page.locator('#alm-validate').getByRole('link',{name:'R check available via the reproducible repo'});
+ const link=page.locator('#alm-validate').getByRole('link',{name:'Python reference and re-execution'});
  await expect(link).toHaveAttribute('href','https://github.com/mahmood726-cyber/screen-reproducible');
  expect(external).toEqual([]);
 });

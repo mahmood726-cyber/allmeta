@@ -86,7 +86,7 @@ for(const binary of [false,true])test(`pubbias ${binary?'binary':'built-in'} cur
 test('pubbias altered reference fails closed',async({page})=>{
   await page.goto('/pubbias-tests/index.html');
   await page.route('**/validate/corpus/reference.json',r=>r.fulfill({body:'{}',contentType:'application/json'}));
-  await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
+  await page.getByRole('button',{name:'Replay published corpus (stored references)',exact:true}).click();
   await expect(page.locator('#alm-validate [role=status]')).toContainText('SHA-256 mismatch');
 });
 // TASK3 regressions use the normal page and standard validation fixture.

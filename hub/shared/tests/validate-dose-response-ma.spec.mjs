@@ -86,7 +86,7 @@ test('dose validation buttons render; corpus widget works offline', async ({ pag
   await context.setOffline(true);
   await corpusButton(page).click();
   await expect(page.locator('#alm-validate')).toContainText(countLine, { timeout: 100_000 });
-  await expect(page.locator('#alm-validate')).toContainText('0 failures');
+  await expect(page.locator('#alm-validate')).toContainText('0 failed combinations');
   expect(outside).toEqual([]);
 });
 
@@ -118,7 +118,7 @@ for (const shape of ['linear', 'spline3']) {
     await page.locator('#f-shape').selectOption(shape);
     await liveButton(page).click();
     const panel = page.locator('#alm-validate');
-    await expect(panel).toContainText(/PASS|R check available via the reproducible repo/, { timeout: 165_000 });
+    await expect(panel).toContainText(/PASS|R reference and re-execution/, { timeout: 165_000 });
     const rows = panel.locator('table tbody tr');
     expect(await rows.count()).toBeGreaterThan(10);
     for (const row of await rows.all()) await expect(row.locator('td').last()).toHaveText('PASS');
