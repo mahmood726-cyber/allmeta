@@ -2,6 +2,11 @@ import {test,expect} from './validation-fixture.mjs';
 import {readFileSync} from 'node:fs';
 const manifest=JSON.parse(readFileSync(new URL('../../../correlation-ma/validate/MANIFEST.json',import.meta.url),'utf8'));
 const ALL=72,ACCEPTED=64,REFUSED=8;
+// Edge 155 + Playwright 1.59 (both lane hosts, 19 Oct): an ACCEPTED blob download opens an extra target
+// (url '') on which every protocol call, page.close() included, never returns, so the request-audit teardown
+// hangs. With downloads not accepted the download event still fires (suggestedFilename is asserted below),
+// the file is not written, and no extra target appears.
+test.use({acceptDownloads:false});
 async function open(page){await page.goto('/correlation-ma/index.html');await page.waitForFunction(()=>!!window.AlmCorrValidation);}
 const replay=page=>page.evaluate(()=>AlmCorrValidation.runCorpus());
 const live=page=>page.evaluate(()=>AlmCorrValidation.runLive());
@@ -23,9 +28,8 @@ for(const refused of [false,true])test(`correlation-ma replay passes and restore
     // The original chart node and its download handler survive replay.
     const dl=page.waitForEvent('download');await page.locator('#forest-host [data-xfmt=svg]').click();
     expect((await dl).suggestedFilename()).toMatch(/\.svg$/);
-    // In Edge the blob download also opens a blank page (url '') on which locator calls never
-    // return; the request-audit teardown reads every page, so close the pages this test did not open.
-    for(const p of page.context().pages()) if(p!==page) await p.close();
+    // No page other than the test's own may exist (an extra page would hang the request-audit teardown).
+    expect(page.context().pages()).toEqual([page]);
   }
 });
 for(const file of ['corpus.json','reference.json'])test('correlation-ma refuses tampered '+file+' pin',async({page})=>{
