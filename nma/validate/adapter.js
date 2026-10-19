@@ -185,7 +185,7 @@ const adapter = {
   app:'nma', paper:{title:'A browser tool for network meta-analysis, validated against R netmeta', doi:null, checks:410,
     repoUrl, runUrl:repoUrl+'/actions', codespacesUrl:'https://codespaces.new/mahmood726-cyber/nma-reproducible',
     packageVersions:{netmeta:'3.7-0'}, versions:{netmeta:'3.7-0'}, referenceRuntime:'R', referenceLabel:'R 4.6.0 / netmeta 3.7-0 / meta 8.5-0 (publication-time corpus)'},
-  live:{packages:['netmeta'], currentState, buildScript, appValues:state=>quantities(state).map(({key,label,value})=>({key,label,value})),
+  live:{scriptExport:true,packages:['netmeta'], currentState, buildScript, appValues:state=>quantities(state).map(({key,label,value})=>({key,label,value})),
     compare:{tolerance:{default:1e-6},kind:{}}, paperVersions:{netmeta:'3.7-0'},
     versionNote:'Browser netmeta 3.4-0; validated version in the paper: netmeta 3.7-0. Differences exceeding 1e-6 are FAIL; tolerances are not relaxed for version differences.'},
   corpus:{files:corpusFiles,run:runCorpus}

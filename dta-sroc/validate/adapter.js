@@ -206,7 +206,7 @@ const adapter = {
  app:'dta-sroc',
  paper:{title:'DTA SROC: bivariate meta-analysis validated against R mada',doi:null,checks:855,
   repoUrl,runUrl:repoUrl+'/actions/workflows/reproduce.yml',codespacesUrl:'https://codespaces.new/mahmood726-cyber/dta-sroc-reproducible', packageVersions:{mada:'0.5.12'},referenceRuntime:'R',referenceLabel:'mada 0.5.12 (publication-time corpus)'},
- live:{packages:['mada'],scope:'Bivariate intercept-only fits. Current-data meta-regression is unavailable; the stored corpus includes meta-regression reference fits.',validatedVersions:{mada:'0.5.12'},currentState,buildScript,appValues:values,
+ live:{scriptExport:true,packages:['mada'],scope:'Bivariate intercept-only fits. Current-data meta-regression is unavailable; the stored corpus includes meta-regression reference fits.',validatedVersions:{mada:'0.5.12'},currentState,buildScript,appValues:values,
   compare:{tolerance:{default:1e-6},kind:{lrPos:'rel',lrNeg:'rel',lrPosLo:'rel',lrPosHi:'rel',lrNegLo:'rel',lrNegHi:'rel',dor:'rel',tauSe:'rel',tauFpr:'rel',Theta:'rel',Lambda:'rel',beta:'rel',sigma2theta:'rel',sigma2alpha:'rel'}}},
  corpus:{files:[{"path": "validate/corpus/paper_values.json", "sha256": "a3cc58b2018720d0467fc40bd673edd6259277802293d5c7b7e5438937a4dfbd"}, {"path": "validate/corpus/reference.json", "sha256": "c27829827ad9772c8a9886c682ad13ef8ff80a8016372052bbc0b91a48105d29"}], async run(files,onProgress=()=>{}) {
   const data=unpack(files,'validate/corpus/reference.json');

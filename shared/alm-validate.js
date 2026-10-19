@@ -75,6 +75,102 @@
     });
     return runnerPromise;
   }
+  // ---- Self-checking R script export -------------------------------------------------
+  // The live adapter's own R script (same data, options and package call as the in-browser
+  // check) is wrapped so that native R re-runs it and compares every quantity with the value
+  // this page computed, using the adapter's tolerances and the same rules as compare() above.
+  function rNumber(v) {
+    if (v === null || v === undefined) return 'NA_real_';
+    if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
+    if (typeof v === 'string') return JSON.stringify(v);
+    if (typeof v !== 'number') throw new Error('Unsupported app quantity type: ' + typeof v);
+    if (Number.isNaN(v)) return 'NaN';
+    if (!Number.isFinite(v)) return v > 0 ? 'Inf' : '-Inf';
+    return v.toPrecision(17);
+  }
+  function rList(entries) {
+    return 'list(' + entries.map(([k, v]) => JSON.stringify(String(k)) + '=' + v).join(',\n  ') + ')';
+  }
+  const R_CHECKER = String.raw`
+.alm_lines <- .alm_out[startsWith(.alm_out, "ALMJSON:")]
+if (length(.alm_lines) != 1) stop("The R script must emit exactly one ALMJSON record")
+cat(.alm_out[!startsWith(.alm_out, "ALMJSON:")], sep = "\n")
+.alm_body <- trimws(.alm_lines)
+.alm_body <- substr(.alm_body, nchar("ALMJSON:{") + 1, nchar(.alm_body) - 1)
+.alm_ref <- list()
+for (.p in strsplit(.alm_body, ',"', fixed = TRUE)[[1]]) {
+  .pos <- regexpr('":', .p, fixed = TRUE)
+  .key <- gsub('"', "", substr(.p, 1, .pos - 1), fixed = TRUE)
+  .val <- substr(.p, .pos + 2, nchar(.p))
+  .alm_ref[.key] <- list(if (.val == "null") NULL else if (.val %in% c("true", "false")) .val == "true" else
+    if (startsWith(.val, '"')) substr(.val, 2, nchar(.val) - 1) else suppressWarnings(as.numeric(.val)))
+}
+.alm_cmp <- function(a, r, kind, tol) {
+  if (!kind %in% c("abs", "rel", "exact")) return(c(Inf, 0))
+  if (kind == "exact") return(c(if (identical(a, r)) 0 else Inf, 1))
+  if (!is.numeric(tol) || length(tol) != 1 || !is.finite(tol) || tol < 0) return(c(Inf, 0))
+  if (is.null(r) && length(a) == 1 && is.na(a)) return(c(0, 1))
+  if (is.null(r) || !is.numeric(r) || !is.numeric(a) || !is.finite(a) || !is.finite(r)) return(c(Inf, 0))
+  d <- abs(a - r) / (if (kind == "rel") max(1, abs(r)) else 1)
+  c(d, as.numeric(d <= tol))
+}
+.alm_rows <- do.call(rbind, lapply(names(.alm_app), function(k) {
+  r <- .alm_ref[[k]]
+  res <- if (k %in% names(.alm_ref)) .alm_cmp(.alm_app[[k]], r, .alm_kind[[k]], .alm_tol[[k]]) else c(Inf, 0)
+  data.frame(quantity = .alm_label[[k]], app = format(.alm_app[[k]], digits = 12),
+             R = if (is.null(r)) "missing" else format(r, digits = 12), difference = signif(res[1], 3),
+             tolerance = .alm_tol[[k]], result = if (res[2] == 1 && res[1] <= .alm_tol[[k]]) "PASS" else "FAIL",
+             stringsAsFactors = FALSE)
+}))
+cat("\nBrowser app versus native R:\n")
+print(.alm_rows, row.names = FALSE)
+.alm_n <- nrow(.alm_rows); .alm_pass <- sum(.alm_rows$result == "PASS")
+cat(sprintf("\n%d/%d quantities agree within the stated tolerances.\n", .alm_pass, .alm_n))
+cat("R ", R.version.string, "\n", sep = "")
+for (.pkg in .alm_packages) cat(.pkg, " ", as.character(utils::packageVersion(.pkg)), "\n", sep = "")
+if (.alm_pass != .alm_n) { cat("RESULT: FAIL\n"); if (!interactive()) quit(status = 1) } else cat("RESULT: PASS\n")
+`;
+  function selfCheckingScript(adapter, app, comparison, script) {
+    const a = adapter.live;
+    const keys = app.map(v => v.key);
+    if (new Set(keys).size !== keys.length) throw new Error('Duplicate app quantity keys');
+    const tolOf = k => comparison.tolerance[k] ?? comparison.tolerance.default;
+    const kindOf = k => (comparison.kind || {})[k] || 'abs';
+    for (const k of keys) {
+      const t = tolOf(k);
+      if (typeof t !== 'number' || !Number.isFinite(t) || t < 0) throw new Error('Invalid tolerance for ' + k);
+      if (!KINDS.includes(kindOf(k))) throw new Error('Unknown comparison kind for ' + k);
+    }
+    const versions = a.paperVersions || a.validatedVersions || adapter.paper.packageVersions || {};
+    const header = [
+      '# Self-checking R script exported by allmeta (' + (adapter.app || 'app') + ').',
+      '# It re-runs the current analysis in native R with the same data, options and package call that the',
+      '# page\'s "Validate this analysis in R" check uses, then compares every quantity with the value the',
+      '# browser computed, using the same tolerances. Run: Rscript <this file>  (exit status 1 on any FAIL).',
+      '# Exported: ' + new Date().toISOString() + '; allmeta build ' + (global.AlmBuildInfo ? global.AlmBuildInfo.sha : 'unavailable') + '.',
+      '# Packages: ' + a.packages.join(', ') + (Object.keys(versions).length ? ' (validated versions: ' + Object.entries(versions).map(([p, v]) => p + ' ' + v).join(', ') + ')' : '') + '.',
+      '# Install if needed: install.packages(c(' + a.packages.map(p => JSON.stringify(p)).join(', ') + '))',
+      adapter.paper && adapter.paper.repoUrl ? '# Published validation of this app: ' + adapter.paper.repoUrl : null,
+      a.scope ? '# Scope: ' + a.scope : null
+    ].filter(Boolean).join('\n');
+    return header + '\n\n' +
+      '.alm_packages <- c(' + a.packages.map(p => JSON.stringify(p)).join(', ') + ')\n' +
+      '# Values computed by the browser app (full precision):\n' +
+      '.alm_app <- ' + rList(app.map(v => [v.key, rNumber(v.value)])) + '\n' +
+      '.alm_label <- ' + rList(app.map(v => [v.key, JSON.stringify(String(v.label || v.key))])) + '\n' +
+      '.alm_tol <- ' + rList(keys.map(k => [k, rNumber(tolOf(k))])) + '\n' +
+      '.alm_kind <- ' + rList(keys.map(k => [k, JSON.stringify(kindOf(k))])) + '\n\n' +
+      '# ---- The analysis in R (identical to the in-browser live check) ----\n' +
+      '.alm_out <- capture.output({\n' + script + '\n})\n' +
+      '# ---- Comparison with the browser ----' + R_CHECKER;
+  }
+  function saveText(text, filename) {
+    const blob = new Blob([text], { type: 'text/x-r;charset=utf-8' });
+    const url = URL.createObjectURL(blob), link = document.createElement('a');
+    link.href = url; link.download = filename; document.body.appendChild(link); link.click();
+    setTimeout(() => { link.remove(); URL.revokeObjectURL(url); }, 0);
+  }
+
   const mounts = new WeakMap();
   function mount(el, adapter) {
     if (typeof el === 'string') el = document.querySelector(el);
@@ -86,9 +182,13 @@
     node('p', 'Current-analysis comparison runs reference software on your data. Corpus replay runs the shipped JavaScript on published benchmark inputs against stored reference values; it does not run R or Python or validate your current data.', el);
     const controls = node('div', undefined, el);
     const runtime = adapter.paper.referenceRuntime || 'R';
-    let live;
+    let live, rscript;
     if (adapter.live) {
       live = node('button', 'Validate this analysis in R', controls); live.type = 'button';
+      if (adapter.live.scriptExport) {   // opt-in per adapter: the exported script is validated per app
+        rscript = node('button', 'Download R script (re-run and check in R)', controls); rscript.type = 'button';
+        rscript.title = 'A self-contained R script with your data and options; it re-runs the analysis in R and checks every number against this page';
+      }
       if (adapter.live.scope) node('p', 'Live R scope: ' + adapter.live.scope, controls);
     } else {
       node('p', 'Live ' + (adapter.paper.referenceRuntime || 'reference-software') + ' comparison is unavailable in this browser.', controls);
@@ -257,9 +357,26 @@
         } finally { activeLive = null; }
       });
     }
+    async function exportScript() {
+      const a = adapter.live;
+      if (!a) throw new Error('R script export unavailable for this adapter');
+      try {
+        await runner();   // some adapters build their script with AlmWebR helpers (webR itself is not started)
+        const state = structuredClone(a.currentState());
+        const app = a.appValues(state);
+        if (!app.length) throw new Error('Adapter supplied no current-analysis quantities');
+        const comparison = structuredClone(a.compare);   // after currentState(): some adapters set tolerances there
+        const text = selfCheckingScript(adapter, app, comparison, a.buildScript(state));
+        const filename = (adapter.app || 'allmeta') + '-check.R';
+        saveText(text, filename);
+        status.textContent = 'Downloaded ' + filename + ': it re-runs this analysis in R and checks ' + app.length + ' quantities against this page.';
+        return text;
+      } catch (e) { status.textContent = 'R script export refused: ' + e.message; throw e; }
+    }
     corpusButton.onclick = () => runCorpus().catch(() => {});
     if (adapter.live) live.onclick = () => runLive().catch(() => {});
-    return { prepare, runCorpus, runLive };
+    if (rscript) rscript.onclick = () => exportScript().catch(() => {});
+    return { prepare, runCorpus, runLive, exportScript };
   }
-  global.AlmValidate = { mount, digest, verify, loadFiles, compare };
+  global.AlmValidate = { mount, digest, verify, loadFiles, compare, selfCheckingScript };
 })(typeof window !== 'undefined' ? window : globalThis);

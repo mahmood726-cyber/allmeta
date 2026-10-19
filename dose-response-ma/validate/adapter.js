@@ -233,7 +233,7 @@ const adapter = {
   app: 'dose-response-ma',
   paper: { title: 'A browser tool for dose-response meta-analysis, validated against R dosresmeta', doi: '10.5281/zenodo.23135712', checks: 724,
     runUrl: repoUrl + '/actions/workflows/reproduce.yml', codespacesUrl: 'https://codespaces.new/mahmood726-cyber/dose-response-ma-reproducible?quickstart=1', repoUrl, referenceRuntime:'R', referenceLabel:'dosresmeta 2.2.0; published model-combination references' },
-  live: { packages: ['dosresmeta', 'mixmeta'], validatedVersions: { dosresmeta: '2.2.0' }, currentState, appValues, buildScript, compare: liveCompare },
+  live: { scriptExport: true, packages: ['dosresmeta', 'mixmeta'], validatedVersions: { dosresmeta: '2.2.0' }, currentState, appValues, buildScript, compare: liveCompare },
   corpus: { files: CORPUS_FILES, run: runCorpus }
 };
 window.AlmDoseValidate = adapter;
