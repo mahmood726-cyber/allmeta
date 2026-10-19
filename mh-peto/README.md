@@ -11,6 +11,9 @@ What the page shows:
   no events in one group in every study) is shown as "not estimable" with the reason.
 - Cochran's Q, I² and H² for each method; for the odds ratio, the Cochran-Mantel-Haenszel test,
   Tarone's test and the Breslow-Day test, as printed by metafor.
+- Rare-event conventions side by side: MH without correction (metafor), MH as meta::metabin computes it by
+  default, Peto, and an inverse-variance fixed effect with 0.5 added to zero-cell tables, with a flag when
+  they disagree on significance or differ by more than 10%.
 - Per-study table, forest plot (with x-axis) and L'Abbé plot; a separate DerSimonian-Laird fragility index.
 - Input checking: every line is either used or listed with its line number and reason (non-integer,
   negative, events larger than total, wrong number of values). Nothing is dropped or rounded silently.

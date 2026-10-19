@@ -166,6 +166,15 @@ StudyE, 4, 600, 10, 600</textarea>
       </div>
       <p class="note" id="het-note">Q uses the per-study estimates with 0.5 added to every cell of a table that has a zero (metafor's default for rma.mh); the Peto Q leaves out tables with no events in either group, or events in every participant. The Cochran-Mantel-Haenszel test is uncorrected (correct = FALSE). Tarone's test and the Breslow-Day test use the tables in which the fitted count is defined.</p>
       <p class="note" id="zero-note"></p>
+      <h2 style="margin-top:0.9rem">Rare-event conventions (sensitivity)</h2>
+      <div class="table-wrap">
+      <table id="conv">
+        <caption>The same tables pooled under the conventions that R packages use by default; the first row is this page's main result</caption>
+        <thead><tr><th scope="col">Convention</th><th scope="col">Estimate</th><th scope="col">95% CI</th><th scope="col">p</th></tr></thead>
+        <tbody id="conv-body"></tbody>
+      </table>
+      </div>
+      <p class="note" id="conv-note" aria-live="polite"></p>
       <h2 style="margin-top:0.5rem">Per-study</h2>
       <div class="table-wrap">
       <table id="per-study">
@@ -478,6 +487,64 @@ StudyE, 4, 600, 10, 600</textarea>
       return out;
     }
 
+    // ---- rare-event conventions (E2), validated against meta 8.5-0 and metafor 5.2-1 ----
+    function convPack(beta, se) {
+      beta = finOrNull(beta); se = finOrNull(se);
+      if (beta === null || se === null) return { beta: beta, se: se, lo: null, hi: null, z: null, p: null };
+      var z = beta / se;
+      return { beta: beta, se: se, lo: beta - Z975 * se, hi: beta + Z975 * se, z: finOrNull(z), p: finOrNull(2 * normUpper(Math.abs(z))) };
+    }
+    // meta::metabin(method = "MH") with its defaults: incr = 0.5 added to every cell of a study with a zero
+    // (method.incr = "only0"), allstudies = FALSE (OR leaves out tables with no events or all events in both
+    // groups, RR leaves out tables with no events in both groups), MH.exact = FALSE, RR.Cochrane = FALSE.
+    function metaDefaultMH(rows, measure) {
+      var nz = function (x) { return Number.isNaN(x) ? 0 : x; }; // R sums with na.rm = TRUE
+      var t = rows.map(function (r) {
+        var a = r.e1, n1 = r.n1, c = r.e2, n2 = r.n2, incl = 1;
+        if (measure === 'OR' && ((a === 0 && c === 0) || (c === n2 && a === n1))) incl = 0;
+        if (measure === 'RR' && a === 0 && c === 0) incl = 0;
+        var inc = (incl && (n1 - a === 0 || a === 0 || n2 - c === 0 || c === 0)) ? 0.5 : 0;
+        var n11 = a * incl, n21 = c * incl, n1d = n1 * incl, n2d = n2 * incl, N = n1d + n2d;
+        return { n11: n11, n21: n21, n1d: n1d, n2d: n2d, n12: n1d - n11, n22: n2d - n21, n_1: n11 + n21, i: inc, den: N + 4 * inc };
+      });
+      if (measure === 'OR') {
+        var sA = 0, sC = 0, sAB = 0, sBC = 0, sAD = 0, sCD = 0;
+        t.forEach(function (q) {
+          var A = (q.n11 + q.i) * (q.n22 + q.i) / q.den, B = (q.n11 + q.i + q.n22 + q.i) / q.den;
+          var C = (q.n12 + q.i) * (q.n21 + q.i) / q.den, D = (q.n12 + q.i + q.n21 + q.i) / q.den;
+          sA += nz(A); sC += nz(C); sAB += nz(A * B); sBC += nz(B * C); sAD += nz(A * D); sCD += nz(C * D);
+        });
+        var te = Math.log(sA / sC), psi = Math.exp(te);
+        return convPack(te, Math.sqrt(1 / (2 * sA * sA) * (sAB + psi * (sBC + sAD) + psi * psi * sCD)));
+      }
+      if (measure === 'RR') {
+        var sR = 0, sS = 0, sD = 0;
+        t.forEach(function (q) {
+          sD += nz(((q.n1d + 2 * q.i) * (q.n2d + 2 * q.i) * (q.n_1 + 2 * q.i) - (q.n11 + q.i) * (q.n21 + q.i) * q.den) / (q.den * q.den));
+          sR += nz((q.n11 + q.i) * (q.n2d + 2 * q.i) / q.den); sS += nz((q.n21 + q.i) * (q.n1d + 2 * q.i) / q.den);
+        });
+        return convPack(Math.log(sR / sS), Math.sqrt(sD / (sR * sS)));
+      }
+      // RD: weighted mean of the uncorrected study RDs with weights computed from the corrected counts.
+      var sRr = 0, sW = 0, sWte = 0, sS2 = 0;
+      t.forEach(function (q) {
+        var TE = q.n11 / q.n1d - q.n21 / q.n2d;
+        var R = ((q.n11 + q.i) * (q.n12 + q.i) * Math.pow(q.n2d + 2 * q.i, 3) + (q.n21 + q.i) * (q.n22 + q.i) * Math.pow(q.n1d + 2 * q.i, 3)) /
+          ((q.n1d + 2 * q.i) * (q.n2d + 2 * q.i) * q.den * q.den);
+        var S = (q.n1d + 2 * q.i) * (q.n2d + 2 * q.i) / q.den;
+        sRr += nz(R); sS2 += nz(S);
+        if (!Number.isNaN(TE) && !Number.isNaN(S)) { sW += S; sWte += S * TE; }
+      });
+      return convPack(sWte / sW, Math.sqrt(sRr) / sS2);
+    }
+    // Inverse-variance fixed effect (metafor rma(method = "EE")) on escalc defaults: 0.5 added to every
+    // cell of a table with a zero, double-zero tables kept.
+    function ivFixed(rows, measure) {
+      var e = escalcMH(rows, measure), sw = 0, swy = 0;
+      for (var i = 0; i < e.yi.length; i++) { sw += 1 / e.vi[i]; swy += e.yi[i] / e.vi[i]; }
+      return convPack(swy / sw, 1 / Math.sqrt(sw));
+    }
+
     function perStudy(rows, measure) {
       return rows.map(function (r) {
         // 0.5 correction for display
@@ -513,8 +580,8 @@ StudyE, 4, 600, 10, 600</textarea>
     var MEASURE_NAME = { OR: 'odds ratio', RR: 'risk ratio', RD: 'risk difference' };
     function clearOutputs() {
       _lastResults = null;
-      ['pooled-body', 'per-body', 'forest', 'labbe', 'het-body', 'assoc-body'].forEach(function (id) { document.getElementById(id).innerHTML = ''; });
-      ['k-note', 'estimability-note', 'zero-note'].forEach(function (id) { document.getElementById(id).textContent = ''; });
+      ['pooled-body', 'per-body', 'forest', 'labbe', 'het-body', 'assoc-body', 'conv-body'].forEach(function (id) { document.getElementById(id).innerHTML = ''; });
+      ['k-note', 'estimability-note', 'zero-note', 'conv-note'].forEach(function (id) { document.getElementById(id).textContent = ''; });
     }
     function showInputErrors(parsed) {
       var box = document.getElementById('input-errors'), src = document.getElementById('src');
@@ -650,6 +717,34 @@ StudyE, 4, 600, 10, 600</textarea>
         assocBody.innerHTML = '<tr><td colspan="4">Defined for the odds ratio only (as in metafor); choose Odds ratio to see the CMH, Tarone and Breslow-Day tests.</td></tr>';
       }
 
+      // Rare-event conventions side by side (E2).
+      var ratio = measure !== 'RD';
+      var back = function (b) { return b === null ? null : (ratio ? Math.exp(b) : b); };
+      var conv = { metaDefault: metaDefaultMH(rows, measure), iv: ivFixed(rows, measure) };
+      var convRows = [];
+      var mainBeta = mhPooled ? (ratio ? mhPooled.logEst : mhPooled.est) : null;
+      var mainSe = mhPooled ? (ratio ? mhPooled.seLog : mhPooled.se) : null;
+      convRows.push(['MH ' + measure + ', no continuity correction (metafor rma.mh; this page)', convPack(mainBeta, mainSe)]);
+      convRows.push(['MH ' + measure + ', meta::metabin default (0.5 added to zero-cell studies' + (measure === 'RD' ? ' in the weights' : '; double-zero studies left out') + ')', conv.metaDefault]);
+      if (measure === 'OR') { var pp = pooled.find(function (q) { return q.name === 'Peto OR'; }); convRows.push(['Peto OR (metafor rma.peto)', pp ? convPack(pp.logEst, pp.seLog) : convPack(null, null)]); }
+      convRows.push(['Inverse-variance fixed effect, 0.5 added to tables with a zero (metafor rma, method "EE")', conv.iv]);
+      document.getElementById('conv-body').innerHTML = convRows.map(function (cr) {
+        var c = cr[1];
+        if (c.beta === null || c.se === null) return '<tr class="not-estimable"><td>' + esc(cr[0]) + '</td><td colspan="3">not estimable for these tables</td></tr>';
+        return '<tr><td>' + esc(cr[0]) + '</td><td>' + fmt(back(c.beta)) + '</td><td>[' + fmt(back(c.lo)) + ', ' + fmt(back(c.hi)) + ']</td><td>' + fmtP(c.p) + '</td></tr>';
+      }).join('');
+      var defined = convRows.filter(function (cr) { return cr[1].beta !== null && cr[1].se !== null && cr[1].p !== null; });
+      var sigs = defined.map(function (cr) { return cr[1].p < 0.05; });
+      var flags = [];
+      if (sigs.length > 1 && sigs.some(function (s) { return s !== sigs[0]; })) flags.push('the conventions disagree on statistical significance at the 5% level');
+      if (ratio && defined.length > 1) {
+        var bs = defined.map(function (cr) { return cr[1].beta; });
+        if (Math.max.apply(null, bs) - Math.min.apply(null, bs) > Math.log(1.1)) flags.push('the estimates differ by more than 10% between conventions');
+      }
+      document.getElementById('conv-note').textContent = defined.length < 2 ? '' : (flags.length
+        ? 'Check: ' + flags.join(', and ') + '. Report the convention you used and consider presenting the others as a sensitivity analysis.'
+        : 'The conventions agree on direction and significance' + (ratio ? ', and their estimates are within 10% of each other.' : '.'));
+
       // Fragility index (DL OR/RR/RD; number of event modifications to flip significance).
       var fragNote = document.getElementById('fragility-note');
       var frag = null;
@@ -709,6 +804,12 @@ StudyE, 4, 600, 10, 600</textarea>
         _lastResults.breslow_day = het.assoc.BD; _lastResults.breslow_day_p = het.assoc.BDp;
         _lastResults.bd_tarone_df = het.assoc.kpos !== null && het.assoc.kpos > 1 ? het.assoc.kpos - 1 : null;
       }
+      // E2 conventions on the analysis scale (log for OR/RR), full precision.
+      ['metaDefault', 'iv'].forEach(function (key) {
+        var pre = key === 'metaDefault' ? 'metamh_' : 'ivfe_', c = conv[key];
+        _lastResults[pre + 'beta'] = c.beta; _lastResults[pre + 'se'] = c.se; _lastResults[pre + 'lo_b'] = c.lo;
+        _lastResults[pre + 'hi_b'] = c.hi; _lastResults[pre + 'z'] = c.z; _lastResults[pre + 'p'] = c.p;
+      });
       _lastResults.k_double_zero = nDouble;
       _lastResults.zero_cell_convention = 'metafor: pooled MH/Peto without continuity correction; per-study OR/RR add 0.5 to tables with a zero cell';
 

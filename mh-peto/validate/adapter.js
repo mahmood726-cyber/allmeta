@@ -123,7 +123,7 @@ cat('ALMJSON:{',paste(paste0('"',names(v),'":',v),collapse=','),'}\\n',sep='')`;
     const src=document.getElementById('src'),sel=document.getElementById('measure');
     const original={src:src.value,measure:sel.value,result:window._almLastMhPeto(),labbe:window.__almLabbe,
       active:document.activeElement,x:scrollX,y:scrollY,start:src.selectionStart,end:src.selectionEnd,direction:src.selectionDirection};
-    const panels=['pooled-body','per-body','forest','labbe','fragility-note','het-body','assoc-body','k-note','estimability-note','zero-note','input-errors','per-effect-h','per-caption'].map(id=>document.getElementById(id)).filter(Boolean).map(e=>[e,e.innerHTML,e.getAttribute('viewBox'),e.hidden]);
+    const panels=['pooled-body','per-body','forest','labbe','fragility-note','het-body','assoc-body','k-note','estimability-note','zero-note','input-errors','per-effect-h','per-caption','conv-body','conv-note'].map(id=>document.getElementById(id)).filter(Boolean).map(e=>[e,e.innerHTML,e.getAttribute('viewBox'),e.hidden]);
     const srcAria=[src.getAttribute('aria-invalid'),src.getAttribute('aria-describedby')];
     const controls=[...document.querySelectorAll('main input,main textarea,main select,main button')].map(e=>[e,e.disabled]);
     const writer=window.alm&&alm.urlState&&alm.urlState.write;

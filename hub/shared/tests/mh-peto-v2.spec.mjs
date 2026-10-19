@@ -156,6 +156,35 @@ test.describe('heterogeneity, CMH, Tarone and Breslow-Day (metafor 5.2-1 referen
   });
 });
 
+test.describe('rare-event conventions side by side (meta 8.5-0 / metafor 5.2-1 references)', () => {
+  // Reference values: Rscript on metafor 5.2-1 + meta 8.5-0 (lane script e2_reference.R / r_edges.R, 2026-10-19).
+  test('paper example: meta::metabin default and IV fixed effect match R; conventions agree', async ({ page }) => {
+    await page.goto(url);
+    await page.getByRole('button', { name: /Load example: Yusuf 1985/ }).click();
+    await expect(page.locator('#conv-body tr')).toHaveCount(4);
+    const r = await page.evaluate(() => window._almLastMhPeto());
+    const want = [['metamh_beta', -0.0687503096624942], ['metamh_se', 0.119004694490166], ['metamh_p', 0.563459316011458, true],
+      ['ivfe_beta', -0.0627735933947847], ['ivfe_se', 0.119854996279356], ['ivfe_p', 0.60045510910342, true]];
+    expect(want.filter(([k, v, abs]) => !close(r[k], v, 1e-9, !!abs)).map(([k]) => k)).toEqual([]);
+    await expect(page.locator('#conv-body tr', { hasText: 'meta::metabin default' })).toContainText('0.934');
+    await expect(page.locator('#conv-note')).toContainText('The conventions agree on direction and significance');
+    await page.selectOption('#measure', 'RD');
+    const d = await page.evaluate(() => window._almLastMhPeto());
+    expect(close(d.metamh_beta, -0.00550960423798482)).toBe(true);
+    expect(close(d.ivfe_beta, -0.00274246716540742)).toBe(true);
+    await expect(page.locator('#conv-body tr')).toHaveCount(3);
+  });
+  test('sparse data where the conventions disagree on significance is flagged', async ({ page }) => {
+    await page.goto(url);
+    await enter(page, 'A,0,30,0,31\nB,2,40,7,41\nC,1,25,4,26');
+    const r = await page.evaluate(() => window._almLastMhPeto());
+    expect(close(r.metamh_p, 0.0383660888277101, 1e-9, true)).toBe(true);
+    expect(close(r.ivfe_p, 0.0504486982623806, 1e-9, true)).toBe(true);
+    await expect(page.locator('#conv-note')).toContainText('the conventions disagree on statistical significance at the 5% level');
+    await expect(page.locator('#conv-note')).toContainText('the estimates differ by more than 10%');
+  });
+});
+
 test.describe('outputs and wording', () => {
   test('forest plot has an x-axis with ticks and a measure label', async ({ page }) => {
     await page.goto(url);
@@ -228,7 +257,7 @@ test.describe('usability and accessibility', () => {
     await page.goto(url);
     await expect(page.getByLabel('Effect measure')).toHaveCount(1);
     await expect(page.getByRole('textbox', { name: /Studies/ })).toHaveId('src');
-    for (const id of ['pooled', 'het', 'assoc', 'per-study']) await expect(page.locator('#' + id + ' caption')).toHaveCount(1);
+    for (const id of ['pooled', 'het', 'assoc', 'conv', 'per-study']) await expect(page.locator('#' + id + ' caption')).toHaveCount(1);
     await expect(page.locator('#alm-csv-mount textarea')).toHaveAttribute('aria-label', /Paste CSV/);
     for (const id of ['k-note', 'estimability-note', 'fragility-note']) await expect(page.locator('#' + id)).toHaveAttribute('aria-live', 'polite');
     // Measure is reachable before the Run button in keyboard order.
