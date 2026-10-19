@@ -771,11 +771,13 @@ class BeginnerMode {
     }
 
     runDTAAnalysis(dataset) {
-        if (typeof DTAMetaAnalysis === 'undefined') {
-            console.log('DTA analysis would run here');
-            return;
-        }
-        // DTA analysis logic
+        document.getElementById('results-modal')?.remove();
+        document.getElementById('hta-nma-results')?.remove();
+        document.getElementById('bias-modal')?.remove();
+        window.lastResults = null;
+        window.lastNMAEngine = null;
+        window.currentDataset = null;
+        HTASynthesisPlots.error('Diagnostic test accuracy is not implemented in the beginner workflow. No bivariate or HSROC model has been fitted. Use the dedicated Diagnostic Test Accuracy application to enter and analyse 2×2 tables.');
     }
 
     showResultsWithInterpretation(dataset, results) {
@@ -1237,6 +1239,10 @@ class BeginnerMode {
 
     applyTooltipsToElement(element) {
         if (!element || !element.textContent) return;
+        // Labels may be decorated; SVG geometry/metadata and input/code must
+        // remain intact for numerical exports and subsequent parsing.
+        if (element.namespaceURI !== 'http://www.w3.org/1999/xhtml' ||
+            element.closest('svg,script,style,textarea,select,option,pre,code')) return;
 
         const text = element.textContent;
         Object.keys(this.tooltipData || {}).forEach(term => {

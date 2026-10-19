@@ -4,6 +4,9 @@
 
 'use strict';
 
+// Renderer dispatch is mocked here; actual SVG geometry is browser-tested.
+global.HTASynthesisPlots = { pairwise: jest.fn(), nma: jest.fn(), error: jest.fn() };
+
 // ---- Mock globals ----
 global.MetaAnalysisMethods = class {
     constructor() {}

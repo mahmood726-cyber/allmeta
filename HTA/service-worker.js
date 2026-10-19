@@ -10,7 +10,8 @@
  * - Cache management strategies
  */
 
-const CACHE_NAME = 'hta-pro-v1.0.0';
+// Invalidate cache-first scripts together when the synthesis contracts change.
+const CACHE_NAME = 'hta-pro-v1.0.1-advanced-synthesis';
 const RUNTIME_CACHE = 'hta-pro-runtime-v1.0.0';
 
 // Core files to cache on install
@@ -18,9 +19,17 @@ const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.json',
-  'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
-  'https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js'
+  '../shared/vendor/jszip-3.10.1.min.js',
+  '../shared/vendor/chart-4.4.1.umd.min.js',
+  '../shared/vendor/d3-7.9.0.min.js',
+  '../shared/ma-core.js',
+  './src/engine/metaMethods.js',
+  './src/engine/nma.js',
+  './src/ui/app.js',
+  './src/ui/advancedSynthesis.js',
+  './src/ui/advancedUI.js',
+  './src/ui/synthesisPlots.js',
+  './src/ui/beginnerMode.js'
 ];
 
 // ============================================================
@@ -56,7 +65,7 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             // Delete old caches
-            if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+            if (cacheName.startsWith('hta-pro-') && cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
               console.log('[Service Worker] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }

@@ -424,10 +424,12 @@ class HTAApp {
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 const tabId = tab.dataset.tab;
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                const scope = tab.closest('.content-section') || document;
+                scope.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                scope.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 tab.classList.add('active');
-                document.getElementById(`tab-${tabId}`).classList.add('active');
+                document.getElementById(`tab-${tabId}`)?.classList.add('active');
+                document.dispatchEvent(new CustomEvent('hta:tab-shown'));
             });
         });
     }
