@@ -417,6 +417,8 @@
     for (var a = 0; a < k; a++) { var w0 = 1 / vi[a]; sw0 += w0; sw0sq += w0 * w0; }
     var s2 = (k - 1) * sw0 / (sw0 * sw0 - sw0sq);
     var I2 = (df > 0 && (t2 + s2) > 0) ? 100 * t2 / (t2 + s2) : 0;
+    // FE fixes tau2 at zero; heterogeneity remains the Q-based diagnostic.
+    if (method === "FE") I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
 
     var knha = !!opts.knha && method !== "FE" && df >= 1;
     if (knha) {
