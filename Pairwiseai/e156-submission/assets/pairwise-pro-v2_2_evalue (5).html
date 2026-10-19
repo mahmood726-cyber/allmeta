@@ -15592,13 +15592,26 @@ di "P(exceeds MCID): " %6.4f \`P_mcid'
         const sortedStudies = sortedIndices.map(i => studies[i]);
         
         // Determine scale and transformations
-        const isRatio = r.measure !== 'RD';
-        const useLog = fs.xAxisScale === 'log' || (fs.xAxisScale === 'auto' && isRatio);
+        const measure = String(r.measure || '').toUpperCase();
+        const ratioMeasures = new Set(['OR', 'RR', 'HR', 'IRR', 'ROM']);
+        const differenceMeasures = new Set(['RD', 'MD', 'SMD']);
+        if (!ratioMeasures.has(measure) && !differenceMeasures.has(measure)) {
+          plotDiv.textContent = 'Forest plot unavailable for ' + (measure || 'unspecified measure') +
+            ': this measure needs a separately validated display transformation.';
+          return;
+        }
+        const isRatio = ratioMeasures.has(measure);
+        if (!isRatio && fs.xAxisScale === 'log') {
+          plotDiv.textContent = 'Logarithmic forest axes are not supported for ' + measure +
+            '. Select Auto or Linear to display signed differences.';
+          return;
+        }
+        const useLog = isRatio && fs.xAxisScale !== 'linear';
         
-        // Transform functions based on scale
-        const transform = useLog && isRatio 
-          ? (x) => Math.exp(x)  // exp for log OR/RR
-          : (x) => r.measure === 'RD' ? x * 100 : x;  // RD as percentage
+        // Axis choice changes spacing only, never the displayed estimand.
+        // yi is a log effect for ratio measures and a signed effect for differences.
+        const transform = isRatio ? (x) => Math.exp(x)
+          : (x) => measure === 'RD' ? x * 100 : x;
         
         const y_positions = sortedStudies.map((_, i) => k - i);
         const effects = sortedStudies.map(s => transform(s.yi));
