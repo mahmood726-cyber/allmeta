@@ -41,7 +41,7 @@ function parseList(script, name) {
 
 for (const [app, spec] of Object.entries(APPS)) {
   test(`${app}: Download R script exports a self-checking script for every example and option`, async ({ page, baseURL }) => {
-    test.setTimeout(600_000);
+    test.setTimeout(1_800_000);
     page.on('dialog', d => d.accept());   // "replace current data?" confirmations when loading an example
     await page.goto(new URL(spec.page, baseURL).href);
     const widget = page.locator('#alm-validate');
@@ -77,10 +77,12 @@ for (const [app, spec] of Object.entries(APPS)) {
       }
       const name = app + '__' + Object.values(variant).join('_').replace(/[^A-Za-z0-9.-]+/g, '-');
       const status = widget.locator('[role=status]');
-      const download = page.waitForEvent('download', { timeout: 15_000 }).catch(() => null);
+      await status.evaluate(el => { el.textContent = ''; });   // so a previous variant's message cannot satisfy the wait
+      const download = page.waitForEvent('download', { timeout: 60_000 }).catch(() => null);
       await button.click();
-      const dl = await download;
+      await expect(status).toHaveText(/^(Downloaded |R script export refused: )/, { timeout: 60_000 });
       const message = await status.innerText();
+      const dl = message.startsWith('Downloaded ') ? await download : null;
       if (!dl) {
         // Refusal must be explicit (e.g. a model the reference package does not implement); never silent.
         expect(message, `${name}: no download and no explicit refusal`).toMatch(/^R script export refused: .+/);

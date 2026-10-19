@@ -18,6 +18,7 @@ ap.add_argument('dir')
 ap.add_argument('--rscript', default='Rscript')
 ap.add_argument('--out', default=None)
 ap.add_argument('--timeout', type=int, default=600)
+ap.add_argument('--expect', default='', help='comma-separated apps that must each have a manifest and >= 1 passing script')
 a = ap.parse_args()
 root = Path(a.dir)
 
@@ -79,6 +80,9 @@ summary = {'versions': versions, 'scripts': sum(1 for r in results if r['verdict
                       for a in apps},
            'not_pass': [r['name'] for r in results if r['verdict'] not in ('PASS',) + SKIP]}
 ok &= all(v['pass'] > 0 for v in summary['by_app'].values())   # every app must have at least one passing script
+missing = [x for x in a.expect.split(',') if x and x not in summary['by_app']]
+summary['missing_apps'] = missing   # an app whose browser stage failed writes no manifest: that must not read as a pass
+ok &= not missing
 print(json.dumps(summary, indent=1))
 if a.out:
     Path(a.out).write_text(json.dumps({'summary': summary, 'results': results}, indent=1), encoding='utf-8')
