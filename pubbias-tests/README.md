@@ -10,7 +10,7 @@ Live: https://mahmood726-cyber.github.io/allmeta/pubbias-tests/
 
 The **PET-PEESE and leave-one-out sensitivity** section gives PET and PEESE limit estimates with 95% t intervals, the
 conditional PET-PEESE choice (PEESE when PET's intercept test rejects at two-sided 5%, otherwise PET), and a one-click
-leave-one-out table of Egger, Begg, trim-and-fill, PET/PEESE and, for 2x2 data, Peters and Harbord, flagging omissions
+leave-one-out table of Egger, Begg, trim-and-fill, PET/PEESE, Thompson-Sharp and, for 2x2 data, Peters and Harbord, flagging omissions
 that move a p-value across 0.05, change trim-and-fill k0 or change the PET-PEESE branch. It has its own
 "Validate the extras in R" panel; see [validate/README-plus.md](validate/README-plus.md).
 

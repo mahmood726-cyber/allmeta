@@ -1,0 +1,22 @@
+{
+ "R": "R version 4.6.0 (2026-04-24 ucrt)",
+ "packages": {
+  "metafor": "5.2.1",
+  "meta": "8.5.0",
+  "metadat": "1.6.0",
+  "jsonlite": "2.0.0"
+ },
+ "node": "v24.15.0",
+ "browser": "chrome-headless-shell (Playwright chromium_headless_shell-1243)",
+ "libraries": [
+  "C:/Users/User/allmeta-offload/Rlib_extra",
+  "C:/Users/User/allmeta-offload/Rlib_dta",
+  "R-4.6.0/library"
+ ],
+ "tolerances": {
+  "closed_form_relative": 1e-09,
+  "iterative_reml_relative": 1e-06,
+  "p_absolute": 1e-09,
+  "categorical": "exact"
+ }
+}

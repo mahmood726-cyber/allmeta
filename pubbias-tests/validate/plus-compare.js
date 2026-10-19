@@ -16,13 +16,15 @@
     peese: [['est', 'est']],
     conditional: [['branch', 'branch']],
     peters: [['statistic', 'statistic'], ['p', 'p']],
-    harbord: [['statistic', 'statistic'], ['p', 'p']]
+    harbord: [['statistic', 'statistic'], ['p', 'p']],
+    thompson: [['statistic', 'statistic'], ['p', 'p'], ['limit', 'limit']]
   };
-  const FLAGS = ['egger_flip', 'begg_flip', 'peters_flip', 'harbord_flip', 'trimfill_k0_change', 'branch_change'];
+  const FLAGS = ['egger_flip', 'begg_flip', 'peters_flip', 'harbord_flip', 'thompson_flip', 'trimfill_k0_change', 'branch_change'];
   function kind(method, q) {
     if (['k0', 'side', 'branch', 'df'].includes(q)) return ['exact', 0];
     if (/^(p|slopeP)$/.test(q)) return ['abs', 1e-9];
     if (method === 'trimfill' && q === 'est') return ['rel', 1e-6];
+    if (method === 'thompson') return ['rel', 1e-6]; // iterative REML, as compareTS
     return ['rel', 1e-9];
   }
   // R error text -> refusal reason (same vocabulary as plus-engine.js and the original adapter).

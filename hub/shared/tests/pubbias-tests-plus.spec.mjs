@@ -17,7 +17,7 @@ test('one-click worked example: PET-PEESE, 13 omissions, identity with the main 
   await expect(page.locator('#format')).toHaveValue('binary');
   await expect(page.locator('#plus-pp-body tr')).toHaveCount(3);
   await expect(page.locator('#plus-loo-body tr')).toHaveCount(14);
-  await expect(page.locator('#plus-loo-head th')).toHaveCount(16); // omitted + 14 quantities + flags
+  await expect(page.locator('#plus-loo-head th')).toHaveCount(18); // omitted + 16 quantities + flags
   await expect(page.locator('#plus-identity')).toHaveAttribute('data-plus-identity', 'match');
   await expect(page.locator('[data-plus-branch="full.conditional.branch"]')).toHaveCount(1);
   // Independent read of the main results table (3 decimals) against the plus base row.
@@ -38,7 +38,7 @@ test('one-click worked example: PET-PEESE, 13 omissions, identity with the main 
   await expect(page.locator('#plus-loo-body tr:not([hidden])')).toHaveCount(14);
   const csv = await page.evaluate(() => AlmPubbiasPlusUI.csv());
   expect(csv.trim().split('\n')).toHaveLength(15);
-  expect(csv.split('\n')[0]).toBe('omitted,egger_statistic,egger_p,egger_limit,peese_est,conditional_branch,begg_tau,begg_p,trimfill_k0,trimfill_side,trimfill_est,peters_statistic,peters_p,harbord_statistic,harbord_p,flags');
+  expect(csv.split('\n')[0]).toBe('omitted,egger_statistic,egger_p,egger_limit,peese_est,conditional_branch,begg_tau,begg_p,trimfill_k0,trimfill_side,trimfill_est,peters_statistic,peters_p,harbord_statistic,harbord_p,thompson_statistic,thompson_p,flags');
 });
 
 test('hero BCG example loads all 13 studies as effect and SE', async ({ page }) => {
@@ -46,6 +46,42 @@ test('hero BCG example loads all 13 studies as effect and SE', async ({ page }) 
   await page.locator('[data-alm-hero]').selectOption('bcg');
   const r = await page.evaluate(() => ({ fmt: document.getElementById('format').value, parsed: window.__almPubBiasEngine.parseTESE(document.getElementById('src').value).length, k: window._almLastPubbias().k }));
   expect(r).toEqual({ fmt: 'te-se', parsed: 13, k: 13 });
+});
+
+test('labelled BCG text ("Aronson 1948, -0.8893, 0.5706") parses all 13 rows (the old parser kept 3)', async ({ page }) => {
+  await page.goto(URL_);
+  const r = await page.evaluate(() => {
+    const text = AlmDatasets.toForestPlotText(AlmDatasets.get('bcg')), rows = window.__almPubBiasEngine.parseTESE(text);
+    return { n: rows.length, first: rows[0], want: AlmDatasets.get('bcg').effect_se[0].yi };
+  });
+  expect(r.n).toBe(13);
+  expect(r.first.te).toBe(r.want);
+});
+
+test('an unreadable line refuses the analysis with its line number; nothing is dropped or exported', async ({ page }) => {
+  await page.goto(URL_);
+  await page.locator('#format').selectOption('te-se');
+  await page.locator('#src').fill('0.1, 0.1\n0.2, x\n0.3, 0.15\n0.25, -0.1\n0.15, 0.1\n0.4, 0.2');
+  await page.locator('#btn-run').click();
+  const alert = page.locator('#body [role=alert]');
+  await expect(alert).toContainText('line 2: "x" is not a number');
+  await expect(alert).toContainText('line 4: SE must be positive');
+  await expect(page.locator('#src')).toHaveAttribute('aria-invalid', 'true');
+  expect(await page.evaluate(() => window._almLastPubbias())).toBeNull();
+  await page.locator('#plus-run').click();
+  await expect(page.locator('#plus-status')).toContainText('Refused: Input not used. 2 lines could not be read');
+  // Binary counts: decimals and events above the group size are refused, not truncated.
+  await page.locator('#format').selectOption('binary');
+  await page.locator('#src').fill('12, 150, 18, 150\n8.5, 90, 14, 90\n20, 220, 35, 220\n5, 60, 70, 60\n15, 180, 22, 180');
+  await page.locator('#btn-run').click();
+  await expect(alert).toContainText('line 2: counts must be whole numbers');
+  await expect(alert).toContainText('line 4: events must be between 0 and the group size');
+  // Fixing the input clears the error state.
+  await page.locator('#src').fill('12, 150, 18, 150\n8, 90, 14, 90\n20, 220, 35, 220\n5, 60, 10, 60\n15, 180, 22, 180');
+  await page.locator('#btn-run').click();
+  await expect(page.locator('#body [role=alert]')).toHaveCount(0);
+  await expect(page.locator('#src')).toHaveAttribute('aria-invalid', 'false');
+  expect(await page.evaluate(() => window._almLastPubbias().k)).toBe(5);
 });
 
 test('base-row identity: plus full-data row equals the main table on every corpus configuration with 5 <= k <= 100', async ({ page }) => {

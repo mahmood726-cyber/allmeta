@@ -1,5 +1,5 @@
 // Node check of the #alm-plus extras against the pinned native R reference.
-// Run from the repository root:  node pubbias-tests/validate/check-plus.mjs [--reference <file>] [--json <out>]
+// Run from the repository root:  node pubbias-tests/validate/check-plus.mjs [--reference <file>] [--json <out>] [--plant ts-intercept]
 // The page's inline engine is extracted verbatim from pubbias-tests/index.html (the same code the browser runs),
 // then plus-engine.js and plus-compare.js are loaded unchanged. The browser panel (plus-adapter.js) is authoritative;
 // this is a fast offline mirror used during development and in tests.
@@ -14,7 +14,15 @@ export function loadPageEngine() {
   const html = readFileSync(join(app, 'index.html'), 'utf8');
   const a = html.indexOf('// ---- Engine (unchanged from pre-retrofit) ----'), b = html.indexOf('// ---- axis state ----');
   if (a < 0 || b < a) throw Error('Inline engine markers not found in index.html');
-  const src = html.slice(a, b) + '\nreturn {parseTESE, trimFill, remlSlopeNeg, wls, parseBinary, eggerGeneric, beggMazumdar, petersTest, harbordTest, thompsonSharp};';
+  let eng = html.slice(a, b);
+  // --plant ts-intercept: the defect of the old build (z of the intercept instead of the sei coefficient);
+  // the replay must then report thompson_sharp failures.
+  if (process.argv.includes('--plant')) {
+    const want = arg('--plant'), sites = { 'ts-intercept': ['var z = fin.b1 / Math.sqrt(fin.A[2]);', 'var z = fin.b0 / Math.sqrt(fin.A[0]);'] };
+    if (!sites[want] || !eng.includes(sites[want][0])) throw Error('Unknown plant or site not found: ' + want);
+    eng = eng.replace(sites[want][0], sites[want][1]);
+  }
+  const src = eng + '\nreturn {parseTESE, trimFill, remlSlopeNeg, wls, parseBinary, eggerGeneric, beggMazumdar, petersTest, harbordTest, thompsonSharp};';
   return vm.runInThisContext('(function(){"use strict";' + src + '})')();
 }
 globalThis.__almPubBiasEngine = loadPageEngine();

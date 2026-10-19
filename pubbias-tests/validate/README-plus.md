@@ -14,24 +14,28 @@ The `#alm-plus` section adds two things to the publication-bias page, each check
    function.
 2. **One-click leave-one-out of every validated test.** For each study omitted in turn: Egger t, p and limit
    estimate; PEESE estimate and the PET-PEESE branch; Begg tau and p; trim-and-fill k0, side and estimate; for 2x2
-   data, Peters and Harbord t and p. Each omission is flagged when it moves a test's p-value across 0.05, changes
+   data, Peters and Harbord t and p; Thompson-Sharp z, p and limit estimate. Each omission is flagged when it moves a
+   test's p-value across 0.05, changes
    trim-and-fill k0 or changes the PET-PEESE branch. The table can be filtered to flagged rows and exported as CSV.
    In R this needs a loop over omissions with several calls per omission; the R reference is exactly that loop
    (`validate/generate-plus.R`) using the publication archive's calls:
    `regtest(rma(y, v, method="REML"), model="lm", predictor="sei")`, `ranktest(y, vi=v)`,
    `trimfill(rma(y, v, method="REML"), estimator="L0")`, and
-   `metabias(metabin(e1, n1, e2, n2, sm="OR", method="Inverse", allstudies=TRUE), method.bias="Peters"/"Harbord", k.min=3)`.
+   `metabias(metabin(e1, n1, e2, n2, sm="OR", method="Inverse", allstudies=TRUE), method.bias="Peters"/"Harbord", k.min=3)`,
+   and `regtest(rma(y, v, method="REML"), model="rma", predictor="sei")` for Thompson-Sharp.
 
-Egger, Begg, trim-and-fill, Peters and Harbord in the extras are computed by **calling the page's own inline engine**
+Egger, Begg, trim-and-fill, Peters, Harbord and Thompson-Sharp in the extras are computed by **calling the page's own inline engine**
 (`window.__almPubBiasEngine`), so the full-data row of the leave-one-out table cannot differ from the main results
 table. The panel shows this as a visible identity check after every run (exact `Object.is` equality with the page's
-results object for Egger, Begg and trim-and-fill; the rendered 3-decimal text for Peters and Harbord), and a test
+results object for Egger, Begg and trim-and-fill; the rendered 3-decimal text for Peters, Harbord and Thompson-Sharp), and a test
 repeats it on every corpus configuration with 5 <= k <= 100 (121 configurations: 120 identical; for
 `dat.baker2009/OR:Placebo:Salmeterol` the main analysis is refused because trim-and-fill's REML does not converge,
 and the extras show the same trim-and-fill refusal). New computation (PET intercept test and CI with an
 accurate t quantile, PEESE, the conditional rule, the omission loop and flags) lives in `pubbias-tests/plus-engine.js`.
-`shared/selmodel.js`, `shared/trimfill.js`, the inline engine, the original corpus, reference, manifest and
-`validate/adapter.js` are unchanged. The original adapter has no page-text contract, so it needs no `#alm-plus`
+`shared/selmodel.js`, `shared/trimfill.js`, the inline Egger, Begg, trim-and-fill, Peters and Harbord code, the
+original corpus, reference, manifest and `validate/adapter.js` are unchanged. In this version the page's input
+parsers were made strict (no silent row drops) and Thompson-Sharp was rewritten (below); the original 2,113-check
+paper replay gives the same 2,107/2,113 and the same 6 documented exceptions before and after. The original adapter has no page-text contract, so it needs no `#alm-plus`
 exclusion; the extras use their own nodes and their own validation mount.
 
 Refusals are explicit: fewer than 3 studies (PET-PEESE), fewer than 4 or more than 100 studies (leave-one-out;
@@ -39,18 +43,18 @@ Refusals are explicit: fewer than 3 studies (PET-PEESE), fewer than 4 or more th
 fewer than 3 informative 2x2 rows, and the alpha tie. The selection model on the page remains experimental, does not
 reproduce metafor, and is not part of the extras or their checks.
 
-**Thompson-Sharp (fixed in this version, page results table).** The previous build tested the intercept of the
-weighted regression of effect on standard error and divided an already dispersion-scaled standard error by
-sqrt(max(1, phi)); it agreed with R in 0 of the paper's 152 configurations and the paper says it must not be used.
-It is now the random-effects meta-regression test of Thompson and Sharp as implemented by
-`metafor::regtest(rma(yi, vi, method="REML"), model="rma", predictor="sei")`: a REML meta-regression of yi on sei
-and a z test of the sei coefficient (a port of metafor 5.2-1's REML Fisher scoring). It refuses with fewer than 3
-studies, equal standard errors, or when the parent REML fit does not converge. The R reference
-(`validate/generate-ts.R` -> `plus-corpus/thompson-sharp-reference.json`) covers all 152 configurations; the replay
-compares statistic, p, slope, limit (intercept) and tau^2 (1e-6 relative with unit floor; p 1e-9 absolute; refusals
-exact): 151 configurations agree (largest differences 6.0e-13 statistic, 4.7e-13 p) and in the 152nd
-(`dat.baker2009/OR:Placebo:Salmeterol`) both refuse because REML does not converge. The reference was generated
-independently on two machines (baseimage and laptop, R 4.6.0, metafor 5.2-1) with byte-identical output.
+**Thompson-Sharp (page table).** The test in the main results table is now checked by this panel against
+`regtest(rma(yi, vi, method="REML"), model="rma", predictor="sei")` (metafor 5.2-1) on all 152 configurations:
+statistic, p, sei coefficient, intercept (limit) and tau2, or the refusal when R's parent REML fit does not converge
+(`dat.baker2009/OR:Placebo:Salmeterol`, refused by both). Result: 152/152 configurations, 756/756 checks
+(max |difference|: statistic 6.0e-13, p 4.7e-13). The build before this version failed all 152. Root cause, two
+parts: (1) it tested the intercept (the limit estimate) instead of the sei coefficient; (2) it fitted Egger's
+multiplicative-dispersion weighted lm with a t test (regtest `model="lm"`) instead of Thompson and Sharp's
+additive between-study variance (REML meta-regression, z test). Fixing (1) alone still matched 0/152. The page now
+ports metafor's REML Fisher scoring for the two-coefficient model. Tolerance: 1e-6 relative for the iterative REML
+quantities (the paper's trim-and-fill tolerance), 1e-9 absolute for p. The reference
+(`validate/generate-ts.R`, written in binary mode so it is LF on every OS) was generated independently on two
+machines (baseimage and laptop, R 4.6.0, metafor 5.2-1) and in a third independent run, with identical values.
 
 ## Corpus
 
@@ -58,7 +62,8 @@ The extras reuse the 152 configurations of the paper corpus (`validate/corpus/co
 SHA-256 as the original panel) from the publication archive
 [pubbias-reproducible](https://github.com/mahmood726-cyber/pubbias-reproducible): the installed metadat 1.6-0
 catalogue enumerated 114 datasets, 75 used and 39 excluded; `plus-corpus/dataset-disposition.json` is the archive's
-per-dataset disposition (same content; stored here with LF line endings, the archive file has CRLF), recording for every excluded dataset its columns and the reason
+per-dataset disposition (identical to the archive's `data/dataset-disposition.json` after CRLF-to-LF
+normalisation; the pin is on the LF bytes that a git checkout produces), recording for every excluded dataset its columns and the reason
 (no supplied effect/variance or supported paired binary structure with at least three finite positive-variance rows).
 The replay checks that the used datasets' configurations are exactly the corpus.
 
@@ -75,12 +80,18 @@ when both refuse with the same reason. Each configuration also has one display c
 exactly one node whose stored value equals the engine value and whose text is its formatted value; every refusal and
 branch label is shown once with its reason; every flags cell lists exactly the true flags.
 
-The 60,972 checks are 60,063 numerical/categorical comparisons of the extras, 756 Thompson-Sharp comparisons
-(151 configurations x 5 quantities, plus 1 matched refusal), 152 display checks and 1 disposition check.
+The 72,896 checks are 72,743 numerical/categorical comparisons (60,063 for PET-PEESE and the leave-one-out of the
+other tests, 756 for full-data Thompson-Sharp and 11,924 for Thompson-Sharp in the leave-one-out: 3,008 omissions x
+statistic, p and limit, 15 refusals and 2,885 flags), 152 display checks and 1 disposition check.
 All four pinned files are hashed as the LF bytes git stores (`pin-plus.mjs` refuses a file containing a CR byte).
 
-**Result (offline replay, pinned native R 4.6.0, metafor 5.2-1, meta 8.5-0): 60,878/60,972 checks pass;
-94 documented failures, 0 unexpected.**
+**Result (offline replay, pinned native R 4.6.0, metafor 5.2-1, meta 8.5-0): 72,802/72,896 checks pass;
+94 documented failures, 0 unexpected.** Measured 2026-10-19 in headless Chromium (page panel) and by the Node
+mirror `check-plus.mjs` (72,649/72,743 numerical checks; the 153 display and disposition checks are browser-only).
+`generate-plus.R` was re-run on a second machine: before Thompson-Sharp was added to the loop it reproduced every
+one of the previously pinned file's 105,121 numbers (difference 0), and adding Thompson-Sharp changed no other value. A second, independent oracle for PET, PEESE, the conditional branch and
+the leave-one-out PET/PEESE estimates (base-R `lm(yi ~ x, weights = 1/vi)` and its own omission loop, not
+`regtest`) agrees on 12,303/12,303 checks. Planted defects make the comparison fail (see Reproduce).
 
 All documented failures belong to two classes, each decided by a generic rule (no dataset identifiers in the rules);
 in both, R refuses because a REML fit inside the R call does not converge with default controls while the app returns
@@ -117,10 +128,20 @@ versions and stops on other metafor/meta versions):
     Rscript validate/generate-plus.R          # writes validate/plus-corpus/reference-plus-raw.json
     cd .. && node pubbias-tests/validate/pin-plus.mjs --drop-raw   # canonical JSON + LF, MANIFEST-plus.json, plus-pins.js
     node pubbias-tests/validate/check-plus.mjs                     # Node mirror of the replay (page engine extracted from index.html)
+    node pubbias-tests/validate/check-plus.mjs --plant ts-intercept   # planted defect: Thompson-Sharp statistic/p must fail
 
-Browser tests: `hub/shared/tests/pubbias-tests-plus.spec.mjs` (worked example and keyboard use, base-row identity
-on the corpus, identity negative, refusals, offline replay, 13 planted negatives (including the two Thompson-Sharp ones), SHA-256 tamper, live webR
-`@slow`).
+    Rscript validate/generate-ts.R            # Thompson-Sharp reference -> plus-corpus/thompson-sharp-reference.json (LF)
+    Rscript validate/lm-oracle-petpeese.R validate/corpus/corpus.json validate/plus-corpus/petpeese-lm-reference.json
+    node pubbias-tests/validate/check-lm-petpeese.mjs [--plant]    # second PET/PEESE oracle (base-R lm), 12,303 checks
+    node pubbias-tests/validate/check-original.mjs [index.html]    # Node mirror of the original 2,113-check paper replay
+
+Measured counts, planted-defect outcomes and the before/after record are in `plus-corpus/comparison-plus.json`;
+versions and tolerances in `plus-corpus/versions-plus.json`.
+
+Browser tests: `hub/shared/tests/pubbias-tests-plus.spec.mjs` (worked example and keyboard use, BCG example with
+labels, line-numbered input refusals, base-row identity on the corpus, identity negative, refusals, offline replay,
+13 planted negatives (including the two Thompson-Sharp ones), SHA-256 tamper, live webR `@slow`). These specs were not run on the lane machine (Playwright
+is not installed there); the replay and negatives above were run in headless Chromium through the page's own panel.
 
 | Item | Static or dynamic | Source |
 |---|---|---|

@@ -38,7 +38,7 @@
     const c = result.full.conditional; if (c.status === 'ok') for (const q of ['est', 'ciLo', 'ciHi']) want['full.conditional.' + q] = c.values[q];
     if (result.loo.status === 'ok') for (const row of result.loo.values.rows) {
       const tag = 'loo.' + (row.omit === null ? 'none' : 'omit' + row.omit) + '.';
-      for (const [m, q] of [['egger', 'statistic'], ['egger', 'p'], ['egger', 'limit'], ['peese', 'est'], ['conditional', 'branch'], ['begg', 'tau'], ['begg', 'p'], ['trimfill', 'k0'], ['trimfill', 'side'], ['trimfill', 'est'], ['peters', 'statistic'], ['peters', 'p'], ['harbord', 'statistic'], ['harbord', 'p']]) {
+      for (const [m, q] of [['egger', 'statistic'], ['egger', 'p'], ['egger', 'limit'], ['peese', 'est'], ['conditional', 'branch'], ['begg', 'tau'], ['begg', 'p'], ['trimfill', 'k0'], ['trimfill', 'side'], ['trimfill', 'est'], ['peters', 'statistic'], ['peters', 'p'], ['harbord', 'statistic'], ['harbord', 'p'], ['thompson', 'statistic'], ['thompson', 'p']]) {
         if (['peters', 'harbord'].includes(m) && !binary) continue;
         if (row[m].status === 'ok') want[tag + m + '.' + q] = row[m].values[q];
       }
@@ -61,7 +61,7 @@
     const refusals = [];
     for (const m of ['pet', 'peese', 'conditional']) if (result.full[m].status !== 'ok') refusals.push(['full.' + m, result.full[m].reason]);
     if (result.loo.status !== 'ok') refusals.push(['loo', result.loo.reason]);
-    else for (const row of result.loo.values.rows) for (const m of ['egger', 'peese', 'conditional', 'begg', 'trimfill', 'peters', 'harbord']) {
+    else for (const row of result.loo.values.rows) for (const m of ['egger', 'peese', 'conditional', 'begg', 'trimfill', 'peters', 'harbord', 'thompson']) {
       if (['peters', 'harbord'].includes(m) && !binary) continue;
       if (row[m].status !== 'ok') refusals.push(['loo.' + (row.omit === null ? 'none' : 'omit' + row.omit) + '.' + m, row[m].reason]);
     }
@@ -147,16 +147,17 @@
       ' r$begg <- cap({ z <- ranktest(ys, vi=vs); list(tau=unname(z$tau), p=z$pval) })',
       ' r$trimfill <- cap({ z <- trimfill(rma(ys, vs, method="REML"), estimator="L0"); list(k0=z$k0, side=z$side, est=as.numeric(z$b)) })',
       ' p1 <- cap(reg(ys, vs, "sei")); q1 <- cap(reg(ys, vs, "vi")); r$pet <- p1; r$peese <- q1; r$conditional <- cond(p1, q1)',
+      ' r$thompson <- cap({ z <- regtest(rma(ys, vs, method="REML"), model="rma", predictor="sei", ret.fit=TRUE); list(statistic=unname(z$zval), p=unname(z$pval), limit=as.numeric(coef(z$fit)[1])) })',
       s.binary ? ' inf <- sum(e1[keep] + e2[keep] > 0 & e1[keep] + e2[keep] < n1[keep] + n2[keep]) < 3; for (M in c("Peters","Harbord")) { z <- cap(metabias(metabin(e1[keep], n1[keep], e2[keep], n2[keep], sm="OR", method="Inverse", allstudies=TRUE), method.bias=M, k.min=3)); if (is.null(z$error) && is.null(z$statistic)) z <- list(error="none", informative=inf); r[[tolower(M)]] <- if (is.null(z$error)) list(statistic=unname(z$statistic), p=z$p.value) else list(error=z$error, informative=inf) }' : '',
       ' r }',
-      'fields <- list(egger=c("statistic","p","limit"), begg=c("tau","p"), trimfill=c("k0","side","est"), pet="est", peese="est", conditional="branch"' + (s.binary ? ', peters=c("statistic","p"), harbord=c("statistic","p")' : '') + ')',
+      'fields <- list(egger=c("statistic","p","limit"), begg=c("tau","p"), trimfill=c("k0","side","est"), pet="est", peese="est", conditional="branch", thompson=c("statistic","p","limit")' + (s.binary ? ', peters=c("statistic","p"), harbord=c("statistic","p")' : '') + ')',
       'sig <- function(x) if (is.null(x$error)) x$p < 0.05 else NA',
       'flag <- function(a, b) if (is.na(a) || is.na(b)) "null" else tolower(as.character(a != b))',
       'if (k < 4) put("loo.refusal", if (k < 3) "k-below-3" else "loo-requires-k-4") else if (k > 100) put("loo.refusal", "loo-k-above-100") else {',
       ' base <- tests(NULL)',
       ' for (i in c(0, seq_len(k))) { r <- if (i == 0) base else tests(i); tag <- if (i == 0) "loo.none." else paste0("loo.omit", i, ".")',
       '  for (m in names(fields)) { x <- r[[m]]; if (!is.null(x$error)) { put(paste0(tag, m, ".refusal"), if (m %in% c("pet","peese","conditional") && x$error == "alpha-tie") "alpha-tie" else reason(x$error, if (m %in% c("peters","harbord")) x$informative else NA)); next }; for (q in fields[[m]]) put(paste0(tag, m, ".", q), x[[q]]) }',
-      '  if (i > 0) { for (m in intersect(c("egger","begg","peters","harbord"), names(fields))) put(paste0(tag, "flag.", m, "_flip"), flag(sig(base[[m]]), sig(r[[m]])))',
+      '  if (i > 0) { for (m in intersect(c("egger","begg","peters","harbord","thompson"), names(fields))) put(paste0(tag, "flag.", m, "_flip"), flag(sig(base[[m]]), sig(r[[m]])))',
       '   put(paste0(tag, "flag.trimfill_k0_change"), if (!is.null(base$trimfill$error) || !is.null(r$trimfill$error)) "null" else tolower(as.character(base$trimfill$k0 != r$trimfill$k0)))',
       '   put(paste0(tag, "flag.branch_change"), if (!is.null(base$conditional$error) || !is.null(r$conditional$error)) "null" else tolower(as.character(base$conditional$branch != r$conditional$branch))) } } }',
       'enc <- function(x) { if (length(x) != 1 || is.na(x)) return("null"); if (is.character(x)) return(paste0("\\"", x, "\\"")); if (!is.finite(x)) return("null"); sprintf("%.17g", x) }',
@@ -184,7 +185,7 @@
   function rule(key) {
     if (/\.(k0|side|branch|df|refusal)$|\.flag\./.test(key)) return ['exact', 0];
     if (/\.(p|slopeP)$/.test(key)) return ['abs', 1e-9];
-    return ['rel', /trimfill\.est$/.test(key) ? 1e-6 : 1e-9];
+    return ['rel', /trimfill\.est$|\.thompson\./.test(key) ? 1e-6 : 1e-9];
   }
   const adapter = { app: 'pubbias-tests-plus', paper: { checks: PINS.checks, repoUrl: repo },
     live: { packages: ['metafor', 'meta'], paperVersions: { metafor: '5.2-1', meta: '8.5-0' }, currentState, appValues, buildScript, get compare() { return compare; } },

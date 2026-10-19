@@ -38,9 +38,9 @@
 
   function currentRows() {
     const E = window.__almPubBiasEngine, binary = el('format').value === 'binary', text = el('src').value;
+    // The page parsers refuse (throw, with line numbers) on any unreadable line; no line is skipped.
     const rows = (binary ? E.parseBinary : E.parseTESE)(text);
-    const lines = text.trim() ? text.trim().split(/\n/).filter(l => l.trim()).length : 0;
-    return { rows: rows.map(r => ({ te: r.te, se: r.se })), binary: binary ? rows : null, ignored: lines - rows.length };
+    return { rows: rows.map(r => ({ te: r.te, se: r.se })), binary: binary ? rows : null };
   }
 
   function renderPP(full) {
@@ -68,9 +68,10 @@
     ['peese', 'est', 'PEESE estimate'], ['conditional', 'branch', 'Branch'],
     ['begg', 'tau', 'Begg tau'], ['begg', 'p', 'Begg p'],
     ['trimfill', 'k0', 'Trim-and-fill k0'], ['trimfill', 'side', 'Side'], ['trimfill', 'est', 'Trim-and-fill estimate'],
-    ['peters', 'statistic', 'Peters t'], ['peters', 'p', 'Peters p'], ['harbord', 'statistic', 'Harbord t'], ['harbord', 'p', 'Harbord p']
+    ['peters', 'statistic', 'Peters t'], ['peters', 'p', 'Peters p'], ['harbord', 'statistic', 'Harbord t'], ['harbord', 'p', 'Harbord p'],
+    ['thompson', 'statistic', 'Thompson-Sharp z'], ['thompson', 'p', 'Thompson-Sharp p']
   ];
-  const FLAG_TEXT = { egger_flip: 'Egger p<0.05 changes', begg_flip: 'Begg p<0.05 changes', peters_flip: 'Peters p<0.05 changes', harbord_flip: 'Harbord p<0.05 changes', trimfill_k0_change: 'k0 changes', branch_change: 'PET-PEESE branch changes' };
+  const FLAG_TEXT = { egger_flip: 'Egger p<0.05 changes', begg_flip: 'Begg p<0.05 changes', peters_flip: 'Peters p<0.05 changes', harbord_flip: 'Harbord p<0.05 changes', thompson_flip: 'Thompson-Sharp p<0.05 changes', trimfill_k0_change: 'k0 changes', branch_change: 'PET-PEESE branch changes' };
   function cols(binary) { return COLS.filter(([m]) => binary || !['peters', 'harbord'].includes(m)); }
   function flagList(f) { return Object.entries(f || {}).filter(([, v]) => v === true).map(([k]) => FLAG_TEXT[k]); }
 
@@ -130,9 +131,13 @@
         if (!row || r.status !== 'ok' || row[1] !== r.values.statistic.toFixed(3) || row[2] !== r.values.p.toFixed(3)) mism.push(name);
       }
     }
+    { // Thompson-Sharp: same rendered text, or both refused.
+      const row = [...document.querySelectorAll('#body tr')].map(tr => [...tr.cells].map(c => c.textContent)).find(c => c[0] === 'Thompson-Sharp'), r = b.thompson;
+      if (!row || (r.status === 'ok' ? row[1] !== r.values.statistic.toFixed(3) || row[2] !== r.values.p.toFixed(3) : !/^refused/.test(row[4] || ''))) mism.push('Thompson-Sharp');
+    }
     out.dataset.plusIdentity = mism.length ? 'mismatch' : 'match';
     out.textContent = mism.length ? 'FAIL: the full-data row differs from the main results table for ' + mism.join(', ') + '.'
-      : 'The full-data row equals the main results table exactly (same page engine): Egger, Begg, trim-and-fill' + (binary ? ', Peters and Harbord.' : '.');
+      : 'The full-data row equals the main results table exactly (same page engine): Egger, Begg, trim-and-fill' + (binary ? ', Peters, Harbord' : '') + ' and Thompson-Sharp.';
     return mism;
   }
 
@@ -149,7 +154,7 @@
       const cur = currentRows();
       if (!cur.rows.length) throw Error('No valid studies in the input.');
       const t0 = performance.now(), result = P.compute(cur.rows, cur.binary);
-      render(result, cur.binary, cur.ignored > 0 ? '; ' + cur.ignored + ' input line(s) ignored, as in the main table' : '');
+      render(result, cur.binary);
       const mism = identity(result, !!cur.binary);
       el('plus-status').textContent = (result.loo.status === 'ok' ? 'Leave-one-out complete: ' + (result.loo.values.rows.length - 1) + ' omissions in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s.' : 'PET-PEESE complete; ' + explain(result.loo.reason).toLowerCase() + '.') + (mism && mism.length ? ' Identity check FAILED.' : '');
       return result;
