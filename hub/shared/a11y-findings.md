@@ -1,20 +1,20 @@
 # a11y portfolio sweep — discovery baseline
 
-Generated: 2026-06-04T08:33:31.131Z
+Generated: 2026-10-19T18:22:31.597Z
 Apps scanned: 76/76
-Total violation instances: 38
+Total violation instances: 43
 
 ## Ranked rules (fix top-down — breadth = one fix, many apps)
 
 | Rank | Rule | Impact | Apps | Nodes | Description |
 |-----:|------|--------|-----:|------:|-------------|
 | 1 | `scrollable-region-focusable` | serious | 3 | 4 | Scrollable region must have keyboard access |
-| 2 | `color-contrast` | serious | 2 | 9 | Elements must meet minimum color contrast ratio thresholds |
+| 2 | `color-contrast` | serious | 2 | 4 | Elements must meet minimum color contrast ratio thresholds |
 | 3 | `nested-interactive` | serious | 1 | 1 | Interactive controls must not be nested |
 | 4 | `label-title-only` | serious | 1 | 1 | Form elements should have a visible label |
-| 5 | `region` | moderate | 19 | 48 | All page content should be contained by landmarks |
-| 6 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
-| 7 | `heading-order` | moderate | 1 | 1 | Heading levels should only increase by one |
+| 5 | `region` | moderate | 23 | 68 | All page content should be contained by landmarks |
+| 6 | `heading-order` | moderate | 2 | 2 | Heading levels should only increase by one |
+| 7 | `skip-link` | moderate | 1 | 1 | The skip-link target should exist and be focusable |
 | 8 | `landmark-banner-is-top-level` | moderate | 1 | 1 | Banner landmark should not be contained in another landmark |
 | 9 | `landmark-contentinfo-is-top-level` | moderate | 1 | 1 | Contentinfo landmark should not be contained in another landmark |
 | 10 | `landmark-main-is-top-level` | moderate | 1 | 1 | Main landmark should not be contained in another landmark |
@@ -49,7 +49,7 @@ Total violation instances: 38
 | evidence-board | 0 | scanned |
 | evidenceos | 0 | scanned |
 | focus-studio | 0 | scanned |
-| forest-plot | 0 | scanned |
+| forest-plot | 2 | scanned |
 | funnel-plot | 1 | scanned |
 | gosh | 0 | scanned |
 | gosh-metareg | 0 | scanned |
@@ -66,9 +66,9 @@ Total violation instances: 38
 | median-to-mean | 0 | scanned |
 | meta-regression | 1 | scanned |
 | mh-peto | 0 | scanned |
-| multilevel-ma | 0 | scanned |
+| multilevel-ma | 1 | scanned |
 | multivariate-ma | 0 | scanned |
-| nma | 1 | scanned |
+| nma | 2 | scanned |
 | nma-dose-response-app | 3 | scanned |
 | nma-global-inconsistency | 0 | scanned |
 | nma-inconsistency | 1 | scanned |
@@ -84,7 +84,7 @@ Total violation instances: 38
 | prisma-screen | 0 | scanned |
 | project | 0 | scanned |
 | proportion-ma | 0 | scanned |
-| pubbias-tests | 0 | scanned |
+| pubbias-tests | 1 | scanned |
 | quadas-2 | 0 | scanned |
 | rct-extractor | 3 | scanned |
 | rob-traffic-light | 0 | scanned |
