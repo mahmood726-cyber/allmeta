@@ -97,6 +97,7 @@
 6, 0.38, 0.14, follow-up</textarea>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="input-error" role="alert" aria-live="assertive" hidden></div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount"></div>
 
@@ -144,14 +145,27 @@
 
     // ---- engine (unchanged from pre-retrofit) ----
 
+    // Strict, atomic input: never pool a subset after silently discarding bad rows.
     function parse(text) {
-      return text.trim().split(/\n/).map(function (l) {
-        var parts = l.split(/,/).map(function (s) { return s.trim(); });
-        var study = parts[0];
-        var te = parseFloat(parts[1]), se = parseFloat(parts[2]);
-        if (!study || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        return { study: study, te: te, se: se, label: parts[3] || '' };
-      }).filter(Boolean);
+      var decimal = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
+      var rows = [];
+      String(text).split(/\r?\n/).forEach(function (line, index) {
+        if (!line.trim()) return;
+        var fields = line.split(',');
+        var row = index + 1;
+        if (fields.length < 3) throw new Error('Line ' + row + ': expected study, effect, SE and optional label.');
+        var study = fields[0].trim();
+        var rawEffect = fields[1].trim(), rawSE = fields[2].trim();
+        if (!study) throw new Error('Line ' + row + ': study identifier is missing.');
+        if (!decimal.test(rawEffect) || !decimal.test(rawSE))
+          throw new Error('Line ' + row + ': effect and SE must be complete finite decimal numbers.');
+        var te = Number(rawEffect), se = Number(rawSE), variance = se * se;
+        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0 ||
+            !Number.isFinite(variance) || variance <= 0 || !Number.isFinite(1 / variance))
+          throw new Error('Line ' + row + ': require a finite effect and strictly positive, numerically usable SE.');
+        rows.push({ study: study, te: te, se: se, label: fields.slice(3).join(',').trim() });
+      });
+      return rows;
     }
 
     function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
@@ -303,9 +317,29 @@
 
     run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src");
 
+    function reportInputError(message, preserveResults) {
+      var box = document.getElementById('input-error');
+      box.textContent = message;
+      box.hidden = !message;
+      if (!preserveResults && message) {
+        _lastResults = null;
+        _lastReml = null;
+        document.getElementById('summary').textContent = '';
+        document.getElementById('body').textContent = '';
+        document.getElementById('forest').replaceChildren();
+      }
+    }
+
     function run() {
-      var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3) { _lastResults = null; _lastReml = null; return; }
+      var rows;
+      try {
+        rows = parse(document.getElementById('src').value);
+        if (rows.length < 3) throw new Error('Enter at least three valid effect rows.');
+      } catch (err) {
+        reportInputError('Analysis refused: ' + err.message + ' No subset was pooled or exported.', false);
+        return;
+      }
+      reportInputError('', true);
       var f = fit(rows);
 
       var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };
@@ -449,11 +483,28 @@
 
     // ---- load CSV rows into textarea ----
     window.__almLoad = function (rows) {
-      var lines = rows.map(function (r) {
-        return [r.study || '', r.effect || r.te || '', r.SE || r.se || '', r.label || ''].join(', ');
-      });
-      document.getElementById('src').value = lines.join('\n');
+      var lines;
+      try {
+        if (!Array.isArray(rows) || !rows.length) throw new Error('CSV has no data rows.');
+        lines = rows.map(function (r, i) {
+          var study = String(r.study == null ? '' : r.study).trim();
+          var label = String(r.label == null ? '' : r.label);
+          if (!study || /[,\r\n]/.test(study) || /[\r\n]/.test(label))
+            throw new Error('CSV row ' + (i + 1) + ': study must be nonempty without commas/newlines; label must have no newlines.');
+          var effect = r.effect !== undefined && r.effect !== null ? r.effect : r.te;
+          var se = r.SE !== undefined && r.SE !== null ? r.SE : r.se;
+          return [study, effect == null ? '' : effect, se == null ? '' : se, label].join(', ');
+        });
+        var proposed = lines.join('\n');
+        if (parse(proposed).length < 3) throw new Error('At least three valid effects are required.');
+      } catch (err) {
+        reportInputError('CSV import refused: ' + err.message + ' Existing dataset and results were preserved.', true);
+        return false;
+      }
+      if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) window.alm.resetUndo.snapshot();
+      document.getElementById('src').value = proposed;
       run();
+      return true;
     };
 
     // Expose last results for export
@@ -470,7 +521,6 @@
         { name: 'label',  required: false, type: 'string', example: 'outcome A' },
       ],
       onParse: function (result) {
-        window.alm.resetUndo.snapshot();
         window.__almLoad(result.rows);
       },
     });
