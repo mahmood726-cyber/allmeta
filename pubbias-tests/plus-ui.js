@@ -38,9 +38,9 @@
 
   function currentRows() {
     const E = window.__almPubBiasEngine, binary = el('format').value === 'binary', text = el('src').value;
+    // The page parsers refuse (throw, with line numbers) on any unreadable line; no line is skipped.
     const rows = (binary ? E.parseBinary : E.parseTESE)(text);
-    const lines = text.trim() ? text.trim().split(/\n/).filter(l => l.trim()).length : 0;
-    return { rows: rows.map(r => ({ te: r.te, se: r.se })), binary: binary ? rows : null, ignored: lines - rows.length };
+    return { rows: rows.map(r => ({ te: r.te, se: r.se })), binary: binary ? rows : null };
   }
 
   function renderPP(full) {
@@ -149,7 +149,7 @@
       const cur = currentRows();
       if (!cur.rows.length) throw Error('No valid studies in the input.');
       const t0 = performance.now(), result = P.compute(cur.rows, cur.binary);
-      render(result, cur.binary, cur.ignored > 0 ? '; ' + cur.ignored + ' input line(s) ignored, as in the main table' : '');
+      render(result, cur.binary);
       const mism = identity(result, !!cur.binary);
       el('plus-status').textContent = (result.loo.status === 'ok' ? 'Leave-one-out complete: ' + (result.loo.values.rows.length - 1) + ' omissions in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s.' : 'PET-PEESE complete; ' + explain(result.loo.reason).toLowerCase() + '.') + (mism && mism.length ? ' Identity check FAILED.' : '');
       return result;

@@ -37,7 +37,18 @@ exclusion; the extras use their own nodes and their own validation mount.
 Refusals are explicit: fewer than 3 studies (PET-PEESE), fewer than 4 or more than 100 studies (leave-one-out;
 100 is the validated range), equal standard errors (singular regression), REML or trim-and-fill non-convergence,
 fewer than 3 informative 2x2 rows, and the alpha tie. The selection model on the page remains experimental, does not
-reproduce metafor, and is not part of the extras or their checks. Thompson-Sharp is not compared.
+reproduce metafor, and is not part of the extras or their checks.
+
+**Thompson-Sharp (page table).** The test in the main results table is now checked by this panel against
+`regtest(rma(yi, vi, method="REML"), model="rma", predictor="sei")` (metafor 5.2-1) on all 152 configurations:
+statistic, p, sei coefficient, intercept (limit) and tau2, or the refusal when R's parent REML fit does not converge
+(`dat.baker2009/OR:Placebo:Salmeterol`, refused by both). Result: 152/152 configurations, 756/756 checks
+(max |difference|: statistic 6.0e-13, p 4.7e-13). The build before this version failed all 152. Root cause, two
+parts: (1) it tested the intercept (the limit estimate) instead of the sei coefficient; (2) it fitted Egger's
+multiplicative-dispersion weighted lm with a t test (regtest `model="lm"`) instead of Thompson and Sharp's
+additive between-study variance (REML meta-regression, z test). Fixing (1) alone still matched 0/152. The page now
+ports metafor's REML Fisher scoring for the two-coefficient model. Tolerance: 1e-6 relative for the iterative REML
+quantities (the paper's trim-and-fill tolerance), 1e-9 absolute for p.
 
 ## Corpus
 
@@ -45,7 +56,8 @@ The extras reuse the 152 configurations of the paper corpus (`validate/corpus/co
 SHA-256 as the original panel) from the publication archive
 [pubbias-reproducible](https://github.com/mahmood726-cyber/pubbias-reproducible): the installed metadat 1.6-0
 catalogue enumerated 114 datasets, 75 used and 39 excluded; `plus-corpus/dataset-disposition.json` is the archive's
-per-dataset disposition (byte-identical copy), recording for every excluded dataset its columns and the reason
+per-dataset disposition (identical to the archive's `data/dataset-disposition.json` after CRLF-to-LF
+normalisation; the pin is on the LF bytes that a git checkout produces), recording for every excluded dataset its columns and the reason
 (no supplied effect/variance or supported paired binary structure with at least three finite positive-variance rows).
 The replay checks that the used datasets' configurations are exactly the corpus.
 
@@ -62,10 +74,16 @@ when both refuse with the same reason. Each configuration also has one display c
 exactly one node whose stored value equals the engine value and whose text is its formatted value; every refusal and
 branch label is shown once with its reason; every flags cell lists exactly the true flags.
 
-The 60,216 checks are 60,063 numerical/categorical comparisons, 152 display checks and 1 disposition check.
+The 60,972 checks are 60,819 numerical/categorical comparisons (60,063 for the extras and 756 for Thompson-Sharp),
+152 display checks and 1 disposition check.
 
-**Result (offline replay, pinned native R 4.6.0, metafor 5.2-1, meta 8.5-0): 60,122/60,216 checks pass;
-94 documented failures, 0 unexpected.**
+**Result (offline replay, pinned native R 4.6.0, metafor 5.2-1, meta 8.5-0): 60,878/60,972 checks pass;
+94 documented failures, 0 unexpected.** Measured 2026-10-19 in headless Chromium (page panel) and by the Node
+mirror `check-plus.mjs` (60,725/60,819 numerical checks; the 153 display and disposition checks are browser-only).
+The reference was regenerated on a second machine with `generate-plus.R` and agrees with the pinned file in every
+one of its 105,121 numbers (difference 0). A second, independent oracle for PET, PEESE, the conditional branch and
+the leave-one-out PET/PEESE estimates (base-R `lm(yi ~ x, weights = 1/vi)` and its own omission loop, not
+`regtest`) agrees on 12,303/12,303 checks. Planted defects make the comparison fail (see Reproduce).
 
 All documented failures belong to two classes, each decided by a generic rule (no dataset identifiers in the rules);
 in both, R refuses because a REML fit inside the R call does not converge with default controls while the app returns
@@ -102,10 +120,20 @@ versions and stops on other metafor/meta versions):
     Rscript validate/generate-plus.R          # writes validate/plus-corpus/reference-plus-raw.json
     cd .. && node pubbias-tests/validate/pin-plus.mjs --drop-raw   # canonical JSON + LF, MANIFEST-plus.json, plus-pins.js
     node pubbias-tests/validate/check-plus.mjs                     # Node mirror of the replay (page engine extracted from index.html)
+    node pubbias-tests/validate/check-plus.mjs --plant ts-intercept   # planted defect: Thompson-Sharp statistic/p must fail
 
-Browser tests: `hub/shared/tests/pubbias-tests-plus.spec.mjs` (worked example and keyboard use, base-row identity
-on the corpus, identity negative, refusals, offline replay, 11 planted negatives, SHA-256 tamper, live webR
-`@slow`).
+    Rscript validate/generate-ts.R            # Thompson-Sharp reference -> plus-corpus/thompson-sharp-reference.json (LF)
+    Rscript validate/lm-oracle-petpeese.R validate/corpus/corpus.json validate/plus-corpus/petpeese-lm-reference.json
+    node pubbias-tests/validate/check-lm-petpeese.mjs [--plant]    # second PET/PEESE oracle (base-R lm), 12,303 checks
+    node pubbias-tests/validate/check-original.mjs [index.html]    # Node mirror of the original 2,113-check paper replay
+
+Measured counts, planted-defect outcomes and the before/after record are in `plus-corpus/comparison-plus.json`;
+versions and tolerances in `plus-corpus/versions-plus.json`.
+
+Browser tests: `hub/shared/tests/pubbias-tests-plus.spec.mjs` (worked example and keyboard use, BCG example with
+labels, line-numbered input refusals, base-row identity on the corpus, identity negative, refusals, offline replay,
+13 planted negatives, SHA-256 tamper, live webR `@slow`). These specs were not run on the lane machine (Playwright
+is not installed there); the replay and negatives above were run in headless Chromium through the page's own panel.
 
 | Item | Static or dynamic | Source |
 |---|---|---|
