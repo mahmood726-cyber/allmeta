@@ -165,6 +165,8 @@
     L.push('ctl <- list(maxiter = 10000, reltol = 1e-13, optim = list(maxit = 10000, reltol = 1e-13))');
     L.push('rows_of <- function(M) lapply(seq_len(nrow(M)), function(i) unname(M[i, ]))');
     L.push('fit_mv <- function(S) {');
+    L.push('  # The page refuses a within-study covariance that is not positive definite; mvmeta does not check.');
+    L.push('  if (any(vapply(S, function(s) min(eigen(s, symmetric = TRUE, only.values = TRUE)$values) <= 0, TRUE))) stop("Within-study covariance must be positive definite.")');
     L.push('  f <- mvmeta(Y ~ 1, S = S, method = "reml", bscov = "unstr", control = ctl)');
     L.push('  mu <- unname(as.numeric(coef(f))); V <- unname(vcov(f)); se <- sqrt(diag(V)); G <- unname(f$Psi); z <- mu / se');
     L.push('  list(mu = mu, se = se, muVcov = rows_of(V), G = rows_of(G), rho = if (all(diag(G) > 0)) G[1, 2] / sqrt(G[1, 1] * G[2, 2]) else NULL,');
