@@ -55,6 +55,8 @@ tests <- function(y, v, b) {
  # meta-regression rma(yi, vi, mods=sqrt(vi)) with step halving (stepadj=0.5, maxiter=1000) and pass its side.
  if (!is.null(r$trimfill$error)) r$trimfill$fallback_side <- capture({s<-rma(y,v,mods=sqrt(v),method='REML',control=list(stepadj=0.5,maxiter=1000));sd<-if(coef(s)[2]<0)'right' else 'left';z<-trimfill(rma(y,v,method='REML'),side=sd,estimator='L0');list(k0=z$k0,side=z$side,est=as.numeric(z$b))})
  r$pet <- capture(reg(y, v, 'sei')); r$peese <- capture(reg(y, v, 'vi')); r$conditional <- conditional(r$pet, r$peese)
+ # Thompson-Sharp: additive-tau2 REML meta-regression on sei, z test (metafor default regtest).
+ r$thompson <- capture({m<-rma(y,v,method='REML');z<-regtest(m,model='rma',predictor='sei',ret.fit=TRUE);list(statistic=unname(z$zval),p=unname(z$pval),limit=as.numeric(coef(z$fit)[1]))})
  if (!is.null(b)) for (method in c('Peters','Harbord')) {
   key <- tolower(method)
   r[[key]] <- capture({z<-metabias(metabin(b$e1,b$n1,b$e2,b$n2,sm='OR',method='Inverse',allstudies=TRUE),method.bias=method,k.min=3);list(statistic=unname(z$statistic),p=z$p.value)})
@@ -66,7 +68,7 @@ tests <- function(y, v, b) {
 sig <- function(x) if (is.null(x$error) && !is.null(x$p) && is.finite(x$p)) x$p < ALPHA else NA
 flags <- function(base, row) {
  f <- list()
- for (m in c('egger','begg','peters','harbord')) if (!is.null(base[[m]])) { a <- sig(base[[m]]); b <- sig(row[[m]]); f[[paste0(m,'_flip')]] <- if (is.na(a) || is.na(b)) NA else a != b }
+ for (m in c('egger','begg','peters','harbord','thompson')) if (!is.null(base[[m]])) { a <- sig(base[[m]]); b <- sig(row[[m]]); f[[paste0(m,'_flip')]] <- if (is.na(a) || is.na(b)) NA else a != b }
  tb <- base$trimfill; tr <- row$trimfill
  f$trimfill_k0_change <- if (!is.null(tb$error) || !is.null(tr$error)) NA else tb$k0 != tr$k0
  cb <- base$conditional; cr <- row$conditional
@@ -103,7 +105,8 @@ res <- list(schema='pubbias-tests-plus-reference-v1', versions=versions,
   egger="regtest(rma(y,v,method='REML'),model='lm',predictor='sei',ret.fit=TRUE)", begg='ranktest(y,vi=v)',
   trimfill="trimfill(rma(y,v,method='REML'),estimator='L0')", pet="regtest(y,vi=v,model='lm',predictor='sei',ret.fit=TRUE)",
   peese="regtest(y,vi=v,model='lm',predictor='vi',ret.fit=TRUE)",
-  peters_harbord="metabias(metabin(e1,n1,e2,n2,sm='OR',method='Inverse',allstudies=TRUE),method.bias=M,k.min=3)"),
+  peters_harbord="metabias(metabin(e1,n1,e2,n2,sm='OR',method='Inverse',allstudies=TRUE),method.bias=M,k.min=3)",
+  thompson="regtest(rma(y,v,method='REML'),model='rma',predictor='sei',ret.fit=TRUE)"),
  datasets=out)
 dir.create('validate/plus-corpus', showWarnings=FALSE)
 writeLines(js(res), if (SMOKE) Sys.getenv('PLUS_SMOKE_OUT') else 'validate/plus-corpus/reference-plus-raw.json', useBytes=TRUE)

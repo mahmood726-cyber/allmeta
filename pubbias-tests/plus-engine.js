@@ -1,5 +1,5 @@
 /* pubbias-tests #alm-plus engine: PET, PEESE, conditional PET-PEESE and leave-one-out sensitivity.
- * Every existing test (Egger, Begg, trim-and-fill, Peters, Harbord) is computed by calling the page's own
+ * Every existing test (Egger, Begg, trim-and-fill, Peters, Harbord, Thompson-Sharp) is computed by calling the page's own
  * inline engine (window.__almPubBiasEngine), so the full-data row cannot differ from the main results table.
  * New quantities: PET intercept test and t confidence interval, PEESE (weighted lm(yi ~ vi, weights=1/vi)),
  * the conditional choice, and the omission loop. No archived output is read by this engine.
@@ -113,6 +113,8 @@
       return Number.isInteger(t.k0) && Number.isFinite(t.est) ? ok({ k0: t.k0, side, est: t.est }) : refusal('undefined-trimfill');
     });
     r.pet = pet(rows); r.peese = peese(rows); r.conditional = conditional(r.pet, r.peese);
+    // Thompson-Sharp (page engine; REML meta-regression on SE, z test). Refuses where R's parent REML fit refuses.
+    r.thompson = attempt(() => { const t = E.thompsonSharp(rows); return [t.statistic, t.p, t.limit].every(Number.isFinite) ? ok({ statistic: t.statistic, p: t.p, limit: t.limit }) : refusal('undefined-regression'); });
     if (binary) for (const [key, fn] of [['peters', 'petersTest'], ['harbord', 'harbordTest']]) {
       r[key] = attempt(() => { const z = E[fn](binary); return z && Number.isFinite(z.statistic) && Number.isFinite(z.p) ? ok({ statistic: z.statistic, p: z.p }) : refusal('undefined-regression'); });
     }
@@ -121,7 +123,7 @@
   const sig = x => x.status === 'ok' ? x.values.p < ALPHA : null;
   function flags(base, row) {
     const f = {};
-    for (const m of ['egger', 'begg', 'peters', 'harbord']) if (base[m]) { const a = sig(base[m]), b = sig(row[m]); f[m + '_flip'] = a === null || b === null ? null : a !== b; }
+    for (const m of ['egger', 'begg', 'peters', 'harbord', 'thompson']) if (base[m]) { const a = sig(base[m]), b = sig(row[m]); f[m + '_flip'] = a === null || b === null ? null : a !== b; }
     f.trimfill_k0_change = base.trimfill.status !== 'ok' || row.trimfill.status !== 'ok' ? null : base.trimfill.values.k0 !== row.trimfill.values.k0;
     f.branch_change = base.conditional.status !== 'ok' || row.conditional.status !== 'ok' ? null : base.conditional.values.branch !== row.conditional.values.branch;
     return f;

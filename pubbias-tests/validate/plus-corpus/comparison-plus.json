@@ -5,15 +5,15 @@
  "versions": "see versions-plus.json",
  "extras_replay_browser": {
   "runner": "page panel AlmPubbiasPlusValidation.runCorpus() in chrome-headless-shell 1243 via CDP (work/cdp_eval.mjs), local static server",
-  "checks": 60972,
-  "passed": 60878,
+  "checks": 72896,
+  "passed": 72802,
   "documented_failures": 94,
   "unexpected": 0
  },
  "extras_replay_node": {
   "runner": "node pubbias-tests/validate/check-plus.mjs (numerical checks only; display/disposition are browser-only)",
-  "checks": 60819,
-  "passed": 60725,
+  "checks": 72743,
+  "passed": 72649,
   "documented_failures": 94,
   "unexpected": 0,
   "families": {
@@ -197,6 +197,11 @@
     "checks": 1880,
     "max_diff": 1.0
    },
+   "loo.flag.thompson_flip": {
+    "passed": 2885,
+    "checks": 2885,
+    "max_diff": 0.0
+   },
    "loo.flag.trimfill_k0_change": {
     "passed": 2883,
     "checks": 2885,
@@ -246,6 +251,26 @@
     "passed": 14,
     "checks": 14,
     "max_diff": 0.0
+   },
+   "loo.thompson.limit": {
+    "passed": 3008,
+    "checks": 3008,
+    "max_diff": 3.93e-14
+   },
+   "loo.thompson.p": {
+    "passed": 3008,
+    "checks": 3008,
+    "max_diff": 5.34e-14
+   },
+   "loo.thompson.refusal": {
+    "passed": 15,
+    "checks": 15,
+    "max_diff": 0.0
+   },
+   "loo.thompson.statistic": {
+    "passed": 3008,
+    "checks": 3008,
+    "max_diff": 4.97e-14
    },
    "loo.trimfill.est": {
     "passed": 3008,
@@ -304,7 +329,16 @@
   "configurations_passing": "152/152",
   "checks": "756/756",
   "before_this_version": "0/152 configurations, 0/756 checks (main and 36fc136 page code)",
-  "independent_lane_oracle": "second R script (rma(yi, vi, mods=~sqrt(vi)) cross-check) agrees: 152/152, 756/756"
+  "independent_lane_oracle": "second R script (rma(yi, vi, mods=~sqrt(vi)) cross-check) agrees: 152/152, 756/756",
+  "leave_one_out": {
+   "reference": "regtest(rma(y, v, method='REML'), model='rma', predictor='sei') per omission (generate-plus.R)",
+   "checks": "11,924/11,924 (3,008 x statistic/p/limit, 15 refusals agreeing, 2,885 flags)",
+   "max_diff": {
+    "statistic": 4.97e-14,
+    "p": 5.34e-14,
+    "limit": 3.93e-14
+   }
+  }
  },
  "petpeese_lm_oracle": {
   "runner": "node pubbias-tests/validate/check-lm-petpeese.mjs",
@@ -333,36 +367,34 @@
  },
  "planted_defects": {
   "extras: Thompson-Sharp reference statistic +2e-6 (browser)": {
-   "checks": 60972,
-   "passed": 60877,
+   "checks": 72896,
+   "passed": 72801,
    "unexpected": 1,
    "sample": [
     "dat.bcg/OR:tpos:cpos | thompson_sharp.statistic [UNEXPECTED]"
    ]
   },
   "extras: previous Thompson-Sharp formula (browser)": {
-   "checks": 60972,
-   "passed": 60270,
-   "unexpected": 608,
+   "checks": 72896,
+   "passed": 63810,
+   "unexpected": 8992,
    "sample": [
-    "dat.anand1999/OR:ai:ci | thompson_sharp.statistic [UNEXPECTED]",
-    "dat.anand1999/OR:ai:ci | thompson_sharp.p [UNEXPECTED]"
+    "dat.anand1999/OR:ai:ci | loo.none.thompson.statistic [UNEXPECTED]",
+    "dat.anand1999/OR:ai:ci | loo.none.thompson.p [UNEXPECTED]"
    ]
   },
   "extras: PEESE reference est +2e-9 (browser)": {
-   "checks": 60972,
-   "passed": 60877,
+   "checks": 72896,
+   "passed": 72801,
    "unexpected": 1,
    "sample": [
     "dat.bcg/OR:tpos:cpos | full.peese.est [UNEXPECTED]"
    ]
   },
   "check-plus.mjs --plant ts-intercept (node)": {
-   "checks": 60819,
-   "passed": 60423,
-   "failed": 396,
-   "thompson_sharp.statistic": "0/151",
-   "thompson_sharp.p": "0/151"
+   "checks": 72743,
+   "passed": 66189,
+   "failed": 6554
   },
   "check-lm-petpeese.mjs --plant (PEESE +1e-8)": {
    "checks": 12303,
@@ -380,5 +412,6 @@
   "bad_rows": "refused with line numbers (role=alert, aria-invalid=true), nothing exported",
   "browser_observation": "Analysis unavailable: Input not used. 2 lines could not be read; fix them and run again. line 2: \"x\" is not a number; line 4: SE must be positive."
  },
- "reference_reproduction": "validate/generate-plus.R re-run on this machine (33.7 min): all 105,121 numbers equal the pinned reference-plus.json (difference 0); canonical file byte-identical"
+ "reference_reproduction": "validate/generate-plus.R re-run twice on this machine: (1) before Thompson-Sharp was added to the loop, all 105,121 numbers equal the WIP-pinned file (difference 0); (2) with Thompson-Sharp in the loop (43.9 min), every non-Thompson value is identical to (1)",
+ "identity_main_table": "120/121 corpus configurations with 5<=k<=100 match exactly (Egger, Begg, trim-and-fill, Peters, Harbord, Thompson-Sharp); dat.baker2009/OR:Placebo:Salmeterol not applicable (main analysis refused: trim-and-fill REML), as before"
 }

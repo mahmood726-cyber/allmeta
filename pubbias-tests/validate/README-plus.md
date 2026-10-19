@@ -14,24 +14,28 @@ The `#alm-plus` section adds two things to the publication-bias page, each check
    function.
 2. **One-click leave-one-out of every validated test.** For each study omitted in turn: Egger t, p and limit
    estimate; PEESE estimate and the PET-PEESE branch; Begg tau and p; trim-and-fill k0, side and estimate; for 2x2
-   data, Peters and Harbord t and p. Each omission is flagged when it moves a test's p-value across 0.05, changes
+   data, Peters and Harbord t and p; Thompson-Sharp z, p and limit estimate. Each omission is flagged when it moves a
+   test's p-value across 0.05, changes
    trim-and-fill k0 or changes the PET-PEESE branch. The table can be filtered to flagged rows and exported as CSV.
    In R this needs a loop over omissions with several calls per omission; the R reference is exactly that loop
    (`validate/generate-plus.R`) using the publication archive's calls:
    `regtest(rma(y, v, method="REML"), model="lm", predictor="sei")`, `ranktest(y, vi=v)`,
    `trimfill(rma(y, v, method="REML"), estimator="L0")`, and
-   `metabias(metabin(e1, n1, e2, n2, sm="OR", method="Inverse", allstudies=TRUE), method.bias="Peters"/"Harbord", k.min=3)`.
+   `metabias(metabin(e1, n1, e2, n2, sm="OR", method="Inverse", allstudies=TRUE), method.bias="Peters"/"Harbord", k.min=3)`,
+   and `regtest(rma(y, v, method="REML"), model="rma", predictor="sei")` for Thompson-Sharp.
 
-Egger, Begg, trim-and-fill, Peters and Harbord in the extras are computed by **calling the page's own inline engine**
+Egger, Begg, trim-and-fill, Peters, Harbord and Thompson-Sharp in the extras are computed by **calling the page's own inline engine**
 (`window.__almPubBiasEngine`), so the full-data row of the leave-one-out table cannot differ from the main results
 table. The panel shows this as a visible identity check after every run (exact `Object.is` equality with the page's
-results object for Egger, Begg and trim-and-fill; the rendered 3-decimal text for Peters and Harbord), and a test
+results object for Egger, Begg and trim-and-fill; the rendered 3-decimal text for Peters, Harbord and Thompson-Sharp), and a test
 repeats it on every corpus configuration with 5 <= k <= 100 (121 configurations: 120 identical; for
 `dat.baker2009/OR:Placebo:Salmeterol` the main analysis is refused because trim-and-fill's REML does not converge,
 and the extras show the same trim-and-fill refusal). New computation (PET intercept test and CI with an
 accurate t quantile, PEESE, the conditional rule, the omission loop and flags) lives in `pubbias-tests/plus-engine.js`.
-`shared/selmodel.js`, `shared/trimfill.js`, the inline engine, the original corpus, reference, manifest and
-`validate/adapter.js` are unchanged. The original adapter has no page-text contract, so it needs no `#alm-plus`
+`shared/selmodel.js`, `shared/trimfill.js`, the inline Egger, Begg, trim-and-fill, Peters and Harbord code, the
+original corpus, reference, manifest and `validate/adapter.js` are unchanged. In this version the page's input
+parsers were made strict (no silent row drops) and Thompson-Sharp was rewritten (below); the original 2,113-check
+paper replay gives the same 2,107/2,113 and the same 6 documented exceptions before and after. The original adapter has no page-text contract, so it needs no `#alm-plus`
 exclusion; the extras use their own nodes and their own validation mount.
 
 Refusals are explicit: fewer than 3 studies (PET-PEESE), fewer than 4 or more than 100 studies (leave-one-out;
@@ -74,14 +78,15 @@ when both refuse with the same reason. Each configuration also has one display c
 exactly one node whose stored value equals the engine value and whose text is its formatted value; every refusal and
 branch label is shown once with its reason; every flags cell lists exactly the true flags.
 
-The 60,972 checks are 60,819 numerical/categorical comparisons (60,063 for the extras and 756 for Thompson-Sharp),
-152 display checks and 1 disposition check.
+The 72,896 checks are 72,743 numerical/categorical comparisons (60,063 for PET-PEESE and the leave-one-out of the
+other tests, 756 for full-data Thompson-Sharp and 11,924 for Thompson-Sharp in the leave-one-out: 3,008 omissions x
+statistic, p and limit, 15 refusals and 2,885 flags), 152 display checks and 1 disposition check.
 
-**Result (offline replay, pinned native R 4.6.0, metafor 5.2-1, meta 8.5-0): 60,878/60,972 checks pass;
+**Result (offline replay, pinned native R 4.6.0, metafor 5.2-1, meta 8.5-0): 72,802/72,896 checks pass;
 94 documented failures, 0 unexpected.** Measured 2026-10-19 in headless Chromium (page panel) and by the Node
-mirror `check-plus.mjs` (60,725/60,819 numerical checks; the 153 display and disposition checks are browser-only).
-The reference was regenerated on a second machine with `generate-plus.R` and agrees with the pinned file in every
-one of its 105,121 numbers (difference 0). A second, independent oracle for PET, PEESE, the conditional branch and
+mirror `check-plus.mjs` (72,649/72,743 numerical checks; the 153 display and disposition checks are browser-only).
+`generate-plus.R` was re-run on a second machine: before Thompson-Sharp was added to the loop it reproduced every
+one of the previously pinned file's 105,121 numbers (difference 0), and adding Thompson-Sharp changed no other value. A second, independent oracle for PET, PEESE, the conditional branch and
 the leave-one-out PET/PEESE estimates (base-R `lm(yi ~ x, weights = 1/vi)` and its own omission loop, not
 `regtest`) agrees on 12,303/12,303 checks. Planted defects make the comparison fail (see Reproduce).
 

@@ -17,7 +17,7 @@ test('one-click worked example: PET-PEESE, 13 omissions, identity with the main 
   await expect(page.locator('#format')).toHaveValue('binary');
   await expect(page.locator('#plus-pp-body tr')).toHaveCount(3);
   await expect(page.locator('#plus-loo-body tr')).toHaveCount(14);
-  await expect(page.locator('#plus-loo-head th')).toHaveCount(16); // omitted + 14 quantities + flags
+  await expect(page.locator('#plus-loo-head th')).toHaveCount(18); // omitted + 16 quantities + flags
   await expect(page.locator('#plus-identity')).toHaveAttribute('data-plus-identity', 'match');
   await expect(page.locator('[data-plus-branch="full.conditional.branch"]')).toHaveCount(1);
   // Independent read of the main results table (3 decimals) against the plus base row.
@@ -38,7 +38,7 @@ test('one-click worked example: PET-PEESE, 13 omissions, identity with the main 
   await expect(page.locator('#plus-loo-body tr:not([hidden])')).toHaveCount(14);
   const csv = await page.evaluate(() => AlmPubbiasPlusUI.csv());
   expect(csv.trim().split('\n')).toHaveLength(15);
-  expect(csv.split('\n')[0]).toBe('omitted,egger_statistic,egger_p,egger_limit,peese_est,conditional_branch,begg_tau,begg_p,trimfill_k0,trimfill_side,trimfill_est,peters_statistic,peters_p,harbord_statistic,harbord_p,flags');
+  expect(csv.split('\n')[0]).toBe('omitted,egger_statistic,egger_p,egger_limit,peese_est,conditional_branch,begg_tau,begg_p,trimfill_k0,trimfill_side,trimfill_est,peters_statistic,peters_p,harbord_statistic,harbord_p,thompson_statistic,thompson_p,flags');
 });
 
 test('hero BCG example loads all 13 studies as effect and SE', async ({ page }) => {

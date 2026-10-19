@@ -4,12 +4,12 @@
   "configurations": 152,
   "looConfigurations": 138,
   "omissions": 2885,
-  "numericChecks": 60819,
+  "numericChecks": 72743,
   "thompsonSharpChecks": 756,
   "displayChecks": 152,
   "dispositionChecks": 1,
-  "checks": 60972,
-  "expectedPassed": 60878,
+  "checks": 72896,
+  "expectedPassed": 72802,
   "versions": {
     "R": "R version 4.6.0 (2026-04-24 ucrt)",
     "metafor": "5.2.1",
@@ -27,7 +27,8 @@
     "trimfill": "trimfill(rma(y,v,method='REML'),estimator='L0')",
     "pet": "regtest(y,vi=v,model='lm',predictor='sei',ret.fit=TRUE)",
     "peese": "regtest(y,vi=v,model='lm',predictor='vi',ret.fit=TRUE)",
-    "peters_harbord": "metabias(metabin(e1,n1,e2,n2,sm='OR',method='Inverse',allstudies=TRUE),method.bias=M,k.min=3)"
+    "peters_harbord": "metabias(metabin(e1,n1,e2,n2,sm='OR',method='Inverse',allstudies=TRUE),method.bias=M,k.min=3)",
+    "thompson": "regtest(rma(y,v,method='REML'),model='rma',predictor='sei',ret.fit=TRUE)"
   },
   "files": [
     {
@@ -37,8 +38,8 @@
     },
     {
       "path": "validate/plus-corpus/reference-plus.json",
-      "sha256": "764639a8f6832c47884ab9705b8309cf27c542a8b68b3c1cd93b53fecdd6a5ed",
-      "bytes": 3306251
+      "sha256": "6b2e0c6d73d6caab00e4d5a2a5f5658f936f179e8273a0b70ca653a9f6795a27",
+      "bytes": 3661491
     },
     {
       "path": "validate/plus-corpus/dataset-disposition.json",
