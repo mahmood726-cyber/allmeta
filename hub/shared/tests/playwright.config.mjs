@@ -9,6 +9,7 @@ const channel = process.env.PW_CHANNEL || undefined;
 export default defineConfig({
   testDir: '.',
   testMatch: '*.spec.mjs',
+  testIgnore: '*-plus-pixels.spec.mjs', // Dedicated Windows pixel CI job and config.
   timeout: 30_000,
   use: {
     baseURL: 'http://localhost:8088',

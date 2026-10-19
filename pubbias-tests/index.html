@@ -59,7 +59,7 @@
   <!-- Cycle 2.8 Task 3 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
   <script src="../hub/shared/csv-upload.js"></script>
-  <script src="../hub/shared/chart-download.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
@@ -89,7 +89,7 @@
       <h2>Input</h2>
 
       <!-- csv-upload mount -->
-      <div id="alm-csv-mount"></div>
+
 
       <label>
         <span>Data format</span>
@@ -109,12 +109,15 @@
 0.22, 0.08
 0.32, 0.12
 0.45, 0.17
-0.28, 0.10</textarea>
+0.28, 0.10</textarea></label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="alm-csv-mount"></div>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
-      </label>
-      <button type="button" id="btn-run" class="primary" style="width:100%">Run tests</button>
+
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
         <button type="button" id="btn-bus-load" style="flex:1" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
         <button type="button" id="btn-bus-save" style="flex:1" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
@@ -135,10 +138,10 @@
       <h2 style="margin-top:0.5rem">Funnel + regression overlay</h2>
       <svg id="funnel" viewBox="0 0 600 300" role="img" aria-label="Funnel plot with regression lines"></svg>
 
-      <!-- chart-download mount -->
+      <!-- plot-export mount -->
       <div class="actions">
-        <span style="font-size:0.8rem;color:var(--muted)">Download chart:</span>
-        <div id="alm-chart-mount"></div>
+        <span style="font-size:0.8rem;color:var(--muted)">Download plots:</span>
+        <div id="alm-plot-mount"></div>
       </div>
 
       <!-- results-export mount -->
@@ -146,13 +149,14 @@
         <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
         <div id="alm-export-mount"></div>
       </div>
-    
+
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
   <footer>
     Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp with multiplicative dispersion. See Sterne JAC, Sutton AJ, Ioannidis JPA, et al. <em>BMJ</em> 2011;343:d4002 for funnel-plot recommendations and power comparisons. Egger reports a t statistic, not a z statistic. The selection model uses ML and is experimental, not validated against metafor.
   </footer>
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
   (function () {
     'use strict';
@@ -574,6 +578,8 @@
     // ---- last results ----
     var _lastResults = null;
 
+    run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #format");
+
     function run() {
       _lastResults = null;
       try { runAnalysis(); }
@@ -734,6 +740,7 @@
     window._almLastPubbias = function () { return _lastResults; };
     // Expose the test engine for R-parity tests (parseBinary + each test).
     window.__almPubBiasEngine = {
+      parseTESE: parseTESE, trimFill: trimFill, remlSlopeNeg: remlSlopeNeg, wls: wls,
       parseBinary: parseBinary, eggerGeneric: eggerGeneric, beggMazumdar: beggMazumdar,
       petersTest: petersTest, harbordTest: harbordTest, thompsonSharp: thompsonSharp,
     };
@@ -745,6 +752,7 @@
       }
       run();
     });
+
 
     if (window.MaStudies && MaStudies.attachButtons) {
       // pubbias supports binary/SE inputs; bus contract is logged effect + SE
@@ -783,10 +791,10 @@
       },
     });
 
-    window.alm.chartDownload({
-      target: '#alm-chart-mount',
+    window.alm.plotExport({
+      target: '#alm-plot-mount',
       basename: 'pubbias-funnel',
-      getSvg: function () { return document.getElementById('funnel'); },
+      plots: [{ id: 'funnel', name: 'Funnel plot', getSvg: function () { return document.getElementById('funnel'); } }],
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
@@ -918,5 +926,8 @@
   });
 })();
 </script>
+<div id="alm-validate"></div>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>

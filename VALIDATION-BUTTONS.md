@@ -1,5 +1,9 @@
 # Validation buttons
 
+Cumulative + subgroup: live PM checks the current cumulative steps (in the page's year/row order), or each separately fitted subgroup, the overall pool and the FE-pooled between-subgroup Q/df/p/I² difference, against self-hosted metafor 4.8-0 (paper 5.2-1), with tau2 at 1e-6 and every other computed, displayed or exported value at 1e-9 under the declared conditional rule (RESULTS_Q.md); exact cards, notes, controls, plot geometry and page-template text; refuses in the axis-error state. Declared replay: 609,398 checks over 1,816 configurations (all k <= 100, all 6 page refusals, every adjudicated residual-Q configuration); full archived comparison: 1,615,408 checks. See [cumulative-subgroup/validate/README.md](cumulative-subgroup/validate/README.md), `validate-cumulative-subgroup.spec.mjs` and integration cases.
+
+GOSH: live FE/DL checks every current subset against self-hosted metafor 4.8-0 (paper 5.2-1), including exact membership, engine values, exported summaries and exact displayed headings/labels/values. Declared replay: 876,760 checks over 178 model configurations (all k <= 12, two fixed sampled configurations, all cap refusals); full archived paper: 12,813,556 checks. See [gosh/validate/README.md](gosh/validate/README.md), `validate-gosh.spec.mjs` and integration cases.
+
 The shared `AlmValidate.mount(el, adapter)` widget supplies accessible controls, a results table, hash verification, version reporting and evidence links. Missing values and invalid hashes fail closed.
 
 ## Tier 1: current analysis in R
@@ -46,11 +50,17 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 
 | App | Tier 1 | Tier 2 | Integration status |
 |---|---|---|---|
+| Limit MA | meta 8.3-0 / metasens 1.5-3; paper meta 8.5-0 / metasens 1.5-3 | Full 169 configurations; 55524/55525, one named R refusal | validate-limit-ma + integration; hashes, same-origin, restored navigation |
+| Influence | metafor 4.8-0; paper 5.2-1; all current per-study diagnostics | 142 configurations, full 164802-check primary comparison | validate-influence + integration specs; same-origin, hashes, exact flags and restored history |
+| Multilevel MA | metafor 4.8-0; paper 5.2-1 | 44 configurations, 528 checks including MoM-share and UI contracts | validate-multilevel-ma + integration specs |
 | Heterogeneity | metafor 4.8-0; paper 5.2-1 | Numerical replay and separate rendered audit | See integration report |
+| Publication bias (`pubbias-tests`) | metafor 4.8-0 and meta 8.3-0; paper 5.2-1 / 8.5-0 | 152 configurations, 2,107/2,113; six named failures retained | See pubbias-tests/validate/README.md and validation specs |
 | Dose-response | dosresmeta 2.2.0 vendored | Contract: 724 combinations | See integration report |
 | DTA SROC | mada 0.5.12 vendored; intercept-only bivariate fits | Contract: 855 checks, including meta-regression | See audit report |
 | NMA | netmeta 3.4-0 vendored; paper 3.7-0 | Contract: 410 checks | See integration report |
+| MH/Peto | metafor 4.8-0; paper 5.2-1; current OR/RR/RD and Peto OR | Full 68,461-check current-page replay; archived independent R oracle explicitly labelled | validate-mh-peto.spec.mjs and integration cases |
 | Screen | No live Python oracle; repository link with `live:null` | Screen simulator replay against published rounded benchmark values | See audit report |
+| Proportion MA | metafor 4.8-0; paper 5.2-1; current PLO/PFT/PR and PM/DL/FE | Full 298116-check primary contract, 2160 configurations including per-study and DOM checks | See proportion-ma/validate/README.md and validate-proportion-ma.spec.mjs |
 
 ## Static versus dynamic disclosure
 
@@ -63,4 +73,8 @@ The **120,720 displayed numbers are a separate audit**, not part of 131,781. Fol
 | Live R fits and versions | Dynamic | Actual R session and packageVersion checks |
 | Build SHA | Static generated stamp | Existing shared/build-info.js; regenerate at integration/release |
 
-See `INTEGRATION_REPORT.md` for the original implementation evidence and `docs/validation-audit-2026-10-11.md` for the independent audit, package-version investigation and regression checks. Audit changes require review before merging; they do not deploy or release the applications.
+See `INTEGRATION_REPORT.md` for exact commands, results and limitations, and `docs/validation-audit-2026-10-11.md` for the independent audit, package-version investigation and regression checks. Audit changes require review before merging; they do not deploy or release the applications.
+
+Multilevel details and scope: [multilevel-ma/validate/README.md](multilevel-ma/validate/README.md). Its live check uses `rma.mv(yi, vi, random = ~ 1 | cluster/id, method = "REML")` on current page inputs.
+
+Influence details and scope: [influence/validate/README.md](influence/validate/README.md). Live checks use intercept-only REML, leave1out/influence/REML Baujat and FE radial. The primary replay includes every effect row and restores page input/results without URL or history writes. Its historical before-fix denominator additionally included DL Baujat controls. Flags are validated as Booleans, then encoded as 0/1 for zero-tolerance comparison by the unchanged shared widget.

@@ -151,10 +151,18 @@ function unpack(files, path) {
 }
 function currentState() {
   if (document.getElementById('f-cov').value === 'last') throw new Error('Live R comparison of DTA meta-regression is unavailable. The published corpus includes its reference fits; use the reproducible repository to rerun mada on your covariate data.');
-  document.getElementById('f-data').dispatchEvent(new Event('input', {bubbles:true}));
+  // State reader only: never dispatch events or re-render here. The rendered fit
+  // must match a side-effect-free recomputation from the current inputs;
+  // otherwise refuse rather than validate a fit the page is no longer showing.
+  // Stale *completed* results are cleared by the shared widget's input fingerprint.
   const fit = window.__almBivariate();
   if (!fit) throw new Error('The current data have no bivariate fit; select a valid configuration first.');
-  return { fit, rows: window.__almResults().rows, method: document.getElementById('f-method').value,
+  const fresh = window.__almResults(), cur = fresh && fresh.bivariate;
+  const r10 = v => (v == null || !isFinite(v)) ? null : +v.toPrecision(10);
+  const same = cur && cur.method === fit.method && cur.mu_logit_se === r10(fit.muLogitSe) && cur.mu_logit_fpr === r10(fit.muLogitFPR) &&
+    JSON.stringify(cur.Psi) === JSON.stringify(fit.Psi.map(r => r.map(r10)));
+  if (!same) throw new Error('The displayed fit does not match the current inputs; run the analysis again before validating.');
+  return { fit, rows: fresh.rows, method: document.getElementById('f-method').value,
     correction: document.getElementById('f-cc').value };
 }
 function values(s) {
@@ -198,7 +206,7 @@ const adapter = {
  app:'dta-sroc',
  paper:{title:'DTA SROC: bivariate meta-analysis validated against R mada',doi:null,checks:855,
   repoUrl,runUrl:repoUrl+'/actions/workflows/reproduce.yml',codespacesUrl:'https://codespaces.new/mahmood726-cyber/dta-sroc-reproducible', packageVersions:{mada:'0.5.12'},referenceRuntime:'R',referenceLabel:'mada 0.5.12 (publication-time corpus)'},
- live:{packages:['mada'],scope:'Bivariate intercept-only fits. Current-data meta-regression is unavailable; the stored corpus includes meta-regression reference fits.',inputs:['f-data','f-method','f-cc','f-cov'],validatedVersions:{mada:'0.5.12'},currentState,buildScript,appValues:values,
+ live:{packages:['mada'],scope:'Bivariate intercept-only fits. Current-data meta-regression is unavailable; the stored corpus includes meta-regression reference fits.',validatedVersions:{mada:'0.5.12'},currentState,buildScript,appValues:values,
   compare:{tolerance:{default:1e-6},kind:{lrPos:'rel',lrNeg:'rel',lrPosLo:'rel',lrPosHi:'rel',lrNegLo:'rel',lrNegHi:'rel',dor:'rel',tauSe:'rel',tauFpr:'rel',Theta:'rel',Lambda:'rel',beta:'rel',sigma2theta:'rel',sigma2alpha:'rel'}}},
  corpus:{files:[{"path": "validate/corpus/paper_values.json", "sha256": "a3cc58b2018720d0467fc40bd673edd6259277802293d5c7b7e5438937a4dfbd"}, {"path": "validate/corpus/reference.json", "sha256": "c27829827ad9772c8a9886c682ad13ef8ff80a8016372052bbc0b91a48105d29"}], async run(files,onProgress=()=>{}) {
   const data=unpack(files,'validate/corpus/reference.json');

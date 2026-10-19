@@ -41,12 +41,21 @@
     }
     return files;
   }
+  // Known comparison kinds; anything else fails closed with an explicit reason
+  // rather than silently falling through to an absolute-difference test.
+  const KINDS = ['abs', 'rel', 'exact'];
   function compare(app, ref, kind, tol) {
+    if (!KINDS.includes(kind)) return { diff: Infinity, pass: false, reason: 'Unknown comparison kind: ' + String(kind) };
+    if (kind === 'exact') {
+      const pass = typeof app === typeof ref && ['string', 'boolean', 'number'].includes(typeof app) && app === ref && (typeof app !== 'number' || Number.isFinite(app));
+      return { diff: pass ? 0 : Infinity, pass };
+    }
     // null is a declared unavailable quantity; undefined/NaN never passes.
     const diff = app === null && ref === null ? 0 :
       typeof app === 'number' && typeof ref === 'number' && Number.isFinite(app) && Number.isFinite(ref) ?
         Math.abs(app - ref) / (kind === 'rel' ? Math.max(1, Math.abs(ref)) : 1) : Infinity;
-    return { diff, pass: ['abs', 'rel'].includes(kind) && Number.isFinite(tol) && tol >= 0 && Number.isFinite(diff) && diff <= tol };
+    if (typeof tol !== 'number' || !Number.isFinite(tol) || tol < 0) return { diff, pass: false, reason: 'Invalid tolerance: ' + String(tol) };
+    return { diff, pass: Number.isFinite(diff) && diff <= tol };
   }
   function node(tag, text, parent) {
     const el = document.createElement(tag);
@@ -55,7 +64,6 @@
     return el;
   }
   let runnerPromise;
-  const mounts = new WeakMap();
   function runner() {
     if (global.AlmWebR) return Promise.resolve(global.AlmWebR);
     if (!runnerPromise) runnerPromise = new Promise((resolve, reject) => {
@@ -67,6 +75,7 @@
     });
     return runnerPromise;
   }
+  const mounts = new WeakMap();
   function mount(el, adapter) {
     if (typeof el === 'string') el = document.querySelector(el);
     if (!el) throw new Error('Validation mount missing');
@@ -76,13 +85,14 @@
     node('h2', 'Validation checks', el);
     node('p', 'Current-analysis comparison runs reference software on your data. Corpus replay runs the shipped JavaScript on published benchmark inputs against stored reference values; it does not run R or Python or validate your current data.', el);
     const controls = node('div', undefined, el);
+    const runtime = adapter.paper.referenceRuntime || 'R';
     let live;
     if (adapter.live) {
       live = node('button', 'Validate this analysis in R', controls); live.type = 'button';
       if (adapter.live.scope) node('p', 'Live R scope: ' + adapter.live.scope, controls);
     } else {
       node('p', 'Live ' + (adapter.paper.referenceRuntime || 'reference-software') + ' comparison is unavailable in this browser.', controls);
-      live = node('a', (adapter.paper.referenceRuntime || 'Reference software') + ' reference and re-execution', controls);
+      live = node('a', runtime + ' reference and re-execution', controls);
       live.href = adapter.paper.repoUrl; live.style.opacity = '0.75';
     }
     const corpusButton = node('button', 'Replay published corpus (stored references)', controls); corpusButton.type = 'button';
@@ -91,7 +101,7 @@
     const details = node('div', undefined, el);
     const results = node('div', undefined, el); results.style.overflowX = 'auto';
     const links = node('p', undefined, el);
-    for (const [label, url] of [[(adapter.paper.referenceRuntime || 'R') + ' re-execution instructions / runs (GitHub Actions)', adapter.paper.runUrl], ['Open Codespaces', adapter.paper.codespacesUrl], ['Reproducible repository', adapter.paper.repoUrl], ['Paper DOI', adapter.paper.doi && 'https://doi.org/' + adapter.paper.doi]]) {
+    for (const [label, url] of [[adapter.paper.runLabel || runtime + ' re-execution instructions / runs (GitHub Actions)', adapter.paper.runUrl], ['Open Codespaces', adapter.paper.codespacesUrl], ['Reproducible repository', adapter.paper.repoUrl], ['Paper DOI', adapter.paper.doi && 'https://doi.org/' + adapter.paper.doi]]) {
       if (!url) continue;
       const a = node('a', label, links); a.href = url; links.append(' · ');
     }
@@ -110,33 +120,60 @@
       for (const r of rows) {
         const tr = node('tr', undefined, body);
         const label = r.label || [r.id, r.quantity].filter(Boolean).join(': ');
-        for (const v of [label, r.app, r.ref, r.diff, r.tol, r.pass ? 'PASS' : 'FAIL']) node('td', v && typeof v === 'object' ? JSON.stringify(v) : String(v), tr);
+        for (const v of [label, r.app, r.ref, r.diff, r.tol, r.pass ? 'PASS' : 'FAIL' + (r.reason ? ' (' + r.reason + ')' : '')]) node('td', v && typeof v === 'object' ? JSON.stringify(v) : String(v), tr);
       }
     }
-    let running = false, lastMode, liveKey, inputWatch;
-    const inputIDs = adapter.live && adapter.live.inputs || [];
-    const inputKey = () => JSON.stringify(inputIDs.map(id => {
-      const input = document.getElementById(id);
-      return input ? [id, input.value, input.checked] : [id, null];
-    }));
-    function invalidateLive() {
-      if (lastMode !== 'live' || running || liveKey === undefined || inputKey() === liveKey) return;
-      results.replaceChildren(); details.replaceChildren();
-      status.textContent = 'Inputs changed. Run the live reference comparison again for the current analysis.';
-      liveKey = undefined; clearInterval(inputWatch);
+    // currentState may refit/render (and write URL state), so never poll it.
+    // The immutable R payload below is paired with a revision of its input controls.
+    // Non-DOM adapters may supply a side-effect-free live.revision() value too.
+    let revision = 0, activeLive = null, completedLive = false, running = false;
+    function fingerprint() {
+      return JSON.stringify([
+        [...document.querySelectorAll('input,select,textarea')].filter(n => !el.contains(n))
+          .map(n => [n.id, n.value, n.checked, n.type === 'file' ? [...n.files].map(f => [f.name, f.size, f.lastModified]) : null]),
+        adapter.live && adapter.live.revision ? adapter.live.revision() : null
+      ]);
     }
-    // App handlers may update form values after a load/reset click, or later in
-    // a FileReader callback without emitting input/change. Check both paths.
-    const afterInput = () => queueMicrotask(invalidateLive);
-    for (const event of ['input', 'change', 'click']) document.addEventListener(event, afterInput);
+    let lastInputs = fingerprint();
+    function stale() {
+      details.replaceChildren(); results.replaceChildren();
+      status.textContent = activeLive
+        ? 'Inputs changed while R was running \u2014 run the check again. Result out of date.'
+        : 'Live R result out of date \u2014 run the check again.';
+    }
+    function changed(force = false) {
+      const inputs = fingerprint();
+      if (force || inputs !== lastInputs) {
+        lastInputs = inputs; revision++;
+        if (activeLive || completedLive) {
+          if (activeLive) activeLive.stale = true;
+          stale(); completedLive = false;
+        }
+      }
+    }
+    function onEdit(event) {
+      if (!el.contains(event.target)) changed(true);
+    }
+    function onAction(event) {
+      if (!el.contains(event.target) && event.target.closest('button,input[type=submit]')) changed(true);
+    }
+    document.addEventListener('input', onEdit, true);
+    document.addEventListener('change', onEdit, true);
+    document.addEventListener('click', onAction, true);
+    // File/project loaders may assign .value asynchronously without dispatching an event.
+    const observer = new MutationObserver(() => changed());
+    observer.observe(document.body, {childList:true, subtree:true});
+    const timer = setInterval(() => changed(), 100);
     mounts.set(el, () => {
-      for (const event of ['input', 'change', 'click']) document.removeEventListener(event, afterInput);
-      clearInterval(inputWatch);
+      if (activeLive) activeLive.stale = true;
+      observer.disconnect(); clearInterval(timer);
+      document.removeEventListener('input', onEdit, true);
+      document.removeEventListener('change', onEdit, true);
+      document.removeEventListener('click', onAction, true);
     });
-    async function busy(fn, mode) {
-      if (running) throw new Error('A validation check is already running');
-      running = true; lastMode = mode;
-      liveKey = undefined; clearInterval(inputWatch);
+    async function busy(fn) {
+      if (running) throw new Error('Validation already running');
+      running = true; completedLive = false;
       corpusButton.disabled = true; if (adapter.live) live.disabled = true;
       details.replaceChildren(); results.replaceChildren();
       try { return await fn(); } catch (e) { status.textContent = 'Validation refused: ' + e.message; throw e; }
@@ -158,8 +195,8 @@
         const files = await prepare();
         const result = await adapter.corpus.run(files, (progress, total) => { status.textContent = typeof progress === 'object' ? progress.message : total ? progress + '/' + total : progress; });
         if (!result || !Array.isArray(result.failed)) throw new Error('Invalid corpus result from adapter');
-        // One failed combination may have several diagnostics. Preserve those
-        // rows even if the adapter's accounting is invalid; never hide evidence.
+        // One failed check may carry several diagnostic rows. Render them before
+        // validating the accounting, so invalid accounting never hides evidence.
         table(result.failed.map(f => ({ ...f, pass: false })), 'Stored reference');
         const failedChecks = result.failedChecks ?? result.failed.length;
         if (!Number.isInteger(result.checks) || result.checks < 0 || !Number.isInteger(result.passed) || result.passed < 0 ||
@@ -169,49 +206,56 @@
         if (!Array.isArray(coverageFails)) throw new Error('Invalid coverage accounting from adapter');
         const expected = adapter.corpus.mode === 'quick' ? adapter.corpus.quickChecks : adapter.paper.checks;
         const countOK = result.checks === expected;
-        status.textContent = result.passed + '/' + result.checks + ' passed; ' + failedChecks + ' failed checks. Paper: ' + adapter.paper.checks + ' checks.' + (adapter.corpus.mode === 'quick' ? ' Quick subset: ' + expected + ' checks; not full paper reproduction.' : '') + (countOK ? '' : ' FAIL: check count differs from selected scope.') + (coverageFails.length ? ' FAIL: corpus coverage differs from the published contract.' : '') + (result.displayFails && result.displayFails.length ? ' FAIL: rendered-number audit has failures.' : '') + ' JavaScript replay against stored references; R/Python not executed.';
+        status.textContent = result.passed + '/' + result.checks + ' passed; ' + failedChecks + ' failed checks. Paper: ' + adapter.paper.checks + ' checks.' + (adapter.corpus.mode === 'quick' ? ' Quick subset: ' + expected + ' checks; not full paper reproduction.' : '') + (countOK ? '' : ' FAIL: check count differs from selected scope.') + (coverageFails.length ? ' FAIL: corpus coverage differs from the published contract.' : '') + (result.displayFails && result.displayFails.length ? ' FAIL: rendered-number audit has failures.' : '') + ' JavaScript replay against stored references; ' + runtime + ' not executed.';
         node('p', 'Allmeta build stamp ' + (global.AlmBuildInfo ? global.AlmBuildInfo.sha : 'unavailable') + ' (generated metadata); elapsed ' + ((performance.now() - start) / 1000).toFixed(2) + ' s', details);
         if (adapter.paper.referenceLabel) node('p', 'Stored reference: ' + adapter.paper.referenceLabel, details);
         for (const f of adapter.corpus.files) node('p', 'SHA-256 verified: ' + f.path + ' ' + f.sha256, details);
         for (const line of result.summaryLines || []) node('p', line, details);
         node('pre', 'Maxima: ' + JSON.stringify(result.maxima) + '\nRefusals: ' + JSON.stringify(result.refusals), details);
         const rows = [...result.failed, ...coverageFails].map(f => ({ ...f, pass: false }));
-        if (!countOK) rows.push({label:'Selected corpus scope: check count',app:result.checks,ref:expected,diff:Math.abs(result.checks-expected),tol:0,pass:false});
-        if (result.displayFails && result.displayFails.length) rows.push(...result.displayFails.map(f=>({label:'Rendered-number audit',app:f,ref:'Within display rounding tolerance',diff:null,tol:null,pass:false})));
+        if (!countOK) rows.push({ label: 'Selected corpus scope: check count', app: result.checks, ref: expected, diff: Math.abs(result.checks - expected), tol: 0, pass: false });
+        if (result.displayFails && result.displayFails.length) rows.push(...result.displayFails.map(f => ({ label: 'Rendered-number audit', app: f, ref: 'Within display rounding tolerance', diff: null, tol: null, pass: false })));
         table(rows.length ? rows : [{ label: 'Published corpus checks', app: result.passed, ref: expected, diff: 0, tol: 0, pass: true }], 'Stored reference');
         return result;
-      }, 'corpus');
+      });
     }
     async function runLive() {
       return busy(async () => {
-        status.textContent = 'Preparing current-analysis reference comparison…';
         const a = adapter.live;
-        if (!a) throw new Error('Live reference comparison unavailable for this app');
-        await runner();
-        // Snapshot data, app values, script and tolerances together, before the
-        // asynchronous R fit. An edited page must never retain a stale PASS.
-        const state = a.currentState(), key = inputKey();
-        const app = a.appValues(state), script = a.buildScript(state);
-        const comparison = {tolerance:{...a.compare.tolerance},kind:{...a.compare.kind}};
-        if (!app.length) throw new Error('Adapter supplied no current-analysis quantities');
-        const r = await (await runner()).runR({ script, packages: a.packages, onStatus: s => { status.textContent = s; } });
-        if (!r.ok) throw new Error(r.error);
-        if (inputKey() !== key) throw new Error('Inputs changed while R was running. Run the live comparison again for the current analysis.');
-        const lines = r.stdout.split(/\r?\n/).filter(s => s.startsWith('ALMJSON:'));
-        if (lines.length !== 1) throw new Error('R must emit exactly one ALMJSON record');
-        const ref = JSON.parse(lines[0].slice(8));
-        const rows = app.map(v => {
-          const tol = comparison.tolerance[v.key] ?? comparison.tolerance.default;
-          const kind = comparison.kind[v.key] || 'abs';
-          return { label: v.label, app: v.value, ref: ref[v.key], tol, ...compare(v.value, ref[v.key], kind, tol) };
-        });
-        for (const [pkg, version] of Object.entries(r.versions)) node('p', pkg + ' ' + version, details);
-        for (const [pkg, version] of Object.entries(a.paperVersions || a.validatedVersions || adapter.paper.packageVersions || {})) if (r.versions[pkg] !== version) node('p', 'Validated version in the paper: ' + pkg + ' ' + version + '. Any differences beyond tolerance are reported as FAIL.', details);
-        if (state.note) node('p', state.note, details);
-        table(rows); status.textContent = rows.filter(r => r.pass).length + '/' + rows.length + ' live R quantities passed.' + (rows.some(r=>!r.pass) ? ' FAIL: discrepancies exceed tolerance or quantities are unavailable.' : '');
-        liveKey = key; inputWatch = setInterval(invalidateLive, 500);
-        return { rows, versions: r.versions };
-      }, 'live');
+        if (!a) throw new Error('Live R validation unavailable for this adapter');
+        const state = structuredClone(a.currentState());
+        const app = a.appValues(state), comparison = structuredClone(a.compare);
+        changed();
+        const check = activeLive = {revision, stale:false};
+        status.textContent = 'Preparing current-analysis R check...';
+        try {
+          await runner();
+          const script = a.buildScript(state);
+          if (!app.length) throw new Error('Adapter supplied no current-analysis quantities');
+          const r = await (await runner()).runR({ script, packages: a.packages, onStatus: s => { changed(); if (!check.stale) status.textContent = s; } });
+          changed();
+          if (check.stale || revision !== check.revision) { stale(); return {stale:true, rows:[]}; }
+          if (!r.ok) throw new Error(r.error);
+          const lines = r.stdout.split(/\r?\n/).filter(s => s.startsWith('ALMJSON:'));
+          if (lines.length !== 1) throw new Error('R must emit exactly one ALMJSON record');
+          const ref = JSON.parse(lines[0].slice(8));
+          const rows = app.map(v => {
+            const tol = comparison.tolerance[v.key] ?? comparison.tolerance.default;
+            const kind = (comparison.kind || {})[v.key] || 'abs';
+            return { label: v.label, app: v.value, ref: ref[v.key], tol, ...compare(v.value, ref[v.key], kind, tol) };
+          });
+          for (const [pkg, version] of Object.entries(r.versions)) node('p', pkg + ' ' + version, details);
+          for (const [pkg, version] of Object.entries(a.paperVersions || a.validatedVersions || adapter.paper.packageVersions || {})) if (r.versions[pkg] !== version) node('p', 'Validated version in the paper: ' + pkg + ' ' + version + '. Any differences beyond tolerance are reported as FAIL.', details);
+          if (state.note) node('p', state.note, details);
+          table(rows); status.textContent = rows.filter(r => r.pass).length + '/' + rows.length + ' live R quantities passed.' + (rows.some(r => !r.pass) ? ' FAIL: discrepancies exceed tolerance or quantities are unavailable.' : '');
+          completedLive = true;
+          return { rows, versions: r.versions };
+        } catch (error) {
+          changed();
+          if (check.stale) { stale(); return {stale:true, rows:[]}; }
+          throw error;
+        } finally { activeLive = null; }
+      });
     }
     corpusButton.onclick = () => runCorpus().catch(() => {});
     if (adapter.live) live.onclick = () => runLive().catch(() => {});

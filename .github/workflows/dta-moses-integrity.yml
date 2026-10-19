@@ -1,0 +1,35 @@
+name: DTA Moses identifiability
+on:
+  pull_request:
+    paths:
+      - 'dta-sroc/**'
+      - 'shared/dta-bivariate.js'
+      - 'hub/shared/tests/dta-moses*'
+      - '.github/workflows/dta-moses-integrity.yml'
+jobs:
+  dta-moses-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node --test dta-sroc/tests/moses-nonidentifiability.test.cjs
+      - run: python dta-sroc/tests/moses-geometry.py
+      - run: npm ci
+        working-directory: hub/shared/tests
+      - run: npx playwright install --with-deps chromium
+        working-directory: hub/shared/tests
+      - run: npx playwright test --config dta-moses.config.mjs --reporter=line
+        working-directory: hub/shared/tests
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dta-moses-integrity-artifacts
+          path: hub/shared/tests/test-results/
+          if-no-files-found: ignore

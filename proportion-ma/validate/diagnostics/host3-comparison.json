@@ -1,0 +1,197 @@
+{
+  "configurations": 240,
+  "refusals": 28,
+  "checks": 2166,
+  "passed": 2139,
+  "failedAssertions": 27,
+  "failedConfigurations": 23,
+  "failures": [
+    {
+      "id": "dat.axfors2021::hcq_arm_event::hcq_arm_total::all",
+      "field": "se",
+      "actual": 0.5520706080465969,
+      "reference": 0.552068718737978,
+      "normalisedDifference": 1.8893086188853658e-06
+    },
+    {
+      "id": "dat.axfors2021::control_arm_event::control_arm_total::all",
+      "field": "se",
+      "actual": 0.641808747471304,
+      "reference": 0.6418100333102897,
+      "normalisedDifference": 1.2858389857317576e-06
+    },
+    {
+      "id": "dat.bcg::tpos::tpos+tneg::all",
+      "field": "se",
+      "actual": 0.3312443429213769,
+      "reference": 0.3312322421385704,
+      "normalisedDifference": 1.2100782806501176e-05
+    },
+    {
+      "id": "dat.bcg::cpos::cpos+cneg::all",
+      "field": "se",
+      "actual": 0.4436174900321189,
+      "reference": 0.44363393525886036,
+      "normalisedDifference": 1.6445226741435004e-05
+    },
+    {
+      "id": "dat.bcg::cpos::cpos+cneg::all",
+      "field": "ciHi",
+      "actual": 0.037459915249410135,
+      "reference": 0.03746104452461534,
+      "normalisedDifference": 1.1292752052083355e-06
+    },
+    {
+      "id": "dat.bcg::cpos::cpos+cneg::all",
+      "field": "piHi",
+      "actual": 0.36917149522040904,
+      "reference": 0.36917343469206176,
+      "normalisedDifference": 1.9394716527232347e-06
+    },
+    {
+      "id": "dat.chiarito2020::p2y12.mi::p2y12.total::all",
+      "field": "se",
+      "actual": 0.2836132814363599,
+      "reference": 0.2836143020911523,
+      "normalisedDifference": 1.0206547924052067e-06
+    },
+    {
+      "id": "dat.chiarito2020::p2y12.stroke::p2y12.total::all",
+      "field": "status",
+      "actual": "refused",
+      "reference": "ok"
+    },
+    {
+      "id": "dat.chiarito2020::p2y12.death::p2y12.total::all",
+      "field": "se",
+      "actual": 0.36901688763286355,
+      "reference": 0.36901189795636014,
+      "normalisedDifference": 4.989676503419638e-06
+    },
+    {
+      "id": "dat.chiarito2020::p2y12.vdeath::p2y12.total::all",
+      "field": "se",
+      "actual": 0.414529467285889,
+      "reference": 0.41453114780161576,
+      "normalisedDifference": 1.6805157267429927e-06
+    },
+    {
+      "id": "dat.chiarito2020::aspirin.mi::aspirin.total::all",
+      "field": "se",
+      "actual": 0.3299908029946289,
+      "reference": 0.3299926373587546,
+      "normalisedDifference": 1.8343641257079213e-06
+    },
+    {
+      "id": "dat.chiarito2020::aspirin.death::aspirin.total::all",
+      "field": "se",
+      "actual": 0.3482078843206555,
+      "reference": 0.34820558700962223,
+      "normalisedDifference": 2.297311033294669e-06
+    },
+    {
+      "id": "dat.chiarito2020::aspirin.vdeath::aspirin.total::all",
+      "field": "se",
+      "actual": 0.37007160095781977,
+      "reference": 0.37006995865653664,
+      "normalisedDifference": 1.6423012831334738e-06
+    },
+    {
+      "id": "dat.colditz1994::tpos::tpos+tneg::all",
+      "field": "se",
+      "actual": 0.3312443429213769,
+      "reference": 0.3312322421385704,
+      "normalisedDifference": 1.2100782806501176e-05
+    },
+    {
+      "id": "dat.colditz1994::cpos::cpos+cneg::all",
+      "field": "se",
+      "actual": 0.4436174900321189,
+      "reference": 0.44363393525886036,
+      "normalisedDifference": 1.6445226741435004e-05
+    },
+    {
+      "id": "dat.colditz1994::cpos::cpos+cneg::all",
+      "field": "ciHi",
+      "actual": 0.037459915249410135,
+      "reference": 0.03746104452461534,
+      "normalisedDifference": 1.1292752052083355e-06
+    },
+    {
+      "id": "dat.colditz1994::cpos::cpos+cneg::all",
+      "field": "piHi",
+      "actual": 0.36917149522040904,
+      "reference": 0.36917343469206176,
+      "normalisedDifference": 1.9394716527232347e-06
+    },
+    {
+      "id": "dat.collins1985b::pre.xci::pre.nci::all",
+      "field": "se",
+      "actual": 0.4352327291055588,
+      "reference": 0.4352343724057306,
+      "normalisedDifference": 1.6433001717719442e-06
+    },
+    {
+      "id": "dat.collins1985b::stb.xci::fup.nci::all",
+      "field": "status",
+      "actual": "ok",
+      "reference": "refused"
+    },
+    {
+      "id": "dat.dong2013::death::randomized::TIO-HH",
+      "field": "se",
+      "actual": 0.3236255547877584,
+      "reference": 0.3236266083969954,
+      "normalisedDifference": 1.0536092370228012e-06
+    },
+    {
+      "id": "dat.egger2001::ai::n1i::all",
+      "field": "se",
+      "actual": 0.21409369039201792,
+      "reference": 0.21409479255971267,
+      "normalisedDifference": 1.1021676947498005e-06
+    },
+    {
+      "id": "dat.egger2001::ci::n2i::all",
+      "field": "se",
+      "actual": 0.1957124036337907,
+      "reference": 0.19571126132369254,
+      "normalisedDifference": 1.1423100981511336e-06
+    },
+    {
+      "id": "dat.graves2010::ai::n1i::all",
+      "field": "se",
+      "actual": 0.24601108146332687,
+      "reference": 0.24602068441523758,
+      "normalisedDifference": 9.602951910714363e-06
+    },
+    {
+      "id": "dat.graves2010::ci::n2i::all",
+      "field": "se",
+      "actual": 0.226006655331539,
+      "reference": 0.2260197669077885,
+      "normalisedDifference": 1.3111576249502654e-05
+    },
+    {
+      "id": "dat.nissen2007::cont.death::cont.total::all",
+      "field": "se",
+      "actual": 0.4763775340611912,
+      "reference": 0.47637628841827645,
+      "normalisedDifference": 1.2456429147600367e-06
+    },
+    {
+      "id": "dat.obrien2003::cases::total::all",
+      "field": "se",
+      "actual": 0.1704770181099521,
+      "reference": 0.17046997252142065,
+      "normalisedDifference": 7.04558853145687e-06
+    },
+    {
+      "id": "dat.tian2009::deaths::n::Control",
+      "field": "se",
+      "actual": 0.5134291845388864,
+      "reference": 0.5134331352834096,
+      "normalisedDifference": 3.9507445231956595e-06
+    }
+  ]
+}

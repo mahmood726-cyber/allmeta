@@ -1,0 +1,1 @@
+{"R":"R version 4.6.0 (2026-04-24 ucrt)","packages":{"metafor":"5.2.1","meta":"8.5.0","metadat":"1.6.0","lme4":"2.0.6","jsonlite":"2.0.0"},"nAGQ":7,"control":{"glmerCtrl":{"optimizer":"bobyqa","optCtrl":{"maxfun":100000,"rhoend":1.0000000000000001e-09}}},"pi":"t_(k-1), omitted for k<3","iterative_tolerance":9.9999999999999995e-07}

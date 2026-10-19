@@ -596,62 +596,62 @@ print(summary(res))`,
     }
 
     btnRun.addEventListener("click", async () => {
-      if (!webR) return;
+      if (!webR || btnRun.disabled) return;
       const key = document.getElementById("tpl").value;
       const tpl = TEMPLATES[key];
       const parsed = tpl.parse(document.getElementById("data").value);
       if (parsed.length === 0) { outEl.textContent = "No valid rows parsed from input."; return; }
       const dfCode = toRDataFrame(parsed);
       const userCode = document.getElementById("r-code").value;
-
+      btnRun.disabled = true;
       outEl.textContent = "Running…";
       plotWrap.style.display = "none";
-      plotHost.innerHTML = "";
-
-      let shelter = null;
+      plotHost.replaceChildren();
+      plotHost.dataset.plotCount = "0";
+      let shelter = null, capture = null;
       try {
         await ensurePackages(["metafor", ...(tpl.packages || [])]);
         statusEl.textContent = "running"; statusEl.className = "status-badge loading";
         shelter = await new webR.Shelter();
-        await webR.evalR(dfCode);
-        const wantsPlot = /plot\s*\(|hist\s*\(|forest\s*\(|funnel\s*\(|baujat\s*\(|netgraph\s*\(|netheat\s*\(/.test(userCode);
-        if (wantsPlot) {
-          await webR.evalR(`svg("/tmp/plot.svg", width = 8, height = 6)`);
+        await webR.evalRVoid(dfCode);
+        // captureR owns its graphics device. Display every returned page,
+        // including boxplot/barplot/ggplot and plots invoked through functions.
+        // A command-name regexp or a second SVG device loses real R output.
+        capture = await shelter.captureR(userCode, {
+          withAutoprint: true,
+          captureGraphics: { width: 800, height: 600 }
+        });
+        for (const [index, image] of (capture.images || []).entries()) {
+          const figure = document.createElement("figure");
+          figure.style.margin = "0 0 1rem";
+          const canvas = document.createElement("canvas");
+          canvas.width = image.width; canvas.height = image.height;
+          canvas.style.cssText = "display:block;width:100%;height:auto;background:white";
+          canvas.setAttribute("role", "img");
+          canvas.setAttribute("aria-label", "R plot " + (index + 1));
+          canvas.dataset.plotPage = String(index + 1);
+          canvas.getContext("2d").drawImage(image, 0, 0);
+          const caption = document.createElement("figcaption");
+          caption.textContent = "R plot " + (index + 1);
+          figure.append(canvas, caption);
+          plotHost.appendChild(figure);
         }
-        const res = await shelter.captureR(userCode, { withAutoprint: true });
-        if (wantsPlot) {
-          try {
-            await webR.evalR(`dev.off()`);
-            const fs = await webR.FS.readFile("/tmp/plot.svg");
-            const svgRaw = new TextDecoder().decode(fs);
-            // Sanitise SVG: strip <script>, on* attributes, and foreignObject.
-            // Parse and walk the tree with DOMParser rather than regex to avoid
-            // attacker-crafted R code writing malicious event handlers.
-            const parsed = new DOMParser().parseFromString(svgRaw, "image/svg+xml");
-            const kill = parsed.querySelectorAll("script, foreignObject");
-            kill.forEach(n => n.remove());
-            parsed.querySelectorAll("*").forEach(el => {
-              for (const attr of [...el.attributes]) {
-                if (/^on/i.test(attr.name)) el.removeAttribute(attr.name);
-                if (attr.name === "href" || attr.name === "xlink:href") {
-                  if (/^\s*javascript:/i.test(attr.value)) el.removeAttribute(attr.name);
-                }
-              }
-            });
-            plotHost.innerHTML = "";
-            plotHost.appendChild(parsed.documentElement);
-            plotWrap.style.display = "block";
-          } catch (_) { /* no plot produced */ }
-        }
-        const out = res.output.filter(x => x.type === "stdout" || x.type === "stderr")
-                             .map(x => x.data).join("\n");
-        outEl.textContent = out || "(no textual output)";
-        statusEl.textContent = "ready"; statusEl.className = "status-badge ready";
+        const count = capture.images?.length || 0;
+        plotHost.dataset.plotCount = String(count);
+        if (count) plotWrap.style.display = "block";
+        const output = capture.output.filter(x => ["stdout", "stderr", "message", "warning", "error"].includes(x.type))
+          .map(x => typeof x.data === "string" ? x.data : (x.data?.message || JSON.stringify(x.data))).join("\n");
+        const hasError = capture.output.some(x => x.type === "error");
+        outEl.textContent = (output || "(no textual output)") + (count ? "\n" + count + " plot page(s) displayed." : "\nThis run produced no plots.");
+        statusEl.textContent = hasError ? "R error" : "ready";
+        statusEl.className = "status-badge " + (hasError ? "error" : "ready");
       } catch (err) {
         outEl.textContent = "R error:\n" + String(err);
-        statusEl.textContent = "ready"; statusEl.className = "status-badge ready";
+        statusEl.textContent = "R error"; statusEl.className = "status-badge error";
       } finally {
+        for (const image of capture?.images || []) image.close();
         if (shelter) { try { await shelter.purge(); } catch (_) {} }
+        btnRun.disabled = false;
       }
     });
 

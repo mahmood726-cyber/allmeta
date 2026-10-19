@@ -50,7 +50,7 @@ test('NMA buttons replay hash-verified corpus through file selection offline', a
   await widget.locator('input[type=file]').setInputFiles(corpusPaths);
   await widget.getByRole('button', {name:'Replay published corpus (stored references)'}).click();
   await expect(widget.getByRole('status')).toContainText('410/410 passed; 0 failed checks. Paper: 410 checks.');
-  await expect(widget.getByRole('status')).toContainText('R/Python not executed');
+  await expect(widget.getByRole('status')).toContainText('JavaScript replay against stored references; R not executed');
   await expect(widget).toContainText('SHA-256 verified');
   expect(external).toEqual([]);
 });

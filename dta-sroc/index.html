@@ -92,6 +92,7 @@
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/autosave.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -106,15 +107,19 @@
       <h2>Study data</h2>
 
       <!-- csv-upload mount: RFC-4180 file picker for study, TP, FP, FN, TN -->
-      <div id="alm-csv-mount" style="margin-bottom:0.75rem;"></div>
+
 
       <fieldset>
         <legend>Data</legend>
         <label>
           <span class="lbl">CSV: <code>label, <abbr data-gloss="TP">TP</abbr>, <abbr data-gloss="FP">FP</abbr>, <abbr data-gloss="FN">FN</abbr>, <abbr data-gloss="TN">TN</abbr></code></span>
-          <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
+          <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea></label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="alm-csv-mount" style="margin-bottom:0.75rem;"></div>
           <span class="hint"><abbr data-gloss="TP">TP</abbr> = true positives, <abbr data-gloss="FP">FP</abbr> = false positives, <abbr data-gloss="FN">FN</abbr> = false negatives, <abbr data-gloss="TN">TN</abbr> = true negatives. With a covariate, add it as a last column.</span>
-        </label>
+
         <label>
           <span class="lbl">Example data (datasets shipped with the R package mada)</span>
           <select id="f-example" aria-label="Example data (datasets shipped with the R package mada)">
@@ -181,8 +186,7 @@
       <div id="alm-export-mount" style="margin-bottom:0.5rem;"></div>
 
       <div class="actions">
-        <button type="button" id="btn-svg" class="primary">Download SVG</button>
-        <button type="button" id="btn-png">Download PNG</button>
+        <div id="alm-plot-mount"></div>
         <button type="button" id="btn-json">Download JSON</button>
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
@@ -203,6 +207,7 @@
 
   <p class="footer-note"><strong>Bivariate model</strong> (Reitsma et&nbsp;al. 2005): logit sensitivity and logit false-positive rate are pooled jointly with a between-study covariance matrix, by the estimators of the R package <code>mada</code> (function <code>reitsma</code>, which calls <code>mvmeta</code>): REML (default), ML, method of moments, variance components, or fixed effect; with an optional study-level covariate (bivariate meta-regression). Shown in crimson: the summary point (♦), the Rutter–Gatsonis <abbr data-gloss="SROC">SROC</abbr> curve, and the 95% <strong>confidence</strong> (solid) and <strong>prediction</strong> (dashed) regions, as <code>plot.reitsma(predict = TRUE)</code>. Computed in pure JavaScript and checked against <code>mada</code> 0.5.12 on all six of its example datasets. <strong>Moses–Littenberg <abbr data-gloss="SROC">SROC</abbr></strong> (blue; Moses et&nbsp;al., <em>Stat Med</em> 1993): unweighted <abbr data-gloss="OLS">OLS</abbr> of D = logit(<abbr data-gloss="Se">Se</abbr>) − logit(<abbr data-gloss="FPR">FPR</abbr>) on S = logit(<abbr data-gloss="Se">Se</abbr>) + logit(<abbr data-gloss="FPR">FPR</abbr>), as <code>mada::mslSROC</code>; it ignores between-study heterogeneity and is shown for comparison. <strong>Related:</strong> the <a href="../hsroc/">HSROC explorer &rarr;</a> fits the Rutter &amp; Gatsonis (2001) parameterisation directly.</p>
 
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
   (function () {
     "use strict";
@@ -251,7 +256,7 @@
       p.push("<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>");
       // regression line: lnDOR = intercept + slope·(1/√ESS) ⇒ for y-values 0..yhi
       p.push("<line x1='" + x(d.intercept) + "' y1='" + y(0) + "' x2='" + x(d.intercept + d.slope * yhi) + "' y2='" + y(yhi) + "' stroke='#888' stroke-dasharray='4,2'/>");
-      d.x.forEach((xi, i) => p.push("<circle cx='" + x(d.y[i]) + "' cy='" + y(xi) + "' r='3' fill='#2c5e8a'/>"));
+      d.x.forEach((xi, i) => p.push("<circle cx='" + x(d.y[i]) + "' cy='" + y(xi) + "' r='3' fill='#2c5e8a'/>") );
       p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 8) + "' text-anchor='middle' font-size='10' fill='" + fg + "'>ln(DOR)</text>");
       p.push("<text x='12' y='" + (T + ph / 2) + "' transform='rotate(-90 12 " + (T + ph / 2) + ")' text-anchor='middle' font-size='10' fill='" + fg + "'>1/√ESS</text>");
       p.push("<text x='" + (W - R) + "' y='14' text-anchor='end' font-size='10' fill='" + fg + "'>Deeks p = " + d.p.toFixed(3) + "</text>");
@@ -320,24 +325,49 @@
     // Rows: label, TP, FP, FN, TN [, covariate]. Labels may contain commas (all leading fields).
     function parseStudies(text, covMode) {
       const studies = [], warnings = [];
-      const lines = String(text || "").split(/\r?\n/);
-      const nc = covMode === "last" ? 5 : 4;
+      const lines = String(text || '').split(/\r?\n/);
+      const nc = covMode === 'last' ? 5 : 4;
+      let firstRecord = true;
       for (let i = 0; i < lines.length; i++) {
         const raw = lines[i].trim();
-        if (!raw || raw.startsWith("#")) continue;
+        if (!raw || raw.startsWith('#')) continue;
         const parts = raw.split(/\s*[,\t]\s*/);
-        if (parts.length < nc + 1) { warnings.push("Line " + (i + 1) + ": need " + (nc + 1) + " columns"); continue; }
-        const cov = covMode === "last" ? parts[parts.length - 1] : null;
-        const cells = parts.slice(parts.length - nc, parts.length - nc + 4).map(parseFloat);
-        const [tp, fp, fn, tn] = cells;
-        if (![tp, fp, fn, tn].every(v => Number.isFinite(v) && v >= 0)) {
-          if (studies.length === 0 && i < 3) continue;
-          warnings.push("Line " + (i + 1) + ": non-numeric or negative cell"); continue;
+        if (parts.length < nc + 1) {
+          warnings.push(`Line ${i + 1}: need label and ${nc} data columns`);
+          firstRecord = false;
+          continue;
         }
-        const label = parts.slice(0, parts.length - nc).join(", ") || ("Study " + (studies.length + 1));
-        studies.push({ label: label, tp: tp, fp: fp, fn: fn, tn: tn, cov: cov });
+        const offset = parts.length - nc;
+        const numericFields = parts.slice(offset, offset + 4);
+        const cov = covMode === 'last' ? parts[parts.length - 1] : null;
+        const isHeader = firstRecord &&
+          numericFields.every((v, j) => v.toUpperCase() === ['TP', 'FP', 'FN', 'TN'][j]) &&
+          (covMode !== 'last' || /^(cov|covariate)$/i.test(cov));
+        firstRecord = false;
+        if (isHeader) continue;
+        const counts = numericFields.map(v => /^\d+$/.test(v.trim()) ? Number(v.trim()) : NaN);
+        if (!counts.every(Number.isSafeInteger) || counts.some(v => v < 0)) {
+          warnings.push(`Line ${i + 1}: TP, FP, FN and TN must be non-negative whole-person counts`);
+          continue;
+        }
+        const [tp, fp, fn, tn] = counts;
+        if (![tp + fn, fp + tn].every(v => Number.isSafeInteger(v) && v > 0)) {
+          warnings.push(`Line ${i + 1}: both diseased and non-diseased denominators must be positive`);
+          continue;
+        }
+        if (covMode === 'last' && !String(cov).trim()) {
+          warnings.push(`Line ${i + 1}: covariate value is required`);
+          continue;
+        }
+        const label = parts.slice(0, offset).join(', ').trim();
+        if (!label) {
+          warnings.push(`Line ${i + 1}: a study label is required`);
+          continue;
+        }
+        studies.push({label, tp, fp, fn, tn, cov});
       }
-      return { studies, warnings };
+      if (warnings.length) warnings.unshift('Analysis blocked: correct all study rows before fitting any model.');
+      return {studies: warnings.length ? [] : studies, warnings};
     }
 
     // Per-study points after the chosen continuity-correction rule (the same rule as the model).
@@ -380,8 +410,12 @@
       }
       if (studies.length && !finite) errors.push("At least one study has a zero cell and the continuity correction is set to none, so its logit sensitivity or false-positive rate is infinite; mada refuses this fit too. Choose 'All studies' or 'Only studies with a zero cell'.");
       if (B && finite && rows.length >= 3) {
-        try { out.moses = B.mosesLittenberg(rows, opts); } catch (e) { out.moses = null; }
-        try { out.rho = B.thresholdSpearman(rows, opts); } catch (e) { out.rho = null; }
+        try { out.moses = B.mosesLittenberg(rows, opts); }
+        catch (e) { errors.push("Moses SROC unavailable: " + e.message); }
+        try {
+          out.rho = B.thresholdSpearman(rows, opts);
+          if (out.rho == null) errors.push("Spearman threshold correlation is undefined: sensitivity or false-positive rate has no rank variation.");
+        } catch (e) { errors.push("Spearman threshold correlation unavailable: " + e.message); }
       }
       if (B && finite && rows.length >= 4) {
         try { out.bivar = B.fit(rows, opts); } catch (e) { errors.push("Bivariate model: " + e.message); }
@@ -462,11 +496,15 @@
         const lx = L + plotW - 206, ly = T + 14;
         p.push("<g font-size=\"12\" fill=\"#15181d\">");
         p.push("<rect x=\""+(lx-8)+"\" y=\""+(ly-10)+"\" width=\"206\" height=\"66\" fill=\"#fff\" fill-opacity=\"0.82\" stroke=\"#d9d5cc\" rx=\"4\"/>");
-        p.push("<line x1=\""+lx+"\" y1=\""+ly+"\" x2=\""+(lx+22)+"\" y2=\""+ly+"\" stroke=\"#2c5e8a\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+4)+"\">Moses SROC</text>");
+        if (fit) p.push("<line x1=\""+lx+"\" y1=\""+ly+"\" x2=\""+(lx+22)+"\" y2=\""+ly+"\" stroke=\"#2c5e8a\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+4)+"\">Moses SROC</text>");
+        else p.push("<text x=\""+lx+"\" y=\""+(ly+4)+"\">Moses SROC unavailable</text>");
         p.push("<line x1=\""+lx+"\" y1=\""+(ly+18)+"\" x2=\""+(lx+22)+"\" y2=\""+(ly+18)+"\" stroke=\"#b23a48\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+22)+"\">Bivariate SROC</text>");
         p.push("<rect x=\""+lx+"\" y=\""+(ly+31)+"\" width=\"22\" height=\"10\" fill=\"#b23a48\" fill-opacity=\"0.12\" stroke=\"#b23a48\"/><text x=\""+(lx+28)+"\" y=\""+(ly+40)+"\">95% conf / pred (dashed)</text>");
         p.push("</g>");
       }
+
+      if (!fit && !bivar && studies.length >= 3)
+        p.push("<text x=\""+L+"\" y=\""+(T+16)+"\" font-size=\"12\" fill=\"#15181d\">Moses SROC unavailable</text>");
 
       // Points with size proportional to total N
       let maxN = 0;
@@ -513,6 +551,8 @@
         "<tr><th scope=\"row\">log-likelihood</th><td>" + (b.logLik == null ? "--" : fmt(b.logLik, 2)) + "</td><th scope=\"row\">σ²θ / σ²α</th><td>" + fmt(h.sigma2theta, 4) + " / " + fmt(h.sigma2alpha, 4) + "</td></tr>" +
         "</tbody></table>";
     }
+
+    render = window.alm.analysisLifecycle(render, function (result) { return !!_lastBivar && (document.getElementById("f-cov").value !== "last" || !!_lastMetareg); }, "[id^=\"f-\"]");
 
     function render() {
       const state = readState();
@@ -647,9 +687,16 @@
       render();
     }
     function attach() {
+      document.getElementById("btn-run").addEventListener("click", render);
+      window.alm.plotExport({
+        target: "#alm-plot-mount", basename: "dta-sroc",
+        plots: [
+          { id: "sroc", name: "SROC plot", getSvg: function () { return document.querySelector("#svg-host svg"); } },
+          { id: "fagan", name: "Fagan plot", getSvg: function () { return document.querySelector("#fagan-host svg"); } },
+          { id: "deeks", name: "Deeks plot", getSvg: function () { return document.querySelector("#deeks-host svg"); } }
+        ]
+      });
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) { el.addEventListener("input", render); if (el.tagName === "SELECT") el.addEventListener("change", render); } }
-      document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
-      document.getElementById("btn-png").addEventListener("click", onDownloadPng);
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){
@@ -692,16 +739,51 @@
         { name: 'TN',    required: true,  type: 'float',  example: '88' },
       ],
       onParse: function (result) {
-        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
-          window.alm.resetUndo.snapshot();
+        // Reject the whole import: a partial study set must never be pooled.
+        // The snapshot supports Undo while stale pooled estimates are cleared.
+        if (window.alm && window.alm.resetUndo) window.alm.resetUndo.snapshot();
+        function reject(reason) {
+          document.getElementById('f-data').value = '';
+          render();
+          warnEl.textContent = 'CSV rejected: ' + reason + '. No partial analysis retained; use Undo to restore the preceding state.';
+          warnEl.classList.add('is-visible');
         }
-        // Convert parsed rows back to textarea CSV format
-        var lines = result.rows.map(function (row) {
-          var label = row.study || '';
-          return [label, row.TP, row.FP, row.FN, row.TN].join(', ');
-        });
-        document.getElementById('f-data').value = lines.join('\n');
-        render();
+        try {
+          const headers = result.headers || [];
+          const cols = ['TP', 'FP', 'FN', 'TN'];
+          const hasStudy = headers.includes('study');
+          const expected = hasStudy ? ['study'].concat(cols) : cols;
+          if (headers.length !== expected.length || new Set(headers).size !== headers.length ||
+              expected.some(name => headers.filter(h => h === name).length !== 1) ||
+              (result.warnings || []).length)
+            throw new Error('Use unique, exact study/TP/FP/FN/TN headers (study may be omitted) and complete cells. ' +
+              (result.warnings || []).slice(0, 5).join('; '));
+          if (readState().cov === 'last')
+            throw new Error('CSV upload has no covariate field; turn off meta-regression or enter labelled study covariates manually');
+          if (!Array.isArray(result.rows) || !result.rows.length)
+            throw new Error('No study rows found');
+          const labels = [];
+          const lines = result.rows.map(function (row, i) {
+            const label = hasStudy ? String(row.study == null ? '' : row.study) : 'Study ' + (i + 1);
+            if (!label.trim() || label.trim().startsWith('#') || /[\r\n\t]/.test(label))
+              throw new Error('Row ' + (i + 1) + ': study labels must be non-comment single-line text');
+            const cells = cols.map(key => row[key]);
+            if (!cells.every(Number.isSafeInteger) || cells.some(x => x < 0) ||
+                ![cells[0] + cells[2], cells[1] + cells[3]].every(x => Number.isSafeInteger(x) && x > 0))
+              throw new Error('Row ' + (i + 1) + ': non-negative whole-person counts and positive denominators required');
+            labels.push(label);
+            return [label].concat(cells).join(', ');
+          });
+          const proposed = lines.join('\n');
+          const check = parseStudies(proposed, '');
+          if (check.warnings.length || check.studies.length !== result.rows.length ||
+              check.studies.some((s, i) => s.label !== labels[i] ||
+                s.tp !== result.rows[i].TP || s.fp !== result.rows[i].FP ||
+                s.fn !== result.rows[i].FN || s.tn !== result.rows[i].TN))
+            throw new Error('Study labels and counts could not be round-tripped losslessly');
+          document.getElementById('f-data').value = proposed;
+          render();
+        } catch (error) { reject(error.message || String(error)); }
       },
     });
 

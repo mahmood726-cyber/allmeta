@@ -1,73 +1,36 @@
-"""R-parity test: gosh vs metafor::gosh(rma.uni(...)).
+"""R-parity test: gosh vs metafor::gosh(rma.uni(...)), with actual-page assertions.
 
-Engine parameterisation (JS gosh/index.html):
-  - Input: effect, SE pairs (parsed from textarea or CSV with yi, vi columns)
-  - Full enumeration for k <= 15: all 2^k - 1 non-empty subsets of size >= 2
-  - Random sampling for k > 15 (advanced-stats.md rule)
-  - For each subset: FE (inverse-variance) or DL RE pooling
-  - Summary: median estimate, IQR, range, median I² across all subsets
-
-metafor::gosh() reference (R 4.5.2):
-  - gosh(rma.uni(yi, vi, method="FE"), progbar=FALSE)
-  - Returns per-subset: estimate, I2, k, QE
-  - Subsets of size k_i < 2 are skipped by metafor (same as JS engine)
-
-Fixture: 5 studies (k=5) → full enumeration = 26 subsets (size 2-5).
-Data: study, yi, vi columns (vi = SE²).
-  S01: yi=0.22, vi=0.0064 (SE=0.08)
-  S02: yi=0.30, vi=0.0196 (SE=0.14)
-  S03: yi=0.27, vi=0.0081 (SE=0.09)
-  S04: yi=0.15, vi=0.0049 (SE=0.07)
-  S05: yi=0.45, vi=0.0324 (SE=0.18)
-
-Values captured from a single Rscript run on gosh-tiny.R + gosh-tiny.csv
-(2026-05-14, R 4.5.2, metafor 4.x):
-  {
-    "method":     "FE",
-    "k":          5,
-    "n_subsets":  26,
-    "median_est": 0.2217261558338,
-    "q25_est":    0.2047081408179,
-    "q75_est":    0.2615342255235,
-    "min_est":    0.18,
-    "max_est":    0.3565384615385,
-    "median_i2":  0.0,
-    "full_k_est": 0.2254227851625,
-    "full_k_i2":  0.0
-  }
-
-R-parity scope:
-  - Subset count: JS engine produces same 26 subsets as metafor (size >= 2)
-  - Median FE estimate across all 26 subsets: tol=1e-4
-  - Full-k FE estimate: tol=1e-6 (deterministic closed-form IV pooling)
-  - Bounds check: min ≤ median ≤ max; I² in [0, 100]
-  - Range: min_est ≤ full_k_est ≤ max_est
+Pinned values were re-derived with R 4.6.0 / metafor 5.2-1 on 2026-10-15
+using fixtures/gosh-tiny.R without filtering singleton subsets. The Python
+pooling helpers below are an independent reimplementation, not page tests.
+The parametrized page test executes the real inline JS and vi import callback.
 """
 import math
-import sys
+import os
 import subprocess
 import json
 import shutil
+from functools import lru_cache
 from pathlib import Path
 
 import pytest
 
 FIX = Path(__file__).parent / "fixtures"
-RSCRIPT_PATH = r"C:\Program Files\R\R-4.5.2\bin\Rscript.exe"
+RSCRIPT_PATH = os.environ.get("RSCRIPT", "")
 
 # ---------------------------------------------------------------------------
-# Expected values captured from R (2026-05-14) — DO NOT change without
+# Expected values captured from R (2026-10-15) — DO NOT change without
 # re-running gosh-tiny.R and updating the comment above.
 # ---------------------------------------------------------------------------
 GOSH_EXPECTED = {
     "method":     "FE",
     "k":          5,
-    "n_subsets":  26,
-    "median_est": 0.2217261558338,
-    "q25_est":    0.2047081408179,
-    "q75_est":    0.2615342255235,
-    "min_est":    0.18,
-    "max_est":    0.3565384615385,
+    "n_subsets":  31,
+    "median_est": 0.2254227851625,
+    "q25_est":    0.2061857502663,
+    "q75_est":    0.2674705996114,
+    "min_est":    0.15,
+    "max_est":    0.45,
     "median_i2":  0.0,
     "full_k_est": 0.2254227851625,
     "full_k_i2":  0.0,
@@ -88,6 +51,7 @@ def _rscript():
     return _c[0] if _c else None
 
 
+@lru_cache(maxsize=2)
 def _run_r(method="FE"):
     rscript = _rscript()
     if rscript is None:
@@ -110,7 +74,7 @@ def _run_r(method="FE"):
         capture_output=True, text=True, encoding="utf-8",
         errors="replace", timeout=120,
     )
-    if proc.returncode not in (0, 1):
+    if proc.returncode != 0:
         raise RuntimeError(f"Rscript failed (exit {proc.returncode}):\n{proc.stderr}")
     lines = [l.strip() for l in proc.stdout.splitlines() if l.strip()]
     return json.loads(lines[-1])
@@ -127,14 +91,14 @@ def test_gosh_k_matches_fixture():
 
 
 def test_gosh_n_subsets_fe():
-    """k=5 → 26 subsets of size >= 2 (full enumeration)."""
+    """k=5 → 31 subsets of size >= 1 (full enumeration)."""
     r = _run_r("FE")
     assert r["n_subsets"] == GOSH_EXPECTED["n_subsets"], \
-        f"n_subsets: expected 26 vs R {r['n_subsets']}"
+        f"n_subsets: expected 31 vs R {r['n_subsets']}"
 
 
 def test_gosh_median_est_fe_matches_r():
-    """Median FE estimate across 26 subsets matches R at tol=1e-4."""
+    """Median FE estimate across 31 subsets matches R at tol=1e-4."""
     r = _run_r("FE")
     py_val, r_val = GOSH_EXPECTED["median_est"], r["median_est"]
     assert math.isclose(py_val, r_val, abs_tol=TOL_MEDIAN, rel_tol=TOL_MEDIAN), \
@@ -182,7 +146,7 @@ def test_gosh_full_k_est_within_range():
 
 # ---------------------------------------------------------------------------
 # Pure-Python formula tests — no R subprocess.
-# Verify the JS engine's FE pooling and all-subset enumeration directly.
+# Verify an independent Python reimplementation; page coverage is below.
 # ---------------------------------------------------------------------------
 
 # Fixture: same 5 studies as gosh-tiny.csv (vi = SE²)
@@ -208,14 +172,12 @@ def _fe_pool(rows):
 
 
 def _all_subsets_fe(rows):
-    """Enumerate all non-empty subsets of size >= 2; return list of (mu, I2)."""
+    """Enumerate all non-empty subsets of size >= 1; return list of (mu, I2)."""
     k = len(rows)
     total = (1 << k) - 1
     results = []
     for m in range(1, total + 1):
         subset = [rows[i] for i in range(k) if m & (1 << i)]
-        if len(subset) < 2:
-            continue
         p = _fe_pool(subset)
         results.append({"mu": p["mu"], "I2": p["I2"], "k": len(subset)})
     return results
@@ -235,32 +197,26 @@ def test_fe_pool_full_k_i2_zero():
     assert p["I2"] == 0.0, f"I2 should be 0, got {p['I2']:.4f}"
 
 
-def test_subset_count_equals_26():
-    """Full enumeration of k=5 yields exactly 26 subsets of size >= 2."""
+def test_subset_count_equals_31():
+    """Full enumeration of k=5 yields exactly 31 subsets of size >= 1."""
     results = _all_subsets_fe(_STUDIES)
-    assert len(results) == 26, f"Expected 26 subsets, got {len(results)}"
+    assert len(results) == 31, f"Expected 31 subsets, got {len(results)}"
 
 
 def test_median_est_matches_r():
-    """Python median FE estimate over 26 subsets matches R at tol=1e-4.
-
-    R's median() for even-length vectors averages the two central values.
-    For n=26 subsets: median = (mus[12] + mus[13]) / 2 (0-indexed).
-    The JS engine uses mus[floor(n/2)] = mus[13] (upper middle) — this
-    test uses R's convention to match the pinned R output.
-    """
+    """Independent Python median across all 31 non-empty subsets."""
     results = _all_subsets_fe(_STUDIES)
     mus = sorted(r["mu"] for r in results)
     n = len(mus)
     # R median convention for even n: average of central pair
-    median = (mus[n // 2 - 1] + mus[n // 2]) / 2
+    median = __import__("statistics").median(mus)
     expected = GOSH_EXPECTED["median_est"]
     assert math.isclose(median, expected, abs_tol=TOL_MEDIAN, rel_tol=TOL_MEDIAN), \
         f"median: Python={median:.6f} vs R={expected:.6f}"
 
 
 def test_min_est_matches_r():
-    """Minimum FE estimate across 26 subsets matches R at tol=1e-6."""
+    """Minimum FE estimate across 31 subsets matches R at tol=1e-6."""
     results = _all_subsets_fe(_STUDIES)
     mn = min(r["mu"] for r in results)
     expected = GOSH_EXPECTED["min_est"]
@@ -269,7 +225,7 @@ def test_min_est_matches_r():
 
 
 def test_max_est_matches_r():
-    """Maximum FE estimate across 26 subsets matches R at tol=1e-6."""
+    """Maximum FE estimate across 31 subsets matches R at tol=1e-6."""
     results = _all_subsets_fe(_STUDIES)
     mx = max(r["mu"] for r in results)
     expected = GOSH_EXPECTED["max_est"]
@@ -278,7 +234,7 @@ def test_max_est_matches_r():
 
 
 def test_all_subset_i2_in_0_100():
-    """All I² values across 26 subsets lie in [0, 100]."""
+    """All I² values across 31 subsets lie in [0, 100]."""
     results = _all_subsets_fe(_STUDIES)
     for r in results:
         assert 0.0 <= r["I2"] <= 100.0 + 1e-9, \
@@ -327,7 +283,47 @@ def test_se_positive_for_all_subsets():
     total = (1 << k) - 1
     for m in range(1, total + 1):
         subset = [_STUDIES[i] for i in range(k) if m & (1 << i)]
-        if len(subset) < 2:
-            continue
         p = _fe_pool(subset)
         assert p["se"] > 0, f"SE={p['se']} for subset of size {p['k']}"
+
+
+PAGE_EXPECTED = {
+    "FE": {key: GOSH_EXPECTED[key] for key in
+           ("k", "n_subsets", "median_est", "q25_est", "q75_est", "min_est", "max_est", "median_i2")},
+    "DL": dict(k=5, n_subsets=31, median_est=0.2396923076923,
+               q25_est=0.2109066780492, q75_est=0.2689956450735,
+               min_est=0.15, max_est=0.45, median_i2=0.0),
+}
+
+@pytest.fixture(scope="module")
+def page_reference():
+    page = Path(os.environ.get("GOSH_PAGE", FIX.parent.parent / "index.html")).resolve()
+    proc = subprocess.run(["node", str(FIX.parent / "reference-probe.cjs"), str(page)],
+                          capture_output=True, text=True, encoding="utf-8", timeout=60)
+    assert proc.returncode == 0, proc.stderr
+    return json.loads(proc.stdout)
+
+@pytest.mark.parametrize("model,field,value", [
+    (model, field, value) for model, fields in PAGE_EXPECTED.items()
+    for field, value in fields.items()
+])
+def test_page_matches_metafor(page_reference, model, field, value):
+    assert page_reference[model]["result"][field] == pytest.approx(value, rel=0, abs=1e-6)
+
+
+def test_sampled_even_median_has_distinct_middle_values(page_reference):
+    from .numeric_oracle import pool_points
+    import statistics
+    values = sorted(p[0] for p in pool_points(16, "FE", 38))
+    assert len(values) == 38 and values[18] != values[19]
+    state = page_reference["even"]
+    assert state["result"]["median_est"] == pytest.approx(statistics.median(values), rel=0, abs=1e-10)
+    assert state["median"] == f"{statistics.median(values):.3f}"
+
+
+def test_point_just_outside_limit_is_omitted(page_reference):
+    import re
+    state = page_reference["outside"]
+    assert len(re.findall(r"<circle\b", state["svg"])) == 14
+    assert state["result"]["n_subsets"] == 15
+    assert state["plotNote"] == "1 subset points outside the current axis range are omitted."

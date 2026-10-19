@@ -2770,6 +2770,15 @@ function initializeTabs() {
   e.forEach(n => {
     n.addEventListener("click", () => {
       const a = n.dataset.tab;
+      requestAnimationFrame(() => {
+        const panel = document.getElementById('panel-' + a);
+        if (!panel || typeof Plotly === 'undefined') return;
+        panel.querySelectorAll('.js-plotly-plot').forEach(plot => {
+          if (plot.data && plot.clientWidth && plot.clientHeight) {
+            Plotly.Plots.resize(plot).catch(error => console.warn('Plot resize failed:', error));
+          }
+        });
+      });
       e.forEach(e => e.classList.remove("tab-btn--active")), n.classList.add("tab-btn--active"), t.forEach(e => {
         e.classList.remove("tab-panel--active"), e.id === `panel-${a}` && e.classList.add("tab-panel--active")
       }), "multioutcome" === a && populateOutcomeDictionary(), "verdict" === a && "function" == typeof renderVerdictPanel && renderVerdictPanel(), "hta" === a && "function" == typeof populateHTADropdowns && populateHTADropdowns(), "function" == typeof onTabActivate && onTabActivate(a), safeTimeout(() => normalizeMojibakeInDOM(document.body), 0)
@@ -24090,14 +24099,7 @@ function saveProject(filename = null) {
     settings: AppState.settings,
     data: studyData,
     studies: AppState.studies,
-    results: AppState.results ? {
-      pooled: AppState.results.pooled,
-      heterogeneity: AppState.results.heterogeneity,
-      studies: AppState.results.studies,
-      yi: AppState.results.yi,
-      vi: AppState.results.vi,
-      names: AppState.results.names
-    } : null,
+    results: AppState.results,
     truthcert: AppState.truthcert
   };
 
@@ -24175,9 +24177,8 @@ function applyProjectState(state) {
   }
   if (state.results) {
     AppState.results = state.results;
-    if (typeof renderAnalysisPanel === 'function') {
-      safeRender(renderAnalysisPanel, 'panel-analysis', AppState.results);
-    }
+    // Repaint every result panel from the complete saved result, without refitting.
+    if (typeof renderResults === 'function') renderResults();
   }
   canUseUndoManager() && (UndoManager.clear(), UndoManager.saveState('Load project'));
   showToast('Project loaded successfully', 'success');

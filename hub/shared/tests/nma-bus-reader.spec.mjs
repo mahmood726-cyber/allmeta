@@ -221,10 +221,10 @@ test.describe('component-nma ← ma-comparisons-v1 reader (pipe + components)', 
 
 // bucher is a single-triangle indirect calculator (4 scalar fields), not a
 // list app. Its "Load from bus" maps toContrasts into the existing
-// __almBucherLoad, which pools by pair and fills AC/BC from the first two arms.
+// __almBucherLoad, which pools the explicitly chosen A-C and B-C links.
 // A star seed (A-vs-control, B-vs-control) yields the A-vs-B-via-control triangle.
 test.describe('bucher ← ma-comparisons-v1 reader (triangle prefill)', () => {
-  const URL = 'http://localhost:8088/bucher/';
+  const appURL = () => new globalThis.URL('/bucher/', test.info().project.use.baseURL).href;
   const BSEED = {
     _schema: 'ma-comparisons-v1',
     effectMeasure: 'OR',
@@ -249,8 +249,9 @@ test.describe('bucher ← ma-comparisons-v1 reader (triangle prefill)', () => {
   }
 
   test('Load from bus fills the AC/BC triangle fields on the log scale', async ({ page }) => {
-    await page.goto(URL);
+    await page.goto(appURL());
     await ready(page);
+    await page.locator('#treatC').fill('control');
     const wrote = await page.evaluate((seed) => window.MaComparisons.write(seed), BSEED);
     expect(wrote).toBe(true);
 
@@ -278,8 +279,9 @@ test.describe('bucher ← ma-comparisons-v1 reader (triangle prefill)', () => {
       errors.push(t);
     });
     page.on('pageerror', err => errors.push(err.message));
-    await page.goto(URL);
+    await page.goto(appURL());
     await ready(page);
+    await page.locator('#treatC').fill('control');
     await page.evaluate((seed) => window.MaComparisons.write(seed), BSEED);
     await page.locator('#btn-bus-load').click();
     expect(errors, 'console errors: ' + errors.join('; ')).toEqual([]);

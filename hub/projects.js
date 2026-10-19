@@ -1078,7 +1078,7 @@ window.HTML_APPS_PROJECTS = [
   {
     name: "AdaptSim",
     folder: "adaptsim",
-    path: "https://mahmood726-cyber.github.io/adaptsim/",
+    path: "https://mahmood726-cyber.github.io/adaptsim/e156-submission/assets/adaptsim.html",
     added: "2026-04-20",
     collection: "existing",
     mode: "url",
@@ -1091,7 +1091,7 @@ window.HTML_APPS_PROJECTS = [
     name: "Al-Mizan",
     subcategory: "Effect-size tools",
     folder: "al-mizan",
-    path: "https://mahmood726-cyber.github.io/al-mizan/",
+    path: "https://mahmood726-cyber.github.io/al-mizan/e156-submission/assets/al-mizan.html",
     added: "2026-04-20",
     collection: "existing",
     mode: "url",
@@ -1103,7 +1103,7 @@ window.HTML_APPS_PROJECTS = [
   {
     name: "CardioOracle",
     folder: "cardiooracle",
-    path: "https://mahmood726-cyber.github.io/cardiooracle/",
+    path: "https://mahmood726-cyber.github.io/cardiooracle/e156-submission/assets/CardioOracle.html",
     added: "2026-04-20",
     collection: "existing",
     mode: "url",

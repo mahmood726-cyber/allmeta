@@ -130,7 +130,7 @@ function currentState() {
   input.dispatchEvent(new Event('input', { bubbles: true }));
   const result = window._almLastDoseResponse();
   if (!result) throw new Error('Enter data that the dose-response app can fit before validating.');
-  if (['PM', 'DL'].includes(result.method)) throw new Error('R check available via the reproducible repo: dosresmeta does not implement the selected PM/DL estimator. ' + repoUrl);
+  if (['PM', 'DL'].includes(result.method)) throw new Error('Live R comparison unavailable; R reference and re-execution are in the reproducible repository: dosresmeta does not implement the selected PM/DL estimator. ' + repoUrl);
   const excluded = new Set(result.excluded.map(x => String(x.id)));
   const groups = new Map();
   for (const line of input.value.split(/\r?\n/)) {
@@ -233,10 +233,10 @@ const adapter = {
   app: 'dose-response-ma',
   paper: { title: 'A browser tool for dose-response meta-analysis, validated against R dosresmeta', doi: '10.5281/zenodo.23135712', checks: 724,
     runUrl: repoUrl + '/actions/workflows/reproduce.yml', codespacesUrl: 'https://codespaces.new/mahmood726-cyber/dose-response-ma-reproducible?quickstart=1', repoUrl, referenceRuntime:'R', referenceLabel:'dosresmeta 2.2.0; published model-combination references' },
-  live: { packages: ['dosresmeta', 'mixmeta'], inputs:['f-data','f-shape','f-knots','f-cov','f-proc','f-method','f-mod','f-xref','f-modval','f-pdoses'], validatedVersions: { dosresmeta: '2.2.0' }, currentState, appValues, buildScript, compare: liveCompare },
+  live: { packages: ['dosresmeta', 'mixmeta'], validatedVersions: { dosresmeta: '2.2.0' }, currentState, appValues, buildScript, compare: liveCompare },
   corpus: { files: CORPUS_FILES, run: runCorpus }
 };
 window.AlmDoseValidate = adapter;
 if (window.AlmValidate) window.AlmValidate.mount(document.getElementById('alm-validate'), adapter);
-else document.getElementById('alm-validate').textContent = 'Validation widget unavailable in this checkout. R check available via the reproducible repo: ' + repoUrl;
+else document.getElementById('alm-validate').textContent = 'Validation widget unavailable in this checkout. R reference and re-execution: ' + repoUrl;
 })();

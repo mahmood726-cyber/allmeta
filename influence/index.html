@@ -80,6 +80,7 @@
   <script src="../shared/hero-examples.js"></script>
   <script src="../shared/citation.js"></script>
   <script src="../shared/autosave.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -92,7 +93,7 @@
       <h2>Input</h2>
 
       <!-- csv-upload mount: file picker for study,yi,vi CSV files -->
-      <div id="alm-csv-mount"></div>
+
 
       <fieldset>
         <legend>Data</legend>
@@ -107,12 +108,16 @@
 0.22, 0.08, Chen
 0.32, 0.12, Garcia
 0.45, 0.17, Ahmed
-0.28, 0.10, Brown</textarea>
+0.28, 0.10, Brown</textarea></label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="alm-csv-mount"></div>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
           <span class="hint">Paste <code>effect, SE[, label]</code> rows, or upload a CSV above.</span>
-        </label>
+
       </fieldset>
 
       <!-- axis-controls mount: axis range inputs (domain override for LOO plot) -->
@@ -122,7 +127,6 @@
       <div id="alm-export-mount"></div>
 
       <div class="actions">
-        <button type="button" id="btn-run" class="primary">Compute diagnostics</button>
         <button type="button" id="btn-bus-load" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
         <button type="button" id="btn-bus-save" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
         <!-- reset-undo mount: undo-stack dialog replaces bare confirm() -->
@@ -143,16 +147,18 @@
       <h2 style="margin-top:0.6rem">Cook's D × Hat</h2>
       <svg id="influence-plot" viewBox="0 0 600 260" role="img" aria-label="Influence plot of Cook's distance vs hat values"></svg>
       <h2 style="margin-top:0.6rem">Baujat plot</h2>
-      <p class="hint">Horizontal: each study's contribution to heterogeneity (Q); vertical: its influence on the pooled estimate. Studies to the upper-right drive both. Matches <code>metafor::baujat</code>.</p>
+      <p class="hint">Horizontal: each study's squared Pearson residual from the REML model; vertical: its influence on the pooled estimate. Studies to the upper-right drive both. Matches <code>metafor::baujat</code>.</p>
       <svg id="baujat-plot" viewBox="0 0 600 300" role="img" aria-label="Baujat plot: heterogeneity contribution vs influence on the pooled estimate"></svg>
       <h2 style="margin-top:0.6rem">Radial (Galbraith) plot</h2>
       <p class="hint">Precision (1/SE) vs standardised effect (effect/SE). The slope of the through-origin line is the fixed-effect estimate; points outside the ±2 band are outliers. Matches <code>metafor::radial</code>.</p>
       <svg id="radial-plot" viewBox="0 0 600 300" role="img" aria-label="Radial Galbraith plot of precision vs standardised effect"></svg>
 
+      <div id="alm-plot-mount"></div>
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
-  <p class="footer-note">Standard influence diagnostics for weighted linear meta-analysis. Flags in red: <abbr data-gloss="Effect">Cook's D</abbr> &gt; 1, hat &gt; 3·k̄ (k̄ = 1/k), |studentized residual| &gt; 2. Matches metafor::influence(); applied to a <abbr data-gloss="REML">REML</abbr> random-effects intercept-only model. <abbr data-gloss="Heterogeneity">Heterogeneity</abbr> quantified by <abbr data-gloss="tau2">τ²</abbr> and <abbr data-gloss="I2">I²</abbr>.</p>
+  <p class="footer-note">Standard influence diagnostics for weighted linear meta-analysis. Flags in red: |DFFITS| &gt; 3/√(k−1), Cook's D &gt; median χ²(1), hat &gt; 3/k, or |DFBETAS| &gt; 1. Matches metafor::influence(); applied to a <abbr data-gloss="REML">REML</abbr> random-effects intercept-only model. <abbr data-gloss="Heterogeneity">Heterogeneity</abbr> quantified by <abbr data-gloss="tau2">τ²</abbr> and <abbr data-gloss="I2">I²</abbr>.</p>
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
@@ -220,6 +226,27 @@
       window._almLastDiag      = function () { return _lastDiag; };
       window._almStudies       = function () { return _lastStudies; };
 
+      // Preserve both edited inputs and the last rendered analysis across corpus validation.
+      // Recomputing the input on restore would silently change an unsubmitted edit's results.
+      window.__almInfluenceValidationSnapshot = function () {
+        return structuredClone({input: document.getElementById('src').value,
+          autosave: localStorage.getItem('alm-autosave:influence'),
+          diag: _lastDiag, full: _lastFull, studies: _lastStudies,
+          baujat: window.__almBaujat, radial: window.__almRadial,
+          html: Object.fromEntries(['body', 'loo-plot', 'influence-plot', 'baujat-plot', 'radial-plot']
+            .map(id => [id, document.getElementById(id).innerHTML]))});
+      };
+      window.__almInfluenceValidationRestore = function (state) {
+        document.getElementById('src').value = state.input;
+        if (state.autosave === null) localStorage.removeItem('alm-autosave:influence');
+        else localStorage.setItem('alm-autosave:influence', state.autosave);
+        _lastDiag = state.diag; _lastFull = state.full; _lastStudies = state.studies;
+        window.__almBaujat = state.baujat; window.__almRadial = state.radial;
+        for (const [id, html] of Object.entries(state.html)) document.getElementById(id).innerHTML = html;
+      };
+
+    run = window.alm.analysisLifecycle(run, function (result) { return _lastStudies.length >= 3 && !!_lastFull; }, "#src");
+
       function run() {
         const rows = parse(document.getElementById("src").value);
         _lastStudies = rows;
@@ -238,13 +265,17 @@
           // Studentized (deleted) residual: deleted mean, deleted τ², SE of the mean
           const resid = (r.te - loo.mu) / Math.sqrt(r.se * r.se + loo.tau2 + loo.seMu * loo.seMu);
           // DFFITS
-          const dffits = (full.mu - loo.mu) / Math.sqrt(r.se * r.se + loo.tau2);
+          const dffits = (full.mu - loo.mu) / Math.sqrt(hat * (r.se * r.se + loo.tau2));
           // Cook's D (refit-based: (μ − μ_(−i))² / se_μ²)
           const cooksD = (full.mu - loo.mu) ** 2 / (full.seMu * full.seMu);
           // Cov-ratio
           const covRatio = (loo.seMu / full.seMu) ** 2;
+          // DFBETAS uses the full design evaluated at the deleted tau-squared.
+          const dfbeta = (full.mu - loo.mu) * Math.sqrt(rows.reduce((s, x) => s + 1 / (x.se * x.se + loo.tau2), 0));
+          const influential = Math.abs(dffits) > 3 / Math.sqrt(k - 1) ||
+            cooksD > 0.4549364231195727 || hat > 3 / k || Math.abs(dfbeta) > 1;
           return {
-            ...r, hat, resid, dffits, cooksD, covRatio,
+            ...r, hat, resid, dffits, cooksD, covRatio, influential,
             loo_mu: loo.mu, loo_seMu: loo.seMu,
           };
         });
@@ -254,7 +285,7 @@
         const __bodyParts = [""];
         const hatThreshold = 3 / k;
         for (const d of diag) {
-          const flag = d.cooksD > 1 || d.hat > hatThreshold || Math.abs(d.resid) > 2 ? "flag" : "";
+          const flag = d.influential ? "flag" : "";
           __bodyParts.push(`<tr class="${flag}">
             <td>${esc(d.label)}</td>
             <td>${fmt(d.te)}</td>
@@ -278,7 +309,7 @@
       function drawBaujat(rows) {
         const svg = document.getElementById("baujat-plot");
         if (!svg || !window.AlmDiagPlots) return;
-        const bj = window.AlmDiagPlots.baujat(rows.map(r => r.te), rows.map(r => r.se * r.se));
+        const bj = window.AlmDiagPlots.baujat(rows.map(r => r.te), rows.map(r => r.se * r.se), "REML");
         window.__almBaujat = bj;
         const W = 600, H = 300, padL = 56, padR = 20, padT = 20, padB = 42, pw = W - padL - padR, ph = H - padT - padB;
         const xMax = Math.max(...bj.x, 1e-6), yMax = Math.max(...bj.y, 1e-6);
@@ -289,7 +320,7 @@
           s.push(`<circle cx="${X(xi)}" cy="${Y(bj.y[i])}" r="4" fill="var(--accent)" fill-opacity="0.6" stroke="currentColor" stroke-width="0.6"/>`);
           s.push(`<text x="${X(xi) + 5}" y="${Y(bj.y[i]) + 3}" font-size="9" fill="currentColor" opacity="0.75">${esc(rows[i].label || (i + 1))}</text>`);
         });
-        s.push(`<text x="${padL + pw / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor">Contribution to Q (heterogeneity)</text>`);
+        s.push(`<text x="${padL + pw / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor">Squared Pearson residual (REML)</text>`);
         s.push(`<text x="14" y="${padT + ph / 2}" transform="rotate(-90 14 ${padT + ph / 2})" text-anchor="middle" font-size="11" fill="currentColor">Influence on pooled estimate</text>`);
         svg.innerHTML = s.join("");
       }
@@ -362,9 +393,9 @@
         __svgParts.push(`<line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" stroke="currentColor" opacity="0.5"/>`);
         // Thresholds
         __svgParts.push(`<line x1="${X(3 / diag.length)}" y1="${padT}" x2="${X(3 / diag.length)}" y2="${padT + plotH}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
-        __svgParts.push(`<line x1="${padL}" y1="${Y(1)}" x2="${padL + plotW}" y2="${Y(1)}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
+        __svgParts.push(`<line x1="${padL}" y1="${Y(0.4549364231195727)}" x2="${padL + plotW}" y2="${Y(0.4549364231195727)}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
         for (const d of diag) {
-          const flag = d.cooksD > 1 || d.hat > 3 / diag.length || Math.abs(d.resid) > 2;
+          const flag = d.influential;
           __svgParts.push(`<circle cx="${X(d.hat)}" cy="${Y(d.cooksD)}" r="5" fill="${flag ? 'var(--flag)' : 'var(--accent)'}" opacity="0.85"/>`);
           __svgParts.push(`<text x="${X(d.hat) + 7}" y="${Y(d.cooksD) + 4}" font-size="10" fill="currentColor">${esc(d.label)}</text>`);
         }
@@ -488,6 +519,22 @@
       },
     });
 
+    window.alm.plotExport({
+      target: "#alm-plot-mount", basename: "influence",
+      plots: [
+        { id: "loo", name: "Leave-one-out forest", getSvg: function () { return document.querySelector("#loo-plot"); } },
+        { id: "influence", name: "Influence plot", getSvg: function () { return document.querySelector("#influence-plot"); } },
+        { id: "baujat", name: "Baujat plot", getSvg: function () { return document.querySelector("#baujat-plot"); } },
+        { id: "radial", name: "Radial plot", getSvg: function () { return document.querySelector("#radial-plot"); } }
+      ],
+      getReceiptInput: function () {
+        var s = (window._almStudies && window._almStudies()) || [];
+        if (s.length < 3) return null;
+        return { studies: s.map(function (r) { return { est: r.te, se: r.se }; }),
+          method: "Influence diagnostics (Cook's distance, leave-one-out, DFFITS)",
+          label: "influence-results", results: window.__almResults() };
+      }
+    });
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'influence-results',
@@ -598,5 +645,8 @@
   });
 })();
 </script>
+<div id="alm-validate"></div>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>
