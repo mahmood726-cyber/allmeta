@@ -261,7 +261,7 @@
       add(prefix + 'global Q', 'rel', f.dbt.Q, `${rx}$global$Q`);
       add(prefix + 'global df', 'exact', f.dbt.df, `${rx}$global$df`);
       add(prefix + 'global p', 'abs', f.dbt.p, `${rx}$global$p`);
-      lines.push(`check(${str(prefix + 'node-split comparisons')}, "exact", ${str(f.nodeSplit.map(s => s.comparison).sort().join(' | '))}, paste(sort(names(${rx}$splits), method = "radix"), collapse = " | "))`);
+      lines.push(`check(${str(prefix + 'node-split comparisons')}, "exact", ${str(f.nodeSplit.map(s => s.comparison).sort().join(' | '))}, paste(sort(as.character(names(${rx}$splits)), method = "radix"), collapse = " | "))`);
       for (const s of f.nodeSplit) {
         const sx = `${rx}$splits[[${str(s.comparison)}]]`;
         add(`${prefix}${s.comparison}: direct`, 'rel', s.direct.mean, `${sx}$direct`);

@@ -1,6 +1,6 @@
 # Run every generated plus R script with native Rscript --vanilla, one at a time.
 # Resumable: finished scripts are recorded in <dir>\done.jsonl and skipped.
-#   powershell -File run-scripts.ps1 -Dir <scripts-dir> -Rscript "C:\Program Files\R\R-4.6.0\bin\Rscript.exe" [-Kind base|loo|all]
+#   powershell -File run-scripts.ps1 -Dir <scripts-dir> -Rscript "<path to Rscript.exe>" [-Kind base|loo|all]
 param([string]$Dir, [string]$Rscript, [string]$Kind = 'all')
 $ErrorActionPreference = 'Continue'
 $index = Get-Content -Raw -Encoding utf8 (Join-Path $Dir 'index.json') | ConvertFrom-Json
