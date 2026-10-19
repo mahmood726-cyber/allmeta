@@ -116,7 +116,10 @@ start<-if(length(args)>3)as.integer(args[4]) else 1L; step<-if(length(args)>4)as
 dir.create(out,showWarnings=FALSE,recursive=TRUE)
 versions<-list(R=paste(R.version$major,R.version$minor,sep="."),netmeta=as.character(packageVersion("netmeta")),metafor=as.character(packageVersion("metafor")),jsonlite=as.character(packageVersion("jsonlite")),meta=as.character(packageVersion("meta")),gs_memo=gs_memo)
 cat("versions",unlist(versions),"\n")
-for(i in which((seq_along(corpus)-1L)%%step==start-1L)) {
+todo<-which((seq_along(corpus)-1L)%%step==start-1L)
+# PLUS_REVERSE=1 walks a shard backwards so a second node can share it (outputs are per configuration).
+if(Sys.getenv("PLUS_REVERSE","0")=="1") todo<-rev(todo)
+for(i in todo) {
  c<-corpus[[i]]; key<-G(c,"key"); file<-file.path(out,sprintf("%05d.json",i)); began<-proc.time()[["elapsed"]]
  if(file.exists(file) && identical(G(jsonlite::fromJSON(file,simplifyVector=FALSE),"key"),key)) {cat(i,"cached",key,"\n");next}
  d<-do.call(rbind,lapply(G(c,"rows"),as.data.frame,stringsAsFactors=FALSE)); model<-G(c,"model")

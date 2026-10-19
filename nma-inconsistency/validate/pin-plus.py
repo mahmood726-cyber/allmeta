@@ -9,7 +9,7 @@
       final references (no new R fit) into plus/estimators-reference.json.
   python nma-inconsistency/validate/pin-plus.py merge <shard-dir>...
       Merge generate-plus.R per-configuration outputs into plus/reference.json.
-  python nma-inconsistency/validate/pin-plus.py pin
+  python nma-inconsistency/validate/pin-plus.py pin [checks]
       Pin the plus evidence files (SHA-256, bytes, counts) into MANIFEST-plus.json
       and manifest-plus.js.
 """
@@ -114,7 +114,7 @@ def cmd_merge(dirs):
     print(f'MERGED {len(cases)} configurations / {n} drop-fits; statuses {st}')
 
 
-def cmd_pin():
+def cmd_pin(checks=None):
     corpus = load(plus / 'corpus.json')
     reference = load(plus / 'reference.json')
     est = load(plus / 'estimators-reference.json')
@@ -127,6 +127,8 @@ def cmd_pin():
     manifest = dict(
         files=files, configurations=len(corpus), loop_configurations=sum(c['loops'] for c in corpus),
         drop_fits=drops, estimator_triples=len(est),
+        # Derived by executing plus-adapter.js once (like the v1 builder); the replay then asserts it.
+        checks=int(checks) if checks else None,
         referenceVersions=reference['versions'],
         source='P16 archive corpus.json + final reference/*.json (R 4.6.0, netmeta 3.7-0, metafor 5.2-1)',
         rule='Every accepted archived configuration with a closed loop, plus the first three accepted no-loop configurations per model; each study removed in turn; tau2 re-estimated per drop with the selected model.',
@@ -140,4 +142,4 @@ def cmd_pin():
 if __name__ == '__main__':
     cmd, args = sys.argv[1], sys.argv[2:]
     {'corpus': lambda: cmd_corpus(args[0]), 'estimators': lambda: cmd_estimators(args[0]),
-     'merge': lambda: cmd_merge(args), 'pin': cmd_pin}[cmd]()
+     'merge': lambda: cmd_merge(args), 'pin': lambda: cmd_pin(*args)}[cmd]()

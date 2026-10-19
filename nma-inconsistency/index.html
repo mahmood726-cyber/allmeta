@@ -50,6 +50,7 @@
     .note { background: var(--warn-soft); border-left: 3px solid var(--warn); padding: 0.55rem 0.8rem;
             border-radius: 4px; font-size: 0.82rem; margin: 0.75rem 0; }
     .note strong { color: var(--warn); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
@@ -103,7 +104,7 @@
       <h2>Input</h2>
       <label>
         <span>Contrasts — <code>A, B, effect, SE[, study ID]</code></span>
-        <textarea id="src" aria-label="Input">A, B, -0.30, 0.10
+        <textarea id="src" aria-label="Contrasts" aria-describedby="src-hint inco-input-msg">A, B, -0.30, 0.10
 A, B, -0.32, 0.08
 A, B, -0.28, 0.09
 A, C, -0.20, 0.12
@@ -114,18 +115,18 @@ A, D, -0.50, 0.15
 B, D, -0.25, 0.18
 C, D, -0.35, 0.14
 A, D, -0.48, 0.14</textarea>
-        <span class="hint">Independent two-arm studies only. Multiple rows per comparison allowed. Supply study IDs to detect repeated or multi-arm studies; correlated contrasts are unsupported.</span>
+        <span class="hint" id="src-hint">Independent two-arm studies only. Multiple rows per comparison allowed. Supply study IDs to detect repeated or multi-arm studies; correlated contrasts are unsupported.</span>
       </label>
       <p id="inco-input-msg" class="plus-msg" role="status" aria-live="polite"></p>
       <div id="inco-example" style="margin:0.2rem 0 0.6rem"><span class="plus-sub">Try real data (one click):</span> <span data-examples></span><p id="inco-example-note" class="plus-sub" aria-live="polite" style="margin:0.3rem 0 0"></p></div>
       <label style="margin-top:0.5rem;display:block">
         <span style="font-size:0.85rem;color:var(--muted)">Model</span>
-        <select id="f-model" style="width:100%;padding:0.4rem 0.5rem;margin-top:0.25rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px;" aria-label="F model">
+        <select id="f-model" style="width:100%;padding:0.4rem 0.5rem;margin-top:0.25rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px;" aria-label="Model" aria-describedby="model-hint">
           <option value="FE">Fixed-effect (common τ²=0)</option>
           <option value="PM">Random-effects (Paule-Mandel τ²)</option>
           <option value="DL">Random-effects (DerSimonian-Laird τ²)</option>
         </select>
-        <span class="hint" style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.25rem">
+        <span class="hint" id="model-hint" style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.25rem">
           RE models estimate shared τ² from consistency-model residuals before testing inconsistency — addresses the "FE Q-statistics inflated under heterogeneity" caveat below.
         </span>
       </label>
@@ -134,7 +135,7 @@ A, D, -0.48, 0.14</textarea>
     <section class="panel" aria-live="polite">
       <h2>Node-split per comparison</h2>
       <table>
-        <thead><tr><th>Comparison</th><th>Direct</th><th>Indirect</th><th>Difference</th><th>z</th><th>p</th><th></th></tr></thead>
+        <thead><tr><th scope="col">Comparison</th><th scope="col">Direct</th><th scope="col">Indirect</th><th scope="col">Difference</th><th scope="col">z</th><th scope="col">p</th><th scope="col"><span class="sr-only">Verdict</span></th></tr></thead>
         <tbody id="ns-body"></tbody>
       </table>
       <h2 style="margin-top:0.8rem">Design-by-treatment (global)</h2>
@@ -172,7 +173,7 @@ A, D, -0.48, 0.14</textarea>
       <section id="alm-validate" style="grid-column:1/-1"></section>
 </main>
   <footer>
-    For independent two-arm studies, removing each direct comparison gives the same split as netmeta back-calculation / SIDE at a fixed shared τ². RE global Q uses this consistency-model τ² as a preset; it is not the default within-design τ² test from decomp.design. Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-4 on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-06-03):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. The DL path matches <code>netmeta(random=TRUE, method.tau="DL")</code> τ², network estimates and <code>netsplit()</code> using the generalized DerSimonian-Kacker/Jackson moment denominator (see <code>hub/shared/tests/nma-inconsistency-re-parity.spec.mjs</code>); PM uses the generalized Paule-Mandel <code>Q(τ²)=df</code> moment condition. Recommended k≥5 per design.
+    For independent two-arm studies, removing each direct comparison gives the same split as netmeta back-calculation / SIDE at a fixed shared τ². RE global Q uses this consistency-model τ² as a preset; it is not the default within-design τ² test from decomp.design. Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-9 (relative; p-values 1e-9 absolute) on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; pinned replay in <code>validate/</code>; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-06-03):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. The DL path matches <code>netmeta(random=TRUE, method.tau="DL")</code> τ², network estimates and <code>netsplit()</code> using the generalized DerSimonian-Kacker/Jackson moment denominator (see <code>hub/shared/tests/nma-inconsistency-re-parity.spec.mjs</code>); PM uses the generalized Paule-Mandel <code>Q(τ²)=df</code> moment condition (validated to 1e-6 relative against the uncentred metafor equation, p-values 1e-9 absolute). Recommended k≥5 per design.
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
