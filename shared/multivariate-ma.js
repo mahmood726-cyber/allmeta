@@ -152,6 +152,23 @@
     return { G: G, f: f, iterations: it, stop: stop, maxAbsScore: fin ? Math.max.apply(null, fin.grad.map(Math.abs)) : NaN };
   }
 
+  // Allocation-free REML objective for two outcomes (same value as _objG up to rounding).
+  // Returns Infinity when some S_i + G or the summed weight matrix is not positive definite.
+  function _obj2(studies, g00, g01, g11) {
+    var k = studies.length, i, ld = 0, s00 = 0, s01 = 0, s11 = 0, t0 = 0, t1 = 0, W = new Float64Array(3 * k);
+    for (i = 0; i < k; i++) {
+      var S = studies[i].S, a = S[0][0] + g00, b = S[0][1] + g01, d = S[1][1] + g11, det = a * d - b * b;
+      if (!(a > 0) || !(det > 0)) return Infinity;
+      var w00 = d / det, w01 = -b / det, w11 = a / det, y = studies[i].y;
+      W[3 * i] = w00; W[3 * i + 1] = w01; W[3 * i + 2] = w11; ld += Math.log(det);
+      s00 += w00; s01 += w01; s11 += w11; t0 += w00 * y[0] + w01 * y[1]; t1 += w01 * y[0] + w11 * y[1];
+    }
+    var sd = s00 * s11 - s01 * s01; if (!(s00 > 0) || !(sd > 0)) return Infinity;
+    var m0 = (s11 * t0 - s01 * t1) / sd, m1 = (s00 * t1 - s01 * t0) / sd, q = 0;
+    for (i = 0; i < k; i++) { var r0 = studies[i].y[0] - m0, r1 = studies[i].y[1] - m1; q += W[3 * i] * r0 * r0 + 2 * W[3 * i + 1] * r0 * r1 + W[3 * i + 2] * r1 * r1; }
+    return 0.5 * (ld + Math.log(sd) + q);
+  }
+
   function fit(studies, opts) {
     opts = opts || {};
     // Fail closed: with k<2 the between-study covariance G is unidentifiable
@@ -184,6 +201,7 @@
     var x0 = []; for (a = 0; a < m; a++) for (b = 0; b <= a; b++) x0.push(L0[a][b]);
 
     var obj = function (x) {
+      if (m === 2) { var v2 = _obj2(studies, x[0] * x[0], x[0] * x[1], x[1] * x[1] + x[2] * x[2]); return Number.isFinite(v2) ? v2 : 1e12; }
       var G = _fromChol(x, m), pr = _profile(studies, G);
       if (!pr) return 1e12;
       var ll = pr.logdetV + _logdet(pr.sumW);
@@ -204,8 +222,27 @@
       studies.forEach(function (s, i) { var dv = s.y.map(function (v, j) { return v - pr.mu[j]; }), w = _matVec(pr.Ws[i], dv); value += dv.reduce(function (t, v, j) { return t + v * w[j]; }, 0); });
       opt = { f: 0.5 * value };
     } else {
-      opt = _nelderMead(obj, x0, 0.05, 2000);
-      opt = _nelderMead(obj, opt.x, 0.005, 1000);
+      // Several starts (the REML surface can have a local maximum at G = 0 or an
+      // interior point while the global one is elsewhere, e.g. rank one at rho = -1):
+      // moment start, x0.1, x10 and, for two outcomes, correlations +-0.9.
+      var cholVec = function (M) {
+        var Lc = [], out = [], aa, bb, dd;
+        for (aa = 0; aa < m; aa++) { Lc.push(new Array(m).fill(0)); for (bb = 0; bb <= aa; bb++) { var sv = M[aa][bb]; for (dd = 0; dd < bb; dd++) sv -= Lc[aa][dd] * Lc[bb][dd]; Lc[aa][bb] = (aa === bb) ? Math.sqrt(Math.max(1e-6, sv)) : sv / Lc[bb][bb]; } }
+        for (aa = 0; aa < m; aa++) for (bb = 0; bb <= aa; bb++) out.push(Lc[aa][bb]);
+        return out;
+      };
+      var D0 = G0.map(function (row, aa) { return row.map(function (v, bb) { return aa === bb ? v : 0; }); });
+      var startMats = [D0, D0.map(function (row) { return row.map(function (v) { return v * 0.1; }); }), D0.map(function (row) { return row.map(function (v) { return v * 10; }); })];
+      if (m === 2) [0.9, -0.9].forEach(function (rr) { var c = rr * Math.sqrt(D0[0][0] * D0[1][1]); startMats.push([[D0[0][0], c], [c, D0[1][1]]]); });
+      var starts = [x0].concat(startMats.slice(1).map(cholVec));
+      // Screen every start with 600 simplex iterations, then run the full two-stage
+      // search (2000 + 1000 iterations) from the best two screened points.
+      var screened = starts.map(function (st) { return _nelderMead(obj, st, 0.05, 600); }).sort(function (u, w) { return u.f - w.f; });
+      opt = null;
+      screened.slice(0, 2).forEach(function (sc) {
+        var o1 = _nelderMead(obj, sc.x, 0.05, 2000); o1 = _nelderMead(obj, o1.x, 0.005, 1000);
+        if (!opt || o1.f < opt.f) opt = o1;
+      });
       G = _fromChol(opt.x, m);
       boundary = "interior";
       // Interior optimum: polish the simplex result by Fisher scoring.
@@ -325,7 +362,7 @@
     });
   }
 
-  var api = { fit: fit, fitUnivariate: fitUnivariate, sweepRho: sweepRho, zTest: zTest, chisqSF: chisqSF, covFromR: covFromR, _objG: _objG, _scoreInfo: _scoreInfo };
+  var api = { fit: fit, fitUnivariate: fitUnivariate, sweepRho: sweepRho, zTest: zTest, chisqSF: chisqSF, covFromR: covFromR, _objG: _objG, _obj2: _obj2, _scoreInfo: _scoreInfo };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmMultivariate = api;
 })(typeof window !== "undefined" ? window : globalThis);
