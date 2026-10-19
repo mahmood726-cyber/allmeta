@@ -82,7 +82,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>Small-study-effect tests</h1>
-    <p>Small-study tests include Egger (unweighted regression, multiplicative dispersion, t test with k-2 degrees of freedom), Begg-Mazumdar rank correlation, Peters and Harbord for binary outcomes, and the multiplicative-dispersion Thompson-Sharp variant. Trim-and-fill uses L0 and REML. Numerical agreement depends on inputs and convergence; these methods do not establish publication bias on their own.</p>
+    <p>Small-study tests include Egger (unweighted regression, multiplicative dispersion, t test with k-2 degrees of freedom), Begg-Mazumdar rank correlation, Peters and Harbord for binary outcomes, and the Thompson-Sharp random-effects (REML) meta-regression test. Trim-and-fill uses L0 and REML. Numerical agreement depends on inputs and convergence; these methods do not establish publication bias on their own.</p>
   </header>
   <main id="main">
     <section class="panel">
@@ -152,9 +152,52 @@
 
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
+    <section id="alm-plus" class="panel" aria-labelledby="plus-title" style="grid-column:1/-1;min-width:0">
+      <style>
+        #alm-plus .plus-actions { display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.5rem 0; }
+        #alm-plus button { padding:0.45rem 0.85rem; border-radius:6px; border:1px solid var(--accent); background:var(--panel); color:var(--ink); font-weight:600; cursor:pointer; }
+        #alm-plus button.primary { background:var(--accent); color:#fff; }
+        #alm-plus button:focus-visible, #alm-plus [tabindex]:focus-visible, #alm-plus input:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+        #alm-plus button:disabled { opacity:0.55; cursor:not-allowed; }
+        #alm-plus .plus-scroll { overflow-x:auto; max-height:32rem; overflow-y:auto; border:1px solid var(--border); border-radius:6px; }
+        #alm-plus table { font-size:0.8rem; margin:0; }
+        #alm-plus th, #alm-plus td { white-space:nowrap; }
+        #alm-plus tr.plus-flagged { background:var(--warn-soft); }
+        #alm-plus tr.plus-flagged td:last-child { color:var(--warn); font-weight:600; }
+        #alm-plus [data-plus-refusal] { color:var(--muted); font-style:italic; }
+      </style>
+      <h2 id="plus-title">PET&ndash;PEESE and leave-one-out sensitivity</h2>
+      <p>PET and PEESE are weighted regressions of the effects on their standard errors (PET) or variances (PEESE), weights 1/variance, with t inference on k&minus;2 degrees of freedom; the intercept is the limit estimate for a study with zero standard error. PET is the same weighted model as the Egger test above. <strong>Conditional rule:</strong> use PEESE when PET&rsquo;s intercept test rejects at two-sided 5% (p &lt; 0.05), otherwise PET. Leave-one-out repeats every validated test with each study omitted in turn and flags omissions that move a p-value across 0.05, change the trim-and-fill k0 or change the PET&ndash;PEESE branch. These are sensitivity analyses; they do not establish publication bias.</p>
+      <div class="plus-actions">
+        <button type="button" id="plus-example">Load worked example and run (BCG trials, 2&times;2 counts)</button>
+        <button type="button" id="plus-run" class="primary">Run PET&ndash;PEESE and leave-one-out on the current input</button>
+        <button type="button" id="plus-csv" disabled>Download leave-one-out table (CSV)</button>
+      </div>
+      <p id="plus-status" role="status" aria-live="polite">Uses the studies and format entered above. Needs at least 3 studies for PET&ndash;PEESE and 4 to 100 studies for leave-one-out.</p>
+      <p id="plus-k"></p>
+      <div class="plus-scroll" role="region" aria-label="PET and PEESE results" tabindex="0">
+        <table aria-describedby="plus-title">
+          <caption style="text-align:left;padding:0.4rem 0.55rem">Full data: limit estimates (intercepts) with 95% t confidence intervals</caption>
+          <thead><tr><th scope="col">Model</th><th scope="col">Estimate</th><th scope="col">SE</th><th scope="col">95% CI</th><th scope="col">Intercept t</th><th scope="col">Intercept p</th><th scope="col">Slope t</th><th scope="col">Slope p</th></tr></thead>
+          <tbody id="plus-pp-body"></tbody>
+        </table>
+      </div>
+      <p id="plus-identity" role="note"></p>
+      <h3 style="font-size:0.95rem;margin:0.9rem 0 0.3rem">Leave-one-out</h3>
+      <div id="plus-loo-summary"></div>
+      <label style="display:inline-flex;gap:0.4rem;align-items:center"><input type="checkbox" id="plus-only-flagged"> Show only flagged omissions</label>
+      <div class="plus-scroll" role="region" aria-label="Leave-one-out table" tabindex="0">
+        <table>
+          <caption style="text-align:left;padding:0.4rem 0.55rem">Each row omits one study (numbered in input order); the first row uses all studies and equals the main results table</caption>
+          <thead id="plus-loo-head"></thead>
+          <tbody id="plus-loo-body"></tbody>
+        </table>
+      </div>
+      <div id="alm-plus-validate" aria-label="Validate the extras in R"></div>
+    </section>
   </main>
   <footer>
-    Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp with multiplicative dispersion. See Sterne JAC, Sutton AJ, Ioannidis JPA, et al. <em>BMJ</em> 2011;343:d4002 for funnel-plot recommendations and power comparisons. Egger reports a t statistic, not a z statistic. The selection model uses ML and is experimental, not validated against metafor.
+    Tests: Egger (continuous), Begg-Mazumdar rank correlation, Harbord-Egger modification for binary OR with log-score transform, Peters' test for log-OR using 1/(total sample size) as predictor, Thompson-Sharp as a REML random-effects meta-regression on the standard error (z test, as metafor regtest model="rma"). See Sterne JAC, Sutton AJ, Ioannidis JPA, et al. <em>BMJ</em> 2011;343:d4002 for funnel-plot recommendations and power comparisons. Egger reports a t statistic, not a z statistic. The selection model uses ML and is experimental, not validated against metafor.
   </footer>
   <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
@@ -555,21 +598,65 @@
     }
 
     function thompsonSharp(rows) {
-      // Thompson & Sharp: Egger with multiplicative random-effects adjustment
-      var ys = rows.map(function (r) { return r.te; });
-      var xs = rows.map(function (r) { return r.se; });
-      var ws = rows.map(function (r) { return 1 / (r.se * r.se); });
-      var r = wls(xs, ys, ws);
-      // Multiplicative phi-hat from residuals
-      var rss = 0, sumW = 0;
-      for (var i = 0; i < xs.length; i++) {
-        var res = ys[i] - (r.b0 + r.b1 * xs[i]);
-        rss += ws[i] * res * res; sumW += ws[i];
+      // Thompson & Sharp (1999) random-effects meta-regression test, as metafor::regtest(rma(yi, vi,
+      // method="REML"), model="rma", predictor="sei"): REML meta-regression yi ~ sei, z test of the sei
+      // coefficient. Port of metafor 5.2-1 rma.uni REML Fisher scoring (HE start on centred yi, threshold 1e-5,
+      // maxiter 100, step halving at zero, ll0 check). The previous build tested the intercept of the
+      // weighted lm and divided an already dispersion-scaled SE by sqrt(max(1, phi)); it matched R in 0/150.
+      var k = rows.length;
+      if (k < 3) throw new Error('Thompson-Sharp needs at least 3 studies.');
+      remlPool(rows); // regtest(model="rma") needs the parent REML fit; refuse when it does not converge
+      var y = rows.map(function (r) { return r.te; }), v = rows.map(function (r) { return r.se * r.se; });
+      var s = v.map(Math.sqrt), my = y.reduce(function (a, b) { return a + b; }, 0) / k;
+      var yc = y.map(function (t) { return t - my; });
+      if (s.every(function (x) { return x === s[0]; })) throw new Error('Singular regression design.');
+      function fit(w, yy) { // weighted least squares on X = [1, s]
+        var S0 = 0, S1 = 0, S2 = 0, T0 = 0, T1 = 0;
+        for (var i = 0; i < k; i++) { S0 += w[i]; S1 += w[i] * s[i]; S2 += w[i] * s[i] * s[i]; T0 += w[i] * yy[i]; T1 += w[i] * s[i] * yy[i]; }
+        var det = S0 * S2 - S1 * S1;
+        if (!(det > 0)) throw new Error('Singular regression design.');
+        var A = [S2 / det, -S1 / det, S0 / det]; // [a00, a01, a11] of (X'WX)^-1
+        return { A: A, det: det, b0: A[0] * T0 + A[1] * T1, b1: A[1] * T0 + A[2] * T1 };
       }
-      var phi = rss / Math.max(1, xs.length - 2);
-      var seB0Adj = r.seB0 * Math.sqrt(Math.max(1, phi));
-      var z = r.b0 / seB0Adj;
-      return { statistic: z, p: pt2(z, rows.length - 2), name: 'Thompson-Sharp', applicable: 'Egger with multiplicative dispersion' };
+      // HE start: OLS residual SS minus tr(P V), divided by k - p.
+      var ols = fit(y.map(function () { return 1; }), yc), rss = 0, trPV = 0;
+      for (var i = 0; i < k; i++) {
+        var e = yc[i] - ols.b0 - ols.b1 * s[i];
+        rss += e * e;
+        trPV += v[i] * (1 - (ols.A[0] + 2 * ols.A[1] * s[i] + ols.A[2] * s[i] * s[i]));
+      }
+      var tau2 = Math.max(0, (rss - trPV) / (k - 2)), change = 1e-5 + 1, iter = 0;
+      while (change > 1e-5) {
+        iter++;
+        var old = tau2, w = v.map(function (vi) { return 1 / (vi + tau2); }), f = fit(w, yc);
+        var M = [0, 0, 0], C = [0, 0, 0], sw = 0, sw2 = 0, ypy = 0;
+        for (var j = 0; j < k; j++) {
+          var w2 = w[j] * w[j], w3 = w2 * w[j], r = w[j] * (yc[j] - f.b0 - f.b1 * s[j]);
+          sw += w[j]; sw2 += w2; ypy += r * r;
+          M[0] += w2; M[1] += w2 * s[j]; M[2] += w2 * s[j] * s[j];
+          C[0] += w3; C[1] += w3 * s[j]; C[2] += w3 * s[j] * s[j];
+        }
+        var A = f.A;
+        var trAM = A[0] * M[0] + 2 * A[1] * M[1] + A[2] * M[2], trAC = A[0] * C[0] + 2 * A[1] * C[1] + A[2] * C[2];
+        // tr(A M A M) for symmetric 2x2 A and M.
+        var AM00 = A[0] * M[0] + A[1] * M[1], AM01 = A[0] * M[1] + A[1] * M[2], AM10 = A[1] * M[0] + A[2] * M[1], AM11 = A[1] * M[1] + A[2] * M[2];
+        var trAMAM = AM00 * AM00 + 2 * AM01 * AM10 + AM11 * AM11;
+        var trP = sw - trAM, trPP = sw2 - 2 * trAC + trAMAM;
+        var adj = (ypy - trP) / trPP;
+        if (Number.isNaN(adj)) adj = 0;
+        while (tau2 + adj < 0) adj /= 2;
+        tau2 += adj; change = Math.abs(old - tau2);
+        if (iter > 100) throw new Error('Fisher scoring algorithm did not converge.');
+      }
+      function reml(t) { // restricted log-likelihood up to a constant (centred y, as metafor)
+        var w = v.map(function (vi) { return 1 / (vi + t); }), f = fit(w, yc), q = 0, sl = 0;
+        for (var i = 0; i < k; i++) { var e = yc[i] - f.b0 - f.b1 * s[i]; q += w[i] * e * e; sl += Math.log(v[i] + t); }
+        return -0.5 * sl - 0.5 * Math.log(f.det) - 0.5 * q;
+      }
+      if (reml(0) - reml(tau2) > Math.pow(Number.EPSILON, 0.25) && tau2 > 1e-5) tau2 = 0;
+      var wf = v.map(function (vi) { return 1 / (vi + tau2); }), fin = fit(wf, y);
+      var z = fin.b1 / Math.sqrt(fin.A[2]);
+      return { statistic: z, p: pz(z), b0: fin.b1, limit: fin.b0, tau2: tau2, name: 'Thompson-Sharp', applicable: 'REML meta-regression on SE (z test)' };
     }
 
     // ---- axis state ----
@@ -609,13 +696,14 @@
         tests.push(petersTest(rows));
         tests.push(harbordTest(rows));
       }
-      tests.push(thompsonSharp(rows));
+      try { tests.push(thompsonSharp(rows)); }
+      catch (error) { tests.push({ statistic: NaN, p: NaN, refused: error.message, name: 'Thompson-Sharp', applicable: 'REML meta-regression on SE (z test)' }); }
 
       for (var ii = 0; ii < tests.length; ii++) {
         var t = tests[ii];
         if (!t) continue;
-        var cls = t.p < 0.05 ? 'bad' : 'ok';
-        var verdict = t.p < 0.05 ? 'evidence of bias' : 'no evidence';
+        var cls = t.refused ? 'bad' : t.p < 0.05 ? 'bad' : 'ok';
+        var verdict = t.refused ? 'refused: ' + t.refused.replace(/</g, '&lt;') : t.p < 0.05 ? 'evidence of bias' : 'no evidence';
         body.innerHTML += '<tr><td><code>' + t.name + '</code></td><td>' + fmt(t.statistic, 3) + '</td><td>' + fmt(t.p, 3) + '</td><td>' + t.applicable + '</td><td><span class="chip ' + cls + '">' + verdict + '</span></td></tr>';
       }
       // Egger-on-binary caveat: for binary (log-OR) outcomes the standardised
@@ -893,6 +981,14 @@
         container: "#alm-hero-mount",
         textarea: "#src",
         adapter: "forest",
+        // The shared forest text is "label, yi, se"; labels such as "Aronson 1948" contain numbers that the
+        // effect/SE parser would read as data (3 of 13 BCG rows survived). Load effect and SE only, full precision.
+        onAfterLoad: function (ds) {
+          if (!ds || !Array.isArray(ds.effect_se)) return;
+          document.getElementById('format').value = 'te-se';
+          document.getElementById('src').value = ds.effect_se.map(function (r) { return String(r.yi) + ', ' + String(Math.sqrt(r.vi)); }).join('\n');
+          document.getElementById('btn-run').click();
+        },
       });
     }
   });
@@ -921,7 +1017,10 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'pubbias-tests' });
+      // The shared default selectors, restricted to the original page: #alm-plus controls are not autosaved,
+      // so the saved key set and positional indices are those of the page without the extras.
+      AlmAutosave.install({ appKey: 'pubbias-tests', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *)'; }) });
     }
   });
 })();
@@ -929,5 +1028,10 @@
 <div id="alm-validate"></div>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
+<script src="plus-engine.js"></script>
+<script src="plus-ui.js"></script>
+<script src="validate/plus-compare.js"></script>
+<script src="validate/plus-pins.js"></script>
+<script src="validate/plus-adapter.js"></script>
 </body>
 </html>
