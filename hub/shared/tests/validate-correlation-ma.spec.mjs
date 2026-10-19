@@ -23,6 +23,9 @@ for(const refused of [false,true])test(`correlation-ma replay passes and restore
     // The original chart node and its download handler survive replay.
     const dl=page.waitForEvent('download');await page.locator('#forest-host [data-xfmt=svg]').click();
     expect((await dl).suggestedFilename()).toMatch(/\.svg$/);
+    // In Edge the blob download also opens a blank page (url '') on which locator calls never
+    // return; the request-audit teardown reads every page, so close the pages this test did not open.
+    for(const p of page.context().pages()) if(p!==page) await p.close();
   }
 });
 for(const file of ['corpus.json','reference.json'])test('correlation-ma refuses tampered '+file+' pin',async({page})=>{
