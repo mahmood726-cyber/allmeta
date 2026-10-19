@@ -1,0 +1,211 @@
+{
+  "captured_at": "2026-10-10T21:31:03.263Z",
+  "r_version": "R version 4.5.1 (2025-06-13)",
+  "metafor_version": "4.8.0",
+  "runtime": "bundled WebR (WebAssembly), not native R",
+  "source_sha256": "d7f7a9debf58ac192bd87a33d50ad34e5d36f893ef75df8956ce37e9580c110c",
+  "input_sha256": {
+    "tests/fixtures/reml_nonconvergence.json": "95b2ef4cf735d4b3da0da3b360a0c373e2ff0e1d7d3a3c1ea6faeee852a828e4",
+    "tests/fixtures/reml_global_modes.json": "0386d10160a0e30a774f376e0ce90c12c60b70614cb0574695d452cc3a469335"
+  },
+  "runtime_sha256": {
+    "r-shiny/shinylive/webr/packages/lattice/lattice_0.22-9.tgz": "ba5d01351d5a75dbf9193c03ba33ef7141dc27aea835c9dc9e0b1c41544b0822",
+    "r-shiny/shinylive/webr/packages/Matrix/Matrix_1.7-5.tgz": "408f6f9226d1849eddefbd00c866c4836ccc1803e6ab5bdfc107d5170585685c",
+    "r-shiny/shinylive/webr/packages/nlme/nlme_3.1-169.tgz": "cb1b992c11ec78fe4529441ab6e684c3a9929661b86890cec3beff7f45ebdb61",
+    "r-shiny/shinylive/webr/packages/metadat/metadat_1.4-0.tgz": "581a0d76b2c0b4a22baa017fee61750740f7a13a22c5a546971d5a64f410a7b2",
+    "r-shiny/shinylive/webr/packages/numDeriv/numDeriv_2016.8-1.1.tgz": "d4a872a6f04de8b74fbc24e479152916f87618295b092930f00ec3ce83b7f866",
+    "r-shiny/shinylive/webr/packages/mathjaxr/mathjaxr_2.0-0.tgz": "0309e3ecbf1363c09f7434c3a02275f98436367d57f20f448090d73bc507945e",
+    "r-shiny/shinylive/webr/packages/pbapply/pbapply_1.7-4.tgz": "a256290bd68d1e73b129c9483c7746d71c32e62a0cc25bfe595ce7b6a8b495ff",
+    "r-shiny/shinylive/webr/packages/metafor/metafor_4.8-0.tgz": "746f8ab2d0d85b03a3f07ead0340193a04defd1f871dd6511dd758a9f2ff28b0",
+    "digest_0.6.39.tgz": "3aaa3c2acf4af9fd93c78db33878aaff91568da71c7de14e30a6baafcac0c6b9",
+    "R.wasm": "b2e87bafe6245e72b50044dd5678303981491c275a393a30dcaec903dea8a500"
+  },
+  "cases": {
+    "CD005566": {
+      "reference": {
+        "tau2": 0.03304213592255091,
+        "mu": -0.14812032341898404,
+        "se": 0.10357165316065556,
+        "ciLo": -0.35111703343314293,
+        "ciHi": 0.05487638659517488,
+        "I2": 24.11635427933444,
+        "knhaSe": 0.07267006300030521,
+        "knhaCiLo": -0.2972269763175551,
+        "knhaCiHi": 0.0009863294795870725,
+        "logLik": -27.631986051669266,
+        "boundaryLogLik": -32.125309537175696
+      },
+      "default": {
+        "error": "Fisher scoring algorithm did not converge. See 'help(rma)' for possible remedies."
+      },
+      "damped": {
+        "tau2": 0.03304213592255052,
+        "logLik": -27.631986051669262
+      },
+      "strict": {
+        "tau2": 0.03304213592255052,
+        "logLik": -27.631986051669262
+      }
+    },
+    "CD006536": {
+      "reference": {
+        "tau2": 0.04495467370154248,
+        "mu": -0.15526070059040092,
+        "se": 0.17195880683178028,
+        "ciLo": -0.4922937688051704,
+        "ciHi": 0.18177236762436855,
+        "I2": 3.577990180829685,
+        "knhaSe": 0.1360257005285424,
+        "knhaCiLo": -0.42977167794011356,
+        "knhaCiHi": 0.11925027675931171,
+        "logLik": -62.80347356830049,
+        "boundaryLogLik": -62.8730495105492
+      },
+      "default": {
+        "error": "Fisher scoring algorithm did not converge. See 'help(rma)' for possible remedies."
+      },
+      "damped": {
+        "tau2": 0.0449546737074375,
+        "logLik": -62.8034735683005
+      },
+      "strict": {
+        "tau2": 0.04495467370151668,
+        "logLik": -62.80347356830049
+      }
+    },
+    "CD016031": {
+      "reference": {
+        "tau2": 0.3648085947777566,
+        "mu": -0.24199535114221218,
+        "se": 0.2593123295448544,
+        "ciLo": -0.7502381777973085,
+        "ciHi": 0.2662474755128842,
+        "I2": 20.982225397735586,
+        "knhaSe": 0.21212489406065071,
+        "knhaCiLo": -0.6772396820810029,
+        "knhaCiHi": 0.1932489797965786,
+        "logLik": -44.03095403358726,
+        "boundaryLogLik": -45.41709197587868
+      },
+      "default": {
+        "error": "Fisher scoring algorithm did not converge. See 'help(rma)' for possible remedies."
+      },
+      "damped": {
+        "tau2": 0.36480859477807415,
+        "logLik": -44.030954033587264
+      },
+      "strict": {
+        "tau2": 0.3648085947777486,
+        "logLik": -44.030954033587264
+      }
+    },
+    "seed84084-1530": {
+      "reference": {
+        "tau2": 0.060387118607540445,
+        "mu": 0.10863134036775167,
+        "se": 0.10778537792197927,
+        "ciLo": -0.10262411841936638,
+        "ciHi": 0.3198867991548697,
+        "I2": 99.45438804647975,
+        "knhaSe": 0.17874663943047006,
+        "knhaCiLo": -0.32874593000700214,
+        "knhaCiHi": 0.5460086107425055,
+        "logLik": -7.458214728609066,
+        "boundaryLogLik": -7.591284958018324
+      },
+      "default": {
+        "tau2": 0.060394608351320295,
+        "logLik": -7.458214734893302
+      },
+      "damped": {
+        "tau2": 0.060387118914869635,
+        "logLik": -7.458214728609066
+      },
+      "strict": {
+        "tau2": 0.060387118610454975,
+        "logLik": -7.45821472860907
+      }
+    },
+    "seed84084-1917": {
+      "reference": {
+        "tau2": 0.7633768741080981,
+        "mu": 0.05583002636471865,
+        "se": 0.3286426880078996,
+        "ciLo": -0.5882978059131979,
+        "ciHi": 0.6999578586426353,
+        "I2": 96.93830410168286,
+        "knhaSe": 0.45486167043812714,
+        "knhaCiLo": -0.9453137601640933,
+        "knhaCiHi": 1.0569738128935307,
+        "logLik": -25.27965887431199,
+        "boundaryLogLik": -26.42514064942012
+      },
+      "default": {
+        "tau2": 0.7634040903295813,
+        "logLik": -25.279658874692917
+      },
+      "damped": {
+        "tau2": 0.763376874837257,
+        "logLik": -25.27965887431199
+      },
+      "strict": {
+        "tau2": 0.7633768741152035,
+        "logLik": -25.279658874311995
+      }
+    },
+    "shallow-interior-beats-boundary": {
+      "reference": {
+        "tau2": 3.819165332714941,
+        "mu": 1.0855864380284297,
+        "se": 1.169478077624961,
+        "ciLo": -1.206548474825631,
+        "ciHi": 3.3777213508824904,
+        "I2": 99.9947643131738,
+        "knhaSe": 1.21943991616719,
+        "knhaCiLo": -4.161240046033788,
+        "knhaCiHi": 6.332412922090647,
+        "logLik": -4.345639908337889,
+        "boundaryLogLik": -4.345640908337891
+      },
+      "default": {
+        "tau2": 3.8191657991820165,
+        "logLik": -4.345639908337892
+      },
+      "damped": {
+        "tau2": 3.819165332838819,
+        "logLik": -4.345639908337888
+      },
+      "strict": {
+        "tau2": 3.819165332715953,
+        "logLik": -4.345639908337889
+      }
+    },
+    "boundary-beats-interior": {
+      "reference": {
+        "tau2": 0,
+        "mu": 0.00019124932925713013,
+        "se": 0.007070891041799029,
+        "ciLo": -0.013667442451275868,
+        "ciHi": 0.014049941109790126,
+        "I2": 0,
+        "knhaSe": 0.01912493292571301,
+        "knhaCiLo": -0.08209669552983735,
+        "knhaCiHi": 0.0824791941883516,
+        "logLik": -4.345626277062039,
+        "boundaryLogLik": -4.345626277062039
+      },
+      "default": {
+        "tau2": 3.8191558936435634,
+        "logLik": -4.345637733800395
+      },
+      "damped": {
+        "tau2": 3.819155427291061,
+        "logLik": -4.345637733800389
+      },
+      "strict": {
+        "tau2": 0,
+        "logLik": -4.345626277062039
+      }
+    }
+  }
+}

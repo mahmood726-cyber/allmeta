@@ -23,6 +23,14 @@ the section is renamed to that version and dated, and a fresh
 ### Added
 - _(items added since the most recent tag will be listed here)_
 
+### Fixed
+- REML in the shared univariate pooling core now checks competing positive
+  likelihood modes as well as the zero boundary, using adaptive score bounds.
+  Corrects Pairwise70 CD006536 (τ² 0 → 0.0449546737), narrow interior peaks missed
+  by a fixed grid, and failures under extreme changes of units. Fresh R/metafor
+  references, adversarial regressions and impact scope are recorded in
+  `docs/reml-global-validation.md`. This entry does not authorize a release.
+
 ---
 
 ## [1.7.0] — 2026-10-18
