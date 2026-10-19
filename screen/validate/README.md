@@ -78,7 +78,7 @@ scope. See `../../INTEGRATION_REPORT.md` for verified results and request logs.
 For `file://`, use the shared file picker to select all 19 `.csv.gz` files from
 `benchmark/data/corpora/` and `reference.json` from `screen/validate/corpus/`.
 Because those files live in two directories, you may copy them into one temporary
-folder for a single multi-file selection. Click **Re-run full validation** after
+folder for a single multi-file selection. Click **Replay published corpus (stored references)** after
 choosing full or quick mode. No bundled offline copy is needed. Direct callers
 can pass the selected `File` objects to
 `AlmValidate.loadFiles(a.corpus.files, selectedFiles, true)` and pass the returned
@@ -87,7 +87,7 @@ Quick mode has four checks versus the full paper's 29 Screen comparisons; its
 scope must not be labelled a full-paper PASS.
 
 `live: null` is intentional. Screen's comparator is ASReview (Python).
-The honest link text is **R check available via the reproducible repo**.
+The honest link text is **Python reference and re-execution**, preceded by "Live Python comparison is unavailable in this browser."
 No buildScript, fake ALMJSON line or R PASS rows are supplied. This follows the
 contract's explicit Screen exception, which supersedes the generic live-R
 instructions in the lane task.

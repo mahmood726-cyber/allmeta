@@ -36,6 +36,68 @@
     return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
   }
 
+  // Engine-independent natural log for the binary (OR/RR) contrast effects.
+  // ECMAScript leaves Math.log "implementation-approximated", and engines do
+  // differ: Math.log(7.105263157894737) — the log-OR of 2.5/9.5 vs 0.5/13.5
+  // after the 0.5 zero-cell correction — is 1.960835799271989 in V8 of
+  // Chromium 147 / Node 24 but 1.9608357992719891 (one ulp higher) in V8 of
+  // Chrome/Edge 155. The same imported study then produced different input
+  // text in different browsers. This is a line-for-line port of fdlibm's
+  // __ieee754_log (error < 1 ulp) using only IEEE-754 +, -, *, / and bit
+  // extraction, which JavaScript requires to be correctly rounded and unfused,
+  // so the result is bit-identical in every conforming engine.
+  var _logBuf = new DataView(new ArrayBuffer(8));
+  var LN2_HI = 6.93147180369123816490e-01, LN2_LO = 1.90821492927058770002e-10,
+    TWO54 = 1.80143985094819840000e+16,
+    LG1 = 6.666666666666735130e-01, LG2 = 3.999999999940941908e-01,
+    LG3 = 2.857142874366239149e-01, LG4 = 2.222219843214978396e-01,
+    LG5 = 1.818357216161805012e-01, LG6 = 1.531383769920937332e-01,
+    LG7 = 1.479819860511658591e-01;
+  function detLog(x) {
+    var hfsq, f, s, z, R, w, t1, t2, dk, i, j, k = 0, hx, lx;
+    if (typeof x !== "number") x = Number(x);
+    if (x !== x) return x;                        // NaN
+    _logBuf.setFloat64(0, x);
+    hx = _logBuf.getInt32(0); lx = _logBuf.getUint32(4);
+    if (hx < 0x00100000) {                        // x < 2^-1022, zero or negative
+      if (((hx & 0x7fffffff) | lx) === 0) return -Infinity;
+      if (hx < 0) return NaN;
+      k -= 54; x *= TWO54;                        // subnormal: scale up
+      _logBuf.setFloat64(0, x); hx = _logBuf.getInt32(0);
+    }
+    if (hx >= 0x7ff00000) return x + x;           // +Infinity
+    k += (hx >> 20) - 1023;
+    hx &= 0x000fffff;
+    i = (hx + 0x95f64) & 0x100000;
+    _logBuf.setInt32(0, hx | (i ^ 0x3ff00000));   // normalize x or x/2
+    x = _logBuf.getFloat64(0);
+    k += (i >> 20);
+    f = x - 1.0;
+    if ((0x000fffff & (2 + hx)) < 3) {            // |f| < 2^-20
+      if (f === 0) { if (k === 0) return 0; dk = k; return dk * LN2_HI + dk * LN2_LO; }
+      R = f * f * (0.5 - 0.33333333333333333 * f);
+      if (k === 0) return f - R;
+      dk = k; return dk * LN2_HI - ((R - dk * LN2_LO) - f);
+    }
+    s = f / (2.0 + f);
+    dk = k;
+    z = s * s;
+    i = hx - 0x6147a;
+    w = z * z;
+    j = 0x6b851 - hx;
+    t1 = w * (LG2 + w * (LG4 + w * LG6));
+    t2 = z * (LG1 + w * (LG3 + w * (LG5 + w * LG7)));
+    i |= j;
+    R = t2 + t1;
+    if (i > 0) {
+      hfsq = 0.5 * f * f;
+      if (k === 0) return f - (hfsq - s * (hfsq + R));
+      return dk * LN2_HI - ((hfsq - (s * (hfsq + R) + dk * LN2_LO)) - f);
+    }
+    if (k === 0) return f - s * (f - R);
+    return dk * LN2_HI - ((s * (f - R) - dk * LN2_LO) - f);
+  }
+
   // ----- Validation -------------------------------------------------------
 
   function validateArm(arm, effectMeasure, prefix) {
@@ -369,11 +431,11 @@
           var e2 = y.events + cc, ne2 = (y.n - y.events) + cc;
           if (!(e1 > 0) || !(ne1 > 0) || !(e2 > 0) || !(ne2 > 0)) continue;
           if (isOR) {
-            te = Math.log((e1 * ne2) / (e2 * ne1));
+            te = detLog((e1 * ne2) / (e2 * ne1));
             se = Math.sqrt(1 / e1 + 1 / ne1 + 1 / e2 + 1 / ne2);
           } else { // RR
             var n1 = x.n + (cc ? 2 * cc : 0), n2 = y.n + (cc ? 2 * cc : 0);
-            te = Math.log((e1 / n1) / (e2 / n2));
+            te = detLog((e1 / n1) / (e2 / n2));
             se = Math.sqrt(1 / e1 - 1 / n1 + 1 / e2 - 1 / n2);
           }
           if (!isFiniteNumber(te) || !isFiniteNumber(se) || !(se > 0)) continue;
@@ -443,11 +505,11 @@
         if (!(eX > 0) || !(neX > 0)) continue;
         var effect, se;
         if (isOR) {
-          effect = Math.log((eX * neR) / (eR * neX));
+          effect = detLog((eX * neR) / (eR * neX));
           se = Math.sqrt(1 / eX + 1 / neX + 1 / eR + 1 / neR);
         } else { // RR
           var nX = x.n + (cc ? 2 * cc : 0), nR = ref.n + (cc ? 2 * cc : 0);
-          effect = Math.log((eX / nX) / (eR / nR));
+          effect = detLog((eX / nX) / (eR / nR));
           se = Math.sqrt(1 / eX - 1 / nX + 1 / eR - 1 / nR);
         }
         if (!isFiniteNumber(effect) || !isFiniteNumber(se) || !(se > 0)) continue;
@@ -475,6 +537,7 @@
     toNmaProStudies: toNmaProStudies,
     toContrasts: toContrasts,
     toDoseResponse: toDoseResponse,
+    detLog: detLog,
   };
 
   if (typeof module !== "undefined" && module.exports) {

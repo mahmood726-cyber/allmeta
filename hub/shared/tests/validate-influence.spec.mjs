@@ -5,6 +5,8 @@ test('influence full primary replay restores inputs, results and navigation',asy
   await page.goto(url);
   // Corpus validation must preserve pending edits and the prior rendered result independently.
   await page.locator('#src').fill('not yet valid');
+  // Let the pending user edit reach autosave before checking replay restoration.
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('alm-autosave:influence')||'null')?.values.src==='not yet valid');
   const before=await page.evaluate(()=>({data:__almSnapshot(),href:location.href,length:history.length,state:history.state,full:_almLastInfluence(),storage:{...localStorage}}));
   const result=await page.evaluate(()=>AlmInfluenceValidation.runCorpus());
   expect(result.checks).toBe(164802);expect(result.passed).toBe(164802);expect(result.failed).toEqual([]);
@@ -36,7 +38,7 @@ test('influence current built-in example and changed inputs live R @slow',async(
 });
 test('influence refuses altered corpus bytes',async({page})=>{
   await page.goto(url);await page.route('**/validate/corpus/corpus.json',r=>r.fulfill({contentType:'application/json',body:'[]'}));
-  await page.getByRole('button',{name:'Re-run full validation',exact:true}).click();
+  await page.getByRole('button',{name:'Replay published corpus (stored references)',exact:true}).click();
   await expect(page.locator('#alm-validate [role=status]')).toContainText('SHA-256 mismatch');
 });
 test('influence malformed evidence is refused before replay',async({page})=>{

@@ -205,6 +205,10 @@ describe('NetworkMetaAnalysis', () => {
             nma.setData(starData(), 'binary');
             const results = await nma.run();
 
+            expect(results.model).toBe('fixed');
+            expect(results.requestedModel).toBe('random');
+            expect(results.fittedTauSquared).toBe(0);
+
             // 4 treatments => 3 effects vs reference
             expect(results.effects).toHaveLength(3);
             for (const effect of results.effects) {

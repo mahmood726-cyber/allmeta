@@ -5,6 +5,9 @@
 
 'use strict';
 
+// Renderer dispatch is mocked here; actual SVG geometry is browser-tested.
+global.HTASynthesisPlots = { pairwise: jest.fn(), nma: jest.fn(), error: jest.fn() };
+
 // ---- Mock globals ----
 global.MetaAnalysisMethods = class {
     constructor() {}
@@ -43,6 +46,8 @@ function setupDOM() {
 // Set up DOM before require
 setupDOM();
 
+// index.html loads synthesisPlots.js before beginnerMode.js; mirror that order.
+require('../../src/ui/synthesisPlots');
 const { BeginnerMode } = require('../../src/ui/beginnerMode');
 
 describe('BeginnerMode — wizard flows and data entry', () => {
@@ -361,6 +366,14 @@ describe('BeginnerMode — wizard flows and data entry', () => {
 
         test('applyTooltipsToElement does nothing for null element', () => {
             expect(() => bm.applyTooltipsToElement(null)).not.toThrow();
+        });
+        test('does not decorate SVG metadata or corrupt its JSON', () => {
+            const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+            const metadata=document.createElementNS(svg.namespaceURI,'metadata');
+            metadata.textContent='{"method":"REML","useHKSJ":false}';svg.appendChild(metadata);
+            bm.applyTooltipsToElement(metadata);bm.applyTooltipsToElement(svg);
+            expect(JSON.parse(metadata.textContent)).toEqual({method:'REML',useHKSJ:false});
+            expect(svg.querySelector('.stat-term-tooltip')).toBeNull();
         });
 
         test('applyTooltipsToElement adds tooltip for matching term', () => {

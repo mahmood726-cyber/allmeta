@@ -534,6 +534,7 @@
           if (a.multiArmStudies && a.multiArmStudies.length) {
             extras.push("Multi-arm correction applied to " + a.multiArmStudies.length + " stud" + (a.multiArmStudies.length === 1 ? "y" : "ies") + " (" + a.multiArmStudies.join(", ") + "): correlated contrasts, as netmeta.");
           }
+          (a.varianceDisclosures || []).forEach(function (d) { extras.push(d.message); });
           if (a.df === 0) extras.push("No degrees of freedom for heterogeneity (every comparison has a single study and the network has no loops): τ², I² and prediction intervals cannot be estimated.");
           else if (model === "re" && !a.predict) extras.push("Prediction intervals need at least 2 degrees of freedom for heterogeneity.");
           // heterogeneity and inconsistency
@@ -640,6 +641,7 @@
         }
         lines.push(cells.map(csvCell).join(","));
       }
+      (a.varianceDisclosures || []).forEach(function (d) { lines.push(csvCell("Note: " + d.message)); });
       downloadBlob(new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"}), "nma-league.csv");
     }
     function onDownloadJson() {

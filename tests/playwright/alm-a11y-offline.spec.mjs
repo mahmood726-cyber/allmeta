@@ -109,11 +109,40 @@ for (const app of APPS) {
 
 // ---- export validity: RIS / CSV / JSON are well-formed (Screen) ----
 test("Screen exports are well-formed (RIS records, CSV header, JSON schema)", async ({ page }) => {
+  const logs = [];
+  page.on("console", m => logs.push(m.text()));
   await page.goto("/screen/index.html");
   await page.waitForFunction(() => !!window.__almScreenpro);
   await page.locator("#btn-example").click();
-  // include one record so the RIS export (includes only) is non-empty
+  // include one record at title/abstract
   await page.locator('#card-host [data-dec="include"]').click();
+  // Requirement: RIS exports FINAL (full-text) includes only. A title/abstract-only
+  // include is not final, so the RIS export must produce no file and say why.
+  const blobsBefore = await page.evaluate(() => {
+    window.__risBlobs = 0;
+    const o = URL.createObjectURL;
+    URL.createObjectURL = function (b) { window.__risBlobs++; return o.call(URL, b); };
+    document.getElementById("btn-export-ris").click();
+    URL.createObjectURL = o;
+    return window.__risBlobs;
+  });
+  expect(blobsBefore).toBe(0);
+  expect(logs).toContain("No included records to export.");
+  // Full text opens only once title/abstract is complete: exclude every other
+  // non-duplicate record, then complete full-text screening for the included one
+  // so the RIS export is non-empty.
+  const pendingTA = () => page.evaluate(() => window.__almScreenpro.state().records.filter(r => !r.dup && !r.r1.d).length);
+  for (let i = 0; i < 10 && await pendingTA() > 0; i++) {
+    await page.locator("#nav-undec").click();
+    await page.locator('#card-host [data-dec="exclude"]').click();
+  }
+  expect(await pendingTA()).toBe(0);
+  await page.locator("#f-stage").selectOption("ft");
+  await expect(page.locator("#f-stage")).toHaveValue("ft");
+  await page.locator("#ft-retrieval").selectOption("retrieved");
+  await page.locator("#ft-save").click();
+  await page.locator('#card-host [data-dec="include"]').click();
+  expect(await page.evaluate(() => window.__almScreenpro.state().records.filter(r => r.fullText.r1.d === "include").length)).toBe(1);
   const blobs = await page.evaluate(async () => {
     const captured = {};
     const orig = URL.createObjectURL;
@@ -140,6 +169,9 @@ test("Screen exports are well-formed (RIS records, CSV header, JSON schema)", as
   // RIS: proper record delimiters
   expect(blobs.ris).toMatch(/^TY {2}- JOUR/m);
   expect(blobs.ris).toMatch(/^ER {2}- /m);
+  // RIS carries exactly the one final (full-text) include, nothing excluded at title/abstract
+  expect(blobs.ris.match(/^TY {2}- JOUR/gm)).toHaveLength(1);
+  expect(blobs.ris).toContain("TI  - Synthetic demo: heart failure randomized trial");
 });
 
 // ---- CSV injection guard: dangerous prefixes neutralised, negatives preserved ----

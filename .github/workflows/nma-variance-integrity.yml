@@ -1,0 +1,49 @@
+name: NMA variance integrity
+
+on:
+  pull_request:
+    paths:
+      - 'shared/nma-multiarm-v1.js'
+      - 'shared/ma-comparisons-v1.js'
+      - 'shared/tests/nma-multiarm-v1.spec.mjs'
+      - 'nma/**'
+      - 'hub/shared/tests/nma*.spec.mjs'
+      - 'tests/fixtures/nma-multiarm-rounding-*'
+      - '.github/workflows/nma-variance-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nma-variance-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Existing multi-arm/bus numerical regressions
+        run: node --test shared/tests/nma-multiarm-v1.spec.mjs
+      - run: npm ci
+        working-directory: hub/shared/tests
+      - run: npx playwright install --with-deps chromium
+        working-directory: hub/shared/tests
+      - name: NMA browser workflows and archived-reference checks
+        run: npx playwright test nma --reporter=line
+        working-directory: hub/shared/tests
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nma-variance-integrity-results
+          path: |
+            hub/shared/tests/test-results/
+            hub/shared/tests/artifacts/
+          if-no-files-found: ignore
+          retention-days: 14

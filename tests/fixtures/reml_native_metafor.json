@@ -1,0 +1,10 @@
+{
+  "r_version": "R version 4.6.0 (2026-04-24 ucrt)",
+  "metafor_version": "5.0.1",
+  "call": "rma(yi, vi, method='REML', control=list(stepadj=0.5, threshold=1e-14, maxiter=10000))",
+  "tau2": {
+    "CD005566": 0.0330421359225505,
+    "CD006536": 0.0449546737015453,
+    "CD016031": 0.364808594777756
+  }
+} 
