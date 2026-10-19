@@ -1,5 +1,5 @@
 // multivariate-ma sanity: default example equals the pinned R reference; no console errors; no off-origin requests.
-import { test, expect } from './validation-fixture.mjs';
+import { test, expect } from './multivariate-ma-fixture.mjs';
 import { readFileSync } from 'node:fs';
 const ref = JSON.parse(readFileSync(new URL('../../../multivariate-ma/validate/plus/reference.json', import.meta.url), 'utf8'));
 const berkey = ref.configurations.find(c => c.id === 'mvmeta::berkey98::PD+AL::REML::supplied').supplied;

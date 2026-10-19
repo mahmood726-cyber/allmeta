@@ -1,5 +1,5 @@
 // Pixel references for the multivariate-ma joint plot and rho_w sweep plot (Windows Edge, CI job plus-pixels).
-import { test, expect } from './validation-fixture.mjs';
+import { test, expect } from './multivariate-ma-fixture.mjs';
 const options = { threshold: 0.2, maxDiffPixelRatio: 0.005, animations: 'disabled', caret: 'hide' };
 test.use({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, reducedMotion: 'reduce', colorScheme: 'light' });
 for (const [name, button] of [['berkey', 'btn-ex-berkey'], ['hyp', 'btn-ex-hyp']]) test('multivariate-ma plus pixels ' + name, async ({ page }) => {

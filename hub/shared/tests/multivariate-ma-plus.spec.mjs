@@ -1,5 +1,5 @@
 // multivariate-ma plus panel: usability, exports, refusals and the full pinned R corpus replay.
-import { test, expect } from './validation-fixture.mjs';
+import { test, expect } from './multivariate-ma-fixture.mjs';
 import { readFileSync } from 'node:fs';
 const url = '/multivariate-ma/index.html';
 const manifest = JSON.parse(readFileSync(new URL('../../../multivariate-ma/validate/MANIFEST-plus.json', import.meta.url), 'utf8'));
