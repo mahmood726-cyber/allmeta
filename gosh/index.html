@@ -105,7 +105,7 @@
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
-        <span class="hint">k &#8804; 15 studies: full enumeration (2&#7505; &#8722; 1 subsets). k &gt; 15: a random-sampling preview, then exact streamed enumeration of all subsets (see Subsets for k &gt; 15).</span>
+        <span class="hint">k &#8804; 15 studies: full enumeration (2&#7505; &#8722; 1 subsets). k &gt; 15: random-sampling preview (Olkin &amp; Dahabreh 2012 recommendation); exact enumeration is available below.</span>
 
       <label>
         <span>Pooling model</span>
@@ -173,7 +173,7 @@
 <section id="alm-plus"></section>
 </main>
   <footer>
-    Olkin I, Dahabreh IJ, Trikalinos TA. GOSH &#8212; a graphical display of study heterogeneity. <em>Res Synth Methods</em> 2012;3(3):214&#8211;23. Subgroup structure interpretation aligns with <em>Cochrane Handbook v6.5 &#167;10.10.2</em> on detecting influential studies; <span data-gloss="i2">I&#178;</span> interpretation per &#167;10.10.2 (low &lt;30%, moderate 30&#8211;60%, substantial 50&#8211;90%, considerable 75&#8211;100%). For k &gt; 15 the sampled preview draws 5,000 subsets by default, choosing sizes uniformly from 2 to k, with replacement, using a fixed seed; the exact mode then enumerates all 2^k - 1 subsets by streaming. This differs from <code>metafor::gosh()</code>, which enumerates all non-empty subsets when 2^k - 1 is at most 1,000,000 (k up to 19), and otherwise draws 1,000,000 subsets by default with binomial size probabilities. Full enumeration here includes single-study subsets.
+    Olkin I, Dahabreh IJ, Trikalinos TA. GOSH &#8212; a graphical display of study heterogeneity. <em>Res Synth Methods</em> 2012;3(3):214&#8211;23. Subgroup structure interpretation aligns with <em>Cochrane Handbook v6.5 &#167;10.10.2</em> on detecting influential studies; <span data-gloss="i2">I&#178;</span> interpretation per &#167;10.10.2 (low &lt;30%, moderate 30&#8211;60%, substantial 50&#8211;90%, considerable 75&#8211;100%). For k &gt; 15 the sampled preview draws 5,000 subsets by default, choosing sizes uniformly from 2 to k, with replacement, using a fixed seed; the exact mode then enumerates all non-empty subsets by streaming. This differs from <code>metafor::gosh()</code>, which enumerates all non-empty subsets when 2^k - 1 is at most 1,000,000 (k up to 19), and otherwise draws 1,000,000 subsets by default with binomial size probabilities. Full enumeration here includes single-study subsets.
   </footer>
   <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
@@ -300,6 +300,7 @@
         var rawSample = document.getElementById('n-sample').value.trim();
         var nSample = Number(rawSample);
         if (rawSample === '' || !Number.isInteger(nSample) || nSample < 1 || nSample > 100000) {
+          exactRequest(null);
           sampleError.textContent = 'Enter a whole number of draws from 1 to 100,000.';
           document.getElementById('m-n').textContent = '0';
           _lastResults = null;
@@ -314,6 +315,7 @@
       }
 
       if (results.length === 0) {
+        exactRequest(null);
         document.getElementById('m-n').textContent = '0';
         _lastResults = null; // do not leave a stale result exportable
         document.getElementById('m-est').textContent = '\u2014';
@@ -363,6 +365,7 @@
       };
 
       draw(results);
+      if (!_exactSuppressed && window.AlmGoshExact) window.AlmGoshExact.labelResult(_lastResults);
       if (isSampled) exactRequest({ rows: rows, model: model, apply: applyExact, axes: function () { return _axisState; } });
 
       // URL state
@@ -386,6 +389,7 @@
         median_est: res.median_est, median_i2: res.median_i2, min_est: res.min_est, max_est: res.max_est,
         q25_est: res.q25_est, q75_est: res.q75_est, exact: res,
       });
+      window.AlmGoshExact.labelResult(_lastResults);
     }
 
     function draw(pts) {
@@ -548,6 +552,8 @@
 
     // Expose last results for export
     window._almLastGosh = function () { return _lastResults; };
+    // The controller loads after this inline script; rerun restored/default inputs once it is ready.
+    window.__almGoshExactReady = function () { run(); };
 
 
     // Validation observes calls to the unchanged parser and pooling engine.
@@ -752,6 +758,7 @@
 <script src="validate/manifest-plus.js"></script>
 <script src="validate/adapter-plus.js"></script>
 <script src="exact-enum.js"></script>
+<script src="validate/exact/compare.js"></script>
 <script src="exact-ui.js"></script>
 </body>
 </html>

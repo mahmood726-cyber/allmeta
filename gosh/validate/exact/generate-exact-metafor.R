@@ -14,6 +14,7 @@ if (length(args) < 3) stop("usage: Rscript generate-exact-metafor.R <corpus.json
 lib <- Sys.getenv("P13B_RLIB", "")
 if (nzchar(lib)) .libPaths(c(lib, .libPaths()))
 suppressPackageStartupMessages({ library(jsonlite); library(metafor) })
+stopifnot(as.character(packageVersion("jsonlite")) == "2.0.0")
 if (as.character(packageVersion("metafor")) != "5.2.1") stop("metafor 5.2.1 required, found ", as.character(packageVersion("metafor")))
 corpus_path <- args[1]; work <- args[2]; out_path <- args[3]
 max_k <- if (length(args) >= 4) as.integer(args[4]) else 20L

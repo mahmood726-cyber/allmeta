@@ -17,16 +17,25 @@
   function compare(app, ref, opts) {
     opts = opts || {};
     var tol = opts.tol === undefined ? TOL : opts.tol;
-    var checks = 0, failures = [];
+    var checks = 0, failures = [], quantities = {}, maxDiff = 0;
     var id = (ref.id || '?') + ' ' + ref.model;
-    function exact(name, a, b) { checks++; if (a !== b) failures.push({ id: id, quantity: name, app: a, ref: b }); }
+    function record(name, pass, diff, abs) {
+      var group = name.replace(/^grid\[\d+\]$/, 'grid_cell').replace(/^per_study\[\d+\]\./, 'per_study.');
+      var q = quantities[group] || (quantities[group] = {checks:0,passed:0,maxNormDiff:0,maxAbsDiff:0});
+      checks++; q.checks++; if (pass) q.passed++;
+      q.maxNormDiff = Math.max(q.maxNormDiff, diff || 0); q.maxAbsDiff = Math.max(q.maxAbsDiff, abs || 0);
+    }
+    function exact(name, a, b) { record(name, a === b); if (a !== b) failures.push({ id: id, quantity: name, app: a, ref: b }); }
     function near(name, a, b) {
-      checks++;
       var d = Math.abs(a - b) / Math.max(1, Math.abs(b));
-      if (typeof a !== 'number' || typeof b !== 'number' || !(d <= tol)) failures.push({ id: id, quantity: name, app: a, ref: b, diff: d });
+      var pass = Number.isFinite(a) && Number.isFinite(b) && d <= tol;
+      record(name, pass, Number.isFinite(d) ? d : Infinity, Math.abs(a-b));
+      maxDiff = Math.max(maxDiff, Number.isFinite(d) ? d : Infinity);
+      if (!pass) failures.push({ id: id, quantity: name, app: a, ref: b, diff: d });
       return d;
     }
-    var maxDiff = 0;
+    exact('exact', app.exact, true);
+    exact('expected_subsets', app.expected_subsets, Math.pow(2, ref.k) - 1);
     exact('k', app.k, ref.k);
     exact('model', app.model, ref.model);
     exact('n_subsets', app.n_subsets, ref.n_subsets);
@@ -37,18 +46,23 @@
     });
     if (ref.model === 'DL' && ref.tau2_positive !== undefined) exact('tau2_positive', app.tau2_positive, ref.tau2_positive);
     // grid: rebuild the dense reference from sparse [cell, count] pairs
-    var nx = app.grid.nx, ny = app.grid.ny, dense = new Array(nx * ny).fill(0);
+    var nx = 100, ny = 100, dense = new Array(nx * ny).fill(0);
+    exact('grid_nx', app.grid.nx, nx); exact('grid_ny', app.grid.ny, ny);
+    exact('grid_length', app.grid.counts.length, nx * ny);
+    exact('grid_y0', app.grid.y0, 0); exact('grid_y1', app.grid.y1, 100);
     (ref.grid_cells || []).forEach(function (p) { dense[p[0]] = p[1]; });
     near('grid_x0', app.grid.x0, ref.grid_x0); near('grid_x1', app.grid.x1, ref.grid_x1);
     var moved = 0;
-    for (var c = 0; c < nx * ny; c++) { checks++; if (app.grid.counts[c] !== dense[c]) { moved += Math.abs(app.grid.counts[c] - dense[c]); failures.push({ id: id, quantity: 'grid[' + c + ']', app: app.grid.counts[c], ref: dense[c] }); } }
+    for (var c = 0; c < nx * ny; c++) { exact('grid[' + c + ']', app.grid.counts[c], dense[c]); if (app.grid.counts[c] !== dense[c]) moved += Math.abs(app.grid.counts[c] - dense[c]); }
+    exact('per_study_length', app.per_study.length, ref.k);
     (ref.per_study || []).forEach(function (r, i) {
       var a = app.per_study[i] || {};
+      exact('per_study[' + (i + 1) + '].study', a.study, r.study);
       exact('per_study[' + (i + 1) + '].with_n', a.with_n, r.with_n);
       exact('per_study[' + (i + 1) + '].without_n', a.without_n, r.without_n);
       PER.forEach(function (q) { maxDiff = Math.max(maxDiff, near('per_study[' + (i + 1) + '].' + q, a[q], r[q]) || 0); });
     });
-    return { id: id, checks: checks, passed: checks - failures.length, failures: failures, maxNormDiff: maxDiff, gridMoved: moved };
+    return { id: id, checks: checks, passed: checks - failures.length, failures: failures, maxNormDiff: maxDiff, gridMoved: moved, quantities: quantities };
   }
 
   var api = { compare: compare, TOL: TOL };

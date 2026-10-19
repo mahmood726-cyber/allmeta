@@ -2,6 +2,7 @@
 // Pinned references: gosh/validate/exact/ (MANIFEST-exact.json). Tolerance 1e-9 normalised, counts and grid cells exact.
 // GOSH_EXACT_BASE (default /gosh/) lets the same spec run against another checkout (e.g. origin/main) to show it fails there.
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 const BASE = process.env.GOSH_EXACT_BASE || '/gosh/';
 const DIR = BASE + 'validate/exact/';
@@ -110,13 +111,56 @@ test.describe('GOSH exact enumeration', () => {
     test.setTimeout(120_000);
     await load(page);
     await input(page, 'dat.collins1985a::003', 'DL', 'exact');
+    await page.evaluate(() => { window.exactTicks = 0; setInterval(() => window.exactTicks++, 10); });
     await expect(page.locator('#exact-cancel')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.exactTicks)).toBeGreaterThan(2);
     await expect(page.locator('#m-n')).toHaveText('5,000');
     await page.click('#exact-cancel');
     await expect(page.locator('#exact-status')).toHaveText('Exact enumeration cancelled; the sampled result is shown.');
     await expect(page.locator('#exact-progress')).toBeHidden();
     expect(await page.evaluate(() => window._almLastGosh().sampled)).toBe(true);
     await expect(page.locator('#m-n')).toHaveText('5,000');
+  });
+
+  test('UI: completed tables clear on sampling and cached results restore labels and exports', async ({ page }) => {
+    await load(page); await input(page, 'dat.damico2009::001', 'FE', 'exact');
+    await expect(page.locator('#exact-status')).toHaveText(/^Exact: all/, {timeout:60000});
+    await page.selectOption('#enum-mode','sample'); await page.click('#btn-run');
+    await expect(page.locator('#exact-perstudy tbody tr')).toHaveCount(0);
+    await expect(page.locator('#plot-note')).toContainText('random sample of 5,000');
+    await page.selectOption('#enum-mode','exact'); await page.click('#btn-run');
+    await expect(page.locator('#exact-status')).toHaveText(/^Exact: all/);
+    await expect(page.locator('#exact-perstudy tbody tr')).toHaveCount(16);
+    await page.click('#exact-run');
+    await expect(page.locator('#exact-cancel')).toBeHidden();
+    await expect(page.locator('#exact-summary caption')).toContainText('all 2^16-1 subsets (exact)');
+    await expect(page.locator('#plot title')).toContainText('all 2^16-1 subsets (exact)');
+    for (const action of ['json','csv','report-md','report-txt']) {
+      const promise=page.waitForEvent('download');
+      await page.locator('#alm-export-mount [data-action="'+action+'"]').click();
+      const download=await promise;
+      expect(await readFile(await download.path(),'utf8')).toContain('all 2^16-1 subsets (exact)');
+    }
+  });
+
+  test('UI: invalid draws cancel pending work and k > 30 refuses exact honestly', async ({ page }) => {
+    await load(page); await input(page, 'dat.collins1985a::003','DL','exact');
+    await page.fill('#n-sample','0'); await page.click('#btn-run');
+    await expect(page.locator('#exact-cancel')).toBeHidden();
+    expect(await page.evaluate(()=>window._almLastGosh())).toBeNull();
+    await page.fill('#src',Array.from({length:31},(_,i)=>`${i/10}, 1, S${i}`).join('\n'));
+    await page.fill('#n-sample','5000'); await page.selectOption('#enum-mode','sample'); await page.click('#btn-run');
+    await expect(page.locator('#exact-status')).toContainText('supports up to 30 studies');
+    await expect(page.locator('#exact-run')).toBeHidden();
+    await expect(page.locator('#plot-note')).toContainText('random sample of 5,000');
+  });
+
+  test('UI: chunked fallback completes without Web Workers', async ({ page }) => {
+    await page.addInitScript(()=>{window.Worker=function(){throw Error('Worker disabled by test');};});
+    await load(page); await input(page,'dat.damico2009::001','DL','exact');
+    await expect(page.locator('#exact-status')).toHaveText(/^Exact: all 65,535/, {timeout:60000});
+    expect(await page.evaluate(()=>window._almLastGosh().exact.n_subsets)).toBe(65535);
+    await expect(page.locator('#exact-perstudy tbody tr')).toHaveCount(16);
   });
 
   test('UI: sampling-only mode and k <= 15 leave the existing paths unchanged', async ({ page }) => {

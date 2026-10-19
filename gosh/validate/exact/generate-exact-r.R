@@ -17,6 +17,7 @@ if (length(args) != 3) stop("usage: Rscript generate-exact-r.R <corpus.json> <wo
 lib <- Sys.getenv("P13B_RLIB", "")
 if (nzchar(lib)) .libPaths(c(lib, .libPaths()))
 suppressPackageStartupMessages(library(jsonlite))
+stopifnot(as.character(packageVersion("jsonlite")) == "2.0.0")
 corpus_path <- args[1]; work <- args[2]; out_path <- args[3]
 dir.create(work, showWarnings = FALSE, recursive = TRUE)
 corpus <- fromJSON(corpus_path, simplifyVector = FALSE)

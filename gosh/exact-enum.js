@@ -65,6 +65,7 @@
     options = options || {};
     var k = te.length;
     var GX = options.gridX || 100, GY = options.gridY || 100;
+    if (!Number.isInteger(GX) || !Number.isInteger(GY) || GX < 1 || GY < 1 || GX * GY > 1000000) throw new Error('invalid grid dimensions');
     var m = Math.min(k, LOW_MAX), h = k - m;
     var c = 0;
     for (var i = 0; i < k; i++) c += te[i];
@@ -73,12 +74,15 @@
     for (i = 0; i < k; i++) {
       v[i] = se[i] * se[i]; yc[i] = te[i] - c;
       var w = 1 / v[i];
+      if (!(v[i] > 0) || !(w > 0) || ![c, v[i], yc[i], w, w * yc[i], w * yc[i] * yc[i], w * w].every(Number.isFinite)) throw new Error('inputs exceed the representable numeric range');
       elems.push({ w: w, wy: w * yc[i], wy2: w * yc[i] * yc[i], w2: w * w });
     }
     var LT = table(elems.slice(0, m)), HT = table(elems.slice(m));
+    if (![LT, HT].every(function (t) { return ['sw','swy','swy2','sw2'].every(function (q) { return Number.isFinite(t[q][t.size - 1]); }); })) throw new Error('subset sums exceed the representable numeric range');
     var x0 = Infinity, x1 = -Infinity;
     for (i = 0; i < k; i++) { if (te[i] < x0) x0 = te[i]; if (te[i] > x1) x1 = te[i]; }
     if (!(x1 > x0)) { x0 = x0 - 0.5; x1 = x1 + 0.5; }
+    if (!(x1 > x0) || !Number.isFinite(x1 - x0) || !Number.isFinite(QBINS / (x1 - x0))) throw new Error('plot range is not representable');
     var gxScale = GX / (x1 - x0), gyScale = GY / 100;
     var qxScale = QBINS / (x1 - x0), qyScale = QBINS / 100;
     var isDL = model === 'DL';
@@ -202,11 +206,13 @@
       bufE = []; bufI = []; var binsE = [], binsI = [], cnt = 0;
       ranks.forEach(function (r) {
         var b = locE[r].bin;
-        if (b >= 0 && slotE[b] < 0) { slotE[b] = bufE.length; binsE.push(b); bufE.push(new Float64Array(st.qEst[b])); cnt += st.qEst[b]; }
+        if (b >= 0 && slotE[b] < 0) { slotE[b] = binsE.length; binsE.push(b); cnt += st.qEst[b]; }
         b = locI[r].bin;
-        if (b >= 0 && slotI[b] < 0) { slotI[b] = bufI.length; binsI.push(b); bufI.push(new Float64Array(st.qI2[b])); cnt += st.qI2[b]; }
+        if (b >= 0 && slotI[b] < 0) { slotI[b] = binsI.length; binsI.push(b); cnt += st.qI2[b]; }
       });
       if (cnt > COLLECT_CAP) throw new Error('quantile collection would exceed ' + COLLECT_CAP + ' values');
+      bufE = binsE.map(function (b) { return new Float64Array(st.qEst[b]); });
+      bufI = binsI.map(function (b) { return new Float64Array(st.qI2[b]); });
       fillE = new Int32Array(bufE.length); fillI = new Int32Array(bufI.length);
       quantilePlan = { ranks: ranks, locE: locE, locI: locI, binsE: binsE, binsI: binsI };
       return quantilePlan;

@@ -6,8 +6,7 @@
  */
 (function () {
   'use strict';
-  // Measured in headless Edge on the development machine (gosh/validate/exact/README.md, "Throughput"): Auto runs the
-  // exact enumeration when k is at most these limits, which kept both passes under about 60 s there.
+  // Conservative automatic workload limits, not a runtime guarantee; manual exact mode permits up to MAX_K.
   var AUTO_MAX_K = { FE: 26, DL: 25 };
   var ENGINE_MAX_K = 30;
   var NS_PER_SUBSET = { FE: 450, DL: 1000 }; // both passes; used only for the displayed estimate
@@ -35,9 +34,13 @@
     current = null;
     el('exact-progress').hidden = true; el('exact-cancel').hidden = true;
   }
-  function clearTables() { el('exact-summary').tBodies[0].replaceChildren(); el('exact-perstudy').tHead.replaceChildren(); el('exact-perstudy').tBodies[0].replaceChildren(); }
+  function clearTables() { el('exact-summary').hidden = true; el('exact-perstudy').hidden = true; el('exact-summary').tBodies[0].replaceChildren(); el('exact-perstudy').tHead.replaceChildren(); el('exact-perstudy').tBodies[0].replaceChildren(); }
 
   function renderTables(res, rows) {
+    el('exact-summary').hidden = false; el('exact-perstudy').hidden = false;
+    var label = 'all 2^' + res.k + '-1 subsets (exact): ' + res.n_subsets.toLocaleString();
+    el('exact-summary').caption.textContent = label;
+    el('exact-perstudy').caption.textContent = 'Per-study with/without means over ' + label;
     var body = el('exact-summary').tBodies[0]; body.replaceChildren();
     var items = [['Subsets enumerated', res.n_subsets.toLocaleString() + ' of ' + res.expected_subsets.toLocaleString()],
       ['Estimate: median (q25, q75)', fmt(res.median_est, 4) + ' (' + fmt(res.q25_est, 4) + ', ' + fmt(res.q75_est, 4) + ')'],
@@ -70,7 +73,7 @@
     var yMin = 0, yMax = 100;
     if (axes && Array.isArray(axes.y)) { if (axes.y[0] !== null) yMin = axes.y[0]; if (axes.y[1] !== null) yMax = axes.y[1]; }
     if (axes && Array.isArray(axes.x)) { if (axes.x[0] !== null) xMin = axes.x[0]; if (axes.x[1] !== null) xMax = axes.x[1]; }
-    if (!(xMax > xMin) || !(yMax > yMin)) return '';
+    if (![xMin,xMax,yMin,yMax,xMax-xMin,yMax-yMin].every(Number.isFinite) || !(xMax > xMin) || !(yMax > yMin)) return '';
     var X = function (v) { return padL + (v - xMin) / (xMax - xMin) * plotW; };
     var Y = function (v) { return padT + (1 - (v - yMin) / (yMax - yMin)) * plotH; };
     var parts = ['<defs><clipPath id="exact-clip"><rect x="60" y="20" width="520" height="350"/></clipPath></defs>'];
@@ -101,11 +104,25 @@
   }
   function show(res, req) {
     el('plot').innerHTML = renderDensity(res, req.axes ? req.axes() : null);
-    el('plot-note').textContent = 'Exact enumeration: ' + res.n_subsets.toLocaleString() + ' subsets shown as a density (darker = more subsets).';
+    var plotted = !!el('plot').innerHTML;
+    el('plot-error').textContent = plotted ? '' : 'Plot cannot be displayed: invalid axis limits. Widen or reset the limits. Computed results are retained.';
+    el('plot-note').textContent = plotted ? 'Exact enumeration: ' + res.n_subsets.toLocaleString() + ' subsets shown as a density (darker = more subsets).' : '';
     if (req.apply) req.apply(res);
   }
 
+  function labelResult(result) {
+    if (!result) return;
+    var label = result.sampled ? 'random sample of ' + result.n_subsets.toLocaleString() :
+      'all 2^' + result.k + '-1 subsets (exact): ' + result.n_subsets.toLocaleString();
+    result.enumeration_label = label;
+    var plot = el('plot');
+    if (plot.innerHTML) plot.innerHTML = '<title>' + label + '</title><text x="60" y="12" font-size="10" fill="currentColor">' + label + '</text>' + plot.innerHTML;
+    if (result.sampled) el('plot-note').textContent = label + '. ' + el('plot-note').textContent;
+  }
+
   function startExact(req) {
+    if (!req || req.rows.length > ENGINE_MAX_K) return;
+    if (cache && cache.key === req.key) { stop(); finish(cache.result, req); return; }
     stop();
     var id = ++seq, t0 = Date.now();
     current = { id: id, req: req };
@@ -135,7 +152,7 @@
       if (!current || current.id !== id) return;
       var E = window.AlmGoshExactEngine, eng;
       try { eng = E.createEngine(payload.te, payload.se, payload.model); } catch (err) { fail(err.message); return; }
-      var H = 0, pass = 0, n = eng.highCount, step = Math.max(1, Math.floor(n / 400)), tm = Date.now();
+      var H = 0, pass = 0, n = eng.highCount, step = 1, tm = Date.now();
       (function slice() {
         if (!current || current.id !== id) return;
         var until = Date.now() + 40;
@@ -146,7 +163,9 @@
           }
         } catch (err) { fail(err.message); return; }
         if (pass < 2) { progress((pass + H / n) / 2); current.timer = setTimeout(slice, 0); return; }
-        var res = eng.summary(eng.finishQuantiles()); res.timing = { main_ms: Date.now() - tm, quantile_ms: 0 };
+        var res;
+        try { res = eng.summary(eng.finishQuantiles()); } catch (err) { fail(err.message); return; }
+        res.timing = { main_ms: Date.now() - tm, quantile_ms: 0 };
         var r = current.req; stop(); finish(res, r);
       })();
     }
@@ -154,16 +173,16 @@
 
   // Called by the page after every run.
   function request(req) {
-    if (!req) { stop(); cache = null; clearTables(); el('exact-status').textContent = 'Applies when more than 15 studies are entered.'; el('exact-run').hidden = true; return; }
+    if (!req) { stop(); pending = null; cache = null; clearTables(); el('exact-status').textContent = 'Applies when more than 15 studies are entered.'; el('exact-run').hidden = true; return; }
     var k = req.rows.length, m = mode();
     req.key = key(req.rows, req.model);
     pending = req;
     el('exact-run').hidden = false;
-    if (m === 'sample') { stop(); el('exact-status').textContent = 'Random sampling selected. Showing random sampling (labelled). Press "Run exact enumeration" to enumerate every subset.'; return; }
-    if (cache && cache.key === req.key) { stop(); show(cache.result, req); return; }
+    if (k > ENGINE_MAX_K) { stop(); clearTables(); pending = null; el('exact-status').textContent = 'Exact enumeration supports up to ' + ENGINE_MAX_K + ' studies (over one billion subsets); larger workloads exceed the bounded integer/memory design. Showing random sampling.'; el('exact-run').hidden = true; return; }
+    if (m === 'sample') { stop(); clearTables(); el('exact-status').textContent = 'Random sampling selected. Showing random sampling (labelled). Press "Run exact enumeration" to enumerate every subset.'; return; }
+    if (cache && cache.key === req.key) { stop(); finish(cache.result, req); return; }
     if (current && current.req.key === req.key) { current.req = req; return; }
     stop(); clearTables();
-    if (k > ENGINE_MAX_K) { el('exact-status').textContent = 'Exact enumeration supports up to ' + ENGINE_MAX_K + ' studies; showing random sampling.'; el('exact-run').hidden = true; return; }
     var est = estimateSeconds(k, req.model);
     if (m === 'exact' || (m === 'auto' && k <= AUTO_MAX_K[req.model])) { startExact(req); return; }
     el('exact-status').textContent = 'Auto: exact enumeration of ' + (Math.pow(2, k) - 1).toLocaleString() + ' subsets is estimated at about ' + Math.ceil(est) + ' s on a fast desktop, above the auto limit. ' +
@@ -174,5 +193,14 @@
   el('exact-run').onclick = function () { if (pending) startExact(pending); };
   el('exact-cancel').onclick = function () { stop(); el('exact-status').textContent = 'Exact enumeration cancelled; the sampled result is shown.'; };
 
-  window.AlmGoshExact = { request: request, cancel: stop, renderDensity: renderDensity, AUTO_MAX_K: AUTO_MAX_K, get cached() { return cache; } };
+  ['src','model','n-sample','enum-mode'].forEach(function (id) {
+    el(id).addEventListener('input', function () {
+      if (!current) return;
+      stop(); pending = null; clearTables(); el('exact-run').hidden = true;
+      el('exact-status').textContent = 'Inputs changed; press Run analysis to start exact enumeration for the new inputs.';
+    });
+  });
+
+  window.AlmGoshExact = { request: request, cancel: stop, labelResult: labelResult, renderDensity: renderDensity, AUTO_MAX_K: AUTO_MAX_K, get cached() { return cache; } };
+  if (window.__almGoshExactReady) window.__almGoshExactReady();
 })();
