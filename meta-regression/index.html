@@ -1017,5 +1017,42 @@
   });
 })();
 </script>
+
+<section id="alm-plus" aria-labelledby="plus-title">
+ <h2 id="plus-title">Multiple moderators and model comparison</h2>
+ <p>Fit nested maximum-likelihood models with two or three numeric moderators. Enter independent study effects and their sampling variances. For categorical moderators, supply numeric indicator columns. Missing or invalid rows are refused.</p>
+ <p>Initial rows: metadat::dat.bcg, log risk ratios and sampling variances, with year and absolute latitude.</p>
+ <label for="plus-data">CSV: yi, vi, then moderator columns</label>
+ <p id="plus-data-hint" class="plus-hint">Header line <code>yi,vi,name1,name2</code> (optionally a third moderator). One study per line, comma-separated, numbers only. Press Ctrl+Enter in the box to fit.</p>
+ <textarea id="plus-data" spellcheck="false" aria-describedby="plus-data-hint">yi,vi,year,ablat
+-0.889311333920205,0.325584765003961,1948,44
+-1.58538865720143,0.194581121398144,1949,55
+-1.34807314829969,0.415367965367965,1960,42
+-1.44155119002131,0.0200100319022476,1977,52
+-0.217547322211296,0.0512101721696309,1973,13
+-0.786115585818864,0.00690561845590876,1953,44
+-1.62089822359839,0.223017247572315,1973,19
+0.0119523335238405,0.00396157929781773,1980,13
+-0.469417648738149,0.056434210463249,1968,27
+-1.37134480347278,0.0730247936130289,1961,42
+-0.339358828338391,0.0124122139715597,1974,18
+0.445913400571379,0.532505845200153,1969,33
+-0.0173139482168798,0.0714046596839863,1976,33</textarea>
+ <label><input id="plus-interaction" type="checkbox"> Include the interaction between the first two moderators</label>
+ <button id="plus-run" type="button">Fit ML models</button>
+ <button id="plus-example" type="button">Load BCG example and fit</button>
+ <button id="plus-export" type="button" disabled>Export extras as JSON</button>
+ <p id="plus-status" role="status" aria-live="polite"></p>
+ <div id="plus-results"></div>
+ <div id="plus-plot"></div>
+ <div id="alm-plus-validate"></div>
+</section>
+<link rel="stylesheet" href="plus.css">
+<script src="plus-engine.js"></script>
+<script src="validate/contract.js"></script>
+<script src="plus-ui.js"></script>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/plus-pins.js"></script>
+<script src="validate/plus-adapter.js"></script>
 </body>
 </html>
