@@ -7,7 +7,10 @@ se <- c(0.13784048752090222, 0.14832396974191325, 0.09486832980505137, 0.2280350
 x  <- c(10, 10, 20, 10, 6, 4, 10, 10, 8, 8, 10, 15, 35, 20, 15, 15, 8, 10, 55, 15, 5, 3, 15, 10)
 labels <- c("dat.bangertdrowns2004:4", "dat.bangertdrowns2004:5", "dat.bangertdrowns2004:6", "dat.bangertdrowns2004:10", "dat.bangertdrowns2004:13", "dat.bangertdrowns2004:14", "dat.bangertdrowns2004:16", "dat.bangertdrowns2004:17", "dat.bangertdrowns2004:18", "dat.bangertdrowns2004:19", "dat.bangertdrowns2004:21", "dat.bangertdrowns2004:23", "dat.bangertdrowns2004:26", "dat.bangertdrowns2004:27", "dat.bangertdrowns2004:28", "dat.bangertdrowns2004:29", "dat.bangertdrowns2004:30", "dat.bangertdrowns2004:32", "dat.bangertdrowns2004:37", "dat.bangertdrowns2004:40", "dat.bangertdrowns2004:42", "dat.bangertdrowns2004:44", "dat.bangertdrowns2004:45", "dat.bangertdrowns2004:48")
 
-res <- rma(yi = yi, sei = se, mods = ~ x, method = "PM", test = "adhoc", slab = labels)
+# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence
+# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).
+res <- rma(yi = yi, sei = se, mods = ~ x, method = "PM", test = "adhoc", slab = labels,
+           control = list(tol = 1e-12))
 print(res)
 
 # Expected browser output (for diff):

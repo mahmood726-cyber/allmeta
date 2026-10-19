@@ -130,8 +130,8 @@ test('fixed seed gives identical MC output twice; a different seed does not (mod
 // ---- Exported R script ---------------------------------------------------------------------------
 // The scripts in fixtures/features/meta-regression/rscript/*.R were run UNMODIFIED in R 4.6.0 with
 // metafor 5.2.1 by fixtures/features/meta-regression/run_rscripts.R, twice: as exported
-// (r-results.json, metafor's default PM root-finding tolerance) and with rma() resolved to a wrapper that
-// only adds control=list(tol=1e-12, threshold=1e-12) (r-results-tight.json). Each test re-exports the
+// (r-results.json; since #155 the export itself sets control=list(tol=1e-12) for the PM root-finder) and with
+// rma() resolved to a wrapper that only adds control=list(tol=1e-12, threshold=1e-12) (r-results-tight.json). Each test re-exports the
 // script from the page and requires it to be byte-identical to the script R ran, then compares R's fit
 // with the page. Tolerance: 1e-9 when tau^2 = 0 (closed form), else 1e-6 (iterative PM), relative to
 // max(1, |R|).
@@ -183,16 +183,15 @@ test('exported R script reproduces the page estimates when R\'s PM solver is con
   expect(rows.flatMap(r => r.bad.map(b => r.id + ' ' + b))).toEqual([]);
 });
 
-test('exported R script, run exactly as exported (metafor default PM tolerance), reproduces the page estimates', async ({ page }) => {
-  // KNOWN GAP (lane fc, 19 Oct 2026): the exported script calls rma(method="PM") with metafor's default
-  // root-finding tolerance (.Machine$double.eps^0.25), so R's own fit is not converged: 4 of 6
-  // configurations exceed 1e-6 (aloe2013, bangertdrowns2004, bcg latitude, bcg year). Largest gaps:
-  // R^2 0.109 percentage points (bangertdrowns2004), tau^2 2.4e-5 absolute, slope t 5.8e-4 relative,
-  // intercept SE 9.8e-5. With control=list(tol=1e-12) all 6 agree (test above), i.e. the page is the
-  // converged value. Remove test.fail() when the exported script sets a tight control.
-  test.fail();
+test('exported R script, run exactly as exported, reproduces the page estimates', async ({ page }) => {
+  // Requirement (paper 8): the exported script, run unmodified, reproduces the page. Before #155 the export
+  // called rma(method="PM") with metafor's default root-finding tolerance (.Machine$double.eps^0.25) and 4 of
+  // 6 configurations exceeded 1e-6 (largest: R^2 0.109 percentage points, bangertdrowns2004); this test was
+  // an expected failure. The export now sets control=list(tol=1e-12); r-results.json was regenerated from the
+  // re-exported scripts with run_rscripts.R, and R must report that tolerance as used.
   test.setTimeout(180_000);
   expect(RRES.tight).toBe(false);
+  for (const cfg of CONFIGS) expect(RRES.results[cfg.file].control_tol, cfg.file + ': PM tolerance used by R').toBe(1e-12);
   const rows = compareAll(await exportedFits(page), RRES);
   test.info().annotations.push({ type: 'r-script-default', description: rows.map(r => `${r.id}: max ${r.max.toExponential(2)} [${r.bad.join(' | ')}]`).join('; ') });
   expect(rows.flatMap(r => r.bad.map(b => r.id + ' ' + b))).toEqual([]);

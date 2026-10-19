@@ -7,7 +7,10 @@ se <- c(0.40465131911125596, 0.4214636152117623, 0.6405126152203485, 0.527046276
 x  <- c(1989, 1991, 1990, 1991, 1992, 1993)
 labels <- c("dat.hart1999:1", "dat.hart1999:2", "dat.hart1999:3", "dat.hart1999:4", "dat.hart1999:5", "dat.hart1999:6")
 
-res <- rma(yi = yi, sei = se, mods = ~ x, method = "PM", test = "adhoc", slab = labels)
+# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence
+# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).
+res <- rma(yi = yi, sei = se, mods = ~ x, method = "PM", test = "adhoc", slab = labels,
+           control = list(tol = 1e-12))
 print(res)
 
 # Expected browser output (for diff):
