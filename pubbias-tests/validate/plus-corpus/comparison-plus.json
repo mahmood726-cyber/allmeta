@@ -309,10 +309,11 @@
  "petpeese_lm_oracle": {
   "runner": "node pubbias-tests/validate/check-lm-petpeese.mjs",
   "reference": "plus-corpus/petpeese-lm-reference.json (base-R lm, own omission loop)",
-  "reference_sha256": "c3e55dd7cb08cb37bb510d1177f7ca4811f09035344f23bf52db488d4ad7c615",
+  "reference_sha256": "5c0ce82f144addc089040aceb29566d30227da1d9550ea984c5a67f3bf5163b7",
   "checks": 12303,
   "passed": 12303,
-  "families": {}
+  "families": {},
+  "reference_sha256_bytes": "LF"
  },
  "original_paper_replay": {
   "runner_browser": "AlmPubbiasValidation.runCorpus() (unchanged validate/adapter.js) in headless Chromium",
