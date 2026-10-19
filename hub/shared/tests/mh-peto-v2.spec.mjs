@@ -329,3 +329,26 @@ test.describe('usability and accessibility', () => {
     });
   }
 });
+
+// Keys the original page's autosave writes on main (74ff0a7), captured with the same procedure (lane p610b probe).
+const MAIN_AUTOSAVE_KEYS = ['alm-plot-1-format', 'alm-plot-1-physical-width', 'alm-plot-1-resolution', 'idx:1', 'idx:10', 'idx:6',
+  'idx:7', 'idx:8', 'idx:9', 'measure', 'src'];
+test('autosave keys and positional indices are exactly those on main; the leave-one-out filter is not saved', async ({ page }) => {
+  await page.goto(url);
+  const keysOf = appKey => page.evaluate(k => Object.keys((JSON.parse(localStorage.getItem('alm-autosave:' + k) || '{}').values) || {}).sort(), appKey);
+  await page.evaluate(() => { localStorage.clear(); document.getElementById('src').dispatchEvent(new Event('input', { bubbles: true })); });
+  await expect.poll(() => keysOf('mh-peto'), { timeout: 10000 }).toEqual(MAIN_AUTOSAVE_KEYS);
+  // The plot-panel checkboxes keep main's positions (idx:9, idx:10); the filter has no position.
+  expect(await page.evaluate(() => [...document.querySelectorAll('#alm-plot-mount input[type=checkbox]')].map(e => e.dataset.autosaveIndex))).toEqual(['9', '10']);
+  expect(await page.locator('#loo-only-flagged').getAttribute('data-autosave-index')).toBeNull();
+  // Using the filter writes nothing to the original key.
+  await page.getByRole('button', { name: 'Run leave-one-out' }).click();
+  await page.evaluate(() => localStorage.clear());
+  await page.locator('#loo-only-flagged').check();
+  await page.waitForTimeout(1500);
+  expect(await keysOf('mh-peto')).toEqual([]);
+  // Planted negative: an autosave installed with the default selectors (as before this fix) saves the filter and shifts idx.
+  await page.evaluate(() => { AlmAutosave.install({ appKey: 'p10-negative' }); document.getElementById('src').dispatchEvent(new Event('input', { bubbles: true })); });
+  await expect.poll(() => keysOf('p10-negative'), { timeout: 10000 }).toContain('loo-only-flagged');
+  expect(await keysOf('p10-negative')).not.toEqual(MAIN_AUTOSAVE_KEYS);
+});
