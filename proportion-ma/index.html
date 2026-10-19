@@ -52,6 +52,21 @@
                padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <style>
+    /* Usability (2026-10-19): no horizontal page scroll at 375 px; a solid focus outline. */
+    @media (max-width: 720px) {
+      main { grid-template-columns: minmax(0, 1fr) !important; }
+      main > * { min-width: 0; }
+      .panel table { display: block; overflow-x: auto; }
+      .actions, .alm-csv-row, #alm-export-mount > *, #alm-plot-mount > * { flex-wrap: wrap; }
+      input, select, textarea { max-width: 100%; box-sizing: border-box; }
+      .alm-axis-row { grid-template-columns: auto auto minmax(0, 1fr) auto minmax(0, 1fr) auto !important; }
+      .alm-axis input[type=number] { width: 100% !important; min-width: 0; }
+    }
+    button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid #1f5fbf !important; outline-offset: 2px; }
+    #parse-warn { background: var(--warn-soft); border-left: 3px solid var(--warn); color: var(--ink); padding: 0.55rem 0.8rem; border-radius: 4px; font-size: 0.82rem; margin-bottom: 0.6rem; }
+    #parse-warn ul { margin: 0.2rem 0 0; padding-left: 1.1rem; }
+  </style>
   <!-- Cycle 2.6 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
   <script src="../hub/shared/csv-upload.js"></script>
@@ -92,6 +107,7 @@
 3, 40, Study F
 25, 300, Study G</textarea></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <button type="button" id="btn-example" style="margin-top:0.4rem" title="Replace the studies with the seven-study example and run it">Load example</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount"></div>
@@ -124,6 +140,7 @@
 
     <section class="panel">
       <div id="k-warn" style="display:none;background:var(--warn-soft);border-left:3px solid var(--warn);color:var(--warn);padding:0.55rem 0.8rem;border-radius:4px;font-size:0.82rem;margin-bottom:0.6rem" role="status" aria-live="polite"></div>
+      <div id="parse-warn" role="status" aria-live="polite" hidden></div>
       <h2>Studies &amp; pooled</h2>
       <table>
         <thead><tr><th>Study</th><th>events/n</th><th>p</th><th>95% CI</th><th>weight</th></tr></thead>
@@ -177,6 +194,39 @@
         if (!Number.isFinite(x) || !Number.isFinite(n) || n <= 0 || x < 0 || x > n) return null;
         return { x: x, n: n, label: parts[2] || ('Study ' + (i + 1)) };
       }).filter(Boolean);
+    }
+
+    // Line-level reasons for rows that parseTable() skips or reads differently from
+    // what was typed. Reporting only: parseTable(), and so every result, is unchanged.
+    function parseIssues(text) {
+      var issues = [];
+      if (!text.trim()) return issues;
+      text.trim().split(/\n/).forEach(function (l, i) {
+        if (!l.trim()) return;
+        var where = 'Line ' + (i + 1) + ': ';
+        var parts = l.split(/,/).map(function (s) { return s.trim(); });
+        if (parts.length < 2) { issues.push(where + 'needs events and total separated by a comma; skipped.'); return; }
+        var x = parseInt(parts[0], 10), n = parseInt(parts[1], 10);
+        if (!Number.isFinite(x) || !Number.isFinite(n)) { issues.push(where + 'events and total must be numbers; skipped.'); return; }
+        if (n <= 0) { issues.push(where + 'total must be at least 1; skipped.'); return; }
+        if (x < 0) { issues.push(where + 'events cannot be negative; skipped.'); return; }
+        if (x > n) { issues.push(where + 'events (' + x + ') exceed total (' + n + '); skipped.'); return; }
+        if (!/^\d+$/.test(parts[0]) || !/^\d+$/.test(parts[1])) issues.push(where + 'events and total should be whole numbers; read as ' + x + ', ' + n + '.');
+        if (parts.length > 3) issues.push(where + 'has ' + parts.length + ' columns; expected events, total, label. Extra columns ignored.');
+      });
+      return issues;
+    }
+
+    function showIssues(text, rows) {
+      var el = document.getElementById('parse-warn');
+      if (!el) return;
+      var issues = text.trim() ? parseIssues(text) : ['No studies entered. Enter one study per line as: events, total, label (optional).'];
+      if (!issues.length) { el.hidden = true; el.innerHTML = ''; return; }
+      var head = rows.length + ' stud' + (rows.length === 1 ? 'y' : 'ies') + ' read.';
+      el.innerHTML = '<strong>Input notes</strong> &mdash; ' + head + '<ul>' + issues.map(function (t) {
+        return '<li>' + String(t).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]); }) + '</li>';
+      }).join('') + '</ul>';
+      el.hidden = false;
     }
 
     // --- inverse beta (Clopper-Pearson) via relation to F-distribution approximation ---
@@ -326,6 +376,7 @@
       var trans = document.getElementById('trans').value;
       var tauEst = document.getElementById('tau-est').value;
       var rows = parseTable(text);
+      showIssues(text, rows);
 
       // DL k<10 warning
       var kw = document.getElementById('k-warn');
@@ -339,6 +390,9 @@
       }
       if (rows.length < 2) {
         document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Need at least 2 studies.</td></tr>';
+        // Do not leave the previous data set's heterogeneity line or forest plot on screen.
+        document.getElementById('het').innerHTML = '';
+        document.getElementById('forest').innerHTML = '';
         _lastResults = null; // do not leave a stale result exportable
         return;
       }
@@ -527,6 +581,16 @@
 
     document.getElementById('btn-run').addEventListener('click', function () {
       window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot && window.alm.resetUndo.snapshot();
+      run();
+    });
+
+    // One-click example: the seven-study data set the page opens with.
+    var EXAMPLE_SRC = document.getElementById('src').defaultValue;
+    document.getElementById('btn-example').addEventListener('click', function () {
+      window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot && window.alm.resetUndo.snapshot();
+      var src = document.getElementById('src');
+      src.value = EXAMPLE_SRC;
+      src.dispatchEvent(new Event('input', { bubbles: true }));
       run();
     });
 
