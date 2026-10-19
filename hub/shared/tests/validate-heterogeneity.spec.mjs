@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const ROOT=fileURLToPath(new globalThis.URL('../../../',import.meta.url));
-const URL='http://localhost:8088/heterogeneity/index.html';
+const URL='/heterogeneity/index.html';
 test('published corpus: 131781 numerical checks and separate 121424 rendered numbers',async({page,context})=>{
   test.setTimeout(180000);
-  const outside=[];context.on('request',r=>{if(new globalThis.URL(r.url()).origin!=='http://localhost:8088')outside.push(r.url());});
+  const origin=new globalThis.URL(test.info().project.use.baseURL).origin;
+  const outside=[];context.on('request',r=>{if(new globalThis.URL(r.url()).origin!==origin)outside.push(r.url());});
   await page.goto(URL);
   await expect(page.getByRole('button',{name:'Validate this analysis in R',exact:true})).toBeVisible();
   const before=await page.locator('#f-data').inputValue();
@@ -22,7 +23,8 @@ test('published corpus: 131781 numerical checks and separate 121424 rendered num
 });
 test('built-in example agrees with pinned metafor; session versions shown @slow',async({page,context})=>{
   test.setTimeout(180000);
-  const outside=[];context.on('request',r=>{if(new globalThis.URL(r.url()).origin!=='http://localhost:8088')outside.push(r.url());});
+  const origin=new globalThis.URL(test.info().project.use.baseURL).origin;
+  const outside=[];context.on('request',r=>{if(new globalThis.URL(r.url()).origin!==origin)outside.push(r.url());});
   await page.goto(URL);
   page.on('console',m=>console.log('BROWSER',m.type(),m.text()));
   page.on('pageerror',e=>console.log('PAGE ERROR',e.message));
