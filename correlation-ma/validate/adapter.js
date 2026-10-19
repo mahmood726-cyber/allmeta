@@ -20,7 +20,7 @@ const finite = x => typeof x === 'number' && Number.isFinite(x);
 function pageText() {
   const out = [];
   function visit(el, path) {
-    if (el.matches('#alm-validate,#headline,#res-body,#forest-host,script,style')) return;
+    if (el.matches('#alm-validate,#headline,#res-body,#forest-host,#alm-plus,#f-tools,#f-notice,script,style')) return;
     const attrs = ['aria-label','title','href','type','data-action'].map(a => el.getAttribute(a));
     out.push([path, attrs]);
     if (el.tagName === 'TEXTAREA') return;

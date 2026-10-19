@@ -36,6 +36,24 @@
     .note { color: var(--muted); font-size: 0.8rem; }
     footer { padding: 1rem clamp(1rem,3vw,3rem) 2rem; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); max-width: 90ch; }
     a { color: var(--accent); }
+    /* plus panel (plus-ui.js) */
+    :root { --forest-ci:#2f6fa8; }
+    @media (prefers-color-scheme:dark) { :root { --forest-ci:#6aa6d4; } }
+    #forest-host svg line[stroke='#6aa6d4'] { stroke: var(--forest-ci); }
+    #alm-plus { margin: 0 clamp(1rem,3vw,3rem) 1.5rem; overflow-x: auto; }
+    #alm-plus fieldset { border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    #alm-plus label { display: inline-block; margin-right: 1rem; }
+    #alm-plus .plus-table caption { text-align: left; color: var(--muted); font-size: 0.8rem; caption-side: top; padding-bottom: 0.3rem; }
+    #alm-plus tr.plus-current { background: var(--accent-soft); font-weight: 600; }
+    #alm-plus tr.plus-flag { outline: 2px solid #b04444; }
+    .plus-loo-ci { stroke: var(--forest-ci); stroke-width: 1.5; }
+    .plus-loo-ci.plus-loo-flag { stroke: #b04444; stroke-width: 2.5; }
+    .plus-loo-pt { fill: var(--accent); }
+    .plus-loo-full { stroke: var(--accent); stroke-dasharray: 2,2; }
+    .plus-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    #f-tools { margin-top: 0.6rem; display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    #f-notice { margin-top: 0.5rem; }
+    #f-notice ul { margin: 0.2rem 0 0; padding-left: 1.2rem; }
   </style>
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/build-info.js"></script>
@@ -63,6 +81,8 @@
       </select>
     </label>
     <p class="note" style="margin-top:0.5rem">Fisher z: <code>z = atanh(r)</code>, variance <code>1/(n−3)</code> (Fisher 1921). Pooling on the z-scale, back-transformed via <code>tanh</code>. Prediction interval uses t<sub>k−1</sub> (Cochrane v6.5).</p>
+    <div id="f-tools" role="group" aria-label="Data tools"><button type="button" data-tool="example">Load example</button> <button type="button" data-tool="clear">Clear</button> <button type="button" data-tool="convert">Convert tabs/semicolons</button></div>
+    <div id="f-notice" class="note" role="status" hidden></div>
   </section>
   <section class="panel">
     <h2>Pooled estimate</h2>
@@ -74,6 +94,7 @@
     <div id="alm-validate"></div>
   </section>
 </main>
+<section id="alm-plus" class="panel" aria-label="Sensitivity, leave-one-out and reporting"></section>
 <footer>
   Random-effects pooling on the Fisher <em>z</em>-scale via the audited <code>shared/ma-core.js</code> (DL/PM/REML τ², t<sub>k−1</sub> prediction interval), back-transformed to <em>r</em>. Matches <code>metafor::escalc(measure="ZCOR") |&gt; rma()</code> to ~1e-6 (verified — <code>correlation-ma-parity.spec.mjs</code>). References: Fisher RA 1921; Hedges &amp; Olkin 1985, <em>Statistical Methods for Meta-Analysis</em>.
 </footer>
@@ -179,6 +200,8 @@
 </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/results-export.js"></script>
+<script src="plus-core.js"></script>
+<script src="plus-ui.js"></script>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/pins.js"></script>
 <script src="validate/adapter.js"></script>
