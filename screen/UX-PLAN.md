@@ -38,3 +38,5 @@ Count: 2 install/launch commands (plus a Python install if absent), then 2 requi
 F1–F5. Constraints honoured: no change to the ranking model, features, cadence or `ml*`/`hybrid-core` maths; no new network calls or CDNs; no stopping or recall-guarantee language (the consecutive-irrelevant count is labelled descriptive only, as in ASReview, where stopping is "left to you"). Logic lives in `ux.js` (pure, Node-tested); DOM wiring in `ux-ui.js`.
 
 After the change the Screen path is: open page → drop file (or click to choose / try demo) → label 2+2 while the hint counts up → click **Start AI ranking** in the strip above the card. No install, nothing leaves the browser.
+
+Local validation, 19 Oct 2026 (Windows, installed Chrome): 45 Screen Python tests, 19 Node tests and 114 Screen browser tests passed (`screen-workflow.config.mjs`, including the new `screen-ux.spec.mjs`). The ASReview CSV export follows the documented column names; it was not imported into a real ASReview install.
