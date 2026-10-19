@@ -125,7 +125,10 @@ multivariate/multilevel/meta-regression engines.
   (`2e-8` absolute/relative). Source/input/package hashes accompany the capture.
 - **3,000 seeded SciPy contrast-profile checks**, including 63 non-unimodal
   score profiles: no corrected failures; the original PR fails twice.
-  Maximum corrected likelihood loss is 1.42e-14, versus a 1e-7 stress threshold.
+  Maximum corrected likelihood loss is 7.1e-15 (final core; 1.42e-14 before
+  the score-root polish), versus a 1e-7 stress threshold. Provenance is in
+  `tests/fixtures/reml_stress_summary.json`; `module_sha256` is the SHA-256
+  of the committed (LF) `shared/ma-core.js` blob.
   The finite-grid reference is a stress oracle, not a mathematical proof of
   complete root isolation. Explicit adversarial fixtures complement it.
 - Unit tests cover zero, one and two studies; equal variances; identical effects;
