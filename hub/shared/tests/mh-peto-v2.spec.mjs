@@ -226,7 +226,7 @@ test.describe('outputs and wording', () => {
     await page.selectOption('#measure', 'RD');
     const rd = await page.evaluate(() => window.__mhPetoRScript());
     expect(rd).toContain('measure <- "RD"');
-    expect(rd).not.toContain('rma.peto');
+    expect(rd).not.toContain('fit_peto');
     expect(rd).not.toContain('`TA`');
   });
   test('R script export is refused with a message when the input is invalid', async ({ page }) => {
