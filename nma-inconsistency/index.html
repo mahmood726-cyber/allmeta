@@ -53,6 +53,28 @@
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+    /* plus panel (sensitivity, model comparison, reporting) */
+    .plus-btn, .plus-sort, .plus-row { font: inherit; color: inherit; cursor: pointer; }
+    .plus-btn { border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem 0.7rem; background: transparent; margin: 0.25rem 0.35rem 0 0; font-size: 0.8rem; }
+    .plus-btn:hover { background: var(--accent-soft); }
+    .plus-sort, .plus-row { background: none; border: 0; padding: 0; text-align: left; font-weight: 600; letter-spacing: inherit; text-transform: inherit; }
+    .plus-row { text-decoration: underline; text-underline-offset: 2px; font-weight: 500; }
+    .plus-row[aria-pressed="true"] { color: var(--accent); font-weight: 700; }
+    th[aria-sort="ascending"] .plus-sort::after { content: " \2191"; }
+    th[aria-sort="descending"] .plus-sort::after { content: " \2193"; }
+    .plus-btn:focus-visible, .plus-sort:focus-visible, .plus-row:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    #alm-plus h3 { margin: 1.1rem 0 0.4rem; font-size: 0.95rem; }
+    #alm-plus caption { text-align: left; font-size: 0.8rem; color: var(--muted); padding-bottom: 0.3rem; }
+    .plus-table-wrap { overflow-x: auto; }
+    .plus-sub { color: var(--muted); font-size: 0.78rem; }
+    .plus-msg { font-size: 0.8rem; color: var(--warn); margin: 0.35rem 0 0; }
+    .plus-msg:empty { display: none; }
+    tr.plus-flag td, tr.plus-flag th { background: var(--warn-soft); }
+    .plus-bar { fill: var(--accent); cursor: pointer; }
+    .plus-bar.flip { fill: var(--incon); }
+    .plus-bar.sel { stroke: var(--ink); stroke-width: 1.5; }
+    #plus-methods-text { white-space: pre-wrap; background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.84rem; }
+    #alm-plus ul { margin: 0.2rem 0 0.4rem 1.1rem; padding: 0; font-size: 0.88rem; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
@@ -86,6 +108,8 @@ C, D, -0.35, 0.14
 A, D, -0.48, 0.14</textarea>
         <span class="hint">Independent two-arm studies only. Multiple rows per comparison allowed. Supply study IDs to detect repeated or multi-arm studies; correlated contrasts are unsupported.</span>
       </label>
+      <p id="inco-input-msg" class="plus-msg" role="status" aria-live="polite"></p>
+      <div id="inco-example" style="margin:0.2rem 0 0.6rem"><span class="plus-sub">Try real data (one click):</span> <span data-examples></span><p id="inco-example-note" class="plus-sub" aria-live="polite" style="margin:0.3rem 0 0"></p></div>
       <label style="margin-top:0.5rem;display:block">
         <span style="font-size:0.85rem;color:var(--muted)">Model</span>
         <select id="f-model" style="width:100%;padding:0.4rem 0.5rem;margin-top:0.25rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px;" aria-label="F model">
@@ -99,7 +123,7 @@ A, D, -0.48, 0.14</textarea>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run tests</button>
     </section>
-    <section class="panel">
+    <section class="panel" aria-live="polite">
       <h2>Node-split per comparison</h2>
       <table>
         <thead><tr><th>Comparison</th><th>Direct</th><th>Indirect</th><th>Difference</th><th>z</th><th>p</th><th></th></tr></thead>
@@ -110,6 +134,27 @@ A, D, -0.48, 0.14</textarea>
       <h2 style="margin-top:0.8rem">Net-split forest</h2>
       <svg id="ns-plot" viewBox="0 0 600 300" role="img" aria-label="Direct vs indirect estimates per comparison"></svg>
       <div class="note"><strong>Reading the plot:</strong> direct and indirect whiskers should overlap for a consistent network. Non-overlapping whiskers with |z| &gt; 1.96 indicate a specific loop with inconsistency. The global design-by-treatment test is the omnibus check.</div>
+    </section>
+    <section id="alm-plus" class="panel" style="grid-column:1/-1" aria-labelledby="alm-plus-h">
+      <h2 id="alm-plus-h">Interpretation, sensitivity and reporting</h2>
+      <h3>What the results mean</h3>
+      <ul id="plus-interpret-list"></ul>
+      <h3>Leave-one-study-out sensitivity</h3>
+      <p class="plus-sub">Each study is removed in turn and the whole analysis is refitted with the selected model (random-effects &tau;&sup2; is re-estimated for every refit).</p>
+      <p id="plus-loo-status" role="status" aria-live="polite"></p>
+      <p id="plus-loo-summary"></p>
+      <svg id="plus-dq" viewBox="0 0 600 40" role="img" aria-labelledby="plus-dq-t" data-alm-export="nma-inconsistency-loo-dq"><title id="plus-dq-t">Change in global Q when each study is removed</title></svg>
+      <div class="plus-table-wrap"><table class="plus-table" id="plus-loo-table"><caption>Refit without each study. Select a column heading to sort, or a study to see its node-splits. Highlighted rows change a conclusion at the 0.05 level.</caption><thead><tr id="plus-loo-head"></tr></thead><tbody id="plus-loo-body"></tbody></table></div>
+      <div id="plus-detail" class="plus-table-wrap" aria-live="polite"></div>
+      <h3>Fixed-effect vs random-effects</h3>
+      <div class="plus-table-wrap"><table class="plus-table" id="plus-cmp"><caption>The same tests under the three models (p-values; a dash means not estimable).</caption><thead><tr><th scope="col">Quantity</th><th scope="col">Fixed-effect</th><th scope="col">DerSimonian-Laird</th><th scope="col">Paule-Mandel</th><th scope="col">Conclusion at 0.05</th></tr></thead><tbody id="plus-cmp-body"></tbody></table></div>
+      <p id="plus-cmp-summary"></p>
+      <h3>Methods and Results text</h3>
+      <div id="plus-methods-text"></div>
+      <p><button type="button" class="plus-btn" id="plus-copy">Copy Methods + Results</button><button type="button" class="plus-btn" id="plus-r">Download R script (self-verifying)</button><button type="button" class="plus-btn" id="plus-r-loo">R script with leave-one-out refits</button></p>
+      <p id="plus-report-status" class="plus-sub" role="status" aria-live="polite"></p>
+      <p class="plus-sub">The R script refits this analysis with netmeta and metafor in native R, compares every number shown here and stops with an error on any mismatch.</p>
+      <section id="alm-plus-validate"></section>
     </section>
   
       <div id="alm-flow-mount" aria-live="polite"></div>
@@ -549,6 +594,9 @@ A, D, -0.48, 0.14</textarea>
     document.getElementById("btn-run").addEventListener("click", run);
     run();
   </script>
+<script src="plus-core.js"></script>
+<script src="plus-examples.js"></script>
+<script src="plus-ui.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/results-export.js"></script>
 <script src="../hub/shared/chart-export-auto.js"></script>
@@ -583,7 +631,7 @@ A, D, -0.48, 0.14</textarea>
   });
 })();
 </script>
-<script>(function(){function b(){if(!(window.alm&&window.alm.resultsExport))return setTimeout(b,200);if(document.getElementById("alm-export-mount"))return;var m=document.createElement("div");m.id="alm-export-mount";m.style.margin="1rem clamp(1rem,3vw,3rem)";var ft=document.querySelector("footer"),mn=document.querySelector("main")||document.body;if(ft&&ft.parentNode)ft.parentNode.insertBefore(m,ft);else mn.appendChild(m);window.alm.resultsExport({target:m,basename:"nma-inconsistency",getResults:function(){var f=window._almLastInco;var r=f&&f();return r||{};}});}if(document.readyState!=="loading")b();else document.addEventListener("DOMContentLoaded",b);})();</script>
+<script>(function(){function b(){if(!(window.alm&&window.alm.resultsExport))return setTimeout(b,200);if(document.getElementById("alm-export-mount"))return;var m=document.createElement("div");m.id="alm-export-mount";m.style.margin="1rem clamp(1rem,3vw,3rem)";var ft=document.querySelector("footer"),mn=document.querySelector("main")||document.body;if(ft&&ft.parentNode)ft.parentNode.insertBefore(m,ft);else mn.appendChild(m);window.alm.resultsExport({target:m,basename:"nma-inconsistency",getResults:function(){var f=window._almLastInco;var r=f&&f();return r||{};},methods:function(){var t=window.AlmIncoPlus&&window.AlmIncoPlus.methodsText();var ft=document.querySelector("footer");return (t?t+"\n\n":"")+(ft?ft.textContent.replace(/\s+/g," ").trim():"");}});}if(document.readyState!=="loading")b();else document.addEventListener("DOMContentLoaded",b);})();</script>
 
 <script>
 // ma-comparisons-v1 reader: import the shared arm-level network (events/n from
@@ -637,5 +685,7 @@ A, D, -0.48, 0.14</textarea>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
 <script src="validate/live.js"></script>
+<script src="validate/manifest-plus.js"></script>
+<script src="validate/plus-adapter.js"></script>
 </body>
 </html>

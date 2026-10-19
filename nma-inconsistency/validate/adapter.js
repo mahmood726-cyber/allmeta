@@ -7,7 +7,8 @@ const CONTRACT = {"files":[{"path":"validate/corpus/corpus.json","sha256":"631f9
 const $ = id => document.getElementById(id);
 const eq = (a,b) => JSON.stringify(a) === JSON.stringify(b);
 const normal = s => s.replace(/\s+/g, ' ').trim();
-const SKIP = 'script,style,textarea,#alm-validate,#ns-body,#dbt,#ns-plot,.alm-xbar';
+// #alm-plus, #inco-example and #inco-input-msg hold the plus panel and input helpers; they have their own validation and specs.
+const SKIP = 'script,style,textarea,#alm-validate,#ns-body,#dbt,#ns-plot,.alm-xbar,#alm-plus,#inco-example,#inco-input-msg';
 // Text-node positions and accessible labels, including shared continue/export controls.
 // Dynamic chart-download controls are audited separately; overlays outside landmarks are not template.
 function pageText() {
