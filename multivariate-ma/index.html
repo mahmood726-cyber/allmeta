@@ -57,6 +57,7 @@
     <h2 style="margin-top:1rem">Joint outcome plot</h2>
     <div id="plot-host"></div>
   </section>
+  <div id="alm-features"></div>
 </main>
 <footer>
   Multivariate meta-analysis via <code>shared/multivariate-ma.js</code>: y<sub>i</sub> ~ N(μ, S<sub>i</sub> + G), with known within-study covariance S<sub>i</sub> and an unstructured between-study covariance G estimated by REML (μ by GLS; G by Cholesky-parameterised Nelder-Mead, with the exact REML solution for two studies). Fitted as <code>mvmeta::mvmeta(Y~1, S, method="reml", bscov="unstr")</code> / <code>metafor::rma.mv(yi, V, mods=~outcome-1, random=~outcome|study, struct="UN", method="REML")</code>. What is tested: an independent validation (P18) compared this page with mvmeta 1.0.3 on 92 two-outcome configurations from 22 installed R datasets (iterative quantities within 1e-6 relative to max(1,|ref|); exact two-study solutions within 1e-9), with a metafor 5.2-1 <code>rma.mv</code> cross-check on Berkey&nbsp;1998; the in-repo browser test <code>multivariate-ma-parity.spec.mjs</code> checks dat.berkey1998 μ, SE and τ² to 5 decimal places and ρ and the REML log-likelihood to 4. Reference: Berkey et&nbsp;al. 1998, <em>Stat Med</em> 17:2537; Jackson, Riley &amp; White 2011.
@@ -148,5 +149,17 @@
 </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="alm-live.js"></script>
+<link rel="stylesheet" href="../shared/alm-features.css">
+<link rel="stylesheet" href="../shared/alm-entry.css">
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/url-pack.js"></script>
+<script src="../shared/alm-zip.js"></script>
+<script src="../shared/truthcert-export.js"></script>
+<script src="../shared/alm-validate.js"></script>
+<script src="../shared/alm-features.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="alm-features.js"></script>
 </body>
 </html>
