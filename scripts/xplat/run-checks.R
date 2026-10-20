@@ -1,6 +1,7 @@
 # F4 matrix runner (one OS x R row of .github/workflows/xplat-verify.yml). Base R + jsonlite only.
 #
-#   Rscript scripts/xplat/run-checks.R <xplat-out dir> <os label> <r label> <install path>
+#   Rscript scripts/xplat/run-checks.R <xplat-out dir> <os label> <r label> <install path> <packages via>
+# <packages via> is "renv" only when .github/r/restore.R restored and verified every locked version on this row.
 #
 # Runs, each in its own Rscript process (a failure never stops the others):
 #   every check-<app>.R          -> ALMCHECK line + exit code per app
@@ -11,8 +12,8 @@
 # failed, or the planted copy was NOT detected.
 suppressPackageStartupMessages(library(jsonlite))
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) < 4L) stop("usage: run-checks.R <xplat-out> <os> <r> <install path>")
-out_dir <- args[[1]]; os <- args[[2]]; r_label <- args[[3]]; install <- args[[4]]
+if (length(args) < 5L) stop("usage: run-checks.R <xplat-out> <os> <r> <install path> <packages via>")
+out_dir <- args[[1]]; os <- args[[2]]; r_label <- args[[3]]; install <- args[[4]]; packages_via <- args[[5]]
 rscript <- file.path(R.home("bin"), if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript")
 log_dir <- "xplat-logs"
 dir.create(log_dir, showWarnings = FALSE)
@@ -71,14 +72,14 @@ for (a in manifest$apps) {
 }
 
 pinned <- c("metafor", "meta", "netmeta", "metadat", "mada", "dosresmeta", "mvmeta", "mixmeta", "metasens",
-  "robumeta", "clubSandwich", "jsonlite", "ragg")
+  "robumeta", "clubSandwich", "jsonlite")
 versions <- lapply(setNames(pinned, pinned), function(p) tryCatch(as.character(utils::packageVersion(p)), error = function(e) NULL))
 
 n_apps <- length(apps); n_pass <- sum(vapply(apps, function(x) isTRUE(x$pass), logical(1)))
 q_pass <- sum(vapply(apps, function(x) if (is.na(x$passed)) 0L else x$passed, integer(1)))
 q_all <- sum(vapply(apps, function(x) as.integer(x$expected_N), integer(1)))
 result <- list(os = os, r = r_label, R.version.string = R.version.string, platform = R.version$platform,
-  install = install, packages = versions, apps = apps, checks = list(passed = n_pass, N = n_apps),
+  install = install, packages_via = packages_via, packages = versions, apps = apps, checks = list(passed = n_pass, N = n_apps),
   quantities = list(passed = q_pass, N = q_all), entry = entry, planted = planted, planted_detected = planted$detected,
   plots = plots, plots_ok = all(vapply(plots, function(x) isTRUE(x$pass), logical(1))),
   export_commit = manifest$commit)
