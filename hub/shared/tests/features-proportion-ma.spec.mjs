@@ -172,7 +172,10 @@ test('Verify in R: every row passes on the built-in example; planted defect fail
   // Standalone app SVG: no page-dependent paint, intrinsic size from the viewBox.
   const svgText = await page.evaluate(() => AlmVerifyR.serializeSvg(document.getElementById('forest')));
   expect(svgText).not.toMatch(/var\(|currentcolor/i);
-  expect(svgText).toMatch(/^<svg[^>]* width="600"[^>]* height="280"/);
+  const svgAttr = await page.evaluate(t => { const s = new DOMParser().parseFromString(t, 'image/svg+xml').documentElement;
+    return { vb: s.getAttribute('viewBox').trim().split(/[\s,]+/).slice(2).join(' '), wh: s.getAttribute('width') + ' ' + s.getAttribute('height') }; }, svgText);
+  expect(svgAttr.wh).toBe(svgAttr.vb);
+  expect(svgText).toMatch(/fill="rgb\(/);
   expect(errors).toEqual([]);
 });
 
