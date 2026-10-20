@@ -1,0 +1,40 @@
+[1] "<R_LIBS>"
+[2] "<R_LIBS_USER>"  
+[3] "<R-install>/library"   
+[1] "R version 4.6.0 (2026-04-24 ucrt)"
+[1] '5.2.1'
+[1] '1.6.0'
+rma.uni test= choices: z 
+archived predict.rma args: object,newmods,intercept,tau2.levels,gamma2.levels,hetvar,prob,addx,level,adjust,digits,transf,targs,vcov,... 
+archived leave1out.rma.uni args: x,cluster,digits,transf,targs,progbar,... 
+archived influence.rma.uni args: model,digits,progbar,... 
+archived rma.uni args: yi,vi,sei,weights,ai,bi,ci,di,n1i,n2i,x1i,x2i,t1i,t2i,m1i,m2i,sd1i,sd2i,xi,mi,ri,ti,fi,pi,sdi,r2i,mini,maxi,ni,mods,scale,measure,data,slab,subset,add,to,drop00,intercept,method,weighted,test,level,btt,att,tau2,verbose,digits,control,... 
+predict.rma has pi.type arg: FALSE 
+dat.bakdash2021::es.z::Sample.size.stats k=678 fits=12 loo=k>200 elapsed=60.3s
+dat.bakdash2021::es.z::Sample.size k=678 fits=24 loo=k>200 elapsed=130.4s
+dat.cohen1981::ri::ni k=20 fits=36 loo=yes elapsed=137.8s
+dat.craft2003::ri::ni k=54 fits=48 loo=yes elapsed=157.6s
+dat.crede2010::ri::ni k=97 fits=60 loo=yes elapsed=218.3s
+dat.curtin2002::corr::N k=21 fits=72 loo=yes elapsed=224.6s
+dat.lehmann2018::RM_r::Total.SampleSize k=12 fits=84 loo=yes elapsed=228.4s
+dat.lim2014/m_o_size::ri::ni k=357 fits=96 loo=k>200 elapsed=239.5s
+dat.lim2014/m_o_fecundity::ri::ni k=517 fits=108 loo=k>200 elapsed=270.4s
+dat.lim2014/o_o_unadj::ri::ni k=170 fits=120 loo=yes elapsed=613.1s
+dat.lim2014/o_o_adj::ri::ni k=185 fits=132 loo=yes elapsed=1075.9s
+dat.mcdaniel1994::ri::ni k=160 fits=144 loo=yes elapsed=1382.4s
+dat.metap/validity::r::n k=20 fits=156 loo=yes elapsed=1389.1s
+dat.molloy2014::ri::ni k=16 fits=168 loo=yes elapsed=1394.7s
+dat.moura2021/dat::ri::ni k=1828 fits=180 loo=k>200 elapsed=3424.8s
+dat.nakagawa2007::Correlation::SampleSize k=15 fits=192 loo=yes elapsed=3428.6s
+dat.white2020::r::n k=186 fits=204 loo=yes elapsed=3829.7s
+plus-probe::built-in k=8 fits=216 loo=yes elapsed=3832.0s
+plus-probe::two-studies k=2 fits=228 loo=k<3 elapsed=3832.7s
+plus-probe::three-studies k=3 fits=240 loo=yes elapsed=3834.1s
+plus-probe::identical-effects k=3 fits=252 loo=yes elapsed=3835.3s
+plus-probe::homogeneous-q-lt-1 k=4 fits=264 loo=yes elapsed=3836.7s
+plus-probe::near-boundary k=2 fits=276 loo=k<3 elapsed=3837.3s
+plus-probe::near-plus-one k=3 fits=288 loo=yes elapsed=3838.6s
+plus-probe::comma-label k=3 fits=300 loo=yes elapsed=3839.8s
+plus-probe::injection-label k=3 fits=312 loo=yes elapsed=3841.0s
+plus-probe::loo-flip k=5 fits=324 loo=yes elapsed=3842.7s
+PLUS-REFERENCE: inputs=27 fits=324 loo_omissions=11856 warnings=0
