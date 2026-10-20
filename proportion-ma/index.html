@@ -67,6 +67,8 @@
   <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
   <script src="../shared/autosave.js"></script>
+  <!-- Feature panel share link: must read the #s= hash before url-state rewrites it during the first run. -->
+  <script src="../shared/alm-share.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
@@ -715,6 +717,7 @@
 })();
 </script>
 <section id="alm-validate" aria-label="Independent validation"></section>
+<div id="alm-features"></div>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
 <!-- GLMM extras are separate from the original transformed-scale engine. -->
@@ -737,5 +740,14 @@
 <script src="plus-ui.js"></script>
 <script src="validate/plus-pins.js"></script>
 <script src="validate/plus-adapter.js"></script>
+<!-- Shared feature panel (Verify in R, Share); entry/text tabs are added by their own modules. -->
+<link rel="stylesheet" href="../shared/alm-features.css">
+<script src="../shared/url-pack.js"></script>
+<script src="../shared/alm-zip.js"></script>
+<script src="../shared/alm-features.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="alm-features.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="alm-features-text.js"></script>
 </body>
 </html>
