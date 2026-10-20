@@ -55,9 +55,12 @@
         }
         cur += ch; i++; continue;
       }
-      if (ch === '"' && cur.trim() === "") { inQ = true; quoted = true; cur = ""; i++; continue; }
+      if (ch === '"' && !quoted && cur.trim() === "") { inQ = true; quoted = true; cur = ""; i++; continue; }
       if (ch === delim) { out.push(quoted ? cur : cur.trim()); cur = ""; quoted = false; i++; continue; }
-      if (quoted && ch.trim() !== "") throw UserError("Line " + lineNo + ": text after a closing quote; check the quoting of this row.");
+      if (quoted) {
+        if (ch.trim() !== "") throw UserError("Line " + lineNo + ": text after a closing quote; check the quoting of this row.");
+        i++; continue; // Whitespace outside the closing quote is not field content.
+      }
       cur += ch; i++;
     }
     if (inQ) throw UserError("Line " + lineNo + ": unclosed double quote.");
@@ -72,13 +75,6 @@
     se: ["se", "sei", "sete", "std.err", "std_err", "stderr", "standard_error"]
   };
   function canon(s) { return String(s).trim().toLowerCase().replace(/\s+/g, "_"); }
-  // A header cell is a non-numeric word; NA-like tokens or blanks are treated as
-  // (invalid) data so that a bad first data row is refused, never silently dropped.
-  function looksLikeHeaderCell(s) {
-    var t = String(s).trim().toLowerCase();
-    if (!t || isNumberText(t)) return false;
-    return ["na", "nan", "null", "none", "inf", "+inf", "-inf", "infinity", "-infinity", ".", "-", "?"].indexOf(t) < 0 && !/^[+-]?\d+,\d+$/.test(t);
-  }
   function isNumberText(s) { return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(String(s).trim()); }
 
   // Returns { rows, predictorNames (from header or null), header, delimiter,
@@ -98,18 +94,15 @@
 
     var header = null, colCluster = 0, colY = 1, colV = 2, colSE = -1, predCols = null;
     var first = parsed[0].f;
-    if (first.length >= 3 && looksLikeHeaderCell(first[1]) && looksLikeHeaderCell(first[2])) {
+    // Remove a header only when all required roles have recognized names.
+    // Otherwise validate the first row as data, including any malformed values.
+    var c = first.map(canon);
+    function find(list) { for (var a = 0; a < c.length; a++) if (list.indexOf(c[a]) >= 0) return a; return -1; }
+    var fc = find(NAMES.cluster), fy = find(NAMES.yi), fv = find(NAMES.vi), fs = find(NAMES.se);
+    if (fc >= 0 && fy >= 0 && (fv >= 0 || fs >= 0)) {
       header = first.map(function (h) { return String(h).trim(); });
       parsed.shift();
-      var c = header.map(canon);
-      function find(list) { for (var a = 0; a < c.length; a++) if (list.indexOf(c[a]) >= 0) return a; return -1; }
-      var fc = find(NAMES.cluster), fy = find(NAMES.yi), fv = find(NAMES.vi), fs = find(NAMES.se);
-      if (fc >= 0 && fy >= 0 && (fv >= 0 || fs >= 0)) {
-        colCluster = fc; colY = fy; colV = fv; colSE = fv >= 0 ? -1 : fs;
-      } else {
-        // Unrecognised header: positional cluster, yi, vi (or se if column 3 is called se).
-        colCluster = 0; colY = 1; colV = NAMES.se.indexOf(c[2]) >= 0 ? -1 : 2; colSE = colV === -1 ? 2 : -1;
-      }
+      colCluster = fc; colY = fy; colV = fv; colSE = fv >= 0 ? -1 : fs;
       predCols = [];
       for (var hc = 0; hc < header.length; hc++) if (hc !== colCluster && hc !== colY && hc !== colV && hc !== colSE) predCols.push(hc);
       if (!parsed.length) throw UserError("Only a header row was found; add data rows below it.");
