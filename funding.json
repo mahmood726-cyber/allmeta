@@ -55,7 +55,7 @@
         "channels": [
           "contact-maintainer"
         ],
-        "description": "A proposed 12-month, part-time work package: USD 8,000 for 20 maintainer delivery days at USD 400/day; USD 1,000 for independent methodological checks; USD 1,000 for reproducibility infrastructure and accessibility resources. Deliverables: documented reference fixtures and regression checks for priority analysis workflows; clearer import/error handling and accessibility; worked public-data examples and a maintenance report. The package pays the maintainer for delivery time. External review and rate/cost eligibility remain subject to funder agreement. Other funding applications may cover related work; overlapping tasks and costs will be removed or reconciled before accepting multiple awards. Funding buys no favourable scientific findings, exclusive rights or equity."
+        "description": "12-month part-time pilot: USD 8,000 for 20 maintainer days at USD 400/day; USD 1,000 independent methods checks; USD 1,000 reproducibility/accessibility resources. Deliver reference fixtures, regression checks, import/error and accessibility fixes, public-data examples and a maintenance report. Reconcile overlapping funded costs before accepting awards. Rates and costs subject to funder agreement. No equity, exclusivity or favourable findings; no clinical validation claimed."
       }
     ]
   }
