@@ -1,0 +1,48 @@
+{
+ "asreview": "3.0.8",
+ "elas_u4": {
+  "querier": "max",
+  "classifier": "svm",
+  "balancer": "balanced",
+  "feature_extractor": "tfidf",
+  "stopper": null,
+  "querier_param": {},
+  "classifier_param": {
+   "loss": "squared_hinge",
+   "C": 0.11
+  },
+  "balancer_param": {
+   "ratio": 9.8
+  },
+  "feature_extractor_param": {
+   "ngram_range": [
+    1,
+    2
+   ],
+   "sublinear_tf": true,
+   "min_df": 1,
+   "max_df": 0.95
+  },
+  "stopper_param": {},
+  "n_query": 1
+ },
+ "elas_u3": {
+  "querier": "max",
+  "classifier": "nb",
+  "balancer": "balanced",
+  "feature_extractor": "tfidf",
+  "stopper": null,
+  "querier_param": {},
+  "classifier_param": {
+   "alpha": 3.822
+  },
+  "balancer_param": {
+   "ratio": 1.2
+  },
+  "feature_extractor_param": {
+   "stop_words": "english"
+  },
+  "stopper_param": {},
+  "n_query": 1
+ }
+}

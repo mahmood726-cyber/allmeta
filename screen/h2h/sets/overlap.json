@@ -1,0 +1,8386 @@
+{
+ "pairs": [
+  {
+   "a": "Bindoli_2024a",
+   "b": "Bindoli_2024b",
+   "shared_openalex_ids": 282,
+   "shared_titles": 272,
+   "frac_of_smaller": 0.8598
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 1239,
+   "shared_titles": 1256,
+   "frac_of_smaller": 0.7169
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 724,
+   "shared_titles": 707,
+   "frac_of_smaller": 0.6447
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 89,
+   "shared_titles": 89,
+   "frac_of_smaller": 0.6403
+  },
+  {
+   "a": "Demirkaya_2015",
+   "b": "Erer_2015",
+   "shared_openalex_ids": 61,
+   "shared_titles": 60,
+   "frac_of_smaller": 0.4357
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 753,
+   "shared_titles": 747,
+   "frac_of_smaller": 0.3928
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 408,
+   "shared_titles": 403,
+   "frac_of_smaller": 0.3633
+  },
+  {
+   "a": "Oud_2018",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 72,
+   "shared_titles": 71,
+   "frac_of_smaller": 0.3038
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 118,
+   "shared_titles": 117,
+   "frac_of_smaller": 0.2161
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 30,
+   "shared_titles": 29,
+   "frac_of_smaller": 0.2158
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 477,
+   "shared_titles": 473,
+   "frac_of_smaller": 0.213
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 92,
+   "shared_titles": 92,
+   "frac_of_smaller": 0.1673
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 75,
+   "shared_titles": 74,
+   "frac_of_smaller": 0.1652
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 507,
+   "shared_titles": 504,
+   "frac_of_smaller": 0.1619
+  },
+  {
+   "a": "Lewowski_2021",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 51,
+   "shared_titles": 49,
+   "frac_of_smaller": 0.1579
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Oud_2018",
+   "shared_openalex_ids": 36,
+   "shared_titles": 36,
+   "frac_of_smaller": 0.1519
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 51,
+   "shared_titles": 51,
+   "frac_of_smaller": 0.1518
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 48,
+   "shared_titles": 46,
+   "frac_of_smaller": 0.1463
+  },
+  {
+   "a": "Lewowski_2021",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 44,
+   "shared_titles": 46,
+   "frac_of_smaller": 0.1424
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 151,
+   "shared_titles": 150,
+   "frac_of_smaller": 0.1345
+  },
+  {
+   "a": "de_Matteis_2024a",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 18,
+   "shared_titles": 18,
+   "frac_of_smaller": 0.1295
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 191,
+   "shared_titles": 190,
+   "frac_of_smaller": 0.1141
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 125,
+   "shared_titles": 125,
+   "frac_of_smaller": 0.1113
+  },
+  {
+   "a": "Oud_2018",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 26,
+   "shared_titles": 26,
+   "frac_of_smaller": 0.1097
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 60,
+   "shared_titles": 55,
+   "frac_of_smaller": 0.1085
+  },
+  {
+   "a": "Hall_2011",
+   "b": "Radjenovic_2013",
+   "shared_openalex_ids": 21,
+   "shared_titles": 21,
+   "frac_of_smaller": 0.1077
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 48,
+   "shared_titles": 48,
+   "frac_of_smaller": 0.1057
+  },
+  {
+   "a": "Sepriano_2022",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 184,
+   "shared_titles": 183,
+   "frac_of_smaller": 0.105
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 197,
+   "shared_titles": 197,
+   "frac_of_smaller": 0.1028
+  },
+  {
+   "a": "Maciel_2024",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 27,
+   "shared_titles": 27,
+   "frac_of_smaller": 0.0993
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 256,
+   "shared_titles": 255,
+   "frac_of_smaller": 0.0985
+  },
+  {
+   "a": "Oliveira_2021",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 18,
+   "shared_titles": 18,
+   "frac_of_smaller": 0.0978
+  },
+  {
+   "a": "Clark_2021",
+   "b": "Toffalini_2021",
+   "shared_openalex_ids": 19,
+   "shared_titles": 19,
+   "frac_of_smaller": 0.096
+  },
+  {
+   "a": "Zakeri-Nasrabadi_2023a",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 58,
+   "shared_titles": 58,
+   "frac_of_smaller": 0.0937
+  },
+  {
+   "a": "Lewowski_2021",
+   "b": "Santos_2018",
+   "shared_openalex_ids": 30,
+   "shared_titles": 29,
+   "frac_of_smaller": 0.0929
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 65,
+   "shared_titles": 63,
+   "frac_of_smaller": 0.0918
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 277,
+   "shared_titles": 267,
+   "frac_of_smaller": 0.0863
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 39,
+   "shared_titles": 39,
+   "frac_of_smaller": 0.0859
+  },
+  {
+   "a": "Sepriano_2020",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 162,
+   "shared_titles": 161,
+   "frac_of_smaller": 0.0854
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 145,
+   "shared_titles": 144,
+   "frac_of_smaller": 0.0828
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 138,
+   "shared_titles": 138,
+   "frac_of_smaller": 0.0824
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 116,
+   "shared_titles": 113,
+   "frac_of_smaller": 0.082
+  },
+  {
+   "a": "Clark_2021",
+   "b": "Roberts_2021",
+   "shared_openalex_ids": 16,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.0808
+  },
+  {
+   "a": "Fong_2021",
+   "b": "Theobald_2021",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0714
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Maciel_2024",
+   "shared_openalex_ids": 19,
+   "shared_titles": 19,
+   "frac_of_smaller": 0.0699
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 134,
+   "shared_titles": 134,
+   "frac_of_smaller": 0.0695
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 81,
+   "shared_titles": 78,
+   "frac_of_smaller": 0.0685
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 31,
+   "shared_titles": 31,
+   "frac_of_smaller": 0.0683
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 128,
+   "shared_titles": 129,
+   "frac_of_smaller": 0.068
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 96,
+   "shared_titles": 95,
+   "frac_of_smaller": 0.0678
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0667
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 113,
+   "shared_titles": 111,
+   "frac_of_smaller": 0.0665
+  },
+  {
+   "a": "Webers_2022",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 9,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0647
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 21,
+   "shared_titles": 20,
+   "frac_of_smaller": 0.064
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 73,
+   "shared_titles": 73,
+   "frac_of_smaller": 0.0633
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 28,
+   "shared_titles": 28,
+   "frac_of_smaller": 0.0617
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Burska_2023",
+   "shared_openalex_ids": 20,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.061
+  },
+  {
+   "a": "Santos_2018",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 28,
+   "shared_titles": 28,
+   "frac_of_smaller": 0.0592
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 8,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0576
+  },
+  {
+   "a": "Bos_2018",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 94,
+   "shared_titles": 92,
+   "frac_of_smaller": 0.0569
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 38,
+   "shared_titles": 36,
+   "frac_of_smaller": 0.0554
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 38,
+   "shared_titles": 38,
+   "frac_of_smaller": 0.0554
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 18,
+   "shared_titles": 15,
+   "frac_of_smaller": 0.0549
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 30,
+   "shared_titles": 30,
+   "frac_of_smaller": 0.0545
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 36,
+   "shared_titles": 35,
+   "frac_of_smaller": 0.0525
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 74,
+   "shared_titles": 73,
+   "frac_of_smaller": 0.0523
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 73,
+   "shared_titles": 74,
+   "frac_of_smaller": 0.0523
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Bech_2019",
+   "shared_openalex_ids": 28,
+   "shared_titles": 27,
+   "frac_of_smaller": 0.0509
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0504
+  },
+  {
+   "a": "Sepriano_2020",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0504
+  },
+  {
+   "a": "Erer_2015",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 13,
+   "shared_titles": 13,
+   "frac_of_smaller": 0.0498
+  },
+  {
+   "a": "Roberts_2021",
+   "b": "Toffalini_2021",
+   "shared_openalex_ids": 16,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.0489
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 272,
+   "shared_titles": 275,
+   "frac_of_smaller": 0.0484
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 16,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.0476
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 33,
+   "shared_titles": 33,
+   "frac_of_smaller": 0.0466
+  },
+  {
+   "a": "Greca_2023",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 15,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0464
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 86,
+   "shared_titles": 88,
+   "frac_of_smaller": 0.0464
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 190,
+   "shared_titles": 190,
+   "frac_of_smaller": 0.0464
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 42,
+   "shared_titles": 42,
+   "frac_of_smaller": 0.0458
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 15,
+   "shared_titles": 12,
+   "frac_of_smaller": 0.0457
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 64,
+   "shared_titles": 64,
+   "frac_of_smaller": 0.0452
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 75,
+   "shared_titles": 73,
+   "frac_of_smaller": 0.0447
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 24,
+   "shared_titles": 24,
+   "frac_of_smaller": 0.0436
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 54,
+   "shared_titles": 55,
+   "frac_of_smaller": 0.043
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Demirkaya_2015",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0429
+  },
+  {
+   "a": "Demirkaya_2015",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0429
+  },
+  {
+   "a": "Eggmann_2023",
+   "b": "Wassenaar_2017",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0414
+  },
+  {
+   "a": "Donners_2021",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0412
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 58,
+   "shared_titles": 53,
+   "frac_of_smaller": 0.041
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 58,
+   "shared_titles": 57,
+   "frac_of_smaller": 0.041
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Hanlon_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.04
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.04
+  },
+  {
+   "a": "Sepriano_2020",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 70,
+   "shared_titles": 70,
+   "frac_of_smaller": 0.04
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 56,
+   "shared_titles": 53,
+   "frac_of_smaller": 0.0396
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 18,
+   "shared_titles": 18,
+   "frac_of_smaller": 0.0396
+  },
+  {
+   "a": "Burska_2023",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 21,
+   "shared_titles": 19,
+   "frac_of_smaller": 0.0385
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 119,
+   "shared_titles": 117,
+   "frac_of_smaller": 0.038
+  },
+  {
+   "a": "van_Dis_2019",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 118,
+   "shared_titles": 118,
+   "frac_of_smaller": 0.0377
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 53,
+   "shared_titles": 51,
+   "frac_of_smaller": 0.0375
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 26,
+   "shared_titles": 26,
+   "frac_of_smaller": 0.0367
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 12,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0366
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 23,
+   "shared_titles": 25,
+   "frac_of_smaller": 0.0364
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 61,
+   "shared_titles": 58,
+   "frac_of_smaller": 0.0359
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Demirkaya_2015",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0357
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 42,
+   "shared_titles": 37,
+   "frac_of_smaller": 0.0355
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 108,
+   "shared_titles": 108,
+   "frac_of_smaller": 0.0351
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 45,
+   "shared_titles": 44,
+   "frac_of_smaller": 0.035
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 41,
+   "shared_titles": 41,
+   "frac_of_smaller": 0.0347
+  },
+  {
+   "a": "Adamo_2021",
+   "b": "Chakraborty_2023",
+   "shared_openalex_ids": 39,
+   "shared_titles": 39,
+   "frac_of_smaller": 0.0345
+  },
+  {
+   "a": "Moran_2020",
+   "b": "Sep_2021",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0342
+  },
+  {
+   "a": "Santos_2018",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 16,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.0338
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 23,
+   "shared_titles": 23,
+   "frac_of_smaller": 0.0335
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 66,
+   "shared_titles": 67,
+   "frac_of_smaller": 0.0327
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0327
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0327
+  },
+  {
+   "a": "Roberts_2021",
+   "b": "Zinsser_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.032
+  },
+  {
+   "a": "Muthu_2020",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 29,
+   "shared_titles": 29,
+   "frac_of_smaller": 0.0316
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 96,
+   "shared_titles": 95,
+   "frac_of_smaller": 0.0312
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "van_Hoorn_2020",
+   "shared_openalex_ids": 36,
+   "shared_titles": 36,
+   "frac_of_smaller": 0.0312
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 17,
+   "shared_titles": 17,
+   "frac_of_smaller": 0.0309
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 17,
+   "shared_titles": 15,
+   "frac_of_smaller": 0.0309
+  },
+  {
+   "a": "Greca_2023",
+   "b": "van_Heugten_Breurkes_2022",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0308
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 10,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0305
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 10,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0305
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 10,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0305
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 10,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0305
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 39,
+   "shared_titles": 21,
+   "frac_of_smaller": 0.0305
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 38,
+   "shared_titles": 31,
+   "frac_of_smaller": 0.03
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 21,
+   "shared_titles": 21,
+   "frac_of_smaller": 0.0297
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Burska_2023",
+   "shared_openalex_ids": 42,
+   "shared_titles": 36,
+   "frac_of_smaller": 0.0297
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 222,
+   "shared_titles": 224,
+   "frac_of_smaller": 0.0297
+  },
+  {
+   "a": "Chakraborty_2023",
+   "b": "Nobrega-Dos_Santos_2023",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0293
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 16,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.0291
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 41,
+   "shared_titles": 41,
+   "frac_of_smaller": 0.029
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 41,
+   "shared_titles": 41,
+   "frac_of_smaller": 0.029
+  },
+  {
+   "a": "Tektonidou_2019",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 4,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0288
+  },
+  {
+   "a": "Adamo_2021",
+   "b": "Ali_2024",
+   "shared_openalex_ids": 14,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0285
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 196,
+   "shared_titles": 185,
+   "frac_of_smaller": 0.0285
+  },
+  {
+   "a": "Adamo_2021",
+   "b": "Deckers_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0283
+  },
+  {
+   "a": "Greca_2023",
+   "b": "Lewowski_2021",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0279
+  },
+  {
+   "a": "van_Ballegooijen_2024",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 87,
+   "shared_titles": 84,
+   "frac_of_smaller": 0.0278
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 19,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.0277
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 85,
+   "shared_titles": 86,
+   "frac_of_smaller": 0.0275
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 9,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0274
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0274
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "Oliveira_2021",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0272
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "Burska_2023",
+   "shared_openalex_ids": 14,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.027
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Erer_2015",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0268
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0268
+  },
+  {
+   "a": "Menon_2022",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 13,
+   "shared_titles": 13,
+   "frac_of_smaller": 0.0268
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Hanlon_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0267
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0267
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 51,
+   "shared_titles": 50,
+   "frac_of_smaller": 0.0265
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 18,
+   "shared_titles": 18,
+   "frac_of_smaller": 0.0262
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 80,
+   "shared_titles": 80,
+   "frac_of_smaller": 0.0256
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 18,
+   "shared_titles": 18,
+   "frac_of_smaller": 0.0254
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 18,
+   "shared_titles": 18,
+   "frac_of_smaller": 0.0254
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 18,
+   "shared_titles": 18,
+   "frac_of_smaller": 0.0254
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 36,
+   "shared_titles": 35,
+   "frac_of_smaller": 0.0254
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 35,
+   "shared_titles": 36,
+   "frac_of_smaller": 0.0254
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 14,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0253
+  },
+  {
+   "a": "Chakraborty_2023",
+   "b": "Greca_2023",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0248
+  },
+  {
+   "a": "Greca_2023",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 7,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0248
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 35,
+   "shared_titles": 31,
+   "frac_of_smaller": 0.0247
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 27,
+   "shared_titles": 25,
+   "frac_of_smaller": 0.024
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 45,
+   "shared_titles": 45,
+   "frac_of_smaller": 0.0237
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 13,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0236
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 16,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.0233
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 39,
+   "shared_titles": 39,
+   "frac_of_smaller": 0.023
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 50,
+   "shared_titles": 50,
+   "frac_of_smaller": 0.0223
+  },
+  {
+   "a": "Maciel_2024",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0221
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Butink_2023",
+   "shared_openalex_ids": 45,
+   "shared_titles": 43,
+   "frac_of_smaller": 0.022
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 12,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.022
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 31,
+   "shared_titles": 28,
+   "frac_of_smaller": 0.0219
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 15,
+   "shared_titles": 15,
+   "frac_of_smaller": 0.0219
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "Filges_2018",
+   "shared_openalex_ids": 20,
+   "shared_titles": 20,
+   "frac_of_smaller": 0.0219
+  },
+  {
+   "a": "Marques_2021",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 15,
+   "shared_titles": 12,
+   "frac_of_smaller": 0.0219
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Butink_2023",
+   "shared_openalex_ids": 12,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0218
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 12,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0218
+  },
+  {
+   "a": "Chakraborty_2023",
+   "b": "Lewowski_2021",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0217
+  },
+  {
+   "a": "Chakraborty_2023",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 37,
+   "shared_titles": 37,
+   "frac_of_smaller": 0.0217
+  },
+  {
+   "a": "Oliveira_2021",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0217
+  },
+  {
+   "a": "Bech_2019",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 3,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0216
+  },
+  {
+   "a": "Burska_2023",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 3,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0216
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0216
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0216
+  },
+  {
+   "a": "Zanframundo_2022",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 3,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0216
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0214
+  },
+  {
+   "a": "Demirkaya_2015",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0214
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Bosch_2021",
+   "shared_openalex_ids": 7,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0213
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Butink_2023",
+   "shared_openalex_ids": 7,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0213
+  },
+  {
+   "a": "Santos_2018",
+   "b": "Tumkaya_2018",
+   "shared_openalex_ids": 10,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0211
+  },
+  {
+   "a": "van_Ballegooijen_2024",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 67,
+   "shared_titles": 59,
+   "frac_of_smaller": 0.0209
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 6,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0208
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 24,
+   "shared_titles": 23,
+   "frac_of_smaller": 0.0208
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Donners_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0206
+  },
+  {
+   "a": "Donners_2021",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0206
+  },
+  {
+   "a": "Donners_2021",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0206
+  },
+  {
+   "a": "Donners_2021",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0206
+  },
+  {
+   "a": "Zakeri-Nasrabadi_2023b",
+   "b": "van_Heugten_Breurkes_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0205
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 14,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0204
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 11,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0201
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Pijls_2018",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.02
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 38,
+   "shared_titles": 38,
+   "frac_of_smaller": 0.02
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0198
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 28,
+   "shared_titles": 23,
+   "frac_of_smaller": 0.0198
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 28,
+   "shared_titles": 27,
+   "frac_of_smaller": 0.0198
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 37,
+   "shared_titles": 38,
+   "frac_of_smaller": 0.0198
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0198
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 23,
+   "shared_titles": 20,
+   "frac_of_smaller": 0.0194
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Leenaars_2019",
+   "shared_openalex_ids": 26,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0194
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Erer_2015",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0192
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 39,
+   "shared_titles": 39,
+   "frac_of_smaller": 0.0191
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 24,
+   "shared_titles": 24,
+   "frac_of_smaller": 0.0186
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Bindoli_2024b",
+   "shared_openalex_ids": 6,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0183
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Bosch_2023",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0183
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 10,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0183
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Bindoli_2024a",
+   "shared_openalex_ids": 10,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0182
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Burska_2023",
+   "shared_openalex_ids": 10,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0182
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 10,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0182
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 10,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0182
+  },
+  {
+   "a": "Roberts_2021",
+   "b": "Sanchez-Gomez_2024",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0182
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 10,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0181
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 20,
+   "shared_titles": 17,
+   "frac_of_smaller": 0.0178
+  },
+  {
+   "a": "Chakraborty_2023",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0178
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 25,
+   "shared_titles": 24,
+   "frac_of_smaller": 0.0177
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 39,
+   "shared_titles": 38,
+   "frac_of_smaller": 0.0174
+  },
+  {
+   "a": "Cinquin_2018",
+   "b": "Noetel_2021",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0172
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.017
+  },
+  {
+   "a": "van_de_Schoot_2025",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.017
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 12,
+   "shared_titles": 12,
+   "frac_of_smaller": 0.0169
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 19,
+   "shared_titles": 19,
+   "frac_of_smaller": 0.0169
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 59,
+   "shared_titles": 59,
+   "frac_of_smaller": 0.0168
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 34,
+   "shared_titles": 33,
+   "frac_of_smaller": 0.0166
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 18,
+   "shared_titles": 18,
+   "frac_of_smaller": 0.0165
+  },
+  {
+   "a": "Marques_2021",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0165
+  },
+  {
+   "a": "Sepriano_2020",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0165
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0164
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 10,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.016
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 28,
+   "shared_titles": 28,
+   "frac_of_smaller": 0.016
+  },
+  {
+   "a": "Ward_2020",
+   "b": "Zinsser_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.016
+  },
+  {
+   "a": "Ward_2020",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.016
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 32,
+   "shared_titles": 30,
+   "frac_of_smaller": 0.0156
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0155
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 40,
+   "shared_titles": 40,
+   "frac_of_smaller": 0.0154
+  },
+  {
+   "a": "Radjenovic_2013",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0154
+  },
+  {
+   "a": "Filges_2018",
+   "b": "Roberts_2021",
+   "shared_openalex_ids": 13,
+   "shared_titles": 12,
+   "frac_of_smaller": 0.0149
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 21,
+   "shared_titles": 18,
+   "frac_of_smaller": 0.0148
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 17,
+   "shared_titles": 19,
+   "frac_of_smaller": 0.0148
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 8,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0147
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 8,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0147
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 8,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0147
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 59,
+   "shared_titles": 60,
+   "frac_of_smaller": 0.0147
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 45,
+   "shared_titles": 43,
+   "frac_of_smaller": 0.0146
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0144
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0144
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 17,
+   "shared_titles": 15,
+   "frac_of_smaller": 0.0144
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0144
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0144
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0144
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0144
+  },
+  {
+   "a": "Sepriano_2022",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0144
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Theobald_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0143
+  },
+  {
+   "a": "Demirkaya_2015",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0143
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 18,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0141
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 15,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.0139
+  },
+  {
+   "a": "Cinquin_2018",
+   "b": "Ruggeri_2019",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0138
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 26,
+   "shared_titles": 26,
+   "frac_of_smaller": 0.0137
+  },
+  {
+   "a": "Chakraborty_2023",
+   "b": "Chueca_2023",
+   "shared_openalex_ids": 7,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0137
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 23,
+   "shared_titles": 23,
+   "frac_of_smaller": 0.0137
+  },
+  {
+   "a": "Zakeri-Nasrabadi_2023a",
+   "b": "van_Heugten_Breurkes_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0137
+  },
+  {
+   "a": "Tektonidou_2019",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 16,
+   "shared_titles": 12,
+   "frac_of_smaller": 0.0135
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 31,
+   "shared_titles": 30,
+   "frac_of_smaller": 0.0134
+  },
+  {
+   "a": "Chou_2003",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0134
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Hanlon_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Hanlon_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 0,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Hanlon_2022",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0133
+  },
+  {
+   "a": "Kapuka_2021",
+   "b": "Mejean_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0132
+  },
+  {
+   "a": "Kapuka_2021",
+   "b": "Viguie_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0132
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0131
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0131
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0128
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0128
+  },
+  {
+   "a": "Webers_2022",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 7,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0128
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 18,
+   "shared_titles": 18,
+   "frac_of_smaller": 0.0127
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 33,
+   "shared_titles": 33,
+   "frac_of_smaller": 0.0127
+  },
+  {
+   "a": "Oud_2018",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0127
+  },
+  {
+   "a": "Oud_2018",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0127
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 29,
+   "shared_titles": 29,
+   "frac_of_smaller": 0.0125
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 28,
+   "shared_titles": 27,
+   "frac_of_smaller": 0.0125
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 16,
+   "shared_titles": 13,
+   "frac_of_smaller": 0.0125
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 20,
+   "shared_titles": 21,
+   "frac_of_smaller": 0.0125
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 24,
+   "shared_titles": 23,
+   "frac_of_smaller": 0.0124
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Bindoli_2024b",
+   "shared_openalex_ids": 4,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0122
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0122
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0122
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0122
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 17,
+   "shared_titles": 15,
+   "frac_of_smaller": 0.012
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 16,
+   "shared_titles": 17,
+   "frac_of_smaller": 0.012
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 42,
+   "shared_titles": 40,
+   "frac_of_smaller": 0.012
+  },
+  {
+   "a": "Muthu_2020",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.012
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 20,
+   "shared_titles": 21,
+   "frac_of_smaller": 0.012
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0119
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0116
+  },
+  {
+   "a": "Brons_2024",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0116
+  },
+  {
+   "a": "Brons_2024",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0116
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 19,
+   "shared_titles": 17,
+   "frac_of_smaller": 0.0114
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0113
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0113
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0113
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 16,
+   "shared_titles": 13,
+   "frac_of_smaller": 0.0113
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 23,
+   "shared_titles": 23,
+   "frac_of_smaller": 0.0112
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Butink_2023",
+   "shared_openalex_ids": 19,
+   "shared_titles": 17,
+   "frac_of_smaller": 0.0112
+  },
+  {
+   "a": "Walker_2018",
+   "b": "Wassenaar_2017",
+   "shared_openalex_ids": 17,
+   "shared_titles": 17,
+   "frac_of_smaller": 0.0112
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 19,
+   "shared_titles": 21,
+   "frac_of_smaller": 0.0111
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 21,
+   "shared_titles": 21,
+   "frac_of_smaller": 0.011
+  },
+  {
+   "a": "Butink_2023",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.011
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 5,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.011
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.011
+  },
+  {
+   "a": "Tektonidou_2019",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.011
+  },
+  {
+   "a": "Zanframundo_2022",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 6,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.011
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Bakker-Jacobs_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0109
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 14,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0109
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0109
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0109
+  },
+  {
+   "a": "Oliveira_2021",
+   "b": "Roberts_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0109
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0108
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Butink_2023",
+   "shared_openalex_ids": 33,
+   "shared_titles": 32,
+   "frac_of_smaller": 0.0107
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 18,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0107
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 12,
+   "shared_titles": 12,
+   "frac_of_smaller": 0.0107
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 12,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0107
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 15,
+   "shared_titles": 15,
+   "frac_of_smaller": 0.0106
+  },
+  {
+   "a": "Moran_2020",
+   "b": "Tumkaya_2018",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0104
+  },
+  {
+   "a": "Adamo_2021",
+   "b": "Radjenovic_2013",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Donners_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Donners_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Cinquin_2018",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Donners_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Cinquin_2018",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Donners_2021",
+   "b": "Hamaker_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Donners_2021",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Donners_2021",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Donners_2021",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Filges_2022",
+   "b": "Xu_2022",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Lewowski_2021",
+   "b": "van_Heugten_Breurkes_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Mejean_2024",
+   "b": "Viguie_2020",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0103
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0102
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 12,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0101
+  },
+  {
+   "a": "Muthu_2020",
+   "b": "Pijls_2018",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.01
+  },
+  {
+   "a": "Pijls_2018",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.01
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Bosch_2023",
+   "shared_openalex_ids": 14,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0099
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 14,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0099
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 14,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0099
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 17,
+   "shared_titles": 17,
+   "frac_of_smaller": 0.0097
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0095
+  },
+  {
+   "a": "Chakraborty_2023",
+   "b": "Deckers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0094
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Pinos-Cisneros_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0093
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 29,
+   "shared_titles": 26,
+   "frac_of_smaller": 0.0093
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0093
+  },
+  {
+   "a": "Pinos-Cisneros_2023",
+   "b": "van_Hoorn_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0093
+  },
+  {
+   "a": "Bech_2019",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 5,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0092
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0092
+  },
+  {
+   "a": "Taschner_2024",
+   "b": "Toffalini_2021",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0092
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Bosch_2021",
+   "shared_openalex_ids": 5,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0091
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0091
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Boersma-van_Dam_2024",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0091
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0091
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0091
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Leenaars_2019",
+   "shared_openalex_ids": 5,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.009
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 17,
+   "shared_titles": 17,
+   "frac_of_smaller": 0.009
+  },
+  {
+   "a": "Leenaars_2019",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 12,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.009
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0089
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0089
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 18,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 15,
+   "shared_titles": 15,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0088
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0087
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0087
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0087
+  },
+  {
+   "a": "Marques_2021",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 6,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0087
+  },
+  {
+   "a": "Marques_2021",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 6,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0087
+  },
+  {
+   "a": "Tektonidou_2019",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 10,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0085
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Oud_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0084
+  },
+  {
+   "a": "Maciel_2024",
+   "b": "Oud_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0084
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Moran_2020",
+   "shared_openalex_ids": 16,
+   "shared_titles": 16,
+   "frac_of_smaller": 0.0081
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.008
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "Zinsser_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.008
+  },
+  {
+   "a": "Filges_2018",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.008
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 9,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.008
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Zinsser_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.008
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0078
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 23,
+   "shared_titles": 24,
+   "frac_of_smaller": 0.0078
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 15,
+   "shared_titles": 13,
+   "frac_of_smaller": 0.0078
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 13,
+   "shared_titles": 13,
+   "frac_of_smaller": 0.0078
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Bosch_2021",
+   "shared_openalex_ids": 13,
+   "shared_titles": 12,
+   "frac_of_smaller": 0.0077
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "Leenaars_2019",
+   "shared_openalex_ids": 4,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0077
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 13,
+   "shared_titles": 13,
+   "frac_of_smaller": 0.0077
+  },
+  {
+   "a": "Erer_2015",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0077
+  },
+  {
+   "a": "Erer_2015",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0077
+  },
+  {
+   "a": "Erer_2015",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0077
+  },
+  {
+   "a": "Erer_2015",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0077
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0076
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 9,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0076
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0076
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 9,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0076
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "Xu_2022",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0074
+  },
+  {
+   "a": "Maciel_2024",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0074
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 14,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0074
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0073
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0073
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0073
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0073
+  },
+  {
+   "a": "Lewowski_2021",
+   "b": "Nobrega-Dos_Santos_2023",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0073
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 5,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0073
+  },
+  {
+   "a": "Nobrega-Dos_Santos_2023",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0073
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 4,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0073
+  },
+  {
+   "a": "de_Matteis_2024b",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0073
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Boersma-van_Dam_2024",
+   "shared_openalex_ids": 4,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Butink_2023",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 3,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Butink_2023",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Demirkaya_2015",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Erer_2015",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "de_Matteis_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0072
+  },
+  {
+   "a": "Abgaz_2023",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0071
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Bosch_2021",
+   "shared_openalex_ids": 10,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0071
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Butink_2023",
+   "shared_openalex_ids": 10,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0071
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 8,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0071
+  },
+  {
+   "a": "Demirkaya_2015",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0071
+  },
+  {
+   "a": "Demirkaya_2015",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0071
+  },
+  {
+   "a": "Demirkaya_2015",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0071
+  },
+  {
+   "a": "Demirkaya_2015",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0071
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.007
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.007
+  },
+  {
+   "a": "Cinquin_2018",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0069
+  },
+  {
+   "a": "Cinquin_2018",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0069
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "Roberts_2021",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0069
+  },
+  {
+   "a": "Adamo_2021",
+   "b": "van_Heugten_Breurkes_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0068
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Noetel_2021",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0068
+  },
+  {
+   "a": "Leenaars_2019",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 9,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0067
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Pijls_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0067
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0066
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0066
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0066
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 11,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0066
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0066
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0066
+  },
+  {
+   "a": "Harms_2024",
+   "b": "Kapuka_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0066
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0066
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0066
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0066
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Burska_2023",
+   "shared_openalex_ids": 11,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0065
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 23,
+   "shared_titles": 22,
+   "frac_of_smaller": 0.0065
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 20,
+   "shared_titles": 20,
+   "frac_of_smaller": 0.0065
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 17,
+   "shared_titles": 17,
+   "frac_of_smaller": 0.0065
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0065
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0064
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 9,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0064
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 8,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0063
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 14,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0063
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 8,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0063
+  },
+  {
+   "a": "Ali_2024",
+   "b": "Lewowski_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0062
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0062
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0062
+  },
+  {
+   "a": "Greca_2023",
+   "b": "Santos_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0062
+  },
+  {
+   "a": "Menon_2022",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0062
+  },
+  {
+   "a": "Ali_2024",
+   "b": "Chakraborty_2023",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0061
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Hamaker_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0061
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0061
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0061
+  },
+  {
+   "a": "Toffalini_2021",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0061
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.006
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.006
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.006
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 10,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0059
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 7,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0059
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0058
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0058
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0057
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0057
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0057
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 11,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0057
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 11,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0057
+  },
+  {
+   "a": "Moran_2020",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0057
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0057
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Butink_2023",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0056
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0056
+  },
+  {
+   "a": "Moran_2020",
+   "b": "Ruggeri_2019",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0056
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0055
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Bech_2019",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0055
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0055
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Bosch_2023",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0055
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0055
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0055
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Endedijk_2021",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0055
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 9,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0055
+  },
+  {
+   "a": "Filges_2018",
+   "b": "Verdugo-Castro_2022",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0055
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Oliveira_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Bosch_2023",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 3,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Cozim-Melges_2024",
+   "b": "Low_2023",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 14,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Oliveira_2021",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0054
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0053
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0053
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 10,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0053
+  },
+  {
+   "a": "Chou_2003",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0053
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Wassenaar_2017",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0053
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0053
+  },
+  {
+   "a": "Sanchez-Gomez_2024",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0053
+  },
+  {
+   "a": "Smid_2019",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0053
+  },
+  {
+   "a": "Taschner_2024",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0053
+  },
+  {
+   "a": "Ward_2020",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0053
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 10,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0052
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 10,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0052
+  },
+  {
+   "a": "Ali_2024",
+   "b": "Radjenovic_2013",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0051
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Filges_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0051
+  },
+  {
+   "a": "Chueca_2023",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0051
+  },
+  {
+   "a": "Clark_2021",
+   "b": "Dornauer_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0051
+  },
+  {
+   "a": "Clark_2021",
+   "b": "Sanchez-Gomez_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0051
+  },
+  {
+   "a": "Radjenovic_2013",
+   "b": "Santos_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0051
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0049
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 7,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0049
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Rinne_2021",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0049
+  },
+  {
+   "a": "Butink_2023",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 15,
+   "shared_titles": 15,
+   "frac_of_smaller": 0.0049
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 8,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 9,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 6,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Leenaars_2019",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Mohamed_2023",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Webers_2022",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0047
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Noetel_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Burska_2023",
+   "shared_openalex_ids": 14,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Ferreira_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Noetel_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Butink_2023",
+   "shared_openalex_ids": 14,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Ferreira_2022",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Ferreira_2022",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 5,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Noetel_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Noetel_2021",
+   "b": "Ruggeri_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Noetel_2021",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0045
+  },
+  {
+   "a": "Adamo_2021",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0044
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0044
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0044
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0044
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0044
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 3,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0044
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0044
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Burska_2023",
+   "shared_openalex_ids": 10,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0043
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 5,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Bosch_2021",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Bosch_2023",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Burska_2023",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Oud_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 5,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 13,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Oud_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Oud_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0042
+  },
+  {
+   "a": "Menon_2022",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0041
+  },
+  {
+   "a": "Menon_2022",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0041
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 30,
+   "shared_titles": 30,
+   "frac_of_smaller": 0.0041
+  },
+  {
+   "a": "Bos_2018",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.004
+  },
+  {
+   "a": "Dornauer_2023",
+   "b": "Sanchez-Gomez_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.004
+  },
+  {
+   "a": "Dornauer_2023",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.004
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0039
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0039
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0039
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0039
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0039
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0039
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Hamaker_2022",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0039
+  },
+  {
+   "a": "Sepriano_2020",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0039
+  },
+  {
+   "a": "Eggmann_2023",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0038
+  },
+  {
+   "a": "Erer_2015",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0038
+  },
+  {
+   "a": "Erer_2015",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0038
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "Verdugo-Castro_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Greca_2023",
+   "b": "Nobrega-Dos_Santos_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Maciel_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Maciel_2024",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Maciel_2024",
+   "b": "Wijnen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Maciel_2024",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Moran_2020",
+   "b": "Rinne_2021",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Nobrega-Dos_Santos_2023",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Nobrega-Dos_Santos_2023",
+   "b": "van_Heugten_Breurkes_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Sepriano_2022",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0037
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Boersma-van_Dam_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Bech_2019",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Bosch_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Burska_2023",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Bos_2018",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 10,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Low_2023",
+   "b": "Viguie_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 8,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0036
+  },
+  {
+   "a": "Abgaz_2023",
+   "b": "Chakraborty_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0035
+  },
+  {
+   "a": "Abgaz_2023",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0035
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Bindoli_2024a",
+   "shared_openalex_ids": 5,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0035
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0035
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0035
+  },
+  {
+   "a": "Moran_2020",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0035
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Cinquin_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Roberts_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Xu_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Attai_2022",
+   "b": "van_Heugten_Breurkes_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Chakraborty_2023",
+   "b": "Cinquin_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Chakraborty_2023",
+   "b": "van_Heugten_Breurkes_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Chueca_2023",
+   "b": "Cinquin_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Cinquin_2018",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Cinquin_2018",
+   "b": "Roberts_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Cinquin_2018",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Cinquin_2018",
+   "b": "Xu_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Cinquin_2018",
+   "b": "van_Hoorn_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 11,
+   "shared_titles": 11,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Santos_2018",
+   "b": "van_Heugten_Breurkes_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0034
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Pijls_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0033
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Pijls_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0033
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Pijls_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0033
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Pijls_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0033
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0033
+  },
+  {
+   "a": "Taschner_2024",
+   "b": "Verdugo-Castro_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0033
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Hamaker_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0032
+  },
+  {
+   "a": "Verdugo-Castro_2022",
+   "b": "Xu_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0032
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Toffalini_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Ruggeri_2019",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Chueca_2023",
+   "b": "Greca_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Chueca_2023",
+   "b": "Lewowski_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Noetel_2021",
+   "b": "Toffalini_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "Toffalini_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Sanchez-Gomez_2024",
+   "b": "Toffalini_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Toffalini_2021",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0031
+  },
+  {
+   "a": "Attai_2022",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Dolinska_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Bindoli_2024b",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 17,
+   "shared_titles": 17,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Chueca_2023",
+   "b": "Sanchez-Acedo_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "Ramiro_2015",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Ramiro_2015",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Ramiro_2015",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Ramiro_2015",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Sanchez-Acedo_2023",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.003
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Burska_2023",
+   "shared_openalex_ids": 6,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Bos_2018",
+   "b": "Hall_2011",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Bosch_2023",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 5,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 4,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 12,
+   "shared_titles": 12,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Hall_2011",
+   "b": "Santos_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Hall_2011",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0029
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 4,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Sepriano_2020",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Webers_2022",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "van_Ballegooijen_2024",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "van_Dis_2019",
+   "b": "van_der_Valk_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0028
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Chou_2003",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0027
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0027
+  },
+  {
+   "a": "Chou_2003",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0027
+  },
+  {
+   "a": "Chou_2003",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0027
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Fejza_2023",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0027
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 3,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0027
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0027
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0027
+  },
+  {
+   "a": "Roberts_2021",
+   "b": "Ward_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0027
+  },
+  {
+   "a": "Ward_2020",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0027
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Sanchez-Gomez_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Sanchez-Gomez_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Smid_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 8,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Filges_2018",
+   "b": "Filges_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Harms_2024",
+   "b": "Wijnen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Mejean_2024",
+   "b": "Wijnen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Mohamed_2023",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Smid_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "Sanchez-Gomez_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Sanchez-Gomez_2024",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Viguie_2020",
+   "b": "Wijnen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0026
+  },
+  {
+   "a": "Rinne_2021",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0025
+  },
+  {
+   "a": "Sepriano_2020",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0025
+  },
+  {
+   "a": "Tektonidou_2019",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 3,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0025
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Hamaker_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0024
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0024
+  },
+  {
+   "a": "Harms_2024",
+   "b": "Viguie_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0024
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0024
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0024
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Noetel_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Noetel_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Filges_2018",
+   "b": "Noetel_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Menon_2022",
+   "b": "Noetel_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "Noetel_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Noetel_2021",
+   "b": "Verdugo-Castro_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Noetel_2021",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Noetel_2021",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Noetel_2021",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Roberts_2021",
+   "b": "Ruggeri_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Roberts_2021",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Taschner_2024",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0023
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Filges_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Leenaars_2019",
+   "shared_openalex_ids": 3,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Clarinval_2021",
+   "b": "Rinne_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Clarinval_2021",
+   "b": "Viguie_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Filges_2018",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Leenaars_2019",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Meijboom_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Meijboom_2021",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 5,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0022
+  },
+  {
+   "a": "Adamo_2021",
+   "b": "Santos_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Fong_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Fong_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Chakraborty_2023",
+   "b": "Santos_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Chueca_2023",
+   "b": "Santos_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Filges_2018",
+   "b": "Fong_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Fong_2021",
+   "b": "Xu_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 3,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Menon_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Mejean_2024",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Menon_2022",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Menon_2022",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "Tumkaya_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Taschner_2024",
+   "b": "Xu_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Tumkaya_2018",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0021
+  },
+  {
+   "a": "Ali_2024",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.002
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.002
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 23,
+   "shared_titles": 22,
+   "frac_of_smaller": 0.002
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 14,
+   "shared_titles": 14,
+   "frac_of_smaller": 0.002
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 7,
+   "shared_titles": 8,
+   "frac_of_smaller": 0.002
+  },
+  {
+   "a": "Moran_2020",
+   "b": "Wassenaar_2017",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.002
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "Bos_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Appenzeller-Herzog_2019",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Burska_2023",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Butink_2023",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Mohamed_2023",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 6,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Walker_2018",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0019
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Attai_2022",
+   "b": "Low_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Attai_2022",
+   "b": "Zakeri-Nasrabadi_2023b",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Bosch_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Dolinska_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bakker-Jacobs_2022",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Boersma-van_Dam_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bech_2019",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bech_2019",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Bos_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Dolinska_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Smid_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Boersma-van_Dam_2024",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Kerschbaumer_2024b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Low_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "de_Matteis_2024b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 3,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Wolters_2018",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0018
+  },
+  {
+   "a": "Adamo_2021",
+   "b": "Chueca_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Anmarkrud_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Aouad_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "Rinne_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Anmarkrud_2021",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Attai_2022",
+   "b": "Chueca_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Butink_2023",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "van_Hoorn_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Chueca_2023",
+   "b": "Verdugo-Castro_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Chueca_2023",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 7,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Tektonidou_2019",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Tektonidou_2019",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Webers_2022",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Wolters_2018",
+   "b": "van_Hoorn_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0017
+  },
+  {
+   "a": "Adamo_2021",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Hamaker_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Hamaker_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Butink_2023",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 5,
+   "shared_titles": 5,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Cozim-Melges_2024",
+   "b": "Moran_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Cozim-Melges_2024",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 9,
+   "shared_titles": 9,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "Zakeri-Nasrabadi_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Wolters_2018",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Zakeri-Nasrabadi_2023a",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0016
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Leenaars_2019",
+   "b": "Marques_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Leenaars_2019",
+   "b": "Ruggeri_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Leenaars_2019",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Ruggeri_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Marques_2021",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Marques_2021",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Moran_2020",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 6,
+   "shared_titles": 6,
+   "frac_of_smaller": 0.0015
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Aouad_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0014
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0014
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Hamaker_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0014
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0014
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0014
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0014
+  },
+  {
+   "a": "Aouad_2024",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0014
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Dolinska_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0014
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0014
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Filges_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Bos_2018",
+   "b": "Bosch_2023",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "Smid_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Fejza_2023",
+   "b": "Mohamed_2023",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Filges_2022",
+   "b": "Rinne_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Filges_2022",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Filges_2022",
+   "b": "Verdugo-Castro_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Filges_2022",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Smid_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 9,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Sepriano_2020",
+   "b": "Smid_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Smid_2019",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Smid_2019",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0013
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Rinne_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 10,
+   "shared_titles": 10,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Rinne_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Rinne_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Harms_2024",
+   "b": "Rinne_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Mohamed_2023",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Rinne_2021",
+   "b": "Roberts_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Rinne_2021",
+   "b": "Ruggeri_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Walker_2018",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Webers_2022",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 4,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Wolters_2018",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0012
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Xu_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Roberts_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Mohamed_2023",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Muthu_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Filges_2018",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Filges_2018",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Roberts_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Moseng_2024",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 4,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Muthu_2020",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Muthu_2020",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Roberts_2021",
+   "b": "Verdugo-Castro_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Roberts_2021",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Roberts_2021",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Roberts_2021",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0011
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.001
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.001
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.001
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.001
+  },
+  {
+   "a": "Monschau_2025",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.001
+  },
+  {
+   "a": "Moran_2020",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.001
+  },
+  {
+   "a": "Viguie_2020",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.001
+  },
+  {
+   "a": "Walker_2018",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.001
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "van_Hoorn_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Brouwer_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 3,
+   "shared_titles": 3,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Endedijk_2021",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 7,
+   "shared_titles": 7,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Kerschbaumer_2024b",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Moran_2020",
+   "b": "van_Hoorn_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Sepriano_2022",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Tektonidou_2019",
+   "b": "van_Hoorn_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Wolters_2018",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "van_de_Schoot_2025",
+   "b": "van_der_Waal_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0009
+  },
+  {
+   "a": "Attai_2022",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Bos_2018",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Bos_2018",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Hamaker_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Verdugo-Castro_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Giesen_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Tektonidou_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Giesen_2021",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Mohamed_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Hamaker_2022",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Taschner_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "Verdugo-Castro_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Taschner_2024",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Tektonidou_2019",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Tektonidou_2019",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Walker_2018",
+   "b": "Zanframundo_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0008
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "Fejza_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Bindoli_2024a",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Bos_2018",
+   "b": "Leenaars_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Fejza_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Wassenaar_2017",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Farisogullari_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Farisogullari_2023",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Fejza_2023",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Fejza_2023",
+   "b": "Parodis_2023b",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Fejza_2023",
+   "b": "Sepriano_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Fejza_2023",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Lauper_2021",
+   "shared_openalex_ids": 4,
+   "shared_titles": 4,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Leenaars_2019",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Leenaars_2019",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Leenaars_2019",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Wassenaar_2017",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0007
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Attai_2022",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Attai_2022",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Attai_2022",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Attai_2022",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Bos_2018",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Dolinska_2022",
+   "shared_openalex_ids": 0,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Bosch_2021",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Dolinska_2022",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Burska_2023",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Burska_2023",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Moseng_2024",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "Seghers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Parodis_2023b",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Seghers_2022",
+   "b": "Wolters_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Wolters_2018",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0006
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Bosch_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Kerschbaumer_2024a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Mohamed_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 0,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Alunno_2020",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Moran_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Sepriano_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Kerschbaumer_2022",
+   "b": "Leenaars_2020",
+   "shared_openalex_ids": 0,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Kerschbaumer_2024a",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Leenaars_2020",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 0,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Moran_2020",
+   "b": "Parodis_2023a",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Moran_2020",
+   "b": "Viguie_2020",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Moran_2020",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0005
+  },
+  {
+   "a": "Bos_2018",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0004
+  },
+  {
+   "a": "Bos_2018",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0004
+  },
+  {
+   "a": "Bosch_2023",
+   "b": "van_Ballegooijen_2024",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0004
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0004
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Kerschbaumer_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0004
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Sanchez-Alvarez_2023",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0004
+  },
+  {
+   "a": "Ruggeri_2019",
+   "b": "Webers_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0004
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0004
+  },
+  {
+   "a": "Sanchez-Alvarez_2023",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0004
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Dolinska_2022",
+   "shared_openalex_ids": 1,
+   "shared_titles": 0,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Brouwer_2019",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Burska_2023",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Butink_2023",
+   "b": "Walker_2018",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Hilfiker_2017",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Dolinska_2022",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Hilfiker_2017",
+   "b": "Monschau_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Parodis_2023a",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Walker_2018",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 2,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Webers_2022",
+   "b": "van_Dis_2019",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Webers_2022",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 2,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0003
+  },
+  {
+   "a": "Lauper_2021",
+   "b": "van_de_Schoot_2025",
+   "shared_openalex_ids": 1,
+   "shared_titles": 1,
+   "frac_of_smaller": 0.0002
+  }
+ ],
+ "vs_local_corpora": [
+  {
+   "review": "Appenzeller-Herzog_2019",
+   "corpus": "local:appenzeller_herzog_2020",
+   "shared_titles": 395,
+   "frac_of_review": 0.7611
+  },
+  {
+   "review": "Appenzeller-Herzog_2019",
+   "corpus": "local:bos_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0019
+  },
+  {
+   "review": "Bakker-Jacobs_2022",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0018
+  },
+  {
+   "review": "Bech_2019",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 2,
+   "frac_of_review": 0.0036
+  },
+  {
+   "review": "Boersma-van_Dam_2024",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0018
+  },
+  {
+   "review": "Bos_2018",
+   "corpus": "local:appenzeller_herzog_2020",
+   "shared_titles": 1,
+   "frac_of_review": 0.0004
+  },
+  {
+   "review": "Bos_2018",
+   "corpus": "local:bos_2018",
+   "shared_titles": 2029,
+   "frac_of_review": 0.9111
+  },
+  {
+   "review": "Bos_2018",
+   "corpus": "local:cohen_statins",
+   "shared_titles": 1,
+   "frac_of_review": 0.0004
+  },
+  {
+   "review": "Bos_2018",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 77,
+   "frac_of_review": 0.0346
+  },
+  {
+   "review": "Bosch_2023",
+   "corpus": "local:bos_2018",
+   "shared_titles": 3,
+   "frac_of_review": 0.0013
+  },
+  {
+   "review": "Bosch_2023",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0004
+  },
+  {
+   "review": "Brouwer_2019",
+   "corpus": "local:appenzeller_herzog_2020",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Brouwer_2019",
+   "corpus": "local:bos_2018",
+   "shared_titles": 7,
+   "frac_of_review": 0.0006
+  },
+  {
+   "review": "Brouwer_2019",
+   "corpus": "local:cohen_betablockers",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Brouwer_2019",
+   "corpus": "local:cohen_nsaids",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Brouwer_2019",
+   "corpus": "local:cohen_opiods",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Brouwer_2019",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 5,
+   "frac_of_review": 0.0004
+  },
+  {
+   "review": "Burska_2023",
+   "corpus": "local:appenzeller_herzog_2020",
+   "shared_titles": 1,
+   "frac_of_review": 0.0003
+  },
+  {
+   "review": "Burska_2023",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 2,
+   "frac_of_review": 0.0006
+  },
+  {
+   "review": "Butink_2023",
+   "corpus": "local:cohen_opiods",
+   "shared_titles": 1,
+   "frac_of_review": 0.0003
+  },
+  {
+   "review": "Butink_2023",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0003
+  },
+  {
+   "review": "Chou_2003",
+   "corpus": "local:cohen_adhd",
+   "shared_titles": 4,
+   "frac_of_review": 0.0107
+  },
+  {
+   "review": "Chou_2003",
+   "corpus": "local:cohen_betablockers",
+   "shared_titles": 1,
+   "frac_of_review": 0.0027
+  },
+  {
+   "review": "Chou_2003",
+   "corpus": "local:cohen_nsaids",
+   "shared_titles": 2,
+   "frac_of_review": 0.0053
+  },
+  {
+   "review": "Chou_2003",
+   "corpus": "local:cohen_opiods",
+   "shared_titles": 322,
+   "frac_of_review": 0.861
+  },
+  {
+   "review": "Chou_2003",
+   "corpus": "local:cohen_skeletalmusclerelaxants",
+   "shared_titles": 11,
+   "frac_of_review": 0.0294
+  },
+  {
+   "review": "Chou_2003",
+   "corpus": "local:cohen_triptans",
+   "shared_titles": 1,
+   "frac_of_review": 0.0027
+  },
+  {
+   "review": "Farisogullari_2023",
+   "corpus": "local:cohen_nsaids",
+   "shared_titles": 1,
+   "frac_of_review": 0.0007
+  },
+  {
+   "review": "Farisogullari_2023",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0007
+  },
+  {
+   "review": "Fejza_2023",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0007
+  },
+  {
+   "review": "Giesen_2021",
+   "corpus": "local:bos_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0008
+  },
+  {
+   "review": "Giesen_2021",
+   "corpus": "local:cohen_adhd",
+   "shared_titles": 1,
+   "frac_of_review": 0.0008
+  },
+  {
+   "review": "Giesen_2021",
+   "corpus": "local:cohen_opiods",
+   "shared_titles": 5,
+   "frac_of_review": 0.0039
+  },
+  {
+   "review": "Giesen_2021",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 3,
+   "frac_of_review": 0.0023
+  },
+  {
+   "review": "Hall_2011",
+   "corpus": "local:bos_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0029
+  },
+  {
+   "review": "Hamaker_2022",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 3,
+   "frac_of_review": 0.0024
+  },
+  {
+   "review": "Hanlon_2022",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0133
+  },
+  {
+   "review": "Hilfiker_2017",
+   "corpus": "local:bos_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Hilfiker_2017",
+   "corpus": "local:cohen_estrogens",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Hilfiker_2017",
+   "corpus": "local:cohen_opiods",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Hilfiker_2017",
+   "corpus": "local:cohen_statins",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Hilfiker_2017",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 4,
+   "frac_of_review": 0.0005
+  },
+  {
+   "review": "Lauper_2021",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 2,
+   "frac_of_review": 0.0004
+  },
+  {
+   "review": "Leenaars_2019",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0007
+  },
+  {
+   "review": "Leenaars_2020",
+   "corpus": "local:cohen_nsaids",
+   "shared_titles": 1,
+   "frac_of_review": 0.0005
+  },
+  {
+   "review": "Leenaars_2020",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0005
+  },
+  {
+   "review": "Low_2023",
+   "corpus": "local:kwok_2020",
+   "shared_titles": 1,
+   "frac_of_review": 0.0018
+  },
+  {
+   "review": "Muthu_2020",
+   "corpus": "local:cohen_opiods",
+   "shared_titles": 1,
+   "frac_of_review": 0.0011
+  },
+  {
+   "review": "Parodis_2023a",
+   "corpus": "local:cohen_statins",
+   "shared_titles": 1,
+   "frac_of_review": 0.0002
+  },
+  {
+   "review": "Parodis_2023a",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0002
+  },
+  {
+   "review": "Pijls_2017",
+   "corpus": "local:cohen_aceinhibitors",
+   "shared_titles": 1,
+   "frac_of_review": 0.02
+  },
+  {
+   "review": "Pijls_2017",
+   "corpus": "local:cohen_calciumchannelblockers",
+   "shared_titles": 1,
+   "frac_of_review": 0.02
+  },
+  {
+   "review": "Ruggeri_2019",
+   "corpus": "local:cohen_adhd",
+   "shared_titles": 1,
+   "frac_of_review": 0.0004
+  },
+  {
+   "review": "Ruggeri_2019",
+   "corpus": "local:cohen_atypicalantipsychotics",
+   "shared_titles": 1,
+   "frac_of_review": 0.0004
+  },
+  {
+   "review": "Seghers_2022",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0006
+  },
+  {
+   "review": "Sepriano_2020",
+   "corpus": "local:appenzeller_herzog_2020",
+   "shared_titles": 1,
+   "frac_of_review": 0.0005
+  },
+  {
+   "review": "Tektonidou_2019",
+   "corpus": "local:bos_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0008
+  },
+  {
+   "review": "Walker_2018",
+   "corpus": "local:bos_2018",
+   "shared_titles": 8,
+   "frac_of_review": 0.0007
+  },
+  {
+   "review": "Walker_2018",
+   "corpus": "local:cohen_aceinhibitors",
+   "shared_titles": 2,
+   "frac_of_review": 0.0002
+  },
+  {
+   "review": "Walker_2018",
+   "corpus": "local:cohen_antihistamines",
+   "shared_titles": 2,
+   "frac_of_review": 0.0002
+  },
+  {
+   "review": "Walker_2018",
+   "corpus": "local:cohen_atypicalantipsychotics",
+   "shared_titles": 2,
+   "frac_of_review": 0.0002
+  },
+  {
+   "review": "Walker_2018",
+   "corpus": "local:cohen_betablockers",
+   "shared_titles": 3,
+   "frac_of_review": 0.0003
+  },
+  {
+   "review": "Walker_2018",
+   "corpus": "local:cohen_oralhypoglycemics",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Walker_2018",
+   "corpus": "local:cohen_skeletalmusclerelaxants",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Walker_2018",
+   "corpus": "local:kwok_2020",
+   "shared_titles": 2,
+   "frac_of_review": 0.0002
+  },
+  {
+   "review": "Walker_2018",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "Ward_2020",
+   "corpus": "local:cohen_adhd",
+   "shared_titles": 1,
+   "frac_of_review": 0.0027
+  },
+  {
+   "review": "Wolters_2018",
+   "corpus": "local:bos_2018",
+   "shared_titles": 76,
+   "frac_of_review": 0.046
+  },
+  {
+   "review": "Wolters_2018",
+   "corpus": "local:cohen_nsaids",
+   "shared_titles": 1,
+   "frac_of_review": 0.0006
+  },
+  {
+   "review": "Wolters_2018",
+   "corpus": "local:cohen_statins",
+   "shared_titles": 1,
+   "frac_of_review": 0.0006
+  },
+  {
+   "review": "Wolters_2018",
+   "corpus": "local:cohen_urinaryincontinence",
+   "shared_titles": 1,
+   "frac_of_review": 0.0006
+  },
+  {
+   "review": "Wolters_2018",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1436,
+   "frac_of_review": 0.8698
+  },
+  {
+   "review": "Zanframundo_2022",
+   "corpus": "local:cohen_opiods",
+   "shared_titles": 1,
+   "frac_of_review": 0.0008
+  },
+  {
+   "review": "Zanframundo_2022",
+   "corpus": "local:cohen_statins",
+   "shared_titles": 1,
+   "frac_of_review": 0.0008
+  },
+  {
+   "review": "Zanframundo_2022",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0008
+  },
+  {
+   "review": "van_Ballegooijen_2024",
+   "corpus": "local:cohen_atypicalantipsychotics",
+   "shared_titles": 1,
+   "frac_of_review": 0.0003
+  },
+  {
+   "review": "van_Ballegooijen_2024",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 4,
+   "frac_of_review": 0.0012
+  },
+  {
+   "review": "van_Dis_2019",
+   "corpus": "local:cohen_skeletalmusclerelaxants",
+   "shared_titles": 1,
+   "frac_of_review": 0.0003
+  },
+  {
+   "review": "van_Dis_2019",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0003
+  },
+  {
+   "review": "van_Hoorn_2020",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 2,
+   "frac_of_review": 0.0017
+  },
+  {
+   "review": "van_de_Schoot_2025",
+   "corpus": "local:bos_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0001
+  },
+  {
+   "review": "van_de_Schoot_2025",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 2,
+   "frac_of_review": 0.0003
+  },
+  {
+   "review": "van_der_Waal_2022",
+   "corpus": "local:wolters_2018",
+   "shared_titles": 1,
+   "frac_of_review": 0.0009
+  }
+ ]
+}
