@@ -12,7 +12,7 @@
  * subgroup difference.
  */
 import { test, expect } from '@playwright/test';
-const URL = 'http://localhost:8088/cumulative-subgroup/index.html';
+const URL = '/cumulative-subgroup/index.html';
 
 const STUDIES = [
   { est: -0.22, se: 0.14, group: 'Low' }, { est: -0.30, se: 0.12, group: 'Low' },
