@@ -116,7 +116,7 @@
         <legend>Data</legend>
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE</code></span>
-          <textarea id="f-data" spellcheck="false" aria-label="Studies"></textarea></label>
+          <textarea id="f-data" spellcheck="false" aria-label="Studies" aria-describedby="warn-banner"></textarea></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
@@ -214,6 +214,7 @@
 
     function parseStudies(text) {
       const studies=[], warnings=[];
+      const numberToken=/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
       let first=true;
       const lines=String(text||"").split(/\r?\n/);
       for (let i=0;i<lines.length;i++) {
@@ -224,14 +225,20 @@
         const header=first && parts.length>=3 && /^(yi|est|effect|estimate)$/i.test(ys) && /^(se|sei|standard[ _-]?error)$/i.test(ss);
         first=false;
         if (header) continue;
-        const est=Number(ys),se=Number(ss),v=se*se;
-        if (parts.length<3 || !ys || !ss || !Number.isFinite(est) || !Number.isFinite(se)) {
-          warnings.push("Line "+(i+1)+": need label and complete finite estimate/SE values"); continue;
-        }
-        if (!(se>0 && Number.isFinite(v) && v>0 && Number.isFinite(1/v) && Number.isFinite(est/v))) {
-          warnings.push("Line "+(i+1)+": positive, numerically representable SE required"); continue;
-        }
         const label=parts.slice(0,-2).join(", ") || ("Study "+(studies.length+1));
+        const row="Line "+(i+1)+" ("+(parts.length<3 ? parts[0] : label)+"): ";
+        if (parts.length<3) {
+          warnings.push(row+"need label, estimate and SE fields"); continue;
+        }
+        const est=Number(ys),se=Number(ss),v=se*se;
+        const validEstimate=numberToken.test(ys) && Number.isFinite(est);
+        const validSE=numberToken.test(ss) && Number.isFinite(se);
+        if (!validEstimate) warnings.push(row+"estimate must be a complete finite number");
+        if (!validSE) warnings.push(row+"SE must be a complete finite number greater than zero");
+        if (!validEstimate || !validSE) continue;
+        if (!(se>0 && Number.isFinite(v) && v>0 && Number.isFinite(1/v) && Number.isFinite(est/v))) {
+          warnings.push(row+"positive, numerically representable SE required (SE must be greater than zero)"); continue;
+        }
         studies.push({label,est,se,v});
       }
       if (warnings.length) warnings.unshift("Analysis blocked: correct all study rows; no partial dataset was pooled.");
@@ -606,7 +613,7 @@
 
     // Last-computed result cache — populated by render(), read by __almResults().
     // Exposed on window so the alm-init script block (separate IIFE) can access them.
-    let _lastInfo = null, _lastStudies = [];
+    let _lastInfo = null, _lastStudies = [], _lastState = null;
     window._almLastFE = function () { return _lastInfo; };   // alm-init reads this to know render() ran
     window._almLastStudies = function () { return _lastStudies; };
 
@@ -616,6 +623,7 @@
       const state = readState();
       const parsed = parseStudies(state.data);
       const extras = [];
+      if (parsed.studies.length < 2) extras.push("Need ≥2 study rows. Enter at least two studies with an estimate and a positive SE.");
       if (state.tau2 === "dl" && parsed.studies.length < 10) {
         extras.push("DerSimonian-Laird is not offered for fewer than 10 studies (it is biased for small k); Paule-Mandel is used instead.");
       }
@@ -632,10 +640,13 @@
         extras.push("Analysis blocked: "+(error.message||String(error)));
       }
       _lastInfo=info;_lastStudies=parsed.studies;
+      _lastState=JSON.stringify(state);
+      if (!info) { statsWrap.innerHTML=""; looTable.innerHTML=""; }
+      document.getElementById("f-data").setAttribute("aria-invalid", String(!info));
       renderWarnings(parsed.warnings, extras);
       const svg = (parsed.studies.length >= 2 && info)
         ? buildSvg(parsed.studies, info.sum, info)
-        : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need ≥2 study rows.</text></svg>";
+        : "<svg xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-labelledby=\"baujat-empty-title baujat-empty-description\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><title id=\"baujat-empty-title\">No fitted analysis</title><desc id=\"baujat-empty-description\">Enter at least two valid study rows. See the study input notes for details.</desc><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">No fitted analysis. See input notes.</text></svg>";
       svgHost.innerHTML = svg;
       if (!info) document.getElementById("baujat-range-note").textContent="";
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
@@ -671,6 +682,20 @@
     }
     function slugify(t, f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
 
+    function addWarning(message) {
+      const list=warnEl.querySelector("ul");
+      if (!list) { renderWarnings([message]); return; }
+      if (Array.from(list.children).some(item=>item.textContent===message)) return;
+      const item=document.createElement("li"); item.textContent=message; list.appendChild(item);
+      warnEl.classList.add("is-visible");
+    }
+    function requireFittedAnalysis() {
+      if (_lastState!==JSON.stringify(readState())) render();
+      if (_lastInfo) return true;
+      addWarning("No valid results to export");
+      return false;
+    }
+
     // TruthCert on export — bind to the CURRENT studies + heterogeneity summary.
     async function hetReceipt(studies, info) {
       if (!window.AlmTruthCertExport) return null;
@@ -681,6 +706,7 @@
       } catch (e) { return null; }
     }
     async function onDownloadSvg() {
+      if (!requireFittedAnalysis()) return;
       const state = readState();
       const parsed = parseStudies(state.data);
       if (parsed.studies.length < 2) return Toast.show("Need ≥2 studies.", "warn");
@@ -691,6 +717,7 @@
       downloadBlob(new Blob([svg],{type:"image/svg+xml;charset=utf-8"}), "baujat-"+slugify("","plot")+".svg");
     }
     async function onDownloadPng() {
+      if (!requireFittedAnalysis()) return;
       const state = readState();
       const parsed = parseStudies(state.data);
       if (parsed.studies.length < 2) return Toast.show("Need ≥2 studies.", "warn");
@@ -715,6 +742,7 @@
       img.src = url;
     }
     async function onDownloadJson() {
+      if (!requireFittedAnalysis()) return;
       const state = readState();
       const out = Object.assign({_schema:"heterogeneity-v1", _savedAt:new Date().toISOString()}, state);
       const parsed = parseStudies(state.data);
@@ -753,12 +781,17 @@
       } catch (e) { Toast.show("Could not load shared: " + e.message, "warn"); }
     }
     function onBusSave() {
-      const parsed = parseStudies(document.getElementById("f-data").value);
-      if (!parsed.studies.length) { Toast.show("Nothing to save.", "warn"); return; }
-      if (!window.MaStudies) { Toast.show("Bus helper not loaded.", "error"); return; }
-      const ok = MaStudies.write(parsed.studies);
-      if (ok) Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn");
-      else Toast.show("Could not save to shared bus.", "warn");
+      render();
+      if (!_lastInfo) { addWarning("Cannot save: fit at least two valid studies first."); return false; }
+      if (!window.MaStudies) { addWarning("Bus helper not loaded. Current studies were not saved."); return false; }
+      try {
+        if (MaStudies.write(_lastStudies)) {
+          Toast.show("Saved " + _lastStudies.length + " studies to shared bus.", "warn");
+          return true;
+        }
+      } catch (error) { /* A failed save must never open the validator on older data. */ }
+      addWarning("Could not save current studies to shared bus.");
+      return false;
     }
     // Push the HKSJ random-effects pooled estimate to GRADE SoF via ma-pooled-v1.
     // Carries the displayed point + HKSJ CI verbatim; the export-scale selector
@@ -789,17 +822,23 @@
 
     function attach() {
       document.getElementById("btn-run").addEventListener("click", render);
+      document.getElementById("alm-export-mount").addEventListener("click", function (event) {
+        if (event.target.closest("button") && !requireFittedAnalysis()) {
+          event.preventDefault(); event.stopImmediatePropagation();
+        }
+      }, true);
       window.alm.plotExport({
         target: "#alm-plot-mount", basename: "heterogeneity",
         plots: [
-          { id: "baujat", name: "Baujat plot", getSvg: function () { return document.querySelector("#svg-host svg"); } }
+          { id: "baujat", name: "Baujat plot", getSvg: function () {
+            if (!requireFittedAnalysis()) throw new Error("No valid results to export");
+            return document.querySelector("#svg-host svg");
+          } }
         ],
         getReceiptInput: function () {
-          const state = readState(), parsed = parseStudies(state.data);
-          if (parsed.studies.length < 2) return null;
-          const info = renderStats(parsed.studies, state.tau2);
-          return { studies: parsed.studies, method: "Heterogeneity: Q, I², τ², prediction interval (+ Baujat)",
-            label: "heterogeneity", results: (info && info.sum) || null };
+          if (!requireFittedAnalysis()) return null;
+          return { studies: _lastStudies, method: "Heterogeneity: Q, I², τ², prediction interval (+ Baujat)",
+            label: "heterogeneity", results: _lastInfo.sum };
         }
       });
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
@@ -815,8 +854,7 @@
       }
       document.getElementById("btn-push-grade").addEventListener("click", onPushPooledToGrade);
       document.getElementById("btn-validate-webr").addEventListener("click", function () {
-        onBusSave();
-        window.open("../webr-validator/index.html?fromBus=1", "_blank");
+        if (onBusSave()) window.open("../webr-validator/index.html?fromBus=1", "_blank");
       });
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){
