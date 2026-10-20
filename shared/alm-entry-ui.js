@@ -15,6 +15,16 @@
     const root=node("section",undefined,el);root.className="alm-entry";root.setAttribute("aria-label","Smart data entry");
     const label=node("label","Paste from a paper, Excel, RevMan, Covidence or a PDF table",root);
     const textarea=node("textarea",undefined,root);textarea.id=prefix+"paste";textarea.rows=7;label.htmlFor=textarea.id;
+    const decimalGroup=node("div",undefined,root),decimal={value:"point",explicit:false},decimalRadios=[];
+    decimalGroup.setAttribute("role","group");decimalGroup.setAttribute("aria-label","Decimal mark");
+    node("span","Decimal mark: point · comma · ask",decimalGroup);
+    for(const value of ["point","comma","ask"]){
+      const lab=node("label",value,decimalGroup),radio=node("input",undefined,lab);
+      radio.type="radio";radio.name=prefix+"decimal";radio.value=value;radio.checked=value==="point";decimalRadios.push(radio);
+      radio.addEventListener("change",()=>{decimal.value=value;decimal.explicit=true;answers.decimal=value;if(table)refresh();});
+    }
+    const integerLabel=node("label","Means are from integer-scored items (enable GRIM check)",root),integerScale=node("input",undefined,integerLabel);
+    integerScale.type="checkbox";integerScale.addEventListener("change",()=>{answers.integerScale=integerScale.checked;if(table)refresh();});
     const fileLabel=node("label","Or choose a CSV, TSV or text file",root);
     const file=node("input",undefined,root);file.type="file";file.accept=".csv,.tsv,.txt";file.id=prefix+"file";fileLabel.htmlFor=file.id;
     const parse=node("button","Preview and convert",root);parse.type="button";
@@ -80,18 +90,24 @@
       table.rows.forEach(row=>{const tr=node("tr",undefined,body);for(let i=0;i<width;i++)node("td",row[i]||"",tr);});
     }
     function parseText(){
-      answers={};table=core.parseTable(textarea.value);detection=core.detect(table,schema);
+      if(/\d,\d/.test(core.normalize(textarea.value).text)&&!decimal.explicit)decimal.value="ask";
+      decimalRadios.forEach(r=>r.checked=r.value===decimal.value);
+      answers={decimal:decimal.value,integerScale:integerScale.checked};table=core.parseTable(textarea.value);detection=core.detect(table,schema);
       // Exact extra column names are supplied by the embedding app.
       (table.header||[]).forEach((h,i)=>{if(extras.includes(h)){detection.mapping[i]=h;detection.questions=detection.questions.filter(q=>q.id!=="column:"+i);}});
       renderPreview();refresh();
     }
     parse.addEventListener("click",parseText);
-    textarea.addEventListener("input",()=>{fileRevision++;use.disabled=true;output=null;status.textContent="Text changed. Preview and convert to update the rows.";});
+    function resetDecimal(){
+      decimal.explicit=false;decimal.value=/\d,\d/.test(core.normalize(textarea.value).text)?"ask":"point";
+      decimalRadios.forEach(r=>r.checked=r.value===decimal.value);
+    }
+    textarea.addEventListener("input",()=>{resetDecimal();fileRevision++;use.disabled=true;output=null;status.textContent="Text changed. Preview and convert to update the rows.";});
     file.addEventListener("change",async()=>{
       const chosen=file.files&&file.files[0];if(!chosen)return;
       const revision=++fileRevision;
       use.disabled=true;output=null;status.textContent="Reading file…";
-      try{const text=await chosen.text();if(revision!==fileRevision)return;textarea.value=text;parseText();}
+      try{const text=await chosen.text();if(revision!==fileRevision)return;textarea.value=text;resetDecimal();parseText();}
       catch(e){status.textContent="Could not read the file: "+e.message;use.disabled=true;}
     });
     use.addEventListener("click",async()=>{
@@ -130,6 +146,10 @@
     const root=node("section",undefined,el);root.className="alm-entry alm-entry-provenance";root.setAttribute("aria-label","Paper text and source confirmation");
     const pasteLabel=node("label","Paste the exact paper text or table",root),paste=node("textarea",undefined,root);
     paste.rows=7;paste.id=prefix+"paste";pasteLabel.htmlFor=paste.id;
+    let decimalExplicit=false;
+    const decimal=select("Decimal mark: point · comma · ask",root,[["point","point"],["comma","comma"],["ask","ask"]],()=>{decimalExplicit=true;extraction=null;candidatesBox.replaceChildren();questions.replaceChildren();});
+    decimal.value="point";
+    const wantedOutcome=input("Outcome to look for (used only to rank candidates)",root);
     const status=node("p","Add a source result, check its meaning, then confirm each study.",root);status.setAttribute("role","status");status.setAttribute("aria-live","polite");
     const questions=node("div",undefined,root),candidatesBox=node("div",undefined,root),cards=node("div",undefined,root);
     const use=button("Use these rows",root,async()=>{
@@ -200,6 +220,18 @@
         row.raw.est=v.effect;row.raw.lo=v.lo;row.raw.hi=v.hi;row.raw.measure=measure;row.raw.ratio=ratio;row.raw.scale=logScale?"log":"natural";
         if(!Number.isFinite(row.raw.yi)||!Number.isFinite(row.raw.sei))row.issues.push("The values cannot be converted on the selected scale.");
         if(name!=="generic")row.issues.push("This app needs additional contrast or dose fields; supply these through its table workflow.");
+      }else if(c.kind==="median_iqr"||c.kind==="mean_sd"){
+        const n=Number(choice.n);
+        if(!(n>0))row.issues.push("Enter the printed sample size.");
+        if(c.kind==="median_iqr"){
+          const args={...c.values,n};
+          let result=core.convertFivenum(args);
+          if(result.flags.some(f=>f.code==="fivenum-skew")&&choice.skew==="convert anyway")result=core.convertFivenum({...args,test:false});
+          row.rec=core.provenance.applyConversion(row.rec,{...result,field:"mean and SD",formula:"Luo/Wan/Shi mean and SD from median/IQR"});
+          row.raw.mean=result.mean;row.raw.sd=result.sd;
+        }else{row.raw.mean=c.values.mean;row.raw.sd=c.values.sd;}
+        row.raw.n=n;
+        row.issues.push("This summary needs a printed sample-size source and the app's remaining arm fields. Use the table workflow to supply these inputs.");
       }else row.issues.push("This result does not supply all raw inputs required by this app.");
       const sanity=core.sanity([row.raw],schema);row.rec.flags.push(...sanity);
       if(c.percentagesCorroborate===false)row.rec.flags.push({code:"PERCENT_MISMATCH",text:"Printed percentages do not corroborate this denominator assignment. Check the source."});
@@ -246,6 +278,18 @@
       }
       if(candidate.kind==="effect_ci"&&!candidate.measure)select("Effect measure (RR = risk ratio; OR = odds ratio; HR = hazard ratio; MD = mean difference; SMD = standardized mean difference; IRR = incidence rate ratio; RD = risk difference)",card,["RR","OR","HR","MD","SMD","IRR","RD"].map(x=>[x,x]),value=>{row.choice.measure=value;rebuild(row);});
       if(candidate.kind==="effect_ci"&&Object.values(candidate.values).some(x=>x<=0))select("Ratio scale (natural values are positive; log values may be negative)",card,[["natural","Natural scale"],["log","Already log transformed"]],value=>{row.choice.scale=value;rebuild(row);});
+      node("p","Decimal mark for this source: "+candidate.decimal+"; rule: "+candidate.rule,card);
+      for(const [key,value] of Object.entries(candidate.facets||{})){
+        const evidence=(candidate.facetEvidence[key]||[]).map(e=>e.text).join(", ");
+        node("p",key+": "+value+(evidence?" (source cue: "+evidence+")":""),card);
+      }
+      for(const facet of candidate.requiredFacets||[])select("Choose "+facet.key,card,facet.choices.map(v=>[v,v]),value=>{
+        row.choice.facets=row.choice.facets||{};row.choice.facets[facet.key]=value;rebuild(row);
+      });
+      if(candidate.kind==="median_iqr"||candidate.kind==="mean_sd"){
+        const n=input("Printed sample size (for conversion preview)",card,"","number");n.addEventListener("input",()=>{row.choice.n=n.value;rebuild(row);});
+        if(candidate.kind==="median_iqr")select("Skewness decision",card,[["keep unconverted","Keep unconverted if skewed"],["convert anyway","Convert anyway: data look skewed; the mean/SD estimate may be unreliable"]],value=>{row.choice.skew=value;rebuild(row);});
+      }
       for(const [key,title] of [["outcome","Outcome measured"],["timepoint","Timepoint (or not stated)"]]){
         const e=input(title,card);e.addEventListener("input",()=>{row.choice[key]=e.value.trim();rebuild(row);});
       }
@@ -260,16 +304,17 @@
       rebuild(row);csv.disabled=false;docx.disabled=false;return row;
     }
     function preview(){
-      extraction=core.extract(paste.value,schema);questions.replaceChildren();candidatesBox.replaceChildren();
+      if(/\d,\d/.test(core.normalize(paste.value).text)&&!decimalExplicit)decimal.value="ask";
+      extraction=core.extract(paste.value,schema,{decimal:decimal.value,outcome:wantedOutcome.value});questions.replaceChildren();candidatesBox.replaceChildren();
       extraction.questions.forEach(q=>node("p",q.text,questions));
       const original=paste.value;
       if(!extraction.candidates.length){status.textContent="No supported result found. Paste the full interval, explicit events and totals, or a table including its headers.";return;}
-      const chooser=select("Choose the source result to add",candidatesBox,extraction.candidates.map((c,i)=>[i,(c.measure?c.measure+" — ":"")+c.cue]),()=>{add.disabled=chooser.value==="";});
+      const chooser=select("Choose the source result to add",candidatesBox,extraction.candidates.map((c,i)=>[i,`Rank ${i+1}, score ${c.score.toFixed(2)}: `+(c.measure?c.measure+" — ":"")+c.cue]),()=>{add.disabled=chooser.value===""||extraction.decimal==="ask";});
       const add=button("Add chosen result",candidatesBox,()=>{if(chooser.value!=="")addCandidate(extraction.candidates[+chooser.value],original);});add.disabled=true;
       status.textContent=`${extraction.candidates.length} candidates. Select each result you need and check its source.`;
     }
     button("Extract candidates",root,preview);
-    paste.addEventListener("input",()=>{extraction=null;candidatesBox.replaceChildren();questions.replaceChildren();});
+    paste.addEventListener("input",()=>{decimalExplicit=false;decimal.value=/\d,\d/.test(core.normalize(paste.value).text)?"ask":"point";extraction=null;candidatesBox.replaceChildren();questions.replaceChildren();});
     return {element:root,parse:preview,getResult:()=>({records:rows.map(r=>r.raw),provenance:rows.map(r=>r.rec),extraction}),destroy(){revision++;root.remove();}};
   }
   const api={mount,mountProvenance};global.AlmEntryUI=api;

@@ -3,12 +3,25 @@
  * No statistical engine or app wiring lives in this module. */
 (function (global) {
   "use strict";
+  const RULES_VERSION="entry3.1";
+  const RULES=[];
+  function defineRule(id,kind,pattern,description) {
+    const rule=Object.freeze({id,version:1,kind,pattern,description});
+    RULES.push(rule);return pattern;
+  }
+  function ruleRegex(id) {
+    const rule=RULES.find(r=>r.id===id);
+    if(!rule)throw new Error("Unknown extraction rule: "+id);
+    return new RegExp(rule.pattern.source,rule.pattern.flags);
+  }
+  const ruleRef=id=>id+"@"+RULES.find(r=>r.id===id).version;
   const finite = x => typeof x === "number" && Number.isFinite(x);
   const present = x => x !== undefined && x !== null && !Number.isNaN(x);
   const flag = (code, text, blocking = false, extra = {}) => ({code, text, blocking, ...extra});
   const handbook = "Cochrane Handbook v6.5 §6.5.2.2";
   function result(value, method, citation, inputs, flags = []) {
-    return {value: finite(value) ? value : null, method, citation, inputs: {...inputs}, flags};
+    const fn=({"SE from CI":"seFromCI","SE from p":"seFromP","CI midpoint":"estFromCI","SD from SE":"sdFromSE","SD from CI (t, n-1 df)":"sdFromCI","SD from CI (normal)":"sdFromCI","events from percent":"eventsFromPercent"})[method];
+    return {value: finite(value) ? value : null, method, citation, inputs: {...inputs}, flags,...(fn?{fn,args:{...inputs},result:finite(value)?value:null,rulesVersion:RULES_VERSION}:{})};
   }
   function invalid(inputs, text) {
     return result(null, "not converted", handbook, inputs, [flag("invalid-input", text, true)]);
@@ -210,7 +223,7 @@
     const finish=()=>{
       const values={mean:finite(mean)?mean:null,sd:finite(sd)?sd:null};
       if(values.mean===null||values.sd===null)flags.push(flag("fivenum-unavailable","Mean or SD is unavailable for this method, scenario, sample size or skewness test",true));
-      return {values,...values,method:methods,citation:methods.map((m,i)=>m==="luo/wan/shi"?(i?(scenario===3?"Shi 2020":"Wan 2014"):"Luo 2018"):({hozo2005:"Hozo 2005",wan2014:"Wan 2014",bland2015:"Bland 2015",luo2016:"Luo 2018",shi2020:"Shi 2020",walter2007:"Walter 2007"})[m]).join("; "),inputs:{...a},flags,scenario};
+      return {values,...values,fn:"convertFivenum",args:{...a},result:values,rulesVersion:RULES_VERSION,method:methods,citation:methods.map((m,i)=>m==="luo/wan/shi"?(i?(scenario===3?"Shi 2020":"Wan 2014"):"Luo 2018"):({hozo2005:"Hozo 2005",wan2014:"Wan 2014",bland2015:"Bland 2015",luo2016:"Luo 2018",shi2020:"Shi 2020",walter2007:"Walter 2007"})[m]).join("; "),inputs:{...a},flags,scenario};
     };
     let scenario=0;
     const n=present(a.n)?a.n:NaN;
@@ -230,7 +243,11 @@
     if(scenario===1){tval=Math.abs((min+max-2*med)/range);crit=1/Math.log(n+9)+2.5/(n+1);}
     if(scenario===2){tval=Math.abs((q1+q3-2*med)/iqr);crit=2.65/Math.sqrt(n)-6/n**2;}
     if(scenario===3){tval=Math.max(2.65*Math.log(.6*n)/Math.sqrt(n)*Math.abs((min+max-2*med)/range),Math.abs((q1+q3-2*med)/iqr));crit=3/Math.sqrt(n)-40/n**3;}
-    if(a.test!==false && tval>=crit){flags.push(flag("fivenum-skew","Five-number symmetry test rejected estimation",true));return finish();}
+    if(tval>=crit){
+      flags.push(flag("fivenum-skew","data look skewed; the mean/SD estimate may be unreliable",a.test!==false));
+      if(a.test!==false)return finish();
+      flags.push(flag("SKEW_OVERRIDE","User explicitly chose to convert anyway (metafor test=FALSE)"));
+    }
     const mm=methods[0],sm=methods[1],luo=mm==="luo/wan/shi"||mm==="luo2016";
     const xi=2*qnorm((n-.375)/(n+.25)),eta=2*qnorm((.75*n-.125)/(n+.25));
     let weight;
@@ -279,37 +296,81 @@
 
   const NUM="[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?";
   const RANGE=`(${NUM})\\s*(?:to|,|-)\\s*(${NUM})`;
-  const norm=s=>String(s===null||s===undefined?"":s).replace(/[\u2212\u2010-\u2014]/g,"-").replace(/(\d)[·⋅](?=\d)/g,"$1.").replace(/[\u00a0\u2009\u202f]/g," ").trim();
+  const norm=s=>normalize(String(s===null||s===undefined?"":s)).text.trim();
   function parseCell(str,ctx={}) {
+    const token=parseCellRaw(str,ctx);
+    // Non-enumerable metadata preserves the established token/fixture contract.
+    Object.defineProperty(token,"rule",{value:ruleRef(token._ruleId||"R-CELL-UNKNOWN"),enumerable:false});
+    delete token._ruleId;
+    const source=String(str??""),mapped=sourceMap(source),working=ctx.decimal==="comma"?mapped.value.replace(ruleRegex("R-DECIMAL-REPLACE"),"$1."):mapped.value;
+    const numbers=[...working.matchAll(ruleRegex("R-CELL-NUMBERS"))],used=new Set(),spans={};
+    for(const [field,value] of Object.entries(token)){
+      if(!finite(value)||field==="level")continue;
+      const found=numbers.find((m,i)=>!used.has(i)&&+m[0]===value);
+      if(found){used.add(numbers.indexOf(found));spans[field]=mapped.span(found.index,found.index+found[0].length);}
+    }
+    Object.defineProperty(token,"spans",{value:spans,enumerable:false});
+    Object.defineProperty(token,"selectors",{value:Object.fromEntries(Object.entries(spans).map(([k,p])=>[k,selectors(source,p)])),enumerable:false});
+    return token;
+  }
+  defineRule("R-CELL-PATTERN-01","parse",new RegExp(`^(?:p\\s*)?([<>=≤≥]+)\\s*(${NUM})$`,"i"),"Cell grammar 1");
+  defineRule("R-CELL-PATTERN-02","parse",new RegExp(`^(${NUM})(?:\\s*\\/\\s*(${NUM}))?\\s*[([{]\\s*(${NUM})\\s*%\\s*[)\\]}]$`),"Cell grammar 2");
+  defineRule("R-CELL-PATTERN-03","parse",new RegExp(`^(${NUM})\\s*%$`),"Cell grammar 3");
+  defineRule("R-CELL-PATTERN-04","parse",new RegExp(`^(${NUM})\\s*\\/\\s*(${NUM})$`),"Cell grammar 4");
+  defineRule("R-CELL-PATTERN-05","parse",new RegExp(`^${NUM}$`),"Cell grammar 5");
+  defineRule("R-CELL-PATTERN-06","parse",new RegExp(`^(${NUM})\\s*(?:[, ]*[(\\[{]\\s*|,\\s*|\\s+)${RANGE}\\s*[)\\]}]?$`,"i"),"Cell grammar 6");
+  defineRule("R-CELL-PATTERN-07","parse",new RegExp(`^${RANGE}$`,"i"),"Cell grammar 7");
+  defineRule("R-CELL-PATTERN-08","parse",new RegExp(`^(?:mean\\s*)?(${NUM})\\s*(?:±|\\+/-|[(\\[{])\\s*(${NUM})\\s*(?:[)\\]}])?\\s*$`,"i"),"Cell grammar 8");
+  defineRule("R-CELL-CUE-01","context",/\d,\d/,"R-CELL-CUE cue 1");
+  defineRule("R-CELL-CUE-02","context",/^(?:NA|N\/A|NR|not reported|-)$/i,"R-CELL-CUE cue 2");
+  defineRule("R-CELL-CUE-03","context",/^p(?:[ -]?value)?$/,"R-CELL-CUE cue 3");
+  defineRule("R-CELL-CUE-04","context",/^p(?:[ -]?value)?$/,"R-CELL-CUE cue 4");
+  defineRule("R-CELL-CUE-05","context",/\d+(?:\.\d+)?\s*%\s*CI/ig,"R-CELL-CUE cue 5");
+  defineRule("R-CELL-CUE-06","context",/\b(?:median|mean|IQR|range|CI)\b/ig,"R-CELL-CUE cue 6");
+  defineRule("R-CELL-CUE-07","context",/[;:]/g,"R-CELL-CUE cue 7");
+  defineRule("R-CELL-CUE-08","context",/\b(SD|SE)\b/i,"R-CELL-CUE cue 8");
+  defineRule("R-CELL-CUE-09","context",/\b(?:SD|SE)\b/ig,"R-CELL-CUE cue 9");
+  defineRule("R-CELL-CUE-10","context",/\bse\b|standard error/,"R-CELL-CUE cue 10");
+  defineRule("R-CELL-CUE-11","context",/\bsd\b|standard deviation/,"R-CELL-CUE cue 11");
+  defineRule("R-CELL-UNKNOWN","unknown",/.*/,"Unsupported or unresolved cell");
+  defineRule("R-CELL-MEDIAN_IQR","median_iqr",ruleRegex("R-CELL-PATTERN-06"),"Three-number cell with an IQR header or cue");
+  defineRule("R-CELL-MEDIAN_RANGE","median_range",ruleRegex("R-CELL-PATTERN-06"),"Three-number cell with a range header or cue");
+  defineRule("R-CELL-EST_CI","est_ci",ruleRegex("R-CELL-PATTERN-06"),"Estimate with lower and upper interval limits");
+  defineRule("R-CELL-MEAN_SD","mean_sd",ruleRegex("R-CELL-PATTERN-08"),"Mean and spread, requiring SD/SE interpretation");
+  defineRule("R-CELL-NUMBERS","span",new RegExp(`(?<![\\d.])${NUM}`,"g"),"Source numeric token spans");
+  defineRule("R-CELL-LEVEL","context",/(\d+(?:\.\d+)?)\s*%\s*CI/i,"Explicit confidence level");
+  defineRule("R-CELL-IQR","context",/iqr|interquartile/i,"Interquartile range cue");
+  defineRule("R-CELL-RANGE","context",/range/i,"Range cue");
+  function parseCellRaw(str,ctx={}) {
     let s=norm(str),header=String(ctx.header||"").toLowerCase();
-    if(/\d,\d/.test(s)){
-      if(ctx.decimal==="comma")s=s.replace(/(\d),(?=\d)/g,"$1.");
-      else if(ctx.decimal!=="separator")return {kind:"unknown",raw:s,ambiguousDecimal:true};
+    if(ruleRegex("R-CELL-CUE-01").test(s)){
+      if(ctx.decimal==="comma")s=s.replace(ruleRegex("R-DECIMAL-REPLACE"),"$1.");
+      else if(ctx.decimal!=="separator")return {_ruleId:"R-CELL-UNKNOWN",kind:"unknown",raw:s,ambiguousDecimal:true};
     }
     let m;
-    if(!s||/^(?:NA|N\/A|NR|not reported|-)$/i.test(s))return {kind:"unknown",raw:s,missing:true};
-    if((m=s.match(new RegExp(`^(?:p\\s*)?([<>=≤≥]+)\\s*(${NUM})$`,"i"))))return {kind:"p",op:m[1],value:+m[2]};
-    if((m=s.match(new RegExp(`^(${NUM})(?:\\s*\\/\\s*(${NUM}))?\\s*[([{]\\s*(${NUM})\\s*%\\s*[)\\]}]$`))))return {kind:"n_pct",num:+m[1],...(m[2]?{den:+m[2]}:{}),pct:+m[3]};
-    if((m=s.match(new RegExp(`^(${NUM})\\s*%$`))))return {kind:"percent",value:+m[1]};
-    if((m=s.match(new RegExp(`^(${NUM})\\s*\\/\\s*(${NUM})$`))))return {kind:"fraction",num:+m[1],den:+m[2]};
-    if((m=s.match(new RegExp(`^${NUM}$`))))return {kind:/^p(?:[ -]?value)?$/.test(header)?"p":"number",value:+m[0],...(/^p(?:[ -]?value)?$/.test(header)?{op:"="}:{})};
-    const levelMatch=s.match(/(\d+(?:\.\d+)?)\s*%\s*CI/i);
+    if(!s||ruleRegex("R-CELL-CUE-02").test(s))return {_ruleId:"R-CELL-UNKNOWN",kind:"unknown",raw:s,missing:true};
+    if((m=s.match(ruleRegex("R-CELL-PATTERN-01"))))return {_ruleId:"R-CELL-PATTERN-01",kind:"p",op:m[1],value:+m[2]};
+    if((m=s.match(ruleRegex("R-CELL-PATTERN-02"))))return {_ruleId:"R-CELL-PATTERN-02",kind:"n_pct",num:+m[1],...(m[2]?{den:+m[2]}:{}),pct:+m[3]};
+    if((m=s.match(ruleRegex("R-CELL-PATTERN-03"))))return {_ruleId:"R-CELL-PATTERN-03",kind:"percent",value:+m[1]};
+    if((m=s.match(ruleRegex("R-CELL-PATTERN-04"))))return {_ruleId:"R-CELL-PATTERN-04",kind:"fraction",num:+m[1],den:+m[2]};
+    if((m=s.match(ruleRegex("R-CELL-PATTERN-05"))))return {_ruleId:"R-CELL-PATTERN-05",kind:ruleRegex("R-CELL-CUE-03").test(header)?"p":"number",value:+m[0],...(ruleRegex("R-CELL-CUE-04").test(header)?{op:"="}:{})};
+    const levelMatch=s.match(ruleRegex("R-CELL-LEVEL"));
     const level=levelMatch?+levelMatch[1]/100:undefined;
-    const isIQR=/iqr|interquartile/i.test(s+" "+header),isRange=/range/i.test(s+" "+header);
-    let clean=s.replace(/\d+(?:\.\d+)?\s*%\s*CI/ig,"").replace(/\b(?:median|mean|IQR|range|CI)\b/ig,"").replace(/[;:]/g," ").trim();
-    if((m=clean.match(new RegExp(`^(${NUM})\\s*(?:[, ]*[(\\[{]\\s*|,\\s*|\\s+)${RANGE}\\s*[)\\]}]?$`,"i")))){
-      if(isIQR)return {kind:"median_iqr",median:+m[1],q1:+m[2],q3:+m[3]};
-      if(isRange)return {kind:"median_range",median:+m[1],min:+m[2],max:+m[3]};
-      return {kind:"est_ci",est:+m[1],lo:+m[2],hi:+m[3],...(level?{level}:{})};
+    const isIQR=ruleRegex("R-CELL-IQR").test(s+" "+header),isRange=ruleRegex("R-CELL-RANGE").test(s+" "+header);
+    let clean=s.replace(ruleRegex("R-CELL-CUE-05"),"").replace(ruleRegex("R-CELL-CUE-06"),"").replace(ruleRegex("R-CELL-CUE-07")," ").trim();
+    if((m=clean.match(ruleRegex("R-CELL-PATTERN-06")))){
+      if(isIQR)return {_ruleId:"R-CELL-MEDIAN_IQR",kind:"median_iqr",median:+m[1],q1:+m[2],q3:+m[3]};
+      if(isRange)return {_ruleId:"R-CELL-MEDIAN_RANGE",kind:"median_range",median:+m[1],min:+m[2],max:+m[3]};
+      return {_ruleId:"R-CELL-EST_CI",kind:"est_ci",est:+m[1],lo:+m[2],hi:+m[3],...(level?{level}:{})};
     }
-    if((m=clean.match(new RegExp(`^${RANGE}$`,"i"))))return {kind:"ci",lo:+m[1],hi:+m[2],...(level?{level}:{})};
-    const statedDispersion=s.match(/\b(SD|SE)\b/i);
-    const dispersionText=s.replace(/\b(?:SD|SE)\b/ig,"").trim();
-    if((m=dispersionText.match(new RegExp(`^(?:mean\\s*)?(${NUM})\\s*(?:±|\\+/-|[(\\[{])\\s*(${NUM})\\s*(?:[)\\]}])?\\s*$`,"i")))){
-      const dispersion=((statedDispersion&&statedDispersion[1])||(/\bse\b|standard error/.test(header)?"SE":/\bsd\b|standard deviation/.test(header)?"SD":"")).toUpperCase();
-      return {kind:"mean_sd",mean:+m[1],spread:+m[2],dispersion:dispersion||null,ambiguousDispersion:!dispersion};
+    if((m=clean.match(ruleRegex("R-CELL-PATTERN-07"))))return {_ruleId:"R-CELL-PATTERN-07",kind:"ci",lo:+m[1],hi:+m[2],...(level?{level}:{})};
+    const statedDispersion=s.match(ruleRegex("R-CELL-CUE-08"));
+    const dispersionText=s.replace(ruleRegex("R-CELL-CUE-09"),"").trim();
+    if((m=dispersionText.match(ruleRegex("R-CELL-PATTERN-08")))){
+      const dispersion=((statedDispersion&&statedDispersion[1])||(ruleRegex("R-CELL-CUE-10").test(header)?"SE":ruleRegex("R-CELL-CUE-11").test(header)?"SD":"")).toUpperCase();
+      return {_ruleId:"R-CELL-MEAN_SD",kind:"mean_sd",mean:+m[1],spread:+m[2],dispersion:dispersion||null,ambiguousDispersion:!dispersion};
     }
-    return {kind:"unknown",raw:s};
+    return {_ruleId:"R-CELL-UNKNOWN",kind:"unknown",raw:s};
   }
   // RFC-4180 scanner also handles tabs/semicolons and quoted newlines.
   function scan(text,delimiter) {
@@ -463,6 +524,7 @@
     records.forEach((r,row)=>{
       const enriched={...(typeof schema==="object"?{ratio:schema.ratio}:{}),...r};
       Object.values(sanityRules).forEach(rule=>rule(enriched).forEach(f=>flags.push({...f,row,study:r.study})));
+      consistency(enriched).filter(f=>!flags.some(old=>old.row===row&&old.code===f.code)).forEach(f=>flags.push({...f,row,study:r.study}));
       if(r.study&&seen.has(r.study))flags.push(flag("duplicate-study","Duplicate study label",false,{row,study:r.study}));
       if(r.study)seen.add(r.study);
     });
@@ -502,11 +564,11 @@
     const ratioHeader=(table.header||[]).some(h=>/\b(?:OR|RR|HR)\b|odds ratio|risk ratio|hazard ratio/i.test(h));
     const ratio=typeof schema==="object"&&schema.ratio!==undefined?schema.ratio:ratioHeader;
     table.rows.forEach((row,i)=>{
-      const r={study:`Study ${i+1}`},pending=[];
+      const r={study:`Study ${i+1}`,...(answers.integerScale?{integerScale:true}:{})},pending=[];
       if(ratio)r.ratio=true;
       function log(out,description) {
         out.flags.forEach(f=>flags.push({...f,row:i,study:r.study}));
-        steps.push({row:i,study:r.study,text:`${r.study}: ${description} (${out.citation})`,method:out.method,citation:out.citation,inputs:out.inputs,flags:out.flags});
+        steps.push({row:i,study:r.study,text:`${r.study}: ${description} (${out.citation})`,method:out.method,citation:out.citation,inputs:out.inputs,flags:out.flags,...(out.fn?{fn:out.fn,args:out.args,result:out.result,rulesVersion:out.rulesVersion}:{})});
         return out.value;
       }
       row.forEach((cell,col)=>{
@@ -514,7 +576,7 @@
         if(!field||field==="ignore")return;
         if(["study","treatment","t1","t2"].includes(field)||(!fields.includes(field)&&!sources.includes(field))){r[field]=cell;return;}
         const header=(table.header||[])[col]||"";
-        let token=parseCell(cell,{header});
+        let token=parseCell(cell,{header,decimal:answers.decimal});
         if(token.ambiguousDecimal){
           const q=question(`decimal:${i}:${col}`,`${r.study}, ${header||field}: interpret comma as decimal separator?`,["comma","separator"]),a=ask(q);
           if(q.choices.includes(a)){
@@ -525,7 +587,7 @@
         if(token.ambiguousDispersion){
           const q=question(`dispersion:${i}:${col}`,`${r.study}: is ${token.spread} an SD or SE?`,["SD","SE"]),a=ask(q);
           if(q.choices.includes(a)){
-            token={...token,dispersion:a,ambiguousDispersion:false};
+            token={...token,spans:token.spans,dispersion:a,ambiguousDispersion:false};
             steps.push({row:i,study:r.study,text:`${r.study}: dispersion confirmed as ${a}`,method:"dispersion confirmed",citation:"User confirmation",inputs:{cell,dispersion:a},flags:[]});
           }
         }
@@ -533,13 +595,14 @@
           if(!token.missing&&!token.ambiguousDecimal)flags.push(flag("unparsed-cell",`${r.study}: cannot parse ${header||field}: ${cell}`,true,{row:i}));
           return;
         }
-        if(token.kind==="number"){r[field]=token.value;if(["yi","est"].includes(field))r.roundingUnit=roundingUnit(cell);return;}
+        if(token.kind==="number"){r[field]=token.value;if(["yi","est"].includes(field))r.roundingUnit=roundingUnit(cell);if(answers.integerScale&&["mean","m1i","m2i"].includes(field))r[field+"Text"]=cell;return;}
         if(token.kind==="p"){r.p=token;return;}
         if(token.kind==="percent"){pending.push({kind:"percent",field,pct:token.value});return;}
         if(token.kind==="fraction"||token.kind==="n_pct"){
           r[field]=token.num;
           const total=({xi:"ni",events:"n",cases:"n",ai:"n1i",ci:"n2i"})[field];
           if(total&&present(token.den))r[total]=token.den;
+          if(token.kind==="n_pct"){r.pct=token.pct;r.pctText=cell.match(/([\d.,·⋅]+)\s*%/)?.[1];r.events=token.num;if(total)r.n=r[total];}
           return;
         }
         if(token.kind==="est_ci"||token.kind==="ci"){
@@ -549,7 +612,7 @@
           if(token.level)r.level=token.level;
           return;
         }
-        pending.push({field,...token});
+        pending.push({field,...token,...(token.kind==="mean_sd"?{meanText:cell.slice(...token.spans.mean)}:{})});
       });
       for(const q of pending){
         const suffix=/[12](?:i)?$/.test(q.field)?q.field.match(/([12])(?:i)?$/)[1]:"";
@@ -562,12 +625,13 @@
           r[target]=log(eventsFromPercent({pct:q.pct,n:r[total]}),"Events estimated from percent");
         }else if(q.kind==="mean_sd"){
           r[meanKey]=q.mean;
+          if(answers.integerScale)r[meanKey+"Text"]=q.meanText;
           if(q.dispersion==="SD")r[sdKey]=q.spread;
           if(q.dispersion==="SE")r[sdKey]=log(sdFromSE({se:q.spread,n:r[nKey]}),"SD estimated from SE");
         }else if(q.kind==="median_iqr"||q.kind==="median_range"){
           const a={median:q.median,n:r[nKey],...(q.kind==="median_iqr"?{q1:q.q1,q3:q.q3}:{min:q.min,max:q.max})};
           Object.assign(r,a);
-          try{const out=convertFivenum(a);log(out,`Mean and SD estimated from ${q.kind==="median_iqr"?"IQR":"range"}`);r[meanKey]=out.mean;r[sdKey]=out.sd;}
+          try{const out=fivenumChoice(a,i,ask);log(out,`Mean and SD estimated from ${q.kind==="median_iqr"?"IQR":"range"}`);r[meanKey]=out.mean;r[sdKey]=out.sd;}
           catch(e){flags.push(flag("fivenum-invalid",e.message,true,{row:i}));}
         }
       }
@@ -593,7 +657,7 @@
       }
       if(present(r.median)&&!pending.some(q=>/^median_/.test(q.kind))){
         try{
-          const out=convertFivenum({min:r.min,q1:r.q1,median:r.median,q3:r.q3,max:r.max,n:r.n||r.ni||r.n1i});
+          const out=fivenumChoice({min:r.min,q1:r.q1,median:r.median,q3:r.q3,max:r.max,n:r.n||r.ni||r.n1i},i,ask);
           log(out,"Mean and SD estimated from five-number summary");
           r[name==="continuous"?"m1i":"mean"]=out.mean;r[name==="continuous"?"sd1i":"sd"]=out.sd;
         }catch(e){flags.push(flag("fivenum-invalid",e.message,true,{row:i}));}
@@ -641,21 +705,151 @@
   // Tags are never evaluated. Table structure survives as tabs/newlines.
   function sourceMap(text) {
     let value="";const starts=[],ends=[];
-    const re=/<[^>]*>|&(?:#x[\da-f]+|#\d+|nbsp|thinsp|minus|ndash|mdash|middot|amp|lt|gt);|\u00c3[\u0082\u201a]\u00c2\u00a0|\u00c2\u00a0|\u00c3[\u0082\u201a][ \u00a0]|[\s\S]/gi;
+    const re=/<\/?[a-z][^>]*>|&(?:#x[\da-f]+|#\d+|nbsp|thinsp|minus|ndash|mdash|middot|amp|lt|gt);|\u00c3[\u0082\u201a]\u00c2\u00a0|\u00c2\u00a0|\u00c3[\u0082\u201a][ \u00a0]|[\s\S]/gi;
     for(const m of text.matchAll(re)){
       let s=m[0];
-      if(s[0]==="<")s=/^<\/tr\b/i.test(s)?"\n":/^<\/(?:td|th)\b|^<(?:td|th)\b[^>]*\/>/i.test(s)?"\t":"";
+      if(s[0]==="<"&&s.length>1)s=/^<\/tr\b/i.test(s)?"\n":/^<\/(?:td|th)\b|^<(?:td|th)\b[^>]*\/>/i.test(s)?"\t":"";
       else if(s[0]==="&"){
         const name=s.slice(1,-1).toLowerCase(),entities={nbsp:" ",thinsp:" ",minus:"-",ndash:"-",mdash:"-",middot:".",amp:"&",lt:"<",gt:">"};
         const code=name.startsWith("#x")?parseInt(name.slice(2),16):name[0]==="#"?parseInt(name.slice(1),10):null;
         s=code!==null&&code<=0x10ffff?String.fromCodePoint(code):entities[name]||s;
       }else if(s.length>1)s=" ";
-      s=s.replace(/[\u2212\u2010-\u2015]/g,"-").replace(/[\u00b7\u22c5]/g,".").replace(/[\u00a0\u2000-\u200b\u202f]/g," ");
+      s=s.replace(/[\u2212\u2010-\u2015]/g,"-").replace(/[\u00b7\u22c5]/g,".").replace(/[\u00a0\u2000-\u200b\u202f]/g," ").replace(/[０-９]/g,c=>String(c.charCodeAt(0)-0xff10));
       value+=s;for(let i=0;i<s.length;i++){starts.push(m.index);ends.push(m.index+m[0].length);}
     }
-    return {value,span:(a,b)=>[starts[a],ends[b-1]]};
+    return {value,map:[...starts,text.length],span:(a,b)=>[starts[a],ends[b-1]]};
   }
-  const printedNumber=s=>Number(String(s).trim().replace(/[\u2212\u2010-\u2015]/g,"-").replace(/[\u00b7\u22c5]/g,".").replace(/,/g,""));
+  function normalize(original){const m=sourceMap(String(original));return {text:m.value,map:m.map};}
+  const printedNumber=(s,decimal)=>Number(String(s).trim().replace(/[０-９]/g,c=>String(c.charCodeAt(0)-0xff10)).replace(/[\u2212\u2010-\u2015]/g,"-").replace(/[\u00b7\u22c5]/g,".").replace(/,/g,decimal==="comma"?".":""));
+  function selectors(text,span){
+    const [start,end]=span;
+    return [{type:"TextPositionSelector",start,end},{type:"TextQuoteSelector",exact:text.slice(start,end),prefix:text.slice(Math.max(0,start-32),start),suffix:text.slice(end,end+32)}];
+  }
+  function anchor(text,selector){
+    const p=selector.find(s=>s.type==="TextPositionSelector"),q=selector.find(s=>s.type==="TextQuoteSelector");
+    if(p&&Number.isInteger(p.start)&&Number.isInteger(p.end)&&p.start>=0&&p.end>p.start&&p.end<=text.length&&(!q||text.slice(p.start,p.end)===q.exact))return [p.start,p.end];
+    if(!q||!q.exact)return null;
+    // Whitespace folding retains a source map; quote/context matching never picks
+    // between equally plausible repeated quotations.
+    const fold=s=>{let value="";const starts=[],ends=[];for(const m of s.matchAll(/\s+|[^\s]/gu)){value+=/^\s/.test(m[0])?" ":m[0];for(let i=0;i<(/^\s/.test(m[0])?1:m[0].length);i++){starts.push(m.index);ends.push(m.index+m[0].length);}}return {value,starts,ends};};
+    const f=fold(text),exact=fold(q.exact).value,prefix=fold(q.prefix||"").value,suffix=fold(q.suffix||"").value,hits=[];
+    for(let at=f.value.indexOf(exact);at>=0;at=f.value.indexOf(exact,at+1)){
+      const before=f.value.slice(Math.max(0,at-prefix.length),at),after=f.value.slice(at+exact.length,at+exact.length+suffix.length);
+      const score=(prefix&&before===prefix?1:0)+(suffix&&after===suffix?1:0);
+      hits.push({span:[f.starts[at],f.ends[at+exact.length-1]],score});
+    }
+    hits.sort((a,b)=>b.score-a.score);
+    return hits.length&&(!hits[1]||hits[0].score>hits[1].score)?hits[0].span:null;
+  }
+  defineRule("R-FACET-TIME","facet",/\b(?:at\s+)?(?:\d+(?:\.\d+)?[- ](?:days?|weeks?|months?|years?)|(?:day|week|month|year)\s+\d+(?:\.\d+)?)\b/gi,"Printed timepoint");
+  defineRule("R-FACET-ANALYSIS","facet",/\b(?:ITT|intention[- ]to[- ]treat|per[- ]protocol|as[- ]treated)\b/gi,"Analysis population");
+  defineRule("R-FACET-ADJUSTMENT","facet",/\b(?:unadjusted|adjusted)\b/gi,"Adjustment status");
+  defineRule("R-FACET-PHASE","facet",/\b(?:baseline|follow[- ]up|change(?:\s+from\s+baseline)?)\b/gi,"Baseline, follow-up or change");
+  defineRule("R-FACET-ARM","facet",/\b(?:in the|in|for)\s+([a-z][a-z0-9 -]{0,40}?)\s+(?:arm|group)\b/gi,"Printed arm label");
+  const facetRules={timepoint:"R-FACET-TIME",analysisSet:"R-FACET-ANALYSIS",adjustment:"R-FACET-ADJUSTMENT",phase:"R-FACET-PHASE",arm:"R-FACET-ARM"};
+  function facetCues(text){
+    const mapped=sourceMap(text),out={};
+    for(const [key,id] of Object.entries(facetRules))out[key]=[...mapped.value.matchAll(ruleRegex(id))].map(m=>{
+      let value=m[0].toLowerCase().replace(/^at\s+/,"").replace(/-/g," ");
+      if(key==="analysisSet")value=/itt|intention/.test(value)?"ITT":/per/.test(value)?"per-protocol":"other";
+      if(key==="phase")value=value.startsWith("change")?"change":value==="baseline"?"baseline":"follow-up";
+      if(key==="arm")value=m[1];
+      const span=mapped.span(m.index,m.index+m[0].length);
+      return {value,text:text.slice(...span),span,rule:ruleRef(id)};
+    });
+    return out;
+  }
+  function decorateCandidates(text,candidates,questions,opts){
+    const cues=facetCues(text);
+    const outcomeWords=[...new Set((opts.outcome||"").toLowerCase().match(/[a-z]{3,}/g)||[])].filter(w=>!["the","and","with","for","from"].includes(w));
+    for(const c of candidates){
+      const spans=Object.values(c.spans),start=Math.min(...spans.map(p=>p[0])),end=Math.max(...spans.map(p=>p[1]));
+      c.rule=ruleRef(c.ruleId);c.rulesVersion=RULES_VERSION;c.decimal=opts.decimal||"point";
+      c.selectors={};c.facets={};c.valueFacets={};c.facetEvidence={};
+      // Prefer preceding cues within the current clause; permit a following cue
+      // only when no earlier result intervenes.
+      const nearest=(key,pos)=>{
+        const possible=cues[key].filter(e=>Math.abs(e.span[0]-pos)<=150&&!/[;.!?]\s/.test(text.slice(Math.min(e.span[1],pos),Math.max(e.span[0],pos))));
+        return possible.filter(e=>e.span[0]<=pos).at(-1)||possible.find(e=>!candidates.some(other=>other!==c&&Object.values(other.spans).some(p=>p[0]>pos&&p[0]<e.span[0])));
+      };
+      for(const key of Object.keys(facetRules)){
+        const e=nearest(key,start);c.facets[key]=e?e.value:"unknown";c.facetEvidence[key]=e?[e]:[];
+      }
+      for(const [key,span] of Object.entries(c.spans)){
+        c.selectors[key]=selectors(text,span);c.valueFacets[key]={};
+        for(const facet of Object.keys(facetRules)){
+          const e=nearest(facet,span[0]);c.valueFacets[key][facet]={value:e?e.value:"unknown",evidence:e?[e]:[]};
+        }
+      }
+      if(c.kind==="counts")c.values.arms.forEach((a,i)=>{if(a.label)for(const field of ["events","n"])c.valueFacets["arms."+i+"."+field].arm={value:a.label,evidence:[{text:a.label}]};});
+      c.reportedPercentages=c.kind==="counts"?c.values.arms.flatMap((a,arm)=>a.pctSpan?[{arm,value:a.pct,span:a.pctSpan,text:text.slice(...a.pctSpan),selector:selectors(text,a.pctSpan),facets:c.valueFacets["arms."+arm+".events"]}]:[]):[];
+      const local=text.slice(Math.max(0,start-250),Math.min(text.length,end+70)).toLowerCase();
+      c.score=0;c.reasons=[];
+      const add=(score,reason)=>{c.score+=score;c.reasons.push({score,reason});};
+      if(c.measure)add(3,"Named effect measure beside the estimate");
+      if(/\bci\b|confidence interval/i.test(c.cue))add(2,"Confidence interval cue");
+      if(c.kind==="counts"&&c.values.arms.some(a=>a.label))add(2,"Printed arm words");
+      for(const word of outcomeWords){
+        const at=local.lastIndexOf(word,Math.min(local.length,250));
+        if(at>=0)add(1+1/(1+Math.abs(Math.min(start,250)-at)/50),"Nearby outcome word: "+word);
+      }
+      c.flags=consistency(c.kind==="effect_ci"?{est:c.values.effect,...c.values,ratio:["RR","OR","HR","IRR"].includes(c.measure),level:c.level,p:c.p}:c.values,opts);
+      c.requiredFacets=[];
+    }
+    for(const key of ["timepoint","analysisSet","adjustment","phase"]){
+      const choices=[...new Set(cues[key].map(e=>e.value))];
+      if(choices.length>1){
+        questions.push({id:"facet:"+key,facet:key,text:"Choose the "+key+" for this result.",choices});
+        candidates.forEach(c=>c.requiredFacets.push({key,choices}));
+      }
+    }
+    candidates.sort((a,b)=>b.score-a.score||Math.min(...Object.values(a.spans).map(p=>p[0]))-Math.min(...Object.values(b.spans).map(p=>p[0])));
+  }
+  function fivenumChoice(args,row,ask){
+    const out=convertFivenum(args);
+    if(!out.flags.some(f=>f.code==="fivenum-skew"))return out;
+    const answer=ask(question("skew:"+row,"data look skewed; the mean/SD estimate may be unreliable. Convert anyway?",["convert anyway","keep unconverted"]));
+    return answer==="convert anyway"?convertFivenum({...args,test:false}):out;
+  }
+  function consistency(r,opts={}){
+    const warnings=[...sanityRules.asymmetry(r)];
+    const p=r.p,est=present(r.est)?r.est:r.effect;
+    if(p&&typeof p==="object"&&p.op!=="="&&validCI(r)&&finite(est)){
+      const se=seFromCI(r).value,e=r.ratio?Math.log(est):est,pci=2*normalTail(Math.abs(e)/se);
+      const violated=p.op==="<"?pci>=p.value:p.op==="≤"?pci>p.value:p.op===">"?pci<=p.value:p.op==="≥"?pci<p.value:false;
+      if(violated)warnings.push(flag("P_CI_BOUND","The p-value bound is inconsistent with the confidence interval (Altman & Bland 2011)"));
+    }else warnings.push(...sanityRules.p({...r,est}));
+    const counts=r.arms||[r];
+    for(const a of counts){
+      if(finite(a.events)&&a.n>0&&finite(a.pct)){
+        const digits=a.pctText!==undefined?(String(a.pctText).split(/[.,·⋅]/)[1]||"").length:(a.pctDigits||0);
+        if(Math.abs(100*a.events/a.n-a.pct)>.5*10**-digits+1e-12)warnings.push(flag("PERCENT_MISMATCH","The events/total do not agree with the reported percentage at its printed precision"));
+      }
+    }
+    const ordered=["min","q1","median","q3","max"].map(k=>r[k]).filter(finite);
+    if(ordered.some((v,i)=>i&&v<ordered[i-1]))warnings.push(flag("QUARTILE_ORDER","Check quartile order: min <= q1 <= median <= q3 <= max"));
+    if(opts.integerScale||r.integerScale)for(const m of [r,{mean:r.m1i,n:r.n1i,meanText:r.m1iText},{mean:r.m2i,n:r.n2i,meanText:r.m2iText}]){
+      if(!finite(m.mean)||!Number.isInteger(m.n)||m.n<=0)continue;
+      const unit=m.meanText!==undefined?10**-(String(m.meanText).split(/[.,·⋅]/)[1]||"").length:10**-(m.meanDigits===undefined?2:m.meanDigits);
+      const lo=(m.mean-unit/2)*m.n,hi=(m.mean+unit/2)*m.n;
+      if(Math.ceil(lo-1e-12)>Math.floor(hi+1e-12))warnings.push(flag("GRIM","This rounded mean is incompatible with integer-scored items and the stated sample size"));
+    }
+    return warnings;
+  }
+  const conversionFunctions={seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,eventsFromPercent,convertFivenum,logRatio:a=>({value:Math.log(a.effect)})};
+  function replay(log){
+    const equal=(a,b)=>a&&b&&typeof a==="object"&&typeof b==="object"?Object.keys(a).length===Object.keys(b).length&&Object.keys(a).every(k=>equal(a[k],b[k])):a===b;
+    const results=log.map((entry,index)=>{
+      try{
+        if(entry.rulesVersion!==RULES_VERSION)throw new Error("Rules version mismatch");
+        if(!Object.prototype.hasOwnProperty.call(conversionFunctions,entry.fn))throw new Error("Unknown conversion");
+        const out=conversionFunctions[entry.fn](entry.args),value=out.values||out.value;
+        const ok=equal(value,entry.result)&&(!("output" in entry)||equal(entry.output,value));
+        return {index,ok,result:value,...(!ok?{error:"Conversion result does not replay exactly"}:{})};
+      }catch(e){return {index,ok:false,error:e.message};}
+    });
+    return {ok:results.every(r=>r.ok),results};
+  }
   const numberPattern="[-+]?(?:\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?|\\d+(?:\\.\\d+)?|\\.\\d+)";
   const measurePattern="standard(?:ized|ised) mean difference|incidence rate ratio|relative risk|risk ratio|odds ratio|hazard ratio|rate ratio|mean difference|risk difference|difference in risk|difference|SMD|IRR|RR|OR|HR|MD|RD";
   function measures(s){
@@ -669,8 +863,45 @@
     if(/difference|^md$/.test(s))return ["MD"];
     return ["RR"];
   }
+  const ci="(?:(?<level>\\d{2}(?:\\.\\d+)?)\\s*%\\s*)?(?:confidence\\s+interval(?:\\s*\\[CI\\])?|CI)\\s*(?:of\\s*)?[,:=\\s]*[\\[(]?\\s*";
+  const bounds=`(?<lo>${numberPattern})\\s*(?:-|to|,|;)\\s*(?<hi>${numberPattern})(?![\\d.])`;
+  const lead=`\\b(?<measure>${measurePattern})\\b(?:\\s*\\((?:HR|RR|OR|MD|SMD|IRR|RD)\\))?(?:\\s+(?:with|in)\\s+[^;,()[\\]\\n]{1,65}?)?\\s*(?:was|of|is)?\\s*[:,=]?\\s*(?<effect>${numberPattern})(?![\\d.])`;
+  const bridge="\\s*(?:percentage points|percent|days|points|%)?\\s*[,;]?\\s*[\\[(]?\\s*(?:with\\s+(?:a\\s+)?)?";
+    const pct="(?:\\s*(?:patients|participants|events)?\\s*[\\[(]\\s*(?<pct>\\d+(?:\\.\\d+)?)\\s*%\\s*[\\])])?";
+  defineRule("R-EFFECT-CI","extract",new RegExp(lead+bridge+"(?:"+ci+"|[\\[(]\\s*)"+bounds,"gdi"),"re source grammar");
+  defineRule("R-EFFECT-BARE","extract",new RegExp(`(?<![\\w.])(?<effect>${numberPattern})(?![\\d.%])\\s*[,;]?\\s*[\\[(]?\\s*${ci}${bounds}`,"gdi"),"reBare source grammar");
+  defineRule("R-COUNTS-DIRECT","extract",new RegExp(`(?<![\\w./])(?<events>\\d+(?:,\\d{3})*)${pct}\\s*(?:of\\s+(?:the\\s+)?|/)\\s*(?<n>\\d+(?:,\\d{3})*)(?!\\d|/|\\.\\d)(?:\\s*[\\[(]\\s*(?<afterpct>\\d+(?:\\.\\d+)?)\\s*%\\s*[\\])])?`,"gd"),"Printed event/total with an optional reported percentage");
+  defineRule("R-COUNTS-PERCENT","extract",new RegExp(`(?<![\\w.])(?<events>\\d+(?:,\\d{3})*)\\s*(?:patients|participants|events)?\\s*[\\[(]\\s*(?<pct>\\d+(?:\\.\\d+)?)\\s*%?\\s*[\\])]`,"gd"),"np source grammar");
+  defineRule("R-MEAN-SD","mean_sd",new RegExp(`\\bmean\\s*[:=]?\\s*(?<mean>${numberPattern})\\s*(?:\\(\\s*SD\\s*[:=]?\\s*|[,;]\\s*SD\\s*[:=]?\\s*|±\\s*(?:SD\\s*)?)(?<sd>${numberPattern})`,"gdi"),"Explicit mean_sd summary");
+  defineRule("R-MEDIAN-IQR","median_iqr",new RegExp(`\\bmedian\\s*[:=]?\\s*(?<median>${numberPattern})\\s*[,;]?\\s*[\\[(]?\\s*IQR\\s*[:=]?\\s*(?<q1>${numberPattern})\\s*(?:-|to|,)\\s*(?<q3>${numberPattern})`,"gdi"),"Explicit median_iqr summary");
+  defineRule("R-EXTRACT-CUE-01","context",/\d,$/,"R-EXTRACT-CUE cue 1");
+  defineRule("R-EXTRACT-CUE-02","context",/^\s*(?:patients|participants|controls)?\s*(?:\([^)]*\)|\[[^\]]*\])?\s*(?:in the|assigned to|allocated to|receiving)\s+([a-z][a-z -]{0,60}?)(?:\s+group|\s+(?:died|and|had)|[,;.()]|$)/i,"R-EXTRACT-CUE cue 2");
+  defineRule("R-EXTRACT-CUE-03","context",/^\s*\(([a-z][a-z0-9 -]{0,40})\)/i,"R-EXTRACT-CUE cue 3");
+  defineRule("R-EXTRACT-CUE-04","context",/^\s*(?:mg|ml|years|days|months)\b/i,"R-EXTRACT-CUE cue 4");
+  defineRule("R-EXTRACT-CUE-05","context",/\([^)]*\)|\[[^\]]*\]/g,"R-EXTRACT-CUE cue 5");
+  defineRule("R-EXTRACT-CUE-06","context",/\bn\s*=\s*(?<n>\d+(?:,\d{3})*)/gdi,"R-EXTRACT-CUE cue 6");
+  defineRule("R-EXTRACT-CUE-07","context",/[\n\t;.]/,"R-EXTRACT-CUE cue 7");
+  defineRule("R-EXTRACT-CUE-08","context",/[ (]+$/,"R-EXTRACT-CUE cue 8");
+  defineRule("R-EXTRACT-CUE-09","context",/[^\n]+/g,"R-EXTRACT-CUE cue 9");
+  defineRule("R-EXTRACT-CUE-10","context",/[^\t]+?(?=\t|$)/g,"R-EXTRACT-CUE cue 10");
+  defineRule("R-EXTRACT-CUE-11","context",/\S(?:(?! {2,}).)*?(?= {2,}|$)/g,"R-EXTRACT-CUE cue 11");
+  defineRule("R-EXTRACT-CUE-12","context",/\bevents?\b/i,"R-EXTRACT-CUE cue 12");
+  defineRule("R-EXTRACT-CUE-13","context",/\b(?:total|n)\b/i,"R-EXTRACT-CUE cue 13");
+  defineRule("R-EXTRACT-CUE-14","context",/^\d+$/,"R-EXTRACT-CUE cue 14");
+  defineRule("R-EXTRACT-CUE-15","context",/^\d+$/,"R-EXTRACT-CUE cue 15");
+  defineRule("R-EXTRACT-CUE-16","context",/\bSD\b/i,"R-EXTRACT-CUE cue 16");
+  defineRule("R-EXTRACT-CUE-17","context",/\d,\d/,"R-EXTRACT-CUE cue 17");
+  defineRule("R-COUNTS-TABLE","counts",/\bevents?\b.*\b(?:total|n)\b/i,"Two explicitly labelled event/total columns");
+  defineRule("R-DECIMAL-COMMA","context",/\d,\d/,"Potential decimal comma");
+  defineRule("R-DECIMAL-REPLACE","context",/(\d),(?=\d)/g,"Explicit decimal-comma setting");
+  defineRule("R-BARE-EXCLUDE","context",/(?:\bp\s*[<=>]\s*|\b(?:day|age|dose|year)\s*(?:was|is|of|=|:)?\s*)$/i,"Exclude p-values, ages and doses from bare intervals");
+  defineRule("R-ARM-BEFORE","context",/([a-z][a-z -]{0,50}?)\s*(?:group)?\s*[:,]\s*$/i,"Arm label before counts");
+  defineRule("R-CLAUSE","context",/;|\n|\.\s+[A-Z]/,"Separate result clauses");
+  defineRule("R-P-VALUE","p",new RegExp(`\\bp\\s*(?<op>[<>=≤≥])\\s*(?<p>${numberPattern})`,"gdi"),"Exact p-value or explicitly retained bound");
   function extract(text,schema,opts={}){
-    text=String(text||"");const mapped=sourceMap(text),s=mapped.value,candidates=[],questions=[];
+    text=String(text||"");const mapped=sourceMap(text),candidates=[],questions=[];
+    const decimal=opts.decimal|| (ruleRegex("R-EXTRACT-CUE-17").test(mapped.value)?"ask":"point");
+    const s=decimal==="comma"?mapped.value.replace(ruleRegex("R-DECIMAL-REPLACE"),"$1."):mapped.value;
     const requested=typeof schema==="object"?schema.name||schema.schema||schema.kind:schema;
     const wantCounts=!requested||["counts","binary2x2","proportion","arm-nma","dose","dta"].includes(requested);
     const wantEffects=!requested||["effect_ci","generic","contrast-nma","dose"].includes(requested);
@@ -678,57 +909,50 @@
     const push=c=>{
       const entries=c.kind==="counts"?c.values.arms.flatMap((a,i)=>[["arms."+i+".events",a.events],["arms."+i+".n",a.n]]):Object.entries(c.values);
       // A number broken by markup is not a literal source-number span.
-      if(entries.some(([k,v])=>!c.spans[k]||printedNumber(text.slice(...c.spans[k]))!==v||/\d,$/.test(text.slice(Math.max(0,c.spans[k][0]-2),c.spans[k][0]))))return;
+      if(entries.some(([k,v])=>!c.spans[k]||printedNumber(text.slice(...c.spans[k]),decimal)!==v||(decimal!=="comma"&&ruleRegex("R-EXTRACT-CUE-01").test(text.slice(Math.max(0,c.spans[k][0]-2),c.spans[k][0])))))return;
       if(!candidates.some(x=>JSON.stringify([x.kind,x.measure,x.spans])===JSON.stringify([c.kind,c.measure,c.spans])))candidates.push(c);
     };
     if(wantEffects){
-      const ci="(?:(?<level>\\d{2}(?:\\.\\d+)?)\\s*%\\s*)?(?:confidence\\s+interval(?:\\s*\\[CI\\])?|CI)\\s*(?:of\\s*)?[,:=\\s]*[\\[(]?\\s*";
-      const bounds=`(?<lo>${numberPattern})\\s*(?:-|to|,|;)\\s*(?<hi>${numberPattern})(?![\\d.])`;
-      const lead=`\\b(?<measure>${measurePattern})\\b(?:\\s*\\((?:HR|RR|OR|MD|SMD|IRR|RD)\\))?(?:\\s+(?:with|in)\\s+[^;,()[\\]\\n]{1,65}?)?\\s*(?:was|of|is)?\\s*[:,=]?\\s*(?<effect>${numberPattern})(?![\\d.])`;
-      const bridge="\\s*(?:percentage points|percent|days|points|%)?\\s*[,;]?\\s*[\\[(]?\\s*(?:with\\s+(?:a\\s+)?)?";
-      const re=new RegExp(lead+bridge+"(?:"+ci+"|[\\[(]\\s*)"+bounds,"gdi");
-      for(const m of s.matchAll(re)){
+      for(const m of s.matchAll(ruleRegex("R-EFFECT-CI"))){
         if(m.groups.measure==="or")continue; // Ordinary English conjunction, not an OR label.
         const values={},spans={};for(const k of ["effect","lo","hi"]){const n=capture(m,k);values[k]=n.value;spans[k]=n.span;}
-        for(const measure of measures(m.groups.measure))push({kind:"effect_ci",measure,values:{...values},level:m.groups.level?+m.groups.level/100:.95,spans:{...spans},cue:text.slice(...mapped.span(m.index,m.index+m[0].length))});
+        for(const measure of measures(m.groups.measure))push({ruleId:"R-EFFECT-CI",kind:"effect_ci",measure,values:{...values},level:m.groups.level?+m.groups.level/100:.95,spans:{...spans},cue:text.slice(...mapped.span(m.index,m.index+m[0].length))});
       }
       // Explicit CI without a named measure. Never consume a preceding percentage or p value.
-      const reBare=new RegExp(`(?<![\\w.])(?<effect>${numberPattern})(?![\\d.%])\\s*[,;]?\\s*[\\[(]?\\s*${ci}${bounds}`,"gdi");
-      for(const m of s.matchAll(reBare)){
+      for(const m of s.matchAll(ruleRegex("R-EFFECT-BARE"))){
         const values={},spans={};for(const k of ["effect","lo","hi"]){const n=capture(m,k);values[k]=n.value;spans[k]=n.span;}
         if(candidates.some(c=>c.spans.effect&&c.spans.effect[0]===spans.effect[0]))continue;
-        if(/(?:\bp\s*[<=>]\s*|\b(?:day|age|dose|year)\s*(?:was|is|of|=|:)?\s*)$/i.test(s.slice(Math.max(0,m.index-25),m.index)))continue;
-        push({kind:"effect_ci",values,level:m.groups.level?+m.groups.level/100:.95,spans,cue:text.slice(...mapped.span(m.index,m.index+m[0].length))});
+        if(ruleRegex("R-BARE-EXCLUDE").test(s.slice(Math.max(0,m.index-25),m.index)))continue;
+        push({ruleId:"R-EFFECT-BARE",kind:"effect_ci",values,level:m.groups.level?+m.groups.level/100:.95,spans,cue:text.slice(...mapped.span(m.index,m.index+m[0].length))});
       }
     }
     if(wantCounts){
       const labelAt=(start,end)=>{
         const after=s.slice(end,end+170),before=s.slice(Math.max(0,start-90),start);
-        const a=after.match(/^\s*(?:patients|participants|controls)?\s*(?:\([^)]*\)|\[[^\]]*\])?\s*(?:in the|assigned to|allocated to|receiving)\s+([a-z][a-z -]{0,60}?)(?:\s+group|\s+(?:died|and|had)|[,;.()]|$)/i);
-        const b=before.match(/([a-z][a-z -]{0,50}?)\s*(?:group)?\s*[:,]\s*$/i);
-        const c=after.match(/^\s*\(([a-z][a-z0-9 -]{0,40})\)/i);
+        const a=after.match(ruleRegex("R-EXTRACT-CUE-02"));
+        const b=before.match(ruleRegex("R-ARM-BEFORE"));
+        const c=after.match(ruleRegex("R-EXTRACT-CUE-03"));
         return (a&&a[1]||c&&c[1]||b&&b[1]||"").trim();
       };
       const pair=(arms,cue,extra={})=>{
         const spans={};arms.forEach((a,i)=>{spans["arms."+i+".events"]=a.span.events;spans["arms."+i+".n"]=a.span.n;});
-        push({kind:"counts",values:{arms:arms.map(a=>({...a}))},spans,cue,...extra});
+        push({ruleId:extra.ruleId||"R-COUNTS-DIRECT",kind:"counts",values:{arms:arms.map(a=>({...a}))},spans,cue,...extra});
       };
-      const pct="(?:\\s*(?:patients|participants|events)?\\s*[\\[(]\\s*\\d+(?:\\.\\d+)?\\s*%\\s*[\\])])?";
-      const direct=new RegExp(`(?<![\\w./])(?<events>\\d+(?:,\\d{3})*)${pct}\\s*(?:of\\s+(?:the\\s+)?|/)\\s*(?<n>\\d+(?:,\\d{3})*)(?!\\d|/|\\.\\d)`,"gd");
       const arms=[];
-      for(const m of s.matchAll(direct)){
+      for(const m of s.matchAll(ruleRegex("R-COUNTS-DIRECT"))){
         const e=capture(m,"events"),n=capture(m,"n");
         if(e.value>n.value||n.value<=0)continue;
-        if(/^\s*(?:mg|ml|years|days|months)\b/i.test(s.slice(m.index+m[0].length)))continue;
-        arms.push({events:e.value,n:n.value,label:labelAt(m.index,m.index+m[0].length),span:{events:e.span,n:n.span},start:m.index,end:m.index+m[0].length});
+        if(ruleRegex("R-EXTRACT-CUE-04").test(s.slice(m.index+m[0].length)))continue;
+        const pctKey=m.groups.pct?"pct":m.groups.afterpct?"afterpct":null;
+        arms.push({events:e.value,n:n.value,...(pctKey?{pct:+m.groups[pctKey],pctText:m.groups[pctKey],pctSpan:capture(m,pctKey).span}:{}),label:labelAt(m.index,m.index+m[0].length),span:{events:e.span,n:n.span},start:m.index,end:m.index+m[0].length});
       }
       // Separate explicit outcome clauses. Within an unsplit multi-arm clause, expose
       // every comparison in printed order rather than silently pairing adjacent arms.
       const groups=[];let group=[];
       for(const arm of arms){
         if(group.length){
-          const gap=s.slice(group[group.length-1].end,arm.start).replace(/\([^)]*\)|\[[^\]]*\]/g,"");
-          if(group.length>=2&&/;|\n|\.\s+[A-Z]/.test(gap)){groups.push(group);group=[];}
+          const gap=s.slice(group[group.length-1].end,arm.start).replace(ruleRegex("R-EXTRACT-CUE-05"),"");
+          if(group.length>=2&&ruleRegex("R-CLAUSE").test(gap)){groups.push(group);group=[];}
         }
         group.push(arm);
       }
@@ -740,16 +964,15 @@
       // Explicit denominators elsewhere in a report/table. Enumerate compatible assignments;
       // percentages corroborate printed counts, never reconstruct counts or denominators.
       const totals=[];
-      for(const m of s.matchAll(/\bn\s*=\s*(?<n>\d+(?:,\d{3})*)/gdi)){
-        const n=capture(m,"n");totals.push({n:n.value,span:n.span,label:s.slice(Math.max(0,m.index-65),m.index).split(/[\n\t;.]/).pop().replace(/[ (]+$/,"").trim()});
+      for(const m of s.matchAll(ruleRegex("R-EXTRACT-CUE-06"))){
+        const n=capture(m,"n");totals.push({n:n.value,span:n.span,label:s.slice(Math.max(0,m.index-65),m.index).split(ruleRegex("R-EXTRACT-CUE-07")).pop().replace(ruleRegex("R-EXTRACT-CUE-08"),"").trim()});
       }
       if(totals.length>=2){
-        const np=new RegExp(`(?<![\\w.])(?<events>\\d+(?:,\\d{3})*)\\s*(?:patients|participants|events)?\\s*[\\[(]\\s*(?<pct>\\d+(?:\\.\\d+)?)\\s*%?\\s*[\\])]`,"gd");
         const events=[];
-        for(const m of s.matchAll(np)){
+        for(const m of s.matchAll(ruleRegex("R-COUNTS-PERCENT"))){
           const e=capture(m,"events");
           if(arms.some(a=>a.span.events[0]===e.span[0]))continue;
-          events.push({events:e.value,span:e.span,pct:+m.groups.pct,digits:(m.groups.pct.split(".")[1]||"").length,start:m.index,end:m.index+m[0].length});
+          events.push({events:e.value,span:e.span,pct:+m.groups.pct,pctText:m.groups.pct,pctSpan:capture(m,"pct").span,digits:(m.groups.pct.split(".")[1]||"").length,start:m.index,end:m.index+m[0].length});
         }
         for(let i=0;i+1<events.length;i+=2){
           const es=events.slice(i,i+2);
@@ -758,58 +981,64 @@
             const ts=[totals[a],totals[b]];
             if(es.some((e,j)=>e.events>ts[j].n))continue;
             const corroborated=es.every((e,j)=>Math.abs(100*e.events/ts[j].n-e.pct)<=.51*Math.pow(10,-e.digits));
-            pair(es.map((e,j)=>({events:e.events,n:ts[j].n,label:ts[j].label,span:{events:e.span,n:ts[j].span}})),text.slice(...mapped.span(es[0].start,es[1].end)),{assignmentRequired:true,percentagesCorroborate:corroborated});
+            pair(es.map((e,j)=>({events:e.events,n:ts[j].n,pct:e.pct,pctText:e.pctText,pctSpan:e.pctSpan,pctDigits:e.digits,label:ts[j].label,span:{events:e.span,n:ts[j].span}})),text.slice(...mapped.span(es[0].start,es[1].end)),{ruleId:"R-COUNTS-PERCENT",assignmentRequired:true,percentagesCorroborate:corroborated});
           }
         }
       }
       // Tab/space tables with explicit events/total column names.
-      const lines=[...s.matchAll(/[^\n]+/g)];
+      const lines=[...s.matchAll(ruleRegex("R-EXTRACT-CUE-09"))];
       if(lines.length>1){
-        const cells=line=>[...line[0].matchAll(/[^\t]+?(?=\t|$)/g)].flatMap(m=>{
-          const parts=[...m[0].matchAll(/\S(?:(?! {2,}).)*?(?= {2,}|$)/g)];
+        const cells=line=>[...line[0].matchAll(ruleRegex("R-EXTRACT-CUE-10"))].flatMap(m=>{
+          const parts=[...m[0].matchAll(ruleRegex("R-EXTRACT-CUE-11"))];
           return parts.map(p=>({text:p[0],start:line.index+m.index+p.index}));
         });
-        const header=cells(lines[0]),ev=header.map((c,i)=>/\bevents?\b/i.test(c.text)?i:-1).filter(i=>i>=0),ns=header.map((c,i)=>/\b(?:total|n)\b/i.test(c.text)?i:-1).filter(i=>i>=0);
+        const header=cells(lines[0]),ev=header.map((c,i)=>ruleRegex("R-EXTRACT-CUE-12").test(c.text)?i:-1).filter(i=>i>=0),ns=header.map((c,i)=>ruleRegex("R-EXTRACT-CUE-13").test(c.text)?i:-1).filter(i=>i>=0);
         if(ev.length===2&&ns.length===2)for(const line of lines.slice(1)){
           const cs=cells(line),as=[];
           for(let j=0;j<2;j++){
             const e=cs[ev[j]],n=cs[ns[j]];
-            if(!e||!n||!/^\d+$/.test(e.text)||!/^\d+$/.test(n.text))break;
+            if(!e||!n||!ruleRegex("R-EXTRACT-CUE-14").test(e.text)||!ruleRegex("R-EXTRACT-CUE-15").test(n.text))break;
             as.push({events:+e.text,n:+n.text,label:header[ev[j]].text,span:{events:mapped.span(e.start,e.start+e.text.length),n:mapped.span(n.start,n.start+n.text.length)}});
           }
-          if(as.length===2)pair(as,text.slice(...mapped.span(line.index,line.index+line[0].length)));
+          if(as.length===2)pair(as,text.slice(...mapped.span(line.index,line.index+line[0].length)),{ruleId:"R-COUNTS-TABLE"});
         }
       }
     }
     if(!requested||["continuous","mean_sd","median_iqr"].includes(requested)){
-      const patterns=[
-        ["mean_sd",`\\bmean\\s*[:=]?\\s*(?<mean>${numberPattern})\\s*(?:\\(\\s*SD\\s*[:=]?\\s*|[,;]\\s*SD\\s*[:=]?\\s*|±\\s*(?:SD\\s*)?)(?<sd>${numberPattern})`],
-        ["median_iqr",`\\bmedian\\s*[:=]?\\s*(?<median>${numberPattern})\\s*[,;]?\\s*[\\[(]?\\s*IQR\\s*[:=]?\\s*(?<q1>${numberPattern})\\s*(?:-|to|,)\\s*(?<q3>${numberPattern})`]
-      ];
-      for(const [kind,pattern] of patterns)for(const m of s.matchAll(new RegExp(pattern,"gdi"))){
+      for(const [kind,ruleId] of [["mean_sd","R-MEAN-SD"],["median_iqr","R-MEDIAN-IQR"]])for(const m of s.matchAll(ruleRegex(ruleId))){
         const values={},spans={};for(const k of Object.keys(m.groups)){const n=capture(m,k);values[k]=n.value;spans[k]=n.span;}
-        const ambiguous=kind==="mean_sd"&&!/\bSD\b/i.test(m[0]);
-        push({kind,values,spans,cue:text.slice(...mapped.span(m.index,m.index+m[0].length)),dispersion:ambiguous?null:"SD"});
+        const ambiguous=kind==="mean_sd"&&!ruleRegex("R-EXTRACT-CUE-16").test(m[0]);
+        push({ruleId,kind,values,spans,cue:text.slice(...mapped.span(m.index,m.index+m[0].length)),dispersion:ambiguous?null:"SD"});
         if(ambiguous)questions.push({id:"dispersion:"+m.index,text:"Is the spread a standard deviation (SD) or standard error (SE)?",choices:["SD","SE"]});
       }
     }
-    candidates.sort((a,b)=>Math.min(...Object.values(a.spans).map(x=>x[0]))-Math.min(...Object.values(b.spans).map(x=>x[0])));
+    const pValues=[...s.matchAll(ruleRegex("R-P-VALUE"))].map(m=>{const n=capture(m,"p");return {op:m.groups.op,value:n.value,span:n.span,text:text.slice(...n.span),selector:selectors(text,n.span),rule:ruleRef("R-P-VALUE")};});
+    candidates.forEach(c=>{
+      const end=Math.max(...Object.values(c.spans).map(p=>p[1]));
+      const p=pValues.find(p=>p.span[0]>=end&&p.span[0]-end<80&&!candidates.some(x=>x!==c&&Object.values(x.spans).some(s=>s[0]>end&&s[0]<p.span[0])));
+      if(p)c.p=p;
+    });
+    decorateCandidates(text,candidates,questions,{...opts,decimal});
     if(candidates.length>1)questions.push({id:"candidate",text:"Choose the result, outcome and timepoint to use. More than one candidate was found.",choices:candidates.map((c,i)=>({value:i,label:c.cue,measure:c.measure}))});
     if(candidates.some(c=>c.kind==="counts"))questions.push({id:"arms",text:"Map the printed arms to treatment and control. Text order does not determine treatment.",choices:["first is treatment","second is treatment"]});
     if(candidates.some(c=>c.kind==="effect_ci"&&!c.measure))questions.push({id:"measure",text:"Which effect measure and scale does this interval describe?",choices:["RR","OR","HR","MD","SMD","IRR","RD"]});
-    if(/\d,\d{1,2}(?!\d)/.test(s))questions.push({id:"decimal",text:"Check whether commas are decimal marks or separators; decimal commas are not converted.",choices:["decimal mark","separator"]});
-    return {candidates,questions};
+    if(decimal==="ask")questions.push({id:"decimal",text:"Choose the decimal mark for this paste.",choices:["point","comma"]});
+    return {candidates,questions,decimal,pValues,rulesVersion:RULES_VERSION};
   }
   let provenanceSerial=0;
   const clone=x=>JSON.parse(JSON.stringify(x));
   const provenance={
-    create({pastedText="",label="",reference="",location="",doi="",pmid=""}={}){
-      return {id:"entry-"+Date.now().toString(36)+"-"+(++provenanceSerial),label,reference,location,doi,pmid,pastedText:String(pastedText),choice:{},values:[],conversions:[],flags:[],usedAs:"",confirmed:false,confirmedAt:null};
+    create({pastedText="",label="",reference="",location="",doi="",pmid="",decimal="point"}={}){
+      return {id:"entry-"+Date.now().toString(36)+"-"+(++provenanceSerial),label,reference,location,doi,pmid,decimal,pastedText:String(pastedText),choice:{},values:[],conversions:[],flags:[],usedAs:"",confirmed:false,confirmedAt:null};
     },
     fromCandidate(rec,candidate,choice={}){
       const out=clone(rec);out.choice=clone(choice);out.values=[];out.conversions=[];out.flags=[];out.confirmed=false;out.confirmedAt=null;
       out.kind=candidate.kind;out.measure=choice.measure||candidate.measure;out.level=candidate.level;
-      const add=(field,value,key)=>{const span=candidate.spans[key];out.values.push({field,value,span:span&&span.slice(),text:span?out.pastedText.slice(...span):""});};
+      out.rule=candidate.rule;out.rulesVersion=candidate.rulesVersion;out.decimal=candidate.decimal||rec.decimal;
+      out.requiredFacets=clone(candidate.requiredFacets||[]);out.facets=clone(candidate.facets||{});out.p=candidate.p?clone(candidate.p):undefined;
+      out.reportedPercentages=clone(candidate.reportedPercentages||[]);
+      out.flags.push(...clone(candidate.flags||[]));
+      const add=(field,value,key)=>{const span=candidate.spans[key];out.values.push({field,value,span:span&&span.slice(),text:span?out.pastedText.slice(...span):"",selector:span?selectors(out.pastedText,span):[],facets:clone(candidate.valueFacets?.[key]||{}),rule:candidate.rule});};
       if(candidate.kind==="counts")candidate.values.arms.forEach((a,i)=>{
         const role=choice.treatmentIndex===i?"treatment":choice.controlIndex===i?"control":null;
         if(choice.armIndex!==undefined&&choice.armIndex!==i)return;
@@ -822,12 +1051,14 @@
     },
     applyConversion(rec,conversionResult){
       const out=clone(rec),r=conversionResult;
-      out.conversions.push({field:r.field||"",formula:r.formula||r.method,citation:r.citation,inputs:clone(r.inputs||{}),output:r.output===undefined?r.value:r.output});
+      const fn=r.fn||(r.method==="log ratio"?"logRatio":/SD.*SE.*sqrt/.test(r.formula||"")?"sdFromSE":undefined);
+      const output=r.output===undefined?(r.values||r.value):r.output;
+      out.conversions.push({field:r.field||"",formula:r.formula||r.method,citation:r.citation,inputs:clone(r.inputs||{}),output,fn,args:clone(r.args||r.inputs||{}),result:output,rulesVersion:RULES_VERSION});
       out.flags.push(...clone(r.flags||(r.flag?[r.flag]:[])));out.confirmed=false;out.confirmedAt=null;return out;
     },
     sentence(rec){
       const names={ai:"events (treatment)",n1i:"total (treatment)",ci:"events (control)",n2i:"total (control)",effect:"effect estimate",lo:"lower confidence limit",hi:"upper confidence limit"};
-      return `From ${rec.label||"[author and year missing]"} (${rec.location||"[location missing]"}), you pasted "${rec.pastedText}". We read: ${rec.values.map(v=>(names[v.field]||v.field)+" "+v.text).join("; ")||"none"}. We converted: ${rec.conversions.map(c=>`${c.field}: ${c.formula} = ${c.output} (${c.citation})`).join("; ")||"none"}. Used as: ${rec.usedAs||"[not supplied by the app]"}.`;
+      return `From ${rec.label||"[author and year missing]"} (${rec.location||"[location missing]"}), you pasted "${rec.pastedText}". We read: ${rec.values.map(v=>(names[v.field]||v.field)+" "+v.text).join("; ")||"none"}${rec.p?"; p "+rec.p.op+" "+rec.p.value+(rec.p.op!=="="?" (BOUND)":""):""}. We converted: ${rec.conversions.map(c=>`${c.field}: ${c.formula} = ${JSON.stringify(c.output)} (${c.citation})`).join("; ")||"none"}. Used as: ${rec.usedAs||"[not supplied by the app]"}.`;
     },
     validate(rec){
       const missing=[];
@@ -837,20 +1068,27 @@
       if(!rec.values||!rec.values.length)missing.push("values");
       for(const v of rec.values||[]){
         const p=v.span;
-        const literal=/^[-+\u2212\u2010-\u2015]?(?:\d{1,3}(?:,\d{3})+(?:[.\u00b7\u22c5]\d+)?|\d+(?:[.\u00b7\u22c5]\d+)?|[.\u00b7\u22c5]\d+)$/.test(v.text);
-        if(!Array.isArray(p)||p.length!==2||!p.every(Number.isInteger)||p[0]<0||p[1]<=p[0]||p[1]>rec.pastedText.length||rec.pastedText.slice(...p)!==v.text||!literal||printedNumber(v.text)!==v.value)missing.push("span:"+v.field);
+        const normalized=normalize(v.text).text;
+        const literal=(rec.decimal==="comma"?/^[-+]?(?:\d+(?:,\d+)?|,\d+)$/:/^[-+]?(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?|\.\d+)$/).test(normalized);
+        if(!Array.isArray(p)||p.length!==2||!p.every(Number.isInteger)||p[0]<0||p[1]<=p[0]||p[1]>rec.pastedText.length||rec.pastedText.slice(...p)!==v.text||!literal||printedNumber(v.text,rec.decimal)!==v.value)missing.push("span:"+v.field);
+        if(v.selector&&JSON.stringify(v.selector)!==JSON.stringify(selectors(rec.pastedText,p)))missing.push("selector:"+v.field);
       }
+      if(rec.decimal==="ask")missing.push("decimal");
+      for(const v of [...(rec.p?[rec.p]:[]),...(rec.reportedPercentages||[])])
+        if(!Array.isArray(v.span)||rec.pastedText.slice(...v.span)!==v.text||printedNumber(v.text,rec.decimal)!==v.value||JSON.stringify(v.selector)!==JSON.stringify(selectors(rec.pastedText,v.span)))missing.push("auxiliary source value");
+      for(const f of rec.requiredFacets||[])if(!f.choices.includes(rec.choice?.facets?.[f.key])||(rec.facets[f.key]!=="unknown"&&rec.choice.facets[f.key]!==rec.facets[f.key]))missing.push("facet:"+f.key);
+      if(rec.conversions?.length&&!replay(rec.conversions).ok)missing.push("conversion replay");
       if(rec.flags&&rec.flags.some(f=>f.blocking))missing.push("blocking flags");
       return missing;
     },
     toCSV(records){
-      const keys=["id","label","reference","location","doi","pmid","pastedText","choice","values","conversions","flags","usedAs","confirmed","confirmedAt"];
+      const keys=["id","label","reference","location","doi","pmid","pastedText","decimal","rule","rulesVersion","facets","p","reportedPercentages","choice","values","conversions","flags","usedAs","confirmed","confirmedAt"];
       const cell=x=>{let s=typeof x==="object"?JSON.stringify(x):String(x===undefined?"":x);if(/^[\s\u0000-\u001f]*[=+\-@]/.test(s)||/^[\t\r\n]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
       return [keys.map(cell).join(","),...records.map(r=>keys.map(k=>cell(r[k])).join(","))].join("\r\n");
     },
     toDocxParagraphs(records){return records.flatMap(r=>[provenance.sentence(r),"Reference: "+r.reference+"; DOI: "+(r.doi||"none")+"; PMID: "+(r.pmid||"none"),"User choices: "+JSON.stringify(r.choice)+"; flags: "+JSON.stringify(r.flags)+"; confirmed: "+r.confirmed+"; confirmed at: "+(r.confirmedAt||"not confirmed")]);}
   };
-  const api={parseTable,parseCell,detect,convert,extract,provenance,seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,convertFivenum,eventsFromPercent,sanity,sanityRules,SCHEMAS,fallback:null,qnorm,qt};
+  const api={normalize,anchor,selectors,RULES,RULES_VERSION,replay,consistency,parseTable,parseCell,detect,convert,extract,provenance,seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,convertFivenum,eventsFromPercent,sanity,sanityRules,SCHEMAS,fallback:null,qnorm,qt};
   global.AlmEntry=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);

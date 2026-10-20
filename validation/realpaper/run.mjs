@@ -30,17 +30,17 @@ function valuesMatch(c,e,kind){
 }
 export function scoreRow(row,extracted){
   const expected=row.expected,nums=literalNumbers(row.text);
+  const result=extracted||A.extract(row.text,row.kind==="counts"?"binary2x2":"generic",{outcome:row.outcome});
   const keys=row.kind==="counts"?["ai","n1i","ci","n2i"]:["effect","lo","hi"];
   const absent=keys.filter(k=>!nums.some(n=>n.value===expected[k]));
-  if(absent.length)return {id:row.id,status:"NOT_IN_TEXT",missing:absent};
-  const result=extracted||A.extract(row.text,row.kind==="counts"?"binary2x2":"generic");
+  if(absent.length)return {id:row.id,status:"NOT_IN_TEXT",missing:absent,candidateCount:result.candidates.length,rank:null};
   const candidates=result.candidates.filter(c=>c.kind===row.kind);
   const sameValues=candidates.filter(c=>valuesMatch(c,expected,row.kind));
   const sameSpans=sameValues.filter(c=>validSpans(row.text,c));
   // A named measure is required to match whenever the source states a measure.
   const stated=/\b(?:RR|OR|HR|IRR|SMD|MD|RD|relative risk|risk ratio|odds ratio|hazard ratio|rate ratio|mean difference|risk difference|difference)\b/i.test(row.text);
   const correct=sameSpans.filter(c=>row.kind!=="effect_ci"||!stated||c.measure===expected.scale);
-  const base={id:row.id,candidateCount:result.candidates.length,matchingCandidates:correct.length};
+  const base={id:row.id,candidateCount:result.candidates.length,matchingCandidates:correct.length,rank:correct.length?1+result.candidates.findIndex(c=>correct.includes(c)):null};
   if(correct.length)return {...base,status:result.candidates.length>1?"AMBIGUOUS_PASS":"UNIQUE_PASS"};
   if(sameValues.length&&!sameSpans.length)return {...base,status:"WRONG_SPAN"};
   if(sameSpans.length)return {...base,status:"WRONG_MEASURE"};
@@ -54,10 +54,12 @@ export function run(file){
   const results=rows.map(row=>{try{return scoreRow(row);}catch(e){return {id:row.id,status:"OTHER",error:e.message};}});
   const count=status=>results.filter(r=>r.status===status).length;
   const split=basename(file,".json"),unique=count("UNIQUE_PASS"),ambiguous=count("AMBIGUOUS_PASS"),notInText=count("NOT_IN_TEXT");
-  const summary={split,unique,ambiguous,pass:unique+ambiguous,N:rows.length-notInText,not_in_text:notInText,categories:Object.fromEntries(categories.map(c=>[c,count(c)]))};
-  results.forEach(r=>console.log(`${r.status} ${r.id}${r.missing?" missing="+r.missing.join(","):" candidates="+r.candidateCount}`));
+  const ranked=results.filter(r=>r.rank!==null&&r.rank!==undefined),rank1=ranked.filter(r=>r.rank===1).length;
+  const summary={split,unique,ambiguous,pass:unique+ambiguous,N:rows.length-notInText,not_in_text:notInText,categories:Object.fromEntries(categories.map(c=>[c,count(c)])),ranked:ranked.length,meanRank:ranked.length?ranked.reduce((s,r)=>s+r.rank,0)/ranked.length:null,rank1,rank1Percent:ranked.length?100*rank1/ranked.length:null};
+  results.forEach(r=>console.log(`${r.status} ${r.id} candidates=${r.candidateCount} rank=${r.rank??"NA"}${r.missing?" missing="+r.missing.join(","):""}`));
   console.log(`REALPAPER ${split} unique=${unique} ambiguous=${ambiguous} pass=${unique+ambiguous}/${summary.N} not_in_text=${notInText}`);
   for(const c of categories)console.log(`${c} ${summary.categories[c]}`);
+  console.log(`RANK mean=${summary.meanRank===null?"NA":summary.meanRank.toFixed(4)} rank1=${rank1}/${ranked.length} percent=${summary.rank1Percent===null?"NA":summary.rank1Percent.toFixed(2)}% (correctly offered rows)`);
   writeFileSync(join(dirname(file),split+".results.json"),JSON.stringify({summary,results},null,2)+"\n");
   return summary;
 }

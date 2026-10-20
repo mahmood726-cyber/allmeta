@@ -15,14 +15,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "Death within 90 days after randomization occurred in 530 of 2433 patients (21.8%) in the BMES group and in 530 of 2413 patients (22.0%) in the saline group, for a difference of -0.15 percentage points",
+   "text": "BACKGROUND: Whether the use of balanced multielectrolyte solution (BMES) in preference to 0.9% sodium chloride solution (saline) in critically ill patients reduces the risk of acute kidney injury or death is uncertain. METHODS: In a double-blind, randomized, controlled trial, we assigned critically ill patients to receive BMES (Plasma-Lyte 148) or saline as fluid therapy in the intensive care unit (ICU) for 90 days. The primary outcome was death from any cause within 90 days after randomization. Secondary outcomes were receipt of new renal-replacement therapy and the maximum increase in the creatinine level during ICU stay. RESULTS: A total of 5037 patients were recruited from 53 ICUs in Australia and New Zealand - 2515 patients were assigned to the BMES group and 2522 to the saline group. Death within 90 days after randomization occurred in 530 of 2433 patients (21.8%) in the BMES group and in 530 of 2413 patients (22.0%) in the saline group, for a difference of -0.15 percentage points (95% confidence interval [CI], -3.60 to 3.30; P = 0.90). New renal-replacement therapy was initiated in 306 of 2403 patients (12.7%) in the BMES group and in 310 of 2394 patients (12.9%) in the saline group, for a difference of -0.20 percentage points (95% CI, -2.96 to 2.56). The mean (±SD) maximum increase in serum creatinine level was 0.41±1.06 mg per deciliter (36.6±94.0 μmol per liter) in the BMES group and 0.41±1.02 mg per deciliter (36.1±90.0 μmol per liter) in the saline group, for a difference of 0.01 mg per deciliter (95% CI, -0.05 to 0.06) (0.5 μmol per liter [95% CI, -4.7 to 5.7]). The number of adverse and serious adverse events did not differ meaningfully between the groups. CONCLUSIONS: We found no evidence that the risk of death or acute kidney injury among critically ill adults in the ICU was lower with the use of BMES than with saline. (Funded by the National Health and Medical Research Council of Australia and the Health Research Council of New Zealand; PLUS ClinicalTrials.gov number, NCT02721654.).",
    "kind": "counts",
    "expected": {
     "ai": 530,
     "n1i": 2433,
     "ci": 530,
     "n2i": 2413
-   }
+   },
+   "excerpt": "Death within 90 days after randomization occurred in 530 of 2433 patients (21.8%) in the BMES group and in 530 of 2413 patients (22.0%) in the saline group, for a difference of -0.15 percentage points",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "balanced-crystalloids-vs-saline-mortality|Mortality|PMID 34375394",
@@ -40,7 +42,8 @@
     "lo": 0.9,
     "hi": 1.05,
     "scale": "HR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "balanced-crystalloids-vs-saline-mortality|New renal-replacement therapy|PMID 35041780",
@@ -51,14 +54,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "New renal-replacement therapy was initiated in 306 of 2403 patients (12.7%) in the BMES group and in 310 of 2394 patients (12.9%) in the saline group, for a difference of -0.20 percentage points (95% ",
+   "text": "BACKGROUND: Whether the use of balanced multielectrolyte solution (BMES) in preference to 0.9% sodium chloride solution (saline) in critically ill patients reduces the risk of acute kidney injury or death is uncertain. METHODS: In a double-blind, randomized, controlled trial, we assigned critically ill patients to receive BMES (Plasma-Lyte 148) or saline as fluid therapy in the intensive care unit (ICU) for 90 days. The primary outcome was death from any cause within 90 days after randomization. Secondary outcomes were receipt of new renal-replacement therapy and the maximum increase in the creatinine level during ICU stay. RESULTS: A total of 5037 patients were recruited from 53 ICUs in Australia and New Zealand - 2515 patients were assigned to the BMES group and 2522 to the saline group. Death within 90 days after randomization occurred in 530 of 2433 patients (21.8%) in the BMES group and in 530 of 2413 patients (22.0%) in the saline group, for a difference of -0.15 percentage points (95% confidence interval [CI], -3.60 to 3.30; P = 0.90). New renal-replacement therapy was initiated in 306 of 2403 patients (12.7%) in the BMES group and in 310 of 2394 patients (12.9%) in the saline group, for a difference of -0.20 percentage points (95% CI, -2.96 to 2.56). The mean (±SD) maximum increase in serum creatinine level was 0.41±1.06 mg per deciliter (36.6±94.0 μmol per liter) in the BMES group and 0.41±1.02 mg per deciliter (36.1±90.0 μmol per liter) in the saline group, for a difference of 0.01 mg per deciliter (95% CI, -0.05 to 0.06) (0.5 μmol per liter [95% CI, -4.7 to 5.7]). The number of adverse and serious adverse events did not differ meaningfully between the groups. CONCLUSIONS: We found no evidence that the risk of death or acute kidney injury among critically ill adults in the ICU was lower with the use of BMES than with saline. (Funded by the National Health and Medical Research Council of Australia and the Health Research Council of New Zealand; PLUS ClinicalTrials.gov number, NCT02721654.).",
    "kind": "counts",
    "expected": {
     "ai": 306,
     "n1i": 2403,
     "ci": 310,
     "n2i": 2394
-   }
+   },
+   "excerpt": "New renal-replacement therapy was initiated in 306 of 2403 patients (12.7%) in the BMES group and in 310 of 2394 patients (12.9%) in the saline group, for a difference of -0.20 percentage points (95% ",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "colchicine-postop-af|Postoperative atrial fibrillation|PMID 42132185",
@@ -69,14 +74,16 @@
    "harness_label": "abstract effect+CI (RR)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "RESULTS: Of 163 analyzed patients (81 colchicine, 82 placebo), POAF incidence was significantly lower in the colchicine group (17.3% vs. 46.3%; RR 0.37, 95% CI 0.21-0.66; p < 0.001), with an absolute ",
+   "text": "BACKGROUND: Postoperative arrhythmias are common after coronary artery bypass graft (CABG) surgery and are linked to adverse outcomes. Colchicine, an anti-inflammatory agent, has shown inconsistent results in prior studies, possibly due to dosing and timing variations. OBJECTIVES: To evaluate the efficacy and safety of short-term, weight-adjusted colchicine initiated preoperatively for preventing postoperative arrhythmias after CABG. METHODS: In this randomized, double-blind, placebo-controlled trial, 172 adults scheduled for on-pump CABG received colchicine or placebo. The regimen included a preoperative loading dose (1 mg twice daily) followed by a weight-based maintenance dose (0.5 mg daily if <70 kg; 1 mg daily if ≥70 kg) for 14 days. The primary outcome was incidence of postoperative atrial fibrillation (POAF). Secondary outcomes included early (≤48 h) and late (>48 h) POAF, other arrhythmias, inflammatory markers (CRP, ESR), length of stay, and adverse events. RESULTS: Of 163 analyzed patients (81 colchicine, 82 placebo), POAF incidence was significantly lower in the colchicine group (17.3% vs. 46.3%; RR 0.37, 95% CI 0.21-0.66; p < 0.001), with an absolute risk reduction of 29.0% and number needed to treat (NNT) of 4. Colchicine reduced both early and late POAF (p < 0.001 and p = 0.002). No significant reduction was seen in other arrhythmias. Gastrointestinal events, primarily diarrhea, were more common with colchicine (25.9% vs. 8.5%, p = 0.003), but were manageable and without serious adverse events. CONCLUSION: Short-term perioperative weight-adjusted colchicine is effective and safe for preventing POAF after CABG, with a low NNT and manageable side effects, though it did not significantly affect other arrhythmias. TRIAL REGISTRATION: Iranian Registry of Clinical Trials, IRCT20200328046886N6.",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.37,
     "lo": 0.21,
     "hi": 0.66,
     "scale": "RR"
-   }
+   },
+   "excerpt": "RESULTS: Of 163 analyzed patients (81 colchicine, 82 placebo), POAF incidence was significantly lower in the colchicine group (17.3% vs. 46.3%; RR 0.37, 95% CI 0.21-0.66; p < 0.001), with an absolute ",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "colchicine-postop-af|Postoperative atrial fibrillation|PMID 32720823",
@@ -87,14 +94,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "POAF occurred in 13 patients (16.1%) in the colchicine group and 13 patients (18.3%) in the placebo group (odds ratio 0.85 [95% Confidence Interval = 0.37-1.99]).",
+   "text": "BACKGROUND: Studies using 1 mg of colchicine to prevent postoperative atrial fibrillation (POAF) reported conflicting results. Moreover, colchicine was associated with significant gastrointestinal (GI) side effects. This study examined whether low-dose colchicine effectively prevents POAF and whether low-dose therapy is associated with lower rates of colchicine-induced GI side effects. METHODS: In this prospective, randomized, double-blind, placebo-controlled study, consecutive adult patients admitted for elective cardiac surgeries randomly received a 1-mg dose of colchicine (n = 81) or placebo (n = 71) orally 12 to 24 hours before surgery followed by a daily dose of 0.5 mg until hospital discharge. The primary efficacy endpoint was the development of at least one episode of POAF of ≥5 minutes. The primary safety endpoint was the development of adverse events, especially diarrhea. RESULTS: The in-hospital mortality rate was 3.9%. POAF occurred in 13 patients (16.1%) in the colchicine group and 13 patients (18.3%) in the placebo group (odds ratio 0.85 [95% Confidence Interval = 0.37-1.99]). Diarrhea occurred in two patients in each group and necessitated treatment discontinuation in one patient in each group. CONCLUSION: Low-dose colchicine did not prevent POAF in patients undergoing cardiac surgery. These results should be interpreted cautiously because of the small sample size and early study termination.ClinicalTrials.gov Unique Identifier number: NCT03015831.",
    "kind": "counts",
    "expected": {
     "ai": 13,
     "n1i": 81,
     "ci": 13,
     "n2i": 71
-   }
+   },
+   "excerpt": "POAF occurred in 13 patients (16.1%) in the colchicine group and 13 patients (18.3%) in the placebo group (odds ratio 0.85 [95% Confidence Interval = 0.37-1.99]).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "colchicine-postop-af|Postoperative atrial fibrillation|PMID 25172965",
@@ -105,14 +114,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "There were no significant differences between the colchicine and placebo groups for the secondary end points of postoperative AF (colchicine, 61 patients [33.9%]; placebo, 75 patients [41.7%]; absolut",
+   "text": "IMPORTANCE: Postpericardiotomy syndrome, postoperative atrial fibrillation (AF), and postoperative effusions may be responsible for increased morbidity and health care costs after cardiac surgery. Postoperative use of colchicine prevented these complications in a single trial. OBJECTIVE: To determine the efficacy and safety of perioperative use of oral colchicine in reducing postpericardiotomy syndrome, postoperative AF, and postoperative pericardial or pleural effusions. DESIGN, SETTING, AND PARTICIPANTS: Investigator-initiated, double-blind, placebo-controlled, randomized clinical trial among 360 consecutive candidates for cardiac surgery enrolled in 11 Italian centers between March 2012 and March 2014. At enrollment, mean age of the trial participants was 67.5 years (SD, 10.6 years), 69% were men, and 36% had planned valvular surgery. Main exclusion criteria were absence of sinus rhythm at enrollment, cardiac transplantation, and contraindications to colchicine. INTERVENTIONS: Patients were randomized to receive placebo (n=180) or colchicine (0.5 mg twice daily in patients ≥70 kg or 0.5 mg once daily in patients <70 kg; n=180) starting between 48 and 72 hours before surgery and continued for 1 month after surgery. MAIN OUTCOMES AND MEASURES: Occurrence of postpericardiotomy syndrome within 3 months; main secondary study end points were postoperative AF and pericardial or pleural effusion. RESULTS: The primary end point of postpericardiotomy syndrome occurred in 35 patients (19.4%) assigned to colchicine and in 53 (29.4%) assigned to placebo (absolute difference, 10.0%; 95% CI, 1.1%-18.7%; number needed to treat = 10). There were no significant differences between the colchicine and placebo groups for the secondary end points of postoperative AF (colchicine, 61 patients [33.9%]; placebo, 75 patients [41.7%]; absolute difference, 7.8%; 95% CI, -2.2% to 17.6%) or postoperative pericardial/pleural effusion (colchicine, 103 patients [57.2%]; placebo, 106 patients [58.9%]; absolute difference, 1.7%; 95% CI, -8.5% to 11.7%), although there was a reduction in postoperative AF in the prespecified on-treatment analysis (placebo, 61/148 patients [41.2%]; colchicine, 38/141 patients [27.0%]; absolute difference, 14.2%; 95% CI, 3.3%-24.7%). Adverse events occurred in 21 patients (11.7%) in the placebo group vs 36 (20.0%) in the colchicine group (absolute difference, 8.3%; 95% CI; 0.76%-15.9%; number needed to harm = 12), but discontinuation rates were similar. No serious adverse events were observed. CONCLUSIONS AND RELEVANCE: Among patients undergoing cardiac surgery, perioperative use of colchicine compared with placebo reduced the incidence of postpericardiotomy syndrome but not of postoperative AF or postoperative pericardial/pleural effusion. The increased risk of gastrointestinal adverse effects reduced the potential benefits of colchicine in this setting. TRIAL REGISTRATION: clinicaltrials.gov Identifier: NCT01552187.",
    "kind": "counts",
    "expected": {
     "ai": 61,
     "n1i": 180,
     "ci": 75,
     "n2i": 180
-   }
+   },
+   "excerpt": "There were no significant differences between the colchicine and placebo groups for the secondary end points of postoperative AF (colchicine, 61 patients [33.9%]; placebo, 75 patients [41.7%]; absolut",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "colchicine-secondary-cv-prevention|Trial-defined major coronary/cardiovascular composite|PMID 31733140",
@@ -123,14 +134,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "The primary end point occurred in 5.5% of the patients in the colchicine group, as compared with 7.1% of those in the placebo group (hazard ratio, 0.77; 95% confidence interval [CI], 0.61 to 0.96; P =",
+   "text": "BACKGROUND: Experimental and clinical evidence supports the role of inflammation in atherosclerosis and its complications. Colchicine is an orally administered, potent antiinflammatory medication that is indicated for the treatment of gout and pericarditis. METHODS: We performed a randomized, double-blind trial involving patients recruited within 30 days after a myocardial infarction. The patients were randomly assigned to receive either low-dose colchicine (0.5 mg once daily) or placebo. The primary efficacy end point was a composite of death from cardiovascular causes, resuscitated cardiac arrest, myocardial infarction, stroke, or urgent hospitalization for angina leading to coronary revascularization. The components of the primary end point and safety were also assessed. RESULTS: A total of 4745 patients were enrolled; 2366 patients were assigned to the colchicine group, and 2379 to the placebo group. Patients were followed for a median of 22.6 months. The primary end point occurred in 5.5% of the patients in the colchicine group, as compared with 7.1% of those in the placebo group (hazard ratio, 0.77; 95% confidence interval [CI], 0.61 to 0.96; P = 0.02). The hazard ratios were 0.84 (95% CI, 0.46 to 1.52) for death from cardiovascular causes, 0.83 (95% CI, 0.25 to 2.73) for resuscitated cardiac arrest, 0.91 (95% CI, 0.68 to 1.21) for myocardial infarction, 0.26 (95% CI, 0.10 to 0.70) for stroke, and 0.50 (95% CI, 0.31 to 0.81) for urgent hospitalization for angina leading to coronary revascularization. Diarrhea was reported in 9.7% of the patients in the colchicine group and in 8.9% of those in the placebo group (P = 0.35). Pneumonia was reported as a serious adverse event in 0.9% of the patients in the colchicine group and in 0.4% of those in the placebo group (P = 0.03). CONCLUSIONS: Among patients with a recent myocardial infarction, colchicine at a dose of 0.5 mg daily led to a significantly lower risk of ischemic cardiovascular events than placebo. (Funded by the Government of Quebec and others; COLCOT ClinicalTrials.gov number, NCT02551094.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.77,
     "lo": 0.61,
     "hi": 0.96,
     "scale": "HR"
-   }
+   },
+   "excerpt": "The primary end point occurred in 5.5% of the patients in the colchicine group, as compared with 7.1% of those in the placebo group (hazard ratio, 0.77; 95% confidence interval [CI], 0.61 to 0.96; P =",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "colchicine-secondary-cv-prevention|Trial-defined major coronary/cardiovascular composite|PMID 32865380",
@@ -141,14 +154,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "A primary end-point event occurred in 187 patients (6.8%) in the colchicine group and in 264 patients (9.6%) in the placebo group (incidence, 2.5 vs. 3.6 events per 100 person-years; hazard ratio, 0.6",
+   "text": "BACKGROUND: Evidence from a recent trial has shown that the antiinflammatory effects of colchicine reduce the risk of cardiovascular events in patients with recent myocardial infarction, but evidence of such a risk reduction in patients with chronic coronary disease is limited. METHODS: In a randomized, controlled, double-blind trial, we assigned patients with chronic coronary disease to receive 0.5 mg of colchicine once daily or matching placebo. The primary end point was a composite of cardiovascular death, spontaneous (nonprocedural) myocardial infarction, ischemic stroke, or ischemia-driven coronary revascularization. The key secondary end point was a composite of cardiovascular death, spontaneous myocardial infarction, or ischemic stroke. RESULTS: A total of 5522 patients underwent randomization; 2762 were assigned to the colchicine group and 2760 to the placebo group. The median duration of follow-up was 28.6 months. A primary end-point event occurred in 187 patients (6.8%) in the colchicine group and in 264 patients (9.6%) in the placebo group (incidence, 2.5 vs. 3.6 events per 100 person-years; hazard ratio, 0.69; 95% confidence interval [CI], 0.57 to 0.83; P<0.001). A key secondary end-point event occurred in 115 patients (4.2%) in the colchicine group and in 157 patients (5.7%) in the placebo group (incidence, 1.5 vs. 2.1 events per 100 person-years; hazard ratio, 0.72; 95% CI, 0.57 to 0.92; P = 0.007). The incidence rates of spontaneous myocardial infarction or ischemia-driven coronary revascularization (composite end point), cardiovascular death or spontaneous myocardial infarction (composite end point), ischemia-driven coronary revascularization, and spontaneous myocardial infarction were also significantly lower with colchicine than with placebo. The incidence of death from noncardiovascular causes was higher in the colchicine group than in the placebo group (incidence, 0.7 vs. 0.5 events per 100 person-years; hazard ratio, 1.51; 95% CI, 0.99 to 2.31). CONCLUSIONS: In a randomized trial involving patients with chronic coronary disease, the risk of cardiovascular events was significantly lower among those who received 0.5 mg of colchicine once daily than among those who received placebo. (Funded by the National Health Medical Research Council of Australia and others; LoDoCo2 Australian New Zealand Clinical Trials Registry number, ACTRN12614000093684.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.69,
     "lo": 0.57,
     "hi": 0.83,
     "scale": "HR"
-   }
+   },
+   "excerpt": "A primary end-point event occurred in 187 patients (6.8%) in the colchicine group and in 264 patients (9.6%) in the placebo group (incidence, 2.5 vs. 3.6 events per 100 person-years; hazard ratio, 0.6",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "colchicine-secondary-cv-prevention|Trial-defined major coronary/cardiovascular composite|PMID 39555823",
@@ -159,14 +174,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "A primary-outcome event occurred in 322 of 3528 patients (9.1%) in the colchicine group and 327 of 3534 patients (9.3%) in the placebo group over a median follow-up period of 3 years (hazard ratio, 0.",
+   "text": "BACKGROUND: Inflammation is associated with adverse cardiovascular events. Data from recent trials suggest that colchicine reduces the risk of cardiovascular events. METHODS: In this multicenter trial with a 2-by-2 factorial design, we randomly assigned patients who had myocardial infarction to receive either colchicine or placebo and either spironolactone or placebo. The results of the colchicine trial are reported here. The primary efficacy outcome was a composite of death from cardiovascular causes, recurrent myocardial infarction, stroke, or unplanned ischemia-driven coronary revascularization, evaluated in a time-to-event analysis. C-reactive protein was measured at 3 months in a subgroup of patients, and safety was also assessed. RESULTS: A total of 7062 patients at 104 centers in 14 countries underwent randomization; at the time of analysis, the vital status was unknown for 45 patients (0.6%), and this information was most likely missing at random. A primary-outcome event occurred in 322 of 3528 patients (9.1%) in the colchicine group and 327 of 3534 patients (9.3%) in the placebo group over a median follow-up period of 3 years (hazard ratio, 0.99; 95% confidence interval [CI], 0.85 to 1.16; P = 0.93). The incidence of individual components of the primary outcome appeared to be similar in the two groups. The least-squares mean difference in C-reactive protein levels between the colchicine group and the placebo group at 3 months, adjusted according to the baseline values, was -1.28 mg per liter (95% CI, -1.81 to -0.75). Diarrhea occurred in a higher percentage of patients with colchicine than with placebo (10.2% vs. 6.6%; P<0.001), but the incidence of serious infections did not differ between groups. CONCLUSIONS: Among patients who had myocardial infarction, treatment with colchicine, when started soon after myocardial infarction and continued for a median of 3 years, did not reduce the incidence of the composite primary outcome (death from cardiovascular causes, recurrent myocardial infarction, stroke, or unplanned ischemia-driven coronary revascularization). (Funded by the Canadian Institutes of Health Research and others; CLEAR ClinicalTrials.gov number, NCT03048825.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.99,
     "lo": 0.85,
     "hi": 1.16,
     "scale": "HR"
-   }
+   },
+   "excerpt": "A primary-outcome event occurred in 322 of 3528 patients (9.1%) in the colchicine group and 327 of 3534 patients (9.3%) in the placebo group over a median follow-up period of 3 years (hazard ratio, 0.",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "colchicine-secondary-cv-prevention|Gastrointestinal adverse effects|PMID 34876021",
@@ -177,14 +194,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "Evaluating adverse effects, gastrointestinal symptom was the most with the rate of 15 (12.5%) in the colchicine group and 3 (2.5%) in the controls.",
+   "text": "BACKGROUND: Cardiovascular disease in particular acute coronary syndrome (ACS) is remained one of the most cause of morbidity and mortality, annually. Considering inflammatory pathway of atherosclerosis, colchicine as an anti-inflammatory drug is introduced to be effective in pathogenesis, prognosis and mortality rate of these patients. So in order to find out the effects of this drug we conducted this trial to know whether it reduces major adverse cardiac events (MACE) in ACS patients or not. METHODS: In a prospective randomized double-blinded placebo-controlled trial, we enrolled ACS patients (40-70 years) with recent ST-segment elevation myocardial infarction (STEMI) or NSTE-ACS diagnosed by coronary angiography and managed with either medical therapy or percutaneous coronary intervention. Patients were assigned to two groups either receiving colchicine 0.5 mg daily or placebo for 6 months. Both groups simultaneously received standard medical therapy as accessible guidelines. MACE occurrence consists of decompensated heart failure, ACS, stroke and survival rate compared between two groups. RESULTS: A total of 249 patients were recruited between October 2019-March 2020 with mean age of 56.89 ± 7.54, 69.5% males; 120 assigned to the colchicine group and 129 assigned to the placebo group. Over the 6 months' period, 36 MACE occurred that were 8 events in the colchicine group compared with 28 events in the placebo group experiencing the event (P = 0.001). All of four deaths in the colchicine group and two in the placebo group were due to cardiovascular events. Evaluating adverse effects, gastrointestinal symptom was the most with the rate of 15 (12.5%) in the colchicine group and 3 (2.5%) in the controls. (P = 0.002). CONCLUSION: The addition of colchicine to standard medical therapy in ACS patients significantly reduces MACE occurrence and improves survival rate over the time.",
    "kind": "counts",
    "expected": {
     "ai": 15,
     "n1i": 120,
     "ci": 3,
     "n2i": 129
-   }
+   },
+   "excerpt": "Evaluating adverse effects, gastrointestinal symptom was the most with the rate of 15 (12.5%) in the colchicine group and 3 (2.5%) in the controls.",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "colchicine-secondary-cv-prevention|Non-cardiovascular death|PMID 32865380",
@@ -195,14 +214,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "The incidence of death from noncardiovascular causes was higher in the colchicine group than in the placebo group (incidence, 0.7 vs. 0.5 events per 100 person-years; hazard ratio, 1.51; 95% CI, 0.99 ",
+   "text": "BACKGROUND: Evidence from a recent trial has shown that the antiinflammatory effects of colchicine reduce the risk of cardiovascular events in patients with recent myocardial infarction, but evidence of such a risk reduction in patients with chronic coronary disease is limited. METHODS: In a randomized, controlled, double-blind trial, we assigned patients with chronic coronary disease to receive 0.5 mg of colchicine once daily or matching placebo. The primary end point was a composite of cardiovascular death, spontaneous (nonprocedural) myocardial infarction, ischemic stroke, or ischemia-driven coronary revascularization. The key secondary end point was a composite of cardiovascular death, spontaneous myocardial infarction, or ischemic stroke. RESULTS: A total of 5522 patients underwent randomization; 2762 were assigned to the colchicine group and 2760 to the placebo group. The median duration of follow-up was 28.6 months. A primary end-point event occurred in 187 patients (6.8%) in the colchicine group and in 264 patients (9.6%) in the placebo group (incidence, 2.5 vs. 3.6 events per 100 person-years; hazard ratio, 0.69; 95% confidence interval [CI], 0.57 to 0.83; P<0.001). A key secondary end-point event occurred in 115 patients (4.2%) in the colchicine group and in 157 patients (5.7%) in the placebo group (incidence, 1.5 vs. 2.1 events per 100 person-years; hazard ratio, 0.72; 95% CI, 0.57 to 0.92; P = 0.007). The incidence rates of spontaneous myocardial infarction or ischemia-driven coronary revascularization (composite end point), cardiovascular death or spontaneous myocardial infarction (composite end point), ischemia-driven coronary revascularization, and spontaneous myocardial infarction were also significantly lower with colchicine than with placebo. The incidence of death from noncardiovascular causes was higher in the colchicine group than in the placebo group (incidence, 0.7 vs. 0.5 events per 100 person-years; hazard ratio, 1.51; 95% CI, 0.99 to 2.31). CONCLUSIONS: In a randomized trial involving patients with chronic coronary disease, the risk of cardiovascular events was significantly lower among those who received 0.5 mg of colchicine once daily than among those who received placebo. (Funded by the National Health Medical Research Council of Australia and others; LoDoCo2 Australian New Zealand Clinical Trials Registry number, ACTRN12614000093684.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 1.51,
     "lo": 0.99,
     "hi": 2.31,
     "scale": "HR"
-   }
+   },
+   "excerpt": "The incidence of death from noncardiovascular causes was higher in the colchicine group than in the placebo group (incidence, 0.7 vs. 0.5 events per 100 person-years; hazard ratio, 1.51; 95% CI, 0.99 ",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "corticosteroids-cap-mortality|All-cause mortality|PMID 36942789",
@@ -213,14 +234,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "By day 28, death had occurred in 25 of 400 patients (6.2%; 95% confidence interval [CI], 3.9 to 8.6) in the hydrocortisone group and in 47 of 395 patients (11.9%; 95% CI, 8.7 to 15.1) in the placebo g",
+   "text": "BACKGROUND: Whether the antiinflammatory and immunomodulatory effects of glucocorticoids may decrease mortality among patients with severe community-acquired pneumonia is unclear. METHODS: In this phase 3, multicenter, double-blind, randomized, controlled trial, we assigned adults who had been admitted to the intensive care unit (ICU) for severe community-acquired pneumonia to receive intravenous hydrocortisone (200 mg daily for either 4 or 7 days as determined by clinical improvement, followed by tapering for a total of 8 or 14 days) or to receive placebo. All the patients received standard therapy, including antibiotics and supportive care. The primary outcome was death at 28 days. RESULTS: A total of 800 patients had undergone randomization when the trial was stopped after the second planned interim analysis. Data from 795 patients were analyzed. By day 28, death had occurred in 25 of 400 patients (6.2%; 95% confidence interval [CI], 3.9 to 8.6) in the hydrocortisone group and in 47 of 395 patients (11.9%; 95% CI, 8.7 to 15.1) in the placebo group (absolute difference, -5.6 percentage points; 95% CI, -9.6 to -1.7; P = 0.006). Among the patients who were not undergoing mechanical ventilation at baseline, endotracheal intubation was performed in 40 of 222 (18.0%) in the hydrocortisone group and in 65 of 220 (29.5%) in the placebo group (hazard ratio, 0.59; 95% CI, 0.40 to 0.86). Among the patients who were not receiving vasopressors at baseline, such therapy was initiated by day 28 in 55 of 359 (15.3%) of the hydrocortisone group and in 86 of 344 (25.0%) in the placebo group (hazard ratio, 0.59; 95% CI, 0.43 to 0.82). The frequencies of hospital-acquired infections and gastrointestinal bleeding were similar in the two groups; patients in the hydrocortisone group received higher daily doses of insulin during the first week of treatment. CONCLUSIONS: Among patients with severe community-acquired pneumonia being treated in the ICU, those who received hydrocortisone had a lower risk of death by day 28 than those who received placebo. (Funded by the French Ministry of Health; CAPE COD ClinicalTrials.gov number, NCT02517489.).",
    "kind": "counts",
    "expected": {
     "ai": 25,
     "n1i": 400,
     "ci": 47,
     "n2i": 395
-   }
+   },
+   "excerpt": "By day 28, death had occurred in 25 of 400 patients (6.2%; 95% confidence interval [CI], 3.9 to 8.6) in the hydrocortisone group and in 47 of 395 patients (11.9%; 95% CI, 8.7 to 15.1) in the placebo g",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "corticosteroids-cap-mortality|All-cause mortality|PMID 25688779",
@@ -231,14 +254,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "In-hospital mortality did not differ between the 2 groups (6 patients [10%] in the methylprednisolone group vs 9 patients [15%] in the placebo group; P = .37); the difference between groups was 5% (95",
+   "text": "IMPORTANCE: In patients with severe community-acquired pneumonia, treatment failure is associated with excessive inflammatory response and worse outcomes. Corticosteroids may modulate cytokine release in these patients, but the benefit of this adjunctive therapy remains controversial. OBJECTIVE: To assess the effect of corticosteroids in patients with severe community-acquired pneumonia and high associated inflammatory response. DESIGN, SETTING, AND PARTICIPANTS: Multicenter, randomized, double-blind, placebo-controlled trial conducted in 3 Spanish teaching hospitals involving patients with both severe community-acquired pneumonia and a high inflammatory response, which was defined as a level of C-reactive protein greater than 150 mg/L at admission. Patients were recruited and followed up from June 2004 through February 2012. INTERVENTIONS: Patients were randomized to receive either an intravenous bolus of 0.5 mg/kg per 12 hours of methylprednisolone (n = 61) or placebo (n = 59) for 5 days started within 36 hours of hospital admission. MAIN OUTCOMES AND MEASURES: The primary outcome was treatment failure (composite outcome of early treatment failure defined as [1] clinical deterioration indicated by development of shock, [2] need for invasive mechanical ventilation not present at baseline, or [3] death within 72 hours of treatment; or composite outcome of late treatment failure defined as [1] radiographic progression, [2] persistence of severe respiratory failure, [3] development of shock, [4] need for invasive mechanical ventilation not present at baseline, or [5] death between 72 hours and 120 hours after treatment initiation; or both early and late treatment failure). In-hospital mortality was a secondary outcome and adverse events were assessed. RESULTS: There was less treatment failure among patients from the methylprednisolone group (8 patients [13%]) compared with the placebo group (18 patients [31%]) (P = .02), with a difference between groups of 18% (95% CI, 3% to 32%). Corticosteroid treatment reduced the risk of treatment failure (odds ratio, 0.34 [95% CI, 0.14 to 0.87]; P = .02). In-hospital mortality did not differ between the 2 groups (6 patients [10%] in the methylprednisolone group vs 9 patients [15%] in the placebo group; P = .37); the difference between groups was 5% (95% CI, -6% to 17%). Hyperglycemia occurred in 11 patients (18%) in the methylprednisolone group and in 7 patients (12%) in the placebo group (P = .34). CONCLUSIONS AND RELEVANCE: Among patients with severe community-acquired pneumonia and high initial inflammatory response, the acute use of methylprednisolone compared with placebo decreased treatment failure. If replicated, these findings would support the use of corticosteroids as adjunctive treatment in this clinical population. TRIAL REGISTRATION: clinicaltrials.gov Identifier: NCT00908713.",
    "kind": "counts",
    "expected": {
     "ai": 6,
     "n1i": 61,
     "ci": 9,
     "n2i": 59
-   }
+   },
+   "excerpt": "In-hospital mortality did not differ between the 2 groups (6 patients [10%] in the methylprednisolone group vs 9 patients [15%] in the placebo group; P = .37); the difference between groups was 5% (95",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 25688779",
@@ -249,14 +274,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "Hyperglycemia occurred in 11 patients (18%) in the methylprednisolone group and in 7 patients (12%) in the placebo group (P = .34).",
+   "text": "IMPORTANCE: In patients with severe community-acquired pneumonia, treatment failure is associated with excessive inflammatory response and worse outcomes. Corticosteroids may modulate cytokine release in these patients, but the benefit of this adjunctive therapy remains controversial. OBJECTIVE: To assess the effect of corticosteroids in patients with severe community-acquired pneumonia and high associated inflammatory response. DESIGN, SETTING, AND PARTICIPANTS: Multicenter, randomized, double-blind, placebo-controlled trial conducted in 3 Spanish teaching hospitals involving patients with both severe community-acquired pneumonia and a high inflammatory response, which was defined as a level of C-reactive protein greater than 150 mg/L at admission. Patients were recruited and followed up from June 2004 through February 2012. INTERVENTIONS: Patients were randomized to receive either an intravenous bolus of 0.5 mg/kg per 12 hours of methylprednisolone (n = 61) or placebo (n = 59) for 5 days started within 36 hours of hospital admission. MAIN OUTCOMES AND MEASURES: The primary outcome was treatment failure (composite outcome of early treatment failure defined as [1] clinical deterioration indicated by development of shock, [2] need for invasive mechanical ventilation not present at baseline, or [3] death within 72 hours of treatment; or composite outcome of late treatment failure defined as [1] radiographic progression, [2] persistence of severe respiratory failure, [3] development of shock, [4] need for invasive mechanical ventilation not present at baseline, or [5] death between 72 hours and 120 hours after treatment initiation; or both early and late treatment failure). In-hospital mortality was a secondary outcome and adverse events were assessed. RESULTS: There was less treatment failure among patients from the methylprednisolone group (8 patients [13%]) compared with the placebo group (18 patients [31%]) (P = .02), with a difference between groups of 18% (95% CI, 3% to 32%). Corticosteroid treatment reduced the risk of treatment failure (odds ratio, 0.34 [95% CI, 0.14 to 0.87]; P = .02). In-hospital mortality did not differ between the 2 groups (6 patients [10%] in the methylprednisolone group vs 9 patients [15%] in the placebo group; P = .37); the difference between groups was 5% (95% CI, -6% to 17%). Hyperglycemia occurred in 11 patients (18%) in the methylprednisolone group and in 7 patients (12%) in the placebo group (P = .34). CONCLUSIONS AND RELEVANCE: Among patients with severe community-acquired pneumonia and high initial inflammatory response, the acute use of methylprednisolone compared with placebo decreased treatment failure. If replicated, these findings would support the use of corticosteroids as adjunctive treatment in this clinical population. TRIAL REGISTRATION: clinicaltrials.gov Identifier: NCT00908713.",
    "kind": "counts",
    "expected": {
     "ai": 11,
     "n1i": 61,
     "ci": 7,
     "n2i": 59
-   }
+   },
+   "excerpt": "Hyperglycemia occurred in 11 patients (18%) in the methylprednisolone group and in 7 patients (12%) in the placebo group (P = .34).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 33446608",
@@ -267,14 +294,16 @@
    "harness_label": "",
    "provenance": "abstract_verified_arms",
    "derivation": "reconstructed",
-   "text": "RESULTS: Between December 2012 and November 2018, 401 patients were randomised to receive dexamethasone (n=203) or placebo (n=198). Median LOS was shorter in the dexamethasone group (4.5 days, 95% CI 4.0-5.0 days) than in the placebo group (5.0 days, 95% CI 4.6-5.4 days; p=0.033). Within both CAP severity subgroups, differences in LOS between treatment groups were not statistically significant. The secondary ICU admission rate was lower in the dexamethasone arm (5 (3%) versus 14 (7%); p=0.030); 30-day mortality did not differ between groups. In the dexamethasone group the rate of hospital readmission tended to be higher (20 (10%) versus 9 (5%); p=0.051) and hyperglycaemia (14 (7%) versus 1 (1%); p=0.001) was more prevalent. ",
+   "text": "BACKGROUND: Adjunctive intravenous corticosteroid treatment has been shown to reduce length of stay (LOS) in adults hospitalised with community-acquired pneumonia (CAP). We aimed to assess the effect of oral dexamethasone on LOS and whether this effect is disease severity dependent. METHODS: In this multicentre, stratified randomised, double-blind, placebo-controlled trial, immunocompetent adults with CAP were randomly assigned (1:1 ratio) to receive oral dexamethasone (6 mg once daily) or placebo for 4 days in four teaching hospitals in the Netherlands. Randomisation (blocks of four) was stratified by CAP severity (pneumonia severity index class I-III and IV-V). The primary outcome was LOS. RESULTS: Between December 2012 and November 2018, 401 patients were randomised to receive dexamethasone (n=203) or placebo (n=198). Median LOS was shorter in the dexamethasone group (4.5 days, 95% CI 4.0-5.0 days) than in the placebo group (5.0 days, 95% CI 4.6-5.4 days; p=0.033). Within both CAP severity subgroups, differences in LOS between treatment groups were not statistically significant. The secondary ICU admission rate was lower in the dexamethasone arm (5 (3%) versus 14 (7%); p=0.030); 30-day mortality did not differ between groups. In the dexamethasone group the rate of hospital readmission tended to be higher (20 (10%) versus 9 (5%); p=0.051) and hyperglycaemia (14 (7%) versus 1 (1%); p=0.001) was more prevalent. CONCLUSION: Oral dexamethasone reduced LOS and ICU admission rate in adults hospitalised with CAP. It remains unclear for which patients the risk-benefit ratio is optimal.",
    "kind": "counts",
    "expected": {
     "ai": 14,
     "n1i": 203,
     "ci": 1,
     "n2i": 198
-   }
+   },
+   "excerpt": "RESULTS: Between December 2012 and November 2018, 401 patients were randomised to receive dexamethasone (n=203) or placebo (n=198). Median LOS was shorter in the dexamethasone group (4.5 days, 95% CI 4.0-5.0 days) than in the placebo group (5.0 days, 95% CI 4.6-5.4 days; p=0.033). Within both CAP severity subgroups, differences in LOS between treatment groups were not statistically significant. The secondary ICU admission rate was lower in the dexamethasone arm (5 (3%) versus 14 (7%); p=0.030); 30-day mortality did not differ between groups. In the dexamethasone group the rate of hospital readmission tended to be higher (20 (10%) versus 9 (5%); p=0.051) and hyperglycaemia (14 (7%) versus 1 (1%); p=0.001) was more prevalent. ",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 25608756",
@@ -285,14 +314,16 @@
    "harness_label": "abstract effect+CI (OR)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "The prednisone group had a higher incidence of in-hospital hyperglycaemia needing insulin treatment (76 [19%] vs 43 [11%]; OR 1.96, 95% CI 1.31-2.93, p=0.0010).",
+   "text": "BACKGROUND: Clinical trials yielded conflicting data about the benefit of adding systemic corticosteroids for treatment of community-acquired pneumonia. We assessed whether short-term corticosteroid treatment reduces time to clinical stability in patients admitted to hospital for community-acquired pneumonia. METHODS: In this double-blind, multicentre, randomised, placebo-controlled trial, we recruited patients aged 18 years or older with community-acquired pneumonia from seven tertiary care hospitals in Switzerland within 24 h of presentation. Patients were randomly assigned (1:1 ratio) to receive either prednisone 50 mg daily for 7 days or placebo. The computer-generated randomisation was done with variable block sizes of four to six and stratified by study centre. The primary endpoint was time to clinical stability defined as time (days) until stable vital signs for at least 24 h, and analysed by intention to treat. This trial is registered with ClinicalTrials.gov, number NCT00973154. FINDINGS: From Dec 1, 2009, to May 21, 2014, of 2911 patients assessed for eligibility, 785 patients were randomly assigned to either the prednisone group (n=392) or the placebo group (n=393). Median time to clinical stability was shorter in the prednisone group (3·0 days, IQR 2·5-3·4) than in the placebo group (4·4 days, 4·0-5·0; hazard ratio [HR] 1·33, 95% CI 1·15-1·50, p<0·0001). Pneumonia-associated complications until day 30 did not differ between groups (11 [3%] in the prednisone group and 22 [6%] in the placebo group; odds ratio [OR] 0·49 [95% CI 0·23-1·02]; p=0·056). The prednisone group had a higher incidence of in-hospital hyperglycaemia needing insulin treatment (76 [19%] vs 43 [11%]; OR 1·96, 95% CI 1·31-2·93, p=0·0010). Other adverse events compatible with corticosteroid use were rare and similar in both groups. INTERPRETATION: Prednisone treatment for 7 days in patients with community-acquired pneumonia admitted to hospital shortens time to clinical stability without an increase in complications. This finding is relevant from a patient perspective and an important determinant of hospital costs and efficiency. FUNDING: Swiss National Science Foundation, Viollier AG, Nora van Meeuwen Haefliger Stiftung, Julia und Gottfried Bangerter-Rhyner Stiftung.",
    "kind": "effect_ci",
    "expected": {
     "effect": 1.96,
     "lo": 1.31,
     "hi": 2.93,
     "scale": "OR"
-   }
+   },
+   "excerpt": "The prednisone group had a higher incidence of in-hospital hyperglycaemia needing insulin treatment (76 [19%] vs 43 [11%]; OR 1.96, 95% CI 1.31-2.93, p=0.0010).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 21636122",
@@ -303,14 +334,16 @@
    "harness_label": "",
    "provenance": "abstract_verified_arms",
    "derivation": "reconstructed",
-   "text": "In-hospital mortality and severe adverse events were infrequent and rates did not differ between groups, although 67 (44%) of 151 patients in the dexamethasone group had hyperglycaemia compared with 35 (23%) of 153 controls (p<0·0001).",
+   "text": "BACKGROUND: Whether addition of corticosteroids to antibiotic treatment benefits patients with community-acquired pneumonia who are not in intensive care units is unclear. We aimed to assess effect of addition of dexamethasone on length of stay in this group, which might result in earlier resolution of pneumonia through dampening of systemic inflammation. METHODS: In our double-blind, placebo-controlled trial, we randomly assigned adults aged 18 years or older with confirmed community-acquired pneumonia who presented to emergency departments of two teaching hospitals in the Netherlands to receive intravenous dexamethasone (5 mg once a day) or placebo for 4 days from admission. Patients were ineligible if they were immunocompromised, needed immediate transfer to an intensive-care unit, or were already receiving corticosteroids or immunosuppressive drugs. We randomly allocated patients on a one-to-one basis to treatment groups with a computerised randomisation allocation sequence in blocks of 20. The primary outcome was length of hospital stay in all enrolled patients. This study is registered with ClinicalTrials.gov, number NCT00471640. FINDINGS: Between November, 2007, and September, 2010, we enrolled 304 patients and randomly allocated 153 to the placebo group and 151 to the dexamethasone group. 143 (47%) of 304 enrolled patients had pneumonia of pneumonia severity index class 4-5 (79 [52%] patients in the dexamethasone group and 64 [42%] controls). Median length of stay was 6·5 days (IQR 5·0-9·0) in the dexamethasone group compared with 7·5 days (5·3-11·5) in the placebo group (95% CI of difference in medians 0-2 days; p=0·0480). In-hospital mortality and severe adverse events were infrequent and rates did not differ between groups, although 67 (44%) of 151 patients in the dexamethasone group had hyperglycaemia compared with 35 (23%) of 153 controls (p<0·0001). INTERPRETATION: Dexamethasone can reduce length of hospital stay when added to antibiotic treatment in non-immunocompromised patients with community-acquired pneumonia. FUNDING: None.",
    "kind": "counts",
    "expected": {
     "ai": 67,
     "n1i": 151,
     "ci": 35,
     "n2i": 153
-   }
+   },
+   "excerpt": "In-hospital mortality and severe adverse events were infrequent and rates did not differ between groups, although 67 (44%) of 151 patients in the dexamethasone group had hyperglycaemia compared with 35 (23%) of 153 controls (p<0·0001).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "corticosteroids-covid19-mortality|28-day all-cause mortality|PMID 32678530",
@@ -321,14 +354,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "Overall, 482 patients (22.9%) in the dexamethasone group and 1110 patients (25.7%) in the usual care group died within 28 days after randomization (age-adjusted rate ratio, 0.83; 95% confidence interv",
+   "text": "BACKGROUND: Coronavirus disease 2019 (Covid-19) is associated with diffuse lung damage. Glucocorticoids may modulate inflammation-mediated lung injury and thereby reduce progression to respiratory failure and death. METHODS: In this controlled, open-label trial comparing a range of possible treatments in patients who were hospitalized with Covid-19, we randomly assigned patients to receive oral or intravenous dexamethasone (at a dose of 6 mg once daily) for up to 10 days or to receive usual care alone. The primary outcome was 28-day mortality. Here, we report the final results of this assessment. RESULTS: A total of 2104 patients were assigned to receive dexamethasone and 4321 to receive usual care. Overall, 482 patients (22.9%) in the dexamethasone group and 1110 patients (25.7%) in the usual care group died within 28 days after randomization (age-adjusted rate ratio, 0.83; 95% confidence interval [CI], 0.75 to 0.93; P<0.001). The proportional and absolute between-group differences in mortality varied considerably according to the level of respiratory support that the patients were receiving at the time of randomization. In the dexamethasone group, the incidence of death was lower than that in the usual care group among patients receiving invasive mechanical ventilation (29.3% vs. 41.4%; rate ratio, 0.64; 95% CI, 0.51 to 0.81) and among those receiving oxygen without invasive mechanical ventilation (23.3% vs. 26.2%; rate ratio, 0.82; 95% CI, 0.72 to 0.94) but not among those who were receiving no respiratory support at randomization (17.8% vs. 14.0%; rate ratio, 1.19; 95% CI, 0.92 to 1.55). CONCLUSIONS: In patients hospitalized with Covid-19, the use of dexamethasone resulted in lower 28-day mortality among those who were receiving either invasive mechanical ventilation or oxygen alone at randomization but not among those receiving no respiratory support. (Funded by the Medical Research Council and National Institute for Health Research and others; RECOVERY ClinicalTrials.gov number, NCT04381936; ISRCTN number, 50189673.).",
    "kind": "counts",
    "expected": {
     "ai": 482,
     "n1i": 2104,
     "ci": 1110,
     "n2i": 4321
-   }
+   },
+   "excerpt": "Overall, 482 patients (22.9%) in the dexamethasone group and 1110 patients (25.7%) in the usual care group died within 28 days after randomization (age-adjusted rate ratio, 0.83; 95% confidence interv",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "corticosteroids-covid19-mortality|Serious adverse events|PMID 34138478",
@@ -339,14 +374,16 @@
    "harness_label": "",
    "provenance": "abstract_verified_arms",
    "derivation": "reconstructed",
-   "text": "At day 28, the median number of days alive without life support in the hydrocortisone vs placebo group were 7 vs 10 (adjusted mean difference: -1.1 days, 95% CI -9.5 to 7.3, P = .79); mortality was 6/16 vs 2/14; and the number of serious adverse reactions 1/16 vs 0/14.",
+   "text": "BACKGROUND: In the early phase of the pandemic, some guidelines recommended the use of corticosteroids for critically ill patients with COVID-19, whereas others recommended against the use despite lack of firm evidence of either benefit or harm. In the COVID STEROID trial, we aimed to assess the effects of low-dose hydrocortisone on patient-centred outcomes in adults with COVID-19 and severe hypoxia. METHODS: In this multicentre, parallel-group, placebo-controlled, blinded, centrally randomised, stratified clinical trial, we randomly assigned adults with confirmed COVID-19 and severe hypoxia (use of mechanical ventilation or supplementary oxygen with a flow of at least 10 L/min) to either hydrocortisone (200 mg/d) vs a matching placebo for 7 days or until hospital discharge. The primary outcome was the number of days alive without life support at day 28 after randomisation. RESULTS: The trial was terminated early when 30 out of 1000 participants had been enrolled because of external evidence indicating benefit from corticosteroids in severe COVID-19. At day 28, the median number of days alive without life support in the hydrocortisone vs placebo group were 7 vs 10 (adjusted mean difference: -1.1 days, 95% CI -9.5 to 7.3, P = .79); mortality was 6/16 vs 2/14; and the number of serious adverse reactions 1/16 vs 0/14. CONCLUSIONS: In this trial of adults with COVID-19 and severe hypoxia, we were unable to provide precise estimates of the benefits and harms of hydrocortisone as compared with placebo as only 3% of the planned sample size were enrolled. TRIAL REGISTRATION: ClinicalTrials.gov: NCT04348305. European Union Drug Regulation Authorities Clinical Trials (EudraCT) Database: 2020-001395-15.",
    "kind": "counts",
    "expected": {
     "ai": 1,
     "n1i": 16,
     "ci": 0,
     "n2i": 14
-   }
+   },
+   "excerpt": "At day 28, the median number of days alive without life support in the hydrocortisone vs placebo group were 7 vs 10 (adjusted mean difference: -1.1 days, 95% CI -9.5 to 7.3, P = .79); mortality was 6/16 vs 2/14; and the number of serious adverse reactions 1/16 vs 0/14.",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "denosumab-vertebral-fracture|New vertebral fracture|PMID 19671655",
@@ -357,14 +394,16 @@
    "harness_label": "abstract effect+CI (RR)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "RESULTS: As compared with placebo, denosumab reduced the risk of new radiographic vertebral fracture, with a cumulative incidence of 2.3% in the denosumab group, versus 7.2% in the placebo group (risk",
+   "text": "BACKGROUND: Denosumab is a fully human monoclonal antibody to the receptor activator of nuclear factor-kappaB ligand (RANKL) that blocks its binding to RANK, inhibiting the development and activity of osteoclasts, decreasing bone resorption, and increasing bone density. Given its unique actions, denosumab may be useful in the treatment of osteoporosis. METHODS: We enrolled 7868 women between the ages of 60 and 90 years who had a bone mineral density T score of less than -2.5 but not less than -4.0 at the lumbar spine or total hip. Subjects were randomly assigned to receive either 60 mg of denosumab or placebo subcutaneously every 6 months for 36 months. The primary end point was new vertebral fracture. Secondary end points included nonvertebral and hip fractures. RESULTS: As compared with placebo, denosumab reduced the risk of new radiographic vertebral fracture, with a cumulative incidence of 2.3% in the denosumab group, versus 7.2% in the placebo group (risk ratio, 0.32; 95% confidence interval [CI], 0.26 to 0.41; P<0.001)--a relative decrease of 68%. Denosumab reduced the risk of hip fracture, with a cumulative incidence of 0.7% in the denosumab group, versus 1.2% in the placebo group (hazard ratio, 0.60; 95% CI, 0.37 to 0.97; P=0.04)--a relative decrease of 40%. Denosumab also reduced the risk of nonvertebral fracture, with a cumulative incidence of 6.5% in the denosumab group, versus 8.0% in the placebo group (hazard ratio, 0.80; 95% CI, 0.67 to 0.95; P=0.01)--a relative decrease of 20%. There was no increase in the risk of cancer, infection, cardiovascular disease, delayed fracture healing, or hypocalcemia, and there were no cases of osteonecrosis of the jaw and no adverse reactions to the injection of denosumab. CONCLUSIONS: Denosumab given subcutaneously twice yearly for 36 months was associated with a reduction in the risk of vertebral, nonvertebral, and hip fractures in women with osteoporosis. (ClinicalTrials.gov number, NCT00089791.)",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.32,
     "lo": 0.26,
     "hi": 0.41,
     "scale": "RR"
-   }
+   },
+   "excerpt": "RESULTS: As compared with placebo, denosumab reduced the risk of new radiographic vertebral fracture, with a cumulative incidence of 2.3% in the denosumab group, versus 7.2% in the placebo group (risk",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "denosumab-vertebral-fracture|Nonvertebral fracture|PMID 19671655",
@@ -375,14 +414,16 @@
    "harness_label": "abstract effect+CI (HR)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "Denosumab also reduced the risk of nonvertebral fracture, with a cumulative incidence of 6.5% in the denosumab group, versus 8.0% in the placebo group (hazard ratio, 0.80; 95% CI, 0.67 to 0.95; P=0.01",
+   "text": "BACKGROUND: Denosumab is a fully human monoclonal antibody to the receptor activator of nuclear factor-kappaB ligand (RANKL) that blocks its binding to RANK, inhibiting the development and activity of osteoclasts, decreasing bone resorption, and increasing bone density. Given its unique actions, denosumab may be useful in the treatment of osteoporosis. METHODS: We enrolled 7868 women between the ages of 60 and 90 years who had a bone mineral density T score of less than -2.5 but not less than -4.0 at the lumbar spine or total hip. Subjects were randomly assigned to receive either 60 mg of denosumab or placebo subcutaneously every 6 months for 36 months. The primary end point was new vertebral fracture. Secondary end points included nonvertebral and hip fractures. RESULTS: As compared with placebo, denosumab reduced the risk of new radiographic vertebral fracture, with a cumulative incidence of 2.3% in the denosumab group, versus 7.2% in the placebo group (risk ratio, 0.32; 95% confidence interval [CI], 0.26 to 0.41; P<0.001)--a relative decrease of 68%. Denosumab reduced the risk of hip fracture, with a cumulative incidence of 0.7% in the denosumab group, versus 1.2% in the placebo group (hazard ratio, 0.60; 95% CI, 0.37 to 0.97; P=0.04)--a relative decrease of 40%. Denosumab also reduced the risk of nonvertebral fracture, with a cumulative incidence of 6.5% in the denosumab group, versus 8.0% in the placebo group (hazard ratio, 0.80; 95% CI, 0.67 to 0.95; P=0.01)--a relative decrease of 20%. There was no increase in the risk of cancer, infection, cardiovascular disease, delayed fracture healing, or hypocalcemia, and there were no cases of osteonecrosis of the jaw and no adverse reactions to the injection of denosumab. CONCLUSIONS: Denosumab given subcutaneously twice yearly for 36 months was associated with a reduction in the risk of vertebral, nonvertebral, and hip fractures in women with osteoporosis. (ClinicalTrials.gov number, NCT00089791.)",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.8,
     "lo": 0.67,
     "hi": 0.95,
     "scale": "HR"
-   }
+   },
+   "excerpt": "Denosumab also reduced the risk of nonvertebral fracture, with a cumulative incidence of 6.5% in the denosumab group, versus 8.0% in the placebo group (hazard ratio, 0.80; 95% CI, 0.67 to 0.95; P=0.01",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "denosumab-vertebral-fracture|Hip fracture|PMID 19671655",
@@ -393,14 +434,16 @@
    "harness_label": "abstract effect+CI (HR)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "Denosumab reduced the risk of hip fracture, with a cumulative incidence of 0.7% in the denosumab group, versus 1.2% in the placebo group (hazard ratio, 0.60; 95% CI, 0.37 to 0.97; P=0.04)--a relative ",
+   "text": "BACKGROUND: Denosumab is a fully human monoclonal antibody to the receptor activator of nuclear factor-kappaB ligand (RANKL) that blocks its binding to RANK, inhibiting the development and activity of osteoclasts, decreasing bone resorption, and increasing bone density. Given its unique actions, denosumab may be useful in the treatment of osteoporosis. METHODS: We enrolled 7868 women between the ages of 60 and 90 years who had a bone mineral density T score of less than -2.5 but not less than -4.0 at the lumbar spine or total hip. Subjects were randomly assigned to receive either 60 mg of denosumab or placebo subcutaneously every 6 months for 36 months. The primary end point was new vertebral fracture. Secondary end points included nonvertebral and hip fractures. RESULTS: As compared with placebo, denosumab reduced the risk of new radiographic vertebral fracture, with a cumulative incidence of 2.3% in the denosumab group, versus 7.2% in the placebo group (risk ratio, 0.32; 95% confidence interval [CI], 0.26 to 0.41; P<0.001)--a relative decrease of 68%. Denosumab reduced the risk of hip fracture, with a cumulative incidence of 0.7% in the denosumab group, versus 1.2% in the placebo group (hazard ratio, 0.60; 95% CI, 0.37 to 0.97; P=0.04)--a relative decrease of 40%. Denosumab also reduced the risk of nonvertebral fracture, with a cumulative incidence of 6.5% in the denosumab group, versus 8.0% in the placebo group (hazard ratio, 0.80; 95% CI, 0.67 to 0.95; P=0.01)--a relative decrease of 20%. There was no increase in the risk of cancer, infection, cardiovascular disease, delayed fracture healing, or hypocalcemia, and there were no cases of osteonecrosis of the jaw and no adverse reactions to the injection of denosumab. CONCLUSIONS: Denosumab given subcutaneously twice yearly for 36 months was associated with a reduction in the risk of vertebral, nonvertebral, and hip fractures in women with osteoporosis. (ClinicalTrials.gov number, NCT00089791.)",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.6,
     "lo": 0.37,
     "hi": 0.97,
     "scale": "HR"
-   }
+   },
+   "excerpt": "Denosumab reduced the risk of hip fracture, with a cumulative incidence of 0.7% in the denosumab group, versus 1.2% in the placebo group (hazard ratio, 0.60; 95% CI, 0.37 to 0.97; P=0.04)--a relative ",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 24344086",
@@ -411,14 +454,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "The primary outcome, recurrent symptomatic, objectively confirmed VTE and related deaths during 6 months of treatment occurred in 30 of the 1279 dabigatran patients (2.3%) compared with 28 of the 1289",
+   "text": "BACKGROUND: Dabigatran and warfarin have been compared for the treatment of acute venous thromboembolism (VTE) in a previous trial. We undertook this study to extend those findings. METHODS AND RESULTS: In a randomized, double-blind, double-dummy trial of 2589 patients with acute VTE treated with low-molecular-weight or unfractionated heparin for 5 to 11 days, we compared dabigatran 150 mg twice daily with warfarin. The primary outcome, recurrent symptomatic, objectively confirmed VTE and related deaths during 6 months of treatment occurred in 30 of the 1279 dabigatran patients (2.3%) compared with 28 of the 1289 warfarin patients (2.2%; hazard ratio, 1.08; 95% confidence interval [CI], 0.64-1.80; absolute risk difference, 0.2%; 95% CI, -1.0 to 1.3; P<0.001 for the prespecified noninferiority margin for both criteria). The safety end point, major bleeding, occurred in 15 patients receiving dabigatran (1.2%) and in 22 receiving warfarin (1.7%; hazard ratio, 0.69; 95% CI, 0.36-1.32). Any bleeding occurred in 200 dabigatran (15.6%) and 285 warfarin (22.1%; hazard ratio, 0.67; 95% CI, 0.56-0.81) patients. Deaths, adverse events, and acute coronary syndromes were similar in both groups. Pooled analysis of this study RE-COVER II and the RE-COVER trial gave hazard ratios for recurrent VTE of 1.09 (95% CI, 0.76-1.57), for major bleeding of 0.73 (95% CI, 0.48-1.11), and for any bleeding of 0.70 (95% CI, 0.61-0.79). CONCLUSION: Dabigatran has similar effects on VTE recurrence and a lower risk of bleeding compared with warfarin for the treatment of acute VTE. CLINICAL TRIAL REGISTRATION URL: www.clinicaltrials.gov. Unique identifiers: NCT00680186 and NCT00291330.",
    "kind": "effect_ci",
    "expected": {
     "effect": 1.08,
     "lo": 0.64,
     "hi": 1.8,
     "scale": "HR"
-   }
+   },
+   "excerpt": "The primary outcome, recurrent symptomatic, objectively confirmed VTE and related deaths during 6 months of treatment occurred in 30 of the 1279 dabigatran patients (2.3%) compared with 28 of the 1289",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 19966341",
@@ -429,14 +474,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "The hazard ratio with dabigatran was 1.10 (95% CI, 0.65 to 1.84).",
+   "text": "BACKGROUND: The direct oral thrombin inhibitor dabigatran has a predictable anticoagulant effect and may be an alternative therapy to warfarin for patients who have acute venous thromboembolism. METHODS: In a randomized, double-blind, noninferiority trial involving patients with acute venous thromboembolism who were initially given parenteral anticoagulation therapy for a median of 9 days (interquartile range, 8 to 11), we compared oral dabigatran, administered at a dose of 150 mg twice daily, with warfarin that was dose-adjusted to achieve an international normalized ratio of 2.0 to 3.0. The primary outcome was the 6-month incidence of recurrent symptomatic, objectively confirmed venous thromboembolism and related deaths. Safety end points included bleeding events, acute coronary syndromes, other adverse events, and results of liver-function tests. RESULTS: A total of 30 of the 1274 patients randomly assigned to receive dabigatran (2.4%), as compared with 27 of the 1265 patients randomly assigned to warfarin (2.1%), had recurrent venous thromboembolism; the difference in risk was 0.4 percentage points (95% confidence interval [CI], -0.8 to 1.5; P<0.001 for the prespecified noninferiority margin). The hazard ratio with dabigatran was 1.10 (95% CI, 0.65 to 1.84). Major bleeding episodes occurred in 20 patients assigned to dabigatran (1.6%) and in 24 patients assigned to warfarin (1.9%) (hazard ratio with dabigatran, 0.82; 95% CI, 0.45 to 1.48), and episodes of any bleeding were observed in 205 patients assigned to dabigatran (16.1%) and 277 patients assigned to warfarin (21.9%; hazard ratio with dabigatran, 0.71; 95% CI, 0.59 to 0.85). The numbers of deaths, acute coronary syndromes, and abnormal liver-function tests were similar in the two groups. Adverse events leading to discontinuation of the study drug occurred in 9.0% of patients assigned to dabigatran and in 6.8% of patients assigned to warfarin (P=0.05). CONCLUSIONS: For the treatment of acute venous thromboembolism, a fixed dose of dabigatran is as effective as warfarin, has a safety profile that is similar to that of warfarin, and does not require laboratory monitoring. (ClinicalTrials.gov number, NCT00291330.)",
    "kind": "effect_ci",
    "expected": {
     "effect": 1.1,
     "lo": 0.65,
     "hi": 1.84,
     "scale": "HR"
-   }
+   },
+   "excerpt": "The hazard ratio with dabigatran was 1.10 (95% CI, 0.65 to 1.84).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 22449293",
@@ -447,14 +494,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "RESULTS: Rivaroxaban was noninferior to standard therapy (noninferiority margin, 2.0; P=0.003) for the primary efficacy outcome, with 50 events in the rivaroxaban group (2.1%) versus 44 events in the ",
+   "text": "BACKGROUND: A fixed-dose regimen of rivaroxaban, an oral factor Xa inhibitor, has been shown to be as effective as standard anticoagulant therapy for the treatment of deep-vein thrombosis, without the need for laboratory monitoring. This approach may also simplify the treatment of pulmonary embolism. METHODS: In a randomized, open-label, event-driven, noninferiority trial involving 4832 patients who had acute symptomatic pulmonary embolism with or without deep-vein thrombosis, we compared rivaroxaban (15 mg twice daily for 3 weeks, followed by 20 mg once daily) with standard therapy with enoxaparin followed by an adjusted-dose vitamin K antagonist for 3, 6, or 12 months. The primary efficacy outcome was symptomatic recurrent venous thromboembolism. The principal safety outcome was major or clinically relevant nonmajor bleeding. RESULTS: Rivaroxaban was noninferior to standard therapy (noninferiority margin, 2.0; P=0.003) for the primary efficacy outcome, with 50 events in the rivaroxaban group (2.1%) versus 44 events in the standard-therapy group (1.8%) (hazard ratio, 1.12; 95% confidence interval [CI], 0.75 to 1.68). The principal safety outcome occurred in 10.3% of patients in the rivaroxaban group and 11.4% of those in the standard-therapy group (hazard ratio, 0.90; 95% CI, 0.76 to 1.07; P=0.23). Major bleeding was observed in 26 patients (1.1%) in the rivaroxaban group and 52 patients (2.2%) in the standard-therapy group (hazard ratio, 0.49; 95% CI, 0.31 to 0.79; P=0.003). Rates of other adverse events were similar in the two groups. CONCLUSIONS: A fixed-dose regimen of rivaroxaban alone was noninferior to standard therapy for the initial and long-term treatment of pulmonary embolism and had a potentially improved benefit-risk profile. (Funded by Bayer HealthCare and Janssen Pharmaceuticals; EINSTEIN-PE ClinicalTrials.gov number, NCT00439777.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 1.12,
     "lo": 0.75,
     "hi": 1.68,
     "scale": "HR"
-   }
+   },
+   "excerpt": "RESULTS: Rivaroxaban was noninferior to standard therapy (noninferiority margin, 2.0; P=0.003) for the primary efficacy outcome, with 50 events in the rivaroxaban group (2.1%) versus 44 events in the ",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 21128814",
@@ -465,14 +514,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "Rivaroxaban had noninferior efficacy with respect to the primary outcome (36 events [2.1%], vs. 51 events with enoxaparin-vitamin K antagonist [3.0%]; hazard ratio, 0.68; 95% confidence interval [CI],",
+   "text": "BACKGROUND: Rivaroxaban, an oral factor Xa inhibitor, may provide a simple, fixed-dose regimen for treating acute deep-vein thrombosis (DVT) and for continued treatment, without the need for laboratory monitoring. METHODS: We conducted an open-label, randomized, event-driven, noninferiority study that compared oral rivaroxaban alone (15 mg twice daily for 3 weeks, followed by 20 mg once daily) with subcutaneous enoxaparin followed by a vitamin K antagonist (either warfarin or acenocoumarol) for 3, 6, or 12 months in patients with acute, symptomatic DVT. In parallel, we carried out a double-blind, randomized, event-driven superiority study that compared rivaroxaban alone (20 mg once daily) with placebo for an additional 6 or 12 months in patients who had completed 6 to 12 months of treatment for venous thromboembolism. The primary efficacy outcome for both studies was recurrent venous thromboembolism. The principal safety outcome was major bleeding or clinically relevant nonmajor bleeding in the initial-treatment study and major bleeding in the continued-treatment study. RESULTS: The study of rivaroxaban for acute DVT included 3449 patients: 1731 given rivaroxaban and 1718 given enoxaparin plus a vitamin K antagonist. Rivaroxaban had noninferior efficacy with respect to the primary outcome (36 events [2.1%], vs. 51 events with enoxaparin-vitamin K antagonist [3.0%]; hazard ratio, 0.68; 95% confidence interval [CI], 0.44 to 1.04; P<0.001). The principal safety outcome occurred in 8.1% of the patients in each group. In the continued-treatment study, which included 602 patients in the rivaroxaban group and 594 in the placebo group, rivaroxaban had superior efficacy (8 events [1.3%], vs. 42 with placebo [7.1%]; hazard ratio, 0.18; 95% CI, 0.09 to 0.39; P<0.001). Four patients in the rivaroxaban group had nonfatal major bleeding (0.7%), versus none in the placebo group (P=0.11). CONCLUSIONS: Rivaroxaban offers a simple, single-drug approach to the short-term and continued treatment of venous thrombosis that may improve the benefit-to-risk profile of anticoagulation. (Funded by Bayer Schering Pharma and Ortho-McNeil; ClinicalTrials.gov numbers, NCT00440193 and NCT00439725.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.68,
     "lo": 0.44,
     "hi": 1.04,
     "scale": "HR"
-   }
+   },
+   "excerpt": "Rivaroxaban had noninferior efficacy with respect to the primary outcome (36 events [2.1%], vs. 51 events with enoxaparin-vitamin K antagonist [3.0%]; hazard ratio, 0.68; 95% confidence interval [CI],",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 23991658",
@@ -483,14 +534,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "Edoxaban was noninferior to warfarin with respect to the primary efficacy outcome, which occurred in 130 patients in the edoxaban group (3.2%) and 146 patients in the warfarin group (3.5%) (hazard rat",
+   "text": "BACKGROUND: Whether the oral factor Xa inhibitor edoxaban can be an alternative to warfarin in patients with venous thromboembolism is unclear. METHODS: In a randomized, double-blind, noninferiority study, we randomly assigned patients with acute venous thromboembolism, who had initially received heparin, to receive edoxaban at a dose of 60 mg once daily, or 30 mg once daily (e.g., in the case of patients with creatinine clearance of 30 to 50 ml per minute or a body weight below 60 kg), or to receive warfarin. Patients received the study drug for 3 to 12 months. The primary efficacy outcome was recurrent symptomatic venous thromboembolism. The principal safety outcome was major or clinically relevant nonmajor bleeding. RESULTS: A total of 4921 patients presented with deep-vein thrombosis, and 3319 with a pulmonary embolism. Among patients receiving warfarin, the time in the therapeutic range was 63.5%. Edoxaban was noninferior to warfarin with respect to the primary efficacy outcome, which occurred in 130 patients in the edoxaban group (3.2%) and 146 patients in the warfarin group (3.5%) (hazard ratio, 0.89; 95% confidence interval [CI], 0.70 to 1.13; P<0.001 for noninferiority). The safety outcome occurred in 349 patients (8.5%) in the edoxaban group and 423 patients (10.3%) in the warfarin group (hazard ratio, 0.81; 95% CI, 0.71 to 0.94; P=0.004 for superiority). The rates of other adverse events were similar in the two groups. A total of 938 patients with pulmonary embolism had right ventricular dysfunction, as assessed by measurement of N-terminal pro-brain natriuretic peptide levels; the rate of recurrent venous thromboembolism in this subgroup was 3.3% in the edoxaban group and 6.2% in the warfarin group (hazard ratio, 0.52; 95% CI, 0.28 to 0.98). CONCLUSIONS: Edoxaban administered once daily after initial treatment with heparin was noninferior to high-quality standard therapy and caused significantly less bleeding in a broad spectrum of patients with venous thromboembolism, including those with severe pulmonary embolism. (Funded by Daiichi-Sankyo; Hokusai-VTE ClinicalTrials.gov number, NCT00986154.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.89,
     "lo": 0.7,
     "hi": 1.13,
     "scale": "HR"
-   }
+   },
+   "excerpt": "Edoxaban was noninferior to warfarin with respect to the primary efficacy outcome, which occurred in 130 patients in the edoxaban group (3.2%) and 146 patients in the warfarin group (3.5%) (hazard rat",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 23808982",
@@ -501,14 +554,16 @@
    "harness_label": "abstract effect+CI (RR)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "RESULTS: The primary efficacy outcome occurred in 59 of 2609 patients (2.3%) in the apixaban group, as compared with 71 of 2635 (2.7%) in the conventional-therapy group (relative risk, 0.84; 95% confidence interval [CI], 0.60 to 1.18; difference in risk [apixaban minus conventional therapy], -0.4 percentage poin",
+   "text": "BACKGROUND: Apixaban, an oral factor Xa inhibitor administered in fixed doses, may simplify the treatment of venous thromboembolism. METHODS: In this randomized, double-blind study, we compared apixaban (at a dose of 10 mg twice daily for 7 days, followed by 5 mg twice daily for 6 months) with conventional therapy (subcutaneous enoxaparin, followed by warfarin) in 5395 patients with acute venous thromboembolism. The primary efficacy outcome was recurrent symptomatic venous thromboembolism or death related to venous thromboembolism. The principal safety outcomes were major bleeding alone and major bleeding plus clinically relevant nonmajor bleeding. RESULTS: The primary efficacy outcome occurred in 59 of 2609 patients (2.3%) in the apixaban group, as compared with 71 of 2635 (2.7%) in the conventional-therapy group (relative risk, 0.84; 95% confidence interval [CI], 0.60 to 1.18; difference in risk [apixaban minus conventional therapy], -0.4 percentage points; 95% CI, -1.3 to 0.4). Apixaban was noninferior to conventional therapy (P<0.001) for predefined upper limits of the 95% confidence intervals for both relative risk (<1.80) and difference in risk (<3.5 percentage points). Major bleeding occurred in 0.6% of patients who received apixaban and in 1.8% of those who received conventional therapy (relative risk, 0.31; 95% CI, 0.17 to 0.55; P<0.001 for superiority). The composite outcome of major bleeding and clinically relevant nonmajor bleeding occurred in 4.3% of the patients in the apixaban group, as compared with 9.7% of those in the conventional-therapy group (relative risk, 0.44; 95% CI, 0.36 to 0.55; P<0.001). Rates of other adverse events were similar in the two groups. CONCLUSIONS: A fixed-dose regimen of apixaban alone was noninferior to conventional therapy for the treatment of acute venous thromboembolism and was associated with significantly less bleeding (Funded by Pfizer and Bristol-Myers Squibb; ClinicalTrials.gov number, NCT00643201).",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.84,
     "lo": 0.6,
     "hi": 1.18,
     "scale": "RR"
-   }
+   },
+   "excerpt": "RESULTS: The primary efficacy outcome occurred in 59 of 2609 patients (2.3%) in the apixaban group, as compared with 71 of 2635 (2.7%) in the conventional-therapy group (relative risk, 0.84; 95% confidence interval [CI], 0.60 to 1.18; difference in risk [apixaban minus conventional therapy], -0.4 percentage poin",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Major bleeding|PMID 24344086",
@@ -519,14 +574,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "The safety end point, major bleeding, occurred in 15 patients receiving dabigatran (1.2%) and in 22 receiving warfarin (1.7%; hazard ratio, 0.69; 95% CI, 0.36-1.32).",
+   "text": "BACKGROUND: Dabigatran and warfarin have been compared for the treatment of acute venous thromboembolism (VTE) in a previous trial. We undertook this study to extend those findings. METHODS AND RESULTS: In a randomized, double-blind, double-dummy trial of 2589 patients with acute VTE treated with low-molecular-weight or unfractionated heparin for 5 to 11 days, we compared dabigatran 150 mg twice daily with warfarin. The primary outcome, recurrent symptomatic, objectively confirmed VTE and related deaths during 6 months of treatment occurred in 30 of the 1279 dabigatran patients (2.3%) compared with 28 of the 1289 warfarin patients (2.2%; hazard ratio, 1.08; 95% confidence interval [CI], 0.64-1.80; absolute risk difference, 0.2%; 95% CI, -1.0 to 1.3; P<0.001 for the prespecified noninferiority margin for both criteria). The safety end point, major bleeding, occurred in 15 patients receiving dabigatran (1.2%) and in 22 receiving warfarin (1.7%; hazard ratio, 0.69; 95% CI, 0.36-1.32). Any bleeding occurred in 200 dabigatran (15.6%) and 285 warfarin (22.1%; hazard ratio, 0.67; 95% CI, 0.56-0.81) patients. Deaths, adverse events, and acute coronary syndromes were similar in both groups. Pooled analysis of this study RE-COVER II and the RE-COVER trial gave hazard ratios for recurrent VTE of 1.09 (95% CI, 0.76-1.57), for major bleeding of 0.73 (95% CI, 0.48-1.11), and for any bleeding of 0.70 (95% CI, 0.61-0.79). CONCLUSION: Dabigatran has similar effects on VTE recurrence and a lower risk of bleeding compared with warfarin for the treatment of acute VTE. CLINICAL TRIAL REGISTRATION URL: www.clinicaltrials.gov. Unique identifiers: NCT00680186 and NCT00291330.",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.69,
     "lo": 0.36,
     "hi": 1.32,
     "scale": "HR"
-   }
+   },
+   "excerpt": "The safety end point, major bleeding, occurred in 15 patients receiving dabigatran (1.2%) and in 22 receiving warfarin (1.7%; hazard ratio, 0.69; 95% CI, 0.36-1.32).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Major bleeding|PMID 19966341",
@@ -537,14 +594,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "Major bleeding episodes occurred in 20 patients assigned to dabigatran (1.6%) and in 24 patients assigned to warfarin (1.9%) (hazard ratio with dabigatran, 0.82; 95% CI, 0.45 to 1.48), and episodes of",
+   "text": "BACKGROUND: The direct oral thrombin inhibitor dabigatran has a predictable anticoagulant effect and may be an alternative therapy to warfarin for patients who have acute venous thromboembolism. METHODS: In a randomized, double-blind, noninferiority trial involving patients with acute venous thromboembolism who were initially given parenteral anticoagulation therapy for a median of 9 days (interquartile range, 8 to 11), we compared oral dabigatran, administered at a dose of 150 mg twice daily, with warfarin that was dose-adjusted to achieve an international normalized ratio of 2.0 to 3.0. The primary outcome was the 6-month incidence of recurrent symptomatic, objectively confirmed venous thromboembolism and related deaths. Safety end points included bleeding events, acute coronary syndromes, other adverse events, and results of liver-function tests. RESULTS: A total of 30 of the 1274 patients randomly assigned to receive dabigatran (2.4%), as compared with 27 of the 1265 patients randomly assigned to warfarin (2.1%), had recurrent venous thromboembolism; the difference in risk was 0.4 percentage points (95% confidence interval [CI], -0.8 to 1.5; P<0.001 for the prespecified noninferiority margin). The hazard ratio with dabigatran was 1.10 (95% CI, 0.65 to 1.84). Major bleeding episodes occurred in 20 patients assigned to dabigatran (1.6%) and in 24 patients assigned to warfarin (1.9%) (hazard ratio with dabigatran, 0.82; 95% CI, 0.45 to 1.48), and episodes of any bleeding were observed in 205 patients assigned to dabigatran (16.1%) and 277 patients assigned to warfarin (21.9%; hazard ratio with dabigatran, 0.71; 95% CI, 0.59 to 0.85). The numbers of deaths, acute coronary syndromes, and abnormal liver-function tests were similar in the two groups. Adverse events leading to discontinuation of the study drug occurred in 9.0% of patients assigned to dabigatran and in 6.8% of patients assigned to warfarin (P=0.05). CONCLUSIONS: For the treatment of acute venous thromboembolism, a fixed dose of dabigatran is as effective as warfarin, has a safety profile that is similar to that of warfarin, and does not require laboratory monitoring. (ClinicalTrials.gov number, NCT00291330.)",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.82,
     "lo": 0.45,
     "hi": 1.48,
     "scale": "HR"
-   }
+   },
+   "excerpt": "Major bleeding episodes occurred in 20 patients assigned to dabigatran (1.6%) and in 24 patients assigned to warfarin (1.9%) (hazard ratio with dabigatran, 0.82; 95% CI, 0.45 to 1.48), and episodes of",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Major bleeding|PMID 22449293",
@@ -555,14 +614,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "Major bleeding was observed in 26 patients (1.1%) in the rivaroxaban group and 52 patients (2.2%) in the standard-therapy group (hazard ratio, 0.49; 95% CI, 0.31 to 0.79; P=0.003).",
+   "text": "BACKGROUND: A fixed-dose regimen of rivaroxaban, an oral factor Xa inhibitor, has been shown to be as effective as standard anticoagulant therapy for the treatment of deep-vein thrombosis, without the need for laboratory monitoring. This approach may also simplify the treatment of pulmonary embolism. METHODS: In a randomized, open-label, event-driven, noninferiority trial involving 4832 patients who had acute symptomatic pulmonary embolism with or without deep-vein thrombosis, we compared rivaroxaban (15 mg twice daily for 3 weeks, followed by 20 mg once daily) with standard therapy with enoxaparin followed by an adjusted-dose vitamin K antagonist for 3, 6, or 12 months. The primary efficacy outcome was symptomatic recurrent venous thromboembolism. The principal safety outcome was major or clinically relevant nonmajor bleeding. RESULTS: Rivaroxaban was noninferior to standard therapy (noninferiority margin, 2.0; P=0.003) for the primary efficacy outcome, with 50 events in the rivaroxaban group (2.1%) versus 44 events in the standard-therapy group (1.8%) (hazard ratio, 1.12; 95% confidence interval [CI], 0.75 to 1.68). The principal safety outcome occurred in 10.3% of patients in the rivaroxaban group and 11.4% of those in the standard-therapy group (hazard ratio, 0.90; 95% CI, 0.76 to 1.07; P=0.23). Major bleeding was observed in 26 patients (1.1%) in the rivaroxaban group and 52 patients (2.2%) in the standard-therapy group (hazard ratio, 0.49; 95% CI, 0.31 to 0.79; P=0.003). Rates of other adverse events were similar in the two groups. CONCLUSIONS: A fixed-dose regimen of rivaroxaban alone was noninferior to standard therapy for the initial and long-term treatment of pulmonary embolism and had a potentially improved benefit-risk profile. (Funded by Bayer HealthCare and Janssen Pharmaceuticals; EINSTEIN-PE ClinicalTrials.gov number, NCT00439777.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.49,
     "lo": 0.31,
     "hi": 0.79,
     "scale": "HR"
-   }
+   },
+   "excerpt": "Major bleeding was observed in 26 patients (1.1%) in the rivaroxaban group and 52 patients (2.2%) in the standard-therapy group (hazard ratio, 0.49; 95% CI, 0.31 to 0.79; P=0.003).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Major or clinically relevant nonmajor bleeding|PMID 22449293",
@@ -573,14 +634,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "The principal safety outcome occurred in 10.3% of patients in the rivaroxaban group and 11.4% of those in the standard-therapy group (hazard ratio, 0.90; 95% CI, 0.76 to 1.07; P=0.23).",
+   "text": "BACKGROUND: A fixed-dose regimen of rivaroxaban, an oral factor Xa inhibitor, has been shown to be as effective as standard anticoagulant therapy for the treatment of deep-vein thrombosis, without the need for laboratory monitoring. This approach may also simplify the treatment of pulmonary embolism. METHODS: In a randomized, open-label, event-driven, noninferiority trial involving 4832 patients who had acute symptomatic pulmonary embolism with or without deep-vein thrombosis, we compared rivaroxaban (15 mg twice daily for 3 weeks, followed by 20 mg once daily) with standard therapy with enoxaparin followed by an adjusted-dose vitamin K antagonist for 3, 6, or 12 months. The primary efficacy outcome was symptomatic recurrent venous thromboembolism. The principal safety outcome was major or clinically relevant nonmajor bleeding. RESULTS: Rivaroxaban was noninferior to standard therapy (noninferiority margin, 2.0; P=0.003) for the primary efficacy outcome, with 50 events in the rivaroxaban group (2.1%) versus 44 events in the standard-therapy group (1.8%) (hazard ratio, 1.12; 95% confidence interval [CI], 0.75 to 1.68). The principal safety outcome occurred in 10.3% of patients in the rivaroxaban group and 11.4% of those in the standard-therapy group (hazard ratio, 0.90; 95% CI, 0.76 to 1.07; P=0.23). Major bleeding was observed in 26 patients (1.1%) in the rivaroxaban group and 52 patients (2.2%) in the standard-therapy group (hazard ratio, 0.49; 95% CI, 0.31 to 0.79; P=0.003). Rates of other adverse events were similar in the two groups. CONCLUSIONS: A fixed-dose regimen of rivaroxaban alone was noninferior to standard therapy for the initial and long-term treatment of pulmonary embolism and had a potentially improved benefit-risk profile. (Funded by Bayer HealthCare and Janssen Pharmaceuticals; EINSTEIN-PE ClinicalTrials.gov number, NCT00439777.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.9,
     "lo": 0.76,
     "hi": 1.07,
     "scale": "HR"
-   }
+   },
+   "excerpt": "The principal safety outcome occurred in 10.3% of patients in the rivaroxaban group and 11.4% of those in the standard-therapy group (hazard ratio, 0.90; 95% CI, 0.76 to 1.07; P=0.23).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Major or clinically relevant nonmajor bleeding|PMID 23991658",
@@ -591,14 +654,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "The safety outcome occurred in 349 patients (8.5%) in the edoxaban group and 423 patients (10.3%) in the warfarin group (hazard ratio, 0.81; 95% CI, 0.71 to 0.94; P=0.004 for superiority).",
+   "text": "BACKGROUND: Whether the oral factor Xa inhibitor edoxaban can be an alternative to warfarin in patients with venous thromboembolism is unclear. METHODS: In a randomized, double-blind, noninferiority study, we randomly assigned patients with acute venous thromboembolism, who had initially received heparin, to receive edoxaban at a dose of 60 mg once daily, or 30 mg once daily (e.g., in the case of patients with creatinine clearance of 30 to 50 ml per minute or a body weight below 60 kg), or to receive warfarin. Patients received the study drug for 3 to 12 months. The primary efficacy outcome was recurrent symptomatic venous thromboembolism. The principal safety outcome was major or clinically relevant nonmajor bleeding. RESULTS: A total of 4921 patients presented with deep-vein thrombosis, and 3319 with a pulmonary embolism. Among patients receiving warfarin, the time in the therapeutic range was 63.5%. Edoxaban was noninferior to warfarin with respect to the primary efficacy outcome, which occurred in 130 patients in the edoxaban group (3.2%) and 146 patients in the warfarin group (3.5%) (hazard ratio, 0.89; 95% confidence interval [CI], 0.70 to 1.13; P<0.001 for noninferiority). The safety outcome occurred in 349 patients (8.5%) in the edoxaban group and 423 patients (10.3%) in the warfarin group (hazard ratio, 0.81; 95% CI, 0.71 to 0.94; P=0.004 for superiority). The rates of other adverse events were similar in the two groups. A total of 938 patients with pulmonary embolism had right ventricular dysfunction, as assessed by measurement of N-terminal pro-brain natriuretic peptide levels; the rate of recurrent venous thromboembolism in this subgroup was 3.3% in the edoxaban group and 6.2% in the warfarin group (hazard ratio, 0.52; 95% CI, 0.28 to 0.98). CONCLUSIONS: Edoxaban administered once daily after initial treatment with heparin was noninferior to high-quality standard therapy and caused significantly less bleeding in a broad spectrum of patients with venous thromboembolism, including those with severe pulmonary embolism. (Funded by Daiichi-Sankyo; Hokusai-VTE ClinicalTrials.gov number, NCT00986154.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.81,
     "lo": 0.71,
     "hi": 0.94,
     "scale": "HR"
-   }
+   },
+   "excerpt": "The safety outcome occurred in 349 patients (8.5%) in the edoxaban group and 423 patients (10.3%) in the warfarin group (hazard ratio, 0.81; 95% CI, 0.71 to 0.94; P=0.004 for superiority).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Any bleeding|PMID 24344086",
@@ -609,14 +674,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "Any bleeding occurred in 200 dabigatran (15.6%) and 285 warfarin (22.1%; hazard ratio, 0.67; 95% CI, 0.56-0.81) patients.",
+   "text": "BACKGROUND: Dabigatran and warfarin have been compared for the treatment of acute venous thromboembolism (VTE) in a previous trial. We undertook this study to extend those findings. METHODS AND RESULTS: In a randomized, double-blind, double-dummy trial of 2589 patients with acute VTE treated with low-molecular-weight or unfractionated heparin for 5 to 11 days, we compared dabigatran 150 mg twice daily with warfarin. The primary outcome, recurrent symptomatic, objectively confirmed VTE and related deaths during 6 months of treatment occurred in 30 of the 1279 dabigatran patients (2.3%) compared with 28 of the 1289 warfarin patients (2.2%; hazard ratio, 1.08; 95% confidence interval [CI], 0.64-1.80; absolute risk difference, 0.2%; 95% CI, -1.0 to 1.3; P<0.001 for the prespecified noninferiority margin for both criteria). The safety end point, major bleeding, occurred in 15 patients receiving dabigatran (1.2%) and in 22 receiving warfarin (1.7%; hazard ratio, 0.69; 95% CI, 0.36-1.32). Any bleeding occurred in 200 dabigatran (15.6%) and 285 warfarin (22.1%; hazard ratio, 0.67; 95% CI, 0.56-0.81) patients. Deaths, adverse events, and acute coronary syndromes were similar in both groups. Pooled analysis of this study RE-COVER II and the RE-COVER trial gave hazard ratios for recurrent VTE of 1.09 (95% CI, 0.76-1.57), for major bleeding of 0.73 (95% CI, 0.48-1.11), and for any bleeding of 0.70 (95% CI, 0.61-0.79). CONCLUSION: Dabigatran has similar effects on VTE recurrence and a lower risk of bleeding compared with warfarin for the treatment of acute VTE. CLINICAL TRIAL REGISTRATION URL: www.clinicaltrials.gov. Unique identifiers: NCT00680186 and NCT00291330.",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.67,
     "lo": 0.56,
     "hi": 0.81,
     "scale": "HR"
-   }
+   },
+   "excerpt": "Any bleeding occurred in 200 dabigatran (15.6%) and 285 warfarin (22.1%; hazard ratio, 0.67; 95% CI, 0.56-0.81) patients.",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "doac-vte-recurrence|Any bleeding|PMID 19966341",
@@ -627,14 +694,16 @@
    "harness_label": "",
    "provenance": "abstract_verified",
    "derivation": "reported",
-   "text": "Major bleeding episodes occurred in 20 patients assigned to dabigatran (1.6%) and in 24 patients assigned to warfarin (1.9%) (hazard ratio with dabigatran, 0.82; 95% CI, 0.45 to 1.48), and episodes of any bleeding were observed in 205 patients assigned to dabigatran (16.1%) and 277 patients assigned to warfarin (21.9%; hazard ratio with dabigatran, 0.71; 95% CI, 0.59 to 0.85). The numbers of deaths, acute coronary syndromes, and abnormal liver-function tests were similar in the two groups. Adverse events leading to discontinuation of the study drug occurred in 9.0% of patients assigned to dabigatran and in 6.8% of patients assigned to warfarin (P=0.05). CONCLUSIONS: For the treatment of acute venous thromboembolism, a fixed dose of dabigatran is as effective as warfarin, has a safety profile that is similar to that of warfarin, and does not require laboratory monitoring. (ClinicalTrials.gov number, NCT00291330.)",
+   "text": "BACKGROUND: The direct oral thrombin inhibitor dabigatran has a predictable anticoagulant effect and may be an alternative therapy to warfarin for patients who have acute venous thromboembolism. METHODS: In a randomized, double-blind, noninferiority trial involving patients with acute venous thromboembolism who were initially given parenteral anticoagulation therapy for a median of 9 days (interquartile range, 8 to 11), we compared oral dabigatran, administered at a dose of 150 mg twice daily, with warfarin that was dose-adjusted to achieve an international normalized ratio of 2.0 to 3.0. The primary outcome was the 6-month incidence of recurrent symptomatic, objectively confirmed venous thromboembolism and related deaths. Safety end points included bleeding events, acute coronary syndromes, other adverse events, and results of liver-function tests. RESULTS: A total of 30 of the 1274 patients randomly assigned to receive dabigatran (2.4%), as compared with 27 of the 1265 patients randomly assigned to warfarin (2.1%), had recurrent venous thromboembolism; the difference in risk was 0.4 percentage points (95% confidence interval [CI], -0.8 to 1.5; P<0.001 for the prespecified noninferiority margin). The hazard ratio with dabigatran was 1.10 (95% CI, 0.65 to 1.84). Major bleeding episodes occurred in 20 patients assigned to dabigatran (1.6%) and in 24 patients assigned to warfarin (1.9%) (hazard ratio with dabigatran, 0.82; 95% CI, 0.45 to 1.48), and episodes of any bleeding were observed in 205 patients assigned to dabigatran (16.1%) and 277 patients assigned to warfarin (21.9%; hazard ratio with dabigatran, 0.71; 95% CI, 0.59 to 0.85). The numbers of deaths, acute coronary syndromes, and abnormal liver-function tests were similar in the two groups. Adverse events leading to discontinuation of the study drug occurred in 9.0% of patients assigned to dabigatran and in 6.8% of patients assigned to warfarin (P=0.05). CONCLUSIONS: For the treatment of acute venous thromboembolism, a fixed dose of dabigatran is as effective as warfarin, has a safety profile that is similar to that of warfarin, and does not require laboratory monitoring. (ClinicalTrials.gov number, NCT00291330.)",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.71,
     "lo": 0.59,
     "hi": 0.85,
     "scale": "HR"
-   }
+   },
+   "excerpt": "Major bleeding episodes occurred in 20 patients assigned to dabigatran (1.6%) and in 24 patients assigned to warfarin (1.9%) (hazard ratio with dabigatran, 0.82; 95% CI, 0.45 to 1.48), and episodes of any bleeding were observed in 205 patients assigned to dabigatran (16.1%) and 277 patients assigned to warfarin (21.9%; hazard ratio with dabigatran, 0.71; 95% CI, 0.59 to 0.85). The numbers of deaths, acute coronary syndromes, and abnormal liver-function tests were similar in the two groups. Adverse events leading to discontinuation of the study drug occurred in 9.0% of patients assigned to dabigatran and in 6.8% of patients assigned to warfarin (P=0.05). CONCLUSIONS: For the treatment of acute venous thromboembolism, a fixed dose of dabigatran is as effective as warfarin, has a safety profile that is similar to that of warfarin, and does not require laboratory monitoring. (ClinicalTrials.gov number, NCT00291330.)",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 23992601",
@@ -645,14 +714,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "RESULTS: A primary end-point event occurred in 613 patients in the saxagliptin group and in 609 patients in the placebo group (7.3% and 7.2%, respectively, according to 2-year Kaplan-Meier estimates; ",
+   "text": "BACKGROUND: The cardiovascular safety and efficacy of many current antihyperglycemic agents, including saxagliptin, a dipeptidyl peptidase 4 (DPP-4) inhibitor, are unclear. METHODS: We randomly assigned 16,492 patients with type 2 diabetes who had a history of, or were at risk for, cardiovascular events to receive saxagliptin or placebo and followed them for a median of 2.1 years. Physicians were permitted to adjust other medications, including antihyperglycemic agents. The primary end point was a composite of cardiovascular death, myocardial infarction, or ischemic stroke. RESULTS: A primary end-point event occurred in 613 patients in the saxagliptin group and in 609 patients in the placebo group (7.3% and 7.2%, respectively, according to 2-year Kaplan-Meier estimates; hazard ratio with saxagliptin, 1.00; 95% confidence interval [CI], 0.89 to 1.12; P=0.99 for superiority; P<0.001 for noninferiority); the results were similar in the \"on-treatment\" analysis (hazard ratio, 1.03; 95% CI, 0.91 to 1.17). The major secondary end point of a composite of cardiovascular death, myocardial infarction, stroke, hospitalization for unstable angina, coronary revascularization, or heart failure occurred in 1059 patients in the saxagliptin group and in 1034 patients in the placebo group (12.8% and 12.4%, respectively, according to 2-year Kaplan-Meier estimates; hazard ratio, 1.02; 95% CI, 0.94 to 1.11; P=0.66). More patients in the saxagliptin group than in the placebo group were hospitalized for heart failure (3.5% vs. 2.8%; hazard ratio, 1.27; 95% CI, 1.07 to 1.51; P=0.007). Rates of adjudicated cases of acute and chronic pancreatitis were similar in the two groups (acute pancreatitis, 0.3% in the saxagliptin group and 0.2% in the placebo group; chronic pancreatitis, <0.1% and 0.1% in the two groups, respectively). CONCLUSIONS: DPP-4 inhibition with saxagliptin did not increase or decrease the rate of ischemic events, though the rate of hospitalization for heart failure was increased. Although saxagliptin improves glycemic control, other approaches are necessary to reduce cardiovascular risk in patients with diabetes. (Funded by AstraZeneca and Bristol-Myers Squibb; SAVOR-TIMI 53 ClinicalTrials.gov number, NCT01107886.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 1.0,
     "lo": 0.89,
     "hi": 1.12,
     "scale": "HR"
-   }
+   },
+   "excerpt": "RESULTS: A primary end-point event occurred in 613 patients in the saxagliptin group and in 609 patients in the placebo group (7.3% and 7.2%, respectively, according to 2-year Kaplan-Meier estimates; ",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 30418475",
@@ -663,14 +734,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate differ",
+   "text": "IMPORTANCE: Type 2 diabetes is associated with increased cardiovascular (CV) risk. Prior trials have demonstrated CV safety of 3 dipeptidyl peptidase 4 (DPP-4) inhibitors but have included limited numbers of patients with high CV risk and chronic kidney disease. OBJECTIVE: To evaluate the effect of linagliptin, a selective DPP-4 inhibitor, on CV outcomes and kidney outcomes in patients with type 2 diabetes at high risk of CV and kidney events. DESIGN, SETTING, AND PARTICIPANTS: Randomized, placebo-controlled, multicenter noninferiority trial conducted from August 2013 to August 2016 at 605 clinic sites in 27 countries among adults with type 2 diabetes, hemoglobin A1c of 6.5% to 10.0%, high CV risk (history of vascular disease and urine-albumin creatinine ratio [UACR] >200 mg/g), and high renal risk (reduced eGFR and micro- or macroalbuminuria). Participants with end-stage renal disease (ESRD) were excluded. Final follow-up occurred on January 18, 2018. INTERVENTIONS: Patients were randomized to receive linagliptin, 5 mg once daily (n = 3494), or placebo once daily (n = 3485) added to usual care. Other glucose-lowering medications or insulin could be added based on clinical need and local clinical guidelines. MAIN OUTCOMES AND MEASURES: Primary outcome was time to first occurrence of the composite of CV death, nonfatal myocardial infarction, or nonfatal stroke. Criteria for noninferiority of linagliptin vs placebo was defined by the upper limit of the 2-sided 95% CI for the hazard ratio (HR) of linagliptin relative to placebo being less than 1.3. Secondary outcome was time to first occurrence of adjudicated death due to renal failure, ESRD, or sustained 40% or higher decrease in eGFR from baseline. RESULTS: Of 6991 enrollees, 6979 (mean age, 65.9 years; eGFR, 54.6 mL/min/1.73 m2; 80.1% with UACR >30 mg/g) received at least 1 dose of study medication and 98.7% completed the study. During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate difference, 0.13 [95% CI, -0.63 to 0.90] per 100 person-years) (HR, 1.02; 95% CI, 0.89-1.17; P < .001 for noninferiority). The kidney outcome occurred in 327 of 3494 (9.4%) and 306 of 3485 (8.8%), respectively (absolute incidence rate difference, 0.22 [95% CI, -0.52 to 0.97] per 100 person-years) (HR, 1.04; 95% CI, 0.89-1.22; P = .62). Adverse events occurred in 2697 (77.2%) and 2723 (78.1%) patients in the linagliptin and placebo groups; 1036 (29.7%) and 1024 (29.4%) had 1 or more episodes of hypoglycemia; and there were 9 (0.3%) vs 5 (0.1%) events of adjudication-confirmed acute pancreatitis. CONCLUSIONS AND RELEVANCE: Among adults with type 2 diabetes and high CV and renal risk, linagliptin added to usual care compared with placebo added to usual care resulted in a noninferior risk of a composite CV outcome over a median 2.2 years. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT01897532.",
    "kind": "effect_ci",
    "expected": {
     "effect": 1.02,
     "lo": 0.89,
     "hi": 1.17,
     "scale": "HR"
-   }
+   },
+   "excerpt": "During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate differ",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 28893244",
@@ -688,7 +761,8 @@
     "lo": 0.77,
     "hi": 1.29,
     "scale": "HR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 26052984",
@@ -706,7 +780,8 @@
     "lo": 0.89,
     "hi": 1.1,
     "scale": "HR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "dpp4-mace-t2d|Adverse events|PMID 30418475",
@@ -717,14 +792,16 @@
    "harness_label": "",
    "provenance": "abstract_verified_arms",
    "derivation": "reconstructed",
-   "text": "INTERVENTIONS: Patients were randomized to receive linagliptin, 5 mg once daily (n = 3494), or placebo once daily (n = 3485) added to usual care. Other glucose-lowering medications or insulin could be added based on clinical need and local clinical guidelines. MAIN OUTCOMES AND MEASURES: Primary outcome was time to first occurrence of the composite of CV death, nonfatal myocardial infarction, or nonfatal stroke. Criteria for noninferiority of linagliptin vs placebo was defined by the upper limit of the 2-sided 95% CI for the hazard ratio (HR) of linagliptin relative to placebo being less than 1.3. Secondary outcome was time to first occurrence of adjudicated death due to renal failure, ESRD, or sustained 40% or higher decrease in eGFR from baseline. RESULTS: Of 6991 enrollees, 6979 (mean age, 65.9 years; eGFR, 54.6 mL/min/1.73 m2; 80.1% with UACR >30 mg/g) received at least 1 dose of study medication and 98.7% completed the study. During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate difference, 0.13 [95% CI, -0.63 to 0.90] per 100 person-years) (HR, 1.02; 95% CI, 0.89-1.17; P < .001 for noninferiority). The kidney outcome occurred in 327 of 3494 (9.4%) and 306 of 3485 (8.8%), respectively (absolute incidence rate difference, 0.22 [95% CI, -0.52 to 0.97] per 100 person-years) (HR, 1.04; 95% CI, 0.89-1.22; P = .62). Adverse events occurred in 2697 (77.2%) and 2723 (78.1%) patients in the linagliptin and placebo groups; 1036 (29.7%) and 1024 (29.4%) had 1 or more episodes of hypoglycemia; and there were 9 (0.3%) vs 5 (0.1%) events of adjudication-confirmed acute pancreatitis. CONCLUSIONS AND RELEVANCE: Among adults with type 2 diabetes and high CV and renal risk, linagliptin added to usual care compared with placebo added to usual care resulted in a noninferior risk of a composite CV outcome over a median 2.2 years. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT01897532.",
+   "text": "IMPORTANCE: Type 2 diabetes is associated with increased cardiovascular (CV) risk. Prior trials have demonstrated CV safety of 3 dipeptidyl peptidase 4 (DPP-4) inhibitors but have included limited numbers of patients with high CV risk and chronic kidney disease. OBJECTIVE: To evaluate the effect of linagliptin, a selective DPP-4 inhibitor, on CV outcomes and kidney outcomes in patients with type 2 diabetes at high risk of CV and kidney events. DESIGN, SETTING, AND PARTICIPANTS: Randomized, placebo-controlled, multicenter noninferiority trial conducted from August 2013 to August 2016 at 605 clinic sites in 27 countries among adults with type 2 diabetes, hemoglobin A1c of 6.5% to 10.0%, high CV risk (history of vascular disease and urine-albumin creatinine ratio [UACR] >200 mg/g), and high renal risk (reduced eGFR and micro- or macroalbuminuria). Participants with end-stage renal disease (ESRD) were excluded. Final follow-up occurred on January 18, 2018. INTERVENTIONS: Patients were randomized to receive linagliptin, 5 mg once daily (n = 3494), or placebo once daily (n = 3485) added to usual care. Other glucose-lowering medications or insulin could be added based on clinical need and local clinical guidelines. MAIN OUTCOMES AND MEASURES: Primary outcome was time to first occurrence of the composite of CV death, nonfatal myocardial infarction, or nonfatal stroke. Criteria for noninferiority of linagliptin vs placebo was defined by the upper limit of the 2-sided 95% CI for the hazard ratio (HR) of linagliptin relative to placebo being less than 1.3. Secondary outcome was time to first occurrence of adjudicated death due to renal failure, ESRD, or sustained 40% or higher decrease in eGFR from baseline. RESULTS: Of 6991 enrollees, 6979 (mean age, 65.9 years; eGFR, 54.6 mL/min/1.73 m2; 80.1% with UACR >30 mg/g) received at least 1 dose of study medication and 98.7% completed the study. During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate difference, 0.13 [95% CI, -0.63 to 0.90] per 100 person-years) (HR, 1.02; 95% CI, 0.89-1.17; P < .001 for noninferiority). The kidney outcome occurred in 327 of 3494 (9.4%) and 306 of 3485 (8.8%), respectively (absolute incidence rate difference, 0.22 [95% CI, -0.52 to 0.97] per 100 person-years) (HR, 1.04; 95% CI, 0.89-1.22; P = .62). Adverse events occurred in 2697 (77.2%) and 2723 (78.1%) patients in the linagliptin and placebo groups; 1036 (29.7%) and 1024 (29.4%) had 1 or more episodes of hypoglycemia; and there were 9 (0.3%) vs 5 (0.1%) events of adjudication-confirmed acute pancreatitis. CONCLUSIONS AND RELEVANCE: Among adults with type 2 diabetes and high CV and renal risk, linagliptin added to usual care compared with placebo added to usual care resulted in a noninferior risk of a composite CV outcome over a median 2.2 years. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT01897532.",
    "kind": "counts",
    "expected": {
     "ai": 2697,
     "n1i": 3494,
     "ci": 2723,
     "n2i": 3485
-   }
+   },
+   "excerpt": "INTERVENTIONS: Patients were randomized to receive linagliptin, 5 mg once daily (n = 3494), or placebo once daily (n = 3485) added to usual care. Other glucose-lowering medications or insulin could be added based on clinical need and local clinical guidelines. MAIN OUTCOMES AND MEASURES: Primary outcome was time to first occurrence of the composite of CV death, nonfatal myocardial infarction, or nonfatal stroke. Criteria for noninferiority of linagliptin vs placebo was defined by the upper limit of the 2-sided 95% CI for the hazard ratio (HR) of linagliptin relative to placebo being less than 1.3. Secondary outcome was time to first occurrence of adjudicated death due to renal failure, ESRD, or sustained 40% or higher decrease in eGFR from baseline. RESULTS: Of 6991 enrollees, 6979 (mean age, 65.9 years; eGFR, 54.6 mL/min/1.73 m2; 80.1% with UACR >30 mg/g) received at least 1 dose of study medication and 98.7% completed the study. During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate difference, 0.13 [95% CI, -0.63 to 0.90] per 100 person-years) (HR, 1.02; 95% CI, 0.89-1.17; P < .001 for noninferiority). The kidney outcome occurred in 327 of 3494 (9.4%) and 306 of 3485 (8.8%), respectively (absolute incidence rate difference, 0.22 [95% CI, -0.52 to 0.97] per 100 person-years) (HR, 1.04; 95% CI, 0.89-1.22; P = .62). Adverse events occurred in 2697 (77.2%) and 2723 (78.1%) patients in the linagliptin and placebo groups; 1036 (29.7%) and 1024 (29.4%) had 1 or more episodes of hypoglycemia; and there were 9 (0.3%) vs 5 (0.1%) events of adjudication-confirmed acute pancreatitis. CONCLUSIONS AND RELEVANCE: Among adults with type 2 diabetes and high CV and renal risk, linagliptin added to usual care compared with placebo added to usual care resulted in a noninferior risk of a composite CV outcome over a median 2.2 years. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT01897532.",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "dpp4-mace-t2d|Hypoglycemia|PMID 30418475",
@@ -735,14 +812,16 @@
    "harness_label": "",
    "provenance": "abstract_verified_arms",
    "derivation": "reconstructed",
-   "text": "INTERVENTIONS: Patients were randomized to receive linagliptin, 5 mg once daily (n = 3494), or placebo once daily (n = 3485) added to usual care. Other glucose-lowering medications or insulin could be added based on clinical need and local clinical guidelines. MAIN OUTCOMES AND MEASURES: Primary outcome was time to first occurrence of the composite of CV death, nonfatal myocardial infarction, or nonfatal stroke. Criteria for noninferiority of linagliptin vs placebo was defined by the upper limit of the 2-sided 95% CI for the hazard ratio (HR) of linagliptin relative to placebo being less than 1.3. Secondary outcome was time to first occurrence of adjudicated death due to renal failure, ESRD, or sustained 40% or higher decrease in eGFR from baseline. RESULTS: Of 6991 enrollees, 6979 (mean age, 65.9 years; eGFR, 54.6 mL/min/1.73 m2; 80.1% with UACR >30 mg/g) received at least 1 dose of study medication and 98.7% completed the study. During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate difference, 0.13 [95% CI, -0.63 to 0.90] per 100 person-years) (HR, 1.02; 95% CI, 0.89-1.17; P < .001 for noninferiority). The kidney outcome occurred in 327 of 3494 (9.4%) and 306 of 3485 (8.8%), respectively (absolute incidence rate difference, 0.22 [95% CI, -0.52 to 0.97] per 100 person-years) (HR, 1.04; 95% CI, 0.89-1.22; P = .62). Adverse events occurred in 2697 (77.2%) and 2723 (78.1%) patients in the linagliptin and placebo groups; 1036 (29.7%) and 1024 (29.4%) had 1 or more episodes of hypoglycemia; and there were 9 (0.3%) vs 5 (0.1%) events of adjudication-confirmed acute pancreatitis. CONCLUSIONS AND RELEVANCE: Among adults with type 2 diabetes and high CV and renal risk, linagliptin added to usual care compared with placebo added to usual care resulted in a noninferior risk of a composite CV outcome over a median 2.2 years. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT01897532.",
+   "text": "IMPORTANCE: Type 2 diabetes is associated with increased cardiovascular (CV) risk. Prior trials have demonstrated CV safety of 3 dipeptidyl peptidase 4 (DPP-4) inhibitors but have included limited numbers of patients with high CV risk and chronic kidney disease. OBJECTIVE: To evaluate the effect of linagliptin, a selective DPP-4 inhibitor, on CV outcomes and kidney outcomes in patients with type 2 diabetes at high risk of CV and kidney events. DESIGN, SETTING, AND PARTICIPANTS: Randomized, placebo-controlled, multicenter noninferiority trial conducted from August 2013 to August 2016 at 605 clinic sites in 27 countries among adults with type 2 diabetes, hemoglobin A1c of 6.5% to 10.0%, high CV risk (history of vascular disease and urine-albumin creatinine ratio [UACR] >200 mg/g), and high renal risk (reduced eGFR and micro- or macroalbuminuria). Participants with end-stage renal disease (ESRD) were excluded. Final follow-up occurred on January 18, 2018. INTERVENTIONS: Patients were randomized to receive linagliptin, 5 mg once daily (n = 3494), or placebo once daily (n = 3485) added to usual care. Other glucose-lowering medications or insulin could be added based on clinical need and local clinical guidelines. MAIN OUTCOMES AND MEASURES: Primary outcome was time to first occurrence of the composite of CV death, nonfatal myocardial infarction, or nonfatal stroke. Criteria for noninferiority of linagliptin vs placebo was defined by the upper limit of the 2-sided 95% CI for the hazard ratio (HR) of linagliptin relative to placebo being less than 1.3. Secondary outcome was time to first occurrence of adjudicated death due to renal failure, ESRD, or sustained 40% or higher decrease in eGFR from baseline. RESULTS: Of 6991 enrollees, 6979 (mean age, 65.9 years; eGFR, 54.6 mL/min/1.73 m2; 80.1% with UACR >30 mg/g) received at least 1 dose of study medication and 98.7% completed the study. During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate difference, 0.13 [95% CI, -0.63 to 0.90] per 100 person-years) (HR, 1.02; 95% CI, 0.89-1.17; P < .001 for noninferiority). The kidney outcome occurred in 327 of 3494 (9.4%) and 306 of 3485 (8.8%), respectively (absolute incidence rate difference, 0.22 [95% CI, -0.52 to 0.97] per 100 person-years) (HR, 1.04; 95% CI, 0.89-1.22; P = .62). Adverse events occurred in 2697 (77.2%) and 2723 (78.1%) patients in the linagliptin and placebo groups; 1036 (29.7%) and 1024 (29.4%) had 1 or more episodes of hypoglycemia; and there were 9 (0.3%) vs 5 (0.1%) events of adjudication-confirmed acute pancreatitis. CONCLUSIONS AND RELEVANCE: Among adults with type 2 diabetes and high CV and renal risk, linagliptin added to usual care compared with placebo added to usual care resulted in a noninferior risk of a composite CV outcome over a median 2.2 years. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT01897532.",
    "kind": "counts",
    "expected": {
     "ai": 1036,
     "n1i": 3494,
     "ci": 1024,
     "n2i": 3485
-   }
+   },
+   "excerpt": "INTERVENTIONS: Patients were randomized to receive linagliptin, 5 mg once daily (n = 3494), or placebo once daily (n = 3485) added to usual care. Other glucose-lowering medications or insulin could be added based on clinical need and local clinical guidelines. MAIN OUTCOMES AND MEASURES: Primary outcome was time to first occurrence of the composite of CV death, nonfatal myocardial infarction, or nonfatal stroke. Criteria for noninferiority of linagliptin vs placebo was defined by the upper limit of the 2-sided 95% CI for the hazard ratio (HR) of linagliptin relative to placebo being less than 1.3. Secondary outcome was time to first occurrence of adjudicated death due to renal failure, ESRD, or sustained 40% or higher decrease in eGFR from baseline. RESULTS: Of 6991 enrollees, 6979 (mean age, 65.9 years; eGFR, 54.6 mL/min/1.73 m2; 80.1% with UACR >30 mg/g) received at least 1 dose of study medication and 98.7% completed the study. During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate difference, 0.13 [95% CI, -0.63 to 0.90] per 100 person-years) (HR, 1.02; 95% CI, 0.89-1.17; P < .001 for noninferiority). The kidney outcome occurred in 327 of 3494 (9.4%) and 306 of 3485 (8.8%), respectively (absolute incidence rate difference, 0.22 [95% CI, -0.52 to 0.97] per 100 person-years) (HR, 1.04; 95% CI, 0.89-1.22; P = .62). Adverse events occurred in 2697 (77.2%) and 2723 (78.1%) patients in the linagliptin and placebo groups; 1036 (29.7%) and 1024 (29.4%) had 1 or more episodes of hypoglycemia; and there were 9 (0.3%) vs 5 (0.1%) events of adjudication-confirmed acute pancreatitis. CONCLUSIONS AND RELEVANCE: Among adults with type 2 diabetes and high CV and renal risk, linagliptin added to usual care compared with placebo added to usual care resulted in a noninferior risk of a composite CV outcome over a median 2.2 years. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT01897532.",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "dpp4-mace-t2d|Hospitalization for heart failure|PMID 23992601",
@@ -753,14 +832,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "More patients in the saxagliptin group than in the placebo group were hospitalized for heart failure (3.5% vs. 2.8%; hazard ratio, 1.27; 95% CI, 1.07 to 1.51; P=0.007).",
+   "text": "BACKGROUND: The cardiovascular safety and efficacy of many current antihyperglycemic agents, including saxagliptin, a dipeptidyl peptidase 4 (DPP-4) inhibitor, are unclear. METHODS: We randomly assigned 16,492 patients with type 2 diabetes who had a history of, or were at risk for, cardiovascular events to receive saxagliptin or placebo and followed them for a median of 2.1 years. Physicians were permitted to adjust other medications, including antihyperglycemic agents. The primary end point was a composite of cardiovascular death, myocardial infarction, or ischemic stroke. RESULTS: A primary end-point event occurred in 613 patients in the saxagliptin group and in 609 patients in the placebo group (7.3% and 7.2%, respectively, according to 2-year Kaplan-Meier estimates; hazard ratio with saxagliptin, 1.00; 95% confidence interval [CI], 0.89 to 1.12; P=0.99 for superiority; P<0.001 for noninferiority); the results were similar in the \"on-treatment\" analysis (hazard ratio, 1.03; 95% CI, 0.91 to 1.17). The major secondary end point of a composite of cardiovascular death, myocardial infarction, stroke, hospitalization for unstable angina, coronary revascularization, or heart failure occurred in 1059 patients in the saxagliptin group and in 1034 patients in the placebo group (12.8% and 12.4%, respectively, according to 2-year Kaplan-Meier estimates; hazard ratio, 1.02; 95% CI, 0.94 to 1.11; P=0.66). More patients in the saxagliptin group than in the placebo group were hospitalized for heart failure (3.5% vs. 2.8%; hazard ratio, 1.27; 95% CI, 1.07 to 1.51; P=0.007). Rates of adjudicated cases of acute and chronic pancreatitis were similar in the two groups (acute pancreatitis, 0.3% in the saxagliptin group and 0.2% in the placebo group; chronic pancreatitis, <0.1% and 0.1% in the two groups, respectively). CONCLUSIONS: DPP-4 inhibition with saxagliptin did not increase or decrease the rate of ischemic events, though the rate of hospitalization for heart failure was increased. Although saxagliptin improves glycemic control, other approaches are necessary to reduce cardiovascular risk in patients with diabetes. (Funded by AstraZeneca and Bristol-Myers Squibb; SAVOR-TIMI 53 ClinicalTrials.gov number, NCT01107886.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 1.27,
     "lo": 1.07,
     "hi": 1.51,
     "scale": "HR"
-   }
+   },
+   "excerpt": "More patients in the saxagliptin group than in the placebo group were hospitalized for heart failure (3.5% vs. 2.8%; hazard ratio, 1.27; 95% CI, 1.07 to 1.51; P=0.007).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "dpp4-mace-t2d|Hospitalization for heart failure|PMID 26052984",
@@ -771,14 +852,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "Rates of hospitalization for heart failure did not differ between the two groups (hazard ratio, 1.00; 95% CI, 0.83 to 1.20; P=0.98).",
+   "text": "BACKGROUND: Data are lacking on the long-term effect on cardiovascular events of adding sitagliptin, a dipeptidyl peptidase 4 inhibitor, to usual care in patients with type 2 diabetes and cardiovascular disease. METHODS: In this randomized, double-blind study, we assigned 14,671 patients to add either sitagliptin or placebo to their existing therapy. Open-label use of antihyperglycemic therapy was encouraged as required, aimed at reaching individually appropriate glycemic targets in all patients. To determine whether sitagliptin was noninferior to placebo, we used a relative risk of 1.3 as the marginal upper boundary. The primary cardiovascular outcome was a composite of cardiovascular death, nonfatal myocardial infarction, nonfatal stroke, or hospitalization for unstable angina. RESULTS: During a median follow-up of 3.0 years, there was a small difference in glycated hemoglobin levels (least-squares mean difference for sitagliptin vs. placebo, -0.29 percentage points; 95% confidence interval [CI], -0.32 to -0.27). Overall, the primary outcome occurred in 839 patients in the sitagliptin group (11.4%; 4.06 per 100 person-years) and 851 patients in the placebo group (11.6%; 4.17 per 100 person-years). Sitagliptin was noninferior to placebo for the primary composite cardiovascular outcome (hazard ratio, 0.98; 95% CI, 0.88 to 1.09; P<0.001). Rates of hospitalization for heart failure did not differ between the two groups (hazard ratio, 1.00; 95% CI, 0.83 to 1.20; P=0.98). There were no significant between-group differences in rates of acute pancreatitis (P=0.07) or pancreatic cancer (P=0.32). CONCLUSIONS: Among patients with type 2 diabetes and established cardiovascular disease, adding sitagliptin to usual care did not appear to increase the risk of major adverse cardiovascular events, hospitalization for heart failure, or other adverse events. (Funded by Merck Sharp & Dohme; TECOS ClinicalTrials.gov number, NCT00790205.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 1.0,
     "lo": 0.83,
     "hi": 1.2,
     "scale": "HR"
-   }
+   },
+   "excerpt": "Rates of hospitalization for heart failure did not differ between the two groups (hazard ratio, 1.00; 95% CI, 0.83 to 1.20; P=0.98).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "esketamine-trd-madrs|Adverse events|PMID 37025256",
@@ -796,7 +879,8 @@
     "n1i": 126,
     "ci": 89,
     "n2i": 126
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "iv-iron-hfref-hosp|Heart-failure hospitalization|PMID 40159390",
@@ -807,14 +891,16 @@
    "harness_label": "abstract effect+CI (IRR)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "The second primary outcome (total heart failure hospitalizations) occurred 264 times in the ferric carboxymaltose group vs 320 times in the placebo group (rate ratio, 0.80 [95% CI, 0.60-1.06]; P = .12",
+   "text": "IMPORTANCE: Uncertainty remains about the efficacy of intravenous iron in patients with heart failure and iron deficiency. OBJECTIVE: To assess the efficacy and safety of ferric carboxymaltose in patients with heart failure and iron deficiency. DESIGN, SETTING, AND PARTICIPANTS: This multicenter, randomized clinical trial enrolled 1105 patients with heart failure (defined as having a left ventricular ejection fraction of ≤45%) and iron deficiency (serum ferritin level <100 ng/mL; or if transferrin saturation was <20%, a serum ferritin level between 100 ng/mL and 299 ng/mL) at 70 clinic sites in 6 European countries from March 2017 to November 2023. The median follow-up was 16.6 months (IQR, 7.9-29.9 months). INTERVENTION: Administration of ferric carboxymaltose (n = 558) initially given at an intravenous dose of up to 2000 mg that was followed by 500 mg every 4 months (unless stopping criteria were met) vs a saline placebo (n = 547). MAIN OUTCOMES AND MEASURES: The primary end point events were (1) time to cardiovascular death or first heart failure hospitalization, (2) total heart failure hospitalizations, and (3) time to cardiovascular death or first heart failure hospitalization in patients with a transferrin saturation less than 20%. All end point events were measured through follow-up. The end points would be considered statistically significant if they fulfilled at least 1 of the following conditions: (1) P ≤ .05 for all 3 of the end point comparisons, (2) P ≤ .025 for 2 of the end point comparisons, or (3) P ≤ .0167 for any of the 3 end point comparisons (Hochberg procedure). RESULTS: Of the 1105 participants (mean age, 70 years [SD, 12 years]; 33% were women), cardiovascular death or first heart failure hospitalization (first primary outcome) occurred in 141 in the ferric carboxymaltose group vs 166 in the placebo group (hazard ratio, 0.79 [95% CI, 0.63-0.99]; P = .04). The second primary outcome (total heart failure hospitalizations) occurred 264 times in the ferric carboxymaltose group vs 320 times in the placebo group (rate ratio, 0.80 [95% CI, 0.60-1.06]; P = .12). The third primary outcome (cardiovascular death or first heart failure hospitalization in patients with a transferrin saturation <20%) occurred in 103 patients in the ferric carboxymaltose group vs 128 patients in the placebo group (hazard ratio, 0.79 [95% CI, 0.61-1.02], P = .07). A similar amount of patients had at least 1 serious adverse event in the ferric carboxymaltose group (269; 48.2%) vs in the placebo group (273; 49.9%) (P = .61). CONCLUSIONS AND RELEVANCE: In patients with heart failure and iron deficiency, ferric carboxymaltose did not significantly reduce the time to first heart failure hospitalization or cardiovascular death in the overall cohort or in patients with a transferrin saturation less than 20%, or reduce the total number of heart failure hospitalizations vs placebo. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT03036462.",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.8,
     "lo": 0.6,
     "hi": 1.06,
     "scale": "IRR"
-   }
+   },
+   "excerpt": "The second primary outcome (total heart failure hospitalizations) occurred 264 times in the ferric carboxymaltose group vs 320 times in the placebo group (rate ratio, 0.80 [95% CI, 0.60-1.06]; P = .12",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "iv-iron-hfref-hosp|Heart-failure hospitalization|PMID 25176939",
@@ -832,7 +918,8 @@
     "lo": 0.19,
     "hi": 0.82,
     "scale": "HR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "metformin-pcos-ovulation|Ovulation with metformin added to clomifene|PMID 19522426",
@@ -850,7 +937,8 @@
     "n1i": 16,
     "ci": 6,
     "n2i": 16
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "metformin-pcos-ovulation|Ovulation with metformin added to clomifene|PMID 16769748",
@@ -868,7 +956,8 @@
     "n1i": 111,
     "ci": 82,
     "n2i": 114
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "metformin-pcos-ovulation|Ovulation with metformin added to clomifene|PMID 11172832",
@@ -879,14 +968,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "RESULT(S): In the metformin and placebo groups, 9 of 12 participants (75%) and 4 of 15 participants (27%) ovulated, and 6 of 11 participants (55%) and 1 of 14 participants (7%) conceived, respectively",
+   "text": "OBJECTIVE: To determine whether metformin treatment increases the ovulation and pregnancy rates in response to clomiphene citrate (CC) in women who are resistant to CC alone. DESIGN: Randomized, double-blind, placebo-controlled trial. SETTING: Multicenter environment. PATIENT(S): Anovulatory women with the polycystic ovary syndrome (PCOS) who were resistant to CC. INTERVENTION(S): Participants received placebo or metformin, 500 mg three times daily, for 7 weeks. Information on reproductive steroids, gonadotropins, and oral glucose tolerance testing was obtained at baseline and after treatment. Metformin or placebo was continued and CC treatment was begun at 50 mg daily for 5 days. Serum P level > or =4 ng/mL was considered to indicate ovulation. With ovulation, the daily CC dose was not changed, but with anovulation it was increased by 50 mg for the next cycle. Patients completed the study when they had had six ovulatory cycles, became pregnant, or experienced anovulation while receiving 150 mg of CC. MAIN OUTCOME MEASURE(S): Ovulation and pregnancy rates. RESULT(S): In the metformin and placebo groups, 9 of 12 participants (75%) and 4 of 15 participants (27%) ovulated, and 6 of 11 participants (55%) and 1 of 14 participants (7%) conceived, respectively. Comparisons between the groups were significant. CONCLUSION(S): In anovulatory women with PCOS who are resistant to CC, metformin use significantly increased the ovulation rate and pregnancy rate from CC treatment.",
    "kind": "counts",
    "expected": {
     "ai": 9,
     "n1i": 12,
     "ci": 4,
     "n2i": 15
-   }
+   },
+   "excerpt": "RESULT(S): In the metformin and placebo groups, 9 of 12 participants (75%) and 4 of 15 participants (27%) ovulated, and 6 of 11 participants (55%) and 1 of 14 participants (7%) conceived, respectively",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 33190147",
@@ -904,7 +995,8 @@
     "lo": 0.93,
     "hi": 1.19,
     "scale": "HR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 30415637",
@@ -915,14 +1007,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "During a median follow-up of 5.3 years, a major cardiovascular event occurred in 386 participants in the n-3 group and in 419 in the placebo group (hazard ratio, 0.92; 95% confidence interval [CI], 0.",
+   "text": "BACKGROUND: Higher intake of marine n-3 (also called omega-3) fatty acids has been associated with reduced risks of cardiovascular disease and cancer in several observational studies. Whether supplementation with n-3 fatty acids has such effects in general populations at usual risk for these end points is unclear. METHODS: We conducted a randomized, placebo-controlled trial, with a two-by-two factorial design, of vitamin D3 (at a dose of 2000 IU per day) and marine n-3 fatty acids (at a dose of 1 g per day) in the primary prevention of cardiovascular disease and cancer among men 50 years of age or older and women 55 years of age or older in the United States. Primary end points were major cardiovascular events (a composite of myocardial infarction, stroke, or death from cardiovascular causes) and invasive cancer of any type. Secondary end points included individual components of the composite cardiovascular end point, the composite end point plus coronary revascularization (expanded composite of cardiovascular events), site-specific cancers, and death from cancer. Safety was also assessed. This article reports the results of the comparison of n-3 fatty acids with placebo. RESULTS: A total of 25,871 participants, including 5106 black participants, underwent randomization. During a median follow-up of 5.3 years, a major cardiovascular event occurred in 386 participants in the n-3 group and in 419 in the placebo group (hazard ratio, 0.92; 95% confidence interval [CI], 0.80 to 1.06; P=0.24). Invasive cancer was diagnosed in 820 participants in the n-3 group and in 797 in the placebo group (hazard ratio, 1.03; 95% CI, 0.93 to 1.13; P=0.56). In the analyses of key secondary end points, the hazard ratios were as follows: for the expanded composite end point of cardiovascular events, 0.93 (95% CI, 0.82 to 1.04); for total myocardial infarction, 0.72 (95% CI, 0.59 to 0.90); for total stroke, 1.04 (95% CI, 0.83 to 1.31); for death from cardiovascular causes, 0.96 (95% CI, 0.76 to 1.21); and for death from cancer (341 deaths from cancer), 0.97 (95% CI, 0.79 to 1.20). In the analysis of death from any cause (978 deaths overall), the hazard ratio was 1.02 (95% CI, 0.90 to 1.15). No excess risks of bleeding or other serious adverse events were observed. CONCLUSIONS: Supplementation with n-3 fatty acids did not result in a lower incidence of major cardiovascular events or cancer than placebo. (Funded by the National Institutes of Health and others; VITAL ClinicalTrials.gov number, NCT01169259 .).",
    "kind": "effect_ci",
    "expected": {
     "effect": 0.92,
     "lo": 0.8,
     "hi": 1.06,
     "scale": "HR"
-   }
+   },
+   "excerpt": "During a median follow-up of 5.3 years, a major cardiovascular event occurred in 386 participants in the n-3 group and in 419 in the placebo group (hazard ratio, 0.92; 95% confidence interval [CI], 0.",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 30415628",
@@ -940,7 +1034,8 @@
     "lo": 0.65,
     "hi": 0.83,
     "scale": "HR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 20929341",
@@ -951,14 +1046,16 @@
    "harness_label": "abstract source-reported HR (registered estimand)",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "Neither EPA-DHA nor ALA reduced this primary end point (hazard ratio with EPA-DHA, 1.01; 95% confidence interval [CI], 0.87 to 1.17; P=0.93; hazard ratio with ALA, 0.91; 95% CI, 0.78 to 1.05; P=0.20).",
+   "text": "BACKGROUND: Results from prospective cohort studies and randomized, controlled trials have provided evidence of a protective effect of n-3 fatty acids against cardiovascular diseases. We examined the effect of the marine n-3 fatty acids eicosapentaenoic acid (EPA) and docosahexaenoic acid (DHA) and of the plant-derived alpha-linolenic acid (ALA) on the rate of cardiovascular events among patients who have had a myocardial infarction. METHODS: In a multicenter, double-blind, placebo-controlled trial, we randomly assigned 4837 patients, 60 through 80 years of age (78% men), who had had a myocardial infarction and were receiving state-of-the-art antihypertensive, antithrombotic, and lipid-modifying therapy to receive for 40 months one of four trial margarines: a margarine supplemented with a combination of EPA and DHA (with a targeted additional daily intake of 400 mg of EPA-DHA), a margarine supplemented with ALA (with a targeted additional daily intake of 2 g of ALA), a margarine supplemented with EPA-DHA and ALA, or a placebo margarine. The primary end point was the rate of major cardiovascular events, which comprised fatal and nonfatal cardiovascular events and cardiac interventions. Data were analyzed according to the intention-to-treat principle, with the use of Cox proportional-hazards models. RESULTS: The patients consumed, on average, 18.8 g of margarine per day, which resulted in additional intakes of 226 mg of EPA combined with 150 mg of DHA, 1.9 g of ALA, or both, in the active-treatment groups. During the follow-up period, a major cardiovascular event occurred in 671 patients (13.9%). Neither EPA-DHA nor ALA reduced this primary end point (hazard ratio with EPA-DHA, 1.01; 95% confidence interval [CI], 0.87 to 1.17; P=0.93; hazard ratio with ALA, 0.91; 95% CI, 0.78 to 1.05; P=0.20). In the prespecified subgroup of women, ALA, as compared with placebo and EPA-DHA alone, was associated with a reduction in the rate of major cardiovascular events that approached significance (hazard ratio, 0.73; 95% CI, 0.51 to 1.03; P=0.07). The rate of adverse events did not differ significantly among the study groups. CONCLUSIONS: Low-dose supplementation with EPA-DHA or ALA did not significantly reduce the rate of major cardiovascular events among patients who had had a myocardial infarction and who were receiving state-of-the-art antihypertensive, antithrombotic, and lipid-modifying therapy. (Funded by the Netherlands Heart Foundation and others; ClinicalTrials.gov number, NCT00127452.).",
    "kind": "effect_ci",
    "expected": {
     "effect": 1.01,
     "lo": 0.87,
     "hi": 1.17,
     "scale": "HR"
-   }
+   },
+   "excerpt": "Neither EPA-DHA nor ALA reduced this primary end point (hazard ratio with EPA-DHA, 1.01; 95% confidence interval [CI], 0.87 to 1.17; P=0.93; hazard ratio with ALA, 0.91; 95% CI, 0.78 to 1.05; P=0.20).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 21115589",
@@ -976,7 +1073,8 @@
     "lo": 0.79,
     "hi": 1.47,
     "scale": "HR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 38199870",
@@ -994,7 +1092,8 @@
     "lo": 0.64,
     "hi": 1.56,
     "scale": "HR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "omega3-cardiovascular-events|Atrial fibrillation|PMID 30146932",
@@ -1012,7 +1111,8 @@
     "n1i": 7740,
     "ci": 135,
     "n2i": 7740
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "sacubitril-valsartan-hfref|Composite cardiovascular death or heart-failure hospitalization|PMID 25176015",
@@ -1030,7 +1130,8 @@
     "lo": 0.73,
     "hi": 0.87,
     "scale": "HR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "sacubitril-valsartan-hfref|Composite cardiovascular death or heart-failure hospitalization|NCT02468232",
@@ -1048,7 +1149,8 @@
     "lo": 0.6501,
     "hi": 1.8212,
     "scale": "HR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "semaglutide-obesity-weight|Percent change in body weight|PMID 33625476",
@@ -1059,14 +1161,16 @@
    "harness_label": "abstract reported mean difference + CI",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "At week 68, the estimated mean body weight change from baseline was -16.0% for semaglutide vs -5.7% for placebo (difference, -10.3 percentage points [95% CI, -12.0 to -8.6]; P < .001).",
+   "text": "IMPORTANCE: Weight loss improves cardiometabolic risk factors in people with overweight or obesity. Intensive lifestyle intervention and pharmacotherapy are the most effective noninvasive weight loss approaches. OBJECTIVE: To compare the effects of once-weekly subcutaneous semaglutide, 2.4 mg vs placebo for weight management as an adjunct to intensive behavioral therapy with initial low-calorie diet in adults with overweight or obesity. DESIGN, SETTING, AND PARTICIPANTS: Randomized, double-blind, parallel-group, 68-week, phase 3a study (STEP 3) conducted at 41 sites in the US from August 2018 to April 2020 in adults without diabetes (N = 611) and with either overweight (body mass index ≥27) plus at least 1 comorbidity or obesity (body mass index ≥30). INTERVENTIONS: Participants were randomized (2:1) to semaglutide, 2.4 mg (n = 407) or placebo (n = 204), both combined with a low-calorie diet for the first 8 weeks and intensive behavioral therapy (ie, 30 counseling visits) during 68 weeks. MAIN OUTCOMES AND MEASURES: The co-primary end points were percentage change in body weight and the loss of 5% or more of baseline weight by week 68. Confirmatory secondary end points included losses of at least 10% or 15% of baseline weight. RESULTS: Of 611 randomized participants (495 women [81.0%], mean age 46 years [SD, 13], body weight 105.8 kg [SD, 22.9], and body mass index 38.0 [SD, 6.7]), 567 (92.8%) completed the trial, and 505 (82.7%) were receiving treatment at trial end. At week 68, the estimated mean body weight change from baseline was -16.0% for semaglutide vs -5.7% for placebo (difference, -10.3 percentage points [95% CI, -12.0 to -8.6]; P < .001). More participants treated with semaglutide vs placebo lost at least 5% of baseline body weight (86.6% vs 47.6%, respectively; P < .001). A higher proportion of participants in the semaglutide vs placebo group achieved weight losses of at least 10% or 15% (75.3% vs 27.0% and 55.8% vs 13.2%, respectively; P < .001). Gastrointestinal adverse events were more frequent with semaglutide (82.8%) vs placebo (63.2%). Treatment was discontinued owing to these events in 3.4% of semaglutide participants vs 0% of placebo participants. CONCLUSIONS AND RELEVANCE: Among adults with overweight or obesity, once-weekly subcutaneous semaglutide compared with placebo, used as an adjunct to intensive behavioral therapy and initial low-calorie diet, resulted in significantly greater weight loss during 68 weeks. Further research is needed to assess the durability of these findings. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT03611582.",
    "kind": "effect_ci",
    "expected": {
     "effect": -10.3,
     "lo": -12.0,
     "hi": -8.6,
     "scale": "MD"
-   }
+   },
+   "excerpt": "At week 68, the estimated mean body weight change from baseline was -16.0% for semaglutide vs -5.7% for placebo (difference, -10.3 percentage points [95% CI, -12.0 to -8.6]; P < .001).",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "semaglutide-obesity-weight|Percent change in body weight|PMID 33567185",
@@ -1077,14 +1181,16 @@
    "harness_label": "abstract reported mean difference + CI",
    "provenance": "abstract",
    "derivation": "reported",
-   "text": "RESULTS: The mean change in body weight from baseline to week 68 was -14.9% in the semaglutide group as compared with -2.4% with placebo, for an estimated treatment difference of -12.4 percentage poin",
+   "text": "BACKGROUND: Obesity is a global health challenge with few pharmacologic options. Whether adults with obesity can achieve weight loss with once-weekly semaglutide at a dose of 2.4 mg as an adjunct to lifestyle intervention has not been confirmed. METHODS: In this double-blind trial, we enrolled 1961 adults with a body-mass index (the weight in kilograms divided by the square of the height in meters) of 30 or greater (≥27 in persons with ≥1 weight-related coexisting condition), who did not have diabetes, and randomly assigned them, in a 2:1 ratio, to 68 weeks of treatment with once-weekly subcutaneous semaglutide (at a dose of 2.4 mg) or placebo, plus lifestyle intervention. The coprimary end points were the percentage change in body weight and weight reduction of at least 5%. The primary estimand (a precise description of the treatment effect reflecting the objective of the clinical trial) assessed effects regardless of treatment discontinuation or rescue interventions. RESULTS: The mean change in body weight from baseline to week 68 was -14.9% in the semaglutide group as compared with -2.4% with placebo, for an estimated treatment difference of -12.4 percentage points (95% confidence interval [CI], -13.4 to -11.5; P<0.001). More participants in the semaglutide group than in the placebo group achieved weight reductions of 5% or more (1047 participants [86.4%] vs. 182 [31.5%]), 10% or more (838 [69.1%] vs. 69 [12.0%]), and 15% or more (612 [50.5%] vs. 28 [4.9%]) at week 68 (P<0.001 for all three comparisons of odds). The change in body weight from baseline to week 68 was -15.3 kg in the semaglutide group as compared with -2.6 kg in the placebo group (estimated treatment difference, -12.7 kg; 95% CI, -13.7 to -11.7). Participants who received semaglutide had a greater improvement with respect to cardiometabolic risk factors and a greater increase in participant-reported physical functioning from baseline than those who received placebo. Nausea and diarrhea were the most common adverse events with semaglutide; they were typically transient and mild-to-moderate in severity and subsided with time. More participants in the semaglutide group than in the placebo group discontinued treatment owing to gastrointestinal events (59 [4.5%] vs. 5 [0.8%]). CONCLUSIONS: In participants with overweight or obesity, 2.4 mg of semaglutide once weekly plus lifestyle intervention was associated with sustained, clinically relevant reduction in body weight. (Funded by Novo Nordisk; STEP 1 ClinicalTrials.gov number, NCT03548935).",
    "kind": "effect_ci",
    "expected": {
     "effect": -12.4,
     "lo": -13.4,
     "hi": -11.5,
     "scale": "MD"
-   }
+   },
+   "excerpt": "RESULTS: The mean change in body weight from baseline to week 68 was -14.9% in the semaglutide group as compared with -2.4% with placebo, for an estimated treatment difference of -12.4 percentage poin",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "tocilizumab-covid19-mortality|28-day all-cause mortality|PMID 33933206",
@@ -1102,7 +1208,8 @@
     "lo": 0.76,
     "hi": 0.94,
     "scale": "RR"
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "tocilizumab-covid19-mortality|28-day all-cause mortality|NCT04320615",
@@ -1120,7 +1227,8 @@
     "n1i": 294,
     "ci": 28,
     "n2i": 144
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "tocilizumab-covid19-mortality|28-day all-cause mortality|NCT04403685",
@@ -1138,7 +1246,8 @@
     "n1i": 65,
     "ci": 6,
     "n2i": 64
-   }
+   },
+   "text_source": "harness_excerpt"
   },
   {
    "id": "tocilizumab-covid19-mortality|Serious adverse events|PMID 33631066",
@@ -1149,14 +1258,16 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "In the safety population, serious adverse events occurred in 103 of 295 patients (34.9%) in the tocilizumab group and in 55 of 143 patients (38.5%) in the placebo group.",
+   "text": "BACKGROUND: Coronavirus disease 2019 (Covid-19) is associated with immune dysregulation and hyperinflammation, including elevated interleukin-6 levels. The use of tocilizumab, a monoclonal antibody against the interleukin-6 receptor, has resulted in better outcomes in patients with severe Covid-19 pneumonia in case reports and retrospective observational cohort studies. Data are needed from randomized, placebo-controlled trials. METHODS: In this phase 3 trial, we randomly assigned patients who were hospitalized with severe Covid-19 pneumonia in a 2:1 ratio receive a single intravenous infusion of tocilizumab (at a dose of 8 mg per kilogram of body weight) or placebo. Approximately one quarter of the participants received a second dose of tocilizumab or placebo 8 to 24 hours after the first dose. The primary outcome was clinical status at day 28 on an ordinal scale ranging from 1 (discharged or ready for discharge) to 7 (death) in the modified intention-to-treat population, which included all the patients who had received at least one dose of tocilizumab or placebo. RESULTS: Of the 452 patients who underwent randomization, 438 (294 in the tocilizumab group and 144 in the placebo group) were included in the primary and secondary analyses. The median value for clinical status on the ordinal scale at day 28 was 1.0 (95% confidence interval [CI], 1.0 to 1.0) in the tocilizumab group and 2.0 (non-ICU hospitalization without supplemental oxygen) (95% CI, 1.0 to 4.0) in the placebo group (between-group difference, -1.0; 95% CI, -2.5 to 0; P = 0.31 by the van Elteren test). In the safety population, serious adverse events occurred in 103 of 295 patients (34.9%) in the tocilizumab group and in 55 of 143 patients (38.5%) in the placebo group. Mortality at day 28 was 19.7% in the tocilizumab group and 19.4% in the placebo group (weighted difference, 0.3 percentage points; 95% CI, -7.6 to 8.2; nominal P = 0.94). CONCLUSIONS: In this randomized trial involving hospitalized patients with severe Covid-19 pneumonia, the use of tocilizumab did not result in significantly better clinical status or lower mortality than placebo at 28 days. (Funded by F. Hoffmann-La Roche and the Department of Health and Human Services; COVACTA ClinicalTrials.gov number, NCT04320615.).",
    "kind": "counts",
    "expected": {
     "ai": 103,
     "n1i": 295,
     "ci": 55,
     "n2i": 143
-   }
+   },
+   "excerpt": "In the safety population, serious adverse events occurred in 103 of 295 patients (34.9%) in the tocilizumab group and in 55 of 143 patients (38.5%) in the placebo group.",
+   "text_source": "pubmed_abstract"
   },
   {
    "id": "tocilizumab-covid19-mortality|Serious adverse events|PMID 33332779",
@@ -1167,14 +1278,17 @@
    "harness_label": "abstract arm-level counts (percentage-corroborated)",
    "provenance": "abstract",
    "derivation": "reconstructed",
-   "text": "In the safety population, serious adverse events occurred in 38 of 250 patients (15.2%) in the tocilizumab group and 25 of 127 patients (19.7%) in the placebo group.",
+   "text": "BACKGROUND: Coronavirus disease 2019 (Covid-19) pneumonia is often associated with hyperinflammation. Despite the disproportionate incidence of Covid-19 among underserved and racial and ethnic minority populations, the safety and efficacy of the anti-interleukin-6 receptor antibody tocilizumab in patients from these populations who are hospitalized with Covid-19 pneumonia are unclear. METHODS: We randomly assigned (in a 2:1 ratio) patients hospitalized with Covid-19 pneumonia who were not receiving mechanical ventilation to receive standard care plus one or two doses of either tocilizumab (8 mg per kilogram of body weight intravenously) or placebo. Site selection was focused on the inclusion of sites enrolling high-risk and minority populations. The primary outcome was mechanical ventilation or death by day 28. RESULTS: A total of 389 patients underwent randomization, and the modified intention-to-treat population included 249 patients in the tocilizumab group and 128 patients in the placebo group; 56.0% were Hispanic or Latino, 14.9% were Black, 12.7% were American Indian or Alaska Native, 12.7% were non-Hispanic White, and 3.7% were of other or unknown race or ethnic group. The cumulative percentage of patients who had received mechanical ventilation or who had died by day 28 was 12.0% (95% confidence interval [CI], 8.5 to 16.9) in the tocilizumab group and 19.3% (95% CI, 13.3 to 27.4) in the placebo group (hazard ratio for mechanical ventilation or death, 0.56; 95% CI, 0.33 to 0.97; P = 0.04 by the log-rank test). Clinical failure as assessed in a time-to-event analysis favored tocilizumab over placebo (hazard ratio, 0.55; 95% CI, 0.33 to 0.93). Death from any cause by day 28 occurred in 10.4% of the patients in the tocilizumab group and 8.6% of those in the placebo group (weighted difference, 2.0 percentage points; 95% CI, -﻿5.2 to 7.8). In the safety population, serious adverse events occurred in 38 of 250 patients (15.2%) in the tocilizumab group and 25 of 127 patients (19.7%) in the placebo group. CONCLUSIONS: In hospitalized patients with Covid-19 pneumonia who were not receiving mechanical ventilation, tocilizumab reduced the likelihood of progression to the composite outcome of mechanical ventilation or death, but it did not improve survival. No new safety signals were identified. (Funded by Genentech; EMPACTA ClinicalTrials.gov number, NCT04372186.).",
    "kind": "counts",
    "expected": {
     "ai": 38,
     "n1i": 250,
     "ci": 25,
     "n2i": 127
-   }
+   },
+   "excerpt": "In the safety population, serious adverse events occurred in 38 of 250 patients (15.2%) in the tocilizumab group and 25 of 127 patients (19.7%) in the placebo group.",
+   "text_source": "pubmed_abstract"
   }
- ]
+ ],
+ "text_rule": "v2: full PubMed abstract (efetch 2026-10-20) when the first 120 normalised chars of the verified excerpt occur in it; else the excerpt"
 }

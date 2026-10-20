@@ -1,282 +1,284 @@
 {
   "summary": {
     "split": "dev",
-    "unique": 32,
-    "ambiguous": 12,
-    "pass": 44,
-    "N": 45,
-    "not_in_text": 20,
+    "unique": 16,
+    "ambiguous": 44,
+    "pass": 60,
+    "N": 63,
+    "not_in_text": 2,
     "categories": {
-      "NOT_FOUND": 1,
+      "NOT_FOUND": 3,
       "WRONG_VALUE": 0,
       "WRONG_SPAN": 0,
       "WRONG_MEASURE": 0,
       "SPLIT_ACROSS_SENTENCES": 0,
       "TABLE_LAYOUT": 0,
       "OTHER": 0
-    }
+    },
+    "ranked": 60,
+    "meanRank": 1.5,
+    "rank1": 45,
+    "rank1Percent": 75
   },
   "results": [
     {
       "id": "balanced-crystalloids-vs-saline-mortality|Mortality|PMID 35041780",
-      "candidateCount": 1,
+      "candidateCount": 2,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "balanced-crystalloids-vs-saline-mortality|Mortality|PMID 34375394",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "balanced-crystalloids-vs-saline-mortality|New renal-replacement therapy|PMID 35041780",
-      "candidateCount": 1,
+      "candidateCount": 2,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "colchicine-postop-af|Postoperative atrial fibrillation|PMID 42132185",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "colchicine-postop-af|Postoperative atrial fibrillation|PMID 32720823",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "n1i",
-        "n2i"
-      ]
+      "candidateCount": 2,
+      "matchingCandidates": 2,
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "colchicine-postop-af|Postoperative atrial fibrillation|PMID 25172965",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "n1i",
-        "n2i"
-      ]
+      "candidateCount": 11,
+      "matchingCandidates": 2,
+      "rank": 4,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "colchicine-secondary-cv-prevention|Trial-defined major coronary/cardiovascular composite|PMID 31733140",
-      "candidateCount": 1,
+      "candidateCount": 6,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "colchicine-secondary-cv-prevention|Trial-defined major coronary/cardiovascular composite|PMID 32865380",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "effect",
-        "lo",
-        "hi"
-      ]
+      "candidateCount": 3,
+      "matchingCandidates": 1,
+      "rank": 2,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "colchicine-secondary-cv-prevention|Trial-defined major coronary/cardiovascular composite|PMID 39555823",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "effect",
-        "lo",
-        "hi"
-      ]
-    },
-    {
-      "id": "colchicine-secondary-cv-prevention|Gastrointestinal adverse effects|PMID 34876021",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "n1i",
-        "n2i"
-      ]
-    },
-    {
-      "id": "colchicine-secondary-cv-prevention|Non-cardiovascular death|PMID 32865380",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "hi"
-      ]
-    },
-    {
-      "id": "corticosteroids-cap-mortality|All-cause mortality|PMID 36942789",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
+      "id": "colchicine-secondary-cv-prevention|Gastrointestinal adverse effects|PMID 34876021",
+      "candidateCount": 0,
+      "matchingCandidates": 0,
+      "rank": null,
+      "status": "NOT_FOUND"
+    },
+    {
+      "id": "colchicine-secondary-cv-prevention|Non-cardiovascular death|PMID 32865380",
+      "candidateCount": 3,
+      "matchingCandidates": 1,
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
+    },
+    {
+      "id": "corticosteroids-cap-mortality|All-cause mortality|PMID 36942789",
+      "candidateCount": 3,
+      "matchingCandidates": 1,
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
+    },
+    {
       "id": "corticosteroids-cap-mortality|All-cause mortality|PMID 25688779",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "n1i",
-        "n2i"
-      ]
+      "candidateCount": 6,
+      "matchingCandidates": 1,
+      "rank": 3,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 25688779",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "n1i",
-        "n2i"
-      ]
+      "candidateCount": 6,
+      "matchingCandidates": 1,
+      "rank": 5,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 33446608",
       "candidateCount": 6,
       "matchingCandidates": 1,
+      "rank": 5,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 25608756",
-      "candidateCount": 1,
+      "candidateCount": 3,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 21636122",
-      "candidateCount": 1,
+      "candidateCount": 3,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 3,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "corticosteroids-covid19-mortality|28-day all-cause mortality|PMID 32678530",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "n1i",
-        "n2i"
-      ]
+      "candidateCount": 0,
+      "matchingCandidates": 0,
+      "rank": null,
+      "status": "NOT_FOUND"
     },
     {
       "id": "corticosteroids-covid19-mortality|Serious adverse events|PMID 34138478",
       "candidateCount": 2,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "denosumab-vertebral-fracture|New vertebral fracture|PMID 19671655",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "effect",
-        "lo",
-        "hi"
-      ]
+      "candidateCount": 3,
+      "matchingCandidates": 1,
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "denosumab-vertebral-fracture|Nonvertebral fracture|PMID 19671655",
-      "candidateCount": 1,
+      "candidateCount": 3,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "denosumab-vertebral-fracture|Hip fracture|PMID 19671655",
-      "candidateCount": 1,
+      "candidateCount": 3,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 24344086",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "effect",
-        "lo",
-        "hi"
-      ]
+      "candidateCount": 7,
+      "matchingCandidates": 1,
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 19966341",
-      "candidateCount": 1,
+      "candidateCount": 4,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 2,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 22449293",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "effect",
-        "lo",
-        "hi"
-      ]
+      "candidateCount": 3,
+      "matchingCandidates": 1,
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 21128814",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "lo",
-        "hi"
-      ]
+      "candidateCount": 2,
+      "matchingCandidates": 1,
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 23991658",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "effect",
-        "lo",
-        "hi"
-      ]
+      "candidateCount": 3,
+      "matchingCandidates": 1,
+      "rank": 2,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 23808982",
-      "candidateCount": 1,
+      "candidateCount": 3,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Major bleeding|PMID 24344086",
-      "candidateCount": 1,
+      "candidateCount": 7,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Major bleeding|PMID 19966341",
-      "candidateCount": 1,
+      "candidateCount": 4,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Major bleeding|PMID 22449293",
-      "candidateCount": 1,
+      "candidateCount": 3,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Major or clinically relevant nonmajor bleeding|PMID 22449293",
-      "candidateCount": 1,
+      "candidateCount": 3,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 3,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Major or clinically relevant nonmajor bleeding|PMID 23991658",
-      "candidateCount": 1,
+      "candidateCount": 3,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 2,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Any bleeding|PMID 24344086",
-      "candidateCount": 1,
+      "candidateCount": 7,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "doac-vte-recurrence|Any bleeding|PMID 19966341",
-      "candidateCount": 2,
+      "candidateCount": 4,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 23992601",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "effect",
-        "lo",
-        "hi"
-      ]
+      "candidateCount": 4,
+      "matchingCandidates": 1,
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 30418475",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "effect",
-        "lo",
-        "hi"
-      ]
+      "candidateCount": 4,
+      "matchingCandidates": 1,
+      "rank": 2,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 28893244",
@@ -284,104 +286,120 @@
       "missing": [
         "lo",
         "hi"
-      ]
+      ],
+      "candidateCount": 0,
+      "rank": null
     },
     {
       "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 26052984",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "dpp4-mace-t2d|Adverse events|PMID 30418475",
       "candidateCount": 10,
       "matchingCandidates": 1,
+      "rank": 3,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "dpp4-mace-t2d|Hypoglycemia|PMID 30418475",
       "candidateCount": 10,
       "matchingCandidates": 1,
+      "rank": 5,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "dpp4-mace-t2d|Hospitalization for heart failure|PMID 23992601",
-      "candidateCount": 1,
+      "candidateCount": 4,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "dpp4-mace-t2d|Hospitalization for heart failure|PMID 26052984",
-      "candidateCount": 1,
+      "candidateCount": 2,
       "matchingCandidates": 1,
-      "status": "UNIQUE_PASS"
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "esketamine-trd-madrs|Adverse events|PMID 37025256",
       "candidateCount": 62,
       "matchingCandidates": 2,
+      "rank": 1,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "iv-iron-hfref-hosp|Heart-failure hospitalization|PMID 40159390",
-      "candidateCount": 2,
+      "candidateCount": 4,
       "matchingCandidates": 1,
+      "rank": 2,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "iv-iron-hfref-hosp|Heart-failure hospitalization|PMID 25176939",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "metformin-pcos-ovulation|Ovulation with metformin added to clomifene|PMID 19522426",
       "candidateCount": 0,
       "matchingCandidates": 0,
+      "rank": null,
       "status": "NOT_FOUND"
     },
     {
       "id": "metformin-pcos-ovulation|Ovulation with metformin added to clomifene|PMID 16769748",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "metformin-pcos-ovulation|Ovulation with metformin added to clomifene|PMID 11172832",
       "candidateCount": 6,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 33190147",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 30415637",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "lo",
-        "hi"
-      ]
+      "candidateCount": 8,
+      "matchingCandidates": 1,
+      "rank": 1,
+      "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 30415628",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 20929341",
-      "candidateCount": 2,
+      "candidateCount": 3,
       "matchingCandidates": 1,
+      "rank": 2,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 21115589",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
@@ -391,68 +409,78 @@
         "effect",
         "lo",
         "hi"
-      ]
+      ],
+      "candidateCount": 0,
+      "rank": null
     },
     {
       "id": "omega3-cardiovascular-events|Atrial fibrillation|PMID 30146932",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "sacubitril-valsartan-hfref|Composite cardiovascular death or heart-failure hospitalization|PMID 25176015",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "sacubitril-valsartan-hfref|Composite cardiovascular death or heart-failure hospitalization|NCT02468232",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "semaglutide-obesity-weight|Percent change in body weight|PMID 33625476",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "semaglutide-obesity-weight|Percent change in body weight|PMID 33567185",
-      "status": "NOT_IN_TEXT",
-      "missing": [
-        "lo",
-        "hi"
-      ]
+      "candidateCount": 1,
+      "matchingCandidates": 1,
+      "rank": 1,
+      "status": "UNIQUE_PASS"
     },
     {
       "id": "tocilizumab-covid19-mortality|28-day all-cause mortality|PMID 33933206",
       "candidateCount": 2,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "tocilizumab-covid19-mortality|28-day all-cause mortality|NCT04320615",
       "candidateCount": 2,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "tocilizumab-covid19-mortality|28-day all-cause mortality|NCT04403685",
       "candidateCount": 2,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "AMBIGUOUS_PASS"
     },
     {
       "id": "tocilizumab-covid19-mortality|Serious adverse events|PMID 33631066",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     },
     {
       "id": "tocilizumab-covid19-mortality|Serious adverse events|PMID 33332779",
       "candidateCount": 1,
       "matchingCandidates": 1,
+      "rank": 1,
       "status": "UNIQUE_PASS"
     }
   ]
