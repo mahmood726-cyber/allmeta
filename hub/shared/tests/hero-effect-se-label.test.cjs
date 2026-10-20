@@ -82,7 +82,6 @@ test('old forest layout is refused by both effect-first parsing rules', () => {
   for (const app of ['gosh', 'limit-ma']) {
     const html = read(`${app}/index.html`);
     const parse = vm.runInContext(`(${html.match(/    function parse\(text\) \{[\s\S]*?\n    \}/)[0].trim()})`, h.context);
-    if (app === 'gosh') assert.throws(() => parse(text), /Line 1: effect/);
-    else assert.equal(parse(text).length, 0);
+    assert.throws(() => parse(text), /Line 1: effect/);
   }
 });
