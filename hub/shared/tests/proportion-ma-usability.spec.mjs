@@ -127,6 +127,9 @@ test.describe(`${APP} usability`, () => {
     await page.goto(PAGE);
     await coreVisible(page);
     await enter(page, '12, 150, A\n-8, 90, B\n20, 220, C');
+    // Measure the settled page: hub/app-style.css fades main/.panel in over 300 ms (+60 ms delay), and axe run
+    // mid-fade blends the ancestor opacity into every colour (see c9e5b8f; #165 CI color-contrast).
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
     const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
     const summary = r.violations.map((v) => `${v.impact} ${v.id} x${v.nodes.length}`);
     info.annotations.push({ type: 'axe', description: `axe-core ${r.testEngine.version}: ${summary.join('; ') || 'no violations'}` });
