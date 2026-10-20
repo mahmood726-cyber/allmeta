@@ -1,0 +1,45 @@
+key,line,text,reason
+boundaries::REML,1,"rplus, 1, 40",|r| >= 1
+boundaries::REML,2,"rminus, -1, 40",|r| >= 1
+boundaries::REML,3,"over, 1.01, 40",|r| >= 1
+boundaries::REML,4,"nthree, .3, 3",n <= 3
+boundaries::REML,5,"ntwo, .3, 2",n <= 3
+boundaries::REML,6,"missing, NA, 30",missing or malformed numeric field
+boundaries::REML,7,"nan, .3, NA",missing or malformed numeric field
+boundaries::REML,8,"inf, Infinity, 40",nonfinite numeric field
+boundaries::PM,1,"rplus, 1, 40",|r| >= 1
+boundaries::PM,2,"rminus, -1, 40",|r| >= 1
+boundaries::PM,3,"over, 1.01, 40",|r| >= 1
+boundaries::PM,4,"nthree, .3, 3",n <= 3
+boundaries::PM,5,"ntwo, .3, 2",n <= 3
+boundaries::PM,6,"missing, NA, 30",missing or malformed numeric field
+boundaries::PM,7,"nan, .3, NA",missing or malformed numeric field
+boundaries::PM,8,"inf, Infinity, 40",nonfinite numeric field
+boundaries::DL,1,"rplus, 1, 40",|r| >= 1
+boundaries::DL,2,"rminus, -1, 40",|r| >= 1
+boundaries::DL,3,"over, 1.01, 40",|r| >= 1
+boundaries::DL,4,"nthree, .3, 3",n <= 3
+boundaries::DL,5,"ntwo, .3, 2",n <= 3
+boundaries::DL,6,"missing, NA, 30",missing or malformed numeric field
+boundaries::DL,7,"nan, .3, NA",missing or malformed numeric field
+boundaries::DL,8,"inf, Infinity, 40",nonfinite numeric field
+boundaries::FE,1,"rplus, 1, 40",|r| >= 1
+boundaries::FE,2,"rminus, -1, 40",|r| >= 1
+boundaries::FE,3,"over, 1.01, 40",|r| >= 1
+boundaries::FE,4,"nthree, .3, 3",n <= 3
+boundaries::FE,5,"ntwo, .3, 2",n <= 3
+boundaries::FE,6,"missing, NA, 30",missing or malformed numeric field
+boundaries::FE,7,"nan, .3, NA",missing or malformed numeric field
+boundaries::FE,8,"inf, Infinity, 40",nonfinite numeric field
+numeric-junk::REML,1,"junk-r, .4oops, 30",missing or malformed numeric field
+numeric-junk::REML,2,"junk-n, .4, 30oops",missing or malformed numeric field
+numeric-junk::PM,1,"junk-r, .4oops, 30",missing or malformed numeric field
+numeric-junk::PM,2,"junk-n, .4, 30oops",missing or malformed numeric field
+numeric-junk::DL,1,"junk-r, .4oops, 30",missing or malformed numeric field
+numeric-junk::DL,2,"junk-n, .4, 30oops",missing or malformed numeric field
+numeric-junk::FE,1,"junk-r, .4oops, 30",missing or malformed numeric field
+numeric-junk::FE,2,"junk-n, .4, 30oops",missing or malformed numeric field
+comment-blank-short::REML,3,invalid,fewer than 3 comma-separated fields
+comment-blank-short::PM,3,invalid,fewer than 3 comma-separated fields
+comment-blank-short::DL,3,invalid,fewer than 3 comma-separated fields
+comment-blank-short::FE,3,invalid,fewer than 3 comma-separated fields

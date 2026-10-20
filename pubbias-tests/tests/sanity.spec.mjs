@@ -187,27 +187,22 @@ test.describe('pubbias-tests retrofit sanity', () => {
       { study: 'S9',  yi: 0.45, sei: 0.17 },
       { study: 'S10', yi: 0.58, sei: 0.10 },
     ];
-    // metafor 4.x output (kept in sync with test_against_metafor.py EXPECTED).
-    // Egger here is the unweighted lm form (model='lm', predictor='sei') in
-    // the R script — same formulation as the JS engine, so 1e-6 parity holds.
+    // metafor 5.2.1 / R 4.6.0 output (hub/shared/tests/fixtures/features/pubbias-tests/pbtiny.R ->
+    // pb-tiny-metafor.json): regtest(model='lm', predictor='sei'), ranktest, trimfill(rma REML, L0).
+    // Egger here is the unweighted lm form, the same formulation as the JS engine.
     const expected = {
       k:           10,
-      egger_z:     2.012386422432,
-      egger_p:     0.07898547737289,
-      egger_b0:    0.2784981650617,
-      egger_se_b0: 0.1213956498907,
+      egger_z:     2.01238642243209,
+      egger_p:     0.0789854773728947,
       begg_tau:    0.4319297483313,
-      begg_p:      0.08668084494669,
+      begg_p:      0.0866808449466936,
       tf_k0:       3,
-      tf_est:      0.4939061137764,
+      tf_est:      0.493906526760515,
     };
-    const TOL = 1e-6;
-    // begg_p uses normal approximation (z = tau / sqrt(var_tau)) while
-    // metafor::ranktest uses the exact distribution for k <= 50.  Difference
-    // is ~5e-3 in p for the pb-tiny fixture.
-    const BEGG_TOL = 1e-2;
-    // tf_est: JS uses FE pool on augmented set; metafor uses REML.  Diff ~3e-3.
-    const TF_TOL   = 5e-3;
+    // Paper tolerances: 1e-9 for closed-form quantities (Egger, Begg tau and p), 1e-6 for the
+    // iterative trim-and-fill estimate (REML pool of the augmented set, as metafor).
+    const TOL    = 1e-9;
+    const TF_TOL = 1e-6;
 
     await page.goto(PUBBIAS_URL);
     await waitForAlm(page);
@@ -229,24 +224,14 @@ test.describe('pubbias-tests retrofit sanity', () => {
       `Egger z: ${r.egger_z} vs metafor=${expected.egger_z}`).toBeLessThan(TOL);
     expect(Math.abs(r.egger_p - expected.egger_p),
       `Egger p: ${r.egger_p} vs metafor=${expected.egger_p}`).toBeLessThan(TOL);
-    // Cycle 7.23: Begg-Mazumdar tau now matches metafor::ranktest exactly.
-    // The fix moved from raw Kendall tau on (te/se, v) to proper Begg
-    // studentization: t*_i = (t_i - θ̂_FE) / sqrt(v_i - v*), then tau-b
-    // between t*_i and v_i (matches R's cor.test default).  The p-value
-    // still uses normal approximation (~5e-3 gap vs metafor's exact
-    // distribution for k=10).
+    // Begg-Mazumdar: studentized t*_i = (t_i - theta_FE)/sqrt(v_i - v*), Kendall tau-b, and the
+    // same p-value rule as metafor::ranktest.
     expect(Math.abs(r.begg_tau - expected.begg_tau),
       `Begg tau: ${r.begg_tau} vs metafor=${expected.begg_tau}`).toBeLessThan(TOL);
     expect(Math.abs(r.begg_p - expected.begg_p),
-      `Begg p: ${r.begg_p} vs metafor=${expected.begg_p}`).toBeLessThan(BEGG_TOL);
+      `Begg p: ${r.begg_p} vs metafor=${expected.begg_p}`).toBeLessThan(TOL);
 
-    // Cycle 7.24: trim-and-fill k0 now matches metafor::trimfill exactly.
-    // The fix replaced a broken rank-by-te implementation with the proper
-    // Duval-Tweedie L0 algorithm (sign × rank of absolute residuals; iterate
-    // re-pooling the trimmed set until L0 converges).  The adjusted estimate
-    // (tf_est) still drifts ~3e-3 because metafor pools the augmented set
-    // under REML while JS uses FE — a smaller secondary gap to close in a
-    // future cycle.
+    // Trim-and-fill: Duval-Tweedie L0, augmented set pooled under REML as metafor::trimfill.
     expect(r.tf_k0, `tf_k0 mismatch`).toBe(expected.tf_k0);
     expect(Math.abs(r.tf_est - expected.tf_est),
       `tf_est: ${r.tf_est} vs metafor=${expected.tf_est}`).toBeLessThan(TF_TOL);

@@ -1,0 +1,40 @@
+{
+  "schema": "limit-ma-loo-validation-v1",
+  "selection": "All primary corpus configurations with 4 <= length(te) <= 200, in source order",
+  "configurations": 165,
+  "datasets": 109,
+  "deletions": 5304,
+  "successful": 5148,
+  "refused": 156,
+  "comparison_checks": 31514,
+  "tolerance": "abs(app-R)/max(1,abs(R)) <= 1e-9",
+  "observed_k": [
+    4,
+    186
+  ],
+  "ui_k_limit": 200,
+  "R": "4.6.0",
+  "packages": {
+    "meta": "8.5.0",
+    "metasens": "1.5.3",
+    "metafor": "5.2.1",
+    "jsonlite": "2.0.0"
+  },
+  "files": [
+    {
+      "path": "../corpus/corpus.json",
+      "bytes": 638350,
+      "sha256": "a9232d92c3b777c09033b327e8b7df5e332e8b68aadb130d8e164fa4cc437744"
+    },
+    {
+      "path": "corpus.json",
+      "bytes": 391016,
+      "sha256": "60f00b083e5b68b27483585ac77fbb32293dc01dfe298ade15ed73ec7062b61b"
+    },
+    {
+      "path": "reference.csv",
+      "bytes": 600899,
+      "sha256": "c39318f0c798a64c1cf0f202140f043bb89a7db3ca458ae98010bd0d3d85334c"
+    }
+  ]
+}

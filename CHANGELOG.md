@@ -11,6 +11,13 @@ the section is renamed to that version and dated, and a fresh
 
 ## [Unreleased]
 
+### Added
+- _(items added since the most recent tag will be listed here)_
+
+---
+
+## [1.8.0] — 2026-10-20
+
 ### Fixed
 - E-value input validation distinguishes malformed number text from omitted
   confidence limits, rejects incomplete or inconsistent intervals, and clears
@@ -19,9 +26,26 @@ the section is renamed to that version and dated, and a fresh
   RCTs alone. Observational-only input at alpha=0 displays a non-estimable result
   without crashing the plot or leaving stale export state. Earlier alpha=0
   results with mixed designs should be rerun; positive-alpha behavior is unchanged.
+- Cumulative + subgroup: in the cumulative plot the per-step study labels no
+  longer overlap the effect-axis tick numbers and axis title. The labels moved
+  to a one-row-per-step key below the chart, the step axis is numbered, and the
+  axis title sits left of the widest tick number; the chart frame and every
+  plotted mark are unchanged. Layout only: no number changes. The Validate
+  replay's plot text/position contract was re-pinned to the new layout and still
+  runs 609,398 checks with 6 refusals. Above 300 steps the key lists the first
+  300 and one row naming the rest, so PNG/PDF export keeps working at large k.
+- Cumulative + subgroup page usability: the pooled-result cards and notes sit at
+  the top of the Preview panel (inside the first 1366 x 900 viewport); "Load
+  example" is the first control under "Studies"; no horizontal scroll at 390 px;
+  the "allmeta" badge no longer covers the title; an axis tick that rounds to
+  zero prints "0.00", never "-0.00". No number changes; the Validate template
+  text pin was re-derived for the moved nodes (texts and labels identical).
 
 ### Added
-- _(items added since the most recent tag will be listed here)_
+- Merged pull requests in this release (merge order): #150, #149, #151, #133, #158, #159, #161, #162, #163,
+  #164, #165 (papers 2-10); #166, #171, #167, #170, #146, #172, #160, #157, #152, #168 and the shared-tests
+  limit-ma log fix (papers 11-19); already on main since v1.7.0: #143, #148, #153, #154 and the proportion-ma GLMM.
+  Full CI on the exact release tree: PR #199 (candidate 4, 42a94da), 12/12 checks green.
 
 ### Fixed
 - REML in the shared univariate pooling core now checks competing positive
@@ -29,7 +53,7 @@ the section is renamed to that version and dated, and a fresh
   Corrects Pairwise70 CD006536 (τ² 0 → 0.0449546737), narrow interior peaks missed
   by a fixed grid, and failures under extreme changes of units. Fresh R/metafor
   references, adversarial regressions and impact scope are recorded in
-  `docs/reml-global-validation.md`. This entry does not authorize a release.
+  `docs/reml-global-validation.md`.
 
 ---
 

@@ -1,0 +1,132 @@
+Rscript.exe : During startup - Warning messages:
+At line:2 char:143
++ ... USER='NUL'; & C:/Users/User/R/R-4.6.0/bin/Rscript.exe meta-regression ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (During startup - Warning messages::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+1: Setting LC_COLLATE=C.UTF-8 failed 
+2: Setting LC_CTYPE=C.UTF-8 failed 
+3: Setting LC_MONETARY=C.UTF-8 failed 
+4: Setting LC_TIME=C.UTF-8 failed 
+[1] "C:/Users/User/allmeta-offload/Rlib_extra"
+[2] "C:/Users/User/allmeta-offload/Rlib_dta"  
+[3] "C:/Users/User/R/R-4.6.0/library"         
+metafor 5.2.1 
+metadat 1.6.0 
+jsonlite 2.0.0 
+dat.aloe2013 0 configurations so far
+dat.anand1999 4 configurations so far
+dat.anker2025 20 configurations so far
+dat.assink2016 22 configurations so far
+dat.axfors2021 22 configurations so far
+dat.bakdash2021 26 configurations so far
+dat.baker2009 26 configurations so far
+dat.bangertdrowns2004 30 configurations so far
+dat.bartos2023 30 configurations so far
+dat.baskerville2012 34 configurations so far
+dat.bassler2004 34 configurations so far
+dat.bauer2002 34 configurations so far
+dat.bcg 36 configurations so far
+dat.begg1989 36 configurations so far
+dat.berkey1998 40 configurations so far
+dat.berkey1998r 44 configurations so far
+dat.besson2016 44 configurations so far
+dat.bonett2010 44 configurations so far
+dat.bornmann2007 44 configurations so far
+dat.bourassa1996 48 configurations so far
+dat.cannon2006 48 configurations so far
+dat.chiarito2020 64 configurations so far
+dat.cohen1981 64 configurations so far
+dat.colditz1994 66 configurations so far
+dat.collins1985a 66 configurations so far
+dat.collins1985b 66 configurations so far
+dat.craft2003 66 configurations so far
+dat.crede2010 66 configurations so far
+dat.crisafulli2020 70 configurations so far
+dat.curtin2002 72 configurations so far
+dat.curtis1998 76 configurations so far
+dat.dagostino1998 76 configurations so far
+dat.damico2009 80 configurations so far
+dat.debruin2009 80 configurations so far
+dat.demir2022 80 configurations so far
+dat.dogliotti2014 80 configurations so far
+dat.dong2013 80 configurations so far
+dat.dorn2007 84 configurations so far
+dat.dumouchel1994 84 configurations so far
+dat.egger2001 84 configurations so far
+dat.feng2019 88 configurations so far
+dat.fine1993 88 configurations so far
+dat.franchini2012 88 configurations so far
+dat.frank2008 88 configurations so far
+dat.furukawa2003 88 configurations so far
+dat.gibson2002 96 configurations so far
+dat.graves2010 96 configurations so far
+dat.greb2008 96 configurations so far
+dat.greenland1992 96 configurations so far
+dat.gurusamy2011 96 configurations so far
+dat.hackshaw1998 100 configurations so far
+dat.hahn2001 100 configurations so far
+dat.hannum2020 100 configurations so far
+dat.hart1999 104 configurations so far
+dat.hartmannboyce2018 104 configurations so far
+dat.hasselblad1998 104 configurations so far
+dat.higgins2008 104 configurations so far
+dat.hine1989 104 configurations so far
+dat.huber2000 104 configurations so far
+dat.ishak2007 112 configurations so far
+dat.kalaian1996 116 configurations so far
+dat.karner2014 124 configurations so far
+dat.kearon1998 124 configurations so far
+dat.knapp2017 128 configurations so far
+dat.konstantopoulos2011 132 configurations so far
+dat.landenberger2005 136 configurations so far
+dat.laopaiboon2015 140 configurations so far
+dat.lau1992 140 configurations so far
+dat.lee2004 140 configurations so far
+dat.lehmann2018 144 configurations so far
+dat.li2007 144 configurations so far
+dat.linde2005 148 configurations so far
+dat.linde2015 148 configurations so far
+dat.linde2016 148 configurations so far
+dat.lloyd2010 148 configurations so far
+dat.lopez2019 152 configurations so far
+dat.mccurdy2020 156 configurations so far
+dat.mcdaniel1994 156 configurations so far
+dat.meeker2017 156 configurations so far
+dat.michael2013 160 configurations so far
+dat.molloy2014 164 configurations so far
+dat.moore1998 168 configurations so far
+dat.nakagawa2007 168 configurations so far
+dat.nielweise2007 168 configurations so far
+dat.nielweise2008 168 configurations so far
+dat.nissen2007 168 configurations so far
+dat.normand1999 168 configurations so far
+dat.obrien2003 172 configurations so far
+dat.pagliaro1992 172 configurations so far
+dat.pignon2000 172 configurations so far
+dat.poole2003 172 configurations so far
+dat.pritz1997 172 configurations so far
+dat.quan2000 172 configurations so far
+dat.raudenbush1985 176 configurations so far
+dat.riley2003 176 configurations so far
+dat.rivera2025 176 configurations so far
+dat.roever2022 178 configurations so far
+dat.senn2013 178 configurations so far
+dat.spooner2002 178 configurations so far
+dat.steurer2006 182 configurations so far
+dat.stowe2010 182 configurations so far
+dat.tannersmith2016 186 configurations so far
+dat.thompson1999 190 configurations so far
+dat.tian2009 190 configurations so far
+dat.ursino2021 192 configurations so far
+dat.vanhowe1999 192 configurations so far
+dat.viechtbauer2021 192 configurations so far
+dat.white2020 194 configurations so far
+dat.woods2010 194 configurations so far
+dat.yusuf1985 194 configurations so far
+Warning messages:
+1: strings not representable in native encoding will be translated to UTF-8 
+2: strings not representable in native encoding will be translated to UTF-8 
+3: strings not representable in native encoding will be translated to UTF-8 
+TOTAL 194 configurations; 162 fits; 43 datasets

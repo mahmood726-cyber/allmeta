@@ -6,16 +6,21 @@
     const updated = document.getElementById('analysis-status');
     const stale = document.getElementById('analysis-stale');
     const snapshot = () => JSON.stringify([[...document.querySelectorAll(inputs)].map(el => [el.id, el.value, el.checked]), state ? state() : null]);
-    let completed = null;
+    // completed: inputs of the last successful run. attempted: inputs of the last run, successful or refused.
+    // A change event that only commits an input already run (e.g. textarea blur after an auto-run) is not stale.
+    let completed = null, attempted = null;
     const hide = () => { updated.hidden = true; if (stale) stale.hidden = true; };
     for (const type of ['input', 'change']) document.addEventListener(type, event => {
-      if (event.target.matches(inputs) && snapshot() !== completed) { updated.hidden = true; if (stale) stale.hidden = false; }
+      if (!event.target.matches(inputs)) return;
+      const now = snapshot();
+      if (now !== completed && now !== attempted) { updated.hidden = true; if (stale) stale.hidden = false; }
     }, true);
     const wrapped = function () {
       hide();
-      completed = null;
+      completed = null; attempted = null;
       const result = run.apply(this, arguments);
-      if (succeeded(result)) { completed = snapshot(); updated.hidden = false; }
+      attempted = snapshot();
+      if (succeeded(result)) { completed = attempted; updated.hidden = false; }
       else completed = null;
       return result;
     };

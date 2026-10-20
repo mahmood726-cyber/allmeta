@@ -1,0 +1,2 @@
+# Pinned exact-enumeration corpus and references: hashed as LF bytes; never convert line endings.
+*.json -text

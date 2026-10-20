@@ -1,0 +1,28 @@
+{
+  "checks": 855,
+  "passed": 855,
+  "failed": [],
+  "maxima": {
+    "coef": 1.488565759544258e-8,
+    "vcov": 2.5364350259016177e-8,
+    "Psi": 1.8834767390174534e-7,
+    "logLik": 4.547473508864641e-13,
+    "AIC": 9.094947017729282e-13,
+    "BIC": 9.094947017729282e-13,
+    "summary": 2.7295742055510885e-10,
+    "corRandom": 6.756919912476178e-9,
+    "hsroc": 2.2936993193667377e-8,
+    "auc": 4.317357582550585e-10,
+    "sroc": 1.4034896189674129e-8,
+    "confRegion": 3.2030069421773864e-8,
+    "predRegion": 2.9023277055287068e-8
+  },
+  "refusals": {
+    "reference": 25,
+    "app": 25,
+    "matched": 25
+  },
+  "summaryLines": [
+    "855/855 checks passed; 105 configurations (80 fits + 25 identical refusals); 105 configuration checks + 732 quantity checks + 18 Moses-Littenberg checks."
+  ]
+}

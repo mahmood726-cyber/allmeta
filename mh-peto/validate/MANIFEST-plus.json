@@ -1,0 +1,47 @@
+{
+  "schema": "mh-peto-plus-v1",
+  "protocol": "Q/I2/H2 (MH and Peto), CMH, Tarone, Breslow-Day, leave-one-out (rma.mh/rma.peto + leave1out) and rare-event conventions (meta::metabin MH defaults, rma EE on escalc defaults) vs native R",
+  "configurationMeasures": 1008,
+  "checks": 120010,
+  "expectedPassed": 120000,
+  "documentedFailures": [
+    "dat.baker2009|exac|Placebo vs Salmeterol|OR | conv.metamh.beta",
+    "dat.baker2009|exac|Placebo vs Salmeterol|OR | conv.metamh.se",
+    "dat.baker2009|exac|Placebo vs Salmeterol|OR | conv.metamh.p",
+    "dat.baker2009|exac|Placebo vs Salmeterol|OR | conv.metamh.lo",
+    "dat.baker2009|exac|Placebo vs Salmeterol|OR | conv.metamh.hi",
+    "dat.baker2009|exac|Placebo vs Salmeterol|RR | conv.metamh.beta",
+    "dat.baker2009|exac|Placebo vs Salmeterol|RR | conv.metamh.se",
+    "dat.baker2009|exac|Placebo vs Salmeterol|RR | conv.metamh.p",
+    "dat.baker2009|exac|Placebo vs Salmeterol|RR | conv.metamh.lo",
+    "dat.baker2009|exac|Placebo vs Salmeterol|RR | conv.metamh.hi"
+  ],
+  "files": [
+    {
+      "path": "corpus/corpus.json",
+      "sha256": "53bd35b24c11be3acd09bb468af1b35037f3eb4f0c24ad9fd6a4914b2de27f86",
+      "bytes": 193649
+    },
+    {
+      "path": "plus-corpus/reference-plus.json",
+      "sha256": "afa500d337d47b647511c7076688ce720a8a47e24b01d692904631318268ea84",
+      "bytes": 2742870
+    }
+  ],
+  "versions": {
+    "R": "R version 4.6.0 (2026-04-24 ucrt)",
+    "metafor": "5.2.1",
+    "meta": "8.5.0",
+    "jsonlite": "2.0.0"
+  },
+  "claims": {
+    "protocol": "Text claims on the page and README: metabin(MH.exact=TRUE) equals the page's MH for OR/RR (beta, SE, p) and differs in SE for RD; rma.mh with metafor's defaults gives the same pooled estimate, a different Q exactly on configurations with a double-zero or all-event table, and a different CMH unless |O-E| = 0.25; pinned double-zero example rv610_102_struct_k4 (OR, RR)",
+    "checks": 3793,
+    "expectedPassed": 3793,
+    "file": {
+      "path": "plus-corpus/claims-plus.json",
+      "sha256": "e7d4ffa3e1acdf4351e2741cb5caa39f7cf24104f08332ac9a09ea0c44092e43",
+      "bytes": 245171
+    }
+  }
+}

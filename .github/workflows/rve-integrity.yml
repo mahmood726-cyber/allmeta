@@ -1,0 +1,38 @@
+name: rve-integrity
+
+# Runs the rve-meta engine and extras unit tests (Node-backed pytest) whenever the
+# engine, the extras module, the page or the tests change.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'shared/rve.js'
+      - 'shared/rve-extras.js'
+      - 'shared/stats-qt.js'
+      - 'rve-meta/**'
+      - 'tests/test_rve.py'
+      - 'tests/test_rve_extras.py'
+      - '.github/workflows/rve-integrity.yml'
+  pull_request:
+    paths:
+      - 'shared/rve.js'
+      - 'shared/rve-extras.js'
+      - 'shared/stats-qt.js'
+      - 'rve-meta/**'
+      - 'tests/test_rve.py'
+      - 'tests/test_rve_extras.py'
+      - '.github/workflows/rve-integrity.yml'
+
+jobs:
+  rve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest numpy
+      - run: python -m pytest tests/test_rve.py tests/test_rve_extras.py -q

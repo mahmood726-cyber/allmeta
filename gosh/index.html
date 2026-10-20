@@ -78,7 +78,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
   <header>
     <h1>GOSH plot &#8212; all-subset meta-analysis</h1>
-    <p>Graphical display of study heterogeneity (Olkin, Dahabreh, Trikalinos 2012). For every non-empty subset of studies, compute the pooled estimate and <span data-gloss="i2">I&#178;</span> under a fixed-effect or DL random-effects model. Each subset becomes one dot; clusters suggest influential studies or subgroup structure. For k &gt; 15 the engine uses random sampling (advanced-stats.md).</p>
+    <p>Graphical display of study heterogeneity (Olkin, Dahabreh, Trikalinos 2012). For every non-empty subset of studies, compute the pooled estimate and <span data-gloss="i2">I&#178;</span> under a fixed-effect or DL random-effects model. Each subset becomes one dot; clusters suggest influential studies or subgroup structure. For k &gt; 15 the page enumerates every subset exactly by streaming (no subset is stored) when that is fast enough, and otherwise draws random subsets; the result is labelled.</p>
   </header>
   <main id="main">
     <section class="panel">
@@ -89,7 +89,7 @@
 
       <label>
         <span>Studies &#8212; <code>effect, SE, label</code> (per line)</span>
-        <textarea id="src" aria-label="Input">0.22, 0.08, Study A
+        <textarea id="src" aria-label="Input" aria-describedby="input-error">0.22, 0.08, Study A
 0.30, 0.14, Study B
 0.27, 0.09, Study C
 0.15, 0.07, Study D
@@ -97,7 +97,8 @@
 0.10, 0.06, Study F
 0.35, 0.16, Study G
 0.22, 0.10, Study H
-0.40, 0.20, Study I</textarea></label>
+0.40, 0.20, Study I</textarea>
+        <span id="input-error" role="alert"></span></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
@@ -105,7 +106,7 @@
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
-        <span class="hint">k &#8804; 15 studies: full enumeration (2&#7505; &#8722; 1 subsets). k &gt; 15: random sampling (Olkin &amp; Dahabreh 2012 recommendation).</span>
+        <span class="hint">k &#8804; 15 studies: full enumeration (2&#7505; &#8722; 1 subsets). k &gt; 15: random-sampling preview (Olkin &amp; Dahabreh 2012 recommendation); exact enumeration is available below.</span>
 
       <label>
         <span>Pooling model</span>
@@ -119,6 +120,15 @@
         <input id="n-sample" type="number" step="1" min="1" max="100000" value="5000" aria-describedby="sample-error" aria-label="App default: 5,000 draws. Larger = more accurate density but slower.">
         <span class="hint">App default: 5,000 draws; enter a whole number from 1 to 100,000 (cap limits browser workload). Uniform subset size from 2 to k, with replacement. This differs from metafor.</span>
         <span id="sample-error" role="alert"></span>
+      </label>
+      <label id="enum-label" style="display:none">
+        <span>Subsets for k &gt; 15</span>
+        <select id="enum-mode" aria-label="Subset enumeration for k above 15">
+          <option value="auto" selected>Auto: exact all subsets when fast, else sampling</option>
+          <option value="exact">Exact: all 2^k &#8722; 1 subsets (streamed)</option>
+          <option value="sample">Random sampling only</option>
+        </select>
+        <span class="hint">Exact enumeration runs in the background with progress and Cancel; the sampled preview is shown meanwhile.</span>
       </label>
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
         <button type="button" id="btn-bus-load" style="flex:1" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
@@ -159,11 +169,12 @@
     </section>
 
       <div id="alm-flow-mount" aria-live="polite"></div>
+<section id="alm-exact"></section>
 <section id="alm-validate"></section>
 <section id="alm-plus"></section>
 </main>
   <footer>
-    Olkin I, Dahabreh IJ, Trikalinos TA. GOSH &#8212; a graphical display of study heterogeneity. <em>Res Synth Methods</em> 2012;3(3):214&#8211;23. Subgroup structure interpretation aligns with <em>Cochrane Handbook v6.5 &#167;10.10.2</em> on detecting influential studies; <span data-gloss="i2">I&#178;</span> interpretation per &#167;10.10.2 (low &lt;30%, moderate 30&#8211;60%, substantial 50&#8211;90%, considerable 75&#8211;100%). For k &gt; 15 this app draws 5,000 subsets by default, choosing sizes uniformly from 2 to k, with replacement, using a fixed seed. This differs from <code>metafor::gosh()</code>, which enumerates all non-empty subsets when 2^k - 1 is at most 1,000,000 (k up to 19), and otherwise draws 1,000,000 subsets by default with binomial size probabilities. Full enumeration here includes single-study subsets.
+    Olkin I, Dahabreh IJ, Trikalinos TA. GOSH &#8212; a graphical display of study heterogeneity. <em>Res Synth Methods</em> 2012;3(3):214&#8211;23. Subgroup structure interpretation aligns with <em>Cochrane Handbook v6.5 &#167;10.10.2</em> on detecting influential studies; <span data-gloss="i2">I&#178;</span> interpretation per &#167;10.10.2 (low &lt;30%, moderate 30&#8211;60%, substantial 50&#8211;90%, considerable 75&#8211;100%). For k &gt; 15 the sampled preview draws 5,000 subsets by default, choosing sizes uniformly from 2 to k, with replacement, using a fixed seed; the exact mode then enumerates all non-empty subsets by streaming. This differs from <code>metafor::gosh()</code>, which enumerates all non-empty subsets when 2^k - 1 is at most 1,000,000 (k up to 19), and otherwise draws 1,000,000 subsets by default with binomial size probabilities. Full enumeration here includes single-study subsets.
   </footer>
   <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
@@ -173,12 +184,28 @@
     // ---- engine ----
 
     function parse(text) {
-      return text.trim().split(/\n/).map(function (l, i) {
+      var rows = [], errors = [], first = true;
+      var numeric = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+      // Keep the original default labels while reporting physical input line numbers.
+      var leading = (String(text).match(/^\s*/) || [''])[0].split('\n').length - 1;
+      String(text).split(/\r?\n/).forEach(function (l, i) {
+        if (!l.trim()) return;
         var parts = l.split(/,/).map(function (s) { return s.trim(); });
-        var te = parseFloat(parts[0]), se = parseFloat(parts[1]);
-        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        return { te: te, se: se, label: parts[2] || ('S' + (i + 1)) };
-      }).filter(Boolean);
+        var header = first && /^(effect|yi|te)$/i.test(parts[0]) && /^se$/i.test(parts[1]) &&
+          (parts.length === 2 || (parts.length === 3 && /^label$/i.test(parts[2])));
+        first = false;
+        if (header) return;
+        var reason = '';
+        if (parts.length < 2 || parts.length > 3) reason = 'expected effect, SE[, label] separated by commas';
+        else if (!numeric.test(parts[0])) reason = 'effect must be a complete number';
+        else if (!numeric.test(parts[1])) reason = 'SE must be a complete number';
+        else if (!Number.isFinite(Number(parts[0])) || !Number.isFinite(Number(parts[1]))) reason = 'effect and SE must be finite';
+        else if (!(Number(parts[1]) > 0)) reason = 'SE must be greater than 0';
+        if (reason) errors.push('Line ' + (i + 1) + ': ' + reason);
+        else rows.push({ te: Number(parts[0]), se: Number(parts[1]), label: parts[2] || ('S' + (i + 1 - leading)) });
+      });
+      if (errors.length) throw new Error(errors.join('; ') + '.');
+      return rows;
     }
 
     function pool(rows, model) {
@@ -257,16 +284,26 @@
     // ---- last results storage for export ----
     var _lastResults = null;
 
-    run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #model, #n-sample");
+    run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #model, #n-sample, #enum-mode");
 
     function run() {
       document.getElementById('plot-note').textContent = '';
       document.getElementById('plot-error').textContent = '';
+      document.getElementById('input-error').textContent = '';
       var text = document.getElementById('src').value;
       var model = document.getElementById('model').value;
-      var rows = parse(text);
       var sampleError = document.getElementById('sample-error');
       sampleError.textContent = '';
+      var rows;
+      try { rows = parse(text); }
+      catch (error) {
+        clearInputResults(error.message);
+        return;
+      }
+      if (rows.length < 3) {
+        clearInputResults('Enter at least 3 valid studies (effect, SE[, label]); found ' + rows.length + '.');
+        return;
+      }
       if (rows.length < 3 || rows.length > 100) {
         document.getElementById('m-n').textContent = '—';
         _lastResults = null; // do not leave a stale result exportable
@@ -274,6 +311,7 @@
         document.getElementById('m-i2').textContent = '\u2014';
         document.getElementById('plot').innerHTML = '';
         document.getElementById('sample-label').style.display = 'none';
+        exactRequest(null);
         return;
       }
 
@@ -281,12 +319,15 @@
       var isSampled = rows.length > FULL_ENUM_LIMIT;
       var sampleLabel = document.getElementById('sample-label');
       if (sampleLabel) sampleLabel.style.display = isSampled ? 'block' : 'none';
+      document.getElementById('enum-label').style.display = isSampled ? 'block' : 'none';
+      if (!isSampled) exactRequest(null);
 
       var results;
       if (isSampled) {
         var rawSample = document.getElementById('n-sample').value.trim();
         var nSample = Number(rawSample);
         if (rawSample === '' || !Number.isInteger(nSample) || nSample < 1 || nSample > 100000) {
+          exactRequest(null);
           sampleError.textContent = 'Enter a whole number of draws from 1 to 100,000.';
           document.getElementById('m-n').textContent = '0';
           _lastResults = null;
@@ -301,6 +342,7 @@
       }
 
       if (results.length === 0) {
+        exactRequest(null);
         document.getElementById('m-n').textContent = '0';
         _lastResults = null; // do not leave a stale result exportable
         document.getElementById('m-est').textContent = '\u2014';
@@ -350,11 +392,31 @@
       };
 
       draw(results);
+      if (!_exactSuppressed && window.AlmGoshExact) window.AlmGoshExact.labelResult(_lastResults);
+      if (isSampled) exactRequest({ rows: rows, model: model, apply: applyExact, axes: function () { return _axisState; } });
 
       // URL state
       if (window.alm && window.alm.urlState) {
         window.alm.urlState.write({ model: model, src: text.substring(0, 600) });
       }
+    }
+
+    // Exact streamed enumeration for k > 15 (gosh/exact-ui.js). Never started by validation runs.
+    var _exactSuppressed = false;
+    function exactRequest(req) {
+      if (_exactSuppressed || !window.AlmGoshExact) return;
+      window.AlmGoshExact.request(req);
+    }
+    function applyExact(res) {
+      document.getElementById('m-n').textContent = res.n_subsets.toLocaleString();
+      document.getElementById('m-est').textContent = fmt(res.median_est);
+      document.getElementById('m-i2').textContent = res.median_i2.toFixed(1) + '%';
+      _lastResults = Object.assign({}, _lastResults, {
+        sampled: false, enumeration: 'exact-streamed', n_subsets: res.n_subsets,
+        median_est: res.median_est, median_i2: res.median_i2, min_est: res.min_est, max_est: res.max_est,
+        q25_est: res.q25_est, q75_est: res.q75_est, exact: res,
+      });
+      window.AlmGoshExact.labelResult(_lastResults);
     }
 
     function draw(pts) {
@@ -493,6 +555,15 @@
       run();
     }
 
+    function clearInputResults(message) {
+      _lastResults = null;
+      document.getElementById('plot').innerHTML = '';
+      ['m-n', 'm-est', 'm-i2'].forEach(function (id) { document.getElementById(id).textContent = '\u2014'; });
+      document.getElementById('sample-label').style.display = 'none';
+      document.getElementById('input-error').textContent = message;
+      if (window.AlmGoshPlus) window.AlmGoshPlus.clear('Analysis refused. Correct the input and refresh extras.');
+    }
+
     // ---- CSV load: accept study,yi,vi or study,yi,sei columns ----
     window.__almGoshLoad = function (rows) {
       if (!rows || rows.length < 1) { document.getElementById('src').value = ''; run(); return; }
@@ -517,6 +588,8 @@
 
     // Expose last results for export
     window._almLastGosh = function () { return _lastResults; };
+    // The controller loads after this inline script; rerun restored/default inputs once it is ready.
+    window.__almGoshExactReady = function () { run(); };
 
 
     // Validation observes calls to the unchanged parser and pooling engine.
@@ -525,21 +598,21 @@
       if (model !== undefined) document.getElementById('model').value=model;
       if (draws !== undefined) document.getElementById('n-sample').value=draws;
       if (axes !== undefined) _axisState=axes;
-      var originalParse=parse, originalPool=pool, rows, points=[];
+      var originalParse=parse, originalPool=pool, rows, points=[];_exactSuppressed=true;
       parse=function(text){rows=originalParse(text);return rows;};
       pool=function(subset,model){var p=originalPool(subset,model);points.push(Object.assign({members:subset.map(function(r){return rows.indexOf(r)+1;})},p));return p;};
       try {run();return {summary:_lastResults,points:points};}
-      finally {parse=originalParse;pool=originalPool;}
+      finally {parse=originalParse;pool=originalPool;_exactSuppressed=false;}
     };
     window.__almGoshValidationSnapshot = function() {
       return {controls:['src','model','n-sample'].map(function(id){return [id,document.getElementById(id).value];}),
-        dom:['plot','m-n','m-est','m-i2','plot-error','plot-note','sample-error'].map(function(id){return [id,document.getElementById(id).innerHTML];}),
-        sampleStyle:document.getElementById('sample-label').style.cssText,results:_lastResults,axes:_axisState};
+        dom:['plot','m-n','m-est','m-i2','plot-error','plot-note','sample-error','input-error'].map(function(id){return [id,document.getElementById(id).innerHTML];}),
+        sampleStyle:document.getElementById('sample-label').style.cssText,enumStyle:document.getElementById('enum-label').style.cssText,results:_lastResults,axes:_axisState};
     };
     window.__almGoshValidationRestore = function(s) {
       s.controls.forEach(function(x){document.getElementById(x[0]).value=x[1];});
       s.dom.forEach(function(x){document.getElementById(x[0]).innerHTML=x[1];});
-      document.getElementById('sample-label').style.cssText=s.sampleStyle;_lastResults=s.results;_axisState=s.axes;
+      document.getElementById('sample-label').style.cssText=s.sampleStyle;if(s.enumStyle!==undefined)document.getElementById('enum-label').style.cssText=s.enumStyle;_lastResults=s.results;_axisState=s.axes;
     };
 
     // ---- module init ----
@@ -681,7 +754,8 @@
       AlmHero.attachHero({
         container: "#alm-hero-mount",
         textarea: "#src",
-        adapter: "forest",
+        adapter: "effect-se-label",
+        onAfterLoad: function () { document.getElementById('btn-run').click(); },
       });
     }
   });
@@ -720,5 +794,8 @@
 <script src="plus.js"></script>
 <script src="validate/manifest-plus.js"></script>
 <script src="validate/adapter-plus.js"></script>
+<script src="exact-enum.js"></script>
+<script src="validate/exact/compare.js"></script>
+<script src="exact-ui.js"></script>
 </body>
 </html>
