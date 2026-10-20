@@ -1,0 +1,423 @@
+{
+ "schema": "pubbias-tests-plus-comparison-v1",
+ "date": "2026-10-19",
+ "machine": "lane p610 (desktop-iljmsi3)",
+ "versions": "see versions-plus.json",
+ "extras_replay_browser": {
+  "runner": "page panel AlmPubbiasPlusValidation.runCorpus() in chrome-headless-shell 1243 via CDP (work/cdp_eval.mjs), local static server",
+  "checks": 72896,
+  "passed": 72802,
+  "documented_failures": 94,
+  "unexpected": 0
+ },
+ "extras_replay_node": {
+  "runner": "node pubbias-tests/validate/check-plus.mjs (numerical checks only; display/disposition are browser-only)",
+  "checks": 72743,
+  "passed": 72649,
+  "documented_failures": 94,
+  "unexpected": 0,
+  "families": {
+   "full.conditional.branch": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 0.0
+   },
+   "full.conditional.ciHi": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 7.82e-15
+   },
+   "full.conditional.ciLo": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 6.69e-15
+   },
+   "full.conditional.est": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 5.44e-15
+   },
+   "full.peese.ciHi": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 2.39e-15
+   },
+   "full.peese.ciLo": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 4.27e-15
+   },
+   "full.peese.df": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 0.0
+   },
+   "full.peese.est": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 4.27e-15
+   },
+   "full.peese.p": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 1.4e-13
+   },
+   "full.peese.se": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 6.56e-16
+   },
+   "full.peese.slope": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 7.65e-15
+   },
+   "full.peese.slopeP": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 1.11e-13
+   },
+   "full.peese.slopeT": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 6.46e-15
+   },
+   "full.peese.t": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 2.63e-14
+   },
+   "full.pet.ciHi": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 1.08e-13
+   },
+   "full.pet.ciLo": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 6.69e-15
+   },
+   "full.pet.df": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 0.0
+   },
+   "full.pet.est": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 8.72e-15
+   },
+   "full.pet.p": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 8.06e-14
+   },
+   "full.pet.se": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 7.27e-15
+   },
+   "full.pet.slope": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 4.07e-14
+   },
+   "full.pet.slopeP": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 2.58e-11
+   },
+   "full.pet.slopeT": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 7.79e-14
+   },
+   "full.pet.t": {
+    "passed": 152,
+    "checks": 152,
+    "max_diff": 1.38e-14
+   },
+   "loo.begg.p": {
+    "passed": 3023,
+    "checks": 3023,
+    "max_diff": 8.48e-14
+   },
+   "loo.begg.tau": {
+    "passed": 3023,
+    "checks": 3023,
+    "max_diff": 2.22e-16
+   },
+   "loo.conditional.branch": {
+    "passed": 3023,
+    "checks": 3023,
+    "max_diff": 0.0
+   },
+   "loo.egger.limit": {
+    "passed": 3010,
+    "checks": 3010,
+    "max_diff": 3.49e-14
+   },
+   "loo.egger.p": {
+    "passed": 3010,
+    "checks": 3010,
+    "max_diff": 2.63e-11
+   },
+   "loo.egger.refusal": {
+    "passed": 0,
+    "checks": 13,
+    "max_diff": 1.0
+   },
+   "loo.egger.statistic": {
+    "passed": 3010,
+    "checks": 3010,
+    "max_diff": 3.11e-12
+   },
+   "loo.flag.begg_flip": {
+    "passed": 2885,
+    "checks": 2885,
+    "max_diff": 0.0
+   },
+   "loo.flag.branch_change": {
+    "passed": 2885,
+    "checks": 2885,
+    "max_diff": 0.0
+   },
+   "loo.flag.egger_flip": {
+    "passed": 2868,
+    "checks": 2885,
+    "max_diff": 1.0
+   },
+   "loo.flag.harbord_flip": {
+    "passed": 1863,
+    "checks": 1880,
+    "max_diff": 1.0
+   },
+   "loo.flag.peters_flip": {
+    "passed": 1863,
+    "checks": 1880,
+    "max_diff": 1.0
+   },
+   "loo.flag.thompson_flip": {
+    "passed": 2885,
+    "checks": 2885,
+    "max_diff": 0.0
+   },
+   "loo.flag.trimfill_k0_change": {
+    "passed": 2883,
+    "checks": 2885,
+    "max_diff": 1.0
+   },
+   "loo.harbord.p": {
+    "passed": 1968,
+    "checks": 1968,
+    "max_diff": 2.3e-11
+   },
+   "loo.harbord.refusal": {
+    "passed": 3,
+    "checks": 16,
+    "max_diff": 1.0
+   },
+   "loo.harbord.statistic": {
+    "passed": 1968,
+    "checks": 1968,
+    "max_diff": 1.93e-12
+   },
+   "loo.peese.est": {
+    "passed": 3023,
+    "checks": 3023,
+    "max_diff": 5.51e-14
+   },
+   "loo.pet.est": {
+    "passed": 3023,
+    "checks": 3023,
+    "max_diff": 3.49e-14
+   },
+   "loo.peters.p": {
+    "passed": 1968,
+    "checks": 1968,
+    "max_diff": 2.39e-11
+   },
+   "loo.peters.refusal": {
+    "passed": 3,
+    "checks": 16,
+    "max_diff": 1.0
+   },
+   "loo.peters.statistic": {
+    "passed": 1968,
+    "checks": 1968,
+    "max_diff": 2.3e-14
+   },
+   "loo.refusal": {
+    "passed": 14,
+    "checks": 14,
+    "max_diff": 0.0
+   },
+   "loo.thompson.limit": {
+    "passed": 3008,
+    "checks": 3008,
+    "max_diff": 3.93e-14
+   },
+   "loo.thompson.p": {
+    "passed": 3008,
+    "checks": 3008,
+    "max_diff": 5.34e-14
+   },
+   "loo.thompson.refusal": {
+    "passed": 15,
+    "checks": 15,
+    "max_diff": 0.0
+   },
+   "loo.thompson.statistic": {
+    "passed": 3008,
+    "checks": 3008,
+    "max_diff": 4.97e-14
+   },
+   "loo.trimfill.est": {
+    "passed": 3008,
+    "checks": 3008,
+    "max_diff": 1.04e-14
+   },
+   "loo.trimfill.k0": {
+    "passed": 3008,
+    "checks": 3008,
+    "max_diff": 0.0
+   },
+   "loo.trimfill.refusal": {
+    "passed": 13,
+    "checks": 15,
+    "max_diff": 1.0
+   },
+   "loo.trimfill.side": {
+    "passed": 3008,
+    "checks": 3008,
+    "max_diff": 0.0
+   },
+   "thompson_sharp.b0": {
+    "passed": 151,
+    "checks": 151,
+    "max_diff": 1.99e-13
+   },
+   "thompson_sharp.limit": {
+    "passed": 151,
+    "checks": 151,
+    "max_diff": 2.62e-14
+   },
+   "thompson_sharp.p": {
+    "passed": 151,
+    "checks": 151,
+    "max_diff": 4.67e-13
+   },
+   "thompson_sharp.refusal": {
+    "passed": 1,
+    "checks": 1,
+    "max_diff": 0.0
+   },
+   "thompson_sharp.statistic": {
+    "passed": 151,
+    "checks": 151,
+    "max_diff": 5.97e-13
+   },
+   "thompson_sharp.tau2": {
+    "passed": 151,
+    "checks": 151,
+    "max_diff": 6.68e-15
+   }
+  }
+ },
+ "thompson_sharp": {
+  "reference": "regtest(rma(yi, vi, method='REML'), model='rma', predictor='sei') metafor 5.2-1",
+  "configurations_passing": "152/152",
+  "checks": "756/756",
+  "before_this_version": "0/152 configurations, 0/756 checks (main and 36fc136 page code)",
+  "independent_lane_oracle": "second R script (rma(yi, vi, mods=~sqrt(vi)) cross-check) agrees: 152/152, 756/756",
+  "leave_one_out": {
+   "reference": "regtest(rma(y, v, method='REML'), model='rma', predictor='sei') per omission (generate-plus.R)",
+   "checks": "11,924/11,924 (3,008 x statistic/p/limit, 15 refusals agreeing, 2,885 flags)",
+   "max_diff": {
+    "statistic": 4.97e-14,
+    "p": 5.34e-14,
+    "limit": 3.93e-14
+   }
+  },
+  "reproduction": "validate/generate-ts.R re-run 2026-10-20 01:27 on desktop-iljmsi3 (lane fx610; R 4.6.0, metafor 5.2-1, jsonlite 2.0.0): output byte-identical to the pinned thompson-sharp-reference.json (SHA-256 f4b837fd2ea0fa9e8eed28a62527d1fd6c25c98c3463d4c9c2bf4fdb588e644c, 25,427 bytes). No other regeneration of this file is recorded."
+ },
+ "petpeese_lm_oracle": {
+  "runner": "node pubbias-tests/validate/check-lm-petpeese.mjs",
+  "reference": "plus-corpus/petpeese-lm-reference.json (base-R lm, own omission loop)",
+  "reference_sha256": "5c0ce82f144addc089040aceb29566d30227da1d9550ea984c5a67f3bf5163b7",
+  "checks": 12303,
+  "passed": 12303,
+  "families": {},
+  "reference_sha256_bytes": "LF"
+ },
+ "original_paper_replay": {
+  "runner_browser": "AlmPubbiasValidation.runCorpus() (unchanged validate/adapter.js) in headless Chromium",
+  "runner_node": "node pubbias-tests/validate/check-original.mjs",
+  "after": "2107/2113, 6 documented, 0 unexpected",
+  "before_36fc136": "2107/2113, 6 documented, 0 unexpected",
+  "main_engine": "2107/2113, 6 documented, 0 unexpected",
+  "failures": [
+   "dat.baker2009/OR:Placebo:Salmeterol | Egger | refusal [documented]",
+   "dat.baker2009/OR:Placebo:Salmeterol | Peters | refusal [documented]",
+   "dat.baker2009/OR:Placebo:Salmeterol | Harbord | refusal [documented]",
+   "dat.mccurdy2020 | Begg | tau [documented]",
+   "dat.mccurdy2020 | Begg | p [documented]",
+   "dat.mccurdy2020 | Trim-and-fill | refusal [documented]"
+  ],
+  "failure_identities_identical_before_after": true
+ },
+ "planted_defects": {
+  "extras: Thompson-Sharp reference statistic +2e-6 (browser)": {
+   "checks": 72896,
+   "passed": 72801,
+   "unexpected": 1,
+   "sample": [
+    "dat.bcg/OR:tpos:cpos | thompson_sharp.statistic [UNEXPECTED]"
+   ]
+  },
+  "extras: previous Thompson-Sharp formula (browser)": {
+   "checks": 72896,
+   "passed": 63810,
+   "unexpected": 8992,
+   "sample": [
+    "dat.anand1999/OR:ai:ci | loo.none.thompson.statistic [UNEXPECTED]",
+    "dat.anand1999/OR:ai:ci | loo.none.thompson.p [UNEXPECTED]"
+   ]
+  },
+  "extras: PEESE reference est +2e-9 (browser)": {
+   "checks": 72896,
+   "passed": 72801,
+   "unexpected": 1,
+   "sample": [
+    "dat.bcg/OR:tpos:cpos | full.peese.est [UNEXPECTED]"
+   ]
+  },
+  "check-plus.mjs --plant ts-intercept (node)": {
+   "checks": 72743,
+   "passed": 66189,
+   "failed": 6554
+  },
+  "check-lm-petpeese.mjs --plant (PEESE +1e-8)": {
+   "checks": 12303,
+   "passed": 12302
+  },
+  "check-original.mjs with Egger z x (1+1e-8)": {
+   "checks": 2113,
+   "passed": 1846,
+   "unexpected": 262
+  }
+ },
+ "input_parsing": {
+  "bcg_hero_rows_before": "3/13 (main parser)",
+  "bcg_hero_rows_after": "13/13",
+  "bad_rows": "refused with line numbers (role=alert, aria-invalid=true), nothing exported",
+  "browser_observation": "Analysis unavailable: Input not used. 2 lines could not be read; fix them and run again. line 2: \"x\" is not a number; line 4: SE must be positive."
+ },
+ "reference_reproduction": "validate/generate-plus.R re-run twice on this machine: (1) before Thompson-Sharp was added to the loop, all 105,121 numbers equal the WIP-pinned file (difference 0); (2) with Thompson-Sharp in the loop (43.9 min), every non-Thompson value is identical to (1)",
+ "identity_main_table": "120/121 corpus configurations with 5<=k<=100 match exactly (Egger, Begg, trim-and-fill, Peters, Harbord, Thompson-Sharp); dat.baker2009/OR:Placebo:Salmeterol not applicable (main analysis refused: trim-and-fill REML), as before",
+ "side_regression_refusal_consistency": {
+  "corpus": "of 3,023 leave-one-out rows, Thompson-Sharp refuses (reml-nonconvergence) in 15; in 2 of them (dat.karner2014/sgrq.md omit 1; dat.karner2014/OR:tiotropium.deaths:placebo.deaths omit 6) trim-and-fill returns k0/side/estimate; these are exactly the 2 side-regression-refusal rows",
+  "rv610_synthetic": "28/28 reduced sets where metafor trimfill refuses: the page's Thompson-Sharp refuses on the same set (reml-nonconvergence) and trim-and-fill equals the review's recorded app values",
+  "page_changed": false
+ }
+}
