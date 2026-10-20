@@ -1,8 +1,0 @@
-diff --git a/shared/stats-qt.js b/shared/stats-qt.js
---- a/shared/stats-qt.js
-+++ b/shared/stats-qt.js
-@@ -57,3 +57,3 @@
-   function _betacf(a, b, x) {
--    var MAXIT = 200, EPS = 3e-7, FPMIN = 1e-30;
-+    var MAXIT = 200, EPS = 1e-14, FPMIN = 1e-30;
-     var qab = a + b, qap = a + 1, qam = a - 1;
