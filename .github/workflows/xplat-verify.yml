@@ -1,0 +1,240 @@
+name: xplat-verify
+
+# F4 cross-platform verification of every app's live R adapter (docs/xplat.md).
+#   export : Playwright opens each app's built-in example and writes self-contained R checks
+#            (check-<app>.R, plots-<app>.R, one PLANTED copy) + the F1 entry case grid -> artifact xplat-out
+#   rcheck : OS x R matrix (+ rocker container) runs every check, the entry grid, the planted copy
+#            (must FAIL) and the plots; writes result-<os>-<r>.json; fails on any miss or an undetected plant
+#   report : job summary + xplat-results.json; on main only, pushes status page + shields badges to the
+#            xplat-status branch (plain commit, never forced)
+#   snapshot (workflow_dispatch snapshot=true): pak-installs .github/r/pinned.txt on R 4.5.1 and uploads a
+#            generated renv.lock for a human to commit as .github/r/renv.lock
+
+on:
+  workflow_dispatch:
+    inputs:
+      snapshot:
+        description: "Generate .github/r/renv.lock (artifact) instead of running the matrix"
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      snapshot:
+        type: boolean
+        default: false
+        required: false
+  push:
+    branches: [main]
+    paths:
+      - '*/alm-features.js'
+      - 'shared/alm-*'
+      - 'shared/webr-runner.js'
+      - 'validation/**'
+      - '.github/r/**'
+      - 'scripts/xplat/**'
+  pull_request:
+    paths:
+      - '*/alm-features.js'
+      - 'shared/alm-*'
+      - 'shared/webr-runner.js'
+      - 'validation/**'
+      - '.github/r/**'
+      - 'scripts/xplat/**'
+      - '.github/workflows/xplat-verify.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xplat-verify-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  export:
+    if: ${{ !inputs.snapshot }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Playwright (reuses hub/shared/tests deps)
+        working-directory: hub/shared/tests
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: export R checks from every app's live adapter
+        run: node scripts/xplat/export-checks.mjs --out xplat-out --port 8110
+      - name: F1 entry case grid (shipped so R-only rows need no node)
+        run: |
+          node validation/entry/gen_cases.mjs
+          mkdir -p xplat-out/entry
+          cp validation/entry/cases.json validation/entry/cases.planted.json xplat-out/entry/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xplat-out
+          path: xplat-out/
+          if-no-files-found: error
+
+  rcheck:
+    needs: export
+    if: ${{ !inputs.snapshot }}
+    name: rcheck (${{ matrix.os }}, R ${{ matrix.r }})
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        r: [release, oldrel-1]
+        include:
+          - os: ubuntu-latest
+            r: container
+            container: rocker/r-ver:4.5.1
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xplat-out
+          path: xplat-out
+      - name: pinned package refs
+        id: pins
+        run: |
+          {
+            echo 'refs<<EOF'
+            cat .github/r/pinned.txt
+            echo 'EOF'
+            if [ -f .github/r/renv.lock ]; then echo "lock=true"; else echo "lock=false"; fi
+          } >> "$GITHUB_OUTPUT"
+      - uses: r-lib/actions/setup-r@v2
+        if: ${{ !matrix.container }}
+        with:
+          r-version: ${{ matrix.r }}
+          use-public-rspm: true
+      # rocker/r-ver freezes CRAN at a dated P3M snapshot that predates the pinned versions (pak then cannot
+      # reconcile e.g. meta@8.5-0 with the snapshot's meta); use current P3M binaries like the host rows.
+      - name: container CRAN repo (current P3M, not rocker's frozen snapshot)
+        if: ${{ matrix.container }}
+        run: |
+          codename=$(. /etc/os-release && echo "$VERSION_CODENAME")
+          echo "options(repos = c(CRAN = 'https://p3m.dev/cran/__linux__/${codename}/latest'))" >> "$(Rscript -e 'cat(R.home("etc"))')/Rprofile.site"
+          Rscript -e 'print(getOption("repos"))'
+      # --- path A: committed lockfile -> renv ---
+      - uses: r-lib/actions/setup-renv@v2
+        if: ${{ steps.pins.outputs.lock == 'true' && !matrix.container }}
+        with:
+          working-directory: .github/r
+      - name: renv restore (container)
+        if: ${{ steps.pins.outputs.lock == 'true' && matrix.container }}
+        run: |
+          Rscript -e 'install.packages("renv", repos = "https://cloud.r-project.org")'
+          Rscript -e 'renv::restore(project = ".github/r", prompt = FALSE)'
+      - name: use the renv library for the checks
+        if: ${{ steps.pins.outputs.lock == 'true' }}
+        run: |
+          lib=$(Rscript -e 'cat(renv::paths$library(project = normalizePath(".github/r")))')
+          echo "R_LIBS_USER=$lib" >> "$GITHUB_ENV"
+          echo "XPLAT_INSTALL=renv (.github/r/renv.lock)" >> "$GITHUB_ENV"
+      # --- path B: no lockfile yet -> the same pinned versions via setup-r-dependencies (pak) ---
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        if: ${{ steps.pins.outputs.lock != 'true' }}
+        with:
+          packages: ${{ steps.pins.outputs.refs }}
+          dependencies: '"hard"'
+      - name: record install path (fallback)
+        if: ${{ steps.pins.outputs.lock != 'true' }}
+        run: echo "XPLAT_INSTALL=setup-r-dependencies (pinned refs from .github/r/pinned.txt; no renv.lock committed)" >> "$GITHUB_ENV"
+      - name: run every check, entry grid, planted copy, plots
+        run: Rscript scripts/xplat/run-checks.R xplat-out "${{ matrix.os }}" "${{ matrix.r }}" "$XPLAT_INSTALL"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xplat-result-${{ matrix.os }}-${{ matrix.r }}
+          path: |
+            result-*.json
+            xplat-logs/
+          if-no-files-found: ignore
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xplat-plots-${{ matrix.os }}-${{ matrix.r }}
+          path: xplat-plots/
+          if-no-files-found: ignore
+
+  report:
+    needs: rcheck
+    if: ${{ always() && !inputs.snapshot }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: xplat-result-*
+          path: results
+      - name: aggregate
+        run: |
+          node scripts/xplat/report.mjs --results results --status xplat-status/status \
+            --expected "ubuntu-latest:release,ubuntu-latest:oldrel-1,windows-latest:release,windows-latest:oldrel-1,macos-latest:release,macos-latest:oldrel-1,ubuntu-latest:container" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xplat-results
+          path: |
+            xplat-results.json
+            xplat-status/
+      - name: publish status + badges to branch xplat-status (main only; plain commit, never forced)
+        if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          set -euo pipefail
+          publish() {
+            local parent="" tree commit
+            if git fetch --depth=1 origin xplat-status 2>/dev/null; then parent=$(git rev-parse FETCH_HEAD); fi
+            export GIT_INDEX_FILE="$RUNNER_TEMP/xplat-index"; rm -f "$GIT_INDEX_FILE"
+            if [ -n "$parent" ]; then git read-tree "$parent"; else git read-tree --empty; fi   # orphan on first run
+            git rm -r --cached --quiet --ignore-unmatch status
+            for f in xplat-status/status/*; do
+              git update-index --add --cacheinfo "100644,$(git hash-object -w "$f"),status/$(basename "$f")"
+            done
+            tree=$(git write-tree); unset GIT_INDEX_FILE
+            if [ -n "$parent" ] && [ "$tree" = "$(git rev-parse "$parent^{tree}")" ]; then echo "status unchanged"; return 0; fi
+            commit=$(git commit-tree "$tree" ${parent:+-p "$parent"} -m "xplat-verify status for ${GITHUB_SHA} (run ${GITHUB_RUN_ID})")
+            git push origin "$commit:refs/heads/xplat-status"   # fast-forward only; a race is retried, never forced
+          }
+          for i in 1 2 3 4 5; do publish && exit 0; echo "push rejected; refetching (attempt $i)"; sleep $((i * 5)); done
+          exit 1
+
+  # Also runs on pull requests so the lockfile generation itself stays tested (the artifact is never committed by CI).
+  snapshot:
+    if: ${{ inputs.snapshot || github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5.1"
+          use-public-rspm: true
+      - name: pak-install the pinned versions and snapshot with renv
+        run: Rscript .github/r/snapshot.R
+      - uses: actions/upload-artifact@v4
+        with:
+          name: renv-lock
+          path: renv.lock
+          if-no-files-found: error
