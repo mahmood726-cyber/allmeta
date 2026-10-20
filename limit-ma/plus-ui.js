@@ -78,19 +78,23 @@ function draw(plotState=state,lookup=el){
  for(const curve of curves)svgNode(svg,'polyline',{points:curve.points.map(([x,s])=>xx(x)+','+yy(s)).join(' '),fill:'none',stroke:curve.color,'stroke-width':2,...(curve.dash?{'stroke-dasharray':'4 4'}:{})});
 }
 function current(){
- const lines=el('src').value.trim().split(/\n/),te=[],se=[];
- for(const line of lines){const p=line.split(',');if(p.length<2||!p[0].trim()||!p[1].trim()||!Number.isFinite(+p[0])||!(+p[1]>0)||!Number.isFinite(+p[1]))throw Error('Every row requires a finite effect and positive SE.');te.push(+p[0]);se.push(+p[1]);}
+ const rows=window.__almLimitParse(el('src').value),te=rows.map(r=>r.te),se=rows.map(r=>r.se);
  if(te.length<3)throw Error('At least three studies required.');const c={te,se},measure=el('plus-binary-measure').value;
  if(measure)c.binary={measure,rows:el('plus-binary-counts').value.trim().split(/\n/).map(line=>line.split(',').map(x=>x.trim()?Number(x):NaN))};
  return c;
 }
+function clear(message='Run comparisons using the current input. Independent validation is separate below.'){
+ state=null;
+ for(const id of ['plus-body','plus-details','plus-forest','plus-funnel','plus-interpretation'])el(id).replaceChildren();
+ el('plus-status').textContent=message;
+}
 function run(){
- try {const c=current();window.__almLimitValidationRun(el('src').value,false);const limit=window._almLastLimit();
+ try {window.__almLimitValidationRun(el('src').value,false);const c=current(),limit=window._almLastLimit();
   render(AlmLimitPlus.compute(c,limit,+el('plus-alpha').value),c,limit);el('plus-status').textContent='Sensitivity calculations complete. Check the independent validation panel before interpreting results.';
- }catch(e){state=null;for(const id of ['plus-body','plus-details','plus-forest','plus-funnel','plus-interpretation'])el(id).replaceChildren();el('plus-status').textContent='Refused: '+e.message;}
+ }catch(e){clear('Refused: '+e.message);}
 }
 root.querySelectorAll('input[type=checkbox]').forEach(n=>n.addEventListener('change',()=>draw()));
 el('plus-run').addEventListener('click',run);
 el('plus-alpha').addEventListener('change',()=>{if(state)run();});
-window.AlmLimitPlusUI={render,run,drawReference:(results,c,limit,lookup)=>draw({results,c,limit},lookup),snapshot:()=>state,restore:s=>{if(s)render(s.results,s.c,s.limit);else {state=null;for(const id of ['plus-body','plus-details','plus-forest','plus-funnel','plus-interpretation'])el(id).replaceChildren();}}};
+window.AlmLimitPlusUI={render,run,clear,drawReference:(results,c,limit,lookup)=>draw({results,c,limit},lookup),snapshot:()=>state,restore:s=>{if(s)render(s.results,s.c,s.limit);else clear();}};
 })();
