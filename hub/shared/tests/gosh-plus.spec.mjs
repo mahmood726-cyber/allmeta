@@ -49,7 +49,7 @@ test('extras clean reference follows responsive layout',async({page})=>{
   expect(await failures(page)).toEqual([]);
 });
 
-test('extras every quantity against pinned R corpus, offline',async({page,context})=>{
+test('extras every quantity against pinned R corpus, offline',async({page,context},testInfo)=>{
   test.setTimeout(300000);await page.goto(url);
   const before=await page.evaluate(()=>({snapshot:__almGoshValidationSnapshot(),href:location.href,storage:{...localStorage}}));
   await page.evaluate(()=>AlmGoshPlusValidation.prepare());await context.setOffline(true);
@@ -60,7 +60,9 @@ test('extras every quantity against pinned R corpus, offline',async({page,contex
   for(const a of result.axisCoverage)if(a.checked){expect(a.coverage).toBeGreaterThanOrEqual(.2);expect(a.residual).toBeLessThanOrEqual(1e-7);}else expect(a.message).toMatch(/^axis labels: not checked \(.*\)$/);
   expect(result.checks).toBe(manifest.checks);expect(result.passed).toBe(result.checks);expect(result.failed).toEqual([]);
   expect(await page.evaluate(()=>({snapshot:__almGoshValidationSnapshot(),href:location.href,storage:{...localStorage}}))).toEqual(before);
-  console.log('AXIS COVERAGE',JSON.stringify(result.axisCoverage));
+  // Full per-axis JSON is ~51 KB on one line; keep it out of the CI log (see limit-ma-plus.spec.mjs).
+  await testInfo.attach('axis-coverage.json',{body:JSON.stringify(result.axisCoverage),contentType:'application/json'});
+  console.log('AXIS COVERAGE',checked+'/'+result.axisCoverage.length,'checked (full JSON attached as axis-coverage.json)');
   console.log('GOSH PLUS REPLAY',result.passed+'/'+result.checks);
 });
 test('extras selector, study counts, sorting, keyboard and isolated plot',async({page})=>{

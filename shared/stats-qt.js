@@ -55,7 +55,7 @@
     return -t + Math.log(2.5066282746310005 * ser / x);
   }
   function _betacf(a, b, x) {
-    var MAXIT = 200, EPS = 3e-7, FPMIN = 1e-30;
+    var MAXIT = 1000, EPS = 4e-15, FPMIN = 1e-30;
     var qab = a + b, qap = a + 1, qam = a - 1;
     var c = 1, d = 1 - qab * x / qap;
     if (Math.abs(d) < FPMIN) d = FPMIN;
@@ -86,7 +86,7 @@
   }
   function pt(t, df) {
     // Two-sided expression via incomplete beta: P(T ≤ t) for t real.
-    if (df <= 0) return NaN;
+    if (df <= 0 || Number.isNaN(t) || Number.isNaN(df)) return NaN;
     if (!Number.isFinite(t)) return t > 0 ? 1 : 0;
     var x = df / (df + t * t);
     var p = 0.5 * _ibeta(df / 2, 0.5, x);
@@ -98,7 +98,7 @@
     if (p <= 0) return -Infinity;
     if (p >= 1) return Infinity;
     if (p === 0.5) return 0;
-    if (df < 1) return NaN;
+    if (!(df > 0)) return NaN;
     if (df === 1) return Math.tan(Math.PI * (p - 0.5));
     if (df === 2) {
       var alpha = 4 * p * (1 - p);

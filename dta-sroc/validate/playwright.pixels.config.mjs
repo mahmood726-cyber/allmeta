@@ -1,0 +1,11 @@
+import base from '../../hub/shared/tests/playwright.config.mjs';
+export default {...base,testDir:'../../hub/shared/tests',testMatch:'dta-sroc-plus-pixels.spec.mjs',
+ testIgnore:[], // Override the ordinary shared suite's pixel exclusion.
+ timeout:120000,expect:{timeout:15000},updateSnapshots:'none',
+ snapshotPathTemplate:'{testDir}/../../../dta-sroc/validate/pixel-references/{arg}{ext}',
+ // Grayscale text antialiasing: LCD (ClearType) subpixel text depends on the capturing machine's ClearType settings,
+ // so references captured with it fail on other Windows machines and on CI (REVIEW_133 P1-2).
+ projects:[{name:'windows-edge',use:{channel:'msedge',launchOptions:{args:['--disable-lcd-text']}}}],
+ use:{...base.use,baseURL:'http://127.0.0.1:8000',viewport:{width:1280,height:900},deviceScaleFactor:1,reducedMotion:'reduce',colorScheme:'light'},
+ webServer:{command:'python -m http.server 8000 --bind 127.0.0.1 --directory ../../../',port:8000,cwd:'../../hub/shared/tests',reuseExistingServer:false}
+};

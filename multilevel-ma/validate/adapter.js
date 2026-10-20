@@ -27,7 +27,9 @@ stopifnot(all(is.finite(x)))
 cat('ALMJSON:{',paste(sprintf('"%s":%.17g',names(x),x),collapse=','),'}\\n',sep='')`;
   }
   function renderMatches(r) {
-    const table = document.querySelectorAll('#summary table')[1];
+    // The historical page-text contract is confined to #summary. Extras have
+    // their own contract and must never contribute text to this replay.
+    const table = [...document.querySelectorAll('#summary table')].filter(t => !t.closest('#alm-plus'))[1];
     return !!table && keys.every(k => table.innerText.includes(r[k].toFixed(k.startsWith('sigma2') ? 4 : 3)));
   }
   async function replay(loaded, progress) {

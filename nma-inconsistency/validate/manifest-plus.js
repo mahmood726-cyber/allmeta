@@ -1,0 +1,45 @@
+window.AlmIncoPlusManifest = {
+  "files": [
+    {
+      "path": "validate/plus/corpus.json",
+      "sha256": "9e09023a64b46005d53527118801df3b046218e932773017b51aba5ae31b63e1",
+      "bytes": 487475
+    },
+    {
+      "path": "validate/plus/reference.json",
+      "sha256": "a84d1b8136cd211b80e1fa447c012ec879d7322dcf9c7eb438abc90c3241fb45",
+      "bytes": 19934097
+    },
+    {
+      "path": "validate/plus/estimators-reference.json",
+      "sha256": "f31b49e26615e16f41658411a7c9f01db8e61e19a5ae7d52119538b1c4f3c158",
+      "bytes": 850142
+    },
+    {
+      "path": "validate/corpus/corpus.json",
+      "sha256": "631f9ab81b3598e1b6105dfd7655ffd59399c25d755668b6682ecd796745b598",
+      "bytes": 206134
+    },
+    {
+      "path": "validate/corpus/reference.json",
+      "sha256": "aa0e07ae7f6885dcd0f6c5eeff93b4d01658ad82858ed7dcf4184723c16f8787",
+      "bytes": 852554
+    }
+  ],
+  "configurations": 153,
+  "loop_configurations": 144,
+  "drop_fits": 5016,
+  "estimator_triples": 97,
+  "checks": 643413,
+  "referenceVersions": {
+    "R": "4.6.0",
+    "netmeta": "3.7.0",
+    "metafor": "5.2.1",
+    "jsonlite": "2.0.0",
+    "meta": "8.5.0",
+    "gs_memo": true
+  },
+  "source": "P16 archive corpus.json + final reference/*.json (R 4.6.0, netmeta 3.7-0, metafor 5.2-1)",
+  "rule": "Every accepted archived configuration with a closed loop, plus the first three accepted no-loop configurations per model; each study removed in turn; tau2 re-estimated per drop with the selected model.",
+  "tolerance": "FE/DL estimates, Q, tau2 1e-9 relative to max(1,|R|); PM-derived 1e-6; p-values 1e-9 absolute; df, counts, membership, flips and refusal reasons exact"
+};

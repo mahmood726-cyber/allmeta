@@ -1,0 +1,18 @@
+[
+ {"name":"effect prefix", "line":"0.4O, 0.2", "reason":"effect must be a complete number"},
+ {"name":"SE prefix", "line":"0.4, 0.2O", "reason":"SE must be a complete number"},
+ {"name":"zero SE", "line":"0.4, 0", "reason":"SE must be greater than 0"},
+ {"name":"negative SE", "line":"0.4, -0.2", "reason":"SE must be greater than 0"},
+ {"name":"infinite effect", "line":"Infinity, 0.2", "reason":"finite"},
+ {"name":"NaN SE", "line":"0.4, NaN", "reason":"finite"},
+ {"name":"overflow effect", "line":"1e999, 0.2", "reason":"finite"},
+ {"name":"overflow SE", "line":"0.4, 1e999", "reason":"finite"},
+ {"name":"missing field", "line":"0.4", "reason":"expected effect, SE[, label]"},
+ {"name":"extra field", "line":"0.4, 0.2, A, B", "reason":"expected effect, SE[, label]"},
+ {"name":"empty effect", "line":", 0.2", "reason":"effect must be a complete number"},
+ {"name":"empty SE", "line":"0.4,", "reason":"SE must be a complete number"},
+ {"name":"decimal commas", "line":"0,4,0,2", "reason":"Use decimal points"},
+ {"name":"semicolon decimal commas", "line":"0,4; 0,2", "reason":"Use decimal points"},
+ {"name":"hexadecimal", "line":"0x10, 0.2", "reason":"effect must be a complete number"},
+ {"name":"repeated header", "line":"effect, SE, label", "reason":"effect must be a complete number"}
+]

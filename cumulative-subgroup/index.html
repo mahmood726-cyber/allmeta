@@ -29,11 +29,15 @@
     body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
            background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
     header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    /* The fixed "← allmeta" badge (#hub-back: top 12px, ~26px tall) must never cover the title. hub/app-style.css sets
+       header padding-top 28px !important (54px below 720px); this more specific rule wins at every width. */
+    body > header { padding-top:56px !important; }
     header h1 { margin:0 0 0.25rem; font-size:1.5rem; letter-spacing:-0.01em; }
     header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:66ch; }
     .layout { display:grid; grid-template-columns:minmax(320px,26rem) 1fr;
               gap:1.5rem; padding:1.5rem clamp(1rem,3vw,3rem); align-items:start; }
-    @media (max-width:980px) { .layout { grid-template-columns:1fr; } }
+    @media (max-width:980px) { .layout { grid-template-columns:minmax(0,1fr); } }
+    .layout > * { min-width:0; }
     .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; }
     .panel h2 { margin:0 0 0.75rem; font-size:0.9rem; font-weight:600;
                 text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
@@ -66,6 +70,8 @@
     .footer-note { margin:0; color:var(--muted); font-size:0.78rem; text-align:right;
                    padding:0 clamp(1rem,3vw,3rem) 1.5rem; }
     .file-input-hidden { display:none; }
+    .example-row { margin:0 0 0.6rem; }
+    #stats-wrap .stats { margin:0 0 0.75rem; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <!-- Cycle 2.7 shared UX modules — wired per RETROFIT_AUDIT.md:
@@ -101,6 +107,7 @@
   <main id="main" class="layout">
     <section class="panel" aria-label="Input form">
       <h2>Studies</h2>
+      <div class="example-row"><button type="button" id="btn-example" class="primary">Load example</button></div>
 
       <!-- csv-upload mount: file picker for CSV files -->
       <div id="alm-csv-mount"></div>
@@ -132,9 +139,6 @@
         </label>
       </fieldset>
 
-      <div id="stats-wrap"></div>
-      <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
-
       <!-- axis-controls mount -->
       <div id="alm-axis-mount" style="margin-top:0.5rem"></div>
       <!-- reset-undo mount -->
@@ -145,7 +149,6 @@
         <button type="button" id="btn-png">Download PNG</button>
         <button type="button" id="btn-json">Download JSON</button>
         <button type="button" id="btn-import">Import JSON</button>
-        <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-bus-load" title="Load studies from the shared MA bus">↓ Shared</button>
         <button type="button" id="btn-bus-save" title="Push current studies to the shared MA bus">↑ Shared</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
         <button type="button" id="btn-rscript">Export R script</button>
@@ -158,6 +161,8 @@
 
     <section class="panel preview-wrap" aria-label="Preview">
       <h2 id="preview-heading">Preview</h2>
+      <div id="stats-wrap"></div>
+      <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
       <div id="svg-host"></div>
       <!-- chart-download mount -->
       <div class="actions" style="margin-top:0.5rem">
@@ -357,6 +362,8 @@
 
     function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
     function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?3:d); }
+    // Axis tick numbers: a tick that niceTicks lands a rounding error below zero (e.g. -2.8e-17) prints as "0.00", never "-0.00".
+    function tickLabel(t) { const s = fmt(t,2); return s === "-0.00" ? "0.00" : s; }
     function niceTicks(lo,hi,n) {
       if (!(hi>lo)) return [lo];
       const r=hi-lo, s0=r/Math.max(1,n);
@@ -390,9 +397,32 @@
       return "<svg xmlns=\"http://www.w3.org/2000/svg\" data-axis-refusal=\"1\" viewBox=\"0 0 720 120\" width=\"720\" height=\"120\"><rect width=\"720\" height=\"120\" fill=\"#fff\"/><text x=\"360\" y=\"52\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" font-weight=\"600\" fill=\"#b91c1c\">Plot cannot be displayed: effect-axis limits are invalid.</text><text x=\"360\" y=\"76\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"12\" fill=\"#5c6470\">"+escapeXml(msg)+"</text></svg>";
     }
 
+    // Cumulative plot layout. The chart keeps its 720 x 520 frame, marks and axes; the study labels are
+    // NOT drawn beside the effect axis (that margin holds the tick numbers and the axis title, and 100
+    // labels cannot fit in its height). The x axis carries step numbers and a key below the chart gives
+    // one row per step: the step number and the study added at it. The key grows with k, so every text
+    // keeps its own row at a fixed font size for any k, and a long label can only extend rightwards.
+    // validate/adapter.js (cumulativePlot) reproduces these rules exactly.
+    const CUM_KEY_HEAD_Y = 508, CUM_KEY_TOP = 526, CUM_KEY_ROW = 13, CUM_KEY_X = 180, CUM_KEY_NUM_X = 202, CUM_KEY_LABEL_X = 208;
+    // The key lists at most CUM_KEY_MAX steps, then one row naming how many more there are, so the SVG stays
+    // under ~4,500 units tall and PNG/PDF export (2x canvas) stays inside browser canvas limits at any k.
+    const CUM_KEY_MAX = 300;
+    function cumKeyMoreText(k) { return "… and " + (k - CUM_KEY_MAX) + " more steps (all steps are in the results export)"; }
+    // Step-number interval: the smallest 1/2/5 x 10^n step whose numbers are at least 24 units apart.
+    function stepLabelEvery(k, plotW) {
+      const gap = plotW / (k - 1 || 1);
+      for (let p = 1; ; p *= 10) for (const m of [1, 2, 5]) if (m * p * gap >= 24) return m * p;
+    }
+    // Effect-axis title position: left of the widest tick number (6 units per character at font size 9,
+    // a conservative width) with a 12-unit gap, and never closer than 12 units to the left edge.
+    function effectTitleX(L, tickTexts) {
+      const widest = tickTexts.reduce((n, t) => Math.max(n, t.length), 0);
+      return Math.max(12, L - 8 - 6 * widest - 12);
+    }
+
     function buildCumulativeSvg(state, data) {
-      const W=720, H=520, L=180, R=30, T=state.title?60:40, B=70;
-      const plotW=W-L-R, plotH=H-T-B;
+      const W=720, Hc=520, L=180, R=30, T=state.title?60:40, B=70;
+      const plotW=W-L-R, plotH=Hc-T-B;
       const series = data.series;
       const k = series.length;
       if (!k) return "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">No studies.</text></svg>";
@@ -413,6 +443,7 @@
       yLo = effAxis.lo; yHi = effAxis.hi;
       function x(v) { return L + (v-xLo)/(xHi-xLo || 1) * plotW; }
       function y(v) { return T + plotH - (v-yLo)/(yHi-yLo) * plotH; }
+      const keyRows = Math.min(k, CUM_KEY_MAX), H = CUM_KEY_TOP + (keyRows + (k > CUM_KEY_MAX ? 1 : 0) - 1) * CUM_KEY_ROW + 14;
 
       const p = [];
       p.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -432,30 +463,36 @@
       const linePts = series.map(s => x(s.step)+","+y(s.mu));
       p.push("<polyline points=\""+linePts.join(" ")+"\" fill=\"none\" stroke=\"#2c5e8a\" stroke-width=\"2\"/>");
 
-      // Points + study labels
+      // Points
       for (const s of series) {
         p.push("<circle cx=\""+x(s.step)+"\" cy=\""+y(s.mu)+"\" r=\"3\" fill=\"#2c5e8a\" stroke=\"#15181d\" stroke-width=\"0.6\"/>");
       }
 
-      // Row labels on left (study names)
-      for (const s of series) {
-        const rowY = T + plotH * (s.step / k) - 8;
-        const yearTag = s.year != null ? " (" + s.year + ")" : "";
-        p.push("<text x=\""+(L-8)+"\" y=\""+(rowY+10)+"\" text-anchor=\"end\" font-size=\"9\" fill=\"#5c6470\">+ " + escapeXml(s.label + yearTag)+"</text>");
-      }
-
-      // Axes
-      const axisY = T + plotH;
+      // Axes. Step axis: a tick per step, numbered every stepLabelEvery steps.
+      const axisY = T + plotH, every = stepLabelEvery(k, plotW);
       for (let step=1; step<=k; step++) {
         p.push("<line x1=\""+x(step)+"\" y1=\""+axisY+"\" x2=\""+x(step)+"\" y2=\""+(axisY+3)+"\" stroke=\"#15181d\"/>");
       }
-      p.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Cumulative study count</text>");
-      const yTicks = niceTicks(yLo, yHi, 6);
-      for (const t of yTicks) {
-        p.push("<line x1=\""+L+"\" y1=\""+y(t)+"\" x2=\""+(L-4)+"\" y2=\""+y(t)+"\" stroke=\"#15181d\"/>");
-        p.push("<text x=\""+(L-8)+"\" y=\""+(y(t)+3)+"\" text-anchor=\"end\" font-size=\"9\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+      for (let step=1; step<=k; step++) {
+        if (step % every === 0) p.push("<text class=\"cum-step-num\" x=\""+x(step)+"\" y=\""+(axisY+14)+"\" text-anchor=\"middle\" font-size=\"9\" fill=\"#5c6470\">"+step+"</text>");
       }
-      p.push("<text transform=\"translate("+(L-44)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Pooled effect (95% CI)</text>");
+      p.push("<text class=\"cum-axis-title\" x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Cumulative study count</text>");
+      const yTicks = niceTicks(yLo, yHi, 6), yTickText = yTicks.map(tickLabel);
+      yTicks.forEach((t, i) => {
+        p.push("<line x1=\""+L+"\" y1=\""+y(t)+"\" x2=\""+(L-4)+"\" y2=\""+y(t)+"\" stroke=\"#15181d\"/>");
+        p.push("<text class=\"cum-tick\" x=\""+(L-8)+"\" y=\""+(y(t)+3)+"\" text-anchor=\"end\" font-size=\"9\" fill=\"#5c6470\">"+yTickText[i]+"</text>");
+      });
+      p.push("<text class=\"cum-axis-title\" transform=\"translate("+effectTitleX(L, yTickText)+","+(T+plotH/2)+") rotate(-90)\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Pooled effect (95% CI)</text>");
+
+      // Step key: one row per step (step number, then the study added at that step).
+      p.push("<text class=\"cum-key-head\" x=\""+CUM_KEY_X+"\" y=\""+CUM_KEY_HEAD_Y+"\" font-size=\"10\" font-weight=\"600\" fill=\"#15181d\">Study added at each step</text>");
+      for (const s of series.slice(0, keyRows)) {
+        const rowY = CUM_KEY_TOP + (s.step - 1) * CUM_KEY_ROW;
+        const yearTag = s.year != null ? " (" + s.year + ")" : "";
+        p.push("<text class=\"cum-key-num\" x=\""+CUM_KEY_NUM_X+"\" y=\""+rowY+"\" text-anchor=\"end\" font-size=\"9\" fill=\"#5c6470\">"+s.step+"</text>");
+        p.push("<text class=\"cum-step-label\" x=\""+CUM_KEY_LABEL_X+"\" y=\""+rowY+"\" font-size=\"9\" fill=\"#5c6470\">+ " + escapeXml(s.label + yearTag)+"</text>");
+      }
+      if (k > CUM_KEY_MAX) p.push("<text class=\"cum-key-more\" x=\""+CUM_KEY_LABEL_X+"\" y=\""+(CUM_KEY_TOP + keyRows * CUM_KEY_ROW)+"\" font-size=\"9\" font-style=\"italic\" fill=\"#5c6470\">"+cumKeyMoreText(k)+"</text>");
 
       p.push("</svg>");
       return p.join("");
@@ -519,7 +556,7 @@
       const xTicks = niceTicks(xLo, xHi, 6);
       for (const t of xTicks) {
         p.push("<line x1=\""+x(t)+"\" y1=\""+axisY+"\" x2=\""+x(t)+"\" y2=\""+(axisY+4)+"\" stroke=\"#15181d\"/>");
-        p.push("<text x=\""+x(t)+"\" y=\""+(axisY+16)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+        p.push("<text x=\""+x(t)+"\" y=\""+(axisY+16)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+tickLabel(t)+"</text>");
       }
       p.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Effect</text>");
 

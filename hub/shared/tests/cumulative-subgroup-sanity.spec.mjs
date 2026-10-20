@@ -13,7 +13,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const APP_URL = 'http://localhost:8088/cumulative-subgroup/';
+const APP_URL = '/cumulative-subgroup/';
 
 /**
  * Wait until all 7 alm modules have registered on window.alm

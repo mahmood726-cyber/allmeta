@@ -151,25 +151,82 @@
     function ptxt(p) { var s = pfmt(p); return s.charAt(0) === "<" ? "p " + s : "p = " + s; }
     function pfmt(p) { return !(typeof p === "number" && isFinite(p)) ? "—" : (p < 0.0001 ? "< 0.0001" : p.toFixed(4)); }
     function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-    function nums(s) { return String(s || "").split(/[,;\s]+/).filter(function (t) { return t !== ""; }).map(Number).filter(isFinite); }
+    function inputError(where, message) { throw new Error(where + ": " + message); }
+    function number(s, where) {
+      var token = String(s == null ? "" : s).trim();
+      if (!/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(token) || !isFinite(Number(token))) {
+        inputError(where, token ? 'enter a finite number; found "' + token + '".' : "a number is required.");
+      }
+      return Number(token);
+    }
+    function nums(s, field, single) {
+      var text = String(s || "").trim(), tokens = [];
+      if (!text) return []; // Deliberately blank optional controls keep their defaults.
+      text.split(/[,;]/).forEach(function (part) {
+        tokens = tokens.concat(part.trim() ? part.trim().split(/\s+/) : [""]);
+      });
+      var values = tokens.map(function (token, i) { return number(token, field + ", entry " + (i + 1)); });
+      if (single && values.length !== 1) inputError(field, "enter one number.");
+      return values;
+    }
+    function csvRow(line, row) {
+      var cells = [], cell = "", quoted = false, closed = false;
+      for (var i = 0; i < line.length; i++) {
+        var c = line.charAt(i);
+        if (quoted) {
+          if (c === '"' && line.charAt(i + 1) === '"') { cell += '"'; i++; }
+          else if (c === '"') { quoted = false; closed = true; }
+          else cell += c;
+        } else if (c === ',') { cells.push(cell.trim()); cell = ""; closed = false; }
+        else if (c === '"' && !cell.trim() && !closed) { cell = ""; quoted = true; }
+        else if (c === '"' || (closed && c.trim())) inputError("Row " + row + ", CSV field " + (cells.length + 1), "check the quotation marks.");
+        else cell += c;
+      }
+      if (quoted) inputError("Row " + row + ", CSV field " + (cells.length + 1), "close the quotation marks.");
+      cells.push(cell.trim());
+      return cells;
+    }
     var _last = null;
     window._almLastDoseResponse = function () { return _last; };
 
-    function parse(text) {
-      var byStudy = {}, order = [];
-      String(text || "").split(/\r?\n/).forEach(function (line) {
+    function parse(text, useMod) {
+      var byStudy = Object.create(null), order = [];
+      String(text || "").split(/\r?\n/).forEach(function (line, index) {
         var t = line.trim(); if (!t || t.charAt(0) === "#") return;
-        var p = t.split(/\s*,\s*/);
-        if (p.length < 6) return;
-        var id = p[0], dose = parseFloat(p[1]), cases = parseFloat(p[2]), n = parseFloat(p[3]),
-            logrr = parseFloat(p[4]), seRaw = (p[5] || "").trim(), type = (p[6] || "cc").trim().toLowerCase(), cov = p.length > 7 ? parseFloat(p[7]) : NaN;
-        var se = seRaw === "" ? null : parseFloat(seRaw);
-        if (!isFinite(dose)) return;
-        if (!byStudy[id]) { byStudy[id] = { id: id, rows: [], mod: cov }; order.push(id); }
-        byStudy[id].rows.push({ dose: dose, cases: cases, n: n, logrr: isFinite(logrr) ? logrr : 0, se: se, type: type });
-        if (!isFinite(byStudy[id].mod) && isFinite(cov)) byStudy[id].mod = cov;
+        var row = index + 1, p = csvRow(t, row);
+        if (/^study,dose,cases,n,logrr,se(?:,type(?:,covariate)?)?$/.test(p.join(",").toLowerCase())) return;
+        var id = p[0], where = "Row " + row + (id ? " (study " + id + ")" : "");
+        if (!id) inputError(where + ", study", "a study label is required.");
+        if (p.length > 8) inputError(where + ", columns", "expected study, dose, cases, n, logRR, SE, type and an optional covariate.");
+        var dose = number(p[1], where + ", dose"), cases = number(p[2], where + ", cases"), n = number(p[3], where + ", n"),
+            logrr = number(p[4], where + ", logRR"), type = (p[6] || "cc").toLowerCase(), cov = p[7] ? number(p[7], where + ", covariate") : NaN;
+        if (p[5] == null) inputError(where + ", SE", "include the SE cell (blank only for the reference row).");
+        var se = p[5] === "" ? null : number(p[5], where + ", SE");
+        if (se !== null && se < 0) inputError(where + ", SE", "must be positive for a non-reference dose.");
+        if ((se === null || se === 0) && logrr !== 0) inputError(where + ", SE", "a positive SE is required for a non-reference dose; a reference row has logRR 0.");
+        if (["cc", "ir", "ci"].indexOf(type) < 0) inputError(where + ", type", "use cc, ir or ci.");
+        if ($("f-cov").value !== "indep") {
+          if (!(cases > 0)) inputError(where + ", cases", "must be greater than 0 for covariance reconstruction.");
+          if (!(n > 0)) inputError(where + ", n", "must be greater than 0 for covariance reconstruction.");
+        }
+        if (!byStudy[id]) { byStudy[id] = { id: id, rows: [], mod: cov, firstRow: row, references: 0 }; order.push(id); }
+        var study = byStudy[id];
+        if (study.rows.length && study.rows[0].type !== type) inputError(where + ", type", "must be the same throughout this study.");
+        if (isFinite(study.mod) && isFinite(cov) && study.mod !== cov) inputError(where + ", covariate", "must be the same throughout this study.");
+        if (se === null || se === 0) {
+          study.references++;
+          if (study.references > 1) inputError(where + ", SE", "each study must have exactly one reference row (SE blank or 0).");
+        }
+        study.rows.push({ dose: dose, cases: cases, n: n, logrr: logrr, se: se, type: type });
+        if (!isFinite(study.mod) && isFinite(cov)) study.mod = cov;
       });
-      return order.map(function (k) { return byStudy[k]; });
+      return order.map(function (id) {
+        var study = byStudy[id], where = "Row " + study.firstRow + " (study " + id + ")";
+        if (!study.references) inputError(where + ", SE", "each study needs a reference row (SE blank or 0, logRR 0).");
+        if (study.rows.length < 2) inputError(where + ", dose", "each study needs at least one non-reference dose.");
+        if (useMod && !isFinite(study.mod)) inputError(where + ", covariate", "a number is required for meta-regression.");
+        return { id: study.id, rows: study.rows, mod: study.mod };
+      });
     }
 
     function syncControls() {
@@ -192,19 +249,32 @@
     run = window.alm.analysisLifecycle(run, function (result) { return !!_last; }, "[id^=\"f-\"]");
 
     function run() {
+      try { analyse(); }
+      catch (error) { clearOut(error.message || "Analysis failed. Check the inputs."); }
+    }
+
+    function analyse() {
       syncControls();
-      var studies = parse($("f-data").value), shape = $("f-shape").value, proc = $("f-proc").value, cov = $("f-cov").value, M = $("f-method").value, useMod = $("f-mod").checked;
+      _last = null;
+      var shape = $("f-shape").value, proc = $("f-proc").value, cov = $("f-cov").value, M = $("f-method").value, useMod = $("f-mod").checked;
+      var studies = parse($("f-data").value, useMod);
       if (studies.length < 2) { clearOut("Enter at least 2 studies.", "warn"); return; }
+      var xref = nums($("f-xref").value, "Reference dose", true), modv = useMod ? nums($("f-modval").value, "Covariate value", true) : [],
+          pd = nums($("f-pdoses").value, "Doses to report");
       var model = shape === "linear" ? "linear" : shape === "quadratic" ? "quadratic" : "rcs", knots;
       if (model === "rcs") {
-        if (shape === "splinec") { knots = nums($("f-knots").value); if (knots.length < 3) { clearOut("Enter 3 to 7 knot doses, or choose a default knot set.", "warn"); return; } }
+        if (shape === "splinec") {
+          knots = nums($("f-knots").value, "Knot doses");
+          if (knots.length < 3 || knots.length > 7) inputError("Knot doses", "enter 3 to 7 knot doses, or choose a default knot set.");
+          if (knots.some(function (k, i) { return knots.indexOf(k) !== i; })) inputError("Knot doses", "knots must be distinct.");
+        }
         else knots = +shape.slice(6);
       }
       var method = { REML: "reml", ML: "ml", MM: "mm", FE: "fixed", PM: "fixed", DL: "fixed" }[M];
       var r = DR.fitDR(studies, { model: model, knots: knots, covariance: cov, proc: proc, method: method, mod: useMod });
-      if (!r.ok) {
+      if (!r.ok || r.excluded.length) {
         var extra = r.excluded && r.excluded.length ? " Excluded: " + r.excluded.map(function (e) { return e.id + " (" + e.reason + ")"; }).join("; ") + "." : "";
-        clearOut(r.error + extra); return;
+        clearOut((r.error || "All studies must be usable; analysis refused.") + extra); return;
       }
       // Paule–Mandel / DerSimonian–Laird (linear, two-stage, GL): pool the per-study slopes on ma-core.
       if (M === "PM" || M === "DL") {
@@ -213,7 +283,7 @@
         r.wald = { chi2: Math.pow(lf.slope / lf.se, 2), df: 1, p: DR._internal.pchisqUpper(Math.pow(lf.slope / lf.se, 2), 1) };
         r.predict = function (doses, xref) { xref = +xref || 0; return doses.map(function (d) { var x = +d - xref, lp = x * lf.slope, se = Math.abs(x) * lf.se; return { dose: +d, logRR: lp, se: se, ciLo: lp - 1.959963984540054 * se, ciHi: lp + 1.959963984540054 * se, rr: Math.exp(lp), rrLo: Math.exp(lp - 1.959963984540054 * se), rrHi: Math.exp(lp + 1.959963984540054 * se) }; }); };
       }
-      render(r, { shape: shape, M: M, studies: studies });
+      render(r, { shape: shape, M: M, studies: studies, xref: xref, modv: modv, pd: pd });
     }
 
     function methodLabel(r, M) {
@@ -222,11 +292,11 @@
     }
 
     function render(r, ui) {
-      var xrefIn = nums($("f-xref").value), xref = xrefIn.length ? xrefIn[0] : r.doseRange[0];
-      var modv = nums($("f-modval").value), modValue = r.mod ? (modv.length ? modv[0] : 0) : null;
+      var xrefIn = ui.xref, xref = xrefIn.length ? xrefIn[0] : r.doseRange[0];
+      var modv = ui.modv, modValue = r.mod ? (modv.length ? modv[0] : 0) : null;
       var nonref = []; ui.studies.forEach(function (s) { s.rows.forEach(function (row) { if (row.se != null && isFinite(row.se)) nonref.push(row.dose); }); });
       nonref.sort(function (a, b) { return a - b; });
-      var pd = nums($("f-pdoses").value);
+      var pd = ui.pd;
       if (!pd.length) pd = [0.1, 0.25, 0.5, 0.75, 0.9].map(function (p) { return +DR._quantile7(nonref, p).toPrecision(3); }).filter(function (d, i, a) { return a.indexOf(d) === i; });
       var preds = r.predict(pd, xref, modValue);
       var shapeTxt = r.model === "linear" ? "linear trend" : r.model === "quadratic" ? "quadratic curve" : r.knots.length + "-knot restricted cubic spline (knots at " + r.knots.map(function (k) { return sig(k, 4); }).join(", ") + ")";
@@ -347,6 +417,18 @@
 
     $("f-data").value = EXAMPLE;
     document.getElementById("btn-run").addEventListener("click", run);
+    // Capture activation before the shared exporters can create an empty artifact.
+    ["alm-export-mount", "alm-plot-mount"].forEach(function (id) {
+      $(id).addEventListener("click", function (event) {
+        if (_last || !event.target.closest("button")) return;
+        event.preventDefault(); event.stopImmediatePropagation();
+        if (!$("msgs").querySelector("[data-export-error]")) {
+          var message = document.createElement("div");
+          message.className = "msg err"; message.setAttribute("role", "status"); message.setAttribute("data-export-error", "");
+          message.textContent = "No valid results to export"; $("msgs").appendChild(message);
+        }
+      }, true);
+    });
     window.alm.plotExport({
       target: "#alm-plot-mount", basename: "dose-response-ma",
       plots: [
@@ -358,7 +440,7 @@
     ["f-shape", "f-cov", "f-proc", "f-method", "f-mod"].forEach(function (id) { $(id).addEventListener("change", run); });
     run();
     (function () { function rdy(f) { document.readyState !== "loading" ? f() : document.addEventListener("DOMContentLoaded", f); }
-      rdy(function () { if (window.alm && window.alm.resultsExport) window.alm.resultsExport({ target: "#alm-export-mount", basename: "dose-response-results", getResults: function () { return _almLastDoseResponse() || {}; } }); });
+      rdy(function () { if (window.alm && window.alm.resultsExport) window.alm.resultsExport({ target: "#alm-export-mount", basename: "dose-response-results", getResults: function () { return _almLastDoseResponse(); } }); });
     })();
   })();
 </script>

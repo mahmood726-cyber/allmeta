@@ -1,0 +1,49 @@
+[1] "C:/Users/User/allmeta-offload/Rlib_extra"
+[2] "C:/Users/User/allmeta-offload/Rlib_dta"  
+[3] "C:/Users/User/R/R-4.6.0/library"         
+mada : [1] '0.5.12'
+metadat : [1] '1.6.0'
+mvmeta : [1] '1.0.3'
+jsonlite : [1] '2.0.0'
+Loading required package: mvtnorm
+Loading required package: ellipse
+
+Attaching package: 'ellipse'
+
+The following object is masked from 'package:graphics':
+
+    pairs
+
+Loading required package: mvmeta
+This is mvmeta 1.0.3. For an overview type: help('mvmeta-package').
+Loading required package: metafor
+Loading required package: Matrix
+Loading required package: metadat
+Loading required package: numDeriv
+
+Loading the 'metafor' package (version 5.2-1). For an
+introduction to the package please type: help(metafor)
+
+
+Attaching package: 'metafor'
+
+The following object is masked from 'package:mvmeta':
+
+    blup
+
+
+Attaching package: 'mada'
+
+The following object is masked from 'package:metafor':
+
+    forest
+
+There were 50 or more warnings (use warnings() to see the first 50)
+There were 50 or more warnings (use warnings() to see the first 50)
+There were 50 or more warnings (use warnings() to see the first 50)
+Raw-scale configurations: 3528  fitted by mada on raw input: 3462 
+  reference-raw-year 18 
+  shift-scan 660 
+  synthetic-raw-year 540 
+  scale-scan 2160 
+  near-standardised 150 

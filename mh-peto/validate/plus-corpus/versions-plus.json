@@ -1,0 +1,24 @@
+{
+ "R": "R version 4.6.0 (2026-04-24 ucrt)",
+ "packages": {
+  "metafor": "5.2.1",
+  "meta": "8.5.0",
+  "metadat": "1.6.0",
+  "jsonlite": "2.0.0"
+ },
+ "calls": {
+  "mh": "rma.mh(ai,bi,ci,di,measure=m,add=c(.5,0),to=c('only0','none'),drop00=c(FALSE,FALSE),correct=FALSE)",
+  "peto": "rma.peto(ai,bi,ci,di,add=0,to='none',drop00=TRUE)",
+  "loo": "leave1out(fit)",
+  "metamh": "metabin(ai,n1i,ci,n2i,sm=m,method='MH') defaults (incr=0.5, method.incr='only0', allstudies=FALSE, MH.exact=FALSE)",
+  "ivfe": "rma(yi,vi,data=escalc(measure=m,ai,bi,ci,di),method='EE') (escalc defaults add=1/2, to='only0', drop00=FALSE)"
+ },
+ "node": "v24.15.0",
+ "browser": "chrome-headless-shell (Playwright chromium_headless_shell-1243)",
+ "tolerances": {
+  "relative": "|app-R|/max(1,|R|) <= 1e-9",
+  "p_values_absolute": 1e-09,
+  "flags_and_refusals": "exact",
+  "null": "matches null (R NA or R error) only"
+ }
+}
