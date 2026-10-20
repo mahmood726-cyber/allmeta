@@ -44,7 +44,7 @@ writeFileSync('xplat-results.json', JSON.stringify(aggregate, null, 2) + '\n');
 const md = [
   `## xplat-verify: ${allPass ? 'all rows PASS' : 'FAIL'}`, '',
   '| OS | R | R version | packages via | result | |', '|---|---|---|---|---|---|',
-  ...rows.map(r => `| ${r.os} | ${r.r} | ${r.missing ? '-' : r['R.version.string']} | ${r.missing ? '-' : r.install} | ${line(r)} | ${r.pass ? 'PASS' : 'FAIL'} |`),
+  ...rows.map(r => `| ${r.os} | ${r.r} | ${r.missing ? '-' : r['R.version.string']} | ${r.missing ? '-' : (r.packages_via || r.install)} | ${line(r)} | ${r.pass ? 'PASS' : 'FAIL'} |`),
   '', apps.length ? '| app | ' + rows.map(r => `${r.os} / ${r.r}`).join(' | ') + ' |' : '',
   apps.length ? '|---|' + rows.map(() => '---|').join('') : '',
   ...apps.map(a => `| ${a} | ` + rows.map(r => { const x = (r.apps || {})[a]; return x ? `${x.pass ? '✅' : '❌'} ${n(x.passed)}/${n(x.N)}` : '-'; }).join(' | ') + ' |'),
@@ -80,7 +80,7 @@ th,td{border:1px solid #bbb;padding:.3rem .6rem;text-align:left}.pass{color:#0a6
 Commit <code>${esc(aggregate.commit || 'n/a')}</code>, generated ${esc(aggregate.generated)}.</p>
 <p>${runUrl ? `<a href="${esc(runUrl)}">This run (logs)</a> · <a href="${esc(runUrl)}#artifacts">Artifacts (R scripts, results, plots)</a> · ` : ''}<a href="${esc(workflowUrl)}">All xplat-verify runs</a></p>
 <table><thead><tr><th scope="col">OS</th><th scope="col">R</th><th scope="col">R version</th><th scope="col">Packages via</th><th scope="col">Result</th><th scope="col">Badge</th></tr></thead><tbody>
-${rows.map(r => `<tr><td>${esc(r.os)}</td><td>${esc(r.r)}</td><td>${esc(r.missing ? '-' : r['R.version.string'])}</td><td>${esc(r.missing ? '-' : r.install)}</td><td class="${r.pass ? 'pass' : 'fail'}">${esc(line(r))}</td><td><img alt="${esc(r.os + ' R ' + r.r)}" src="${esc(badgeImg(`badge-${slug(r)}.json`))}"></td></tr>`).join('\n')}
+${rows.map(r => `<tr><td>${esc(r.os)}</td><td>${esc(r.r)}</td><td>${esc(r.missing ? '-' : r['R.version.string'])}</td><td>${esc(r.missing ? '-' : (r.packages_via || r.install))}</td><td class="${r.pass ? 'pass' : 'fail'}">${esc(line(r))}</td><td><img alt="${esc(r.os + ' R ' + r.r)}" src="${esc(badgeImg(`badge-${slug(r)}.json`))}"></td></tr>`).join('\n')}
 </tbody></table>
 <h2>Per app</h2>
 <table><thead><tr><th scope="col">App</th>${rows.map(r => `<th scope="col">${esc(r.os)} / ${esc(r.r)}</th>`).join('')}</tr></thead><tbody>

@@ -7,8 +7,8 @@ name: xplat-verify
 #            (must FAIL) and the plots; writes result-<os>-<r>.json; fails on any miss or an undetected plant
 #   report : job summary + xplat-results.json; on main only, pushes status page + shields badges to the
 #            xplat-status branch (plain commit, never forced)
-#   snapshot (workflow_dispatch snapshot=true): pak-installs .github/r/pinned.txt on R 4.5.1 and uploads a
-#            generated renv.lock for a human to commit as .github/r/renv.lock
+#   snapshot (workflow_dispatch snapshot=true): pak-installs .github/r/pinned.txt on R 4.5.1 from a dated P3M
+#            snapshot and uploads a generated renv.lock for a human to commit as .github/r/renv.lock
 
 on:
   workflow_dispatch:
@@ -127,22 +127,13 @@ jobs:
           codename=$(. /etc/os-release && echo "$VERSION_CODENAME")
           echo "options(repos = c(CRAN = 'https://p3m.dev/cran/__linux__/${codename}/latest'))" >> "$(Rscript -e 'cat(R.home("etc"))')/Rprofile.site"
           Rscript -e 'print(getOption("repos"))'
-      # --- path A: committed lockfile -> renv ---
-      - uses: r-lib/actions/setup-renv@v2
-        if: ${{ steps.pins.outputs.lock == 'true' && !matrix.container }}
-        with:
-          working-directory: .github/r
-      - name: renv restore (container)
-        if: ${{ steps.pins.outputs.lock == 'true' && matrix.container }}
-        run: |
-          Rscript -e 'install.packages("renv", repos = "https://cloud.r-project.org")'
-          Rscript -e 'renv::restore(project = ".github/r", prompt = FALSE)'
-      - name: use the renv library for the checks
+      # --- path A: committed lockfile -> renv, on every row (host and container alike) ---
+      # restore.R installs the lock's system requirements (Linux), restores from the lock's dated P3M snapshot
+      # (binaries) and checks every installed version against the lock. Any failure fails this row: there is no
+      # fallback to path B once a lock is committed. It sets R_LIBS + R_LIBS_USER, XPLAT_PACKAGES_VIA=renv and XPLAT_INSTALL.
+      - name: renv restore from .github/r/renv.lock (fails the row on any error)
         if: ${{ steps.pins.outputs.lock == 'true' }}
-        run: |
-          lib=$(Rscript -e 'cat(renv::paths$library(project = normalizePath(".github/r")))')
-          echo "R_LIBS_USER=$lib" >> "$GITHUB_ENV"
-          echo "XPLAT_INSTALL=renv (.github/r/renv.lock)" >> "$GITHUB_ENV"
+        run: Rscript .github/r/restore.R
       # --- path B: no lockfile yet -> the same pinned versions via setup-r-dependencies (pak) ---
       - uses: r-lib/actions/setup-r-dependencies@v2
         if: ${{ steps.pins.outputs.lock != 'true' }}
@@ -151,9 +142,11 @@ jobs:
           dependencies: '"hard"'
       - name: record install path (fallback)
         if: ${{ steps.pins.outputs.lock != 'true' }}
-        run: echo "XPLAT_INSTALL=setup-r-dependencies (pinned refs from .github/r/pinned.txt; no renv.lock committed)" >> "$GITHUB_ENV"
+        run: |
+          echo "XPLAT_PACKAGES_VIA=setup-r-dependencies" >> "$GITHUB_ENV"
+          echo "XPLAT_INSTALL=setup-r-dependencies (pinned refs from .github/r/pinned.txt; no renv.lock committed)" >> "$GITHUB_ENV"
       - name: run every check, entry grid, planted copy, plots
-        run: Rscript scripts/xplat/run-checks.R xplat-out "${{ matrix.os }}" "${{ matrix.r }}" "$XPLAT_INSTALL"
+        run: Rscript scripts/xplat/run-checks.R xplat-out "${{ matrix.os }}" "${{ matrix.r }}" "$XPLAT_INSTALL" "$XPLAT_PACKAGES_VIA"
       - if: always()
         uses: actions/upload-artifact@v4
         with:
