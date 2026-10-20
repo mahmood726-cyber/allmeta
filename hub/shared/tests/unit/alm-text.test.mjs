@@ -297,3 +297,35 @@ test('T.when with a function is lazy: guarded parts reading a missing key do not
   const eager = { ...simpleTemplates, plain: (T) => ['x', T.when(T.has('missing'), [' ', T.num('missing', 2)])] };
   assert.throws(() => AlmText.render(eager, simpleResults, ctx0), /missing result "missing"/);
 });
+
+// FU4: heterogeneity-method citations (Q-profile CI, Sidik-Jonkman estimator, empirical Bayes).
+const NEW_CITES = {
+  viechtbauerQProfile: ['Viechtbauer 2007', /Confidence intervals for the amount of heterogeneity in meta-analysis\. Stat Med 2007;26:37-52\./],
+  sidikJonkman: ['Sidik and Jonkman 2005', /Simple heterogeneity variance estimation for meta-analysis\. J R Stat Soc Ser C Appl Stat 2005;54:367-384\./],
+  sidikJonkmanComparison: ['Sidik and Jonkman 2007', /A comparison of heterogeneity variance estimators in combining results of studies\. Stat Med 2007;26:1964-1981\./],
+  morris: ['Morris 1983', /Parametric empirical Bayes inference: theory and applications\. J Am Stat Assoc 1983;78:47-55\./],
+};
+test('citations: Viechtbauer 2007, Sidik & Jonkman 2005/2007, Morris 1983 render as typed tokens and pass the audit', () => {
+  for (const [id, [short, full]] of Object.entries(NEW_CITES)) {
+    assert.ok(!/\d/.test(id), 'citation id is digit-free: ' + id);
+    assert.equal(AlmText.CITES[id].short, short);
+    assert.match(AlmText.CITES[id].full, full);
+  }
+  const t = { ...simpleTemplates, methods: (T) => ['Q-profile CI (', T.cite('viechtbauerQProfile'), '); SJ (', T.cite('sidikJonkman'), '; ',
+    T.cite('sidikJonkmanComparison'), '); EB (', T.cite('morris'), ').'] };
+  const out = AlmText.render(t, simpleResults, ctx0);
+  assert.equal(out.methods.text, 'Q-profile CI (Viechtbauer 2007); SJ (Sidik and Jonkman 2005; Sidik and Jonkman 2007); EB (Morris 1983).');
+  assert.deepEqual(out.cites.map(c => c.id), Object.keys(NEW_CITES));
+  const a = AlmText.audit(out, simpleResults, { ctx: ctx0 });
+  report('new-citations', a);
+  assert.equal(a.ok, true, JSON.stringify(a.failures));
+  // PLANTED: a citation token whose text no longer matches the table fails the audit.
+  const tampered = JSON.parse(JSON.stringify(out));
+  const seg = tampered.methods.segments.find(s => s.type === 'cite' && s.id === 'morris');
+  seg.text = 'Morris 1984';
+  tampered.methods.text = tampered.methods.segments.map(s => s.text).join('');
+  const b = AlmText.audit(tampered, simpleResults, { ctx: ctx0 });
+  report('new-citations-planted', b);
+  assert.equal(b.ok, false);
+  assert.ok(b.failures.some(f => f.check === 'methods:cite:morris'), JSON.stringify(b.failures));
+});

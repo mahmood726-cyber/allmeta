@@ -112,3 +112,45 @@ test('AlmFeaturesState and module registration', () => {
   eq(F.tabs, ['entry', 'text', 'verify', 'share']); eq(F.blocks, BLOCKS);
   console.log('ALMFEATURES checks ' + checks);
 });
+
+// FU3: Data entry / Report text tabs use built-in modules when their UI components are loaded.
+test('moduleFor: built-in Data entry / Report text modules appear only when AlmEntryUI / AlmTextUI are loaded', () => {
+  const saved = { e: globalThis.AlmEntryUI, t: globalThis.AlmTextUI };
+  try {
+    delete globalThis.AlmEntryUI; delete globalThis.AlmTextUI;
+    eq([F.moduleFor('entry'), F.moduleFor('text')], [null, null], 'no UI component -> no tab module');
+    globalThis.AlmEntryUI = { mount() {} }; globalThis.AlmTextUI = { mount() {} };
+    const e = F.moduleFor('entry'), t = F.moduleFor('text');
+    eq([e && e.label, t && t.label], ['Data entry', 'Report text']);
+    ok(F.moduleFor('entry') === e && F.moduleFor('text') === t, 'built-ins are stable objects (renderHost keeps mounted tabs)');
+    eq(F.tabs, ['entry', 'text', 'verify', 'share'], 'tab order Data entry, Report text, Verify in R, Share');
+    // Lazy: render() mounts nothing; the first onShow() mounts with the spec block's options; later shows do not re-mount.
+    const calls = [];
+    globalThis.AlmEntryUI = { mount(el, opts) { calls.push(opts); return { destroy() {} }; } };
+    const panel = {}, block = { schema: 'proportion', extras: ['subgroup'], apply() { return { ok: true }; }, usedAs: 'proportion' };
+    const hooks = F.moduleFor('entry').render(panel, { app: 'x', spec: {}, block });
+    eq(calls.length, 0, 'nothing mounted before the tab is shown');
+    hooks.onShow(); hooks.onShow();
+    eq(calls.length, 1, 'mounted exactly once');
+    eq([calls[0].schema, calls[0].extras, calls[0].usedAs, calls[0].apply === block.apply], ['proportion', ['subgroup'], 'proportion', true]);
+    const texts = [];
+    globalThis.AlmTextUI = { mount(el, spec) { texts.push(spec); return { regenerate() { texts.push('regen'); } }; } };
+    const th = F.moduleFor('text').render({}, { app: 'x', spec: {}, block: { results() {}, templates: {} } });
+    th.onShow(); th.onShow();
+    eq([texts.length, texts[0].app, texts[1]], [2, 'x', 'regen'], 'Report text mounts once, regenerates on later shows');
+    // A registered module still wins over the built-in.
+    const custom = { render() {} };
+    F.registerModule('text', custom);
+    ok(F.moduleFor('text') === custom, 'registered module overrides the built-in');
+  } finally {
+    if (saved.e === undefined) delete globalThis.AlmEntryUI; else globalThis.AlmEntryUI = saved.e;
+    if (saved.t === undefined) delete globalThis.AlmTextUI; else globalThis.AlmTextUI = saved.t;
+  }
+});
+
+test('PLANTED: an eager entry module (mounting in render) is caught by the lazy-mount gate', () => {
+  const calls = [];
+  const eager = { render(panel, ctx) { calls.push(ctx.block); return { onShow() {} }; } };
+  eager.render({}, { block: {} });
+  ok(calls.length === 1, 'the eager module mounted before being shown -> the "nothing mounted before shown" gate FAILS');
+});
