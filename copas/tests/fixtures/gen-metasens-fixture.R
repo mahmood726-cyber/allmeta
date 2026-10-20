@@ -108,6 +108,45 @@ out <- list(
                  DL_10 = mk("DL", 10L))
 )
 path <- file.path("copas", "tests", "fixtures", "copas-metasens-fixture.json")
-writeLines(toJSON(out, auto_unbox = TRUE, digits = NA, na = "string",
+## digits = 17, NOT digits = NA. jsonlite's "max precision" setting emits about
+## 15 significant digits and is NOT round-trip exact, so a double can come back
+## one unit in the last place away from the value R held. Most of this fixture
+## would tolerate that, but base::pretty()'s level count and contourLines'
+## crossing test `(z0 < zc) != (z1 < zc)` are DISCRETE functions of the values,
+## so a one-ULP perturbation can change the answer the test demands. Observed:
+##   pretty(c(0.1, 0.1 + 1e-12),   10) -> 12 levels
+##   pretty(c(0.1, 0.100000000001), 10) -> 11 levels   (what digits = NA writes)
+writeLines(toJSON(out, auto_unbox = TRUE, digits = 17, na = "string",
                   matrix = "rowmajor"), path)
+## Prove the round trip rather than trusting it.
+local({
+  back <- fromJSON(path, simplifyVector = FALSE)
+  leaves <- function(o) {
+    if (is.list(o)) return(unlist(lapply(o, leaves), use.names = FALSE))
+    if (is.numeric(o)) return(as.numeric(o))
+    if (is.character(o)) {
+      n <- suppressWarnings(as.numeric(o))
+      return(ifelse(is.na(n) & !(o %in% c("NA", "NaN")), NA_real_, n))
+    }
+    if (is.logical(o)) return(as.numeric(o))
+    numeric(0)
+  }
+  a <- leaves(out); b <- leaves(back)
+  ## Order-insensitive: the round trip legitimately reorders some containers (a
+  ## matrix is written as an array of ROWS, so it comes back row-major where R
+  ## held it column-major). What must be preserved is every VALUE, so the finite
+  ## values are compared as sorted multisets and the rest by count.
+  stopifnot(length(a) == length(b))
+  cls <- function(v) c(sum(is.finite(v)), sum(is.nan(v)), sum(is.na(v) & !is.nan(v)),
+                       sum(v == Inf, na.rm = TRUE), sum(v == -Inf, na.rm = TRUE))
+  if (!identical(cls(a), cls(b)))
+    stop("fixture JSON round trip changed the value classes", call. = FALSE)
+  sa <- sort(a[is.finite(a)]); sb <- sort(b[is.finite(b)])
+  bad <- which(sa != sb)
+  if (length(bad))
+    stop(sprintf("fixture JSON is not round-trip exact: %d of %d finite values differ",
+                 length(bad), length(sa)), call. = FALSE)
+  cat(sprintf("JSON round-trip PASS: %d numeric leaves, %d finite\n",
+              length(a), length(sa)))
+})
 cat("wrote", path, "with", length(out$configs), "configurations, k =", length(TE), "\n")
