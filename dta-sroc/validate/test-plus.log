@@ -1,0 +1,31 @@
+✔ all scalar reference checks (256.8866ms)
+✔ detect fit corruption: coef (287.6873ms)
+✔ detect fit corruption: vcov (265.3784ms)
+✔ detect fit corruption: Psi (164.7332ms)
+✔ detect fit corruption: p (126.27ms)
+✔ detect fit corruption: z (114.2468ms)
+✔ detect fit corruption: se (115.3669ms)
+✔ detect fit corruption: lo (107.5198ms)
+✔ detect fit corruption: hi (109.8857ms)
+✔ detect prediction corruption: sens (110.5001ms)
+✔ detect prediction corruption: spec (356.1315ms)
+✔ detect prediction corruption: mu (192.8214ms)
+✔ detect prediction corruption: C (236.6644ms)
+✔ detect prediction corruption: positive (127.4579ms)
+✔ detect prediction corruption: negative (113.4002ms)
+✔ detect prediction corruption: confidence (145.2149ms)
+✔ detect prediction corruption: prediction (242.1958ms)
+✔ detect refusal corruption (240.3349ms)
+✔ detect array truncation (139.7138ms)
+✔ invalid method and correction (1.0851ms)
+✔ invalid counts and constant covariate (1.2361ms)
+✔ invalid prediction and prevalence (15.244ms)
+✔ undefined post-test probability is refused (14.4924ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9355.268
