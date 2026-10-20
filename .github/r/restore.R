@@ -35,15 +35,34 @@ if (Sys.info()[["sysname"]] == "Linux") {
   }
 }
 
-renv::restore(project = project, lockfile = lock_path, prompt = FALSE, clean = FALSE)
+# An explicit library: renv::paths$library() of a never-activated project is not where restore() installs.
+lib <- file.path(project, "renv", "xplat-library")
+dir.create(lib, recursive = TRUE, showWarnings = FALSE)
+lib <- normalizePath(lib, winslash = "/")
+renv::restore(project = project, library = lib, lockfile = lock_path, prompt = FALSE, clean = FALSE)
 
-lib <- normalizePath(renv::paths$library(project = project), winslash = "/")
-ip <- utils::installed.packages(lib.loc = lib, noCache = TRUE)
-got <- ip[match(names(want), ip[, "Package"]), "Version"]
+# Verify what the checks will actually load: a fresh R with R_LIBS_USER=<lib> (as run-checks.R gets it) reports the
+# version and library of every locked package. A package renv left alone because this R bundles the same version
+# (e.g. boot) counts only if that version equals the lock.
+probe <- tempfile(fileext = ".R")
+writeLines(c(sprintf("for (p in c(%s)) {", paste(sprintf('"%s"', names(want)), collapse = ", ")),
+  '  v <- tryCatch(as.character(utils::packageVersion(p)), error = function(e) NA_character_)',
+  '  path <- tryCatch(normalizePath(dirname(find.package(p)), winslash = "/"), error = function(e) NA_character_)',
+  '  cat("PKG", p, v, path, sep = "\t"); cat("\n")', "}"), probe)
+rscript <- file.path(R.home("bin"), if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript")
+Sys.setenv(R_LIBS_USER = lib)   # inherited by the child (system2's env= is ignored on Windows)
+out <- system2(rscript, c("--vanilla", shQuote(probe)), stdout = TRUE)
+rows <- do.call(rbind, strsplit(out[startsWith(out, "PKG\t")], "\t", fixed = TRUE))
+got <- setNames(rows[, 3], rows[, 2])[names(want)]
+from <- setNames(rows[, 4], rows[, 2])[names(want)]
+got[got == "NA"] <- NA
 bad <- is.na(got) | got != want
-for (p in names(want)) cat(sprintf("  %-14s lock %-12s installed %s%s\n", p, want[[p]], got[[p]], if (bad[[p]]) "  MISMATCH" else ""))
-if (any(bad)) stop("renv::restore did not install the locked versions of: ", paste(names(want)[bad], collapse = ", "))
-cat(sprintf("RENV_RESTORED %d/%d packages at the locked versions into %s\n", sum(!bad), length(want), lib))
+in_lib <- !is.na(from) & tolower(from) == tolower(lib)
+for (p in names(want)) cat(sprintf("  %-14s lock %-12s loads %-12s from %s%s\n", p, want[[p]], got[[p]],
+  if (in_lib[[p]]) "renv library" else from[[p]], if (bad[[p]]) "  MISMATCH" else ""))
+if (any(bad)) stop("renv::restore did not provide the locked versions of: ", paste(names(want)[bad], collapse = ", "))
+cat(sprintf("RENV_RESTORED %d/%d packages at the locked versions (%d from %s, %d bundled with this R at the same version)\n",
+  sum(!bad), length(want), sum(in_lib), lib, sum(!bad) - sum(in_lib)))
 
 env_file <- Sys.getenv("GITHUB_ENV")
 if (nzchar(env_file)) cat(sprintf("R_LIBS_USER=%s\nXPLAT_PACKAGES_VIA=renv\nXPLAT_INSTALL=renv %s restore of .github/r/renv.lock (%d/%d packages at locked versions)\n",
