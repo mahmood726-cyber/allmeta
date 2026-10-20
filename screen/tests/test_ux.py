@@ -37,10 +37,10 @@ def test_no_stopping_or_recall_guarantee_language():
     assert "do not estimate how many relevant records remain" in _h()
 
 
-def test_ux_ui_does_not_touch_ranking_math_or_cadence():
+def test_ux_ui_delegates_to_pinned_ranker_without_ranking_math():
     s = (ROOT / "ux-ui.js").read_text(encoding="utf-8")
-    # It may only click the existing trainer and mirror the existing opt-in checkbox.
-    assert "$('hy-train').click()" in s
+    # Guidance delegates to the U4 UI; fitting stays in the worker.
+    assert "window.ScreenRankUI.start()" in s
     for bad in ("ScreenHybrid", "hybridScore =", "hybridScore=", "DEFAULTS", "postMessage", "new Worker", "mlTrain", "onTrain", "autoRank"):
         assert bad not in s, bad
 
@@ -50,7 +50,7 @@ def test_new_controls_have_unique_ids_and_balanced_markup():
     ids = re.findall(r'id="([^"]+)"', h)
     dupes = {i for i in ids if ids.count(i) > 1}
     assert not dupes, dupes
-    for i in ("btn-export-asreview", "ux-strip", "ux-gate", "ux-start-ai", "ux-auto", "ux-progress"):
+    for i in ("btn-export-asreview", "ux-strip", "ux-gate", "ux-start-ai", "ux-auto-wrap", "ux-progress", "rank-advanced"):
         assert f'id="{i}"' in h
     assert len(re.findall(r"<div[\s>]", h)) == h.count("</div>")
     inline = h[h.index("<script>\n"):]

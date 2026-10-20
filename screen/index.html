@@ -254,7 +254,9 @@
     <aside aria-label="Project setup">
       <section class="panel">
         <h2>Project</h2>
-        <button type="button" id="btn-train" class="primary">Train &amp; rank</button>
+        <details id="rank-advanced"><summary>Advanced ranking trainers</summary>
+        <button type="button" id="btn-train">Train &amp; rank (legacy Naive Bayes)</button>
+        <div id="rank-advanced-controls"></div></details>
         <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
         <div id="analysis-stale" hidden>Results out of date — press Train &amp; rank</div>
         <label><span class="lbl">Review title</span>
@@ -331,7 +333,7 @@
           <label><span class="lbl">Sort</span>
             <select id="f-sort">
               <option value="order">Import order</option>
-              <option value="hybrid">Hybrid local ranking ↓</option><option value="ml">Legacy ML relevance ↓</option><option value="uncertainty">ML uncertainty first</option>
+              <option value="rankcore">U4 AI ranking</option><option value="hybrid">Hybrid local ranking ↓</option><option value="ml">Legacy ML relevance ↓</option><option value="uncertainty">ML uncertainty first</option>
               <option value="relevance">Term score ↓</option>
               <option value="rct">RCT likelihood ↓</option>
               <option value="year">Year ↓</option>
@@ -420,7 +422,7 @@
         <span id="ux-progress" class="ux-progress"></span>
         <span class="ux-ai"><span id="ux-gate" role="status" aria-live="polite"></span>
           <button type="button" id="ux-start-ai" class="primary" disabled>Start AI ranking</button>
-          <label class="toggle" id="ux-auto-wrap" hidden><input type="checkbox" id="ux-auto"> Keep ranking updated after each decision</label></span>
+          <span id="ux-auto-wrap" hidden>U4 retrains after every decision.</span></span>
         <p class="hint" id="ux-progress-note">Descriptive counts of your decisions in this stage. They do not estimate how many relevant records remain.</p>
       </div>
       <div class="progress">
@@ -942,6 +944,7 @@
         if (kw && (r.title + " " + r.abstract).toLowerCase().indexOf(kw) < 0) return false;
         return true;
       });
+      if (S.sort === "rankcore") out.sort(function(a,b){return (b.rankScore==null?-Infinity:b.rankScore)-(a.rankScore==null?-Infinity:a.rankScore) || (a.rankIndex==null?Infinity:a.rankIndex)-(b.rankIndex==null?Infinity:b.rankIndex);});
       if (S.sort === "hybrid") out.sort(function(a,b){return (b.hybridScore==null?-1:b.hybridScore)-(a.hybridScore==null?-1:a.hybridScore);});
       else if (S.sort === "uncertainty") out.sort(function(a,b){return (a.mlScore == null ? 2 : Math.abs(a.mlScore-0.5)) - (b.mlScore == null ? 2 : Math.abs(b.mlScore-0.5));});
       else if (S.sort === "ml") out.sort(function (a, b) { return (b.mlScore == null ? -1 : b.mlScore) - (a.mlScore == null ? -1 : a.mlScore); });
@@ -1985,6 +1988,7 @@
       };
     }
     function onTrain() {
+      if(window.ScreenRankUI)window.ScreenRankUI.stop();
       var res = mlTrain();
       $("ml-status").innerHTML = escapeHtml(res.msg);
       if (res.ok) {
@@ -2197,7 +2201,7 @@
     }
 
     window.ScreenBridge={state:function(){return S;},save:save,render:render,current:currentRecord,
-      eligible:stageRecords,notify:workflowMessage,audit:W.audit,
+      eligible:stageRecords,undecided:isUndecidedForActive,notify:workflowMessage,audit:W.audit,
       label:function(r){if(r.dup)return null;var d=W.visible(r,S);return d==="include"?1:d==="exclude"?0:null;}};
     // ---- test hook (deterministic, for behavioural specs) ----
     window.__almScreenpro = {
@@ -2249,6 +2253,8 @@
   })();
   </script>
   <script src="hybrid-ui.js"></script>
+  <script src="rank-config.js"></script>
+  <script src="rank-ui.js"></script>
   <script src="ux-ui.js"></script>
   <script src="../hub/shared/a11y-landmarks.js"></script>
   <div id="alm-validate"></div>

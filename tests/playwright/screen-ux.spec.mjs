@@ -22,7 +22,7 @@ test('empty project shows a single first-run path with drop, choose-file and dem
   await expect(page.locator('#ux-start-ai')).toBeDisabled();
 });
 
-test('gate hint counts up, one button starts the existing hybrid ranker, cadence setting untouched', async ({ page }) => {
+test('gate hint counts up, one button starts U4 and enables per-decision refitting', async ({ page }) => {
   await ready(page);
   await page.locator('#fr-demo').click();
   await page.keyboard.press('i');
@@ -40,26 +40,26 @@ test('gate hint counts up, one button starts the existing hybrid ranker, cadence
   await expect(page.locator('#ux-auto-wrap')).toBeVisible();
   expect(await page.evaluate(() => __almScreenpro.state().hybrid.auto)).toBe(false);
   await page.locator('#ux-start-ai').click();
-  await expect(page.locator('#hy-status')).toContainText('Ranked', { timeout: 30000 });
+  await expect(page.locator('#rank-status')).toContainText('Ranked', { timeout: 30000 });
   await expect(page.locator('#ux-gate')).toContainText('AI ranking is current');
   await expect(page.locator('#ux-start-ai')).toBeHidden();
   const s = await page.evaluate(() => __almScreenpro.state());
-  expect(s.sort).toBe('hybrid');
+  expect(s.sort).toBe('rankcore');
   expect(s.filter).toBe('undecided');
   expect(s.hybrid.auto).toBe(false);
-  expect(s.hybrid.run.labels.length).toBe(4);
+  expect(s.rank.run.labels).toBe(4);
   // The progress text carries no stopping or recall-guarantee language.
   const body = (await page.locator('body').innerText()).toLowerCase();
   for (const bad of ['safe to stop', 'you can stop', 'stop screening', 'recall guarantee']) expect(body).not.toContain(bad);
   await expect(page.locator('#ux-progress-note')).toContainText('do not estimate how many relevant records remain');
 });
 
-test('the mirror toggle drives the existing opt-in retraining checkbox', async ({ page }) => {
+test('advanced trainers remain available with their own opt-in setting', async ({ page }) => {
   await ready(page);
   await page.locator('#fr-demo').click();
   for (const k of ['i', 'e', 'e', 'i']) await page.keyboard.press(k);
-  await page.locator('#ux-auto').check();
-  await expect(page.locator('#hy-auto')).toBeChecked();
+  await page.locator('#rank-advanced summary').click();
+  await page.locator('#hy-auto').check();
   expect(await page.evaluate(() => __almScreenpro.state().hybrid.auto)).toBe(true);
   await expect(page.locator('#hy-status')).toContainText('Ranked', { timeout: 30000 });
 });

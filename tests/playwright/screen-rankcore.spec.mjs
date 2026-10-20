@@ -1,0 +1,32 @@
+import {test, expect} from '@playwright/test';
+
+test('demo 2+2 starts the pinned worker, orders undecided records and refits after a decision', async ({page}) => {
+  const workers=[];
+  page.on('worker',w=>workers.push(w.url()));
+  await page.goto('/screen/index.html');
+  await page.waitForFunction(()=>!!window.ScreenRankUI);
+  await page.locator('#fr-demo').click();
+  await expect(page.locator('#ux-start-ai')).toBeDisabled();
+  for(const key of ['i','e','e','i']) await page.keyboard.press(key);
+  const before=await page.evaluate(()=>__almScreenpro.state().records.map(r=>[r.id,r.r1.d]));
+  await page.locator('#ux-start-ai').click();
+  await expect(page.locator('#rank-status')).toContainText('Ranked', {timeout:30000});
+  expect(workers.some(url=>url.endsWith('/rank-worker.js'))).toBe(true);
+  const state=await page.evaluate(()=>__almScreenpro.state());
+  expect(state.sort).toBe('rankcore');
+  expect(state.filter).toBe('undecided');
+  expect(state.rank.run.worker).toBe('rank-worker.js');
+  expect(state.rank.run.ranked.length).toBeGreaterThan(0);
+  expect(state.records.map(r=>[r.id,r.r1.d])).toEqual(before);
+  const first=state.rank.run.ranked[0];
+  expect(await page.evaluate(()=>ScreenBridge.current().id)).toBe(first.id);
+  await expect(page.locator('#card-host .ctitle')).toBeVisible();
+  await page.locator('[data-dec="exclude"]').click();
+  await page.waitForFunction(()=>ScreenBridge.state().rank.run?.labels===5);
+  const after=await page.evaluate(()=>__almScreenpro.state());
+  expect(after.rank.run.ranked.some(r=>r.id===first.id)).toBe(false);
+  expect(workers.filter(url=>url.endsWith('/rank-worker.js')).length).toBeGreaterThanOrEqual(2);
+  await page.locator('#rank-advanced summary').click();
+  await expect(page.locator('#hy-train')).toBeVisible();
+  await expect(page.locator('#btn-train')).toBeVisible();
+});
