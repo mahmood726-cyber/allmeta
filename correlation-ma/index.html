@@ -71,6 +71,7 @@
     <h2 style="margin-top:1rem">Forest (r scale)</h2>
     <div id="forest-host"></div>
     <div id="alm-export-mount" style="margin-top:1rem"></div>
+    <div id="alm-validate"></div>
   </section>
 </main>
 <footer>
@@ -92,7 +93,9 @@
         var t = line.trim(); if (!t || t.charAt(0) === "#") return;
         var p = t.split(/\s*,\s*/);
         if (p.length < 3) return;
-        var n = parseFloat(p[p.length - 1]), r = parseFloat(p[p.length - 2]);
+        // Require complete numeric fields; parseFloat silently accepted trailing text.
+        if (!p[p.length - 1].trim() || !p[p.length - 2].trim()) return;
+        var n = Number(p[p.length - 1]), r = Number(p[p.length - 2]);
         var label = p.slice(0, p.length - 2).join(", ") || ("Study " + (rows.length + 1));
         if (!isFinite(r) || !isFinite(n) || r <= -1 || r >= 1 || n <= 3) return;
         rows.push({ label: label, r: r, n: n, z: Math.atanh(r), v: 1 / (n - 3) });
@@ -150,6 +153,17 @@
       return p.join("");
     }
 
+    // Observation/replay hooks only: use the same parser, calculation and renderer as input events.
+    window.__almCorrValidationRun = run;
+    window.__almCorrValidationSnapshot = function () {
+      return { data: document.getElementById('f-data').value, method: document.getElementById('f-method').value,
+        last: _last, nodes: ['headline', 'res-body', 'forest-host'].map(function (id) { return Array.from(document.getElementById(id).childNodes); }) };
+    };
+    window.__almCorrValidationRestore = function (s) {
+      document.getElementById('f-data').value = s.data; document.getElementById('f-method').value = s.method;
+      _last = s.last;
+      ['headline', 'res-body', 'forest-host'].forEach(function (id, i) { document.getElementById(id).replaceChildren.apply(document.getElementById(id), s.nodes[i]); });
+    };
     document.getElementById("f-data").value = EXAMPLE;
     document.getElementById("f-data").addEventListener("input", run);
     document.getElementById("f-method").addEventListener("change", run);
@@ -165,5 +179,8 @@
 </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/results-export.js"></script>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/pins.js"></script>
+<script src="validate/adapter.js"></script>
 </body>
 </html>
