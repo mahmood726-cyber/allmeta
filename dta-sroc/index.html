@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'self'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
   <meta name="description" content="Diagnostic test accuracy meta-analysis: bivariate (Reitsma) model by REML, ML, method of moments or variance components, with meta-regression, SROC curves, 95% confidence and prediction regions, AUC, LR±, Fagan nomogram and Deeks' test. Pure JavaScript; reproduces mada::reitsma.">
   <meta name="color-scheme" content="light dark">
@@ -837,7 +837,10 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'dta-sroc' });
+      // The #alm-plus extras are kept out of the original autosave so its keys and
+      // positional idx:N indices stay exactly as before the extras were added.
+      AlmAutosave.install({ appKey: 'dta-sroc', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *)'; }) });
     }
   });
 })();
@@ -846,5 +849,13 @@
 <script src="../shared/alm-validate.js"></script>
 <script src="../shared/webr-runner.js"></script>
 <script src="validate/adapter.js"></script>
+<section id="alm-plus" style="max-width:960px;margin:2rem auto;padding:1rem;border:1px solid #aaa"></section>
+<script src="plus-bivariate.js"></script>
+<script src="plus.js"></script>
+<script src="validate/plus-pins.js"></script>
+<script src="validate/plus-core.js"></script>
+<script src="plus-ui.js"></script>
+<script src="validate/plus-render-reference.js"></script>
+<script src="validate/plus-adapter.js"></script>
 </body>
 </html>
