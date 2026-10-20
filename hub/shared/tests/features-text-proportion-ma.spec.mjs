@@ -224,3 +224,76 @@ test('no results yet -> "Run the analysis first."', async ({ page }) => {
   await expect(page.locator('#alm-text-empty .alm-text-body')).toBeHidden();
   expect(errs, 'no console errors').toEqual([]);
 });
+
+// ---------- review of PR #178, P1-a: stale text must never be exported as current ----------
+// Clipboard is captured by a page-level stub so the test reads exactly what Copy would put on the clipboard.
+async function mountWithCapture(page, id) {
+  await page.evaluate(({ app, id }) => {
+    window.__copied = [];
+    const cb = { writeText: (s) => { window.__copied.push(s); return Promise.resolve(); } };
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, get: () => cb });
+    const host = document.createElement('div');
+    host.id = id;
+    document.body.appendChild(host);
+    window.AlmTextUI.mount(host, { app, text: window.AlmTextSpecs[app] });
+  }, { app: APP, id });
+  return page.locator('#' + id);
+}
+const NEW_SRC = '30, 150, Study A\n8, 90, Study B\n20, 220, Study C\n5, 60, Study D\n15, 180, Study E\n3, 40, Study F\n25, 300, Study G';
+
+test('PLANTED stale (review P1-a): change #src + Run -> Copy and .md carry the NEW numbers, never the old', async ({ page }) => {
+  const errs = [];
+  await openApp(page, errs);
+  const host = await mountWithCapture(page, 'alm-text-stale');
+  const oldText = (await renderInPage(page)).text;
+  await expect(host.locator('[data-para="results"]')).toHaveText(oldText.results);
+  const oldP = await page.evaluate(() => window._almLastPropMA().poolP);
+
+  await page.locator('#src').fill(NEW_SRC);
+  await page.locator('#btn-run').click();
+  await page.waitForFunction((p) => window._almLastPropMA() && window._almLastPropMA().poolP !== p, oldP);
+  const newText = (await renderInPage(page)).text;
+  expect(newText.results).not.toEqual(oldText.results);
+  // the panel notices the re-run before anything is exported
+  await expect(host.locator('.alm-text-status')).toContainText('Results changed');
+
+  await host.locator('[data-copy="results"]').click();
+  await expect.poll(() => page.evaluate(() => window.__copied.length)).toBe(1);
+  const copied = await page.evaluate(() => window.__copied[0]);
+  expect(copied).toEqual(newText.results);
+  expect(copied).not.toEqual(oldText.results);
+  await expect(host.locator('[data-para="results"]')).toHaveText(newText.results);
+  await expect(host.locator('.alm-text-audit')).toContainText('Number audit:');
+
+  const [md] = await Promise.all([page.waitForEvent('download'), host.locator('.alm-text-md').click()]);
+  const mdText = fs.readFileSync(await md.path(), 'utf8');
+  expect(mdText).toContain(newText.results);
+  expect(mdText).not.toContain(oldText.results);
+  console.log('TEXTSTALE rerun: copy+md carry new numbers');
+  expect(errs, 'no console errors').toEqual([]);
+});
+
+test('PLANTED stale (review P1-a): inputs edited but NOT re-run -> Copy and .md are refused', async ({ page }) => {
+  const errs = [];
+  await openApp(page, errs);
+  const host = await mountWithCapture(page, 'alm-text-stale-inputs');
+  let downloads = 0;
+  page.on('download', () => { downloads++; });
+  await page.locator('#src').fill(NEW_SRC);
+  await expect(page.locator('#analysis-stale')).toBeVisible();
+  await expect(host.locator('.alm-text-status')).toContainText('Results changed');
+  await host.locator('[data-copy="results"]').click();
+  await host.locator('.alm-text-md').click();
+  await page.waitForTimeout(1500);
+  expect(await page.evaluate(() => window.__copied.length)).toBe(0);
+  expect(downloads).toBe(0);
+  await expect(host.locator('.alm-text-status')).toContainText('Run analysis');
+  // re-run -> export allowed again, with the new numbers
+  await page.locator('#btn-run').click();
+  const newText = (await renderInPage(page)).text;
+  await host.locator('[data-copy="results"]').click();
+  await expect.poll(() => page.evaluate(() => window.__copied.length)).toBe(1);
+  expect(await page.evaluate(() => window.__copied[0])).toEqual(newText.results);
+  console.log('TEXTSTALE inputs: refused until re-run');
+  expect(errs, 'no console errors').toEqual([]);
+});

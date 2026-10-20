@@ -297,3 +297,115 @@ test('T.when with a function is lazy: guarded parts reading a missing key do not
   const eager = { ...simpleTemplates, plain: (T) => ['x', T.when(T.has('missing'), [' ', T.num('missing', 2)])] };
   assert.throws(() => AlmText.render(eager, simpleResults, ctx0), /missing result "missing"/);
 });
+
+// ---------- review of PR #178: P1-b verify sentence must be POSITIVE ----------
+// F3 row format (panel lane, rows from AlmValidate.compare): {pass: true|false}. Only pass === true counts.
+test('PLANTED (review P1-b): a row without an explicit pass === true -> NO verify sentence', () => {
+  const ctxFor = (rows, extra) => ({ ...ctx0, verify: { ...verifyOk, rows }, revision: 'rev-abc', ...(extra || {}) });
+  const bad = [
+    ['row without pass field', [{ pass: true }, { quantity: 'tau2' }]],
+    ['pass: null', [{ pass: true }, { pass: null }]],
+    ["status: 'error'", [{ pass: true }, { status: 'error' }]],
+    ['pass: 0', [{ pass: true }, { pass: 0 }]],
+    ["pass: 'yes'", [{ pass: true }, { pass: 'yes' }]],
+    ['pass: 1', [{ pass: true }, { pass: 1 }]],
+    ['passed: true but no pass', [{ pass: true }, { passed: true }]],
+    ['ok: true but no pass', [{ pass: true }, { ok: true }]],
+    ['null row', [{ pass: true }, null]],
+  ];
+  let held = 0;
+  for (const [why, rows] of bad) {
+    assert.equal(AlmText.verifyFacts(ctxFor(rows)), null, why);
+    const r = AlmText.render(simpleTemplates, simpleResults, ctxFor(rows));
+    assert.doesNotMatch(r.methods.text, /verified in R/, why);
+    held++;
+  }
+  // verify.passed must be exactly true
+  for (const p of [1, 'true', undefined, null]) assert.equal(AlmText.verifyFacts(ctxFor([{ pass: true }], { verify: { ...verifyOk, passed: p, rows: [{ pass: true }] } })), null, 'passed=' + p);
+  // every row pass === true -> sentence
+  assert.deepEqual(AlmText.verifyFacts(ctxFor([{ pass: true }, { pass: true }])), { pkg: 'metafor', pkgVersion: '4.8-0', webr: '0.5.4', n: 2 });
+  console.log(`TEXTVERIFY planted-rows ${held}/${bad.length} withheld`);
+});
+
+test('PLANTED (review P1-b): AlmFeatures.verifiedCurrent(app) !== true -> NO verify sentence; context() reads it', () => {
+  const ok = { ...ctx0, verify: verifyOk, revision: 'rev-abc' };
+  assert.equal(AlmText.verifyFacts({ ...ok, verifiedCurrent: false }), null);
+  assert.ok(AlmText.verifyFacts({ ...ok, verifiedCurrent: true }));
+  const saved = { st: globalThis.AlmFeaturesState, f: globalThis.AlmFeatures };
+  try {
+    globalThis.AlmFeaturesState = { verify: verifyOk };
+    let current = false;
+    globalThis.AlmFeatures = { revision: () => 'rev-abc', verifiedCurrent: (app) => (app === 'demo-app' ? current : true) };
+    let c = AlmText.context('demo-app', {});
+    assert.equal(c.verifiedCurrent, false);
+    assert.equal(AlmText.verifyFacts(c), null, 'host says the verification is not current');
+    current = true;
+    c = AlmText.context('demo-app', {});
+    assert.equal(c.verifiedCurrent, true);
+    assert.ok(AlmText.verifyFacts(c));
+    // a host whose verifiedCurrent throws or returns a non-boolean -> not current
+    globalThis.AlmFeatures = { revision: () => 'rev-abc', verifiedCurrent: () => { throw new Error('x'); } };
+    assert.equal(AlmText.verifyFacts(AlmText.context('demo-app', {})), null);
+    globalThis.AlmFeatures = { revision: () => 'rev-abc', verifiedCurrent: () => 'yes' };
+    assert.equal(AlmText.verifyFacts(AlmText.context('demo-app', {})), null);
+    // host without verifiedCurrent (older panel lane) -> the revision + rows gates alone decide
+    globalThis.AlmFeatures = { revision: () => 'rev-abc' };
+    assert.ok(AlmText.verifyFacts(AlmText.context('demo-app', {})));
+  } finally {
+    globalThis.AlmFeaturesState = saved.st;
+    globalThis.AlmFeatures = saved.f;
+  }
+});
+
+// ---------- review of PR #178: P1-a fingerprint of what the text was generated from ----------
+test('fingerprint (review P1-a): changes when results, revision, verification or entry provenance change', () => {
+  const fp = (r, c) => AlmText.fingerprint(r, c);
+  const base = fp(simpleResults, ctx0);
+  assert.equal(typeof base, 'string');
+  assert.equal(fp({ ...simpleResults }, { ...ctx0 }), base, 'equal inputs -> equal fingerprint');
+  assert.notEqual(fp({ ...simpleResults, est: simpleResults.est + 1e-9 }, ctx0), base, 'result changed');
+  assert.notEqual(fp(simpleResults, { ...ctx0, revision: 'r2' }), base, 'revision changed');
+  assert.notEqual(fp(simpleResults, { ...ctx0, verify: verifyOk, revision: 'rev-abc' }), fp(simpleResults, { ...ctx0, revision: 'rev-abc' }), 'verification became current');
+  assert.notEqual(fp(simpleResults, { ...ctx0, provenance }), base, 'entry provenance changed');
+  assert.notEqual(fp(null, ctx0), base);
+});
+
+// ---------- review of PR #178: P2s ----------
+test('PLANTED (review P2): DOM cross-check below the declared domMin -> audit FAILS (never a silent zero)', () => {
+  const r = AlmText.render(simpleTemplates, simpleResults, ctx0);
+  const a = AlmText.audit(r, simpleResults, { ctx: ctx0, dom: {}, domMin: 3 });
+  report('planted-dom-min', a);
+  assert.equal(a.ok, false);
+  assert.ok(a.failures.some(f => f.check === 'dom:min'));
+  const a2 = AlmText.audit(r, simpleResults, { ctx: ctx0, dom: null, domMin: 1 });
+  assert.equal(a2.ok, false, 'dom() returning null with domMin set must fail');
+  const dom = { est: { text: '-0.12', fmt: { kind: 'num', digits: 2 } }, k: { text: '12', fmt: { kind: 'int' } }, i2: { text: '35.0%', fmt: { kind: 'pct', digits: 1 } } };
+  assert.equal(AlmText.audit(r, simpleResults, { ctx: ctx0, dom, domMin: 3 }).ok, true);
+  assert.equal(prop.text.domMin, 3, 'app 9 declares its DOM minimum');
+});
+
+test('entry (review P2): records with confirmed:false are NOT counted', () => {
+  const recs = [
+    { id: 'a', reference: 'r', location: 'T1', confirmed: true, conversions: [{ code: 'SD_FROM_IQR' }] },
+    { id: 'b', reference: 'r', location: 'T2', confirmed: false, conversions: [{ code: 'SD_FROM_IQR' }] },
+    { id: 'c', reference: 'r', location: 'T3', conversions: [] },
+  ];
+  const s = AlmText.entrySummary(recs);
+  assert.equal(s.reports, 2);
+  assert.deepEqual(s.groups.map(g => g.count), [1]);
+  assert.equal(AlmText.entrySummary([recs[1]]).reports, 0);
+  const r = AlmText.render(simpleTemplates, simpleResults, { ...ctx0, provenance: [recs[1]] });
+  assert.doesNotMatch(r.methods.text, /Data were extracted|interquartile/);
+});
+
+test('proportion-ma (review P2): I² = 0 flag says "few studies" only when k is below the funnel threshold', () => {
+  const t = prop.text.templates;
+  const ctx = { app: 'proportion-ma', build, entryLog: [], verify: null };
+  const big = AlmText.render(t, propResults({ k: 12, df: 11, i2: 0, tau2: 0 }), ctx);
+  const f = big.flags.find(x => /does not show that the studies are homogeneous/.test(x.text));
+  assert.ok(f, 'I2=0 flag present at k=12');
+  assert.doesNotMatch(f.text, /few studies/);
+  assert.equal(AlmText.audit(big, propResults({ k: 12, df: 11, i2: 0, tau2: 0 }), { ctx }).ok, true);
+  const small = AlmText.render(t, propResults(), ctx);
+  assert.ok(small.flags.some(x => /with few studies, heterogeneity statistics have low power/.test(x.text)), 'k=7 keeps the few-studies clause');
+});

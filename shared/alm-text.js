@@ -198,6 +198,9 @@
       return true;
     }
     log.forEach(function (s, idx) {
+      // F1 requires every row to be confirmed before use: a record that carries a `confirmed` field
+      // counts only when it is exactly true (review of PR #178).
+      if (s && typeof s === 'object' && Object.prototype.hasOwnProperty.call(s, 'confirmed') && s.confirmed !== true) return;
       if (typeof s === 'string') {
         var m = /^\s*([^:]{1,80}):\s*(.+)$/.exec(s);
         if (m) addText(m[2], null, m[1].trim()); else addText(s, null, null);
@@ -251,14 +254,19 @@
 
   // The verification sentence is allowed ONLY when Verify-in-R ran for the CURRENT state
   // revision in this session and every compared row passed. Anything else -> null (sentence omitted).
+  // The gate is POSITIVE (review of PR #178): verify.passed === true, every row has row.pass === true
+  // (F3 row format: rows from AlmValidate.compare -> {pass: true|false}); a row with no pass field,
+  // pass: null / 0 / 'yes', or status: 'error' never counts as passed. When the host provides
+  // AlmFeatures.verifiedCurrent(app), context() records it and anything but true withholds the sentence.
   function verifyFacts(ctx) {
     var v = ctx && ctx.verify;
     if (!v || typeof v !== 'object' || v.passed !== true) return null;
+    if (ctx.verifiedCurrent != null && ctx.verifiedCurrent !== true) return null;
     if (ctx.revision == null || v.revision == null || v.revision !== ctx.revision) return null;
     if (!Array.isArray(v.rows) || !v.rows.length) return null;
     for (var i = 0; i < v.rows.length; i++) {
       var row = v.rows[i];
-      if (!row || row.pass === false || row.passed === false || row.ok === false || /fail/i.test(String(row.status || ''))) return null;
+      if (!row || typeof row !== 'object' || row.pass !== true) return null;
     }
     var pkg = packageVersion(v, ctx.verifyPackage);
     var vs = v.versions || {};
@@ -557,6 +565,11 @@
           'results() ' + key + ' formats as ' + JSON.stringify(mine) + ' but the page displays ' + JSON.stringify(d.text));
       });
     }
+    // The DOM cross-check is the only check independent of results() inside the UI, so a spec can declare
+    // how many keys it must reach; fewer (a layout change, dom() finding nothing) FAILS instead of a silent zero.
+    if (typeof opts.domMin === 'number' && opts.domMin > 0) {
+      check(domChecked >= opts.domMin, 'dom:min', 'only ' + domChecked + ' value(s) cross-checked against the page display; the app declares at least ' + opts.domMin);
+    }
     return { ok: failures.length === 0, checks: checks, passed: checks - failures.length, failures: failures, tokens: nTokens, domChecked: domChecked };
   }
 
@@ -568,6 +581,10 @@
     try {
       if (global.AlmFeatures && typeof global.AlmFeatures.revision === 'function') rev = global.AlmFeatures.revision(app);
     } catch (e) { rev = undefined; }
+    var verifiedCurrent = null; // null = host has no verifiedCurrent(); otherwise exactly true or false
+    if (global.AlmFeatures && typeof global.AlmFeatures.verifiedCurrent === 'function') {
+      try { verifiedCurrent = global.AlmFeatures.verifiedCurrent(app) === true; } catch (e) { verifiedCurrent = false; }
+    }
     return {
       app: app,
       build: global.AlmBuildInfo || null,
@@ -575,8 +592,22 @@
         : (Array.isArray(st.entryLog) ? st.entryLog.slice() : []),
       verify: st.verify || null,
       revision: rev,
+      verifiedCurrent: verifiedCurrent,
       verifyPackage: textSpec && textSpec.verifyPackage
     };
+  }
+
+  // Fingerprint of everything the text is generated from: the results, the host state revision, the
+  // context values the templates print (app, build, entry provenance counts) and whether the verification
+  // sentence would be printed. The UI records it at generate time and recomputes it before every Copy /
+  // download: if it differs, the text is regenerated and re-audited first (review of PR #178).
+  function fingerprint(results, ctx) {
+    return JSON.stringify({
+      results: results == null ? null : results,
+      revision: ctx && ctx.revision != null ? ctx.revision : null,
+      ctx: ctxValues(ctx),
+      verify: verifyFacts(ctx)
+    });
   }
 
   // ------------------------------------------------------------------- exports
@@ -627,6 +658,7 @@
     render: render,
     audit: audit,
     context: context,
+    fingerprint: fingerprint,
     ctxValues: ctxValues,
     verifyFacts: verifyFacts,
     entrySummary: entryRecords,
@@ -713,8 +745,11 @@
         sec.appendChild(p);
         var cp = el('button', { type: 'button', 'class': 'alm-text-copy', 'data-copy': b[0], 'aria-label': 'Copy ' + b[1] }, 'Copy');
         cp.addEventListener('click', function () {
+          var cur = ensureCurrent();
+          if (!cur) return;
           copyText(p.textContent).then(function (ok) {
-            status.textContent = ok ? b[1] + ' copied to the clipboard.' : 'Copy failed: select the text and copy it manually.';
+            status.textContent = ok ? b[1] + ' copied to the clipboard.' + (cur === 'regenerated' ? REGEN_NOTE : '')
+              : 'Copy failed: select the text and copy it manually.';
           });
         });
         sec.appendChild(cp);
@@ -740,7 +775,62 @@
       root.appendChild(body);
       host.appendChild(root);
 
-      var state = { rendered: null, audit: null, error: null };
+      var state = { rendered: null, audit: null, error: null, fp: null };
+      var REGEN_NOTE = ' The results had changed since the text was generated, so it was regenerated and re-audited first.';
+      var MSG_CHANGED = 'Results changed since this text was generated — Regenerate. (Copy and downloads regenerate and re-audit automatically.)';
+      var MSG_INPUTS = 'Results changed: the inputs were edited after the last run, so this text may not match them — press Run analysis, then Regenerate.';
+
+      // Is the shown text still what the app's current results would produce?
+      //   'current' | 'changed' (results / revision / context differ) | 'inputs' (app reports its results out of date)
+      //   | 'none' (no results) | 'error'
+      function currency() {
+        if (typeof textSpec.stale === 'function') {
+          var st;
+          try { st = textSpec.stale(); } catch (e) { st = true; }
+          if (st) return 'inputs';
+        }
+        var r;
+        try { r = textSpec.results(); } catch (e) { return 'error'; }
+        if (!r) return 'none';
+        var fp;
+        try { fp = AlmText.fingerprint(r, AlmText.context(app, textSpec)); } catch (e) { return 'error'; }
+        return fp === state.fp ? 'current' : 'changed';
+      }
+      function markStale(on, msg) {
+        if (on) { root.setAttribute('data-stale', 'true'); status.textContent = msg; }
+        else root.removeAttribute('data-stale');
+      }
+      // Gate for every export. Returns 'current' / 'regenerated' (export allowed: the text is current and
+      // audited) or null (refused; the status line says why). Never exports text generated from other results.
+      function ensureCurrent() {
+        var c = currency();
+        if (c === 'inputs') { markStale(true, MSG_INPUTS); return null; }
+        if (c !== 'current') {
+          generate();
+          if (!(state.rendered && state.audit && state.audit.ok)) return null;
+          if (currency() !== 'current') { markStale(true, MSG_CHANGED); return null; }
+          return 'regenerated';
+        }
+        return state.rendered && state.audit && state.audit.ok ? 'current' : null;
+      }
+      function checkStale() {
+        if (!root.isConnected) { detach(); return; }
+        if (!(state.rendered && state.audit && state.audit.ok)) return;
+        var c = currency();
+        if (c === 'inputs') markStale(true, MSG_INPUTS);
+        else if (c !== 'current') markStale(true, MSG_CHANGED);
+      }
+      // The app re-runs on a click (Run analysis) and marks its inputs stale on input/change; check after the
+      // app's own handlers have run. Exports are gated by ensureCurrent() regardless of these hints.
+      var deferred = null;
+      function onAppEvent(ev) {
+        if (ev && ev.target && root.contains(ev.target)) return;
+        if (deferred) return;
+        deferred = setTimeout(function () { deferred = null; checkStale(); }, 0);
+      }
+      var EVENTS = ['input', 'change', 'click', 'keyup'];
+      EVENTS.forEach(function (t) { document.addEventListener(t, onAppEvent, true); });
+      function detach() { EVENTS.forEach(function (t) { document.removeEventListener(t, onAppEvent, true); }); }
       var title = 'allmeta ' + app + ' — report text';
       var base = (app || 'allmeta') + '-report-text';
 
@@ -752,7 +842,8 @@
       }
 
       function generate() {
-        state.rendered = null; state.audit = null; state.error = null;
+        state.rendered = null; state.audit = null; state.error = null; state.fp = null;
+        markStale(false);
         setDocxAvailability();
         var r;
         try { r = textSpec.results(); } catch (e) { r = null; state.error = e.message; }
@@ -765,8 +856,9 @@
           var ctx = AlmText.context(app, textSpec);
           var rendered = render(textSpec.templates, r, ctx);
           var dom = typeof textSpec.dom === 'function' ? textSpec.dom() : null;
-          var a = audit(rendered, r, { ctx: ctx, dom: dom });
+          var a = audit(rendered, r, { ctx: ctx, dom: dom, domMin: textSpec.domMin });
           state.rendered = rendered; state.audit = a;
+          state.fp = AlmText.fingerprint(r, ctx);
           if (!a.ok) {
             body.hidden = true;
             status.textContent = 'Number audit failed (' + a.passed + ' of ' + a.checks + ' checks passed), so the text is withheld: ' +
@@ -794,20 +886,22 @@
 
       regen.addEventListener('click', generate);
       mdBtn.addEventListener('click', function () {
-        if (!state.rendered || !state.audit || !state.audit.ok) return;
+        var cur = ensureCurrent();
+        if (!cur) return;
         download(base + '.md', new Blob([toMarkdown(state.rendered, title)], { type: 'text/markdown;charset=utf-8' }));
-        status.textContent = 'Markdown file downloaded.';
+        status.textContent = 'Markdown file downloaded.' + (cur === 'regenerated' ? REGEN_NOTE : '');
       });
       docxBtn.addEventListener('click', function () {
-        if (!state.rendered || !state.audit || !state.audit.ok) return;
         if (!(global.AlmZip && typeof global.AlmZip.docx === 'function')) { setDocxAvailability(); return; }
+        var cur = ensureCurrent();
+        if (!cur) return;
         var bytes = global.AlmZip.docx({ title: title, paragraphs: docxParagraphs(state.rendered) });
         download(base + '.docx', new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
-        status.textContent = 'Word file downloaded.';
+        status.textContent = 'Word file downloaded.' + (cur === 'regenerated' ? REGEN_NOTE : '');
       });
 
       generate();
-      var api = { regenerate: generate, state: state, root: root };
+      var api = { regenerate: generate, state: state, root: root, check: checkStale, detach: detach };
       host.almText = api;
       return api;
     }

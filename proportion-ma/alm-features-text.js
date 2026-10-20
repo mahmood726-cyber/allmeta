@@ -196,8 +196,9 @@
           '): heterogeneity estimates (τ² and I²) are imprecise.']),
         T.when(r.k < T.R.funnelK, ['Fewer than ', T.rule('funnelK'),
           ' studies: tests for small-study effects (funnel plot asymmetry) would be underpowered, and none were performed.']),
-        T.when(T.zero('i2', 1), ['An I² of ', T.pct('i2', 1),
-          ' does not show that the studies are homogeneous; with few studies, heterogeneity statistics have low power.']),
+        T.when(T.zero('i2', 1), ['An I² of ', T.pct('i2', 1), ' does not show that the studies are homogeneous; ',
+          T.when(r.k < T.R.funnelK, 'with few studies, heterogeneity statistics have low power.'),
+          T.when(!(r.k < T.R.funnelK), 'heterogeneity statistics can have low power.')]),
         T.when(r.tauEstimator === 'DL' && r.k < T.R.dlMinK, ['The DerSimonian–Laird estimator tends to underestimate τ² with fewer than ',
           T.rule('dlMinK'), ' studies; the app recommends Paule–Mandel for inference.']),
         T.when(r.transform === 'ft', ['Freeman–Tukey back-transformed results can be seriously misleading (', T.cite('schwarzer'),
@@ -214,6 +215,14 @@
     results: results,
     templates: templates,
     dom: dom,
+    // The audit FAILS if fewer page-displayed values than this are cross-checked (pooled proportion, CI, tau2, Q, I2...).
+    domMin: 3,
+    // The app's own out-of-date indicator (hub/shared/analysis-lifecycle.js): inputs edited since the last run.
+    stale: function () {
+      if (typeof document === 'undefined') return false;
+      var s = document.getElementById('analysis-stale');
+      return !!(s && !s.hidden);
+    },
     mount: function (el) { return global.AlmTextUI ? global.AlmTextUI.mount(el, { app: APP, text: textSpec }) : null; }
   };
 
