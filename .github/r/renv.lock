@@ -2292,7 +2292,7 @@
     "ragg": {
       "Package": "ragg",
       "Version": "1.5.2",
-      "Source": "any",
+      "Source": "Repository",
       "Type": "Package",
       "Title": "Graphic Devices Based on AGG",
       "Authors@R": "c( person(\"Thomas Lin\", \"Pedersen\", , \"thomas.pedersen@posit.co\", role = c(\"cre\", \"aut\"), comment = c(ORCID = \"0000-0002-5147-4711\")), person(\"Maxim\", \"Shemanarev\", role = c(\"aut\", \"cph\"), comment = \"Author of AGG\"), person(\"Tony\", \"Juricic\", , \"tonygeek@yahoo.com\", role = c(\"ctb\", \"cph\"), comment = \"Contributor to AGG\"), person(\"Milan\", \"Marusinec\", , \"milan@marusinec.sk\", role = c(\"ctb\", \"cph\"), comment = \"Contributor to AGG\"), person(\"Spencer\", \"Garrett\", role = \"ctb\", comment = \"Contributor to AGG\"), person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"), comment = c(ROR = \"03wc8by49\")) )",
@@ -2324,13 +2324,7 @@
       "SystemRequirements": "freetype2, libpng, libtiff, libjpeg, libwebp, libwebpmux",
       "NeedsCompilation": "yes",
       "Author": "Thomas Lin Pedersen [cre, aut] (ORCID: <https://orcid.org/0000-0002-5147-4711>), Maxim Shemanarev [aut, cph] (Author of AGG), Tony Juricic [ctb, cph] (Contributor to AGG), Milan Marusinec [ctb, cph] (Contributor to AGG), Spencer Garrett [ctb] (Contributor to AGG), Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>)",
-      "Repository": "RSPM",
-      "RemoteType": "any",
-      "RemotePkgRef": "any::ragg",
-      "RemoteRef": "any::ragg",
-      "RemoteRepos": "https://packagemanager.posit.co/cran/__linux__/noble/latest",
-      "RemotePkgPlatform": "x86_64-pc-linux-gnu-ubuntu-24.04",
-      "RemoteSha": "1.5.2"
+      "Repository": "CRAN"
     },
     "rbibutils": {
       "Package": "rbibutils",
