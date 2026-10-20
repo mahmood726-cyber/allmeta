@@ -1,0 +1,65 @@
+{
+  "files": [
+    {
+      "path": "plus-corpus/generate-plus.log",
+      "sha256": "694997b43c4567cfea1c81fe2a27c9dd166758284be43f510a60fa9b5407ec17",
+      "bytes": 2555
+    },
+    {
+      "path": "plus-corpus/probe-row-refusals.csv",
+      "sha256": "9e4203111314bc352e3cc381a7fa49a4f8179afc678292a011bfc5604e6b8b3c",
+      "bytes": 2531
+    },
+    {
+      "path": "plus-corpus/reference-plus.json",
+      "sha256": "0c14c06faa452796148703df6aa875739f5f4bbbf4eb9634479f479d5a77e73b",
+      "bytes": 3786377
+    },
+    {
+      "path": "plus-corpus/row-ledger-summary.json",
+      "sha256": "774078e35ea4cd502be9804cf896fc2bbe5c78904236895cb86c867fe36141c7",
+      "bytes": 125322
+    },
+    {
+      "path": "plus-corpus/rscript-results.json",
+      "sha256": "ba5b3bc29bc7bd67203101e45e08ac7cee5e72464f9ceac22a2031af39236ab1",
+      "bytes": 174054
+    },
+    {
+      "path": "plus-corpus/run-rscripts-1.log",
+      "sha256": "731049a62187c5dabf9439eb932a3bf1b7d2c27c701706cf2a5b3d943967f9a5",
+      "bytes": 195
+    },
+    {
+      "path": "plus-corpus/run-rscripts-2.log",
+      "sha256": "e4cdf28183a9c722c2e82137a6157a532e1c50347bf82dccc135fa0d1e8f79f6",
+      "bytes": 195
+    }
+  ],
+  "plus_check": {
+    "checks": 160646,
+    "command": "node correlation-ma/validate/plus-check.cjs --rjson correlation-ma/validate/plus-corpus/rscript-results.json"
+  },
+  "dom_check": {
+    "checks": 24481,
+    "command": "node hub/shared/tests/validate-correlation-ma-plus.node.cjs"
+  },
+  "reference": {
+    "R": "4.6.0",
+    "metafor": "5.2-1",
+    "metadat": "1.6-0",
+    "inputs": 27,
+    "fits": 324,
+    "loo_omissions": 11856,
+    "warnings": 0,
+    "rscripts_executed": 270,
+    "rscripts_rerun_identical": 220
+  },
+  "loo_max_k": 200,
+  "tolerances": {
+    "closed_form_rel": 1e-09,
+    "pm_reml_tau2_rel": 1e-06,
+    "I2_abs_over_100": 1e-09,
+    "flags_counts_strings": "exact"
+  }
+}
