@@ -51,9 +51,16 @@
 
   // Hart/West rational approximation of the standard normal CDF; relative
   // accuracy ~1e-15 including the far tail (the continued-fraction branch).
+  //
+  // The usual "if (z > 37) return 0" shortcut is deliberately NOT used. R's
+  // pnorm still returns a (subnormal) positive value out to about -37.52, and
+  // lambda(u) = dnorm(u)/pnorm(u) is the Copas model's inverse Mills ratio: a
+  // zero there turns lambda into Inf instead of about |u|. The cutoff is set at
+  // z > 40, beyond which exp(-z*z/2) underflows to zero anyway and R returns 0
+  // too. Found by probe E18.
   function pnorm(x) {
     var z = mAbs(x), p;
-    if (z > 37) p = 0;
+    if (z > 40) p = 0;
     else {
       var e = mExp(-z * z / 2);
       if (z < 7.07106781186547) {
@@ -67,8 +74,15 @@
         d = d * z + 793.826512519948; d = d * z + 440.413735824752;
         p = e * b / d;
       } else {
-        var f = z + 1 / (z + 2 / (z + 3 / (z + 4 / (z + 13 / 20))));
-        p = e / (2.506628274631 * f);
+        // Mills-ratio continued fraction, evaluated bottom-up:
+        //   P(Z < -z) = dnorm(z) / (z + 1/(z + 2/(z + 3/(z + ...))))
+        // West's four-term truncation is only about 3e-9 relative at z = 10;
+        // 24 terms reproduces R's pnorm to the last digit from z = 7.07 out to
+        // the subnormal limit. Checked against R at z = 7.07, 7.5, 8, 10, 15,
+        // 20, 30 and 37.5. Found by probe E18.
+        var f = 0;
+        for (var kk = 24; kk >= 1; kk--) f = kk / (z + f);
+        p = e / (SQRT_2PI * (z + f));
       }
     }
     return x > 0 ? 1 - p : p;
@@ -438,12 +452,13 @@
       Sxx += dx * dx; Sxy += dx * dy; Syy += dy * dy;
     }
     if (!(Sxx > 0)) {
-      // Constant x: R's lm drops the slope (rank deficient), coef[2] is NA and
-      // vcov has no second diagonal element, so se.slope is NA too. mss = 0 so
-      // r.squared = 0 and adj.r.squared = 1 - (n-1)/(n-2).
-      var rdf0 = n - 2;
+      // Constant x: R's lm drops the slope (rank deficient), so coef[2] is NA
+      // and vcov has no second diagonal element, making se.slope NA too. The
+      // rank then equals the intercept term, which takes summary.lm's OTHER
+      // branch -- `r.squared <- adj.r.squared <- 0` -- rather than the
+      // 1 - (1 - r2)(n - 1)/rdf formula. Found by probes lm case 2 and case 3.
       return { nobs: n, intercept: my, slope: NaN, seSlope: NaN,
-               adjRSquared: rdf0 > 0 ? 1 - (n - 1) / rdf0 : NaN };
+               adjRSquared: 0 };
     }
     var slope = Sxy / Sxx, intercept = my - slope * mx;
     var mss = slope * Sxy;                 // = Sxy^2 / Sxx
