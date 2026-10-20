@@ -53,8 +53,10 @@ multiplicative-dispersion weighted lm with a t test (regtest `model="lm"`) inste
 additive between-study variance (REML meta-regression, z test). Fixing (1) alone still matched 0/152. The page now
 ports metafor's REML Fisher scoring for the two-coefficient model. Tolerance: 1e-6 relative for the iterative REML
 quantities (the paper's trim-and-fill tolerance), 1e-9 absolute for p. The reference
-(`validate/generate-ts.R`, written in binary mode so it is LF on every OS) was generated independently on two
-machines (baseimage and laptop, R 4.6.0, metafor 5.2-1) and in a third independent run, with identical values.
+(`validate/generate-ts.R`, written in binary mode so it is LF on every OS) is reproducible: re-running the committed
+script on 2026-10-20 (desktop-iljmsi3, R 4.6.0, metafor 5.2-1; lane fx610) wrote a file byte-identical to the pinned
+one (SHA-256 f4b837fd...644c, 25,427 bytes), recorded in `plus-corpus/comparison-plus.json`
+(`thompson_sharp.reproduction`). Other regenerations of this file are not recorded in the archive and are not claimed.
 
 ## Corpus
 
@@ -88,8 +90,9 @@ All four pinned files are hashed as the LF bytes git stores (`pin-plus.mjs` refu
 **Result (offline replay, pinned native R 4.6.0, metafor 5.2-1, meta 8.5-0): 72,802/72,896 checks pass;
 94 documented failures, 0 unexpected.** Measured 2026-10-19 in headless Chromium (page panel) and by the Node
 mirror `check-plus.mjs` (72,649/72,743 numerical checks; the 153 display and disposition checks are browser-only).
-`generate-plus.R` was re-run on a second machine: before Thompson-Sharp was added to the loop it reproduced every
-one of the previously pinned file's 105,121 numbers (difference 0), and adding Thompson-Sharp changed no other value. A second, independent oracle for PET, PEESE, the conditional branch and
+`generate-plus.R` was re-run twice on the lane machine (record: `comparison-plus.json`, `reference_reproduction`):
+before Thompson-Sharp was added to the loop it reproduced every one of the previously pinned file's 105,121 numbers
+(difference 0), and adding Thompson-Sharp changed no other value. A second, independent oracle for PET, PEESE, the conditional branch and
 the leave-one-out PET/PEESE estimates (base-R `lm(yi ~ x, weights = 1/vi)` and its own omission loop, not
 `regtest`) agrees on 12,303/12,303 checks. Planted defects make the comparison fail (see Reproduce).
 
@@ -102,12 +105,27 @@ a value, and a documented R fallback agrees with the app at the stated tolerance
   (rma for regtest; metabin's random-effects fit for metabias) does not converge. Fallback: `regtest` on the vectors;
   `metabin(..., method.tau="DL")`, which does not change the Peters/Harbord regression. This is the same cause as the
   three Baker Egger/Peters/Harbord exceptions of the original paper replay.
-- **side-regression-refusal** (4 checks: `dat.karner2014/sgrq.md` omitting study 1 and
+- **side-regression-refusal** (4 checks on this corpus: 2 trim-and-fill refusal checks and their 2 dependent k0
+  flags, in 2 leave-one-out rows: `dat.karner2014/sgrq.md` omitting study 1 and
   `dat.karner2014/OR:tiotropium.deaths:placebo.deaths` omitting study 6). metafor's `trimfill` first fits the
   side-determining meta-regression `rma(yi, vi, mods=sqrt(vi))`, whose Fisher scoring does not converge with default
   controls; the page determines the side with its own REML slope fit. Refitting that regression with step halving
   (`control=list(stepadj=0.5, maxiter=1000)`) and passing its side to `trimfill` gives k0, side and estimate equal to
   the app's (k0 3 and 5; estimates agree to 1e-15). The fallback is recorded as a diagnostic, never as the reference.
+  - **The class is generic, not a corpus rarity.** It arises when tau² is near 0. On an independent synthetic set
+    (rv610 review of PR #158, seed 61019, 162 regular configurations) it covered 61 checks: 28 of 2,838 leave-one-out
+    trim-and-fill results plus 33 dependent k0 flags, from 3 configurations, all with true tau² = 0
+    (`c074_k30_t0_b1.5`, with a strong small-study slope, gave 55 of the 61). On all 28, step-halving refit plus
+    `trimfill(side=)` equals the app's k0, side and estimate.
+  - **Known inconsistency in the leave-one-out table.** On these rows the page shows a trim-and-fill k0, side and
+    estimate, while the Thompson-Sharp cell of the same row refuses ("REML did not converge"), although both rest on
+    the same REML meta-regression on the standard error: Thompson-Sharp uses metafor's default-control Fisher scoring
+    and refuses, whereas the trim-and-fill side comes from the page's own slope fit, which converges. On this corpus it
+    happens in exactly the 2 rows above (of the 15 leave-one-out rows where Thompson-Sharp refuses, the other 13 also
+    refuse trim-and-fill); on the review's synthetic set it happens in all 28 of the 28 rows. Read a trim-and-fill
+    result in a row whose Thompson-Sharp cell refuses as one that metafor's `trimfill` would refuse with default
+    controls. The page is not changed in this version, because making it refuse would change validated outputs (the
+    pinned counts and documented identities).
 
 Flags whose R value is undefined because of such a refusal inherit the class (53 of the 94; 41 are refusal checks).
 They remain FAIL and are pinned by identity and class in `MANIFEST-plus.json`; a new, missing, reclassified or
@@ -140,8 +158,13 @@ versions and tolerances in `plus-corpus/versions-plus.json`.
 
 Browser tests: `hub/shared/tests/pubbias-tests-plus.spec.mjs` (worked example and keyboard use, BCG example with
 labels, line-numbered input refusals, base-row identity on the corpus, identity negative, refusals, offline replay,
-13 planted negatives (including the two Thompson-Sharp ones), SHA-256 tamper, live webR `@slow`). These specs were not run on the lane machine (Playwright
-is not installed there); the replay and negatives above were run in headless Chromium through the page's own panel.
+13 planted negatives (including the two Thompson-Sharp ones), SHA-256 tamper, live webR `@slow`), with
+`validate-pubbias-tests.spec.mjs`, `pubbias-tests-sanity.spec.mjs`, `pubbias-binary-parity.spec.mjs` and
+`pubbias-tests-a11y-autosave.spec.mjs`. Run record: Playwright 1.59.1, msedge, `--workers=1`, on the commit that
+added this record (parent 10d013f): 52/52 passed (pubbias-tests-plus 24/24 including the browser panel replay
+72,802/72,896 and live webR, validate-pubbias-tests 17/17 including the original replay 2,107/2,113,
+pubbias-tests-sanity 6/6, pubbias-binary-parity 1/1, pubbias-tests-a11y-autosave 4/4). Earlier record: 52/52 on
+3d85599 (lane p610b). Six shared specs hard-code `localhost:8088`; they were run as untracked port-swapped copies.
 
 | Item | Static or dynamic | Source |
 |---|---|---|

@@ -338,7 +338,8 @@
     "p": 5.34e-14,
     "limit": 3.93e-14
    }
-  }
+  },
+  "reproduction": "validate/generate-ts.R re-run 2026-10-20 01:27 on desktop-iljmsi3 (lane fx610; R 4.6.0, metafor 5.2-1, jsonlite 2.0.0): output byte-identical to the pinned thompson-sharp-reference.json (SHA-256 f4b837fd2ea0fa9e8eed28a62527d1fd6c25c98c3463d4c9c2bf4fdb588e644c, 25,427 bytes). No other regeneration of this file is recorded."
  },
  "petpeese_lm_oracle": {
   "runner": "node pubbias-tests/validate/check-lm-petpeese.mjs",
@@ -413,5 +414,10 @@
   "browser_observation": "Analysis unavailable: Input not used. 2 lines could not be read; fix them and run again. line 2: \"x\" is not a number; line 4: SE must be positive."
  },
  "reference_reproduction": "validate/generate-plus.R re-run twice on this machine: (1) before Thompson-Sharp was added to the loop, all 105,121 numbers equal the WIP-pinned file (difference 0); (2) with Thompson-Sharp in the loop (43.9 min), every non-Thompson value is identical to (1)",
- "identity_main_table": "120/121 corpus configurations with 5<=k<=100 match exactly (Egger, Begg, trim-and-fill, Peters, Harbord, Thompson-Sharp); dat.baker2009/OR:Placebo:Salmeterol not applicable (main analysis refused: trim-and-fill REML), as before"
+ "identity_main_table": "120/121 corpus configurations with 5<=k<=100 match exactly (Egger, Begg, trim-and-fill, Peters, Harbord, Thompson-Sharp); dat.baker2009/OR:Placebo:Salmeterol not applicable (main analysis refused: trim-and-fill REML), as before",
+ "side_regression_refusal_consistency": {
+  "corpus": "of 3,023 leave-one-out rows, Thompson-Sharp refuses (reml-nonconvergence) in 15; in 2 of them (dat.karner2014/sgrq.md omit 1; dat.karner2014/OR:tiotropium.deaths:placebo.deaths omit 6) trim-and-fill returns k0/side/estimate; these are exactly the 2 side-regression-refusal rows",
+  "rv610_synthetic": "28/28 reduced sets where metafor trimfill refuses: the page's Thompson-Sharp refuses on the same set (reml-nonconvergence) and trim-and-fill equals the review's recorded app values",
+  "page_changed": false
+ }
 }

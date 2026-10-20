@@ -634,7 +634,7 @@
       // method="REML"), model="rma", predictor="sei"): REML meta-regression yi ~ sei, z test of the sei
       // coefficient. Port of metafor 5.2-1 rma.uni REML Fisher scoring (HE start on centred yi, threshold 1e-5,
       // maxiter 100, step halving at zero, ll0 check). The previous build tested the intercept of the
-      // weighted lm and divided an already dispersion-scaled SE by sqrt(max(1, phi)); it matched R in 0/150.
+      // weighted lm and divided an already dispersion-scaled SE by sqrt(max(1, phi)); it matched R in 0/152.
       var k = rows.length;
       if (k < 3) throw new Error('Thompson-Sharp needs at least 3 studies.');
       remlPool(rows); // regtest(model="rma") needs the parent REML fit; refuse when it does not converge
