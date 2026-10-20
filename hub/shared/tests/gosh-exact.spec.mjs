@@ -82,9 +82,11 @@ test.describe('GOSH exact enumeration', () => {
     console.log('PLANTED', JSON.stringify(r.map(x => ({ id: x.id, model: x.model, good: x.good, drop: x.drop.length, weight: x.weight.length, dropSample: x.drop.slice(0, 4), weightSample: x.weight.slice(0, 4) }))));
     for (const x of r) {
       expect(x.good).toBe(0);
+      // Removing one subset must change counts/grid, but its mean shift is
+      // (mean - est) / (N - 1) and need not exceed the fixed 1e-9 tolerance
+      // (begg FE: N=1,048,575, normalised shift about 9.407e-10).
       expect(x.drop).toContain('n_subsets');
       expect(x.drop.some(q => q.startsWith('grid['))).toBe(true);
-      expect(x.drop).toContain('mean_est');
       expect(x.weight.length).toBeGreaterThan(0);
     }
   });
