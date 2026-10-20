@@ -1,0 +1,129 @@
+During startup - Warning messages:
+1: Setting LC_COLLATE=C.UTF-8 failed 
+2: Setting LC_CTYPE=C.UTF-8 failed 
+3: Setting LC_MONETARY=C.UTF-8 failed 
+4: Setting LC_TIME=C.UTF-8 failed 
+[1] "C:/Users/mahmo/allmeta-offload-stage/Rlib_extra"                                                                
+[2] "F:/claude-temp/claude/C--Projects-rapidmeta-staging/9c59d82a-a422-4f19-ba4c-3921424ae079/scratchpad/re/Rlib_dta"
+[3] "C:/Program Files/R/R-4.6.0/library"                                                                             
+mada : [1] '0.5.12'
+metadat : [1] '1.6.0'
+mvmeta : [1] '1.0.3'
+jsonlite : [1] '2.0.0'
+dat.aloe2013 : study,n,tval,preds,R2 
+dat.anand1999 : study,year,intensity,asp.t,asp.c,ai,n1i,ci,n2i 
+dat.anker2025 : study,year,intv.n,placebo.n,iv.iron,size,followup,baseline.age,baseline.lvef,baseline.hgb,baseline.ft,baseline.tsat,total.n,total.logrr,total.se,female.n,female.logrr,female.se,male.n,male.logrr,male.se,sex.logrrr,sex.se 
+dat.assink2016 : study,esid,id,yi,vi,pubstatus,year,deltype 
+dat.axfors2021 : id,acronym,patient_setting,covid_status,blinding_exact,high_dose,Published,hcq_cq,hcq_arm_total,hcq_arm_event,control_arm_total,control_arm_event,Control 
+dat.bakdash2021 : Author,Year,Title,DOI,DTIC.link,SA.measure.type,Sample.size,Sample.size.stats,es.z,vi.z,SampleID,Outcome 
+dat.baker2009 : study,year,id,treatment,exac,total 
+dat.bangertdrowns2004 : id,author,year,grade,length,minutes,wic,feedback,info,pers,imag,meta,subject,ni,yi,vi 
+dat.bartos2023 : person,hsame,hdiff,tsame,tdiff,same,flips 
+dat.baskerville2012 : author,year,score,design,alloconc,blind,itt,fumonths,retention,country,outcomes,duration,pperf,meetings,hours,tailor,smd,se 
+dat.bassler2004 : study,Ee,Ne,Ec,Nc,blind 
+dat.bauer2002 : study,year,threshold,n.treat,n.control,n.total,wmwstat,lower,upper,stderr 
+dat.bcg : trial,author,year,tpos,tneg,cpos,cneg,ablat,alloc 
+dat.begg1989 : study,trt,arms,yi,sei,vi 
+dat.berkey1998 : trial,author,year,ni,outcome,yi,vi,v1i,v2i 
+dat.berkey1998r : trial,author,year,ni,outcome,yi,vi,v1i,v2i 
+dat.besson2016 : comp_ID,study_ID,dam_ID,animal_ID,Reference,species,strain,manip_type,manip_direction,nom_manip_val,exp,control,manip_parameter,vitmin_eql,adlib_con,adlib_exp,diet_con,diet_exp,dam_diet_start_dPC,dam_diet_end_dPC,diet_label,age_mating,n_con_dam,n_exp_dam,multi_use_con,dam_housing,temperature,photoperiod,litter_size,litter_size_equalized,crossfostered,sex,housing,bodymass_mean_contr,bodymass_SE_contr,bodymass_mean_exp,bodymass_SE_exp,bm_N_contr,bm_N_exp,bm_dPP,offspring_diet,offspring_con_adlib,offspring_diet_level,offspring_diet_end_dPP,post_diet_adlib,response_age_dPP,authors_behaviour_classification,our_behaviour_classification,response_test,time_trial,measure,unit,high_better,night.day,comparison,exp_mean,exp_se,exp_n,con_mean,con_se,con_n,con_ID,percentage,Data_source,measure_comments,SE_imputed,Comments 
+dat.bonett2010 : study,source,ni,ai,mi,caregivers 
+dat.bornmann2007 : study,obs,doctype,gender,year,org,country,type,discipline,waward,wtotal,maward,mtotal 
+dat.bourassa1996 : study,sample,author,year,selection,investigator,hand_assess,eye_assess,mage,lh.le,lh.re,rh.le,rh.re,sex 
+dat.cannon2006 : trial,pop,nt,nc,ep1t,ep1c,ep2t,ep2c,ep3t,ep3c,ep4t,ep4c,ep5t,ep5c,ep6t,ep6c 
+dat.chiarito2020 : study,year,p2y12,duration.months,p2y12.daily.dosage,aspirin.daily.dosage,p2y12.daily.mg,aspirin.daily.mg,baseline.age,baseline.males,baseline.diabetes,baseline.hypertension,baseline.dyslipidaemia,p2y12.mi,p2y12.stroke,p2y12.death,p2y12.vdeath,p2y12.total,aspirin.mi,aspirin.stroke,aspirin.death,aspirin.vdeath,aspirin.total,rob.R,rob.D,rob.Mi,rob.Me,rob.S,rob.overall 
+dat.cohen1981 : study,sample,control,ni,ri 
+dat.colditz1994 : trial,author,year,tpos,tneg,cpos,cneg,ablat,alloc 
+dat.collins1985a : id,trial,year,ref,trt,ctrl,nti,b.xti,o.xti,d.xti,nci,b.xci,o.xci,d.xci 
+dat.collins1985b : id,author,year,pre.nti,pre.nci,pre.xti,pre.xci,oedema,fup.nti,fup.nci,ped.xti,ped.xci,stb.xti,stb.xci,ned.xti,ned.xci 
+dat.craft2003 : study,ni,sport,ri,var1,var2 
+dat.crede2010 : studyid,year,source,sampleid,criterion,class,ni,ri 
+dat.crisafulli2020 : study,pubyear,country,from,to,cases,total 
+dat.curtin2002 : author,year,N,mean,SE,corr 
+dat.curtis1998 : id,paper,genus,species,fungrp,co2.ambi,co2.elev,units,time,pot,method,stock,xtrt,level,m1i,sd1i,n1i,m2i,sd2i,n2i 
+dat.dagostino1998 : study,cold,scale.rn,scale.sn,drug,tnt,tnc,outcome,mt,sdt,mc,sdc,xt,xc,nt,nc 
+dat.damico2009 : study,year,xt,nt,xc,nc,conceal,blind 
+dat.debruin2009 : author,year,scq,ni,xi,mi,ethnicity,patients,select,sens 
+dat.demir2022 : studyid,esid,author,year,pubtype,country,participants,n,alpha,items 
+dat.dogliotti2014 : study,id,treatment,stroke,total 
+dat.dong2013 : id,treatment,death,randomized 
+dat.dorn2007 : id,study,year,country,ibs.crit,days,visits,jadad,x.a,n.a,x.p,n.p 
+dat.dumouchel1994 : study,smoke,no2,gender,or,lower,upper 
+dat.egger2001 : id,study,year,ai,n1i,ci,n2i 
+dat.feng2019 : author,year,region,design,source,age,males,first,questionnaire,interview,timing,depr,n 
+dat.fine1993 : study,nei,nci,e1i,c1i,e2i,c2i,e3i,c3i,e4i,c4i 
+dat.franchini2012 : Study,Treatment1,y1,sd1,n1,Treatment2,y2,sd2,n2,Treatment3,y3,sd3,n3 
+dat.frank2008 : study,bc.ins.ins,bc.ins.del,bc.del.del,ct.ins.ins,ct.ins.del,ct.del.del 
+dat.furukawa2003 : author,Ne,Me,Se,Nc,Mc,Sc,measure 
+dat.gibson2002 : author,year,n1i,m1i,sd1i,n2i,m2i,sd2i,ai,bi,ci,di,type 
+dat.graves2010 : study,ai,n1i,ci,n2i 
+dat.greb2008 : study,Ee,Ne,Ec,Nc 
+dat.greenland1992 : author,year,b,SE 
+dat.gurusamy2011 : study,treatment,death,n 
+dat.hackshaw1998 : study,author,year,country,design,cases,or,or.lb,or.ub,yi,vi 
+dat.hahn2001 : study,ai,n1i,ci,n2i 
+dat.hannum2020 : authorName,DOI,ni,xi,percentOlfactoryLoss,comments,objectivity,measured,testType,country,patientType 
+dat.hart1999 : trial,study,year,x1i,n1i,t1i,x2i,n2i,t2i,compgrp,prevtype,trinr 
+dat.hartmannboyce2018 : study,x.nrt,n.nrt,x.ctrl,n.ctrl,treatment 
+dat.hasselblad1998 : id,study,authors,year,trt,xi,ni 
+dat.higgins2008 : author,resp.halo,fail.halo,miss.halo,resp.plac,fail.plac,miss.plac 
+dat.hine1989 : study,source,n1i,n2i,ai,ci 
+dat.huber2000 : study,treatment,recurrences 
+dat.ishak2007 : study,y1i,v1i,y2i,v2i,y3i,v3i,y4i,v4i,mdur,mbase 
+dat.kalaian1996 : id,study,year,n1i,n2i,outcome,yi,vi,hrs,ets,homework,type 
+dat.karner2014 : study,year,duration,inhaler,baseline.age,baseline.males,baseline.fev1,baseline.fev1pp,baseline.pyr,tiotropium.total,tiotropium.exa,tiotropium.sexa,tiotropium.hospi,tiotropium.deaths,tiotropium.sae,tiotropium.dropout,placebo.total,placebo.exa,placebo.sexa,placebo.hospi,placebo.deaths,placebo.sae,placebo.dropout,sgrq.md,sgrq.se,fev1.md,fev1.se,rob.rand,rob.alloc,rob.perf,rob.det,rob.att,rob.rep 
+dat.kearon1998 : id,study,year,patients,tp,np,tn,nn 
+dat.knapp2017 : authors,year,study,task,difficulty,group1,group2,comp,yi,vi,n_sz,n_hc,yi_iq,vi_iq 
+dat.konstantopoulos2011 : district,school,study,year,yi,vi 
+dat.landenberger2005 : study,pubtype,country,design,program,setting,designprob,n.ctrl.rec,n.ctrl.non,n.cbt.rec,n.cbt.non,interval,group,age,male,minority,length,sessions,hrs_week,hrs_total,cbt.cogskills,cbt.cogrestruct,cbt.intpprbsolv,cbt.socskills,cbt.angerctrl,cbt.victimimpact,cbt.subabuse,cbt.behavmod,cbt.relapseprev,cbt.moralrsng,cbt.roletaking,cbt.other 
+dat.laopaiboon2015 : author,year,ai,n1i,ci,n2i,age,diag.ab,diag.cb,diag.pn,ctrl 
+dat.lau1992 : trial,year,ai,n1i,ci,n2i 
+dat.lee2004 : id,study,year,ai,n1i,ci,n2i 
+dat.lehmann2018 : Short_Title,Full_Citation,Year,PRPublication,Source_Type,Preregistered,Moderator_Group,Context,Gender,Color_Contrast,Color_Form,Photo_Type,Photo_Similarity,DV_Type,DV_Items,DV_Scale,DV_ScaleBottom,DV_ScaleTop,Location,Continent,Participants,Participant_Notes,Design,Eth_Majority,Eth_Majority_Detail,Eth_Stim,Eth_Match,Red_Age,Control_Age,Color_Red,Color_Control,Red_Original,Color_Match,Presentation_Control,Stimuli_Presentation,Red_N,Red_M,Red_SD,Control_N,Control_M,Control_SD,SD_diff,RM_r,Control_Attractiveness,Notes,Total.SampleSize,pooled,yi,vi 
+dat.li2007 : id,study,year,ai,n1i,ci,n2i 
+dat.linde2005 : id,study,year,country,ni,major,baseline,version,duration,prep,dosage,response,ai,n1i,ci,n2i,group 
+dat.linde2015 : id,author,year,treatment1,treatment2,treatment3,n1,resp1,remi1,loss1,loss.ae1,ae1,n2,resp2,remi2,loss2,loss.ae2,ae2,n3,resp3,remi3,loss3,loss.ae3,ae3 
+dat.linde2016 : id,author,year,resp,n,int,int.long 
+dat.lloyd2010 : author,year,mean.das,lower.das,upper.das,mean.haq,lower.haq,upper.haq,n 
+dat.lopez2019 : study,treatment,scale,n,diff,se,group,tailored,sessions,length,intensity,multi,cog,ba,psed,home,prob,soc,relax,goal,final,mind,act 
+dat.mccurdy2020 : article,experiment,sample,id,pairing,yi,vi,ni,stimuli,condition,gen_difficulty,manip_type,present_style,word_status,memory_test,memory_type,gen_constraint,learning_type,stimuli_relation,gen_mode,gen_task,attention,pacing,filler_task,age_grp,retention_delay 
+dat.mcdaniel1994 : study,ni,ri,type,struct 
+dat.meeker2017 : team,division,mean,se,batters 
+dat.michael2013 : Study,No_brain_n,No_brain_m,No_brain_s,Brain_n,Brain_m,Brain_s,Included_Critique,Medium,Compensation,Participant_Pool,yi,vi 
+dat.molloy2014 : authors,year,ni,ri,controls,design,a_measure,c_measure,meanage,quality 
+dat.moore1998 : id,author,year,Ee,Ne,Ec,Nc,nonenglish,medline,grey,samecont,journal 
+dat.nakagawa2007 : StudyID,Place,Correlation,SampleSize 
+dat.nielweise2007 : study,author,year,ai,n1i,ci,n2i 
+dat.nielweise2008 : study,authors,year,x1i,t1i,x2i,t2i 
+dat.nissen2007 : study,type,phase,population,start,end,treatment,control,weeks,treat.total,treat.infarction,treat.death,cont.total,cont.infarction,cont.death 
+dat.normand1999 : study,source,n1i,m1i,sd1i,n2i,m2i,sd2i 
+dat.obrien2003 : study,author,year,ref,ch,dm,mg,grp,bmi.lb,bmi.ub,bmi,cases,total 
+dat.pagliaro1992 : study,trt,xi,ni 
+dat.pignon2000 : id,trial,OmE,V,grp 
+dat.poole2003 : author,year,Ne,Me,Se,Nc,Mc,Sc,duration 
+dat.pritz1997 : study,authors,xi,ni 
+dat.quan2000 : study,Ee,Ne,Ec,Nc 
+dat.raudenbush1985 : study,author,year,weeks,setting,tester,n1i,n2i,yi,vi 
+dat.riley2003 : study,yi,vi,sei,outcome 
+dat.rivera2025 : Author,Year,Title,DOI,TP,FP,FN,TN,Sensitivity,Specificity,PPV,NPV,Sample.size,n1,n2,Prevalence,AUC,SampleID 
+dat.roever2022 : study,year,dose,events,total 
+dat.senn2013 : study,ni,treatment,comment,mi,sdi 
+dat.spooner2002 : author,year,Ne,Me,Se,Nc,Mc,Sc,agegroup,order 
+dat.steurer2006 : author,year,Ne,Nc,HR,lowHR,uppHR,lnHR,selnHR 
+dat.stowe2010 : study,id,t1,y1,sd1,n1,t2,y2,sd2,n2,t3,y3,sd3,n3 
+dat.tannersmith2016 : studyid,yi,vi,sei,aget1,aget2,propmale,sexmix 
+dat.thompson1999 : studyid,ihd.cont,noihd.cont,ihd.exp,noihd.exp,OR,logOR,varlogOR,cholr 
+dat.tian2009 : study,group,intervention,detailed.intervention,phase,duration,n.all,n,deaths,infarcts,type,population,period,age,male,hemoglobin 
+dat.ursino2021 : study,year,dose,events,total 
+dat.vanhowe1999 : study,category,non.pos,non.neg,cir.pos,cir.neg 
+dat.viechtbauer2021 : trial,nTi,nCi,xTi,xCi,dose 
+dat.white2020 : study_id,obs,exp_obs,control,class,genus,species,sex,iridescent,col_var,col_component,quality_measure,region,n,r 
+dat.woods2010 : author,treatment,r,N 
+dat.yusuf1985 : table,id,trial,ai,n1i,ci,n2i 
+Warning messages:
+1: In get(n, e) :
+  strings not representable in native encoding will be translated to UTF-8
+2: In get(n, e) :
+  strings not representable in native encoding will be translated to UTF-8
+3: In get(n, e) :
+  strings not representable in native encoding will be translated to UTF-8
