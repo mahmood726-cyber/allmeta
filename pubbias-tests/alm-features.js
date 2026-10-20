@@ -73,10 +73,21 @@
     }
     return out;
   }
+  function selectionBoundary(r) {
+    // The optimiser's logistic weight is bounded by zero and one hundred.
+    // Match the displayed precision, including near-boundary rounded values.
+    return Number.isFinite(r.sel_delta2) &&
+      (Number(r.sel_delta2.toFixed(3)) <= 0 || Number(r.sel_delta2.toFixed(3)) >= 100);
+  }
   var templates = {
     plain: function (T, r) {
-      return ['This analysis examined small-study effects in ', T.int('k'), ' studies. Egger’s test gave t = ',
-        T.num('egger_t', 3), ' and p = ', T.num('egger_p', 3),
+      return ['This analysis examined small-study effects in ', T.int('k'), ' studies. ',
+        T.when(r.format === 'te-se', function () { return [
+          'Egger’s test gave t = ', T.num('egger_t', 3), ' and ', T.p('egger_p')]; }),
+        T.when(r.format === 'binary', function () { return [
+          'Peters: t = ', T.num('peters_t', 3), ', ', T.p('peters_p'),
+          '; Harbord: t = ', T.num('harbord_t', 3), ', ', T.p('harbord_p'),
+          '. Egger is not recommended for binary log odds ratios']; }),
         '. Funnel asymmetry can have several explanations and does not establish publication bias. ',
         'A lack of evidence of asymmetry does not establish its absence. ',
         T.when(r.k < T.R.funnelK, ['With fewer than ', T.rule('funnelK'),
@@ -93,32 +104,38 @@
           ' was added to every cell. Peters regressed log odds ratios on inverse total sample size, weighted by the reciprocal of the sum of inverse pooled event and non-event counts. Harbord regressed the efficient score divided by the square root of its information on the square root of that information. Both exclude studies with no events or no non-events across both arms and use two-sided t tests with informative-study count minus two degrees of freedom. ']),
         'Egger regressed the standardised effect on precision using unweighted least squares with multiplicative residual dispersion; the intercept used a two-sided t test with study count minus two degrees of freedom. ',
         'Begg–Mazumdar correlated fixed-effect-centred, studentised effects with their variances using Kendall’s tau-b; its two-sided test uses the exact permutation distribution without ties and a tie-corrected normal approximation without continuity correction otherwise. ',
-        'The app’s Thompson–Sharp variant regresses effect on standard error using inverse-variance weights, tests the intercept, and multiplies its already dispersion-adjusted standard error by the square root of the larger of unity and residual dispersion; it uses a two-sided t test with study count minus two degrees of freedom. ',
+        'The quantity labelled Thompson–Sharp on the page tests the intercept of the effect-on-SE regression (effect extrapolated to SE zero), not a test of asymmetry. It uses inverse-variance weights and multiplies its already dispersion-adjusted standard error by the square root of the larger of unity and residual dispersion, with a two-sided t test with study count minus two degrees of freedom. ',
         'Trim-and-fill uses the L-zero estimator, chooses the filling side from the sign of a REML meta-regression slope on standard error, and uses REML for the trimmed and augmented fits; absolute residual ranks break ties by sorted order. ',
         'The experimental Vevea–Hedges selection model uses maximum likelihood with Nelder–Mead optimisation and REML starting values, a one-sided normal p-value cutpoint of ',
         T.num('selectionCutpoint', 3),
         ', and a chi-squared likelihood-ratio test against an unselected maximum-likelihood model with one degree of freedom. It is not validated against metafor. ',
         'The page reports no confidence intervals, prediction intervals or heterogeneity summaries; none are inferred here. ',
         T.entry(), T.when(T.entry(), ' '), T.software(),
-        T.when(r.verified, function () { return [' ', T.verify(),
+        T.when(r.verified && T.verify(), function () { return [' ', T.verify(),
+          T.when(r.format === 'binary', ' Peters and Harbord were compared using meta; its version is recorded in Verify in R.'),
           ' This comparison covers Egger, Begg and trim-and-fill, plus Peters and Harbord for binary data; it excludes Thompson–Sharp and the experimental selection model.']; })
       ];
     },
     results: function (T, r) {
-      return ['There were ', T.int('k'), ' studies. Egger: t = ', T.num('egger_t', 3), ', p = ', T.num('egger_p', 3),
-        '; Begg–Mazumdar: tau-b = ', T.num('begg_tau', 3), ', p = ', T.num('begg_p', 3),
-        '; Thompson–Sharp: t = ', T.num('thompson_t', 3), ', p = ', T.num('thompson_p', 3), '. ',
+      return ['There were ', T.int('k'), ' studies. Egger: t = ', T.num('egger_t', 3), ', ', T.p('egger_p'),
+        T.when(r.format === 'binary', ' (Egger is not recommended for binary log odds ratios)'),
+        '; Begg–Mazumdar: tau-b = ', T.num('begg_tau', 3), ', ', T.p('begg_p'), '. ',
+        'The effect-on-SE intercept (effect extrapolated to SE zero; labelled Thompson–Sharp on the page) is not a test of asymmetry: t = ',
+        T.num('thompson_t', 3), ', ', T.p('thompson_p'), '. ',
         T.when(r.format === 'binary', function () { return [
-          'Peters: t = ', T.num('peters_t', 3), ', p = ', T.num('peters_p', 3),
-          '; Harbord: t = ', T.num('harbord_t', 3), ', p = ', T.num('harbord_p', 3), '. '
+          'Peters: t = ', T.num('peters_t', 3), ', ', T.p('peters_p'),
+          '; Harbord: t = ', T.num('harbord_t', 3), ', ', T.p('harbord_p'), '. '
         ]; }),
-        'Trim-and-fill imputed ', T.int('tf_k0'), ' studies, with adjusted estimate ', T.num('tf_est', 3), '. ',
+        'Trim-and-fill imputed ', T.int('tf_k0'), ' ', T.plural('tf_k0', 'study', 'studies'),
+        ', with adjusted estimate ', T.num('tf_est', 3), '. ',
         T.when(T.has('sel_mu') && T.has('sel_unadjusted'), function () { return [
           'The experimental selection model gave relative selection weight δ₂ = ', T.num('sel_delta2', 3),
-          ', likelihood-ratio p = ', T.num('sel_LRTp', 3), ', adjusted mean ', T.num('sel_mu', 3),
-          ' and unadjusted mean ', T.num('sel_unadjusted', 3), '. '
+          ', likelihood-ratio ', T.p('sel_LRTp'), ', adjusted mean ', T.num('sel_mu', 3),
+          ' and unadjusted mean ', T.num('sel_unadjusted', 3), '. ',
+          T.when(selectionBoundary(r),
+            'The selection weight reached its boundary; the model is not informative. ')
         ]; }),
-        'All effects remain on the analysis scale. P-values retain the page’s rounding; a displayed zero does not mean an exact zero.'];
+        'All effects remain on the analysis scale. P-values below the reporting threshold are shown as bounds; other p-values retain the page’s rounding.'];
     },
     flags: function (T, r) {
       return [T.when(r.k < T.R.funnelK, ['Fewer than ', T.rule('funnelK'),
@@ -163,11 +180,18 @@
     })) throw new Error('Need at least five finite effects with positive standard errors');
     // Labels and extraction provenance stay in the shared provenance record: this
     // app's parser accepts numeric effect/SE pairs, not study labels.
-    byId('src').value = records.map(function (r) { return r.yi + ', ' + r.sei; }).join('\n');
-    byId('format').value = 'te-se';
-    byId('btn-run').click();
-    var last = global._almLastPubbias();
-    return { ok: !!last && last.k === records.length, n: records.length };
+    var previousSrc = byId('src').value, previousFormat = byId('format').value, ok = false;
+    try {
+      byId('src').value = records.map(function (r) { return r.yi + ', ' + r.sei; }).join('\n');
+      byId('format').value = 'te-se';
+      byId('btn-run').click();
+      var last = global._almLastPubbias();
+      ok = !!last && last.format === 'te-se' && last.k === records.length &&
+        last.studies.every(function (row, i) { return row.te === records[i].yi && row.se === records[i].sei; });
+      return { ok: ok, n: records.length };
+    } finally {
+      if (!ok) { byId('src').value = previousSrc; byId('format').value = previousFormat; }
+    }
   }
   var spec = {
     paper: 6, title: 'Small-study-effect tests',

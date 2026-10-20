@@ -1,11 +1,19 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { readZip, readTiff, decodePng } from './zip-reader.mjs';
 
 const APP = 'pubbias-tests';
 const PAGE = '/pubbias-tests/index.html';
 const SNAP = new URL('./__snapshots__/text-pubbias-tests.json', import.meta.url);
+test('REVIEW: focused failing-first regressions and planted audit failure', () => {
+  const run = spawnSync(process.execPath, ['--test', '--test-isolation=none',
+    fileURLToPath(new URL('./fixtures/features/pubbias-tests/review-regressions.cjs', import.meta.url))],
+  { encoding: 'utf8' });
+  expect(run.status, run.stdout + run.stderr).toBe(0);
+});
 async function open(page, tab = 'entry') {
   await page.goto(PAGE);
   await page.waitForFunction(() => window.AlmFeatures?.get('pubbias-tests') && window._almLastPubbias());
@@ -108,6 +116,13 @@ test('TEXT: audit, every displayed result, snapshot and report downloads', async
   console.log(`TEXTAUDIT ${out.audit.passed}/${out.audit.checks} domChecked=${out.audit.domChecked}`);
   expect(out.audit.failures).toEqual([]); expect(out.audit.ok).toBe(true);
   expect(out.audit.domChecked).toBeGreaterThanOrEqual(12);
+  // Only these nine comparisons are independent of results()'s DOM reads.
+  // Thompson, Peters, Harbord and sel_unadjusted check display consistency only.
+  const independentKeys = await page.evaluate(() => Object.keys(AlmPubbiasFeatures.text.dom())
+    .filter(key => Object.hasOwn(_almLastPubbias(), key)));
+  expect(independentKeys).toEqual(['egger_t', 'egger_p', 'begg_tau', 'begg_p',
+    'tf_k0', 'tf_est', 'sel_delta2', 'sel_LRTp', 'sel_mu']);
+  console.log(`TEXTDOM independent=${independentKeys.length}; other checks validate display consistency`);
   const shown = await page.locator('#body tr').evaluateAll(rows => rows.flatMap(row => {
     if (row.cells.length !== 5) return [];
     const label = row.cells[0].querySelector('code')?.textContent;
@@ -168,20 +183,8 @@ test('VERIFY: live R, funnel exports, receipt, planted failure and stale text', 
   await expect(panel).toContainText('Thompson–Sharp is excluded');
   await expect(panel).toContainText('not validated against metafor');
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
-  await expect(summary).toHaveText(/quantities match R|unavailable/, { timeout: 600_000 });
+  await expect(summary).toHaveText(/^11 of 11 quantities match R — PASS$/, { timeout: 600_000 });
   const message = await summary.innerText();
-  // The pinned package set is expected to support both packages. Missing-package
-  // fallback is accepted only when the runner explicitly reports that condition.
-  if (message.includes('unavailable')) {
-    expect(message).toMatch(/Not checked in the browser: R package (meta|metafor) is unavailable/);
-    expect(message).not.toContain('PASS');
-    const [scriptDownload] = await Promise.all([page.waitForEvent('download'),
-      panel.getByRole('button', { name: 'R script (.R)', exact: true }).click()]);
-    expect(scriptDownload.suggestedFilename()).toBe(`${APP}-verify.R`);
-    expect(fs.readFileSync(await scriptDownload.path(), 'utf8')).toContain('library(metafor)');
-    console.log('VERIFY unavailable: ' + message);
-    return;
-  }
   const m = /^(\d+) of (\d+) quantities match R — PASS$/.exec(message);
   expect(m, message).not.toBeNull();
   const n = +m[2]; expect(n).toBe(11); expect(+m[1]).toBe(n);
@@ -223,6 +226,77 @@ test('VERIFY: live R, funnel exports, receipt, planted failure and stale text', 
   expect(await panel.locator('tbody td[data-result]').allTextContents()).toEqual(['FAIL', ...Array(n - 1).fill('PASS')]);
   console.log(`VERIFY planted ${n - 1}/${n} FAIL`);
 });
+
+test('VERIFY BINARY: meta rows, planted failure and verified inputs with unrun results', async ({ page }) => {
+  test.setTimeout(900_000);
+  await open(page, 'verify');
+  await page.locator('#format').selectOption('binary');
+  const panel = page.locator('#alm-f-panel-verify');
+  const summary = panel.locator('[data-testid=verify-summary]');
+  const verify = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
+  await verify.click();
+  await expect(summary).toHaveText('15 of 15 quantities match R — PASS', { timeout: 600_000 });
+  const receipt = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(receipt.rows).toHaveLength(15);
+  expect(receipt.rows.every(row => row.pass)).toBe(true);
+  for (const key of ['peters_statistic', 'peters_p', 'harbord_statistic', 'harbord_p']) {
+    expect(receipt.rows.find(row => row.key === key)?.pass, key).toBe(true);
+  }
+  expect(receipt.versions.meta).toMatch(/^\d/);
+  expect(receipt.versions.metafor).toMatch(/^\d/);
+  console.log('VERIFY 15/15 binary (including Peters and Harbord via meta)');
+  await page.evaluate(() => AlmFeatures.open('pubbias-tests', 'text'));
+  await expect(page.locator('[data-para=methods]')).toContainText('Results were independently verified in R');
+  await expect(page.locator('[data-para=methods]')).toContainText('Peters and Harbord were compared using meta');
+
+  // Verify edited inputs without running the app. A fresh passing R receipt
+  // must not certify the older results still displayed by the engine.
+  const before = await page.evaluate(() => _almLastPubbias());
+  const src = await page.locator('#src').inputValue();
+  await page.locator('#src').fill(src.replace(/\d+/, n => String(Number(n) + 1)));
+  await page.evaluate(() => AlmFeatures.open('pubbias-tests', 'verify'));
+  await verify.click();
+  await expect(summary).toHaveText('15 of 15 quantities match R — PASS', { timeout: 300_000 });
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('pubbias-tests'))).toBe(true);
+  expect(await page.evaluate(() => _almLastPubbias())).toEqual(before);
+  expect(await page.evaluate(() => AlmPubbiasFeatures.text.results().verified)).toBe(false);
+  await page.evaluate(() => AlmFeatures.open('pubbias-tests', 'text'));
+  await expect(page.locator('[data-para=methods]')).not.toContainText('Results were independently verified in R');
+  await expect(page.locator('[data-para=methods]')).not.toContainText('This comparison covers');
+
+  await page.locator('#src').fill(src);
+  await page.evaluate(() => {
+    window.__almVerifyPerturb = { key: 'peters_statistic', delta: 0.1 };
+    AlmFeatures.open('pubbias-tests', 'verify');
+  });
+  await verify.click();
+  await expect(summary).toContainText('14 of 15 quantities match R — FAIL', { timeout: 300_000 });
+  const failed = await page.evaluate(() => AlmFeaturesState.verify.rows.filter(row => !row.pass).map(row => row.key));
+  expect(failed).toEqual(['peters_statistic']);
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('pubbias-tests'))).toBe(false);
+  console.log('VERIFY planted 14/15 binary FAIL');
+});
+
+for (const pkg of ['metafor', 'meta']) {
+  test(`VERIFY UNAVAILABLE: stubbed ${pkg} failure withholds receipt and preserves script download`, async ({ page }) => {
+    await open(page, 'verify');
+    await page.evaluate(pkg => {
+      window.AlmWebR = { runRPlots: async () => ({ ok: false, error: 'Package not in pinned repository: ' + pkg }) };
+    }, pkg);
+    const panel = page.locator('#alm-f-panel-verify');
+    await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
+    await expect(panel.locator('[data-testid=verify-summary]'))
+      .toContainText(`Not checked in the browser: R package ${pkg} is unavailable`);
+    expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('pubbias-tests'))).toBe(false);
+    expect(await panel.locator('tbody td[data-result]').allTextContents()).toEqual([]);
+    const [download] = await Promise.all([page.waitForEvent('download'),
+      panel.getByRole('button', { name: 'R script (.R)', exact: true }).click()]);
+    expect(download.suggestedFilename()).toBe(`${APP}-verify.R`);
+    expect(fs.readFileSync(await download.path(), 'utf8')).toContain('library(metafor)');
+    await page.evaluate(() => AlmFeatures.open('pubbias-tests', 'text'));
+    await expect(page.locator('[data-para=methods]')).not.toContainText('Results were independently verified in R');
+  });
+}
 
 test('SHARE: binary data, all axis options, log/provenance round trip; corrupt and invalid links refuse atomically', async ({ page, browser, baseURL }) => {
   await open(page, 'share');

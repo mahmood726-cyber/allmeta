@@ -61,6 +61,10 @@ function render() {
   const audit = context.AlmText.audit(rendered, r, { ctx, dom: spec.text.dom() });
   return { r, rendered, audit };
 }
+// Reuse the exact unchanged engine/DOM setup for focused review regressions.
+if (require.main !== module) {
+  module.exports = { context, elements, spec, baseline, render, html };
+} else {
 const out = render();
 assert.equal(out.audit.ok, true, JSON.stringify(out.audit.failures));
 assert.equal(out.audit.domChecked, 12);
@@ -129,3 +133,4 @@ assert.deepEqual(context._almLastPubbias(), binaryResult);
 assert.throws(() => spec.share.set({ ...saved, src: 'changed', axes: ['NaN'] }));
 assert.deepEqual(spec.share.get(), saved);
 console.log('OFFLINE SHARE 2/2 state restore/invalid state; no URL or browser claim');
+}
