@@ -1,0 +1,32 @@
+{
+  "schema": "gosh-exact-manifest-v1",
+  "configurations": 17,
+  "models": [
+    "FE",
+    "DL"
+  ],
+  "tolerance": 1e-09,
+  "counts_and_grid": "exact",
+  "quartiles": "type 7",
+  "files": [
+    {
+      "path": "corpus.json",
+      "sha256": "cf28d65c340a168646dfa1a387d1f48e010ff0ee6d34f5d38d8a0300521e6f2f",
+      "bytes": 15955
+    },
+    {
+      "path": "reference-r.json",
+      "sha256": "b7ac44b896110f767d1e1c43fdc0ff6800ce2fe4422123bc9c69071a7962da93",
+      "bytes": 1047685
+    },
+    {
+      "path": "reference-metafor.json",
+      "sha256": "0996778e4b4b26d7b72f296a9ff619621144950a85824cf8c371da71c570f392",
+      "bytes": 484374
+    }
+  ],
+  "checks": {
+    "reference-r.json": 345842,
+    "reference-metafor.json": 182826
+  }
+}
