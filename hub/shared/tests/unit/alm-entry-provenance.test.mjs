@@ -77,7 +77,7 @@ function setup(schema="binary2x2",apply=()=>({ok:true}),usedAs="log odds ratio (
     all().find(e=>e.tagName==="textarea").value=text;await button("Extract candidates").fire("click");await set("Choose the source result",index);await button("Add chosen result").fire("click");
   }
   async function complete(){
-    for(const [title,value] of [["Study label","Ellis 2022"],["Full reference","Synthetic journal report"],["Location","Table 6"],["Treatment arm","1"],["Control arm","0"],["Outcome measured","Rash"],["Timepoint","8 weeks"]])await set(title,value);
+    for(const [title,value] of [["Study label","Ellis 2022"],["Full reference","Synthetic journal report"],["Location","Table 6"],["Treatment arm","1"],["Control arm","0"],["Outcome measured","Rash"],["Timepoint","8 weeks"],["Who is counted","ITT"]])await set(title,value);
     const confirm=field("I confirm");assert.equal(confirm.disabled,false);confirm.checked=true;await confirm.fire("change");
   }
   return {root,panel,all,button,field,set,add,complete};
@@ -128,7 +128,7 @@ test("paper UI failed apply restores previous provenance state",async()=>{
 test("paper UI applies a single explicitly selected arm to a proportion app",async()=>{
   let received;const h=setup("proportion",rs=>{received=rs;return {ok:true};},"proportion (computed from events and total)");
   await h.add("7/84 (8.3%)");
-  for(const [k,v] of [["Study label","Ellis 2022"],["Full reference","Report"],["Location","Table 4"],["Arm to use","0"],["Outcome measured","Rash"],["Timepoint","8 weeks"]])await h.set(k,v);
+  for(const [k,v] of [["Study label","Ellis 2022"],["Full reference","Report"],["Location","Table 4"],["Arm to use","0"],["This arm is","intervention"],["Outcome measured","Rash"],["Timepoint","8 weeks"],["Who is counted","ITT"]])await h.set(k,v);
   const confirm=h.field("I confirm");assert.equal(confirm.disabled,false);confirm.checked=true;await confirm.fire("change");await h.button("Use these rows").fire("click");
   assert.equal(received[0].xi,7);assert.equal(received[0].ni,84);assert.deepEqual(received[0].provenance.values.map(v=>v.field),["xi","ni"]);
 });

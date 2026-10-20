@@ -34,3 +34,17 @@
 .alm-entry-source mark { background: Mark; color: MarkText; padding: .1em; }
 .alm-entry-source small { font-weight: bold; }
 .alm-entry-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.alm-entry button.alm-entry-primary { font-weight: bold; border-width: 2px; border-color: var(--accent, Highlight); }
+.alm-entry-note { margin: 0; font-weight: bold; }
+.alm-entry-edited { margin-inline-start: .5rem; }
+.alm-entry-decimals:empty, .alm-entry-todo:empty { display: none; }
+.alm-entry-line { font-weight: bold; margin: .25rem 0; }
+.alm-entry-clause { margin: .25rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.alm-entry-clause mark { background: Mark; color: MarkText; padding: .1em; }
+.alm-entry-clause small { font-weight: bold; }
+.alm-entry-confirm { padding: .25rem 0; }
+.alm-entry-todo { border-inline-start: 3px solid var(--border, GrayText); padding-inline-start: 1.5rem; }
+.alm-entry-arm-check, .alm-entry-same-source { border: 2px solid currentColor; border-radius: .25rem; padding: .5rem .75rem; }
+.alm-entry-same-source { font-weight: bold; }
+.alm-entry details summary { cursor: pointer; }
+.alm-entry [hidden] { display: none !important; }
