@@ -1,0 +1,17 @@
+[
+  {"name":"effect prefix", "line":"0.4O, 0.2, Bad", "reason":"effect must be a complete number"},
+  {"name":"SE prefix", "line":"0.4, 0.2O, Bad", "reason":"SE must be a complete number"},
+  {"name":"missing effect", "line":", 0.2, Bad", "reason":"effect must be a complete number"},
+  {"name":"missing SE", "line":"0.4, , Bad", "reason":"SE must be a complete number"},
+  {"name":"missing column", "line":"0.4", "reason":"expected effect, SE"},
+  {"name":"extra column", "line":"0.4, 0.2, Bad, extra", "reason":"expected effect, SE"},
+  {"name":"wrong delimiter", "line":"0.4; 0.2; Bad", "reason":"expected effect, SE"},
+  {"name":"zero SE", "line":"0.4, 0, Bad", "reason":"SE must be greater than 0"},
+  {"name":"negative SE", "line":"0.4, -0.2, Bad", "reason":"SE must be greater than 0"},
+  {"name":"overflow effect", "line":"1e999, 0.2, Bad", "reason":"must be finite"},
+  {"name":"overflow SE", "line":"0.4, 1e999, Bad", "reason":"must be finite"},
+  {"name":"Infinity", "line":"Infinity, 0.2, Bad", "reason":"effect must be a complete number"},
+  {"name":"NaN", "line":"0.4, NaN, Bad", "reason":"SE must be a complete number"},
+  {"name":"underflow SE", "line":"0.4, 1e-999, Bad", "reason":"SE must be greater than 0"},
+  {"name":"mid-data header", "line":"effect, SE, label", "reason":"effect must be a complete number"}
+]

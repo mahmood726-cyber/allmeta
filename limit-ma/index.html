@@ -84,7 +84,7 @@
 
 
       <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem">Studies &#8212; <code>effect, SE, label (optional)</code></label>
-      <textarea id="src" aria-label="Studies — effect, SE, label (one per line)">0.55, 0.08, S01
+      <textarea id="src" aria-describedby="limit-error" aria-label="Studies — effect, SE, label (one per line)">0.55, 0.08, S01
 0.48, 0.10, S02
 0.70, 0.15, S03
 0.60, 0.09, S04
@@ -190,12 +190,30 @@
     var _axisState = null;
 
     function parse(text) {
-      return text.trim().split(/\n/).map(function (l, i) {
+      var rows = [], errors = [], first = true;
+      var numeric = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+      // Keep the original default labels while reporting physical input line numbers.
+      var leading = (String(text).match(/^\s*/) || [''])[0].split('\n').length - 1;
+      String(text).split(/\r?\n/).forEach(function (l, i) {
+        if (!l.trim()) return;
         var parts = l.split(/,/).map(function (s) { return s.trim(); });
-        var te = parseFloat(parts[0]), se = parseFloat(parts[1]);
-        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        return { te: te, se: se, label: parts[2] || ('Study ' + (i + 1)) };
-      }).filter(Boolean);
+        var header = first && /^(effect|yi|te)$/i.test(parts[0]) && /^se$/i.test(parts[1]) &&
+          (parts.length === 2 || (parts.length === 3 && /^label$/i.test(parts[2])));
+        first = false;
+        if (header) return;
+        var reason = '';
+        if (parts.length < 2 || parts.length > 3 || /;/.test(parts.slice(0, 2).join(',')))
+          reason = 'expected effect, SE[, label] separated by commas. Use decimal points (0.4), not decimal commas (0,4)';
+        else if (parts.slice(0, 2).some(function (p) { return /^[+-]?(Infinity|NaN)$/i.test(p); })) reason = 'effect and SE must be finite';
+        else if (!numeric.test(parts[0])) reason = 'effect must be a complete number';
+        else if (!numeric.test(parts[1])) reason = 'SE must be a complete number';
+        else if (!Number.isFinite(Number(parts[0])) || !Number.isFinite(Number(parts[1]))) reason = 'effect and SE must be finite';
+        else if (!(Number(parts[1]) > 0)) reason = 'SE must be greater than 0';
+        if (reason) errors.push('Line ' + (i + 1) + ': ' + reason);
+        else rows.push({ te: Number(parts[0]), se: Number(parts[1]), label: parts[2] || ('Study ' + (i + 1 - leading)) });
+      });
+      if (errors.length) throw new Error(errors.join('; ') + '.');
+      return rows;
     }
 
     function fmt(x, d) {
@@ -314,6 +332,9 @@
       document.getElementById('body').innerHTML = '';
       document.getElementById('plot').innerHTML = '';
       document.getElementById('limit-error').textContent = message;
+      document.getElementById('limit-range-note').textContent = '';
+      document.getElementById('limit-diagnostics').textContent = '';
+      if (window.AlmLimitPlusUI) window.AlmLimitPlusUI.clear();
     }
 
     run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src");
@@ -322,7 +343,9 @@
       document.getElementById('limit-error').textContent = '';
       document.getElementById('limit-range-note').textContent = '';
       document.getElementById('limit-diagnostics').textContent = '';
-      var rows = parse(document.getElementById('src').value);
+      var rows;
+      try { rows = parse(document.getElementById('src').value); }
+      catch (error) { refuse(error.message); return; }
       if (rows.length < 3) { refuse('At least three valid studies are required.'); return; }
       if (rows.every(function (r) { return r.se === rows[0].se; })) {
         refuse('Limit meta-analysis requires variation in study SEs.'); return;
@@ -575,6 +598,9 @@
       document.getElementById('src').value=text;if(automaticAxes)_axisState=null;run();
     };
 
+    // Sensitivity comparisons share the same strict input contract.
+    window.__almLimitParse = parse;
+
     // Expose for results-export
     window._almLastLimit = function () { return _lastResults; };
 
@@ -718,7 +744,8 @@
       AlmHero.attachHero({
         container: "#alm-hero-mount",
         textarea: "#src",
-        adapter: "forest",
+        adapter: "effect-se-label",
+        onAfterLoad: function () { document.getElementById('btn-run').click(); },
       });
     }
   });
