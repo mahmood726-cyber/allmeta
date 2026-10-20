@@ -56,7 +56,8 @@ async function fillCard(c, label, armIndex) {
   await c.getByLabel('Arm to use').selectOption(String(armIndex));
   // Required facets (e.g. timepoint when the paste mentions several): choose the one the source cue shows.
   for (const facet of ['timepoint', 'analysisSet', 'adjustment', 'phase']) {
-    const sel = c.getByLabel('Choose ' + facet, { exact: true });
+    // The wrapping <label> text also contains the option texts, so match the label by its leading caption.
+    const sel = c.locator(`xpath=.//label[normalize-space(text()[1])="Choose ${facet}"]/select`);
     if (!(await sel.count())) continue;
     const shown = await c.locator('p').filter({ hasText: new RegExp('^' + facet + ': ') }).first().textContent().catch(() => '');
     const value = (/^\w+: (.*?)(?: \(source cue|$)/.exec(shown || '') || [])[1];
@@ -65,6 +66,14 @@ async function fillCard(c, label, armIndex) {
   }
   await c.getByLabel('Outcome measured').fill('continued antidepressants');
   await c.getByLabel('Timepoint (or not stated)').fill('6 months');
+}
+
+async function extractCandidates(host, text) {
+  await host.getByLabel('Paste the exact paper text or table').fill(text);
+  await host.getByRole('button', { name: 'Extract candidates', exact: true }).click();
+  await expect(host.locator('[role=status]').first()).toContainText(/candidates|No supported result/);
+  const chooser = host.getByLabel('Choose the source result to add');
+  return (await chooser.count()) ? chooser.locator('option').evaluateAll(os => os.map(o => ({ value: o.value, text: o.textContent }))) : [];
 }
 
 async function extractAndAdd(page, host, text, cueIncludes) {
@@ -159,19 +168,32 @@ test('persona walkthrough pack: paper text -> provenance -> app 9 -> Methods', a
   const sentences = await host.locator('p').filter({ hasText: /^From PRI-SMA 2016/ }).allTextContents();
   await capture(page, 5, 'highlights-and-sentence', 'Highlighted values and the "What we took" sentence', await hostText(), { sentences });
 
-  // (6) deliberate error: a typo copy with 186/125 (events > n) -> blocking message, confirmation and Use disabled
-  const typo = await extractAndAdd(page, host, TYPO, '186/125');
-  await typo.add.click();
-  await expect(card(host, 3)).toHaveCount(1);
-  await fillCard(card(host, 3), 'PRI-SMA 2016 typo check', 0);
-  const block = card(host, 3).locator('li').filter({ hasText: /^Block: |must be between/ });
+  // (6) deliberate error (events > n). (a) Free text: a typo copy with 186/125 -> record which candidates the extractor
+  //     offers. (b) The table workflow on the same page: a row with 186 events of 125 -> blocking message, Use disabled.
+  const typo = await extractCandidates(host, TYPO);
+  const typoOffered = typo.some(o => o.text.includes('186/125'));
+  console.log(`PERSONA typo free text: candidates offered = ${JSON.stringify(typo.filter(o => o.value !== '').map(o => o.text))}; 186/125 offered: ${typoOffered}`);
+  await page.evaluate(() => {
+    const h = document.createElement('section');
+    h.id = 'persona-table-host'; h.setAttribute('aria-label', 'Table entry (persona walkthrough container)');
+    h.style.cssText = 'margin:1rem;padding:1rem;border:2px dashed #b00';
+    document.getElementById('persona-entry-host').after(h);
+    window.__personaTable = window.AlmEntryUI.mount(h, { schema: 'proportion', apply: () => ({ ok: false }) });
+    h.scrollIntoView();
+  });
+  const tableHost = page.locator('#persona-table-host');
+  const TAB = String.fromCharCode(9), NL = String.fromCharCode(10);
+  await tableHost.locator('textarea').fill([['Study', 'Events', 'Total'], ['PRI-SMA 2016 intervention arm', '186', '125'], ['PRI-SMA 2016 TAU arm', '78', '133']]
+    .map(r => r.join(TAB)).join(NL));
+  await tableHost.getByRole('button', { name: 'Preview and convert', exact: true }).click();
+  const block = tableHost.locator('li.alm-entry-block');
   await expect(block.first()).toBeVisible();
-  await expect(card(host, 3).getByLabel('I confirm this row')).toBeDisabled();
-  await expect(host.getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
-  await capture(page, 6, 'blocking-error', 'Deliberate error (186 events of 125): blocking message', await hostText(),
-    { blocking: await block.allTextContents() });
-  await card(host, 3).getByRole('button', { name: 'Remove this row', exact: true }).click();
-  await expect(card(host, 3)).toHaveCount(0);
+  await expect(tableHost.getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
+  await capture(page, 6, 'blocking-error', 'Deliberate error (186 events of 125): free-text candidates and the table workflow block',
+    ['--- free text with the typo: candidates offered ---', ...(typo.filter(o => o.value !== '').map(o => o.text)), '',
+      '--- table workflow ---', await tableHost.innerText()].join(NL),
+    { typoCandidates: typo, typoOffered, blocking: await block.allTextContents() });
+  await page.evaluate(() => { window.__personaTable.destroy(); document.getElementById('persona-table-host').remove(); });
 
   // (7) confirm + Use these rows -> the app's result
   for (const i of [1, 2]) {
