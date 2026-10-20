@@ -1,0 +1,153 @@
+{
+ "_provenance": "R 4.6.0, netmeta 3.7.0 (netmeta:::prepare + netmeta:::nma_additive, the engine of netcomb/discomb). Values copied verbatim from reference.json of the P19 component-nma validation archive; inputs from its focused-corpus.json. Regenerate with that archive, not from this page.",
+ "cases": {
+  "heterogeneous": {
+   "text": "a | control | -2 | .1\nb | control | 1 | .2\na+b | control | 3 | .3\na | b | 2 | .15\nb | control | -.5 | .25",
+   "status": "ok",
+   "Q": 633.7830640866323,
+   "df": 3,
+   "tau2": 7.158660219603105,
+   "k": 5,
+   "components": {
+    "a": {
+     "est": 0.9931858230468762,
+     "se": 1.5491260942829306
+    },
+    "b": {
+     "est": 0.37202010656771345,
+     "se": 1.342793186106681
+    }
+   },
+   "combinations": {
+    "a": {
+     "est": 0.9931858230468762,
+     "se": 1.5491260942829306
+    },
+    "a+b": {
+     "est": 1.3652059296145898,
+     "se": 2.0528290700885026
+    },
+    "b": {
+     "est": 0.37202010656771345,
+     "se": 1.342793186106681
+    }
+   }
+  },
+  "saturated": {
+   "text": "a | control | -.3 | .1\nb | control | .2 | .2",
+   "status": "ok",
+   "Q": 0,
+   "df": 0,
+   "tau2": null,
+   "k": 2,
+   "components": {
+    "a": {
+     "est": -0.3,
+     "se": 0.1
+    },
+    "b": {
+     "est": 0.2,
+     "se": 0.2
+    }
+   },
+   "combinations": {
+    "a": {
+     "est": -0.3,
+     "se": 0.1
+    },
+    "b": {
+     "est": 0.2,
+     "se": 0.2
+    }
+   }
+  },
+  "html-label": {
+   "text": "<tag>&x | control | .3 | .1\nconstructor | control | .2 | .15\n__proto__ | control | .1 | .2",
+   "status": "ok",
+   "Q": 3.423875456688419e-32,
+   "df": 0,
+   "tau2": null,
+   "k": 3,
+   "components": {
+    "<tag>&x": {
+     "est": 0.3,
+     "se": 0.1
+    },
+    "__proto__": {
+     "est": 0.1,
+     "se": 0.2
+    },
+    "constructor": {
+     "est": 0.19999999999999998,
+     "se": 0.15
+    }
+   },
+   "combinations": {
+    "<tag>&x": {
+     "est": 0.3,
+     "se": 0.1
+    },
+    "__proto__": {
+     "est": 0.1,
+     "se": 0.2
+    },
+    "constructor": {
+     "est": 0.19999999999999998,
+     "se": 0.15
+    }
+   }
+  },
+  "singular": {
+   "text": "a | b | .3 | .1\na | b | .4 | .2",
+   "status": "refused",
+   "reason": "Components are not identifiable from the contrasts."
+  },
+  "numeric-junk": {
+   "text": "a | control | .3oops | .1\na | control | .4 | .1",
+   "status": "refused",
+   "reason": "Invalid contrast input."
+  },
+  "disconnected-identifiable": {
+   "text": "a+b | control | .3 | .1\na | b | -.2 | .2\na+b | control | .7 | .1\na | b | -.5 | .3",
+   "status": "ok",
+   "Q": 8.69230769230769,
+   "df": 2,
+   "tau2": 0.057999999999999975,
+   "k": 4,
+   "components": {
+    "a": {
+     "est": 0.09024390243902441,
+     "se": 0.15244617869390484
+    },
+    "b": {
+     "est": 0.40975609756097575,
+     "se": 0.1524461786939049
+    }
+   },
+   "combinations": {
+    "a": {
+     "est": 0.09024390243902441,
+     "se": 0.15244617869390484
+    },
+    "a+b": {
+     "est": 0.5000000000000002,
+     "se": 0.18439088914585772
+    },
+    "b": {
+     "est": 0.40975609756097575,
+     "se": 0.1524461786939049
+    }
+   }
+  }
+ },
+ "signed_zero": {
+  "exact_zero": {
+   "key": "metabook::Hamza2021::response::OR::full::DL::inactive=placebo",
+   "name": "nefazodone@300",
+   "r_est": 8.604228440844963e-16,
+   "js_est_before_fix": -9.020562075079397e-17,
+   "note": "Only link to control is a contrast with te = 0 exactly; R and JS differ only by roundoff sign."
+  },
+  "genuine_negative": null
+ }
+}
