@@ -1,0 +1,16 @@
+{
+  "app": "correlation-ma",
+  "source": "Built-in example; default REML estimator",
+  "plain": "This analysis combined 8 studies. The pooled correlation was 0.375 (95% confidence interval 0.275 to 0.467). The confidence interval does not include zero correlation. Variation beyond sampling error might not be important (I² = 21.2%). For a new study in a similar setting, the prediction interval for the true correlation is 0.172 to 0.548. Correlation does not establish causation or clinical importance.",
+  "methods": "Correlations were transformed with Fisher z = atanh(r), with sampling variance equal to the reciprocal of (sample size minus 3), and pooled using inverse-variance weights. A random-effects model estimated between-study variance using restricted maximum likelihood (REML). The pooled 95% confidence interval used the standard normal (Wald) critical value on the Fisher-z scale, without Hartung–Knapp adjustment. The page does not report a hypothesis-test p-value. Study confidence intervals also use the normal approximation on the Fisher-z scale. Pooled estimates, confidence limits and prediction limits were back-transformed with tanh. I² was computed as between-study variance divided by the sum of between-study variance and the Higgins–Thompson typical within-study variance, expressed as a percentage (Higgins and Thompson 2002). The typical variance is (k minus one) times the sum of fixed-effect weights divided by the squared sum of weights minus the sum of squared weights. The 95% prediction interval used pooled z ± t × √(τ² + SE²), with t degrees of freedom equal to the number of studies minus one (Cochrane Handbook v6.5, §10.10.4.3; Higgins, Thompson and Spiegelhalter 2009). The app computes this interval from 2 studies onward; estimates from few studies are uncertain. The page accepts finite correlations strictly between minus one and one and sample sizes greater than 3; invalid input rows are skipped by its parser. Analyses were run in allmeta correlation-ma <build.version> (commit <build.shortSha>).",
+  "results": "The analysis included 8 studies. The pooled correlation was 0.375 (95% CI 0.275 to 0.467); pooled Fisher z = 0.394. Between-study variance τ²(z) = 0.0055; I² = 21.2% (might not be important; Cochrane Handbook v6.5, §10.10.2). The 95% prediction interval on the correlation scale was 0.172 to 0.548.",
+  "flags": [
+    "Tests for small-study effects would be underpowered; none were performed."
+  ],
+  "references": [
+    "Higgins JPT, Thompson SG. Quantifying heterogeneity in a meta-analysis. Stat Med 2002;21:1539-1558.",
+    "Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, section 10.10.4.3 (Prediction intervals in random-effects meta-analysis).",
+    "Higgins JPT, Thompson SG, Spiegelhalter DJ. A re-evaluation of random-effects meta-analysis. J R Stat Soc Ser A 2009;172:137-159.",
+    "Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, section 10.10.2 (Identifying and measuring heterogeneity)."
+  ]
+}
