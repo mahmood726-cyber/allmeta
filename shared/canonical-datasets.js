@@ -191,6 +191,13 @@
     }).join("\n");
   }
 
+  function toEffectSeLabelText(dataset) {
+    if (!dataset || !dataset.effect_se) return "";
+    return dataset.effect_se.map(function (s) {
+      return s.yi + ", " + Math.sqrt(s.vi).toFixed(4) + ", " + s.label;
+    }).join("\n");
+  }
+
   function toGlmmTextarea(dataset) {
     if (!dataset || !dataset.binary_2x2) return "";
     return dataset.binary_2x2.map(function (r) {
@@ -233,6 +240,7 @@
     list: function () { return Object.keys(DATASETS); },
     get: function (key) { return DATASETS[key] || null; },
     toForestPlotText: toForestPlotText,
+    toEffectSeLabelText: toEffectSeLabelText,
     toGlmmTextarea: toGlmmTextarea,
     toCrossDesignText: toCrossDesignText,
     toCrossNetworkText: toCrossNetworkText,

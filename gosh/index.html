@@ -89,7 +89,7 @@
 
       <label>
         <span>Studies &#8212; <code>effect, SE, label</code> (per line)</span>
-        <textarea id="src" aria-label="Input">0.22, 0.08, Study A
+        <textarea id="src" aria-label="Input" aria-describedby="input-error">0.22, 0.08, Study A
 0.30, 0.14, Study B
 0.27, 0.09, Study C
 0.15, 0.07, Study D
@@ -97,7 +97,8 @@
 0.10, 0.06, Study F
 0.35, 0.16, Study G
 0.22, 0.10, Study H
-0.40, 0.20, Study I</textarea></label>
+0.40, 0.20, Study I</textarea>
+        <span id="input-error" role="alert"></span></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
@@ -173,12 +174,28 @@
     // ---- engine ----
 
     function parse(text) {
-      return text.trim().split(/\n/).map(function (l, i) {
+      var rows = [], errors = [], first = true;
+      var numeric = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+      // Keep the original default labels while reporting physical input line numbers.
+      var leading = (String(text).match(/^\s*/) || [''])[0].split('\n').length - 1;
+      String(text).split(/\r?\n/).forEach(function (l, i) {
+        if (!l.trim()) return;
         var parts = l.split(/,/).map(function (s) { return s.trim(); });
-        var te = parseFloat(parts[0]), se = parseFloat(parts[1]);
-        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        return { te: te, se: se, label: parts[2] || ('S' + (i + 1)) };
-      }).filter(Boolean);
+        var header = first && /^(effect|yi|te)$/i.test(parts[0]) && /^se$/i.test(parts[1]) &&
+          (parts.length === 2 || (parts.length === 3 && /^label$/i.test(parts[2])));
+        first = false;
+        if (header) return;
+        var reason = '';
+        if (parts.length < 2 || parts.length > 3) reason = 'expected effect, SE[, label] separated by commas';
+        else if (!numeric.test(parts[0])) reason = 'effect must be a complete number';
+        else if (!numeric.test(parts[1])) reason = 'SE must be a complete number';
+        else if (!Number.isFinite(Number(parts[0])) || !Number.isFinite(Number(parts[1]))) reason = 'effect and SE must be finite';
+        else if (!(Number(parts[1]) > 0)) reason = 'SE must be greater than 0';
+        if (reason) errors.push('Line ' + (i + 1) + ': ' + reason);
+        else rows.push({ te: Number(parts[0]), se: Number(parts[1]), label: parts[2] || ('S' + (i + 1 - leading)) });
+      });
+      if (errors.length) throw new Error(errors.join('; ') + '.');
+      return rows;
     }
 
     function pool(rows, model) {
@@ -262,11 +279,21 @@
     function run() {
       document.getElementById('plot-note').textContent = '';
       document.getElementById('plot-error').textContent = '';
+      document.getElementById('input-error').textContent = '';
       var text = document.getElementById('src').value;
       var model = document.getElementById('model').value;
-      var rows = parse(text);
       var sampleError = document.getElementById('sample-error');
       sampleError.textContent = '';
+      var rows;
+      try { rows = parse(text); }
+      catch (error) {
+        clearInputResults(error.message);
+        return;
+      }
+      if (rows.length < 3) {
+        clearInputResults('Enter at least 3 valid studies (effect, SE[, label]); found ' + rows.length + '.');
+        return;
+      }
       if (rows.length < 3 || rows.length > 100) {
         document.getElementById('m-n').textContent = '—';
         _lastResults = null; // do not leave a stale result exportable
@@ -493,6 +520,15 @@
       run();
     }
 
+    function clearInputResults(message) {
+      _lastResults = null;
+      document.getElementById('plot').innerHTML = '';
+      ['m-n', 'm-est', 'm-i2'].forEach(function (id) { document.getElementById(id).textContent = '\u2014'; });
+      document.getElementById('sample-label').style.display = 'none';
+      document.getElementById('input-error').textContent = message;
+      if (window.AlmGoshPlus) window.AlmGoshPlus.clear('Analysis refused. Correct the input and refresh extras.');
+    }
+
     // ---- CSV load: accept study,yi,vi or study,yi,sei columns ----
     window.__almGoshLoad = function (rows) {
       if (!rows || rows.length < 1) { document.getElementById('src').value = ''; run(); return; }
@@ -533,7 +569,7 @@
     };
     window.__almGoshValidationSnapshot = function() {
       return {controls:['src','model','n-sample'].map(function(id){return [id,document.getElementById(id).value];}),
-        dom:['plot','m-n','m-est','m-i2','plot-error','plot-note','sample-error'].map(function(id){return [id,document.getElementById(id).innerHTML];}),
+        dom:['plot','m-n','m-est','m-i2','plot-error','plot-note','sample-error','input-error'].map(function(id){return [id,document.getElementById(id).innerHTML];}),
         sampleStyle:document.getElementById('sample-label').style.cssText,results:_lastResults,axes:_axisState};
     };
     window.__almGoshValidationRestore = function(s) {
@@ -681,7 +717,8 @@
       AlmHero.attachHero({
         container: "#alm-hero-mount",
         textarea: "#src",
-        adapter: "forest",
+        adapter: "effect-se-label",
+        onAfterLoad: function () { document.getElementById('btn-run').click(); },
       });
     }
   });

@@ -17,7 +17,7 @@
  *     textarea: "#src",              // the target textarea
  *     adapter: "forest",              // "forest" | "glmm" | "cross-design" |
  *                                     // "cross-network" | "sequential" |
- *                                     // "personalised"
+ *                                     // "personalised" | "effect-se-label"
  *     onAfterLoad: () => …,           // optional callback (re-render plot)
  *     extras: { "f-rho": "0.5" },     // optional field setters after load
  *   });
@@ -28,6 +28,9 @@
   // ---- Per-adapter manifest (dataset key + label per app type) ----------
 
   var MANIFESTS = {
+    "effect-se-label": [
+      { key: "bcg", label: "BCG vaccine (Berkey 1995, log-RR)" },
+    ],
     forest: [
       { key: "bcg", label: "BCG vaccine (Berkey 1995, log-RR)" },
     ],
@@ -55,6 +58,7 @@
     if (!global.AlmDatasets) return null;
     var D = global.AlmDatasets;
     switch (adapter) {
+      case "effect-se-label": return D.toEffectSeLabelText;
       case "forest":
       case "bma":          return D.toForestPlotText;
       case "glmm":         return D.toGlmmTextarea;
