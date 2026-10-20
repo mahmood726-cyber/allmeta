@@ -24,6 +24,7 @@
     verify: {
       adapter: function () { return AlmValidate.adapters['proportion-ma']; },
       rObjects: 'x, n, es (escalc), f (rma fit), back (back-transform)',
+      inputs: '#src, #trans, #tau-est', // the app's analysis inputs (Verify in R stale check)
       plots: [{
         id: 'forest', title: 'Forest plot', r: forestCode, width_in: 8, height_in: 6,
         app: function () { return byId('forest'); },

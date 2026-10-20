@@ -71,6 +71,34 @@ test('revision(app) = stateHash(liveAdapter.currentState())', () => {
   ok(F.stateHash({ a: 1 }) !== F.stateHash({ a: 2 }) && F.stateHash('x') !== F.stateHash('y'));
 });
 
+test('verifiedCurrent(app): true only for a passed run of THIS app at the CURRENT state', () => {
+  let state = { rows: [{ x: 3, n: 30 }], tr: 'logit', method: 'PM' };
+  F.register('vc-app', { verify: { adapter: () => ({ live: { currentState: () => state } }) } });
+  const st = globalThis.AlmFeaturesState;
+  const saved = st.verify;
+  st.verify = { revision: null, passed: false, rows: [], versions: {} };
+  eq(F.verifiedCurrent('vc-app'), false, 'never verified');
+  st.verify = { app: 'vc-app', revision: F.revision('vc-app'), passed: true, stale: false };
+  eq(F.verifiedCurrent('vc-app'), true, 'passed run at the current state');
+  eq(F.verifiedCurrent('other-app'), false, 'a run of another app does not count');
+  st.verify = { ...st.verify, passed: false };
+  eq(F.verifiedCurrent('vc-app'), false, 'failed run');
+  st.verify = { ...st.verify, passed: true };
+  state = { ...state, rows: [{ x: 4, n: 30 }] };                 // one data value changes after the run
+  eq(F.verifiedCurrent('vc-app'), false, 'state changed -> not current');
+  // PLANTED DEFECT: reading verify.passed alone (the bug this API exists to prevent) is caught.
+  const naive = () => st.verify.passed === true;
+  eq(naive(), true, 'naive check still says verified after the change');
+  ok(naive() !== F.verifiedCurrent('vc-app'), 'gate distinguishes the naive check from the real one');
+  state = { rows: [{ x: 3, n: 30 }], tr: 'logit', method: 'PM' };   // change reverted -> current again
+  eq(F.verifiedCurrent('vc-app'), true, 'reverting the change makes it current again');
+  F.register('vc-throw', { verify: { adapter: () => ({ live: { currentState() { throw new Error('x'); } } }) } });
+  st.verify = { app: 'vc-throw', revision: 'rev-0000000000000000', passed: true };
+  eq(F.verifiedCurrent('vc-throw'), false, 'invalid current state -> false');
+  eq(F.inputsHash('vc-app'), null, 'no document -> no input fingerprint');
+  st.verify = saved;
+});
+
 test('AlmFeaturesState and module registration', () => {
   const st = globalThis.AlmFeaturesState;
   ok(Array.isArray(st.entryLog) && st.entryLog.length === 0, 'entryLog');
