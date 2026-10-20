@@ -27,13 +27,13 @@
     "dta-sroc-7-cards.png": "8e3c8b9b0ce19b6c4b35b04b5ea50c473cc79c20a06caa426103f59d4c6889a3",
     "dta-sroc-7-plot.png": "0160048555baa40de41846bc8e5ee08f87697a783a7e00b1361de73f4ffe853e",
     "dta-sroc-7-table.png": "a4af775caaf957ce121f93a3a72b904232086ebeb9c36c856054c92754a66c5b",
-    "dta-sroc-8-cards.png": "1781712ae8b2802d8f32bea2b4f9c0ca09df944a6039e2c78251c3ea41160819",
-    "dta-sroc-8-plot.png": "3c42a34c2ed3c31077e28a319dd0e0395590dafc4e6b47a987e7dbebe614662a",
-    "dta-sroc-8-table.png": "742d8b21331899f77ed6c1dcb554d00287359d403ee4203fb818c6b3163720d2",
-    "dta-sroc-9-cards.png": "62871e2492a1aa3fb70b4e2690e240a081529724a125ca5bf70f5aac4b324f2c",
-    "dta-sroc-9-plot.png": "4de49e00d07fcbd9362ef76852e50b6fcb89e75a790bbfd4aa8707a3d42747b7",
-    "dta-sroc-9-table.png": "f5e86509c35b7095c9c56be7a856db62943643800294d5cff917cee8629e58bc"
+    "dta-sroc-8-cards.png": "3e66065a7231ff3a41f4334651bd1a36800d829a9ddef8ec6817dc79c066c673",
+    "dta-sroc-8-plot.png": "05934bdb8e46a5fdf4ab78ae334846acedaa1439f57b1fe639226016f9cb955c",
+    "dta-sroc-8-table.png": "a77e4f56e4df251ebdd925a5707b52f7f07d7357d5c616b468ffa33769bb759c",
+    "dta-sroc-9-cards.png": "cadd5b8ca3e48feb0f324fcaa890628f5b957ac6549256e8d2f6224cd75e052c",
+    "dta-sroc-9-plot.png": "40db75bd20f5ade299f76ef713bc41156bc63e4f9508de8021222b2d5f4372b6",
+    "dta-sroc-9-table.png": "ac7e68ab8f8bca1450a14bc65e581c36462bda4cf8aacffffd256d2b604f2cd8"
   },
-  "review": "Regenerated 2026-10-19 (lane fx, REVIEW_133 P1-2). The previous references used ClearType (LCD subpixel) text, which depends on the capturing machine's ClearType settings; they failed 13/13 on another Windows Edge machine and on CI. References are now captured with grayscale text. The same commit fits the model on the centred covariate, which changes trailing digits of the full-precision printed values (largest relative change 2.3e-8 across the ten configurations; all values remain within the existing tolerances: corpus 195,291/195,291, display replay 505,326/505,326), so eight table images change width. No renderer edits. Earlier review note: existing full-precision table wrapping and mobile language-control overlap retained.",
+  "review": "Regenerated 2026-10-20 (lane cand, v1.8.0 candidate): the six images of the two mobile configurations (8 and 9: table, cards, plot) only, on top of #133 + #162. #162 (fix/usability-dta-sroc) changes the original app above #alm-plus (48 px #roc-axis-note and fractional height changes), which moves the mobile (390 px) results from y=...0.28 to y=...0.80, so they rasterise 1 px lower (five images are exact 1 px shifts of the old ones; the config 8 plot differs in SVG antialiasing). The #plus-results markup (every number, card and SVG coordinate) is byte-identical to #133 alone in all ten configurations; desktop images are unchanged. Regenerated 2026-10-19 (lane fx, REVIEW_133 P1-2). The previous references used ClearType (LCD subpixel) text, which depends on the capturing machine's ClearType settings; they failed 13/13 on another Windows Edge machine and on CI. References are now captured with grayscale text. The same commit fits the model on the centred covariate, which changes trailing digits of the full-precision printed values (largest relative change 2.3e-8 across the ten configurations; all values remain within the existing tolerances: corpus 195,291/195,291, display replay 505,326/505,326), so eight table images change width. No renderer edits. Earlier review note: existing full-precision table wrapping and mobile language-control overlap retained.",
   "textAntialiasing": "grayscale (--disable-lcd-text, set in dta-sroc/validate/playwright.pixels.config.mjs)"
 }
