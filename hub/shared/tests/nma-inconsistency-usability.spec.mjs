@@ -34,16 +34,16 @@ test('changing the model re-runs without a click',async({page})=>{
  expect(await page.evaluate(()=>_almLastInco().model)).toBe('DL');
  await expect(page.locator('#dbt')).toContainText('Model: DL τ²');
 });
-test('edited valid input re-runs after a pause; invalid input explains and keeps results',async({page})=>{
+test('edited valid input re-runs after a pause; invalid input explains and clears results',async({page})=>{
  await page.goto(app);
  await page.fill('#src','A,B,.2,.1\nB,C,.3,.2\nA,C,.6,.15\nA,B,.25,.12');
- await expect.poll(()=>page.evaluate(()=>window.parse(document.getElementById('src').value).length===4&&_almLastInco().nodeSplit?.length)).toBeTruthy();
- const kept=await page.evaluate(()=>JSON.stringify(_almLastInco()));
+ await expect.poll(()=>page.evaluate(()=>_almLastInco().trts?.join('')==='ABC'&&_almLastInco().dbt?.df===1&&_almLastInco().nodeSplit?.length===3)).toBeTruthy();
  await page.fill('#src','t1,t2,TE,seTE\nA,B,.2,0\nB,C,x,.2');
  await expect(page.locator('#inco-input-msg')).toContainText('line 1 looks like a header');
  await expect(page.locator('#inco-input-msg')).toContainText('line 2 SE must be > 0');
- await expect(page.locator('#inco-input-msg')).toContainText('Results below are for the previous input');
- expect(await page.evaluate(()=>JSON.stringify(_almLastInco()))).toBe(kept);
+ await expect.poll(()=>page.evaluate(()=>_almLastInco().status)).toBe('refused');
+ await expect(page.locator('#ns-body tr')).toHaveCount(0);
+ await expect.poll(()=>page.evaluate(()=>AlmIncoPlus.methodsText())).toBe('');
  await page.fill('#src','"A,B,.2,.1\nB,C,.3,.2');
  await expect(page.locator('#inco-input-msg')).toContainText('opened on line 1 is never closed');
 });

@@ -62,7 +62,7 @@
     Object.assign(out, {
       tau2: fit.tau2, dbt: fit.dbt, nSplits: fit.nodeSplit.length,
       nInconsistent: fit.nodeSplit.filter(s => sig(s.p)).length, splitP,
-      globalFlip: sig(base.dbt.p) !== sig(fit.dbt.p),
+      globalFlip: finite(base.dbt.p) && finite(fit.dbt.p) && sig(base.dbt.p) !== sig(fit.dbt.p),
       globalTestable: fit.dbt.p !== null,
       splitFlips: base.nodeSplit.filter(s => splitP[s.comparison] !== null && sig(s.p) !== sig(splitP[s.comparison])).map(s => s.comparison),
       splitLost: base.nodeSplit.filter(s => splitP[s.comparison] === null).map(s => s.comparison),
@@ -116,7 +116,7 @@
     const gr = pRange(ok.map(d => d.dbt.p));
     const range = gr ? ` (global p ranged from ${fmtP(gr[0])} to ${fmtP(gr[1])} across single-study removals)` : '';
     if (b.dbt.p !== null) {
-      if (!L.globalFlips.length) parts.push(`Removing any single study leaves the global test on the same side of 0.05${range}; this concerns the stability of the test result, not evidence of consistency.`);
+      if (!L.globalFlips.length) parts.push(`Among removals with a testable global p-value, the global test stays on the same side of 0.05${range}; this concerns the stability of the test result, not evidence of consistency.`);
       else parts.push(`The global test result is fragile: p crosses 0.05 (full data p = ${fmtP(b.dbt.p)}) after removing ${L.globalFlips.join(', ')}${range}.`);
     }
     if (b.nodeSplit.length) {

@@ -9,7 +9,7 @@ test('plus replay: every LOO refit, FE/DL/PM triple and sentence matches native 
  const {c}=harness(),a=c.AlmIncoPlusAdapter,before=JSON.stringify(c.AlmIncoValidationAdapter.snapshot());
  const r=await a.corpus.run(files());
  console.log(`plus replay ${r.passed}/${r.checks}; groups ${JSON.stringify(r.groups)}; boundary ${r.boundary.length}`);
- assert.deepEqual(r.failed.slice(0,5),[]);assert.equal(r.passed,r.checks);assert.equal(r.checks,manifest.checks);
+ assert.equal(r.failed.length,0);assert.equal(r.passed,r.checks);assert.equal(r.checks,manifest.checks);
  assert.equal(JSON.stringify(c.AlmIncoValidationAdapter.snapshot()),before,'plus replay must not alter the validated page state');
 });
 test('plus replay detects a changed R value even with a matching pin',async()=>{

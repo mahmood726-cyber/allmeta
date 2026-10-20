@@ -2,7 +2,7 @@
  * Reads the page engine through AlmIncoPlusCore (pure); never calls the engine
  * with side effects and never writes the validated result regions. The only
  * calls to run() are the user's own: real-data example buttons, a model change,
- * a debounced edit to valid input and Ctrl/Cmd+Enter.
+ * a debounced input edit and Ctrl/Cmd+Enter.
  */
 (function () {
   'use strict';
@@ -89,8 +89,8 @@
       if (typing !== null && typeof window.clearTimeout === 'function') window.clearTimeout(typing);
       typing = later(() => {
         typing = null;
-        // Auto-run only input the page would accept; otherwise explain and keep results.
-        if (!window.inputIssue(window.parse(src.value)) && src.value !== shownText) window.run();
+        // Run refusals too, so the base result and observed plus/export state clear.
+        if (src.value !== shownText) window.run();
         else showInputMessage();
       }, 500);
     });
