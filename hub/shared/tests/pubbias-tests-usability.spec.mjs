@@ -63,7 +63,6 @@ test.describe(`${APP} usability`, () => {
   });
 
   test('2 example dataset: one action on the benchmark selector loads and analyses BCG (k = 13)', async ({ page }) => {
-    test.fail(true, 'ISSUE: the "Try with" selector writes "label, logRR, SE" lines; parseTESE() reads the year in the label as the effect and drops 10 of 13 trials (k = 3), and the loader does not run the analysis (results marked out of date).');
     await page.goto(PAGE);
     await page.locator('#alm-hero-mount select').selectOption('bcg'); // action 1
     await expect(page.locator('#analysis-stale')).toBeHidden();
@@ -80,10 +79,8 @@ test.describe(`${APP} usability`, () => {
   });
 
   const CASES = [
-    { name: 'non-numeric', text: 'a, b\nc, d\ne, f\ng, h\ni, j\nk, l', want: /non-numeric|not a number|must be numbers|could not read/i,
-      known: 'ISSUE: every line rejected but the page only says "very low power below k=10. Current k = 0".' },
-    { name: 'negative SE', text: '0.25, 0.08\n0.18, -0.10\n0.40, 0.15\n0.30, 0.09\n0.12, 0.07\n0.55, 0.20\n0.22, 0.08\n0.32, 0.12\n0.45, 0.17\n0.28, 0.10', want: /line 2.*(SE|standard error)/i,
-      known: 'ISSUE: the row with SE = -0.10 is dropped silently and the tests run on k = 9 with no note.' },
+    { name: 'non-numeric', text: 'a, b\nc, d\ne, f\ng, h\ni, j\nk, l', want: /non-numeric|not a number|must be numbers|could not read/i },
+    { name: 'negative SE', text: '0.25, 0.08\n0.18, -0.10\n0.40, 0.15\n0.30, 0.09\n0.12, 0.07\n0.55, 0.20\n0.22, 0.08\n0.32, 0.12\n0.45, 0.17\n0.28, 0.10', want: /line 2.*(SE|standard error)/i },
     { name: 'k = 1', text: '0.25, 0.08', want: /k = 1/ },
     { name: 'empty', text: '', want: /no studies|nothing entered|empty|enter (one|at least)/i,
       known: 'ISSUE: empty input reports "very low power below k=10. Current k = 0" instead of saying no data were entered.' },
@@ -105,7 +102,6 @@ test.describe(`${APP} usability`, () => {
   }
 
   test('4 refusal does not leave the previous plot on screen', async ({ page }) => {
-    test.fail(true, 'ISSUE: when k < 5 runAnalysis() returns before drawFunnel(), so the previous funnel plot stays visible beside the refusal.');
     await page.goto(PAGE);
     await expect(page.locator('#funnel circle')).toHaveCount(DEFAULT_ROWS);
     await enter(page, '');

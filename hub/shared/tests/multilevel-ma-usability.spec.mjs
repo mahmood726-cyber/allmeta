@@ -62,7 +62,6 @@ test.describe(`${APP} usability`, () => {
   });
 
   test('2 example dataset: a control restores and analyses the example in one click', async ({ page }) => {
-    test.fail(true, 'ISSUE: the example is pre-filled on first load only; there is no "Load example" control, so a user who has edited the data cannot get it back in one click.');
     await page.goto(PAGE);
     await enter(page, '1, 0.5, 0.1, a\n2, 0.4, 0.1, b\n3, 0.3, 0.1, c');
     expect(await page.getByRole('button', { name: /example/i }).count(), 'an example control exists').toBeGreaterThan(0);
