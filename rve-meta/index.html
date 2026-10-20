@@ -55,7 +55,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Robust Variance Estimation (RVE)</h1>
-    <p>Cluster-robust sandwich estimator for meta-regression with dependent effect sizes (multiple outcomes per study, multi-arm trials, repeated measures). Implements the Hedges-Tipton-Johnson 2010 correlated-effects (CORR) working model with a CR1 small-sample correction. The robustness is to <em>misspecification of the within-cluster correlation ρ</em> — it closes the inverse-variance underestimate that breaks fixed-effect / standard random-effects meta-regression when effects are nested. Coverage is good when the number of clusters is reasonably large; with <strong>few clusters (m≲20) the CR1 SEs are anticonservative</strong> — see the footer and use <code>robumeta</code>/<code>clubSandwich</code> (CR2) in R for inference there.</p>
+    <p>Cluster-robust meta-regression for dependent effects using the Hedges-Tipton-Johnson CORR working model, CR2 bias-reduced standard errors and per-coefficient Satterthwaite degrees of freedom. Inference can be unreliable with very low degrees of freedom; inspect the coefficient-specific df and sensitivity to the working correlation.</p>
   </header>
   <main>
     <section class="panel">
@@ -82,12 +82,12 @@ study5, 0.16, 0.025, 0, 24</textarea>
 
       <label style="margin-top:0.5rem">
         <span>Working correlation ρ</span>
-        <input id="f-rho" type="number" step="0.05" min="0" max="0.99" value="0.8" aria-label="F rho">
+        <input id="f-rho" type="number" step="0.05" min="0" max="1" value="0.8" aria-label="F rho">
         <span style="color:var(--muted);font-size:0.78rem">Typical 0.6–0.8 in education / public-health reviews. Result is robust to mis-specification — sensitivity analysis recommended.</span>
       </label>
 
       <label>
-        <span>Predictor names (comma-separated; one fewer than data columns after vi)</span>
+        <span>Predictor names (comma-separated; one per data column after vi)</span>
         <input id="f-names" type="text" value="intervention, dose_weeks" aria-label="F names">
       </label>
 
@@ -109,7 +109,7 @@ study5, 0.16, 0.025, 0, 24</textarea>
       <div id="alm-flow-mount" aria-live="polite"></div>
 </main>
   <footer>
-    Engine: <code>shared/rve.js</code> — Hedges-Tipton-Johnson 2010 correlated-effects working model with the <strong>CR2 bias-reduced small-sample correction</strong> (Tipton 2015; Pustejovsky-Tipton 2018) and per-coefficient <strong>Satterthwaite degrees of freedom</strong>, the accurate default for inference with few clusters. τ² is the HTJ CORR moment estimator (not a plain DerSimonian-Laird across rows). t-quantiles via exact qt (Hill 1970). Calibration: matches <code>robumeta::robu(modelweights="CORR", small=TRUE)</code> on <strong>every reported quantity — τ², coefficients, CR2 SEs and Satterthwaite df — to ≤1e-5</strong> (verified on homogeneous and heterogeneous datasets; see <code>rve-meta-cr2-parity.spec.mjs</code>). Because the CORR weights are constant within a cluster, the within-cluster annihilator block is symmetric, so A<sub>j</sub> is a true symmetric inverse-square-root. CR1 (a single scalar correction, anticonservative at small m) remains available via <code>fitCORR(rows,{method:"CR1"})</code>. The HIER working model is not yet implemented; for hierarchical effects use <code>robumeta::robu(model="HIER")</code> in R.
+    Engine: <code>shared/rve.js</code> — Hedges-Tipton-Johnson 2010 correlated-effects working model with the <strong>CR2 bias-reduced small-sample correction</strong> (Tipton 2015; Pustejovsky-Tipton 2018) and per-coefficient <strong>Satterthwaite degrees of freedom</strong>, with potentially unreliable inference at very low degrees of freedom. τ² is the HTJ CORR moment estimator (not a plain DerSimonian-Laird across rows). t-quantiles via safeguarded inversion of the Student-t CDF. Reference implementation: <code>robumeta::robu(modelweights="CORR", small=TRUE)</code>. Check numerical conditioning and coefficient-specific degrees of freedom before interpreting inference. Because the CORR weights are constant within a cluster, the within-cluster annihilator block is symmetric, so A<sub>j</sub> is a true symmetric inverse-square-root. CR1 (a single scalar correction, anticonservative at small m) remains available via <code>fitCORR(rows,{method:"CR1"})</code>. The HIER working model is not yet implemented; for hierarchical effects use <code>robumeta::robu(model="HIER")</code> in R.
   </footer>
 
   <script>
@@ -118,23 +118,27 @@ study5, 0.16, 0.025, 0, 24</textarea>
 
     function parseInput(text, predictorNames) {
       var rows = [];
+      var width = null;
       var warnings = [];
       var lines = text.split(/\r?\n/);
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i].trim();
         if (!line || line.charAt(0) === "#") continue;
         var parts = line.split(/\s*,\s*/);
-        if (parts.length < 3) { warnings.push("Row " + (i + 1) + ": needs at least cluster, yi, vi"); continue; }
+        if (parts.length < 3) throw new Error("Row " + (i + 1) + ": needs at least cluster, yi, vi");
+        if (width === null) width = parts.length;
+        if (parts.length !== width) throw new Error("Row " + (i + 1) + ": inconsistent predictor count");
         var cluster = parts[0];
-        var yi = parseFloat(parts[1]);
-        var vi = parseFloat(parts[2]);
-        if (!isFinite(yi) || !isFinite(vi) || vi <= 0) {
-          warnings.push("Row " + (i + 1) + ": invalid yi/vi"); continue;
+        if (!cluster) throw new Error("Row " + (i + 1) + ": empty cluster");
+        var yi = Number(parts[1]);
+        var vi = Number(parts[2]);
+        if (!parts[1].trim() || !parts[2].trim() || !isFinite(yi) || !isFinite(vi) || vi <= 0) {
+          throw new Error("Row " + (i + 1) + ": invalid yi/vi");
         }
         var xs = [1]; // intercept
         for (var j = 3; j < parts.length; j++) {
-          var v = parseFloat(parts[j]);
-          if (!isFinite(v)) { warnings.push("Row " + (i + 1) + ": non-finite predictor"); v = 0; }
+          var v = Number(parts[j]);
+          if (!parts[j].trim() || !isFinite(v)) throw new Error("Row " + (i + 1) + ": invalid predictor");
           xs.push(v);
         }
         rows.push({ cluster: cluster, yi: yi, vi: vi, X: xs });
@@ -148,7 +152,13 @@ study5, 0.16, 0.025, 0, 24</textarea>
       var text = document.getElementById("src").value;
       var rho = parseFloat(document.getElementById("f-rho").value);
       var nameInput = document.getElementById("f-names").value;
-      var parsed = parseInput(text);
+      window.__almLastRVE = null;
+      var parsed;
+      try { parsed = parseInput(text); } catch (e) {
+        document.getElementById("meta-row").textContent = "Fit failed: " + e.message;
+        document.getElementById("coef-body").innerHTML = "";
+        return;
+      }
       if (!parsed.rows.length) {
         document.getElementById("meta-row").textContent = "No valid rows.";
         document.getElementById("coef-body").innerHTML = "";
@@ -156,7 +166,7 @@ study5, 0.16, 0.025, 0, 24</textarea>
       }
       var fit, summary;
       try {
-        fit = AlmRVE.fitCORR(parsed.rows, { rho: isFinite(rho) ? rho : 0.8 });
+        fit = AlmRVE.fitCORR(parsed.rows, { rho: rho });
         summary = AlmRVE.summary(fit);
       } catch (e) {
         document.getElementById("meta-row").innerHTML = '<span style="color:#b04444">Fit failed: ' + e.message + '</span>';
@@ -166,13 +176,14 @@ study5, 0.16, 0.025, 0, 24</textarea>
       document.getElementById("meta-row").innerHTML =
         "k = " + fit.k_total + " effects, m = " + fit.m_clusters + " clusters, " +
         "p = " + fit.p + " coefficients, τ²(CORR) = <code>" + fmt(fit.tau2, 4) + "</code>, ρ = " + fmt(fit.rho, 2);
+      if (summary.some(function (s) { return s.df < 4; })) document.getElementById("meta-row").appendChild(document.createTextNode(" Warning: df < 4; inference may be unreliable."));
       var names = ["(intercept)"].concat(
         nameInput.split(/\s*,\s*/).filter(function (s) { return s.length; }));
       while (names.length < fit.p) names.push("x" + names.length);
       var rowsHtml = "";
       for (var j = 0; j < summary.length; j++) {
         var s = summary[j];
-        rowsHtml += "<tr><td>" + names[j] + "</td>" +
+        rowsHtml += "<tr><td>" + names[j].replace(/[&<>"']/g, function(c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }) + "</td>" +
           "<td>" + fmt(s.estimate, 3) + "</td>" +
           "<td>" + fmt(s.se, 3) + "</td>" +
           "<td>" + fmt(s.t, 2) + "</td>" +
