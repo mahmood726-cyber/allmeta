@@ -142,7 +142,7 @@ test('TEXT: audit, all displayed quantities, snapshot and report downloads', asy
 
 test('TEXT PLANTED: DOM mismatch withholds prose; random t CI, exponentiation and numeric labels audit', async ({ page }) => {
   await open(page);
-  await page.evaluate(() => { window.__almTextPerturb = { key: 'ref_0_est', delta: .01 }; });
+  await page.evaluate(() => { window.__almTest = true; window.__almTextPerturb = { key: 'ref_0_est', delta: .01 }; });
   const bad = await audit(page);
   expect(bad.audit.ok).toBe(false);
   expect(bad.audit.failures.map(f => f.check)).toContain('dom:ref_0_est');
@@ -191,6 +191,7 @@ test('VERIFY: live netmeta, both R plots, ZIP, current-state wording and planted
     const [r] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'R script (.R)', exact: true }).click()]);
     expect(fs.readFileSync(await r.path(), 'utf8')).toContain('library(netmeta)');
     console.log('VERIFY unavailable: netmeta; R download present; no pass claimed');
+    expect(status, 'The pinned netmeta package must be available for the VERIFY gate').not.toMatch(/package netmeta is unavailable/);
     return;
   }
   const match = /^(\d+) of (\d+) quantities match R — PASS$/.exec(status);

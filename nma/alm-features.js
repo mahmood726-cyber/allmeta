@@ -17,6 +17,11 @@
     Object.keys(fields).forEach(function (k) { s[k] = el(fields[k]).value; });
     return s;
   }
+  function analysisKey() {
+    var s = controls();
+    delete s.example; // Selection alone does not load or alter the completed analysis.
+    return JSON.stringify(s);
+  }
   function label(value) {
     return typeof value === 'string' && value.trim() && !/[,\t\r\n]/.test(value) && !/^\s*#/.test(value);
   }
@@ -31,16 +36,9 @@
     }).join('\n');
   }
   function checkData(data, ci, ref) {
-    var records = [];
-    data.split(/\r?\n/).forEach(function (line) {
-      if (!line.trim() || /^\s*#/.test(line)) return;
-      var p = line.trim().split(/\s*[,\t]\s*/);
-      if (!records.length && /^(estimate|effect|TE|est)$/i.test(p[3] || '')) return;
-      if (p.length !== 5 || !p[3].trim() || !p[4].trim()) throw new Error('Each data row must contain five columns.');
-      records.push({ study: p[0], t1: p[1], t2: p[2], yi: Number(p[3]), sei: Number(p[4]) });
-    });
-    var canonical = rowsText(records);
-    var result = global.__almNmaCompute(canonical, undefined, { randomCi: ci });
+    // Use the app's parser on the exact text that restore will assign, including
+    // headers, extra columns and parseFloat semantics. Entry still uses rowsText.
+    var result = global.__almNmaCompute(data, undefined, { randomCi: ci });
     if (result.error) throw new Error(result.error);
     if (ref !== undefined && result.treatments.indexOf(ref) < 0) throw new Error('Reference treatment is absent from the data.');
     return result;
@@ -67,7 +65,6 @@
     var r = controls(), dom = {};
     r.digits = r.scale === 'exp' ? 2 : 3;
     r.nullEffect = r.scale === 'exp' ? 1 : 0;
-    r.ciLevel = 95; r.piMinDf = 2; r.mcDraws = 10000;
     r.references = []; r.ranks = []; r.league = []; r.heterogeneity = [];
     function put(key, text, digits, kind) {
       if (typeof text !== 'string') return;
@@ -83,6 +80,7 @@
         if (!/^-?\d+(?:\.\d+)?$/.test(part)) return { text: part };
         var id = key + '_number_' + i, digits = (part.split('.')[1] || '').length;
         r[id] = Number(part);
+        dom[id] = { text: part, fmt: { kind: 'num', digits: digits } };
         if (!Number.isFinite(r[id]) || digits > 10 || r[id].toFixed(digits) !== part) {
           r.labelIssue = 'Report text cannot preserve this numeric treatment label with the shared number formatter: ' + text + '. Use the displayed tables and exports.';
         }
@@ -95,7 +93,6 @@
     var het = document.querySelectorAll('#het-host tbody tr');
     var tau = nums(het[0].cells[1].textContent), i2 = nums(het[1].cells[1].textContent);
     if (tau.length === 2) { put('tau2', tau[0], 4); put('tau', tau[1], 4); }
-    if (i2.length === 3) ['i2', 'i2Lo', 'i2Hi'].forEach(function (key, i) { put(key, i2[i] + '%', 1, 'pct'); });
     Array.from(het).slice(2).forEach(function (row, i) {
       var key = 'het_' + i, text = row.cells[1].textContent, n = nums(text);
       r.heterogeneity.push(key); r[key + '_label'] = row.cells[0].textContent;
@@ -104,6 +101,16 @@
       r[key + '_bounded'] = /p\s*</.test(text);
     });
     r.df = r.het_0_df;
+    // The page formats null I² bounds as zero. With at most one residual
+    // degree of freedom, zero/zero is not an estimable Higgins–Thompson CI,
+    // even when I² itself is zero. Keep prose independent of that display bug.
+    if (r.df > 0 && i2.length) {
+      put('i2', i2[0] + '%', 1, 'pct');
+      if (i2.length === 3 && Number(i2[1]) <= r.i2 && r.i2 <= Number(i2[2]) &&
+          !(r.df <= 1 && Number(i2[1]) === 0 && Number(i2[2]) === 0)) {
+        put('i2Lo', i2[1] + '%', 1, 'pct'); put('i2Hi', i2[2] + '%', 1, 'pct');
+      }
+    }
     Array.from(refs).forEach(function (row, i) {
       var key = 'ref_' + i, n = nums(row.cells[1].textContent);
       r.references.push(key); named(key + '_name', row.cells[0].textContent);
@@ -121,6 +128,10 @@
       put(key + '_pscore', row.children[2].textContent, 1, 'pct');
       if (row.children[3].textContent !== '--') put(key + '_best', row.children[3].textContent, 1, 'pct');
     });
+    var rankNote = document.querySelector('#sucra-host p');
+    var draws = rankNote && /ranking first in ([\d,]+) draws/.exec(rankNote.textContent);
+    if (draws) put('mcDraws', draws[1].replace(/,/g, ''), 0, 'int');
+    r.hasBest = r.ranks.some(function (key) { return Number.isFinite(r[key + '_best']); });
     var heads = Array.from(document.querySelectorAll('#league-host thead th')).slice(1);
     Array.from(document.querySelectorAll('#league-host tbody tr')).forEach(function (row, i) {
       Array.from(row.querySelectorAll('td')).forEach(function (cell, j) {
@@ -131,15 +142,15 @@
         ['est', 'lo', 'hi'].forEach(function (suffix, ix) { put(key + '_' + suffix, n[ix], r.digits); });
       });
     });
-    return { r: r, dom: dom, state: JSON.stringify(controls()) };
+    return { r: r, dom: dom, state: analysisKey() };
   }
   var saved = null;
   function capture() { saved = displayed(); }
   function results() {
-    if (!saved || saved.state !== JSON.stringify(controls())) return null;
+    if (!saved || saved.state !== analysisKey()) return null;
     if (saved.r.labelIssue) throw new Error(saved.r.labelIssue);
     var r = JSON.parse(JSON.stringify(saved.r));
-    var p = global.__almTextPerturb;
+    var p = global.__almTest === true && global.__almTextPerturb;
     if (p && typeof r[p.key] === 'number' && Number.isFinite(p.delta)) r[p.key] += p.delta;
     return r;
   }
@@ -156,7 +167,7 @@
         '. ', r.references.map(function (key) {
           var includes = global.AlmText.cochrane.ciIncludesNull(r[key + '_lo'], r[key + '_hi'], r.nullEffect);
           return [name(T, r, key + '_name'), ': ', T.num(key + '_est', r.digits), ' (',
-            T.pct('ciLevel', 0), ' confidence interval ', T.ci(key + '_lo', key + '_hi', r.digits), '). ',
+            T.rule('ciLevel'), ' confidence interval ', T.ci(key + '_lo', key + '_hi', r.digits), '). ',
             includes ? 'The interval includes no effect; there is no evidence of a difference, which is not evidence of no difference. ' :
               'The confidence interval excludes no effect. ',
             T.when(global.AlmText.cochrane.imprecise(r[key + '_lo'], r[key + '_hi'], r.nullEffect),
@@ -170,18 +181,19 @@
         r.model === 're' ? 'random effects and a common between-study variance estimated by the generalised DerSimonian–Laird method. ' :
           'a common-effect inverse-variance model. ',
         'Entered effects represent the second treatment minus the first, already on the analysis scale; no arm-count conversion or continuity correction is performed. Complete multi-arm comparisons are grouped by study and correlated contrasts use arm variances; the random-effects covariance adds half the between-study variance to shared contrasts. Invalid or inconsistent multi-arm designs are refused. ',
-        'Effects and ', T.pct('ciLevel', 0), ' confidence limits ',
+        'Effects and ', T.rule('ciLevel'), ' confidence limits ',
         r.scale === 'exp' ? 'were exponentiated for display. ' : 'are displayed on the entered analysis scale. ',
         r.model === 're' && r.ci === 't-dist' && r.df > T.R.none ?
           'Confidence intervals and two-sided tests use a t distribution with the degrees of freedom of Q. ' :
           'Confidence intervals and two-sided tests use the normal Wald approximation. ',
         'No Hartung–Knapp adjustment is applied. Heterogeneity is reported as Q with chi-squared tests, the DerSimonian–Laird between-study variance and its square root, and I² with a Higgins–Thompson interval through H. I² is the nonnegative Q-based proportion of excess variation. Q is decomposed into within-design heterogeneity and between-design inconsistency. ',
-        r.model === 're' ? ['Prediction intervals are the random-effects estimate plus or minus a t quantile times the square root of the sum of between-study variance and squared standard error, on the analysis scale, using the degrees of freedom of Q; they require at least ',
-          T.int('piMinDf'), ' such degrees of freedom and are transformed like the confidence limits. '] :
+        r.model === 're' ? 'Prediction intervals are the random-effects estimate plus or minus a t quantile times the square root of the sum of between-study variance and squared standard error, on the analysis scale, using the degrees of freedom of Q; they require sufficient residual degrees of freedom and are transformed like the confidence limits. ' :
           'Prediction intervals are not displayed for the common-effect model. ',
         'P-scores average pairwise certainty derived from the selected model’s two-sided tests; ',
-        r.dir === 'desirable' ? 'smaller' : 'larger', ' estimates rank better. P(best) uses ',
-        T.int('mcDraws'), ' multivariate-normal draws of the fitted effects with their covariance and a fixed random seed. ',
+        r.dir === 'desirable' ? 'smaller' : 'larger', ' estimates rank better. ',
+        r.hasBest ? ['P(best) uses ', T.when(T.has('mcDraws'), function () { return [T.int('mcDraws'), ' ']; }),
+          'multivariate-normal draws of the fitted effects with their covariance and a fixed random seed. '] : 'P(best) is not estimable. ',
+        T.when(T.entry(), 'User-supplied data-entry notes (not independently verified): '),
         T.entry(), T.when(T.entry(), ' '), T.software(),
         T.when(global.AlmFeatures && global.AlmFeatures.verifiedCurrent(APP), function () { return [' ', T.verify()]; })];
     },
@@ -190,12 +202,13 @@
         ' treatments. Reference: ', name(T, r, 'referenceName'), '. ',
         r.references.map(function (key) {
           return [name(T, r, key + '_name'), ' versus reference: ', T.num(key + '_est', r.digits),
-            ' (', T.pct('ciLevel', 0), ' CI ', T.ci(key + '_lo', key + '_hi', r.digits), '); ', pvalue(T, r, key), '. ',
+            ' (', T.rule('ciLevel'), ' CI ', T.ci(key + '_lo', key + '_hi', r.digits), '); ', pvalue(T, r, key), '. ',
             T.when(T.has(key + '_piLo'), function () { return ['Prediction interval: ', T.ci(key + '_piLo', key + '_piHi', r.digits), '. ']; })];
         }),
         T.has('tau2') ? ['Between-study variance τ² = ', T.num('tau2', 4), '; τ = ', T.num('tau', 4), '. '] :
           'Between-study variance is not estimable. ',
-        T.has('i2') ? ['I² = ', T.pct('i2', 1), ' (', T.pct('ciLevel', 0), ' CI ', T.ci('i2Lo', 'i2Hi', 1, 'pct'), '); ',
+        T.has('i2') ? ['I² = ', T.pct('i2', 1),
+          T.has('i2Lo') ? [' (', T.rule('ciLevel'), ' CI ', T.ci('i2Lo', 'i2Hi', 1, 'pct'), '); '] : '; its confidence interval is not estimable. Variation beyond chance ',
           T.band('i2', 1), ' (', T.cite('handbookHet'), '). '] : 'I² is not estimable. ',
         r.heterogeneity.map(function (key) {
           return [r[key + '_label'], ': Q = ', T.num(key + '_Q', 2), ', df = ', T.int(key + '_df'), ', ', pvalue(T, r, key), '. '];
@@ -213,19 +226,51 @@
     flags: function (T, r) {
       return [T.when(r.k < T.R.fewK, 'Few studies: heterogeneity estimates are imprecise.'),
         T.when(r.k < T.R.funnelK, 'Tests for small-study effects would be underpowered; none were performed.'),
-        T.when(r.model === 're' && r.df < r.piMinDf, 'Prediction intervals are not estimable with these heterogeneity degrees of freedom.'),
+        T.when(r.model === 're' && r.references.some(function (key) { return !T.has(key + '_piLo'); }), 'Prediction intervals are not estimable with these heterogeneity degrees of freedom.'),
+        T.when(r.model === 'fe' && r.k >= T.R.piMinK, 'Prediction intervals are expected with this many studies but are unavailable for the common-effect model.'),
         'Text uses the completed results at the precision displayed by the page. Confidence intervals alone do not establish clinical importance.',
         'Assess consistency and transitivity before interpreting network estimates or rankings.'];
     }
   };
   var textSpec = { app: APP, verifyPackage: 'netmeta', results: results, templates: templates,
     dom: function () { var d = displayed(); return d ? d.dom : {}; } };
+  function verificationAdapter() {
+    var adapter = global.AlmLiveAdapters && global.AlmLiveAdapters[APP] || global.AlmNmaValidateAdapter;
+    if (!adapter) return adapter;
+    var live = adapter.live || adapter;
+    // The published live adapter reparses input using Number() and a narrower
+    // header rule than the page. Bridge input capture here; retain its R script,
+    // quantity definitions, package metadata and comparison tolerances unchanged.
+    var bridged = Object.assign({}, live, { currentState: function () {
+      var s = controls();
+      var state = { note: live.versionNote, text: s.data, ref: s.ref,
+        model: s.model, ci: s.ci, dir: s.dir, scale: s.scale };
+      state.result = global.__almNmaCompute(state.text, state.ref, { randomCi: state.ci });
+      if (state.result.error) throw new Error(state.result.error);
+      state.rows = [];
+      state.text.split(/\r?\n/).forEach(function (line, i) {
+        if (!line.trim() || line.trim().startsWith('#')) return;
+        var p = line.trim().split(/\s*[,\t]\s*/);
+        if (p.length < 5) throw new Error('Line ' + (i + 1) + ': need five columns');
+        // Match parseContrasts' numeric and leading-header semantics, including
+        // extra columns. Still refuse malformed data instead of verifying a subset.
+        var est = parseFloat(p[3]), se = parseFloat(p[4]);
+        if ((!Number.isFinite(est) || !Number.isFinite(se)) && state.rows.length === 0 && i < 3) return;
+        if (!Number.isFinite(est) || !Number.isFinite(se) || se <= 0 || p[1] === p[2]) {
+          throw new Error('Line ' + (i + 1) + ': invalid contrast; validation refused');
+        }
+        state.rows.push({ study: p[0], t1: p[1], t2: p[2], est: est, se: se });
+      });
+      return state;
+    } });
+    return adapter.live ? Object.assign({}, adapter, { live: bridged }) : bridged;
+  }
   var spec = {
     paper: 4, title: 'Network meta-analysis',
     entry: { schema: 'contrast-nma', extras: [], apply: apply },
     text: textSpec,
     verify: {
-      adapter: function () { return global.AlmLiveAdapters && global.AlmLiveAdapters[APP] || global.AlmNmaValidateAdapter; },
+      adapter: verificationAdapter,
       inputs: '#f-data, #f-ref, #f-model, #f-ci, #f-dir, #f-scale, #f-title',
       rObjects: 'p (contrast data), fit (netmeta), rank (netrank)',
       plots: [
@@ -245,6 +290,7 @@
     share: {
       get: function () {
         var s = controls();
+        checkData(s.data, s.ci, s.ref);
         s.entryLog = (global.AlmFeaturesState && global.AlmFeaturesState.entryLog) || [];
         return s;
       },
