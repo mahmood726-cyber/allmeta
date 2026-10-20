@@ -38,7 +38,7 @@ jobs:
       - name: node unit tests
         run: |
           set -o pipefail
-          node --test hub/shared/tests/unit/ 2>&1 | tee unit.log
+          node --test --test-reporter=tap hub/shared/tests/unit/ 2>&1 | tee unit.log
           grep -E '^# (pass|fail) ' unit.log
           test "$(grep -E '^# fail ' unit.log | awk '{print $3}')" = "0"
 
