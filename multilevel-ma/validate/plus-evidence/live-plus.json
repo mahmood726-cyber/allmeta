@@ -1,0 +1,353 @@
+{
+  "rows": [
+    {
+      "label": "REML log-likelihood",
+      "app": 8.431626917023733,
+      "ref": 8.431626916432101,
+      "tol": 0.000001,
+      "diff": 7.016814648437514e-11,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance estimate",
+      "app": 0.013683456454655013,
+      "ref": 0.013683456451201432,
+      "tol": 0.000001,
+      "diff": 3.4535811710423303e-12,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance 95% profile CI lower",
+      "app": 0,
+      "ref": 0,
+      "tol": 0.000001,
+      "diff": 0,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance 95% profile CI upper",
+      "app": 0.09091459311008301,
+      "ref": 0.09091459311570659,
+      "tol": 0.000001,
+      "diff": 5.623571053270382e-12,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile variance (mark 1)",
+      "app": 0,
+      "ref": 0,
+      "tol": 0.000001,
+      "diff": 0,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile log-likelihood (mark 1)",
+      "app": 6.780416601750586,
+      "ref": 6.78041660175059,
+      "tol": 0.000001,
+      "diff": 5.239668721658268e-16,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile variance (mark 2)",
+      "app": 0.011364324138760377,
+      "ref": 0.011364324139463323,
+      "tol": 0.000001,
+      "diff": 7.029463816587977e-13,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile log-likelihood (mark 2)",
+      "app": 8.41300101860807,
+      "ref": 8.413001017512876,
+      "tol": 0.000001,
+      "diff": 1.3017866836426004e-10,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile variance (mark 3)",
+      "app": 0.022728648277520754,
+      "ref": 0.022728648278926646,
+      "tol": 0.000001,
+      "diff": 1.4058927633175955e-12,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile log-likelihood (mark 3)",
+      "app": 8.284246958982967,
+      "ref": 8.28424695798822,
+      "tol": 0.000001,
+      "diff": 1.2007698474114936e-10,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile variance (mark 4)",
+      "app": 0.034092972416281134,
+      "ref": 0.03409297241838997,
+      "tol": 0.000001,
+      "diff": 2.1088339408059653e-12,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile log-likelihood (mark 4)",
+      "app": 7.954400113602345,
+      "ref": 7.9544001129601245,
+      "tol": 0.000001,
+      "diff": 8.073776650444277e-11,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile variance (mark 5)",
+      "app": 0.04545729655504151,
+      "ref": 0.04545729655785329,
+      "tol": 0.000001,
+      "diff": 2.811785526635191e-12,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile log-likelihood (mark 5)",
+      "app": 7.615520390899489,
+      "ref": 7.6155203902416115,
+      "tol": 0.000001,
+      "diff": 8.638638917289927e-11,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile variance (mark 6)",
+      "app": 0.05682162069380188,
+      "ref": 0.05682162069731662,
+      "tol": 0.000001,
+      "diff": 3.5147371124644167e-12,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile log-likelihood (mark 6)",
+      "app": 7.300063315132354,
+      "ref": 7.3000633144866836,
+      "tol": 0.000001,
+      "diff": 8.844720328711347e-11,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile variance (mark 7)",
+      "app": 0.06818594483256227,
+      "ref": 0.06818594483677994,
+      "tol": 0.000001,
+      "diff": 4.217667881611931e-12,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile log-likelihood (mark 7)",
+      "app": 7.012304000994336,
+      "ref": 7.012304000353174,
+      "tol": 0.000001,
+      "diff": 9.143382692685788e-11,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile variance (mark 8)",
+      "app": 0.07955026897132264,
+      "ref": 0.07955026897624326,
+      "tol": 0.000001,
+      "diff": 4.920619467441156e-12,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile log-likelihood (mark 8)",
+      "app": 6.750297648032399,
+      "ref": 6.750297647418867,
+      "tol": 0.000001,
+      "diff": 9.088967155120516e-11,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile variance (mark 9)",
+      "app": 0.09091459311008301,
+      "ref": 0.09091459311570659,
+      "tol": 0.000001,
+      "diff": 5.623571053270382e-12,
+      "pass": true
+    },
+    {
+      "label": "Between-study variance profile log-likelihood (mark 9)",
+      "app": 6.5108975066804415,
+      "ref": 6.510897506086715,
+      "tol": 0.000001,
+      "diff": 9.11897084711954e-11,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance estimate",
+      "app": 0,
+      "ref": 3.1431010536636064e-12,
+      "tol": 0.000001,
+      "diff": 3.1431010536636064e-12,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance 95% profile CI lower",
+      "app": 0,
+      "ref": 0,
+      "tol": 0.000001,
+      "diff": 0,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance 95% profile CI upper",
+      "app": 0.014162084770748089,
+      "ref": 0.014162085016673884,
+      "tol": 0.000001,
+      "diff": 2.4592579535298587e-10,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile variance (mark 1)",
+      "app": 0,
+      "ref": 0,
+      "tol": 0.000001,
+      "diff": 0,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile log-likelihood (mark 1)",
+      "app": 8.431626917023733,
+      "ref": 8.431626917023731,
+      "tol": 0.000001,
+      "diff": 2.1067782729021462e-16,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile variance (mark 2)",
+      "app": 0.001770260596343511,
+      "ref": 0.0017702606270842355,
+      "tol": 0.000001,
+      "diff": 3.074072441912323e-11,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile log-likelihood (mark 2)",
+      "app": 8.115806509592412,
+      "ref": 8.115806504387994,
+      "tol": 0.000001,
+      "diff": 6.41269383011489e-10,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile variance (mark 3)",
+      "app": 0.003540521192687022,
+      "ref": 0.003540521254168471,
+      "tol": 0.000001,
+      "diff": 6.148144883824647e-11,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile log-likelihood (mark 3)",
+      "app": 7.830037855467014,
+      "ref": 7.830037845993269,
+      "tol": 0.000001,
+      "diff": 1.2099232011296327e-9,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile variance (mark 4)",
+      "app": 0.005310781789030533,
+      "ref": 0.005310781881252707,
+      "tol": 0.000001,
+      "diff": 9.222217347421013e-11,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile log-likelihood (mark 4)",
+      "app": 7.568696397593536,
+      "ref": 7.568696384537609,
+      "tol": 0.000001,
+      "diff": 1.724990188911601e-9,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile variance (mark 5)",
+      "app": 0.007081042385374044,
+      "ref": 0.007081042508336942,
+      "tol": 0.000001,
+      "diff": 1.2296289767649293e-10,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile log-likelihood (mark 5)",
+      "app": 7.327596503112423,
+      "ref": 7.3275964869897745,
+      "tol": 0.000001,
+      "diff": 2.200264184046081e-9,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile variance (mark 6)",
+      "app": 0.008851302981717556,
+      "ref": 0.008851303135421177,
+      "tol": 0.000001,
+      "diff": 1.53703621011414e-10,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile log-likelihood (mark 6)",
+      "app": 7.1035331041577,
+      "ref": 7.103533085366161,
+      "tol": 0.000001,
+      "diff": 2.645379245188303e-9,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile variance (mark 7)",
+      "app": 0.010621563578061067,
+      "ref": 0.010621563762505414,
+      "tol": 0.000001,
+      "diff": 1.8444434694842027e-10,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile log-likelihood (mark 7)",
+      "app": 6.893997298193158,
+      "ref": 6.893997277045233,
+      "tol": 0.000001,
+      "diff": 3.06758537013487e-9,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile variance (mark 8)",
+      "app": 0.012391824174404577,
+      "ref": 0.012391824389589648,
+      "tol": 0.000001,
+      "diff": 2.1518507115070307e-10,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile log-likelihood (mark 8)",
+      "app": 6.696990474902639,
+      "ref": 6.696990451648121,
+      "tol": 0.000001,
+      "diff": 3.4723833756183558e-9,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile variance (mark 9)",
+      "app": 0.014162084770748089,
+      "ref": 0.014162085016673884,
+      "tol": 0.000001,
+      "diff": 2.4592579535298587e-10,
+      "pass": true
+    },
+    {
+      "label": "Within-study variance profile log-likelihood (mark 9)",
+      "app": 6.51089750667955,
+      "ref": 6.510897481521376,
+      "tol": 0.000001,
+      "diff": 3.864010189372753e-9,
+      "pass": true
+    }
+  ],
+  "versions": {
+    "R": "R version 4.5.1 (2025-06-13)",
+    "webR": "0.5.5",
+    "metafor": "4.8-0"
+  }
+}
