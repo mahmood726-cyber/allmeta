@@ -64,6 +64,8 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/build-info.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/copas-core.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
@@ -103,7 +105,27 @@
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
       </label>
-      <button type="button" id="btn-run" class="primary" style="width:100%">Fit sensitivity grid</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 0.6rem;margin:0.5rem 0">
+        <label><span>Contour grid (<code>ngrid</code>)</span>
+          <select id="opt-ngrid">
+            <option value="10">10 &times; 10 (fast)</option>
+            <option value="20" selected>20 &times; 20 (metasens default)</option>
+          </select></label>
+        <label><span><span data-gloss="tau">&#964;</span><sup>2</sup> for the starting value</span>
+          <select id="opt-tau">
+            <option value="REML" selected>REML (meta default)</option>
+            <option value="DL">DerSimonian&#8211;Laird</option>
+          </select></label>
+        <label><span>Residual-bias level (<code>sign.rsb</code>)</span>
+          <input id="opt-signrsb" type="number" value="0.1" min="0.001" max="0.999" step="0.01"></label>
+        <label><span>CI level</span>
+          <select id="opt-level">
+            <option value="0.9">90%</option>
+            <option value="0.95" selected>95%</option>
+            <option value="0.99">99%</option>
+          </select></label>
+      </div>
+      <button type="button" id="btn-run" class="primary" style="width:100%">Fit Copas selection model</button>
       <div style="display:flex;gap:0.4rem;margin-top:0.4rem">
         <button type="button" id="btn-bus-load" style="flex:1" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
         <button type="button" id="btn-bus-save" style="flex:1" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
@@ -117,9 +139,13 @@
     </section>
     <section class="panel">
       <div id="k-warn" class="note" style="display:none;background:var(--warn-soft,#fbeedd);border-left:3px solid var(--warn,#b05a1c);color:var(--warn,#b05a1c)" role="status" aria-live="polite"></div>
-      <h2>Sensitivity across <span data-gloss="gamma">&#947;</span></h2>
+      <h2>Adjusted estimate</h2>
       <table>
-        <thead><tr><th>Pub. prob. (largest-SE study)</th><th>Implied N unpublished</th><th>Copas-adjusted pooled</th><th>95% <span data-gloss="ci">CI</span></th></tr></thead>
+        <tbody id="summary"></tbody>
+      </table>
+      <h2 style="margin-top:0.5rem">Sensitivity down the orthogonal line</h2>
+      <table>
+        <thead><tr><th>Pub. prob. (largest-SE study)</th><th>Implied N unpublished</th><th>Copas-adjusted pooled</th><th><span data-gloss="ci">CI</span></th><th title="Likelihood-ratio test of residual selection bias, 1 df">p (residual bias)</th></tr></thead>
         <tbody id="body"></tbody>
       </table>
       <h2 style="margin-top:0.5rem">Sensitivity curve</h2>
@@ -143,38 +169,32 @@
 </section>
   </main>
   <footer>
-    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95&#8211;109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247&#8211;262 (extension). <strong>Implementation:</strong> the full Copas &amp; Shi (2000) profile log-likelihood (a faithful port of <code>metasens:::copas.loglik.without.beta</code> + its analytic gradient, box-constrained MLE) is maximised at each point of a reproducible publication-probability path. R-parity: the profile MLE matches <code>metasens::copas()</code> to &#8776;1e-4 on effect, &#961; (where identified) and &#964; at the shared (&#947;&#8320;,&#947;&#8321;) points (<code>tests/copas-parity.spec.mjs</code>); unadjusted FE matches metafor to 1e-6. <strong>Not reproduced:</strong> metasens&#8217;s single auto-selected <code>TE.adjust</code> additionally requires a bit-faithful port of R&#8217;s <code>contourLines()</code> slope/goodness-of-fit machinery; this app instead reports the entire profile-MLE sensitivity curve. Per advanced-stats.md, <strong>Copas selection models need k &#8805; 15</strong> for stable estimation &#8212; this app does not enforce that gate; treat output as illustrative if k &lt; 15.
+    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95&#8211;109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247&#8211;262 (extension). <strong>Implementation:</strong> <code>shared/copas-core.js</code> ports the whole of <code>metasens::copas()</code> (metasens 1.5-3) &#8212; the &#947; grids, the <code>ngrid</code>&#215;<code>ngrid</code> profile-MLE contour surface, R&#8217;s own <code>contourLines()</code> and <code>pretty()</code> machinery, the approximate orthogonal line with its per-contour regressions, the four-parameter residual-selection-bias fit (<code>pval.rsb</code>) and metasens&#8217;s <code>TE.adjust</code> selection rule. <strong>Where it differs:</strong> the box-constrained maximisation is a projected-gradient routine, not R&#8217;s <code>L-BFGS-B</code>; because <code>optim</code>&#8217;s default <code>factr</code> stops about 2&#215;10<sup>-9</sup> short in the objective, the two do not report bit-identical maximum-likelihood values. Every deterministic stage is checked against R to 1e-9 and the likelihood attained here is never worse than metasens&#8217;s; see the validation archive for the per-quantity counts. Per advanced-stats.md, <strong>Copas selection models need k &#8805; 15</strong> for stable estimation &#8212; this app warns but does not refuse; treat output as illustrative if k &lt; 15.
   </footer>
   <script>
-    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
-    var Z975 = 1.959963984540054;
-
   (function () {
     'use strict';
 
-    // ---- engine (unchanged math) ----
+    // All normal-distribution and selection-model arithmetic now comes from
+    // shared/copas-core.js (ported from metasens and from R's own internals);
+    // the page keeps only input parsing, formatting and rendering.
 
-    function pnorm(x) {
-      var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-      var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
-      return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
-    }
-
-    function qnorm(p) {
-      if (p <= 0 || p >= 1) return NaN;
-      var q = p < 0.5 ? p : 1 - p;
-      var t = Math.sqrt(-2 * Math.log(q));
-      var c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
-      var d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
-      var x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
-      return p < 0.5 ? -x : x;
+    // A field is accepted only if the WHOLE token is a number. parseFloat's
+    // prefix parsing would otherwise read ".4oops" as 0.4 and "30oops" as 30,
+    // silently admitting a malformed row.
+    function num(tok) {
+      if (!/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(tok)) return NaN;
+      var v = parseFloat(tok);
+      return Number.isFinite(v) ? v : NaN;
     }
 
     function parse(text) {
-      return text.trim().split(/\n/).map(function (l) {
-        var parts = l.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite);
-        if (parts.length < 2 || parts[1] <= 0) return null;
-        return { te: parts[0], se: parts[1] };
+      return text.split(/\r?\n/).map(function (l) {
+        var toks = l.trim().split(/[\s,]+/).filter(function (t) { return t.length > 0; });
+        if (toks.length < 2) return null;
+        var te = num(toks[0]), se = num(toks[1]);
+        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
+        return { te: te, se: se };
       }).filter(Boolean);
     }
 
@@ -183,299 +203,68 @@
       return Number.isFinite(x) ? x.toFixed(d) : '&#8212;';
     }
 
-    // ==== Copas & Shi (2000) selection-model profile MLE ====
+    // ==== Copas & Shi (2000) selection model — full metasens pipeline ====
     //
-    // Faithful port of metasens::copas internals (metasens 1.5-3):
-    //   copas.loglik.without.beta + copas.gradient.without.beta, optimised
-    //   under box constraints exactly as metasens's optim(L-BFGS-B) call.
-    // Validated to ~1e-4 vs metasens at a reproducible publication-probability
-    // path of (gamma0, gamma1) points (tests/fixtures/copas-oracle.json,
-    // tests/copas-parity.spec.mjs). The single auto-selected metasens
-    // TE.adjust additionally needs a bit-faithful port of R's contourLines()
-    // slope machinery — out of scope here and documented in the page note.
+    // The model, R's contour/pretty machinery, the orthogonal line, the
+    // residual-selection-bias test and metasens's TE.adjust rule all live in
+    // shared/copas-core.js, which is a port of metasens 1.5-3 copas() and of
+    // the R internals it depends on. This page only drives it and renders it.
+    var CC = window.AlmCopasCore;
 
-    // West (2009) cumulative normal — absolute accuracy ~1e-15.
-    function _pnorm(x) {
-      var z = Math.abs(x), p;
-      if (z > 37) { p = 0; }
-      else {
-        var e = Math.exp(-z * z / 2);
-        if (z < 7.07106781186547) {
-          var b = 3.52624965998911e-2 * z + 0.700383064443688;
-          b = b * z + 6.37396220353165; b = b * z + 33.912866078383;
-          b = b * z + 112.079291497871; b = b * z + 221.213596169931;
-          b = b * z + 220.206867912376;
-          var d = 8.83883476483184e-2 * z + 1.75566716318264;
-          d = d * z + 16.064177579207; d = d * z + 86.7807322029461;
-          d = d * z + 296.564248779674; d = d * z + 637.333633378831;
-          d = d * z + 793.826512519948; d = d * z + 440.413735824752;
-          p = e * b / d;
-        } else {
-          var f = z + 1 / (z + 2 / (z + 3 / (z + 4 / (z + 13 / 20))));
-          p = e / (2.506628274631 * f);
-        }
-      }
-      return x > 0 ? 1 - p : p;
-    }
-    function _dnorm(x) { return Math.exp(-0.5 * x * x) / 2.5066282746310002; }
-    // Inverse Mills ratio phi/Phi; asymptotic -x guard for the 0/0 left tail.
-    function _lambda(u) {
-      var P = _pnorm(u);
-      if (!(P > 1e-300)) return u < 0 ? -u : 0;
-      return _dnorm(u) / P;
+    // metagen()'s random-effects pool, used only as the optimiser start, exactly
+    // as metasens does (start = c(TE.random, rho0, tau)).
+    function startValues(te, se, methodTau) {
+      var vi = se.map(function (s) { return s * s; });
+      var fit = window.AlmMaCore.pool(te, vi, { method: methodTau === 'DL' ? 'DL' : 'REML' });
+      var eg = CC.eggerEstimate(te, se);
+      return { TE_random: fit.mu, seTE_random: fit.se, tau: Math.sqrt(fit.tau2),
+               tau2: fit.tau2, egger: eg,
+               rho0: Math.sign(eg) === 1 ? 0.9999 / 2 : -0.9999 / 2 };
     }
 
-    // Negative copas log-likelihood. Returns +Inf on infeasible parameters
-    // (so the optimiser rejects, matching metasens's optim feasibility).
-    function _copasNLL(par, g0, g1, te, se) {
-      var mu = par[0], rho = par[1], tau = par[2], sum = 0;
-      for (var i = 0; i < te.length; i++) {
-        var u = g0 + g1 / se[i], lam = _lambda(u);
-        var denom = 1 - rho * rho * lam * (u + lam);
-        if (!(denom > 0)) return Infinity;
-        var sigma2 = se[i] * se[i] / denom;
-        var s2t2 = sigma2 + tau * tau;
-        var rhoT = rho * Math.sqrt(sigma2) / Math.sqrt(s2t2);
-        var omr = 1 - rhoT * rhoT;
-        if (!(omr > 0)) return Infinity;
-        var v = (u + rhoT * (te[i] - mu) / Math.sqrt(s2t2)) / Math.sqrt(omr);
-        if (v < -37) v = -37;
-        var Pv = _pnorm(v);
-        if (!(Pv > 0)) return Infinity;
-        var d = te[i] - mu;
-        sum += -(-0.5 * Math.log(s2t2) - d * d / (2 * s2t2) + Math.log(Pv));
-      }
-      return Number.isFinite(sum) ? sum : Infinity;
+    function readOpts() {
+      var el = function (id) { return document.getElementById(id); };
+      var ng = el('opt-ngrid'), tt = el('opt-tau'), sr = el('opt-signrsb'), lv = el('opt-level');
+      var signrsb = sr ? parseFloat(sr.value) : 0.1;
+      return {
+        ngrid: ng ? parseInt(ng.value, 10) : 20,
+        method_tau: tt ? tt.value : 'REML',
+        sign_rsb: Number.isFinite(signrsb) && signrsb > 0 && signrsb < 1 ? signrsb : 0.1,
+        level_ma: lv ? parseFloat(lv.value) : 0.95
+      };
     }
 
-    // Analytic gradient of the negative log-likelihood — exact port of
-    // metasens:::copas.gradient.without.beta (returns d(-loglik)).
-    function _copasGrad(par, g0, g1, te, se) {
-      var mu = par[0], rho = par[1], tau = par[2];
-      var rho2 = rho * rho, tau2 = tau * tau;
-      var gm = 0, gr = 0, gt = 0;
-      for (var i = 0; i < te.length; i++) {
-        var TEmu = te[i] - mu, varTE = se[i] * se[i];
-        var u = g0 + g1 / se[i], lam = _lambda(u);
-        var ci2 = lam * (u + lam);
-        var sigma2 = varTE / (1 - rho2 * ci2);
-        var sigma = Math.sqrt(sigma2);
-        var s2t2 = sigma2 + tau2;
-        var rhoT = rho * sigma / Math.sqrt(s2t2);
-        var rho2T = rhoT * rhoT;
-        var bottom = Math.sqrt(1 - rho2T);
-        var top = u + rhoT * TEmu / Math.sqrt(s2t2);
-        var vv = top / bottom; if (vv < -37) vv = -37;
-        var lamv = _lambda(vv);
-        var gMu = TEmu / s2t2
-          - (rhoT / Math.sqrt(s2t2 * (1 - rho2T))) * lamv;
-        var gRho = -ci2 * rho * sigma2 * sigma2 / (varTE * s2t2)
-          + TEmu * TEmu * ci2 * rho * sigma2 * sigma2 / (varTE * s2t2 * s2t2);
-        var diffTop = (top - u) / rho
-          - (top - u) * rho * ci2 / (1 - ci2 * rho2)
-          + 2 * (top - u) * rho * tau2 * ci2 / (varTE + tau2 * (1 - ci2 * rho2));
-        var eta = varTE / (varTE + tau2 * (1 - ci2 * rho2));
-        var diffBot = Math.pow(1 - rho2T, -1.5) * rho * eta
-          * (1 + rho2 * tau2 * ci2 * eta / varTE);
-        gRho += (top * diffBot + diffTop / bottom) * lamv;
-        var gTau = -0.5 / s2t2 + 0.5 * TEmu * TEmu / (s2t2 * s2t2)
-          + (-sigma * TEmu * rho / (bottom * s2t2 * s2t2)
-             - 0.5 * top * Math.pow(1 - rho2T, -1.5) * sigma2 * rho2
-               / (s2t2 * s2t2)) * lamv;
-        gTau = 2 * tau * gTau;
-        gm += -gMu; gr += -gRho; gt += -gTau;
-      }
-      return [gm, gr, gt];
-    }
-
-    var _RHO_BOUND = 0.9999;
-    function _clamp(p) {
-      return [par0Clamp(p[0]),
-              Math.max(-_RHO_BOUND, Math.min(_RHO_BOUND, p[1])),
-              Math.max(0, p[2])];
-    }
-    function par0Clamp(m) { return Math.max(-1e6, Math.min(1e6, m)); }
-
-    // Box-constrained minimiser: projected BB-gradient descent with Armijo
-    // backtracking, then a bounded Nelder-Mead polish (precision at active
-    // bounds: rho->+-0.9999, tau->0 are common Copas solutions).
-    function _minimise(g0, g1, te, se, start) {
-      var x = _clamp(start.slice());
-      var f = _copasNLL(x, g0, g1, te, se);
-      var gprev = null, xprev = null, step = 1e-2;
-      for (var it = 0; it < 600; it++) {
-        var g = _copasGrad(x, g0, g1, te, se);
-        if (!g.every(Number.isFinite)) break;
-        if (gprev) {
-          var sy = 0, ss = 0;
-          for (var k = 0; k < 3; k++) {
-            var ds = x[k] - xprev[k], dg = g[k] - gprev[k];
-            ss += ds * ds; sy += ds * dg;
-          }
-          if (sy > 1e-14) step = Math.min(1e3, Math.max(1e-10, ss / sy));
-        }
-        xprev = x.slice(); gprev = g.slice();
-        var t = step, improved = false;
-        for (var ls = 0; ls < 40; ls++) {
-          var cand = _clamp([x[0] - t * g[0], x[1] - t * g[1], x[2] - t * g[2]]);
-          var fc = _copasNLL(cand, g0, g1, te, se);
-          if (fc < f - 1e-12) { x = cand; f = fc; improved = true; break; }
-          t *= 0.5;
-        }
-        if (!improved) break;
-      }
-      // Nelder-Mead polish within the box.
-      x = _nelderMead(function (p) {
-        return _copasNLL(_clamp(p), g0, g1, te, se);
-      }, x);
-      x = _clamp(x);
-      return { par: x, value: _copasNLL(x, g0, g1, te, se) };
-    }
-
-    function _nelderMead(fn, x0) {
-      var n = x0.length, a = 1, gc = 2, r = 0.5, sg = 0.5;
-      var sx = [x0.slice()];
-      for (var i = 0; i < n; i++) {
-        var p = x0.slice();
-        p[i] += (p[i] !== 0 ? 0.05 * Math.abs(p[i]) : 0.01);
-        sx.push(p);
-      }
-      var fv = sx.map(fn);
-      for (var iter = 0; iter < 400; iter++) {
-        var ord = fv.map(function (v, i) { return i; })
-          .sort(function (i, j) { return fv[i] - fv[j]; });
-        sx = ord.map(function (i) { return sx[i]; });
-        fv = ord.map(function (i) { return fv[i]; });
-        if (Math.abs(fv[n] - fv[0]) < 1e-12) break;
-        var c = new Array(n).fill(0);
-        for (var i = 0; i < n; i++)
-          for (var j = 0; j < n; j++) c[j] += sx[i][j] / n;
-        var xr = c.map(function (cj, j) { return cj + a * (cj - sx[n][j]); });
-        var fr = fn(xr);
-        if (fr < fv[0]) {
-          var xe = c.map(function (cj, j) { return cj + gc * (cj - sx[n][j]); });
-          var fe = fn(xe);
-          if (fe < fr) { sx[n] = xe; fv[n] = fe; }
-          else { sx[n] = xr; fv[n] = fr; }
-        } else if (fr < fv[n - 1]) { sx[n] = xr; fv[n] = fr; }
-        else {
-          var xc = c.map(function (cj, j) { return cj + r * (sx[n][j] - cj); });
-          var fc2 = fn(xc);
-          if (fc2 < fv[n]) { sx[n] = xc; fv[n] = fc2; }
-          else {
-            for (var i = 1; i <= n; i++) {
-              sx[i] = sx[i].map(function (v, j) { return sx[0][j] + sg * (v - sx[0][j]); });
-              fv[i] = fn(sx[i]);
-            }
-          }
-        }
-      }
-      var best = 0;
-      for (var i = 1; i <= n; i++) if (fv[i] < fv[best]) best = i;
-      return sx[best];
-    }
-
-    // Profile MLE at fixed (gamma0, gamma1) over (mu, rho, tau). Multi-start
-    // on the rho-sign basin (metasens seeds rho0 = +-rho.bound/2 via `left`;
-    // multi-start is start-agnostic and robust at the global optimum).
-    // Egger (1997) linreg intercept sign — metasens's `left` determination
-    // (metabias meth='linreg'): OLS of TE/se on 1/se; sign(intercept)==1.
-    function _eggerLeft(rows) {
-      var n = rows.length, sx = 0, sy = 0, sxx = 0, sxy = 0;
-      for (var i = 0; i < n; i++) {
-        var x = 1 / rows[i].se, y = rows[i].te / rows[i].se;
-        sx += x; sy += y; sxx += x * x; sxy += x * y;
-      }
-      var det = n * sxx - sx * sx;
-      var a = det !== 0 ? (sy * sxx - sx * sxy) / det : 0; // intercept (bias)
-      return a > 0;
-    }
-
-    function copasProfileMLE(rows, g0, g1) {
-      var te = rows.map(function (r) { return r.te; });
-      var se = rows.map(function (r) { return r.se; });
-      var w = rows.map(function (r) { return 1 / (r.se * r.se); });
-      var sw = w.reduce(function (s, x) { return s + x; }, 0);
-      var muHat = rows.reduce(function (s, r, i) { return s + w[i] * r.te; }, 0) / sw;
-      // metasens seeds rho0 = +-rho.bound/2 by Egger `left`; L-BFGS-B stays in
-      // that sign-basin. Use sign-disciplined starts (no opposite-sign start,
-      // which would converge to the mirror solution with wrong-sign rho).
-      var sgn = _eggerLeft(rows) ? 1 : -1;
-      var best = null;
-      var starts = [
-        [muHat, sgn * _RHO_BOUND / 2, 0.05],
-        [muHat, sgn * _RHO_BOUND * 0.9, 0.05],
-        [muHat, sgn * 0.05, 0.05],
-      ];
-      for (var s = 0; s < starts.length; s++) {
-        var r = _minimise(g0, g1, te, se, starts[s]);
-        if (Number.isFinite(r.value) && (!best || r.value < best.value - 1e-10))
-          best = r;
-      }
-      if (!best) return { TE: NaN, rho: NaN, tau: NaN, seTE: NaN, nll: NaN };
-      var mu = best.par[0];
-      // seTE: sqrt of [1,1] of inverse numeric Hessian of the NLL, with the
-      // exact metasens regularisation (junk2$hessian + 1e-8, element-wise).
-      var H = _numHessian(function (p) {
-        return _copasNLL(p, g0, g1, te, se);
-      }, best.par);
-      var seTEdiag = H[0][0] > 0 ? Math.sqrt(1 / H[0][0]) : NaN; // metasens last-resort
-      for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++) H[a][b] += 1e-8;
-      var inv = _inv3(H);
-      var seTE = inv && inv[0][0] > 0 ? Math.sqrt(inv[0][0]) : NaN;
-      return { TE: mu, rho: best.par[1], tau: best.par[2], seTE: seTE,
-               seTEdiag: seTEdiag, nll: best.value };
-    }
-
-    function _numHessian(fn, x) {
-      var n = x.length, h = 1e-5, H = [[0,0,0],[0,0,0],[0,0,0]];
-      for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) {
-        var xpp = x.slice(), xpm = x.slice(), xmp = x.slice(), xmm = x.slice();
-        xpp[i]+=h; xpp[j]+=h; xpm[i]+=h; xpm[j]-=h;
-        xmp[i]-=h; xmp[j]+=h; xmm[i]-=h; xmm[j]-=h;
-        H[i][j] = (fn(xpp) - fn(xpm) - fn(xmp) + fn(xmm)) / (4 * h * h);
-      }
-      return H;
-    }
-    function _inv3(m) {
-      var a=m[0][0],b=m[0][1],c=m[0][2],d=m[1][0],e=m[1][1],f=m[1][2],
-          g=m[2][0],h=m[2][1],i=m[2][2];
-      var A=e*i-f*h, B=-(d*i-f*g), C=d*h-e*g;
-      var det=a*A+b*B+c*C;
-      if (!Number.isFinite(det) || Math.abs(det) < 1e-300) return null;
-      return [[A/det, -(b*i-c*h)/det, (b*f-c*e)/det],
-              [B/det, (a*i-c*g)/det, -(a*f-c*d)/det],
-              [C/det, -(a*h-b*g)/det, (a*e-b*d)/det]];
-    }
-
-    // Public hook for R-parity tests: profile MLE at (g0,g1) on loaded data.
+    // Back-compatible hook: profile MLE at an explicit (gamma0, gamma1) on the
+    // loaded data. Kept because the earlier parity spec calls it.
     window.__almCopasProfileMLE = function (g0, g1) {
       var rows = parse(document.getElementById('src').value);
       if (rows.length < 1) return { TE: NaN, rho: NaN, tau: NaN, seTE: NaN };
-      return copasProfileMLE(rows, g0, g1);
+      var te = rows.map(function (r) { return r.te; });
+      var se = rows.map(function (r) { return r.se; });
+      var sv = startValues(te, se, readOpts().method_tau);
+      var fit = CC.profileMLE(te, se, [g0, g1], [sv.TE_random, sv.rho0, sv.tau], 0.9999);
+      return { TE: fit.par[0], rho: fit.par[1], tau: fit.par[2], nll: fit.value };
     };
 
-    // Reproducible publication-probability path -> (gamma0, gamma1):
-    // smallest-SE study pinned at pHi (~always published); largest-SE study's
-    // publication probability swept down. Identical to copas-oracle.R.
-    var _COPAS_PHI = 0.9999;
-    function _qnorm(p) {
-      if (p <= 0 || p >= 1) return p <= 0 ? -Infinity : Infinity;
-      var q = p < 0.5 ? p : 1 - p;
-      var t = Math.sqrt(-2 * Math.log(q));
-      var c0=2.515517,c1=0.802853,c2=0.010328,d1=1.432788,d2=0.189269,d3=0.001308;
-      var x = t - (c0 + c1*t + c2*t*t) / (1 + d1*t + d2*t*t + d3*t*t*t);
-      // one Newton refinement for accuracy
-      x = (p < 0.5 ? -x : x);
-      x = x - (_pnorm(x) - p) / _dnorm(x);
-      return x;
+    // The full fit on the currently loaded data. Also the validation hook: any
+    // option may be overridden so a run can reproduce metasens's configuration.
+    function fitCopas(override) {
+      var rows = parse(document.getElementById('src').value);
+      var o = readOpts();
+      if (override) for (var key in override) if (override.hasOwnProperty(key)) o[key] = override[key];
+      var te = rows.map(function (r) { return r.te; });
+      var se = rows.map(function (r) { return r.se; });
+      if (te.length < 3) return { refused: 'k<3', k: te.length };
+      var sv = startValues(te, se, o.method_tau);
+      return CC.copas({
+        TE: te, seTE: se,
+        TE_random: sv.TE_random, seTE_random: sv.seTE_random, tau: sv.tau,
+        ngrid: o.ngrid, nlevels: o.nlevels, levels: o.levels, slope: o.slope,
+        left: o.left, rho_bound: o.rho_bound, sign_rsb: o.sign_rsb,
+        level_ma: o.level_ma
+      });
     }
-    function copasPublprobGamma(p, seMin, seMax) {
-      if (p >= 1) return { g0: _qnorm(_COPAS_PHI), g1: 0 };
-      var g1 = (_qnorm(_COPAS_PHI) - _qnorm(p)) / (1 / seMin - 1 / seMax);
-      var g0 = _qnorm(_COPAS_PHI) - g1 / seMin;
-      return { g0: g0, g1: g1 };
-    }
+    window.__almCopasFull = fitCopas;
 
     // ---- axis state (overrideable by axis-controls) ----
     var _axisState = {};
@@ -494,71 +283,92 @@
           warnEl.style.display = 'none';
         }
       }
-      if (rows.length < 3) { _lastResults = null; return; }
+      var summaryEl = document.getElementById('summary');
+      var bodyEl = document.getElementById('body');
+      var fit = fitCopas();
+      if (!fit || fit.refused) {
+        _lastResults = null;
+        var why = fit && fit.refused === 'seTE.min==seTE.max'
+          ? 'every study has the same standard error, so the selection function cannot be identified'
+          : 'at least 3 studies with an effect and a positive standard error are needed';
+        if (summaryEl) summaryEl.innerHTML = '<tr><td>No fit — ' + why + '.</td></tr>';
+        if (bodyEl) bodyEl.innerHTML = '';
+        drawSens([]);
+        return;
+      }
 
-      // Standard FE pool
-      var w0 = rows.map(function (r) { return 1 / (r.se * r.se); });
-      var sw0 = w0.reduce(function (a, b) { return a + b; }, 0);
-      var fe = rows.reduce(function (acc, r, i) { return acc + w0[i] * r.te; }, 0) / sw0;
-      var feSE = Math.sqrt(1 / sw0);
-
-      // Copas & Shi (2000) profile MLE along the reproducible publication-
-      // probability path (smallest-SE study ~always published; largest-SE
-      // study's publprob swept down). Each point is a true profile MLE.
-      var seArr = rows.map(function (r) { return r.se; });
-      var seMin = Math.min.apply(null, seArr);
-      var seMax = Math.max.apply(null, seArr);
-      var pgrid = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3];
-      var sePrev = NaN;
-      var results = pgrid.map(function (p) {
-        var gg = copasPublprobGamma(p, seMin, seMax);
-        var mle = copasProfileMLE(rows, gg.g0, gg.g1);
-        // Faithful metasens display-seTE fallback (carry-forward chain).
-        var seD = mle.seTE;
-        if (sePrev === sePrev && (!Number.isFinite(seD) || seD === 0)) seD = sePrev;
-        if (!Number.isFinite(seD) || seD === 0) seD = mle.seTEdiag;
-        if (!Number.isFinite(seD) || seD === 0) seD = feSE;
-        sePrev = seD;
-        var nUnpubl = rows.reduce(function (acc, r) {
-          var ps = _pnorm(gg.g0 + gg.g1 / r.se);
-          return acc + (ps > 0 ? (1 - ps) / ps : 0);
-        }, 0);
-        return { gamma: p, publprob: p, gamma0: gg.g0, gamma1: gg.g1,
-                 mean: mle.TE, se: seD, rho: mle.rho, tau: mle.tau,
-                 nUnpubl: nUnpubl };
+      var pct = (fit.level_ma * 100);
+      var pctLabel = (pct === Math.round(pct) ? String(Math.round(pct)) : pct.toFixed(1)) + '%';
+      var results = fit.publprob.map(function (p, i) {
+        return { publprob: p, mean: fit.TE_slope[i], se: fit.seTE_slope[i],
+                 lo: fit.lower_slope[i], hi: fit.upper_slope[i],
+                 rho: fit.rho_slope[i], tau: fit.tau_slope[i],
+                 pvalRsb: fit.pval_rsb[i], nUnpubl: fit.N_unpubl[i],
+                 selected: fit.sel_adj === (i + 1) };
       });
 
       _lastResults = {
-        _schema: 'copas-results-v2',
-        k: rows.length,
-        fe_pooled: fe,
-        fe_se: feSE,
-        rho_bound: _RHO_BOUND,
+        _schema: 'copas-results-v3',
+        k: fit.k,
+        dropped_rows: fit.dropped,
+        method: 'Copas & Shi (2000) selection model, metasens::copas pipeline',
+        ngrid: fit.ngrid, nlevels: fit.nlevels_arg,
+        sign_rsb: fit.sign_rsb, level_ma: fit.level_ma,
+        rho_bound: fit.rho_bound, left: fit.left,
+        te_random: fit.TE_random, se_random: fit.seTE_random, tau: fit.tau,
+        gamma0_range: fit.gamma0_range, gamma1_range: fit.gamma1_range,
+        slope: fit.slope,
+        te_adjust: fit.TE_adjust, se_adjust: fit.seTE_adjust,
+        lower_adjust: fit.lower_adjust, upper_adjust: fit.upper_adjust,
+        statistic_adjust: fit.statistic_adjust, pval_adjust: fit.pval_adjust,
+        tau_adjust: fit.tau_adjust, pval_rsb_adj: fit.pval_rsb_adj,
+        n_unpubl_adj: fit.N_unpubl_adj,
         sensitivity_grid: results.map(function (r) {
-          return {
-            publprob: r.publprob,
-            gamma0: r.gamma0,
-            gamma1: r.gamma1,
-            te_adj: r.mean,
-            se_adj: r.se,
-            rho: r.rho,
-            tau: r.tau,
-            n_unpubl: r.nUnpubl,
-            lo: r.mean - Z975 * r.se,
-            hi: r.mean + Z975 * r.se,
-          };
+          return { publprob: r.publprob, te_adj: r.mean, se_adj: r.se,
+                   lo: r.lo, hi: r.hi, rho: r.rho, tau: r.tau,
+                   pval_rsb: r.pvalRsb, n_unpubl: r.nUnpubl, selected: r.selected };
         }),
-        rows: rows.map(function (r) { return { te: r.te, se: r.se }; }),
+        rows: fit.TE.map(function (te, i) { return { te: te, se: fit.seTE[i] }; })
       };
 
-      var body = document.getElementById('body');
+      if (summaryEl) {
+        var sm = [''];
+        var row = function (label, value) {
+          sm.push('<tr><th scope="row" style="text-transform:none;letter-spacing:0">' +
+                  label + '</th><td>' + value + '</td></tr>');
+        };
+        row('Unadjusted random-effects pooled effect',
+            fmt(fit.TE_random) + ' (SE ' + fmt(fit.seTE_random) + ', τ ' + fmt(fit.tau) + ')');
+        if (Number.isFinite(fit.TE_adjust)) {
+          row('Copas-adjusted effect', '<strong>' + fmt(fit.TE_adjust) + '</strong> (SE ' +
+              fmt(fit.seTE_adjust) + ')');
+          row(pctLabel + ' CI', '[' + fmt(fit.lower_adjust) + ', ' + fmt(fit.upper_adjust) + ']');
+          row('p-value (adjusted effect)', fmtP(fit.pval_adjust));
+          row('p-value, residual selection bias', fmtP(fit.pval_rsb_adj));
+          row('Implied number of unpublished studies', fit.N_unpubl_adj.toFixed(1));
+        } else {
+          row('Copas-adjusted effect',
+              'not reported — every point of the orthogonal line shows residual selection bias at p ≤ ' +
+              fit.sign_rsb + ', which is metasens’s condition for withholding the adjusted estimate');
+        }
+        row('Selection model', 'ρ bound ' + fit.rho_bound + ', ' +
+            (fit.left ? 'left (small studies over-reported)' : 'right') +
+            ', grid ' + fit.ngrid + '×' + fit.ngrid +
+            ', orthogonal-line slope ' + fmt(fit.slope));
+        summaryEl.innerHTML = sm.join('');
+      }
+
       var __bodyParts = [''];
       for (var i = 0; i < results.length; i++) {
         var r = results[i];
-        var lo = r.mean - Z975 * r.se, hi = r.mean + Z975 * r.se;
-        __bodyParts.push('<tr><td>' + r.publprob.toFixed(2) + '</td><td>' + r.nUnpubl.toFixed(1) + '</td><td>' + fmt(r.mean) + '</td><td>[' + fmt(lo) + ', ' + fmt(hi) + ']</td></tr>');
+        __bodyParts.push('<tr' + (r.selected ? ' style="font-weight:600;background:var(--accent-soft)"' : '') +
+          '><td>' + r.publprob.toFixed(3) + (r.selected ? ' ◀' : '') +
+          '</td><td>' + r.nUnpubl.toFixed(1) +
+          '</td><td>' + fmt(r.mean) +
+          '</td><td>[' + fmt(r.lo) + ', ' + fmt(r.hi) + ']' +
+          '</td><td>' + fmtP(r.pvalRsb) + '</td></tr>');
       }
-      body.innerHTML = __bodyParts.join('');
+      if (bodyEl) bodyEl.innerHTML = __bodyParts.join('');
 
       drawSens(results);
 
@@ -568,16 +378,23 @@
       }
     }
 
+    function fmtP(p) {
+      if (!Number.isFinite(p)) return '&#8212;';
+      return p < 0.0001 ? '&lt;0.0001' : p.toFixed(4);
+    }
+
     function drawSens(results) {
       var svg = document.getElementById('plot');
       var W = 600, H = 280, padL = 60, padR = 20, padT = 20, padB = 40;
       var plotW = W - padL - padR, plotH = H - padT - padB;
       var __svgParts = [''];
-      var gammas = results.map(function (r) { return r.gamma; });
+      if (!results || results.length < 2) { svg.innerHTML = ''; return; }
+      var gammas = results.map(function (r) { return r.publprob; });
       var means = results.map(function (r) { return r.mean; });
-      var los = results.map(function (r) { return r.mean - Z975 * r.se; });
-      var his = results.map(function (r) { return r.mean + Z975 * r.se; });
+      var los = results.map(function (r) { return r.lo; });
+      var his = results.map(function (r) { return r.hi; });
       var xMin = Math.min.apply(null, gammas), xMax = Math.max.apply(null, gammas);
+      if (!(xMax > xMin)) { svg.innerHTML = ''; return; }
 
       // Apply y-axis override if set
       var yMin0 = null, yMax0 = null;
@@ -614,9 +431,18 @@
       for (var i = 0; i < gammas.length; i++) {
         __svgParts.push('<circle cx="' + X(gammas[i]) + '" cy="' + Y(means[i]) + '" r="4" fill="var(--accent)"/>');
       }
-      // Axis ticks
-      for (var i = 0; i < gammas.length; i++) {
-        __svgParts.push('<text x="' + X(gammas[i]) + '" y="' + (padT + plotH + 16) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">' + gammas[i].toFixed(1) + '</text>');
+      // Axis ticks: the orthogonal line's publication probabilities are not on a
+      // round grid, so label the ends and the middle rather than every point.
+      var tickIdx = gammas.length <= 5
+        ? gammas.map(function (g, i) { return i; })
+        : [0, Math.floor((gammas.length - 1) / 2), gammas.length - 1];
+      for (var ti = 0; ti < tickIdx.length; ti++) {
+        var gi = tickIdx[ti];
+        __svgParts.push('<text x="' + X(gammas[gi]) + '" y="' + (padT + plotH + 16) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">' + gammas[gi].toFixed(3) + '</text>');
+      }
+      // Mark the point metasens would report as TE.adjust.
+      for (var si = 0; si < results.length; si++) if (results[si].selected) {
+        __svgParts.push('<circle cx="' + X(gammas[si]) + '" cy="' + Y(means[si]) + '" r="7" fill="none" stroke="var(--warn)" stroke-width="2"/>');
       }
       __svgParts.push('<text x="' + (padL + plotW / 2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8">Publication probability of largest-SE study (→ stronger selection)</text>');
       __svgParts.push('<text x="18" y="' + (padT + plotH / 2) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" transform="rotate(-90 18 ' + (padT + plotH / 2) + ')">Adjusted pooled effect</text>');
@@ -661,6 +487,11 @@
         window.alm.resetUndo.snapshot();
       }
       run();
+    });
+
+    ['opt-ngrid', 'opt-tau', 'opt-signrsb', 'opt-level'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', run);
     });
 
     if (window.MaStudies && MaStudies.attachButtons) {
