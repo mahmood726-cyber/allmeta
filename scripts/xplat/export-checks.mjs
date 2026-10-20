@@ -177,8 +177,9 @@ cat("PLOT", ${rStr(app + '-' + p.id + '.png')}, "\n")`);
 # ---- verify plots (shared/alm-verify-r.js plot code, objects documented as: ${rComment(rec.rObjects || 'n/a')}) ----
 alm_dir <- Sys.getenv("XPLAT_PLOTS_DIR", "xplat-plots")
 dir.create(alm_dir, showWarnings = FALSE, recursive = TRUE)
-alm_png <- function(path, w, h) {   # base grDevices only (cairo off Windows): no ragg/system-font stack to pin
-  if (.Platform$OS.type != "windows" && isTRUE(capabilities("cairo"))) grDevices::png(path, width = w, height = h, units = "in", res = 150, type = "cairo")
+alm_png <- function(path, w, h) {   # base grDevices only: no ragg/system-font stack to pin. cairo on Linux (no X11 on CI);
+  # macOS keeps its default quartz device (its cairo.so needs XQuartz), Windows its default device.
+  if (Sys.info()[["sysname"]] == "Linux" && isTRUE(capabilities("cairo"))) grDevices::png(path, width = w, height = h, units = "in", res = 150, type = "cairo")
   else grDevices::png(path, width = w, height = h, units = "in", res = 150)
 }
 ${plots.length ? plots.join('\n') : 'cat("No verify plots registered for this app (no verify.plots in its alm-features.js).\\n")'}

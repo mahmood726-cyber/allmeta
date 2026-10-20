@@ -6,6 +6,9 @@
 #            renv::restore() does not (e.g. igraph's P3M binary needs libglpk40 at load time).
 #   all OS:  renv installs from the lockfile's repositories: a dated P3M snapshot (binaries for Windows, Linux
 #            and, where P3M has them, macOS; renv rewrites it to the __linux__ URL on Linux), then CRAN.
+# r-lib/actions/setup-r exports RENV_CONFIG_REPOS_OVERRIDE=<P3M latest>, which would make renv ignore the lock's
+# dated snapshot and fetch whatever is current; restore from the lock's own repositories instead.
+Sys.unsetenv("RENV_CONFIG_REPOS_OVERRIDE")
 project <- normalizePath(".github/r", winslash = "/")
 lock_path <- file.path(project, "renv.lock")
 tools_lib <- file.path(tempdir(), "xplat-tools")

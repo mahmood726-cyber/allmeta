@@ -17,7 +17,7 @@ Workflow: [`.github/workflows/xplat-verify.yml`](../.github/workflows/xplat-veri
      `AlmValidate.compare()` (`abs`; `rel` = |app − R| / max(1, |R|); `exact`; null = null passes; NaN, missing and
      non-finite values never pass). It prints one row per quantity, then `ALMCHECK <app> <passed>/<N>`, and exits 1 on any miss.
    - `plots-<app>.R`: the same adapter code, then each verify plot saved to `xplat-plots/<app>-<plot>.png`
-     (base `grDevices::png()`, cairo where available; no ragg/system-font stack to pin).
+     (base `grDevices::png()`: cairo on Linux, quartz on macOS, the default device on Windows; no ragg/system-font stack to pin).
    - `PLANTED-check-<app>.R` (first app only): identical to its check, except that one embedded app value
      is changed by 1e-3 relative. This copy **must fail**.
    - `manifest.json`: app, paper, N, packages and the SHA-256 of each script, plus any app that was skipped

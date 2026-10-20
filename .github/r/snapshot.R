@@ -16,7 +16,8 @@ cat("installing from", getOption("repos"), "\n")
 install.packages("pak", repos = sprintf("https://r-lib.github.io/p/pak/stable/%s/%s/%s",
   .Platform$pkgType, R.version$os, R.version$arch))
 install.packages(c("renv", "jsonlite"))
-pak::pkg_install(refs, ask = FALSE, dependencies = NA)
+# Unversioned refs go to pak as plain CRAN refs: an `any::` ref is recorded as `Source: any`, which renv cannot restore.
+pak::pkg_install(sub("^any::", "", refs), ask = FALSE, dependencies = NA)
 # renv validates the full Depends/Imports/LinkingTo closure (binary installs skip LinkingTo, e.g. cpp11, RcppEigen),
 # and a source restore needs them, so install whatever of that closure is still missing.
 db <- utils::available.packages()
@@ -46,5 +47,5 @@ cat(sprintf("renv.lock: R %s, %d packages, P3M snapshot %s\n", lock$R$Version, l
 for (p in names(want)) cat(sprintf("  %-13s %s\n", p, lock$Packages[[p]]$Version))
 src <- vapply(lock$Packages, function(p) paste(p$Source, p$Repository %||% ""), "")
 print(table(src))
-stale <- names(lock$Packages)[vapply(lock$Packages, function(p) !identical(p$Repository, "RSPM"), logical(1))]
+stale <- names(lock$Packages)[vapply(lock$Packages, function(p) !identical(p$Source, "Repository") || !identical(p$Repository, "RSPM"), logical(1))]
 if (length(stale)) stop("lock entries not from the dated P3M snapshot (restore could not get them as binaries): ", paste(stale, collapse = ", "))
