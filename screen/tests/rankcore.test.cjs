@@ -98,3 +98,17 @@ test('maybe decisions remain in the feature corpus but not the undecided queue',
   const result=w.run({id:3,records:data,labels}).result;
   assert.deepEqual(Array.from(result.ranked,r=>r.index).sort(),[5,6,7]);
 });
+
+test('frozen SPECTER2 pack requires every row and matching provenance before switching', () => {
+  const w=worker();
+  const values=Float32Array.from({length:records.length*768},(_,i)=>i%768===0?1:0);
+  const embedding={model:'specter2',dim:768,values,packSha:'2b1dc054c82e7ad6cf20456b11bee978416468c1af399383dbbd66b307d5748a',pooling:'cls',maxTokens:256,prefix:''};
+  assert.equal(w.run({id:10,records,labels}).result.variant,'u4');
+  assert.equal(w.run({id:11,records,labels,embedding:{...embedding,values:values.slice(768)}}).result.variant,'u4');
+  assert.equal(w.run({id:12,records,labels,embedding:{...embedding,packSha:'tampered'}}).result.variant,'u4');
+  const result=w.run({id:13,records,labels,embedding}).result;
+  assert.equal(result.variant,'u4+specter2');
+  assert.equal(result.semantic.dim,768);
+  assert.equal(result.semantic.weight,0.5);
+  assert.equal(result.semantic.packSha,embedding.packSha);
+});

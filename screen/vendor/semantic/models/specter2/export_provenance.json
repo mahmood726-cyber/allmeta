@@ -1,0 +1,31 @@
+{
+  "source_model": "allenai/specter2_base",
+  "source_revision": "3447645e1def9117997203454fa4495937bfbd83",
+  "exporter": "optimum.exporters.onnx --task feature-extraction --opset 14",
+  "quantization": {
+    "fn": "onnxruntime.quantization.quantize_dynamic",
+    "weight_type": "QInt8",
+    "per_channel": "False",
+    "reduce_range": "False"
+  },
+  "versions": {
+    "torch": "2.14.1+cpu",
+    "transformers": "4.57.6",
+    "optimum": "2.1.0",
+    "optimum-onnx": "0.1.0",
+    "onnx": "1.23.2",
+    "onnxruntime": "1.31.0"
+  },
+  "python": "3.13.13",
+  "files": {
+    "model.onnx": {
+      "bytes": 437548115,
+      "sha256": "25ef73b7232489eba5f04ae217fb48b54e1a94150749f840fd5ab62afe6e379c"
+    },
+    "model_quantized.onnx": {
+      "bytes": 110115365,
+      "sha256": "2b1dc054c82e7ad6cf20456b11bee978416468c1af399383dbbd66b307d5748a"
+    }
+  },
+  "note": "allenai/specter2_base (Apache-2.0) base encoder, no adapter; CLS pooling as in the SPECTER2 card; embed.mjs input title + '. ' + abstract."
+}

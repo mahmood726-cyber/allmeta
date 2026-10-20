@@ -17,14 +17,18 @@ self.onmessage = ({data}) => {
       throw Error('Label at least two relevant and two irrelevant records.');
     let X = R.tfidf(records.map(r => (r.title || '') + ' ' + (r.abstract || '')), R.ELAS_U4);
     let semantic = null;
-    if (cfg.embModel !== null && data.embedding) {
+    const completeSpecter = data.embedding?.model === 'specter2' && data.embedding.dim === 768 &&
+      data.embedding.packSha === '2b1dc054c82e7ad6cf20456b11bee978416468c1af399383dbbd66b307d5748a' &&
+      data.embedding.pooling === 'cls' && data.embedding.maxTokens === 256 && data.embedding.prefix === '' &&
+      data.embedding.values?.length === records.length * 768;
+    if (cfg.embModel !== null && data.embedding && (cfg.embModel !== 'specter2' || completeSpecter)) {
       const e = data.embedding;
       if (e.model !== cfg.embModel) throw Error('Embedding model differs from rank-config.js.');
       if (!Number.isInteger(e.dim) || e.dim < 1 || e.values.length !== records.length * e.dim ||
           !Array.from(e.values).every(Number.isFinite) || !Number.isFinite(cfg.embW))
         throw Error('Invalid or incomplete embedding matrix.');
       X = R.appendDense(X, e.values, e.dim, cfg.embW);
-      semantic = {model: e.model, dim: e.dim, weight: cfg.embW};
+      semantic = {model: e.model, dim: e.dim, weight: cfg.embW, packSha: e.packSha || null};
     }
     const model = R.trainSVM(X, ids, y, R.balancedWeights(y, R.ELAS_U4.ratio), R.ELAS_U4.C, {seed: 1});
     const labelled = new Set(ids);
@@ -32,7 +36,7 @@ self.onmessage = ({data}) => {
       .filter(r => !labelled.has(r.index) && records[r.index].undecided !== false)
       .map(r => ({...r, score: R.score(X, model, r.index)}))
       .sort((a, b) => b.score - a.score || a.index - b.index);
-    postMessage({id: data.id, result: {ranked, config: cfg, semantic, labels: ids.length},
+    postMessage({id: data.id, result: {ranked, config: cfg, semantic, variant: semantic ? 'u4+specter2' : 'u4', labels: ids.length},
       elapsed: performance.now() - started});
   } catch (e) { postMessage({id: data.id, error: e.message}); }
 };

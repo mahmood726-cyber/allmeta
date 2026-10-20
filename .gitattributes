@@ -42,3 +42,7 @@ screen/hybrid-core.js text eol=lf
 # Screen head-to-head (screen/h2h): bytes pinned by sha256 in PROTOCOL/FREEZE; never convert line endings.
 screen/h2h/** -text
 screen/bench/** -text
+# Model packs: every file is pinned by sha256 (FREEZE.md); never convert line endings.
+screen/vendor/semantic/models/** -text
+*.part00 binary
+*.part01 binary

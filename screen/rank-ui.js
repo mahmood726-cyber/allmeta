@@ -29,21 +29,21 @@
         finish(); return;
       }
       if (data.error) { $('rank-status').textContent = data.error; finish(); return; }
-      s.records.forEach(r => { r.rankScore = null; r.rankIndex = null; });
+      s.records.forEach(r => { r.rankScore = null; r.rankIndex = null; r.rankVariant = null; });
       const byId = new Map(records.map(r => [r.id, r]));
       data.result.ranked.forEach(item => {
-        const r = byId.get(item.id); r.rankScore = item.score; r.rankIndex = item.index;
+        const r = byId.get(item.id); r.rankScore = item.score; r.rankIndex = item.index; r.rankVariant = data.result.variant;
       });
       s.rank.run = {...data.result, elapsed: data.elapsed, worker: 'rank-worker.js'};
       s.sort = 'rankcore'; s.cursor = 0; $('f-sort').value = 'rankcore';
-      $('rank-status').textContent = 'Ranked ' + data.result.ranked.length + ' undecided records with U4. Scores are priorities, not probabilities.';
+      $('rank-status').textContent = 'Ranked ' + data.result.ranked.length + ' undecided records with '+data.result.variant+'. Scores are priorities, not probabilities. '+(data.result.semantic?'':(window.ScreenSpecter?.summary()||''));
       finish(); B.save(); B.render();
     };
     w.onerror = e => {
       if (worker === w) $('rank-status').textContent = 'U4 worker failed: ' + e.message;
       finish();
     };
-    const embedding = window.ScreenHybridUI.rankEmbedding(ScreenRankConfig.embModel);
+    const embedding = ScreenRankConfig.embModel === 'specter2' ? window.ScreenSpecter?.embedding() : window.ScreenHybridUI.rankEmbedding(ScreenRankConfig.embModel);
     w.postMessage({id, records: records.map(r => ({id:r.id,title:r.title,abstract:r.abstract,undecided:B.undecided(r)})), labels, embedding});
   }
   function refresh() {
@@ -52,7 +52,7 @@
     const sig = snapshot();
     if (owner !== s || signature !== sig) {
       owner = s; signature = sig; cancel();
-      s.records.forEach(r => { r.rankScore = null; r.rankIndex = null; });
+      s.records.forEach(r => { r.rankScore = null; r.rankIndex = null; r.rankVariant = null; });
       s.rank.run = null;
       $('rank-status').textContent = 'U4 ranking needs training for the current records and reviewer.';
       if (s.rank.enabled && ScreenUX.gate(rows().map(B.label)).met) timer = setTimeout(train, 0);

@@ -1,0 +1,17 @@
+{
+  "file": "model_quantized.onnx",
+  "bytes": 110115365,
+  "sha256": "2b1dc054c82e7ad6cf20456b11bee978416468c1af399383dbbd66b307d5748a",
+  "parts": [
+    {
+      "name": "model_quantized.onnx.part00",
+      "bytes": 90000000,
+      "sha256": "5179bd4ab6993d8af61c10b31acf6db165328e2ee28f92a738586eb7e1d43a7b"
+    },
+    {
+      "name": "model_quantized.onnx.part01",
+      "bytes": 20115365,
+      "sha256": "50259303d682c0a7b07029a3500a321c4356c7145fc3cddee7228bd5c75c1d5a"
+    }
+  ]
+}

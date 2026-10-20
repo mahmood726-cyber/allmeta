@@ -1,0 +1,5 @@
+Model: allenai/specter2_base
+License: Apache-2.0
+Source revision: 3447645e1def9117997203454fa4495937bfbd83
+Local ONNX export; see export_provenance.json.
+Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0

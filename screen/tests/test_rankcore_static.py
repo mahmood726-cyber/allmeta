@@ -17,7 +17,7 @@ class RankCoreStatic(unittest.TestCase):
         sw = (SCREEN / "sw.js").read_text()
         for name in ("rank-worker.js", "rank-config.js", "rank-ui.js", "h2h/js/rank-core.js"):
             self.assertIn('"' + name + '"', sw)
-        self.assertIn("screen-shell-rankcore-3", sw)
+        self.assertIn("screen-shell-rankcore-4", sw)
 
     def test_no_remote_fetch_or_import(self):
         for name in ("rank-worker.js", "rank-config.js", "rank-ui.js", "h2h/js/rank-core.js", "sw.js"):
