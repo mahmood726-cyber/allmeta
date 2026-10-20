@@ -50,6 +50,32 @@
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
     .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
                padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
+    /* v2 usability: no horizontal scroll at phone width, captions, input errors, notes. */
+    main > * { min-width: 0; }
+    .table-wrap { overflow-x: auto; max-width: 100%; }
+    #alm-csv-mount { overflow-x: auto; max-width: 100%; }
+    .actions > div { max-width: 100%; min-width: 0; }
+    #alm-export-mount .alm-export { display: flex; flex-wrap: wrap; max-width: 100%; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    caption { caption-side: top; text-align: left; font-size: 0.78rem; color: var(--muted); padding-bottom: 0.2rem; }
+    #input-errors { margin-top: 0.6rem; padding: 0.6rem 0.75rem; border: 1px solid var(--warn); background: var(--warn-soft); border-radius: 6px; font-size: 0.84rem; }
+    #input-errors[hidden] { display: none; }
+    #input-errors ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+    textarea[aria-invalid="true"] { border-color: var(--warn); outline: 2px solid var(--warn); }
+    .note { font-size: 0.8rem; color: var(--muted); margin: 0.3rem 0 0.6rem; }
+    .not-estimable td { font-style: italic; color: var(--muted); }
+    tr.loo-flagged { background: var(--warn-soft); }
+    #loo th[scope="row"] { font-weight: normal; text-align: left; white-space: nowrap; }
+    .secondary { border: 1px solid var(--border); border-radius: 6px; padding: 0.45rem 0.85rem; cursor: pointer; background: transparent; color: inherit; font: inherit; font-size: 0.85rem; }
+    #jump-results { display: none; margin-top: 0.5rem; font-size: 0.85rem; color: var(--accent); }
+    @media (max-width: 1000px) { #jump-results { display: inline-block; } }
+    @media (prefers-color-scheme:dark) {
+      /* Shared widgets (csv-upload, plot-export, results-export, reset-undo) inherit low-contrast
+         light-theme colours; restate them for this page only so other apps are untouched. */
+      main button:not(.primary):not(#btn-verify-in-r):not(#btn-truthcert),
+      main select, main input, main summary { color: var(--ink) !important; background-color: var(--input-bg) !important; border-color: #6b7380 !important; }
+      main a { color: var(--accent); }
+    }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <!-- Cycle 2.6 shared UX modules — wired per RETROFIT_AUDIT.md:
@@ -82,14 +108,22 @@
     <section class="panel">
       <h2>Input</h2>
 
-      <!-- csv-upload mount: file picker for study,e1,n1,e2,n2 CSV files -->
-
-
-      <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem; margin-top:0.6rem">
-        Studies — <code>study, e1, n1, e2, n2</code>
-        <span class="hint">events + totals per arm; one row per study</span>
+      <label for="measure">
+        <span>Effect measure</span>
+        <select id="measure">
+          <option value="OR" selected>Odds ratio</option>
+          <option value="RR">Risk ratio</option>
+          <option value="RD">Risk difference</option>
+        </select>
       </label>
-      <textarea id="src" aria-label="Studies — name, events1, n1, events2, n2 (one per line)">StudyA, 3, 500, 8, 500
+      <button type="button" id="btn-example" class="secondary" style="width:100%">Load example: Yusuf 1985 &beta;-blockers (21 trials)</button>
+
+      <!-- csv-upload mount: file picker for study,e1,n1,e2,n2 CSV files -->
+      <label for="src" style="display:block; font-size:0.85rem; margin-bottom:0.4rem; margin-top:0.6rem">
+        Studies — <code>study, e1, n1, e2, n2</code>
+        <span class="hint" id="src-hint">One row per study: label, events and total in group 1, events and total in group 2. Whole numbers only; comma, tab or semicolon separated; a header row is ignored. Rows that cannot be used are listed, never dropped silently.</span>
+      </label>
+      <textarea id="src" aria-describedby="src-hint" spellcheck="false">StudyA, 3, 500, 8, 500
 StudyB, 1, 200, 5, 200
 StudyC, 0, 150, 4, 150
 StudyD, 2, 400, 6, 400
@@ -97,15 +131,9 @@ StudyE, 4, 600, 10, 600</textarea>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="input-errors" role="alert" hidden></div>
+      <a id="jump-results" href="#results">Jump to results &darr;</a>
       <div id="alm-csv-mount"></div>
-      <label>
-        <span>Effect measure</span>
-        <select id="measure" aria-label="Measure">
-          <option value="OR" selected>Odds ratio</option>
-          <option value="RR">Risk ratio</option>
-          <option value="RD">Risk difference</option>
-        </select>
-      </label>
 
       <!-- axis-controls mount -->
       <div id="alm-axis-mount" style="margin-top:0.75rem"></div>
@@ -113,18 +141,65 @@ StudyE, 4, 600, 10, 600</textarea>
       <!-- reset-undo mount -->
       <div id="alm-undo-mount" style="margin-top:0.5rem"></div>
     </section>
-    <section class="panel">
-      <h2>Pooled estimates</h2>
+    <section class="panel" id="results" tabindex="-1" aria-labelledby="results-h">
+      <h2 id="results-h">Pooled estimates</h2>
+      <p id="k-note" class="note" aria-live="polite"></p>
+      <div class="table-wrap">
       <table id="pooled">
-        <thead><tr><th>Method</th><th>Estimate</th><th>95% CI</th><th>z</th><th>p</th></tr></thead>
+        <caption>Fixed-effect pooled estimates (metafor rma.mh / rma.peto conventions)</caption>
+        <thead><tr><th scope="col">Method</th><th scope="col">Estimate</th><th scope="col">95% CI</th><th scope="col">z</th><th scope="col">p</th></tr></thead>
         <tbody id="pooled-body"></tbody>
       </table>
-      <p id="fragility-note" class="stat" style="margin:0.4rem 0 0;font-size:0.85rem"></p>
+      </div>
+      <p id="estimability-note" class="note" aria-live="polite"></p>
+      <p id="fragility-note" class="stat" style="margin:0.4rem 0 0;font-size:0.85rem" aria-live="polite"></p>
+      <h2 style="margin-top:0.9rem">Heterogeneity and association tests</h2>
+      <div class="table-wrap">
+      <table id="het">
+        <caption>Cochran's Q, I&sup2; and H&sup2; for each pooled method, as printed by metafor rma.mh(&hellip;, add = c(0.5, 0), to = c("only0", "none"), drop00 = c(FALSE, FALSE), correct = FALSE) and rma.peto(&hellip;, add = 0, to = "none", drop00 = TRUE)</caption>
+        <thead><tr><th scope="col">Method</th><th scope="col">Q (df)</th><th scope="col">p</th><th scope="col">I&sup2;</th><th scope="col">H&sup2;</th></tr></thead>
+        <tbody id="het-body"></tbody>
+      </table>
+      <table id="assoc">
+        <caption>Association and homogeneity tests for the odds ratio (raw counts, no continuity correction)</caption>
+        <thead><tr><th scope="col">Test</th><th scope="col">&chi;&sup2;</th><th scope="col">df</th><th scope="col">p</th></tr></thead>
+        <tbody id="assoc-body"></tbody>
+      </table>
+      </div>
+      <p class="note" id="het-note">Q uses the per-study estimates with 0.5 added to every cell of a table that has a zero, keeping tables with no events (or events in every participant) in both groups: rma.mh(&hellip;, add = c(0.5, 0), to = c("only0", "none"), drop00 = c(FALSE, FALSE), correct = FALSE). These are not metafor's defaults: rma.mh with its defaults (drop00 = TRUE, correct = TRUE) gives the same pooled estimate but leaves those tables out of Q, so Q, I&sup2; and H&sup2; differ when such a table is present, and it continuity-corrects the Cochran-Mantel-Haenszel test. The Peto Q leaves out tables with no events in either group, or events in every participant. The Cochran-Mantel-Haenszel test is uncorrected (correct = FALSE). Tarone's test and the Breslow-Day test use the tables in which the fitted count is defined.</p>
+      <p class="note" id="zero-note"></p>
+      <h2 style="margin-top:0.9rem">Rare-event conventions (sensitivity)</h2>
+      <div class="table-wrap">
+      <table id="conv">
+        <caption>The same tables pooled under the defaults of meta::metabin and escalc (the inverse-variance row is metafor rma(method = "EE")); the first row is this page's main result</caption>
+        <thead><tr><th scope="col">Convention</th><th scope="col">Estimate</th><th scope="col">95% CI</th><th scope="col">p</th></tr></thead>
+        <tbody id="conv-body"></tbody>
+      </table>
+      </div>
+      <p class="note" id="conv-note" aria-live="polite"></p>
+      <h2 style="margin-top:0.9rem">Leave-one-out</h2>
+      <div class="actions" style="margin-top:0.2rem">
+        <button type="button" id="btn-loo" class="secondary" aria-describedby="loo-hint">Run leave-one-out</button>
+        <button type="button" id="btn-loo-csv" class="secondary" disabled>Download leave-one-out table (CSV)</button>
+        <label style="display:inline-flex;gap:0.35rem;align-items:center;font-size:0.85rem"><input type="checkbox" id="loo-only-flagged"> Show only flagged omissions</label>
+      </div>
+      <p class="note" id="loo-hint">Re-pools the current tables with each one omitted in turn (as metafor leave1out on rma.mh and rma.peto): estimate, 95% CI, p and I&sup2; for each method. An omission is flagged when it moves that method's p-value across 0.05. Needs at least 3 tables.</p>
+      <p id="loo-status" role="status" aria-live="polite" class="note"></p>
+      <div class="table-wrap">
+      <table id="loo">
+        <caption>Each row omits one table (numbered in input order); estimates on the display scale</caption>
+        <thead id="loo-head"></thead>
+        <tbody id="loo-body"></tbody>
+      </table>
+      </div>
       <h2 style="margin-top:0.5rem">Per-study</h2>
+      <div class="table-wrap">
       <table id="per-study">
-        <thead><tr><th>Study</th><th>e1/n1</th><th>e2/n2</th><th>Effect</th><th>95% CI</th></tr></thead>
+        <caption id="per-caption">Per-study effects with 95% CIs</caption>
+        <thead><tr><th scope="col">Study</th><th scope="col">e1/n1</th><th scope="col">e2/n2</th><th scope="col" id="per-effect-h">Effect</th><th scope="col">95% CI</th></tr></thead>
         <tbody id="per-body"></tbody>
       </table>
+      </div>
       <h2 style="margin-top:0.5rem">Forest</h2>
       <svg id="forest" viewBox="0 0 600 280" role="img" aria-label="Forest plot of per-study and pooled effects"></svg>
       <h2 style="margin-top:0.5rem">L'Abbé plot</h2>
@@ -143,11 +218,18 @@ StudyE, 4, 600, 10, 600</textarea>
         <div id="alm-export-mount"></div>
       </div>
 
+      <!-- self-checking R script (E3) -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Reproduce in R:</span>
+        <button type="button" id="btn-r-script" class="secondary" aria-describedby="r-script-hint">Export self-checking R script</button>
+        <span id="r-script-hint" class="note" style="margin:0">A .R file with your data, the metafor rma.mh / rma.peto calls for the current settings, and this page's numbers; running it in R prints a PASS/FAIL comparison.</span>
+      </div>
+
       <!-- cross-tool bus (ma-studies-v1) producer -->
       <div class="actions">
         <span style="font-size:0.8rem;color:var(--muted)">Cross-tool:</span>
         <button type="button" id="btn-bus-save" title="Send the per-study effects (log scale for OR/RR, identity for RD) to the shared ma-studies-v1 bus so forest-plot, funnel-plot, influence and other tools can pool them without re-typing." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit">Send to bus</button>
-        <button type="button" id="btn-verify-in-r" title="Push the per-study effects to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer">Verify in R</button>
+        <button type="button" id="btn-verify-in-r" title="Sends the 0.5-corrected per-study effects to the WebR validator, which fits an inverse-variance model with rma(). This is NOT a check of the Mantel-Haenszel or Peto results; use 'Validate this analysis in R' below or the self-checking R script for that." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer">Open study effects in WebR (inverse-variance, not MH/Peto)</button>
         <button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current per-study effects — re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer">TruthCert receipt</button>
         <button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit">&#128273; Key</button>
       </div>
@@ -171,39 +253,77 @@ StudyE, 4, 600, 10, 600</textarea>
     // 1e-6 agreement so the looser value would fail.
     var Z975 = 1.959963984540054;
 
-    function parse(text) {
-      // Accepts either:
-      //   study, e1, n1, e2, n2   (study label first — canonical CSV format)
-      //   e1, n1, e2, n2, label   (legacy textarea format, numeric first)
-      return text.trim().split(/\n/).map(function (l, i) {
-        if (!l.trim()) return null;
-        var parts = l.split(/,/).map(function (s) { return s.trim(); });
-        // Try study-first format: parts[0] is string label, rest are numbers
-        var label, e1, n1, e2, n2;
-        if (isNaN(Number(parts[0])) || !Number.isFinite(Number(parts[0]))) {
-          // study name first
-          label = parts[0] || ('Study ' + (i + 1));
-          e1 = parseInt(parts[1], 10); n1 = parseInt(parts[2], 10);
-          e2 = parseInt(parts[3], 10); n2 = parseInt(parts[4], 10);
-        } else {
-          // legacy: numeric first, optional label at end
-          e1 = parseInt(parts[0], 10); n1 = parseInt(parts[1], 10);
-          e2 = parseInt(parts[2], 10); n2 = parseInt(parts[3], 10);
-          label = parts[4] || ('Study ' + (i + 1));
-        }
-        if (![e1, n1, e2, n2].every(Number.isFinite) || n1 <= 0 || n2 <= 0 || e1 < 0 || e2 < 0 || e1 > n1 || e2 > n2) return null;
-        return { e1: e1, n1: n1, e2: e2, n2: n2, label: label };
-      }).filter(Boolean);
+    // ---- input parsing (v2): every non-blank line is either used or reported ----
+    // Accepts, per line:
+    //   study, e1, n1, e2, n2   (study label first — canonical CSV format)
+    //   e1, n1, e2, n2[, label] (legacy textarea format, numeric first)
+    // Delimiter: tab if the line has one, else comma, else semicolon. A label may be
+    // double-quoted ("Smith, 2001"). Counts must be whole numbers written as digits:
+    // "2.7", "-1", "1e3" or "x" are refused with the line number, never truncated or
+    // dropped. One invalid line stops the whole analysis (no partial pooling).
+    function splitFields(line) {
+      var delim = line.indexOf('\t') >= 0 ? '\t' : (line.indexOf(',') >= 0 ? ',' : (line.indexOf(';') >= 0 ? ';' : ','));
+      var out = [], cur = '', q = false, quoted = false;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line.charAt(i);
+        if (q) {
+          if (ch === '"') { if (line.charAt(i + 1) === '"') { cur += '"'; i++; } else q = false; }
+          else cur += ch;
+        } else if (ch === '"' && !cur.trim()) { q = true; quoted = true; cur = ''; }
+        else if (ch === delim) { out.push(cur.trim()); cur = ''; }
+        else cur += ch;
+      }
+      if (q) return { error: 'has an opening double quote with no closing quote' };
+      out.push(cur.trim());
+      return { fields: out, quoted: quoted };
     }
-
-    // NEW: parse from CSV upload row objects (keys: study,e1,n1,e2,n2)
-    function parseRows(rows) {
-      return rows.map(function (r, i) {
-        var e1 = parseInt(r.e1, 10), n1 = parseInt(r.n1, 10);
-        var e2 = parseInt(r.e2, 10), n2 = parseInt(r.n2, 10);
-        if (![e1, n1, e2, n2].every(Number.isFinite) || n1 <= 0 || n2 <= 0 || e1 < 0 || e2 < 0 || e1 > n1 || e2 > n2) return null;
-        return { e1: e1, n1: n1, e2: e2, n2: n2, label: r.study || ('Study ' + (i + 1)) };
-      }).filter(Boolean);
+    var COUNT_RE = /^\d+$/;
+    function isCount(s) { return COUNT_RE.test(s); }
+    function looksNumeric(s) { return s !== '' && Number.isFinite(Number(s)); }
+    function parseInput(text) {
+      var lines = String(text).replace(/\r\n?/g, '\n').split('\n');
+      var rows = [], errors = [], notes = [], seenData = false;
+      for (var i = 0; i < lines.length; i++) {
+        var raw = lines[i], lineNo = i + 1;
+        if (!raw.trim()) continue;
+        var sp = splitFields(raw);
+        if (sp.error) { errors.push({ line: lineNo, text: raw, message: 'line ' + sp.error + '.' }); seenData = true; continue; }
+        var f = sp.fields;
+        // A header row (first data line, no numeric count fields) is ignored and reported.
+        if (!seenData && f.length >= 4 && f.slice(1, 5).every(function (s) { return !looksNumeric(s); }) && !looksNumeric(f[0])) {
+          seenData = true; notes.push('Line ' + lineNo + ' looks like a header row and was ignored.'); continue;
+        }
+        seenData = true;
+        var label, counts;
+        if (f.length === 5 && !(looksNumeric(f[0]) && !looksNumeric(f[4]))) { label = f[0]; counts = f.slice(1, 5); }
+        else if ((f.length === 5 || f.length === 4) && looksNumeric(f[0])) { counts = f.slice(0, 4); label = f.length === 5 ? f[4] : ''; }
+        else {
+          errors.push({ line: lineNo, text: raw, message: 'expected 5 values (study, e1, n1, e2, n2) but found ' + f.length + '.' });
+          continue;
+        }
+        var names = ['e1', 'n1', 'e2', 'n2'], vals = [], bad = [];
+        for (var j = 0; j < 4; j++) {
+          var s = counts[j];
+          if (s === '') bad.push(names[j] + ' is empty');
+          else if (!isCount(s)) bad.push(names[j] + ' = "' + s + '" is not a whole number' + (/^-/.test(s) ? ' (negative)' : (/[.,]\d/.test(s) || /\d\.\d*$/.test(s) ? ' (decimals are not rounded or truncated)' : '')));
+          else if (!Number.isSafeInteger(Number(s))) bad.push(names[j] + ' = "' + s + '" is too large');
+          vals.push(Number(s));
+        }
+        if (!bad.length) {
+          if (vals[1] < 1) bad.push('n1 must be at least 1');
+          if (vals[3] < 1) bad.push('n2 must be at least 1');
+          if (vals[0] > vals[1]) bad.push('e1 (' + vals[0] + ') is larger than n1 (' + vals[1] + ')');
+          if (vals[2] > vals[3]) bad.push('e2 (' + vals[2] + ') is larger than n2 (' + vals[3] + ')');
+        }
+        if (bad.length) { errors.push({ line: lineNo, label: label, text: raw, message: bad.join('; ') + '.' }); continue; }
+        rows.push({ e1: vals[0], n1: vals[1], e2: vals[2], n2: vals[3], label: label || ('Study ' + (rows.length + 1)), line: lineNo });
+      }
+      return { rows: rows, errors: errors, notes: notes };
+    }
+    // Rows only when the whole input is valid; any invalid line yields [] (nothing is pooled).
+    function parse(text) {
+      var p = parseInput(text);
+      return p.errors.length ? [] : p.rows.map(function (r) { return { e1: r.e1, n1: r.n1, e2: r.e2, n2: r.n2, label: r.label }; });
     }
 
     function normUpper(x) {
@@ -224,6 +344,8 @@ StudyE, 4, 600, 10, 600</textarea>
       return phi / f;
     }
     function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
+    // p for the heterogeneity/association tables only (the pooled-table p format is part of the archived display contract).
+    function fmtP(p) { return (p === null || !Number.isFinite(p)) ? '—' : (p < 0.001 ? '&lt;0.001' : p.toFixed(3)); }
     function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
     function escSvg(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
 
@@ -297,6 +419,189 @@ StudyE, 4, 600, 10, 600</textarea>
       return { est: Math.exp(logOR), logEst: logOR, seLog: seLog, lo: Math.exp(logOR - Z975 * seLog), hi: Math.exp(logOR + Z975 * seLog) };
     }
 
+    // ---- heterogeneity and association tests (v2), mirroring metafor 5.2-1 ----
+    // rma.mh(add=c(.5,0), to=c('only0','none'), drop00=c(FALSE,FALSE), correct=FALSE):
+    //   Q uses escalc yi/vi with 0.5 added to every cell of a table with a zero (OR, RR and RD);
+    //   CMH, Breslow-Day and Tarone use the raw counts.
+    // rma.peto(add=0, to='none', drop00=TRUE): Q over tables with events and non-events.
+    function pchisqUpper(x, df) {
+      // P(X > x) for chi-square with integer df, by the closed forms (every term positive).
+      if (typeof x !== 'number' || Number.isNaN(x) || !(df >= 1) || Math.floor(df) !== df) return NaN;
+      if (x <= 0) return 1;
+      if (!Number.isFinite(x)) return 0;
+      var h = x / 2, lh = Math.log(h), s = 0, j;
+      if (df % 2 === 0) {
+        var lg = 0; // log(j!)
+        for (j = 0; j < df / 2; j++) { if (j > 0) lg += Math.log(j); s += Math.exp(-h + j * lh - lg); }
+        return Math.min(1, s);
+      }
+      s = 2 * normUpper(Math.sqrt(x));
+      var lgh = 0.5 * Math.log(Math.PI); // log Gamma(1/2)
+      for (j = 1; j <= (df - 1) / 2; j++) { lgh += Math.log(j - 0.5); s += Math.exp(-h + (j - 0.5) * lh - lgh); }
+      return Math.min(1, s);
+    }
+    function finOrNull(x) { return (typeof x === 'number' && Number.isFinite(x)) ? x : null; }
+    function qStats(yi, vi, beta) {
+      var y = [], v = [], i;
+      for (i = 0; i < yi.length; i++) if (!Number.isNaN(yi[i]) && !Number.isNaN(vi[i])) { y.push(yi[i]); v.push(vi[i]); }
+      var k = y.length;
+      if (k <= 1) return { QE: 0, QEp: 1, I2: 0, H2: 1, df: 0, k: k };
+      if (beta === null || !Number.isFinite(beta)) return { QE: null, QEp: null, I2: null, H2: null, df: k - 1, k: k };
+      var Q = 0;
+      for (i = 0; i < k; i++) Q += (1 / v[i]) * (y[i] - beta) * (y[i] - beta);
+      if (Number.isNaN(Q)) return { QE: null, QEp: null, I2: null, H2: null, df: k - 1, k: k };
+      Q = Math.max(0, Q);
+      var df = k - 1, I2 = Math.max(0, 100 * (Q - df) / Q);
+      return { QE: finOrNull(Q), QEp: finOrNull(pchisqUpper(Q, df)), I2: finOrNull(I2), H2: finOrNull(Q / df), df: df, k: k };
+    }
+    function escalcMH(rows, measure) {
+      var yi = [], vi = [];
+      rows.forEach(function (r) {
+        var a = r.e1, b = r.n1 - r.e1, c = r.e2, d = r.n2 - r.e2;
+        if (a === 0 || b === 0 || c === 0 || d === 0) { a += 0.5; b += 0.5; c += 0.5; d += 0.5; }
+        if (measure === 'OR') { yi.push(Math.log(a * d / (b * c))); vi.push(1 / a + 1 / b + 1 / c + 1 / d); }
+        else if (measure === 'RR') { yi.push(Math.log((a / (a + b)) / (c / (c + d)))); vi.push(1 / a - 1 / (a + b) + 1 / c - 1 / (c + d)); }
+        else { var n1 = a + b, n2 = c + d, p1 = a / n1, p2 = c / n2; yi.push(p1 - p2); vi.push(p1 * (1 - p1) / n1 + p2 * (1 - p2) / n2); }
+      });
+      return { yi: yi, vi: vi };
+    }
+    function escalcPeto(rows) {
+      var yi = [], vi = [];
+      rows.forEach(function (r) {
+        var a = r.e1, b = r.n1 - r.e1, c = r.e2, d = r.n2 - r.e2;
+        if ((a === 0 && c === 0) || (b === 0 && d === 0)) { yi.push(NaN); vi.push(NaN); return; }
+        var n1 = a + b, n2 = c + d, N = n1 + n2, m1 = a + c, m2 = b + d, E = n1 * m1 / N, V = n1 * n2 * m1 * m2 / (N * N * (N - 1));
+        yi.push((a - E) / V); vi.push(1 / V);
+      });
+      return { yi: yi, vi: vi };
+    }
+    function cmhTarone(rows, psi) {
+      var sxt = 0, syt = 0, num = 0, den = 0;
+      rows.forEach(function (r) {
+        var n1 = r.n1, n2 = r.n2, N = n1 + n2, xt = r.e1 + r.e2, yt = N - xt;
+        sxt += xt; syt += yt; num += r.e1 - (n1 / N) * xt; den += (n1 / N) * (n2 / N) * (xt * (yt / (N - 1)));
+      });
+      var out = { MH: null, MHp: null, BD: null, BDp: null, TA: null, TAp: null, kpos: null };
+      if (!(sxt === 0 || syt === 0)) { var MH = Math.abs(num) * Math.abs(num) / den; out.MH = finOrNull(MH); out.MHp = out.MH === null ? null : finOrNull(pchisqUpper(MH, 1)); }
+      if (psi === null || !Number.isFinite(psi)) return out;
+      var bd = 0, s1 = 0, s2 = 0, kpos = 0;
+      rows.forEach(function (r) {
+        var n1 = r.n1, n2 = r.n2, N = n1 + n2, xt = r.e1 + r.e2, yt = N - xt, N11;
+        if (psi === 1) N11 = (n1 / N) * xt;
+        else { var A = psi * (n1 + xt) + (n2 - xt), B = Math.sqrt(A * A - 4 * n1 * xt * psi * (psi - 1)); N11 = (A - B) / (2 * (psi - 1)); }
+        if (!(N11 > 0 && xt > 0 && yt > 0)) return;
+        kpos++;
+        var N12 = n1 - N11, N21 = xt - N11, N22 = N11 - n1 - xt + N, w = 1 / N11 + 1 / N12 + 1 / N21 + 1 / N22;
+        bd += (r.e1 - N11) * (r.e1 - N11) / Math.pow(w, -1); s1 += r.e1 - N11; s2 += Math.pow(w, -1);
+      });
+      out.kpos = kpos;
+      out.BD = finOrNull(Math.max(0, bd));
+      out.TA = finOrNull(Math.max(0, bd - s1 * s1 / s2));
+      if (kpos > 1) {
+        out.BDp = out.BD === null ? null : finOrNull(pchisqUpper(out.BD, kpos - 1));
+        out.TAp = out.TA === null ? null : finOrNull(pchisqUpper(out.TA, kpos - 1));
+      }
+      return out;
+    }
+
+    // ---- rare-event conventions (E2), validated against meta 8.5-0 and metafor 5.2-1 ----
+    function convPack(beta, se) {
+      beta = finOrNull(beta); se = finOrNull(se);
+      if (beta === null || se === null) return { beta: beta, se: se, lo: null, hi: null, z: null, p: null };
+      var z = beta / se;
+      return { beta: beta, se: se, lo: beta - Z975 * se, hi: beta + Z975 * se, z: finOrNull(z), p: finOrNull(2 * normUpper(Math.abs(z))) };
+    }
+    // meta::metabin(method = "MH") with its defaults: incr = 0.5 added to every cell of a study with a zero
+    // (method.incr = "only0"), allstudies = FALSE (OR leaves out tables with no events or all events in both
+    // groups, RR leaves out tables with no events in both groups), MH.exact = FALSE, RR.Cochrane = FALSE.
+    function metaDefaultMH(rows, measure) {
+      var nz = function (x) { return Number.isNaN(x) ? 0 : x; }; // R sums with na.rm = TRUE
+      var t = rows.map(function (r) {
+        var a = r.e1, n1 = r.n1, c = r.e2, n2 = r.n2, incl = 1;
+        if (measure === 'OR' && ((a === 0 && c === 0) || (c === n2 && a === n1))) incl = 0;
+        if (measure === 'RR' && a === 0 && c === 0) incl = 0;
+        var inc = (incl && (n1 - a === 0 || a === 0 || n2 - c === 0 || c === 0)) ? 0.5 : 0;
+        var n11 = a * incl, n21 = c * incl, n1d = n1 * incl, n2d = n2 * incl, N = n1d + n2d;
+        return { n11: n11, n21: n21, n1d: n1d, n2d: n2d, n12: n1d - n11, n22: n2d - n21, n_1: n11 + n21, i: inc, den: N + 4 * inc };
+      });
+      if (measure === 'OR') {
+        var sA = 0, sC = 0, sAB = 0, sBC = 0, sAD = 0, sCD = 0;
+        t.forEach(function (q) {
+          var A = (q.n11 + q.i) * (q.n22 + q.i) / q.den, B = (q.n11 + q.i + q.n22 + q.i) / q.den;
+          var C = (q.n12 + q.i) * (q.n21 + q.i) / q.den, D = (q.n12 + q.i + q.n21 + q.i) / q.den;
+          sA += nz(A); sC += nz(C); sAB += nz(A * B); sBC += nz(B * C); sAD += nz(A * D); sCD += nz(C * D);
+        });
+        var te = Math.log(sA / sC), psi = Math.exp(te);
+        return convPack(te, Math.sqrt(1 / (2 * sA * sA) * (sAB + psi * (sBC + sAD) + psi * psi * sCD)));
+      }
+      if (measure === 'RR') {
+        var sR = 0, sS = 0, sD = 0;
+        t.forEach(function (q) {
+          sD += nz(((q.n1d + 2 * q.i) * (q.n2d + 2 * q.i) * (q.n_1 + 2 * q.i) - (q.n11 + q.i) * (q.n21 + q.i) * q.den) / (q.den * q.den));
+          sR += nz((q.n11 + q.i) * (q.n2d + 2 * q.i) / q.den); sS += nz((q.n21 + q.i) * (q.n1d + 2 * q.i) / q.den);
+        });
+        return convPack(Math.log(sR / sS), Math.sqrt(sD / (sR * sS)));
+      }
+      // RD: weighted mean of the uncorrected study RDs with weights computed from the corrected counts.
+      var sRr = 0, sW = 0, sWte = 0, sS2 = 0;
+      t.forEach(function (q) {
+        var TE = q.n11 / q.n1d - q.n21 / q.n2d;
+        var R = ((q.n11 + q.i) * (q.n12 + q.i) * Math.pow(q.n2d + 2 * q.i, 3) + (q.n21 + q.i) * (q.n22 + q.i) * Math.pow(q.n1d + 2 * q.i, 3)) /
+          ((q.n1d + 2 * q.i) * (q.n2d + 2 * q.i) * q.den * q.den);
+        var S = (q.n1d + 2 * q.i) * (q.n2d + 2 * q.i) / q.den;
+        sRr += nz(R); sS2 += nz(S);
+        if (!Number.isNaN(TE) && !Number.isNaN(S)) { sW += S; sWte += S * TE; }
+      });
+      return convPack(sWte / sW, Math.sqrt(sRr) / sS2);
+    }
+    // Inverse-variance fixed effect (metafor rma(method = "EE")) on escalc defaults: 0.5 added to every
+    // cell of a table with a zero, double-zero tables kept.
+    function ivFixed(rows, measure) {
+      var e = escalcMH(rows, measure), sw = 0, swy = 0;
+      for (var i = 0; i < e.yi.length; i++) { sw += 1 / e.vi[i]; swy += e.yi[i] / e.vi[i]; }
+      return convPack(swy / sw, 1 / Math.sqrt(sw));
+    }
+
+    // Every number the page reports for one set of tables (pure; used by run(), leave-one-out and the
+    // Node cross-check against R). mh/peto are null when not estimable; beta/se are on the analysis scale
+    // (log for OR/RR, identity for RD).
+    function analyse(rows, measure) {
+      var mh = measure === 'OR' ? mhOR(rows) : (measure === 'RR' ? mhRR(rows) : mhRD(rows));
+      var pe = measure === 'OR' ? peto(rows) : null;
+      var mhBeta = mh ? (measure === 'RD' ? mh.est : mh.logEst) : null, mhSe = mh ? (measure === 'RD' ? mh.se : mh.seLog) : null;
+      var em = escalcMH(rows, measure), het = { mh: qStats(em.yi, em.vi, mhBeta) };
+      if (measure === 'OR') {
+        var ep = escalcPeto(rows);
+        // rma.peto stops with an error when no table is informative; report nothing rather than Q = 0.
+        het.peto = pe ? qStats(ep.yi, ep.vi, pe.logEst) : { QE: null, QEp: null, I2: null, H2: null, df: null, k: 0 };
+        het.assoc = cmhTarone(rows, mh ? mh.est : null);
+      }
+      return { measure: measure, mh: mh, peto: pe, het: het, mhFit: convPack(mhBeta, mhSe), petoFit: pe ? convPack(pe.logEst, pe.seLog) : null,
+        conv: { metaDefault: metaDefaultMH(rows, measure), iv: ivFixed(rows, measure) } };
+    }
+
+    // Leave-one-out (metafor leave1out(rma.mh(...)) and leave1out(rma.peto(...))): each table omitted in turn,
+    // in input order. Needs at least 3 tables so that every reduced set can still be pooled (2 or more).
+    // A flag marks an omission that moves the method's p-value across 0.05 relative to all tables.
+    var LOO_MIN = 3;
+    function leaveOneOut(rows, measure) {
+      if (rows.length < LOO_MIN) return { refused: 'leave-one-out needs at least ' + LOO_MIN + ' tables, so that each reduced set still has 2 to pool' };
+      var full = analyse(rows, measure), out = [];
+      var pick = function (a) {
+        var r = { mh: Object.assign({}, a.mhFit, a.het.mh) };
+        if (measure === 'OR') r.peto = Object.assign({}, a.petoFit || convPack(null, null), a.het.peto);
+        return r;
+      };
+      var sig = function (f) { return f.p === null ? null : f.p < 0.05; };
+      var base = pick(full);
+      for (var i = 0; i < rows.length; i++) {
+        var r = pick(analyse(rows.filter(function (_, j) { return j !== i; }), measure)), flags = {};
+        Object.keys(r).forEach(function (m) { var a = sig(base[m]), b = sig(r[m]); flags[m + '_flip'] = a === null || b === null ? null : a !== b; });
+        out.push(Object.assign({ omit: i + 1, label: rows[i].label }, r, { flags: flags }));
+      }
+      return { measure: measure, full: base, rows: out };
+    }
+
     function perStudy(rows, measure) {
       return rows.map(function (r) {
         // 0.5 correction for display
@@ -329,52 +634,180 @@ StudyE, 4, 600, 10, 600</textarea>
 
     run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #measure");
 
+    var MEASURE_NAME = { OR: 'odds ratio', RR: 'risk ratio', RD: 'risk difference' };
+    function clearOutputs() {
+      _lastResults = null;
+      ['pooled-body', 'per-body', 'forest', 'labbe', 'het-body', 'assoc-body', 'conv-body'].forEach(function (id) { document.getElementById(id).innerHTML = ''; });
+      ['k-note', 'estimability-note', 'zero-note', 'conv-note'].forEach(function (id) { document.getElementById(id).textContent = ''; });
+      clearLoo('');
+    }
+    // Leave-one-out output belongs to the input it was run on; any re-analysis clears it.
+    var _lastLoo = null;
+    function clearLoo(message) {
+      _lastLoo = null;
+      document.getElementById('loo-head').innerHTML = ''; document.getElementById('loo-body').innerHTML = '';
+      document.getElementById('loo-status').textContent = message;
+      document.getElementById('btn-loo-csv').disabled = true;
+    }
+    function showInputErrors(parsed) {
+      var box = document.getElementById('input-errors'), src = document.getElementById('src');
+      if (!parsed.errors.length) {
+        box.hidden = true; box.innerHTML = '';
+        src.removeAttribute('aria-invalid');
+        src.setAttribute('aria-describedby', 'src-hint');
+        return;
+      }
+      var shown = parsed.errors.slice(0, 20).map(function (e) {
+        return '<li>Line ' + e.line + (e.label ? ' (' + esc(e.label) + ')' : '') + ': ' + esc(e.message) + '</li>';
+      });
+      if (parsed.errors.length > 20) shown.push('<li>and ' + (parsed.errors.length - 20) + ' more.</li>');
+      box.innerHTML = '<strong>No analysis was run.</strong> ' + parsed.errors.length + ' input line' + (parsed.errors.length === 1 ? ' needs' : 's need') +
+        ' fixing; rows are never dropped or rounded silently.<ul>' + shown.join('') + '</ul>';
+      box.hidden = false;
+      src.setAttribute('aria-invalid', 'true');
+      src.setAttribute('aria-describedby', 'src-hint input-errors');
+    }
+    // Plain-language reason when an MH or Peto estimate is undefined (metafor returns NA there too).
+    function notEstimableReason(name, rows) {
+      var sa = 0, sc = 0, R = 0, S = 0, V = 0;
+      rows.forEach(function (r) {
+        var a = r.e1, b = r.n1 - r.e1, c = r.e2, d = r.n2 - r.e2, n = r.n1 + r.n2;
+        sa += a; sc += c; R += a * d / n; S += b * c / n;
+        if (!((a === 0 && c === 0) || (b === 0 && d === 0))) V++;
+      });
+      if (name === 'MH OR') {
+        if (sa + sc === 0) return 'no study has an event in either group';
+        if (R === 0 && S === 0) return 'every study has a zero in both a·d and b·c, so the ratio is 0/0';
+        if (R === 0) return 'every study has either no events in group one or no non-events in group two, so the odds ratio would be 0';
+        return 'every study has either no non-events in group one or no events in group two, so the odds ratio would be infinite';
+      }
+      if (name === 'MH RR') {
+        if (sa === 0 && sc === 0) return 'no study has an event in either group';
+        return sa === 0 ? 'no study has an event in group one, so the risk ratio would be 0' : 'no study has an event in group two, so the risk ratio would be infinite';
+      }
+      if (name === 'Peto OR') return V === 0 ? 'every table has no events in either group or events in every participant, so the Peto variance is zero' : 'the Peto variance is zero';
+      return 'the estimate is undefined for these tables';
+    }
+
     function run() {
-      var rows = parse(document.getElementById('src').value);
+      var parsed = parseInput(document.getElementById('src').value);
       var measure = document.getElementById('measure').value;
+      showInputErrors(parsed);
+      if (parsed.errors.length) {
+        clearOutputs();
+        document.getElementById('fragility-note').textContent = '';
+        return;
+      }
+      var rows = parse(document.getElementById('src').value);
       if (rows.length < 2) {
-        _lastResults = null;
-        ['pooled-body', 'per-body', 'forest', 'labbe'].forEach(function (id) { document.getElementById(id).innerHTML = ''; });
-        document.getElementById('fragility-note').textContent = 'Enter at least two valid studies.';
+        clearOutputs();
+        document.getElementById('fragility-note').textContent = 'Enter at least two valid studies.' +
+          (rows.length === 1 ? ' Only one table was entered; a pooled estimate needs two or more.' : '');
         return;
       }
 
-      var pooled = [];
-      var Q = null, QEp = null;
-      if (measure === 'OR') {
-        var mh = mhOR(rows), pe = peto(rows);
-        if (mh) { pooled.push(Object.assign({ name: 'MH OR' }, mh)); Q = mh._Q; }
-        if (pe) pooled.push(Object.assign({ name: 'Peto OR' }, pe));
-      } else if (measure === 'RR') {
-        var mrr = mhRR(rows);
-        if (mrr) pooled.push(Object.assign({ name: 'MH RR' }, mrr));
-      } else {
-        var mrd = mhRD(rows);
-        if (mrd) pooled.push(Object.assign({ name: 'MH RD' }, mrd));
-      }
+      clearLoo(_lastLoo ? 'The analysis was re-run: press Run leave-one-out again for the current tables.' : '');
+      var res = analyse(rows, measure), pooled = [], undefinedMethods = [];
+      if (res.mh) pooled.push(Object.assign({ name: 'MH ' + measure }, res.mh)); else undefinedMethods.push('MH ' + measure);
+      if (measure === 'OR') { if (res.peto) pooled.push(Object.assign({ name: 'Peto OR' }, res.peto)); else undefinedMethods.push('Peto OR'); }
 
       var body = document.getElementById('pooled-body');
       var parts = [];
       var firstPooled = pooled.find(function (p) { return p.name.indexOf('MH ') === 0; }) || null;
-      for (var i = 0; i < pooled.length; i++) {
-        var p = pooled[i];
-        if (!p) continue;
+      // Methods in a fixed order; an undefined estimate is a row with its reason, never left out silently.
+      (measure === 'OR' ? ['MH OR', 'Peto OR'] : ['MH ' + measure]).forEach(function (name) {
+        var p = pooled.find(function (q) { return q.name === name; });
+        if (!p) {
+          parts.push('<tr class="not-estimable"><td><code>' + name + '</code></td><td colspan="4">not estimable: ' + esc(notEstimableReason(name, rows)) + '</td></tr>');
+          return;
+        }
         var z = p.logEst !== undefined ? p.logEst / p.seLog : p.est / p.se;
         var pval = 2 * normUpper(Math.abs(z));
         parts.push('<tr><td><code>' + p.name + '</code></td><td>' + fmt(p.est) + '</td><td>[' + fmt(p.lo) + ', ' + fmt(p.hi) + ']</td><td>' + fmt(z, 2) + '</td><td>' + fmt(pval, 3) + '</td></tr>');
-      }
+      });
       body.innerHTML = parts.join('');
+      document.getElementById('estimability-note').textContent = undefinedMethods.length
+        ? (undefinedMethods.join(' and ') + (undefinedMethods.length === 1 ? ' is' : ' are') + ' not estimable for these tables; metafor also returns NA here, and the export records null.')
+        : '';
+
+      // Study counts and zero-cell handling (always stated, never implied).
+      var nZero = 0, nDouble = 0;
+      rows.forEach(function (r) {
+        var a = r.e1, b = r.n1 - r.e1, c = r.e2, d = r.n2 - r.e2;
+        if (a === 0 || b === 0 || c === 0 || d === 0) nZero++;
+        if ((a === 0 && c === 0) || (b === 0 && d === 0)) nDouble++;
+      });
+      document.getElementById('k-note').textContent = rows.length + ' tables entered and pooled' +
+        (parsed.notes.length ? ' (' + parsed.notes.join(' ') + ')' : '') + '; ' + nZero + ' with a zero cell, ' + nDouble + ' with no events (or no non-events) in both groups.';
+      document.getElementById('zero-note').textContent = 'Zero cells: the pooled Mantel-Haenszel and Peto estimates use the counts as entered, with no continuity correction ' +
+        '(the convention of metafor rma.mh / rma.peto, which this page follows). Tables with no events in both groups ' + (measure === 'RD' ? 'add a risk difference of 0, with their weight, to the MH estimate' : 'add nothing to the MH estimate') + ' and are left out of the Peto estimate. ' +
+        'Per-study ' + (measure === 'RD' ? 'risk differences use the uncorrected counts. ' : (MEASURE_NAME[measure] + 's add 0.5 to every cell of a table that contains a zero. ')) +
+        'R users note: meta::metabin adds 0.5 to zero-cell studies inside its MH estimate by default (MH.exact = FALSE), so its pooled result can differ; ' +
+        (measure === 'RD' ? 'for the risk difference, meta\'s MH variance differs from metafor\'s, so even with MH.exact = TRUE the estimate matches but the SE and p differ.' : 'for the ' + MEASURE_NAME[measure] + ', set MH.exact = TRUE to match.');
+
+      // Heterogeneity (Q, I2, H2) for each method, and CMH / Tarone / Breslow-Day for the OR.
+      var het = res.het;
+      var mhPooled = pooled.find(function (q) { return q.name.indexOf('MH ') === 0; });
+      var hetRows = [['MH ' + measure, het.mh]].concat(het.peto ? [['Peto OR', het.peto]] : []);
+      document.getElementById('het-body').innerHTML = hetRows.map(function (hr) {
+        var h = hr[1];
+        if (h.QE === null) return '<tr class="not-estimable"><td><code>' + hr[0] + '</code></td><td colspan="4">not available: the pooled estimate is not estimable</td></tr>';
+        return '<tr><td><code>' + hr[0] + '</code></td><td>' + fmt(h.QE, 2) + ' (' + h.df + ')</td><td>' + fmtP(h.QEp) + '</td><td>' + fmt(h.I2, 1) + '%</td><td>' + fmt(h.H2, 2) + '</td></tr>';
+      }).join('');
+      var assocBody = document.getElementById('assoc-body');
+      if (het.assoc) {
+        var A = het.assoc, dfBD = A.kpos !== null && A.kpos > 1 ? A.kpos - 1 : null;
+        var row = function (name, x, df, pv) {
+          return '<tr><td>' + name + '</td><td>' + (x === null ? '—' : fmt(x, 2)) + '</td><td>' + (df === null ? '—' : df) + '</td><td>' + fmtP(pv) + '</td></tr>';
+        };
+        assocBody.innerHTML = row('Cochran-Mantel-Haenszel (association)', A.MH, A.MH === null ? null : 1, A.MHp) +
+          row('Tarone (homogeneity of OR)', A.TA, dfBD, A.TAp) + row('Breslow-Day (homogeneity of OR)', A.BD, dfBD, A.BDp);
+      } else {
+        assocBody.innerHTML = '<tr><td colspan="4">Defined for the odds ratio only (as in metafor); choose Odds ratio to see the CMH, Tarone and Breslow-Day tests.</td></tr>';
+      }
+
+      // Rare-event conventions side by side (E2).
+      var ratio = measure !== 'RD';
+      var back = function (b) { return b === null ? null : (ratio ? Math.exp(b) : b); };
+      var conv = res.conv;
+      var convRows = [];
+      var mainBeta = mhPooled ? (ratio ? mhPooled.logEst : mhPooled.est) : null;
+      var mainSe = mhPooled ? (ratio ? mhPooled.seLog : mhPooled.se) : null;
+      convRows.push(['MH ' + measure + ', no continuity correction (metafor rma.mh; this page)', convPack(mainBeta, mainSe)]);
+      convRows.push(['MH ' + measure + ', meta::metabin default (0.5 added to zero-cell studies' + (measure === 'RD' ? ' in the weights' : '; double-zero studies left out') + ')', conv.metaDefault]);
+      if (measure === 'OR') { var pp = pooled.find(function (q) { return q.name === 'Peto OR'; }); convRows.push(['Peto OR (metafor rma.peto)', pp ? convPack(pp.logEst, pp.seLog) : convPack(null, null)]); }
+      convRows.push(['Inverse-variance fixed effect, 0.5 added to tables with a zero (metafor rma, method "EE")', conv.iv]);
+      document.getElementById('conv-body').innerHTML = convRows.map(function (cr) {
+        var c = cr[1];
+        if (c.beta === null || c.se === null) return '<tr class="not-estimable"><td>' + esc(cr[0]) + '</td><td colspan="3">not estimable for these tables</td></tr>';
+        return '<tr><td>' + esc(cr[0]) + '</td><td>' + fmt(back(c.beta)) + '</td><td>[' + fmt(back(c.lo)) + ', ' + fmt(back(c.hi)) + ']</td><td>' + fmtP(c.p) + '</td></tr>';
+      }).join('');
+      var defined = convRows.filter(function (cr) { return cr[1].beta !== null && cr[1].se !== null && cr[1].p !== null; });
+      var sigs = defined.map(function (cr) { return cr[1].p < 0.05; });
+      var flags = [];
+      if (sigs.length > 1 && sigs.some(function (s) { return s !== sigs[0]; })) flags.push('the conventions disagree on statistical significance at the 5% level');
+      if (ratio && defined.length > 1) {
+        var bs = defined.map(function (cr) { return cr[1].beta; });
+        if (Math.max.apply(null, bs) - Math.min.apply(null, bs) > Math.log(1.1)) flags.push('the estimates differ by more than 10% between conventions');
+      }
+      document.getElementById('conv-note').textContent = defined.length < 2 ? '' : (flags.length
+        ? 'Check: ' + flags.join(', and ') + '. Report the convention you used and consider presenting the others as a sensitivity analysis.'
+        : 'The conventions agree on direction and significance' + (ratio ? ', and their estimates are within 10% of each other.' : '.'));
 
       // Fragility index (DL OR/RR/RD; number of event modifications to flip significance).
       var fragNote = document.getElementById('fragility-note');
       var frag = null;
       if (window.AlmFragility) {
         frag = window.AlmFragility.fragility(rows.map(function (r) { return { e1: r.e1, n1: r.n1, e0: r.e2, n0: r.n2 }; }), { measure: measure });
-        if (Number.isFinite(frag.FI)) fragNote.textContent = 'DL fragility index = ' + frag.FI + ' event modification' + (frag.FI === 1 ? '' : 's') + ' to lose significance (FQ = ' + fmt(frag.FQ, 4) + ').';
-        else fragNote.textContent = 'DL fragility index: ' + (frag.dir || 'not applicable') + '.';
+        var sep = ' (separate DerSimonian-Laird random-effects model on 0.5-corrected study effects, not the MH/Peto estimate above.)';
+        if (Number.isFinite(frag.FI)) fragNote.textContent = 'DL fragility index = ' + frag.FI + ' event modification' + (frag.FI === 1 ? '' : 's') + ' to lose significance (FQ = ' + fmt(frag.FQ, 4) + ').' + sep;
+        else fragNote.textContent = 'DL fragility index: ' + ((frag.dir && frag.dir !== 'undefined') ? frag.dir : 'not applicable') + '.' + sep;
       }
 
       var studies = perStudy(rows, measure);
+      document.getElementById('per-effect-h').textContent = measure === 'RD' ? 'RD' : (measure + ' (0.5 if zero cell)');
+      document.getElementById('per-caption').textContent = 'Per-study ' + MEASURE_NAME[measure] + 's with 95% CIs' +
+        (measure === 'RD' ? ' (uncorrected counts)' : ' (0.5 added to every cell of a table with a zero)');
       var perBody = document.getElementById('per-body');
       var perParts = [];
       for (var j = 0; j < studies.length; j++) {
@@ -409,6 +842,25 @@ StudyE, 4, 600, 10, 600</textarea>
         _lastResults.peto_z   = pZ;
         _lastResults.peto_p   = 2 * normUpper(Math.abs(pZ));
       }
+      // v2 heterogeneity / association statistics (full precision; null where metafor gives NA).
+      _lastResults.mh_QE = het.mh.QE; _lastResults.mh_QEp = het.mh.QEp; _lastResults.mh_I2 = het.mh.I2; _lastResults.mh_H2 = het.mh.H2; _lastResults.mh_Q_df = het.mh.df;
+      if (het.peto) {
+        _lastResults.peto_QE = het.peto.QE; _lastResults.peto_QEp = het.peto.QEp; _lastResults.peto_I2 = het.peto.I2; _lastResults.peto_H2 = het.peto.H2; _lastResults.peto_Q_df = het.peto.df;
+      }
+      if (het.assoc) {
+        _lastResults.cmh = het.assoc.MH; _lastResults.cmh_p = het.assoc.MHp;
+        _lastResults.tarone = het.assoc.TA; _lastResults.tarone_p = het.assoc.TAp;
+        _lastResults.breslow_day = het.assoc.BD; _lastResults.breslow_day_p = het.assoc.BDp;
+        _lastResults.bd_tarone_df = het.assoc.kpos !== null && het.assoc.kpos > 1 ? het.assoc.kpos - 1 : null;
+      }
+      // E2 conventions on the analysis scale (log for OR/RR), full precision.
+      ['metaDefault', 'iv'].forEach(function (key) {
+        var pre = key === 'metaDefault' ? 'metamh_' : 'ivfe_', c = conv[key];
+        _lastResults[pre + 'beta'] = c.beta; _lastResults[pre + 'se'] = c.se; _lastResults[pre + 'lo_b'] = c.lo;
+        _lastResults[pre + 'hi_b'] = c.hi; _lastResults[pre + 'z'] = c.z; _lastResults[pre + 'p'] = c.p;
+      });
+      _lastResults.k_double_zero = nDouble;
+      _lastResults.zero_cell_convention = 'metafor: pooled MH/Peto without continuity correction; per-study OR/RR add 0.5 to tables with a zero cell';
 
       // Persist URL state
       if (window.alm && window.alm.urlState) {
@@ -446,7 +898,8 @@ StudyE, 4, 600, 10, 600</textarea>
 
     function drawForest(studies, pooled, measure) {
       var svg = document.getElementById('forest');
-      var W = 600, H = Math.max(200, 40 + (studies.length + pooled.length + 1) * 26);
+      var AXIS_H = 44;
+      var W = 600, H = Math.max(200, 40 + (studies.length + pooled.length + 1) * 26) + AXIS_H;
       svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
       var parts = [];
       var padL = 130, padR = 30;
@@ -474,7 +927,29 @@ StudyE, 4, 600, 10, 600</textarea>
       var pad = (hi - lo) * 0.1 || 0.3;
       var X = function (v) { return padL + (mapFn(v) - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW; };
       var nullV = logScale ? 1 : 0;
-      parts.push('<line x1="' + X(nullV) + '" y1="10" x2="' + X(nullV) + '" y2="' + (H - 25) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
+      var axisY = H - AXIS_H + 4;
+      parts.push('<line x1="' + X(nullV) + '" y1="10" x2="' + X(nullV) + '" y2="' + axisY + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
+      // x-axis: ticks at round values inside the plotted range, labelled on the data scale.
+      var x0 = lo - pad, x1 = hi + pad, ticks = [];
+      if (logScale) {
+        [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].forEach(function (t) { var u = Math.log(t); if (u >= x0 && u <= x1) ticks.push(t); });
+        if (ticks.length > 7) ticks = ticks.filter(function (t) { return [0.001, 0.01, 0.1, 1, 10, 100, 1000].indexOf(t) >= 0 || [0.5, 2].indexOf(t) >= 0; });
+        if (ticks.length < 2) ticks = [0.15, 0.5, 0.85].map(function (f) { return Number(Math.exp(x0 + f * (x1 - x0)).toPrecision(2)); });
+      } else {
+        var span = x1 - x0, raw = span / 5, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = [1, 2, 5, 10].map(function (m) { return m * mag; }).find(function (s) { return s >= raw; }) || 10 * mag;
+        for (var tv = Math.ceil(x0 / step) * step; tv <= x1 + 1e-12; tv += step) ticks.push(Math.abs(tv) < step * 1e-9 ? 0 : tv);
+      }
+      if (Number.isFinite(x0) && Number.isFinite(x1) && x1 > x0) {
+        parts.push('<line class="forest-axis" x1="' + padL + '" y1="' + axisY + '" x2="' + (padL + plotW) + '" y2="' + axisY + '" stroke="currentColor" opacity="0.7"/>');
+        ticks.forEach(function (t) {
+          var tx = logScale ? padL + (Math.log(t) - x0) / (x1 - x0) * plotW : padL + (t - x0) / (x1 - x0) * plotW;
+          var lab = logScale ? String(t) : String(Number(t.toPrecision(6)));
+          parts.push('<line class="forest-tick" x1="' + tx + '" y1="' + axisY + '" x2="' + tx + '" y2="' + (axisY + 5) + '" stroke="currentColor" opacity="0.7"/>');
+          parts.push('<text class="forest-tick-label" x="' + tx + '" y="' + (axisY + 17) + '" text-anchor="middle" font-size="10" fill="currentColor">' + escSvg(lab) + '</text>');
+        });
+        var axisName = { OR: 'Odds ratio', RR: 'Risk ratio', RD: 'Risk difference' }[measure] + (logScale ? ' (log scale)' : '') + '; dashed line: no difference';
+        parts.push('<text class="forest-axis-label" x="' + (padL + plotW / 2) + '" y="' + (axisY + 34) + '" text-anchor="middle" font-size="11" fill="currentColor">' + escSvg(axisName) + '</text>');
+      }
       var y = 25;
       for (var i = 0; i < studies.length; i++) {
         var s = studies[i];
@@ -501,6 +976,177 @@ StudyE, 4, 600, 10, 600</textarea>
 
     document.getElementById('measure').addEventListener('change', run);
 
+    // ---- one-click example: the paper's use case (metadat dat.yusuf1985, table 6, 21 trials) ----
+    var YUSUF_T6 = [
+      ['Balcon', 14, 56, 15, 58], ['Clausen', 18, 66, 19, 64], ['Multicentre', 15, 100, 12, 95], ['Barber 1.4', 10, 52, 12, 47],
+      ['Norris', 21, 226, 24, 228], ['Kahler', 3, 38, 6, 31], ['Ledwich', 2, 20, 3, 20], ['Snow 2', 19, 76, 15, 67],
+      ['Fuccella', 15, 106, 9, 114], ['Briant', 5, 62, 4, 57], ['Pitt', 0, 9, 0, 8], ['Lombardo', 8, 133, 11, 127],
+      ['Thompson', 3, 48, 3, 49], ['Hutton', 0, 16, 0, 13], ['Tonkin', 1, 42, 1, 46], ['Gupta', 0, 25, 3, 25],
+      ['Barber 2.1', 14, 221, 15, 228], ['Yusuf', 0, 11, 0, 11], ['Wilcox 1', 8, 259, 7, 129], ['Wilcox 2', 6, 157, 4, 158],
+      ['CPRG', 3, 177, 2, 136]
+    ];
+    document.getElementById('btn-example').addEventListener('click', function () {
+      window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot && window.alm.resetUndo.snapshot();
+      document.getElementById('src').value = YUSUF_T6.map(function (r) { return r.join(', '); }).join('\n');
+      document.getElementById('measure').value = 'OR';
+      run();
+    });
+
+    // ---- leave-one-out (one click) ----
+    var LOO_FLAG_TEXT = { mh_flip: 'MH p<0.05 changes', peto_flip: 'Peto p<0.05 changes' };
+    function looFlags(f) { return Object.keys(f || {}).filter(function (k) { return f[k] === true; }).map(function (k) { return LOO_FLAG_TEXT[k]; }); }
+    function runLoo() {
+      var parsed = parseInput(document.getElementById('src').value), measure = document.getElementById('measure').value;
+      if (parsed.errors.length) { clearLoo('Not run: fix the input lines listed above first.'); return null; }
+      var rows = parse(document.getElementById('src').value), res = leaveOneOut(rows, measure);
+      if (res.refused) { clearLoo('Not run: ' + res.refused + ' (' + rows.length + ' entered).'); return res; }
+      var ratio = measure !== 'RD', methods = measure === 'OR' ? [['mh', 'MH OR'], ['peto', 'Peto OR']] : [['mh', 'MH ' + measure]];
+      var back = function (b) { return b === null ? null : (ratio ? Math.exp(b) : b); };
+      var head = '<tr><th scope="col">Omitted table</th>' + methods.map(function (m) {
+        return '<th scope="col">' + m[1] + ' (95% CI)</th><th scope="col">' + m[1] + ' p</th><th scope="col">' + m[1] + ' I&sup2;</th>';
+      }).join('') + '<th scope="col">Flags</th></tr>';
+      var cells = function (r) {
+        return methods.map(function (m) {
+          var f = r[m[0]];
+          if (f.beta === null) return '<td colspan="2">not estimable</td><td>—</td>';
+          return '<td>' + fmt(back(f.beta)) + ' [' + fmt(back(f.lo)) + ', ' + fmt(back(f.hi)) + ']</td><td>' + fmtP(f.p) + '</td><td>' + (f.I2 === null ? '—' : fmt(f.I2, 1) + '%') + '</td>';
+        }).join('');
+      };
+      var body = ['<tr data-omit="none"><th scope="row">none (all ' + rows.length + ' tables)</th>' + cells(res.full) + '<td></td></tr>'];
+      res.rows.forEach(function (r) {
+        var fl = looFlags(r.flags);
+        body.push('<tr data-omit="' + r.omit + '"' + (fl.length ? ' class="loo-flagged" data-flagged="true"' : '') + '><th scope="row">' + r.omit + ': ' + esc(r.label) + '</th>' + cells(r) + '<td>' + esc(fl.join('; ')) + '</td></tr>');
+      });
+      document.getElementById('loo-head').innerHTML = head;
+      document.getElementById('loo-body').innerHTML = body.join('');
+      _lastLoo = res;
+      var nFlag = res.rows.filter(function (r) { return looFlags(r.flags).length; }).length;
+      document.getElementById('loo-status').textContent = 'Leave-one-out complete: ' + res.rows.length + ' omissions; ' + nFlag + ' flagged (p-value crosses 0.05).';
+      document.getElementById('btn-loo-csv').disabled = false;
+      applyLooFilter();
+      return res;
+    }
+    function applyLooFilter() {
+      var only = document.getElementById('loo-only-flagged').checked;
+      Array.prototype.forEach.call(document.querySelectorAll('#loo-body tr'), function (tr) { tr.hidden = only && tr.dataset.omit !== 'none' && tr.dataset.flagged !== 'true'; });
+    }
+    // CSV at full precision on the analysis scale (log for OR/RR), one row per omission.
+    function looCsv() {
+      if (!_lastLoo) return null;
+      var ms = _lastLoo.measure === 'OR' ? ['mh', 'peto'] : ['mh'], q = ['beta', 'se', 'lo', 'hi', 'z', 'p', 'QE', 'QEp', 'I2', 'H2'];
+      var cell = function (v) { return v === null || v === undefined ? 'NA' : String(v); };
+      var lines = [['omitted', 'label'].concat([].concat.apply([], ms.map(function (m) { return q.map(function (k) { return m + '_' + k; }); }))).concat(['flags']).join(',')];
+      [{ omit: 'none', label: '', full: true }].concat(_lastLoo.rows).forEach(function (r) {
+        var src = r.full ? _lastLoo.full : r;
+        lines.push([r.omit, '"' + String(r.label).replace(/"/g, '""') + '"'].concat([].concat.apply([], ms.map(function (m) { return q.map(function (k) { return cell(src[m][k]); }); })))
+          .concat(['"' + (r.full ? '' : looFlags(r.flags).join('; ')) + '"']).join(','));
+      });
+      return lines.join('\n') + '\n';
+    }
+    document.getElementById('btn-loo').addEventListener('click', runLoo);
+    document.getElementById('loo-only-flagged').addEventListener('change', applyLooFilter);
+    document.getElementById('btn-loo-csv').addEventListener('click', function () {
+      var text = looCsv(); if (!text) return;
+      var url = URL.createObjectURL(new Blob([text], { type: 'text/csv' })), a = document.createElement('a');
+      a.href = url; a.download = 'mh-peto-leave-one-out.csv'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    });
+    window.__mhPetoLoo = { run: runLoo, csv: looCsv, last: function () { return _lastLoo; }, restore: function (r) { _lastLoo = r; }, leaveOneOut: leaveOneOut, analyse: analyse };
+
+    // ---- self-checking R script export (E3) ----
+    function rString(s) {
+      var out = '"';
+      for (var i = 0; i < s.length; i++) {
+        var cp = s.codePointAt(i);
+        if (cp > 0xFFFF) i++;
+        var ch = String.fromCodePoint(cp);
+        if (ch === '\\') out += '\\\\';
+        else if (ch === '"') out += '\\"';
+        else if (ch === '\n') out += '\\n';
+        else if (ch === '\r') out += '\\r';
+        else if (ch === '\t') out += '\\t';
+        else if (cp < 0x20 || cp === 0x7F) out += '\\x' + ('0' + cp.toString(16)).slice(-2);
+        else if (cp > 0x7E) out += cp > 0xFFFF ? '\\U{' + cp.toString(16) + '}' : '\\u{' + cp.toString(16) + '}';
+        else out += ch;
+      }
+      return out + '"';
+    }
+    function rNum(x) { return (typeof x === 'number' && Number.isFinite(x)) ? x.toPrecision(17) : 'NA'; }
+    function buildRScript(rows, measure, res) {
+      var vec = function (f) { return 'c(' + rows.map(f).join(', ') + ')'; };
+      var mhKeys = [['est', 'mh_est'], ['ci.lb', 'mh_lo'], ['ci.ub', 'mh_hi'], ['zval', 'mh_z'], ['pval', 'mh_p'], ['QE', 'mh_QE'], ['QEp', 'mh_QEp'], ['I2', 'mh_I2'], ['H2', 'mh_H2']];
+      if (measure === 'OR') mhKeys = mhKeys.concat([['MH', 'cmh'], ['MHp', 'cmh_p'], ['TA', 'tarone'], ['TAp', 'tarone_p'], ['BD', 'breslow_day'], ['BDp', 'breslow_day_p']]);
+      var petoKeys = [['est', 'peto_est'], ['ci.lb', 'peto_lo'], ['ci.ub', 'peto_hi'], ['zval', 'peto_z'], ['pval', 'peto_p'], ['QE', 'peto_QE'], ['QEp', 'peto_QEp'], ['I2', 'peto_I2'], ['H2', 'peto_H2']];
+      var appVec = function (keys) { return 'c(' + keys.map(function (k) { return '`' + k[0] + '` = ' + rNum(res[k[1]]); }).join(', ') + ')'; };
+      var L = [];
+      L.push('# Self-checking R script exported by allmeta mh-peto.');
+      L.push('# It refits the analysis shown on the page with metafor and compares every number with the');
+      L.push('# page values recorded below. Tolerance 1e-9: relative to max(1, |R value|); p-values absolute.');
+      L.push('# NA on the page must match NA in R. Requires the metafor package (validated against 5.2-1).');
+      L.push('if (!requireNamespace("metafor", quietly = TRUE)) stop("Please install the metafor package: install.packages(\\"metafor\\")")');
+      L.push('library(metafor)');
+      L.push('dat <- data.frame(');
+      L.push('  study = ' + vec(function (r) { return rString(String(r.label)); }) + ',');
+      L.push('  ai = ' + vec(function (r) { return r.e1; }) + ',');
+      L.push('  n1i = ' + vec(function (r) { return r.n1; }) + ',');
+      L.push('  ci = ' + vec(function (r) { return r.e2; }) + ',');
+      L.push('  n2i = ' + vec(function (r) { return r.n2; }) + ',');
+      L.push('  stringsAsFactors = FALSE)');
+      L.push('dat$bi <- dat$n1i - dat$ai; dat$di <- dat$n2i - dat$ci');
+      L.push('measure <- ' + rString(measure));
+      L.push('# Settings used by the page (metafor conventions; no continuity correction in the pooled estimate):');
+      L.push('# An R error (for example rma.peto with no informative table) counts as NA, matching a "not estimable" page row.');
+      L.push('fit_mh <- tryCatch(rma.mh(ai = ai, bi = bi, ci = ci, di = di, data = dat, slab = study, measure = measure,');
+      L.push('                 add = c(0.5, 0), to = c("only0", "none"), drop00 = c(FALSE, FALSE), correct = FALSE), error = function(e) e)');
+      if (measure === 'OR') L.push('fit_peto <- tryCatch(rma.peto(ai = ai, bi = bi, ci = ci, di = di, data = dat, slab = study, add = 0, to = "none", drop00 = TRUE), error = function(e) e)');
+      L.push('print(fit_mh)');
+      if (measure === 'OR') L.push('print(fit_peto)');
+      L.push('rvals <- function(f) {');
+      L.push('  tr <- if (measure == "RD") identity else exp');
+      L.push('  if (inherits(f, "error")) f <- list()');
+      L.push('  g <- function(x) if (is.null(x) || length(x) != 1) NA_real_ else as.numeric(x)');
+      L.push('  c(est = tr(g(f$beta)), ci.lb = tr(g(f$ci.lb)), ci.ub = tr(g(f$ci.ub)), zval = g(f$zval), pval = g(f$pval),');
+      L.push('    QE = g(f$QE), QEp = g(f$QEp), I2 = g(f$I2), H2 = g(f$H2), MH = g(f$MH), MHp = g(f$MHp),');
+      L.push('    TA = g(f$TA), TAp = g(f$TAp), BD = g(f$BD), BDp = g(f$BDp))');
+      L.push('}');
+      L.push('app_mh <- ' + appVec(mhKeys));
+      if (measure === 'OR') L.push('app_peto <- ' + appVec(petoKeys));
+      L.push('compare <- function(method, app, r) {');
+      L.push('  r <- r[names(app)]');
+      L.push('  isp <- grepl("p$", names(app))');
+      L.push('  scale <- ifelse(isp, 1, pmax(1, abs(r)))');
+      L.push('  diff <- ifelse(is.na(app) & is.na(r), 0, ifelse(is.na(app) | is.na(r), Inf, abs(app - r) / scale))');
+      L.push('  data.frame(method = method, quantity = names(app), page = format(app, digits = 15), R = format(r, digits = 15),');
+      L.push('             difference = signif(diff, 3), result = ifelse(diff <= 1e-9, "PASS", "FAIL"), row.names = NULL)');
+      L.push('}');
+      L.push('cmp <- compare(' + rString('MH ' + measure) + ', app_mh, rvals(fit_mh))');
+      if (measure === 'OR') L.push('cmp <- rbind(cmp, compare("Peto OR", app_peto, rvals(fit_peto)))');
+      L.push('print(cmp, right = FALSE)');
+      L.push('cat("metafor", as.character(packageVersion("metafor")), "|", R.version.string, "\\n")');
+      L.push('cat(sprintf("ALLMETA-CHECK %s: %d/%d quantities agree with the page at 1e-9\\n", if (all(cmp$result == "PASS")) "PASS" else "FAIL", sum(cmp$result == "PASS"), nrow(cmp)))');
+      return L.join('\n') + '\n';
+    }
+    window.__mhPetoRScript = function () {
+      run();
+      var rows = parse(document.getElementById('src').value);
+      var measure = document.getElementById('measure').value;
+      if (rows.length < 2 || !_lastResults) return null;
+      return buildRScript(rows, measure, _lastResults);
+    };
+    document.getElementById('btn-r-script').addEventListener('click', function () {
+      var text = window.__mhPetoRScript();
+      if (!text) {
+        var box = document.getElementById('input-errors');
+        if (box.hidden) { box.innerHTML = '<strong>No R script was exported.</strong> Enter at least two valid studies first.'; box.hidden = false; }
+        return;
+      }
+      var a = document.createElement('a');
+      var url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+      a.href = url; a.download = 'mhpeto-check-' + document.getElementById('measure').value + '.R';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    });
+
     // ---- snapshot/restore helpers for reset-undo ----
     function snapshot() {
       return { src: document.getElementById('src').value, measure: document.getElementById('measure').value };
@@ -522,7 +1168,7 @@ StudyE, 4, 600, 10, 600</textarea>
     };
 
     // Validation hooks use the page parser and rendering path.
-    window.__mhValidation = {parse: parse, run: run, restoreResult: function (r) { _lastResults = r; }};
+    window.__mhValidation = {parse: parse, parseInput: parseInput, run: run, restoreResult: function (r) { _lastResults = r; }};
 
     // Expose last results for export
     window._almLastMhPeto = function () { return _lastResults; };
@@ -562,6 +1208,11 @@ StudyE, 4, 600, 10, 600</textarea>
         window.alm.resetUndo.snapshot();
         window.__almLoad(result.rows);
       },
+    });
+
+    // The shared CSV widget's paste box has only a placeholder; give it an accessible name here.
+    Array.prototype.forEach.call(document.querySelectorAll('#alm-csv-mount textarea'), function (t) {
+      if (!t.getAttribute('aria-label') && !t.id) t.setAttribute('aria-label', 'Paste CSV text with columns study, e1, n1, e2, n2');
     });
 
     window.alm.plotExport({
@@ -626,7 +1277,10 @@ StudyE, 4, 600, 10, 600</textarea>
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'mh-peto' });
+      // The leave-one-out view filter is not autosaved: it was added after main, and saving it would shift the
+      // positional idx:N keys of the later plot controls, so drafts saved by the earlier page would restore wrongly.
+      AlmAutosave.install({ appKey: 'mh-peto', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#loo-only-flagged)'; }) });
     }
   });
 })();
