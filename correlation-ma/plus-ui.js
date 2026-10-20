@@ -87,7 +87,7 @@
   function renderSensitivity() {
     var host = $("alm-plus-sens"), studies = currentStudies();
     if (!host) return;
-    if (!studies) { _plus = null; host.innerHTML = "<p role='status'>Enter at least 2 studies (label, r, n) to see the sensitivity table.</p>"; renderProse(); return; }
+    if (!studies) { state.sens = null; _plus = null; host.innerHTML = "<p role='status'>Enter at least 2 studies (label, r, n) to see the sensitivity table.</p>"; renderProse(); return; }
     var sens = P.sensitivity(studies, { method: currentMethod(), test: state.test });
     state.sens = sens; _plus = sens;
     var rows = sens.cells.map(function (c) {

@@ -57,12 +57,22 @@ test('scripted task walkthrough with click count, screenshots and Figure 2', asy
   // 7. Export: R script and results JSON.
   await click(page.locator('#alm-plus-r'), 'Download R script');
   const json = page.locator('#alm-export-mount button[data-action=json]');
-  if (await json.count()) await click(json, 'Export results JSON');
+  await expect(json).toHaveCount(1);
+  await click(json, 'Export results JSON');
   const dl = await page.evaluate(() => window.__dl || []);
   const rText = await page.evaluate(async () => { const b = window.__blobs.find(x => x.type.startsWith('text/plain')); return b ? await b.text() : null; });
   log.push({ step: 'export', clicks, downloads: dl, r_script_matches_selection: !!rText && rText.includes('fit <- rma(yi, vi, data = dat, method = "PM", test = "knha"') });
   await step('export');
   expect(dl.some(n => /\.R$/.test(n))).toBe(true);
+  expect(dl).toContain('correlation-ma-PM-knha.R');
+  expect(rText).toContain('fit <- rma(yi, vi, data = dat, method = "PM", test = "knha"');
+  expect(dl).toContain('correlation-ma-results.json');
+  const jsonText = await page.evaluate(async () => { const b = window.__blobs.find(x => x.type.startsWith('application/json')); return b ? await b.text() : null; });
+  const exported = JSON.parse(jsonText);
+  expect(exported).toEqual(await page.evaluate(() => window._almLastCorrMA()));
+  expect(exported.k).toBe(16);
+  expect(exported.method).toBe('PM');
+  expect(clicks).toBe(7);
   // Figure 2: the extras panel on real data (dat.molloy2014, 16 studies), REML default, Wald z, after leave-one-out.
   await page.locator('#f-data').fill(MOLLOY); await page.locator('#f-method').selectOption('REML');
   await page.locator("input[name='alm-plus-test'][value='z']").check(); await page.locator('#alm-plus-loo-btn').click();
@@ -86,6 +96,7 @@ test('scripted task walkthrough with click count, screenshots and Figure 2', asy
     const r = await new AxeBuilder({ page }).withTags(TAGS).analyze();
     axe[scheme] = { violations: r.violations.map(v => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, targets: v.nodes.slice(0, 5).map(n => n.target.join(' ')) })), passes: r.passes.length };
     console.log(`[walkthrough axe ${scheme}] violations=${r.violations.length} passes=${r.passes.length} ${JSON.stringify(axe[scheme].violations)}`);
+    expect(r.violations).toEqual([]);
   }
   const result = { clicks_total: clicks, clicks_to_core_output_on_own_data: log.find(x => x.step === 'core output').clicks, steps: log, axe };
   writeFileSync(`${OUT}/walkthrough-result.json`, JSON.stringify(result, null, 1));
