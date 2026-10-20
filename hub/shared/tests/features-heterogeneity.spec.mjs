@@ -393,12 +393,13 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   expect(st.verify.passed).toBe(true); expect(st.verify.nPassed).toBe(N);
   expect(st.verify.revision).toBe(st.revision);
   expect(st.verify.versions.webR).toBe('0.5.5');
-  // R Baujat plot beside the app's Baujat SVG; the clone carries no duplicate ids.
-  await expect(panel.locator('figure img')).toHaveCount(1);
-  expect(await panel.locator('figure img').evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+  // R forest plot (R only: the page draws none) and R Baujat plot beside the app's Baujat SVG; no duplicate ids.
+  await expect(panel.locator('figure img')).toHaveCount(2);
+  expect(await panel.locator('figure img').evaluateAll(imgs => imgs.every(img => img.complete && img.naturalWidth > 0))).toBe(true);
   await expect(panel.locator('figure svg')).toHaveCount(1);
   expect(await page.evaluate(() => document.querySelectorAll('#baujat-title').length)).toBe(1);
   await expect(panel.getByRole('region', { name: 'R script' })).toContainText('metafor::baujat(fb');
+  await expect(panel.getByRole('region', { name: 'R script' })).toContainText('metafor::forest(f');
   await axe(page, 'verify tab (after run)');
 
   const [zipDl] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'Download everything (ZIP)', exact: true }).click()]);
@@ -407,8 +408,11 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   const byName = Object.fromEntries(entries.map(e => [e.name, e.bytes]));
   console.log('VERIFY ZIP ' + entries.map(e => e.name + ':' + e.bytes.length).join(' '));
   for (const name of ['heterogeneity-verify.R', 'heterogeneity-verify-comparison.csv', 'sessionInfo.txt', 'console.txt',
-    'heterogeneity-baujat-R-300dpi.png', 'heterogeneity-baujat-R.pdf', 'heterogeneity-baujat-R-300dpi.tiff', 'truthcert.json']) expect(byName[name], name).toBeDefined();
+    'heterogeneity-baujat-R-300dpi.png', 'heterogeneity-baujat-R.pdf', 'heterogeneity-baujat-R-300dpi.tiff',
+    'heterogeneity-forest-R-300dpi.png', 'heterogeneity-forest-R.pdf', 'heterogeneity-forest-R-300dpi.tiff', 'truthcert.json']) expect(byName[name], name).toBeDefined();
   expect(Object.keys(byName).filter(nm => /^heterogeneity-baujat-(R|app)\.svg$/.test(nm))).toHaveLength(1);
+  // The forest plot has no app counterpart: its SVG can only be R's own (webR has cairo), never an "app" SVG.
+  expect(Object.keys(byName).filter(nm => /^heterogeneity-forest-app\.svg$/.test(nm))).toEqual([]);
   const dec = b => new TextDecoder().decode(b);
   const csv = dec(byName['heterogeneity-verify-comparison.csv']).trim().split('\n');
   expect(csv[0]).toBe('quantity,key,app,R,abs_diff,tolerance,kind,result'); expect(csv).toHaveLength(N + 1);

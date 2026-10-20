@@ -31,8 +31,9 @@
  *           yi, vi    effects and sampling variances;  fit(m, test)  metafor::rma wrapper;
  *           f         rma fit with the app's estimator, test="z";  hk  test="adhoc";  pr  predict(test="t");
  *           dl        DL fit (Q-based I2);  qp  Q-profile confint(PM)$random;  out  the compared values.
- *         Plot: the page draws a Baujat plot (it has no forest plot), so the R side is metafor::baujat on a
- *         refit of the same yi, vi and method as f, with the study labels as slab.
+ *         Plots: (1) forest = metafor::forest(f) with the study labels — R only, the page draws no forest plot;
+ *         (2) baujat = metafor::baujat on a refit of the same yi, vi and method as f (study labels as slab),
+ *         beside the page's own Baujat SVG.
  * share : {data: #f-data text, tau2: #f-tau2}; set() validates, restores and re-runs.
  */
 (function (global) {
@@ -179,7 +180,7 @@
       return [
         'This analysis combined ', T.int('k'), ' studies. ',
         'On the scale on which the study effects were entered, the average effect was estimated at ', T.num('mu', 3),
-        '. Allowing for chance, the true average effect is likely to lie between ', T.ci('hkLo', 'hkHi', 3),
+        '. Allowing for chance, the true average effect is likely to lie in the range ', T.ci('hkLo', 'hkHi', 3),
         ' (', T.rule('ciLevel'), ' confidence interval). ',
         'If zero means no effect on this scale (differences or log ratios), ',
         includes
@@ -286,6 +287,14 @@
       'metafor::baujat(fb, symbol = "slab")';
   }
 
+  // Forest plot: R side only — the page draws no forest plot, so there is no app SVG to show beside it.
+  function forestCode(state) {
+    var labels = (state && state.result && Array.isArray(state.result.baujat) ? state.result.baujat : [])
+      .map(function (b) { return JSON.stringify(String(b.label)); }).join(', ');
+    return 'metafor::forest(f, slab = c(' + labels + '),\n' +
+      '  xlab = "Effect (scale as entered)", header = c("Study", "Estimate [95% CI]"))';
+  }
+
   // The page's Baujat SVG, cloned without aria-labelledby (the panel strips ids from its copy, which would
   // leave that reference dangling); the <title>/<desc> children stay.
   function appBaujat() {
@@ -322,7 +331,8 @@
     verify: {
       adapter: function () { return global.AlmValidate && global.AlmValidate.adapters ? global.AlmValidate.adapters[APP] : null; },
       rObjects: 'yi, vi; fit(m, test); f (rma fit, app estimator, test="z"); hk (adhoc); pr (predict, test="t"); dl; qp (Q-profile); fb (refit with study labels, plot only)',
-      plots: [{ id: 'baujat', title: 'Baujat plot', r: baujatCode, width_in: 8, height_in: 6, app: appBaujat }]
+      plots: [{ id: 'forest', title: 'Forest plot (R only; the app draws none)', r: forestCode, width_in: 8, height_in: 6, app: function () { return null; } },
+        { id: 'baujat', title: 'Baujat plot', r: baujatCode, width_in: 8, height_in: 6, app: appBaujat }]
     },
     share: { get: shareGet, set: shareSet }
   };
