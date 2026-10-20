@@ -6,7 +6,8 @@
   "results": "Across 7 studies, summary sensitivity was 0.811 (95% CI 0.767 to 0.848) and specificity was 0.910 (0.886 to 0.929). LR+ was 9.01 (6.92 to 11.74); LR− was 0.21 (0.17 to 0.26); diagnostic OR was 43.4. Between-study variance was 0.0607 for logit sensitivity and 0.0506 for logit false-positive rate. Between-study correlation was −1.000. AUC was 0.932 (partial AUC 0.792). HSROC parameters were Λ = 3.8124, Θ = −0.5147, β = −0.0906, σ²θ = 0.0000, and σ²α = 0.2218. Log-likelihood was 26.97; AIC was −43.93. Moses intercept α = 4.309; slope β = 0.464. Spearman threshold correlation was −0.750. Deeks’ test p = 0.078. At 20% pre-test probability, the Fagan display gave post-test probabilities of 69% after a positive test and 5% after a negative test.",
   "flags": [
     "With few studies, the between-study covariance and prediction region are imprecise, and Deeks’ small-study test is underpowered.",
-    "Absolute threshold correlation exceeds 0.6; the app flags a possible threshold effect. Interpret the SROC curve alongside the summary point."
+    "Absolute threshold correlation exceeds 0.6; the app flags a possible threshold effect. Interpret the SROC curve alongside the summary point.",
+    "The between-study covariance estimate is at a boundary or degenerate at the displayed precision; the covariance may be poorly identified with these data. Interpret the correlation, HSROC parameters and the prediction region with caution."
   ],
   "references": []
 }

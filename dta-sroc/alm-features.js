@@ -9,6 +9,7 @@
   var METHODS = { reml: 'restricted maximum likelihood (REML)', ml: 'maximum likelihood (ML)',
     mm: 'method of moments', vc: 'variance components', fixed: 'fixed effect' };
   var FIELDS = ['data', 'title', 'method', 'cc', 'cov', 'example'];
+  var DISPLAY_SOURCED = ['mosesAlpha', 'mosesBeta', 'thresholdRho', 'pretest', 'postPos', 'postNeg'];
   function byId(id) { return document.getElementById(id); }
   function axisInputs() { return Array.from(document.querySelectorAll('#alm-axis-mount input')); }
 
@@ -61,11 +62,26 @@
         throw new Error('Row ' + (i + 1) + ': non-negative whole-person counts and positive diseased/non-diseased totals required.');
       }
       if (byId('f-cc').value === 'none' && cells.indexOf(0) >= 0) throw new Error('Zero cells require a continuity correction before fitting.');
+      var p = r.provenance;
+      if (!p || p.confirmed !== true || p.label !== label ||
+          !['label', 'reference', 'location', 'pastedText'].every(function (key) {
+            return typeof p[key] === 'string' && p[key].trim();
+          }) || !Array.isArray(p.values) || !['tp', 'fp', 'fn', 'tn'].every(function (field) {
+            var values = p.values.filter(function (v) { return v && v.field === field; });
+            if (values.length !== 1) return false;
+            var v = values[0], span = v.span;
+            return v.value === r[field] && typeof v.text === 'string' && v.text.length > 0 &&
+              Array.isArray(span) && span.length === 2 && span.every(Number.isSafeInteger) &&
+              span[0] >= 0 && span[1] > span[0] && span[1] <= p.pastedText.length &&
+              p.pastedText.slice(span[0], span[1]) === v.text;
+          })) throw new Error('Row ' + (i + 1) + ': confirmed provenance with a matching label, reference, location and source spans is required.');
       return [label].concat(cells).join(', ');
     });
     // Validate every row before touching the input; the native parser reads the
     // final four columns as counts and joins preceding label columns with ", ".
+    if (global.alm && global.alm.resetUndo && typeof global.alm.resetUndo.snapshot === 'function') global.alm.resetUndo.snapshot();
     byId('f-data').value = lines.join('\n');
+    if (byId('f-title').value === 'Example SROC - diagnostic test') byId('f-title').value = '';
     byId('btn-run').click();
     return { ok: !!global.__almBivariate(), n: records.length };
   }
@@ -107,12 +123,20 @@
     return out;
   }
 
+  // These values are read from the display itself; comparing them with the same
+  // display is not an independent audit. Keep them in the report, not domChecked.
+  function auditDom() {
+    var out = dom();
+    DISPLAY_SOURCED.forEach(function (key) { delete out[key]; });
+    return out;
+  }
+
   function results() {
     var b = typeof global.__almBivariate === 'function' ? global.__almBivariate() : null;
     if (!b || (byId('analysis-stale') && !byId('analysis-stale').hidden)) return null;
     var r = {
       k: b.k, method: b.method, correction: b.correctionControl, ccAdd: b.correction, parameterCount: b.df,
-      ciLevel: 95, regionDf: 2, chiSquare: 5.991464547107979,
+      ciLevel: 95, regionDf: 2, chiSquare: 5.991464547107979, deeksCc: 0.5, correlationBoundary: 1,
       aucMin: 0.01, aucMax: 0.99, aucGrid: 99, pCutoff: 0.0001, thresholdLimit: 0.6,
       sens: b.sens, sensLo: b.sensCI[0], sensHi: b.sensCI[1],
       spec: b.spec, specLo: b.specCI[0], specHi: b.specCI[1],
@@ -128,7 +152,7 @@
     var d = global.__almDeeks();
     if (d) { r.deeksP = d.p; r.deeksDf = d.df; }
     var displayed = dom();
-    ['mosesAlpha', 'mosesBeta', 'thresholdRho', 'pretest', 'postPos', 'postNeg'].forEach(function (key) {
+    DISPLAY_SOURCED.forEach(function (key) {
       if (displayed[key]) r[key] = Number(displayed[key].text);
     });
     var mr = global.__almMetaRegression();
@@ -178,7 +202,7 @@
         T.when(T.has('mosesAlpha'), 'The comparison Moses–Littenberg curve used unweighted ordinary least squares of the difference of the logits on their sum, after the selected correction. '),
         T.when(T.has('thresholdRho'), 'The threshold correlation was Spearman correlation between logit sensitivity and logit false-positive rate, with average ranks for ties. '),
         T.when(T.has('deeksP'), ['Deeks’ test regressed log diagnostic odds ratios on inverse square root effective sample size, weighted by effective sample size. Its slope used a two-sided t test with ',
-          T.int('deeksDf'), ' residual degrees of freedom. For this test, ', T.num('ccAdd', 1),
+          T.int('deeksDf'), ' residual degrees of freedom. For this test, ', T.num('deeksCc', 1),
           ' was added to all cells of each study containing a zero cell, independently of the bivariate correction choice. ']),
         T.when(T.has('pretest'), ['The Fagan display converted a pre-test probability of ', T.pct('pretest', 0),
           ' to odds, multiplied by each summary likelihood ratio, then converted back to probabilities. ']),
@@ -222,12 +246,15 @@
             '; the app flags a possible threshold effect. Interpret the SROC curve alongside the summary point.']),
         T.when(r.converged === false, 'The estimator did not converge; interpret the fit with caution.'),
         T.when(r.truncated === true, 'The between-study covariance estimate was not positive definite and was truncated.'),
+        T.when(r.method !== 'fixed' && ((T.has('rho') && Math.abs(T.shown('rho', 3)) === r.correlationBoundary) ||
+          (T.has('sigma2theta') && T.zero('sigma2theta', 4)) || (T.has('sigma2alpha') && T.zero('sigma2alpha', 4))),
+          'The between-study covariance estimate is at a boundary or degenerate at the displayed precision; the covariance may be poorly identified with these data. Interpret the correlation, HSROC parameters and the prediction region with caution.'),
         T.when(r.hasCovariate, 'Live R verification of meta-regression is unavailable in the existing adapter.'),
         T.when(T.has('deeksP') && T.zero('deeksP', 3), 'A rounded p-value of zero does not mean the probability is exactly zero.')
       ];
     }
   };
-  var textSpec = { app: APP, verifyPackage: 'mada', results: results, dom: dom, templates: templates };
+  var textSpec = { app: APP, verifyPackage: 'mada', results: results, dom: auditDom, templates: templates };
   var spec = {
     paper: 3, title: 'Diagnostic test accuracy',
     entry: { schema: 'dta', apply: apply },
@@ -278,9 +305,24 @@
   global.AlmTextSpecs = global.AlmTextSpecs || {};
   global.AlmTextSpecs[APP] = textSpec;
   if (global.AlmFeatures) {
-    // The current shared entry UI exposes mount(), without a host module.
+    // This shared UI has no source confirmation workflow. Keep preview available
+    // but fail closed until the shared provenance module can replace this host.
     if (global.AlmEntryUI) global.AlmFeatures.registerModule('entry', {
-      label: 'Data entry', render: function (panel, ctx) { return global.AlmEntryUI.mount(panel, ctx.block); }
+      label: 'Data entry', render: function (panel, ctx) {
+        var ui = global.AlmEntryUI.mount(panel, ctx.block);
+        var use = Array.from(ui.element.querySelectorAll('button')).find(function (b) { return b.textContent === 'Use these rows'; });
+        var gate = document.createElement('fieldset');
+        gate.disabled = true;
+        var legend = document.createElement('legend');
+        legend.textContent = 'Source confirmation required';
+        gate.appendChild(legend);
+        use.parentNode.insertBefore(gate, use);
+        gate.appendChild(use);
+        var note = document.createElement('p');
+        note.textContent = 'Import is unavailable in this version: source references, locations and confirmation for every study must be recorded first. You can preview conversions here or enter counts in the main input.';
+        ui.element.appendChild(note);
+        return ui;
+      }
     });
     // Like entry, the text UI supplies mount() but does not register a tab.
     if (global.AlmTextUI) global.AlmFeatures.registerModule('text', {

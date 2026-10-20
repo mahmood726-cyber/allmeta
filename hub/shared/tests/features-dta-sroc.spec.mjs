@@ -60,6 +60,18 @@ test('ENTRY: three formats round-trip the native example through the shared APIs
       const converted = AlmEntry.convert(table, detected, 'dta', i === 2 ? { 'table:delimiter': 'columns' } : {});
       const blocking = converted.flags.filter(f => f.blocking);
       if (blocking.length) return { i, blocking };
+      // This API fixture supplies explicit synthetic confirmations. It does not
+      // claim that the legacy shared UI can collect provenance (see REVIEW P1).
+      converted.records.forEach(r => {
+        const pastedText = [r.study, r.tp, r.fp, r.fn, r.tn].join('\t');
+        let start = r.study.length + 1;
+        r.provenance = { label: r.study, reference: 'Built-in synthetic example', location: 'Example data',
+          pastedText, confirmed: true, values: ['tp', 'fp', 'fn', 'tn'].map(field => {
+            const text = String(r[field]), span = [start, start + text.length];
+            start += text.length + 1;
+            return { field, value: r[field], text, span };
+          }) };
+      });
       const applied = adapter.entry.apply(converted.records);
       return { i, blocking, applied, expected: counts,
         actual: __almResults().rows.map(r => [r.study, r.TP, r.FP, r.FN, r.TN]),
