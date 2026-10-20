@@ -1,0 +1,62 @@
+{
+  "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+  "version": "1.0.0",
+  "entity": {
+    "type": "individual",
+    "role": "maintainer",
+    "name": "Dr Mahmood Ahmad",
+    "email": "mahmood726@gmail.com",
+    "description": "Independent maintainer of open evidence-synthesis research software. Professionally employed as a Specialist in Cardiology at Royal Free London NHS Foundation Trust, UK. This funding request is independent and does not represent employer sponsorship or a university appointment.",
+    "webpageUrl": {
+      "url": "https://github.com/mahmood726-cyber/allmeta"
+    }
+  },
+  "projects": [
+    {
+      "guid": "allmeta",
+      "name": "AllMeta",
+      "description": "MIT-licensed browser-based evidence-synthesis software. Funding would support maintainable statistical validation, reproducible reference fixtures, accessibility, documentation and open teaching examples. Existing software and replay tests are research-stage outputs; independent prospective accuracy, clinical readiness and superiority to other tools are not claimed.",
+      "webpageUrl": {
+        "url": "https://github.com/mahmood726-cyber/allmeta"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/mahmood726-cyber/allmeta"
+      },
+      "licenses": [
+        "spdx:MIT"
+      ],
+      "tags": [
+        "research",
+        "science",
+        "statistics",
+        "education",
+        "javascript",
+        "healthcare"
+      ]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "contact-maintainer",
+        "type": "other",
+        "address": "mahmood726@gmail.com",
+        "description": "Contact the maintainer to agree lawful grant administration and payment. Any required banking and tax documents would be supplied privately to an agreed funder; no banking details are published here."
+      }
+    ],
+    "plans": [
+      {
+        "guid": "allmeta-maintenance-pilot",
+        "status": "active",
+        "name": "AllMeta: open validation and maintenance pilot",
+        "amount": 10000,
+        "currency": "USD",
+        "frequency": "one-time",
+        "channels": [
+          "contact-maintainer"
+        ],
+        "description": "A proposed 12-month, part-time work package: USD 8,000 for 20 maintainer delivery days at USD 400/day; USD 1,000 for independent methodological checks; USD 1,000 for reproducibility infrastructure and accessibility resources. Deliverables: documented reference fixtures and regression checks for priority analysis workflows; clearer import/error handling and accessibility; worked public-data examples and a maintenance report. The package pays the maintainer for delivery time. External review and rate/cost eligibility remain subject to funder agreement. Other funding applications may cover related work; overlapping tasks and costs will be removed or reconciled before accepting multiple awards. Funding buys no favourable scientific findings, exclusive rights or equity."
+      }
+    ]
+  }
+}
