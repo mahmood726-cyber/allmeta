@@ -30,7 +30,7 @@ test('original autosave keys are exactly those on main; the extras are never sav
  expect(await keysOf('dta-sroc-negative')).not.toEqual(MAIN_AUTOSAVE_KEYS);
 });
 
-test('raw calendar-year covariate shows the raw-scale note; standardised reference data do not',async({page})=>{
+test('raw or rescaled covariates show the raw-scale note; standardised reference data do not',async({page})=>{
  await open(page);
  const c=corpus.cases.find(c=>c.id==='dat.kearon1998/year/reml/all');
  const note=page.locator('#plus-scale-note');
@@ -41,6 +41,16 @@ test('raw calendar-year covariate shows the raw-scale note; standardised referen
  await expect(note).toContainText('standard deviations from zero');
  await expect(note).toContainText('mada::reitsma run on these raw values can differ');
  await expect(page.locator('#plus-results table')).toBeVisible();
+ // RECHECK_133 P1-3: a centred covariate on a large or small scale also differs from mada on the raw values, so the
+ // note is shown unless the covariate is already standardised (|mean|/SD and |SD-1| <= 1e-3).
+ const setX=(f,at)=>page.evaluate(({c,rows,at})=>!!AlmDTAPlusUI.set({rows,method:c.method,correction:c.correction,at,prevalence:.1}),{c,rows:c.rows.map(r=>({...r,x:f(r.x)})),at});
+ for(const [f,at] of [[x=>1000*x,0],[x=>0.01*x,0],[x=>x+0.01,0]]){
+  expect(await setX(f,at)).toBe(true);
+  await expect(note).toContainText('The covariate is not standardised');
+  await expect(note).toContainText('mada::reitsma run on these raw values can differ');
+ }
+ expect(await setX(x=>0.9995*x+0.0004,0)).toBe(true);
+ await expect(note).toBeEmpty();
  // The note clears with the results when the input changes, and is not shown for a refusal.
  await page.locator('#plus-data').fill('x');
  await expect(note).toBeEmpty();

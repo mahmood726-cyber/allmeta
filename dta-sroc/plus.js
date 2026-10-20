@@ -43,9 +43,14 @@ function predict(f,at,prevalence){
  if(![sens,fp,positive,negative,...mu,...C.flat(),...Object.values(regions).flat(2)].every(Number.isFinite))throw Error('Prediction is numerically undefined at these inputs');
  return {at,prevalence,sens,spec:1-fp,mu,C,regions,positive,negative};
 }
-// |mean|/SD of the covariate. Above RAW_SCALE_LIMIT the UI warns that mada::reitsma on the same raw values can
-// differ beyond the validation tolerance (validate/README-plus.md, "Raw-scale covariates"; check-plus-raw.mjs).
-const RAW_SCALE_LIMIT=20;
-function meanOverSD(rows){const n=rows.length,c=rows.reduce((s,r)=>s+r.x,0)/n;return Math.abs(c)/Math.sqrt(rows.reduce((s,r)=>s+(r.x-c)**2,0)/(n-1));}
-g.AlmDTAPlus={fit,predict,meanOverSD,RAW_SCALE_LIMIT};
+// The UI warns that mada::reitsma on the same raw values can differ beyond the validation tolerance whenever the
+// covariate is not already standardised (|mean|/SD and |SD-1| both <= STANDARDISED_TOLERANCE). mada's raw-scale
+// agreement depends on the scale of x as well as on mean/SD: centred covariates with SD 0.01 or 1000 differ too, and
+// no threshold on mean/SD or on the condition number of [1, x] separates the cases (validate/README-plus.md,
+// "Raw-scale covariates"; check-plus-raw.mjs).
+const STANDARDISED_TOLERANCE=1e-3;
+function covariateMoments(rows){const n=rows.length,mean=rows.reduce((s,r)=>s+r.x,0)/n;return {mean,sd:Math.sqrt(rows.reduce((s,r)=>s+(r.x-mean)**2,0)/(n-1))};}
+function meanOverSD(rows){const m=covariateMoments(rows);return Math.abs(m.mean)/m.sd;}
+function scaleNoteShown(rows){const m=covariateMoments(rows);return !(Math.abs(m.mean)/m.sd<=STANDARDISED_TOLERANCE&&Math.abs(m.sd-1)<=STANDARDISED_TOLERANCE);}
+g.AlmDTAPlus={fit,predict,covariateMoments,meanOverSD,scaleNoteShown,STANDARDISED_TOLERANCE};
 })(globalThis);

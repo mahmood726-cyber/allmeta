@@ -73,6 +73,24 @@ for (i in 1:60) {
   d <- data.frame(TP = tp, FN = n1 - tp, FP = fp, TN = n0 - fp, x = yr)
   for (m in c('reml', 'ml', 'fixed')) for (cc in c('all', 'single', 'none')) add(one(sprintf('syn%02d/raw-year/%s/%s', i, m, cc), 'synthetic-raw-year', d, m, cc))
 }
+# Scale scan (RECHECK_133 P1-3): mada's raw-scale conditioning depends on the absolute scale of x as well as on
+# mean/SD, so the same data are placed at SD 0.01 .. 1000 and mean/SD 0 .. 1000 (|mean| up to 1e6), REML/ML/fixed.
+# No RNG is used after the data are drawn, so adding configurations per dataset does not change the data.
+set.seed(20261020)
+for (i in 1:10) {
+  k <- c(4, 5, 6, 8, 10, 12, 15, 20, 30, 40)[i]
+  repeat {
+    u <- rnorm(k); u <- (u - mean(u)) / sd(u)
+    n1 <- sample(if (i %% 3 == 0) 8:40 else 20:300, k, TRUE); n0 <- sample(if (i %% 3 == 0) 15:80 else 40:600, k, TRUE)
+    tp <- rbinom(k, n1, plogis(qlogis(.8) + .3 * u + rnorm(k, 0, .45))); fp <- rbinom(k, n0, plogis(qlogis(.14) - .2 * u + rnorm(k, 0, .45)))
+    if (all(c(tp, n1 - tp, fp, n0 - fp) > 0)) break
+  }
+  for (s in c(0.01, 0.1, 1, 10, 100, 1000)) for (r in c(0, 0.5, 1, 2, 3, 5, 8, 14, 20, 50, 200, 1000)) for (m in c('reml', 'ml', 'fixed'))
+    add(one(sprintf('scale%02d/sd%g/r%g/%s', i, s, r, m), 'scale-scan', data.frame(TP = tp, FN = n1 - tp, FP = fp, TN = n0 - fp, x = s * (u + r)), m, 'all'))
+  # The edge of the "already standardised" tolerance (no note): SD 1 +/- 1e-3, mean/SD up to 1e-3.
+  for (sr in list(c(0.999, 0), c(0.999, 0.001), c(1, 0.001), c(1.001, 0), c(1.001, 0.001))) for (m in c('reml', 'ml', 'fixed'))
+    add(one(sprintf('scale%02d/sd%g/r%g/%s', i, sr[1], sr[2], m), 'near-standardised', data.frame(TP = tp, FN = n1 - tp, FP = fp, TN = n0 - fp, x = sr[1] * (u + sr[2])), m, 'all'))
+}
 out <- list(R = as.character(getRversion()), mada = as.character(packageVersion('mada')), mvmeta = as.character(packageVersion('mvmeta')),
   metadat = as.character(packageVersion('metadat')), control = ctl, cases = cases)
 jsonlite::write_json(out, 'allmeta/dta-sroc/validate/corpus/plus-raw-scale.json', auto_unbox = TRUE, digits = NA, na = 'null')

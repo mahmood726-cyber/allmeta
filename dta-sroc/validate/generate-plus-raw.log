@@ -40,7 +40,10 @@ The following object is masked from 'package:metafor':
 
 There were 50 or more warnings (use warnings() to see the first 50)
 There were 50 or more warnings (use warnings() to see the first 50)
-Raw-scale configurations: 1218  fitted by mada on raw input: 1152 
+There were 50 or more warnings (use warnings() to see the first 50)
+Raw-scale configurations: 3528  fitted by mada on raw input: 3462 
   reference-raw-year 18 
   shift-scan 660 
   synthetic-raw-year 540 
+  scale-scan 2160 
+  near-standardised 150 

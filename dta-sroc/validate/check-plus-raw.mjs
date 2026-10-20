@@ -2,9 +2,10 @@
 // Each configuration is compared, at the existing tolerances, with mada on the SAME supplied input ("raw") and with
 // mada on the standardised covariate back-transformed to the supplied scale ("std", the same model).
 // Requirements (the gate fails otherwise):
-//   1. every configuration with mean/SD <= AlmDTAPlus.RAW_SCALE_LIMIT agrees with both references (N/N);
-//   2. every configuration that differs from mada on the same input beyond tolerance is one where the UI shows
-//      the raw-scale note (mean/SD > RAW_SCALE_LIMIT): no silent difference;
+//   1. every configuration without the raw-scale note (covariate already standardised: AlmDTAPlus.scaleNoteShown)
+//      agrees with both references (N/N);
+//   2. every configuration that differs from mada on the same input (or standardised) beyond tolerance is one where
+//      the UI shows the raw-scale note: no silent difference;
 //   3. refusals equal mada's exactly;
 //   4. the set of out-of-tolerance configurations equals the one pinned in MANIFEST-plus-raw.json (any change is visible).
 // node check-plus-raw.mjs --pin rewrites the manifest (SHA-256 and the divergence set) after a deliberate regeneration.
@@ -36,9 +37,9 @@ function compare(r,ref){
   if(q.regions)for(const k of ['confidence','prediction'])arr(q.at+'/'+k,a.regions[k],q.regions[k],t);}
  return {checks,failures};
 }
-const limit=AlmDTAPlus.RAW_SCALE_LIMIT,summary={};const violations=[];const divergent={raw:[],std:[]};let maxRel=0;
+const tol=AlmDTAPlus.STANDARDISED_TOLERANCE,summary={};const violations=[];const divergent={raw:[],std:[]};let maxRel=0;
 for(const r of corpus.cases){
- const ratio=AlmDTAPlus.meanOverSD(r.rows),warned=ratio>limit;
+ const ratio=AlmDTAPlus.meanOverSD(r.rows),warned=AlmDTAPlus.scaleNoteShown(r.rows);
  if(Math.abs(ratio-r.meanOverSD)>1e-9*Math.max(1,r.meanOverSD))violations.push(r.id+': mean/SD differs from the generator');
  for(const which of ['raw','std']){
   const res=compare(r,r[which]),key=r.set+' / mada-'+which+' / '+(warned?'note shown':'no note');
@@ -47,16 +48,16 @@ for(const r of corpus.cases){
   if(!res.failures.length){s.agreeing++;continue;}
   divergent[which].push(r.id);
   for(const x of res.failures)if(typeof x.ref==='number'&&Number.isFinite(x.app))maxRel=Math.max(maxRel,Math.abs(x.app-x.ref)/Math.max(1,Math.abs(x.ref)));
-  if(!warned)violations.push(`${r.id} (mean/SD ${ratio.toPrecision(3)}, no note) differs from mada-${which}: ${res.failures.slice(0,3).map(x=>x.id+' '+x.app+' vs '+x.ref).join('; ')}`);
+  if(!warned)violations.push(`${r.id} (mean/SD ${ratio.toPrecision(3)}, SD ${AlmDTAPlus.covariateMoments(r.rows).sd.toPrecision(3)}, no note) differs from mada-${which}: ${res.failures.slice(0,3).map(x=>x.id+' '+x.app+' vs '+x.ref).join('; ')}`);
   if(res.failures.some(x=>x.id==='ok'||x.id==='refusal'))violations.push(`${r.id}: refusal differs from mada-${which}`);
  }
 }
-console.log(`Raw-scale corpus: ${corpus.cases.length} configurations; R ${corpus.R}, mada ${corpus.mada}, mvmeta ${corpus.mvmeta}; note above mean/SD ${limit}`);
+console.log(`Raw-scale corpus: ${corpus.cases.length} configurations; R ${corpus.R}, mada ${corpus.mada}, mvmeta ${corpus.mvmeta}; note unless |mean|/SD and |SD-1| <= ${tol}`);
 for(const [k,s] of Object.entries(summary).sort())console.log(`  ${k}: ${s.agreeing}/${s.configurations} configurations within tolerance (${s.passed}/${s.checks} checks)`);
 console.log(`  out-of-tolerance configurations: vs mada on the same input ${divergent.raw.length}, vs mada standardised ${divergent.std.length}; all with the note shown: ${violations.length===0}; largest relative difference ${maxRel.toExponential(2)}`);
-if(pin){fs.writeFileSync(manifestFile,JSON.stringify({path:'validate/corpus/plus-raw-scale.json',sha256:sha,bytes:bytes.length,configurations:corpus.cases.length,rawScaleLimit:limit,divergent},null,2)+'\n');console.log('Pinned',sha);}
+if(pin){fs.writeFileSync(manifestFile,JSON.stringify({path:'validate/corpus/plus-raw-scale.json',sha256:sha,bytes:bytes.length,configurations:corpus.cases.length,standardisedTolerance:tol,divergent},null,2)+'\n');console.log('Pinned',sha);}
 else{
  for(const which of ['raw','std'])if(JSON.stringify(divergent[which])!==JSON.stringify(manifest.divergent[which]))violations.push(`out-of-tolerance set vs mada-${which} differs from the pinned set (${divergent[which].length} now, ${manifest.divergent[which].length} pinned)`);
- if(manifest.rawScaleLimit!==limit)violations.push('RAW_SCALE_LIMIT differs from the pinned value');
+ if(manifest.standardisedTolerance!==tol)violations.push('STANDARDISED_TOLERANCE differs from the pinned value');
 }
 if(violations.length){console.log('FAIL:\n '+violations.slice(0,20).join('\n '));process.exitCode=1;}else console.log('PASS: raw-scale gate');
