@@ -69,8 +69,7 @@ test('verify.optional: both sides missing -> "not applicable", never PASS, not i
   eq([r.n, r.nPassed, r.nNotComputed, r.nNotApplicable, r.passed], [2, 2, 0, 4, true]);
   ok(r.rows.filter(x => x.status === 'notapplicable').every(x => x.pass === false), 'never a PASS row');
   eq(V.summaryText(r), '2 of 2 computed quantities match R; 0 not computed; 4 not applicable — PASS');
-  eq(V.comparisonCsv(r.rows).trim().split('
-')[2].endsWith(',NOT APPLICABLE for this analysis'), true);
+  eq(V.comparisonCsv(r.rows).trim().split(String.fromCharCode(10))[2].endsWith(',NOT APPLICABLE for this analysis'), true);
 });
 
 test('PLANTED: a key declared not applicable but with an R value and a different app value still FAILS', () => {
