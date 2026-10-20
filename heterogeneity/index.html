@@ -97,6 +97,8 @@
   <script src="../shared/citation.js"></script>
   <script src="../shared/autosave.js"></script>
   <script src="../hub/shared/plot-export.js"></script>
+  <!-- Feature panel share link: must read the #s= hash before url-state rewrites it during the first run. -->
+  <script src="../shared/alm-share.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -1071,7 +1073,18 @@
 })();
 </script>
 <div id="alm-validate"></div>
+<div id="alm-features"></div>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
+<!-- Shared feature panel (Verify in R, Share; entry/text blocks registered for their modules). -->
+<link rel="stylesheet" href="../shared/alm-features.css">
+<script src="../shared/webr-runner.js"></script>
+<script src="../shared/url-pack.js"></script>
+<script src="../shared/alm-zip.js"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-features.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="alm-features.js"></script>
 </body>
 </html>
