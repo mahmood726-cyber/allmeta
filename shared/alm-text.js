@@ -32,7 +32,8 @@
     fewK:       { value: 5,     text: '5',     about: 'below this k, heterogeneity estimates are imprecise' },
     funnelK:    { value: 10,    text: '10',    about: 'below this k, small-study (funnel plot) tests are underpowered (Cochrane Handbook v6.5 §13.3.5.4)' },
     dlMinK:     { value: 10,    text: '10',    about: 'below this k the DerSimonian-Laird tau2 estimator is biased low' },
-    ccAdd:      { value: 0.5,   text: '0.5',   about: 'continuity correction added to boundary studies' }
+    ccAdd:      { value: 0.5,   text: '0.5',   about: 'continuity correction added to boundary studies' },
+    none:       { value: 0,     text: '0',     about: 'zero, for count conditions in templates (e.g. no boundary studies)' }
   };
   var R = {};
   Object.keys(RULES).forEach(function (k) { R[k] = RULES[k].value; });
@@ -352,7 +353,9 @@
         if (!Object.prototype.hasOwnProperty.call(CITES, id)) throw new Error('AlmText: unknown citation "' + id + '"');
         return seg('cite', { id: id, text: CITES[id].short });
       },
-      when: function (cond, parts) { return cond ? parts : null; },
+      // parts may be a function: it is then only evaluated when cond holds, so guarded
+      // helpers (e.g. a prediction interval that is null for k < 3) are never read.
+      when: function (cond, parts) { return cond ? (typeof parts === 'function' ? parts() : parts) : null; },
       pick: function (key, map) {
         if (!results || !Object.prototype.hasOwnProperty.call(results, key)) throw new Error('AlmText: missing result "' + key + '"');
         var v = results[key];

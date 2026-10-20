@@ -290,3 +290,10 @@ test('flags: a skipped (null) flag before a numeric flag keeps provenance labels
   report('flags-alignment', a);
   assert.equal(a.ok, true, JSON.stringify(a.failures));
 });
+
+test('T.when with a function is lazy: guarded parts reading a missing key do not throw; eager parts do', () => {
+  const lazy = { ...simpleTemplates, plain: (T) => ['x', T.when(T.has('missing'), () => [' ', T.num('missing', 2)])] };
+  assert.equal(AlmText.render(lazy, simpleResults, ctx0).plain.text, 'x');
+  const eager = { ...simpleTemplates, plain: (T) => ['x', T.when(T.has('missing'), [' ', T.num('missing', 2)])] };
+  assert.throws(() => AlmText.render(eager, simpleResults, ctx0), /missing result "missing"/);
+});

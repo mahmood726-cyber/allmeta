@@ -16,6 +16,7 @@
  *   - study CIs: Clopper-Pearson; no p-value for Q is computed by the app, so none is reported.
  * Display digits (index.html render()): proportions fmtPct 1 dp, tau2 4 dp, Q 2 dp, I2 1 dp, df integer.
  *
+ * Conditional parts that read possibly-missing keys are passed to T.when as functions (lazy).
  * Template rule: no digit literals outside T.* calls (enforced by hub/shared/tests/unit/alm-text-lint.test.mjs).
  * Test-only hook: window.__almTextPerturb = {key, delta} adds delta to that results() key (changes nothing unless set).
  */
@@ -97,7 +98,7 @@
       var fe = r.tauEstimator === 'FE';
       return [
         'This analysis combined ', T.int('k'), ' studies',
-        T.when(T.has('totalN'), [' with ', T.int('totalN'), ' participants in total']),
+        T.when(T.has('totalN'), function () { return [' with ', T.int('totalN'), ' participants in total']; }),
         '. Across these studies, the average proportion of participants with the outcome was estimated at ', T.prop('poolP', 1),
         '. Allowing for chance, the true average is likely to be in the range ', T.ci('poolLo', 'poolHi', 1, 'prop'),
         ' (', T.rule('ciLevel'), ' confidence interval). ',
@@ -105,9 +106,10 @@
           ? 'The analysis assumed that all studies share one common proportion, so differences between settings were not modelled. '
           : ['The amount of variation between the studies’ results beyond what chance would explain ', T.band('i2', 1),
              ' (I² = ', T.pct('i2', 1), '). '],
-        T.when(!fe && r.k >= T.R.piMinK && T.has('poolPiLo') && T.has('poolPiHi'),
-          ['In a new setting similar to these studies, the proportion could plausibly be anywhere from ',
-           T.ci('poolPiLo', 'poolPiHi', 1, 'prop'), '. ']),
+        T.when(!fe && r.k >= T.R.piMinK && T.has('poolPiLo') && T.has('poolPiHi'), function () {
+          return ['In a new setting similar to these studies, the proportion could plausibly be anywhere from ',
+            T.ci('poolPiLo', 'poolPiHi', 1, 'prop'), '. '];
+        }),
         T.when(r.k < T.R.fewK, 'Because there are few studies, these estimates are uncertain. '),
         'This summary describes how common the outcome was in the included studies; it does not show why the outcome occurs or how much it matters to patients.'
       ];
@@ -128,7 +130,10 @@
           'For studies with no events or with all participants having the event, ', T.rule('ccAdd'),
           ' was added to both the event and the non-event counts (boundary-only continuity correction; ', T.cite('sweeting'),
           '); no correction was applied to any other study',
-          T.when(T.has('nBoundary'), ['; ', T.int('nBoundary'), T.plural('nBoundary', ' study needed', ' studies needed'), ' this correction']),
+          T.when(T.has('nBoundary') && r.nBoundary > T.R.none, function () {
+            return ['; ', T.int('nBoundary'), T.plural('nBoundary', ' study needed', ' studies needed'), ' this correction'];
+          }),
+          T.when(T.has('nBoundary') && r.nBoundary === T.R.none, '; no included study needed this correction'),
           '. The pooled estimate and its limits were back-transformed with the inverse logit. '
         ]),
         T.when(tr === 'ft', [
@@ -148,7 +153,7 @@
         'Heterogeneity was summarised with Cochran’s Q, τ² and I², where I² was computed from Q as (Q − df)/Q, expressed as a percentage and truncated at zero (',
         T.cite('higginsThompson'), ')',
         T.when(r.tauEstimator === 'PM', '; with the Paule–Mandel estimator this Q-based I² can differ from the τ²-based I² reported by some software'),
-        '. I² was interpreted with the overlapping bands of the Cochrane Handbook (', T.cite('handbookHet'), '). ',
+        '. I² was interpreted with the overlapping bands given in ', T.cite('handbookHet'), '. ',
         fe
           ? 'No prediction interval is reported for the fixed-effect model. '
           : ['A ', T.rule('ciLevel'),
@@ -166,8 +171,9 @@
       var fe = r.tauEstimator === 'FE';
       return [
         'The analysis included ', T.int('k'), ' studies',
-        T.when(T.has('totalN') && T.has('totalEvents'),
-          [' with ', T.int('totalN'), ' participants and ', T.int('totalEvents'), T.plural('totalEvents', ' event', ' events')]),
+        T.when(T.has('totalN') && T.has('totalEvents'), function () {
+          return [' with ', T.int('totalN'), ' participants and ', T.int('totalEvents'), T.plural('totalEvents', ' event', ' events')];
+        }),
         '. The pooled proportion was ', T.prop('poolP', 1), ' (', T.rule('ciLevel'), ' CI ', T.ci('poolLo', 'poolHi', 1, 'prop'), ') from ',
         fe ? 'a fixed-effect inverse-variance model'
           : ['a random-effects model (', T.pick('tauEstimator', { PM: 'Paule–Mandel', DL: 'DerSimonian–Laird' }), ' τ²)'],
@@ -175,10 +181,11 @@
         'Between-study variance τ² = ', T.num('tau2', 4),
         T.when(fe, ' (fixed at zero by the fixed-effect model)'),
         '; Q = ', T.num('Q', 2), ' (df = ', T.int('df'), '); I² = ', T.pct('i2', 1),
-        ', which according to the Cochrane Handbook bands ', T.band('i2', 1), ' (', T.cite('handbookHet'), ').',
-        T.when(!fe && r.k >= T.R.piMinK && T.has('poolPiLo') && T.has('poolPiHi'),
-          [' The ', T.rule('ciLevel'), ' prediction interval for the proportion in a new study similar to those included was ',
-           T.ci('poolPiLo', 'poolPiHi', 1, 'prop'), '.'])
+        ' (', T.cite('handbookHet'), ': ', T.band('i2', 1), ').',
+        T.when(!fe && r.k >= T.R.piMinK && T.has('poolPiLo') && T.has('poolPiHi'), function () {
+          return [' The ', T.rule('ciLevel'), ' prediction interval for the proportion in a new study similar to those included was ',
+            T.ci('poolPiLo', 'poolPiHi', 1, 'prop'), '.'];
+        })
       ];
     },
 
