@@ -3,7 +3,7 @@
 // leaveOneOut() are called on every configuration of the archive corpus.
 // Run from the repository root: node mh-peto/validate/check-plus.mjs [--plant <name>] [--json out.json] [--index <html>]
 // Planted defects (each must produce unexpected failures): tarone, cmh-continuity-correction, loo-omits-wrong-table,
-// i2-uses-k, metamh-keeps-double-zero.
+// i2-uses-k, metamh-keeps-double-zero; claim plants q-drops-double-zero, mh-rr-variance (fail the claim checks).
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
@@ -21,6 +21,11 @@ const MUT = { // planted defects: each must make the comparison fail
   'loo-omits-wrong-table': ['return j !== i; }), measure)), flags = {};', 'return j !== (i + 1) % rows.length; }), measure)), flags = {};'],
   'i2-uses-k': ['var df = k - 1, I2 = Math.max(0, 100 * (Q - df) / Q);', 'var df = k - 1, I2 = Math.max(0, 100 * (Q - k) / Q);'],
   'metamh-keeps-double-zero': ["if (measure === 'OR' && ((a === 0 && c === 0) || (c === n2 && a === n1))) incl = 0;", ''],
+  // claim plants (text claims, claims-plus.json): Q leaves out double-zero / all-event tables (as drop00 = TRUE would);
+  // MH RR variance x (1 + 1e-7)
+  'q-drops-double-zero': ['if (a === 0 || b === 0 || c === 0 || d === 0) { a += 0.5; b += 0.5; c += 0.5; d += 0.5; }',
+    'if ((a === 0 && c === 0) || (b === 0 && d === 0)) { yi.push(NaN); vi.push(NaN); return; } if (a === 0 || b === 0 || c === 0 || d === 0) { a += 0.5; b += 0.5; c += 0.5; d += 0.5; }'],
+  'mh-rr-variance': ['var varLogRR = varNum / (num * denom);', 'var varLogRR = varNum / (num * denom) * (1 + 1e-7);'],
 };
 const mut = arg('--plant');
 if (mut) { const [x, y] = MUT[mut]; if (!src.includes(x)) throw Error('mutation site not found: ' + mut); src = src.replace(x, y); }
@@ -103,4 +108,71 @@ if (!mut) {
   if (JSON.stringify(got) !== JSON.stringify(want)) problems.push('documented failure identities differ from MANIFEST-plus.json');
   console.log(problems.length ? 'CONTRACT FAIL: ' + problems.join('; ') : `CONTRACT PASS: ${pass}/${n} as pinned; ${got.length} documented failures as pinned; inputs match SHA-256 pins`);
   if (problems.length) process.exitCode = 1;
+}
+
+// ---- Text claims shown on the page (plus-corpus/claims-plus.json, written by generate-plus.R). Counted separately
+// from the 120,010 checks above, with their own pinned contract (MANIFEST-plus.json "claims").
+//  (1) zero-note: "for OR and RR, metabin(MH.exact = TRUE) matches": beta, SE and p equal the page's MH at 1e-9;
+//      for RD the estimate matches but meta's MH variance differs (the SE differs on every configuration).
+//  (2) het-note / captions: the page's call is not rma.mh's default. With the default (drop00 = TRUE, correct = TRUE)
+//      the pooled estimate is the same, Q differs exactly on the configurations with a double-zero or all-event
+//      table (where Q is defined), and the CMH statistic differs except where |O - E| = 0.25.
+//  (3) one pinned double-zero example (rv610 review, 102_struct_k4): page values equal R's stated call, and the
+//      default call gives a different Q, I2 and (OR) CMH.
+{
+  const C = JSON.parse(readFileSync(join(here, 'plus-corpus', 'claims-plus.json'), 'utf8'));
+  let cn = 0, cp = 0; const cby = {}, cfails = [];
+  const c2 = (id, fam, ok, detail) => { cby[fam] = cby[fam] || [0, 0]; cby[fam][0]++; cn++; if (ok) { cp++; cby[fam][1]++; } else cfails.push({ id, family: fam, detail }); };
+  const near = (x, r, kind) => { x = x === undefined ? null : x; r = r === undefined ? null : r; if (x === null || r === null) return x === null && r === null; return Math.abs(x - r) / (kind === 'abs' ? 1 : Math.max(1, Math.abs(r))) <= 1e-9; };
+  const differs = (x, r) => !near(x, r);
+  let rdSeDiff = 0, rdPDiff = 0, rdN = 0, qDiff = 0, qNA = 0, cmhNA = 0, cmhQuarter = 0;
+  for (const cfg of corpus) {
+    if (cfg.rows.length < 2) continue;
+    const rows = cfg.rows.map(s => ({ e1: s.ai, n1: s.ai + s.bi, e2: s.ci, n2: s.ci + s.di }));
+    const dzae = rows.some(r => (r.e1 === 0 && r.e2 === 0) || (r.e1 === r.n1 && r.e2 === r.n2));
+    for (const m of ['OR', 'RR', 'RD']) {
+      const id = cfg.id + '|' + m, c = C.configurations[id];
+      if (!c) throw Error('missing claims record ' + id);
+      const A = E.analyse(rows, m), f = A.mhFit, x = c.mhexact, d = c.mh_default;
+      if (x.error || d.error) { c2(id, 'claim.R-error', false, x.error || d.error); continue; }
+      c2(id, `claim.mhexact.${m}.beta`, near(f.beta, x.beta), [f.beta, x.beta]);
+      if (m !== 'RD') { c2(id, `claim.mhexact.${m}.se`, near(f.se, x.se), [f.se, x.se]); c2(id, `claim.mhexact.${m}.p`, near(f.p, x.pval, 'abs'), [f.p, x.pval]); }
+      else { rdN++; if (differs(f.se, x.se)) rdSeDiff++; if (!near(f.p, x.pval, 'abs')) rdPDiff++; c2(id, 'claim.mhexact.RD.se-differs', differs(f.se, x.se), [f.se, x.se]); }
+      c2(id, 'claim.default.beta', near(f.beta, d.beta), [f.beta, d.beta]);
+      // Q is compared where at least one side defines it (both null: MH not estimable, no Q under either call).
+      if (A.het.mh.QE === null && d.QE === null) qNA++;
+      else { const qd = differs(A.het.mh.QE, d.QE); if (qd) qDiff++; c2(id, 'claim.default.Q-differs-iff-double-zero-or-all-event', qd === dzae, { qd, dzae, app: A.het.mh.QE, def: d.QE }); }
+      // (|O-E| - 0.5)^2 equals (O-E)^2 only when |O-E| = 0.25, where O-E = sum(a - n1 xt / N); otherwise the
+      // corrected default CMH differs from the page's uncorrected one.
+      if (m === 'OR') {
+        const s = A.het.assoc, oe = Math.abs(rows.reduce((t, r) => t + r.e1 - r.n1 / (r.n1 + r.n2) * (r.e1 + r.e2), 0)), same = Math.abs(oe - 0.25) < 1e-12;
+        if (same) cmhQuarter++;
+        if (s.MH === null && d.MH === null) cmhNA++; else c2(id, 'claim.default.CMH-differs-unless-|O-E|=0.25', differs(s.MH, d.MH) === !same, [s.MH, d.MH, oe]);
+      }
+    }
+  }
+  const P = C.pinned.data, prow = P.e1.map((e, i) => ({ e1: e, n1: P.n1[i], e2: P.e2[i], n2: P.n2[i] }));
+  for (const m of ['OR', 'RR']) {
+    const A = E.analyse(prow, m), h = Object.assign({}, A.het.mh, m === 'OR' ? { MH: A.het.assoc.MH, MHp: A.het.assoc.MHp } : {}), pg = P[m].page, df = P[m].default;
+    const qs = [['QE'], ['QEp', 'abs'], ['I2'], ['H2']].concat(m === 'OR' ? [['MH'], ['MHp', 'abs']] : []);
+    for (const [q, kind] of qs) c2(C.pinned.id + '|' + m, `claim.pin.page.${q}`, near(h[q], pg[q], kind), [h[q], pg[q]]);
+    for (const q of ['QE', 'I2'].concat(m === 'OR' ? ['MH'] : [])) c2(C.pinned.id + '|' + m, `claim.pin.default-differs.${q}`, Math.abs(h[q] - df[q]) > 1e-6, [h[q], df[q]]);
+  }
+  console.log(`text claims vs R (claims-plus.json)${mut ? ' [PLANTED ' + mut + ']' : ''}: ${cp}/${cn} claim checks pass; RD with MH.exact = TRUE: SE differs in ${rdSeDiff}/${rdN}, p in ${rdPDiff}/${rdN}; default rma.mh: Q differs in ${qDiff} configuration-measures, Q undefined under both calls in ${qNA}; CMH: |O-E| = 0.25 in ${cmhQuarter}, undefined in ${cmhNA}`);
+  for (const [k, v] of Object.entries(cby).sort()) console.log('  ' + k.padEnd(58), (v[1] + '/' + v[0]).padStart(9));
+  for (const f of cfails.slice(0, 12)) console.log('CLAIM FAIL', JSON.stringify(f));
+  if (cfails.length) process.exitCode = 1;
+  if (!mut) {
+    const { createHash } = await import('node:crypto');
+    const cm = JSON.parse(readFileSync(join(here, 'MANIFEST-plus.json'), 'utf8')).claims, cpr = [];
+    if (!cm) cpr.push('no claims entry in MANIFEST-plus.json');
+    else {
+      const b = readFileSync(join(here, cm.file.path));
+      if (createHash('sha256').update(b).digest('hex') !== cm.file.sha256 || b.length !== cm.file.bytes) cpr.push('SHA-256 mismatch: ' + cm.file.path);
+      if (cn !== cm.checks) cpr.push(`claim check count ${cn} != ${cm.checks}`);
+      if (cp !== cm.expectedPassed) cpr.push(`claims passed ${cp} != ${cm.expectedPassed}`);
+    }
+    console.log(cpr.length ? 'CLAIMS CONTRACT FAIL: ' + cpr.join('; ') : `CLAIMS CONTRACT PASS: ${cp}/${cn} as pinned; claims-plus.json matches its SHA-256 pin`);
+    if (cpr.length) process.exitCode = 1;
+  }
 }

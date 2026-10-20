@@ -3,14 +3,20 @@
 Mantel-Haenszel (OR, RR, RD) and Peto one-step odds-ratio pooling for binary outcomes, following the
 conventions of metafor `rma.mh` / `rma.peto`: the pooled estimates use the counts as entered, with no
 continuity correction. Per-study OR/RR add 0.5 to every cell of a table with a zero (display only).
-meta::metabin's default (`MH.exact = FALSE`) adds 0.5 inside the MH estimate, so its result can differ.
+meta::metabin's default (`MH.exact = FALSE`) adds 0.5 inside the MH estimate, so its result can differ. For OR and
+RR, `metabin(..., method = "MH", MH.exact = TRUE)` matches the page; for RD the estimate matches but meta's MH variance
+differs from metafor's, so the SE and p differ.
 
 What the page shows:
 
 - MH and Peto pooled estimates with 95% CI, z and p; an estimate that cannot be computed (for example
   no events in one group in every study) is shown as "not estimable" with the reason.
 - Cochran's Q, I² and H² for each method; for the odds ratio, the Cochran-Mantel-Haenszel test,
-  Tarone's test and the Breslow-Day test, as printed by metafor.
+  Tarone's test and the Breslow-Day test, as printed by metafor `rma.mh(..., add = c(0.5, 0), to = c("only0", "none"),
+  drop00 = c(FALSE, FALSE), correct = FALSE)` and `rma.peto(..., add = 0, to = "none", drop00 = TRUE)`. These are not
+  metafor's defaults: with its defaults (`drop00 = TRUE`, `correct = TRUE`) rma.mh gives the same pooled estimate but a
+  different Q, I² and H² on data that include a table with no events (or only events) in both groups, and a
+  continuity-corrected Cochran-Mantel-Haenszel test.
 - Rare-event conventions side by side: MH without correction (metafor), MH as meta::metabin computes it by
   default, Peto, and an inverse-variance fixed effect with 0.5 added to zero-cell tables, with a flag when
   they disagree on significance or differ by more than 10%.

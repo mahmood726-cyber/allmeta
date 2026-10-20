@@ -156,7 +156,7 @@ StudyE, 4, 600, 10, 600</textarea>
       <h2 style="margin-top:0.9rem">Heterogeneity and association tests</h2>
       <div class="table-wrap">
       <table id="het">
-        <caption>Cochran's Q, I&sup2; and H&sup2; for each pooled method, as printed by metafor</caption>
+        <caption>Cochran's Q, I&sup2; and H&sup2; for each pooled method, as printed by metafor rma.mh(&hellip;, add = c(0.5, 0), to = c("only0", "none"), drop00 = c(FALSE, FALSE), correct = FALSE) and rma.peto(&hellip;, add = 0, to = "none", drop00 = TRUE)</caption>
         <thead><tr><th scope="col">Method</th><th scope="col">Q (df)</th><th scope="col">p</th><th scope="col">I&sup2;</th><th scope="col">H&sup2;</th></tr></thead>
         <tbody id="het-body"></tbody>
       </table>
@@ -166,12 +166,12 @@ StudyE, 4, 600, 10, 600</textarea>
         <tbody id="assoc-body"></tbody>
       </table>
       </div>
-      <p class="note" id="het-note">Q uses the per-study estimates with 0.5 added to every cell of a table that has a zero (metafor's default for rma.mh); the Peto Q leaves out tables with no events in either group, or events in every participant. The Cochran-Mantel-Haenszel test is uncorrected (correct = FALSE). Tarone's test and the Breslow-Day test use the tables in which the fitted count is defined.</p>
+      <p class="note" id="het-note">Q uses the per-study estimates with 0.5 added to every cell of a table that has a zero, keeping tables with no events (or events in every participant) in both groups: rma.mh(&hellip;, add = c(0.5, 0), to = c("only0", "none"), drop00 = c(FALSE, FALSE), correct = FALSE). These are not metafor's defaults: rma.mh with its defaults (drop00 = TRUE, correct = TRUE) gives the same pooled estimate but leaves those tables out of Q, so Q, I&sup2; and H&sup2; differ when such a table is present, and it continuity-corrects the Cochran-Mantel-Haenszel test. The Peto Q leaves out tables with no events in either group, or events in every participant. The Cochran-Mantel-Haenszel test is uncorrected (correct = FALSE). Tarone's test and the Breslow-Day test use the tables in which the fitted count is defined.</p>
       <p class="note" id="zero-note"></p>
       <h2 style="margin-top:0.9rem">Rare-event conventions (sensitivity)</h2>
       <div class="table-wrap">
       <table id="conv">
-        <caption>The same tables pooled under the conventions that R packages use by default; the first row is this page's main result</caption>
+        <caption>The same tables pooled under the defaults of meta::metabin and escalc (the inverse-variance row is metafor rma(method = "EE")); the first row is this page's main result</caption>
         <thead><tr><th scope="col">Convention</th><th scope="col">Estimate</th><th scope="col">95% CI</th><th scope="col">p</th></tr></thead>
         <tbody id="conv-body"></tbody>
       </table>
@@ -740,9 +740,10 @@ StudyE, 4, 600, 10, 600</textarea>
       document.getElementById('k-note').textContent = rows.length + ' tables entered and pooled' +
         (parsed.notes.length ? ' (' + parsed.notes.join(' ') + ')' : '') + '; ' + nZero + ' with a zero cell, ' + nDouble + ' with no events (or no non-events) in both groups.';
       document.getElementById('zero-note').textContent = 'Zero cells: the pooled Mantel-Haenszel and Peto estimates use the counts as entered, with no continuity correction ' +
-        '(the convention of metafor rma.mh / rma.peto, which this page follows). Tables with no events in both groups add nothing to the MH estimate and are left out of the Peto estimate. ' +
+        '(the convention of metafor rma.mh / rma.peto, which this page follows). Tables with no events in both groups ' + (measure === 'RD' ? 'add a risk difference of 0, with their weight, to the MH estimate' : 'add nothing to the MH estimate') + ' and are left out of the Peto estimate. ' +
         'Per-study ' + (measure === 'RD' ? 'risk differences use the uncorrected counts. ' : (MEASURE_NAME[measure] + 's add 0.5 to every cell of a table that contains a zero. ')) +
-        'R users note: meta::metabin adds 0.5 to zero-cell studies inside its MH estimate by default (MH.exact = FALSE), so its pooled result can differ; set MH.exact = TRUE to match.';
+        'R users note: meta::metabin adds 0.5 to zero-cell studies inside its MH estimate by default (MH.exact = FALSE), so its pooled result can differ; ' +
+        (measure === 'RD' ? 'for the risk difference, meta\'s MH variance differs from metafor\'s, so even with MH.exact = TRUE the estimate matches but the SE and p differ.' : 'for the ' + MEASURE_NAME[measure] + ', set MH.exact = TRUE to match.');
 
       // Heterogeneity (Q, I2, H2) for each method, and CMH / Tarone / Breslow-Day for the OR.
       var het = res.het;

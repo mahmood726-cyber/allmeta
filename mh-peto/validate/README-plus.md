@@ -70,6 +70,23 @@ rule is generic and contains no dataset identifiers. The checks remain FAIL and 
 | I² computed with k instead of k - 1 | 6,383 |
 | meta-default MH keeping double-zero tables | 288 |
 
+**Text claims (test-backed).** Two sentences on the page are about R calls other than the validated ones. They are
+checked by `check-plus.mjs` against `plus-corpus/claims-plus.json` (written by `generate-plus.R`; SHA-256 pinned
+in `MANIFEST-plus.json` under `claims`). These 3,793 checks are counted separately from the 120,010 above:
+
+| Claim on the page | Check | Result |
+|---|---|---|
+| For OR and RR, `metabin(..., method = "MH", MH.exact = TRUE)` matches the page | beta, SE and p equal the page's MH at 1e-9 | OR 756/756, RR 756/756 |
+| For RD, meta's MH variance differs from metafor's | beta equal at 1e-9; SE differs | 252/252 and 252/252 (p differs in 217/252) |
+| `rma.mh` with metafor's defaults gives the same pooled estimate | beta equal at 1e-9 | 756/756 |
+| ... but a different Q when a table has no events (or only events) in both groups | Q differs exactly on those configuration-measures | 754/754 (172 differ; 2 have no Q under either call) |
+| ... and a continuity-corrected CMH | CMH differs, except where \|O - E\| = 0.25 (where (\|O - E\| - 0.5)² = (O - E)²) | 252/252 (1 such case) |
+| Pinned double-zero example (rv610 review, `102_struct_k4`, OR and RR) | page Q, p, I², H² (and CMH) equal the stated call; the default call differs in Q, I² (and CMH). RR: I² 0% on the page, 32.8% with the default | 15/15 |
+
+Planted claim defects: Q leaving out double-zero and all-event tables (as `drop00 = TRUE` would),
+`--plant q-drops-double-zero`: 3,609/3,793; MH RR variance x (1 + 1e-7), `--plant mh-rr-variance`: 3,391/3,793. Both
+exit 1.
+
 **Paper replay unchanged.** The primary 68,461-check replay (Tier 2, `adapter.js`) gives 68,461/68,461 before
 (2cd75db) and after, with tails 106/106, in headless Chromium. All 26,208 exported values of the 1,008
 configuration-measures are identical before and after.
@@ -90,17 +107,22 @@ configuration-measures are identical before and after.
 From `mh-peto/`, with R 4.6.0, metafor 5.2-1, meta 8.5-0 and jsonlite (the script prints `.libPaths()` and versions,
 and stops on other metafor/meta versions; 6 to 8 minutes):
 
-    Rscript validate/generate-plus.R                # -> validate/plus-corpus/reference-plus.json (LF)
+    Rscript validate/generate-plus.R                # -> validate/plus-corpus/reference-plus.json + claims-plus.json (LF)
+    Rscript validate/generate-plus.R --claims-only  # -> claims-plus.json only (about 5 minutes)
 
 From the repository root:
 
-    node mh-peto/validate/check-plus.mjs            # 120,010 checks + pin/count/identity contract
+    node mh-peto/validate/check-plus.mjs            # 120,010 checks + pin/count/identity contract; 3,793 claim checks + contract
     node mh-peto/validate/check-plus.mjs --plant tarone   # also: cmh-continuity-correction, loo-omits-wrong-table,
-                                                    #       i2-uses-k, metamh-keeps-double-zero
+                                                    #       i2-uses-k, metamh-keeps-double-zero,
+                                                    #       q-drops-double-zero, mh-rr-variance (claims)
 
-Browser tests: `hub/shared/tests/mh-peto-v2.spec.mjs`, `validate-mh-peto.spec.mjs` and `validate-integration.spec.mjs`.
-They were not run on the lane machine, because Playwright is not installed there. The browser numbers above come from
-the page's own panel and API, driven in headless Chromium over the DevTools protocol.
+Browser tests: `hub/shared/tests/mh-peto-v2.spec.mjs`, `validate-mh-peto.spec.mjs`, `validate-integration.spec.mjs`,
+`mh-peto-sanity.spec.mjs` and `mh-peto-bus.spec.mjs`. Run record: Playwright 1.59.1, msedge, `--workers=1`, on the
+commit that added the text claims (parent 0064c4f): 76/76 passed (mh-peto-v2 30/30, validate-mh-peto 10/10 including
+the 68,461/68,461 replay with tails 106/106, validate-integration 26/26, mh-peto-sanity 6/6, mh-peto-bus 4/4). Earlier
+record: 74/74 on ee4af92 (lane p610b). Six shared specs hard-code `localhost:8088`; they were run as untracked
+port-swapped copies.
 
 | Item | Static or dynamic | Source |
 |---|---|---|

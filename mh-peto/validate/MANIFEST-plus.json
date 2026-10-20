@@ -33,5 +33,15 @@
     "metafor": "5.2.1",
     "meta": "8.5.0",
     "jsonlite": "2.0.0"
+  },
+  "claims": {
+    "protocol": "Text claims on the page and README: metabin(MH.exact=TRUE) equals the page's MH for OR/RR (beta, SE, p) and differs in SE for RD; rma.mh with metafor's defaults gives the same pooled estimate, a different Q exactly on configurations with a double-zero or all-event table, and a different CMH unless |O-E| = 0.25; pinned double-zero example rv610_102_struct_k4 (OR, RR)",
+    "checks": 3793,
+    "expectedPassed": 3793,
+    "file": {
+      "path": "plus-corpus/claims-plus.json",
+      "sha256": "e7d4ffa3e1acdf4351e2741cb5caa39f7cf24104f08332ac9a09ea0c44092e43",
+      "bytes": 245171
+    }
   }
 }
