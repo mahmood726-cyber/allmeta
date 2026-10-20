@@ -1,0 +1,573 @@
+{
+ "schema": "multivariate-ma-plus-roundtrip-v1",
+ "cases": 94,
+ "checks": 29502,
+ "passed": 29502,
+ "failed": [],
+ "adjudicated": [
+  {
+   "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9",
+   "dlogLik": 7.602807272633072e-12,
+   "worst": [
+    "z 1.18e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.2",
+   "dlogLik": 4.3726799958676565e-11,
+   "worst": [
+    "z 2.68e-6",
+    "z 1.22e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::fibrinogen::b3+b5::REML::supplied#rhoW=-0.9",
+   "dlogLik": 2.015099198615644e-11,
+   "worst": [
+    "z 1.26e-6",
+    "G 1.08e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::hsls::b1+b3::REML::supplied#rhoW=-0.8",
+   "dlogLik": 7.283063041541027e-13,
+   "worst": [
+    "G 1.03e-6",
+    "G 1.03e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::hsls::b1+b3::REML::supplied#rhoW=-0.6",
+   "dlogLik": 3.907985046680551e-13,
+   "worst": [
+    "G 1.08e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::hsls::b2+b3::REML::supplied#rhoW=0.7",
+   "dlogLik": 9.965361869035405e-12,
+   "worst": [
+    "z 1.59e-6",
+    "G 3.16e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.9",
+   "dlogLik": 1.7621459846850485e-12,
+   "worst": [
+    "G 1.15e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.8",
+   "dlogLik": 1.7053025658242404e-12,
+   "worst": [
+    "G 1.18e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.7",
+   "dlogLik": 7.887024366937112e-12,
+   "worst": [
+    "G 2.14e-6",
+    "G 2.37e-6",
+    "G 2.37e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.1",
+   "dlogLik": 2.0605739337042905e-12,
+   "worst": [
+    "G 1.32e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=0.7",
+   "dlogLik": 6.693312570860144e-12,
+   "worst": [
+    "G 1.06e-6",
+    "G 1.69e-6",
+    "G 1.69e-6"
+   ]
+  },
+  {
+   "id": "mvmeta::smoking::yB+yD::REML::supplied#main",
+   "dlogLik": 8.074367841004459e-10,
+   "worst": [
+    "G 2.49e-6",
+    "G 2.49e-6",
+    "G 5.92e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9",
+   "dlogLik": 7.602807272633072e-12,
+   "worst": [
+    "z 1.18e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.2",
+   "dlogLik": 4.3726799958676565e-11,
+   "worst": [
+    "z 2.68e-6",
+    "z 1.22e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::fibrinogen::b3+b5::REML::supplied#rhoW=-0.9",
+   "dlogLik": 2.015099198615644e-11,
+   "worst": [
+    "z 1.26e-6",
+    "G 1.08e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::hsls::b1+b3::REML::supplied#rhoW=-0.8",
+   "dlogLik": 7.283063041541027e-13,
+   "worst": [
+    "G 1.03e-6",
+    "G 1.03e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::hsls::b1+b3::REML::supplied#rhoW=-0.6",
+   "dlogLik": 3.907985046680551e-13,
+   "worst": [
+    "G 1.08e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::hsls::b2+b3::REML::supplied#rhoW=0.7",
+   "dlogLik": 9.965361869035405e-12,
+   "worst": [
+    "z 1.59e-6",
+    "G 3.16e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.9",
+   "dlogLik": 1.7621459846850485e-12,
+   "worst": [
+    "G 1.15e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.8",
+   "dlogLik": 1.7053025658242404e-12,
+   "worst": [
+    "G 1.18e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.7",
+   "dlogLik": 7.887024366937112e-12,
+   "worst": [
+    "G 2.14e-6",
+    "G 2.37e-6",
+    "G 2.37e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.1",
+   "dlogLik": 2.0605739337042905e-12,
+   "worst": [
+    "G 1.32e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=0.7",
+   "dlogLik": 6.693312570860144e-12,
+   "worst": [
+    "G 1.06e-6",
+    "G 1.69e-6",
+    "G 1.69e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::smoking::yB+yD::REML::supplied#main",
+   "dlogLik": 8.074367841004459e-10,
+   "worst": [
+    "G 2.49e-6",
+    "G 2.49e-6",
+    "G 5.92e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.3",
+   "dlogLik": 3.851141627819743e-11,
+   "worst": [
+    "G 1.03e-6",
+    "G 1.26e-6",
+    "G 1.26e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4",
+   "dlogLik": 3.5356606531422585e-11,
+   "worst": [
+    "G 1.22e-6",
+    "G 1.48e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.3",
+   "dlogLik": 8.135714324453147e-13,
+   "worst": [
+    "G 1.03e-6",
+    "G 1.01e-6",
+    "G 1.01e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.6",
+   "dlogLik": 2.0392576516314875e-12,
+   "worst": [
+    "G 1.92e-6",
+    "G 1.85e-6",
+    "G 1.85e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.7",
+   "dlogLik": 4.380495965961018e-12,
+   "worst": [
+    "G 2.43e-6",
+    "G 2.61e-6",
+    "se 1.11e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.8",
+   "dlogLik": 2.2808421817899216e-12,
+   "worst": [
+    "G 2.03e-6",
+    "G 2.05e-6",
+    "G 2.05e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0#rhoW=0.8",
+   "dlogLik": 2.1316282072803006e-13,
+   "worst": [
+    "G 1.07e-6",
+    "G 1.07e-6",
+    "G 1.23e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0#rhoW=0.9",
+   "dlogLik": 6.695444199067424e-11,
+   "worst": [
+    "G 2.70e-6",
+    "G 3.78e-6",
+    "G 3.78e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#main",
+   "dlogLik": 2.6290081223123707e-12,
+   "worst": [
+    "G 1.43e-6",
+    "G 1.34e-6",
+    "G 1.34e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#rhoW=-0.3",
+   "dlogLik": 2.3590018827235326e-12,
+   "worst": [
+    "G 1.22e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#rhoW=-0.1",
+   "dlogLik": 2.6219026949547697e-12,
+   "worst": [
+    "G 1.40e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#rhoW=0",
+   "dlogLik": 2.6290081223123707e-12,
+   "worst": [
+    "G 1.43e-6",
+    "G 1.34e-6",
+    "G 1.34e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.3",
+   "dlogLik": 3.851141627819743e-11,
+   "worst": [
+    "G 1.03e-6",
+    "G 1.26e-6",
+    "G 1.26e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4",
+   "dlogLik": 3.5356606531422585e-11,
+   "worst": [
+    "G 1.22e-6",
+    "G 1.48e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.3",
+   "dlogLik": 8.135714324453147e-13,
+   "worst": [
+    "G 1.03e-6",
+    "G 1.01e-6",
+    "G 1.01e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.6",
+   "dlogLik": 2.0392576516314875e-12,
+   "worst": [
+    "G 1.92e-6",
+    "G 1.85e-6",
+    "G 1.85e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.7",
+   "dlogLik": 4.380495965961018e-12,
+   "worst": [
+    "G 2.43e-6",
+    "G 2.61e-6",
+    "se 1.11e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.8",
+   "dlogLik": 2.2808421817899216e-12,
+   "worst": [
+    "G 2.03e-6",
+    "G 2.05e-6",
+    "G 2.05e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0.97#main",
+   "dlogLik": 6.970424237806583e-12,
+   "worst": [
+    "se 1.31e-6",
+    "z 1.35e-6",
+    "G 5.29e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0.97#rhoW=0.8",
+   "dlogLik": 2.1316282072803006e-13,
+   "worst": [
+    "G 1.07e-6",
+    "G 1.07e-6",
+    "G 1.23e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0.97#rhoW=0.9",
+   "dlogLik": 6.695444199067424e-11,
+   "worst": [
+    "G 2.70e-6",
+    "G 3.78e-6",
+    "G 3.78e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0.97#rhoW=-0.3",
+   "dlogLik": 2.3590018827235326e-12,
+   "worst": [
+    "G 1.22e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0.97#rhoW=-0.1",
+   "dlogLik": 2.6219026949547697e-12,
+   "worst": [
+    "G 1.40e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0.97#rhoW=0",
+   "dlogLik": 2.6290081223123707e-12,
+   "worst": [
+    "G 1.43e-6",
+    "G 1.34e-6",
+    "G 1.34e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.3",
+   "dlogLik": 3.851141627819743e-11,
+   "worst": [
+    "G 1.03e-6",
+    "G 1.26e-6",
+    "G 1.26e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4",
+   "dlogLik": 3.5356606531422585e-11,
+   "worst": [
+    "G 1.22e-6",
+    "G 1.48e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.3",
+   "dlogLik": 8.135714324453147e-13,
+   "worst": [
+    "G 1.03e-6",
+    "G 1.01e-6",
+    "G 1.01e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.6",
+   "dlogLik": 2.0392576516314875e-12,
+   "worst": [
+    "G 1.92e-6",
+    "G 1.85e-6",
+    "G 1.85e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.7",
+   "dlogLik": 4.380495965961018e-12,
+   "worst": [
+    "G 2.43e-6",
+    "G 2.61e-6",
+    "se 1.11e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.8",
+   "dlogLik": 2.2808421817899216e-12,
+   "worst": [
+    "G 2.03e-6",
+    "G 2.05e-6",
+    "G 2.05e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y2i+y4i::REML::documented-AR1-0.97#main",
+   "dlogLik": 6.970424237806583e-12,
+   "worst": [
+    "se 1.31e-6",
+    "z 1.35e-6",
+    "G 5.29e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y2i+y4i::REML::documented-AR1-0.97#rhoW=0.8",
+   "dlogLik": 2.1316282072803006e-13,
+   "worst": [
+    "G 1.07e-6",
+    "G 1.07e-6",
+    "G 1.23e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y2i+y4i::REML::documented-AR1-0.97#rhoW=0.9",
+   "dlogLik": 6.695444199067424e-11,
+   "worst": [
+    "G 2.70e-6",
+    "G 3.78e-6",
+    "G 3.78e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y3i+y4i::REML::documented-AR1-0.97#rhoW=-0.3",
+   "dlogLik": 2.3590018827235326e-12,
+   "worst": [
+    "G 1.22e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y3i+y4i::REML::documented-AR1-0.97#rhoW=-0.1",
+   "dlogLik": 2.6219026949547697e-12,
+   "worst": [
+    "G 1.40e-6"
+   ]
+  },
+  {
+   "id": "metadat::dat.ishak2007::y3i+y4i::REML::documented-AR1-0.97#rhoW=0",
+   "dlogLik": 2.6290081223123707e-12,
+   "worst": [
+    "G 1.43e-6",
+    "G 1.34e-6",
+    "G 1.34e-6"
+   ]
+  },
+  {
+   "id": "mixmeta::gliomas::month6+month12::REML::documented-AR1-0#rhoW=0.8",
+   "dlogLik": 0.003827157760934341,
+   "worst": [
+    "mu 5.17e-2",
+    "se 1.80e-2",
+    "z 7.75e-2"
+   ]
+  },
+  {
+   "id": "mixmeta::gliomas::month6+month12::REML::documented-AR1-0.61#rhoW=0.8",
+   "dlogLik": 0.003827157760934341,
+   "worst": [
+    "mu 5.17e-2",
+    "se 1.80e-2",
+    "z 7.75e-2"
+   ]
+  },
+  {
+   "id": "metadat::dat.fine1993::month6+month12::REML::documented-covariance-raw#rhoW=0.8",
+   "dlogLik": 0.0038271577609272356,
+   "worst": [
+    "mu 5.17e-2",
+    "se 1.80e-2",
+    "z 7.75e-2"
+   ]
+  },
+  {
+   "id": "example::hyp::per-study-r#rhoW=-0.9",
+   "dlogLik": 1.7479351299698465e-12,
+   "worst": [
+    "G 1.15e-6"
+   ]
+  },
+  {
+   "id": "example::hyp::per-study-r#rhoW=-0.8",
+   "dlogLik": 1.6981971384666394e-12,
+   "worst": [
+    "G 1.18e-6"
+   ]
+  },
+  {
+   "id": "example::hyp::per-study-r#rhoW=-0.7",
+   "dlogLik": 7.894129794294713e-12,
+   "worst": [
+    "G 2.14e-6",
+    "G 2.37e-6",
+    "G 2.37e-6"
+   ]
+  },
+  {
+   "id": "example::hyp::per-study-r#rhoW=-0.1",
+   "dlogLik": 2.0605739337042905e-12,
+   "worst": [
+    "G 1.32e-6"
+   ]
+  },
+  {
+   "id": "example::hyp::per-study-r#rhoW=0.7",
+   "dlogLik": 6.700417998217745e-12,
+   "worst": [
+    "G 1.06e-6",
+    "G 1.69e-6",
+    "G 1.69e-6"
+   ]
+  }
+ ],
+ "missing": []
+}
