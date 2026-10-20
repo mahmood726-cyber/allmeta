@@ -8,7 +8,7 @@
  * that subgroup has a year (stable, ties keep row order), otherwise row order.
  *
  * Nothing here changes a page calculation; this file only calls the engine and draws/exports its output.
- * Exposes window.AlmSubgroupCumulative = { compute, renderSvg, toJson, toCsv, parseCsv, replay, replayCore, ... }.
+ * Exposes window.AlmSubgroupCumulative = { compute, renderSvg, tableHtml, toJson, toCsv, parseCsv, replay, replayCore, ... }.
  */
 (function (global) {
 'use strict';
@@ -138,6 +138,21 @@ function overlaySvg(res) {
   p.push('<text transform="translate(14,' + (T + plotH / 2) + ') rotate(-90)" text-anchor="middle" font-size="11" fill="#15181d" data-role="ylab">Pooled effect (95% CI)</text>');
   p.push('</svg>');
   return p.join('');
+}
+
+// ---------------------------------------------------------------- table
+// One table per subgroup, one row per step, at the page's display precision (fmt: 3 decimals; tau2 4).
+const TABLE_HEAD = ['Step', 'Study added', 'k', 'Pooled', '95% CI', 'τ²', 'Q', '95% PI'];
+function tableRow(s) {
+  return [String(s.step), s.label + (s.year != null ? ' (' + s.year + ')' : ''), String(s.k), fmt(s.mu), '[' + fmt(s.lo) + ', ' + fmt(s.hi) + ']', fmt(s.tau2, 4), fmt(s.Q),
+    s.piLo == null ? '—' : '[' + fmt(s.piLo) + ', ' + fmt(s.piHi) + ']'];
+}
+function tableHtml(res) {
+  if (!res || res.refused) return '';
+  return res.groups.map((g, i) => '<table class="subcum-table" data-subcum-table="' + i + '" data-group="' + esc(g.name) + '">' +
+    '<caption>' + esc(g.name + ' (k=' + g.k + '; ' + (g.byYear ? 'accrued by year' : 'accrued in row order') + ')') + '</caption>' +
+    '<thead><tr>' + TABLE_HEAD.map(h => '<th scope="col">' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' +
+    g.series.map(s => '<tr>' + tableRow(s).map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table>').join('');
 }
 
 // ---------------------------------------------------------------- export
@@ -306,10 +321,13 @@ function mount() {
   host.dataset.ready = '1';
   host.innerHTML =
     '<p class="subcum-lead">A cumulative path for each subgroup, computed with the same ordering rule, Paule-Mandel pool, 95% CI and t<sub>k−1</sub> prediction interval as the cumulative view. ' +
-    'metafor::cumul and meta::metacum have no subgroup argument; this view is checked against an R loop over subgroups (Replay below).</p>' +
+    'In R, neither <code>metafor::cumul</code> (metafor 5.2.1) nor <code>meta::metacum</code> (meta 8.5.0) takes a subgroup argument, but R composes the same paths in one loop: ' +
+    '<code>lapply(split(d, d$group), function(x) cumul(rma(yi, vi, data = x, method = "PM"), order = x$year))</code> (ordered by year only when every study in the subgroup has one). ' +
+    'This view is replayed against exactly that R loop (Replay below).</p>' +
     '<div class="subcum-controls"><label class="subcum-inline"><span>Layout</span> <select id="subcum-mode" aria-label="Within-subgroup layout" style="width:auto">' +
     '<option value="multiples">Small multiples</option><option value="overlay">Overlaid paths</option></select></label></div>' +
     '<div id="subcum-svg" class="subcum-svg" style="margin-top:0.5rem;overflow-x:auto"></div>' +
+    '<div id="subcum-tables" class="subcum-tables" role="region" aria-label="Within-subgroup cumulative table" tabindex="0" style="margin-top:0.5rem;max-height:28rem;overflow:auto"></div>' +
     '<div class="actions"><button type="button" id="subcum-json">Download JSON</button><button type="button" id="subcum-csv">Download CSV</button>' +
     '<button type="button" id="subcum-svgdl">Download SVG</button><button type="button" id="subcum-replay" title="Replay the pinned R composite reference (per-subgroup rma PM + cumul) through this page">Replay R reference (within-subgroup)</button></div>' +
     '<p id="subcum-status" class="subcum-status" aria-live="polite"></p>';
@@ -324,6 +342,7 @@ function mount() {
     global.__almSubCumLast = res;
     const box = document.getElementById('subcum-svg'); box.innerHTML = renderSvg(res, { mode: modeEl.value });
     const svg = box.querySelector('svg'); if (svg) { svg.style.width = '100%'; svg.style.maxWidth = Math.round(1.35 * Number(svg.getAttribute('width'))) + 'px'; svg.style.height = 'auto'; svg.style.display = 'block'; }
+    document.getElementById('subcum-tables').innerHTML = tableHtml(res);
   };
   const schedule = () => { if (!timer) timer = setTimeout(refresh, 60); };
   const svgHost = document.getElementById('svg-host');
@@ -345,7 +364,7 @@ function mount() {
   refresh();
 }
 
-global.AlmSubgroupCumulative = { SCHEMA, NOGROUP, ORDER_RULE, MAX_PANELS, MAX_OVERLAY, EVIDENCE, TOL, compute, renderSvg, toJson, toCsv, parseCsv,
+global.AlmSubgroupCumulative = { SCHEMA, NOGROUP, ORDER_RULE, MAX_PANELS, MAX_OVERLAY, EVIDENCE, TOL, compute, renderSvg, tableHtml, tableRow, TABLE_HEAD, toJson, toCsv, parseCsv,
   csvOf, expectedStudies, expectedChecks, replayCore, replay, loadPinned, utf16Less };
 if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();

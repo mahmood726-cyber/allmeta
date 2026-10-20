@@ -58,7 +58,7 @@ test('within-subgroup tier refuses changed evidence bytes', async ({ page }) => 
 });
 
 test('planted negative controls fail; unplanted evidence passes', async ({ page }) => {
-  test.setTimeout(600000);
+  test.setTimeout(3600000);   // 12 full replays of 1,005,903 checks; ~4 min each on a loaded host
   await open(page); await loadEvidence(page);
   // Control of the controls: no mutation -> zero failures with the same harness.
   const clean = await planted(page, '');
@@ -84,9 +84,10 @@ test('planted negative controls fail; unplanted evidence passes', async ({ page 
     throw Error('no candidate');`);
   expect(nc4.failed).toBeGreaterThan(0); expect(nc4.keys).toHaveLength(1); expect(nc4.quantities.members).toBeGreaterThan(0);
   // NC5 engine defect of the kind meta::metacum shows for a subgrouped object: every subgroup gets the POOLED path.
-  const nc5 = await planted(page, '', `const page = deps.cumulative, parse = deps.parse; let all = null;
-    deps.parse = t => { const p = parse(t); all = p.studies; return p; };
-    deps.cumulative = rows => { const c = page(all); return { sorted: c.sorted.slice(0, rows.length), series: c.series.slice(0, rows.length) }; };`);
+  const nc5 = await planted(page, '', `const page = deps.cumulative, parse = deps.parse; let all = null, pooled = null;
+    deps.parse = t => { const p = parse(t); all = p.studies; pooled = null; return p; };
+    // the pooled path is computed once per configuration (was once per subgroup: O(groups x k^2), > 20 min at k = 1,653)
+    deps.cumulative = rows => { if (!pooled) pooled = page(all); return { sorted: pooled.sorted.slice(0, rows.length), series: pooled.series.slice(0, rows.length) }; };`);
   expect(nc5.failed).toBeGreaterThan(1000);
   // NC6 the declared conditional rule is load-bearing and limited: without the adjudication list exactly the
   // 34 residual-Q comparisons fail, nothing else.
@@ -212,4 +213,85 @@ test('the existing pinned contract and template are untouched by the new tier', 
   // The new section is a body-level region, not inside any template root the existing page-text contract reads.
   const where = await page.evaluate(() => { const s = document.getElementById('alm-subcum'); return { parent: s.parentElement.tagName, inRoot: !!s.closest('main,header,footer,nav') }; });
   expect(where).toEqual({ parent: 'BODY', inRoot: false });
+});
+
+// ---- the feature through the UI, against the R reference ----
+// The user enters data in the page's data box (the same CSV the replay feeds the engine), the within-subgroup section
+// redraws, the user picks each layout; every subgroup then has a plot panel AND a table, and every table cell equals the
+// pinned R composite value (metafor 5.2.1 loop) at the page's display precision.
+const refPath = new URL('corpus/reference.json', root), corpusPath = new URL('corpus/corpus.json', root);
+const REF = JSON.parse(readFileSync(refPath, 'utf8')), CORPUS = JSON.parse(readFileSync(corpusPath, 'utf8'));
+const f3 = (x, d = 3) => Number.isFinite(x) ? x.toFixed(d) : '--';
+function rRows(rg) {   // the table rows the page must show, from the R reference alone
+  return rg.steps.map(s => [String(s.step), s.label + (s.year != null ? ' (' + s.year + ')' : ''), String(s.k), f3(s.mu), '[' + f3(s.lo) + ', ' + f3(s.hi) + ']', f3(s.tau2, 4), f3(s.Q),
+    s.piLo == null ? '—' : '[' + f3(s.piLo) + ', ' + f3(s.piHi) + ']']);
+}
+const tablesOnPage = () => [...document.querySelectorAll('#subcum-tables table')].map(t => ({ group: t.dataset.group, caption: t.caption.textContent,
+  head: [...t.tHead.rows[0].cells].map(c => c.textContent), rows: [...t.tBodies[0].rows].map(r => [...r.cells].map(c => c.textContent)) }));
+// Deterministic picks: a year-ordered configuration with >= 2 subgroups of k >= 3 accrued by year and one with ties, and a
+// row-order configuration holding an (ungrouped) subgroup.
+const PICKS = [
+  REF.findIndex((r, i) => r.status === 'ok' && CORPUS[i].key.includes('::year=') && r.groups.filter(g => g.by_year && g.k >= 3).length >= 2 &&
+    r.groups.some(g => g.by_year && new Set(g.steps.map(s => s.year)).size < g.k) && CORPUS[i].k <= 40),
+  REF.findIndex((r, i) => r.status === 'ok' && CORPUS[i].key.endsWith('::rows') && r.groups.some(g => g.name === '(ungrouped)') && r.groups.length >= 2 && CORPUS[i].k <= 40),
+];
+test('UI: data entered in the page -> each layout shows a plot panel and a table per subgroup; every cell equals the R reference', async ({ page }) => {
+  test.setTimeout(180000);
+  expect(PICKS.every(i => i >= 0)).toBe(true);
+  await open(page);
+  for (const i of PICKS) {
+    const c = CORPUS[i], r = REF[i];
+    const csv = await page.evaluate(c => AlmSubgroupCumulative.csvOf(c), c);
+    await page.locator('#alm-subcum-h').scrollIntoViewIfNeeded();
+    for (const mode of ['overlay', 'multiples']) {
+      if (mode === 'overlay' && r.groups.length > 8) continue;
+      await setData(page, csv, mode);
+      const sorted = r.groups.map(g => g.name).slice().sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+      await page.waitForFunction(([names, k]) => window.__almSubCumLast?.k === k && JSON.stringify([...document.querySelectorAll('#subcum-tables table')].map(t => t.dataset.group)) === JSON.stringify(names), [sorted, c.k]);
+      const panels = await page.evaluate(() => [...document.querySelectorAll('#subcum-svg [data-subcum-panel]')].map(g => [g.dataset.group, Number(g.dataset.k), g.querySelectorAll('circle').length]));
+      expect(panels.map(p => p[0]), c.key + ' ' + mode).toEqual(sorted);
+      for (const [name, k, circles] of panels) { const rg = r.groups.find(g => g.name === name); expect([k, circles]).toEqual([rg.k, rg.k]); }
+    }
+    const tables = await page.evaluate(tablesOnPage);
+    expect(tables.map(t => t.group), c.key).toEqual(r.groups.map(g => g.name).slice().sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)));
+    for (const t of tables) {
+      const rg = r.groups.find(g => g.name === t.group);
+      expect(t.head).toEqual(['Step', 'Study added', 'k', 'Pooled', '95% CI', 'τ²', 'Q', '95% PI']);
+      expect(t.caption).toBe(rg.name + ' (k=' + rg.k + '; ' + (rg.by_year ? 'accrued by year' : 'accrued in row order') + ')');
+      expect(t.rows, c.key + ' / ' + t.group).toEqual(rRows(rg));
+    }
+    // The exports carry the same subgroups and steps as the table.
+    const read = async (sel) => { const [d] = await Promise.all([page.waitForEvent('download'), page.click(sel)]); return readFileSync(await d.path(), 'utf8'); };
+    const j = JSON.parse(await read('#subcum-json'));
+    expect(j.groups.map(g => [g.name, g.series.length])).toEqual(tables.map(t => [t.group, t.rows.length]));
+    j.groups.forEach(g => g.series.forEach((s, m) => { const rs = r.groups.find(x => x.name === g.name).steps[m];
+      expect(s.row, g.name).toBe(rs.members[m]); expect(Math.abs(s.mu - rs.mu) / Math.max(1, Math.abs(rs.mu))).toBeLessThanOrEqual(1e-9); }));
+    const rows = await page.evaluate(t => AlmSubgroupCumulative.parseCsv(t), await read('#subcum-csv'));
+    expect(rows.map(x => x.group + '#' + x.step)).toEqual(j.groups.flatMap(g => g.series.map(s => g.name + '#' + s.step)));
+    console.log('SUBCUM UI', c.key, 'groups', tables.length, 'rows', tables.reduce((a, t) => a + t.rows.length, 0));
+  }
+});
+
+test('UI negative control: one altered table cell or a missing table is detected', async ({ page }) => {
+  await open(page);
+  const i = PICKS[0], c = CORPUS[i], r = REF[i];
+  await setData(page, await page.evaluate(c => AlmSubgroupCumulative.csvOf(c), c), 'multiples');
+  await page.waitForFunction(n => document.querySelectorAll('#subcum-tables table').length === n, r.groups.length);
+  await page.waitForTimeout(500);   // let the debounced (60 ms) redraw settle before planting
+  const read = `(${tablesOnPage.toString()})()`;
+  let tables = await page.evaluate(`(() => { const td = document.querySelector('#subcum-tables tbody tr:nth-child(2) td:nth-child(4)'); td.textContent = (Number(td.textContent) + 0.001).toFixed(3); return ${read}; })()`);
+  expect(tables.some(t => JSON.stringify(t.rows) !== JSON.stringify(rRows(r.groups.find(g => g.name === t.group))))).toBe(true);
+  tables = await page.evaluate(`(() => { document.querySelector('#subcum-tables table').remove(); return ${read}; })()`);
+  expect(tables.length).toBe(r.groups.length - 1);
+});
+
+test('page wording about R: names versions, states the one-loop R composition, claims nothing unsourced', async ({ page }) => {
+  await open(page);
+  const text = await page.locator('#alm-subcum').innerText();
+  expect(text).toContain('metafor 5.2.1'); expect(text).toContain('meta 8.5.0');
+  expect(text).toContain('lapply(split(d, d$group), function(x) cumul(rma(yi, vi, data = x, method = "PM"), order = x$year))');
+  // The probe (R_LACKS_EVIDENCE.md) shows metacum returns the pooled path for a subgrouped object; the page does not
+  // source that, so it must not claim it. No superiority wording either.
+  expect(text).not.toMatch(/metacum[^.]*\b(drops?|ignores?|silently|discards?|loses?)\b/i);
+  expect(text).not.toMatch(/better than R|beats R|more accurate than R|R cannot|R lacks/i);
 });
