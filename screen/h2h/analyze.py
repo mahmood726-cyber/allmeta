@@ -36,7 +36,15 @@ def read_set(p):
     return [x.strip() for x in Path(p).read_text().splitlines() if x.strip() and not x.startswith("#")]
 
 
-def validate_and_score(res_dir: Path, review: str, y: np.ndarray, pri: dict, expect: dict, check=None) -> dict:
+def best_case(y: np.ndarray, prior: list) -> dict:
+    """AMENDMENT 1 (2026-10-20): a failed COMPARATOR run is scored with the best order possible from its starting
+    records (every remaining relevant record next), so a comparator failure can never move the result toward Screen."""
+    rest = [int(i) for i in np.flatnonzero(y) if int(i) not in set(prior)]
+    return core.metrics_from_order(list(prior) + rest, y)
+
+
+def validate_and_score(res_dir: Path, review: str, y: np.ndarray, pri: dict, expect: dict, check=None,
+                       fail_score: str = "worst") -> dict:
     d = json.loads(Path(res_dir, f"{review}.json").read_text())
     if d.get("review", review) != review:
         raise SystemExit(f"{res_dir}/{review}: file is for review {d.get('review')}")
@@ -47,7 +55,8 @@ def validate_and_score(res_dir: Path, review: str, y: np.ndarray, pri: dict, exp
         raise SystemExit(f"{res_dir}/{review}: dataset ID hash differs from the registered priors")
     if d.get("dataset_sha256") != pri["dataset_sha256"]:
         raise SystemExit(f"{res_dir}/{review}: dataset digest missing or differs from the registered priors")
-    if check:
+    all_failed = bool(d.get("runs")) and all(r.get("failed") for r in d["runs"].values())
+    if check and not all_failed:  # AMENDMENT 1: a review whose every seed failed has no run provenance to check
         msg = check(d)
         if msg:
             raise SystemExit(f"{res_dir}/{review}: {msg}")
@@ -59,7 +68,7 @@ def validate_and_score(res_dir: Path, review: str, y: np.ndarray, pri: dict, exp
         if run.get("failed"):
             if run.get("attempts", 0) < 2:
                 raise SystemExit(f"{res_dir}/{review}: seed {s} failed after fewer than 2 attempts")
-            per.append(dict(WORST)); failed.append(s); continue
+            per.append(dict(WORST) if fail_score == "worst" else best_case(y, pri["priors"][s])); failed.append(s); continue
         order = run["order"]
         if order[: len(pri["priors"][s])] != pri["priors"][s]:
             raise SystemExit(f"{res_dir}/{review}: seed {s} does not start from the registered starting records")
@@ -129,9 +138,12 @@ def main():
     ap.add_argument("--screen-config", required=True, help="the frozen candidate's config name recorded in its result files")
     ap.add_argument("--screen-rank-sha256", required=True, help="sha256 of the frozen rank-core.js (FREEZE.md)")
     ap.add_argument("--screen-emb-onnx-sha256", default=None, help="sha256 of the frozen embedding weights, if any (FREEZE.md)")
+    ap.add_argument("--screen-freeze-json", default=None,
+                    help="AMENDMENT 1: JSON {cfg, emb} from FREEZE.md; every result file's cfg and emb recipe must equal it")
     ap.add_argument("--priors", default=str(HERE / "priors"))
     ap.add_argument("--data-dir", default=str(core.DATA_DIR)); ap.add_argument("--out", required=True)
     a = ap.parse_args()
+    frozen = json.loads(Path(a.screen_freeze_json).read_text()) if a.screen_freeze_json else None
     reviews = read_set(a.set)
     allc = json.loads(Path(a.clusters).read_text())[a.cluster_key]
     S = set(reviews)
@@ -156,6 +168,12 @@ def main():
         onnx = (d.get("emb") or {}).get("onnx_sha256")
         if onnx != a.screen_emb_onnx_sha256:
             return f"embedding weights {onnx} differ from the frozen {a.screen_emb_onnx_sha256}"
+        if frozen is not None:  # AMENDMENT 1: the settings, not only the names and hashes, must be the frozen ones
+            if d.get("cfg") != frozen["cfg"]:
+                return f"ranker settings {d.get('cfg')} differ from the frozen {frozen['cfg']}"
+            for k, v in (frozen.get("emb") or {}).items():
+                if (d.get("emb") or {}).get(k) != v:
+                    return f"embedding recipe field {k}={(d.get('emb') or {}).get(k)!r} differs from the frozen {v!r}"
         return None
 
     per = {}
@@ -165,8 +183,8 @@ def main():
         if core.dataset_digest(r, Path(a.data_dir)) != pri["dataset_sha256"]:
             raise SystemExit(f"{r}: data on disk differ from the data the priors were registered on")
         per[r] = {"screen": validate_and_score(Path(a.screen), r, y, pri, {"tool": "screen", "config": a.screen_config}, screen_check),
-                  "u4": validate_and_score(Path(a.u4), r, y, pri, {"tool": "asreview", "ai": "elas_u4"}, asr_check("elas_u4")),
-                  "u3": validate_and_score(Path(a.u3), r, y, pri, {"tool": "asreview", "ai": "elas_u3"}, asr_check("elas_u3")),
+                  "u4": validate_and_score(Path(a.u4), r, y, pri, {"tool": "asreview", "ai": "elas_u4"}, asr_check("elas_u4"), "best"),
+                  "u3": validate_and_score(Path(a.u3), r, y, pri, {"tool": "asreview", "ai": "elas_u3"}, asr_check("elas_u3"), "best"),
                   "R": int(y.sum()), "N": int(len(y))}
 
     def rev_diff(outcome, comp, seed101=False):

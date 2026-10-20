@@ -154,3 +154,93 @@ def test_driver_set_guard_is_symmetric(tmp_path, tool, extra):
                             "--out", str(tmp_path / "out"), *mode], capture_output=True, text=True, stdin=subprocess.DEVNULL)
         assert p.returncode != 0 and msg in p.stderr, (key, mode, p.stderr)
         assert not (tmp_path / "out" / f"{key}.json").exists()
+
+
+# ---- AMENDMENT 1 (2026-10-20): each test plants the defect the amendment closes ----
+def _setup3(tmp_path, scr_meta=SCR):
+    data, keys = _make(tmp_path, n_reviews=3)
+    core.write_priors(keys, tmp_path / "priors", data)
+    _orders(data, keys, tmp_path / "screen", False, scr_meta)
+    _orders(data, keys, tmp_path / "u4", False, ASR("elas_u4"))
+    _orders(data, keys, tmp_path / "u3", False, ASR("elas_u3"))
+    (tmp_path / "set.txt").write_text("\n".join(keys)); (tmp_path / "cl.json").write_text(json.dumps({"clusters": [[k] for k in keys]}))
+    base = [sys.executable, str(HERE / "analyze.py"), "--screen", str(tmp_path / "screen"), "--u4", str(tmp_path / "u4"),
+            "--u3", str(tmp_path / "u3"), "--set", str(tmp_path / "set.txt"), "--clusters", str(tmp_path / "cl.json"),
+            "--data-dir", str(data), "--screen-config", "__control_cfg", "--screen-rank-sha256", "__control_sha",
+            "--priors", str(tmp_path / "priors"), "--out", str(tmp_path / "a.json")]
+    return data, keys, base
+
+
+def _fail(path, seeds=None):
+    d = json.loads(path.read_text())
+    for s in (seeds or list(d["runs"])):
+        d["runs"][s] = {"failed": True, "attempts": 2}
+    path.write_text(json.dumps(d))
+
+
+def test_comparator_failure_never_moves_result_toward_screen(tmp_path):
+    data, keys, base = _setup3(tmp_path)
+    subprocess.run(base, check=True, capture_output=True, stdin=subprocess.DEVNULL)
+    before = json.loads((tmp_path / "a.json").read_text())["per_review"][keys[0]]
+    _fail(tmp_path / "u4" / f"{keys[0]}.json", ["101"])
+    subprocess.run(base, check=True, capture_output=True, stdin=subprocess.DEVNULL)
+    after = json.loads((tmp_path / "a.json").read_text())["per_review"][keys[0]]
+    d_before = before["screen"]["wss95"] - before["u4"]["wss95"]
+    d_after = after["screen"]["wss95"] - after["u4"]["wss95"]
+    assert d_after <= d_before + 1e-12  # the old symmetric worst-case scoring made this LARGER (+ toward Screen)
+    assert after["u4"]["seed101"]["wss95"] >= before["u4"]["seed101"]["wss95"]
+
+
+def test_review_with_every_seed_failed_is_scored_not_fatal(tmp_path):
+    data, keys, base = _setup3(tmp_path)
+    f = tmp_path / "screen" / f"{keys[1]}.json"; d = json.loads(f.read_text())
+    head = {k: d[k] for k in ("tool", "config", "review", "ids_sha256", "dataset_sha256")}  # what the driver writes
+    f.write_text(json.dumps({**head, "all_failed": True, "runs": {str(s): {"failed": True, "attempts": 2} for s in core.SEEDS}}))
+    p = subprocess.run(base, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    assert p.returncode == 0, p.stderr
+    r = json.loads((tmp_path / "a.json").read_text())
+    assert r["per_review"][keys[1]]["screen"]["wss95"] == -0.05 and len(r["failed_seeds"]["screen"][keys[1]]) == 10
+
+
+def test_frozen_settings_are_enforced(tmp_path):
+    cfg = {"C": 0.11, "ratio": 9.8, "retrainEvery": 1}
+    data, keys, base = _setup3(tmp_path, {**SCR, "cfg": cfg, "emb": {"model": "m", "onnx_sha256": None}})
+    fz = tmp_path / "fz.json"
+    fz.write_text(json.dumps({"cfg": cfg, "emb": {"model": "m"}}))
+    assert subprocess.run(base + ["--screen-freeze-json", str(fz)], capture_output=True, stdin=subprocess.DEVNULL).returncode == 0
+    fz.write_text(json.dumps({"cfg": {**cfg, "C": 0.25}, "emb": {"model": "m"}}))
+    p = subprocess.run(base + ["--screen-freeze-json", str(fz)], capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    assert p.returncode != 0 and "ranker settings" in p.stderr
+    fz.write_text(json.dumps({"cfg": cfg, "emb": {"model": "other"}}))
+    p = subprocess.run(base + ["--screen-freeze-json", str(fz)], capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    assert p.returncode != 0 and "embedding recipe" in p.stderr
+
+
+def test_driver_accepts_only_valid_orders(tmp_path):
+    import run_heldout
+    y = np.array([0, 1, 0, 1, 0, 0]); prior = [1, 0, 2, 4]
+    def put(run):
+        pf = tmp_path / "p.json"; pf.write_text(json.dumps({"runs": {"101": run}})); return pf
+    assert run_heldout.accept_run(put({"order": [1, 0, 2, 4, 3]}), "101", y, prior)[0]
+    for bad in ({"order": [1, 0, 2, 4]}, {"order": [1, 0, 2, 4, 3, 5]}, {"order": [0, 1, 2, 4, 3]},
+                {"order": [1, 0, 2, 4, 3, 3]}, {"failed": True}, {}):
+        assert not run_heldout.accept_run(put(bad), "101", y, prior)[0], bad
+    assert not run_heldout.accept_run(tmp_path / "missing.json", "101", y, prior)[0]
+
+
+def test_heldout_screen_run_requires_matching_freeze(tmp_path, monkeypatch):
+    import hashlib
+    import run_heldout
+    (tmp_path / "js").mkdir(); (tmp_path / "js" / "rank-core.js").write_bytes(b"// __control_rank_core\n")
+    monkeypatch.setattr(run_heldout, "HERE", tmp_path)
+    with pytest.raises(SystemExit, match="FREEZE.json is missing"):
+        run_heldout.check_freeze("cfgA", "--x 1")
+    sha = hashlib.sha256(b"// __control_rank_core\n").hexdigest()
+    (tmp_path / "FREEZE.json").write_text(json.dumps({"rank_core_sha256": sha, "config": "cfgA", "js_args": "--x 1"}))
+    assert "freeze_sha256" in run_heldout.check_freeze("cfgA", "--x 1")
+    for cfg, args in (("cfgB", "--x 1"), ("cfgA", "--x 2")):
+        with pytest.raises(SystemExit, match="differs from FREEZE.json"):
+            run_heldout.check_freeze(cfg, args)
+    (tmp_path / "js" / "rank-core.js").write_bytes(b"// edited\n")
+    with pytest.raises(SystemExit, match="rank_core_sha256"):
+        run_heldout.check_freeze("cfgA", "--x 1")

@@ -273,3 +273,57 @@ Analyses: `analyze.py --screen R/screen --u4 R/asreview/elas_u4 --u3 R/asreview/
 | Sets, clusters, seeds, starting records, margin, tests, commands, ASReview version/settings | yes | |
 | Screen candidate identity | fixed in `FREEZE.md` before held-out runs | |
 | Screening orders, metrics, CIs, p-values | | yes |
+
+## Amendment 1 (2026-10-20; made before any held-out run of either tool)
+
+Source: an independent protocol review (`h2h/reviews/R1_protocol.md`) and a DEV-results review
+(`h2h/reviews/R2_results.md`). No held-out data had been run or inspected by either tool when this amendment was written; the
+registered commit is `24f04f363eaa542764fac9fb341b2b0ac1d31948`.
+
+**A1.1 Failure scoring is now conservative for a non-inferiority claim.** Section 8 scored every failed
+(tool, review, seed) run with the worst values. For a failed *comparator* run that moves the difference toward
+Screen, which is the wrong direction for H1. From now: a failed Screen run keeps the worst values; a failed ASReview
+run (u4 or u3) is scored with the best order possible from its starting records (every remaining relevant record
+next; `analyze.py: best_case`). A comparator failure can therefore only make Screen look worse. The 95% success gate
+for each tool is unchanged.
+
+**A1.2 A review whose every seed failed is scored, never fatal.** The driver writes such a review with
+`all_failed: true` and the identity fields only; the analysis skips run-provenance checks for it (there is no run)
+and scores it as in A1.1. Previously the provenance check would have stopped the analysis after results existed.
+
+**A1.3 Orders are validated in the driver, for both tools.** `run_heldout.py: accept_run` accepts a run only if its
+order starts from the registered starting records and passes `core.metrics_from_order`; otherwise the attempt is a
+failure and is retried once, then recorded as failed. Each attempt log records the reason.
+
+**A1.4 The frozen settings are checked, not only names and hashes.** `analyze.py --screen-freeze-json` takes the
+`cfg` and `emb` objects from `FREEZE.md`; every Screen result file's ranker settings (C, ratio, retraining cadence,
+TF-IDF options) and every listed embedding-recipe field must equal them, or the analysis stops.
+
+**A1.5 The freeze is enforced in code.** A held-out Screen run is refused unless `h2h/FREEZE.json` exists and its
+`rank_core_sha256`, `config` and `js_args` equal the file and arguments being run (`run_heldout.py: check_freeze`).
+Every result file records the driver's git commit and the sha256 of `FREEZE.json`. The git tag `h2h-prereg-v1`
+(protocol header) still has to be created by the repository owner; until then the registered commit SHA above is the
+reference.
+
+**A1.6 What FREEZE.md must pin for an embedding candidate** (in addition to the protocol header): the allmeta commit;
+sha256 of `rank-core.js`, `run_js.mjs`, `run_heldout.py`, `analyze.py`, `core.py`, `bench/extract.mjs`; the exact
+`--js-args` including `--emb-dir` and `--emb-onnx-sha256`; the source model id and revision, the export command and
+tool versions, sha256 of every model file (ONNX, tokenizer, config); the embedding recipe (text template, prefix,
+max tokens, pooling, normalisation, dtype, device/backend, batch); the embedding script's sha256 and the
+Transformers.js, onnxruntime and Node versions; the selection rule and fallback that chose the candidate. Held-out
+embeddings are computed once, with that pipeline, before the Screen held-out run, and their sha256s are archived
+with the results.
+
+**Disclosures (no change to the analysis).**
+- Margin (7.2): the "about 4% of u4's mean" figure uses in-sample numbers, and the statement that ASReview changed
+  its default because of the 0.035 u4-u3 gap is our reading, not a documented ASReview decision. The margin itself is
+  unchanged. In records: 0.02 WSS@95 is 2 extra records screened per 100.
+- Unit (6): the brief asked for the review as the unit; the protocol uses clusters of overlapping reviews (each
+  equally weighted), which is more conservative where reviews share records. S3 gives the review-level analysis.
+- Ceiling: 40 of the 84 PRIMARY reviews have R < 20, where WSS@95 equals WSS@100 - 0.05 and differences shrink.
+  S6 (R >= 20) is reported next to the primary result with equal prominence, together with each tool's absolute mean
+  WSS@95 (a random order has expected WSS@95 of about 0).
+- Seeds: the ASReview runs reseed NumPy per seed; Screen's SVM uses a fixed internal seed (1) and differs across
+  seeds only through the starting records. Both tools share identical starting records on every seed.
+- The DEV gain of the chosen candidate is optimistic (best of about 37 configurations on 18 reviews, where u4 is
+  in-sample); it is not a prediction of the held-out difference.

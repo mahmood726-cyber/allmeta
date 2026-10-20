@@ -14,10 +14,51 @@ import sys
 import time
 from pathlib import Path
 
+import hashlib
+
 import core
 
 HERE = Path(__file__).resolve().parent
 LIMIT_S = 6 * 3600
+
+
+def accept_run(pf: Path, s: str, y, prior: list):
+    """AMENDMENT 1 (2026-10-20): a run counts as successful only if its order is valid for the metrics (same check for
+    both tools), so an invalid order is a retried failure here instead of an error inside the analysis."""
+    if not pf.exists():
+        return False, "no output file"
+    run = json.loads(pf.read_text())["runs"].get(s) or {"failed": True}
+    if run.get("failed"):
+        return False, "runner recorded a failure"
+    try:
+        if run["order"][: len(prior)] != prior:
+            return False, "order does not start from the registered starting records"
+        core.metrics_from_order(run["order"], y)
+    except (ValueError, KeyError, TypeError) as e:
+        return False, f"invalid order: {e}"
+    return True, ""
+
+
+def check_freeze(config: str, js_args: str) -> dict:
+    """AMENDMENT 1: a held-out Screen run is refused unless FREEZE.json exists and names this exact ranker file,
+    config and runner arguments."""
+    fz = HERE / "FREEZE.json"
+    if not fz.exists():
+        raise SystemExit("held-out Screen run refused: FREEZE.json is missing")
+    f = json.loads(fz.read_text())
+    rank_sha = hashlib.sha256((HERE / "js" / "rank-core.js").read_bytes()).hexdigest()
+    for k, have in (("rank_core_sha256", rank_sha), ("config", config), ("js_args", js_args)):
+        if f.get(k) != have:
+            raise SystemExit(f"held-out Screen run refused: {k}={have!r} differs from FREEZE.json {f.get(k)!r}")
+    return {"freeze_sha256": hashlib.sha256(fz.read_bytes()).hexdigest()}
+
+
+def git_commit() -> str:
+    try:
+        return subprocess.run(["git", "-C", str(HERE), "rev-parse", "HEAD"], capture_output=True, text=True,
+                              stdin=subprocess.DEVNULL, timeout=30).stdout.strip() or "unknown"
+    except (OSError, subprocess.TimeoutExpired):
+        return "unknown"
 
 
 def read_set(p):
@@ -49,6 +90,9 @@ def main():
         if bad:
             raise SystemExit(f"not in the set: {sorted(bad)}")
         reviews = a.reviews.split(",")
+    prov = {"driver_git_commit": git_commit()}
+    if a.tool == "screen" and not a.dev_smoke:
+        prov.update(check_freeze(a.config, a.js_args))
     out = Path(a.out); parts = out / "_per_seed"; parts.mkdir(parents=True, exist_ok=True)
     log = (out / "_attempts.jsonl").open("a")
     for rv in reviews:
@@ -56,6 +100,8 @@ def main():
         if final.exists():
             continue
         runs, head = {}, None
+        _, y, _ = core.load_review(rv, Path(a.data_dir))
+        pri = json.loads((HERE / "priors" / f"{rv}.json").read_text())
         for s in map(str, core.SEEDS):
             pf = parts / f"{rv}__{s}.json"
             if a.tool == "asreview":
@@ -75,21 +121,20 @@ def main():
                     rc, err = p.returncode, p.stderr[-2000:]
                 except subprocess.TimeoutExpired:
                     rc, err = "timeout", f"exceeded {LIMIT_S} s"
-                ok = rc == 0 and pf.exists() and not json.loads(pf.read_text())["runs"][s].get("failed")
+                ok, why = accept_run(pf, s, y, pri["priors"][s]) if rc == 0 else (False, f"exit {rc}")
                 log.write(json.dumps({"tool": a.tool, "ai": a.ai, "config": a.config, "review": rv, "seed": s, "attempt": attempt,
-                                      "rc": rc, "ok": ok, "seconds": round(time.time() - t0, 1), "stderr_tail": err}) + "\n"); log.flush()
+                                      "rc": rc, "ok": ok, "why": why, "seconds": round(time.time() - t0, 1), "stderr_tail": err}) + "\n"); log.flush()
                 if ok:
                     d = json.loads(pf.read_text()); head = head or {k: v for k, v in d.items() if k != "runs"}
                     rec = d["runs"][s]; rec["driver_attempt"] = attempt
                     break
             runs[s] = rec or {"failed": True, "attempts": 2}
             print(f"[{a.tool}] {rv} seed {s}: {'ok' if rec else 'FAILED twice'}", flush=True)
-        if head is None:  # every seed failed: still write the review, so it is scored worst-case and never dropped
-            _, _, ids = core.load_review(rv, Path(a.data_dir))
-            pri = json.loads((HERE / "priors" / f"{rv}.json").read_text())
-            head = {"tool": a.tool, "review": rv, "ids_sha256": ids, "dataset_sha256": pri["dataset_sha256"]}
+        if head is None:  # every seed failed: still write the review, so it is scored and never dropped
+            head = {"tool": a.tool, "review": rv, "ids_sha256": pri["ids_sha256"], "dataset_sha256": pri["dataset_sha256"],
+                    "all_failed": True}
             head.update({"ai": a.ai} if a.tool == "asreview" else {"config": a.config})
-        final.write_text(json.dumps({**head, "runs": runs}))
+        final.write_text(json.dumps({**head, **prov, "runs": runs}))
 
 
 if __name__ == "__main__":
