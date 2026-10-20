@@ -28,8 +28,10 @@
     html,body { margin:0; padding:0; }
     body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
            background:var(--bg); color:var(--ink); min-height:100vh; line-height:1.5; }
-    /* Top padding clears the fixed "90 allmeta" badge (top 12px, ~26px tall) so it never covers the title. */
-    header { padding:3.25rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    header { padding:2rem clamp(1rem,3vw,3rem) 1rem; border-bottom:1px solid var(--border); background:var(--panel); }
+    /* The fixed "← allmeta" badge (#hub-back: top 12px, ~26px tall) must never cover the title. hub/app-style.css sets
+       header padding-top 28px !important (54px below 720px); this more specific rule wins at every width. */
+    body > header { padding-top:56px !important; }
     header h1 { margin:0 0 0.25rem; font-size:1.5rem; letter-spacing:-0.01em; }
     header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:66ch; }
     .layout { display:grid; grid-template-columns:minmax(320px,26rem) 1fr;
@@ -105,13 +107,13 @@
   <main id="main" class="layout">
     <section class="panel" aria-label="Input form">
       <h2>Studies</h2>
+      <div class="example-row"><button type="button" id="btn-example" class="primary">Load example</button></div>
 
       <!-- csv-upload mount: file picker for CSV files -->
       <div id="alm-csv-mount"></div>
 
       <fieldset>
         <legend>Data</legend>
-        <div class="example-row"><button type="button" id="btn-example" class="primary">Load example</button></div>
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE, year, group</code></span>
           <textarea id="f-data" spellcheck="false" aria-label="Studies"></textarea>
@@ -360,6 +362,8 @@
 
     function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
     function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?3:d); }
+    // Axis tick numbers: a tick that niceTicks lands a rounding error below zero (e.g. -2.8e-17) prints as "0.00", never "-0.00".
+    function tickLabel(t) { const s = fmt(t,2); return s === "-0.00" ? "0.00" : s; }
     function niceTicks(lo,hi,n) {
       if (!(hi>lo)) return [lo];
       const r=hi-lo, s0=r/Math.max(1,n);
@@ -473,7 +477,7 @@
         if (step % every === 0) p.push("<text class=\"cum-step-num\" x=\""+x(step)+"\" y=\""+(axisY+14)+"\" text-anchor=\"middle\" font-size=\"9\" fill=\"#5c6470\">"+step+"</text>");
       }
       p.push("<text class=\"cum-axis-title\" x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Cumulative study count</text>");
-      const yTicks = niceTicks(yLo, yHi, 6), yTickText = yTicks.map(t => fmt(t,2));
+      const yTicks = niceTicks(yLo, yHi, 6), yTickText = yTicks.map(tickLabel);
       yTicks.forEach((t, i) => {
         p.push("<line x1=\""+L+"\" y1=\""+y(t)+"\" x2=\""+(L-4)+"\" y2=\""+y(t)+"\" stroke=\"#15181d\"/>");
         p.push("<text class=\"cum-tick\" x=\""+(L-8)+"\" y=\""+(y(t)+3)+"\" text-anchor=\"end\" font-size=\"9\" fill=\"#5c6470\">"+yTickText[i]+"</text>");
@@ -552,7 +556,7 @@
       const xTicks = niceTicks(xLo, xHi, 6);
       for (const t of xTicks) {
         p.push("<line x1=\""+x(t)+"\" y1=\""+axisY+"\" x2=\""+x(t)+"\" y2=\""+(axisY+4)+"\" stroke=\"#15181d\"/>");
-        p.push("<text x=\""+x(t)+"\" y=\""+(axisY+16)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+fmt(t,2)+"</text>");
+        p.push("<text x=\""+x(t)+"\" y=\""+(axisY+16)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5c6470\">"+tickLabel(t)+"</text>");
       }
       p.push("<text x=\""+(L+plotW/2)+"\" y=\""+(axisY+36)+"\" text-anchor=\"middle\" font-size=\"11\" fill=\"#15181d\">Effect</text>");
 

@@ -27,6 +27,12 @@ the section is renamed to that version and dated, and a fresh
   replay's plot text/position contract was re-pinned to the new layout and still
   runs 609,398 checks with 6 refusals. Above 300 steps the key lists the first
   300 and one row naming the rest, so PNG/PDF export keeps working at large k.
+- Cumulative + subgroup page usability: the pooled-result cards and notes sit at
+  the top of the Preview panel (inside the first 1366 x 900 viewport); "Load
+  example" is the first control under "Studies"; no horizontal scroll at 390 px;
+  the "allmeta" badge no longer covers the title; an axis tick that rounds to
+  zero prints "0.00", never "-0.00". No number changes; the Validate template
+  text pin was re-derived for the moved nodes (texts and labels identical).
 
 ### Added
 - _(items added since the most recent tag will be listed here)_
