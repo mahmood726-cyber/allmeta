@@ -8,6 +8,9 @@ import { createHash } from 'node:crypto';
 import { readZip, readTiff, decodePng } from './zip-reader.mjs';
 
 const PAGE = '/proportion-ma/index.html';
+// The Verify in R test hook (window.__almVerifyPerturb) is inert unless the URL has ?almtest=1.
+const PAGE_TEST = PAGE + '?almtest=1';
+const PASS_RE = /^(\d+) of (\d+) computed quantities match R; 0 not computed — PASS$/;
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const PROVENANCE = [
   { id: 'p1', label: 'Alpha 2019', reference: 'Alpha A et al. Trials 2019;20:1', location: 'Table 2', pastedText: '5/40 (12.5%)',
@@ -44,7 +47,7 @@ const sha = b => createHash('sha256').update(b).digest('hex');
 test('Verify in R: every row passes on the built-in example; planted defect fails; downloads', async ({ page }) => {
   test.setTimeout(900_000);
   const errors = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto(PAGE);
+  await page.goto(PAGE_TEST);
   await expect(page.locator('#res-body .pooled-row')).toHaveCount(1);
   await expect(page.locator('#alm-features')).toBeVisible();
   await openPanel(page);
@@ -71,7 +74,7 @@ test('Verify in R: every row passes on the built-in example; planted defect fail
   await expect(summary).not.toBeEmpty({ timeout: 600_000 });
   const text = (await summary.textContent()).trim();
   console.log('FEATURES VERIFY ' + text);
-  const m = /^(\d+) of (\d+) quantities match R — PASS$/.exec(text);
+  const m = PASS_RE.exec(text);
   expect(m, text).not.toBeNull();
   const N = +m[2];
   expect(N).toBeGreaterThanOrEqual(10); expect(+m[1]).toBe(N);
@@ -81,6 +84,7 @@ test('Verify in R: every row passes on the built-in example; planted defect fail
   console.log('FEATURES VERSIONS ' + JSON.stringify(st.verify.versions));
   console.log('FEATURES GRAPHICS ' + JSON.stringify(st.verify.graphics));
   expect(st.verify.passed).toBe(true); expect(st.verify.nPassed).toBe(N);
+  expect(st.verify.nNotComputed).toBe(0); expect(st.verify.testHook).toBe(false);
   expect(st.verify.revision).toBe(st.revision);
   expect(st.verify.versions.webR).toBe('0.5.5');
   // R plot beside the app's plot; the app SVG clone carries no duplicate ids.
@@ -103,7 +107,7 @@ test('Verify in R: every row passes on the built-in example; planted defect fail
   expect(byName['provenance.csv'], 'no provenance recorded -> no provenance.csv').toBeUndefined();
   const dec = b => new TextDecoder().decode(b);
   const csv = dec(byName['proportion-ma-verify-comparison.csv']).trim().split('\n');
-  expect(csv[0]).toBe('quantity,key,app,R,abs_diff,tolerance,kind,result'); expect(csv).toHaveLength(N + 1);
+  expect(csv[0]).toBe('quantity,key,app,R,diff,abs_diff,tolerance,kind,result'); expect(csv).toHaveLength(N + 1);
   expect(csv.slice(1).every(l => l.endsWith(',PASS'))).toBe(true);
   const script = dec(byName['proportion-ma-verify.R']);
   expect(script).toContain('metafor::escalc'); expect(script).toContain('metafor::forest('); expect(script).toContain('print(sessionInfo())');
@@ -123,6 +127,8 @@ test('Verify in R: every row passes on the built-in example; planted defect fail
   expect(results9.stateRevision).toBe(st.verify.revision); expect(results9.webR).toBe('0.5.5');
   expect(results9.files.map(f => f.name).sort()).toEqual(Object.keys(byName).filter(n => n !== 'truthcert.json').sort());
   for (const f of results9.files) { expect(f.sha256, f.name).toBe(sha(byName[f.name])); expect(f.bytes).toBe(byName[f.name].length); }
+  expect(results9.testHook).toBe(false); expect(results9.nNotComputed).toBe(0);
+  expect(receipt.studies).toHaveLength((await page.locator('#src').inputValue()).trim().split('\n').length);
   expect(receipt.signed).toBe(false);
   expect(receipt.contentHash).toMatch(/^sha256:[0-9a-f]{64}$/);
   expect(await page.evaluate(r => AlmTruthCertExport.verifyContentHash(r), receipt)).toBe(true);
@@ -135,7 +141,9 @@ test('Verify in R: every row passes on the built-in example; planted defect fail
   const prov = readZip(readFileSync(await zip2.path())).find(e => e.name === 'provenance.csv');
   expect(prov).toBeDefined();
   const provLines = dec(prov.bytes).trim().split('\n');
-  expect(provLines[0]).toBe('label,reference,doi,pmid,location,outcome,arm,timepoint,field,value,span_start,span_end,conversions,flags,confirmed');
+  expect(provLines[0]).toBe(await page.evaluate(() => AlmVerifyR.PROVENANCE_COLUMNS.join(',')));
+  expect(provLines[0]).toContain(',pasted_text,quote_exact,quote_prefix,quote_suffix,conversions,flags,');
+  expect(provLines[1]).toContain(',5/40 (12.5%),');
   expect(provLines).toHaveLength(5);
 
   // PLANTED DEFECT: perturb one app value via the documented test hook -> exactly that row FAILS.
@@ -144,11 +152,27 @@ test('Verify in R: every row passes on the built-in example; planted defect fail
   await expect(summary).toContainText('FAIL', { timeout: 300_000 });
   const planted = (await summary.textContent()).trim();
   console.log('FEATURES PLANTED ' + planted);
-  expect(planted).toBe(`${N - 1} of ${N} quantities match R — FAIL: 1 outside tolerance or unavailable`);
-  const failing = await panel.locator('tbody tr').evaluateAll(trs => trs.filter(tr => tr.querySelector('td[data-result]').textContent !== 'PASS').map(tr => tr.dataset.key));
-  expect(failing).toEqual(['tau2']);
+  const TEST_PLANTED = `TEST MODE (test hook active; not a verification) — ${N - 1} of ${N} computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active`;
+  expect(planted).toBe(TEST_PLANTED);
+  const failingKeys = () => panel.locator('tbody tr').evaluateAll(trs => trs.filter(tr => tr.querySelector('td[data-result]').textContent !== 'PASS').map(tr => tr.dataset.key));
+  expect(await failingKeys()).toEqual(['tau2']);
+  expect(await page.evaluate(() => ({ passed: AlmFeaturesState.verify.passed, testHook: AlmFeaturesState.verify.testHook, perturbed: AlmFeaturesState.verify.perturbed })))
+    .toEqual({ passed: false, testHook: true, perturbed: { key: 'tau2', delta: 1e-3 } });
+  const [zip3] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'Download everything (ZIP)', exact: true }).click()]);
+  const r3 = JSON.parse(dec(readZip(readFileSync(await zip3.path())).find(e => e.name === 'truthcert.json').bytes)).extra.results;
+  expect([r3.testHook, r3.passed, r3.perturbed]).toEqual([true, false, { key: 'tau2', delta: 1e-3 }]);
+  expect(r3.summary).toBe(TEST_PLANTED);
+  // The hook can never make a row pass: a zero perturbation (value equal to the app's own) still FAILS that row.
+  await page.evaluate(() => { window.__almVerifyPerturb = { key: 'tau2', delta: 0 }; });
+  await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
+  await expect(summary).toHaveText(TEST_PLANTED, { timeout: 300_000 });
+  expect(await failingKeys()).toEqual(['tau2']);
   expect(await page.evaluate(() => AlmFeaturesState.verify.passed)).toBe(false);
   await page.evaluate(() => { delete window.__almVerifyPerturb; });
+  // Standalone app SVG: no page-dependent paint, intrinsic size from the viewBox.
+  const svgText = await page.evaluate(() => AlmVerifyR.serializeSvg(document.getElementById('forest')));
+  expect(svgText).not.toMatch(/var\(|currentcolor/i);
+  expect(svgText).toMatch(/^<svg[^>]* width="600"[^>]* height="280"/);
   expect(errors).toEqual([]);
 });
 
@@ -204,19 +228,21 @@ test('Share link restores data, options, provenance and the pooled estimate; bad
   const p5 = await fresh();
   await p5.goto(new URL(PAGE, baseURL).href);
   expect(await p5.locator('[data-testid=share-status]').textContent()).toBe('');
+  // Without ?almtest=1 the Verify in R test hook is inert.
+  expect(await p5.evaluate(() => { window.__almVerifyPerturb = { key: 'tau2', delta: 1 }; return AlmVerifyR.testHookActive(); })).toBe(false);
   expect(errors).toEqual([]);
 });
 
 // ---- FU1: results go STALE when the analysis changes after a run --------------------------------------
 const STALE_TEXT = 'These results are for an earlier version of the analysis. Run Verify in R again.';
 async function verifyOnce(page) {
-  await page.goto(PAGE);
+  await page.goto(PAGE_TEST);
   await expect(page.locator('#res-body .pooled-row')).toHaveCount(1);
   await openPanel(page);
   await page.getByRole('tab', { name: 'Verify in R', exact: true }).click();
   const panel = page.locator('#alm-f-panel-verify');
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
-  await expect(panel.locator('[data-testid=verify-summary]')).toHaveText(/^\d+ of \d+ quantities match R — PASS$/, { timeout: 600_000 });
+  await expect(panel.locator('[data-testid=verify-summary]')).toHaveText(PASS_RE, { timeout: 600_000 });
   return panel;
 }
 // The three stale signals the gate checks after one data value is changed.
@@ -246,7 +272,7 @@ test('STALE: changing the analysis after Verify in R marks results stale (banner
   console.log('FEATURES STALE ' + JSON.stringify({ banner: s.banner, verifiedCurrent: s.verifiedCurrent, receiptStale: s.receiptStale }));
   expect(s).toMatchObject({ banner: true, verifiedCurrent: false, receiptStale: true });
   await expect(panel.locator('[data-testid=verify-stale]')).toHaveText(STALE_TEXT);
-  await expect(panel.locator('[data-testid=verify-summary]')).toHaveText(/^STALE \(earlier version of the analysis\): \d+ of \d+ quantities match R/);
+  await expect(panel.locator('[data-testid=verify-summary]')).toHaveText(/^STALE \(earlier version of the analysis\): \d+ of \d+ computed quantities match R; 0 not computed/);
   await expect(panel.locator('table caption')).toContainText('STALE');
   await expect(panel.getByRole('button', { name: 'Comparison (.csv) (stale)', exact: true })).toBeVisible();
   expect(await page.evaluate(() => AlmFeaturesState.verify.stale)).toBe(true);

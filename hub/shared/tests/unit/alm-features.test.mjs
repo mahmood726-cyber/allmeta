@@ -3,6 +3,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const require = createRequire(import.meta.url);
 // A module that loaded BEFORE the host (e.g. alm-share.js in <head>) queues itself here.
@@ -42,14 +45,22 @@ test('register MERGES: a later call adds/overrides only the blocks it provides',
   assert.throws(() => F.register('ok-app', null), /spec must be an object/); checks++;
 });
 
-test('PLANTED DEFECT: an overwrite-style register would be caught by the merge gate', () => {
-  const store = {};
-  const naiveRegister = (app, spec) => { store[app] = spec; };   // the defect: replaces the whole spec
-  naiveRegister('p', { verify: {}, share: {} });
-  const before = { ...store.p };
-  naiveRegister('p', { text: {} });
-  eq(lostBlocks(before, store.p), ['verify', 'share'], 'gate reports the lost blocks');
-  ok(lostBlocks(before, store.p).length > 0, 'gate FAILS on the planted defect');
+test('PLANTED DEFECT: the real shared/alm-features.js with register() made overwrite-style fails the merge gate', () => {
+  // Load a copy of the shipped module with the merge line planted to start from a fresh spec on every call.
+  const src = readFileSync(fileURLToPath(new URL('../../../../shared/alm-features.js', import.meta.url)), 'utf8');
+  const marker = '    var cur = specs[app];';
+  eq(src.split(marker).length, 2, 'planting marker present exactly once');
+  const load = code => { const mod = { exports: {} }; vm.runInNewContext(code, { module: mod, globalThis: {}, console }); return mod.exports; };
+  const exercise = G => {
+    G.register('p', { verify: { plots: [] }, share: { get() {} } });
+    const before = { ...G.get('p') };
+    G.register('p', { text: { templates: {} } });
+    return lostBlocks(before, G.get('p'));
+  };
+  eq(exercise(load(src)), [], 'control: the unmodified module passes the gate');
+  const planted = exercise(load(src.replace(marker, '    var cur = null;')));
+  eq(planted, ['verify', 'share'], 'gate reports the lost blocks');
+  ok(planted.length > 0, 'gate FAILS on the planted defect');
 });
 
 test('revision(app) = stateHash(liveAdapter.currentState())', () => {

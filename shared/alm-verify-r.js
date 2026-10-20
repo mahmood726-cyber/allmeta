@@ -17,8 +17,14 @@
  * download buttons STALE and the ZIP's truthcert.json carries stale + both revisions.
  * AlmFeatures.verifiedCurrent(app) is the check F2 should use (never verify.passed alone).
  *
- * TEST-ONLY HOOK: if window.__almVerifyPerturb = {key, delta} is set, delta is added to that app value
- * before comparing (used by the planted-defect test). It changes nothing unless set.
+ * Rows: a quantity null / undefined / NaN on either side is NOT COMPUTED (never a match) and fails the run,
+ * unless the adapter lists the key in compare.optional (then it is listed but excluded from N). Summary:
+ * "n of N computed quantities match R; m not computed — PASS|FAIL: ...".
+ *
+ * TEST-ONLY HOOK: window.__almVerifyPerturb = {key, delta} is honoured ONLY when the page URL has
+ * ?almtest=1. It adds delta to that app value for display and then forces that row to FAIL whatever the
+ * comparison says (it can never produce a pass); any run with the hook active is stamped testHook:true in
+ * AlmFeaturesState.verify and truthcert.json, never passes, and the summary starts with "TEST MODE".
  */
 (function (global) {
   'use strict';
@@ -41,30 +47,123 @@
     if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
     return s;
   }
+  // Result text per row status (pass / fail / notcomputed / optional).
+  function missingSide(r) {
+    var a = isMissing(r.app), b = isMissing(r.ref);
+    return a && b ? 'app and R' : a ? 'app' : 'R';
+  }
+  function resultText(r) {
+    if (r.status === 'pass') return 'PASS';
+    if (r.status === 'notcomputed') return 'NOT COMPUTED (' + missingSide(r) + ')';
+    if (r.status === 'optional') return 'NOT COMPUTED, optional (' + missingSide(r) + ')';
+    return 'FAIL' + (r.reason ? ' (' + r.reason + ')' : '');
+  }
+  // diff = what the verdict uses (relative when kind is rel, as on screen); abs_diff = |App-R|.
   function comparisonCsv(rows) {
-    var head = ['quantity', 'key', 'app', 'R', 'abs_diff', 'tolerance', 'kind', 'result'];
+    var head = ['quantity', 'key', 'app', 'R', 'diff', 'abs_diff', 'tolerance', 'kind', 'result'];
     return [head.join(',')].concat(rows.map(function (r) {
-      return [r.label, r.key, r.app, r.ref, r.absDiff, r.tol, r.kind, r.pass ? 'PASS' : 'FAIL' + (r.reason ? ' (' + r.reason + ')' : '')].map(csvCell).join(',');
+      var diff = r.diff !== null && r.diff !== undefined && Number.isFinite(r.diff) ? r.diff : null;
+      return [r.label, r.key, r.app, r.ref, diff, r.absDiff, r.tol, r.kind, resultText(r)].map(csvCell).join(',');
     })).join('\n') + '\n';
   }
 
+  // A quantity is computed only if it is present and not NaN; null / undefined / NaN are never matches.
+  function isMissing(x) { return x === null || x === undefined || (typeof x === 'number' && Number.isNaN(x)); }
+
+  // TEST-ONLY hook gate: honoured only when the page URL carries ?almtest=1 (CI loads the specs that way).
+  function testHookActive(hook, search) {
+    if (arguments.length === 0) {
+      hook = global.__almVerifyPerturb;
+      search = global.location && typeof global.location.search === 'string' ? global.location.search : '';
+    }
+    if (!hook || typeof hook !== 'object') return false;
+    try { return new URLSearchParams(search || '').get('almtest') === '1'; } catch (e) { return false; }
+  }
+
+  // Compare every quantity. opts.compare = AlmValidate.compare; opts.hook = an ACTIVE test hook or null.
+  // Rows missing on either side are 'notcomputed' (or 'optional' when compare.optional lists the key, which
+  // excludes them from N); the hooked row is always 'fail' whatever the comparison says, and any run with
+  // an active hook is stamped testHook and never passes.
+  function evaluate(appValues, ref, comparison, opts) {
+    opts = opts || {};
+    var cmp = opts.compare || (global.AlmValidate && global.AlmValidate.compare);
+    var hook = opts.hook || null, tolerance = comparison.tolerance || {}, optional = Array.isArray(comparison.optional) ? comparison.optional : [];
+    ref = ref || {};
+    var rows = appValues.map(function (v) {
+      var tol = tolerance[v.key] !== undefined ? tolerance[v.key] : tolerance.default;
+      var kind = (comparison.kind || {})[v.key] || 'abs';
+      var value = v.value, rv = ref[v.key], hooked = !!hook && hook.key === v.key;
+      if (hooked && typeof value === 'number') value = value + Number(hook.delta);
+      var row = { key: v.key, label: v.label || v.key, app: value, ref: rv, tol: tol, kind: kind, diff: null, absDiff: null, pass: false, reason: null };
+      if (isMissing(value) || isMissing(rv)) {
+        row.status = optional.indexOf(v.key) >= 0 ? 'optional' : 'notcomputed';
+        row.reason = 'not computed';
+      } else {
+        var c = cmp(value, rv, kind, tol);
+        row.diff = c.diff;
+        row.absDiff = typeof value === 'number' && typeof rv === 'number' ? Math.abs(value - rv) : null;
+        row.pass = !!c.pass; row.reason = c.reason || null;
+        row.status = row.pass ? 'pass' : 'fail';
+      }
+      if (hooked) { row.pass = false; row.status = 'fail'; row.reason = 'test perturbation'; }
+      return row;
+    });
+    var computed = rows.filter(function (r) { return r.status === 'pass' || r.status === 'fail'; });
+    var nPassed = computed.filter(function (r) { return r.pass; }).length;
+    var nNotComputed = rows.filter(function (r) { return r.status === 'notcomputed'; }).length;
+    var nOptional = rows.filter(function (r) { return r.status === 'optional'; }).length;
+    var testHook = !!hook;
+    return { rows: rows, n: computed.length, nPassed: nPassed, nNotComputed: nNotComputed, nOptional: nOptional, testHook: testHook,
+      perturbed: testHook ? { key: hook.key, delta: Number(hook.delta) } : null,
+      passed: !testHook && computed.length > 0 && nPassed === computed.length && nNotComputed === 0 };
+  }
+
+  function summaryText(res) {
+    var body = res.nPassed + ' of ' + res.n + ' computed quantities match R; ' + res.nNotComputed + ' not computed' +
+      (res.nOptional ? ' (' + res.nOptional + ' optional not computed)' : '');
+    var why = [];
+    if (res.n - res.nPassed) why.push((res.n - res.nPassed) + ' not matching R');
+    if (res.nNotComputed) why.push(res.nNotComputed + ' not computed');
+    if (!res.n) why.push('nothing computed');
+    if (res.testHook) why.push('test hook active');
+    return (res.testHook ? 'TEST MODE (test hook active; not a verification) — ' : '') + body + ' — ' + (res.passed ? 'PASS' : 'FAIL: ' + why.join('; '));
+  }
+
   // F1 provenance table: one row per extracted value per study (a study with no values still gets one row).
-  var PROV_COLS = ['label', 'reference', 'doi', 'pmid', 'location', 'outcome', 'arm', 'timepoint', 'field', 'value', 'span_start', 'span_end', 'conversions', 'flags', 'confirmed'];
+  // Auditable on its own: span_start/span_end index pasted_text (verbatim, UTF-16), the W3C TextQuoteSelector
+  // of the value when recorded, each conversion's formula + citation + inputs -> output, flags with text.
+  var PROV_COLS = ['label', 'reference', 'doi', 'pmid', 'location', 'outcome', 'arm', 'timepoint', 'field', 'value', 'value_text', 'span_start', 'span_end',
+    'pasted_text', 'quote_exact', 'quote_prefix', 'quote_suffix', 'conversions', 'flags', 'used_as', 'rules_version', 'confirmed', 'confirmed_at'];
+  function textQuote(sel) {
+    var list = Array.isArray(sel) ? sel : (sel && typeof sel === 'object' ? [sel] : []);
+    return list.filter(function (s) { return s && s.type === 'TextQuoteSelector'; })[0] || {};
+  }
   function provenanceCsv(records) {
     var lines = [PROV_COLS.join(',')];
     (Array.isArray(records) ? records : []).forEach(function (rec) {
       if (!rec || typeof rec !== 'object') return;
       var choice = rec.choice && typeof rec.choice === 'object' ? rec.choice : {};
       var arm = choice['arm(s)'] !== undefined ? choice['arm(s)'] : (choice.arms !== undefined ? choice.arms : choice.arm);
-      var conv = (Array.isArray(rec.conversions) ? rec.conversions : []).map(function (c) {
-        return [c.field, c.formula, c.citation].filter(function (x) { return x !== undefined && x !== null && x !== ''; }).join(': ');
+      var convs = Array.isArray(rec.conversions) ? rec.conversions : [];
+      var conv = convs.map(function (c) {
+        if (!c || typeof c !== 'object') return String(c);
+        var s = [c.field, c.formula].filter(function (x) { return x !== undefined && x !== null && x !== ''; }).join(': ');
+        if (c.citation) s += ' [' + c.citation + ']';
+        if (c.inputs && typeof c.inputs === 'object' && Object.keys(c.inputs).length) s += ' inputs ' + JSON.stringify(c.inputs);
+        if (c.output !== undefined && c.output !== null) s += ' -> ' + (typeof c.output === 'object' ? JSON.stringify(c.output) : String(c.output));
+        return s;
       }).join(' | ');
-      var flags = (Array.isArray(rec.flags) ? rec.flags : []).map(function (f) { return f && f.code ? f.code : String(f); }).join(' | ');
+      var flags = (Array.isArray(rec.flags) ? rec.flags : []).map(function (f) {
+        return f && f.code ? f.code + (f.text ? ': ' + f.text : '') : String(f);
+      }).join(' | ');
+      var rules = rec.rulesVersion || convs.map(function (c) { return c && c.rulesVersion; }).filter(Boolean)[0];
       var values = Array.isArray(rec.values) && rec.values.length ? rec.values : [{}];
       values.forEach(function (v) {
         var span = Array.isArray(v.span) ? v.span : [];
+        var q = textQuote(v.selector);
         lines.push([rec.label, rec.reference, rec.doi, rec.pmid, rec.location, choice.outcome, arm, choice.timepoint,
-          v.field, v.value, span[0], span[1], conv, flags, rec.confirmed === true ? 'yes' : 'no'].map(csvCell).join(','));
+          v.field, v.value, v.text, span[0], span[1], rec.pastedText, q.exact, q.prefix, q.suffix, conv, flags, rec.usedAs, rules,
+          rec.confirmed === true ? 'yes' : 'no', rec.confirmed === true ? rec.confirmedAt : null].map(csvCell).join(','));
       });
     });
     return lines.join('\n') + '\n';
@@ -122,9 +221,27 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
 
+  // Standalone SVG: page-dependent paint (var(--x), currentColor) is resolved to the computed colour of the
+  // live node, and width/height come from the viewBox, so the file looks like the plot on screen.
+  var PAINT = ['fill', 'stroke', 'color', 'stop-color'];
   function serializeSvg(svgEl) {
     var clone = svgEl.cloneNode(true);
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    var live = [svgEl].concat(Array.from(svgEl.querySelectorAll('*'))), copy = [clone].concat(Array.from(clone.querySelectorAll('*')));
+    if (typeof getComputedStyle === 'function') live.forEach(function (n, i) {
+      var cs = getComputedStyle(n);
+      PAINT.forEach(function (a) {
+        var v = copy[i].getAttribute(a);
+        if (v && /var\(|currentcolor/i.test(v)) copy[i].setAttribute(a, cs.getPropertyValue(a));
+      });
+      var st = copy[i].getAttribute('style');
+      if (st && /var\(|currentcolor/i.test(st)) {
+        copy[i].removeAttribute('style');
+        PAINT.forEach(function (a) { if (new RegExp('(^|;)\\s*' + a + '\\s*:', 'i').test(st)) copy[i].setAttribute(a, cs.getPropertyValue(a)); });
+      }
+    });
+    var vb = (svgEl.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+    if (!clone.getAttribute('width') && vb.length === 4 && vb.every(Number.isFinite)) { clone.setAttribute('width', String(vb[2])); clone.setAttribute('height', String(vb[3])); }
     return new XMLSerializer().serializeToString(clone);
   }
 
@@ -202,7 +319,7 @@
     function clearOutputs() {
       objectURLs.forEach(function (u) { URL.revokeObjectURL(u); }); objectURLs = [];
       [summary, missing, versionsP, plotsBox, downloads, scriptBox, consoleBox, sessionBox].forEach(function (n) { n.replaceChildren(); });
-      summary.removeAttribute('data-result'); summary.removeAttribute('data-stale');
+      summary.removeAttribute('data-result'); summary.removeAttribute('data-stale'); summary.removeAttribute('data-test-mode');
       tableWrap.replaceChildren(); tableWrap.hidden = true; tableWrap.removeAttribute('data-stale');
       lastRun = null; downloadButtons = []; isStale = false;
       staleBanner.textContent = ''; staleBanner.hidden = true;
@@ -244,7 +361,7 @@
         el('td', { class: 'alm-f-num' }, fmtDiff(r.diff), tr);
         el('td', { class: 'alm-f-num' }, fmt(r.tol), tr);
         el('td', null, r.kind, tr);
-        el('td', { 'data-result': r.pass ? 'pass' : 'fail' }, r.pass ? 'PASS' : 'FAIL' + (r.reason ? ' (' + r.reason + ')' : ''), tr);
+        el('td', { 'data-result': r.status }, resultText(r), tr);
       });
     }
 
@@ -293,26 +410,20 @@
         var lines = r.stdout.split(/\r?\n/).filter(function (s) { return s.indexOf('ALMJSON:') === 0; });
         if (lines.length !== 1) throw new Error('R must emit exactly one ALMJSON record');
         var ref = JSON.parse(lines[0].slice(8));
-        var perturb = global.__almVerifyPerturb;
-        var rows = appValues.map(function (v) {
-          var tol = comparison.tolerance[v.key] !== undefined ? comparison.tolerance[v.key] : comparison.tolerance.default;
-          var kind = (comparison.kind || {})[v.key] || 'abs';
-          var value = v.value;
-          if (perturb && perturb.key === v.key && typeof value === 'number') value = value + Number(perturb.delta);
-          var c = global.AlmValidate.compare(value, ref[v.key], kind, tol);
-          var absDiff = typeof value === 'number' && typeof ref[v.key] === 'number' ? Math.abs(value - ref[v.key]) : null;
-          return { key: v.key, label: v.label || v.key, app: value, ref: ref[v.key], tol: tol, kind: kind, diff: c.diff, absDiff: absDiff, pass: c.pass, reason: c.reason || null };
-        });
-        var nPassed = rows.filter(function (x) { return x.pass; }).length, passed = rows.length > 0 && nPassed === rows.length;
-        summary.textContent = nPassed + ' of ' + rows.length + ' quantities match R — ' + (passed ? 'PASS' : 'FAIL: ' + (rows.length - nPassed) + ' outside tolerance or unavailable');
+        var hook = testHookActive() ? global.__almVerifyPerturb : null;
+        var ev = evaluate(appValues, ref, comparison, { compare: global.AlmValidate.compare, hook: hook });
+        var rows = ev.rows, nPassed = ev.nPassed, passed = ev.passed;
+        summary.textContent = summaryText(ev);
         summary.setAttribute('data-result', passed ? 'pass' : 'fail');
+        if (ev.testHook) summary.setAttribute('data-test-mode', 'true'); else summary.removeAttribute('data-test-mode');
         table(rows);
         versionsP.textContent = 'R versions: ' + Object.keys(r.versions).map(function (k) { return k + ' ' + r.versions[k]; }).join('; ') + '.';
         // graphics: what the webR devices actually produced (device bitmap sizes, PDF bytes, SVG availability).
         var graphics = { cairo: r.cairo, plots: r.plots.map(function (p) {
           return { id: p.id, native: p.native, raster: { width: p.raster.width, height: p.raster.height, dpi: p.raster.dpi }, pdfBytes: p.pdf.length, svg: !!p.svg, svgReason: p.svgReason };
         }) };
-        global.AlmFeaturesState.verify = { app: app, revision: revision, inputsHash: inputsAtRun, stale: false, passed: passed, rows: rows, versions: r.versions, packages: live.packages || [], n: rows.length, nPassed: nPassed, graphics: graphics };
+        global.AlmFeaturesState.verify = { app: app, revision: revision, inputsHash: inputsAtRun, stale: false, passed: passed, rows: rows, versions: r.versions, packages: live.packages || [],
+          n: ev.n, nPassed: nPassed, nNotComputed: ev.nNotComputed, nOptional: ev.nOptional, testHook: ev.testHook, perturbed: ev.perturbed, graphics: graphics };
 
         var csv = comparisonCsv(rows);
         files.push({ name: app + '-verify-comparison.csv', string: csv });
@@ -354,7 +465,7 @@
               addDownload(title + ' SVG — app plot (R SVG unavailable in browser)', function () { saveBlob(new Blob([appText], { type: 'image/svg+xml' }), base + '-app.svg'); });
             }
           })(png300, tiff, rp.pdf, rp, base, title, appSvg);
-          if (!rp.svg) el('p', { class: 'alm-f-note' }, title + ': ' + rp.svgReason + '; the SVG download is the app’s own plot.', plotsBox);
+          if (!rp.svg) el('p', { class: 'alm-f-note' }, title + ': ' + rp.svgReason + (appSvg ? '; the SVG download is the app’s own plot.' : '; no SVG download is available for this plot.'), plotsBox);
         }
 
         el('h3', null, 'R console output', consoleBox);
@@ -374,7 +485,8 @@
           }
           var bi = global.AlmBuildInfo || {};
           var results = { app: app, paper: spec.paper || null, commit: bi.sha || 'unknown', version: bi.version || 'unknown', stateRevision: revision,
-            R: r.versions.R, webR: r.versions.webR, packages: r.versions, passed: passed, nPassed: nPassed, n: rows.length, files: manifest };
+            R: r.versions.R, webR: r.versions.webR, packages: r.versions, passed: passed, nPassed: nPassed, n: ev.n, nNotComputed: ev.nNotComputed, nOptional: ev.nOptional,
+            testHook: ev.testHook, perturbed: ev.perturbed, summary: summaryText(ev), files: manifest };
           // Staleness at download time (checkStale(true) ran just before this). The current revision is only
           // computed when the inputs are unchanged: computing it re-runs the app, which must not happen for
           // edited-but-not-run inputs. The input fingerprints are always recorded.
@@ -387,7 +499,7 @@
           if (results.currentRevision === null) results.currentRevisionNote = 'inputs changed since the run; current revision not computed (would re-run the analysis)';
           var receipt;
           if (global.AlmTruthCertExport && typeof global.AlmTruthCertExport.buildReceipt === 'function') {
-            receipt = global.AlmTruthCertExport.sidecarJSON(await global.AlmTruthCertExport.buildReceipt({ studies: [], method: 'Verify in R (webR)', label: app + '-verify-in-r', results: results }));
+            receipt = global.AlmTruthCertExport.sidecarJSON(await global.AlmTruthCertExport.buildReceipt({ studies: Array.isArray(state.rows) ? state.rows : [], method: 'Verify in R (webR)', label: app + '-verify-in-r', results: results }));
           } else {
             receipt = JSON.stringify({ signed: false, contentHash: null, reason: 'shared/truthcert-export.js not loaded', extra: { results: results } }, null, 2);
           }
@@ -395,7 +507,7 @@
           saveBlob(new Blob([global.AlmZip.zip(all)], { type: 'application/zip' }), app + '-verify-in-r.zip');
         });
         zipButton.classList.add('alm-f-primary');
-        status.textContent = 'R finished: ' + nPassed + ' of ' + rows.length + ' quantities match.';
+        status.textContent = (ev.testHook ? 'TEST MODE. ' : '') + 'R finished: ' + nPassed + ' of ' + ev.n + ' computed quantities match; ' + ev.nNotComputed + ' not computed.';
         var cap = tableWrap.querySelector('caption');
         lastRun = { revision: revision, inputsHash: inputsAtRun, summaryText: summary.textContent, captionText: cap ? cap.textContent : '' };
         checkStale(false); // inputs edited while R was running -> stale at once
@@ -415,7 +527,7 @@
   }
 
   var mod = { label: 'Verify in R', render: render };
-  var api = { comparisonCsv: comparisonCsv, provenanceCsv: provenanceCsv, PROVENANCE_COLUMNS: PROV_COLS, csvCell: csvCell, downloadScript: downloadScript, module: mod };
+  var api = { evaluate: evaluate, summaryText: summaryText, testHookActive: testHookActive, serializeSvg: serializeSvg, comparisonCsv: comparisonCsv, provenanceCsv: provenanceCsv, PROVENANCE_COLUMNS: PROV_COLS, csvCell: csvCell, downloadScript: downloadScript, module: mod };
   global.AlmVerifyR = api;
   if (global.AlmFeatures && typeof global.AlmFeatures.registerModule === 'function') global.AlmFeatures.registerModule('verify', mod);
   else (global.AlmFeaturesPending = global.AlmFeaturesPending || []).push(['verify', mod]);

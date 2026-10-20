@@ -75,20 +75,75 @@ test('PLANTED DEFECTS: corrupted, truncated, foreign-app and wrong-version links
   eq((await S.decode(badProv, 'proportion-ma')).ok, false, 'malformed provenance refused');
 });
 
-const cells = csv => csv.trim().split('\n').slice(1).flatMap(line => line.match(/("([^"]|"")*"|[^,]*)(,|$)/g).map(c => c.replace(/,$/, '')));
-const injectionSafe = csv => cells(csv).every(c => !/^"?[=+@\t\r]/.test(c));
+const injectionSafe = csv => parseCsv(csv).slice(1).flat().every(c => !/^[=+@\t\r]/.test(c));
 
-test('provenance CSV: one row per value, all columns, formula-injection safe', () => {
+// Minimal RFC-4180 reader (quoted fields may contain commas, quotes and newlines).
+function parseCsv(text) {
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { row.push(cell); cell = ''; }
+    else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+const PROV_HEADER = 'label,reference,doi,pmid,location,outcome,arm,timepoint,field,value,value_text,span_start,span_end,pasted_text,quote_exact,quote_prefix,quote_suffix,conversions,flags,used_as,rules_version,confirmed,confirmed_at';
+// 2-record fixture in the F1 shape (W3C selectors, replayable conversion, rulesVersion), incl. a '=SUM(' paste.
+const AUDIT = [
+  { id: 'a1', label: 'Smith 2019', reference: 'Smith J. Lancet 2019;393:1-10', location: 'Table 2', pastedText: 'median 4 (IQR 2-7), n=59',
+    rulesVersion: 'entry3.1', choice: { 'arm(s)': 'treatment: colchicine', outcome: 'pain', timepoint: '12 months' },
+    values: [{ field: 'm1i', value: 4.3, span: [7, 8], text: '4', selector: [{ type: 'TextPositionSelector', start: 7, end: 8 }, { type: 'TextQuoteSelector', exact: '4', prefix: 'median ', suffix: ' (IQR 2-7), n=59' }] }],
+    conversions: [{ field: 'm1i', formula: 'mean from median/IQR', citation: 'Luo 2018', inputs: { q1: 2, med: 4, q3: 7, n: 59 }, output: 4.3, rulesVersion: 'entry3.1' }],
+    flags: [{ code: 'SD_FROM_IQR', text: 'SD estimated from IQR' }], usedAs: 'mean (treatment)', confirmed: true, confirmedAt: '2026-10-20T10:00:00Z' },
+  { id: 'a2', label: 'Jones 2020', reference: 'Jones K. BMJ 2020', location: 'p. 5', pastedText: '=SUM(A1:A9) 12/150, "quoted"\nline2',
+    choice: { arm: 'control', outcome: 'pain', timepoint: '12 months' },
+    values: [{ field: 'xi', value: 12, span: [12, 14], text: '12', selector: { type: 'TextQuoteSelector', exact: '12', prefix: '=SUM(A1:A9) ', suffix: '/150' } },
+      { field: 'ni', value: 150, span: [15, 18], text: '150' }],
+    conversions: [], flags: [], usedAs: 'proportion', confirmed: false, confirmedAt: null },
+];
+
+test('provenance CSV is auditable on its own: verbatim pasted text, W3C quote, conversions, flags, rules version', () => {
+  const csv = V.provenanceCsv(AUDIT);
+  const rows = parseCsv(csv);
+  eq(rows[0].join(','), PROV_HEADER);
+  eq(V.PROVENANCE_COLUMNS.join(','), PROV_HEADER);
+  eq(rows.length, 1 + 1 + 2, 'header + 1 value (Smith) + 2 values (Jones)');
+  const col = Object.fromEntries(V.PROVENANCE_COLUMNS.map((c, i) => [c, i]));
+  const at = (r, c) => rows[r][col[c]];
+  // spans index the exported pasted_text, verbatim (incl. newline and quotes)
+  for (const r of [1, 2, 3]) {
+    const text = at(r, 'pasted_text').replace(/^'(?==)/, ''); // undo the formula-injection prefix only
+    eq(text.slice(+at(r, 'span_start'), +at(r, 'span_end')), at(r, 'value_text'), 'span indexes pasted_text in row ' + r);
+  }
+  eq(at(1, 'pasted_text'), 'median 4 (IQR 2-7), n=59');
+  eq(at(2, 'pasted_text'), "'=SUM(A1:A9) 12/150, \"quoted\"\nline2", 'verbatim, = neutralised');
+  eq([at(1, 'quote_exact'), at(1, 'quote_prefix'), at(1, 'quote_suffix')], ['4', 'median ', ' (IQR 2-7), n=59']);
+  eq([at(2, 'quote_exact'), at(2, 'quote_prefix'), at(2, 'quote_suffix')], ['12', "'=SUM(A1:A9) ", '/150']);
+  eq([at(3, 'quote_exact'), at(3, 'quote_prefix'), at(3, 'quote_suffix')], ['', '', ''], 'no selector -> empty');
+  ok(at(1, 'conversions').includes('m1i: mean from median/IQR [Luo 2018]'), at(1, 'conversions'));
+  ok(at(1, 'conversions').includes('{"q1":2,"med":4,"q3":7,"n":59}') && at(1, 'conversions').includes('-> 4.3'), at(1, 'conversions'));
+  eq(at(1, 'flags'), 'SD_FROM_IQR: SD estimated from IQR');
+  eq([at(1, 'used_as'), at(1, 'rules_version'), at(1, 'confirmed'), at(1, 'confirmed_at')], ['mean (treatment)', 'entry3.1', 'yes', '2026-10-20T10:00:00Z']);
+  eq([at(2, 'rules_version'), at(2, 'confirmed'), at(2, 'confirmed_at')], ['', 'no', '']);
+  ok(injectionSafe(csv), 'formula-injection safe');
+});
+
+test('provenance CSV: one row per value, formula-injection safe', () => {
   const csv = V.provenanceCsv(PROVENANCE);
+  const rows = parseCsv(csv);
+  const col = Object.fromEntries(V.PROVENANCE_COLUMNS.map((c, i) => [c, i]));
+  eq(rows.length, 1 + 3, 'header + 2 values (Smith) + 1 value (second record)');
+  eq(['label', 'outcome', 'arm', 'timepoint', 'field', 'value', 'span_start', 'span_end', 'flags', 'confirmed'].map(c => rows[1][col[c]]),
+    ['Smith 2019', 'MACE', 'treatment: colchicine', '12 months', 'xi', '12', '0', '2', 'TIMEPOINT_CHOSEN: two timepoints reported', 'yes']);
   const lines = csv.trim().split('\n');
-  eq(lines[0], 'label,reference,doi,pmid,location,outcome,arm,timepoint,field,value,span_start,span_end,conversions,flags,confirmed');
-  eq(V.PROVENANCE_COLUMNS.length, 15);
-  eq(lines.length, 1 + 3, 'header + 2 values (Smith) + 1 value (second record)');
-  ok(lines[1].startsWith('Smith 2019,') && lines[1].includes(',MACE,treatment: colchicine,12 months,xi,12,0,2,,TIMEPOINT_CHOSEN,yes'), lines[1]);
   ok(lines[3].startsWith('"\'=HYPERLINK(""http://x"")",'), 'leading = neutralised and quotes doubled: ' + lines[3]);
   ok(lines[3].includes('"\'+evil, ""quoted"""'), 'leading + neutralised: ' + lines[3]);
   ok(lines[3].includes(',-0.5,'), 'negative numbers are NOT prefixed');
-  ok(lines[3].includes('m1i: mean from median/IQR: Wan 2014') && lines[3].endsWith(',no'));
+  ok(rows[3][col.conversions].startsWith('m1i: mean from median/IQR [Wan 2014]'), rows[3][col.conversions]);
   ok(injectionSafe(csv), 'gate passes on the real writer');
   eq(V.provenanceCsv([]), V.PROVENANCE_COLUMNS.join(',') + '\n', 'empty -> header only');
 });
