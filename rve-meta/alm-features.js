@@ -6,8 +6,30 @@
 (function (global) {
   'use strict';
   var APP = 'rve-meta';
+  // Bridge the existing desktop adapter into the documented feature registry.
+  if (global.AlmValidate && global.AlmLiveAdapters && global.AlmLiveAdapters[APP]) {
+    global.AlmValidate.adapters[APP] = global.AlmLiveAdapters[APP];
+  }
+  // App-specific additions to the exported typed-token registries. Shared files
+  // and their frozen generic rule constants remain unchanged.
+  var lowDfRule = { value: 4, text: '4', about: 'Below this Satterthwaite df, inference may be untrustworthy (Tipton 2015).' };
+  if (global.AlmText) {
+    global.AlmText.RULES.rveLowDf = lowDfRule;
+    global.AlmText.CITES.rveHTJ = {
+      short: 'Hedges, Tipton and Johnson 2010',
+      full: 'Hedges LV, Tipton E, Johnson MC. Robust variance estimation in meta-regression with dependent effect size estimates. Research Synthesis Methods. 2010;1:39–65. https://doi.org/10.1002/jrsm.5'
+    };
+    global.AlmText.CITES.rveTipton = {
+      short: 'Tipton 2015',
+      full: 'Tipton E. Small sample adjustments for robust variance estimation with meta-regression. Psychological Methods. 2015;20:375–393. https://doi.org/10.1037/met0000011'
+    };
+    global.AlmText.CITES.rvePustejovskyTipton = {
+      short: 'Pustejovsky and Tipton 2018',
+      full: 'Pustejovsky JE, Tipton E. Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business & Economic Statistics. 2018;36:672–683. https://doi.org/10.1080/07350015.2016.1247004'
+    };
+  }
   function byId(id) { return document.getElementById(id); }
-  function live() { return global.AlmLiveAdapters && global.AlmLiveAdapters[APP]; }
+  function live() { return global.AlmValidate && global.AlmValidate.adapters[APP]; }
   function names() { return byId('f-names').value.split(/\s*,\s*/).filter(Boolean); }
   function number(v, label) {
     if (v === null || v === undefined || String(v).trim() === '' || !Number.isFinite(Number(v))) {
@@ -101,7 +123,7 @@
     o.summary.forEach(function (s, i) {
       var prefix = 'coef_' + i + '_';
       r.coefficientKeys.push({ prefix: prefix, indexKey: prefix + 'index' });
-      r[prefix + 'index'] = s.coef_index;
+      r[prefix + 'index'] = s.coef_index + 1;
       Object.keys(s).forEach(function (k) { r[prefix + k] = s[k]; });
     });
     var pt = global.__almTextPerturb;
@@ -135,10 +157,12 @@
         'The estimates describe associations and do not establish causation or clinical importance.'];
     },
     methods: function (T, r) {
-      return ['Effects and sampling variances on the supplied analysis scale were analysed using the Hedges–Tipton–Johnson correlated-effects (CORR) working model, with correlation ρ = ',
+      return ['Effects and sampling variances on the supplied analysis scale were analysed using the Hedges–Tipton–Johnson correlated-effects (CORR) working model (',
+        T.cite('rveHTJ'), '), with correlation ρ = ',
         T.num('rho', 2), '. An intercept was added automatically. The between-cluster variance used the CORR moment estimator truncated at zero. ',
         'Each effect was weighted by the reciprocal of the product of its cluster size and the sum of that cluster’s mean sampling variance and τ². ',
-        'Inference used the CR', T.int('correction'), ' bias-reduced sandwich correction and coefficient-specific Satterthwaite degrees of freedom. ',
+        'Inference used the CR', T.int('correction'), ' bias-reduced sandwich correction and coefficient-specific Satterthwaite degrees of freedom (',
+        T.cite('rveTipton'), '; ', T.cite('rvePustejovskyTipton'), '). ',
         'Two-sided t tests compared each coefficient with zero; ', T.pct('ciLevel', 0),
         ' confidence limits were the estimate plus or minus the corresponding t quantile times its robust standard error. ',
         'The app applied no effect transformation or back-transformation. It computed no prediction interval or I² statistic. ',
@@ -167,8 +191,9 @@
             '. This does not establish absence of an association.']);
         }
       });
-      if (r.coefficientKeys.some(function (c) { return r[c.prefix + 'df'] < T.R.fewK; })) {
-        flags.push('Low Satterthwaite degrees of freedom limit the precision of inference.');
+      if (r.coefficientKeys.some(function (c) { return r[c.prefix + 'df'] < lowDfRule.value; })) {
+        flags.push(['For coefficients with low Satterthwaite degrees of freedom, p-values and confidence intervals may not be trustworthy (Satterthwaite df < ',
+          T.rule('rveLowDf'), '; ', T.cite('rveTipton'), ').']);
       }
       return flags;
     }
@@ -180,11 +205,12 @@
   } });
   var spec = {
     paper: 15, title: 'Robust variance estimation', entry: entry, text: textSpec,
-    verify: { adapter: live, inputs: '#src, #f-rho, #f-names', rObjects: 'd, f (robu fit), tab, cr2',
-      plots: [{ id: 'forest', title: 'Forest plot', r: 'robumeta::forest.robu(f)', width_in: 8, height_in: 6,
-        app: function () { return null; } }] },
+    verify: { adapter: live, inputs: '#src, #f-rho, #f-names', rObjects: 'd, f (robu fit), tab, cr2' },
     share: { get: get, set: set }
   };
+  Object.defineProperty(spec.verify, 'plots', { enumerable: true, get: function () {
+    return live().plots;
+  } });
   global.AlmTextSpecs = global.AlmTextSpecs || {};
   global.AlmTextSpecs[APP] = textSpec;
   global.AlmRVEFeatures = spec;
@@ -202,7 +228,7 @@
     global.AlmFeatures.registerModule('verify', { label: 'Verify in R', render: function (panel, ctx) {
       var hooks = global.AlmVerifyR.module.render(panel, ctx);
       var note = document.createElement('p');
-      note.textContent = 'The desktop script includes a robumeta forest plot. This page has a coefficient table and no app SVG to compare.';
+      note.textContent = 'The desktop script includes a robust coefficient-interval plot for intercept-only and moderator models. This page has a coefficient table and no app SVG to compare.';
       panel.appendChild(note);
       var zip = document.createElement('button');
       zip.type = 'button'; zip.className = 'alm-f-btn'; zip.hidden = true;

@@ -165,7 +165,8 @@ test('VERIFY: real browser runner reports missing packages, offers R and an expl
   await expect(panel.locator('td[data-result]')).toHaveCount(0);
   const [r] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'R script (.R)', exact: true }).click()]);
   const script = fs.readFileSync(await r.path(), 'utf8');
-  for (const source of ['robumeta::robu', "modelweights='CORR'", 'small=TRUE', 'clubSandwich::coef_test', "test='Satterthwaite'", 'robumeta::forest.robu(f)', 'print(sessionInfo())']) expect(script).toContain(source);
+  for (const source of ['robumeta::robu', "modelweights='CORR'", 'small=TRUE', 'clubSandwich::coef_test', "test='Satterthwaite'", 'plot(tab$b.r', 'segments(tab$CI.L', 'print(sessionInfo())']) expect(script).toContain(source);
+  expect(script).not.toContain('forest.robu');
   const [zip] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'Download unavailable-check bundle (ZIP)' }).click()]);
   const entries = readZip(fs.readFileSync(await zip.path()));
   expect(entries.map(e => e.name).sort()).toEqual(['README.txt', 'rve-meta-verify.R', 'status.json', 'truthcert.json'].sort());
@@ -253,4 +254,96 @@ test('AXE: all feature tabs have no serious or critical accessibility violations
     expect(serious.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) }))).toEqual([]);
   }
   expect(errors).toEqual([]);
+});
+
+test('REVIEW P1: desktop plots reuse coefficient intervals for moderator and intercept-only fits', async ({ page }) => {
+  await open(page);
+  for (const interceptOnly of [false, true]) {
+    const out = await page.evaluate(interceptOnly => {
+      const spec = AlmFeatures.get('rve-meta');
+      if (interceptOnly) {
+        const state = spec.share.get();
+        state.src = state.src.split('\n').map(line => line.split(',').slice(0, 3).join(',')).join('\n');
+        state.names = '';
+        spec.share.set(state);
+      }
+      const adapter = spec.verify.adapter(), state = adapter.currentState();
+      return {
+        p: state.result.fit.p,
+        plots: spec.verify.plots.map(p => ({ id: p.id, title: p.title, r: p.r })),
+        expected: adapter.plots,
+        script: AlmVerifyR.downloadScript('rve-meta', adapter.buildScript(state), spec.verify.plots, state)
+      };
+    }, interceptOnly);
+    expect(out.p).toBe(interceptOnly ? 1 : 3);
+    expect(out.plots).toEqual(out.expected);
+    expect(out.script).not.toContain('forest.robu');
+    expect(out.script).toContain('plot(tab$b.r');
+    expect(out.script).toContain('segments(tab$CI.L');
+    expect(out.script).toMatch(/grDevices::dev.off\(\)[\s\n]*print\(sessionInfo\(\)\)/);
+  }
+  await tab(page, 'verify');
+  await expect(page.locator('#alm-f-panel-verify')).toContainText('coefficient-interval plot');
+  await expect(page.locator('#alm-f-panel-verify')).not.toContainText('robumeta forest plot');
+});
+
+test('REVIEW P2: coefficient numbering starts at one in results and flags', async ({ page }) => {
+  await open(page);
+  const out = await render(page);
+  expect(out.audit.ok).toBe(true);
+  expect(out.snapshot.results).not.toContain('Coefficient 0:');
+  for (const index of [1, 2, 3]) {
+    expect(out.snapshot.results).toContain(`Coefficient ${index}: estimate`);
+    expect(out.snapshot.flags.some(f => f.startsWith(`Coefficient ${index}:`))).toBe(true);
+  }
+});
+
+test('REVIEW P2: low-df warning uses the strict four-df boundary and a typed Tipton citation', async ({ page }) => {
+  await open(page);
+  const cases = await page.evaluate(() => {
+    const spec = AlmFeatures.get('rve-meta').text;
+    return [1.15, 3.999, 4, 4.999, 5].map(df => {
+      const r = spec.results();
+      r.coefficientKeys.forEach(c => { r[c.prefix + 'df'] = df; });
+      const rendered = AlmText.render(spec.templates, r, { app: 'rve-meta' });
+      return { df, flags: rendered.flags, audit: AlmText.audit(rendered, r) };
+    });
+  });
+  for (const c of cases) {
+    expect(c.audit.ok, JSON.stringify(c.audit.failures)).toBe(true);
+    const warnings = c.flags.filter(f => /Satterthwaite degrees of freedom|Satterthwaite df/.test(f.text));
+    expect(warnings).toHaveLength(c.df < 4 ? 1 : 0);
+    if (c.df < 4) {
+      expect(warnings[0].text).toContain('p-values and confidence intervals may not be trustworthy');
+      expect(warnings[0].text).toContain('Satterthwaite df < 4');
+      expect(warnings[0].segments).toContainEqual(expect.objectContaining({ type: 'cite', text: 'Tipton 2015' }));
+    }
+  }
+});
+
+test('REVIEW P2: Methods exports include typed sources for CORR and small-sample inference', async ({ page }) => {
+  await open(page);
+  const out = await page.evaluate(() => {
+    const spec = AlmFeatures.get('rve-meta').text, r = spec.results();
+    const rendered = AlmText.render(spec.templates, r, { app: 'rve-meta' });
+    return { rendered, audit: AlmText.audit(rendered, r), md: AlmText.toMarkdown(rendered), docx: AlmText.docxParagraphs(rendered) };
+  });
+  expect(out.audit.ok).toBe(true);
+  for (const text of ['Hedges, Tipton and Johnson 2010', 'Tipton 2015', 'Pustejovsky and Tipton 2018']) {
+    expect(out.rendered.methods.segments).toContainEqual(expect.objectContaining({ type: 'cite', text }));
+  }
+  expect(out.rendered.cites).toHaveLength(3);
+  for (const cite of out.rendered.cites) {
+    expect(out.md).toContain(cite.full);
+    expect(out.docx.some(p => p.text === cite.full)).toBe(true);
+  }
+});
+
+test('REVIEW P2: feature verification uses the documented AlmValidate adapter registry', async ({ page }) => {
+  await open(page);
+  expect(await page.evaluate(() => {
+    const registered = AlmValidate.adapters['rve-meta'];
+    return !!registered && registered === AlmLiveAdapters['rve-meta'] &&
+      registered === AlmFeatures.get('rve-meta').verify.adapter();
+  })).toBe(true);
 });
