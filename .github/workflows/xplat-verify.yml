@@ -119,6 +119,14 @@ jobs:
         with:
           r-version: ${{ matrix.r }}
           use-public-rspm: true
+      # rocker/r-ver freezes CRAN at a dated P3M snapshot that predates the pinned versions (pak then cannot
+      # reconcile e.g. meta@8.5-0 with the snapshot's meta); use current P3M binaries like the host rows.
+      - name: container CRAN repo (current P3M, not rocker's frozen snapshot)
+        if: ${{ matrix.container }}
+        run: |
+          codename=$(. /etc/os-release && echo "$VERSION_CODENAME")
+          echo "options(repos = c(CRAN = 'https://p3m.dev/cran/__linux__/${codename}/latest'))" >> "$(Rscript -e 'cat(R.home("etc"))')/Rprofile.site"
+          Rscript -e 'print(getOption("repos"))'
       # --- path A: committed lockfile -> renv ---
       - uses: r-lib/actions/setup-renv@v2
         if: ${{ steps.pins.outputs.lock == 'true' && !matrix.container }}

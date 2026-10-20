@@ -9,6 +9,12 @@ install.packages("pak", repos = sprintf("https://r-lib.github.io/p/pak/stable/%s
   .Platform$pkgType, R.version$os, R.version$arch))
 install.packages(c("renv", "jsonlite"))
 pak::pkg_install(refs, ask = FALSE, dependencies = NA)
+# renv validates the full Depends/Imports/LinkingTo closure (binary installs skip LinkingTo, e.g. cpp11, RcppEigen),
+# and a source restore needs them, so install whatever of that closure is still missing.
+closure <- unique(unlist(tools::package_dependencies(pkgs, db = utils::available.packages(),
+  which = c("Depends", "Imports", "LinkingTo"), recursive = TRUE)))
+missing <- setdiff(closure, c(rownames(utils::installed.packages()), "R"))
+if (length(missing)) { cat("installing LinkingTo/closure packages:", missing, "\n"); pak::pkg_install(missing, ask = FALSE, dependencies = NA) }
 want <- setNames(sub("^.*@", "", refs[grepl("@", refs)]), sub("@.*$", "", refs[grepl("@", refs)]))
 got <- vapply(names(want), function(p) as.character(utils::packageVersion(p)), "")
 bad <- want[package_version(gsub("-", ".", want)) != package_version(got)]
