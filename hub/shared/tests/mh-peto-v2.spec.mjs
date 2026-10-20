@@ -323,6 +323,9 @@ test.describe('usability and accessibility', () => {
       expect(path, 'axe-core not found: install hub/shared/tests dependencies or set AXE_PATH').toBeTruthy();
       await page.emulateMedia({ colorScheme: scheme });
       await page.goto(url);
+      // Measure the settled page: hub/app-style.css fades main/.panel in over 300 ms (+60 ms delay), and axe run
+      // mid-fade blends the ancestor opacity into every colour (#btn-verify-in-r 5.45:1 reads as 4.4:1 at opacity 0.89).
+      await page.evaluate(() => Promise.all(document.getAnimations().map(a => a.finished)));
       await page.addScriptTag({ content: await readFile(path, 'utf8') });
       const violations = await page.evaluate(async () => (await window.axe.run(document, { resultTypes: ['violations'] })).violations.map(v => v.id + ':' + v.nodes.length));
       expect(violations).toEqual([]);
