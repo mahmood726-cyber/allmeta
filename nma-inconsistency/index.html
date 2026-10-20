@@ -115,6 +115,7 @@ A, D, -0.48, 0.14</textarea>
       <div id="alm-flow-mount" aria-live="polite"></div>
       <section id="alm-validate" style="grid-column:1/-1"></section>
 </main>
+<div id="alm-features"></div>
   <footer>
     For independent two-arm studies, removing each direct comparison gives the same split as netmeta back-calculation / SIDE at a fixed shared τ². RE global Q uses this consistency-model τ² as a preset; it is not the default within-design τ² test from decomp.design. Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-4 on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-06-03):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. The DL path matches <code>netmeta(random=TRUE, method.tau="DL")</code> τ², network estimates and <code>netsplit()</code> using the generalized DerSimonian-Kacker/Jackson moment denominator (see <code>hub/shared/tests/nma-inconsistency-re-parity.spec.mjs</code>); PM uses the generalized Paule-Mandel <code>Q(τ²)=df</code> moment condition. Recommended k≥5 per design.
   </footer>
@@ -637,5 +638,17 @@ A, D, -0.48, 0.14</textarea>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
 <script src="validate/live.js"></script>
+<script src="alm-live.js"></script>
+<!-- Shared feature panel (Verify in R, Share; data-entry and report-text blocks registered for their modules). -->
+<link rel="stylesheet" href="../shared/alm-features.css">
+<script src="../shared/url-pack.js"></script>
+<script src="../shared/alm-zip.js"></script>
+<script src="../shared/truthcert-export.js"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-features.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="alm-features.js"></script>
 </body>
 </html>
