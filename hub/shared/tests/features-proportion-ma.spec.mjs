@@ -206,3 +206,84 @@ test('Share link restores data, options, provenance and the pooled estimate; bad
   expect(await p5.locator('[data-testid=share-status]').textContent()).toBe('');
   expect(errors).toEqual([]);
 });
+
+// ---- FU1: results go STALE when the analysis changes after a run --------------------------------------
+const STALE_TEXT = 'These results are for an earlier version of the analysis. Run Verify in R again.';
+async function verifyOnce(page) {
+  await page.goto(PAGE);
+  await expect(page.locator('#res-body .pooled-row')).toHaveCount(1);
+  await openPanel(page);
+  await page.getByRole('tab', { name: 'Verify in R', exact: true }).click();
+  const panel = page.locator('#alm-f-panel-verify');
+  await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
+  await expect(panel.locator('[data-testid=verify-summary]')).toHaveText(/^\d+ of \d+ quantities match R — PASS$/, { timeout: 600_000 });
+  return panel;
+}
+// The three stale signals the gate checks after one data value is changed.
+async function staleSignals(page, panel) {
+  await page.waitForTimeout(800); // > the 250 ms debounce
+  const banner = await panel.locator('[data-testid=verify-stale]').isVisible();
+  const verifiedCurrent = await page.evaluate(() => AlmFeatures.verifiedCurrent('proportion-ma'));
+  const [dl] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: /^Download everything \(ZIP\)/ }).click()]);
+  const receipt = JSON.parse(new TextDecoder().decode(readZip(readFileSync(await dl.path())).find(e => e.name === 'truthcert.json').bytes));
+  return { banner, verifiedCurrent, receiptStale: receipt.extra.results.stale, results: receipt.extra.results };
+}
+const changeOneValue = page => page.locator('#src').fill(DEFAULT_FIRST_LINE_CHANGED);
+const DEFAULT_FIRST_LINE_CHANGED = '13, 150, Study A\n8, 90, Study B\n20, 220, Study C\n5, 60, Study D\n15, 180, Study E\n3, 40, Study F\n25, 300, Study G';
+
+test('STALE: changing the analysis after Verify in R marks results stale (banner, labels, receipt, verifiedCurrent)', async ({ page }) => {
+  test.setTimeout(900_000);
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  const panel = await verifyOnce(page);
+  const original = await page.locator('#src').inputValue();
+  expect(original.split('\n')[0]).toBe('12, 150, Study A');
+  const verified = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('proportion-ma'))).toBe(true);
+  await expect(panel.locator('[data-testid=verify-stale]')).toBeHidden();
+
+  await changeOneValue(page);                                   // one data value: 12 -> 13 events
+  const s = await staleSignals(page, panel);
+  console.log('FEATURES STALE ' + JSON.stringify({ banner: s.banner, verifiedCurrent: s.verifiedCurrent, receiptStale: s.receiptStale }));
+  expect(s).toMatchObject({ banner: true, verifiedCurrent: false, receiptStale: true });
+  await expect(panel.locator('[data-testid=verify-stale]')).toHaveText(STALE_TEXT);
+  await expect(panel.locator('[data-testid=verify-summary]')).toHaveText(/^STALE \(earlier version of the analysis\): \d+ of \d+ quantities match R/);
+  await expect(panel.locator('table caption')).toContainText('STALE');
+  await expect(panel.getByRole('button', { name: 'Comparison (.csv) (stale)', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => AlmFeaturesState.verify.stale)).toBe(true);
+  expect(s.results.verifiedRevision).toBe(verified.revision);
+  expect(s.results.currentRevision).toBeNull();                 // inputs edited: never re-run the app to hash them
+  expect(s.results.currentInputsHash).not.toBe(s.results.verifiedInputsHash);
+  expect(s.results.verifiedInputsHash).toBe(verified.inputsHash);
+
+  // Revert the value -> current again (banner gone, verifiedCurrent true, receipt not stale).
+  await page.locator('#src').fill(original);
+  const back = await staleSignals(page, panel);
+  expect(back).toMatchObject({ banner: false, verifiedCurrent: true, receiptStale: false });
+  expect(back.results.currentRevision).toBe(verified.revision);
+
+  // A programmatic change (no input event) is caught when the tab is shown again.
+  await page.evaluate(() => { document.getElementById('trans').value = 'ft'; });
+  await page.getByRole('tab', { name: 'Share', exact: true }).click();
+  await page.getByRole('tab', { name: 'Verify in R', exact: true }).click();
+  await expect(panel.locator('[data-testid=verify-stale]')).toBeVisible();
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('proportion-ma'))).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('STALE PLANTED DEFECT: with the stale check disabled the stale gate fails', async ({ page }) => {
+  test.setTimeout(900_000);
+  // Serve alm-verify-r.js with markStale() forced to "not stale" -- the defect the gate must catch.
+  await page.route('**/shared/alm-verify-r.js', async route => {
+    const body = await (await route.fetch()).text();
+    const marker = '    function markStale(stale) {';
+    expect(body.includes(marker), 'planting marker present').toBe(true);
+    await route.fulfill({ contentType: 'application/javascript', body: body.replace(marker, marker + ' stale = false;') });
+  });
+  const panel = await verifyOnce(page);
+  await changeOneValue(page);
+  const s = await staleSignals(page, panel);
+  console.log('FEATURES STALE PLANTED ' + JSON.stringify({ banner: s.banner, verifiedCurrent: s.verifiedCurrent, receiptStale: s.receiptStale }));
+  const gatePasses = s.banner === true && s.verifiedCurrent === false && s.receiptStale === true;
+  expect(gatePasses, 'the stale gate must FAIL when the stale check is disabled').toBe(false);
+  expect(s.banner).toBe(false); expect(s.receiptStale).toBe(false);
+});

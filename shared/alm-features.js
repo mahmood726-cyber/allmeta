@@ -92,6 +92,28 @@
     try { return stateHash(live.currentState()); } catch (e) { return null; }
   }
 
+  // Cheap, side-effect-free fingerprint of the app's input controls (spec.verify.inputs selector, default
+  // every input/select/textarea outside the feature panel). Unlike revision() it never re-runs the app,
+  // so it is safe to call on every keystroke. null without a document.
+  function inputsHash(app) {
+    if (typeof document === 'undefined') return null;
+    var spec = specs[app], sel = spec && spec.verify && typeof spec.verify.inputs === 'string' ? spec.verify.inputs : 'input,select,textarea';
+    var nodes = Array.prototype.slice.call(document.querySelectorAll(sel)).filter(function (n) { return !n.closest('#alm-features'); });
+    return stateHash(nodes.map(function (n) {
+      return [n.id || n.name || '', n.type === 'checkbox' || n.type === 'radio' ? n.checked : n.value];
+    }));
+  }
+
+  // true only if the last Verify in R run for THIS app passed AND was for the current state:
+  // inputs unchanged since the run (cheap check first, so edited-but-unrun inputs never trigger a re-run)
+  // and revision(app) equal to the verified revision.
+  function verifiedCurrent(app) {
+    var st = global.AlmFeaturesState, v = st && st.verify;
+    if (!v || v.app !== app || v.passed !== true || typeof v.revision !== 'string') return false;
+    if (typeof v.inputsHash === 'string' && inputsHash(app) !== v.inputsHash) return false;
+    return revision(app) === v.revision;
+  }
+
   function queueRender() {
     if (typeof document === 'undefined' || renderQueued) return;
     renderQueued = true;
@@ -154,6 +176,14 @@
     host.toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     host.marker.textContent = open ? '▾' : '▸';
     host.body.hidden = !open;
+    if (open) notifyShown(host);
+  }
+
+  // Modules may return {onShow()} from render(); it runs whenever their panel becomes visible.
+  function notifyShown(host) {
+    var t = host.selected && host.tabs[host.selected];
+    if (!t || host.body.hidden || !t.hooks || typeof t.hooks.onShow !== 'function') return;
+    try { t.hooks.onShow(); } catch (e) { /* a failing hook must not break tab switching */ }
   }
 
   function select(host, key, focus) {
@@ -165,6 +195,7 @@
       t.panel.hidden = !on;
     });
     if (focus && host.tabs[key]) host.tabs[key].tab.focus();
+    notifyShown(host);
   }
 
   function renderHost(mountEl, app) {
@@ -187,7 +218,7 @@
         host.tabs[t.key] = { tab: tab, panel: panel, mod: mod, version: version, label: label };
         tab.addEventListener('click', function () { select(host, t.key, false); });
         try {
-          mod.render(panel, { app: app, spec: spec, block: block, host: { open: function (key) { open(app, key || t.key); } } });
+          host.tabs[t.key].hooks = mod.render(panel, { app: app, spec: spec, block: block, host: { open: function (key) { open(app, key || t.key); } } }) || null;
         } catch (e) {
           panel.replaceChildren();
           el('p', { class: 'alm-f-error', role: 'alert' }, label + ' could not be shown: ' + (e && e.message ? e.message : String(e)), panel);
@@ -213,6 +244,7 @@
   ensureState();
   var api = {
     register: register, registerModule: registerModule, get: get, revision: revision, stateHash: stateHash,
+    inputsHash: inputsHash, verifiedCurrent: verifiedCurrent,
     open: open, liveAdapter: liveAdapter, blocks: BLOCKS.slice(), tabs: TABS.map(function (t) { return t.key; }),
   };
   global.AlmFeatures = api;

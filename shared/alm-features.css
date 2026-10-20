@@ -93,3 +93,9 @@
 .alm-features .alm-f-share-row label { font-weight: 600; }
 .alm-features a { color: var(--alm-f-accent); }
 @media (prefers-reduced-motion: reduce) { .alm-features * { transition: none !important; animation: none !important; } }
+.alm-features .alm-f-stale {
+  margin: 0.5rem 0; padding: 0.5rem 0.75rem; border-left: 4px solid var(--alm-f-fail);
+  color: var(--alm-f-fail); font-weight: 700;
+}
+.alm-features .alm-f-stale[hidden] { display: none; }
+.alm-features [data-stale="true"] table, .alm-features .alm-f-summary[data-stale="true"] { opacity: 0.85; }

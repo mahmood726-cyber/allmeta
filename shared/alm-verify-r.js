@@ -12,6 +12,11 @@
  * AlmFeaturesState.verify = {revision, passed, rows, versions, packages, n, nPassed} where revision =
  * AlmFeatures.stateHash(state) (identical to AlmFeatures.revision(app) for the same state).
  *
+ * STALE: after a run, edits to the app inputs (verify.inputs selector; debounced input/change events),
+ * showing the tab, and every download re-check the state; a changed state marks summary, table and
+ * download buttons STALE and the ZIP's truthcert.json carries stale + both revisions.
+ * AlmFeatures.verifiedCurrent(app) is the check F2 should use (never verify.passed alone).
+ *
  * TEST-ONLY HOOK: if window.__almVerifyPerturb = {key, delta} is set, delta is added to that app value
  * before comparing (used by the planted-defect test). It changes nothing unless set.
  */
@@ -153,20 +158,62 @@
     var scriptBox = el('div', null, null, panel);
     var consoleBox = el('div', null, null, panel);
     var sessionBox = el('div', null, null, panel);
+    var staleBanner = el('p', { role: 'alert', class: 'alm-f-stale', 'data-testid': 'verify-stale' }, null, panel);
+    staleBanner.hidden = true;
+    panel.insertBefore(staleBanner, summary);
+    var STALE_TEXT = 'These results are for an earlier version of the analysis. Run Verify in R again.';
+    var lastRun = null, downloadButtons = [], isStale = false;
     var objectURLs = [];
+
+    // Stale = the app's inputs or analysis state changed after the last completed run. Cheap input
+    // fingerprint first (never re-runs the app); full=true also compares AlmFeatures.revision(app).
+    function checkStale(full) {
+      if (!lastRun) return false;
+      var stale = global.AlmFeatures.inputsHash(app) !== lastRun.inputsHash;
+      if (!stale && full) stale = global.AlmFeatures.revision(app) !== lastRun.revision;
+      markStale(stale);
+      return stale;
+    }
+    function markStale(stale) {
+      isStale = !!stale;
+      staleBanner.textContent = isStale ? STALE_TEXT : '';
+      staleBanner.hidden = !isStale;
+      if (lastRun) {
+        summary.textContent = isStale ? 'STALE (earlier version of the analysis): ' + lastRun.summaryText : lastRun.summaryText;
+        summary.setAttribute('data-stale', isStale ? 'true' : 'false');
+        var cap = tableWrap.querySelector('caption');
+        if (cap) cap.textContent = isStale ? 'STALE — ' + lastRun.captionText : lastRun.captionText;
+        tableWrap.setAttribute('data-stale', isStale ? 'true' : 'false');
+      }
+      downloadButtons.forEach(function (d) { d.button.textContent = isStale ? d.label + ' (stale)' : d.label; });
+      var v = global.AlmFeaturesState && global.AlmFeaturesState.verify;
+      if (v && lastRun && v.revision === lastRun.revision) v.stale = isStale;
+    }
+    var staleTimer = null;
+    function onAppEdit(e) {
+      if (!lastRun || (e.target && e.target.closest && e.target.closest('#alm-features'))) return;
+      clearTimeout(staleTimer);
+      staleTimer = setTimeout(function () { checkStale(false); }, 250);
+    }
+    document.addEventListener('input', onAppEdit, true);
+    document.addEventListener('change', onAppEdit, true);
     var running = false;
 
     function clearOutputs() {
       objectURLs.forEach(function (u) { URL.revokeObjectURL(u); }); objectURLs = [];
       [summary, missing, versionsP, plotsBox, downloads, scriptBox, consoleBox, sessionBox].forEach(function (n) { n.replaceChildren(); });
-      summary.removeAttribute('data-result');
-      tableWrap.replaceChildren(); tableWrap.hidden = true;
+      summary.removeAttribute('data-result'); summary.removeAttribute('data-stale');
+      tableWrap.replaceChildren(); tableWrap.hidden = true; tableWrap.removeAttribute('data-stale');
+      lastRun = null; downloadButtons = []; isStale = false;
+      staleBanner.textContent = ''; staleBanner.hidden = true;
     }
 
     function addDownload(label, fn) {
       var b = el('button', { type: 'button', class: 'alm-f-btn' }, label, downloads);
+      downloadButtons.push({ button: b, label: label });
       b.addEventListener('click', function () {
-        Promise.resolve().then(fn).catch(function (e) { status.textContent = 'Download failed: ' + (e && e.message ? e.message : String(e)); });
+        // Downloads stay allowed when stale, but the state is re-checked first so labels/receipt are honest.
+        Promise.resolve().then(function () { checkStale(true); return fn(); }).catch(function (e) { status.textContent = 'Download failed: ' + (e && e.message ? e.message : String(e)); });
       });
       return b;
     }
@@ -210,6 +257,7 @@
         var adapter = block.adapter && block.adapter();
         live = adapter && (adapter.live || adapter);
         if (!live || typeof live.currentState !== 'function' || typeof live.buildScript !== 'function') throw new Error('This app has no live R adapter.');
+        var inputsAtRun = global.AlmFeatures.inputsHash(app);
         state = structuredClone(live.currentState());
         var revision = global.AlmFeatures.stateHash(state);
         var appValues = live.appValues(state);
@@ -237,7 +285,7 @@
             a.target = '_blank';
             p.appendChild(document.createTextNode('.'));
             status.textContent = 'R package ' + m[1] + ' unavailable in browser R.';
-            global.AlmFeaturesState.verify = { revision: revision, passed: false, rows: [], versions: {}, packages: live.packages || [], n: 0, nPassed: 0, error: 'missing package ' + m[1] };
+            global.AlmFeaturesState.verify = { app: app, revision: revision, inputsHash: inputsAtRun, stale: false, passed: false, rows: [], versions: {}, packages: live.packages || [], n: 0, nPassed: 0, error: 'missing package ' + m[1] };
             return { ok: false, missingPackage: m[1] };
           }
           throw new Error(r.error || 'R failed');
@@ -264,7 +312,7 @@
         var graphics = { cairo: r.cairo, plots: r.plots.map(function (p) {
           return { id: p.id, native: p.native, raster: { width: p.raster.width, height: p.raster.height, dpi: p.raster.dpi }, pdfBytes: p.pdf.length, svg: !!p.svg, svgReason: p.svgReason };
         }) };
-        global.AlmFeaturesState.verify = { revision: revision, passed: passed, rows: rows, versions: r.versions, packages: live.packages || [], n: rows.length, nPassed: nPassed, graphics: graphics };
+        global.AlmFeaturesState.verify = { app: app, revision: revision, inputsHash: inputsAtRun, stale: false, passed: passed, rows: rows, versions: r.versions, packages: live.packages || [], n: rows.length, nPassed: nPassed, graphics: graphics };
 
         var csv = comparisonCsv(rows);
         files.push({ name: app + '-verify-comparison.csv', string: csv });
@@ -327,6 +375,16 @@
           var bi = global.AlmBuildInfo || {};
           var results = { app: app, paper: spec.paper || null, commit: bi.sha || 'unknown', version: bi.version || 'unknown', stateRevision: revision,
             R: r.versions.R, webR: r.versions.webR, packages: r.versions, passed: passed, nPassed: nPassed, n: rows.length, files: manifest };
+          // Staleness at download time (checkStale(true) ran just before this). The current revision is only
+          // computed when the inputs are unchanged: computing it re-runs the app, which must not happen for
+          // edited-but-not-run inputs. The input fingerprints are always recorded.
+          var currentInputs = global.AlmFeatures.inputsHash(app);
+          results.stale = isStale;
+          results.verifiedRevision = revision;
+          results.currentRevision = currentInputs === inputsAtRun ? global.AlmFeatures.revision(app) : null;
+          results.verifiedInputsHash = inputsAtRun;
+          results.currentInputsHash = currentInputs;
+          if (results.currentRevision === null) results.currentRevisionNote = 'inputs changed since the run; current revision not computed (would re-run the analysis)';
           var receipt;
           if (global.AlmTruthCertExport && typeof global.AlmTruthCertExport.buildReceipt === 'function') {
             receipt = global.AlmTruthCertExport.sidecarJSON(await global.AlmTruthCertExport.buildReceipt({ studies: [], method: 'Verify in R (webR)', label: app + '-verify-in-r', results: results }));
@@ -338,18 +396,22 @@
         });
         zipButton.classList.add('alm-f-primary');
         status.textContent = 'R finished: ' + nPassed + ' of ' + rows.length + ' quantities match.';
+        var cap = tableWrap.querySelector('caption');
+        lastRun = { revision: revision, inputsHash: inputsAtRun, summaryText: summary.textContent, captionText: cap ? cap.textContent : '' };
+        checkStale(false); // inputs edited while R was running -> stale at once
         return { ok: true, passed: passed, rows: rows, versions: r.versions, revision: revision };
       } catch (e) {
         var msg = e && e.message ? e.message : String(e);
         summary.textContent = 'Not verified: ' + msg;
         summary.setAttribute('data-result', 'fail');
         status.textContent = 'R check did not complete.';
-        if (global.AlmFeaturesState) global.AlmFeaturesState.verify = { revision: state ? global.AlmFeatures.stateHash(state) : null, passed: false, rows: [], versions: {}, packages: live && live.packages || [], n: 0, nPassed: 0, error: msg };
+        if (global.AlmFeaturesState) global.AlmFeaturesState.verify = { app: app, revision: state ? global.AlmFeatures.stateHash(state) : null, stale: false, passed: false, rows: [], versions: {}, packages: live && live.packages || [], n: 0, nPassed: 0, error: msg };
         return { ok: false, error: msg };
       } finally { running = false; button.disabled = false; }
     }
 
     button.addEventListener('click', function () { run(); });
+    return { onShow: function () { checkStale(true); } };
   }
 
   var mod = { label: 'Verify in R', render: render };
