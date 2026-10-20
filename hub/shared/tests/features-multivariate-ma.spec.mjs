@@ -269,3 +269,99 @@ test('missing app result is withheld; adapter reads the fit without refitting', 
   await page.locator('#alm-f-panel-text .alm-text-regenerate').click();
   await expect(page.locator('#alm-f-panel-text .alm-text-status')).toHaveText('Run the analysis first.');
 });
+
+test('REVIEW: decimal choice preserves comma source and requires fresh confirmation', async ({ page }) => {
+  await open(page);
+  const panel = page.locator('#alm-f-panel-entry'), source = TSV.replaceAll('.', ',');
+  const paste = panel.getByLabel('Paired outcome table', { exact: true });
+  const use = panel.getByRole('button', { name: 'Use these rows', exact: true });
+  await paste.fill(source);
+  await panel.getByRole('button', { name: 'Preview and convert' }).click();
+  await expect(use).toBeDisabled();
+  await panel.getByLabel('Decimal mark for this paste', { exact: true }).selectOption('comma');
+  await expect(panel.locator('fieldset')).toHaveCount(10);
+  await expect(panel.locator('mark').filter({ hasText: '0,0075' })).toHaveCount(1);
+  for (const box of await panel.locator('fieldset').all()) {
+    await box.getByLabel('Source author and year').fill('Smith 2020');
+    await box.getByLabel('Full reference').fill('Smith et al.');
+    await box.getByLabel('Source location').fill('Table 1');
+    await box.getByLabel('Timepoint (or not stated)').fill('not stated');
+    await box.getByLabel('I confirm this outcome row').check();
+  }
+  await expect(use).toBeEnabled(); await use.click();
+  const saved = await page.evaluate(() => ({ provenance: AlmFeaturesState.provenance,
+    errors: AlmFeaturesState.provenance.flatMap(p => AlmMultivariateFeatures.entry.validateProvenance(p)) }));
+  expect(saved.errors).toEqual([]);
+  expect(saved.provenance[0].pastedText).toBe(source.split('\n')[1]);
+  expect(saved.provenance[0].decimal).toBe('comma');
+  await paste.fill(source.replace('0,47', '0,48'));
+  await expect(use).toBeDisabled(); await expect(panel.locator('fieldset')).toHaveCount(0);
+  await expect(panel.getByLabel('Decimal mark for this paste', { exact: true })).toHaveValue('point');
+});
+
+test('REVIEW: CI questions can be answered without editing the source', async ({ page }) => {
+  await open(page);
+  const panel = page.locator('#alm-f-panel-entry');
+  const source = [['study', 'outcome', 'yi', 'cov'], ...LONG.map(r => [r[0], r[1], '0.5 (0.7 to 0.3)', 0.001])]
+    .map(r => r.join('\t')).join('\n');
+  await panel.getByLabel('Paired outcome table', { exact: true }).fill(source);
+  await panel.getByRole('button', { name: 'Preview and convert' }).click();
+  for (let i = 0; i < 10; i++) await panel.getByLabel(/swap the lower and upper CI bounds/).first().selectOption('swap');
+  await expect(panel.locator('fieldset')).toHaveCount(10);
+  await expect(panel.getByRole('status')).toContainText('confirm the source');
+  await expect(panel.getByTestId('entry-log')).toContainText('User confirmed swapping');
+  await expect(panel.locator('.alm-entry-source').first()).toHaveText(source.split('\n')[1]);
+  await expect(panel.getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
+});
+
+test('REVIEW: blocked preview announces the reason for disabled apply', async ({ page }) => {
+  await open(page);
+  const panel = page.locator('#alm-f-panel-entry');
+  await panel.getByLabel('Paired outcome table', { exact: true }).fill(TSV.replaceAll('0.003', '1'));
+  await panel.getByRole('button', { name: 'Preview and convert' }).click();
+  await expect(panel.getByRole('status')).toContainText('Preview blocked:');
+  await expect(panel.getByRole('status')).toContainText('positive definite');
+  await expect(panel.getByRole('alert')).toContainText('positive definite');
+  await expect(panel.getByRole('button', { name: 'Use these rows', exact: true })).toHaveAttribute('aria-describedby', 'mv-entry-status');
+  await expect(panel.locator('fieldset')).toHaveCount(0);
+});
+
+test('REVIEW: supplied SE is checked at printed precision and retained in provenance', async ({ page }) => {
+  await open(page);
+  const out = await page.evaluate(rows => {
+    const make = se => [['study', 'outcome', 'yi', 'vi', 'cov', 'se'], ...rows.map(r => [...r, se ?? Math.sqrt(r[3]).toFixed(4)])]
+      .map(r => r.join('\t')).join('\n');
+    return { clean: AlmMultivariateFeatures.entry.convert(make()),
+      bad: ['0.1', '0', '-0.0866', 'invalid'].map(se => AlmMultivariateFeatures.entry.convert(make(se))) };
+  }, LONG);
+  expect(out.clean.flags.filter(f => f.blocking)).toEqual([]);
+  expect(out.clean.records[0].vi).toBe(0.0075);
+  expect(out.clean.records[0].values.find(v => v.field === 'sei').text).toBe('0.0866');
+  for (const bad of out.bad) expect(bad.flags.some(f => f.blocking && /SE.*(variance|positive|finite)/i.test(f.text))).toBe(true);
+});
+
+test('REVIEW: signed-zero confidence limits retain the report and changed limits fail audit', async ({ page }) => {
+  await open(page, 'text');
+  await page.evaluate(() => {
+    const card = document.querySelector('#stats .v');
+    card.textContent = card.textContent.replace(/\[[-\d.]+,/, '[-0.000,');
+  });
+  expect((await render(page)).audit.ok).toBe(true);
+  const panel = page.locator('#alm-f-panel-text');
+  await panel.locator('.alm-text-regenerate').click();
+  await expect(panel.locator('.alm-text-body')).toBeVisible();
+  await page.evaluate(() => { window.__almTextPerturb = { key: 'loa', delta: 0.001 }; });
+  expect((await render(page)).audit.failures.map(f => f.check)).toContain('dom:loa');
+  await panel.locator('.alm-text-regenerate').click();
+  await expect(panel.locator('.alm-text-body')).toBeHidden();
+});
+
+test('REVIEW: natural-ratio intervals get a scale-neutral no-effect caveat', async ({ page }) => {
+  await open(page, 'text');
+  await page.locator('#f-data').fill(DATA.map((_, i) => `Trial ${i + 1}, 1, 0.01, 1, 0.01, 0.003`).join('\n'));
+  const out = await render(page);
+  expect(out.audit.ok).toBe(true);
+  expect(out.snapshot.plain).toContain('no-effect value for the supplied scale');
+  expect(out.snapshot.plain).toContain('not evidence of no difference');
+  expect(out.snapshot.plain).not.toContain('An interval includes no effect');
+});

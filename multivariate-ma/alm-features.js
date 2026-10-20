@@ -10,8 +10,8 @@
   function el(id) { return document.getElementById(id); }
   function run() { el('f-data').dispatchEvent(new Event('input', { bubbles: true })); }
   function block(text, row) { return { code: 'multivariate-input', text: text, row: row, blocking: true }; }
-  function numeric(value) {
-    var token = global.AlmEntry.parseCell(String(value));
+  function numeric(value, decimal) {
+    var token = global.AlmEntry.parseCell(String(value), { decimal: decimal });
     return token.kind === 'number' && !token.ambiguousDecimal ? token.value : NaN;
   }
   // Offsets are into each verbatim pasted row, never the normalised table.
@@ -31,9 +31,11 @@
     spans.push([start, line.length]);
     return spans;
   }
-  function sourceValue(line, cellSpan, field, value) {
+  function sourceValue(line, cellSpan, field, value, decimal) {
     if (!cellSpan || !Number.isFinite(value)) return null;
     var normalized = global.AlmEntry.normalize(line.slice(cellSpan[0], cellSpan[1]));
+    // This replacement preserves offsets into the verbatim comma source.
+    if (decimal === 'comma') normalized.text = normalized.text.replace(/(\d),(?=\d)/g, '$1.');
     var re = /[-+]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[-+]?\d+)?/gi, m;
     while ((m = re.exec(normalized.text))) {
       var start = m.index, printed = m[0];
@@ -48,7 +50,8 @@
 
   // A long table deliberately makes outcome membership explicit. A RevMan
   // export without a covariance cannot identify this model and is refused.
-  function convert(source) {
+  function convert(source, answers) {
+    answers = Object.assign({ decimal: 'point' }, answers);
     var core = global.AlmEntry, table = core.parseTable(source);
     var headers = (table.header || []).map(function (h) { return h.trim().toLowerCase().replace(/_/g, ' '); });
     var aliases = {
@@ -74,36 +77,59 @@
       header: ['study', 'yi', 'sei'], rows: [], notes: table.notes,
       source: source, delimiter: table.delimiter
     };
+    function working(cell) {
+      return answers.decimal === 'comma' ? String(cell).replace(/(\d),(?=\d)/g, '$1.') : cell;
+    }
     table.rows.forEach(function (row) {
       var se = map.sei === undefined ? '' : row[map.sei];
-      if (map.vi !== undefined) {
-        var v = numeric(row[map.vi]);
+      if (map.vi !== undefined && map.sei === undefined) {
+        var v = numeric(row[map.vi], answers.decimal);
         se = v > 0 ? String(Math.sqrt(v)) : '';
       }
-      generic.rows.push([row[map.study], row[map.yi], se]);
+      // The shared CI-swap retry reads cells without a decimal context.
+      // Normalise only this working copy after the explicit per-paste choice.
+      generic.rows.push([row[map.study], working(row[map.yi]), working(se)]);
     });
     var detected = core.detect(generic, 'generic');
-    var converted = core.convert(generic, detected, { name: 'generic', ratio: false }, { decimal: 'point' });
+    var converted = core.convert(generic, detected, { name: 'generic', ratio: false }, answers);
     out.flags = converted.flags.filter(function (f) { return f.code !== 'duplicate-study'; });
     out.steps = converted.steps;
-    out.questions = converted.questions;
+    out.questions = converted.questions.filter(function (q) { return q.choices.indexOf(answers[q.id]) < 0; });
     out.records = converted.records.map(function (r, i) {
       var raw = table.rows[i];
-      var vi = map.vi === undefined ? r.sei * r.sei : numeric(raw[map.vi]);
+      var vi = map.vi === undefined ? r.sei * r.sei : numeric(raw[map.vi], answers.decimal);
+      if (map.sei !== undefined && map.vi !== undefined) {
+        var suppliedSE = numeric(raw[map.sei], answers.decimal);
+        var printed = core.normalize(working(raw[map.sei])).text.trim();
+        var precision = printed.match(/^[-+]?(?:\d+(?:\.(\d+))?|\.(\d+))(?:e([-+]?\d+))?$/i);
+        var unit = precision ? Math.pow(10, Number(precision[3] || 0) - (precision[1] || precision[2] || '').length) : NaN;
+        if (!(suppliedSE > 0) || !Number.isFinite(suppliedSE)) {
+          out.flags.push(block('Supplied SE must be positive and finite when variance is also supplied.', i));
+        } else if (!(vi > 0) || !Number.isFinite(unit) || Math.abs(suppliedSE - Math.sqrt(vi)) > unit / 2) {
+          out.flags.push(block('SE and variance disagree at the printed SE precision; check the source and choose one dispersion column.', i));
+        } else {
+          out.steps.push({ row: i, study: r.study, text: r.study + ': supplied SE agrees with the square root of variance at its printed precision; variance retained for analysis.',
+            method: 'SE and variance checked', citation: 'Definition of sampling variance' });
+        }
+      }
       if (map.vi === undefined && Number.isFinite(r.sei)) {
         out.steps.push({ row: i, study: r.study, text: r.study + ': variance = SE squared.',
           field: 'vi', formula: 'variance = SE squared', method: 'variance = SE squared',
           citation: 'Definition of sampling variance', inputs: { sei: r.sei }, output: vi });
       }
       var line = sourceRows[i], spans = sourceCells(line, table.delimiter), values = [];
-      [['yi', 'yi', r.yi], ['vi', 'vi', vi], ['sei', 'sei', r.sei], ['cov', 'cov', numeric(raw[map.cov])],
+      [['yi', 'yi', r.yi], ['vi', 'vi', vi], ['sei', 'sei', r.sei], ['cov', 'cov', numeric(raw[map.cov], answers.decimal)],
         ['yi', 'lo', r.lo], ['yi', 'hi', r.hi]].forEach(function (item) {
         if (map[item[0]] === undefined || !Number.isFinite(item[2])) return;
-        var v = sourceValue(line, spans[map[item[0]]], item[1], item[2]);
+        var v = sourceValue(line, spans[map[item[0]]], item[1], item[2], answers.decimal);
         if (v) values.push(v); else out.flags.push(block('Cannot anchor ' + item[1] + ' to the verbatim source row.', i));
       });
-      return { study: r.study, outcome: raw[map.outcome], yi: r.yi, vi: vi, cov: numeric(raw[map.cov]),
-        pastedText: line, values: values, sourceRow: i, conversions: out.steps.filter(function (s) { return s.row === i; }).map(function (s) {
+      return { study: r.study, outcome: raw[map.outcome], yi: r.yi, vi: vi, cov: numeric(raw[map.cov], answers.decimal), decimal: answers.decimal,
+        pastedText: line, values: values, sourceRow: i, conversions: out.steps.filter(function (s) {
+          // Choices and consistency checks stay in entryLog; only numerical
+          // conversions go to the independently replayed conversion registry.
+          return s.row === i && (s.fn || s.method === 'variance = SE squared');
+        }).map(function (s) {
           return Object.assign({}, s, { field: s.field || 'sei', formula: s.formula || s.method, output: s.output === undefined ? s.result : s.output });
         }) };
     });
@@ -172,17 +198,23 @@
     node('p', 'RevMan/Covidence tables need an explicit outcome and covariance column. Marginal effects alone cannot supply the missing covariance.', panel);
     var label = node('label', 'Paired outcome table', panel), paste = node('textarea', undefined, panel);
     paste.id = 'mv-entry-paste'; label.htmlFor = paste.id;
+    var decimalLabel = node('label', 'Decimal mark for this paste', panel), decimal = node('select', undefined, panel);
+    decimal.id = 'mv-entry-decimal'; decimalLabel.htmlFor = decimal.id;
+    ['point', 'comma'].forEach(function (value) { node('option', value, decimal).value = value; });
+    decimal.value = 'point';
     var preview = node('button', 'Preview and convert', panel);
     preview.type = 'button';
     var status = node('p', 'Paste a table to begin.', panel); status.setAttribute('role', 'status');
+    status.id = 'mv-entry-status';
     var details = node('div', undefined, panel), log = node('div', undefined, panel);
     log.dataset.testid = 'entry-log';
     var use = node('button', 'Use these rows', panel); use.type = 'button'; use.disabled = true;
-    var out = null, confirmed = [];
+    use.setAttribute('aria-describedby', status.id);
+    var out = null, confirmed = [], answers = { decimal: 'point' };
     function provenance(c, i) {
       var r = c.record;
       return { id: 'mv-' + i, label: c.label.value, study: r.study, reference: c.reference.value, location: c.location.value,
-        pastedText: r.pastedText, choice: { study: r.study, outcome: r.outcome, timepoint: c.timepoint.value },
+        pastedText: r.pastedText, decimal: r.decimal, choice: { study: r.study, outcome: r.outcome, timepoint: c.timepoint.value },
         values: r.values, conversions: r.conversions, flags: [], usedAs: 'Paired analysis-scale effect, sampling variance and covariance',
         confirmed: c.check.checked, confirmedAt: c.check.checked ? new Date().toISOString() : null };
     }
@@ -192,13 +224,34 @@
           return !c.timepoint.value.trim() || validateProvenance(provenance(c, i)).length;
         });
     }
-    paste.addEventListener('input', function () { out = null; use.disabled = true; status.textContent = 'Text changed. Preview again.'; });
-    preview.addEventListener('click', function () {
-      out = convert(paste.value); confirmed = []; details.replaceChildren(); log.replaceChildren();
+    paste.addEventListener('input', function () {
+      out = null; confirmed = []; answers = { decimal: 'point' }; decimal.value = 'point';
+      details.replaceChildren(); log.replaceChildren(); use.disabled = true;
+      status.textContent = 'Text changed. Choose the decimal mark and preview again.';
+    });
+    decimal.addEventListener('change', function () { answers = { decimal: decimal.value }; showPreview(); });
+    function showPreview() {
+      out = convert(paste.value, answers); confirmed = []; details.replaceChildren(); log.replaceChildren();
       node('h3', 'Conversion log', log);
       out.steps.forEach(function (s) { node('p', s.text, log); });
-      out.flags.forEach(function (f) { node('p', (f.blocking ? 'Block: ' : 'Check: ') + f.text, details); });
-      out.questions.forEach(function (q) { node('p', q.text, details); });
+      var flags = node('div', undefined, details); flags.setAttribute('role', 'alert');
+      out.flags.forEach(function (f) { node('p', (f.blocking ? 'Block: ' : 'Check: ') + f.text, flags); });
+      out.questions.forEach(function (q, i) {
+        var prompt = q.id.indexOf('decimal:') === 0 ? 'Decimal mark for this paste (including variance and covariance): ' + q.text : q.text;
+        var lab = node('label', prompt, details), select = node('select', undefined, details);
+        select.id = 'mv-entry-question-' + i; lab.htmlFor = select.id;
+        node('option', 'Choose an answer', select).value = '';
+        q.choices.forEach(function (choice) { node('option', choice, select).value = choice; });
+        select.value = '';
+        select.addEventListener('change', function () {
+          // Comma interpretation is a per-paste decision, including variance
+          // and covariance columns handled by this adapter.
+          if (q.id.indexOf('decimal:') === 0 && select.value === 'comma') {
+            answers.decimal = 'comma'; decimal.value = 'comma';
+          }
+          answers[q.id] = select.value; showPreview();
+        });
+      });
       if (!out.flags.some(function (f) { return f.blocking; }) && !out.questions.length) {
         out.records.forEach(function (r, i) {
           var box = node('fieldset', undefined, details);
@@ -227,9 +280,14 @@
           confirmed.push(c);
         });
       }
-      status.textContent = 'Review the conversion log and confirm the source of every outcome row.';
+      var blocking = out.flags.filter(function (f) { return f.blocking; });
+      status.textContent = blocking.length || out.questions.length
+        ? 'Preview blocked: ' + blocking.length + ' blocking issues; ' + out.questions.length + ' unanswered questions. ' +
+          (blocking.length ? blocking[0].text : out.questions[0].text)
+        : 'Review the conversion log and confirm the source of every outcome row.';
       gate();
-    });
+    }
+    preview.addEventListener('click', showPreview);
     use.addEventListener('click', function () {
       if (use.disabled) return;
       try {
@@ -261,7 +319,12 @@
     if (cards.length !== 5) return out;
     ['a', 'b'].forEach(function (suffix, i) {
       var m = cards[i].textContent.match(/(-?\d+\.\d+) \[(-?\d+\.\d+), (-?\d+\.\d+)\]/);
-      if (m) ['mu', 'lo', 'hi'].forEach(function (k, j) { out[k + suffix] = { text: m[j + 1], fmt: { kind: 'num', digits: 3 } }; });
+      if (m) ['mu', 'lo', 'hi'].forEach(function (k, j) {
+        // Number('-0.000') loses its printed sign when formatted by AlmText.
+        // Canonicalise only zero CI spellings, leaving nonzero audit evidence intact.
+        var printed = k === 'mu' ? m[j + 1] : m[j + 1].replace(/^-0\.0+$/, '0.000');
+        out[k + suffix] = { text: printed, fmt: { kind: 'num', digits: 3 } };
+      });
       out['sd' + suffix] = { text: cards[i + 2].textContent, fmt: { kind: 'num', digits: 4 } };
     });
     if (cards[4].textContent !== '—') out.rho = { text: cards[4].textContent, fmt: { kind: 'num', digits: 3 } };
@@ -292,8 +355,7 @@
         ' correlated outcomes. In the order shown on the page, the pooled effects were ', T.num('mua', 3), ' and ', T.num('mub', 3),
         '. Their ', T.pct('level', 0), ' confidence intervals were ', T.ci('loa', 'hia', 3), ' and ', T.ci('lob', 'hib', 3),
         '. These intervals describe uncertainty in average effects, not the range of effects in a new study. Clinical importance and causality cannot be determined from this summary.',
-        T.when(global.AlmText.cochrane.ciIncludesNull(r.loa, r.hia, T.R.none) || global.AlmText.cochrane.ciIncludesNull(r.lob, r.hib, T.R.none),
-          ' An interval includes no effect; this is not evidence of no difference.')];
+        ' If an interval includes the no-effect value for the supplied scale, this is not evidence of no difference.'];
     },
     methods: function (T) {
       return ['Complete paired outcome vectors were analysed using a multivariate normal random-effects model with known within-study covariance matrices. ',
