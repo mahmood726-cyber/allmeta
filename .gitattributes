@@ -30,6 +30,7 @@ hub/shared/vendor/*.js binary
 **/validate/corpus/*.json text eol=lf
 nma-inconsistency/validate/corpus/*.json text eol=lf
 nma-inconsistency/validate/corpus/reference.json text eol=lf
+nma-inconsistency/validate/plus/*.json text eol=lf
 
 **/validate/plus/*.json text eol=lf
 **/validate/plus-corpus/*.json text eol=lf
