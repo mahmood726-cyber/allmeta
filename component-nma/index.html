@@ -61,8 +61,8 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Component NMA</h1>
-    <p>Additive model for multi-component interventions (Welton et al., Am J Epidemiol 2009). Each intervention is a set of components (e.g., "drug + exercise + education"). The model estimates one effect per component; any combination's effect is the sum of its components.</p>
-    <p style="margin-top:.5rem;padding:.5rem .7rem;border-left:3px solid #b8860b;background:rgba(184,134,11,.08);font-size:.9rem"><strong>Multi-arm correction off.</strong> Contrast rows are treated as independent, so a multi-arm trial entered as several rows double-counts its shared comparator (no τ²/2 off-diagonal). For multi-arm trials with the correct correlation, use <a href="../nma-pro-v2/">NMA Pro</a>.</p>
+    <p>Additive model for multi-component interventions (Welton et al., Am J Epidemiol 2009). Each intervention is a set of components (e.g., "drug + exercise + education"). The random-effects model uses a generalized DerSimonian–Laird estimator and normal 95% confidence intervals. It estimates one effect per component; any combination's effect is the sum of its components.</p>
+    <p style="margin-top:.5rem;padding:.5rem .7rem;border-left:3px solid #b8860b;background:rgba(184,134,11,.08);font-size:.9rem"><strong>Multi-arm correction off.</strong> Contrast rows are treated as independent, so a multi-arm trial entered as several rows double-counts its shared comparator (no τ²/2 off-diagonal). The bus importer refuses multi-arm trials; pasted rows must be independent two-arm contrasts. For multi-arm trials with the correct correlation, use <a href="../nma-pro-v2/">NMA Pro</a>.</p>
   </header>
   <main>
     <section class="panel">
@@ -77,7 +77,7 @@ drug+exercise+education | control | -0.55 | 0.15
 exercise+education | control | -0.30 | 0.13
 drug | exercise | -0.12 | 0.10
 drug+exercise | drug | -0.18 | 0.11</textarea>
-        <span class="hint">Components separated by <code>+</code>. Use <code>control</code> for no intervention.</span>
+        <span class="hint">Components separated by <code>+</code>. Use <code>control</code> for no intervention. Labels are case-insensitive. Empty or repeated components and malformed rows are refused. At least two contrasts and an identifiable component design are required. With zero residual degrees of freedom, heterogeneity is not estimable (exported as null); effects use sampling variances.</span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit</button>
     </section>
@@ -108,14 +108,21 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
 
     // Parse: arm A components, arm B components, effect, SE
     function parse(text) {
-      return text.trim().split(/\n/).map(l => {
+      return text.trim().split(/\n/).filter(l => l.trim()).map(l => {
         const parts = l.split(/\|/).map(s => s.trim());
-        if (parts.length < 4) return null;
-        const te = parseFloat(parts[2]), se = parseFloat(parts[3]);
-        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        const splitArm = s => s.toLowerCase() === "control" ? [] : s.split(/\s*\+\s*/).map(c => c.toLowerCase());
-        return { A: splitArm(parts[0]), B: splitArm(parts[1]), te, se };
-      }).filter(Boolean);
+        if (parts.length !== 4 || parts.some(s => !s)) throw new Error("Invalid contrast input.");
+        const te = Number(parts[2]), se = Number(parts[3]);
+        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) throw new Error("Invalid contrast input.");
+        const splitArm = s => {
+          if (s.toLowerCase() === "control") return [];
+          const a = s.split(/\s*\+\s*/).map(c => c.toLowerCase());
+          if (a.some(c => !c) || new Set(a).size !== a.length) throw new Error("Invalid contrast input.");
+          return a;
+        };
+        const A = splitArm(parts[0]), B = splitArm(parts[1]);
+        if (A.slice().sort().join("+") === B.slice().sort().join("+")) throw new Error("Invalid contrast input.");
+        return { A, B, te, se };
+      });
     }
 
     // --- matrix math (copy from NMA tool) ---
@@ -158,6 +165,20 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
         for (const c of r.A) X[i][comps.indexOf(c)] += 1;
         for (const c of r.B) X[i][comps.indexOf(c)] -= 1;
       });
+      const rankWork = X.map(r => r.slice());
+      let rank = 0;
+      for (let j = 0; j < p && rank < rows.length; j++) {
+        let pivot = rank;
+        for (let i = rank + 1; i < rows.length; i++) if (Math.abs(rankWork[i][j]) > Math.abs(rankWork[pivot][j])) pivot = i;
+        if (Math.abs(rankWork[pivot][j]) < 1e-12) continue;
+        [rankWork[rank], rankWork[pivot]] = [rankWork[pivot], rankWork[rank]];
+        for (let i = rank + 1; i < rows.length; i++) {
+          const v = rankWork[i][j] / rankWork[rank][j];
+          for (let k = j; k < p; k++) rankWork[i][k] -= v * rankWork[rank][k];
+        }
+        rank++;
+      }
+      if (!p || rank < p) throw new Error("Components are not identifiable from the contrasts.");
       const y = rows.map(r => r.te);
       const w = rows.map(r => 1 / (r.se * r.se));
       const Xt = transpose(X);
@@ -173,7 +194,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       let { beta, cov: covFE } = wls(w);
       const res = y.map((yi, i) => yi - X[i].reduce((s, x, j) => s + x * beta[j], 0));
       const Q = res.reduce((s, r, i) => s + w[i] * r * r, 0);
-      const df = Math.max(1, rows.length - p);
+      const df = rows.length - p;
       const sumW = w.reduce((a, b) => a + b, 0);
       // Generalized DerSimonian–Laird moment denominator for multi-component WLS:
       // denom = sumW − trace(cov · X'W²X); reduces to sumW − sumW²/sumW when p=1.
@@ -182,22 +203,39 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       let tr = 0;
       for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) tr += covFE[i][j] * XtW2X[j][i];
       const denom = sumW - tr;
-      const tau2 = denom <= 1e-12 ? 0 : Math.max(0, (Q - df) / denom);
+      const tau2 = df === 0 ? null : (denom <= 1e-12 ? 0 : Math.max(0, (Q - df) / denom));
       const wRE = rows.map(r => 1 / (r.se * r.se + tau2));
       const res2 = wls(wRE);
       return { comps, beta: res2.beta, cov: res2.cov, tau2, Q, df };
     }
 
-    function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+    // Floating-point roundoff of an exact zero (|x| < 1e-12) has an arbitrary sign:
+    // display it as 0.000, not -0.000. Genuine small negatives keep their sign.
+    function fmt(x, d = 3) {
+      if (!Number.isFinite(x)) return "—";
+      return (Math.abs(x) < 1e-12 ? 0 : x).toFixed(d);
+    }
 
     let _lastCnma = null;
 
+    function clearResults() {
+      _lastCnma = null;
+      for (const id of ["comp-body", "int-body", "forest"]) document.getElementById(id).innerHTML = "";
+    }
+    function escapeLabel(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
     function run() {
-      const rows = parse(document.getElementById("src").value);
-      if (rows.length < 2) return;
-      let f;
-      try { f = fit(rows); }
-      catch (e) { Toast.show(e.message, "warn"); return; }
+      clearResults();
+      let rows, f;
+      try {
+        rows = parse(document.getElementById("src").value);
+        if (rows.length < 2) throw new Error("At least 2 valid contrasts are required.");
+        f = fit(rows);
+      } catch (e) {
+        if (window.Toast) window.Toast.show(e.message, "warn");
+        return;
+      }
 
       // Component table
       const cBody = document.getElementById("comp-body");
@@ -207,7 +245,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
         return { name: c, e, se, lo: e - Z975 * se, hi: e + Z975 * se };
       });
       for (const r of compRows) {
-        cBody.innerHTML += `<tr><td><code>${r.name}</code></td><td>${fmt(r.e)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
+        cBody.innerHTML += `<tr><td><code>${escapeLabel(r.name)}</code></td><td>${fmt(r.e)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
       }
 
       // Implied intervention effects: all unique combinations present in input
@@ -233,7 +271,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
         return { name, e: mean, se, lo: mean - Z975 * se, hi: mean + Z975 * se };
       });
       for (const r of intRows) {
-        iBody.innerHTML += `<tr><td><code>${r.name}</code></td><td>${fmt(r.e)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
+        iBody.innerHTML += `<tr><td><code>${escapeLabel(r.name)}</code></td><td>${fmt(r.e)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
       }
 
       drawForest([...compRows.map(r => ({ ...r, kind: "component" })), ...intRows.map(r => ({ ...r, kind: "intervention" }))]);
@@ -268,7 +306,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       __svgParts.push(`<line x1="${X(0)}" y1="${y0 - 10}" x2="${X(0)}" y2="${y0 + items.length * 26}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
       items.forEach((r, i) => {
         const y = y0 + i * 26;
-        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor" ${r.kind === "component" ? 'font-weight="600"' : ""}>${r.kind === "component" ? "[C] " : ""}${r.name}</text>`);
+        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor" ${r.kind === "component" ? 'font-weight="600"' : ""}>${r.kind === "component" ? "[C] " : ""}${escapeLabel(r.name)}</text>`);
         __svgParts.push(`<line x1="${X(r.lo)}" y1="${y}" x2="${X(r.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>`);
         const c = r.kind === "component" ? "var(--accent)" : "var(--warn)";
         __svgParts.push(`<rect x="${X(r.e) - 4}" y="${y - 4}" width="8" height="8" fill="${c}"/>`);
@@ -276,7 +314,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       // axis
       __svgParts.push(`<line x1="${padL}" y1="${y0 + items.length * 26}" x2="${padL + plotW}" y2="${y0 + items.length * 26}" stroke="currentColor" opacity="0.5"/>`);
       for (const t of [lo, 0, hi]) {
-        __svgParts.push(`<text x="${X(t)}" y="${y0 + items.length * 26 + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${t.toFixed(2)}</text>`);
+        __svgParts.push(`<text x="${X(t)}" y="${y0 + items.length * 26 + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${fmt(t, 2)}</text>`);
       }
       svg.innerHTML = __svgParts.join("");
 
@@ -347,9 +385,12 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
     function notify(msg) { if (window.Toast && typeof Toast.show === "function") Toast.show(msg, "warn"); }
     btn.addEventListener("click", function () {
       var env = MaComparisons.read();
-      if (!env || !Array.isArray(env.studies) || !env.studies.length) { notify("Shared network bus is empty."); return; }
+      if (!env || !Array.isArray(env.studies) || !env.studies.length) { clearResults(); notify("Shared network bus is empty."); return; }
+      if (env.studies.some(s => Array.isArray(s.arms) && s.arms.length > 2) || new Set(env.studies.map(s => s.id)).size !== env.studies.length) {
+        clearResults(); notify("Multi-arm or repeated-study bus inputs are unsupported: contrast covariance is required."); return;
+      }
       var rows = MaComparisons.toContrasts(env);
-      if (!rows.length) { notify("Bus measure " + (env.effectMeasure || "?") + " yielded no contrasts (needs OR/RR with events/n, or MD/SMD with mean/sd/n)."); return; }
+      if (!rows.length) { clearResults(); notify("Bus measure " + (env.effectMeasure || "?") + " yielded no contrasts (needs OR/RR with events/n, or MD/SMD with mean/sd/n)."); return; }
       ta.value = rows.map(function (r) { return r.treatment1 + " | " + r.treatment2 + " | " + r.te + " | " + r.se; }).join("\n");
       ta.dispatchEvent(new Event("input", { bubbles: true }));
       runBtn.click();

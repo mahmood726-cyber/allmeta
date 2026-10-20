@@ -8,7 +8,9 @@ export const test = base.extend({
     await use();
     const panels=[];
     for(const page of context.pages()) {
-      if(page.isClosed())continue;
+      // Edge adds a blank (url "") page to the context after a blob download; it has no panel, and
+      // waiting for #alm-validate there would hang the teardown until the test timeout.
+      if(page.isClosed() || !/^https?:/.test(page.url()))continue;
       panels.push({url:page.url(),panel:await page.locator('#alm-validate').innerText().catch(()=>null)});
     }
     const outside = requests.filter(u=>/^https?:/.test(u) && new URL(u).origin !== new URL(page.url()).origin);
