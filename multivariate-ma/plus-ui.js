@@ -89,13 +89,19 @@
     p.push('</svg>'); return p.join('');
   }
 
+  function clearSweep() {
+    state.sweep = null; state.grid = null;
+    el('plus-sweep-plot').innerHTML = ''; el('plus-sweep-body').replaceChildren(); el('plus-sweep-head').replaceChildren();
+    renderTexts();
+  }
   function update(parsed, res) {
-    state.parsed = parsed; state.res = res; state.sweep = null;
-    renderComparison(parsed, res); el('plus-sweep-plot').innerHTML = ''; el('plus-sweep-body').replaceChildren(); el('plus-sweep-head').replaceChildren();
+    state.parsed = parsed; state.res = res;
+    clearSweep(); renderComparison(parsed, res);
     el('plus-status').textContent = res && res.status === 'ok' ? 'Sweep not run for the current data.' : 'Sweep unavailable: ' + (res ? res.reason : 'no data');
     renderTexts();
   }
   function runSweep() {
+    clearSweep();
     if (!state.parsed) return null;
     var g = P.makeGrid(Number(el('plus-from').value), Number(el('plus-to').value), Number(el('plus-step').value));
     if (g.error) { el('plus-status').textContent = 'Refused: ' + g.error; return null; }

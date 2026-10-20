@@ -11,14 +11,50 @@
  *   displayed strings exact.
  *   Boundary adjudication: when a bivariate fit's parameter checks fail and the fit is at a boundary
  *   (R adjudication, app boundary zero/rank-one, or |rho_ref| > 1 - 1e-6), the fit passes iff
- *   app logLik >= ref logLik - 1e-8. Every adjudicated fit is listed. Status, k, logLik and
- *   undefined-rho status are never adjudicated.
+ *   recomputed app logLik >= ref logLik - 1e-8 and the reported fit is internally consistent.
+ *   Every adjudicated fit is listed. Status, k, logLik, z, p and undefined-rho status
+ *   are never adjudicated.
  */
 (function (g) {
   'use strict';
   var TOL_IT = 1e-6, TOL_EXACT = 1e-9, TOL_LL_ADJ = 1e-8;
   function rel(a, r) { return typeof a === 'number' && typeof r === 'number' && Number.isFinite(a) && Number.isFinite(r) ? Math.abs(a - r) / Math.max(1, Math.abs(r)) : Infinity; }
   function abs(a, r) { return typeof a === 'number' && typeof r === 'number' && Number.isFinite(a) && Number.isFinite(r) ? Math.abs(a - r) : Infinity; }
+  // Rebuild GLS and REML from the actual G and input covariances, without optimizing
+  // or trusting reported means, uncertainty or likelihood. Also used by the R comparator.
+  function fitIntegrity(rows, app, tests, rhoW, tol) {
+    var fail = { ok: false, logLik: -Infinity };
+    if (!rows || rows.length < 2 || !app || !app.G) return fail;
+    var G = app.G, a = G[0][0], b = G[0][1], c = G[1][1];
+    if (![a, b, c, G[1][0]].every(Number.isFinite) || a < 0 || c < 0 ||
+        b !== G[1][0] || Math.abs(b) > Math.sqrt(a) * Math.sqrt(c) * (1 + 8 * Number.EPSILON)) return fail;
+    var s00 = 0, s01 = 0, s11 = 0, h0 = 0, h1 = 0, ld = 0, weights = [];
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i], cov = rhoW == null ? row.cov : rhoW * Math.sqrt(row.v[0] * row.v[1]);
+      var v0 = row.v[0] + a, v1 = row.v[1] + c, v01 = cov + b, det = v0 * v1 - v01 * v01;
+      if (!(v0 > 0 && det > 0)) return fail;
+      var w0 = v1 / det, w1 = v0 / det, w01 = -v01 / det;
+      weights.push([w0, w01, w1]); ld += Math.log(det);
+      s00 += w0; s01 += w01; s11 += w1;
+      h0 += w0 * row.y[0] + w01 * row.y[1]; h1 += w01 * row.y[0] + w1 * row.y[1];
+    }
+    var sd = s00 * s11 - s01 * s01;
+    if (!(sd > 0)) return fail;
+    var V = [[s11 / sd, -s01 / sd], [-s01 / sd, s00 / sd]];
+    var mu = [V[0][0] * h0 + V[0][1] * h1, V[1][0] * h0 + V[1][1] * h1], q = 0;
+    rows.forEach(function (row, i) { var d0 = row.y[0] - mu[0], d1 = row.y[1] - mu[1], w = weights[i]; q += d0 * (w[0] * d0 + w[1] * d1) + d1 * (w[1] * d0 + w[2] * d1); });
+    var ll = -0.5 * (ld + Math.log(sd) + q) - (rows.length - 1) * Math.log(2 * Math.PI) + Math.log(rows.length);
+    var valid = rel(app.logLik, ll) <= tol;
+    for (var j = 0; j < 2; j++) {
+      var se = Math.sqrt(V[j][j]), t = g.AlmMultivariate.zTest(app.mu[j], app.muSE[j]);
+      valid = valid && rel(app.mu[j], mu[j]) <= tol && rel(app.muSE[j], se) <= tol &&
+        t.status === 'ok' && rel(tests[j].z, t.z) <= tol && abs(tests[j].p, t.p) <= tol;
+      if (app.muVcov) for (var l = 0; l < 2; l++) valid = valid && rel(app.muVcov[j][l], V[j][l]) <= tol;
+    }
+    var rho = a > 0 && c > 0 ? b / Math.sqrt(a * c) : null;
+    valid = valid && (rho === null ? app.rho === null : rel(app.rho, rho) <= tol);
+    return { ok: valid, logLik: ll };
+  }
   function parsedFrom(c) {
     return { mode: 'cov', rhoW: null, outcomes: c.outcomes.slice(), omitted: [],
       rows: c.rows.map(function (r) { return { line: r.source_row, label: r.label, y: r.y.slice(), v: r.v.slice(), cov: r.cov, r: r.cov / Math.sqrt(r.v[0] * r.v[1]) }; }) };
@@ -63,7 +99,7 @@
       if (Number.isFinite(diff)) maxima[q] = Math.max(maxima[q] || 0, diff);
     }
     function exact(id, q, a, r) { rec(id, q, a === r, a, r, a === r ? 0 : Infinity, 0); }
-    function fitChecks(id, app, appTests, appStatus, appReason, r) {
+    function fitChecks(id, app, appTests, appStatus, appReason, r, rows, rhoW) {
       exact(id, 'status', appStatus, r.status);
       if (r.status !== 'ok') { exact(id, 'refusal_reason', appStatus === 'refused' ? appReason : null, r.reason); return; }
       var ok = appStatus === 'ok', tol = /^two-study exact/.test(r.adjudication) ? TOL_EXACT : TOL_IT;
@@ -80,19 +116,24 @@
         for (var l = 0; l < 2; l++) { num('G', ok ? app.G[j][l] : null, r.G[j][l], tol); num('muVcov', ok ? app.muVcov[j][l] : null, r.muVcov[j][l], tol); }
       }
       if (r.rho !== null) num('rho', ok ? app.rho : null, r.rho, tol);
-      var anyFail = pending.some(function (x) { return !(x.d <= x.t); });
+      var anyFail = pending.some(function (x) { return x.q !== 'z' && x.q !== 'p' && !(x.d <= x.t); });
       var atBoundary = ok && (r.adjudication !== 'none' || /zero|rank-one/.test(app.optimizer && app.optimizer.boundary || '') || (r.rho !== null && Math.abs(r.rho) > 1 - 1e-6) || app.rho === null);
-      var adj = anyFail && atBoundary && llDiff >= -TOL_LL_ADJ;
-      if (adj) adjudicated.push({ id: id, logLikApp: app.logLik, logLikRef: r.logLik, diff: llDiff, boundaryApp: app.optimizer && app.optimizer.boundary, adjudicationRef: r.adjudication, worst: pending.filter(function (x) { return !(x.d <= x.t); }).map(function (x) { return x.q + ' ' + x.d.toExponential(2); }).slice(0, 4) });
-      pending.forEach(function (x) { rec(id, x.q, adj || x.d <= x.t, x.a, x.r, x.d, x.t, adj && !(x.d <= x.t) ? { adjudicated: true } : null); });
+      var integrity = ok ? fitIntegrity(rows, app, appTests, rhoW, tol) : { ok: false };
+      var adj = anyFail && atBoundary && integrity.ok && integrity.logLik - r.logLik >= -TOL_LL_ADJ;
+      if (adj) adjudicated.push({ id: id, logLikApp: app.logLik, logLikRef: r.logLik, diff: llDiff, boundaryApp: app.optimizer && app.optimizer.boundary, adjudicationRef: r.adjudication, worst: pending.filter(function (x) { return x.q !== 'z' && x.q !== 'p' && !(x.d <= x.t); }).map(function (x) { return x.q + ' ' + x.d.toExponential(2); }).slice(0, 4) });
+      pending.forEach(function (x) {
+        var waived = adj && x.q !== 'z' && x.q !== 'p';
+        rec(id, x.q, integrity.ok && (waived || x.d <= x.t), x.a, x.r, x.d, x.t,
+          !integrity.ok ? { inconsistentFit: true } : waived && !(x.d <= x.t) ? { adjudicated: true } : null);
+      });
     }
     var display = opts.display || null, grid = corpus.grid;
     for (var i = 0; i < corpus.configurations.length; i++) {
       var c = corpus.configurations[i], r = ref.configurations[i], parsed = parsedFrom(c);
       var res = P.compute(parsed);
-      fitChecks(c.id + '#supplied', res.fit, res.tests, res.status, res.reason, r.supplied);
+      fitChecks(c.id + '#supplied', res.fit, res.tests, res.status, res.reason, r.supplied, parsed.rows, null);
       var sw = P.sweep(parsed, grid);
-      sw.forEach(function (s, j) { fitChecks(c.id + '#rhoW=' + grid[j], s.fit, s.tests, s.status, s.reason, r.sweep[j]); });
+      sw.forEach(function (s, j) { fitChecks(c.id + '#rhoW=' + grid[j], s.fit, s.tests, s.status, s.reason, r.sweep[j], parsed.rows, grid[j]); });
       [0, 1].forEach(function (j) {
         var id = c.id + '#univariate' + j, u = res.univariate ? res.univariate[j] : { status: res.status }, ru = r.univariate[j];
         exact(id, 'uni_status', u.status, ru.status); if (ru.status !== 'ok') return;
@@ -125,6 +166,6 @@
     return { checks: checks, passed: passed, failed: failed, failedChecks: failed.length, maxima: maxima, adjudicated: adjudicated,
       appPolish: polish, logLikComparison: { appHigherBy1e10: appBetterLL, refHigherBy1e10: refBetterLL, maxAbsDiff: llDiffMax } };
   }
-  g.AlmMvPlusContract = { replay: replay, expectedChecks: expectedChecks, validateInputs: validateInputs, parsedFrom: parsedFrom, TOL: { iterative: TOL_IT, exact: TOL_EXACT, llAdjudication: TOL_LL_ADJ } };
+  g.AlmMvPlusContract = { replay: replay, expectedChecks: expectedChecks, validateInputs: validateInputs, parsedFrom: parsedFrom, fitIntegrity: fitIntegrity, TOL: { iterative: TOL_IT, exact: TOL_EXACT, llAdjudication: TOL_LL_ADJ } };
   if (typeof module !== 'undefined' && module.exports) module.exports = g.AlmMvPlusContract;
 })(typeof window !== 'undefined' ? window : globalThis);

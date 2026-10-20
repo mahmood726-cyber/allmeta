@@ -14,15 +14,17 @@
       for (var j = 0; j < 2; j++) {
         push('mv.' + j + '.ci', ok ? F.ci(f.mu[j], f.muSE[j]) : '(app result missing)');
         push('mv.' + j + '.se', ok ? F.f4(f.muSE[j]) : '(app result missing)');
-        push('mv.' + j + '.z', ok ? F.z(res.tests[j].z) : '(app result missing)');
-        push('mv.' + j + '.p', ok ? F.p(res.tests[j].p) : '(app result missing)');
+        var t = ok ? window.AlmMultivariate.zTest(f.mu[j], f.muSE[j]) : null;
+        push('mv.' + j + '.z', ok ? F.z(t.z) : '(app result missing)');
+        push('mv.' + j + '.p', ok ? F.p(t.p) : '(app result missing)');
         push('mv.' + j + '.tau2', ok ? F.sig4(f.G[j][j]) : '(app result missing)');
         push('ratio.' + j, ok ? (res.varRatio[j] === null ? '—' : F.f3(res.varRatio[j])) : '(app result missing)');
         var u = ok ? res.univariate[j] : null, uok = u && u.status === 'ok';
         push('uni.' + j + '.ci', uok ? F.ci(u.mu, u.se) : '(app result missing)');
         push('uni.' + j + '.se', uok ? F.f4(u.se) : '(app result missing)');
-        push('uni.' + j + '.z', uok ? F.z(u.z) : '(app result missing)');
-        push('uni.' + j + '.p', uok ? F.p(u.p) : '(app result missing)');
+        var ut = uok ? window.AlmMultivariate.zTest(u.mu, u.se) : null;
+        push('uni.' + j + '.z', uok ? F.z(ut.z) : '(app result missing)');
+        push('uni.' + j + '.p', uok ? F.p(ut.p) : '(app result missing)');
         push('uni.' + j + '.tau2', uok ? F.sig4(u.tau2) : '(app result missing)');
       }
     }

@@ -33,9 +33,11 @@ The check count is derived from the reference structure alone (`MANIFEST-plus.js
 
 - Iterative REML quantities (mu, SE, Var(mu), G, rho, logLik, z; univariate mu, SE, tau^2, logLik, z; variance ratio): 1e-6 relative to max(1, |ref|). p-values 1e-6 absolute. Two-study exact fits 1e-9. Closed-form p(z) grid 1e-9 absolute.
 - Exact: status, k, refusal reason, undefined-rho status, and every displayed table string (the panel is rendered from the app's own values and read back from the DOM).
-- Boundary adjudication: a bivariate fit at a boundary whose parameters differ beyond tolerance passes iff app logLik >= R logLik - 1e-8; every such fit is listed.
+- Boundary adjudication: parameter discrepancies can pass only when GLS means, uncertainty, rho, z/p and likelihood are internally consistent with the supplied G and study covariances, and the recomputed REML logLik is at least R logLik - 1e-8. z and p must also agree with the reference at their existing tolerances; they are never adjudicated. Every adjudicated fit is listed. The displayed z/p audit recomputes the expected values from the fitted mean and SE.
 
-## Results (this commit)
+## Recorded results before review hardening
+
+The stored evidence below predates the stricter adjudication and consistency checks. Re-run the Node replay and R round-trip comparator to assess the current code; these historical all-pass counts do not certify the hardened contract.
 
 `run-plus-node.cjs` (Node v24.13.0, linkedom 0.18.12, every page script executed; alm-validate.js and a11y-landmarks.js are browser widgets and skipped): **54,612/54,612 checks pass**, 1 fit passed by logLik adjudication (`metadat::dat.craft2003::acog.asom+asom.conf` at rho_w = -0.3: rank-one boundary, app rho -1 vs R -0.99981, app logLik higher by 5.4e-10). App logLik exceeds R's by > 1e-10 in 1 fit; R's exceeds the app's by > 1e-10 in none. Evidence: `plus/evidence-node.json`. The same replay runs in the browser from the "Validation checks" panel under `#alm-plus-validate` and in `hub/shared/tests/multivariate-ma-plus.spec.mjs`.
 

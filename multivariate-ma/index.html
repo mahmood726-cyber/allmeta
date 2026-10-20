@@ -174,7 +174,9 @@
         if (p.length < need + 1) { omitted.push({ line: lineNo, label: t.slice(0, 40), reason: "needs " + (need + 1) + " comma-separated fields (label + " + need + " numbers)" }); firstData = false; return; }
         var nums = p.slice(p.length - need).map(number);
         if (!nums.every(isFinite)) {
-          if (firstData && nums.every(function (x) { return isNaN(x); })) { firstData = false; return; }   // header row
+          var fields = p.slice(p.length - need).map(function (s) { return s.trim().toLowerCase(); });
+          var header = ["y1", "v1", "y2", "v2"].concat(mode === "rhoW" ? [] : [mode === "cov" ? "cov" : "r"]);
+          if (firstData && fields.every(function (s, j) { return s === header[j]; })) { firstData = false; return; }
           omitted.push({ line: lineNo, label: label, reason: "missing or non-numeric value" }); firstData = false; return;
         }
         firstData = false;
