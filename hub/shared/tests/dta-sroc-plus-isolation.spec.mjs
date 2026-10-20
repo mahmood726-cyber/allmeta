@@ -11,9 +11,18 @@ const MAIN_AUTOSAVE_KEYS=['alm-plot-1-format', 'alm-plot-1-physical-width', 'alm
 test('original autosave keys are exactly those on main; the extras are never saved into them',async({page})=>{
  await open(page);
  const keysOf=appKey=>page.evaluate(k=>Object.keys((JSON.parse(localStorage.getItem('alm-autosave:'+k)||'{}').values)||{}).sort(),appKey);
+ // shared/autosave.js never saves a disabled control (_readField), so a control another change disables (e.g. the inert
+ // axis controls in #162) drops out of the saved values without moving any other key. The positional idx:N keys are
+ // assigned over all matched controls, disabled or not, so the remaining keys are still exactly main's.
+ const disabledKeys=()=>page.evaluate(()=>[...document.querySelectorAll('[data-autosave-index]')].filter(el=>el.disabled&&!el.closest('#alm-plus'))
+  .map(el=>el.id||el.name||'idx:'+el.dataset.autosaveIndex));
+ const savedVsMain=async appKey=>{const off=await disabledKeys();return {saved:await keysOf(appKey),expected:MAIN_AUTOSAVE_KEYS.filter(k=>!off.includes(k))};};
  await page.locator('#plus-load').click();
  await page.evaluate(()=>{localStorage.clear();document.getElementById('f-data').dispatchEvent(new Event('input',{bubbles:true}));});
- await expect.poll(()=>keysOf('dta-sroc'),{timeout:10000}).toEqual(MAIN_AUTOSAVE_KEYS);
+ await expect.poll(async()=>{const r=await savedVsMain('dta-sroc');return r.saved.length?r.saved:null;},{timeout:10000}).not.toBeNull();
+ expect(await disabledKeys()).not.toContain('f-data');
+ const first=await savedVsMain('dta-sroc');
+ expect(first.saved).toEqual(first.expected);
  expect((await keysOf('dta-sroc')).filter(k=>k.startsWith('plus-'))).toEqual([]);
  // Editing the extras must not write to (or re-index) the original key.
  await page.evaluate(()=>localStorage.clear());
@@ -23,7 +32,7 @@ test('original autosave keys are exactly those on main; the extras are never sav
  await page.waitForTimeout(1500);
  expect(await keysOf('dta-sroc')).toEqual([]);
  await page.evaluate(()=>document.getElementById('f-data').dispatchEvent(new Event('input',{bubbles:true})));
- await expect.poll(()=>keysOf('dta-sroc'),{timeout:10000}).toEqual(MAIN_AUTOSAVE_KEYS);
+ await expect.poll(()=>keysOf('dta-sroc'),{timeout:10000}).toEqual(first.expected);
  // Planted negative: an autosave installed with the default selectors (as before this fix) picks up the extras.
  await page.evaluate(()=>{AlmAutosave.install({appKey:'dta-sroc-negative'});document.getElementById('f-data').dispatchEvent(new Event('input',{bubbles:true}));});
  await expect.poll(()=>keysOf('dta-sroc-negative'),{timeout:10000}).toContain('plus-data');
