@@ -4,13 +4,15 @@ Smart entry numerical validation
 From the repository root:
 
 ```
-node --test --test-reporter=tap hub/shared/tests/unit/
+node --test --test-reporter=tap "hub/shared/tests/unit/**/*.test.mjs"
 node validation/entry/gen_cases.mjs
 Rscript validation/entry/check_entry.R validation/entry/cases.json
 Rscript validation/entry/check_entry.R validation/entry/cases.planted.json
+Rscript validation/entry/check_entry.R validation/entry/cases.planted-tiny.json
+Rscript validation/entry/check_entry.R validation/entry/cases.planted-formula.json
 ```
 
-The last command must exit 1 and print a failure. The unmodified corpus must
+Each of the last three commands must exit 1 and print a failure. The unmodified corpus must
 exit 0 and print `ENTRY passed/total` with identical counts. All cases run before
 that final line; errors are failures, never skipped rows.
 
@@ -27,8 +29,11 @@ Gauss–Kronrod rule and R's default `integrate()` stopping tolerance; its SD is
 compared with metafor's integration result. Unsupported scenario
 outputs are compared as missing values, including all n < 5 five-number inputs.
 
-The comparator is `abs(JS-R) / max(1, abs(R)) <= 1e-10`; missing must match
-missing, and unexpected errors fail. CI and p conversions use `conv.wald`
+The comparator is a true relative tolerance, `abs(JS-R) <= 1e-10 * abs(R)`,
+at every magnitude; when R is exactly 0 this requires JS to be exactly 0. (An
+earlier version divided by a floor of 1, which made the check absolute 1e-10
+for |R| < 1, so the 1e-12/1e-9/1e-6 parts of the grid could not fail.) Missing
+must match missing, and unexpected errors fail. CI and p conversions use `conv.wald`
 plus direct formulas. Estimate midpoint is calculated directly and passed to
 `conv.wald`: that function does not itself impute missing estimates.
 SD from a mean CI uses t with n-1 degrees of freedom below 60 and normal
@@ -36,23 +41,26 @@ quantiles at or above 60, including at level .95 (3.919927969..., conventionally
 rounded to 3.92 in the Handbook). Events use nearest integer with upward ties,
 the JavaScript convention, stated explicitly in the R oracle.
 
-The planted corpus changes exactly one scalar JS output by 1e-6 relative.
+There are three planted corpora, and the R gate must FAIL each one:
+`cases.planted.json` multiplies one large stored output (sdFromSE, about 1000)
+by 1+1e-6; `cases.planted-tiny.json` does the same to a fixed 1e-12-scale case
+(seFromCI with bounds 1e-12 and 3e-12, output about 5.1e-13), which only a
+relative criterion can detect; `cases.planted-formula.json` recomputes every
+output with a copy of `alm-entry.js` in which one coefficient is changed
+(Luo 2018 IQR weight `.7+.39/n` -> `.7+.40/n`), so an error that propagates
+through the converter itself is caught, not only an edited stored number.
 Parser fixtures and unit tests independently cover table delimiters, compound
 cells, explicit ambiguity questions, schema mapping, every sanity rule, and
 a disabled-rule planted defect. Browser UI is a separate, unwired mountable
 module; callers load `shared/alm-entry.css` and provide their own apply callback.
 
 When the sandbox blocks the Node test runner's child process (`spawn EPERM`),
-the same tests can run in process:
+the same tests can run in process by listing every suite explicitly (there is
+no index file or package entry point in the unit directory; CI uses the glob):
 
 ```
-node --test --test-isolation=none --test-reporter=tap hub/shared/tests/unit/alm-entry.test.mjs hub/shared/tests/unit/alm-entry-ui.test.mjs
+node --test --test-isolation=none --test-reporter=tap hub/shared/tests/unit/*.test.mjs
 ```
-
-The unit directory has a package entry point so its positional directory
-argument loads both suites with the default process isolation. In-process
-execution needs explicit filenames (as above) or `hub/shared/tests/unit/index.mjs`;
-Node's ESM loader does not accept the directory in that mode.
 
 The round-1 feedback contains two umbrella-runner defects:
 
@@ -78,7 +86,7 @@ powershell -NoProfile -File validation/entry/test_entry.ps1
 ```
 
 Add `-InProcess` only when the sandbox prohibits Node child creation. The
-same tests run through `index.mjs`. The runner exits 0 and prints
+runner then lists every `hub/shared/tests/unit/*.test.mjs` file explicitly. The runner exits 0 and prints
 `ALL_TESTS_PASS` only if all gates pass. Its 16 self-tests include unequal
 normal counts, an undetected planted defect, missing summaries and erroneous
 process exits. They exercise the actual gate predicates.

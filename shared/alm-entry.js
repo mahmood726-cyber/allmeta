@@ -3,7 +3,7 @@
  * No statistical engine or app wiring lives in this module. */
 (function (global) {
   "use strict";
-  const RULES_VERSION="entry3.1";
+  const RULES_VERSION="entry4.1";
   const RULES=[];
   function defineRule(id,kind,pattern,description) {
     const rule=Object.freeze({id,version:1,kind,pattern,description});
@@ -18,13 +18,15 @@
   const finite = x => typeof x === "number" && Number.isFinite(x);
   const present = x => x !== undefined && x !== null && !Number.isNaN(x);
   const flag = (code, text, blocking = false, extra = {}) => ({code, text, blocking, ...extra});
-  const handbook = "Cochrane Handbook v6.5 §6.5.2.2";
+  // Per-function sources: SE/estimate from a ratio or difference CI is §6.3.1, SE from p §6.3.2,
+  // SD from the SE or CI of a mean §6.5.2.2.
+  const handbook = "Cochrane Handbook v6.5 §6.5.2.2", ciSource = "Cochrane Handbook v6.5 §6.3.1", pSource = "Cochrane Handbook v6.5 §6.3.2";
   function result(value, method, citation, inputs, flags = []) {
     const fn=({"SE from CI":"seFromCI","SE from p":"seFromP","CI midpoint":"estFromCI","SD from SE":"sdFromSE","SD from CI (t, n-1 df)":"sdFromCI","SD from CI (normal)":"sdFromCI","events from percent":"eventsFromPercent"})[method];
     return {value: finite(value) ? value : null, method, citation, inputs: {...inputs}, flags,...(fn?{fn,args:{...inputs},result:finite(value)?value:null,rulesVersion:RULES_VERSION}:{})};
   }
-  function invalid(inputs, text) {
-    return result(null, "not converted", handbook, inputs, [flag("invalid-input", text, true)]);
+  function invalid(inputs, text, citation) {
+    return result(null, "not converted", citation, inputs, [flag("invalid-input", text, true)]);
   }
   function levelOf(a) { return a.level === undefined ? 0.95 : a.level; }
   function validCI(a) {
@@ -169,39 +171,41 @@
     walterCache.set(n,value);return value;
   }
   function seFromCI(a) {
-    if(!validCI(a))return invalid(a,"CI bounds, level or ratio scale are invalid");
+    if(!validCI(a))return invalid(a,"CI bounds, level or ratio scale are invalid",ciSource);
     const lo=a.ratio?Math.log(a.lo):a.lo,hi=a.ratio?Math.log(a.hi):a.hi;
-    return result((hi-lo)/(2*qnorm(1-(1-levelOf(a))/2)),"SE from CI",handbook,a);
+    return result((hi-lo)/(2*qnorm(1-(1-levelOf(a))/2)),"SE from CI",ciSource,a);
   }
   function seFromP(a) {
     const token=typeof a.p==="string"?parseCell(a.p,{header:"p"}):a.p;
     const p=typeof token==="object" && token ? token.value : token;
     if(token && typeof token==="object" && token.op && token.op!=="=")
-      return result(null,"not converted","Cochrane Handbook v6.5 §6.3.2",a,[flag("p-inequality","A p-value inequality cannot be converted to an SE",true)]);
-    if(!finite(a.est)||!finite(p)||p<=0||p>=1||(a.ratio&&a.est<=0))return invalid(a,"An exact p in (0,1) and a valid estimate are required");
-    return result(Math.abs(a.ratio?Math.log(a.est):a.est)/(-qnorm(p/2)),"SE from p","Cochrane Handbook v6.5 §6.3.2",a);
+      return result(null,"not converted",pSource,a,[flag("p-inequality","A p-value inequality cannot be converted to an SE",true)]);
+    if(!finite(a.est)||!finite(p)||p<=0||p>=1||(a.ratio&&a.est<=0))return invalid(a,"An exact p in (0,1) and a valid estimate are required",pSource);
+    return result(Math.abs(a.ratio?Math.log(a.est):a.est)/(-qnorm(p/2)),"SE from p",pSource,a);
   }
   function estFromCI(a) {
-    if(!validCI(a))return invalid(a,"CI bounds or ratio scale are invalid");
-    const v=a.ratio?Math.exp((Math.log(a.lo)+Math.log(a.hi))/2):a.lo/2+a.hi/2;
-    return result(v,"CI midpoint","Cochrane Handbook v6.5 §6.3.1",a,[flag("ci-midpoint","estimate taken as CI midpoint")]);
+    if(!validCI(a))return invalid(a,"CI bounds or ratio scale are invalid",ciSource);
+    // (L+U)/2 is the oracle's exact operation order; halve first only if the sum overflows.
+    const v=a.ratio?Math.exp((Math.log(a.lo)+Math.log(a.hi))/2):finite(a.lo+a.hi)?(a.lo+a.hi)/2:a.lo/2+a.hi/2;
+    return result(v,"CI midpoint",ciSource,a,[flag("ci-midpoint","estimate taken as CI midpoint")]);
   }
   function sdFromSE(a) {
-    if(!finite(a.se)||a.se<0||!finite(a.n)||a.n<=0)return invalid(a,"SE must be nonnegative and n positive");
+    if(!finite(a.se)||a.se<0||!finite(a.n)||a.n<=0)return invalid(a,"SE must be nonnegative and n positive",handbook);
     return result(a.se*Math.sqrt(a.n),"SD from SE",handbook,a);
   }
   function sdFromCI(a) {
-    if(!validCI(a)||!finite(a.n)||a.n<=1)return invalid(a,"Valid CI and n > 1 are required");
+    if(!validCI(a)||!finite(a.n)||a.n<=1)return invalid(a,"Valid CI and n > 1 are required",handbook);
     const small=a.n<60,p=1-(1-levelOf(a))/2;
     return result(Math.sqrt(a.n)*(a.hi-a.lo)/(2*(small?qt(p,a.n-1):qnorm(p))),small?"SD from CI (t, n-1 df)":"SD from CI (normal)",handbook,a);
   }
   function eventsFromPercent(a) {
-    if(!finite(a.pct)||a.pct<0||a.pct>100||!finite(a.n)||a.n<=0)return invalid(a,"Percent must be in [0,100] and n positive");
+    if(!finite(a.pct)||a.pct<0||a.pct>100||!finite(a.n)||a.n<=0)return invalid(a,"Percent must be in [0,100] and n positive","Arithmetic: percent × n / 100");
     const raw=a.pct/100*a.n,v=Math.round(raw);
     return result(v,"events from percent","Arithmetic: percent × n / 100",a,Math.abs(raw-v)>.05?[flag("rounded-events","non-integer events (rounded %)")]:[]);
   }
   const meanMethods=["luo/wan/shi","hozo2005","wan2014","bland2015","luo2016","walter2007"];
   const sdMethods=["luo/wan/shi","hozo2005","wan2014","bland2015","shi2020","walter2007"];
+  const FIVENUM_METHODS=meanMethods.filter(m=>sdMethods.includes(m));
   function convertFivenum(a) {
     let methods=Array.isArray(a.method)?a.method.slice():[a.method||"default",a.method||"default"];
     if(methods.length!==2)throw new Error("method must contain a mean and an SD method");
@@ -301,15 +305,18 @@
     const token=parseCellRaw(str,ctx);
     // Non-enumerable metadata preserves the established token/fixture contract.
     Object.defineProperty(token,"rule",{value:ruleRef(token._ruleId||"R-CELL-UNKNOWN"),enumerable:false});
-    delete token._ruleId;
-    const source=String(str??""),mapped=sourceMap(source),working=ctx.decimal==="comma"?mapped.value.replace(ruleRegex("R-DECIMAL-REPLACE"),"$1."):mapped.value;
-    const numbers=[...working.matchAll(ruleRegex("R-CELL-NUMBERS"))],used=new Set(),spans={};
+    const comma=token._comma;
+    delete token._ruleId;delete token._comma;
+    const source=String(str??""),mapped=sourceMap(source),working=comma==="comma"?mapped.value.replace(ruleRegex("R-DECIMAL-REPLACE"),"$1."):mapped.value;
+    // Grouped numbers keep their commas in the span so provenance quotes "1,234" verbatim.
+    const numbers=[...working.matchAll(comma==="thousands"?ruleRegex("R-THOUSANDS-NUMBERS"):ruleRegex("R-CELL-NUMBERS"))],used=new Set(),spans={};
     for(const [field,value] of Object.entries(token)){
       if(!finite(value)||field==="level")continue;
-      const found=numbers.find((m,i)=>!used.has(i)&&+m[0]===value);
+      const found=numbers.find((m,i)=>!used.has(i)&&+m[0].replace(/,/g,"")===value);
       if(found){used.add(numbers.indexOf(found));spans[field]=mapped.span(found.index,found.index+found[0].length);}
     }
     Object.defineProperty(token,"spans",{value:spans,enumerable:false});
+    Object.defineProperty(token,"comma",{value:comma||null,enumerable:false});
     Object.defineProperty(token,"selectors",{value:Object.fromEntries(Object.entries(spans).map(([k,p])=>[k,selectors(source,p)])),enumerable:false});
     return token;
   }
@@ -341,12 +348,31 @@
   defineRule("R-CELL-LEVEL","context",/(\d+(?:\.\d+)?)\s*%\s*CI/i,"Explicit confidence level");
   defineRule("R-CELL-IQR","context",/iqr|interquartile/i,"Interquartile range cue");
   defineRule("R-CELL-RANGE","context",/range/i,"Range cue");
+  // Meaning of a comma between digits. decimal: "comma" (decimal mark), "thousands" (digit grouping),
+  // "list" (separates values; legacy alias "separator"), "point" (the per-paste setting: the comma is not a
+  // decimal mark, so it is grouping when every such comma is a valid 3-digit group, otherwise a list
+  // separator); anything else ("ask", undefined) leaves the cell ambiguous so convert() asks.
+  function commaMode(s,decimal) {
+    if(!ruleRegex("R-CELL-CUE-01").test(s))return null;
+    if(decimal==="separator")decimal="list";
+    if(decimal==="point")return ruleRegex("R-CELL-CUE-01").test(s.replace(ruleRegex("R-THOUSANDS-GROUP"),""))?"list":"thousands";
+    return ["comma","thousands","list"].includes(decimal)?decimal:"ask";
+  }
   function parseCellRaw(str,ctx={}) {
     let s=norm(str),header=String(ctx.header||"").toLowerCase();
-    if(ruleRegex("R-CELL-CUE-01").test(s)){
-      if(ctx.decimal==="comma")s=s.replace(ruleRegex("R-DECIMAL-REPLACE"),"$1.");
-      else if(ctx.decimal!=="separator")return {_ruleId:"R-CELL-UNKNOWN",kind:"unknown",raw:s,ambiguousDecimal:true};
+    const comma=commaMode(s,ctx.decimal);
+    if(comma==="ask")return {_ruleId:"R-CELL-UNKNOWN",kind:"unknown",raw:s,ambiguousDecimal:true};
+    if(comma==="comma")s=s.replace(ruleRegex("R-DECIMAL-REPLACE"),"$1.");
+    if(comma==="thousands"){
+      s=s.replace(ruleRegex("R-THOUSANDS-GROUP"),"");
+      // A comma that is not a valid 3-digit group cannot be a thousands separator.
+      if(ruleRegex("R-CELL-CUE-01").test(s))return {_ruleId:"R-THOUSANDS-GROUP",_comma:comma,kind:"unknown",raw:norm(str),invalidGrouping:true};
     }
+    // A bare "a,b" with a non-decimal comma is two listed values, never a CI or range.
+    if(comma==="list"&&ruleRegex("R-LIST-PAIR").test(s))return {_ruleId:"R-LIST-PAIR",_comma:comma,kind:"unknown",raw:s,listPair:true};
+    return {...parseCellGrammar(s,header,ctx),...(comma?{_comma:comma}:{})};
+  }
+  function parseCellGrammar(s,header,ctx) {
     let m;
     if(!s||ruleRegex("R-CELL-CUE-02").test(s))return {_ruleId:"R-CELL-UNKNOWN",kind:"unknown",raw:s,missing:true};
     if((m=s.match(ruleRegex("R-CELL-PATTERN-01"))))return {_ruleId:"R-CELL-PATTERN-01",kind:"p",op:m[1],value:+m[2]};
@@ -464,17 +490,32 @@
     if(/^(weight|weight %)$/.test(h))return "ignore";
     return null;
   }
+  // Effect-measure family named by headers. Abbreviations match case-sensitively as whole tokens, so the
+  // English word "or" (RevMan's "Study or Subgroup", "Mean (SD) or median (IQR)") never names a ratio.
+  // Label columns (study, treatment, t1, t2) are skipped. A difference header never sets ratio: when both
+  // families are named, nothing is decided and convert() asks.
+  defineRule("R-MEASURE-RATIO","context",/(?:^|[^A-Za-z])(?:OR|RR|HR|IRR)(?![A-Za-z])/,"Ratio measure abbreviation in a header");
+  defineRule("R-MEASURE-RATIO-WORDS","context",/odds ratio|risk ratio|hazard ratio|rate ratio|relative risk/i,"Spelled-out ratio measure (any case)");
+  defineRule("R-MEASURE-DIFFERENCE","context",/(?:^|[^A-Za-z])(?:MD|SMD|WMD|RD)(?![A-Za-z])/,"Difference measure abbreviation in a header");
+  defineRule("R-MEASURE-DIFFERENCE-WORDS","context",/difference/i,"Spelled-out difference measure (any case)");
+  function measureFromHeaders(headers,mapping={}) {
+    const named=(headers||[]).filter((h,i)=>h&&!["study","treatment","t1","t2"].includes(mapping[i])).map(h=>norm(h));
+    const ratio=named.some(h=>ruleRegex("R-MEASURE-RATIO").test(h)||ruleRegex("R-MEASURE-RATIO-WORDS").test(h));
+    const difference=named.some(h=>ruleRegex("R-MEASURE-DIFFERENCE").test(h)||ruleRegex("R-MEASURE-DIFFERENCE-WORDS").test(h));
+    return ratio&&!difference?"ratio":difference&&!ratio?"difference":null;
+  }
   function detect(table,schema) {
     const mapping={},confidence={},questions=[],used=new Set(),width=Math.max(0,(table.header||[]).length,...table.rows.map(r=>r.length));
     const choices=["ignore",...new Set([...schemaFields(schema),...sources])];
     for(let col=0;col<width;col++){
       const h=table.header&&table.header[col];let field=h?headerField(h,schema):null,score=field?1:0;
       if(field&&field!=="ignore"&&used.has(field)){field=null;score=0;}
-      if(!field){
+      const heuristicField=schemaFields(schema).includes("xi")?"xi":"events";
+      if(!field&&!used.has(heuristicField)){
         const vals=table.rows.map(r=>parseCell(r[col]));
         const next=table.rows.map(r=>parseCell(r[col+1]));
         if(vals.length&&vals.every((v,i)=>v.kind==="number"&&Number.isInteger(v.value)&&v.value>=0&&next[i].kind==="number"&&v.value<=next[i].value)){
-          field=schemaFields(schema).includes("xi")?"xi":"events";score=.55;
+          field=heuristicField;score=.55;
         }
       }
       mapping[col]=field||"ignore";confidence[col]=score;
@@ -533,6 +574,30 @@
     }
     return flags;
   }
+  const commaWords={comma:"a decimal mark",thousands:"a thousands separator",list:"a list separator"};
+  const effectFields=["yi","est","lo","hi","p","ci_bounds"];
+  // A conversion depends on ratio vs difference unless every effect column is an analysis-scale "yi"
+  // column (header "yi", or a user mapping on a headerless paste) holding plain numbers.
+  function measureMatters(table,map,answers) {
+    return Object.keys(map).filter(k=>effectFields.includes(map[k])).some(k=>{
+      const h=(table.header||[])[k];
+      if(map[k]!=="yi"||(h&&!/^\s*yi\s*$/i.test(h)))return true;
+      return table.rows.some(r=>["ci","est_ci"].includes(parseCell(r[k],{header:h,decimal:answers.decimal}).kind));
+    });
+  }
+  function logSymmetricHint(table,map,answers) {
+    const triples=table.rows.map(row=>{
+      const t={};
+      Object.keys(map).filter(k=>effectFields.includes(map[k])).forEach(k=>{
+        const c=parseCell(row[k],{header:(table.header||[])[k],decimal:answers.decimal});
+        if(c.kind==="est_ci"){t.e=c.est;t.l=c.lo;t.h=c.hi;}else if(c.kind==="ci"){t.l=c.lo;t.h=c.hi;}
+        else if(c.kind==="number")t[map[k]==="lo"?"l":map[k]==="hi"?"h":"e"]=c.value;
+      });
+      return t;
+    }).filter(t=>[t.e,t.l,t.h].every(v=>finite(v)&&v>0)&&t.l<t.e&&t.e<t.h);
+    const asym=(e,l,h)=>{const a=e-l,b=h-e;return Math.abs(a-b)>.1*Math.max(a,b);};
+    return triples.length>0&&triples.every(t=>asym(t.e,t.l,t.h)&&!asym(Math.log(t.e),Math.log(t.l),Math.log(t.h)));
+  }
   function roundingUnit(text) {
     const m=norm(text).match(new RegExp(NUM));
     if(!m)return 1e-12;
@@ -561,8 +626,21 @@
       }
     }
     if(table.notes.some(n=>/Unclosed|different column/.test(n)))flags.push(flag("table-shape","Repair unclosed quotes or inconsistent column counts",true));
-    const ratioHeader=(table.header||[]).some(h=>/\b(?:OR|RR|HR)\b|odds ratio|risk ratio|hazard ratio/i.test(h));
-    const ratio=typeof schema==="object"&&schema.ratio!==undefined?schema.ratio:ratioHeader;
+    // Ratio vs difference decides log transforms; when neither the schema nor a header names the measure
+    // and a conversion depends on it, ask (blocking). CI symmetry is shown as a hint, never used to decide.
+    const headerMeasure=measureFromHeaders(table.header,map);
+    let ratio=headerMeasure==="ratio";
+    if(typeof schema==="object"&&schema.ratio!==undefined)ratio=!!schema.ratio;
+    else if(!headerMeasure&&["generic","contrast-nma","dose"].includes(name)&&!(table.header||[]).some(h=>/\blog\b|ln\s*\(/i.test(h))&&measureMatters(table,map,answers)){
+      const hint=logSymmetricHint(table,map,answers);
+      const q=question("measure:type",`Is the effect measure a ratio (OR, RR, HR: positive values, CI symmetric on the log scale) or a difference (MD, SMD, RD)?${hint?" Hint: these confidence intervals are symmetric on the log scale but not on the natural scale, which suggests a ratio. Please confirm.":""}`,["ratio","difference"]);
+      if(hint)q.hint="log-symmetric";
+      const a=ask(q);ratio=a==="ratio";
+      if(q.choices.includes(a))steps.push({row:null,study:null,text:`Effect measure confirmed as a ${a}`,method:"measure confirmed",citation:"User confirmation",inputs:{measure:a},flags:[]});
+    }
+    // answers.fivenumMethod: one FIVENUM_METHODS entry or a [mean, sd] pair (metafor conv.fivenum names).
+    const fivenumOption=answers.fivenumMethod?{method:answers.fivenumMethod}:{};
+    const fivenumNote=answers.fivenumMethod?` using ${[].concat(answers.fivenumMethod).join(" / ")} (user-selected method)`:"";
     table.rows.forEach((row,i)=>{
       const r={study:`Study ${i+1}`,...(answers.integerScale?{integerScale:true}:{})},pending=[];
       if(ratio)r.ratio=true;
@@ -577,13 +655,16 @@
         if(["study","treatment","t1","t2"].includes(field)||(!fields.includes(field)&&!sources.includes(field))){r[field]=cell;return;}
         const header=(table.header||[])[col]||"";
         let token=parseCell(cell,{header,decimal:answers.decimal});
+        // Asked only in "ask" mode (or when no per-paste setting is given); the setting otherwise decides.
         if(token.ambiguousDecimal){
-          const q=question(`decimal:${i}:${col}`,`${r.study}, ${header||field}: interpret comma as decimal separator?`,["comma","separator"]),a=ask(q);
+          const q=question(`decimal:${i}:${col}`,`${r.study}, ${header||field}: what does the comma in "${cell}" mean?`,["comma","thousands","list"]);
+          q.labels={comma:"Decimal mark (1,23 = 1.23)",thousands:"Thousands separator (1,234 = 1234)",list:"List separator"};
+          const a=ask(q);
           if(q.choices.includes(a)){
             token=parseCell(cell,{header,decimal:a});
-            steps.push({row:i,study:r.study,text:`${r.study}: comma interpreted as ${a==="comma"?"a decimal mark":"a separator"} by confirmation`,method:"decimal confirmed",citation:"User confirmation",inputs:{cell},flags:[]});
+            steps.push({row:i,study:r.study,text:`${r.study}: comma interpreted as ${commaWords[a]} by confirmation`,method:"decimal confirmed",citation:"User confirmation",inputs:{cell,comma:a},flags:[]});
           }
-        }
+        }else if(token.comma==="thousands"||token.comma==="list"&&answers.decimal==="point")steps.push({row:i,study:r.study,text:`${r.study}: comma in "${cell}" read as ${commaWords[token.comma]} (decimal setting: ${answers.decimal})`,method:"decimal setting",citation:"Per-paste decimal setting",inputs:{cell,comma:token.comma},flags:[]});
         if(token.ambiguousDispersion){
           const q=question(`dispersion:${i}:${col}`,`${r.study}: is ${token.spread} an SD or SE?`,["SD","SE"]),a=ask(q);
           if(q.choices.includes(a)){
@@ -592,7 +673,7 @@
           }
         }
         if(token.kind==="unknown"){
-          if(!token.missing&&!token.ambiguousDecimal)flags.push(flag("unparsed-cell",`${r.study}: cannot parse ${header||field}: ${cell}`,true,{row:i}));
+          if(!token.missing&&!token.ambiguousDecimal)flags.push(flag("unparsed-cell",`${r.study}: cannot parse ${header||field}: ${cell}${token.listPair?" (two comma-separated values are not an interval; enter the CI with 'to' or a dash)":token.invalidGrouping?" (not a valid thousands grouping)":""}`,true,{row:i}));
           return;
         }
         if(token.kind==="number"){r[field]=token.value;if(["yi","est"].includes(field))r.roundingUnit=roundingUnit(cell);if(answers.integerScale&&["mean","m1i","m2i"].includes(field))r[field+"Text"]=cell;return;}
@@ -631,7 +712,7 @@
         }else if(q.kind==="median_iqr"||q.kind==="median_range"){
           const a={median:q.median,n:r[nKey],...(q.kind==="median_iqr"?{q1:q.q1,q3:q.q3}:{min:q.min,max:q.max})};
           Object.assign(r,a);
-          try{const out=fivenumChoice(a,i,ask);log(out,`Mean and SD estimated from ${q.kind==="median_iqr"?"IQR":"range"}`);r[meanKey]=out.mean;r[sdKey]=out.sd;}
+          try{const out=fivenumChoice({...a,...fivenumOption},i,ask);log(out,`Mean and SD estimated from ${q.kind==="median_iqr"?"IQR":"range"}${fivenumNote}`);r[meanKey]=out.mean;r[sdKey]=out.sd;}
           catch(e){flags.push(flag("fivenum-invalid",e.message,true,{row:i}));}
         }
       }
@@ -657,8 +738,8 @@
       }
       if(present(r.median)&&!pending.some(q=>/^median_/.test(q.kind))){
         try{
-          const out=fivenumChoice({min:r.min,q1:r.q1,median:r.median,q3:r.q3,max:r.max,n:r.n||r.ni||r.n1i},i,ask);
-          log(out,"Mean and SD estimated from five-number summary");
+          const out=fivenumChoice({min:r.min,q1:r.q1,median:r.median,q3:r.q3,max:r.max,n:r.n||r.ni||r.n1i,...fivenumOption},i,ask);
+          log(out,"Mean and SD estimated from five-number summary"+fivenumNote);
           r[name==="continuous"?"m1i":"mean"]=out.mean;r[name==="continuous"?"sd1i":"sd"]=out.sd;
         }catch(e){flags.push(flag("fivenum-invalid",e.message,true,{row:i}));}
       }
@@ -674,11 +755,13 @@
     for(const f of flags.filter(f=>f.action==="swap-columns"))ask(question("swap-columns:"+f.fields.join(":"),`Swap ${f.fields[0]} and ${f.fields[1]} for all rows?`,["swap","keep"]));
     // Swap source cells/mappings and rerun conversions, never stale derived values.
     let rerun=false;const rows=table.rows.map(r=>r.slice()),nextMap={...map},nextAnswers={...answers};
+    const detectionQuestions=detectionObject?mapping.questions||[]:mapping?[]:detected.questions;
     for(const q of questions){
       if(answers[q.id]!=="swap")continue;
       if(q.id.startsWith("swap-columns:")){
         const [,a,b]=q.id.split(":");
         Object.keys(nextMap).forEach(k=>{if(nextMap[k]===a)nextMap[k]=b;else if(nextMap[k]===b)nextMap[k]=a;});rerun=true;delete nextAnswers[q.id];
+        Object.keys(nextAnswers).filter(k=>k.startsWith("column:")).forEach(k=>{if(nextAnswers[k]===a)nextAnswers[k]=b;else if(nextAnswers[k]===b)nextAnswers[k]=a;});
       }else if(q.id.startsWith("swap-ci:")){
         const i=+q.id.split(":")[1],l=Object.keys(map).find(k=>map[k]==="lo"),h=Object.keys(map).find(k=>map[k]==="hi");
         if(l!==undefined&&h!==undefined){[rows[i][l],rows[i][h]]=[rows[i][h],rows[i][l]];rerun=true;delete nextAnswers[q.id];}
@@ -693,7 +776,8 @@
       }
     }
     if(rerun){
-      const out=convert({...table,rows},nextMap,schema,nextAnswers);
+      // Rerun with the detection object so unanswered column questions survive (and still block).
+      const out=convert({...table,rows},{mapping:nextMap,questions:detectionQuestions},schema,nextAnswers);
       out.steps.unshift({text:"User confirmed swapping source columns or CI bounds",method:"user-confirmed swap",citation:"User confirmation",inputs:{},flags:[]});
       return out;
     }
@@ -894,6 +978,9 @@
   defineRule("R-COUNTS-TABLE","counts",/\bevents?\b.*\b(?:total|n)\b/i,"Two explicitly labelled event/total columns");
   defineRule("R-DECIMAL-COMMA","context",/\d,\d/,"Potential decimal comma");
   defineRule("R-DECIMAL-REPLACE","context",/(\d),(?=\d)/g,"Explicit decimal-comma setting");
+  defineRule("R-THOUSANDS-GROUP","context",/(?<=(?<![\d.,])\d{1,3}(?:,\d{3})*),(?=\d{3}(?:,\d{3})*(?!\d|,\d))/g,"Grouping comma inside a valid 1-3 digit + 3-digit-group number");
+  defineRule("R-THOUSANDS-NUMBERS","span",new RegExp(`(?<![\\d.,])[+-]?\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?(?![\\d,])|(?<![\\d.,])${NUM}`,"g"),"Source numeric token spans, digit grouping retained");
+  defineRule("R-LIST-PAIR","context",new RegExp(`^${NUM}\\s*,\\s*${NUM}$`),"Bare comma-separated pair (two values, not an interval)");
   defineRule("R-BARE-EXCLUDE","context",/(?:\bp\s*[<=>]\s*|\b(?:day|age|dose|year)\s*(?:was|is|of|=|:)?\s*)$/i,"Exclude p-values, ages and doses from bare intervals");
   defineRule("R-ARM-BEFORE","context",/([a-z][a-z -]{0,50}?)\s*(?:group)?\s*[:,]\s*$/i,"Arm label before counts");
   defineRule("R-CLAUSE","context",/;|\n|\.\s+[A-Z]/,"Separate result clauses");
@@ -1088,7 +1175,7 @@
     },
     toDocxParagraphs(records){return records.flatMap(r=>[provenance.sentence(r),"Reference: "+r.reference+"; DOI: "+(r.doi||"none")+"; PMID: "+(r.pmid||"none"),"User choices: "+JSON.stringify(r.choice)+"; flags: "+JSON.stringify(r.flags)+"; confirmed: "+r.confirmed+"; confirmed at: "+(r.confirmedAt||"not confirmed")]);}
   };
-  const api={normalize,anchor,selectors,RULES,RULES_VERSION,replay,consistency,parseTable,parseCell,detect,convert,extract,provenance,seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,convertFivenum,eventsFromPercent,sanity,sanityRules,SCHEMAS,fallback:null,qnorm,qt};
+  const api={FIVENUM_METHODS,measureFromHeaders,normalize,anchor,selectors,RULES,RULES_VERSION,replay,consistency,parseTable,parseCell,detect,convert,extract,provenance,seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,convertFivenum,eventsFromPercent,sanity,sanityRules,SCHEMAS,fallback:null,qnorm,qt};
   global.AlmEntry=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);

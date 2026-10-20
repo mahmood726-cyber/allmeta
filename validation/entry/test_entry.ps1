@@ -73,11 +73,13 @@ Push-Location -LiteralPath $Wt
 try {
     '== 1. node unit tests'
     $nodeArgs = @('--test', '--test-reporter=tap')
-    # Only process isolation changes; the same two suites and assertions run.
+    # Only process isolation changes; the same suites and assertions run. In-process mode lists every
+    # unit/*.test.mjs explicitly (the ESM loader does not accept a directory in that mode).
     if ($InProcess) {
-        $nodeArgs += @('--test-isolation=none', 'hub/shared/tests/unit/index.mjs')
+        $nodeArgs += '--test-isolation=none'
+        $nodeArgs += @(Get-ChildItem hub/shared/tests/unit -Filter '*.test.mjs' | ForEach-Object { 'hub/shared/tests/unit/' + $_.Name })
     } else {
-        $nodeArgs += 'hub/shared/tests/unit/'
+        $nodeArgs += 'hub/shared/tests/unit/**/*.test.mjs'
     }
     # R startup diagnostics can be NativeCommandError records in Windows
     # PowerShell. Capture them and use the process exit code for each gate.
@@ -97,7 +99,9 @@ try {
     $generationOutput
     Gate 'gen' ($null -ne $generationExit -and $generationExit -eq 0 -and
         (Test-Path validation/entry/cases.json) -and
-        (Test-Path validation/entry/cases.planted.json)) "exit=$generationExit; both corpora required"
+        (Test-Path validation/entry/cases.planted.json) -and
+        (Test-Path validation/entry/cases.planted-tiny.json) -and
+        (Test-Path validation/entry/cases.planted-formula.json)) "exit=$generationExit; all four corpora required"
 
     '== 3. R cross-check'
     $global:LASTEXITCODE = $null
@@ -106,12 +110,14 @@ try {
     $rOutput | Select-Object -Last 60
     Gate 'rcheck' (Test-RResult $rOutput $rExit $false) "exit=$rExit (need >=2000 cases, all pass and exit 0)"
 
-    '== 4. planted defect must FAIL'
-    $global:LASTEXITCODE = $null
-    $plantedOutput = @(& $Rscript validation/entry/check_entry.R validation/entry/cases.planted.json 2>&1 | ForEach-Object { "$_" })
-    $plantedExit = $global:LASTEXITCODE
-    $plantedOutput | Select-Object -Last 15
-    Gate 'planted' (Test-RResult $plantedOutput $plantedExit $true) "exit=$plantedExit (need passed < total and nonzero exit)"
+    '== 4. planted defects must FAIL (large value, 1e-12-scale value, formula coefficient)'
+    foreach ($plantedName in @('cases.planted.json', 'cases.planted-tiny.json', 'cases.planted-formula.json')) {
+        $global:LASTEXITCODE = $null
+        $plantedOutput = @(& $Rscript validation/entry/check_entry.R "validation/entry/$plantedName" 2>&1 | ForEach-Object { "$_" })
+        $plantedExit = $global:LASTEXITCODE
+        $plantedOutput | Select-Object -Last 15
+        Gate "planted:$plantedName" (Test-RResult $plantedOutput $plantedExit $true) "exit=$plantedExit (need passed < total and nonzero exit)"
+    }
 
     '== 5. hygiene'
     $ErrorActionPreference = 'Stop'

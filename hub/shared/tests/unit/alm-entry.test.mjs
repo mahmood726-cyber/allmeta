@@ -222,11 +222,12 @@ test("swap columns requires explicit answer and recomputes",()=>{
 });
 test("swap CI bounds recomputes SE",()=>{
   const t=A.parseTable("Study\tLower\tUpper\nA\t3\t1"),d=A.detect(t,"generic");
-  const o=A.convert(t,d,"generic",{"swap-ci:0":"swap"});assert.equal(o.records[0].yi,2);assert.ok(o.records[0].sei>0);assert.ok(!o.flags.some(f=>f.blocking));
+  // No header names the measure, so it is stated explicitly (REVIEW_179 P1).
+  const o=A.convert(t,d,"generic",{"swap-ci:0":"swap","measure:type":"difference"});assert.equal(o.records[0].yi,2);assert.ok(o.records[0].sei>0);assert.ok(!o.flags.some(f=>f.blocking));
 });
 test("swap compound CI bounds recomputes SE",()=>{
   const t=A.parseTable("Study\tEstimate\nA\t2 (3-1)"),d=A.detect(t,"generic");
-  const o=A.convert(t,d,"generic",{"swap-ci:0":"swap"});assert.equal(o.records[0].yi,2);assert.ok(o.records[0].sei>0);assert.ok(!o.flags.some(f=>f.blocking));
+  const o=A.convert(t,d,"generic",{"swap-ci:0":"swap","measure:type":"difference"});assert.equal(o.records[0].yi,2);assert.ok(o.records[0].sei>0);assert.ok(!o.flags.some(f=>f.blocking));
 });
 test("mean SE header conversion continuous",()=>{
   const t=A.parseTable("Study\tExperimental Mean (SE)\tExperimental Total\tControl Mean (SD)\tControl Total\nA\t4.5 (1.2)\t25\t3 (2)\t30");

@@ -1,6 +1,8 @@
 // Deterministic corpus. Run from any directory; paths are relative to this file.
 import {createRequire} from "node:module";
-import {writeFileSync} from "node:fs";
+import {readFileSync,writeFileSync} from "node:fs";
+import {fileURLToPath} from "node:url";
+import vm from "node:vm";
 const require=createRequire(import.meta.url),A=require("../../shared/alm-entry.js");
 let seed=20261020;
 function random(){let t=seed+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;}
@@ -51,11 +53,28 @@ for(const n of ns)for(const level of levels)for(const magnitude of [1e-12,1e-6,1
   add("seFromCI",ratioArgs);add("estFromCI",ratioArgs);
   add("seFromP",{est:Math.exp(logCenter),p:[1e-16,.02,.5][repeat],ratio:true});
 }
-// Fixed large output ensures the planted 1e-6 relative defect exceeds the
-// max(1, |R|) denominator tolerance regardless of random corpus ordering.
+// Fixed tiny output (about 5.1e-13): a 1e-6 relative error is about 5e-19 absolute, which the former
+// max(1, |R|) comparator could never detect. cases.planted-tiny.json must FAIL the relative gate.
+add("seFromCI",{lo:1e-12,hi:3e-12,level:.95,ratio:false});
+const tinyIndex=cases.length-1;
+// Fixed large output for the original planted copy.
 add("sdFromSE",{se:100,n:100});
-writeFileSync(new URL("cases.json",import.meta.url),JSON.stringify(cases,null,2)+"\n");
+const write=(name,corpus)=>writeFileSync(new URL(name,import.meta.url),JSON.stringify(corpus,null,2)+"\n");
+write("cases.json",cases);
 const planted=structuredClone(cases);
 planted[planted.length-1].js.value*=1+1e-6;
-writeFileSync(new URL("cases.planted.json",import.meta.url),JSON.stringify(planted,null,2)+"\n");
-console.log(`Generated ${cases.length} cases (seed 20261020); planted exactly one numerical defect.`);
+write("cases.planted.json",planted);
+const plantedTiny=structuredClone(cases);
+plantedTiny[tinyIndex].js.value*=1+1e-6;
+write("cases.planted-tiny.json",plantedTiny);
+// Planted FORMULA defect: outputs recomputed by a copy of alm-entry.js with one coefficient changed
+// (Luo 2018 IQR weight 0.7 + 0.39/n -> 0.7 + 0.40/n), so the gate is shown to catch an error that
+// propagates through A[fn], not only an edited stored number. cases.planted-formula.json must FAIL.
+const entryPath=fileURLToPath(new URL("../../shared/alm-entry.js",import.meta.url));
+const source=readFileSync(entryPath,"utf8"),perturbed=source.replace("weight=.7+.39/n","weight=.7+.40/n");
+if(perturbed===source)throw new Error("planted formula coefficient not found in alm-entry.js");
+const sandbox={module:{exports:{}},require:createRequire(entryPath)};
+vm.runInNewContext(perturbed,sandbox,{filename:"alm-entry.planted-formula.js"});
+const B=sandbox.module.exports;
+write("cases.planted-formula.json",cases.map(c=>({...c,js:JSON.parse(JSON.stringify(B[c.fn](structuredClone(c.args))))})));
+console.log(`Generated ${cases.length} cases (seed 20261020); planted copies: one stored value (large), one stored value (1e-12 scale), one formula coefficient.`);

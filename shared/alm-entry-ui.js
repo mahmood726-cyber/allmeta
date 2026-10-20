@@ -23,6 +23,17 @@
       radio.type="radio";radio.name=prefix+"decimal";radio.value=value;radio.checked=value==="point";decimalRadios.push(radio);
       radio.addEventListener("change",()=>{decimal.value=value;decimal.explicit=true;answers.decimal=value;if(table)refresh();});
     }
+    // Five-number method selector, shown once a median/IQR/range conversion occurs; the choice is logged.
+    const methodBox=node("div",undefined,root);let fivenumMethod=null;
+    const methodAnswer=()=>!fivenumMethod||fivenumMethod.value==="luo/wan/shi"?undefined:fivenumMethod.value;
+    function showMethodChoice(){
+      if(fivenumMethod)return;
+      const methodLabel=node("label","Mean/SD from median, IQR or range (conv.fivenum method)",methodBox);
+      fivenumMethod=node("select",undefined,methodLabel);fivenumMethod.id=prefix+"fivenum";methodLabel.htmlFor=fivenumMethod.id;
+      core.FIVENUM_METHODS.forEach(m=>{const o=node("option",m==="luo/wan/shi"?"luo/wan/shi (default)":m,fivenumMethod);o.value=m;});
+      fivenumMethod.value="luo/wan/shi";
+      fivenumMethod.addEventListener("change",()=>{answers.fivenumMethod=methodAnswer();if(table)refresh();});
+    }
     const integerLabel=node("label","Means are from integer-scored items (enable GRIM check)",root),integerScale=node("input",undefined,integerLabel);
     integerScale.type="checkbox";integerScale.addEventListener("change",()=>{answers.integerScale=integerScale.checked;if(table)refresh();});
     const fileLabel=node("label","Or choose a CSV, TSV or text file",root);
@@ -47,7 +58,7 @@
         q.choices.forEach((choice,j)=>{
           const wrap=node("label",undefined,group),radio=node("input",undefined,wrap);
           radio.type="radio";radio.name=prefix+q.id;radio.id=prefix+q.id+"-"+j;radio.value=choice;radio.checked=answers[q.id]===choice;
-          node("span",choice,wrap);
+          node("span",(q.labels&&q.labels[choice])||choice,wrap);
           radio.addEventListener("change",()=>{
             answers[q.id]=choice;
             if(q.id==="table:delimiter"&&choice==="columns"){
@@ -62,6 +73,7 @@
           });
         });
       });
+      if(output.steps.some(s=>s.fn==="convertFivenum"))showMethodChoice();
       log.replaceChildren();
       output.steps.forEach(s=>node("li","✓ "+s.text,log));
       output.flags.forEach(f=>{const li=node("li",(f.blocking?"⛔ Block: ":"⚠ Warning: ")+(f.study?f.study+": ":"")+f.text,log);li.className=f.blocking?"alm-entry-block":"alm-entry-warning";});
@@ -92,9 +104,11 @@
     function parseText(){
       if(/\d,\d/.test(core.normalize(textarea.value).text)&&!decimal.explicit)decimal.value="ask";
       decimalRadios.forEach(r=>r.checked=r.value===decimal.value);
-      answers={decimal:decimal.value,integerScale:integerScale.checked};table=core.parseTable(textarea.value);detection=core.detect(table,schema);
-      // Exact extra column names are supplied by the embedding app.
-      (table.header||[]).forEach((h,i)=>{if(extras.includes(h)){detection.mapping[i]=h;detection.questions=detection.questions.filter(q=>q.id!=="column:"+i);}});
+      answers={decimal:decimal.value,integerScale:integerScale.checked,fivenumMethod:methodAnswer()};table=core.parseTable(textarea.value);detection=core.detect(table,schema);
+      // Extra column names are supplied by the embedding app; headers match them case-insensitively, and
+      // every column question offers them so an extras column can always be confirmed.
+      (table.header||[]).forEach((h,i)=>{const extra=extras.find(x=>x.toLowerCase()===String(h).trim().toLowerCase());if(extra){detection.mapping[i]=extra;detection.questions=detection.questions.filter(q=>q.id!=="column:"+i);}});
+      detection.questions=detection.questions.map(q=>({...q,choices:[...new Set([...q.choices,...extras])]}));
       renderPreview();refresh();
     }
     parse.addEventListener("click",parseText);

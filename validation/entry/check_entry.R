@@ -9,10 +9,13 @@ cases <- fromJSON(path, simplifyVector=FALSE)
 tol <- 1e-10
 passed <- 0L
 `%or%` <- function(x,y) if (is.null(x)) y else x
+# True relative criterion |js - r| <= 1e-10 * |r| at every magnitude. (The former denominator
+# floor of 1 made the check absolute for |r| < 1.) When r == 0 this demands js == 0 exactly.
+# A missing JS value (null) must match an R NA.
 same <- function(js,r) {
   if (is.null(js)) return(length(r)==1L && is.na(r))
   is.numeric(js) && length(js)==1L && is.finite(js) && is.finite(r) &&
-    abs(js-r)/max(1,abs(r)) <= tol
+    abs(js-r) <= tol*abs(r)
 }
 oracle <- function(case) {
   a <- case$args
