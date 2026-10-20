@@ -25,6 +25,8 @@ for(const app of apps) test(`lifecycle ${app}`,async({page})=>{
  const valid=await data.inputValue();
  await data.fill('');await page.locator('#btn-run').click();
  await expect(page.locator('#analysis-status')).toBeHidden();await expect(page.locator('#analysis-stale')).toBeHidden();
+ // Requirement (influence): empty input is refused visibly and no earlier result stays on screen.
+ if(app==='influence') {await expect(page.locator('#input-error')).toBeVisible();await expect(page.locator('#body tr')).toHaveCount(0);}
  await data.fill(valid);await page.locator('#btn-run').click();
  await expect(page.locator('#analysis-status')).toBeVisible();expect(errors).toEqual([]);
 });
