@@ -115,6 +115,11 @@ INLINE_META_MATH_EXEMPT = {
                     "(tests/test_ipd_meta_pro_tau2_parity.py). Adding a dependency + "
                     "rewriting 10+ sites is high blast radius for a validated engine — "
                     "exempted, not migrated (2026-06-07 scope).",
+    "mh-peto": "Mantel-Haenszel/Peto are fixed-effect models with no tau2: metafor rma.mh and "
+               "rma.peto report the Q-based I2 = 100*(QE-df)/QE, which the page reproduces "
+               "(I2 for MH OR/RR/RD and Peto matches the archived metafor 5.2-1 reference, "
+               "252/252 pooled configurations each, max 2.4e-13); ma-core's tau2-based I2 "
+               "would not be the statistic R prints",
 }
 
 
