@@ -162,6 +162,7 @@
 <section id="alm-validate"></section>
 <section id="alm-plus"></section>
 </main>
+<div id="alm-features"></div>
   <footer>
     Olkin I, Dahabreh IJ, Trikalinos TA. GOSH &#8212; a graphical display of study heterogeneity. <em>Res Synth Methods</em> 2012;3(3):214&#8211;23. Subgroup structure interpretation aligns with <em>Cochrane Handbook v6.5 &#167;10.10.2</em> on detecting influential studies; <span data-gloss="i2">I&#178;</span> interpretation per &#167;10.10.2 (low &lt;30%, moderate 30&#8211;60%, substantial 50&#8211;90%, considerable 75&#8211;100%). For k &gt; 15 this app draws 5,000 subsets by default, choosing sizes uniformly from 2 to k, with replacement, using a fixed seed. This differs from <code>metafor::gosh()</code>, which enumerates all non-empty subsets when 2^k - 1 is at most 1,000,000 (k up to 19), and otherwise draws 1,000,000 subsets by default with binomial size probabilities. Full enumeration here includes single-study subsets.
   </footer>
@@ -720,5 +721,16 @@
 <script src="plus.js"></script>
 <script src="validate/manifest-plus.js"></script>
 <script src="validate/adapter-plus.js"></script>
+<link rel="stylesheet" href="../shared/alm-features.css">
+<link rel="stylesheet" href="../shared/alm-entry.css">
+<script src="../shared/url-pack.js"></script>
+<script src="../shared/alm-zip.js"></script>
+<script src="../shared/alm-features.js"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-entry-ui.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="alm-features.js"></script>
 </body>
 </html>
