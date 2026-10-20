@@ -15,8 +15,15 @@
  *   meta     8.5.0  ci(), metagen() common-effect pool
  *   R        4.6.0  grDevices::contourLines (src/main/plot3d.c + contour-common.h),
  *                   base::pretty (src/appl/pretty.c), stats::lm / summary.lm
- * Three deliberate quirks of the R code are reproduced because they change the
+ * Two deliberate quirks of the R code are reproduced because they change the
  * output; each is marked R-QUIRK below.
+ *
+ * NOT reproduced: copas() wraps each grid optim() in try() and, when a fit
+ * throws, leaves the PREVIOUS fit's object in place, so TE.contour[i, j] silently
+ * takes the previous grid point's value. This routine always returns a value for
+ * every grid point, so there is nothing to carry forward. The validation
+ * archive's R reference does reproduce the carry-forward, so if it ever fires the
+ * difference shows up as a contour disagreement rather than being hidden.
  *
  * References: Copas JB. J R Stat Soc Ser A 1999;162:95-109. Copas JB, Shi JQ.
  * Biostatistics 2000;1:247-262. Carpenter JR, Rucker G, Schwarzer G. Biom J
