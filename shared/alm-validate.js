@@ -244,7 +244,7 @@
             const kind = (comparison.kind || {})[v.key] || 'abs';
             return { label: v.label, app: v.value, ref: ref[v.key], tol, ...compare(v.value, ref[v.key], kind, tol) };
           });
-          for (const [pkg, version] of Object.entries(r.versions)) node('p', pkg + ' ' + version, details);
+          for (const [pkg, version] of Object.entries(r.versions)) node('p', pkg === 'R' && /^R version /.test(version) ? version : pkg + ' ' + version, details); // R.version.string already starts "R version
           for (const [pkg, version] of Object.entries(a.paperVersions || a.validatedVersions || adapter.paper.packageVersions || {})) if (r.versions[pkg] !== version) node('p', 'Validated version in the paper: ' + pkg + ' ' + version + '. Any differences beyond tolerance are reported as FAIL.', details);
           if (state.note) node('p', state.note, details);
           table(rows); status.textContent = rows.filter(r => r.pass).length + '/' + rows.length + ' live R quantities passed.' + (rows.some(r => !r.pass) ? ' FAIL: discrepancies exceed tolerance or quantities are unavailable.' : '');
