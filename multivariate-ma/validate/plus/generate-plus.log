@@ -1,0 +1,103 @@
+R version 4.6.0 (2026-04-24 ucrt) 
+[1] "<R_LIBS>"
+[2] "<R_LIBS_USER>"  
+[3] "<R_HOME>/library"      
+mvmeta 1.0.3 
+metafor 5.2.1 
+jsonlite 2.0.0 
+mvmeta control: list(maxiter = 10000, reltol = 1e-13, optim = list(maxit = 10000,      reltol = 1e-13)) 
+nlminb refinement control: list(rel.tol = 1e-15, x.tol = 1e-15, eval.max = 20000, iter.max = 10000) 
+metafor::rma control: list(threshold = 1e-12, maxiter = 10000) 
+1 mvmeta::berkey98::PD+AL::REML::supplied 5 ok 26.5s 
+2 mvmeta::fibrinogen::b2+b3::REML::supplied 31 ok 78.9s 
+3 mvmeta::fibrinogen::b2+b4::REML::supplied 31 ok 131.4s 
+4 mvmeta::fibrinogen::b2+b5::REML::supplied 31 ok 177.9s 
+5 mvmeta::fibrinogen::b3+b4::REML::supplied 31 ok 259.7s 
+6 mvmeta::fibrinogen::b3+b5::REML::supplied 31 ok 356.1s 
+7 mvmeta::fibrinogen::b4+b5::REML::supplied 31 ok 468.2s 
+8 mvmeta::hsls::b1+b2::REML::supplied 8 ok 480.9s 
+9 mvmeta::hsls::b1+b3::REML::supplied 8 ok 492.1s 
+10 mvmeta::hsls::b2+b3::REML::supplied 8 ok 502.7s 
+11 mvmeta::hyp::sbp+dbp::REML::supplied 10 ok 523.1s 
+12 mvmeta::p53::y1+y2::REML::documented-rho-0.95 3 ok 529.3s 
+13 mvmeta::smoking::yB+yC::REML::supplied 2 ok 535.4s 
+14 mvmeta::smoking::yB+yD::REML::supplied 2 ok 543.2s 
+15 mvmeta::smoking::yC+yD::REML::supplied 4 ok 549.9s 
+16 mixmeta::berkey98::PD+AL::REML::supplied 5 ok 562.1s 
+17 mixmeta::fibrinogen::b2+b3::REML::supplied 31 ok 599.8s 
+18 mixmeta::fibrinogen::b2+b4::REML::supplied 31 ok 636.3s 
+19 mixmeta::fibrinogen::b2+b5::REML::supplied 31 ok 672.5s 
+20 mixmeta::fibrinogen::b3+b4::REML::supplied 31 ok 728.9s 
+21 mixmeta::fibrinogen::b3+b5::REML::supplied 31 ok 814.9s 
+22 mixmeta::fibrinogen::b4+b5::REML::supplied 31 ok 916.4s 
+23 mixmeta::hsls::b1+b2::REML::supplied 8 ok 925.7s 
+24 mixmeta::hsls::b1+b3::REML::supplied 8 ok 934.1s 
+25 mixmeta::hsls::b2+b3::REML::supplied 8 ok 942.7s 
+26 mixmeta::hyp::sbp+dbp::REML::supplied 10 ok 958.7s 
+27 mixmeta::p53::y1+y2::REML::documented-rho-0.95 3 ok 963.1s 
+28 mixmeta::smoking::yB+yC::REML::supplied 2 ok 967.6s 
+29 mixmeta::smoking::yB+yD::REML::supplied 2 ok 974.0s 
+30 mixmeta::smoking::yC+yD::REML::supplied 4 ok 979.0s 
+31 mixmeta::dbs::eff_month3+eff_month6::REML::documented-AR1-0 11 ok 990.1s 
+32 mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0 13 ok 1002.1s 
+33 mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0 4 ok 1009.6s 
+34 mixmeta::dbs::eff_month6+eff_month12::REML::documented-AR1-0 11 ok 1018.7s 
+35 mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0 5 ok 1024.8s 
+36 mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0 8 ok 1032.4s 
+37 mixmeta::dbs::eff_month3+eff_month6::REML::documented-AR1-0.97 11 ok 1041.6s 
+38 mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97 13 ok 1051.4s 
+39 mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97 4 ok 1058.5s 
+40 mixmeta::dbs::eff_month6+eff_month12::REML::documented-AR1-0.97 11 ok 1067.5s 
+41 mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0.97 5 ok 1073.9s 
+42 mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0.97 8 ok 1081.4s 
+43 metadat::dat.ishak2007::y1i+y2i::REML::documented-AR1-0.97 11 ok 1090.9s 
+44 metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97 13 ok 1102.0s 
+45 metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97 4 ok 1110.2s 
+46 metadat::dat.ishak2007::y2i+y3i::REML::documented-AR1-0.97 11 ok 1120.4s 
+47 metadat::dat.ishak2007::y2i+y4i::REML::documented-AR1-0.97 5 ok 1126.6s 
+48 metadat::dat.ishak2007::y3i+y4i::REML::documented-AR1-0.97 8 ok 1134.4s 
+49 mixmeta::gliomas::month6+month12::REML::documented-AR1-0 16 ok 1143.3s 
+50 mixmeta::gliomas::month6+month18::REML::documented-AR1-0 16 ok 1152.0s 
+51 mixmeta::gliomas::month6+month24::REML::documented-AR1-0 16 ok 1166.3s 
+52 mixmeta::gliomas::month12+month18::REML::documented-AR1-0 16 ok 1176.0s 
+53 mixmeta::gliomas::month12+month24::REML::documented-AR1-0 17 ok 1194.0s 
+54 mixmeta::gliomas::month18+month24::REML::documented-AR1-0 16 ok 1207.0s 
+55 mixmeta::gliomas::month6+month12::REML::documented-AR1-0.61 16 ok 1216.6s 
+56 mixmeta::gliomas::month6+month18::REML::documented-AR1-0.61 16 ok 1226.4s 
+57 mixmeta::gliomas::month6+month24::REML::documented-AR1-0.61 16 ok 1242.1s 
+58 mixmeta::gliomas::month12+month18::REML::documented-AR1-0.61 16 ok 1252.4s 
+59 mixmeta::gliomas::month12+month24::REML::documented-AR1-0.61 17 ok 1270.6s 
+60 mixmeta::gliomas::month18+month24::REML::documented-AR1-0.61 16 ok 1283.5s 
+61 metadat::dat.berkey1998::PD+AL::REML::supplied 5 ok 1291.2s 
+62 metadat::dat.berkey1998r::AL+PD::REML::supplied 5 ok 1298.9s 
+63 metadat::dat.kalaian1996::verbal+math::REML::documented-rho-0.66 20 ok 1314.0s 
+64 metadat::dat.fine1993::month6+month12::REML::documented-covariance-raw 16 ok 1323.5s 
+65 metadat::dat.fine1993::month6+month18::REML::documented-covariance-raw 16 ok 1333.0s 
+66 metadat::dat.fine1993::month6+month24::REML::documented-covariance-raw 16 ok 1349.0s 
+67 metadat::dat.fine1993::month12+month18::REML::documented-covariance-raw 16 ok 1359.2s 
+68 metadat::dat.fine1993::month12+month24::REML::documented-covariance-raw 17 ok 1377.1s 
+69 metadat::dat.fine1993::month18+month24::REML::documented-covariance-raw 16 refused 1389.3s 
+70 metadat::dat.fine1993::month6+month12::REML::documented-covariance-ridge 16 ok 1398.2s 
+71 metadat::dat.fine1993::month6+month18::REML::documented-covariance-ridge 16 ok 1407.6s 
+72 metadat::dat.fine1993::month6+month24::REML::documented-covariance-ridge 16 ok 1422.1s 
+73 metadat::dat.fine1993::month12+month18::REML::documented-covariance-ridge 16 ok 1431.3s 
+74 metadat::dat.fine1993::month12+month24::REML::documented-covariance-ridge 17 ok 1449.5s 
+75 metadat::dat.fine1993::month18+month24::REML::documented-covariance-ridge 16 ok 1461.8s 
+76 metadat::dat.craft2003::acog.perf+asom.perf::REML::rcalc 9 ok 1471.4s 
+77 metadat::dat.craft2003::acog.perf+conf.perf::REML::rcalc 8 ok 1479.9s 
+78 metadat::dat.craft2003::acog.perf+acog.asom::REML::rcalc 9 ok 1489.1s 
+79 metadat::dat.craft2003::acog.perf+acog.conf::REML::rcalc 8 ok 1497.5s 
+80 metadat::dat.craft2003::acog.perf+asom.conf::REML::rcalc 8 ok 1506.1s 
+81 metadat::dat.craft2003::asom.perf+conf.perf::REML::rcalc 8 ok 1514.6s 
+82 metadat::dat.craft2003::asom.perf+acog.asom::REML::rcalc 9 ok 1523.1s 
+83 metadat::dat.craft2003::asom.perf+acog.conf::REML::rcalc 8 ok 1531.4s 
+84 metadat::dat.craft2003::asom.perf+asom.conf::REML::rcalc 8 ok 1539.7s 
+85 metadat::dat.craft2003::conf.perf+acog.asom::REML::rcalc 8 ok 1548.1s 
+86 metadat::dat.craft2003::conf.perf+acog.conf::REML::rcalc 8 ok 1558.0s 
+87 metadat::dat.craft2003::conf.perf+asom.conf::REML::rcalc 8 ok 1566.0s 
+88 metadat::dat.craft2003::acog.asom+acog.conf::REML::rcalc 8 ok 1576.2s 
+89 metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc 8 ok 1600.4s 
+90 metadat::dat.craft2003::acog.conf+asom.conf::REML::rcalc 8 ok 1609.4s 
+91 metadat::dat.kearon1998::logit_sensitivity+logit_specificity::REML::disjoint-binomial-samples 30 ok 1627.0s 
+92 metadat::dat.rivera2025::logit_sensitivity+logit_specificity::REML::disjoint-binomial-samples 10 ok 1634.9s 
+PLUS REFERENCE 92 configurations; 19 rho_w each; 1839 bivariate fits; 184 univariate fits

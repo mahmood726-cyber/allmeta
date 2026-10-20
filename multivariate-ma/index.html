@@ -27,9 +27,23 @@
     table{width:100%;border-collapse:collapse;font-size:.84rem;margin-top:.5rem}th,td{text-align:left;padding:.3rem .5rem;border-bottom:1px solid var(--border)}
     .note{color:var(--muted);font-size:.82rem}code{font-size:.85em}a{color:var(--accent)}
     svg{width:100%;height:auto;background:var(--panel);border-radius:6px;margin-top:.5rem}
+    .toolbar{display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0}
+    button,.filebtn{font:inherit;font-size:.85rem;padding:.35rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);cursor:pointer}
+    button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,.filebtn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+    .filebtn input{position:absolute;left:-9999px}
+    .modes{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.5rem 0;font-size:.85rem}
+    select,input[type=number]{background:var(--input-bg);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:.3rem .4rem;font:inherit;font-size:.85rem}
+    input[type=number]{width:6rem}
+    textarea[readonly]{min-height:6rem;font-family:inherit;font-size:.85rem}
+    h3{font-size:.95rem;margin:1rem 0 .3rem}
+    caption{text-align:left;caption-side:top;padding:.2rem 0}
+    tr[data-flag] td{color:#b23a48;font-weight:600}
+    /* shared validation widget dims its unavailable-live link to opacity .75, which fails WCAG contrast here */
+    #alm-plus-validate a{opacity:1!important}
     footer{padding:1rem clamp(1rem,3vw,3rem) 2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);max-width:92ch}
   </style>
   <script src="../shared/multivariate-ma.js"></script>
+  <script src="plus.js"></script>
   <script src="../shared/build-info.js"></script>
 </head>
 <body>
@@ -40,31 +54,86 @@
   <p>Jointly pool <strong>two correlated outcomes</strong> measured in the same studies, using each study's within-study covariance. The two outcome means are estimated together with an unstructured between-study covariance (REML), borrowing strength across outcomes — the mvmeta / <code>metafor::rma.mv</code> model.</p>
 </header>
 <main id="main">
-  <section class="panel">
-    <h2>Studies</h2>
-    <label class="note">One row per study: <code>label, y₁, var₁, y₂, var₂, cov₁₂</code> — the two effect sizes, their positive within-study variances, and their covariance (a positive-definite matrix is required). Rows missing either outcome or a numeric covariance are omitted; at least two complete rows are required. Between-study correlation is undefined when a between-study variance is zero.
-      <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea>
-    </label>
+  <section class="panel" aria-labelledby="studies-title">
+    <h2 id="studies-title">Studies</h2>
+    <div class="toolbar" role="group" aria-label="Data actions">
+      <button type="button" id="btn-ex-berkey">Load example: Berkey 1998 (periodontal)</button>
+      <button type="button" id="btn-ex-hyp">Load example: hypertension (hyp, per-study r)</button>
+      <button type="button" id="btn-clear">Clear</button>
+      <label class="filebtn">Upload CSV <input type="file" id="f-csv" accept=".csv,.txt,text/csv,text/plain"></label>
+    </div>
+    <div class="modes">
+      <label for="f-mode">Within-study covariance input</label>
+      <select id="f-mode" aria-describedby="mode-help">
+        <option value="cov">Covariance supplied: label, y&#8321;, var&#8321;, y&#8322;, var&#8322;, cov&#8321;&#8322;</option>
+        <option value="r">Per-study correlation: label, y&#8321;, var&#8321;, y&#8322;, var&#8322;, r</option>
+        <option value="rhoW">One assumed correlation &rho;w for all studies: label, y&#8321;, var&#8321;, y&#8322;, var&#8322;</option>
+      </select>
+      <label for="f-rhow" id="rhow-label">Assumed &rho;w</label>
+      <input type="number" id="f-rhow" value="0.5" min="-0.99" max="0.99" step="0.05" aria-describedby="mode-help">
+    </div>
+    <p class="note" id="mode-help">One row per study, comma separated; lines starting with # are comments. Variances must be positive; a within-study correlation must satisfy |r| &lt; 1. Rows with a missing or non-numeric value, a non-positive variance or |r| &ge; 1 are omitted and listed below. At least two complete rows are required. Between-study correlation is undefined when a between-study variance is zero.</p>
+    <label class="note" for="f-data">Study data</label>
+    <textarea id="f-data" spellcheck="false" aria-describedby="mode-help"></textarea>
     <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.6rem">
       <label class="note">Outcome 1 name <input type="text" id="f-o1" value="Outcome 1"></label>
       <label class="note">Outcome 2 name <input type="text" id="f-o2" value="Outcome 2"></label>
     </div>
+    <p id="omitted" class="note" role="status" aria-live="polite"></p>
+    <details id="derived-wrap"><summary>Derived within-study correlation per study</summary>
+      <table aria-label="Derived within-study correlation per study"><thead><tr><th scope="col">Line</th><th scope="col">Study</th><th scope="col">r = cov / sqrt(var&#8321;&middot;var&#8322;)</th><th scope="col">Flag</th></tr></thead><tbody id="derived-body"></tbody></table>
+    </details>
   </section>
-  <section class="panel">
-    <h2>Pooled estimates</h2>
-    <div id="headline" class="note"></div>
+  <section class="panel" aria-labelledby="pooled-title">
+    <h2 id="pooled-title">Pooled estimates</h2>
+    <div id="headline" class="note" role="status" aria-live="polite"></div>
     <div id="stats" class="stats"></div>
     <h2 style="margin-top:1rem">Joint outcome plot</h2>
     <div id="plot-host"></div>
+    <div class="toolbar"><button type="button" id="btn-plot-svg">Download plot (SVG)</button><button type="button" id="btn-plot-png">Download plot (PNG)</button></div>
+  </section>
+  <section id="alm-plus" class="panel" aria-labelledby="plus-title">
+    <h2 id="plus-title">Comparison, tests and within-study correlation sensitivity</h2>
+    <h3>Univariate vs multivariate (same studies)</h3>
+    <table aria-describedby="plus-cmp-note"><caption class="note" id="plus-cmp-note">Each outcome pooled jointly (bivariate REML) and separately (univariate REML) on the same k studies. Var ratio = variance of the joint pooled mean / variance of the separate pooled mean. z and p: two-sided Wald test of mean = 0 (normal).</caption>
+      <thead><tr><th scope="col">Outcome</th><th scope="col">Model</th><th scope="col">Mean [95% CI]</th><th scope="col">SE</th><th scope="col">z</th><th scope="col">p</th><th scope="col">&tau;&sup2; (between-study variance)</th><th scope="col">Var ratio</th></tr></thead>
+      <tbody id="plus-cmp-body"></tbody></table>
+    <h3>Within-study correlation (&rho;w) sensitivity sweep</h3>
+    <p class="note" id="plus-sweep-note">Refits the bivariate model with the same within-study correlation &rho;w for every study (supplied covariances or r are replaced), for each grid value. Each value must satisfy |&rho;w| &lt; 1.</p>
+    <div class="modes" role="group" aria-label="Sweep grid">
+      <label for="plus-from">From</label><input type="number" id="plus-from" value="-0.9" step="0.1" min="-0.99" max="0.99" aria-describedby="plus-sweep-note">
+      <label for="plus-to">To</label><input type="number" id="plus-to" value="0.9" step="0.1" min="-0.99" max="0.99" aria-describedby="plus-sweep-note">
+      <label for="plus-step">Step</label><input type="number" id="plus-step" value="0.1" step="0.05" min="0.01" aria-describedby="plus-sweep-note">
+      <button type="button" id="plus-run">Run &rho;w sweep</button>
+    </div>
+    <p id="plus-status" class="note" role="status" aria-live="polite">Sweep not run yet.</p>
+    <div id="plus-sweep-plot"></div>
+    <table aria-describedby="plus-sweep-note"><caption class="note">Sweep results (one row per &rho;w)</caption>
+      <thead id="plus-sweep-head"></thead><tbody id="plus-sweep-body"></tbody></table>
+    <h3>Interpretation</h3>
+    <p id="plus-interpretation"></p>
+    <h3>Methods text</h3>
+    <textarea id="plus-methods" readonly aria-label="Auto-generated methods text"></textarea>
+    <h3>Results text</h3>
+    <textarea id="plus-results" readonly aria-label="Auto-generated results text"></textarea>
+    <div class="toolbar">
+      <button type="button" id="plus-copy-methods">Copy methods</button>
+      <button type="button" id="plus-copy-results">Copy results</button>
+      <button type="button" id="plus-dl-r">Download R script</button>
+      <button type="button" id="plus-dl-json">Download results (JSON)</button>
+      <button type="button" id="plus-dl-sweep-svg">Download sweep plot (SVG)</button>
+      <button type="button" id="plus-dl-sweep-png">Download sweep plot (PNG)</button>
+    </div>
+    <div id="alm-plus-validate" aria-label="R validation of the comparison and sweep"></div>
   </section>
 </main>
 <footer>
-  Multivariate meta-analysis via <code>shared/multivariate-ma.js</code>: y<sub>i</sub> ~ N(μ, S<sub>i</sub> + G), with known within-study covariance S<sub>i</sub> and an unstructured between-study covariance G estimated by REML (μ by GLS; G by Cholesky-parameterised Nelder-Mead, with the exact REML solution for two studies). Fitted as <code>mvmeta::mvmeta(Y~1, S, method="reml", bscov="unstr")</code> / <code>metafor::rma.mv(yi, V, mods=~outcome-1, random=~outcome|study, struct="UN", method="REML")</code>. What is tested: an independent validation (P18) compared this page with mvmeta 1.0.3 on 92 two-outcome configurations from 22 installed R datasets (iterative quantities within 1e-6 relative to max(1,|ref|); exact two-study solutions within 1e-9), with a metafor 5.2-1 <code>rma.mv</code> cross-check on Berkey&nbsp;1998; the in-repo browser test <code>multivariate-ma-parity.spec.mjs</code> checks dat.berkey1998 μ, SE and τ² to 5 decimal places and ρ and the REML log-likelihood to 4. Reference: Berkey et&nbsp;al. 1998, <em>Stat Med</em> 17:2537; Jackson, Riley &amp; White 2011.
+  Multivariate meta-analysis via <code>shared/multivariate-ma.js</code>: y<sub>i</sub> ~ N(μ, S<sub>i</sub> + G), with known within-study covariance S<sub>i</sub> and an unstructured between-study covariance G estimated by REML (μ by GLS; G by Cholesky-parameterised Nelder-Mead, with the exact REML solution for two studies). Fitted as <code>mvmeta::mvmeta(Y~1, S, method="reml", bscov="unstr")</code> / <code>metafor::rma.mv(yi, V, mods=~outcome-1, random=~outcome|study, struct="UN", method="REML")</code>. What is tested: an independent validation (P18) compared this page with mvmeta 1.0.3 on 92 two-outcome configurations from 22 installed R datasets (iterative quantities within 1e-6 relative to max(1,|ref|); exact two-study solutions within 1e-9), with a metafor 5.2-1 <code>rma.mv</code> cross-check on Berkey&nbsp;1998; the in-repo browser test <code>multivariate-ma-parity.spec.mjs</code> checks dat.berkey1998 μ, SE and τ² to 5 decimal places and ρ and the REML log-likelihood to 4. The comparison/sensitivity panel is checked against a stored R reference (mvmeta, refined to a vanishing analytic gradient; metafor <code>rma</code> and <code>rma.mv</code>) on the same 92 configurations × 19 within-study correlations: 54,612 checks, protocol in <code>validate/README-plus.md</code>; re-run them in the validation panel above. Reference: Berkey et&nbsp;al. 1998, <em>Stat Med</em> 17:2537; Jackson, Riley &amp; White 2011.
 </footer>
 <script>
   (function () {
     "use strict";
-    // Berkey 1998 periodontal trials: outcome 1 = PD (probing depth), 2 = AL (attachment level).
+    // Berkey 1998 periodontal trials (metadat dat.berkey1998 / mvmeta berkey98): outcome 1 = PD (probing depth), 2 = AL (attachment level).
     var EXAMPLE = [
       "# label, y_PD, var_PD, y_AL, var_AL, cov",
       "Trial 1, 0.47, 0.0075, -0.32, 0.0077, 0.0030",
@@ -73,36 +142,96 @@
       "Trial 4, 0.26, 0.0029, -0.31, 0.0015, 0.0009",
       "Trial 5, 0.56, 0.0148, -0.39, 0.0304, 0.0072"
     ].join("\n");
+    // mvmeta::hyp (10 hypertension trials): systolic and diastolic BP difference; var = SE^2; r = within-study correlation.
+    var EXAMPLE_HYP = [
+      "# label, y_sbp, var_sbp, y_dbp, var_dbp, r",
+      "Study 1, -6.66, 0.5184, -2.99, 0.0729, 0.78",
+      "Study 2, -14.17, 22.3729, -7.87, 2.0736, 0.45",
+      "Study 3, -12.88, 106.2961, -6.01, 3.1329, 0.59",
+      "Study 4, -8.71, 0.09, -5.11, 0.01, 0.77",
+      "Study 5, -8.70, 0.0196, -4.64, 0.0025, 0.66",
+      "Study 6, -10.60, 0.3364, -5.56, 0.0324, 0.49",
+      "Study 7, -11.36, 0.09, -3.98, 0.0729, 0.50",
+      "Study 8, -17.93, 33.8724, -6.54, 1.7161, 0.61",
+      "Study 9, -6.55, 0.1681, -2.08, 0.0121, 0.45",
+      "Study 10, -10.26, 0.04, -3.49, 0.0016, 0.51"
+    ].join("\n");
     var Z = 1.959963984540054;
+    function el(id) { return document.getElementById(id); }
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d == null ? 3 : d) : "—"; }
-    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
-    var _last = null;
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&#39;").replace(/"/g, "&quot;"); }
+    var _last = null, _parsed = null, _fit = null;
     window._almLastMultivariate = function () { return _last; };
 
-    function parse(text) {
-      var studies = [], labels = [];
-      String(text || "").split(/\r?\n/).forEach(function (line) {
+    function number(s) { return s.trim() ? Number(s) : NaN; }
+    // Mode-aware parser. Returns used rows and every omitted data row with its line and reason.
+    function parse(text, mode, rhoW) {
+      var rows = [], omitted = [], need = mode === "rhoW" ? 4 : 5, firstData = true;
+      String(text || "").split(/\r?\n/).forEach(function (line, idx) {
         var t = line.trim(); if (!t || t.charAt(0) === "#") return;
-        var p = t.split(/\s*,\s*/);
-        if (p.length < 6) return;
-        function number(s) { return s.trim() ? Number(s) : NaN; }
-        var y1 = number(p[p.length - 5]), v1 = number(p[p.length - 4]), y2 = number(p[p.length - 3]), v2 = number(p[p.length - 2]), cov = number(p[p.length - 1]);
-        if (![y1, v1, y2, v2, cov].every(isFinite) || v1 <= 0 || v2 <= 0) return;
-        labels.push(p.slice(0, p.length - 5).join(", ") || ("Study " + (studies.length + 1)));
-        studies.push({ y: [y1, y2], S: [[v1, cov], [cov, v2]] });
+        var p = t.split(/\s*,\s*/), lineNo = idx + 1;
+        var label = p.length > need ? p.slice(0, p.length - need).join(", ") : "";
+        if (p.length < need + 1) { omitted.push({ line: lineNo, label: t.slice(0, 40), reason: "needs " + (need + 1) + " comma-separated fields (label + " + need + " numbers)" }); firstData = false; return; }
+        var nums = p.slice(p.length - need).map(number);
+        if (!nums.every(isFinite)) {
+          if (firstData && nums.every(function (x) { return isNaN(x); })) { firstData = false; return; }   // header row
+          omitted.push({ line: lineNo, label: label, reason: "missing or non-numeric value" }); firstData = false; return;
+        }
+        firstData = false;
+        var y1 = nums[0], v1 = nums[1], y2 = nums[2], v2 = nums[3], cov, r;
+        if (!(v1 > 0) || !(v2 > 0)) { omitted.push({ line: lineNo, label: label, reason: "variance must be > 0" }); return; }
+        if (mode === "cov") { cov = nums[4]; r = cov / Math.sqrt(v1 * v2); }
+        else if (mode === "r") { r = nums[4]; if (!(Math.abs(r) < 1)) { omitted.push({ line: lineNo, label: label, reason: "within-study r must satisfy |r| < 1" }); return; } cov = window.AlmMultivariate.covFromR(v1, v2, r); }
+        else if (mode === "rhoW") { r = rhoW; cov = window.AlmMultivariate.covFromR(v1, v2, rhoW); }
+        else throw new Error("unknown input mode " + mode);
+        rows.push({ line: lineNo, label: label || ("Study " + (rows.length + 1)), y: [y1, y2], v: [v1, v2], cov: cov, r: r });
       });
-      return { studies: studies, labels: labels };
+      return { mode: mode, rhoW: mode === "rhoW" ? rhoW : null, rows: rows, omitted: omitted };
+    }
+    // The mode is kept in a variable updated by the select's change event (select.value is
+    // unreliable in some non-browser DOMs used for validation replays).
+    var currentMode = "cov";
+    function getMode() { return currentMode; }
+    function setMode(v) { if (["cov", "r", "rhoW"].indexOf(v) < 0) throw new Error("unknown input mode " + v); currentMode = v; Array.prototype.forEach.call(el("f-mode").querySelectorAll("option"), function (o) { if (o.value === v) { o.setAttribute("selected", ""); o.selected = true; } else { o.removeAttribute("selected"); o.selected = false; } }); }
+    function currentParsed() {
+      var mode = getMode(), rw = Number(el("f-rhow").value);
+      var parsed = parse(el("f-data").value, mode, rw);
+      parsed.outcomes = [el("f-o1").value || "Outcome 1", el("f-o2").value || "Outcome 2"];
+      if (mode === "rhoW" && !(Math.abs(rw) < 1)) { parsed.invalid = "Assumed within-study correlation must satisfy |ρw| < 1."; }
+      return parsed;
     }
 
+    function renderDerived(parsed) {
+      var body = el("derived-body"); body.innerHTML = "";
+      parsed.rows.forEach(function (r) {
+        var flag = parsed.mode === "cov" && !(Math.abs(r.r) < 1) ? "|r| ≥ 1: covariance not positive definite" : parsed.mode === "rhoW" ? "assumed" : "";
+        var tr = document.createElement("tr");
+        [String(r.line), r.label, fmt(r.r, 4), flag].forEach(function (v) { var td = document.createElement("td"); td.textContent = v; tr.appendChild(td); });
+        if (flag && flag !== "assumed") tr.setAttribute("data-flag", "r");
+        body.appendChild(tr);
+      });
+    }
+    function renderOmitted(parsed) {
+      var n = parsed.omitted.length;
+      el("omitted").textContent = "k used = " + parsed.rows.length + "; " + n + " row" + (n === 1 ? "" : "s") + " omitted" + (n ? ": " + parsed.omitted.map(function (o) { return "line " + o.line + " (" + o.reason + ")"; }).join("; ") : "") + ".";
+    }
+
+    function clearOutputs() { el("stats").innerHTML = ""; el("plot-host").innerHTML = ""; _last = null; _fit = null; }
     function run() {
-      var parsed = parse(document.getElementById("f-data").value);
-      var o1 = document.getElementById("f-o1").value || "Outcome 1", o2 = document.getElementById("f-o2").value || "Outcome 2";
-      var head = document.getElementById("headline"), stats = document.getElementById("stats");
-      if (parsed.studies.length < 2 || !window.AlmMultivariate) { head.textContent = "Enter ≥ 2 studies."; stats.innerHTML = ""; document.getElementById("plot-host").innerHTML = ""; _last = null; return; }
-      _last = null; stats.innerHTML = ""; document.getElementById("plot-host").innerHTML = "";
-      var f;
-      try { f = window.AlmMultivariate.fit(parsed.studies); }
-      catch (error) { head.textContent = error.message; return; }
+      var parsed = currentParsed(), o1 = parsed.outcomes[0], o2 = parsed.outcomes[1];
+      var head = el("headline"), stats = el("stats");
+      _parsed = parsed; clearOutputs(); renderDerived(parsed); renderOmitted(parsed);
+      var done = function (res) { if (window.AlmMvPlusUI) window.AlmMvPlusUI.update(parsed, res); };
+      if (parsed.invalid) { head.textContent = "Refused: " + parsed.invalid; done({ status: "refused", reason: parsed.invalid, k: parsed.rows.length }); return; }
+      if (parsed.rows.length < 2 || !window.AlmMultivariate) { head.textContent = "Enter ≥ 2 studies."; done({ status: "refused", reason: "At least two complete studies are required.", k: parsed.rows.length }); return; }
+      var res = window.AlmMvPlus ? window.AlmMvPlus.compute(parsed) : null, f;
+      if (res && res.status !== "ok") {
+        var bad = parsed.rows.filter(function (r) { return !(Math.abs(r.r) < 1); }).map(function (r) { return r.line; });
+        head.textContent = "Refused: " + res.reason + (bad.length ? " (|r| ≥ 1 on line" + (bad.length > 1 ? "s " : " ") + bad.join(", ") + ")" : "");
+        done(res); return;
+      }
+      if (res) f = res.fit; else { try { f = window.AlmMultivariate.fit(parsed.rows.map(function (r) { return { y: r.y, S: [[r.v[0], r.cov], [r.cov, r.v[1]]] }; })); } catch (error) { head.textContent = error.message; return; } }
+      _fit = f;
       head.innerHTML = "k = " + f.k + " studies · 2 outcomes · unstructured between-study covariance (REML) · logLik = " + fmt(f.logLik, 3);
       function card(k, v) { return "<div class='stat'><span class='k'>" + esc(k) + "</span><span class='v'>" + v + "</span></div>"; }
       stats.innerHTML =
@@ -111,41 +240,85 @@
         card("Between-study SD " + o1, fmt(Math.sqrt(f.G[0][0]), 4)) +
         card("Between-study SD " + o2, fmt(Math.sqrt(f.G[1][1]), 4)) +
         card("Between-study ρ", fmt(f.rho, 3));
-      document.getElementById("plot-host").innerHTML = plot(parsed.studies, f, o1, o2);
-      _last = { _schema: "multivariate-ma-results-v1", k: f.k, mu: f.mu, muSE: f.muSE, G: f.G, rho: f.rho, logLik: f.logLik };
+      el("plot-host").innerHTML = plot(parsed.rows, f, o1, o2);
+      var tests = res ? res.tests : [null, null];
+      _last = { _schema: "multivariate-ma-results-v2", k: f.k, mu: f.mu, muSE: f.muSE, G: f.G, rho: f.rho, logLik: f.logLik,
+        muVcov: f.muVcov, z: tests.map(function (t) { return t ? t.z : null; }), p: tests.map(function (t) { return t ? t.p : null; }),
+        outcomes: [o1, o2], mode: parsed.mode, rhoW: parsed.rhoW, labels: parsed.rows.map(function (r) { return r.label; }),
+        omitted: parsed.omitted.slice(), optimizer: f.optimizer };
+      done(res);
     }
-
-    function plot(studies, f, o1, o2) {
-      var W = 560, H = 360, L = 56, R = 20, T = 20, B = 44, pw = W - L - R, ph = H - T - B;
+    function ticks(lo, hi, n) {
+      var span = hi - lo, raw = span / (n || 5), mag = Math.pow(10, Math.floor(Math.log10(raw))), st = [1, 2, 2.5, 5, 10].map(function (m) { return m * mag; }).find(function (s) { return s >= raw; }) || 10 * mag;
+      var out = [], v = Math.ceil(lo / st) * st; for (; v <= hi + st * 1e-9; v += st) out.push(Math.abs(v) < st * 1e-9 ? 0 : v);
+      var d = Math.max(0, -Math.floor(Math.log10(st) + 1e-9)); return out.map(function (x) { return { v: x, label: x.toFixed(d + (st / mag === 2.5 ? 1 : 0)) }; });
+    }
+    function plot(rows, f, o1, o2) {
+      var W = 560, H = 380, L = 64, R = 20, T = 40, B = 50, pw = W - L - R, ph = H - T - B;
       var radius = Math.sqrt(-2 * Math.log(0.05));
-      var xs = studies.map(function (s) { return s.y[0]; }).concat([f.mu[0] - radius * f.muSE[0], f.mu[0] + radius * f.muSE[0]]);
-      var ys = studies.map(function (s) { return s.y[1]; }).concat([f.mu[1] - radius * f.muSE[1], f.mu[1] + radius * f.muSE[1]]);
+      var xs = rows.map(function (s) { return s.y[0]; }).concat([f.mu[0] - radius * f.muSE[0], f.mu[0] + radius * f.muSE[0]]);
+      var ys = rows.map(function (s) { return s.y[1]; }).concat([f.mu[1] - radius * f.muSE[1], f.mu[1] + radius * f.muSE[1]]);
       var xlo = Math.min.apply(null, xs), xhi = Math.max.apply(null, xs), ylo = Math.min.apply(null, ys), yhi = Math.max.apply(null, ys);
       var xpad = (xhi - xlo) * 0.15 || 0.1, ypad = (yhi - ylo) * 0.15 || 0.1; xlo -= xpad; xhi += xpad; ylo -= ypad; yhi += ypad;
       var X = function (v) { return L + (v - xlo) / (xhi - xlo) * pw; }, Y = function (v) { return T + ph - (v - ylo) / (yhi - ylo) * ph; };
-      var dark = matchMedia('(prefers-color-scheme:dark)').matches;
-      var p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      var dark = window.matchMedia && matchMedia('(prefers-color-scheme:dark)').matches, ink = dark ? '#e7e4dc' : '#15181d', grid = dark ? '#2f343a' : '#d9d5cc';
+      var desc = "Scatter of " + rows.length + " study estimates (" + esc(o1) + " on x, " + esc(o2) + " on y), pooled mean (" + fmt(f.mu[0]) + ", " + fmt(f.mu[1]) + ") and its 95% joint confidence ellipse.";
+      var p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif' role='img' aria-labelledby='mv-plot-title mv-plot-desc'>"];
+      p.push("<title id='mv-plot-title'>Joint outcome plot</title><desc id='mv-plot-desc'>" + desc + "</desc>");
       p.push("<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>");
-      p.push("<rect x='" + L + "' y='" + T + "' width='" + pw + "' height='" + ph + "' fill='none' stroke='" + (dark ? '#2f343a' : '#d9d5cc') + "'/>");
-      // study points
-      studies.forEach(function (s) { p.push("<circle cx='" + X(s.y[0]) + "' cy='" + Y(s.y[1]) + "' r='4' fill='#2c5e8a' fill-opacity='0.55' stroke='" + (dark ? '#e7e4dc' : '#15181d') + "' stroke-width='0.6'/>"); });
-      // pooled point + 95% confidence ellipse from muVcov
-      var C = f.muVcov, L00 = Math.sqrt(C[0][0]), L10 = C[1][0] / L00, L11 = Math.sqrt(Math.max(0, C[1][1] - L10 * L10)), r = Math.sqrt(-2 * Math.log(0.05));
+      p.push("<rect x='" + L + "' y='" + T + "' width='" + pw + "' height='" + ph + "' fill='none' stroke='" + grid + "'/>");
+      ticks(xlo, xhi, 6).forEach(function (t) { var x = X(t.v); p.push("<line data-axis='x' x1='" + x + "' x2='" + x + "' y1='" + (T + ph) + "' y2='" + (T + ph + 5) + "' stroke='" + ink + "'/><text data-tick='x' x='" + x + "' y='" + (T + ph + 17) + "' text-anchor='middle' font-size='10' fill='" + ink + "'>" + t.label + "</text>"); });
+      ticks(ylo, yhi, 6).forEach(function (t) { var y = Y(t.v); p.push("<line data-axis='y' x1='" + (L - 5) + "' x2='" + L + "' y1='" + y + "' y2='" + y + "' stroke='" + ink + "'/><text data-tick='y' x='" + (L - 7) + "' y='" + (y + 3) + "' text-anchor='end' font-size='10' fill='" + ink + "'>" + t.label + "</text>"); });
+      rows.forEach(function (s) { p.push("<circle cx='" + X(s.y[0]) + "' cy='" + Y(s.y[1]) + "' r='4' fill='#2c5e8a' fill-opacity='0.55' stroke='" + ink + "' stroke-width='0.6'/>"); });
+      var C = f.muVcov, L00 = Math.sqrt(C[0][0]), L10 = C[1][0] / L00, L11 = Math.sqrt(Math.max(0, C[1][1] - L10 * L10)), r = radius;
       var ell = [];
       for (var i = 0; i <= 80; i++) { var th = 2 * Math.PI * i / 80, a = r * Math.cos(th), b = r * Math.sin(th); ell.push(X(f.mu[0] + L00 * a) + "," + Y(f.mu[1] + L10 * a + L11 * b)); }
       p.push("<polygon points='" + ell.join(" ") + "' fill='#b23a48' fill-opacity='0.10' stroke='#b23a48' stroke-width='1.3'/>");
       p.push("<path d='M" + X(f.mu[0]) + " " + (Y(f.mu[1]) - 6) + "L" + (X(f.mu[0]) + 6) + " " + Y(f.mu[1]) + "L" + X(f.mu[0]) + " " + (Y(f.mu[1]) + 6) + "L" + (X(f.mu[0]) - 6) + " " + Y(f.mu[1]) + "Z' fill='#b23a48' stroke='#fff' stroke-width='1'/>");
-      p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 8) + "' text-anchor='middle' font-size='11' fill='currentColor'>" + esc(o1) + "</text>");
-      p.push("<text x='14' y='" + (T + ph / 2) + "' transform='rotate(-90 14 " + (T + ph / 2) + ")' text-anchor='middle' font-size='11' fill='currentColor'>" + esc(o2) + "</text>");
+      // legend (outside the data area)
+      p.push("<g data-legend='1' font-size='10' fill='" + ink + "'><circle cx='" + (L + 6) + "' cy='16' r='4' fill='#2c5e8a' fill-opacity='0.55' stroke='" + ink + "' stroke-width='0.6'/><text x='" + (L + 14) + "' y='19'>Study</text>" +
+        "<path d='M" + (L + 76) + " 10L" + (L + 82) + " 16L" + (L + 76) + " 22L" + (L + 70) + " 16Z' fill='#b23a48'/><text x='" + (L + 88) + "' y='19'>Pooled mean</text>" +
+        "<rect x='" + (L + 170) + "' y='11' width='16' height='10' fill='#b23a48' fill-opacity='0.10' stroke='#b23a48'/><text x='" + (L + 192) + "' y='19'>95% joint confidence region</text></g>");
+      p.push("<text x='" + (L + pw / 2) + "' y='" + (H - 8) + "' text-anchor='middle' font-size='11' fill='" + ink + "'>" + esc(o1) + "</text>");
+      p.push("<text x='14' y='" + (T + ph / 2) + "' transform='rotate(-90 14 " + (T + ph / 2) + ")' text-anchor='middle' font-size='11' fill='" + ink + "'>" + esc(o2) + "</text>");
       p.push("</svg>"); return p.join("");
     }
 
-    document.getElementById("f-data").value = EXAMPLE;
-    ["f-data", "f-o1", "f-o2"].forEach(function (id) { document.getElementById(id).addEventListener("input", run); });
-    document.getElementById("f-o1").value = "PD"; document.getElementById("f-o2").value = "AL";
+    var timer = null;
+    function schedule() { if (timer) clearTimeout(timer); timer = setTimeout(function () { timer = null; run(); }, 250); }
+    function now() { if (timer) { clearTimeout(timer); timer = null; } run(); }
+    function syncMode() { var a = getMode() === "rhoW"; el("f-rhow").disabled = !a; el("rhow-label").style.opacity = a ? "1" : ".55"; }
+    function load(text, mode, o1, o2) { el("f-data").value = text; setMode(mode); el("f-o1").value = o1; el("f-o2").value = o2; syncMode(); now(); }
+    ["f-data", "f-o1", "f-o2", "f-rhow"].forEach(function (id) { el(id).addEventListener("input", schedule); });
+    el("f-mode").addEventListener("change", function (e) { var v = e.target.value; if (["cov", "r", "rhoW"].indexOf(v) >= 0) currentMode = v; syncMode(); now(); });
+    el("btn-ex-berkey").addEventListener("click", function () { load(EXAMPLE, "cov", "PD", "AL"); });
+    el("btn-ex-hyp").addEventListener("click", function () { load(EXAMPLE_HYP, "r", "SBP", "DBP"); });
+    el("btn-clear").addEventListener("click", function () { el("f-data").value = ""; now(); el("f-data").focus(); });
+    el("f-csv").addEventListener("change", function (e) {
+      var file = e.target.files && e.target.files[0]; if (!file) return;
+      var rd = new FileReader(); rd.onload = function () { el("f-data").value = String(rd.result || ""); now(); }; rd.readAsText(file); e.target.value = "";
+    });
+    function download(name, blob) { var url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 1000); }
+    function svgPng(svgText, name) {
+      var img = new Image(), url = URL.createObjectURL(new Blob([svgText], { type: "image/svg+xml" }));
+      img.onload = function () { var c = document.createElement("canvas"); c.width = img.width * 2; c.height = img.height * 2; var x = c.getContext("2d"); x.scale(2, 2); x.drawImage(img, 0, 0); URL.revokeObjectURL(url); c.toBlob(function (b) { if (b) download(name, b); }, "image/png"); };
+      img.src = url;
+    }
+    el("btn-plot-svg").addEventListener("click", function () { var s = el("plot-host").innerHTML; if (s) download("multivariate-ma-plot.svg", new Blob([s], { type: "image/svg+xml" })); });
+    el("btn-plot-png").addEventListener("click", function () { var s = el("plot-host").innerHTML; if (s) svgPng(s, "multivariate-ma-plot.png"); });
+    window.AlmMvPage = { setMode: setMode, getMode: getMode, run: now, parse: parse, current: function () { return { parsed: _parsed, fit: _fit }; }, load: load, download: download, svgPng: svgPng, EXAMPLE: EXAMPLE, EXAMPLE_HYP: EXAMPLE_HYP };
+
+    el("f-data").value = EXAMPLE;
+    el("f-o1").value = "PD"; el("f-o2").value = "AL";
+    syncMode();
     run();
   })();
 </script>
+<script src="plus-ui.js"></script>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/plus-pins.js"></script>
+<script src="validate/plus-contract.js"></script>
+<script src="validate/plus-adapter.js"></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 </body>
 </html>
