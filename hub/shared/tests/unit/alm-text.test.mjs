@@ -278,4 +278,15 @@ test('proportion-ma PLANTED: perturbed result vs rendered provenance -> audit FA
   const a = AlmText.audit(out, { ...r, poolP: r.poolP + 0.01 }, { ctx: ctx0 });
   report('proportion-ma-planted', a);
   assert.equal(a.ok, false);
+  assert.ok(a.failures.length > 0 && a.failures.every(f => /:poolP:value$/.test(f.check)), JSON.stringify(a.failures));
+});
+
+test('flags: a skipped (null) flag before a numeric flag keeps provenance labels aligned', () => {
+  const t = { ...simpleTemplates, flags: (T) => [null, T.when(false, 'x'), ['k = ', T.int('k')], 'plain flag', ['I² ', T.pct('i2', 1)]] };
+  const r = AlmText.render(t, simpleResults, ctx0);
+  assert.deepEqual(r.flags.map(f => f.text), ['k = 12', 'plain flag', 'I² 35.0%']);
+  assert.deepEqual(r.provenance.filter(p => p.para.startsWith('flags')).map(p => p.para), ['flags.0', 'flags.2']);
+  const a = AlmText.audit(r, simpleResults, { ctx: ctx0 });
+  report('flags-alignment', a);
+  assert.equal(a.ok, true, JSON.stringify(a.failures));
 });

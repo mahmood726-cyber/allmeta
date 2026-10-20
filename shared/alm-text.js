@@ -447,10 +447,14 @@
     if (typeof templates.flags === 'function') {
       var list = templates.flags(T, results, ctx);
       if (!Array.isArray(list)) throw new Error('AlmText: flags template must return an array');
-      list.forEach(function (f, i) {
+      // Paragraph names follow the index in out.flags (what audit() iterates), not the index in the
+      // template list: skipped (null) flags must not shift the provenance paragraph labels.
+      list.forEach(function (f) {
         if (f == null || f === false) return;
-        var p = para('flags.' + i, function () { return f; }, T, results, ctx, provenance, cites);
+        var mark = provenance.length;
+        var p = para('flags.' + out.flags.length, function () { return f; }, T, results, ctx, provenance, cites);
         if (p.text) out.flags.push(p);
+        else provenance.length = mark;
       });
     }
     out.provenance = provenance;
