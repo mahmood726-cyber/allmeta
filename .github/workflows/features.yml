@@ -108,3 +108,39 @@ jobs:
             hub/shared/tests/test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+  personas:
+    # Persona walkthrough PACK for the data-entry UX (capture tool): screenshots, visible text and provenance
+    # state for each step, uploaded as artifact persona-pack. Asserts only that every step rendered.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+        working-directory: hub/shared/tests
+      - run: npx playwright install --with-deps chromium
+        working-directory: hub/shared/tests
+      - name: persona walkthrough
+        run: |
+          # The spec imports @playwright/test: resolve it from the features test package (one Playwright instance).
+          ln -s "$GITHUB_WORKSPACE/hub/shared/tests/node_modules" scripts/personas/node_modules
+          cd scripts/personas
+          ./node_modules/.bin/playwright test -c playwright.personas.config.mjs --reporter=line
+        env:
+          CI: "true"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: persona-pack
+          path: |
+            scripts/personas/pack/
+            scripts/personas/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
