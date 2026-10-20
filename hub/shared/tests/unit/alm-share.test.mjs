@@ -39,9 +39,11 @@ test('state + provenance round-trip through the link codec', async () => {
 
 test('links over 32,768 characters are refused with a clear message', async () => {
   eq(S.MAX_LINK, 32768);
-  let seed = 7; const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  // mulberry32 (32-bit integer math): a float LCG loses its low bits above 2^53, cycles and compresses away.
+  let seed = 7; const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const big = { src: Array.from({ length: 40000 }, () => String.fromCharCode(33 + Math.floor(rnd() * 90))).join(''), trans: 'logit', tau: 'PM' };
   const packed = await S.encode('proportion-ma', big, []);
+  ok(packed.length > S.MAX_LINK, 'fixture is genuinely over the limit (packed ' + packed.length + ')');
   assert.throws(() => S.makeLink('http://localhost/proportion-ma/', packed), e => e.code === 'TOO_LARGE' && /too large for a share link/.test(e.message) && /32,768/.test(e.message)); checks++;
   const edge = 'a'.repeat(32768 - 'http://h/#s='.length);
   eq(S.makeLink('http://h/', edge).length, 32768, 'exactly at the limit is allowed');

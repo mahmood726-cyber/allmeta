@@ -464,8 +464,12 @@
           var png = await _canvasBlob(_bitmapToCanvas(screen, sw, sh));
           if (screen.close) screen.close();
           var pw = Math.round(plot.width_in * PRINT_DPI), ph = Math.round(plot.height_in * PRINT_DPI);
-          var big = await _capture(w, plot.code, pw, ph, PLOT_BASE_PT * PRINT_DPI / 72);
-          native.raster = { width: big.width, height: big.height };
+          // webR's canvas device renders at a fixed multiple of the requested size (2x in webR 0.5.5:
+          // 768x576 requested -> 1536x1152 bitmap). Request print size / that factor so the bitmap is
+          // already ~300 dpi instead of a 4x-memory 600-dpi bitmap; any residual is resampled below.
+          var scale = native.screen.width / sw > 0 ? native.screen.width / sw : 1;
+          var big = await _capture(w, plot.code, Math.round(pw / scale), Math.round(ph / scale), PLOT_BASE_PT * PRINT_DPI / 72 / scale);
+          native.raster = { width: big.width, height: big.height }; native.deviceScale = scale;
           var bigCanvas = _bitmapToCanvas(big, pw, ph);
           if (big.close) big.close();
           var raster = { width: pw, height: ph, dpi: PRINT_DPI, rgba: bigCanvas.getContext('2d').getImageData(0, 0, pw, ph).data };
