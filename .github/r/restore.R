@@ -46,7 +46,7 @@ renv::restore(project = project, library = lib, lockfile = lock_path, prompt = F
 # (e.g. boot) counts only if that version equals the lock.
 probe <- tempfile(fileext = ".R")
 writeLines(c(sprintf("for (p in c(%s)) {", paste(sprintf('"%s"', names(want)), collapse = ", ")),
-  '  v <- tryCatch(as.character(utils::packageVersion(p)), error = function(e) NA_character_)',
+  '  v <- suppressWarnings(utils::packageDescription(p, fields = "Version"))',   # raw DESCRIPTION string (packageVersion() turns 7.3-66 into 7.3.66)
   '  path <- tryCatch(normalizePath(dirname(find.package(p)), winslash = "/"), error = function(e) NA_character_)',
   '  cat("PKG", p, v, path, sep = "\t"); cat("\n")', "}"), probe)
 rscript <- file.path(R.home("bin"), if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript")
