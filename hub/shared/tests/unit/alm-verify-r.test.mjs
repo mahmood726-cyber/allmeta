@@ -1,4 +1,5 @@
 // node:test — shared/alm-verify-r.js row evaluation (review of PR #177):
+//   * verify.optional (opts.notApplicable): "not applicable" only when BOTH sides are missing (FU10);
 //   * quantities missing on either side (null / undefined / NaN) are NOT matches -> "not computed", never PASS,
 //     and make the run fail unless the adapter declares the key optional (compare.optional) -> listed, excluded from N;
 //   * the test hook window.__almVerifyPerturb can only ever make a row FAIL, is inert without ?almtest=1,
@@ -56,6 +57,38 @@ test('compare.optional: declared-optional keys missing on a side are listed but 
   eq([r2.n, r2.nPassed, r2.passed], [2, 1, false]);
   // a non-optional key is still required
   eq(evaluate({ mu: null }, { mu: null }, cmp).passed, false);
+});
+
+// verify.optional (FU10): keys declared not applicable for this data, passed as opts.notApplicable.
+const evalNA = (app, ref, na, cmp = CMP) => V.evaluate(vals(app), ref, cmp, { compare, notApplicable: na });
+test('verify.optional: both sides missing -> "not applicable", never PASS, not in N, does not fail', () => {
+  const na = ['piLo', 'piHi', 'poolPiLo', 'poolPiHi'];
+  const r = evalNA({ mu: 0.5, piLo: null, piHi: NaN, poolPiLo: null, poolPiHi: undefined, tau2: 0.1 },
+    { mu: 0.5, piLo: null, piHi: null, poolPiLo: NaN, poolPiHi: null, tau2: 0.1 }, na);
+  eq(r.rows.map(x => x.status), ['pass', 'notapplicable', 'notapplicable', 'notapplicable', 'notapplicable', 'pass']);
+  eq([r.n, r.nPassed, r.nNotComputed, r.nNotApplicable, r.passed], [2, 2, 0, 4, true]);
+  ok(r.rows.filter(x => x.status === 'notapplicable').every(x => x.pass === false), 'never a PASS row');
+  eq(V.summaryText(r), '2 of 2 computed quantities match R; 0 not computed; 4 not applicable — PASS');
+  eq(V.comparisonCsv(r.rows).trim().split('
+')[2].endsWith(',NOT APPLICABLE for this analysis'), true);
+});
+
+test('PLANTED: a key declared not applicable but with an R value and a different app value still FAILS', () => {
+  const r = evalNA({ mu: 0.5, piLo: 0.2 }, { mu: 0.5, piLo: 0.3 }, ['piLo']);
+  eq(r.rows[1].status, 'fail');
+  eq([r.n, r.nPassed, r.nNotApplicable, r.passed], [2, 1, 0, false]);
+  // only one side missing -> NOT COMPUTED and the run fails (either direction)
+  const r2 = evalNA({ mu: 0.5, piLo: null }, { mu: 0.5, piLo: 0.3 }, ['piLo']);
+  eq([r2.rows[1].status, r2.nNotComputed, r2.nNotApplicable, r2.passed], ['notcomputed', 1, 0, false]);
+  const r3 = evalNA({ mu: 0.5, piLo: 0.3 }, { mu: 0.5, piLo: null }, ['piLo']);
+  eq([r3.rows[1].status, r3.passed], ['notcomputed', false]);
+  // a key not declared stays required; nothing but not-applicable rows is not a pass
+  eq(evalNA({ mu: null }, { mu: null }, ['piLo']).passed, false);
+  eq(evalNA({ piLo: null }, { piLo: null }, ['piLo']).passed, false);
+  // compare.optional keeps working alongside
+  const r4 = evalNA({ mu: 0.5, piLo: null, x: null }, { mu: 0.5, piLo: null, x: null }, ['piLo'], { ...CMP, optional: ['x'] });
+  eq(r4.rows.map(x => x.status), ['pass', 'notapplicable', 'optional']);
+  eq(V.summaryText(r4), '1 of 1 computed quantities match R; 0 not computed (1 optional not computed); 1 not applicable — PASS');
 });
 
 test('outside tolerance -> FAIL with the count', () => {

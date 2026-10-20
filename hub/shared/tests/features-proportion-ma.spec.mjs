@@ -316,3 +316,31 @@ test('STALE PLANTED DEFECT: with the stale check disabled the stale gate fails',
   expect(gatePasses, 'the stale gate must FAIL when the stale check is disabled').toBe(false);
   expect(s.banner).toBe(false); expect(s.receiptStale).toBe(false);
 });
+
+// ---- FU10: quantities not applicable for the data (prediction interval at k = 2) ----------------------
+test('k = 2: prediction-interval keys are "not applicable" (verify.optional), the run still PASSES', async ({ page }) => {
+  test.setTimeout(900_000);
+  const errors = [];
+  page.on('pageerror', e => errors.push(String(e)));
+  await page.goto(PAGE_TEST);
+  await expect(page.locator('#res-body .pooled-row')).toHaveCount(1);
+  await page.locator('#src').fill('86, 125, Arm A 2016\n78, 133, Arm B 2016');
+  await page.locator('#btn-run').click();
+  await expect(page.locator('#res-body')).toContainText('Arm B 2016');
+  await openPanel(page);
+  await page.getByRole('tab', { name: 'Verify in R', exact: true }).click();
+  const panel = page.locator('#alm-f-panel-verify');
+  await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
+  const summary = panel.locator('[data-testid=verify-summary]');
+  await expect(summary).toHaveText(/ — (PASS|FAIL)/, { timeout: 600_000 });
+  console.log('FEATURES K2 ' + await summary.textContent());
+  await expect(summary).toHaveText(/^(\d+) of \1 computed quantities match R; 0 not computed; 4 not applicable — PASS$/);
+  const na = await panel.locator('td[data-result=notapplicable]').evaluateAll(tds => tds.map(td => td.closest('tr').dataset.key).sort());
+  expect(na).toEqual(['piHi', 'piLo', 'poolPiHi', 'poolPiLo']);
+  await expect(panel.locator('td[data-result=notapplicable]').first()).toHaveText('NOT APPLICABLE for this analysis');
+  const v = await page.evaluate(() => AlmFeaturesState.verify);
+  expect([v.passed, v.nNotComputed, v.nNotApplicable, v.testHook]).toEqual([true, 0, 4, false]);
+  expect(v.n).toBe(v.nPassed);
+  expect(v.rows.filter(r => r.status === 'pass').map(r => r.key)).not.toContain('piLo');
+  expect(errors).toEqual([]);
+});

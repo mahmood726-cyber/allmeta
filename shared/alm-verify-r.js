@@ -19,7 +19,11 @@
  *
  * Rows: a quantity null / undefined / NaN on either side is NOT COMPUTED (never a match) and fails the run,
  * unless the adapter lists the key in compare.optional (then it is listed but excluded from N). Summary:
- * "n of N computed quantities match R; m not computed — PASS|FAIL: ...".
+ * "n of N computed quantities match R; m not computed[; j not applicable] — PASS|FAIL: ...".
+ * NOT APPLICABLE: the features spec may declare verify.optional = [keys] or function(state) -> [keys] for
+ * quantities that do not exist for the current data (e.g. prediction-interval keys when k < 3). Such a key
+ * is "not applicable for this analysis" (never PASS, never in N, never fails the run) ONLY when BOTH sides
+ * are null / NaN; if either side has a value it is compared normally (one-sided -> NOT COMPUTED, fails).
  *
  * TEST-ONLY HOOK: window.__almVerifyPerturb = {key, delta} is honoured ONLY when the page URL has
  * ?almtest=1. It adds delta to that app value for display and then forces that row to FAIL whatever the
@@ -56,6 +60,7 @@
     if (r.status === 'pass') return 'PASS';
     if (r.status === 'notcomputed') return 'NOT COMPUTED (' + missingSide(r) + ')';
     if (r.status === 'optional') return 'NOT COMPUTED, optional (' + missingSide(r) + ')';
+    if (r.status === 'notapplicable') return 'NOT APPLICABLE for this analysis';
     return 'FAIL' + (r.reason ? ' (' + r.reason + ')' : '');
   }
   // diff = what the verdict uses (relative when kind is rel, as on screen); abs_diff = |App-R|.
@@ -88,6 +93,7 @@
     opts = opts || {};
     var cmp = opts.compare || (global.AlmValidate && global.AlmValidate.compare);
     var hook = opts.hook || null, tolerance = comparison.tolerance || {}, optional = Array.isArray(comparison.optional) ? comparison.optional : [];
+    var notApplicable = Array.isArray(opts.notApplicable) ? opts.notApplicable : [];
     ref = ref || {};
     var rows = appValues.map(function (v) {
       var tol = tolerance[v.key] !== undefined ? tolerance[v.key] : tolerance.default;
@@ -95,7 +101,10 @@
       var value = v.value, rv = ref[v.key], hooked = !!hook && hook.key === v.key;
       if (hooked && typeof value === 'number') value = value + Number(hook.delta);
       var row = { key: v.key, label: v.label || v.key, app: value, ref: rv, tol: tol, kind: kind, diff: null, absDiff: null, pass: false, reason: null };
-      if (isMissing(value) || isMissing(rv)) {
+      if (isMissing(value) && isMissing(rv) && notApplicable.indexOf(v.key) >= 0) {
+        row.status = 'notapplicable';
+        row.reason = 'not applicable for this analysis';
+      } else if (isMissing(value) || isMissing(rv)) {
         row.status = optional.indexOf(v.key) >= 0 ? 'optional' : 'notcomputed';
         row.reason = 'not computed';
       } else {
@@ -112,15 +121,17 @@
     var nPassed = computed.filter(function (r) { return r.pass; }).length;
     var nNotComputed = rows.filter(function (r) { return r.status === 'notcomputed'; }).length;
     var nOptional = rows.filter(function (r) { return r.status === 'optional'; }).length;
+    var nNotApplicable = rows.filter(function (r) { return r.status === 'notapplicable'; }).length;
     var testHook = !!hook;
-    return { rows: rows, n: computed.length, nPassed: nPassed, nNotComputed: nNotComputed, nOptional: nOptional, testHook: testHook,
+    return { rows: rows, n: computed.length, nPassed: nPassed, nNotComputed: nNotComputed, nOptional: nOptional, nNotApplicable: nNotApplicable, testHook: testHook,
       perturbed: testHook ? { key: hook.key, delta: Number(hook.delta) } : null,
       passed: !testHook && computed.length > 0 && nPassed === computed.length && nNotComputed === 0 };
   }
 
   function summaryText(res) {
     var body = res.nPassed + ' of ' + res.n + ' computed quantities match R; ' + res.nNotComputed + ' not computed' +
-      (res.nOptional ? ' (' + res.nOptional + ' optional not computed)' : '');
+      (res.nOptional ? ' (' + res.nOptional + ' optional not computed)' : '') +
+      (res.nNotApplicable ? '; ' + res.nNotApplicable + ' not applicable' : '');
     var why = [];
     if (res.n - res.nPassed) why.push((res.n - res.nPassed) + ' not matching R');
     if (res.nNotComputed) why.push(res.nNotComputed + ' not computed');
@@ -379,6 +390,10 @@
         var revision = global.AlmFeatures.stateHash(state);
         var appValues = live.appValues(state);
         var comparison = structuredClone(live.compare);
+        // verify.optional: keys not applicable for this data (array, or function(state) -> array).
+        var notApplicable = typeof block.optional === 'function' ? block.optional(structuredClone(state)) : block.optional;
+        if (notApplicable !== undefined && notApplicable !== null && !Array.isArray(notApplicable)) throw new Error('verify.optional must be an array of quantity keys');
+        notApplicable = notApplicable || [];
         if (!Array.isArray(appValues) || !appValues.length) throw new Error('Adapter supplied no quantities to compare.');
         script = live.buildScript(state);
         fullScript = downloadScript(app, script, plots, state);
@@ -411,7 +426,7 @@
         if (lines.length !== 1) throw new Error('R must emit exactly one ALMJSON record');
         var ref = JSON.parse(lines[0].slice(8));
         var hook = testHookActive() ? global.__almVerifyPerturb : null;
-        var ev = evaluate(appValues, ref, comparison, { compare: global.AlmValidate.compare, hook: hook });
+        var ev = evaluate(appValues, ref, comparison, { compare: global.AlmValidate.compare, hook: hook, notApplicable: notApplicable });
         var rows = ev.rows, nPassed = ev.nPassed, passed = ev.passed;
         summary.textContent = summaryText(ev);
         summary.setAttribute('data-result', passed ? 'pass' : 'fail');
@@ -423,7 +438,7 @@
           return { id: p.id, native: p.native, raster: { width: p.raster.width, height: p.raster.height, dpi: p.raster.dpi }, pdfBytes: p.pdf.length, svg: !!p.svg, svgReason: p.svgReason };
         }) };
         global.AlmFeaturesState.verify = { app: app, revision: revision, inputsHash: inputsAtRun, stale: false, passed: passed, rows: rows, versions: r.versions, packages: live.packages || [],
-          n: ev.n, nPassed: nPassed, nNotComputed: ev.nNotComputed, nOptional: ev.nOptional, testHook: ev.testHook, perturbed: ev.perturbed, graphics: graphics };
+          n: ev.n, nPassed: nPassed, nNotComputed: ev.nNotComputed, nOptional: ev.nOptional, nNotApplicable: ev.nNotApplicable, testHook: ev.testHook, perturbed: ev.perturbed, graphics: graphics };
 
         var csv = comparisonCsv(rows);
         files.push({ name: app + '-verify-comparison.csv', string: csv });
@@ -485,7 +500,7 @@
           }
           var bi = global.AlmBuildInfo || {};
           var results = { app: app, paper: spec.paper || null, commit: bi.sha || 'unknown', version: bi.version || 'unknown', stateRevision: revision,
-            R: r.versions.R, webR: r.versions.webR, packages: r.versions, passed: passed, nPassed: nPassed, n: ev.n, nNotComputed: ev.nNotComputed, nOptional: ev.nOptional,
+            R: r.versions.R, webR: r.versions.webR, packages: r.versions, passed: passed, nPassed: nPassed, n: ev.n, nNotComputed: ev.nNotComputed, nOptional: ev.nOptional, nNotApplicable: ev.nNotApplicable,
             testHook: ev.testHook, perturbed: ev.perturbed, summary: summaryText(ev), files: manifest };
           // Staleness at download time (checkStale(true) ran just before this). The current revision is only
           // computed when the inputs are unchanged: computing it re-runs the app, which must not happen for

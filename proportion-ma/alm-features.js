@@ -3,6 +3,7 @@
  *   R objects left in the global environment by its buildScript (documented here for plot code):
  *     x, n      events and totals;  es  metafor::escalc(...) on the analysis scale (PLO / PFT / PR);
  *     f         metafor::rma(es$yi, es$vi, method=<PM|DL|FE>) fit;  back  back-transform to proportions.
+ *   optional(state): prediction-interval keys when k < 3 (not applicable; see shared/alm-verify-r.js).
  * share: the #src text plus every option control (#trans, #tau-est); set() validates, restores and re-runs.
  * entry/text blocks are added by their own lanes (AlmFeatures.register merges blocks).
  */
@@ -25,6 +26,14 @@
       adapter: function () { return AlmValidate.adapters['proportion-ma']; },
       rObjects: 'x, n, es (escalc), f (rma fit), back (back-transform)',
       inputs: '#src, #trans, #tau-est', // the app's analysis inputs (Verify in R stale check)
+      // Prediction-interval quantities do not exist for k < 3 (the app shows none; R gives NA): listed as
+      // "not applicable" only when both sides are missing. Keys are read from the adapter's appValues.
+      optional: function (state) {
+        if (state.rows.length >= 3) return [];
+        return AlmValidate.adapters['proportion-ma'].live.appValues(state)
+          .map(function (v) { return v.key; })
+          .filter(function (k) { return /^(pool)?pi(Lo|Hi)$/i.test(k); });
+      },
       plots: [{
         id: 'forest', title: 'Forest plot', r: forestCode, width_in: 8, height_in: 6,
         app: function () { return byId('forest'); },
