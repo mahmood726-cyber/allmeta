@@ -8,7 +8,43 @@
 (function (global) {
   'use strict';
   var APP = 'multilevel-ma';
+  var VARIANCE_RULE = 'multilevel-variance.1';
   function byId(id) { return document.getElementById(id); }
+  function clearProvenance() {
+    if (!global.AlmFeaturesState) return;
+    global.AlmFeaturesState.entryLog = [];
+    global.AlmFeaturesState.provenance = [];
+    delete global.AlmFeaturesState.entryInput;
+  }
+  function validateSource(source) {
+    // The shared replay registry has no variance-to-SE operation. Replay that
+    // app-local operation here; all other conversions go through shared replay.
+    try {
+      var conversions = source.conversions || [], local = conversions.filter(function (c) { return c.fn === 'multilevel.seFromVariance'; });
+      var missing = global.AlmEntry.provenance.validate(Object.assign({}, source, {
+        conversions: conversions.filter(function (c) { return c.fn !== 'multilevel.seFromVariance'; })
+      }));
+      if (local.some(function (c) {
+        var vi = c.args && c.args.vi, value = Math.sqrt(vi);
+        return c.rulesVersion !== VARIANCE_RULE || !Number.isFinite(vi) || vi <= 0 ||
+          !c.inputs || c.inputs.vi !== vi || c.field !== 'sei' || c.result !== value || c.output !== value ||
+          !source.values.some(function (v) { return v.field === 'vi' && v.value === vi; });
+      })) missing.push('conversion replay');
+      if (!source.choice || !String(source.choice.timepoint || '').trim()) missing.push('timepoint');
+      return missing;
+    } catch (e) { return ['invalid source record']; }
+  }
+  function currentProvenance() {
+    var state = global.AlmFeaturesState || {}, sources = state.provenance || [];
+    var input = byId('src').value;
+    if (!Array.isArray(sources) || sources.some(function (s) {
+      return !s || s.appliedInput !== input || validateSource(s).length;
+    }) || (state.entryInput !== undefined && state.entryInput !== input)) {
+      clearProvenance();
+      return [];
+    }
+    return sources;
+  }
   function identifier(s) {
     return typeof s === 'string' && s.trim() && !/[,\r\n]/.test(s) &&
       !Object.prototype.hasOwnProperty.call(Object.prototype, s.trim()) && s.trim() !== '__proto__';
@@ -29,10 +65,7 @@
     byId('src').value = records.map(function (r) {
       return [r.study.trim(), r.yi, Math.sqrt(r.vi), r.es_id.trim()].join(', ');
     }).join('\n');
-    if (global.AlmFeaturesState) {
-      global.AlmFeaturesState.entryLog = [];
-      global.AlmFeaturesState.provenance = [];
-    }
+    clearProvenance();
     byId('btn-run').click();
     return { ok: true, n: records.length };
   }
@@ -46,7 +79,9 @@
         /^(vi|variance|sampling variance)$/.test(h) ? 'sei' : null;
       if (!field) return;
       if (Object.keys(map).some(function (k) { return +k !== col && map[k] === field; })) {
-        extraFlags.push({ blocking: true, text: 'Supply only one uncertainty column (variance or SE).' });
+        extraFlags.push({ blocking: true, text: field === 'es_id' ?
+          'Supply only one effect ID column (es_id, effect id, label or outcome).' :
+          'Supply only one uncertainty column (variance or SE).' });
       }
       map[col] = field;
       questions = questions.filter(function (q) { return q.id !== 'column:' + col; });
@@ -57,7 +92,9 @@
         } else {
           work.rows[i][col] = String(Math.sqrt(token.value));
           extraSteps.push({ row: i, method: 'SE from variance', citation: 'Definition of sampling variance',
-            inputs: { vi: token.value }, text: 'Row ' + (i + 1) + ': SE = sqrt(vi); the page accepts SE, not variance.' });
+            inputs: { vi: token.value }, fn: 'multilevel.seFromVariance', args: { vi: token.value },
+            result: Math.sqrt(token.value), rulesVersion: VARIANCE_RULE,
+            text: 'Row ' + (i + 1) + ': SE = sqrt(vi); the page accepts SE, not variance.' });
         }
       });
     });
@@ -74,6 +111,11 @@
     out.steps = extraSteps.concat(out.steps);
     out.steps.push({ method: 'page input', citation: 'App input convention', inputs: {},
       text: 'Study and effect IDs are preserved; the page uses the supplied analysis scale without back-transformation. Repeated study IDs define clusters.' });
+    out.decimal = (answers && answers.decimal) || 'point';
+    out.sourceMapping = Object.assign({}, map);
+    (table.header || []).forEach(function (h, col) {
+      if (/^(vi|variance|sampling variance)$/i.test(h.trim().replace(/[_-]/g, ' '))) out.sourceMapping[col] = 'vi';
+    });
     return out;
   }
   // Anchor printed numeric tokens in the verbatim source, never in a normalised
@@ -82,9 +124,13 @@
     var core = global.AlmEntry, table = core.parseTable(text), cursor = 0;
     if (table.header) cursor = text.indexOf('\n') + 1;
     return table.rows.map(function (cells, row) {
-      var record = output.records[row], source = core.provenance.create({ pastedText: text });
+      var record = output.records[row], source = core.provenance.create({ pastedText: text, decimal: output.decimal || 'point' });
+      var steps = output.steps.filter(function (s) { return s.row === row; });
       source.choice = { study: record.study, outcome: record.es_id, timepoint: '' };
-      source.usedAs = 'Effect on the supplied analysis scale; SE = sqrt(vi); study cluster ' + record.study;
+      var uncertainty = steps.some(function (s) { return s.method === 'SE from variance'; }) ? 'SE = sqrt(vi) from supplied sampling variance' :
+        steps.some(function (s) { return s.method === 'SE from CI'; }) ? 'SE derived from the confidence interval' :
+        steps.some(function (s) { return s.method === 'SE from p'; }) ? 'SE derived from the exact p-value' : 'supplied SE';
+      source.usedAs = 'Effect on the supplied analysis scale; ' + uncertainty + '; study cluster ' + record.study;
       source.flags = output.flags.filter(function (f) { return f.row === row; });
       cells.forEach(function (cell, col) {
         var at = text.indexOf(cell, cursor);
@@ -92,23 +138,25 @@
         cursor = at + cell.length;
         var h = (table.header || [])[col] || '';
         if (/^(study|study id|study name|es[_ -]id|effect id|label|outcome)$/i.test(h)) return;
-        var token = core.parseCell(cell, { header: h, decimal: 'point' });
+        var token = core.parseCell(cell, { header: h, decimal: source.decimal });
         Object.keys(token.spans || {}).forEach(function (key) {
           var span = token.spans[key].map(function (n) { return at + n; });
-          source.values.push({ field: key === 'value' ? h : key, value: token[key],
+          var field = key === 'value' ? output.sourceMapping[col] : key === 'est' ? 'yi' : key;
+          source.values.push({ field: field, value: token[key],
             span: span, text: text.slice(span[0], span[1]), selector: core.selectors(text, span) });
         });
       });
-      source.conversions = output.steps.filter(function (s) { return s.row === row; }).map(function (s) {
-        return { field: 'SE', formula: s.method, method: s.method, citation: s.citation, inputs: s.inputs,
-          output: Math.sqrt(record.vi) };
+      source.conversions = steps.filter(function (s) { return !!s.fn; }).map(function (s) {
+        return { field: s.fn === 'estFromCI' ? 'yi' : 'sei', formula: s.method, method: s.method,
+          citation: s.citation, inputs: s.inputs, output: s.result,
+          fn: s.fn, args: s.args, result: s.result, rulesVersion: s.rulesVersion };
       });
       return source;
     });
   }
-  function convert(text) {
+  function convert(text, answers) {
     var table = global.AlmEntry.parseTable(text);
-    return convertTable(table, global.AlmEntry.detect(table, 'generic'), { decimal: 'point' });
+    return convertTable(table, global.AlmEntry.detect(table, 'generic'), Object.assign({ decimal: 'point' }, answers));
   }
   function mountEntry(panel) {
     function node(tag, text, parent) {
@@ -117,11 +165,18 @@
     node('p', 'Paste a table with study, es_id, yi and vi, or replace vi with SE or supply an estimate and confidence interval. Use effects already on the intended analysis scale. Each effect must have an ID. Confirm each row and its source before applying it.');
     var label = node('label', 'Multilevel data table'), paste = node('textarea');
     paste.id = 'ml-entry-paste'; label.htmlFor = paste.id; paste.rows = 7;
+    var decimalLabel = node('label', 'Decimal mark for this paste'), decimal = node('select');
+    decimal.id = 'ml-entry-decimal'; decimalLabel.htmlFor = decimal.id;
+    [['point', 'Decimal point (0.35)'], ['comma', 'Decimal comma (0,35)']].forEach(function (choice) {
+      var option = node('option', choice[1], decimal); option.value = choice[0];
+    });
+    decimal.value = 'point';
     var preview = node('button', 'Preview and convert'); preview.type = 'button';
-    var status = node('p'); status.setAttribute('role', 'status');
+    var status = node('p'); status.id = 'ml-entry-status'; status.setAttribute('role', 'status');
     var rows = node('div'), heading = node('h3', 'Conversion log'), log = node('ul');
     heading.id = 'ml-entry-log'; log.setAttribute('aria-labelledby', heading.id);
     var use = node('button', 'Use these rows'); use.type = 'button'; use.disabled = true;
+    use.setAttribute('aria-describedby', status.id);
     function download(name, bytes, type) {
       var url = URL.createObjectURL(new Blob([bytes], { type: type })), a = node('a');
       a.href = url; a.download = name; a.click(); a.remove();
@@ -130,29 +185,38 @@
     var csv = node('button', 'Export source records CSV'), docx = node('button', 'Export source records DOCX');
     csv.type = docx.type = 'button'; csv.disabled = docx.disabled = true;
     var output = null, sources = [];
-    function missing(s) {
-      // SE/variance definitions are recorded explicitly; shared replay currently
-      // has no variance-to-SE operation. Validate source anchors separately.
-      return global.AlmEntry.provenance.validate(Object.assign({}, s, { conversions: [] }));
-    }
     function gate() {
-      use.disabled = !output || output.flags.some(function (f) { return f.blocking; }) ||
-        sources.some(function (s) { return missing(s).length || !s.choice.timepoint.trim(); });
-      csv.disabled = docx.disabled = !sources.length;
+      var missing = sources.map(validateSource), blocking = output ? output.flags.filter(function (f) { return f.blocking; }).length : 0;
+      use.disabled = !output || !sources.length || blocking > 0 || missing.some(function (m) { return m.length; });
+      csv.disabled = docx.disabled = use.disabled;
+      if (output) {
+        var requirements = Array.from(new Set([].concat.apply([], missing)));
+        status.textContent = sources.filter(function (s) { return s.confirmed; }).length + ' of ' + sources.length +
+          ' rows confirmed; ' + blocking + ' blocking issues.' +
+          (requirements.length ? ' Required: ' + requirements.join(', ') + '.' : ' All source requirements complete.');
+      }
+      return !use.disabled;
     }
-    paste.addEventListener('input', function () { output = null; sources = []; use.disabled = csv.disabled = docx.disabled = true; rows.replaceChildren(); log.replaceChildren(); });
+    function invalidate() {
+      output = null; sources = []; use.disabled = csv.disabled = docx.disabled = true;
+      rows.replaceChildren(); log.replaceChildren(); status.textContent = 'Preview and confirm this paste before using the rows.';
+    }
+    paste.addEventListener('input', invalidate); decimal.addEventListener('change', invalidate);
     preview.addEventListener('click', function () {
-      output = convert(paste.value); sources = sourceRecords(paste.value, output); rows.replaceChildren(); log.replaceChildren();
+      output = convert(paste.value, { decimal: decimal.value }); sources = sourceRecords(paste.value, output); rows.replaceChildren(); log.replaceChildren();
       output.steps.concat(output.flags).forEach(function (s) { node('li', (s.blocking ? 'Block: ' : '') + s.text, log); });
       output.records.forEach(function (r, i) {
         var source = sources[i];
         var card = node('fieldset', null, rows); node('legend', String(r.study) + ' / ' + String(r.es_id), card);
-        node('p', 'Effect = ' + r.yi + '; variance = ' + r.vi + '; page SE = ' + Math.sqrt(r.vi), card);
+        function fmt(n, digits) { return Number.isFinite(n) ? n.toFixed(digits) : 'unavailable'; }
+        node('p', 'Effect = ' + fmt(r.yi, 3) + '; variance = ' + fmt(r.vi, 4) + '; page SE = ' + fmt(Math.sqrt(r.vi), 3), card);
+        var sentence = node('p', global.AlmEntry.provenance.sentence(source), card);
         var quoted = node('details', null, card); node('summary', 'Verbatim source and extracted values', quoted);
         var pre = node('pre', null, quoted), end = 0;
         source.values.slice().sort(function (a, b) { return a.span[0] - b.span[0]; }).forEach(function (v) {
           node('span', source.pastedText.slice(end, v.span[0]), pre);
-          var mark = node('mark', v.text, pre); mark.title = v.field; end = v.span[1];
+          var mark = node('mark', v.text, pre); mark.title = v.field; mark.setAttribute('role', 'note');
+          mark.setAttribute('tabindex', '0'); mark.setAttribute('aria-label', v.field + ': ' + v.text); end = v.span[1];
         });
         node('span', source.pastedText.slice(end), pre);
         source.flags.filter(function (f) { return f.blocking; }).forEach(function (f) { node('p', 'Block: ' + f.text, card); });
@@ -162,6 +226,7 @@
           var input = node('input', null, lab); input.type = 'text'; input.required = true;
           input.addEventListener('input', function () {
             if (key === 'timepoint') source.choice.timepoint = input.value; else source[key] = input.value;
+            sentence.textContent = global.AlmEntry.provenance.sentence(source);
             source.confirmed = false; source.confirmedAt = null; check.checked = false; gate();
           });
         });
@@ -171,28 +236,32 @@
           source.confirmed = check.checked; source.confirmedAt = check.checked ? new Date().toISOString() : null; gate();
         });
       });
-      status.textContent = output.records.length + ' rows; ' + output.flags.filter(function (f) { return f.blocking; }).length + ' blocking issues.';
       gate();
     });
     use.addEventListener('click', function () {
-      if (use.disabled) return;
+      if (!gate()) return;
       try {
         apply(output.records);
         global.AlmFeaturesState.entryLog = output.steps.slice();
+        sources.forEach(function (s) { s.appliedInput = byId('src').value; });
         global.AlmFeaturesState.provenance = JSON.parse(JSON.stringify(sources));
+        global.AlmFeaturesState.entryInput = byId('src').value;
         status.textContent = 'Applied ' + output.records.length + ' rows.';
       } catch (e) { status.textContent = e.message; use.disabled = true; }
     });
     csv.addEventListener('click', function () {
+      if (!gate()) return;
       download(APP + '-sources.csv', global.AlmEntry.provenance.toCSV(sources), 'text/csv;charset=utf-8');
     });
     docx.addEventListener('click', function () {
+      if (!gate()) return;
       download(APP + '-sources.docx', global.AlmZip.docx({ title: 'Multilevel source records',
         paragraphs: global.AlmEntry.provenance.toDocxParagraphs(sources).map(function (text) { return { text: text }; }) }), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     });
   }
 
   function results() {
+    var sources = currentProvenance();
     var m = global._almLastMlma && global._almLastMlma(), reml = global.__almReml && global.__almReml();
     if (!m || !reml || (byId('analysis-stale') && !byId('analysis-stale').hidden)) return null;
     var r = Object.assign({}, m, {
@@ -200,9 +269,9 @@
       remlBetween: reml.sigma2Between, remlWithin: reml.sigma2Within, logLik: reml.logLik,
       studyShare: m.I2_study * 100, withinShare: m.I2_within * 100, samplingShare: m.I2_sampling * 100,
       totalShare: (m.I2_study + m.I2_within + m.I2_sampling) * 100,
-      df: m.J - 1, verified: !!(global.AlmFeatures && global.AlmFeatures.verifiedCurrent(APP))
+      df: Math.max(1, m.J - 1), verified: !!(global.AlmFeatures && global.AlmFeatures.verifiedCurrent(APP))
     });
-    var state = global.AlmFeaturesState || {}, sources = state.provenance || [], steps = state.entryLog || [];
+    var state = global.AlmFeaturesState || {}, steps = state.entryLog || [];
     r.entryRows = sources.length;
     r.entrySources = new Set(sources.map(function (s) { return s.reference; })).size;
     r.entryCI = steps.filter(function (s) { return s.method === 'SE from CI' || /SE estimated from CI/.test(s.text || ''); }).length;
@@ -217,7 +286,7 @@
       var tr = table && table.rows[row], cell = tr && tr.cells[col];
       return cell ? cell.textContent.match(/[-+]?\d+(?:\.\d+)?%?/g) || [] : [];
     }
-    function put(key, text, digits, kind) { if (text !== undefined) out[key] = { text: text, fmt: { kind: kind || 'num', digits: digits } }; }
+    function put(key, text, digits, kind) { out[key] = { text: text === undefined ? '' : text, fmt: { kind: kind || 'num', digits: digits } }; }
     put('mu', values(tables[0], 0, 1)[0], 3); put('seMu', values(tables[0], 0, 2)[0], 3);
     [['ci_lb_z', 'ci_ub_z'], ['ci_lb_hk', 'ci_ub_hk']].forEach(function (keys, i) {
       var v = values(tables[0], i + 1, 1); keys.forEach(function (k, j) { put(k, v[j], 3); });
@@ -285,8 +354,9 @@
   var textSpec = { app: APP, verifyPackage: 'metafor', results: results, dom: dom, templates: templates };
   function axis(edge) { return document.querySelector('#alm-axis-mount [data-edge="' + edge + '"]'); }
   function shareGet() {
+    currentProvenance();
     return { src: byId('src').value, axis: { min: axis('min').value, max: axis('max').value, log: axis('log').checked },
-      entryLog: global.AlmFeaturesState.entryLog.slice() };
+      entryInput: byId('src').value, entryLog: global.AlmFeaturesState.entryLog.slice() };
   }
   function shareSet(s) {
     if (!s || typeof s.src !== 'string' || s.src.length > 200000) throw new Error('Data text missing or too long.');
@@ -298,17 +368,19 @@
     if (parsed.length !== lines.length || parsed.length < 3 || parsed.some(function (r) { return !identifier(r.study); })) throw new Error('Invalid effect rows.');
     if (s.entryLog !== undefined && !Array.isArray(s.entryLog)) throw new Error('Invalid conversion log.');
     // Validate everything before changing any controls.
+    clearProvenance();
     byId('src').value = s.src;
     ['min', 'max', 'log'].forEach(function (k) {
       if (k === 'log') axis(k).checked = a[k]; else axis(k).value = a[k];
     });
     ['min', 'max', 'log'].forEach(function (k) { axis(k).dispatchEvent(new Event('change', { bubbles: true })); });
-    global.AlmFeaturesState.entryLog = s.entryLog || [];
+    global.AlmFeaturesState.entryLog = s.entryInput === s.src ? (s.entryLog || []) : [];
+    global.AlmFeaturesState.entryInput = s.src;
     byId('btn-run').click();
   }
   var spec = {
     paper: 7, title: 'Multilevel meta-analysis',
-    entry: { schema: 'multilevel', extras: ['es_id'], apply: apply, convert: convert, convertTable: convertTable, sourceRecords: sourceRecords },
+    entry: { schema: 'generic', extras: ['es_id'], apply: apply, convert: convert, convertTable: convertTable, sourceRecords: sourceRecords, validateSource: validateSource },
     text: textSpec,
     verify: {
       adapter: function () { return (global.AlmLiveAdapters && global.AlmLiveAdapters[APP]) || global.AlmMultilevelValidationAdapter; },
@@ -324,12 +396,7 @@
   global.AlmTextSpecs = global.AlmTextSpecs || {};
   global.AlmTextSpecs[APP] = textSpec;
   if (typeof document !== 'undefined') {
-    byId('src').addEventListener('input', function () {
-      if (global.AlmFeaturesState) {
-        global.AlmFeaturesState.entryLog = [];
-        global.AlmFeaturesState.provenance = [];
-      }
-    });
+    byId('src').addEventListener('input', clearProvenance);
   }
   if (global.AlmFeatures) {
     global.AlmFeatures.register(APP, spec);
