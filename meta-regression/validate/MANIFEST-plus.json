@@ -1,0 +1,44 @@
+{
+  "schema": "meta-regression-plus-v1",
+  "configurations": 194,
+  "numericChecks": 52573,
+  "checks": 52767,
+  "versions": {
+    "metafor": "5.2-1",
+    "metadat": "1.6.0",
+    "jsonlite": "2.0.0"
+  },
+  "documentedDivergences": 3,
+  "tolerances": {
+    "closed": 1e-9,
+    "iterative": 0.000001,
+    "pvalue": 1e-9
+  },
+  "control": {
+    "threshold": "1e-12 * max(1, var(yi))",
+    "stepadj": 0.5,
+    "maxiter": 10000
+  },
+  "files": [
+    {
+      "path": "validate/plus/corpus.json",
+      "bytes": 349061,
+      "sha256": "27e5ba13f2e544300cfb8ed01635864f09838ace3645c87b87b083a2f7f293ae"
+    },
+    {
+      "path": "validate/plus/reference.json",
+      "bytes": 971826,
+      "sha256": "1afccbdba803ba655c48ded8631a2137ba6c3bbb7c2a1f2aae315959645a8c2c"
+    },
+    {
+      "path": "validate/plus/candidates.json",
+      "bytes": 152996,
+      "sha256": "736a2e4b9a65ee7352a7b8f96776c07d1f88c41de743d6ac72726a5b32a462f8"
+    },
+    {
+      "path": "validate/plus/divergences.json",
+      "bytes": 27362,
+      "sha256": "a1f52648e03c224cbba2ed47270abe68cc356141f334d84156170e151da45375"
+    }
+  ]
+}

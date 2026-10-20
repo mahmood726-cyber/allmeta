@@ -1,0 +1,14 @@
+#alm-plus { margin:2rem auto; padding:1.5rem; max-width:1100px; border:1px solid var(--border); border-radius:8px; background:var(--panel); }
+#alm-plus textarea { display:block; width:100%; min-height:14rem; font:14px monospace; margin:.5rem 0; }
+#alm-plus label { display:block; margin:.7rem 0; }
+#alm-plus table { border-collapse:collapse; width:100%; font-size:.9rem; }
+#alm-plus th, #alm-plus td { padding:.4rem; border-bottom:1px solid var(--border); text-align:left; }
+#alm-plus dl { display:grid; grid-template-columns:minmax(9rem,18rem) 1fr; gap:.25rem 1rem; }
+#alm-plus dd { margin:0; overflow-wrap:anywhere; }
+#plus-results { overflow-x:auto; }
+#plus-plot { width:100%; max-width:900px; margin:1rem auto; }
+#alm-plus button { margin:.3rem .5rem .3rem 0; }
+#alm-plus .plus-hint { margin:.2rem 0; font-size:.9rem; color:var(--muted, inherit); }
+#plus-status.plus-refused { font-weight:600; color:#a4161a; border-left:4px solid #a4161a; padding-left:.5rem; }
+@media (prefers-color-scheme: dark) { #plus-status.plus-refused { color:#ff8a80; border-left-color:#ff8a80; } }
+@media (max-width: 600px) { #alm-plus { padding:1rem; margin:1rem 0; } #alm-plus textarea { font-size:13px; } #alm-plus dl { grid-template-columns:1fr; gap:0; } #alm-plus dt { font-weight:600; margin-top:.4rem; } #alm-plus dd { overflow-wrap:normal; } }
