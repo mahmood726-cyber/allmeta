@@ -173,8 +173,9 @@
         </label>
       </fieldset>
 
-      <!-- axis-controls mount: ROC [0,1]×[0,1] domain; override deferred -->
-      <div id="alm-axis-mount" style="margin-bottom:0.5rem;"></div>
+      <!-- ROC axes use the fixed unit square. -->
+      <div id="alm-axis-mount" aria-describedby="roc-axis-note" style="margin-bottom:0.5rem;"></div>
+      <p id="roc-axis-note">The ROC plot uses the fixed [0,1] domain on both axes. Axis controls are disabled.</p>
 
       <div id="stats-wrap"></div>
       <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
@@ -187,7 +188,7 @@
 
       <div class="actions">
         <div id="alm-plot-mount"></div>
-        <button type="button" id="btn-json">Download JSON</button>
+        <button type="button" id="btn-json">Save input session (JSON)</button>
         <button type="button" id="btn-import">Import JSON</button>
         <button type="button" id="btn-example">Load example</button>
         <button type="button" id="btn-reset">Reset</button>
@@ -221,6 +222,7 @@
     const warnEl = document.getElementById("warn-banner");
     const svgHost = document.getElementById("svg-host");
     let _lastBivar = null, _lastDeeks = null, _lastMetareg = null;
+    let _validResultState = null;
     window.__almBivariate = function () { return _lastBivar; };
     window.__almMetaRegression = function () { return _lastMetareg; };
     window.__almDeeks = function () { return _lastDeeks; };
@@ -322,6 +324,14 @@
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
 
+    const COUNT_FIELDS = ['TP', 'FP', 'FN', 'TN'];
+    function parseCount(value) {
+      const token = String(value == null ? '' : value).trim();
+      if (!/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(token)) return NaN;
+      const count = Number(token);
+      return Number.isSafeInteger(count) && count >= 0 ? count : NaN;
+    }
+
     // Rows: label, TP, FP, FN, TN [, covariate]. Labels may contain commas (all leading fields).
     function parseStudies(text, covMode) {
       const studies = [], warnings = [];
@@ -333,7 +343,8 @@
         if (!raw || raw.startsWith('#')) continue;
         const parts = raw.split(/\s*[,\t]\s*/);
         if (parts.length < nc + 1) {
-          warnings.push(`Line ${i + 1}: need label and ${nc} data columns`);
+          const missing = COUNT_FIELDS.concat(covMode === 'last' ? ['covariate'] : []).slice(parts.length - 1);
+          warnings.push(`Line ${i + 1} (${parts[0] || 'unnamed study'}): missing ${missing.join(', ')}; need label and ${nc} data columns`);
           firstRecord = false;
           continue;
         }
@@ -345,21 +356,24 @@
           (covMode !== 'last' || /^(cov|covariate)$/i.test(cov));
         firstRecord = false;
         if (isHeader) continue;
-        const counts = numericFields.map(v => /^\d+$/.test(v.trim()) ? Number(v.trim()) : NaN);
-        if (!counts.every(Number.isSafeInteger) || counts.some(v => v < 0)) {
-          warnings.push(`Line ${i + 1}: TP, FP, FN and TN must be non-negative whole-person counts`);
+        const label = parts.slice(0, offset).join(', ').trim();
+        const rowName = `Line ${i + 1} (${label || 'unnamed study'})`;
+        const counts = numericFields.map(parseCount);
+        if (!counts.every(Number.isSafeInteger)) {
+          counts.forEach((v, j) => {
+            if (!Number.isSafeInteger(v)) warnings.push(`${rowName}: ${COUNT_FIELDS[j]} must be a non-negative whole-person count (safe integer)`);
+          });
           continue;
         }
         const [tp, fp, fn, tn] = counts;
         if (![tp + fn, fp + tn].every(v => Number.isSafeInteger(v) && v > 0)) {
-          warnings.push(`Line ${i + 1}: both diseased and non-diseased denominators must be positive`);
+          warnings.push(`${rowName}: TP + FN and FP + TN must both be positive safe-integer denominators`);
           continue;
         }
         if (covMode === 'last' && !String(cov).trim()) {
-          warnings.push(`Line ${i + 1}: covariate value is required`);
+          warnings.push(`${rowName}: covariate value is required`);
           continue;
         }
-        const label = parts.slice(0, offset).join(', ').trim();
         if (!label) {
           warnings.push(`Line ${i + 1}: a study label is required`);
           continue;
@@ -558,6 +572,8 @@
       const state = readState();
       const a = analyse(state);
       const studies = a.studies, b = a.bivar;
+      _validResultState = b && (state.cov !== 'last' || a.metareg) ? JSON.stringify(state) : null;
+      document.getElementById('analysis-status').textContent = 'Analysis updated';
       const parts = [];
       parts.push(statCard("k", String(studies.length)));
       if (b) {
@@ -583,7 +599,7 @@
       let tables = "";
       if (b && b.hsroc) tables += hsrocHtml(b);
       if (a.metareg) tables += coefTableHtml(a.metareg);
-      statsWrap.innerHTML = "<div class=\"stats\">" + parts.join("") + "</div>" + tables;
+      statsWrap.innerHTML = studies.length ? "<div class=\"stats\">" + parts.join("") + "</div>" + tables : "";
       const fh = document.getElementById("fagan-host"), dh = document.getElementById("deeks-host");
       if (fh) fh.innerHTML = b ? faganSvg(b) : "";
       if (dh) dh.innerHTML = a.deeks ? deeksSvg(a.deeks) : "";
@@ -596,7 +612,7 @@
       if (b && b.method === "fixed") extras.push("Fixed-effect model: no between-study variance, so no SROC curve and the prediction region equals the confidence region.");
       if (b && b.converged === false) extras.push("The " + METHOD_LABEL[b.method] + " estimation did not converge within 100 iterations; interpret with caution.");
       if (b && b.negeigen) extras.push("The " + METHOD_LABEL[b.method] + " estimate of the between-study covariance was not positive definite and was truncated (as mada does).");
-      if (studies.length && studies.length < 4) extras.push("k = " + studies.length + " — the bivariate model needs at least 4 studies.");
+      if (studies.length < 4) extras.push("The bivariate model needs at least 4 studies with valid TP, FP, FN and TN counts (currently " + studies.length + ")." + (studies.length ? " Any displayed means and plots describe the entered studies; no bivariate fit is available." : ""));
       else if (studies.length && studies.length < 10) extras.push("k = " + studies.length + " — with fewer than about 10 studies the between-study covariance, and hence the prediction region, is imprecise.");
       const all = a.parsed.warnings.concat(extras);
       if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
@@ -604,7 +620,7 @@
 
       const svg = studies.length
         ? buildSvg(state, studies, a.moses ? { alpha: a.moses.A1, beta: a.moses.B1 } : null, b)
-        : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Enter at least one study.</text></svg>";
+        : "<p>Enter at least 4 studies with valid TP, FP, FN and TN counts for bivariate analysis.</p>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
       // Update URL state after every render so link stays shareable.
@@ -634,18 +650,31 @@
       setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
     }
     function slugify(t,f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
+    function requireValidResult() {
+      if (_validResultState !== null && _validResultState === JSON.stringify(readState())) return true;
+      const status = document.getElementById('analysis-status');
+      status.textContent = 'No valid results to export';
+      status.hidden = false;
+      return false;
+    }
+    function guardExports(event) {
+      const button = event.target.closest('button');
+      if (!button || (event.currentTarget.id === 'alm-plot-mount' && !button.textContent.startsWith('Download'))) return;
+      if (!requireValidResult()) { event.preventDefault(); event.stopImmediatePropagation(); }
+    }
     function currentSvg() {
+      if (!requireValidResult()) return null;
       const state = readState();
       const a = analyse(state);
       if (!a.studies.length) return null;
       return { state, svg: buildSvg(state, a.studies, a.moses ? { alpha: a.moses.A1, beta: a.moses.B1 } : null, a.bivar) };
     }
     function onDownloadSvg() {
-      const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");
+      const r = currentSvg(); if (!r) return;
       downloadBlob(new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"}), "sroc-"+slugify(r.state.title,"plot")+".svg");
     }
     function onDownloadPng() {
-      const r = currentSvg(); if (!r) return Toast.show("No studies parsed.", "warn");
+      const r = currentSvg(); if (!r) return;
       const W=620,H=620,scale=2;
       const img = new Image();
       const blob = new Blob([r.svg],{type:"image/svg+xml;charset=utf-8"});
@@ -688,12 +717,14 @@
     }
     function attach() {
       document.getElementById("btn-run").addEventListener("click", render);
+      document.getElementById('alm-export-mount').addEventListener('click', guardExports, true);
+      document.getElementById('alm-plot-mount').addEventListener('click', guardExports, true);
       window.alm.plotExport({
         target: "#alm-plot-mount", basename: "dta-sroc",
         plots: [
-          { id: "sroc", name: "SROC plot", getSvg: function () { return document.querySelector("#svg-host svg"); } },
-          { id: "fagan", name: "Fagan plot", getSvg: function () { return document.querySelector("#fagan-host svg"); } },
-          { id: "deeks", name: "Deeks plot", getSvg: function () { return document.querySelector("#deeks-host svg"); } }
+          { id: "sroc", name: "SROC plot", getSvg: function () { return requireValidResult() ? document.querySelector("#svg-host svg") : null; } },
+          { id: "fagan", name: "Fagan plot", getSvg: function () { return requireValidResult() ? document.querySelector("#fagan-host svg") : null; } },
+          { id: "deeks", name: "Deeks plot", getSvg: function () { return requireValidResult() ? document.querySelector("#deeks-host svg") : null; } }
         ]
       });
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) { el.addEventListener("input", render); if (el.tagName === "SELECT") el.addEventListener("change", render); } }
@@ -738,6 +769,10 @@
         { name: 'FN',    required: true,  type: 'float',  example: '20' },
         { name: 'TN',    required: true,  type: 'float',  example: '88' },
       ],
+      // Keep raw tokens until app validation can name the study and count field.
+      parse: function (text, columns) {
+        return window.alm.csvUpload.parse(text, columns.map(c => Object.assign({}, c, { type: 'string' })));
+      },
       onParse: function (result) {
         // Reject the whole import: a partial study set must never be pooled.
         // The snapshot supports Undo while stale pooled estimates are cleared.
@@ -762,24 +797,28 @@
             throw new Error('CSV upload has no covariate field; turn off meta-regression or enter labelled study covariates manually');
           if (!Array.isArray(result.rows) || !result.rows.length)
             throw new Error('No study rows found');
-          const labels = [];
+          const labels = [], countRows = [];
           const lines = result.rows.map(function (row, i) {
             const label = hasStudy ? String(row.study == null ? '' : row.study) : 'Study ' + (i + 1);
             if (!label.trim() || label.trim().startsWith('#') || /[\r\n\t]/.test(label))
               throw new Error('Row ' + (i + 1) + ': study labels must be non-comment single-line text');
-            const cells = cols.map(key => row[key]);
-            if (!cells.every(Number.isSafeInteger) || cells.some(x => x < 0) ||
-                ![cells[0] + cells[2], cells[1] + cells[3]].every(x => Number.isSafeInteger(x) && x > 0))
-              throw new Error('Row ' + (i + 1) + ': non-negative whole-person counts and positive denominators required');
+            const cells = cols.map(key => {
+              const count = parseCount(row[key]);
+              if (!Number.isSafeInteger(count)) throw new Error('Row ' + (i + 1) + ' (' + label + '): ' + key + ' must be a non-negative whole-person count (safe integer)');
+              return count;
+            });
+            if (![cells[0] + cells[2], cells[1] + cells[3]].every(x => Number.isSafeInteger(x) && x > 0))
+              throw new Error('Row ' + (i + 1) + ' (' + label + '): TP + FN and FP + TN must both be positive safe-integer denominators');
             labels.push(label);
+            countRows.push(cells);
             return [label].concat(cells).join(', ');
           });
           const proposed = lines.join('\n');
           const check = parseStudies(proposed, '');
           if (check.warnings.length || check.studies.length !== result.rows.length ||
               check.studies.some((s, i) => s.label !== labels[i] ||
-                s.tp !== result.rows[i].TP || s.fp !== result.rows[i].FP ||
-                s.fn !== result.rows[i].FN || s.tn !== result.rows[i].TN))
+                s.tp !== countRows[i][0] || s.fp !== countRows[i][1] ||
+                s.fn !== countRows[i][2] || s.tn !== countRows[i][3]))
             throw new Error('Study labels and counts could not be round-tripped losslessly');
           document.getElementById('f-data').value = proposed;
           render();
@@ -787,27 +826,25 @@
       },
     });
 
-    // Axis controls: ROC space is [0,1]×[0,1] fixed — override deferred.
-    // Renders controls for user reference; buildSvg() uses fixed unit square domain.
+    // Keep the axis ranges visible for reference, with every control disabled.
     window.alm.axisControls({
       target: '#alm-axis-mount',
       axes: [
         { key: 'x', label: '1 − Sp axis (FPR)', range: [0, 1], log: false },
         { key: 'y', label: 'Se axis (Sensitivity)', range: [0, 1], log: false },
       ],
-      onChange: function (state) {
-        window.__almAxis = state;
-        // NOTE: ROC domain is fixed [0,1]×[0,1] which is scientifically correct.
-        // Axis-controls renders the controls but does not yet drive buildSvg() domain.
-        // Deferred — same pattern as funnel-plot / pet-peese Cycle 2.2.
-      },
     });
+    document.querySelectorAll('#alm-axis-mount input, #alm-axis-mount select, #alm-axis-mount button').forEach(el => { el.disabled = true; });
 
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'dta-sroc-results',
-      getResults: function () { return window.__almResults(); },
+      getResults: function () {
+        if (!requireValidResult()) throw new Error('No valid results to export');
+        return window.__almResults();
+      },
     });
+    document.querySelector('#alm-export-mount [data-action="json"]').textContent = 'Export results (JSON)';
 
     window.alm.urlState({ version: 1 });
     var restored = window.alm.urlState.read();
