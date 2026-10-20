@@ -1,0 +1,77 @@
+{
+  "app": "multivariate-ma",
+  "script": "# P18 primary oracle: mvmeta REML, unstructured between-study covariance.\n# jsonlite is shipped in the same-origin webR library image, not its tarball\n# manifest. Mount that existing image only in webR; desktop R uses its library.\nif (grepl('emscripten', R.version$os) && !requireNamespace('jsonlite', quietly=TRUE)) {\n  webr::mount('/tmp/alm-bundled-library', NULL)\n  .libPaths(c(.libPaths(), '/tmp/alm-bundled-library'))\n}\nstopifnot(requireNamespace('jsonlite', quietly=TRUE))\ncat('SERIALIZER jsonlite', as.character(utils::packageVersion('jsonlite')), '\\n')\nd <- matrix(c(0.47,0.0075,-0.32,0.0077,0.003,0.2,0.0057,-0.6,0.0008,0.0009,0.4,0.0021,-0.12,0.0014,0.0007,0.26,0.0029,-0.31,0.0015,0.0009,0.56,0.0148,-0.39,0.0304,0.0072), ncol=5, byrow=TRUE)\nY <- d[, c(1,3), drop=FALSE]; k <- nrow(Y)\nS <- lapply(seq_len(k), function(i) matrix(c(d[i,2],d[i,5],d[i,5],d[i,4]),2,2))\nstopifnot(k >= 2, all(vapply(S, function(x) min(eigen(x, symmetric=TRUE, only.values=TRUE)$values)>0, TRUE)))\n# Independent starts and optimizer controls from P18 bench/reference.R:16-23.\nstart <- diag(pmax(apply(Y,2,var)-colMeans(t(vapply(S,diag,numeric(2)))),1e-4))\nfits <- list()\nfor (g in list(NULL, start, start*.1, start*10)) {\n  candidate <- tryCatch(mvmeta::mvmeta(Y~1, S=S, method='reml', bscov='unstr',\n    control=list(maxiter=10000,reltol=1e-13,initPsi=g,optim=list(maxit=10000,reltol=1e-13))), error=function(e) NULL)\n  if (!is.null(candidate) && isTRUE(candidate$converged)) fits[[length(fits)+1L]] <- candidate\n}\nif (!length(fits)) stop('mvmeta did not converge')\nf <- fits[[which.max(vapply(fits, function(x) as.numeric(logLik(x)), 0))]]\nmu <- as.numeric(coef(f)); CV <- vcov(f); G <- f$Psi\n# mvmeta omits metafor's +.5 log|X'X| normalization: add log(k).\nll <- as.numeric(logLik(f)) + log(k)\nXlist <- rep(list(diag(2)),k); ylist <- lapply(seq_len(k),function(i)Y[i,])\nnalist <- rep(list(c(FALSE,FALSE)),k)\nreml_at <- function(g) get('remlprof.fn',asNamespace('mvmeta'))(\n  numeric(),Xlist,ylist,S,nalist,2,k,1,2*k,'fixed',list(Psifix=g))\n# P18 boundary adjudication uses the installed package GLS and likelihood.\nzero <- matrix(0,2,2); f0 <- mvmeta::mvmeta(Y~1,S=S,method='fixed')\nmu0 <- as.numeric(coef(f0)); C0 <- vcov(f0); W <- lapply(S,solve)\nscore <- Reduce('+',lapply(seq_len(k),function(i) {\n  w<-W[[i]]; wr<-w%*%(Y[i,]-mu0); w-w%*%C0%*%w-tcrossprod(wr)\n}))\nboundary <- min(eigen(score,symmetric=TRUE)$values)>=0 &&\n  reml_at(zero)>=as.numeric(logLik(f))-1e-12*max(1,abs(as.numeric(logLik(f))))\nif (boundary) G <- zero\nif (k==2) {\n  delta <- Y[1,]-Y[2,]\n  q <- as.numeric(crossprod(delta,solve(S[[1]]+S[[2]],delta)))\n  G <- if(q>1) .5*(1-1/q)*tcrossprod(delta) else zero\n}\nif (boundary || k==2) {\n  f <- mvmeta::mvmeta(Y~1,S=lapply(S,function(x)x+G),method='fixed')\n  mu <- as.numeric(coef(f)); CV <- vcov(f); ll <- reml_at(G)+log(k)\n}\nse <- sqrt(diag(CV))\nout <- list(k=k,mu1=mu[1],mu2=mu[2],se1=se[1],se2=se[2],\n  variance1=G[1,1],variance2=G[2,2],covariance=G[1,2],\n  rho=if(all(diag(G)>0)) G[1,2]/sqrt(prod(diag(G))) else NA_real_,logLik=ll)\ncat('ALMJSON:',jsonlite::toJSON(out,digits=NA,auto_unbox=TRUE,na='null'),'\\n',sep='')\n",
+  "packages": [
+    "mvmeta"
+  ],
+  "appValues": [
+    {
+      "key": "k",
+      "label": "Number of studies",
+      "value": 5
+    },
+    {
+      "key": "mu1",
+      "label": "PD pooled estimate",
+      "value": 0.35378159826490024
+    },
+    {
+      "key": "mu2",
+      "label": "AL pooled estimate",
+      "value": -0.3392151787432598
+    },
+    {
+      "key": "se1",
+      "label": "PD standard error",
+      "value": 0.05884863182951051
+    },
+    {
+      "key": "se2",
+      "label": "AL standard error",
+      "value": 0.08790513632869704
+    },
+    {
+      "key": "variance1",
+      "label": "PD between-study variance",
+      "value": 0.011733025497500637
+    },
+    {
+      "key": "variance2",
+      "label": "AL between-study variance",
+      "value": 0.03265133250686065
+    },
+    {
+      "key": "covariance",
+      "label": "Between-study covariance",
+      "value": 0.01191596334051057
+    },
+    {
+      "key": "rho",
+      "label": "Between-study correlation",
+      "value": 0.6087986719817008
+    },
+    {
+      "key": "logLik",
+      "label": "Restricted log likelihood",
+      "value": 3.691767694370328
+    }
+  ],
+  "compare": {
+    "tolerance": {
+      "default": 0.000001
+    },
+    "kind": {
+      "mu1": "rel",
+      "mu2": "rel",
+      "se1": "rel",
+      "se2": "rel",
+      "variance1": "rel",
+      "variance2": "rel",
+      "covariance": "rel",
+      "rho": "rel",
+      "logLik": "rel",
+      "k": "exact"
+    }
+  },
+  "provenance": "Node execution with DOM storage stubs; NOT a Playwright or webR export"
+}

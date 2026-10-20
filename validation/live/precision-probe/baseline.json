@@ -1,0 +1,259 @@
+{
+  "app": "rve-meta",
+  "script": "# P15 reference recipe: robumeta CORR, small=TRUE; independent CR2 check.\nd <- data.frame(yi=c(0.45,0.38,0.55,0.22,0.31,0.18,0.25,0.3,0.6,0.55,0.12,0.2,0.16), vi=c(0.04,0.05,0.06,0.03,0.04,0.02,0.03,0.04,0.05,0.06,0.02,0.03,0.025), cl=c(\"study1\",\"study1\",\"study1\",\"study2\",\"study2\",\"study3\",\"study3\",\"study3\",\"study4\",\"study4\",\"study5\",\"study5\",\"study5\"))\nd$x1 <- c(1,1,1,1,1,0,0,0,1,1,0,0,0)\nd$x2 <- c(6,6,6,12,12,18,18,18,4,4,24,24,24)\nf <- robumeta::robu(yi ~ x1 + x2,\n  data=d, studynum=cl, var.eff.size=vi, modelweights='CORR', rho=0.8, small=TRUE)\ntab <- f$reg_table\ncr2 <- as.data.frame(clubSandwich::coef_test(f, vcov='CR2', test='Satterthwaite'))\nout <- list(k=nrow(d),clusters=length(unique(d$cl)),coefficients=nrow(tab),tau2=as.numeric(f$mod_info$tau.sq))\ncolumns <- c(estimate='b.r',se='SE',t='t',df='dfs',p='prob',ci_lo='CI.L',ci_hi='CI.U')\nclub_columns <- c(estimate='beta',se='SE',t='tstat',df='df_Satt',p='p_Satt')\nfor (i in seq_len(nrow(tab))) {\n  for (key in names(columns)) out[[paste('coef',i-1L,key,sep='.')]] <- tab[[columns[[key]]]][i]\n  for (key in names(club_columns)) out[[paste('club',i-1L,key,sep='.')]] <- cr2[[club_columns[[key]]]][i]\n}\ncat('ALMJSON:',jsonlite::toJSON(out,digits=NA,auto_unbox=TRUE,na='null'),'\\n',sep='')\n",
+  "packages": [
+    "robumeta",
+    "clubSandwich",
+    "jsonlite"
+  ],
+  "appValues": [
+    {
+      "key": "k",
+      "label": "Number of effects",
+      "value": 13
+    },
+    {
+      "key": "clusters",
+      "label": "Number of clusters",
+      "value": 5
+    },
+    {
+      "key": "coefficients",
+      "label": "Number of coefficients",
+      "value": 3
+    },
+    {
+      "key": "tau2",
+      "label": "Between-study variance",
+      "value": 0
+    },
+    {
+      "key": "coef.0.estimate",
+      "label": "Intercept: Estimate",
+      "value": 0.7669313482216626
+    },
+    {
+      "key": "coef.0.se",
+      "label": "Intercept: Robust standard error",
+      "value": 0.22222439844133843
+    },
+    {
+      "key": "coef.0.t",
+      "label": "Intercept: t statistic",
+      "value": 3.451157269862575
+    },
+    {
+      "key": "coef.0.df",
+      "label": "Intercept: Satterthwaite degrees of freedom",
+      "value": 1.5001261028393253
+    },
+    {
+      "key": "coef.0.p",
+      "label": "Intercept: p-value",
+      "value": 0.1103336366037877
+    },
+    {
+      "key": "coef.0.ci_lo",
+      "label": "Intercept: Lower confidence limit",
+      "value": -0.5699605934830467
+    },
+    {
+      "key": "coef.0.ci_hi",
+      "label": "Intercept: Upper confidence limit",
+      "value": 2.103823289926372
+    },
+    {
+      "key": "club.0.estimate",
+      "label": "Intercept: Estimate (clubSandwich)",
+      "value": 0.7669313482216626
+    },
+    {
+      "key": "club.0.se",
+      "label": "Intercept: Robust standard error (clubSandwich)",
+      "value": 0.22222439844133843
+    },
+    {
+      "key": "club.0.t",
+      "label": "Intercept: t statistic (clubSandwich)",
+      "value": 3.451157269862575
+    },
+    {
+      "key": "club.0.df",
+      "label": "Intercept: Satterthwaite degrees of freedom (clubSandwich)",
+      "value": 1.5001261028393253
+    },
+    {
+      "key": "club.0.p",
+      "label": "Intercept: p-value (clubSandwich)",
+      "value": 0.1103336366037877
+    },
+    {
+      "key": "coef.1.estimate",
+      "label": "intervention: Estimate",
+      "value": -0.14444423235985848
+    },
+    {
+      "key": "coef.1.se",
+      "label": "intervention: Robust standard error",
+      "value": 0.15533467430115655
+    },
+    {
+      "key": "coef.1.t",
+      "label": "intervention: t statistic",
+      "value": -0.9298904639914194
+    },
+    {
+      "key": "coef.1.df",
+      "label": "intervention: Satterthwaite degrees of freedom",
+      "value": 1.1503210232926873
+    },
+    {
+      "key": "coef.1.p",
+      "label": "intervention: p-value",
+      "value": 0.5062231072335901
+    },
+    {
+      "key": "coef.1.ci_lo",
+      "label": "intervention: Lower confidence limit",
+      "value": -1.601842571997408
+    },
+    {
+      "key": "coef.1.ci_hi",
+      "label": "intervention: Upper confidence limit",
+      "value": 1.3129541072776911
+    },
+    {
+      "key": "club.1.estimate",
+      "label": "intervention: Estimate (clubSandwich)",
+      "value": -0.14444423235985848
+    },
+    {
+      "key": "club.1.se",
+      "label": "intervention: Robust standard error (clubSandwich)",
+      "value": 0.15533467430115655
+    },
+    {
+      "key": "club.1.t",
+      "label": "intervention: t statistic (clubSandwich)",
+      "value": -0.9298904639914194
+    },
+    {
+      "key": "club.1.df",
+      "label": "intervention: Satterthwaite degrees of freedom (clubSandwich)",
+      "value": 1.1503210232926873
+    },
+    {
+      "key": "club.1.p",
+      "label": "intervention: p-value (clubSandwich)",
+      "value": 0.5062231072335901
+    },
+    {
+      "key": "coef.2.estimate",
+      "label": "dose_weeks: Estimate",
+      "value": -0.026750334033211975
+    },
+    {
+      "key": "coef.2.se",
+      "label": "dose_weeks: Robust standard error",
+      "value": 0.010162994122608964
+    },
+    {
+      "key": "coef.2.t",
+      "label": "dose_weeks: t statistic",
+      "value": -2.6321312115789004
+    },
+    {
+      "key": "coef.2.df",
+      "label": "dose_weeks: Satterthwaite degrees of freedom",
+      "value": 1.524585679177035
+    },
+    {
+      "key": "coef.2.p",
+      "label": "dose_weeks: p-value",
+      "value": 0.15633439998814525
+    },
+    {
+      "key": "coef.2.ci_lo",
+      "label": "dose_weeks: Lower confidence limit",
+      "value": -0.08653557342600143
+    },
+    {
+      "key": "coef.2.ci_hi",
+      "label": "dose_weeks: Upper confidence limit",
+      "value": 0.03303490535957749
+    },
+    {
+      "key": "club.2.estimate",
+      "label": "dose_weeks: Estimate (clubSandwich)",
+      "value": -0.026750334033211975
+    },
+    {
+      "key": "club.2.se",
+      "label": "dose_weeks: Robust standard error (clubSandwich)",
+      "value": 0.010162994122608964
+    },
+    {
+      "key": "club.2.t",
+      "label": "dose_weeks: t statistic (clubSandwich)",
+      "value": -2.6321312115789004
+    },
+    {
+      "key": "club.2.df",
+      "label": "dose_weeks: Satterthwaite degrees of freedom (clubSandwich)",
+      "value": 1.524585679177035
+    },
+    {
+      "key": "club.2.p",
+      "label": "dose_weeks: p-value (clubSandwich)",
+      "value": 0.15633439998814525
+    }
+  ],
+  "compare": {
+    "tolerance": {
+      "default": 1e-9
+    },
+    "kind": {
+      "k": "exact",
+      "clusters": "exact",
+      "coefficients": "exact",
+      "tau2": "rel",
+      "coef.0.estimate": "rel",
+      "coef.0.se": "rel",
+      "coef.0.t": "rel",
+      "coef.0.df": "rel",
+      "coef.0.p": "abs",
+      "coef.0.ci_lo": "abs",
+      "coef.0.ci_hi": "abs",
+      "club.0.estimate": "rel",
+      "club.0.se": "rel",
+      "club.0.t": "rel",
+      "club.0.df": "rel",
+      "club.0.p": "abs",
+      "coef.1.estimate": "rel",
+      "coef.1.se": "rel",
+      "coef.1.t": "rel",
+      "coef.1.df": "rel",
+      "coef.1.p": "abs",
+      "coef.1.ci_lo": "abs",
+      "coef.1.ci_hi": "abs",
+      "club.1.estimate": "rel",
+      "club.1.se": "rel",
+      "club.1.t": "rel",
+      "club.1.df": "rel",
+      "club.1.p": "abs",
+      "coef.2.estimate": "rel",
+      "coef.2.se": "rel",
+      "coef.2.t": "rel",
+      "coef.2.df": "rel",
+      "coef.2.p": "abs",
+      "coef.2.ci_lo": "abs",
+      "coef.2.ci_hi": "abs",
+      "club.2.estimate": "rel",
+      "club.2.se": "rel",
+      "club.2.t": "rel",
+      "club.2.df": "rel",
+      "club.2.p": "abs"
+    }
+  },
+  "provenance": "Isolated Node VM baseline; source fix applied=true; NOT a browser export"
+}
