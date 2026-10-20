@@ -1,0 +1,44 @@
+{
+  "configurations": 27,
+  "candidates": 114,
+  "checks": 130017,
+  "passed": 130011,
+  "failures": [
+    {
+      "id": "dat.kearon1998/year/reml/all/p/1",
+      "app": 0.31112838567345713,
+      "ref": 0.311128391440863,
+      "tol": 1e-9
+    },
+    {
+      "id": "dat.kearon1998/year/reml/all/p/3",
+      "app": 0.4152926547967516,
+      "ref": 0.415292657734436,
+      "tol": 1e-9
+    },
+    {
+      "id": "dat.kearon1998/year/reml/single/p/1",
+      "app": 0.3084990343152362,
+      "ref": 0.308499030480892,
+      "tol": 1e-9
+    },
+    {
+      "id": "dat.kearon1998/year/ml/single/p/1",
+      "app": 0.2876628252548127,
+      "ref": 0.287662813999278,
+      "tol": 1e-9
+    },
+    {
+      "id": "dat.kearon1998/year/ml/single/p/3",
+      "app": 0.44916479584294045,
+      "ref": 0.449164792087738,
+      "tol": 1e-9
+    },
+    {
+      "id": "dat.kearon1998/patients/ml/single/p/3",
+      "app": 0.5438690774972064,
+      "ref": 0.5438690789021,
+      "tol": 1e-9
+    }
+  ]
+}
