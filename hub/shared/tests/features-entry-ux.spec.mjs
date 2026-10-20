@@ -57,10 +57,14 @@ function parseCSV(text) {
 }
 const card = (host, i) => host.locator('fieldset').filter({ has: host.page().locator('legend', { hasText: new RegExp(`^Study source ${i}$`) }) });
 
-async function fillCard(c, label, arm) {
+async function fillCard(c, label, arm, unit = 'individuals') {
+  const initials = c.page().getByLabel('Your initials (recorded with each confirmation)');
+  if (!(await initials.first().inputValue())) await initials.first().fill('MA');
   await c.getByLabel('Study label (author and year, e.g. Smith 2019)').fill(label);
   await c.getByLabel('Full reference').fill(REFERENCE);
-  await c.getByLabel('Location (table, figure or page)').fill('Abstract, Results paragraph');
+  await c.getByLabel('Source type', { exact: true }).selectOption('Abstract');
+  await c.getByLabel('Location: number or page (e.g. 2, p. 5 or Results paragraph)').fill('Results paragraph');
+  if (unit) await c.getByLabel('What was randomised?', { exact: true }).selectOption(unit);
   await c.getByLabel('DOI', { exact: true }).fill('10.1186/s12875-016-0578-9');
   await c.getByLabel('Arm to use', { exact: true }).selectOption(String(arm));
   await c.getByLabel('Outcome measured').fill('continued antidepressants');
@@ -133,7 +137,7 @@ test('entry UX U1-U8 on PMC5244530 (app 9): arm integrity, same-source guard, ev
   await role2.selectOption('control');
   await expect(c2.locator('.alm-entry-arm-check')).toBeHidden();
   await expect(confirm2).toBeEnabled();
-  await expect(c2.locator('.alm-entry-line')).toHaveText('78 events of 133 · Control · continued antidepressants · 6 month · counted: not stated');
+  await expect(c2.locator('.alm-entry-line')).toHaveText('78 events of 133 · Control · continued antidepressants · 6 month · counted: not stated · randomised: individuals');
 
   // U1: cue 'intervention group' vs role Control on row 1 -> blocked until the explicit acknowledgement.
   await c1.getByLabel('This arm is', { exact: true }).selectOption('control');
@@ -154,7 +158,7 @@ test('entry UX U1-U8 on PMC5244530 (app 9): arm integrity, same-source guard, ev
   await expect(c1.locator('.alm-entry-todo')).toBeEmpty();
 
   // U5: structured line, source clause with the numbers highlighted, full paste behind a disclosure; confirm next to it.
-  await expect(c1.locator('.alm-entry-line')).toHaveText('86 events of 125 · Intervention · continued antidepressants · 6 month · counted: all randomised (ITT)');
+  await expect(c1.locator('.alm-entry-line')).toHaveText('86 events of 125 · Intervention · continued antidepressants · 6 month · counted: all randomised (ITT) · randomised: individuals');
   await expect(c1.locator('.alm-entry-clause')).toContainText('However, significantly more patients in the intervention group continued antidepressants');
   await expect(c1.locator('.alm-entry-clause mark')).toHaveCount(2);
   await expect(c1.locator('.alm-entry-clause')).not.toContainText('12-month');
@@ -252,4 +256,148 @@ test('PLANTED DEFECT: first-cue arm stamping (the persona P1 bug) is caught by t
   // The planted cue contradicts the TAU row's Control role, so the gate must FAIL (confirmation blocked).
   await expect(c.locator('.alm-entry-arm-check')).toContainText('says "in the intervention group", but you chose Control');
   await expect(c.getByLabel('I confirm this row')).toBeDisabled();
+});
+
+// Second-batch personas (guideline methodologist, Cochrane statistician, journal peer reviewer): N1-N6.
+test('entry N1-N6 on PMC5244530 (app 9): randomisation unit + design effect, not stated, structured source, outcome definition, initials, compare, source hash', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/proportion-ma/index.html');
+  await expect(page.locator('#res-body .pooled-row')).toHaveCount(1);
+  const host = await mountEntry(page, 'entry-n-host');
+  const pasteBox = host.getByLabel('Paste the exact paper text or table');
+  await pasteBox.fill(PASTE);
+  await host.getByRole('button', { name: 'Extract candidates', exact: true }).click();
+  await host.getByLabel('Choose the source result to add').selectOption('0');
+  const add = host.getByRole('button', { name: 'Add chosen result', exact: true });
+  await add.click(); await add.click();
+  const c1 = card(host, 1), c2 = card(host, 2);
+  await fillCard(c1, 'PRI-SMA 2016 intervention arm', 0, '');
+  await fillCard(c2, 'PRI-SMA 2016 TAU arm', 1, '');
+  await c1.getByLabel('This arm is', { exact: true }).selectOption('intervention');
+  await c2.getByLabel('This arm is', { exact: true }).selectOption('control');
+  for (const [c, n] of [[c1, 125], [c2, 133]]) {
+    await c.getByLabel('Timepoint', { exact: true }).selectOption('6 month');
+    await c.getByLabel(`Who is counted in ${n}?`, { exact: true }).selectOption('not stated');
+  }
+
+  // N1: required unit of randomisation; PRI-SMA randomised GPs (clusters).
+  const unit1 = c1.getByLabel('What was randomised?', { exact: true });
+  expect(await unit1.locator('option').allTextContents()).toEqual(['Choose…', 'Individuals', 'Clusters (e.g. practices)', 'Crossover periods', 'Not randomised', 'Not stated']);
+  await expect(c1.getByLabel('I confirm this row')).toBeDisabled();
+  await expect(c1.locator('.alm-entry-todo')).toContainText('Say what was randomised');
+  await expect(c1.locator('.alm-entry-cluster')).toBeHidden();
+  await unit1.selectOption('clusters');
+  await expect(c1.locator('.alm-entry-cluster')).toBeVisible();
+  await c1.getByLabel('Number of clusters').fill('45');
+  await c1.getByLabel('Total participants in all clusters').fill('258');
+  await c1.getByLabel('ICC (intracluster correlation)').fill('0.02');
+  await c1.getByLabel('Source of the ICC or design effect').selectOption('external');
+  await c1.getByLabel('Adjust for clustering?').selectOption('adjust');
+  const de = 1 + (258 / 45 - 1) * 0.02;
+  await expect(c1.locator('.alm-entry-cluster-preview')).toHaveText(`Design effect = 1 + (M − 1) × ICC = ${de.toFixed(3)} (M = 258 / 45); events 86 → ${+(86 / de).toFixed(2)}, total in this group 125 → ${+(125 / de).toFixed(2)} (entered as ${Math.round(86 / de)} of ${Math.round(125 / de)})`);
+  await expect(c1.locator('.alm-entry-line')).toContainText(`randomised: clusters (adjusted, design effect ${+de.toFixed(3)})`);
+  await c2.getByLabel('What was randomised?', { exact: true }).selectOption('clusters');
+  await c2.getByLabel('Adjust for clustering?').selectOption('decline');
+  await expect(c2.locator('.alm-entry-line')).toContainText('randomised: clusters (not adjusted)');
+  await expect(c2).toContainText('Cluster-randomised trial not adjusted for clustering');
+
+  // N3: structured source with the abstract warning and an optional "Verified against".
+  expect(await c1.getByLabel('Source type', { exact: true }).locator('option').allTextContents()).toEqual(['Choose…', 'Abstract', 'Table', 'Figure', 'Text', 'Supplement', 'Registry']);
+  await expect(c1.locator('.alm-entry-abstract-note')).toHaveText('Abstracts often round values or differ from the full-text tables; check the full text if available.');
+  await c1.getByLabel('Verified against (optional, e.g. Table 2 of the full text)').fill('Table 2');
+  await c2.getByLabel('Source type', { exact: true }).selectOption('Table');
+  await expect(c2.locator('.alm-entry-abstract-note')).toBeHidden();
+  await c2.getByLabel('Source type', { exact: true }).selectOption('Abstract');
+
+  // N2: outcome definition taken from the selection in the paste box (stored with its span).
+  const phrase = PASTE.slice(PASTE.indexOf('continued antidepressants until'), PASTE.indexOf(' (86/125'));
+  await pasteBox.evaluate((e, [a, b]) => { e.focus(); e.setSelectionRange(a, b); }, [PASTE.indexOf(phrase), PASTE.indexOf(phrase) + phrase.length]);
+  await c1.getByRole('button', { name: 'Use the text selected in the paste box', exact: true }).click();
+  await expect(c1.getByLabel('Outcome as defined in the paper (optional, verbatim)')).toHaveValue(phrase);
+
+  // N4 + N5: initials recorded; "not stated" choices are user statements.
+  for (const c of [c1, c2]) { await expect(c.getByLabel('I confirm this row')).toBeEnabled(); await c.getByLabel('I confirm this row').check(); }
+  await host.getByLabel('I understand these rows are arms of one trial and want them pooled as separate single groups').check();
+  const use = host.getByRole('button', { name: 'Use these rows', exact: true });
+  await expect(use).toBeEnabled();
+  const axe = await new AxeBuilder({ page }).include('#entry-n-host').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  expect(axe.violations.filter(v => ['serious', 'critical'].includes(v.impact)).map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).join(' | ')}`)).toEqual([]);
+
+  // N6: an edited paste box marks the confirmed rows and blocks "Use these rows"; reverting clears it.
+  await pasteBox.fill(PASTE.replace('86/125', '186/125'));
+  await expect(c1.locator('.alm-entry-source-changed')).toBeVisible();
+  await expect(c1.locator('.alm-entry-source-changed')).toContainText('Source text changed since confirmation');
+  await expect(use).toBeDisabled();
+  const axeChanged = await new AxeBuilder({ page }).include('#entry-n-host').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  expect(axeChanged.violations.filter(v => ['serious', 'critical'].includes(v.impact)).map(v => v.id)).toEqual([]);
+  await pasteBox.fill(PASTE);
+  await expect(c1.locator('.alm-entry-source-changed')).toBeHidden();
+  await expect(use).toBeEnabled();
+
+  await use.click();
+  const status = host.locator('[role=status]').first();
+  await expect(status).toContainText('Applied 2 confirmed rows.');
+  await expect(status).toContainText('1 row from a cluster-randomised trial was not adjusted for clustering (flag CLUSTER_NOT_ADJUSTED)');
+  await expect(page.locator('#res-body .pooled-row')).toHaveCount(1);
+  expect(await page.locator('#src').inputValue()).toBe(`${Math.round(86 / de)}, ${Math.round(125 / de)}, PRI-SMA 2016 intervention arm\n78, 133, PRI-SMA 2016 TAU arm`);
+  const state = await page.evaluate(() => ({ prov: window.AlmFeaturesState.provenance, methods: window.AlmFeaturesState.entryMethods }));
+  expect(state.prov.map(r => r.confirmedBy)).toEqual(['MA', 'MA']);
+  expect(state.prov.map(r => r.confirmedVia)).toEqual(['row', 'row']);
+  expect(state.prov[0].conversions.find(c => c.fn === 'clusterCounts').output).toEqual({ events: 86 / de, n: 125 / de, designEffect: de });
+  expect(state.prov[0].source).toEqual({ type: 'Abstract', detail: 'Results paragraph', verifiedAgainst: 'Table 2' });
+  expect(state.prov[0].outcomeDefinition.text).toBe(phrase);
+  expect(state.methods.join(' ')).toContain('Cochrane Handbook v6.5 §23.1.4');
+
+  // CSV: initials, how confirmed, hash, design, structured source and NOT_STATED_* flags.
+  const [dl] = await Promise.all([page.waitForEvent('download'), host.getByRole('button', { name: 'Export provenance CSV', exact: true }).click()]);
+  const csvText = fs.readFileSync(await dl.path(), 'utf8');
+  const csv = parseCSV(csvText), head = csv[0], col = (row, name) => row[head.indexOf(name)];
+  expect(col(csv[1], 'confirmedBy')).toBe('MA');
+  expect(col(csv[1], 'confirmedVia')).toBe('row');
+  expect(col(csv[1], 'sourceHash')).toMatch(/^[0-9a-f]{64}$/);
+  expect(col(csv[1], 'randomisation')).toBe('clusters');
+  expect(col(csv[1], 'sourceType')).toBe('Abstract');
+  expect(col(csv[1], 'verifiedAgainst')).toBe('Table 2');
+  expect(col(csv[2], 'flags')).toContain('CLUSTER_NOT_ADJUSTED');
+  expect(col(csv[1], 'flags')).toContain('NOT_STATED_ANALYSISSET');
+
+  // N4: compare with a second extractor's CSV (read-only differences).
+  const theirs = csvText.replace('""value"":86', '""value"":85');
+  expect(theirs).not.toBe(csvText);
+  await host.getByLabel('Compare with another extraction (CSV)').setInputFiles({ name: 'second.csv', mimeType: 'text/csv', buffer: Buffer.from(theirs, 'utf8') });
+  await expect(host.locator('.alm-entry-compare')).toContainText('1 difference between this extraction and the other one. Read-only: nothing here was changed.');
+  await expect(host.locator('.alm-entry-compare')).toContainText('value xi: 86 here, 85 in the other extraction');
+  expect(errors).toEqual([]);
+});
+
+test('PLANTED DEFECT: a design-effect conversion stored with the wrong formula is refused at "Use these rows"', async ({ page }) => {
+  await page.goto('/proportion-ma/index.html');
+  const host = await mountEntry(page, 'entry-n-planted');
+  await host.getByLabel('Paste the exact paper text or table').fill(PASTE);
+  await host.getByRole('button', { name: 'Extract candidates', exact: true }).click();
+  await host.getByLabel('Choose the source result to add').selectOption('0');
+  await host.getByRole('button', { name: 'Add chosen result', exact: true }).click();
+  const c = card(host, 1);
+  await fillCard(c, 'PRI-SMA 2016 intervention arm', 0, 'clusters');
+  await c.getByLabel('This arm is', { exact: true }).selectOption('intervention');
+  await c.getByLabel('Timepoint', { exact: true }).selectOption('6 month');
+  await c.getByLabel('Who is counted in 125?', { exact: true }).selectOption('ITT');
+  await c.getByLabel('Mean cluster size (M)').fill('5');
+  await c.getByLabel('ICC (intracluster correlation)').fill('0.05');
+  await c.getByLabel('Source of the ICC or design effect').selectOption('this paper');
+  await c.getByLabel('Adjust for clustering?').selectOption('adjust');
+  await c.getByLabel('I confirm this row').check();
+  const use = host.getByRole('button', { name: 'Use these rows', exact: true });
+  await expect(use).toBeEnabled();
+  const before = await page.locator('#src').inputValue();
+  // Plant 1 + M x ICC (instead of 1 + (M - 1) x ICC) into the confirmed record's logged conversion.
+  await page.evaluate(() => {
+    const rec = window['__entry-n-planted'].getResult().provenance[0];
+    const conv = rec.conversions.find(x => x.fn === 'clusterCounts'), wrong = 1 + 5 * 0.05;
+    conv.result = conv.output = { events: 86 / wrong, n: 125 / wrong, designEffect: wrong };
+  });
+  await use.click();
+  await expect(host.locator('[role=status]').first()).not.toContainText('Applied');
+  expect(await page.locator('#src').inputValue()).toBe(before);
+  expect(await page.evaluate(() => (window.AlmFeaturesState || {}).provenance)).toBeUndefined();
 });

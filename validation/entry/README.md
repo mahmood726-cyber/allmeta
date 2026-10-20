@@ -10,9 +10,10 @@ Rscript validation/entry/check_entry.R validation/entry/cases.json
 Rscript validation/entry/check_entry.R validation/entry/cases.planted.json
 Rscript validation/entry/check_entry.R validation/entry/cases.planted-tiny.json
 Rscript validation/entry/check_entry.R validation/entry/cases.planted-formula.json
+Rscript validation/entry/check_entry.R validation/entry/cases.planted-de.json
 ```
 
-Each of the last three commands must exit 1 and print a failure. The unmodified corpus must
+Each of the last four commands must exit 1 and print a failure. The unmodified corpus must
 exit 0 and print `ENTRY passed/total` with identical counts. All cases run before
 that final line; errors are failures, never skipped rows.
 
@@ -41,14 +42,20 @@ quantiles at or above 60, including at level .95 (3.919927969..., conventionally
 rounded to 3.92 in the Handbook). Events use nearest integer with upward ties,
 the JavaScript convention, stated explicitly in the R oracle.
 
-There are three planted corpora, and the R gate must FAIL each one:
+Cluster-randomised trials (Cochrane Handbook v6.5 §23.1.4): `designEffect`, `clusterCounts`
+and `clusterSE` are checked against the Handbook arithmetic written out in R,
+DE = 1 + (M - 1) × ICC with M given or total / clusters (or a reported DE), events and totals
+divided by DE, and an SE multiplied by sqrt(DE); M from 1 to 500 and ICC from 0 to 1.
+
+There are four planted corpora, and the R gate must FAIL each one:
 `cases.planted.json` multiplies one large stored output (sdFromSE, about 1000)
 by 1+1e-6; `cases.planted-tiny.json` does the same to a fixed 1e-12-scale case
 (seFromCI with bounds 1e-12 and 3e-12, output about 5.1e-13), which only a
 relative criterion can detect; `cases.planted-formula.json` recomputes every
 output with a copy of `alm-entry.js` in which one coefficient is changed
 (Luo 2018 IQR weight `.7+.39/n` -> `.7+.40/n`), so an error that propagates
-through the converter itself is caught, not only an edited stored number.
+through the converter itself is caught, not only an edited stored number;
+`cases.planted-de.json` does the same with the design effect changed to `1 + M × ICC`.
 Parser fixtures and unit tests independently cover table delimiters, compound
 cells, explicit ambiguity questions, schema mapping, every sanity rule, and
 a disabled-rule planted defect. Browser UI is a separate, unwired mountable

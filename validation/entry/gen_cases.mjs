@@ -53,6 +53,20 @@ for(const n of ns)for(const level of levels)for(const magnitude of [1e-12,1e-6,1
   add("seFromCI",ratioArgs);add("estFromCI",ratioArgs);
   add("seFromP",{est:Math.exp(logCenter),p:[1e-16,.02,.5][repeat],ratio:true});
 }
+// Cluster-randomised trials (Cochrane Handbook v6.5 §23.1.4): DE = 1 + (M - 1) * ICC with M given or total / clusters,
+// or a reported DE; events and totals divided by DE, an SE multiplied by sqrt(DE).
+for(const m of [1,1.5,2,5.7,10,25,60,500])for(const icc of [0,1e-4,.005,.02,.05,.2,.5,1]){
+  add("designEffect",{m,icc});
+  const n=Math.max(1,Math.round(m*(2+random()*40))),events=Math.floor(random()*(n+1));
+  add("clusterCounts",{events,n,m,icc});
+  add("clusterSE",{se:(.01+random())*[1e-6,1,1e3][Math.floor(random()*3)],m,icc});
+}
+for(const k of [2,5,12,45,91,400])for(const icc of [.01,.05,.3]){
+  const total=k*Math.round(2+random()*30);
+  add("designEffect",{k,total,icc});
+  add("clusterCounts",{events:Math.floor(random()*(total+1)),n:total,k,total,icc});
+}
+for(const designEffect of [1,1.02,1.5,2.75,10])add("clusterCounts",{events:86,n:125,designEffect}),add("clusterSE",{se:.25,designEffect});
 // Fixed tiny output (about 5.1e-13): a 1e-6 relative error is about 5e-19 absolute, which the former
 // max(1, |R|) comparator could never detect. cases.planted-tiny.json must FAIL the relative gate.
 add("seFromCI",{lo:1e-12,hi:3e-12,level:.95,ratio:false});
@@ -73,8 +87,16 @@ write("cases.planted-tiny.json",plantedTiny);
 const entryPath=fileURLToPath(new URL("../../shared/alm-entry.js",import.meta.url));
 const source=readFileSync(entryPath,"utf8"),perturbed=source.replace("weight=.7+.39/n","weight=.7+.40/n");
 if(perturbed===source)throw new Error("planted formula coefficient not found in alm-entry.js");
-const sandbox={module:{exports:{}},require:createRequire(entryPath)};
+const sandbox={module:{exports:{}},require:createRequire(entryPath),TextEncoder};
 vm.runInNewContext(perturbed,sandbox,{filename:"alm-entry.planted-formula.js"});
 const B=sandbox.module.exports;
 write("cases.planted-formula.json",cases.map(c=>({...c,js:JSON.parse(JSON.stringify(B[c.fn](structuredClone(c.args))))})));
-console.log(`Generated ${cases.length} cases (seed 20261020); planted copies: one stored value (large), one stored value (1e-12 scale), one formula coefficient.`);
+// Planted DESIGN-EFFECT defect: DE = 1 + (M - 1) * ICC perturbed to 1 + M * ICC in a copy of alm-entry.js.
+// cases.planted-de.json must FAIL.
+const perturbedDE=source.replace("1+(m-1)*a.icc","1+m*a.icc");
+if(perturbedDE===source)throw new Error("planted design-effect formula not found in alm-entry.js");
+const sandboxDE={module:{exports:{}},require:createRequire(entryPath),TextEncoder};
+vm.runInNewContext(perturbedDE,sandboxDE,{filename:"alm-entry.planted-de.js"});
+const D=sandboxDE.module.exports;
+write("cases.planted-de.json",cases.map(c=>({...c,js:JSON.parse(JSON.stringify(D[c.fn](structuredClone(c.args))))})));
+console.log(`Generated ${cases.length} cases (seed 20261020); planted copies: one stored value (large), one stored value (1e-12 scale), one formula coefficient, one design-effect formula.`);

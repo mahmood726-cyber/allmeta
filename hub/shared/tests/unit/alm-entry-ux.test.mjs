@@ -13,7 +13,7 @@ const counts=text=>A.extract(text,"proportion",{outcome:"continued antidepressan
 function row(armIndex,choice={},meta={}){
   const c=counts(PASTE);
   let r=P.create({pastedText:PASTE,label:"PRI-SMA 2016",reference:REF,location:"Abstract",doi:"10.1186/s12875-016-0578-9",...meta});
-  r=P.fromCandidate(r,c,{armIndex,outcome:"continued antidepressants",timepoint:"6 month",facets:{timepoint:"6 month"},...choice});
+  r=P.fromCandidate(r,c,{armIndex,outcome:"continued antidepressants",timepoint:"6 month",facets:{timepoint:"6 month"},denominator:"ITT",randomisation:"individuals",...choice});
   r.usedAs="events and total of one arm";return r;
 }
 
@@ -36,16 +36,16 @@ test("U1 regression: the TAU row is NOT stamped intervention (facet follows the 
   for(const v of r.values)assert.notEqual(v.facets.arm.value,"intervention");
   const csv=P.toCSV([r]);assert.doesNotMatch(csv.split("\r\n")[1],/"intervention"/);
   const head=csv.split("\r\n")[0];assert.match(head,/"armRole"/);assert.match(head,/"armCue"/);
-  r.confirmed=true;assert.deepEqual(P.validate(r),[]);
+  P.confirm(r,{by:"MA"});assert.deepEqual(P.validate(r),[]);
 });
 test("U1 role is REQUIRED for a single printed arm (no default)",()=>{
-  const r=row(0);assert.equal(r.facets.arm,"not chosen");r.confirmed=true;assert.ok(P.validate(r).includes("arm role"));
-  const ok=row(0,{role:"intervention"});ok.confirmed=true;assert.deepEqual(P.validate(ok),[]);
+  const r=row(0);assert.equal(r.facets.arm,"not chosen");P.confirm(r,{by:"MA"});assert.ok(P.validate(r).includes("arm role"));
+  const ok=row(0,{role:"intervention"});P.confirm(ok,{by:"MA"});assert.deepEqual(P.validate(ok),[]);
   assert.equal(P.fromCandidate(P.create({pastedText:PASTE}),counts(PASTE),{armIndex:0,role:"bogus"}).choice.role,"bogus");
-  const bogus=row(0,{role:"bogus"});bogus.confirmed=true;assert.ok(P.validate(bogus).includes("arm role"));
+  const bogus=row(0,{role:"bogus"});P.confirm(bogus,{by:"MA"});assert.ok(P.validate(bogus).includes("arm role"));
 });
 test("U1 cue 'intervention group' vs role Control blocks until acknowledged",()=>{
-  const r=row(0,{role:"control"});r.confirmed=true;
+  const r=row(0,{role:"control"});P.confirm(r,{by:"MA"});
   const issues=P.armIssues(r);assert.equal(issues.length,1);assert.equal(issues[0].code,"ARM_CUE_CONTRADICTS");
   assert.match(issues[0].text,/in the intervention group/);
   assert.ok(P.validate(r).includes("arm contradiction"));
@@ -54,7 +54,7 @@ test("U1 cue 'intervention group' vs role Control blocks until acknowledged",()=
 });
 test("U1 label TAU/control/usual care/placebo vs role Intervention blocks until acknowledged",()=>{
   for(const label of ["PRI-SMA 2016 TAU arm","Smith 2019 control","Smith 2019 usual care","Smith 2019 placebo"]){
-    const r=row(1,{role:"intervention"},{label});r.confirmed=true;
+    const r=row(1,{role:"intervention"},{label});P.confirm(r,{by:"MA"});
     assert.deepEqual(P.armIssues(r).map(i=>i.code),["ARM_LABEL_CONTRADICTS"],label);
     assert.ok(P.validate(r).includes("arm contradiction"));
     r.choice.armAck=P.armAckKey(r);assert.deepEqual(P.validate(r),[]);
@@ -70,7 +70,7 @@ test("U1 two rows from one source using the same printed arm are flagged",()=>{
 test("PLANTED DEFECT U1: a candidate-level first cue copied to every arm is caught",()=>{
   const c=counts(PASTE),bad=JSON.parse(JSON.stringify(c));bad.armCues=[c.armCues[0],c.armCues[0]];
   const r=P.fromCandidate(P.create({pastedText:PASTE,label:"PRI-SMA 2016",reference:REF,location:"Abstract"}),bad,{armIndex:1,role:"control",outcome:"x",timepoint:"6 month",facets:{timepoint:"6 month"}});
-  r.confirmed=true;assert.ok(P.validate(r).includes("arm contradiction"));
+  P.confirm(r,{by:"MA"});assert.ok(P.validate(r).includes("arm contradiction"));
 });
 
 // ---- U2 same-source guard and counting --------------------------------------------------------------
@@ -129,18 +129,18 @@ test("U4 timepoint options say where each one occurs; nothing preselected",()=>{
   assert.deepEqual(A.timepointOptions("Rash: 3/40 vs 5/41",A.extract("Rash: 3/40 vs 5/41","proportion").candidates[0],0),[]);
 });
 test("U4 choosing a timepoint that is not the nearest is a warning, not a block",()=>{
-  const r=row(0,{role:"intervention",timepoint:"12 month",facets:{timepoint:"12 month"}});r.confirmed=true;
+  const r=row(0,{role:"intervention",timepoint:"12 month",facets:{timepoint:"12 month"}});P.confirm(r,{by:"MA"});
   assert.deepEqual(P.validate(r),[]);
   assert.ok(r.flags.some(f=>f.code==="TIMEPOINT_NOT_NEAREST"&&!f.blocking&&/6 month/.test(f.text)));
-  const n=row(0,{role:"intervention",timepoint:"not stated",facets:{timepoint:"not stated"}});n.confirmed=true;assert.deepEqual(P.validate(n),[]);
-  const none=row(0,{role:"intervention",timepoint:"",facets:{}});none.confirmed=true;assert.ok(P.validate(none).includes("facet:timepoint"));
+  const n=row(0,{role:"intervention",timepoint:"not stated",facets:{timepoint:"not stated"}});P.confirm(n,{by:"MA"});assert.deepEqual(P.validate(n),[]);
+  const none=row(0,{role:"intervention",timepoint:"",facets:{}});P.confirm(none,{by:"MA"});assert.ok(P.validate(none).includes("facet:timepoint"));
 });
 
 // ---- U5 confirmation line --------------------------------------------------------------------------
 test("U5 one short structured line per row and the source clause containing the numbers",()=>{
   const r=row(0,{role:"intervention",denominator:"not stated"});
-  assert.equal(P.line(r),"86 events of 125 · Intervention · continued antidepressants · 6 month · counted: not stated");
-  const u=row(1);assert.equal(P.line(u),"78 events of 133 · arm: not chosen · continued antidepressants · 6 month · counted: not chosen");
+  assert.equal(P.line(r),"86 events of 125 · Intervention · continued antidepressants · 6 month · counted: not stated · randomised: individuals");
+  const u=row(1,{denominator:undefined,randomisation:undefined});assert.equal(P.line(u),"78 events of 133 · arm: not chosen · continued antidepressants · 6 month · counted: not chosen · randomised: not chosen");
   const cl=P.clause(r);assert.ok(cl.text.startsWith("However, significantly more patients"));assert.ok(cl.text.endsWith("0.05)."));
   assert.equal(PASTE.slice(cl.start,cl.end),cl.text);
 });
@@ -201,7 +201,8 @@ function setup(schema="proportion"){
   const paste=async text=>{const p=all().find(e=>e.tagName==="textarea");p.value=text;await p.fire("input");await button("Extract candidates").fire("click");};
   const addCounts=async()=>{const ch=field("Choose the source result");const opt=all(ch).find(o=>o.tagName==="option"&&/86\/125/.test(o.textContent));await set("Choose the source result",opt.value);await button("Add chosen result").fire("click");return cards().at(-1);};
   const fill=async(card,label,arm,role)=>{
-    for(const [k,v] of [["Study label",label],["Full reference",REF],["Location","Abstract, Results paragraph"],["DOI","10.1186/s12875-016-0578-9"],["Arm to use",String(arm)],["Outcome measured","continued antidepressants"]])await set(k,v,card);
+    await set("Your initials","MA");
+    for(const [k,v] of [["Study label",label],["Full reference",REF],["Source type","Abstract"],["Location","Results paragraph"],["DOI","10.1186/s12875-016-0578-9"],["Arm to use",String(arm)],["Outcome measured","continued antidepressants"],["What was randomised?","individuals"]])await set(k,v,card);
     if(role)await set("This arm is",role,card);
   };
   return {root,panel,all,button,field,set,cards,paste,addCounts,fill,applied:()=>applied};
@@ -214,7 +215,7 @@ test("UI U1+U5: confirm stays disabled until role AND timepoint AND denominator 
   await h.set("Timepoint","6 month",c);assert.equal(h.field("I confirm",c).disabled,true);
   await h.set("Who is counted in 125?","ITT",c);assert.equal(h.field("I confirm",c).disabled,false);
   const line=h.all(c).find(e=>e.className==="alm-entry-line");
-  assert.equal(line.textContent,"86 events of 125 · Intervention · continued antidepressants · 6 month · counted: all randomised (ITT)");
+  assert.equal(line.textContent,"86 events of 125 · Intervention · continued antidepressants · 6 month · counted: all randomised (ITT) · randomised: individuals");
   // The confirm control sits right after the line and the source clause.
   const kids=c.children,i=kids.indexOf(line);assert.equal(kids[i+1].className,"alm-entry-clause");assert.ok(descendants(kids[i+2]).some(e=>e.type==="checkbox"&&e.parent.textContent.startsWith("I confirm")));
   assert.equal(h.all(kids[i+1]).filter(e=>e.tagName==="mark").length,2);

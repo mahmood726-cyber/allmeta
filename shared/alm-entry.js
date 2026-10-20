@@ -3,7 +3,7 @@
  * No statistical engine or app wiring lives in this module. */
 (function (global) {
   "use strict";
-  const RULES_VERSION="entry5.1";
+  const RULES_VERSION="entry6.1";
   const RULES=[];
   function defineRule(id,kind,pattern,description) {
     const rule=Object.freeze({id,version:1,kind,pattern,description});
@@ -22,7 +22,7 @@
   // SD from the SE or CI of a mean §6.5.2.2.
   const handbook = "Cochrane Handbook v6.5 §6.5.2.2", ciSource = "Cochrane Handbook v6.5 §6.3.1", pSource = "Cochrane Handbook v6.5 §6.3.2";
   function result(value, method, citation, inputs, flags = []) {
-    const fn=({"SE from CI":"seFromCI","SE from p":"seFromP","CI midpoint":"estFromCI","SD from SE":"sdFromSE","SD from CI (t, n-1 df)":"sdFromCI","SD from CI (normal)":"sdFromCI","events from percent":"eventsFromPercent"})[method];
+    const fn=({"SE from CI":"seFromCI","SE from p":"seFromP","CI midpoint":"estFromCI","SD from SE":"sdFromSE","SD from CI (t, n-1 df)":"sdFromCI","SD from CI (normal)":"sdFromCI","events from percent":"eventsFromPercent","design effect":"designEffect","design effect (reported)":"designEffect","SE × √(design effect)":"clusterSE"})[method];
     return {value: finite(value) ? value : null, method, citation, inputs: {...inputs}, flags,...(fn?{fn,args:{...inputs},result:finite(value)?value:null,rulesVersion:RULES_VERSION}:{})};
   }
   function invalid(inputs, text, citation) {
@@ -202,6 +202,57 @@
     if(!finite(a.pct)||a.pct<0||a.pct>100||!finite(a.n)||a.n<=0)return invalid(a,"Percent must be in [0,100] and n positive","Arithmetic: percent × n / 100");
     const raw=a.pct/100*a.n,v=Math.round(raw);
     return result(v,"events from percent","Arithmetic: percent × n / 100",a,Math.abs(raw-v)>.05?[flag("rounded-events","non-integer events (rounded %)")]:[]);
+  }
+  // Cluster-randomised trials (Cochrane Handbook v6.5 §23.1.4): DE = 1 + (M - 1) × ICC, M = mean cluster size
+  // (given, or total / number of clusters), or a design effect taken from the report. Events and totals are
+  // divided by the same DE (effective sample size); an SE is multiplied by sqrt(DE).
+  const clusterSource="Cochrane Handbook v6.5 §23.1.4";
+  function designEffect(a) {
+    if(present(a.designEffect)){
+      if(!finite(a.designEffect)||a.designEffect<1)return invalid(a,"A design effect must be a number of at least 1",clusterSource);
+      return result(a.designEffect,"design effect (reported)",clusterSource,a);
+    }
+    const m=present(a.m)?a.m:finite(a.total)&&finite(a.k)&&a.k>0?a.total/a.k:NaN;
+    if(!finite(m)||m<1||!finite(a.icc)||a.icc<0||a.icc>1)return invalid(a,"Give the mean cluster size (at least 1), or the number of clusters and the total, and an ICC between 0 and 1; or a design effect",clusterSource);
+    return result(1+(m-1)*a.icc,"design effect",clusterSource,a);
+  }
+  function clusterCounts(a) {
+    const de=designEffect(a),bad=!finite(a.events)||!finite(a.n)||a.n<=0||a.events<0||a.events>a.n;
+    const flags=de.value===null?de.flags:bad?[flag("invalid-input","Events must be between 0 and a positive total",true)]:[];
+    const values=flags.length?null:{events:a.events/de.value,n:a.n/de.value,designEffect:de.value};
+    return {values,...(values||{events:null,n:null,designEffect:null}),value:values&&values.designEffect,method:"effective sample size",citation:clusterSource,inputs:{...a},flags,fn:"clusterCounts",args:{...a},result:values,rulesVersion:RULES_VERSION};
+  }
+  function clusterSE(a) {
+    const de=designEffect(a);
+    if(de.value===null)return {...de,fn:"clusterSE",args:{...a},result:null,rulesVersion:RULES_VERSION};
+    if(!finite(a.se)||a.se<0)return invalid(a,"SE must be nonnegative",clusterSource);
+    return result(a.se*Math.sqrt(de.value),"SE × √(design effect)",clusterSource,a);
+  }
+  // SHA-256 of the UTF-8 bytes (FIPS 180-4); constants from the fractional parts of prime roots.
+  const SHA_K=[],SHA_H=[];
+  for(let c=2;SHA_K.length<64;c++){
+    let prime=true;for(let d=2;d*d<=c;d++)if(c%d===0){prime=false;break;}
+    if(!prime)continue;
+    if(SHA_H.length<8)SHA_H.push(Math.pow(c,1/2)*4294967296|0);
+    SHA_K.push(Math.pow(c,1/3)*4294967296|0);
+  }
+  function sha256(text) {
+    const bytes=new TextEncoder().encode(String(text)),len=bytes.length,words=new Array(((len+72)>>6)<<4).fill(0),w=new Array(64);
+    for(let i=0;i<len;i++)words[i>>2]|=bytes[i]<<(24-8*(i&3));
+    words[len>>2]|=0x80<<(24-8*(len&3));
+    words[words.length-2]=Math.floor(len/536870912);words[words.length-1]=(len*8)>>>0;
+    let h=SHA_H.slice();
+    const rot=(x,n)=>x>>>n|x<<(32-n);
+    for(let j=0;j<words.length;j+=16){
+      for(let i=0;i<64;i++)w[i]=i<16?words[j+i]|0:(rot(w[i-15],7)^rot(w[i-15],18)^w[i-15]>>>3)+w[i-7]+(rot(w[i-2],17)^rot(w[i-2],19)^w[i-2]>>>10)+w[i-16]|0;
+      let [a,b,c,d,e,f,g,k]=h;
+      for(let i=0;i<64;i++){
+        const t1=k+(rot(e,6)^rot(e,11)^rot(e,25))+(e&f^~e&g)+SHA_K[i]+w[i]|0,t2=(rot(a,2)^rot(a,13)^rot(a,22))+(a&b^a&c^b&c)|0;
+        k=g;g=f;f=e;e=d+t1|0;d=c;c=b;b=a;a=t1+t2|0;
+      }
+      h=[a,b,c,d,e,f,g,k].map((x,i)=>x+h[i]|0);
+    }
+    return h.map(x=>(x>>>0).toString(16).padStart(8,"0")).join("");
   }
   const meanMethods=["luo/wan/shi","hozo2005","wan2014","bland2015","luo2016","walter2007"];
   const sdMethods=["luo/wan/shi","hozo2005","wan2014","bland2015","shi2020","walter2007"];
@@ -957,7 +1008,7 @@
     }
     return warnings;
   }
-  const conversionFunctions={seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,eventsFromPercent,convertFivenum,logRatio:a=>({value:Math.log(a.effect)})};
+  const conversionFunctions={seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,eventsFromPercent,convertFivenum,designEffect,clusterCounts,clusterSE,logRatio:a=>({value:Math.log(a.effect)})};
   function replay(log){
     const equal=(a,b)=>a&&b&&typeof a==="object"&&typeof b==="object"?Object.keys(a).length===Object.keys(b).length&&Object.keys(a).every(k=>equal(a[k],b[k])):a===b;
     const results=log.map((entry,index)=>{
@@ -1205,12 +1256,49 @@
     return [[c.treatmentIndex,"intervention"],[c.controlIndex,"control"]].filter(([i])=>i!==undefined).map(([i,r])=>pick(i,r)).filter(Boolean);
   }
   const clone=x=>JSON.parse(JSON.stringify(x));
+  // Unit of randomisation (N1), structured source (N3), facets that may be stated as "not stated in source" (N5).
+  const RANDOMISATION_CHOICES={individuals:"Individuals",clusters:"Clusters (e.g. practices)",crossover:"Crossover periods","not randomised":"Not randomised","not stated":"Not stated"};
+  const ICC_SOURCES={"this paper":"This paper",external:"Another study (external)",assumed:"Assumed"};
+  const SOURCE_TYPES=["Abstract","Table","Figure","Text","Supplement","Registry"];
+  const ABSTRACT_NOTE="Abstracts often round values or differ from the full-text tables; check the full text if available.";
+  const FACET_CHOICES={analysisSet:["ITT","per-protocol","other"],adjustment:["adjusted","unadjusted"],phase:["baseline","follow-up","change"]};
+  const FACET_NAMES={timepoint:"Timepoint",analysisSet:"Analysis population",adjustment:"Adjustment",phase:"Type of value",randomisation:"Unit of randomisation",arm:"Arm"};
+  const NOT_STATED="not stated";
+  const CSV_KEYS=["id","label","reference","location","sourceType","sourceDetail","verifiedAgainst","doi","pmid","pastedText","decimal","rule","rulesVersion","candidateRank","candidateScore","facets","statements","armRole","armCue","denominator","timepoint","timepointEvidence","randomisation","design","outcomeDefinition","p","reportedPercentages","choice","values","conversions","flags","sameSourceOptIn","usedAs","confirmed","confirmedAt","confirmedBy","confirmedVia","sourceHash"];
+  function parseLocation(location){
+    const s=String(location||"").trim(),m=/^(abstract|table|fig(?:ure|\.)?|text|supplement(?:ary)?(?:\s+material)?|registry)\b[\s,:.-]*(.*)$/i.exec(s);
+    if(m){const t=m[1].toLowerCase();return {type:t.startsWith("fig")?"Figure":t.startsWith("supp")?"Supplement":t[0].toUpperCase()+t.slice(1),detail:m[2].trim()};}
+    if(/^(?:p\.|pp\.|page)\s*\d/i.test(s))return {type:"Text",detail:s};
+    return {type:"",detail:s};
+  }
+  const clusterArgs=cl=>Object.fromEntries(["m","k","total","icc","designEffect"].filter(k=>present(cl[k])&&cl[k]!=="").map(k=>[k,+cl[k]]));
+  const confirmVias=["row","bulk"];
+  function csvRows(text){
+    const rows=[];let row=[],cell="",quoted=false;text=String(text).replace(/^﻿/,"");
+    for(let i=0;i<text.length;i++){
+      const c=text[i];
+      if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=false;else cell+=c;}
+      else if(c==='"')quoted=true;
+      else if(c===","){row.push(cell);cell="";}
+      else if(c==="\r"&&text[i+1]==="\n"||c==="\n"){row.push(cell);rows.push(row);row=[];cell="";if(c==="\r")i++;}
+      else cell+=c;
+    }
+    if(cell!==""||row.length)row.push(cell),rows.push(row);
+    return rows;
+  }
   const provenance={
-    create({pastedText="",label="",reference="",location="",doi="",pmid="",decimal="point"}={}){
-      return {id:"entry-"+Date.now().toString(36)+"-"+(++provenanceSerial),label,reference,location,doi,pmid,decimal,pastedText:String(pastedText),choice:{},values:[],conversions:[],flags:[],usedAs:"",confirmed:false,confirmedAt:null};
+    create({pastedText="",label="",reference="",location="",source,doi="",pmid="",decimal="point"}={}){
+      const src=source?clone(source):parseLocation(location);
+      return {id:"entry-"+Date.now().toString(36)+"-"+(++provenanceSerial),label,reference,location:location||provenance.sourceLocation(src),source:src,doi,pmid,decimal,pastedText:String(pastedText),choice:{},values:[],conversions:[],flags:[],usedAs:"",confirmed:false,confirmedAt:null,confirmedBy:null,confirmedVia:null,sourceHash:null};
+    },
+    // "Table 2", "Supplement S4", "Abstract, Results paragraph".
+    sourceLocation(source){
+      const s=source||{},type=String(s.type||"").trim(),detail=String(s.detail||"").trim();
+      return [type,detail].filter(Boolean).join(type&&detail&&/^[A-Za-z]?\d/.test(detail)?" ":", ");
     },
     fromCandidate(rec,candidate,choice={}){
       const out=clone(rec);out.choice=clone(choice);out.values=[];out.conversions=[];out.flags=[];out.confirmed=false;out.confirmedAt=null;
+      out.confirmedBy=null;out.confirmedVia=null;out.sourceHash=null;delete out.confirmedAgainst;
       out.kind=candidate.kind;out.measure=choice.measure||candidate.measure;out.level=candidate.level;
       out.rule=candidate.rule;out.rulesVersion=candidate.rulesVersion;out.decimal=candidate.decimal||rec.decimal;
       out.requiredFacets=clone(candidate.requiredFacets||[]);out.facets=clone(candidate.facets||{});out.p=candidate.p?clone(candidate.p):undefined;
@@ -1244,6 +1332,83 @@
         out.timepointEvidence={chosen,nearest:nearest?nearest.value:null,where};
         if(nearest&&chosen!==nearest.value)out.flags.push({code:"TIMEPOINT_NOT_NEAREST",text:`The timepoint written next to these numbers is "${nearest.value}"; you chose "${chosen}". Check the paper.`,blocking:false});
       }
+      // N5: a facet with no cue in the text is "unknown" until the user picks a value or "not stated" (a user statement).
+      if(choice.timepoint)out.facets.timepoint=choice.timepoint;
+      for(const [k,v] of Object.entries(choice.facets||{}))if(out.facets[k]==="unknown"&&typeof v==="string"&&v.trim())out.facets[k]=v.trim();
+      out.statements=[];
+      for(const [k,v] of [...Object.entries(out.facets),["randomisation",choice.randomisation]])if(v===NOT_STATED){
+        out.statements.push({facet:k,value:"not stated in source",by:"user"});
+        out.flags.push({code:"NOT_STATED_"+k.toUpperCase(),text:`${FACET_NAMES[k]||k}: not stated in the source (your statement).`,blocking:false});
+      }
+      provenance.applyDesign(out,candidate);
+      return out;
+    },
+    // N1: unit of randomisation; clusters -> design-effect conversion (counts) or an explicit decline flag.
+    applyDesign(out,candidate){
+      const c=out.choice,unit=c.randomisation;
+      out.design={randomisation:RANDOMISATION_CHOICES[unit]?unit:"not chosen"};
+      if(unit==="crossover")out.flags.push({code:"CROSSOVER_DESIGN",text:"Crossover trial: these values are entered as if from parallel groups; a paired analysis is not done here (Cochrane Handbook v6.5 §23.2).",blocking:false});
+      if(unit==="not randomised")out.flags.push({code:"NOT_RANDOMISED",text:"Not a randomised comparison: treat this row as non-randomised evidence.",blocking:false});
+      if(unit!=="clusters")return out;
+      const cl=clone(c.cluster||{}),args=clusterArgs(cl);out.design.cluster=cl;
+      if(cl.action==="decline")out.flags.push({code:"CLUSTER_NOT_ADJUSTED",text:"Cluster-randomised trial not adjusted for clustering (no ICC or design effect applied); its confidence interval will be too narrow (Cochrane Handbook v6.5 §23.1.4).",blocking:false});
+      if(cl.action==="already"&&out.kind!=="counts")out.flags.push({code:"CLUSTER_ANALYSIS_REPORTED",text:"Cluster-randomised trial: you stated that the reported analysis already accounts for clustering.",blocking:false});
+      if(cl.action!=="adjust")return out;
+      const de=designEffect(args);
+      if(de.value===null){out.flags.push({code:"CLUSTER_INPUTS",text:"To adjust for clustering, give the mean cluster size (or the number of clusters and the total) and the ICC, or a design effect.",blocking:true});return out;}
+      if(!ICC_SOURCES[cl.iccSource]){out.flags.push({code:"CLUSTER_INPUTS",text:"Give the source of the ICC or design effect (this paper, another study, or assumed).",blocking:true});return out;}
+      out.design.designEffect=de.value;
+      if(out.kind!=="counts")return out;
+      const formula=present(args.designEffect)?"events / DE, total / DE (DE reported)":"events / DE, total / DE, DE = 1 + (M − 1) × ICC"+(present(args.m)?"":", M = total / clusters");
+      const byArm={};for(const v of out.values)if(v.armIndex!==undefined)(byArm[v.armIndex]=byArm[v.armIndex]||{})[v.part]=v;
+      for(const arm of Object.values(byArm)){
+        if(!arm.events||!arm.n)continue;
+        const r=clusterCounts({...args,events:arm.events.value,n:arm.n.value});
+        if(!r.values){out.flags.push(...clone(r.flags));continue;}
+        // Count inputs are whole numbers in the apps: the effective counts are rounded for entry (Handbook §23.1.4), logged.
+        const rounded={events:Math.round(r.values.events),n:Math.round(r.values.n)};
+        out.conversions.push({field:arm.events.field+", "+arm.n.field,fields:{events:arm.events.field,n:arm.n.field},formula,citation:clusterSource,inputs:clone(r.inputs),output:clone(r.values),rounded,fn:"clusterCounts",args:clone(r.args),result:clone(r.values),rulesVersion:RULES_VERSION,iccSource:cl.iccSource});
+        out.flags.push({code:"CLUSTER_COUNTS_ROUNDED",text:`Effective counts rounded to whole numbers for entry: ${arm.events.text} → ${+r.values.events.toFixed(2)} → ${rounded.events} events; ${arm.n.text} → ${+r.values.n.toFixed(2)} → ${rounded.n} total (${clusterSource}).`,blocking:false});
+      }
+      return out;
+    },
+    // Values sent to the app after logged design-effect conversions, rounded for entry ({xi: 78, ni: 114});
+    // {exact:true} gives the unrounded effective counts.
+    adjusted(rec,{exact=false}={}){
+      const out={};
+      for(const c of rec.conversions||[])if(c.fn==="clusterCounts"&&c.fields&&c.output){const v=exact?c.output:c.rounded;out[c.fields.events]=v.events;out[c.fields.n]=v.n;}
+      return out;
+    },
+    // N2: verbatim outcome definition; a span is kept only when it addresses the row's own pasted text.
+    outcomeDefinition(rec,text,span){
+      const t=String(text||"");
+      if(!t.trim())return null;
+      if(Array.isArray(span)&&rec.pastedText.slice(...span)===t)return {text:t,span:span.slice(),selector:selectors(rec.pastedText,span)};
+      return {text:t};
+    },
+    // N4 + N6: who confirmed, how, and the SHA-256 of the row's source and of the paste box at confirmation.
+    confirm(rec,{by,via="row",at,boxText}={}){
+      const initials=String(by||"").trim();
+      if(!initials)throw new Error("Confirmation needs the extractor's initials");
+      if(!confirmVias.includes(via))throw new Error("confirmedVia must be 'row' or 'bulk'");
+      rec.confirmed=true;rec.confirmedAt=at||new Date().toISOString();rec.confirmedBy=initials;rec.confirmedVia=via;
+      rec.sourceHash=sha256(rec.pastedText);rec.confirmedAgainst=boxText===undefined?rec.sourceHash:sha256(boxText);
+      return rec;
+    },
+    unconfirm(rec){rec.confirmed=false;rec.confirmedAt=null;rec.confirmedBy=null;rec.confirmedVia=null;rec.sourceHash=null;delete rec.confirmedAgainst;return rec;},
+    sourceChanged(rec,boxText){return !!(rec.confirmed&&rec.confirmedAgainst&&sha256(String(boxText))!==rec.confirmedAgainst);},
+    // Methods sentences for design flags (cluster adjustment, crossover, non-randomised, not-stated design).
+    methods(records){
+      const n=code=>records.filter(r=>(r.flags||[]).some(f=>f.code===code)).length,out=[];
+      const adjusted=records.filter(r=>(r.conversions||[]).some(c=>c.fn==="clusterCounts")||(r.conversions||[]).some(c=>c.fn==="clusterSE")).length;
+      const was=k=>k===1?"was":"were";
+      if(adjusted)out.push(`Counts or standard errors from ${plural(adjusted,"row")} of cluster-randomised trials ${was(adjusted)} adjusted with a design effect, 1 + (M − 1) × ICC (Cochrane Handbook v6.5 §23.1.4).`);
+      const not=n("CLUSTER_NOT_ADJUSTED");
+      if(not)out.push(`${plural(not,"row")} from a cluster-randomised trial ${was(not)} not adjusted for clustering (flag CLUSTER_NOT_ADJUSTED); ${not===1?"its confidence interval is":"their confidence intervals are"} too narrow.`);
+      const rep=n("CLUSTER_ANALYSIS_REPORTED");if(rep)out.push(`For ${plural(rep,"row")} from cluster-randomised trials the reported analysis accounted for clustering (extractor's statement).`);
+      const cross=n("CROSSOVER_DESIGN");if(cross)out.push(`${plural(cross,"row")} from crossover trials ${was(cross)} entered as parallel-group data.`);
+      const nr=n("NOT_RANDOMISED");if(nr)out.push(`${plural(nr,"row")} ${was(nr)} not from a randomised comparison.`);
+      const ns=n("NOT_STATED_RANDOMISATION");if(ns)out.push(`The unit of randomisation was not stated for ${plural(ns,"row")}.`);
       return out;
     },
     applyConversion(rec,conversionResult){
@@ -1255,13 +1420,27 @@
     },
     sentence(rec){
       const names={ai:"events (treatment)",n1i:"total (treatment)",ci:"events (control)",n2i:"total (control)",effect:"effect estimate",lo:"lower confidence limit",hi:"upper confidence limit"};
-      return `From ${rec.label||"[author and year missing]"} (${rec.location||"[location missing]"}), you pasted "${rec.pastedText}". We read: ${rec.values.map(v=>(names[v.field]||v.field)+" "+v.text).join("; ")||"none"}${rec.p?"; p "+rec.p.op+" "+rec.p.value+(rec.p.op!=="="?" (BOUND)":""):""}. We converted: ${rec.conversions.map(c=>`${c.field}: ${c.formula} = ${JSON.stringify(c.output)} (${c.citation})`).join("; ")||"none"}. Used as: ${rec.usedAs||"[not supplied by the app]"}.`;
+      return `From ${rec.label||"[author and year missing]"} (${rec.location||"[location missing]"}), you pasted "${rec.pastedText}". We read: ${rec.values.map(v=>(names[v.field]||v.field)+" "+v.text).join("; ")||"none"}${rec.p?"; p "+rec.p.op+" "+rec.p.value+(rec.p.op!=="="?" (BOUND)":""):""}. We converted: ${rec.conversions.map(c=>c.fn==="clusterCounts"?`${c.field}: ${c.output.events} and ${c.output.n} after dividing by the design effect ${c.output.designEffect}, entered as ${c.rounded.events} and ${c.rounded.n} (${c.formula}; ${c.citation})`:`${c.field}: ${c.formula} = ${JSON.stringify(c.output)} (${c.citation})`).join("; ")||"none"}. Used as: ${rec.usedAs||"[not supplied by the app]"}.`;
     },
-    validate(rec){
+    // beforeConfirm: everything except the confirmation itself (used to enable "I confirm this row").
+    validate(rec,{beforeConfirm=false}={}){
       const missing=[];
       if(!/[\p{L}][\p{L}'’.-]*(?:\s+.*)?\s+(?:18|19|20|21)\d{2}[a-z]?\b/u.test(String(rec.label||"").trim()))missing.push("label");
       for(const field of ["reference","location"])if(!String(rec[field]||"").trim())missing.push(field);
-      if(!rec.confirmed)missing.push("confirmed");
+      if(String(rec.location||"").trim()&&!SOURCE_TYPES.includes(rec.source?.type))missing.push("source type");
+      if(!beforeConfirm){
+        if(!rec.confirmed)missing.push("confirmed");
+        else{
+          if(!String(rec.confirmedBy||"").trim()||!confirmVias.includes(rec.confirmedVia))missing.push("confirmed by");
+          if(rec.sourceHash!==sha256(rec.pastedText))missing.push("source hash");
+        }
+      }
+      const c=rec.choice||{};
+      if(!RANDOMISATION_CHOICES[c.randomisation])missing.push("randomisation");
+      else if(c.randomisation==="clusters"&&!["adjust","decline",...(rec.kind==="counts"?[]:["already"])].includes(c.cluster?.action))missing.push("cluster adjustment");
+      for(const [k,v] of Object.entries(rec.facets||{}))if(v==="unknown"&&(k!=="arm"||rec.kind==="counts"))missing.push("unknown:"+k);
+      const def=rec.outcomeDefinition;
+      if(def&&(typeof def.text!=="string"||def.span!==undefined&&(!Array.isArray(def.span)||rec.pastedText.slice(...def.span)!==def.text||JSON.stringify(def.selector)!==JSON.stringify(selectors(rec.pastedText,def.span)))))missing.push("outcome definition");
       if(!rec.values||!rec.values.length)missing.push("values");
       for(const v of rec.values||[]){
         const p=v.span;
@@ -1337,12 +1516,19 @@
     line(rec){
       const c=rec.choice||{},den=DENOMINATOR_CHOICES[c.denominator]?(c.denominator==="ITT"?"all randomised (ITT)":c.denominator==="followed up"?"only those followed up":"not stated"):"not chosen";
       const tail=[c.outcome||"outcome: not entered",c.timepoint||"timepoint: not chosen"];
-      const v=k=>(rec.values||[]).find(x=>x.field===k);
-      if(rec.kind==="counts"&&c.armIndex!==undefined&&v("xi")&&v("ni"))return [`${v("xi").text} events of ${v("ni").text}`,ROLE_NAMES[c.role]||"arm: not chosen",...tail,"counted: "+den].join(" · ");
-      if(rec.kind==="counts"&&v("ai")&&v("ci"))return [`${v("ai").text} events of ${v("n1i").text} (intervention) vs ${v("ci").text} of ${v("n2i").text} (control)`,...tail,"counted: "+den].join(" · ");
-      if(rec.kind==="counts")return ["printed arms: not chosen",...tail,"counted: "+den].join(" · ");
-      if(rec.kind==="effect_ci"&&v("effect")&&v("lo")&&v("hi"))return [`${rec.measure||"effect"} ${v("effect").text} (${v("lo").text} to ${v("hi").text})`,...tail].join(" · ");
-      return [(rec.values||[]).map(x=>(FIELD_LABELS[x.field]||x.field)+" "+x.text).join(", ")||"no values",...tail].join(" · ");
+      const v=k=>(rec.values||[]).find(x=>x.field===k),design=provenance.designText(rec);
+      if(rec.kind==="counts"&&c.armIndex!==undefined&&v("xi")&&v("ni"))return [`${v("xi").text} events of ${v("ni").text}`,ROLE_NAMES[c.role]||"arm: not chosen",...tail,"counted: "+den,design].join(" · ");
+      if(rec.kind==="counts"&&v("ai")&&v("ci"))return [`${v("ai").text} events of ${v("n1i").text} (intervention) vs ${v("ci").text} of ${v("n2i").text} (control)`,...tail,"counted: "+den,design].join(" · ");
+      if(rec.kind==="counts")return ["printed arms: not chosen",...tail,"counted: "+den,design].join(" · ");
+      if(rec.kind==="effect_ci"&&v("effect")&&v("lo")&&v("hi"))return [`${rec.measure||"effect"} ${v("effect").text} (${v("lo").text} to ${v("hi").text})`,...tail,design].join(" · ");
+      return [(rec.values||[]).map(x=>(FIELD_LABELS[x.field]||x.field)+" "+x.text).join(", ")||"no values",...tail,design].join(" · ");
+    },
+    // "randomised: individuals" / "randomised: clusters (adjusted, design effect 1.095)".
+    designText(rec){
+      const c=rec.choice||{},cl=c.cluster||{},de=rec.design?.designEffect;
+      if(c.randomisation==="clusters")return "randomised: clusters ("+(de?"adjusted, design effect "+(+de.toFixed(3)):cl.action==="decline"?"not adjusted":cl.action==="already"?"analysis accounts for clustering":"adjustment not chosen")+")";
+      if(c.randomisation==="not randomised")return "not randomised";
+      return "randomised: "+(RANDOMISATION_CHOICES[c.randomisation]?RANDOMISATION_CHOICES[c.randomisation].toLowerCase():"not chosen");
     },
     // The clause/sentence of the paste that contains every used number.
     clause(rec){
@@ -1354,17 +1540,62 @@
       return {start,end,text:t.slice(start,end)};
     },
     toCSV(records){
-      const keys=["id","label","reference","location","doi","pmid","pastedText","decimal","rule","rulesVersion","candidateRank","candidateScore","facets","armRole","armCue","denominator","timepoint","timepointEvidence","p","reportedPercentages","choice","values","conversions","flags","sameSourceOptIn","usedAs","confirmed","confirmedAt"];
+      const keys=CSV_KEYS;
       const cell=x=>{let s=typeof x==="object"?JSON.stringify(x):String(x===undefined?"":x);if(/^[\s\u0000-\u001f]*[=+\-@]/.test(s)||/^[\t\r\n]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
       // Chosen role and the printed cue are separate columns.
       const derived=r=>({...r,armRole:r.choice?.armIndex!==undefined?r.choice.role||"not chosen":(r.armCues||[]).map(a=>a.role).join("; "),
         armCue:r.choice?.armIndex!==undefined?(r.armCue?r.armCue.text:"none next to these numbers"):(r.armCues||[]).map(a=>a.role+": "+(a.cue?a.cue.text:"none")).join("; "),
-        denominator:r.choice?.denominator,timepoint:r.choice?.timepoint});
+        denominator:r.choice?.denominator,timepoint:r.choice?.timepoint,
+        sourceType:r.source?.type,sourceDetail:r.source?.detail,verifiedAgainst:r.source?.verifiedAgainst,randomisation:r.choice?.randomisation});
       return [keys.map(cell).join(","),...records.map(r=>{const d=derived(r);return keys.map(k=>cell(d[k])).join(",");})].join("\r\n");
+    },
+    // Reads a provenance CSV written by toCSV (this tool) back into records; undoes the formula-injection prefix.
+    fromCSV(text){
+      const [head,...rows]=csvRows(text).filter(r=>r.some(c=>c!==""));
+      if(!head||!head.includes("label")||!head.includes("values"))throw new Error("Not a provenance CSV from this tool (no label/values columns)");
+      const undo=s=>s.startsWith("'")&&(/^[\s\u0000-\u001f]*[=+\-@]/.test(s.slice(1))||/^[\t\r\n]/.test(s.slice(1)))?s.slice(1):s;
+      const json=["facets","timepointEvidence","p","reportedPercentages","choice","values","conversions","flags","sameSourceOptIn","design","outcomeDefinition","statements"];
+      return rows.map(cells=>{
+        const r={};
+        head.forEach((k,i)=>{
+          const s=undo(cells[i]===undefined?"":cells[i]);
+          if(json.includes(k)){if(s!=="")try{r[k]=JSON.parse(s);}catch(e){r[k]=s;}}
+          else if(k==="confirmed")r[k]=s==="true";
+          else if(k==="candidateRank"||k==="candidateScore"){if(s!=="")r[k]=+s;}
+          else r[k]=s;
+        });
+        r.source={type:r.sourceType||"",detail:r.sourceDetail||"",...(r.verifiedAgainst?{verifiedAgainst:r.verifiedAgainst}:{})};
+        for(const k of ["sourceType","sourceDetail","verifiedAgainst","armRole","armCue","denominator","timepoint","randomisation"])delete r[k];
+        return r;
+      });
+    },
+    // Second extractor: per-row differences in values, spans, facets and key choices. Read-only; never merges.
+    compare(mine,theirs){
+      const key=r=>normRef(r.label),used=new Set(),rows=[];
+      const show=x=>x===undefined||x===null||x===""?"(none)":Array.isArray(x)?x.join("–"):typeof x==="object"?JSON.stringify(x):String(x);
+      const diffRows=(a,b)=>{
+        const diffs=[],add=(what,x,y)=>{if(JSON.stringify(x===undefined?null:x)!==JSON.stringify(y===undefined?null:y))diffs.push({what,mine:show(x),theirs:show(y)});};
+        const va=Object.fromEntries((a.values||[]).map(v=>[v.field,v])),vb=Object.fromEntries((b.values||[]).map(v=>[v.field,v]));
+        for(const f of new Set([...Object.keys(va),...Object.keys(vb)])){add("value "+f,va[f]?.value,vb[f]?.value);add("span "+f,va[f]?.span,vb[f]?.span);}
+        for(const k of new Set([...Object.keys(a.facets||{}),...Object.keys(b.facets||{})]))add("facet "+k,a.facets?.[k],b.facets?.[k]);
+        add("arm role",a.choice?.role,b.choice?.role);add("printed arm",a.choice?.armIndex,b.choice?.armIndex);
+        add("unit of randomisation",a.choice?.randomisation,b.choice?.randomisation);add("cluster adjustment",a.design?.cluster,b.design?.cluster);
+        add("outcome",a.choice?.outcome,b.choice?.outcome);add("outcome definition",a.outcomeDefinition?.text,b.outcomeDefinition?.text);
+        add("location",a.location,b.location);add("measure",a.measure,b.measure);
+        add("conversions",(a.conversions||[]).map(c=>c.output),(b.conversions||[]).map(c=>c.output));
+        return diffs;
+      };
+      mine.forEach(a=>{
+        const j=theirs.findIndex((b,i)=>!used.has(i)&&key(b)===key(a));
+        if(j<0){rows.push({label:a.label,status:"only in this extraction",diffs:[]});return;}
+        used.add(j);rows.push({label:a.label,status:"matched",diffs:diffRows(a,theirs[j])});
+      });
+      theirs.forEach((b,i)=>{if(!used.has(i))rows.push({label:b.label,status:"only in the other extraction",diffs:[]});});
+      return {rows,differences:rows.reduce((s,r)=>s+r.diffs.length+(r.status==="matched"?0:1),0)};
     },
     toDocxParagraphs(records){return records.flatMap(r=>[provenance.sentence(r),"Reference: "+r.reference+"; DOI: "+(r.doi||"none")+"; PMID: "+(r.pmid||"none"),"User choices: "+JSON.stringify(r.choice)+"; flags: "+JSON.stringify(r.flags)+"; confirmed: "+r.confirmed+"; confirmed at: "+(r.confirmedAt||"not confirmed")]);}
   };
-  const api={FIELD_LABELS,plural,SINGLE_GROUP_SCHEMAS,DENOMINATOR_CHOICES,ROLE_NAMES,armRoleOf,timepointOptions,decimalPreview,FIVENUM_METHODS,measureFromHeaders,normalize,anchor,selectors,RULES,RULES_VERSION,replay,consistency,parseTable,parseCell,detect,convert,extract,provenance,seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,convertFivenum,eventsFromPercent,sanity,sanityRules,SCHEMAS,fallback:null,qnorm,qt};
+  const api={RANDOMISATION_CHOICES,ICC_SOURCES,SOURCE_TYPES,ABSTRACT_NOTE,FACET_CHOICES,FACET_NAMES,designEffect,clusterCounts,clusterSE,sha256,FIELD_LABELS,plural,SINGLE_GROUP_SCHEMAS,DENOMINATOR_CHOICES,ROLE_NAMES,armRoleOf,timepointOptions,decimalPreview,FIVENUM_METHODS,measureFromHeaders,normalize,anchor,selectors,RULES,RULES_VERSION,replay,consistency,parseTable,parseCell,detect,convert,extract,provenance,seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,convertFivenum,eventsFromPercent,sanity,sanityRules,SCHEMAS,fallback:null,qnorm,qt};
   global.AlmEntry=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);

@@ -55,6 +55,12 @@ oracle <- function(case) {
   } else if (case$fn == "eventsFromPercent") {
     # JavaScript/entry convention: ties go upward for nonnegative counts.
     value <- floor(a$pct/100*a$n+.5)
+  } else if (case$fn %in% c("designEffect","clusterCounts","clusterSE")) {
+    # Cochrane Handbook v6.5 section 23.1.4: DE = 1 + (M - 1) * ICC; M = total / clusters when not given.
+    m <- if (!is.null(a$m)) a$m else a$total/a$k
+    de <- if (!is.null(a$designEffect)) a$designEffect else 1+(m-1)*a$icc
+    if (case$fn == "clusterCounts") return(list(events=a$events/de,n=a$n/de,designEffect=de))
+    value <- if (case$fn == "clusterSE") a$se*sqrt(de) else de
   } else stop(paste("Unknown function",case$fn))
   list(value=value)
 }

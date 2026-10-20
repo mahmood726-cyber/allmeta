@@ -56,7 +56,7 @@ test("comma setting, original quote selectors and provenance validation",()=>{
   assert.equal(A.extract(text,"generic").decimal,"ask");
   assert.equal(A.extract(text,"generic").candidates.length,0);
   const c=A.extract(text,"generic",{decimal:"comma"}).candidates[0];assert.deepEqual(c.values,{effect:.72,lo:.51,hi:.94});
-  const r=A.provenance.fromCandidate(A.provenance.create({pastedText:text,label:"Smith 2020",reference:"Report",location:"Table 1"}),c);r.confirmed=true;
+  const r=A.provenance.fromCandidate(A.provenance.create({pastedText:text,label:"Smith 2020",reference:"Report",location:"Table 1"}),c,{randomisation:"individuals",timepoint:"not stated",facets:{analysisSet:"not stated",adjustment:"not stated",phase:"not stated"}});A.provenance.confirm(r,{by:"SM"});
   assert.deepEqual(A.provenance.validate(r),[]);assert.equal(r.decimal,"comma");
   for(const v of r.values){assert.equal(v.selector[1].exact,text.slice(...v.span));assert.ok(v.selector[1].prefix.length<=32&&v.selector[1].suffix.length<=32);}
 });
@@ -136,8 +136,8 @@ test("PLANTED DEFECT: replay rejects tampered results, args, functions and versi
 });
 test("PLANTED DEFECT: selectors and required facet answers cannot bypass provenance validation",()=>{
   const text="adjusted HR 0.7 (95% CI 0.5-0.9); unadjusted HR 0.8 (95% CI 0.6-1.1)";
-  const c=A.extract(text,"generic").candidates[0],r=A.provenance.fromCandidate(A.provenance.create({pastedText:text,label:"Smith 2020",reference:"Report",location:"Table 1"}),c,{facets:{adjustment:"adjusted"}});
-  r.confirmed=true;assert.deepEqual(A.provenance.validate(r),[]);
+  const c=A.extract(text,"generic").candidates[0],r=A.provenance.fromCandidate(A.provenance.create({pastedText:text,label:"Smith 2020",reference:"Report",location:"Table 1"}),c,{randomisation:"individuals",timepoint:"not stated",facets:{adjustment:"adjusted",analysisSet:"not stated",phase:"not stated"}});
+  A.provenance.confirm(r,{by:"SM"});assert.deepEqual(A.provenance.validate(r),[]);
   r.choice.facets.adjustment="unadjusted";assert.ok(A.provenance.validate(r).includes("facet:adjustment"));
   r.values[0].selector[1].exact="0.8";assert.ok(A.provenance.validate(r).includes("selector:effect"));
 });

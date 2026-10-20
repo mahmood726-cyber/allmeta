@@ -73,9 +73,10 @@ jobs:
       - name: planted defects (each must FAIL)
         # cases.planted.json: one large stored value x(1+1e-6); cases.planted-tiny.json: one 1e-12-scale
         # stored value x(1+1e-6), invisible to an absolute 1e-10 tolerance; cases.planted-formula.json:
-        # outputs from a copy of alm-entry.js with the Luo 0.39/n coefficient changed to 0.40/n.
+        # outputs from a copy of alm-entry.js with the Luo 0.39/n coefficient changed to 0.40/n;
+        # cases.planted-de.json: the cluster design effect 1 + (M - 1) * ICC changed to 1 + M * ICC.
         run: |
-          for corpus in planted planted-tiny planted-formula; do
+          for corpus in planted planted-tiny planted-formula planted-de; do
             if Rscript validation/entry/check_entry.R "validation/entry/cases.$corpus.json" > "$corpus.log" 2>&1; then
               echo "planted defect in cases.$corpus.json was NOT detected"; cat "$corpus.log"; exit 1
             fi
@@ -91,6 +92,7 @@ jobs:
             planted.log
             planted-tiny.log
             planted-formula.log
+            planted-de.log
           if-no-files-found: ignore
 
   browser:

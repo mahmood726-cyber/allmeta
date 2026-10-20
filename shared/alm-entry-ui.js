@@ -152,6 +152,10 @@
   // mountProvenance is also available explicitly; all rows in this workflow require confirmation.
   const SAME_SOURCE_NOTICE="These rows are different arms of ONE trial. This app pools single groups; it does not compare arms. To compare intervention with control, use a two-group analysis.";
   const PHASE_LABELS={baseline:"at baseline","follow-up":"at follow-up",change:"change from baseline"};
+  const DESIGN_FLAGS=["CLUSTER_NOT_ADJUSTED","CLUSTER_ANALYSIS_REPORTED","CROSSOVER_DESIGN","NOT_RANDOMISED"];
+  const UNKNOWN_FACET_TITLES={analysisSet:"Analysis population (not found in the text)",adjustment:"Adjusted for other factors? (not found in the text)",phase:"Type of value (not found in the text)"};
+  const has=x=>x!==undefined&&x!==null&&x!=="";
+  const SOURCE_CHANGED="Source text changed since confirmation: the paste box no longer matches the text this row was confirmed against. Put the original text back, or check this row's stored text (Show full pasted text) and re-confirm.";
   function mountProvenance(el,{schema="generic",apply,usedAs=""}={}){
     const core=global.AlmEntry||(typeof module!=="undefined"&&module.exports?require("./alm-entry.js"):null);
     if(!core||typeof apply!=="function")throw new Error("AlmEntry and apply(records) are required");
@@ -184,6 +188,11 @@
     const decimalList=node("ul",undefined,root);decimalList.className="alm-entry-decimals";decimalList.setAttribute("aria-label","How numbers with a comma are read");
     function showDecimals(){decimalList.replaceChildren();core.decimalPreview(paste.value,decimal.value).forEach(p=>node("li",p.message,decimalList));}
     const wantedOutcome=input("Outcome to look for (used only to rank candidates)",root);
+    // N4: the extractor's initials, asked once per session and stored with every confirmation.
+    const initials=input("Your initials (recorded with each confirmation)",root);
+    try{initials.value=global.sessionStorage&&global.sessionStorage.getItem("alm-entry-initials")||"";}catch(e){initials.value="";}
+    const who=()=>String(initials.value||"").trim();
+    initials.addEventListener("input",()=>{try{if(global.sessionStorage)global.sessionStorage.setItem("alm-entry-initials",who());}catch(e){}refreshAll();});
     const status=node("p","Add a source result, check its meaning, then confirm each study.",root);status.setAttribute("role","status");status.setAttribute("aria-live","polite");
     const questions=node("div",undefined,root),candidatesBox=node("div",undefined,root),cards=node("div",undefined,root);
     // Same-source guard (U2): blocking for single-group apps until an explicit opt-in.
@@ -197,20 +206,22 @@
       const records=rows.map((r,i)=>({...r.raw,provenance:JSON.parse(JSON.stringify(snapshot[i]))}));
       global.AlmFeaturesState=global.AlmFeaturesState||{};
       const state=global.AlmFeaturesState,previous=state.provenance,previousSummary=state.provenanceSummary;
-      state.provenance=snapshot;state.provenanceSummary=P.summary(snapshot);applying=true;refreshGate();
+      const previousMethods=state.entryMethods;
+      state.provenance=snapshot;state.provenanceSummary=P.summary(snapshot);state.entryMethods=P.methods(snapshot);applying=true;refreshGate();
       try{
         const response=await apply(records);
         if(response&&response.ok===false)throw new Error("The application did not accept these rows");
-        state.entryLog=snapshot.flatMap(r=>r.conversions.map(c=>({...c,study:r.label,text:r.label+": "+c.formula,method:c.formula})));
+        state.entryLog=snapshot.flatMap(r=>[...r.conversions.map(c=>({...c,study:r.label,text:r.label+": "+c.formula,method:c.formula})),
+          ...r.flags.filter(f=>DESIGN_FLAGS.includes(f.code)||/^NOT_STATED_/.test(f.code)).map(f=>({study:r.label,text:r.label+": "+f.text,flags:[f],method:"design or reporting flag",citation:"Cochrane Handbook v6.5 §23.1.4"}))]);
         const n=core.plural(records.length,"confirmed row");
-        status.textContent=(version===revision?`Applied ${n}.`:"Applied the confirmed snapshot. Review subsequent edits before applying again.")+" "+P.summarySentence(snapshot);
+        status.textContent=[(version===revision?`Applied ${n}.`:"Applied the confirmed snapshot. Review subsequent edits before applying again."),P.summarySentence(snapshot),...state.entryMethods].join(" ");
         candidatesBox.replaceChildren();questions.replaceChildren();extraction=null;
-      }catch(e){state.provenance=previous;state.provenanceSummary=previousSummary;status.textContent="Could not apply rows: "+e.message;}
+      }catch(e){state.provenance=previous;state.provenanceSummary=previousSummary;state.entryMethods=previousMethods;status.textContent="Could not apply rows: "+e.message;}
       finally{applying=false;refreshGate();}
     });
     use.disabled=true;
     function sameSourceBlocked(){return singleGroup&&P.sameSource(rows.map(r=>r.rec)).length>0&&!optIn.checked;}
-    function valid(){return rows.length>0&&rows.every(r=>P.validate(r.rec).length===0&&r.issues.length===0)&&!sameSourceBlocked();}
+    function valid(){return rows.length>0&&rows.every(r=>P.validate(r.rec).length===0&&r.issues.length===0&&!P.sourceChanged(r.rec,paste.value))&&!sameSourceBlocked();}
     function refreshGate(){use.disabled=applying||!valid();}
     function download(name,type,data){
       const blob=data instanceof Blob?data:new Blob([data],{type}),url=global.URL.createObjectURL(blob),a=node("a",name,root);
@@ -222,6 +233,22 @@
       if(rows.length)try{download("provenance.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",global.AlmZip.docx(P.toDocxParagraphs(rows.map(r=>r.rec))));}catch(e){status.textContent="Could not export DOCX: "+e.message;}
     });
     csv.disabled=true;docx.disabled=true;
+    // N4: second extractor. Read-only per-row differences; nothing is merged or changed.
+    const compareFile=input("Compare with another extraction (CSV)",root,"","file");compareFile.accept=".csv,text/csv";
+    const compareOut=node("div",undefined,root);compareOut.className="alm-entry-compare";compareOut.hidden=true;compareOut.setAttribute("aria-live","polite");
+    compareFile.addEventListener("change",async()=>{
+      const chosen=compareFile.files&&compareFile.files[0];if(!chosen)return;
+      compareOut.replaceChildren();compareOut.hidden=false;
+      try{
+        const report=P.compare(rows.map(r=>r.rec),P.fromCSV(await chosen.text()));
+        node("p",`${core.plural(report.differences,"difference")} between this extraction and the other one. Read-only: nothing here was changed.`,compareOut);
+        const list=node("ul",undefined,compareOut);
+        for(const r of report.rows){
+          const li=node("li",`${r.label||"[no label]"}: ${r.status==="matched"?core.plural(r.diffs.length,"difference"):r.status}`,list);
+          if(r.diffs.length){const ul=node("ul",undefined,li);r.diffs.forEach(d=>node("li",`${d.what}: ${d.mine} here, ${d.theirs} in the other extraction`,ul));}
+        }
+      }catch(e){node("p","Could not compare: "+e.message,compareOut);}
+    });
     const plainField=f=>core.FIELD_LABELS[f]||String(f).replace(/^arm(\d+)\.(events|n)$/,(m,i,k)=>`${k==="n"?"total":"events"} (printed arm ${+i+1})`);
     // Highlight the used values inside text[start, end).
     function highlights(parent,rec,start=0,end=rec.pastedText.length){
@@ -245,6 +272,7 @@
     function rebuild(row){
       const old=row.rec,c=row.candidate,choice=row.choice;
       row.rec=P.fromCandidate(old,c,choice);row.rec.usedAs=usedAs;row.rec.candidateRank=row.rank;row.issues=[];
+      if(row.outcomeDef)row.rec.outcomeDefinition=row.outcomeDef;else delete row.rec.outcomeDefinition;
       if(!usedAs)row.issues.push("The app adapter must supply entry.usedAs to explain how these values will be used.");
       row.raw={study:old.label};
       if(c.kind==="counts"){
@@ -254,6 +282,7 @@
         }else if(choice.treatmentIndex===undefined||choice.controlIndex===undefined||choice.treatmentIndex===choice.controlIndex)row.issues.push("Choose distinct treatment and control arms.");
         if(!core.DENOMINATOR_CHOICES[choice.denominator])row.issues.push("Say who is counted in the total.");
         row.rec.values.forEach(v=>{if(["ai","ci","n1i","n2i","xi","ni"].includes(v.field))row.raw[v.field]=v.value;});
+        Object.assign(row.raw,P.adjusted(row.rec));
         if(!["proportion","binary2x2"].includes(name))row.issues.push("These counts cannot fill this app's required inputs. Choose a compatible result.");
       }else if(c.kind==="effect_ci"&&["generic","contrast-nma","dose"].includes(name)){
         const measure=choice.measure||c.measure;
@@ -265,6 +294,10 @@
         row.raw.yi=ratio&&!logScale?Math.log(v.effect):v.effect;row.raw.sei=result.value;
         if(ratio&&!logScale){
           row.rec=P.applyConversion(row.rec,{field:"yi",formula:"yi = ln(effect)",method:"log ratio",citation:result.citation,inputs:{effect:v.effect},value:row.raw.yi});
+        }
+        if(row.rec.design?.designEffect&&choice.cluster?.action==="adjust"&&Number.isFinite(row.raw.sei)){
+          const adj=core.clusterSE({se:row.raw.sei,designEffect:row.rec.design.designEffect});
+          row.rec=P.applyConversion(row.rec,{...adj,field:"sei",formula:"SE × √(design effect)"});row.raw.sei=adj.value;
         }
         row.raw.est=v.effect;row.raw.lo=v.lo;row.raw.hi=v.hi;row.raw.measure=measure;row.raw.ratio=ratio;row.raw.scale=logScale?"log":"natural";
         if(!Number.isFinite(row.raw.yi)||!Number.isFinite(row.raw.sei))row.issues.push("The values cannot be converted on the selected scale.");
@@ -285,6 +318,9 @@
       if(!choice.outcome)row.issues.push("Enter the outcome.");
       if(!choice.timepoint)row.issues.push("Choose the timepoint (or Not stated).");
       for(const f of row.rec.requiredFacets||[])if(f.key!=="timepoint"&&!f.choices.includes(choice.facets?.[f.key]))row.issues.push(`Choose: ${facetTitle(f.key)}.`);
+      for(const [k,v] of Object.entries(row.rec.facets||{}))if(v==="unknown"&&UNKNOWN_FACET_TITLES[k]&&c.kind!=="counts")row.issues.push(`Choose: ${facetTitle(k)} (or “Not stated in source”).`);
+      if(!core.RANDOMISATION_CHOICES[choice.randomisation])row.issues.push("Say what was randomised (individuals, clusters, crossover periods).");
+      else if(choice.randomisation==="clusters"&&!["adjust","decline",...(c.kind==="counts"?[]:["already"])].includes(choice.cluster?.action))row.issues.push("Say whether to adjust for clustering.");
       const sanity=core.sanity([row.raw],schema);row.rec.flags.push(...sanity);
       if(c.percentagesCorroborate===false)row.rec.flags.push({code:"PERCENT_MISMATCH",text:"Printed percentages do not corroborate this denominator assignment. Check the source."});
       for(const f of row.rec.flags)if(f.blocking)row.issues.push(f.text);
@@ -298,13 +334,24 @@
       rows.forEach((row,i)=>{
         const rec=row.rec,arm=P.armIssues(rec),acked=arm.length>0&&row.choice.armAck===P.armAckKey(rec);
         row.cross=same.filter(s=>s.rows.includes(i)).map(s=>s.text);
-        const missing=P.validate({...rec,confirmed:true}).filter(m=>!["arm role","arm contradiction","blocking flags"].includes(m)&&!m.startsWith("facet:"));
-        const todo=[...row.issues,...row.cross,...(arm.length&&!acked?["The arm you chose does not match the words in the paper. Change it, or tick “I have checked the arm”."]:[]),...(missing.length?["Fill in: "+missing.map(m=>({label:"study label (author and year)",reference:"full reference",location:"location",decimal:"decimal mark (choose point or comma above)"})[m]||m).join(", ")+"."]:[])];
+        const ready=P.validate(rec,{beforeConfirm:true});
+        const missing=ready.filter(m=>!["arm role","arm contradiction","blocking flags","randomisation","cluster adjustment"].includes(m)&&!m.startsWith("facet:")&&!m.startsWith("unknown:"));
+        const todo=[...row.issues,...row.cross,...(arm.length&&!acked?["The arm you chose does not match the words in the paper. Change it, or tick “I have checked the arm”."]:[]),...(missing.length?["Fill in: "+missing.map(m=>({label:"study label (author and year)",reference:"full reference",location:"source type and location",decimal:"decimal mark (choose point or comma above)","source type":"source type (abstract, table, figure, text, supplement or registry)","outcome definition":"outcome definition (select it again from the paste box)"})[m]||m).join(", ")+"."]:[]),
+          ...(who()?[]:["Enter your initials at the top of the panel (recorded with each confirmation)."])];
         row.todo.replaceChildren();todo.forEach(t=>node("li",t,row.todo));
         row.armBox.hidden=!arm.length;row.armText.replaceChildren();arm.forEach(a=>node("li",a.text,row.armText));row.ack.checked=acked;
-        const blocked=todo.length>0||P.validate({...rec,confirmed:true}).length>0;
-        if(blocked&&row.confirm.checked){row.confirm.checked=false;rec.confirmed=false;rec.confirmedAt=null;}
+        const blocked=todo.length>0||ready.length>0;
+        if(blocked&&row.confirm.checked){row.confirm.checked=false;P.unconfirm(rec);}
         row.confirm.disabled=blocked;
+        // N6: the paste box no longer matches the text this row was confirmed against.
+        const changed=P.sourceChanged(rec,paste.value);row.changed.hidden=!changed;row.reconfirm.disabled=!who()||blocked;
+        // N1: cluster inputs only for cluster-randomised rows, with the design effect previewed.
+        row.cluster.hidden=row.choice.randomisation!=="clusters";
+        const de=rec.design?.designEffect,args=row.choice.cluster||{},adj=P.adjusted(rec,{exact:true});
+        row.clusterPreview.textContent=!de?"Design effect: give the mean cluster size (or the number of clusters and the total) and the ICC, or a reported design effect.":
+          (has(args.designEffect)?`Design effect (reported) = ${+de.toFixed(3)}`:`Design effect = 1 + (M − 1) × ICC = ${de.toFixed(3)}`+(has(args.m)?"":` (M = ${args.total} / ${args.k})`))+
+          (Object.keys(adj).length?"; "+Object.entries(adj).map(([f,x])=>`${plainField(f)} ${rec.values.find(v=>v.field===f).text} → ${+x.toFixed(2)}`).join(", ")+
+            ` (entered as ${rec.conversions.filter(x=>x.fn==="clusterCounts").map(x=>x.rounded.events+" of "+x.rounded.n).join(" and ")})`:"");
         row.line.textContent=P.line(rec);
         const clause=P.clause(rec);highlights(row.clause,rec,clause.start,clause.end);
         if(row.full.open)highlights(row.source,rec);
@@ -333,8 +380,12 @@
       row.confirm=input("I confirm this row",confirmBox,"","checkbox");
       row.confirm.addEventListener("change",()=>{
         if(row.confirm.disabled)return;
-        row.rec.confirmed=row.confirm.checked;row.rec.confirmedAt=row.rec.confirmed?new Date().toISOString():null;revision++;refreshAll();
+        if(row.confirm.checked&&who())P.confirm(row.rec,{by:who(),via:"row",boxText:paste.value});else{row.confirm.checked=false;P.unconfirm(row.rec);}
+        revision++;refreshAll();
       });
+      row.changed=node("div",undefined,card);row.changed.className="alm-entry-source-changed";row.changed.setAttribute("role","alert");row.changed.hidden=true;
+      node("p",SOURCE_CHANGED,row.changed);
+      row.reconfirm=button("Re-confirm this row",row.changed,()=>{if(!who()||row.confirm.disabled)return;P.confirm(row.rec,{by:who(),via:"row",boxText:paste.value});row.confirm.checked=true;revision++;refreshAll();});
       row.todo=node("ul",undefined,card);row.todo.className="alm-entry-todo";row.todo.setAttribute("aria-label","Still to answer for this row");
       row.armBox=node("div",undefined,card);row.armBox.className="alm-entry-arm-check";row.armBox.setAttribute("role","alert");row.armBox.hidden=true;
       row.armText=node("ul",undefined,row.armBox);
@@ -372,6 +423,25 @@
       if(candidate.kind==="counts"){
         row.denominator=select("Who is counted in the total?",card,Object.entries(core.DENOMINATOR_CHOICES),value=>{set("denominator",value);rebuild(row);});
       }
+      // N5: facets with no cue in the text need a value or "Not stated in source" (effect rows; counts ask in plain words above).
+      if(candidate.kind!=="counts")for(const key of Object.keys(UNKNOWN_FACET_TITLES)){
+        if(candidate.facets?.[key]!=="unknown"||(candidate.requiredFacets||[]).some(f=>f.key===key))continue;
+        select(UNKNOWN_FACET_TITLES[key],card,[...core.FACET_CHOICES[key].map(v=>[v,key==="phase"?PHASE_LABELS[v]||v:v]),["not stated","Not stated in source"]],value=>{
+          row.choice.facets=row.choice.facets||{};if(value)row.choice.facets[key]=value;else delete row.choice.facets[key];rebuild(row);
+        });
+      }
+      // N1: unit of randomisation (required), with cluster inputs and an explicit adjust/decline choice.
+      select("What was randomised?",card,Object.entries(core.RANDOMISATION_CHOICES),value=>{set("randomisation",value);rebuild(row);});
+      row.cluster=node("div",undefined,card);row.cluster.className="alm-entry-cluster";row.cluster.hidden=true;
+      node("p","Cluster-randomised trial: the design effect 1 + (M − 1) × ICC (Cochrane Handbook v6.5 §23.1.4) divides events and totals, or multiplies an SE by its square root.",row.cluster);
+      const clusterSet=(key,value)=>{row.choice.cluster=row.choice.cluster||{};if(value===""||value===undefined)delete row.choice.cluster[key];else row.choice.cluster[key]=value;rebuild(row);};
+      for(const [key,title] of [["m","Mean cluster size (M)"],["k","Number of clusters"],["total","Total participants in all clusters"],["icc","ICC (intracluster correlation)"],["designEffect","Or: design effect reported in the paper"]]){
+        const e=input(title,row.cluster,"","number");e.step="any";e.min="0";e.addEventListener("input",()=>clusterSet(key,String(e.value||"").trim()===""?"":+e.value));
+      }
+      select("Source of the ICC or design effect",row.cluster,Object.entries(core.ICC_SOURCES),value=>clusterSet("iccSource",value));
+      select("Adjust for clustering?",row.cluster,candidate.kind==="counts"?[["adjust","Yes: divide events and totals by the design effect"],["decline","No: keep the printed counts (flagged as not adjusted)"]]:
+        [["already","The reported result already accounts for clustering"],["adjust","Yes: multiply the SE by the square root of the design effect"],["decline","No: keep it unadjusted (flagged as not adjusted)"]],value=>clusterSet("action",value));
+      row.clusterPreview=node("p","",row.cluster);row.clusterPreview.className="alm-entry-cluster-preview";
       for(const facet of candidate.requiredFacets||[]){
         if(facet.key==="timepoint")continue;
         const cue=(candidate.facetEvidence?.[facet.key]||[]).map(e=>"“"+e.text+"”").join(", ");
@@ -385,7 +455,27 @@
         if(candidate.kind==="median_iqr")select("Skewness decision",card,[["keep unconverted","Keep unconverted if skewed"],["convert anyway","Convert anyway: data look skewed; the mean/SD estimate may be unreliable"]],value=>{row.choice.skew=value;rebuild(row);});
       }
       const outcome=input("Outcome measured",card);outcome.addEventListener("input",()=>{set("outcome",outcome.value.trim());rebuild(row);});
-      for(const [key,title] of [["label","Study label (author and year, e.g. Smith 2019)"],["reference","Full reference"],["location","Location (table, figure or page)"],["doi","DOI"],["pmid","PMID"]]){
+      // N2: optional verbatim outcome definition, typed or taken from the selection in the paste box (with its span).
+      const definition=input("Outcome as defined in the paper (optional, verbatim)",card);
+      definition.addEventListener("input",()=>{row.outcomeDef=P.outcomeDefinition(row.rec,definition.value)||undefined;rebuild(row);});
+      button("Use the text selected in the paste box",card,()=>{
+        const a=paste.selectionStart,b=paste.selectionEnd;
+        if(paste.value!==text){status.textContent="To select the outcome definition, the paste box must hold this row's source text.";return;}
+        if(!(Number.isInteger(a)&&Number.isInteger(b)&&b>a)){status.textContent="Select the outcome definition in the paste box first.";return;}
+        row.outcomeDef=P.outcomeDefinition(row.rec,text.slice(a,b),[a,b]);definition.value=row.outcomeDef.text;rebuild(row);
+      });
+      // N3: structured source: type + number/page; abstracts get a full-text warning and an optional "Verified against".
+      row.source={type:"",detail:""};
+      const setSource=()=>{
+        const s={type:row.source.type,detail:row.source.detail,...(row.source.type==="Abstract"&&row.source.verifiedAgainst?{verifiedAgainst:row.source.verifiedAgainst}:{})};
+        row.rec.source=s;row.rec.location=P.sourceLocation(s);abstractBox.hidden=s.type!=="Abstract";rebuild(row);
+      };
+      select("Source type",card,core.SOURCE_TYPES.map(t=>[t,t]),value=>{row.source.type=value;setSource();});
+      const detail=input("Location: number or page (e.g. 2, p. 5 or Results paragraph)",card);detail.addEventListener("input",()=>{row.source.detail=detail.value.trim();setSource();});
+      const abstractBox=node("div",undefined,card);abstractBox.className="alm-entry-abstract";abstractBox.hidden=true;
+      node("p",core.ABSTRACT_NOTE,abstractBox).className="alm-entry-abstract-note";
+      const verified=input("Verified against (optional, e.g. Table 2 of the full text)",abstractBox);verified.addEventListener("input",()=>{row.source.verifiedAgainst=verified.value.trim();setSource();});
+      for(const [key,title] of [["label","Study label (author and year, e.g. Smith 2019)"],["reference","Full reference"],["doi","DOI"],["pmid","PMID"]]){
         const e=input(title,card);
         let link;
         if(key==="doi"||key==="pmid"){

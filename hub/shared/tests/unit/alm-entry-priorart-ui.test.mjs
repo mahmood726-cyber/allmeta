@@ -23,7 +23,11 @@ function setup(){
   const set=async(t,value)=>{const e=field(t);assert.ok(e,t);e.value=value;await e.fire(e.tagName==="select"?"change":"input");};
   const paste=async text=>{const p=all().find(e=>e.tagName==="textarea");p.value=text;await p.fire("input");await button("Extract candidates").fire("click");};
   const add=async()=>{await set("Choose the source result","0");await button("Add chosen result").fire("click");};
-  const complete=async()=>{for(const [k,v] of [["Study label","Smith 2020"],["Full reference","Report"],["Location","Table 1"],["Outcome measured","Rash"],["Timepoint","12 weeks"]])await set(k,v);};
+  const complete=async()=>{
+    for(const [k,v] of [["Your initials","SM"],["Study label","Smith 2020"],["Full reference","Report"],["Source type","Table"],["Location","1"],["Outcome measured","Rash"],["Timepoint","12 weeks"],["What was randomised?","individuals"]])await set(k,v);
+    // Facets with no cue in the text are stated explicitly (N5).
+    for(const k of ["Analysis population","Adjusted for other factors?","Type of value"])if(field(k))await set(k,"not stated");
+  };
   return {root,panel,field,set,button,paste,add,complete,applied:()=>applied};
 }
 test("ranked alternatives are never preselected and facet decisions gate confirmation",async()=>{

@@ -5,7 +5,7 @@ const require=createRequire(import.meta.url),A=require("../../../../shared/alm-e
 const source="🧪 7/84 in the amber group vs 11/86 in the blue group";
 function record(){
   let r=P.create({pastedText:source,label:"Ellis 2022",reference:"Ellis et al., Synthetic trial report.",location:"Table 6",doi:"10.1000/example",pmid:"123456"});
-  r=P.fromCandidate(r,A.extract(source,"counts").candidates[0],{treatmentIndex:1,controlIndex:0,outcome:"Rash",timepoint:"8 weeks"});
+  r=P.fromCandidate(r,A.extract(source,"counts").candidates[0],{treatmentIndex:1,controlIndex:0,outcome:"Rash",timepoint:"8 weeks",denominator:"ITT",randomisation:"individuals"});
   r.usedAs="log odds ratio (computed by the app from events and totals)";return r;
 }
 test("create stores verbatim UTF-16 text and independent identities",()=>{
@@ -30,14 +30,14 @@ test("conversion captures formula, inputs, output, citation and resets confirmat
   c.inputs.n=0;assert.equal(updated.conversions[0].inputs.n,49);assert.equal(r.conversions.length,0);
 });
 test("required metadata and explicit confirmation gate validation",()=>{
-  const r=record();assert.deepEqual(P.validate(r),["confirmed"]);r.confirmed=true;assert.deepEqual(P.validate(r),[]);
+  const r=record();assert.deepEqual(P.validate(r),["confirmed"]);P.confirm(r,{by:"EE"});assert.deepEqual(P.validate(r),[]);
   r.label="2022";r.reference=" ";r.location="";assert.deepEqual(P.validate(r),["label","reference","location"]);
 });
 for(const label of ["García 2020","O'Neil 1998","Ng et al. 2024","Smith 2019a"])test("author/year label: "+label,()=>{
-  const r=record();r.label=label;r.confirmed=true;assert.ok(!P.validate(r).includes("label"));
+  const r=record();r.label=label;P.confirm(r,{by:"EE"});assert.ok(!P.validate(r).includes("label"));
 });
 test("blocking flags prevent validation",()=>{
-  const r=record();r.confirmed=true;r.flags.push({blocking:true,text:"Invalid counts"});assert.ok(P.validate(r).includes("blocking flags"));
+  const r=record();P.confirm(r,{by:"EE"});r.flags.push({blocking:true,text:"Invalid counts"});assert.ok(P.validate(r).includes("blocking flags"));
 });
 test("CSV quotes line breaks, quotes and all provenance fields",()=>{
   const r=record();r.reference='Title "quoted"\nsecond line';const csv=P.toCSV([r]);assert.ok(csv.includes('"Title ""quoted""\nsecond line"'));assert.ok(csv.includes('"pastedText"'));assert.ok(csv.includes('"conversions"'));assert.ok(csv.includes(source));
@@ -49,9 +49,9 @@ test("DOCX paragraph preparation needs no ZIP global",()=>{
   const p=P.toDocxParagraphs([record()]);assert.ok(Array.isArray(p));assert.ok(p[0].includes("We read:"));assert.ok(p[1].includes("10.1000/example"));assert.ok(p[2].includes("8 weeks"));
 });
 test("PLANTED DEFECT: an altered span or value invalidates a confirmed record",()=>{
-  const r=record();r.confirmed=true;assert.deepEqual(P.validate(r),[]);
+  const r=record();P.confirm(r,{by:"EE"});assert.deepEqual(P.validate(r),[]);
   r.values[0].span[1]++;assert.ok(P.validate(r).includes("span:ci"));
-  const b=record();b.confirmed=true;b.values[0].value=8;assert.ok(P.validate(b).includes("span:ci"));
+  const b=record();P.confirm(b,{by:"EE"});b.values[0].value=8;assert.ok(P.validate(b).includes("span:ci"));
 });
 
 // DOM behavior tests deliberately make no browser-layout or assistive-technology claim.
@@ -77,7 +77,7 @@ function setup(schema="binary2x2",apply=()=>({ok:true}),usedAs="log odds ratio (
     all().find(e=>e.tagName==="textarea").value=text;await button("Extract candidates").fire("click");await set("Choose the source result",index);await button("Add chosen result").fire("click");
   }
   async function complete(){
-    for(const [title,value] of [["Study label","Ellis 2022"],["Full reference","Synthetic journal report"],["Location","Table 6"],["Treatment arm","1"],["Control arm","0"],["Outcome measured","Rash"],["Timepoint","8 weeks"],["Who is counted","ITT"]])await set(title,value);
+    for(const [title,value] of [["Your initials","EE"],["Study label","Ellis 2022"],["Full reference","Synthetic journal report"],["Source type","Table"],["Location","6"],["Treatment arm","1"],["Control arm","0"],["Outcome measured","Rash"],["Timepoint","8 weeks"],["Who is counted","ITT"],["What was randomised?","individuals"]])await set(title,value);
     const confirm=field("I confirm");assert.equal(confirm.disabled,false);confirm.checked=true;await confirm.fire("change");
   }
   return {root,panel,all,button,field,set,add,complete};
@@ -89,7 +89,7 @@ test("paper UI requires selection, metadata, arm mapping and confirmation before
   assert.equal(received[0].ai,11);assert.equal(received[0].ci,7);assert.equal(stored[0].confirmed,true);assert.ok(stored[0].confirmedAt);assert.deepEqual(received[0].provenance,stored[0]);
 });
 test("paper UI editing source metadata revokes confirmation",async()=>{
-  const h=setup();await h.add();await h.complete();await h.set("Location","Figure 7");
+  const h=setup();await h.add();await h.complete();await h.set("Source type","Figure");await h.set("Location","7");
   assert.equal(h.field("I confirm").checked,false);assert.equal(h.button("Use these rows").disabled,true);assert.equal(h.panel.getResult().provenance[0].confirmedAt,null);
 });
 test("paper UI uses source slices and safe nodes for marks and malicious text",async()=>{
@@ -116,7 +116,7 @@ test("paper UI warns when DOCX dependency is absent",async()=>{
 test("paper UI records effect conversions and sends computed values",async()=>{
   let received;const h=setup("generic",rs=>{received=rs;return {ok:true};},"log risk ratio");
   await h.add("RR 0.72 (95% CI 0.51-0.94)");
-  for(const [k,v] of [["Study label","Ellis 2022"],["Full reference","Report"],["Location","Page 7"],["Outcome measured","Rash"],["Timepoint","8 weeks"]])await h.set(k,v);
+  for(const [k,v] of [["Your initials","EE"],["Study label","Ellis 2022"],["Full reference","Report"],["Source type","Text"],["Location","p. 7"],["Outcome measured","Rash"],["Timepoint","8 weeks"],["What was randomised?","individuals"],["Analysis population","not stated"],["Adjusted for other factors?","not stated"],["Type of value","not stated"]])await h.set(k,v);
   const confirm=h.field("I confirm");assert.equal(confirm.disabled,false);confirm.checked=true;await confirm.fire("change");await h.button("Use these rows").fire("click");
   assert.equal(received[0].yi,Math.log(.72));assert.equal(received[0].sei,A.seFromCI({lo:.51,hi:.94,ratio:true,level:.95}).value);assert.equal(received[0].provenance.conversions.length,2);
 });
@@ -128,14 +128,14 @@ test("paper UI failed apply restores previous provenance state",async()=>{
 test("paper UI applies a single explicitly selected arm to a proportion app",async()=>{
   let received;const h=setup("proportion",rs=>{received=rs;return {ok:true};},"proportion (computed from events and total)");
   await h.add("7/84 (8.3%)");
-  for(const [k,v] of [["Study label","Ellis 2022"],["Full reference","Report"],["Location","Table 4"],["Arm to use","0"],["This arm is","intervention"],["Outcome measured","Rash"],["Timepoint","8 weeks"],["Who is counted","ITT"]])await h.set(k,v);
+  for(const [k,v] of [["Your initials","EE"],["Study label","Ellis 2022"],["Full reference","Report"],["Source type","Table"],["Location","4"],["Arm to use","0"],["This arm is","intervention"],["Outcome measured","Rash"],["Timepoint","8 weeks"],["Who is counted","ITT"],["What was randomised?","individuals"]])await h.set(k,v);
   const confirm=h.field("I confirm");assert.equal(confirm.disabled,false);confirm.checked=true;await confirm.fire("change");await h.button("Use these rows").fire("click");
   assert.equal(received[0].xi,7);assert.equal(received[0].ni,84);assert.deepEqual(received[0].provenance.values.map(v=>v.field),["xi","ni"]);
 });
 test("paper UI requires scale confirmation for a negative ratio interval",async()=>{
   let received;const h=setup("generic",rs=>{received=rs;return {ok:true};},"log hazard ratio");
   await h.add("HR -0.3 (95% CI -0.5 to -0.1)");
-  for(const [k,v] of [["Study label","Ellis 2022"],["Full reference","Report"],["Location","Page 7"],["Outcome measured","Rash"],["Timepoint","8 weeks"]])await h.set(k,v);
+  for(const [k,v] of [["Your initials","EE"],["Study label","Ellis 2022"],["Full reference","Report"],["Source type","Text"],["Location","p. 7"],["Outcome measured","Rash"],["Timepoint","8 weeks"],["What was randomised?","individuals"],["Analysis population","not stated"],["Adjusted for other factors?","not stated"],["Type of value","not stated"]])await h.set(k,v);
   assert.equal(h.field("I confirm").disabled,true);await h.set("Ratio scale","log");
   const confirm=h.field("I confirm");assert.equal(confirm.disabled,false);confirm.checked=true;await confirm.fire("change");await h.button("Use these rows").fire("click");
   assert.equal(received[0].yi,-.3);assert.equal(received[0].provenance.choice.scale,"log");
