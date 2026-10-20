@@ -1,7 +1,7 @@
 # Restore .github/r/renv.lock for one xplat-verify row (every OS/R row, including the rocker container).
 #   Rscript .github/r/restore.R      (from the repo root)
 # Never falls back: if a system requirement, the restore, or the version check fails, this stops with an error
-# and the row fails. On success it appends R_LIBS_USER, XPLAT_PACKAGES_VIA=renv and XPLAT_INSTALL to $GITHUB_ENV.
+# and the row fails. On success it appends R_LIBS, R_LIBS_USER, XPLAT_PACKAGES_VIA=renv and XPLAT_INSTALL to $GITHUB_ENV.
 #   Linux:   installs the lock's system requirements (pak::pkg_sysreqs -> apt-get) before the restore, because
 #            renv::restore() does not (e.g. igraph's P3M binary needs libglpk40 at load time).
 #   all OS:  renv installs from the lockfile's repositories: a dated P3M snapshot (binaries for Windows, Linux
@@ -50,7 +50,10 @@ writeLines(c(sprintf("for (p in c(%s)) {", paste(sprintf('"%s"', names(want)), c
   '  path <- tryCatch(normalizePath(dirname(find.package(p)), winslash = "/"), error = function(e) NA_character_)',
   '  cat("PKG", p, v, path, sep = "\t"); cat("\n")', "}"), probe)
 rscript <- file.path(R.home("bin"), if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript")
-Sys.setenv(R_LIBS_USER = lib)   # inherited by the child (system2's env= is ignored on Windows)
+# R_LIBS ranks above R_LIBS_USER in .libPaths(); rocker's Renviron.site sets R_LIBS=<site-library>:<R library>
+# unless R_LIBS is already set, which would put the R-bundled Matrix/MASS/... ahead of the restored ones.
+# So the renv library goes into both (inherited by the child; system2's env= is ignored on Windows).
+Sys.setenv(R_LIBS = lib, R_LIBS_USER = lib)
 out <- system2(rscript, c("--vanilla", shQuote(probe)), stdout = TRUE)
 rows <- do.call(rbind, strsplit(out[startsWith(out, "PKG\t")], "\t", fixed = TRUE))
 got <- setNames(rows[, 3], rows[, 2])[names(want)]
@@ -65,5 +68,5 @@ cat(sprintf("RENV_RESTORED %d/%d packages at the locked versions (%d from %s, %d
   sum(!bad), length(want), sum(in_lib), lib, sum(!bad) - sum(in_lib)))
 
 env_file <- Sys.getenv("GITHUB_ENV")
-if (nzchar(env_file)) cat(sprintf("R_LIBS_USER=%s\nXPLAT_PACKAGES_VIA=renv\nXPLAT_INSTALL=renv %s restore of .github/r/renv.lock (%d/%d packages at locked versions)\n",
-  lib, utils::packageVersion("renv"), sum(!bad), length(want)), file = env_file, append = TRUE)
+if (nzchar(env_file)) cat(sprintf("R_LIBS=%s\nR_LIBS_USER=%s\nXPLAT_PACKAGES_VIA=renv\nXPLAT_INSTALL=renv %s restore of .github/r/renv.lock (%d/%d packages at locked versions)\n",
+  lib, lib, utils::packageVersion("renv"), sum(!bad), length(want)), file = env_file, append = TRUE)

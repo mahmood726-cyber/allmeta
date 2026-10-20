@@ -130,7 +130,7 @@ jobs:
       # --- path A: committed lockfile -> renv, on every row (host and container alike) ---
       # restore.R installs the lock's system requirements (Linux), restores from the lock's dated P3M snapshot
       # (binaries) and checks every installed version against the lock. Any failure fails this row: there is no
-      # fallback to path B once a lock is committed. It sets R_LIBS_USER, XPLAT_PACKAGES_VIA=renv and XPLAT_INSTALL.
+      # fallback to path B once a lock is committed. It sets R_LIBS + R_LIBS_USER, XPLAT_PACKAGES_VIA=renv and XPLAT_INSTALL.
       - name: renv restore from .github/r/renv.lock (fails the row on any error)
         if: ${{ steps.pins.outputs.lock == 'true' }}
         run: Rscript .github/r/restore.R
