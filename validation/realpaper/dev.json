@@ -1,0 +1,1180 @@
+{
+ "corpus": "mahmood726-cyber/meta-harness@f498cba6aeb057889b76bda47f0f338a7d89c906 docs/reviews/<slug>/review.json",
+ "split_rule": "sha256(slug utf-8) last hex digit even -> dev, odd -> heldout; fixed 2026-10-20 15:40 BST before any extraction run",
+ "kinds": [
+  "counts",
+  "effect_ci"
+ ],
+ "rows": [
+  {
+   "id": "balanced-crystalloids-vs-saline-mortality|Mortality|PMID 35041780",
+   "topic": "balanced-crystalloids-vs-saline-mortality",
+   "split": "dev",
+   "outcome": "Mortality",
+   "trial": "PMID 35041780",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "Death within 90 days after randomization occurred in 530 of 2433 patients (21.8%) in the BMES group and in 530 of 2413 patients (22.0%) in the saline group, for a difference of -0.15 percentage points",
+   "kind": "counts",
+   "expected": {
+    "ai": 530,
+    "n1i": 2433,
+    "ci": 530,
+    "n2i": 2413
+   }
+  },
+  {
+   "id": "balanced-crystalloids-vs-saline-mortality|Mortality|PMID 34375394",
+   "topic": "balanced-crystalloids-vs-saline-mortality",
+   "split": "dev",
+   "outcome": "Mortality",
+   "trial": "PMID 34375394",
+   "harness_label": "abstract effect+CI (HR)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "abstract arm-level counts (percentage-corroborated): By day 90, 1381 of 5230 patients (26.4%) assigned to a balanced solution died vs 1439 of 5290 patients (27.2%) assigned to saline solution (adjusted hazard ratio, 0.97 [95% CI, 0.90-1.05]; P = .47).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.97,
+    "lo": 0.9,
+    "hi": 1.05,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "balanced-crystalloids-vs-saline-mortality|New renal-replacement therapy|PMID 35041780",
+   "topic": "balanced-crystalloids-vs-saline-mortality",
+   "split": "dev",
+   "outcome": "New renal-replacement therapy",
+   "trial": "PMID 35041780",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "New renal-replacement therapy was initiated in 306 of 2403 patients (12.7%) in the BMES group and in 310 of 2394 patients (12.9%) in the saline group, for a difference of -0.20 percentage points (95% ",
+   "kind": "counts",
+   "expected": {
+    "ai": 306,
+    "n1i": 2403,
+    "ci": 310,
+    "n2i": 2394
+   }
+  },
+  {
+   "id": "colchicine-postop-af|Postoperative atrial fibrillation|PMID 42132185",
+   "topic": "colchicine-postop-af",
+   "split": "dev",
+   "outcome": "Postoperative atrial fibrillation",
+   "trial": "PMID 42132185",
+   "harness_label": "abstract effect+CI (RR)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "RESULTS: Of 163 analyzed patients (81 colchicine, 82 placebo), POAF incidence was significantly lower in the colchicine group (17.3% vs. 46.3%; RR 0.37, 95% CI 0.21-0.66; p < 0.001), with an absolute ",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.37,
+    "lo": 0.21,
+    "hi": 0.66,
+    "scale": "RR"
+   }
+  },
+  {
+   "id": "colchicine-postop-af|Postoperative atrial fibrillation|PMID 32720823",
+   "topic": "colchicine-postop-af",
+   "split": "dev",
+   "outcome": "Postoperative atrial fibrillation",
+   "trial": "PMID 32720823",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "POAF occurred in 13 patients (16.1%) in the colchicine group and 13 patients (18.3%) in the placebo group (odds ratio 0.85 [95% Confidence Interval = 0.37-1.99]).",
+   "kind": "counts",
+   "expected": {
+    "ai": 13,
+    "n1i": 81,
+    "ci": 13,
+    "n2i": 71
+   }
+  },
+  {
+   "id": "colchicine-postop-af|Postoperative atrial fibrillation|PMID 25172965",
+   "topic": "colchicine-postop-af",
+   "split": "dev",
+   "outcome": "Postoperative atrial fibrillation",
+   "trial": "PMID 25172965",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "There were no significant differences between the colchicine and placebo groups for the secondary end points of postoperative AF (colchicine, 61 patients [33.9%]; placebo, 75 patients [41.7%]; absolut",
+   "kind": "counts",
+   "expected": {
+    "ai": 61,
+    "n1i": 180,
+    "ci": 75,
+    "n2i": 180
+   }
+  },
+  {
+   "id": "colchicine-secondary-cv-prevention|Trial-defined major coronary/cardiovascular composite|PMID 31733140",
+   "topic": "colchicine-secondary-cv-prevention",
+   "split": "dev",
+   "outcome": "Trial-defined major coronary/cardiovascular composite",
+   "trial": "PMID 31733140",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "The primary end point occurred in 5.5% of the patients in the colchicine group, as compared with 7.1% of those in the placebo group (hazard ratio, 0.77; 95% confidence interval [CI], 0.61 to 0.96; P =",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.77,
+    "lo": 0.61,
+    "hi": 0.96,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "colchicine-secondary-cv-prevention|Trial-defined major coronary/cardiovascular composite|PMID 32865380",
+   "topic": "colchicine-secondary-cv-prevention",
+   "split": "dev",
+   "outcome": "Trial-defined major coronary/cardiovascular composite",
+   "trial": "PMID 32865380",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "A primary end-point event occurred in 187 patients (6.8%) in the colchicine group and in 264 patients (9.6%) in the placebo group (incidence, 2.5 vs. 3.6 events per 100 person-years; hazard ratio, 0.6",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.69,
+    "lo": 0.57,
+    "hi": 0.83,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "colchicine-secondary-cv-prevention|Trial-defined major coronary/cardiovascular composite|PMID 39555823",
+   "topic": "colchicine-secondary-cv-prevention",
+   "split": "dev",
+   "outcome": "Trial-defined major coronary/cardiovascular composite",
+   "trial": "PMID 39555823",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "A primary-outcome event occurred in 322 of 3528 patients (9.1%) in the colchicine group and 327 of 3534 patients (9.3%) in the placebo group over a median follow-up period of 3 years (hazard ratio, 0.",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.99,
+    "lo": 0.85,
+    "hi": 1.16,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "colchicine-secondary-cv-prevention|Gastrointestinal adverse effects|PMID 34876021",
+   "topic": "colchicine-secondary-cv-prevention",
+   "split": "dev",
+   "outcome": "Gastrointestinal adverse effects",
+   "trial": "PMID 34876021",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "Evaluating adverse effects, gastrointestinal symptom was the most with the rate of 15 (12.5%) in the colchicine group and 3 (2.5%) in the controls.",
+   "kind": "counts",
+   "expected": {
+    "ai": 15,
+    "n1i": 120,
+    "ci": 3,
+    "n2i": 129
+   }
+  },
+  {
+   "id": "colchicine-secondary-cv-prevention|Non-cardiovascular death|PMID 32865380",
+   "topic": "colchicine-secondary-cv-prevention",
+   "split": "dev",
+   "outcome": "Non-cardiovascular death",
+   "trial": "PMID 32865380",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "The incidence of death from noncardiovascular causes was higher in the colchicine group than in the placebo group (incidence, 0.7 vs. 0.5 events per 100 person-years; hazard ratio, 1.51; 95% CI, 0.99 ",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.51,
+    "lo": 0.99,
+    "hi": 2.31,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "corticosteroids-cap-mortality|All-cause mortality|PMID 36942789",
+   "topic": "corticosteroids-cap-mortality",
+   "split": "dev",
+   "outcome": "All-cause mortality",
+   "trial": "PMID 36942789",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "By day 28, death had occurred in 25 of 400 patients (6.2%; 95% confidence interval [CI], 3.9 to 8.6) in the hydrocortisone group and in 47 of 395 patients (11.9%; 95% CI, 8.7 to 15.1) in the placebo g",
+   "kind": "counts",
+   "expected": {
+    "ai": 25,
+    "n1i": 400,
+    "ci": 47,
+    "n2i": 395
+   }
+  },
+  {
+   "id": "corticosteroids-cap-mortality|All-cause mortality|PMID 25688779",
+   "topic": "corticosteroids-cap-mortality",
+   "split": "dev",
+   "outcome": "All-cause mortality",
+   "trial": "PMID 25688779",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "In-hospital mortality did not differ between the 2 groups (6 patients [10%] in the methylprednisolone group vs 9 patients [15%] in the placebo group; P = .37); the difference between groups was 5% (95",
+   "kind": "counts",
+   "expected": {
+    "ai": 6,
+    "n1i": 61,
+    "ci": 9,
+    "n2i": 59
+   }
+  },
+  {
+   "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 25688779",
+   "topic": "corticosteroids-cap-mortality",
+   "split": "dev",
+   "outcome": "Hyperglycaemia",
+   "trial": "PMID 25688779",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "Hyperglycemia occurred in 11 patients (18%) in the methylprednisolone group and in 7 patients (12%) in the placebo group (P = .34).",
+   "kind": "counts",
+   "expected": {
+    "ai": 11,
+    "n1i": 61,
+    "ci": 7,
+    "n2i": 59
+   }
+  },
+  {
+   "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 33446608",
+   "topic": "corticosteroids-cap-mortality",
+   "split": "dev",
+   "outcome": "Hyperglycaemia",
+   "trial": "PMID 33446608",
+   "harness_label": "",
+   "provenance": "abstract_verified_arms",
+   "derivation": "reconstructed",
+   "text": "RESULTS: Between December 2012 and November 2018, 401 patients were randomised to receive dexamethasone (n=203) or placebo (n=198). Median LOS was shorter in the dexamethasone group (4.5 days, 95% CI 4.0-5.0 days) than in the placebo group (5.0 days, 95% CI 4.6-5.4 days; p=0.033). Within both CAP severity subgroups, differences in LOS between treatment groups were not statistically significant. The secondary ICU admission rate was lower in the dexamethasone arm (5 (3%) versus 14 (7%); p=0.030); 30-day mortality did not differ between groups. In the dexamethasone group the rate of hospital readmission tended to be higher (20 (10%) versus 9 (5%); p=0.051) and hyperglycaemia (14 (7%) versus 1 (1%); p=0.001) was more prevalent. ",
+   "kind": "counts",
+   "expected": {
+    "ai": 14,
+    "n1i": 203,
+    "ci": 1,
+    "n2i": 198
+   }
+  },
+  {
+   "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 25608756",
+   "topic": "corticosteroids-cap-mortality",
+   "split": "dev",
+   "outcome": "Hyperglycaemia",
+   "trial": "PMID 25608756",
+   "harness_label": "abstract effect+CI (OR)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "The prednisone group had a higher incidence of in-hospital hyperglycaemia needing insulin treatment (76 [19%] vs 43 [11%]; OR 1.96, 95% CI 1.31-2.93, p=0.0010).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.96,
+    "lo": 1.31,
+    "hi": 2.93,
+    "scale": "OR"
+   }
+  },
+  {
+   "id": "corticosteroids-cap-mortality|Hyperglycaemia|PMID 21636122",
+   "topic": "corticosteroids-cap-mortality",
+   "split": "dev",
+   "outcome": "Hyperglycaemia",
+   "trial": "PMID 21636122",
+   "harness_label": "",
+   "provenance": "abstract_verified_arms",
+   "derivation": "reconstructed",
+   "text": "In-hospital mortality and severe adverse events were infrequent and rates did not differ between groups, although 67 (44%) of 151 patients in the dexamethasone group had hyperglycaemia compared with 35 (23%) of 153 controls (p<0·0001).",
+   "kind": "counts",
+   "expected": {
+    "ai": 67,
+    "n1i": 151,
+    "ci": 35,
+    "n2i": 153
+   }
+  },
+  {
+   "id": "corticosteroids-covid19-mortality|28-day all-cause mortality|PMID 32678530",
+   "topic": "corticosteroids-covid19-mortality",
+   "split": "dev",
+   "outcome": "28-day all-cause mortality",
+   "trial": "PMID 32678530",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "Overall, 482 patients (22.9%) in the dexamethasone group and 1110 patients (25.7%) in the usual care group died within 28 days after randomization (age-adjusted rate ratio, 0.83; 95% confidence interv",
+   "kind": "counts",
+   "expected": {
+    "ai": 482,
+    "n1i": 2104,
+    "ci": 1110,
+    "n2i": 4321
+   }
+  },
+  {
+   "id": "corticosteroids-covid19-mortality|Serious adverse events|PMID 34138478",
+   "topic": "corticosteroids-covid19-mortality",
+   "split": "dev",
+   "outcome": "Serious adverse events",
+   "trial": "PMID 34138478",
+   "harness_label": "",
+   "provenance": "abstract_verified_arms",
+   "derivation": "reconstructed",
+   "text": "At day 28, the median number of days alive without life support in the hydrocortisone vs placebo group were 7 vs 10 (adjusted mean difference: -1.1 days, 95% CI -9.5 to 7.3, P = .79); mortality was 6/16 vs 2/14; and the number of serious adverse reactions 1/16 vs 0/14.",
+   "kind": "counts",
+   "expected": {
+    "ai": 1,
+    "n1i": 16,
+    "ci": 0,
+    "n2i": 14
+   }
+  },
+  {
+   "id": "denosumab-vertebral-fracture|New vertebral fracture|PMID 19671655",
+   "topic": "denosumab-vertebral-fracture",
+   "split": "dev",
+   "outcome": "New vertebral fracture",
+   "trial": "PMID 19671655",
+   "harness_label": "abstract effect+CI (RR)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "RESULTS: As compared with placebo, denosumab reduced the risk of new radiographic vertebral fracture, with a cumulative incidence of 2.3% in the denosumab group, versus 7.2% in the placebo group (risk",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.32,
+    "lo": 0.26,
+    "hi": 0.41,
+    "scale": "RR"
+   }
+  },
+  {
+   "id": "denosumab-vertebral-fracture|Nonvertebral fracture|PMID 19671655",
+   "topic": "denosumab-vertebral-fracture",
+   "split": "dev",
+   "outcome": "Nonvertebral fracture",
+   "trial": "PMID 19671655",
+   "harness_label": "abstract effect+CI (HR)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "Denosumab also reduced the risk of nonvertebral fracture, with a cumulative incidence of 6.5% in the denosumab group, versus 8.0% in the placebo group (hazard ratio, 0.80; 95% CI, 0.67 to 0.95; P=0.01",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.8,
+    "lo": 0.67,
+    "hi": 0.95,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "denosumab-vertebral-fracture|Hip fracture|PMID 19671655",
+   "topic": "denosumab-vertebral-fracture",
+   "split": "dev",
+   "outcome": "Hip fracture",
+   "trial": "PMID 19671655",
+   "harness_label": "abstract effect+CI (HR)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "Denosumab reduced the risk of hip fracture, with a cumulative incidence of 0.7% in the denosumab group, versus 1.2% in the placebo group (hazard ratio, 0.60; 95% CI, 0.37 to 0.97; P=0.04)--a relative ",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.6,
+    "lo": 0.37,
+    "hi": 0.97,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 24344086",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)",
+   "trial": "PMID 24344086",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "The primary outcome, recurrent symptomatic, objectively confirmed VTE and related deaths during 6 months of treatment occurred in 30 of the 1279 dabigatran patients (2.3%) compared with 28 of the 1289",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.08,
+    "lo": 0.64,
+    "hi": 1.8,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 19966341",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)",
+   "trial": "PMID 19966341",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "The hazard ratio with dabigatran was 1.10 (95% CI, 0.65 to 1.84).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.1,
+    "lo": 0.65,
+    "hi": 1.84,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 22449293",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)",
+   "trial": "PMID 22449293",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "RESULTS: Rivaroxaban was noninferior to standard therapy (noninferiority margin, 2.0; P=0.003) for the primary efficacy outcome, with 50 events in the rivaroxaban group (2.1%) versus 44 events in the ",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.12,
+    "lo": 0.75,
+    "hi": 1.68,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 21128814",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)",
+   "trial": "PMID 21128814",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "Rivaroxaban had noninferior efficacy with respect to the primary outcome (36 events [2.1%], vs. 51 events with enoxaparin-vitamin K antagonist [3.0%]; hazard ratio, 0.68; 95% confidence interval [CI],",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.68,
+    "lo": 0.44,
+    "hi": 1.04,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 23991658",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)",
+   "trial": "PMID 23991658",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "Edoxaban was noninferior to warfarin with respect to the primary efficacy outcome, which occurred in 130 patients in the edoxaban group (3.2%) and 146 patients in the warfarin group (3.5%) (hazard rat",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.89,
+    "lo": 0.7,
+    "hi": 1.13,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)|PMID 23808982",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Symptomatic recurrent VTE (DVT / nonfatal PE / fatal PE or VTE-related death)",
+   "trial": "PMID 23808982",
+   "harness_label": "abstract effect+CI (RR)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "RESULTS: The primary efficacy outcome occurred in 59 of 2609 patients (2.3%) in the apixaban group, as compared with 71 of 2635 (2.7%) in the conventional-therapy group (relative risk, 0.84; 95% confidence interval [CI], 0.60 to 1.18; difference in risk [apixaban minus conventional therapy], -0.4 percentage poin",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.84,
+    "lo": 0.6,
+    "hi": 1.18,
+    "scale": "RR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Major bleeding|PMID 24344086",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Major bleeding",
+   "trial": "PMID 24344086",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "The safety end point, major bleeding, occurred in 15 patients receiving dabigatran (1.2%) and in 22 receiving warfarin (1.7%; hazard ratio, 0.69; 95% CI, 0.36-1.32).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.69,
+    "lo": 0.36,
+    "hi": 1.32,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Major bleeding|PMID 19966341",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Major bleeding",
+   "trial": "PMID 19966341",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "Major bleeding episodes occurred in 20 patients assigned to dabigatran (1.6%) and in 24 patients assigned to warfarin (1.9%) (hazard ratio with dabigatran, 0.82; 95% CI, 0.45 to 1.48), and episodes of",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.82,
+    "lo": 0.45,
+    "hi": 1.48,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Major bleeding|PMID 22449293",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Major bleeding",
+   "trial": "PMID 22449293",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "Major bleeding was observed in 26 patients (1.1%) in the rivaroxaban group and 52 patients (2.2%) in the standard-therapy group (hazard ratio, 0.49; 95% CI, 0.31 to 0.79; P=0.003).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.49,
+    "lo": 0.31,
+    "hi": 0.79,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Major or clinically relevant nonmajor bleeding|PMID 22449293",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Major or clinically relevant nonmajor bleeding",
+   "trial": "PMID 22449293",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "The principal safety outcome occurred in 10.3% of patients in the rivaroxaban group and 11.4% of those in the standard-therapy group (hazard ratio, 0.90; 95% CI, 0.76 to 1.07; P=0.23).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.9,
+    "lo": 0.76,
+    "hi": 1.07,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Major or clinically relevant nonmajor bleeding|PMID 23991658",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Major or clinically relevant nonmajor bleeding",
+   "trial": "PMID 23991658",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "The safety outcome occurred in 349 patients (8.5%) in the edoxaban group and 423 patients (10.3%) in the warfarin group (hazard ratio, 0.81; 95% CI, 0.71 to 0.94; P=0.004 for superiority).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.81,
+    "lo": 0.71,
+    "hi": 0.94,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Any bleeding|PMID 24344086",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Any bleeding",
+   "trial": "PMID 24344086",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "Any bleeding occurred in 200 dabigatran (15.6%) and 285 warfarin (22.1%; hazard ratio, 0.67; 95% CI, 0.56-0.81) patients.",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.67,
+    "lo": 0.56,
+    "hi": 0.81,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "doac-vte-recurrence|Any bleeding|PMID 19966341",
+   "topic": "doac-vte-recurrence",
+   "split": "dev",
+   "outcome": "Any bleeding",
+   "trial": "PMID 19966341",
+   "harness_label": "",
+   "provenance": "abstract_verified",
+   "derivation": "reported",
+   "text": "Major bleeding episodes occurred in 20 patients assigned to dabigatran (1.6%) and in 24 patients assigned to warfarin (1.9%) (hazard ratio with dabigatran, 0.82; 95% CI, 0.45 to 1.48), and episodes of any bleeding were observed in 205 patients assigned to dabigatran (16.1%) and 277 patients assigned to warfarin (21.9%; hazard ratio with dabigatran, 0.71; 95% CI, 0.59 to 0.85). The numbers of deaths, acute coronary syndromes, and abnormal liver-function tests were similar in the two groups. Adverse events leading to discontinuation of the study drug occurred in 9.0% of patients assigned to dabigatran and in 6.8% of patients assigned to warfarin (P=0.05). CONCLUSIONS: For the treatment of acute venous thromboembolism, a fixed dose of dabigatran is as effective as warfarin, has a safety profile that is similar to that of warfarin, and does not require laboratory monitoring. (ClinicalTrials.gov number, NCT00291330.)",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.71,
+    "lo": 0.59,
+    "hi": 0.85,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 23992601",
+   "topic": "dpp4-mace-t2d",
+   "split": "dev",
+   "outcome": "3-point major adverse cardiovascular events",
+   "trial": "PMID 23992601",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "RESULTS: A primary end-point event occurred in 613 patients in the saxagliptin group and in 609 patients in the placebo group (7.3% and 7.2%, respectively, according to 2-year Kaplan-Meier estimates; ",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.0,
+    "lo": 0.89,
+    "hi": 1.12,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 30418475",
+   "topic": "dpp4-mace-t2d",
+   "split": "dev",
+   "outcome": "3-point major adverse cardiovascular events",
+   "trial": "PMID 30418475",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate differ",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.02,
+    "lo": 0.89,
+    "hi": 1.17,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 28893244",
+   "topic": "dpp4-mace-t2d",
+   "split": "dev",
+   "outcome": "3-point major adverse cardiovascular events",
+   "trial": "PMID 28893244",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "The primary MACE outcome occurred in 114/2092 patients in the omarigliptin group (5.45%) and 114/2100 patients in the placebo group (5.43%), with a hazard ratio (HR) of 1.00 (95% confidence interval [",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.0,
+    "lo": 0.77,
+    "hi": 1.29,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "dpp4-mace-t2d|3-point major adverse cardiovascular events|PMID 26052984",
+   "topic": "dpp4-mace-t2d",
+   "split": "dev",
+   "outcome": "3-point major adverse cardiovascular events",
+   "trial": "PMID 26052984",
+   "harness_label": "",
+   "provenance": "served_pool_signed_notice",
+   "derivation": "reported",
+   "text": "Percentage of Participants With First Confirmed CV Event of MACE (Intent to Treat Population) [Up to 5 years]: Hazard Ratio (HR) 0.99 (0.89, 1.1)",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.99,
+    "lo": 0.89,
+    "hi": 1.1,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "dpp4-mace-t2d|Adverse events|PMID 30418475",
+   "topic": "dpp4-mace-t2d",
+   "split": "dev",
+   "outcome": "Adverse events",
+   "trial": "PMID 30418475",
+   "harness_label": "",
+   "provenance": "abstract_verified_arms",
+   "derivation": "reconstructed",
+   "text": "INTERVENTIONS: Patients were randomized to receive linagliptin, 5 mg once daily (n = 3494), or placebo once daily (n = 3485) added to usual care. Other glucose-lowering medications or insulin could be added based on clinical need and local clinical guidelines. MAIN OUTCOMES AND MEASURES: Primary outcome was time to first occurrence of the composite of CV death, nonfatal myocardial infarction, or nonfatal stroke. Criteria for noninferiority of linagliptin vs placebo was defined by the upper limit of the 2-sided 95% CI for the hazard ratio (HR) of linagliptin relative to placebo being less than 1.3. Secondary outcome was time to first occurrence of adjudicated death due to renal failure, ESRD, or sustained 40% or higher decrease in eGFR from baseline. RESULTS: Of 6991 enrollees, 6979 (mean age, 65.9 years; eGFR, 54.6 mL/min/1.73 m2; 80.1% with UACR >30 mg/g) received at least 1 dose of study medication and 98.7% completed the study. During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate difference, 0.13 [95% CI, -0.63 to 0.90] per 100 person-years) (HR, 1.02; 95% CI, 0.89-1.17; P < .001 for noninferiority). The kidney outcome occurred in 327 of 3494 (9.4%) and 306 of 3485 (8.8%), respectively (absolute incidence rate difference, 0.22 [95% CI, -0.52 to 0.97] per 100 person-years) (HR, 1.04; 95% CI, 0.89-1.22; P = .62). Adverse events occurred in 2697 (77.2%) and 2723 (78.1%) patients in the linagliptin and placebo groups; 1036 (29.7%) and 1024 (29.4%) had 1 or more episodes of hypoglycemia; and there were 9 (0.3%) vs 5 (0.1%) events of adjudication-confirmed acute pancreatitis. CONCLUSIONS AND RELEVANCE: Among adults with type 2 diabetes and high CV and renal risk, linagliptin added to usual care compared with placebo added to usual care resulted in a noninferior risk of a composite CV outcome over a median 2.2 years. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT01897532.",
+   "kind": "counts",
+   "expected": {
+    "ai": 2697,
+    "n1i": 3494,
+    "ci": 2723,
+    "n2i": 3485
+   }
+  },
+  {
+   "id": "dpp4-mace-t2d|Hypoglycemia|PMID 30418475",
+   "topic": "dpp4-mace-t2d",
+   "split": "dev",
+   "outcome": "Hypoglycemia",
+   "trial": "PMID 30418475",
+   "harness_label": "",
+   "provenance": "abstract_verified_arms",
+   "derivation": "reconstructed",
+   "text": "INTERVENTIONS: Patients were randomized to receive linagliptin, 5 mg once daily (n = 3494), or placebo once daily (n = 3485) added to usual care. Other glucose-lowering medications or insulin could be added based on clinical need and local clinical guidelines. MAIN OUTCOMES AND MEASURES: Primary outcome was time to first occurrence of the composite of CV death, nonfatal myocardial infarction, or nonfatal stroke. Criteria for noninferiority of linagliptin vs placebo was defined by the upper limit of the 2-sided 95% CI for the hazard ratio (HR) of linagliptin relative to placebo being less than 1.3. Secondary outcome was time to first occurrence of adjudicated death due to renal failure, ESRD, or sustained 40% or higher decrease in eGFR from baseline. RESULTS: Of 6991 enrollees, 6979 (mean age, 65.9 years; eGFR, 54.6 mL/min/1.73 m2; 80.1% with UACR >30 mg/g) received at least 1 dose of study medication and 98.7% completed the study. During a median follow-up of 2.2 years, the primary outcome occurred in 434 of 3494 (12.4%) and 420 of 3485 (12.1%) in the linagliptin and placebo groups, respectively, (absolute incidence rate difference, 0.13 [95% CI, -0.63 to 0.90] per 100 person-years) (HR, 1.02; 95% CI, 0.89-1.17; P < .001 for noninferiority). The kidney outcome occurred in 327 of 3494 (9.4%) and 306 of 3485 (8.8%), respectively (absolute incidence rate difference, 0.22 [95% CI, -0.52 to 0.97] per 100 person-years) (HR, 1.04; 95% CI, 0.89-1.22; P = .62). Adverse events occurred in 2697 (77.2%) and 2723 (78.1%) patients in the linagliptin and placebo groups; 1036 (29.7%) and 1024 (29.4%) had 1 or more episodes of hypoglycemia; and there were 9 (0.3%) vs 5 (0.1%) events of adjudication-confirmed acute pancreatitis. CONCLUSIONS AND RELEVANCE: Among adults with type 2 diabetes and high CV and renal risk, linagliptin added to usual care compared with placebo added to usual care resulted in a noninferior risk of a composite CV outcome over a median 2.2 years. TRIAL REGISTRATION: ClinicalTrials.gov Identifier: NCT01897532.",
+   "kind": "counts",
+   "expected": {
+    "ai": 1036,
+    "n1i": 3494,
+    "ci": 1024,
+    "n2i": 3485
+   }
+  },
+  {
+   "id": "dpp4-mace-t2d|Hospitalization for heart failure|PMID 23992601",
+   "topic": "dpp4-mace-t2d",
+   "split": "dev",
+   "outcome": "Hospitalization for heart failure",
+   "trial": "PMID 23992601",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "More patients in the saxagliptin group than in the placebo group were hospitalized for heart failure (3.5% vs. 2.8%; hazard ratio, 1.27; 95% CI, 1.07 to 1.51; P=0.007).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.27,
+    "lo": 1.07,
+    "hi": 1.51,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "dpp4-mace-t2d|Hospitalization for heart failure|PMID 26052984",
+   "topic": "dpp4-mace-t2d",
+   "split": "dev",
+   "outcome": "Hospitalization for heart failure",
+   "trial": "PMID 26052984",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "Rates of hospitalization for heart failure did not differ between the two groups (hazard ratio, 1.00; 95% CI, 0.83 to 1.20; P=0.98).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.0,
+    "lo": 0.83,
+    "hi": 1.2,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "esketamine-trd-madrs|Adverse events|PMID 37025256",
+   "topic": "esketamine-trd-madrs",
+   "split": "dev",
+   "outcome": "Adverse events",
+   "trial": "PMID 37025256",
+   "harness_label": "",
+   "provenance": "fulltext_verified_arms",
+   "derivation": "reconstructed",
+   "text": "<table-wrap position=\"float\" id=\"t0004\" orientation=\"portrait\"><label>Table 4</label><caption><p>Safety Summary During the Double-Blind Treatment Phase</p></caption><table frame=\"hsides\" rules=\"groups\"><thead><tr><th rowspan=\"1\" colspan=\"1\"/><th rowspan=\"1\" colspan=\"1\">Esketamine Plus AD (n=126)</th><th rowspan=\"1\" colspan=\"1\">AD Plus Placebo (n=126)</th></tr></thead><tbody><tr><td rowspan=\"1\" colspan=\"1\"><bold>TEAEs</bold></td><td rowspan=\"1\" colspan=\"1\">120 (95.2)</td><td rowspan=\"1\" colspan=\"1\">89 (70.6)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Most common (≥10% of patients in either group)</td><td rowspan=\"1\" colspan=\"1\"/><td rowspan=\"1\" colspan=\"1\"/></tr><tr><td rowspan=\"1\" colspan=\"1\"> Dizziness</td><td rowspan=\"1\" colspan=\"1\">97 (77.0)</td><td rowspan=\"1\" colspan=\"1\">25 (19.8)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Dissociation</td><td rowspan=\"1\" colspan=\"1\">75 (59.5)</td><td rowspan=\"1\" colspan=\"1\">8 (6.3)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Nausea</td><td rowspan=\"1\" colspan=\"1\">53 (42.1)</td><td rowspan=\"1\" colspan=\"1\">17 (13.5)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Blood pressure increased</td><td rowspan=\"1\" colspan=\"1\">38 (30.2)</td><td rowspan=\"1\" colspan=\"1\">13 (10.3)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Hypoesthesia</td><td rowspan=\"1\" colspan=\"1\">25 (19.8)</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Vomiting</td><td rowspan=\"1\" colspan=\"1\">23 (18.3)</td><td rowspan=\"1\" colspan=\"1\">2 (1.6)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Vision blurred</td><td rowspan=\"1\" colspan=\"1\">23 (18.3)</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Somnolence</td><td rowspan=\"1\" colspan=\"1\">20 (15.9)</td><td rowspan=\"1\" colspan=\"1\">11 (8.7)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Headache</td><td rowspan=\"1\" colspan=\"1\">16 (12.7)</td><td rowspan=\"1\" colspan=\"1\">14 (11.1)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Dysgeusia</td><td rowspan=\"1\" colspan=\"1\">14 (11.1)</td><td rowspan=\"1\" colspan=\"1\">6 (4.8)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"><bold>TEAEs possibly related to intranasal drug<sup>a</sup></bold></td><td rowspan=\"1\" colspan=\"1\">117 (92.9)</td><td rowspan=\"1\" colspan=\"1\">55 (43.7)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"><bold>TEAEs leading to death<sup>b</sup></bold></td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"><bold>Treatment-emergent SAEs</bold></td><td rowspan=\"1\" colspan=\"1\">3 (2.4)</td><td rowspan=\"1\" colspan=\"1\">3 (2.4)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Completed suicide<sup>b</sup></td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Depression</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td><td rowspan=\"1\" colspan=\"1\">3 (2.4)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Suicide attempt</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"><bold>TEAEs leading to discontinuation of intranasal study medication<sup>c</sup></bold></td><td rowspan=\"1\" colspan=\"1\">7 (5.6)</td><td rowspan=\"1\" colspan=\"1\">2 (1.6)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Nausea</td><td rowspan=\"1\" colspan=\"1\">2 (1.6)</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Vomiting</td><td rowspan=\"1\" colspan=\"1\">2 (1.6)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Dissociation</td><td rowspan=\"1\" colspan=\"1\">2 (1.6)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Dizziness</td><td rowspan=\"1\" colspan=\"1\">2 (1.6)</td><td rowspan=\"1\" colspan=\"1\">2 (1.6)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Depressional suicide</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Headache</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Asthenia</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Blood pressure increased</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Decreased appetite</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Myalgia</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Diarrhea</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Parosmia</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td><td rowspan=\"1\" colspan=\"1\">1 (0.8)</td></tr><tr><td rowspan=\"1\" colspan=\"1\"> Insomnia</td><td rowspan=\"1\" colspan=\"1\">0 (0)</td><td rowspan=\"1\" colspan=\"1\">2 (1.6)</td></tr></tbody></table><table-wrap-foot><fn id=\"tfn0007\"><p><bold>Notes</bold>: All data are n (%). Incidence is based on the number of patients experiencing at least one AE, not the number of events. <sup>a</sup>Study drug relationships of possible, probable, and very likely are included in this category. <sup>b</sup>Same patient. <sup>c</sup>An AE that started in the double-blind treatment phase and resulted in discontinuation in the follow-up phase is counted as treatment-emergent in the double-blind treatment phase.</p></fn><fn id=\"tfn0008\"><p><bold>Abbreviations</bold>: AD, antidepressant; AE, adverse event; SAE, serious adverse event; TEAE, treatment-emergent adverse event.</p></fn></table-wrap-foot></table-wrap>",
+   "kind": "counts",
+   "expected": {
+    "ai": 120,
+    "n1i": 126,
+    "ci": 89,
+    "n2i": 126
+   }
+  },
+  {
+   "id": "iv-iron-hfref-hosp|Heart-failure hospitalization|PMID 40159390",
+   "topic": "iv-iron-hfref-hosp",
+   "split": "dev",
+   "outcome": "Heart-failure hospitalization",
+   "trial": "PMID 40159390",
+   "harness_label": "abstract effect+CI (IRR)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "The second primary outcome (total heart failure hospitalizations) occurred 264 times in the ferric carboxymaltose group vs 320 times in the placebo group (rate ratio, 0.80 [95% CI, 0.60-1.06]; P = .12",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.8,
+    "lo": 0.6,
+    "hi": 1.06,
+    "scale": "IRR"
+   }
+  },
+  {
+   "id": "iv-iron-hfref-hosp|Heart-failure hospitalization|PMID 25176939",
+   "topic": "iv-iron-hfref-hosp",
+   "split": "dev",
+   "outcome": "Heart-failure hospitalization",
+   "trial": "PMID 25176939",
+   "harness_label": "abstract effect+CI (HR)",
+   "provenance": "pmc_fulltext",
+   "derivation": "reported",
+   "text": "Treatment with FCM was associated with a significant reduction in the risk of hospitalization due to worsening HF with a time-to-event analysis returning an HR of 0.39 with a 95% CI of (0.19–0.82) ( P",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.39,
+    "lo": 0.19,
+    "hi": 0.82,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "metformin-pcos-ovulation|Ovulation with metformin added to clomifene|PMID 19522426",
+   "topic": "metformin-pcos-ovulation",
+   "split": "dev",
+   "outcome": "Ovulation with metformin added to clomifene",
+   "trial": "PMID 19522426",
+   "harness_label": "",
+   "provenance": "published_rate",
+   "derivation": "reconstructed_from_proportions",
+   "text": "Ben Ayed 2009, abstract: '32 PCOS women were recruited in the study and equally allocated to the two groups. The ovulation rate in the metformin group was 62.5% compared with 37.5% in the placebo group.' Equal allocation of 32 -> 16 per arm; counts are exact: 62.5% of 16 = 10, 37.5% of 16 = 6 (an S2 add-on-to-clomifene contrast, metformin+CC vs CC+placebo).",
+   "kind": "counts",
+   "expected": {
+    "ai": 10,
+    "n1i": 16,
+    "ci": 6,
+    "n2i": 16
+   }
+  },
+  {
+   "id": "metformin-pcos-ovulation|Ovulation with metformin added to clomifene|PMID 16769748",
+   "topic": "metformin-pcos-ovulation",
+   "split": "dev",
+   "outcome": "Ovulation with metformin added to clomifene",
+   "trial": "PMID 16769748",
+   "harness_label": "",
+   "provenance": "published_rate",
+   "derivation": "reconstructed_from_proportions",
+   "text": "Moll 2006 (BMJ, NCT-registered multicentre RCT), abstract: '111 women were allocated to clomifene citrate plus metformin (metformin group) and 114 women were allocated to clomifene citrate plus placebo (placebo group). The ovulation rate in the metformin group was 64% compared with 72% in the placebo group.' Counts recovered as the unique integers consistent with the reported rate and denominator: round(0.64*111)=71 (71/111=63.96% -> '64%'; 70->63%, 72->65%), round(0.72*114)=82 (82/114=71.9% -> '72%'; 81->71%, 83->73%). Metformin ARM WORSE than placebo (an S2 add-on-to-clomifene contrast; treatment-naive PCOS).",
+   "kind": "counts",
+   "expected": {
+    "ai": 71,
+    "n1i": 111,
+    "ci": 82,
+    "n2i": 114
+   }
+  },
+  {
+   "id": "metformin-pcos-ovulation|Ovulation with metformin added to clomifene|PMID 11172832",
+   "topic": "metformin-pcos-ovulation",
+   "split": "dev",
+   "outcome": "Ovulation with metformin added to clomifene",
+   "trial": "PMID 11172832",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "RESULT(S): In the metformin and placebo groups, 9 of 12 participants (75%) and 4 of 15 participants (27%) ovulated, and 6 of 11 participants (55%) and 1 of 14 participants (7%) conceived, respectively",
+   "kind": "counts",
+   "expected": {
+    "ai": 9,
+    "n1i": 12,
+    "ci": 4,
+    "n2i": 15
+   }
+  },
+  {
+   "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 33190147",
+   "topic": "omega3-cardiovascular-events",
+   "split": "dev",
+   "outcome": "Major vascular events / MACE",
+   "trial": "PMID 33190147",
+   "harness_label": "ClinicalTrials.gov results (structured target endpoint)",
+   "provenance": "ctgov_results",
+   "derivation": "reported",
+   "text": "outcome 'The Composite of CV Events' HR 1.05 (95% CI 0.93 to 1.19); endpoint counts 541/6539 (Epanova) vs 517/6539 (Placebo)",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.05,
+    "lo": 0.93,
+    "hi": 1.19,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 30415637",
+   "topic": "omega3-cardiovascular-events",
+   "split": "dev",
+   "outcome": "Major vascular events / MACE",
+   "trial": "PMID 30415637",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "During a median follow-up of 5.3 years, a major cardiovascular event occurred in 386 participants in the n-3 group and in 419 in the placebo group (hazard ratio, 0.92; 95% confidence interval [CI], 0.",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.92,
+    "lo": 0.8,
+    "hi": 1.06,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 30415628",
+   "topic": "omega3-cardiovascular-events",
+   "split": "dev",
+   "outcome": "Major vascular events / MACE",
+   "trial": "PMID 30415628",
+   "harness_label": "ClinicalTrials.gov results (structured target endpoint)",
+   "provenance": "ctgov_results",
+   "derivation": "reported",
+   "text": "outcome 'Composite of CV Death, Nonfatal MI (Including Silent MI), or Nonfatal Stroke.' HR 0.74 (95% CI 0.65 to 0.83); endpoint counts 459/4089 (AMR101) vs 606/4090 (Placebo)",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.74,
+    "lo": 0.65,
+    "hi": 0.83,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 20929341",
+   "topic": "omega3-cardiovascular-events",
+   "split": "dev",
+   "outcome": "Major vascular events / MACE",
+   "trial": "PMID 20929341",
+   "harness_label": "abstract source-reported HR (registered estimand)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "Neither EPA-DHA nor ALA reduced this primary end point (hazard ratio with EPA-DHA, 1.01; 95% confidence interval [CI], 0.87 to 1.17; P=0.93; hazard ratio with ALA, 0.91; 95% CI, 0.78 to 1.05; P=0.20).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.01,
+    "lo": 0.87,
+    "hi": 1.17,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 21115589",
+   "topic": "omega3-cardiovascular-events",
+   "split": "dev",
+   "outcome": "Major vascular events / MACE",
+   "trial": "PMID 21115589",
+   "harness_label": "",
+   "provenance": "fulltext_verified",
+   "derivation": "reported",
+   "text": "SU.FOL.OM3 (PMID 21115589) full text (PMC2993045, Results / fig 4): 'Allocation to omega 3 fatty acids was not associated with any significant effect on major vascular events (81 v 76 patients, hazard ratio 1.08 (0.79 to 1.47), P=0.64; fig 4).' This is the omega-3 MAIN-EFFECT MARGINAL (omega-3 present vs absent, collapsed over the 2x2 B-vitamin allocation) on the trial's declared primary outcome (major cardiovascular events). Double-blind, placebo-controlled factorial; 2501 patients with a history of myocardial infarction, unstable angina, or ischaemic stroke (secondary prevention). Estimand-matched: major vascular events, HR, intention-to-treat, trial end.",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.08,
+    "lo": 0.79,
+    "hi": 1.47,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "omega3-cardiovascular-events|Major vascular events / MACE|PMID 38199870",
+   "topic": "omega3-cardiovascular-events",
+   "split": "dev",
+   "outcome": "Major vascular events / MACE",
+   "trial": "PMID 38199870",
+   "harness_label": "abstract effect+CI (HR)",
+   "provenance": "pmc_fulltext",
+   "derivation": "reported",
+   "text": "Based on the main effects analysis, we did not find any statistically significant benefit of any of the three interventions with regard to the risk of MACE: omega-3 versus no omega-3 (adjusted hazard ",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.0,
+    "lo": 0.64,
+    "hi": 1.56,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "omega3-cardiovascular-events|Atrial fibrillation|PMID 30146932",
+   "topic": "omega3-cardiovascular-events",
+   "split": "dev",
+   "outcome": "Atrial fibrillation",
+   "trial": "PMID 30146932",
+   "harness_label": "ClinicalTrials.gov results (structured)",
+   "provenance": "ctgov_results",
+   "derivation": "reconstructed",
+   "text": "outcome 'Number of Participants With Event: Atrial Fibrillation (Omega-3 Comparison Only)' COUNT_OF_PARTICIPANTS 166/7740 (Omega-3) vs 135/7740 (Placebo Omega-3)",
+   "kind": "counts",
+   "expected": {
+    "ai": 166,
+    "n1i": 7740,
+    "ci": 135,
+    "n2i": 7740
+   }
+  },
+  {
+   "id": "sacubitril-valsartan-hfref|Composite cardiovascular death or heart-failure hospitalization|PMID 25176015",
+   "topic": "sacubitril-valsartan-hfref",
+   "split": "dev",
+   "outcome": "Composite cardiovascular death or heart-failure hospitalization",
+   "trial": "PMID 25176015",
+   "harness_label": "",
+   "provenance": "fulltext_verified",
+   "derivation": "reported",
+   "text": "PARADIGM-HF (PMID 25176015) abstract: the primary composite of death from cardiovascular causes or hospitalization for heart failure occurred in 914 of 4187 (21.8%) LCZ696 vs 1117 of 4212 (26.5%) enalapril patients (hazard ratio in the LCZ696 group, 0.80; 95% CI, 0.73 to 0.87; P<0.001). SCALE CORRECTION (override): the CT.gov structured extractor pooled the count-derived RR 0.823 from 914/4187 vs 1117/4212 and labelled the k=1 pool HR; the trial reports the time-to-event HR 0.80 directly.",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.8,
+    "lo": 0.73,
+    "hi": 0.87,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "sacubitril-valsartan-hfref|Composite cardiovascular death or heart-failure hospitalization|NCT02468232",
+   "topic": "sacubitril-valsartan-hfref",
+   "split": "dev",
+   "outcome": "Composite cardiovascular death or heart-failure hospitalization",
+   "trial": "NCT02468232",
+   "harness_label": "ClinicalTrials.gov results (structured target endpoint)",
+   "provenance": "ctgov_results",
+   "derivation": "reported",
+   "text": "outcome 'Exposure-adjusted Incident Rate (EAIR) of CEC Confirmed Composite Endpoints' HR 1.0881 (95% CI 0.6501 to 1.8212)",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 1.0881,
+    "lo": 0.6501,
+    "hi": 1.8212,
+    "scale": "HR"
+   }
+  },
+  {
+   "id": "semaglutide-obesity-weight|Percent change in body weight|PMID 33625476",
+   "topic": "semaglutide-obesity-weight",
+   "split": "dev",
+   "outcome": "Percent change in body weight",
+   "trial": "PMID 33625476",
+   "harness_label": "abstract reported mean difference + CI",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "At week 68, the estimated mean body weight change from baseline was -16.0% for semaglutide vs -5.7% for placebo (difference, -10.3 percentage points [95% CI, -12.0 to -8.6]; P < .001).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": -10.3,
+    "lo": -12.0,
+    "hi": -8.6,
+    "scale": "MD"
+   }
+  },
+  {
+   "id": "semaglutide-obesity-weight|Percent change in body weight|PMID 33567185",
+   "topic": "semaglutide-obesity-weight",
+   "split": "dev",
+   "outcome": "Percent change in body weight",
+   "trial": "PMID 33567185",
+   "harness_label": "abstract reported mean difference + CI",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "RESULTS: The mean change in body weight from baseline to week 68 was -14.9% in the semaglutide group as compared with -2.4% with placebo, for an estimated treatment difference of -12.4 percentage poin",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": -12.4,
+    "lo": -13.4,
+    "hi": -11.5,
+    "scale": "MD"
+   }
+  },
+  {
+   "id": "tocilizumab-covid19-mortality|28-day all-cause mortality|PMID 33933206",
+   "topic": "tocilizumab-covid19-mortality",
+   "split": "dev",
+   "outcome": "28-day all-cause mortality",
+   "trial": "PMID 33933206",
+   "harness_label": "abstract effect+CI (RR)",
+   "provenance": "abstract",
+   "derivation": "reported",
+   "text": "abstract arm-level counts (percentage-corroborated): Overall, 621 (31%) of the 2022 patients allocated tocilizumab and 729 (35%) of the 2094 patients allocated to usual care died within 28 days (rate ratio 0.85; 95% CI 0.76-0.94; p=0.0028).",
+   "kind": "effect_ci",
+   "expected": {
+    "effect": 0.85,
+    "lo": 0.76,
+    "hi": 0.94,
+    "scale": "RR"
+   }
+  },
+  {
+   "id": "tocilizumab-covid19-mortality|28-day all-cause mortality|NCT04320615",
+   "topic": "tocilizumab-covid19-mortality",
+   "split": "dev",
+   "outcome": "28-day all-cause mortality",
+   "trial": "NCT04320615",
+   "harness_label": "",
+   "provenance": "served_pool_signed_notice",
+   "derivation": "reconstructed",
+   "text": "Tocilizumab (N=294) ... Placebo (N=144) ... Death at day 28 — no. (%) 58 (19.7) 28 (19.4)",
+   "kind": "counts",
+   "expected": {
+    "ai": 58,
+    "n1i": 294,
+    "ci": 28,
+    "n2i": 144
+   }
+  },
+  {
+   "id": "tocilizumab-covid19-mortality|28-day all-cause mortality|NCT04403685",
+   "topic": "tocilizumab-covid19-mortality",
+   "split": "dev",
+   "outcome": "28-day all-cause mortality",
+   "trial": "NCT04403685",
+   "harness_label": "",
+   "provenance": "served_pool_signed_notice",
+   "derivation": "reconstructed",
+   "text": "Tocilizumab group (n=65) ... Control group (n=64) ... Mortality up to 28 days 14 (21) 6 (9)",
+   "kind": "counts",
+   "expected": {
+    "ai": 14,
+    "n1i": 65,
+    "ci": 6,
+    "n2i": 64
+   }
+  },
+  {
+   "id": "tocilizumab-covid19-mortality|Serious adverse events|PMID 33631066",
+   "topic": "tocilizumab-covid19-mortality",
+   "split": "dev",
+   "outcome": "Serious adverse events",
+   "trial": "PMID 33631066",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "In the safety population, serious adverse events occurred in 103 of 295 patients (34.9%) in the tocilizumab group and in 55 of 143 patients (38.5%) in the placebo group.",
+   "kind": "counts",
+   "expected": {
+    "ai": 103,
+    "n1i": 295,
+    "ci": 55,
+    "n2i": 143
+   }
+  },
+  {
+   "id": "tocilizumab-covid19-mortality|Serious adverse events|PMID 33332779",
+   "topic": "tocilizumab-covid19-mortality",
+   "split": "dev",
+   "outcome": "Serious adverse events",
+   "trial": "PMID 33332779",
+   "harness_label": "abstract arm-level counts (percentage-corroborated)",
+   "provenance": "abstract",
+   "derivation": "reconstructed",
+   "text": "In the safety population, serious adverse events occurred in 38 of 250 patients (15.2%) in the tocilizumab group and 25 of 127 patients (19.7%) in the placebo group.",
+   "kind": "counts",
+   "expected": {
+    "ai": 38,
+    "n1i": 250,
+    "ci": 25,
+    "n2i": 127
+   }
+  }
+ ]
+}

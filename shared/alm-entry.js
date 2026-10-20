@@ -637,7 +637,220 @@
     unresolved.forEach(q=>flags.push(flag("unanswered-question",q.text,true,{questionId:q.id})));
     return {records,steps,flags,questions};
   }
-  const api={parseTable,parseCell,detect,convert,seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,convertFivenum,eventsFromPercent,sanity,sanityRules,SCHEMAS,fallback:null,qnorm,qt};
+  // Normalise a working copy, retaining UTF-16 source boundaries for every character.
+  // Tags are never evaluated. Table structure survives as tabs/newlines.
+  function sourceMap(text) {
+    let value="";const starts=[],ends=[];
+    const re=/<[^>]*>|&(?:#x[\da-f]+|#\d+|nbsp|thinsp|minus|ndash|mdash|middot|amp|lt|gt);|\u00c3[\u0082\u201a]\u00c2\u00a0|\u00c2\u00a0|\u00c3[\u0082\u201a][ \u00a0]|[\s\S]/gi;
+    for(const m of text.matchAll(re)){
+      let s=m[0];
+      if(s[0]==="<")s=/^<\/tr\b/i.test(s)?"\n":/^<\/(?:td|th)\b|^<(?:td|th)\b[^>]*\/>/i.test(s)?"\t":"";
+      else if(s[0]==="&"){
+        const name=s.slice(1,-1).toLowerCase(),entities={nbsp:" ",thinsp:" ",minus:"-",ndash:"-",mdash:"-",middot:".",amp:"&",lt:"<",gt:">"};
+        const code=name.startsWith("#x")?parseInt(name.slice(2),16):name[0]==="#"?parseInt(name.slice(1),10):null;
+        s=code!==null&&code<=0x10ffff?String.fromCodePoint(code):entities[name]||s;
+      }else if(s.length>1)s=" ";
+      s=s.replace(/[\u2212\u2010-\u2015]/g,"-").replace(/[\u00b7\u22c5]/g,".").replace(/[\u00a0\u2000-\u200b\u202f]/g," ");
+      value+=s;for(let i=0;i<s.length;i++){starts.push(m.index);ends.push(m.index+m[0].length);}
+    }
+    return {value,span:(a,b)=>[starts[a],ends[b-1]]};
+  }
+  const printedNumber=s=>Number(String(s).trim().replace(/[\u2212\u2010-\u2015]/g,"-").replace(/[\u00b7\u22c5]/g,".").replace(/,/g,""));
+  const numberPattern="[-+]?(?:\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?|\\d+(?:\\.\\d+)?|\\.\\d+)";
+  const measurePattern="standard(?:ized|ised) mean difference|incidence rate ratio|relative risk|risk ratio|odds ratio|hazard ratio|rate ratio|mean difference|risk difference|difference in risk|difference|SMD|IRR|RR|OR|HR|MD|RD";
+  function measures(s){
+    s=s.toLowerCase();
+    if(s==="rate ratio")return ["RR","IRR"]; // Both usages occur in reports; ask, never choose.
+    if(/standard|^smd$/.test(s))return ["SMD"];
+    if(/incidence|^irr$/.test(s))return ["IRR"];
+    if(/hazard|^hr$/.test(s))return ["HR"];
+    if(/odds|^or$/.test(s))return ["OR"];
+    if(/risk difference|difference in risk|^rd$/.test(s))return ["RD"];
+    if(/difference|^md$/.test(s))return ["MD"];
+    return ["RR"];
+  }
+  function extract(text,schema,opts={}){
+    text=String(text||"");const mapped=sourceMap(text),s=mapped.value,candidates=[],questions=[];
+    const requested=typeof schema==="object"?schema.name||schema.schema||schema.kind:schema;
+    const wantCounts=!requested||["counts","binary2x2","proportion","arm-nma","dose","dta"].includes(requested);
+    const wantEffects=!requested||["effect_ci","generic","contrast-nma","dose"].includes(requested);
+    const capture=(m,k)=>{const [a,b]=m.indices.groups[k];return {value:printedNumber(m.groups[k]),span:mapped.span(a,b)};};
+    const push=c=>{
+      const entries=c.kind==="counts"?c.values.arms.flatMap((a,i)=>[["arms."+i+".events",a.events],["arms."+i+".n",a.n]]):Object.entries(c.values);
+      // A number broken by markup is not a literal source-number span.
+      if(entries.some(([k,v])=>!c.spans[k]||printedNumber(text.slice(...c.spans[k]))!==v||/\d,$/.test(text.slice(Math.max(0,c.spans[k][0]-2),c.spans[k][0]))))return;
+      if(!candidates.some(x=>JSON.stringify([x.kind,x.measure,x.spans])===JSON.stringify([c.kind,c.measure,c.spans])))candidates.push(c);
+    };
+    if(wantEffects){
+      const ci="(?:(?<level>\\d{2}(?:\\.\\d+)?)\\s*%\\s*)?(?:confidence\\s+interval(?:\\s*\\[CI\\])?|CI)\\s*(?:of\\s*)?[,:=\\s]*[\\[(]?\\s*";
+      const bounds=`(?<lo>${numberPattern})\\s*(?:-|to|,|;)\\s*(?<hi>${numberPattern})(?![\\d.])`;
+      const lead=`\\b(?<measure>${measurePattern})\\b(?:\\s*\\((?:HR|RR|OR|MD|SMD|IRR|RD)\\))?(?:\\s+(?:with|in)\\s+[^;,()[\\]\\n]{1,65}?)?\\s*(?:was|of|is)?\\s*[:,=]?\\s*(?<effect>${numberPattern})(?![\\d.])`;
+      const bridge="\\s*(?:percentage points|percent|days|points|%)?\\s*[,;]?\\s*[\\[(]?\\s*(?:with\\s+(?:a\\s+)?)?";
+      const re=new RegExp(lead+bridge+"(?:"+ci+"|[\\[(]\\s*)"+bounds,"gdi");
+      for(const m of s.matchAll(re)){
+        if(m.groups.measure==="or")continue; // Ordinary English conjunction, not an OR label.
+        const values={},spans={};for(const k of ["effect","lo","hi"]){const n=capture(m,k);values[k]=n.value;spans[k]=n.span;}
+        for(const measure of measures(m.groups.measure))push({kind:"effect_ci",measure,values:{...values},level:m.groups.level?+m.groups.level/100:.95,spans:{...spans},cue:text.slice(...mapped.span(m.index,m.index+m[0].length))});
+      }
+      // Explicit CI without a named measure. Never consume a preceding percentage or p value.
+      const reBare=new RegExp(`(?<![\\w.])(?<effect>${numberPattern})(?![\\d.%])\\s*[,;]?\\s*[\\[(]?\\s*${ci}${bounds}`,"gdi");
+      for(const m of s.matchAll(reBare)){
+        const values={},spans={};for(const k of ["effect","lo","hi"]){const n=capture(m,k);values[k]=n.value;spans[k]=n.span;}
+        if(candidates.some(c=>c.spans.effect&&c.spans.effect[0]===spans.effect[0]))continue;
+        if(/(?:\bp\s*[<=>]\s*|\b(?:day|age|dose|year)\s*(?:was|is|of|=|:)?\s*)$/i.test(s.slice(Math.max(0,m.index-25),m.index)))continue;
+        push({kind:"effect_ci",values,level:m.groups.level?+m.groups.level/100:.95,spans,cue:text.slice(...mapped.span(m.index,m.index+m[0].length))});
+      }
+    }
+    if(wantCounts){
+      const labelAt=(start,end)=>{
+        const after=s.slice(end,end+170),before=s.slice(Math.max(0,start-90),start);
+        const a=after.match(/^\s*(?:patients|participants|controls)?\s*(?:\([^)]*\)|\[[^\]]*\])?\s*(?:in the|assigned to|allocated to|receiving)\s+([a-z][a-z -]{0,60}?)(?:\s+group|\s+(?:died|and|had)|[,;.()]|$)/i);
+        const b=before.match(/([a-z][a-z -]{0,50}?)\s*(?:group)?\s*[:,]\s*$/i);
+        const c=after.match(/^\s*\(([a-z][a-z0-9 -]{0,40})\)/i);
+        return (a&&a[1]||c&&c[1]||b&&b[1]||"").trim();
+      };
+      const pair=(arms,cue,extra={})=>{
+        const spans={};arms.forEach((a,i)=>{spans["arms."+i+".events"]=a.span.events;spans["arms."+i+".n"]=a.span.n;});
+        push({kind:"counts",values:{arms:arms.map(a=>({...a}))},spans,cue,...extra});
+      };
+      const pct="(?:\\s*(?:patients|participants|events)?\\s*[\\[(]\\s*\\d+(?:\\.\\d+)?\\s*%\\s*[\\])])?";
+      const direct=new RegExp(`(?<![\\w./])(?<events>\\d+(?:,\\d{3})*)${pct}\\s*(?:of\\s+(?:the\\s+)?|/)\\s*(?<n>\\d+(?:,\\d{3})*)(?!\\d|/|\\.\\d)`,"gd");
+      const arms=[];
+      for(const m of s.matchAll(direct)){
+        const e=capture(m,"events"),n=capture(m,"n");
+        if(e.value>n.value||n.value<=0)continue;
+        if(/^\s*(?:mg|ml|years|days|months)\b/i.test(s.slice(m.index+m[0].length)))continue;
+        arms.push({events:e.value,n:n.value,label:labelAt(m.index,m.index+m[0].length),span:{events:e.span,n:n.span},start:m.index,end:m.index+m[0].length});
+      }
+      // Separate explicit outcome clauses. Within an unsplit multi-arm clause, expose
+      // every comparison in printed order rather than silently pairing adjacent arms.
+      const groups=[];let group=[];
+      for(const arm of arms){
+        if(group.length){
+          const gap=s.slice(group[group.length-1].end,arm.start).replace(/\([^)]*\)|\[[^\]]*\]/g,"");
+          if(group.length>=2&&/;|\n|\.\s+[A-Z]/.test(gap)){groups.push(group);group=[];}
+        }
+        group.push(arm);
+      }
+      if(group.length)groups.push(group);
+      for(const as of groups){
+        if(as.length===1)pair(as,text.slice(...mapped.span(as[0].start,as[0].end)));
+        for(let i=0;i<as.length;i++)for(let j=i+1;j<as.length;j++)pair([as[i],as[j]],text.slice(...mapped.span(as[i].start,as[j].end)));
+      }
+      // Explicit denominators elsewhere in a report/table. Enumerate compatible assignments;
+      // percentages corroborate printed counts, never reconstruct counts or denominators.
+      const totals=[];
+      for(const m of s.matchAll(/\bn\s*=\s*(?<n>\d+(?:,\d{3})*)/gdi)){
+        const n=capture(m,"n");totals.push({n:n.value,span:n.span,label:s.slice(Math.max(0,m.index-65),m.index).split(/[\n\t;.]/).pop().replace(/[ (]+$/,"").trim()});
+      }
+      if(totals.length>=2){
+        const np=new RegExp(`(?<![\\w.])(?<events>\\d+(?:,\\d{3})*)\\s*(?:patients|participants|events)?\\s*[\\[(]\\s*(?<pct>\\d+(?:\\.\\d+)?)\\s*%?\\s*[\\])]`,"gd");
+        const events=[];
+        for(const m of s.matchAll(np)){
+          const e=capture(m,"events");
+          if(arms.some(a=>a.span.events[0]===e.span[0]))continue;
+          events.push({events:e.value,span:e.span,pct:+m.groups.pct,digits:(m.groups.pct.split(".")[1]||"").length,start:m.index,end:m.index+m[0].length});
+        }
+        for(let i=0;i+1<events.length;i+=2){
+          const es=events.slice(i,i+2);
+          for(let a=0;a<totals.length;a++)for(let b=0;b<totals.length;b++){
+            if(a===b)continue;
+            const ts=[totals[a],totals[b]];
+            if(es.some((e,j)=>e.events>ts[j].n))continue;
+            const corroborated=es.every((e,j)=>Math.abs(100*e.events/ts[j].n-e.pct)<=.51*Math.pow(10,-e.digits));
+            pair(es.map((e,j)=>({events:e.events,n:ts[j].n,label:ts[j].label,span:{events:e.span,n:ts[j].span}})),text.slice(...mapped.span(es[0].start,es[1].end)),{assignmentRequired:true,percentagesCorroborate:corroborated});
+          }
+        }
+      }
+      // Tab/space tables with explicit events/total column names.
+      const lines=[...s.matchAll(/[^\n]+/g)];
+      if(lines.length>1){
+        const cells=line=>[...line[0].matchAll(/[^\t]+?(?=\t|$)/g)].flatMap(m=>{
+          const parts=[...m[0].matchAll(/\S(?:(?! {2,}).)*?(?= {2,}|$)/g)];
+          return parts.map(p=>({text:p[0],start:line.index+m.index+p.index}));
+        });
+        const header=cells(lines[0]),ev=header.map((c,i)=>/\bevents?\b/i.test(c.text)?i:-1).filter(i=>i>=0),ns=header.map((c,i)=>/\b(?:total|n)\b/i.test(c.text)?i:-1).filter(i=>i>=0);
+        if(ev.length===2&&ns.length===2)for(const line of lines.slice(1)){
+          const cs=cells(line),as=[];
+          for(let j=0;j<2;j++){
+            const e=cs[ev[j]],n=cs[ns[j]];
+            if(!e||!n||!/^\d+$/.test(e.text)||!/^\d+$/.test(n.text))break;
+            as.push({events:+e.text,n:+n.text,label:header[ev[j]].text,span:{events:mapped.span(e.start,e.start+e.text.length),n:mapped.span(n.start,n.start+n.text.length)}});
+          }
+          if(as.length===2)pair(as,text.slice(...mapped.span(line.index,line.index+line[0].length)));
+        }
+      }
+    }
+    if(!requested||["continuous","mean_sd","median_iqr"].includes(requested)){
+      const patterns=[
+        ["mean_sd",`\\bmean\\s*[:=]?\\s*(?<mean>${numberPattern})\\s*(?:\\(\\s*SD\\s*[:=]?\\s*|[,;]\\s*SD\\s*[:=]?\\s*|±\\s*(?:SD\\s*)?)(?<sd>${numberPattern})`],
+        ["median_iqr",`\\bmedian\\s*[:=]?\\s*(?<median>${numberPattern})\\s*[,;]?\\s*[\\[(]?\\s*IQR\\s*[:=]?\\s*(?<q1>${numberPattern})\\s*(?:-|to|,)\\s*(?<q3>${numberPattern})`]
+      ];
+      for(const [kind,pattern] of patterns)for(const m of s.matchAll(new RegExp(pattern,"gdi"))){
+        const values={},spans={};for(const k of Object.keys(m.groups)){const n=capture(m,k);values[k]=n.value;spans[k]=n.span;}
+        const ambiguous=kind==="mean_sd"&&!/\bSD\b/i.test(m[0]);
+        push({kind,values,spans,cue:text.slice(...mapped.span(m.index,m.index+m[0].length)),dispersion:ambiguous?null:"SD"});
+        if(ambiguous)questions.push({id:"dispersion:"+m.index,text:"Is the spread a standard deviation (SD) or standard error (SE)?",choices:["SD","SE"]});
+      }
+    }
+    candidates.sort((a,b)=>Math.min(...Object.values(a.spans).map(x=>x[0]))-Math.min(...Object.values(b.spans).map(x=>x[0])));
+    if(candidates.length>1)questions.push({id:"candidate",text:"Choose the result, outcome and timepoint to use. More than one candidate was found.",choices:candidates.map((c,i)=>({value:i,label:c.cue,measure:c.measure}))});
+    if(candidates.some(c=>c.kind==="counts"))questions.push({id:"arms",text:"Map the printed arms to treatment and control. Text order does not determine treatment.",choices:["first is treatment","second is treatment"]});
+    if(candidates.some(c=>c.kind==="effect_ci"&&!c.measure))questions.push({id:"measure",text:"Which effect measure and scale does this interval describe?",choices:["RR","OR","HR","MD","SMD","IRR","RD"]});
+    if(/\d,\d{1,2}(?!\d)/.test(s))questions.push({id:"decimal",text:"Check whether commas are decimal marks or separators; decimal commas are not converted.",choices:["decimal mark","separator"]});
+    return {candidates,questions};
+  }
+  let provenanceSerial=0;
+  const clone=x=>JSON.parse(JSON.stringify(x));
+  const provenance={
+    create({pastedText="",label="",reference="",location="",doi="",pmid=""}={}){
+      return {id:"entry-"+Date.now().toString(36)+"-"+(++provenanceSerial),label,reference,location,doi,pmid,pastedText:String(pastedText),choice:{},values:[],conversions:[],flags:[],usedAs:"",confirmed:false,confirmedAt:null};
+    },
+    fromCandidate(rec,candidate,choice={}){
+      const out=clone(rec);out.choice=clone(choice);out.values=[];out.conversions=[];out.flags=[];out.confirmed=false;out.confirmedAt=null;
+      out.kind=candidate.kind;out.measure=choice.measure||candidate.measure;out.level=candidate.level;
+      const add=(field,value,key)=>{const span=candidate.spans[key];out.values.push({field,value,span:span&&span.slice(),text:span?out.pastedText.slice(...span):""});};
+      if(candidate.kind==="counts")candidate.values.arms.forEach((a,i)=>{
+        const role=choice.treatmentIndex===i?"treatment":choice.controlIndex===i?"control":null;
+        if(choice.armIndex!==undefined&&choice.armIndex!==i)return;
+        add(choice.armIndex===i?"xi":role==="treatment"?"ai":role==="control"?"ci":"arm"+i+".events",a.events,"arms."+i+".events");
+        add(choice.armIndex===i?"ni":role==="treatment"?"n1i":role==="control"?"n2i":"arm"+i+".n",a.n,"arms."+i+".n");
+      });
+      else Object.entries(candidate.values).forEach(([k,v])=>add(k,v,k));
+      if(choice.timepoint)out.flags.push({code:"TIMEPOINT_CHOSEN",text:"Timepoint chosen: "+choice.timepoint});
+      return out;
+    },
+    applyConversion(rec,conversionResult){
+      const out=clone(rec),r=conversionResult;
+      out.conversions.push({field:r.field||"",formula:r.formula||r.method,citation:r.citation,inputs:clone(r.inputs||{}),output:r.output===undefined?r.value:r.output});
+      out.flags.push(...clone(r.flags||(r.flag?[r.flag]:[])));out.confirmed=false;out.confirmedAt=null;return out;
+    },
+    sentence(rec){
+      const names={ai:"events (treatment)",n1i:"total (treatment)",ci:"events (control)",n2i:"total (control)",effect:"effect estimate",lo:"lower confidence limit",hi:"upper confidence limit"};
+      return `From ${rec.label||"[author and year missing]"} (${rec.location||"[location missing]"}), you pasted "${rec.pastedText}". We read: ${rec.values.map(v=>(names[v.field]||v.field)+" "+v.text).join("; ")||"none"}. We converted: ${rec.conversions.map(c=>`${c.field}: ${c.formula} = ${c.output} (${c.citation})`).join("; ")||"none"}. Used as: ${rec.usedAs||"[not supplied by the app]"}.`;
+    },
+    validate(rec){
+      const missing=[];
+      if(!/[\p{L}][\p{L}'’.-]*(?:\s+.*)?\s+(?:18|19|20|21)\d{2}[a-z]?\b/u.test(String(rec.label||"").trim()))missing.push("label");
+      for(const field of ["reference","location"])if(!String(rec[field]||"").trim())missing.push(field);
+      if(!rec.confirmed)missing.push("confirmed");
+      if(!rec.values||!rec.values.length)missing.push("values");
+      for(const v of rec.values||[]){
+        const p=v.span;
+        const literal=/^[-+\u2212\u2010-\u2015]?(?:\d{1,3}(?:,\d{3})+(?:[.\u00b7\u22c5]\d+)?|\d+(?:[.\u00b7\u22c5]\d+)?|[.\u00b7\u22c5]\d+)$/.test(v.text);
+        if(!Array.isArray(p)||p.length!==2||!p.every(Number.isInteger)||p[0]<0||p[1]<=p[0]||p[1]>rec.pastedText.length||rec.pastedText.slice(...p)!==v.text||!literal||printedNumber(v.text)!==v.value)missing.push("span:"+v.field);
+      }
+      if(rec.flags&&rec.flags.some(f=>f.blocking))missing.push("blocking flags");
+      return missing;
+    },
+    toCSV(records){
+      const keys=["id","label","reference","location","doi","pmid","pastedText","choice","values","conversions","flags","usedAs","confirmed","confirmedAt"];
+      const cell=x=>{let s=typeof x==="object"?JSON.stringify(x):String(x===undefined?"":x);if(/^[\s\u0000-\u001f]*[=+\-@]/.test(s)||/^[\t\r\n]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
+      return [keys.map(cell).join(","),...records.map(r=>keys.map(k=>cell(r[k])).join(","))].join("\r\n");
+    },
+    toDocxParagraphs(records){return records.flatMap(r=>[provenance.sentence(r),"Reference: "+r.reference+"; DOI: "+(r.doi||"none")+"; PMID: "+(r.pmid||"none"),"User choices: "+JSON.stringify(r.choice)+"; flags: "+JSON.stringify(r.flags)+"; confirmed: "+r.confirmed+"; confirmed at: "+(r.confirmedAt||"not confirmed")]);}
+  };
+  const api={parseTable,parseCell,detect,convert,extract,provenance,seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,convertFivenum,eventsFromPercent,sanity,sanityRules,SCHEMAS,fallback:null,qnorm,qt};
   global.AlmEntry=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
