@@ -58,4 +58,5 @@ jobs:
       - run: node --test copas/tests/copas-cases.test.mjs
       # Page structure, the __almCopasProfileMLE <-> parity-spec contract, and
       # the claim guards (no private notes file cited, no "never worse" claim).
+      - run: python -m pip install pytest
       - run: python -m pytest copas/tests/test_structure.py -q
