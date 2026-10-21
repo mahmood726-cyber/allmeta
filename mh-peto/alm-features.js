@@ -8,6 +8,59 @@
   function el(id) { return document.getElementById(id); }
   function axis(edge) { return document.querySelector('#alm-axis-mount [data-edge="' + edge + '"]'); }
 
+  function restoredLog(log) {
+    function invalid() { throw new Error('Invalid conversion log.'); }
+    function object(v) { return v && typeof v === 'object' && !Array.isArray(v); }
+    function keys(v, allowed) { return Object.keys(v).every(function (key) { return allowed.indexOf(key) >= 0; }); }
+    function bounded(v, depth) {
+      if (typeof v === 'string') return v.length <= 2048;
+      if (v === null || typeof v === 'boolean') return true;
+      if (typeof v === 'number') return Number.isFinite(v);
+      if (!v || typeof v !== 'object' || depth > 5 || Object.keys(v).length > 100) return false;
+      return Object.keys(v).every(function (key) { return key.length <= 80 && bounded(v[key], depth + 1); });
+    }
+    if (!Array.isArray(log) || log.length > 1000) invalid();
+    log.forEach(function (s) {
+      if (!object(s) || !bounded(s, 0)) invalid();
+      if (s.code) {
+        // Code-only records cannot override the toolkit's fixed wording or carry
+        // nested provenance that would take precedence over the code in T.entry().
+        if (!global.AlmText || !Object.prototype.hasOwnProperty.call(global.AlmText.ENTRY_CODES, s.code) ||
+            !keys(s, ['code', 'study']) || (s.study !== undefined && typeof s.study !== 'string')) invalid();
+        return;
+      }
+      // Preserve the legacy no-conversion record used by existing share links.
+      if (s.method === 'transcription' && s.text === 'Counts transcribed without conversion' &&
+          keys(s, ['method', 'text'])) return;
+      if (!keys(s, ['row', 'study', 'text', 'method', 'citation', 'inputs', 'flags', 'fn', 'args', 'result', 'rulesVersion']) ||
+          !object(s.inputs) || !Array.isArray(s.flags) || typeof s.text !== 'string') invalid();
+      if (s.method === 'user-confirmed swap' && s.text === 'User confirmed swapping source columns or CI bounds' &&
+          s.citation === 'User confirmation' && Object.keys(s.inputs).length === 0 && s.flags.length === 0 &&
+          keys(s, ['text', 'method', 'citation', 'inputs', 'flags'])) return;
+      if (!Number.isSafeInteger(s.row) || s.row < 0 || typeof s.study !== 'string' || !s.study.trim()) invalid();
+      if (s.method === 'decimal confirmed' && s.citation === 'User confirmation' && s.flags.length === 0 &&
+          keys(s.inputs, ['cell']) && typeof s.inputs.cell === 'string' &&
+          keys(s, ['row', 'study', 'text', 'method', 'citation', 'inputs', 'flags']) &&
+          ['a decimal mark', 'a separator'].some(function (choice) {
+            return s.text === s.study + ': comma interpreted as ' + choice + ' by confirmation';
+          })) return;
+      // Binary-arm table conversions generate percentage-to-count steps. Check
+      // their wording and replay metadata against the existing shared converter.
+      if (s.method !== 'events from percent' || !global.AlmEntry ||
+          !keys(s.inputs, ['pct', 'n']) || !Number.isSafeInteger(s.inputs.n) || s.inputs.n <= 0 ||
+          !Number.isFinite(s.inputs.pct) || s.inputs.pct < 0 || s.inputs.pct > 100) invalid();
+      var out = global.AlmEntry.eventsFromPercent(s.inputs);
+      if (s.citation !== out.citation || s.text !== s.study + ': Events estimated from percent (' + out.citation + ')' ||
+          JSON.stringify(s.flags) !== JSON.stringify(out.flags)) invalid();
+      if (['fn', 'args', 'result', 'rulesVersion'].some(function (key) { return key in s; }) &&
+          (s.fn !== out.fn || s.rulesVersion !== out.rulesVersion || s.result !== out.result ||
+            !object(s.args) || !keys(s.args, ['pct', 'n']) || s.args.pct !== s.inputs.pct || s.args.n !== s.inputs.n)) invalid();
+    });
+    var serialized = JSON.stringify(log);
+    if (serialized.length > 65536) invalid();
+    return JSON.parse(serialized);
+  }
+
   function apply(records) {
     if (!Array.isArray(records) || records.length < 2) throw new Error('At least two studies are required.');
     var lines = records.map(function (r) {
@@ -31,12 +84,14 @@
     var last = typeof global._almLastMhPeto === 'function' && global._almLastMhPeto();
     if (!last) return null;
     var r = Object.assign({}, last, { ciLevel: 95, cc: 0.5, nullValue: last.measure === 'RD' ? 0 : 1 });
+    // Test-only hook: planted defects must be rejected by the independent DOM audit.
     var pt = global.__almTextPerturb;
     if (pt && typeof r[pt.key] === 'number' && typeof pt.delta === 'number') r[pt.key] += pt.delta;
     return r;
   }
   function dom() {
-    var out = {};
+    var out = { k: { text: global.AlmText.format(document.querySelectorAll('#per-body tr').length,
+      { kind: 'int' }), fmt: { kind: 'int' } } };
     document.querySelectorAll('#pooled-body tr').forEach(function (row) {
       var cells = row.cells, prefix = cells[0].textContent.indexOf('Peto') >= 0 ? 'peto_' : 'mh_';
       var ci = cells[2].textContent.replace(/[[\]]/g, '').split(',');
@@ -64,6 +119,7 @@
             global.AlmText.cochrane.differencePhrase(r.mh_lo, r.mh_hi, r.nullValue), '. '];
         }),
         T.when(!T.has('mh_est'), 'The Mantel–Haenszel estimate was undefined for these counts. '),
+        'These pooled results assume a single common effect across studies; this analysis does not estimate between-study variation or a prediction interval. ',
         'The event may be beneficial or harmful; these numbers alone do not establish causation or clinical importance.'];
     },
     methods: function (T, r) {
@@ -91,13 +147,13 @@
         T.when(T.has('mh_est'), function () {
           return ['MH ', T.pick('measure', { OR: 'OR', RR: 'RR', RD: 'RD' }), ' = ', T.num('mh_est', 3),
             ' (', T.pct('ciLevel', 0), ' CI ', T.ci('mh_lo', 'mh_hi', 3), ')',
-            T.when(T.has('mh_z') && T.has('mh_p'), function () { return ['; z = ', T.num('mh_z', 2), '; p = ', T.num('mh_p', 3)]; }), '. '];
+            T.when(T.has('mh_z') && T.has('mh_p'), function () { return ['; z = ', T.num('mh_z', 2), '; ', T.p('mh_p')]; }), '. '];
         }),
         T.when(T.has('mh_est') && !T.has('mh_z'), 'The MH z statistic and p value were undefined. '),
         T.when(!T.has('mh_est'), 'MH estimate and confidence interval were undefined. '),
         T.when(r.measure === 'OR' && T.has('peto_est'), function () {
           return ['Peto OR = ', T.num('peto_est', 3), ' (', T.pct('ciLevel', 0), ' CI ',
-            T.ci('peto_lo', 'peto_hi', 3), '); z = ', T.num('peto_z', 2), '; p = ', T.num('peto_p', 3), '. '];
+            T.ci('peto_lo', 'peto_hi', 3), '); z = ', T.num('peto_z', 2), '; ', T.p('peto_p'), '. '];
         }),
         T.when(T.has('fragility_index'), function () {
           return ['The separate DL fragility index was ', T.int('fragility_index'), ' event modifications (FQ = ',
@@ -107,6 +163,7 @@
     },
     flags: function (T, r) {
       return ['Displayed p values are rounded; a displayed zero does not imply a zero probability.',
+        'These pooled results assume a single common effect across studies; this analysis does not estimate between-study variation or a prediction interval.',
         T.when(r.measure === 'OR', 'Peto estimates require caution with unbalanced arms or large effects.'),
         T.when(T.has('mh_lo') && T.has('mh_hi') &&
           global.AlmText.cochrane.imprecise(r.mh_lo, r.mh_hi, r.nullValue),
@@ -159,6 +216,7 @@
             ![a.min, a.max].every(function (v) { return typeof v === 'string' && (v === '' || Number.isFinite(Number(v))); }) ||
             (a.min !== '' && a.max !== '' && Number(a.min) >= Number(a.max)) ||
             !Array.isArray(s.entryLog)) throw new Error('Invalid axis options or conversion log.');
+        var entryLog = restoredLog(s.entryLog);
         el('src').value = s.src; el('measure').value = s.measure;
         // An untouched axis follows the measure automatically in the app. Preserve
         // that behaviour on fresh links; only emit overrides if one was used.
@@ -174,7 +232,7 @@
           defaultAxisOverride = !a.applied;
         }
         axis('log').checked = a.log; axisApplied = a.applied;
-        global.AlmFeaturesState.entryLog = s.entryLog;
+        global.AlmFeaturesState.entryLog = entryLog;
         el('btn-run').click();
       }
     }
@@ -187,12 +245,19 @@
       label: 'Data entry',
       render: function (panel, ctx) {
         var ui = global.AlmEntryUI.mount(panel, ctx.block);
-        var heading = document.createElement('h3'), log = document.createElement('p');
-        heading.textContent = 'Conversion log'; panel.appendChild(heading); panel.appendChild(log);
+        var heading = document.createElement('h3'), log = document.createElement('ul'), empty = document.createElement('p');
+        heading.textContent = 'Conversion log'; panel.appendChild(heading); panel.appendChild(log); panel.appendChild(empty);
+        empty.textContent = 'No numerical conversions recorded. Raw event counts and arm totals are passed to the app.';
         function refresh() {
           var steps = global.AlmFeaturesState.entryLog || [];
-          log.textContent = steps.length ? steps.map(function (s) { return s.text; }).join('\n') :
-            'No numerical conversions recorded. Raw event counts and arm totals are passed to the app.';
+          log.replaceChildren();
+          steps.forEach(function (s) {
+            var item = document.createElement('li');
+            item.textContent = s.text || (s.study ? s.study + ': ' : '') +
+              (s.code && global.AlmText.ENTRY_CODES[s.code] ? global.AlmText.ENTRY_CODES[s.code].desc : s.method || '');
+            log.appendChild(item);
+          });
+          log.hidden = !steps.length; empty.hidden = !!steps.length;
         }
         refresh();
         return { onShow: refresh, entry: ui };
