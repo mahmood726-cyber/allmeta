@@ -408,4 +408,106 @@ test('proportion-ma (review P2): I² = 0 flag says "few studies" only when k is 
   assert.equal(AlmText.audit(big, propResults({ k: 12, df: 11, i2: 0, tau2: 0 }), { ctx }).ok, true);
   const small = AlmText.render(t, propResults(), ctx);
   assert.ok(small.flags.some(x => /with few studies, heterogeneity statistics have low power/.test(x.text)), 'k=7 keeps the few-studies clause');
+
+// FU4: heterogeneity-method citations (Q-profile CI, Sidik-Jonkman estimator, empirical Bayes).
+const NEW_CITES = {
+  viechtbauerQProfile: ['Viechtbauer 2007', /Confidence intervals for the amount of heterogeneity in meta-analysis\. Stat Med 2007;26:37-52\./],
+  sidikJonkman: ['Sidik and Jonkman 2005', /Simple heterogeneity variance estimation for meta-analysis\. J R Stat Soc Ser C Appl Stat 2005;54:367-384\./],
+  sidikJonkmanComparison: ['Sidik and Jonkman 2007', /A comparison of heterogeneity variance estimators in combining results of studies\. Stat Med 2007;26:1964-1981\./],
+  morris: ['Morris 1983', /Parametric empirical Bayes inference: theory and applications\. J Am Stat Assoc 1983;78:47-55\./],
+};
+test('citations: Viechtbauer 2007, Sidik & Jonkman 2005/2007, Morris 1983 render as typed tokens and pass the audit', () => {
+  for (const [id, [short, full]] of Object.entries(NEW_CITES)) {
+    assert.ok(!/\d/.test(id), 'citation id is digit-free: ' + id);
+    assert.equal(AlmText.CITES[id].short, short);
+    assert.match(AlmText.CITES[id].full, full);
+  }
+  const t = { ...simpleTemplates, methods: (T) => ['Q-profile CI (', T.cite('viechtbauerQProfile'), '); SJ (', T.cite('sidikJonkman'), '; ',
+    T.cite('sidikJonkmanComparison'), '); EB (', T.cite('morris'), ').'] };
+  const out = AlmText.render(t, simpleResults, ctx0);
+  assert.equal(out.methods.text, 'Q-profile CI (Viechtbauer 2007); SJ (Sidik and Jonkman 2005; Sidik and Jonkman 2007); EB (Morris 1983).');
+  assert.deepEqual(out.cites.map(c => c.id), Object.keys(NEW_CITES));
+  const a = AlmText.audit(out, simpleResults, { ctx: ctx0 });
+  report('new-citations', a);
+  assert.equal(a.ok, true, JSON.stringify(a.failures));
+  // PLANTED: a citation token whose text no longer matches the table fails the audit.
+  const tampered = JSON.parse(JSON.stringify(out));
+  const seg = tampered.methods.segments.find(s => s.type === 'cite' && s.id === 'morris');
+  seg.text = 'Morris 1984';
+  tampered.methods.text = tampered.methods.segments.map(s => s.text).join('');
+  const b = AlmText.audit(tampered, simpleResults, { ctx: ctx0 });
+  report('new-citations-planted', b);
+  assert.equal(b.ok, false);
+  assert.ok(b.failures.some(f => f.check === 'methods:cite:morris'), JSON.stringify(b.failures));
+});
+
+// FU6: network meta-analysis consistency citations.
+test('citations: Dias et al. 2010 and Higgins et al. 2012 render as typed tokens and pass the audit', () => {
+  assert.equal(AlmText.CITES.dias2010.short, 'Dias et al. 2010');
+  assert.equal(AlmText.CITES.dias2010.full, 'Dias S, Welton NJ, Caldwell DM, Ades AE. Checking consistency in mixed treatment comparison meta-analysis. Stat Med 2010;29:932-944.');
+  assert.equal(AlmText.CITES.higgins2012.short, 'Higgins et al. 2012');
+  assert.equal(AlmText.CITES.higgins2012.full, 'Higgins JPT, Jackson D, Barrett JK, Lu G, Ades AE, White IR. Consistency and inconsistency in network meta-analysis: concepts and models for multi-arm studies. Res Synth Methods 2012;3:98-110.');
+  const t = { ...simpleTemplates, methods: (T) => ['Consistency was checked by node-splitting (', T.cite('dias2010'), ') and the design-by-treatment model (', T.cite('higgins2012'), ').'] };
+  const out = AlmText.render(t, simpleResults, ctx0);
+  assert.equal(out.methods.text, 'Consistency was checked by node-splitting (Dias et al. 2010) and the design-by-treatment model (Higgins et al. 2012).');
+  const a = AlmText.audit(out, simpleResults, { ctx: ctx0 });
+  report('nma-citations', a);
+  assert.equal(a.ok, true, JSON.stringify(a.failures));
+  const tampered = JSON.parse(JSON.stringify(out));
+  tampered.methods.segments.find(s => s.id === 'dias2010').text = 'Dias et al. 2011';
+  tampered.methods.text = tampered.methods.segments.map(s => s.text).join('');
+  const b = AlmText.audit(tampered, simpleResults, { ctx: ctx0 });
+  report('nma-citations-planted', b);
+  assert.ok(b.failures.some(f => f.check === 'methods:cite:dias2010'), JSON.stringify(b.failures));
+});
+
+// FU7: typed label tokens. Labels (study / treatment / outcome names) may contain digits;
+// they come verbatim from results() and are excluded from numeric tokenisation by segment type.
+const labelTemplates = {
+  ...simpleTemplates,
+  results: (T) => ['Compared with ', T.label('ref'), ', ', T.label({ key: 'trts', index: 1 }), ' had the largest effect (k = ', T.int('k'), '; first study ', T.label({ key: 'studies', index: 0 }), ').'],
+};
+const labelResults = { ...simpleResults, ref: 'Placebo', trts: ['Placebo', 'Drug 2'], studies: ['Smith 2019', 'Jones 2020'] };
+
+test('label: "Drug 2" and "Smith 2019" render verbatim from results(), are tracked in order, and the audit passes', () => {
+  const r = AlmText.render(labelTemplates, labelResults, ctx0);
+  assert.equal(r.results.text, 'Compared with Placebo, Drug 2 had the largest effect (k = 12; first study Smith 2019).');
+  assert.deepEqual(r.labels.map(l => [l.key, l.index, l.value]), [['ref', undefined, 'Placebo'], ['trts', 1, 'Drug 2'], ['studies', 0, 'Smith 2019']]);
+  assert.deepEqual(r.provenance.filter(p => p.para === 'results').map(p => p.key), ['k']);
+  const a = AlmText.audit(r, labelResults, { ctx: ctx0 });
+  report('label', a);
+  assert.equal(a.ok, true, JSON.stringify(a.failures));
+  // Control: the same digits typed as plain template text (not a label) still fail the token audit.
+  const plain = AlmText.render({ ...simpleTemplates, results: (T) => ['Drug 2 (k = ', T.int('k'), ').'] }, labelResults, ctx0);
+  assert.equal(AlmText.audit(plain, labelResults, { ctx: ctx0 }).ok, false);
+});
+
+test('label not in results() -> render THROWS; a label segment with no results value -> audit FAILS', () => {
+  assert.throws(() => AlmText.render({ ...simpleTemplates, results: (T) => [T.label('nope')] }, labelResults, ctx0), /missing label "nope"/);
+  assert.throws(() => AlmText.render({ ...simpleTemplates, results: (T) => [T.label({ key: 'trts', index: 5 })] }, labelResults, ctx0), /missing label "trts\[5\]"/);
+  assert.throws(() => AlmText.render({ ...simpleTemplates, results: (T) => [T.label('k')] }, labelResults, ctx0), /not a non-empty string/);
+  // Rendered against results that had the label; audited against results that do not.
+  const r = AlmText.render(labelTemplates, labelResults, ctx0);
+  const { ref, ...noRef } = labelResults;
+  const a = AlmText.audit(r, noRef, { ctx: ctx0 });
+  report('label-missing', a);
+  assert.equal(a.ok, false);
+  assert.ok(a.failures.some(f => f.check === 'results:label:ref'), JSON.stringify(a.failures));
+});
+
+test('PLANTED: a label segment whose text != results value -> audit FAILS', () => {
+  const r = AlmText.render(labelTemplates, labelResults, ctx0);
+  const seg = r.results.segments.find(s => s.type === 'label' && s.key === 'trts');
+  seg.text = 'Drug 3';
+  r.results.text = r.results.segments.map(s => s.text).join('');
+  const a = AlmText.audit(r, labelResults, { ctx: ctx0 });
+  report('label-planted', a);
+  assert.equal(a.ok, false);
+  assert.ok(a.failures.some(f => f.check === 'results:label:trts[1]'), JSON.stringify(a.failures));
+  // Value and text both changed together still disagree with results().
+  const r2 = AlmText.render(labelTemplates, labelResults, ctx0);
+  const s2 = r2.results.segments.find(s => s.type === 'label' && s.key === 'studies');
+  s2.text = s2.value = 'Smith 2018';
+  r2.results.text = r2.results.segments.map(s => s.text).join('');
+  assert.equal(AlmText.audit(r2, labelResults, { ctx: ctx0 }).ok, false);
 });

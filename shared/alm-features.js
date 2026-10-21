@@ -19,6 +19,9 @@
  * Mounts into <div id="alm-features"> (optional data-app="<app>"): a collapsible section with an
  * accessible tablist "Data entry · Report text · Verify in R · Share" (roving tabindex, arrow/Home/End
  * keys, aria-selected/aria-controls). A tab is shown only when both its module and the spec block exist.
+ * Data entry and Report text have built-in modules (AlmFeatures.moduleFor): when spec.entry exists and
+ * shared/alm-entry-ui.js is loaded, AlmEntryUI.mount(panel, {schema, extras, apply, usedAs}); when spec.text
+ * exists and shared/alm-text.js is loaded, AlmTextUI.mount(panel, {app, text}). Both mount on first show.
  * window.AlmFeaturesState = {entryLog:[], provenance:[], verify:{revision, passed, rows, versions}}.
  *
  * Plain IIFE: window.AlmFeatures + module.exports (node-testable; no DOM work happens without document).
@@ -198,11 +201,56 @@
     notifyShown(host);
   }
 
+  // Built-in tab modules for the two UIs that ship as plain mountable components (shared/alm-entry-ui.js,
+  // shared/alm-text.js): used when no module registered for that key and the component is loaded. Both mount
+  // LAZILY, on the first time their panel is shown (onShow hook); Report text regenerates on every later show
+  // so it always reflects the app's current results. Objects are stable so renderHost() keeps mounted tabs.
+  function mountError(panel, label, e) {
+    panel.replaceChildren();
+    el('p', { class: 'alm-f-error', role: 'alert' }, label + ' could not be shown: ' + (e && e.message ? e.message : String(e)), panel);
+  }
+  var BUILTIN = {
+    entry: {
+      label: 'Data entry',
+      render: function (panel, ctx) {
+        return { onShow: function () {
+          if (panel.__almHandle || panel.__almFailed) return;
+          var b = ctx.block;
+          try {
+            panel.__almHandle = global.AlmEntryUI.mount(panel, { schema: b.schema, extras: Array.isArray(b.extras) ? b.extras : [], apply: b.apply, usedAs: b.usedAs });
+          } catch (e) { panel.__almFailed = true; mountError(panel, 'Data entry', e); }
+        } };
+      },
+      destroy: function (panel) { var h = panel.__almHandle; if (h && typeof h.destroy === 'function') h.destroy(); panel.__almHandle = null; },
+    },
+    text: {
+      label: 'Report text',
+      render: function (panel, ctx) {
+        return { onShow: function () {
+          if (panel.__almFailed) return;
+          var h = panel.__almHandle;
+          if (h) { if (typeof h.regenerate === 'function') h.regenerate(); return; }
+          try {
+            panel.__almHandle = global.AlmTextUI.mount(panel, { app: ctx.app, text: ctx.block });
+          } catch (e) { panel.__almFailed = true; mountError(panel, 'Report text', e); }
+        } };
+      },
+      destroy: function (panel) { panel.replaceChildren(); panel.__almHandle = null; },
+    },
+  };
+  // The module that renders tab `key`: a registered one wins; otherwise the built-in when its UI is loaded.
+  function moduleFor(key) {
+    if (modules[key]) return modules[key];
+    if (key === 'entry' && global.AlmEntryUI && typeof global.AlmEntryUI.mount === 'function') return BUILTIN.entry;
+    if (key === 'text' && global.AlmTextUI && typeof global.AlmTextUI.mount === 'function') return BUILTIN.text;
+    return null;
+  }
+
   function renderHost(mountEl, app) {
     var spec = specs[app];
     var host = hosts[app] && hosts[app].mountEl === mountEl && mountEl.contains(hosts[app].body) ? hosts[app] : buildHost(mountEl, app);
     TABS.forEach(function (t) {
-      var mod = modules[t.key], block = spec[t.key], cur = host.tabs[t.key];
+      var mod = moduleFor(t.key), block = spec[t.key], cur = host.tabs[t.key];
       var want = !!(mod && block);
       var version = spec._versions[t.key] || 0;
       if (cur && (!want || cur.mod !== mod || cur.version !== version)) {
@@ -244,12 +292,14 @@
   ensureState();
   var api = {
     register: register, registerModule: registerModule, get: get, revision: revision, stateHash: stateHash,
-    inputsHash: inputsHash, verifiedCurrent: verifiedCurrent,
+    inputsHash: inputsHash, verifiedCurrent: verifiedCurrent, moduleFor: moduleFor,
     open: open, liveAdapter: liveAdapter, blocks: BLOCKS.slice(), tabs: TABS.map(function (t) { return t.key; }),
   };
   global.AlmFeatures = api;
   var pending = global.AlmFeaturesPending;
   global.AlmFeaturesPending = { push: function (item) { registerModule(item[0], item[1]); } };
   if (Array.isArray(pending)) pending.forEach(function (item) { registerModule(item[0], item[1]); });
+  // Built-in tabs depend on UI scripts that may load after this file: re-render once everything has loaded.
+  if (typeof document !== 'undefined' && typeof global.addEventListener === 'function') global.addEventListener('load', queueRender);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

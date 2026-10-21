@@ -3,15 +3,20 @@
  * (template/regex only — no AI, no network), plus a number audit.
  *
  * Contract (allmeta features DESIGN.md, "F2 In-app text"):
- *   AlmText.render(templates, results, ctx) -> {plain, methods, results, flags, provenance, cites, ctxValues}
+ *   AlmText.render(templates, results, ctx) -> {plain, methods, results, flags, provenance, labels, cites, ctxValues}
  *     templates = { plain(T, r, ctx), methods(T, r, ctx), results(T, r, ctx), flags?(T, r, ctx) -> [parts...] }
  *     Every number in the output is emitted by a T helper from `results` (or from ctx: build info,
  *     data-entry log counts, verification facts) and recorded in provenance[] in order.
  *     A missing / non-finite key makes render THROW (never prints NaN / undefined / null).
+ *     T.label(key | {key, index}) prints a text label (study / treatment / outcome name, which may
+ *     contain digits, e.g. "Drug 2") verbatim from results[key] (or results[key][index]) and records
+ *     it in labels[] in order. Label segments are excluded from numeric tokenisation by segment type.
  *   AlmText.audit(rendered, results, {ctx, dom}) -> {ok, checks, passed, failures[], tokens}
  *     (a) the numeric tokens of each rendered paragraph equal, in order, the tokens of its typed
  *         segments (provenance texts + typed rule/cite/ctx tokens) — a literal digit in a template fails;
  *     (b) every provenance value === results[key] (or the ctx value) and its text === the formatter output;
+ *         every label segment's value === results[key] (or results[key][index]), its text === that value,
+ *         and it matches labels[] in order;
  *     (c) optional dom map {key: {text, fmt}}: results[key] formatted with the app's display digits
  *         equals what the page displays.
  *   AlmText.cochrane: i2Band, ciIncludesNull, imprecise, smallK — Cochrane Handbook v6.5 wording helpers.
@@ -39,7 +44,8 @@
   Object.keys(RULES).forEach(function (k) { R[k] = RULES[k].value; });
   Object.freeze(R);
 
-  // Fixed citation table. Ids are digit-free so templates never contain digits outside T calls.
+  // Fixed citation table. Ids are normally digit-free; dias2010 / higgins2012 keep their agreed
+  // ids. Ids only ever appear inside T.cite(...), which the no-digit-literal lint strips.
   var CITES = {
     handbook:         { short: 'Cochrane Handbook v6.5', full: 'Higgins JPT, Thomas J, Chandler J, Cumpston M, Li T, Page MJ, Welch VA (eds). Cochrane Handbook for Systematic Reviews of Interventions, version 6.5. Cochrane, 2024.' },
     handbookHet:      { short: 'Cochrane Handbook v6.5, §10.10.2', full: 'Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, section 10.10.2 (Identifying and measuring heterogeneity).' },
@@ -49,6 +55,12 @@
     dersimonianLaird: { short: 'DerSimonian and Laird 1986', full: 'DerSimonian R, Laird N. Meta-analysis in clinical trials. Control Clin Trials 1986;7:177-188.' },
     pauleMandel:      { short: 'Paule and Mandel 1982', full: 'Paule RC, Mandel J. Consensus values and weighting factors. J Res Natl Bur Stand 1982;87:377-385.' },
     viechtbauer:      { short: 'Viechtbauer 2005', full: 'Viechtbauer W. Bias and efficiency of meta-analytic variance estimators in the random-effects model. J Educ Behav Stat 2005;30:261-293.' },
+    viechtbauerQProfile: { short: 'Viechtbauer 2007', full: 'Viechtbauer W. Confidence intervals for the amount of heterogeneity in meta-analysis. Stat Med 2007;26:37-52.' },
+    sidikJonkman:     { short: 'Sidik and Jonkman 2005', full: 'Sidik K, Jonkman JN. Simple heterogeneity variance estimation for meta-analysis. J R Stat Soc Ser C Appl Stat 2005;54:367-384.' },
+    sidikJonkmanComparison: { short: 'Sidik and Jonkman 2007', full: 'Sidik K, Jonkman JN. A comparison of heterogeneity variance estimators in combining results of studies. Stat Med 2007;26:1964-1981.' },
+    dias2010:         { short: 'Dias et al. 2010', full: 'Dias S, Welton NJ, Caldwell DM, Ades AE. Checking consistency in mixed treatment comparison meta-analysis. Stat Med 2010;29:932-944.' },
+    higgins2012:      { short: 'Higgins et al. 2012', full: 'Higgins JPT, Jackson D, Barrett JK, Lu G, Ades AE, White IR. Consistency and inconsistency in network meta-analysis: concepts and models for multi-arm studies. Res Synth Methods 2012;3:98-110.' },
+    morris:           { short: 'Morris 1983', full: 'Morris CN. Parametric empirical Bayes inference: theory and applications. J Am Stat Assoc 1983;78:47-55.' },
     hartungKnapp:     { short: 'Hartung and Knapp 2001', full: 'Hartung J, Knapp G. A refined method for the meta-analysis of controlled clinical trials with binary outcome. Stat Med 2001;20:3875-3889.' },
     higginsThompson:  { short: 'Higgins and Thompson 2002', full: 'Higgins JPT, Thompson SG. Quantifying heterogeneity in a meta-analysis. Stat Med 2002;21:1539-1558.' },
     higginsBMJ:       { short: 'Higgins et al. 2003', full: 'Higgins JPT, Thompson SG, Deeks JJ, Altman DG. Measuring inconsistency in meta-analyses. BMJ 2003;327:557-560.' },
@@ -335,8 +347,19 @@
       var fmt = ctxFmt(v);
       return seg('ctx', { key: key, value: v, fmt: fmt, text: format(v, fmt), source: 'ctx' });
     }
+    function labelSeg(spec) {
+      var key = spec, index;
+      if (spec && typeof spec === 'object') { key = spec.key; index = spec.index; }
+      if (typeof key !== 'string' || !key) throw new Error('AlmText: label needs a key or {key, index}');
+      var v = labelValue(results, key, index);
+      if (v.error) throw new Error('AlmText: ' + v.error);
+      var props = { key: key, value: v.value, text: v.value, source: 'results' };
+      if (index !== undefined) props.index = index;
+      return seg('label', props);
+    }
     var T = {
       R: R,
+      label: labelSeg,
       num: function (key, digits) { return numSeg(key, { kind: 'num', digits: digits }); },
       est: function (key, digits) { return numSeg(key, { kind: 'num', digits: digits }); },
       int: function (key) { return numSeg(key, { kind: 'int' }); },
@@ -421,6 +444,21 @@
     return T;
   }
 
+  // Label lookup shared by T.label (render) and audit: results[key] (a string), or
+  // results[key][index] when an index is given (results[key] must then be an array).
+  function labelValue(results, key, index) {
+    var name = index === undefined ? key : key + '[' + String(index) + ']';
+    if (!results || !Object.prototype.hasOwnProperty.call(results, key)) return { error: 'missing label "' + name + '"' };
+    var v = results[key];
+    if (index !== undefined) {
+      if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) return { error: 'label index for "' + key + '" must be a non-negative integer' };
+      if (!Array.isArray(v) || index >= v.length) return { error: 'missing label "' + name + '"' };
+      v = v[index];
+    }
+    if (typeof v !== 'string' || !v.trim()) return { error: 'label "' + name + '" is not a non-empty string (' + String(v) + ')' };
+    return { value: v };
+  }
+
   function flatten(parts, out) {
     if (parts == null || parts === false) return out;
     if (typeof parts === 'string') { if (parts) out.push(txt(parts)); return out; }
@@ -430,12 +468,16 @@
       (typeof parts === 'number' ? ' ' + parts + ': numbers must come from T helpers' : '') + ')');
   }
 
-  function para(name, fn, T, results, ctx, provenance, cites) {
+  function para(name, fn, T, results, ctx, provenance, cites, labels) {
     if (typeof fn !== 'function') throw new Error('AlmText: template "' + name + '" is not a function');
     var segments = flatten(fn(T, results, ctx), []);
     segments.forEach(function (s) {
       if (s.type === 'num' || s.type === 'ctx') {
         provenance.push({ key: s.key, value: s.value, text: s.text, para: name, fmt: s.fmt, source: s.source });
+      } else if (s.type === 'label') {
+        var l = { key: s.key, value: s.value, text: s.text, para: name, source: s.source };
+        if (s.index !== undefined) l.index = s.index;
+        labels.push(l);
       } else if (s.type === 'cite' && cites.indexOf(s.id) < 0) {
         cites.push(s.id);
       }
@@ -448,11 +490,11 @@
     if (!results || typeof results !== 'object') throw new Error('AlmText: no results (run the analysis first)');
     var cv = ctxValues(ctx || {});
     var T = makeToolkit(results, ctx || {}, cv);
-    var provenance = [], cites = [];
+    var provenance = [], cites = [], labels = [];
     var out = {
-      plain: para('plain', templates.plain, T, results, ctx, provenance, cites),
-      methods: para('methods', templates.methods, T, results, ctx, provenance, cites),
-      results: para('results', templates.results, T, results, ctx, provenance, cites),
+      plain: para('plain', templates.plain, T, results, ctx, provenance, cites, labels),
+      methods: para('methods', templates.methods, T, results, ctx, provenance, cites, labels),
+      results: para('results', templates.results, T, results, ctx, provenance, cites, labels),
       flags: []
     };
     if (typeof templates.flags === 'function') {
@@ -462,13 +504,14 @@
       // template list: skipped (null) flags must not shift the provenance paragraph labels.
       list.forEach(function (f) {
         if (f == null || f === false) return;
-        var mark = provenance.length;
-        var p = para('flags.' + out.flags.length, function () { return f; }, T, results, ctx, provenance, cites);
+        var mark = provenance.length, lmark = labels.length;
+        var p = para('flags.' + out.flags.length, function () { return f; }, T, results, ctx, provenance, cites, labels);
         if (p.text) out.flags.push(p);
-        else provenance.length = mark;
+        else { provenance.length = mark; labels.length = lmark; }
       });
     }
     out.provenance = provenance;
+    out.labels = labels;
     out.cites = cites.map(function (id) { return { id: id, short: CITES[id].short, full: CITES[id].full }; });
     out.ctxValues = cv;
     return out;
@@ -500,6 +543,7 @@
     }
     var cv = opts.ctx ? ctxValues(opts.ctx) : (rendered.ctxValues || {});
     var prov = rendered.provenance, pi = 0;
+    var labs = Array.isArray(rendered.labels) ? rendered.labels : [], li = 0;
 
     paragraphs(rendered).forEach(function (pair) {
       var name = pair[0], p = pair[1];
@@ -507,8 +551,19 @@
       var joined = p.segments.map(function (s) { return s.text; }).join('');
       check(joined === p.text, name + ':text', 'rendered text differs from its segments');
       var expected = [];
+      // Numeric tokens of the text are taken with label segments masked out (by segment type):
+      // a label like "Drug 2" is a name, not a number, and is checked against results() below.
+      var masked = p.segments.map(function (s) { return s.type === 'label' ? ' ' : s.text; }).join('');
       p.segments.forEach(function (s) {
-        if (s.type === 'num' || s.type === 'ctx') {
+        if (s.type === 'label') {
+          var lname = name + ':label:' + s.key + (s.index !== undefined ? '[' + String(s.index) + ']' : '');
+          var truth = labelValue(results, s.key, s.index);
+          check(!truth.error && truth.value === s.value && s.text === s.value, lname,
+            truth.error ? truth.error : 'label text ' + JSON.stringify(s.text) + ' / value ' + JSON.stringify(s.value) + ' != results ' + JSON.stringify(truth.value));
+          var le = labs[li++];
+          check(!!le && le.key === s.key && le.index === s.index && le.para === name && le.value === s.value && le.text === s.text,
+            lname + ':provenance', 'label segment has no matching labels[] entry in order');
+        } else if (s.type === 'num' || s.type === 'ctx') {
           var e = prov[pi++];
           if (!e || e.key !== s.key || e.para !== name) {
             check(false, name + ':provenance-order', 'segment ' + s.key + ' has no matching provenance entry in order');
@@ -524,7 +579,7 @@
           expected = expected.concat(tokens(s.text));
         }
       });
-      var got = tokens(p.text);
+      var got = tokens(masked);
       nTokens += got.length;
       var same = got.length === expected.length && got.every(function (t, i) { return t === expected[i]; });
       var where = '';
@@ -536,6 +591,7 @@
       check(same, name + ':tokens', 'numeric tokens in the text do not match provenance + typed tokens' + where);
     });
     check(pi === prov.length, 'provenance:count', 'provenance has ' + prov.length + ' entries but the text uses ' + pi);
+    check(li === labs.length, 'labels:count', 'labels has ' + labs.length + ' entries but the text uses ' + li);
 
     prov.forEach(function (e, i) {
       var label = 'provenance[' + i + ']:' + e.key;
