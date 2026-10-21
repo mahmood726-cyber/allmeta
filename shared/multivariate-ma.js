@@ -169,6 +169,48 @@
     return 0.5 * (ld + Math.log(sd) + q);
   }
 
+  // Observational only: this never changes the selected fitted G.
+  function _diagnostic(studies, G, bestF, candidates, defaultF, startsRun) {
+    var m = G.length, llTol = 1e-8, sdTol = 1e-4, rhoTol = 1e-4, sentinel = 1e11;
+    // Only this distinctness rule is scale-free: SDs are compared relatively and correlations absolutely, so whether two
+    // candidates are distinct does not depend on outcome units. The boundary floor below, 1e-10*max(1, mean S_ii), is
+    // unit-dependent when mean S_ii < 1, so the boundary verdict (and with it the overall verdict) can change with units.
+    var distinct = function (a, b) {
+      for (var i = 0; i < m; i++) {
+        var sa = Math.sqrt(Math.max(0, a[i][i])), sb = Math.sqrt(Math.max(0, b[i][i]));
+        if (Math.abs(sa - sb) > sdTol * Math.max(sa, sb)) return true;
+        for (var j = i + 1; j < m; j++) {
+          var ta = Math.sqrt(Math.max(0, a[j][j])), tb = Math.sqrt(Math.max(0, b[j][j]));
+          if (sa > 0 && ta > 0 && sb > 0 && tb > 0 && Math.abs(a[i][j] / (sa * ta) - b[i][j] / (sb * tb)) > rhoTol) return true;
+        }
+      }
+      return false;
+    };
+    var near = [{ G: G, f: bestF }].concat(candidates).filter(function (c) { return Number.isFinite(c.f) && c.f < sentinel && Math.abs(c.f - bestF) <= llTol; });
+    var clusters = [];
+    near.forEach(function (c) { if (!clusters.some(function (d) { return !distinct(c.G, d.G); })) clusters.push(c); });
+    var zero = [], correlations = [];
+    for (var i = 0; i < m; i++) {
+      var threshold = 1e-10 * Math.max(1, studies.reduce(function (s, st) { return s + st.S[i][i] / studies.length; }, 0));
+      if (G[i][i] <= threshold) zero.push({ component: i, variance: G[i][i], threshold: threshold });
+      for (var j = i + 1; j < m; j++) if (G[i][i] > 0 && G[j][j] > 0) {
+        var r = Math.max(-1, Math.min(1, G[i][j] / Math.sqrt(G[i][i] * G[j][j])));
+        if (Math.abs(r) >= 1 - 1e-6) correlations.push({ components: [i, j], rho: r });
+      }
+    }
+    var boundary = zero.length > 0 || correlations.length > 0, multiple = clusters.length > 1;
+    // No valid fit: the best objective is the failure sentinel, so nothing is near it. Not an interior maximum.
+    var failed = near.length === 0 || !(bestF < sentinel);
+    return { schema: 'multivariate-ma-diagnostic-v2', startsRun: startsRun,
+      distinctOptimaWithinTolerance: clusters.length, nearBestCandidates: near.length,
+      bestVsDefaultStartLogLikGap: defaultF === null || !(defaultF < sentinel) || !(bestF < sentinel) ? null : defaultF - bestF,
+      defaultStart: startsRun ? 'moment start, 600-iteration screen' : 'not applicable: exact two-study solution',
+      boundary: { zeroVariances: zero, correlations: correlations },
+      tolerances: { logLik: llTol, distinctEstimates: sdTol, correlation: 1e-6 },
+      verdict: failed ? 'no valid fit' : boundary ? 'boundary maximum' : multiple ? 'multiple near-equal optima' : 'interior maximum',
+      interpretation: 'Candidates within the logLik tolerance are distinct if a between-study SD differs by more than distinctEstimates relative to the larger SD, or a correlation by more than distinctEstimates absolutely; this does not depend on outcome units. Finite multistart searches give numerical evidence, not proof of a global maximum, and "interior maximum" does not claim uniqueness.' };
+  }
+
   function fit(studies, opts) {
     opts = opts || {};
     // Fail closed: with k<2 the between-study covariance G is unidentifiable
@@ -209,6 +251,7 @@
       return 0.5 * ll;
     };
     var opt, G, pr, boundary = "two-study-exact", polish = null;
+    var diagnosticCandidates = [], defaultF = null, startsRun = 0;
     if (k === 2) {
       // REML is the likelihood of the single difference d, with variance S1+S2+2G.
       // Whiten by S1+S2: the constrained optimum is rank one (or exactly zero).
@@ -237,10 +280,14 @@
       var starts = [x0].concat(startMats.slice(1).map(cholVec));
       // Screen every start with 600 simplex iterations, then run the full two-stage
       // search (2000 + 1000 iterations) from the best two screened points.
-      var screened = starts.map(function (st) { return _nelderMead(obj, st, 0.05, 600); }).sort(function (u, w) { return u.f - w.f; });
+      var screened = starts.map(function (st) { return _nelderMead(obj, st, 0.05, 600); });
+      startsRun = starts.length; defaultF = screened[0].f;
+      diagnosticCandidates = screened.map(function (o) { return { G: _fromChol(o.x, m), f: o.f }; });
+      screened.sort(function (u, w) { return u.f - w.f; });
       opt = null;
       screened.slice(0, 2).forEach(function (sc) {
         var o1 = _nelderMead(obj, sc.x, 0.05, 2000); o1 = _nelderMead(obj, o1.x, 0.005, 1000);
+        diagnosticCandidates.push({ G: _fromChol(o1.x, m), f: o1.f });
         if (!opt || o1.f < opt.f) opt = o1;
       });
       G = _fromChol(opt.x, m);
@@ -314,7 +361,8 @@
     var logLik = -opt.f - 0.5 * (N - p) * Math.log(2 * Math.PI) + 0.5 * m * Math.log(k);
     var rho = (m === 2 && G[0][0] > 0 && G[1][1] > 0) ? Math.max(-1, Math.min(1, G[0][1] / Math.sqrt(G[0][0] * G[1][1]))) : null;
     if (boundary === "two-study-exact" && G.every(function (row) { return row.every(function (v) { return v === 0; }); })) boundary = "two-study-exact-zero";
-    return { mu: pr.mu, muSE: muSE, muVcov: pr.sumWinv, G: G, rho: rho, logLik: logLik, m: m, k: k, optimizer: { boundary: boundary, polish: polish } };
+    return { mu: pr.mu, muSE: muSE, muVcov: pr.sumWinv, G: G, rho: rho, logLik: logLik, m: m, k: k, optimizer: { boundary: boundary, polish: polish },
+      diagnostic: _diagnostic(studies, G, opt.f, diagnosticCandidates, defaultF, startsRun) };
   }
 
   // ---- normal-theory z test (two-sided) via the regularized upper incomplete gamma ----
@@ -343,7 +391,7 @@
   function fitUnivariate(y, v, opts) {
     if (!Array.isArray(y) || !Array.isArray(v) || y.length !== v.length) throw new Error("y and v must be arrays of equal length");
     var f = fit(y.map(function (yi, i) { return { y: [yi], S: [[v[i]]] }; }), opts);
-    return { k: f.k, mu: f.mu[0], se: f.muSE[0], tau2: f.G[0][0], logLik: f.logLik, optimizer: f.optimizer };
+    return { k: f.k, mu: f.mu[0], se: f.muSE[0], tau2: f.G[0][0], logLik: f.logLik, optimizer: f.optimizer, diagnostic: f.diagnostic };
   }
 
   // ---- within-study correlation helpers ----
@@ -362,7 +410,7 @@
     });
   }
 
-  var api = { fit: fit, fitUnivariate: fitUnivariate, sweepRho: sweepRho, zTest: zTest, chisqSF: chisqSF, covFromR: covFromR, _objG: _objG, _obj2: _obj2, _scoreInfo: _scoreInfo };
+  var api = { fit: fit, fitUnivariate: fitUnivariate, sweepRho: sweepRho, zTest: zTest, chisqSF: chisqSF, covFromR: covFromR, _objG: _objG, _obj2: _obj2, _scoreInfo: _scoreInfo, _diagnostic: _diagnostic };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmMultivariate = api;
 })(typeof window !== "undefined" ? window : globalThis);

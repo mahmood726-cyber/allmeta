@@ -116,7 +116,7 @@
     var s = state, last = window._almLastMultivariate ? window._almLastMultivariate() : null;
     return { _schema: 'multivariate-ma-plus-export-v1', build: build(), input: s.parsed && { mode: s.parsed.mode, rhoW: s.parsed.rhoW, outcomes: s.parsed.outcomes, rows: s.parsed.rows, omitted: s.parsed.omitted },
       result: last, univariate: s.res && s.res.univariate || null, varRatio: s.res && s.res.varRatio || null,
-      sweep: s.sweep && s.sweep.map(function (x) { return x.status === 'ok' ? { rhoW: x.rhoW, status: 'ok', mu: x.fit.mu, muSE: x.fit.muSE, muVcov: x.fit.muVcov, G: x.fit.G, rho: x.fit.rho, logLik: x.fit.logLik, z: x.tests.map(function (t) { return t.z; }), p: x.tests.map(function (t) { return t.p; }), boundary: x.boundary } : x; }) || null };
+      sweep: s.sweep && s.sweep.map(function (x) { return x.status === 'ok' ? { rhoW: x.rhoW, status: 'ok', mu: x.fit.mu, muSE: x.fit.muSE, muVcov: x.fit.muVcov, G: x.fit.G, rho: x.fit.rho, logLik: x.fit.logLik, z: x.tests.map(function (t) { return t.z; }), p: x.tests.map(function (t) { return t.p; }), boundary: x.boundary, diagnostic: x.fit.diagnostic } : x; }) || null };
   }
   function rScript() {
     var g = state.grid || P.makeGrid(Number(el('plus-from').value), Number(el('plus-to').value), Number(el('plus-step').value)).grid;

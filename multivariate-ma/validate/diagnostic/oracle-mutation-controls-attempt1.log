@@ -1,0 +1,17 @@
+R version 4.6.0 (2026-04-24 ucrt) 
+[1] "C:/Users/User/allmeta-offload/Rlib_extra"
+[2] "C:/Users/User/allmeta-offload/Rlib_dta"  
+[3] "C:/Program Files/R/R-4.6.0/library"      
+mvmeta 1.0.3 
+metafor 5.2.1 
+jsonlite 2.0.0 
+mvmeta control: list(maxiter = 10000, reltol = 1e-13, optim = list(maxit = 10000,      reltol = 1e-13)) 
+nlminb refinement control: list(rel.tol = 1e-15, x.tol = 1e-15, eval.max = 20000, iter.max = 10000) 
+metafor::rma control: list(threshold = 1e-12, maxiter = 10000) 
+VERDICT 1 mutation-control:k20:E1e-7 boundary maximum near 8 clusters 8 
+VERDICT 2 mutation-control:k6:E1e-5 multiple near-equal optima near 10 clusters 9 
+VERDICT 3 mutation-control:mvmeta::berkey98::PD+AL::REML::supplied#main@x100000 interior maximum near 1 clusters 1 
+R VERDICTS mutation-control boundary maximum 1 
+R VERDICTS mutation-control interior maximum 1 
+R VERDICTS mutation-control multiple near-equal optima 1 
+R ORACLE 3 fits
