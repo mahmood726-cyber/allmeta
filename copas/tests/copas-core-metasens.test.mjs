@@ -27,7 +27,29 @@
  *
  *   OPTIMALITY — at every orthogonal-line point the objective this port attains
  *     must be no worse than the one metasens reports, which is what separates
- *     "a different optimiser" from "a different likelihood".
+ *     "a different optimiser" from "a different likelihood". Asserted for BOTH
+ *     likelihoods: the three-parameter loglik1 and the four-parameter loglik2
+ *     behind pval.rsb.
+ *
+ * Two surfaces, and why both are needed.
+ *
+ *   The port's OWN surface (`end-to-end fit`) is the honest test of stage 2,
+ *   but metasens's single-start L-BFGS-B stalls at a few grid points, and
+ *   contourLines() level crossing is a DISCONTINUOUS function of the surface.
+ *   Once one grid point differs, R's contour lines and this port's are not the
+ *   same lines, so comparing the orthogonal line built on top of them is not a
+ *   like-for-like comparison. Those stalled-point counts are PINNED below
+ *   (STALLED), so a change in stall behaviour is a failure rather than a
+ *   silently different number of comparisons.
+ *
+ *   R's own surface (`adjusted estimate from R's surface`) removes that
+ *   discontinuity: feed `TE.contour` straight in and every downstream stage --
+ *   pretty(), contourLines(), the per-line regressions, the orthogonal line,
+ *   the stage-4 and stage-5 fits, metasens's TE.adjust rule -- runs on exactly
+ *   the surface R had. The adjusted estimate is then compared with metasens
+ *   UNCONDITIONALLY, in every configuration including the ngrid = 20 REML one
+ *   the app actually ships. Nothing here is skipped at runtime and no
+ *   tolerance is relaxed to make that possible.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -45,6 +67,29 @@ const FIX = JSON.parse(
 const TOL_DET = 1e-9;
 const TOL_ITER = 1e-4;
 const TOL_BOUND = 1e-3;
+const SLACK = 1e-12;   // relative slack on every "never worse" assertion
+
+/* Grid points at which metasens's single-start L-BFGS-B stalls and this port
+ * attains a strictly lower objective, per configuration. PINNED, because the
+ * end-to-end comparison below is necessarily limited to configurations whose
+ * surface matched R everywhere, and an unpinned count makes that limitation
+ * invisible: a regression that made the minimiser wander would RAISE these
+ * numbers and so disable comparisons, while the suite stayed green. Measured
+ * on this fixture under node 24 (census: lanes/rev212/logs/stalled-census.log):
+ *
+ *   REML_10  1 of 100    REML_20  6 of 400    DL_10  0 of 100
+ *
+ * DL_10 is therefore the only configuration whose own surface reaches the
+ * end-to-end orthogonal-line comparison, which is exactly why the
+ * R-surface test below exists and covers all three. If one of these counts
+ * changes, read the change before editing the number: it means stage 2's
+ * optimiser moved. */
+const STALLED = { REML_10: 1, REML_20: 6, DL_10: 0 };
+
+/* Configurations whose own surface reached the end-to-end orthogonal-line
+ * comparison. Asserted non-empty after the per-configuration loop, so "every
+ * configuration skipped it" can never pass unnoticed. */
+const reachedEndToEnd = [];
 
 const num = (v) => {
   if (v === null || v === undefined) return NaN;
@@ -60,18 +105,37 @@ const nums = (v) => (v === null || v === undefined ? [] : [].concat(v).map(num))
 function close(name, app, ref, tol) {
   const a = nums(app), r = nums(ref);
   assert.equal(a.length, r.length, `${name}: length ${a.length} vs ${r.length}`);
-  let worst = 0, at = -1;
+  let worst = 0, at = -1, compared = 0;
   for (let i = 0; i < r.length; i++) {
     const na = Number.isNaN(a[i]), nr = Number.isNaN(r[i]);
     if (na && nr) continue;
     assert.ok(!na && !nr, `${name}[${i}]: NA mismatch (app ${a[i]}, R ${r[i]})`);
+    compared++;
     const d = Math.abs(a[i] - r[i]) / Math.max(1, Math.abs(r[i]));
     if (d > worst) { worst = d; at = i; }
   }
+  // Skipping NA-on-both-sides is the right per-element parity rule, but it
+  // means an array that is entirely NA on both sides reports worst = 0 and
+  // satisfies the assertion by comparing nothing. Refuse that (MINOR-20).
+  assert.ok(compared > 0 && r.length > 0,
+    `${name}: compared ${compared} of ${r.length} elements — the assertion is ` +
+    "vacuous (every element is NA on both sides)");
   assert.ok(worst <= tol,
     `${name}: max relative deviation ${worst.toExponential(3)} at index ${at} ` +
     `exceeds ${tol.toExponential(0)}`);
   return worst;
+}
+
+/* "The port must not be worse", elementwise, with the standard relative slack. */
+function noWorse(name, app, ref) {
+  const a = nums(app), r = nums(ref);
+  assert.equal(a.length, r.length, `${name}: length ${a.length} vs ${r.length}`);
+  assert.ok(r.length > 0, `${name}: nothing to compare`);
+  for (let i = 0; i < r.length; i++) {
+    assert.ok(a[i] <= r[i] + SLACK * Math.max(1, Math.abs(r[i])),
+      `${name}[${i}]: this port attained ${a[i]} but metasens reports ${r[i]} ` +
+      "(the port must not be worse at the same gamma)");
+  }
 }
 
 const TE = nums(FIX.TE), seTE = nums(FIX.seTE);
@@ -245,6 +309,13 @@ for (const name of CONFIGS) {
         `${TOL_ITER}; at the other ${better} this port attains a strictly lower ` +
         "objective than metasens reports (metasens's optimiser stalled there).");
     }
+    // PINNED. The count decides how much of the orthogonal line is compared
+    // below, so it is an assertion, not a log line. See STALLED above.
+    assert.equal(better, STALLED[name],
+      `${name}: metasens stalls at ${better} of ${z.length} grid points, but ` +
+      `${STALLED[name]} is pinned. Stage 2's optimiser has moved — understand ` +
+      "the change before editing STALLED, because this count gates the " +
+      "end-to-end comparison on the port's own surface.");
     // The orthogonal line is built from contourLines() of this surface, and
     // level crossing is a discontinuous function of it. So the downstream
     // comparison is asserted only where the surface itself matched everywhere:
@@ -284,9 +355,112 @@ for (const name of CONFIGS) {
       close("pval.rsb.adj", [fit.pval_rsb_adj], [c["pval.rsb.adj"]], TOL_ITER);
       close("N.unpubl.adj", [fit.N_unpubl_adj], [c["N.unpubl.adj"]], TOL_ITER);
       close("tau.adjust", [fit.tau_adjust], [c["tau.adjust"]], TOL_ITER);
+      reachedEndToEnd.push(name);
     }
   });
+
+  test(`${name}: adjusted estimate from R's own surface (unconditional)`, () => {
+    // Everything stage 3 onwards, on exactly the surface metasens had, so the
+    // discontinuity of contourLines() in the surface cannot make the
+    // comparison inapplicable. This is the check that covers the app's shipped
+    // configuration (REML, ngrid = 20); no runtime condition guards any
+    // assertion in this test.
+    const fit = CC.copas({
+      TE: TE, seTE: seTE,
+      TE_random: num(c["TE.random"]), seTE_random: num(c["seTE.random"]),
+      tau: num(c.tau), ngrid: ngrid, sign_rsb: num(c["sign.rsb"]),
+      level_ma: num(c["level.ma"]),
+      TE_contour: z,                     // <- R's own ngrid x ngrid surface
+    });
+    assert.ok(!fit.refused, `fit refused: ${fit.refused}`);
+    assert.equal(fit.TE_contour_supplied, true,
+      "copas() ignored the supplied TE_contour — the surface was recomputed, " +
+      "so this test is not comparing what it claims to compare");
+    assert.equal(fit.contour_par, null,
+      "copas() must not report per-grid-point fits it did not perform");
+    close("TE.contour(in)", fit.TE_contour, z, 0);
+
+    // Deterministic chain off that surface.
+    close("pretty.levels", fit.pretty_levels, c["pretty.levels"], TOL_DET);
+    const rl = [].concat(c["contour.lines"]);
+    assert.equal(fit.contour_lines.length, rl.length,
+      `contour line count ${fit.contour_lines.length} vs R ${rl.length}`);
+    for (let i = 0; i < rl.length; i++) {
+      close(`line${i}.x`, fit.contour_lines[i].x, rl[i].x, TOL_DET);
+      close(`line${i}.y`, fit.contour_lines[i].y, rl[i].y, TOL_DET);
+    }
+    close("regr.slopes", fit.regr.slopes, regrR.slopes, TOL_DET);
+    close("regr.adj.r.squareds", fit.regr.adj_r_squareds, regrR.adj_r_squareds, TOL_DET);
+    close("slope", [fit.slope], [c.slope], TOL_DET);
+    close("gamma0.slope", fit.gamma0_slope, c["gamma0.slope"], TOL_DET);
+    close("gamma1.slope", fit.gamma1_slope, c["gamma1.slope"], TOL_DET);
+    close("publprob", fit.publprob, c.publprob, TOL_DET);
+    close("N.unpubl", fit.N_unpubl, c["N.unpubl"], TOL_DET);
+
+    // Stage 4 — the estimates down the line, and their optimality.
+    close("TE.slope", fit.TE_slope, c["TE.slope"], TOL_ITER);
+    close("tau.slope", fit.tau_slope, c["tau.slope"], TOL_ITER);
+    close("rho.slope", fit.rho_slope, c["rho.slope"], TOL_BOUND);
+    close("seTE.slope", fit.seTE_slope, c["seTE.slope"], TOL_BOUND);
+    close("lower.slope", fit.lower_slope, c["lower.slope"], TOL_ITER);
+    close("upper.slope", fit.upper_slope, c["upper.slope"], TOL_ITER);
+    noWorse("loglik1", fit.loglik1, c.loglik1);
+    close("loglik1", fit.loglik1, c.loglik1, TOL_ITER);
+
+    // Stage 5 — the four-parameter fit behind pval.rsb. MAJOR-4: this one had
+    // no optimality guard at all, and the direction of the difference matters.
+    // A port that converges FURTHER than metasens here gets a smaller
+    // pval.rsb, which can move the selected orthogonal-line point or make
+    // adjustSelection() withhold the adjusted estimate entirely. Guarding
+    // loglik2 symmetrically with loglik1 is what makes that a measured
+    // difference rather than an unexamined one.
+    noWorse("loglik2", fit.loglik2, c.loglik2);
+    close("loglik2", fit.loglik2, c.loglik2, TOL_ITER);
+    close("pval.rsb", fit.pval_rsb, c["pval.rsb"], TOL_ITER);
+
+    // The adjusted estimate, in every configuration, including the default.
+    close("TE.adjust", [fit.TE_adjust], [c["TE.adjust"]], TOL_ITER);
+    close("seTE.adjust", [fit.seTE_adjust], [c["seTE.adjust"]], TOL_BOUND);
+    close("lower.adjust", [fit.lower_adjust], [c["lower.adjust"]], TOL_BOUND);
+    close("upper.adjust", [fit.upper_adjust], [c["upper.adjust"]], TOL_BOUND);
+    close("pval.adjust", [fit.pval_adjust], [c["pval.adjust"]], TOL_ITER);
+    close("pval.rsb.adj", [fit.pval_rsb_adj], [c["pval.rsb.adj"]], TOL_ITER);
+    close("N.unpubl.adj", [fit.N_unpubl_adj], [c["N.unpubl.adj"]], TOL_ITER);
+    close("tau.adjust", [fit.tau_adjust], [c["tau.adjust"]], TOL_ITER);
+    // metasens reports a value here, so the selection rule must have selected
+    // one. A withheld estimate would otherwise sail through as NaN-vs-NaN.
+    assert.ok(Number.isFinite(fit.TE_adjust) && fit.sel_adj !== null,
+      "metasens reports TE.adjust for this configuration but the port " +
+      "withheld it (adjustSelection returned null)");
+  });
 }
+
+test("the app's shipped configuration is compared to metasens end to end", () => {
+  // The app ships ngrid = 20 with REML start values (copas/index.html's
+  // opt-ngrid / opt-tau defaults), i.e. REML_20. Whatever happens to the
+  // stalled-point counts, that configuration's adjusted estimate must be
+  // compared with metasens somewhere in this file.
+  assert.ok(CONFIGS.includes("REML_20"),
+    "the fixture no longer contains the app's shipped configuration " +
+    "(REML, ngrid = 20); regenerate it with gen-metasens-fixture.R");
+  const shipped = FIX.configs.REML_20;
+  assert.equal(num(shipped.ngrid), 20);
+  assert.equal(shipped["method.tau"], "REML");
+  assert.ok(Number.isFinite(num(shipped["TE.adjust"])),
+    "REML_20 has no TE.adjust to compare against");
+});
+
+test("at least one configuration is compared on the port's OWN surface", () => {
+  // The R-surface test above is unconditional, but it deliberately bypasses
+  // stage 2. Something must still compare the orthogonal line built from the
+  // port's own grid, or stage 2 -> stage 3 wiring goes unchecked.
+  assert.ok(reachedEndToEnd.length > 0,
+    "no configuration reached the end-to-end comparison on the port's own " +
+    "surface: metasens stalled somewhere in every one of " +
+    `${CONFIGS.join(", ")}. The gate has swallowed the whole comparison.`);
+  console.log(`  note: own-surface end-to-end comparison reached by ` +
+    `${reachedEndToEnd.join(", ")} (of ${CONFIGS.join(", ")}).`);
+});
 
 test("malformed input fields are refused, not prefix-parsed", () => {
   // Regression guard: parseFloat(".4oops") is 0.4 and parseFloat("30oops") is 30,

@@ -25,6 +25,25 @@
  * archive's R reference does reproduce the carry-forward, so if it ever fires the
  * difference shows up as a contour disagreement rather than being hidden.
  *
+ * ALSO NOT identical, and worth knowing the direction of. The box-constrained
+ * minimiser here is not L-BFGS-B (see minimiseBox) and converges past R's
+ * factr = 1e7 stopping point, so this port's attained objective is usually
+ * lower than metasens's. For stage 4's three-parameter loglik1 that is benign.
+ * For stage 5's four-parameter loglikWithBeta it is not neutral:
+ *   - metasens ports no analytic gradient for the four-parameter likelihood, so
+ *     R's optim falls back to its OWN finite differences at ndeps = 1e-3, while
+ *     numGrad below uses h = 1e-7 * max(1, |x|). Different gradient, different
+ *     path, different stopping point.
+ *   - pval.rsb = 1 - pchisq(2*(loglik1 - loglik2), 1). A loglik2 that converges
+ *     FURTHER makes 2*(l1 - l2) LARGER and pval.rsb SMALLER. That pushes points
+ *     below sign.rsb, and adjustSelection() responds by selecting a later
+ *     orthogonal-line point or -- if every point goes significant -- by
+ *     withholding the adjusted estimate altogether. So a better optimiser can
+ *     make this port refuse to report an estimate metasens reports.
+ * Both loglik1 and loglik2 therefore carry a "never worse than metasens"
+ * assertion in copas/tests/copas-core-metasens.test.mjs, and the page's footer
+ * states the pval.rsb direction, so the effect is measured rather than assumed.
+ *
  * References: Copas JB. J R Stat Soc Ser A 1999;162:95-109. Copas JB, Shi JQ.
  * Biostatistics 2000;1:247-262. Carpenter JR, Rucker G, Schwarzer G. Biom J
  * 2009;51:919-932 (metasens's implementation).
@@ -864,10 +883,29 @@
 
   /* Full port of metasens::copas().
    * opts: { TE, seTE, TE_random, seTE_random, tau, ngrid, nlevels, levels,
-   *         slope, left, rho_bound, sign_rsb, level_ma, gamma0_range, gamma1_range }
+   *         slope, left, rho_bound, sign_rsb, level_ma, gamma0_range,
+   *         gamma1_range, TE_contour }
    * TE_random / seTE_random / tau are the metagen() values (the optimiser start);
    * when omitted a DerSimonian-Laird pool is used (closed form).
-   * Returns null when the inputs cannot support a fit (k < 3, or seTE constant).
+   *
+   * TE_contour is a VALIDATION hook, never used by the page: supply R's own
+   * ngrid x ngrid contour surface (column-major, as R's matrix) and stage 2's
+   * grid of profile MLEs is skipped, so stages 3-5 run on exactly the surface
+   * metasens had. It exists because contourLines() level crossing is a
+   * discontinuous function of the surface: once the two surfaces differ at a
+   * single stalled grid point they do not have the same contour lines, and the
+   * adjusted estimate built on top of them cannot be compared like for like.
+   * With the surface pinned, TE.adjust CAN be compared with metasens in every
+   * configuration -- including the ngrid = 20 REML one the app ships. The
+   * result then reports TE_contour_supplied: true and contour_par: null, so a
+   * caller cannot mistake an injected surface for a computed one, nor an empty
+   * list of per-point fits for "every point converged".
+   *
+   * Does NOT return null on unusable input; it returns a truthy object with a
+   * `refused` string and no estimates -- { refused, k, dropped } -- so test
+   * `if (!result || result.refused)`, never `if (!result)`. The refusal
+   * reasons are "k<3", "seTE.min==seTE.max", "seTE.near-degenerate" and
+   * "orthogonal-line.empty".
    */
   function copas(opts) {
     var TE = [], seTE = [], i, j;
@@ -919,10 +957,18 @@
     // stage 2 — contour surface (column-major, as R's matrix)
     var TEcontour = new Float64Array(ngrid * ngrid);
     var contourPar = [];
-    for (i = 0; i < ngrid; i++) for (j = 0; j < ngrid; j++) {
-      var fit0 = profileMLE(TE, seTE, [gamma0[i], gamma1[j]], start, rhoBound);
-      TEcontour[i + j * ngrid] = fit0.par[0];
-      contourPar.push({ i: i, j: j, par: fit0.par, value: fit0.value });
+    var supplied = !!opts.TE_contour;
+    if (supplied) {
+      if (opts.TE_contour.length !== ngrid * ngrid)
+        return { refused: "TE_contour.length!=ngrid^2", k: k, dropped: dropped };
+      for (i = 0; i < ngrid * ngrid; i++) TEcontour[i] = opts.TE_contour[i];
+      contourPar = null;
+    } else {
+      for (i = 0; i < ngrid; i++) for (j = 0; j < ngrid; j++) {
+        var fit0 = profileMLE(TE, seTE, [gamma0[i], gamma1[j]], start, rhoBound);
+        TEcontour[i + j * ngrid] = fit0.par[0];
+        contourPar.push({ i: i, j: j, par: fit0.par, value: fit0.value });
+      }
     }
 
     // stage 3 — approximate orthogonal line
@@ -962,6 +1008,11 @@
       TEslope.push(f1.par[0]); rhoSlope.push(f1.par[1]); tauSlope.push(f1.par[2]);
       loglik1.push(f1.value); par1.push(f1.par.slice());
       var H = optimHess(function (p) { return gradientWithoutBeta(p, g, TE, seTE); }, f1.par);
+      // +1e-8 on EVERY element, not just the diagonal. This is metasens's own
+      // regularisation: `solve(junk2$hessian + 1e-08)` in the copas() source,
+      // where R's recycling adds the scalar to all n^2 entries. It looks like a
+      // fudge and is numerically meaningful, so the provenance stays in the
+      // code: it is faithful, not invented here.
       var Hreg = H.map(function (row) { return row.map(function (v) { return v + 1e-8; }); });
       var inv00 = solveFirstDiag(Hreg);
       var se = inv00 > 0 ? mSqrt(inv00) : NaN;
@@ -1025,6 +1076,7 @@
       gamma0: gamma0, gamma1: gamma1,
       gamma0_rescale: g0res, gamma1_rescale: g1res,
       TE_contour: Array.prototype.slice.call(TEcontour),
+      TE_contour_supplied: supplied,
       contour_par: contourPar,
       pretty_levels: prettyLevels,
       contour_lines: cl.map(function (c) { return { level: c.level, x: c.x, y: c.y }; }),
