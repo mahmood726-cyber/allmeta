@@ -48,6 +48,10 @@ jobs:
       # rank-deficient branch), pinned straight against R. Each of the three
       # fixes in 43ae0db fails one of these.
       - run: node --test copas/tests/copas-core-rbase.test.mjs
+      # Inputs the model is not identified on. These guard against the
+      # OPPOSITE of a crash: a NaN objective or an empty orthogonal line being
+      # converted into a schema-valid, range-plausible estimate.
+      - run: node --test copas/tests/copas-core-refusals.test.mjs
       # Page structure, the __almCopasProfileMLE <-> parity-spec contract, and
       # the claim guards (no private notes file cited, no "never worse" claim).
       - run: python -m pytest copas/tests/test_structure.py -q

@@ -88,6 +88,73 @@ def test_profile_mle_hook_returns_every_field_the_parity_spec_asserts():
         "them; every such assertion would compare against undefined")
 
 
+def test_both_ingestion_paths_use_the_shared_whole_token_parser():
+    """The page has two readers — the textarea (parse()) and the CSV upload
+    (__almCopasLoad). parseFloat is a prefix parser, so ".4oops" reads as 0.4
+    and "30oops" as 30; a malformed row then becomes a schema-valid but
+    semantically wrong study that nothing downstream can detect. Fixing one
+    reader and not the other left the defect live for every user who uploads a
+    CSV instead of pasting."""
+    html = INDEX.read_text(encoding="utf-8")
+    i = html.index("window.__almCopasLoad")
+    body = html[i:html.index("\n    };", i)]
+    assert "parseFloat" not in body, (
+        "__almCopasLoad still uses parseFloat — it must use the shared "
+        "whole-token parser (num === CC.parseNumToken) like parse() does")
+    assert re.search(r"\bnum\(", body), (
+        "__almCopasLoad does not call the shared num() parser")
+    # And the page must not re-declare the rule locally: one rule, one place.
+    assert "CC.parseNumToken" in html, (
+        "the page must take its number rule from shared/copas-core.js so it "
+        "can be tested without a browser")
+    assert html.count(r"^[+-]?(\d+\.?\d*|\.\d+)") == 0, (
+        "the number-token regex is re-declared in the page; it belongs only "
+        "in shared/copas-core.js")
+
+
+def test_both_shared_modules_are_checked_before_use():
+    """copas-core.js and ma-core.js are hard dependencies of this page. A 404
+    or a load-order change used to throw a bare TypeError inside run() with
+    nothing on screen."""
+    html = INDEX.read_text(encoding="utf-8")
+    assert "window.AlmCopasCore" in html and "window.AlmMaCore" in html
+    head = html[html.index("window.AlmCopasCore"):]
+    head = head[:4000]
+    assert "copas-core.js" in head and "ma-core.js" in head, \
+        "the missing-module message should name the files that failed to load"
+    assert re.search(r"typeof\s+CC\.copas\s*!==\s*['\"]function['\"]", head), \
+        "copas-core.js is not verified to have actually loaded"
+    assert re.search(r"typeof\s+MaCore\.pool\s*!==\s*['\"]function['\"]", head), \
+        "ma-core.js is not verified to have actually loaded"
+
+
+def test_counts_are_not_rendered_with_bare_toFixed():
+    """N.unpubl is Inf wherever an implied selection probability underflows —
+    R gives Inf there too, so the value stays faithful, but
+    (Infinity).toFixed(1) puts the literal string "Infinity" in a table
+    cell."""
+    html = INDEX.read_text(encoding="utf-8")
+    for bad in ("N_unpubl_adj.toFixed", "nUnpubl.toFixed"):
+        assert bad not in html, (
+            f"{bad} renders Infinity as the string 'Infinity'; use fmtCount()")
+    assert "function fmtCount" in html, "fmtCount() is missing"
+
+
+def test_every_refusal_reason_the_engine_can_return_is_explained():
+    """copas() refuses with a distinct string per reason. If the page does not
+    handle one, the user gets the generic 'at least 3 studies' message for a
+    completely different problem."""
+    core = (ROOT / "shared" / "copas-core.js").read_text(encoding="utf-8")
+    reasons = set(re.findall(r'refused:\s*"([^"]+)"', core))
+    assert reasons, "could not find any refusal reasons in shared/copas-core.js"
+    html = INDEX.read_text(encoding="utf-8")
+    # Reasons that cannot reach run(): the page never supplies TE_contour.
+    validation_only = {"TE_contour.length!=ngrid^2"}
+    missing = sorted(r for r in reasons - validation_only if r not in html)
+    assert not missing, (
+        f"copas/index.html does not explain these refusal reasons: {missing}")
+
+
 def test_no_private_notes_file_is_cited_in_shipped_text():
     """`advanced-stats.md` is a private local rules file. Citing it in text a
     user reads points at something no reader can consult, and the paper's

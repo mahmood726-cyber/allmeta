@@ -179,6 +179,28 @@
   // underflow R yields NaN and so must the port (probe E18 in PREREG.md).
   function lambda(x) { return dnorm(x) / pnorm(x); }
 
+  /* ------------------------------------------------------------ input tokens */
+  // The one rule by which a user-supplied field becomes a number, shared by
+  // every reader the page has. parseFloat is a PREFIX parser: parseFloat(".4oops")
+  // is 0.4 and parseFloat("30oops") is 30, so a reader built on it silently
+  // admits a malformed row as a plausible value -- schema-valid, semantically
+  // wrong, and invisible to everything downstream. A token is accepted only if
+  // the WHOLE of it is a number.
+  //
+  // Lives here rather than in copas/index.html because the page has TWO
+  // ingestion paths (the textarea and the CSV upload), they must not disagree,
+  // and a rule declared inside the page cannot be tested without a browser.
+  // Accepts a number as well as a string, because the CSV reader is handed
+  // already-coerced values; non-finite numbers are still refused.
+  var NUM_TOKEN = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function parseNumToken(tok) {
+    if (typeof tok === "number") return isFin(tok) ? tok : NaN;
+    if (typeof tok !== "string") return NaN;
+    if (!NUM_TOKEN.test(tok)) return NaN;
+    var v = parseFloat(tok);
+    return isFin(v) ? v : NaN;
+  }
+
   /* ------------------------------------------- R's seq(from, to, length.out) */
   // R's seq.int pins both endpoints exactly and interpolates between them.
   function seqLen(from, to, m) {
@@ -959,6 +981,38 @@
       [0, 1.29 / (1 / seMin - 1 / seMax)];
     var gamma0Range = opts.gamma0_range ||
       [-0.25 - gamma1Range[1] / seMax, 2];
+
+    // Identification, continued. `seMin < seMax` above only excludes an EXACTLY
+    // constant seTE; a near-constant one passes it and then detonates here,
+    // because gamma1Range[1] = 1.29 / (1/seMin - 1/seMax) diverges as the two
+    // converge. seTE = [0.1, 0.1, 0.1, 0.1, 0.1000001] gives
+    // gamma1Range[1] ~ 129,000 and gamma0Range[0] ~ -1.29e6. At that corner of
+    // the grid u = gamma0 + gamma1/seTE is about -1.29e6, both pnorm(u) and
+    // dnorm(u) underflow, and lambda(u) = 0/0 = NaN -- deliberately, to match
+    // R. The objective is then NaN at every such point, and minimiseBox has no
+    // way to improve on a NaN: bbDescent breaks on the first non-finite
+    // gradient and the two direct-search polishes run to their limits with
+    // every comparison false (NaN < x is false). It returns the START VECTOR
+    // with value NaN, so TE.contour would store the DerSimonian-Laird / REML
+    // start value for mu -- a plausible-looking treatment effect -- at every
+    // failed point, and pretty()/contourLines() would run on a surface that is
+    // partly a constant.
+    //
+    // The test is exact rather than a tuned threshold: refuse when the model's
+    // own inverse Mills ratio is already not computable at the most extreme
+    // corner of the grid metasens would scan (gamma0 = gamma0Range[0],
+    // gamma1 = gamma1Range[0]). metasens does not refuse here -- it produces
+    // the NaN-ridden surface -- so this is a deliberate, disclosed divergence:
+    // a user-facing estimate is not the place to be faithful to an underflow.
+    var uWorst = mMin(gamma0Range[0], gamma0Range[1]) +
+                 mMin(gamma1Range[0], gamma1Range[1]) / seMax;
+    var spread = (seMax - seMin) / seMax;
+    if (!isFin(lambda(uWorst)))
+      return { refused: "seTE.near-degenerate", k: k, dropped: dropped,
+               seTE_min: seMin, seTE_max: seMax, seTE_spread: spread,
+               gamma0_range: gamma0Range, gamma1_range: gamma1Range,
+               u_worst: uWorst };
+
     var gamma0 = seqLen(gamma0Range[0], gamma0Range[1], ngrid);
     var gamma1 = seqLen(gamma1Range[0], gamma1Range[1], ngrid);
     var g0min = Math.min.apply(null, gamma0), g0max = Math.max.apply(null, gamma0);
@@ -973,6 +1027,7 @@
     // stage 2 — contour surface (column-major, as R's matrix)
     var TEcontour = new Float64Array(ngrid * ngrid);
     var contourPar = [];
+    var nonFinite = 0;
     var supplied = !!opts.TE_contour;
     if (supplied) {
       if (opts.TE_contour.length !== ngrid * ngrid)
@@ -984,6 +1039,13 @@
         var fit0 = profileMLE(TE, seTE, [gamma0[i], gamma1[j]], start, rhoBound);
         TEcontour[i + j * ngrid] = fit0.par[0];
         contourPar.push({ i: i, j: j, par: fit0.par, value: fit0.value });
+        // A grid point whose attained objective is not finite did not converge
+        // to anything: minimiseBox returns the start vector with value NaN, so
+        // TEcontour just took the start value for mu. Counted and surfaced
+        // rather than left to look like a treatment effect. The identification
+        // guard above should make this unreachable, which is exactly why it is
+        // worth counting -- if it ever fires, the guard has a gap.
+        if (!isFin(fit0.value)) nonFinite++;
       }
     }
 
@@ -1014,6 +1076,26 @@
     var xs = ol.xSlope, ys2 = ol.ySlope, g0s = ol.gamma0Slope, g1s = ol.gamma1Slope;
     var ng = g0s.length;
     var publprob = ol.publprob;
+
+    // If no contour line had adjRSquared > 0, orthogonalLine() has nothing to
+    // pool: slope is NaN, every xSlope is NaN, the in-range filter drops them
+    // all, and what is left is the prepended (gamma0, gamma1) = (10, 0)
+    // no-selection anchor on its own. ng is then 1, publprob is [pnorm(10)] = [1],
+    // and the single "sensitivity" point is the profile MLE under NO SELECTION
+    // AT ALL -- i.e. the unadjusted estimate. Reporting that as the
+    // "Copas-adjusted effect", in bold, with a CI and an implied number of
+    // unpublished studies, while drawSens() blanks the curve for having fewer
+    // than two points, is the worst available outcome: it is the unadjusted
+    // answer wearing the adjusted answer's label. Refuse, with its own reason,
+    // so the page can say what happened.
+    if (ng < 2)
+      return { refused: "orthogonal-line.empty", k: k, dropped: dropped,
+               n_orthogonal_points: ng, slope: slope,
+               // n_contour_lines, not contour_lines: on a successful fit
+               // contour_lines is the array of lines, and a field that is an
+               // array on one path and a count on the other is a trap.
+               n_contour_lines: cl.length, contour_nonfinite: nonFinite,
+               adj_r_squareds: regr.adj_r_squareds };
 
     // stage 4 — estimates down the line
     var TEslope = [], seTEslope = [], rhoSlope = [], tauSlope = [], loglik1 = [];
@@ -1093,7 +1175,10 @@
       gamma0_rescale: g0res, gamma1_rescale: g1res,
       TE_contour: Array.prototype.slice.call(TEcontour),
       TE_contour_supplied: supplied,
+      contour_nonfinite: nonFinite,
       contour_par: contourPar,
+      n_orthogonal_points: ng,
+      seTE_spread: spread,
       pretty_levels: prettyLevels,
       contour_lines: cl.map(function (c) { return { level: c.level, x: c.x, y: c.y }; }),
       regr: regr, sel_r: selR,
@@ -1149,7 +1234,7 @@
 
   var api = {
     pnorm: pnorm, dnorm: dnorm, qnorm: qnorm, pchisq1Upper: pchisq1Upper,
-    lambda: lambda, seqLen: seqLen,
+    lambda: lambda, seqLen: seqLen, parseNumToken: parseNumToken,
     rPrettyCore: rPrettyCore, rPretty: rPretty, contourLines: contourLines,
     lmYX: lmYX, commonEffect: commonEffect, ci: ci,
     loglikWithoutBeta: loglikWithoutBeta, loglikWithBeta: loglikWithBeta,

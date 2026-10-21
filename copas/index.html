@@ -175,18 +175,47 @@
   (function () {
     'use strict';
 
-    // All normal-distribution and selection-model arithmetic now comes from
-    // shared/copas-core.js (ported from metasens and from R's own internals);
-    // the page keeps only input parsing, formatting and rendering.
+    // ==== Copas & Shi (2000) selection model — full metasens pipeline ====
+    //
+    // All normal-distribution and selection-model arithmetic comes from
+    // shared/copas-core.js, a port of metasens 1.5-3 copas() and of the R
+    // internals it depends on: R's contour/pretty machinery, the orthogonal
+    // line, the residual-selection-bias test and metasens's TE.adjust rule.
+    // shared/ma-core.js supplies the metagen() random-effects pool used as the
+    // optimiser's start value. This page keeps only input parsing, formatting
+    // and rendering.
+    //
+    // Both modules are hard dependencies. A 404 or a load-order change used to
+    // surface as a bare TypeError thrown inside run() with nothing on screen,
+    // so they are checked once, here, with a message a user can act on.
+    var CC = window.AlmCopasCore;
+    var MaCore = window.AlmMaCore;
+    var MISSING = [];
+    if (!CC || typeof CC.copas !== 'function') MISSING.push('../shared/copas-core.js');
+    if (!MaCore || typeof MaCore.pool !== 'function') MISSING.push('../shared/ma-core.js');
+    if (MISSING.length) {
+      document.addEventListener('DOMContentLoaded', function () {
+        var el = document.getElementById('summary');
+        if (el) {
+          el.textContent = '';
+          var tr = document.createElement('tr');
+          var td = document.createElement('td');
+          td.textContent = 'Cannot fit: the selection-model engine did not load (' +
+            MISSING.join(', ') + '). Reload the page; if it persists the ' +
+            'deployment is incomplete.';
+          tr.appendChild(td); el.appendChild(tr);
+        }
+      });
+      return;   // never run a partial engine
+    }
 
     // A field is accepted only if the WHOLE token is a number. parseFloat's
     // prefix parsing would otherwise read ".4oops" as 0.4 and "30oops" as 30,
-    // silently admitting a malformed row.
-    function num(tok) {
-      if (!/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(tok)) return NaN;
-      var v = parseFloat(tok);
-      return Number.isFinite(v) ? v : NaN;
-    }
+    // silently admitting a malformed row. The rule lives in
+    // shared/copas-core.js so that BOTH of this page's readers -- the textarea
+    // below and the CSV upload in __almCopasLoad -- use the same one, and so
+    // that it can be tested without a browser. Do not re-implement it here.
+    var num = CC.parseNumToken;
 
     function parse(text) {
       return text.split(/\r?\n/).map(function (l) {
@@ -203,19 +232,11 @@
       return Number.isFinite(x) ? x.toFixed(d) : '&#8212;';
     }
 
-    // ==== Copas & Shi (2000) selection model — full metasens pipeline ====
-    //
-    // The model, R's contour/pretty machinery, the orthogonal line, the
-    // residual-selection-bias test and metasens's TE.adjust rule all live in
-    // shared/copas-core.js, which is a port of metasens 1.5-3 copas() and of
-    // the R internals it depends on. This page only drives it and renders it.
-    var CC = window.AlmCopasCore;
-
     // metagen()'s random-effects pool, used only as the optimiser start, exactly
     // as metasens does (start = c(TE.random, rho0, tau)).
     function startValues(te, se, methodTau) {
       var vi = se.map(function (s) { return s * s; });
-      var fit = window.AlmMaCore.pool(te, vi, { method: methodTau === 'DL' ? 'DL' : 'REML' });
+      var fit = MaCore.pool(te, vi, { method: methodTau === 'DL' ? 'DL' : 'REML' });
       var eg = CC.eggerEstimate(te, se);
       return { TE_random: fit.mu, seTE_random: fit.se, tau: Math.sqrt(fit.tau2),
                tau2: fit.tau2, egger: eg,
@@ -291,11 +312,30 @@
     // ---- results storage for export ----
     var _lastResults = null;
 
+    // Rows the CSV reader refused on the last upload. Reported rather than
+    // dropped in silence: a refused row is the whole point of the whole-token
+    // rule, and a user who pasted a malformed file should be told so. Consumed
+    // by the run() the upload triggers, so it cannot go stale across a later
+    // control change.
+    var _refusedOnLoad = 0;
+
     function run() {
+      var refusedRows = _refusedOnLoad;
+      _refusedOnLoad = 0;
       var rows = parse(document.getElementById('src').value);
       var warnEl = document.getElementById('k-warn');
       if (warnEl) {
-        if (rows.length < 15 && rows.length >= 3) {
+        if (refusedRows > 0) {
+          warnEl.textContent = refusedRows + ' uploaded row(s) were refused: ' +
+            'a field was not a well-formed number end to end (a value like ' +
+            '".4oops" is rejected, not read as 0.4). ' + rows.length +
+            ' row(s) were used.' +
+            (rows.length < 15 && rows.length >= 3
+              ? ' Also: k = ' + rows.length + ', below the k ≥ 15 at which this ' +
+                'app treats Copas estimates as stable enough to interpret.'
+              : '');
+          warnEl.style.display = 'block';
+        } else if (rows.length < 15 && rows.length >= 3) {
           // No source is cited here on purpose: k >= 15 is this project's own
           // operating threshold for the Copas selection model, not a published
           // cut-off, and the file it used to name is a private local notes file
@@ -309,11 +349,38 @@
       var summaryEl = document.getElementById('summary');
       var bodyEl = document.getElementById('body');
       var fit = fitCopas();
+      // copas() returns a TRUTHY {refused: ...} object, never null, so both
+      // halves of this test are load-bearing.
       if (!fit || fit.refused) {
         _lastResults = null;
-        var why = fit && fit.refused === 'seTE.min==seTE.max'
-          ? 'every study has the same standard error, so the selection function cannot be identified'
-          : 'at least 3 studies with an effect and a positive standard error are needed';
+        var why;
+        switch (fit && fit.refused) {
+          case 'seTE.min==seTE.max':
+            why = 'every study has the same standard error, so the selection ' +
+                  'function cannot be identified';
+            break;
+          case 'seTE.near-degenerate':
+            why = 'the standard errors are too close together to identify the ' +
+                  'selection function (the spread is ' +
+                  (fit.seTE_spread * 100).toFixed(4) + '% of the largest SE, ' +
+                  'which makes the γ grid span about ' +
+                  Math.abs(fit.gamma0_range[0]).toPrecision(3) +
+                  ' and the model’s inverse Mills ratio incomputable at ' +
+                  'that corner). The Copas model needs studies of genuinely ' +
+                  'different precision';
+            break;
+          case 'orthogonal-line.empty':
+            why = 'no contour line of the likelihood surface admits a usable ' +
+                  'regression (' + fit.n_contour_lines + ' contour line(s), none ' +
+                  'with a positive adjusted R²), so the approximate orthogonal ' +
+                  'line collapses to the no-selection point alone. There is no ' +
+                  'sensitivity path to report — the unadjusted estimate is NOT ' +
+                  'a Copas-adjusted one and is not shown as such';
+            break;
+          default:
+            why = 'at least 3 studies with an effect and a positive standard ' +
+                  'error are needed';
+        }
         if (summaryEl) summaryEl.innerHTML = '<tr><td>No fit — ' + why + '.</td></tr>';
         if (bodyEl) bodyEl.innerHTML = '';
         drawSens([]);
@@ -368,7 +435,7 @@
           row(pctLabel + ' CI', '[' + fmt(fit.lower_adjust) + ', ' + fmt(fit.upper_adjust) + ']');
           row('p-value (adjusted effect)', fmtP(fit.pval_adjust));
           row('p-value, residual selection bias', fmtP(fit.pval_rsb_adj));
-          row('Implied number of unpublished studies', fit.N_unpubl_adj.toFixed(1));
+          row('Implied number of unpublished studies', fmtCount(fit.N_unpubl_adj));
         } else {
           row('Copas-adjusted effect',
               'not reported — every point of the orthogonal line shows residual selection bias at p ≤ ' +
@@ -386,7 +453,7 @@
         var r = results[i];
         __bodyParts.push('<tr' + (r.selected ? ' style="font-weight:600;background:var(--accent-soft)"' : '') +
           '><td>' + r.publprob.toFixed(3) + (r.selected ? ' ◀' : '') +
-          '</td><td>' + r.nUnpubl.toFixed(1) +
+          '</td><td>' + fmtCount(r.nUnpubl) +
           '</td><td>' + fmt(r.mean) +
           '</td><td>[' + fmt(r.lo) + ', ' + fmt(r.hi) + ']' +
           '</td><td>' + fmtP(r.pvalRsb) + '</td></tr>');
@@ -404,6 +471,24 @@
     function fmtP(p) {
       if (!Number.isFinite(p)) return '&#8212;';
       return p < 0.0001 ? '&lt;0.0001' : p.toFixed(4);
+    }
+
+    // N.unpubl = sum((1 - p_i) / p_i) over the studies. The engine reproduces
+    // R exactly and R yields Inf when some p_i underflows to 0 at a strongly
+    // selecting gamma, so the number itself stays faithful -- but
+    // (Infinity).toFixed(1) renders the string "Infinity" into a table cell,
+    // and a user-facing cell is not the place to be faithful to an overflow
+    // (review-212 MINOR-13). Rendered, not computed, so nothing downstream or
+    // in the export changes.
+    function fmtCount(n) {
+      if (Number.isNaN(n) || n === undefined || n === null) return '&#8212;';
+      if (n === Infinity)
+        return '<span title="At this publication probability the implied ' +
+               'selection probability of at least one study underflows to ' +
+               'zero, so the implied count diverges. R reports Inf here ' +
+               'too.">unbounded</span>';
+      if (!Number.isFinite(n)) return '&#8212;';
+      return n.toFixed(1);
     }
 
     function drawSens(results) {
@@ -486,17 +571,22 @@
     }
 
     // ---- CSV load: accept study,yi,sei or effect,SE columns ----
+    // Uses the SAME whole-token rule as the textarea (num === CC.parseNumToken).
+    // This path used bare parseFloat, so ".4oops" arrived as 0.4 and "30oops"
+    // as 30 for anyone who uploaded a CSV rather than pasting -- the textarea
+    // fix covered one of the page's two readers (review-212 MAJOR-6).
     window.__almCopasLoad = function (rows) {
       if (!rows || rows.length < 1) return;
-      var lines = [];
+      var lines = [], refused = 0;
       rows.forEach(function (r) {
-        var te  = parseFloat(r.yi  !== undefined ? r.yi  : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te)));
-        var sei = parseFloat(r.sei !== undefined ? r.sei : (r.SE     !== undefined ? r.SE     : (r.seTE !== undefined ? r.seTE : r.se)));
-        if (!Number.isFinite(te) || !Number.isFinite(sei) || sei <= 0) return;
+        var te  = num(r.yi  !== undefined ? r.yi  : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te)));
+        var sei = num(r.sei !== undefined ? r.sei : (r.SE     !== undefined ? r.SE     : (r.seTE !== undefined ? r.seTE : r.se)));
+        if (!Number.isFinite(te) || !Number.isFinite(sei) || sei <= 0) { refused++; return; }
         lines.push(te.toString() + ', ' + sei.toString());
       });
       if (lines.length < 1) return;
       document.getElementById('src').value = lines.join('\n');
+      _refusedOnLoad = refused;
       run();
     };
 

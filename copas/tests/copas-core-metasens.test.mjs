@@ -465,11 +465,31 @@ test("at least one configuration is compared on the port's OWN surface", () => {
 test("malformed input fields are refused, not prefix-parsed", () => {
   // Regression guard: parseFloat(".4oops") is 0.4 and parseFloat("30oops") is 30,
   // so a prefix-parsing reader silently admits malformed rows.
-  const ok = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
-  for (const bad of [".4oops", "30oops", "1,2", "--1", "1e", "", " ", "NaN", "Inf"])
-    assert.ok(!ok.test(bad), `${bad!=="" ? bad : "(empty)"} must be refused`);
-  for (const good of ["0.25", ".25", "-0.25", "+1", "1e-7", "5.5E+2", "30"])
-    assert.ok(ok.test(good), `${good} must be accepted`);
+  //
+  // This calls the SHARED parser the page uses on both of its ingestion paths
+  // (the textarea and the CSV upload). It used to declare a local copy of the
+  // regex and assert that a regex literal behaves as a regex, which exercised
+  // no production code at all and would have passed unchanged if the page had
+  // reverted to parseFloat entirely (review-212 MAJOR-6).
+  const n = CC.parseNumToken;
+  assert.equal(typeof n, "function",
+    "shared/copas-core.js must export parseNumToken — the page's two readers " +
+    "share it, and a test that re-declares the rule tests nothing");
+  for (const bad of [".4oops", "30oops", "1,2", "--1", "1e", "", " ", "NaN", "Inf",
+                     "0x10", "1.2.3", "1 2", "e5", "+", ".", "1d5", "Infinity",
+                     null, undefined, {}, []])
+    assert.ok(Number.isNaN(n(bad)),
+      `${JSON.stringify(bad)} must be refused, got ${n(bad)}`);
+  for (const [good, want] of [["0.25", 0.25], [".25", 0.25], ["-0.25", -0.25],
+                              ["+1", 1], ["1e-7", 1e-7], ["5.5E+2", 550],
+                              ["30", 30], ["0", 0], ["-0", -0], ["7.", 7]])
+    assert.equal(n(good), want, `${good} must parse to ${want}`);
+  // A number already typed as a number (the CSV path receives these) passes
+  // through, but a non-finite one does not.
+  assert.equal(n(0.25), 0.25);
+  assert.equal(n(0), 0);
+  for (const bad of [NaN, Infinity, -Infinity])
+    assert.ok(Number.isNaN(n(bad)), `${bad} must be refused`);
 });
 
 test("lambda matches R: NaN where both dnorm and pnorm underflow", () => {
