@@ -43,6 +43,11 @@ jobs:
       - run: node --test copas/tests/copas-core-metasens.test.mjs
       # The profile MLE against the second-dataset metasens oracle.
       - run: node --test copas/tests/copas-oracle.test.mjs
+      # The R base-stats routines the port reimplements (pnorm's two branches
+      # and its far-tail cutoff, lambda, pchisq on 1 df, summary.lm's
+      # rank-deficient branch), pinned straight against R. Each of the three
+      # fixes in 43ae0db fails one of these.
+      - run: node --test copas/tests/copas-core-rbase.test.mjs
       # Page structure, the __almCopasProfileMLE <-> parity-spec contract, and
       # the claim guards (no private notes file cited, no "never worse" claim).
       - run: python -m pytest copas/tests/test_structure.py -q

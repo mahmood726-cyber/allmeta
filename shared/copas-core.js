@@ -68,8 +68,24 @@
 
   /* ---------------------------------------------------------------- numerics */
 
-  // Hart/West rational approximation of the standard normal CDF; relative
-  // accuracy ~1e-15 including the far tail (the continued-fraction branch).
+  // Hart/West rational approximation of the standard normal CDF below
+  // z = sqrt(50), a 24-term Mills continued fraction above it.
+  //
+  // Measured relative accuracy against R 4.6.0 (the sweep behind these
+  // figures is pinned by copas/tests/copas-core-rbase.test.mjs):
+  //   continued-fraction branch, z >= sqrt(50) ... machine precision (<1e-15)
+  //   rational branch, |z| <= 3 ................. machine precision
+  //   rational branch, z = 5 .................... 4.6e-11
+  //   rational branch, z = 7 .................... 2.6e-9
+  // The boundary is therefore an accuracy STEP, not a smooth join: the
+  // continued fraction is already at machine precision from about z = 4.5,
+  // roughly 2.5 units below where it is switched on, so pnorm is about four
+  // orders of magnitude less accurate just under sqrt(50) than just over it.
+  // Lowering the boundary would make this agree with R to ~1e-15 throughout,
+  // but it perturbs every likelihood evaluation and hence every count the
+  // validation archive reports, so it is pinned by a test rather than changed
+  // here. loglikWithoutBeta clamps v at -37 and the converged v values are
+  // small, which is why the 1e-9 deterministic tier holds as things stand.
   //
   // The usual "if (z > 37) return 0" shortcut is deliberately NOT used. R's
   // pnorm still returns a (subnormal) positive value out to about -37.52, and
