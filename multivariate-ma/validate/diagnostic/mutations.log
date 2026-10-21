@@ -1,0 +1,23 @@
+MUTATION boundary variance threshold x1e4: 297 SURVIVED (295/297); controls KILLED (3/4)
+  control caught by mutation-control:imprecise-study: R interior maximum, mutant boundary maximum
+MUTATION correlation boundary 1e-6 -> 1e-2: 297 KILLED (283/297); controls SURVIVED (4/4)
+  297 caught by mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4@x1: R interior maximum, mutant boundary maximum
+  297 caught by mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4@x1: R interior maximum, mutant boundary maximum
+  297 caught by metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4@x1: R interior maximum, mutant boundary maximum
+  297 caught by mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6@x1: R interior maximum, mutant boundary maximum
+  297 caught by mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4@x10: R interior maximum, mutant boundary maximum
+  297 caught by mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4@x10: R interior maximum, mutant boundary maximum
+  297 caught by metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4@x10: R interior maximum, mutant boundary maximum
+  297 caught by mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6@x10: R interior maximum, mutant boundary maximum
+  297 caught by mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4@x0.1: R interior maximum, mutant boundary maximum
+  297 caught by mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4@x0.1: R interior maximum, mutant boundary maximum
+  297 caught by metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4@x0.1: R interior maximum, mutant boundary maximum
+  297 caught by mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6@x0.1: R interior maximum, mutant boundary maximum
+MUTATION skip the multiple-optima check: 297 SURVIVED (295/297); controls KILLED (3/4)
+  control caught by mutation-control:k6:E1e-5: R multiple near-equal optima, mutant interior maximum
+MUTATION swap precedence (multiple before boundary): 297 SURVIVED (296/297); controls KILLED (3/4)
+  control caught by mutation-control:mirrored-zero: R boundary maximum, mutant multiple near-equal optima
+MUTATION absolute (not scale-free) SD tolerance: 297 SURVIVED (295/297); controls KILLED (3/4)
+  control caught by mutation-control:mvmeta::berkey98::PD+AL::REML::supplied#main@x100000: R interior maximum, mutant multiple near-equal optima
+UNMUTATED 297 295/297; controls 4/4
+exit 0

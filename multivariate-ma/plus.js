@@ -39,7 +39,7 @@
       try {
         var u = eng().fitUnivariate(parsed.rows.map(function (r) { return r.y[j]; }), parsed.rows.map(function (r) { return r.v[j]; }));
         var t = eng().zTest(u.mu, u.se);
-        return { status: 'ok', k: u.k, mu: u.mu, se: u.se, tau2: u.tau2, logLik: u.logLik, z: t.z, p: t.p, boundary: u.optimizer.boundary };
+        return { status: 'ok', k: u.k, mu: u.mu, se: u.se, tau2: u.tau2, logLik: u.logLik, z: t.z, p: t.p, boundary: u.optimizer.boundary, diagnostic: u.diagnostic };
       } catch (e) { return { status: 'refused', reason: e.message }; }
     });
     var f;

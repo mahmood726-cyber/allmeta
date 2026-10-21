@@ -1,0 +1,90 @@
+{
+  "agreement": "295/297",
+  "disagreements": [
+    {
+      "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x1",
+      "reason": "wrong verdict",
+      "expected": "multiple near-equal optima",
+      "actual": "boundary maximum"
+    },
+    {
+      "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x0.1",
+      "reason": "wrong verdict",
+      "expected": "interior maximum",
+      "actual": "boundary maximum"
+    }
+  ],
+  "rVerdicts": {
+    "control: interior maximum": 90,
+    "hard: boundary maximum": 145,
+    "hard: interior maximum": 61,
+    "hard: multiple near-equal optima": 1
+  },
+  "jsVerdicts": {
+    "control: interior maximum": 90,
+    "hard: boundary maximum": 147,
+    "hard: interior maximum": 60
+  },
+  "unitsInvariance": "117/117",
+  "mutations": [
+    {
+      "name": "boundary variance threshold x1e4",
+      "killed297": false,
+      "agreement297": 295,
+      "killedByControls": true,
+      "caughtBy": [
+        "mutation-control:imprecise-study"
+      ]
+    },
+    {
+      "name": "correlation boundary 1e-6 -> 1e-2",
+      "killed297": true,
+      "agreement297": 283,
+      "killedByControls": false,
+      "caughtBy": [
+        "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4@x1",
+        "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4@x1",
+        "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4@x1",
+        "mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6@x1",
+        "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4@x10",
+        "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4@x10",
+        "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4@x10",
+        "mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6@x10",
+        "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4@x0.1",
+        "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4@x0.1",
+        "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4@x0.1",
+        "mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6@x0.1"
+      ]
+    },
+    {
+      "name": "skip the multiple-optima check",
+      "killed297": false,
+      "agreement297": 295,
+      "killedByControls": true,
+      "caughtBy": [
+        "mutation-control:k6:E1e-5"
+      ]
+    },
+    {
+      "name": "swap precedence (multiple before boundary)",
+      "killed297": false,
+      "agreement297": 296,
+      "killedByControls": true,
+      "caughtBy": [
+        "mutation-control:mirrored-zero"
+      ]
+    },
+    {
+      "name": "absolute (not scale-free) SD tolerance",
+      "killed297": false,
+      "agreement297": 295,
+      "killedByControls": true,
+      "caughtBy": [
+        "mutation-control:mvmeta::berkey98::PD+AL::REML::supplied#main@x100000"
+      ]
+    }
+  ],
+  "plusReplay": "54612/54612",
+  "exactReplay": "2023/2023 fits, 1 identical refusal",
+  "nodeTests": "18 pass, 0 fail"
+}

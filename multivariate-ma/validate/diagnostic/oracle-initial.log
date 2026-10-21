@@ -1,0 +1,132 @@
+Rscript.exe : During startup - Warning messages:
+At line:2 char:210
++ ... lib_extra'; & 'C:\Program Files\R\R-4.6.0\bin\Rscript.exe' --vanilla  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (During startup - Warning messages::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+1: Setting LC_COLLATE=C.UTF-8 failed 
+2: Setting LC_CTYPE=C.UTF-8 failed 
+3: Setting LC_MONETARY=C.UTF-8 failed 
+4: Setting LC_TIME=C.UTF-8 failed 
+R version 4.6.0 (2026-04-24 ucrt) 
+[1] "C:/Users/User/allmeta-offload/Rlib_extra"
+[2] "C:/Users/User/allmeta-offload/Rlib_dta"  
+[3] "C:/Program Files/R/R-4.6.0/library"      
+mvmeta 1.0.3 
+metafor 5.2.1 
+jsonlite 2.0.0 
+mvmeta control: list(maxiter = 10000, reltol = 1e-13, optim = list(maxit = 10000,      reltol = 1e-13)) 
+nlminb refinement control: list(rel.tol = 1e-15, x.tol = 1e-15, eval.max = 20000, iter.max = 10000) 
+metafor::rma control: list(threshold = 1e-12, maxiter = 10000) 
+DEFAULT 1 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 2 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 3 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 4 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 5 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 6 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 7 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 8 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 9 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 10 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 11 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 12 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 13 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 14 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 15 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 16 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 17 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 18 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 19 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 20 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 21 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 22 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 23 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 24 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 25 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 26 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 27 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 28 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 29 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 30 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 31 mvmeta warnings 0 metafor warnings 0 
+DEFAULT 32 mvmeta warnings 0 metafor warnings 0 
+CONTROL 1 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#main 
+CONTROL 2 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.9 
+CONTROL 3 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.8 
+CONTROL 4 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.7 
+CONTROL 5 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.6 
+CONTROL 6 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.5 
+CONTROL 7 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.4 
+CONTROL 8 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.3 
+CONTROL 9 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.2 
+CONTROL 10 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.1 
+CONTROL 11 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0 
+CONTROL 12 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.1 
+CONTROL 13 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.2 
+CONTROL 14 selected 0 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.3 
+CONTROL 15 selected 1 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.4 
+CONTROL 16 selected 1 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.5 
+CONTROL 17 selected 1 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.6 
+CONTROL 18 selected 1 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.7 
+CONTROL 19 selected 1 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.8 
+CONTROL 20 selected 1 mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.9 
+CONTROL 21 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#main 
+CONTROL 22 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.8 
+CONTROL 23 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.7 
+CONTROL 24 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.6 
+CONTROL 25 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.5 
+CONTROL 26 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.4 
+CONTROL 27 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.3 
+CONTROL 28 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.1 
+CONTROL 29 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0 
+CONTROL 30 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.1 
+CONTROL 31 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.2 
+CONTROL 32 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.3 
+CONTROL 33 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.4 
+CONTROL 34 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.5 
+CONTROL 35 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.6 
+CONTROL 36 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.7 
+CONTROL 37 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.8 
+CONTROL 38 selected 1 mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.9 
+CONTROL 39 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#main 
+CONTROL 40 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=-0.9 
+CONTROL 41 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=-0.8 
+CONTROL 42 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=-0.7 
+CONTROL 43 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=-0.6 
+CONTROL 44 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=-0.5 
+CONTROL 45 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=-0.4 
+CONTROL 46 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=-0.3 
+CONTROL 47 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=-0.2 
+CONTROL 48 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=-0.1 
+CONTROL 49 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0 
+CONTROL 50 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.1 
+CONTROL 51 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.2 
+CONTROL 52 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.3 
+CONTROL 53 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.4 
+CONTROL 54 selected 1 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.5 
+CONTROL 55 selected 2 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6 
+CONTROL 56 selected 2 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.7 
+CONTROL 57 selected 2 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.8 
+CONTROL 58 selected 2 mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.9 
+CONTROL 59 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#main 
+CONTROL 60 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=-0.9 
+CONTROL 61 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=-0.8 
+CONTROL 62 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=-0.7 
+CONTROL 63 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=-0.6 
+CONTROL 64 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=-0.5 
+CONTROL 65 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=-0.4 
+CONTROL 66 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=-0.3 
+CONTROL 67 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=-0.2 
+CONTROL 68 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=-0.1 
+CONTROL 69 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0 
+CONTROL 70 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.1 
+CONTROL 71 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.2 
+CONTROL 72 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.3 
+CONTROL 73 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.4 
+CONTROL 74 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.5 
+CONTROL 75 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.6 
+CONTROL 76 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.7 
+CONTROL 77 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.8 
+CONTROL 78 selected 3 mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.9 
+CONTROL 79 selected 3 mvmeta::fibrinogen::b3+b4::REML::supplied#main 

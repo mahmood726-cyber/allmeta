@@ -1,0 +1,166 @@
+[
+  {
+    "path": "C:\\Users\\User\\p18ll\\fits.csv",
+    "sha256": "4b30aaa5b9df4c401281f37059c890b0d33def8dad3dc5b03f5d227fb2c18554"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\population.json",
+    "sha256": "fa53b29f212dc54a89171bc9a851bfc466b3fc74d0cc734cf22be0ee50a9d059"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\jobs.json",
+    "sha256": "a315403c3f28c8723f582387bc80695515a47d88253497bab605113502759b46"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\summary.json",
+    "sha256": "e5a141ac1a00fc855378d892d9f8842e263f6a25e596d441f3682554eaf59be1"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\P18LL.md",
+    "sha256": "d6fb91513784fa62b6de6cbddf8b0526416b7529786b6ae85724744ca46fd7d6"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-001.json",
+    "sha256": "05f47f9281155d3cb41dee10eba5efce072d21b22f98a598bab80bef816ae5aa"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-002.json",
+    "sha256": "46213944d95ad887f1d16e0a93310791ce79e4420b353cd546d8d1cca75bdca3"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-003.json",
+    "sha256": "767e9a889e5977c12c98093260cd445765f5f6715bb58cf64506b1f580b00c32"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-004.json",
+    "sha256": "da5fbfc0153fba2d5c7694af89926dcba9b0cc02247a57e500b411201c6676a7"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-005.json",
+    "sha256": "415f55cd7859c98cb40125f7f69022979758f4493aa05f5e114b13b8e6c163a1"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-006.json",
+    "sha256": "76a7612910cde0ccdedd54098e23d5957ecb546980f979751a569d83ccd99c98"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-007.json",
+    "sha256": "73730929ddbba50425871383552392e593ea6e5c30e8b0794e3351f311ff5ceb"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-008.json",
+    "sha256": "9b90c222ae6b91852a86c1f757046d7a5d078eb53fef48944127942aaff13ab2"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-009.json",
+    "sha256": "34c738e2d9e0a302c9d7a52d3f9af74f8bd159496bcce0516ba75c79669eb13e"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-010.json",
+    "sha256": "64c3f322e68915573c6df072e6137a4b6d1e8d8deddf4df9c5c918234c80c82c"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-011.json",
+    "sha256": "183004560c01ef8ad8bbfde63e22b408434e7815cad05a8104c83389b988de0c"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-012.json",
+    "sha256": "965f7d71052cdaf3e49e617abed0a49af9c771fb19a519fadbd8fa3f3c72691e"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-013.json",
+    "sha256": "c70146166da7f7172e1ef258534f26c807c4c7a3042f4046a4019fa4bd3146a0"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-014.json",
+    "sha256": "377715ff8c10eded03516474c795bd6e50c95585777126ded8f46b0295eb1505"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-015.json",
+    "sha256": "646bd95bf72fc9b1cca6ea7f8caf81cd1c071d98c93248482d66f33189f4246f"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-016.json",
+    "sha256": "95ec18f59a9e8652f85fa983f52c62dbdf86a84cd95bbdc7f9905f9b67a45eb2"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-017.json",
+    "sha256": "88c68ae48248a438fbae3a8ea3694403fe26fb2e16f208c42bce488f02c6ef20"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-018.json",
+    "sha256": "a8d400422733ca77851ae35af6bd858c25ea346dbf3486654a8b253f87d6e0e0"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-019.json",
+    "sha256": "10b394fd05e2e115062e07d0c338efadf19f268a14138bf4e644b60ea28b9acd"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-020.json",
+    "sha256": "06b23956f27155975dfc40c228f8209712348fcc576971a89e6819fbf2bfa6ff"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-021.json",
+    "sha256": "3f21fb1b4f3c3f0e04e08be823a753c5634e5323d805788f120fff3b2ce53b9b"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-022.json",
+    "sha256": "eba45555d243a1736bb3355002f24acce004f91dccf6df3e9a41b9137eb45b08"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-023.json",
+    "sha256": "f8b657dc32d56a62d6583d712f531023e632283578eebf240907b5c5c4b82ce2"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-024.json",
+    "sha256": "5dbc65b33f54897637f73aa4117fe687644902855ce380ea369761435ae63d8a"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-025.json",
+    "sha256": "ec294b14920fc8a037cdf41a4923aec7d667455b93dbf40e43a005ceebd6757c"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-026.json",
+    "sha256": "16276414c0ed151edf4442f08a187cdb2a48fee7c8a5a1ae9e2ce946a2a0cd6f"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-027.json",
+    "sha256": "9f21238e6620daee9b4945ac955adea2ee9f2eba40aa853b5d4c8d7d5c5e7f5a"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-028.json",
+    "sha256": "f9c84cad2df093d708a25ce7aca90bc29461ba199b91ab1519e96e598ff1a18d"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-029.json",
+    "sha256": "c62d802176216c529508ee7f4d83f1ec7126cf6a92ae4c12635e096f9d3225ab"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-030.json",
+    "sha256": "8ac44adf1ced8faa332d6ba27d9b96af2a10f8254df370efb34103b23d530576"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-031.json",
+    "sha256": "ba48e7bd8ca21507833a29612544df2cf319430ab767034bdd3816b902d0434f"
+  },
+  {
+    "path": "C:\\Users\\User\\p18ll\\results\\job-032.json",
+    "sha256": "af133ba18456f312b6b1a3867253ae60a87dc2b8e35f3ac92b6676725a109c4b"
+  },
+  {
+    "path": "C:\\Users\\User\\p18diag\\allmeta\\multivariate-ma\\validate\\plus\\corpus.json",
+    "sha256": "fbac67e86b31ba9f7f9e3d3bb6cf2284a226a95500a218aafe71d8b7bb23477b"
+  },
+  {
+    "path": "C:\\Users\\User\\p18diag\\allmeta\\multivariate-ma\\validate\\diagnostic\\PREREG.md",
+    "sha256": "a7fbd8ed8a5352112cf79374ecd8bb18a64388745d5442cbcf3e0ecc18cf17e9"
+  },
+  {
+    "path": "C:\\Users\\User\\p18diag\\allmeta\\multivariate-ma\\validate\\diagnostic\\baseline-engine.cjs",
+    "sha256": "50af4e810f95e959a7c423d20bf36f69f02a9f52339c592216f2472026920b07"
+  },
+  {
+    "path": "C:\\Users\\User\\p18diag\\allmeta\\multivariate-ma\\validate\\generate-plus.R",
+    "sha256": "b14e5fa05350864f271d9bc4f5ed7b938f664d6bd373d55572d1cc5db88c7fe2"
+  }
+]
