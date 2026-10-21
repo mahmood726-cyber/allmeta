@@ -132,23 +132,71 @@ test("a non-finite objective anywhere on the grid is counted, not hidden", () =>
 test("a collapsed orthogonal line is refused with its own reason", () => {
   // Driven through the documented `slope` override rather than hunting for a
   // dataset with a degenerate contour surface: slope = NaN is exactly the
-  // state orthogonalLine() reaches when no contour line has adjRSquared > 0,
-  // and it is the only input that state depends on.
+  // state orthogonalLine() reaches when no contour line has adjRSquared > 0.
+  // (The other route to the same state -- a finite slope whose intersections
+  // all rescale outside the gamma ranges -- is what 5 of the validation
+  // archive's 138 configurations hit, and `ng < 2` catches both.)
   const TE = [0.25, 0.18, 0.40, 0.30, 0.12, 0.55, 0.22, 0.32, 0.45, 0.28];
   const seTE = [0.08, 0.10, 0.15, 0.09, 0.07, 0.20, 0.08, 0.12, 0.17, 0.10];
   const r = fit(TE, seTE, { slope: NaN });
   assert.equal(r.refused, "orthogonal-line.empty",
     `expected an empty-orthogonal-line refusal, got ${JSON.stringify(r.refused)}`);
-  assert.ok(!Number.isFinite(r.TE_adjust),
-    "the no-selection MLE must NOT be reported as the Copas-adjusted effect");
   assert.equal(r.n_orthogonal_points, 1,
     "the refusal should report how many points the line collapsed to " +
     "(1 = the no-selection anchor alone)");
-  assert.equal(typeof r.n_contour_lines, "number",
-    "the refusal should report the contour-line count under a name that is " +
-    "not `contour_lines` (an array on the success path)");
-  assert.equal(r.contour_lines, undefined,
-    "`contour_lines` must not be a count on one path and an array on the other");
+  assert.ok(Math.abs(r.publprob[0] - 1) < 1e-12,
+    "the single point is the (10, 0) anchor, i.e. publprob 1 — no selection");
+  // THIS is the fix: a renderer must refuse. The page tests `fit.refused`
+  // before it displays anything, so neither of the two things the review
+  // describes can reach the user any more.
+  //
+  // But the estimates are deliberately STILL PRESENT, because metasens does
+  // not refuse in this state and 5 of the archive's 138 configurations are in
+  // it: returning early would make the port disagree with metasens there and
+  // move the archive's comparison counts. A parity harness reads straight
+  // through `refused`; a renderer must not.
+  assert.equal(typeof r.n_contour_lines, "number");
+  assert.ok(Array.isArray(r.contour_lines),
+    "`contour_lines` is the array of lines on this path too, and " +
+    "`n_contour_lines` is the count — one name, one meaning");
+  assert.equal(r.TE_slope.length, 1, "one estimate, at the anchor");
+  assert.ok(Math.abs(r.N_unpubl[0]) < 1e-9,
+    "no selection implies no unpublished studies");
+
+  // Both downstream outcomes exist, and the page used to present each of them
+  // misleadingly. metasens's own rule decides which, so neither is changed
+  // here — only whether the page shows it.
+  //
+  //   (a) pval.rsb <= sign.rsb: adjustSelection withholds, TE.adjust is NaN,
+  //       and the page printed "not reported — every point of the orthogonal
+  //       line shows residual selection bias", blaming the data for what is
+  //       really an empty line.
+  assert.ok(r.pval_rsb[0] <= 0.1);
+  assert.equal(r.sel_adj, null);
+  assert.ok(Number.isNaN(r.TE_adjust));
+
+  //   (b) pval.rsb > sign.rsb: adjustSelection returns 1 and the page printed
+  //       the NO-SELECTION MLE in bold as the "Copas-adjusted effect".
+  const r2 = fit(TE, seTE, { slope: NaN, sign_rsb: 1e-6 });
+  assert.equal(r2.refused, "orthogonal-line.empty");
+  assert.equal(r2.sel_adj, 1);
+  assert.ok(Number.isFinite(r2.TE_adjust),
+    "estimates must remain readable for parity work — only the page refuses");
+  assert.ok(Math.abs(r2.TE_adjust - r2.TE_slope[0]) < 1e-15,
+    "the 'adjusted' value IS the single anchor estimate");
+  assert.ok(Math.abs(r2.N_unpubl_adj) < 1e-9,
+    "...and it implies zero unpublished studies, which is the tell");
+});
+
+test("a successful fit reports refused === null, so `r.refused` is a safe test", () => {
+  const TE = [0.25, 0.18, 0.40, 0.30, 0.12, 0.55, 0.22, 0.32, 0.45, 0.28];
+  const seTE = [0.08, 0.10, 0.15, 0.09, 0.07, 0.20, 0.08, 0.12, 0.17, 0.10];
+  const r = fit(TE, seTE);
+  assert.equal(r.refused, null,
+    "a successful fit must set refused to null, not leave it undefined, so " +
+    "the field is always present and always means the same thing");
+  assert.ok(r.n_orthogonal_points >= 2);
+  assert.ok(Number.isFinite(r.TE_adjust));
 });
 
 test("orthogonalLine still reports the collapse rather than throwing", () => {

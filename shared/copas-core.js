@@ -954,10 +954,18 @@
    * list of per-point fits for "every point converged".
    *
    * Does NOT return null on unusable input; it returns a truthy object with a
-   * `refused` string and no estimates -- { refused, k, dropped } -- so test
-   * `if (!result || result.refused)`, never `if (!result)`. The refusal
-   * reasons are "k<3", "seTE.min==seTE.max", "seTE.near-degenerate" and
-   * "orthogonal-line.empty".
+   * `refused` string, so test `if (!result || result.refused)`, never
+   * `if (!result)`. The refusal reasons are:
+   *   "k<3", "seTE.min==seTE.max", "seTE.near-degenerate",
+   *   "TE_contour.length!=ngrid^2"   -- early returns, NO estimates present;
+   *   "orthogonal-line.empty"        -- a LATE flag: every estimate is still
+   *                                     present and still equals metasens's,
+   *                                     because metasens does not refuse in
+   *                                     this state and 5 of the validation
+   *                                     archive's 138 configurations are in
+   *                                     it. A renderer must refuse; a parity
+   *                                     harness may read straight through.
+   * On a successful fit `refused` is null, so the test above works either way.
    */
   function copas(opts) {
     var TE = [], seTE = [], i, j;
@@ -1091,25 +1099,34 @@
     var ng = g0s.length;
     var publprob = ol.publprob;
 
-    // If no contour line had adjRSquared > 0, orthogonalLine() has nothing to
-    // pool: slope is NaN, every xSlope is NaN, the in-range filter drops them
-    // all, and what is left is the prepended (gamma0, gamma1) = (10, 0)
-    // no-selection anchor on its own. ng is then 1, publprob is [pnorm(10)] = [1],
-    // and the single "sensitivity" point is the profile MLE under NO SELECTION
-    // AT ALL -- i.e. the unadjusted estimate. Reporting that as the
-    // "Copas-adjusted effect", in bold, with a CI and an implied number of
-    // unpublished studies, while drawSens() blanks the curve for having fewer
-    // than two points, is the worst available outcome: it is the unadjusted
-    // answer wearing the adjusted answer's label. Refuse, with its own reason,
-    // so the page can say what happened.
-    if (ng < 2)
-      return { refused: "orthogonal-line.empty", k: k, dropped: dropped,
-               n_orthogonal_points: ng, slope: slope,
-               // n_contour_lines, not contour_lines: on a successful fit
-               // contour_lines is the array of lines, and a field that is an
-               // array on one path and a count on the other is a trap.
-               n_contour_lines: cl.length, contour_nonfinite: nonFinite,
-               adj_r_squareds: regr.adj_r_squareds };
+    // The orthogonal line can collapse to the prepended (gamma0, gamma1) =
+    // (10, 0) no-selection anchor alone, by either of two routes:
+    //   - no contour line has adjRSquared > 0, so orthogonalLine() has nothing
+    //     to pool, slope is NaN and every xSlope is NaN; or
+    //   - the slope is finite but every x/y intersection rescales to a point
+    //     OUTSIDE the gamma ranges, so the in-range filter drops them all.
+    // Either way ng is 1, publprob is [pnorm(10)] = [1], and the single
+    // "sensitivity" point is the profile MLE under NO SELECTION AT ALL -- the
+    // unadjusted estimate. Presenting that as the "Copas-adjusted effect", in
+    // bold, with a CI and an implied number of unpublished studies, while
+    // drawSens() blanks the curve for having fewer than two points, is the
+    // worst available outcome: the unadjusted answer wearing the adjusted
+    // answer's label. So this is flagged as a refusal, below, after everything
+    // has been computed.
+    //
+    // Why AFTER and not here. metasens does NOT refuse in this state -- it
+    // reports TE.adjust at the anchor -- and it is not a rare corner: 5 of the
+    // 138 configurations in the validation archive land here
+    // (dat.laopaiboon2015, both measures), all with N.unpubl.adj = 0 and
+    // TE.adjust within ~3e-3 of TE.random, which is the signature of exactly
+    // this failure. Returning early would therefore make the port disagree
+    // with metasens on those 5 and silently move the archive's comparison
+    // counts. Instead the full result is returned WITH `refused` set, so the
+    // page refuses to present it (which is the fix) while a parity harness can
+    // still read the same numbers it read before (so no archive count moves).
+    // Callers that render must test `refused`; callers that compare may ignore
+    // it. See n_orthogonal_points.
+    var collapsed = ng < 2;
 
     // stage 4 — estimates down the line
     var TEslope = [], seTEslope = [], rhoSlope = [], tauSlope = [], loglik1 = [];
@@ -1179,6 +1196,11 @@
 
     return {
       _schema: "copas-core-v1",
+      // Set only in the collapsed-orthogonal-line case; every estimate below
+      // is still present and still equal to what metasens reports, so a parity
+      // harness is unaffected while a renderer must refuse. See `collapsed`.
+      refused: collapsed ? "orthogonal-line.empty" : null,
+      n_contour_lines: cl.length,
       k: k, dropped: dropped, TE: TE, seTE: seTE,
       TE_random: TErandom, seTE_random: seTErandom, tau: tau,
       egger_estimate1: eggerEst, left: left, rho0: rho0, rho_bound: rhoBound,
