@@ -55,11 +55,30 @@
     th { color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
     td code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 4px; }
     tr.flag { background: rgba(145, 33, 33, 0.1); }
-    svg { width: 100%; height: auto; display: block; }
+    tr.excluded td { opacity: 0.55; }
+    tr.excluded td.study { text-decoration: line-through; }
+    td.infl-yes { color: var(--flag); font-weight: 700; }
+    table.diag .mc { display: none; }
+    table.diag.show-more .mc { display: table-cell; }
+    table caption { caption-side: top; text-align: left; color: var(--muted); font-size: 0.78rem; padding: 0 0 0.35rem; }
+    .table-wrap { overflow-x: auto; max-width: 100%; }
+    .input-error { margin-top: 0.5rem; padding: 0.5rem 0.65rem; border: 1px solid var(--flag); border-left-width: 4px;
+                   border-radius: 6px; color: var(--ink); background: var(--warn-soft); font-size: 0.85rem; }
+    .row-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0 0.6rem; }
+    #model-summary td.num, #model-summary th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    #excl-sentence { font-size: 0.86rem; margin: 0.2rem 0 0.8rem; }
+    svg { width: 100%; height: auto; display: block; max-width: 100%; }
+    header { padding-top: 3rem; }
+    main, .panel { min-width: 0; }
     .footer-note { margin: 0; color: var(--muted); font-size: 0.78rem; text-align: right;
                    padding: 0 clamp(1rem, 3vw, 3rem) 1.5rem; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <style>
+    /* WCAG 2.4.7: a visible 2px focus outline (hub/app-style.css replaces it with a faint halo). */
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--accent) !important; outline-offset: 2px !important; }
+  </style>
   <!-- Cycle 2.5 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
        skipped (out-of-scope): chart-download (SVG plots rendered inline; deferred) -->
@@ -81,6 +100,8 @@
   <script src="../shared/citation.js"></script>
   <script src="../shared/autosave.js"></script>
   <script src="../hub/shared/plot-export.js"></script>
+  <script src="influence-extra.js"></script>
+  <script src="r-script.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -110,13 +131,14 @@
 0.45, 0.17, Ahmed
 0.28, 0.10, Brown</textarea></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="input-error" class="input-error" role="alert" hidden></div>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount"></div>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
-          <span class="hint">Paste <code>effect, SE[, label]</code> rows, or upload a CSV above.</span>
+          <span class="hint">Paste one study per line as <code>effect, SE[, label]</code> (comma-separated, <code>.</code> as the decimal point; SE &gt; 0; at least 3 studies), or upload a CSV above. Lines that do not fit are refused with their line numbers.</span>
 
       </fieldset>
 
@@ -128,7 +150,7 @@
 
       <div class="actions">
         <button type="button" id="btn-bus-load" title="Load studies from the shared ma-studies-v1 bus">Load from bus</button>
-        <button type="button" id="btn-bus-save" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Verify in R</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
+        <button type="button" id="btn-bus-save" title="Save current studies to the shared ma-studies-v1 bus">Save to bus</button><button type="button" id="btn-verify-in-r" title="Push current studies to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">Open in WebR Validator</button><button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current studies &mdash; re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer;">TruthCert receipt</button><button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit;">&#128273; Key</button>
         <!-- reset-undo mount: undo-stack dialog replaces bare confirm() -->
         <div id="alm-undo-mount" style="display:inline-flex;gap:0.5rem;align-items:center;"></div>
         <!-- btn-reset hidden: reset-undo module provides the visible button; kept for test compat -->
@@ -137,11 +159,32 @@
     </section>
 
     <section class="panel" aria-label="Diagnostics">
-      <h2>Diagnostics</h2>
-      <table>
-        <thead><tr><th>Study</th><th>Effect</th><th>z<sub>i</sub></th><th>Hat</th><th>Cook's D</th><th>DFFITS</th><th>Cov-ratio</th><th><abbr data-gloss="Influence">LOO</abbr> pooled</th></tr></thead>
+      <h2 id="model-h">Random-effects model (REML)</h2>
+      <div class="table-wrap">
+        <table id="model-summary" aria-labelledby="model-h">
+          <caption id="model-caption">Pooled estimate and heterogeneity for all studies. Tick "Exclude" on study rows below to re-pool without them.</caption>
+          <thead><tr><th scope="col">Quantity</th><th scope="col" class="num">All studies</th><th scope="col" class="num excl-col" hidden>After exclusion</th><th scope="col" class="num excl-col" hidden>Change</th></tr></thead>
+          <tbody id="model-body"></tbody>
+        </table>
+      </div>
+      <p id="excl-sentence" aria-live="polite"></p>
+      <div class="row-actions" role="group" aria-label="Exclude and re-pool">
+        <button type="button" id="btn-excl-flagged">Exclude all flagged</button>
+        <button type="button" id="btn-excl-clear">Clear exclusions</button>
+        <button type="button" id="btn-excl-apply" title="Replace the input with the retained studies and recompute every diagnostic (undo restores the full data)">Re-run diagnostics on retained studies</button>
+        <button type="button" id="btn-rscript" title="Download an R script that reproduces this analysis with metafor and checks every value shown here">Download R script (.R)</button>
+        <button type="button" id="btn-study-csv" title="One row per study with every column of the table">Per-study table (CSV)</button>
+      </div>
+      <div id="excl-msg" role="status" aria-live="polite"></div>
+      <h2 id="diag-h">Per-study diagnostics</h2>
+      <button type="button" id="btn-more-cols" aria-pressed="false" aria-controls="diag-table">Show leave-one-out heterogeneity and DFBETAS columns</button>
+      <div class="table-wrap">
+      <table id="diag-table" class="diag">
+        <caption>Rows marked "Yes" in the Influential column meet metafor's rule (|DFFITS| &gt; 3/&radic;(k&minus;1), Cook's D &gt; median &chi;&sup2;(1), hat &gt; 3/k, or |DFBETAS| &gt; 1). Leave-one-out (LOO) columns refit the model without that study.</caption>
+        <thead><tr><th scope="col">Exclude</th><th scope="col">Study</th><th scope="col">Effect</th><th scope="col">Weight %</th><th scope="col">z<sub>i</sub></th><th scope="col">Hat</th><th scope="col">Cook's D</th><th scope="col">DFFITS</th><th scope="col" class="mc">DFBETAS</th><th scope="col">Cov-ratio</th><th scope="col"><abbr data-gloss="Influence">LOO</abbr> pooled (SE)</th><th scope="col" class="mc">LOO 95% CI</th><th scope="col" class="mc">LOO p</th><th scope="col" class="mc">LOO &tau;&sup2;</th><th scope="col" class="mc">LOO I&sup2; %</th><th scope="col" class="mc">LOO Q</th><th scope="col" class="mc">LOO p(Q)</th><th scope="col">Influential</th></tr></thead>
         <tbody id="body"></tbody>
       </table>
+      </div>
       <h2 style="margin-top:0.6rem">Leave-one-out forest</h2>
       <svg id="loo-plot" viewBox="0 0 600 400" role="img" aria-label="Leave-one-out pooled estimates"></svg>
       <h2 style="margin-top:0.6rem">Cook's D × Hat</h2>
@@ -157,7 +200,7 @@
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
-  <p class="footer-note">Standard influence diagnostics for weighted linear meta-analysis. Flags in red: |DFFITS| &gt; 3/√(k−1), Cook's D &gt; median χ²(1), hat &gt; 3/k, or |DFBETAS| &gt; 1. Matches metafor::influence(); applied to a <abbr data-gloss="REML">REML</abbr> random-effects intercept-only model. <abbr data-gloss="Heterogeneity">Heterogeneity</abbr> quantified by <abbr data-gloss="tau2">τ²</abbr> and <abbr data-gloss="I2">I²</abbr>.</p>
+  <p class="footer-note">Standard influence diagnostics for weighted linear meta-analysis. Influential (marked "Yes" and tinted): |DFFITS| &gt; 3/√(k−1), Cook's D &gt; median χ²(1), hat &gt; 3/k, or |DFBETAS| &gt; 1. Matches metafor::influence(); applied to a <abbr data-gloss="REML">REML</abbr> random-effects intercept-only model. <abbr data-gloss="Heterogeneity">Heterogeneity</abbr> quantified by <abbr data-gloss="tau2">τ²</abbr> and <abbr data-gloss="I2">I²</abbr>.</p>
   <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -167,14 +210,26 @@
       "use strict";
       const LS_KEY = "influence-v1";
 
+      // Strict parser: every non-blank line must be "effect, SE[, label]" with numeric effect and SE > 0.
+      // Invalid lines are refused (reported with line numbers) instead of being silently dropped.
+      const NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
       function parse(text) {
-        return text.trim().split(/\n/).map((l, i) => {
+        const rows = [], errors = [];
+        String(text).split(/\r?\n/).forEach((l, i) => {
+          if (!l.trim()) return;
           const parts = l.split(/,/).map(s => s.trim());
-          const te = parseFloat(parts[0]), se = parseFloat(parts[1]);
-          if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-          return { te, se, label: parts[2] || `Study ${i + 1}` };
-        }).filter(Boolean);
+          const line = i + 1;
+          if (parts.length < 2) { errors.push({ line, reason: /;/.test(l) ? "use commas between fields and '.' as the decimal point" : 'needs at least effect and SE' }); return; }
+          if (!NUM.test(parts[0])) { errors.push({ line, reason: /;/.test(l) ? "use commas between fields and '.' as the decimal point" : 'effect "' + parts[0].slice(0, 20) + '" is not a number' }); return; }
+          if (!NUM.test(parts[1])) { errors.push({ line, reason: /;/.test(l) ? "use commas between fields and '.' as the decimal point" : 'SE "' + parts[1].slice(0, 20) + '" is not a number' }); return; }
+          const te = Number(parts[0]), se = Number(parts[1]);
+          if (!Number.isFinite(te) || !Number.isFinite(se)) { errors.push({ line, reason: 'value is not finite' }); return; }
+          if (!(se > 0)) { errors.push({ line, reason: 'SE must be greater than 0' }); return; }
+          rows.push({ te, se, label: parts.slice(2).join(', ') || `Study ${line}` });
+        });
+        return { rows, errors };
       }
+      window.__almInfluenceParse = parse;
 
       // Cycle 7.13: switched τ² estimator from DerSimonian-Laird to REML.
       //
@@ -228,13 +283,19 @@
 
       // Preserve both edited inputs and the last rendered analysis across corpus validation.
       // Recomputing the input on restore would silently change an unsubmitted edit's results.
+      const SNAPSHOT_IDS = ['body', 'loo-plot', 'influence-plot', 'baujat-plot', 'radial-plot', 'model-summary', 'excl-sentence', 'excl-msg', 'input-error'];
+      const HIDDEN_IDS = ['input-error'];
+      const EXCL_BUTTONS = ['btn-excl-flagged', 'btn-excl-clear', 'btn-excl-apply'];
       window.__almInfluenceValidationSnapshot = function () {
         return structuredClone({input: document.getElementById('src').value,
           autosave: localStorage.getItem('alm-autosave:influence'),
           diag: _lastDiag, full: _lastFull, studies: _lastStudies,
           baujat: window.__almBaujat, radial: window.__almRadial,
-          html: Object.fromEntries(['body', 'loo-plot', 'influence-plot', 'baujat-plot', 'radial-plot']
-            .map(id => [id, document.getElementById(id).innerHTML]))});
+          excluded: [..._excluded], exclusion: _lastExclusion,
+          html: Object.fromEntries(SNAPSHOT_IDS.map(id => [id, document.getElementById(id).innerHTML])),
+          hidden: Object.fromEntries(HIDDEN_IDS.map(id => [id, document.getElementById(id).hidden])),
+          checked: [...document.querySelectorAll('#body input.excl')].map(cb => cb.checked),
+          disabled: EXCL_BUTTONS.map(id => document.getElementById(id).disabled)});
       };
       window.__almInfluenceValidationRestore = function (state) {
         document.getElementById('src').value = state.input;
@@ -242,16 +303,57 @@
         else localStorage.setItem('alm-autosave:influence', state.autosave);
         _lastDiag = state.diag; _lastFull = state.full; _lastStudies = state.studies;
         window.__almBaujat = state.baujat; window.__almRadial = state.radial;
+        _excluded = new Set(state.excluded); _lastExclusion = state.exclusion;
         for (const [id, html] of Object.entries(state.html)) document.getElementById(id).innerHTML = html;
+        for (const [id, h] of Object.entries(state.hidden)) document.getElementById(id).hidden = h;
+        document.querySelectorAll('#body input.excl').forEach((cb, i) => { cb.checked = state.checked[i]; });
+        EXCL_BUTTONS.forEach((id, i) => { document.getElementById(id).disabled = state.disabled[i]; });
       };
 
     run = window.alm.analysisLifecycle(run, function (result) { return _lastStudies.length >= 3 && !!_lastFull; }, "#src");
 
+      const X = window.AlmInfluenceExtra;
+      let _excluded = new Set();
+      let _lastExclusion = null;
+      window._almLastExclusion = function () { return _lastExclusion; };
+
+      function pageLocked() { return document.getElementById("src").disabled; }
+      function showError(msg) {
+        const el = document.getElementById("input-error");
+        el.textContent = msg || "";
+        el.hidden = !msg;
+      }
+      // Invalid input must never leave a previous analysis on screen looking current.
+      function clearResults() {
+        _lastDiag = null; _lastFull = null; _lastStudies = []; _excluded = new Set(); _lastExclusion = null;
+        window.__almBaujat = null; window.__almRadial = null;
+        for (const id of ["body", "model-body", "loo-plot", "influence-plot", "baujat-plot", "radial-plot"]) document.getElementById(id).innerHTML = "";
+        document.getElementById("excl-sentence").textContent = "";
+        document.getElementById("excl-msg").textContent = "";
+        document.querySelectorAll("#model-summary .excl-col").forEach(el => { el.hidden = true; });
+      }
+
       function run() {
-        const rows = parse(document.getElementById("src").value);
+        const parsed = parse(document.getElementById("src").value);
+        const rows = parsed.rows;
+        if (parsed.errors.length || rows.length < 3) {
+          clearResults();
+          if (parsed.errors.length) {
+            const shown = parsed.errors.slice(0, 8).map(e => `line ${e.line}: ${e.reason}`).join("; ");
+            const more = parsed.errors.length > 8 ? `; and ${parsed.errors.length - 8} more` : "";
+            showError(`Input refused: ${parsed.errors.length} line${parsed.errors.length > 1 ? "s" : ""} could not be read (${shown}${more}). Each line must be "effect, SE[, label]". No results are shown until the input is fixed.`);
+          } else if (rows.length === 0) {
+            showError('No studies entered. Paste "effect, SE[, label]" lines, upload a CSV, or pick an example under "Try with".');
+          } else {
+            showError(`At least 3 studies are needed for influence diagnostics; ${rows.length} valid ${rows.length === 1 ? "study was" : "studies were"} entered.`);
+          }
+          return;
+        }
+        showError("");
+        _excluded = new Set();
         _lastStudies = rows;
-        if (rows.length < 3) return;
         const full = pool(rows);
+        Object.assign(full, X.summarize(full, rows.map(r => r.se * r.se)));
         _lastFull = full;
         const k = rows.length;
 
@@ -274,35 +376,146 @@
           const dfbeta = (full.mu - loo.mu) * Math.sqrt(rows.reduce((s, x) => s + 1 / (x.se * x.se + loo.tau2), 0));
           const influential = Math.abs(dffits) > 3 / Math.sqrt(k - 1) ||
             cooksD > 0.4549364231195727 || hat > 3 / k || Math.abs(dfbeta) > 1;
+          // Leave-one-out heterogeneity/test statistics (metafor leave1out) from the same deletion fit.
+          const ls = X.summarize(loo, rest.map(x => x.se * x.se));
           return {
             ...r, hat, resid, dffits, cooksD, covRatio, influential,
             loo_mu: loo.mu, loo_seMu: loo.seMu,
+            dfbetas: dfbeta, weight: 100 * full.wRE[i] / full.swRE,
+            loo_ciLo: ls.ciLo, loo_ciHi: ls.ciHi, loo_z: ls.z, loo_p: ls.p,
+            loo_tau2: loo.tau2, loo_I2: ls.I2, loo_H2: ls.H2, loo_Q: loo.Q, loo_Qp: ls.Qp,
           };
         });
         _lastDiag = diag;
 
         const body = document.getElementById("body");
         const __bodyParts = [""];
-        const hatThreshold = 3 / k;
-        for (const d of diag) {
+        // While the Validate corpus replay has locked the page (input disabled), new controls stay disabled too.
+        const lockAttr = pageLocked() ? " disabled" : "";
+        diag.forEach((d, i) => {
           const flag = d.influential ? "flag" : "";
-          __bodyParts.push(`<tr class="${flag}">
-            <td>${esc(d.label)}</td>
+          __bodyParts.push(`<tr class="${flag}" data-i="${i}">
+            <td><input type="checkbox" class="excl" data-i="${i}" aria-label="Exclude ${esc(d.label)} and re-pool"${lockAttr}></td>
+            <td class="study">${esc(d.label)}</td>
             <td>${fmt(d.te)}</td>
+            <td>${fmt(d.weight, 2)}</td>
             <td>${fmt(d.resid, 2)}</td>
             <td>${fmt(d.hat, 3)}</td>
             <td>${fmt(d.cooksD, 3)}</td>
             <td>${fmt(d.dffits, 3)}</td>
+            <td class="mc">${fmt(d.dfbetas, 3)}</td>
             <td>${fmt(d.covRatio, 3)}</td>
             <td>${fmt(d.loo_mu)} (${fmt(d.loo_seMu)})</td>
+            <td class="mc">${fmt(d.loo_ciLo)} to ${fmt(d.loo_ciHi)}</td>
+            <td class="mc">${fmtP(d.loo_p)}</td>
+            <td class="mc">${fmtS(d.loo_tau2)}</td>
+            <td class="mc">${fmt(d.loo_I2, 1)}</td>
+            <td class="mc">${fmt(d.loo_Q, 2)}</td>
+            <td class="mc">${fmtP(d.loo_Qp)}</td>
+            <td class="${d.influential ? "infl-yes" : ""}">${d.influential ? "Yes &#10033;" : "No"}</td>
           </tr>`);
-        }
-        __bodyParts.push(`<tr style="background:var(--accent-soft); font-weight:700"><td colspan="7">Full-sample pooled</td><td>${fmt(full.mu)} (${fmt(full.seMu)})</td></tr>`);
+        });
+        __bodyParts.push(`<tr style="background:var(--accent-soft); font-weight:700"><td></td><td>All ${k} studies pooled</td><td></td><td>100.00</td><td></td><td></td><td></td><td></td><td class="mc"></td><td></td><td>${fmt(full.mu)} (${fmt(full.seMu)})</td><td class="mc">${fmt(full.ciLo)} to ${fmt(full.ciHi)}</td><td class="mc">${fmtP(full.p)}</td><td class="mc">${fmtS(full.tau2)}</td><td class="mc">${fmt(full.I2, 1)}</td><td class="mc">${fmt(full.Q, 2)}</td><td class="mc">${fmtP(full.Qp)}</td><td></td></tr>`);
         drawLOO(diag, full);
         drawInfluence(diag);
         drawBaujat(rows);
         drawRadial(rows);
         body.innerHTML = __bodyParts.join("");
+        updateExclusion();
+      }
+
+      function fmtP(p) {
+        if (p === null || !Number.isFinite(p)) return "—";
+        if (p < 0.0001) return "<0.0001";
+        return p.toFixed(4);
+      }
+      function fmtS(x) { // small positive quantities such as tau²
+        if (x === null || !Number.isFinite(x)) return "—";
+        if (x !== 0 && Math.abs(x) < 0.001) return x.toExponential(2);
+        return x.toFixed(4);
+      }
+
+      // ---- E1: exclude and re-pool ---------------------------------------------------------
+      // Re-fits the same REML engine on the retained studies; the influence diagnostics in the
+      // table stay those of the full data (as in metafor, where a refit is a separate rma() call).
+      function repool(keepRows) {
+        const p = pool(keepRows);
+        return Object.assign({ mu: p.mu, seMu: p.seMu, tau2: p.tau2, Q: p.Q, df: p.df }, X.summarize(p, keepRows.map(r => r.se * r.se)));
+      }
+      function setExcluded(indices) {
+        if (!_lastDiag) return;
+        _excluded = new Set(indices.filter(i => Number.isInteger(i) && i >= 0 && i < _lastDiag.length));
+        updateExclusion();
+      }
+      window.__almInfluenceSetExcluded = setExcluded;
+
+      function updateExclusion() {
+        const msg = document.getElementById("excl-msg");
+        const sentence = document.getElementById("excl-sentence");
+        const full = _lastFull, rows = _lastStudies, diag = _lastDiag;
+        if (!full || !diag) return;
+        const ex = [..._excluded].sort((a, b) => a - b);
+        const keepRows = rows.filter((_, i) => !_excluded.has(i));
+        let kept = null, refused = false;
+        if (ex.length && keepRows.length < 3) refused = true;
+        else if (ex.length) kept = repool(keepRows);
+        _lastExclusion = { excluded: ex, full: { mu: full.mu, seMu: full.seMu, tau2: full.tau2, Q: full.Q, df: full.df, k: full.k, z: full.z, p: full.p, ciLo: full.ciLo, ciHi: full.ciHi, I2: full.I2, H2: full.H2, Qp: full.Qp }, kept, refused };
+        // Table rows and checkboxes
+        document.querySelectorAll("#body tr[data-i]").forEach(tr => {
+          const i = Number(tr.dataset.i), on = _excluded.has(i);
+          tr.classList.toggle("excluded", on);
+          const cb = tr.querySelector("input.excl"); if (cb) cb.checked = on;
+        });
+        // Linked highlighting in all four plots
+        document.querySelectorAll("#loo-plot g[data-i], #influence-plot g[data-i], #baujat-plot g[data-i], #radial-plot g[data-i]").forEach(g => {
+          const on = _excluded.has(Number(g.dataset.i));
+          g.setAttribute("opacity", on ? "0.22" : "1");
+          g.classList.toggle("is-excluded", on);
+        });
+        // Summary table
+        const showEx = ex.length > 0;
+        document.querySelectorAll("#model-summary .excl-col").forEach(el => { el.hidden = !showEx; });
+        const kHeader = document.querySelector("#model-summary thead th.excl-col");
+        if (kHeader) kHeader.textContent = showEx ? `Excluding ${ex.length} stud${ex.length === 1 ? "y" : "ies"}` : "After exclusion";
+        const lines = [
+          ["Studies (k)", full.k, kept && kept.k, x => String(x), true],
+          ["Pooled estimate", full.mu, kept && kept.mu, x => fmt(x, 4), true],
+          ["Standard error", full.seMu, kept && kept.seMu, x => fmt(x, 4), true],
+          ["95% CI lower", full.ciLo, kept && kept.ciLo, x => fmt(x, 4), true],
+          ["95% CI upper", full.ciHi, kept && kept.ciHi, x => fmt(x, 4), true],
+          ["z", full.z, kept && kept.z, x => fmt(x, 3), true],
+          ["p (two-sided)", full.p, kept && kept.p, fmtP, false],
+          ["τ² (REML)", full.tau2, kept && kept.tau2, fmtS, true],
+          ["I² (%)", full.I2, kept && kept.I2, x => fmt(x, 1), true],
+          ["H²", full.H2, kept && kept.H2, x => fmt(x, 3), true],
+          ["Q", full.Q, kept && kept.Q, x => fmt(x, 3), true],
+          ["df", full.df, kept && kept.df, x => String(x), true],
+          ["p(Q) heterogeneity", full.Qp, kept && kept.Qp, fmtP, false],
+        ];
+        document.getElementById("model-body").innerHTML = lines.map(([name, a, b, f, diff]) =>
+          `<tr><th scope="row">${name}</th><td class="num">${a === null ? "—" : f(a)}</td>` +
+          (showEx ? `<td class="num">${b === null || b === undefined ? "—" : f(b)}</td><td class="num">${diff && kept && a !== null && b !== null ? (b - a >= 0 ? "+" : "") + f(b - a) : ""}</td>` : `<td class="num excl-col" hidden></td><td class="num excl-col" hidden></td>`) +
+          `</tr>`).join("");
+        // Messages and the interpretation sentence (numbers rendered from the values above)
+        const flagged = diag.map((d, i) => d.influential ? i : -1).filter(i => i >= 0);
+        if (refused) {
+          msg.textContent = `Cannot re-pool: only ${keepRows.length} stud${keepRows.length === 1 ? "y" : "ies"} would remain (at least 3 are needed). Untick some exclusions.`;
+          sentence.textContent = "";
+        } else if (kept) {
+          const names = ex.map(i => diag[i].label);
+          const list = names.length <= 6 ? names.join(", ") : names.slice(0, 6).join(", ") + ` and ${names.length - 6} more`;
+          msg.textContent = `Re-pooled without ${ex.length} stud${ex.length === 1 ? "y" : "ies"}.`;
+          sentence.textContent = `Excluding ${ex.length} of ${full.k} studies (${list}) changes the pooled estimate from ${fmt(full.mu, 4)} (95% CI ${fmt(full.ciLo, 4)} to ${fmt(full.ciHi, 4)}) to ${fmt(kept.mu, 4)} (95% CI ${fmt(kept.ciLo, 4)} to ${fmt(kept.ciHi, 4)}); τ² changes from ${fmtS(full.tau2)} to ${fmtS(kept.tau2)} and I² from ${fmt(full.I2, 1)}% to ${fmt(kept.I2, 1)}%. This is a sensitivity analysis: it shows how much the result depends on these studies, not that they are wrong.`;
+        } else {
+          msg.textContent = "";
+          sentence.textContent = flagged.length
+            ? `${flagged.length} of ${full.k} studies ${flagged.length === 1 ? "meets" : "meet"} metafor's influence rule (${flagged.slice(0, 6).map(i => diag[i].label).join(", ")}${flagged.length > 6 ? ` and ${flagged.length - 6} more` : ""}). Use "Exclude all flagged" to see how the pooled estimate changes without them.`
+            : `None of the ${full.k} studies meets metafor's influence rule. Tick "Exclude" on any row to see how the pooled estimate changes without it.`;
+        }
+        const locked = pageLocked();
+        document.getElementById("btn-excl-flagged").disabled = locked || flagged.length === 0;
+        document.getElementById("btn-excl-clear").disabled = locked || ex.length === 0;
+        document.getElementById("btn-excl-apply").disabled = locked || !kept;
       }
 
       // Baujat + radial via the R-verified shared engine (matches metafor).
@@ -316,9 +529,10 @@
         const X = v => padL + v / (xMax * 1.08) * pw, Y = v => padT + ph - v / (yMax * 1.08) * ph;
         const s = [""];
         s.push(`<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + ph}" stroke="currentColor" opacity="0.5"/><line x1="${padL}" y1="${padT + ph}" x2="${padL + pw}" y2="${padT + ph}" stroke="currentColor" opacity="0.5"/>`);
+        s.push(`<title>Baujat plot: squared Pearson residual against influence on the pooled estimate, one point per study</title>`);
         bj.x.forEach((xi, i) => {
-          s.push(`<circle cx="${X(xi)}" cy="${Y(bj.y[i])}" r="4" fill="var(--accent)" fill-opacity="0.6" stroke="currentColor" stroke-width="0.6"/>`);
-          s.push(`<text x="${X(xi) + 5}" y="${Y(bj.y[i]) + 3}" font-size="9" fill="currentColor" opacity="0.75">${esc(rows[i].label || (i + 1))}</text>`);
+          s.push(`<g data-i="${i}"><title>${esc(rows[i].label || (i + 1))}</title><circle cx="${X(xi)}" cy="${Y(bj.y[i])}" r="4" fill="var(--accent)" fill-opacity="0.6" stroke="currentColor" stroke-width="0.6"/>`);
+          s.push(`<text x="${X(xi) + 5}" y="${Y(bj.y[i]) + 3}" font-size="9" fill="currentColor" opacity="0.75">${esc(rows[i].label || (i + 1))}</text></g>`);
         });
         s.push(`<text x="${padL + pw / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor">Squared Pearson residual (REML)</text>`);
         s.push(`<text x="14" y="${padT + ph / 2}" transform="rotate(-90 14 ${padT + ph / 2})" text-anchor="middle" font-size="11" fill="currentColor">Influence on pooled estimate</text>`);
@@ -334,7 +548,7 @@
         const xMax = Math.max(...rad.x) * 1.08;
         const zAbs = Math.max(...rad.z.map(Math.abs), rad.slope * xMax + 2, 2) * 1.05;
         const X = v => padL + v / xMax * pw, Y = v => padT + ph / 2 - v / zAbs * (ph / 2);
-        const s = [""];
+        const s = [`<title>Radial (Galbraith) plot: precision against standardised effect, one point per study</title>`];
         s.push(`<line x1="${padL}" y1="${Y(0)}" x2="${padL + pw}" y2="${Y(0)}" stroke="currentColor" opacity="0.4"/>`);
         // slope line + ±2 band
         s.push(`<line x1="${X(0)}" y1="${Y(0)}" x2="${X(xMax)}" y2="${Y(rad.slope * xMax)}" stroke="var(--warn)" stroke-width="1.5"/>`);
@@ -342,7 +556,7 @@
         s.push(`<line x1="${X(0)}" y1="${Y(-2)}" x2="${X(xMax)}" y2="${Y(rad.slope * xMax - 2)}" stroke="var(--warn)" stroke-dasharray="4 3" opacity="0.6"/>`);
         rad.x.forEach((xi, i) => {
           const out = Math.abs(rad.resid[i]) > 2;
-          s.push(`<circle cx="${X(xi)}" cy="${Y(rad.z[i])}" r="4" fill="${out ? 'var(--warn)' : 'var(--accent)'}" fill-opacity="0.6" stroke="currentColor" stroke-width="0.6"/>`);
+          s.push(`<g data-i="${i}"><title>${esc(rows[i].label || (i + 1))}</title><circle cx="${X(xi)}" cy="${Y(rad.z[i])}" r="4" fill="${out ? 'var(--warn)' : 'var(--accent)'}" fill-opacity="0.6" stroke="currentColor" stroke-width="0.6"/></g>`);
         });
         s.push(`<text x="${padL + pw / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor">Precision (1/SE)</text>`);
         s.push(`<text x="14" y="${padT + ph / 2}" transform="rotate(-90 14 ${padT + ph / 2})" text-anchor="middle" font-size="11" fill="currentColor">Standardised effect (effect/SE)</text>`);
@@ -360,9 +574,16 @@
         const ses = diag.map(d => d.loo_seMu);
         const los = diag.map((d, i) => mus[i] - Z975 * ses[i]);
         const his = diag.map((d, i) => mus[i] + Z975 * ses[i]);
-        const lo = Math.min(0, ...los, full.mu - Z975 * full.seMu), hi = Math.max(0, ...his, full.mu + Z975 * full.seMu);
-        const pad = (hi - lo) * 0.1 || 0.3;
+        let lo = Math.min(0, ...los, full.mu - Z975 * full.seMu), hi = Math.max(0, ...his, full.mu + Z975 * full.seMu);
+        let pad = (hi - lo) * 0.1 || 0.3;
+        // Axis controls: a user-set [min, max] replaces the automatic domain (points outside are clipped).
+        const ax = window.__almAxis && window.__almAxis.x;
+        if (ax && Number.isFinite(ax[0]) && Number.isFinite(ax[1]) && ax[0] < ax[1]) { lo = ax[0]; hi = ax[1]; pad = 0; }
         const X = v => padL + (v - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
+        __svgParts.push(`<title>Leave-one-out forest plot: pooled estimate and 95% CI after dropping each study</title>`);
+        // Path (not rect) so '#loo-plot rect' still means the study squares.
+        __svgParts.push(`<defs><clipPath id="loo-clip"><path d="M${padL} 0H${padL + plotW}V${H}H${padL}Z"/></clipPath></defs>`);
+        __svgParts.push(`<text x="${padL}" y="${H - 8}" font-size="10" fill="currentColor" opacity="0.7">${esc(fmt(lo - pad, 2))}</text><text x="${padL + plotW}" y="${H - 8}" text-anchor="end" font-size="10" fill="currentColor" opacity="0.7">${esc(fmt(hi + pad, 2))}</text>`);
 
         // Full pool reference
         __svgParts.push(`<line x1="${X(full.mu)}" y1="20" x2="${X(full.mu)}" y2="${H - 30}" stroke="var(--warn)" stroke-dasharray="4 2" opacity="0.6"/>`);
@@ -370,10 +591,10 @@
 
         diag.forEach((d, i) => {
           const y = 35 + i * 26;
-          __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">Drop ${esc(d.label)}</text>`);
+          __svgParts.push(`<g data-i="${i}"><text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">Drop ${esc(d.label)}</text>`);
           const l = d.loo_mu - Z975 * d.loo_seMu, h = d.loo_mu + Z975 * d.loo_seMu;
-          __svgParts.push(`<line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.3" opacity="0.55"/>`);
-          __svgParts.push(`<rect x="${X(d.loo_mu) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/>`);
+          __svgParts.push(`<g clip-path="url(#loo-clip)"><line x1="${X(l)}" y1="${y}" x2="${X(h)}" y2="${y}" stroke="currentColor" stroke-width="1.3" opacity="0.55"/>`);
+          __svgParts.push(`<rect x="${X(d.loo_mu) - 3.5}" y="${y - 3.5}" width="7" height="7" fill="var(--accent)"/></g></g>`);
         });
         svg.innerHTML = __svgParts.join("");
       }
@@ -394,11 +615,15 @@
         // Thresholds
         __svgParts.push(`<line x1="${X(3 / diag.length)}" y1="${padT}" x2="${X(3 / diag.length)}" y2="${padT + plotH}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
         __svgParts.push(`<line x1="${padL}" y1="${Y(0.4549364231195727)}" x2="${padL + plotW}" y2="${Y(0.4549364231195727)}" stroke="var(--flag)" stroke-dasharray="3 3" opacity="0.5"/>`);
-        for (const d of diag) {
-          const flag = d.influential;
-          __svgParts.push(`<circle cx="${X(d.hat)}" cy="${Y(d.cooksD)}" r="5" fill="${flag ? 'var(--flag)' : 'var(--accent)'}" opacity="0.85"/>`);
-          __svgParts.push(`<text x="${X(d.hat) + 7}" y="${Y(d.cooksD) + 4}" font-size="10" fill="currentColor">${esc(d.label)}</text>`);
-        }
+        __svgParts.push(`<title>Influence plot: Cook's distance against hat value; influential studies drawn as red diamonds</title>`);
+        diag.forEach((d, i) => {
+          const flag = d.influential, cx = X(d.hat), cy = Y(d.cooksD);
+          // Shape as well as colour marks influential studies (WCAG 1.4.1).
+          __svgParts.push(`<g data-i="${i}"><title>${esc(d.label)}${flag ? ' (influential)' : ''}</title>` + (flag
+            ? `<path d="M${cx} ${cy - 6}L${cx + 6} ${cy}L${cx} ${cy + 6}L${cx - 6} ${cy}Z" fill="var(--flag)" opacity="0.85"/>`
+            : `<circle cx="${cx}" cy="${cy}" r="5" fill="var(--accent)" opacity="0.85"/>`));
+          __svgParts.push(`<text x="${cx + 7}" y="${cy + 4}" font-size="10" fill="currentColor">${esc(d.label)}${flag ? ' *' : ''}</text></g>`);
+        });
         __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">Hat value</text>`);
         __svgParts.push(`<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">Cook's D</text>`);
         svg.innerHTML = __svgParts.join("");
@@ -418,6 +643,73 @@
       };
 
       document.getElementById("btn-run").addEventListener("click", run);
+
+      // ---- E1 controls ----
+      document.getElementById("body").addEventListener("change", e => {
+        const cb = e.target.closest("input.excl");
+        if (!cb) return;
+        const i = Number(cb.dataset.i);
+        if (cb.checked) _excluded.add(i); else _excluded.delete(i);
+        updateExclusion();
+      });
+      document.getElementById("btn-excl-flagged").addEventListener("click", () => {
+        if (_lastDiag) setExcluded(_lastDiag.map((d, i) => d.influential ? i : -1).filter(i => i >= 0));
+      });
+      document.getElementById("btn-excl-clear").addEventListener("click", () => setExcluded([]));
+      document.getElementById("btn-excl-apply").addEventListener("click", () => {
+        if (!_lastExclusion || !_lastExclusion.kept) return;
+        if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) window.alm.resetUndo.snapshot();
+        const ta = document.getElementById("src");
+        ta.value = _lastStudies.filter((_, i) => !_excluded.has(i)).map(r => `${r.te}, ${r.se}, ${r.label}`).join("\n");
+        ta.dispatchEvent(new Event("input", { bubbles: true }));
+        run();
+      });
+      document.getElementById("btn-more-cols").addEventListener("click", function () {
+        const t = document.getElementById("diag-table"), on = !t.classList.contains("show-more");
+        t.classList.toggle("show-more", on);
+        this.setAttribute("aria-pressed", String(on));
+        this.textContent = on ? "Hide leave-one-out heterogeneity and DFBETAS columns" : "Show leave-one-out heterogeneity and DFBETAS columns";
+      });
+      function download(text, name, type) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([text], { type }));
+        a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }
+      window.__almInfluenceRScript = function () {
+        const ex = _lastExclusion || { excluded: [], kept: null };
+        return window.AlmInfluenceR.build({ rows: _lastStudies, full: _lastFull, diag: _lastDiag, excluded: ex.kept ? ex.excluded : [], kept: ex.kept,
+          version: (window.AlmBuildInfo && window.AlmBuildInfo.version) || "" });
+      };
+      document.getElementById("btn-rscript").addEventListener("click", () => {
+        try { download(window.__almInfluenceRScript(), "influence-analysis.R", "text/plain"); }
+        catch (e) { document.getElementById("excl-msg").textContent = "R script not created: " + e.message; }
+      });
+      // Per-study table: one row per study, every displayed and validated column.
+      const STUDY_COLS = [["study", "label"], ["effect", "te"], ["se", "se"], ["weight_percent", "weight"], ["rstudent", "resid"], ["hat", "hat"],
+        ["cooks_d", "cooksD"], ["dffits", "dffits"], ["dfbetas", "dfbetas"], ["cov_ratio", "covRatio"], ["loo_estimate", "loo_mu"], ["loo_se", "loo_seMu"],
+        ["loo_ci_lb", "loo_ciLo"], ["loo_ci_ub", "loo_ciHi"], ["loo_z", "loo_z"], ["loo_p", "loo_p"], ["loo_tau2", "loo_tau2"], ["loo_I2", "loo_I2"],
+        ["loo_H2", "loo_H2"], ["loo_Q", "loo_Q"], ["loo_Qp", "loo_Qp"], ["influential", "influential"]];
+      window.__almInfluenceStudyRows = function () {
+        if (!_lastDiag) return [];
+        return _lastDiag.map((d, i) => Object.assign(Object.fromEntries(STUDY_COLS.map(([k, f]) => [k, d[f]])), { excluded: _excluded.has(i) }));
+      };
+      function csvCell(v) {
+        let s = v === null || v === undefined ? "" : String(v);
+        if (/^[=+@\t\r]/.test(s)) s = "'" + s; // spreadsheet formula injection guard
+        return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }
+      window.__almInfluenceStudyCsv = function () {
+        const rows = window.__almInfluenceStudyRows();
+        if (!rows.length) throw new Error("Run the analysis first.");
+        const cols = Object.keys(rows[0]);
+        return [cols.join(","), ...rows.map(r => cols.map(c => csvCell(r[c])).join(","))].join("\r\n") + "\r\n";
+      };
+      document.getElementById("btn-study-csv").addEventListener("click", () => {
+        try { download(window.__almInfluenceStudyCsv(), "influence-studies.csv", "text/csv"); }
+        catch (e) { document.getElementById("excl-msg").textContent = "Table not exported: " + e.message; }
+      });
+      window.__almInfluenceRedrawLOO = function () { if (_lastDiag && _lastFull) { drawLOO(_lastDiag, _lastFull); updateExclusion(); } };
       document.getElementById("btn-reset").addEventListener("click", function () {
         if (confirm("Reset all studies?")) {
           const ta = document.getElementById('src');
@@ -475,18 +767,32 @@
         k: diag ? diag.length : 0,
       };
       if (full) {
+        out.model        = 'REML random-effects, intercept only (metafor rma, test="z")';
         out.pooled_mu    = full.mu;
         out.pooled_seMu  = full.seMu;
+        out.ci_lb        = full.ciLo;
+        out.ci_ub        = full.ciHi;
+        out.z            = full.z;
+        out.p            = full.p;
         out.tau2         = full.tau2;
+        out.I2           = full.I2;
+        out.H2           = full.H2;
         out.Q            = full.Q;
         out.Q_df         = full.df;
+        out.Q_p          = full.Qp;
       }
       if (diag && diag.length > 0) {
-        // Attach per-study LOO estimates as a summary array
+        // One record per study with every column of the table (same objects as the per-study CSV).
+        out.studies = window.__almInfluenceStudyRows();
         out.loo_estimates = diag.map(function (d) {
           return { study: d.label, loo_mu: d.loo_mu, loo_seMu: d.loo_seMu,
                    cooksD: d.cooksD, hat: d.hat, resid: d.resid };
         });
+        var ex = window._almLastExclusion ? window._almLastExclusion() : null;
+        if (ex && ex.excluded.length) {
+          out.exclusion = { excluded_studies: ex.excluded.map(function (i) { return diag[i].label; }),
+                            refused: ex.refused, refit: ex.kept };
+        }
       }
       return out;
     };
@@ -508,16 +814,20 @@
 
     window.alm.axisControls({
       target: '#alm-axis-mount',
-      axes: [{ key: 'x', label: 'LOO X axis', range: [null, null], log: false }],
+      axes: [{ key: 'x', label: 'Leave-one-out forest x', range: [null, null], log: false }],
       onChange: function (state) {
+        // Drives the leave-one-out forest x-axis: both min and max set (min < max) replace the automatic
+        // domain; clearing either restores it. Log scale is not offered (effects are already on the analysis scale).
         window.__almAxis = state;
-        // NOTE: axis-controls renders min/max inputs but does NOT yet drive
-        // the LOO plot axis domain. drawLOO() auto-computes its domain
-        // from CI extents; wiring __almAxis requires threading lo/hi
-        // overrides through run() — deferred to a future cycle.
-        // The controls are functional UI but domain override is no-op.
+        if (window.__almInfluenceRedrawLOO) window.__almInfluenceRedrawLOO();
       },
     });
+    (function () {
+      var logBox = document.querySelector('#alm-axis-mount input[data-edge="log"]');
+      if (logBox) { logBox.disabled = true; logBox.title = 'Not available: effects are already on the analysis (e.g. log) scale'; }
+      var csvTa = document.querySelector('#alm-csv-mount textarea');
+      if (csvTa && !csvTa.getAttribute('aria-label')) csvTa.setAttribute('aria-label', 'Paste CSV with columns study, yi, vi');
+    })();
 
     window.alm.plotExport({
       target: "#alm-plot-mount", basename: "influence",
@@ -612,6 +922,14 @@
         container: "#alm-hero-mount",
         textarea: "#src",
         adapter: "forest",
+        // The shared forest adapter writes "label, yi, se" (SE to 4 dp); this page reads
+        // "effect, SE, label". Rewrite from the dataset itself (full-precision sqrt(vi)) and run.
+        onAfterLoad: function (ds) {
+          var ta = document.getElementById("src");
+          ta.value = ds.effect_se.map(function (s) { return s.yi + ", " + Math.sqrt(s.vi) + ", " + s.label; }).join(String.fromCharCode(10));
+          ta.dispatchEvent(new Event("input", { bubbles: true }));
+          document.getElementById("btn-run").click();
+        },
       });
     }
   });

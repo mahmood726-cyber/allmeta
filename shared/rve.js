@@ -77,27 +77,38 @@
   function trace(A) { var s = 0; for (var i = 0; i < A.length; i++) s += A[i][i]; return s; }
 
   // Gauss-Jordan inverse; small p ≤ ~20 is fine for meta-regression designs.
+  // Partial-pivot LU, followed by triangular solves (R solve.default/dgesv order).
   function invert(A) {
-    var n = A.length;
-    var M = new Array(n);
-    for (var i = 0; i < n; i++) M[i] = A[i].slice().concat(identity(n)[i]);
-    for (var c = 0; c < n; c++) {
-      var pivRow = c;
-      for (var r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[pivRow][c])) pivRow = r;
-      if (Math.abs(M[pivRow][c]) < 1e-12) throw new Error("RVE: singular X'WX");
-      if (pivRow !== c) { var tmp = M[c]; M[c] = M[pivRow]; M[pivRow] = tmp; }
-      var piv = M[c][c];
-      for (var j = 0; j < 2 * n; j++) M[c][j] /= piv;
-      for (var r2 = 0; r2 < n; r2++) {
-        if (r2 === c) continue;
-        var f = M[r2][c];
-        if (f === 0) continue;
-        for (var j2 = 0; j2 < 2 * n; j2++) M[r2][j2] -= f * M[c][j2];
+    var n=A.length, LU=A.map(r=>r.slice()), piv=[];
+    for(var k=0;k<n;k++) {
+      var pivot=k;
+      for(var i=k+1;i<n;i++) if(Math.abs(LU[i][k])>Math.abs(LU[pivot][k])) pivot=i;
+      if(LU[pivot][k]===0 || !Number.isFinite(LU[pivot][k])) throw new Error("RVE: singular X'WX");
+      piv.push(pivot);
+      if(pivot!==k) {var tmp=LU[k];LU[k]=LU[pivot];LU[pivot]=tmp;}
+      for(var i=k+1;i<n;i++) LU[i][k]*=(1/LU[k][k]);
+      for(var j=k+1;j<n;j++) for(var i=k+1;i<n;i++) LU[i][j]-=LU[i][k]*LU[k][j];
+    }
+    var out=identity(n);
+    for(var k=0;k<n;k++) if(piv[k]!==k) {var tmp=out[k];out[k]=out[piv[k]];out[piv[k]]=tmp;}
+    for(var col=0;col<n;col++) {
+      for(var k=0;k<n;k++) for(var i=k+1;i<n;i++) out[i][col]-=out[k][col]*LU[i][k];
+      for(var k=n-1;k>=0;k--) {
+        out[k][col]/=LU[k][k];
+        for(var i=0;i<k;i++) out[i][col]-=out[k][col]*LU[i][k];
       }
     }
-    var inv = zeros(n, n);
-    for (var ii = 0; ii < n; ii++) for (var jj = 0; jj < n; jj++) inv[ii][jj] = M[ii][n + jj];
-    return inv;
+    // solve.default uses machine epsilon as its computational-singularity tolerance.
+    // The explicit inverse is already available, so use its one-norm condition bound.
+    var normA=0,normInv=0;
+    for(var j=0;j<n;j++) {
+      var sa=0,si=0;
+      for(var i=0;i<n;i++){sa+=Math.abs(A[i][j]);si+=Math.abs(out[i][j]);}
+      normA=Math.max(normA,sa);normInv=Math.max(normInv,si);
+    }
+    var reciprocalCondition=(1/normA)/normInv;
+    if(!(reciprocalCondition>=Number.EPSILON)) throw new Error("RVE: computationally singular X'WX");
+    return out;
   }
 
   // Symmetric eigendecomposition via cyclic Jacobi rotations (Numerical Recipes
@@ -168,10 +179,15 @@
   function fitCORR(rows, opts) {
     opts = opts || {};
     var rho = (typeof opts.rho === "number" && opts.rho >= 0 && opts.rho <= 1) ? opts.rho : 0.8;
+    if (opts.rho !== undefined && (!Number.isFinite(opts.rho) || opts.rho < 0 || opts.rho > 1)) throw new Error("RVE: rho must be in [0, 1]");
     var method = (opts.method === "CR1") ? "CR1" : "CR2";
     var k = rows.length;
     if (!k) throw new Error("RVE: no rows");
     var p = rows[0].X.length; // includes intercept (robumeta's p+1)
+
+    rows.forEach(function(r) {
+      if (!r.X || r.X.length !== p || !r.X.every(Number.isFinite) || !Number.isFinite(r.yi) || !Number.isFinite(r.vi) || r.vi <= 0 || r.cluster == null || String(r.cluster).trim() === "") throw new Error("RVE: invalid row or predictor count");
+    });
 
     // Group by cluster (preserves first-seen order).
     var clusterOrder = [];
@@ -183,8 +199,9 @@
     }
     var m = clusterOrder.length; // N in robumeta (number of studies/clusters)
 
+
     // Per-cluster size k_j and mean sampling variance v̄_j.
-    var clKj = {}, clVbar = {};
+    var clKj = Object.create(null), clVbar = Object.create(null);
     for (var ci = 0; ci < m; ci++) {
       var key = clusterOrder[ci], idx = byCluster[key], sv = 0;
       for (var a = 0; a < idx.length; a++) sv += rows[idx[a]].vi;
@@ -196,10 +213,15 @@
 
     // Weighted IV fit for a per-row weight vector. Returns {M=(X'WX)^{-1}, beta}.
     function fitW(weights) {
-      var XtW = transpose(X).map(function (col) { return col.map(function (v2, i2) { return v2 * weights[i2]; }); });
-      var XtWX = matMul(XtW, X);
+      var XtWX = zeros(p,p), Xty = new Array(p).fill(0);
+      clusterOrder.forEach(function(key) {
+        var idx=byCluster[key], Xj=idx.map(function(i) { return X[i]; });
+        var XtW=transpose(Xj).map(function(col) { return col.map(function(v,j) {return v*weights[idx[j]];}); });
+        var lhs=matMul(XtW,Xj), rhs=matVec(XtW,idx.map(function(i) {return y[i];}));
+        for(var i=0;i<p;i++) { Xty[i]+=rhs[i]; for(var j=0;j<p;j++) XtWX[i][j]+=lhs[i][j]; }
+      });
       var Minv = invert(XtWX);
-      return { M: Minv, beta: matVec(Minv, matVec(XtW, y)) };
+      return { M: Minv, beta: matVec(Minv, Xty) };
     }
     function residuals(beta) {
       var e = new Array(k);
@@ -234,12 +256,17 @@
       var sumXWJWX = zeros(p, p), MWKXX = zeros(p, p), MwkXJ = zeros(p, p);
       for (var cj = 0; cj < m; cj++) {
         var keyj = clusterOrder[cj], idxj = byCluster[keyj], wj0 = wFE[idxj[0]], kj0 = idxj.length;
-        var cs = new Array(p); for (var jj = 0; jj < p; jj++) { var s2 = 0; for (var aa = 0; aa < idxj.length; aa++) s2 += X[idxj[aa]][jj]; cs[jj] = s2; }
-        for (var rr = 0; rr < p; rr++) for (var c2 = 0; c2 < p; c2++) {
-          var xtx = 0; for (var ab = 0; ab < idxj.length; ab++) xtx += X[idxj[ab]][rr] * X[idxj[ab]][c2];
-          sumXWJWX[rr][c2] += wj0 * wj0 * cs[rr] * cs[c2];
-          MWKXX[rr][c2] += (wj0 / kj0) * xtx;
-          MwkXJ[rr][c2] += (wj0 / kj0) * (cs[rr] * cs[c2] - xtx);
+        var Xj=idxj.map(function(i) {return X[i];}), Xt=transpose(Xj);
+        var XtW=Xt.map(function(row) {return row.map(function(v) {return v*wj0;});});
+        var XtWJ=XtW.map(function(row) {var sum=0;for(var a=0;a<row.length;a++)sum+=row[a];return new Array(kj0).fill(sum);});
+        var XWJWX=matMul(XtWJ.map(function(row) {return row.map(function(v) {return v*wj0;});}),Xj);
+        var WKXX=matMul(Xt.map(function(row) {return row.map(function(v) {return v*(wj0/kj0);});}),Xj);
+        var XtJ=Xt.map(function(row) {var sum=0;for(var a=0;a<row.length;a++)sum+=row[a];return new Array(kj0).fill(sum);});
+        var XJX=matMul(XtJ,Xj), XX=matMul(Xt,Xj);
+        for(var rr=0;rr<p;rr++)for(var c2=0;c2<p;c2++) {
+          sumXWJWX[rr][c2]+=XWJWX[rr][c2];
+          MWKXX[rr][c2]+=WKXX[rr][c2];
+          MwkXJ[rr][c2]+=(wj0/kj0)*(XJX[rr][c2]-XX[rr][c2]);
         }
       }
       var denom = sumW - trace(matMul(f0.M, sumXWJWX));
@@ -249,6 +276,8 @@
       var term2 = termB / denom;
       tau2 = Math.max(0, term1 + rho * term2);
     }
+
+    if (m <= p) throw new Error("RVE: m<=p; insufficient clusters for inference");
 
     // ---- Re-weighted fit with the RVE weights ----------------------------
     var weights = clusterWeights(tau2);
@@ -288,12 +317,13 @@
         }
         var Aj = invSqrtSym(ImHii);
         Alist.push(Aj); idxList.push(idxC);
-        // g_j = w_j X_jᵀ A_j e_j
-        var Ae = new Array(kj);
-        for (var a5 = 0; a5 < kj; a5++) { var sA = 0; for (var b5 = 0; b5 < kj; b5++) sA += Aj[a5][b5] * resid[idxC[b5]]; Ae[a5] = sA; }
-        var g = new Array(p);
-        for (var j5 = 0; j5 < p; j5++) { var sg = 0; for (var a6 = 0; a6 < kj; a6++) sg += X[idxC[a6]][j5] * Ae[a6]; g[j5] = wj * sg; }
-        for (var i6 = 0; i6 < p; i6++) for (var j6 = 0; j6 < p; j6++) meat[i6][j6] += g[i6] * g[j6];
+        var Xj = idxC.map(function(i) { return X[i]; });
+        var XtWj = transpose(Xj).map(function(row) { return row.map(function(v) { return v * wj; }); });
+        var Sj = idxC.map(function(i) { return idxC.map(function(j) { return resid[i]*resid[j]; }); });
+        var block = matMul(matMul(matMul(XtWj, Aj), Sj), Aj);
+        block = block.map(function(row) { return row.map(function(v) { return v*wj; }); });
+        block = matMul(block, Xj);
+        for (var i6=0;i6<p;i6++) for(var j6=0;j6<p;j6++) meat[i6][j6]+=block[i6][j6];
       }
       cov = matMul(matMul(Q, meat), Q);
 
@@ -365,19 +395,16 @@
   function summary(fit, opts) {
     opts = opts || {};
     var qt = (global.AlmStats && global.AlmStats.qt) ? global.AlmStats.qt : null;
+    if (!qt || !global.AlmStats.pt) throw new Error("RVE: Student-t inference dependency unavailable");
     var out = [];
     for (var j = 0; j < fit.p; j++) {
       var dfj = Array.isArray(fit.df) ? fit.df[j] : fit.df;
-      var crit = qt ? qt(0.975, dfj) : 1.96;
+      var crit = qt(0.975, dfj);
       var est = fit.beta[j];
       var sej = fit.se_robust[j];
-      var tval = sej > 0 ? est / sej : 0;
+      var tval = est / sej;
       var pval;
-      if (global.AlmStats && global.AlmStats.pt) {
-        pval = 2 * (1 - global.AlmStats.pt(Math.abs(tval), dfj));
-      } else {
-        pval = 2 * (1 - 0.5 * (1 + _erfApprox(Math.abs(tval) / Math.SQRT2)));
-      }
+      pval = 2 * global.AlmStats.pt(-Math.abs(tval), dfj);
       out.push({ coef_index: j, estimate: est, se: sej, t: tval, df: dfj, ci_lo: est - crit * sej, ci_hi: est + crit * sej, p: pval });
     }
     return out;

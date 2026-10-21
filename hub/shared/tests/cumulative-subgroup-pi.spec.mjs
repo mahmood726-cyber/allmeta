@@ -11,7 +11,7 @@ const BENIGN = /frame-ancestors|ERR_CONNECTION/;
 test('cumulative-subgroup overall PI present, brackets μ, wider than CI', async ({ page }) => {
   const errs = [];
   page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errs.push(m.text()); });
-  await page.goto('http://localhost:8088/cumulative-subgroup/index.html', { waitUntil: 'load' });
+  await page.goto('/cumulative-subgroup/index.html', { waitUntil: 'load' });
   await page.waitForFunction(() => typeof window._almLastCumSub === 'function', { timeout: 10000 });
   // Switch to the subgroup view (which reports the overall pool + PI) and re-render.
   await page.selectOption('#f-view', 'subgroup');

@@ -1,10 +1,11 @@
 """Tests for shared/rve.js (Hedges-Tipton-Johnson 2010 robust variance).
 
-Validates the CORR working model + CR1 small-sample correction on a
-canonical balanced and unbalanced cluster design. Reference values
-computed by hand from the closed-form OLS-with-cluster-robust-SE
-expression (which matches robumeta::robu for the CORR model when ρ is
-treated as known).
+Checks the CORR working model with the default CR2 small-sample correction
+and Satterthwaite df (robumeta::robu(modelweights="CORR", small=TRUE)):
+cluster grouping, the refusal of designs with no more clusters than
+coefficients, Student-t intervals, tau^2 estimation and the dominance of
+clusters (not effects) in the robust SE. Full R parity is asserted in
+hub/shared/tests/rve-meta-cr2-parity.spec.mjs and the paper-15 corpus.
 """
 from __future__ import annotations
 
@@ -47,7 +48,9 @@ def _run_node(script: str) -> object:
 # --- Cluster-grouping basics --------------------------------------------------
 
 
-def test_fitCORR_recognizes_balanced_clusters():
+def test_fitCORR_refuses_design_with_no_more_clusters_than_coefficients():
+    # Requirement: RVE needs m > p. Two clusters cannot support an intercept plus
+    # one predictor (m = 2, p = 2), so the fit must be refused, not reported.
     out = _run_node(f"""
         const rows = [
           {{ cluster: "A", yi: 0.1, vi: 0.04, X: [1, 1] }},
@@ -57,19 +60,41 @@ def test_fitCORR_recognizes_balanced_clusters():
           {{ cluster: "B", yi: 0.5, vi: 0.04, X: [1, 0] }},
           {{ cluster: "B", yi: 0.6, vi: 0.04, X: [1, 0] }},
         ];
+        let refused = null;
+        try {{ M.fitCORR(rows, {{ rho: 0.8, tau2: 0 }}); }} catch (e) {{ refused = e.message; }}
+        console.log(JSON.stringify({{ refused }}));
+    """)
+    assert out["refused"] is not None, "m <= p design must be refused"
+    assert "m<=p" in out["refused"]
+
+
+def test_fitCORR_recognizes_balanced_clusters():
+    # Three balanced clusters (m = 3 > p = 2): grouping and the closed-form
+    # weighted means are recovered. With tau^2 = 0 and equal vi, the weights are
+    # equal within and across clusters, so beta = OLS on the rows.
+    out = _run_node(f"""
+        const rows = [
+          {{ cluster: "A", yi: 0.1, vi: 0.04, X: [1, 1] }},
+          {{ cluster: "A", yi: 0.2, vi: 0.04, X: [1, 1] }},
+          {{ cluster: "B", yi: 0.4, vi: 0.04, X: [1, 0] }},
+          {{ cluster: "B", yi: 0.5, vi: 0.04, X: [1, 0] }},
+          {{ cluster: "C", yi: 0.6, vi: 0.04, X: [1, 0] }},
+          {{ cluster: "C", yi: 0.7, vi: 0.04, X: [1, 0] }},
+        ];
         const fit = M.fitCORR(rows, {{ rho: 0.8, tau2: 0 }});
         console.log(JSON.stringify({{
-          m: fit.m_clusters, k: fit.k_total, p: fit.p,
+          m: fit.m_clusters, k: fit.k_total, p: fit.p, method: fit.method,
           beta: fit.beta, se: fit.se_robust,
         }}));
     """)
-    assert out["m"] == 2
+    assert out["m"] == 3
     assert out["k"] == 6
     assert out["p"] == 2
-    # With τ²=0 and balanced clusters at vi=0.04, β̂[0] (intercept for cluster B)
-    # = mean of B = 0.5. β̂[1] (predictor) = mean of A − mean of B = 0.2 - 0.5 = -0.3.
-    assert abs(out["beta"][0] - 0.5) < 1e-6
-    assert abs(out["beta"][1] - (-0.3)) < 1e-6
+    assert out["method"] == "CR2"
+    # beta[0] = mean of B and C rows = 0.55; beta[1] = mean(A) - 0.55 = 0.15 - 0.55 = -0.4.
+    assert abs(out["beta"][0] - 0.55) < 1e-9
+    assert abs(out["beta"][1] - (-0.4)) < 1e-9
+    assert all(s > 0 for s in out["se"])
 
 
 def test_fitCORR_unbalanced_clusters_returns_finite_robust_se():
@@ -149,6 +174,6 @@ def test_fitCORR_clusters_dominate_se_not_k():
         const fitB = M.fitCORR(b, {{ tau2: 0.01 }});
         console.log(JSON.stringify({{ seA: fitA.se_robust[0], seB: fitB.se_robust[0], betaA: fitA.beta[0], betaB: fitB.beta[0] }}));
     """)
-    # β̂ is the same; SE within ~30% (CR1 correction depends slightly on k/(k-p))
+    # beta is the same; SE within ~30% (the CR2 adjustment depends on the cluster leverages)
     assert abs(out["betaA"] - out["betaB"]) < 1e-6
     assert 0.7 < out["seB"] / out["seA"] < 1.3

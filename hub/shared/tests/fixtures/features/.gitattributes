@@ -1,0 +1,2 @@
+# Byte-exact fixtures: the exported R scripts are compared byte-for-byte with the page export (LF).
+* -text

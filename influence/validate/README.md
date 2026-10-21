@@ -18,9 +18,9 @@ The companion `influence-reproducible` archive includes `validate.R`. From its r
 Rscript validate.R
 ```
 
-It verifies input hashes before computing, refits every configuration using actual metafor calls, prints the per-quantity table and `164802/164802 checks pass`, writes `outputs/validate_R_table.csv`, and exits nonzero on failure. Browser row-count and plot-presence checks replay the archived app evidence; they are explicitly labelled. See the archive README for accelerated-BLAS provenance and exact-fit cache parity evidence. The archive is prepared locally; no archive publication URL or DOI is claimed.
+It verifies input hashes before computing, refits every configuration using actual metafor calls, prints the per-quantity table and `164802/164802 checks pass`, writes `outputs/validate_R_table.csv`, and exits nonzero on failure. Browser row-count and plot-presence checks replay the archived app evidence; they are explicitly labelled. See the archive README for accelerated-BLAS provenance and exact-fit cache parity evidence. The v1.0.0 archive is published at https://doi.org/10.5281/zenodo.23415788 (it validates the c6b8912/fd45b9f engine; the exclusion, LOO-heterogeneity and R-script features added later are validated by the harness prepared for archive v1.1.0, not by v1.0.0).
 
-Scope: intercept-only REML, no estimator selector or HKSJ; no comparisons of unexposed full-model p/I2, LOO p/I2/Q, tau2.del/QE.del, or GOSH (a navigation link). Some inputs deliberately ignore dependence to test arithmetic, not clinical conclusions.
+Scope of the in-app replay (164,802 checks): intercept-only REML, no estimator selector or HKSJ. Full-model p/I2, LOO p/I2/Q, tau2.del/QE.del, DFBETAS and exclusion re-fits are displayed from v2 and validated by the harness prepared for archive v1.1.0, not by this replay. GOSH is a navigation link only. Some inputs deliberately ignore dependence to test arithmetic, not clinical conclusions.
 
 | Item | Static or dynamic | Evidence |
 |---|---|---|

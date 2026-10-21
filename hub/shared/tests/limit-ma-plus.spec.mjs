@@ -17,7 +17,7 @@ for(const mode of ['http','file'])test('limit-ma-plus clean reference style smok
   return AlmLimitPlusContract.geometry(r,c,limit);
  });expect(failures).toEqual([]);
 });
-test('limit-ma-plus all configurations and displayed quantities versus pinned R',async({page})=>{
+test('limit-ma-plus all configurations and displayed quantities versus pinned R',async({page},testInfo)=>{
  test.setTimeout(240000);await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
  const before=await page.evaluate(()=>__almLimitValidationSnapshot());
  const r=await page.evaluate(()=>AlmLimitPlusValidation.runCorpus());
@@ -26,7 +26,9 @@ test('limit-ma-plus all configurations and displayed quantities versus pinned R'
  await expect(page.locator('#alm-plus-validate')).toContainText(`Axis labels: ${checked} checked; ${r.axisCoverage.length-checked} not checked.`);
  for(const a of r.axisCoverage)if(a.checked){expect(a.coverage).toBeGreaterThanOrEqual(.2);expect(a.residual).toBeLessThanOrEqual(1e-7);}else expect(a.message).toMatch(/^axis labels: not checked \(.*\)$/);
  writeFileSync(new URL('../../../limit-ma/validate/plus/evidence-replay.json',import.meta.url),JSON.stringify(r,null,2)+'\n');
- console.log('AXIS COVERAGE',JSON.stringify(r.axisCoverage));
+ // The full per-axis JSON is ~94 KB on one line; in the CI log it made the run look stuck at this test. Attach it instead.
+ await testInfo.attach('axis-coverage.json',{body:JSON.stringify(r.axisCoverage),contentType:'application/json'});
+ console.log('AXIS COVERAGE',checked+'/'+r.axisCoverage.length,'checked (full JSON attached as axis-coverage.json)');
  console.log('LIMIT PLUS',r.passed+'/'+r.checks,'failed',r.failed.length);
  expect(await page.evaluate(()=>__almLimitValidationSnapshot())).toEqual(before);
  expect(r.failed).toEqual([]);

@@ -1,0 +1,17 @@
+{
+  "original": {
+    "checks": 528,
+    "passed": 528,
+    "failed": []
+  },
+  "extras": {
+    "checks": 10749,
+    "passed": 10749,
+    "failed": [],
+    "summaryLines": [
+      "65 configurations: 44 from metadat and 21 few-cluster regime designs. Numerical values, displayed cells, JSON exports, two profile plots and eight refusals. CR2 references: clubSandwich 0.7.0; profiles: metafor 5.2-1 with its upper search bound widened until each limit is interior.",
+      "Iterative tolerance 1e-6 relative to max(1,|R|); p-values 1e-9 absolute. Counts, labels and refusals exact. Plot geometry: 0.05 CSS px versus a clean same-browser render; painted styles exact."
+    ]
+  },
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.7727.15 Safari/537.36"
+}

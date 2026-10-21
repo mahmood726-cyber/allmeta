@@ -1,0 +1,5 @@
+validate/corpus/plus-reference.json text eol=lf
+validate/plus-pins.js text eol=lf
+validate/MANIFEST-plus.json text eol=lf
+validate/corpus/plus-raw-scale.json text eol=lf
+validate/MANIFEST-plus-raw.json text eol=lf
