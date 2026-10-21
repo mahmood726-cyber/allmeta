@@ -1,6 +1,6 @@
 /* Component NMA feature adapter. The app remains the sole analysis engine.
- * Text reads estimates/SEs from _almLastCnma and the displayed CI endpoints
- * (the app does not expose unrounded endpoints). No prediction interval exists.
+ * Text reads estimates/SEs from _almLastCnma and derives their normal CI endpoints;
+ * the displayed endpoints and independent R limits audit them. No prediction interval exists.
  * R objects: dc, an additive discomb/netcomb fit, used by forest.netcomb.
  */
 (function (global) {
@@ -8,9 +8,35 @@
   var APP = 'component-nma';
   function input() { return document.getElementById('src'); }
   function last() { return global._almLastCnma && global._almLastCnma(); }
+  var fittedResult = last(), fittedSrc = typeof document !== 'undefined' && input() ? input().value : null;
+  function rememberFit() { fittedResult = last(); fittedSrc = input().value; }
+  // Observe the app's existing fit entry points; never run the engine from a reader.
+  if (typeof document !== 'undefined' && document.getElementById('btn-run')) {
+    document.getElementById('btn-run').addEventListener('click', rememberFit);
+  }
+  if (typeof global.__almCnmaLoad === 'function') {
+    var engineLoad = global.__almCnmaLoad;
+    global.__almCnmaLoad = function () {
+      var result = engineLoad.apply(this, arguments);
+      rememberFit();
+      return result;
+    };
+  }
+  function requireFresh() {
+    if (input().value !== fittedSrc || last() !== fittedResult) throw new Error('Results are out of date; press Fit first.');
+  }
+  function entryCurrent() { return (global.AlmFeaturesState || {}).entrySrc === input().value; }
+  function checkComponents(rows) {
+    if (rows.some(function (r) { return r.A.indexOf('control') !== -1 || r.B.indexOf('control') !== -1; })) {
+      throw new Error('A component named control inside a combination cannot be translated to R: rename that component. Use control alone only for the empty reference.');
+    }
+  }
+  function displayValue(x) { return Math.abs(x) < 1e-12 ? 0 : x; }
+  function limits(o) { return { lo: o.est - global.Z975 * o.se, hi: o.est + global.Z975 * o.se }; }
   function validateSource(src) {
     if (typeof src !== 'string' || src.length > 200000) throw new Error('Data text missing or too long.');
     var rows = global.parse(src);
+    checkComponents(rows);
     if (rows.length < 2) throw new Error('At least two independent contrasts are required.');
     // Preflight with the app's own parser and fit, without changing inputs/results.
     global.fit(rows);
@@ -36,6 +62,9 @@
       return [r.t1, r.t2, r.yi, r.sei].join(' | ');
     }).join('\n');
     load(src);
+    var state = global.AlmFeaturesState = global.AlmFeaturesState || {};
+    state.entrySrc = input().value;
+    state.provenance = [];
     return { ok: !!last(), n: records.length };
   }
 
@@ -50,10 +79,11 @@
       r[key + '_name'] = name;
       r[key + '_number'] = i + 1;
       // Match the app's signed-zero display convention without refitting.
-      r[key + '_est'] = Math.abs(o.est) < 1e-12 ? 0 : o.est;
+      r[key + '_est'] = displayValue(o.est);
       r[key + '_se'] = o.se;
-      r[key + '_lo'] = Number(ci[1]);
-      r[key + '_hi'] = Number(ci[2]);
+      var bounds = limits(o);
+      r[key + '_lo'] = displayValue(bounds.lo);
+      r[key + '_hi'] = displayValue(bounds.hi);
       dom[key + '_est'] = { text: cells[1].textContent, fmt: { kind: 'num', digits: 3 } };
       dom[key + '_lo'] = { text: ci[1], fmt: { kind: 'num', digits: 3 } };
       dom[key + '_hi'] = { text: ci[2], fmt: { kind: 'num', digits: 3 } };
@@ -64,6 +94,7 @@
   function readText() {
     var o = last();
     if (!o) return null;
+    requireFresh();
     var r = { k: o.df + o.comps.length, p: o.comps.length, tau2: o.tau2, Q: o.Q, df: o.df,
       ciLevel: 95, nullEffect: 0, cKeys: [], iKeys: [] }, dom = {};
     tableRows('comp-body', 'c', r, dom);
@@ -74,8 +105,8 @@
     var data = readText();
     if (!data) return null;
     var r = data.r, pt = global.__almTextPerturb;
-    var state = global.AlmFeaturesState || {}, steps = state.entryLog || [];
-    r.hasProvenance = Array.isArray(state.provenance) && state.provenance.length > 0;
+    var state = global.AlmFeaturesState || {}, steps = entryCurrent() ? state.entryLog || [] : [];
+    r.hasProvenance = entryCurrent() && Array.isArray(state.provenance) && state.provenance.length > 0;
     r.entryCI = steps.filter(function (s) { return s.method === 'SE from CI'; }).length;
     r.entryP = steps.filter(function (s) { return s.method === 'SE from p'; }).length;
     r.entryMidpoint = steps.filter(function (s) { return s.method === 'CI midpoint'; }).length;
@@ -85,8 +116,9 @@
   // Numeric treatment labels are referred to by their table row so label digits
   // cannot be mistaken for untracked statistical results by the number audit.
   function label(T, r, key) {
-    return /\d/.test(r[key + '_name']) ? ['table row ', T.int(key + '_number')] : r[key + '_name'];
+    return /\d/.test(r[key + '_name']) ? [key.charAt(0) === 'c' ? 'component table row ' : 'intervention table row ', T.int(key + '_number')] : r[key + '_name'];
   }
+  function numericLabels(r) { return r.cKeys.concat(r.iKeys).some(function (key) { return /\d/.test(r[key + '_name']); }); }
   var templates = {
     plain: function (T, r) {
       return ['This analysis combined ', T.int('k'), ' independent contrasts to estimate ', T.int('p'),
@@ -107,18 +139,19 @@
         'Normal Wald ', T.pct('ciLevel', 0), ' confidence intervals use the estimate plus or minus the standard normal critical value times its SE. ',
         'Combination effects sum the component estimates, and their variances include all component covariances. ',
         'No hypothesis tests, prediction intervals, automatic interactions or multi-arm covariance correction are computed. ',
-        'Only independent two-arm contrasts are supported. ', T.software(), ' ',
-        T.when(r.hasProvenance, function () { return T.entry(); }),
+        'Only independent two-arm contrasts are supported.',
+        T.when(T.software(), function () { return [' ', T.software()]; }),
+        T.when(r.hasProvenance && T.entry(), function () { return [' ', T.entry()]; }),
         T.when(!r.hasProvenance && r.entryCI > T.R.none, function () {
-          return ['SEs were derived from confidence intervals for ', T.int('entryCI'), ' contrasts (', T.cite('handbookSE'), '). '];
+          return [' SEs were derived from confidence intervals for ', T.int('entryCI'), ' contrasts (', T.cite('handbookSE'), ').'];
         }),
         T.when(!r.hasProvenance && r.entryP > T.R.none, function () {
-          return ['SEs were derived from exact P values for ', T.int('entryP'), ' contrasts (', T.cite('handbookSE'), '). '];
+          return [' SEs were derived from exact P values for ', T.int('entryP'), ' contrasts (', T.cite('handbookSE'), ').'];
         }),
         T.when(!r.hasProvenance && r.entryMidpoint > T.R.none, function () {
-          return ['Estimates were taken as interval midpoints on the analysis scale for ', T.int('entryMidpoint'), ' contrasts. '];
-        }), ' ',
-        T.when(global.AlmFeatures && global.AlmFeatures.verifiedCurrent(APP), function () { return T.verify(); })];
+          return [' Estimates were taken as interval midpoints on the analysis scale for ', T.int('entryMidpoint'), ' contrasts.'];
+        }),
+        T.when(global.AlmFeatures && global.AlmFeatures.verifiedCurrent(APP) && T.verify(), function () { return [' ', T.verify()]; })];
     },
     results: function (T, r) {
       return ['The additive model included ', T.int('k'), ' contrasts and ', T.int('p'), ' components. Component effects: ',
@@ -129,13 +162,28 @@
           return [label(T, r, key), ' = ', T.num(key + '_est', 3), ' (', T.pct('ciLevel', 0), ' CI ', T.ci(key + '_lo', key + '_hi', 3), '). '];
         }), 'Common-effect residual Q = ', T.num('Q', 3), ' (df = ', T.int('df'), '). ',
         T.has('tau2') ? ['Between-contrast variance τ² = ', T.num('tau2', 3), '.'] : 'Between-contrast variance is not estimable.'];
+    },
+    flags: function (T, r) {
+      return [
+        T.when(r.k < T.R.fewK || r.df < T.R.piMinK, ['Few independent contrasts or low residual degrees of freedom (', T.int('df'),
+          '): heterogeneity estimates are imprecise.']),
+        T.when(T.has('tau2') && T.zero('tau2', 3), function () { return ['A between-contrast variance τ² of ', T.num('tau2', 3),
+          ' does not show that the contrasts are homogeneous.']; }),
+        T.when(r.k < T.R.dlMinK, ['The DerSimonian–Laird estimator can underestimate between-contrast variance with fewer than ',
+          T.rule('dlMinK'), ' independent contrasts.']),
+        T.when(numericLabels(r), 'Labels containing digits are identified by their row in the component or intervention table above to keep label numbers separate from statistical results.')
+      ].concat(r.cKeys.map(function (key) {
+        return T.when(global.AlmText.cochrane.imprecise(r[key + '_lo'], r[key + '_hi'], r.nullEffect),
+          [label(T, r, key), ': the estimate is imprecise; the confidence interval includes no effect and effects in both directions.']);
+      }));
     }
   };
 
   function currentState() {
-    var src = input().value, rows = validateSource(src);
-    document.getElementById('btn-run').click();
     if (!last()) throw new Error('Run a valid analysis first.');
+    requireFresh();
+    var src = input().value, rows = global.parse(src);
+    checkComponents(rows);
     appValues({ result: last() }).forEach(function (v) { live.compare.kind[v.key] = 'rel'; });
     return { src: src, rows: rows, result: last() };
   }
@@ -143,8 +191,9 @@
     var out = ['tau2', 'Q', 'df'].map(function (key) { return { key: key, label: key, value: s.result[key] }; });
     ['components', 'combinations'].forEach(function (group) {
       Object.keys(s.result[group]).sort().forEach(function (name, i) {
-        ['est', 'se'].forEach(function (q) {
-          out.push({ key: group + '_' + i + '_' + q, label: group + ': ' + name + ' ' + q, value: s.result[group][name][q] });
+        var o = s.result[group][name], bounds = limits(o);
+        ['est', 'se', 'lo', 'hi'].forEach(function (q) {
+          out.push({ key: group + '_' + i + '_' + q, label: group + ': ' + name + ' ' + q, value: q === 'lo' || q === 'hi' ? bounds[q] : o[q] });
         });
       });
     });
@@ -166,8 +215,8 @@
     ['components', 'combinations'].forEach(function (group) {
       var field = group === 'components' ? 'Comp' : 'Comb';
       Object.keys(s.result[group]).sort().forEach(function (name, i) {
-        ['est', 'se'].forEach(function (q) {
-          var target = (q === 'se' ? 'se' : '') + field;
+        ['est', 'se', 'lo', 'hi'].forEach(function (q) {
+          var target = ({ est: '', se: 'se', lo: 'lower.', hi: 'upper.' })[q] + field;
           code.push('z[[' + JSON.stringify(group + '_' + i + '_' + q) + ']] <- unname(dc$' + target + '.random[match(' + JSON.stringify(name) + ', dc$' + (group === 'components' ? 'comps' : 'trts') + ')])');
         });
       });
@@ -190,11 +239,19 @@
     verify: { adapter: adapter, inputs: '#src', rObjects: 'dc (additive discomb/netcomb fit)',
       plots: [{ id: 'forest', title: 'Additive intervention forest plot', r: 'forest(dc, pooled = "random", reference.group = "control", backtransf = FALSE)',
         app: function () { return document.getElementById('forest'); }, width_in: 8, height_in: 6 }] },
-    share: { get: function () { return { src: input().value, entryLog: (global.AlmFeaturesState || {}).entryLog || [] }; }, set: function (s) {
+    share: { get: function () {
+      var state = global.AlmFeaturesState || {};
+      // The shared link writer reads provenance after get(), so discard detached records here too.
+      if (!entryCurrent()) state.provenance = [];
+      return { src: input().value, entryLog: entryCurrent() ? state.entryLog || [] : [] };
+    }, set: function (s) {
       if (!s || typeof s !== 'object') throw new Error('Missing analysis state.');
       if (s.entryLog !== undefined && !Array.isArray(s.entryLog)) throw new Error('Invalid conversion log.');
       load(s.src);
-      if (global.AlmFeaturesState) global.AlmFeaturesState.entryLog = s.entryLog || [];
+      var state = global.AlmFeaturesState = global.AlmFeaturesState || {};
+      state.entryLog = s.entryLog || [];
+      state.entrySrc = input().value;
+      state.provenance = [];
     } }
   };
   global.AlmComponentFeatures = spec;
@@ -210,7 +267,16 @@
       var note = document.createElement('p');
       note.textContent = 'Use study, t1, t2, effect and SE columns. Each row must be an independent two-arm contrast. Separate components with +; use control for the empty reference. Effects must share the same analysis scale.';
       panel.appendChild(note);
-      return global.AlmEntryUI.mount(panel, ctx.block);
+      var ui = global.AlmEntryUI.mount(panel, ctx.block);
+      // The shared provenance workflow cannot represent the two contrast arms yet.
+      // Keep the working table and its paste intact until that shared support exists.
+      Array.from(ui.element.querySelectorAll('button')).forEach(function (button) {
+        if (button.textContent === 'Extract paper text with source confirmation') button.disabled = true;
+      });
+      var limitation = document.createElement('p');
+      limitation.textContent = 'Source confirmation is not available for contrast tables in the shared entry workflow yet. Use the table preview and retain your source references separately; these rows do not have confirmed source provenance.';
+      panel.appendChild(limitation);
+      return ui;
     } });
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = spec;

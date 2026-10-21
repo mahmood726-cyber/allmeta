@@ -146,7 +146,7 @@ test('VERIFY: live netmeta example, plots and ZIP; planted defect FAILS; stale c
   const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
   const run = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
   await run.click();
-  await expect(summary).toHaveText(/^21 of 21 quantities match R — PASS$/, { timeout: 600_000 });
+  await expect(summary).toHaveText(/^39 of 39 quantities match R — PASS$/, { timeout: 600_000 });
   const verified = await page.evaluate(() => AlmFeaturesState.verify);
   expect(verified.rows.every(r => r.pass)).toBe(true);
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(true);
@@ -162,7 +162,7 @@ test('VERIFY: live netmeta example, plots and ZIP; planted defect FAILS; stale c
   const decode = b => new TextDecoder().decode(b);
   expect(decode(files[`${APP}-verify.R`])).toContain('netmeta::discomb');
   expect(decode(files[`${APP}-verify.R`])).toContain('forest(dc, pooled = "random"');
-  expect(decode(files[`${APP}-verify-comparison.csv`]).trim().split('\n')).toHaveLength(22);
+  expect(decode(files[`${APP}-verify-comparison.csv`]).trim().split('\n')).toHaveLength(40);
   expect(decode(files[`${APP}-forest-R.pdf`]).slice(0, 5)).toBe('%PDF-');
   const png = decodePng(files[`${APP}-forest-R-300dpi.png`]);
   expect([png.width, png.height]).toEqual([2400, 1800]);
@@ -177,16 +177,46 @@ test('VERIFY: live netmeta example, plots and ZIP; planted defect FAILS; stale c
   await page.locator('#src').fill(original.replace('-0.45', '-0.46'));
   await page.locator('#btn-run').click();
   await page.locator('.alm-text-regenerate').click();
-  // context() may rerun the app; verifiedCurrent must still reject the changed input hash.
+  // Reading context is side-effect free; changed inputs invalidate the verification claim.
   await expect(page.locator('.alm-text-body')).not.toContainText('Results were independently verified in R');
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(false);
   await page.locator('#src').fill(original); await page.locator('#btn-run').click();
   await page.evaluate(() => { window.__almVerifyPerturb = { key: 'components_0_est', delta: .01 }; AlmFeatures.open('component-nma', 'verify'); });
   await run.click();
-  await expect(summary).toContainText('20 of 21 quantities match R — FAIL', { timeout: 300_000 });
+  await expect(summary).toContainText('38 of 39 quantities match R — FAIL', { timeout: 300_000 });
   const planted = await page.evaluate(() => AlmFeaturesState.verify);
   expect(planted.rows.filter(r => !r.pass).map(r => r.key)).toEqual(['components_0_est']);
   console.log(`VERIFY planted ${planted.nPassed}/${planted.n}`);
+});
+
+test('VERIFY: heterogeneous live netmeta checks nonzero tau2 and all endpoints; planted CI FAILS', async ({ page }) => {
+  test.setTimeout(900_000);
+  await open(page, 'verify');
+  const ref = JSON.parse(fs.readFileSync(new URL('../../../component-nma/tests/fixtures/cnma-validation-oracle.json', import.meta.url), 'utf8')).cases.heterogeneous;
+  await page.evaluate(src => __almCnmaLoad(src), ref.text);
+  const result = await page.evaluate(() => _almLastCnma());
+  expect(result.tau2).toBeGreaterThan(0);
+  sameResult(result, { ...ref, comps: Object.keys(ref.components).sort() });
+  const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
+  const run = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
+  await run.click();
+  await expect(summary).toHaveText('23 of 23 quantities match R — PASS', { timeout: 600_000 });
+  const verified = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(verified.rows.every(r => r.pass)).toBe(true);
+  expect(verified.rows.filter(r => /_(lo|hi)$/.test(r.key))).toHaveLength(10);
+  console.log(`VERIFY ${verified.nPassed}/${verified.n} heterogeneous tau2=${result.tau2}`);
+  await page.evaluate(() => { window.__almVerifyPerturb = { key: 'components_0_hi', delta: .01 }; });
+  await run.click();
+  // The shared renderer includes the failed-quantity count in its FAIL summary.
+  await expect(summary).toHaveText('22 of 23 quantities match R — FAIL: 1 outside tolerance or unavailable', { timeout: 300_000 });
+  await expect(summary).toHaveAttribute('data-result', 'fail');
+  const planted = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(planted.passed).toBe(false);
+  expect(planted.n).toBe(23);
+  expect(planted.nPassed).toBe(22);
+  expect(planted.rows.filter(r => !r.pass).map(r => r.key)).toEqual(['components_0_hi']);
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(false);
+  console.log(`VERIFY planted-CI ${planted.nPassed}/${planted.n}`);
 });
 
 test('SHARE: complete state round trip and corrupted/invalid links leave the example untouched', async ({ page, browser }) => {
@@ -197,6 +227,8 @@ test('SHARE: complete state round trip and corrupted/invalid links leave the exa
   await page.locator('#src').fill(changed); await page.locator('#btn-run').click();
   const result = await page.evaluate(() => _almLastCnma());
   const saved = await page.evaluate(() => {
+    // This synthetic provenance was recorded for the current input, like entry.apply does.
+    AlmFeaturesState.entrySrc = document.getElementById('src').value;
     AlmFeaturesState.entryLog = [{ study: 'Example row', method: 'scale confirmed', citation: 'User confirmation', inputs: { scale: 'analysis' } }];
     AlmFeaturesState.provenance = [{ id: 'example', label: 'Built-in example', reference: 'Synthetic test data', location: 'Input row one',
       pastedText: document.getElementById('src').value.split('\n')[0], values: [], conversions: [], flags: [], confirmed: true }];
