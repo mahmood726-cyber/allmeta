@@ -557,7 +557,10 @@
   }
   function detect(table,schema) {
     const mapping={},confidence={},questions=[],used=new Set(),width=Math.max(0,(table.header||[]).length,...table.rows.map(r=>r.length));
-    const choices=["ignore",...new Set([...schemaFields(schema),...sources])];
+    // One choice per plain-word meaning: a source alias with the same words as a schema field ("n" vs "ni",
+    // "se" vs "sei") is not offered, so the user never picks the alias that leaves the schema field empty.
+    const fields=schemaFields(schema),label=v=>FIELD_LABELS[v]||v;
+    const choices=["ignore",...new Set([...fields,...sources.filter(v=>!fields.some(f=>f===v||label(f)===label(v)))])];
     for(let col=0;col<width;col++){
       const h=table.header&&table.header[col];let field=h?headerField(h,schema):null,score=field?1:0;
       if(field&&field!=="ignore"&&used.has(field)){field=null;score=0;}
@@ -931,15 +934,22 @@
       if(c.kind==="counts"){
         // Arm words belong to THE number they sit next to: a printed label, else the nearest arm phrase in the
         // same clause with no other printed result between the phrase and this number (never the first cue).
+        // A phrase between two results belongs to the closer one ("12/80 in the placebo group vs 7/82": 12/80 only;
+        // equally close: neither). A printed label with no arm word (an outcome before a colon, "rash: 3/40") never
+        // shadows an arm phrase.
         const others=candidates.flatMap(o=>Object.values(o.spans));
         c.armCues=c.values.arms.map(a=>{
-          if(a.label)return {value:a.label.toLowerCase(),text:a.label,source:"printed label"};
+          if(a.label&&armRoleOf(a.label))return {value:a.label.toLowerCase(),text:a.label,source:"printed label"};
           const from=a.span.events[0],to=a.span.n[1];
-          const clear=(x,y)=>!/[;.!?]\s/.test(text.slice(x,y))&&!others.some(p=>p[0]>=x&&p[0]<y&&!(p[0]>=from&&p[0]<to));
-          const before=cues.arm.filter(e=>e.span[1]<=from&&from-e.span[1]<=150&&clear(e.span[1],from)).at(-1);
-          const after=cues.arm.find(e=>e.span[0]>=to&&e.span[0]-to<=150&&clear(to,e.span[0]));
+          const clearOf=(x,y,own)=>!/[;.!?]\s/.test(text.slice(x,y))&&!others.some(p=>p[0]>=x&&p[0]<y&&!(p[0]>=own[0]&&p[0]<own[1]));
+          const clear=(x,y)=>clearOf(x,y,[from,to]);
+          const prevEnd=e=>Math.max(-1,...others.filter(p=>p[1]<=e.span[0]&&clearOf(p[1],e.span[0],[0,0])).map(p=>p[1]));
+          const nextStart=e=>Math.min(Infinity,...others.filter(p=>p[0]>=e.span[1]&&clearOf(e.span[1],p[0],[0,0])).map(p=>p[0]));
+          const before=cues.arm.filter(e=>e.span[1]<=from&&from-e.span[1]<=150&&clear(e.span[1],from)&&(prevEnd(e)<0||from-e.span[1]<e.span[0]-prevEnd(e))).at(-1);
+          const after=cues.arm.find(e=>e.span[0]>=to&&e.span[0]-to<=150&&clear(to,e.span[0])&&e.span[0]-to<nextStart(e)-e.span[1]);
           const e=before||after;
-          return e?{value:e.value.toLowerCase(),text:e.text,span:e.span.slice(),rule:e.rule,source:"nearby words"}:null;
+          if(e)return {value:e.value.toLowerCase(),text:e.text,span:e.span.slice(),rule:e.rule,source:"nearby words"};
+          return a.label?{value:a.label.toLowerCase(),text:a.label,source:"printed label"}:null;
         });
         c.values.arms.forEach((a,i)=>{for(const field of ["events","n"])c.valueFacets["arms."+i+"."+field].arm=c.armCues[i]?{value:c.armCues[i].value,evidence:[c.armCues[i]]}:{value:"unknown",evidence:[]};});
         // Raw counts carry no adjustment or baseline/follow-up phase; the denominator is asked in plain words.
@@ -1273,12 +1283,12 @@
   // Unit of randomisation (N1), structured source (N3), facets that may be stated as "not stated in source" (N5).
   const RANDOMISATION_CHOICES={individuals:"Individuals",clusters:"Clusters (e.g. practices)",crossover:"Crossover periods","not randomised":"Not randomised","not stated":"Not stated"};
   const ICC_SOURCES={"this paper":"This paper",external:"Another study (external)",assumed:"Assumed"};
-  const SOURCE_TYPES=["Abstract","Table","Figure","Text","Supplement","Registry"];
+  const SOURCE_TYPES=["Abstract","Table","Figure","Text","Supplement","Registry"],SOURCE_TYPES_NEEDING_DETAIL=["Table","Figure","Text","Supplement"];
   const ABSTRACT_NOTE="Abstracts often round values or differ from the full-text tables; check the full text if available.";
   const FACET_CHOICES={analysisSet:["ITT","per-protocol","other"],adjustment:["adjusted","unadjusted"],phase:["baseline","follow-up","change"]};
   const FACET_NAMES={timepoint:"Timepoint",analysisSet:"Analysis population",adjustment:"Adjustment",phase:"Type of value",randomisation:"Unit of randomisation",arm:"Arm"};
   const NOT_STATED="not stated";
-  const CSV_KEYS=["id","label","reference","location","sourceType","sourceDetail","verifiedAgainst","doi","pmid","pastedText","decimal","rule","rulesVersion","candidateRank","candidateScore","facets","statements","armRole","armCue","denominator","timepoint","timepointEvidence","randomisation","design","outcomeDefinition","p","reportedPercentages","choice","values","conversions","flags","sameSourceOptIn","usedAs","confirmed","confirmedAt","confirmedBy","confirmedVia","sourceHash"];
+  const CSV_KEYS=["id","label","reference","location","sourceType","sourceDetail","verifiedAgainst","doi","pmid","pastedText","decimal","kind","measure","level","rule","rulesVersion","candidateRank","candidateScore","facets","statements","armRole","armCue","denominator","timepoint","timepointEvidence","randomisation","design","outcomeDefinition","p","reportedPercentages","choice","values","conversions","flags","sameSourceOptIn","usedAs","confirmed","confirmedAt","confirmedBy","confirmedVia","sourceHash"];
   function parseLocation(location){
     const s=String(location||"").trim(),m=/^(abstract|table|fig(?:ure|\.)?|text|supplement(?:ary)?(?:\s+material)?|registry)\b[\s,:.-]*(.*)$/i.exec(s);
     if(m){const t=m[1].toLowerCase();return {type:t.startsWith("fig")?"Figure":t.startsWith("supp")?"Supplement":t[0].toUpperCase()+t.slice(1),detail:m[2].trim()};}
@@ -1456,6 +1466,8 @@
       if(!/[\p{L}][\p{L}'’.-]*(?:\s+.*)?\s+(?:18|19|20|21)\d{2}[a-z]?\b/u.test(String(rec.label||"").trim()))missing.push("label");
       for(const field of ["reference","location"])if(!String(rec[field]||"").trim())missing.push(field);
       if(String(rec.location||"").trim()&&!SOURCE_TYPES.includes(rec.source?.type))missing.push("source type");
+      // A table, figure, text passage or supplement needs its number or page; the type alone locates nothing.
+      else if(SOURCE_TYPES_NEEDING_DETAIL.includes(rec.source?.type)&&!String(rec.source?.detail||"").trim()&&!missing.includes("location"))missing.push("location");
       if(!beforeConfirm){
         if(!rec.confirmed)missing.push("confirmed");
         else{
@@ -1483,7 +1495,9 @@
       // Timepoint: one merged control (evidence-annotated options, "not stated" or typed); a non-nearest choice only warns.
       for(const f of rec.requiredFacets||[]){
         const v=rec.choice?.facets?.[f.key];
-        if(f.key==="timepoint"?!(typeof v==="string"&&v.trim()):(!f.choices.includes(v)||(rec.facets[f.key]!=="unknown"&&v!==rec.facets[f.key])))missing.push("facet:"+f.key);
+        // "not stated" is accepted only for a result with no cue of its own (fromCandidate stored it over "unknown").
+        const notStated=v===NOT_STATED&&rec.facets[f.key]===NOT_STATED;
+        if(f.key==="timepoint"?!(typeof v==="string"&&v.trim()):!notStated&&(!f.choices.includes(v)||(rec.facets[f.key]!=="unknown"&&v!==rec.facets[f.key])))missing.push("facet:"+f.key);
       }
       if(rec.kind==="counts"&&rec.choice?.armIndex!==undefined&&!ROLE_NAMES[rec.choice.role])missing.push("arm role");
       if(provenance.armIssues(rec).length&&rec.choice?.armAck!==provenance.armAckKey(rec))missing.push("arm contradiction");
@@ -1574,7 +1588,7 @@
     },
     toCSV(records){
       const keys=CSV_KEYS;
-      const cell=x=>{let s=typeof x==="object"?JSON.stringify(x):String(x===undefined?"":x);if(/^[\s\u0000-\u001f]*[=+\-@]/.test(s)||/^[\t\r\n]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
+      const cell=x=>{let s=x===undefined||x===null?"":typeof x==="object"?JSON.stringify(x):String(x);if(/^[\s\u0000-\u001f]*[=+\-@]/.test(s)||/^[\t\r\n]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
       // Chosen role and the printed cue are separate columns.
       const derived=r=>({...r,armRole:r.choice?.armIndex!==undefined?r.choice.role||"not chosen":(r.armCues||[]).map(a=>a.role).join("; "),
         armCue:r.choice?.armIndex!==undefined?(r.armCue?r.armCue.text:"none next to these numbers"):(r.armCues||[]).map(a=>a.role+": "+(a.cue?a.cue.text:"none")).join("; "),
@@ -1594,7 +1608,7 @@
           const s=undo(cells[i]===undefined?"":cells[i]);
           if(json.includes(k)){if(s!=="")try{r[k]=JSON.parse(s);}catch(e){r[k]=s;}}
           else if(k==="confirmed")r[k]=s==="true";
-          else if(k==="candidateRank"||k==="candidateScore"){if(s!=="")r[k]=+s;}
+          else if(k==="candidateRank"||k==="candidateScore"||k==="level"){if(s!=="")r[k]=+s;}
           else r[k]=s;
         });
         r.source={type:r.sourceType||"",detail:r.sourceDetail||"",...(r.verifiedAgainst?{verifiedAgainst:r.verifiedAgainst}:{})};
@@ -1607,7 +1621,9 @@
       const key=r=>normRef(r.label),used=new Set(),rows=[];
       const show=x=>x===undefined||x===null||x===""?"(none)":Array.isArray(x)?x.join("–"):typeof x==="object"?JSON.stringify(x):String(x);
       const diffRows=(a,b)=>{
-        const diffs=[],add=(what,x,y)=>{if(JSON.stringify(x===undefined?null:x)!==JSON.stringify(y===undefined?null:y))diffs.push({what,mine:show(x),theirs:show(y)});};
+        // Absent, null and "" (an empty CSV cell) are the same "(none)".
+        const none=x=>x===undefined||x===""?null:x;
+        const diffs=[],add=(what,x,y)=>{if(JSON.stringify(none(x))!==JSON.stringify(none(y)))diffs.push({what,mine:show(x),theirs:show(y)});};
         const va=Object.fromEntries((a.values||[]).map(v=>[v.field,v])),vb=Object.fromEntries((b.values||[]).map(v=>[v.field,v]));
         for(const f of new Set([...Object.keys(va),...Object.keys(vb)])){add("value "+f,va[f]?.value,vb[f]?.value);add("span "+f,va[f]?.span,vb[f]?.span);}
         for(const k of new Set([...Object.keys(a.facets||{}),...Object.keys(b.facets||{})]))add("facet "+k,a.facets?.[k],b.facets?.[k]);
@@ -1628,7 +1644,7 @@
     },
     toDocxParagraphs(records){return records.flatMap(r=>[provenance.sentence(r),"Reference: "+r.reference+"; DOI: "+(r.doi||"none")+"; PMID: "+(r.pmid||"none"),"User choices: "+JSON.stringify(r.choice)+"; flags: "+JSON.stringify(r.flags)+"; confirmed: "+r.confirmed+"; confirmed at: "+(r.confirmedAt||"not confirmed")]);}
   };
-  const api={RANDOMISATION_CHOICES,ICC_SOURCES,SOURCE_TYPES,ABSTRACT_NOTE,FACET_CHOICES,FACET_NAMES,designEffect,clusterCounts,clusterSE,sha256,FIELD_LABELS,plural,SINGLE_GROUP_SCHEMAS,PROVENANCE_SCHEMAS,DENOMINATOR_CHOICES,ROLE_NAMES,armRoleOf,timepointOptions,decimalPreview,FIVENUM_METHODS,measureFromHeaders,normalize,anchor,selectors,RULES,RULES_VERSION,replay,consistency,parseTable,parseCell,detect,convert,extract,provenance,seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,convertFivenum,eventsFromPercent,sanity,sanityRules,SCHEMAS,fallback:null,qnorm,qt};
+  const api={RANDOMISATION_CHOICES,ICC_SOURCES,clusterArgs,SOURCE_TYPES,ABSTRACT_NOTE,FACET_CHOICES,FACET_NAMES,designEffect,clusterCounts,clusterSE,sha256,FIELD_LABELS,plural,SINGLE_GROUP_SCHEMAS,PROVENANCE_SCHEMAS,DENOMINATOR_CHOICES,ROLE_NAMES,armRoleOf,timepointOptions,decimalPreview,FIVENUM_METHODS,measureFromHeaders,normalize,anchor,selectors,RULES,RULES_VERSION,replay,consistency,parseTable,parseCell,detect,convert,extract,provenance,seFromCI,seFromP,estFromCI,sdFromSE,sdFromCI,convertFivenum,eventsFromPercent,sanity,sanityRules,SCHEMAS,fallback:null,qnorm,qt};
   global.AlmEntry=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);

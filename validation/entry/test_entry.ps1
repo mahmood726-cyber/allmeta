@@ -101,7 +101,8 @@ try {
         (Test-Path validation/entry/cases.json) -and
         (Test-Path validation/entry/cases.planted.json) -and
         (Test-Path validation/entry/cases.planted-tiny.json) -and
-        (Test-Path validation/entry/cases.planted-formula.json)) "exit=$generationExit; all four corpora required"
+        (Test-Path validation/entry/cases.planted-formula.json) -and
+        (Test-Path validation/entry/cases.planted-de.json)) "exit=$generationExit; all five corpora required"
 
     '== 3. R cross-check'
     $global:LASTEXITCODE = $null
@@ -110,8 +111,8 @@ try {
     $rOutput | Select-Object -Last 60
     Gate 'rcheck' (Test-RResult $rOutput $rExit $false) "exit=$rExit (need >=2000 cases, all pass and exit 0)"
 
-    '== 4. planted defects must FAIL (large value, 1e-12-scale value, formula coefficient)'
-    foreach ($plantedName in @('cases.planted.json', 'cases.planted-tiny.json', 'cases.planted-formula.json')) {
+    '== 4. planted defects must FAIL (large value, 1e-12-scale value, formula coefficient, design effect 1 + M * ICC)'
+    foreach ($plantedName in @('cases.planted.json', 'cases.planted-tiny.json', 'cases.planted-formula.json', 'cases.planted-de.json')) {
         $global:LASTEXITCODE = $null
         $plantedOutput = @(& $Rscript validation/entry/check_entry.R "validation/entry/$plantedName" 2>&1 | ForEach-Object { "$_" })
         $plantedExit = $global:LASTEXITCODE
