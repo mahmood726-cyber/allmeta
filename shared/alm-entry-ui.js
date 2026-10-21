@@ -19,7 +19,7 @@
     const label=node("label","Paste from a paper, Excel, RevMan, Covidence or a PDF table",root);
     const textarea=node("textarea",undefined,root);textarea.id=prefix+"paste";textarea.rows=7;label.htmlFor=textarea.id;
     const parse=node("button","Preview and convert",root);parse.type="button";parse.className="alm-entry-primary";
-    node("p","Percentages and p-values are never used as counts.",root).className="alm-entry-note";
+    node("p","P-values are never used as counts. A percentage becomes a count only with its total, and the conversion is logged.",root).className="alm-entry-note";
     const decimalGroup=node("div",undefined,root),decimal={value:"point",explicit:false},decimalRadios=[];
     decimalGroup.setAttribute("role","group");decimalGroup.setAttribute("aria-label","Decimal mark");
     node("span","Decimal mark in this paste (1.5 = point, 1,5 = comma; ask = you decide each one):",decimalGroup);
@@ -206,11 +206,16 @@
     // Same-source guard (U2): blocking for single-group apps until an explicit opt-in.
     const sameSource=node("div",undefined,root);sameSource.className=singleGroup?"alm-entry-same-source":"alm-entry-same-source-info";sameSource.hidden=true;
     const sameSourceText=node("p","",sameSource),optIn=singleGroup?input("I understand these rows are arms of one trial and want them pooled as separate single groups",sameSource,"","checkbox"):null;
-    if(optIn)optIn.addEventListener("change",()=>{revision++;refreshAll();});
+    let optInAt=null;
+    if(optIn)optIn.addEventListener("change",()=>{optInAt=optIn.checked?new Date().toISOString():null;revision++;refreshAll();});
+    // Copies of the rows with the same-source acknowledgement on each grouped row (applied snapshot and CSV export alike).
+    function acknowledged(){
+      const groups=P.sameSource(rows.map(r=>r.rec)),optedIn=new Set(singleGroup&&optIn.checked?groups.flat():[]),at=optInAt||new Date().toISOString();
+      return rows.map((r,i)=>({...JSON.parse(JSON.stringify(r.rec)),...(optedIn.has(i)?{sameSourceOptIn:{acknowledged:true,text:SAME_SOURCE_NOTICE,rows:groups.find(g=>g.includes(i)).length,acknowledgedAt:at}}:{})}));
+    }
     const use=button("Use these rows",root,async()=>{
       if(use.disabled||applying||!valid())return;
-      const version=revision,groups=P.sameSource(rows.map(r=>r.rec)),optedIn=new Set(singleGroup&&optIn.checked?groups.flat():[]),at=new Date().toISOString();
-      const snapshot=rows.map((r,i)=>({...JSON.parse(JSON.stringify(r.rec)),...(optedIn.has(i)?{sameSourceOptIn:{acknowledged:true,text:SAME_SOURCE_NOTICE,rows:groups.find(g=>g.includes(i)).length,acknowledgedAt:at}}:{})}));
+      const version=revision,snapshot=acknowledged();
       const records=rows.map((r,i)=>({...r.raw,provenance:JSON.parse(JSON.stringify(snapshot[i]))}));
       global.AlmFeaturesState=global.AlmFeaturesState||{};
       const state=global.AlmFeaturesState,previous=state.provenance,previousSummary=state.provenanceSummary;
@@ -235,7 +240,7 @@
       const blob=data instanceof Blob?data:new Blob([data],{type}),url=global.URL.createObjectURL(blob),a=node("a",name,root);
       a.href=url;a.download=name;a.click();a.remove();global.setTimeout(()=>global.URL.revokeObjectURL(url),0);
     }
-    const csv=button("Export provenance CSV",root,()=>{if(rows.length)download("provenance.csv","text/csv;charset=utf-8",P.toCSV(rows.map(r=>r.rec)));});
+    const csv=button("Export provenance CSV",root,()=>{if(rows.length)download("provenance.csv","text/csv;charset=utf-8",P.toCSV(acknowledged()));});
     const docx=button("Export provenance DOCX",root,()=>{
       if(!global.AlmZip||typeof global.AlmZip.docx!=="function"){status.textContent="DOCX export needs AlmZip to be loaded by this app.";return;}
       if(rows.length)try{download("provenance.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",global.AlmZip.docx(P.toDocxParagraphs(rows.map(r=>r.rec))));}catch(e){status.textContent="Could not export DOCX: "+e.message;}
@@ -304,7 +309,8 @@
           row.rec=P.applyConversion(row.rec,{field:"yi",formula:"yi = ln(effect)",method:"log ratio",citation:result.citation,inputs:{effect:v.effect},value:row.raw.yi});
         }
         if(row.rec.design?.designEffect&&choice.cluster?.action==="adjust"&&Number.isFinite(row.raw.sei)){
-          const adj=core.clusterSE({se:row.raw.sei,designEffect:row.rec.design.designEffect});
+          // The row's own cluster inputs (M, clusters + total, ICC, or a reported DE): replay recomputes the design effect.
+          const adj=core.clusterSE({se:row.raw.sei,...core.clusterArgs(choice.cluster||{})});
           row.rec=P.applyConversion(row.rec,{...adj,field:"sei",formula:"SE × √(design effect)"});row.raw.sei=adj.value;
         }
         row.raw.est=v.effect;row.raw.lo=v.lo;row.raw.hi=v.hi;row.raw.measure=measure;row.raw.ratio=ratio;row.raw.scale=logScale?"log":"natural";
@@ -325,7 +331,13 @@
       }else row.issues.push("This result does not supply all raw inputs required by this app.");
       if(!choice.outcome)row.issues.push("Enter the outcome.");
       if(!choice.timepoint)row.issues.push("Choose the timepoint (or Not stated).");
-      for(const f of row.rec.requiredFacets||[])if(f.key!=="timepoint"&&!f.choices.includes(choice.facets?.[f.key]))row.issues.push(`Choose: ${facetTitle(f.key)}.`);
+      for(const f of row.rec.requiredFacets||[]){
+        if(f.key==="timepoint")continue;
+        const v=choice.facets?.[f.key],own=c.facets?.[f.key];
+        if(!(f.choices.includes(v)||v==="not stated"&&own==="unknown"))row.issues.push(`Choose: ${facetTitle(f.key)}.`);
+        // Validation keeps the value written next to these numbers; say so instead of disabling the box silently.
+        else if(own&&own!=="unknown"&&v!==own)row.issues.push(`The text next to these numbers says “${own}”, but you chose “${v}”. Choose “${own}”, or add the result the paper reports as ${v}.`);
+      }
       for(const [k,v] of Object.entries(row.rec.facets||{}))if(v==="unknown"&&UNKNOWN_FACET_TITLES[k]&&c.kind!=="counts")row.issues.push(`Choose: ${facetTitle(k)} (or “Not stated in source”).`);
       if(!core.RANDOMISATION_CHOICES[choice.randomisation])row.issues.push("Say what was randomised (individuals, clusters, crossover periods).");
       else if(choice.randomisation==="clusters"&&!["adjust","decline",...(c.kind==="counts"?[]:["already"])].includes(choice.cluster?.action))row.issues.push("Say whether to adjust for clustering.");
@@ -371,7 +383,7 @@
         if(row.denominator)row.denominator.caption.textContent=totals.length?`Who is counted in ${totals.map(a=>a.n).join(" and ")}?`:"Who is counted in the total?";
       });
       const groups=P.sameSource(recs),key=JSON.stringify(groups);
-      if(key!==sameSourceKey){sameSourceKey=key;if(optIn)optIn.checked=false;}
+      if(key!==sameSourceKey){sameSourceKey=key;if(optIn)optIn.checked=false;optInAt=null;}
       sameSource.hidden=!groups.length;
       sameSourceText.textContent=!groups.length?"":singleGroup?SAME_SOURCE_NOTICE+" Rows "+groups.map(g=>g.map(i=>i+1).join(" and ")).join("; ")+" come from the same report or pasted text.":"Rows "+groups.map(g=>g.map(i=>i+1).join(" and ")).join("; ")+" come from the same report. "+P.summarySentence(recs);
       edited.textContent=rows.some(r=>P.sourceChanged(r.rec))?" — Edited since confirmation":"";
@@ -454,7 +466,9 @@
         if(facet.key==="timepoint")continue;
         const cue=(candidate.facetEvidence?.[facet.key]||[]).map(e=>"“"+e.text+"”").join(", ");
         const title=facet.key==="phase"?"Type of value: at follow-up / change from baseline":facet.key==="adjustment"?"Choose adjustment (adjusted or unadjusted estimate)":"Choose analysis set (who is counted)";
-        select(title+(cue?` — text next to the numbers: ${cue}`:""),card,facet.choices.map(v=>[v,facet.key==="phase"?PHASE_LABELS[v]||v:v]),value=>{
+        // A result with no cue of its own may also be "not stated in source" (other results' cues do not decide it).
+        const notStated=candidate.facets?.[facet.key]==="unknown"?[["not stated","Not stated in source"]]:[];
+        select(title+(cue?` — text next to the numbers: ${cue}`:""),card,[...facet.choices.map(v=>[v,facet.key==="phase"?PHASE_LABELS[v]||v:v]),...notStated],value=>{
           row.choice.facets=row.choice.facets||{};if(value)row.choice.facets[facet.key]=value;else delete row.choice.facets[facet.key];rebuild(row);
         });
       }

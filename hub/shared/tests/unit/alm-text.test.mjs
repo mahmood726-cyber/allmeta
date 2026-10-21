@@ -180,11 +180,11 @@ test('verify sentence ONLY when passed and revision matches the current state re
 
 // ---------- data-entry provenance sentence ----------
 const provenance = [
-  { id: 's1', label: 'Smith 2019', reference: 'ref', location: 'Table 2', conversions: [{ code: 'SD_FROM_IQR', field: 'sd1i' }, { code: 'SD_FROM_IQR', field: 'sd2i' }, { code: 'MEAN_FROM_MEDIAN', field: 'm1i' }], flags: [{ code: 'SD_FROM_IQR', text: 'x' }] },
-  { id: 's2', label: 'Jones 2020', reference: 'ref', location: 'Figure 3', conversions: [{ code: 'SD_FROM_IQR', field: 'sd1i' }], flags: [] },
-  { id: 's3', label: 'Lee 2021', reference: 'ref', location: 'p. 5', conversions: [{ code: 'SE_FROM_CI', field: 'sei' }], flags: [{ code: 'TIMEPOINT_CHOSEN', text: 'y' }] },
-  { id: 's4', label: 'Kim 2022', reference: 'ref', location: 'Supplement S4', conversions: [], flags: [{ code: 'SD_FROM_IQR', text: 'z' }] },
-  { id: 's5', label: 'Ng 2023', reference: 'ref', location: 'Table 1', conversions: [], flags: [] },
+  { id: 's1', label: 'Smith 2019', reference: 'ref 1', location: 'Table 2', conversions: [{ code: 'SD_FROM_IQR', field: 'sd1i' }, { code: 'SD_FROM_IQR', field: 'sd2i' }, { code: 'MEAN_FROM_MEDIAN', field: 'm1i' }], flags: [{ code: 'SD_FROM_IQR', text: 'x' }] },
+  { id: 's2', label: 'Jones 2020', reference: 'ref 2', location: 'Figure 3', conversions: [{ code: 'SD_FROM_IQR', field: 'sd1i' }], flags: [] },
+  { id: 's3', label: 'Lee 2021', reference: 'ref 3', location: 'p. 5', conversions: [{ code: 'SE_FROM_CI', field: 'sei' }], flags: [{ code: 'TIMEPOINT_CHOSEN', text: 'y' }] },
+  { id: 's4', label: 'Kim 2022', reference: 'ref 4', location: 'Supplement S4', conversions: [], flags: [{ code: 'SD_FROM_IQR', text: 'z' }] },
+  { id: 's5', label: 'Ng 2023', reference: 'ref 5', location: 'Table 1', conversions: [], flags: [] },
 ];
 test('entry: no provenance -> no sentence', () => {
   for (const c of [ctx0, { ...ctx0, entryLog: undefined }, { ...ctx0, provenance: [] }]) {
@@ -386,9 +386,9 @@ test('PLANTED (review P2): DOM cross-check below the declared domMin -> audit FA
 
 test('entry (review P2): records with confirmed:false are NOT counted', () => {
   const recs = [
-    { id: 'a', reference: 'r', location: 'T1', confirmed: true, conversions: [{ code: 'SD_FROM_IQR' }] },
-    { id: 'b', reference: 'r', location: 'T2', confirmed: false, conversions: [{ code: 'SD_FROM_IQR' }] },
-    { id: 'c', reference: 'r', location: 'T3', conversions: [] },
+    { id: 'a', reference: 'r a', location: 'T1', confirmed: true, conversions: [{ code: 'SD_FROM_IQR' }] },
+    { id: 'b', reference: 'r b', location: 'T2', confirmed: false, conversions: [{ code: 'SD_FROM_IQR' }] },
+    { id: 'c', reference: 'r c', location: 'T3', conversions: [] },
   ];
   const s = AlmText.entrySummary(recs);
   assert.equal(s.reports, 2);

@@ -196,9 +196,11 @@
 
   // Summarise F1 provenance records (AlmFeaturesState.provenance) or legacy entryLog steps.
   // Groups by conversion/flag code; counts are numbers of distinct studies.
+  // Distinct reports are counted by F1 itself (AlmEntry.provenance.summary: rows sharing a DOI, PMID or normalised
+  // reference are one report), so two arms of one trial read "1 report (2 arms)", never "2 reports".
   function entryRecords(log) {
-    if (!Array.isArray(log)) return { groups: [], reports: 0, allLocated: false };
-    var map = {}, order = [], reports = 0, located = 0;
+    if (!Array.isArray(log)) return { groups: [], reports: 0, rows: 0, arms: 0, detail: null, allLocated: false };
+    var map = {}, order = [], reports = 0, located = 0, f1 = [];
     function add(key, info, who) {
       if (!map[key]) { map[key] = { desc: info.desc, cite: info.cite || null, citeText: info.citeText || null, seen: {}, n: 0 }; order.push(key); }
       var g = map[key];
@@ -229,8 +231,9 @@
         if (m) addText(m[2], null, m[1].trim()); else addText(s, null, null);
       } else if (s && typeof s === 'object') {
         if (Array.isArray(s.conversions) || Array.isArray(s.flags) || s.reference != null || s.location != null) {
-          // F1 provenance record: one per study report.
+          // F1 provenance record: one row (an arm or a comparison) of a study report.
           reports++;
+          f1.push(s);
           if (s.location != null && String(s.location).trim()) located++;
           var who = s.id != null ? String(s.id) : (s.label != null ? String(s.label) : 'record-' + idx);
           var codes = {};
@@ -250,10 +253,20 @@
         }
       }
     });
+    var rows = reports, arms = 0, detail = null, E = global.AlmEntry;
+    if (f1.length && E && E.provenance && typeof E.provenance.summary === 'function') {
+      var sm = E.provenance.summary(f1);
+      reports = sm.reports; arms = sm.arms;
+      // Same wording rule as AlmEntry.provenance.summarySentence: arms when every row is one printed arm, else rows.
+      if (reports !== rows) detail = arms && f1.every(function (r) { return r.choice && r.choice.armIndex !== undefined; }) ? 'arms' : 'rows';
+    }
     return {
       groups: order.map(function (k) { var g = map[k]; return { desc: g.desc, count: g.n, cite: g.cite, citeText: g.citeText }; }),
       reports: reports,
-      allLocated: reports > 0 && located === reports
+      rows: rows,
+      arms: arms,
+      detail: detail,
+      allLocated: rows > 0 && located === rows
     };
   }
 
@@ -312,6 +325,7 @@
     var e = entryRecords(Array.isArray(ctx.provenance) && ctx.provenance.length ? ctx.provenance : ctx.entryLog);
     out['entry.groups'] = e.groups.length;
     if (e.reports) out['entry.reports'] = e.reports;
+    if (e.reports && e.detail) { out['entry.' + e.detail] = e[e.detail]; out.__entryDetail = e.detail; }
     e.groups.forEach(function (g, i) {
       out['entry.' + i + '.desc'] = g.desc;
       out['entry.' + i + '.count'] = g.count;
@@ -430,8 +444,16 @@
         if (!hasReports && !n) return null;
         var parts = [];
         if (hasReports) {
-          parts.push('Data were extracted from ', ctxSeg('entry.reports'), cv['entry.reports'] === 1 ? ' report' : ' reports',
-            cv.__entryAllLocated ? ' (source location recorded for each study)' : '');
+          parts.push('Data were extracted from ', ctxSeg('entry.reports'), cv['entry.reports'] === 1 ? ' report' : ' reports');
+          var d = cv.__entryDetail;
+          if (d) {
+            // "1 report (2 arms; source location recorded for each)".
+            var unit = d === 'arms' ? ' arm' : ' row';
+            parts.push(' (', ctxSeg('entry.' + d), cv['entry.' + d] === 1 ? unit : unit + 's',
+              cv.__entryAllLocated ? '; source location recorded for each)' : ')');
+          } else if (cv.__entryAllLocated) {
+            parts.push(' (source location recorded for each study)');
+          }
         } else {
           parts.push('Data-entry conversions');
         }
