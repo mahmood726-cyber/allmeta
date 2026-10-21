@@ -139,6 +139,7 @@
     </section>
     <section class="panel">
       <div id="k-warn" class="note" style="display:none;background:var(--warn-soft,#fbeedd);border-left:3px solid var(--warn,#b05a1c);color:var(--warn,#b05a1c)" role="status" aria-live="polite"></div>
+      <div id="fit-status" style="display:none;font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem" role="status" aria-live="polite"></div>
       <h2>Adjusted estimate</h2>
       <table>
         <tbody id="summary"></tbody>
@@ -169,7 +170,7 @@
 </section>
   </main>
   <footer>
-    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95&#8211;109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247&#8211;262 (extension). <strong>Implementation:</strong> <code>shared/copas-core.js</code> ports the whole of <code>metasens::copas()</code> (metasens 1.5-3) &#8212; the &#947; grids, the <code>ngrid</code>&#215;<code>ngrid</code> profile-MLE contour surface, R&#8217;s own <code>contourLines()</code> and <code>pretty()</code> machinery, the approximate orthogonal line with its per-contour regressions, the four-parameter residual-selection-bias fit (<code>pval.rsb</code>) and metasens&#8217;s <code>TE.adjust</code> selection rule. <strong>Where it differs:</strong> the box-constrained maximisation is a projected-gradient routine, not R&#8217;s <code>L-BFGS-B</code>; because <code>optim</code>&#8217;s default <code>factr</code> stops about 2&#215;10<sup>-9</sup> short in the objective, the two do not report bit-identical maximum-likelihood values. Stage 5 (the four-parameter residual-bias fit behind <code>pval.rsb</code>) differs the same way, and in a direction worth knowing: where this port converges further than metasens, <code>pval.rsb</code> comes out <em>smaller</em>, which can move the selected point down the orthogonal line or make the adjusted estimate be withheld where metasens reports one. <strong>What is checked, and where it falls short:</strong> the committed suite checks every deterministic stage against R to 1e-9 on one reference dataset (<code>metadat::dat.hackshaw1998</code>, k&nbsp;=&nbsp;37) in three configurations, and the profile MLE against a separate <code>metasens</code> oracle on a second dataset (<code>copas/tests/fixtures/copas-oracle.json</code>, driven in a browser by <code>hub/shared/tests/copas-parity.spec.mjs</code> and in Node by <code>copas/tests/copas-oracle.test.mjs</code>). The validation archive extends this to 46 inputs &#8212; and reports that the objective attained here is <em>worse</em> than metasens&#8217;s at 84 of 42,498 comparable grid points, in 16 of 138 configurations. That was a pre-registered requirement and the archive records it as <strong>not met</strong>; see its <code>DEVIATIONS.md</code>. Neither optimiser dominates the other. <strong>Small k:</strong> this app warns below k&nbsp;=&nbsp;15 and treats 3&nbsp;&#8804;&nbsp;k&nbsp;&lt;&nbsp;15 output as illustrative rather than refusing it; k&nbsp;&#8805;&nbsp;15 is this project&#8217;s own operating threshold, not a published one.
+    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95&#8211;109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247&#8211;262 (extension). <strong>Implementation:</strong> <code>shared/copas-core.js</code> ports the whole of <code>metasens::copas()</code> (metasens 1.5-3) &#8212; the &#947; grids, the <code>ngrid</code>&#215;<code>ngrid</code> profile-MLE contour surface, R&#8217;s own <code>contourLines()</code> and <code>pretty()</code> machinery, the approximate orthogonal line with its per-contour regressions, the four-parameter residual-selection-bias fit (<code>pval.rsb</code>) and metasens&#8217;s <code>TE.adjust</code> selection rule. <strong>Where it differs:</strong> the box-constrained maximisation is a projected-gradient routine, not R&#8217;s <code>L-BFGS-B</code>; because <code>optim</code>&#8217;s default <code>factr</code> stops about 2&#215;10<sup>-9</sup> short in the objective, the two do not report bit-identical maximum-likelihood values. Stage 5 (the four-parameter residual-bias fit behind <code>pval.rsb</code>) differs the same way, and in a direction worth knowing: where this port converges further than metasens, <code>pval.rsb</code> comes out <em>smaller</em>, which can move the selected point down the orthogonal line or make the adjusted estimate be withheld where metasens reports one. <strong>What is checked, and where it falls short:</strong> the committed suite checks every deterministic stage against R to 1e-9 on one reference dataset (<code>metadat::dat.hackshaw1998</code>, k&nbsp;=&nbsp;37) in three configurations, and the profile MLE against a separate <code>metasens</code> oracle on a second dataset (<code>copas/tests/fixtures/copas-oracle.json</code>, driven in a browser by <code>hub/shared/tests/copas-parity.spec.mjs</code> and in Node by <code>copas/tests/copas-oracle.test.mjs</code>). The validation archive extends this to 46 inputs &#8212; and reports that the objective attained here is <em>worse</em> than metasens&#8217;s at 84 of 42,498 comparable grid points, in 16 of 138 configurations. That was a pre-registered requirement and the archive records it as <strong>not met</strong>; see its <code>DEVIATIONS.md</code>. Neither optimiser dominates the other. <strong>What it costs:</strong> a fit is <code>ngrid</code>&#215;<code>ngrid</code> profile maximum-likelihood maximisations on the main thread of this tab &#8212; 400 at the default. Measured under Node 24: about 3.7&nbsp;s for the ten studies this page loads with, and about 7.9&nbsp;s for <code>dat.hackshaw1998</code> (k&nbsp;=&nbsp;37); a browser is the same order. The elapsed time of each fit is reported above the results. Changing the y-axis range only redraws the chart; changing <code>ngrid</code>, the &#964;&sup2; method, <code>sign.rsb</code> or the CI level refits, and those controls are debounced. <strong>Small k:</strong> this app warns below k&nbsp;=&nbsp;15 and treats 3&nbsp;&#8804;&nbsp;k&nbsp;&lt;&nbsp;15 output as illustrative rather than refusing it; k&nbsp;&#8805;&nbsp;15 is this project&#8217;s own operating threshold, not a published one.
   </footer>
   <script>
   (function () {
@@ -319,7 +320,65 @@
     // control change.
     var _refusedOnLoad = 0;
 
+    // ---- cost of a fit, and how the page stays honest about it ----
+    //
+    // A fit is ngrid x ngrid profile MLEs, each up to 6 rounds of (<=2,000
+    // projected-BB iterations + 600 Nelder-Mead + 80 pattern-search rounds),
+    // plus ~10 line fits and ~10 four-parameter fits -- synchronously, on the
+    // main thread. Measured (node 24, lanes/rev212/logs/runtime.log):
+    //
+    //   dataset                ngrid 10   ngrid 20 (default)
+    //   this page's default     1.7 s      3.7 s
+    //   hackshaw1998, k = 37    2.5 s      7.9 s
+    //
+    // That is not a cost to incur silently or repeatedly, so (review-212
+    // MAJOR-10):
+    //   - a y-axis change REDRAWS from the stored results instead of refitting
+    //     (it only affects the SVG, and a refit for an axis tweak cost a full
+    //     3.7 s for no change in any number);
+    //   - the option controls are DEBOUNCED, so dragging through a <select>
+    //     or typing in sign.rsb starts one fit, not one per keystroke;
+    //   - the page says it is fitting, and yields to the browser so that
+    //     message actually paints before the main thread blocks;
+    //   - the elapsed time is REPORTED, so the cost is visible rather than
+    //     being a figure that appears nowhere.
+    var FIT_DEBOUNCE_MS = 300;
+    var _debounceTimer = null;
+    var _sensResults = [];     // last rendered sensitivity rows, for redraw
+
+    function statusEl() { return document.getElementById('fit-status'); }
+
+    function showStatus(text) {
+      var el = statusEl();
+      if (!el) return;
+      if (!text) { el.style.display = 'none'; el.textContent = ''; return; }
+      el.textContent = text;
+      el.style.display = 'block';
+    }
+
+    // Announce, yield once so the browser paints, then fit. Every entry point
+    // that is triggered by a user action goes through this; run() itself stays
+    // synchronous so tests and the validation harness can call it directly.
+    function runDeferred() {
+      var o = readOpts();
+      showStatus('Fitting the selection model: ' + o.ngrid + '×' + o.ngrid + ' = ' +
+        (o.ngrid * o.ngrid) + ' profile maximum-likelihood fits. This runs in ' +
+        'this tab and takes a few seconds.');
+      // setTimeout, not requestAnimationFrame: rAF runs BEFORE paint, so the
+      // message would not be visible until after the blocking work finished.
+      setTimeout(run, 0);
+    }
+
+    function runDebounced() {
+      if (_debounceTimer) clearTimeout(_debounceTimer);
+      _debounceTimer = setTimeout(function () {
+        _debounceTimer = null;
+        runDeferred();
+      }, FIT_DEBOUNCE_MS);
+    }
+
     function run() {
+      var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
       var refusedRows = _refusedOnLoad;
       _refusedOnLoad = 0;
       var rows = parse(document.getElementById('src').value);
@@ -383,7 +442,9 @@
         }
         if (summaryEl) summaryEl.innerHTML = '<tr><td>No fit — ' + why + '.</td></tr>';
         if (bodyEl) bodyEl.innerHTML = '';
+        _sensResults = [];
         drawSens([]);
+        showStatus('');
         return;
       }
 
@@ -460,7 +521,17 @@
       }
       if (bodyEl) bodyEl.innerHTML = __bodyParts.join('');
 
+      _sensResults = results;
       drawSens(results);
+
+      // The cost of what just happened, reported rather than left implicit.
+      var t1 = (window.performance && performance.now) ? performance.now() : Date.now();
+      showStatus('Fitted in ' + ((t1 - t0) / 1000).toFixed(1) + ' s: ' +
+        fit.ngrid + '×' + fit.ngrid + ' = ' + (fit.ngrid * fit.ngrid) +
+        ' profile maximum-likelihood fits on the contour surface, plus ' +
+        fit.n_orthogonal_points + ' down the orthogonal line. Changing the ' +
+        'y-axis range only redraws; changing ngrid, τ² method, sign.rsb or ' +
+        'the CI level refits.');
 
       // URL state
       if (window.alm && window.alm.urlState) {
@@ -567,7 +638,7 @@
     function restore(snap) {
       if (!snap) return;
       if (snap.src    !== undefined) document.getElementById('src').value      = snap.src;
-      run();
+      runDeferred();
     }
 
     // ---- CSV load: accept study,yi,sei or effect,SE columns ----
@@ -587,7 +658,7 @@
       if (lines.length < 1) return;
       document.getElementById('src').value = lines.join('\n');
       _refusedOnLoad = refused;
-      run();
+      runDeferred();
     };
 
     // Expose last results for export
@@ -599,19 +670,23 @@
       if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
         window.alm.resetUndo.snapshot();
       }
-      run();
+      runDeferred();
     });
 
+    // Debounced: each of these starts a multi-second synchronous fit, and
+    // sign.rsb is a number input a user types into.
     ['opt-ngrid', 'opt-tau', 'opt-signrsb', 'opt-level'].forEach(function (id) {
       var el = document.getElementById(id);
-      if (el) el.addEventListener('change', run);
+      if (!el) return;
+      el.addEventListener('change', runDebounced);
+      if (el.tagName === 'INPUT') el.addEventListener('input', runDebounced);
     });
 
     if (window.MaStudies && MaStudies.attachButtons) {
       MaStudies.attachButtons({
         btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
         textarea: "#src", format: "est-se-label",
-        onAfterLoad: run,
+        onAfterLoad: runDeferred,
       });
     }
 
@@ -651,8 +726,12 @@
         { key: 'y', label: 'Y axis (adjusted pooled effect)', range: [null, null], log: false },
       ],
       onChange: function (state) {
+        // The y-axis range is a property of the PLOT, not of the fit: it
+        // enters only drawSens()'s yMin/yMax. Refitting here cost a full
+        // ngrid x ngrid run (3.7 s at the default) and could not change a
+        // single reported number. Redraw from the stored results instead.
         _axisState = state;
-        run();
+        drawSens(_sensResults);
       },
     });
 
@@ -666,10 +745,11 @@
     var restored = window.alm.urlState.read();
     if (restored && Object.keys(restored).length > 0) {
       if (restored.src    !== undefined) document.getElementById('src').value     = restored.src;
-      run();
-    } else {
-      run();
     }
+    // Initial fit is deferred too: at the default ngrid = 20 this is a
+    // multi-second synchronous run, and deferring it lets the page paint its
+    // controls and its "fitting" message first instead of appearing frozen.
+    runDeferred();
 
     window.alm.resetUndo({
       target: '#alm-undo-mount',

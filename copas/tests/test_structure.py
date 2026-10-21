@@ -155,6 +155,55 @@ def test_every_refusal_reason_the_engine_can_return_is_explained():
         f"copas/index.html does not explain these refusal reasons: {missing}")
 
 
+def test_an_axis_change_redraws_instead_of_refitting():
+    """The y-axis range enters only drawSens()'s yMin/yMax. Refitting on an
+    axis change cost a full ngrid x ngrid run — about 3.7 s at the default —
+    and could not change a single reported number."""
+    html = INDEX.read_text(encoding="utf-8")
+    i = html.index("axisControls")
+    block = html[i:i + 1200]
+    assert "onChange" in block, "axis-controls onChange handler not found"
+    handler = block[block.index("onChange"):]
+    handler = handler[:handler.index("});")]
+    assert not re.search(r"\brun(Deferred|Debounced)?\(\)", handler), (
+        "the axis onChange still triggers a refit; it should call "
+        "drawSens() with the stored results")
+    assert "drawSens" in handler, "the axis onChange should redraw"
+
+
+def test_option_controls_are_debounced_and_the_fit_is_deferred():
+    """Each option change starts a multi-second synchronous fit, and sign.rsb
+    is a number input a user types into. The fit is also deferred by a
+    macrotask so the 'fitting' message paints before the main thread blocks —
+    requestAnimationFrame would not, since it runs before paint."""
+    html = INDEX.read_text(encoding="utf-8")
+    assert "function runDebounced" in html, "no debounce around the fit"
+    assert "function runDeferred" in html, "the fit is not deferred for paint"
+    i = html.index("['opt-ngrid'")
+    block = html[i:i + 700]
+    assert "runDebounced" in block, "the option controls are not debounced"
+    assert not re.search(r"addEventListener\('change',\s*run\)", block), (
+        "an option control still calls run() directly, with no debounce")
+    # Every user-triggered entry point goes through the deferred path; run()
+    # itself stays synchronous for tests and the validation harness.
+    assert not re.search(r"onAfterLoad:\s*run\b(?!Deferred)", html), (
+        "the bus load still calls run() directly")
+
+
+def test_the_page_reports_what_a_fit_cost():
+    """MAJOR-10's other half: no runtime figure appeared anywhere in the PR,
+    the lane report or the page."""
+    html = INDEX.read_text(encoding="utf-8")
+    assert "performance.now" in html, "the fit is not timed"
+    assert re.search(r"Fitted in", html), "the elapsed time is not reported"
+    assert 'id="fit-status"' in html, "no status element for the fit"
+    # And the footer must carry a measured figure, since that is the artefact
+    # the paper describes.
+    flat = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
+    assert re.search(r"3\.7.{0,3}s", flat) and re.search(r"7\.9.{0,3}s", flat), \
+        "the footer does not state a measured runtime"
+
+
 def test_no_private_notes_file_is_cited_in_shipped_text():
     """`advanced-stats.md` is a private local rules file. Citing it in text a
     user reads points at something no reader can consult, and the paper's

@@ -146,7 +146,55 @@ test("fixture provenance is the pinned reference", () => {
   assert.equal(FIX.meta.versions.meta, "8.5.0");
   assert.equal(FIX.meta.versions.metadat, "1.6.0");
   assert.equal(FIX.meta.versions.R, "4.6.0");
-  assert.ok(TE.length >= 5 && TE.length === seTE.length);
+  // The version strings alone are self-referential: the generator writes
+  // them, so they say "this JSON claims to be from metasens 1.5.3" and
+  // nothing about the DATA. With only `TE.length >= 5` on top of that, a
+  // truncated or substituted fixture with five studies passed the provenance
+  // test and every comparison after it then compared a different dataset
+  // (review-212 MINOR-19). Pin the dataset itself.
+  assert.equal(FIX.meta.dataset, "metadat::dat.hackshaw1998 (yi, sqrt(vi))");
+  assert.equal(num(FIX.meta.k), 37, "dat.hackshaw1998 has k = 37");
+  assert.equal(TE.length, 37);
+  assert.equal(seTE.length, 37);
+  // An order-sensitive checksum over the data: sum((i + 1) * v[i]), so a
+  // permutation, a substitution or a truncation all change it. The expected
+  // values are computed from metadat::dat.hackshaw1998 in R, NOT copied out
+  // of the fixture, so they are an independent pin:
+  //   Rscript -e 'data(dat.hackshaw1998, package="metadat");
+  //     TE <- dat.hackshaw1998$yi; seTE <- sqrt(dat.hackshaw1998$vi);
+  //     ck <- function(v) sum(seq_along(v) * v); print(c(ck(TE), ck(seTE)))'
+  // (lanes/rev212/logs/r-unit-pins.log records the run.)
+  const ck = (a) => a.reduce((s, v, i) => s + (i + 1) * v, 0);
+  assert.ok(Math.abs(ck(TE) - 201.31985831187416) < 1e-12,
+    `TE checksum ${ck(TE)} is not dat.hackshaw1998's yi (201.31985831187416)`);
+  assert.ok(Math.abs(ck(seTE) - 221.19587248323154) < 1e-12,
+    `seTE checksum ${ck(seTE)} is not dat.hackshaw1998's sqrt(vi) ` +
+    "(221.19587248323154)");
+  assert.ok(Math.abs(Math.min(...seTE) - 0.10014513184138413) < 1e-15);
+  assert.ok(Math.abs(Math.max(...seTE) - 0.73498018023784106) < 1e-15);
+  assert.ok(seTE.every((s) => s > 0), "every seTE must be positive");
+});
+
+test("the repo suite's 'never worse' assertion is stricter than the archive's finding", () => {
+  // Recorded so it is not mistaken for a new regression later (MINOR-18).
+  //
+  // The validation archive reports the attained objective is WORSE than
+  // metasens's at 84 of 42,498 comparable grid points, in 16 of 138
+  // configurations, and records that pre-registered requirement as not met.
+  // This file asserts the same property as a HARD FAILURE, at a 1e-12
+  // relative slack -- i.e. stricter than the archive's own finding, not
+  // looser. That is deliberate and correct: the three configurations here are
+  // not among the 16, and a fixture regenerated on one that IS among them
+  // would fail this suite. If that happens it is the known shortfall
+  // surfacing in a new configuration, NOT a fresh defect, and the fix is to
+  // report it alongside the archive's count -- never to widen SLACK, which
+  // would make the suite stop seeing what the archive already discloses.
+  assert.equal(SLACK, 1e-12,
+    "the optimality slack is pinned; widening it would hide the archive's " +
+    "disclosed shortfall rather than measure it");
+  assert.ok(Object.values(STALLED).every((n) => n >= 0),
+    "STALLED counts points where the port is BETTER; the port being worse is " +
+    "a hard failure, not a counted case");
 });
 
 for (const name of CONFIGS) {
