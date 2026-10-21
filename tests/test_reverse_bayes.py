@@ -68,6 +68,60 @@ def test_significance_guards():
     assert _run("RB.analyze(1.9601, 1.0)")["sceptical"]["priorSDoverEffect"] > 10
 
 
+def test_statement_diffuse_prior_not_called_smaller_than_effect():
+    # Near the significance boundary the critical prior SD is many times the effect (here ~11x);
+    # the statement must say so, never that the SD is much smaller ("<<") than the effect.
+    a = _run("RB.analyze(1.9601, 1.0)")
+    ratio = a["sceptical"]["priorSDoverEffect"]
+    assert ratio > 10
+    assert "≪" not in a["statement"]
+    assert f"{ratio:.3g} times the effect" in a["statement"]
+    # below 10x the percentage wording is kept
+    b = _run("RB.analyze(0.8, 0.2)")
+    assert f"{round(b['sceptical']['priorSDoverEffect'] * 100)}% of the effect" in b["statement"]
+
+
+PAGE_DOM = r"""
+const fs = require('fs'), vm = require('vm');
+const html = fs.readFileSync('reverse-bayes/index.html', 'utf8');
+const els = {};
+for (const m of html.matchAll(/<(\w+)\b([^>]*\bid="([^"]+)"[^>]*)>/g)) {
+  const a = m[2], v = (a.match(/\bvalue="([^"]*)"/) || [])[1] || '';
+  els[m[3]] = { value: m[1] === 'select' ? 'ratio' : v, hidden: /\shidden/.test(a), className: '', textContent: '',
+    innerHTML: '', _l: [], addEventListener(t, f) { this._l.push(f); } };
+}
+const ctx = { document: { getElementById: id => els[id] }, Math, JSON, isFinite, parseFloat };
+ctx.window = ctx; vm.createContext(ctx);
+for (const s of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+  const src = (s[1].match(/src="([^"]+)"/) || [])[1];
+  vm.runInContext(src ? fs.readFileSync(require('path').join('reverse-bayes', src), 'utf8') : s[2], ctx);
+}
+const run = (v) => { Object.assign(els.scale, { value: v[0] }); els.est.value = v[1]; els.lo.value = v[2];
+  els.hi.value = v[3]; els.alpha.value = v[4]; els.run._l.forEach(f => f()); };
+"""
+
+
+@pytest.mark.parametrize("bad", [
+    ["ratio", "1.6", "-1", "2.23", "0.05"],   # non-positive ratio limit
+    ["diff", "1.6", "2", "1", "0.05"],        # lo > hi
+    ["diff", "1.6", "1", "2", "0.5"],         # alpha out of range
+])
+def test_refusal_clears_previous_result(bad):
+    js = PAGE_DOM + (
+        "run(['ratio','1.60','1.15','2.23','0.05']);"
+        "const before = els.statement.textContent;"
+        f"run({json.dumps(bad)});"
+        "console.log(JSON.stringify({before, after: els.statement.textContent, tbl: els.tbl.hidden, "
+        "note: els.note.hidden, verdict: els.verdict.className}));")
+    r = subprocess.run([NODE, "-e", js], capture_output=True, text=True, timeout=20, cwd=str(ROOT))
+    assert r.returncode == 0, r.stderr
+    o = json.loads(r.stdout.strip().splitlines()[-1])
+    assert o["before"].startswith("To overturn this result")
+    assert o["verdict"] == "verdict warn"
+    assert o["tbl"] is True and o["note"] is True
+    assert o["after"] == ""  # no stale statement from the previous analysis
+
+
 def test_sceptical_p_monotone_decreasing():
     ps = [_run(f"RB.analyze({z}, 1.0).intrinsic.scepticalP") for z in (2.0, 2.5, 3.0, 4.0)]
     assert all(ps[i] < ps[i - 1] for i in range(1, len(ps)))

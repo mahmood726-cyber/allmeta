@@ -128,14 +128,17 @@
       return "The pooled effect is not significant at the " + (100 * (1 - o.alpha)).toFixed(0) +
         "% level (two-sided p=" + o.pObs.toPrecision(3) + "); no sceptical prior is needed to overturn it.";
     }
-    var pct = (o.sceptical.priorSDoverEffect * 100).toFixed(0);
+    // Below 10x the effect the SD is given as a percentage; from 10x up (diffuse critical prior, result near the
+    // significance boundary) as a multiple, e.g. "11.3 times the effect" (never as smaller than the effect).
+    var ratio = o.sceptical.priorSDoverEffect;
+    var sdTxt = ratio < 10 ? (ratio * 100).toFixed(0) + "% of the effect" : ratio.toPrecision(3) + " times the effect";
     var cred = o.intrinsic.credible
       ? "It IS intrinsically credible (|z|=" + Math.abs(o.z).toFixed(2) + " ≥ " + o.intrinsic.zLimit.toFixed(2) +
         "): significant even against a prior derived from the finding itself."
       : "It is NOT intrinsically credible (|z|=" + Math.abs(o.z).toFixed(2) + " < " + o.intrinsic.zLimit.toFixed(2) +
         ", sceptical p=" + o.intrinsic.scepticalP.toPrecision(3) + "): a like-sized sceptic would not be convinced.";
     return "To overturn this result a sceptic must hold, before seeing the data, a prior centred on no effect with 95% interval within ±" +
-      Math.abs(o.sceptical.priorInterval95[1]).toPrecision(3) + " (SD ≈ " + (o.sceptical.priorSDoverEffect * 100 < 1000 ? pct + "% of the effect" : "≪ the effect") +
+      Math.abs(o.sceptical.priorInterval95[1]).toPrecision(3) + " (SD ≈ " + sdTxt +
       "). " + cred;
   }
 

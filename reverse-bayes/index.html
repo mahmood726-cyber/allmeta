@@ -119,21 +119,17 @@
         var note = $("note");
         note.hidden = true; note.textContent = "";
         if (![est, lo, hi, alpha].every(isFinite) || !(hi > lo) || !(alpha > 0 && alpha < 0.5)) {
-          setVerdict("warn", "Check inputs: need estimate, lo &lt; hi, and 0 &lt; α &lt; 0.5.");
-          $("tbl").hidden = true; $("statement").textContent = ""; return;
+          return refuse("Check inputs: need estimate, lo &lt; hi, and 0 &lt; α &lt; 0.5.");
         }
         var theta, s;
         if (scale === "ratio") {
-          if (!(est > 0 && lo > 0 && hi > 0)) {
-            setVerdict("warn", "Ratio measures must be positive (log scale).");
-            $("tbl").hidden = true; return;
-          }
+          if (!(est > 0 && lo > 0 && hi > 0)) return refuse("Ratio measures must be positive (log scale).");
           theta = Math.log(est); s = (Math.log(hi) - Math.log(lo)) / (2 * 1.959963984540054);
         } else {
           theta = est; s = (hi - lo) / (2 * 1.959963984540054);
         }
         var r = window.AlmReverseBayes.analyze(theta, s, { alpha: alpha });
-        if (r.error) { setVerdict("warn", r.error); $("tbl").hidden = true; return; }
+        if (r.error) return refuse(r.error);
 
         $("tbl").hidden = false;
         $("rz").textContent = fmt(r.z, 3) + "  (p = " + r.pObs.toPrecision(3) + ")";
@@ -160,6 +156,12 @@
           : (r.significant ? "Significant, but NOT intrinsically credible" : "Not significant");
         setVerdict(cls, head);
         $("statement").textContent = r.statement;
+      }
+
+      // Every refusal clears the previous analysis: no stale statement or table stays on screen.
+      function refuse(html) {
+        setVerdict("warn", html);
+        $("tbl").hidden = true; $("statement").textContent = "";
       }
 
       function setVerdict(cls, html) {
