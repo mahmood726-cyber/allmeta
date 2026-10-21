@@ -31,7 +31,9 @@ jobs:
           set -o pipefail
           node --test --test-reporter=tap "hub/shared/tests/unit/**/*.test.mjs" 2>&1 | tee unit.log
           grep -E '^# (pass|fail) ' unit.log
+          # A run that matched no test files prints "# pass 0" and would pass vacuously (review of PR #182): require pass > 0.
           test "$(grep -E '^# fail ' unit.log | awk '{print $3}')" = "0"
+          test "$(grep -E '^# pass ' unit.log | awk '{print $3}')" -gt 0
 
   entry-r:
     runs-on: ubuntu-latest
