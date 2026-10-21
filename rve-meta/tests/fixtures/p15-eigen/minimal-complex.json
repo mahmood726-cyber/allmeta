@@ -1,0 +1,261 @@
+{
+  "input": {
+    "id": "dat.lehmann2018::003::PRPublication::Year::rho=0",
+    "base": "dat.lehmann2018::003",
+    "dataset": "dat.lehmann2018",
+    "definition": "res_femalep <- rma(yi, vi, data = red_romance_femalep, test = \"knha\")",
+    "cluster": "PRPublication",
+    "moderator": "Year",
+    "rho": 0,
+    "rows": [
+      {
+        "cluster": "Yes",
+        "yi": 0.333777317264367,
+        "vi": 0.0490469099173399,
+        "X": [
+          1,
+          2010.1
+        ]
+      },
+      {
+        "cluster": "Yes",
+        "yi": -0.113551226990538,
+        "vi": 0.034579386597736496,
+        "X": [
+          1,
+          2017
+        ]
+      },
+      {
+        "cluster": "No",
+        "yi": -0.335221330490664,
+        "vi": 0.06421723682161298,
+        "X": [
+          1,
+          2016
+        ]
+      },
+      {
+        "cluster": "Yes",
+        "yi": -0.0807119902604848,
+        "vi": 0.0164775867491884,
+        "X": [
+          1,
+          2017
+        ]
+      },
+      {
+        "cluster": "No",
+        "yi": 0.0629583956913574,
+        "vi": 0.0214064792945335,
+        "X": [
+          1,
+          2015
+        ]
+      },
+      {
+        "cluster": "Yes",
+        "yi": 0.902605083174318,
+        "vi": 0.21030661319890304,
+        "X": [
+          1,
+          2010
+        ]
+      },
+      {
+        "cluster": "Yes",
+        "yi": 0.252398497776883,
+        "vi": 0.0280472848790218,
+        "X": [
+          1,
+          2013
+        ]
+      },
+      {
+        "cluster": "No",
+        "yi": 0.0571672746138631,
+        "vi": 0.10267347763053201,
+        "X": [
+          1,
+          2014
+        ]
+      },
+      {
+        "cluster": "No",
+        "yi": -0.0133241266759535,
+        "vi": 0.054888434020124305,
+        "X": [
+          1,
+          2014
+        ]
+      },
+      {
+        "cluster": "No",
+        "yi": -0.470265124631243,
+        "vi": 0.025609399648525603,
+        "X": [
+          1,
+          2015
+        ]
+      },
+      {
+        "cluster": "Yes",
+        "yi": 1.05059905199334,
+        "vi": 0.150579557834104,
+        "X": [
+          1,
+          2010
+        ]
+      },
+      {
+        "cluster": "No",
+        "yi": -0.116767125744696,
+        "vi": 0.0308289557732639,
+        "X": [
+          1,
+          2015
+        ]
+      },
+      {
+        "cluster": "No",
+        "yi": -0.351343778513966,
+        "vi": 0.08476411973102851,
+        "X": [
+          1,
+          2015
+        ]
+      },
+      {
+        "cluster": "No",
+        "yi": -0.269817450444916,
+        "vi": 0.05935883423944549,
+        "X": [
+          1,
+          2014
+        ]
+      },
+      {
+        "cluster": "Yes",
+        "yi": -0.0757365423853466,
+        "vi": 0.06806818248330009,
+        "X": [
+          1,
+          2014
+        ]
+      }
+    ],
+    "source_rows": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36
+    ],
+    "omitted_rows": []
+  },
+  "R": {
+    "id": "dat.lehmann2018::003::PRPublication::Year::rho=0",
+    "status": "refused",
+    "reason": "invalid comparison with complex values",
+    "warnings": []
+  },
+  "trials": 121,
+  "deletion_checks": [
+    {
+      "removed": 1,
+      "preserves": false
+    },
+    {
+      "removed": 2,
+      "preserves": false
+    },
+    {
+      "removed": 3,
+      "preserves": false
+    },
+    {
+      "removed": 4,
+      "preserves": false
+    },
+    {
+      "removed": 5,
+      "preserves": false
+    },
+    {
+      "removed": 6,
+      "preserves": false
+    },
+    {
+      "removed": 7,
+      "preserves": false
+    },
+    {
+      "removed": 8,
+      "preserves": false
+    },
+    {
+      "removed": 9,
+      "preserves": false
+    },
+    {
+      "removed": 10,
+      "preserves": false
+    },
+    {
+      "removed": 11,
+      "preserves": false
+    },
+    {
+      "removed": 12,
+      "preserves": false
+    },
+    {
+      "removed": 13,
+      "preserves": false
+    },
+    {
+      "removed": 14,
+      "preserves": false
+    },
+    {
+      "removed": 15,
+      "preserves": false
+    }
+  ],
+  "app": {
+    "id": "dat.lehmann2018::003::PRPublication::Year::rho=0",
+    "status": "refused",
+    "reason": "RVE: m<=p; insufficient clusters for inference"
+  }
+}

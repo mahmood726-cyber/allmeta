@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
   <meta name="description" content="Robust variance estimation (RVE) meta-regression for dependent effect sizes: CORR working model, CR2 standard errors, Satterthwaite degrees of freedom, conditioning check and R-script export.">
   <meta name="color-scheme" content="light dark">
@@ -74,6 +74,7 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/stats-qt.js"></script>
+  <script src="../shared/rve-eigen.js"></script>
   <script src="../shared/rve.js"></script>
   <script src="../shared/rve-extras.js"></script>
   <script src="../shared/build-info.js"></script>

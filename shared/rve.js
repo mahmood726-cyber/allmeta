@@ -156,7 +156,10 @@
   // Symmetric inverse square root: V diag(λ^{-1/2}) Vᵀ, with λ < 1e-10 → 0
   // (matches robumeta's eigenval thresholding for rank-deficient leverage blocks).
   function invSqrtSym(A) {
-    var n = A.length, eig = symEig(A), V = eig.vectors;
+    var rEigen = global.AlmRVEEigen;
+    if (!rEigen && typeof require === "function") rEigen = require("./rve-eigen.js");
+    if (!rEigen) throw new Error("RVE: LAPACK eigen dependency unavailable");
+    var n = A.length, eig = rEigen(A), V = eig.vectors;
     var d = eig.values.map(function (l) { return l < 1e-10 ? 0 : 1 / Math.sqrt(l); });
     var out = zeros(n, n);
     for (var i = 0; i < n; i++)
@@ -169,6 +172,86 @@
   }
 
   // ----- CORR-model fit ---------------------------------------------------
+  // R 4.6 (Windows x64) summary.c uses a 64-significand-bit LDOUBLE.
+  // Represent finite extended values as n * 2^e; round every operation to
+  // nearest/even, not just the final sum. This also preserves mean's extended
+  // subtraction/correction before its single conversion back to binary64.
+  var reductionBits = new DataView(new ArrayBuffer(8));
+  function ldFromDouble(x) {
+    reductionBits.setFloat64(0, x);
+    var hi = reductionBits.getUint32(0), lo = reductionBits.getUint32(4);
+    var exp = (hi >>> 20) & 2047;
+    var n = (BigInt(hi & 1048575) << 32n) | BigInt(lo);
+    if (exp) n |= 1n << 52n;
+    return { n: hi >>> 31 ? -n : n, e: exp ? exp - 1075 : -1074 };
+  }
+  function roundQuotient(n, d) {
+    var q = n / d, r = n % d;
+    return q + (2n * r > d || (2n * r === d && (q & 1n)) ? 1n : 0n);
+  }
+  function ldRound(n, e, precision) {
+    var negative = n < 0n;
+    if (negative) n = -n;
+    var shift = Math.max(0, n.toString(2).length - precision);
+    if (shift) n = roundQuotient(n, 1n << BigInt(shift));
+    return { n: negative ? -n : n, e: e + shift };
+  }
+  function ldAdd(a, b) {
+    var e = Math.min(a.e, b.e);
+    return ldRound((a.n << BigInt(a.e - e)) + (b.n << BigInt(b.e - e)), e, 64);
+  }
+  function ldDivide(a, count) {
+    if (!a.n) return a;
+    var negative = a.n < 0n, n = negative ? -a.n : a.n, d = BigInt(count);
+    var shift = 64 + d.toString(2).length - n.toString(2).length;
+    var numerator = n << BigInt(Math.max(0, shift));
+    var denominator = d << BigInt(Math.max(0, -shift));
+    // Choose the scale so the quotient has exactly 64 significant bits.
+    if (numerator / denominator >= (1n << 64n)) { denominator <<= 1n; shift--; }
+    var q = roundQuotient(numerator, denominator);
+    return { n: negative ? -q : q, e: a.e - shift };
+  }
+  function ldToDouble(a) {
+    var n = a.n, negative = n < 0n;
+    if (negative) n = -n;
+    var shift = Math.max(0, n.toString(2).length - 53, -1074 - a.e);
+    n = roundQuotient(n, 1n << BigInt(shift));
+    var value = Number(n) * Math.pow(2, a.e + shift);
+    return negative ? -value : value;
+  }
+  function rSum(xs) {
+    var s = { n: 0n, e: 0 };
+    for (var i = 0; i < xs.length; i++) {
+      if (!Number.isFinite(xs[i])) return xs.reduce(function(a, b) { return a + b; }, 0);
+      s = ldAdd(s, ldFromDouble(xs[i]));
+    }
+    return ldToDouble(s);
+  }
+  function rMean(xs) {
+    if (xs.length === 1) return xs[0];
+    var values = xs.map(ldFromDouble), s = { n: 0n, e: 0 };
+    values.forEach(function(x) { s = ldAdd(s, x); });
+    var finiteSum = Number.isFinite(ldToDouble(s));
+    if (finiteSum) s = ldDivide(s, xs.length);
+    else {
+      s = { n: 0n, e: 0 };
+      xs.forEach(function(x) { s = ldAdd(s, ldFromDouble(x / xs.length)); });
+    }
+    var t = { n: 0n, e: 0 };
+    values.forEach(function(x) {
+      var delta = ldAdd(x, { n: -s.n, e: s.e });
+      t = ldAdd(t, finiteSum ? delta : ldDivide(delta, xs.length));
+    });
+    return ldToDouble(ldAdd(s, finiteSum ? ldDivide(t, xs.length) : t));
+  }
+  // The archived v1 reference pins LC_COLLATE/LC_CTYPE=C. R's native
+  // conversion escapes unrepresentable Unicode before bytewise collation.
+  function rFactorKey(label) {
+    return String(label).replace(/[^\x00-\x7f]/gu, function(ch) {
+      var hex = ch.codePointAt(0).toString(16).toUpperCase();
+      return '<U+' + hex.padStart(hex.length > 4 ? 8 : 4, '0') + '>';
+    });
+  }
   //
   // Input rows: { cluster, yi, vi, X: [...predictors including intercept] }
   // opts: { rho (0–1, default 0.8), tau2 (override), method ("CR2" default | "CR1") }
@@ -189,7 +272,12 @@
       if (!r.X || r.X.length !== p || !r.X.every(Number.isFinite) || !Number.isFinite(r.yi) || !Number.isFinite(r.vi) || r.vi <= 0 || r.cluster == null || String(r.cluster).trim() === "") throw new Error("RVE: invalid row or predictor count");
     });
 
-    // Group by cluster (preserves first-seen order).
+    // robumeta 2.1 robu.R:37-39: as.factor(), then order(study).
+    // Keep observations stable within factors and return weights in caller order.
+    var inputOrder = rows.map(function(r, i) { return { row: r, index: i, key: rFactorKey(r.cluster) }; });
+    inputOrder.sort(function(a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : a.index - b.index; });
+    rows = inputOrder.map(function(x) { return x.row; });
+    // Group by cluster in factor-level order.
     var clusterOrder = [];
     var byCluster = Object.create(null);
     for (var i = 0; i < k; i++) {
@@ -203,9 +291,10 @@
     // Per-cluster size k_j and mean sampling variance v̄_j.
     var clKj = Object.create(null), clVbar = Object.create(null);
     for (var ci = 0; ci < m; ci++) {
-      var key = clusterOrder[ci], idx = byCluster[key], sv = 0;
-      for (var a = 0; a < idx.length; a++) sv += rows[idx[a]].vi;
-      clKj[key] = idx.length; clVbar[key] = sv / idx.length;
+      var key = clusterOrder[ci], idx = byCluster[key];
+      // robu.R:42 stats::ave -> mean.default -> summary.c real_mean.
+      clKj[key] = idx.length;
+      clVbar[key] = rMean(idx.map(function(i) { return rows[i].vi; }));
     }
 
     var X = rows.map(function (r) { return r.X.slice(); });
@@ -247,8 +336,9 @@
       var wFE = clusterWeights(0);
       var f0 = fitW(wFE);
       var e0 = residuals(f0.beta);
-      var Qe = 0, sumW = 0;
-      for (var i3 = 0; i3 < k; i3++) { Qe += wFE[i3] * e0[i3] * e0[i3]; sumW += wFE[i3]; }
+      // robu.R:134 sumW <- sum(data.full$weights), summary.c rsum.
+      var Qe = 0, sumW = rSum(wFE);
+      for (var i3 = 0; i3 < k; i3++) { Qe += wFE[i3] * e0[i3] * e0[i3]; }
       // Within W_j = w_j·I and J_j = ones(k_j): build the three trace terms.
       //   sumXWJWX_j = w_j² (Σ_a X_a)(Σ_a X_a)ᵀ
       //   Matrx_WKXX_j = (w_j/k_j) Σ_a X_a X_aᵀ
@@ -277,7 +367,7 @@
       tau2 = Math.max(0, term1 + rho * term2);
     }
 
-    if (m <= p) throw new Error("RVE: m<=p; insufficient clusters for inference");
+    if (m <= p && method === "CR1") throw new Error("RVE: m<=p; insufficient clusters for inference");
 
     // ---- Re-weighted fit with the RVE weights ----------------------------
     var weights = clusterWeights(tau2);
@@ -325,6 +415,8 @@
         block = matMul(block, Xj);
         for (var i6=0;i6<p;i6++) for(var j6=0;j6<p;j6++) meat[i6][j6]+=block[i6][j6];
       }
+      // robumeta's eigenvalue comparison precedes the reference's m<=p guard.
+      if (m <= p) throw new Error("RVE: m<=p; insufficient clusters for inference");
       cov = matMul(matMul(Q, meat), Q);
 
       // ---- Satterthwaite df per coefficient ------------------------------
@@ -368,10 +460,12 @@
     var se = new Array(p);
     for (var i7 = 0; i7 < p; i7++) se[i7] = Math.sqrt(Math.max(0, cov[i7][i7]));
 
+    var callerWeights = new Array(k);
+    inputOrder.forEach(function(x, i) { callerWeights[x.index] = weights[i]; });
     return {
       beta: beta, cov_robust: cov, se_robust: se,
       df: dfArr, m_clusters: m, k_total: k, p: p,
-      tau2: tau2, rho: rho, method: method, weights: weights,
+      tau2: tau2, rho: rho, method: method, weights: callerWeights,
     };
   }
 
