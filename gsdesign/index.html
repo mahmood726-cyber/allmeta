@@ -65,10 +65,10 @@
         <label><span class="lbl" id="alphaLbl">One-sided α</span><input id="alpha" type="number" step="any" min="0.0001" max="0.4" value="0.025" aria-label="Alpha"></label>
         <label><span class="lbl">Looks (K)</span><input id="K" type="number" step="1" min="1" max="10" value="4" aria-label="Looks (K)"></label>
       </div>
-      <label><span class="lbl">Information fractions (optional)</span><input id="timing" type="text" placeholder="equally spaced, e.g. 0.25, 0.5, 0.75, 1" aria-label="Information fractions"></label>
+      <label><span class="lbl">Information fractions (optional)</span><input id="timing" type="text" placeholder="equally spaced, e.g. 0.25, 0.5, 0.75, 1" aria-label="Information fractions (optional)"></label>
       <label>
         <span class="lbl">Spending function (efficacy)</span>
-        <select id="spend" aria-label="Spending function">
+        <select id="spend" aria-label="Spending function (efficacy)">
           <option value="obf" selected>O'Brien-Fleming type (Lan-DeMets)</option>
           <option value="pocock">Pocock type (Lan-DeMets)</option>
           <option value="landemets">Power ρ (Kim-DeMets)</option>
@@ -102,7 +102,7 @@
       </label>
       <label id="bindWrap" hidden>
         <span class="lbl">Futility bound</span>
-        <select id="bind" aria-label="Futility bound type">
+        <select id="bind" aria-label="Futility bound">
           <option value="0" selected>Non-binding (gsDesign test.type 4)</option>
           <option value="1">Binding (gsDesign test.type 3)</option>
         </select>
@@ -126,16 +126,16 @@
     <section class="panel full" aria-label="Adaptive simulation">
       <h2>Adaptive simulation — two-group comparison of means</h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:0 0.8rem">
-        <label><span class="lbl">Standard deviation σ</span><input id="sd" type="number" step="any" value="5" aria-label="Standard deviation"></label>
-        <label><span class="lbl">Maximum total N (planned)</span><input id="nmax" type="number" step="any" value="60" aria-label="Maximum planned total sample size"></label>
-        <label><span class="lbl">Mean differences</span><input id="alts" type="text" value="0, 1, 2, 3, 4" aria-label="Mean differences to simulate"></label>
+        <label><span class="lbl">Standard deviation σ</span><input id="sd" type="number" step="any" value="5" aria-label="Standard deviation σ"></label>
+        <label><span class="lbl">Maximum total N (planned)</span><input id="nmax" type="number" step="any" value="60" aria-label="Maximum total N (planned)"></label>
+        <label><span class="lbl">Mean differences</span><input id="alts" type="text" value="0, 1, 2, 3, 4" aria-label="Mean differences"></label>
         <label><span class="lbl">Test statistic</span><select id="comb" aria-label="Test statistic"><option value="inverseNormal" selected>Inverse normal combination</option><option value="groupSequential">Group sequential (pooled data)</option></select></label>
         <label><span class="lbl">Sample-size re-estimation</span><select id="ssr" aria-label="Sample-size re-estimation"><option value="0" selected>Off (planned sizes)</option><option value="1">On: conditional power</option></select></label>
         <label><span class="lbl">Target conditional power</span><input id="cp" type="number" step="any" value="0.8" aria-label="Target conditional power"></label>
-        <label><span class="lbl">Min stage size (stages ≥ 2)</span><input id="smin" type="number" step="any" value="20" aria-label="Minimum stage sample size"></label>
-        <label><span class="lbl">Max stage size (stages ≥ 2)</span><input id="smax" type="number" step="any" value="80" aria-label="Maximum stage sample size"></label>
-        <label><span class="lbl">Assumed effect for SSR</span><input id="th1" type="text" placeholder="observed" aria-label="Assumed effect for re-estimation (blank = observed)"></label>
-        <label><span class="lbl">Simulated trials per difference</span><input id="iter" type="number" step="1" value="10000" aria-label="Simulated trials"></label>
+        <label><span class="lbl">Min stage size (stages ≥ 2)</span><input id="smin" type="number" step="any" value="20" aria-label="Min stage size (stages ≥ 2)"></label>
+        <label><span class="lbl">Max stage size (stages ≥ 2)</span><input id="smax" type="number" step="any" value="80" aria-label="Max stage size (stages ≥ 2)"></label>
+        <label><span class="lbl">Assumed effect for SSR</span><input id="th1" type="text" placeholder="observed" aria-label="Assumed effect for SSR"></label>
+        <label><span class="lbl">Simulated trials per difference</span><input id="iter" type="number" step="1" value="10000" aria-label="Simulated trials per difference"></label>
         <label><span class="lbl">Seed</span><input id="seed" type="number" step="1" value="20261021" aria-label="Seed"></label>
       </div>
       <button class="primary" id="simrun" type="button">Simulate</button>
