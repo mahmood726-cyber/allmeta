@@ -9,7 +9,8 @@ const channel = process.env.PW_CHANNEL || undefined;
 export default defineConfig({
   testDir: '.',
   testMatch: '*.spec.mjs',
-  testIgnore: '*-plus-pixels.spec.mjs', // Dedicated Windows pixel CI job and config.
+  // Dedicated Windows pixel CI job and config; shared-feature specs run in features.yml (playwright.features.config.mjs).
+  testIgnore: ['*-plus-pixels.spec.mjs', 'features-*.spec.mjs'],
   timeout: 30_000,
   use: {
     baseURL: 'http://localhost:8088',
