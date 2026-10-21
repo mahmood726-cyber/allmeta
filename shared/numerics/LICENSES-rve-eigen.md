@@ -1,5 +1,7 @@
 # Licences of the binaries embedded in `shared/rve-eigen.js`
 
+**Licence of `shared/rve-eigen.js`: GPL-3.0, as distributed by webR.** The file embeds webR distribution binaries, and webR distributes its binaries under GPL-3 (section 4). The upstream LAPACK/BLAS modified-BSD and LLVM Apache-2.0-with-LLVM-exception notices below are kept verbatim. Sources: R BLAS/LAPACK https://github.com/wch/r-source/tree/trunk/src/modules/lapack and https://github.com/wch/r-source/tree/trunk/src/extra/blas; webR https://github.com/r-wasm/webr. Everything else in allmeta, including `rve-eigen-runtime.js` and `build-rve-eigen.cjs`, remains under the MIT licence.
+
 `shared/rve-eigen.js` inlines, as base64, the unchanged webR builds of
 `libRblas.so` and `libRlapack.so` from `r-shiny/shinylive/webr` (SHA-256 pins
 in `build-rve-eigen.cjs`). Those binaries are **not** covered by allmeta's MIT

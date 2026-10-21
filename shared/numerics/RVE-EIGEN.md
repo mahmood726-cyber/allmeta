@@ -123,6 +123,8 @@ comparator, not in this kernel.
 
 ## Licences
 
+`shared/rve-eigen.js` is licensed GPL-3.0, as distributed by webR (https://github.com/r-wasm/webr); see LICENSES-rve-eigen.md for the verbatim upstream notices and source links. The rest of allmeta is MIT.
+
 The embedded payloads are the same files allmeta already distributes in
 `r-shiny/shinylive/webr`. They are not relicensed under allmeta's MIT licence.
 [LICENSES-rve-eigen.md](LICENSES-rve-eigen.md) reproduces R's `doc/COPYRIGHTS`
