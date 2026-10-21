@@ -138,7 +138,7 @@ QNORM_R = [
 
 def test_qnorm_matches_r_within_two_ulp():
     # Same algorithm and operation order as R; V8's Math.log may differ from the C library's log in the last bit,
-    # so 2 ulp is allowed (the previous Acklam + Halley version was 5.4 ulp off at p = 0.995).
+    # so 2 ulp is allowed (the previous Acklam + Halley version was 7 ulp, 1.2e-15 relative, off at p = 0.995).
     got = _run("[" + ",".join(f"RB._qnorm({p!r})" for p, _ in QNORM_R) + "]")
     for (p, want), x in zip(QNORM_R, got):
         assert abs(x - want) <= 2 * math.ulp(want if want else 1.0), (p, x, want)
