@@ -63,6 +63,47 @@ def test_single_look_reduces_to_fixed_design():
     assert math.isclose(got[0], 1.959963984540054, abs_tol=1e-6)
 
 
+def _node(expr, timeout=30):
+    r = subprocess.run([NODE, "-e", PRELUDE + "console.log(JSON.stringify(" + expr + "));"],
+                       capture_output=True, text=True, timeout=timeout, cwd=str(ROOT))
+    if r.returncode != 0:
+        raise AssertionError(f"node exited {r.returncode}\n{r.stdout}\n{r.stderr}")
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+def test_two_sided_follows_gsdesign_test_type_2():
+    # gsDesign test.type=2 spends sfLDOF(alpha_one_sided, t) on EACH side, so with a
+    # two-sided 0.05 test the first of two equally spaced bounds is
+    # b1 = Phi^-1(1 - sfLDOF(0.025, 0.5)), sfLDOF(a, t) = 2 * (1 - Phi(Phi^-1(1 - a/2) / sqrt(t))).
+    from statistics import NormalDist
+    N = NormalDist()
+    spend1 = 2 * (1 - N.cdf(N.inv_cdf(1 - 0.0125) / math.sqrt(0.5)))
+    want = N.inv_cdf(1 - spend1)
+    got = _node("G.boundaries({alpha:0.05,infoFracs:[0.5,1],spend:'obf',twoSided:true})[0].z_eff")
+    assert math.isclose(got, want, abs_tol=1e-9), (got, want)
+
+
+def test_many_looks_finish_quickly():
+    # the recursive-density solver was exponential in K (K=5 ~5 s, K=6 minutes);
+    # the page allows K up to 10.
+    expr = "G.boundaries({alpha:0.025,infoFracs:[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1],spend:'obf'}).map(x=>x.z_eff)"
+    got = _node(expr, timeout=20)
+    assert len(got) == 10 and all(2 < g < 9 for g in got)
+
+
+def test_beta_spending_futility_is_computed_under_the_alternative():
+    # gsDesign beta-spending: P(Z1 < a1 | theta = delta) = sf(beta, t1), i.e.
+    # a1 = delta * sqrt(I1) + Phi^-1(sf(beta, t1)); under H0 (the old behaviour) a1 = Phi^-1(sf(beta, t1)).
+    from statistics import NormalDist
+    N = NormalDist()
+    r = _node("(()=>{const b=G.boundaries({alpha:0.025,infoFracs:[1/3,2/3,1],spend:'obf',futility:'betaspend',"
+              "futSpend:'obf',beta:0.1});return {a1:b[0].z_fut,I1:b[0].infoRatio};})()")
+    delta = N.inv_cdf(0.975) + N.inv_cdf(0.9)
+    bspend1 = 2 * (1 - N.cdf(N.inv_cdf(1 - 0.05) / math.sqrt(1 / 3)))
+    assert r.get("I1") is not None, r
+    assert math.isclose(r["a1"], delta * math.sqrt(r["I1"]) + N.inv_cdf(bspend1), abs_tol=1e-9), r
+
+
 def test_conditional_power_sanity():
     # CP under current trend, interim exactly on the final-boundary trajectory.
     out = subprocess.run(
