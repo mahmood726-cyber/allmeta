@@ -287,6 +287,42 @@
                seTEdiag: seTEdiag, nll: fit.value };
     };
 
+    // copas-results-v2 contract: the reproducible publication-probability path
+    // of copas/tests/fixtures/copas-oracle.R (smallest-SE study pinned at
+    // publprob pHi = 0.9999, largest-SE study's publprob swept 1.0 -> 0.3), a
+    // profile MLE at each (gamma0, gamma1) and metasens's display-seTE
+    // carry-forward chain. PR #212 replaced this grid with the metasens
+    // orthogonal line, which has a data-dependent length and no round
+    // publprob values; that line is now exported beside it as
+    // `orthogonal_line`, not in its place. Each point goes through the hook
+    // above, so the exported grid is the very computation copas-parity.spec.mjs
+    // checks against the oracle. `se` must be the loaded data's SEs (the hook
+    // re-reads the textarea).
+    var V2_PHI = 0.9999;
+    var V2_PGRID = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3];
+    function v2Grid(se, feSE, level) {
+      var seMin = Math.min.apply(null, se), seMax = Math.max.apply(null, se);
+      var qHi = CC.qnorm(V2_PHI), sePrev = NaN;
+      return V2_PGRID.map(function (p) {
+        var g1 = p >= 1 ? 0 : (qHi - CC.qnorm(p)) / (1 / seMin - 1 / seMax);
+        var g0 = qHi - g1 / seMin;
+        var mle = window.__almCopasProfileMLE(g0, g1);
+        var seD = mle.seTE;
+        if (sePrev === sePrev && (!Number.isFinite(seD) || seD === 0)) seD = sePrev;
+        if (!Number.isFinite(seD) || seD === 0) seD = mle.seTEdiag;
+        if (!Number.isFinite(seD) || seD === 0) seD = feSE;
+        sePrev = seD;
+        var nUnpubl = se.reduce(function (acc, s) {
+          var ps = CC.pnorm(g0 + g1 / s);
+          return acc + (ps > 0 ? (1 - ps) / ps : 0);
+        }, 0);
+        var c = CC.ci(mle.TE, seD, level);
+        return { publprob: p, gamma0: g0, gamma1: g1, te_adj: mle.TE, se_adj: seD,
+                 rho: mle.rho, tau: mle.tau, n_unpubl: nUnpubl,
+                 lo: c.lower, hi: c.upper };
+      });
+    }
+
     // The full fit on the currently loaded data. Also the validation hook: any
     // option may be overridden so a run can reproduce metasens's configuration.
     function fitCopas(override) {
@@ -458,9 +494,19 @@
                  selected: fit.sel_adj === (i + 1) };
       });
 
+      // Unadjusted inverse-variance common-effect pool (metafor rma FE /
+      // meta TE.common); the v2 fe_pooled / fe_se.
+      var feSE = Math.sqrt(1 / fit.seTE.reduce(function (a, s) { return a + 1 / (s * s); }, 0));
+
+      // Still copas-results-v2: every v2 field (k, fe_pooled, fe_se, rho_bound,
+      // sensitivity_grid with its v2 rows, rows) is present with its v2
+      // meaning, and everything PR #212's metasens pipeline added is additive.
+      // A consumer of v2 needs no change, so the schema string must not move.
       _lastResults = {
-        _schema: 'copas-results-v3',
+        _schema: 'copas-results-v2',
         k: fit.k,
+        fe_pooled: CC.commonEffect(fit.TE, fit.seTE),
+        fe_se: feSE,
         dropped_rows: fit.dropped,
         method: 'Copas & Shi (2000) selection model, metasens::copas pipeline',
         ngrid: fit.ngrid, nlevels: fit.nlevels_arg,
@@ -474,7 +520,10 @@
         statistic_adjust: fit.statistic_adjust, pval_adjust: fit.pval_adjust,
         tau_adjust: fit.tau_adjust, pval_rsb_adj: fit.pval_rsb_adj,
         n_unpubl_adj: fit.N_unpubl_adj,
-        sensitivity_grid: results.map(function (r) {
+        sensitivity_grid: v2Grid(fit.seTE, feSE, fit.level_ma),
+        // The metasens orthogonal line: what the table and plot show, and the
+        // row TE.adjust is taken from (selected).
+        orthogonal_line: results.map(function (r) {
           return { publprob: r.publprob, te_adj: r.mean, se_adj: r.se,
                    lo: r.lo, hi: r.hi, rho: r.rho, tau: r.tau,
                    pval_rsb: r.pvalRsb, n_unpubl: r.nUnpubl, selected: r.selected };
@@ -529,7 +578,8 @@
       showStatus('Fitted in ' + ((t1 - t0) / 1000).toFixed(1) + ' s: ' +
         fit.ngrid + '×' + fit.ngrid + ' = ' + (fit.ngrid * fit.ngrid) +
         ' profile maximum-likelihood fits on the contour surface, plus ' +
-        fit.n_orthogonal_points + ' down the orthogonal line. Changing the ' +
+        fit.n_orthogonal_points + ' down the orthogonal line and ' +
+        V2_PGRID.length + ' on the exported publication-probability grid. Changing the ' +
         'y-axis range only redraws; changing ngrid, τ² method, sign.rsb or ' +
         'the CI level refits.');
 
