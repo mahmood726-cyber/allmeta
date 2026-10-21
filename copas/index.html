@@ -169,7 +169,7 @@
 </section>
   </main>
   <footer>
-    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95&#8211;109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247&#8211;262 (extension). <strong>Implementation:</strong> <code>shared/copas-core.js</code> ports the whole of <code>metasens::copas()</code> (metasens 1.5-3) &#8212; the &#947; grids, the <code>ngrid</code>&#215;<code>ngrid</code> profile-MLE contour surface, R&#8217;s own <code>contourLines()</code> and <code>pretty()</code> machinery, the approximate orthogonal line with its per-contour regressions, the four-parameter residual-selection-bias fit (<code>pval.rsb</code>) and metasens&#8217;s <code>TE.adjust</code> selection rule. <strong>Where it differs:</strong> the box-constrained maximisation is a projected-gradient routine, not R&#8217;s <code>L-BFGS-B</code>; because <code>optim</code>&#8217;s default <code>factr</code> stops about 2&#215;10<sup>-9</sup> short in the objective, the two do not report bit-identical maximum-likelihood values. Every deterministic stage is checked against R to 1e-9 and the likelihood attained here is never worse than metasens&#8217;s; see the validation archive for the per-quantity counts. Per advanced-stats.md, <strong>Copas selection models need k &#8805; 15</strong> for stable estimation &#8212; this app warns but does not refuse; treat output as illustrative if k &lt; 15.
+    Copas JB. What works?: Selectivity models and meta-analysis. <em>J R Stat Soc Ser A</em> 1999;162:95&#8211;109 (seminal selection-model paper); Copas JB, Shi JQ. Meta-analysis, funnel plots and sensitivity analysis. <em>Biostatistics</em> 2000;1:247&#8211;262 (extension). <strong>Implementation:</strong> <code>shared/copas-core.js</code> ports the whole of <code>metasens::copas()</code> (metasens 1.5-3) &#8212; the &#947; grids, the <code>ngrid</code>&#215;<code>ngrid</code> profile-MLE contour surface, R&#8217;s own <code>contourLines()</code> and <code>pretty()</code> machinery, the approximate orthogonal line with its per-contour regressions, the four-parameter residual-selection-bias fit (<code>pval.rsb</code>) and metasens&#8217;s <code>TE.adjust</code> selection rule. <strong>Where it differs:</strong> the box-constrained maximisation is a projected-gradient routine, not R&#8217;s <code>L-BFGS-B</code>; because <code>optim</code>&#8217;s default <code>factr</code> stops about 2&#215;10<sup>-9</sup> short in the objective, the two do not report bit-identical maximum-likelihood values. Stage 5 (the four-parameter residual-bias fit behind <code>pval.rsb</code>) differs the same way, and in a direction worth knowing: where this port converges further than metasens, <code>pval.rsb</code> comes out <em>smaller</em>, which can move the selected point down the orthogonal line or make the adjusted estimate be withheld where metasens reports one. <strong>What is checked, and where it falls short:</strong> the committed suite checks every deterministic stage against R to 1e-9 on one reference dataset (<code>metadat::dat.hackshaw1998</code>, k&nbsp;=&nbsp;37) in three configurations, and the profile MLE against a separate <code>metasens</code> oracle on a second dataset (<code>copas/tests/fixtures/copas-oracle.json</code>, driven in a browser by <code>hub/shared/tests/copas-parity.spec.mjs</code> and in Node by <code>copas/tests/copas-oracle.test.mjs</code>). The validation archive extends this to 46 inputs &#8212; and reports that the objective attained here is <em>worse</em> than metasens&#8217;s at 84 of 42,498 comparable grid points, in 16 of 138 configurations. That was a pre-registered requirement and the archive records it as <strong>not met</strong>; see its <code>DEVIATIONS.md</code>. Neither optimiser dominates the other. <strong>Small k:</strong> this app warns below k&nbsp;=&nbsp;15 and treats 3&nbsp;&#8804;&nbsp;k&nbsp;&lt;&nbsp;15 output as illustrative rather than refusing it; k&nbsp;&#8805;&nbsp;15 is this project&#8217;s own operating threshold, not a published one.
   </footer>
   <script>
   (function () {
@@ -235,15 +235,34 @@
     }
 
     // Back-compatible hook: profile MLE at an explicit (gamma0, gamma1) on the
-    // loaded data. Kept because the earlier parity spec calls it.
+    // loaded data. Kept because hub/shared/tests/copas-parity.spec.mjs calls it
+    // and asserts on TE / rho / tau / seTE against copas/tests/fixtures/
+    // copas-oracle.json. Its shape {TE, rho, tau, seTE, seTEdiag, nll} is
+    // therefore a contract, not an implementation detail: both return paths
+    // carry every field, and copas/tests/test_structure.py fails the build if
+    // one is dropped again. seTE is built exactly as stage 4 of CC.copas()
+    // builds seTE.slope — optimhess of the ANALYTIC gradient (R's ndeps = 1e-3)
+    // plus metasens's element-wise `junk2$hessian + 1e-8` regularisation —
+    // and seTEdiag is metasens's last-resort sqrt(1/H[1,1]) off the
+    // UNregularised Hessian.
     window.__almCopasProfileMLE = function (g0, g1) {
       var rows = parse(document.getElementById('src').value);
-      if (rows.length < 1) return { TE: NaN, rho: NaN, tau: NaN, seTE: NaN };
+      if (rows.length < 1)
+        return { TE: NaN, rho: NaN, tau: NaN, seTE: NaN, seTEdiag: NaN, nll: NaN };
       var te = rows.map(function (r) { return r.te; });
       var se = rows.map(function (r) { return r.se; });
       var sv = startValues(te, se, readOpts().method_tau);
       var fit = CC.profileMLE(te, se, [g0, g1], [sv.TE_random, sv.rho0, sv.tau], 0.9999);
-      return { TE: fit.par[0], rho: fit.par[1], tau: fit.par[2], nll: fit.value };
+      var H = CC.optimHess(function (p) {
+        return CC.gradientWithoutBeta(p, [g0, g1], te, se);
+      }, fit.par);
+      var seTEdiag = H[0][0] > 0 ? Math.sqrt(1 / H[0][0]) : NaN;
+      var inv00 = CC.solveFirstDiag(H.map(function (row) {
+        return row.map(function (v) { return v + 1e-8; });
+      }));
+      return { TE: fit.par[0], rho: fit.par[1], tau: fit.par[2],
+               seTE: inv00 > 0 ? Math.sqrt(inv00) : NaN,
+               seTEdiag: seTEdiag, nll: fit.value };
     };
 
     // The full fit on the currently loaded data. Also the validation hook: any
@@ -277,7 +296,11 @@
       var warnEl = document.getElementById('k-warn');
       if (warnEl) {
         if (rows.length < 15 && rows.length >= 3) {
-          warnEl.textContent = 'k = ' + rows.length + ' — Copas selection model needs k ≥ 15 for stable estimation (advanced-stats.md). Output below is illustrative; do not use for inference.';
+          // No source is cited here on purpose: k >= 15 is this project's own
+          // operating threshold for the Copas selection model, not a published
+          // cut-off, and the file it used to name is a private local notes file
+          // that no reader of this page can consult.
+          warnEl.textContent = 'k = ' + rows.length + ' — this app treats k ≥ 15 as the point at which Copas selection-model estimates become stable enough to interpret. Output below is illustrative; do not use for inference.';
           warnEl.style.display = 'block';
         } else {
           warnEl.style.display = 'none';
