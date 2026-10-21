@@ -91,6 +91,7 @@ test('app 9 Data entry end to end: 3 confirmed rows -> app input + provenance; P
   await expect(page.locator('#res-body .pooled-row')).toHaveCount(1);
   await openPanel(page);
   const panel = page.locator('#alm-f-panel-entry');
+  await panel.getByLabel('Your initials (recorded with each confirmation)').fill('MA');
   await panel.getByLabel('Paste the exact paper text or table', { exact: true }).fill(PASTE);
   await panel.getByRole('button', { name: 'Extract candidates', exact: true }).click();
   const use = panel.getByRole('button', { name: 'Use these rows', exact: true });
@@ -108,14 +109,20 @@ test('app 9 Data entry end to end: 3 confirmed rows -> app input + provenance; P
     await expect(card).toHaveCount(1);
     const arm = card.getByLabel('Arm to use');
     const opts = await arm.locator('option').evaluateAll(os => os.map(o => ({ value: o.value, text: o.textContent })));
-    const pick = opts.find(o => o.text.endsWith(`: ${row.e} of ${row.n}`));
+    const pick = opts.find(o => (o.text.endsWith(`: ${row.e} of ${row.n}`) || o.text.includes(`: ${row.e} of ${row.n} (`)));
     expect(pick, JSON.stringify(opts)).toBeDefined();
     await arm.selectOption(pick.value);
+    // Current entry UI (entry5/entry6): role, denominator, timepoint, unit of randomisation, structured source.
+    await card.getByLabel('This arm is').selectOption('intervention');
+    await card.getByLabel(`Who is counted in ${row.n}?`).selectOption('ITT');
     await card.getByLabel('Study label (author and year, e.g. Smith 2019)').fill(row.label);
     await card.getByLabel('Full reference', { exact: true }).fill(`${row.label.split(' ')[0]} A et al. Trials ${row.label.split(' ')[1]};1:${k + 1}`);
-    await card.getByLabel('Location (table, figure or page)').fill('Table 2');
+    await card.getByLabel('Source type', { exact: true }).selectOption('Table');
+    await card.getByLabel('Location: number or page (e.g. 2, p. 5 or Results paragraph)').fill('2');
     await card.getByLabel('Outcome measured').fill('response');
-    await card.getByLabel('Timepoint (or not stated)').fill('12 weeks');
+    await card.getByLabel('Timepoint', { exact: true }).selectOption('__other__');
+    await card.getByLabel('Other timepoint (as written in the paper)').fill('12 weeks');
+    await card.getByLabel('What was randomised?').selectOption('individuals');
     await expect(card.getByLabel('I confirm this row')).toBeEnabled();
   }
   // Confirm rows 1 and 2 only.
@@ -128,6 +135,9 @@ test('app 9 Data entry end to end: 3 confirmed rows -> app input + provenance; P
   console.log('ENTRY planted: 2 of 3 rows confirmed -> Use these rows disabled');
   const third = panel.locator('fieldset').filter({ has: page.locator('legend', { hasText: /^Study source 3$/ }) });
   await third.getByLabel('I confirm this row').check();
+  // One pasted table -> the single-group same-source guard asks for an explicit opt-in before use.
+  await expect(use).toBeDisabled();
+  await panel.getByLabel('I understand these rows are arms of one trial and want them pooled as separate single groups').check();
   await expect(use).toBeEnabled();
   await use.click();
   await expect(panel.getByRole('status').first()).toContainText('Applied 3 confirmed rows.');

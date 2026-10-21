@@ -24,6 +24,7 @@ const GOLD_ROW = GOLD.find(g => /^continued antidepressants/.test(g.outcome));
 const LABELS = ['PRI-SMA 2016 intervention arm', 'PRI-SMA 2016 TAU arm'];
 const REFERENCE = 'PRI-SMA trial report, BMC Family Practice; doi:10.1186/s12875-016-0578-9 (PMC5244530)';
 const LOCATION = 'Abstract, Results paragraph';
+// PRI-SMA randomised general practices (clusters); the walkthrough records "not adjusted" (CLUSTER_NOT_ADJUSTED).
 
 const steps = [];
 
@@ -47,13 +48,17 @@ function card(host, i) {
   return host.locator('fieldset').filter({ has: host.page().locator('legend', { hasText: new RegExp(`^Study source ${i}$`) }) });
 }
 
-// Fill one source card: label, reference, location, DOI, arm, required facets, outcome, timepoint.
+// Fill one source card (current entry UI): label, reference, structured source, DOI, arm + role, denominator,
+// required facets, outcome, timepoint, unit of randomisation.
 async function fillCard(c, label, armIndex) {
   await c.getByLabel('Study label (author and year, e.g. Smith 2019)').fill(label);
   await c.getByLabel('Full reference').fill(REFERENCE);
-  await c.getByLabel('Location (table, figure or page)').fill(LOCATION);
+  await c.getByLabel('Source type', { exact: true }).selectOption('Abstract');
+  await c.getByLabel('Location: number or page (e.g. 2, p. 5 or Results paragraph)').fill('Results paragraph');
   await c.getByLabel('DOI', { exact: true }).fill('10.1186/s12875-016-0578-9');
   await c.getByLabel('Arm to use').selectOption(String(armIndex));
+  await c.getByLabel('This arm is').selectOption(armIndex === 0 ? 'intervention' : 'control');
+  await c.getByLabel(armIndex === 0 ? 'Who is counted in 125?' : 'Who is counted in 133?').selectOption('ITT');
   // Required facets (e.g. timepoint when the paste mentions several): choose the one the source cue shows.
   for (const facet of ['timepoint', 'analysisSet', 'adjustment', 'phase']) {
     // The wrapping <label> text also contains the option texts, so match the label by its leading caption.
@@ -65,13 +70,15 @@ async function fillCard(c, label, armIndex) {
     await sel.selectOption(options.includes(value) ? value : options[0]);
   }
   await c.getByLabel('Outcome measured').fill('continued antidepressants');
-  await c.getByLabel('Timepoint (or not stated)').fill('6 months');
+  await c.getByLabel('Timepoint', { exact: true }).selectOption('6 month');
+  await c.getByLabel('What was randomised?').selectOption('clusters');
+  await c.getByLabel('Adjust for clustering?').selectOption('decline');
 }
 
 async function extractCandidates(host, text) {
   await host.getByLabel('Paste the exact paper text or table').fill(text);
   await host.getByRole('button', { name: 'Extract candidates', exact: true }).click();
-  await expect(host.locator('[role=status]').first()).toContainText(/candidates|No supported result/);
+  await expect(host.locator('[role=status]').first()).toContainText(/\bcandidates?\b|No supported result/);
   const chooser = host.getByLabel('Choose the source result to add');
   return (await chooser.count()) ? chooser.locator('option').evaluateAll(os => os.map(o => ({ value: o.value, text: o.textContent }))) : [];
 }
@@ -80,7 +87,7 @@ async function extractAndAdd(page, host, text, cueIncludes) {
   await host.getByLabel('Paste the exact paper text or table').fill(text);
   await host.getByLabel('Outcome to look for (used only to rank candidates)').fill('continued antidepressants');
   await host.getByRole('button', { name: 'Extract candidates', exact: true }).click();
-  await expect(host.locator('[role=status]').first()).toContainText('candidates');
+  await expect(host.locator('[role=status]').first()).toContainText(/\bcandidates?\b/);
   const chooser = host.getByLabel('Choose the source result to add');
   const opts = await chooser.locator('option').evaluateAll(os => os.map(o => ({ value: o.value, text: o.textContent })));
   const pick = opts.find(o => o.value !== '' && o.text.includes(cueIncludes));
@@ -141,6 +148,7 @@ test('persona walkthrough pack: paper text -> provenance -> app 9 -> Methods', a
   await expect(host.getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
   await capture(page, 1, 'empty-entry', 'Empty data-entry panel', await hostText(), { mode, hasTab });
 
+  await host.getByLabel('Your initials (recorded with each confirmation)').fill('PW');
   // (2) paste the paper's Results paragraph (exact substring of the fixture)
   await host.getByLabel('Paste the exact paper text or table').fill(PASTE);
   await host.getByLabel('Outcome to look for (used only to rank candidates)').fill('continued antidepressants');
@@ -162,6 +170,9 @@ test('persona walkthrough pack: paper text -> provenance -> app 9 -> Methods', a
 
   // (5) value highlights + "What we took and how we used it"
   for (const i of [1, 2]) {
+    // The full paste sits behind "Show full pasted text" (U8); the source clause above it is always highlighted.
+    await expect(card(host, i).locator('p.alm-entry-clause mark')).toHaveCount(2);
+    await card(host, i).getByText('Show full pasted text', { exact: true }).click();
     await expect(card(host, i).locator('pre.alm-entry-source mark')).toHaveCount(2);
     await expect(card(host, i).locator('p').filter({ hasText: /^From PRI-SMA 2016/ })).toContainText('We read:');
   }
@@ -202,6 +213,8 @@ test('persona walkthrough pack: paper text -> provenance -> app 9 -> Methods', a
     await box.check();
   }
   const use = host.getByRole('button', { name: 'Use these rows', exact: true });
+  // Two arms of one trial in a single-group app: the same-source guard needs an explicit opt-in.
+  await host.getByLabel('I understand these rows are arms of one trial and want them pooled as separate single groups').check();
   await expect(use).toBeEnabled();
   await use.click();
   await expect(host.locator('[role=status]').first()).toContainText('Applied 2 confirmed rows.');
@@ -241,6 +254,7 @@ test('persona walkthrough pack: paper text -> provenance -> app 9 -> Methods', a
   }, APP);
   const methods = page.locator('#persona-text-host [data-para="methods"]');
   await expect(methods).toContainText('Data were extracted from');
+  await expect(methods).toContainText('not adjusted for clustering');
   await capture(page, 9, 'report-text-methods', 'Report text with the provenance sentence in Methods',
     await page.locator('#persona-text-host').innerText(), { hasTextTab, methods: await methods.textContent() });
 

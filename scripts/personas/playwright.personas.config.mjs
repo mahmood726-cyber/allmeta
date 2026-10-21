@@ -15,7 +15,7 @@ export default defineConfig({
     command: `python -m http.server ${port} --bind 127.0.0.1 --directory ../../`,
     port,
     cwd: '.',
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI, // never serve another tree from a stale server in CI
     stdout: 'ignore',
     stderr: 'ignore',
   },

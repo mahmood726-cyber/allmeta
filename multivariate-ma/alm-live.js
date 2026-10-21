@@ -4,7 +4,7 @@
   const app = 'multivariate-ma';
   const libraryImage = typeof document !== 'undefined' && document.currentScript ?
     new URL('../r-shiny/shinylive/webr/library.data.gz', document.currentScript.src).href : null;
-  const inputs = () => ['f-data', 'f-o1', 'f-o2'].map(id => document.getElementById(id).value);
+  const inputs = () => ['f-data', 'f-o1', 'f-o2', 'f-mode', 'f-rhow'].map(id => document.getElementById(id) ? document.getElementById(id).value : null);
   let observed, fittedInputs;
   function observe() {
     const result = global._almLastMultivariate && global._almLastMultivariate();
@@ -15,23 +15,28 @@
     const result = observe();
     if (!result) throw Error('Run the multivariate analysis first; no result is available.');
     if (JSON.stringify(inputs()) !== JSON.stringify(fittedInputs)) throw Error('Results are out of date; update the study input first.');
-    // Same row acceptance grammar as index.html:104-118; parsing only, no fit.
-    const rows = [];
+    // Same row acceptance grammar as the page's mode-aware parse(); parsing only, no fit. Each row is
+    // [y1, v1, y2, v2, c]: c is the within-study covariance (mode cov), r (mode r) or the assumed rho_w (mode rhoW);
+    // R converts r to a covariance itself.
+    const mode = result.mode || 'cov', need = mode === 'rhoW' ? 4 : 5, rows = [];
+    if (!['cov', 'r', 'rhoW'].includes(mode)) throw Error('Unknown input mode ' + mode + '.');
+    if (mode === 'rhoW' && !Number.isFinite(result.rhoW)) throw Error('The displayed result has no assumed within-study correlation.');
     fittedInputs[0].split(/\r?\n/).forEach(line => {
       const t = line.trim();
       if (!t || t.startsWith('#')) return;
       const parts = t.split(/\s*,\s*/);
-      if (parts.length < 6) return;
-      const numbers = parts.slice(-5).map(x => x.trim() ? Number(x) : NaN);
+      if (parts.length < need + 1) return;
+      const numbers = parts.slice(-need).map(x => x.trim() ? Number(x) : NaN);
       if (!numbers.every(Number.isFinite) || numbers[1] <= 0 || numbers[3] <= 0) return;
-      rows.push(numbers);
+      if (mode === 'r' && !(Math.abs(numbers[4]) < 1)) return;
+      rows.push(mode === 'rhoW' ? [...numbers, result.rhoW] : numbers);
     });
     if (rows.length !== result.k) throw Error('Input membership differs from the displayed result.');
     // P18 multivariate-ma-reproducible/bench/compare.py:67-69:
     // iterative 1e-6 relative, exact two-study 1e-9. Stricter than the
     // rounded rma.mv check in hub/shared/tests/multivariate-ma-parity.spec.mjs:29-36.
     adapter.compare.tolerance.default = result.k === 2 ? 1e-9 : 1e-6;
-    return { rows, names: fittedInputs.slice(1), result: structuredClone(result) };
+    return { rows, mode, names: fittedInputs.slice(1, 3), result: structuredClone(result) };
   }
   function appValues(s) {
     const r = s.result;
@@ -56,7 +61,7 @@ if (grepl('emscripten', R.version$os) && !requireNamespace('jsonlite', quietly=T
 stopifnot(requireNamespace('jsonlite', quietly=TRUE))
 cat('SERIALIZER jsonlite', as.character(utils::packageVersion('jsonlite')), '\\n')
 d <- matrix(c(${s.rows.flat().join(',')}), ncol=5, byrow=TRUE)
-Y <- d[, c(1,3), drop=FALSE]; k <- nrow(Y)
+${s.mode && s.mode !== 'cov' ? `# Column 5 is the within-study correlation (${s.mode === 'r' ? 'reported r' : 'assumed rho_w'}): covariance = r * sqrt(v1 * v2).\nd[, 5] <- d[, 5] * sqrt(d[, 2] * d[, 4])\n` : ''}Y <- d[, c(1,3), drop=FALSE]; k <- nrow(Y)
 S <- lapply(seq_len(k), function(i) matrix(c(d[i,2],d[i,5],d[i,5],d[i,4]),2,2))
 stopifnot(k >= 2, all(vapply(S, function(x) min(eigen(x, symmetric=TRUE, only.values=TRUE)$values)>0, TRUE)))
 # Independent starts and optimizer controls from P18 bench/reference.R:16-23.

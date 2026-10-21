@@ -2,7 +2,8 @@
 (function (global) {
   'use strict';
   const app = 'rve-meta';
-  const inputs = () => ['src', 'f-rho', 'f-names'].map(id => document.getElementById(id).value);
+  const centreBox = () => document.getElementById('f-centre');
+  const inputs = () => ['src', 'f-rho', 'f-names'].map(id => document.getElementById(id).value).concat(centreBox() ? [centreBox().checked] : []);
   let observed, fittedInputs;
   function observe() {
     const result = global.__almLastRVE && global.__almLastRVE();
@@ -15,21 +16,15 @@
     // coefficient table is therefore part of the result-availability check.
     if (!result || !document.querySelector('#coef-body tr')) throw Error('Run the RVE analysis first; no successful result is displayed.');
     if (JSON.stringify(inputs()) !== JSON.stringify(fittedInputs)) throw Error('Results are out of date; fit the RVE model first.');
-    const rows = [];
-    fittedInputs[0].split(/\r?\n/).forEach(line => {
-      const t = line.trim();
-      if (!t || t.startsWith('#')) return;
-      const p = t.split(/\s*,\s*/);
-      if (p.length < 3) return;
-      const yi = parseFloat(p[1]), vi = parseFloat(p[2]);
-      if (!Number.isFinite(yi) || !Number.isFinite(vi) || vi <= 0) return;
-      // Match the existing page parser, including its zero substitution.
-      rows.push({ cluster: p[0], yi, vi, X: [1, ...p.slice(3).map(x => Number.isFinite(parseFloat(x)) ? parseFloat(x) : 0)] });
-    });
+    // The page's own parsed rows (header-mapped columns, vi from an SE column, quoted labels) before any
+    // centring, as recorded in its result object; centring is redone in R from the same raw values.
+    const inp = result.inputs;
+    if (!inp || !Array.isArray(inp.rows)) throw Error('The displayed result does not record its inputs.');
+    const rows = inp.rows.map(r => ({ cluster: String(r.cluster), yi: r.yi, vi: r.vi, X: [1, ...r.x] }));
     if (rows.length !== result.fit.k_total || rows.some(r => r.X.length !== result.fit.p)) throw Error('Input dimensions differ from the displayed fit.');
-    const names = ['Intercept', ...fittedInputs[2].split(/\s*,\s*/).filter(Boolean)];
+    const names = ['Intercept', ...(inp.predictor_names || []).map(String)];
     while (names.length < result.fit.p) names.push('Predictor ' + names.length);
-    const state = { rows, names, rho: result.fit.rho, result: structuredClone(result) };
+    const state = { rows, names, rho: result.fit.rho, centred: !!inp.centred, result: structuredClone(result) };
     adapter.compare = { tolerance: { default: 1e-9 }, kind: {} };
     // P15 rve-reproducible/bench/compare_engine.py:6-13,35-40:
     // 1e-9 relative for estimate/SE/t/df/tau2, absolute for p and CI limits.
@@ -58,7 +53,7 @@
     return `# P15 reference recipe: robumeta CORR, small=TRUE; independent CR2 check.
 d <- data.frame(yi=${vector('yi')}, vi=${vector('vi')}, cl=${vector('cluster')})
 ${Array.from({length: predictors}, (_,j) => `d$x${j+1} <- c(${s.rows.map(r => r.X[j+1]).join(',')})`).join('\n')}
-f <- robumeta::robu(yi ~ ${predictors ? Array.from({length: predictors},(_,j)=>'x'+(j+1)).join(' + ') : '1'},
+${s.centred ? '# The app centred every predictor at its mean.\n' + Array.from({length: predictors}, (_,j) => `d$x${j+1} <- d$x${j+1} - mean(d$x${j+1})`).join('\n') + '\n' : ''}f <- robumeta::robu(yi ~ ${predictors ? Array.from({length: predictors},(_,j)=>'x'+(j+1)).join(' + ') : '1'},
   data=d, studynum=cl, var.eff.size=vi, modelweights='CORR', rho=${s.rho}, small=TRUE)
 tab <- f$reg_table
 cr2 <- as.data.frame(clubSandwich::coef_test(f, vcov='CR2', test='Satterthwaite'))
