@@ -88,6 +88,7 @@
     <h2 id="pooled-title">Pooled estimates</h2>
     <div id="headline" class="note" role="status" aria-live="polite"></div>
     <div id="stats" class="stats"></div>
+    <p id="likelihood-diagnostic" class="note" role="status" hidden></p>
     <h2 style="margin-top:1rem">Joint outcome plot</h2>
     <div id="plot-host"></div>
     <div class="toolbar"><button type="button" id="btn-plot-svg">Download plot (SVG)</button><button type="button" id="btn-plot-png">Download plot (PNG)</button></div>
@@ -218,7 +219,7 @@
       el("omitted").textContent = "k used = " + parsed.rows.length + "; " + n + " row" + (n === 1 ? "" : "s") + " omitted" + (n ? ": " + parsed.omitted.map(function (o) { return "line " + o.line + " (" + o.reason + ")"; }).join("; ") : "") + ".";
     }
 
-    function clearOutputs() { el("stats").innerHTML = ""; el("plot-host").innerHTML = ""; _last = null; _fit = null; }
+    function clearOutputs() { el("stats").innerHTML = ""; el("plot-host").innerHTML = ""; el("likelihood-diagnostic").textContent = ""; el("likelihood-diagnostic").hidden = true; _last = null; _fit = null; }
     function run() {
       var parsed = currentParsed(), o1 = parsed.outcomes[0], o2 = parsed.outcomes[1];
       var head = el("headline"), stats = el("stats");
@@ -234,6 +235,11 @@
       }
       if (res) f = res.fit; else { try { f = window.AlmMultivariate.fit(parsed.rows.map(function (r) { return { y: r.y, S: [[r.v[0], r.cov], [r.cov, r.v[1]]] }; })); } catch (error) { head.textContent = error.message; return; } }
       _fit = f;
+      var diagnosticNote = el("likelihood-diagnostic"), verdict = f.diagnostic.verdict;
+      diagnosticNote.hidden = verdict === "unique interior maximum";
+      diagnosticNote.textContent = diagnosticNote.hidden ? "" : verdict === "boundary maximum" ?
+        "The fit is at a covariance boundary: a between-study variance is near zero or a correlation is near ±1. Treat these covariance estimates with care." :
+        "Different covariance estimates give almost the same likelihood at the checked tolerance. These estimates are not numerically unique.";
       head.innerHTML = "k = " + f.k + " studies · 2 outcomes · unstructured between-study covariance (REML) · logLik = " + fmt(f.logLik, 3);
       function card(k, v) { return "<div class='stat'><span class='k'>" + esc(k) + "</span><span class='v'>" + v + "</span></div>"; }
       stats.innerHTML =
@@ -247,7 +253,7 @@
       _last = { _schema: "multivariate-ma-results-v2", k: f.k, mu: f.mu, muSE: f.muSE, G: f.G, rho: f.rho, logLik: f.logLik,
         muVcov: f.muVcov, z: tests.map(function (t) { return t ? t.z : null; }), p: tests.map(function (t) { return t ? t.p : null; }),
         outcomes: [o1, o2], mode: parsed.mode, rhoW: parsed.rhoW, labels: parsed.rows.map(function (r) { return r.label; }),
-        omitted: parsed.omitted.slice(), optimizer: f.optimizer };
+        omitted: parsed.omitted.slice(), optimizer: f.optimizer, diagnostic: f.diagnostic };
       done(res);
     }
     function ticks(lo, hi, n) {

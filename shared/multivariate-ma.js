@@ -56,7 +56,7 @@
         if (fc < fv[n]) { simplex[n] = xc; fv[n] = fc; }
         else { for (var s2 = 1; s2 <= n; s2++) { simplex[s2] = simplex[0].map(function (x0v, k) { return x0v + 0.5 * (simplex[s2][k] - x0v); }); fv[s2] = f(simplex[s2]); } } }
     }
-    order(); return { x: simplex[0], f: fv[0] };
+    order(); return { x: simplex[0], f: fv[0], converged: it < (maxit || 1000), iterations: it };
   }
 
   // Build a symmetric PD m×m matrix from its lower-Cholesky params (length m(m+1)/2).
@@ -169,6 +169,85 @@
     return 0.5 * (ld + Math.log(sd) + q);
   }
 
+  // Observational only: these searches never change the selected fitted G.
+  function _diagnostic(studies, G, bestF, candidates, defaultF, startsRun) {
+    var m = G.length, llTol = 1e-8, estimateTol = 1e-6, flatTol = 1e-6;
+    var objective = function (g) { return m === 2 ? _obj2(studies, g[0][0], g[0][1], g[1][1]) : _objG(studies, g); };
+    var base = objective(G), constant = -0.5 * m * (studies.length - 1) * Math.log(2 * Math.PI) + 0.5 * m * Math.log(studies.length);
+    var near = [{ G: G, f: bestF }].concat(candidates).filter(function (c) { return Number.isFinite(c.f) && Math.abs(c.f - bestF) <= llTol; });
+    var clusters = [];
+    near.forEach(function (c) {
+      if (!clusters.some(function (d) {
+        return c.G.every(function (row, i) { return row.every(function (v, j) { return Math.abs(v - d.G[i][j]) <= estimateTol * Math.max(1, Math.abs(G[i][j])); }); });
+      })) clusters.push(c);
+    });
+    var zero = [], correlations = [];
+    for (var i = 0; i < m; i++) {
+      var threshold = 1e-10 * Math.max(1, studies.reduce(function (s, st) { return s + st.S[i][i] / studies.length; }, 0));
+      if (G[i][i] <= threshold) zero.push({ component: i, variance: G[i][i], threshold: threshold });
+      for (var j = i + 1; j < m; j++) if (G[i][i] > 0 && G[j][j] > 0) {
+        var r = Math.max(-1, Math.min(1, G[i][j] / Math.sqrt(G[i][i] * G[j][j])));
+        if (Math.abs(r) >= 1 - 1e-6) correlations.push({ components: [i, j], rho: r });
+      }
+    }
+    var profiles = G.map(function (row, component) {
+      var v = row[component], h = 1e-4 * Math.max(1, v);
+      var points = [Math.max(0, v - h), v + h].filter(function (x) { return x !== v; }).map(function (fixed) {
+        var result;
+        if (m === 1) result = { f: objective([[fixed]]), converged: true };
+        else if (m === 2) {
+          var other = 1 - component, sd = Math.sqrt(G[other][other]);
+          var rho = v > 0 && sd > 0 ? G[0][1] / Math.sqrt(v * G[other][other]) : 0;
+          var at = function (x) {
+            var rr = Math.max(-1, Math.min(1, x[1])), cross = Math.sqrt(fixed) * Math.abs(x[0]) * rr;
+            return component === 0 ? _obj2(studies, fixed, cross, x[0] * x[0]) : _obj2(studies, x[0] * x[0], cross, fixed);
+          };
+          [rho, -1, 1].forEach(function (r) {
+            var o = _nelderMead(at, [sd, r], 0.01 * Math.max(1, sd), 400);
+            if (!result || o.f < result.f) result = o;
+          });
+        } else {
+          // Normalizing one Cholesky row fixes its variance and preserves PSD.
+          var L = [], x = [], rowStart = component * (component + 1) / 2;
+          for (var a = 0; a < m; a++) {
+            L.push(new Array(m).fill(0));
+            for (var b = 0; b <= a; b++) {
+              var t = G[a][b];
+              for (var d = 0; d < b; d++) t -= L[a][d] * L[b][d];
+              L[a][b] = a === b ? Math.sqrt(Math.max(0, t)) : (L[b][b] > 0 ? t / L[b][b] : 0);
+              x.push(L[a][b]);
+            }
+          }
+          var atM = function (z) {
+            var p = z.slice(), norm = 0;
+            for (var j = 0; j <= component; j++) norm += p[rowStart + j] * p[rowStart + j];
+            if (norm === 0) p[rowStart + component] = Math.sqrt(fixed);
+            else for (var j = 0; j <= component; j++) p[rowStart + j] *= Math.sqrt(fixed / norm);
+            return objective(_fromChol(p, m));
+          };
+          result = _nelderMead(atM, x, 0.01, 600);
+        }
+        return { variance: fixed, logLik: Number.isFinite(result.f) ? constant - result.f : null,
+          deltaLogLik: Number.isFinite(result.f) ? base - result.f : null,
+          converged: result.converged, status: Number.isFinite(result.f) ? 'finite-search' : 'failed' };
+      });
+      var flat = points.length === 2 && points.every(function (p) { return p.deltaLogLik !== null && Math.abs(p.deltaLogLik) < flatTol; });
+      var curvature = v >= h && points.every(function (p) { return p.deltaLogLik !== null; }) ? -(points[0].deltaLogLik + points[1].deltaLogLik) / (h * h) : null;
+      return { component: component, variance: v, offset: h, points: points, flat: flat, curvature: curvature };
+    });
+    var boundary = zero.length > 0 || correlations.length > 0;
+    var flat = clusters.length > 1 || profiles.some(function (p) { return p.flat; });
+    return { schema: 'multivariate-ma-diagnostic-v1', startsRun: startsRun,
+      distinctOptimaWithinTolerance: clusters.length, nearBestCandidates: near.length,
+      bestVsDefaultStartLogLikGap: defaultF === null ? null : defaultF - bestF,
+      defaultStart: startsRun ? 'moment start, 600-iteration screen' : 'not applicable: exact two-study solution',
+      boundary: { zeroVariances: zero, correlations: correlations },
+      profiles: profiles, flat: flat,
+      tolerances: { logLik: llTol, distinctEstimates: estimateTol, flatLogLik: flatTol, correlation: 1e-6, offset: 1e-4 },
+      verdict: boundary ? 'boundary maximum' : flat ? 'flat likelihood: estimates not unique' : 'unique interior maximum',
+      interpretation: 'Finite searches and local offsets give numerical evidence, not proof of global uniqueness; flatness depends on outcome units and tolerances.' };
+  }
+
   function fit(studies, opts) {
     opts = opts || {};
     // Fail closed: with k<2 the between-study covariance G is unidentifiable
@@ -209,6 +288,7 @@
       return 0.5 * ll;
     };
     var opt, G, pr, boundary = "two-study-exact", polish = null;
+    var diagnosticCandidates = [], defaultF = null, startsRun = 0;
     if (k === 2) {
       // REML is the likelihood of the single difference d, with variance S1+S2+2G.
       // Whiten by S1+S2: the constrained optimum is rank one (or exactly zero).
@@ -237,10 +317,14 @@
       var starts = [x0].concat(startMats.slice(1).map(cholVec));
       // Screen every start with 600 simplex iterations, then run the full two-stage
       // search (2000 + 1000 iterations) from the best two screened points.
-      var screened = starts.map(function (st) { return _nelderMead(obj, st, 0.05, 600); }).sort(function (u, w) { return u.f - w.f; });
+      var screened = starts.map(function (st) { return _nelderMead(obj, st, 0.05, 600); });
+      startsRun = starts.length; defaultF = screened[0].f;
+      diagnosticCandidates = screened.map(function (o) { return { G: _fromChol(o.x, m), f: o.f }; });
+      screened.sort(function (u, w) { return u.f - w.f; });
       opt = null;
       screened.slice(0, 2).forEach(function (sc) {
         var o1 = _nelderMead(obj, sc.x, 0.05, 2000); o1 = _nelderMead(obj, o1.x, 0.005, 1000);
+        diagnosticCandidates.push({ G: _fromChol(o1.x, m), f: o1.f });
         if (!opt || o1.f < opt.f) opt = o1;
       });
       G = _fromChol(opt.x, m);
@@ -314,7 +398,8 @@
     var logLik = -opt.f - 0.5 * (N - p) * Math.log(2 * Math.PI) + 0.5 * m * Math.log(k);
     var rho = (m === 2 && G[0][0] > 0 && G[1][1] > 0) ? Math.max(-1, Math.min(1, G[0][1] / Math.sqrt(G[0][0] * G[1][1]))) : null;
     if (boundary === "two-study-exact" && G.every(function (row) { return row.every(function (v) { return v === 0; }); })) boundary = "two-study-exact-zero";
-    return { mu: pr.mu, muSE: muSE, muVcov: pr.sumWinv, G: G, rho: rho, logLik: logLik, m: m, k: k, optimizer: { boundary: boundary, polish: polish } };
+    return { mu: pr.mu, muSE: muSE, muVcov: pr.sumWinv, G: G, rho: rho, logLik: logLik, m: m, k: k, optimizer: { boundary: boundary, polish: polish },
+      diagnostic: _diagnostic(studies, G, opt.f, diagnosticCandidates, defaultF, startsRun) };
   }
 
   // ---- normal-theory z test (two-sided) via the regularized upper incomplete gamma ----
@@ -343,7 +428,7 @@
   function fitUnivariate(y, v, opts) {
     if (!Array.isArray(y) || !Array.isArray(v) || y.length !== v.length) throw new Error("y and v must be arrays of equal length");
     var f = fit(y.map(function (yi, i) { return { y: [yi], S: [[v[i]]] }; }), opts);
-    return { k: f.k, mu: f.mu[0], se: f.muSE[0], tau2: f.G[0][0], logLik: f.logLik, optimizer: f.optimizer };
+    return { k: f.k, mu: f.mu[0], se: f.muSE[0], tau2: f.G[0][0], logLik: f.logLik, optimizer: f.optimizer, diagnostic: f.diagnostic };
   }
 
   // ---- within-study correlation helpers ----

@@ -1,0 +1,598 @@
+{
+  "fits": [
+    {
+      "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.2",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b3+b5::REML::supplied#rhoW=-0.9",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mvmeta::hsls::b1+b3::REML::supplied#rhoW=-0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mvmeta::hsls::b1+b3::REML::supplied#rhoW=-0.6",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mvmeta::hsls::b2+b3::REML::supplied#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.9",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.8",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.7",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.1",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mvmeta::smoking::yB+yD::REML::supplied#main",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.2",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::fibrinogen::b3+b5::REML::supplied#rhoW=-0.9",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::hsls::b1+b3::REML::supplied#rhoW=-0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::hsls::b1+b3::REML::supplied#rhoW=-0.6",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::hsls::b2+b3::REML::supplied#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.9",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.8",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.7",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.1",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mixmeta::smoking::yB+yD::REML::supplied#main",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.3",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.3",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.6",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0#rhoW=0.9",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#main",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#rhoW=-0.3",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#rhoW=-0.1",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#rhoW=0",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.3",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.3",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.6",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0.97#main",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0.97#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0.97#rhoW=0.9",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0.97#rhoW=-0.3",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0.97#rhoW=-0.1",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0.97#rhoW=0",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.3",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.3",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.6",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y2i+y4i::REML::documented-AR1-0.97#main",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y2i+y4i::REML::documented-AR1-0.97#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y2i+y4i::REML::documented-AR1-0.97#rhoW=0.9",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y3i+y4i::REML::documented-AR1-0.97#rhoW=-0.3",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y3i+y4i::REML::documented-AR1-0.97#rhoW=-0.1",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.ishak2007::y3i+y4i::REML::documented-AR1-0.97#rhoW=0",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::gliomas::month6+month12::REML::documented-AR1-0#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mixmeta::gliomas::month6+month12::REML::documented-AR1-0.61#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.fine1993::month6+month12::REML::documented-covariance-raw#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "example::hyp::per-study-r#rhoW=-0.9",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "example::hyp::per-study-r#rhoW=-0.8",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "example::hyp::per-study-r#rhoW=-0.7",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "example::hyp::per-study-r#rhoW=-0.1",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "example::hyp::per-study-r#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "flat likelihood: estimates not unique"
+      }
+    },
+    {
+      "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3",
+      "diagnostic": {
+        "verdict": "boundary maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#main",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.4",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.3",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.2",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.1",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.1",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.2",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.3",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.4",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.5",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.6",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.9",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b4::REML::supplied#main",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b5::REML::supplied#main",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.6",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.7",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b3+b5::REML::supplied#rhoW=0.8",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b3+b5::REML::supplied#rhoW=0.9",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "mvmeta::fibrinogen::b4+b5::REML::supplied#main",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.berkey1998r::AL+PD::REML::supplied#main",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.berkey1998r::AL+PD::REML::supplied#rhoW=-0.4",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    },
+    {
+      "id": "metadat::dat.berkey1998r::AL+PD::REML::supplied#rhoW=-0.3",
+      "diagnostic": {
+        "verdict": "unique interior maximum"
+      }
+    }
+  ]
+}

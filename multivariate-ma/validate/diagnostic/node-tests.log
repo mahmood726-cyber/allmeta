@@ -1,0 +1,21 @@
+✔ exact two-study zero: no starts, no fictitious default gap, both variances flagged (14.4838ms)
+✔ rank-one and interior flat hard fits are distinguished with finite profiles (872.5038ms)
+✔ univariate profile matches independently evaluated likelihood and keeps old fields (14.7703ms)
+✔ three-outcome engine returns a profile for each variance without changing numbers (1673.8151ms)
+✔ UI note follows real results and clears on invalid input; JSON includes all fit diagnostics (1615.1726ms)
+✔ comparison rejects dropped, duplicate, unexpected and wrong-verdict records (1.5504ms)
+✔ P1-1 malformed sweep clears prior results, prose, plots and exports (5025.9125ms)
+✔ P1-2 incomplete first study is disclosed in parser, notice and methods (879.9974ms)
+✔ P1-3 boundary contract rejects corrupted p values in supplied and sweep fits (1232.3885ms)
+✔ P1-3 display audit independently rejects corrupted p text (1333.9929ms)
+✔ P1-3 boundary contract rejects G corruption with an unchanged reported likelihood (1229.3398ms)
+✔ P1-3 boundary contract rejects corrupted z values (1105.5409ms)
+✔ P1-3 roundtrip comparator rejects corrupted p values (744.1556ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 38988.0331

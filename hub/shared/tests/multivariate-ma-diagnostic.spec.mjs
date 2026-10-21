@@ -1,0 +1,32 @@
+import { test, expect } from './multivariate-ma-fixture.mjs';
+
+test('likelihood note and diagnostic exports follow current data', async ({ page }) => {
+  await page.goto('/multivariate-ma/index.html');
+  await page.waitForFunction(() => window._almLastMultivariate?.()?.diagnostic);
+  const note = page.locator('#likelihood-diagnostic');
+  await expect(note).toHaveAttribute('role', 'status');
+  await expect(note).toBeHidden();
+  await page.locator('#f-mode').selectOption('cov');
+  await page.locator('#f-data').fill('a,0,1,0,1,0\nb,0,1,0,1,0');
+  await expect(note).toBeVisible();
+  await expect(note).toContainText('covariance boundary');
+  const exported = await page.evaluate(() => window.AlmMvPlusUI.resultsJSON());
+  expect(exported.result.diagnostic.verdict).toBe('boundary maximum');
+  expect(exported.result.diagnostic.startsRun).toBe(0);
+  expect(exported.univariate.every(f => f.diagnostic)).toBe(true);
+  await page.locator('#plus-run').click();
+  const sweep = await page.evaluate(() => window.AlmMvPlusUI.resultsJSON().sweep);
+  expect(sweep.filter(s => s.status === 'ok').every(s => s.diagnostic)).toBe(true);
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#plus-dl-json').click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  const chunks = []; for await (const chunk of stream) chunks.push(chunk);
+  const json = JSON.parse(Buffer.concat(chunks).toString());
+  expect(json.result.diagnostic).toEqual(exported.result.diagnostic);
+  await page.locator('#btn-ex-hyp').click();
+  await expect(note).toContainText('almost the same likelihood');
+  await page.locator('#btn-clear').click();
+  await expect(note).toBeHidden();
+  expect(await page.evaluate(() => window.AlmMvPlusUI.resultsJSON().result)).toBeNull();
+});

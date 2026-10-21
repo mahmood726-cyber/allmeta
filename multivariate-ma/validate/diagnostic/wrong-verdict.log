@@ -1,0 +1,12 @@
+98/99 agreement; 1 failures
+[
+  {
+    "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9",
+    "reason": "wrong verdict",
+    "expected": [
+      "boundary maximum",
+      "flat likelihood: estimates not unique"
+    ],
+    "actual": "unique interior maximum"
+  }
+]
