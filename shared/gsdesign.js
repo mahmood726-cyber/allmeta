@@ -224,21 +224,22 @@
     return { problo: problo, probhi: probhi, powr: powr, futile: futile, en: en };
   }
 
-  var GS_MAXITER = 20, GS_ZCLAMP = 20;
+  // gsDesign 3.11.0 uses +-20 (EXTREMEZ) for absent bounds and as the Newton clamp
+  var GS_MAXITER = 20, GS_ZCLAMP = 20, EXTREMEZ = 20;
 
   // Lower and upper bounds under theta = 0 (gsbound.c).
   function gsBound(I, trueneg, falsepos, tol, r) {
     tol = tol == null ? 1e-6 : tol; r = r || 18;
     var K = I.length, a = new Array(K), b = new Array(K), error = 0;
-    a[0] = trueneg[0] <= 0 ? -Infinity : qnormLower(trueneg[0]);
-    b[0] = falsepos[0] <= 0 ? Infinity : qnormUpper(falsepos[0]);
+    a[0] = trueneg[0] <= 0 ? -EXTREMEZ : qnormLower(trueneg[0]);
+    b[0] = falsepos[0] <= 0 ? EXTREMEZ : qnormUpper(falsepos[0]);
     if (K === 1) return { I: I, a: a, b: b, error: 0 };
     var g = gridpts(r, 0, a[0], b[0]), h = h1(0, g, I[0]), rtIk = Math.sqrt(I[0]);
     for (var i = 1; i < K; i++) {
       var rtIkm1 = rtIk; rtIk = Math.sqrt(I[i]);
       var rtdeltak = Math.sqrt(I[i] - I[i - 1]), scale = INV_SQRT_2PI * rtIk / rtdeltak;
       var loA = trueneg[i] > 0, hiA = falsepos[i] > 0;
-      var atem2 = loA ? qnormLower(trueneg[i]) : -Infinity, btem2 = hiA ? qnormUpper(falsepos[i]) : Infinity;
+      var atem2 = loA ? qnormLower(trueneg[i]) : -EXTREMEZ, btem2 = hiA ? qnormUpper(falsepos[i]) : EXTREMEZ;
       var atem = atem2, btem = btem2, adelta = loA ? 1 : 0, bdelta = hiA ? 1 : 0, j = 0, ii, x;
       while ((adelta > tol || bdelta > tol) && j++ < GS_MAXITER) {
         var plo = 0, phi = 0, dplo = 0, dphi = 0;
@@ -296,14 +297,14 @@
     var K = I.length, b = new Array(K), problo = new Array(K), error = 0;
     var rtIk = Math.sqrt(I[0]), mu = rtIk * theta;
     problo[0] = pnormUpper(mu - a[0]);
-    b[0] = probhi[0] <= 0 ? Infinity : mu - qnormLower(probhi[0]);
+    b[0] = probhi[0] <= 0 ? EXTREMEZ : mu - qnormLower(probhi[0]);
     if (K > 1) {
       var g = gridpts(r, mu, a[0], b[0]), h = h1(theta, g, I[0]);
       for (var i = 1; i < K; i++) {
         var rtIkm1 = rtIk; rtIk = Math.sqrt(I[i]); mu = rtIk * theta;
         var rtdeltak = Math.sqrt(I[i] - I[i - 1]), drift = theta * (I[i] - I[i - 1]);
         var scale = INV_SQRT_2PI * rtIk / rtdeltak, hiA = probhi[i] > 0;
-        var btem2 = hiA ? mu - qnormLower(probhi[i]) : Infinity, btem = btem2, bdelta = hiA ? 1 : 0, j = 0, ii, x;
+        var btem2 = hiA ? mu - qnormLower(probhi[i]) : EXTREMEZ, btem = btem2, bdelta = hiA ? 1 : 0, j = 0, ii, x;
         while (bdelta > tol && j++ < GS_MAXITER) {
           var phi = 0, dphi = 0;
           btem = btem2;
@@ -427,7 +428,7 @@
    * beta, n.fix = 1, timing, sfu, sfupar, sfl, sflpar, tol, r).
    * opts: { testType 1-4, alpha (one-sided), beta, timing [..,1] or k,
    *         sfu: {family:'LDOF'|'LDPocock'|'Power'|'HSD', param}, sfl: {...},
-   *         tol = 1e-6, r = 18, nFix = 1 }
+   *         tol = 1e-6, r = 18, nFix = 1, delta (if > 0, sets nFix as gsDesign does) }
    * Returns { k, testType, alpha, beta, delta, timing, nI, inflation,
    *   upper:{bound, spend, prob:[[theta0 per look],[theta1 per look]]},
    *   lower:{bound, spend, prob} (types 2-4), en:[E(I|theta0), E(I|theta1)] }.
@@ -444,12 +445,14 @@
     if (!(beta > 0 && beta < 1 - alpha)) throw new Error("beta must be in (0, 1 - alpha)");
     if (Math.abs(timing[K - 1] - 1) > 1e-12) throw new Error("timing must end at 1");
     for (var c = 0; c < K; c++) if (!(timing[c] > (c ? timing[c - 1] : 0))) throw new Error("timing must be increasing and > 0");
-    var delta = Math.abs(qnormLower(alpha) + qnormLower(beta)) / Math.sqrt(nfix);
+    var delta;
+    if (opts.delta > 0) { delta = opts.delta; nfix = Math.pow((qnormLower(alpha) + qnormLower(beta)) / delta, 2); }
+    else delta = Math.abs(qnormLower(alpha) + qnormLower(beta)) / Math.sqrt(nfix);
     var sfu = opts.sfu || { family: "HSD", param: -4 }, sfl = opts.sfl || { family: "HSD", param: -2 };
     var uCum = spendVector(sfu, alpha, timing), falsepos = diffs(uCum), out;
 
     if (testType === 1) {
-      var a1 = timing.map(function () { return -Infinity; });
+      var a1 = timing.map(function () { return -EXTREMEZ; });
       var b1 = gsBound1(0, timing, a1, falsepos, tol, r).b;
       var Im = uniroot(function (x) { return gsbetadiff(x, delta, beta, timing, a1, b1, r); }, nfix, 10 * nfix, tol);
       var nI1 = scaleVec(timing, Im), y1 = gsprob([0, delta], nI1, a1, b1, r);
@@ -465,10 +468,10 @@
     } else if (testType === 3 || testType === 4) {
       var falseneg = diffs(spendVector(sfl, beta, timing)), lim, res;
       if (testType === 4) {
-        var x0 = gsBound1(0, timing, timing.map(function () { return -Infinity; }), falsepos, tol, r);
+        var x0 = gsBound1(0, timing, timing.map(function () { return -EXTREMEZ; }), falsepos, tol, r);
         lim = searchIhigh(0.98 * nfix, 1.2 * nfix, delta, timing, falseneg, x0.b, tol, r, nfix);
         res = gsI1(delta, timing, falseneg, x0.b, lim[0], lim[1], tol, r);
-        var nb = gsprob(0, res.I, timing.map(function () { return -Infinity; }), x0.b, r).probhi[0];
+        var nb = gsprob(0, res.I, timing.map(function () { return -EXTREMEZ; }), x0.b, r).probhi[0];
         var y4 = gsprob([0, delta], res.I, res.a, x0.b, r);
         if (maxAbsDiff(falsepos, nb) > tol) throw new Error("False positive rates not achieved");
         if (maxAbsDiff(falseneg, y4.problo[1]) > tol) throw new Error("False negative rates not achieved");
@@ -481,7 +484,7 @@
         res = gsI1(delta, timing, falseneg, xb1.b, lim[0], lim[1], tol, r);
         var x3 = gsprob(0, res.I, res.a, res.b, 18), flag = Math.abs(x3.powr[0] - alpha), jj = 0, I3 = res.I;
         while (flag > tol && jj < 100) {
-          var aa = res.a.slice(0, K - 1).concat([-Infinity]);
+          var aa = res.a.slice(0, K - 1).concat([-EXTREMEZ]);
           var x4 = gsBound1(0, I3, aa, falsepos, 1e-6, 18);
           lim = searchIhigh(nfix / 3, 1.2 * nfix, delta, timing, falseneg, x4.b, tol, r, nfix);
           res = gsI1(delta, timing, falseneg, x4.b, lim[0], lim[1], tol, r);
