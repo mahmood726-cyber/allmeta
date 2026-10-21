@@ -1,0 +1,46 @@
+{
+ "tier": "within-subgroup cumulative (separate from validate/MANIFEST.json; that contract is unchanged)",
+ "files": [
+  {
+   "path": "subcum/validate/corpus/corpus.json",
+   "sha256": "e22564def18c582ef227b9ed3222334f9e0a60b2a502808392778509dd13d6c2",
+   "bytes": 4382056
+  },
+  {
+   "path": "subcum/validate/corpus/reference.json",
+   "sha256": "8eec0c68094c99bf9996f0c9b5c448c8f4b8a2a85b5408eb72166fef1dab56fb",
+   "bytes": 19891041
+  },
+  {
+   "path": "subcum/validate/corpus/adjudicated.json",
+   "sha256": "35e8b3542ceec501b4a1138fbabdac7ff29523b2195c565482622e4f2efe517d",
+   "bytes": 16689
+  }
+ ],
+ "adjudicated_pools": 34,
+ "adjudication_rule": "Only the listed pools (adjudicated.json, produced by adjudicate.R) may be compared with R closed forms evaluated at the page tau2, and only when the page tau2 agrees with the R PM tau2 at 1e-6, is bit-identical to tau2_app, and membership matches; all other pools are strict. All listed pools are residual Q at the PM weights.",
+ "configurations": 2485,
+ "rows_variants": 1505,
+ "year_variants": 980,
+ "ok": 2479,
+ "refused": 6,
+ "subgroups": 30367,
+ "steps": 71750,
+ "checks": 1005903,
+ "check_formula": "refused: 4; ok: 5 + sum over subgroups of (2 + 13 * k_g)",
+ "referenceVersions": {
+  "R": "4.6.0",
+  "metafor": "5.2.1",
+  "jsonlite": "2.0.0"
+ },
+ "reference_method": "per subgroup: rma(yi, vi, method=\"PM\", test=\"z\", archived convergence controls) on the subgroup rows, then cumul(fit, order = year) when every study in the subgroup has a year, else cumul(fit); residual Q at PM weights and t_{k-1} 95% PI computed from each step",
+ "tolerances": {
+  "tau2": "abs(app-R)/max(1,|R|) <= 1e-6",
+  "other": "1e-9 relative to max(1,|R|)",
+  "k, order, membership, labels, years, group names, refusals": "exact"
+ },
+ "source_corpus": {
+  "path": "validate/corpus/corpus.json",
+  "sha256": "dac5806f456eb35518124d44b74e721f21c353abdb21287db533bc8f36616ea2"
+ }
+}

@@ -1,0 +1,643 @@
+[
+ {
+  "key": "dat.bartos2023::001::subgroup::tsame::rows",
+  "group": "538",
+  "step": 2,
+  "members": [
+   2,
+   31
+  ],
+  "tau2_app": 0.00006216178930062703,
+  "tau2_app_hex": "0x1.04b9b688ebf2ep-14"
+ },
+ {
+  "key": "dat.bartos2023::002::subgroup::tsame::rows",
+  "group": "538",
+  "step": 2,
+  "members": [
+   2,
+   31
+  ],
+  "tau2_app": 0.0000621492427842547,
+  "tau2_app_hex": "0x1.04ac3dc6521cap-14"
+ },
+ {
+  "key": "dat.bartos2023::003::subgroup::flips::rows",
+  "group": "3900",
+  "step": 2,
+  "members": [
+   6,
+   38
+  ],
+  "tau2_app": 0.0000705633776698863,
+  "tau2_app_hex": "0x1.27f6d98f906a0p-14"
+ },
+ {
+  "key": "dat.bartos2023::003::subgroup::flips::rows",
+  "group": "15000",
+  "step": 2,
+  "members": [
+   13,
+   44
+  ],
+  "tau2_app": 0.00001272324814814848,
+  "tau2_app_hex": "0x1.aaebde905e340p-17"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::person::rows",
+  "group": "ChrisGI",
+  "step": 2,
+  "members": [
+   15,
+   16
+  ],
+  "tau2_app": 0.000019150792445843433,
+  "tau2_app_hex": "0x1.414c06f9af340p-16"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::hsame::rows",
+  "group": "2546",
+  "step": 2,
+  "members": [
+   15,
+   16
+  ],
+  "tau2_app": 0.000019150792445843433,
+  "tau2_app_hex": "0x1.414c06f9af340p-16"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::hdiff::rows",
+  "group": "2519",
+  "step": 2,
+  "members": [
+   15,
+   16
+  ],
+  "tau2_app": 0.000019150792445843433,
+  "tau2_app_hex": "0x1.414c06f9af340p-16"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::tsame::rows",
+  "group": "2425",
+  "step": 2,
+  "members": [
+   15,
+   16
+  ],
+  "tau2_app": 0.000019150792445843433,
+  "tau2_app_hex": "0x1.414c06f9af340p-16"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::tdiff::rows",
+  "group": "2515",
+  "step": 2,
+  "members": [
+   15,
+   16
+  ],
+  "tau2_app": 0.000019150792445843433,
+  "tau2_app_hex": "0x1.414c06f9af340p-16"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::same::rows",
+  "group": "4971",
+  "step": 2,
+  "members": [
+   15,
+   16
+  ],
+  "tau2_app": 0.000019150792445843433,
+  "tau2_app_hex": "0x1.414c06f9af340p-16"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::flips::rows",
+  "group": "3900",
+  "step": 3,
+  "members": [
+   11,
+   12,
+   75
+  ],
+  "tau2_app": 0.0000046407525230236885,
+  "tau2_app_hex": "0x1.376f85715a1f8p-18"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::flips::rows",
+  "group": "10005",
+  "step": 2,
+  "members": [
+   15,
+   16
+  ],
+  "tau2_app": 0.000019150792445843433,
+  "tau2_app_hex": "0x1.414c06f9af340p-16"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::flips::rows",
+  "group": "5000",
+  "step": 3,
+  "members": [
+   29,
+   30,
+   59
+  ],
+  "tau2_app": 0.000023187829334005204,
+  "tau2_app_hex": "0x1.8506f7f9c2810p-16"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::flips::rows",
+  "group": "5000",
+  "step": 4,
+  "members": [
+   29,
+   30,
+   59,
+   60
+  ],
+  "tau2_app": 0.000014268671396039967,
+  "tau2_app_hex": "0x1.dec6f439c8e28p-17"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::outcome::rows",
+  "group": "heads",
+  "step": 23,
+  "members": [
+   1,
+   3,
+   5,
+   7,
+   9,
+   11,
+   13,
+   15,
+   17,
+   19,
+   21,
+   23,
+   25,
+   27,
+   29,
+   31,
+   33,
+   35,
+   37,
+   39,
+   41,
+   43,
+   45
+  ],
+  "tau2_app": 6.49872875540725e-7,
+  "tau2_app_hex": "0x1.5ce5d9103f2e8p-21"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::outcome::rows",
+  "group": "heads",
+  "step": 48,
+  "members": [
+   1,
+   3,
+   5,
+   7,
+   9,
+   11,
+   13,
+   15,
+   17,
+   19,
+   21,
+   23,
+   25,
+   27,
+   29,
+   31,
+   33,
+   35,
+   37,
+   39,
+   41,
+   43,
+   45,
+   47,
+   49,
+   51,
+   53,
+   55,
+   57,
+   59,
+   61,
+   63,
+   65,
+   67,
+   69,
+   71,
+   73,
+   75,
+   77,
+   79,
+   81,
+   83,
+   85,
+   87,
+   89,
+   91,
+   93,
+   95
+  ],
+  "tau2_app": 0.000004506862362276395,
+  "tau2_app_hex": "0x1.2e734e49d6eaep-18"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::outcome::rows",
+  "group": "same",
+  "step": 36,
+  "members": [
+   2,
+   4,
+   6,
+   8,
+   10,
+   12,
+   14,
+   16,
+   18,
+   20,
+   22,
+   24,
+   26,
+   28,
+   30,
+   32,
+   34,
+   36,
+   38,
+   40,
+   42,
+   44,
+   46,
+   48,
+   50,
+   52,
+   54,
+   56,
+   58,
+   60,
+   62,
+   64,
+   66,
+   68,
+   70,
+   72
+  ],
+  "tau2_app": 0.0000018773597491948561,
+  "tau2_app_hex": "0x1.f7f32dfaea110p-20"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::outcome::rows",
+  "group": "same",
+  "step": 38,
+  "members": [
+   2,
+   4,
+   6,
+   8,
+   10,
+   12,
+   14,
+   16,
+   18,
+   20,
+   22,
+   24,
+   26,
+   28,
+   30,
+   32,
+   34,
+   36,
+   38,
+   40,
+   42,
+   44,
+   46,
+   48,
+   50,
+   52,
+   54,
+   56,
+   58,
+   60,
+   62,
+   64,
+   66,
+   68,
+   70,
+   72,
+   74,
+   76
+  ],
+  "tau2_app": 0.000006653320275617463,
+  "tau2_app_hex": "0x1.be7f2c0683082p-18"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::outcome::rows",
+  "group": "same",
+  "step": 41,
+  "members": [
+   2,
+   4,
+   6,
+   8,
+   10,
+   12,
+   14,
+   16,
+   18,
+   20,
+   22,
+   24,
+   26,
+   28,
+   30,
+   32,
+   34,
+   36,
+   38,
+   40,
+   42,
+   44,
+   46,
+   48,
+   50,
+   52,
+   54,
+   56,
+   58,
+   60,
+   62,
+   64,
+   66,
+   68,
+   70,
+   72,
+   74,
+   76,
+   78,
+   80,
+   82
+  ],
+  "tau2_app": 0.000017051490627409268,
+  "tau2_app_hex": "0x1.1e1398373b63ep-16"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::outcome::rows",
+  "group": "same",
+  "step": 42,
+  "members": [
+   2,
+   4,
+   6,
+   8,
+   10,
+   12,
+   14,
+   16,
+   18,
+   20,
+   22,
+   24,
+   26,
+   28,
+   30,
+   32,
+   34,
+   36,
+   38,
+   40,
+   42,
+   44,
+   46,
+   48,
+   50,
+   52,
+   54,
+   56,
+   58,
+   60,
+   62,
+   64,
+   66,
+   68,
+   70,
+   72,
+   74,
+   76,
+   78,
+   80,
+   82,
+   84
+  ],
+  "tau2_app": 0.00002611797100750172,
+  "tau2_app_hex": "0x1.b62fd4d110ee4p-16"
+ },
+ {
+  "key": "dat.bartos2023::004::subgroup::outcome::rows",
+  "group": "same",
+  "step": 43,
+  "members": [
+   2,
+   4,
+   6,
+   8,
+   10,
+   12,
+   14,
+   16,
+   18,
+   20,
+   22,
+   24,
+   26,
+   28,
+   30,
+   32,
+   34,
+   36,
+   38,
+   40,
+   42,
+   44,
+   46,
+   48,
+   50,
+   52,
+   54,
+   56,
+   58,
+   60,
+   62,
+   64,
+   66,
+   68,
+   70,
+   72,
+   74,
+   76,
+   78,
+   80,
+   82,
+   84,
+   86
+  ],
+  "tau2_app": 0.000031372653860783114,
+  "tau2_app_hex": "0x1.072c42db685f0p-15"
+ },
+ {
+  "key": "dat.mccurdy2020::001::subgroup::pairing::rows",
+  "group": "480",
+  "step": 2,
+  "members": [
+   840,
+   841
+  ],
+  "tau2_app": 0.00013055555555555563,
+  "tau2_app_hex": "0x1.11cb7aecee4c0p-13"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::study::rows",
+  "group": "12",
+  "step": 2,
+  "members": [
+   37,
+   38
+  ],
+  "tau2_app": 0.0000035567589263886135,
+  "tau2_app_hex": "0x1.dd614e5fc3e5ap-19"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::study::rows",
+  "group": "12",
+  "step": 3,
+  "members": [
+   37,
+   38,
+   39
+  ],
+  "tau2_app": 0.00001332702813955809,
+  "tau2_app_hex": "0x1.bf2e4cce68a34p-17"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::study::year=year",
+  "group": "12",
+  "step": 2,
+  "members": [
+   37,
+   38
+  ],
+  "tau2_app": 0.0000035567589263886135,
+  "tau2_app_hex": "0x1.dd614e5fc3e5ap-19"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::study::year=year",
+  "group": "12",
+  "step": 3,
+  "members": [
+   37,
+   38,
+   39
+  ],
+  "tau2_app": 0.00001332702813955809,
+  "tau2_app_hex": "0x1.bf2e4cce68a34p-17"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::author::rows",
+  "group": "Sebire",
+  "step": 2,
+  "members": [
+   37,
+   38
+  ],
+  "tau2_app": 0.0000035567589263886135,
+  "tau2_app_hex": "0x1.dd614e5fc3e5ap-19"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::author::rows",
+  "group": "Sebire",
+  "step": 3,
+  "members": [
+   37,
+   38,
+   39
+  ],
+  "tau2_app": 0.00001332702813955809,
+  "tau2_app_hex": "0x1.bf2e4cce68a34p-17"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::author::year=year",
+  "group": "Sebire",
+  "step": 2,
+  "members": [
+   37,
+   38
+  ],
+  "tau2_app": 0.0000035567589263886135,
+  "tau2_app_hex": "0x1.dd614e5fc3e5ap-19"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::author::year=year",
+  "group": "Sebire",
+  "step": 3,
+  "members": [
+   37,
+   38,
+   39
+  ],
+  "tau2_app": 0.00001332702813955809,
+  "tau2_app_hex": "0x1.bf2e4cce68a34p-17"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::ref::rows",
+  "group": "20",
+  "step": 2,
+  "members": [
+   37,
+   38
+  ],
+  "tau2_app": 0.0000035567589263886135,
+  "tau2_app_hex": "0x1.dd614e5fc3e5ap-19"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::ref::rows",
+  "group": "20",
+  "step": 3,
+  "members": [
+   37,
+   38,
+   39
+  ],
+  "tau2_app": 0.00001332702813955809,
+  "tau2_app_hex": "0x1.bf2e4cce68a34p-17"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::ref::year=year",
+  "group": "20",
+  "step": 2,
+  "members": [
+   37,
+   38
+  ],
+  "tau2_app": 0.0000035567589263886135,
+  "tau2_app_hex": "0x1.dd614e5fc3e5ap-19"
+ },
+ {
+  "key": "dat.obrien2003::002::subgroup::ref::year=year",
+  "group": "20",
+  "step": 3,
+  "members": [
+   37,
+   38,
+   39
+  ],
+  "tau2_app": 0.00001332702813955809,
+  "tau2_app_hex": "0x1.bf2e4cce68a34p-17"
+ }
+]
