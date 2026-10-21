@@ -1,6 +1,7 @@
 /* GOSH features. Statistics come only from _almLastGosh().
  * The existing live adapter leaves base (rma), g (gosh, enumeration only),
- * yi, vi and captured subset memberships in R. No second statistical engine.
+ * yi, vi, mus, i2s and captured subset memberships in R. No second statistical engine.
+ * __almTextPerturb is a planted-defect test hook, restricted to DOM-audited keys.
  */
 (function (global) {
   'use strict';
@@ -24,12 +25,22 @@
     if (!last) return null;
     var r = Object.assign({}, last);
     var p = global.__almTextPerturb;
-    if (p && typeof r[p.key] === 'number' && typeof p.delta === 'number') r[p.key] += p.delta;
+    if (p && Object.prototype.hasOwnProperty.call(dom(), p.key) && typeof r[p.key] === 'number' && typeof p.delta === 'number') r[p.key] += p.delta;
     return r;
+  }
+  function localeInteger(text) {
+    // The engine uses the browser locale; the text auditor uses ASCII integers.
+    // Translate only that locale's grouping and digits, preserving wrong counts.
+    var format = new Intl.NumberFormat();
+    format.formatToParts(10000).forEach(function (part) {
+      if (part.type === 'group') text = text.split(part.value).join('');
+    });
+    for (var digit = 0; digit < 10; digit++) text = text.split(format.format(digit)).join(String(digit));
+    return text;
   }
   function dom() {
     return {
-      n_subsets: { text: byId('m-n').textContent, fmt: { kind: 'int' } },
+      n_subsets: { text: localeInteger(byId('m-n').textContent), fmt: { kind: 'int' } },
       median_est: { text: byId('m-est').textContent, fmt: { kind: 'num', digits: 3 } },
       median_i2: { text: byId('m-i2').textContent, fmt: { kind: 'pct', digits: 1 } }
     };
@@ -73,7 +84,7 @@
     verify: {
       adapter: function () { return (global.AlmLiveAdapters && global.AlmLiveAdapters[APP]) || global.AlmGoshValidationAdapter; },
       inputs: '#src, #model, #n-sample, #alm-axis-mount input',
-      rObjects: 'base (rma), g (gosh for enumerated subsets), yi, vi, members',
+      rObjects: 'base (rma), g (gosh for enumerated subsets), yi, vi, members, mus, i2s',
       plots: [{ id: 'gosh', title: 'GOSH scatter', width_in: 8, height_in: 6,
         r: 'if (length(yi) <= 15) { plot(g, het="I2") } else { plot(mus, i2s, xlab="Pooled effect", ylab="I squared (%)", main="Captured app subsets") }',
         app: function () { return byId('plot'); } }]
@@ -86,11 +97,14 @@
       },
       set: function (s) {
         if (!s || typeof s.src !== 'string' || s.src.length > 200000) throw new Error('Missing or oversized data.');
+        // Match the app's parse(): parseFloat, skip unreadable rows, ignore extra
+        // columns, and default empty labels after trimming. Restore src verbatim.
         var records = s.src.trim().split(/\n/).map(function (line, i) {
-          var p = line.split(',');
-          if (p.length < 2 || p.length > 3 || !p[0].trim() || !p[1].trim()) throw new Error('Invalid data row.');
-          return { yi: Number(p[0]), sei: Number(p[1]), study: (p[2] || 'S' + (i + 1)).trim() };
-        });
+          var p = line.split(',').map(function (value) { return value.trim(); });
+          var yi = parseFloat(p[0]), sei = parseFloat(p[1]);
+          if (!Number.isFinite(yi) || !Number.isFinite(sei) || sei <= 0) return null;
+          return { yi: yi, sei: sei, study: p[2] || 'S' + (i + 1) };
+        }).filter(Boolean);
         validRecords(records);
         if (['FE', 'DL'].indexOf(s.model) < 0) throw new Error('Unknown pooling model.');
         if (typeof s.draws !== 'string' || !Number.isInteger(Number(s.draws)) || Number(s.draws) < 1 || Number(s.draws) > 100000) throw new Error('Invalid draw count.');

@@ -6,6 +6,167 @@ import { readZip, decodePng, readTiff } from './zip-reader.mjs';
 const PAGE = '/gosh/index.html';
 const SNAP = new URL('./__snapshots__/text-gosh.json', import.meta.url);
 const SAMPLED_INPUT = Array.from({ length: 16 }, (_, i) => `${i / 10}, 0.1, Synthetic ${i + 1}`).join('\n');
+
+for (const locale of ['de-DE', 'fr-FR', 'ru-RU', 'ar-EG']) {
+  test(`REVIEW locale ${locale}: grouped subset count passes audit; wrong count fails`, async ({ browser }) => {
+    const context = await browser.newContext({ locale });
+    const page = await context.newPage();
+    await page.goto(`http://localhost:${process.env.ALM_FEATURES_PORT || 8089}${PAGE}`);
+    await page.locator('#src').fill(Array.from({ length: 11 }, (_, i) => `${i / 10}, .1, Study ${i + 1}`).join('\n'));
+    await page.locator('#btn-run').click();
+    const displayed = await page.evaluate(() => (2047).toLocaleString());
+    await expect(page.locator('#m-n')).toHaveText(displayed);
+    expect((await report(page)).audit.failures).toEqual([]);
+    await tab(page, 'text');
+    await expect(page.locator('.alm-text-body')).toBeVisible();
+    await page.evaluate(() => { document.getElementById('m-n').textContent = (2048).toLocaleString(); });
+    const planted = await report(page);
+    expect(planted.audit.ok).toBe(false);
+    expect(planted.audit.failures.map(f => f.check)).toContain('dom:n_subsets');
+    await context.close();
+  });
+}
+
+for (const variant of ['header', 'extra columns', 'blank line', 'comment', 'numeric prefix and empty label']) {
+  test(`REVIEW SHARE accepts app input: ${variant}`, async ({ page, browser }) => {
+    await open(page);
+    const src = await page.locator('#src').inputValue();
+    const modified = src.replace('0.22, 0.08', '0.42, 0.08');
+    const input = {
+      header: 'effect, SE, label\n' + modified,
+      'extra columns': modified.split('\n').map(line => line + ', 2019').join('\n'),
+      'blank line': modified.replace('\n', '\n\n'),
+      comment: modified + '\n# End of extraction',
+      'numeric prefix and empty label': modified.replace('0.42, 0.08, Study A', '0.42 units, 0.08 units, ')
+    }[variant];
+    await page.locator('#src').fill(input);
+    await page.locator('#btn-run').click();
+    const expected = await page.evaluate(() => ({ state: AlmFeatures.get('gosh').share.get(), result: _almLastGosh() }));
+    expect(expected.result.k).toBe(9);
+    await tab(page, 'share');
+    await page.getByRole('button', { name: 'Copy share link', exact: true }).click();
+    await expect(page.locator('[data-testid=share-status]')).toContainText('Share link');
+    const link = await page.getByLabel('Share link', { exact: true }).inputValue();
+    const context = await browser.newContext(), fresh = await context.newPage();
+    await fresh.goto(link);
+    await expect(fresh.locator('[data-testid=share-status]')).toHaveText('Analysis restored from the share link.');
+    expect(await fresh.evaluate(() => ({ state: AlmFeatures.get('gosh').share.get(), result: _almLastGosh() }))).toEqual(expected);
+    await context.close();
+  });
+}
+
+test('REVIEW SHARE invalid surviving rows leave all state unchanged', async ({ page }) => {
+  await open(page);
+  const out = await page.evaluate(() => {
+    const spec = AlmFeatures.get('gosh'), before = spec.share.get(), result = _almLastGosh();
+    let error;
+    try { spec.share.set({ ...before, src: 'header, SE\n.1, .2, A\n.2, .3, B\ninvalid' }); } catch (e) { error = e.message; }
+    return { error, unchanged: JSON.stringify(before) === JSON.stringify(spec.share.get()), resultUnchanged: JSON.stringify(result) === JSON.stringify(_almLastGosh()) };
+  });
+  expect(out).toEqual({ error: 'Provide three through one hundred studies.', unchanged: true, resultUnchanged: true });
+});
+
+test('REVIEW TEXT perturbation cannot change keys without DOM checks', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => { window.__almTextPerturb = { key: 'k', delta: 3 }; });
+  const out = await report(page);
+  expect(out.r.k).toBe(9);
+  expect(out.audit.ok).toBe(true);
+  expect(out.snapshot.results).toContain('Across 9 studies');
+});
+
+test('REVIEW VERIFY documents objects used by the sampled plot', async ({ page }) => {
+  await open(page);
+  const out = await page.evaluate(() => {
+    const spec = AlmFeatures.get('gosh').verify;
+    return { objects: spec.rObjects, plot: spec.plots[0].r, script: spec.adapter().live.buildScript(spec.adapter().live.currentState()) };
+  });
+  for (const name of ['mus', 'i2s']) {
+    expect(out.objects).toMatch(new RegExp(`\\b${name}\\b`));
+    expect(out.plot).toContain(name);
+    expect(out.script).toContain(name);
+  }
+});
+
+test('REVIEW SHARE restores without navigation timing entries', async ({ page, browser }) => {
+  await open(page);
+  const link = await page.evaluate(async () => {
+    const state = AlmFeatures.get('gosh').share.get();
+    state.src = '.7, .1, A\n.8, .2, B\n.9, .3, C';
+    return AlmShare.makeLink(location.href, await AlmShare.encode('gosh', state, []));
+  });
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    const original = performance.getEntriesByType.bind(performance);
+    performance.getEntriesByType = type => type === 'navigation' ? [] : original(type);
+  });
+  const fresh = await context.newPage();
+  await fresh.goto(link);
+  await expect(fresh.locator('[data-testid=share-status]')).toHaveText('Analysis restored from the share link.');
+  expect(await fresh.evaluate(() => _almLastGosh().k)).toBe(3);
+  await expect(fresh.locator('#src')).toHaveValue('.7, .1, A\n.8, .2, B\n.9, .3, C');
+  await context.close();
+});
+
+async function addSource(panel, year) {
+  await panel.getByLabel('Paste the exact paper text or table').fill('MD 0.2 (95% CI 0.1-0.3)');
+  await panel.getByRole('button', { name: 'Extract candidates', exact: true }).click();
+  const chooser = panel.getByLabel('Choose the source result to add');
+  await expect(chooser).toHaveValue('');
+  await expect(panel.getByRole('button', { name: 'Add chosen result', exact: true })).toBeDisabled();
+  await chooser.selectOption('0');
+  await panel.getByRole('button', { name: 'Add chosen result', exact: true }).click();
+  const card = panel.locator('fieldset').last();
+  await card.getByLabel('Study label', { exact: false }).fill(`Smith ${year}`);
+  await card.getByLabel('Full reference', { exact: true }).fill('Synthetic report');
+  await card.getByLabel('Location', { exact: false }).fill('Table 1');
+  await card.getByLabel('Outcome measured', { exact: true }).fill('Synthetic outcome');
+  await card.getByLabel('Timepoint', { exact: false }).fill('12 weeks');
+  return card;
+}
+
+test('REVIEW ENTRY real gosh block requires confirmation and applies provenance', async ({ page }) => {
+  await open(page);
+  await tab(page, 'entry');
+  const panel = page.locator('#alm-f-panel-entry');
+  await expect(panel.locator('.alm-entry-provenance')).toHaveCount(1);
+  const use = panel.getByRole('button', { name: 'Use these rows', exact: true });
+  const before = await page.locator('#src').inputValue();
+  for (const year of [2020, 2021, 2022]) {
+    const card = await addSource(panel, year);
+    await expect(use).toBeDisabled();
+    await expect(page.locator('#src')).toHaveValue(before);
+    await expect(card.getByLabel('I confirm this row')).toBeEnabled();
+    await card.getByLabel('I confirm this row').check();
+  }
+  await expect(use).toBeEnabled();
+  await use.click();
+  await expect(panel.getByRole('status')).toContainText('Applied 3 confirmed rows.');
+  const out = await page.evaluate(() => ({ result: _almLastGosh(), provenance: AlmFeaturesState.provenance, usedAs: AlmFeatures.get('gosh').entry.usedAs }));
+  expect(out.result.k).toBe(3);
+  expect(out.provenance).toHaveLength(3);
+  expect(out.provenance.every(r => r.confirmed && r.usedAs === out.usedAs)).toBe(true);
+  expect(out.result.studies.map(r => r.label)).toEqual(['Smith 2020', 'Smith 2021', 'Smith 2022']);
+  await panel.locator('fieldset').first().getByLabel('Outcome measured', { exact: true }).fill('Edited outcome');
+  await expect(use).toBeDisabled();
+});
+
+test('REVIEW ENTRY planted missing usedAs blocks the real provenance workflow', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => {
+    const host = document.createElement('div'); host.id = 'gosh-provenance-mutant'; document.body.appendChild(host);
+    const block = { ...AlmFeatures.get('gosh').entry };
+    delete block.usedAs;
+    AlmEntryUI.mount(host, block);
+  });
+  const panel = page.locator('#gosh-provenance-mutant');
+  const before = await page.locator('#src').inputValue();
+  const card = await addSource(panel, 2020);
+  await expect(card.getByLabel('I confirm this row')).toBeDisabled();
+  await expect(panel.getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
+  await expect(panel).toContainText('The app adapter must supply entry.usedAs');
+  await expect(page.locator('#src')).toHaveValue(before);
+});
 async function open(page) {
   await page.goto(PAGE);
   await expect(page.locator('#m-n')).toHaveText('511');

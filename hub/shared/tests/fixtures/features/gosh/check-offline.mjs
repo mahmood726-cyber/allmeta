@@ -86,3 +86,5 @@ assert.ok(T.audit(sa, sampled, { ctx, dom: spec.text.dom() }).ok);
 assert.match(sa.methods.text, /DerSimonian–Laird/); assert.match(sa.methods.text, /drew 37 subsets/);
 element('src').value = ''; element('btn-run').click(); assert.equal(spec.text.results(), null);
 console.log('OFFLINE text variants 2/2 (sampled DL and no results)');
+
+export { context, element, spec, root, html, original, plain };
