@@ -91,7 +91,7 @@
         { kind: 'named', citation: 'Collins et al. 1985 BMJ (the meta-analysis reanalysed)', doi: '10.1136/bmj.290.6461.17',
           note: 'The original meta-analysis whose DerSimonian–Laird result was reanalysed by Cornell et al. 2014.' },
         { kind: 'survey', citation: 'IntHout et al. 2014 BMC Med Res Methodol', doi: '10.1186/1471-2288-14-25',
-          note: 'Survey: 25% of Cochrane meta-analyses significant with DerSimonian–Laird were not significant with Hartung–Knapp–Sidik–Jonkman.' },
+          note: 'A published audit of 689 Cochrane meta-analyses found that 25% of results significant with DerSimonian–Laird were not significant with Hartung–Knapp–Sidik–Jonkman.' },
       ],
     },
     {
@@ -107,7 +107,7 @@
       handbook: [hb('10.10.2')],
       evidence: [
         { kind: 'survey', citation: 'Ioannidis, Patsopoulos & Evangelou 2007 BMJ', doi: '10.1136/bmj.39343.408449.80',
-          note: 'Survey: all 385 meta-analyses with I² = 0 had an upper 95% confidence limit for I² above 33%.' },
+          note: 'A published audit found that in all 385 meta-analyses with I² = 0 the upper 95% confidence limit for I² was above 33%.' },
       ],
     },
     {
@@ -127,9 +127,9 @@
       handbook: [hb('15.3.2'), hb('15.6.4')],
       evidence: [
         { kind: 'survey', citation: 'Alderson & Chalmers 2003 BMJ', doi: '10.1136/bmj.326.7387.475',
-          note: 'Survey: 22.5% of Cochrane review abstracts claimed "no effect" from a non-significant result.' },
+          note: 'A published audit found unqualified "no effect" claims in 22.5% of the Cochrane review abstracts it surveyed.' },
         { kind: 'survey', citation: 'Repeat survey 2020 BMJ Evid Based Med', doi: '10.1136/bmjebm-2019-111257',
-          note: 'Repeat of the Alderson & Chalmers survey.' },
+          note: 'A repeat audit (2020) still found such claims in 7.8% of Cochrane reviews.' },
       ],
     },
     {
@@ -172,7 +172,7 @@
       handbook: [{ label: 'Cochrane Handbook for Systematic Reviews of Diagnostic Test Accuracy v2, chapter 10', url: 'https://doi.org/10.1002/9781119756194.ch10' }],
       evidence: [
         { kind: 'survey', citation: 'Willis & Quigley 2011 BMC Med Res Methodol', doi: '10.1186/1471-2288-11-27',
-          note: 'Survey: 70% of 236 DTA meta-analyses used separate pooling or the Moses–Littenberg SROC; 22% used a bivariate model.' },
+          note: 'A published audit found that 70% of 236 diagnostic accuracy meta-analyses used separate pooling or the Moses–Littenberg SROC; 22% used a bivariate model.' },
       ],
     },
     {
@@ -190,7 +190,7 @@
       handbook: [hb('13.3.4.4')],
       evidence: [
         { kind: 'survey', citation: 'Ioannidis & Trikalinos 2007 CMAJ', doi: '10.1503/cmaj.060410',
-          note: 'Survey: all 11 publication-bias claims were made in meta-analyses that did not qualify for asymmetry testing.' },
+          note: 'A published audit of 60 meta-analyses using asymmetry tests found that all 11 claims of publication bias were made in meta-analyses that did not meet the conditions for the test.' },
       ],
     },
     {
@@ -209,26 +209,9 @@
       handbook: [hb('11.4.4.2')],
       evidence: [
         { kind: 'survey', citation: 'Song et al. 2009 BMJ', doi: '10.1136/bmj.b1147',
-          note: 'Survey: the consistency assumption was not made explicit in 18 of 30 reviews.' },
+          note: 'A published audit found that the consistency assumption was not made explicit in 18 of 30 reviews (60%).' },
         { kind: 'survey', citation: 'Veroniki et al. 2013 Int J Epidemiol', doi: '10.1093/ije/dys222',
-          note: 'Empirical evaluation of inconsistency across published networks.' },
-      ],
-    },
-    {
-      id: 'SP-PIT-WITHINCOR', version: 1, apps: ['multivariate-ma'], part: 'pitfall',
-      requires: ['withinCorrelation'],
-      handbookExempt: 'Not covered by the Cochrane Handbook.',
-      trigger: function (c) {
-        return { fired: c.withinCorrelation === 'assumed', facts: { value: isNum(c.assumedCorrelation) ? fmt(c.assumedCorrelation) : null } };
-      },
-      message: function (f) {
-        return 'The within-study correlation was assumed' + (f.value !== null ? ' (ρw = ' + f.value + ')' : '') +
-          ', not reported by the studies. Results depend on the assumed within-study correlation: try other values and report how the results change.';
-      },
-      handbook: [],
-      evidence: [
-        { kind: 'methods', citation: 'Riley 2009 J R Stat Soc A', doi: '10.1111/j.1467-985X.2008.00593.x',
-          note: 'No published example of this error in a named meta-analysis was found.' },
+          note: 'A published audit of 40 networks found inconsistency in about 1 in 8 of them.' },
       ],
     },
     {

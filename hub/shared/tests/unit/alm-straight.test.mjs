@@ -24,11 +24,10 @@ const VERIFIED_DOIS = Object.freeze([
   '10.1186/1471-2288-11-27',
   '10.1503/cmaj.060410',
   '10.1136/bmj.b1147', '10.1093/ije/dys222',
-  '10.1111/j.1467-985X.2008.00593.x',
 ]);
 const DOI_RE = /^10\.\d{4,9}\/\S+$/;
 // Rules allowed to ship without a Handbook entry (explicitly marked handbookExempt in the table).
-const HANDBOOK_EXEMPT = Object.freeze(['SP-PIT-WITHINCOR']);
+const HANDBOOK_EXEMPT = Object.freeze([]);
 const PLACEMENTS = Object.freeze({
   'SP-REC-SMALLK': ['proportion-ma', 'correlation-ma'],
   'SP-PIT-I2ZERO': ['proportion-ma', 'correlation-ma'],
@@ -37,7 +36,6 @@ const PLACEMENTS = Object.freeze({
   'SP-REC-DTA-SROC': ['dta-sroc'],
   'SP-PIT-FUNNELSMALLK': ['dta-sroc'],
   'SP-PIT-NMACONSIST': ['nma-inconsistency'],
-  'SP-PIT-WITHINCOR': ['multivariate-ma'],
   'SP-UNC-SMALLK': ['dta-sroc', 'proportion-ma', 'nma-inconsistency', 'correlation-ma', 'multivariate-ma'],
   'SP-UNC-WIDEPI': ['proportion-ma', 'correlation-ma'],
 });
@@ -83,10 +81,6 @@ const CASES = {
   'SP-PIT-NMACONSIST': {
     planted: [{ inconsistencyTests: [{ label: 'design-by-treatment test', p: 0.05 }] }, { inconsistencyTests: [{ label: 'node-split A:B', p: 0.001 }, { label: 'node-split A:C', p: 0.6 }] }],
     control: [{ inconsistencyTests: [{ label: 'design-by-treatment test', p: 0.049 }, { label: 'node-split A:B', p: 0.001 }] }],
-  },
-  'SP-PIT-WITHINCOR': {
-    planted: [{ withinCorrelation: 'assumed', assumedCorrelation: 0.5 }, { withinCorrelation: 'assumed' }],
-    control: [{ withinCorrelation: 'reported' }],
   },
   'SP-UNC-SMALLK': {
     planted: [pair({ k: 4 }), { analysisType: 'network', minPerComparison: 4, k: 11 }, { analysisType: 'multivariate', k: 9 }],
@@ -156,7 +150,6 @@ test('messages compose numbers from facts: the planted values appear in the text
   ok(S.check(rule('SP-PIT-I2ZERO'), pair({ k: 3, i2: 0 })).message.startsWith('I² = 0.0% with only 3 studies'), 'I2ZERO facts');
   ok(S.check(rule('SP-PIT-NONSIG'), pair({ estimates: [est({ label: 'pooled r', lo: -0.125, hi: 0.3 })] })).message.includes('pooled r (-0.125 to 0.3'), 'NONSIG CI');
   ok(S.check(rule('SP-PIT-CLUSTER'), CASES['SP-PIT-CLUSTER'].planted[0]).message.includes('1 row comes') && S.check(rule('SP-PIT-CLUSTER'), CASES['SP-PIT-CLUSTER'].planted[0]).message.includes('Smith 2019'), 'cluster count + label');
-  ok(S.check(rule('SP-PIT-WITHINCOR'), { withinCorrelation: 'assumed', assumedCorrelation: 0.35 }).message.includes('ρw = 0.35'), 'assumed value shown');
   ok(S.check(rule('SP-PIT-NMACONSIST'), CASES['SP-PIT-NMACONSIST'].planted[1]).message.startsWith('1 of 2 inconsistency tests'), 'n of N');
   ok(S.check(rule('SP-UNC-SMALLK'), { analysisType: 'network', minPerComparison: 1 }).message.includes('only 1 study'), 'network singular');
   ok(S.check(rule('SP-UNC-WIDEPI'), pair({ k: 3 })).message.includes('-0.1 to 0.7'), 'PI bounds');
@@ -219,9 +212,6 @@ test('citation table: handbook entries, DOI pattern, every DOI in VERIFIED_DOIS;
   const used = new Set(S.RULES.flatMap(r => r.evidence.map(e => e.doi)));
   eq([...used].sort(), VERIFIED_DOIS.slice().sort(), 'every verified DOI is used and nothing else');
   for (const d of VERIFIED_DOIS) ok(DOI_RE.test(d), 'frozen DOI matches pattern ' + d);
-  // Rule 8 ships with the methods citation and the visible "no published example" note.
-  const w = rule('SP-PIT-WITHINCOR');
-  eq(w.evidence.map(e => [e.kind, e.note]), [['methods', 'No published example of this error in a named meta-analysis was found.']]);
   // Handbook sections as given in the rule list.
   const secs = id => rule(id).handbook.map(h => h.label);
   eq(secs('SP-REC-SMALLK'), ['Cochrane Handbook v6.5 §10.10.4.4', 'Cochrane Handbook v6.5 §10.10.4.5']);
@@ -328,3 +318,9 @@ test('feature panel: "Straight path" is an extension tab after Report text; core
 });
 
 test('checks counted', () => { ok(checks > 150, 'checks: ' + checks); console.log('STRAIGHT unit checks ' + checks); });
+
+
+test('approval 2026-10-21: SP-PIT-WITHINCOR is dropped for this round (v2 backlog)', () => {
+  assert.equal(S.RULES.some((r) => r.id === 'SP-PIT-WITHINCOR'), false);
+  for (const r of S.RULES) for (const e of r.evidence) if (e.kind === 'survey') assert.match(e.note, /^A (published|repeat) audit/, r.id);
+});

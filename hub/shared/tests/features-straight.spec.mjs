@@ -232,14 +232,13 @@ test('app 16 nma-inconsistency: example advice, model -> DL, panel + axe', async
   expect(errors).toEqual([]);
 });
 
-test('app 18 multivariate-ma: example advice, assumed rho_w -> WITHINCOR, panel + axe', async ({ page }) => {
+test('app 18 multivariate-ma: example advice; assumed rho_w gives no WITHINCOR (rule dropped for this round), panel + axe', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/multivariate-ma/index.html');
   await expect(page.locator('#stats .stat').first()).toBeVisible();
   const derive = () => page.evaluate(([UNC_MV]) => {
     const r = window._almLastMultivariate(), Z = 1.959963984540054, e = [];
     if (r.mu.some((m, j) => m - Z * r.muSE[j] <= 0 && 0 <= m + Z * r.muSE[j])) e.push('SP-PIT-NONSIG@1');
-    if (r.mode === 'rhoW') e.push('SP-PIT-WITHINCOR@1');
     if (r.k < UNC_MV) e.push('SP-UNC-SMALLK@1');
     return { e, k: r.k, mode: r.mode, p: r.p };
   }, [UNC_MV]);
@@ -248,16 +247,16 @@ test('app 18 multivariate-ma: example advice, assumed rho_w -> WITHINCOR, panel 
   expect(d.e).not.toContain('SP-PIT-WITHINCOR@1'); // covariances are supplied in the example
   await expectFired(page, 'multivariate-ma', d.e, 'example');
   await axe(page, '.alm-straight-notice[data-app="multivariate-ma"]', 'multivariate-ma notice');
-  // PLANTED: same studies with one assumed within-study correlation for all -> WITHINCOR fires with the value.
+  // CONTROL (approval 2026-10-21, rule 8 dropped): an assumed within-study correlation must NOT produce SP-PIT-WITHINCOR.
   await page.evaluate(() => {
     const text = window.AlmMvPage.EXAMPLE.split('\n').map(l => l.startsWith('#') ? '# label, y_PD, var_PD, y_AL, var_AL' : l.split(', ').slice(0, 5).join(', ')).join('\n');
     document.getElementById('f-rhow').value = '0.4';
     window.AlmMvPage.load(text, 'rhoW', 'PD', 'AL');
   });
   d = await derive();
-  expect(d.e).toContain('SP-PIT-WITHINCOR@1');
+  expect(d.e).not.toContain('SP-PIT-WITHINCOR@1');
   const got = await expectFired(page, 'multivariate-ma', d.e, 'rhoW');
-  await expect(page.locator('.alm-straight-notice[data-app="multivariate-ma"] li[data-rule="SP-PIT-WITHINCOR@1"]')).toContainText('ρw = 0.4');
+  await expect(page.locator('.alm-straight-notice[data-app="multivariate-ma"] li[data-rule="SP-PIT-WITHINCOR@1"]')).toHaveCount(0);
   await checkTab(page, 'multivariate-ma', got);
   expect(errors).toEqual([]);
 });

@@ -25,7 +25,7 @@
   ];
   var KIND = {
     named: 'Documented error in a named meta-analysis',
-    survey: 'Survey of published meta-analyses',
+    survey: 'Published audit of meta-analyses',
     methods: 'Methods paper',
   };
   var serial = 0, last = {};
