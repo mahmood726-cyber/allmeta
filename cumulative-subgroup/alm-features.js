@@ -24,13 +24,82 @@
         throw new Error('Each study needs a label, a finite estimate and a positive SE');
       }
       var year = r.year == null || r.year === '' ? null : Number(r.year);
-      if (year !== null && !Number.isFinite(year)) throw new Error('Year must be numeric or empty');
+      if (year !== null && (!Number.isSafeInteger(year) || year < 1000)) {
+        throw new Error('Year must be an integer with at least four digits or empty');
+      }
       if (r.subgroup != null && typeof r.subgroup !== 'string') throw new Error('Subgroup must be text');
       return { label: r.study, est: r.yi, se: r.sei, year: year, group: r.subgroup || null };
     });
-    global.__almLoad(rows); // the app's CSV bridge quotes labels/groups and runs render()
-    run(); // notify input fingerprints and autosave listeners as well
+    var previous = el('f-data').value;
+    try {
+      global.__almLoad(rows); // the app's CSV bridge quotes labels/groups and runs render()
+      var parsed = observed().parsed;
+      if (parsed.warnings.length || parsed.studies.length !== rows.length || rows.some(function (row, i) {
+        var study = parsed.studies[i];
+        return ['label', 'est', 'se', 'year', 'group'].some(function (key) { return study[key] !== row[key]; });
+      })) throw new Error('The app could not preserve every study in the import round trip; check labels, years and subgroups');
+      run(); // notify input fingerprints and autosave listeners only after validation
+    } catch (err) {
+      el('f-data').value = previous;
+      run();
+      throw err;
+    }
     return { ok: true, n: rows.length };
+  }
+  function mountEntry(panel, block) {
+    var ui = global.AlmEntryUI.mount(panel, block), root = ui.element, doc = root.ownerDocument;
+    var paste = root.querySelector('textarea');
+    var heading = doc.createElement('h3'), log = doc.createElement('ul');
+    heading.textContent = 'Conversion log'; heading.id = paste.id + '-conversion-log';
+    log.setAttribute('aria-labelledby', heading.id);
+    root.appendChild(heading); root.appendChild(log);
+    function line(text, className) {
+      var item = doc.createElement('li'); item.textContent = text;
+      if (className) item.className = className;
+      log.appendChild(item);
+    }
+    function flag(f) {
+      line((f.blocking ? 'Block: ' : 'Warning: ') + f.text, f.blocking ? 'alm-entry-block' : 'alm-entry-warning');
+    }
+    function refreshLog() {
+      log.replaceChildren();
+      var output = ui.getResult();
+      (output.provenance || []).forEach(function (row) {
+        row.conversions.forEach(function (c) { line(row.label + ': ' + c.formula + '; ' + c.citation + '; result ' + c.output); });
+        row.flags.forEach(flag);
+      });
+      // The confirmation UI extracts supported source candidates only. A rejected table
+      // still deserves the same parser/converter diagnostics as the table workflow.
+      // This preview never supplies rows to apply() or bypasses source confirmation.
+      if (output.extraction && !output.extraction.candidates.length) {
+        var core = global.AlmEntry, table = core.parseTable(paste.value);
+        if (table.header && table.rows.length) {
+          var detection = core.detect(table, block.schema);
+          table.header.forEach(function (name, i) {
+            if (block.extras.indexOf(name) < 0) return;
+            detection.mapping[i] = name;
+            detection.questions = detection.questions.filter(function (q) { return q.id !== 'column:' + i; });
+          });
+          var converted = core.convert(table, detection, block.schema, { decimal: output.extraction.decimal });
+          line('Table conversion preview only. Add supported source results and confirm each study before applying.');
+          converted.steps.forEach(function (s) { line(s.text); });
+          converted.flags.forEach(flag);
+        }
+      }
+      if (!log.children.length) line('Add a source result to review its conversions and checks.');
+    }
+    // Bubble after the shared handlers, so the log reflects extraction and row edits.
+    ['click', 'input', 'change'].forEach(function (type) { root.addEventListener(type, refreshLog); });
+    refreshLog();
+    return {
+      element: root,
+      parse: function () { ui.parse(); refreshLog(); },
+      getResult: function () { return ui.getResult(); },
+      destroy: function () {
+        ['click', 'input', 'change'].forEach(function (type) { root.removeEventListener(type, refreshLog); });
+        ui.destroy();
+      }
+    };
   }
   function results() {
     if (!global._almLastCumSub || !global._almLastCumSub()) return null;
@@ -40,10 +109,16 @@
     var p = sub ? a.sub.overall : a.cum.series[a.cum.series.length - 1];
     var r = { view: a.summary.view, k: p.k, mu: p.mu, lo: p.lo, hi: p.hi,
       tau2: p.tau2, piLo: p.piLo, piHi: p.piHi,
-      ciLevel: 95, piMin: 2, nullEffect: 0,
       byYear: a.parsed.studies.every(function (s) { return s.year !== null; }),
       verified: !!(global.AlmFeatures && global.AlmFeatures.verifiedCurrent(APP)),
       groupKeys: [] };
+    if (r.verified) {
+      var checks = global.AlmFeaturesState.verify.rows;
+      r.verifyPage = checks.filter(function (row) {
+        return /^display\./.test(row.key) || row.key === 'export.fields' || row.key === 'series_rows';
+      }).length;
+      r.verifyStats = checks.length - r.verifyPage;
+    }
     if (sub) {
       r.groups = a.sub.groups.length; r.Qbw = a.sub.Q_bw; r.dfbw = a.sub.df_bw;
       r.pQ = a.sub.pQ; r.i2bw = a.sub.I2_bw;
@@ -91,10 +166,12 @@
   var templates = {
     plain: function (T, r) {
       return ['This analysis combined ', T.int('k'), ' studies. The pooled effect on the supplied analysis scale was ',
-        T.num('mu', 3), ' (', T.pct('ciLevel', 0), ' confidence interval ', T.ci('lo', 'hi', 3), '). ',
-        global.AlmText.cochrane.ciIncludesNull(r.lo, r.hi, r.nullEffect)
-          ? 'The confidence interval includes no effect; this is not evidence that the effects are the same. '
+        T.num('mu', 3), ' (', T.rule('ciLevel'), ' confidence interval ', T.ci('lo', 'hi', 3), '). ',
+        global.AlmText.cochrane.ciIncludesNull(r.lo, r.hi, T.R.none)
+          ? ['There is ', global.AlmText.cochrane.differencePhrase(r.lo, r.hi, T.R.none), '; this is not evidence of no effect. ']
           : 'The confidence interval does not include zero on this scale. ',
+        T.when(global.AlmText.cochrane.imprecise(r.lo, r.hi, T.R.none),
+          'The estimate is imprecise: the confidence interval includes no effect and effects in either direction. '),
         'The prediction interval for a similar new study was ', T.ci('piLo', 'piHi', 3),
         '. This summary does not establish causation or clinical importance.'];
     },
@@ -102,29 +179,38 @@
       return ['Estimates were pooled on the supplied scale with inverse-variance random-effects weights. ',
         'Paule–Mandel estimated the between-study variance (τ²; ', T.cite('pauleMandel'), '). ',
         'Within-study variances were squared standard errors. No transformation, back-transformation or continuity correction was applied by the app. ',
-        'The pooled ', T.pct('ciLevel', 0), ' confidence interval used a normal Wald approximation without Hartung–Knapp adjustment. ',
-        'Prediction intervals used the pooled estimate ± t × √(τ² + SE²), with t degrees of freedom equal to the number of studies minus one, from ',
-        T.int('piMin'), ' studies (', T.cite('handbookPI'), '). ',
+        'The pooled ', T.rule('ciLevel'), ' confidence interval used a normal Wald approximation without Hartung–Knapp adjustment. ',
+        'Prediction intervals used the pooled estimate ± t × √(τ² + SE²), with t degrees of freedom equal to the number of studies minus one, ',
+        'computed whenever at least two studies were pooled (', T.cite('handbookPI'), '). ',
         r.view === 'cumulative'
           ? ['Each cumulative prefix was refitted, ', r.byYear ? 'ordered by ascending year with ties retaining input order. ' : 'retaining input order because at least one year was missing. ']
-          : ['Each subgroup had a separately estimated τ²; missing group labels were retained as an ungrouped category. ',
-             'The overall estimate pooled all studies separately. Between-subgroup Q used inverse squared subgroup pooled standard errors as weights, ',
+          : ['Subgroups with more than one study had a separately estimated τ²; missing group labels were retained as an ungrouped category. ',
+             'The overall estimate pooled all studies separately. ', T.when(r.dfbw > T.R.none, [
+             'Between-subgroup Q used inverse squared subgroup pooled standard errors as weights, ',
              'centred on the weighted mean of subgroup estimates. Its p-value used a chi-squared distribution with the number of groups minus one degrees of freedom. ',
-             'I² of subgroup differences was the nonnegative percentage (Q − df)/Q; it is not overall study-level I². '],
+             'I² of subgroup differences was the nonnegative percentage (Q − df)/Q; it is not overall study-level I². '])],
         'No pooled-effect p-value or overall study-level I² is reported by this app. ',
-        T.entry(), T.when(T.entry(), ' '), T.software(), T.when(r.verified, function () { return [' ', T.verify()]; })];
+        T.entry(), T.when(T.entry(), ' '), T.software(), T.when(r.verified && T.hasCtx('verify.n'), function () {
+          return [' Results were independently verified in R (', T.ctx('verify.pkg'), ' ', T.ctx('verify.pkgVersion'),
+            '; webR ', T.ctx('verify.webr'), '): ', T.int('verifyStats'), ' statistical quantities matched R; ',
+            T.int('verifyPage'), ' page self-checks passed.'];
+        })];
     },
     results: function (T, r) {
       return ['The ', r.view === 'cumulative' ? 'final cumulative' : 'overall', ' pooled effect across ', T.int('k'),
-        ' studies was ', T.num('mu', 3), ' (', T.pct('ciLevel', 0), ' CI ', T.ci('lo', 'hi', 3),
-        '); τ² = ', T.num('tau2', 4), '. The ', T.pct('ciLevel', 0), ' prediction interval was ', T.ci('piLo', 'piHi', 3), '. ',
+        ' studies was ', T.num('mu', 3), ' (', T.rule('ciLevel'), ' CI ', T.ci('lo', 'hi', 3),
+        '); τ² = ', T.num('tau2', 4), '. The ', T.rule('ciLevel'), ' prediction interval was ', T.ci('piLo', 'piHi', 3), '. ',
         T.when(r.view === 'subgroup', function () {
-          return ['There were ', T.int('groups'), ' subgroups. Between-subgroup Q = ', T.num('Qbw', 2),
-            ' (df = ', T.int('dfbw'), ')', T.has('pQ') ? ['; p = ', T.num('pQ', 3)] : '; p was unavailable',
-            '; I² of differences = ', T.pct('i2bw', 1), '. Subgroups are listed in the plot’s order. ',
+          return [T.plural('groups', 'There was ', 'There were '), T.int('groups'), T.plural('groups', ' subgroup. ', ' subgroups. '),
+            r.dfbw > T.R.none ? ['Between-subgroup Q = ', T.num('Qbw', 2),
+              ' (df = ', T.int('dfbw'), ')', T.has('pQ') ? ['; ', T.p('pQ')] : '; p was unavailable',
+              '; I² of differences = ', T.pct('i2bw', 1), '. ']
+              : 'No between-subgroup comparison is possible with only one subgroup. ',
+            'Subgroups are listed in the plot’s order. ',
             r.groupKeys.map(function (key) {
-              return ['Subgroup ', T.int(key + 'Index'), ': ', T.int(key + 'k'), ' studies; pooled effect ',
-                T.num(key + 'mu', 3), ' (CI ', T.ci(key + 'lo', key + 'hi', 3), '); τ² = ', T.num(key + 'tau2', 4),
+              return ['Subgroup ', T.int(key + 'Index'), ': ', T.int(key + 'k'), T.plural(key + 'k', ' study; pooled effect ', ' studies; pooled effect '),
+                T.num(key + 'mu', 3), ' (CI ', T.ci(key + 'lo', key + 'hi', 3), '); ',
+                T.plural(key + 'k', 'τ² is not estimable', ['τ² = ', T.num(key + 'tau2', 4)]),
                 T.when(T.has(key + 'piLo'), function () { return ['; prediction interval ', T.ci(key + 'piLo', key + 'piHi', 3)]; }), '. '];
             })];
         })];
@@ -132,7 +218,9 @@
     flags: function (T, r) {
       return [T.when(r.k < T.R.fewK, 'Few studies: heterogeneity estimates are imprecise.'),
         T.when(r.k < T.R.funnelK, 'Tests for small-study effects would be underpowered; none were performed.'),
-        T.when(r.view === 'subgroup', 'Subgroup comparisons are observational and do not establish effect modification. A displayed p-value rounded to zero is not an exact zero.')];
+        T.when(r.groupKeys.some(function (key) { return r[key + 'k'] < T.R.fewK; }),
+          'At least one subgroup has few studies: heterogeneity estimates are imprecise.'),
+        T.when(r.view === 'subgroup' && r.dfbw > T.R.none, 'Subgroup comparisons are observational and do not establish effect modification.')];
     }
   };
   function shareGet() {
@@ -163,7 +251,8 @@
       "metafor::forest(mu_plot,ci.lb=lo_plot,ci.ub=hi_plot,slab=names_plot,xlab='Subgroup pooled effect')";
   }
   var spec = { paper: 14, title: 'Cumulative and subgroup meta-analysis',
-    entry: { schema: 'generic', extras: ['subgroup', 'year'], apply: apply },
+    entry: { schema: 'generic', extras: ['subgroup', 'year'],
+      usedAs: 'estimate and SE on the supplied analysis scale (pooled as given by the app)', apply: apply },
     text: { app: APP, verifyPackage: 'metafor', results: results, dom: dom, templates: templates },
     verify: { adapter: function () { return global.AlmLiveAdapters && global.AlmLiveAdapters[APP] || global.AlmValidate.adapters[APP]; },
       inputs: '#f-data, #f-view, #f-title, #alm-axis-mount input',
@@ -176,7 +265,7 @@
   if (global.AlmFeatures) {
     // These shared UI libraries expose mount(), but do not register host modules themselves.
     if (global.AlmFeatures.registerModule) {
-      global.AlmFeatures.registerModule('entry', { render: function (panel, ctx) { return global.AlmEntryUI.mount(panel, ctx.block); } });
+      global.AlmFeatures.registerModule('entry', { render: function (panel, ctx) { return mountEntry(panel, ctx.block); } });
       global.AlmFeatures.registerModule('text', { render: function (panel, ctx) {
         var ui = global.AlmTextUI.mount(panel, { app: APP, text: ctx.block });
         return { onShow: function () { ui.regenerate(); } };

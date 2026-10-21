@@ -82,14 +82,10 @@ test('ENTRY PLANTED: reversed CI blocks use; conversion log is visible; invalid 
   expect(out.blocking.some(f => f.code === 'ci-order')).toBe(true);
   expect(out.applied).toBeNull();
   expect(out.source).toBe(before);
-  // Mount through the shared API, avoiding unstable entry UI interactions.
+  // Exercise the production entry panel, including its app-local conversion log.
   await tab(page, 'entry');
-  await page.evaluate(source => {
-    const panel = document.getElementById('alm-f-panel-entry');
-    panel.replaceChildren();
-    const ui = AlmEntryUI.mount(panel, AlmFeatures.get('cumulative-subgroup').entry);
-    panel.querySelector('textarea').value = source; ui.parse();
-  }, bad);
+  await page.getByLabel('Paste the exact paper text or table', { exact: true }).fill(bad);
+  await page.getByRole('button', { name: 'Extract candidates', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
   await expect(page.getByRole('heading', { name: 'Conversion log', exact: true })).toBeVisible();
   await expect(page.locator('#alm-f-panel-entry .alm-entry-block')).not.toHaveCount(0);
@@ -205,6 +201,9 @@ for (const view of ['cumulative', 'subgroup']) test(`VERIFY: ${view} real webR, 
   console.log(`VERIFY ZIP ${Object.keys(files).length} entries; receipt=PASS graphics=PASS`);
   await tab(page, 'text');
   await expect(page.locator('[data-para=methods]')).toContainText('independently verified in R');
+  await expect(page.locator('[data-para=methods]')).toContainText(view === 'cumulative'
+    ? '142 statistical quantities matched R; 9 page self-checks passed'
+    : '50 statistical quantities matched R; 8 page self-checks passed');
   const original = await page.locator('#f-data').inputValue();
   await page.locator('#f-data').fill(original.replace('-0.22', '-0.23'));
   await page.locator('.alm-text-regenerate').click();
