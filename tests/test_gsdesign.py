@@ -1,9 +1,10 @@
 """Tests for shared/gsdesign.js — group-sequential design boundaries.
 
 Golden efficacy bounds captured from gsDesign (R 4.6.0, gsDesign::gsDesign,
-test.type=1) 2026-07-10. The recursive-density / Gauss-Legendre boundary solver
-reproduces gsDesign to ~1e-5 across the four spending families — the EXACT
-boundary, vs the closed-form approximation in tsa / sequential-ma.
+test.type=1) 2026-07-10. The engine reproduces gsDesign's own numerical method
+(Jennison-Turnbull grid, Newton bounds, Brent information search); the full
+validation against gsDesign 3.11.0 and rpact 4.4.0 lives in the
+gsdesign-reproducible archive.
 """
 import json
 import math
@@ -102,6 +103,24 @@ def test_beta_spending_futility_is_computed_under_the_alternative():
     bspend1 = 2 * (1 - N.cdf(N.inv_cdf(1 - 0.05) / math.sqrt(1 / 3)))
     assert r.get("I1") is not None, r
     assert math.isclose(r["a1"], delta * math.sqrt(r["I1"]) + N.inv_cdf(bspend1), abs_tol=1e-9), r
+
+
+def test_gsdesign_default_design_type4():
+    # gsDesign::gsDesign() defaults: k=3, test.type=4, alpha=.025, beta=.1, sfHSD(-4) / sfHSD(-2)
+    d = _node("G.design({testType:4,k:3,alpha:0.025,beta:0.1})")
+    for g, e in zip(d["upper"]["bound"], [3.010739, 2.546531, 1.999226]):
+        assert math.isclose(g, e, abs_tol=1e-6), d["upper"]["bound"]
+    for g, e in zip(d["lower"]["bound"], [-0.238724, 0.941067, 1.999226]):
+        assert math.isclose(g, e, abs_tol=1e-6), d["lower"]["bound"]
+
+
+def test_simulation_with_reestimation_keeps_type1_error():
+    # inverse-normal combination keeps the type I error under sample-size re-estimation
+    r = _node("""(()=>{const d=G.simDesignFrom(G.design({testType:1,k:3,alpha:0.025,beta:0.1,sfu:{family:'LDOF'}}));
+      const o={alternative:[0],stDev:5,plannedSubjects:[20,40,60],conditionalPower:0.8,
+        minNumberOfSubjectsPerStage:[NaN,20,20],maxNumberOfSubjectsPerStage:[NaN,80,80],maxNumberOfIterations:20000,seed:7};
+      return {rej:G.simulateMeans(d,o)[0].overallReject};})()""", timeout=60)
+    assert abs(r["rej"] - 0.025) < 0.006, r
 
 
 def test_conditional_power_sanity():

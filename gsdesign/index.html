@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Group-sequential trial-design boundaries: exact O'Brien-Fleming / Pocock / Lan-DeMets / Hwang-Shih-DeCani alpha-spending efficacy (and beta-spending futility) boundaries via recursive Gauss-Legendre integration, matching gsDesign.">
+  <meta name="description" content="Group-sequential trial design: Lan-DeMets O'Brien-Fleming, Pocock, power and Hwang-Shih-DeCani spending boundaries with beta-spending futility (reproducing gsDesign), and adaptive-trial simulation with sample-size re-estimation (reproducing rpact).">
   <meta name="color-scheme" content="light dark">
-  <title>Group-Sequential Design — spending-function boundaries</title>
+  <title>Group-Sequential Design — boundaries and adaptive simulation</title>
   <style>
     :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
             --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
@@ -23,7 +23,7 @@
            background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
     header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
     header h1 { margin: 0 0 0.25rem; font-size: 1.55rem; letter-spacing: -0.01em; }
-    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 76ch; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 80ch; }
     main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
            grid-template-columns: minmax(300px, 24rem) 1fr; align-items: start; }
     @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
@@ -43,7 +43,10 @@
     th { color: var(--muted); font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
     svg { width: 100%; height: auto; display: block; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
     .foot { color: var(--muted); font-size: 0.8rem; }
-    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; max-width: 92ch; }
+    .err { color: var(--warn); background: var(--warn-soft); padding: 0.4rem 0.6rem; border-radius: 6px; }
+    .summary { font-size: 0.92rem; margin: 0.2rem 0 0.8rem; }
+    .full { grid-column: 1 / -1; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; max-width: 96ch; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
   </style>
   <script src="../shared/build-info.js"></script>
@@ -52,105 +55,183 @@
 <body>
   <header>
     <h1>Group-Sequential Design</h1>
-    <p>Exact efficacy (and optional beta-spending futility) boundaries for a K-look group-sequential trial, from the canonical joint distribution of the sequential Z-statistics via recursive Gauss-Legendre integration (Armitage-McPherson-Rowe). Matches <code>gsDesign</code>. Unlike the meta-analysis monitoring tools (<a href="../tsa/">TSA</a>, <a href="../sequential-ma/">sequential-MA</a>), this is the exact boundary, not the closed-form approximation.</p>
+    <p>Efficacy and optional β-spending futility boundaries for a K-look group-sequential trial, computed with the same numerical method as the R package <code>gsDesign</code> (Jennison–Turnbull recursive integration), and Monte Carlo operating characteristics of the design, with optional sample-size re-estimation, following the R package <code>rpact</code>. Unlike the meta-analysis monitoring tools (<a href="../tsa/">TSA</a>, <a href="../sequential-ma/">sequential-MA</a>), these are trial-design boundaries. Runs offline; nothing leaves the browser.</p>
   </header>
   <main>
     <section class="panel" aria-label="Design inputs">
       <h2>Design</h2>
       <div class="row2">
-        <label><span class="lbl">One-sided α</span><input id="alpha" type="number" step="any" min="0.0001" max="0.2" value="0.025" aria-label="One-sided α"></label>
+        <label><span class="lbl" id="alphaLbl">One-sided α</span><input id="alpha" type="number" step="any" min="0.0001" max="0.4" value="0.025" aria-label="Alpha"></label>
         <label><span class="lbl">Looks (K)</span><input id="K" type="number" step="1" min="1" max="10" value="4" aria-label="Looks (K)"></label>
       </div>
+      <label><span class="lbl">Information fractions (optional)</span><input id="timing" type="text" placeholder="equally spaced, e.g. 0.25, 0.5, 0.75, 1" aria-label="Information fractions"></label>
       <label>
-        <span class="lbl">Spending function</span>
+        <span class="lbl">Spending function (efficacy)</span>
         <select id="spend" aria-label="Spending function">
-          <option value="obf" selected>O'Brien-Fleming (Lan-DeMets)</option>
-          <option value="pocock">Pocock</option>
-          <option value="landemets">Lan-DeMets ρ (power)</option>
+          <option value="obf" selected>O'Brien-Fleming type (Lan-DeMets)</option>
+          <option value="pocock">Pocock type (Lan-DeMets)</option>
+          <option value="landemets">Power ρ (Kim-DeMets)</option>
           <option value="hsd">Hwang-Shih-DeCani γ</option>
         </select>
       </label>
       <label id="paramWrap" hidden>
         <span class="lbl" id="paramLbl">Parameter</span>
-        <input id="param" type="number" step="any" value="1" aria-label="Parameter">
+        <input id="param" type="number" step="any" value="1" aria-label="Spending parameter">
       </label>
       <label>
         <span class="lbl">Test</span>
         <select id="sided" aria-label="Test">
           <option value="1" selected>One-sided</option>
-          <option value="2">Two-sided</option>
+          <option value="2">Two-sided, symmetric (enter the total two-sided α)</option>
         </select>
       </label>
-      <label>
+      <label id="futWrap">
         <span class="lbl">Futility (β-spending)</span>
         <select id="fut" aria-label="Futility (β-spending)">
           <option value="none" selected>None</option>
-          <option value="obf">O'Brien-Fleming</option>
-          <option value="pocock">Pocock</option>
+          <option value="obf">O'Brien-Fleming type</option>
+          <option value="pocock">Pocock type</option>
+          <option value="landemets">Power ρ</option>
+          <option value="hsd">Hwang-Shih-DeCani γ</option>
         </select>
       </label>
-      <label id="betaWrap" hidden>
-        <span class="lbl">Power target (1−β)</span>
-        <input id="power" type="number" step="any" min="0.5" max="0.99" value="0.9" aria-label="Power target (1−β)">
+      <label id="fparamWrap" hidden>
+        <span class="lbl" id="fparamLbl">Futility parameter</span>
+        <input id="fparam" type="number" step="any" value="1" aria-label="Futility spending parameter">
+      </label>
+      <label id="bindWrap" hidden>
+        <span class="lbl">Futility bound</span>
+        <select id="bind" aria-label="Futility bound type">
+          <option value="0" selected>Non-binding (gsDesign test.type 4)</option>
+          <option value="1">Binding (gsDesign test.type 3)</option>
+        </select>
+      </label>
+      <label>
+        <span class="lbl">Power (1−β)</span>
+        <input id="power" type="number" step="any" min="0.5" max="0.99" value="0.9" aria-label="Power (1−β)">
       </label>
       <button class="primary" id="run" type="button">Compute boundaries</button>
-      <p class="foot" style="margin-top:.6rem">Equally-spaced information fractions (i/K). Nominal p is the per-look two-sided/one-sided crossing p-value.</p>
+      <p class="foot" style="margin-top:.6rem">Nominal p is the one-sided (or, for two-sided tests, two-sided) p-value at the efficacy bound. Information is reported relative to a fixed (single-analysis) design with the same α and power.</p>
     </section>
 
     <section class="panel" aria-label="Boundaries">
       <h2>Boundaries</h2>
-      <table id="tbl"><thead><tr><th>Look</th><th>Info frac</th><th>Z efficacy</th><th>Nominal p</th><th>Cum α</th><th>Z futility</th></tr></thead><tbody id="tb"></tbody></table>
+      <p class="summary" id="summary"></p>
+      <table id="tbl"><thead><tr><th>Look</th><th>Info frac</th><th>Z efficacy</th><th>Nominal p</th><th>Cum α</th><th>Z futility</th><th>P(efficacy | H1)</th></tr></thead><tbody id="tb"></tbody></table>
       <svg id="plot" viewBox="0 0 640 300" role="img" aria-label="Boundary plot"></svg>
       <p class="foot" id="note"></p>
     </section>
+
+    <section class="panel full" aria-label="Adaptive simulation">
+      <h2>Adaptive simulation — two-group comparison of means</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:0 0.8rem">
+        <label><span class="lbl">Standard deviation σ</span><input id="sd" type="number" step="any" value="5" aria-label="Standard deviation"></label>
+        <label><span class="lbl">Maximum total N (planned)</span><input id="nmax" type="number" step="any" value="60" aria-label="Maximum planned total sample size"></label>
+        <label><span class="lbl">Mean differences</span><input id="alts" type="text" value="0, 1, 2, 3, 4" aria-label="Mean differences to simulate"></label>
+        <label><span class="lbl">Test statistic</span><select id="comb" aria-label="Test statistic"><option value="inverseNormal" selected>Inverse normal combination</option><option value="groupSequential">Group sequential (pooled data)</option></select></label>
+        <label><span class="lbl">Sample-size re-estimation</span><select id="ssr" aria-label="Sample-size re-estimation"><option value="0" selected>Off (planned sizes)</option><option value="1">On: conditional power</option></select></label>
+        <label><span class="lbl">Target conditional power</span><input id="cp" type="number" step="any" value="0.8" aria-label="Target conditional power"></label>
+        <label><span class="lbl">Min stage size (stages ≥ 2)</span><input id="smin" type="number" step="any" value="20" aria-label="Minimum stage sample size"></label>
+        <label><span class="lbl">Max stage size (stages ≥ 2)</span><input id="smax" type="number" step="any" value="80" aria-label="Maximum stage sample size"></label>
+        <label><span class="lbl">Assumed effect for SSR</span><input id="th1" type="text" placeholder="observed" aria-label="Assumed effect for re-estimation (blank = observed)"></label>
+        <label><span class="lbl">Simulated trials per difference</span><input id="iter" type="number" step="1" value="10000" aria-label="Simulated trials"></label>
+        <label><span class="lbl">Seed</span><input id="seed" type="number" step="1" value="20261021" aria-label="Seed"></label>
+      </div>
+      <button class="primary" id="simrun" type="button">Simulate</button>
+      <p class="foot" id="simnote" style="margin-top:.6rem">Uses the design above (one-sided only): efficacy bounds as critical values, futility bounds as non-binding stopping rules, information fractions as planned stage proportions. Normal approximation, 1:1 allocation, re-estimation as in rpact::getSimulationMeans.</p>
+      <table id="simtbl"><thead id="simth"></thead><tbody id="simtb"></tbody></table>
+    </section>
   </main>
   <footer>
-    <p><strong>Method.</strong> Sequential Z with independent increments (Cov(Z<sub>i</sub>,Z<sub>j</sub>)=√(t<sub>i</sub>/t<sub>j</sub>)); boundaries solved by the recursive-density method (Armitage, McPherson &amp; Rowe 1969) with 32-point Gauss-Legendre quadrature and bisection on each look's incremental spend. Spending: O'Brien-Fleming &amp; Pocock (Lan &amp; DeMets 1983), power (Lan-DeMets ρ), Hwang-Shih-DeCani γ (1990). Engine <code>shared/gsdesign.js</code>, verified vs <code>gsDesign::gsDesign</code> to ~1e-5. Fully offline. Ported from the author's AdaptSim.</p>
+    <p><strong>Method.</strong> Sequential Z-statistics with independent increments; crossing probabilities by the recursive numerical integration of Jennison &amp; Turnbull (2000, ch. 19) on their grid (r = 18, Simpson weights); bounds by the Newton iteration and maximum information by Brent root finding, reproducing <code>gsDesign::gsDesign</code> (test.type 1–4). Spending: Lan &amp; DeMets (1983) O'Brien-Fleming and Pocock types, Kim-DeMets power family, Hwang-Shih-DeCani (1990). Simulation: stage-wise z-statistics, inverse normal or pooled test statistic, and conditional-power sample-size re-estimation as in <code>rpact::getSimulationMeans</code>. Engine <code>shared/gsdesign.js</code>. Ported from the author's AdaptSim. The design can be shared as a link: inputs are stored in the address after <code>#</code>.</p>
   </footer>
 
   <script>
     (function () {
       "use strict";
       var $ = function (id) { return document.getElementById(id); };
-      function needsParam() { var s = $("spend").value; return s === "landemets" || s === "hsd"; }
+      var G = window.AlmGSDesign;
+      var FIELDS = ["alpha", "K", "timing", "spend", "param", "sided", "fut", "fparam", "bind", "power",
+        "sd", "nmax", "alts", "comb", "ssr", "cp", "smin", "smax", "th1", "iter", "seed"];
+      var current = null;
+      function needsParam(v) { return v === "landemets" || v === "hsd"; }
       function sync() {
-        $("paramWrap").hidden = !needsParam();
+        $("paramWrap").hidden = !needsParam($("spend").value);
         $("paramLbl").textContent = $("spend").value === "landemets" ? "ρ (power)" : "γ (HSD)";
-        $("betaWrap").hidden = $("fut").value === "none";
+        var two = $("sided").value === "2";
+        $("alphaLbl").textContent = two ? "Two-sided α (total)" : "One-sided α";
+        $("futWrap").hidden = two;
+        var fut = !two && $("fut").value !== "none";
+        $("fparamWrap").hidden = !(fut && needsParam($("fut").value));
+        $("fparamLbl").textContent = $("fut").value === "landemets" ? "Futility ρ (power)" : "Futility γ (HSD)";
+        $("bindWrap").hidden = !fut;
       }
+      function readHash() {
+        var h = location.hash.replace(/^#/, ""); if (!h) return false;
+        var sim = false;
+        h.split("&").forEach(function (kv) {
+          var p = kv.split("="), k = decodeURIComponent(p[0]), v = decodeURIComponent(p[1] || "");
+          if (k === "sim") sim = v === "1";
+          else if (FIELDS.indexOf(k) >= 0 && $(k)) $(k).value = v;
+        });
+        return { sim: sim };
+      }
+      function writeHash(sim) {
+        var parts = FIELDS.map(function (k) { return k + "=" + encodeURIComponent($(k).value); });
+        if (sim) parts.push("sim=1");
+        history.replaceState(null, "", "#" + parts.join("&"));
+      }
+      function numList(s) {
+        return s.split(/[,;\s]+/).filter(function (x) { return x !== ""; }).map(Number);
+      }
+      function fmtP(p) { return p < 1e-4 ? p.toExponential(2) : p.toFixed(4); }
       function run() {
         var K = Math.max(1, Math.min(10, parseInt($("K").value, 10) || 1));
-        var frac = []; for (var i = 1; i <= K; i++) frac.push(i / K);
+        var frac = $("timing").value.trim() ? numList($("timing").value) : null;
+        if (!frac) { frac = []; for (var i = 1; i <= K; i++) frac.push(i / K); }
+        var two = $("sided").value === "2", fut = !two && $("fut").value !== "none";
         var opts = {
-          alpha: parseFloat($("alpha").value),
-          infoFracs: frac,
-          spend: $("spend").value,
-          param: parseFloat($("param").value),
-          twoSided: $("sided").value === "2",
-          futility: $("fut").value === "none" ? "none" : "betaspend",
-          futSpend: $("fut").value === "none" ? "obf" : $("fut").value,
-          beta: 1 - (parseFloat($("power").value) || 0.9)
+          alpha: parseFloat($("alpha").value), infoFracs: frac, spend: $("spend").value,
+          param: parseFloat($("param").value), twoSided: two,
+          futility: fut ? "betaspend" : "none", futSpend: $("fut").value, futParam: parseFloat($("fparam").value),
+          binding: $("bind").value === "1", beta: 1 - parseFloat($("power").value)
         };
-        var b = window.AlmGSDesign.boundaries(opts);
         var tb = $("tb"); tb.textContent = "";
+        try {
+          var b = G.boundaries(opts);
+        } catch (e) {
+          current = null;
+          $("summary").innerHTML = ""; var s = document.createElement("span"); s.className = "err";
+          s.textContent = "Cannot compute this design: " + e.message; $("summary").appendChild(s);
+          $("note").textContent = ""; draw([], false); return;
+        }
+        current = b.design;
         b.forEach(function (r) {
           var tr = document.createElement("tr");
           function td(v) { var c = document.createElement("td"); c.textContent = v; tr.appendChild(c); }
           td("" + r.look); td(r.infoFrac.toFixed(3)); td(r.z_eff.toFixed(4));
-          td(r.nomP_eff.toPrecision(3)); td(r.cumAlpha.toFixed(5));
-          td(r.z_fut > -10 ? r.z_fut.toFixed(4) : "—");
+          td(fmtP(r.nomP_eff)); td(r.cumAlpha.toFixed(5));
+          td(isFinite(r.z_fut) ? r.z_fut.toFixed(4) : "—");
+          td(r.probEffH1.toFixed(4));
           tb.appendChild(tr);
         });
-        draw(b, opts.twoSided);
-        $("note").textContent = "Final-look Z = " + b[b.length - 1].z_eff.toFixed(4) +
-          "; total α spent = " + b[b.length - 1].cumAlpha.toFixed(5) + ".";
+        var d = b.design, last = b[b.length - 1];
+        $("summary").textContent = "Maximum information = " + d.inflation.toFixed(4) + " × fixed design; expected information " +
+          (100 * d.en[0] / d.nFix).toFixed(1) + "% (H0) and " + (100 * d.en[1] / d.nFix).toFixed(1) + "% (H1) of a fixed design; power " +
+          (b.reduce(function (s, r) { return s + r.probEffH1; }, 0)).toFixed(4) + ".";
+        draw(b, two);
+        $("note").textContent = "Final-look Z = " + last.z_eff.toFixed(4) + "; total α spent = " + last.cumAlpha.toFixed(5) +
+          (two ? " (two-sided)" : "") + "; design as gsDesign test.type " + d.testType + ".";
+        writeHash(false);
       }
       function draw(b, twoSided) {
         var svg = $("plot"); while (svg.firstChild) svg.removeChild(svg.firstChild);
+        if (!b.length) return;
         var W = 640, H = 300, m = { l: 44, r: 14, t: 14, b: 34 };
-        var maxZ = 0; b.forEach(function (r) { maxZ = Math.max(maxZ, r.z_eff, r.z_fut > -10 ? Math.abs(r.z_fut) : 0); });
+        var maxZ = 0, minZ = 0;
+        b.forEach(function (r) { maxZ = Math.max(maxZ, r.z_eff); if (isFinite(r.z_fut)) minZ = Math.min(minZ, r.z_fut); });
         maxZ = Math.ceil(maxZ + 0.5);
-        var lo = twoSided ? -maxZ : 0;
+        var lo = twoSided ? -maxZ : Math.floor(minZ - 0.5);
         function X(t) { return m.l + (W - m.l - m.r) * t; }
         function Y(z) { return m.t + (H - m.t - m.b) * (1 - (z - lo) / (maxZ - lo)); }
         function line(x1, y1, x2, y2, col, dash) {
@@ -161,26 +242,67 @@
         }
         function dot(x, y, col) { var e = document.createElementNS("http://www.w3.org/2000/svg", "circle"); e.setAttribute("cx", x); e.setAttribute("cy", y); e.setAttribute("r", "3.5"); e.setAttribute("fill", col); svg.appendChild(e); }
         function txt(x, y, s, anchor) { var e = document.createElementNS("http://www.w3.org/2000/svg", "text"); e.setAttribute("x", x); e.setAttribute("y", y); e.setAttribute("font-size", "11"); e.setAttribute("fill", "var(--muted)"); e.setAttribute("text-anchor", anchor || "middle"); e.textContent = s; svg.appendChild(e); }
-        // axes
-        line(m.l, Y(lo), W - m.r, Y(lo), "var(--grid)");
         for (var g = Math.ceil(lo); g <= maxZ; g++) { line(m.l, Y(g), W - m.r, Y(g), "var(--grid)"); txt(m.l - 6, Y(g) + 3, "" + g, "end"); }
-        // efficacy + futility polylines
-        var px = null, pyE = null, pyF = null;
+        var px = null, pyE = null, pyL = null, pyF = null;
         b.forEach(function (r) {
           var x = X(r.infoFrac), yE = Y(r.z_eff);
           if (px !== null) line(px, pyE, x, yE, "var(--accent)");
           dot(x, yE, "var(--accent)");
-          if (twoSided) { var yEl = Y(-r.z_eff); if (px !== null) line(px, Y(-b[r.look - 2].z_eff), x, yEl, "var(--accent)"); dot(x, yEl, "var(--accent)"); }
-          if (r.z_fut > -10) { var yF = Y(r.z_fut); if (pyF !== null && px !== null) line(px, pyF, x, yF, "var(--warn)", "4 3"); dot(x, yF, "var(--warn)"); pyF = yF; }
+          if (twoSided) { var yL = Y(-r.z_eff); if (px !== null) line(px, pyL, x, yL, "var(--accent)"); dot(x, yL, "var(--accent)"); pyL = yL; }
+          if (isFinite(r.z_fut)) { var yF = Y(r.z_fut); if (pyF !== null) line(px, pyF, x, yF, "var(--warn)", "4 3"); dot(x, yF, "var(--warn)"); pyF = yF; }
           txt(x, H - m.b + 16, r.infoFrac.toFixed(2));
           px = x; pyE = yE;
         });
         txt((m.l + W - m.r) / 2, H - 4, "information fraction");
       }
-      $("spend").addEventListener("change", sync);
-      $("fut").addEventListener("change", sync);
+      function simulate() {
+        var tb = $("simtb"), th = $("simth"); tb.textContent = ""; th.textContent = "";
+        function fail(msg) { var tr = document.createElement("tr"), c = document.createElement("td"); c.className = "err"; c.textContent = msg; tr.appendChild(c); tb.appendChild(tr); }
+        if (!current) { fail("Compute a valid design first."); return; }
+        var dsg;
+        try { dsg = G.simDesignFrom(current); } catch (e) { fail("Simulation is available for one-sided designs only."); return; }
+        dsg.method = $("comb").value;
+        var K = current.k, N = parseFloat($("nmax").value), ssr = $("ssr").value === "1";
+        var planned = current.timing.map(function (t) { return N * t; });
+        var mins = [NaN], maxs = [NaN];
+        for (var k = 1; k < K; k++) { mins.push(parseFloat($("smin").value)); maxs.push(parseFloat($("smax").value)); }
+        var th1 = $("th1").value.trim();
+        var opts = {
+          alternative: numList($("alts").value), stDev: parseFloat($("sd").value), plannedSubjects: planned,
+          conditionalPower: ssr ? parseFloat($("cp").value) : NaN,
+          minNumberOfSubjectsPerStage: mins, maxNumberOfSubjectsPerStage: maxs,
+          thetaH1: th1 === "" ? NaN : parseFloat(th1),
+          maxNumberOfIterations: Math.max(100, Math.min(1000000, parseInt($("iter").value, 10) || 10000)),
+          seed: parseInt($("seed").value, 10) || 0
+        };
+        if (!(opts.stDev > 0) || !(N > 0) || !opts.alternative.length || opts.alternative.some(isNaN)) { fail("Check σ, N and the mean differences."); return; }
+        if (ssr && K < 2) { fail("Re-estimation needs at least two looks."); return; }
+        var res = G.simulateMeans(dsg, opts);
+        var head = ["Mean difference", "Rejection probability", "Early stop", "Futility stop", "Expected N"];
+        for (k = 0; k < K; k++) head.push("Reject at look " + (k + 1));
+        if (ssr) for (k = 1; k < K; k++) head.push("Mean n stage " + (k + 1));
+        var tr0 = document.createElement("tr");
+        head.forEach(function (h) { var c = document.createElement("th"); c.textContent = h; tr0.appendChild(c); });
+        th.appendChild(tr0);
+        res.forEach(function (r) {
+          var tr = document.createElement("tr");
+          function td(v) { var c = document.createElement("td"); c.textContent = v; tr.appendChild(c); }
+          td("" + r.alternative); td(r.overallReject.toFixed(4)); td(r.earlyStop.toFixed(4)); td(r.futilityStop.toFixed(4));
+          td(r.expectedNumberOfSubjects.toFixed(1));
+          r.rejectPerStage.forEach(function (p) { td(p.toFixed(4)); });
+          if (ssr) for (var j = 1; j < K; j++) td(r.sampleSizes[j].toFixed(1));
+          tb.appendChild(tr);
+        });
+        $("simnote").textContent = "Simulated " + opts.maxNumberOfIterations + " trials per mean difference (seed " + opts.seed +
+          "). Monte Carlo standard error of a probability p is about √(p(1−p)/" + opts.maxNumberOfIterations + ").";
+        writeHash(true);
+      }
+      ["spend", "fut", "sided"].forEach(function (id) { $(id).addEventListener("change", sync); });
       $("run").addEventListener("click", run);
+      $("simrun").addEventListener("click", simulate);
+      var h = readHash();
       sync(); run();
+      if (h && h.sim) simulate();
     })();
   </script>
 </body>
