@@ -104,7 +104,7 @@ test('entry UX U1-U8 on PMC5244530 (app 9): arm integrity, same-source guard, ev
 
   // U1: arm options show the words next to EACH number; the role is required with no default.
   const armOpts = await c2.getByLabel('Arm to use', { exact: true }).locator('option').allTextContents();
-  expect(armOpts).toEqual(['Choose…', 'Printed arm 1: 86 of 125 (text next to it: “in the intervention group”)', 'Printed arm 2: 78 of 133 (no arm words next to these numbers)']);
+  expect(armOpts).toEqual(['Choose…', 'Printed arm 1: 86 of 125 (text next to it: “in the intervention group”)', 'Printed arm 2: 78 of 133 (no arm phrase recognised next to these numbers)']);
   const role2 = c2.getByLabel('This arm is', { exact: true });
   await expect(role2).toHaveValue('');
   expect(await role2.locator('option').allTextContents()).toEqual(['Choose…', 'Intervention', 'Control (usual care, placebo)', 'Other']);
@@ -181,9 +181,10 @@ test('entry UX U1-U8 on PMC5244530 (app 9): arm integrity, same-source guard, ev
   await host.getByLabel('I understand these rows are arms of one trial and want them pooled as separate single groups').check();
   await expect(use).toBeEnabled();
 
-  // U8: paste box says when it no longer matches the confirmed rows.
-  await pasteBox.fill(PASTE + ' ');
-  await expect(host.locator('label', { hasText: 'Paste the exact paper text or table' })).toContainText('Edited since confirmation');
+  // U8 + N6: the label tracks the confirmed rows' OWN sources; another paper in the paste box changes nothing.
+  await pasteBox.fill('Another paper: 3/40 vs 5/41');
+  await expect(host.locator('label', { hasText: 'Paste the exact paper text or table' })).not.toContainText('Edited since confirmation');
+  await expect(use).toBeEnabled();
   await pasteBox.fill(PASTE);
   await expect(host.locator('label', { hasText: 'Paste the exact paper text or table' })).not.toContainText('Edited since confirmation');
 
@@ -323,13 +324,27 @@ test('entry N1-N6 on PMC5244530 (app 9): randomisation unit + design effect, not
   const axe = await new AxeBuilder({ page }).include('#entry-n-host').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   expect(axe.violations.filter(v => ['serious', 'critical'].includes(v.impact)).map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).join(' | ')}`)).toEqual([]);
 
-  // N6: an edited paste box marks the confirmed rows and blocks "Use these rows"; reverting clears it.
-  await pasteBox.fill(PASTE.replace('86/125', '186/125'));
+  // N6: a second paper in the paste box never marks the confirmed rows (each row keeps its own source).
+  await pasteBox.fill('Another paper: 3/40 vs 5/41 had the outcome.');
+  await host.getByRole('button', { name: 'Extract candidates', exact: true }).click();
+  await expect(c1.locator('.alm-entry-source-changed')).toBeHidden();
+  await expect(c1.getByLabel('I confirm this row')).toBeChecked();
+  await expect(use).toBeEnabled();
+  // PLANTED: a row whose own stored source no longer matches its hash is marked and blocks "Use these rows".
+  const tamper = (restore) => page.evaluate((restore) => {
+    const rec = window['__entry-n-host'].getResult().provenance[0];
+    window.__own = window.__own || rec.pastedText;
+    rec.pastedText = restore ? window.__own : window.__own.slice(0, 20) + (window.__own[20] === '#' ? '%' : '#') + window.__own.slice(21);
+  }, restore);
+  await tamper(false);
+  await pasteBox.fill(PASTE);
   await expect(c1.locator('.alm-entry-source-changed')).toBeVisible();
   await expect(c1.locator('.alm-entry-source-changed')).toContainText('Source text changed since confirmation');
   await expect(use).toBeDisabled();
   const axeChanged = await new AxeBuilder({ page }).include('#entry-n-host').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   expect(axeChanged.violations.filter(v => ['serious', 'critical'].includes(v.impact)).map(v => v.id)).toEqual([]);
+  await tamper(true);
+  await pasteBox.fill(PASTE + ' ');
   await pasteBox.fill(PASTE);
   await expect(c1.locator('.alm-entry-source-changed')).toBeHidden();
   await expect(use).toBeEnabled();
@@ -399,5 +414,6 @@ test('PLANTED DEFECT: a design-effect conversion stored with the wrong formula i
   await use.click();
   await expect(host.locator('[role=status]').first()).not.toContainText('Applied');
   expect(await page.locator('#src').inputValue()).toBe(before);
-  expect(await page.evaluate(() => (window.AlmFeaturesState || {}).provenance)).toBeUndefined();
+  // Nothing was stored: the panel host may initialise provenance to [], but the refused snapshot never lands.
+  expect(await page.evaluate(() => (window.AlmFeaturesState || {}).provenance || [])).toEqual([]);
 });

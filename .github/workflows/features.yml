@@ -34,6 +34,8 @@ jobs:
           # A run that matched no test files prints "# pass 0" and would pass vacuously (review of PR #182): require pass > 0.
           test "$(grep -E '^# fail ' unit.log | awk '{print $3}')" = "0"
           test "$(grep -E '^# pass ' unit.log | awk '{print $3}')" -gt 0
+      - name: real-paper extraction gate (dev split; exits 1 on any WRONG_VALUE or OTHER)
+        run: node validation/realpaper/run.mjs validation/realpaper/dev.json
 
   entry-r:
     runs-on: ubuntu-latest
@@ -106,8 +108,13 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: feature specs
         run: |
-          ls features-*.spec.mjs   # at least one feature spec must exist (no green no-op)
+          # No green no-op: fail (never exit 0) when no feature spec matches or no test ran.
+          shopt -s nullglob
+          specs=(features-*.spec.mjs)
+          if [ "${#specs[@]}" -eq 0 ]; then echo "::error::no features-*.spec.mjs matched"; exit 1; fi
+          echo "${#specs[@]} feature specs"
           npx playwright test -c playwright.features.config.mjs --reporter=line,json
+          node -e "const s=require('./artifacts/features-results.json').stats;console.log('features tests: expected',s.expected,'unexpected',s.unexpected,'flaky',s.flaky,'skipped',s.skipped);if(!(s.expected+s.flaky>0)){console.error('no feature test ran');process.exit(1);}"
         env:
           CI: "true"
           PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/features-results.json

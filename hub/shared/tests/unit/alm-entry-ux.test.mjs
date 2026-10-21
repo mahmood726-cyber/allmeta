@@ -312,9 +312,12 @@ test("UI U8: Extract is first after the paste box; fixed counts note; facet prom
   const c1=h.cards()[0],todo=h.all(c1).find(e=>e.className==="alm-entry-todo");assert.equal(todo.children.length,0);
   await h.set("Timepoint","",c1);assert.ok(todo.textContent.includes("Choose the timepoint"));
   await h.set("Timepoint","6 month",c1);assert.equal(todo.children.length,0);await h.set("I confirm",true,c1);
-  const p=h.all().find(e=>e.tagName==="textarea");p.value=PASTE+" extra";await p.fire("input");
-  assert.match(h.root.textContent,/Edited since confirmation/);
-  p.value=PASTE;await p.fire("input");assert.doesNotMatch(h.root.textContent,/Edited since confirmation/);
+  // The label tracks the confirmed rows' OWN stored sources, not the paste box (which may hold the next paper).
+  const p=h.all().find(e=>e.tagName==="textarea");p.value="Another paper: 3/40 vs 5/41";await p.fire("input");
+  assert.doesNotMatch(h.root.textContent,/Edited since confirmation/);
+  const rec=h.panel.getResult().provenance[0],own=rec.pastedText;rec.pastedText=own.slice(0,20)+(own[20]==="#"?"%":"#")+own.slice(21);
+  p.value=PASTE;await p.fire("input");assert.match(h.root.textContent,/Edited since confirmation/);
+  rec.pastedText=own;await p.fire("input");assert.doesNotMatch(h.root.textContent,/Edited since confirmation/);
 });
 test("UI U8 table workflow: schema columns first, 'More column types…' expands, plain block text, plurals",async()=>{
   const doc={createElement(tag){return new Element(tag,this);}},root=new Element("div",doc);
@@ -329,4 +332,27 @@ test("UI U8 table workflow: schema columns first, 'More column types…' expands
   assert.ok(names().length>10);assert.ok(!names().includes("xi"));
   assert.ok(all().some(e=>e.className==="alm-entry-block"&&e.textContent.includes("Events (186) cannot be more than the total in this group (125). Check row 'PRI-SMA 2016 intervention arm'.")));
   assert.match(root.textContent,/1 row; 2 blocking issues; 1 warning\./);assert.doesNotMatch(root.textContent,/\bxi\b|\bni\b/);
+});
+
+// Lane corefix (app re-reviews): the paper-text (provenance) path is offered ONLY for schemas whose extraction can fill
+// every required input; other apps get the table path plus a one-line note (never a dead end).
+test("UI: 'Extract paper text' is offered only for provenance-capable schemas; otherwise a one-line note and the table path",async()=>{
+  const doc={createElement(tag){return new Element(tag,this);}};
+  assert.deepEqual([...A.PROVENANCE_SCHEMAS].sort(),["binary2x2","generic","proportion"]);
+  for(const schema of Object.keys(A.SCHEMAS)){
+    const root=new Element("div",doc);UI.mount(root,{schema,apply:()=>({ok:true})});
+    const all=descendants(root),paper=all.find(e=>e.tagName==="button"&&/^Extract paper text/.test(e.textContent));
+    const note=all.find(e=>e.className==="alm-entry-note alm-entry-no-paper");
+    assert.ok(all.some(e=>e.tagName==="button"&&e.textContent==="Preview and convert"),schema+": table path present");
+    if(A.PROVENANCE_SCHEMAS.includes(schema)){assert.ok(paper,schema+": paper path offered");assert.ok(!note,schema);}
+    else{assert.ok(!paper,schema+": no dead-end paper path");assert.ok(note,schema+": note shown");assert.match(note.textContent,/table/);assert.equal(note.textContent.split(/(?<=\.)\s/).length,1,"one line");}
+    // An adapter that supplies usedAs for an unsupported schema still gets the table path, not a dead end.
+    const r2=new Element("div",doc);UI.mount(r2,{schema,apply:()=>({ok:true}),usedAs:"x"});
+    const prov=descendants(r2).some(e=>e.tagName==="button"&&e.textContent==="Extract candidates");
+    assert.equal(prov,A.PROVENANCE_SCHEMAS.includes(schema),schema+": provenance panel only when supported");
+  }
+  // PLANTED: mountProvenance for an unsupported schema falls back to the table path (it is never a dead end).
+  const r3=new Element("div",doc);UI.mountProvenance(r3,{schema:"continuous",apply:()=>({ok:true}),usedAs:"x"});
+  assert.ok(descendants(r3).some(e=>e.tagName==="button"&&e.textContent==="Preview and convert"));
+  assert.ok(!descendants(r3).some(e=>e.tagName==="button"&&e.textContent==="Extract candidates"));
 });

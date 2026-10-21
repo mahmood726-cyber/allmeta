@@ -4,6 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
 // Run by .github/workflows/features.yml; kept out of the default config so webR boots do not slow shared-tests.
 const channel = process.env.PW_CHANNEL || undefined;
 // Per-lane port: two worktrees on one machine must not share (reuseExistingServer would serve the other tree).
+// In CI a server is never reused: a stale server on the port could serve another tree.
 const port = Number(process.env.ALM_FEATURES_PORT || 8089);
 
 export default defineConfig({
@@ -20,7 +21,7 @@ export default defineConfig({
     command: `python -m http.server ${port} --bind 127.0.0.1 --directory ../../../`,
     port,
     cwd: '.',
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     stdout: 'ignore',
     stderr: 'ignore',
   },

@@ -142,3 +142,22 @@ test('comparison CSV: diff (verdict scale) and abs_diff; not-computed rows say s
   ok(csv[2].endsWith(',NOT COMPUTED (app and R)'), csv[2]);
   console.log('ALMVERIFYR checks ' + checks);
 });
+
+// Lane corefix (app re-reviews): honest panel wording and a link to a workflow that exists on this branch.
+test('intro note: "compares the N quantities listed below" with N from the adapter, never "every reported quantity"', () => {
+  const t = V.introText(7);
+  ok(/compares the 7 quantities listed below with the app/.test(t), t);
+  ok(!/every/.test(t), t);
+  ok(/compares the quantities listed below/.test(V.introText(null)) && !/every/.test(V.introText(null)), V.introText(null));
+  ok(/compares the 1 quantity listed below/.test(V.introText(1)), V.introText(1));
+});
+test('SVG note claims "the SVG download is the app\'s own plot" ONLY when the app SVG is what is downloaded', () => {
+  const yes = V.svgNote('Forest plot', 'R svg() unavailable (no cairo)', true), no = V.svgNote('Forest plot', 'R svg() unavailable (no cairo)', false);
+  ok(/the SVG download is the app’s own plot/.test(yes), yes);
+  ok(!/app’s own plot/.test(no) && /no SVG download is available/.test(no), no);
+});
+test('XPLAT link points to .github/workflows/xplat-verify.yml, which exists on this branch', async () => {
+  const { existsSync } = await import('node:fs');
+  eq(V.XPLAT_URL, 'https://github.com/mahmood726-cyber/allmeta/actions/workflows/xplat-verify.yml');
+  ok(existsSync(new URL('../../../../.github/workflows/xplat-verify.yml', import.meta.url)), 'workflow file exists');
+});

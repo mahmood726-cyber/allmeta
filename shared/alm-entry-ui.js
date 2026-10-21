@@ -2,10 +2,13 @@
 (function(global){
   "use strict";
   let serial=0;
+  const schemaName=schema=>typeof schema==="object"?schema.name||schema.schema:schema;
+  // The paper-text path is offered only when extraction can fill this schema's inputs; otherwise the table path.
+  const paperSupported=(core,schema)=>core.PROVENANCE_SCHEMAS.includes(schemaName(schema));
   function mount(el,{schema="generic",extras=[],apply,usedAs,provenance=false}={}){
-    if(provenance||usedAs!==undefined)return mountProvenance(el,{schema,extras,apply,usedAs});
     const core=global.AlmEntry||(typeof module!=="undefined"&&module.exports?require("./alm-entry.js"):null);
     if(!core)throw new Error("Load AlmEntry before mounting the paste panel");
+    if((provenance||usedAs!==undefined)&&paperSupported(core,schema))return mountProvenance(el,{schema,extras,apply,usedAs});
     if(typeof apply!=="function")throw new Error("An apply(records) callback is required");
     const doc=el.ownerDocument,prefix="alm-entry-"+(++serial)+"-";
     let table=null,detection=null,answers={},output=null,fileRevision=0;
@@ -49,8 +52,10 @@
     const logTitle=node("h3","Conversion log",root),log=node("ul",undefined,root);
     log.setAttribute("aria-labelledby",logTitle.id=prefix+"log");
     const use=node("button","Use these rows",root);use.type="button";use.disabled=true;
-    const paper=node("button","Extract paper text with source confirmation",root);paper.type="button";
-    paper.addEventListener("click",()=>{root.remove();mountProvenance(el,{schema,extras,apply,usedAs});});
+    if(paperSupported(core,schema)){
+      const paper=node("button","Extract paper text with source confirmation",root);paper.type="button";
+      paper.addEventListener("click",()=>{root.remove();mountProvenance(el,{schema,extras,apply,usedAs});});
+    }else node("p","Extracting from paper text is not available for this app's inputs; paste a table above instead.",root).className="alm-entry-note alm-entry-no-paper";
     function refresh(){
       if(!table)return;
       output=core.convert(table,detection,schema,answers);
@@ -153,14 +158,17 @@
   const SAME_SOURCE_NOTICE="These rows are different arms of ONE trial. This app pools single groups; it does not compare arms. To compare intervention with control, use a two-group analysis.";
   const PHASE_LABELS={baseline:"at baseline","follow-up":"at follow-up",change:"change from baseline"};
   const DESIGN_FLAGS=["CLUSTER_NOT_ADJUSTED","CLUSTER_ANALYSIS_REPORTED","CROSSOVER_DESIGN","NOT_RANDOMISED"];
+  // Citation per design flag; the user's "not stated" statements and NOT_RANDOMISED carry none.
+  const FLAG_CITATIONS={CLUSTER_NOT_ADJUSTED:"Cochrane Handbook v6.5 §23.1.4",CLUSTER_ANALYSIS_REPORTED:"Cochrane Handbook v6.5 §23.1.4",CROSSOVER_DESIGN:"Cochrane Handbook v6.5 §23.2"};
   const UNKNOWN_FACET_TITLES={analysisSet:"Analysis population (not found in the text)",adjustment:"Adjusted for other factors? (not found in the text)",phase:"Type of value (not found in the text)"};
   const has=x=>x!==undefined&&x!==null&&x!=="";
-  const SOURCE_CHANGED="Source text changed since confirmation: the paste box no longer matches the text this row was confirmed against. Put the original text back, or check this row's stored text (Show full pasted text) and re-confirm.";
-  function mountProvenance(el,{schema="generic",apply,usedAs=""}={}){
+  const SOURCE_CHANGED="Source text changed since confirmation: this row's stored source text no longer matches the text it was confirmed against. Check its stored text (Show full pasted text) and re-confirm.";
+  function mountProvenance(el,{schema="generic",extras=[],apply,usedAs=""}={}){
     const core=global.AlmEntry||(typeof module!=="undefined"&&module.exports?require("./alm-entry.js"):null);
     if(!core||typeof apply!=="function")throw new Error("AlmEntry and apply(records) are required");
+    if(!paperSupported(core,schema))return mount(el,{schema,extras,apply});
     const doc=el.ownerDocument,prefix="alm-paper-"+(++serial)+"-",rows=[],P=core.provenance;
-    const name=typeof schema==="object"?schema.name||schema.schema:schema,singleGroup=core.SINGLE_GROUP_SCHEMAS.includes(name);
+    const name=schemaName(schema),singleGroup=core.SINGLE_GROUP_SCHEMAS.includes(name);
     let extraction=null,revision=0,applying=false,sameSourceKey="";
     function node(tag,text,parent){const e=doc.createElement(tag);if(text!==undefined)e.textContent=text;if(parent)parent.appendChild(e);return e;}
     function button(text,parent,fn){const e=node("button",text,parent);e.type="button";e.addEventListener("click",fn);return e;}
@@ -212,7 +220,7 @@
         const response=await apply(records);
         if(response&&response.ok===false)throw new Error("The application did not accept these rows");
         state.entryLog=snapshot.flatMap(r=>[...r.conversions.map(c=>({...c,study:r.label,text:r.label+": "+c.formula,method:c.formula})),
-          ...r.flags.filter(f=>DESIGN_FLAGS.includes(f.code)||/^NOT_STATED_/.test(f.code)).map(f=>({study:r.label,text:r.label+": "+f.text,flags:[f],method:"design or reporting flag",citation:"Cochrane Handbook v6.5 §23.1.4"}))]);
+          ...r.flags.filter(f=>DESIGN_FLAGS.includes(f.code)||/^NOT_STATED_/.test(f.code)).map(f=>({study:r.label,text:r.label+": "+f.text,flags:[f],method:"design or reporting flag",...(FLAG_CITATIONS[f.code]?{citation:FLAG_CITATIONS[f.code]}:{})}))]);
         const n=core.plural(records.length,"confirmed row");
         status.textContent=[(version===revision?`Applied ${n}.`:"Applied the confirmed snapshot. Review subsequent edits before applying again."),P.summarySentence(snapshot),...state.entryMethods].join(" ");
         candidatesBox.replaceChildren();questions.replaceChildren();extraction=null;
@@ -221,7 +229,7 @@
     });
     use.disabled=true;
     function sameSourceBlocked(){return singleGroup&&P.sameSource(rows.map(r=>r.rec)).length>0&&!optIn.checked;}
-    function valid(){return rows.length>0&&rows.every(r=>P.validate(r.rec).length===0&&r.issues.length===0&&!P.sourceChanged(r.rec,paste.value))&&!sameSourceBlocked();}
+    function valid(){return rows.length>0&&rows.every(r=>P.validate(r.rec).length===0&&r.issues.length===0&&!P.sourceChanged(r.rec))&&!sameSourceBlocked();}
     function refreshGate(){use.disabled=applying||!valid();}
     function download(name,type,data){
       const blob=data instanceof Blob?data:new Blob([data],{type}),url=global.URL.createObjectURL(blob),a=node("a",name,root);
@@ -343,8 +351,8 @@
         const blocked=todo.length>0||ready.length>0;
         if(blocked&&row.confirm.checked){row.confirm.checked=false;P.unconfirm(rec);}
         row.confirm.disabled=blocked;
-        // N6: the paste box no longer matches the text this row was confirmed against.
-        const changed=P.sourceChanged(rec,paste.value);row.changed.hidden=!changed;row.reconfirm.disabled=!who()||blocked;
+        // N6: this row's own stored source no longer matches its hash at confirmation (the paste box may hold another paper).
+        const changed=P.sourceChanged(rec);row.changed.hidden=!changed;row.reconfirm.disabled=!who()||blocked;
         // N1: cluster inputs only for cluster-randomised rows, with the design effect previewed.
         row.cluster.hidden=row.choice.randomisation!=="clusters";
         const de=rec.design?.designEffect,args=row.choice.cluster||{},adj=P.adjusted(rec,{exact:true});
@@ -366,7 +374,7 @@
       if(key!==sameSourceKey){sameSourceKey=key;if(optIn)optIn.checked=false;}
       sameSource.hidden=!groups.length;
       sameSourceText.textContent=!groups.length?"":singleGroup?SAME_SOURCE_NOTICE+" Rows "+groups.map(g=>g.map(i=>i+1).join(" and ")).join("; ")+" come from the same report or pasted text.":"Rows "+groups.map(g=>g.map(i=>i+1).join(" and ")).join("; ")+" come from the same report. "+P.summarySentence(recs);
-      edited.textContent=rows.some(r=>r.rec.confirmed&&r.rec.pastedText!==paste.value)?" — Edited since confirmation":"";
+      edited.textContent=rows.some(r=>P.sourceChanged(r.rec))?" — Edited since confirmation":"";
       csv.disabled=!rows.length;docx.disabled=!rows.length;
       refreshGate();
     }
@@ -380,12 +388,12 @@
       row.confirm=input("I confirm this row",confirmBox,"","checkbox");
       row.confirm.addEventListener("change",()=>{
         if(row.confirm.disabled)return;
-        if(row.confirm.checked&&who())P.confirm(row.rec,{by:who(),via:"row",boxText:paste.value});else{row.confirm.checked=false;P.unconfirm(row.rec);}
+        if(row.confirm.checked&&who())P.confirm(row.rec,{by:who(),via:"row"});else{row.confirm.checked=false;P.unconfirm(row.rec);}
         revision++;refreshAll();
       });
       row.changed=node("div",undefined,card);row.changed.className="alm-entry-source-changed";row.changed.setAttribute("role","alert");row.changed.hidden=true;
       node("p",SOURCE_CHANGED,row.changed);
-      row.reconfirm=button("Re-confirm this row",row.changed,()=>{if(!who()||row.confirm.disabled)return;P.confirm(row.rec,{by:who(),via:"row",boxText:paste.value});row.confirm.checked=true;revision++;refreshAll();});
+      row.reconfirm=button("Re-confirm this row",row.changed,()=>{if(!who()||row.confirm.disabled)return;P.confirm(row.rec,{by:who(),via:"row"});row.confirm.checked=true;revision++;refreshAll();});
       row.todo=node("ul",undefined,card);row.todo.className="alm-entry-todo";row.todo.setAttribute("aria-label","Still to answer for this row");
       row.armBox=node("div",undefined,card);row.armBox.className="alm-entry-arm-check";row.armBox.setAttribute("role","alert");row.armBox.hidden=true;
       row.armText=node("ul",undefined,row.armBox);
@@ -396,7 +404,7 @@
       const timepointChoices=()=>[...core.timepointOptions(text,candidate,row.choice.armIndex).map(o=>[o.value,o.label]),["not stated","Not stated"],["__other__","Other…"]];
       if(candidate.kind==="counts"){
         const cues=candidate.armCues||[];
-        const choices=candidate.values.arms.map((a,i)=>[i,`Printed arm ${i+1}: ${a.events} of ${a.n}`+(cues[i]?` (text next to it: “${cues[i].text}”)`:" (no arm words next to these numbers)")]);
+        const choices=candidate.values.arms.map((a,i)=>[i,`Printed arm ${i+1}: ${a.events} of ${a.n}`+(cues[i]?` (text next to it: “${cues[i].text}”)`:" (no arm phrase recognised next to these numbers)")]);
         for(const [key,title] of (name==="proportion"?[["armIndex","Arm to use"]]:[["treatmentIndex","Treatment arm"],["controlIndex","Control arm"]]))select(title,card,choices,value=>{
           set(key,value===""?undefined:+value);
           if(name==="proportion"){delete row.choice.denominator;if(row.denominator)row.denominator.value="";

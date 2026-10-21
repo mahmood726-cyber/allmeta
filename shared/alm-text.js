@@ -52,6 +52,8 @@
     handbookPI:       { short: 'Cochrane Handbook v6.5, §10.10.4.3', full: 'Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, section 10.10.4.3 (Prediction intervals in random-effects meta-analysis).' },
     handbookSE:       { short: 'Cochrane Handbook v6.5, §6.3.1', full: 'Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, section 6.3.1 (Obtaining standard errors from confidence intervals and P values).' },
     handbookSD:       { short: 'Cochrane Handbook v6.5, §6.5.2.2', full: 'Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, section 6.5.2.2 (Obtaining standard deviations from standard errors and confidence intervals).' },
+    handbookCluster:  { short: 'Cochrane Handbook v6.5, §23.1', full: 'Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, chapter 23 (Including variants on randomized trials), section 23.1 (Cluster-randomized trials).' },
+    handbookCrossover: { short: 'Cochrane Handbook v6.5, §23.2', full: 'Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, chapter 23 (Including variants on randomized trials), section 23.2 (Crossover trials).' },
     dersimonianLaird: { short: 'DerSimonian and Laird 1986', full: 'DerSimonian R, Laird N. Meta-analysis in clinical trials. Control Clin Trials 1986;7:177-188.' },
     pauleMandel:      { short: 'Paule and Mandel 1982', full: 'Paule RC, Mandel J. Consensus values and weighting factors. J Res Natl Bur Stand 1982;87:377-385.' },
     viechtbauer:      { short: 'Viechtbauer 2005', full: 'Viechtbauer W. Bias and efficiency of meta-analytic variance estimators in the random-effects model. J Educ Behav Stat 2005;30:261-293.' },
@@ -180,8 +182,17 @@
     SE_FROM_CI:                { desc: 'the standard error was derived from the confidence interval', cite: 'handbookSE' },
     SE_FROM_P:                 { desc: 'the standard error was derived from the P value', cite: 'handbookSE' },
     ESTIMATE_FROM_CI_MIDPOINT: { desc: 'the estimate was taken as the midpoint of the confidence interval', cite: null },
-    EVENTS_FROM_PERCENT:       { desc: 'event counts were derived from reported percentages', cite: null }
+    EVENTS_FROM_PERCENT:       { desc: 'event counts were derived from reported percentages', cite: null },
+    // F1 design flags and design-effect conversions (unit of randomisation, N1).
+    CLUSTER_ADJUSTED:          { desc: 'counts or standard errors from cluster-randomised trials were adjusted with a design effect', cite: 'handbookCluster' },
+    CLUSTER_NOT_ADJUSTED:      { desc: 'cluster-randomised trials were not adjusted for clustering (flag CLUSTER_NOT_ADJUSTED; their confidence intervals are too narrow)', cite: 'handbookCluster' },
+    CLUSTER_ANALYSIS_REPORTED: { desc: 'the reported analysis of cluster-randomised trials accounted for clustering (extractor’s statement)', cite: 'handbookCluster' },
+    CROSSOVER_DESIGN:          { desc: 'crossover trials were entered as parallel-group data (no paired analysis)', cite: 'handbookCrossover' },
+    NOT_RANDOMISED:            { desc: 'data were not from a randomised comparison', cite: null },
+    NOT_STATED_RANDOMISATION:  { desc: 'the unit of randomisation was not stated', cite: null }
   };
+  // F1 conversion functions that map to a code above.
+  var ENTRY_FNS = { clusterCounts: 'CLUSTER_ADJUSTED', clusterSE: 'CLUSTER_ADJUSTED' };
 
   // Summarise F1 provenance records (AlmFeaturesState.provenance) or legacy entryLog steps.
   // Groups by conversion/flag code; counts are numbers of distinct studies.
@@ -226,6 +237,7 @@
           (Array.isArray(s.conversions) ? s.conversions : []).forEach(function (c) {
             if (!c || typeof c !== 'object') return;
             if (c.code && addCode(c.code, who)) { codes[c.code] = true; return; }
+            if (ENTRY_FNS[c.fn]) { codes[ENTRY_FNS[c.fn]] = true; addCode(ENTRY_FNS[c.fn], who); return; }
             addText(c.method || c.text || c.description || (c.field ? c.field + ' converted' : ''), c.citation, who);
           });
           (Array.isArray(s.flags) ? s.flags : []).forEach(function (f) {

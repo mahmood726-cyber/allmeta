@@ -270,10 +270,27 @@
     return Array.from(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
   }
 
+  // Panel wording: N is the number of quantities the adapter supplies (appValues), never "every reported quantity".
+  function introText(n) {
+    var what = typeof n === 'number' && n > 0 ? 'the ' + n + (n === 1 ? ' quantity' : ' quantities') : 'the quantities';
+    return 'Re-runs this analysis in R (webR, inside this browser, no server) and compares ' + what + ' listed below with the app. Verification only.';
+  }
+  // The app-SVG claim is made only when the app's own SVG is actually what the SVG download contains.
+  function svgNote(title, reason, appSvgDownloaded) {
+    return title + ': ' + reason + (appSvgDownloaded ? '; the SVG download is the app’s own plot.' : '; no SVG download is available for this plot.');
+  }
+  function adapterCount(block) {
+    try {
+      var adapter = block.adapter && block.adapter(), live = adapter && (adapter.live || adapter);
+      var v = live && typeof live.appValues === 'function' && typeof live.currentState === 'function' ? live.appValues(live.currentState()) : null;
+      return Array.isArray(v) ? v.length : null;
+    } catch (e) { return null; }
+  }
+
   function render(panel, ctx) {
     var app = ctx.app, spec = ctx.spec, block = ctx.block;
     var plots = Array.isArray(block.plots) ? block.plots : [];
-    el('p', { class: 'alm-f-note' }, 'Re-runs this analysis in R (webR, inside this browser, no server) and compares every reported quantity with the app. Verification only.', panel);
+    var intro = el('p', { class: 'alm-f-note', 'data-testid': 'verify-intro' }, introText(adapterCount(block)), panel);
     var button = el('button', { type: 'button', class: 'alm-f-btn alm-f-primary' }, 'Verify this analysis in R', panel);
     var status = el('p', { role: 'status', 'aria-live': 'polite', class: 'alm-f-note' }, 'Ready. The first run loads R in the browser (about 30 MB).', panel);
     var summary = el('p', { class: 'alm-f-summary', 'data-testid': 'verify-summary' }, null, panel);
@@ -395,6 +412,7 @@
         if (notApplicable !== undefined && notApplicable !== null && !Array.isArray(notApplicable)) throw new Error('verify.optional must be an array of quantity keys');
         notApplicable = notApplicable || [];
         if (!Array.isArray(appValues) || !appValues.length) throw new Error('Adapter supplied no quantities to compare.');
+        intro.textContent = introText(appValues.length);
         script = live.buildScript(state);
         fullScript = downloadScript(app, script, plots, state);
         files.push({ name: app + '-verify.R', string: fullScript });
@@ -467,20 +485,22 @@
           files.push({ name: base + '-R-300dpi.png', bytes: png300 });
           files.push({ name: base + '-R.pdf', bytes: rp.pdf });
           files.push({ name: base + '-R-300dpi.tiff', bytes: tiff });
-          (function (png300, tiff, pdf, rp, base, title, appSvg) {
+          var appSvgDownloaded = (function (png300, tiff, pdf, rp, base, title, appSvg) {
             addDownload(title + ' PNG (300 dpi)', function () { saveBlob(new Blob([png300], { type: 'image/png' }), base + '-R-300dpi.png'); });
             addDownload(title + ' PDF', function () { saveBlob(new Blob([pdf], { type: 'application/pdf' }), base + '-R.pdf'); });
             addDownload(title + ' TIFF (300 dpi)', function () { saveBlob(new Blob([tiff], { type: 'image/tiff' }), base + '-R-300dpi.tiff'); });
             if (rp.svg) {
               files.push({ name: base + '-R.svg', string: rp.svg });
               addDownload(title + ' SVG', function () { saveBlob(new Blob([rp.svg], { type: 'image/svg+xml' }), base + '-R.svg'); });
-            } else if (appSvg) {
-              var appText = serializeSvg(appSvg);
-              files.push({ name: base + '-app.svg', string: appText });
-              addDownload(title + ' SVG — app plot (R SVG unavailable in browser)', function () { saveBlob(new Blob([appText], { type: 'image/svg+xml' }), base + '-app.svg'); });
+              return false;
             }
+            var appText = appSvg ? serializeSvg(appSvg) : '';
+            if (!appText) return false;
+            files.push({ name: base + '-app.svg', string: appText });
+            addDownload(title + ' SVG — app plot (R SVG unavailable in browser)', function () { saveBlob(new Blob([appText], { type: 'image/svg+xml' }), base + '-app.svg'); });
+            return true;
           })(png300, tiff, rp.pdf, rp, base, title, appSvg);
-          if (!rp.svg) el('p', { class: 'alm-f-note' }, title + ': ' + rp.svgReason + (appSvg ? '; the SVG download is the app’s own plot.' : '; no SVG download is available for this plot.'), plotsBox);
+          if (!rp.svg) el('p', { class: 'alm-f-note' }, svgNote(title, rp.svgReason, appSvgDownloaded), plotsBox);
         }
 
         el('h3', null, 'R console output', consoleBox);
@@ -542,7 +562,7 @@
   }
 
   var mod = { label: 'Verify in R', render: render };
-  var api = { evaluate: evaluate, summaryText: summaryText, testHookActive: testHookActive, serializeSvg: serializeSvg, comparisonCsv: comparisonCsv, provenanceCsv: provenanceCsv, PROVENANCE_COLUMNS: PROV_COLS, csvCell: csvCell, downloadScript: downloadScript, module: mod };
+  var api = { introText: introText, svgNote: svgNote, XPLAT_URL: XPLAT_URL, evaluate: evaluate, summaryText: summaryText, testHookActive: testHookActive, serializeSvg: serializeSvg, comparisonCsv: comparisonCsv, provenanceCsv: provenanceCsv, PROVENANCE_COLUMNS: PROV_COLS, csvCell: csvCell, downloadScript: downloadScript, module: mod };
   global.AlmVerifyR = api;
   if (global.AlmFeatures && typeof global.AlmFeatures.registerModule === 'function') global.AlmFeatures.registerModule('verify', mod);
   else (global.AlmFeaturesPending = global.AlmFeaturesPending || []).push(['verify', mod]);

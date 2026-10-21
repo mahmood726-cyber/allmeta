@@ -408,6 +408,7 @@ test('proportion-ma (review P2): I² = 0 flag says "few studies" only when k is 
   assert.equal(AlmText.audit(big, propResults({ k: 12, df: 11, i2: 0, tau2: 0 }), { ctx }).ok, true);
   const small = AlmText.render(t, propResults(), ctx);
   assert.ok(small.flags.some(x => /with few studies, heterogeneity statistics have low power/.test(x.text)), 'k=7 keeps the few-studies clause');
+});
 
 // FU4: heterogeneity-method citations (Q-profile CI, Sidik-Jonkman estimator, empirical Bayes).
 const NEW_CITES = {
@@ -510,4 +511,62 @@ test('PLANTED: a label segment whose text != results value -> audit FAILS', () =
   s2.text = s2.value = 'Smith 2018';
   r2.results.text = r2.results.segments.map(s => s.text).join('');
   assert.equal(AlmText.audit(r2, labelResults, { ctx: ctx0 }).ok, false);
+});
+
+// FU12: design flags from F1 provenance (cluster not adjusted / adjusted, crossover, not randomised) reach the
+// F2 Methods paragraph through the provenance summary, counted per confirmed study and cited to Cochrane Handbook ch. 23.
+const AlmEntry = require('../../../../shared/alm-entry.js');
+function designRecord(label, choice, text = 'Death: 12/50 in the intervention group vs 20/50 in the control group.') {
+  const P = AlmEntry.provenance, c = AlmEntry.extract(text, 'binary2x2').candidates.find(x => x.kind === 'counts');
+  let r = P.create({ pastedText: text, label, reference: label + ' trial report', location: 'Table 2' });
+  r = P.fromCandidate(r, c, { treatmentIndex: 0, controlIndex: 1, outcome: 'death', timepoint: '1 year', facets: { timepoint: '1 year' }, denominator: 'ITT', ...choice });
+  return P.confirm(r, { by: 'MA' });
+}
+const designProvenance = () => [
+  designRecord('Adams 2015', { randomisation: 'clusters', cluster: { action: 'decline' } }),
+  designRecord('Brown 2016', { randomisation: 'clusters', cluster: { action: 'decline' } }),
+  designRecord('Clark 2017', { randomisation: 'clusters', cluster: { action: 'adjust', m: 10, icc: 0.05, iccSource: 'assumed' } }),
+  designRecord('Davis 2018', { randomisation: 'crossover' }),
+  designRecord('Evans 2019', { randomisation: 'not randomised' }),
+  designRecord('Ford 2020', { randomisation: 'individuals' }),
+];
+test('FU12: CLUSTER_NOT_ADJUSTED, cluster adjustment, crossover and not-randomised sentences appear in the F2 Methods paragraph (provenance-tracked counts)', () => {
+  const recs = designProvenance();
+  assert.deepEqual(recs.map(r => AlmEntry.provenance.validate(r)), recs.map(() => []), 'fixtures are valid confirmed F1 rows');
+  const s = AlmText.entrySummary(recs);
+  const by = Object.fromEntries(s.groups.map(g => [g.desc, g]));
+  const notAdj = s.groups.find(g => /not adjusted for clustering/.test(g.desc));
+  assert.ok(notAdj, JSON.stringify(s.groups));
+  assert.equal(notAdj.count, 2);
+  assert.equal(notAdj.cite, 'handbookCluster');
+  assert.equal(s.groups.find(g => /adjusted with a design effect/.test(g.desc)).count, 1);
+  assert.equal(s.groups.find(g => /crossover/.test(g.desc)).cite, 'handbookCrossover');
+  assert.equal(s.groups.find(g => /not from a randomised comparison/.test(g.desc)).count, 1);
+  assert.ok(!Object.keys(by).some(d => /converted$/.test(d)), 'the cluster conversion is described, not "field converted"');
+  assert.match(AlmText.CITES.handbookCluster.full, /chapter 23/);
+  assert.match(AlmText.CITES.handbookCrossover.full, /chapter 23/);
+  for (const [name, t] of [['simple', simpleTemplates], ['proportion-ma', prop.text.templates]]) {
+    const res = name === 'simple' ? simpleResults : propResults();
+    const ctx = { ...ctx0, app: name === 'simple' ? 'demo-app' : 'proportion-ma', provenance: recs };
+    const r = AlmText.render(t, res, ctx);
+    assert.match(r.methods.text, /cluster-randomised trials were not adjusted for clustering \(flag CLUSTER_NOT_ADJUSTED; their confidence intervals are too narrow\) for 2 studies \(Cochrane Handbook v6\.5, §23\.1\)/, r.methods.text);
+    assert.match(r.methods.text, /crossover trials were entered as parallel-group data \(no paired analysis\) for 1 study \(Cochrane Handbook v6\.5, §23\.2\)/);
+    assert.match(r.methods.text, /data were not from a randomised comparison for 1 study/);
+    assert.equal((r.methods.text.match(/§23\.1\)/g) || []).length, 1, 'each citation once');
+    const a = AlmText.audit(r, res, { ctx });
+    report('fu12-design-' + name, a);
+    assert.equal(a.ok, true, JSON.stringify(a.failures));
+    // PLANTED: the CLUSTER_NOT_ADJUSTED count is changed in the rendered provenance -> audit FAILS.
+    const tampered = JSON.parse(JSON.stringify(r));
+    const i = s.groups.indexOf(notAdj), e = tampered.provenance.find(p => p.key === 'entry.' + i + '.count');
+    e.value = e.value + 1; e.text = String(e.value);
+    const b = AlmText.audit(tampered, res, { ctx });
+    report('fu12-design-planted-' + name, b);
+    assert.equal(b.ok, false);
+  }
+  // Unconfirmed rows are not counted; with no design flags no design sentence is printed.
+  const un = designProvenance(); AlmEntry.provenance.unconfirm(un[0]);
+  assert.equal(AlmText.entrySummary(un).groups.find(g => /not adjusted for clustering/.test(g.desc)).count, 1);
+  const plain = AlmText.render(simpleTemplates, simpleResults, { ...ctx0, provenance: [designRecord('Ford 2020', { randomisation: 'individuals' })] });
+  assert.doesNotMatch(plain.methods.text, /cluster|crossover|randomised comparison/);
 });
