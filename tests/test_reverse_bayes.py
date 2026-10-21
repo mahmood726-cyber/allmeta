@@ -122,6 +122,37 @@ def test_refusal_clears_previous_result(bad):
     assert o["after"] == ""  # no stale statement from the previous analysis
 
 
+# R 4.6.0 qnorm (Wichura AS241) at 17 significant digits. The page's critical value z_a must match R to the last bit or
+# two: at p = alpha the significance decision |z| > z_a is a tie decided by the last bits, and near the boundary
+# tau_s^2 = z_a^2 s^4/(theta^2 - z_a^2 s^2) amplifies any error in z_a by ~1/(|z|/z_a - 1).
+QNORM_R = [
+    (0.5, 0), (0.59999999999999998, 0.25334710313579978), (0.75, 0.67448975019608171),
+    (0.90000000000000002, 1.2815515655446008), (0.94999999999999996, 1.6448536269514715),
+    (0.97499999999999998, 1.9599639845400536), (0.98999999999999999, 2.3263478740408408),
+    (0.995, 2.5758293035488999), (0.99750000000000005, 2.8070337683438114), (0.999, 3.0902323061678132),
+    (0.99995000000000001, 3.8905918864131199), (0.025000000000000001, -1.9599639845400538),
+    (0.0001, -3.71901648545568), (1e-10, -6.3613409024040557), (0.074999999999999997, -1.4395314709384557),
+    (0.42499999999999999, -0.18911842627279249), (0.57499999999999996, 0.18911842627279238),
+]
+
+
+def test_qnorm_matches_r_within_two_ulp():
+    # Same algorithm and operation order as R; V8's Math.log may differ from the C library's log in the last bit,
+    # so 2 ulp is allowed (the previous Acklam + Halley version was 5.4 ulp off at p = 0.995).
+    got = _run("[" + ",".join(f"RB._qnorm({p!r})" for p, _ in QNORM_R) + "]")
+    for (p, want), x in zip(QNORM_R, got):
+        assert abs(x - want) <= 2 * math.ulp(want if want else 1.0), (p, x, want)
+
+
+@pytest.mark.parametrize("alpha,z,tau", [
+    (0.005, 2.8070365753775794, 707.10660443466645),   # |z| = z_a (1 + 1e-6): R values
+    (0.01, 2.5758318793782031, 707.10660446268753),
+])
+def test_prior_sd_near_significance_boundary(alpha, z, tau):
+    a = _run(f"RB.analyze({z!r}, 1.0, {{alpha:{alpha}}})")
+    assert math.isclose(a["sceptical"]["priorSD"], tau, rel_tol=1e-9)
+
+
 def test_sceptical_p_monotone_decreasing():
     ps = [_run(f"RB.analyze({z}, 1.0).intrinsic.scepticalP") for z in (2.0, 2.5, 3.0, 4.0)]
     assert all(ps[i] < ps[i - 1] for i in range(1, len(ps)))
