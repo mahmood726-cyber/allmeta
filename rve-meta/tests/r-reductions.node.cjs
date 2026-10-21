@@ -2,8 +2,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const fs = require('node:fs');
-const vm = require('node:vm');
 require('../../shared/stats-qt.js');
 const enginePath = process.env.RVE_ENGINE || path.resolve(__dirname, '../../shared/rve.js');
 const RVE = require(enginePath);
@@ -13,32 +11,64 @@ function close(a, b, absolute, label) {
     Math.abs(a - b) <= 1e-9 * (absolute ? 1 : Math.max(1, Math.abs(b))),
   `${label}: app=${a}, R=${b}`);
 }
+// The helpers are production code: a missing or renamed helper fails here.
+function reductions() {
+  assert.equal(typeof RVE._reductions, 'object', 'RVE._reductions is exported');
+  for (const name of ['rSum', 'rMean', 'rFactorKey', 'rFactorLevels'])
+    assert.equal(typeof RVE._reductions[name], 'function', `RVE._reductions.${name}`);
+  return RVE._reductions;
+}
+function agreesWithR(fit, R, label) {
+  const summary = RVE.summary(fit);
+  close(fit.tau2, R.tau2, false, `${label} tau2`);
+  summary.forEach((s, j) => {
+    for (const [a, r] of Object.entries({
+      estimate: 'b.r', se: 'SE', t: 't', df: 'dfs', p: 'prob',
+      ci_lo: 'CI.L', ci_hi: 'CI.U'
+    })) close(s[a], R.table[j][r], ['p', 'ci_lo', 'ci_hi'].includes(a), `${label} ${a}[${j}]`);
+    for (const [a, r] of Object.entries({
+      estimate: 'beta', se: 'SE', t: 'tstat', df: 'df_Satt', p: 'p_Satt'
+    })) close(s[a], R.club[r][j], a === 'p', `${label} club_${a}[${j}]`);
+  });
+}
 
-// Inspect private arithmetic helpers without adding a production API.
-const ctx = { module: { exports: {} } };
-vm.runInNewContext(fs.readFileSync(enginePath, 'utf8')
-  .replace('function fitCORR(rows, opts) {',
-    'if (typeof rSum === "function") global.reductions = { rSum, rMean, rFactorKey }; function fitCORR(rows, opts) {'), ctx);
-
-test('R 4.6 sum/mean controls: cancellation, double rounding, subnormals and overflow',
-  { skip: !ctx.reductions && 'Reduction helpers are in the rejected candidate, not the unchanged engine' }, () => {
+test('R 4.6 sum/mean controls: cancellation, double rounding, subnormals and overflow', () => {
+  const { rSum, rMean } = reductions();
   const controls = require('./fixtures/p15/reduction-controls.json');
+  assert.ok(controls.length > 0);
   for (const [i, ref] of controls.entries()) {
-    for (const [name, fn] of [['sum', ctx.reductions.rSum], ['mean', ctx.reductions.rMean]]) {
+    for (const [name, fn] of [['sum', rSum], ['mean', rMean]]) {
       const actual = fn(ref.input);
       assert.equal(Number.isFinite(actual) ? actual : null, ref[name], `${name} control ${i}`);
     }
   }
 });
 
-test('C-locale factor ordering uses native Unicode escapes',
-  { skip: !ctx.reductions && 'Factor helper is in the rejected candidate, not the unchanged engine' }, () => {
-  const labels = ['Kessler', 'King', 'Kyle', 'K\uFFFDnig'];
-  const keys = labels.map(ctx.reductions.rFactorKey);
+test('C-locale factor ordering uses native Unicode escapes', () => {
+  const { rFactorKey } = reductions();
+  const labels = ['Kessler', 'King', 'Kyle', 'K�nig'];
+  const keys = labels.map(rFactorKey);
   assert.deepEqual(keys, ['Kessler', 'King', 'Kyle', 'K<U+FFFD>nig']);
   assert.deepEqual(labels.slice().sort((a, b) =>
-    ctx.reductions.rFactorKey(a) < ctx.reductions.rFactorKey(b) ? -1 : 1),
-  ['K\uFFFDnig', 'Kessler', 'King', 'Kyle']);
+    rFactorKey(a) < rFactorKey(b) ? -1 : 1),
+  ['K�nig', 'Kessler', 'King', 'Kyle']);
+});
+
+// R 4.6.0: levels(as.factor(c(2, 10, 1))) is "1" "2" "10";
+// levels(as.factor(c("2", "10", "1"))) is "1" "10" "2" under LC_COLLATE=C;
+// nlevels(as.factor(c(0.3, 0.1 + 0.2))) is 1 (as.character uses 15 digits).
+test('factor levels follow the cluster column type, as as.factor() does', () => {
+  const { rFactorLevels } = reductions();
+  const order = xs => {
+    const lv = rFactorLevels(xs);
+    return [...new Set(xs.map((_, i) => i).sort((a, b) =>
+      lv[a].key < lv[b].key ? -1 : lv[a].key > lv[b].key ? 1 : a - b).map(i => lv[i].group))];
+  };
+  assert.deepEqual(order([2, 10, 1]), ['1', '2', '10']);
+  assert.deepEqual(order(['2', '10', '1']), ['1', '10', '2']);
+  assert.deepEqual(order([0.3, 0.1 + 0.2]), ['0.3']);
+  assert.deepEqual(order([1e5, 100000.0000000001, -0, 0]), ['0', '100000']);
+  assert.throws(() => rFactorLevels([1, 'a']), /RVE: cluster IDs must be all numbers or all strings/);
 });
 
 test('sorting is internal: input is untouched and weights retain input-row alignment', () => {
@@ -52,7 +82,43 @@ test('sorting is internal: input is untouched and weights retain input-row align
   rows.forEach((r, i) => assert.equal(fit.weights[i], 1 / (r.vi + fit.tau2)));
 });
 
-// Source: p15diag/r_source/robumeta_robu.R (robumeta 2.1).
+// numeric-ids.R maps robu's data.full$r.weights back to the input rows.
+test('multi-row clusters: weights are R\'s r.weights in caller order', () => {
+  const { designs } = require('./fixtures/p15/numeric-ids.json');
+  for (const d of designs) {
+    for (const type of ['numeric', 'character']) {
+      const rows = d[type].rows, snapshot = JSON.stringify(rows);
+      assert.ok(new Set(rows.map(r => r.cluster)).size < rows.length, 'has multi-row clusters');
+      const fit = RVE.fitCORR(rows, { rho: d.rho });
+      assert.equal(JSON.stringify(rows), snapshot, 'caller rows unchanged');
+      assert.equal(fit.weights.length, rows.length);
+      fit.weights.forEach((w, i) => close(w, d[type].R.weights[i], false, `seed ${d.seed} ${type} w[${i}]`));
+      // Within a cluster every row carries 1 / (k_j (mean v_j + tau2)).
+      rows.forEach((r, i) => {
+        const peers = rows.filter(q => q.cluster === r.cluster);
+        const mean = peers.reduce((s, q) => s + q.vi, 0) / peers.length;
+        close(fit.weights[i], 1 / (peers.length * (mean + fit.tau2)), false, `w[${i}] cluster ${r.cluster}`);
+      });
+    }
+  }
+});
+
+// Cluster IDs 1..K in shuffled row order. R itself separates numeric,
+// character and first-seen ordering at the 1e-9 gate for these designs.
+for (const type of ['numeric', 'character']) {
+  test(`${type} cluster IDs 1..K: factor order agrees with R at 1e-9`, () => {
+    const { designs } = require('./fixtures/p15/numeric-ids.json');
+    assert.equal(designs.length, 3);
+    for (const d of designs) {
+      assert.ok(d.clusters >= 12);
+      assert.ok(d[type].rows.every(r => typeof r.cluster === (type === 'numeric' ? 'number' : 'string')));
+      assert.ok(d.gap_numeric_vs_character > 1e-9 && d.gap_numeric_vs_first_seen > 1e-9);
+      agreesWithR(RVE.fitCORR(d[type].rows, { rho: d.rho }), d[type].R, `seed ${d.seed} ${type}`);
+    }
+  });
+}
+
+// Source: robumeta 2.1, R/robu.R.
 // 37: dframe$study <- as.factor(dframe$studynum)
 // 39: dframe <- dframe[order(dframe$study), ]
 // 134: sumW <- sum(data.full$weights)
@@ -61,17 +127,6 @@ test('sorting is internal: input is untouched and weights retain input-row align
 for (const cause of ['order', 'sumw', 'mean']) {
   test(`${cause}: smallest archived reproducer agrees with both R references at 1e-9`, () => {
     const f = require(`./fixtures/p15/${cause}.json`);
-    const fit = RVE.fitCORR(f.input.rows, { rho: f.input.rho });
-    const summary = RVE.summary(fit);
-    close(fit.tau2, f.R.tau2, false, 'tau2');
-    summary.forEach((s, j) => {
-      for (const [a, r] of Object.entries({
-        estimate: 'b.r', se: 'SE', t: 't', df: 'dfs', p: 'prob',
-        ci_lo: 'CI.L', ci_hi: 'CI.U'
-      })) close(s[a], f.R.table[j][r], ['p', 'ci_lo', 'ci_hi'].includes(a), `${a}[${j}]`);
-      for (const [a, r] of Object.entries({
-        estimate: 'beta', se: 'SE', t: 'tstat', df: 'df_Satt', p: 'p_Satt'
-      })) close(s[a], f.R.club[r][j], a === 'p', `club_${a}[${j}]`);
-    });
+    agreesWithR(RVE.fitCORR(f.input.rows, { rho: f.input.rho }), f.R, cause);
   });
 }

@@ -24,9 +24,20 @@
  * Satterthwaite. CR1 (a single scalar correction, anticonservative at small m)
  * remains available via opts.method = "CR1".
  *
- * Verified vs robumeta::robu(modelweights="CORR", small=TRUE) to ≤1e-5 on every
- * reported quantity (τ², β̂, CR2 SE, Satterthwaite df) across a homogeneous
- * (τ²=0) and a heterogeneous (τ²>0) dataset; see rve-meta-cr2-parity.spec.mjs.
+ * R parity: robumeta::robu(modelweights="CORR", small=TRUE) 2.1 and
+ * clubSandwich::coef_test(vcov="CR2", test="Satterthwaite") 0.7.0, at 1e-9
+ * (relative to max(1,|R|); absolute for p and CI) on every reported quantity of
+ * the 16,270-configuration corpus, apart from the documented residuals in the
+ * rve-reproducible archive (https://github.com/mahmood726-cyber/rve-reproducible).
+ * Reference platform and locale: R 4.6.0, Windows x64 (80-bit x87 long double,
+ * 64-bit significand, in sum()/mean()), LC_COLLATE=C. The extended sum/mean
+ * and the factor order below emulate exactly that. On builds whose long double
+ * is binary64 (e.g. macOS arm64) R's sum()/mean() round differently, and under
+ * a non-C collation R orders character cluster labels differently, so results
+ * there can differ from this engine at the 1e-9 level.
+ * CR2 needs shared/rve-eigen.js (R's LAPACK DSYEVR/DGEEV via WebAssembly).
+ * Browser checks: hub/shared/tests/rve-meta-wasm-render.spec.mjs (rendered
+ * page, multi-row clusters, R fixture) and rve-meta-cr2-parity.spec.mjs.
  *
  * Reference: Hedges, Tipton & Johnson (2010), Research Synth Methods 1(1):39-65;
  * Tipton (2015), Psych Methods 20(3):375-393; Pustejovsky & Tipton (2018),
@@ -112,7 +123,8 @@
   }
 
   // Symmetric eigendecomposition via cyclic Jacobi rotations (Numerical Recipes
-  // formulation). n is small (per-cluster k_j, typically ≤ ~20). Returns
+  // formulation). Not used by the CR2 fit (which calls R's LAPACK through
+  // rve-eigen.js); kept for rve-extras.js's condition number. Returns
   // { values: [...], vectors } where vectors[i][c] is component i of eigvec c.
   function symEig(Ain) {
     var n = Ain.length;
@@ -252,6 +264,20 @@
       return '<U+' + hex.padStart(hex.length > 4 ? 8 : 4, '0') + '>';
     });
   }
+  // as.factor() follows the column type. Numeric levels sort by value, and
+  // values that as.character() prints alike (15 significant digits) share a
+  // level. Character levels use the C-locale key above. Returns, per row,
+  // { key: sort key, group: level identity }.
+  function rFactorLevels(clusters) {
+    var numeric = clusters.every(function(c) { return typeof c === "number"; });
+    if (!numeric && clusters.some(function(c) { return typeof c === "number"; }))
+      throw new Error("RVE: cluster IDs must be all numbers or all strings");
+    return clusters.map(function(c) {
+      if (!numeric) return { key: rFactorKey(c), group: String(c) };
+      var level = Number(c.toPrecision(15));
+      return { key: level, group: String(level) };
+    });
+  }
   //
   // Input rows: { cluster, yi, vi, X: [...predictors including intercept] }
   // opts: { rho (0–1, default 0.8), tau2 (override), method ("CR2" default | "CR1") }
@@ -269,19 +295,20 @@
     var p = rows[0].X.length; // includes intercept (robumeta's p+1)
 
     rows.forEach(function(r) {
-      if (!r.X || r.X.length !== p || !r.X.every(Number.isFinite) || !Number.isFinite(r.yi) || !Number.isFinite(r.vi) || r.vi <= 0 || r.cluster == null || String(r.cluster).trim() === "") throw new Error("RVE: invalid row or predictor count");
+      if (!r.X || r.X.length !== p || !r.X.every(Number.isFinite) || !Number.isFinite(r.yi) || !Number.isFinite(r.vi) || r.vi <= 0 || r.cluster == null || String(r.cluster).trim() === "" || (typeof r.cluster === "number" && !Number.isFinite(r.cluster))) throw new Error("RVE: invalid row or predictor count");
     });
 
     // robumeta 2.1 robu.R:37-39: as.factor(), then order(study).
     // Keep observations stable within factors and return weights in caller order.
-    var inputOrder = rows.map(function(r, i) { return { row: r, index: i, key: rFactorKey(r.cluster) }; });
+    var levels = rFactorLevels(rows.map(function(r) { return r.cluster; }));
+    var inputOrder = rows.map(function(r, i) { return { row: r, index: i, key: levels[i].key, group: levels[i].group }; });
     inputOrder.sort(function(a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : a.index - b.index; });
     rows = inputOrder.map(function(x) { return x.row; });
     // Group by cluster in factor-level order.
     var clusterOrder = [];
     var byCluster = Object.create(null);
     for (var i = 0; i < k; i++) {
-      var c = String(rows[i].cluster);
+      var c = inputOrder[i].group;
       if (!byCluster[c]) { byCluster[c] = []; clusterOrder.push(c); }
       byCluster[c].push(i);
     }
@@ -515,8 +542,12 @@
     tau2_DL_simple: tau2_DL_simple,
     _invert: invert,
     _matMul: matMul,
+    // Jacobi eigen; no longer used by the fit, still used by rve-extras.js
+    // for the reported condition number kappa(X'WX).
     _symEig: symEig,
     _invSqrtSym: invSqrtSym,
+    // R-reduction and factor-order helpers, exposed for the regression tests.
+    _reductions: { rSum: rSum, rMean: rMean, rFactorKey: rFactorKey, rFactorLevels: rFactorLevels },
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmRVE = api;

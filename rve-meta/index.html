@@ -370,7 +370,17 @@
       if (/m<=p/.test(s)) return m + " cluster" + (m === 1 ? "" : "s") + " cannot support " + p + " coefficient" + (p === 1 ? "" : "s") + " (intercept + " + (p - 1) + " predictor" + (p === 2 ? "" : "s") + "): robust variance estimation needs more clusters than coefficients. Add clusters or remove predictors.";
       if (/singular/i.test(s)) return "The coefficients cannot be estimated because the predictors are collinear (for example a constant column, or one predictor equal to a combination of others). Remove or recode a predictor.";
       if (/rho/.test(s)) return "ρ must be a number between 0 and 1.";
+      if (/invalid comparison with complex values/.test(s)) return "A CR2 adjustment matrix has complex eigenvalues, so robumeta refuses this design (R reports 'invalid comparison with complex values'). The same data fail in R. Check for duplicated or near-collinear rows within a cluster, or remove a predictor.";
       return s;
+    }
+
+    // CR2 uses R's LAPACK through WebAssembly, compiled asynchronously at page
+    // load. Fits wait for it; once it has settled they run immediately.
+    function whenEigenReady(fn) {
+      var eig = window.AlmRVEEigen;
+      if (!eig || !eig.status || eig.status() !== "loading") { fn(); return; }
+      $("meta-row").textContent = "Preparing the CR2 eigen backend (WebAssembly)…";
+      eig.ready.then(fn, fn);
     }
 
     function countClusters(rows) { var s = Object.create(null), n = 0; rows.forEach(function (r) { if (!s[r.cluster]) { s[r.cluster] = 1; n++; } }); return n; }
@@ -506,12 +516,12 @@
       b.addEventListener("click", function () { exportAction(b.getAttribute("data-action")); });
     });
 
-    $("fit-form").addEventListener("submit", function (ev) { ev.preventDefault(); run(); });
+    $("fit-form").addEventListener("submit", function (ev) { ev.preventDefault(); whenEigenReady(run); });
     function loadExample(which) {
       if (which === "small") { $("src").value = SMALL_EXAMPLE; $("f-names").value = "intervention, dose_weeks"; }
       else { $("src").value = $("src").defaultValue; $("f-names").value = "males, college, binge"; }
       $("f-rho").value = "0.8"; $("f-centre").checked = false;
-      run();
+      whenEigenReady(run);
     }
     $("btn-example").addEventListener("click", function () { loadExample("corrdat"); });
     $("btn-example-small").addEventListener("click", function () { loadExample("small"); });
@@ -519,8 +529,8 @@
       $(id).addEventListener("input", function () { if (window.__almLastRVE) $("stale-note").hidden = false; });
       $(id).addEventListener("change", function () { if (window.__almLastRVE) $("stale-note").hidden = false; });
     });
-    window.__almRveRun = run;
-    run();
+    window.__almRveRun = function () { whenEigenReady(run); };
+    whenEigenReady(run);
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>

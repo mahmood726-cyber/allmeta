@@ -77,6 +77,32 @@
   function canon(s) { return String(s).trim().toLowerCase().replace(/\s+/g, "_"); }
   function isNumberText(s) { return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(String(s).trim()); }
 
+  // R's read.csv (type.convert, na.strings = "NA") reads a column as numeric
+  // when every entry is a decimal or hexadecimal number, Inf/infinity, NaN or NA.
+  var R_NUMBER = /^\s*[+-]?(?:(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?|0x(?:[0-9a-f]+\.?[0-9a-f]*|\.[0-9a-f]+)(?:p[+-]?\d+)?|inf(?:inity)?|nan)\s*$/i;
+  function rNumberValue(s) {
+    var t = String(s).trim(), sign = /^-/.test(t) ? -1 : 1;
+    t = t.replace(/^[+-]/, "");
+    var hex = t.match(/^0x([0-9a-f]*)\.?([0-9a-f]*)(?:p([+-]?\d+))?$/i);
+    if (!hex) return sign * Number(/^inf/i.test(t) ? Infinity : /^nan$/i.test(t) ? NaN : t);
+    var v = 0, digits = hex[1] + hex[2];
+    for (var i = 0; i < digits.length; i++) v = v * 16 + parseInt(digits.charAt(i), 16);
+    return sign * v * Math.pow(2, Number(hex[3] || 0) - 4 * hex[2].length);
+  }
+  // robumeta orders clusters by as.factor(studynum), which sorts a numeric
+  // column numerically ("2" < "10", and "007" and "7" are one study). Type the
+  // cluster column as read.csv would; a numeric column must be finite.
+  function typeClusters(rows, lineNos) {
+    var labels = rows.map(function (r) { return r.cluster; });
+    if (!labels.every(function (s) { return R_NUMBER.test(s) || String(s).trim() === "NA"; })) return false;
+    labels.forEach(function (s, i) {
+      var v = String(s).trim() === "NA" ? NaN : rNumberValue(s);
+      if (!isFinite(v)) throw UserError("Line " + lineNos[i] + ": cluster label '" + s + "' is not a finite number. Every other cluster label is a number, so R's read.csv would read this column as numeric. Use finite numbers, or text labels, for every cluster.");
+      rows[i].cluster = v;
+    });
+    return true;
+  }
+
   // Returns { rows, predictorNames (from header or null), header, delimiter,
   //           seColumn, columnLabels }
   function parseStudies(text) {
@@ -118,8 +144,9 @@
       return header ? "'" + header[col] + "' (column " + (col + 1) + ")" : "column " + (col + 1);
     };
 
-    var rows = [];
+    var rows = [], lineNos = [];
     parsed.forEach(function (r) {
+      lineNos.push(r.no);
       var f = r.f;
       if (f.length < 3) throw UserError("Line " + r.no + ": needs at least cluster, yi, vi (" + delimName + "-separated); found " + f.length + " column" + (f.length === 1 ? "" : "s") + ".");
       if (f.length !== width) {
@@ -156,8 +183,10 @@
       }
       rows.push({ cluster: String(cluster), yi: yi, vi: vi, X: xs });
     });
+    var clusterNumeric = typeClusters(rows, lineNos);
     return {
       rows: rows,
+      clusterNumeric: clusterNumeric,
       predictorNames: header ? predCols.map(function (cc) { return header[cc]; }) : null,
       header: !!header,
       delimiter: delimName,
@@ -301,14 +330,19 @@
     L.push("# Generated " + (state.generated || new Date().toISOString()) + " by allmeta rve-meta " + (state.version || ""));
     L.push("# Reference functions: robumeta::robu(modelweights = \"CORR\", small = TRUE) and");
     L.push("# clubSandwich::coef_test(vcov = \"CR2\", test = \"Satterthwaite\").");
-    L.push("# The app was validated against robumeta 2.1 and clubSandwich 0.7.0 (R 4.6.0).");
+    L.push("# The app was validated against robumeta 2.1 and clubSandwich 0.7.0 (R 4.6.0,");
+    L.push("# Windows x64, LC_COLLATE=C). Other platforms or a non-C collation of text");
+    L.push("# cluster labels can change results in the last digits: Sys.setlocale(\"LC_COLLATE\", \"C\").");
     L.push("# If needed: install.packages(c(\"robumeta\", \"clubSandwich\"))");
     L.push("");
     L.push("library(robumeta)");
     L.push("library(clubSandwich)");
     L.push("");
     L.push("d <- data.frame(");
-    L.push("  cluster = c(" + rows.map(function (r) { return rString(r.cluster); }).join(", ") + "),");
+    // A numeric cluster column stays numeric so robu's as.factor() orders it
+    // as the app does.
+    var numericClusters = rows.every(function (r) { return typeof r.cluster === "number"; });
+    L.push("  cluster = c(" + rows.map(function (r) { return numericClusters ? rNum(r.cluster) : rString(r.cluster); }).join(", ") + "),");
     L.push("  yi = c(" + rows.map(function (r) { return rNum(r.yi); }).join(", ") + "),");
     var viLine = "  vi = c(" + rows.map(function (r) { return rNum(r.vi); }).join(", ") + ")";
     L.push(viLine + (q ? "," : ""));
@@ -370,7 +404,7 @@
         build_sha: bi.sha || null,
         url: "https://mahmood726-cyber.github.io/allmeta/rve-meta/",
         engine: "shared/rve.js (CORR working model, CR2 standard errors, Satterthwaite df)",
-        validated_against: "robumeta 2.1 robu(modelweights='CORR', small=TRUE); clubSandwich 0.7.0 coef_test(vcov='CR2', test='Satterthwaite'); R 4.6.0"
+        validated_against: "robumeta 2.1 robu(modelweights='CORR', small=TRUE); clubSandwich 0.7.0 coef_test(vcov='CR2', test='Satterthwaite'); R 4.6.0 (Windows x64, LC_COLLATE=C)"
       },
       inputs: {
         rho: st.rho,

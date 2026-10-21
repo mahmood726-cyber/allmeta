@@ -12,7 +12,36 @@ the section is renamed to that version and dated, and a fresh
 ## [Unreleased]
 
 ### Added
-- _(items added since the most recent tag will be listed here)_
+- RVE: `shared/numerics/LICENSES-rve-eigen.md` reproduces the licences of the
+  webR BLAS/LAPACK binaries embedded in `shared/rve-eigen.js` (R's
+  `doc/COPYRIGHTS` LAPACK/BLAS entries, the LAPACK modified-BSD licence, the
+  LLVM Apache-2.0 with LLVM Exceptions text and webR's licence statement). The
+  generated bundle's header carries the LAPACK notice.
+- RVE: rendered-browser test `hub/shared/tests/rve-meta-wasm-render.spec.mjs`
+  fits R-referenced fixtures with multi-row clusters through the page.
+
+### Changed
+- RVE (rve-meta): the engine reproduces R robumeta 2.1 / clubSandwich 0.7.0 at
+  1e-9 on the reference platform, R 4.6.0 on Windows x64 with LC_COLLATE=C.
+  Clusters follow R's `as.factor()` order (bytewise C-locale order for text
+  labels, numeric order for numeric IDs); `sum()`/`mean()` emulate Windows R's
+  long double; CR2 adjustment matrices use R's own LAPACK (DSYEVR/DGEEV)
+  through WebAssembly. Results can differ from R in the last digits on other
+  platforms or under a non-C collation.
+- RVE (rve-meta): a cluster column whose labels are all numbers is now read as
+  numeric, as R's `read.csv` does: `007` and `7` are one study, and studies are
+  ordered 1, 2, 10. The exported R script keeps such a column numeric. A
+  numeric-looking column with an `Inf`, `NaN` or `NA` label is refused.
+- RVE (rve-meta): CR2 needs WebAssembly. The page compiles the LAPACK backend
+  asynchronously at load and waits for it; if WebAssembly is unavailable or
+  blocked, CR2 fits fail with "RVE: CR2 requires WebAssembly (blocked or
+  unavailable)" instead of returning a result.
+- RVE: designs whose CR2 adjustment matrix has complex eigenvalues are refused
+  with R's message ("invalid comparison with complex values"), as robumeta
+  does. In the 16,270-configuration validation corpus this affects 7
+  configurations: 2 that previously returned a result
+  (`dat.moura2021::001::species.id::publication.year`), and 5 that were
+  already refused with "m<=p" and now report R's complex-eigen refusal.
 
 ---
 
