@@ -8,29 +8,11 @@ name: features
 #   browser  : Playwright features-*.spec.mjs (per-app entry round-trip, text audit + snapshot, verify-in-R panel via webR)
 
 on:
+  # No paths filter on PRs: a filter that misses an audited file (adapters, app pages, shared engines) lets the
+  # text/entry/verify gates silently not run (review of PR #178). These jobs are cheap; run them on every PR.
   pull_request:
-    paths:
-      - 'shared/alm-*'
-      - '*/alm-features.js'
-      - 'hub/shared/tests/unit/**'
-      - 'hub/shared/tests/features-*.spec.mjs'
-      - 'hub/shared/tests/__snapshots__/text-*.json'
-      - 'hub/shared/tests/zip-reader.mjs'
-      - 'hub/shared/tests/playwright*.config.mjs'
-      - 'hub/shared/tests/package*.json'
-      - 'validation/entry/**'
-      - '.github/workflows/features.yml'
   push:
     branches: [main]
-    paths:
-      - 'shared/alm-*'
-      - '*/alm-features.js'
-      - 'hub/shared/tests/unit/**'
-      - 'hub/shared/tests/features-*.spec.mjs'
-      - 'hub/shared/tests/zip-reader.mjs'
-      - 'hub/shared/tests/playwright*.config.mjs'
-      - 'hub/shared/tests/package*.json'
-      - 'validation/entry/**'
   workflow_dispatch:
 
 permissions:
