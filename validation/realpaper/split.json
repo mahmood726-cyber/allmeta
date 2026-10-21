@@ -1,0 +1,40 @@
+{
+ "rule": "sha256(slug utf-8) last hex digit even -> dev, odd -> heldout; fixed 2026-10-20 15:40 BST before any extraction run",
+ "corpus": "mahmood726-cyber/meta-harness@f498cba6aeb057889b76bda47f0f338a7d89c906 docs/reviews/<slug>/review.json",
+ "dev": [
+  "balanced-crystalloids-vs-saline-mortality",
+  "colchicine-postop-af",
+  "colchicine-secondary-cv-prevention",
+  "corticosteroids-cap-mortality",
+  "corticosteroids-covid19-mortality",
+  "denosumab-vertebral-fracture",
+  "doac-vte-recurrence",
+  "dpp4-mace-t2d",
+  "esketamine-trd-madrs",
+  "iv-iron-hfref-hosp",
+  "metformin-pcos-ovulation",
+  "omega3-cardiovascular-events",
+  "sacubitril-valsartan-hfref",
+  "semaglutide-obesity-weight",
+  "tocilizumab-covid19-mortality"
+ ],
+ "heldout": [
+  "colchicine-recurrent-pericarditis",
+  "dapagliflozin-hfpef-hosp",
+  "empagliflozin-hfpef-hosp",
+  "finerenone-ckd-t2d-renal",
+  "glp1-ra-mace-t2d",
+  "melatonin-primary-insomnia-sol",
+  "noac-vs-warfarin-af-stroke",
+  "pcsk9-mace",
+  "probiotics-aad-prevention",
+  "semaglutide-obesity-mace",
+  "sglt2-ckd-progression",
+  "sglt2-hfref-hosp-cvdeath",
+  "sglt2-primary-prevention-hf",
+  "spironolactone-hfref-mortality",
+  "statins-primary-prevention-elderly",
+  "ticagrelor-vs-clopidogrel-acs",
+  "tranexamic-acid-pph"
+ ]
+}
