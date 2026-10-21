@@ -97,8 +97,9 @@
 0.005
 0.009
 0.002</textarea>
-        <span class="hint">Only statistically significant p-values are used (0 &lt; p &lt; 0.05). Non-significant inputs are dropped.</span>
+        <span class="hint">Enter two-sided p-values separated by spaces or new lines. Only statistically significant p-values are used (0 &lt; p &lt; 0.05); other numbers are excluded and entries that are not plain numbers are listed below.</span>
       </label>
+      <p id="input-note" class="hint" style="font-size:0.78rem;color:var(--muted);margin:0 0 0.6rem" aria-live="polite"></p>
       <label>
         <span>Test type (for effect size)</span>
         <select id="test" aria-label="Test">
@@ -139,317 +140,587 @@
     </section>
   </main>
   <footer>
-    <abbr data-gloss="p-curve">p-curve</abbr>: Simonsohn U, Nelson LD, Simmons JP. p-curve: a key to the file-drawer. <em>J Exp Psychol Gen</em> 2014;143:534-547. <strong>Method-vs-code disclosure (allmeta heuristic):</strong> the right-skew test here uses <abbr data-gloss="Fisher">Fisher's combined method</abbr> <code>-2&middot;&Sigma; ln(pp) ~ &chi;&sup2;(2k)</code> on uniformly-transformed pp = p/0.05 values (the original Simonsohn 2014 paper recommends Stouffer's z-pool; both detect right-skew but power differs). The flatness test is Simonsohn's real 33%-power test: for each significant study a pp-value is computed under a 33%-power alternative (the non-centrality giving that study's test 1/3 power at &alpha;=.05, two-sided) and the pp-values are combined by <abbr data-gloss="Stouffer">Stouffer's method</abbr> <code>Z = &Sigma;&Phi;&#8315;&sup1;(pp)/&radic;k</code>; a significantly small flatness <em>p</em> means the curve is <em>flatter</em> than 33% power (inadequate evidential value). Full and half (<em>p</em>&lt;.025) curves are reported. The non-central benchmark is computed for the two families the app accepts as input &mdash; two-sided <em>z</em> (ncp&#8407;&nbsp;&mu;&nbsp;&asymp;&nbsp;1.529) and non-central <em>t</em> at the common df (CDF verified against <code>scipy.stats.nct</code> to&nbsp;1e-6); every input row is therefore covered. (A legacy binomial pp&le;0.5 screen is retained in the exported JSON only, for schema back-compat, and is not shown.) <abbr data-gloss="p-uniform">p-uniform</abbr>: van Assen MALM, van Aert RCM, Wicherts JM. <em>Psychol Methods</em> 2015;20:293-309.
+    <abbr data-gloss="p-curve">p-curve</abbr>: Simonsohn U, Nelson LD, Simmons JP. p-curve: a key to the file-drawer. <em>J Exp Psychol Gen</em> 2014;143:534-547. Simonsohn U, Simmons JP, Nelson LD. Better p-curves. <em>J Exp Psychol Gen</em> 2015;144:1146-1152. <strong>Methods:</strong> inputs are two-sided <em>p</em>-values; 0&nbsp;&lt;&nbsp;<em>p</em>&nbsp;&lt;&nbsp;.05 are used. Right skew is tested by <abbr data-gloss="Fisher">Fisher's method</abbr> on pp&nbsp;=&nbsp;<em>p</em>/.05 (the 2014 paper) and by <abbr data-gloss="Stouffer">Stouffer's method</abbr> <code>Z = &Sigma;&Phi;&#8315;&sup1;(pp)/&radic;k</code> on pp&nbsp;=&nbsp;20<em>p</em> (full) and 40<em>p</em> (half, <em>p</em>&lt;.025), as in the p-curve app 4.x. Flatness is the 33%-power test of the app 4.x: the non-centrality giving 1/3 two-sided power at &alpha;=.05 (normal for <em>z</em>; non-central <em>t</em> at the common df), pp33 conditional on <em>p</em>&lt;.05 (full) or <em>p</em>&lt;.025 (half), combined by Stouffer; a small flatness <em>p</em> means the curve is <em>flatter</em> than 33% power. pp-values are bounded to [2.2&times;10&#8315;&sup1;&#8310;, 1&minus;2.2&times;10&#8315;&sup1;&#8310;] as in the app 4.x. Binomial tests and the power estimate of the app 4.x are not computed. <abbr data-gloss="p-uniform">p-uniform</abbr>: van Assen MALM, van Aert RCM, Wicherts JM. <em>Psychol Methods</em> 2015;20:293-309 &mdash; computed as puniform 0.2.8 <code>puniform(yi = z, vi = 1, side = "right", method = "P")</code> with z = &Phi;&#8315;&sup1;(1 &minus; <em>p</em>/2) (estimate, Irwin-Hall 95% CI, test of no effect; &delta; in z-units). Normal, <em>t</em> and non-central <em>t</em> distributions are ports of the R nmath algorithms. (A legacy binomial pp&le;0.5 screen is retained in the exported JSON only, for schema back-compat, and is not shown.)
   </footer>
   <script>
-    function pnorm(x) {
-      const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
-      return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+    // =====================================================================
+    // Numerical core. Ports of the R nmath algorithms the reference uses, so
+    // results agree with R to rounding:
+    //   pnorm  — Cody (1969) rational Chebyshev, as R's pnorm_both (both tails, log scale)
+    //   qnorm  — Wichura (1988) AS 241, as R's qnorm (both tails)
+    //   lgamma/lbeta — Stirling with the lgammacor series, as R's lbeta
+    //   pbeta  — continued fraction (Lentz), both tails;  pt / qt central t
+    //   pnt    — non-central t, Lenth (1989) AS 243 as R's pnt (errmax 1e-12)
+    // The page previously used A&S 7.1.26 / 26.2.23 approximations (errors up
+    // to ~1e-7 / ~4.5e-4) and a Simpson-rule non-central t (~1e-6).
+    // =====================================================================
+    const M_SQRT_32 = 5.656854249492380195206754896838;
+    const M_1_SQRT_2PI = 0.398942280401432677939946059934;
+    const M_LN_SQRT_2PI = 0.918938533204672741780329736406;
+    const M_LN_SQRT_PI = 0.572364942924700087071713675677;
+    const M_SQRT_2dPI = 0.797884560802865355879892119869;
+    const DBL_EPS = 2.220446049250313e-16;
+
+    // R pnorm_both: returns [cum, ccum]; iTail 0 = lower, 1 = upper, 2 = both.
+    function pnormBoth(x, iTail, logp) {
+      const a = [2.2352520354606839287, 161.02823106855587881, 1067.6894854603709582, 18154.981253343561249, 0.065682337918207449113];
+      const b = [47.20258190468824187, 976.09855173777669322, 10260.932208618978205, 45507.789335026729956];
+      const c = [0.39894151208813466764, 8.8831497943883759412, 93.506656132177855979, 597.27027639480026226,
+        2494.5375852903726711, 6848.1904505362823326, 11602.651437647350124, 9842.7148383839780218, 1.0765576773720192317e-8];
+      const d = [22.266688044328115691, 235.38790178262499861, 1519.377599407554805, 6485.558298266760755,
+        18615.571640885098091, 34900.952721145977266, 38912.003286093271411, 19685.429676859990727];
+      const p = [0.21589853405795699, 0.1274011611602473639, 0.022235277870649807, 0.001421619193227893466,
+        2.9112874951168792e-5, 0.02307344176494017303];
+      const q = [1.28426009614491121, 0.468238212480865118, 0.0659881378689285515, 0.00378239633202758244, 7.29751555083966205e-5];
+      const lower = iTail !== 1, upper = iTail !== 0;
+      let xden, xnum, temp, del, xsq, cum, ccum;
+      if (Number.isNaN(x)) return [NaN, NaN];
+      const y = Math.abs(x);
+      const doDel = (X) => {
+        xsq = Math.trunc(X * 16) / 16;
+        del = (X - xsq) * (X + xsq);
+        if (logp) {
+          cum = (-xsq * (xsq / 2)) - del / 2 + Math.log(temp);
+          if ((lower && x > 0) || (upper && x <= 0))
+            ccum = Math.log1p(-Math.exp(-xsq * (xsq / 2)) * Math.exp(-del / 2) * temp);
+        } else {
+          cum = Math.exp(-xsq * (xsq / 2)) * Math.exp(-del / 2) * temp;
+          ccum = 1.0 - cum;
+        }
+      };
+      const swapTail = () => { if (x > 0) { temp = cum; if (lower) cum = ccum; ccum = temp; } };
+      if (y <= 0.67448975) {
+        if (y > DBL_EPS * 0.5) {
+          xsq = x * x; xnum = a[4] * xsq; xden = xsq;
+          for (let i = 0; i < 3; ++i) { xnum = (xnum + a[i]) * xsq; xden = (xden + b[i]) * xsq; }
+        } else { xnum = xden = 0.0; }
+        temp = x * (xnum + a[3]) / (xden + b[3]);
+        if (lower) cum = 0.5 + temp;
+        if (upper) ccum = 0.5 - temp;
+        if (logp) { if (lower) cum = Math.log(cum); if (upper) ccum = Math.log(ccum); }
+      } else if (y <= M_SQRT_32) {
+        xnum = c[8] * y; xden = y;
+        for (let i = 0; i < 7; ++i) { xnum = (xnum + c[i]) * y; xden = (xden + d[i]) * y; }
+        temp = (xnum + c[7]) / (xden + d[7]);
+        doDel(y); swapTail();
+      } else if ((logp && y < 1e170) || (lower && -37.5193 < x && x < 8.2924) || (upper && -8.2924 < x && x < 37.5193)) {
+        xsq = 1.0 / (x * x);
+        xnum = p[5] * xsq; xden = xsq;
+        for (let i = 0; i < 4; ++i) { xnum = (xnum + p[i]) * xsq; xden = (xden + q[i]) * xsq; }
+        temp = xsq * (xnum + p[4]) / (xden + q[4]);
+        temp = (M_1_SQRT_2PI - temp) / y;
+        doDel(x); swapTail();
+      } else {
+        if (x > 0) { cum = logp ? 0 : 1; ccum = logp ? -Infinity : 0; }
+        else { cum = logp ? -Infinity : 0; ccum = logp ? 0 : 1; }
+      }
+      return [cum, ccum];
     }
-    function qnorm(p) {
-      if (p <= 0 || p >= 1) return NaN;
-      const q = p < 0.5 ? p : 1 - p;
-      const t = Math.sqrt(-2 * Math.log(q));
-      const c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
-      const d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
-      const x = t - (c0 + c1 * t + c2 * t * t) / (1 + d1 * t + d2 * t * t + d3 * t * t * t);
-      return p < 0.5 ? -x : x;
+    function pnormR(x, lowerTail = true, logp = false) {
+      if (!Number.isFinite(x)) {
+        if (Number.isNaN(x)) return NaN;
+        const lo = x < 0 ? 0 : 1; const v = lowerTail ? lo : 1 - lo;
+        return logp ? Math.log(v) : v;
+      }
+      const r = pnormBoth(x, lowerTail ? 0 : 1, logp);
+      return lowerTail ? r[0] : r[1];
     }
+    // R qnorm (AS 241) for p in (0,1); lowerTail selects the tail p refers to.
+    function qnormR(p, lowerTail = true) {
+      if (Number.isNaN(p) || p < 0 || p > 1) return NaN;
+      if (p === 0) return lowerTail ? -Infinity : Infinity;
+      if (p === 1) return lowerTail ? Infinity : -Infinity;
+      const p_ = lowerTail ? p : 0.5 - p + 0.5;
+      const q = p_ - 0.5;
+      let r, val;
+      if (Math.abs(q) <= 0.425) {
+        r = 0.180625 - q * q;
+        return q * (((((((r * 2509.0809287301226727 + 33430.575583588128105) * r + 67265.770927008700853) * r +
+          45921.953931549871457) * r + 13731.693765509461125) * r + 1971.5909503065514427) * r + 133.14166789178437745) * r +
+          3.387132872796366608) / (((((((r * 5226.495278852854561 + 28729.085735721942674) * r + 39307.89580009271061) * r +
+          21213.794301586595867) * r + 5394.1960214247511077) * r + 687.1870074920579083) * r + 42.313330701600911252) * r + 1.0);
+      }
+      const lp = Math.log(q > 0 ? (lowerTail ? 0.5 - p + 0.5 : p) : p_);
+      r = Math.sqrt(-lp);
+      if (r <= 5.0) {
+        r += -1.6;
+        val = (((((((r * 7.7454501427834140764e-4 + 0.0227238449892691845833) * r + 0.24178072517745061177) * r +
+          1.27045825245236838258) * r + 3.64784832476320460504) * r + 5.7694972214606914055) * r + 4.6303378461565452959) * r +
+          1.42343711074968357734) / (((((((r * 1.05075007164441684324e-9 + 5.475938084995344946e-4) * r +
+          0.0151986665636164571966) * r + 0.14810397642748007459) * r + 0.68976733498510000455) * r + 1.6763848301838038494) * r +
+          2.05319162663775882187) * r + 1.0);
+      } else {
+        r += -5.0;
+        val = (((((((r * 2.01033439929228813265e-7 + 2.71155556874348757815e-5) * r + 0.0012426609473880784386) * r +
+          0.026532189526576123093) * r + 0.29656057182850489123) * r + 1.7848265399172913358) * r + 5.4637849111641143699) * r +
+          6.6579046435011037772) / (((((((r * 2.04426310338993978564e-15 + 1.4215117583164458887e-7) * r +
+          1.8463183175100546818e-5) * r + 7.868691311456132591e-4) * r + 0.0148753612908506148525) * r +
+          0.13692988092273580531) * r + 0.59983220655588793769) * r + 1.0);
+      }
+      return q < 0.0 ? -val : val;
+    }
+    // Back-compatible names used below
+    function pnorm(x) { return pnormR(x, true, false); }
+    function qnorm(p) { return qnormR(p, true); }
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+
+    // log-gamma: Stirling + lgammacor for x >= 10, upward recursion below.
+    function _lgammacor(x) {
+      const x2 = 1 / (x * x);
+      return (1 / 12 + x2 * (-1 / 360 + x2 * (1 / 1260 + x2 * (-1 / 1680 + x2 * (1 / 1188 + x2 * (-691 / 360360 + x2 * (1 / 156))))))) / x;
+    }
+    function _lngamma(x) {
+      if (x >= 10) return M_LN_SQRT_2PI + (x - 0.5) * Math.log(x) - x + _lgammacor(x);
+      let prod = 1, z = x;
+      while (z < 10) { prod *= z; z += 1; }
+      return M_LN_SQRT_2PI + (z - 0.5) * Math.log(z) - z + _lgammacor(z) - Math.log(prod);
+    }
+    function _lbeta(a, b) {
+      const p = Math.min(a, b), q = Math.max(a, b);
+      if (p >= 10) {
+        const corr = _lgammacor(p) + _lgammacor(q) - _lgammacor(p + q);
+        return Math.log(q) * -0.5 + M_LN_SQRT_2PI + corr + (p - 0.5) * Math.log(p / (p + q)) + q * Math.log1p(-p / (p + q));
+      } else if (q >= 10) {
+        const corr = _lgammacor(q) - _lgammacor(p + q);
+        return _lngamma(p) + corr + p - p * Math.log(p + q) + (q - 0.5) * Math.log1p(-p / (p + q));
+      }
+      return _lngamma(p) + _lngamma(q) - _lngamma(p + q);
+    }
+    function _betacf(a, b, x) {
+      const FPMIN = 1e-300;
+      const qab = a + b, qap = a + 1, qam = a - 1;
+      let c = 1, d = 1 - qab * x / qap;
+      if (Math.abs(d) < FPMIN) d = FPMIN;
+      d = 1 / d; let h = d;
+      for (let m = 1; m <= 20000; m++) {
+        const m2 = 2 * m;
+        let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; h *= d * c;
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; const del = d * c; h *= del;
+        if (Math.abs(del - 1) <= 1e-16) break;
+      }
+      return h;
+    }
+    // Regularised incomplete beta I_x(a,b); the requested tail is computed directly when it is the small one.
+    function pbetaR(x, a, b, lowerTail) {
+      if (x <= 0) return lowerTail ? 0 : 1;
+      if (x >= 1) return lowerTail ? 1 : 0;
+      const y = 0.5 - x + 0.5;
+      const lbt = a * Math.log(x) + b * Math.log(y) - _lbeta(a, b);
+      if (x < (a + 1) / (a + b + 2)) { const v = Math.exp(lbt) * _betacf(a, b, x) / a; return lowerTail ? v : 0.5 - v + 0.5; }
+      const v = Math.exp(lbt) * _betacf(b, a, y) / b; return lowerTail ? 0.5 - v + 0.5 : v;
+    }
+    // Central t CDF (structure of R's pt).
+    function ptR(x, n, lowerTail = true) {
+      if (Number.isNaN(x) || !(n > 0)) return NaN;
+      if (!Number.isFinite(x)) return (x < 0) === lowerTail ? 0 : 1;
+      const nx = 1 + (x / n) * x;
+      let val;
+      if (nx > 1e100) {
+        const lval = -0.5 * n * (2 * Math.log(Math.abs(x)) - Math.log(n)) - _lbeta(0.5 * n, 0.5) - Math.log(0.5 * n);
+        val = Math.exp(lval);
+      } else {
+        val = (n > x * x) ? pbetaR(x * x / (n + x * x), 0.5, n / 2, false) : pbetaR(1 / nx, n / 2, 0.5, true);
+      }
+      if (x <= 0) lowerTail = !lowerTail;
+      val /= 2;
+      return lowerTail ? 0.5 - val + 0.5 : val;
+    }
+    function _ldt(t, n) { return _lngamma((n + 1) / 2) - _lngamma(n / 2) - 0.5 * Math.log(n * Math.PI) - ((n + 1) / 2) * Math.log1p(t * t / n); }
+    // Upper-tail t quantile for pu in (0, 0.5]: Newton on u = log t with a bisection safeguard.
+    function qtUpper(pu, n) {
+      if (!(pu > 0) || pu >= 1) return NaN;
+      if (pu === 0.5) return 0;
+      if (pu > 0.5) return -qtUpper(0.5 - pu + 0.5, n);
+      const target = Math.log(pu);
+      const g = (t) => Math.log(ptR(t, n, false)) - target;
+      let lo = 0, hi = 1;
+      while (g(hi) > 0) { lo = hi; hi *= 2; if (hi > 1e300) break; }
+      let t = Math.max(lo, Math.min(hi, Math.abs(qnormR(pu, false))));
+      if (!(t > lo && t < hi)) t = 0.5 * (lo + hi);
+      for (let it = 0; it < 200; it++) {
+        const gv = g(t);
+        if (gv > 0) lo = t; else hi = t;
+        if (gv === 0) break;
+        const S = ptR(t, n, false);
+        const slope = -Math.exp(_ldt(t, n)) / S;          // d/dt log S(t)
+        let tn = t - gv / slope;
+        if (!(tn > lo && tn < hi) || !Number.isFinite(tn)) tn = 0.5 * (lo + hi);
+        if (Math.abs(tn - t) <= 2 * DBL_EPS * t) { t = tn; break; }
+        t = tn;
+      }
+      return t;
+    }
+    // Non-central t CDF, port of R's pnt (AS 243).
+    function pntR(t, df, ncp, lowerTail = true) {
+      const itrmax = 1000, errmax = 1e-12;
+      if (!(df > 0)) return NaN;
+      if (ncp === 0) return ptR(t, df, lowerTail);
+      if (!Number.isFinite(t)) return (t < 0) ? (lowerTail ? 0 : 1) : (lowerTail ? 1 : 0);
+      let negdel, tt, del;
+      if (t >= 0) { negdel = false; tt = t; del = ncp; }
+      else {
+        if (ncp > 40) return lowerTail ? 0 : 1;
+        negdel = true; tt = -t; del = -ncp;
+      }
+      if (df > 4e5 || del * del > 2 * Math.LN2 * 1021) {
+        const s = 1 / (4 * df);
+        return pnormR((tt * (1 - s) - del) / Math.sqrt(1 + tt * tt * 2 * s), lowerTail !== negdel, false);
+      }
+      let x = t * t;
+      let rxb = df / (x + df);
+      x = x / (x + df);
+      let tnc;
+      if (x > 0) {
+        const lambda = del * del;
+        let p = 0.5 * Math.exp(-0.5 * lambda);
+        if (p === 0) return lowerTail ? 0 : 1;
+        let q = M_SQRT_2dPI * p * del;
+        let s = 0.5 - p;
+        if (s < 1e-7) s = -0.5 * Math.expm1(-0.5 * lambda);
+        let a = 0.5;
+        const b = 0.5 * df;
+        rxb = Math.pow(rxb, b);
+        const albeta = M_LN_SQRT_PI + _lngamma(b) - _lngamma(0.5 + b);
+        let xodd = pbetaR(x, a, b, true);
+        let godd = 2 * rxb * Math.exp(a * Math.log(x) - albeta);
+        tnc = b * x;
+        let xeven = (tnc < DBL_EPS) ? tnc : 1 - rxb;
+        let geven = tnc * rxb;
+        tnc = p * xodd + q * xeven;
+        for (let it = 1; it <= itrmax; it++) {
+          a += 1;
+          xodd -= godd;
+          xeven -= geven;
+          godd *= x * (a + b - 1) / a;
+          geven *= x * (a + b - 0.5) / (a + 0.5);
+          p *= lambda / (2 * it);
+          q *= lambda / (2 * it + 1);
+          tnc += p * xodd + q * xeven;
+          s -= p;
+          if (s < -1e-10) break;
+          if (s <= 0 && it > 1) break;
+          const errbd = 2 * s * (xodd - godd);
+          if (Math.abs(errbd) < errmax) break;
+        }
+      } else {
+        tnc = 0;
+      }
+      tnc += pnormR(-del, true, false);
+      const lower = lowerTail !== negdel;
+      const tmp = Math.min(tnc, 1);
+      return lower ? tmp : 0.5 - tmp + 0.5;
+    }
+
+    // Exact χ² CDF via the regularised lower incomplete gamma (Fisher right-skew test).
+    function _gammp(s, x) {
+      if (x <= 0) return 0;
+      if (x < s + 1) {
+        let ap = s, sum = 1 / s, del = sum;
+        for (let n = 0; n < 1000; n++) {
+          ap += 1; del *= x / ap; sum += del;
+          if (Math.abs(del) < Math.abs(sum) * 1e-16) break;
+        }
+        return sum * Math.exp(-x + s * Math.log(x) - _lngamma(s));
+      }
+      return 0.5 - _gammq_cf(s, x) + 0.5;
+    }
+    function _gammq_cf(s, x) {
+      let b = x + 1 - s, c = 1e300, d = 1 / b, h = d;
+      for (let i = 1; i < 1000; i++) {
+        const an = -i * (i - s);
+        b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+        c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300;
+        d = 1 / d; const del = d * c; h *= del;
+        if (Math.abs(del - 1) < 1e-16) break;
+      }
+      return Math.exp(-x + s * Math.log(x) - _lngamma(s)) * h;
+    }
+    function pchi(x, k) { if (k <= 0 || x <= 0) return 0; return _gammp(k / 2, x / 2); }
+    // Upper tail computed directly when it is the small one.
+    function pchiUpper(x, k) {
+      if (k <= 0) return NaN; if (x <= 0) return 1;
+      const s = k / 2, h = x / 2;
+      return (h < s + 1) ? 0.5 - _gammp(s, h) + 0.5 : _gammq_cf(s, h);
+    }
+
+    // =====================================================================
+    // p-curve (Simonsohn, Nelson & Simmons 2014; 2015 app 4.x formulas)
+    // Input: two-sided p-values; 0 < p < .05 are used.
+    //   Right skew, Fisher (2014): χ² = −2 Σ ln(p/.05) on 2k df.
+    //   Right skew, Stouffer (app 4.x): pp = 20p (full), 40p (half, p < .025);
+    //     Z = Σ Φ⁻¹(pp)/√k, p = Φ(Z).
+    //   33%-power flatness (app 4.x): ncp giving two-sided power 1/3 at α=.05
+    //     (z: normal; t: non-central t at the common df); full
+    //     pp33 = 1 − S(obs)/S(c.05), half pp33 = 1 − S(obs)/S(c.025) (conditional
+    //     on p < .025); Z = Σ Φ⁻¹(pp33)/√k, p = Φ(Z): a small p means the curve is
+    //     flatter than 33% power. pp-values are bounded to [2.2e-16, 1 − 2.2e-16]
+    //     as in the app 4.x code.
+    // =====================================================================
+    const PP_EPS = 2.2e-16;
+    const pbound = (v) => Math.min(Math.max(v, PP_EPS), 1 - PP_EPS);
+    const stouffer = (pp) => pp.reduce((s, v) => s + qnormR(v, true), 0) / Math.sqrt(pp.length);
+
+    function family(testType, df) {
+      if (testType === "t") {
+        return {
+          name: "non-central t, df=" + df,
+          S2: (x, m) => pntR(x, df, m, false) + pntR(-x, df, m, true),
+          crit: (pc) => qtUpper(pc / 2, df),
+        };
+      }
+      return {
+        name: "two-sided z",
+        S2: (x, m) => pnormR(x - m, false, false) + pnormR(-x - m, true, false),
+        crit: (pc) => qnormR(pc / 2, false),
+      };
+    }
+    // ncp giving 33% two-sided power at α = .05 (bisection to machine precision).
+    function solveNcp33(fam, c05) {
+      let lo = 0, hi = 40;
+      for (let i = 0; i < 200; i++) {
+        const m = (lo + hi) / 2;
+        if (m === lo || m === hi) break;
+        if (fam.S2(c05, m) < 1 / 3) lo = m; else hi = m;
+      }
+      return (lo + hi) / 2;
+    }
+
+    // =====================================================================
+    // p-uniform (van Assen, van Aert & Wicherts 2015), as puniform 0.2.8
+    // puniform(yi = z, vi = 1, alpha = .05, side = "right", method = "P"):
+    // z = Φ⁻¹(1 − p/2), critical value Φ⁻¹(.975); estimate solves Σ q_i(δ) = k/2
+    // with q_i = P(Z ≥ z_i | Z ≥ z_cv; δ); 95% CI from the Irwin-Hall critical
+    // values tabulated in puniform (k ≤ 100; normal approximation above);
+    // test of no effect L.0 = (Σ q_i(0) − k/2)/√(k/12), one-tailed p = Φ(L.0).
+    // Search intervals, approximations and the bisection follow the package; the
+    // bisection tolerance is 1e-12 (the package default is 1e-4).
+    // =====================================================================
+    const PU_ZCV = qnormR(0.025, false);
+    const PU_CV_IRWIN = [0.025, 0.2236068, 0.5313293, 0.8801117, 1.2461056, 1.624144, 2.0123298, 2.4083589, 2.8107664,
+      3.2185166, 3.6308158, 4.0470508, 4.466735, 4.8894743, 5.3149446, 5.7428752, 6.1730373, 6.6052357, 7.0393019,
+      7.4750896, 7.9124706, 8.3513318, 8.791573, 9.2331047, 9.6758467, 10.119727, 10.56468, 11.0106467, 11.4575729,
+      11.9054094, 12.3541107, 12.8036353, 13.2539447, 13.7050034, 14.1567786, 14.6092396, 15.062358, 15.5161073,
+      15.9704626, 16.4254007, 16.8808999, 17.3369397, 17.7935008, 18.2505652, 18.7081158, 19.1661363, 19.6246116,
+      20.0835271, 20.5428692, 21.0026248, 21.4627816, 21.9233278, 22.3842521, 22.845544, 23.3071933, 23.7691902,
+      24.2315254, 24.6941901, 25.1571758, 25.6204742, 26.0840778, 26.5479788, 27.0121703, 27.4766452, 27.9413969,
+      28.4064191, 28.8717057, 29.3372507, 29.8030484, 30.2690934, 30.7353804, 31.2019042, 31.66866, 32.135643,
+      32.6028487, 33.0702724, 33.53791, 34.0057574, 34.4738104, 34.9420652, 35.410518, 35.8791651, 36.3480031,
+      36.8170284, 37.2862377, 37.7556278, 38.2251955, 38.6949378, 39.1648517, 39.6349343, 40.1051829, 40.5755946,
+      41.0461668, 41.516897, 41.9877825, 42.4588211, 42.9300102, 43.4013476, 43.872831, 44.3444582];
+    function puCvP(k) { return k <= 100 ? PU_CV_IRWIN[k - 1] : qnormR(0.025, true) * Math.sqrt(k / 12) + k * 0.5; }
+    function puApprox(zd, zval, zcv) {
+      const a = zval - zcv;
+      const o = (u) => 1 - 1 / (u * u + 2) + 1 / ((u * u + 2) * (u * u + 4)) - 5 / ((u * u + 2) * (u * u + 4) * (u * u + 6));
+      return Math.exp(-(zcv - zd) * a - 0.5 * a * a) * (zcv - zd) / (zval - zd) * o(zval - zd) / o(zcv - zd);
+    }
+    function puSumQ(z, d) {
+      let s = 0;
+      for (const zi of z) {
+        if (PU_ZCV - d <= 38) {
+          const pmarg = Math.exp(pnormR(PU_ZCV - d, false, true));
+          const ph1 = Math.exp(pnormR(zi - d, false, true));
+          s += ph1 / pmarg;
+        } else s += puApprox(d, zi, PU_ZCV);
+      }
+      return s;
+    }
+    // puniform's bisect(); returns NaN where the package's try() would give NA.
+    function puBisect(func, lo, hi, tol) {
+      if (!Number.isFinite(lo) || !Number.isFinite(hi)) return NaN;
+      const flo = func(lo), fhi = func(hi);
+      if (!Number.isFinite(flo) || !Number.isFinite(fhi) || flo * fhi > 0) return NaN;
+      let chg = hi - lo, root = NaN;
+      for (let it = 0; it < 10000 && Math.abs(chg) > tol; it++) {
+        root = (lo + hi) / 2;
+        const froot = func(root);
+        if (Math.abs(froot) <= tol) break;
+        if (flo * froot < 0) hi = root;
+        if (fhi * froot < 0) lo = root;
+        chg = hi - lo;
+      }
+      return root;
+    }
+    function puniformP(z) {
+      const k = z.length, tol = 1e-12;
+      const maxz = Math.max(...z);
+      const bo = [maxz - 38, maxz + 3];
+      const boExtLb = Math.max(...z.map(zi => (-(700 - 0.5 * (zi - PU_ZCV) ** 2) / (zi - PU_ZCV) + PU_ZCV)));
+      const f = (target) => (d) => puSumQ(z, d) - target;
+      let est = puBisect(f(k / 2), bo[0], bo[1], tol);
+      if (Number.isNaN(est)) est = puBisect(f(k / 2), boExtLb, bo[1], tol);
+      const cv = puCvP(k);
+      let lb = puBisect(f(cv), bo[0], est, tol);
+      if (Number.isNaN(lb)) lb = puBisect(f(cv), boExtLb, est, tol);
+      const ub = puBisect(f(k - cv), est, bo[1], tol);
+      // test of no effect (q at δ = 0)
+      let s0 = 0;
+      for (const zi of z) {
+        if (zi <= 38) s0 += Math.exp(pnormR(zi, false, true)) / Math.exp(pnormR(PU_ZCV, false, true));
+        else s0 += puApprox(0, Math.sqrt(1400 + PU_ZCV * PU_ZCV), PU_ZCV);
+      }
+      const L0 = (s0 - k * 0.5) / Math.sqrt(k / 12);
+      return { est, ci_lb: lb, ci_ub: ub, L0, pval0: pnormR(L0, true, false) };
+    }
+
+    // ---- input: whitespace-separated plain decimal numbers; 0 < p < .05 used ----
+    const NUM_RE = /^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?$/;
+    function readInput(text) {
+      const tokens = String(text).split(/[ \t\r\n]+/).filter(t => t.length > 0);
+      const invalid = [], used = [];
+      let excluded = 0;
+      for (const t of tokens) {
+        if (!NUM_RE.test(t)) { invalid.push(t); continue; }
+        const x = Number(t);
+        if (x > 0 && x < 0.05) used.push(x); else excluded++;
+      }
+      return { n_tokens: tokens.length, invalid, n_numeric_excluded: excluded, used };
+    }
+
+    function analyze(raw, testType, dfVal) {
+      const k = raw.length;
+      const half = raw.filter(p => p < 0.025), kh = half.length;
+      const fam = family(testType, dfVal);
+      const R = { k, k_half: kh, flat_family: fam.name };
+      // Fisher (2014)
+      R.fisher_chisq = -2 * raw.reduce((s, p) => s + Math.log(p / 0.05), 0);
+      R.fisher_df = 2 * k;
+      R.fisher_p = pchiUpper(R.fisher_chisq, 2 * k);
+      // Stouffer right skew (app 4.x)
+      R.pp_skew_full = raw.map(p => pbound(20 * p));
+      R.skew_full_z = stouffer(R.pp_skew_full); R.skew_full_p = pnormR(R.skew_full_z);
+      R.pp_skew_half = half.map(p => pbound(40 * p));
+      R.skew_half_z = kh ? stouffer(R.pp_skew_half) : NaN; R.skew_half_p = kh ? pnormR(R.skew_half_z) : NaN;
+      // 33%-power flatness (app 4.x)
+      const c05 = fam.crit(0.05), c025 = fam.crit(0.025);
+      const ncp = solveNcp33(fam, c05);
+      R.ncp33 = ncp;
+      const den05 = fam.S2(c05, ncp), den025 = fam.S2(c025, ncp);
+      R.pp_flat_full = raw.map(p => pbound(1 - fam.S2(fam.crit(p), ncp) / den05));
+      R.flat_full_z = stouffer(R.pp_flat_full); R.flat_full_p = pnormR(R.flat_full_z);
+      R.pp_flat_half = half.map(p => pbound(1 - fam.S2(fam.crit(p), ncp) / den025));
+      R.flat_half_z = kh ? stouffer(R.pp_flat_half) : NaN; R.flat_half_p = kh ? pnormR(R.flat_half_z) : NaN;
+      // plot data (app 4.x binning and expected 33%-power curve)
+      const ps = raw.map(p => Math.ceil(p * 100) / 100);
+      R.plot_observed = [0.01, 0.02, 0.03, 0.04, 0.05].map(b => ps.filter(v => v === b).length / k * 100);
+      const g = [0.01, 0.02, 0.03, 0.04].map(pc => fam.S2(fam.crit(pc), ncp));
+      R.plot_expected33 = [3 * g[0], 3 * (g[1] - g[0]), 3 * (g[2] - g[1]), 3 * (g[3] - g[2]), 3 * (1 / 3 - g[3])].map(v => 100 * v);
+      // legacy export fields (binomial screen; not shown)
+      const pLow = raw.filter(p => p / 0.05 <= 0.5).length / k;
+      R.prop_low = pLow; R.z_flat = (pLow - 0.5) / Math.sqrt(0.25 / k);
+      R.p_flat = 2 * pnormR(-Math.abs(R.z_flat));
+      // p-uniform (z-units)
+      const pu = puniformP(raw.map(p => qnormR(p / 2, false)));
+      R.pu_est = pu.est; R.pu_ci_lb = pu.ci_lb; R.pu_ci_ub = pu.ci_ub; R.pu_L0 = pu.L0; R.pu_pval0 = pu.pval0;
+      return R;
+    }
 
     // Exposed for results-export
     var _lastResults = null;
     window._almLastPcurve = function () { return _lastResults; };
 
     function run() {
-      const raw = document.getElementById("src").value.trim().split(/\s+/).map(parseFloat).filter(x => Number.isFinite(x) && x > 0 && x < 0.05);
+      const inp = readInput(document.getElementById("src").value);
+      const raw = inp.used;
       const nSig = raw.length;
+      const note = document.getElementById("input-note");
+      const parts = [`${nSig} p-value${nSig === 1 ? "" : "s"} with 0 &lt; p &lt; .05 used`];
+      if (inp.n_numeric_excluded) parts.push(`${inp.n_numeric_excluded} excluded (not 0 &lt; p &lt; .05)`);
+      if (inp.invalid.length) parts.push(`${inp.invalid.length} not read as numbers: ` +
+        inp.invalid.slice(0, 5).map(t => `<code>${t.replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch])}</code>`).join(", ") +
+        (inp.invalid.length > 5 ? ", …" : ""));
+      if (note) note.innerHTML = parts.join("; ") + ".";
       if (nSig < 3) {
         document.getElementById("tests-body").innerHTML = `<tr><td colspan="4">Need at least 3 significant (p &lt; 0.05) p-values.</td></tr>`;
+        document.getElementById("pu-body").innerHTML = `<tr><td colspan="2">Not computed (fewer than 3 significant p-values).</td></tr>`;
+        document.getElementById("plot").innerHTML = "";
         _lastResults = null;
         return;
       }
-
-      // --- Right-skew test: transform each p to pp = p / 0.05 (under null, uniform on [0,1]).
-      // Skewness: are small pp over-represented? Fisher's method using ln(pp).
-      const ppRight = raw.map(p => p / 0.05);  // U(0,1) under null
-      // For right-skew under H0 (no effect), pp is uniform. Under H1 (true effect), pp concentrates near 0.
-      // Fisher's method: -2 Σ ln(pp) ~ χ²(2k) under null; large values reject null.
-      const T_skew = -2 * ppRight.reduce((s, pp) => s + Math.log(pp), 0);
-      const p_skew = 1 - pchi(T_skew, 2 * nSig);
-
-      // --- Legacy uniform screen (kept ONLY for the pcurve-results-v1 export
-      // schema and its R-parity fixture): binomial proportion of pp ≤ 0.5 vs
-      // 0.5 under U(0,1). This is NOT the flatness test any more — the real
-      // 33%-power flatness test (below) drives the UI. Do not read these three
-      // fields as evidential-value evidence.
-      const pLow = ppRight.filter(pp => pp <= 0.5).length / nSig;
-      const z_flat = (pLow - 0.5) / Math.sqrt(0.25 / nSig);
-      const p_flat = 2 * (1 - pnorm(Math.abs(z_flat)));
-
-      // --- REAL flatness test (Simonsohn 33%-power benchmark; see engine below).
-      // Uses the selected test family (z two-sided, or t at the common df) to
-      // build each study's pp-value under a 33%-power alternative, then Stouffer.
       const testType = document.getElementById("test").value;
       const dfVal = parseInt(document.getElementById("df").value, 10);
       const useT = (testType === "t" && Number.isFinite(dfVal) && dfVal >= 1);
-      const flatFamily = useT ? ("non-central t, df=" + dfVal) : "two-sided z";
-      const flatFull = useT ? flatnessT(raw, dfVal, false) : flatnessZ(raw, false);
-      const flatHalf = useT ? flatnessT(raw, dfVal, true) : flatnessZ(raw, true);
-      const ncp33 = flatFull ? flatFull.ncp : NaN;
+      const A = analyze(raw, useT ? "t" : "z", dfVal);
 
-      // --- p-uniform: under a fixed true effect δ and selective-publication, conditional p-values should be U(0,1) after transformation p* = P(p ≤ p | reject).
-      // Iteratively find δ that makes mean(pp_delta) = 0.5.
-      // pp_delta = Φ(z_observed - δ·√n) / Φ(-z_{0.025} - δ·√n) (rough approximation with fixed n)
-      // For simplicity, treat each study as z-test and solve for δ (effect on standardized scale).
-      let delta = 0;
-      for (let iter = 0; iter < 60; iter++) {
-        const ppd = raw.map(p => {
-          const z = qnorm(1 - p);  // one-sided Z
-          const num = pnorm(z - delta) - pnorm(qnorm(1 - 0.05) - delta);
-          const denom = 1 - pnorm(qnorm(1 - 0.05) - delta);
-          return denom > 1e-10 ? Math.min(1, Math.max(0, num / denom)) : 0.5;
-        });
-        const mean = ppd.reduce((s, v) => s + v, 0) / ppd.length;
-        if (Math.abs(mean - 0.5) < 1e-4) break;
-        // The conditional-CDF transform above is DECREASING in delta, so to pull its
-        // mean down toward 0.5 we must INCREASE delta. The previous (0.5 - mean) sign
-        // pushed delta the wrong way and diverged (e.g. delta=-4.9 for right-skewed
-        // data that has a clear positive effect). Verified vs an R reference.
-        delta += 0.5 * (mean - 0.5);  // damped update
-        delta = Math.max(-10, Math.min(10, delta));  // guard against pathological divergence
-        if (!Number.isFinite(delta)) { delta = 0; break; }
-      }
-
-      // Save results for export
-      _lastResults = {
+      _lastResults = Object.assign({
         _schema: 'pcurve-results-v1',
-        k: nSig,
-        fisher_chisq: T_skew,
-        fisher_df: 2 * nSig,
-        fisher_p: p_skew,
-        prop_low: pLow,
-        z_flat: z_flat,
-        p_flat: p_flat,
-        // Real 33%-power flatness test (Simonsohn 2014/2015):
-        flat_family: flatFamily,
-        flat_ncp33: ncp33,
-        flat_full_k: flatFull ? flatFull.k : 0,
-        flat_full_stouffer_z: flatFull ? flatFull.Z : NaN,
-        flat_full_p: flatFull ? flatFull.pflat : NaN,
-        flat_half_k: flatHalf ? flatHalf.k : 0,
-        flat_half_stouffer_z: flatHalf ? flatHalf.Z : NaN,
-        flat_half_p: flatHalf ? flatHalf.pflat : NaN,
-        delta_puniform: delta,
+        n_tokens: inp.n_tokens,
+        n_invalid: inp.invalid.length,
+        n_numeric_excluded: inp.n_numeric_excluded,
+      }, A, {
+        // back-compatible names (schema v1)
+        flat_ncp33: A.ncp33,
+        flat_full_k: A.k,
+        flat_full_stouffer_z: A.flat_full_z,
+        flat_half_k: A.k_half,
+        flat_half_stouffer_z: A.flat_half_z,
+        delta_puniform: A.pu_est,
         p_values_used: raw,
-      };
-
-      const testsBody = document.getElementById("tests-body");
-      const __testsBodyParts = [""];
-      const flagSkew = p_skew < 0.05 ? "ok" : "bad";
-      const labelSkew = p_skew < 0.05 ? "evidential value" : "no evidential value";
-      __testsBodyParts.push(`<tr><td><code>Right-skew (full p-curve)</code></td><td>&#x3c7;&sup2; = ${fmt(T_skew, 2)}</td><td>${fmt(p_skew, 3)}</td><td><span class="chip ${flagSkew}">${labelSkew}</span></td></tr>`);
-      // Real 33%-power flatness rows (full and half curve). A significant
-      // (small p) result ⇒ curve is FLATTER than 33% power ⇒ inadequate
-      // evidential value (chip "bad"); otherwise "not flatter than 33%".
-      const flatRow = (label, res) => {
-        if (!res) return `<tr><td><code>${label}</code></td><td>&mdash;</td><td>&mdash;</td><td><span class="chip bad">no p in range</span></td></tr>`;
-        const flag = res.pflat < 0.05 ? "bad" : "ok";
-        const txt = res.pflat < 0.05 ? "flatter than 33% power (inadequate)" : "not flatter than 33% power";
-        return `<tr><td><code>${label}</code> <span class="hint" style="display:inline;color:var(--muted);font-size:0.72rem">k=${res.k}, ${flatFamily}, ncp&#8407;=${fmt(res.ncp, 2)}</span></td><td>Z = ${fmt(res.Z, 2)}</td><td>${fmt(res.pflat, 3)}</td><td><span class="chip ${flag}">${txt}</span></td></tr>`;
-      };
-      __testsBodyParts.push(flatRow("Flatness (full, vs 33% power)", flatFull));
-      __testsBodyParts.push(flatRow("Flatness (half, p&lt;.025, vs 33% power)", flatHalf));
-
-      const puBody = document.getElementById("pu-body");
-      puBody.innerHTML = `
-        <tr><td>Significant p-values used</td><td>${nSig}</td></tr>
-        <tr><td>p-uniform effect estimate (&#948;, z-units)</td><td>${fmt(delta)}</td></tr>
-        <tr><td>p-uniform &#948; (z-units; not Cohen's d &mdash; sample n not collected)</td><td>${fmt(delta, 3)}</td></tr>`;
-
-      drawCurve(raw);
-      testsBody.innerHTML = __testsBodyParts.join("");
-
-    }
-
-    // Exact χ² CDF via the regularised lower incomplete gamma P(k/2, x/2)
-    // (Numerical Recipes gammp; ~1e-14). Replaces a Wilson-Hilferty approximation
-    // that was off by up to ~1.4% in the tail at the small df (= 2·k_sig) typical
-    // of a p-curve — enough to flip a borderline right-skew p across the 0.05
-    // line. Matches R's pchisq; same vetted code as nma-inconsistency.
-    function _lngamma(z) {
-      const g = 7, c = [0.99999999999980993, 676.5203681218851,
-        -1259.1392167224028, 771.32342877765313, -176.61502916214059,
-        12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6,
-        1.5056327351493116e-7];
-      if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - _lngamma(1 - z);
-      z -= 1; let x = c[0];
-      for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
-      const t = z + g + 0.5;
-      return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
-    }
-    function _gammp(s, x) {
-      if (x <= 0) return 0;
-      if (x < s + 1) {
-        let ap = s, sum = 1 / s, del = sum;
-        for (let n = 0; n < 300; n++) {
-          ap += 1; del *= x / ap; sum += del;
-          if (Math.abs(del) < Math.abs(sum) * 1e-15) break;
-        }
-        return sum * Math.exp(-x + s * Math.log(x) - _lngamma(s));
-      }
-      let b = x + 1 - s, c = 1e300, d = 1 / b, h = d;
-      for (let i = 1; i < 300; i++) {
-        const an = -i * (i - s);
-        b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
-        c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300;
-        d = 1 / d; const del = d * c; h *= del;
-        if (Math.abs(del - 1) < 1e-15) break;
-      }
-      return 1 - Math.exp(-x + s * Math.log(x) - _lngamma(s)) * h;
-    }
-    function pchi(x, k) {
-      if (k <= 0 || x <= 0) return 0;
-      return _gammp(k / 2, x / 2);
-    }
-
-    // =====================================================================
-    // REAL flatness test (Simonsohn, Nelson & Simmons 2014 JEP:Gen; 2015
-    // "Better p-curves"). For each significant study we compute its pp-value
-    // UNDER A 33%-POWER ALTERNATIVE (the noncentrality that gives the study's
-    // test 1/3 power at α=.05, two-sided), then combine the pp's with
-    // Stouffer's method (Z = Σ Φ⁻¹(pp)/√k). A curve significantly FLATTER
-    // than the 33%-power benchmark (p_flat small) lacks evidential value.
-    //
-    //   pp33 = P(stat ≥ obs | stat ≥ crit, ncp33)   (uniform under 33% power;
-    //          small when p is small, →1 as p→cutoff)
-    //   Z    = Σ Φ⁻¹(pp33) / √k          p_flat = 1 − Φ(Z)   (small ⇒ flat)
-    //
-    // Full curve conditions on the α=.05 cutoff; half curve uses only p<.025
-    // studies and conditions on the .025 cutoff — but the 33%-power ncp is
-    // ALWAYS defined at α=.05 (Simonsohn's benchmark is 33% power at .05).
-    //
-    // Supported input families (both faithfully computed & scipy-verified):
-    //   z  — two-sided normal (ncp33 μ ≈ 1.529; verified vs scipy.stats.norm)
-    //   t  — non-central t at the common df (ncp33 δ depends on df; the
-    //        non-central t CDF _pnct matches scipy.stats.nct to 1e-6).
-    // No other family is included in the statistic (honesty: the app only
-    // accepts z and t inputs, so the flatness test covers every input row).
-
-    // Non-central t CDF via v=u² substitution over the χ²(ν) density, Simpson
-    // rule. F(t;ν,δ)=∫₀^∞ Φ(t·√(v/ν)−δ)·f_{χ²}(v;ν)dv. Matches scipy.stats.nct
-    // to ~1e-6 across ν∈[1,100], δ∈[0,2.5] (verified in node vs scipy 1.17).
-    function _pnct(t, nu, d) {
-      const N = 2000;
-      const Umax = Math.sqrt(nu + 12 * Math.sqrt(2 * nu)) + 6;
-      const logc = Math.log(2) - (nu / 2) * Math.log(2) - _lngamma(nu / 2);
-      const h = Umax / N, snu = Math.sqrt(nu);
-      let tot = 0;
-      for (let i = 0; i <= N; i++) {
-        const u = i * h;
-        let f;
-        if (u === 0) { f = (nu === 1) ? Math.exp(logc) * pnorm(-d) : 0; }
-        else { const lw = logc + (nu - 1) * Math.log(u) - u * u / 2; f = Math.exp(lw) * pnorm(t * u / snu - d); }
-        const w = (i === 0 || i === N) ? 1 : (i % 2 === 1 ? 4 : 2);
-        tot += w * f;
-      }
-      return tot * h / 3;
-    }
-    function _ptc(x, nu) { return _pnct(x, nu, 0); }           // central t CDF
-    function _qtc(p, nu) {                                      // central t quantile (bisection)
-      let lo = -200, hi = 200;
-      for (let i = 0; i < 70; i++) { const m = (lo + hi) / 2; if (_ptc(m, nu) < p) lo = m; else hi = m; }
-      return (lo + hi) / 2;
-    }
-    // ncp giving 33% power: monotone in ncp, root on [0,8] by bisection.
-    function _solveNcp33(powFn) {
-      let lo = 0, hi = 8;
-      for (let i = 0; i < 70; i++) { const m = (lo + hi) / 2; if (powFn(m) < 1 / 3) lo = m; else hi = m; }
-      return (lo + hi) / 2;
-    }
-    // Two-sided rejection probability (power) at |stat|>crit under the alt.
-    function _zTailPow(crit, mu) { return (1 - pnorm(crit - mu)) + pnorm(-crit - mu); }
-    function _tTailPow(crit, df, d) { return (1 - _pnct(crit, df, d)) + _pnct(-crit, df, d); }
-
-    // Flatness for a z (two-sided normal) family.
-    function flatnessZ(ps, half) {
-      const crit05 = qnorm(0.975);
-      const ncp33 = _solveNcp33(mu => _zTailPow(crit05, mu));
-      const thr = half ? 0.025 : 0.05;
-      const critCond = qnorm(1 - thr / 2);
-      const use = ps.filter(p => p > 0 && p < thr);
-      if (!use.length) return null;
-      const den = _zTailPow(critCond, ncp33);
-      const pp = use.map(p => {
-        const zo = qnorm(1 - p / 2);
-        return Math.min(1 - 1e-12, Math.max(1e-12, _zTailPow(zo, ncp33) / den));
       });
-      const Z = pp.reduce((s, v) => s + qnorm(v), 0) / Math.sqrt(pp.length);
-      return { ncp: ncp33, k: use.length, pp, Z, pflat: 1 - pnorm(Z) };
-    }
-    // Flatness for a t (non-central t) family at common df.
-    function flatnessT(ps, df, half) {
-      const crit05 = _qtc(0.975, df);
-      const ncp33 = _solveNcp33(d => _tTailPow(crit05, df, d));
-      const thr = half ? 0.025 : 0.05;
-      const critCond = _qtc(1 - thr / 2, df);
-      const use = ps.filter(p => p > 0 && p < thr);
-      if (!use.length) return null;
-      const den = _tTailPow(critCond, df, ncp33);
-      const pp = use.map(p => {
-        const to = _qtc(1 - p / 2, df);
-        return Math.min(1 - 1e-12, Math.max(1e-12, _tTailPow(to, df, ncp33) / den));
-      });
-      const Z = pp.reduce((s, v) => s + qnorm(v), 0) / Math.sqrt(pp.length);
-      return { ncp: ncp33, k: use.length, pp, Z, pflat: 1 - pnorm(Z) };
+
+      const chip = (ok, txt) => `<span class="chip ${ok ? "ok" : "bad"}">${txt}</span>`;
+      const cell = (q, txt) => `<td data-q="${q}">${txt}</td>`;
+      const rows = [];
+      rows.push(`<tr><td><code>Right-skew (full, Fisher 2014)</code></td>${cell("fisher_chisq", "&#x3c7;&sup2; = " + fmt(A.fisher_chisq, 2))}${cell("fisher_p", fmt(A.fisher_p, 3))}<td>${chip(A.fisher_p < 0.05, A.fisher_p < 0.05 ? "evidential value" : "no evidential value")}</td></tr>`);
+      const skewRow = (label, z, p, qz, qp) => Number.isFinite(z)
+        ? `<tr><td><code>${label}</code></td>${cell(qz, "Z = " + fmt(z, 2))}${cell(qp, fmt(p, 3))}<td>${chip(p < 0.05, p < 0.05 ? "right-skewed" : "not right-skewed")}</td></tr>`
+        : `<tr><td><code>${label}</code></td><td>&mdash;</td><td>&mdash;</td><td><span class="chip bad">no p &lt; .025</span></td></tr>`;
+      rows.push(skewRow("Right-skew (full, Stouffer)", A.skew_full_z, A.skew_full_p, "skew_full_z", "skew_full_p"));
+      rows.push(skewRow("Right-skew (half, p&lt;.025, Stouffer)", A.skew_half_z, A.skew_half_p, "skew_half_z", "skew_half_p"));
+      const flatRow = (label, k, z, p, qz, qp) => {
+        if (!Number.isFinite(z)) return `<tr><td><code>${label}</code></td><td>&mdash;</td><td>&mdash;</td><td><span class="chip bad">no p in range</span></td></tr>`;
+        const txt = p < 0.05 ? "flatter than 33% power (inadequate)" : "not flatter than 33% power";
+        return `<tr><td><code>${label}</code> <span class="hint" style="display:inline;color:var(--muted);font-size:0.72rem">k=${k}, ${A.flat_family}, ncp&#8407;=${fmt(A.ncp33, 2)}</span></td>${cell(qz, "Z = " + fmt(z, 2))}${cell(qp, fmt(p, 3))}<td>${chip(!(p < 0.05), txt)}</td></tr>`;
+      };
+      rows.push(flatRow("Flatness (full, vs 33% power)", A.k, A.flat_full_z, A.flat_full_p, "flat_full_z", "flat_full_p"));
+      rows.push(flatRow("Flatness (half, p&lt;.025, vs 33% power)", A.k_half, A.flat_half_z, A.flat_half_p, "flat_half_z", "flat_half_p"));
+      document.getElementById("tests-body").innerHTML = rows.join("");
+
+      document.getElementById("pu-body").innerHTML = `
+        <tr><td>Significant p-values used</td>${cell("k", String(A.k))}</tr>
+        <tr><td>p-uniform effect estimate (&#948;, z-units)</td>${cell("pu_est", fmt(A.pu_est))}</tr>
+        <tr><td>95% CI lower bound</td>${cell("pu_ci_lb", fmt(A.pu_ci_lb))}</tr>
+        <tr><td>95% CI upper bound</td>${cell("pu_ci_ub", fmt(A.pu_ci_ub))}</tr>
+        <tr><td>Test of no effect (L.0, z)</td>${cell("pu_L0", fmt(A.pu_L0))}</tr>
+        <tr><td>Test of no effect (one-tailed p)</td>${cell("pu_pval0", fmt(A.pu_pval0))}</tr>
+        <tr><td colspan="2" class="hint">&#948; is in z-units (not Cohen's d); a dash means puniform finds no root in its search interval.</td></tr>`;
+
+      drawCurve(A);
     }
 
-    function drawCurve(pvals) {
+    function drawCurve(A) {
       const svg = document.getElementById("plot");
       const W = 600, H = 240, padL = 50, padR = 20, padT = 20, padB = 40;
       const plotW = W - padL - padR, plotH = H - padT - padB;
-      const __svgParts = [""];
-      // Bins: 0-.01, .01-.02, .02-.03, .03-.04, .04-.05
+      const parts = [""];
+      // Bins as in the p-curve app 4.x: (0,.01], (.01,.02], …, (.04,.05)
       const bins = [0, 0.01, 0.02, 0.03, 0.04, 0.05];
-      const counts = Array(bins.length - 1).fill(0);
-      for (const p of pvals) {
-        for (let i = 0; i < bins.length - 1; i++) {
-          if (p >= bins[i] && p < bins[i + 1]) { counts[i]++; break; }
-        }
-      }
-      const n = pvals.length;
-      const obs = counts.map(c => 100 * c / n);
-      const expectedNull = 20;  // 20% per bin under uniform
-      // Expected right-skew (33% power) — approximate
-      // Under 33% power H1, p-curve is steeper: approx [57, 22, 10, 7, 4] via Simonsohn tables
-      const expected33 = [57, 22, 10, 7, 4];
-      const maxY = Math.max(60, ...obs);
-      const X = i => padL + i * plotW / counts.length + plotW / (2 * counts.length);
+      const obs = A.plot_observed, e33 = A.plot_expected33;
+      const nb = obs.length;
+      const maxY = Math.max(60, ...obs, ...e33);
+      const X = i => padL + i * plotW / nb + plotW / (2 * nb);
       const Y = v => padT + (1 - v / maxY) * plotH;
-
-      // Null line (flat at 20)
-      __svgParts.push(`<line x1="${padL}" y1="${Y(20)}" x2="${padL + plotW}" y2="${Y(20)}" stroke="var(--muted)" stroke-dasharray="4 3" opacity="0.6"/>`);
-      __svgParts.push(`<text x="${padL + plotW - 8}" y="${Y(20) - 5}" text-anchor="end" font-size="10" fill="var(--muted)">null (uniform)</text>`);
-
-      // Expected 33% line
-      const e33path = expected33.map((v, i) => (i === 0 ? "M" : "L") + X(i) + "," + Y(v)).join(" ");
-      __svgParts.push(`<path d="${e33path}" fill="none" stroke="var(--warn)" stroke-dasharray="3 3" opacity="0.7"/>`);
-      __svgParts.push(`<text x="${X(0) + 14}" y="${Y(expected33[0]) - 4}" font-size="10" fill="var(--warn)">33% power</text>`);
-
-      // Observed bars
-      for (let i = 0; i < counts.length; i++) {
-        const bw = plotW / counts.length;
+      parts.push(`<line x1="${padL}" y1="${Y(20)}" x2="${padL + plotW}" y2="${Y(20)}" stroke="var(--muted)" stroke-dasharray="4 3" opacity="0.6"/>`);
+      parts.push(`<text x="${padL + plotW - 8}" y="${Y(20) - 5}" text-anchor="end" font-size="10" fill="var(--muted)">null (uniform)</text>`);
+      const e33path = e33.map((v, i) => (i === 0 ? "M" : "L") + X(i) + "," + Y(v)).join(" ");
+      parts.push(`<path d="${e33path}" fill="none" stroke="var(--warn)" stroke-dasharray="3 3" opacity="0.8"/>`);
+      parts.push(`<text x="${X(0) + 14}" y="${Y(e33[0]) - 4}" font-size="10" fill="var(--warn)">33% power</text>`);
+      for (let i = 0; i < nb; i++) {
+        const bw = plotW / nb;
         const x = padL + i * bw;
         const h = (obs[i] / maxY) * plotH;
-        __svgParts.push(`<rect x="${x + 4}" y="${padT + plotH - h}" width="${bw - 8}" height="${h}" fill="var(--accent)" opacity="0.85"/>`);
-        __svgParts.push(`<text x="${X(i)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor">${(bins[i] * 100).toFixed(0)}–${(bins[i + 1] * 100).toFixed(0)}</text>`);
-        if (obs[i] > 0) __svgParts.push(`<text x="${X(i)}" y="${padT + plotH - h - 5}" text-anchor="middle" font-size="10" fill="currentColor">${obs[i].toFixed(0)}%</text>`);
+        parts.push(`<rect x="${x + 4}" y="${padT + plotH - h}" width="${bw - 8}" height="${h}" fill="var(--accent)" opacity="0.85"/>`);
+        parts.push(`<text x="${X(i)}" y="${padT + plotH + 16}" text-anchor="middle" font-size="11" fill="currentColor">${(bins[i] * 100).toFixed(0)}–${(bins[i + 1] * 100).toFixed(0)}</text>`);
+        if (obs[i] > 0) parts.push(`<text x="${X(i)}" y="${padT + plotH - h - 5}" text-anchor="middle" font-size="10" fill="currentColor">${obs[i].toFixed(0)}%</text>`);
       }
-      __svgParts.push(`<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">p-value bin (%)</text>`);
-      __svgParts.push(`<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">% of studies</text>`);
-      svg.innerHTML = __svgParts.join("");
-
+      parts.push(`<text x="${padL + plotW / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">p-value bin (%)</text>`);
+      parts.push(`<text x="18" y="${padT + plotH / 2}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7" transform="rotate(-90 18 ${padT + plotH / 2})">% of studies</text>`);
+      svg.innerHTML = parts.join("");
     }
 
     // ---- State helpers for reset-undo / url-state --
@@ -464,6 +735,9 @@
       if (ta) ta.value = isEmpty ? '' : (snap.data != null ? snap.data : '');
       run();
     };
+
+    // Engine handle for tests and scripted use (no DOM).
+    window.PCurveEngine = { readInput, analyze, puniformP, pnormR, qnormR, ptR, qtUpper, pntR, pchiUpper };
 
     document.getElementById("btn-run").addEventListener("click", run);
     run();
