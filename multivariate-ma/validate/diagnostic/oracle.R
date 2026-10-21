@@ -26,6 +26,76 @@ capture <- function(fun) {
 }
 metadata <- list(R=R.version.string, mvmeta=as.character(packageVersion("mvmeta")),metafor=as.character(packageVersion("metafor")),
                  libPaths=as.list(.libPaths()), defaults="No optimizer control or starting covariance supplied.")
+# 2026-10-21 addendum: exact R verdict per fit (Rscript --vanilla oracle.R verdicts [mutation-controls]).
+# Runs only this stage, then stops; the historical stages below are not re-run.
+# "verdicts": 69 hard fits + 30 controls at x1, x10, x0.1 -> oracle-verdicts.json (297 fits).
+# "verdicts mutation-controls": the added mutation controls at x1 -> oracle-mutation-controls.json.
+# Uses R's own multistart fits, never the JavaScript verdict or candidates.
+if (identical(commandArgs(trailingOnly=TRUE)[1], "verdicts")) {
+  sdTol <- 1e-4; rhoTol <- 1e-4; llTol <- 1e-8; rhoBoundary <- 1e-6
+  distinct <- function(a, b) {
+    sa <- sqrt(pmax(0, diag(a))); sb <- sqrt(pmax(0, diag(b)))
+    if (any(abs(sa - sb) > sdTol * pmax(sa, sb))) return(TRUE)
+    if (all(c(sa, sb) > 0) && abs(a[1,2]/prod(sa) - b[1,2]/prod(sb)) > rhoTol) return(TRUE)
+    FALSE
+  }
+  mutationStage <- identical(commandArgs(trailingOnly=TRUE)[2], "mutation-controls")
+  population <- if (mutationStage) lapply(read("mutation-controls.json"), function(f) list(id=f$id, set="mutation-control", studies=f$studies)) else
+                c(lapply(read("hard.json"), function(f) list(id=f$id, set="hard", studies=f$studies)),
+                  lapply(read("controls.json")$selected, function(f) list(id=f$id, set="control", studies=f$studies)))
+  scales <- if (mutationStage) 1 else c(1, 10, 0.1)
+  outFile <- if (mutationStage) "oracle-mutation-controls.json" else "oracle-verdicts.json"
+  stopifnot(length(population) == if (mutationStage) 4 else 99)
+  mvctl <- MV_CONTROL
+  mfctl <- list(NULL,
+    list(rel.tol=1e-12,x.tol=1e-12,iter.max=10000,eval.max=20000),
+    list(optimizer="optim",optmethod="BFGS",reltol=1e-12,maxit=10000),
+    list(rel.tol=1e-10,x.tol=1e-10,iter.max=10000,eval.max=20000))
+  out <- list(); t0 <- Sys.time()
+  for (c in scales) for (f in population) {
+    studies <- lapply(f$studies, function(s) list(y=lapply(s$y, function(v) v*c), S=lapply(s$S, function(r) lapply(r, function(v) v*c*c))))
+    setup(studies)
+    ref <- fit_mv(Y, S)
+    cand <- list(list(source="fit_mv refined", G=mat(ref$G), logLik=ref$logLik))
+    start <- diag(pmax(apply(Y, 2, var) - colMeans(t(vapply(S, diag, numeric(2)))), 1e-4))
+    corr <- function(r) { x <- start; x[1,2] <- x[2,1] <- r*sqrt(start[1,1]*start[2,2]); x }
+    starts <- list(NULL, start, start*.1, start*10, corr(0.9), corr(-0.9))
+    names(starts) <- c("mvmeta default", "mvmeta moment", "mvmeta moment x0.1", "mvmeta moment x10", "mvmeta rho 0.9", "mvmeta rho -0.9")
+    for (nm in names(starts)) {
+      ctl <- mvctl; ctl$initPsi <- starts[[nm]]
+      z <- tryCatch(suppressWarnings(mvmeta(Y~1, S=S, method="reml", bscov="unstr", control=ctl)), error=function(e) NULL)
+      if (!is.null(z) && isTRUE(z$converged)) cand[[length(cand)+1]] <- list(source=nm, G=unname(z$Psi), logLik=as.numeric(logLik(z))+log(k))
+    }
+    for (i in seq_along(mfctl)) {
+      z <- tryCatch(suppressWarnings(if (is.null(mfctl[[i]])) rma.mv(yi,V=bldiag(S),mods=~outcome-1,random=~outcome|study,struct="UN",method="REML",data=dat)
+             else rma.mv(yi,V=bldiag(S),mods=~outcome-1,random=~outcome|study,struct="UN",method="REML",data=dat,control=mfctl[[i]])), error=function(e) NULL)
+      if (!is.null(z)) cand[[length(cand)+1]] <- list(source=paste("metafor control", i), G=unname(z$G), logLik=as.numeric(logLik(z)))
+    }
+    G <- mat(ref$G); best <- max(vapply(cand, function(x) x$logLik, 0))
+    threshold <- 1e-10*pmax(1, Reduce("+", lapply(S, diag))/k)
+    zero <- which(diag(G) <= threshold) - 1
+    rho <- if (all(diag(G) > 0)) max(-1, min(1, G[1,2]/sqrt(G[1,1]*G[2,2]))) else NULL
+    boundary <- length(zero) > 0 || (!is.null(rho) && abs(rho) >= 1 - rhoBoundary)
+    near <- Filter(function(x) is.finite(x$logLik) && abs(x$logLik - best) <= llTol, cand)
+    clusters <- list()
+    for (x in near) if (!any(vapply(clusters, function(d) !distinct(x$G, d$G), TRUE))) clusters[[length(clusters)+1]] <- x
+    verdict <- if (boundary) "boundary maximum" else if (length(clusters) > 1) "multiple near-equal optima" else "interior maximum"
+    id <- if (mutationStage) f$id else paste0(f$id, "@x", c)
+    out[[length(out)+1]] <- list(id=id, base=f$id, set=f$set, scale=c, verdict=verdict, boundary=boundary,
+      zeroVariances=as.list(zero), rho=rho, bestLogLik=best, nearBest=length(near), distinctOptima=length(clusters),
+      candidates=lapply(cand, function(x) list(source=x$source, logLik=x$logLik, G=rows_of(x$G), nearBest=abs(x$logLik-best)<=llTol)))
+    cat("VERDICT", length(out), id, verdict, "near", length(near), "clusters", length(clusters), "\n"); flush.console()
+  }
+  n <- length(population) * length(scales)
+  stopifnot(length(out) == n, length(unique(vapply(out, function(x) x$id, ""))) == n)
+  write(list(metadata=c(metadata, list(stage="verdicts", seconds=as.numeric(difftime(Sys.time(), t0, units="secs")),
+    tolerances=list(logLik=llTol, distinctSDRelative=sdTol, distinctCorrelation=rhoTol, correlationBoundary=rhoBoundary, zeroVariance="1e-10*max(1, mean S_ii)"))),
+    fits=out), outFile)
+  tab <- table(vapply(out, function(x) paste(x$set, x$verdict), ""))
+  for (n in names(tab)) cat("R VERDICTS", n, tab[[n]], "\n")
+  cat("R ORACLE", length(out), "fits\n")
+  quit(save="no", status=0)
+}
 hard <- read("hard.json"); defaults <- list(); done <- integer()
 if(file.exists("default-warnings.json")) {
   cached <- read("default-warnings.json")

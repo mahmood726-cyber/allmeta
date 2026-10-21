@@ -1,0 +1,26 @@
+295/297 exact verdict agreement with R; 297/297 existing fit objects exactly unchanged
+a x1 n=3 JS {"boundary maximum":3} R {"boundary maximum":3}
+a x10 n=3 JS {"boundary maximum":3} R {"boundary maximum":3}
+a x0.1 n=3 JS {"boundary maximum":3} R {"boundary maximum":3}
+b x1 n=66 JS {"boundary maximum":46,"interior maximum":20} R {"boundary maximum":45,"interior maximum":20,"multiple near-equal optima":1}
+b x10 n=66 JS {"boundary maximum":46,"interior maximum":20} R {"boundary maximum":46,"interior maximum":20}
+b x0.1 n=66 JS {"boundary maximum":46,"interior maximum":20} R {"boundary maximum":45,"interior maximum":21}
+control x1 n=30 JS {"interior maximum":30} R {"interior maximum":30}
+control x10 n=30 JS {"interior maximum":30} R {"interior maximum":30}
+control x0.1 n=30 JS {"interior maximum":30} R {"interior maximum":30}
+wrong-verdict: planted; run compare.cjs on wrong-verdict.json to verify exit 1
+dropped-fit: planted; run compare.cjs on dropped-fit.json to verify exit 1
+[
+  {
+    "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x1",
+    "reason": "wrong verdict",
+    "expected": "multiple near-equal optima",
+    "actual": "boundary maximum"
+  },
+  {
+    "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x0.1",
+    "reason": "wrong verdict",
+    "expected": "interior maximum",
+    "actual": "boundary maximum"
+  }
+]

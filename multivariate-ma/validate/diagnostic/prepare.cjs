@@ -6,6 +6,8 @@ const write = (p, x) => fs.writeFileSync(path.join(__dirname, p), JSON.stringify
 const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const jobs = read(path.join(source, 'jobs.json')), pop = read(path.join(source, 'population.json')), summary = read(path.join(source, 'summary.json'));
 const provenance = ['fits.csv', 'population.json', 'jobs.json', 'summary.json', 'P18LL.md'].map(p => ({ path: path.join(source, p), sha256: hash(fs.readFileSync(path.join(source, p))) }));
+// 2026-10-21: the `expected` field below is the withdrawn 2026-10-20 mapping. It is kept in hard.json for history
+// and is no longer read; exact expected verdicts come from oracle.R verdicts (oracle-verdicts.json, PREREG addendum).
 const hard = pop.fits.map(f => {
   const s = summary.fits.find(x => x.id === f.id), job = jobs.find(j => j.job === f.job);
   assert(s && job);

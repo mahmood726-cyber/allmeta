@@ -1,33 +1,54 @@
 [
-    {
-        "output":  [
-                       "98/99 agreement; 1 failures",
-                       "[",
-                       "  {",
-                       "    \"id\": \"mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9\",",
-                       "    \"reason\": \"wrong verdict\",",
-                       "    \"expected\": [",
-                       "      \"boundary maximum\",",
-                       "      \"flat likelihood: estimates not unique\"",
-                       "    ],",
-                       "    \"actual\": \"unique interior maximum\"",
-                       "  }",
-                       "]"
-                   ],
-        "exitCode":  1,
-        "name":  "wrong-verdict"
-    },
-    {
-        "output":  [
-                       "98/99 agreement; 1 failures",
-                       "[",
-                       "  {",
-                       "    \"id\": \"mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9\",",
-                       "    \"reason\": \"missing ID\"",
-                       "  }",
-                       "]"
-                   ],
-        "exitCode":  1,
-        "name":  "dropped-fit"
-    }
+  {
+    "name": "wrong-verdict",
+    "exitCode": 1,
+    "output": [
+      "294/297 agreement; 3 failures",
+      "[",
+      "  {",
+      "    \"id\": \"mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9@x1\",",
+      "    \"reason\": \"wrong verdict\",",
+      "    \"expected\": \"boundary maximum\",",
+      "    \"actual\": \"interior maximum\"",
+      "  },",
+      "  {",
+      "    \"id\": \"metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x1\",",
+      "    \"reason\": \"wrong verdict\",",
+      "    \"expected\": \"multiple near-equal optima\",",
+      "    \"actual\": \"boundary maximum\"",
+      "  },",
+      "  {",
+      "    \"id\": \"metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x0.1\",",
+      "    \"reason\": \"wrong verdict\",",
+      "    \"expected\": \"interior maximum\",",
+      "    \"actual\": \"boundary maximum\"",
+      "  }",
+      "]"
+    ]
+  },
+  {
+    "name": "dropped-fit",
+    "exitCode": 1,
+    "output": [
+      "294/297 agreement; 3 failures",
+      "[",
+      "  {",
+      "    \"id\": \"mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9@x1\",",
+      "    \"reason\": \"missing ID\"",
+      "  },",
+      "  {",
+      "    \"id\": \"metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x1\",",
+      "    \"reason\": \"wrong verdict\",",
+      "    \"expected\": \"multiple near-equal optima\",",
+      "    \"actual\": \"boundary maximum\"",
+      "  },",
+      "  {",
+      "    \"id\": \"metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x0.1\",",
+      "    \"reason\": \"wrong verdict\",",
+      "    \"expected\": \"interior maximum\",",
+      "    \"actual\": \"boundary maximum\"",
+      "  }",
+      "]"
+    ]
+  }
 ]

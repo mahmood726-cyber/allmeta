@@ -4,9 +4,11 @@ const fs = require('node:fs'), path = require('node:path'), vm = require('node:v
 const { parseHTML } = require('linkedom');
 const engine = require('../../shared/multivariate-ma.js');
 const baseline = require('../validate/diagnostic/baseline-engine.cjs');
-const { compare } = require('../validate/diagnostic/compare.cjs');
+const { compare, N } = require('../validate/diagnostic/compare.cjs');
+const { controls: mutationControls } = require('../validate/diagnostic/mutation-controls.cjs');
 const hard = require('../validate/diagnostic/hard.json');
 const app = path.resolve(__dirname, '..');
+const MULTIPLE_NOTE = 'Different between-study covariance estimates reach the same likelihood, so these covariance estimates are not unique. The pooled estimates may still be reliable.';
 function page() {
   const { window, document } = parseHTML(fs.readFileSync(path.join(app, 'index.html'), 'utf8'));
   window.matchMedia = () => ({ matches: false });
@@ -20,6 +22,7 @@ function page() {
   }
   return { window, document };
 }
+const rows = studies => studies.map((s, i) => ['s' + i, s.y[0], s.S[0][0], s.y[1], s.S[1][1], s.S[0][1]].map(String).join(',')).join('\n');
 test('exact two-study zero: no starts, no fictitious default gap, both variances flagged', () => {
   const s = [{ y: [0, 0], S: [[1, 0], [0, 1]] }, { y: [0, 0], S: [[1, 0], [0, 1]] }];
   const { diagnostic: d, ...fit } = engine.fit(s);
@@ -27,62 +30,98 @@ test('exact two-study zero: no starts, no fictitious default gap, both variances
   assert.equal(d.startsRun, 0); assert.equal(d.bestVsDefaultStartLogLikGap, null);
   assert.equal(d.boundary.zeroVariances.length, 2); assert.deepEqual(d.boundary.correlations, []);
   assert.equal(d.verdict, 'boundary maximum');
-  assert.equal(d.profiles.length, 2);
-  assert.ok(d.profiles.every(p => p.points.length === 1 && p.points[0].variance > 0));
+  assert.equal(d.profiles, undefined); assert.equal(d.flat, undefined);
 });
-test('rank-one and interior flat hard fits are distinguished with finite profiles', () => {
+test('rank-one hard fit is a boundary; the old "distinct estimates" hard fit is an interior maximum with one cluster', () => {
   const rank = engine.fit(hard[0].studies).diagnostic;
   assert.equal(rank.startsRun, 5); assert.equal(rank.verdict, 'boundary maximum');
   assert.equal(rank.boundary.correlations.length, 1);
-  const f = engine.fit(hard.find(f => f.reason.startsWith('Distinct estimates')).studies);
-  assert.equal(f.diagnostic.verdict, 'flat likelihood: estimates not unique');
-  assert.ok(f.diagnostic.profiles.some(p => p.flat));
-  for (const p of f.diagnostic.profiles) for (const q of p.points) {
-    assert.equal(q.status, 'finite-search');
-    assert.ok(Math.abs(q.logLik - f.logLik - q.deltaLogLik) < 1e-10);
+  const f = engine.fit(hard.find(f => f.reason.startsWith('Distinct estimates')).studies).diagnostic;
+  assert.equal(f.verdict, 'interior maximum'); assert.equal(f.distinctOptimaWithinTolerance, 1);
+});
+test('weakly identified interior fit: distinct candidates at the same likelihood give "multiple near-equal optima"', () => {
+  const c = mutationControls.find(c => c.id === 'mutation-control:k6:E1e-5');
+  const { diagnostic: d, ...fit } = engine.fit(c.studies);
+  assert.deepEqual(fit, baseline.fit(c.studies));
+  assert.equal(d.verdict, 'multiple near-equal optima');
+  assert.ok(d.distinctOptimaWithinTolerance > 1); assert.ok(d.nearBestCandidates >= d.distinctOptimaWithinTolerance);
+  assert.deepEqual(d.boundary, { zeroVariances: [], correlations: [] });
+});
+test('distinctness is scale-free: SDs relative 1e-4, correlations absolute 1e-4, logLik 1e-8', () => {
+  const studies = [{ y: [0, 0], S: [[1, 0], [0, 1]] }, { y: [1, 1], S: [[1, 0], [0, 1]] }, { y: [2, 0], S: [[1, 0], [0, 1]] }];
+  const G = c => [[c * c, 0.5 * c * c * 2], [0.5 * c * c * 2, 4 * c * c]];
+  for (const c of [1e-3, 1, 1e3]) {
+    const g = G(c), sd = [c, 2 * c];
+    const cand = (s0, r) => ({ G: [[s0 * s0, r * s0 * sd[1]], [r * s0 * sd[1], sd[1] * sd[1]]], f: 1 });
+    const verdict = cs => engine._diagnostic(studies, g, 1, cs, 1, 5).verdict;
+    assert.equal(verdict([cand(sd[0] * (1 + 5e-5), 0.5)]), 'interior maximum');
+    assert.equal(verdict([cand(sd[0] * (1 + 2e-4), 0.5)]), 'multiple near-equal optima');
+    assert.equal(verdict([cand(sd[0], 0.5 + 5e-5)]), 'interior maximum');
+    assert.equal(verdict([cand(sd[0], 0.5 + 2e-4)]), 'multiple near-equal optima');
+    assert.equal(verdict([{ ...cand(sd[0] * 2, 0.5), f: 1 + 2e-8 }]), 'interior maximum');
   }
 });
-test('univariate profile matches independently evaluated likelihood and keeps old fields', () => {
-  const y = [-2, -1, 0, 1, 2], v = y.map(() => 0.2);
-  const f = engine.fitUnivariate(y, v), old = baseline.fitUnivariate(y, v);
-  const { diagnostic: d, ...rest } = f;
-  assert.deepEqual(rest, old); assert.equal(d.startsRun, 3);
-  const studies = y.map((y, i) => ({ y: [y], S: [[v[i]]] }));
-  const base = engine._objG(studies, [[f.tau2]]);
-  for (const q of d.profiles[0].points) assert.ok(Math.abs(q.deltaLogLik - (base - engine._objG(studies, [[q.variance]]))) < 1e-12);
+test('boundary takes precedence over multiple near-equal optima', () => {
+  const studies = [{ y: [0, 0], S: [[1, 0], [0, 1]] }, { y: [1, 1], S: [[1, 0], [0, 1]] }, { y: [2, 0], S: [[1, 0], [0, 1]] }];
+  const g = [[0, 0], [0, 1]], other = { G: [[0, 0], [0, 2]], f: 1 };
+  const d = engine._diagnostic(studies, g, 1, [other], 1, 5);
+  assert.equal(d.distinctOptimaWithinTolerance, 2); assert.equal(d.verdict, 'boundary maximum');
 });
-test('three-outcome engine returns a profile for each variance without changing numbers', () => {
+test('default-start gap is null when either value is the failure sentinel', () => {
+  const studies = [{ y: [0, 0], S: [[1, 0], [0, 1]] }, { y: [1, 1], S: [[1, 0], [0, 1]] }, { y: [2, 0], S: [[1, 0], [0, 1]] }];
+  const g = [[1, 0], [0, 1]];
+  assert.equal(engine._diagnostic(studies, g, 1, [], 1e12, 5).bestVsDefaultStartLogLikGap, null);
+  assert.equal(engine._diagnostic(studies, g, 1, [], 1e11, 5).bestVsDefaultStartLogLikGap, null);
+  assert.equal(engine._diagnostic(studies, g, 1e12, [], 1e12, 5).bestVsDefaultStartLogLikGap, null);
+  assert.equal(engine._diagnostic(studies, g, 1, [], 3, 5).bestVsDefaultStartLogLikGap, 2);
+});
+test('univariate fit keeps old fields and gives an interior maximum', () => {
+  const y = [-2, -1, 0, 1, 2], v = y.map(() => 0.2);
+  const { diagnostic: d, ...rest } = engine.fitUnivariate(y, v);
+  assert.deepEqual(rest, baseline.fitUnivariate(y, v)); assert.equal(d.startsRun, 3);
+  assert.equal(d.verdict, 'interior maximum');
+});
+test('three-outcome fixture gives an interior maximum without changing numbers', () => {
   const studies = [[-2, 1, 0], [2, -1, 1], [1, 3, -2], [-1, -3, 2], [0, 0, -1]].map(y => ({ y, S: [[1, 0, 0], [0, 1, 0], [0, 0, 1]] }));
   const { diagnostic, ...rest } = engine.fit(studies);
   assert.deepEqual(rest, baseline.fit(studies));
-  assert.equal(diagnostic.profiles.length, 3);
-  assert.ok(diagnostic.profiles.every(p => p.points.length > 0));
+  assert.equal(diagnostic.verdict, 'interior maximum');
 });
-test('UI note follows real results and clears on invalid input; JSON includes all fit diagnostics', () => {
+test('UI note: none for interior, boundary and multiple-optima texts, cleared on refused and empty input', () => {
   const { window: w, document: d } = page();
   const note = d.getElementById('likelihood-diagnostic');
   assert.equal(note.getAttribute('role'), 'status');
-  assert.equal(w._almLastMultivariate().diagnostic.verdict, 'unique interior maximum');
-  assert.equal(note.hidden, true);
+  assert.match(d.querySelector('style').textContent, /#likelihood-diagnostic\[hidden\]\{display:none\}/);
+  assert.equal(w._almLastMultivariate().diagnostic.verdict, 'interior maximum');
+  assert.equal(note.hidden, true); assert.equal(note.textContent, '');
   w.AlmMvPage.setMode('cov');
-  d.getElementById('f-data').value = 'a,0,1,0,1,0\nb,0,1,0,1,0';
-  w.AlmMvPage.run();
+  const set = text => { d.getElementById('f-data').value = text; w.AlmMvPage.run(); };
+  set('a,0,1,0,1,0\nb,0,1,0,1,0');
   assert.equal(note.hidden, false); assert.match(note.textContent, /covariance boundary/);
   const out = w.AlmMvPlusUI.resultsJSON();
   assert.equal(out.result.diagnostic.startsRun, 0);
   assert.ok(out.univariate.every(u => u.diagnostic));
   w.AlmMvPlusUI.runSweep();
   assert.ok(w.AlmMvPlusUI.resultsJSON().sweep.every(s => s.status !== 'ok' || s.diagnostic));
-  d.getElementById('f-data').value = ''; w.AlmMvPage.run();
+  set('a,0,1,0,1,2\nb,1,1,1,1,2\nc,2,1,0,1,2');
+  assert.match(d.getElementById('headline').textContent, /^Refused/);
+  assert.equal(note.hidden, true); assert.equal(note.textContent, '');
+  set(rows(mutationControls.find(c => c.id === 'mutation-control:k6:E1e-5').studies));
+  assert.equal(w._almLastMultivariate().diagnostic.verdict, 'multiple near-equal optima');
+  assert.equal(note.hidden, false); assert.equal(note.textContent, MULTIPLE_NOTE);
+  set('a,0,1,0,1,0\nb,0,1,0,1,0'); set('a,0,1,0,1,0\nb,0,1,0,1,0\nc,1,1,1,1,2');
+  assert.equal(note.hidden, true); assert.equal(note.textContent, '');
+  set(rows(mutationControls[0].studies)); set('');
   assert.equal(note.hidden, true); assert.equal(note.textContent, '');
   assert.equal(w.AlmMvPlusUI.resultsJSON().result, null);
 });
-test('comparison rejects dropped, duplicate, unexpected and wrong-verdict records', () => {
-  const expected = Array.from({ length: 99 }, (_, i) => ({ id: String(i), expected: ['unique interior maximum'] }));
-  const actual = expected.map(f => ({ id: f.id, diagnostic: { verdict: f.expected[0] } }));
+test('comparison rejects dropped, duplicate, unexpected and wrong-verdict records and needs one exact verdict each', () => {
+  const expected = Array.from({ length: N }, (_, i) => ({ id: String(i), verdict: 'interior maximum' }));
+  const actual = expected.map(f => ({ id: f.id, diagnostic: { verdict: f.verdict } }));
   assert.equal(compare(expected, actual).passed, true);
   assert.equal(compare(expected, actual.slice(1)).passed, false);
   assert.equal(compare(expected, actual.concat(actual[0])).passed, false);
   assert.equal(compare(expected, [{ id: 'foreign', diagnostic: actual[0].diagnostic }, ...actual.slice(1)]).passed, false);
-  assert.equal(compare(expected, [{ id: '0', diagnostic: { verdict: 'boundary maximum' } }, ...actual.slice(1)]).agreement, 98);
+  assert.equal(compare(expected, [{ id: '0', diagnostic: { verdict: 'boundary maximum' } }, ...actual.slice(1)]).agreement, N - 1);
+  assert.throws(() => compare(expected.map((f, i) => i ? f : { ...f, verdict: ['boundary maximum', 'interior maximum'] }), actual));
 });

@@ -1,7 +1,10 @@
 'use strict';
-const verdicts = new Set(['unique interior maximum', 'boundary maximum', 'flat likelihood: estimates not unique']);
+// Exact verdict comparison against the R oracle (oracle-verdicts.json): one expected verdict per fit, no alternatives.
+const verdicts = new Set(['interior maximum', 'boundary maximum', 'multiple near-equal optima']);
+const N = 297;
 function compare(expected, actual) {
-  if (expected.length !== 99 || new Set(expected.map(f => f.id)).size !== 99) throw Error('Expected population must contain exactly 99 unique IDs');
+  if (expected.length !== N || new Set(expected.map(f => f.id)).size !== N) throw Error(`Expected population must contain exactly ${N} unique IDs`);
+  if (!expected.every(f => verdicts.has(f.verdict))) throw Error('Every expected record needs exactly one known verdict');
   const counts = new Map(), byId = new Map(), failures = [];
   for (const f of actual) { counts.set(f.id, (counts.get(f.id) || 0) + 1); byId.set(f.id, f); }
   const ids = new Set(expected.map(f => f.id));
@@ -10,17 +13,17 @@ function compare(expected, actual) {
   for (const f of expected) {
     const observed = byId.get(f.id);
     if (counts.get(f.id) !== 1) failures.push({ id: f.id, reason: observed ? 'duplicate ID' : 'missing ID' });
-    else if (!observed.diagnostic || !verdicts.has(observed.diagnostic.verdict) || !f.expected.includes(observed.diagnostic.verdict))
-      failures.push({ id: f.id, reason: 'wrong verdict', expected: f.expected, actual: observed.diagnostic && observed.diagnostic.verdict });
+    else if (!observed.diagnostic || observed.diagnostic.verdict !== f.verdict)
+      failures.push({ id: f.id, reason: 'wrong verdict', expected: f.verdict, actual: observed.diagnostic && observed.diagnostic.verdict });
     else agreement++;
   }
-  return { expected: 99, actual: actual.length, agreement, passed: failures.length === 0 && actual.length === 99, failures };
+  return { expected: N, actual: actual.length, agreement, passed: failures.length === 0 && actual.length === N, failures };
 }
-module.exports = { compare };
+module.exports = { compare, N };
 if (require.main === module) {
   const fs = require('node:fs'), path = require('node:path');
   const read = p => JSON.parse(fs.readFileSync(p, 'utf8'));
-  const expected = read(path.join(__dirname, 'hard.json')).concat(read(path.join(__dirname, 'controls.json')).selected);
+  const expected = read(path.join(__dirname, 'oracle-verdicts.json')).fits;
   const actual = read(process.argv[2]).fits;
   const result = compare(expected, actual);
   console.log(`${result.agreement}/${result.expected} agreement; ${result.failures.length} failures`);

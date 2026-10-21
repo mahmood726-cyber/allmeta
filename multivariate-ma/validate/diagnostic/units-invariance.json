@@ -1,0 +1,2822 @@
+{
+  "node": "v24.13.0",
+  "factors": [
+    0.01,
+    0.1,
+    10,
+    100
+  ],
+  "fits": 117,
+  "invariant": 117,
+  "failures": [],
+  "verdicts": [
+    {
+      "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.2",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b3+b5::REML::supplied#rhoW=-0.9",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::hsls::b1+b3::REML::supplied#rhoW=-0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::hsls::b1+b3::REML::supplied#rhoW=-0.6",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::hsls::b2+b3::REML::supplied#rhoW=0.7",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.9",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.8",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.7",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.1",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::hyp::sbp+dbp::REML::supplied#rhoW=0.7",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::smoking::yB+yD::REML::supplied#main",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.9",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::fibrinogen::b2+b3::REML::supplied#rhoW=-0.2",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::fibrinogen::b3+b5::REML::supplied#rhoW=-0.9",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::hsls::b1+b3::REML::supplied#rhoW=-0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::hsls::b1+b3::REML::supplied#rhoW=-0.6",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::hsls::b2+b3::REML::supplied#rhoW=0.7",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.9",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.8",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.7",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=-0.1",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::hyp::sbp+dbp::REML::supplied#rhoW=0.7",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::smoking::yB+yD::REML::supplied#main",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.3",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.3",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.6",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.7",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0#rhoW=0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0#rhoW=0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0#rhoW=0.9",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#main",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#rhoW=-0.3",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#rhoW=-0.1",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0#rhoW=0",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.3",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.3",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.6",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.7",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month3+eff_long::REML::documented-AR1-0.97#rhoW=0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0.97#main",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0.97#rhoW=0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month6+eff_long::REML::documented-AR1-0.97#rhoW=0.9",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0.97#rhoW=-0.3",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0.97#rhoW=-0.1",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::dbs::eff_month12+eff_long::REML::documented-AR1-0.97#rhoW=0",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.3",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.3",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.6",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.7",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y1i+y4i::REML::documented-AR1-0.97#rhoW=0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y2i+y4i::REML::documented-AR1-0.97#main",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y2i+y4i::REML::documented-AR1-0.97#rhoW=0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y2i+y4i::REML::documented-AR1-0.97#rhoW=0.9",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y3i+y4i::REML::documented-AR1-0.97#rhoW=-0.3",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y3i+y4i::REML::documented-AR1-0.97#rhoW=-0.1",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.ishak2007::y3i+y4i::REML::documented-AR1-0.97#rhoW=0",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::gliomas::month6+month12::REML::documented-AR1-0#rhoW=0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mixmeta::gliomas::month6+month12::REML::documented-AR1-0.61#rhoW=0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.fine1993::month6+month12::REML::documented-covariance-raw#rhoW=0.8",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "example::hyp::per-study-r#rhoW=-0.9",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "example::hyp::per-study-r#rhoW=-0.8",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "example::hyp::per-study-r#rhoW=-0.7",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "example::hyp::per-study-r#rhoW=-0.1",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "example::hyp::per-study-r#rhoW=0.7",
+      "set": "hard",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3",
+      "set": "hard",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#main",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.4",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.3",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.2",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=-0.1",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.1",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.2",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.3",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.4",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.5",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.6",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.7",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.8",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::berkey98::PD+AL::REML::supplied#rhoW=0.9",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.7",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b3::REML::supplied#rhoW=0.8",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b4::REML::supplied#main",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.7",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b5::REML::supplied#main",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.6",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.7",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b2+b5::REML::supplied#rhoW=0.8",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b3+b5::REML::supplied#rhoW=0.8",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b3+b5::REML::supplied#rhoW=0.9",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "mvmeta::fibrinogen::b4+b5::REML::supplied#main",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.berkey1998r::AL+PD::REML::supplied#main",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.berkey1998r::AL+PD::REML::supplied#rhoW=-0.4",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "metadat::dat.berkey1998r::AL+PD::REML::supplied#rhoW=-0.3",
+      "set": "control",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "fixture:m1",
+      "set": "fixture",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "fixture:m3",
+      "set": "fixture",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:uni:k10:v0.05",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:uni:k10:v0.2",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:uni:k30:v0.5",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k40:S0.1:rho-0.71",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k10:S0.01:1",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k10:S0.01:2",
+      "set": "probe",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k10:S0.01:3",
+      "set": "probe",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k40:S0.01:1",
+      "set": "probe",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k40:S0.01:2",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k40:S0.01:3",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k10:S0.5:1",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k10:S0.5:2",
+      "set": "probe",
+      "verdict": "boundary maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "boundary maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "boundary maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k10:S0.5:3",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k40:S0.5:1",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k40:S0.5:2",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    },
+    {
+      "id": "probe:bi:k40:S0.5:3",
+      "set": "probe",
+      "verdict": "interior maximum",
+      "scaled": [
+        {
+          "c": 0.01,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 0.1,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 10,
+          "verdict": "interior maximum"
+        },
+        {
+          "c": 100,
+          "verdict": "interior maximum"
+        }
+      ],
+      "invariant": true
+    }
+  ]
+}

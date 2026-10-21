@@ -25,7 +25,7 @@
     .stat{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;min-width:9rem}
     .stat .k{display:block;font-size:.72rem;color:var(--muted)}.stat .v{font-weight:700}
     table{width:100%;border-collapse:collapse;font-size:.84rem;margin-top:.5rem}th,td{text-align:left;padding:.3rem .5rem;border-bottom:1px solid var(--border)}
-    .note{color:var(--muted);font-size:.82rem}code{font-size:.85em}a{color:var(--accent)}
+    .note{color:var(--muted);font-size:.82rem}#likelihood-diagnostic[hidden]{display:none}code{font-size:.85em}a{color:var(--accent)}
     svg{width:100%;height:auto;background:var(--panel);border-radius:6px;margin-top:.5rem}
     .toolbar{display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0}
     button,.filebtn{font:inherit;font-size:.85rem;padding:.35rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--ink);cursor:pointer}
@@ -236,10 +236,11 @@
       if (res) f = res.fit; else { try { f = window.AlmMultivariate.fit(parsed.rows.map(function (r) { return { y: r.y, S: [[r.v[0], r.cov], [r.cov, r.v[1]]] }; })); } catch (error) { head.textContent = error.message; return; } }
       _fit = f;
       var diagnosticNote = el("likelihood-diagnostic"), verdict = f.diagnostic.verdict;
-      diagnosticNote.hidden = verdict === "unique interior maximum";
-      diagnosticNote.textContent = diagnosticNote.hidden ? "" : verdict === "boundary maximum" ?
+      diagnosticNote.textContent = verdict === "boundary maximum" ?
         "The fit is at a covariance boundary: a between-study variance is near zero or a correlation is near ±1. Treat these covariance estimates with care." :
-        "Different covariance estimates give almost the same likelihood at the checked tolerance. These estimates are not numerically unique.";
+        verdict === "multiple near-equal optima" ?
+        "Different between-study covariance estimates reach the same likelihood, so these covariance estimates are not unique. The pooled estimates may still be reliable." : "";
+      diagnosticNote.hidden = diagnosticNote.textContent === "";
       head.innerHTML = "k = " + f.k + " studies · 2 outcomes · unstructured between-study covariance (REML) · logLik = " + fmt(f.logLik, 3);
       function card(k, v) { return "<div class='stat'><span class='k'>" + esc(k) + "</span><span class='v'>" + v + "</span></div>"; }
       stats.innerHTML =

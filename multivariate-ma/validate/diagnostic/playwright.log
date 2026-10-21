@@ -1,0 +1,32 @@
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:23] "GET /multivariate-ma/index.html HTTP/1.1" 200 -
+
+Running 2 tests using 1 worker
+
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /multivariate-ma/index.html HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /shared/forced-colors.css HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /shared/multivariate-ma.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /multivariate-ma/plus.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /shared/build-info.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /multivariate-ma/plus-ui.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /shared/alm-validate.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /multivariate-ma/validate/plus-pins.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /multivariate-ma/validate/plus-contract.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /multivariate-ma/validate/plus-adapter.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /hub/shared/a11y-landmarks.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:24] "GET /favicon.ico HTTP/1.1" 200 -
+  ok 1 [msedge] › allmeta\hub\shared\tests\multivariate-ma-diagnostic.spec.mjs:9:1 › likelihood note and diagnostic exports follow current data (2.6s)
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /multivariate-ma/index.html HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /shared/forced-colors.css HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /shared/multivariate-ma.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /multivariate-ma/plus.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /shared/build-info.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /multivariate-ma/plus-ui.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /shared/alm-validate.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /multivariate-ma/validate/plus-pins.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /multivariate-ma/validate/plus-contract.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /multivariate-ma/validate/plus-adapter.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /hub/shared/a11y-landmarks.js HTTP/1.1" 200 -
+[2m[WebServer] [22m127.0.0.1 - - [21/Oct/2026 07:56:27] "GET /favicon.ico HTTP/1.1" 200 -
+  ok 2 [msedge] › allmeta\hub\shared\tests\multivariate-ma-sanity.spec.mjs:7:1 › multivariate-ma default example matches mvmeta (pinned reference) and renders cleanly (385ms)
+
+  2 passed (5.2s)

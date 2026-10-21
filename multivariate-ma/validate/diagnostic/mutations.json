@@ -1,0 +1,191 @@
+{
+  "node": "v24.13.0",
+  "rule": "killed on a population = disagrees with R on >=1 fit where the unmutated engine agrees with R",
+  "unmutated": {
+    "agreement297": 295,
+    "expected297": 297,
+    "failures297": [
+      {
+        "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x1",
+        "reason": "wrong verdict",
+        "expected": "multiple near-equal optima",
+        "actual": "boundary maximum"
+      },
+      {
+        "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x0.1",
+        "reason": "wrong verdict",
+        "expected": "interior maximum",
+        "actual": "boundary maximum"
+      }
+    ],
+    "controls": [
+      {
+        "id": "mutation-control:k6:E1e-5",
+        "expected": "multiple near-equal optima",
+        "actual": "multiple near-equal optima"
+      },
+      {
+        "id": "mutation-control:imprecise-study",
+        "expected": "interior maximum",
+        "actual": "interior maximum"
+      },
+      {
+        "id": "mutation-control:mirrored-zero",
+        "expected": "boundary maximum",
+        "actual": "boundary maximum"
+      },
+      {
+        "id": "mutation-control:mvmeta::berkey98::PD+AL::REML::supplied#main@x100000",
+        "expected": "interior maximum",
+        "actual": "interior maximum"
+      }
+    ]
+  },
+  "mutations": [
+    {
+      "name": "boundary variance threshold x1e4",
+      "from": "var threshold = 1e-10 * Math.max(1,",
+      "to": "var threshold = 1e-6 * Math.max(1,",
+      "killed297": false,
+      "agreement297": 295,
+      "caughtBy297": [],
+      "killedByControls": true,
+      "controlAgreement": 3,
+      "caughtByControls": [
+        {
+          "id": "mutation-control:imprecise-study",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        }
+      ],
+      "killed": true
+    },
+    {
+      "name": "correlation boundary 1e-6 -> 1e-2",
+      "from": "if (Math.abs(r) >= 1 - 1e-6) correlations.push",
+      "to": "if (Math.abs(r) >= 1 - 1e-2) correlations.push",
+      "killed297": true,
+      "agreement297": 283,
+      "caughtBy297": [
+        {
+          "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4@x1",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4@x1",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4@x1",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6@x1",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4@x10",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4@x10",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4@x10",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6@x10",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0#rhoW=0.4@x0.1",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "mixmeta::dbs::eff_month3+eff_month12::REML::documented-AR1-0.97#rhoW=0.4@x0.1",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "metadat::dat.ishak2007::y1i+y3i::REML::documented-AR1-0.97#rhoW=0.4@x0.1",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        },
+        {
+          "id": "mvmeta::fibrinogen::b2+b4::REML::supplied#rhoW=0.6@x0.1",
+          "expected": "interior maximum",
+          "actual": "boundary maximum"
+        }
+      ],
+      "killedByControls": false,
+      "controlAgreement": 4,
+      "caughtByControls": [],
+      "killed": true
+    },
+    {
+      "name": "skip the multiple-optima check",
+      "from": "multiple = clusters.length > 1;",
+      "to": "multiple = false;",
+      "killed297": false,
+      "agreement297": 295,
+      "caughtBy297": [],
+      "killedByControls": true,
+      "controlAgreement": 3,
+      "caughtByControls": [
+        {
+          "id": "mutation-control:k6:E1e-5",
+          "expected": "multiple near-equal optima",
+          "actual": "interior maximum"
+        }
+      ],
+      "killed": true
+    },
+    {
+      "name": "swap precedence (multiple before boundary)",
+      "from": "verdict: boundary ? 'boundary maximum' : multiple ? 'multiple near-equal optima' : 'interior maximum',",
+      "to": "verdict: multiple ? 'multiple near-equal optima' : boundary ? 'boundary maximum' : 'interior maximum',",
+      "killed297": false,
+      "agreement297": 296,
+      "caughtBy297": [],
+      "killedByControls": true,
+      "controlAgreement": 3,
+      "caughtByControls": [
+        {
+          "id": "mutation-control:mirrored-zero",
+          "expected": "boundary maximum",
+          "actual": "multiple near-equal optima"
+        }
+      ],
+      "killed": true
+    },
+    {
+      "name": "absolute (not scale-free) SD tolerance",
+      "from": "if (Math.abs(sa - sb) > sdTol * Math.max(sa, sb)) return true;",
+      "to": "if (Math.abs(sa - sb) > sdTol) return true;",
+      "killed297": false,
+      "agreement297": 295,
+      "caughtBy297": [],
+      "killedByControls": true,
+      "controlAgreement": 3,
+      "caughtByControls": [
+        {
+          "id": "mutation-control:mvmeta::berkey98::PD+AL::REML::supplied#main@x100000",
+          "expected": "interior maximum",
+          "actual": "multiple near-equal optima"
+        }
+      ],
+      "killed": true
+    }
+  ]
+}
