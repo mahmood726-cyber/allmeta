@@ -92,8 +92,20 @@
   // robumeta orders clusters by as.factor(studynum), which sorts a numeric
   // column numerically ("2" < "10", and "007" and "7" are one study). Type the
   // cluster column as read.csv would; a numeric column must be finite.
+  // type.convert() tries logical before numeric: a column of exactly T, F,
+  // TRUE or FALSE (case-sensitive, after quote removal) is logical, and
+  // as.factor(<logical>) has the levels "FALSE" < "TRUE". Those labels are
+  // what the C-locale string path sorts, so the column becomes them.
+  var R_LOGICAL = /^(?:T|F|TRUE|FALSE)$/;
   function typeClusters(rows, lineNos) {
     var labels = rows.map(function (r) { return r.cluster; });
+    if (labels.every(function (s) { return R_LOGICAL.test(s) || s === "NA"; }) && labels.some(function (s) { return s !== "NA"; })) {
+      labels.forEach(function (s, i) {
+        if (s === "NA") throw UserError("Line " + lineNos[i] + ": cluster label 'NA' is missing. Every other cluster label is T/F/TRUE/FALSE, so R's read.csv would read this column as logical. Give every row a cluster label.");
+        rows[i].cluster = s.charAt(0) === "T" ? "TRUE" : "FALSE";
+      });
+      return false;
+    }
     if (!labels.every(function (s) { return R_NUMBER.test(s) || String(s).trim() === "NA"; })) return false;
     labels.forEach(function (s, i) {
       var v = String(s).trim() === "NA" ? NaN : rNumberValue(s);

@@ -114,6 +114,23 @@ test('P0 DOM: displayed and exported cluster counts agree after quoted input', a
   const exported = JSON.parse(await h.downloads[0].text());
   assert.equal(exported.model.m_clusters, 2);
   assert.deepEqual(exported.inputs.rows.map(r => r.cluster), ['A', 'A', 'B']);
+
+  // 16-digit numeric IDs (review N1): R 4.6.0 keeps these six as six levels.
+  // The rows are rve-meta/tests/fixtures/p15/as-character.R's robumeta fit.
+  const six = require(path.join(root, 'rve-meta/tests/fixtures/p15/as-character.json')).fits[0];
+  assert.equal(six.R.m, 6);
+  h.fit(six.rows.map(r => `${r.cluster},${r.yi},${r.vi}`).join('\n'));
+  assert.match(h.el('meta-row').textContent, /m = 6 clusters/);
+  assert.equal(h.c.__almLastRVE().model.m_clusters, 6);
+  h.document.querySelector('[data-action="json"]').click();
+  const exportedSix = JSON.parse(await h.downloads[1].text());
+  assert.equal(exportedSix.model.m_clusters, 6);
+  assert.deepEqual(exportedSix.inputs.rows.map(r => r.cluster), six.rows.map(r => r.cluster));
+  // as.character(1e15 + 4) and (1e15 + 5) are both "1e+15": one level, so the
+  // refusal names the fitted m = 1, not the two distinct numbers typed.
+  h.fit('1000000000000004,0.2,0.03\n1000000000000005,0.4,0.04');
+  assert.match(h.document.querySelector('#meta-row [role="alert"]')?.textContent || '',
+    /Fit failed: 1 cluster cannot support 1 coefficient/);
 });
 
 test('P1 DOM: malformed refit clears prior sensitivity, results and all exports', async () => {
@@ -155,6 +172,24 @@ test('M2: an all-numeric cluster column is typed as R read.csv would', () => {
   for (const bad of ['Inf', 'NaN', 'NA'])
     assert.throws(() => E.parseStudies(`1,.1,.04\n${bad},.2,.05\n3,.3,.04`),
       e => e.userFacing === true && new RegExp(`Line 2: cluster label '${bad}' is not a finite number`).test(e.message), bad);
+});
+
+// read-csv-logical.R: read.csv types an all-T/F/TRUE/FALSE column as logical,
+// so "T" and "TRUE" are one study and the levels are "FALSE" < "TRUE".
+test('N2: a T/F/TRUE/FALSE cluster column is typed as R read.csv would', () => {
+  const { cases } = require(path.join(root, 'rve-meta/tests/fixtures/p15/read-csv-logical.json'));
+  assert.ok(cases.some(c => c.class === 'logical') && cases.some(c => c.class === 'character'));
+  for (const c of cases) {
+    const parsed = E.parseStudies(c.input.map((s, i) => `${s},${i / 10},0.04`).join('\n'));
+    assert.equal(parsed.clusterNumeric, false, c.input.join());
+    const lv = RVE._reductions.rFactorLevels(parsed.rows.map(r => r.cluster));
+    const levels = [...new Set(lv.map((l, i) => i).sort((a, b) =>
+      lv[a].key < lv[b].key ? -1 : lv[a].key > lv[b].key ? 1 : a - b).map(i => lv[i].group))];
+    assert.deepEqual(levels, c.levels, `levels of ${c.input.join()}`);
+    assert.deepEqual(lv.map(l => levels.indexOf(l.group) + 1), c.codes, `codes of ${c.input.join()}`);
+  }
+  assert.throws(() => E.parseStudies('T,.1,.04\nNA,.2,.05\nF,.3,.04'),
+    e => e.userFacing === true && /Line 2: cluster label 'NA' is missing/.test(e.message));
 });
 
 test('M2: the exported R script keeps a numeric cluster column numeric', () => {

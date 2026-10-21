@@ -383,8 +383,6 @@
       eig.ready.then(fn, fn);
     }
 
-    function countClusters(rows) { var s = Object.create(null), n = 0; rows.forEach(function (r) { if (!s[r.cluster]) { s[r.cluster] = 1; n++; } }); return n; }
-
     function run() {
       $("stale-note").hidden = true;
       $("names-warning").hidden = true; $("names-warning").textContent = "";
@@ -422,7 +420,7 @@
         fit = AlmRVE.fitCORR(fitRows, { rho: rho });
         summary = AlmRVE.summary(fit);
       } catch (e) {
-        showError(friendlyEngineError(e, countClusters(parsed.rows), nPred + 1));
+        showError(friendlyEngineError(e, e && e.m_clusters, nPred + 1));
         return;
       }
       var kappa = E.kappaXtWX(fitRows, fit.weights);

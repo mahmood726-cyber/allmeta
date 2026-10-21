@@ -32,6 +32,12 @@ the section is renamed to that version and dated, and a fresh
   numeric, as R's `read.csv` does: `007` and `7` are one study, and studies are
   ordered 1, 2, 10. The exported R script keeps such a column numeric. A
   numeric-looking column with an `Inf`, `NaN` or `NA` label is refused.
+  Two numeric IDs are one study exactly when R's `as.character()` prints them
+  alike, so long IDs keep R's partition: `1000000000000006` and
+  `1000000000000008` are two studies, while `1000000000000004` and
+  `1000000000000005` are one (`"1e+15"`), as in R. A column of `T`/`F`/`TRUE`/
+  `FALSE` labels is read as logical, as `read.csv` does (`T` and `TRUE` are one
+  study). The cluster count in the too-few-clusters message is the fitted one.
 - RVE (rve-meta): CR2 needs WebAssembly. The page compiles the LAPACK backend
   asynchronously at load and waits for it; if WebAssembly is unavailable or
   blocked, CR2 fits fail with "RVE: CR2 requires WebAssembly (blocked or

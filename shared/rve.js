@@ -264,9 +264,85 @@
       return '<U+' + hex.padStart(hex.length > 4 ? 8 : 4, '0') + '>';
     });
   }
+  // R 4.6.0 as.character(<double>) for finite x (Windows x64): StringFromReal
+  // = formatReal() with 15 digits and scipen = 0, then EncodeRealDrop0
+  // (src/main/format.c, printutils.c). Values are exact rationals num/den.
+  //  - scientific(): kp = floor(log10 r) - 14; r_prec = r scaled by 10^-kp in
+  //    64-bit long double (table power when |kp| <= 27, else powl), times
+  //    10 again if below 1e14; alpha = nearbyintl(r_prec) (half-to-even).
+  //    nsig drops alpha's trailing zeros.
+  //  - fixed when its width is <= the E width; it then prints the value's own
+  //    digits to rgt decimals, so 1e15 + 6 is "1000000000000006" while
+  //    1e15 + 4 is "1e+15".
+  //  - snprintf ties, measured on R 4.6.0: "%.0f" rounds half away from zero
+  //    (1e15 + 6.5 -> "...007"); "%.Nf" (N >= 1) and "%e" round half-to-even.
+  //  Assumed, and checked against R from 1e-300 to 1e300: powl(10, kp) is
+  //  correctly rounded and Math.log10 floors as C's log10 does.
+  function pow10(k) { return 10n ** BigInt(k); }
+  function bitLength(n) { return n.toString(2).length; }
+  function ldOf(num, den) { // num/den > 0 rounded to a 64-bit significand
+    var shift = 64 - bitLength(num) + bitLength(den);
+    var N = shift > 0 ? num << BigInt(shift) : num, D = shift < 0 ? den << BigInt(-shift) : den;
+    if (N / D >= (1n << 64n)) { if (shift > 0) N >>= 1n; else D <<= 1n; shift--; }
+    return { n: roundQuotient(N, D), e: -shift };
+  }
+  function fracOf(a) { // { num, den } of a positive n * 2^e
+    return { num: a.n << BigInt(Math.max(a.e, 0)), den: 1n << BigInt(Math.max(-a.e, 0)) };
+  }
+  function roundHalfAway(n, d) { var q = n / d; return 2n * (n % d) >= d ? q + 1n : q; }
+  function rAsCharacterDouble(x) {
+    if (x === 0) return "0";
+    var neg = x < 0 ? 1 : 0, r = fracOf(ldFromDouble(Math.abs(x)));
+    var kp = Math.floor(Math.log10(Math.abs(x))) - 14, rp;
+    if (kp === 0) rp = ldOf(r.num, r.den);
+    else if (Math.abs(kp) <= 27) { // tbl[] holds double literals: 1e23..1e27 are inexact
+      var t = fracOf(ldFromDouble(Number("1e" + Math.abs(kp))));
+      rp = kp > 0 ? ldOf(r.num * t.den, r.den * t.num) : ldOf(r.num * t.num, r.den * t.den);
+    } else {
+      var p = fracOf(kp > 0 ? ldOf(pow10(kp), 1n) : ldOf(1n, pow10(-kp)));
+      rp = ldOf(r.num * p.den, r.den * p.num);
+    }
+    var f = fracOf(rp);
+    if (f.num < pow10(14) * f.den) { rp = ldOf(f.num * 10n, f.den); kp--; f = fracOf(rp); }
+    var alpha = roundQuotient(f.num, f.den);
+    var digits = alpha.toString().replace(/0+$/, ""), nsig = digits.length;
+    if (alpha === pow10(15)) kp++;
+    var kpower = kp + 14;
+    // roundingwidens: r < 10^kpower - 0.5 / 10^rgt, rgt = 15 - kpower in [0, 27].
+    var rgtW = Math.min(Math.max(15 - kpower, 0), 27);
+    var widens = kpower > 0 && kpower <= 27 &&
+      2n * r.num * pow10(rgtW) < r.den * (2n * pow10(kpower + rgtW) - 1n);
+    var left = kpower + 1 - (widens ? 1 : 0);
+    var rgt = Math.max(nsig - left, 0);
+    var wF = (left < 0 ? 1 + neg : neg + (left <= 0 ? 1 : left)) + rgt + (rgt ? 1 : 0);
+    var e = (left > 100 || left <= -99) ? 2 : 1;
+    var wE = neg + (nsig > 1 ? 1 : 0) + (nsig - 1) + 4 + e;
+    var sign = neg ? "-" : "", s;
+    if (wF <= wE) { // "%.{rgt}f", then drop trailing zeros
+      s = (rgt ? roundQuotient(r.num * pow10(rgt), r.den) : roundHalfAway(r.num, r.den)).toString();
+      if (rgt) {
+        s = s.padStart(rgt + 1, "0");
+        s = (s.slice(0, -rgt) + "." + s.slice(-rgt)).replace(/\.?0+$/, "");
+      }
+      return sign + s;
+    }
+    // "%#.{nsig - 1}e" on the exact value, then drop trailing zeros.
+    var ex = kpower, m;
+    for (;;) {
+      var d = ex - nsig + 1;
+      m = roundQuotient(r.num * pow10(Math.max(-d, 0)), r.den * pow10(Math.max(d, 0)));
+      if (m >= pow10(nsig)) { ex++; continue; }
+      if (m < pow10(nsig - 1)) { ex--; continue; }
+      break;
+    }
+    s = m.toString().replace(/0+$/, "");
+    return sign + s[0] + (s.length > 1 ? "." + s.slice(1) : "") +
+      "e" + (ex < 0 ? "-" : "+") + String(Math.abs(ex)).padStart(2, "0");
+  }
   // as.factor() follows the column type. Numeric levels sort by value, and
-  // values that as.character() prints alike (15 significant digits) share a
-  // level. Character levels use the C-locale key above. Returns, per row,
+  // values with the same as.character() label share a level; factor() keeps
+  // the first label in sorted order, so a level is a contiguous run of values.
+  // Character levels use the C-locale key above. Returns, per row,
   // { key: sort key, group: level identity }.
   function rFactorLevels(clusters) {
     var numeric = clusters.every(function(c) { return typeof c === "number"; });
@@ -274,9 +350,14 @@
       throw new Error("RVE: cluster IDs must be all numbers or all strings");
     return clusters.map(function(c) {
       if (!numeric) return { key: rFactorKey(c), group: String(c) };
-      var level = Number(c.toPrecision(15));
-      return { key: level, group: String(level) };
+      return { key: c, group: rAsCharacterDouble(c) };
     });
+  }
+  // The refusal carries the fitted cluster count, so a page reports the same m.
+  function tooFewClusters(m) {
+    var e = new Error("RVE: m<=p; insufficient clusters for inference");
+    e.m_clusters = m;
+    return e;
   }
   //
   // Input rows: { cluster, yi, vi, X: [...predictors including intercept] }
@@ -303,6 +384,11 @@
     var levels = rFactorLevels(rows.map(function(r) { return r.cluster; }));
     var inputOrder = rows.map(function(r, i) { return { row: r, index: i, key: levels[i].key, group: levels[i].group }; });
     inputOrder.sort(function(a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : a.index - b.index; });
+    // order() on the factor codes: rows of one level (which may hold several
+    // doubles, e.g. 1e15 + 4 and 1e15 + 5) stay in input order.
+    var levelRank = Object.create(null), nLevels = 0;
+    inputOrder.forEach(function(x) { if (!(x.group in levelRank)) levelRank[x.group] = nLevels++; });
+    inputOrder.sort(function(a, b) { return levelRank[a.group] - levelRank[b.group] || a.index - b.index; });
     rows = inputOrder.map(function(x) { return x.row; });
     // Group by cluster in factor-level order.
     var clusterOrder = [];
@@ -394,7 +480,7 @@
       tau2 = Math.max(0, term1 + rho * term2);
     }
 
-    if (m <= p && method === "CR1") throw new Error("RVE: m<=p; insufficient clusters for inference");
+    if (m <= p && method === "CR1") throw tooFewClusters(m);
 
     // ---- Re-weighted fit with the RVE weights ----------------------------
     var weights = clusterWeights(tau2);
@@ -443,7 +529,7 @@
         for (var i6=0;i6<p;i6++) for(var j6=0;j6<p;j6++) meat[i6][j6]+=block[i6][j6];
       }
       // robumeta's eigenvalue comparison precedes the reference's m<=p guard.
-      if (m <= p) throw new Error("RVE: m<=p; insufficient clusters for inference");
+      if (m <= p) throw tooFewClusters(m);
       cov = matMul(matMul(Q, meat), Q);
 
       // ---- Satterthwaite df per coefficient ------------------------------
@@ -547,7 +633,7 @@
     _symEig: symEig,
     _invSqrtSym: invSqrtSym,
     // R-reduction and factor-order helpers, exposed for the regression tests.
-    _reductions: { rSum: rSum, rMean: rMean, rFactorKey: rFactorKey, rFactorLevels: rFactorLevels },
+    _reductions: { rSum: rSum, rMean: rMean, rFactorKey: rFactorKey, rFactorLevels: rFactorLevels, rAsCharacterDouble: rAsCharacterDouble },
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmRVE = api;

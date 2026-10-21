@@ -20,9 +20,33 @@ an 80-bit x87 long double (64-bit significand); `shared/rve.js` emulates that.
 On R builds where long double is binary64 (for example macOS arm64) these
 reductions round differently, and under a non-C collation R orders character
 cluster labels differently (an English locale sorts case-insensitively), so R
-itself can differ from this engine at the 1e-9 level there. Numeric cluster
-IDs are ordered numerically, as `as.factor()` does for a numeric column; the
-page types a cluster column as numeric exactly when R's `read.csv` would.
+itself can differ from this engine at the 1e-9 level there.
+
+### Cluster IDs
+
+robumeta groups and orders studies by `as.factor(studynum)`.
+
+- **Numeric IDs** are ordered by value, and two IDs are one study exactly when
+  R's `as.character()` prints them alike. `rAsCharacterDouble` in
+  `shared/rve.js` reproduces R 4.6.0's `as.character(<double>)` (`formatReal`
+  with 15 digits, including its long-double scaling and Windows `snprintf`
+  ties), so `1e15 + 4` and `1e15 + 5` are one level (`"1e+15"`) while
+  `1e15 + 6` and `1e15 + 8` are two. This is checked value by value against R
+  (`rve-meta/tests/fixtures/p15/as-character.R`) and was scanned over 670,000
+  R-labelled values with no disagreement.
+- **Logical IDs.** A column whose labels are all exactly `T`, `F`, `TRUE` or
+  `FALSE` is logical in `read.csv`; the page maps it to the levels `"FALSE"` <
+  `"TRUE"`, as `as.factor(<logical>)` has
+  (`rve-meta/tests/fixtures/p15/read-csv-logical.R`).
+- **Text IDs** sort bytewise, as under `LC_COLLATE=C`.
+
+The page types the column as `read.csv` would, with these deliberate or known
+differences: `NA`, `Inf` and `NaN` cluster labels are refused rather than kept;
+the page trims whitespace outside quotes, so an unquoted ` T` or ` A` is the
+label `T` or `A` (R keeps the space and, for ` T`, reads the column as
+character); hexadecimal labels longer than about 14 hex digits are not
+correctly rounded; and R's Windows `strtod` rounds some subnormal labels (for
+example `1e-310`) differently. None of these is a plausible study identifier.
 
 ## Loading
 
@@ -36,7 +60,13 @@ permits WebAssembly compilation in its CSP with `'wasm-unsafe-eval'`.
   `AlmRVEEigen.status()` reports `loading`, `ready` or `failed`. The page
   waits for it before fitting. A CR2 eigen call made while it is loading
   throws `RVE: CR2 eigen backend is still loading…`; it never returns a number.
-- In Node the modules are compiled synchronously on first use.
+- In Node the modules are compiled synchronously on first use. The choice is
+  made by testing `process.versions.node`, so a host that has both Node and a
+  DOM (an Electron renderer, jsdom or vitest) also compiles synchronously.
+- The page waits only when `AlmRVEEigen.status()` is `loading`. If
+  `rve-eigen.js` has not run when a fit starts (for example, it was given an
+  `async`/`defer` attribute or failed to load), the fit fails with
+  `RVE: LAPACK eigen dependency unavailable`; it does not return a number.
 - If WebAssembly is absent or compilation is refused (for example by a CSP),
   every CR2 eigen call throws
   `RVE: CR2 requires WebAssembly (blocked or unavailable)`, with the original
@@ -47,6 +77,26 @@ multi-row clusters through the rendered page and checks the console for CSP and
 compile errors.
 
 ## Implementation
+
+### Which numbers are not computed by LAPACK
+
+Every CR2 adjustment block of size 2 or more is decomposed by R's LAPACK through
+the backend, or the fit throws. The exceptions are:
+
+- **1-by-1 blocks** (single-effect clusters, common in real data) return
+  `values = [h]`, `vectors = [[1]]` directly, before the backend check, so they
+  run even while the backend is loading. This is exactly what R's
+  `eigen(matrix(h), symmetric = TRUE)` returns, and the engine's `V diag(d) V'`
+  reconstruction does not depend on the sign of a 1-by-1 vector.
+- **`method: "CR1"`** has no eigen step. It is outside the CR2 parity claim.
+- **The reported condition number** κ₂(XᵀWX) (`shared/rve-extras.js`) uses the
+  engine's Jacobi solver `_symEig`, not LAPACK. It is a diagnostic only; no
+  parity claim is made for it.
+
+`invSqrtSym` has no fallback: without the backend it throws
+`RVE: LAPACK eigen dependency unavailable`.
+
+### Kernel
 
 The readable implementation is `rve-eigen-runtime.js`. It implements R's
 `isSymmetric.matrix` row/column prechecks and `all.equal.numeric` scaling, calls
@@ -133,3 +183,9 @@ the generated `rve-eigen.js` header also carries), the LLVM Apache-2.0 with
 LLVM Exceptions pointer and exception text, and webR's licence statement
 (webR distributes its binaries under GPL-3). The wrapper code in this directory
 is MIT.
+
+The LAPACK licence that the generated header carries contains the literal
+tokens `$COPYRIGHT$` and `$HEADER$`. They are verbatim in netlib's licence (and
+in R's `doc/COPYRIGHTS`), so they must not be filled in; a scanner for
+unfilled template tokens should exclude `shared/rve-eigen.js` and
+`LICENSES-rve-eigen.md` for that reason.

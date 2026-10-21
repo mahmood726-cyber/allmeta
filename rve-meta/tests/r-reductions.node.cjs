@@ -14,7 +14,7 @@ function close(a, b, absolute, label) {
 // The helpers are production code: a missing or renamed helper fails here.
 function reductions() {
   assert.equal(typeof RVE._reductions, 'object', 'RVE._reductions is exported');
-  for (const name of ['rSum', 'rMean', 'rFactorKey', 'rFactorLevels'])
+  for (const name of ['rSum', 'rMean', 'rFactorKey', 'rFactorLevels', 'rAsCharacterDouble'])
     assert.equal(typeof RVE._reductions[name], 'function', `RVE._reductions.${name}`);
   return RVE._reductions;
 }
@@ -56,7 +56,8 @@ test('C-locale factor ordering uses native Unicode escapes', () => {
 
 // R 4.6.0: levels(as.factor(c(2, 10, 1))) is "1" "2" "10";
 // levels(as.factor(c("2", "10", "1"))) is "1" "10" "2" under LC_COLLATE=C;
-// nlevels(as.factor(c(0.3, 0.1 + 0.2))) is 1 (as.character uses 15 digits).
+// levels(as.factor(c(1e5, 100000.0000000001, -0, 0))) is "0" "1e+05";
+// nlevels(as.factor(c(0.3, 0.1 + 0.2))) is 1 (as.character(0.1 + 0.2) is "0.3").
 test('factor levels follow the cluster column type, as as.factor() does', () => {
   const { rFactorLevels } = reductions();
   const order = xs => {
@@ -67,8 +68,48 @@ test('factor levels follow the cluster column type, as as.factor() does', () => 
   assert.deepEqual(order([2, 10, 1]), ['1', '2', '10']);
   assert.deepEqual(order(['2', '10', '1']), ['1', '10', '2']);
   assert.deepEqual(order([0.3, 0.1 + 0.2]), ['0.3']);
-  assert.deepEqual(order([1e5, 100000.0000000001, -0, 0]), ['0', '100000']);
+  assert.deepEqual(order([1e5, 100000.0000000001, -0, 0]), ['0', '1e+05']);
   assert.throws(() => rFactorLevels([1, 'a']), /RVE: cluster IDs must be all numbers or all strings/);
+});
+
+// as-character.R: R 4.6.0's as.character(<double>) and the as.factor()
+// partition it induces, including 16-17 digit IDs, ULP neighbours and -0.
+test('numeric level labels are R\'s as.character(<double>), value by value', () => {
+  const { rAsCharacterDouble } = reductions();
+  const { vectors } = require('./fixtures/p15/as-character.json');
+  let n = 0;
+  for (const v of vectors) v.values.forEach((x, i) => {
+    assert.equal(rAsCharacterDouble(x), v.as_character[i], `${v.name}: ${x}`); n++;
+  });
+  assert.ok(n > 1500, `${n} values`);
+});
+
+test('numeric cluster IDs: level count, partition and level order agree with R', () => {
+  const { rFactorLevels } = reductions();
+  const { vectors } = require('./fixtures/p15/as-character.json');
+  for (const v of vectors) {
+    const lv = rFactorLevels(v.values);
+    const order = v.values.map((_, i) => i).sort((a, b) =>
+      lv[a].key < lv[b].key ? -1 : lv[a].key > lv[b].key ? 1 : a - b);
+    const levels = [...new Set(order.map(i => lv[i].group))];
+    assert.equal(levels.length, v.nlevels, `${v.name}: nlevels`);
+    assert.deepEqual(levels, v.levels, `${v.name}: levels`);
+    v.values.forEach((_, i) => assert.equal(levels.indexOf(lv[i].group) + 1, v.codes[i], `${v.name}: code[${i}]`));
+  }
+});
+
+test('16-digit numeric IDs: m and the fit agree with robumeta at 1e-9', () => {
+  const { fits } = require('./fixtures/p15/as-character.json');
+  assert.deepEqual(fits.map(f => f.R.m), [6, 4, 6]);
+  assert.equal(new Set(fits[2].rows.map(r => r.cluster)).size, 7, 'seven doubles, six R levels');
+  for (const f of fits) {
+    assert.ok(f.rows.every(r => typeof r.cluster === 'number'));
+    const fit = RVE.fitCORR(f.rows, { rho: f.rho });
+    assert.equal(fit.m_clusters, f.R.m, `${f.name}: m`);
+    assert.equal(fit.m_clusters, f.R.levels.length);
+    agreesWithR(fit, f.R, f.name);
+    fit.weights.forEach((w, i) => close(w, f.R.weights[i], false, `${f.name} w[${i}]`));
+  }
 });
 
 test('sorting is internal: input is untouched and weights retain input-row alignment', () => {
