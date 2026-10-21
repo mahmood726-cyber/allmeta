@@ -24,9 +24,20 @@
  * Satterthwaite. CR1 (a single scalar correction, anticonservative at small m)
  * remains available via opts.method = "CR1".
  *
- * Verified vs robumeta::robu(modelweights="CORR", small=TRUE) to ≤1e-5 on every
- * reported quantity (τ², β̂, CR2 SE, Satterthwaite df) across a homogeneous
- * (τ²=0) and a heterogeneous (τ²>0) dataset; see rve-meta-cr2-parity.spec.mjs.
+ * R parity: robumeta::robu(modelweights="CORR", small=TRUE) 2.1 and
+ * clubSandwich::coef_test(vcov="CR2", test="Satterthwaite") 0.7.0, at 1e-9
+ * (relative to max(1,|R|); absolute for p and CI) on every reported quantity of
+ * the 16,270-configuration corpus, apart from the documented residuals in the
+ * rve-reproducible archive (https://github.com/mahmood726-cyber/rve-reproducible).
+ * Reference platform and locale: R 4.6.0, Windows x64 (80-bit x87 long double,
+ * 64-bit significand, in sum()/mean()), LC_COLLATE=C. The extended sum/mean
+ * and the factor order below emulate exactly that. On builds whose long double
+ * is binary64 (e.g. macOS arm64) R's sum()/mean() round differently, and under
+ * a non-C collation R orders character cluster labels differently, so results
+ * there can differ from this engine at the 1e-9 level.
+ * CR2 needs shared/rve-eigen.js (R's LAPACK DSYEVR/DGEEV via WebAssembly).
+ * Browser checks: hub/shared/tests/rve-meta-wasm-render.spec.mjs (rendered
+ * page, multi-row clusters, R fixture) and rve-meta-cr2-parity.spec.mjs.
  *
  * Reference: Hedges, Tipton & Johnson (2010), Research Synth Methods 1(1):39-65;
  * Tipton (2015), Psych Methods 20(3):375-393; Pustejovsky & Tipton (2018),
@@ -112,7 +123,8 @@
   }
 
   // Symmetric eigendecomposition via cyclic Jacobi rotations (Numerical Recipes
-  // formulation). n is small (per-cluster k_j, typically ≤ ~20). Returns
+  // formulation). Not used by the CR2 fit (which calls R's LAPACK through
+  // rve-eigen.js); kept for rve-extras.js's condition number. Returns
   // { values: [...], vectors } where vectors[i][c] is component i of eigvec c.
   function symEig(Ain) {
     var n = Ain.length;
@@ -156,7 +168,10 @@
   // Symmetric inverse square root: V diag(λ^{-1/2}) Vᵀ, with λ < 1e-10 → 0
   // (matches robumeta's eigenval thresholding for rank-deficient leverage blocks).
   function invSqrtSym(A) {
-    var n = A.length, eig = symEig(A), V = eig.vectors;
+    var rEigen = global.AlmRVEEigen;
+    if (!rEigen && typeof require === "function") rEigen = require("./rve-eigen.js");
+    if (!rEigen) throw new Error("RVE: LAPACK eigen dependency unavailable");
+    var n = A.length, eig = rEigen(A), V = eig.vectors;
     var d = eig.values.map(function (l) { return l < 1e-10 ? 0 : 1 / Math.sqrt(l); });
     var out = zeros(n, n);
     for (var i = 0; i < n; i++)
@@ -169,6 +184,181 @@
   }
 
   // ----- CORR-model fit ---------------------------------------------------
+  // R 4.6 (Windows x64) summary.c uses a 64-significand-bit LDOUBLE.
+  // Represent finite extended values as n * 2^e; round every operation to
+  // nearest/even, not just the final sum. This also preserves mean's extended
+  // subtraction/correction before its single conversion back to binary64.
+  var reductionBits = new DataView(new ArrayBuffer(8));
+  function ldFromDouble(x) {
+    reductionBits.setFloat64(0, x);
+    var hi = reductionBits.getUint32(0), lo = reductionBits.getUint32(4);
+    var exp = (hi >>> 20) & 2047;
+    var n = (BigInt(hi & 1048575) << 32n) | BigInt(lo);
+    if (exp) n |= 1n << 52n;
+    return { n: hi >>> 31 ? -n : n, e: exp ? exp - 1075 : -1074 };
+  }
+  function roundQuotient(n, d) {
+    var q = n / d, r = n % d;
+    return q + (2n * r > d || (2n * r === d && (q & 1n)) ? 1n : 0n);
+  }
+  function ldRound(n, e, precision) {
+    var negative = n < 0n;
+    if (negative) n = -n;
+    var shift = Math.max(0, n.toString(2).length - precision);
+    if (shift) n = roundQuotient(n, 1n << BigInt(shift));
+    return { n: negative ? -n : n, e: e + shift };
+  }
+  function ldAdd(a, b) {
+    var e = Math.min(a.e, b.e);
+    return ldRound((a.n << BigInt(a.e - e)) + (b.n << BigInt(b.e - e)), e, 64);
+  }
+  function ldDivide(a, count) {
+    if (!a.n) return a;
+    var negative = a.n < 0n, n = negative ? -a.n : a.n, d = BigInt(count);
+    var shift = 64 + d.toString(2).length - n.toString(2).length;
+    var numerator = n << BigInt(Math.max(0, shift));
+    var denominator = d << BigInt(Math.max(0, -shift));
+    // Choose the scale so the quotient has exactly 64 significant bits.
+    if (numerator / denominator >= (1n << 64n)) { denominator <<= 1n; shift--; }
+    var q = roundQuotient(numerator, denominator);
+    return { n: negative ? -q : q, e: a.e - shift };
+  }
+  function ldToDouble(a) {
+    var n = a.n, negative = n < 0n;
+    if (negative) n = -n;
+    var shift = Math.max(0, n.toString(2).length - 53, -1074 - a.e);
+    n = roundQuotient(n, 1n << BigInt(shift));
+    var value = Number(n) * Math.pow(2, a.e + shift);
+    return negative ? -value : value;
+  }
+  function rSum(xs) {
+    var s = { n: 0n, e: 0 };
+    for (var i = 0; i < xs.length; i++) {
+      if (!Number.isFinite(xs[i])) return xs.reduce(function(a, b) { return a + b; }, 0);
+      s = ldAdd(s, ldFromDouble(xs[i]));
+    }
+    return ldToDouble(s);
+  }
+  function rMean(xs) {
+    if (xs.length === 1) return xs[0];
+    var values = xs.map(ldFromDouble), s = { n: 0n, e: 0 };
+    values.forEach(function(x) { s = ldAdd(s, x); });
+    var finiteSum = Number.isFinite(ldToDouble(s));
+    if (finiteSum) s = ldDivide(s, xs.length);
+    else {
+      s = { n: 0n, e: 0 };
+      xs.forEach(function(x) { s = ldAdd(s, ldFromDouble(x / xs.length)); });
+    }
+    var t = { n: 0n, e: 0 };
+    values.forEach(function(x) {
+      var delta = ldAdd(x, { n: -s.n, e: s.e });
+      t = ldAdd(t, finiteSum ? delta : ldDivide(delta, xs.length));
+    });
+    return ldToDouble(ldAdd(s, finiteSum ? ldDivide(t, xs.length) : t));
+  }
+  // The archived v1 reference pins LC_COLLATE/LC_CTYPE=C. R's native
+  // conversion escapes unrepresentable Unicode before bytewise collation.
+  function rFactorKey(label) {
+    return String(label).replace(/[^\x00-\x7f]/gu, function(ch) {
+      var hex = ch.codePointAt(0).toString(16).toUpperCase();
+      return '<U+' + hex.padStart(hex.length > 4 ? 8 : 4, '0') + '>';
+    });
+  }
+  // R 4.6.0 as.character(<double>) for finite x (Windows x64): StringFromReal
+  // = formatReal() with 15 digits and scipen = 0, then EncodeRealDrop0
+  // (src/main/format.c, printutils.c). Values are exact rationals num/den.
+  //  - scientific(): kp = floor(log10 r) - 14; r_prec = r scaled by 10^-kp in
+  //    64-bit long double (table power when |kp| <= 27, else powl), times
+  //    10 again if below 1e14; alpha = nearbyintl(r_prec) (half-to-even).
+  //    nsig drops alpha's trailing zeros.
+  //  - fixed when its width is <= the E width; it then prints the value's own
+  //    digits to rgt decimals, so 1e15 + 6 is "1000000000000006" while
+  //    1e15 + 4 is "1e+15".
+  //  - snprintf ties, measured on R 4.6.0: "%.0f" rounds half away from zero
+  //    (1e15 + 6.5 -> "...007"); "%.Nf" (N >= 1) and "%e" round half-to-even.
+  //  Assumed, and checked against R from 1e-300 to 1e300: powl(10, kp) is
+  //  correctly rounded and Math.log10 floors as C's log10 does.
+  function pow10(k) { return 10n ** BigInt(k); }
+  function bitLength(n) { return n.toString(2).length; }
+  function ldOf(num, den) { // num/den > 0 rounded to a 64-bit significand
+    var shift = 64 - bitLength(num) + bitLength(den);
+    var N = shift > 0 ? num << BigInt(shift) : num, D = shift < 0 ? den << BigInt(-shift) : den;
+    if (N / D >= (1n << 64n)) { if (shift > 0) N >>= 1n; else D <<= 1n; shift--; }
+    return { n: roundQuotient(N, D), e: -shift };
+  }
+  function fracOf(a) { // { num, den } of a positive n * 2^e
+    return { num: a.n << BigInt(Math.max(a.e, 0)), den: 1n << BigInt(Math.max(-a.e, 0)) };
+  }
+  function roundHalfAway(n, d) { var q = n / d; return 2n * (n % d) >= d ? q + 1n : q; }
+  function rAsCharacterDouble(x) {
+    if (x === 0) return "0";
+    var neg = x < 0 ? 1 : 0, r = fracOf(ldFromDouble(Math.abs(x)));
+    var kp = Math.floor(Math.log10(Math.abs(x))) - 14, rp;
+    if (kp === 0) rp = ldOf(r.num, r.den);
+    else if (Math.abs(kp) <= 27) { // tbl[] holds double literals: 1e23..1e27 are inexact
+      var t = fracOf(ldFromDouble(Number("1e" + Math.abs(kp))));
+      rp = kp > 0 ? ldOf(r.num * t.den, r.den * t.num) : ldOf(r.num * t.num, r.den * t.den);
+    } else {
+      var p = fracOf(kp > 0 ? ldOf(pow10(kp), 1n) : ldOf(1n, pow10(-kp)));
+      rp = ldOf(r.num * p.den, r.den * p.num);
+    }
+    var f = fracOf(rp);
+    if (f.num < pow10(14) * f.den) { rp = ldOf(f.num * 10n, f.den); kp--; f = fracOf(rp); }
+    var alpha = roundQuotient(f.num, f.den);
+    var digits = alpha.toString().replace(/0+$/, ""), nsig = digits.length;
+    if (alpha === pow10(15)) kp++;
+    var kpower = kp + 14;
+    // roundingwidens: r < 10^kpower - 0.5 / 10^rgt, rgt = 15 - kpower in [0, 27].
+    var rgtW = Math.min(Math.max(15 - kpower, 0), 27);
+    var widens = kpower > 0 && kpower <= 27 &&
+      2n * r.num * pow10(rgtW) < r.den * (2n * pow10(kpower + rgtW) - 1n);
+    var left = kpower + 1 - (widens ? 1 : 0);
+    var rgt = Math.max(nsig - left, 0);
+    var wF = (left < 0 ? 1 + neg : neg + (left <= 0 ? 1 : left)) + rgt + (rgt ? 1 : 0);
+    var e = (left > 100 || left <= -99) ? 2 : 1;
+    var wE = neg + (nsig > 1 ? 1 : 0) + (nsig - 1) + 4 + e;
+    var sign = neg ? "-" : "", s;
+    if (wF <= wE) { // "%.{rgt}f", then drop trailing zeros
+      s = (rgt ? roundQuotient(r.num * pow10(rgt), r.den) : roundHalfAway(r.num, r.den)).toString();
+      if (rgt) {
+        s = s.padStart(rgt + 1, "0");
+        s = (s.slice(0, -rgt) + "." + s.slice(-rgt)).replace(/\.?0+$/, "");
+      }
+      return sign + s;
+    }
+    // "%#.{nsig - 1}e" on the exact value, then drop trailing zeros.
+    var ex = kpower, m;
+    for (;;) {
+      var d = ex - nsig + 1;
+      m = roundQuotient(r.num * pow10(Math.max(-d, 0)), r.den * pow10(Math.max(d, 0)));
+      if (m >= pow10(nsig)) { ex++; continue; }
+      if (m < pow10(nsig - 1)) { ex--; continue; }
+      break;
+    }
+    s = m.toString().replace(/0+$/, "");
+    return sign + s[0] + (s.length > 1 ? "." + s.slice(1) : "") +
+      "e" + (ex < 0 ? "-" : "+") + String(Math.abs(ex)).padStart(2, "0");
+  }
+  // as.factor() follows the column type. Numeric levels sort by value, and
+  // values with the same as.character() label share a level; factor() keeps
+  // the first label in sorted order, so a level is a contiguous run of values.
+  // Character levels use the C-locale key above. Returns, per row,
+  // { key: sort key, group: level identity }.
+  function rFactorLevels(clusters) {
+    var numeric = clusters.every(function(c) { return typeof c === "number"; });
+    if (!numeric && clusters.some(function(c) { return typeof c === "number"; }))
+      throw new Error("RVE: cluster IDs must be all numbers or all strings");
+    return clusters.map(function(c) {
+      if (!numeric) return { key: rFactorKey(c), group: String(c) };
+      return { key: c, group: rAsCharacterDouble(c) };
+    });
+  }
+  // The refusal carries the fitted cluster count, so a page reports the same m.
+  function tooFewClusters(m) {
+    var e = new Error("RVE: m<=p; insufficient clusters for inference");
+    e.m_clusters = m;
+    return e;
+  }
   //
   // Input rows: { cluster, yi, vi, X: [...predictors including intercept] }
   // opts: { rho (0–1, default 0.8), tau2 (override), method ("CR2" default | "CR1") }
@@ -186,14 +376,25 @@
     var p = rows[0].X.length; // includes intercept (robumeta's p+1)
 
     rows.forEach(function(r) {
-      if (!r.X || r.X.length !== p || !r.X.every(Number.isFinite) || !Number.isFinite(r.yi) || !Number.isFinite(r.vi) || r.vi <= 0 || r.cluster == null || String(r.cluster).trim() === "") throw new Error("RVE: invalid row or predictor count");
+      if (!r.X || r.X.length !== p || !r.X.every(Number.isFinite) || !Number.isFinite(r.yi) || !Number.isFinite(r.vi) || r.vi <= 0 || r.cluster == null || String(r.cluster).trim() === "" || (typeof r.cluster === "number" && !Number.isFinite(r.cluster))) throw new Error("RVE: invalid row or predictor count");
     });
 
-    // Group by cluster (preserves first-seen order).
+    // robumeta 2.1 robu.R:37-39: as.factor(), then order(study).
+    // Keep observations stable within factors and return weights in caller order.
+    var levels = rFactorLevels(rows.map(function(r) { return r.cluster; }));
+    var inputOrder = rows.map(function(r, i) { return { row: r, index: i, key: levels[i].key, group: levels[i].group }; });
+    inputOrder.sort(function(a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : a.index - b.index; });
+    // order() on the factor codes: rows of one level (which may hold several
+    // doubles, e.g. 1e15 + 4 and 1e15 + 5) stay in input order.
+    var levelRank = Object.create(null), nLevels = 0;
+    inputOrder.forEach(function(x) { if (!(x.group in levelRank)) levelRank[x.group] = nLevels++; });
+    inputOrder.sort(function(a, b) { return levelRank[a.group] - levelRank[b.group] || a.index - b.index; });
+    rows = inputOrder.map(function(x) { return x.row; });
+    // Group by cluster in factor-level order.
     var clusterOrder = [];
     var byCluster = Object.create(null);
     for (var i = 0; i < k; i++) {
-      var c = String(rows[i].cluster);
+      var c = inputOrder[i].group;
       if (!byCluster[c]) { byCluster[c] = []; clusterOrder.push(c); }
       byCluster[c].push(i);
     }
@@ -203,9 +404,10 @@
     // Per-cluster size k_j and mean sampling variance v̄_j.
     var clKj = Object.create(null), clVbar = Object.create(null);
     for (var ci = 0; ci < m; ci++) {
-      var key = clusterOrder[ci], idx = byCluster[key], sv = 0;
-      for (var a = 0; a < idx.length; a++) sv += rows[idx[a]].vi;
-      clKj[key] = idx.length; clVbar[key] = sv / idx.length;
+      var key = clusterOrder[ci], idx = byCluster[key];
+      // robu.R:42 stats::ave -> mean.default -> summary.c real_mean.
+      clKj[key] = idx.length;
+      clVbar[key] = rMean(idx.map(function(i) { return rows[i].vi; }));
     }
 
     var X = rows.map(function (r) { return r.X.slice(); });
@@ -247,8 +449,9 @@
       var wFE = clusterWeights(0);
       var f0 = fitW(wFE);
       var e0 = residuals(f0.beta);
-      var Qe = 0, sumW = 0;
-      for (var i3 = 0; i3 < k; i3++) { Qe += wFE[i3] * e0[i3] * e0[i3]; sumW += wFE[i3]; }
+      // robu.R:134 sumW <- sum(data.full$weights), summary.c rsum.
+      var Qe = 0, sumW = rSum(wFE);
+      for (var i3 = 0; i3 < k; i3++) { Qe += wFE[i3] * e0[i3] * e0[i3]; }
       // Within W_j = w_j·I and J_j = ones(k_j): build the three trace terms.
       //   sumXWJWX_j = w_j² (Σ_a X_a)(Σ_a X_a)ᵀ
       //   Matrx_WKXX_j = (w_j/k_j) Σ_a X_a X_aᵀ
@@ -277,7 +480,7 @@
       tau2 = Math.max(0, term1 + rho * term2);
     }
 
-    if (m <= p) throw new Error("RVE: m<=p; insufficient clusters for inference");
+    if (m <= p && method === "CR1") throw tooFewClusters(m);
 
     // ---- Re-weighted fit with the RVE weights ----------------------------
     var weights = clusterWeights(tau2);
@@ -325,6 +528,8 @@
         block = matMul(block, Xj);
         for (var i6=0;i6<p;i6++) for(var j6=0;j6<p;j6++) meat[i6][j6]+=block[i6][j6];
       }
+      // robumeta's eigenvalue comparison precedes the reference's m<=p guard.
+      if (m <= p) throw tooFewClusters(m);
       cov = matMul(matMul(Q, meat), Q);
 
       // ---- Satterthwaite df per coefficient ------------------------------
@@ -368,10 +573,12 @@
     var se = new Array(p);
     for (var i7 = 0; i7 < p; i7++) se[i7] = Math.sqrt(Math.max(0, cov[i7][i7]));
 
+    var callerWeights = new Array(k);
+    inputOrder.forEach(function(x, i) { callerWeights[x.index] = weights[i]; });
     return {
       beta: beta, cov_robust: cov, se_robust: se,
       df: dfArr, m_clusters: m, k_total: k, p: p,
-      tau2: tau2, rho: rho, method: method, weights: weights,
+      tau2: tau2, rho: rho, method: method, weights: callerWeights,
     };
   }
 
@@ -421,8 +628,12 @@
     tau2_DL_simple: tau2_DL_simple,
     _invert: invert,
     _matMul: matMul,
+    // Jacobi eigen; no longer used by the fit, still used by rve-extras.js
+    // for the reported condition number kappa(X'WX).
     _symEig: symEig,
     _invSqrtSym: invSqrtSym,
+    // R-reduction and factor-order helpers, exposed for the regression tests.
+    _reductions: { rSum: rSum, rMean: rMean, rFactorKey: rFactorKey, rFactorLevels: rFactorLevels, rAsCharacterDouble: rAsCharacterDouble },
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmRVE = api;
