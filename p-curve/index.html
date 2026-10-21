@@ -84,7 +84,7 @@
       <div id="alm-csv-mount"></div>
 
       <label>
-        <span>p-values — one per line (one-sided or two-sided significant, &lt;0.05)</span>
+        <span>Two-sided p-values — one per line (significant: &lt; 0.05)</span>
         <textarea id="src" aria-label="Input">0.001
 0.003
 0.002
@@ -136,7 +136,7 @@
         <tbody id="pu-body"></tbody>
       </table>
       <h2 style="margin-top:0.5rem">p-curve distribution (significant p only)</h2>
-      <svg id="plot" viewBox="0 0 600 240" role="img" aria-label="Observed and expected p-curve distribution"></svg>
+      <svg id="plot" viewBox="0 0 600 250" role="img" aria-label="Observed and expected p-curve distribution"></svg>
     </section>
   </main>
   <footer>
@@ -675,7 +675,7 @@
       const flatRow = (label, k, z, p, qz, qp) => {
         if (!Number.isFinite(z)) return `<tr><td><code>${label}</code></td><td>&mdash;</td><td>&mdash;</td><td><span class="chip bad">no p in range</span></td></tr>`;
         const txt = p < 0.05 ? "flatter than 33% power (inadequate)" : "not flatter than 33% power";
-        return `<tr><td><code>${label}</code> <span class="hint" style="display:inline;color:var(--muted);font-size:0.72rem">k=${k}, ${A.flat_family}, ncp&#8407;=${fmt(A.ncp33, 2)}</span></td>${cell(qz, "Z = " + fmt(z, 2))}${cell(qp, fmt(p, 3))}<td>${chip(!(p < 0.05), txt)}</td></tr>`;
+        return `<tr><td><code>${label}</code> <span class="hint" style="display:inline;color:var(--muted);font-size:0.72rem">k=${k}, ${A.flat_family}, ncp=${fmt(A.ncp33, 2)}</span></td>${cell(qz, "Z = " + fmt(z, 2))}${cell(qp, fmt(p, 3))}<td>${chip(!(p < 0.05), txt)}</td></tr>`;
       };
       rows.push(flatRow("Flatness (full, vs 33% power)", A.k, A.flat_full_z, A.flat_full_p, "flat_full_z", "flat_full_p"));
       rows.push(flatRow("Flatness (half, p&lt;.025, vs 33% power)", A.k_half, A.flat_half_z, A.flat_half_p, "flat_half_z", "flat_half_p"));
@@ -695,7 +695,7 @@
 
     function drawCurve(A) {
       const svg = document.getElementById("plot");
-      const W = 600, H = 240, padL = 50, padR = 20, padT = 20, padB = 40;
+      const W = 600, H = 250, padL = 50, padR = 20, padT = 34, padB = 40;
       const plotW = W - padL - padR, plotH = H - padT - padB;
       const parts = [""];
       // Bins as in the p-curve app 4.x: (0,.01], (.01,.02], …, (.04,.05)
@@ -706,10 +706,14 @@
       const X = i => padL + i * plotW / nb + plotW / (2 * nb);
       const Y = v => padT + (1 - v / maxY) * plotH;
       parts.push(`<line x1="${padL}" y1="${Y(20)}" x2="${padL + plotW}" y2="${Y(20)}" stroke="var(--muted)" stroke-dasharray="4 3" opacity="0.6"/>`);
-      parts.push(`<text x="${padL + plotW - 8}" y="${Y(20) - 5}" text-anchor="end" font-size="10" fill="var(--muted)">null (uniform)</text>`);
       const e33path = e33.map((v, i) => (i === 0 ? "M" : "L") + X(i) + "," + Y(v)).join(" ");
       parts.push(`<path d="${e33path}" fill="none" stroke="var(--warn)" stroke-dasharray="3 3" opacity="0.8"/>`);
-      parts.push(`<text x="${X(0) + 14}" y="${Y(e33[0]) - 4}" font-size="10" fill="var(--warn)">33% power</text>`);
+      // legend (top right, outside the bars' label positions)
+      const lx = padL + plotW - 250, ly = 10;
+      parts.push(`<line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}" stroke="var(--muted)" stroke-dasharray="4 3"/>`);
+      parts.push(`<text x="${lx + 27}" y="${ly + 3}" font-size="10" fill="var(--muted)">null (uniform)</text>`);
+      parts.push(`<line x1="${lx + 115}" y1="${ly}" x2="${lx + 137}" y2="${ly}" stroke="var(--warn)" stroke-dasharray="3 3"/>`);
+      parts.push(`<text x="${lx + 142}" y="${ly + 3}" font-size="10" fill="var(--warn)">expected, 33% power</text>`);
       for (let i = 0; i < nb; i++) {
         const bw = plotW / nb;
         const x = padL + i * bw;
