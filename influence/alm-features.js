@@ -12,23 +12,25 @@
     var rows = src.trim().split(/\n/).map(function (line, i) {
       if (!line.trim()) return null;
       var p = line.split(',').map(function (s) { return s.trim(); });
-      if (p.length < 2 || p.length > 3 || !p[0] || !p[1] || !Number.isFinite(Number(p[0])) ||
-          !Number.isFinite(Number(p[1])) || Number(p[1]) <= 0) throw new Error('Every row needs a finite effect and a positive SE.');
-      return { te: Number(p[0]), se: Number(p[1]), label: p[2] || 'Study ' + (i + 1) };
+      // Match the page parser, including numeric prefixes and ignored trailing fields.
+      var te = parseFloat(p[0]), se = parseFloat(p[1]);
+      if (!finite(te) || !finite(se) || se <= 0) throw new Error('Every row needs a finite effect and a positive SE.');
+      return { te: te, se: se, label: p[2] || 'Study ' + (i + 1) };
     }).filter(Boolean);
     if (rows.length < 3) throw new Error('Influence diagnostics require at least three studies.');
     return rows;
   }
   function apply(records) {
     if (!Array.isArray(records) || records.length < 3) throw new Error('Influence diagnostics require at least three studies.');
-    var src = records.map(function (r) {
+    var src = records.map(function (r, i) {
       if (!r || !finite(r.yi) || !finite(r.sei) || r.sei <= 0) throw new Error('Every row needs a finite effect and a positive SE.');
       if (typeof r.study !== 'string' || !r.study.trim() || /[,\r\n]/.test(r.study)) {
-        throw new Error('Study labels must be nonempty and contain no commas or line breaks in this app.');
+        throw new Error('Row ' + (i + 1) + ' (study ' + JSON.stringify(r.study) + '): study labels must be nonempty and contain no commas or line breaks in this app.');
       }
       return r.yi + ', ' + r.sei + ', ' + r.study.trim();
     }).join('\n');
     nativeRows(src);
+    if (global.alm && global.alm.resetUndo && typeof global.alm.resetUndo.snapshot === 'function') global.alm.resetUndo.snapshot();
     byId('src').value = src;
     byId('src').dispatchEvent(new Event('input', { bubbles: true }));
     byId('btn-run').click();
@@ -50,7 +52,8 @@
       r[prefix + 'row'] = i + 1;
       ['te', 'resid', 'hat', 'cooksD', 'dffits', 'covRatio', 'loo_mu', 'loo_seMu'].forEach(function (key) { r[prefix + key] = d[key]; });
     });
-    var pt = global.__almTextPerturb;
+    // TEST-ONLY HOOK: browser gates opt in explicitly; user pages ignore perturbations.
+    var pt = document.documentElement.hasAttribute('data-alm-test') && global.__almTextPerturb;
     if (pt && finite(r[pt.key]) && finite(pt.delta)) r[pt.key] += pt.delta;
     return r;
   }
@@ -153,6 +156,10 @@
       global.AlmFeatures.registerModule('entry', { render: function (el, ctx) { return global.AlmEntryUI.mount(el, ctx.block); } });
       global.AlmFeatures.registerModule('text', { render: function (el, ctx) {
         var ui = global.AlmTextUI.mount(el, { app: ctx.app, text: ctx.block });
+        var scope = document.createElement('p');
+        scope.className = 'alm-influence-audit-scope';
+        scope.textContent = 'Only values displayed in the diagnostics table are cross-checked against the page. Other reported values, including the between-study variance and heterogeneity statistic, are read from the app’s last results.';
+        ui.root.appendChild(scope);
         return { onShow: function () { ui.regenerate(); } };
       } });
     }

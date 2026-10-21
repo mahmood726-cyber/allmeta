@@ -3,6 +3,9 @@ import AxeBuilder from '@axe-core/playwright';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import { readZip, readTiff, decodePng } from './zip-reader.mjs';
+import { regressions } from './fixtures/features/influence/review-regressions.mjs';
+
+for (const [name, check] of regressions) test(name, check);
 
 const APP = 'influence', PAGE = '/influence/index.html';
 const SNAP = new URL('./__snapshots__/text-influence.json', import.meta.url);
@@ -76,12 +79,12 @@ test('ENTRY: three formats reproduce the built-in example through parser APIs an
     if (name.startsWith('paper')) expect(out.converted.steps.filter(s => s.method === 'SE from CI')).toHaveLength(10);
     passed++;
   }
-  console.log(`ENTRYRT ${passed}/${formats.length}`);
+  console.log(`ENTRYAPI ${passed}/${formats.length} (table API only; shared provenance table path is unavailable)`);
 });
 
 test('ENTRY PLANTED: reversed CI blocks application; conversion log and atomic native-input refusal', async ({ page }) => {
   await open(page);
-  // Use the shared mount API, not entry UI clicks: the source-confirmation UI is developed separately.
+  // Isolated table-API coverage. The shipped provenance UI is covered separately below.
   const out = await page.evaluate(input => {
     const spec = AlmFeatures.get('influence'), host = document.createElement('div');
     host.id = 'entry-api-check'; document.body.appendChild(host);
@@ -104,6 +107,111 @@ test('ENTRY PLANTED: reversed CI blocks application; conversion log and atomic n
   expect(out.flags.some(f => f.blocking)).toBe(true); expect(out.disabled).toBe(true);
   expect(out.errors).toHaveLength(3); expect(out.errors).not.toContain('UNSAFE PASS'); expect(out.unchanged).toBe(true);
   console.log('ENTRY PLANTED blocked; native-input refusals 3/3; conversion log 10/10');
+});
+
+test('REVIEW shared blocker: shipped provenance UI refuses table fixtures without replacing input', async ({ page }) => {
+  await open(page);
+  const panel = page.locator('#alm-f-panel-entry');
+  await expect(panel.locator('.alm-entry-provenance')).toBeVisible();
+  const before = await page.locator('#src').inputValue();
+  for (const [name, input] of formats) {
+    await panel.getByLabel('Paste the exact paper text or table', { exact: true }).fill(input);
+    await panel.getByRole('button', { name: 'Extract candidates', exact: true }).click();
+    await expect(panel.getByRole('status'), name).toContainText('No supported result found');
+    await expect(panel.getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
+    await expect(page.locator('#src')).toHaveValue(before);
+  }
+  console.log('ENTRY TABLE BLOCKER 3/3 reproduced in shipped UI; needs shared fix (see REPORT.md)');
+});
+
+test('ENTRY shipped provenance workflow: three confirmed sources round trip and Undo restores prior data', async ({ page }) => {
+  await open(page);
+  const panel = page.locator('#alm-f-panel-entry'), use = panel.getByRole('button', { name: 'Use these rows', exact: true });
+  const before = await page.locator('#src').inputValue();
+  const inputs = [
+    ['Smith 2019', 'Mean difference 0.25 (95% CI 0.09 to 0.41)', .25, .09, .41],
+    ['Jones 2020', 'Mean difference 0.18 (95% CI 0.02 to 0.34)', .18, .02, .34],
+    ['Lee 2021', 'Mean difference 0.30 (95% CI 0.10 to 0.50)', .30, .10, .50]
+  ];
+  for (const [label, text] of inputs) {
+    await panel.getByLabel('Paste the exact paper text or table', { exact: true }).fill(text);
+    await panel.getByRole('button', { name: 'Extract candidates', exact: true }).click();
+    // The shared label wraps the select, so getByLabel includes option text.
+    // Match the control's exact accessible name (which excludes its options).
+    const chooser = panel.getByRole('combobox', { name: 'Choose the source result to add', exact: true });
+    await chooser.selectOption('0');
+    await expect(chooser).toHaveValue('0');
+    await panel.getByRole('button', { name: 'Add chosen result', exact: true }).click();
+    const card = panel.locator('fieldset').last();
+    await expect(card.getByLabel('I confirm this row', { exact: true })).toBeDisabled();
+    await card.getByLabel('Study label (author and year, e.g. Smith 2019)', { exact: true }).fill(label);
+    await card.getByLabel('Full reference', { exact: true }).fill(label + ', synthetic regression fixture');
+    await card.getByLabel('Location (table, figure or page)', { exact: true }).fill('Results paragraph');
+    await card.getByLabel('Outcome measured', { exact: true }).fill('Example outcome');
+    await card.getByLabel('Timepoint (or not stated)', { exact: true }).fill('not stated');
+    await expect(use).toBeDisabled();
+    await card.getByLabel('I confirm this row', { exact: true }).check();
+  }
+  await use.click();
+  await expect(panel.getByRole('status')).toHaveText('Applied 3 confirmed rows.');
+  const out = await page.evaluate(() => ({ studies: _almStudies(), provenance: AlmFeaturesState.provenance, log: AlmFeaturesState.entryLog }));
+  expect(out.studies).toHaveLength(3); expect(out.provenance).toHaveLength(3); expect(out.log).toHaveLength(3);
+  for (let i = 0; i < inputs.length; i++) {
+    const [label, text, yi, lo, hi] = inputs[i], p = out.provenance[i];
+    expect(out.studies[i].label).toBe(label); expect(out.studies[i].te).toBe(yi);
+    expect(Math.abs(out.studies[i].se - (hi - lo) / (2 * Z)) / ((hi - lo) / (2 * Z))).toBeLessThanOrEqual(1e-9);
+    expect(p.pastedText).toBe(text); expect(p.confirmed).toBe(true); expect(p.confirmedAt).toBeTruthy();
+    expect(p.values.length).toBeGreaterThanOrEqual(3);
+    for (const v of p.values) expect(text.slice(...v.span)).toBe(v.text);
+  }
+  console.log('ENTRYRT 3/3 (confirmed prose sources through shipped UI; tables blocked upstream)');
+  await page.locator('#alm-undo-mount').getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.locator('#src')).toHaveValue(before);
+  expect(await page.evaluate(() => _almStudies().map(s => [s.label, s.te, s.se]))).toEqual(EXAMPLE);
+});
+
+test('ENTRY PLANTED shipped provenance workflow blocks a reversed confidence interval', async ({ page }) => {
+  await open(page);
+  const panel = page.locator('#alm-f-panel-entry'), before = await page.locator('#src').inputValue();
+  await panel.getByLabel('Paste the exact paper text or table', { exact: true }).fill('Mean difference 0.25 (95% CI 0.41 to 0.09)');
+  await panel.getByRole('button', { name: 'Extract candidates', exact: true }).click();
+  const chooser = panel.getByRole('combobox', { name: 'Choose the source result to add', exact: true });
+  await chooser.selectOption('0');
+  await expect(chooser).toHaveValue('0');
+  await panel.getByRole('button', { name: 'Add chosen result', exact: true }).click();
+  const card = panel.locator('fieldset').last();
+  await card.getByLabel('Study label (author and year, e.g. Smith 2019)', { exact: true }).fill('Smith 2019');
+  await card.getByLabel('Full reference', { exact: true }).fill('Synthetic planted fixture');
+  await card.getByLabel('Location (table, figure or page)', { exact: true }).fill('Results paragraph');
+  await card.getByLabel('Outcome measured', { exact: true }).fill('Example outcome');
+  await card.getByLabel('Timepoint (or not stated)', { exact: true }).fill('not stated');
+  await expect(card).toContainText('Lower CI exceeds upper CI');
+  await expect(card.getByLabel('I confirm this row', { exact: true })).toBeDisabled();
+  await expect(panel.getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
+  await expect(page.locator('#src')).toHaveValue(before);
+});
+
+test('REVIEW browser report and share agree with native parsing; ordinary pages ignore the test hook', async ({ page }) => {
+  await open(page, 'text');
+  const panel = page.locator('#alm-f-panel-text');
+  await expect(panel.locator('.alm-influence-audit-scope')).toContainText('Only values displayed in the diagnostics table are cross-checked against the page');
+  for (const literal of ['0.25', '0x10', '0.25suffix']) {
+    await page.evaluate(literal => {
+      const spec = AlmFeatures.get('influence');
+      spec.share.set({ ...spec.share.get(), src: literal + ', 0.1, Smith, 2019\n0.2, 0.1, Jones\n0.3, 0.1, Lee' });
+    }, literal);
+    await panel.locator('.alm-text-regenerate').click();
+    await expect(panel.locator('.alm-text-body')).toBeVisible();
+    expect(await page.evaluate(() => _almStudies()[0])).toEqual({ te: parseFloat(literal), se: .1, label: 'Smith' });
+    const before = await page.evaluate(() => AlmFeatures.get('influence').text.results());
+    for (const key of ['mu', 'tau2']) {
+      await page.evaluate(key => { window.__almTextPerturb = { key, delta: 1 }; }, key);
+      await panel.locator('.alm-text-regenerate').click();
+      expect(await page.evaluate(() => AlmFeatures.get('influence').text.results())).toEqual(before);
+      await expect(panel.locator('.alm-text-body')).toBeVisible();
+    }
+    await page.evaluate(() => { delete window.__almTextPerturb; });
+  }
 });
 
 test('TEXT: number audit, every displayed diagnostic and reviewed snapshot', async ({ page }, testInfo) => {
@@ -134,13 +242,16 @@ test('TEXT exports; planted displayed-value defect withholds text; pending edits
     if (ext === 'md') expect(bytes.toString('utf8')).toContain(result);
     else expect(readZip(bytes).map(e => e.name)).toEqual(expect.arrayContaining(['[Content_Types].xml', '_rels/.rels', 'word/document.xml']));
   }
-  await page.evaluate(() => { window.__almTextPerturb = { key: 'mu', delta: .1 }; });
+  await page.evaluate(() => {
+    document.documentElement.setAttribute('data-alm-test', '');
+    window.__almTextPerturb = { key: 'mu', delta: .1 };
+  });
   await panel.locator('.alm-text-regenerate').click();
   const audit = await page.evaluate(() => document.getElementById('alm-f-panel-text').almText.state.audit);
   expect(audit.ok).toBe(false); expect(audit.failures.map(f => f.check)).toContain('dom:mu');
   console.log(`TEXTAUDIT planted ${audit.passed}/${audit.checks} dom:mu FAIL`);
   await expect(panel.locator('.alm-text-body')).toBeHidden();
-  await page.evaluate(() => { delete window.__almTextPerturb; });
+  await page.evaluate(() => { delete window.__almTextPerturb; document.documentElement.removeAttribute('data-alm-test'); });
   await panel.locator('.alm-text-regenerate').click();
   await expect(panel.locator('.alm-text-body')).toBeVisible();
   const before = await page.evaluate(() => _almLastInfluence());
