@@ -12,8 +12,8 @@
  * "less") furthest toward the null; it stops when that bound reaches the null. FI = number
  * of modifications (the flipping one included). Mirror logic for an effect above the null.
  *
- * Pooling reproduces metafor::rma.uni(measure, method="DL", test="z") incl. escalc's
- * add=1/2-to-zero-cell-studies and drop00 conventions; the DL pool delegates to ma-core.
+ * Pooling reproduces metafor::rma.uni(measure, method="DL", test="z", drop00=FALSE) as called by
+ * frag.ma, incl. escalc's add=1/2-to-zero-cell-studies convention; the DL pool delegates to ma-core.
  *
  * Verified vs fragility::frag.ma(measure="OR", method="DL"): a 5-study set with pooled
  * OR<1 (p=0.00115) → FI = 13.
@@ -26,10 +26,10 @@
 
   var Z975 = 1.959963984540054;
 
-  // escalc for one study (measure OR/RR/RD) with metafor add=1/2/to="only0"/drop00.
-  // rows: {a:e1, b:ne1, c:e0, d:ne0}. Returns {yi, vi} or null if dropped.
+  // escalc for one study (measure OR/RR/RD) with metafor add=1/2, to="only0", drop00=FALSE — the defaults that
+  // fragility::frag.ma passes to rma.uni: studies with no events (or only events) in both arms are KEPT with the
+  // 1/2 correction, never dropped (the greedy path can create such studies). rows: {a:e1, b:ne1, c:e0, d:ne0}.
   function _escalc(a, b, c, d, measure) {
-    if ((a === 0 && c === 0) || (b === 0 && d === 0)) return null; // drop00
     var aa = a, bb = b, cc = c, dd = d;
     if (a === 0 || b === 0 || c === 0 || d === 0) { aa += 0.5; bb += 0.5; cc += 0.5; dd += 0.5; }
     if (measure === "RD") {
@@ -65,6 +65,8 @@
     var c = studies.map(function (s) { return s.e0; });          // control events
     var d = studies.map(function (s) { return s.n0 - s.e0; });   // control non-events
     var totalN = studies.reduce(function (t, s) { return t + s.n1 + s.n0; }, 0);
+    // frag.ma stops for a single study (its FI is a trial-level index, fragility::frag.study).
+    if (studies.length < 2) return { FI: null, FQ: null, dir: "at least two studies are needed (a single trial has a trial-level fragility index)", pooled: { est: null, lo: null, hi: null }, modifications: [] };
 
     var ori = _pool(a, b, c, d, measure);
     if (!ori) return { FI: null, FQ: null, dir: "undefined", pooled: { est: null, lo: null, hi: null } };

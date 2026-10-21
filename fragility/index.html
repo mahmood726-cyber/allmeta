@@ -97,11 +97,12 @@
     Greedy procedure matching <code>fragility::frag.ma(method="DL")</code>: each step applies the single ±1
     event change (across any study, either arm) that pushes the watched DerSimonian-Laird 95% CI bound furthest
     toward the null, stopping when significance flips. FI = number of changes; FQ = FI ÷ total sample size.
-    Zero-cell handling follows <code>metafor::escalc</code> (add ½, drop double-zero studies); the DL pool
+    Zero-cell handling follows <code>frag.ma</code>'s defaults for <code>metafor</code> (add ½ to studies with a zero cell;
+    double-zero studies are kept, <code>drop00 = FALSE</code>); at least two studies are required; the DL pool
     delegates to the audited <code>shared/ma-core.js</code>. Reference: Atal I, Porcher R, Boutron I, Ravaud P.
     The statistical significance of meta-analyses is frequently fragile. J Clin Epidemiol. 2019;111:32-40.
     doi:10.1016/j.jclinepi.2019.03.012. Verified vs the <code>fragility</code> R package in
-    <code>hub/shared/tests/fragility-parity.spec.mjs</code>.
+    <code>fragility/tests/test_frag_ma_parity.py</code>.
   </footer>
   <script>
     var EXAMPLE = [
@@ -119,6 +120,10 @@
         var t = line.trim();
         if (!t || t[0] === "#") return;
         var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
+        // counts must be complete non-negative integers ("" must not read as 0, 2.5 is not a count)
+        if (!f.slice(0, 4).every(function (s) { return /^\d+$/.test(s); }) || f.length < 4) {
+          errs.push("line " + (i + 1)); return;
+        }
         var e1 = +f[0], n1 = +f[1], e0 = +f[2], n0 = +f[3];
         if (![e1, n1, e0, n0].every(isFinite) || n1 <= 0 || n0 <= 0 || e1 < 0 || e0 < 0 || e1 > n1 || e0 > n0) {
           errs.push("line " + (i + 1)); return;
