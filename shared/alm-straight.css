@@ -1,0 +1,52 @@
+/* shared/alm-straight.css — F6 Straight path: advisory notice above results + the feature-panel tab.
+   Advisory (amber) styling, never error red; meaning is carried by words ("Pitfall:", "Uncertainty:"), not colour. */
+.alm-straight-notice, .alm-straight {
+  --alm-sp-bg: #fff7e8;
+  --alm-sp-ink: #2e2207;
+  --alm-sp-edge: #9a5b0c;
+  --alm-sp-muted: #5a4a2a;
+  --alm-sp-link: #174a7e;
+}
+@media (prefers-color-scheme: dark) {
+  .alm-straight-notice, .alm-straight {
+    --alm-sp-bg: #2a2113;
+    --alm-sp-ink: #f3e6cc;
+    --alm-sp-edge: #e0a268;
+    --alm-sp-muted: #d9c7a3;
+    --alm-sp-link: #9ccbf5;
+  }
+}
+.alm-straight-notice {
+  margin: 0 0 0.75rem; padding: 0.55rem 0.8rem; border: 1px solid var(--alm-sp-edge); border-left-width: 4px;
+  border-radius: 6px; background: var(--alm-sp-bg); color: var(--alm-sp-ink);
+  font: 0.85rem/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.alm-straight-notice[hidden] { display: none; }
+.alm-straight-notice .alm-sp-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem; }
+.alm-straight-notice .alm-sp-sub { color: var(--alm-sp-muted); flex: 1 1 auto; }
+.alm-straight-notice button, .alm-straight button {
+  padding: 0.15rem 0.55rem; border: 1px solid currentColor; border-radius: 5px; background: transparent;
+  color: inherit; font: inherit; font-size: 0.8rem; cursor: pointer; margin-left: 0.35rem;
+}
+.alm-straight-notice .alm-sp-more { margin: 0.3rem 0 0; }
+.alm-straight-notice a, .alm-straight a { color: var(--alm-sp-link); }
+.alm-straight-notice button:focus-visible, .alm-straight button:focus-visible,
+.alm-straight-notice a:focus-visible, .alm-straight a:focus-visible, .alm-straight summary:focus-visible {
+  outline: 2px solid var(--alm-sp-link); outline-offset: 2px;
+}
+.alm-straight-notice .alm-sp-list, .alm-straight .alm-sp-list { margin: 0.35rem 0 0; padding-left: 1.1rem; }
+.alm-sp-item { margin: 0.25rem 0; }
+.alm-sp-msg { display: inline; margin: 0; }
+.alm-sp-detail { margin: 0.3rem 0 0.5rem; padding: 0.35rem 0.6rem; border-left: 2px solid var(--alm-sp-edge); }
+.alm-sp-detail[hidden] { display: none; }
+.alm-sp-detail ul { margin: 0.15rem 0 0.35rem; padding-left: 1.1rem; }
+.alm-sp-dt { margin: 0.2rem 0 0; font-weight: 600; }
+.alm-sp-kind { font-weight: 600; }
+.alm-sp-note, .alm-sp-id { color: var(--alm-sp-muted); }
+.alm-sp-id { margin: 0.2rem 0 0; font-size: 0.78rem; }
+.alm-straight { padding: 0.5rem 0.75rem; border-radius: 6px; background: var(--alm-sp-bg); color: var(--alm-sp-ink); }
+.alm-straight .alm-sp-h { margin: 0.75rem 0 0.25rem; font-size: 0.95rem; }
+.alm-straight .alm-sp-intro, .alm-straight .alm-sp-none { margin: 0.25rem 0; color: var(--alm-sp-muted); }
+.alm-straight .alm-sp-checked { margin-top: 0.75rem; }
+.alm-straight .alm-sp-checked ul { font-size: 0.82rem; }
+@media (prefers-reduced-motion: reduce) { .alm-straight-notice *, .alm-straight * { transition: none !important; animation: none !important; } }
