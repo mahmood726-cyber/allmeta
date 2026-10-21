@@ -1,11 +1,11 @@
 [
   {
     "path": "shared/multivariate-ma.js",
-    "sha256": "db60db8bbc849ee8575ba6ac28842f415e36f302964dec8b2d971986177424e0"
+    "sha256": "80b150465b29a13d04371fb3b3859111aefef2301bad38dc5050436d29cf4c7b"
   },
   {
     "path": "multivariate-ma/index.html",
-    "sha256": "b872da9c650984ba18f0249652f614a37dac8b923cad019c9e3730ed875c6c70"
+    "sha256": "cafc562c46025e6c9cea87385138e6d3d7d26802b6c9a70a6143813a3da40bc5"
   },
   {
     "path": "multivariate-ma/plus-ui.js",
@@ -17,7 +17,7 @@
   },
   {
     "path": "multivariate-ma/tests/diagnostic.cjs",
-    "sha256": "5ec0892150666d232b5305549ac708461bbcedbed84305dff1f349bd9268d105"
+    "sha256": "920d627307f760ea51a0ed4bb8a32fb861e7e7c15c54ac52c3df393a72c759c5"
   },
   {
     "path": "multivariate-ma/tests/units-invariance.cjs",
@@ -25,6 +25,6 @@
   },
   {
     "path": "hub/shared/tests/multivariate-ma-diagnostic.spec.mjs",
-    "sha256": "93896746a0e2225788004f5cae3ce9b6c4b606bb319d0d2430822cdc963ad0c5"
+    "sha256": "d585792e82c6637d6c9ba84366512e80e1a1b2cece585bc8e89a9cfee0e4f261"
   }
 ]

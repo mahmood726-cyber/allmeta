@@ -92,3 +92,14 @@ Validation, replacing the 99-fit comparison above:
    (mutation-controls.json; its R verdict also comes from oracle.R).
 4. The 30 controls were selected under the withdrawn rule. They are kept as the control population; their
    selection does not use the new rule.
+
+## Addendum note, 2026-10-21 (second revision): scope of the units-invariance result (REVIEW_209 round 2)
+
+Result of item 1 above: 117/117 fits gave an identical verdict at c in {0.01, 0.1, 10, 100}
+(units-invariance.json). Scope: only the distinctness rule ("multiple near-equal optima") is scale-free. The
+boundary floor 1e-10*max(1, mean S_ii) is unit-dependent when mean S_ii < 1: below that the threshold stays
+at 1e-10 while G_ii scales with c^2, so the boundary verdict, and with it the overall verdict, can change with
+outcome units. None of the 117 fits comes near this regime, but it is reachable. Reviewer's reproduction
+(the mutation-controls.cjs design with k=6, eps=1e-7, S_i = I, the same fit at every scale, G_00/c^2 = 1e-7):
+"multiple near-equal optima" at c=1 and c=0.1, "boundary maximum" at c=0.01 (G_00 = 1e-11 <= 1e-10). No
+threshold was changed.

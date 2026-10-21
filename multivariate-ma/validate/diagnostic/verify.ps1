@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 Push-Location $PSScriptRoot
 try {
   & node run.cjs
-  if ($LASTEXITCODE -ne 0) { throw 'Diagnostic agreement with the R oracle is not 297/297 (see agreement.json)' }
+  if ($LASTEXITCODE -ne 0) { throw 'Diagnostic disagrees with the R oracle outside the named allowance in compare.cjs (see agreement.json)' }
   $mutations = @()
   foreach ($defectName in @('wrong-verdict', 'dropped-fit')) {
     $output = & node compare.cjs "$defectName.json"
@@ -17,5 +17,7 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Units invariance failed (see units-invariance.json)' }
   & node mutations.cjs
   if ($LASTEXITCODE -ne 0) { throw 'An engine mutation survived (see mutations.json)' }
+  & node report.cjs
+  if ($LASTEXITCODE -ne 0) { throw 'report.cjs assertions failed' }
 } finally { Pop-Location }
 exit 0

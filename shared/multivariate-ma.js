@@ -172,7 +172,9 @@
   // Observational only: this never changes the selected fitted G.
   function _diagnostic(studies, G, bestF, candidates, defaultF, startsRun) {
     var m = G.length, llTol = 1e-8, sdTol = 1e-4, rhoTol = 1e-4, sentinel = 1e11;
-    // Scale-free: SDs are compared relatively, correlations absolutely, so the result does not depend on outcome units.
+    // Only this distinctness rule is scale-free: SDs are compared relatively and correlations absolutely, so whether two
+    // candidates are distinct does not depend on outcome units. The boundary floor below, 1e-10*max(1, mean S_ii), is
+    // unit-dependent when mean S_ii < 1, so the boundary verdict (and with it the overall verdict) can change with units.
     var distinct = function (a, b) {
       for (var i = 0; i < m; i++) {
         var sa = Math.sqrt(Math.max(0, a[i][i])), sb = Math.sqrt(Math.max(0, b[i][i]));
@@ -197,13 +199,15 @@
       }
     }
     var boundary = zero.length > 0 || correlations.length > 0, multiple = clusters.length > 1;
+    // No valid fit: the best objective is the failure sentinel, so nothing is near it. Not an interior maximum.
+    var failed = near.length === 0 || !(bestF < sentinel);
     return { schema: 'multivariate-ma-diagnostic-v2', startsRun: startsRun,
       distinctOptimaWithinTolerance: clusters.length, nearBestCandidates: near.length,
       bestVsDefaultStartLogLikGap: defaultF === null || !(defaultF < sentinel) || !(bestF < sentinel) ? null : defaultF - bestF,
       defaultStart: startsRun ? 'moment start, 600-iteration screen' : 'not applicable: exact two-study solution',
       boundary: { zeroVariances: zero, correlations: correlations },
       tolerances: { logLik: llTol, distinctEstimates: sdTol, correlation: 1e-6 },
-      verdict: boundary ? 'boundary maximum' : multiple ? 'multiple near-equal optima' : 'interior maximum',
+      verdict: failed ? 'no valid fit' : boundary ? 'boundary maximum' : multiple ? 'multiple near-equal optima' : 'interior maximum',
       interpretation: 'Candidates within the logLik tolerance are distinct if a between-study SD differs by more than distinctEstimates relative to the larger SD, or a correlation by more than distinctEstimates absolutely; this does not depend on outcome units. Finite multistart searches give numerical evidence, not proof of a global maximum, and "interior maximum" does not claim uniqueness.' };
   }
 

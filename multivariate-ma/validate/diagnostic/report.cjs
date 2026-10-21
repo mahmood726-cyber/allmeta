@@ -7,9 +7,13 @@ const readText = p => {
   return bytes.toString(bytes[0] === 0xff && bytes[1] === 0xfe ? 'utf16le' : 'utf8').replace(/^﻿/, '');
 };
 const read = p => JSON.parse(readText(p));
+const { ALLOWED } = require('./compare.cjs');
 const a = read('agreement.json'), oracle = read('oracle-verdicts.json'), units = read('units-invariance.json'), mutations = read('mutations.json');
 const replay = read('plus-replay.json'), exact = read('exact-replay.json'), mutationResults = read('mutation-results.json'), tests = readText('node-tests.log');
 assert.equal(oracle.fits.length, 297); assert.equal(a.expected, 297); assert.equal(a.actual, 297); assert.equal(a.exactBaselineFits, 297);
+// 295/297, and the two failures are exactly the named allowance in compare.cjs (the craft2003 rank-one fit at x1 and x0.1).
+assert.equal(a.agreement, 295); assert.equal(a.passed, true); assert.equal(a.unexplained, 0);
+assert.deepEqual(a.failures.map(f => f.id).sort(), [...ALLOWED.keys()].sort()); assert.ok(a.failures.every(f => f.allowed));
 assert.equal(units.invariant, units.fits);
 assert.ok(mutations.mutations.length === 5 && mutations.mutations.every(m => m.killed));
 assert.equal(replay.passed, 54612); assert.equal(replay.checks, 54612); assert.equal(replay.failedChecks, 0);

@@ -1,29 +1,31 @@
-dd3a5dc0518eefdb6dae663a5eed9a498eeb53c5
+108b911aa1406de30b04b9a033741231e93f07e0
 working tree: uncommitted lane changes on top of HEAD above (final pre-commit run); node v24.13.0
-✔ exact two-study zero: no starts, no fictitious default gap, both variances flagged (7.3298ms)
-✔ rank-one hard fit is a boundary; the old "distinct estimates" hard fit is an interior maximum with one cluster (91.4151ms)
-✔ weakly identified interior fit: distinct candidates at the same likelihood give "multiple near-equal optima" (46.636ms)
-✔ distinctness is scale-free: SDs relative 1e-4, correlations absolute 1e-4, logLik 1e-8 (0.4144ms)
-✔ boundary takes precedence over multiple near-equal optima (0.1924ms)
-✔ default-start gap is null when either value is the failure sentinel (0.1743ms)
-✔ univariate fit keeps old fields and gives an interior maximum (18.1534ms)
-✔ three-outcome fixture gives an interior maximum without changing numbers (478.6753ms)
-✔ UI note: none for interior, boundary and multiple-optima texts, cleared on refused and empty input (484.8694ms)
-✔ comparison rejects dropped, duplicate, unexpected and wrong-verdict records and needs one exact verdict each (2.4055ms)
-✔ P1-1 malformed sweep clears prior results, prose, plots and exports (1235.6445ms)
-✔ P1-2 incomplete first study is disclosed in parser, notice and methods (185.3003ms)
-✔ P1-3 boundary contract rejects corrupted p values in supplied and sweep fits (144.513ms)
-✔ P1-3 display audit independently rejects corrupted p text (149.1791ms)
-✔ P1-3 boundary contract rejects G corruption with an unchanged reported likelihood (149.7023ms)
-✔ P1-3 boundary contract rejects corrupted z values (132.7796ms)
-✔ P1-3 roundtrip comparator rejects corrupted p values (176.5033ms)
-✔ diagnostic verdict does not depend on outcome units: verdict(y*c, S*c^2) == verdict(y, S) (6004.8367ms)
-ℹ tests 18
+✔ exact two-study zero: no starts, no fictitious default gap, both variances flagged (5.2693ms)
+✔ rank-one hard fit is a boundary; the old "distinct estimates" hard fit is an interior maximum with one cluster (135.8934ms)
+✔ weakly identified interior fit: distinct candidates at the same likelihood give "multiple near-equal optima" (28.296ms)
+✔ distinctness is scale-free: SDs relative 1e-4, correlations absolute 1e-4, logLik 1e-8 (0.5436ms)
+✔ boundary takes precedence over multiple near-equal optima (0.2718ms)
+✔ default-start gap is null when either value is the failure sentinel (1.6358ms)
+✔ a failed fit (best objective at the sentinel, nothing near it) is "no valid fit", not an interior maximum (0.2638ms)
+✔ univariate fit keeps old fields and gives an interior maximum (51.8642ms)
+✔ three-outcome fixture gives an interior maximum without changing numbers (517.6074ms)
+✔ UI note: none for interior, boundary and multiple-optima texts, cleared on refused and empty input (469.8028ms)
+✔ comparison rejects dropped, duplicate, unexpected and wrong-verdict records and needs one exact verdict each (1.839ms)
+✔ named allowance: only the two craft2003 disagreements pass; a third disagreement fails (1.518ms)
+✔ P1-1 malformed sweep clears prior results, prose, plots and exports (1288.2261ms)
+✔ P1-2 incomplete first study is disclosed in parser, notice and methods (152.0656ms)
+✔ P1-3 boundary contract rejects corrupted p values in supplied and sweep fits (141.008ms)
+✔ P1-3 display audit independently rejects corrupted p text (137.2173ms)
+✔ P1-3 boundary contract rejects G corruption with an unchanged reported likelihood (127.8848ms)
+✔ P1-3 boundary contract rejects corrupted z values (126.1289ms)
+✔ P1-3 roundtrip comparator rejects corrupted p values (125.6512ms)
+✔ diagnostic verdict does not depend on outcome units: verdict(y*c, S*c^2) == verdict(y, S) (6216.1797ms)
+ℹ tests 20
 ℹ suites 0
-ℹ pass 18
+ℹ pass 20
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 6180.5266
+ℹ duration_ms 6522.6652
 exit 0

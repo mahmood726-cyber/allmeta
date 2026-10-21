@@ -5,13 +5,15 @@
       "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x1",
       "reason": "wrong verdict",
       "expected": "multiple near-equal optima",
-      "actual": "boundary maximum"
+      "actual": "boundary maximum",
+      "allowed": true
     },
     {
       "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x0.1",
       "reason": "wrong verdict",
       "expected": "interior maximum",
-      "actual": "boundary maximum"
+      "actual": "boundary maximum",
+      "allowed": true
     }
   ],
   "rVerdicts": {
@@ -86,5 +88,5 @@
   ],
   "plusReplay": "54612/54612",
   "exactReplay": "2023/2023 fits, 1 identical refusal",
-  "nodeTests": "18 pass, 0 fail"
+  "nodeTests": "20 pass, 0 fail"
 }

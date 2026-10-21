@@ -4,11 +4,12 @@ const fs = require('node:fs'), path = require('node:path'), vm = require('node:v
 const { parseHTML } = require('linkedom');
 const engine = require('../../shared/multivariate-ma.js');
 const baseline = require('../validate/diagnostic/baseline-engine.cjs');
-const { compare, N } = require('../validate/diagnostic/compare.cjs');
+const { compare, N, ALLOWED } = require('../validate/diagnostic/compare.cjs');
+const oracle = require('../validate/diagnostic/oracle-verdicts.json').fits;
 const { controls: mutationControls } = require('../validate/diagnostic/mutation-controls.cjs');
 const hard = require('../validate/diagnostic/hard.json');
 const app = path.resolve(__dirname, '..');
-const MULTIPLE_NOTE = 'Different between-study covariance estimates reach the same likelihood, so these covariance estimates are not unique. The pooled estimates may still be reliable.';
+const MULTIPLE_NOTE = 'Different between-study covariance estimates reach likelihoods within 10⁻⁸ of each other, so these covariance estimates are not well determined by these data. The pooled estimates may still be reliable.';
 function page() {
   const { window, document } = parseHTML(fs.readFileSync(path.join(app, 'index.html'), 'utf8'));
   window.matchMedia = () => ({ matches: false });
@@ -75,6 +76,15 @@ test('default-start gap is null when either value is the failure sentinel', () =
   assert.equal(engine._diagnostic(studies, g, 1e12, [], 1e12, 5).bestVsDefaultStartLogLikGap, null);
   assert.equal(engine._diagnostic(studies, g, 1, [], 3, 5).bestVsDefaultStartLogLikGap, 2);
 });
+test('a failed fit (best objective at the sentinel, nothing near it) is "no valid fit", not an interior maximum', () => {
+  const studies = [{ y: [0, 0], S: [[1, 0], [0, 1]] }, { y: [1, 1], S: [[1, 0], [0, 1]] }, { y: [2, 0], S: [[1, 0], [0, 1]] }];
+  const g = [[1, 0], [0, 1]];
+  for (const bestF of [1e12, 1e11, Infinity, NaN]) {
+    const d = engine._diagnostic(studies, g, bestF, [], null, 5);
+    assert.equal(d.verdict, 'no valid fit'); assert.equal(d.nearBestCandidates, 0); assert.equal(d.distinctOptimaWithinTolerance, 0);
+  }
+  assert.equal(engine._diagnostic(studies, g, 1, [], null, 5).verdict, 'interior maximum');
+});
 test('univariate fit keeps old fields and gives an interior maximum', () => {
   const y = [-2, -1, 0, 1, 2], v = y.map(() => 0.2);
   const { diagnostic: d, ...rest } = engine.fitUnivariate(y, v);
@@ -124,4 +134,22 @@ test('comparison rejects dropped, duplicate, unexpected and wrong-verdict record
   assert.equal(compare(expected, [{ id: 'foreign', diagnostic: actual[0].diagnostic }, ...actual.slice(1)]).passed, false);
   assert.equal(compare(expected, [{ id: '0', diagnostic: { verdict: 'boundary maximum' } }, ...actual.slice(1)]).agreement, N - 1);
   assert.throws(() => compare(expected.map((f, i) => i ? f : { ...f, verdict: ['boundary maximum', 'interior maximum'] }), actual));
+});
+test('named allowance: only the two craft2003 disagreements pass; a third disagreement fails', () => {
+  assert.equal(ALLOWED.size, 2);
+  const agree = oracle.map(f => ({ id: f.id, diagnostic: { verdict: f.verdict } }));
+  const withPair = agree.map(f => ALLOWED.has(f.id) ? { id: f.id, diagnostic: { verdict: ALLOWED.get(f.id).actual } } : f);
+  const pair = compare(oracle, withPair);
+  assert.equal(pair.passed, true); assert.equal(pair.agreement, N - 2); assert.equal(pair.unexplained, 0);
+  assert.deepEqual(pair.failures.map(f => f.id).sort(), [...ALLOWED.keys()].sort());
+  const i = withPair.findIndex(f => !ALLOWED.has(f.id));
+  const third = withPair.map((f, j) => j === i ? { id: f.id, diagnostic: { verdict: f.diagnostic.verdict === 'interior maximum' ? 'boundary maximum' : 'interior maximum' } } : f);
+  const r = compare(oracle, third);
+  assert.equal(r.passed, false); assert.equal(r.agreement, N - 3); assert.equal(r.unexplained, 1);
+  assert.deepEqual(r.failures.filter(f => !f.allowed).map(f => f.id), [withPair[i].id]);
+  // An allowed id with any verdict other than the documented one is not allowed either.
+  const id = [...ALLOWED.keys()][0];
+  const other = withPair.map(f => f.id === id ? { id, diagnostic: { verdict: 'interior maximum' } } : f);
+  assert.equal(compare(oracle, other).passed, false);
+  assert.equal(compare(oracle, withPair.filter(f => f.id !== id)).passed, false);
 });

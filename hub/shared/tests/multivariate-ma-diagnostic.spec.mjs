@@ -39,7 +39,7 @@ test('likelihood note and diagnostic exports follow current data', async ({ page
   await page.locator('#f-data').fill(rows(weak));
   await expect.poll(() => verdict(page)).toBe('multiple near-equal optima');
   await expect(note).toBeVisible();
-  await expect(note).toHaveText('Different between-study covariance estimates reach the same likelihood, so these covariance estimates are not unique. The pooled estimates may still be reliable.');
+  await expect(note).toHaveText('Different between-study covariance estimates reach likelihoods within 10⁻⁸ of each other, so these covariance estimates are not well determined by these data. The pooled estimates may still be reliable.');
   // The hypertension example (mmHg) is an ordinary interior fit: the engine gives "interior maximum" and no note.
   await page.locator('#btn-ex-hyp').click();
   await expect.poll(() => verdict(page)).toBe('interior maximum');

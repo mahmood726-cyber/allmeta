@@ -239,7 +239,7 @@
       diagnosticNote.textContent = verdict === "boundary maximum" ?
         "The fit is at a covariance boundary: a between-study variance is near zero or a correlation is near ±1. Treat these covariance estimates with care." :
         verdict === "multiple near-equal optima" ?
-        "Different between-study covariance estimates reach the same likelihood, so these covariance estimates are not unique. The pooled estimates may still be reliable." : "";
+        "Different between-study covariance estimates reach likelihoods within 10⁻⁸ of each other, so these covariance estimates are not well determined by these data. The pooled estimates may still be reliable." : "";
       diagnosticNote.hidden = diagnosticNote.textContent === "";
       head.innerHTML = "k = " + f.k + " studies · 2 outcomes · unstructured between-study covariance (REML) · logLik = " + fmt(f.logLik, 3);
       function card(k, v) { return "<div class='stat'><span class='k'>" + esc(k) + "</span><span class='v'>" + v + "</span></div>"; }

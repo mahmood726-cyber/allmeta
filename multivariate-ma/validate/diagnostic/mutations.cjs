@@ -14,8 +14,8 @@ const mutations = [
   { name: 'boundary variance threshold x1e4', from: 'var threshold = 1e-10 * Math.max(1,', to: 'var threshold = 1e-6 * Math.max(1,' },
   { name: 'correlation boundary 1e-6 -> 1e-2', from: 'if (Math.abs(r) >= 1 - 1e-6) correlations.push', to: 'if (Math.abs(r) >= 1 - 1e-2) correlations.push' },
   { name: 'skip the multiple-optima check', from: 'multiple = clusters.length > 1;', to: 'multiple = false;' },
-  { name: 'swap precedence (multiple before boundary)', from: "verdict: boundary ? 'boundary maximum' : multiple ? 'multiple near-equal optima' : 'interior maximum',",
-    to: "verdict: multiple ? 'multiple near-equal optima' : boundary ? 'boundary maximum' : 'interior maximum'," },
+  { name: 'swap precedence (multiple before boundary)', from: "boundary ? 'boundary maximum' : multiple ? 'multiple near-equal optima' : 'interior maximum',",
+    to: "multiple ? 'multiple near-equal optima' : boundary ? 'boundary maximum' : 'interior maximum'," },
   { name: 'absolute (not scale-free) SD tolerance', from: 'if (Math.abs(sa - sb) > sdTol * Math.max(sa, sb)) return true;', to: 'if (Math.abs(sa - sb) > sdTol) return true;' }
 ];
 function load(code) {

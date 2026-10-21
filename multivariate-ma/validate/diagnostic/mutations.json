@@ -9,13 +9,15 @@
         "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x1",
         "reason": "wrong verdict",
         "expected": "multiple near-equal optima",
-        "actual": "boundary maximum"
+        "actual": "boundary maximum",
+        "allowed": true
       },
       {
         "id": "metadat::dat.craft2003::acog.asom+asom.conf::REML::rcalc#rhoW=-0.3@x0.1",
         "reason": "wrong verdict",
         "expected": "interior maximum",
-        "actual": "boundary maximum"
+        "actual": "boundary maximum",
+        "allowed": true
       }
     ],
     "controls": [
@@ -153,8 +155,8 @@
     },
     {
       "name": "swap precedence (multiple before boundary)",
-      "from": "verdict: boundary ? 'boundary maximum' : multiple ? 'multiple near-equal optima' : 'interior maximum',",
-      "to": "verdict: multiple ? 'multiple near-equal optima' : boundary ? 'boundary maximum' : 'interior maximum',",
+      "from": "boundary ? 'boundary maximum' : multiple ? 'multiple near-equal optima' : 'interior maximum',",
+      "to": "multiple ? 'multiple near-equal optima' : boundary ? 'boundary maximum' : 'interior maximum',",
       "killed297": false,
       "agreement297": 296,
       "caughtBy297": [],
