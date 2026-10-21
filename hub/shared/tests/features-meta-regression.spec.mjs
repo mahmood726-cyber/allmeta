@@ -6,6 +6,14 @@ import { readZip, readTiff, decodePng } from './zip-reader.mjs';
 
 const APP = 'meta-regression', PAGE = `/${APP}/index.html`;
 const SNAP = fileURLToPath(new URL('./__snapshots__/text-meta-regression.json', import.meta.url));
+function requireVerifiedSummary(text) {
+  expect(text).not.toContain('unavailable');
+  expect(text).toMatch(/^\d+ of \d+ quantities match R — PASS$/);
+  const counts = text.match(/\d+/g).map(Number);
+  expect(counts[1]).toBeGreaterThan(0);
+  expect(counts[0]).toBe(counts[1]);
+  return true;
+}
 async function open(page, tab = 'text') {
   await page.goto(PAGE);
   await expect(page.locator('#alm-features .alm-f-toggle')).toBeVisible();
@@ -111,9 +119,10 @@ test('TEXT: audit, independent displayed values, snapshot, and report downloads'
   const shown = await page.locator('#stats-wrap .stat').evaluateAll(cs => Object.fromEntries(cs.map(c =>
     [c.querySelector('.k').textContent, c.querySelector('.v').textContent])));
   expect(out.snapshot.results).toContain(`Residual τ² = ${shown['τ² (PM)']}`);
-  expect(out.snapshot.results).toContain(`R² = ${shown['R² (τ² explained)']}`);
+  expect(out.r.R2_tau2).toBe(Number(shown['R² (τ² explained)'].replace('%', '')) / 100);
+  expect(out.snapshot.results).toContain('R² not estimable (no between-study variance in the intercept-only model)');
   expect(out.snapshot.results).toContain(`HKSJ q = ${shown['HKSJ q']}`);
-  expect(out.snapshot.results).toContain(`The permutation p-value was ${Object.entries(shown).find(([k]) => k.startsWith('β₁ permutation'))[1]}`);
+  expect(out.snapshot.results).toContain(`The permutation test gave p = ${Object.entries(shown).find(([k]) => k.startsWith('β₁ permutation'))[1]}`);
   const slope = shown['β₁ (slope)'].match(/([-.\d]+) \[([-.\d]+), ([-.\d]+)\]/);
   expect(out.snapshot.results.replaceAll('−', '-')).toContain(`slope was ${slope[1]} (95% CI ${slope[2]} to ${slope[3]})`);
   console.log('TEXTDOM 5/5');
@@ -159,18 +168,11 @@ test('VERIFY: real browser R, all comparisons, bubble plots, ZIP, stale claim an
   await button.click();
   await expect(summary).not.toBeEmpty({ timeout: 600_000 });
   const text = await summary.textContent();
-  if (text.includes('unavailable')) {
-    expect(text).toBe('Not checked in the browser: R package metafor is unavailable.');
-    expect(await page.evaluate(() => AlmFeaturesState.verify.passed)).toBe(false);
-    const [dl] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'R script (.R)', exact: true }).click()]);
-    expect(fs.readFileSync(await dl.path(), 'utf8')).toContain('metafor::rma');
-    console.log('VERIFY unavailable: metafor; no PASS claimed; R download present');
-    return;
-  }
-  expect(text).toMatch(/^\d+ of \d+ quantities match R — PASS$/);
+  requireVerifiedSummary(text);
   const state = await page.evaluate(() => AlmFeaturesState.verify);
   console.log(`VERIFY ${state.nPassed}/${state.n}`);
   expect(state.n).toBeGreaterThanOrEqual(5);
+  expect(state.n).toBe(28);
   expect(state.rows.every(r => r.pass)).toBe(true);
   await expect(panel.locator('figure img')).toHaveCount(1);
   await expect(panel.locator('figure svg')).toHaveCount(1);
@@ -255,4 +257,148 @@ test('AXE: every feature tab has no serious or critical accessibility violations
     expect(bad.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]);
     console.log(`AXE ${tab}: ${scan.passes.length} rules passed; ${bad.length} serious/critical`);
   }
+});
+
+test('REVIEW P1: unsupported paper extraction is disabled with an honest provenance notice', async ({ page }) => {
+  await open(page, 'entry');
+  const panel = page.locator('#alm-f-panel-entry');
+  await expect(panel.getByRole('button', { name: 'Extract paper text with source confirmation' })).toBeDisabled();
+  await expect(panel).toContainText('Paper-text extraction is unavailable');
+  await expect(panel).toContainText('moderator');
+  await expect(panel).toContainText('Table entry does not yet provide per-study source confirmation');
+});
+
+test('REVIEW P1: share preserves detached copies of entry metadata and clears it for changed data', async ({ page }) => {
+  await open(page, 'share');
+  const out = await page.evaluate(app => {
+    const spec = AlmFeatures.get(app);
+    const records = _almLastStudies().map(s => ({ study: s.label, yi: s.est, sei: s.se, moderator: s.x,
+      provenance: { label: s.label, pastedText: 'verbatim − text', confirmed: true, location: 'Table A' } }));
+    spec.entry.apply(records);
+    AlmFeaturesState.entryLog = [{ study: records[0].study, text: 'SE estimated from CI', method: 'SE from CI' }];
+    const saved = spec.share.get();
+    const captured = JSON.parse(JSON.stringify(saved));
+    AlmFeaturesState.entryLog[0].text = 'mutated';
+    if (AlmFeaturesState.provenance) AlmFeaturesState.provenance[0].location = 'mutated';
+    const detached = JSON.stringify(saved) === JSON.stringify(captured);
+    spec.share.set(saved);
+    const restored = { provenance: AlmFeaturesState.provenance, entryLog: AlmFeaturesState.entryLog };
+    const before = spec.share.get();
+    let rejected = false;
+    try { spec.share.set({ ...before, data: 'invalid changed data', provenance: {} }); } catch { rejected = true; }
+    const atomic = JSON.stringify(before) === JSON.stringify(spec.share.get());
+    document.getElementById('f-data').value += '\nNew, 0.1, 0.2, 29';
+    const stale = spec.share.get();
+    spec.share.set({ ...captured, provenance: undefined, entryLog: undefined });
+    const legacy = spec.share.get();
+    return { captured, restored, detached, rejected, atomic, stale, legacy, expected: records.map(r => r.provenance) };
+  }, APP);
+  expect(out.captured.provenance).toEqual(out.expected);
+  expect(out.captured.entryLog).toHaveLength(1);
+  expect(out.restored).toEqual({ provenance: out.expected, entryLog: out.captured.entryLog });
+  expect(out.detached && out.rejected && out.atomic).toBe(true);
+  expect(out.stale.provenance).toEqual([]);
+  expect(out.stale.entryLog).toEqual([]);
+  expect(out.legacy.provenance).toEqual([]);
+  expect(out.legacy.entryLog).toEqual([]);
+});
+
+test('REVIEW P1: entry metadata survives an actual share link in a fresh browser context', async ({ page, browser }) => {
+  await open(page, 'share');
+  const before = await page.evaluate(app => {
+    const s = AlmFeatures.get(app);
+    s.entry.apply(_almLastStudies().map(row => ({ study: row.label, yi: row.est, sei: row.se, moderator: row.x,
+      provenance: { label: row.label, reference: 'Example source', location: 'Table A', pastedText: 'exact source text', confirmed: true } })));
+    AlmFeaturesState.entryLog = [{ study: 'Trial A', text: 'SE estimated from CI', method: 'SE from CI' }];
+    return s.share.get();
+  }, APP);
+  await page.getByRole('button', { name: 'Copy share link', exact: true }).click();
+  await expect(page.locator('[data-testid=share-status]')).toContainText('Share link');
+  const link = await page.getByLabel('Share link', { exact: true }).inputValue();
+  const ctx = await browser.newContext();
+  try {
+    const restored = await ctx.newPage();
+    await restored.goto(link);
+    await expect(restored.locator('[data-testid=share-status]')).toHaveText('Analysis restored from the share link.');
+    expect(await restored.evaluate(app => AlmFeatures.get(app).share.get(), APP)).toEqual(before);
+    expect(before.provenance).toHaveLength(8);
+    expect(before.entryLog).toHaveLength(1);
+  } finally { await ctx.close(); }
+});
+
+test('REVIEW P2-1: changing moderator units cannot conceal a jointly scaled slope and SE defect', async ({ page }) => {
+  await open(page, 'verify');
+  const out = await page.evaluate(app => {
+    const spec = AlmFeatures.get(app), live = spec.verify.adapter();
+    spec.entry.apply(_almLastStudies().map(s => ({ study: s.label, yi: s.est, sei: s.se, moderator: s.x * 1e6 })));
+    const state = live.currentState(), base = live.appValues(state), ref = Object.fromEntries(base.map(v => [v.key, v.value]));
+    const bad = structuredClone(state);
+    for (const key of ['slope', 'slope_se', 'slope_ci_lb', 'slope_ci_ub']) bad.result[key] *= 0.2;
+    function compare(values) { return values.filter(v => !AlmValidate.compare(v.value, ref[v.key],
+      live.compare.kind[v.key], live.compare.tolerance[v.key] ?? live.compare.tolerance.default).pass).map(v => v.key); }
+    return { good: compare(base), bad: compare(live.appValues(bad)), script: live.buildScript(state) };
+  }, APP);
+  expect(out.good).toEqual([]);
+  expect(out.bad.length).toBeGreaterThan(0);
+  expect(out.script).toContain('slope_per_range');
+});
+
+test('REVIEW P2-2 planted unavailable package must fail the real-R verification gate', () => {
+  expect(() => requireVerifiedSummary('Not checked in the browser: R package metafor is unavailable.')).toThrow();
+  expect(() => requireVerifiedSummary('0 of 0 quantities match R — PASS')).toThrow();
+  expect(requireVerifiedSummary('23 of 23 quantities match R — PASS')).toBe(true);
+});
+
+test('REVIEW P2-3: distinguish undefined R squared from a genuinely zero reduction', async ({ page }) => {
+  await open(page);
+  const out = await rendered(page);
+  expect(out.snapshot.results).toContain('R² not estimable (no between-study variance in the intercept-only model)');
+  expect(out.snapshot.results).not.toContain('R² = 0.0%');
+  const defined = await page.evaluate(app => {
+    const s = AlmFeatures.get(app).text, raw = __almResults;
+    window.__almResults = () => ({ ...raw(), tau2_pm: 0.3, R2_tau2: 0 });
+    try { return AlmText.render(s.templates, s.results(), {}).results.text; } finally { window.__almResults = raw; }
+  }, APP);
+  expect(defined).toContain('R² = 0.0%');
+});
+
+test('REVIEW P2-4: endpoint p values use audited inequalities in copied Results', async ({ page }) => {
+  await open(page);
+  const cases = await page.evaluate(app => {
+    const s = AlmFeatures.get(app).text;
+    return [0, 1, 0.051].map(p => {
+      const r = { ...s.results(), slope_p_display: p, permP: p, QE_p: p };
+      const text = AlmText.render(s.templates, r, {});
+      return { text: text.results.text, audit: AlmText.audit(text, r, {}) };
+    });
+  }, APP);
+  expect(cases[0].text).toContain('p < 0.001');
+  expect(cases[1].text).toContain('p > 0.999');
+  expect(cases[2].text).toContain('p = 0.051');
+  for (const c of cases) {
+    expect(c.text).not.toMatch(/p = (0\.000|1\.000)/);
+    expect(c.audit.failures).toEqual([]);
+  }
+});
+
+test('REVIEW P2-5: study-count caution addresses meta-regression and observational bias', async ({ page }) => {
+  await open(page);
+  const out = await rendered(page);
+  expect(out.snapshot.flags.join(' ')).toContain('ten studies per characteristic');
+  expect(out.snapshot.flags.join(' ')).toContain('aggregation bias');
+  expect(out.snapshot.flags.join(' ')).not.toContain('funnel');
+  expect(out.snapshot.references.join(' ')).toContain('10.11.4');
+  expect(out.audit.failures).toEqual([]);
+});
+
+test('REVIEW P2-6: the valid prediction-interval citation belongs to its Methods sentence', async ({ page }) => {
+  await open(page);
+  const out = await rendered(page);
+  expect(out.snapshot.methods).toContain('variance of the fitted mean (Cochrane Handbook v6.5, §10.10.4.3).');
+});
+
+test('REVIEW P2-7: the live adapter is discoverable through the public registry', async ({ page }) => {
+  await open(page, 'verify');
+  expect(await page.evaluate(app => Boolean(window.AlmLiveAdapters?.[app]) &&
+    AlmLiveAdapters[app] === AlmFeatures.get(app).verify.adapter(), APP)).toBe(true);
 });
