@@ -54,13 +54,13 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Rare-events GLMM</h1>
-    <p>Experimental rare-event logistic meta-analysis. Browser estimates have not established corpus-wide agreement with metafor. The unconditional implementation uses treatment-only random effects and fixed 10-point quadrature; it differs from metafor's default UM.FS model. Use R for analyses requiring metafor estimates.</p>
+    <p>Odds-ratio meta-analysis of rare events with the binomial-normal generalised linear mixed models of metafor's <code>rma.glmm</code> (UM.FS, UM.RS, CM.EL, CM.AL; maximum likelihood), fitted in your browser without continuity corrections. As in metafor, studies with no events, or only events, in both arms are dropped.</p>
   </header>
   <main>
     <section class="panel">
       <h2>Studies</h2>
       <label style="display:block">
-        <span style="font-size:0.85rem">One row per study: <code>label, events_T, n_T, events_C, n_C</code>. 0-event cells are handled NATIVELY — no continuity correction needed.</span>
+        <span style="font-size:0.85rem">One row per study: <code>label, events_T, n_T, events_C, n_C</code> (whole numbers). Zero-event arms need no continuity correction.</span>
         <textarea id="src" aria-label="Studies">Trial 1, 0, 250, 1, 248
 Trial 2, 2, 500, 5, 510
 Trial 3, 0, 180, 3, 182
@@ -76,16 +76,16 @@ Trial 8, 1, 210, 3, 215</textarea>
       <label style="margin-top:0.5rem">
         <span style="font-size:0.85rem">Model</span>
         <select id="f-model" style="width:100%;padding:0.4rem 0.55rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px" aria-label="F model">
-          <option value="UM.FS" selected>Experimental unconditional fit (not default metafor UM.FS)</option>
-          <option value="CM.EL">CM.EL — conditional likelihood; numerical parity unverified</option>
-          <option value="CM.AL">Fixed-baseline approximation (not metafor CM.AL)</option>
-          <option value="UM.RS">UM.RS — unconditional, random study effects (R-only — generates a metafor script)</option>
+          <option value="UM.FS" selected>UM.FS — unconditional, fixed study effects (metafor default)</option>
+          <option value="UM.RS">UM.RS — unconditional, random study effects</option>
+          <option value="CM.EL">CM.EL — conditional, exact likelihood</option>
+          <option value="CM.AL">CM.AL — conditional, approximate likelihood</option>
         </select>
-        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">The fixed-baseline approximation is not metafor CM.AL. Its interval error is dataset dependent. CM.EL uses adaptive quadrature and a bounded variance search; finite output alone does not certify convergence or agreement with metafor. UM.RS generates an R script.</span>
+        <span style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.3rem">Each option is the <code>rma.glmm(measure="OR", model=...)</code> model of the same name, with metafor's defaults: 7-point adaptive quadrature (UM.FS, CM.AL), Laplace approximation (UM.RS) and the integrated noncentral hypergeometric likelihood (CM.EL, which reports the fixed-effect fit when τ² &lt; 10⁻⁴). Inputs whose odds ratio has no finite estimate (complete separation) are refused.</span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit GLMM</button>
       <div class="note">
-        <strong>When to use:</strong> any meta-analysis where some studies have 0 events in one or both arms. Standard inverse-variance pooling with +0.5 correction biases OR toward 1; the GLMM doesn't because it models the binomial likelihood directly. Reference: Stijnen T, Hamza TH, Ozdemir P 2010 (Stat Med 29:3046-3067).
+        <strong>When to use:</strong> meta-analyses of odds ratios in which some studies have 0 events in one or both arms. Inverse-variance pooling after adding 0.5 to zero cells can bias the pooled odds ratio; the GLMMs model the binomial counts directly. Reference: Stijnen T, Hamza TH, Ozdemir P 2010 (Stat Med 29:3046-3067).
       </div>
     </section>
     <section class="panel">
@@ -96,12 +96,13 @@ Trial 8, 1, 210, 3, 215</textarea>
         <thead><tr><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">Method</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">OR</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">95% CI</th><th style="text-align:left;border-bottom:1px solid var(--border);padding:0.4rem 0.55rem">τ²</th></tr></thead>
         <tbody></tbody>
       </table>
+      <div id="umrs-mount"></div>
     </section>
   
       <div id="alm-flow-mount" aria-live="polite"></div>
 </main>
   <footer>
-    Engine: <code>shared/rare-events-glmm.js</code>. Experimental browser approximations; use <code>metafor::rma.glmm</code> in R for the named reference models.
+    Engine: <code>shared/rare-events-glmm.js</code>, written to reproduce <code>metafor::rma.glmm</code> (metafor 5.2-1, lme4 2.0-6); the UM.RS view also gives the equivalent R script.
   </footer>
   <script>
   (function () {
@@ -116,9 +117,10 @@ Trial 8, 1, 210, 3, 215</textarea>
         var parts = line.split(/\s*,\s*/);
         if (parts.length < 5) continue;
         var label = parts[0];
+        // Counts must be whole numbers written as digits ("2.5", "3abc", "1e2" are rejected, not truncated).
+        if (!parts.slice(1, 5).every(function (p) { return /^\d+$/.test(p.trim()); })) continue;
         var eT = parseInt(parts[1], 10), nT = parseInt(parts[2], 10);
         var eC = parseInt(parts[3], 10), nC = parseInt(parts[4], 10);
-        if (!isFinite(eT) || !isFinite(nT) || !isFinite(eC) || !isFinite(nC)) continue;
         if (nT <= 0 || nC <= 0 || eT < 0 || eC < 0 || eT > nT || eC > nC) continue;
         rows.push({ label: label, events_T: eT, n_T: nT, events_C: eC, n_C: nC });
       }
@@ -164,6 +166,7 @@ Trial 8, 1, 210, 3, 215</textarea>
     function run() {
       window.__almLastRareEventsGLMM = null;
       document.querySelector("#compare tbody").innerHTML = "";
+      document.getElementById("umrs-mount").innerHTML = "";
       var rows = parse(document.getElementById("src").value);
       if (rows.length < 2) {
         document.getElementById("summary").innerHTML =
@@ -172,38 +175,38 @@ Trial 8, 1, 210, 3, 215</textarea>
       }
       var modelEl = document.getElementById("f-model");
       var model = modelEl ? modelEl.value : "UM.FS";
-      if (model === "UM.RS") { renderUMRS(rows); return; }
-      var glmm = model === "CM.EL"
-        ? AlmRareEventsGLMM.fitConditionalExact(rows)
-        : model === "CM.AL"
-          ? AlmRareEventsGLMM.fit(rows)
-          : AlmRareEventsGLMM.fitUnconditional(rows);
+      var glmm = AlmRareEventsGLMM.fitModel(model, rows);
+      var iv = ivPoolWithCC(rows);
+      var rcode = model === "UM.RS" ? buildUMRSscript(rows) : null;
+      window.__almLastRareEventsGLMM = function () { return { model: model, rows: rows, glmm: glmm, iv: iv, rcode: rcode }; };
       if (!glmm.ok || ![glmm.theta, glmm.se_theta, glmm.tau2, glmm.OR, glmm.OR_lo, glmm.OR_hi].every(Number.isFinite)) {
         document.getElementById("summary").innerHTML =
-          '<div class="card" style="grid-column:1/-1;color:var(--bad)">GLMM fit failed: ' +
-          (glmm.error || "Non-finite fit; use R to diagnose this dataset.") + '</div>';
+          '<div class="card" style="grid-column:1/-1;color:var(--bad)">No ' + model + ' estimate: ' +
+          esc(glmm.error || "Non-finite fit; use R to diagnose this dataset.") + '</div>';
+        document.querySelector("#compare tbody").innerHTML =
+          '<tr><td>IV pool + 0.5 CC</td><td>' + fmt(iv.OR, 3) + '</td><td>' + fmt(iv.OR_lo, 3) + ', ' + fmt(iv.OR_hi, 3) + '</td><td>' + fmt(iv.tau2, 4) + '</td></tr>';
+        if (rcode) renderUMRS(rcode);
         return;
       }
-      var iv = ivPoolWithCC(rows);
       document.getElementById("summary").innerHTML =
-        '<div class="card"><span class="k">OR (GLMM)</span><span class="v">' + fmt(glmm.OR, 3) + '</span></div>' +
+        '<div class="card"><span class="k">OR (' + model + ')</span><span class="v">' + fmt(glmm.OR, 3) + '</span></div>' +
         '<div class="card"><span class="k">95% CI</span><span class="v">' + fmt(glmm.OR_lo, 3) + ', ' + fmt(glmm.OR_hi, 3) + '</span></div>' +
-        '<div class="card"><span class="k">log-OR θ̂</span><span class="v">' + fmt(glmm.theta, 4) + '</span></div>' +
+        '<div class="card"><span class="k">log-OR θ̂ (SE)</span><span class="v">' + fmt(glmm.theta, 4) + ' (' + fmt(glmm.se_theta, 4) + ')</span></div>' +
         '<div class="card"><span class="k">τ²</span><span class="v">' + fmt(glmm.tau2, 4) + '</span></div>' +
+        (model === "UM.RS" ? '<div class="card"><span class="k">σ² (study intercepts)</span><span class="v">' + fmt(glmm.sigma2, 4) + '</span></div>' : '') +
         '<div class="card"><span class="k">k studies</span><span class="v">' + glmm.k + '</span></div>' +
-        '<div class="card"><span class="k">0-event studies</span><span class="v">' + rows.filter(function (r) { return r.events_T === 0 || r.events_C === 0; }).length + '</span></div>';
+        '<div class="card"><span class="k">Double-zero studies dropped</span><span class="v">' + glmm.k_dropped00 + '</span></div>' +
+        '<div class="card"><span class="k">0-event studies</span><span class="v">' + glmm.n_zero_cell_studies + '</span></div>';
 
       document.querySelector("#compare tbody").innerHTML =
-        '<tr><td>Browser approximation</td><td>' + fmt(glmm.OR, 3) + '</td><td>' + fmt(glmm.OR_lo, 3) + ', ' + fmt(glmm.OR_hi, 3) + '</td><td>' + fmt(glmm.tau2, 4) + '</td></tr>' +
+        '<tr><td>GLMM ' + model + '</td><td>' + fmt(glmm.OR, 3) + '</td><td>' + fmt(glmm.OR_lo, 3) + ', ' + fmt(glmm.OR_hi, 3) + '</td><td>' + fmt(glmm.tau2, 4) + '</td></tr>' +
         '<tr><td>IV pool + 0.5 CC</td><td>' + fmt(iv.OR, 3) + '</td><td>' + fmt(iv.OR_lo, 3) + ', ' + fmt(iv.OR_hi, 3) + '</td><td>' + fmt(iv.tau2, 4) + '</td></tr>';
-
-      window.__almLastRareEventsGLMM = function () { return { glmm: glmm, iv: iv }; };
+      if (rcode) renderUMRS(rcode);
     }
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-    // UM.RS (random study intercepts) is fit by metafor via glmer's Laplace
-    // approximation — it cannot be reproduced in pure JS to metafor tolerance, so this
-    // model is offered as an exact, copy/run-it-yourself R deep-link rather than an
-    // unverified in-browser number (same principle as the RoBMA full-model deep-link).
+    // UM.RS (random study intercepts) is fitted in the browser like the other models; the
+    // equivalent metafor call is also shown so the fit can be re-run in R.
     function buildUMRSscript(rows) {
       var ai = rows.map(function (r) { return r.events_T; }).join(", ");
       var bi = rows.map(function (r) { return r.n_T - r.events_T; }).join(", ");
@@ -222,19 +225,14 @@ Trial 8, 1, 210, 3, 215</textarea>
         'predict(res, transf=exp)     # pooled OR with 95% CI'
       ].join("\n");
     }
-    function renderUMRS(rows) {
-      var code = buildUMRSscript(rows);
-      var esc = function (s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); };
-      document.getElementById("summary").innerHTML =
-        '<div class="card" style="grid-column:1/-1">' +
-        '<span class="k">UM.RS — random study effects (R-only)</span>' +
-        '<p style="margin:.4rem 0;font-size:.82rem;color:var(--muted)">UM.RS adds a random study intercept on top of the random treatment effect, so metafor fits it with <code>glmer</code> (Laplace approximation). That can\'t be reproduced in-browser to metafor tolerance, so allmeta gives you the exact script to run in R instead of an unverified number — use <strong>UM.FS</strong> or <strong>CM.EL</strong> (experimental browser fits) for an in-browser fit.</p>' +
+    function renderUMRS(code) {
+      document.getElementById("umrs-mount").innerHTML =
+        '<h2 style="margin-top:1rem">The same UM.RS fit in R</h2>' +
+        '<p style="margin:.4rem 0;font-size:.82rem;color:var(--muted)">metafor fits UM.RS with <code>lme4::glmer</code> (Laplace approximation, random study intercepts and treatment effects).</p>' +
         '<textarea id="umrs-code" readonly rows="11" aria-label="UM.RS metafor R script" style="width:100%;font:12px/1.4 ui-monospace,Consolas,monospace;background:var(--input-bg);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:.5rem">' + esc(code) + '</textarea>' +
         '<div style="margin-top:.4rem;display:flex;gap:.5rem;flex-wrap:wrap">' +
         '<button type="button" id="umrs-copy" style="padding:.4rem .8rem;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer">Copy R script</button>' +
-        '<button type="button" id="umrs-dl" style="padding:.4rem .8rem;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer">Download .R</button></div></div>';
-      document.querySelector("#compare tbody").innerHTML =
-        '<tr><td>UM.RS</td><td colspan="3" style="color:var(--muted)">Run the R script above (random study effects — glmer/Laplace).</td></tr>';
+        '<button type="button" id="umrs-dl" style="padding:.4rem .8rem;border:1px solid var(--border);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer">Download .R</button></div>';
       var copyBtn = document.getElementById("umrs-copy");
       copyBtn.addEventListener("click", function () { var ta = document.getElementById("umrs-code"); ta.select(); try { navigator.clipboard.writeText(ta.value); copyBtn.textContent = "Copied ✓"; } catch (e) { copyBtn.textContent = "Select + copy"; } });
       document.getElementById("umrs-dl").addEventListener("click", function () {
@@ -242,7 +240,6 @@ Trial 8, 1, 210, 3, 215</textarea>
         a.href = url; a.download = "rare-events-UM-RS.R"; document.body.appendChild(a); a.click();
         setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
       });
-      window.__almLastRareEventsGLMM = function () { return { model: "UM.RS", deepLink: true, rcode: code }; };
     }
 
     document.getElementById("btn-run").addEventListener("click", run);

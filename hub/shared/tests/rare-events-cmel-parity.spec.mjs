@@ -13,10 +13,13 @@
  *     → θ=-0.95937220  se=0.23453577  τ²≈1.3e-5 (boundary)
  *
  * The engine conditions on each study's event margin (no nuisance baseline) and
- * integrates the random effect by ADAPTIVE Gauss-Hermite, reproducing metafor to
- * ~1e-7 on θ/τ² and ~1e-3 on SE. It is also more robust than metafor's CM.EL
- * optimiser, which fails to converge on the very sparse built-in example — so the
- * app keeps UM.FS as the default and offers CM.EL as the verified exact option.
+ * integrates the random effect by adaptive Gauss-Hermite (48 nodes), reproducing
+ * metafor's objective to ~1e-15 and θ/τ² to ~1e-7. The SE agrees to ~1e-3 only:
+ * metafor's numerical Hessian (numDeriv, r = 16) is affected by quadrature noise;
+ * against the Hessian of the precise objective the SE agrees to ~1e-8 (paper-30
+ * validation archive, PREREG amendment A4). For DS_C (τ² < 1e-4) metafor and the
+ * app report the fixed-effect conditional estimate. metafor's CM.EL optimiser fails
+ * on the sparse built-in example, where the app returns the fixed-effect fit.
  */
 import { test, expect } from '@playwright/test';
 const URL = 'http://localhost:8088/rare-events-glmm/index.html';
