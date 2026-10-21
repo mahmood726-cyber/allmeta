@@ -1,0 +1,6 @@
+{
+  "fits": 2023,
+  "refusals": 1,
+  "configurations": 92,
+  "comparison": "deepStrictEqual of every preexisting fit field, no rounding or tolerances"
+}

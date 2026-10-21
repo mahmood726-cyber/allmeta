@@ -72,20 +72,22 @@ test('P1: recognized headers keep aliases, reordered columns, predictors and SE 
   assert.throws(() => E.parseStudies('cluster,yi,vi'), /Only a header row/);
 });
 
-function app() {
+async function app() {
   const html = fs.readFileSync(path.join(root, 'rve-meta/index.html'), 'utf8');
   const { document, window } = parseHTML(html);
   const downloads = [];
-  const c = { document, console, Blob, setTimeout: () => 0,
+  const c = { document, console, Blob, atob, setTimeout: () => 0,
     URL: { createObjectURL: blob => { downloads.push(blob); return 'blob:node'; }, revokeObjectURL() {} } };
   c.window = c;
   vm.createContext(c);
   // Scope to the app's real parser/engine/export dependencies and main UI script.
   // Autosave, hub navigation and accessibility decoration are outside this check.
-  for (const src of ['stats-qt', 'rve', 'rve-extras', 'build-info']) {
+  // rve-eigen compiles asynchronously outside Node, as on the page; wait for it.
+  for (const src of ['stats-qt', 'rve-eigen', 'rve', 'rve-extras', 'build-info']) {
     vm.runInContext(fs.readFileSync(path.join(root, `shared/${src}.js`), 'utf8'), c,
       { filename: `${src}.js`, timeout: 10000 });
   }
+  await c.AlmRVEEigen.ready;
   const scripts = [...document.querySelectorAll('script:not([src])')]
     .filter(s => s.textContent.includes('function run()'));
   assert.equal(scripts.length, 1, 'one real app fit handler');
@@ -102,7 +104,7 @@ function app() {
 }
 
 test('P0 DOM: displayed and exported cluster counts agree after quoted input', async () => {
-  const h = app();
+  const h = await app();
   h.fit(QUOTED);
   assert.match(h.el('meta-row').textContent, /m = 2 clusters/);
   assert.equal(h.c.__almLastRVE().model.m_clusters, 2);
@@ -112,10 +114,27 @@ test('P0 DOM: displayed and exported cluster counts agree after quoted input', a
   const exported = JSON.parse(await h.downloads[0].text());
   assert.equal(exported.model.m_clusters, 2);
   assert.deepEqual(exported.inputs.rows.map(r => r.cluster), ['A', 'A', 'B']);
+
+  // 16-digit numeric IDs (review N1): R 4.6.0 keeps these six as six levels.
+  // The rows are rve-meta/tests/fixtures/p15/as-character.R's robumeta fit.
+  const six = require(path.join(root, 'rve-meta/tests/fixtures/p15/as-character.json')).fits[0];
+  assert.equal(six.R.m, 6);
+  h.fit(six.rows.map(r => `${r.cluster},${r.yi},${r.vi}`).join('\n'));
+  assert.match(h.el('meta-row').textContent, /m = 6 clusters/);
+  assert.equal(h.c.__almLastRVE().model.m_clusters, 6);
+  h.document.querySelector('[data-action="json"]').click();
+  const exportedSix = JSON.parse(await h.downloads[1].text());
+  assert.equal(exportedSix.model.m_clusters, 6);
+  assert.deepEqual(exportedSix.inputs.rows.map(r => r.cluster), six.rows.map(r => r.cluster));
+  // as.character(1e15 + 4) and (1e15 + 5) are both "1e+15": one level, so the
+  // refusal names the fitted m = 1, not the two distinct numbers typed.
+  h.fit('1000000000000004,0.2,0.03\n1000000000000005,0.4,0.04');
+  assert.match(h.document.querySelector('#meta-row [role="alert"]')?.textContent || '',
+    /Fit failed: 1 cluster cannot support 1 coefficient/);
 });
 
-test('P1 DOM: malformed refit clears prior sensitivity, results and all exports', () => {
-  const h = app();
+test('P1 DOM: malformed refit clears prior sensitivity, results and all exports', async () => {
+  const h = await app();
   h.fit('a,.2,.03\nb,.4,.04\nc,.1,.02\nd,.6,.05');
   assert.equal(typeof h.c.__almLastRVE, 'function');
   h.el('btn-rho-sens').click();
@@ -139,4 +158,44 @@ test('P1 DOM: malformed refit clears prior sensitivity, results and all exports'
   h.fit('a,.2,.03\nb,.4,.04\nc,.1,.02\nd,.6,.05');
   assert.equal(typeof h.c.__almLastRVE, 'function');
   assert.ok(exports.every(b => b.disabled === false));
+});
+
+// R 4.6.0 read.csv: a column of numbers is numeric (also hex and "+5"), so
+// "007" and "7" are one study and as.factor() orders levels numerically.
+test('M2: an all-numeric cluster column is typed as R read.csv would', () => {
+  const parsed = E.parseStudies('7,.1,.04\n007,.2,.05\n10,.3,.04\n2,.4,.05\n0x1A,.5,.04\n+5,.6,.05');
+  assert.equal(parsed.clusterNumeric, true);
+  assert.deepEqual(parsed.rows.map(r => r.cluster), [7, 7, 10, 2, 26, 5]);
+  const text = E.parseStudies('s7,.1,.04\n7,.2,.05\n10,.3,.04');
+  assert.equal(text.clusterNumeric, false);
+  assert.deepEqual(text.rows.map(r => r.cluster), ['s7', '7', '10']);
+  for (const bad of ['Inf', 'NaN', 'NA'])
+    assert.throws(() => E.parseStudies(`1,.1,.04\n${bad},.2,.05\n3,.3,.04`),
+      e => e.userFacing === true && new RegExp(`Line 2: cluster label '${bad}' is not a finite number`).test(e.message), bad);
+});
+
+// read-csv-logical.R: read.csv types an all-T/F/TRUE/FALSE column as logical,
+// so "T" and "TRUE" are one study and the levels are "FALSE" < "TRUE".
+test('N2: a T/F/TRUE/FALSE cluster column is typed as R read.csv would', () => {
+  const { cases } = require(path.join(root, 'rve-meta/tests/fixtures/p15/read-csv-logical.json'));
+  assert.ok(cases.some(c => c.class === 'logical') && cases.some(c => c.class === 'character'));
+  for (const c of cases) {
+    const parsed = E.parseStudies(c.input.map((s, i) => `${s},${i / 10},0.04`).join('\n'));
+    assert.equal(parsed.clusterNumeric, false, c.input.join());
+    const lv = RVE._reductions.rFactorLevels(parsed.rows.map(r => r.cluster));
+    const levels = [...new Set(lv.map((l, i) => i).sort((a, b) =>
+      lv[a].key < lv[b].key ? -1 : lv[a].key > lv[b].key ? 1 : a - b).map(i => lv[i].group))];
+    assert.deepEqual(levels, c.levels, `levels of ${c.input.join()}`);
+    assert.deepEqual(lv.map(l => levels.indexOf(l.group) + 1), c.codes, `codes of ${c.input.join()}`);
+  }
+  assert.throws(() => E.parseStudies('T,.1,.04\nNA,.2,.05\nF,.3,.04'),
+    e => e.userFacing === true && /Line 2: cluster label 'NA' is missing/.test(e.message));
+});
+
+test('M2: the exported R script keeps a numeric cluster column numeric', () => {
+  const rows = E.parseStudies('2,.1,.04\n10,.2,.05\n1,.3,.04').rows;
+  const script = E.toRScript({ rows, names: [], rho: 0.8, centred: false, version: 'test', generated: 'fixed' });
+  assert.match(script, /^ {2}cluster = c\(2, 10, 1\),$/m);
+  const labels = E.toRScript({ rows: E.parseStudies('b,.1,.04\na,.2,.05').rows, names: [], rho: 0.8, centred: false, generated: 'fixed' });
+  assert.match(labels, /^ {2}cluster = c\("b", "a"\),$/m);
 });

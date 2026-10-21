@@ -8,12 +8,31 @@
 ## point exactly as metasens does internally (source lines 224-248). The JS
 ## engine must reproduce (TE, rho, tau, seTE) at the identical (gamma0, gamma1).
 ## This isolates engine parity from R's contour algorithm.
+##
+##   Rscript copas/tests/fixtures/copas-oracle.R      (from the repo root)
+##
+## Consumers of copas-oracle.json — keep BOTH in step when regenerating:
+##   hub/shared/tests/copas-parity.spec.mjs   (browser: drives copas/index.html)
+##   copas/tests/copas-oracle.test.mjs        (node: drives shared/copas-core.js)
+## Paths are repo-root-relative so the script runs on any checkout; the version
+## pins are asserted so a different metasens cannot silently rewrite the oracle.
 suppressPackageStartupMessages({library(metasens); library(meta); library(jsonlite)})
+
+PINS <- list(R = "4.6.0", metasens = "1.5.3", meta = "8.5.0")
+act <- list(R = paste(R.version$major, R.version$minor, sep = "."),
+            metasens = as.character(packageVersion("metasens")),
+            meta = as.character(packageVersion("meta")))
+for (p in names(PINS)) if (!identical(PINS[[p]], act[[p]]))
+  stop(sprintf("version pin failed: %s needs %s, have %s", p, PINS[[p]], act[[p]]))
+
+FIXDIR <- file.path("copas", "tests", "fixtures")
+if (!dir.exists(FIXDIR))
+  stop("run this from the repo root: ", file.path(FIXDIR, "copas-oracle.R"))
 
 cat("===== metasens:::lambda (port this exactly) =====\n")
 print(metasens:::lambda)
 
-d  <- read.csv("C:/Projects/allmeta/copas/tests/fixtures/copas-tiny.csv")
+d  <- read.csv(file.path(FIXDIR, "copas-tiny.csv"))
 TE <- d$yi; seTE <- d$sei
 m  <- metagen(TE = TE, seTE = seTE, sm = "MD", method.tau = "DL")
 TE.random <- as.numeric(m$TE.random)
@@ -72,12 +91,16 @@ for (idx in seq_along(pgrid)) {
     N_unpubl = sum((1 - p.si) / p.si))
 }
 
+## Provenance, so a consumer can refuse a substituted or truncated oracle
+## rather than passing vacuously on whatever it is handed (MINOR-19).
 oracle <- list(
-  fixture = "copas-tiny", seTE_min = seMin, seTE_max = seMax,
+  fixture = "copas-tiny", versions = act, k = length(TE),
+  TE = TE, seTE = seTE,
+  seTE_min = seMin, seTE_max = seMax,
   TE_random = TE.random, tau_dl = tau, rho_bound = rho.bound,
   left = left, rho0 = rho0, pHi = pHi,
   points = do.call(rbind.data.frame, rows))
 writeLines(toJSON(oracle, auto_unbox = TRUE, digits = 12, dataframe = "rows"),
-           "C:/Projects/allmeta/copas/tests/fixtures/copas-oracle.json")
+           file.path(FIXDIR, "copas-oracle.json"))
 cat("\nwrote copas-oracle.json with", length(rows), "points\n")
 print(oracle$points)

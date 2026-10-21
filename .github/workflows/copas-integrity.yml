@@ -1,0 +1,62 @@
+name: Copas selection-model integrity
+
+# The copas engine's R-parity suite lives in copas/tests/*.test.mjs and, until
+# this workflow, ran NOWHERE in CI: shared-tests.yml covers hub/shared/tests
+# and playwright.yml covers tests/playwright, so every repo-resident check of
+# shared/copas-core.js against metasens was a local-only run. That is exactly
+# the gap review-212 MAJOR-7 names -- the three fixes in 43ae0db are correct
+# but a regression of any of them could not be detected by CI.
+#
+# Nothing here needs R or a browser: both fixtures are committed
+# (copas-metasens-fixture.json from metasens::copas(), copas-oracle.json from
+# metasens's own likelihood + optim), and both suites are stdlib node and
+# stdlib python. The browser spec that drives the page against the same oracle
+# (hub/shared/tests/copas-parity.spec.mjs) runs in shared-tests.yml.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'copas/**'
+      - 'shared/copas-core.js'
+      - 'shared/ma-core.js'
+      - 'hub/shared/tests/copas-parity.spec.mjs'
+      - '.github/workflows/copas-integrity.yml'
+  workflow_dispatch:
+
+jobs:
+  copas-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # metasens::copas() parity: the gamma grids, pretty(), contourLines(),
+      # the per-line regressions, the orthogonal line, both likelihoods and
+      # their optimality, and the adjusted estimate -- the last of these in
+      # every configuration including the ngrid = 20 REML one the app ships.
+      - run: node --test copas/tests/copas-core-metasens.test.mjs
+      # The profile MLE against the second-dataset metasens oracle.
+      - run: node --test copas/tests/copas-oracle.test.mjs
+      # The R base-stats routines the port reimplements (pnorm's two branches
+      # and its far-tail cutoff, lambda, pchisq on 1 df, summary.lm's
+      # rank-deficient branch), pinned straight against R. Each of the three
+      # fixes in 43ae0db fails one of these.
+      - run: node --test copas/tests/copas-core-rbase.test.mjs
+      # Inputs the model is not identified on. These guard against the
+      # OPPOSITE of a crash: a NaN objective or an empty orthogonal line being
+      # converted into a schema-valid, range-plausible estimate.
+      - run: node --test copas/tests/copas-core-refusals.test.mjs
+      # Small k, both values of metasens's `left`, the unadjusted pool against
+      # meta::metagen, and the two deliberately reproduced contourLines quirks
+      # on hand-built surfaces.
+      - run: node --test copas/tests/copas-cases.test.mjs
+      # Page structure, the __almCopasProfileMLE <-> parity-spec contract, and
+      # the claim guards (no private notes file cited, no "never worse" claim).
+      - run: python -m pip install pytest
+      - run: python -m pytest copas/tests/test_structure.py -q
