@@ -52,6 +52,10 @@ jobs:
       # OPPOSITE of a crash: a NaN objective or an empty orthogonal line being
       # converted into a schema-valid, range-plausible estimate.
       - run: node --test copas/tests/copas-core-refusals.test.mjs
+      # Small k, both values of metasens's `left`, the unadjusted pool against
+      # meta::metagen, and the two deliberately reproduced contourLines quirks
+      # on hand-built surfaces.
+      - run: node --test copas/tests/copas-cases.test.mjs
       # Page structure, the __almCopasProfileMLE <-> parity-spec contract, and
       # the claim guards (no private notes file cited, no "never worse" claim).
       - run: python -m pytest copas/tests/test_structure.py -q

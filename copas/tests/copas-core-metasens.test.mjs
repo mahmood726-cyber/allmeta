@@ -402,8 +402,18 @@ for (const name of CONFIGS) {
     close("tau.slope", fit.tau_slope, c["tau.slope"], TOL_ITER);
     close("rho.slope", fit.rho_slope, c["rho.slope"], TOL_BOUND);
     close("seTE.slope", fit.seTE_slope, c["seTE.slope"], TOL_BOUND);
-    close("lower.slope", fit.lower_slope, c["lower.slope"], TOL_ITER);
-    close("upper.slope", fit.upper_slope, c["upper.slope"], TOL_ITER);
+    // lower/upper.slope are TE.slope +- z*seTE.slope, so they inherit
+    // seTE.slope's error scaled by z ~ 1.96 and cannot be held tighter than
+    // seTE.slope's own tier. Checked two ways rather than one: the CI ALGEBRA
+    // is pinned at 1e-9 against the port's own inputs (and separately against
+    // R's own values, in the `N.unpubl, ci() and pval.rsb` test above), and
+    // the comparison against R is at TOL_BOUND.
+    const ciSelf = nums(fit.TE_slope).map((v, i) =>
+      CC.ci(v, nums(fit.seTE_slope)[i], num(c["level.ma"])));
+    close("lower.slope(self)", fit.lower_slope, ciSelf.map((x) => x.lower), TOL_DET);
+    close("upper.slope(self)", fit.upper_slope, ciSelf.map((x) => x.upper), TOL_DET);
+    close("lower.slope", fit.lower_slope, c["lower.slope"], TOL_BOUND);
+    close("upper.slope", fit.upper_slope, c["upper.slope"], TOL_BOUND);
     noWorse("loglik1", fit.loglik1, c.loglik1);
     close("loglik1", fit.loglik1, c.loglik1, TOL_ITER);
 

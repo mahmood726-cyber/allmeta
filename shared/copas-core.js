@@ -373,8 +373,22 @@
     for (i = 0; i < nx - 1; i++) {
       xl = x[i]; xh = x[i + 1];
       // R-QUIRK 1: xl is reused as a swap temporary in the k == 4 branch below
-      // and is NOT restored, so later cells in the same column see the swapped
-      // value. Faithfully reproduced: xl is assigned only here.
+      // and is NOT restored, and it is assigned only HERE (in the i loop), not
+      // per cell -- so a later cell in the same column could in principle read
+      // the swapped value. Faithfully reproduced, scoping included.
+      //
+      // Measured, though: the leak has no observable effect. On exit from that
+      // branch xl is always exactly x[i] again, because the selection sort
+      // leaves it holding the left-edge intersection, whose x IS xl. Checked
+      // over the six hand-built surfaces in copas-cases-fixture.json (saddle2
+      // takes this branch 20 times), the three metasens fixture surfaces
+      // (REML_20 takes it once) and 200,000 randomly generated small surfaces:
+      // xl === x[i] at every branch exit, and restoring xl explicitly changes
+      // no contour line on any of them. Reproduced for fidelity and for the
+      // scoping; but the earlier claim that "later cells in the same column
+      // see the swapped value" was never demonstrated and no input has been
+      // found for which it holds. The branch ITSELF is now exercised against
+      // R -- see copas/tests/copas-cases.test.mjs, surface saddle2.
       for (j = 0; j < ny - 1; j++) {
         yl = y[j]; yh = y[j + 1];
         var kk = i + j * nx;
