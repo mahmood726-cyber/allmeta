@@ -32,6 +32,7 @@ jobs:
           python-version: "3.12"
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - run: node csv-upload-kinds.test.cjs && node results-export-fallback.test.cjs && node v181-negative-controls.cjs
       - run: npx playwright test --reporter=line,json
         env:
           CI: "true"

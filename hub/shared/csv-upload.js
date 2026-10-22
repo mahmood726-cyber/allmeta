@@ -74,14 +74,23 @@
     return { value: value };
   }
 
+  // Statistical units are semantic, not edit-distance matches.
+  function _kind(header) {
+    var key = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (['se', 'sei', 'stderr', 'stderror', 'standarderror', 'sete'].includes(key)) return 'standard error';
+    if (['vi', 'var', 'variance'].includes(key)) return 'variance';
+    if (['sd', 'sdi', 'stddev', 'stdev', 'standarddeviation'].includes(key)) return 'standard deviation';
+    return '';
+  }
+
   /**
    * parse(text, columns) -> { headers, rows, warnings }
    *
    * text    — raw CSV string (RFC-4180)
    * columns — array of { name: string, type?: 'int'|'float'|'string' }
    *
-   * Fuzzy header matching: any header within Levenshtein <= 2 of a declared
-   * column name is silently remapped (with a warning in the warnings array).
+   * Exact names and statistical aliases precede explicit SE-to-variance conversion.
+   * Remaining same-kind fuzzy matches (distance <= 2) produce visible warnings.
    */
   function parse(text, columns) {
     columns = columns || [];
@@ -92,33 +101,64 @@
     }
     var rawHeaders = matrix[0].map(function (h) { return h.trim(); });
 
-    // Build headerMap: raw header string -> column descriptor (possibly fuzzy).
-    // Two passes so a fuzzy near-match can NEVER hijack a column that another
-    // header claims exactly (e.g. "sd" is Levenshtein 1 from "se" — without this
-    // it would overwrite the real "se" with the standard deviation). Pass 1 takes
-    // exact matches; pass 2 fuzzes only over columns not already claimed, and no
-    // two headers may map to the same column.
-    var headerMap = {}, claimed = {}, hi, ci;
+    // Exact names (case-insensitive) win, then same-kind aliases, then the
+    // explicit SE -> variance conversion. Fuzzy matching is never a unit change.
+    var headerMap = Object.create(null), claimed = Object.create(null), hi, ci;
+    var errors = [];
+    function claim(header, col, square) {
+      headerMap[header] = { name: col.name, type: square ? 'float' : col.type, square: !!square };
+      claimed[col.name] = true;
+    }
     for (hi = 0; hi < rawHeaders.length; hi++) {
       var he = rawHeaders[hi];
       for (ci = 0; ci < columns.length; ci++) {
-        if (he === columns[ci].name && !claimed[columns[ci].name]) { headerMap[he] = columns[ci]; claimed[columns[ci].name] = true; break; }
+        if (he.toLowerCase() === columns[ci].name.toLowerCase() && !claimed[columns[ci].name]) {
+          claim(he, columns[ci]); break;
+        }
+      }
+    }
+    for (hi = 0; hi < rawHeaders.length; hi++) {
+      var ha = rawHeaders[hi], kind = _kind(ha);
+      if (headerMap[ha] || !kind) continue;
+      for (ci = 0; ci < columns.length; ci++) {
+        if (!claimed[columns[ci].name] && kind === _kind(columns[ci].name)) {
+          claim(ha, columns[ci]);
+          warnings.push('Header "' + ha + '" recognized as "' + columns[ci].name + '" (' + kind + ')');
+          break;
+        }
+      }
+    }
+    for (hi = 0; hi < rawHeaders.length; hi++) {
+      var hs = rawHeaders[hi];
+      if (headerMap[hs] || _kind(hs) !== 'standard error') continue;
+      for (ci = 0; ci < columns.length; ci++) {
+        if (!claimed[columns[ci].name] && _kind(columns[ci].name) === 'variance') {
+          claim(hs, columns[ci], true);
+          warnings.push('Converted standard error "' + hs + '" to variance "' + columns[ci].name +
+            '" using ' + columns[ci].name + ' = SE^2 (each SE squared).');
+          break;
+        }
       }
     }
     for (hi = 0; hi < rawHeaders.length; hi++) {
       var h = rawHeaders[hi];
-      if (headerMap[h]) continue;                     // already claimed exactly
+      if (headerMap[h]) continue;
       var bestCol = null, bestDist = Infinity;
       for (ci = 0; ci < columns.length; ci++) {
-        if (claimed[columns[ci].name]) continue;      // don't hijack a claimed column
+        if (claimed[columns[ci].name]) continue;
+        // Unknown headers may not fuzz into SE/variance/SD either: short names
+        // are too easy to confuse with unrelated fields such as n or moderator.
+        if (_kind(h) !== _kind(columns[ci].name)) continue;
         var d = _lev(h, columns[ci].name, 3);
         if (d < bestDist) { bestDist = d; bestCol = columns[ci]; }
       }
       if (bestCol && bestDist <= 2) {
-        headerMap[h] = bestCol; claimed[bestCol.name] = true;
-        warnings.push('Header "' + h + '" mapped to "' + bestCol.name + '" (Levenshtein ' + bestDist + ')');
+        claim(h, bestCol);
+        warnings.push('CHECK CSV HEADERS: Header "' + h + '" mapped to "' + bestCol.name + '" (Levenshtein ' + bestDist + ')');
       } else {
-        headerMap[h] = { name: h };                   // pass through as a plain column
+        headerMap[h] = { name: h };
+        if (_kind(h)) warnings.push('Header "' + h + '" retained as ' + _kind(h) +
+          '; it was not mapped to a different statistical kind. Check the expected CSV format.');
       }
     }
 
@@ -133,15 +173,25 @@
         if (result.err) {
           warnings.push('row ' + r + ': ' + result.err);
         }
+        if (col.square) {
+          var converted = result.value * result.value;
+          if (result.err || result.value < 0 || !Number.isFinite(converted) ||
+              (result.value > 0 && converted === 0)) {
+            errors.push('CSV rejected at row ' + r + ': "' + rawHeaders[i] +
+              '" must be a non-negative finite SE whose square is representable.');
+          } else {
+            result.value = converted;
+          }
+        }
         obj[col.name] = result.value;
       }
       rows.push(obj);
     }
 
-    return { headers: rawHeaders, rows: rows, warnings: warnings };
+    return { headers: rawHeaders, rows: errors.length ? [] : rows, warnings: warnings.concat(errors), errors: errors };
   }
 
-  const _STYLE = `.alm-csv{display:grid;gap:.6rem;font:13px/1.4 system-ui,sans-serif}.alm-csv-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.alm-csv input[type=file]{font:inherit}.alm-csv textarea{min-height:6rem;width:100%;font:12px/1.35 ui-monospace,Consolas,monospace;padding:.4rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--input-bg,#fff);color:var(--ink,#15181d)}.alm-csv button{padding:.3rem .6rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--panel,#fff);color:var(--ink,#15181d);cursor:pointer;font:inherit}.alm-csv details summary{cursor:pointer;font-weight:600}.alm-csv [data-section=warnings]{color:#b45309;font-size:12px}.alm-csv [data-section=warnings]:empty{display:none}.alm-csv table{border-collapse:collapse;font-size:12px;margin-top:.4rem}.alm-csv th,.alm-csv td{padding:.2rem .4rem;border:1px solid var(--border,#e2e8f0);text-align:left}@media (prefers-color-scheme:dark){.alm-csv textarea{background:var(--input-bg,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv button{background:var(--panel,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv [data-section=warnings]{color:#e0a85e}.alm-csv th,.alm-csv td{border-color:var(--border,#3a4048)}}`;
+  const _STYLE = `.alm-csv{display:grid;gap:.6rem;font:13px/1.4 system-ui,sans-serif}.alm-csv-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.alm-csv input[type=file]{font:inherit}.alm-csv textarea{min-height:6rem;width:100%;font:12px/1.35 ui-monospace,Consolas,monospace;padding:.4rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--input-bg,#fff);color:var(--ink,#15181d)}.alm-csv button{padding:.3rem .6rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--panel,#fff);color:var(--ink,#15181d);cursor:pointer;font:inherit}.alm-csv details summary{cursor:pointer;font-weight:600}.alm-csv [data-section=warnings]{color:#7c2d12;background:#fff4e5;border:2px solid currentColor;border-radius:6px;padding:.75rem;font-size:14px;font-weight:600}.alm-csv [data-section=warnings]:empty{display:none}.alm-csv table{border-collapse:collapse;font-size:12px;margin-top:.4rem}.alm-csv th,.alm-csv td{padding:.2rem .4rem;border:1px solid var(--border,#e2e8f0);text-align:left}@media (prefers-color-scheme:dark){.alm-csv textarea{background:var(--input-bg,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv button{background:var(--panel,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv [data-section=warnings]{color:#ffe0b2;background:#352719}.alm-csv th,.alm-csv td{border-color:var(--border,#3a4048)}}`;
   let _stylesInjected = false;
   function _ensureStyle() {
     if (_stylesInjected) return;
@@ -192,7 +242,7 @@
         <div class="alm-csv-row">
           <button type="button" data-action="parse-paste">Parse pasted text</button>
         </div>
-        <div data-section="warnings"></div>
+        <div data-section="warnings" role="alert" aria-live="assertive"></div>
         ${_formatPanel(columns)}
       </div>`;
     const fileInput = target.querySelector('input[type="file"]');
@@ -203,6 +253,7 @@
       const result = (typeof opts.parse === 'function' ? opts.parse : parse)(text, columns);
       warnEl.textContent = result.warnings.map(w => String.fromCharCode(8226) + ' ' + w).join('\n');
       warnEl.style.whiteSpace = 'pre-wrap';
+      if (result.errors && result.errors.length) return;
       onParse(result);
     }
     fileInput.addEventListener('change', () => {

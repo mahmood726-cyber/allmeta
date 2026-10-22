@@ -11,6 +11,18 @@ the section is renamed to that version and dated, and a fresh
 
 ## [Unreleased]
 
+### Fixed
+- CSV uploads distinguish standard errors, variances and standard deviations.
+  SE columns supplied to variance-based apps are explicitly squared, with a
+  prominent conversion notice; incompatible statistical headers cannot be
+  silently matched.
+- Methods+Results reports describe the settings actually used by the eight
+  supported analysis apps. Reports from apps without run-specific Methods now
+  say that Methods were not recorded instead of copying page boilerplate.
+  Reports retain completed-run settings and identify the optional maximum
+  likelihood (ML) location-scale fit.
+
+
 ### Added
 - RVE: `shared/numerics/LICENSES-rve-eigen.md` reproduces the licences of the
   webR BLAS/LAPACK binaries embedded in `shared/rve-eigen.js` (R's

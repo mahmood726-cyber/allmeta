@@ -26,7 +26,7 @@
   function _flatKVs(obj, prefix) {
     prefix = prefix || '';
     const out = [];
-    for (const [k, v] of Object.entries(obj)) {
+    for (const [k, v] of Object.entries(obj || {})) {
       const path = prefix ? prefix + '.' + k : k;
       if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
         out.push(..._flatKVs(v, path));
@@ -61,20 +61,19 @@
   }
 
   // ---- Methods + Results prose report -----------------------------------
-  // Auto-pulls the app's own descriptive copy (title, intro, footer/methods note)
-  // — which already documents the method — and formats getResults() beneath it,
-  // so any app wiring resultsExport gets a readable, citable report for free.
+  // Methods must describe the exported run. Static page introductions and
+  // footers document capabilities, not the settings used for these results.
+  const _METHODS_UNRECORDED = 'Methods of this run: not recorded by this app; the settings used are listed under Results.';
   function _grab(sel) {
     const el = document.querySelector(sel);
     return el ? el.textContent.replace(/\s+/g, ' ').trim() : '';
   }
-  function _autoMeta(opts) {
+  function _autoMeta(opts, results) {
     const title = opts.title || _grab('h1') || document.title || 'allmeta analysis';
-    const desc = opts.description || _grab('header p') || _grab('main p') ||
-      (document.querySelector('meta[name="description"]') || {}).content || '';
-    let methods = opts.methods || _grab('.footer-note') || _grab('footer');
-    if (typeof opts.methods === 'function') methods = opts.methods();
-    return { title, desc, methods };
+    // Pass the exact getResults() snapshot to avoid reading pending controls
+    // or recomputing with different settings while building the report.
+    const methods = typeof opts.methods === 'function' ? opts.methods(results) : '';
+    return { title, methods };
   }
   function _resultsBlock(obj, plain) {
     const rows = _flatKVs(obj).filter(([k]) => k !== '_schema');
@@ -83,7 +82,7 @@
     return _toMD(obj);
   }
   function _toReport(obj, opts, plain) {
-    const m = _autoMeta(opts);
+    const m = _autoMeta(opts, obj);
     const today = new Date().toISOString().slice(0, 10);
     const L = [];
     L.push((plain ? '' : '# ') + m.title);
@@ -94,8 +93,7 @@
     L.push('');
     L.push((plain ? 'METHODS' : '## Methods'));
     L.push('');
-    if (m.desc) L.push(m.desc);
-    if (m.methods && m.methods !== m.desc) { L.push(''); L.push(m.methods); }
+    L.push(m.methods || _METHODS_UNRECORDED);
     L.push('');
     L.push((plain ? 'RESULTS' : '## Results'));
     L.push('');

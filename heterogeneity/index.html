@@ -689,8 +689,8 @@
       const item=document.createElement("li"); item.textContent=message; list.appendChild(item);
       warnEl.classList.add("is-visible");
     }
-    function requireFittedAnalysis() {
-      if (_lastState!==JSON.stringify(readState())) render();
+    function requireFittedAnalysis(refresh = true) {
+      if (refresh && _lastState!==JSON.stringify(readState())) render();
       if (_lastInfo) return true;
       addWarning("No valid results to export");
       return false;
@@ -823,7 +823,9 @@
     function attach() {
       document.getElementById("btn-run").addEventListener("click", render);
       document.getElementById("alm-export-mount").addEventListener("click", function (event) {
-        if (event.target.closest("button") && !requireFittedAnalysis()) {
+        // Shared reports describe the cached completed run, including its estimator.
+        // Pending controls must not silently trigger a different analysis on export.
+        if (event.target.closest("button") && !requireFittedAnalysis(false)) {
           event.preventDefault(); event.stopImmediatePropagation();
         }
       }, true);
@@ -1011,6 +1013,12 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'heterogeneity-results',
+      methods: function (r) {
+        if (!r || !r.tau2_estimator) return '';
+        var estimator = { pm: 'Paule-Mandel (PM)', reml: 'REML', ml: 'maximum likelihood (ML)', eb: 'empirical Bayes (EB)', sj: 'Sidik-Jonkman (SJ)', he: 'Hedges (HE)', hs: 'Hunter-Schmidt (HS)', dl: 'DerSimonian-Laird (DL)' }[r.tau2_estimator] || r.tau2_estimator;
+        return 'Inverse-variance random effects (RE); tau-squared estimator used: ' + estimator +
+          '. 95% normal (z) and modified Hartung-Knapp confidence intervals (variance floor 1); prediction interval uses unadjusted model SE and t with k-1 degrees of freedom. Q-profile intervals for tau-squared and model-based I-squared. Input effect scale retained; no continuity correction.';
+      },
       getResults: function () { return window.__almResults(); },
     });
 

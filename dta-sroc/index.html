@@ -839,6 +839,16 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'dta-sroc-results',
+      methods: function (r) {
+        if (!r || !r.bivariate) return '';
+        var method = r.bivariate.method;
+        var model = method === 'fixed' ? 'Fixed effect (FE); no between-study variance estimated' :
+          'Random effects (RE); between-study covariance estimator: ' + ({ reml: 'REML', ml: 'ML', mm: 'method of moments', vc: 'variance components' }[method] || method);
+        return 'Bivariate logit sensitivity/false-positive-rate model. ' + model +
+          '. 95% normal (Wald) confidence intervals, back-transformed for sensitivity and specificity.' +
+          ' Continuity correction: ' + ({ all: '0.5 in all studies if any cell is zero', single: '0.5 only in studies with a zero cell', none: 'none' }[r.correction_control] || r.correction_control) +
+          '. Study-level covariate meta-regression: ' + (r.meta_regression ? 'enabled' : 'disabled') + '.';
+      },
       getResults: function () {
         if (!requireValidResult()) throw new Error('No valid results to export');
         return window.__almResults();
