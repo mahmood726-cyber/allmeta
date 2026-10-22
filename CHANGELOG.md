@@ -12,16 +12,19 @@ the section is renamed to that version and dated, and a fresh
 ## [Unreleased]
 
 ### Fixed
-- CSV uploads distinguish standard errors, variances and standard deviations.
-  SE columns supplied to variance-based apps are explicitly squared, with a
-  prominent conversion notice; incompatible statistical headers cannot be
-  silently matched.
+- CSV uploads distinguish standard errors, variances and standard deviations,
+  including arm- and outcome-suffixed headers. Suffixed statistical fields
+  require exact declared names; they cannot be silently remapped across kinds
+  or arms. Recognised SE columns supplied to variance-based apps are explicitly
+  squared with a prominent notice. Blank SE cells remain missing with a row
+  warning, just like blank variance cells; invalid nonblank conversions fail.
 - Methods+Results reports describe the settings actually used by the eight
-  supported analysis apps. Reports from apps without run-specific Methods now
-  say that Methods were not recorded instead of copying page boilerplate.
-  Reports retain completed-run settings and identify the optional maximum
-  likelihood (ML) location-scale fit.
-
+  supported analysis apps, including DTA's completed analysis and the optional
+  meta-regression location-scale fit. Pending edits do not change that report.
+  Explicit app-supplied Methods and description strings remain supported.
+  Page boilerplate is no longer copied into Methods; unsupported apps say
+  Methods were not recorded, and supported apps without results say there is
+  no completed run.
 
 ### Added
 - RVE: `shared/numerics/LICENSES-rve-eigen.md` reproduces the licences of the

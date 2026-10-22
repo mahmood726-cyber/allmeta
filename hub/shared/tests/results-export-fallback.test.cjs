@@ -24,8 +24,8 @@ const context = {
 };
 let src = fs.readFileSync(source, 'utf8');
 if (process.env.V181_MUTANT === 'footer') {
-  const mutant = src.replace("const methods = typeof opts.methods === 'function' ? opts.methods(results) : '';",
-    "const methods = _grab('.footer-note') || _grab('footer');");
+  const mutant = src.replace(/const methods = typeof opts\.methods[\s\S]*?;\n    return \{ title, methods \};/,
+    "const methods = _grab('.footer-note') || _grab('footer');\n    return { title, methods };");
   assert.notEqual(mutant, src, 'Footer mutation target must exist');
   src = mutant;
 }
@@ -51,8 +51,33 @@ vm.runInNewContext(src, context);
   assert.equal(received, result, 'Methods must use the exact exported results snapshot');
   assert.ok((await blob.text()).includes('Run-specific fixed effect (FE).'));
   assert.ok(!(await blob.text()).includes('STATIC BOILERPLATE'));
-  context.window.alm.resultsExport({ target: '#export', getResults: () => result, methods: 'STATIC BOILERPLATE' });
-  handlers['[data-action="report-md"]']();
-  assert.ok((await blob.text()).includes('not recorded by this app'));
-  console.log('PASS fallback MD/TXT, null results, snapshot callback, static methods rejection');
+  // Explicit strings are part of the API; page scraping is not.
+  for (const opts of [
+    { methods: 'Explicit app methods.' },
+    { description: 'Explicit app description.' },
+    { methods: 'Explicit app methods.', description: 'Explicit app description.' },
+    { methods: 'Same explicit copy.', description: 'Same explicit copy.' }
+  ]) {
+    context.window.alm.resultsExport({ target: '#export', getResults: () => result, ...opts });
+    for (const action of ['report-md', 'report-txt']) {
+      handlers['[data-action="' + action + '"]']();
+      const text = await blob.text();
+      for (const value of new Set(Object.values(opts))) {
+        assert.equal(text.split(value).length - 1, 1, text);
+      }
+      assert.ok(!text.includes('STATIC BOILERPLATE'), text);
+      if (opts.methods) assert.ok(!text.includes('not recorded by this app'), text);
+    }
+  }
+  for (const result of [{}, null, { _schema: 'stub-v1', k: 0 }]) {
+    context.window.alm.resultsExport({ target: '#export', getResults: () => result, methods: () => '' });
+    for (const action of ['report-md', 'report-txt']) {
+      handlers['[data-action="' + action + '"]']();
+      const text = await blob.text();
+      assert.match(text, /No completed run/i);
+      assert.ok(!text.includes('not recorded by this app'), text);
+      assert.ok(!text.includes('STATIC BOILERPLATE'), text);
+    }
+  }
+  console.log('PASS fallback MD/TXT, null results, snapshot callback, explicit strings, no completed run');
 })().catch(error => { console.error(error); process.exitCode = 1; });

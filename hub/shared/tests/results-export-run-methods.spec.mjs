@@ -56,8 +56,7 @@ for (const c of cases) {
 
     // Direct DOM edits without an event do not trigger a new analysis. Exports
     // must remain bound to the exported results, not read pending selectors.
-    // DTA intentionally re-computes after validating current state on export.
-    if (c.selector && c.app !== 'dta-sroc') {
+    if (c.selector) {
       await page.evaluate(({ selector, check }) => {
         const el = document.querySelector(selector);
         if (check) el.checked = false;
@@ -67,6 +66,98 @@ for (const c of cases) {
     }
   });
 }
+
+test('DTA Results and Methods retain the completed analysis through pending edits', async ({ page, baseURL }) => {
+  await page.goto(new URL('/dta-sroc/index.html', baseURL).href);
+  await page.locator('#btn-example').click();
+  await page.locator('#f-method').selectOption('fixed');
+  await page.locator('#f-cc').selectOption('single');
+  await page.locator('#btn-run').click();
+  const snapshot = await page.evaluate(() => {
+    const { _savedAt, ...r } = window.__almResults();
+    return r;
+  });
+  expect(snapshot.bivariate.method).toBe('fixed');
+  expect(snapshot.correction_control).toBe('single');
+  const before = methods(await report(page));
+  // No input/change event: these are pending controls, not a completed run.
+  await page.evaluate(() => {
+    document.querySelector('#f-method').value = 'reml';
+    document.querySelector('#f-cc').value = 'all';
+    document.querySelector('#f-data').value = '';
+  });
+  const pending = await page.evaluate(() => {
+    const { _savedAt, ...r } = window.__almResults();
+    return r;
+  });
+  expect(pending).toEqual(snapshot);
+  expect(methods(await report(page))).toBe(before);
+  const exported = JSON.parse(await report(page, 'json'));
+  delete exported._savedAt;
+  expect(exported).toEqual(snapshot);
+  // An attempted invalid run must clear the completed result, not retain it.
+  await page.locator('#btn-run').click();
+  const invalid = await page.evaluate(() => window.__almResults());
+  expect(invalid.k).toBe(0);
+  expect(invalid.bivariate).toBeNull();
+  const downloads = [];
+  page.on('download', d => downloads.push(d));
+  await page.locator('#alm-export-mount [data-action="report-md"]').click();
+  await expect(page.locator('#analysis-status')).toHaveText('No valid results to export');
+  expect(downloads).toEqual([]);
+});
+
+test('meta-regression location-scale flag belongs to the completed fitted snapshot', async ({ page, baseURL }) => {
+  await page.goto(new URL('/meta-regression/index.html', baseURL).href);
+  await page.locator('#btn-example').click();
+  await page.locator('#f-scale').check();
+  await page.locator('#btn-run').click();
+  const before = methods(await report(page));
+  expect(before).toMatch(/location-scale model: enabled.*ML/s);
+  const snapshot = await page.evaluate(() => window.__almResults());
+  expect(snapshot.location_scale).toBe(true);
+  // Replacing this legacy accessor must not alter an already fitted result.
+  await page.evaluate(() => {
+    window.__almLocScale = () => null;
+    document.querySelector('#f-scale').checked = false;
+  });
+  expect(await page.evaluate(() => window.__almResults())).toEqual(snapshot);
+  expect(methods(await report(page))).toBe(before);
+  expect(JSON.parse(await report(page, 'json'))).toEqual(snapshot);
+  await page.locator('#btn-run').click();
+  expect(await page.evaluate(() => window.__almResults().location_scale)).toBe(false);
+  expect(methods(await report(page))).toContain('location-scale model: disabled');
+});
+
+test('explicit app Methods and description strings survive MD and TXT exports', async ({ page }) => {
+  await page.setContent('<h1>Stub app</h1><footer>PAGE BOILERPLATE</footer><div id="alm-export-mount"></div>');
+  await page.addScriptTag({ content: readFileSync(new URL('../results-export.js', import.meta.url), 'utf8') });
+  await page.evaluate(() => window.alm.resultsExport({
+    target: '#alm-export-mount', getResults: () => ({ model: 'FE' }),
+    methods: 'Explicit stub Methods.', description: 'Explicit stub description.'
+  }));
+  for (const action of ['report-md', 'report-txt']) {
+    const text = await report(page, action);
+    expect(text).toContain('Explicit stub Methods.');
+    expect(text).toContain('Explicit stub description.');
+    expect(text).not.toContain('PAGE BOILERPLATE');
+    expect(text).not.toContain('not recorded by this app');
+  }
+});
+
+test('supported app with no completed run says so', async ({ page }) => {
+  await page.setContent('<h1>Stub app</h1><footer>PAGE BOILERPLATE</footer><div id="alm-export-mount"></div>');
+  await page.addScriptTag({ content: readFileSync(new URL('../results-export.js', import.meta.url), 'utf8') });
+  await page.evaluate(() => window.alm.resultsExport({
+    target: '#alm-export-mount', getResults: () => ({}), methods: () => ''
+  }));
+  for (const action of ['report-md', 'report-txt']) {
+    const text = await report(page, action);
+    expect(text).toMatch(/No completed run/i);
+    expect(text).not.toContain('not recorded by this app');
+    expect(text).not.toContain('PAGE BOILERPLATE');
+  }
+});
 
 test('export fallback never presents footer or intro as run Methods', async ({ page }) => {
   await page.setContent('<h1>Fallback</h1><header><p>STATIC INTRO</p></header><footer>STATIC FOOTER REML and DL</footer><div id="alm-export-mount"></div>');

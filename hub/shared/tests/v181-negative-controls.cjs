@@ -3,7 +3,9 @@ const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
-const baseline = process.argv.includes('--baseline');
+const round3Baseline = process.argv.includes('--round3-baseline');
+const baseline = process.argv.includes('--baseline') || round3Baseline;
+const baselineFolder = round3Baseline ? 'round3-before' : 'baseline';
 const root = path.resolve(__dirname, '../../..');
 for (const [test, mutation, source] of [
   ['csv-upload-kinds.test.cjs', 'csv', 'csv-upload.js'],
@@ -11,7 +13,7 @@ for (const [test, mutation, source] of [
 ]) {
   const args = [path.join(__dirname, test)];
   if (baseline) {
-    const original = path.join(root, 'integration-evidence/v181/baseline/hub/shared', source);
+    const original = path.join(root, 'integration-evidence/v181', baselineFolder, 'hub/shared', source);
     assert.ok(fs.existsSync(original), 'Original source must be present for baseline replay: ' + original);
     args.push(original);
   }
@@ -24,10 +26,25 @@ for (const [test, mutation, source] of [
   assert.equal(result.status, 1, 'Negative control must fail by an assertion: ' + result.stdout + result.stderr);
   assert.match(result.stdout + result.stderr, /AssertionError/);
   assert.doesNotMatch(result.stderr, /mutation target must exist/i);
-  if (mutation === 'footer') assert.match(result.stderr, /STATIC BOILERPLATE/);
-  if (mutation === 'csv') assert.match(result.stderr, /FAIL se explicitly squared/);
+  if (mutation === 'footer') assert.match(result.stderr, round3Baseline ? /actual|expected/ : /STATIC BOILERPLATE/);
+  if (mutation === 'csv') assert.match(result.stderr, round3Baseline ? /FAIL se1 cannot become vi1/ : /FAIL se explicitly squared/);
   console.log('PASS negative control (' + (baseline ? 'original source' : mutation) + '): ' + test);
   console.log((result.stdout + result.stderr).split('\n').slice(0, 12).join('\n'));
+}
+if (round3Baseline) {
+  const original = path.join(root, 'integration-evidence/v181/round3-before');
+  const result = spawnSync(process.execPath, [path.join(__dirname, 'results-export-snapshots.test.cjs'), original], {
+    cwd: root, env: { ...process.env, V181_MUTANT: '' }, encoding: 'utf8', timeout: 30000
+  });
+  assert.ifError(result.error);
+  assert.equal(result.signal, null);
+  assert.equal(result.status, 1, 'Snapshot regressions must fail by assertions');
+  assert.match(result.stderr, /AssertionError/);
+  assert.match(result.stderr, /FAIL DTA export never recomputes/);
+  assert.match(result.stderr, /FAIL meta-regression flag comes from/);
+  assert.doesNotMatch(result.stderr, /SyntaxError|ReferenceError|TypeError|accessor must exist/);
+  console.log('PASS Round 3 snapshot regressions reject original adapters');
+  console.log(result.stderr);
 }
 if (process.argv.includes('--browser')) {
   const cli = require.resolve('@playwright/test/cli');

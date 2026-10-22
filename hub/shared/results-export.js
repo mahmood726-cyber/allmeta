@@ -72,7 +72,8 @@
     const title = opts.title || _grab('h1') || document.title || 'allmeta analysis';
     // Pass the exact getResults() snapshot to avoid reading pending controls
     // or recomputing with different settings while building the report.
-    const methods = typeof opts.methods === 'function' ? opts.methods(results) : '';
+    const methods = typeof opts.methods === 'function' ? opts.methods(results) :
+      (typeof opts.methods === 'string' ? opts.methods : '');
     return { title, methods };
   }
   function _resultsBlock(obj, plain) {
@@ -93,7 +94,11 @@
     L.push('');
     L.push((plain ? 'METHODS' : '## Methods'));
     L.push('');
-    L.push(m.methods || _METHODS_UNRECORDED);
+    const desc = typeof opts.description === 'string' ? opts.description : '';
+    if (desc) L.push(desc, '');
+    if (m.methods && m.methods !== desc) L.push(m.methods);
+    else if (!m.methods) L.push(typeof opts.methods === 'function' ?
+      'No completed run: run the analysis first, then export.' : _METHODS_UNRECORDED);
     L.push('');
     L.push((plain ? 'RESULTS' : '## Results'));
     L.push('');

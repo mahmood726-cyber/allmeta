@@ -77,8 +77,20 @@
   // Statistical units are semantic, not edit-distance matches.
   function _kind(header) {
     var key = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+    var stem = key.replace(/^(standarddeviation|standarderror|stderror|stderr|stddev|stdev|variance|sete|var|sei|sdi|vi|se|sd|v)(?:\d+|trt|ctrl|ctl|tx|i|t|c|e)*$/, '$1');
+    // Prefixes also guard near-miss uncertainty names. They are not aliases:
+    // e.g. se_t must not claim se_c, and "severity" must not be squared.
+    if (/^(se|stderr|stderror|standarderror)/.test(stem)) return 'standard error';
+    if (/^v/.test(stem)) return 'variance';
+    if (/^(sd|stddev|stdev|standarddeviation)/.test(stem)) return 'standard deviation';
+    return '';
+  }
+  // Only unsuffixed, explicitly recognised names may be aliased or converted.
+  // Arm/outcome fields require their exact declared name.
+  function _aliasKind(header) {
+    var key = header.toLowerCase().replace(/[^a-z0-9]/g, '');
     if (['se', 'sei', 'stderr', 'stderror', 'standarderror', 'sete'].includes(key)) return 'standard error';
-    if (['vi', 'var', 'variance'].includes(key)) return 'variance';
+    if (['v', 'vi', 'var', 'vari', 'variance'].includes(key)) return 'variance';
     if (['sd', 'sdi', 'stddev', 'stdev', 'standarddeviation'].includes(key)) return 'standard deviation';
     return '';
   }
@@ -118,10 +130,10 @@
       }
     }
     for (hi = 0; hi < rawHeaders.length; hi++) {
-      var ha = rawHeaders[hi], kind = _kind(ha);
+      var ha = rawHeaders[hi], kind = _aliasKind(ha);
       if (headerMap[ha] || !kind) continue;
       for (ci = 0; ci < columns.length; ci++) {
-        if (!claimed[columns[ci].name] && kind === _kind(columns[ci].name)) {
+        if (!claimed[columns[ci].name] && kind === _aliasKind(columns[ci].name)) {
           claim(ha, columns[ci]);
           warnings.push('Header "' + ha + '" recognized as "' + columns[ci].name + '" (' + kind + ')');
           break;
@@ -130,12 +142,12 @@
     }
     for (hi = 0; hi < rawHeaders.length; hi++) {
       var hs = rawHeaders[hi];
-      if (headerMap[hs] || _kind(hs) !== 'standard error') continue;
+      if (headerMap[hs] || _aliasKind(hs) !== 'standard error') continue;
       for (ci = 0; ci < columns.length; ci++) {
-        if (!claimed[columns[ci].name] && _kind(columns[ci].name) === 'variance') {
+        if (!claimed[columns[ci].name] && _aliasKind(columns[ci].name) === 'variance') {
           claim(hs, columns[ci], true);
           warnings.push('Converted standard error "' + hs + '" to variance "' + columns[ci].name +
-            '" using ' + columns[ci].name + ' = SE^2 (each SE squared).');
+            '" using ' + columns[ci].name + ' = SE^2 (each SE squared). Blank SE cells remain missing with a row warning, as for blank variance cells.');
           break;
         }
       }
@@ -149,6 +161,7 @@
         // Unknown headers may not fuzz into SE/variance/SD either: short names
         // are too easy to confuse with unrelated fields such as n or moderator.
         if (_kind(h) !== _kind(columns[ci].name)) continue;
+        if (_kind(h) && (!_aliasKind(h) || !_aliasKind(columns[ci].name))) continue;
         var d = _lev(h, columns[ci].name, 3);
         if (d < bestDist) { bestDist = d; bestCol = columns[ci]; }
       }
@@ -173,7 +186,7 @@
         if (result.err) {
           warnings.push('row ' + r + ': ' + result.err);
         }
-        if (col.square) {
+        if (col.square && raw !== '') {
           var converted = result.value * result.value;
           if (result.err || result.value < 0 || !Number.isFinite(converted) ||
               (result.value > 0 && converted === 0)) {

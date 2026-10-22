@@ -19,7 +19,7 @@ test('statistical aliases, conversions, exclusions and ordinary typos', async ({
     return {
       se: ['se', 'SE', 'sei', 'stderr', 'standard error', 'Std. Error'].map(h => parse(h, 'vi', 0.2)),
       variance: ['vi', 'var', 'variance'].map(h => parse(h, 'vi', 0.04)),
-      forbidden: [['sd', 'se'], ['sd', 'vi'], ['vi', 'se'], ['var', 'sei'], ['variance', 'sd'], ['se', 'sd']].map(([h, c]) => ({ result: parse(h, c, 0.2), column: c })),
+      forbidden: [['sd', 'se'], ['sd', 'vi'], ['vi', 'se'], ['var', 'sei'], ['variance', 'sd'], ['se', 'sd'], ['se1', 'vi1'], ['se_1', 'vi_1'], ['sd1', 'se1'], ['se1', 'v1'], ['sei_t', 'var_t'], ['var_c', 'sei_c']].map(([h, c]) => ({ result: parse(h, c, 0.2), column: c })),
       typo: parse('esitmate', 'estimate', 0.3)
     };
   });
@@ -52,6 +52,15 @@ test('remaps have a prominent accessible notice and bad conversions do not reach
   await page.locator('[data-action="parse-paste"]').click();
   await expect(notice).toContainText('rejected');
   expect(await page.evaluate(() => window.parsed)).toBeNull();
+  await page.locator('#csv textarea').fill('estimate,SE\n0.3,\n0.4,0.2');
+  await page.locator('[data-action="parse-paste"]').click();
+  await expect(notice).toContainText('Blank SE cells remain missing');
+  await expect(notice).toContainText('row 1: missing float');
+  const missing = await page.evaluate(() => window.parsed);
+  expect(missing.errors).toEqual([]);
+  expect(missing.rows).toHaveLength(2);
+  expect(missing.rows[0].vi).toBeNull();
+  expect(missing.rows[1].vi).toBeCloseTo(0.04, 12);
 });
 
 test('meta-regression Study,MD,SE,Weeks retains the input SE', async ({ page, baseURL }) => {

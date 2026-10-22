@@ -568,6 +568,8 @@
         var tmin = Math.min.apply(null, ls.tau2), tmax = Math.max.apply(null, ls.tau2);
         parts.push(statCard("τ² range over x", fmt(tmin, 4) + " – " + fmt(tmax, 4)));
       }
+      // Bind the optional fit flag to the same completed PM fit as the coefficients.
+      if (fitted) fitted.location_scale = !!_lastLocScale;
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
 
       const extras = [];
@@ -839,7 +841,7 @@
         out.slope_ci_lb  = isFinite(tCrit) ? f.b1 - tCrit * seB1 : NaN;
         out.slope_ci_ub  = isFinite(tCrit) ? f.b1 + tCrit * seB1 : NaN;
         out.tau2_pm      = fitted.tau2;
-        out.location_scale = !!(window.__almLocScale && window.__almLocScale());
+        out.location_scale = !!fitted.location_scale;
         out.hksj_q       = hk.q;
         out.hksj_q_df    = df;
         out.R2_tau2      = r2;

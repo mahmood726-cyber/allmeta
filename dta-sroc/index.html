@@ -222,7 +222,7 @@
     const warnEl = document.getElementById("warn-banner");
     const svgHost = document.getElementById("svg-host");
     let _lastBivar = null, _lastDeeks = null, _lastMetareg = null;
-    let _validResultState = null;
+    let _validResultState = null, _lastAnalysis = null;
     window.__almBivariate = function () { return _lastBivar; };
     window.__almMetaRegression = function () { return _lastMetareg; };
     window.__almDeeks = function () { return _lastDeeks; };
@@ -282,7 +282,8 @@
 
     // Results accessor for results-export
     window.__almResults = function () {
-      const a = analyse(readState());
+      const a = _lastAnalysis;
+      if (!a) return {};
       const r6 = v => (v == null || !isFinite(v)) ? null : +v.toFixed(6);
       const r10 = v => (v == null || !isFinite(v)) ? null : +v.toPrecision(10);
       const rows = a.studies.map(function (s) {
@@ -569,10 +570,11 @@
     render = window.alm.analysisLifecycle(render, function (result) { return !!_lastBivar && (document.getElementById("f-cov").value !== "last" || !!_lastMetareg); }, "[id^=\"f-\"]");
 
     function render() {
+      _lastAnalysis = null;
+      _validResultState = null;
       const state = readState();
       const a = analyse(state);
       const studies = a.studies, b = a.bivar;
-      _validResultState = b && (state.cov !== 'last' || a.metareg) ? JSON.stringify(state) : null;
       document.getElementById('analysis-status').textContent = 'Analysis updated';
       const parts = [];
       parts.push(statCard("k", String(studies.length)));
@@ -622,6 +624,9 @@
         ? buildSvg(state, studies, a.moses ? { alpha: a.moses.A1, beta: a.moses.B1 } : null, b)
         : "<p>Enter at least 4 studies with valid TP, FP, FN and TN counts for bivariate analysis.</p>";
       svgHost.innerHTML = svg;
+      // Publish only after rendering completes; invalid attempts replace the old run.
+      _lastAnalysis = a;
+      _validResultState = b && (state.cov !== 'last' || a.metareg) ? JSON.stringify(state) : null;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
       // Update URL state after every render so link stays shareable.
       // Wrapped in try-catch: btoa in url-state.js rejects non-Latin1 chars
@@ -650,8 +655,8 @@
       setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
     }
     function slugify(t,f) { const s=String(t||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); return s||f; }
-    function requireValidResult() {
-      if (_validResultState !== null && _validResultState === JSON.stringify(readState())) return true;
+    function requireValidResult(current = true) {
+      if (_validResultState !== null && (!current || _validResultState === JSON.stringify(readState()))) return true;
       const status = document.getElementById('analysis-status');
       status.textContent = 'No valid results to export';
       status.hidden = false;
@@ -660,7 +665,7 @@
     function guardExports(event) {
       const button = event.target.closest('button');
       if (!button || (event.currentTarget.id === 'alm-plot-mount' && !button.textContent.startsWith('Download'))) return;
-      if (!requireValidResult()) { event.preventDefault(); event.stopImmediatePropagation(); }
+      if (!requireValidResult(event.currentTarget.id !== 'alm-export-mount')) { event.preventDefault(); event.stopImmediatePropagation(); }
     }
     function currentSvg() {
       if (!requireValidResult()) return null;
@@ -850,7 +855,7 @@
           '. Study-level covariate meta-regression: ' + (r.meta_regression ? 'enabled' : 'disabled') + '.';
       },
       getResults: function () {
-        if (!requireValidResult()) throw new Error('No valid results to export');
+        if (!requireValidResult(false)) throw new Error('No valid results to export');
         return window.__almResults();
       },
     });
