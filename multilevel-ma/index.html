@@ -504,6 +504,13 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'mlma-results',
+      methods: function (r) {
+        if (!r || !r.k) return '';
+        return 'Three-level random effects (RE): effects nested within ' + r.J +
+          ' study clusters. The exported pooled result uses method-of-moments between-study and within-study variance components.' +
+          ' 95% normal (z) and modified Hartung-Knapp confidence intervals (variance floor 1, cluster degrees of freedom ' + Math.max(1, r.J - 1) +
+          '); prediction interval uses the adjusted SE and total heterogeneity. Supplied effect scale retained; no continuity correction.';
+      },
       getResults: function () { return window._almLastMlma ? window._almLastMlma() : {}; },
     });
 
