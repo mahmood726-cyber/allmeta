@@ -16,6 +16,7 @@
  */
 import { test, expect, type ConsoleMessage } from "@playwright/test";
 import { INTERNAL_APPS } from "./apps";
+import { classifyAssetFailure } from "./pages-crawl-classify.cjs";
 import { writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -87,6 +88,22 @@ for (const app of INTERNAL_APPS) {
     const url = `${PAGES_BASE}/${app.path.replace(/^\.\//, "")}`;
     const consoleErrors: string[] = [];
     const missingAssets: string[] = [];
+    const assetNotes: string[] = [];
+    const rechecks = new Map<string, { first: number | string; seenAt: number; checked: boolean }>();
+    const notesWithAssets = (note = "") => [note, ...assetNotes].filter(Boolean).join("; ");
+    const assetsIncludingPending = () => [
+      ...missingAssets,
+      ...[...rechecks].filter(([, failure]) => !failure.checked)
+        .map(([assetUrl, failure]) => `${failure.first} ${assetUrl} (not re-checked)`),
+    ];
+    function recordAssetFailure(assetUrl: string, first: number | string): void {
+      if (classifyAssetFailure(first) === "missing") {
+        // Non-transient failures are final, including browser-policy blocks.
+        missingAssets.push(`${first} ${assetUrl}`);
+      } else if (!rechecks.has(assetUrl)) {
+        rechecks.set(assetUrl, { first, seenAt: Date.now(), checked: false });
+      }
+    }
     page.on("console", (msg: ConsoleMessage) => {
       if (msg.type() === "error") consoleErrors.push(msg.text());
     });
@@ -95,13 +112,13 @@ for (const app of INTERNAL_APPS) {
     // here, so this cleanly separates real deploy regressions from favicon noise.
     page.on("response", (r) => {
       if (r.status() >= 400 && r.url() !== url && !isBenignAsset(r.url(), "")) {
-        missingAssets.push(`${r.status()} ${r.url()}`);
+        recordAssetFailure(r.url(), r.status());
       }
     });
     page.on("requestfailed", (r) => {
       const errText = (r.failure() && r.failure()!.errorText) || "failed";
       if (!isBenignAsset(r.url(), errText)) {
-        missingAssets.push(`${errText} ${r.url()}`);
+        recordAssetFailure(r.url(), errText);
       }
     });
 
@@ -116,7 +133,7 @@ for (const app of INTERNAL_APPS) {
 
     if (loadError) {
       writeRow(app.slug, { app: app.name, url, status: "fail-load", http_status: httpStatus,
-        duration_ms: Date.now() - started, console_errors: consoleErrors, missing_assets: missingAssets, notes: loadError });
+        duration_ms: Date.now() - started, console_errors: consoleErrors, missing_assets: assetsIncludingPending(), notes: notesWithAssets(loadError) });
       throw new Error(`Load failed: ${loadError}`);
     }
     // A deployed app that 404s (or any 4xx/5xx) is a real deploy regression
@@ -124,20 +141,48 @@ for (const app of INTERNAL_APPS) {
     // with HTTP 404, so the status is authoritative.
     if (httpStatus !== null && httpStatus >= 400) {
       writeRow(app.slug, { app: app.name, url, status: "fail-http", http_status: httpStatus,
-        duration_ms: Date.now() - started, console_errors: consoleErrors, missing_assets: missingAssets,
-        notes: `HTTP ${httpStatus} — file missing from deploy or path case mismatch` });
+        duration_ms: Date.now() - started, console_errors: consoleErrors, missing_assets: assetsIncludingPending(),
+        notes: notesWithAssets(`HTTP ${httpStatus} — file missing from deploy or path case mismatch`) });
       throw new Error(`HTTP ${httpStatus} for ${url}`);
     }
 
     // Let late requests/console errors surface, then evaluate.
     await page.waitForTimeout(800);
+    // Re-check each failed URL once, at least two seconds after its first failure.
+    // Drain failures arriving while checks are pending before writing the row.
+    while ([...rechecks.values()].some((failure) => !failure.checked)) {
+      await Promise.all([...rechecks.entries()].filter(([, failure]) => !failure.checked)
+        .map(async ([assetUrl, failure]) => {
+          failure.checked = true;
+          await page.waitForTimeout(Math.max(0, 2_000 - (Date.now() - failure.seenAt)));
+          let outcome: number | string;
+          try {
+            const response = await page.request.get(assetUrl, {
+              headers: { "Cache-Control": "no-cache, no-store", Pragma: "no-cache" },
+              timeout: 5_000,
+              maxRetries: 0,
+              failOnStatusCode: false,
+            });
+            outcome = response.status();
+            await response.dispose();
+          } catch (error) {
+            outcome = error instanceof Error ? error.message : String(error);
+          }
+          const recovered = classifyAssetFailure(failure.first, outcome) === "transient";
+          const detail = recovered
+            ? `transient ${failure.first} recovered on re-check (${outcome}) ${assetUrl}`
+            : `${failure.first} ${assetUrl}; re-check failed (${outcome})`;
+          assetNotes.push(detail);
+          if (!recovered) missingAssets.push(detail);
+        }));
+    }
     const shipAnyway = KNOWN_SHIP_ANYWAY.has(app.slug);
 
-    // Real missing assets (page-initiated 4xx / request failures) = deploy regression.
+    // Non-transient failures or a failed re-check are deployed-asset failures.
     if (missingAssets.length > 0 && !shipAnyway) {
       writeRow(app.slug, { app: app.name, url, status: "fail-missing-asset", http_status: httpStatus,
         duration_ms: Date.now() - started, console_errors: filterBenign(consoleErrors), missing_assets: missingAssets,
-        notes: "asset(s) returned 4xx/failed on the deployed site" });
+        notes: notesWithAssets("asset(s) had a non-transient failure or failed re-check on the deployed site") });
       throw new Error(`Missing deployed asset(s): ${missingAssets.slice(0, 3).join(" | ")}`);
     }
 
@@ -145,13 +190,13 @@ for (const app of INTERNAL_APPS) {
     if (realErrors.length > 0) {
       writeRow(app.slug, { app: app.name, url, status: "fail-console-error", http_status: httpStatus,
         duration_ms: Date.now() - started, console_errors: realErrors, missing_assets: missingAssets,
-        notes: shipAnyway ? "known ship-anyway; source defect" : "" });
+        notes: notesWithAssets(shipAnyway ? "known ship-anyway; source defect" : "") });
       if (!shipAnyway) throw new Error(`Console errors: ${realErrors.slice(0, 3).join(" | ")}`);
       return;
     }
 
     writeRow(app.slug, { app: app.name, url, status: "pass", http_status: httpStatus,
-      duration_ms: Date.now() - started, console_errors: [], missing_assets: missingAssets, notes: "" });
+      duration_ms: Date.now() - started, console_errors: [], missing_assets: missingAssets, notes: notesWithAssets() });
     expect(httpStatus === null || httpStatus < 400).toBeTruthy();
   });
 }
