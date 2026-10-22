@@ -91,9 +91,14 @@ for (const app of INTERNAL_APPS) {
     const assetNotes: string[] = [];
     const rechecks = new Map<string, { first: number | string; seenAt: number; checked: boolean }>();
     const notesWithAssets = (note = "") => [note, ...assetNotes].filter(Boolean).join("; ");
+    const assetsIncludingPending = () => [
+      ...missingAssets,
+      ...[...rechecks].filter(([, failure]) => !failure.checked)
+        .map(([assetUrl, failure]) => `${failure.first} ${assetUrl} (not re-checked)`),
+    ];
     function recordAssetFailure(assetUrl: string, first: number | string): void {
       if (classifyAssetFailure(first) === "missing") {
-        // 4xx is authoritative: never retry or erase it after a later success.
+        // Non-transient failures are final, including browser-policy blocks.
         missingAssets.push(`${first} ${assetUrl}`);
       } else if (!rechecks.has(assetUrl)) {
         rechecks.set(assetUrl, { first, seenAt: Date.now(), checked: false });
@@ -128,7 +133,7 @@ for (const app of INTERNAL_APPS) {
 
     if (loadError) {
       writeRow(app.slug, { app: app.name, url, status: "fail-load", http_status: httpStatus,
-        duration_ms: Date.now() - started, console_errors: consoleErrors, missing_assets: missingAssets, notes: notesWithAssets(loadError) });
+        duration_ms: Date.now() - started, console_errors: consoleErrors, missing_assets: assetsIncludingPending(), notes: notesWithAssets(loadError) });
       throw new Error(`Load failed: ${loadError}`);
     }
     // A deployed app that 404s (or any 4xx/5xx) is a real deploy regression
@@ -136,7 +141,7 @@ for (const app of INTERNAL_APPS) {
     // with HTTP 404, so the status is authoritative.
     if (httpStatus !== null && httpStatus >= 400) {
       writeRow(app.slug, { app: app.name, url, status: "fail-http", http_status: httpStatus,
-        duration_ms: Date.now() - started, console_errors: consoleErrors, missing_assets: missingAssets,
+        duration_ms: Date.now() - started, console_errors: consoleErrors, missing_assets: assetsIncludingPending(),
         notes: notesWithAssets(`HTTP ${httpStatus} — file missing from deploy or path case mismatch`) });
       throw new Error(`HTTP ${httpStatus} for ${url}`);
     }
@@ -173,11 +178,11 @@ for (const app of INTERNAL_APPS) {
     }
     const shipAnyway = KNOWN_SHIP_ANYWAY.has(app.slug);
 
-    // First 4xx or a failed re-check is a deployed-asset failure.
+    // Non-transient failures or a failed re-check are deployed-asset failures.
     if (missingAssets.length > 0 && !shipAnyway) {
       writeRow(app.slug, { app: app.name, url, status: "fail-missing-asset", http_status: httpStatus,
         duration_ms: Date.now() - started, console_errors: filterBenign(consoleErrors), missing_assets: missingAssets,
-        notes: notesWithAssets("asset(s) returned 4xx or failed re-check on the deployed site") });
+        notes: notesWithAssets("asset(s) had a non-transient failure or failed re-check on the deployed site") });
       throw new Error(`Missing deployed asset(s): ${missingAssets.slice(0, 3).join(" | ")}`);
     }
 
