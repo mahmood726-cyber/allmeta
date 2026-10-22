@@ -33,7 +33,7 @@
     textarea { width: 100%; min-height: 14rem; padding: 0.5rem 0.65rem;
                border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
                border-radius: 6px; font: 0.84rem/1.4 "SF Mono", Consolas, monospace; }
-    input { width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border);
+    input, select { width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border);
       background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
     label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
     button.primary { background: var(--accent); color: #fff; border: none; padding: 0.55rem 1.2rem;
@@ -59,7 +59,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Network meta-regression (treatment × covariate)</h1>
-    <p>Adjusts pairwise NMA pooled effects for a single study-level covariate, with a separate interaction slope γ_k per non-reference treatment. The full model is y_i = X_i β + Z_i γ + δ_i + ε_i where Z_i = X_i · (x_i − x̄). Centring at the mean of the covariate gives β̂ the interpretation of "treatment effect at the average study." Predictions at any user-supplied covariate value come with proper SEs that account for Cov(β̂, γ̂).</p>
+    <p>Network meta-regression with REML (default), ML, or fixed-effect estimation, and a separate interaction slope for each non-reference treatment. Multi-arm studies use study-baseline contrasts with random-effect correlation 0.5. The model centres the covariate at the mean of retained rows, so the beta table reports treatment effects at that mean. Predictions account for covariance between effects and slopes.</p>
   </header>
   <main>
     <section class="panel">
@@ -80,6 +80,14 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       <label>
         <span>Reference treatment</span>
         <input id="f-ref" type="text" value="A" aria-label="Reference treatment">
+      </label>
+      <label for="f-method">
+        <span>Estimation method</span>
+        <select id="f-method">
+          <option value="REML" selected>REML</option>
+          <option value="ML">ML</option>
+          <option value="FE">Fixed effect (FE)</option>
+        </select>
       </label>
       <label>
         <span>Predict at covariate values (comma-separated)</span>
@@ -106,7 +114,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
   <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 </main>
   <footer>
-    Engine: <code>shared/nma-meta-regression.js</code>. Estimation: Paule-Mandel τ² + GLS on the augmented design. Reference: Cooper et al. 2009 <em>Stat Med</em>; Dias et al. 2018 NICE DSU TSD 3. Single covariate per fit — for multiple covariates, fit each separately. <strong>R-parity:</strong> the fit matches <code>netmeta::netmetareg(assumption="independent")</code> to ~1e-6 (see <code>hub/shared/tests/nma-meta-reg-parity.spec.mjs</code>). Note two convention differences if you cross-check in R: this app reports the <code>treatment2 − treatment1</code> contrast and centres the covariate at its mean, whereas <code>netmeta</code> reports the reverse contrast sign and at covariate = 0 — so every coefficient here is the negative of netmeta's, evaluated at a shifted intercept.
+    Engine: <code>shared/nma-meta-regression.js</code>. REML (default), ML, or FE as in <code>netmeta::netmetareg(consistency=TRUE, assumption="independent")</code>. Random effects have rho = 0.5 within multi-arm studies. Multi-arm studies use only contrasts against the study baseline, as netmetareg; retained contrasts are oriented relative to that baseline. Within-study sampling covariance is not modelled because input is contrast level. Single numeric study-level covariate per fit. A row <code>trtA, trtB, yi</code> means yi is the effect of trtB relative to trtA: in netmeta use <code>treat1 = trtB, treat2 = trtA, TE = yi</code>. Coefficients at covariate 0 and slopes then equal netmetareg's; the beta table here is at the mean covariate xbar of retained rows. Validated against netmeta 3.7-0 netmetareg (see the paper-28 validation archive).
   </footer>
   <script>
   (function () {
@@ -197,12 +205,12 @@ S10, A, B, -0.32, 0.10, 70</textarea>
     }
 
     function run() {
+      window.__almLastNmaMetaReg = function () { return null; };
+      ["#beta tbody", "#gamma tbody", "#pred tbody"].forEach(function (selector) {
+        document.querySelector(selector).innerHTML = "";
+      });
+      document.getElementById("plot-host").innerHTML = "";
       var rows = parse(document.getElementById("src").value);
-      if (rows.length < 4) {
-        document.getElementById("summary").innerHTML =
-          '<div class="card" style="grid-column:1/-1;color:var(--warn)">Need ≥ 4 valid contrast rows.</div>';
-        return;
-      }
       var refTrt = (document.getElementById("f-ref").value || "").trim();
       var predicts = (document.getElementById("f-predict").value || "")
         .split(/\s*,\s*/).map(function (s) { return parseFloat(s); }).filter(isFinite);
@@ -215,13 +223,16 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       }
       var fit;
       try {
-        fit = AlmNmaMetaReg.fit(rows, treatments, { predictAt: predicts.length ? predicts : undefined });
+        fit = AlmNmaMetaReg.fit(rows, treatments, { method: document.getElementById("f-method").value, predictAt: predicts.length ? predicts : undefined });
       } catch (e) {
         document.getElementById("summary").innerHTML =
           '<div class="card" style="grid-column:1/-1;color:var(--warn)">Fit failed: ' + e.message + '</div>';
         return;
       }
       document.getElementById("summary").innerHTML =
+        '<div class="card"><span class="k">Method</span><span class="v">' + fit.method + '</span></div>' +
+        '<div class="card"><span class="k">QE (df)</span><span class="v">' + fmt(fit.QE, 3) + ' (' + fit.QEdf + ')</span></div>' +
+        '<div class="card"><span class="k">Dropped multi-arm contrasts</span><span class="v">' + fit.droppedRows.filter(function (r) { return r.reason === "multi-arm contrast not involving study baseline"; }).length + '</span></div>' +
         '<div class="card"><span class="k">x̄ (covariate mean)</span><span class="v">' + fmt(fit.xMean, 2) + '</span></div>' +
         '<div class="card"><span class="k">τ²</span><span class="v">' + fmt(fit.tau2, 4) + '</span></div>' +
         '<div class="card"><span class="k">n rows</span><span class="v">' + fit.n + '</span></div>' +

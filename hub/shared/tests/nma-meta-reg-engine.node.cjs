@@ -139,6 +139,16 @@ test("three-arm reference-baseline keep rule and mean of kept rows", () => {
   near(f.gamma.B.estimate, 0.1);
   near(f.gamma.C.estimate, -0.1);
 });
+test("multi-arm study missing a comparison is refused, as netmeta does", () => {
+  const rows = [];
+  for (let s = 0; s < 4; s++) {
+    rows.push(row("S" + s, "A", "B", 0.3 + s * 0.1, s));
+    rows.push(row("S" + s, "A", "C", 0.6 - s * 0.1, s));
+    if (s > 0) rows.push(row("S" + s, "B", "C", 0.3, s));
+  }
+  assert.throws(() => engine.fit(rows, ["A", "B", "C"], { method: "FE" }),
+    /Study 'S0' has a wrong number of comparisons/);
+});
 test("absent reference uses last normalized code-unit label", () => {
   const treatments = ["A", "b c", "bZ", "b_a"];
   const rows = [];
