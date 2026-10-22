@@ -69,6 +69,14 @@ def test_double_zero_studies_are_kept_as_in_frag_ma():
     assert r[1]["FI"] == 11  # frag.ma(..., measure = "OR", method = "DL")$FI
 
 
+def test_candidate_order_matches_frag_ma():
+    # frag.ma scans control-arm changes of every study first, then treatment-arm changes, and stops at the first
+    # change that flips significance; so the flipping (last) step of dat.ns ma.id 55 (OR) is study 2, control, -1.
+    s = tables(NS55["e1"], NS55["n1"], NS55["e0"], NS55["n0"])
+    r = run(ENGINE, [{"studies": s, "measure": "OR"}])[0]
+    assert r["path"][-1] == [2, "control", -1]
+
+
 def test_parser_rejects_empty_and_fractional_counts():
     texts = ["5,,3,10\n8, 100, 18, 100\n5, 90, 14, 95",
              ",10,3,10\n8, 100, 18, 100\n5, 90, 14, 95",

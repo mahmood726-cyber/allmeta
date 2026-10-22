@@ -76,14 +76,12 @@
     var mods = [], moremod = true, guard = 0;
 
     while (sig && moremod && guard++ < 100000) {
-      // modifiable candidates this step
-      var cand = [];
-      for (var i = 0; i < a.length; i++) {
-        if (less ? (c[i] > 0) : (d[i] > 0)) cand.push({ s: i, grp: 0 });       // control arm
-        if (less ? (a[i] < a[i] + b[i]) : (a[i] > 0)) cand.push({ s: i, grp: 1 }); // treatment arm has room
-      }
-      // (treatment room check uses n1=a+b)
-      cand = cand.filter(function (k) { return k.grp === 0 ? true : (less ? (a[k.s] < studies[k.s].n1) : (a[k.s] > 0)); });
+      // modifiable candidates this step, in frag.ma's order: the control arm of every study first, then the
+      // treatment arm of every study. The order decides which change wins a tie and, because the scan stops at
+      // the first change that flips significance, which change is the last step.
+      var cand = [], i;
+      for (i = 0; i < a.length; i++) if (less ? (c[i] > 0) : (d[i] > 0)) cand.push({ s: i, grp: 0 });   // control arm
+      for (i = 0; i < a.length; i++) if (less ? (b[i] > 0) : (a[i] > 0)) cand.push({ s: i, grp: 1 });   // treatment arm has room
       if (!cand.length) { moremod = false; break; }
       var best = null;
       for (var j = 0; j < cand.length; j++) {
