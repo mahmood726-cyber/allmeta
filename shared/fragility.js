@@ -15,8 +15,9 @@
  * Pooling reproduces metafor::rma.uni(measure, method="DL", test="z", drop00=FALSE) as called by
  * frag.ma, incl. escalc's add=1/2-to-zero-cell-studies convention; the DL pool delegates to ma-core.
  *
- * Verified vs fragility::frag.ma(measure="OR", method="DL"): a 5-study set with pooled
- * OR<1 (p=0.00115) → FI = 13.
+ * Verified vs fragility 2.0 frag.ma(measure="OR", method="DL"): the page's built-in 5-study
+ * example (pooled OR<1, p=1.97e-5) → FI = 17 (RR 16, RD 21); full corpus in the paper-33
+ * validation archive (fragility-reproducible) and fragility/tests/test_frag_ma_parity.py.
  *
  * Reference: Atal I, Porcher R, Boutron I, Ravaud P (2019), J Clin Epidemiol 111:58-67;
  * Lin L (2021), R package `fragility`.
