@@ -201,7 +201,7 @@
           <li>When done, send the included records on to <a href="../extract/">Extraction</a>.</li>
         </ol>
         <div class="alm-task-grid">
-          <div class="alm-card alm-tool"><h4>The tool does</h4>Flags likely duplicates, an offline RCT-likelihood score and your search-term matches — these are <em>hints</em>.</div>
+          <div class="alm-card alm-tool"><h4>The tool does</h4>Flags possible duplicates, an offline RCT model score and your search-term matches — these are <em>hints</em>.</div>
           <div class="alm-card alm-you"><h4>You must check</h4>Every <strong>include / exclude</strong> decision, and that the final included set is correct, before moving on.</div>
         </div>
       </div>
@@ -317,7 +317,7 @@
               <option value="order">Import order</option>
               <option value="ml">ML relevance ↓</option><option value="uncertainty">ML uncertainty first</option>
               <option value="relevance">Term score ↓</option>
-              <option value="rct">RCT likelihood ↓</option>
+              <option value="rct">RCT model score ↓</option>
               <option value="year">Year ↓</option>
             </select></label>
         </div>
@@ -327,7 +327,7 @@
 
       <section class="panel">
         <h2>Cold-start RCT classifier</h2>
-        <p class="hint" style="margin-top:0">Every card shows a <strong>RCT&nbsp;%</strong> badge — a study-design likelihood from an offline, transparent bag-of-words logistic model trained on real PubMed abstracts (labelled by Publication Type). It needs <em>no</em> labels from you, so it helps from record&nbsp;one; sort by <em>RCT likelihood</em> to triage trials first. <span id="rct-meta"></span></p>
+        <p class="hint" style="margin-top:0">The <strong>RCT model score</strong> is a ranking signal, not a calibrated probability or a decision about study design. The PubMed sample was approximately balanced between RCT and non-RCT publication types. Negatives were reviews, observational studies, case reports and comparative studies. Non-randomised interventional designs were absent as an explicit negative class; their coverage and performance are not established. Protocols, single-arm and quasi-randomised studies can score highly. This is an English-oriented model; non-English performance is not validated. Check random allocation and eligibility yourself. <span id="rct-meta"></span></p>
       </section>
 
       <section class="panel">
@@ -395,7 +395,7 @@
         <span><kbd>1</kbd>–<kbd>9</kbd> reason</span><span><kbd>n</kbd> next undecided</span><span><kbd>j</kbd>/<kbd>k</kbd> move</span>
         <span><kbd>u</kbd> undo</span><span><kbd>f</kbd> exit</span>
       </div>
-      <div id="card-host" aria-live="polite"></div>
+      <div id="card-host" tabindex="-1" aria-label="Screening records"></div>
       <details class="panel" id="history-panel"><summary>Decision history</summary><p class="hint">Dated local history; editable backup files are not signed or authenticated. Older imported decisions have no reconstructed history.</p><ol id="audit-list"></ol></details>
 
       <section class="panel" id="conflict-panel" style="display:none;margin-top:1rem;">
@@ -407,7 +407,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: DOI exact + trigram-Jaccard title similarity (≥0.85), with a multi-field assist (relaxed title threshold when first-author surname AND year both match) that catches reformatted titles and same-work/different-DOI duplicates. Candidate pairs come from blocking + a sorted-neighbourhood window, to reduce pair comparisons; this upgrade does not claim measured 100k-record throughput; earliest-imported record wins. Agreement: Cohen's &kappa; over records both reviewers decided. Effective decision in dual mode: adjudication, agreement, conflict, or pending until both reviewers decide. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
+  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: exact DOI matches are removed automatically. Title similarity (trigram-Jaccard ≥0.85, or ≥0.72 with the same first author and year) produces possible duplicates for confirmation. Different nonempty DOIs never merge. Candidate pairs come from blocking + a sorted-neighbourhood window, to reduce pair comparisons; this upgrade does not claim measured 100k-record throughput; earliest-imported record wins. Agreement: unweighted Cohen's &kappa; over include/exclude pairs only; maybe and missing ratings are omitted. SE and 95% CI use the Fleiss-Cohen-Everitt asymptotic method. Effective decision in dual mode: adjudication, agreement, conflict, or pending until both reviewers decide. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
 
   <!-- Help modal -->
   <div class="modal-bg" id="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
@@ -455,7 +455,7 @@
     ];
 
     var toast = function (m) {
-      try { if (window.AlmToast && AlmToast.show) return AlmToast.show(m); } catch (e) {}
+      try { if (window.Toast && window.Toast.show) return window.Toast.show(m); } catch (e) {}
       try { console.log(m); } catch (e) {}
     };
 
@@ -485,16 +485,18 @@
       if (!s) return [];
       return String(s).split(/;| and |&/).map(function (a) { return a.trim(); }).filter(Boolean);
     }
+    function termRegex(pattern) {
+      return new RegExp("(?<![\\p{L}\\p{N}\\p{M}_])(?:" + pattern + ")(?![\\p{L}\\p{N}\\p{M}_])", "giu");
+    }
     function countOcc(hay, needle) {
-      if (!needle) return 0; var n = 0, i = 0;
-      while ((i = hay.indexOf(needle, i)) >= 0) { n++; i += needle.length; }
-      return n;
+      if (!needle) return 0;
+      return (hay.match(termRegex(escapeRe(needle))) || []).length;
     }
 
     // ---- dedup math (from citation-dedup) ----
     var STOP = new Set("a an the of and or to in for on with without via using study trial randomized randomised controlled".split(" "));
     function normTitle(t) {
-      return String(t || "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/)
+      return String(t || "").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}\p{M} ]+/gu, " ").split(/\s+/)
         .filter(function (w) { return w && !STOP.has(w); }).join(" ").trim();
     }
     function trigrams(s) {
@@ -528,21 +530,22 @@
     // the earliest-imported record exactly as the brute-force loop chose it.
     // Multi-field assist (M-4): a slightly relaxed title threshold is accepted
     // when first-author surname AND year both match, catching reformatted titles
-    // and same-work-different-DOI duplicates that the title-only 0.85 rule misses.
+    // as review candidates; conflicting DOIs always remain separate reports.
     var DEDUP_T_STRICT = 0.85, DEDUP_T_ASSIST = 0.72, SN_WINDOW = 8;
     function dedupCore(recs, opts) {
       opts = opts || {};
       var bruteOnly = !!opts.brute;       // reference O(n^2), strict-threshold only
       var i, j, info = { comparisons: 0, merges: 0 };
       for (i = 0; i < recs.length; i++) {
+        recs[i].possibleDupOf = [];
         if (recs[i].dupManual) { recs[i].dup = true; if (!recs[i].dupOf) recs[i].dupOf = "(manual)"; }
         else { recs[i].dup = false; recs[i].dupOf = null; }
       }
       // DOI exact
-      var seenDoi = {};
+      var seenDoi = Object.create(null);
       for (i = 0; i < recs.length; i++) {
         if (recs[i].dup) continue;
-        var d = (recs[i].doi || "").toLowerCase();
+        var d = doiKey(recs[i]);
         if (!d) continue;
         if (seenDoi[d]) { recs[i].dup = true; recs[i].dupOf = seenDoi[d]; }
         else seenDoi[d] = recs[i].id;
@@ -556,6 +559,7 @@
       function tryMerge(a, b) {
         info.comparisons++;
         if (a.r.dup || b.r.dup) return;
+        if (differentDois(a.r, b.r)) return;
         if (!a.t.size || !b.t.size) return;
         var jac = jaccard(a.t, b.t), merge = false;
         if (jac >= DEDUP_T_STRICT) merge = true;
@@ -565,7 +569,7 @@
         }
         if (!merge) return;
         var keep = a.oi <= b.oi ? a : b, drop = a.oi <= b.oi ? b : a;
-        drop.r.dup = true; drop.r.dupOf = keep.r.id; info.merges++;
+        drop.r.possibleDupOf.push(keep.r.id);
       }
       if (bruteOnly || live.length <= 60) {
         // Exact pass for small sets (keeps unit-test parity) or when explicitly
@@ -619,6 +623,22 @@
       for (i = 0; i < pairs.length; i++) tryMerge(live[pairs[i][0]], live[pairs[i][1]]);
       return info;
     }
+    function doiKey(r) { return String(r.doi || "").trim().replace(/^(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:\s*)/i, "").toLowerCase(); }
+    function differentDois(a,b) { return !!(doiKey(a) && doiKey(b) && doiKey(a) !== doiKey(b)); }
+    function confirmDuplicate(id, keepId) {
+      var r=S.records.find(function(r){return r.id===id;});
+      var keep=S.records.find(function(r){return r.id===keepId;});
+      if(!r || !keep || r===keep || keep.dup || differentDois(r,keep) ||
+          S.records.some(function(x){return x.dup && x.dupOf===r.id;})) {
+        workflowMessage("Cannot confirm this pair: different DOIs, unavailable original or linked duplicates. Review linked records first.");return false;
+      }
+      var confirmed=action(function(){
+        var before={dup:r.dup,dupManual:r.dupManual,dupOf:r.dupOf};
+        r.dup=true;r.dupManual=true;r.dupOf=keep.id;
+        W.audit(S,"duplicate-confirmed",r,S.stage,before,{dup:true,dupManual:true,dupOf:keep.id});
+        runDedup();
+      }); if(confirmed)focusCardHeading();return confirmed;
+    }
     function runDedup() { return dedupCore(S.records, {}); }
 
     // ---- relevance score (transparent TF over user terms) ----
@@ -652,13 +672,14 @@
       terms.sort(function (a, b) { return b.t.length - a.t.length; });
       var pat = terms.map(function (o) { return escapeRe(o.t); }).join("|");
       var re;
-      try { re = new RegExp("(" + pat + ")", "gi"); } catch (e) { return esc; }
-      return esc.replace(re, function (m) {
-        var ml = m.toLowerCase(), hit = null, i;
-        for (i = 0; i < terms.length; i++) { if (terms[i].t.toLowerCase() === ml) { hit = terms[i]; break; } }
-        if (!hit) for (i = 0; i < terms.length; i++) { if (ml.indexOf(terms[i].t.toLowerCase()) >= 0) { hit = terms[i]; break; } }
-        return '<mark class="hl-' + (hit ? hit.c : "inc") + '">' + m + "</mark>";
+      try { re = termRegex(pat); } catch (e) { return esc; }
+      var raw=String(text || ""), out="", last=0;
+      raw.replace(re, function(m,offset){
+        var hit=terms.find(function(o){return o.t.toLowerCase()===m.toLowerCase();});
+        out+=escapeHtml(raw.slice(last,offset))+'<mark class="hl-'+(hit ? hit.c : "inc")+'">'+escapeHtml(m)+'</mark>';
+        last=offset+m.length;return m;
       });
+      return out+escapeHtml(raw.slice(last));
     }
 
     // ---- import parsers ----
@@ -710,23 +731,20 @@
       if (!lines.length) return [];
       var header = lines[0].map(function (h) { return h.trim().toLowerCase(); });
       function idx(names) { for (var n = 0; n < names.length; n++) { var i = header.indexOf(names[n]); if (i >= 0) return i; } return -1; }
-      var iT = idx(["title", "ti"]), iA = idx(["abstract", "ab"]), iAu = idx(["authors", "author", "au"]),
-        iY = idx(["year", "py", "pubyear", "publication year"]), iJ = idx(["journal", "source", "jo", "publication"]),
-        iD = idx(["doi"]), iId = idx(["id", "record id", "key", "refid"]), iP = idx(["pmid"]), iK = idx(["keywords", "kw"]);
-      var recs = [], start = iT >= 0 ? 1 : 0, r, c;
+      var iT = idx(["title", "ti", "article title"]), iA = idx(["abstract", "ab"]), iAu = idx(["authors", "author", "au"]),
+        iY = idx(["year", "py", "pubyear", "publication year"]), iJ = idx(["journal", "source", "jo", "publication", "so", "source title"]),
+        iD = idx(["doi", "di"]), iId = idx(["id", "record id", "key", "refid"]), iP = idx(["pmid"]), iK = idx(["keywords", "kw"]);
+      if (iT < 0) throw new Error("Missing title column. Expected title, ti or Article Title; found: " + header.join(", "));
+      var recs = [], start = 1, r, c;
       for (r = start; r < lines.length; r++) {
         c = lines[r]; if (!c.length) continue;
         function get(i) { return i >= 0 && i < c.length ? c[i].trim() : ""; }
         var rec;
-        if (iT >= 0) {
-          rec = {
-            id: get(iId), title: get(iT), abstract: get(iA), authors: splitAuthors(get(iAu)),
-            year: get(iY), journal: get(iJ), doi: get(iD), pmid: get(iP),
-            keywords: get(iK) ? get(iK).split(/[;|]/).map(function (s) { return s.trim(); }).filter(Boolean) : []
-          };
-        } else {
-          rec = { id: c[0] || "", title: c[1] || "", abstract: c[2] || "" };
-        }
+        rec = {
+          id: get(iId), title: get(iT), abstract: get(iA), authors: splitAuthors(get(iAu)),
+          year: get(iY), journal: get(iJ), doi: get(iD), pmid: get(iP),
+          keywords: get(iK) ? get(iK).split(/[;|]/).map(function (s) { return s.trim(); }).filter(Boolean) : []
+        };
         if (rec.title || rec.abstract) recs.push(rec);
       }
       return recs.map(normalizeImported);
@@ -821,7 +839,7 @@
       invalidateRanking();
       runDedup(); rescoreAll();
       var dups = S.records.filter(function (r) { return r.dup; }).length;
-      toast("Imported " + newRecs.length + " record(s). " + (dups ? dups + " duplicate(s) flagged." : "No duplicates."));
+      toast("Imported " + newRecs.length + " record(s). " + dups + " duplicate(s) removed; " + computeCounts(S.records).possibleDuplicates + " possible duplicate(s) retained for confirmation.");
       S.cursor = 0; save(); render();
     }
 
@@ -847,10 +865,11 @@
         else undecided++;
       }
       var screened = included + excluded;
-      return { identified: identified, duplicates: duplicates, screened: screened, included: included, excluded: excluded, maybe: maybe, conflict: conflict, undecided: undecided };
+      return { identified: identified, duplicates: duplicates, possibleDuplicates: records.filter(function(r){return !r.dup && (r.possibleDupOf || []).length;}).length, screened: screened, included: included, excluded: excluded, maybe: maybe, conflict: conflict, undecided: undecided };
     }
+    var KAPPA_POLICY = "Unweighted include/exclude only, using original reviewer decisions; pairs containing maybe or a missing decision are omitted. Maybe is not a final decision.";
     function cohensKappa(records) {
-      var pairs = records.filter(function (r) { return !r.dup; }).map(function(r){return W.stageData(r,S.stage);}).filter(function(r){return r.r1.d && r.r2.d;});
+      var pairs = records.filter(function (r) { return !r.dup; }).map(function(r){return W.stageData(r,S.stage);}).filter(function(r){return ["include","exclude"].includes(r.r1.d) && ["include","exclude"].includes(r.r2.d);});
       var n = pairs.length;
       if (n < 2) return null;
       var cats = {}; pairs.forEach(function (r) { cats[r.r1.d] = 1; cats[r.r2.d] = 1; });
@@ -867,7 +886,30 @@
       // is misleading, so flag the degenerate case for the UI instead of forcing 0.
       var degenerate = (1 - pe) < 1e-12;
       var kappa = degenerate ? null : (po - pe) / (1 - pe);
-      return { n: n, agree: agree, po: po, pe: pe, kappa: kappa, degenerate: degenerate };
+      // Multinomial delta method, equivalent to Fleiss-Cohen-Everitt's
+      // non-null asymptotic variance. The gradient includes both marginals.
+      var se=null, ci=null;
+      if(!degenerate){
+        var row={}, col={}, table={};
+        keys.forEach(function(c){row[c]=0;col[c]=0;});
+        pairs.forEach(function(r){
+          row[r.r1.d]+=1/n;col[r.r2.d]+=1/n;
+          var key=r.r1.d+"|"+r.r2.d;table[key]=(table[key] || 0)+1/n;
+        });
+        var cells=[], mean=0;
+        keys.forEach(function(a){keys.forEach(function(b){
+          var p=table[a+"|"+b] || 0;
+          var g=((a===b ? 1 : 0)-(1-kappa)*(col[a]+row[b]))/(1-pe);
+          cells.push({p:p,g:g});mean+=p*g;
+        });});
+        var variance=cells.reduce(function(v,c){return v+c.p*Math.pow(c.g-mean,2);},0)/n;
+        se=Math.sqrt(Math.max(0,variance));
+        ci=[Math.max(-1,kappa-1.959963984540054*se),Math.min(1,kappa+1.959963984540054*se)];
+      }
+      return { n:n, agree:agree, po:po, pe:pe, kappa:kappa, degenerate:degenerate,
+        se:se, ci95:ci, method:"Fleiss-Cohen-Everitt asymptotic SE; Wald 95% CI clipped to [-1, 1]",
+        categories:["include","exclude"], maybePolicy:KAPPA_POLICY, smallSample:n<30 };
+
     }
 
     // ---- filtering / sorting ----
@@ -933,6 +975,14 @@
       return out.length ? '<div class="reclinks">' + out.join("") + "</div>" : "";
     }
 
+    function duplicateCandidatesHtml(r) {
+      if(r.dup || !(r.possibleDupOf || []).length)return "";
+      return '<div class="possible-duplicates"><strong>Possible duplicate — retained until confirmed.</strong>' +
+        r.possibleDupOf.map(function(id){
+          var keep=S.records.find(function(x){return x.id===id;});
+          return keep && !keep.dup ? '<p>'+escapeHtml(keep.title)+' <button type="button" data-confirm-dup="'+escapeHtml(id)+'">Confirm duplicate</button></p>' : "";
+        }).join("") + '<p>Use Duplicate again to reverse a confirmed removal.</p></div>';
+    }
     function renderCard() {
       var r = currentRecord();
       if (!r) {
@@ -954,7 +1004,7 @@
       var badges = '<span class="badge b-src">' + escapeHtml(r.source) + "</span>";
       if (r.mlScore != null && S.modelRun) badges += '<span class="badge b-ml">Rank score ' + Math.round(r.mlScore * 100) + "/100" + (S.modelRun.stale ? " (needs retraining)" : "") + "</span>";
       var rct = rctScore(r);
-      if (rct != null) badges += '<span class="badge b-rct" title="Cold-start RCT likelihood from the offline classifier — a study-design signal before any screening decisions">RCT ' + Math.round(rct * 100) + "%</span>";
+      if (rct != null) badges += '<span class="badge b-rct" title="Uncalibrated English-oriented model score; non-English and non-randomised interventional performance not validated. Check study design.">RCT model score ' + Math.round(rct * 100) + "/100</span>";
       if (r.score != null) badges += '<span class="badge b-score">term ' + r.score + "</span>";
       if (r.dup) badges += '<span class="badge b-dup">duplicate of ' + escapeHtml(r.dupOf || "?") + "</span>";
       if (r.score != null && r.score < 0 && !t && !r.dup) badges += '<span class="badge b-sugg">auto-exclude suggested</span>';
@@ -981,11 +1031,12 @@
         ? "No abstract available — this is a ClinicalTrials.gov registry record. Open the ClinicalTrials.gov link above to read the trial details."
         : "No abstract available.";
       var html = '<div class="card' + (r.dup ? " is-dup" : "") + '">' +
-        '<h2 class="ctitle">' + highlight(r.title || "(no title)") + "</h2>" +
+        '<h2 class="ctitle" tabindex="-1">' + highlight(r.title || "(no title)") + "</h2>" +
         (meta.length ? '<p class="cmeta">' + meta.join("") + "</p>" : "") +
         (line2.length ? '<p class="cmeta">' + line2.join(" · ") + "</p>" : "") +
         recordLinksHtml(r) +
         '<div class="badges">' + badges + "</div>" +
+        duplicateCandidatesHtml(r) +
         absNote +
         '<div class="abstract' + (abEmpty ? " empty" : "") + '">' + (abEmpty ? abEmptyMsg : highlight(r.abstract)) + "</div>" +
         (S.stage !== "ft" && r.aiRationale ? '<p class="ai-rationale">AI rationale: ' + escapeHtml(r.aiRationale) + "</p>" : "") +
@@ -1028,6 +1079,9 @@
       cardHost.innerHTML = html;
       if ($("ft-save")) $("ft-save").onclick = function(){ action(function(){ W.evidence(S,r,{retrieval:$("ft-retrieval").value,url:$("ft-url").value,note:$("ft-note").value}); }); };
 
+      Array.prototype.forEach.call(cardHost.querySelectorAll("[data-confirm-dup]"), function(b){
+        b.addEventListener("click",function(){confirmDuplicate(r.id,b.getAttribute("data-confirm-dup"));});
+      });
       // wire card buttons
       Array.prototype.forEach.call(cardHost.querySelectorAll("[data-dec]"), function (b) {
         b.addEventListener("click", function () { decide(b.getAttribute("data-dec")); });
@@ -1059,6 +1113,7 @@
         ["Records", c.identified], ["Duplicates", c.duplicates], ["Screened", c.screened],
         ["Included", c.included], ["Excluded", c.excluded], ["Maybe", c.maybe]
       ];
+      cells.push(["Possible duplicates", c.possibleDuplicates]);
       if (S.mode === "dual" && !S.blind) cells.push(["Conflicts", c.conflict]);
       cells.push(["Undecided", c.undecided]);
       statsEl.innerHTML = cells.map(function (kv) {
@@ -1068,10 +1123,14 @@
       if (S.mode === "dual" && !S.blind) {
         var k = cohensKappa(stageRecords());
         kappaEl.innerHTML = !k
-          ? "Cohen's κ needs ≥2 records decided by both reviewers."
+          ? "Cohen's κ needs ≥2 records with final include/exclude decisions by both reviewers."
           : (k.degenerate
             ? "Cohen's κ undefined — both reviewers used a single category (" + (k.po * 100).toFixed(0) + "% raw agreement over " + k.n + ")."
             : "Cohen's κ = <strong>" + k.kappa.toFixed(3) + "</strong> over " + k.n + " dual-decided (" + (k.po * 100).toFixed(0) + "% raw agreement).");
+        if(k && !k.degenerate)kappaEl.innerHTML+=" SE "+k.se.toFixed(3)+"; 95% CI ["+k.ci95[0].toFixed(3)+", "+k.ci95[1].toFixed(3)+"]. "+k.method+".";
+        kappaEl.innerHTML+=" "+KAPPA_POLICY;
+        if(k && k.smallSample)kappaEl.innerHTML+=" Small sample (n<30): kappa and its asymptotic interval may be unreliable.";
+        if(k && !k.degenerate && k.se===0)kappaEl.innerHTML+=" Zero estimated SE at a boundary does not establish certainty.";
       } else kappaEl.innerHTML = "";
 
       // conflicts panel
@@ -1095,7 +1154,12 @@
       } else conflictPanel.style.display = "none";
     }
 
+    function focusCardHeading() {
+      var heading=cardHost.querySelector(".ctitle");
+      (heading || cardHost).focus();
+    }
     function render() {
+      var restoreHeading=document.activeElement && document.activeElement.classList.contains("ctitle");
       VIEW = filteredRecords();
       if (S.cursor >= VIEW.length) S.cursor = Math.max(0, VIEW.length - 1);
       posEl.textContent = (VIEW.length ? (S.cursor + 1) : 0) + " of " + VIEW.length + (S.records.length !== VIEW.length ? " (filtered from " + S.records.length + ")" : "");
@@ -1103,6 +1167,7 @@
       renderCard();
       renderStatsAndConflicts();
       renderWorkflow();
+      if(restoreHeading)focusCardHeading();
     }
 
     // ---- actions ----
@@ -1113,7 +1178,7 @@
           var before={dup:r.dup,dupManual:r.dupManual,dupOf:r.dupOf};
           r.dup=!r.dup; r.dupManual=r.dup; r.dupOf=r.dup ? "(manual)" : null;
           W.audit(S,"duplicate",r,S.stage,before,{dup:r.dup,dupManual:r.dupManual,dupOf:r.dupOf});
-        }); return;
+        }); focusCardHeading(); return;
       }
       var cursor=S.cursor;
       if(action(function(){ W.decide(S,r,val,activeSlot(r).reason); })) advanceAfterDecision(cursor,r.id);
@@ -1127,6 +1192,7 @@
       // A decided card may vanish from the undecided filter; stay on its successor.
       if(!VIEW.some(function(r){return r.id===id;})){ S.cursor=Math.min(cursor,Math.max(0,VIEW.length-1)); render(); }
       else autoAdvance();
+      focusCardHeading();
       scheduleRank();
     }
 
@@ -1137,7 +1203,7 @@
       save(); render();
     }
     function clearDecision() {
-      var r=currentRecord();if(r)action(function(){W.decide(S,r,"","");});
+      var r=currentRecord();if(r && action(function(){W.decide(S,r,"","");}))focusCardHeading();
     }
     function resolveConflict(id,val) {
       var r=S.records.find(function(r){return r.id===id;});if(!r)return;
@@ -1171,6 +1237,7 @@
     function save() {
       if(unreadableSavedData!==null){$("save-status").textContent="Saving blocked: download unreadable saved data, then restore a valid backup or explicitly reset.";return false;}
       S._savedAt = new Date().toISOString();
+      S.provenance = exportProvenance();
       try { localStorage.setItem(LS_KEY, JSON.stringify(S)); $("save-status").textContent="Saved in this browser"; return true; } catch (e) { $("save-status").textContent="NOT SAVED — export a JSON backup now. " + e.message; return false; }
     }
     function load() {
@@ -1251,13 +1318,35 @@
       if (/^-/.test(v) && !/^-\d+(\.\d+)?([eE][+-]?\d+)?$/.test(v)) v="'"+v;
       return '"' + v.replace(/"/g, '""') + '"';
     }
+    function exportProvenance() {
+      var b=window.AlmBuildInfo || {};
+      return {app:"Screen",version:b.version || "unknown",buildCommit:b.sha || "unknown",builtAt:b.builtAt || null};
+    }
+    function exportStamp() {
+      var p=exportProvenance();return p.app+" "+p.version+"; build commit "+p.buildCommit;
+    }
+    function projectExport() {
+      var records=stageRecords(), k=S.mode==="dual" ? cohensKappa(records) : null;
+      return Object.assign({},S,{provenance:exportProvenance(),
+        counts:Object.assign({stage:S.stage,scope:"project"},computeCounts(records)),
+        agreement:Object.assign({stage:S.stage,scope:"project",available:!!k,maybePolicy:KAPPA_POLICY},k || {})});
+    }
+    function allowProjectExport() {
+      if(S.mode==="dual" && S.blind){
+        workflowMessage("Turn off blind mode before exporting combined project counts and agreement, or export your own reviewer file.");
+        return false;
+      }
+      return true;
+    }
     function exportJSON() {
-      var out = Object.assign({}, S, { counts: computeCounts(S.records), agreement: cohensKappa(S.records) });
+      if(!allowProjectExport())return;
+      var out = projectExport();
       downloadBlob(new Blob([JSON.stringify(out, null, 2)], { type: "application/json" }), "screen-project.json");
     }
     function exportCSV() {
+      if(!S.records.length){toast("No records to export.");return;}
       if (S.mode === "dual" && S.blind) { workflowMessage("Turn off blind mode before exporting combined decisions, or export your own reviewer file."); return; }
-      var header = ["id", "title", "abstract", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "rct_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate", "ta_decision", "ft_decision", "ft_r1", "ft_r2", "ft_reason_r1", "ft_reason_r2", "ft_resolution", "ft_retrieval", "ft_url", "ft_note"];
+      var header = ["id", "title", "abstract", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "rct_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate", "ta_decision", "ft_decision", "ft_r1", "ft_r2", "ft_reason_r1", "ft_reason_r2", "ft_resolution", "ft_retrieval", "ft_url", "ft_note", "app_version", "build_commit"];
       var rows = S.records.map(function (r) {
         var rct = rctScore(r);
         return [r.id, r.title, r.abstract, (r.authors || []).join("; "), r.year, r.journal, r.doi, r.pmid,
@@ -1265,7 +1354,7 @@
           (r.labels || []).join("; "), (r.score == null ? "" : r.score),
           (r.mlScore == null ? "" : r.mlScore.toFixed(4)), (rct == null ? "" : rct.toFixed(4)), r.aiSuggestion || "",
           (r.aiConfidence == null ? "" : r.aiConfidence), r.aiRationale || "",
-          r.dup ? "1" : "", W.effective(r,S,"ta"), W.effective(r,S,"ft"), r.fullText.r1.d, r.fullText.r2.d, r.fullText.r1.reason, r.fullText.r2.reason, r.fullText.resolution ? r.fullText.resolution.reason : "", r.fullText.retrieval, r.fullText.url, r.fullText.note].map(csvCell).join(",");
+          r.dup ? "1" : "", W.effective(r,S,"ta"), W.effective(r,S,"ft"), r.fullText.r1.d, r.fullText.r2.d, r.fullText.r1.reason, r.fullText.r2.reason, r.fullText.resolution ? r.fullText.resolution.reason : "", r.fullText.retrieval, r.fullText.url, r.fullText.note, exportProvenance().version, exportProvenance().buildCommit].map(csvCell).join(",");
       });
       downloadBlob(new Blob([[header.map(csvCell).join(",")].concat(rows).join("\n")], { type: "text/csv;charset=utf-8" }), "screen-decisions.csv");
     }
@@ -1274,7 +1363,7 @@
       var inc = S.records.filter(function (r) { return W.effective(r,S,"ft") === "include"; });
       if (!inc.length) { toast("No included records to export."); return; }
       var ris = inc.map(function (r) {
-        var lines = ["TY  - JOUR"];
+        var lines = ["TY  - JOUR", "N1  - Exported by " + exportStamp()];
         if (r.title) lines.push("TI  - " + r.title);
         (r.authors || []).forEach(function (a) { lines.push("AU  - " + a); });
         if (r.year) lines.push("PY  - " + r.year);
@@ -1290,7 +1379,7 @@
       var c=W.flow(S);
       if(S.mode==="dual" && S.blind){workflowMessage("Turn off blind mode before exporting team counts.");return;}
       if(!c.identified || c.pendingScreen || c.pendingFull){workflowMessage("Finish title/abstract and full-text screening before publishing PRISMA counts. Pending work is never counted as excluded.");return;}
-      var payload={db:c.identified,reg:0,removed:c.duplicates,removedBreakdown:"Duplicates flagged in Screen",
+      var payload={provenance:exportProvenance(),db:c.identified,reg:0,removed:c.duplicates,removedBreakdown:"Duplicates flagged in Screen",
         screened:c.screened,excludedScreen:c.excludedScreen,sought:c.sought,notRetrieved:c.notRetrieved,assessed:c.assessed,
         excludedEligible:c.excludedFull,excludedBreakdown:Object.keys(c.reasons).map(function(k){return k+" (n="+c.reasons[k]+")";}).join("; "),
         studies:c.included,reports:c.included,title:S.title || "Screen"};
@@ -1306,7 +1395,7 @@
         var d=W.stageData(r,S.stage)[who];
         return {id:r.id,doi:r.doi,pmid:r.pmid,title:r.title,d:d.d,reason:d.reason,at:d.at};
       }).filter(function(d){return d.d;});
-      return {_schema:"sr-reviewer-v1",workflowVersion:2,stage:S.stage || "ta",reviewer:who,project:S.title || "",count:decisions.length,decisions:decisions};
+      return {_schema:"sr-reviewer-v1",provenance:exportProvenance(),workflowVersion:2,stage:S.stage || "ta",reviewer:who,project:S.title || "",count:decisions.length,decisions:decisions};
     }
     function exportReviewerState() {
       var env=reviewerEnvelope();
@@ -1390,11 +1479,12 @@
       rd.readAsText(file);
     }
     function exportBundle() {
+      if(!allowProjectExport())return;
       var proj = null; try { proj = JSON.parse(localStorage.getItem(SR_PROJECT_KEY) || "null"); } catch (e) {}
       var bundle = {
-        _schema: "sr-bundle-v1", _savedAt: new Date().toISOString(),
+        _schema: "sr-bundle-v1", provenance: exportProvenance(), _savedAt: new Date().toISOString(),
         protocol: proj,
-        screen: Object.assign({}, S, { counts: computeCounts(S.records), agreement: cohensKappa(S.records) })
+        screen: projectExport()
       };
       downloadBlob(new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" }), "screen-bundle.json");
       toast("Exported shareable bundle (protocol + records + both reviewers + counts + κ).");
@@ -1468,7 +1558,10 @@
 
     // ---- keyboard ----
     function onKey(e) {
-      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if(e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey)return;
+      if(e.target && (e.target.isContentEditable || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable=true]"))))return;
+      // S17: a focused control keeps its own activation keys; all other shortcuts still apply
+      if((e.key === "Enter" || e.key === " ") && e.target && e.target.closest && e.target.closest("button, a, summary, [role=button]"))return;
       if ($("help-modal").classList.contains("on")) { if (e.key === "Escape") closeHelp(); return; }
       var k = e.key;
       if (k >= "1" && k <= "9") { applyReason(parseInt(k, 10) - 1); e.preventDefault(); return; }
@@ -1535,6 +1628,18 @@
       if(p.stage && !['ta','ft'].includes(p.stage))throw Error("Invalid screening stage.");
       var next=Object.assign(blankState(),p);next.records=p.records.map(normalizeImported);
       next.stage=next.stage==="ft" ? "ft":"ta";next.mode=next.mode==="dual" ? "dual":"single";next.active=next.active==="r2" ? "r2":"r1";
+      var previous=next.records.map(function(r){return {dup:r.dup,dupOf:r.dupOf};}), released=false;
+      dedupCore(next.records,{});
+      next.records.forEach(function(r,i){
+        if(previous[i].dup && !r.dup){
+          released=true;
+          W.audit(next,"dedup-recheck",r,"ta",previous[i],{dup:false,dupOf:null},"system");
+        }
+      });
+      if(released){
+        if(next.modelRun)next.modelRun.stale=true;
+        if(next.stage==="ft" && W.flow(next).pendingScreen)next.stage="ta";
+      }
       return next;
     }
     function restoreProject(p) {
@@ -1556,7 +1661,8 @@
     // ---- wire up ----
     function attach() {
       $("btn-import").addEventListener("click", function () { $("file-import").click(); });
-      $("btn-recover").onclick=function(){downloadBlob(new Blob([unreadableSavedData || ""],{type:"text/plain"}),"screen-unreadable-backup.txt");};
+      $("btn-recover").onclick=function(){downloadBlob(new Blob([unreadableSavedData || ""],{type:"text/plain"}),"screen-unreadable-backup.txt");
+        downloadBlob(new Blob([JSON.stringify({provenance:exportProvenance(),file:"screen-unreadable-backup.txt"},null,2)],{type:"application/json"}),"screen-unreadable-backup.provenance.json");};
       $("file-import").addEventListener("change", function (e) {
         var f = e.target.files && e.target.files[0]; if (f) onFile(f); e.target.value = "";
       });
@@ -1622,7 +1728,7 @@
     // train a transparent logistic-regression model over TF-IDF features (unigrams
     // + bigrams + MeSH keywords) and re-rank the rest. No backend, no key,
     // deterministic given the same labels. In dual-reviewer mode BOTH reviewers'
-    // labels are used (was R1-only before). 5-fold cross-validated AUC and a
+    // labels are used (was R1-only before). Up to 5-fold cross-validated AUC and a
     // data-driven stopping signal are surfaced so quality is measurable, not asserted.
     var ML = { model: null, V: null, topPos: [], topNeg: [], trained: false, cv: null };
     var ML_STOP = new Set(("a an the of and or to in for on with without via using study trial we our this that these those is are was were be been being as at by from into results methods method background conclusion conclusions objective objectives aim aims patients patient effect effects group groups versus compared comparison between among also can may use used using based both than then there their which while".split(/\s+/)));
@@ -1820,17 +1926,17 @@
       var V = mlBuildVocab(recs);
       if (!V.terms.length) return null;
       function fold(arr) { var f = [], t; for (t = 0; t < arr.length; t++) { (f[t % k] || (f[t % k] = [])).push(arr[t]); } return f; }
-      var pf = fold(pos), nf = fold(neg), scores = [], labels = [], fi, i;
+      var pf = fold(pos), nf = fold(neg), scores = [], labels = [], fi, i, foldsRun = 0;
       for (fi = 0; fi < k; fi++) {
         var tr = [], te = [];
         for (i = 0; i < k; i++) { var src = (pf[i] || []).concat(nf[i] || []); if (i === fi) te = te.concat(src); else tr = tr.concat(src); }
         if (!tr.length || !te.length) continue;
         if (!tr.some(function (p) { return p[1] === 1; }) || !tr.some(function (p) { return p[1] === 0; })) continue;
-        var m = mlFit(tr, V);
+        var m = mlFit(tr, V); foldsRun++;
         for (i = 0; i < te.length; i++) { scores.push(mlPredict(te[i][0], m, V)); labels.push(te[i][1]); }
       }
       if (!scores.length) return null;
-      return { auc: aucScore(scores, labels), n: labelled.length, folds: k, pos: pos.length, neg: neg.length };
+      return { auc: aucScore(scores, labels), n: scores.length, folds: foldsRun, pos: pos.length, neg: neg.length };
     }
     // ---- principled target-recall stopping rule (Callaghan & Müller-Hansen 2020,
     // "Statistical stopping criteria for automated screening in systematic reviews",
@@ -1920,7 +2026,7 @@
         ok: true, inc: res.pos, exc: res.neg, ranked: ranked, cv: ML.cv,
         msg: "Trained on " + res.pos + " includes / " + res.neg + " excludes (" +
           (S.mode === "dual" ? (S.blind ? S.active.toUpperCase()+" only" : "both reviewers") : "R1") + "); ranked " + ranked + " records" +
-          (ML.cv ? "; 5-fold CV AUC " + ML.cv.auc.toFixed(2) : "") + "."
+          (ML.cv ? "; " + cvDescription(ML.cv) : "") + "."
       };
     }
     function onTrain() {
@@ -1936,10 +2042,14 @@
         renderMlPerf();
       } else { $("ml-terms").innerHTML = ""; $("ml-perf").innerHTML = ""; }
     }
+    function cvDescription(cv) {
+      return cv.folds+"-fold CV AUC "+cv.auc.toFixed(2)+" (n="+cv.n+")"+
+        (cv.n<100 || Math.min(cv.pos,cv.neg)<20 ? ". Small sample: AUC is unstable; no confidence interval is estimated" : "");
+    }
     function renderMlPerf() {
       var el=$("ml-perf");if(!el)return;
       if(!ML.trained || !S.modelRun || S.modelRun.stale){el.textContent="";return;}
-      el.textContent=(ML.cv ? "Cross-validation AUC on reviewer-labelled records: "+ML.cv.auc.toFixed(2)+". This is not a recall estimate for the unscreened pool. " : "")+
+      el.textContent=(ML.cv ? cvDescription(ML.cv)+". This is not a recall estimate for the unscreened pool. " : "")+
         "Ranking scores are uncalibrated priorities. No statistical stopping recommendation is issued; finish screening or use a separately validated stopping protocol.";
     }
 
@@ -2071,9 +2181,9 @@
     function aiExportTask() {
       var batch = aiUndecidedBatch(200);
       if (!batch.length) { toast("No undecided records to send to AI."); return; }
-      downloadBlob(new Blob([aiPromptText(batch)], { type: "text/markdown;charset=utf-8" }), "screen-ai-task.md");
+      downloadBlob(new Blob(["Exported by " + exportStamp() + "\n\n" + aiPromptText(batch)], { type: "text/markdown;charset=utf-8" }), "screen-ai-task.md");
       downloadBlob(new Blob([JSON.stringify({
-        task: "screen", title: S.title, include_terms: S.incTerms, exclude_terms: S.excTerms,
+        provenance: exportProvenance(), task: "screen", title: S.title, include_terms: S.incTerms, exclude_terms: S.excTerms,
         exclusion_reasons: S.reasons, output_schema: { id: "string", suggestion: "include|exclude|maybe", confidence: "0..1", rationale: "string" },
         records: batch.map(function (r) { return { id: r.id, title: r.title, abstract: r.abstract, year: r.year, journal: r.journal }; })
       }, null, 2)], { type: "application/json" }), "screen-ai-batch.json");
@@ -2216,8 +2326,8 @@
       state: function(){return JSON.parse(JSON.stringify(S));},
       restoreProject: restoreProject,
       flow: function(){return W.flow(S);},
-      counts: function () { return computeCounts(S.records); },
-      kappa: function () { return cohensKappa(S.records); },
+      counts: function () { return computeCounts(stageRecords()); },
+      kappa: function () { return cohensKappa(stageRecords()); },
       effDecision: effDecision,
       score: function (r) { var rec = normalizeImported(r); scoreRecord(rec); return rec.score; },
       jaccard: jaccard, normTitle: normTitle, trigrams: trigrams,
@@ -2253,7 +2363,7 @@
     try {
       var rm = window.SrRctClassifier && SrRctClassifier.meta && SrRctClassifier.meta();
       var rmEl = $("rct-meta");
-      if (rm && rmEl) rmEl.textContent = "Held-out AUC " + rm.auc + " · sensitivity " + rm.sensitivity + " · specificity " + rm.specificity + " (n=" + (rm.n_train + rm.n_test) + ", " + rm.n_terms + " terms). Offline, transparent weights.";
+      if (rm && rmEl) rmEl.textContent = "Held-out AUC " + rm.auc + " · sensitivity " + rm.sensitivity + " · specificity " + rm.specificity + " (held-out n=" + rm.n_test + ", " + rm.n_terms + " terms). Offline, transparent weights.";
     } catch (e) {}
     try { if (/[?&]import=sr-records-v1/.test(location.search)) importFromSearch(); } catch (e) {}
   })();

@@ -42,19 +42,20 @@ test.describe("Screen · dedup", () => {
     expect(dup).toBe(1);
   });
 
-  test("fuzzy near-duplicate title (no DOI) flagged at >=0.85 trigram Jaccard", async ({ page }) => {
+  test("fuzzy near-duplicate title stays live pending confirmation", async ({ page }) => {
     await hook(page);
     const out = await page.evaluate(() => {
       window.__almScreenpro.setState({ records: [
-        { id: "a", title: "Dapagliflozin in Patients with Heart Failure and Reduced Ejection Fraction" },
-        { id: "b", title: "Dapagliflozin in patients with heart failure and reduced ejection fraction." },
-        { id: "c", title: "Empagliflozin for kidney disease in type 2 diabetes" },
+        { id: "__control_a", title: "Dapagliflozin in Patients with Heart Failure and Reduced Ejection Fraction" },
+        { id: "__control_b", title: "Dapagliflozin in patients with heart failure and reduced ejection fraction." },
+        { id: "__control_c", title: "Empagliflozin for kidney disease in type 2 diabetes" },
       ]});
-      return { n: window.__almScreenpro.dedupCount(), b: window.__almScreenpro.recordById("b").dup, c: window.__almScreenpro.recordById("c").dup };
+      return { candidates: window.__almScreenpro.recordById("__control_b").possibleDupOf, n: window.__almScreenpro.dedupCount(), b: window.__almScreenpro.recordById("__control_b").dup, c: window.__almScreenpro.recordById("__control_c").dup };
     });
-    expect(out.b).toBe(true);   // near-identical title
+    expect(out.b).toBe(false);  // similarity alone cannot remove a record
+    expect(out.candidates).toContain("__control_a");
     expect(out.c).toBe(false);  // unrelated title survives
-    expect(out.n).toBe(1);
+    expect(out.n).toBe(0);
   });
 
   test("distinct titles below threshold are NOT merged (no false merge)", async ({ page }) => {
@@ -82,18 +83,18 @@ test.describe("Screen · dedup", () => {
     expect(out.aOf).toBe("(manual)");
   });
 
-  test("unicode/diacritic titles dedup after normalization", async ({ page }) => {
+  test("unicode/diacritic titles become candidates after normalization", async ({ page }) => {
     await hook(page);
     const n = await page.evaluate(() => {
       window.__almScreenpro.setState({ records: [
-        { id: "a", title: "Étude randomisée sur l'insuffisance cardiaque aiguë" },
-        { id: "b", title: "Étude randomisée sur l'insuffisance cardiaque aiguë!" },
+        { id: "__control_a", title: "Étude randomisée sur l'insuffisance cardiaque aiguë" },
+        { id: "__control_b", title: "Étude randomisée sur l'insuffisance cardiaque aiguë!" },
       ]});
-      return window.__almScreenpro.dedupCount();
+      return {duplicates:window.__almScreenpro.dedupCount(),candidates:window.__almScreenpro.recordById("__control_b").possibleDupOf};
     });
-    // normTitle strips non [a-z0-9]; accented chars collapse to spaces in both,
-    // so the two should still be near-identical after normalization.
-    expect(n).toBe(1);
+    // Unicode letters survive; punctuation-only variants require confirmation.
+    expect(n.duplicates).toBe(0);
+    expect(n.candidates).toContain("__control_a");
   });
 
   test("jaccard / trigrams primitives behave", async ({ page }) => {
@@ -312,12 +313,10 @@ test.describe("Screen · import parsers", () => {
       const h = window.__almScreenpro;
       return {
         empty: h.parse("", "x.csv").length,
-        garbage: h.parse("not a real format at all", "x.csv").length, // CSV fallback, no title col, single col -> title=field => actually becomes a record
       };
     });
     expect(out.empty).toBe(0);
-    // garbage single line w/o header: parsed as positional CSV (title=col1) -> 1 record is acceptable; assert no crash + numeric
-    expect(typeof out.garbage).toBe("number");
+    await expect(page.evaluate(() => window.__almScreenpro.parse("__control_unknown_header", "x.csv"))).rejects.toThrow(/Missing title column/);
     await expect(page.evaluate(() => window.__almScreenpro.parse("{ not json", "x.json"))).rejects.toThrow(/Invalid JSON import/);
   });
 
