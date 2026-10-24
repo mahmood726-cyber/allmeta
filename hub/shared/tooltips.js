@@ -45,6 +45,16 @@
   }
   function fill(tip, el) {
     const key = el.getAttribute('data-gloss'), entry = glossary[key];
+    // Preserve authoritative numerical provenance even when the display is
+    // translated. Exporters read the metadata on the actual rendered tooltip.
+    const check = english[key]?.r_check;
+    if (check) {
+      tip.dataset.rCheckExpression = check.expression;
+      tip.dataset.rCheckReference = check.reference;
+    } else {
+      delete tip.dataset.rCheckExpression;
+      delete tip.dataset.rCheckReference;
+    }
     const localized = lang !== 'en' && translated[key] && translated[key] === entry;
     tip.textContent = entry ? entry.short + (entry.long ? ' — ' + entry.long : '') : el.textContent.trim();
     tip.lang = localized ? lang : 'en'; tip.dir = localized && lang === 'ar' ? 'rtl' : 'ltr';

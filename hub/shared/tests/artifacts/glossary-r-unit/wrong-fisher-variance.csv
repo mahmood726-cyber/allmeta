@@ -1,0 +1,245 @@
+key,text,expression,reference
+HKSJ,Hartung–Knapp adjustment — Adjusts pooled-mean uncertainty using residual scale q and t(k−1); intervals can narrow without a safeguard. Cochrane Handbook §10.10.4.4.,"c(sqrt(hkq/sum(w)), mu+c(-1,1)*qt(0.975,k-1)*sqrt(hkq/sum(w)))",HKSJ
+REML,Restricted maximum likelihood — Estimates heterogeneity accounting for fitted means. Cochrane Handbook §10.10.4.4.,"reml_variance(y,v)",REML
+DL,DerSimonian–Laird estimator — Moment-based estimate of heterogeneity. Cochrane Handbook §10.10.4.4.,"max(0,(Q-(k-1))/C)",DL
+PM,Paule–Mandel estimator — Matches weighted residual variation to degrees of freedom. Cochrane Handbook §10.10.4.4.,"uniroot(function(tau) { ww <- 1/(v+tau); sum(ww*(y-sum(ww*y)/sum(ww))^2)-(k-1) }, c(0,10*var(y)+max(v)), tol=1e-12)$root",PM
+I2,"I-squared — Heterogeneity percentage, not magnitude; values depend on estimator. Rough, overlapping bands: 0–40% may be unimportant, 30–60% moderate, 50–90% substantial, 75–100% considerable. Cochrane Handbook §10.10.2.","c(100*max(0,(Q-(k-1))/Q), 100*tau/(tau+typical), c(0,30,50,75), c(40,60,90,100), as.numeric(100*tau/(tau+typical) >= c(0,30,50,75) & 100*tau/(tau+typical) <= c(40,60,90,100)))",I2
+tau2,Between-study variance — Variance of underlying effects on the squared analysis scale. Cochrane Handbook §10.10.4.3.,"reml_variance(y,v)",tau2
+PI,Prediction interval — Approximate range for a true effect in a similar setting. The t-based 95% form is μ ± t(k−1)√(SE²+τ²); methods differ. Cochrane Handbook §10.10.4.3; metafor predict.rma.,"mu+c(-1,1)*qt(0.975,k-1)*sqrt(se^2+tau)",PI
+SMD,Standardised mean difference — Difference between group means divided by a standard deviation; Hedges' g corrects small-sample bias.,exp(lgamma((N-2)/2)-log(sqrt((N-2)/2))-lgamma((N-3)/2))*(p1-p2)/pooledSD,SMD
+OR,Odds ratio — Ratio of the odds of an event in two groups; usually pooled on the log scale and distinct from a risk ratio.,(a/b)/(c/d),OR
+RR,Risk ratio — Risk in one group divided by risk in another; one indicates equal risks.,(a/n1)/(c/n2),RR
+HR,Hazard ratio — Ratio of instantaneous event rates among those still at risk; interpretation as one constant ratio assumes proportional hazards.,(a/n1)/(c/n2),HR
+RD,Risk difference — Risk in one group minus risk in another; zero means equal risks.,a/n1-c/n2,RD
+NMA,Network meta-analysis — Combines direct and indirect comparisons of multiple interventions. Cochrane Handbook §11.1.,,
+SUCRA,Surface under the cumulative ranking curve — Summarizes ranking; consider effect sizes and uncertainty too. Cochrane Handbook §11.4.3.3.,,
+POTH,"Precision of treatment hierarchy — Summarizes dispersion of treatment ranking scores; a flat ranking gives little separation, and the hierarchy should be interpreted with effect uncertainty.",,
+GRADE,"Grading of Recommendations Assessment, Development and Evaluation — Framework for rating certainty of evidence.",,
+CINeMA,Confidence in Network Meta-Analysis — GRADE-aligned framework for rating certainty in NMA.,,
+ROB-2,Risk of Bias 2 (Cochrane RCT) — Domain-based tool for assessing risk of bias in randomised trials.,,
+ROBINS-I,Risk of Bias in Non-randomised Studies of Interventions — Cochrane tool for non-randomised interventional studies.,,
+QUADAS-2,Quality Assessment of Diagnostic Accuracy Studies 2 — Domain-based tool for risk of bias in diagnostic accuracy studies.,,
+AMSTAR-2,A MeaSurement Tool to Assess systematic Reviews 2 — 16-item appraisal tool for systematic reviews.,,
+PRISMA,Preferred Reporting Items for Systematic Reviews and Meta-Analyses — Reporting checklist + flow diagram for SRs/MAs.,,
+RoB-ME,"Risk of Bias due to Missing Evidence (Cochrane Ch.13, 2024+) — Per-MA reporting-bias tool; replaces funnel/Egger as the verdict.",,
+INSPECT-SR,INSPECT-SR (Cochrane Oct 2025) — Trustworthiness assessment for primary trials in an SR.,,
+DOR,Diagnostic odds ratio — Ratio of the positive to negative likelihood ratio; summarizes discrimination but does not separate sensitivity and specificity.,(a/(a+c)/(b/(b+d)))/((c/(a+c))/(d/(b+d))),DOR
+SROC,Summary ROC curve — Summarizes the sensitivity–false-positive-rate relationship across studies under a diagnostic model; not necessarily one achievable operating point.,,
+HSROC,"Hierarchical summary ROC model — Models diagnostic accuracy, threshold and study heterogeneity; parameter definitions depend on the chosen formulation.",,
+TSA,Trial sequential analysis — Sequential boundary method for meta-analysis with monitoring boundaries (O'Brien-Fleming).,,
+MID,Minimal important difference — Smallest change perceived as important by patients.,,
+MCID,Minimal clinically important difference — Synonymous with MID; emphasises clinical meaningfulness.,,
+RMST,"Restricted mean survival time — Time-to-event summary up to a fixed horizon τ*; pool differences, not ratios.",,
+IPD,Individual patient data — Trial-level participant-level dataset; gold standard for meta-analysis.,,
+ITT,Intention-to-treat — Analysis principle: analyse participants as randomised.,,
+RCT,Randomised controlled trial — Experimental design with random allocation to interventions.,,
+CrI,"Credible interval — Interval containing a stated posterior probability for a parameter, conditional on the data, prior and model.",,
+CI,Confidence interval — An interval procedure with a stated long-run coverage rate under its assumptions; it does not assign a probability to the fixed true effect.,,
+ESS,Effective sample size — Estimates how much independent-sample information is represented by correlated simulation draws; assess it alongside Monte Carlo error and other diagnostics.,,
+Rhat,Potential scale reduction (R̂) — Compares within- and between-chain variation to help assess simulation convergence; a value near one alone does not establish reliable posterior inference.,,
+MAP,Meta-analytic-predictive prior — Bayesian prior derived from historical trials (Neuenschwander 2010).,,
+PETPEESE,"PET–PEESE — Conditionally uses PET or PEESE according to a specified test of the PET intercept; a sensitivity analysis, not a guarantee of bias removal.",,
+GOSH,"Graphical display of study heterogeneity — Shows pooled estimates and heterogeneity over subsets; clusters suggest sensitivity patterns, not proof of distinct populations.",,
+Egger,Egger's test — Regression test for small-study effects; not proof of publication bias. Cochrane Handbook §13.3.4.4.,,
+Peters,Peters' test — A small-study-effect regression test for binary outcomes. Cochrane Handbook §13.3.4.4.,,
+Copas,Copas selection model — Sensitivity model for selective study availability; conclusions depend on selection assumptions usually not identifiable from the observed studies alone.,,
+TrimFill,Trim-and-fill — Imputes studies to restore funnel symmetry; a sensitivity analysis relying on strong assumptions. Cochrane Handbook §13.3.4.5.,,
+Bucher,Bucher indirect comparison — Indirect treatment effect via a common comparator.,,
+PICO,"Population, Intervention, Comparator, Outcome — Question framework for systematic reviews.",,
+EBM,Evidence-based medicine — Clinical practice informed by best available research evidence.,,
+PROSPERO,PROSPERO — International prospective register of systematic reviews.,,
+Cochrane,Cochrane Collaboration — International network producing systematic reviews of healthcare interventions.,,
+Schoenfeld,"Schoenfeld residuals test — Proportional-hazards diagnostic. If rejected, single HR is misleading.",,
+Guyot,Guyot reconstruction — Algorithm to reconstruct IPD from a Kaplan-Meier curve.,,
+Fragility,Fragility index — Number of event-status changes required to cross a specified significance threshold under the stated algorithm; depends on the model and permitted changes.,,
+NPD,"Not positive definite — Covariance-matrix pathology. Fix with nearPD() (Higham), not eigenvalue clamping.",,
+Clopper,Clopper–Pearson interval — Binomial confidence interval obtained by inverting exact tests; coverage is at least nominal under the binomial model and can be conservative.,,
+Clopper-Pearson,Clopper–Pearson interval — Binomial confidence interval obtained by inverting exact tests; coverage is at least nominal under the binomial model and can be conservative.,,
+TP,True positive — Diseased individuals correctly classified as test-positive (cell a of the 2×2 table).,,
+FP,False positive — Non-diseased individuals incorrectly classified as test-positive (cell b).,,
+FN,False negative — Diseased individuals incorrectly classified as test-negative (cell c).,,
+TN,True negative — Non-diseased individuals correctly classified as test-negative (cell d).,,
+Se,Sensitivity — Proportion with the target condition correctly identified as test-positive: TP/(TP+FN).,a/(a+c),Se
+Sp,Specificity — Proportion without the target condition correctly identified as test-negative: TN/(TN+FP).,d/(b+d),Sp
+FPR,"False-positive rate — Proportion without the target condition who test positive: FP/(FP+TN), equal to 1−specificity.",b/(b+d),FPR
+ROC,Receiver operating characteristic — Curve of sensitivity vs 1 − specificity across decision thresholds.,"c(a/(a+c),1-d/(b+d))",ROC
+OLS,Ordinary least squares — Linear-regression fit minimising squared residuals; used for the Moses-Littenberg SROC line.,"as.numeric(solve(crossprod(X),crossprod(X,y)))",OLS
+DTA,Diagnostic test accuracy — Describes how well a test distinguishes those with and without a target condition.,,
+Bayesian,Bayesian inference — Inference framework combining prior beliefs with data via Bayes' theorem.,,
+Frequentist,Frequentist inference — Inference framework based on long-run sampling distributions.,,
+Funnel,Funnel plot — Plots effects against precision or study size; asymmetry has several possible causes besides missing results. Cochrane Handbook §13.3.4.2.,,
+Forest,"Forest plot — Displays study estimates and uncertainty intervals, often alongside a pooled estimate.",,
+Network,Treatment network — Treatments linked by available direct comparisons. Cochrane Handbook §11.1.,,
+Indirect,Indirect evidence — Comparison through other network interventions. Cochrane Handbook §11.1.,,
+MultiArm,Multi-arm study — A study comparing more than two interventions; estimates sharing a comparator are dependent.,,
+Subgroup,Subgroup analysis — Compares effects across study groups. Cochrane Handbook §10.11.2.,,
+Sensitivity,Sensitivity analysis — Repeats an analysis using alternative assumptions or choices to assess how much the conclusions depend on them.,,
+Cumulative,Cumulative meta-analysis — Updates a pooled estimate as studies enter in a specified order; repeated looks need care when interpreting significance.,,
+Influence,Influence analysis — Examines how fitted results change when a study is removed or perturbed.,,
+Heterogeneity,"Heterogeneity — Variation in underlying effects across studies, which may reflect differences in populations, methods or interventions.",,
+Bias,Bias — Systematic deviation from the truth. Distinguish from random error.,,
+Power,Statistical power — Probability of detecting an effect when one exists.,,
+Type1,Type I error — False positive: rejecting a true null hypothesis.,,
+Type2,Type II error — False negative: failing to reject a false null hypothesis.,,
+Effect,"Effect size — A numerical measure of a difference or association, such as a risk ratio or mean difference.",,
+Pooled,Pooled estimate — A model-based combination of study estimates; its interpretation depends on the effect scale and pooling assumptions.,,
+MetaRegression,Meta-regression — Relates study effects to study characteristics; associations need not be causal. Cochrane Handbook §10.11.4.,,
+Mixed,Mixed-effects meta-regression — Random-effects MA + covariates; default in metafor.,,
+ConfounderAdjustment,Confounder adjustment — Statistical control for confounding variables.,,
+Calibration,Calibration (prediction model) — Agreement between predicted and observed risks.,,
+Discrimination,Discrimination (prediction model) — Ability to rank cases above non-cases (AUC).,,
+NetBenefit,Net benefit (decision curve) — Decision-analytic summary of clinical utility across thresholds.,,
+QALY,Quality-adjusted life year — Health-economic outcome combining length + quality of life.,,
+ICER,Incremental cost-effectiveness ratio — Cost per QALY gained between interventions.,(b-d)/(a-c),ICER
+Q,Cochran's Q — Tests variation against sampling error; low power with few studies. Cochrane Handbook §10.10.2.,sum(w0*(y-sum(w0*y)/sum(w0))^2),Q
+FE,Fixed-effect model — Assumes one underlying effect. Cochrane Handbook §10.10.4.1.,,
+RE,Random-effects model — Models a distribution of underlying effects. Cochrane Handbook §10.10.4.1.,,
+SE,Standard error — Estimated sampling variability of an estimate; a smaller SE means greater precision under the model.,,
+SD,Standard deviation — Describes how much individual values vary around their mean; distinct from the standard error of that mean.,,
+PValue,"P-value — Probability, assuming the null model, of a result at least as extreme as observed; not the probability that the null is true.",,
+DF,Degrees of freedom — Amount of independent information used to estimate a variance or determine a reference distribution.,,
+ZTest,"Normal z statistic — An estimate minus its null value divided by its standard error, compared with a standard normal distribution.",mu/se,ZTest
+TTest,"Student's t statistic — A standardized estimate compared with a t distribution using stated degrees of freedom, which affect tail probabilities.","c(mu/se,k-1)",TTest
+Chi2,Chi-squared statistic — A nonnegative statistic compared with a chi-squared distribution with stated degrees of freedom for tests such as heterogeneity or association.,,
+K,"Number of studies — Number of studies contributing to an analysis; with dependent effects, the number of independent study clusters matters.",,
+N,Sample size — Number of participants or observations; for incidence-rate data the denominator may instead be person-time.,,
+Weight,"Study weight — A study's contribution to a pooled estimate, usually determined by precision and the chosen model.",100*w/sum(w),Weight
+IV,"Inverse-variance weighting — Combines estimates using weights inversely related to their variance, adding heterogeneity variance in a random-effects model.",100*w/sum(w),IV
+Harbord,Harbord's test — A score-based regression test for small-study effects with binary outcomes. Cochrane Handbook §13.3.4.4.,,
+Begg,Begg's rank correlation test — Checks association between effects and their variances using ranks; a nonsignificant result does not exclude small-study effects.,,
+SmallStudy,"Small-study effects — Differences between smaller and larger studies, potentially caused by bias, heterogeneity or chance. Cochrane Handbook §13.3.4.",,
+PublicationBias,Publication bias — Selective publication related to findings can distort the available evidence. Cochrane Handbook §13.1.,,
+PET,Precision-effect test — Regresses effects on standard errors using inverse-variance weights; the intercept extrapolates to zero sampling error and may be unstable.,,
+PEESE,Precision-effect estimate with standard error — Regresses effects on sampling variances; the intercept extrapolates to zero sampling variance and depends on model assumptions.,,
+Limit,Limit meta-analysis — Extrapolates a model relating effect and precision to zero sampling error; the limit estimate depends on model assumptions and available study sizes.,,
+Selection,Selection model — Models how availability of study results depends on findings; adjusted estimates depend on unverifiable selection assumptions.,,
+LogRR,Log risk ratio — Natural logarithm of a risk ratio; zero means equal risks and exponentiating returns the risk ratio.,log((a/n1)/(c/n2)),LogRR
+LogOR,Log odds ratio — Natural logarithm of an odds ratio; zero means equal odds and exponentiating returns the odds ratio.,log((a/b)/(c/d)),LogOR
+IRR,Incidence rate ratio — Ratio of event rates per person-time; distinct from a ratio of cumulative risks.,(a/n1)/(c/n2),IRR
+MD,Mean difference — Difference between group means on the same outcome scale.,p1-p2,MD
+Proportion,"Proportion — Number with an event divided by the total observed, between zero and one; here p denotes a proportion, not a test p-value.",a/n1,Proportion
+Logit,"Logit transformation — Logarithm of p/(1−p), mapping a probability between zero and one to the real line; undefined at exactly zero or one.",log(p1/(1-p1)),Logit
+FreemanTukey,Freeman–Tukey transformation — Double-arcsine transformation for pooling proportions; back-transformed estimates depend on the sample-size convention and can be hard to interpret.,,
+Raw,Untransformed proportion — Pools proportions on their original scale; normal approximations may perform poorly near zero or one.,,
+GLMM,Generalized linear mixed model — Uses a link function and random effects; a binomial-normal model directly models event counts with normally distributed random effects.,,
+Continuity,Continuity correction — Adds a small count when zero cells prevent a calculation; the choice can affect estimates for sparse data.,,
+Wilson,"Wilson interval — A confidence interval for a binomial proportion obtained by inverting a score test, often better behaved than a simple normal interval.",,
+ML,Maximum likelihood — Estimates parameters by maximizing the likelihood of the observed data under the model.,,
+Moments,Method of moments — Estimates parameters by matching observed summary quantities to their expected values.,,
+VarianceComponents,Variance components — Separate sources of variance in a model; in a method menu this names a moment-based estimator of those components.,,
+EB,Empirical Bayes estimator — Estimates a distribution's parameters from the studies themselves; the heterogeneity estimator here is equivalent to Paule–Mandel.,,
+SJ,Sidik–Jonkman estimator — A two-step estimator of between-study variance using standardized study effects; results can differ from other heterogeneity estimators.,,
+HE,Hedges estimator — A moment-based estimator of between-study variance using unweighted variability of study estimates.,,
+HS,Hunter–Schmidt estimator — A moment-based estimator of between-study variance using precision-weighted variation of study estimates.,,
+Tau,"Between-study standard deviation — Square root of τ², on the same analysis scale as the underlying effects.",sqrt(tau),Tau
+H2,"H-squared — Conventionally Q/(k−1), matching the DL definition when Q exceeds its degrees of freedom; REML-based H² instead uses estimated heterogeneity and typical sampling variance.","c(Q/(k-1), (tau+typical)/typical)",H2
+QProfile,Q-profile interval — Interval for heterogeneity variance obtained by inverting a generalized Q statistic under the model.,,
+Baujat,Baujat plot — Plots a measure of heterogeneity contribution against influence on the pooled result to highlight studies for investigation.,,
+LOO,Leave-one-out analysis — Repeats the analysis with each study omitted to show sensitivity to individual studies; does not justify automatic exclusion.,,
+Residual,Residual — Difference between an observed study estimate and the value predicted by the model.,y-mu,Residual
+StudentResidual,Standardized residual — Residual scaled by an estimated standard deviation to identify observations poorly predicted by the model.,,
+Hat,"Leverage (hat value) — Measures how much an observation can influence its fitted value, based on its weight and position in the model.",,
+CookD,"Cook's distance — Summarizes the change in fitted coefficients when a study is omitted; large values suggest influence, not necessarily error.",,
+DFFITS,DFFITS — Standardized change in a study's fitted value when that study is omitted.,,
+DFBETAS,DFBETAS — Standardized changes in model coefficients when a study is omitted.,,
+CovRatio,"Covariance ratio — Ratio of coefficient covariance determinants with and without a study, indicating its effect on precision.",looVariance/fullVariance,CovRatio
+Median,"Median — Middle of an ordered distribution, with half the observations on either side.",,
+QBetween,Between-subgroup Q — Tests whether subgroup pooled effects differ beyond estimated sampling uncertainty; does not establish a causal subgroup effect.,,
+R2,Heterogeneity explained (R-squared) — Estimated proportional reduction in residual between-study variance after including moderators; can be unstable with few studies.,"100*max(0,1-modtau/tau)",R2
+QE,Residual heterogeneity Q — Tests unexplained variation after accounting for moderators against expected sampling variation.,,
+RSS,"Residual sum of squares — Sum of squared residuals, with weights where specified; used to estimate dispersion or assess fit.",sum(w*(y-mu)^2),RSS
+Moderator,Moderator or covariate — A study characteristic included to explain effect differences; study-level associations may differ from individual-level associations.,,
+Intercept,Regression intercept — Predicted effect when all predictors equal zero or their chosen centered reference values.,,
+Slope,"Regression slope — Change in the predicted effect per unit increase in a predictor, holding other predictors constant.",,
+Coefficient,Regression coefficient — Estimated change associated with a model term on the analysis scale; interpretation depends on coding and other terms.,,
+Interaction,Interaction — Allows the effect of one predictor or component to depend on another; meaning depends on the analysis scale.,,
+Permutation,Permutation test — Compares the observed statistic with rearranged data under an exchangeability assumption; simulated permutations add Monte Carlo error.,,
+LocationScale,Location-scale model — Models both the mean effect and residual heterogeneity as functions of covariates.,,
+MultiLevel,"Multilevel meta-analysis — Models effects nested within studies, allowing variation between studies and between effects within a study.",,
+WithinVariance,"Within-study effect variance — Variation in underlying effects within a study in a multilevel model, distinct from sampling error and between-study variance.",,
+StudyVariance,Between-study variance component — Variation between study-level underlying effects in a multilevel model.,,
+RVE,Robust variance estimation — Allows dependent effect estimates within independent study clusters; reliable inference still needs adequate independent clusters and model assumptions.,,
+CR2,"Bias-reduced cluster-robust variance — A small-sample adjustment to cluster-robust standard errors, used with suitable degrees of freedom; it cannot guarantee reliable inference with very few clusters.",,
+Satterthwaite,Satterthwaite degrees of freedom — Approximates a t reference distribution for an estimated variance; degrees of freedom can differ by coefficient and be much smaller than the number of studies.,,
+Rho,"Correlation — Describes the strength and direction of a linear association, from −1 to 1; does not establish causation.","c(-1,1,tanh(atanh(zr)))",Rho
+WorkingRho,Working correlation — Assumed correlation among effect estimates within a study used to form weights; sensitivity checks assess dependence on this choice.,,
+Kappa,Condition number — Measures sensitivity of a matrix calculation to small changes; large values indicate potential numerical instability.,,
+Centering,"Centering predictors — Subtracts a reference value, often the mean, from each predictor to change the intercept's interpretation.",ablat-sum(ablat)/k,Centering
+FisherZ,Fisher z transformation — Transforms a correlation r using atanh(r); approximate sampling variance is 1/(n−3) under the usual correlation model.,"c(atanh(zr),1/zn)",FisherZ
+Correlation,Pearson correlation — Measures linear association between two variables from −1 to 1; pooling often uses Fisher z before back-transformation.,"c(-1,1,tanh(atanh(zr)))",Correlation
+Covariance,Covariance — Measures how two quantities vary together; covariance matrices include variances on the diagonal and covariances off the diagonal.,,
+WithinCov,"Within-study covariance — Sampling dependence between estimates from one study, used to avoid treating correlated estimates as independent.",,
+BetweenCov,Between-study covariance — How the underlying effects for different outcomes vary together across studies.,,
+Multivariate,Multivariate meta-analysis — Jointly pools correlated outcomes using their covariance structure; results depend on within- and between-study covariance assumptions.,,
+Univariate,Univariate meta-analysis — Pools one outcome at a time without modelling dependence with other outcomes.,,
+Direct,Direct evidence — Studies comparing the interventions head to head. Cochrane Handbook §11.1.,,
+Inconsistency,Network inconsistency — Disagreement between evidence sources; nonsignificance does not prove agreement. Cochrane Handbook §11.4.4.,,
+NodeSplit,Node-splitting — Compares direct and indirect evidence for the same contrast. Cochrane Handbook §11.4.4.2.,,
+DesignTreatment,Design-by-treatment test — Global assessment of disagreement across network designs. Cochrane Handbook §11.4.4.3.,,
+Transitivity,Transitivity — Comparability of effect modifiers across network comparisons. Cochrane Handbook §11.2.3.1.,,
+PScore,P-score — Frequentist ranking summary; not a probability of being best. Cochrane Handbook §11.4.3.3.,,
+PBest,Probability of being best — Model-based probability of first rank. Cochrane Handbook §11.4.3.3.,,
+League,League table — Matrix of pairwise intervention estimates. Cochrane Handbook §11.6.,,
+Contrast,Treatment contrast — Estimated difference or relative effect comparing two interventions on the analysis scale.,,
+Component,Component network meta-analysis — Models interventions through their components; an additive model assumes component effects add on the chosen outcome scale.,sum(componentCoefficients),Component
+Additivity,Additive component model — Assumes an intervention's effect equals the sum of its component effects on the specified scale.,sum(componentCoefficients),Additivity
+MH,Mantel–Haenszel method — Combines binary-outcome tables across studies using stratified weights; the formula depends on the effect measure.,,
+Peto,Peto odds ratio — Approximate odds-ratio method using observed minus expected events; performance can be poor with large effects or unequal group sizes.,,
+CMH,Cochran–Mantel–Haenszel test — Tests association in stratified binary tables; distinct from testing heterogeneity of study effects.,,
+BreslowDay,"Breslow–Day test — Tests whether odds ratios vary across strata beyond sampling variation, conditional on a common-odds-ratio model.",,
+Tarone,Tarone-adjusted test — Adjustment to the Breslow–Day test of homogeneity of odds ratios.,,
+Labbe,L'Abbé plot — Plots event risks in the two groups against one another to inspect differences among studies.,,
+FragilityQuotient,Fragility quotient — Fragility index divided by the sample-size denominator specified by the analysis.,fi/N,FragilityQuotient
+Bivariate,"Bivariate diagnostic model — Jointly models transformed sensitivity and specificity or false-positive rate, allowing correlated heterogeneity between studies.",,
+LRpos,Positive likelihood ratio — Sensitivity divided by 1−specificity; multiplying pre-test odds by LR+ gives post-test odds after a positive result.,(a/(a+c))/(1-d/(b+d)),LRpos
+LRneg,Negative likelihood ratio — (1−sensitivity) divided by specificity; multiplying pre-test odds by LR− gives post-test odds after a negative result.,(1-a/(a+c))/(d/(b+d)),LRneg
+LR,"Diagnostic likelihood ratio — Ratio relating test results in people with and without the condition, used to update pre-test odds.","c((a/(a+c))/(1-d/(b+d)),(1-a/(a+c))/(d/(b+d)))",LR
+AUC,Area under the ROC curve — Summarizes discrimination across thresholds; partial AUC restricts the false-positive-rate range and requires that range to be specified.,,
+Fagan,Fagan nomogram — Converts pre-test probability to post-test probability using a diagnostic likelihood ratio.,{ prior <- (a+c)/(a+b+c+d); odds <- prior/(1-prior)*(a/(a+c))/(1-d/(b+d)); odds/(1+odds) },Fagan
+Deeks,Deeks' test — Regression test for small-study effects in diagnostic meta-analysis; asymmetry is not proof of publication bias.,,
+Moses,Moses–Littenberg SROC — Regression summary of diagnostic accuracy that does not fully model binomial sampling error and between-study variation.,,
+Spearman,Spearman rank correlation — Measures monotonic association using ranks; a diagnostic threshold association need not establish its cause.,,
+Accuracy,HSROC accuracy parameter — Describes diagnostic discrimination; not the proportion of all tests correctly classified.,,
+Threshold,"Diagnostic threshold — Decision boundary for a positive test, or its model parameter; changing it can trade sensitivity against specificity.",,
+Shape,HSROC shape parameter — Controls asymmetry of the modeled summary ROC curve; interpretation depends on the HSROC parameterisation.,,
+HSROCVariances,"HSROC variance components — Between-study variances in the model's threshold and accuracy parameters, distinct from sampling variance.",,
+LogLik,Log-likelihood — Logarithm of the likelihood under a fitted model; comparisons require compatible data and likelihood conventions.,,
+AIC,"Akaike information criterion — Balances likelihood fit against parameter count; smaller values favor a model among comparable fits, not proof of correctness.",,
+AICc,Small-sample corrected AIC — Adds a finite-sample penalty to AIC; valid comparisons require compatible likelihoods and data.,,
+BIC,Bayesian information criterion — Model comparison criterion with a sample-size-dependent complexity penalty; lower values favor a model among compatible fits.,,
+LRT,Likelihood-ratio test — Compares nested models through their likelihoods; the reference distribution needs care for variance parameters on a boundary.,,
+Wald,Wald test — Compares estimated coefficients with null values using their estimated covariance; relies on the reference approximation.,,
+DoseResponse,"Dose-response meta-analysis — Pools the exposure dose–outcome relationship, allowing dependence among estimates from one study.",,
+Linear,Linear trend — Assumes constant change on the analysis scale per unit increase in dose or a predictor.,,
+Quadratic,"Quadratic curve — Includes dose and squared dose terms, allowing curvature determined by their coefficients.",as.numeric(betaquad[1]+betaquad[2]*ablat+betaquad[3]*ablat^2),Quadratic
+Spline,Restricted cubic spline — Smooth piecewise cubic curve joined at knots and constrained to be linear in the tails.,,
+Knots,Spline knots — Dose values where spline pieces join; their number and locations affect flexibility.,,
+GL,"Greenland–Longnecker method — Reconstructs within-study covariance between dose-category log relative risks sharing a reference group, using counts and reported estimates.",,
+Hamling,Hamling method — Reconstructs effective counts to approximate covariance of adjusted relative-risk estimates sharing a reference category.,,
+TwoStage,"Two-stage estimation — Fits a dose-response model within each study, then pools the coefficients with their covariance matrices.",,
+OneStage,One-stage estimation — Fits the dose-response relationship across studies in one combined model.,,
+ReferenceDose,"Reference dose — Dose against which relative risks are calculated; changing it changes the comparison, not the fitted curve.",,
+Deviance,Deviance — Likelihood-based measure of lack of fit relative to a reference model; its meaning and reference distribution depend on the model.,,
+Determination,Coefficient of determination — Fraction of observed variability explained by regression; adjusted R² accounts for model size and differs from heterogeneity-explained R².,"{ ss <- sum((y-X %*% ols)^2); total <- sum((y-sum(y)/k)^2); c(1-ss/total,1-(ss/(k-2))/(total/(k-1))) }",Determination
+VarianceRatio,"Variance ratio — Ratio of estimated variances, here comparing precision between univariate and multivariate fits.",looVariance/fullVariance,VarianceRatio
+CaseControl,Case-control study — Samples people according to outcome status and compares prior exposure; odds ratios need appropriate interpretation.,,
+PersonTime,"Person-time — Total time participants contribute while at risk, used as the denominator for incidence rates.",,
+CumulativeIncidence,Cumulative incidence — Proportion experiencing an event over a specified follow-up period.,a/n1,CumulativeIncidence
+Nonlinearity,Non-linearity test — Tests whether additional curve terms improve on a linear dose relationship under the chosen model.,,
+i2,"I-squared — Heterogeneity percentage, not magnitude; values depend on estimator. Rough, overlapping bands: 0–40% may be unimportant, 30–60% moderate, 50–90% substantial, 75–100% considerable. Cochrane Handbook §10.10.2.","c(100*max(0,(Q-(k-1))/Q), 100*tau/(tau+typical), c(0,30,50,75), c(40,60,90,100), as.numeric(100*tau/(tau+typical) >= c(0,30,50,75) & 100*tau/(tau+typical) <= c(40,60,90,100)))",i2
+mh-or,Mantel–Haenszel method — Combines binary-outcome tables across studies using stratified weights; the formula depends on the effect measure.,,
+peto-or,Peto odds ratio — Approximate odds-ratio method using observed minus expected events; performance can be poor with large effects or unequal group sizes.,,
+Consistency,Network consistency — Agreement between direct and indirect evidence. Cochrane Handbook §11.2.3.2.,,
+Mean,"Mean effect — Average underlying effect on the analysis scale, estimated by the fitted model.",,
+Variance,Sampling variance — Expected squared sampling deviation of an estimate; equals its standard error squared.,1/a-1/n1+1/c-1/n2,Variance
+EffectCount,"Number of effect estimates — Count of effect estimates, which can exceed the number of independent studies when several effects come from each study.",,
+ClusterCount,Number of study clusters — Count of independent study groups; effects within a group may be dependent.,,
+CoefficientCount,"Number of coefficients — Count of estimated regression coefficients, including the intercept when present; distinct from a test p-value.",,
+HKScale,Hartung–Knapp scale factor — Residual-based factor used to adjust coefficient variance; a modified procedure may floor it at one to prevent a smaller standard error.,"c(hkq,max(1,hkq))",HKScale
+ScaleIntercept,Log-variance intercept — Predicted log residual heterogeneity variance when the scale-model covariates are zero.,,
+ScaleSlope,Log-variance slope — Change in log residual heterogeneity variance per unit increase in a scale-model covariate.,,
+WithinRho,Within-study correlation — Dependence between the sampling errors of estimates from the same study; an assumed value should be checked in sensitivity analyses.,,
+QModel,Moderator test — Tests whether specified moderator coefficients jointly equal zero under the fitted model.,,
+FTest,"F statistic — A test statistic compared with an F distribution with numerator and denominator degrees of freedom, often for multiple regression coefficients.",,
+Bootstrap,Bootstrap — Repeatedly resamples data to estimate uncertainty; results depend on the resampling unit and assumptions.,,
+MonteCarlo,Monte Carlo sampling — Uses random draws to approximate an otherwise costly calculation; results have simulation error.,,

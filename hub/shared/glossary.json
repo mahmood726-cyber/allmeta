@@ -1,14 +1,18 @@
 {
   "HKSJ": {
     "short": "Hartung–Knapp adjustment",
-    "long": "Adjusts pooled-mean uncertainty; intervals can narrow without a safeguard. Cochrane Handbook §10.10.4.4.",
+    "long": "Adjusts pooled-mean uncertainty using residual scale q and t(k−1); intervals can narrow without a safeguard. Cochrane Handbook §10.10.4.4.",
     "aliases": [
       "HKSJ",
       "Hartung-Knapp",
       "Knapp-Hartung",
       "modified HK",
       "HK"
-    ]
+    ],
+    "r_check": {
+      "expression": "c(sqrt(hkq/sum(w)), mu+c(-1,1)*qt(0.975,k-1)*sqrt(hkq/sum(w)))",
+      "reference": "HKSJ"
+    }
   },
   "REML": {
     "short": "Restricted maximum likelihood",
@@ -16,7 +20,11 @@
     "aliases": [
       "REML",
       "restricted maximum likelihood"
-    ]
+    ],
+    "r_check": {
+      "expression": "reml_variance(y,v)",
+      "reference": "REML"
+    }
   },
   "DL": {
     "short": "DerSimonian–Laird estimator",
@@ -25,7 +33,11 @@
       "DL",
       "DerSimonian-Laird",
       "DerSimonian–Laird"
-    ]
+    ],
+    "r_check": {
+      "expression": "max(0,(Q-(k-1))/C)",
+      "reference": "DL"
+    }
   },
   "PM": {
     "short": "Paule–Mandel estimator",
@@ -34,16 +46,24 @@
       "PM",
       "Paule-Mandel",
       "Paule–Mandel"
-    ]
+    ],
+    "r_check": {
+      "expression": "uniroot(function(tau) { ww <- 1/(v+tau); sum(ww*(y-sum(ww*y)/sum(ww))^2)-(k-1) }, c(0,10*var(y)+max(v)), tol=1e-12)$root",
+      "reference": "PM"
+    }
   },
   "I2": {
     "short": "I-squared",
-    "long": "Percentage of variability attributed to heterogeneity, not its absolute magnitude. Cochrane Handbook §10.10.2.",
+    "long": "Heterogeneity percentage, not magnitude; values depend on estimator. Rough, overlapping bands: 0–40% may be unimportant, 30–60% moderate, 50–90% substantial, 75–100% considerable. Cochrane Handbook §10.10.2.",
     "aliases": [
       "I²",
       "I2",
       "I-squared"
-    ]
+    ],
+    "r_check": {
+      "expression": "c(100*max(0,(Q-(k-1))/Q), 100*tau/(tau+typical), c(0,30,50,75), c(40,60,90,100), as.numeric(100*tau/(tau+typical) >= c(0,30,50,75) & 100*tau/(tau+typical) <= c(40,60,90,100)))",
+      "reference": "I2"
+    }
   },
   "tau2": {
     "short": "Between-study variance",
@@ -57,16 +77,24 @@
       "tau-squared",
       "Tau-squared",
       "Residual tau-squared"
-    ]
+    ],
+    "r_check": {
+      "expression": "reml_variance(y,v)",
+      "reference": "tau2"
+    }
   },
   "PI": {
     "short": "Prediction interval",
-    "long": "Range for an underlying effect in a similar setting, allowing for uncertainty. Cochrane Handbook §10.10.4.3.",
+    "long": "Approximate range for a true effect in a similar setting. The t-based 95% form is μ ± t(k−1)√(SE²+τ²); methods differ. Cochrane Handbook §10.10.4.3; metafor predict.rma.",
     "aliases": [
       "PI",
       "prediction interval",
       "prediction intervals"
-    ]
+    ],
+    "r_check": {
+      "expression": "mu+c(-1,1)*qt(0.975,k-1)*sqrt(se^2+tau)",
+      "reference": "PI"
+    }
   },
   "SMD": {
     "short": "Standardised mean difference",
@@ -75,7 +103,11 @@
       "SMD",
       "standardised mean difference",
       "standardized mean difference"
-    ]
+    ],
+    "r_check": {
+      "expression": "exp(lgamma((N-2)/2)-log(sqrt((N-2)/2))-lgamma((N-3)/2))*(p1-p2)/pooledSD",
+      "reference": "SMD"
+    }
   },
   "OR": {
     "short": "Odds ratio",
@@ -84,7 +116,11 @@
       "OR",
       "odds ratio",
       "odds ratios"
-    ]
+    ],
+    "r_check": {
+      "expression": "(a/b)/(c/d)",
+      "reference": "OR"
+    }
   },
   "RR": {
     "short": "Risk ratio",
@@ -94,7 +130,11 @@
       "risk ratio",
       "relative risk",
       "relative risks"
-    ]
+    ],
+    "r_check": {
+      "expression": "(a/n1)/(c/n2)",
+      "reference": "RR"
+    }
   },
   "HR": {
     "short": "Hazard ratio",
@@ -102,7 +142,11 @@
     "aliases": [
       "HR",
       "hazard ratio"
-    ]
+    ],
+    "r_check": {
+      "expression": "(a/n1)/(c/n2)",
+      "reference": "HR"
+    }
   },
   "RD": {
     "short": "Risk difference",
@@ -110,7 +154,11 @@
     "aliases": [
       "RD",
       "risk difference"
-    ]
+    ],
+    "r_check": {
+      "expression": "a/n1-c/n2",
+      "reference": "RD"
+    }
   },
   "NMA": {
     "short": "Network meta-analysis",
@@ -174,7 +222,11 @@
       "DOR",
       "diagnostic OR",
       "diagnostic odds ratio"
-    ]
+    ],
+    "r_check": {
+      "expression": "(a/(a+c)/(b/(b+d)))/((c/(a+c))/(d/(b+d)))",
+      "reference": "DOR"
+    }
   },
   "SROC": {
     "short": "Summary ROC curve",
@@ -234,11 +286,11 @@
   },
   "ESS": {
     "short": "Effective sample size",
-    "long": "MCMC diagnostic. ESS < 400 per parameter → unreliable CrI."
+    "long": "Estimates how much independent-sample information is represented by correlated simulation draws; assess it alongside Monte Carlo error and other diagnostics."
   },
   "Rhat": {
     "short": "Potential scale reduction (R̂)",
-    "long": "MCMC convergence diagnostic. R̂ > 1.01 → do not interpret."
+    "long": "Compares within- and between-chain variation to help assess simulation convergence; a value near one alone does not establish reliable posterior inference."
   },
   "MAP": {
     "short": "Meta-analytic-predictive prior",
@@ -364,7 +416,11 @@
     "aliases": [
       "Se",
       "sensitivity"
-    ]
+    ],
+    "r_check": {
+      "expression": "a/(a+c)",
+      "reference": "Se"
+    }
   },
   "Sp": {
     "short": "Specificity",
@@ -372,7 +428,11 @@
     "aliases": [
       "Sp",
       "specificity"
-    ]
+    ],
+    "r_check": {
+      "expression": "d/(b+d)",
+      "reference": "Sp"
+    }
   },
   "FPR": {
     "short": "False-positive rate",
@@ -380,15 +440,27 @@
     "aliases": [
       "FPR",
       "false-positive rate"
-    ]
+    ],
+    "r_check": {
+      "expression": "b/(b+d)",
+      "reference": "FPR"
+    }
   },
   "ROC": {
     "short": "Receiver operating characteristic",
-    "long": "Curve of sensitivity vs 1 − specificity across decision thresholds."
+    "long": "Curve of sensitivity vs 1 − specificity across decision thresholds.",
+    "r_check": {
+      "expression": "c(a/(a+c),1-d/(b+d))",
+      "reference": "ROC"
+    }
   },
   "OLS": {
     "short": "Ordinary least squares",
-    "long": "Linear-regression fit minimising squared residuals; used for the Moses-Littenberg SROC line."
+    "long": "Linear-regression fit minimising squared residuals; used for the Moses-Littenberg SROC line.",
+    "r_check": {
+      "expression": "as.numeric(solve(crossprod(X),crossprod(X,y)))",
+      "reference": "OLS"
+    }
   },
   "DTA": {
     "short": "Diagnostic test accuracy",
@@ -551,7 +623,11 @@
   },
   "ICER": {
     "short": "Incremental cost-effectiveness ratio",
-    "long": "Cost per QALY gained between interventions."
+    "long": "Cost per QALY gained between interventions.",
+    "r_check": {
+      "expression": "(b-d)/(a-c)",
+      "reference": "ICER"
+    }
   },
   "Q": {
     "short": "Cochran's Q",
@@ -561,7 +637,11 @@
       "Cochran Q",
       "Cochran's Q",
       "Q-statistic"
-    ]
+    ],
+    "r_check": {
+      "expression": "sum(w0*(y-sum(w0*y)/sum(w0))^2)",
+      "reference": "Q"
+    }
   },
   "FE": {
     "short": "Fixed-effect model",
@@ -627,7 +707,11 @@
       "z-test",
       "Normal",
       "normal approximation"
-    ]
+    ],
+    "r_check": {
+      "expression": "mu/se",
+      "reference": "ZTest"
+    }
   },
   "TTest": {
     "short": "Student's t statistic",
@@ -638,7 +722,11 @@
       "Student's t",
       "t distribution",
       "t-test"
-    ]
+    ],
+    "r_check": {
+      "expression": "c(mu/se,k-1)",
+      "reference": "TTest"
+    }
   },
   "Chi2": {
     "short": "Chi-squared statistic",
@@ -671,7 +759,11 @@
       "weight",
       "weights",
       "Weight %"
-    ]
+    ],
+    "r_check": {
+      "expression": "100*w/sum(w)",
+      "reference": "Weight"
+    }
   },
   "IV": {
     "short": "Inverse-variance weighting",
@@ -680,7 +772,11 @@
       "inverse-variance",
       "inverse variance",
       "IV"
-    ]
+    ],
+    "r_check": {
+      "expression": "100*w/sum(w)",
+      "reference": "IV"
+    }
   },
   "Harbord": {
     "short": "Harbord's test",
@@ -755,7 +851,11 @@
       "logRR",
       "log RR",
       "log risk ratio"
-    ]
+    ],
+    "r_check": {
+      "expression": "log((a/n1)/(c/n2))",
+      "reference": "LogRR"
+    }
   },
   "LogOR": {
     "short": "Log odds ratio",
@@ -764,7 +864,11 @@
       "logOR",
       "log OR",
       "log-OR"
-    ]
+    ],
+    "r_check": {
+      "expression": "log((a/b)/(c/d))",
+      "reference": "LogOR"
+    }
   },
   "IRR": {
     "short": "Incidence rate ratio",
@@ -773,7 +877,11 @@
       "IRR",
       "rate ratio",
       "incidence rate ratio"
-    ]
+    ],
+    "r_check": {
+      "expression": "(a/n1)/(c/n2)",
+      "reference": "IRR"
+    }
   },
   "MD": {
     "short": "Mean difference",
@@ -781,7 +889,11 @@
     "aliases": [
       "MD",
       "mean difference"
-    ]
+    ],
+    "r_check": {
+      "expression": "p1-p2",
+      "reference": "MD"
+    }
   },
   "Proportion": {
     "short": "Proportion",
@@ -789,7 +901,11 @@
     "aliases": [
       "proportion",
       "events/n"
-    ]
+    ],
+    "r_check": {
+      "expression": "a/n1",
+      "reference": "Proportion"
+    }
   },
   "Logit": {
     "short": "Logit transformation",
@@ -797,7 +913,11 @@
     "aliases": [
       "logit",
       "Logit"
-    ]
+    ],
+    "r_check": {
+      "expression": "log(p1/(1-p1))",
+      "reference": "Logit"
+    }
   },
   "FreemanTukey": {
     "short": "Freeman–Tukey transformation",
@@ -907,15 +1027,23 @@
     "aliases": [
       "τ",
       "tau"
-    ]
+    ],
+    "r_check": {
+      "expression": "sqrt(tau)",
+      "reference": "Tau"
+    }
   },
   "H2": {
     "short": "H-squared",
-    "long": "Ratio of Q to its degrees of freedom, summarizing dispersion relative to that expected from sampling alone.",
+    "long": "Conventionally Q/(k−1), matching the DL definition when Q exceeds its degrees of freedom; REML-based H² instead uses estimated heterogeneity and typical sampling variance.",
     "aliases": [
       "H²",
       "H2"
-    ]
+    ],
+    "r_check": {
+      "expression": "c(Q/(k-1), (tau+typical)/typical)",
+      "reference": "H2"
+    }
   },
   "QProfile": {
     "short": "Q-profile interval",
@@ -947,7 +1075,11 @@
     "aliases": [
       "residual",
       "residuals"
-    ]
+    ],
+    "r_check": {
+      "expression": "y-mu",
+      "reference": "Residual"
+    }
   },
   "StudentResidual": {
     "short": "Standardized residual",
@@ -997,7 +1129,11 @@
       "Cov-ratio",
       "cov-ratio",
       "covariance ratio"
-    ]
+    ],
+    "r_check": {
+      "expression": "looVariance/fullVariance",
+      "reference": "CovRatio"
+    }
   },
   "Median": {
     "short": "Median",
@@ -1020,7 +1156,11 @@
     "aliases": [
       "R²",
       "R2"
-    ]
+    ],
+    "r_check": {
+      "expression": "100*max(0,1-modtau/tau)",
+      "reference": "R2"
+    }
   },
   "QE": {
     "short": "Residual heterogeneity Q",
@@ -1036,7 +1176,11 @@
     "long": "Sum of squared residuals, with weights where specified; used to estimate dispersion or assess fit.",
     "aliases": [
       "RSS"
-    ]
+    ],
+    "r_check": {
+      "expression": "sum(w*(y-mu)^2)",
+      "reference": "RSS"
+    }
   },
   "Moderator": {
     "short": "Moderator or covariate",
@@ -1153,7 +1297,11 @@
     "long": "Describes the strength and direction of a linear association, from −1 to 1; does not establish causation.",
     "aliases": [
       "ρ"
-    ]
+    ],
+    "r_check": {
+      "expression": "c(-1,1,tanh(atanh(zr)))",
+      "reference": "Rho"
+    }
   },
   "WorkingRho": {
     "short": "Working correlation",
@@ -1178,7 +1326,11 @@
     "aliases": [
       "Centre predictors",
       "centering"
-    ]
+    ],
+    "r_check": {
+      "expression": "ablat-sum(ablat)/k",
+      "reference": "Centering"
+    }
   },
   "FisherZ": {
     "short": "Fisher z transformation",
@@ -1187,7 +1339,11 @@
       "Fisher z",
       "Fisher’s z",
       "Fisher's z"
-    ]
+    ],
+    "r_check": {
+      "expression": "c(atanh(zr),1/(zn-3))",
+      "reference": "FisherZ"
+    }
   },
   "Correlation": {
     "short": "Pearson correlation",
@@ -1196,7 +1352,11 @@
       "r",
       "Pearson correlation",
       "correlation"
-    ]
+    ],
+    "r_check": {
+      "expression": "c(-1,1,tanh(atanh(zr)))",
+      "reference": "Correlation"
+    }
   },
   "Covariance": {
     "short": "Covariance",
@@ -1317,7 +1477,11 @@
       "component NMA",
       "component effects",
       "component"
-    ]
+    ],
+    "r_check": {
+      "expression": "sum(componentCoefficients)",
+      "reference": "Component"
+    }
   },
   "Additivity": {
     "short": "Additive component model",
@@ -1325,7 +1489,11 @@
     "aliases": [
       "additive",
       "additivity"
-    ]
+    ],
+    "r_check": {
+      "expression": "sum(componentCoefficients)",
+      "reference": "Additivity"
+    }
   },
   "MH": {
     "short": "Mantel–Haenszel method",
@@ -1381,7 +1549,11 @@
     "aliases": [
       "FQ",
       "fragility quotient"
-    ]
+    ],
+    "r_check": {
+      "expression": "fi/N",
+      "reference": "FragilityQuotient"
+    }
   },
   "Bivariate": {
     "short": "Bivariate diagnostic model",
@@ -1397,15 +1569,23 @@
     "long": "Sensitivity divided by 1−specificity; multiplying pre-test odds by LR+ gives post-test odds after a positive result.",
     "aliases": [
       "LR+"
-    ]
+    ],
+    "r_check": {
+      "expression": "(a/(a+c))/(1-d/(b+d))",
+      "reference": "LRpos"
+    }
   },
   "LRneg": {
     "short": "Negative likelihood ratio",
-    "long": "(1−sensitivity) divided by specificity; multiplying pre-test odds by LR² gives post-test odds after a negative result.",
+    "long": "(1−sensitivity) divided by specificity; multiplying pre-test odds by LR− gives post-test odds after a negative result.",
     "aliases": [
       "LR−",
       "LR-"
-    ]
+    ],
+    "r_check": {
+      "expression": "(1-a/(a+c))/(d/(b+d))",
+      "reference": "LRneg"
+    }
   },
   "LR": {
     "short": "Diagnostic likelihood ratio",
@@ -1413,7 +1593,11 @@
     "aliases": [
       "LR±",
       "likelihood ratio"
-    ]
+    ],
+    "r_check": {
+      "expression": "c((a/(a+c))/(1-d/(b+d)),(1-a/(a+c))/(d/(b+d)))",
+      "reference": "LR"
+    }
   },
   "AUC": {
     "short": "Area under the ROC curve",
@@ -1429,7 +1613,11 @@
     "aliases": [
       "Fagan",
       "Fagan nomogram"
-    ]
+    ],
+    "r_check": {
+      "expression": "{ prior <- (a+c)/(a+b+c+d); odds <- prior/(1-prior)*(a/(a+c))/(1-d/(b+d)); odds/(1+odds) }",
+      "reference": "Fagan"
+    }
   },
   "Deeks": {
     "short": "Deeks' test",
@@ -1556,7 +1744,11 @@
     "long": "Includes dose and squared dose terms, allowing curvature determined by their coefficients.",
     "aliases": [
       "quadratic"
-    ]
+    ],
+    "r_check": {
+      "expression": "as.numeric(betaquad[1]+betaquad[2]*ablat+betaquad[3]*ablat^2)",
+      "reference": "Quadratic"
+    }
   },
   "Spline": {
     "short": "Restricted cubic spline",
@@ -1625,14 +1817,22 @@
     "aliases": [
       "coefficient of determination",
       "R² (adjusted)"
-    ]
+    ],
+    "r_check": {
+      "expression": "{ ss <- sum((y-X %*% ols)^2); total <- sum((y-sum(y)/k)^2); c(1-ss/total,1-(ss/(k-2))/(total/(k-1))) }",
+      "reference": "Determination"
+    }
   },
   "VarianceRatio": {
     "short": "Variance ratio",
     "long": "Ratio of estimated variances, here comparing precision between univariate and multivariate fits.",
     "aliases": [
       "Var ratio"
-    ]
+    ],
+    "r_check": {
+      "expression": "looVariance/fullVariance",
+      "reference": "VarianceRatio"
+    }
   },
   "CaseControl": {
     "short": "Case-control study",
@@ -1654,7 +1854,11 @@
     "long": "Proportion experiencing an event over a specified follow-up period.",
     "aliases": [
       "cumulative incidence"
-    ]
+    ],
+    "r_check": {
+      "expression": "a/n1",
+      "reference": "CumulativeIncidence"
+    }
   },
   "Nonlinearity": {
     "short": "Non-linearity test",
@@ -1666,7 +1870,11 @@
   },
   "i2": {
     "short": "I-squared",
-    "long": "Percentage of variability attributed to heterogeneity, not its absolute magnitude. Cochrane Handbook §10.10.2."
+    "long": "Heterogeneity percentage, not magnitude; values depend on estimator. Rough, overlapping bands: 0–40% may be unimportant, 30–60% moderate, 50–90% substantial, 75–100% considerable. Cochrane Handbook §10.10.2.",
+    "r_check": {
+      "expression": "c(100*max(0,(Q-(k-1))/Q), 100*tau/(tau+typical), c(0,30,50,75), c(40,60,90,100), as.numeric(100*tau/(tau+typical) >= c(0,30,50,75) & 100*tau/(tau+typical) <= c(40,60,90,100)))",
+      "reference": "i2"
+    }
   },
   "mh-or": {
     "short": "Mantel–Haenszel method",
@@ -1701,7 +1909,11 @@
       "sampling variances",
       "variance",
       "var"
-    ]
+    ],
+    "r_check": {
+      "expression": "1/a-1/n1+1/c-1/n2",
+      "reference": "Variance"
+    }
   },
   "EffectCount": {
     "short": "Number of effect estimates",
@@ -1729,7 +1941,11 @@
     "long": "Residual-based factor used to adjust coefficient variance; a modified procedure may floor it at one to prevent a smaller standard error.",
     "aliases": [
       "HKSJ q"
-    ]
+    ],
+    "r_check": {
+      "expression": "c(hkq,max(1,hkq))",
+      "reference": "HKScale"
+    }
   },
   "ScaleIntercept": {
     "short": "Log-variance intercept",

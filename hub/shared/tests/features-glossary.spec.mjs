@@ -1,9 +1,50 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const apps = 'proportion-ma dta-sroc nma heterogeneity pubbias-tests multilevel-ma meta-regression mh-peto influence limit-ma gosh cumulative-subgroup rve-meta nma-inconsistency correlation-ma multivariate-ma component-nma dose-response-ma'.split(' ');
 const glossary = JSON.parse(readFileSync(new URL('../glossary.json', import.meta.url), 'utf8'));
+
+test('page-rendered English definitions and formula metadata exported for independent R checks', async ({ page }) => {
+  await ready(page, 'heterogeneity');
+  await page.evaluate(async keys => {
+    await window.alm.tooltips.setLang('en');
+    const section = document.createElement('section'); section.id = 'rcheck-glossary';
+    for (const key of keys) {
+      const term = document.createElement('span'); term.dataset.gloss = key;
+      // No alias normalization: check every authoritative key, including aliases.
+      term.textContent = key + ' definition'; section.append(term);
+    }
+    document.querySelector('main').append(section); window.alm.tooltips.rescan();
+  }, Object.keys(glossary));
+  const capture = () => page.locator('#rcheck-glossary [data-gloss]').evaluateAll(els => els.map(el => {
+    const tip = document.getElementById(el.dataset.almTip);
+    return { key: el.dataset.gloss, text: tip.textContent,
+      expression: tip.dataset.rCheckExpression || '', reference: tip.dataset.rCheckReference || '' };
+  }));
+  const validate = rows => {
+    expect(rows.map(row => row.key).sort()).toEqual(Object.keys(glossary).sort());
+    for (const row of rows) {
+      const entry = glossary[row.key];
+      expect(row.text).toBe(entry.short + (entry.long ? ' — ' + entry.long : ''));
+      expect(row.expression).toBe(entry.r_check?.expression || '');
+      expect(row.reference).toBe(entry.r_check?.reference || '');
+    }
+  };
+  const rows = await capture(); validate(rows);
+  // A missing page-produced expression must fail, even when JSON is correct.
+  const term = page.locator('#rcheck-glossary [data-gloss="Q"]');
+  await term.evaluate(el => delete document.getElementById(el.dataset.almTip).dataset.rCheckExpression);
+  expect(() => validate([])).toThrow();
+  const broken = await capture(); expect(() => validate(broken)).toThrow();
+  await page.evaluate(() => window.alm.tooltips.setLang('en'));
+  const restored = await capture(); validate(restored);
+  const out = new URL('rchecks-out/glossary/', import.meta.url);
+  mkdirSync(out, { recursive: true });
+  const csv = value => '"' + String(value).replaceAll('"', '""') + '"';
+  writeFileSync(new URL('entries.csv', out), 'key,text,expression,reference\n' +
+    restored.map(row => [row.key, row.text, row.expression, row.reference].map(csv).join(',')).join('\n') + '\n');
+});
 
 async function violations(page) {
   const result = await new AxeBuilder({ page }).analyze();
