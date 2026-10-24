@@ -172,6 +172,17 @@
     #save-status { font-size:.8rem; margin-left:auto; }
     .full-text-evidence { padding:1rem; margin:1rem 0; border:1px solid var(--border-strong); border-radius:.6rem; }
     .full-text-evidence input,.full-text-evidence textarea { width:100%; }
+    #duplicate-warning { border:2px solid var(--maybe); margin-bottom:1rem; }
+    #duplicate-review { margin-bottom:1rem; }
+    .duplicate-pair { border-top:1px solid var(--border); padding:1rem 0; }
+    .duplicate-records { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+    .duplicate-records article { min-width:0; overflow-wrap:anywhere; }
+    .duplicate-records h4 { margin:.25rem 0; }
+    .duplicate-records dl { margin:.5rem 0; font-size:.85rem; }
+    .duplicate-records dt { font-weight:600; }
+    .duplicate-records dd { margin:0 0 .3rem; }
+    .duplicate-actions { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+    @media(max-width:650px) { .duplicate-records { grid-template-columns:1fr; } }
     #history-panel { margin-top:1rem; } #audit-list { max-height:18rem; overflow:auto; padding-left:1.5rem; font-size:.85rem; }
     :focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
     .conflict-row { flex-wrap:wrap; }
@@ -395,6 +406,17 @@
         <span><kbd>1</kbd>–<kbd>9</kbd> reason</span><span><kbd>n</kbd> next undecided</span><span><kbd>j</kbd>/<kbd>k</kbd> move</span>
         <span><kbd>u</kbd> undo</span><span><kbd>f</kbd> exit</span>
       </div>
+      <div id="duplicate-warning" class="panel" role="status" aria-live="polite" hidden></div>
+      <details id="duplicate-review" class="panel">
+        <summary id="duplicate-review-heading">Review duplicates</summary>
+        <p>Compare both records and the reason before choosing Keep both or Remove. Remove targets the second record; Swap changes the target. Screening can continue while pairs are unresolved.</p>
+        <button type="button" id="duplicate-remove-exact">Remove all exact matches (0)</button>
+        <p class="hint">The bulk count is the number of records that can safely be removed now. Linked pairs stay unresolved until reviewed; undo a linked removal to make another choice.</p>
+        <div id="duplicate-pairs"></div>
+        <h3>Duplicate decisions</h3>
+        <p class="hint">Undo restores a removed record with its own screening decisions and history.</p>
+        <ol id="duplicate-decisions"></ol>
+      </details>
       <div id="card-host" tabindex="-1" aria-label="Screening records"></div>
       <details class="panel" id="history-panel"><summary>Decision history</summary><p class="hint">Dated local history; editable backup files are not signed or authenticated. Older imported decisions have no reconstructed history.</p><ol id="audit-list"></ol></details>
 
@@ -407,7 +429,7 @@
     </section>
   </main>
 
-  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: exact DOI matches are removed automatically. Title similarity (trigram-Jaccard ≥0.85, or ≥0.72 with the same first author and year) produces possible duplicates for confirmation. Different nonempty DOIs never merge. Candidate pairs come from blocking + a sorted-neighbourhood window, to reduce pair comparisons; this upgrade does not claim measured 100k-record throughput; earliest-imported record wins. Agreement: unweighted Cohen's &kappa; over include/exclude pairs only; maybe and missing ratings are omitted. SE and 95% CI use the Fleiss-Cohen-Everitt asymptotic method. Effective decision in dual mode: adjudication, agreement, conflict, or pending until both reviewers decide. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
+  <p class="footer-note">Local by default — with AI assist off, records never leave your device. The optional <em>bring-your-own-key</em> path is the only exception: it sends the title and abstract of each screened record to the AI provider you choose (which is why <code>connect-src</code> allowlists those three hosts), and your key is stored only in this browser. Dedup: nothing is removed automatically. Review suspected pairs with their reasons, keep both or explicitly remove one record. Exact DOI, PubMed ID and normalised-title matches can be removed together after confirmation. Different nonempty DOIs never pair. Title similarity (trigram Jaccard at least 0.85, or at least 0.72 with matching first author and year) only proposes review. Blocking and sorted-neighbourhood matching reduce fuzzy comparisons; measured 100k-record throughput is not claimed. Agreement: unweighted Cohen's &kappa; over include/exclude pairs only; maybe and missing ratings are omitted. SE and 95% CI use the Fleiss-Cohen-Everitt asymptotic method. Effective decision in dual mode: adjudication, agreement, conflict, or pending until both reviewers decide. PRISMA push writes the <code>prisma-flow-v1</code> key. Relevance is a transparent term-frequency score over your own include/exclude terms — no cloud model, no black box.</p>
 
   <!-- Help modal -->
   <div class="modal-bg" id="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
@@ -467,7 +489,7 @@
         reasons: DEFAULT_REASONS.slice(), labels: [],
         mode: "single", active: "r1", blind: false,
         filter: "all", sort: "order", kw: "",
-        cursor: 0, records: [], stage: "ta", workflowVersion: 2, audit: [], autoRank: false, modelRun: null
+        cursor: 0, records: [], stage: "ta", workflowVersion: 2, audit: [], duplicatePairs: [], duplicateDecisions: [], autoRank: false, modelRun: null
       };
     }
 
@@ -521,61 +543,61 @@
       return best.length >= 3 ? best : "";
     }
 
-    // Blocked + multi-field dedup. DOI-exact is O(n). The fuzzy title pass used
-    // to be O(n^2) on the main thread (frozen tab beyond ~50k records, PERF-1).
-    // It now generates candidate pairs by BLOCKING — buckets keyed by the first,
-    // last and longest title token plus an (author,year) key — and a
-    // sorted-neighbourhood window over normalised titles. Each candidate pair is
-    // visited once, in (survivor-index, other-index) order, so the survivor is
-    // the earliest-imported record exactly as the brute-force loop chose it.
-    // Multi-field assist (M-4): a slightly relaxed title threshold is accepted
-    // when first-author surname AND year both match, catching reformatted titles
-    // as review candidates; conflicting DOIs always remain separate reports.
+    // Detection proposes pairs only. Exact buckets are exhaustive; fuzzy buckets
+    // and a sorted neighbourhood bound comparisons for larger imports.
+    function exactTitle(t) {
+      return String(t || "").normalize("NFKC").normalize("NFD").replace(/\p{M}/gu,"")
+        .toLowerCase().replace(/[^\p{L}\p{N} ]+/gu," ").replace(/\s+/g," ").trim();
+    }
+    function pairId(a,b) { return JSON.stringify([a.id,b.id].sort()); }
     var DEDUP_T_STRICT = 0.85, DEDUP_T_ASSIST = 0.72, SN_WINDOW = 8;
     function dedupCore(recs, opts) {
       opts = opts || {};
-      var bruteOnly = !!opts.brute;       // reference O(n^2), strict-threshold only
-      var i, j, info = { comparisons: 0, merges: 0 };
-      for (i = 0; i < recs.length; i++) {
-        recs[i].possibleDupOf = [];
-        if (recs[i].dupManual) { recs[i].dup = true; if (!recs[i].dupOf) recs[i].dupOf = "(manual)"; }
-        else { recs[i].dup = false; recs[i].dupOf = null; }
-      }
-      // DOI exact
-      var seenDoi = Object.create(null);
-      for (i = 0; i < recs.length; i++) {
-        if (recs[i].dup) continue;
-        var d = doiKey(recs[i]);
-        if (!d) continue;
-        if (seenDoi[d]) { recs[i].dup = true; recs[i].dupOf = seenDoi[d]; }
-        else seenDoi[d] = recs[i].id;
-      }
-      // live entries keep their ORIGINAL record index (oi) for survivor choice
-      var live = [];
-      for (i = 0; i < recs.length; i++) if (!recs[i].dup) {
-        var nt = normTitle(recs[i].title);
-        live.push({ r: recs[i], oi: i, nt: nt, t: trigrams(nt), toks: nt ? nt.split(" ") : [] });
-      }
+      var bruteOnly = !!opts.brute;
+      var i, j, info = { comparisons: 0, merges: 0, pairs: [] }, visited=new Set();
+      var live = recs.map(function(r,i) {
+        var nt=normTitle(r.title);
+        return {r:r,oi:i,nt:nt,t:trigrams(nt),toks:nt ? nt.split(" ") : []};
+      });
       function tryMerge(a, b) {
-        info.comparisons++;
-        if (a.r.dup || b.r.dup) return;
+        var key=pairId(a.r,b.r);
+        if(visited.has(key))return; visited.add(key); info.comparisons++;
         if (differentDois(a.r, b.r)) return;
-        if (!a.t.size || !b.t.size) return;
-        var jac = jaccard(a.t, b.t), merge = false;
-        if (jac >= DEDUP_T_STRICT) merge = true;
-        else if (!bruteOnly && jac >= DEDUP_T_ASSIST) {
-          var ka = firstAuthorKey(a.r), kb = firstAuthorKey(b.r);
-          if (ka && ka === kb && a.r.year && a.r.year === b.r.year) merge = true;
+        var reason="", text="", jac=jaccard(a.t,b.t), title=exactTitle(a.r.title);
+        if(doiKey(a.r) && doiKey(a.r)===doiKey(b.r)) {
+          reason="exact-doi"; text="Same DOI "+doiKey(a.r);
+        } else if(a.r.pmid && String(a.r.pmid).trim()===String(b.r.pmid || "").trim()) {
+          reason="exact-pmid"; text="Same PubMed ID "+String(a.r.pmid).trim();
+        } else if(title && title===exactTitle(b.r.title)) {
+          reason="exact-title"; text="Identical title after normalising case, accents and punctuation";
+        } else if(a.nt && b.nt && jac>=DEDUP_T_STRICT) {
+          reason="similar-title"; text="Titles "+Math.round(jac*100)+"% similar (trigram Jaccard "+jac.toFixed(2)+")";
+        } else if(a.nt && b.nt && jac>=DEDUP_T_ASSIST) {
+          var ka=firstAuthorKey(a.r), kb=firstAuthorKey(b.r);
+          if(ka && ka===kb && a.r.year && String(a.r.year)===String(b.r.year)) {
+            reason="similar-title+author-year";
+            var author=(a.r.authors[0].match(/[a-z]{2,}/gi) || []).find(function(t){return t.toLowerCase()===ka;}) || ka;
+            text="Titles "+Math.round(jac*100)+"% similar, same first author ("+author+") and year ("+a.r.year+")";
+          }
         }
-        if (!merge) return;
-        var keep = a.oi <= b.oi ? a : b, drop = a.oi <= b.oi ? b : a;
-        drop.r.possibleDupOf.push(keep.r.id);
+        if(!reason)return;
+        var keep=a.oi<=b.oi ? a:b, drop=a.oi<=b.oi ? b:a;
+        info.pairs.push({id:key,firstId:keep.r.id,secondId:drop.r.id,reason:reason,
+          reasonText:text,exact:reason.indexOf("exact-")===0});
       }
+      // Exact identifiers/titles must be considered even outside fuzzy blocks.
+      var exactBuckets=new Map();
+      live.forEach(function(a) {
+        [doiKey(a.r) ? "doi:"+doiKey(a.r):"", a.r.pmid ? "pmid:"+String(a.r.pmid).trim():"",
+          exactTitle(a.r.title) ? "title:"+exactTitle(a.r.title):""].filter(Boolean).forEach(function(key) {
+          var bucket=exactBuckets.get(key) || [];
+          bucket.forEach(function(b){tryMerge(b,a);}); bucket.push(a); exactBuckets.set(key,bucket);
+        });
+      });
       if (bruteOnly || live.length <= 60) {
         // Exact pass for small sets (keeps unit-test parity) or when explicitly
         // requested as the reference.
         for (i = 0; i < live.length; i++) {
-          if (live[i].r.dup) continue;
           for (j = i + 1; j < live.length; j++) tryMerge(live[i], live[j]);
         }
         return info;
@@ -614,7 +636,7 @@
       order.sort(function (a, b) { return live[a].nt < live[b].nt ? -1 : live[a].nt > live[b].nt ? 1 : a - b; });
       for (i = 0; i < order.length; i++)
         for (j = i + 1; j < Math.min(order.length, i + SN_WINDOW); j++) addPair(order[i], order[j]);
-      // Process in (survivor-oi, other-oi) order so chains resolve deterministically.
+      // Process fuzzy candidate pairs in original import order for stable presentation.
       pairs.sort(function (p, q) {
         var pa = Math.min(live[p[0]].oi, live[p[1]].oi), qa = Math.min(live[q[0]].oi, live[q[1]].oi);
         if (pa !== qa) return pa - qa;
@@ -625,21 +647,96 @@
     }
     function doiKey(r) { return String(r.doi || "").trim().replace(/^(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:\s*)/i, "").toLowerCase(); }
     function differentDois(a,b) { return !!(doiKey(a) && doiKey(b) && doiKey(a) !== doiKey(b)); }
-    function confirmDuplicate(id, keepId) {
-      var r=S.records.find(function(r){return r.id===id;});
-      var keep=S.records.find(function(r){return r.id===keepId;});
-      if(!r || !keep || r===keep || keep.dup || differentDois(r,keep) ||
-          S.records.some(function(x){return x.dup && x.dupOf===r.id;})) {
-        workflowMessage("Cannot confirm this pair: different DOIs, unavailable original or linked duplicates. Review linked records first.");return false;
-      }
-      var confirmed=action(function(){
-        var before={dup:r.dup,dupManual:r.dupManual,dupOf:r.dupOf};
-        r.dup=true;r.dupManual=true;r.dupOf=keep.id;
-        W.audit(S,"duplicate-confirmed",r,S.stage,before,{dup:true,dupManual:true,dupOf:keep.id});
-        runDedup();
-      }); if(confirmed)focusCardHeading();return confirmed;
+    function activeDuplicateDecision(pair, project) {
+      var decisions=(project || S).duplicateDecisions || [];
+      return decisions.slice().reverse().find(function(d){return d.pairId===pair.id && !d.undoneAt;});
     }
-    function runDedup() { return dedupCore(S.records, {}); }
+    function unresolvedPairs(project) {
+      project=project || S;
+      return (project.duplicatePairs || []).filter(function(p){return !activeDuplicateDecision(p,project);});
+    }
+    function syncDuplicatePairs(project) {
+      var result=dedupCore(project.records,{});
+      project.duplicatePairs=result.pairs;
+      project.records.forEach(function(r){r.possibleDupOf=[];});
+      var byId=new Map(project.records.map(function(r){return [r.id,r];}));
+      unresolvedPairs(project).forEach(function(p){byId.get(p.secondId).possibleDupOf.push(p.firstId);});
+      return result;
+    }
+    function runDedup() { return syncDuplicatePairs(S); }
+    function duplicateRecord(id) { return S.records.find(function(r){return r.id===id;}); }
+    function removalAllowed(drop,keep,removed) {
+      return drop && keep && drop!==keep && !drop.dup && !keep.dup && !differentDois(drop,keep) &&
+        !(removed && (removed.has(drop.id) || removed.has(keep.id))) &&
+        !S.records.some(function(r){return r.dup && r.dupOf===drop.id;});
+    }
+    // User handlers are the only writers of a true duplicate flag.
+    function applyDuplicateDecision(pair,choice,removeId,bulk) {
+      if(activeDuplicateDecision(pair))throw Error("This pair already has a decision. Undo it first.");
+      var first=duplicateRecord(pair.firstId), second=duplicateRecord(pair.secondId);
+      if(!first || !second || differentDois(first,second))throw Error("This pair is no longer available.");
+      if(choice==="keep" && (first.dup || second.dup))throw Error("Undo the linked removal before choosing Keep both.");
+      var drop=removeId===first.id ? first:second, keep=drop===first ? second:first;
+      if(choice==="remove" && !removalAllowed(drop,keep))throw Error("Review linked removals first, or swap the records. Undo the earlier removal to review this pair.");
+      var d={id:"duplicate-"+((S.duplicateDecisions || []).length+1),pairId:pair.id,
+        firstId:first.id,secondId:second.id,reason:pair.reason,reasonText:pair.reasonText,
+        action:choice,removedId:choice==="remove" ? drop.id:null,keptId:choice==="remove" ? keep.id:null,
+        actor:reviewerSlotName(),at:new Date().toISOString(),bulk:!!bulk,
+        before:choice==="remove" ? {dup:drop.dup,dupManual:drop.dupManual,dupOf:drop.dupOf}:null};
+      if(choice==="remove") { drop.dup=true; drop.dupManual=true; drop.dupOf=keep.id; }
+      S.duplicateDecisions.push(d);
+      [first,second].forEach(function(r){(r.duplicateHistory || (r.duplicateHistory=[])).push(d.id);});
+      W.audit(S,"duplicate-"+(choice==="remove" ? "confirmed":"kept"),choice==="remove" ? drop:null,S.stage,d.before,d,d.actor);
+      return d;
+    }
+    function decideDuplicate(pairKey,choice,removeId) {
+      if(!["keep","remove"].includes(choice))return false;
+      var pair=S.duplicatePairs.find(function(p){return p.id===pairKey;});
+      if(!pair)return false;
+      return action(function(){applyDuplicateDecision(pair,choice,removeId,false);runDedup();});
+    }
+    function confirmDuplicate(id, keepId) {
+      return decideDuplicate(pairId({id:id},{id:keepId}),"remove",id);
+    }
+    function undoDuplicateDecision(id) {
+      var d=S.duplicateDecisions.find(function(d){return d.id===id;});
+      if(!d || d.undoneAt)return false;
+      return action(function(){
+        if(d.action==="remove"){
+          var r=duplicateRecord(d.removedId);
+          if(!r)throw Error("The removed record is missing.");
+          r.dup=false; r.dupManual=false; r.dupOf=null;
+        }
+        var before=JSON.parse(JSON.stringify(d));
+        d.undoneAt=new Date().toISOString(); d.undoneBy=reviewerSlotName();
+        W.audit(S,"duplicate-undo",d.removedId ? duplicateRecord(d.removedId):null,S.stage,before,
+          {decisionId:d.id,pairId:d.pairId,reason:d.reason,reasonText:d.reasonText,action:"undo",restoredId:d.removedId});
+        runDedup();
+        if(d.action==="remove" && S.stage==="ft" && W.flow(S).pendingScreen){S.stage="ta";pushStateToSetup();}
+      });
+    }
+    function exactRemovalPlan() {
+      var removed=new Set(), anchors=new Set(), plan=[];
+      unresolvedPairs().filter(function(p){return p.exact;}).forEach(function(p){
+        var drop=duplicateRecord(duplicateSwap[p.id] ? p.firstId:p.secondId);
+        var keep=duplicateRecord(duplicateSwap[p.id] ? p.secondId:p.firstId);
+        if(!anchors.has(drop.id) && removalAllowed(drop,keep,removed)){
+          plan.push({pair:p,removeId:drop.id});removed.add(drop.id);anchors.add(keep.id);
+        }
+      });
+      return plan;
+    }
+    function removeAllExactMatches() {
+      var plan=exactRemovalPlan();
+      if(!plan.length)return false;
+      var reasons=plan.map(function(x){return x.pair.reasonText+"; remove "+duplicateRecord(x.removeId).title;});
+      if(!confirm("Remove "+plan.length+" exact matches ("+plan.length+" records)?\n"+reasons.join("\n")+"\nSimilar matches will remain for review. Each removal can be undone."))return false;
+      return action(function(){plan.forEach(function(x){applyDuplicateDecision(x.pair,"remove",x.removeId,true);});runDedup();});
+    }
+    function duplicateExportNote(r) {
+      var decisions=S.duplicateDecisions.filter(function(d){return d.firstId===r.id || d.secondId===r.id;});
+      return JSON.stringify({decisions:decisions,unresolvedPairs:unresolvedPairs().filter(function(p){return p.firstId===r.id || p.secondId===r.id;})});
+    }
 
     // ---- relevance score (transparent TF over user terms) ----
     function scoreRecord(r) {
@@ -708,7 +805,8 @@
         r2: r.r2 && typeof r.r2 === "object" ? { d: dec(r.r2.d), reason: r.r2.reason || "" } : { d: "", reason: "" },
         resolved: dec(r.resolved),
         labels: Array.isArray(r.labels) ? r.labels.slice() : [],
-        dup: !!r.dup, dupManual: !!r.dupManual, dupOf: r.dupOf || null, score: null,
+        dup: !!(r.dup && r.dupManual), dupManual: !!(r.dup && r.dupManual), dupOf: r.dup && r.dupManual ? (r.dupOf || "(manual)") : null, score: null,
+        duplicateHistory: Array.isArray(r.duplicateHistory) ? r.duplicateHistory.slice() : [], sourceFile: clean(r.sourceFile, 500),
         mlScore: null,
         aiSuggestion: ["include", "exclude", "maybe"].indexOf(r.aiSuggestion) >= 0 ? r.aiSuggestion : "",
         aiRationale: clean(r.aiRationale, 400),
@@ -838,8 +936,7 @@
       W.audit(S,"import",null,S.stage,null,{ids:newRecs.map(function(r){return r.id;})});
       invalidateRanking();
       runDedup(); rescoreAll();
-      var dups = S.records.filter(function (r) { return r.dup; }).length;
-      toast("Imported " + newRecs.length + " record(s). " + dups + " duplicate(s) removed; " + computeCounts(S.records).possibleDuplicates + " possible duplicate(s) retained for confirmation.");
+      toast("Imported " + newRecs.length + " record(s). Nothing has been removed. Review suspected duplicates.");
       S.cursor = 0; save(); render();
     }
 
@@ -865,7 +962,7 @@
         else undecided++;
       }
       var screened = included + excluded;
-      return { identified: identified, duplicates: duplicates, possibleDuplicates: records.filter(function(r){return !r.dup && (r.possibleDupOf || []).length;}).length, screened: screened, included: included, excluded: excluded, maybe: maybe, conflict: conflict, undecided: undecided };
+      return { identified: identified, duplicates: duplicates, possibleDuplicates: unresolvedPairs().length, screened: screened, included: included, excluded: excluded, maybe: maybe, conflict: conflict, undecided: undecided };
     }
     var KAPPA_POLICY = "Unweighted include/exclude only, using original reviewer decisions; pairs containing maybe or a missing decision are omitted. Maybe is not a final decision.";
     function cohensKappa(records) {
@@ -975,13 +1072,76 @@
       return out.length ? '<div class="reclinks">' + out.join("") + "</div>" : "";
     }
 
+    var duplicateSwap=Object.create(null);
+    function openDuplicateReview(event) {
+      if(event)event.preventDefault();
+      $("duplicate-review").open=true;
+      $("duplicate-review-heading").focus();
+    }
+    function duplicateRecordHtml(r,position) {
+      function field(label,value){return "<dt>"+label+"</dt><dd>"+escapeHtml(value || "Not supplied")+"</dd>";}
+      return '<article aria-label="'+escapeHtml(position+" record: "+r.title+" ["+r.id+"]")+'"><h4>'+escapeHtml(r.title)+'</h4><dl>'+
+        field("Record ID",r.id)+field("First author",(r.authors || [])[0])+field("Year",r.year)+field("Journal",r.journal)+
+        field("DOI",r.doi)+field("PubMed ID",r.pmid)+field("Source file",r.sourceFile || r.source)+'</dl></article>';
+    }
+    function renderDuplicateReview() {
+      var pending=unresolvedPairs(), exact=pending.filter(function(p){return p.exact;}).length;
+      var warning=$("duplicate-warning"), removed=S.records.filter(function(r){return r.dup;}).length;
+      warning.hidden=!pending.length;
+      warning.innerHTML=pending.length ? escapeHtml(pending.length+" suspected duplicate pairs found ("+exact+" exact). "+
+        (removed ? "Only your confirmed removals have been applied.":"Nothing has been removed."))+
+        ' <a href="#duplicate-review" data-review-duplicates>Review duplicates</a>' : "";
+      Array.prototype.forEach.call(warning.querySelectorAll("[data-review-duplicates]"),function(link){link.addEventListener("click",openDuplicateReview);});
+      var bulk=$("duplicate-remove-exact"), plan=exactRemovalPlan();
+      bulk.textContent="Remove all exact matches ("+plan.length+")";bulk.disabled=!plan.length;
+      bulk.onclick=function(){if(removeAllExactMatches())openDuplicateReview();};
+      $("duplicate-pairs").innerHTML=S.duplicatePairs.map(function(p){
+        var a=duplicateRecord(p.firstId), b=duplicateRecord(p.secondId), d=activeDuplicateDecision(p);
+        if(!a || !b)return "";
+        if(duplicateSwap[p.id]){var tmp=a;a=b;b=tmp;}
+        var pair=escapeHtml(p.id), target=escapeHtml(b.title+" ["+b.id+"]"), both=escapeHtml(a.title+" and "+b.title);
+        var canRemove=removalAllowed(b,a);
+        return '<section class="duplicate-pair" data-pair-id="'+pair+'" data-reason="'+escapeHtml(p.reason)+'" aria-label="Suspected duplicate pair: '+both+'">'+
+          '<p class="duplicate-reason"><strong>'+escapeHtml(p.reasonText)+'</strong></p>'+
+          '<div class="duplicate-records">'+duplicateRecordHtml(a,"First")+duplicateRecordHtml(b,"Second")+'</div>'+
+          (d ? '<p>Decision: '+(d.action==="keep" ? "Keep both":"Removed "+escapeHtml(duplicateRecord(d.removedId).title))+
+            '. Undo is available in Duplicate decisions below.</p>' :
+            '<div class="duplicate-actions"><button type="button" data-duplicate-keep="'+pair+'" aria-label="Keep both: '+both+'"'+(a.dup || b.dup ? " disabled":"")+'>Keep both</button>'+
+            '<button type="button" data-duplicate-remove="'+pair+'" data-remove-id="'+escapeHtml(b.id)+'" aria-label="Remove '+target+'"'+(canRemove ? "":" disabled")+'>Remove</button>'+
+            '<button type="button" data-duplicate-swap="'+pair+'" aria-label="Swap records; remove '+escapeHtml(a.title+" ["+a.id+"]")+' instead">Swap</button></div>'+
+            (!canRemove ? '<p class="hint">This pair is unresolved. A linked record has already been removed. Undo the linked removal before choosing Keep both or Remove.</p>':""))+'</section>';
+      }).join("") || "<p>No suspected duplicate pairs.</p>";
+      var host=$("duplicate-pairs");
+      Array.prototype.forEach.call(host.querySelectorAll("[data-duplicate-keep]"),function(b){
+        b.addEventListener("click",function(){decideDuplicate(b.getAttribute("data-duplicate-keep"),"keep");openDuplicateReview();});
+      });
+      Array.prototype.forEach.call(host.querySelectorAll("[data-duplicate-remove]"),function(b){
+        b.addEventListener("click",function(){decideDuplicate(b.getAttribute("data-duplicate-remove"),"remove",b.getAttribute("data-remove-id"));openDuplicateReview();});
+      });
+      Array.prototype.forEach.call(host.querySelectorAll("[data-duplicate-swap]"),function(b){
+        b.addEventListener("click",function(){
+          var key=b.getAttribute("data-duplicate-swap");duplicateSwap[key]=!duplicateSwap[key];renderDuplicateReview();
+          var buttons=$("duplicate-pairs").querySelectorAll("[data-duplicate-swap]");
+          Array.prototype.forEach.call(buttons,function(next){if(next.getAttribute("data-duplicate-swap")===key)next.focus();});
+        });
+      });
+      $("duplicate-decisions").innerHTML=S.duplicateDecisions.slice().reverse().map(function(d){
+        var title=d.removedId ? duplicateRecord(d.removedId).title :
+          duplicateRecord(d.firstId).title+" and "+duplicateRecord(d.secondId).title;
+        return '<li data-duplicate-decision="'+escapeHtml(d.id)+'">'+escapeHtml(d.at+" | "+d.actor+" | "+
+          (d.action==="keep" ? "Keep both":"Remove")+" | "+title+" | "+d.reasonText)+(d.bulk ? " (bulk exact action)":"")+
+          (d.undoneAt ? " | Undone "+escapeHtml(d.undoneAt):
+            ' <button type="button" data-duplicate-undo="'+escapeHtml(d.id)+'" aria-label="Undo '+escapeHtml(d.action+" decision for "+title)+'">Undo</button>')+'</li>';
+      }).join("") || "<li>No duplicate decisions yet.</li>";
+      Array.prototype.forEach.call($("duplicate-decisions").querySelectorAll("[data-duplicate-undo]"),function(b){
+        b.addEventListener("click",function(){undoDuplicateDecision(b.getAttribute("data-duplicate-undo"));openDuplicateReview();});
+      });
+    }
+
     function duplicateCandidatesHtml(r) {
       if(r.dup || !(r.possibleDupOf || []).length)return "";
-      return '<div class="possible-duplicates"><strong>Possible duplicate — retained until confirmed.</strong>' +
-        r.possibleDupOf.map(function(id){
-          var keep=S.records.find(function(x){return x.id===id;});
-          return keep && !keep.dup ? '<p>'+escapeHtml(keep.title)+' <button type="button" data-confirm-dup="'+escapeHtml(id)+'">Confirm duplicate</button></p>' : "";
-        }).join("") + '<p>Use Duplicate again to reverse a confirmed removal.</p></div>';
+      return '<div class="possible-duplicates"><strong>Possible duplicate: nothing removed.</strong> '+
+        '<a href="#duplicate-review" data-review-duplicates>Review duplicates side by side</a></div>';
     }
     function renderCard() {
       var r = currentRecord();
@@ -1079,8 +1239,8 @@
       cardHost.innerHTML = html;
       if ($("ft-save")) $("ft-save").onclick = function(){ action(function(){ W.evidence(S,r,{retrieval:$("ft-retrieval").value,url:$("ft-url").value,note:$("ft-note").value}); }); };
 
-      Array.prototype.forEach.call(cardHost.querySelectorAll("[data-confirm-dup]"), function(b){
-        b.addEventListener("click",function(){confirmDuplicate(r.id,b.getAttribute("data-confirm-dup"));});
+      Array.prototype.forEach.call(cardHost.querySelectorAll("[data-review-duplicates]"), function(b){
+        b.addEventListener("click",openDuplicateReview);
       });
       // wire card buttons
       Array.prototype.forEach.call(cardHost.querySelectorAll("[data-dec]"), function (b) {
@@ -1110,10 +1270,10 @@
     function renderStatsAndConflicts() {
       var c = computeCounts(stageRecords());
       var cells = [
-        ["Records", c.identified], ["Duplicates", c.duplicates], ["Screened", c.screened],
+        ["Records", c.identified], ["Duplicates removed", c.duplicates], ["Screened", c.screened],
         ["Included", c.included], ["Excluded", c.excluded], ["Maybe", c.maybe]
       ];
-      cells.push(["Possible duplicates", c.possibleDuplicates]);
+      cells.push(["Unresolved duplicate pairs", c.possibleDuplicates]);
       if (S.mode === "dual" && !S.blind) cells.push(["Conflicts", c.conflict]);
       cells.push(["Undecided", c.undecided]);
       statsEl.innerHTML = cells.map(function (kv) {
@@ -1167,6 +1327,7 @@
       renderCard();
       renderStatsAndConflicts();
       renderWorkflow();
+      renderDuplicateReview();
       if(restoreHeading)focusCardHeading();
     }
 
@@ -1174,6 +1335,10 @@
     function decide(val) {
       var r = currentRecord(); if (!r) return;
       if(val === "duplicate") {
+        var prior=S.duplicateDecisions.slice().reverse().find(function(d){return d.removedId===r.id && !d.undoneAt;});
+        if(prior){undoDuplicateDecision(prior.id);focusCardHeading();return;}
+        if(!r.dup && S.duplicatePairs.some(function(p){return p.firstId===r.id || p.secondId===r.id;})){openDuplicateReview();return;}
+        if(!r.dup && !confirm('Remove "'+r.title+'" as a manually identified duplicate? Its screening history will be kept. Use Duplicate again to undo.'))return;
         action(function(){
           var before={dup:r.dup,dupManual:r.dupManual,dupOf:r.dupOf};
           r.dup=!r.dup; r.dupManual=r.dup; r.dupOf=r.dup ? "(manual)" : null;
@@ -1346,15 +1511,15 @@
     function exportCSV() {
       if(!S.records.length){toast("No records to export.");return;}
       if (S.mode === "dual" && S.blind) { workflowMessage("Turn off blind mode before exporting combined decisions, or export your own reviewer file."); return; }
-      var header = ["id", "title", "abstract", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "rct_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate", "ta_decision", "ft_decision", "ft_r1", "ft_r2", "ft_reason_r1", "ft_reason_r2", "ft_resolution", "ft_retrieval", "ft_url", "ft_note", "app_version", "build_commit"];
-      var rows = S.records.map(function (r) {
+      var header = ["id", "title", "abstract", "authors", "year", "journal", "doi", "pmid", "decision", "r1", "r2", "resolved", "reason", "labels", "term_score", "ml_score", "rct_score", "ai_suggestion", "ai_confidence", "ai_rationale", "duplicate", "ta_decision", "ft_decision", "ft_r1", "ft_r2", "ft_reason_r1", "ft_reason_r2", "ft_resolution", "ft_retrieval", "ft_url", "ft_note", "app_version", "build_commit", "duplicate_review"];
+      var rows = S.records.filter(function(r){return !r.dup;}).map(function (r) {
         var rct = rctScore(r);
         return [r.id, r.title, r.abstract, (r.authors || []).join("; "), r.year, r.journal, r.doi, r.pmid,
           effDecision(r), r.r1.d, r.r2.d, r.resolved, (r.r1.reason || r.r2.reason || ""),
           (r.labels || []).join("; "), (r.score == null ? "" : r.score),
           (r.mlScore == null ? "" : r.mlScore.toFixed(4)), (rct == null ? "" : rct.toFixed(4)), r.aiSuggestion || "",
           (r.aiConfidence == null ? "" : r.aiConfidence), r.aiRationale || "",
-          r.dup ? "1" : "", W.effective(r,S,"ta"), W.effective(r,S,"ft"), r.fullText.r1.d, r.fullText.r2.d, r.fullText.r1.reason, r.fullText.r2.reason, r.fullText.resolution ? r.fullText.resolution.reason : "", r.fullText.retrieval, r.fullText.url, r.fullText.note, exportProvenance().version, exportProvenance().buildCommit].map(csvCell).join(",");
+          r.dup ? "1" : "", W.effective(r,S,"ta"), W.effective(r,S,"ft"), r.fullText.r1.d, r.fullText.r2.d, r.fullText.r1.reason, r.fullText.r2.reason, r.fullText.resolution ? r.fullText.resolution.reason : "", r.fullText.retrieval, r.fullText.url, r.fullText.note, exportProvenance().version, exportProvenance().buildCommit, duplicateExportNote(r)].map(csvCell).join(",");
       });
       downloadBlob(new Blob([[header.map(csvCell).join(",")].concat(rows).join("\n")], { type: "text/csv;charset=utf-8" }), "screen-decisions.csv");
     }
@@ -1363,7 +1528,7 @@
       var inc = S.records.filter(function (r) { return W.effective(r,S,"ft") === "include"; });
       if (!inc.length) { toast("No included records to export."); return; }
       var ris = inc.map(function (r) {
-        var lines = ["TY  - JOUR", "N1  - Exported by " + exportStamp()];
+        var lines = ["TY  - JOUR", "N1  - Exported by " + exportStamp(), "N1  - Duplicate review: " + duplicateExportNote(r)];
         if (r.title) lines.push("TI  - " + r.title);
         (r.authors || []).forEach(function (a) { lines.push("AU  - " + a); });
         if (r.year) lines.push("PY  - " + r.year);
@@ -1379,7 +1544,7 @@
       var c=W.flow(S);
       if(S.mode==="dual" && S.blind){workflowMessage("Turn off blind mode before exporting team counts.");return;}
       if(!c.identified || c.pendingScreen || c.pendingFull){workflowMessage("Finish title/abstract and full-text screening before publishing PRISMA counts. Pending work is never counted as excluded.");return;}
-      var payload={provenance:exportProvenance(),db:c.identified,reg:0,removed:c.duplicates,removedBreakdown:"Duplicates flagged in Screen",
+      var payload={provenance:exportProvenance(),db:c.identified,reg:0,removed:c.duplicates,removedBreakdown:"User-confirmed duplicate removals",unresolvedDuplicatePairs:unresolvedPairs().length,
         screened:c.screened,excludedScreen:c.excludedScreen,sought:c.sought,notRetrieved:c.notRetrieved,assessed:c.assessed,
         excludedEligible:c.excludedFull,excludedBreakdown:Object.keys(c.reasons).map(function(k){return k+" (n="+c.reasons[k]+")";}).join("; "),
         studies:c.included,reports:c.included,title:S.title || "Screen"};
@@ -1626,10 +1791,32 @@
       ['incTerms','excTerms','reasons','labels'].forEach(function(k){if(p[k]!==undefined && (!Array.isArray(p[k]) || p[k].some(function(v){return typeof v!=="string";})))throw Error("Invalid project settings: "+k);});
       if(p.mode && !['single','dual'].includes(p.mode))throw Error("Invalid reviewer mode.");
       if(p.stage && !['ta','ft'].includes(p.stage))throw Error("Invalid screening stage.");
+      if(p.duplicateDecisions!==undefined && !Array.isArray(p.duplicateDecisions))throw Error("Invalid duplicate decisions.");
+      var decisionIds=new Set(), activePairs=new Set(), removedIds=new Set();
+      (p.duplicateDecisions || []).forEach(function(d){
+        if(!d || typeof d.id!=="string" || decisionIds.has(d.id) || !ids.has(d.firstId) || !ids.has(d.secondId) ||
+            d.firstId===d.secondId || d.pairId!==pairId({id:d.firstId},{id:d.secondId}) ||
+            !["keep","remove"].includes(d.action) ||
+            !["exact-doi","exact-pmid","exact-title","similar-title","similar-title+author-year"].includes(d.reason) ||
+            typeof d.reasonText!=="string" || typeof d.actor!=="string" || !Number.isFinite(Date.parse(d.at)) ||
+            (d.undoneAt && !Number.isFinite(Date.parse(d.undoneAt))))throw Error("Invalid duplicate decision.");
+        decisionIds.add(d.id);
+        if(d.action==="remove" && (![d.firstId,d.secondId].includes(d.removedId) ||
+            ![d.firstId,d.secondId].includes(d.keptId) || d.keptId===d.removedId))throw Error("Invalid duplicate removal.");
+        if(!d.undoneAt){
+          if(activePairs.has(d.pairId))throw Error("Repeated active duplicate decision.");
+          activePairs.add(d.pairId);
+          if(d.action==="remove"){
+            var record=p.records.find(function(r){return r.id===d.removedId;});
+            if(removedIds.has(d.removedId) || !record.dup || !record.dupManual || record.dupOf!==d.keptId)throw Error("Inconsistent duplicate removal.");
+            removedIds.add(d.removedId);
+          }
+        }
+      });
       var next=Object.assign(blankState(),p);next.records=p.records.map(normalizeImported);
       next.stage=next.stage==="ft" ? "ft":"ta";next.mode=next.mode==="dual" ? "dual":"single";next.active=next.active==="r2" ? "r2":"r1";
-      var previous=next.records.map(function(r){return {dup:r.dup,dupOf:r.dupOf};}), released=false;
-      dedupCore(next.records,{});
+      var previous=p.records.map(function(r){return {dup:r.dup,dupOf:r.dupOf};}), released=false;
+      syncDuplicatePairs(next);
       next.records.forEach(function(r,i){
         if(previous[i].dup && !r.dup){
           released=true;
@@ -1654,7 +1841,7 @@
         if(project && project._schema===LS_KEY){
           if(S.records.length && !confirm("Replace this browser's project with the backup? Export the current project first if you need to keep it."))return;
           restoreProject(project);workflowMessage("Project restored in memory, including stage decisions and history. Check the save status; retrain ranking when needed.");
-        }else addRecords(detectAndParse(text,file.name));
+        }else addRecords(detectAndParse(text,file.name).map(function(r){r.sourceFile=file.name;return r;}));
       }catch(e){workflowMessage("Import failed: "+e.message);}};rd.readAsText(file);
     }
 
@@ -2313,7 +2500,7 @@
     function renderWorkflow() {
       var blind=S.mode==="dual" && S.blind;
       var c=computeCounts(stageRecords());
-      $("workflow-summary").textContent=(S.stage==="ft" ? "Full text":"Title / abstract")+" · "+c.screened+" decided · "+(blind ? S.active.toUpperCase()+" only":"team results");
+      $("workflow-summary").textContent=(S.stage==="ft" ? "Full text":"Title / abstract")+" · "+c.screened+" decided · "+unresolvedPairs().length+" unresolved duplicate pairs · "+(blind ? S.active.toUpperCase()+" only":"team results");
       var history=(S.audit||[]).filter(function(e){return e.stage===S.stage && (!blind || (e.actor===reviewerSlotName() && e.action!=="adjudication"));}).slice(-20).reverse();
       $("audit-list").innerHTML=history.map(function(e){return '<li>'+escapeHtml(e.at+" · "+e.actor+" · "+e.action+" · "+(e.recordId||"project"))+'</li>';}).join("") || '<li>No recorded actions in this stage.</li>';
       var conflictOption=$("f-filter").querySelector('option[value="conflict"]');if(conflictOption)conflictOption.disabled=blind;
@@ -2332,6 +2519,11 @@
       score: function (r) { var rec = normalizeImported(r); scoreRecord(rec); return rec.score; },
       jaccard: jaccard, normTitle: normTitle, trigrams: trigrams,
       parse: function (text, name) { return detectAndParse(text, name); },
+      suspectedPairs: function(){return JSON.parse(JSON.stringify(S.duplicatePairs));},
+      decideDuplicate: decideDuplicate,
+      undoDuplicateDecision: undoDuplicateDecision,
+      removeAllExactMatches: removeAllExactMatches,
+      exactRemovalPlan: exactRemovalPlan,
       dedupCount: function () { runDedup(); return S.records.filter(function (r) { return r.dup; }).length; },
       mlTrain: function () { return mlTrain(); },
       mlScoreOf: function (id) { for (var i = 0; i < S.records.length; i++) if (S.records[i].id === id) return S.records[i].mlScore; return null; },

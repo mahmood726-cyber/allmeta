@@ -105,8 +105,11 @@
   }
   function flow(s) {
     var c={identified:s.records.length,duplicates:0,screened:0,excludedScreen:0,pendingScreen:0,sought:0,notRetrieved:0,assessed:0,pendingFull:0,excludedFull:0,included:0,reasons:Object.create(null)};
+    c.unresolvedDuplicatePairs=(s.duplicatePairs || []).filter(function(p){
+      return !(s.duplicateDecisions || []).some(function(d){return d.pairId===p.id && !d.undoneAt;});
+    }).length;
     s.records.forEach(function(r){
-      if(r.dup){c.duplicates++;return;}
+      if(r.dup && r.dupManual){c.duplicates++;return;}
       var ta=effective(r,s,'ta');
       if(ta!=='include' && ta!=='exclude'){c.pendingScreen++;return;}
       c.screened++;

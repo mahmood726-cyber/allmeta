@@ -10,7 +10,7 @@ async function hook(page) {
 }
 
 test.describe("Screen · dedup", () => {
-  test("exact DOI duplicate flagged regardless of title", async ({ page }) => {
+  test("exact DOI pair requires review regardless of title", async ({ page }) => {
     await hook(page);
     const out = await page.evaluate(() => {
       window.__almScreenpro.setState({ records: [
@@ -22,12 +22,15 @@ test.describe("Screen · dedup", () => {
         a: window.__almScreenpro.recordById("a").dup,
         b: window.__almScreenpro.recordById("b").dup,
         bof: window.__almScreenpro.recordById("b").dupOf,
+        pairs: window.__almScreenpro.suspectedPairs(),
       };
     });
-    expect(out.dupCount).toBe(1);
+    expect(out.dupCount).toBe(0);
     expect(out.a).toBe(false);
-    expect(out.b).toBe(true);
-    expect(out.bof).toBe("a"); // first occurrence wins
+    expect(out.b).toBe(false);
+    expect(out.bof).toBeNull(); // no removal until a user chooses
+    expect(out.pairs).toHaveLength(1);
+    expect(out.pairs[0].reason).toBe("exact-doi");
   });
 
   test("DOI match is case-insensitive", async ({ page }) => {
@@ -37,9 +40,11 @@ test.describe("Screen · dedup", () => {
         { id: "a", title: "X one two three", doi: "10.1000/ABC" },
         { id: "b", title: "Y four five six", doi: "10.1000/abc" },
       ]});
-      return window.__almScreenpro.dedupCount();
+      return {removed:window.__almScreenpro.dedupCount(), pairs:window.__almScreenpro.suspectedPairs()};
     });
-    expect(dup).toBe(1);
+    expect(dup.removed).toBe(0);
+    expect(dup.pairs).toHaveLength(1);
+    expect(dup.pairs[0].reason).toBe("exact-doi");
   });
 
   test("fuzzy near-duplicate title stays live pending confirmation", async ({ page }) => {

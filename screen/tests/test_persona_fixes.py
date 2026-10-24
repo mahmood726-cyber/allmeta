@@ -34,9 +34,9 @@ def test_s06_different_dois_block_fuzzy_removal_and_candidates_are_visible():
     body = section("function tryMerge", "if (bruteOnly ||")
     assert "differentDois(a.r, b.r)" in body
     assert "drop.r.dup = true" not in body
-    assert "possibleDupOf.push" in body
-    assert "Possible duplicate" in HTML and "data-confirm-dup" in HTML
-    assert 'W.audit(S,"duplicate-confirmed"' in HTML
+    assert "info.pairs.push" in body
+    assert "Possible duplicate" in HTML and "data-review-duplicates" in HTML
+    assert 'W.audit(S,"duplicate-"+(choice==="remove" ? "confirmed":"kept")' in HTML
 
 
 def test_s09_title_normalisation_preserves_unicode():

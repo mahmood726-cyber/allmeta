@@ -16,8 +16,13 @@ test('built-in demonstration is explicitly synthetic without publication identif
     expect(r.source).toBe('synthetic demo');
     for(const field of ['doi','pmid','nct','year','journal'])expect(r[field] || '').toBe('');
   }
-  expect(data.records.filter(r=>r.dup)).toHaveLength(0);  // similarity alone never removes a record (S06)
+  expect(data.records.filter(r=>r.dup)).toHaveLength(0);  // even exact title matches require a user decision (S06)
   expect(data.records.filter(r=>(r.possibleDupOf||[]).length)).toHaveLength(1);  // the demo's duplicate is offered for confirmation
+  expect(data.duplicatePairs).toHaveLength(1);
+  expect(data.duplicatePairs[0].reason).toBe('exact-title');
+  await expect(page.locator('#duplicate-warning')).toContainText('Nothing has been removed.');
+  await page.locator('#duplicate-warning a').click();
+  await expect(page.locator('.duplicate-pair article')).toHaveCount(2);
 });
 test('blind review hides peer badges, conflict panels, counts and peer ranking labels', async ({page})=>{
   await page.goto('/screen/index.html');

@@ -81,13 +81,14 @@ test('S06 conflicting DOIs cannot merge; fuzzy candidates require confirmation a
   assert.deepEqual(plain(a.api.recordById('__control_b').possibleDupOf),['__control_a']);
   a.ui.decide('include');
   assert.match(a.el('card-host').innerHTML,/Possible duplicate/);
-  assert.match(a.el('card-host').innerHTML,/data-confirm-dup/);
+  assert.match(a.el('card-host').innerHTML,/data-review-duplicates/);
   assert.equal(a.ui.confirmDuplicate('__control_b','__control_a'),true);
   assert.equal(a.api.flow().duplicates,1);
   a.ui.decide('duplicate');assert.equal(a.api.flow().duplicates,0);
   assert.equal(a.api.state().audit.some(e=>e.action==='duplicate-confirmed'),true);
   set(a,[record('a',{title,doi:'10.1/A'}),record('b',{title,doi:'https://doi.org/10.1/a'})]);
-  assert.equal(a.api.flow().duplicates,1);
+  assert.equal(a.api.flow().duplicates,0);
+  assert.equal(a.api.suspectedPairs()[0].reason,'exact-doi');
 });
 test('S09 title normalisation retains non-Latin letters and NFKC',()=>{
   const a=app();

@@ -43,14 +43,19 @@ Changed: screen/index.html:488 defines Unicode letter/number/mark/underscore bou
 Guard: screen/tests/test_persona_fixes.py:49; screen/tests/persona_fixes.test.cjs:98.
 Not done: no stemming, substring option or language-specific word segmentation. Existing title and exclusion weights remain unchanged.
 
-### S06 — Confirmed: fuzzy dedup silently removes different publications
+### S06 — Owner decision implemented: warn and ask for every suspected pair
 
-Evidence: baseline screen/index.html:556–568 has no conflicting-DOI check and immediately sets dup/dupOf.
-Changed: screen/index.html:627 blocks conflicting DOI pairs. screen/index.html:559 stores possibleDupOf candidates instead of removing records. screen/index.html:978 lists titles and confirmation buttons; the progress panel reports candidate records. screen/index.html:628 audits explicit confirmation and refuses unsafe chains through an already-linked record. The Duplicate toggle reverses a confirmed removal. Exact DOI matches still deduplicate automatically. PRISMA uses only confirmed/manual or exact-DOI removals.
+Owner decision (T7, superseding the earlier S06 behaviour): **Screen never removes a record automatically, including exact identifier matches.** It warns, shows both records and the reason, and offers **Keep both** / **Remove**, a swap control, and **Remove all exact matches (N)** with explicit confirmation.
 
-screen/index.html:1618 rechecks old automatic removals on load/restore, audits released records, marks ranking stale, and returns to title screening when released records need decisions. Manual duplicate flags remain user decisions.
-Guard: screen/tests/test_persona_fixes.py:33; screen/tests/persona_fixes.test.cjs:75 plus Node tests “S06 old automatic removals…” and “S06 no DOI bridge…”.
-Not done: no automatic study linking, DOI authority lookup or redesign of blocking thresholds. An older manual duplicate declaration without a linked record cannot be assessed as a pair.
+Evidence: c71c8dc's shared detector reset duplicate flags and automatically removed exact DOI matches. Earlier similarity-only confirmation did not cover that path. The shared blocked/brute detector now returns suspected pairs with machine/readable reasons and never changes records. Exact reasons are DOI, PubMed ID and case/accent/punctuation-normalised title; other reasons are trigram title similarity and title similarity assisted by first author/year. Conflicting nonempty DOIs prohibit every kind of pair, including identical PMID/title.
+
+Changed: imports and project loads show the unresolved pair warning and a link to side-by-side review. Screening remains available. Progress and PRISMA report unresolved pairs separately; only user-confirmed removals count as duplicates removed. Keep/Remove/bulk decisions persist with project records and audit history in localStorage, project JSON and bundles. Each decision has Undo, and removed records keep their own screening decisions and history. CSV and final-includes RIS retain unresolved candidates, exclude user-removed duplicates, and annotate duplicate decisions.
+
+Load/restore releases all legacy automatic removals, including exact DOI removals, audits the release, marks ranking stale and returns to title screening when necessary. Existing explicit manual duplicate choices remain user decisions. Duplicate decisions in backups are validated; editing unsigned backup JSON is not authentication.
+
+Guard: screen/tests/dedup_review.test.cjs, screen/tests/test_dedup_review.py and tests/playwright/screen-dedup-review.spec.mjs. Existing S06 persona/core/upgrade/demo assertions were updated only where their dedup behaviour changed. See [DEDUP-REVIEW.md](DEDUP-REVIEW.md) for the complete assertion inventory, data model, validation and host commands.
+
+Limits: fuzzy blocking is still a candidate-generation heuristic, not a completeness guarantee. Linked pairs stay unresolved until explicitly reviewed; bulk counts only currently safe removals and never silently decides overlapping pairs. Undo linked removals before reviewing those pairs. No study linking, DOI authority lookup or classifier changes.
 
 ### S07 — Confirmed: exports use the wrong stage population
 

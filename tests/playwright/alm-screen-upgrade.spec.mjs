@@ -25,11 +25,9 @@ test.describe("Screen · blocked dedup", () => {
         recs.push({ id: "__control_b" + i, title: t.toUpperCase() + "." });   // reformatted duplicate
       }
       window.__almScreenpro.setState({ records: recs });
-      window.__almScreenpro.dedupBlocked();
-      const blocked = new Set(window.__almScreenpro.state().records.filter(r=>(r.possibleDupOf || []).length).map(r=>r.id));
+      const blocked = new Set(window.__almScreenpro.dedupBlocked().pairs.map(p=>p.id));
       window.__almScreenpro.setState({ records: recs });
-      window.__almScreenpro.dedupBrute();
-      const brute = new Set(window.__almScreenpro.state().records.filter(r=>(r.possibleDupOf || []).length).map(r=>r.id));
+      const brute = new Set(window.__almScreenpro.dedupBrute().pairs.map(p=>p.id));
       let missedByBlocking = 0; brute.forEach((id) => { if (!blocked.has(id)) missedByBlocking++; });
       return { blocked: blocked.size, brute: brute.size, missedByBlocking };
     });
@@ -62,7 +60,7 @@ test.describe("Screen · blocked dedup", () => {
         { id: "a", title: "Effects of statins on cardiovascular mortality in older adults", authors: ["Smith J"], year: "2020", doi: "" },
         { id: "b", title: "Aspirin for primary prevention of stroke in women", authors: ["Smith J"], year: "2020", doi: "" },
       ]});
-      return window.__almScreenpro.dedupBlocked().merges;
+      return window.__almScreenpro.dedupBlocked().pairs.length;
     });
     expect(c).toBe(0);
   });
