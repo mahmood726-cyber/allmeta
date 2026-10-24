@@ -66,15 +66,37 @@
     },
     share: {
       get: function () {
-        return { src: byId('src').value, trans: byId('trans').value, tau: byId('tau-est').value };
+        var controls = byId('alm-axis-mount').querySelectorAll('input');
+        return { src: byId('src').value, trans: byId('trans').value, tau: byId('tau-est').value,
+          axis: { x: [controls[0].value === '' ? null : Number(controls[0].value),
+            controls[1].value === '' ? null : Number(controls[1].value)], xLog: controls[2].checked } };
       },
       set: function (s) {
-        if (!s || typeof s.src !== 'string' || s.src.length > 200000) throw new Error('data text missing or too long');
+        // Link/file size is checked by AlmShare before restore. A separate text
+        // cap here would reject states that this adapter's get() can export.
+        if (!s || typeof s.src !== 'string') throw new Error('data text missing');
         if (TRANS.indexOf(s.trans) < 0) throw new Error('unknown transformation ' + String(s.trans));
         if (TAU.indexOf(s.tau) < 0) throw new Error('unknown estimator ' + String(s.tau));
+        var axis = s.axis === undefined ? { x: [null, null], xLog: false } : s.axis;
+        if (!axis || !Array.isArray(axis.x) || axis.x.length !== 2 ||
+            axis.x.some(function (v) { return v !== null && (typeof v !== 'number' || !Number.isFinite(v)); }) ||
+            typeof axis.xLog !== 'boolean' || (axis.x[0] !== null && axis.x[1] !== null && axis.x[0] >= axis.x[1])) {
+          throw new Error('invalid forest plot axis options');
+        }
+        var validRows = s.src.trim().split(/\n/).filter(function (line) {
+          var cells = line.split(','), x = parseInt(cells[0], 10), n = parseInt(cells[1], 10);
+          return Number.isFinite(x) && Number.isFinite(n) && n > 0 && x >= 0 && x <= n;
+        });
+        if (validRows.length < 2) throw new Error('at least two valid studies are required');
+        var controls = byId('alm-axis-mount').querySelectorAll('input');
+        if (controls.length !== 3) throw new Error('forest plot axis controls are unavailable');
         byId('src').value = s.src;
         byId('trans').value = s.trans;
         byId('tau-est').value = s.tau;
+        controls[0].value = axis.x[0] === null ? '' : String(axis.x[0]);
+        controls[1].value = axis.x[1] === null ? '' : String(axis.x[1]);
+        controls[2].checked = axis.xLog;
+        Array.prototype.forEach.call(controls, function (control) { control.dispatchEvent(new Event('change', { bubbles: true })); });
         byId('btn-run').click();
       },
     },
