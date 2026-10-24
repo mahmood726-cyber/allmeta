@@ -7,6 +7,27 @@ const writer = fs.readFileSync(new URL('hub/shared/url-state.js', root), 'utf8')
 for (const app of ['gosh', 'copas']) {
   const html = fs.readFileSync(new URL(app + '/index.html', root), 'utf8');
   const block = html.split('// URL state')[1].split(/\r?\n    }/)[0];
+  async function suspendedShare(hidden) {
+    const note = { hidden };
+    const context = vm.createContext({ window: { location: { hash: "" } }, console: { warn() {} },
+      btoa: s => Buffer.from(s, "binary").toString("base64"),
+      atob: s => Buffer.from(s, "base64").toString("binary"),
+      escape, unescape, encodeURIComponent, decodeURIComponent,
+      document: { getElementById: id => id === "src" ? { value: "0.2, 0.1, A" } : note },
+      text: "0.2, 0.1, A", model: "FE" });
+    vm.runInContext(writer, context);
+    await context.window.alm.urlState.withoutWrites(async () => {
+      await context.window.alm.urlState.withoutWrites(() => vm.runInContext(block, context));
+      assert.equal(note.hidden, hidden);
+      assert.equal(context.window.location.hash, "");
+    });
+  }
+  test(app + ": suspended writes preserve a hidden notice (regression plant)", async () => {
+    await suspendedShare(true);
+  });
+  test(app + ": suspended writes preserve an already visible notice", async () => {
+    await suspendedShare(false);
+  });
   function share(src, legacy = false) {
     const note = { hidden: true, textContent: '' };
     const context = vm.createContext({ window: { location: { hash: '' } }, console: { warn() {} },
@@ -50,3 +71,17 @@ for (const app of ['gosh', 'copas']) {
     assert.equal(out.note.hidden, false);
   });
 }
+
+test('suspension accessor tracks nesting and releases after failure', async () => {
+  const context=vm.createContext({window:{location:{hash:''}}});
+  vm.runInContext(writer,context);
+  const state=context.window.alm.urlState;
+  assert.equal(state.isSuspended(),false);
+  await assert.rejects(state.withoutWrites(async () => {
+    assert.equal(state.isSuspended(),true);
+    await state.withoutWrites(() => assert.equal(state.isSuspended(),true));
+    assert.equal(state.isSuspended(),true);
+    throw new Error('plant');
+  }),/plant/);
+  assert.equal(state.isSuspended(),false);
+});

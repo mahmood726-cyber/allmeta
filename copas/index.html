@@ -585,7 +585,7 @@
         'the CI level refits.');
 
       // URL state
-      if (window.alm && window.alm.urlState) {
+      if (window.alm && window.alm.urlState && !window.alm.urlState.isSuspended()) {
         // Let urlState apply its encoded-size budget to the complete dataset.
         var sharedData = window.alm.urlState.write({ src: document.getElementById('src').value });
         if (!sharedData) window.alm.urlState.write({});

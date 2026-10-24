@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
 const out = new URL('./rchecks-out/p0share/', import.meta.url);
 const note = 'Data too long for a link — use Export/Download to share the data';
 const numbers = [[.25,.08],[.18,.10],[.40,.15],[.30,.09],[.12,.07],[.55,.20],[.22,.08],[.32,.12]];
@@ -77,3 +77,56 @@ for (const app of ['gosh','copas']) for (const kind of ['short','past-cut','over
     }
   });
 }
+
+// Reproduce pixel scenario 8 without changing or generating pixel references.
+test('GOSH Plus suspended capture preserves notice and plot geometry', async ({page}) => {
+  const corpus=JSON.parse(await readFile(new URL('../../../gosh/validate/plus/corpus.json',import.meta.url),'utf8'));
+  const c=corpus.find(c=>c.id==='dat.anand1999::001');
+  expect(c).toBeTruthy();
+  await page.goto('/gosh/index.html',{waitUntil:'domcontentloaded'});
+  await ready(page,'gosh');
+  await page.waitForFunction(()=>typeof AlmGoshPlus!=='undefined');
+  await page.evaluate(()=>document.fonts.ready);
+  await expect(page.locator('#share-data-note')).toBeHidden();
+  await page.evaluate(c=>AlmGoshPlus.render(AlmGoshPlus.capture(c.te.map((x,i)=>[x,c.se[i],c.source_rows[i]].join(', ')).join('\n'),'DL',5000)),c);
+  await page.locator('#plus-study').selectOption('3');
+  await page.locator('#plus-het').selectOption('I2');
+  await expect(page.locator('#share-data-note')).toBeHidden();
+  const before=await page.locator('#plus-plot').boundingBox();
+  expect(before).not.toBeNull();
+  await page.locator('#share-data-note').evaluate(el=>el.remove());
+  expect(await page.locator('#plus-plot').boundingBox()).toEqual(before);
+});
+
+// Round-1 contract timed out before checking this planted source mutation.
+// Keep the same 30-second budget and assertion; steps locate any repeated stall.
+for (const planted of [false, true]) test('GOSH Plus FE count header '+(planted ? 'source plant is rejected' : 'correct source control'), async ({page}) => {
+  const corpus=JSON.parse(await readFile(new URL('../../../gosh/validate/plus/corpus.json',import.meta.url),'utf8'));
+  const refs=JSON.parse(await readFile(new URL('../../../gosh/validate/plus/reference.json',import.meta.url),'utf8'));
+  const c=corpus[0], model='FE';
+  if(planted) await page.route('**/gosh/plus.js',async route=>{
+    const body=await (await route.fetch()).text();
+    expect(body).toContain("'With: count'");
+    await route.fulfill({contentType:'application/javascript',body:body.replace("'With: count'","'Wrong count'")});
+  });
+  await page.addInitScript(()=>document.addEventListener('DOMContentLoaded',()=>{
+    const style=document.createElement('style');
+    style.textContent='main, .panel { animation: none !important; }';
+    document.head.append(style);
+  },{once:true}));
+  await test.step('load GOSH',()=>page.goto('/gosh/index.html'));
+  await test.step('capture and render FE extras',()=>page.evaluate(({c,model})=>
+    AlmGoshPlus.render(AlmGoshPlus.capture(c.te.map((x,i)=>[x,c.se[i],c.source_rows[i]].join(', ')).join('\n'),model,5000)),{c,model}));
+  await test.step('select Q',()=>page.locator('#plus-het').selectOption('Q'));
+  await test.step('verify independent source semantics',async()=>{
+    const comparison=page.evaluate(({r,k,model})=>{
+      const failures=[];
+      AlmGoshPlusAdapter.compareDisplay(r,k,model,(q,a,b,kind)=>{
+        if(!AlmValidate.compare(a,b,kind,1e-9).pass) failures.push(q);
+      });
+      return failures;
+    },{r:refs.find(r=>r.key===c.id+'::'+model),k:c.k,model});
+    if(planted) await expect(comparison).rejects.toThrow(/selector|table headers|sort declaration/);
+    else expect(await comparison).toEqual([]);
+  });
+});
