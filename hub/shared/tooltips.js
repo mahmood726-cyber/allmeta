@@ -1,181 +1,238 @@
 (function () {
-  // Method-help glossary tooltips, with optional multi-language support.
-  // Non-English glossaries are machine-translated and carry a per-language
-  // _meta.disclaimer that is appended to every tip; English stays authoritative.
-  const _STYLE = `[data-gloss]{text-decoration:underline dotted;cursor:help}.alm-tooltip{position:absolute;background:#0f172a;color:#f8fafc;padding:.35rem .55rem;border-radius:4px;font:12px/1.4 system-ui,sans-serif;max-width:280px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .12s}.alm-tooltip.is-visible{opacity:1}.alm-tooltip[dir=rtl]{text-align:right}.alm-tooltip .alm-disclaimer{display:block;margin-top:.25rem;font-size:11px;color:#cbd5e1;font-style:italic}.alm-lang-switch{position:fixed;bottom:8px;right:8px;z-index:9998;background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:1px 3px;opacity:.7;transition:opacity .12s}.alm-lang-switch:hover,.alm-lang-switch:focus-within{opacity:1}.alm-lang-switch select{font:12px system-ui,sans-serif;border:0;background:transparent;color:#0f172a;cursor:pointer}`;
-  const _LANGS = { en: 'English', es: 'Español', ar: 'العربية', zh: '中文' };
-  let _stylesInjected = false;
-  let _glossary = {};
-  let _baseSrc = null;     // original 'glossary.json' src, if init was given one
-  let _lang = 'en';
-  let _nextId = 0;
-  let _tipLayer = null;
+  'use strict';
+  // Shared method help. English is authoritative; locale files remain untouched.
+  const LANGS = { en: 'English', es: 'Español', ar: 'العربية', zh: '中文' };
+  const STYLE = `[data-gloss]{text-decoration:underline dotted;cursor:help;text-underline-offset:.16em}
+[data-gloss]:focus-visible{outline:2px solid currentColor;outline-offset:3px;border-radius:2px}
+.alm-tooltip{position:fixed;box-sizing:border-box;background:#0f172a;color:#f8fafc;border:1px solid #94a3b8;padding:.5rem .65rem;border-radius:5px;font:14px/1.45 system-ui,sans-serif;width:max-content;max-width:min(320px,calc(100vw - 16px));z-index:2147483647;visibility:hidden;pointer-events:none;overflow-wrap:anywhere}
+.alm-tooltip.is-visible{visibility:visible;pointer-events:auto}
+.alm-tooltip .alm-disclaimer{display:block;margin-top:.3rem;font-size:12px;color:#e2e8f0}
+.alm-lang-switch{position:fixed;bottom:8px;right:8px;z-index:9998;background:#fff;color:#0f172a;border:1px solid #64748b;border-radius:6px;padding:4px}
+.alm-lang-switch select{font:13px system-ui,sans-serif;background:#fff;color:#0f172a;border:0}
+[data-alm-choice]{display:block;font-size:.85em;margin:.25em 0}
+@media(prefers-color-scheme:dark){.alm-tooltip{background:#f8fafc;color:#0f172a;border-color:#475569}.alm-tooltip .alm-disclaimer{color:#334155}}
+[data-theme=dark] .alm-tooltip{background:#f8fafc;color:#0f172a;border-color:#475569}
+[data-theme=dark] .alm-tooltip .alm-disclaimer{color:#334155}`;
+  let glossary = {}, english = {}, translated = {}, terms = {}, src = null, lang = 'en';
+  let nextId = 0, generation = 0, observer = null, active = null, queued = false, hideTimer;
+  const attached = new Map(), choices = new Map(), requests = new Map();
+  const SKIP = 'script,style,textarea,input,button,a,option,select,pre,kbd,samp,[contenteditable],[aria-hidden="true"],[inert],.gloss-skip,[data-gloss-skip],.alm-tooltip,.alm-lang-switch,[data-gloss]';
 
-  function _storedLang() {
-    try { const l = localStorage.getItem('alm-lang'); return _LANGS[l] ? l : 'en'; }
-    catch (e) { return 'en'; }
+  function mergeGlossaries(base, locale) {
+    const merged = { ...base };
+    Object.keys(locale || {}).forEach(key => {
+      if (key === '_meta' || (typeof locale[key]?.short === 'string' && locale[key].short.trim())) merged[key] = locale[key];
+    });
+    return merged;
   }
-  function _persistLang(l) { try { localStorage.setItem('alm-lang', l); } catch (e) {} }
-
-  // 'a/b/glossary.json' + 'es' -> 'a/b/glossary.es.json'. English keeps the base.
-  function _variantSrc(src, lang) {
-    if (!src || lang === 'en') return src;
-    return src.replace(/glossary\.json/, 'glossary.' + lang + '.json');
+  function buildMatcher(map) {
+    const keys = Object.keys(map).filter(Boolean).sort((a, b) => b.length - a.length);
+    const escaped = keys.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    return new RegExp('(?<![\\p{L}\\p{N}_])(?:' + (escaped.join('|') || '(?!)') + ')(?![\\p{L}\\p{N}_])', 'gu');
   }
-
-  function _disclaimer() {
-    return _lang !== 'en' && _glossary._meta && _glossary._meta.disclaimer
-      ? _glossary._meta.disclaimer : null;
-  }
-
-  function _ensureStyle() {
-    if (_stylesInjected) return;
-    const s = document.createElement('style'); s.textContent = _STYLE;
-    document.head.appendChild(s);
-    _stylesInjected = true;
-  }
-  // Tooltip spans must live inside a landmark or axe `region` (best-practice)
-  // flags every one. Single named region container, display:contents so no
-  // layout box is generated — absolutely-positioned tips keep the initial
-  // containing block exactly as when they were direct <body> children.
-  function _ensureLayer() {
-    if (_tipLayer && _tipLayer.isConnected) return _tipLayer;
-    _tipLayer = document.getElementById('alm-tip-layer');
-    if (!_tipLayer) {
-      _tipLayer = document.createElement('div');
-      _tipLayer.id = 'alm-tip-layer';
-      _tipLayer.setAttribute('role', 'region');
-      _tipLayer.setAttribute('aria-label', 'Glossary tooltips');
-      _tipLayer.style.display = 'contents';
-      document.body.appendChild(_tipLayer);
+  function ensureUI() {
+    if (!document.getElementById('alm-tooltip-style')) {
+      const style = document.createElement('style'); style.id = 'alm-tooltip-style'; style.textContent = STYLE;
+      document.head.append(style);
     }
-    return _tipLayer;
-  }
-
-  // Render a tip's content for the current language: definition text plus,
-  // for machine-translated languages, a de-emphasised disclaimer line.
-  function _fillTip(tip, abbr) {
-    const term = abbr.getAttribute('data-gloss');
-    const entry = _glossary[term];
-    const body = entry ? entry.short + (entry.long ? ' — ' + entry.long : '')
-                       : abbr.textContent.trim();
-    tip.textContent = body;
-    const disc = _disclaimer();
-    if (disc) {
-      const d = document.createElement('span');
-      d.className = 'alm-disclaimer';
-      d.textContent = disc;
-      tip.appendChild(d);
+    let layer = document.getElementById('alm-tip-layer');
+    if (!layer) {
+      layer = document.createElement('div'); layer.id = 'alm-tip-layer';
+      layer.setAttribute('role', 'region'); layer.setAttribute('aria-label', 'Glossary tooltips');
+      layer.style.display = 'contents'; document.body.append(layer);
     }
-    tip.setAttribute('dir', _lang === 'ar' ? 'rtl' : 'ltr');
+    return layer;
   }
-
-  function _attach(abbr) {
-    const id = 'alm-tip-' + (++_nextId);
-    const tip = document.createElement('span');
-    tip.id = id;
-    tip.className = 'alm-tooltip';
-    tip.setAttribute('role', 'tooltip');
-    _fillTip(tip, abbr);
-    _ensureLayer().appendChild(tip);
-    abbr.setAttribute('aria-describedby', id);
-    abbr.tabIndex = 0;
-    const show = () => {
-      const r = abbr.getBoundingClientRect();
-      tip.style.top = (window.scrollY + r.bottom + 6) + 'px';
-      tip.style.left = (window.scrollX + r.left) + 'px';
-      tip.classList.add('is-visible');
-    };
-    const hide = () => tip.classList.remove('is-visible');
-    abbr.addEventListener('mouseenter', show);
-    abbr.addEventListener('mouseleave', hide);
-    abbr.addEventListener('focus', show);
-    abbr.addEventListener('blur', hide);
-    abbr.addEventListener('click', show);
-    document.addEventListener('click', (e) => { if (e.target !== abbr) hide(); });
+  function fill(tip, el) {
+    const key = el.getAttribute('data-gloss'), entry = glossary[key];
+    const localized = lang !== 'en' && translated[key] && translated[key] === entry;
+    tip.textContent = entry ? entry.short + (entry.long ? ' — ' + entry.long : '') : el.textContent.trim();
+    tip.lang = localized ? lang : 'en'; tip.dir = localized && lang === 'ar' ? 'rtl' : 'ltr';
+    if (localized && translated._meta?.disclaimer) {
+      const note = document.createElement('span'); note.className = 'alm-disclaimer';
+      note.textContent = translated._meta.disclaimer; tip.append(note);
+    }
   }
-
-  function _scan() {
-    document.querySelectorAll('abbr[data-gloss]:not([aria-describedby])').forEach(_attach);
+  function hide() {
+    clearTimeout(hideTimer);
+    if (active) active.tip.classList.remove('is-visible');
+    active = null;
   }
-
-  // Re-render the text of already-attached tips (used after a language switch).
-  function _refresh() {
-    document.querySelectorAll('abbr[data-gloss][aria-describedby]').forEach((abbr) => {
-      const tip = document.getElementById(abbr.getAttribute('aria-describedby'));
-      if (tip) _fillTip(tip, abbr);
+  function position() {
+    if (!active) return;
+    const r = active.el.getBoundingClientRect(), tip = active.tip;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
+    tip.style.top = Math.max(8, Math.min(r.bottom + 6 + h <= window.innerHeight ? r.bottom + 6 : r.top - h - 6, window.innerHeight - h - 8)) + 'px';
+  }
+  function show(el, tip) {
+    hide(); active = { el, tip }; tip.classList.add('is-visible'); position();
+  }
+  function attach(el) {
+    if (attached.has(el)) return;
+    const tip = document.createElement('span'); tip.id = 'alm-tip-' + (++nextId);
+    tip.className = 'alm-tooltip'; tip.setAttribute('role', 'tooltip'); fill(tip, el);
+    ensureUI().append(tip); attached.set(el, tip);
+    const descriptions = new Set((el.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+    // Restored result HTML can contain a stale ID from a prior render.
+    for (const id of descriptions) if (/^alm-tip-\d+$/.test(id) && !document.getElementById(id)) descriptions.delete(id);
+    descriptions.add(tip.id); el.setAttribute('aria-describedby', [...descriptions].join(' '));
+    el.dataset.almTip = tip.id; el.tabIndex = 0;
+    el.addEventListener('mouseenter', () => show(el, tip));
+    el.addEventListener('mouseleave', () => { hideTimer = setTimeout(() => { if (document.activeElement !== el) hide(); }, 160); });
+    tip.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+    tip.addEventListener('mouseleave', () => { if (document.activeElement !== el) hide(); });
+    el.addEventListener('focus', () => show(el, tip));
+    el.addEventListener('blur', hide);
+    // pointerdown precedes touch-generated focus, so a first tap always opens.
+    let wasOpen = false;
+    el.addEventListener('pointerdown', () => { wasOpen = active?.el === el; });
+    el.addEventListener('click', e => {
+      e.preventDefault(); // A help term inside a label must not toggle its input.
+      if (wasOpen) hide(); else show(el, tip);
+      wasOpen = false;
+    });
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(el, tip); }
     });
   }
-
-  function _loadAndRefresh(baseSrc, lang) {
-    const url = _variantSrc(baseSrc, lang);
-    if (!url) { _scan(); _refresh(); return Promise.resolve(); }
-    return fetch(url)
-      .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then((g) => { _glossary = g; _scan(); _refresh(); })
-      .catch((err) => {
-        // A missing translation falls back to the authoritative English file.
-        if (lang !== 'en' && baseSrc) {
-          return fetch(baseSrc).then((r) => r.json())
-            .then((g) => { _glossary = g; _scan(); _refresh(); })
-            .catch((e2) => { console.warn('[alm.tooltips] glossary fetch failed:', e2); _scan(); });
-        }
-        console.warn('[alm.tooltips] glossary fetch failed:', err); _scan();
+  function mark(root) {
+    if (!Object.keys(terms).length) return;
+    const re = buildMatcher(terms);
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const p = node.parentElement;
+        if (!p || !node.nodeValue.trim() || p.closest(SKIP)) return NodeFilter.FILTER_REJECT;
+        // Leave code/formula blocks intact; a code-styled standalone method name
+        // can itself receive help without altering its text or markup.
+        if (p.closest('code')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const nodes = []; let node;
+    while ((node = walker.nextNode())) nodes.push(node);
+    for (const n of nodes) {
+      // A selected option often spells out an acronym ("Maximum likelihood
+      // (ML)"). Keep its full text, but offer only one tab stop per concept.
+      // Include existing marks so rescans and split text nodes stay idempotent.
+      const choice = n.parentElement.closest('[data-alm-choice]');
+      const seen = new Set(choice ? Array.from(choice.querySelectorAll('[data-gloss]'), el => el.getAttribute('data-gloss')) : []);
+      const text = n.nodeValue, hits = [...text.matchAll(re)].filter(m => {
+        const key = terms[m[0]];
+        if (!glossary[key]) return false;
+        if (choice && seen.has(key)) return false;
+        seen.add(key); return true;
       });
-  }
-
-  function _injectSwitch() {
-    if (document.querySelector('.alm-lang-switch')) return;        // idempotent
-    if (!document.querySelector('abbr[data-gloss]')) return;       // only where method help exists
-    const wrap = document.createElement('div');
-    wrap.className = 'alm-lang-switch';
-    wrap.setAttribute('role', 'group');
-    wrap.setAttribute('aria-label', 'Method-help language');
-    const sel = document.createElement('select');
-    sel.setAttribute('aria-label', 'Method-help language');
-    Object.keys(_LANGS).forEach((code) => {
-      const o = document.createElement('option');
-      o.value = code; o.textContent = _LANGS[code];
-      if (code === _lang) o.selected = true;
-      sel.appendChild(o);
-    });
-    sel.addEventListener('change', () => setLang(sel.value));
-    wrap.appendChild(sel);
-    document.body.appendChild(wrap);
-  }
-
-  function setLang(lang) {
-    if (!_LANGS[lang] || lang === _lang) return Promise.resolve();
-    _lang = lang;
-    _persistLang(lang);
-    document.documentElement.setAttribute('data-alm-lang', lang);
-    const sel = document.querySelector('.alm-lang-switch select');
-    if (sel && sel.value !== lang) sel.value = lang;
-    if (_baseSrc) return _loadAndRefresh(_baseSrc, lang);
-    // No src (glossary passed as an object) — can't fetch a variant; just re-render.
-    _refresh();
-    return Promise.resolve();
-  }
-
-  function init(opts) {
-    opts = opts || {};
-    _ensureStyle();
-    _lang = _storedLang();
-    document.documentElement.setAttribute('data-alm-lang', _lang);
-    if (opts.glossary && typeof opts.glossary === 'object') {
-      _glossary = opts.glossary; _scan(); _injectSwitch();
-    } else if (opts.src) {
-      _baseSrc = opts.src;
-      _injectSwitch();                 // terms are authored in HTML, present before fetch resolves
-      _loadAndRefresh(_baseSrc, _lang);
-    } else {
-      _scan(); _injectSwitch();        // textContent fallback
+      if (!hits.length) continue;
+      const frag = document.createDocumentFragment(); let offset = 0;
+      for (const m of hits) {
+        frag.append(document.createTextNode(text.slice(offset, m.index)));
+        const svg = n.parentElement.namespaceURI === 'http://www.w3.org/2000/svg';
+        const el = svg ? document.createElementNS('http://www.w3.org/2000/svg', 'tspan') : document.createElement('span');
+        el.setAttribute('data-gloss', terms[m[0]]); el.textContent = m[0]; frag.append(el);
+        offset = m.index + m[0].length;
+      }
+      frag.append(document.createTextNode(text.slice(offset))); n.replaceWith(frag);
     }
+    root.querySelectorAll('code').forEach(el => {
+      if (!el.closest(SKIP) && terms[el.textContent.trim()] && glossary[terms[el.textContent.trim()]]) el.setAttribute('data-gloss', terms[el.textContent.trim()]);
+    });
   }
-  init.rescan = function () { _scan(); };
-  init.setLang = setLang;
-  init.getLang = function () { return _lang; };
-
-  window.alm = window.alm || {};
-  window.alm.tooltips = init;
+  function updateChoices() {
+    document.querySelectorAll('select:not(.alm-lang-switch select)').forEach(select => {
+      const text = Array.from(select.selectedOptions, o => o.textContent).join('; ');
+      const hits = [...text.matchAll(buildMatcher(terms))].filter(m => glossary[terms[m[0]]]);
+      let record = choices.get(select);
+      if (!hits.length) { if (record) { record.node.remove(); choices.delete(select); } return; }
+      if (!record || !record.node.isConnected) {
+        const node = document.createElement('span'); node.setAttribute('data-alm-choice', '');
+        select.after(node); record = { node, text: null }; choices.set(select, record);
+      }
+      if (record.text !== text) { record.node.textContent = 'Method help: ' + text; record.text = text; }
+    });
+    for (const [select, record] of choices) if (!select.isConnected) { record.node.remove(); choices.delete(select); }
+  }
+  function scan() {
+    if (!document.body) return;
+    // Disconnect during our own mutations to avoid scan-observer feedback loops.
+    if (observer) observer.disconnect();
+    updateChoices(); mark(document.body);
+    for (const [el, tip] of attached) {
+      if (!el.isConnected) { if (active?.el === el) hide(); tip.remove(); attached.delete(el); }
+    }
+    document.querySelectorAll('[data-gloss]').forEach(el => {
+      // Resolve authored legacy marks using an exact, app-specific display
+      // alias (for example τ²_within is not between-study variance).
+      const key = terms[el.textContent.trim()];
+      if (key && glossary[key] && key !== el.getAttribute('data-gloss')) {
+        el.setAttribute('data-gloss', key);
+        if (attached.has(el)) fill(attached.get(el), el);
+      }
+      attach(el);
+    });
+    if (observer) observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    injectSwitch();
+  }
+  function schedule() {
+    if (queued) return; queued = true;
+    queueMicrotask(() => { queued = false; scan(); });
+  }
+  function injectSwitch() {
+    if (document.querySelector('.alm-lang-switch') || !document.querySelector('[data-gloss]')) return;
+    const wrap = document.createElement('div'); wrap.className = 'alm-lang-switch';
+    wrap.setAttribute('role', 'group'); wrap.setAttribute('aria-label', 'Method-help language');
+    const select = document.createElement('select'); select.setAttribute('aria-label', 'Method-help language');
+    for (const [code, label] of Object.entries(LANGS)) {
+      const option = document.createElement('option'); option.value = code; option.textContent = label;
+      option.selected = code === lang; select.append(option);
+    }
+    select.addEventListener('change', () => setLang(select.value)); wrap.append(select); document.body.append(wrap);
+  }
+  function fetchJSON(url) {
+    if (!requests.has(url)) requests.set(url, fetch(url).then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status); return r.json();
+    }).catch(error => { requests.delete(url); throw error; }));
+    return requests.get(url);
+  }
+  async function load() {
+    const version = ++generation, requestedLang = lang;
+    try {
+      const [base, locale] = await Promise.all([
+        fetchJSON(src),
+        requestedLang === 'en' ? Promise.resolve({}) : fetchJSON(src.replace(/glossary\.json(?=$|[?#])/, 'glossary.' + requestedLang + '.json')).catch(() => ({}))
+      ]);
+      if (version !== generation) return;
+      english = base; translated = locale; glossary = mergeGlossaries(english, translated);
+      scan(); attached.forEach((tip, el) => fill(tip, el)); position();
+      if (Object.keys(terms).length) document.documentElement.setAttribute('data-alm-glossary-ready', 'true');
+    } catch (error) { console.warn('[alm.tooltips] glossary fetch failed:', error); }
+  }
+  function setLang(value) {
+    if (!LANGS[value]) return Promise.resolve();
+    lang = value; try { localStorage.setItem('alm-lang', lang); } catch (_) {}
+    document.documentElement.setAttribute('data-alm-lang', lang);
+    const select = document.querySelector('.alm-lang-switch select'); if (select) select.value = lang;
+    if (src) return load();
+    translated = {}; glossary = english; attached.forEach((tip, el) => fill(tip, el)); return Promise.resolve();
+  }
+  function init(opts = {}) {
+    ensureUI();
+    if (opts.terms) terms = { ...terms, ...opts.terms };
+    if (!observer) {
+      try { const stored = localStorage.getItem('alm-lang'); if (LANGS[stored]) lang = stored; } catch (_) {}
+      observer = new MutationObserver(schedule);
+      document.addEventListener('change', schedule);
+      document.addEventListener('click', e => { if (active && !active.el.contains(e.target) && !active.tip.contains(e.target)) hide(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); });
+      window.addEventListener('resize', position); window.addEventListener('scroll', position, true);
+    }
+    document.documentElement.setAttribute('data-alm-lang', lang);
+    if (opts.glossary) { english = opts.glossary; translated = {}; glossary = english; scan(); return Promise.resolve(); }
+    if (opts.src) src = opts.src;
+    if (src) return load();
+    scan(); return Promise.resolve();
+  }
+  init.rescan = scan; init.setLang = setLang; init.getLang = () => lang;
+  init.mergeGlossaries = mergeGlossaries; init.buildMatcher = buildMatcher;
+  window.alm = window.alm || {}; window.alm.tooltips = init;
 })();

@@ -1,95 +1,1788 @@
 {
-  "HKSJ": { "short": "Hartung-Knapp-Sidik-Jonkman variance adjustment", "long": "A small-sample variance correction for random-effects meta-analysis; gives wider, better-calibrated CIs when k is small." },
-  "REML": { "short": "Restricted maximum likelihood", "long": "Default τ² estimator in metafor; less biased than DerSimonian-Laird for small k." },
-  "DL":   { "short": "DerSimonian-Laird", "long": "Method-of-moments τ² estimator; classic but biased for small k. Avoid for k<10." },
-  "PM":   { "short": "Paule-Mandel", "long": "Iterative method-of-moments τ² estimator; recommended over DL for small k." },
-  "I2":   { "short": "I-squared", "long": "Proportion of total variance attributable to between-study heterogeneity. Not a magnitude — report τ² alongside." },
-  "tau2": { "short": "Between-study variance (τ²)", "long": "Magnitude of heterogeneity on the same scale as the effect estimate." },
-  "PI":   { "short": "Prediction interval", "long": "Plausible range for the true effect in a new study. Wider than the CI of the pooled estimate." },
-  "SMD":  { "short": "Standardised mean difference", "long": "Effect size for continuous outcomes on different scales; Hedges' g recommended for k<20." },
-  "OR":   { "short": "Odds ratio", "long": "Effect measure for binary outcomes; pool on the log scale (logOR)." },
-  "RR":   { "short": "Risk ratio", "long": "Effect measure for binary outcomes; pool on the log scale (logRR). Often preferred over OR for clinical interpretability." },
-  "HR":   { "short": "Hazard ratio", "long": "Effect measure for time-to-event outcomes; pool on the log scale." },
-  "RD":   { "short": "Risk difference", "long": "Effect measure for binary outcomes on the natural scale; complements ratio measures." },
-  "NMA":  { "short": "Network meta-analysis", "long": "Pooled comparison of >2 interventions through a connected network of trials." },
-  "SUCRA":{ "short": "Surface under the cumulative ranking curve", "long": "Single-number summary of treatment ranking in NMA. Always pair with POTH and CrI of relative effects." },
-  "POTH": { "short": "Probability of treatment hierarchy (Wigle 2025)", "long": "Calibration metric for SUCRA ranking. POTH < 0.5 means the hierarchy is non-informative." },
-  "GRADE":{ "short": "Grading of Recommendations Assessment, Development and Evaluation", "long": "Framework for rating certainty of evidence." },
-  "CINeMA":{ "short": "Confidence in Network Meta-Analysis", "long": "GRADE-aligned framework for rating certainty in NMA." },
-  "ROB-2":{ "short": "Risk of Bias 2 (Cochrane RCT)", "long": "Domain-based tool for assessing risk of bias in randomised trials." },
-  "ROBINS-I":{ "short": "Risk of Bias in Non-randomised Studies of Interventions", "long": "Cochrane tool for non-randomised interventional studies." },
-  "QUADAS-2":{ "short": "Quality Assessment of Diagnostic Accuracy Studies 2", "long": "Domain-based tool for risk of bias in diagnostic accuracy studies." },
-  "AMSTAR-2":{ "short": "A MeaSurement Tool to Assess systematic Reviews 2", "long": "16-item appraisal tool for systematic reviews." },
-  "PRISMA":{ "short": "Preferred Reporting Items for Systematic Reviews and Meta-Analyses", "long": "Reporting checklist + flow diagram for SRs/MAs." },
-  "RoB-ME":{ "short": "Risk of Bias due to Missing Evidence (Cochrane Ch.13, 2024+)", "long": "Per-MA reporting-bias tool; replaces funnel/Egger as the verdict." },
-  "INSPECT-SR":{ "short": "INSPECT-SR (Cochrane Oct 2025)", "long": "Trustworthiness assessment for primary trials in an SR." },
-  "DOR":  { "short": "Diagnostic odds ratio", "long": "Single-number summary of diagnostic test accuracy; DOR = exp(μ₁ + μ₂) in a bivariate model." },
-  "SROC": { "short": "Summary receiver operating characteristic", "long": "Plot of sensitivity vs 1-specificity across DTA studies." },
-  "HSROC":{ "short": "Hierarchical SROC", "long": "Random-effects bivariate model for DTA. Use normal CDF (Φ), not logistic, for AUC." },
-  "TSA":  { "short": "Trial sequential analysis", "long": "Sequential boundary method for meta-analysis with monitoring boundaries (O'Brien-Fleming)." },
-  "MID":  { "short": "Minimal important difference", "long": "Smallest change perceived as important by patients." },
-  "MCID": { "short": "Minimal clinically important difference", "long": "Synonymous with MID; emphasises clinical meaningfulness." },
-  "RMST": { "short": "Restricted mean survival time", "long": "Time-to-event summary up to a fixed horizon τ*; pool differences, not ratios." },
-  "IPD":  { "short": "Individual patient data", "long": "Trial-level participant-level dataset; gold standard for meta-analysis." },
-  "ITT":  { "short": "Intention-to-treat", "long": "Analysis principle: analyse participants as randomised." },
-  "RCT":  { "short": "Randomised controlled trial", "long": "Experimental design with random allocation to interventions." },
-  "CrI":  { "short": "Credible interval (Bayesian)", "long": "Bayesian equivalent of a confidence interval; interpretable as 'probability X falls in [a, b]'." },
-  "CI":   { "short": "Confidence interval (frequentist)", "long": "Range of values consistent with the data at a stated coverage level." },
-  "ESS":  { "short": "Effective sample size", "long": "MCMC diagnostic. ESS < 400 per parameter → unreliable CrI." },
-  "Rhat": { "short": "Potential scale reduction (R̂)", "long": "MCMC convergence diagnostic. R̂ > 1.01 → do not interpret." },
-  "MAP":  { "short": "Meta-analytic-predictive prior", "long": "Bayesian prior derived from historical trials (Neuenschwander 2010)." },
-  "PETPEESE":{ "short": "Precision-Effect Test + Precision-Effect Estimator with Standard Error", "long": "Conditional small-study correction. PET first; if null rejected, switch to PEESE." },
-  "GOSH": { "short": "Graphical display Of Study Heterogeneity", "long": "All-subset sensitivity analysis. Random subsample for k>15." },
-  "Egger":{ "short": "Egger's regression test", "long": "Funnel-plot asymmetry test. Low power for k<10. Use radial version." },
-  "Peters":{ "short": "Peters' test (binary)", "long": "Funnel asymmetry test for binary outcomes; alternative to Egger." },
-  "Copas":{ "short": "Copas selection model", "long": "Publication-bias correction; needs k≥15." },
-  "TrimFill":{ "short": "Trim-and-fill", "long": "Publication-bias visualisation. Sensitivity analysis only — never the primary result." },
-  "Bucher":{ "short": "Bucher indirect comparison", "long": "Indirect treatment effect via a common comparator." },
-  "PICO": { "short": "Population, Intervention, Comparator, Outcome", "long": "Question framework for systematic reviews." },
-  "EBM":  { "short": "Evidence-based medicine", "long": "Clinical practice informed by best available research evidence." },
-  "PROSPERO":{ "short": "PROSPERO", "long": "International prospective register of systematic reviews." },
-  "Cochrane":{ "short": "Cochrane Collaboration", "long": "International network producing systematic reviews of healthcare interventions." },
-  "Schoenfeld":{ "short": "Schoenfeld residuals test", "long": "Proportional-hazards diagnostic. If rejected, single HR is misleading." },
-  "Guyot":{ "short": "Guyot reconstruction", "long": "Algorithm to reconstruct IPD from a Kaplan-Meier curve." },
-  "Fragility":{ "short": "Fragility index", "long": "Minimal number of event reassignments that flip a significant result. Modify ONE arm only." },
-  "NPD":  { "short": "Not positive definite", "long": "Covariance-matrix pathology. Fix with nearPD() (Higham), not eigenvalue clamping." },
-  "Clopper":{ "short": "Clopper-Pearson exact interval", "long": "Exact binomial CI: qbeta(α/2, x, n-x+1)." },
-  "Clopper-Pearson":{ "short": "Clopper-Pearson exact interval", "long": "Exact binomial CI: qbeta(α/2, x, n-x+1); the α/2 is correct." },
-  "TP":{ "short": "True positive", "long": "Diseased individuals correctly classified as test-positive (cell a of the 2×2 table)." },
-  "FP":{ "short": "False positive", "long": "Non-diseased individuals incorrectly classified as test-positive (cell b)." },
-  "FN":{ "short": "False negative", "long": "Diseased individuals incorrectly classified as test-negative (cell c)." },
-  "TN":{ "short": "True negative", "long": "Non-diseased individuals correctly classified as test-negative (cell d)." },
-  "Se":{ "short": "Sensitivity (true-positive rate)", "long": "Se = TP/(TP+FN): proportion of truly diseased correctly identified as positive." },
-  "Sp":{ "short": "Specificity (true-negative rate)", "long": "Sp = TN/(TN+FP): proportion of truly non-diseased correctly identified as negative." },
-  "FPR":{ "short": "False-positive rate", "long": "FPR = 1 − Sp = FP/(FP+TN); the x-axis of the ROC/SROC plot." },
-  "ROC":{ "short": "Receiver operating characteristic", "long": "Curve of sensitivity vs 1 − specificity across decision thresholds." },
-  "OLS":{ "short": "Ordinary least squares", "long": "Linear-regression fit minimising squared residuals; used for the Moses-Littenberg SROC line." },
-  "DTA":{ "short": "Diagnostic test accuracy", "long": "Meta-analysis of test performance (sensitivity/specificity), not treatment effects." },
-  "DOR":{ "short": "Diagnostic odds ratio", "long": "DOR = (Se·Sp)/((1−Se)(1−Sp)) = LR+/LR−; a single global summary of test accuracy." },
-  "Bayesian":{ "short": "Bayesian inference", "long": "Inference framework combining prior beliefs with data via Bayes' theorem." },
-  "Frequentist":{ "short": "Frequentist inference", "long": "Inference framework based on long-run sampling distributions." },
-  "Funnel":{ "short": "Funnel plot", "long": "Scatter of effect vs precision; visual aid for small-study effects." },
-  "Forest":{ "short": "Forest plot", "long": "Standard visualisation of effect estimates and CIs from each study + pooled." },
-  "Network":{ "short": "Treatment network (NMA)", "long": "Graph of treatments connected by direct comparisons." },
-  "Indirect":{ "short": "Indirect comparison", "long": "Effect derived through a common comparator, not direct head-to-head." },
-  "MultiArm":{ "short": "Multi-arm trial", "long": "Trial with >2 arms; NMA covariance for shared control = τ²/2." },
-  "Subgroup":{ "short": "Subgroup analysis", "long": "Effect by participant characteristic. Pre-specify; treat post-hoc as hypothesis-generating." },
-  "Sensitivity":{ "short": "Sensitivity analysis", "long": "Re-run with alternative assumptions to check robustness." },
-  "Cumulative":{ "short": "Cumulative meta-analysis", "long": "MA updated as each new study arrives; for monitoring evidence accumulation." },
-  "Influence":{ "short": "Influence analysis", "long": "Leave-one-out diagnostic for outlier studies." },
-  "Heterogeneity":{ "short": "Heterogeneity", "long": "Between-study variation in effect estimates. Quantify with τ², I², PI." },
-  "Bias": { "short": "Bias", "long": "Systematic deviation from the truth. Distinguish from random error." },
-  "Power":{ "short": "Statistical power", "long": "Probability of detecting an effect when one exists." },
-  "Type1":{ "short": "Type I error", "long": "False positive: rejecting a true null hypothesis." },
-  "Type2":{ "short": "Type II error", "long": "False negative: failing to reject a false null hypothesis." },
-  "Effect":{ "short": "Effect size", "long": "Quantitative summary of a relationship or difference." },
-  "Pooled":{ "short": "Pooled estimate", "long": "Weighted combination of study-level effects." },
-  "MetaRegression":{ "short": "Meta-regression", "long": "Regression of study-level effects on covariates." },
-  "Mixed":{ "short": "Mixed-effects meta-regression", "long": "Random-effects MA + covariates; default in metafor." },
-  "ConfounderAdjustment":{ "short": "Confounder adjustment", "long": "Statistical control for confounding variables." },
-  "Calibration":{ "short": "Calibration (prediction model)", "long": "Agreement between predicted and observed risks." },
-  "Discrimination":{ "short": "Discrimination (prediction model)", "long": "Ability to rank cases above non-cases (AUC)." },
-  "NetBenefit":{ "short": "Net benefit (decision curve)", "long": "Decision-analytic summary of clinical utility across thresholds." },
-  "QALY": { "short": "Quality-adjusted life year", "long": "Health-economic outcome combining length + quality of life." },
-  "ICER": { "short": "Incremental cost-effectiveness ratio", "long": "Cost per QALY gained between interventions." }
+  "HKSJ": {
+    "short": "Hartung–Knapp adjustment",
+    "long": "Adjusts pooled-mean uncertainty; intervals can narrow without a safeguard. Cochrane Handbook §10.10.4.4.",
+    "aliases": [
+      "HKSJ",
+      "Hartung-Knapp",
+      "Knapp-Hartung",
+      "modified HK",
+      "HK"
+    ]
+  },
+  "REML": {
+    "short": "Restricted maximum likelihood",
+    "long": "Estimates heterogeneity accounting for fitted means. Cochrane Handbook §10.10.4.4.",
+    "aliases": [
+      "REML",
+      "restricted maximum likelihood"
+    ]
+  },
+  "DL": {
+    "short": "DerSimonian–Laird estimator",
+    "long": "Moment-based estimate of heterogeneity. Cochrane Handbook §10.10.4.4.",
+    "aliases": [
+      "DL",
+      "DerSimonian-Laird",
+      "DerSimonian–Laird"
+    ]
+  },
+  "PM": {
+    "short": "Paule–Mandel estimator",
+    "long": "Matches weighted residual variation to degrees of freedom. Cochrane Handbook §10.10.4.4.",
+    "aliases": [
+      "PM",
+      "Paule-Mandel",
+      "Paule–Mandel"
+    ]
+  },
+  "I2": {
+    "short": "I-squared",
+    "long": "Percentage of variability attributed to heterogeneity, not its absolute magnitude. Cochrane Handbook §10.10.2.",
+    "aliases": [
+      "I²",
+      "I2",
+      "I-squared"
+    ]
+  },
+  "tau2": {
+    "short": "Between-study variance",
+    "long": "Variance of underlying effects on the squared analysis scale. Cochrane Handbook §10.10.4.3.",
+    "aliases": [
+      "τ²",
+      "tau²",
+      "Tau²",
+      "tau2",
+      "between-study variance",
+      "tau-squared",
+      "Tau-squared",
+      "Residual tau-squared"
+    ]
+  },
+  "PI": {
+    "short": "Prediction interval",
+    "long": "Range for an underlying effect in a similar setting, allowing for uncertainty. Cochrane Handbook §10.10.4.3.",
+    "aliases": [
+      "PI",
+      "prediction interval",
+      "prediction intervals"
+    ]
+  },
+  "SMD": {
+    "short": "Standardised mean difference",
+    "long": "Difference between group means divided by a standard deviation; Hedges' g corrects small-sample bias.",
+    "aliases": [
+      "SMD",
+      "standardised mean difference",
+      "standardized mean difference"
+    ]
+  },
+  "OR": {
+    "short": "Odds ratio",
+    "long": "Ratio of the odds of an event in two groups; usually pooled on the log scale and distinct from a risk ratio.",
+    "aliases": [
+      "OR",
+      "odds ratio",
+      "odds ratios"
+    ]
+  },
+  "RR": {
+    "short": "Risk ratio",
+    "long": "Risk in one group divided by risk in another; one indicates equal risks.",
+    "aliases": [
+      "RR",
+      "risk ratio",
+      "relative risk",
+      "relative risks"
+    ]
+  },
+  "HR": {
+    "short": "Hazard ratio",
+    "long": "Ratio of instantaneous event rates among those still at risk; interpretation as one constant ratio assumes proportional hazards.",
+    "aliases": [
+      "HR",
+      "hazard ratio"
+    ]
+  },
+  "RD": {
+    "short": "Risk difference",
+    "long": "Risk in one group minus risk in another; zero means equal risks.",
+    "aliases": [
+      "RD",
+      "risk difference"
+    ]
+  },
+  "NMA": {
+    "short": "Network meta-analysis",
+    "long": "Combines direct and indirect comparisons of multiple interventions. Cochrane Handbook §11.1.",
+    "aliases": [
+      "NMA",
+      "network meta-analysis"
+    ]
+  },
+  "SUCRA": {
+    "short": "Surface under the cumulative ranking curve",
+    "long": "Summarizes ranking; consider effect sizes and uncertainty too. Cochrane Handbook §11.4.3.3.",
+    "aliases": [
+      "SUCRA"
+    ]
+  },
+  "POTH": {
+    "short": "Precision of treatment hierarchy",
+    "long": "Summarizes dispersion of treatment ranking scores; a flat ranking gives little separation, and the hierarchy should be interpreted with effect uncertainty."
+  },
+  "GRADE": {
+    "short": "Grading of Recommendations Assessment, Development and Evaluation",
+    "long": "Framework for rating certainty of evidence."
+  },
+  "CINeMA": {
+    "short": "Confidence in Network Meta-Analysis",
+    "long": "GRADE-aligned framework for rating certainty in NMA."
+  },
+  "ROB-2": {
+    "short": "Risk of Bias 2 (Cochrane RCT)",
+    "long": "Domain-based tool for assessing risk of bias in randomised trials."
+  },
+  "ROBINS-I": {
+    "short": "Risk of Bias in Non-randomised Studies of Interventions",
+    "long": "Cochrane tool for non-randomised interventional studies."
+  },
+  "QUADAS-2": {
+    "short": "Quality Assessment of Diagnostic Accuracy Studies 2",
+    "long": "Domain-based tool for risk of bias in diagnostic accuracy studies."
+  },
+  "AMSTAR-2": {
+    "short": "A MeaSurement Tool to Assess systematic Reviews 2",
+    "long": "16-item appraisal tool for systematic reviews."
+  },
+  "PRISMA": {
+    "short": "Preferred Reporting Items for Systematic Reviews and Meta-Analyses",
+    "long": "Reporting checklist + flow diagram for SRs/MAs."
+  },
+  "RoB-ME": {
+    "short": "Risk of Bias due to Missing Evidence (Cochrane Ch.13, 2024+)",
+    "long": "Per-MA reporting-bias tool; replaces funnel/Egger as the verdict."
+  },
+  "INSPECT-SR": {
+    "short": "INSPECT-SR (Cochrane Oct 2025)",
+    "long": "Trustworthiness assessment for primary trials in an SR."
+  },
+  "DOR": {
+    "short": "Diagnostic odds ratio",
+    "long": "Ratio of the positive to negative likelihood ratio; summarizes discrimination but does not separate sensitivity and specificity.",
+    "aliases": [
+      "DOR",
+      "diagnostic OR",
+      "diagnostic odds ratio"
+    ]
+  },
+  "SROC": {
+    "short": "Summary ROC curve",
+    "long": "Summarizes the sensitivity–false-positive-rate relationship across studies under a diagnostic model; not necessarily one achievable operating point.",
+    "aliases": [
+      "SROC"
+    ]
+  },
+  "HSROC": {
+    "short": "Hierarchical summary ROC model",
+    "long": "Models diagnostic accuracy, threshold and study heterogeneity; parameter definitions depend on the chosen formulation.",
+    "aliases": [
+      "HSROC"
+    ]
+  },
+  "TSA": {
+    "short": "Trial sequential analysis",
+    "long": "Sequential boundary method for meta-analysis with monitoring boundaries (O'Brien-Fleming)."
+  },
+  "MID": {
+    "short": "Minimal important difference",
+    "long": "Smallest change perceived as important by patients."
+  },
+  "MCID": {
+    "short": "Minimal clinically important difference",
+    "long": "Synonymous with MID; emphasises clinical meaningfulness."
+  },
+  "RMST": {
+    "short": "Restricted mean survival time",
+    "long": "Time-to-event summary up to a fixed horizon τ*; pool differences, not ratios."
+  },
+  "IPD": {
+    "short": "Individual patient data",
+    "long": "Trial-level participant-level dataset; gold standard for meta-analysis."
+  },
+  "ITT": {
+    "short": "Intention-to-treat",
+    "long": "Analysis principle: analyse participants as randomised."
+  },
+  "RCT": {
+    "short": "Randomised controlled trial",
+    "long": "Experimental design with random allocation to interventions."
+  },
+  "CrI": {
+    "short": "Credible interval",
+    "long": "Interval containing a stated posterior probability for a parameter, conditional on the data, prior and model."
+  },
+  "CI": {
+    "short": "Confidence interval",
+    "long": "An interval procedure with a stated long-run coverage rate under its assumptions; it does not assign a probability to the fixed true effect.",
+    "aliases": [
+      "CI",
+      "CIs",
+      "confidence interval",
+      "confidence intervals"
+    ]
+  },
+  "ESS": {
+    "short": "Effective sample size",
+    "long": "MCMC diagnostic. ESS < 400 per parameter → unreliable CrI."
+  },
+  "Rhat": {
+    "short": "Potential scale reduction (R̂)",
+    "long": "MCMC convergence diagnostic. R̂ > 1.01 → do not interpret."
+  },
+  "MAP": {
+    "short": "Meta-analytic-predictive prior",
+    "long": "Bayesian prior derived from historical trials (Neuenschwander 2010)."
+  },
+  "PETPEESE": {
+    "short": "PET–PEESE",
+    "long": "Conditionally uses PET or PEESE according to a specified test of the PET intercept; a sensitivity analysis, not a guarantee of bias removal.",
+    "aliases": [
+      "PET–PEESE",
+      "PET-PEESE"
+    ]
+  },
+  "GOSH": {
+    "short": "Graphical display of study heterogeneity",
+    "long": "Shows pooled estimates and heterogeneity over subsets; clusters suggest sensitivity patterns, not proof of distinct populations.",
+    "aliases": [
+      "GOSH",
+      "all-subset meta-analysis"
+    ]
+  },
+  "Egger": {
+    "short": "Egger's test",
+    "long": "Regression test for small-study effects; not proof of publication bias. Cochrane Handbook §13.3.4.4.",
+    "aliases": [
+      "Egger",
+      "Egger's test",
+      "Egger test"
+    ]
+  },
+  "Peters": {
+    "short": "Peters' test",
+    "long": "A small-study-effect regression test for binary outcomes. Cochrane Handbook §13.3.4.4.",
+    "aliases": [
+      "Peters",
+      "Peters' test"
+    ]
+  },
+  "Copas": {
+    "short": "Copas selection model",
+    "long": "Sensitivity model for selective study availability; conclusions depend on selection assumptions usually not identifiable from the observed studies alone."
+  },
+  "TrimFill": {
+    "short": "Trim-and-fill",
+    "long": "Imputes studies to restore funnel symmetry; a sensitivity analysis relying on strong assumptions. Cochrane Handbook §13.3.4.5.",
+    "aliases": [
+      "trim-and-fill",
+      "trim and fill"
+    ]
+  },
+  "Bucher": {
+    "short": "Bucher indirect comparison",
+    "long": "Indirect treatment effect via a common comparator."
+  },
+  "PICO": {
+    "short": "Population, Intervention, Comparator, Outcome",
+    "long": "Question framework for systematic reviews."
+  },
+  "EBM": {
+    "short": "Evidence-based medicine",
+    "long": "Clinical practice informed by best available research evidence."
+  },
+  "PROSPERO": {
+    "short": "PROSPERO",
+    "long": "International prospective register of systematic reviews."
+  },
+  "Cochrane": {
+    "short": "Cochrane Collaboration",
+    "long": "International network producing systematic reviews of healthcare interventions."
+  },
+  "Schoenfeld": {
+    "short": "Schoenfeld residuals test",
+    "long": "Proportional-hazards diagnostic. If rejected, single HR is misleading."
+  },
+  "Guyot": {
+    "short": "Guyot reconstruction",
+    "long": "Algorithm to reconstruct IPD from a Kaplan-Meier curve."
+  },
+  "Fragility": {
+    "short": "Fragility index",
+    "long": "Number of event-status changes required to cross a specified significance threshold under the stated algorithm; depends on the model and permitted changes.",
+    "aliases": [
+      "fragility index",
+      "FI"
+    ]
+  },
+  "NPD": {
+    "short": "Not positive definite",
+    "long": "Covariance-matrix pathology. Fix with nearPD() (Higham), not eigenvalue clamping."
+  },
+  "Clopper": {
+    "short": "Clopper–Pearson interval",
+    "long": "Binomial confidence interval obtained by inverting exact tests; coverage is at least nominal under the binomial model and can be conservative.",
+    "aliases": [
+      "Clopper",
+      "Clopper-Pearson",
+      "Clopper–Pearson"
+    ]
+  },
+  "Clopper-Pearson": {
+    "short": "Clopper–Pearson interval",
+    "long": "Binomial confidence interval obtained by inverting exact tests; coverage is at least nominal under the binomial model and can be conservative."
+  },
+  "TP": {
+    "short": "True positive",
+    "long": "Diseased individuals correctly classified as test-positive (cell a of the 2×2 table)."
+  },
+  "FP": {
+    "short": "False positive",
+    "long": "Non-diseased individuals incorrectly classified as test-positive (cell b)."
+  },
+  "FN": {
+    "short": "False negative",
+    "long": "Diseased individuals incorrectly classified as test-negative (cell c)."
+  },
+  "TN": {
+    "short": "True negative",
+    "long": "Non-diseased individuals correctly classified as test-negative (cell d)."
+  },
+  "Se": {
+    "short": "Sensitivity",
+    "long": "Proportion with the target condition correctly identified as test-positive: TP/(TP+FN).",
+    "aliases": [
+      "Se",
+      "sensitivity"
+    ]
+  },
+  "Sp": {
+    "short": "Specificity",
+    "long": "Proportion without the target condition correctly identified as test-negative: TN/(TN+FP).",
+    "aliases": [
+      "Sp",
+      "specificity"
+    ]
+  },
+  "FPR": {
+    "short": "False-positive rate",
+    "long": "Proportion without the target condition who test positive: FP/(FP+TN), equal to 1−specificity.",
+    "aliases": [
+      "FPR",
+      "false-positive rate"
+    ]
+  },
+  "ROC": {
+    "short": "Receiver operating characteristic",
+    "long": "Curve of sensitivity vs 1 − specificity across decision thresholds."
+  },
+  "OLS": {
+    "short": "Ordinary least squares",
+    "long": "Linear-regression fit minimising squared residuals; used for the Moses-Littenberg SROC line."
+  },
+  "DTA": {
+    "short": "Diagnostic test accuracy",
+    "long": "Describes how well a test distinguishes those with and without a target condition.",
+    "aliases": [
+      "DTA",
+      "diagnostic test accuracy"
+    ]
+  },
+  "Bayesian": {
+    "short": "Bayesian inference",
+    "long": "Inference framework combining prior beliefs with data via Bayes' theorem."
+  },
+  "Frequentist": {
+    "short": "Frequentist inference",
+    "long": "Inference framework based on long-run sampling distributions."
+  },
+  "Funnel": {
+    "short": "Funnel plot",
+    "long": "Plots effects against precision or study size; asymmetry has several possible causes besides missing results. Cochrane Handbook §13.3.4.2.",
+    "aliases": [
+      "funnel",
+      "funnel plot"
+    ]
+  },
+  "Forest": {
+    "short": "Forest plot",
+    "long": "Displays study estimates and uncertainty intervals, often alongside a pooled estimate.",
+    "aliases": [
+      "forest",
+      "forest plot"
+    ]
+  },
+  "Network": {
+    "short": "Treatment network",
+    "long": "Treatments linked by available direct comparisons. Cochrane Handbook §11.1.",
+    "aliases": [
+      "network graph",
+      "treatment network"
+    ]
+  },
+  "Indirect": {
+    "short": "Indirect evidence",
+    "long": "Comparison through other network interventions. Cochrane Handbook §11.1.",
+    "aliases": [
+      "Indirect",
+      "indirect evidence",
+      "indirect comparison"
+    ]
+  },
+  "MultiArm": {
+    "short": "Multi-arm study",
+    "long": "A study comparing more than two interventions; estimates sharing a comparator are dependent.",
+    "aliases": [
+      "multi-arm",
+      "multi-arm trial"
+    ]
+  },
+  "Subgroup": {
+    "short": "Subgroup analysis",
+    "long": "Compares effects across study groups. Cochrane Handbook §10.11.2.",
+    "aliases": [
+      "subgroup",
+      "subgroup analysis"
+    ]
+  },
+  "Sensitivity": {
+    "short": "Sensitivity analysis",
+    "long": "Repeats an analysis using alternative assumptions or choices to assess how much the conclusions depend on them."
+  },
+  "Cumulative": {
+    "short": "Cumulative meta-analysis",
+    "long": "Updates a pooled estimate as studies enter in a specified order; repeated looks need care when interpreting significance.",
+    "aliases": [
+      "cumulative meta-analysis",
+      "cumulative MA",
+      "cumulative"
+    ]
+  },
+  "Influence": {
+    "short": "Influence analysis",
+    "long": "Examines how fitted results change when a study is removed or perturbed.",
+    "aliases": [
+      "influence",
+      "influence analysis"
+    ]
+  },
+  "Heterogeneity": {
+    "short": "Heterogeneity",
+    "long": "Variation in underlying effects across studies, which may reflect differences in populations, methods or interventions.",
+    "aliases": [
+      "heterogeneity"
+    ]
+  },
+  "Bias": {
+    "short": "Bias",
+    "long": "Systematic deviation from the truth. Distinguish from random error."
+  },
+  "Power": {
+    "short": "Statistical power",
+    "long": "Probability of detecting an effect when one exists."
+  },
+  "Type1": {
+    "short": "Type I error",
+    "long": "False positive: rejecting a true null hypothesis."
+  },
+  "Type2": {
+    "short": "Type II error",
+    "long": "False negative: failing to reject a false null hypothesis."
+  },
+  "Effect": {
+    "short": "Effect size",
+    "long": "A numerical measure of a difference or association, such as a risk ratio or mean difference.",
+    "aliases": [
+      "effect",
+      "effect size",
+      "effect sizes"
+    ]
+  },
+  "Pooled": {
+    "short": "Pooled estimate",
+    "long": "A model-based combination of study estimates; its interpretation depends on the effect scale and pooling assumptions.",
+    "aliases": [
+      "pooled",
+      "pooled estimate",
+      "pooled estimates",
+      "pooled effect"
+    ]
+  },
+  "MetaRegression": {
+    "short": "Meta-regression",
+    "long": "Relates study effects to study characteristics; associations need not be causal. Cochrane Handbook §10.11.4.",
+    "aliases": [
+      "meta-regression"
+    ]
+  },
+  "Mixed": {
+    "short": "Mixed-effects meta-regression",
+    "long": "Random-effects MA + covariates; default in metafor."
+  },
+  "ConfounderAdjustment": {
+    "short": "Confounder adjustment",
+    "long": "Statistical control for confounding variables."
+  },
+  "Calibration": {
+    "short": "Calibration (prediction model)",
+    "long": "Agreement between predicted and observed risks."
+  },
+  "Discrimination": {
+    "short": "Discrimination (prediction model)",
+    "long": "Ability to rank cases above non-cases (AUC)."
+  },
+  "NetBenefit": {
+    "short": "Net benefit (decision curve)",
+    "long": "Decision-analytic summary of clinical utility across thresholds."
+  },
+  "QALY": {
+    "short": "Quality-adjusted life year",
+    "long": "Health-economic outcome combining length + quality of life."
+  },
+  "ICER": {
+    "short": "Incremental cost-effectiveness ratio",
+    "long": "Cost per QALY gained between interventions."
+  },
+  "Q": {
+    "short": "Cochran's Q",
+    "long": "Tests variation against sampling error; low power with few studies. Cochrane Handbook §10.10.2.",
+    "aliases": [
+      "Q",
+      "Cochran Q",
+      "Cochran's Q",
+      "Q-statistic"
+    ]
+  },
+  "FE": {
+    "short": "Fixed-effect model",
+    "long": "Assumes one underlying effect. Cochrane Handbook §10.10.4.1.",
+    "aliases": [
+      "FE",
+      "fixed-effect",
+      "fixed effect",
+      "common effect",
+      "common-effect"
+    ]
+  },
+  "RE": {
+    "short": "Random-effects model",
+    "long": "Models a distribution of underlying effects. Cochrane Handbook §10.10.4.1.",
+    "aliases": [
+      "RE",
+      "random-effects",
+      "random effects"
+    ]
+  },
+  "SE": {
+    "short": "Standard error",
+    "long": "Estimated sampling variability of an estimate; a smaller SE means greater precision under the model.",
+    "aliases": [
+      "SE",
+      "standard error",
+      "standard errors"
+    ]
+  },
+  "SD": {
+    "short": "Standard deviation",
+    "long": "Describes how much individual values vary around their mean; distinct from the standard error of that mean.",
+    "aliases": [
+      "SD",
+      "standard deviation"
+    ]
+  },
+  "PValue": {
+    "short": "P-value",
+    "long": "Probability, assuming the null model, of a result at least as extreme as observed; not the probability that the null is true.",
+    "aliases": [
+      "p",
+      "p-value",
+      "p-values",
+      "P value",
+      "p value"
+    ]
+  },
+  "DF": {
+    "short": "Degrees of freedom",
+    "long": "Amount of independent information used to estimate a variance or determine a reference distribution.",
+    "aliases": [
+      "df",
+      "degrees of freedom"
+    ]
+  },
+  "ZTest": {
+    "short": "Normal z statistic",
+    "long": "An estimate minus its null value divided by its standard error, compared with a standard normal distribution.",
+    "aliases": [
+      "z",
+      "z-test",
+      "Normal",
+      "normal approximation"
+    ]
+  },
+  "TTest": {
+    "short": "Student's t statistic",
+    "long": "A standardized estimate compared with a t distribution using stated degrees of freedom, which affect tail probabilities.",
+    "aliases": [
+      "t",
+      "Student-t",
+      "Student's t",
+      "t distribution",
+      "t-test"
+    ]
+  },
+  "Chi2": {
+    "short": "Chi-squared statistic",
+    "long": "A nonnegative statistic compared with a chi-squared distribution with stated degrees of freedom for tests such as heterogeneity or association.",
+    "aliases": [
+      "χ²",
+      "chi-square",
+      "chi-squared"
+    ]
+  },
+  "K": {
+    "short": "Number of studies",
+    "long": "Number of studies contributing to an analysis; with dependent effects, the number of independent study clusters matters.",
+    "aliases": [
+      "k"
+    ]
+  },
+  "N": {
+    "short": "Sample size",
+    "long": "Number of participants or observations; for incidence-rate data the denominator may instead be person-time.",
+    "aliases": [
+      "n",
+      "sample size"
+    ]
+  },
+  "Weight": {
+    "short": "Study weight",
+    "long": "A study's contribution to a pooled estimate, usually determined by precision and the chosen model.",
+    "aliases": [
+      "weight",
+      "weights",
+      "Weight %"
+    ]
+  },
+  "IV": {
+    "short": "Inverse-variance weighting",
+    "long": "Combines estimates using weights inversely related to their variance, adding heterogeneity variance in a random-effects model.",
+    "aliases": [
+      "inverse-variance",
+      "inverse variance",
+      "IV"
+    ]
+  },
+  "Harbord": {
+    "short": "Harbord's test",
+    "long": "A score-based regression test for small-study effects with binary outcomes. Cochrane Handbook §13.3.4.4.",
+    "aliases": [
+      "Harbord",
+      "Harbord's test"
+    ]
+  },
+  "Begg": {
+    "short": "Begg's rank correlation test",
+    "long": "Checks association between effects and their variances using ranks; a nonsignificant result does not exclude small-study effects.",
+    "aliases": [
+      "Begg",
+      "Begg's test",
+      "Begg-Mazumdar"
+    ]
+  },
+  "SmallStudy": {
+    "short": "Small-study effects",
+    "long": "Differences between smaller and larger studies, potentially caused by bias, heterogeneity or chance. Cochrane Handbook §13.3.4.",
+    "aliases": [
+      "small-study effects",
+      "small-study-effect",
+      "small-study bias"
+    ]
+  },
+  "PublicationBias": {
+    "short": "Publication bias",
+    "long": "Selective publication related to findings can distort the available evidence. Cochrane Handbook §13.1.",
+    "aliases": [
+      "publication bias",
+      "pub bias"
+    ]
+  },
+  "PET": {
+    "short": "Precision-effect test",
+    "long": "Regresses effects on standard errors using inverse-variance weights; the intercept extrapolates to zero sampling error and may be unstable.",
+    "aliases": [
+      "PET"
+    ]
+  },
+  "PEESE": {
+    "short": "Precision-effect estimate with standard error",
+    "long": "Regresses effects on sampling variances; the intercept extrapolates to zero sampling variance and depends on model assumptions.",
+    "aliases": [
+      "PEESE"
+    ]
+  },
+  "Limit": {
+    "short": "Limit meta-analysis",
+    "long": "Extrapolates a model relating effect and precision to zero sampling error; the limit estimate depends on model assumptions and available study sizes.",
+    "aliases": [
+      "limit estimate",
+      "limit meta-analysis",
+      "limit",
+      "Limit without study"
+    ]
+  },
+  "Selection": {
+    "short": "Selection model",
+    "long": "Models how availability of study results depends on findings; adjusted estimates depend on unverifiable selection assumptions.",
+    "aliases": [
+      "selection model",
+      "Vevea-Hedges"
+    ]
+  },
+  "LogRR": {
+    "short": "Log risk ratio",
+    "long": "Natural logarithm of a risk ratio; zero means equal risks and exponentiating returns the risk ratio.",
+    "aliases": [
+      "logRR",
+      "log RR",
+      "log risk ratio"
+    ]
+  },
+  "LogOR": {
+    "short": "Log odds ratio",
+    "long": "Natural logarithm of an odds ratio; zero means equal odds and exponentiating returns the odds ratio.",
+    "aliases": [
+      "logOR",
+      "log OR",
+      "log-OR"
+    ]
+  },
+  "IRR": {
+    "short": "Incidence rate ratio",
+    "long": "Ratio of event rates per person-time; distinct from a ratio of cumulative risks.",
+    "aliases": [
+      "IRR",
+      "rate ratio",
+      "incidence rate ratio"
+    ]
+  },
+  "MD": {
+    "short": "Mean difference",
+    "long": "Difference between group means on the same outcome scale.",
+    "aliases": [
+      "MD",
+      "mean difference"
+    ]
+  },
+  "Proportion": {
+    "short": "Proportion",
+    "long": "Number with an event divided by the total observed, between zero and one; here p denotes a proportion, not a test p-value.",
+    "aliases": [
+      "proportion",
+      "events/n"
+    ]
+  },
+  "Logit": {
+    "short": "Logit transformation",
+    "long": "Logarithm of p/(1−p), mapping a probability between zero and one to the real line; undefined at exactly zero or one.",
+    "aliases": [
+      "logit",
+      "Logit"
+    ]
+  },
+  "FreemanTukey": {
+    "short": "Freeman–Tukey transformation",
+    "long": "Double-arcsine transformation for pooling proportions; back-transformed estimates depend on the sample-size convention and can be hard to interpret.",
+    "aliases": [
+      "Freeman-Tukey",
+      "Freeman–Tukey",
+      "double arcsine"
+    ]
+  },
+  "Raw": {
+    "short": "Untransformed proportion",
+    "long": "Pools proportions on their original scale; normal approximations may perform poorly near zero or one.",
+    "aliases": [
+      "Raw (no transform)",
+      "raw proportion"
+    ]
+  },
+  "GLMM": {
+    "short": "Generalized linear mixed model",
+    "long": "Uses a link function and random effects; a binomial-normal model directly models event counts with normally distributed random effects.",
+    "aliases": [
+      "GLMM",
+      "Binomial-normal",
+      "binomial-normal"
+    ]
+  },
+  "Continuity": {
+    "short": "Continuity correction",
+    "long": "Adds a small count when zero cells prevent a calculation; the choice can affect estimates for sparse data.",
+    "aliases": [
+      "continuity correction",
+      "zero cells",
+      "zero cell"
+    ]
+  },
+  "Wilson": {
+    "short": "Wilson interval",
+    "long": "A confidence interval for a binomial proportion obtained by inverting a score test, often better behaved than a simple normal interval.",
+    "aliases": [
+      "Wilson",
+      "Wilson interval"
+    ]
+  },
+  "ML": {
+    "short": "Maximum likelihood",
+    "long": "Estimates parameters by maximizing the likelihood of the observed data under the model.",
+    "aliases": [
+      "ML",
+      "maximum likelihood"
+    ]
+  },
+  "Moments": {
+    "short": "Method of moments",
+    "long": "Estimates parameters by matching observed summary quantities to their expected values.",
+    "aliases": [
+      "method of moments",
+      "MM",
+      "method-of-moments"
+    ]
+  },
+  "VarianceComponents": {
+    "short": "Variance components",
+    "long": "Separate sources of variance in a model; in a method menu this names a moment-based estimator of those components.",
+    "aliases": [
+      "variance components",
+      "VC"
+    ]
+  },
+  "EB": {
+    "short": "Empirical Bayes estimator",
+    "long": "Estimates a distribution's parameters from the studies themselves; the heterogeneity estimator here is equivalent to Paule–Mandel.",
+    "aliases": [
+      "EB",
+      "Empirical Bayes"
+    ]
+  },
+  "SJ": {
+    "short": "Sidik–Jonkman estimator",
+    "long": "A two-step estimator of between-study variance using standardized study effects; results can differ from other heterogeneity estimators.",
+    "aliases": [
+      "SJ",
+      "Sidik-Jonkman",
+      "Sidik–Jonkman"
+    ]
+  },
+  "HE": {
+    "short": "Hedges estimator",
+    "long": "A moment-based estimator of between-study variance using unweighted variability of study estimates.",
+    "aliases": [
+      "HE",
+      "Hedges"
+    ]
+  },
+  "HS": {
+    "short": "Hunter–Schmidt estimator",
+    "long": "A moment-based estimator of between-study variance using precision-weighted variation of study estimates.",
+    "aliases": [
+      "HS",
+      "Hunter-Schmidt",
+      "Hunter–Schmidt"
+    ]
+  },
+  "Tau": {
+    "short": "Between-study standard deviation",
+    "long": "Square root of τ², on the same analysis scale as the underlying effects.",
+    "aliases": [
+      "τ",
+      "tau"
+    ]
+  },
+  "H2": {
+    "short": "H-squared",
+    "long": "Ratio of Q to its degrees of freedom, summarizing dispersion relative to that expected from sampling alone.",
+    "aliases": [
+      "H²",
+      "H2"
+    ]
+  },
+  "QProfile": {
+    "short": "Q-profile interval",
+    "long": "Interval for heterogeneity variance obtained by inverting a generalized Q statistic under the model.",
+    "aliases": [
+      "Q-profile"
+    ]
+  },
+  "Baujat": {
+    "short": "Baujat plot",
+    "long": "Plots a measure of heterogeneity contribution against influence on the pooled result to highlight studies for investigation.",
+    "aliases": [
+      "Baujat",
+      "Baujat plot"
+    ]
+  },
+  "LOO": {
+    "short": "Leave-one-out analysis",
+    "long": "Repeats the analysis with each study omitted to show sensitivity to individual studies; does not justify automatic exclusion.",
+    "aliases": [
+      "leave-one-out",
+      "leave-one-study-out",
+      "LOO"
+    ]
+  },
+  "Residual": {
+    "short": "Residual",
+    "long": "Difference between an observed study estimate and the value predicted by the model.",
+    "aliases": [
+      "residual",
+      "residuals"
+    ]
+  },
+  "StudentResidual": {
+    "short": "Standardized residual",
+    "long": "Residual scaled by an estimated standard deviation to identify observations poorly predicted by the model.",
+    "aliases": [
+      "z_i",
+      "standardized residual",
+      "studentized residual"
+    ]
+  },
+  "Hat": {
+    "short": "Leverage (hat value)",
+    "long": "Measures how much an observation can influence its fitted value, based on its weight and position in the model.",
+    "aliases": [
+      "Hat",
+      "hat",
+      "leverage"
+    ]
+  },
+  "CookD": {
+    "short": "Cook's distance",
+    "long": "Summarizes the change in fitted coefficients when a study is omitted; large values suggest influence, not necessarily error.",
+    "aliases": [
+      "Cook's D",
+      "Cook’s D",
+      "Cook's distance"
+    ]
+  },
+  "DFFITS": {
+    "short": "DFFITS",
+    "long": "Standardized change in a study's fitted value when that study is omitted.",
+    "aliases": [
+      "DFFITS"
+    ]
+  },
+  "DFBETAS": {
+    "short": "DFBETAS",
+    "long": "Standardized changes in model coefficients when a study is omitted.",
+    "aliases": [
+      "DFBETAS"
+    ]
+  },
+  "CovRatio": {
+    "short": "Covariance ratio",
+    "long": "Ratio of coefficient covariance determinants with and without a study, indicating its effect on precision.",
+    "aliases": [
+      "Cov-ratio",
+      "cov-ratio",
+      "covariance ratio"
+    ]
+  },
+  "Median": {
+    "short": "Median",
+    "long": "Middle of an ordered distribution, with half the observations on either side.",
+    "aliases": [
+      "median"
+    ]
+  },
+  "QBetween": {
+    "short": "Between-subgroup Q",
+    "long": "Tests whether subgroup pooled effects differ beyond estimated sampling uncertainty; does not establish a causal subgroup effect.",
+    "aliases": [
+      "Q_bw",
+      "between-group Q"
+    ]
+  },
+  "R2": {
+    "short": "Heterogeneity explained (R-squared)",
+    "long": "Estimated proportional reduction in residual between-study variance after including moderators; can be unstable with few studies.",
+    "aliases": [
+      "R²",
+      "R2"
+    ]
+  },
+  "QE": {
+    "short": "Residual heterogeneity Q",
+    "long": "Tests unexplained variation after accounting for moderators against expected sampling variation.",
+    "aliases": [
+      "Q_E",
+      "QE",
+      "Qₑ"
+    ]
+  },
+  "RSS": {
+    "short": "Residual sum of squares",
+    "long": "Sum of squared residuals, with weights where specified; used to estimate dispersion or assess fit.",
+    "aliases": [
+      "RSS"
+    ]
+  },
+  "Moderator": {
+    "short": "Moderator or covariate",
+    "long": "A study characteristic included to explain effect differences; study-level associations may differ from individual-level associations.",
+    "aliases": [
+      "moderator",
+      "moderators",
+      "covariate",
+      "covariates",
+      "predictor",
+      "predictors"
+    ]
+  },
+  "Intercept": {
+    "short": "Regression intercept",
+    "long": "Predicted effect when all predictors equal zero or their chosen centered reference values.",
+    "aliases": [
+      "intercept",
+      "β₀"
+    ]
+  },
+  "Slope": {
+    "short": "Regression slope",
+    "long": "Change in the predicted effect per unit increase in a predictor, holding other predictors constant.",
+    "aliases": [
+      "slope",
+      "β₁"
+    ]
+  },
+  "Coefficient": {
+    "short": "Regression coefficient",
+    "long": "Estimated change associated with a model term on the analysis scale; interpretation depends on coding and other terms.",
+    "aliases": [
+      "coefficient",
+      "coefficients",
+      "β̂"
+    ]
+  },
+  "Interaction": {
+    "short": "Interaction",
+    "long": "Allows the effect of one predictor or component to depend on another; meaning depends on the analysis scale.",
+    "aliases": [
+      "interaction",
+      "interactions",
+      "interaction terms"
+    ]
+  },
+  "Permutation": {
+    "short": "Permutation test",
+    "long": "Compares the observed statistic with rearranged data under an exchangeability assumption; simulated permutations add Monte Carlo error.",
+    "aliases": [
+      "permutation",
+      "permutation test"
+    ]
+  },
+  "LocationScale": {
+    "short": "Location-scale model",
+    "long": "Models both the mean effect and residual heterogeneity as functions of covariates.",
+    "aliases": [
+      "location-scale",
+      "LS"
+    ]
+  },
+  "MultiLevel": {
+    "short": "Multilevel meta-analysis",
+    "long": "Models effects nested within studies, allowing variation between studies and between effects within a study.",
+    "aliases": [
+      "multi-level",
+      "multilevel",
+      "3-level",
+      "three-level"
+    ]
+  },
+  "WithinVariance": {
+    "short": "Within-study effect variance",
+    "long": "Variation in underlying effects within a study in a multilevel model, distinct from sampling error and between-study variance.",
+    "aliases": [
+      "τ²_within",
+      "within-study variance"
+    ]
+  },
+  "StudyVariance": {
+    "short": "Between-study variance component",
+    "long": "Variation between study-level underlying effects in a multilevel model.",
+    "aliases": [
+      "τ²_study"
+    ]
+  },
+  "RVE": {
+    "short": "Robust variance estimation",
+    "long": "Allows dependent effect estimates within independent study clusters; reliable inference still needs adequate independent clusters and model assumptions.",
+    "aliases": [
+      "RVE",
+      "robust variance estimation"
+    ]
+  },
+  "CR2": {
+    "short": "Bias-reduced cluster-robust variance",
+    "long": "A small-sample adjustment to cluster-robust standard errors, used with suitable degrees of freedom; it cannot guarantee reliable inference with very few clusters.",
+    "aliases": [
+      "CR2",
+      "cluster-robust"
+    ]
+  },
+  "Satterthwaite": {
+    "short": "Satterthwaite degrees of freedom",
+    "long": "Approximates a t reference distribution for an estimated variance; degrees of freedom can differ by coefficient and be much smaller than the number of studies.",
+    "aliases": [
+      "Satterthwaite"
+    ]
+  },
+  "Rho": {
+    "short": "Correlation",
+    "long": "Describes the strength and direction of a linear association, from −1 to 1; does not establish causation.",
+    "aliases": [
+      "ρ"
+    ]
+  },
+  "WorkingRho": {
+    "short": "Working correlation",
+    "long": "Assumed correlation among effect estimates within a study used to form weights; sensitivity checks assess dependence on this choice.",
+    "aliases": [
+      "working correlation",
+      "CORR"
+    ]
+  },
+  "Kappa": {
+    "short": "Condition number",
+    "long": "Measures sensitivity of a matrix calculation to small changes; large values indicate potential numerical instability.",
+    "aliases": [
+      "κ₂",
+      "condition number",
+      "ill-conditioned"
+    ]
+  },
+  "Centering": {
+    "short": "Centering predictors",
+    "long": "Subtracts a reference value, often the mean, from each predictor to change the intercept's interpretation.",
+    "aliases": [
+      "Centre predictors",
+      "centering"
+    ]
+  },
+  "FisherZ": {
+    "short": "Fisher z transformation",
+    "long": "Transforms a correlation r using atanh(r); approximate sampling variance is 1/(n−3) under the usual correlation model.",
+    "aliases": [
+      "Fisher z",
+      "Fisher’s z",
+      "Fisher's z"
+    ]
+  },
+  "Correlation": {
+    "short": "Pearson correlation",
+    "long": "Measures linear association between two variables from −1 to 1; pooling often uses Fisher z before back-transformation.",
+    "aliases": [
+      "r",
+      "Pearson correlation",
+      "correlation"
+    ]
+  },
+  "Covariance": {
+    "short": "Covariance",
+    "long": "Measures how two quantities vary together; covariance matrices include variances on the diagonal and covariances off the diagonal.",
+    "aliases": [
+      "covariance",
+      "covariances",
+      "cov",
+      "covariance matrix"
+    ]
+  },
+  "WithinCov": {
+    "short": "Within-study covariance",
+    "long": "Sampling dependence between estimates from one study, used to avoid treating correlated estimates as independent.",
+    "aliases": [
+      "within-study covariance"
+    ]
+  },
+  "BetweenCov": {
+    "short": "Between-study covariance",
+    "long": "How the underlying effects for different outcomes vary together across studies.",
+    "aliases": [
+      "between-study covariance",
+      "Ψ"
+    ]
+  },
+  "Multivariate": {
+    "short": "Multivariate meta-analysis",
+    "long": "Jointly pools correlated outcomes using their covariance structure; results depend on within- and between-study covariance assumptions.",
+    "aliases": [
+      "multivariate",
+      "multiple-outcome",
+      "multivariate meta-analysis"
+    ]
+  },
+  "Univariate": {
+    "short": "Univariate meta-analysis",
+    "long": "Pools one outcome at a time without modelling dependence with other outcomes.",
+    "aliases": [
+      "univariate"
+    ]
+  },
+  "Direct": {
+    "short": "Direct evidence",
+    "long": "Studies comparing the interventions head to head. Cochrane Handbook §11.1.",
+    "aliases": [
+      "Direct",
+      "direct evidence"
+    ]
+  },
+  "Inconsistency": {
+    "short": "Network inconsistency",
+    "long": "Disagreement between evidence sources; nonsignificance does not prove agreement. Cochrane Handbook §11.4.4.",
+    "aliases": [
+      "inconsistency",
+      "incoherence"
+    ]
+  },
+  "NodeSplit": {
+    "short": "Node-splitting",
+    "long": "Compares direct and indirect evidence for the same contrast. Cochrane Handbook §11.4.4.2.",
+    "aliases": [
+      "node-split",
+      "node-splitting",
+      "net-split",
+      "SIDE"
+    ]
+  },
+  "DesignTreatment": {
+    "short": "Design-by-treatment test",
+    "long": "Global assessment of disagreement across network designs. Cochrane Handbook §11.4.4.3.",
+    "aliases": [
+      "design-by-treatment",
+      "DBT"
+    ]
+  },
+  "Transitivity": {
+    "short": "Transitivity",
+    "long": "Comparability of effect modifiers across network comparisons. Cochrane Handbook §11.2.3.1.",
+    "aliases": [
+      "transitivity"
+    ]
+  },
+  "PScore": {
+    "short": "P-score",
+    "long": "Frequentist ranking summary; not a probability of being best. Cochrane Handbook §11.4.3.3.",
+    "aliases": [
+      "P-score",
+      "P-scores"
+    ]
+  },
+  "PBest": {
+    "short": "Probability of being best",
+    "long": "Model-based probability of first rank. Cochrane Handbook §11.4.3.3.",
+    "aliases": [
+      "P(best)"
+    ]
+  },
+  "League": {
+    "short": "League table",
+    "long": "Matrix of pairwise intervention estimates. Cochrane Handbook §11.6.",
+    "aliases": [
+      "league table"
+    ]
+  },
+  "Contrast": {
+    "short": "Treatment contrast",
+    "long": "Estimated difference or relative effect comparing two interventions on the analysis scale.",
+    "aliases": [
+      "contrast",
+      "contrasts"
+    ]
+  },
+  "Component": {
+    "short": "Component network meta-analysis",
+    "long": "Models interventions through their components; an additive model assumes component effects add on the chosen outcome scale.",
+    "aliases": [
+      "component NMA",
+      "component effects",
+      "component"
+    ]
+  },
+  "Additivity": {
+    "short": "Additive component model",
+    "long": "Assumes an intervention's effect equals the sum of its component effects on the specified scale.",
+    "aliases": [
+      "additive",
+      "additivity"
+    ]
+  },
+  "MH": {
+    "short": "Mantel–Haenszel method",
+    "long": "Combines binary-outcome tables across studies using stratified weights; the formula depends on the effect measure.",
+    "aliases": [
+      "MH",
+      "Mantel-Haenszel",
+      "Mantel–Haenszel"
+    ]
+  },
+  "Peto": {
+    "short": "Peto odds ratio",
+    "long": "Approximate odds-ratio method using observed minus expected events; performance can be poor with large effects or unequal group sizes.",
+    "aliases": [
+      "Peto",
+      "Peto OR"
+    ]
+  },
+  "CMH": {
+    "short": "Cochran–Mantel–Haenszel test",
+    "long": "Tests association in stratified binary tables; distinct from testing heterogeneity of study effects.",
+    "aliases": [
+      "Cochran-Mantel-Haenszel",
+      "CMH"
+    ]
+  },
+  "BreslowDay": {
+    "short": "Breslow–Day test",
+    "long": "Tests whether odds ratios vary across strata beyond sampling variation, conditional on a common-odds-ratio model.",
+    "aliases": [
+      "Breslow-Day",
+      "Breslow–Day"
+    ]
+  },
+  "Tarone": {
+    "short": "Tarone-adjusted test",
+    "long": "Adjustment to the Breslow–Day test of homogeneity of odds ratios.",
+    "aliases": [
+      "Tarone"
+    ]
+  },
+  "Labbe": {
+    "short": "L'Abbé plot",
+    "long": "Plots event risks in the two groups against one another to inspect differences among studies.",
+    "aliases": [
+      "L’Abbé",
+      "L'Abbé"
+    ]
+  },
+  "FragilityQuotient": {
+    "short": "Fragility quotient",
+    "long": "Fragility index divided by the sample-size denominator specified by the analysis.",
+    "aliases": [
+      "FQ",
+      "fragility quotient"
+    ]
+  },
+  "Bivariate": {
+    "short": "Bivariate diagnostic model",
+    "long": "Jointly models transformed sensitivity and specificity or false-positive rate, allowing correlated heterogeneity between studies.",
+    "aliases": [
+      "bivariate model",
+      "bivariate",
+      "Reitsma"
+    ]
+  },
+  "LRpos": {
+    "short": "Positive likelihood ratio",
+    "long": "Sensitivity divided by 1−specificity; multiplying pre-test odds by LR+ gives post-test odds after a positive result.",
+    "aliases": [
+      "LR+"
+    ]
+  },
+  "LRneg": {
+    "short": "Negative likelihood ratio",
+    "long": "(1−sensitivity) divided by specificity; multiplying pre-test odds by LR² gives post-test odds after a negative result.",
+    "aliases": [
+      "LR−",
+      "LR-"
+    ]
+  },
+  "LR": {
+    "short": "Diagnostic likelihood ratio",
+    "long": "Ratio relating test results in people with and without the condition, used to update pre-test odds.",
+    "aliases": [
+      "LR±",
+      "likelihood ratio"
+    ]
+  },
+  "AUC": {
+    "short": "Area under the ROC curve",
+    "long": "Summarizes discrimination across thresholds; partial AUC restricts the false-positive-rate range and requires that range to be specified.",
+    "aliases": [
+      "AUC",
+      "partial AUC"
+    ]
+  },
+  "Fagan": {
+    "short": "Fagan nomogram",
+    "long": "Converts pre-test probability to post-test probability using a diagnostic likelihood ratio.",
+    "aliases": [
+      "Fagan",
+      "Fagan nomogram"
+    ]
+  },
+  "Deeks": {
+    "short": "Deeks' test",
+    "long": "Regression test for small-study effects in diagnostic meta-analysis; asymmetry is not proof of publication bias.",
+    "aliases": [
+      "Deeks",
+      "Deeks' test"
+    ]
+  },
+  "Moses": {
+    "short": "Moses–Littenberg SROC",
+    "long": "Regression summary of diagnostic accuracy that does not fully model binomial sampling error and between-study variation.",
+    "aliases": [
+      "Moses",
+      "Moses–Littenberg",
+      "Moses-Littenberg"
+    ]
+  },
+  "Spearman": {
+    "short": "Spearman rank correlation",
+    "long": "Measures monotonic association using ranks; a diagnostic threshold association need not establish its cause.",
+    "aliases": [
+      "Spearman",
+      "Spearman ρ"
+    ]
+  },
+  "Accuracy": {
+    "short": "HSROC accuracy parameter",
+    "long": "Describes diagnostic discrimination; not the proportion of all tests correctly classified.",
+    "aliases": [
+      "Λ",
+      "Λ (accuracy)"
+    ]
+  },
+  "Threshold": {
+    "short": "Diagnostic threshold",
+    "long": "Decision boundary for a positive test, or its model parameter; changing it can trade sensitivity against specificity.",
+    "aliases": [
+      "Θ",
+      "threshold",
+      "Θ (threshold)"
+    ]
+  },
+  "Shape": {
+    "short": "HSROC shape parameter",
+    "long": "Controls asymmetry of the modeled summary ROC curve; interpretation depends on the HSROC parameterisation.",
+    "aliases": [
+      "β (shape)"
+    ]
+  },
+  "HSROCVariances": {
+    "short": "HSROC variance components",
+    "long": "Between-study variances in the model's threshold and accuracy parameters, distinct from sampling variance.",
+    "aliases": [
+      "σ²θ",
+      "σ²α"
+    ]
+  },
+  "LogLik": {
+    "short": "Log-likelihood",
+    "long": "Logarithm of the likelihood under a fitted model; comparisons require compatible data and likelihood conventions.",
+    "aliases": [
+      "log-likelihood",
+      "logLik",
+      "Log likelihood",
+      "log likelihood"
+    ]
+  },
+  "AIC": {
+    "short": "Akaike information criterion",
+    "long": "Balances likelihood fit against parameter count; smaller values favor a model among comparable fits, not proof of correctness.",
+    "aliases": [
+      "AIC"
+    ]
+  },
+  "AICc": {
+    "short": "Small-sample corrected AIC",
+    "long": "Adds a finite-sample penalty to AIC; valid comparisons require compatible likelihoods and data.",
+    "aliases": [
+      "AICc"
+    ]
+  },
+  "BIC": {
+    "short": "Bayesian information criterion",
+    "long": "Model comparison criterion with a sample-size-dependent complexity penalty; lower values favor a model among compatible fits.",
+    "aliases": [
+      "BIC"
+    ]
+  },
+  "LRT": {
+    "short": "Likelihood-ratio test",
+    "long": "Compares nested models through their likelihoods; the reference distribution needs care for variance parameters on a boundary.",
+    "aliases": [
+      "LRT",
+      "likelihood-ratio test",
+      "Likelihood-ratio statistic"
+    ]
+  },
+  "Wald": {
+    "short": "Wald test",
+    "long": "Compares estimated coefficients with null values using their estimated covariance; relies on the reference approximation.",
+    "aliases": [
+      "Wald",
+      "Wald test"
+    ]
+  },
+  "DoseResponse": {
+    "short": "Dose-response meta-analysis",
+    "long": "Pools the exposure dose–outcome relationship, allowing dependence among estimates from one study.",
+    "aliases": [
+      "dose-response",
+      "dose-response meta-analysis"
+    ]
+  },
+  "Linear": {
+    "short": "Linear trend",
+    "long": "Assumes constant change on the analysis scale per unit increase in dose or a predictor.",
+    "aliases": [
+      "linear trend"
+    ]
+  },
+  "Quadratic": {
+    "short": "Quadratic curve",
+    "long": "Includes dose and squared dose terms, allowing curvature determined by their coefficients.",
+    "aliases": [
+      "quadratic"
+    ]
+  },
+  "Spline": {
+    "short": "Restricted cubic spline",
+    "long": "Smooth piecewise cubic curve joined at knots and constrained to be linear in the tails.",
+    "aliases": [
+      "restricted cubic spline",
+      "spline"
+    ]
+  },
+  "Knots": {
+    "short": "Spline knots",
+    "long": "Dose values where spline pieces join; their number and locations affect flexibility.",
+    "aliases": [
+      "knots",
+      "knot doses"
+    ]
+  },
+  "GL": {
+    "short": "Greenland–Longnecker method",
+    "long": "Reconstructs within-study covariance between dose-category log relative risks sharing a reference group, using counts and reported estimates.",
+    "aliases": [
+      "Greenland–Longnecker",
+      "Greenland-Longnecker"
+    ]
+  },
+  "Hamling": {
+    "short": "Hamling method",
+    "long": "Reconstructs effective counts to approximate covariance of adjusted relative-risk estimates sharing a reference category.",
+    "aliases": [
+      "Hamling"
+    ]
+  },
+  "TwoStage": {
+    "short": "Two-stage estimation",
+    "long": "Fits a dose-response model within each study, then pools the coefficients with their covariance matrices.",
+    "aliases": [
+      "two-stage"
+    ]
+  },
+  "OneStage": {
+    "short": "One-stage estimation",
+    "long": "Fits the dose-response relationship across studies in one combined model.",
+    "aliases": [
+      "one-stage"
+    ]
+  },
+  "ReferenceDose": {
+    "short": "Reference dose",
+    "long": "Dose against which relative risks are calculated; changing it changes the comparison, not the fitted curve.",
+    "aliases": [
+      "reference dose",
+      "reference level"
+    ]
+  },
+  "Deviance": {
+    "short": "Deviance",
+    "long": "Likelihood-based measure of lack of fit relative to a reference model; its meaning and reference distribution depend on the model.",
+    "aliases": [
+      "deviance",
+      "goodness of fit"
+    ]
+  },
+  "Determination": {
+    "short": "Coefficient of determination",
+    "long": "Fraction of observed variability explained by regression; adjusted R² accounts for model size and differs from heterogeneity-explained R².",
+    "aliases": [
+      "coefficient of determination",
+      "R² (adjusted)"
+    ]
+  },
+  "VarianceRatio": {
+    "short": "Variance ratio",
+    "long": "Ratio of estimated variances, here comparing precision between univariate and multivariate fits.",
+    "aliases": [
+      "Var ratio"
+    ]
+  },
+  "CaseControl": {
+    "short": "Case-control study",
+    "long": "Samples people according to outcome status and compares prior exposure; odds ratios need appropriate interpretation.",
+    "aliases": [
+      "case-control"
+    ]
+  },
+  "PersonTime": {
+    "short": "Person-time",
+    "long": "Total time participants contribute while at risk, used as the denominator for incidence rates.",
+    "aliases": [
+      "person-time",
+      "incidence rate"
+    ]
+  },
+  "CumulativeIncidence": {
+    "short": "Cumulative incidence",
+    "long": "Proportion experiencing an event over a specified follow-up period.",
+    "aliases": [
+      "cumulative incidence"
+    ]
+  },
+  "Nonlinearity": {
+    "short": "Non-linearity test",
+    "long": "Tests whether additional curve terms improve on a linear dose relationship under the chosen model.",
+    "aliases": [
+      "non-linearity",
+      "nonlinearity"
+    ]
+  },
+  "i2": {
+    "short": "I-squared",
+    "long": "Percentage of variability attributed to heterogeneity, not its absolute magnitude. Cochrane Handbook §10.10.2."
+  },
+  "mh-or": {
+    "short": "Mantel–Haenszel method",
+    "long": "Combines binary-outcome tables across studies using stratified weights; the formula depends on the effect measure."
+  },
+  "peto-or": {
+    "short": "Peto odds ratio",
+    "long": "Approximate odds-ratio method using observed minus expected events; performance can be poor with large effects or unequal group sizes."
+  },
+  "Consistency": {
+    "short": "Network consistency",
+    "long": "Agreement between direct and indirect evidence. Cochrane Handbook §11.2.3.2.",
+    "aliases": [
+      "consistency",
+      "coherence"
+    ]
+  },
+  "Mean": {
+    "short": "Mean effect",
+    "long": "Average underlying effect on the analysis scale, estimated by the fitted model.",
+    "aliases": [
+      "μ",
+      "mu",
+      "mean effect"
+    ]
+  },
+  "Variance": {
+    "short": "Sampling variance",
+    "long": "Expected squared sampling deviation of an estimate; equals its standard error squared.",
+    "aliases": [
+      "sampling variance",
+      "sampling variances",
+      "variance",
+      "var"
+    ]
+  },
+  "EffectCount": {
+    "short": "Number of effect estimates",
+    "long": "Count of effect estimates, which can exceed the number of independent studies when several effects come from each study.",
+    "aliases": [
+      "k"
+    ]
+  },
+  "ClusterCount": {
+    "short": "Number of study clusters",
+    "long": "Count of independent study groups; effects within a group may be dependent.",
+    "aliases": [
+      "m"
+    ]
+  },
+  "CoefficientCount": {
+    "short": "Number of coefficients",
+    "long": "Count of estimated regression coefficients, including the intercept when present; distinct from a test p-value.",
+    "aliases": [
+      "p ="
+    ]
+  },
+  "HKScale": {
+    "short": "Hartung–Knapp scale factor",
+    "long": "Residual-based factor used to adjust coefficient variance; a modified procedure may floor it at one to prevent a smaller standard error.",
+    "aliases": [
+      "HKSJ q"
+    ]
+  },
+  "ScaleIntercept": {
+    "short": "Log-variance intercept",
+    "long": "Predicted log residual heterogeneity variance when the scale-model covariates are zero.",
+    "aliases": [
+      "α₀"
+    ]
+  },
+  "ScaleSlope": {
+    "short": "Log-variance slope",
+    "long": "Change in log residual heterogeneity variance per unit increase in a scale-model covariate.",
+    "aliases": [
+      "α₁"
+    ]
+  },
+  "WithinRho": {
+    "short": "Within-study correlation",
+    "long": "Dependence between the sampling errors of estimates from the same study; an assumed value should be checked in sensitivity analyses.",
+    "aliases": [
+      "ρw",
+      "ρ_w"
+    ]
+  },
+  "QModel": {
+    "short": "Moderator test",
+    "long": "Tests whether specified moderator coefficients jointly equal zero under the fitted model.",
+    "aliases": [
+      "Q_M",
+      "QM",
+      "Qm"
+    ]
+  },
+  "FTest": {
+    "short": "F statistic",
+    "long": "A test statistic compared with an F distribution with numerator and denominator degrees of freedom, often for multiple regression coefficients.",
+    "aliases": [
+      "F-test",
+      "F statistic"
+    ]
+  },
+  "Bootstrap": {
+    "short": "Bootstrap",
+    "long": "Repeatedly resamples data to estimate uncertainty; results depend on the resampling unit and assumptions.",
+    "aliases": [
+      "bootstrap"
+    ]
+  },
+  "MonteCarlo": {
+    "short": "Monte Carlo sampling",
+    "long": "Uses random draws to approximate an otherwise costly calculation; results have simulation error.",
+    "aliases": [
+      "Monte Carlo",
+      "MC"
+    ]
+  }
 }
