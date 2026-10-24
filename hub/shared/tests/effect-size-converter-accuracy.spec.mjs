@@ -54,6 +54,7 @@ test('imported Hedges g is not corrected twice and export retains numerical prec
   expect(rows.find(r => r.scale === "SMD (Cohen's d, recovered)").point).toBeCloseTo(0.6706910285986036, 10);
   expect(rows.find(r => r.scale === 'MD').point).toBeCloseTo(5.4, 11);
   expect(result.exported.numerical_reference).toContain('metafor::escalc');
+  expect(result.exported.numerical_reference).toContain('measure="MD",vtype="HO"');
   expect(typeof rows[0].point).toBe('number');
   expect(rows[0].point.toString().length).toBeGreaterThan(10);
 });
@@ -165,6 +166,9 @@ test('P0-47: raw MD SE after a means/SD import is s_p*sqrt(1/n1+1/n2), not the S
     }, c);
     expect(md.point).toBeCloseTo(c.m1 - c.m2, 10);
     expect(md.se).toBeCloseTo(mdSeHO(c), 10);
+    // The app's own exported CI, not one recomputed in the test.
+    expect(md.ci_lower).toBeCloseTo(c.m1 - c.m2 - 1.959963984540054 * mdSeHO(c), 8);
+    expect(md.ci_upper).toBeCloseTo(c.m1 - c.m2 + 1.959963984540054 * mdSeHO(c), 8);
   }
   expect(mdSeHO(SMALL)).toBeCloseTo(Math.sqrt(SMALL.sd1 ** 2 / SMALL.n1 + SMALL.sd2 ** 2 / SMALL.n2), 12);
   // Edinburgh 95% CI to one decimal, as paper 20 reports it: -32.5 to -7.5.

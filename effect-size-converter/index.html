@@ -352,7 +352,7 @@
               "inverse of exact Hedges correction; requires independent group sizes");
             if (Number.isFinite(pooledSd) && pooledSd > 0)
               push("MD", est / J * pooledSd, pooledSd * Math.sqrt(1 / n1 + 1 / n2),
-                "raw MD from d = g / J and the pooled SD; SE = pooled SD × √(1/n1 + 1/n2) (metafor::escalc MD, vtype HO)");
+                "raw MD from d = g / J and the pooled SD; SE = pooled SD × √(1/n1 + 1/n2), assuming equal group variances (metafor::escalc MD, vtype HO)");
           }
         } else {
           push("SMD (Cohen's d)", est, se, "uncorrected; specify n1/n2 for Hedges' g");
@@ -361,10 +361,10 @@
           if (Number.isFinite(pooledSd) && pooledSd > 0) {
             if (Number.isFinite(J) && J > 0)
               push("MD", est * pooledSd, pooledSd * Math.sqrt(1 / n1 + 1 / n2),
-                "raw MD assumes entered SMD is uncorrected Cohen's d; SE = pooled SD × √(1/n1 + 1/n2) (escalc MD, vtype HO)");
+                "raw MD assumes entered SMD is uncorrected Cohen's d; SE = pooled SD × √(1/n1 + 1/n2), assuming equal group variances (escalc MD, vtype HO)");
             else
               push("MD", est * pooledSd, se * pooledSd,
-                "raw MD assumes entered SMD is uncorrected Cohen's d; SE approximate (scaled SMD SE): enter n1/n2 for the exact MD SE");
+                "raw MD assumes entered SMD is uncorrected Cohen's d; SE approximate (scaled SMD SE): enter valid independent group sizes for the pooled-variance (HO) MD SE");
           }
         }
         // The logit method maps a standardized latent continuous contrast to a log odds ratio.
@@ -789,7 +789,7 @@
         pooled_sd: document.getElementById('ctx-sd').value.trim() !== '' ?
           Number(document.getElementById('ctx-sd').value) : null,
         assumptions: 'Normal/Wald 95% CI; fixed p0 for OR/RR/RD; logit (Hasselblad-Hedges) OR/SMD assumes latent logistic distribution; no generic HR/IRR conversion.',
-        numerical_reference: 'metafor::escalc(measure="SMD",correct=TRUE,vtype="LS"); metafor::cmicalc(method="exact")',
+        numerical_reference: 'metafor::escalc(measure="SMD",correct=TRUE,vtype="LS"); metafor::escalc(measure="MD",vtype="HO") for the raw MD row; metafor::cmicalc(method="exact")',
         rows: rows
       };
     };
