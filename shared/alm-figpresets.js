@@ -1,7 +1,7 @@
 /* Journal figure presets. Presentation only: clone the app's SVG, never rerun an engine.
- * null means not established from the linked source, NOT a journal requirement.
- * Values are for graphs/line art. All entries deliberately remain unverified:
- * article type, production stage and current guidance still need author review.
+ * Values are memory-based suggestions for graphs/line art, not confirmed requirements.
+ * Source URLs are places to check, not evidence that these values were fetched.
+ * null means unknown. All entries must remain unverified pending source review.
  * Browser: AlmFigPresets; CommonJS: pure data/sizing helpers for independent tests.
  */
 (function (global) {
@@ -38,7 +38,7 @@
     { id: 'custom', name: 'Custom', width_mm: { single: null, double: null }, min_dpi: null,
       font_family: null, min_pt: null, formats: null, tiff_compression: null,
       colour_notes: 'User-defined export settings. No journal requirements are implied.',
-      source_url: 'https://authors.bmj.com/writing-and-formatting/formatting-your-paper/', verified: false }
+      source_url: null, verified: false }
   ];
   const supported = ['svg', 'png', 'tiff', 'pdf'];
   function lint(items) {
@@ -46,8 +46,10 @@
     for (const p of items) {
       if (!p.id || ids.has(p.id)) errors.push('Missing/duplicate preset id');
       ids.add(p.id);
-      if (!/^https:\/\/[^/\s]+\//.test(p.source_url || '')) errors.push(p.id + ': missing or unsafe source URL');
-      if (typeof p.verified !== 'boolean') errors.push(p.id + ': missing verified flag');
+      if (p.id === 'custom') {
+        if (p.source_url !== null) errors.push('Custom must have a null source URL');
+      } else if (!/^https:\/\/[^/\s]+\//.test(p.source_url || '')) errors.push(p.id + ': missing or unsafe source URL');
+      if (p.verified !== false) errors.push(p.id + ': memory-based values must remain unverified');
       for (const n of [p.width_mm && p.width_mm.single, p.width_mm && p.width_mm.double, p.min_dpi, p.min_pt]) {
         if (n !== null && (!Number.isFinite(n) || n <= 0)) errors.push(p.id + ': invalid numeric requirement');
       }
@@ -131,7 +133,10 @@
       // Keep option text out of the label while retaining the native for/id association.
       el.value = value; field.append(label, el); panel.appendChild(field); return el;
     }
-    const journal = field('Journal preset', presets.map(p => [p.id, p.name]), 'custom');
+    const warning = "Unverified — check the journal's current author guide";
+    const journal = field('Journal preset', presets.map(p => [p.id, p.name + ' — ' + warning]), 'custom');
+    const verification = doc.createElement('span'); verification.className = 'alm-figpresets-verification';
+    panel.appendChild(verification);
     const column = field('Column width', [['single', 'Single / text column'], ['double', 'Double / full width']], 'single');
     const width = field('Preset width (mm)', null, '85');
     const dpi = field('Preset resolution (dpi)', null, '300');
@@ -145,14 +150,17 @@
     function refresh() {
       const p = presets.find(p => p.id === journal.value), s = settings(p.id, { column: column.value });
       width.value = s.widthMm; dpi.value = s.dpi; font.value = s.fontFamily || ''; pt.value = s.minPt || 0;
-      source.href = p.source_url;
-      source.textContent = p.id === 'custom' ? 'Reference guidelines (Custom settings are your own)' : 'Figure guidelines';
+      verification.textContent = p.name + ': ' + warning;
+      source.hidden = p.source_url === null;
+      if (p.source_url) source.href = p.source_url;
+      else source.removeAttribute?.('href');
+      source.textContent = 'Check current figure guidelines';
       const known = p.formats ? p.formats.map(f => f.toUpperCase()).join(', ') : 'not established';
-      note.textContent = "Please check the journal's current guidelines. These settings do not establish compliance. " +
-        'Guideline formats for graphs: ' + known + '. EPS export is unavailable; SVG is an editable working file. PDF here contains a raster image. ' +
+      note.textContent = "Please check the journal's current guidelines. These memory-based suggestions are unverified and do not establish compliance. " +
+        'Unverified format suggestions for graphs: ' + known + '. EPS export is unavailable; SVG is an editable working file. PDF here contains a raster image. ' +
         (s.widthIsDefault ? 'Width uses an app default (85/170 mm), not a verified journal size. ' : '') +
         (!p.min_dpi ? 'Resolution defaults to 300 dpi; no journal minimum is established. ' : '') +
-        'TIFF compression: ' + s.tiffCompression + '. ' + p.colour_notes;
+        'TIFF export compression: ' + s.tiffCompression + '. Unverified notes: ' + p.colour_notes;
       for (const option of format.options) option.textContent = option.value.toUpperCase() +
         (option.value === 'pdf' ? ' (raster image)' : '') +
         (p.formats && !p.formats.includes(option.value) ? ' (working format; not listed)' : '');
