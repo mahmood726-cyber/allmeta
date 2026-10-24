@@ -3,6 +3,8 @@
  * Include this ONE script in an app and every chart (SVG or <canvas>) gets a
  * compact "⬇ SVG · PNG · PDF · JPG" download bar automatically. Re-scans on DOM
  * mutation so dynamically-rendered plots are covered too.
+ * Use data-presets-only on this script for apps with their own export buttons:
+ * journal controls are placed outside the chart's source container.
  *
  * Formats:
  *   - SVG : true vector (SVG sources only; computed styles inlined, viewBox padded)
@@ -30,6 +32,20 @@
     return '';
   })();
   var _pdfState = 0; // 0 = not requested, 1 = loading, 2 = ready, -1 = failed
+  var presetNonce = document.currentScript && document.currentScript.nonce;
+  var presetsOnly = !!(document.currentScript && document.currentScript.hasAttribute('data-presets-only'));
+  var chartBars = new Map();
+  function mountPresets(opts) {
+    if (window.AlmFigPresets) return window.AlmFigPresets.mount(opts);
+    (window.__almFigPresetQueue = window.__almFigPresetQueue || []).push(opts);
+    if (window.__almFigPresetLoading || !SELF_SRC) return;
+    window.__almFigPresetLoading = true;
+    var script = document.createElement('script');
+    script.src = new URL('../../shared/alm-figpresets.js', SELF_SRC).href;
+    if (presetNonce) script.nonce = presetNonce;
+    script.onerror = function () { window.__almFigPresetLoading = false; script.remove(); console.warn('Journal preset controls could not load'); };
+    document.head.appendChild(script);
+  }
   var _pdfCbs = [];
   function loadJsPdf(cb) {
     if ((window.jspdf && window.jspdf.jsPDF) || window.jsPDF) { _pdfState = 2; return cb(true); }
@@ -193,6 +209,8 @@
         });
       }
     });
+    mountPresets({ target: bar, basename: basename,
+      plots: isSvg ? [{ id: 'chart', name: 'chart', getSvg: getSvgEl }] : [] });
     return bar;
   }
 
@@ -229,18 +247,36 @@
     el.__almExported = true;
     var isSvg = el.tagName.toLowerCase() === 'svg';
     var base = basenameFor(el, idx);
-    var bar = makeBar(base, isSvg,
-      function () { return el.isConnected ? el : null; },
-      function () { return el.isConnected ? el : null; });
+    var bar;
+    if (presetsOnly) {
+      bar = document.createElement('div'); bar.className = 'alm-preset-auto';
+      mountPresets({ target: bar, basename: base,
+        plots: isSvg ? [{ id: 'chart', name: 'chart', getSvg: function () { return el.isConnected ? el : null; } }] : [] });
+      // Legacy exporters can serialize the entire source host's innerHTML.
+      // Keep controls outside that host as well as outside the SVG itself.
+      var host = el.parentNode;
+      if (host && host !== document.body && host.parentNode) host.parentNode.insertBefore(bar, host.nextSibling);
+      else if (host) host.insertBefore(bar, el);
+    } else {
+      bar = makeBar(base, isSvg,
+        function () { return el.isConnected ? el : null; },
+        function () { return el.isConnected ? el : null; });
     // Insert the bar as a sibling immediately before the chart — does NOT re-parent
     // the chart, so grid/flex/positioned layouts are preserved.
-    if (el.parentNode) el.parentNode.insertBefore(bar, el);
+      if (el.parentNode) el.parentNode.insertBefore(bar, el);
+    }
+    chartBars.set(el, bar);
   }
 
   var scanScheduled = false;
   function scan() {
     scanScheduled = false;
     ensureStyle();
+    chartBars.forEach(function (bar, el) {
+      if (!el.isConnected || !bar.isConnected) {
+        bar.remove(); chartBars.delete(el); el.__almExported = false;
+      }
+    });
     var els = document.querySelectorAll('svg:not([data-alm-exported-done]), canvas:not([data-alm-exported-done])');
     var n = 0;
     els.forEach(function (el) { if (!el.__almExported) wire(el, n++); });
