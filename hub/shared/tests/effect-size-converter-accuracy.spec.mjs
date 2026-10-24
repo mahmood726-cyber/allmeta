@@ -144,3 +144,64 @@ test('Wald p quantile derives ratio log-scale SE at p=0.05', async ({ page }) =>
   const got = await page.evaluate(() => window.__almResults().input_se);
   expect(got).toBeCloseTo(Math.abs(Math.log(0.75)) / 1.959963984540054, 8);
 });
+
+// ---- Persona P0 regressions for paper 20 (P0-47, P0-46, P0-57, P0-45) ----
+// Independent references: metafor::escalc(measure="MD", vtype="LS") gives
+// vi = sd1^2/n1 + sd2^2/n2 for the raw mean difference (closed form, no R needed).
+
+test('P0-47: raw MD from a means/SD import uses the escalc MD variance, not the SMD SE scaled up', async ({ page }) => {
+  await open(page);
+  const cases = [
+    { m1: 55, sd1: 47, n1: 155, m2: 75, sd2: 64, n2: 156 },   // dat.normand1999 Edinburgh (paper 20 worked example)
+    { m1: 61.2, sd1: 9.4, n1: 5, m2: 52, sd2: 8.8, n2: 5 },   // small n, where the scaled-SMD SE is 16% too wide
+  ];
+  for (const c of cases) {
+    const md = await page.evaluate((row) => {
+      window.__almLoadCSV([row]);
+      return window.__almResults().rows.find(r => r.scale === 'MD');
+    }, c);
+    expect(md.point).toBeCloseTo(c.m1 - c.m2, 10);
+    expect(md.se).toBeCloseTo(Math.sqrt(c.sd1 ** 2 / c.n1 + c.sd2 ** 2 / c.n2), 10);
+  }
+});
+
+test('P0-46: MD divided by the pooled SD is labelled as uncorrected Cohen d, never as plain "SMD"', async ({ page }) => {
+  await open(page);
+  await page.locator('#in-type').selectOption('MD');
+  await page.locator('#in-est').fill('9.2');
+  await page.locator('#in-se').fill('5.7585');
+  await page.locator('#ctx-sd').fill('9.105');
+  await page.locator('#btn-convert').click();
+  const scales = (await page.evaluate(() => window.__almResults())).rows.map(r => r.scale);
+  expect(scales).toContain("SMD (Cohen's d, uncorrected)");
+  expect(scales).not.toContain('SMD');
+});
+
+test('P0-57: OR to SMD uses ln(OR)*sqrt(3)/pi and is named the logit method, not Cox', async ({ page }) => {
+  await open(page);
+  await page.locator('#in-type').selectOption('OR');
+  await page.locator('#in-est').fill('0.75');
+  await page.locator('#in-se').fill('0.12');
+  await page.locator('#btn-convert').click();
+  const got = await page.evaluate(() => window.__almResults());
+  const smd = got.rows.find(r => /^SMD/.test(r.scale));
+  expect(smd.point).toBeCloseTo(Math.log(0.75) * Math.sqrt(3) / Math.PI, 12);
+  expect(smd.scale).toContain('logit');
+  expect(JSON.stringify(got)).not.toMatch(/Cox/);
+  await expect(page.locator('main')).not.toContainText('Cox');
+});
+
+test('P0-45: E-value with no CI entered says so; it is not shown as 1 (a CI crossing the null)', async ({ page }) => {
+  await open(page);
+  await page.locator('#ev-lo').fill('');
+  await page.locator('#ev-hi').fill('');
+  await page.locator('#ev-point').fill('2');
+  await page.locator('#ev-point').dispatchEvent('input');
+  await expect(page.locator('#ev-out')).toContainText('no CI entered');
+  await expect(page.locator('#ev-out')).not.toContainText('1.000');
+  // A real null-crossing CI still gives 1.
+  await page.locator('#ev-lo').fill('0.8');
+  await page.locator('#ev-hi').fill('5');
+  await page.locator('#ev-hi').dispatchEvent('input');
+  await expect(page.locator('#ev-out')).toContainText('nearest null) = 1.000');
+});
