@@ -146,23 +146,65 @@ test('Wald p quantile derives ratio log-scale SE at p=0.05', async ({ page }) =>
 });
 
 // ---- Persona P0 regressions for paper 20 (P0-47, P0-46, P0-57, P0-45) ----
-// Independent references: metafor::escalc(measure="MD", vtype="LS") gives
-// vi = sd1^2/n1 + sd2^2/n2 for the raw mean difference (closed form, no R needed).
+// Independent reference: the raw mean difference m1 - m2 has sampling variance
+// s_p^2 (1/n1 + 1/n2) under the pooled (equal) variance that the SMD itself assumes
+// (metafor::escalc measure="MD", vtype="HO"); with n1 = n2 this equals vtype="LS",
+// sd1^2/n1 + sd2^2/n2. It does not depend on g, so it must be computed from the
+// visible pooled SD and group sizes, never from a cached import.
+const pooledSd = c => Math.sqrt(((c.n1 - 1) * c.sd1 ** 2 + (c.n2 - 1) * c.sd2 ** 2) / (c.n1 + c.n2 - 2));
+const mdSeHO = c => pooledSd(c) * Math.sqrt(1 / c.n1 + 1 / c.n2);
+const EDINBURGH = { m1: 55, sd1: 47, n1: 155, m2: 75, sd2: 64, n2: 156 };   // dat.normand1999 (paper 20 worked example)
+const SMALL = { m1: 61.2, sd1: 9.4, n1: 5, m2: 52, sd2: 8.8, n2: 5 };      // equal n: HO = LS = 5.758472019555189
 
-test('P0-47: raw MD from a means/SD import uses the escalc MD variance, not the SMD SE scaled up', async ({ page }) => {
+test('P0-47: raw MD SE after a means/SD import is s_p*sqrt(1/n1+1/n2), not the SMD SE scaled up', async ({ page }) => {
   await open(page);
-  const cases = [
-    { m1: 55, sd1: 47, n1: 155, m2: 75, sd2: 64, n2: 156 },   // dat.normand1999 Edinburgh (paper 20 worked example)
-    { m1: 61.2, sd1: 9.4, n1: 5, m2: 52, sd2: 8.8, n2: 5 },   // small n, where the scaled-SMD SE is 16% too wide
-  ];
-  for (const c of cases) {
+  for (const c of [EDINBURGH, SMALL]) {
     const md = await page.evaluate((row) => {
       window.__almLoadCSV([row]);
       return window.__almResults().rows.find(r => r.scale === 'MD');
     }, c);
     expect(md.point).toBeCloseTo(c.m1 - c.m2, 10);
-    expect(md.se).toBeCloseTo(Math.sqrt(c.sd1 ** 2 / c.n1 + c.sd2 ** 2 / c.n2), 10);
+    expect(md.se).toBeCloseTo(mdSeHO(c), 10);
   }
+  expect(mdSeHO(SMALL)).toBeCloseTo(Math.sqrt(SMALL.sd1 ** 2 / SMALL.n1 + SMALL.sd2 ** 2 / SMALL.n2), 12);
+  // Edinburgh 95% CI to one decimal, as paper 20 reports it: -32.5 to -7.5.
+  const z = 1.959963984540054, se = mdSeHO(EDINBURGH);
+  expect((-20 - z * se).toFixed(1)).toBe('-32.5');
+  expect((-20 + z * se).toFixed(1)).toBe('-7.5');
+});
+
+test('P0-47: the MD follows the visible inputs (pooled SD edit, a same-g scaled study, snapshot restore)', async ({ page }) => {
+  await open(page);
+  const SCALED = { m1: 110, sd1: 94, n1: 155, m2: 150, sd2: 128, n2: 156 }; // same g and SE as Edinburgh, MD doubled
+  const got = await page.evaluate(({ A, B }) => {
+    const md = () => window.__almResults().rows.find(r => r.scale === 'MD');
+    window.__almLoadCSV([A]);
+    const snapA = window.__almSnapshot();
+    const a = md();
+    const sd = document.getElementById('ctx-sd');
+    sd.value = String(2 * Number(sd.value));
+    const doubled = md();
+    window.__almLoadCSV([B]);
+    const b = md();
+    window.__almRestore(snapA);
+    const restored = md();
+    return { a, doubled, b, restored, snapA };
+  }, { A: EDINBURGH, B: SCALED });
+  expect(got.a.point).toBeCloseTo(-20, 10);
+  expect(got.doubled.point).toBeCloseTo(-40, 8);
+  expect(got.doubled.se).toBeCloseTo(2 * mdSeHO(EDINBURGH), 8);
+  expect(got.b.point).toBeCloseTo(-40, 10);
+  expect(got.b.se).toBeCloseTo(mdSeHO(SCALED), 10);
+  expect(got.restored.point).toBeCloseTo(-20, 10);
+  expect(got.restored.se).toBeCloseTo(mdSeHO(EDINBURGH), 10);
+  // A fresh page restoring the same snapshot gives the same MD and SE (no session-only state).
+  await open(page);
+  const fresh = await page.evaluate((snap) => {
+    window.__almRestore(snap);
+    return window.__almResults().rows.find(r => r.scale === 'MD');
+  }, got.snapA);
+  expect(fresh.point).toBeCloseTo(-20, 10);
+  expect(fresh.se).toBeCloseTo(mdSeHO(EDINBURGH), 10);
 });
 
 test('P0-46: MD divided by the pooled SD is labelled as uncorrected Cohen d, never as plain "SMD"', async ({ page }) => {
