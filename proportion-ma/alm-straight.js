@@ -22,5 +22,6 @@
     return c;
   }
   (window.AlmStraightAdapters = window.AlmStraightAdapters || {})[APP] = { ctx: ctx };
-  window.AlmStraightUI.attach({ app: APP, ctx: ctx, anchor: '#k-warn', watch: ['#res-body', '#het'] });
+  // Share snapshots read the results section's numbers; keep advisory numbers outside it.
+  window.AlmStraightUI.attach({ app: APP, ctx: ctx, anchor: '#alm-features', watch: ['#res-body', '#het'] });
 })();
