@@ -1,0 +1,123 @@
+{
+ "tuned_classic_v1": [
+  "Appenzeller-Herzog_2019",
+  "Bos_2018",
+  "Brouwer_2019",
+  "Chou_2003",
+  "Donners_2021",
+  "Hall_2012",
+  "Leenaars_2019",
+  "Leenaars_2020",
+  "Meijboom_2021",
+  "Menon_2022",
+  "Moran_2021",
+  "Muthu_2021",
+  "Nelson_2002",
+  "Oud_2018",
+  "Radjenovic_2013",
+  "Sep_2021",
+  "Smid_2020",
+  "van_de_Schoot_2018",
+  "van_der_Valk_2021",
+  "van_der_Waal_2022",
+  "van_Dis_2020",
+  "Walker_2018",
+  "Wassenaar_2017",
+  "Wolters_2018"
+ ],
+ "classic_to_plus_by_publication_doi": {
+  "Appenzeller-Herzog_2019": [
+   "Appenzeller-Herzog_2019"
+  ],
+  "Bos_2018": [
+   "Bos_2018"
+  ],
+  "Brouwer_2019": [
+   "Brouwer_2019"
+  ],
+  "Chou_2003": [
+   "Chou_2003"
+  ],
+  "Donners_2021": [
+   "Donners_2021"
+  ],
+  "Hall_2012": [
+   "Hall_2011"
+  ],
+  "Leenaars_2019": [
+   "Leenaars_2019"
+  ],
+  "Leenaars_2020": [
+   "Leenaars_2020"
+  ],
+  "Meijboom_2021": [
+   "Meijboom_2021"
+  ],
+  "Menon_2022": [
+   "Menon_2022"
+  ],
+  "Moran_2021": [
+   "Moran_2020"
+  ],
+  "Muthu_2021": [
+   "Muthu_2020"
+  ],
+  "Nelson_2002": [],
+  "Oud_2018": [
+   "Oud_2018"
+  ],
+  "Radjenovic_2013": [
+   "Radjenovic_2013"
+  ],
+  "Sep_2021": [
+   "Sep_2021"
+  ],
+  "Smid_2020": [
+   "Smid_2019"
+  ],
+  "van_de_Schoot_2018": [],
+  "van_der_Valk_2021": [
+   "van_der_Valk_2021"
+  ],
+  "van_der_Waal_2022": [
+   "van_der_Waal_2022"
+  ],
+  "van_Dis_2020": [
+   "van_Dis_2019"
+  ],
+  "Walker_2018": [
+   "Walker_2018"
+  ],
+  "Wassenaar_2017": [
+   "Wassenaar_2017"
+  ],
+  "Wolters_2018": [
+   "Wolters_2018"
+  ]
+ },
+ "asreview_tuned_in_plus": [
+  "Appenzeller-Herzog_2019",
+  "Bos_2018",
+  "Brouwer_2019",
+  "Chou_2003",
+  "Donners_2021",
+  "Hall_2011",
+  "Leenaars_2019",
+  "Leenaars_2020",
+  "Meijboom_2021",
+  "Menon_2022",
+  "Moran_2020",
+  "Muthu_2020",
+  "Oud_2018",
+  "Radjenovic_2013",
+  "Sep_2021",
+  "Smid_2019",
+  "Walker_2018",
+  "Wassenaar_2017",
+  "Wolters_2018",
+  "van_Dis_2019",
+  "van_der_Valk_2021",
+  "van_der_Waal_2022"
+ ],
+ "note": "Nelson_2002 and van_de_Schoot_2018 (u4 tuning reviews) have no SYNERGY+ counterpart by publication DOI"
+}

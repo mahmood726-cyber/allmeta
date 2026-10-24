@@ -1,0 +1,20 @@
+{
+ "u4": "",
+ "C0.03": "--C 0.03",
+ "C0.05": "--C 0.05",
+ "C0.25": "--C 0.25",
+ "C0.5": "--C 0.5",
+ "C1": "--C 1",
+ "r3": "--ratio 3",
+ "r5": "--ratio 5",
+ "r20": "--ratio 20",
+ "r40": "--ratio 40",
+ "ng1": "--ngram-max 1",
+ "ng3": "--ngram-max 3",
+ "mindf2": "--min-df 2",
+ "maxdf1": "--max-df 1",
+ "nosub": "--sublinear false",
+ "C0.25_r20": "--C 0.25 --ratio 20",
+ "C0.05_r20": "--C 0.05 --ratio 20",
+ "k5": "--retrain-every 5"
+}

@@ -1,0 +1,30 @@
+{
+  "frozen": "2026-10-21",
+  "config": "specter2own_w0.5",
+  "rank_core_sha256": "15b243065a14ecc6ce11ff3cc128d6bfa70b648a25f95116047245314100f252",
+  "js_args": "--emb-dir C:/h2h/emb/specter2-own-heldout --emb-w 0.5 --emb-onnx-sha256 2b1dc054c82e7ad6cf20456b11bee978416468c1af399383dbbd66b307d5748a",
+  "cfg": {
+    "C": 0.11,
+    "ratio": 9.8,
+    "retrainEvery": 1,
+    "tfidf": {"ngram": [1, 2], "minDf": 1, "maxDf": 0.95, "sublinear": true}
+  },
+  "emb": {
+    "model": "local/specter2_base",
+    "onnx_file": "onnx/model_quantized.onnx",
+    "onnx_sha256": "2b1dc054c82e7ad6cf20456b11bee978416468c1af399383dbbd66b307d5748a",
+    "onnx_bytes": 110115365,
+    "dtype": "q8",
+    "device": "cpu",
+    "pooling": "cls",
+    "normalize": true,
+    "prefix": "",
+    "text_template": "<prefix> + title + \". \" + abstract",
+    "maxTokens": 256,
+    "dim": 768,
+    "batch": 32,
+    "transformers_version": "3.8.1",
+    "onnxruntime": {"onnxruntime_node_version": "1.21.0"},
+    "node_version": "v24.15.0"
+  }
+}
