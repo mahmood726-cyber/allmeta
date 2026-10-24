@@ -350,20 +350,22 @@
           if (Number.isFinite(J) && J > 0) {
             push("SMD (Cohen's d, recovered)", est / J, se / J,
               "inverse of exact Hedges correction; requires independent group sizes");
-            const imp = window.__almImportedMeans;
-            if (imp && imp.g === est && imp.se === se)
-              push("MD", imp.md, imp.mdSe,
-                "raw MD from the imported means/SDs; variance sd1²/n1 + sd2²/n2 (metafor::escalc MD)");
-            else if (Number.isFinite(pooledSd) && pooledSd > 0)
-              push("MD", est / J * pooledSd, se / J * pooledSd,
-                "recovered raw MD from d = g / J and the pooled SD; SE approximate (scaled SMD SE)");
+            if (Number.isFinite(pooledSd) && pooledSd > 0)
+              push("MD", est / J * pooledSd, pooledSd * Math.sqrt(1 / n1 + 1 / n2),
+                "raw MD from d = g / J and the pooled SD; SE = pooled SD × √(1/n1 + 1/n2) (metafor::escalc MD, vtype HO)");
           }
         } else {
           push("SMD (Cohen's d)", est, se, "uncorrected; specify n1/n2 for Hedges' g");
           if (Number.isFinite(J) && J > 0)
             push("SMD (Hedges' g)", est * J, se * J, "exact small-sample correction J(df=" + df + ")");
-          if (Number.isFinite(pooledSd) && pooledSd > 0)
-            push("MD", est * pooledSd, se * pooledSd, "raw MD assumes entered SMD is uncorrected Cohen's d");
+          if (Number.isFinite(pooledSd) && pooledSd > 0) {
+            if (Number.isFinite(J) && J > 0)
+              push("MD", est * pooledSd, pooledSd * Math.sqrt(1 / n1 + 1 / n2),
+                "raw MD assumes entered SMD is uncorrected Cohen's d; SE = pooled SD × √(1/n1 + 1/n2) (escalc MD, vtype HO)");
+            else
+              push("MD", est * pooledSd, se * pooledSd,
+                "raw MD assumes entered SMD is uncorrected Cohen's d; SE approximate (scaled SMD SE): enter n1/n2 for the exact MD SE");
+          }
         }
         // The logit method maps a standardized latent continuous contrast to a log odds ratio.
         // It is a model-dependent approximation, NOT an empirical 2x2 OR.
@@ -749,8 +751,9 @@
         if (!isFinite(pt) || (ratio && pt <= 0)) { out.textContent = 'Enter a positive estimate.'; window.__almLastEValue = function () { return null; }; return; }
         var r = window.AlmEValue.eValues(meas, pt, isFinite(lo) ? lo : null, isFinite(hi) ? hi : null, { rare: rare });
         var f = function (x) { return (typeof x === 'number' && isFinite(x)) ? x.toFixed(3) : '—'; };
-        var noCI = (r.rr.point >= 1) ? (r.rr.lo == null) : (r.rr.hi == null);  // the bound nearest the null is missing
-        out.innerHTML = 'E-value (point) = <strong>' + f(r.point) + '</strong> &middot; E-value (CI bound nearest null) = <strong>' + (noCI ? 'not available (no CI entered)' : f(r.ci)) + '</strong>' +
+        var needLo = r.rr.point >= 1, noCI = needLo ? (r.rr.lo == null) : (r.rr.hi == null);  // the bound nearest the null is missing
+        var noCIText = (r.rr.lo == null && r.rr.hi == null) ? 'not available (no CI entered)' : 'not available (the CI bound nearest the null is missing)';
+        out.innerHTML = 'E-value (point) = <strong>' + f(r.point) + '</strong> &middot; E-value (CI bound nearest null) = <strong>' + (noCI ? noCIText : f(r.ci)) + '</strong>' +
           (meas !== 'RR' ? ' &middot; approx RR = ' + f(r.rr.point) : '');
         window.__almLastEValue = function () { return r; };
       }
@@ -797,7 +800,6 @@
       if (!rows || !rows.length) return;
       try {
         var r = rows[0];
-        window.__almImportedMeans = null;
         var stat = AlmEffectAccuracy.fromMeans(Number(r.m1), Number(r.sd1), Number(r.n1),
           Number(r.m2), Number(r.sd2), Number(r.n2));
         if (window.alm && window.alm.resetUndo) window.alm.resetUndo.snapshot();
@@ -810,9 +812,6 @@
         set('in-est', stat.g);   // Never round internal values to 6 digits.
         set('in-se', stat.se);
         set('ctx-sd', stat.pooledSd);
-        window.__almImportedMeans = { g: Number(String(stat.g)), se: Number(String(stat.se)),
-          md: Number(r.m1) - Number(r.m2),
-          mdSe: Math.sqrt(Number(r.sd1) ** 2 / Number(r.n1) + Number(r.sd2) ** 2 / Number(r.n2)) };
         set('der-n1', Number(r.n1));
         set('der-n2', Number(r.n2));
         ['der-t','der-f','der-f-sign','der-p','der-lo','der-hi'].forEach(function (id) {
