@@ -86,3 +86,42 @@ screening on average about 4 fewer records per 100 records in a review than ASRe
 - `results/R/{screen_merged,asreview/elas_u4_merged,asreview/elas_u3_merged}/`: every per-seed screening order,
   environment, and the concatenated attempt logs.
 - `results/merge_*.json`, `results/embeddings_sha256.txt` (87 held-out embedding files and their metadata).
+
+---
+
+# Amendment 2 result: Screen vs ASReview ELAS u5 (ASReview's latest model)
+
+Pre-registered in Amendment 2 (commit `11fd786`, tag `h2h-amend2-u5`) **after** the primary result was known, with
+Screen unchanged: FREEZE.json is identical, and Screen's frozen held-out results above are reused, not rerun. ELAS u5
+is not released (PyPI latest 3.0.8). It is run from ASReview main at commit `79d5682`
+(`3.0.9.dev10+g79d568212`), whose own `asreview simulate` CLI our runner reproduces exactly on DEV (6 of 6 orders).
+Run 2026-10-24, once; analysed once (`analyze_u5.py`, output `results/analysis/u5.json`). Every u5 and Screen run
+succeeded (0 failed seeds).
+
+**Confirmatory family A2: the 15 SYNERGY+ test-split reviews** (u5 was optimised on SYNERGY+'s training set, so only
+these are a fair held-out test). Mean WSS@95: Screen 0.675, u5 0.647.
+
+- **Screen minus u5: +0.028 (95% CI -0.007 to +0.063).** Screen higher on 11 of 15 reviews, lower on 4.
+- **H1-u5 non-inferiority (margin -0.02): accepted** (lower limit -0.007 > -0.02; one-sided p = 0.006).
+- **H2-u5 superiority: not accepted** (the interval includes 0; one-sided p = 0.055). With 15 clusters this test has
+  limited power; the result is "not shown to be superior", not "equivalent".
+
+**Descriptive (no tests):**
+
+| Comparison | Reviews (clusters) | Mean difference (95% CI) | Higher / lower |
+|---|---|---|---|
+| Screen - u5, reviews u5 was optimised on (in-sample for u5) | 69 (62) | +0.032 (+0.016, +0.048) | 49 / 20 |
+| Screen - u5, all PRIMARY | 84 (73) | +0.032 (+0.018, +0.047) | 60 / 24 |
+| u5 - u4, test split | 15 (15) | +0.007 (-0.016, +0.029) | 9 / 6 |
+| u5 - u4, u5's training reviews | 69 (62) | +0.008 (-0.002, +0.018) | 39 / 30 |
+
+In plain terms: on the fair test, Screen is non-inferior to ASReview's newest model and ahead by about 3 records
+per 100 on average, but that lead is not established with confidence on 15 reviews. On reviews where u5 had the
+advantage of being tuned on the data, Screen was still ahead. u5 itself is close to u4 on these data.
+
+**Deviations:** as for the primary run (sharding into separate folders merged by `results/ho_merge.py`, and
+operator-stopped drivers at review boundaries to rebalance long reviews; no stopped attempt counts as a failure and
+no partial file was merged). All u5 runs were on baseimage, in the pinned environment.
+
+Files: `results/analysis/u5.json`; `results/R/asreview/elas_u5_merged/` (per-seed orders, environments, attempt
+logs, merge record).
