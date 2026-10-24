@@ -33,6 +33,32 @@ export function gold(item){
 const armKey=a=>a.events+"/"+a.n;
 const sameArms=(c,g)=>c.kind==="counts"&&c.values.arms.length===2&&JSON.stringify(c.values.arms.map(armKey).sort())===JSON.stringify(g.arms.map(armKey).sort());
 const sameMeanSD=(c,a)=>c.kind==="mean_sd"&&c.values.mean===a.mean&&c.values.sd===a.sd;
+const tokens=s=>new Set(String(s??"").toLowerCase().match(/[\p{L}\p{N}]+/gu)||[]);
+const cueText=c=>typeof c==="string"?c:c?.text??c?.value??"";
+// Assignment uses names and returned cues only, never gold numbers or lower-ranked candidates.
+export function assignedArms(item,candidate){
+  if(!candidate)return [];
+  const arms=candidate.kind==="counts"?candidate.values.arms:
+    candidate.kind==="mean_sd"?(candidate.values.arms||[candidate.values]):[];
+  if(!arms.length||arms.length>2)return [];
+  const names=[tokens(item.intervention),tokens(item.comparator)];
+  const overlap=(i,j)=>{
+    const cues=[arms[i].label,cueText(arms[i].cue),cueText(candidate.armCues?.[i])];
+    if(candidate.kind==="mean_sd"&&arms.length===1)cues.push(candidate.label,candidate.cue,...(candidate.facetEvidence?.arm||[]).map(cueText));
+    return [...tokens(cues.filter(Boolean).join(" "))].filter(t=>names[j].has(t)).length;
+  };
+  if(arms.length===1)return overlap(0,1)>overlap(0,0)?[undefined,arms[0]]:[arms[0]];
+  const printed=overlap(0,0)+overlap(1,1),swapped=overlap(0,1)+overlap(1,0);
+  return swapped>printed?[arms[1],arms[0]]:arms;
+}
+export function automatedScore(item,candidate){
+  const g=gold(item);
+  if(!g)return {pcExact:null,perValue:{correct:0,total:0}};
+  const arms=assignedArms(item,candidate),keys=g.type==="binary"?["events","n"]:["mean","sd","n"];
+  const correct=g.arms.reduce((sum,a,i)=>sum+keys.filter(k=>arms[i]?.[k]===a[k]).length,0);
+  const total=2*keys.length;
+  return {pcExact:correct===total,perValue:{correct,total}};
+}
 const isTableLine=l=>/[|\t]/.test(l)||/\S {2,}\S.* {2,}\S/.test(l);
 function lineOf(text,pos){const a=text.lastIndexOf("\n",pos-1)+1,b=text.indexOf("\n",pos);return text.slice(a,b<0?text.length:b);}
 function sentences(text){return text.split(/(?<=[.;!?])\s+(?=[A-Z(])|\n/);}
@@ -55,11 +81,12 @@ function confusableCategory(c,g){
 }
 // Score one item. `extracted` lets tests plant a result; otherwise the real extractor runs on the whole text.
 export function scoreItem(item,text,extracted){
-  const g=gold(item),base={id:item.id,pmcid:item.pmcid,type:item.outcome_type};
+  const g=gold(item),base={id:item.id,pmcid:item.pmcid,type:item.outcome_type,...automatedScore(item)};
   if(!g)return {...base,status:"GOLD_INCOMPLETE",isDataComplete:item.is_data_complete};
   if(text===null||text===undefined)return {...base,status:"NO_TEXT"};
   const result=extracted||A.extract(text,g.type==="binary"?"binary2x2":"continuous",{outcome:item.outcome});
   const cs=result.candidates,count=cs.length;
+  Object.assign(base,automatedScore(item,cs[0]));
   let rank=null,goldIdx=[],sdQuestion=false;
   if(g.type==="binary"){
     const i=cs.findIndex(c=>sameArms(c,g)&&validSpans(text,c));
@@ -89,7 +116,7 @@ export function run(split,{texts=join(here,"texts"),data=join(here,"data","annot
   };
   const results=items.map(item=>{
     try{return {...scoreItem(item,textOf(item.pmcid)),licence:group(item)};}
-    catch(e){return {id:item.id,pmcid:item.pmcid,type:item.outcome_type,status:"ERROR",error:e.message,licence:group(item)};}
+    catch(e){return {id:item.id,pmcid:item.pmcid,type:item.outcome_type,...automatedScore(item),status:gold(item)?"ERROR":"GOLD_INCOMPLETE",error:e.message,licence:group(item)};}
   });
   for(const r of results){
     const bits=[r.status,"id="+r.id,"PMC"+r.pmcid,r.type,"lic="+(r.licence==="cc by"?"ccby":"other")];
@@ -100,14 +127,22 @@ export function run(split,{texts=join(here,"texts"),data=join(here,"data","annot
     if(r.nPrinted)bits.push("n_printed="+r.nPrinted);
     if(r.status==="GOLD_INCOMPLETE")bits.push("is_data_complete="+r.isDataComplete);
     if(r.error)bits.push("error="+r.error);
+    if(r.status!=="GOLD_INCOMPLETE")bits.push("pc_exact="+(r.pcExact?"PASS":"FAIL"),"per_value="+r.perValue.correct+"/"+r.perValue.total);
     log(bits.join(" "));
   }
   const summarise=rs=>{
+    const eligible=rs.filter(r=>r.status!=="GOLD_INCOMPLETE");
     const ev=rs.filter(r=>r.status==="PASS"||r.status==="MISS"),pass=ev.filter(r=>r.status==="PASS");
-    const of=t=>({pass:pass.filter(r=>r.type===t).length,N:ev.filter(r=>r.type===t).length});
+    const of=t=>({pass:pass.filter(r=>r.type===t).length,N:eligible.filter(r=>r.type===t).length});
+    const pcExact={},perValue={};
+    for(const t of ["binary","continuous"]){
+      const typed=eligible.filter(r=>r.type===t);
+      pcExact[t]={pass:typed.filter(r=>r.pcExact).length,N:typed.length};
+      perValue[t]={correct:typed.reduce((sum,r)=>sum+r.perValue.correct,0),total:typed.reduce((sum,r)=>sum+r.perValue.total,0)};
+    }
     const cats={};for(const r of ev)if(r.category)cats[r.category]=(cats[r.category]||0)+1;
     const conf={};for(const r of pass)for(const c of r.confusable)conf[c]=(conf[c]||0)+1;
-    return {binary:of("binary"),continuous:of("continuous"),
+    return {binary:of("binary"),continuous:of("continuous"),pcExact,perValue,
       goldIncomplete:rs.filter(r=>r.status==="GOLD_INCOMPLETE").length,
       goldIncompleteFlagFalse:rs.filter(r=>r.status==="GOLD_INCOMPLETE"&&r.isDataComplete==="FALSE").length,
       noText:rs.filter(r=>r.status==="NO_TEXT").length,errors:rs.filter(r=>r.status==="ERROR").length,
@@ -119,14 +154,17 @@ export function run(split,{texts=join(here,"texts"),data=join(here,"data","annot
   };
   const fmt=v=>v===null?"NA":v.toFixed(v===Math.round(v)?0:2);
   const s=summarise(results);
-  log(`YUN ${split} binary recall=${s.binary.pass}/${s.binary.N} continuous recall=${s.continuous.pass}/${s.continuous.N} gold_incomplete=${s.goldIncomplete} rank1=${s.rank1===null?"NA":s.rank1.toFixed(1)}% mean_rank=${s.meanRank===null?"NA":s.meanRank.toFixed(2)} confusable=${s.confusableItems}`);
+  log(`YUN ${split} PC-EXACT binary=${s.pcExact.binary.pass}/${s.pcExact.binary.N} continuous=${s.pcExact.continuous.pass}/${s.pcExact.continuous.N} gold_incomplete=${s.goldIncomplete}`);
+  log(`YUN ${split} RECALL binary=${s.binary.pass}/${s.binary.N} continuous=${s.continuous.pass}/${s.continuous.N} gold_incomplete=${s.goldIncomplete} rank1=${s.rank1===null?"NA":s.rank1.toFixed(1)}% mean_rank=${s.meanRank===null?"NA":s.meanRank.toFixed(2)} confusable=${s.confusableItems}`);
+  log(`YUN ${split} PER-VALUE binary=${s.perValue.binary.correct}/${s.perValue.binary.total} continuous=${s.perValue.continuous.correct}/${s.perValue.continuous.total}`);
+  log("YUN NOTE: only PC-EXACT is comparable to Yun et al. 2024 GPT-4 per-comparison exact match (65.5% binary / 48.7% continuous, TEST split)");
   log(`MISS ${MISS.map(c=>c+"="+s.categories[c]).join(" ")}`);
   log(`CONFUSABLE items=${s.confusableItems} candidates=${s.confusableCandidates} ${Object.entries(s.confusableCategories).map(([k,v])=>k+"="+v).join(" ")}`.trim());
   log(`NOTES no_text=${s.noText} errors=${s.errors} gold_incomplete_flag_false=${s.goldIncompleteFlagFalse} sd_question=${s.sdQuestion} continuous_with_n=0/${s.continuous.N} (continuous mode offers no group sizes) median_candidates=${fmt(s.medianCandidates)} rules=${A.RULES_VERSION}`);
   const byLicence={};
   for(const l of ["cc by","other"]){
     const b=summarise(results.filter(r=>r.licence===l));byLicence[l]=b;
-    log(`LICENCE ${l==="cc by"?"ccby":"other"} binary recall=${b.binary.pass}/${b.binary.N} continuous recall=${b.continuous.pass}/${b.continuous.N} gold_incomplete=${b.goldIncomplete} no_text=${b.noText}`);
+    log(`LICENCE ${l==="cc by"?"ccby":"other"} PC-EXACT binary=${b.pcExact.binary.pass}/${b.pcExact.binary.N} continuous=${b.pcExact.continuous.pass}/${b.pcExact.continuous.N} RECALL binary=${b.binary.pass}/${b.binary.N} continuous=${b.continuous.pass}/${b.continuous.N} PER-VALUE binary=${b.perValue.binary.correct}/${b.perValue.binary.total} continuous=${b.perValue.continuous.correct}/${b.perValue.continuous.total} gold_incomplete=${b.goldIncomplete} no_text=${b.noText}`);
   }
   if(out)writeFileSync(out,JSON.stringify({split,rulesVersion:A.RULES_VERSION,summary:s,byLicence,results},null,2)+"\n");
   return {summary:s,byLicence,results};

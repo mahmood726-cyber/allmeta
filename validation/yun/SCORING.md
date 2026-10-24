@@ -1,5 +1,8 @@
 # Yun et al. 2024 benchmark: frozen scoring spec
 
+The original specification below is preserved as history. The amendment at the end supersedes its
+denominator, automated-answer and output statements; its candidate-recall matching rules remain intact.
+
 Status: **FROZEN** (written 2026-10-21, before any DEV or TEST run). Rules version under test:
 `shared/alm-entry.js` `RULES_VERSION` as printed by the runner. Changing anything below after
 the TEST run invalidates the TEST result; harness bug fixes found on DEV must not change these rules.
@@ -86,3 +89,80 @@ One line per item, then
 `YUN <split> binary recall=a/N1 continuous recall=b/N2 gold_incomplete=c rank1=x% mean_rank=y confusable=z`
 (rank1 and mean_rank over PASS items of both types; confusable = PASS items with >=1 confusable), then a
 per-licence breakdown (`cc by` vs other, from `licences.json`). Licence never changes scoring.
+
+## Amendment 2026-10-21, made before any TEST run, no tuning
+
+This additive amendment separates three metrics. It changes no extraction or ranking rules and uses
+no TEST observations. Yun HS et al. (2024), arXiv:2405.01686v2, report per-comparison exact match:
+65.5% binary / 48.7% continuous for GPT-4 on TEST. Each comparison is one intervention-comparator-outcome
+item, and every number must match in the correct arm. Their 120 OA RCTs comprise 10 DEV / 110 TEST
+articles (43 / 656 annotated items). DEV results must not be presented as a TEST head-to-head result.
+
+### Eligibility and automated answer
+
+Exclude **only GOLD_INCOMPLETE**: any required gold number is empty, non-numeric or non-finite after
+the existing numeric parsing. Report its count separately, including the `is_data_complete=FALSE`
+count. The flag alone does not exclude an otherwise complete item. `NO_TEXT`, `ERROR`, no candidate,
+missing candidate fields and wrong candidate types remain in N and fail PC-EXACT. Missing answers
+contribute zero correct numbers and all four/six gold numbers to PER-VALUE. This supersedes the old
+NO_TEXT exclusion; the same eligible-item denominator is used for RECALL. Licence never excludes items.
+
+Extract once with `AlmEntry.extract(text, schema, {outcome: item.outcome})`. The automated answer is
+strictly `candidates[0]` in returned order: no gold-guided selection, no filtering to a later candidate,
+no combining candidates, no user correction, no derived numbers. Names are used only after extraction
+to assign arms, never to change ranking.
+
+Assignment rule, fixed before any TEST run:
+
+- Tokenise names and each returned arm's label/cue using lowercase maximal Unicode letter/digit runs.
+  Use unique tokens, no stopword removal, synonyms, stemming or weighting. Overlap is intersection size.
+  Arm text is the union of `values.arms[i].label`, its `cue`, and `candidate.armCues[i]` (cue `text`,
+  otherwise `value`). The whole two-arm candidate cue is not assigned to either arm.
+- For two arms, compare the summed overlaps for printed assignment (arm 0 intervention, arm 1
+  comparator) and reversed assignment. Reverse only when its score is strictly larger.
+  Ties, including zero overlap, retain printed order. Numeric values never influence assignment.
+- The current continuous candidate is a single `mean_sd` arm. Its cue/label and returned
+  `facetEvidence.arm` text are used as its arm text. Assign it to comparator only when comparator
+  overlap is strictly larger; otherwise to intervention (printed-order fallback). The other arm is
+  unanswered. No second candidate is used. A returned two-arm `mean_sd` payload, if supported by a
+  future extractor, follows the two-arm rule; the current extractor is unchanged.
+
+### Metric definitions
+
+1. **PC-EXACT**, automated per-comparison exact match: PASS iff all four binary values (events and n
+   for both assigned arms) or all six continuous values (mean, SD and n for both assigned arms) equal
+   gold with strict numeric equality. Absent values fail, even if a matching number appears elsewhere
+   in the article. Span validity is retained for RECALL only; PC-EXACT compares the returned numeric
+   answer, without an additional span eligibility condition. This is the **only metric comparable**
+   to the paper's GPT-4 per-comparison exact-match rate. Full TEST coverage would be needed for a
+   head-to-head comparison; a DEV run or a text-subset run is not such a result.
+2. **CANDIDATE-RECALL**, printed as RECALL: the original human-in-the-loop metric above, with arm
+   order free and literal source spans required. Binary needs a matching two-arm counts candidate;
+   continuous needs distinct matching mean/SD candidates and does not score group sizes. Keep rank,
+   rank1 percentage and mean rank over recall PASS items, candidate burden and confusable statistics.
+   This is **not comparable** to GPT-4's rate. Historical `status=PASS` and summary `binary`/`continuous`
+   fields continue to mean recall; `pcExact` stores the automated result separately.
+3. **PER-VALUE**, automated number accuracy: number of exactly equal rank-1, arm-assigned values divided
+   by all gold numbers in eligible items (4 per binary item, 6 per continuous item). Count repeated
+   numeric values separately by field and arm. No candidate contributes 0/4 or 0/6. Partial answers can
+   earn partial credit. This is **not comparable** to GPT-4's per-comparison rate.
+
+The current continuous extractor offers mean/SD for one arm per candidate and no group sizes;
+continuous PC-EXACT therefore fails, even when human-in-the-loop RECALL passes. This is a reported
+limitation, not grounds to relax the metric.
+
+### Amended output
+
+After per-item diagnostics, print these lines in this order (with rank/count details appended to RECALL):
+
+```text
+YUN <split> PC-EXACT binary=a/N continuous=b/N gold_incomplete=c
+YUN <split> RECALL binary=a/N continuous=b/N gold_incomplete=c rank1=x% mean_rank=y confusable=z
+YUN <split> PER-VALUE binary=a/V continuous=b/V
+YUN NOTE: only PC-EXACT is comparable to Yun et al. 2024 GPT-4 per-comparison exact match (65.5% binary / 48.7% continuous, TEST split)
+```
+
+JSON summaries and per-licence summaries include all three metrics; per-item diagnostics include
+`pc_exact` and `per_value` alongside the historical recall status. Zero denominators are printed as
+0/0, not as a success rate. Candidate burden uses items with extraction results; missing-text/error
+counts are reported separately and still contribute failures to metric denominators.
