@@ -1,0 +1,32 @@
+FAIL P2-3 live adapter uses app parser: extra-column: Line 1: invalid contrast; validation refused
+FAIL P2-3 live adapter uses app parser: logOR-header: Line 1: invalid contrast; validation refused
+FAIL P2-3 live adapter uses app parser: parseFloat: Expected values to be strictly deep-equal:
++ actual - expected
+
+  [
+    {
++     est: 16,
+-     est: 0,
+      se: 0.12,
+      study: 'One',
+      t1: 'A',
+      t2: 'B'
+    },
+
+PASS P2-3 live adapter still refuses invalid SE without mutating controls
+PASS P1-1 positive I-squared with unavailable interval
+PASS P1-1 zero I-squared also has unavailable interval
+PASS P2-1 constants do not masquerade as results
+PASS P2-1 absent P(best) omits simulation claim
+PASS P2-2 production ignores perturbation
+PASS P2-2 PLANTED numeric label mismatch fails audit
+PASS P2-3 exact parser input: S,A,B,0.2,0.1,10%
+PASS P2-3 exact parser input: S,A,B,0.2,0.1,
+PASS P2-3 exact parser input: study,t1,t2,logOR,SE / S,A,B,0.2,0.1
+PASS P2-3 exact parser input: S,A,B,0x10,0.1
+PASS P2-3 share get refuses unusable data
+PASS P2-5 unavailable netmeta cannot pass the VERIFY gate
+PASS P2-7 unloaded example selection preserves text
+PASS P2-9 restored free text is labelled user-supplied
+PASS P2-10 common-effect missing PI flag
+REVIEWCHECK 16/19

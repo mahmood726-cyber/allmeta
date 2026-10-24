@@ -1,0 +1,62 @@
+FAIL P1-1 positive I-squared with unavailable interval: Expected values to be strictly equal:
+
+0 !== undefined
+
+FAIL P1-1 zero I-squared also has unavailable interval: Expected values to be strictly equal:
+
+0 !== undefined
+
+FAIL P2-1 constants do not masquerade as results: Expected values to be strictly equal:
+
+95 !== undefined
+
+FAIL P2-1 absent P(best) omits simulation claim: The input was expected to not match the regular expression /P\(best\) uses/. Input:
+
+'Contrast-based network meta-analysis used generalised least squares with a common-effect inverse-variance model. Entered effects represent the second treatment minus the first, already on the analysis scale; no arm-count conversion or continuity correction is performed. Complete multi-arm comparisons are grouped by study and correlated contrasts use arm variances; the random-effects covariance adds half the between-study variance to shared contrasts. Invalid or inconsistent multi-arm designs are refused. Effects and 95% confidence limits are displayed on the entered analysis scale. Confidence intervals and two-sided tests use the normal Wald approximation. No Hartung–Knapp adjustment is applied. Heterogeneity is reported as Q with chi-squared tests, the DerSimonian–Laird between-study variance and its square root, and I² with a Higgins–Thompson interval through H. I² is the nonnegative Q-based proportion of excess variation. Q is decomposed into within-design heterogeneity and between-design inconsistency. Prediction intervals are not displayed for the common-effect model. P-scores average pairwise certainty derived from the selected model’s two-sided tests; smaller estimates rank better. P(best) uses 10,000 multivariate-normal draws of the fitted effects with their covariance and a fixed random seed. '
+
+FAIL P2-2 production ignores perturbation: Expected values to be strictly equal:
+
+1.2 !== 0.2
+
+FAIL P2-2 PLANTED numeric label mismatch fails audit: Expected values to be strictly equal:
+
+true !== false
+
+FAIL P2-3 exact parser input: S,A,B,0.2,0.1,10%: Each data row must contain five columns.
+FAIL P2-3 exact parser input: S,A,B,0.2,0.1,: Each data row must contain five columns.
+FAIL P2-3 exact parser input: study,t1,t2,logOR,SE / S,A,B,0.2,0.1: Each contrast needs study and distinct treatment labels, a finite effect and a positive SE. Labels cannot contain commas, tabs or newlines, or start with #.
+FAIL P2-3 exact parser input: S,A,B,0x10,0.1: Expected values to be strictly equal:
++ actual - expected
+
++ 'S, A, B, 16, 0.1'
+- 'S,A,B,0x10,0.1'
+     ^
+
+FAIL P2-3 share get refuses unusable data: Missing expected exception.
+FAIL P2-5 unavailable netmeta cannot pass the VERIFY gate: The input did not match the regular expression /expect\(status[^\n]*\)\.not\.toMatch\(\/package netmeta is unavailable\//. Input:
+
+'const status = await summary.innerText();\r\n' +
+  '  if (/package netmeta is unavailable/.test(status)) {\r\n' +
+  "    expect(status).toBe('Not checked in the browser: R package netmeta is unavailable.');\r\n" +
+  "    expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('nma'))).toBe(false);\r\n" +
+  "    await expect(panel.locator('td[data-result=pass]')).toHaveCount(0);\r\n" +
+  "    const [r] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'R script (.R)', exact: true }).click()]);\r\n" +
+  "    expect(fs.readFileSync(await r.path(), 'utf8')).toContain('library(netmeta)');\r\n" +
+  "    console.log('VERIFY unavailable: netmeta; R download present; no pass claimed');\r\n" +
+  '    return;\r\n' +
+  '  }\r\n' +
+  '  '
+
+FAIL P2-7 unloaded example selection preserves text: The expression evaluated to a falsy value:
+
+  assert.ok(spec.text.results())
+
+FAIL P2-9 restored free text is labelled user-supplied: The input did not match the regular expression /User-supplied data-entry notes \(not independently verified\):/. Input:
+
+'Contrast-based network meta-analysis used generalised least squares with a common-effect inverse-variance model. Entered effects represent the second treatment minus the first, already on the analysis scale; no arm-count conversion or continuity correction is performed. Complete multi-arm comparisons are grouped by study and correlated contrasts use arm variances; the random-effects covariance adds half the between-study variance to shared contrasts. Invalid or inconsistent multi-arm designs are refused. Effects and 95% confidence limits are displayed on the entered analysis scale. Confidence intervals and two-sided tests use the normal Wald approximation. No Hartung–Knapp adjustment is applied. Heterogeneity is reported as Q with chi-squared tests, the DerSimonian–Laird between-study variance and its square root, and I² with a Higgins–Thompson interval through H. I² is the nonnegative Q-based proportion of excess variation. Q is decomposed into within-design heterogeneity and between-design inconsistency. Prediction intervals are not displayed for the common-effect model. P-scores average pairwise certainty derived from the selected model’s two-sided tests; smaller estimates rank better. P(best) uses 10,000 multivariate-normal draws of the fitted effects with their covariance and a fixed random seed. Data-entry conversions: all values were independently verified in R (netmeta 3.7-0) for 1 study. '
+
+FAIL P2-10 common-effect missing PI flag: The expression evaluated to a falsy value:
+
+  assert.ok(flags.includes('Prediction intervals are expected with this many studies but are unavailable for the common-effect model.'))
+
+REVIEWCHECK 0/15
