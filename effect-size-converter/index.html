@@ -227,7 +227,7 @@
           <g id="forest-labels"></g>
           <g id="forest-axis"></g>
         </svg>
-        <p class="note">These points are <strong>correlated representations of one input</strong>, not separate studies or independent evidence. OR-to-SMD uses Cox's distributional approximation; RR, HR and IRR are not directly mapped to an SMD. Intervals use the delta method where applicable.</p>
+        <p class="note">These points are <strong>correlated representations of one input</strong>, not separate studies or independent evidence. OR-to-SMD uses the logit (Hasselblad–Hedges) distributional approximation; RR, HR and IRR are not directly mapped to an SMD. Intervals use the delta method where applicable.</p>
       </div>
       <div class="plot-wrap" style="margin-top:1rem">
         <h2>E-value (sensitivity to unmeasured confounding)</h2>
@@ -249,7 +249,7 @@
     </section>
   </main>
   <footer>
-    References: Borenstein et al., <em>Introduction to Meta-Analysis</em> (2009); Hedges (1981); <a href="https://wviechtb.github.io/metafor/reference/escalc.html">metafor::escalc(SMD, vtype="LS")</a> and <a href="https://wviechtb.github.io/metafor/reference/cmicalc.html">metafor::cmicalc(exact)</a>. Cox constant <code>√3/π ≈ 0.5513</code> relates OR and a latent continuous SMD under distributional assumptions. There is <strong>no general HR/IRR-to-OR conversion</strong>. SE is on the log scale for ratios.
+    References: Borenstein et al., <em>Introduction to Meta-Analysis</em> (2009); Hedges (1981); <a href="https://wviechtb.github.io/metafor/reference/escalc.html">metafor::escalc(SMD, vtype="LS")</a> and <a href="https://wviechtb.github.io/metafor/reference/cmicalc.html">metafor::cmicalc(exact)</a>. The logit constant <code>√3/π ≈ 0.5513</code> (Hasselblad &amp; Hedges, 1995) relates OR and a latent continuous SMD under distributional assumptions. There is <strong>no general HR/IRR-to-OR conversion</strong>. SE is on the log scale for ratios.
   </footer>
   <script>
     // --- math helpers ---
@@ -295,8 +295,8 @@
           const p1 = est * p0 / (1 - p0 + est * p0);
           push("RD", p1 - p0, NaN, "point only; SE(RD) needs the 2×2 table");
         }
-        // Cox: SMD = ln(OR) * √3/π, SE propagates linearly
-        push("SMD (Cox)", logOR * COX, se * COX, "Cox's constant √3/π ≈ 0.5513");
+        // Logit (Hasselblad-Hedges): SMD = ln(OR) * √3/π, SE propagates linearly
+        push("SMD (logit method)", logOR * COX, se * COX, "logit constant √3/π ≈ 0.5513 (Hasselblad-Hedges)");
       } else if (type === "RR") {
         const logRR = Math.log(est);
         push("RR",     est, se, "log-scale SE");
@@ -316,13 +316,13 @@
             push("OR", or, NaN,
               "RR·p₀ ≈ 1 — OR SE undefined at risk ceiling (implied p₁ ≈ 1); point-only");
             push("RD", (est - 1) * p0, NaN, "point only");
-            push("SMD (Cox via OR)", Math.log(or) * COX, NaN,
-              "Cox's constant; SE undefined at risk ceiling");
+            push("SMD (logit method via OR)", Math.log(or) * COX, NaN,
+              "logit constant; SE undefined at risk ceiling");
           } else {
             const seLogOR = se / Math.abs(denom);
             push("OR", or, seLogOR, "via RR→OR given p₀; log-scale SE");
             push("RD", (est - 1) * p0, NaN, "point only");
-            push("SMD (Cox via OR)", Math.log(or) * COX, seLogOR * COX, "Cox's constant");
+            push("SMD (logit method via OR)", Math.log(or) * COX, seLogOR * COX, "logit constant √3/π");
           }
           }
         }
@@ -351,24 +351,30 @@
             push("SMD (Cohen's d, recovered)", est / J, se / J,
               "inverse of exact Hedges correction; requires independent group sizes");
             if (Number.isFinite(pooledSd) && pooledSd > 0)
-              push("MD", est / J * pooledSd, se / J * pooledSd,
-                "recovered raw MD from d = g / J and the pooled SD");
+              push("MD", est / J * pooledSd, pooledSd * Math.sqrt(1 / n1 + 1 / n2),
+                "raw MD from d = g / J and the pooled SD; SE = pooled SD × √(1/n1 + 1/n2), assuming equal group variances (metafor::escalc MD, vtype HO)");
           }
         } else {
           push("SMD (Cohen's d)", est, se, "uncorrected; specify n1/n2 for Hedges' g");
           if (Number.isFinite(J) && J > 0)
             push("SMD (Hedges' g)", est * J, se * J, "exact small-sample correction J(df=" + df + ")");
-          if (Number.isFinite(pooledSd) && pooledSd > 0)
-            push("MD", est * pooledSd, se * pooledSd, "raw MD assumes entered SMD is uncorrected Cohen's d");
+          if (Number.isFinite(pooledSd) && pooledSd > 0) {
+            if (Number.isFinite(J) && J > 0)
+              push("MD", est * pooledSd, pooledSd * Math.sqrt(1 / n1 + 1 / n2),
+                "raw MD assumes entered SMD is uncorrected Cohen's d; SE = pooled SD × √(1/n1 + 1/n2), assuming equal group variances (escalc MD, vtype HO)");
+            else
+              push("MD", est * pooledSd, se * pooledSd,
+                "raw MD assumes entered SMD is uncorrected Cohen's d; SE approximate (scaled SMD SE): enter valid independent group sizes for the pooled-variance (HO) MD SE");
+          }
         }
-        // Cox maps a standardized latent continuous contrast to a log odds ratio.
+        // The logit method maps a standardized latent continuous contrast to a log odds ratio.
         // It is a model-dependent approximation, NOT an empirical 2x2 OR.
-        push("OR (Cox approximation)", Math.exp(est / COX), se / COX,
+        push("OR (logit approximation)", Math.exp(est / COX), se / COX,
           "latent-logistic distributional assumption; not an observed binary odds ratio");
       } else if (type === "MD") {
         push("MD", est, se);
         if (Number.isFinite(pooledSd) && pooledSd > 0) {
-          push("SMD", est / pooledSd, se / pooledSd, "divide by pooled SD");
+          push("SMD (Cohen's d, uncorrected)", est / pooledSd, se / pooledSd, "divide by pooled SD; no Hedges correction");
         }
       } else if (type === "HR") {
         push("HR", est, se, "log-scale SE; requires a specified follow-up estimand");
@@ -464,7 +470,7 @@
 
     // --- forest plot on SMD scale ---
     function toSmdView(r) {
-      // Only a true SMD, MD/known SD, OR/Cox, or log(OR)/Cox can be shown.
+      // Only a true SMD, MD/known SD, OR/logit, or log(OR)/logit can be shown.
       // RR, HR and IRR have NO generic SMD conversion.
       let pt, se;
       if (/^SMD/.test(r.scale)) { pt = r.point; se = r.se; }
@@ -611,9 +617,9 @@
       const warn = type === "HR" || type === "IRR"
         ? "No general mathematically valid conversion from a hazard/rate ratio to an odds ratio, risk ratio or SMD. A specified time horizon and data-generating model would be needed; use the original effect measure."
         : type === "OR" || type === "RR" || type === "RD"
-        ? "Baseline risk is treated as fixed (its sampling uncertainty is not propagated). OR/RR conversions are conditional on a common p0; Cox OR-to-SMD is a separate distributional approximation."
+        ? "Baseline risk is treated as fixed (its sampling uncertainty is not propagated). OR/RR conversions are conditional on a common p0; logit OR-to-SMD is a separate distributional approximation."
         : type === "SMD"
-        ? "Cox OR conversion assumes an unobserved logistic distribution. An imported Hedges' g is already bias-corrected; do not correct it again."
+        ? "The logit OR conversion assumes an unobserved logistic distribution. An imported Hedges' g is already bias-corrected; do not correct it again."
         : "";
       render(rows, warn);
     }
@@ -745,7 +751,9 @@
         if (!isFinite(pt) || (ratio && pt <= 0)) { out.textContent = 'Enter a positive estimate.'; window.__almLastEValue = function () { return null; }; return; }
         var r = window.AlmEValue.eValues(meas, pt, isFinite(lo) ? lo : null, isFinite(hi) ? hi : null, { rare: rare });
         var f = function (x) { return (typeof x === 'number' && isFinite(x)) ? x.toFixed(3) : '—'; };
-        out.innerHTML = 'E-value (point) = <strong>' + f(r.point) + '</strong> &middot; E-value (CI bound nearest null) = <strong>' + f(r.ci) + '</strong>' +
+        var needLo = r.rr.point >= 1, noCI = needLo ? (r.rr.lo == null) : (r.rr.hi == null);  // the bound nearest the null is missing
+        var noCIText = (r.rr.lo == null && r.rr.hi == null) ? 'not available (no CI entered)' : 'not available (the CI bound nearest the null is missing)';
+        out.innerHTML = 'E-value (point) = <strong>' + f(r.point) + '</strong> &middot; E-value (CI bound nearest null) = <strong>' + (noCI ? noCIText : f(r.ci)) + '</strong>' +
           (meas !== 'RR' ? ' &middot; approx RR = ' + f(r.rr.point) : '');
         window.__almLastEValue = function () { return r; };
       }
@@ -780,8 +788,8 @@
           Number(document.getElementById('ctx-p0').value) : null,
         pooled_sd: document.getElementById('ctx-sd').value.trim() !== '' ?
           Number(document.getElementById('ctx-sd').value) : null,
-        assumptions: 'Normal/Wald 95% CI; fixed p0 for OR/RR/RD; Cox OR/SMD assumes latent logistic distribution; no generic HR/IRR conversion.',
-        numerical_reference: 'metafor::escalc(measure="SMD",correct=TRUE,vtype="LS"); metafor::cmicalc(method="exact")',
+        assumptions: 'Normal/Wald 95% CI; fixed p0 for OR/RR/RD; logit (Hasselblad-Hedges) OR/SMD assumes latent logistic distribution; no generic HR/IRR conversion.',
+        numerical_reference: 'metafor::escalc(measure="SMD",correct=TRUE,vtype="LS"); metafor::escalc(measure="MD",vtype="HO") for the raw MD row; metafor::cmicalc(method="exact")',
         rows: rows
       };
     };
