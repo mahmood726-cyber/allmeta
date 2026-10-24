@@ -35,6 +35,37 @@ function interceptLabel(names, centred) {
     `Intercept (effect when ${names.map(n => `${n} = 0`).join(' and ')}; not an overall pooled effect)`;
 }
 
+function coefficientTerms(result) {
+  return [result.inputs.centred ? '(intercept: effect at predictor means)' : '(intercept)', ...result.inputs.predictor_names];
+}
+// The existing example's predictor names contain no CSV delimiters.
+function csvTerms(text, column) {
+  return text.trim().split(/\r?\n/).slice(1).map(line => line.split(',')[column].replace(/^"|"$/g, ''));
+}
+async function checkRveExports(page, result) {
+  const terms = coefficientTerms(result);
+  expect(result.coefficients.map(c => c.term)).toEqual(terms);
+  const json = JSON.parse(await download(page, '#alm-export-mount', 'json'));
+  expect(json).toEqual(result);
+  expect(csvTerms(await download(page, '#alm-export-mount', 'csv'), 0)).toEqual(terms);
+  const report = await download(page, '#alm-export-mount', 'report-md');
+  for (const term of terms) expect(report).toContain(`| ${term} |`);
+  expect(report).not.toContain('not an overall pooled effect');
+  await page.locator('#btn-rho-sens').click();
+  await expect(page.locator('#rho-sens-table th[scope="row"]').first()).toHaveText(interceptLabel(result.inputs.predictor_names, result.inputs.centred));
+  const pending = page.waitForEvent('download');
+  await page.locator('#btn-rho-csv').click();
+  const file = await pending;
+  expect(await file.failure()).toBeNull();
+  const rho = readFileSync(await file.path(), 'utf8');
+  const rhoRows = rho.trim().split(/\r?\n/).slice(1);
+  const groups = [...new Set(rhoRows.map(line => line.split(',')[0]))];
+  expect(groups.length).toBeGreaterThan(1);
+  for (const group of groups) {
+    expect(csvTerms([rho.split(/\r?\n/)[0], ...rhoRows.filter(line => line.split(',')[0] === group)].join('\n'), 1)).toEqual(terms);
+  }
+}
+
 test('P0-38 moderator plant regression, centred and intercept-only controls; actual page coefficients to R', async ({ page }) => {
   const errors = await open(page, 'rve-meta');
   const original = await page.evaluate(() => __almLastRVE());
@@ -43,15 +74,14 @@ test('P0-38 moderator plant regression, centred and intercept-only controls; act
   const wanted = interceptLabel(names, false);
   await expect(page.locator('#coef-body tr').first().locator('th')).toHaveText(wanted);
   await expect(page.locator('#intercept-note')).toContainText('Centre predictors at their means');
-  expect(original.coefficients[0].term).toBe(wanted);
-  for (const action of ['json', 'csv', 'report-md']) {
-    expect(await download(page, '#alm-export-mount', action)).toContain(wanted);
+  await checkRveExports(page, original);
+  const records = [['scenario', 'index', 'term', 'estimate', 'tau2', 'rho', 'centred', 'label']];
+  async function record(scenario, result) {
+    const labels = await page.locator('#coef-body tr th').allTextContents();
+    expect(labels).toHaveLength(result.coefficients.length);
+    result.coefficients.forEach((c, i) => records.push([scenario, i, c.term, c.estimate, result.model.tau2, result.inputs.rho, Number(result.inputs.centred), labels[i]]));
   }
-  const records = [['scenario', 'index', 'term', 'estimate', 'tau2', 'rho', 'centred']];
-  function record(scenario, result) {
-    result.coefficients.forEach((c, i) => records.push([scenario, i, c.term, c.estimate, result.model.tau2, result.inputs.rho, Number(result.inputs.centred)]));
-  }
-  record('raw', original);
+  await record('raw', original);
   csv('rve-input.csv', [['cluster', 'yi', 'vi', ...names], ...original.inputs.rows.map(r => [r.cluster, r.yi, r.vi, ...r.x])]);
 
   await page.locator('#f-centre').check();
@@ -64,7 +94,8 @@ test('P0-38 moderator plant regression, centred and intercept-only controls; act
   for (let i = 1; i < original.coefficients.length; i++) {
     expect(Math.abs(centred.coefficients[i].estimate - original.coefficients[i].estimate)).toBeLessThanOrEqual(1e-6);
   }
-  record('centred', centred);
+  await checkRveExports(page, centred);
+  await record('centred', centred);
 
   await page.locator('#src').fill(original.inputs.rows.map(r => [r.cluster, r.yi, r.vi].join(',')).join('\n'));
   await page.locator('#f-names').fill('');
@@ -74,12 +105,13 @@ test('P0-38 moderator plant regression, centred and intercept-only controls; act
   expect(pooled.coefficients).toHaveLength(1);
   expect(pooled.coefficients[0].term).toBe('(intercept)');
   await expect(page.locator('#intercept-note')).toHaveCount(0);
-  record('intercept-only', pooled);
+  await checkRveExports(page, pooled);
+  await record('intercept-only', pooled);
   csv('rve-coefficients.csv', records);
   expect(errors).toEqual([]);
 });
 
-test('P0-38 planted original label is detected in the table and exports', async ({ page }) => {
+test('P0-38 planted original label is detected in the table; canonical export names remain correct', async ({ page }) => {
   const html = readFileSync(new URL('rve-meta/index.html', ROOT), 'utf8');
   const mutant = html.replace(/    function coefficientLabels\(names, p, centred\) \{[\s\S]*?\n    \}/,
     '    function coefficientLabels(names, p, centred) { return E.coefficientNames(names, p, centred); }');
@@ -90,7 +122,33 @@ test('P0-38 planted original label is detected in the table and exports', async 
   const wanted = interceptLabel(r.inputs.predictor_names, false);
   expect(await page.locator('#coef-body tr').first().locator('th').textContent()).not.toBe(wanted);
   expect(r.coefficients[0].term).not.toBe(wanted);
+  expect(r.coefficients.map(c => c.term)).toEqual(coefficientTerms(r));
   expect(r.coefficients[0].estimate).toBe(r.fit.beta[0]);
+});
+
+test('R1 planted display labels leaking into coefficient and rho CSV terms are detected', async ({ page }) => {
+  const html = readFileSync(new URL('rve-meta/index.html', ROOT), 'utf8');
+  const mutant = html.replace('var coefNames = E.coefficientNames(names, fit.p, centred);',
+    'var coefNames = coefficientLabels(names, fit.p, centred);')
+    .replace('      var frozen = lastResult;',
+      '      lastResult.coefficients.forEach(function (c, i) { c.term = coefNames[i]; });\n      var frozen = lastResult;');
+  expect(mutant).not.toBe(html);
+  await page.route('**/rve-meta/index.html', route => route.fulfill({ contentType: 'text/html', body: mutant }));
+  await open(page, 'rve-meta');
+  const result = await page.evaluate(() => __almLastRVE());
+  const wanted = interceptLabel(result.inputs.predictor_names, false);
+  await expect(page.locator('#coef-body tr').first().locator('th')).toHaveText(wanted);
+  const coefficients = csvTerms(await download(page, '#alm-export-mount', 'csv'), 0);
+  expect(coefficients).not.toEqual(coefficientTerms(result));
+  expect(coefficients[0]).toBe(wanted);
+  await page.locator('#btn-rho-sens').click();
+  const pending = page.waitForEvent('download');
+  await page.locator('#btn-rho-csv').click();
+  const file = await pending;
+  expect(await file.failure()).toBeNull();
+  const rhoTerms = [...new Set(csvTerms(readFileSync(await file.path(), 'utf8'), 1))];
+  expect(rhoTerms).not.toEqual(coefficientTerms(result));
+  expect(rhoTerms[0]).toBe(wanted);
 });
 
 async function corrLabels(page) {

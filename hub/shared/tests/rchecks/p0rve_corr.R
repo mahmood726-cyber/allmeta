@@ -53,7 +53,7 @@ d <- read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
 if (ncol(d) < 4 || !identical(names(d)[1:3], c("cluster", "yi", "vi")) || !nrow(d) || anyNA(d)) stop("Invalid RVE input schema")
 predictors <- names(d)[-(1:3)]
 if (any(!vapply(d[-1], is.numeric, logical(1))) || any(!is.finite(as.matrix(d[-1]))) || any(d$vi <= 0)) stop("Invalid RVE inputs")
-rve <- read_output("rve-coefficients.csv", c("scenario", "index", "term", "estimate", "tau2", "rho", "centred"))
+rve <- read_output("rve-coefficients.csv", c("scenario", "index", "term", "estimate", "tau2", "rho", "centred", "label"))
 exact(unique(rve$scenario), c("raw", "centred", "intercept-only"), "RVE scenario coverage")
 
 # HTJ CORR moment equation in matrix form, for environments without robumeta.
@@ -92,7 +92,9 @@ for (scenario in c("raw", "centred", "intercept-only")) {
   intercept <- if (!length(mods)) "(intercept)" else if (centred)
     "Intercept (effect at predictor means; not an overall pooled effect)" else
     paste0("Intercept (effect when ", paste(paste0(mods, " = 0"), collapse = " and "), "; not an overall pooled effect)")
-  exact(got$term, c(intercept, mods), paste(scenario, "coefficient labels"))
+  exact(got$label, c(intercept, mods), paste(scenario, "on-screen coefficient labels"))
+  export_intercept <- if (centred) "(intercept: effect at predictor means)" else "(intercept)"
+  exact(got$term, c(export_intercept, mods), paste(scenario, "canonical export terms"))
   data <- d
   if (centred) for (name in mods) data[[name]] <- data[[name]] - mean(data[[name]])
   X <- cbind(1, as.matrix(data[, mods, drop = FALSE]))
