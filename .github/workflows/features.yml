@@ -5,6 +5,7 @@ name: features
 #   unit     : node:test suites in hub/shared/tests/unit (parsers, converters, text audit)
 #   entry-r  : F1 conversion grid vs metafor conv.wald / conv.fivenum, |js-r| <= 1e-10*|r| (exact when r == 0)
 #              + three planted defects (large value, 1e-12-scale value, formula coefficient), each must FAIL
+#   yun      : Yun et al. 2024 candidate-recall harness, DEV split on the committed CC-BY texts (reports, never gates recall)
 #   browser  : Playwright features-*.spec.mjs (per-app entry round-trip, text audit + snapshot, verify-in-R panel via webR)
 
 on:
@@ -88,6 +89,19 @@ jobs:
             planted-formula.log
             planted-de.log
           if-no-files-found: ignore
+
+  yun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Yun DEV on CC-BY texts (must print the YUN line; exits nonzero only on harness errors)
+        run: |
+          set -o pipefail
+          node validation/yun/run.mjs DEV 2>&1 | tee yun.log
+          grep -E '^YUN DEV binary recall=[0-9]+/[0-9]+ continuous recall=[0-9]+/[0-9]+ ' yun.log
 
   browser:
     runs-on: ubuntu-latest
