@@ -12,7 +12,8 @@ import AxeBuilder from '@axe-core/playwright';
 
 const PAGE = '/proportion-ma/index.html';
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
-const TABS = ['Data entry', 'Report text', 'Verify in R', 'Share'];
+// F6 adds the 'Straight path' extension tab after Report text (shared/alm-straight-ui.js).
+const TABS = ['Data entry', 'Report text', 'Straight path', 'Verify in R', 'Share'];
 const PASTE = 'Alpha 2019\t5/40\nBeta 2021\t9/60\nGamma 2020\t14/75';
 const ROWS = [
   { label: 'Alpha 2019', e: 5, n: 40 },

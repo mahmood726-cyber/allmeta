@@ -6,6 +6,7 @@
  *                                       (re)renders when a block arrives after the first mount.
  *   AlmFeatures.registerModule(key, m)  a tab implementation: key in entry|text|verify|share,
  *                                       m = {label?, render(panelEl, ctx)}; ctx = {app, spec, block, host}.
+ *                                       m.extension = {label, after} adds a NEW tab + block key (see addExtensionTab).
  *                                       Modules that load before this file push [key, m] onto
  *                                       window.AlmFeaturesPending; it is drained here.
  *   AlmFeatures.get(app)                the merged spec (or null).
@@ -73,8 +74,21 @@
     return cur;
   }
 
+  // Extension tabs (e.g. shared/alm-straight-ui.js "Straight path"): a module with extension = {label, after}
+  // adds tab `key` (and a spec block of the same name) after the tab `after` (default: last). The core lists
+  // AlmFeatures.tabs / AlmFeatures.blocks are unchanged. Register the module BEFORE apps register that block.
+  function addExtensionTab(key, ext) {
+    if (!/^[a-z][a-z-]{0,30}$/.test(key) || BLOCKS.indexOf(key) >= 0) throw new Error('AlmFeatures.registerModule: invalid extension tab ' + key);
+    var at = TABS.map(function (t) { return t.key; }).indexOf(ext.after);
+    TABS.splice(at < 0 ? TABS.length : at + 1, 0, { key: key, label: String(ext.label || key) });
+    BLOCKS.push(key);
+  }
+
   function registerModule(key, mod) {
-    if (!TABS.some(function (t) { return t.key === key; })) throw new Error('AlmFeatures.registerModule: unknown tab ' + key);
+    if (!TABS.some(function (t) { return t.key === key; })) {
+      if (mod && mod.extension && typeof mod.extension === 'object' && typeof mod.render === 'function') addExtensionTab(key, mod.extension);
+      else throw new Error('AlmFeatures.registerModule: unknown tab ' + key);
+    }
     if (!mod || typeof mod.render !== 'function') throw new Error('AlmFeatures.registerModule: render() required');
     modules[key] = mod;
     queueRender();
