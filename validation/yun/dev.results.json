@@ -1,0 +1,553 @@
+{
+  "split": "DEV",
+  "rulesVersion": "entry6.1",
+  "summary": {
+    "binary": {
+      "pass": 4,
+      "N": 8
+    },
+    "continuous": {
+      "pass": 0,
+      "N": 19
+    },
+    "goldIncomplete": 16,
+    "goldIncompleteFlagFalse": 16,
+    "noText": 0,
+    "errors": 0,
+    "rank1": 25,
+    "meanRank": 8.5,
+    "medianCandidates": 0,
+    "confusableItems": 3,
+    "confusableCandidates": 30,
+    "sdQuestion": 0,
+    "categories": {
+      "PERCENT_ONLY": 0,
+      "SD_SE_AMBIGUOUS": 0,
+      "NOT_FOUND": 0,
+      "IN_TABLE_LAYOUT": 18,
+      "SPLIT_ACROSS_SENTENCES": 0,
+      "OTHER": 5
+    },
+    "confusableCategories": {
+      "OTHER_COUNTS": 30
+    }
+  },
+  "byLicence": {
+    "cc by": {
+      "binary": {
+        "pass": 1,
+        "N": 3
+      },
+      "continuous": {
+        "pass": 0,
+        "N": 4
+      },
+      "goldIncomplete": 5,
+      "goldIncompleteFlagFalse": 5,
+      "noText": 0,
+      "errors": 0,
+      "rank1": 100,
+      "meanRank": 1,
+      "medianCandidates": 0,
+      "confusableItems": 0,
+      "confusableCandidates": 0,
+      "sdQuestion": 0,
+      "categories": {
+        "PERCENT_ONLY": 0,
+        "SD_SE_AMBIGUOUS": 0,
+        "NOT_FOUND": 0,
+        "IN_TABLE_LAYOUT": 2,
+        "SPLIT_ACROSS_SENTENCES": 0,
+        "OTHER": 4
+      },
+      "confusableCategories": {}
+    },
+    "other": {
+      "binary": {
+        "pass": 3,
+        "N": 5
+      },
+      "continuous": {
+        "pass": 0,
+        "N": 15
+      },
+      "goldIncomplete": 11,
+      "goldIncompleteFlagFalse": 11,
+      "noText": 0,
+      "errors": 0,
+      "rank1": 0,
+      "meanRank": 11,
+      "medianCandidates": 0,
+      "confusableItems": 3,
+      "confusableCandidates": 30,
+      "sdQuestion": 0,
+      "categories": {
+        "PERCENT_ONLY": 0,
+        "SD_SE_AMBIGUOUS": 0,
+        "NOT_FOUND": 0,
+        "IN_TABLE_LAYOUT": 16,
+        "SPLIT_ACROSS_SENTENCES": 0,
+        "OTHER": 1
+      },
+      "confusableCategories": {
+        "OTHER_COUNTS": 30
+      }
+    }
+  },
+  "results": [
+    {
+      "id": 1,
+      "pmcid": 57750,
+      "type": "binary",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 2,
+      "pmcid": 57750,
+      "type": "binary",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 3,
+      "pmcid": 1216327,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "cc by"
+    },
+    {
+      "id": 4,
+      "pmcid": 1216327,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "OTHER",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "cc by"
+    },
+    {
+      "id": 5,
+      "pmcid": 1216327,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "OTHER",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "cc by"
+    },
+    {
+      "id": 17,
+      "pmcid": 2681019,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 18,
+      "pmcid": 2681019,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 19,
+      "pmcid": 2681019,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 55,
+      "pmcid": 3276927,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 56,
+      "pmcid": 3276927,
+      "type": "binary",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 57,
+      "pmcid": 3276927,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 58,
+      "pmcid": 3276927,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 59,
+      "pmcid": 3276927,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 60,
+      "pmcid": 3276927,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "other"
+    },
+    {
+      "id": 83,
+      "pmcid": 3580751,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "OTHER",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "cc by"
+    },
+    {
+      "id": 88,
+      "pmcid": 3751573,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "OTHER",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "cc by"
+    },
+    {
+      "id": 120,
+      "pmcid": 4450164,
+      "type": "binary",
+      "status": "PASS",
+      "candidateCount": 28,
+      "rank": 26,
+      "sdQuestion": false,
+      "confusable": [
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS"
+      ],
+      "licence": "other"
+    },
+    {
+      "id": 186,
+      "pmcid": 5244530,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "cc by"
+    },
+    {
+      "id": 187,
+      "pmcid": 5244530,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "cc by"
+    },
+    {
+      "id": 188,
+      "pmcid": 5244530,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "cc by"
+    },
+    {
+      "id": 189,
+      "pmcid": 5244530,
+      "type": "continuous",
+      "status": "GOLD_INCOMPLETE",
+      "isDataComplete": "FALSE",
+      "licence": "cc by"
+    },
+    {
+      "id": 190,
+      "pmcid": 5244530,
+      "type": "binary",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 79,
+      "rank": null,
+      "licence": "cc by"
+    },
+    {
+      "id": 191,
+      "pmcid": 5244530,
+      "type": "binary",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 79,
+      "rank": null,
+      "licence": "cc by"
+    },
+    {
+      "id": 192,
+      "pmcid": 5244530,
+      "type": "binary",
+      "status": "PASS",
+      "candidateCount": 79,
+      "rank": 1,
+      "sdQuestion": false,
+      "confusable": [],
+      "licence": "cc by"
+    },
+    {
+      "id": 224,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 225,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 226,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 227,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 228,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 229,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 230,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 231,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 232,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 233,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 234,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 235,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 236,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 237,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 238,
+      "pmcid": 5498715,
+      "type": "continuous",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 0,
+      "rank": null,
+      "nPrinted": "both",
+      "licence": "other"
+    },
+    {
+      "id": 260,
+      "pmcid": 5771543,
+      "type": "binary",
+      "status": "PASS",
+      "candidateCount": 54,
+      "rank": 5,
+      "sdQuestion": false,
+      "confusable": [
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS",
+        "OTHER_COUNTS"
+      ],
+      "licence": "other"
+    },
+    {
+      "id": 261,
+      "pmcid": 5771543,
+      "type": "binary",
+      "status": "MISS",
+      "category": "IN_TABLE_LAYOUT",
+      "candidateCount": 54,
+      "rank": null,
+      "licence": "other"
+    },
+    {
+      "id": 262,
+      "pmcid": 5771543,
+      "type": "binary",
+      "status": "MISS",
+      "category": "OTHER",
+      "candidateCount": 54,
+      "rank": null,
+      "licence": "other"
+    },
+    {
+      "id": 263,
+      "pmcid": 5771543,
+      "type": "binary",
+      "status": "PASS",
+      "candidateCount": 54,
+      "rank": 2,
+      "sdQuestion": false,
+      "confusable": [
+        "OTHER_COUNTS"
+      ],
+      "licence": "other"
+    }
+  ]
+}
