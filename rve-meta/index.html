@@ -340,6 +340,15 @@
 
     function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+    function coefficientLabels(names, p, centred) {
+      var slopes = [];
+      for (var j = 1; j < p; j++) slopes.push(names[j - 1] || "x" + j);
+      var intercept = "(intercept)";
+      if (slopes.length) intercept = centred
+        ? "Intercept (effect at predictor means; not an overall pooled effect)"
+        : "Intercept (effect when " + slopes.map(function (n) { return n + " = 0"; }).join(" and ") + "; not an overall pooled effect)";
+      return [intercept].concat(slopes);
+    }
     function kappaHtml(k) {
       if (!isFinite(k)) return "∞";
       if (k < 1e4) return k.toFixed(k < 10 ? 2 : 0);
@@ -424,7 +433,7 @@
         return;
       }
       var kappa = E.kappaXtWX(fitRows, fit.weights);
-      var coefNames = E.coefficientNames(names, fit.p, centred);
+      var coefNames = coefficientLabels(names, fit.p, centred);
       var lowDf = summary.map(function (s, j) { return s.df < 4 ? coefNames[j] + " (df " + fmt(s.df, 2) + ")" : null; }).filter(Boolean);
       if (lowDf.length) warnings.push("df < 4 for " + lowDf.join(", ") + ": inference may be unreliable (Tipton 2015).");
       var ill = kappa > E.KAPPA_THRESHOLD;
@@ -433,6 +442,7 @@
       var html = '<p class="summary-line">k = ' + fit.k_total + " effects, m = " + fit.m_clusters + " clusters, p = " + fit.p + " coefficients, τ²(CORR) = <code>" + fmt(fit.tau2, 4) + "</code>, ρ = " + fmt(fit.rho, 2) +
         ", condition number κ₂(XᵀWX) = <span id=\"kappa-value\" data-kappa=\"" + kappa + "\">" + kappaHtml(kappa) + "</span>" + (centred ? " (predictors centred)" : "") + ".</p>";
       if (centred) html += '<p class="note info" id="centre-note">Predictors centred at their means (' + names.map(function (n, i) { return esc(n) + " = " + fmt(means[i], 4); }).join(", ") + "). The intercept is the expected effect at these means.</p>";
+      if (nPred > 0 && !centred) html += '<p class="note info" id="intercept-note">Moderators are included: the intercept is the effect when all moderators equal zero, not an overall pooled effect. Select <strong>Centre predictors at their means</strong> and press <strong>Fit</strong> to interpret the intercept at the predictor means.</p>';
       if (lowDf.length) html += '<p class="note" id="lowdf-warning"><strong>Warning: df &lt; 4</strong> for ' + esc(lowDf.join(", ")) + "; inference may be unreliable. Treat these confidence intervals and p-values with caution.</p>";
       if (ill) html += '<div class="note" id="kappa-warning"><strong>Ill-conditioned design.</strong> κ₂(XᵀWX) = ' + kappaHtml(kappa) + " is above 9.0×10⁶, so rounding error may reach the ninth significant digit of the results (in R as well as here)." +
         (centred ? " The design is still ill-conditioned after centring; consider rescaling predictors (e.g. sample size in thousands)." : ' <button type="button" class="secondary" id="btn-centre">Centre predictors and refit</button>') + "</div>";
@@ -457,6 +467,7 @@
       lastState = { rows: parsed.rows, fitRows: fitRows, names: names, coefNames: coefNames, rho: rho, centred: centred };
       lastResult = E.buildResult({ rawRows: parsed.rows, names: names, rho: rho, centred: centred, means: means, fit: fit, summary: summary,
         kappa: kappa, warnings: warnings, parseInfo: parsed, buildInfo: window.AlmBuildInfo });
+      lastResult.coefficients.forEach(function (c, i) { c.term = coefNames[i]; });
       var frozen = lastResult;
       window.__almLastRVE = function () { return frozen; };
       setExportsEnabled(true);
