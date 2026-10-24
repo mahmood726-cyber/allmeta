@@ -1559,7 +1559,9 @@
     // ---- keyboard ----
     function onKey(e) {
       if(e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey)return;
-      if(e.target && (e.target.isContentEditable || (e.target.closest && e.target.closest("button, a, summary, input, textarea, select, [role=button], [contenteditable=true]"))))return;
+      if(e.target && (e.target.isContentEditable || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable=true]"))))return;
+      // S17: a focused control keeps its own activation keys; all other shortcuts still apply
+      if((e.key === "Enter" || e.key === " ") && e.target && e.target.closest && e.target.closest("button, a, summary, [role=button]"))return;
       if ($("help-modal").classList.contains("on")) { if (e.key === "Escape") closeHelp(); return; }
       var k = e.key;
       if (k >= "1" && k <= "9") { applyReason(parseInt(k, 10) - 1); e.preventDefault(); return; }

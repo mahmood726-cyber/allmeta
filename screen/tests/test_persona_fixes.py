@@ -131,7 +131,12 @@ def test_s12_maybe_is_omitted_and_policy_is_disclosed():
 def test_s17_global_shortcuts_leave_controls_and_handled_events_alone():
     body = section("function onKey", "function openHelp")
     assert "e.defaultPrevented" in body
-    assert 'closest("button, a, summary, input, textarea, select, [role=button]' in body
+    # text fields keep every key
+    assert 'closest("input, textarea, select, [contenteditable=true]")' in body
+    # a focused control keeps only its own activation keys (Enter, Space); letter shortcuts still work there
+    assert '(e.key === "Enter" || e.key === " ") && e.target && e.target.closest && e.target.closest("button, a, summary, [role=button]")' in body
+    # regression guard: the all-keys early return must not list buttons (that disabled 'i' after clicking Focus mode)
+    assert 'closest("button, a, summary, input' not in body
 
 
 def test_s18_focus_follows_decision_without_a_live_card():
