@@ -327,3 +327,47 @@ with the results.
   seeds only through the starting records. Both tools share identical starting records on every seed.
 - The DEV gain of the chosen candidate is optimistic (best of about 37 configurations on 18 reviews, where u4 is
   in-sample); it is not a prediction of the held-out difference.
+
+## Amendment 2 (2026-10-24): an added comparator, ASReview ELAS u5. Written AFTER the primary result was known.
+
+**Why and what it is.** ELAS u5 is ASReview's next model: defined on `asreview` main (PR #2597, 2026-08-25), not
+released on PyPI (latest release 3.0.8). It is a TF-IDF (1-2 grams, sublinear, min_df 1, max_df 1.0) + squared-hinge
+SVM (C = 0.024) + balanced (ratio 9.242) + Max querier model, optimised by its authors on the **training set of
+SYNERGY+**. This amendment adds it as a comparator. It was written after the primary result (commit `1b82d61`) was
+known; that is disclosed, and it is legitimate only because **nothing on Screen's side changes**: FREEZE.json
+(sha256 `cdb5317d33a214c1413104ff13aa113145de3c26845755acff3ac96e3426a6e1`) is unchanged, and Screen's held-out
+results are the frozen run already archived (`results/R/screen_merged`, per-review sha256s in
+`results/merge_screen_merged.json`), reused as they are. No Screen run is repeated.
+
+**Comparator, pinned.** ASReview main at commit `79d568212b2b0a78f9fd7be3c5117dfb890489f9`, installed from a git
+checkout of that commit into its own environment (reported version `3.0.9.dev10+g79d568212`), configuration
+`sets/comparator_configs_u5.json` (sha256 `6bf6f4ac…088`), refused otherwise by `run_asreview_u5.py`. The simulation
+call is the registered one (`run_asreview_h2h.simulate_order`, imported unchanged). DEV parity: on Donners_2021,
+Smid_2019 and Meijboom_2021 at seeds 101 and 202, the screening orders produced by `run_asreview_u5.py` are
+identical to those of that build's own `asreview simulate --ai elas_u5 --prior-idx ... --seed ...` CLI (6 of 6;
+`u5_parity.py`). Driver `run_heldout_u5.py` and analysis `analyze_u5.py` are new files that import the registered
+`run_heldout.py` / `analyze.py` without editing them.
+
+**Unchanged bar.** Same reviews, 10 seeds, 2 + 2 starting records (`priors/`), WSS@95 and the outcome code
+(`core.py`), clusters (`sets/clusters.json`), cluster-weighted mean difference with its t interval, **margin 0.02**,
+one-sided alpha 0.025, failure rules (a failed u5 run scored best-case, Amendment 1), the 95% success gate.
+
+**Sets.** Because u5 was optimised on SYNERGY+'s training set, only reviews outside it are a fair held-out test:
+- **Confirmatory:** `sets/official_test16.txt`, the 15 PRIMARY reviews in SYNERGY+'s test split
+  (`synergy_dataset.splits.TEST_SPLIT`, identical (23 reviews) in both environments; the other 8 are DEV or excluded).
+- **Descriptive only:** the other 69 PRIMARY reviews, where u5 is in-sample (this favours u5).
+
+**Family A2 (confirmatory, separate from the primary family, which is not re-tested or adjusted):**
+- **H1-u5:** Screen minus u5, cluster-weighted mean WSS@95 on the 15 test-split reviews, > -0.02.
+- **H2-u5:** the same > 0, tested only if H1-u5 is accepted (fixed sequence; no further adjustment).
+- Reported regardless: per-review counts, losses beyond the margin, and descriptively Screen - u5 on the 69
+  in-sample reviews and on all 84, and u5 - u4 on both sets.
+- Power is limited (15 clusters): with the SD seen against u4 on this subset, a true difference near +0.01 would
+  often fail H2; a failed H2 is reported as such, never as "beats".
+
+**Commands (fixed now).** In the u5 environment on baseimage:
+`run_heldout_u5.py --set sets/primary.txt --data-dir <data> --out R/asreview/elas_u5` (all 84 PRIMARY reviews, so the
+descriptive comparison exists; sharding with `--reviews` and merging with `results/ho_merge.py` as in the primary
+run). Then, once: `analyze_u5.py --screen results/R/screen_merged --u5 R/asreview/elas_u5 --u4
+results/R/asreview/elas_u4_merged --screen-freeze-json FREEZE.json --data-dir <data> --out A/u5.json`.
+The u5 run is done once and analysed once, and reported whichever way it comes out.
