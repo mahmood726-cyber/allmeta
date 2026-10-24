@@ -124,15 +124,26 @@
       } else c.pendingFull++;
     }); return c;
   }
+  function csvDelimiter(text) {
+    // Count separators outside quoted cells in the first logical row only.
+    var counts={',':0,';':0}, quoted=false;
+    for(var i=0;i<text.length;i++){
+      var ch=text[i];
+      if(ch==='"'){if(quoted && text[i+1]==='"')i++;else quoted=!quoted;}
+      else if(!quoted){if(ch==='\r'||ch==='\n')break;if(ch in counts)counts[ch]++;}
+    }
+    return counts[';']>counts[','] ? ';' : ',';
+  }
   function csvRows(text) {
     var rows=[], row=[], cell='', quoted=false, closed=false;
     text=String(text).replace(/^\uFEFF/,'');
+    var delimiter=csvDelimiter(text);
     for(var i=0;i<text.length;i++) {
       var ch=text[i];
       if(quoted){if(ch==='"'){if(text[i+1]==='"'){cell+='"';i++;}else{quoted=false;closed=true;}}else cell+=ch;continue;}
-      if(closed && ![',','\r','\n'].includes(ch)) throw Error('Unexpected text after closing quote.');
+      if(closed && ![delimiter,'\r','\n'].includes(ch)) throw Error('Unexpected text after closing quote.');
       if(ch==='"'){if(cell)throw Error('Unexpected quote in CSV field.');quoted=true;}
-      else if(ch===','){row.push(cell);cell='';closed=false;}
+      else if(ch===delimiter){row.push(cell);cell='';closed=false;}
       else if(ch==='\r'||ch==='\n'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(Boolean))rows.push(row);row=[];cell='';closed=false;}
       else cell+=ch;
     }
