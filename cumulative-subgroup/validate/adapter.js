@@ -146,10 +146,15 @@ function subgroupPlot(sub, title, user, check) {
 }
 
 // ---- exact displayed-state contracts ----
+function fixedQText(studies) {
+  const w = studies.map(s => 1 / s.v), sw = w.reduce((a, b) => a + b, 0);
+  const mean = studies.reduce((a, s, i) => a + w[i] * s.est, 0) / sw;
+  return fmt(studies.reduce((a, s, i) => a + w[i] * (s.est - mean) * (s.est - mean), 0), 9);
+}
 function cardsExpected(view, a) {
   const k = String(a.parsed.studies.length);
   if (!a.summary) return [['k', k]];
-  if (view === 'cumulative') { const f = a.cum.series[a.cum.series.length - 1]; return [['k', k], ['Final pooled', pooledText(f)], ['Final τ²', fmt(f.tau2, 4)]]; }
+  if (view === 'cumulative') { const f = a.cum.series[a.cum.series.length - 1]; return [['k', k], ['Final pooled', pooledText(f)], ['Final τ²', fmt(f.tau2, 4)], ['Q (random-effects weights)', fmt(f.Q, 9)], ['Cochran’s Q (fixed-effect weights)', fixedQText(a.parsed.studies)]]; }
   const s = a.sub, o = s.overall, out = [['k', k], ['Groups', String(s.groups.length)], ['Overall pooled', pooledText(o)]];
   if (o.piLo != null) out.push(['95% prediction interval', '[' + fmt(o.piLo) + ', ' + fmt(o.piHi) + ']']);
   out.push(['Q_bw (df=' + s.df_bw + ')', fmt(s.Q_bw, 2) + ', p=' + fmt(s.pQ, 3)], ['I² diff', fmt(s.I2_bw, 1) + '%']);
@@ -159,12 +164,19 @@ function cardsOk(expected) {
   const wrap = document.getElementById('stats-wrap'), grid = wrap.children;
   if (grid.length !== 1 || grid[0].tagName !== 'DIV' || grid[0].className !== 'stats' || wrap.childNodes.length !== 1) return false;
   const cards = [...grid[0].childNodes];
+  if (cards.some(c => c.querySelector?.('.k')?.textContent === 'Q')) return false;
   return cards.length === expected.length && cards.every((c, i) => c.nodeType === 1 && c.tagName === 'DIV' && c.className === 'stat' && c.childNodes.length === 2 &&
     [...c.childNodes].every((s, m) => s.nodeType === 1 && s.tagName === 'SPAN' && s.className === ['k', 'v'][m] && s.childNodes.length === 1 && s.firstChild.nodeType === 3 && s.textContent === expected[i][m]));
 }
 function headingOk(view) { const h = document.getElementById('preview-heading'); return h.childNodes.length === 1 && h.textContent === HEADINGS[view]; }
 // Notes banner: hidden and empty, or exactly "Notes" + one list item per note, in order.
 function bannerOk(notes) {
+  // Missing years are an advisory about the existing fallback, not a parser error.
+  const result = window._almLastCumSub();
+  if (result && result.view === 'cumulative') {
+    const missing = result.series.filter(s => s.year == null).map(s => s.label);
+    if (missing.length) notes = notes.concat('Missing year for: ' + missing.join(', ') + '. Cumulative analysis uses input order for all studies. Add a year for every study to order chronologically.');
+  }
   const el = document.getElementById('warn-banner');
   if (!notes.length) return el.className === 'warn-banner' && el.innerHTML === '' && !el.checkVisibility();
   const c = [...el.childNodes];

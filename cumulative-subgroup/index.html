@@ -271,6 +271,11 @@
                piLo: pi ? pi.lo : null, piHi: pi ? pi.hi : null };
     }
 
+    function missingYearNote(studies) {
+      const missing = studies.filter(s => s.year == null).map(s => s.label);
+      return missing.length ? 'Missing year for: ' + missing.join(', ') + '. Cumulative analysis uses input order for all studies. Add a year for every study to order chronologically.' : '';
+    }
+
     // Cumulative: sort by year (or row order) and compute pooled estimate at each step
     function cumulative(studies) {
       const sorted = studies.slice();
@@ -621,10 +626,15 @@
           };
         }
       } else {
+        const orderNote = missingYearNote(parsed.studies);
+        if (orderNote) extras.push(orderNote);
         const cum = cumulative(parsed.studies);
         const final = cum.series[cum.series.length-1];
         parts.push(statCard("Final pooled", fmt(final.mu)+" ["+fmt(final.lo)+", "+fmt(final.hi)+"]"));
         parts.push(statCard("Final τ²", fmt(final.tau2,4)));
+        parts.push(statCard("Q (random-effects weights)", fmt(final.Q,9)));
+        // UI only: Q_final retains its existing RE-weighted meaning and export schema.
+        parts.push(statCard("Cochran’s Q (fixed-effect weights)", fmt(weightedSums(parsed.studies, 0).Q,9)));
         svg = buildCumulativeSvg(state, cum);
         _lastResults = {
           _schema: "cumsub-results-v1",
