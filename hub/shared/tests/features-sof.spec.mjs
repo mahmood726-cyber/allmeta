@@ -1,6 +1,15 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { readZip } from './zip-reader.mjs';
+
+const rcheckRoot = new URL('./rchecks-out/', import.meta.url);
+const rcheckOutput = new URL('sof/page.csv', rcheckRoot);
+test.beforeAll(() => {
+  mkdirSync(new URL('sof/', rcheckRoot), { recursive: true });
+  writeFileSync(new URL('.gitignore', rcheckRoot), '*\n', 'utf8');
+  // A failed browser run must not leave a previous run's evidence for R.
+  rmSync(rcheckOutput, { force: true });
+});
 
 for (const app of ['heterogeneity', 'mh-peto', 'proportion-ma']) {
   test(`${app}: displayed effect, manual certainty persistence and complete downloads`, async ({ page }) => {
@@ -55,15 +64,154 @@ for (const app of ['heterogeneity', 'mh-peto', 'proportion-ma']) {
     }
   });
 }
+
+async function waitForHostLayout(page) {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    // app-style.css animates main and its nested panels (including a delayed
+    // second panel). Visibility/fonts alone can capture transient transforms.
+    // Let finite animations finish naturally; do not change the host's CSS.
+    await Promise.all(document.getAnimations()
+      .filter(animation => Number.isFinite(animation.effect.getComputedTiming().endTime))
+      .map(animation => animation.finished));
+  });
+}
+
+test('SoF mounts beside shared features, outside archived results, without moving plots', async ({ page }) => {
+  for (const app of ['heterogeneity', 'mh-peto', 'proportion-ma']) {
+    // Delay only the new panel to record the original host geometry.
+    await page.route('**/shared/alm-sof.js', route => route.abort());
+    await page.goto(`/${app}/index.html`);
+    await expect(page.locator('main')).toBeVisible();
+    await waitForHostLayout(page);
+    const geometry = () => page.evaluate(() => [...document.querySelectorAll('main, main svg, main canvas')].map(e => {
+      const r = e.getBoundingClientRect();
+      return [e.tagName, e.id, r.x + scrollX, r.y + scrollY, r.width, r.height];
+    }));
+    const before = await geometry();
+    expect(before.length).toBeGreaterThan(1);
+    await page.unroute('**/shared/alm-sof.js');
+    await page.addScriptTag({ url: '/shared/alm-sof.js' });
+    await page.evaluate(app => window.AlmSoF.mount(app), app);
+    await expect(page.locator('#alm-sof h2')).toHaveText('Summary of findings');
+    await page.waitForFunction(() => [...document.styleSheets].some(sheet => sheet.href?.endsWith('/shared/alm-sof.css')));
+    await waitForHostLayout(page);
+    await expect.poll(geometry).toEqual(before);
+    // Keep exact coordinates, including fractions: a one-pixel displacement
+    // must fail even after readiness has been corrected.
+    const geometryGate = actual => expect(actual).toEqual(before);
+    geometryGate(await geometry());
+    const originalStyle = await page.evaluate(() => {
+      const main = document.querySelector('main'), original = main.getAttribute('style');
+      main.style.setProperty('transform', 'translateY(1px)', 'important');
+      return original;
+    });
+    const moved = await geometry();
+    expect(() => geometryGate(moved)).toThrow();
+    await page.evaluate(original => {
+      const main = document.querySelector('main');
+      if (original === null) main.removeAttribute('style'); else main.setAttribute('style', original);
+    }, originalStyle);
+    await expect.poll(geometry).toEqual(before);
+    const placement = () => page.evaluate(() => {
+      const panel = document.querySelector('#alm-sof'), features = document.querySelector('#alm-features');
+      return { outside: !panel.closest('main'), beside: features ? features.nextElementSibling === panel : panel.parentElement === document.body };
+    });
+    const gate = actual => expect(actual).toEqual({ outside: true, beside: true });
+    gate(await placement());
+    // Plant the old placement bug and prove the same gate rejects it.
+    await page.evaluate(() => document.querySelector('main').appendChild(document.querySelector('#alm-sof')));
+    const planted = await placement();
+    expect(() => gate(planted)).toThrow();
+  }
+});
+
+test('R witness: page absolute effects, CI bounds, rounding and refusals across the ACR grid', async ({ page }) => {
+  await page.goto('/mh-peto/index.html');
+  const panel = page.locator('#alm-sof');
+  await expect(panel.locator('[data-sof="effect"]')).not.toHaveText('Unavailable');
+  const rows = [];
+  for (const measure of ['OR', 'RR']) {
+    await page.locator('#measure').selectOption(measure);
+    await page.locator('#btn-run').click();
+    await expect.poll(() => page.evaluate(() => window.AlmSoF.readResult('mh-peto')?.measure)).toBe(measure);
+    await expect(panel.locator('[data-sof="effect"]')).not.toHaveText('Unavailable');
+    rows.push(...await page.evaluate(() => {
+      const panel = document.querySelector('#alm-sof'), input = panel.querySelector('#sof-risk');
+      const result = window.AlmSoF.readResult('mh-peto');
+      const own = window._almLastMhPeto();
+      if ([result.estimate, result.lower, result.upper].some((v, i) => v !== [own.mh_est, own.mh_lo, own.mh_hi][i])) throw Error('SoF changed the host effect or CI');
+      const capture = (source, case_id, r, acr) => {
+        input.value = String(acr);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        if (!panel.hasAttribute('data-sof-absolute')) throw Error('Missing full-precision rendered calculation');
+        const a = JSON.parse(panel.dataset.sofAbsolute);
+        const text = key => panel.querySelector(`[data-sof="${key}"]`).textContent;
+        const cells = document.querySelector('#pooled-body tr').cells;
+        const effect_display = text('effect'), host_display = cells[1].textContent + ' ' + cells[2].textContent;
+        if (effect_display !== host_display) throw Error('SoF differs from the displayed host effect');
+        return { source, case_id, measure: r.measure, acr, estimate: r.estimate, lower: r.lower, upper: r.upper,
+          status: a ? 'ok' : 'refused', comparator: a ? a.comparator * 1000 : '',
+          intervention: a ? a.intervention * 1000 : '', ci_lower: a ? a.lower * 1000 : '', ci_upper: a ? a.upper * 1000 : '',
+          difference: a ? a.difference : '', difference_lower: a ? a.differenceLower : '', difference_upper: a ? a.differenceUpper : '',
+          display_comparator: text('comparator'), display_intervention: text('intervention'), display_difference: text('difference'),
+          note: text('absolute-note'), certainty: text('certainty'), effect_display, host_display };
+      };
+      // Reuse only DOM capture, not a formula or an expected answer, for the
+      // explicitly labelled synthetic grid below. The real examples run first.
+      window.__sofCaptureForR = capture;
+      return Array.from({ length: 101 }, (_, i) => capture('live-example', 'example', result, i / 100));
+    }));
+  }
+  rows.push(...await page.evaluate(() => {
+    // Test fixtures exercise conversions, including HR (not an MH estimator).
+    // No app engine or dataset is edited; only this disposable browser's cached
+    // result accessor is replaced, and restored immediately after capture.
+    const original = window._almLastMhPeto, cells = document.querySelector('#pooled-body tr').cells;
+    const oldDisplay = [cells[1].textContent, cells[2].textContent];
+    const fixtures = [[.25, .125, .375], [.5, .25, .75], [.8, .4, 1.2], [1, 1, 1], [1.25, .625, 1.875], [2, 1, 3], [4, 2, 6]];
+    const collected = [];
+    try {
+      for (const measure of ['RR', 'OR', 'HR']) for (const [i, [estimate, lower, upper]] of fixtures.entries()) {
+        window._almLastMhPeto = () => ({ ...original(), measure, mh_est: estimate, mh_lo: lower, mh_hi: upper });
+        cells[1].textContent = String(estimate); cells[2].textContent = `[${lower}, ${upper}]`;
+        const result = window.AlmSoF.readResult('mh-peto');
+        for (let j = 0; j <= 100; j++) collected.push(window.__sofCaptureForR('formula-fixture', `grid-${i + 1}`, result, j / 100));
+      }
+    } finally {
+      window._almLastMhPeto = original;
+      [cells[1].textContent, cells[2].textContent] = oldDisplay;
+      delete window.__sofCaptureForR;
+      document.querySelector('#sof-risk').dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    return collected;
+  }));
+  expect(rows).toHaveLength((2 + 3 * 7) * 101);
+  for (const row of rows) {
+    expect(row.certainty).toBe('Not selected');
+    if (row.acr === 0 || row.acr === 1) {
+      expect(row.status).toBe('refused');
+      expect(row.note).toContain('strictly between 0 and 1');
+    }
+  }
+  const fields = Object.keys(rows[0]);
+  const cell = value => '"' + String(value).replaceAll('"', '""') + '"';
+  // Written only after the complete live-page capture succeeds. R owns all
+  // independent expected calculations and the OR-as-RR planted defect.
+  writeFileSync(rcheckOutput, [fields.join(','), ...rows.map(row => fields.map(k => cell(row[k])).join(','))].join('\n') + '\n', 'utf8');
+});
 test('changed or invalid input cannot export stale findings', async ({ page }) => {
   await page.goto('/mh-peto/index.html');
   await expect(page.locator('#alm-sof [data-sof="effect"]')).not.toHaveText('Unavailable');
   await page.locator('#src').fill('bad data');
   await expect(page.locator('#alm-sof').getByRole('button', { name: 'Export CSV' })).toBeDisabled();
+  await expect(page.locator('#alm-sof')).toHaveAttribute('data-sof-absolute', 'null');
   await page.locator('#btn-run').click();
   await expect(page.locator('#alm-sof [data-sof="effect"]')).toHaveText('Unavailable');
   await page.locator('#btn-example').click();
   await expect(page.locator('#alm-sof').getByRole('button', { name: 'Export CSV' })).toBeEnabled();
+  await page.locator('#sof-risk').fill('0.2');
+  await expect(page.locator('#alm-sof')).not.toHaveAttribute('data-sof-absolute', 'null');
 });
 
 test('meta-regression uses the main app result at full precision and retains its display', async ({ page }) => {

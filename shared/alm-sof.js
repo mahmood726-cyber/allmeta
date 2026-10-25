@@ -201,7 +201,11 @@
       '<div class="sof-scroll"><table><caption>Summary of findings — app results and user-selected certainty</caption><thead></thead><tbody></tbody></table></div>' +
       '<p data-sof="model"></p><p data-sof="absolute-note"></p><p data-sof="hint"></p><p data-sof="status" role="status"></p>' +
       '<div class="sof-actions"><button type="button" data-export="CSV">Export CSV</button><button type="button" data-export="DOCX">Export DOCX</button><button type="button" data-export="copy">Copy table</button><button type="button" id="sof-default">Use median control risk</button></div><p class="sof-references"></p>';
-    (d.querySelector('main') || d.body).appendChild(host);
+    // Keep the archived main/results/plot geometry unchanged. Some older
+    // hosts have no feature panel; their safe fallback is the end of body.
+    var features = d.getElementById('alm-features');
+    if (features && !features.closest('main')) features.insertAdjacentElement('afterend', host);
+    else d.body.appendChild(host);
     host.querySelector('.sof-references').textContent = CITATION;
     var key = 'alm-sof-v1:' + app, user = { outcome: '', certainty: '', reasons: {} }, current = null, available = false, lastRender = '';
     try { var saved = JSON.parse(global.localStorage.getItem(key)); if (saved && typeof saved === 'object') user = { outcome: typeof saved.outcome === 'string' ? saved.outcome : '', certainty: RATINGS.indexOf(saved.certainty) >= 0 ? saved.certainty : '', reasons: saved.reasons && typeof saved.reasons === 'object' ? saved.reasons : {}, acr: typeof saved.acr === 'string' ? saved.acr : undefined }; } catch (e) { /* Storage is optional. */ }
@@ -216,6 +220,10 @@
       try { if (!blocked) r = readResult(app); } catch (e) { r = null; }
       available = !!r; current = buildFinding(r, user);
       var fingerprint = JSON.stringify([r, user, blocked]); if (fingerprint === lastRender) return; lastRender = fingerprint;
+      // Preserve this render's unrounded calculation for independent numerical
+      // checks. Visible cells retain the documented whole-number rounding.
+      // Invalid/stale input explicitly clears it, rather than retaining values.
+      host.dataset.sofAbsolute = JSON.stringify(current.absolute);
       var ratio = r && ['RR', 'OR', 'HR'].indexOf(r.measure) >= 0;
       host.querySelector('#sof-risk-label').hidden = !ratio;
       host.querySelector('#sof-default').hidden = !ratio;
