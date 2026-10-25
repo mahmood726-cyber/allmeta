@@ -591,6 +591,8 @@
 
     // Expose last results for export
     window._almLastGosh = function () { return _lastResults; };
+    // Share restoration validates with the same side-effect-free input parser.
+    window.__almGoshParse = function (text) { return parse(text); };
     // The controller loads after this inline script; rerun restored/default inputs once it is ready.
     window.__almGoshExactReady = function () { run(); };
 

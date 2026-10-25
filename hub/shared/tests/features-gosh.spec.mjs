@@ -5,6 +5,7 @@ import { readZip, decodePng, readTiff } from './zip-reader.mjs';
 
 const PAGE = '/gosh/index.html';
 const SNAP = new URL('./__snapshots__/text-gosh.json', import.meta.url);
+const INVALID_INPUTS = JSON.parse(fs.readFileSync(new URL('../../../gosh/tests/fixtures/input-validation.json', import.meta.url), 'utf8'));
 const SAMPLED_INPUT = Array.from({ length: 16 }, (_, i) => `${i / 10}, 0.1, Synthetic ${i + 1}`).join('\n');
 
 for (const locale of ['de-DE', 'fr-FR', 'ru-RU', 'ar-EG']) {
@@ -27,17 +28,17 @@ for (const locale of ['de-DE', 'fr-FR', 'ru-RU', 'ar-EG']) {
   });
 }
 
-for (const variant of ['header', 'extra columns', 'blank line', 'comment', 'numeric prefix and empty label']) {
+for (const variant of ['header', 'blank line', 'empty label', 'decimal and exponent', 'CRLF']) {
   test(`REVIEW SHARE accepts app input: ${variant}`, async ({ page, browser }) => {
     await open(page);
     const src = await page.locator('#src').inputValue();
     const modified = src.replace('0.22, 0.08', '0.42, 0.08');
     const input = {
       header: 'effect, SE, label\n' + modified,
-      'extra columns': modified.split('\n').map(line => line + ', 2019').join('\n'),
       'blank line': modified.replace('\n', '\n\n'),
-      comment: modified + '\n# End of extraction',
-      'numeric prefix and empty label': modified.replace('0.42, 0.08, Study A', '0.42 units, 0.08 units, ')
+      'empty label': modified.replace('0.42, 0.08, Study A', '0.42, 0.08, '),
+      'decimal and exponent': modified.replace('0.42, 0.08', '+.42e0, 8.e-2'),
+      CRLF: '\r\n' + modified.replaceAll('\n', '\r\n') + '\r\n'
     }[variant];
     await page.locator('#src').fill(input);
     await page.locator('#btn-run').click();
@@ -55,6 +56,36 @@ for (const variant of ['header', 'extra columns', 'blank line', 'comment', 'nume
   });
 }
 
+// Current GOSH deliberately rejects these inputs (see gosh-input-validation.spec.mjs
+// and the unchanged input-validation.json fixture). Share must enforce that same
+// contract before touching any controls or replacing the last successful result.
+for (const variant of ['extra columns', 'comment', 'numeric prefix and empty label']) {
+  test(`REVIEW SHARE rejects malformed app input atomically: ${variant}`, async ({ page }) => {
+    await open(page);
+    const out = await page.evaluate(variant => {
+      const spec = AlmFeatures.get('gosh'), before = spec.share.get();
+      const result = structuredClone(_almLastGosh()), plot = document.getElementById('plot').innerHTML;
+      const src = {
+        'extra columns': before.src.split('\n').map(line => line + ', 2019').join('\n'),
+        comment: before.src + '\n# End of extraction',
+        'numeric prefix and empty label': before.src.replace('0.22, 0.08, Study A', '0.42 units, 0.08 units, ')
+      }[variant];
+      let error;
+      try { spec.share.set({ ...before, src, model: 'DL', draws: '37', axes: ['-1', '2', false, '0', '90', false], entryLog: [] }); }
+      catch (e) { error = e.message; }
+      return { error, unchanged: JSON.stringify(before) === JSON.stringify(spec.share.get()),
+        resultUnchanged: JSON.stringify(result) === JSON.stringify(_almLastGosh()),
+        plotUnchanged: plot === document.getElementById('plot').innerHTML };
+    }, variant);
+    const reason = variant === 'numeric prefix and empty label' ? 'Line 1: effect must be a complete number'
+      : `Line ${variant === 'comment' ? 10 : 1}: expected effect, SE[, label] separated by commas`;
+    expect(out.error).toContain(reason);
+    expect(out.unchanged).toBe(true); expect(out.resultUnchanged).toBe(true); expect(out.plotUnchanged).toBe(true);
+    await expect(page.locator('#m-n')).toHaveText('511');
+    await expect(page.locator('#input-error')).toHaveText('');
+  });
+}
+
 test('REVIEW SHARE invalid surviving rows leave all state unchanged', async ({ page }) => {
   await open(page);
   const out = await page.evaluate(() => {
@@ -63,7 +94,30 @@ test('REVIEW SHARE invalid surviving rows leave all state unchanged', async ({ p
     try { spec.share.set({ ...before, src: 'header, SE\n.1, .2, A\n.2, .3, B\ninvalid' }); } catch (e) { error = e.message; }
     return { error, unchanged: JSON.stringify(before) === JSON.stringify(spec.share.get()), resultUnchanged: JSON.stringify(result) === JSON.stringify(_almLastGosh()) };
   });
-  expect(out).toEqual({ error: 'Provide three through one hundred studies.', unchanged: true, resultUnchanged: true });
+  expect(out).toEqual({ error: 'Line 1: effect must be a complete number; Line 4: expected effect, SE[, label] separated by commas.', unchanged: true, resultUnchanged: true });
+  // Reuse all the app's source fixtures, including a bad line alongside enough
+  // valid rows: silently dropping that line must never produce a successful load.
+  const refused = await page.evaluate(cases => {
+    const spec = AlmFeatures.get('gosh'), before = spec.share.get(), result = structuredClone(_almLastGosh());
+    return cases.map(c => {
+      let error;
+      try { spec.share.set({ ...before, src: before.src + '\n\n' + c.line }); } catch (e) { error = e.message; }
+      return { error, unchanged: JSON.stringify(before) === JSON.stringify(spec.share.get()),
+        resultUnchanged: JSON.stringify(result) === JSON.stringify(_almLastGosh()) };
+    });
+  }, INVALID_INPUTS);
+  for (const [i, r] of refused.entries()) {
+    expect(r.error, INVALID_INPUTS[i].name).toContain('Line 11:');
+    expect(r.error, INVALID_INPUTS[i].name).toContain(INVALID_INPUTS[i].reason);
+    expect(r.unchanged).toBe(true); expect(r.resultUnchanged).toBe(true);
+  }
+  const tooFew = await page.evaluate(() => {
+    const spec = AlmFeatures.get('gosh'), before = spec.share.get(), result = structuredClone(_almLastGosh());
+    let error;
+    try { spec.share.set({ ...before, src: '.1, .2, A\n.2, .3, B' }); } catch (e) { error = e.message; }
+    return { error, unchanged: JSON.stringify(before) === JSON.stringify(spec.share.get()), resultUnchanged: JSON.stringify(result) === JSON.stringify(_almLastGosh()) };
+  });
+  expect(tooFew).toEqual({ error: 'Provide three through one hundred studies.', unchanged: true, resultUnchanged: true });
 });
 
 test('REVIEW TEXT perturbation cannot change keys without DOM checks', async ({ page }) => {
@@ -109,6 +163,7 @@ test('REVIEW SHARE restores without navigation timing entries', async ({ page, b
 });
 
 async function addSource(panel, year) {
+  await panel.getByLabel('Your initials (recorded with each confirmation)').fill('QA');
   await panel.getByLabel('Paste the exact paper text or table').fill('MD 0.2 (95% CI 0.1-0.3)');
   await panel.getByRole('button', { name: 'Extract candidates', exact: true }).click();
   const chooser = panel.getByLabel('Choose the source result to add');
@@ -119,9 +174,16 @@ async function addSource(panel, year) {
   const card = panel.locator('fieldset').last();
   await card.getByLabel('Study label', { exact: false }).fill(`Smith ${year}`);
   await card.getByLabel('Full reference', { exact: true }).fill('Synthetic report');
-  await card.getByLabel('Location', { exact: false }).fill('Table 1');
+  await card.getByLabel('Source type', { exact: true }).selectOption('Table');
+  await card.getByLabel('Location', { exact: false }).fill('1');
   await card.getByLabel('Outcome measured', { exact: true }).fill('Synthetic outcome');
-  await card.getByLabel('Timepoint', { exact: false }).fill('12 weeks');
+  // This synthetic excerpt supplies none of these details. Answer explicitly
+  // through the current provenance UI instead of inventing source metadata.
+  await card.getByLabel('Timepoint', { exact: true }).selectOption('not stated');
+  await card.getByLabel('What was randomised?', { exact: true }).selectOption('not stated');
+  for (const label of ['Analysis population', 'Adjusted for other factors?', 'Type of value']) {
+    await card.getByLabel(label, { exact: false }).selectOption('not stated');
+  }
   return card;
 }
 
@@ -146,6 +208,12 @@ test('REVIEW ENTRY real gosh block requires confirmation and applies provenance'
   expect(out.result.k).toBe(3);
   expect(out.provenance).toHaveLength(3);
   expect(out.provenance.every(r => r.confirmed && r.usedAs === out.usedAs)).toBe(true);
+  for (const row of out.provenance) {
+    expect(row).toMatchObject({ confirmedBy: 'QA', confirmedVia: 'row',
+      source: { type: 'Table', detail: '1' },
+      choice: { timepoint: 'not stated', randomisation: 'not stated',
+        facets: { timepoint: 'not stated', analysisSet: 'not stated', adjustment: 'not stated', phase: 'not stated' } } });
+  }
   expect(out.result.studies.map(r => r.label)).toEqual(['Smith 2020', 'Smith 2021', 'Smith 2022']);
   await panel.locator('fieldset').first().getByLabel('Outcome measured', { exact: true }).fill('Edited outcome');
   await expect(use).toBeDisabled();
@@ -167,8 +235,8 @@ test('REVIEW ENTRY planted missing usedAs blocks the real provenance workflow', 
   await expect(panel).toContainText('The app adapter must supply entry.usedAs');
   await expect(page.locator('#src')).toHaveValue(before);
 });
-async function open(page) {
-  await page.goto(PAGE);
+async function open(page, query = '') {
+  await page.goto(PAGE + query);
   await expect(page.locator('#m-n')).toHaveText('511');
   await expect(page.locator('#alm-features .alm-f-toggle')).toBeVisible();
 }
@@ -199,28 +267,36 @@ test('ENTRY: built-in example through Excel, paper CI and extraction-export form
     ];
     const runs = inputs.map((input, index) => {
       const table = AlmEntry.parseTable(input), detection = AlmEntry.detect(table, 'generic');
-      const converted = AlmEntry.convert(table, detection, 'generic', {});
+      const unanswered = AlmEntry.convert(table, detection, 'generic', {});
+      // These synthetic CIs were constructed as effect +/- z * SE on the
+      // supplied scale. Explicitly confirm difference-scale conversion.
+      const answers = { 'measure:type': 'difference' };
+      const converted = AlmEntry.convert(table, detection, 'generic', answers);
       if (converted.flags.some(f => f.blocking)) throw Error(JSON.stringify(converted));
       // Use the documented legacy text-log shape. Shared conversion steps also
       // have flags[], which AlmText otherwise treats as full source records.
       AlmFeaturesState.entryLog = converted.steps.map(s => ({ study: s.study, method: s.method, citation: s.citation }));
       const applied = spec.entry.apply(converted.records);
       const rendered = AlmText.render(spec.text.templates, spec.text.results(), AlmText.context('gosh', spec.text));
-      return { index, applied, converted, original, actual: structuredClone(_almLastGosh()), methods: rendered.methods.text };
+      return { index, applied, converted, unanswered, unresolved: converted.questions.filter(q => !q.choices.includes(answers[q.id])),
+        original, actual: structuredClone(_almLastGosh()), methods: rendered.methods.text };
     });
     AlmFeaturesState.entryLog = runs[1].converted.steps.map(s => ({ study: s.study, method: s.method, citation: s.citation }));
     return runs;
   });
   for (const row of out) {
     expect(row.applied).toEqual({ ok: true, n: 9 });
-    expect(row.converted.questions).toEqual([]);
+    expect(row.unanswered.flags).toContainEqual(expect.objectContaining({ code: 'unanswered-question', questionId: 'measure:type', blocking: true }));
+    expect(row.unresolved).toEqual([]);
+    expect(row.converted.steps).toContainEqual(expect.objectContaining({ method: 'measure confirmed', inputs: { measure: 'difference' } }));
     expect(row.actual.n_subsets).toBe(row.original.n_subsets);
     for (const key of ['median_est', 'median_i2', 'min_est', 'max_est', 'q25_est', 'q75_est']) {
       expect(Math.abs(row.actual[key] - row.original[key])).toBeLessThanOrEqual(1e-9 * Math.max(Math.abs(row.original[key]), 1e-12));
     }
   }
-  expect(out[1].converted.steps).toHaveLength(9);
-  expect(out[1].converted.steps.every(s => /SE estimated from CI/.test(s.text))).toBe(true);
+  const conversions = out[1].converted.steps.filter(s => s.method !== 'measure confirmed');
+  expect(conversions).toHaveLength(9);
+  expect(conversions.every(s => /SE estimated from CI/.test(s.text))).toBe(true);
   expect(out[1].methods).toContain('SE from CI');
   await tab(page, 'text');
   await expect(page.locator('#alm-f-panel-text [data-para=methods]')).toContainText('SE from CI');
@@ -229,31 +305,32 @@ test('ENTRY: built-in example through Excel, paper CI and extraction-export form
 
 test('ENTRY planted reversed CI blocks conversion; unsafe records cannot change app input', async ({ page }) => {
   await open(page);
-  const out = await page.evaluate(() => {
-    const input = 'Study\tEffect\nBad\t0.22 (0.4–0.1)\nB\t0.3 (0.1–0.5)\nC\t0.2 (0.1–0.3)';
-    const t = AlmEntry.parseTable(input), c = AlmEntry.convert(t, AlmEntry.detect(t, 'generic'), 'generic', {});
+  const input = 'Study\tEffect\nBad\t0.22 (0.4–0.1)\nB\t0.3 (0.1–0.5)\nC\t0.2 (0.1–0.3)';
+  const out = await page.evaluate(input => {
+    const t = AlmEntry.parseTable(input), c = AlmEntry.convert(t, AlmEntry.detect(t, 'generic'), 'generic', { 'measure:type': 'difference' });
     const before = document.getElementById('src').value;
     const records = _almLastGosh().studies.map(r => ({ study: r.label, yi: r.te, sei: r.se }));
     records[0].sei = -1;
     let error; try { AlmFeatures.get('gosh').entry.apply(records); } catch (e) { error = e.message; }
-    // Exercise the shared table API directly, without depending on clicks in
-    // the evolving provenance workflow. Prove enabled -> blocked, not merely
-    // the initial disabled state before any rows have been supplied.
     const host = document.createElement('div'); host.id = 'gosh-entry-gate'; document.body.appendChild(host);
-    const ui = AlmEntryUI.mount(host, { schema: 'generic', apply: AlmFeatures.get('gosh').entry.apply });
-    const paste = host.querySelector('textarea');
-    const use = [...host.querySelectorAll('button')].find(b => b.textContent === 'Use these rows');
-    paste.value = input.replace('0.4–0.1', '0.1–0.4'); ui.parse();
-    const validEnabled = !use.disabled;
-    paste.value = input; ui.parse();
-    return { flags: c.flags, before, after: document.getElementById('src').value, error,
-      validEnabled, badDisabled: use.disabled, log: host.textContent };
-  });
+    AlmEntryUI.mount(host, { schema: 'generic', apply: AlmFeatures.get('gosh').entry.apply });
+    return { flags: c.flags, before, after: document.getElementById('src').value, error };
+  }, input);
   expect(out.flags.some(f => f.blocking)).toBe(true);
   expect(out.error).toContain('SE positive'); expect(out.after).toBe(out.before);
-  expect(out.validEnabled).toBe(true); expect(out.badDisabled).toBe(true);
-  expect(out.log).toContain('SE estimated from CI');
-  await expect(page.locator('#gosh-entry-gate').getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
+  const gate = page.locator('#gosh-entry-gate'), use = gate.getByRole('button', { name: 'Use these rows', exact: true });
+  const preview = gate.getByRole('button', { name: 'Preview and convert', exact: true });
+  await gate.locator('textarea').fill(input.replace('0.4–0.1', '0.1–0.4'));
+  await preview.click();
+  await expect(use).toBeDisabled(); // The measure question is still unanswered.
+  await gate.getByRole('radio', { name: 'difference', exact: true }).check();
+  await expect(use).toBeEnabled();
+  await gate.locator('textarea').fill(input);
+  await preview.click();
+  await gate.getByRole('radio', { name: 'difference', exact: true }).check();
+  await expect(use).toBeDisabled(); // Now the reversed CI itself blocks apply.
+  await expect(gate).toContainText('SE estimated from CI');
+  await expect(page.locator('#src')).toHaveValue(out.before);
   console.log('ENTRY planted: blocking CI and invalid SE refused; no mutation');
 });
 
@@ -341,14 +418,17 @@ test('SHARE: full data/options round trip; damaged and invalid states are atomic
 test('VERIFY: real webR example passes, plot/ZIP downloads, planted mismatch fails and edits are stale', async ({ page }) => {
   test.setTimeout(900_000);
   const errors = []; page.on('pageerror', e => errors.push(e.message));
-  await open(page); await tab(page, 'verify');
+  await open(page, '?almtest=1'); await tab(page, 'verify');
   const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
   const run = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
   await run.click();
-  await expect(summary).toHaveText(/^\d+ of \d+ quantities match R — PASS$/, { timeout: 600_000 });
+  await expect(summary).toHaveText(/^\d+ of \d+ computed quantities match R; 0 not computed — PASS$/, { timeout: 600_000 });
   const verified = await page.evaluate(() => AlmFeaturesState.verify);
   console.log(`VERIFY ${verified.nPassed}/${verified.n}`);
   expect(verified.n).toBeGreaterThanOrEqual(5); expect(verified.nPassed).toBe(verified.n);
+  expect(verified).toMatchObject({ passed: true, testHook: false, nNotComputed: 0, nOptional: 0, nNotApplicable: 0 });
+  expect(verified.rows).toHaveLength(verified.n);
+  await expect(summary).toHaveText(`${verified.n} of ${verified.n} computed quantities match R; 0 not computed — PASS`);
   expect(verified.rows.every(r => r.pass)).toBe(true);
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('gosh'))).toBe(true);
   await expect(panel.locator('figure img')).toHaveCount(1); await expect(panel.locator('figure svg')).toHaveCount(1);
@@ -374,9 +454,10 @@ test('VERIFY: real webR example passes, plot/ZIP downloads, planted mismatch fai
   await page.locator('#src').fill(src);
   await page.evaluate(() => { window.__almVerifyPerturb = { key: 'median_est', delta: 0.01 }; });
   await run.click();
-  await expect(summary).toContainText('FAIL', { timeout: 600_000 });
+  await expect(summary).toHaveText(/^TEST MODE .* — FAIL: 1 not matching R; test hook active$/, { timeout: 600_000 });
   const planted = await page.evaluate(() => AlmFeaturesState.verify);
   expect(planted.rows.filter(r => !r.pass).map(r => r.key)).toEqual(['median_est']);
+  expect(planted).toMatchObject({ passed: false, testHook: true, n: verified.n, nPassed: verified.n - 1, nNotComputed: 0 });
   console.log(`VERIFY planted ${planted.nPassed}/${planted.n} FAIL median_est`);
   expect(errors).toEqual([]);
 });
@@ -395,8 +476,18 @@ test('AXE: all feature tabs have no serious or critical violations', async ({ pa
 
 test('TEXT: DL and sampled methods describe the actual result; no result refuses text', async ({ page }) => {
   await open(page);
+  // Mounting the feature shell must not eagerly generate a hidden report.
+  await expect(page.locator('#alm-f-panel-text .alm-text-regenerate')).toHaveCount(0);
+  await tab(page, 'text');
+  await expect(page.locator('.alm-text-body')).toBeVisible();
+  const before = await page.evaluate(() => structuredClone(_almLastGosh()));
   await page.locator('#model').selectOption('DL');
   await page.locator('#src').fill(SAMPLED_INPUT);
+  // Exercise the mounted report's currency check as well: it must stop at the
+  // app's stale signal, before context() invokes the live adapter and refits.
+  await page.evaluate(() => document.getElementById('alm-f-panel-text').__almHandle.check());
+  await expect(page.locator('.alm-text-status')).toContainText('press Run analysis');
+  expect(await page.evaluate(() => _almLastGosh())).toEqual(before);
   // Editing data only marks results stale; Run updates sampling visibility.
   await expect(page.locator('#n-sample')).toBeHidden();
   await page.locator('#btn-run').click();

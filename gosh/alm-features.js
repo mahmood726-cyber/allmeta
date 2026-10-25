@@ -76,7 +76,10 @@
         T.when(T.zero('median_i2', 1), 'A median subset I² of zero does not establish homogeneous evidence.')];
     }
   };
-  var text = { app: APP, verifyPackage: 'metafor', results: results, dom: dom, templates: templates };
+  var text = { app: APP, verifyPackage: 'metafor', results: results, dom: dom, templates: templates,
+    // Text's currency check must not call the live adapter (which re-runs GOSH)
+    // while the user is editing inputs for the next analysis.
+    stale: function () { return !byId('analysis-stale').hidden; } };
   var spec = {
     paper: 13, title: 'GOSH subset exploration',
     entry: { schema: 'generic', apply: apply, provenance: true, usedAs: 'effect and standard error on the supplied analysis scale' },
@@ -97,14 +100,12 @@
       },
       set: function (s) {
         if (!s || typeof s.src !== 'string' || s.src.length > 200000) throw new Error('Missing or oversized data.');
-        // Match the app's parse(): parseFloat, skip unreadable rows, ignore extra
-        // columns, and default empty labels after trimming. Restore src verbatim.
-        var records = s.src.trim().split(/\n/).map(function (line, i) {
-          var p = line.split(',').map(function (value) { return value.trim(); });
-          var yi = parseFloat(p[0]), sei = parseFloat(p[1]);
-          if (!Number.isFinite(yi) || !Number.isFinite(sei) || sei <= 0) return null;
-          return { yi: yi, sei: sei, study: p[2] || 'S' + (i + 1) };
-        }).filter(Boolean);
+        // Validate every line before mutating controls, results or conversion logs.
+        // Reuse the app parser so share links cannot silently discard bad rows or
+        // accept numeric prefixes/extra columns that Run analysis refuses.
+        var records = global.__almGoshParse(s.src).map(function (r) {
+          return { yi: r.te, sei: r.se, study: r.label };
+        });
         validRecords(records);
         if (['FE', 'DL'].indexOf(s.model) < 0) throw new Error('Unknown pooling model.');
         if (typeof s.draws !== 'string' || !Number.isInteger(Number(s.draws)) || Number(s.draws) < 1 || Number(s.draws) > 100000) throw new Error('Invalid draw count.');
@@ -128,13 +129,8 @@
   global.AlmTextSpecs = global.AlmTextSpecs || {};
   global.AlmTextSpecs[APP] = text;
   if (global.AlmFeatures) {
-    if (typeof global.AlmFeatures.registerModule === 'function') {
-      global.AlmFeatures.registerModule('entry', { render: function (el, ctx) { return global.AlmEntryUI.mount(el, ctx.block); } });
-      global.AlmFeatures.registerModule('text', { render: function (el) {
-        var ui = global.AlmTextUI.mount(el, { app: APP, text: text });
-        return { onShow: ui.regenerate };
-      } });
-    }
+    // The core's built-in entry/text modules mount on first use and refresh text
+    // on show. Eager app overrides install hidden text listeners that can refit.
     global.AlmFeatures.register(APP, spec);
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = spec;
