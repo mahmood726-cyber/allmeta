@@ -115,11 +115,18 @@ test('ENTRY: example as Excel, paper-style and Covidence tables -> same result; 
   let passed = 0;
   const N = 3;
 
-  // 1. Excel-style tab-separated paste; the two treatment columns are confirmed by the user (questions answered).
+  // 1. Excel-style paste: generic Estimate needs an explicit measure as well as the treatment columns.
   const excel = 'Study\tTreatment 1\tTreatment 2\tEstimate\tSE\n' + EX.map((r, i) => [LABELS[i], ...r].join('\t')).join('\n');
-  const e1 = await enter(page, excel, { 'column:1': 't1', 'column:2': 't2' });
+  const unanswered = await enter(page, excel, { 'column:1': 't1', 'column:2': 't2' });
+  expect(unanswered.blocking).toEqual(['unanswered-question']);
+  expect(unanswered.questions.sort()).toEqual(['column:1', 'column:2', 'measure:type']);
+  expect(unanswered.res).toBeNull();
+  expect(unanswered.src).toBe(EXAMPLE_TEXT);
+  expect(await appResult(page)).toEqual(base);
+  const e1 = await enter(page, excel, { 'column:1': 't1', 'column:2': 't2', 'measure:type': 'difference' });
   expect(e1.blocking, JSON.stringify(e1)).toEqual([]);
-  expect(e1.questions.sort()).toEqual(['column:1', 'column:2']);
+  expect(e1.questions.sort()).toEqual(['column:1', 'column:2', 'measure:type']);
+  expect(e1.steps).toContain('Effect measure confirmed as a difference');
   expect(e1.records).toEqual(want);
   expect(e1.res).toEqual({ ok: true, n: 11 });
   expect(await appResult(page)).toEqual(base); // identical numbers -> identical result and display
@@ -151,9 +158,10 @@ test('ENTRY: example as Excel, paper-style and Covidence tables -> same result; 
   const q = s => '"' + s + '"';
   const cov = [['Study ID', 'Treatment 1', 'Treatment 2', 'Outcome', 'Effect estimate', 'Standard error'].map(q).join(',')]
     .concat(EX.map((r, i) => [LABELS[i], r[0], r[1], 'Pain score', r[2], r[3]].map(q).join(','))).join('\n');
-  const e3 = await enter(page, cov, { 'column:1': 't1', 'column:2': 't2', 'column:3': 'ignore', 'column:4': 'yi' });
+  const e3 = await enter(page, cov, { 'column:1': 't1', 'column:2': 't2', 'column:3': 'ignore', 'column:4': 'yi', 'measure:type': 'difference' });
   expect(e3.blocking, JSON.stringify(e3)).toEqual([]);
-  expect(e3.questions.sort()).toEqual(['column:1', 'column:2', 'column:3', 'column:4']);
+  expect(e3.questions.sort()).toEqual(['column:1', 'column:2', 'column:3', 'column:4', 'measure:type']);
+  expect(e3.steps).toContain('Effect measure confirmed as a difference');
   expect(e3.records).toEqual(want);
   expect(e3.res).toEqual({ ok: true, n: 11 });
   expect(await appResult(page)).toEqual(base);
@@ -399,7 +407,8 @@ test('TEXT PLANTED: perturbing a DOM-cross-checked result makes the audit FAIL a
 test('VERIFY in R: every row passes on the built-in example; planted defect fails; downloads', async ({ page }) => {
   test.setTimeout(900_000);
   const errors = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto(PAGE);
+  // The core honours the planted-defect hook only on an explicitly opted-in test page.
+  await page.goto(PAGE + '?almtest=1');
   await expect(page.locator('#ns-body tr').first()).toBeVisible();
   await expect(page.locator('#alm-features')).toBeVisible();
   await openPanel(page);
@@ -418,7 +427,7 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   await expect(summary).not.toBeEmpty({ timeout: 600_000 });
   const text = (await summary.textContent()).trim();
   console.log('VERIFY ' + text);
-  const m = /^(\d+) of (\d+) quantities match R — PASS$/.exec(text);
+  const m = /^(\d+) of (\d+) computed quantities match R; 0 not computed — PASS$/.exec(text);
   expect(m, text).not.toBeNull();
   const N = +m[2];
   expect(N).toBe(nExpected);
@@ -430,6 +439,9 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   const st = await page.evaluate(app => ({ verify: AlmFeaturesState.verify, revision: AlmFeatures.revision(app), current: AlmFeatures.verifiedCurrent(app) }), APP);
   console.log('VERIFY versions ' + JSON.stringify(st.verify.versions) + ' graphics ' + JSON.stringify(st.verify.graphics));
   expect(st.verify.passed).toBe(true); expect(st.verify.nPassed).toBe(N);
+  expect(st.verify.n).toBe(N);
+  expect([st.verify.nNotComputed, st.verify.nOptional, st.verify.nNotApplicable]).toEqual([0, 0, 0]);
+  expect(st.verify.testHook).toBe(false); expect(st.verify.perturbed).toBeNull();
   expect(st.verify.revision).toBe(st.revision);
   expect(st.current).toBe(true);
   expect(st.verify.versions.webR).toBe('0.5.5');
@@ -470,8 +482,11 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   expect(Object.keys(byName).filter(nm => /^nma-inconsistency-netgraph-app\.svg$/.test(nm))).toEqual([]);
   const dec = b => new TextDecoder().decode(b);
   const csv = dec(byName['nma-inconsistency-verify-comparison.csv']).trim().split('\n');
-  expect(csv[0]).toBe('quantity,key,app,R,abs_diff,tolerance,kind,result'); expect(csv).toHaveLength(N + 1);
+  expect(csv[0]).toBe('quantity,key,app,R,diff,abs_diff,tolerance,kind,result'); expect(csv).toHaveLength(N + 1);
   expect(csv.slice(1).every(l => l.endsWith(',PASS'))).toBe(true);
+  // Every exported field must match the actual comparison, including relative diff and absolute difference.
+  expect(csv.slice(1).map(l => l.split(','))).toEqual(st.verify.rows.map(r =>
+    [r.label, r.key, r.app, r.ref, r.diff, r.absDiff, r.tol, r.kind, 'PASS'].map(String)));
   const script = dec(byName['nma-inconsistency-verify.R']);
   expect(script).toContain('netmeta::netsplit('); expect(script).toContain('netmeta::decomp.design(');
   expect(script).toContain('meta::forest(spl)'); expect(script).toContain('print(sessionInfo())');
@@ -487,6 +502,9 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   const receipt = JSON.parse(dec(byName['truthcert.json']));
   const rr = receipt.extra.results;
   expect(rr.app).toBe('nma-inconsistency'); expect(rr.passed).toBe(true); expect(rr.n).toBe(N);
+  expect(rr.nPassed).toBe(N);
+  expect([rr.nNotComputed, rr.nOptional, rr.nNotApplicable]).toEqual([0, 0, 0]);
+  expect(rr.testHook).toBe(false); expect(rr.perturbed).toBeNull(); expect(rr.summary).toBe(text);
   expect(rr.stateRevision).toBe(st.verify.revision); expect(rr.stale).toBe(false);
   expect(rr.files.map(f => f.name).sort()).toEqual(Object.keys(byName).filter(nm => nm !== 'truthcert.json').sort());
   for (const f of rr.files) expect(f.sha256, f.name).toBe(sha(byName[f.name]));
@@ -498,11 +516,16 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   await expect(summary).toContainText('FAIL', { timeout: 300_000 });
   const planted = (await summary.textContent()).trim();
   console.log('VERIFY PLANTED ' + planted);
-  expect(planted).toBe(`${N - 1} of ${N} quantities match R — FAIL: 1 outside tolerance or unavailable`);
+  expect(planted).toBe(`TEST MODE (test hook active; not a verification) — ${N - 1} of ${N} computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active`);
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
   const failing = await panel.locator('tbody tr').evaluateAll(trs => trs.filter(tr => tr.querySelector('td[data-result]').textContent !== 'PASS').map(tr => tr.dataset.key));
   expect(failing).toEqual(['split.0.direct']);
-  expect(await page.evaluate(() => AlmFeaturesState.verify.passed)).toBe(false);
+  const plantedState = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(plantedState.passed).toBe(false); expect(plantedState.testHook).toBe(true);
+  expect(plantedState.perturbed).toEqual({ key: 'split.0.direct', delta: 1e-3 });
+  expect([plantedState.n, plantedState.nPassed, plantedState.nNotComputed, plantedState.nOptional, plantedState.nNotApplicable]).toEqual([N, N - 1, 0, 0, 0]);
   expect(await page.evaluate(app => AlmFeatures.verifiedCurrent(app), APP)).toBe(false);
+  expect((await methodsNow()).methods).not.toContain('independently verified');
   await page.evaluate(() => { delete window.__almVerifyPerturb; });
   expect(errors).toEqual([]);
 });
