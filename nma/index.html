@@ -802,6 +802,7 @@
 
     // Pure-compute hook for R-parity tests: the netmeta-equivalent analysis (deterministic). Effects are
     // versus refTreat (treatment minus reference); P-scores for both directions of benefit.
+    window.__almNmaParse = parseContrasts;
     window.__almNmaCompute = function (text, refTreat, opts) {
       const { rows, warnings } = parseContrasts(text);
       if (warnings.length) return { error: warnings.join(" ") };

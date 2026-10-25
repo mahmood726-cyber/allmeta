@@ -14,10 +14,16 @@ const EXAMPLE = [
   ['TRIAL9', 'DrugA', 'DrugD', -.06, .16], ['TRIAL10', 'Placebo', 'DrugD', -.28, .13],
 ];
 const Z = 1.959963984540054;
+// nma/index.html labels the built-in example logOR. Generic estimate headers
+// omit that metadata, so explicitly confirm both the ratio and its log scale.
+const LOG_RATIO_ANSWERS = { 'measure:type': 'ratio',
+  ...Object.fromEntries(EXAMPLE.map((_, i) => ['scale:' + i, 'log'])) };
 const FORMATS = [
-  { name: 'Excel TSV', text: ['study\tt1\tt2\testimate\tSE', ...EXAMPLE.map(r => r.join('\t'))].join('\n') },
+  { name: 'Excel TSV', text: ['study\tt1\tt2\testimate\tSE', ...EXAMPLE.map(r => r.join('\t'))].join('\n'),
+    answers: LOG_RATIO_ANSWERS },
   { name: 'paper estimate (lo–hi)', text: ['study  t1  t2  estimate', ...EXAMPLE.map(([s,a,b,y,se]) =>
-    `${s}  ${a}  ${b}  ${y} (${(y-Z*se).toPrecision(17)} to ${(y+Z*se).toPrecision(17)})`)].join('\n') },
+    `${s}  ${a}  ${b}  ${y} (${(y-Z*se).toPrecision(17)} to ${(y+Z*se).toPrecision(17)})`)].join('\n'),
+    answers: LOG_RATIO_ANSWERS },
   // Generic inverse-variance export, with explicit treatment-column choices.
   // Raw arm-count RevMan/Covidence exports are not contrast inputs and are deliberately not invented.
   { name: 'RevMan-style inverse-variance export', text: ['Study or Subgroup\tTreatment 1\tTreatment 2\tlog OR\tSE\tWeight',
@@ -62,13 +68,24 @@ test('ENTRY: three formats use the app controls and reproduce the built-in resul
     const converted = await page.evaluate(f => {
       const E = AlmEntry, spec = AlmNmaFeatures.entry, table = E.parseTable(f.text);
       const detection = E.detect(table, spec.schema);
+      const unanswered = E.convert(table, detection, spec.schema, {});
       const output = E.convert(table, detection, spec.schema, f.answers || {});
       if (output.flags.some(f => f.blocking)) return { output };
       const applied = spec.apply(output.records);
-      return { output, applied, source: document.getElementById('f-data').value };
+      return { unanswered, output, applied, source: document.getElementById('f-data').value };
     }, f);
     expect(converted.output.flags.filter(f => f.blocking), f.name).toEqual([]);
     expect(converted.output.questions.filter(q => !(f.answers && q.choices.includes(f.answers[q.id]))), f.name).toEqual([]);
+    if (f.answers['measure:type']) {
+      expect(converted.unanswered.flags.filter(f => f.blocking)).toEqual([
+        expect.objectContaining({ code: 'unanswered-question', questionId: 'measure:type', blocking: true })
+      ]);
+      expect(converted.output.steps.filter(s => s.method === 'measure confirmed')).toEqual([
+        expect.objectContaining({ inputs: { measure: 'ratio' } })
+      ]);
+      expect(converted.output.steps.filter(s => s.method === 'scale confirmed')).toHaveLength(EXAMPLE.length);
+      expect(converted.output.records.every(r => r.ratio === true && r.scale === 'log')).toBe(true);
+    }
     expect(converted.applied).toEqual({ ok: true, n: EXAMPLE.length });
     const actual = await values(page);
     expect(actual.rows).toHaveLength(baseline.rows.length);
@@ -194,9 +211,17 @@ test('VERIFY: live netmeta, both R plots, ZIP, current-state wording and planted
     expect(status, 'The pinned netmeta package must be available for the VERIFY gate').not.toMatch(/package netmeta is unavailable/);
     return;
   }
-  const match = /^(\d+) of (\d+) quantities match R — PASS$/.exec(status);
+  // The current verifier distinguishes missing quantities from computed matches.
+  // This example requires every adapter quantity: no missing/optional exclusions.
+  const match = /^(\d+) of (\d+) computed quantities match R; 0 not computed — PASS$/.exec(status);
   expect(match, status).not.toBeNull();
   const n = +match[2]; expect(n).toBeGreaterThanOrEqual(5); expect(+match[1]).toBe(n);
+  const expectedKeys = await page.evaluate(() => {
+    const live = AlmNmaFeatures.verify.adapter().live;
+    return live.appValues(live.currentState()).map(r => r.key);
+  });
+  expect(n).toBe(expectedKeys.length);
+  expect(await panel.locator('tbody tr[data-key]').evaluateAll(rows => rows.map(r => r.dataset.key))).toEqual(expectedKeys);
   console.log(`VERIFY ${match[1]}/${n}`);
   expect(await panel.locator('td[data-result]').allTextContents()).toEqual(Array(n).fill('PASS'));
   await expect(panel.locator('figure img')).toHaveCount(2);
@@ -219,6 +244,7 @@ test('VERIFY: live netmeta, both R plots, ZIP, current-state wording and planted
   const receipt = JSON.parse(dec(entries['truthcert.json']));
   expect(receipt.contentHash).toMatch(/^sha256:[a-f0-9]{64}$/);
   expect(receipt.extra.results.passed).toBe(true);
+  expect(receipt.extra.results).toMatchObject({ n, nPassed: n, nNotComputed: 0, nOptional: 0, nNotApplicable: 0, testHook: false });
   for (const f of receipt.extra.results.files) expect(f.sha256).toBe(createHash('sha256').update(entries[f.name]).digest('hex'));
   expect(await page.evaluate(r => AlmTruthCertExport.verifyContentHash(r), receipt)).toBe(true);
   console.log(`VERIFYZIP ${Object.keys(entries).length} entries; two PNG/PDF/TIFF plots`);
@@ -229,11 +255,29 @@ test('VERIFY: live netmeta, both R plots, ZIP, current-state wording and planted
   await expect(page.locator('.alm-text-body')).not.toContainText('independently verified in R');
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('nma'))).toBe(false);
   await tab(page, 'verify');
-  await page.evaluate(() => { window.__almVerifyPerturb = { key: 'tau2', delta: .001 }; });
+  // Production ignores perturbations. Explicitly enter the documented test mode
+  // for the planted mismatch, preserving the completed analysis and R session.
+  expect(await page.evaluate(() => {
+    window.__almVerifyPerturb = { key: 'tau2', delta: .001 };
+    return AlmVerifyR.testHookActive();
+  })).toBe(false);
+  await page.evaluate(() => {
+    const url = new URL(location.href); url.searchParams.set('almtest', '1');
+    history.replaceState(null, '', url.href);
+  });
+  expect(await page.evaluate(() => AlmVerifyR.testHookActive())).toBe(true);
   await button.click();
   await expect(summary).toContainText('FAIL', { timeout: 600_000 });
-  expect(await summary.innerText()).toBe(`${n - 1} of ${n} quantities match R — FAIL: 1 outside tolerance or unavailable`);
-  expect(await panel.locator('tbody tr').evaluateAll(rows => rows.filter(r => r.querySelector('td[data-result]')?.textContent === 'FAIL').map(r => r.dataset.key))).toEqual(['tau2']);
+  expect(await summary.innerText()).toBe(`TEST MODE (test hook active; not a verification) — ${n - 1} of ${n} computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active`);
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
+  await expect(panel.locator('td[data-result=pass]')).toHaveCount(n - 1);
+  await expect(panel.locator('td[data-result=fail]')).toHaveText('FAIL (test perturbation)');
+  expect(await panel.locator('tbody tr').evaluateAll(rows => rows.filter(r => r.querySelector('td[data-result]')?.getAttribute('data-result') !== 'pass').map(r => r.dataset.key))).toEqual(['tau2']);
+  const planted = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(planted).toMatchObject({ passed: false, testHook: true, perturbed: { key: 'tau2', delta: .001 }, n, nPassed: n - 1, nNotComputed: 0, nOptional: 0, nNotApplicable: 0 });
+  const failed = planted.rows.find(r => r.key === 'tau2');
+  expect(failed.diff).toBeGreaterThan(failed.tol);
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('nma'))).toBe(false);
   console.log(`VERIFY planted ${n - 1}/${n} tau2 FAIL`);
   expect(errors).toEqual([]);
   expect(external).toEqual([]);

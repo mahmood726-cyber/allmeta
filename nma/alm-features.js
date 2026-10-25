@@ -36,8 +36,8 @@
     }).join('\n');
   }
   function checkData(data, ci, ref) {
-    // Use the app's parser on the exact text that restore will assign, including
-    // headers, extra columns and parseFloat semantics. Entry still uses rowsText.
+    // Use the app's strict parser on the exact text that restore will assign.
+    // Entry still uses rowsText; malformed rows must never become a reduced network.
     var result = global.__almNmaCompute(data, undefined, { randomCi: ci });
     if (result.error) throw new Error(result.error);
     if (ref !== undefined && result.treatments.indexOf(ref) < 0) throw new Error('Reference treatment is absent from the data.');
@@ -238,8 +238,8 @@
     var adapter = global.AlmLiveAdapters && global.AlmLiveAdapters[APP] || global.AlmNmaValidateAdapter;
     if (!adapter) return adapter;
     var live = adapter.live || adapter;
-    // The published live adapter reparses input using Number() and a narrower
-    // header rule than the page. Bridge input capture here; retain its R script,
+    // The published live adapter splits CSV labels and recognises fewer headers
+    // than the page. Use the page's parser for input capture; retain its R script,
     // quantity definitions, package metadata and comparison tolerances unchanged.
     var bridged = Object.assign({}, live, { currentState: function () {
       var s = controls();
@@ -247,19 +247,10 @@
         model: s.model, ci: s.ci, dir: s.dir, scale: s.scale };
       state.result = global.__almNmaCompute(state.text, state.ref, { randomCi: state.ci });
       if (state.result.error) throw new Error(state.result.error);
-      state.rows = [];
-      state.text.split(/\r?\n/).forEach(function (line, i) {
-        if (!line.trim() || line.trim().startsWith('#')) return;
-        var p = line.trim().split(/\s*[,\t]\s*/);
-        if (p.length < 5) throw new Error('Line ' + (i + 1) + ': need five columns');
-        // Match parseContrasts' numeric and leading-header semantics, including
-        // extra columns. Still refuse malformed data instead of verifying a subset.
-        var est = parseFloat(p[3]), se = parseFloat(p[4]);
-        if ((!Number.isFinite(est) || !Number.isFinite(se)) && state.rows.length === 0 && i < 3) return;
-        if (!Number.isFinite(est) || !Number.isFinite(se) || se <= 0 || p[1] === p[2]) {
-          throw new Error('Line ' + (i + 1) + ': invalid contrast; validation refused');
-        }
-        state.rows.push({ study: p[0], t1: p[1], t2: p[2], est: est, se: se });
+      var parsed = global.__almNmaParse(state.text);
+      if (parsed.warnings.length) throw new Error(parsed.warnings.join(' '));
+      state.rows = parsed.rows.map(function (r) {
+        return { study: r.study, t1: r.t1, t2: r.t2, est: r.est, se: r.se };
       });
       return state;
     } });
