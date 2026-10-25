@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 const ROOT = new URL('../../../', import.meta.url);
 const OUT = new URL('./rchecks-out/p0rve_corr/', import.meta.url);
 const BASE = 'http://127.0.0.1:8088'; // The lane's unchanged default config serves this port.
+const CI_METHOD = 'Main results CI method: Wald z (metafor test = "z").';
 const files = ['correlation-input.csv', 'correlation-ci.csv', 'correlation-labels.csv', 'rve-input.csv', 'rve-coefficients.csv'];
 function csv(name, rows) {
   const cell = v => '"' + String(v).replace(/"/g, '""') + '"';
@@ -165,11 +166,14 @@ function labelsCorrect(labels, selected) {
     labels.scope.includes('Download R script');
 }
 
-test('P0-36 HKSJ plant regression and Wald control label headline, every main export and live check', async ({ page }) => {
+test('P0-36 HKSJ plant regression and Wald control retain v1 exports and label Methods, headline and live check', async ({ page }) => {
   test.setTimeout(120000);
   const errors = await open(page, 'correlation-ma');
   const initial = await page.evaluate(() => _almLastCorrMA());
   expect(labelsCorrect(await corrLabels(page), 'Wald z')).toBe(true);
+  const baseline = {};
+  for (const action of ['json', 'csv', 'md']) baseline[action] = await download(page, '#alm-export-mount', action);
+  expect(baseline.json).toBe(JSON.stringify(initial, null, 2));
   await page.locator('input[name="alm-plus-test"][value="knha"]').check();
   expect(labelsCorrect(await corrLabels(page), 'HKSJ')).toBe(true);
   await expect(page.locator('#alm-plus-prose')).toContainText('HKSJ');
@@ -178,15 +182,26 @@ test('P0-36 HKSJ plant regression and Wald control label headline, every main ex
   const selected = snapshot.panel.cells.find(c => c.method === 'REML' && c.test === 'knha');
   expect(Math.abs(selected.r_lo - initial.r_lo)).toBeGreaterThan(1e-6);
 
-  let exported;
-  for (const action of ['json', 'csv', 'md', 'report-md', 'report-txt']) {
+  for (const action of ['json', 'csv', 'md']) {
     const text = await download(page, '#alm-export-mount', action);
-    expect(text).toContain('Wald z');
-    expect(text).toContain('ci_method');
-    if (action === 'json') exported = JSON.parse(text);
+    expect(text).toBe(baseline[action]);
+    expect(text).not.toContain('ci_method');
+    expect(text).not.toContain('Wald z');
   }
-  expect(exported.test).toBe('z');
-  for (const key of Object.keys(initial)) expect(exported[key]).toEqual(initial[key]);
+  const exported = JSON.parse(baseline.json);
+  expect(exported).toEqual(initial);
+  expect(exported._schema).toBe('corr-ma-results-v1');
+  expect(exported.test).toBeUndefined();
+  let report;
+  for (const action of ['report-md', 'report-txt']) {
+    const text = await download(page, '#alm-export-mount', action);
+    expect(text).toContain(CI_METHOD);
+    expect(text).not.toContain('ci_method');
+    report = text;
+  }
+  // Read CI metadata from the page's Methods report, never add it to the v1 object.
+  const exportCI = report.match(/Main results CI method: (Wald z) \(metafor test = "(z)"\)/);
+  expect(exportCI).not.toBeNull();
   const pending = page.waitForEvent('download');
   await page.locator('#alm-plus-r').click();
   const script = await pending;
@@ -198,7 +213,7 @@ test('P0-36 HKSJ plant regression and Wald control label headline, every main ex
   expect(liveScript).toContain("test='z'");
   const labels = await corrLabels(page);
   csv('correlation-labels.csv', [['surface', 'method'], ['headline', labels.headline.match(/95% CI method: ([^"]+)/)[1]],
-    ['live', labels.live.match(/Live check CI method: ([^.]+)/)[1]], ['export', exported.ci_method],
+    ['live', labels.live.match(/Live check CI method: ([^.]+)/)[1]], ['export', exportCI[1]],
     ['panel', labels.scope.match(/Selected panel CI method: ([^.]+)/)[1]]]);
   expect(labelsCorrect(labels, 'HKSJ')).toBe(true);
   csv('correlation-input.csv', [['label', 'r', 'n'], ...initial.studies.map(s => [s.label, s.r, s.n])]);
@@ -206,7 +221,7 @@ test('P0-36 HKSJ plant regression and Wald control label headline, every main ex
   for (const c of snapshot.panel.cells.filter(c => c.method === 'REML' && ['z', 'knha'].includes(c.test))) {
     ci.push(['panel', c.method, c.test, c.mu_z, c.r, c.r_lo, c.r_hi, Number(c.ci_excludes_0)]);
   }
-  ci.push(['main-export', exported.method, exported.test, exported.mu_z, exported.r, exported.r_lo, exported.r_hi, Number(exported.r_lo > 0 || exported.r_hi < 0)]);
+  ci.push(['main-export', exported.method, exportCI[2], exported.mu_z, exported.r, exported.r_lo, exported.r_hi, Number(exported.r_lo > 0 || exported.r_hi < 0)]);
   csv('correlation-ci.csv', ci);
 
   await page.locator('input[name="alm-plus-test"][value="z"]').check();
@@ -223,11 +238,11 @@ test('P0-36 HKSJ plant regression and Wald control label headline, every main ex
   expect(errors).toEqual([]);
 });
 
-test('P0-36 planted missing labels and export metadata are detected', async ({ page }) => {
+test('P0-36 planted missing screen and Methods labels are detected', async ({ page }) => {
   const html = readFileSync(new URL('correlation-ma/index.html', ROOT), 'utf8');
   const mutant = html.replace('content: "95% CI method: Wald z"', 'content: ""')
     .replace('Live check CI method: Wald z.', 'Live check.')
-    .replace('Object.assign({}, result, { ci_method: "Wald z", test: "z" })', 'result');
+    .replace(CI_METHOD, '');
   expect(mutant).not.toBe(html);
   await page.route('**/correlation-ma/index.html', route => route.fulfill({ contentType: 'text/html', body: mutant }));
   await open(page, 'correlation-ma');
@@ -237,6 +252,30 @@ test('P0-36 planted missing labels and export metadata are detected', async ({ p
   expect(labels.headline).not.toContain('Wald z');
   expect(labels.live).not.toContain('Live check CI method: Wald z');
   const result = JSON.parse(await download(page, '#alm-export-mount', 'json'));
+  expect(result).toEqual(await page.evaluate(() => _almLastCorrMA()));
   expect(result.ci_method).toBeUndefined();
   expect(Number.isFinite(result.r)).toBe(true);
+  expect(await download(page, '#alm-export-mount', 'report-md')).not.toContain(CI_METHOD);
+});
+
+test('P0-36 planted extra keys violate the pinned v1 download contract', async ({ page }) => {
+  const html = readFileSync(new URL('correlation-ma/index.html', ROOT), 'utf8');
+  const mutant = html.replace('return _almLastCorrMA() || {};',
+    'var result = _almLastCorrMA(); return result ? Object.assign({}, result, { ci_method: "Wald z", test: "z" }) : {};');
+  expect(mutant).not.toBe(html);
+  await page.route('**/correlation-ma/index.html', route => route.fulfill({ contentType: 'text/html', body: mutant }));
+  await open(page, 'correlation-ma');
+  await page.locator('input[name="alm-plus-test"][value="knha"]').check();
+  const initial = await page.evaluate(() => _almLastCorrMA());
+  const text = await download(page, '#alm-export-mount', 'json');
+  expect(text).not.toBe(JSON.stringify(initial, null, 2));
+  const result = JSON.parse(text);
+  expect(result).not.toEqual(initial);
+  expect(result).toEqual({ ...initial, ci_method: 'Wald z', test: 'z' });
+  for (const action of ['csv', 'md']) {
+    expect(await download(page, '#alm-export-mount', action)).toContain('ci_method');
+  }
+  // The injected schema defect does not break the correct presentation controls.
+  expect(labelsCorrect(await corrLabels(page), 'HKSJ')).toBe(true);
+  expect(await download(page, '#alm-export-mount', 'report-md')).toContain(CI_METHOD);
 });

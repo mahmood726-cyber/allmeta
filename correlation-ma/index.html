@@ -195,10 +195,12 @@
     function ready(fn) { if (document.readyState !== "loading") fn(); else document.addEventListener("DOMContentLoaded", fn); }
     ready(function () {
       if (window.alm && window.alm.resultsExport) {
-        window.alm.resultsExport({ target: "#alm-export-mount", basename: "correlation-ma-results", getResults: function () {
-          var result = window._almLastCorrMA();
-          return result ? Object.assign({}, result, { ci_method: "Wald z", test: "z" }) : {};
-        } });
+        window.alm.resultsExport({ target: "#alm-export-mount", basename: "correlation-ma-results", getResults: function () { return _almLastCorrMA() || {}; },
+          methods: function () {
+            return document.querySelector("footer").textContent.replace(/\s+/g, " ").trim() +
+              ' Main results CI method: Wald z (metafor test = "z"). The panel\'s CI selection applies to its sensitivity, leave-one-out, reporting and R script.';
+          }
+        });
       }
     });
   })();

@@ -1,0 +1,79 @@
+{
+ "clicks_total": 7,
+ "clicks_to_core_output_on_own_data": 4,
+ "steps": [
+  {
+   "step": "fresh load",
+   "clicks": 0,
+   "headline": "k = 8 · pooled r = 0.375 [0.275, 0.467] · τ²(z) = 0.0055 · I² = 21.2% · 95% PI [0.172, 0.548]"
+  },
+  {
+   "click": 1,
+   "why": "Load example"
+  },
+  {
+   "step": "example",
+   "clicks": 1
+  },
+  {
+   "click": 2,
+   "why": "focus data box"
+  },
+  {
+   "step": "paste own data",
+   "clicks": 2,
+   "notice": "1 row was excluded (16 accepted).Line 17 (row-17, 1.2, 50): |r| >= 1",
+   "headline": "k = 16 · pooled r = 0.149 [0.088, 0.209] · τ²(z) = 0.0081 · I² = 61.7% · 95% PI [-0.053, 0.339]"
+  },
+  {
+   "click": 3,
+   "why": "estimator = Paule-Mandel (one select)"
+  },
+  {
+   "click": 4,
+   "why": "CI method = HKSJ"
+  },
+  {
+   "step": "core output",
+   "clicks": 4,
+   "headline": "k = 16 · pooled r = 0.150 [0.086, 0.213] · τ²(z) = 0.0095 · I² = 65.3% · 95% PI [-0.068, 0.354]",
+   "current_row": "PM\tHKSJ (current)\t0.150 [0.080, 0.218]\t[-0.068, 0.354]\t0.0095\t0.0974\t65.3%\t38.16 (15)\t"
+  },
+  {
+   "click": 5,
+   "why": "Run leave-one-out"
+  },
+  {
+   "step": "leave-one-out",
+   "clicks": 5,
+   "loo_summary": "Full analysis: r = 0.150 [0.080, 0.218]; the CI excludes 0. No single omission changes whether the CI excludes 0. Largest change in r: omitting row-10 (Δr = 0.015)."
+  },
+  {
+   "click": 6,
+   "why": "Download R script"
+  },
+  {
+   "click": 7,
+   "why": "Export results JSON"
+  },
+  {
+   "step": "export",
+   "clicks": 7,
+   "downloads": [
+    "correlation-ma-PM-knha.R",
+    "correlation-ma-results.json"
+   ],
+   "r_script_matches_selection": true
+  }
+ ],
+ "axe": {
+  "light": {
+   "violations": [],
+   "passes": 29
+  },
+  "dark": {
+   "violations": [],
+   "passes": 29
+  }
+ }
+}
