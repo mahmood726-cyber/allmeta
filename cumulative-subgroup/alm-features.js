@@ -101,6 +101,32 @@
       }
     };
   }
+  function verificationDetails(r, ctx) {
+    var v = ctx && ctx.verify;
+    if (!r.verified || !v || v.passed !== true || v.stale === true || v.testHook === true ||
+        (v.app != null && v.app !== APP) || !Array.isArray(v.rows) || !v.rows.length) return null;
+    var checks = [], allowed = r.verifyNotApplicable || [];
+    function missing(value) { return value == null || (typeof value === 'number' && Number.isNaN(value)); }
+    for (var i = 0; i < v.rows.length; i++) {
+      var row = v.rows[i];
+      if (!row || typeof row !== 'object') return null;
+      if (row.pass === true && (row.status == null || row.status === 'pass')) checks.push(row);
+      else if (!(row.pass === false && row.status === 'notapplicable' && allowed.indexOf(row.key) >= 0 &&
+          missing(row.app) && missing(row.ref))) return null;
+    }
+    // The shared text helper predates the verifier's notapplicable status. Validate
+    // EVERY original row above, then use its revision/version gate on the computed
+    // subset for prose metadata only. Never mutate the run, comparison or receipt.
+    var facts = global.AlmText.verifyFacts(Object.assign({}, ctx, {
+      verify: Object.assign({}, v, { rows: checks })
+    }));
+    if (!facts || facts.pkg !== 'metafor') return null;
+    var page = checks.filter(function (row) {
+      return /^display\./.test(row.key) || row.key === 'export.fields' || row.key === 'series_rows';
+    }).length;
+    return { verifyStats: checks.length - page, verifyPage: page,
+      verifyPackage: facts.pkg, verifyPackageVersion: facts.pkgVersion, verifyWebR: facts.webr };
+  }
   function results() {
     if (!global._almLastCumSub || !global._almLastCumSub()) return null;
     var a = observed();
@@ -112,13 +138,6 @@
       byYear: a.parsed.studies.every(function (s) { return s.year !== null; }),
       verified: !!(global.AlmFeatures && global.AlmFeatures.verifiedCurrent(APP)),
       groupKeys: [] };
-    if (r.verified) {
-      var checks = global.AlmFeaturesState.verify.rows;
-      r.verifyPage = checks.filter(function (row) {
-        return /^display\./.test(row.key) || row.key === 'export.fields' || row.key === 'series_rows';
-      }).length;
-      r.verifyStats = checks.length - r.verifyPage;
-    }
     if (sub) {
       r.groups = a.sub.groups.length; r.Qbw = a.sub.Q_bw; r.dfbw = a.sub.df_bw;
       r.pQ = a.sub.pQ; r.i2bw = a.sub.I2_bw;
@@ -127,6 +146,20 @@
         r.groupKeys.push(key); r[key + 'Index'] = i + 1;
         ['k', 'mu', 'lo', 'hi', 'tau2', 'piLo', 'piHi'].forEach(function (q) { r[key + q] = g[q]; });
       });
+    }
+    if (r.verified) {
+      var v = global.AlmFeaturesState.verify;
+      var checks = (Array.isArray(v.rows) ? v.rows : []).filter(function (row) { return row && row.pass === true; });
+      r.verifyPage = checks.filter(function (row) {
+        return /^display\./.test(row.key) || row.key === 'export.fields' || row.key === 'series_rows';
+      }).length;
+      r.verifyStats = checks.length - r.verifyPage;
+      r.verifyNotApplicable = notApplicable({ view: r.view, groups: sub ? a.sub.groups : null,
+        values: (sub ? a.sub.groups : a.cum.series).map(function (pool, i) {
+          return { key: (sub ? 'group.' : 'step.') + (i + 1) + '.k', value: pool.k };
+        }) });
+      var details = verificationDetails(r, { verify: v, revision: v.revision, verifyPackage: 'metafor' });
+      if (details) Object.assign(r, details);
     }
     var pt = global.__almTextPerturb;
     if (pt && typeof r[pt.key] === 'number' && Number.isFinite(pt.delta)) r[pt.key] += pt.delta;
@@ -175,7 +208,9 @@
         'The prediction interval for a similar new study was ', T.ci('piLo', 'piHi', 3),
         '. This summary does not establish causation or clinical importance.'];
     },
-    methods: function (T, r) {
+    methods: function (T, r, ctx) {
+      var details = verificationDetails(r, ctx);
+      var current = details && Object.keys(details).every(function (key) { return details[key] === r[key]; });
       return ['Estimates were pooled on the supplied scale with inverse-variance random-effects weights. ',
         'Paule–Mandel estimated the between-study variance (τ²; ', T.cite('pauleMandel'), '). ',
         'Within-study variances were squared standard errors. No transformation, back-transformation or continuity correction was applied by the app. ',
@@ -190,9 +225,9 @@
              'centred on the weighted mean of subgroup estimates. Its p-value used a chi-squared distribution with the number of groups minus one degrees of freedom. ',
              'I² of subgroup differences was the nonnegative percentage (Q − df)/Q; it is not overall study-level I². '])],
         'No pooled-effect p-value or overall study-level I² is reported by this app. ',
-        T.entry(), T.when(T.entry(), ' '), T.software(), T.when(r.verified && T.hasCtx('verify.n'), function () {
-          return [' Results were independently verified in R (', T.ctx('verify.pkg'), ' ', T.ctx('verify.pkgVersion'),
-            '; webR ', T.ctx('verify.webr'), '): ', T.int('verifyStats'), ' statistical quantities matched R; ',
+        T.entry(), T.when(T.entry(), ' '), T.software(), T.when(current, function () {
+          return [' Results were independently verified in R (', T.label('verifyPackage'), ' ', T.label('verifyPackageVersion'),
+            '; webR ', T.label('verifyWebR'), '): ', T.int('verifyStats'), ' statistical quantities matched R; ',
             T.int('verifyPage'), ' page self-checks passed.'];
         })];
     },
@@ -250,11 +285,26 @@
       "lo_plot <- vapply(fits_plot,function(f) f[['ci.lb']],0.0); hi_plot <- vapply(fits_plot,function(f) f[['ci.ub']],0.0)\n" +
       "metafor::forest(mu_plot,ci.lb=lo_plot,ci.ub=hi_plot,slab=names_plot,xlab='Subgroup pooled effect')";
   }
+  function notApplicable(s) {
+    var keys = [];
+    // The app pool() and the live R adapter's pi_() both omit PIs for k = 1.
+    // Declare by pool size, never by a missing result: unexpected nulls must fail.
+    s.values.forEach(function (row) {
+      if (/^(step\.[1-9]\d*|group\.[1-9]\d*)\.k$/.test(row.key) && row.value === 1) {
+        var prefix = row.key.slice(0, -2);
+        keys.push(prefix + '.piLo', prefix + '.piHi');
+      }
+    });
+    // With one subgroup, df_bw = 0 and neither engine defines a between-group p.
+    if (s.view === 'subgroup' && s.groups.length === 1) keys.push('pQ', 'export.pQ');
+    return keys;
+  }
   var spec = { paper: 14, title: 'Cumulative and subgroup meta-analysis',
     entry: { schema: 'generic', extras: ['subgroup', 'year'],
       usedAs: 'estimate and SE on the supplied analysis scale (pooled as given by the app)', apply: apply },
     text: { app: APP, verifyPackage: 'metafor', results: results, dom: dom, templates: templates },
     verify: { adapter: function () { return global.AlmLiveAdapters && global.AlmLiveAdapters[APP] || global.AlmValidate.adapters[APP]; },
+      optional: notApplicable,
       inputs: '#f-data, #f-view, #f-title, #alm-axis-mount input',
       rObjects: 'yi, vi, yr, grp; fit() and ctl() from the existing live adapter',
       plots: [{ id: 'forest', title: 'Forest plot', r: forestCode, width_in: 8, height_in: 6,

@@ -7,8 +7,8 @@ import { readZip, decodePng, readTiff } from './zip-reader.mjs';
 const APP = 'cumulative-subgroup';
 const PAGE = '/' + APP + '/index.html';
 const SNAP = new URL('./__snapshots__/text-cumulative-subgroup.json', import.meta.url);
-async function open(page) {
-  await page.goto(PAGE);
+async function open(page, search = '') {
+  await page.goto(PAGE + search);
   await expect(page.locator('#alm-features .alm-f-toggle')).toBeVisible();
   await page.locator('#btn-example').click();
 }
@@ -25,21 +25,21 @@ function formats(rows) {
   // the built-in example, not claims about an actual vendor's extraction output.
   const z = 1.959963984540054;
   return [
-    ['Excel TSV', ['study\testimate\tSE\tyear\tsubgroup', ...rows.map(r => [r.label, r.est, r.se, r.year, r.group].join('\t'))].join('\n')],
+    ['Excel TSV', ['study\testimate\tSE\tyear\tsubgroup', ...rows.map(r => [r.label, r.est, r.se, r.year, r.group].join('\t'))].join('\n'), { 'measure:type': 'difference' }],
     ['paper intervals', ['study  estimate  year  subgroup', ...rows.map(r =>
-      `${r.label}  ${r.est} (${r.est - z * r.se} to ${r.est + z * r.se})  ${r.year}  ${r.group}`)].join('\n')],
-    ['RevMan-style generic inverse variance export', ['Study or Subgroup\tlog OR\tSE\tyear\tsubgroup', ...rows.map(r => [r.label, r.est, r.se, r.year, r.group].join('\t'))].join('\n')]
+      `${r.label}  ${r.est} (${r.est - z * r.se} to ${r.est + z * r.se})  ${r.year}  ${r.group}`)].join('\n'), { 'measure:type': 'difference' }],
+    ['RevMan-style generic inverse variance export', ['Study or Subgroup\tlog OR\tSE\tyear\tsubgroup', ...rows.map(r => [r.label, r.est, r.se, r.year, r.group].join('\t'))].join('\n'), {}]
   ];
 }
-async function convert(page, source, apply = true) {
-  return page.evaluate(({ source, apply }) => {
+async function convert(page, source, apply = true, answers = {}) {
+  return page.evaluate(({ source, apply, answers }) => {
     const spec = AlmFeatures.get('cumulative-subgroup').entry;
     const table = AlmEntry.parseTable(source), detection = AlmEntry.detect(table, spec.schema);
     // Explicit passthrough-column decisions (the entry UI offers the same choices).
     (table.header || []).forEach((h, i) => {
       if (spec.extras.includes(h)) { detection.mapping[i] = h; detection.questions = detection.questions.filter(q => q.id !== 'column:' + i); }
     });
-    const out = AlmEntry.convert(table, detection, spec.schema);
+    const out = AlmEntry.convert(table, detection, spec.schema, answers);
     const blocking = out.flags.filter(f => f.blocking);
     let applied = null;
     if (apply && !blocking.length) {
@@ -47,7 +47,7 @@ async function convert(page, source, apply = true) {
       AlmFeaturesState.entryLog = out.steps;
     }
     return { ...out, blocking, applied, result: _almLastCumSub(), source: document.getElementById('f-data').value };
-  }, { source, apply });
+  }, { source, apply, answers });
 }
 test('ENTRY: three example layouts round trip through the parsing APIs in both views', async ({ page }) => {
   await open(page);
@@ -57,10 +57,20 @@ test('ENTRY: three example layouts round trip through the parsing APIs in both v
     await page.locator('#btn-example').click();
     await page.locator('#f-view').selectOption(view);
     const expected = await page.evaluate(() => _almLastCumSub());
-    for (const [name, source] of inputs) {
-      const out = await convert(page, source);
+    for (const [name, source, answers] of inputs) {
+      // These synthetic estimates/intervals stay on the supplied analysis scale.
+      // An unlabeled effect must fail closed until the measure choice is explicit.
+      const before = await page.locator('#f-data').inputValue();
+      const unanswered = answers['measure:type'] ? await convert(page, source) : null;
+      if (unanswered) {
+        expect(unanswered.blocking.some(f => f.questionId === 'measure:type')).toBe(true);
+        expect(unanswered.applied).toBeNull();
+        expect(unanswered.source).toBe(before);
+      }
+      const out = await convert(page, source, true, answers);
       expect(out.blocking, name + JSON.stringify(out.flags)).toEqual([]);
-      expect(out.questions).toEqual([]);
+      expect(out.questions.map(q => q.id)).toEqual(Object.keys(answers));
+      if (answers['measure:type']) expect(out.steps.some(s => s.text === 'Effect measure confirmed as a difference')).toBe(true);
       expect(out.applied).toEqual({ ok: true, n: rows.length });
       expect(out.result.k).toBe(expected.k);
       const key = view === 'cumulative' ? 'mu_final' : 'overall_mu';
@@ -160,7 +170,7 @@ test('TEXT PLANTED: changed DOM-cross-checked estimate fails and withholds text'
 
 for (const view of ['cumulative', 'subgroup']) test(`VERIFY: ${view} real webR, downloads, stale state and planted defect`, async ({ page }) => {
   test.setTimeout(900000);
-  await open(page);
+  await open(page, '?almtest=1');
   await page.locator('#f-view').selectOption(view);
   await tab(page, 'verify');
   const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
@@ -169,14 +179,23 @@ for (const view of ['cumulative', 'subgroup']) test(`VERIFY: ${view} real webR, 
   await expect(summary).not.toBeEmpty({ timeout: 600000 });
   // metafor is pinned and available: an unavailable-package or runtime error must fail.
   const summaryText = await summary.textContent();
-  const m = /^(\d+) of (\d+) quantities match R — PASS$/.exec(summaryText);
+  const m = /^(\d+) of (\d+) computed quantities match R; 0 not computed(?:; (\d+) not applicable)? — PASS$/.exec(summaryText);
   expect(m, summaryText).not.toBeNull();
+  // The first cumulative pool has k=1: both engines leave its PI undefined.
+  // Retain all original rows, and require every other value to match R.
+  const notApplicable = view === 'cumulative' ? ['step.1.piLo', 'step.1.piHi'] : [];
   const n = Number(m[2]);
   expect(Number(m[1])).toBe(n);
-  expect(n).toBe(view === 'cumulative' ? 151 : 58);
+  expect(Number(m[3] || 0)).toBe(notApplicable.length);
+  expect(n + notApplicable.length).toBe(view === 'cumulative' ? 151 : 58);
   console.log(`VERIFY ${n}/${n} view=${view}`);
-  expect(await panel.locator('td[data-result]').allTextContents()).toEqual(Array(n).fill('PASS'));
+  await expect(panel.locator('td[data-result]')).toHaveCount(n + notApplicable.length);
+  expect(await panel.locator('td[data-result=pass]').allTextContents()).toEqual(Array(n).fill('PASS'));
+  expect(await panel.locator('tbody tr').evaluateAll(rows => rows.filter(tr => tr.querySelector('td[data-result]').dataset.result !== 'pass')
+    .map(tr => ({ key: tr.dataset.key, result: tr.querySelector('td[data-result]').textContent })))).toEqual(
+      notApplicable.map(key => ({ key, result: 'NOT APPLICABLE for this analysis' })));
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('cumulative-subgroup'))).toBe(true);
+  expect(await page.evaluate(() => AlmFeaturesState.verify.testHook)).toBe(false);
   await expect(panel.locator('figure img')).toHaveCount(1);
   await expect(panel.locator('figure svg')).toHaveCount(1);
   const [zip] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'Download everything (ZIP)', exact: true }).click()]);
@@ -196,13 +215,19 @@ for (const view of ['cumulative', 'subgroup']) test(`VERIFY: ${view} real webR, 
   expect(tif.tags[282].value).toEqual([300, 1]);
   const receipt = JSON.parse(decode(files['truthcert.json']));
   expect(receipt.extra.results.passed).toBe(true);
+  expect(receipt.extra.results.n).toBe(n);
+  expect(receipt.extra.results.nPassed).toBe(n);
+  expect(receipt.extra.results.nNotComputed).toBe(0);
+  expect(receipt.extra.results.nOptional).toBe(0);
+  expect(receipt.extra.results.nNotApplicable).toBe(notApplicable.length);
+  expect(receipt.extra.results.testHook).toBe(false);
   for (const f of receipt.extra.results.files) expect(f.sha256).toBe(createHash('sha256').update(files[f.name]).digest('hex'));
   expect(await page.evaluate(r => AlmTruthCertExport.verifyContentHash(r), receipt)).toBe(true);
   console.log(`VERIFY ZIP ${Object.keys(files).length} entries; receipt=PASS graphics=PASS`);
   await tab(page, 'text');
   await expect(page.locator('[data-para=methods]')).toContainText('independently verified in R');
   await expect(page.locator('[data-para=methods]')).toContainText(view === 'cumulative'
-    ? '142 statistical quantities matched R; 9 page self-checks passed'
+    ? '140 statistical quantities matched R; 9 page self-checks passed'
     : '50 statistical quantities matched R; 8 page self-checks passed');
   const original = await page.locator('#f-data').inputValue();
   await page.locator('#f-data').fill(original.replace('-0.22', '-0.23'));
@@ -215,8 +240,16 @@ for (const view of ['cumulative', 'subgroup']) test(`VERIFY: ${view} real webR, 
   await tab(page, 'verify');
   await run();
   await expect(summary).toContainText('FAIL', { timeout: 600000 });
-  const failing = await panel.locator('tbody tr').evaluateAll(rows => rows.filter(tr => tr.querySelector('td[data-result]').textContent !== 'PASS').map(tr => tr.dataset.key));
+  await expect(summary).toContainText('TEST MODE');
+  const failing = await panel.locator('tbody tr').evaluateAll(rows => rows.filter(tr => !['pass', 'notapplicable'].includes(tr.querySelector('td[data-result]').dataset.result)).map(tr => tr.dataset.key));
   expect(failing).toEqual([key]);
+  expect(await panel.locator('tbody tr').evaluateAll(rows => rows.filter(tr => tr.querySelector('td[data-result]').dataset.result === 'notapplicable').map(tr => tr.dataset.key))).toEqual(notApplicable);
+  const planted = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(planted.passed).toBe(false);
+  expect(planted.testHook).toBe(true);
+  expect(planted.nPassed).toBe(n - 1);
+  expect(planted.nNotComputed).toBe(0);
+  expect(planted.perturbed).toEqual({ key, delta: 0.01 });
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('cumulative-subgroup'))).toBe(false);
   console.log(`VERIFY PLANTED ${n - 1}/${n} ${key}=FAIL; stale=PASS`);
 });
