@@ -385,7 +385,7 @@
       document.getElementById('m-n').textContent = results.length.toLocaleString();
       document.getElementById('m-est').textContent = fmt(medMu);
       document.getElementById('m-i2').textContent = medI2.toFixed(1) + '%';
-      document.getElementById('m-full-i2').textContent = fullDataI2(rows).toFixed(9) + '%';
+      document.getElementById('m-full-i2').textContent = fullDataI2(rows).toFixed(1) + '%';
 
       // Store for export
       _lastResults = {
@@ -613,7 +613,8 @@
       var originalParse=parse, originalPool=pool, rows, points=[];_exactSuppressed=true;
       parse=function(text){rows=originalParse(text);return rows;};
       pool=function(subset,model){var p=originalPool(subset,model);points.push(Object.assign({members:subset.map(function(r){return rows.indexOf(r)+1;})},p));return p;};
-      try {run();return {summary:_lastResults,points:points};}
+      // Full precision for presentation checks only; the exported summary stays unchanged.
+      try {run();return {summary:_lastResults,points:points,presentation:{full_i2:_lastResults ? fullDataI2(rows) : null}};}
       finally {parse=originalParse;pool=originalPool;_exactSuppressed=false;}
     };
     window.__almGoshValidationSnapshot = function() {

@@ -18,7 +18,7 @@ function display(s){
   const w=s.studies.map(r=>1/(r.se*r.se)), sw=w.reduce((a,b)=>a+b,0);
   const mean=s.studies.reduce((a,r,i)=>a+w[i]*r.te,0)/sw;
   const q=s.studies.reduce((a,r,i)=>a+w[i]*(r.te-mean)*(r.te-mean),0), df=s.studies.length-1;
-  fullValue=(df>0&&q>df?100*(q-df)/q:0).toFixed(9)+'%';
+  fullValue=(df>0&&q>df?100*(q-df)/q:0).toFixed(1)+'%';
  }
  const full=cards[2]?.querySelector('.full-data');
  if(!full||full.children.length!==2||full.children[0].className!=='k'||full.children[0].textContent!=='Full-data I²'||full.children[1].className!=='v'||full.children[1].textContent!==fullValue)return false;

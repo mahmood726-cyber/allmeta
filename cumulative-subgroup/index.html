@@ -632,9 +632,9 @@
         const final = cum.series[cum.series.length-1];
         parts.push(statCard("Final pooled", fmt(final.mu)+" ["+fmt(final.lo)+", "+fmt(final.hi)+"]"));
         parts.push(statCard("Final τ²", fmt(final.tau2,4)));
-        parts.push(statCard("Q (random-effects weights)", fmt(final.Q,9)));
+        parts.push(statCard("Q (random-effects weights)", fmt(final.Q,2)));
         // UI only: Q_final retains its existing RE-weighted meaning and export schema.
-        parts.push(statCard("Cochran’s Q (fixed-effect weights)", fmt(weightedSums(parsed.studies, 0).Q,9)));
+        parts.push(statCard("Cochran’s Q (fixed-effect weights)", fmt(weightedSums(parsed.studies, 0).Q,2)));
         svg = buildCumulativeSvg(state, cum);
         _lastResults = {
           _schema: "cumsub-results-v1",
@@ -830,7 +830,8 @@
       pool = function (rows) { const p = originalPool(rows); pools.push(Object.assign({ members: rows.map(function (r) { return parsed.studies.indexOf(r) + 1; }) }, p)); return p; };
       cumulative = function (rows) { cum = originalCumulative(rows); return cum; };
       subgroup = function (rows) { sub = originalSubgroup(rows); return sub; };
-      try { render(); return { summary: _lastResults, parsed: parsed, pools: pools, cum: cum, sub: sub, axisRefusal: _axisRefusal }; }
+      // Full precision for presentation checks only; Cochran Q is not an export key.
+      try { render(); return { summary: _lastResults, parsed: parsed, pools: pools, cum: cum, sub: sub, axisRefusal: _axisRefusal, presentation: { q_fe: _lastResults && cum ? weightedSums(parsed.studies, 0).Q : null } }; }
       finally { parseStudies = originalParse; pool = originalPool; cumulative = originalCumulative; subgroup = originalSubgroup; }
     };
     // Validation observes the autosave draft banner: shared/autosave.js builds the whole banner before it

@@ -149,12 +149,12 @@ function subgroupPlot(sub, title, user, check) {
 function fixedQText(studies) {
   const w = studies.map(s => 1 / s.v), sw = w.reduce((a, b) => a + b, 0);
   const mean = studies.reduce((a, s, i) => a + w[i] * s.est, 0) / sw;
-  return fmt(studies.reduce((a, s, i) => a + w[i] * (s.est - mean) * (s.est - mean), 0), 9);
+  return fmt(studies.reduce((a, s, i) => a + w[i] * (s.est - mean) * (s.est - mean), 0), 2);
 }
 function cardsExpected(view, a) {
   const k = String(a.parsed.studies.length);
   if (!a.summary) return [['k', k]];
-  if (view === 'cumulative') { const f = a.cum.series[a.cum.series.length - 1]; return [['k', k], ['Final pooled', pooledText(f)], ['Final τ²', fmt(f.tau2, 4)], ['Q (random-effects weights)', fmt(f.Q, 9)], ['Cochran’s Q (fixed-effect weights)', fixedQText(a.parsed.studies)]]; }
+  if (view === 'cumulative') { const f = a.cum.series[a.cum.series.length - 1]; return [['k', k], ['Final pooled', pooledText(f)], ['Final τ²', fmt(f.tau2, 4)], ['Q (random-effects weights)', fmt(f.Q, 2)], ['Cochran’s Q (fixed-effect weights)', fixedQText(a.parsed.studies)]]; }
   const s = a.sub, o = s.overall, out = [['k', k], ['Groups', String(s.groups.length)], ['Overall pooled', pooledText(o)]];
   if (o.piLo != null) out.push(['95% prediction interval', '[' + fmt(o.piLo) + ', ' + fmt(o.piHi) + ']']);
   out.push(['Q_bw (df=' + s.df_bw + ')', fmt(s.Q_bw, 2) + ', p=' + fmt(s.pQ, 3)], ['I² diff', fmt(s.I2_bw, 1) + '%']);

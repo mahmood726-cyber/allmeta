@@ -46,7 +46,7 @@ test('GOSH exact display guard accepts the corrected card and rejects old label/
   const source=read('gosh/validate/adapter.js');
   const label='median I² across subsets (not the full-data I²)';
   const pair=(k,v)=>[{className:'k',textContent:k},{className:'v',textContent:v}];
-  const full={children:pair('Full-data I²','66.666666667%')};
+  const full={children:pair('Full-data I²','66.7%')};
   const cards=[['Subsets computed','7'],['Median estimate','0.000'],[label,'0.0%']].map(([k,v],i)=>({children:[...pair(k,v),...(i===2?[full]:[])],querySelector:s=>s==='.full-data'?(i===2?full:null):{textContent:k}}));
   const doc={querySelectorAll:()=>cards,querySelector:()=>({parentElement:{children:[{tagName:'H2',textContent:'Summary'},{tagName:'H2',textContent:'GOSH scatter'}]}})};
   const display=extract(source,'display',{document:doc});
@@ -54,7 +54,8 @@ test('GOSH exact display guard accepts the corrected card and rejects old label/
   assert.equal(display(s),true);
   cards[2].children[0].textContent='Median I²';assert.equal(display(s),false);
   cards[2].children[0].textContent=label;full.children[1].textContent='0.0%';assert.equal(display(s),false);
-  full.children[1].textContent='66.666666667%';cards.push(cards[0]);assert.equal(display(s),false);
+  full.children[1].textContent='66.666666667%';assert.equal(display(s),false);
+  full.children[1].textContent='66.7%';cards.push(cards[0]);assert.equal(display(s),false);
 });
 test('missing-year banner guard rejects silent fallback and accepts complete-year absence', () => {
   const source=read('cumulative-subgroup/validate/adapter.js');
@@ -66,4 +67,28 @@ test('missing-year banner guard rejects silent fallback and accepts complete-yea
   el.className='warn-banner';el.innerHTML='';el.childNodes=[];assert.equal(check([]),false);
   result.series[0].year=2010;assert.equal(check([]),true);
   result.view='subgroup';result.series[0].year=null;assert.equal(check([]),true);
+});
+
+test('R1 renderer precision: one decimal I2 and two decimals for both Q cards', () => {
+  const i2 = gosh.match(/fullDataI2\(rows\)\.toFixed\((\d+)\)/);
+  assert.ok(i2);
+  const formatI2 = value => value.toFixed(Number(i2[1])) + '%';
+  assert.equal(formatI2(100*4/6), '66.7%');
+  assert.notEqual(formatI2(100*4/6), '66.666666667%');
+  for (const expression of ['fmt(final.Q,', 'fmt(weightedSums(parsed.studies, 0).Q,']) {
+    const digits = Number(cum.slice(cum.indexOf(expression) + expression.length).match(/^\d+/)[0]);
+    assert.equal((6).toFixed(digits), '6.00');
+    assert.notEqual((6).toFixed(digits), '6.000000000');
+  }
+});
+test('R1 cumulative adapter expects two decimal Q displays', () => {
+  const source = read('cumulative-subgroup/validate/adapter.js');
+  const fmt = extract(source, 'fmt');
+  const fixedQText = extract(source, 'fixedQText', {fmt});
+  const cardsExpected = extract(source, 'cardsExpected', {fmt, fixedQText, pooledText:()=>''});
+  const expected = cardsExpected('cumulative', {parsed:{studies:[0,0,3].map(est=>({est,v:1}))},summary:{},cum:{series:[{tau2:2,Q:2}]}});
+  assert.equal(expected[3][1], '2.00');
+  assert.equal(expected[4][1], '6.00');
+  assert.notEqual(expected[3][1], '2.000000000');
+  assert.notEqual(expected[4][1], '6.000000000');
 });
