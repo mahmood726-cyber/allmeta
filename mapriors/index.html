@@ -367,21 +367,28 @@ body.dark .truthcert-badge.fail { background:#7f1d1d; color:#fca5a5; }
     </div>
   </div>
 
+<div class="card"><h2>Model and priors</h2>
+<label>Method <select id="engineMode"><option value="model">RBesT model (deterministic quadrature)</option><option value="quick">Quick normal approximation (not RBesT model)</option></select></label>
+<label>HalfNormal tau scale <input id="engineTau" type="number" min="0" step="any" placeholder="Binary: 1; continuous: sigma/2"></label>
+<label>Beta prior mean <input id="engineBetaMean" type="number" step="any" placeholder="0"></label>
+<label>Beta prior SD <input id="engineBetaSD" type="number" min="0" step="any" placeholder="Binary: 2; continuous: 10*sigma"></label>
+<label>Continuous sigma <input id="engineSigma" type="number" min="0" step="any" placeholder="Pooled within-study SD"></label>
+<p>Leave inputs blank to use defaults. The binary model uses exact binomial counts, including zero and all-event studies. Numerical convergence is reported with the results.</p></div>
   <!-- Derive + Robust Slider -->
   <div class="two-col">
     <div class="card fade-in">
       <h2>Robust MAP Prior</h2>
       <div class="slider-group">
-        <label>Informative Weight (w)</label>
+        <label>Vague Weight (w_vague)</label>
         <div class="slider-row">
-          <span style="font-size:0.8rem;color:var(--text-muted)">Vague</span>
-          <input type="range" id="wSlider" min="0" max="100" value="80" oninput="updateSlider()" aria-label="Informative weight percentage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="80">
           <span style="font-size:0.8rem;color:var(--text-muted)">MAP</span>
-          <span class="slider-val" id="wVal">80%</span>
+          <input type="range" id="wSlider" min="0" max="100" value="20" oninput="updateSlider()" aria-label="Vague weight percentage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
+          <span style="font-size:0.8rem;color:var(--text-muted)">Vague</span>
+          <span class="slider-val" id="wVal">20%</span>
         </div>
       </div>
       <p style="font-size:0.82rem;color:var(--text-muted)">
-        w = 100%: pure MAP prior (max borrowing). w = 0%: pure vague prior (no borrowing).
+        w_vague = 0%: pure MAP prior. w_vague = 100%: pure unit-information vague prior.
         The vague component protects against prior-data conflict.
       </p>
     </div>
@@ -844,7 +851,7 @@ function sync() {
     }
   });
   document.getElementById('studyBadge').textContent = `${studies.length} studies`;
-  document.getElementById('runBtn').disabled = studies.length < 2;
+  document.getElementById('runBtn').disabled = studies.length < 1;
 }
 
 function updateSlider() {
@@ -3916,7 +3923,197 @@ function autoLoadDemo() {
 // ---- Init ----
 renderHeader();
 // Auto-load demo data on first visit instead of empty rows
+/* ==== RBesT-model engine (MAPEngine) ==== */
+// Deterministic intercept-only normal / binomial hierarchical model; no RNG or dependencies.
+var MAPEngine = (() => {
+'use strict';
+const Math=globalThis.Math;
+const PI=Math.PI, SQRT2PI=Math.sqrt(2*PI), expit=x=>x>=0?1/(1+Math.exp(-x)):Math.exp(x)/(1+Math.exp(x)), logit=p=>Math.log(p)-Math.log1p(-p);
+const softplus=x=>Math.max(0,x)+Math.log1p(Math.exp(-Math.abs(x)));
+function pdf(x){return Math.exp(-x*x/2)/SQRT2PI;}
+// Cephes/Cody-style erfc rational approximations, preserving small tail values.
+function horner(x,a){let y=a[0];for(let i=1;i<a.length;i++)y=y*x+a[i];return y;}
+const erfcCoefficients0=[9.60497373987051638749,90.0260197203842689217,2232.00534594684319226,7003.32514112805075473,55592.3013010394962768];
+const erfcCoefficients1=[1,33.5617141647503099647,521.357949780152679795,4594.32382970980127987,22629.0000613890934246,49267.3942608635921086];
+const erfcCoefficients2=[2.46196981473530512524e-10,.564189564831068821977,7.46321056442269912687,48.6371970985681366614,196.520832956077098242,526.445194995477358631,934.528527171957607540,1027.55188689515710272,557.535335369399327526];
+const erfcCoefficients3=[1,13.2281951154744992508,86.7072140885989742329,354.937778887819891062,975.708501743205489753,1823.90916687909736289,2246.33760818710981792,1656.66309194161350182,557.535340817727675546];
+const erfcCoefficients4=[.564189583547755073984,1.27536670759978104416,5.01905042251180477414,6.16021097993053585195,7.40974269950448939160,2.97886665372100240670];
+const erfcCoefficients5=[1,2.26052863220117276590,9.39603524938001434673,12.0489539808096656605,17.0814450747565897222,9.60896809063285878198,3.36907645100081516050];
+function tail(x){x=Math.abs(x)/Math.SQRT2;if(x===Infinity)return 0;if(x<1){let z=x*x;return .5*(1-x*horner(z,erfcCoefficients0)/horner(z,erfcCoefficients1));}
+ let p,q;if(x<8){p=horner(x,erfcCoefficients2);q=horner(x,erfcCoefficients3);}else{p=horner(x,erfcCoefficients4);q=horner(x,erfcCoefficients5);}return .5*Math.exp(-x*x)*p/q;
+}
+function cdf(x){return x<0?tail(x):1-tail(x);}
+function poly(x,a){let s=a[a.length-1];for(let i=a.length-2;i>=0;i--)s=s*x+a[i];return s;}
+// Wichura AS241 rational approximation; coefficients in ascending order.
+function qnorm(p){if(p===0)return-Infinity;if(p===1)return Infinity;if(!(p>0&&p<1))throw Error('Invalid probability');let q=p-.5,r,v;
+ if(Math.abs(q)<=.425){r=.180625-q*q;return q*poly(r,[3.387132872796366608,133.14166789178437745,1971.5909503065514427,13731.693765509461125,45921.953931549871457,67265.770927008700853,33430.575583588128105,2509.0809287301226727])/poly(r,[1,42.313330701600911252,687.1870074920579083,5394.1960214247511077,21213.794301586595867,39307.89580009271061,28729.085735721942674,5226.495278852854561]);}
+ r=Math.sqrt(-Math.log(q<0?p:1-p));if(r<=5){r-=1.6;v=poly(r,[1.42343711074968357734,4.6303378461565452959,5.7694972214606914055,3.64784832476320460504,1.27045825245236838258,.24178072517745061177,.0227238449892691845833,.00077454501427834140764])/poly(r,[1,2.05319162663775882187,1.6763848301838038494,.68976733498510000455,.14810397642748007459,.0151986665636164571966,.0005475938084995344946,1.05075007164441684324e-9]);}
+ else{r-=5;v=poly(r,[6.6579046435011037772,5.4637849111641143699,1.7848265399172913358,.29656057182850489123,.026532189526576123093,.0012426609473880784386,.0000271155556874348757815,.000000201033439929228813265])/poly(r,[1,.59983220655588793769,.13692988092273580531,.0148753612908506148525,.0007868691311456132591,.000018463183175100546818,.00000014215117583164458887,2.04426310338993978564e-15]);}return q<0?-v:v;
+}
+function lgamma(z){if(!(z>0))throw Error('log-gamma requires positive argument');const a=[.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];if(z<.5)return Math.log(PI)-Math.log(Math.sin(PI*z))-lgamma(1-z);z--;let x=a[0];for(let i=1;i<a.length;i++)x+=a[i]/(z+i);let t=z+7.5;return .5*Math.log(2*PI)+(z+.5)*Math.log(t)-t+Math.log(x);}
+const lbeta=(a,b)=>lgamma(a)+lgamma(b)-lgamma(a+b);
+function betacf(a,b,x){let c=1,d=1-(a+b)*x/(a+1);if(Math.abs(d)<1e-300)d=1e-300;d=1/d;let h=d;for(let m=1;m<20000;m++){let aa=m*(b-m)*x/((a+2*m-1)*(a+2*m));for(let j=0;j<2;j++){if(j)aa=-(a+m)*(a+b+m)*x/((a+2*m)*(a+2*m+1));d=1+aa*d;if(Math.abs(d)<1e-300)d=1e-300;c=1+aa/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;let del=d*c;h*=del;if(j&&Math.abs(del-1)<3e-15)return h;}}throw Error('Incomplete beta did not converge');}
+function ibeta(x,a,b){if(x<=0)return 0;if(x>=1)return 1;let bt=Math.exp(a*Math.log(x)+b*Math.log1p(-x)-lbeta(a,b));return x<(a+1)/(a+b+2)?bt*betacf(a,b,x)/a:1-bt*betacf(b,a,1-x)/b;}
+function validate(m){if(!m||!['beta','normal'].includes(m.family)||!m.comps.length)throw Error('Invalid mixture');let z=0;for(const c of m.comps){if(!(c.w>=0&&Number.isFinite(c.w)))throw Error('Invalid weight');if(m.family==='beta'&&!(c.a>0&&c.b>0)||m.family==='normal'&&!(Number.isFinite(c.m)&&c.s>0))throw Error('Invalid component');z+=c.w;}if(Math.abs(z-1)>1e-10)throw Error('Mixture weights must sum to one');return m;}
+function logdensity(m,c,x){if(m.family==='normal')return-.5*((x-c.m)/c.s)**2-Math.log(c.s*SQRT2PI);return(c.a-1)*Math.log(x)+(c.b-1)*Math.log1p(-x)-lbeta(c.a,c.b);}
+function dmix(m,x){if(m.family==='beta'&&(x<0||x>1))return 0;if(m.family==='beta'&&(x===0||x===1)){return m.comps.reduce((s,c)=>{let a=x===0?c.a:c.b,b=x===0?c.b:c.a;return s+(c.w===0?0:c.w*(a<1?Infinity:a===1?b:0));},0);}return m.comps.reduce((s,c)=>s+c.w*Math.exp(logdensity(m,c,x)),0);}
+function pmix(m,x){return m.comps.reduce((s,c)=>s+c.w*(m.family==='beta'?ibeta(x,c.a,c.b):cdf((x-c.m)/c.s)),0);}
+function qmix(m,p){if(!(p>=0&&p<=1))throw Error('Invalid probability');let lo=m.family==='beta'?0:Math.min(...m.comps.map(c=>c.m-40*c.s)),hi=m.family==='beta'?1:Math.max(...m.comps.map(c=>c.m+40*c.s));if(p===0)return m.family==='beta'?0:-Infinity;if(p===1)return m.family==='beta'?1:Infinity;let x=(lo+hi)/2;for(let i=0;i<160;i++){let err=pmix(m,x)-p;if(err>0)hi=x;else lo=x;if(Math.abs(err)<2e-15*Math.min(p,1-p))return x;let y=x-err/dmix(m,x);if(!(y>lo&&y<hi)||!Number.isFinite(y))y=(lo+hi)/2;if(y===x||hi-lo<2e-15*Math.max(1e-100,Math.abs(x)))return x;x=y;}return x;}
+function summary(m){let mean=0,s2=0;for(const c of m.comps){let u=m.family==='beta'?c.a/(c.a+c.b):c.m,v=m.family==='beta'?u*(1-u)/(c.a+c.b+1):c.s*c.s;mean+=c.w*u;s2+=c.w*(v+u*u);}return{mean,sd:Math.sqrt(Math.max(0,s2-mean*mean))};}
+function robustify(m,weight,mean,n=1,sigma=m.sigma){validate(m);if(!(weight>=0&&weight<=1&&n>0))throw Error('Invalid robustification');let c=m.family==='beta'?{w:weight,a:mean*n,b:(1-mean)*n}:{w:weight,m:mean,s:sigma/Math.sqrt(n)};return validate({...m,comps:[...m.comps.map(c=>({...c,w:c.w*(1-weight)})),c]});}
+function postmix(m,data){validate(m);let logs=[],comps=m.comps.map(c=>{if(m.family==='beta'){let{r,n}=data;if(!(r>=0&&r<=n))throw Error('Invalid counts');logs.push(Math.log(c.w)+lbeta(c.a+r,c.b+n-r)-lbeta(c.a,c.b));return{w:0,a:c.a+r,b:c.b+n-r};}let n=data.n,sigma=data.sigma||m.sigma;if(!(n>=0&&sigma>0))throw Error('Invalid normal data');if(!n){logs.push(Math.log(c.w));return{...c};}let v=sigma*sigma/n,s2=1/(1/(c.s*c.s)+1/v);logs.push(Math.log(c.w)-.5*Math.log(c.s*c.s+v)-.5*(data.m-c.m)**2/(c.s*c.s+v));return{w:0,m:s2*(c.m/(c.s*c.s)+data.m/v),s:Math.sqrt(s2)};});let max=Math.max(...logs),z=logs.reduce((s,l)=>s+Math.exp(l-max),0);comps.forEach((c,i)=>c.w=Math.exp(logs[i]-max)/z);return{...m,comps};}
+const glCache=new Map();
+function gl(n){if(glCache.has(n))return glCache.get(n);let out=[];for(let i=1;i<=n;i++){let z=Math.cos(PI*(i-.25)/(n+.5)),pp;for(let j=0;j<30;j++){let p=1,q=0;for(let k=1;k<=n;k++){let t=q;q=p;p=((2*k-1)*z*q-(k-1)*t)/k;}pp=n*(z*p-q)/(z*z-1);let d=p/pp;z-=d;if(Math.abs(d)<2e-16)break;}out.push({x:z,w:2/((1-z*z)*pp*pp)});}out.sort((a,b)=>a.x-b.x);glCache.set(n,out);return out;}
+const ghCache=new Map();
+function gh(n){if(ghCache.has(n))return ghCache.get(n);
+ // Golub-Welsch: implicit QL eigenvalues of the Hermite Jacobi matrix.
+ // Unlike extrapolated root guesses, this remains stable at 256/512 nodes.
+ const d=new Float64Array(n),e=new Float64Array(n);for(let i=0;i<n-1;i++)e[i]=Math.sqrt(i+1);
+ for(let l=0;l<n;l++){for(let iter=0;iter<100;iter++){let m=l;for(;m<n-1;m++)if(Math.abs(e[m])<=2e-16*(Math.abs(d[m])+Math.abs(d[m+1])))break;if(m===l)break;if(iter===99)throw Error('Hermite eigensolver failed');let g=(d[l+1]-d[l])/(2*e[l]),r=Math.hypot(g,1);g=d[m]-d[l]+e[l]/(g+(g>=0?r:-r));let s=1,c=1,p=0,broken=false;for(let i=m-1;i>=l;i--){let f=s*e[i],b=c*e[i];r=Math.hypot(f,g);e[i+1]=r;if(r===0){d[i+1]-=p;e[m]=0;broken=true;break;}s=f/r;c=g/r;g=d[i+1]-p;r=(d[i]-g)*s+2*c*b;p=s*r;d[i+1]=g+p;g=c*r-b;}if(broken)continue;d[l]-=p;e[l]=g;e[m]=0;}}
+ const roots=Array.from(d).sort((a,b)=>a-b),out=[];for(let i=0;i<n;i++){let x=(roots[i]-roots[n-1-i])/2,z=x/Math.SQRT2,p=Math.pow(PI,-.25),q=0;for(let j=1;j<=n;j++){let t=q;q=p;p=z*Math.sqrt(2/j)*q-Math.sqrt((j-1)/j)*t;}let pp=Math.sqrt(2*n)*q,lw=Math.log(2)-2*Math.log(Math.abs(pp))-.5*Math.log(PI);out.push({x,w:Math.exp(lw),aw:Math.exp(lw+z*z)});}let total=out.reduce((s,v)=>s+v.w,0);for(const v of out){v.w/=total;v.aw/=total;}ghCache.set(n,out);return out;
+}
+function integrate(f,a,b,n=128){return gl(n).reduce((s,v)=>s+v.w*f((a+b)/2+(b-a)*v.x/2)*(b-a)/2,0);}
+// ESS conventions requiring RBesT 1.12-0 oracle review:
+// moment: beta mu(1-mu)/Var - 1; normal sigma^2/Var.
+// elir: E[-d2 log prior / d eta2 / I_one(eta)], eta=logit(p) for
+// beta (INCLUDING the Jacobian p(1-p)), eta=theta for normal. Analytic
+// mixture derivatives include the between-component score variance.
+// morita: local information ratio at the GLOBAL mode of that same eta-density.
+// Uncertain: RBesT's Morita epsilon/inflated-prior finite-sample correction and
+// its beta parameterization may differ. This is a curvature analogue, not a
+// silently asserted exact reproduction of Morita's finite-sample algorithm.
+function info(m,x){let p=m.family==='beta'?expit(x):x,logs=m.comps.map(c=>Math.log(c.w)+(m.family==='beta'?c.a*Math.log(p)+c.b*Math.log1p(-p)-lbeta(c.a,c.b):logdensity(m,c,x))),max=Math.max(...logs),z=0,s=0,s2=0,h=0;for(let i=0;i<logs.length;i++){let c=m.comps[i],w=Math.exp(logs[i]-max),score=m.family==='beta'?c.a-(c.a+c.b)*p:(c.m-x)/(c.s*c.s),curv=m.family==='beta'?(c.a+c.b)*p*(1-p):1/(c.s*c.s);z+=w;s+=w*score;s2+=w*score*score;h+=w*curv;}return{log:max+Math.log(z),ratio:(h/z-s2/z+(s/z)**2)/(m.family==='beta'?p*(1-p):1/(m.sigma*m.sigma))};}
+function ess(m,method='moment',sigma=m.sigma){m={...m,sigma};const s=summary(m);if(method==='moment')return m.family==='beta'?s.mean*(1-s.mean)/(s.sd*s.sd)-1:sigma*sigma/(s.sd*s.sd);if(!['morita','elir'].includes(method))throw Error('Unknown ESS method');if(m.comps.length===1){let c=m.comps[0];return m.family==='beta'?c.a+c.b:sigma*sigma/(c.s*c.s);}
+ let lo=m.family==='beta'?-35:Math.min(...m.comps.map(c=>c.m-12*c.s)),hi=m.family==='beta'?35:Math.max(...m.comps.map(c=>c.m+12*c.s));if(method==='elir')return integrate(x=>{let v=info(m,x);return Math.exp(v.log)*v.ratio;},lo,hi,512);
+ let best=lo,bestLog=-Infinity,step=(hi-lo)/1024;for(let i=0;i<=1024;i++){let x=lo+i*step,v=info(m,x).log;if(v>bestLog){best=x;bestLog=v;}}let a=best-step,b=best+step;for(let i=0;i<80;i++){let x=a+(b-a)/3,y=b-(b-a)/3;if(info(m,x).log>info(m,y).log)b=y;else a=x;}return info(m,(a+b)/2).ratio;
+}
+function config(o){let family=['binary','binomial'].includes(o.family)?'binomial':'normal';let sigma=o.sigma||1;let c={...o,family,sigma,tauScale:o.tauScale??o.priors?.tau?.scale??(family==='normal'?sigma/2:1),betaMean:o.betaMean??o.priors?.beta?.mean??0,betaSD:o.betaSD??o.priors?.beta?.sd??(family==='normal'?10*sigma:2)};if(!(c.data?.length&&c.tauScale>0&&c.betaSD>0))throw Error('Invalid gMAP data/priors');for(const d of c.data)if(family==='normal'?!(Number.isFinite(d.y)&&d.se>0):!(Number.isInteger(d.r)&&Number.isInteger(d.n)&&d.n>0&&d.r>=0&&d.r<=d.n))throw Error('Invalid study');return c;}
+function marginal(d,b,t){if(t<1e-10)return d.r*b-d.n*softplus(b);let mode=b,lo=b-(d.n-d.r)*t*t,hi=b+d.r*t*t;for(let i=0;i<80;i++){let p=expit(mode),grad=d.r-d.n*p-(mode-b)/(t*t);if(grad>0)lo=mode;else hi=mode;let next=mode+grad/(d.n*p*(1-p)+1/(t*t));if(!(next>lo&&next<hi))next=(lo+hi)/2;if(Math.abs(next-mode)<1e-12){mode=next;break;}mode=next;}let p=expit(mode),s=1/Math.sqrt(d.n*p*(1-p)+1/(t*t));const f=x=>d.r*x-d.n*softplus(x)-.5*((x-b)/t)**2,base=f(mode);let previous;for(const n of [16,32,64,128,256,512]){let sum=0;for(const v of gh(n)){let x=mode+s*v.x;sum+=v.aw*Math.exp(f(x)-base);}let ans=Math.log(s/t)+base+Math.log(sum);if(previous!==undefined&&Math.abs(ans-previous)<1e-11)return ans;previous=ans;}return previous;}
+function weightedQuantile(nodes,p,key){let a=nodes.map(v=>({x:v[key],w:v.w})).sort((a,b)=>a.x-b.x),s=0;for(const v of a){s+=v.w;if(s>=p)return v.x;}return a[a.length-1].x;}
+function tauMedian(nodes,scale){
+ let grouped=[];for(const v of nodes){let last=grouped[grouped.length-1];if(last&&last.t===v.t)last.w+=v.w;else grouped.push({t:v.t,w:v.w});}
+ const n=grouped.length,coeff=new Float64Array(n);for(const v of grouped){let x=v.t/(6*scale)-1,a=1,b=x;coeff[0]+=v.w;coeff[1]+=v.w*x;for(let k=2;k<n;k++){let c=((2*k-1)*x*b-(k-1)*a)/k;coeff[k]+=v.w*c;a=b;b=c;}}
+ function F(x){let ps=[1,x];for(let k=2;k<=n;k++)ps[k]=((2*k-1)*x*ps[k-1]-(k-1)*ps[k-2])/k;let sum=(x+1)/2;for(let k=1;k<n;k++)sum+=coeff[k]*(ps[k+1]-ps[k-1])/2;return sum;}let lo=-1,hi=1;for(let i=0;i<60;i++){let x=(lo+hi)/2;if(F(x)<.5)lo=x;else hi=x;}return 6*scale*(1+(lo+hi)/2);
+}
+function posterior(c,n){let nodes=[],max=-Infinity,groups=[];if(c.family==='binomial'){for(const d of c.data){let g=groups.find(g=>g.r===d.r&&g.n===d.n);if(g)g.count++;else groups.push({...d,count:1});}}
+ for(const v of gl(n)){let t=6*c.tauScale*(v.x+1),base=Math.log(v.w*6*c.tauScale)-.5*(t/c.tauScale)**2;
+ if(c.family==='normal'){let precision=1/c.betaSD**2,h=c.betaMean/c.betaSD**2,ss=c.betaMean**2/c.betaSD**2,ll=0;for(const d of c.data){let vv=d.se*d.se+t*t;precision+=1/vv;h+=d.y/vv;ss+=d.y*d.y/vv;ll+=Math.log(vv);}let bv=1/precision,b=h*bv,logw=base-.5*(ll+Math.log(precision)+ss-h*h*bv);nodes.push({t,b,bv,s:Math.sqrt(t*t+bv),logw});max=Math.max(max,logw);}
+ else {
+ // Conditional beta density is log-concave (normal prior and log-concave
+ // binomial-normal convolutions). Locate its mode and a 42-log-unit support
+ // envelope; integrating that envelope avoids wasting nodes in prior tails.
+ const logBeta=b=>{let val=-.5*((b-c.betaMean)/c.betaSD)**2;for(const d of groups)val+=d.count*marginal(d,b,t);return val;};
+ let lower=c.betaMean-12*c.betaSD,upper=c.betaMean+12*c.betaSD,a=lower,b=upper;
+ for(let i=0;i<28;i++){let x=a+(b-a)/3,y=b-(b-a)/3;if(logBeta(x)>logBeta(y))b=y;else a=x;}
+ let mode=(a+b)/2,threshold=logBeta(mode)-42;
+ a=lower;b=mode;for(let i=0;i<26;i++){let x=(a+b)/2;if(logBeta(x)<threshold)a=x;else b=x;}let left=a;
+ a=mode;b=upper;for(let i=0;i<26;i++){let x=(a+b)/2;if(logBeta(x)>threshold)a=x;else b=x;}let right=b;
+ for(const u of gl(n)){let b=(left+right)/2+(right-left)/2*u.x,logw=base+Math.log(u.w*(right-left)/2)+logBeta(b);nodes.push({t,b,bv:0,s:t,logw,left,right});max=Math.max(max,logw);}}}
+
+ let z=0;for(const v of nodes){v.w=Math.exp(v.logw-max);z+=v.w;}for(const v of nodes)v.w/=z;if(c.family==='binomial')preparePredictive(nodes,n);return nodes;
+}
+// For tau approaching zero, a sum of narrow Gaussian kernels at beta nodes
+// gives spurious steps. Integrate the conditional beta density spectrally first,
+// then convolve its CDF with the small Gaussian. This is the same quadrature,
+// with an analytic antiderivative rather than an unresolved indicator function.
+function preparePredictive(nodes,n){let groups=[];for(const v of nodes){let g=groups[groups.length-1];if(!g||g.t!==v.t){g={t:v.t,nodes:[],w:0,left:v.left,right:v.right};groups.push(g);}g.nodes.push(v);g.w+=v.w;}for(const g of groups){let half=(g.right-g.left)/2;if(g.t>2*Math.PI*half/n||g.w<1e-18)continue;g.coeff=new Float64Array(n);for(const v of g.nodes){let x=(v.b-(g.left+g.right)/2)/half,a=1,b=x,w=v.w/g.w;g.coeff[0]+=w;g.coeff[1]+=w*x;for(let k=2;k<n;k++){let c=((2*k-1)*x*b-(k-1)*a)/k;g.coeff[k]+=w*c;a=b;b=c;}}}nodes.groups=groups;}
+function conditional(g,y,density=false){let x=(2*y-g.left-g.right)/(g.right-g.left);if(x<=-1)return 0;if(x>=1)return density?0:1;let ps=[1,x],n=g.coeff.length;for(let k=2;k<=n;k++)ps[k]=((2*k-1)*x*ps[k-1]-(k-1)*ps[k-2])/k;let v=density?1:(x+1)/2;for(let k=1;k<n;k++)v+=g.coeff[k]*(density?(2*k+1)*ps[k]:(ps[k+1]-ps[k-1])/2);return density?v/(g.right-g.left):v;}
+function latent(nodes,y,density=false){if(!nodes.groups)return nodes.reduce((s,v)=>s+v.w*(density?pdf((y-v.b)/v.s)/v.s:cdf((y-v.b)/v.s)),0);let sum=0;for(const g of nodes.groups){if(g.coeff){let v=0;for(const h of gh(16))v+=h.w*conditional(g,y-g.t*h.x,density);sum+=g.w*v;}else for(const v of g.nodes)sum+=v.w*(density?pdf((y-v.b)/v.s)/v.s:cdf((y-v.b)/v.s));}return sum;}
+function predCDF(nodes,x,binary){return latent(nodes,binary?logit(x):x);}
+function predQuantile(nodes,p,binary){let lo=Math.min(...nodes.filter(v=>v.w>1e-20).map(v=>v.b-10*v.s)),hi=Math.max(...nodes.filter(v=>v.w>1e-20).map(v=>v.b+10*v.s));for(let i=0;i<70;i++){let x=(lo+hi)/2,v=latent(nodes,x);if(v<p)lo=x;else hi=x;}let x=(lo+hi)/2;return binary?expit(x):x;}
+function describe(nodes,binary){let bm=0,bs=0,tm=0,mean=0,second=0;for(const v of nodes){bm+=v.w*v.b;bs+=v.w*(v.b*v.b+v.bv);tm+=v.w*v.t;if(binary){let oldM=-1,oldS=-1,m=0,s=0;for(const n of [32,64,128,256]){m=0;s=0;for(const h of gh(n)){let p=expit(v.b+v.s*h.x);m+=h.w*p;s+=h.w*p*p;}if(Math.max(Math.abs(m-oldM),Math.abs(s-oldS))<1e-12)break;oldM=m;oldS=s;}mean+=v.w*m;second+=v.w*s;}else{mean+=v.w*v.b;second+=v.w*(v.b*v.b+v.s*v.s);}}return{predictive:{mean,sd:Math.sqrt(Math.max(0,second-mean*mean)),q2_5:predQuantile(nodes,.025,binary),q50:predQuantile(nodes,.5,binary),q97_5:predQuantile(nodes,.975,binary)},beta:{mean:bm,sd:Math.sqrt(Math.max(0,bs-bm*bm))},tau:{mean:tm}};}
+function gMAP(options){const c=config(options),binary=c.family==='binomial';let previous,result,nodes,delta=Infinity,order=0;const tolerance=binary?1e-8:1e-10;for(const n of [32,64,128,256,512]){nodes=posterior(c,n);result=describe(nodes,binary);result.tau.median=tauMedian(nodes,c.tauScale);let values=[...Object.values(result.predictive),...Object.values(result.beta),result.tau.mean,result.tau.median];if(previous)delta=Math.max(...values.map((x,i)=>Math.abs(x-previous[i])/Math.max(1,Math.abs(x))));order=n;if(options.trace)console.log('quadrature',n,delta,result.predictive);if(delta<tolerance)break;previous=values;}
+ result.convergence={converged:delta<tolerance,order,relativeChange:delta,tolerance,tauMedian:'integrated Legendre expansion of marginal density'};result.settings=c;
+ let lo=predQuantile(nodes,.000001,binary),hi=predQuantile(nodes,.999999,binary);result.density=[];for(let i=0;i<=400;i++){let x=lo+(hi-lo)*i/400,y=binary?logit(x):x,d=latent(nodes,y,true)/(binary?x*(1-x):1);result.density.push({x,density:d});}
+ // Deterministic equal-mass grid for EM; each point represents a stratum of the
+ // predictive CDF, not pseudo-random Monte Carlo draws.
+ result._nodes=nodes;return result;
+}
+
+function digamma(x){let s=0;while(x<10){s-=1/x;x++;}let r=1/x,r2=r*r;return s+Math.log(x)-r/2-r2*(1/12-r2*(1/120-r2/252));}
+function trigamma(x){let s=0;while(x<10){s+=1/(x*x);x++;}let r=1/x,r2=r*r;return s+r+r2/2+r*r2*(1/6-r2*(1/30-r2/42));}
+function betaMLE(a,b,lx,ly){for(let i=0;i<30;i++){let common=digamma(a+b),g1=digamma(a)-common-lx,g2=digamma(b)-common-ly,t=trigamma(a+b),aa=trigamma(a)-t,bb=trigamma(b)-t,det=aa*bb-t*t,da=(bb*g1+t*g2)/det,db=(t*g1+aa*g2)/det;let f=1;while(a-f*da<=1e-5||b-f*db<=1e-5)f/=2;a-=f*da;b-=f*db;if(Math.max(Math.abs(f*da)/a,Math.abs(f*db)/b)<1e-9)break;}return{a,b};}
+function fitMixture(result){const binary=result.settings.family==='binomial',nodes=result._nodes;
+ const low=predQuantile(nodes,1e-10,false),high=predQuantile(nodes,1-1e-10,false),grid=[];
+ for(const v of gl(768)){let t=(low+high)/2+(high-low)*v.x/2,d=latent(nodes,t,true),x=binary?expit(t):t;grid.push({x,w:d*v.w*(high-low)/2});}let mass=grid.reduce((s,v)=>s+v.w,0);grid.forEach(v=>v.w/=mass);
+ // AIC uses 16,000 retained draws: assumed RBesT defaults of 4 chains,
+ // 6,000 iterations minus 2,000 warmup. Needs version-specific oracle review;
+ // this is NOT the preregistered oracle's deliberately larger 80,000 draws.
+ const effectiveDraws=16000,candidates=[];let best;
+ for(let K=1;K<=4;K++){let sd=result.predictive.sd,mean=result.predictive.mean,comps=[];for(let k=0;k<K;k++){let m=binary?Math.min(.999,Math.max(.001,mean+(k-(K-1)/2)*sd)):mean+(k-(K-1)/2)*sd;if(binary){let v=Math.min(m*(1-m)*.9,sd*sd/K),prec=Math.max(.1,m*(1-m)/v-1);comps.push({w:1/K,a:m*prec,b:(1-m)*prec});}else comps.push({w:1/K,m,s:sd/Math.sqrt(K)});}
+ let last=-Infinity,ll=-Infinity,iterations=0;
+ for(let iter=0;iter<600;iter++){let sums=comps.map(()=>({w:0,x:0,x2:0,lx:0,ly:0}));ll=0;const norms=comps.map(c=>binary?lbeta(c.a,c.b):Math.log(c.s*SQRT2PI));for(const g of grid){let lx=Math.log(g.x),ly=Math.log1p(-g.x),logs=comps.map((c,i)=>Math.log(c.w)+(binary?(c.a-1)*lx+(c.b-1)*ly-norms[i]:-.5*((g.x-c.m)/c.s)**2-norms[i])),mx=Math.max(...logs),z=logs.reduce((s,v)=>s+Math.exp(v-mx),0);ll+=g.w*(mx+Math.log(z));for(let k=0;k<K;k++){let w=g.w*Math.exp(logs[k]-mx)/z,a=sums[k];a.w+=w;a.x+=w*g.x;a.x2+=w*g.x*g.x;if(binary){a.lx+=w*lx;a.ly+=w*ly;}}}
+ iterations=iter+1;if(iter>2&&Math.abs(ll-last)<1e-10)break;last=ll;
+ comps=comps.map((c,k)=>{let s=sums[k],w=Math.max(s.w,1e-12);if(binary)return{w,...betaMLE(c.a,c.b,s.lx/w,s.ly/w)};let m=s.x/w;return{w,m,s:Math.sqrt(Math.max(1e-12,s.x2/w-m*m))};});let z=comps.reduce((s,c)=>s+c.w,0);comps.forEach(c=>c.w/=z);}
+ let aic=2*(3*K-1)-2*effectiveDraws*ll,mix={family:binary?'beta':'normal',comps,sigma:result.settings.sigma},candidate={K,aic,logLikelihood:ll*effectiveDraws,iterations};candidates.push(candidate);if(!best||aic<best.aic)best={...candidate,mix};}
+ return{...best.mix,fit:{K:best.K,effectiveDraws,candidates,gridMass:mass,defaultDrawsNeedsOracleReview:true}};
+}
+function exportR(options,weight,mapMean){let c=config(options),binary=c.family==='binomial';let code='# Deterministic page model reproduced by RBesT gMAP (MCMC results vary).\nlibrary(RBesT)\n';code+='d <- data.frame(study = seq_len('+c.data.length+'), '+(binary?'r = c('+c.data.map(d=>d.r).join(',')+'), n = c('+c.data.map(d=>d.n).join(',')+')':'y = c('+c.data.map(d=>d.y).join(',')+'), y.se = c('+c.data.map(d=>d.se).join(',')+')')+')\n';code+='fit <- gMAP('+(binary?'cbind(r, n - r) ~ 1 | study':'cbind(y, y.se) ~ 1 | study')+', data = d, family = '+(binary?'binomial':'gaussian')+', tau.dist = "HalfNormal", tau.prior = '+c.tauScale+', beta.prior = matrix(c('+c.betaMean+', '+c.betaSD+'), nrow = 1))\n';code+='map_prior <- automixfit(fit)\nrobust_prior <- robustify(map_prior, weight = '+weight+', mean = '+(binary?.5:mapMean)+(binary?'':', sigma = '+c.sigma)+')\n';code+='summary(map_prior)\nsummary(robust_prior)\nqmix(robust_prior, c(0.025, 0.5, 0.975))\n';for(const method of ['moment','morita','elir'])code+='ess(robust_prior, method = "'+method+'"'+(binary?'':', sigma = '+c.sigma)+')\n';return code;}
+return {normalPDF:pdf,normalCDF:cdf,normalQuantile:qnorm,logGamma:lgamma,incompleteBeta:ibeta,betaQuantile:(p,a,b)=>qmix({family:'beta',comps:[{w:1,a,b}]},p),dmix,pmix,qmix,summary,robustify,postmix,ess,gMAP,fitMixture,exportR,expit,logit};
+})();
+// Existing implementations were a 7-digit CDF and unrefined Acklam quantile.
+normalCDF=MAPEngine.normalCDF;
+normalQuantile=MAPEngine.normalQuantile;
+/* ==== End RBesT-model engine ==== */
+
+
+
+
+
+
+
+/* ==== MAPEngine UI integration ==== */
+const quickRunMAP=runMAP,quickRenderResultsAll=renderResultsAll;
+let engineCache=null,engineWorker=null;
+function engineSettings(){const binary=getEndpointType()==='binary';let denom=studies.reduce((s,d)=>s+Math.max(0,d.n-1),0),pooled=binary?1:Math.sqrt(denom>0?studies.reduce((s,d)=>s+Math.max(0,d.n-1)*d.sd*d.sd,0)/denom:studies.reduce((s,d)=>s+d.sd*d.sd,0)/studies.length);
+ const value=(id,def)=>{let x=document.getElementById(id).value;return x===''?def:Number(x);};let sigma=value('engineSigma',pooled);
+ return{family:binary?'binomial':'normal',data:studies.map(d=>binary?{r:d.events,n:d.n}:{y:d.mean,se:d.sd/Math.sqrt(d.n)}),sigma,tauScale:value('engineTau',binary?1:sigma/2),betaMean:value('engineBetaMean',0),betaSD:value('engineBetaSD',binary?2:10*sigma)};
+}
+function applyEngineResult(result,mix,options,weight,confLevel){const E=MAPEngine,binary=options.family==='binomial',ms=E.summary(mix),robust=E.robustify(mix,weight,binary?.5:ms.mean,1,options.sigma),rs=E.summary(robust),alpha=(1-confLevel)/2;
+ let legacy=studies.length>1?(binary?deriveMAPBinary(1-weight,confLevel):deriveMAPContinuous(1-weight,confLevel)):null;
+ const yi=studies.map(d=>binary?E.logit((d.events+.5)/(d.n+1)):d.mean),vi=studies.map(d=>binary?1/(d.events+.5)+1/(d.n-d.events+.5):d.sd*d.sd/d.n);
+ // Compatibility moments are used only by explicitly labelled supplementary
+ // normal-approximation design tools. Primary summaries/plots use the mixtures.
+ let mm=binary?E.logit(ms.mean):ms.mean,sd=binary?ms.sd/(ms.mean*(1-ms.mean)):ms.sd,rm=binary?E.logit(rs.mean):rs.mean,rd=binary?rs.sd/(rs.mean*(1-rs.mean)):rs.sd;
+ mapResult={...(legacy||{}),engine:true,model:result,mixture:mix,robustMixture:robust,settings:options,type:binary?'binary':'continuous',k:studies.length,w:1-weight,w_vague:weight,confLevel,mu:result.beta.mean,se_mu:result.beta.sd,tau:result.tau.mean,tau2:result.tau.mean**2,p_hat:ms.mean,map_mu:mm,map_se:sd,map_var:sd*sd,robust_mu:rm,robust_se:rd,robust_var:rd*rd,vague_mu:binary?0:ms.mean,vague_se:binary?Math.PI:options.sigma,yi,vi,Q:legacy?.Q||0,I2:legacy?.I2||0,ess_map:E.ess(mix,'moment'),ess_robust:E.ess(robust,'moment'),map_lower:E.qmix(mix,alpha),map_upper:E.qmix(mix,1-alpha),robust_lower:E.qmix(robust,alpha),robust_upper:E.qmix(robust,1-alpha)};
+ if(binary){mapResult.map_lower_logit=E.logit(mapResult.map_lower);mapResult.map_upper_logit=E.logit(mapResult.map_upper);mapResult.robust_lower_logit=E.logit(mapResult.robust_lower);mapResult.robust_upper_logit=E.logit(mapResult.robust_upper);}renderResultsAll();
+}
+runMAP=function(){if(!studies.length)return;const weight=Number(document.getElementById('wSlider').value)/100,conf=Number(document.getElementById('confLevel').value);
+ if(document.getElementById('engineMode').value==='quick'){if(studies.length<2){alert('The quick REML approximation requires at least two studies. The RBesT model supports one.');return;}mapResult=getEndpointType()==='binary'?deriveMAPBinary(1-weight,conf):deriveMAPContinuous(1-weight,conf);quickRenderResultsAll();return;}
+ let options=engineSettings(),key=JSON.stringify(options);if(engineCache?.key===key){applyEngineResult(engineCache.result,engineCache.mix,options,weight,conf);return;}
+ const btn=document.getElementById('runBtn');btn.disabled=true;btn.textContent='Integrating posterior?';
+ const finish=(result,mix)=>{engineCache={key,result,mix};applyEngineResult(result,mix,options,weight,conf);btn.disabled=false;btn.textContent='Derive MAP Prior';};
+ const fail=err=>{btn.disabled=false;btn.textContent='Derive MAP Prior';alert('Model calculation failed: '+err.message);};
+ // Single-file worker keeps quadrature off the UI thread and needs no network.
+ try{if(typeof Worker!=='undefined'){if(engineWorker)engineWorker.terminate();const text=Array.from(document.scripts).map(s=>s.textContent).join('\n'),start=text.indexOf('/* ==== RBesT-model engine (MAPEngine) ==== */'),end=text.indexOf('/* ==== End RBesT-model engine ==== */',start);let source='var normalCDF,normalQuantile;\n'+text.slice(start,end)+'\nonmessage=function(e){try{let r=MAPEngine.gMAP(e.data);let m=MAPEngine.fitMixture(r);delete r._nodes;postMessage({result:r,mix:m});}catch(err){postMessage({error:err.message});}};';let url=URL.createObjectURL(new Blob([source],{type:'application/javascript'}));engineWorker=new Worker(url);URL.revokeObjectURL(url);engineWorker.onmessage=e=>{engineWorker.terminate();engineWorker=null;if(e.data.error)fail(Error(e.data.error));else finish(e.data.result,e.data.mix);};engineWorker.onerror=fail;engineWorker.postMessage(options);}else{let result=MAPEngine.gMAP(options),mix=MAPEngine.fitMixture(result);delete result._nodes;finish(result,mix);}}catch(err){fail(err);}
+};
+function engineFormat(x){return Number(x).toPrecision(6);}
+function engineSummaryHTML(){let r=mapResult,E=MAPEngine,alpha=(1-r.confLevel)/2;let rows=[['Predictive (quadrature)',r.model.predictive.mean,r.model.predictive.sd,r.model.predictive.q2_5,r.model.predictive.q97_5],...[["MAP mixture",r.mixture],["Robust mixture",r.robustMixture]].map(([name,m])=>{let s=E.summary(m);return[name,s.mean,s.sd,E.qmix(m,alpha),E.qmix(m,1-alpha)];})];return '<p>RBesT-model posterior: beta ~ N('+r.settings.betaMean+', '+r.settings.betaSD+'?); tau ~ HalfNormal('+r.settings.tauScale+'). Vague weight '+r.w_vague+'.</p><table class="dt"><tr><th>Distribution (response scale)</th><th>Mean</th><th>SD</th><th>Lower</th><th>Upper</th></tr>'+rows.map(row=>'<tr>'+row.map((x,i)=>'<td>'+(i?engineFormat(x):x)+'</td>').join('')+'</tr>').join('')+'</table><p>Quadrature row: 95% interval; mixture rows: '+(100*r.confLevel)+'% intervals. beta posterior mean / SD: '+engineFormat(r.model.beta.mean)+' / '+engineFormat(r.model.beta.sd)+'; tau mean / median: '+engineFormat(r.model.tau.mean)+' / '+engineFormat(r.model.tau.median)+'. Quadrature '+(r.model.convergence.converged?'converged':'NOT converged')+' at order '+r.model.convergence.order+' (change '+r.model.convergence.relativeChange+').</p>';}
+function engineESSHTML(){let r=mapResult,E=MAPEngine;return '<table class="dt"><tr><th>Mixture</th><th>Moment</th><th>Morita curvature analogue*</th><th>ELIR*</th></tr>'+[['MAP',r.mixture],['Robust',r.robustMixture]].map(([name,m])=>'<tr><td>'+name+'</td>'+['moment','morita','elir'].map(method=>'<td>'+engineFormat(E.ess(m,method))+'</td>').join('')+'</tr>').join('')+'</table><p>* Morita is a local curvature analogue; ESS parameterization and RBesT 1.12-0 agreement await the R reference run. Moment ESS drives the supplementary sample-size calculation.</p>';}
+function engineDensityPlot(){const E=MAPEngine,r=mapResult,binary=r.type==='binary',lo=binary?.001:E.qmix(r.robustMixture,.001),hi=binary?.999:E.qmix(r.robustMixture,.999),points=[];let ymax=0;for(let i=0;i<=300;i++){let x=lo+(hi-lo)*i/300,a=E.dmix(r.mixture,x),b=E.dmix(r.robustMixture,x);points.push({x,a,b});ymax=Math.max(ymax,a,b);}let path=key=>points.map((p,i)=>(i?'L':'M')+(40+620*(p.x-lo)/(hi-lo)).toFixed(2)+' '+(230-210*p[key]/ymax).toFixed(2)).join(' ');document.getElementById('densityPlot').innerHTML='<svg viewBox="0 0 700 265" role="img" aria-label="MAP and robust mixture densities on the response scale"><path d="'+path('a')+'" fill="none" stroke="var(--map-color)" stroke-width="2"/><path d="'+path('b')+'" fill="none" stroke="var(--robust-color)" stroke-width="2"/><text x="40" y="255" fill="currentColor">'+engineFormat(lo)+'</text><text x="570" y="255" fill="currentColor">'+engineFormat(hi)+'</text></svg>';document.getElementById('densityLegend').innerHTML='Blue: fitted MAP ('+r.mixture.fit.K+' components); orange: robust mixture. Response scale.';}
+renderResultsAll=function(){if(!mapResult?.engine){quickRenderResultsAll();return;}const r=mapResult;document.getElementById('results').style.display='block';document.getElementById('metricsGrid').innerHTML=engineSummaryHTML();engineDensityPlot();
+ // Preserve the study forest, then replace its MAP/robust bands with exact
+ // mixture quantiles (handled by the engine-specific forest below).
+ engineForest();document.getElementById('essContent').innerHTML=engineESSHTML();
+ renderPowerPrior();renderCommensuratePrior();renderComparisonTable();renderSampleSize();configureOCSliders();animReset();
+ document.getElementById('interpContent').innerHTML='<p>MAP mixture: '+escapeHtml(JSON.stringify(r.mixture.comps))+'</p><p>Robust mixture: '+escapeHtml(JSON.stringify(r.robustMixture.comps))+'</p><p>The remaining comparison, power-prior, commensurate-prior, conflict, animation and operating-characteristic tools retain their quick normal approximations. They are exploratory and are not RBesT gMAP/postmix results.</p>';
+ document.getElementById('essDetailContent').innerHTML=engineESSHTML();engineESSCurve();renderBorrowingHeatmap();runAutoConflictDetection();document.getElementById('ocResults').style.display='none';document.getElementById('pdcContent').innerHTML='';announce('RBesT-model prior derived; vague weight '+r.w_vague);};
+function engineForest(){let r=mapResult,binary=r.type==='binary',rows=studies.map(s=>{let x=binary?s.events/s.n:s.mean,se=binary?Math.sqrt((s.events+.5)*(s.n-s.events+.5)/(s.n+1)**2/s.n):s.sd/Math.sqrt(s.n);return{name:s.trial,x,lo:binary?Math.max(0,x-1.96*se):x-1.96*se,hi:binary?Math.min(1,x+1.96*se):x+1.96*se};});rows.push({name:'MAP mixture',x:MAPEngine.summary(r.mixture).mean,lo:r.map_lower,hi:r.map_upper},{name:'Robust mixture',x:MAPEngine.summary(r.robustMixture).mean,lo:r.robust_lower,hi:r.robust_upper});let lo=Math.min(...rows.map(r=>r.lo)),hi=Math.max(...rows.map(r=>r.hi)),scale=x=>180+470*(x-lo)/(hi-lo||1);document.getElementById('forestPlot').innerHTML='<svg viewBox="0 0 700 '+(rows.length*30+35)+'" role="img" aria-label="Historical estimates and mixture quantile intervals">'+rows.map((r,i)=>'<text x="5" y="'+(i*30+22)+'" fill="currentColor">'+escapeHtml(r.name)+'</text><line x1="'+scale(r.lo)+'" x2="'+scale(r.hi)+'" y1="'+(i*30+18)+'" y2="'+(i*30+18)+'" stroke="var(--map-color)"/><circle cx="'+scale(r.x)+'" cy="'+(i*30+18)+'" r="4" fill="var(--map-color)"/>').join('')+'</svg>';}
+function engineESSCurve(){let r=mapResult,values=[];for(let i=0;i<=20;i++){let w=i/20,m=MAPEngine.robustify(r.mixture,w,r.type==='binary'?.5:MAPEngine.summary(r.mixture).mean,1,r.settings.sigma);values.push({w,ess:MAPEngine.ess(m,'moment')});}let max=Math.max(...values.map(v=>v.ess),1);document.getElementById('essCurvePlot').innerHTML='<svg viewBox="0 0 700 230" role="img" aria-label="Moment ESS versus vague weight"><path d="'+values.map((v,i)=>(i?'L':'M')+(40+620*v.w)+' '+(200-180*v.ess/max)).join(' ')+'" fill="none" stroke="var(--map-color)"/><text x="40" y="225" fill="currentColor">Vague weight: 0</text><text x="620" y="225" fill="currentColor">1</text></svg>';}
+updateSlider=function(){let val=Number(document.getElementById('wSlider').value);document.getElementById('wVal').textContent=val+'%';document.getElementById('wSlider').setAttribute('aria-valuenow',val);if(mapResult)runMAP();};
+const quickExportRCode=exportRCode,quickExportReport=exportReport,quickRegulatoryReport=generateRegulatoryReport;
+function engineDownload(name,text,type){let url=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
+exportRCode=function(){if(!mapResult?.engine)return quickExportRCode();engineDownload('map_prior_rbest.R',MAPEngine.exportR(mapResult.settings,mapResult.w_vague,MAPEngine.summary(mapResult.mixture).mean),'text/plain');};
+exportReport=function(){if(!mapResult?.engine)return quickExportReport();const r=mapResult;let csv='distribution,mean,sd,lower,upper,moment_ess,morita_curvature,elir\n';for(const[name,m]of[['MAP',r.mixture],['Robust',r.robustMixture]]){let s=MAPEngine.summary(m),a=(1-r.confLevel)/2;csv+=[name,s.mean,s.sd,MAPEngine.qmix(m,a),MAPEngine.qmix(m,1-a),...['moment','morita','elir'].map(method=>MAPEngine.ess(m,method))].join(',')+'\n';}csv+='\nfamily,w,a,b,m,s\n';for(const m of[r.mixture,r.robustMixture])for(const c of m.comps)csv+=[m.family,c.w,c.a??'',c.b??'',c.m??'',c.s??''].join(',')+'\n';engineDownload('map_prior_results.csv',csv,'text/csv');};
+generateRegulatoryReport=function(){if(!mapResult?.engine)return quickRegulatoryReport();const r=mapResult;let html='<!doctype html><meta charset="utf-8"><title>MAP prior model report</title><h1>MAP prior model report</h1>'+engineSummaryHTML()+engineESSHTML()+'<h2>Historical studies</h2><pre>'+escapeHtml(JSON.stringify(studies,null,2))+'</pre><h2>Mixture components</h2><pre>'+escapeHtml(JSON.stringify({MAP:r.mixture,robust:r.robustMixture},null,2))+'</pre><h2>Supplementary design tools (normal approximations)</h2>'+document.getElementById('comparisonContent').innerHTML+document.getElementById('sampleSizeContent').innerHTML+'<h2>R appendix: same data and priors</h2><pre>'+escapeHtml(MAPEngine.exportR(r.settings,r.w_vague,MAPEngine.summary(r.mixture).mean))+'</pre>';engineDownload('map_prior_report.html',html,'text/html');};
+const engineOriginalSync=sync;
+sync=function(){if(engineWorker){engineWorker.terminate();engineWorker=null;document.getElementById('runBtn').textContent='Derive MAP Prior';}engineOriginalSync();engineCache=null;mapResult=null;document.getElementById('results').style.display='none';};
+/* ==== End MAPEngine UI integration ==== */
 autoLoadDemo();
+
+
+
+
 </script>
 </body>
 </html>
