@@ -10,8 +10,8 @@ const PROVENANCE = [{ id: 'example-a', label: 'Study A', reference: 'Built-in sy
   location: 'Example data', pastedText: 'Study A, 85, 10, 15, 140', confirmed: true,
   values: [{ field: 'tp', value: 85, span: [9, 11], text: '85' }], conversions: [], flags: [] }];
 
-async function open(page, tab) {
-  await page.goto(PAGE);
+async function open(page, tab, url = PAGE) {
+  await page.goto(url);
   await page.waitForFunction(() => window.AlmFeatures?.get('dta-sroc') && window.__almBivariate());
   if (tab) await page.evaluate(tab => AlmFeatures.open('dta-sroc', tab), tab);
 }
@@ -197,7 +197,9 @@ test('VERIFY: real mada comparison, SROC plots, ZIP and planted defect', async (
     const u = new URL(req.url());
     if (/^https?:$/.test(u.protocol) && u.hostname !== 'localhost' && u.hostname !== '127.0.0.1') external.push(req.url());
   });
-  await open(page, 'verify');
+  // v2-core only honours the planted-defect hook on explicitly opted-in pages.
+  // The first run below has no active hook and must still be a real R pass.
+  await open(page, 'verify', PAGE + '?almtest=1');
   const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
   await expect(summary).not.toBeEmpty({ timeout: 600_000 });
@@ -215,10 +217,16 @@ test('VERIFY: real mada comparison, SROC plots, ZIP and planted defect', async (
     console.log('VERIFY unavailable: mada absent; no pass claimed');
     return;
   }
-  expect(verdict).toMatch(/^\d+ of \d+ quantities match R — PASS$/);
   const state = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(verdict).toBe(`${state.n} of ${state.n} computed quantities match R; 0 not computed — PASS`);
   expect(state.n).toBeGreaterThanOrEqual(5);
   expect(state.nPassed).toBe(state.n);
+  expect(state.rows).toHaveLength(state.n);
+  expect(state.nNotComputed).toBe(0);
+  expect(state.nOptional).toBe(0);
+  expect(state.nNotApplicable).toBe(0);
+  expect(state.testHook).toBe(false);
+  expect(state.passed).toBe(true);
   expect(state.rows.every(r => r.pass)).toBe(true);
   console.log(`VERIFY ${state.nPassed}/${state.n} mada=${state.versions.mada}`);
   expect(await page.evaluate(() => {
@@ -250,6 +258,7 @@ test('VERIFY: real mada comparison, SROC plots, ZIP and planted defect', async (
   expect(dec(files['dta-sroc-sroc-R.pdf']).slice(0, 5)).toBe('%PDF-');
   const receipt = JSON.parse(dec(files['truthcert.json']));
   expect(receipt.extra.results.passed).toBe(true);
+  expect(receipt.extra.results.testHook).toBe(false);
   expect(receipt.extra.results.files.map(f => f.name).sort()).toEqual(Object.keys(files).filter(n => n !== 'truthcert.json').sort());
   for (const f of receipt.extra.results.files) expect(f.sha256).toBe(createHash('sha256').update(files[f.name]).digest('hex'));
   expect(await page.evaluate(r => AlmTruthCertExport.verifyContentHash(r), receipt)).toBe(true);
@@ -259,6 +268,12 @@ test('VERIFY: real mada comparison, SROC plots, ZIP and planted defect', async (
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
   await expect(summary).toContainText('FAIL', { timeout: 300_000 });
   const planted = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(planted.n).toBe(state.n);
+  expect(planted.nPassed).toBe(state.n - 1);
+  expect(planted.nNotComputed).toBe(0);
+  expect(planted.testHook).toBe(true);
+  expect(planted.perturbed).toEqual({ key: 'sens', delta: 0.01 });
+  await expect(summary).toHaveText(`TEST MODE (test hook active; not a verification) — ${state.n - 1} of ${state.n} computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active`);
   expect(planted.rows.filter(r => !r.pass).map(r => r.key)).toEqual(['sens']);
   expect(planted.passed).toBe(false);
   expect(await page.evaluate(() => {
@@ -277,8 +292,11 @@ test('SHARE: data, every option, provenance and conversion log round-trip; corru
   await page.selectOption('#f-method', 'ml');
   await page.selectOption('#f-cc', 'single');
   await page.fill('#f-title', 'Diagnostic accuracy — shared');
-  await page.locator('#alm-axis-mount input[data-axis=x][data-edge=min]').fill('0.02');
-  await page.locator('#alm-axis-mount input[data-axis=x][data-edge=min]').dispatchEvent('change');
+  // The native ROC plot has a fixed unit-square domain (see its U2 usability
+  // contract). These controls are reference-only, not editable share options.
+  const axes = page.locator('#alm-axis-mount input');
+  await expect(axes).toHaveCount(6);
+  for (let i = 0; i < 6; i++) await expect(axes.nth(i)).toBeDisabled();
   await page.evaluate(p => {
     AlmFeaturesState.provenance = p;
     AlmFeaturesState.entryLog = [{ study: 'Study A', text: 'Counts copied without conversion', method: 'direct counts' }];
@@ -286,6 +304,7 @@ test('SHARE: data, every option, provenance and conversion log round-trip; corru
   await page.click('#btn-run');
   const expected = await page.evaluate(() => ({ state: AlmFeatures.get('dta-sroc').share.get(),
     sens: __almBivariate().sens, spec: __almBivariate().spec }));
+  expect(expected.state.axes).toEqual(['0', '1', false, '0', '1', false]);
   await page.getByRole('button', { name: 'Copy share link', exact: true }).click();
   await expect(page.locator('[data-testid=share-status]')).toContainText('Share link');
   const link = await page.getByLabel('Share link', { exact: true }).inputValue();
@@ -296,6 +315,9 @@ test('SHARE: data, every option, provenance and conversion log round-trip; corru
     const actual = await fresh.evaluate(() => ({ state: AlmFeatures.get('dta-sroc').share.get(),
       sens: __almBivariate().sens, spec: __almBivariate().spec }));
     expect(actual).toEqual(expected);
+    const restoredAxes = fresh.locator('#alm-axis-mount input');
+    await expect(restoredAxes).toHaveCount(6);
+    for (let i = 0; i < 6; i++) await expect(restoredAxes.nth(i)).toBeDisabled();
     expect(await fresh.evaluate(() => AlmFeaturesState.provenance)).toEqual(PROVENANCE);
     expect(new URL(fresh.url()).hash).toBe(new URL(link).hash);
     // PLANTED malformed option: validation happens before even the title changes.
