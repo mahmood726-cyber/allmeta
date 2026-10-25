@@ -12,7 +12,8 @@ async function cached(key,value){const d=await db();return new Promise((resolve,
 async function hash(text,specter){const pin=specter?MODEL_SHA+'|cls|norm|256|prefix=|':'751bff37182d3f1213fa05d7196b954e230abad9|mean|norm|256|';const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pin+text));return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');}
 // Truncation: the pipeline truncates at tokenizer.model_max_length (SPECTER2 ships 1e30), as in the benchmark's embed.mjs.
 async function init(force,model){if(extractor&&loadedModel===model)return;extractor=null;loadedModel=model;initError='';
- if(force!=='wasm'&&navigator.gpu){try{extractor=await pipeline('feature-extraction',model,{device:'webgpu',dtype:'q8'});extractor.tokenizer.model_max_length=256;backend='webgpu';return;}catch(e){initError=e.message;}}
+ let adapter=null;if(force!=='wasm'&&navigator.gpu){try{adapter=await navigator.gpu.requestAdapter();}catch(e){initError=e.message;}if(!adapter&&!initError)initError='No WebGPU adapter; using WASM.';}
+ if(adapter){try{extractor=await pipeline('feature-extraction',model,{device:'webgpu',dtype:'q8'});extractor.tokenizer.model_max_length=256;backend='webgpu';return;}catch(e){initError=e.message;}}
  extractor=await pipeline('feature-extraction',model,{device:'wasm',dtype:'q8'});extractor.tokenizer.model_max_length=256;backend='wasm';
 }
 let queue=Promise.resolve();
