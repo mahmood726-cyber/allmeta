@@ -5,8 +5,8 @@ import { readZip, decodePng, readTiff } from './zip-reader.mjs';
 
 const APP = 'multilevel-ma', PAGE = '/' + APP + '/index.html';
 const SNAP = new URL('./__snapshots__/text-multilevel-ma.json', import.meta.url);
-async function open(page, tab) {
-  await page.goto(PAGE);
+async function open(page, tab, testMode = false) {
+  await page.goto(PAGE + (testMode ? '?almtest=1' : ''));
   await page.waitForFunction(() => window.AlmMultilevelFeatures && window.__almReml());
   if (tab) await page.evaluate(tab => AlmFeatures.open('multilevel-ma', tab), tab);
 }
@@ -135,11 +135,12 @@ test('TEXT PLANTED: DOM discrepancy fails the audit and withholds prose', async 
 
 test('VERIFY: real webR REML comparison, forest exports, planted defect and current-state text', async ({ page }) => {
   test.setTimeout(900_000);
-  await open(page, 'verify');
+  // Current core accepts the planted-defect hook only with this explicit opt-in.
+  await open(page, 'verify', true);
   const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
   const run = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
   await run.click();
-  await expect(summary).toHaveText(/^7 of 7 quantities match R — PASS$/, { timeout: 600_000 });
+  await expect(summary).toHaveText('7 of 7 computed quantities match R; 0 not computed — PASS', { timeout: 600_000 });
   const states = await panel.locator('td[data-result]').allTextContents();
   expect(states).toEqual(Array(7).fill('PASS'));
   console.log('VERIFY 7/7');
@@ -169,11 +170,13 @@ test('VERIFY: real webR REML comparison, forest exports, planted defect and curr
   await page.locator('#src').fill(src); await page.locator('#btn-run').click();
   await page.getByRole('tab', { name: 'Verify in R', exact: true }).click();
   await page.evaluate(() => { window.__almVerifyPerturb = { key: 'mu', delta: .1 }; });
+  expect(await page.evaluate(() => AlmVerifyR.testHookActive())).toBe(true);
   await run.click();
-  await expect(summary).toContainText('6 of 7 quantities match R — FAIL', { timeout: 300_000 });
+  await expect(summary).toHaveText('TEST MODE (test hook active; not a verification) — 6 of 7 computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active', { timeout: 300_000 });
   const failing = await panel.locator('tbody tr').evaluateAll(rows =>
     rows.filter(r => r.querySelector('[data-result]').textContent !== 'PASS').map(r => r.dataset.key));
   expect(failing).toEqual(['mu']);
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('multilevel-ma'))).toBe(false);
   console.log('VERIFY planted 6/7; mu FAIL');
 });
 

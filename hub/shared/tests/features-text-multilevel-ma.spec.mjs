@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createHash } from 'node:crypto';
 
 const CI = 'study\tes_id\tlower\tupper\nA\ta\t0.10\t0.50\nA\tb\t0.05\t0.45\nB\ta\t0.20\t0.60';
 const SE = 'Study ID;Outcome;Effect size;Standard error\nA;a;0.3;0.1\nA;b;0.2;0.1\nB;a;0.4;0.2';
@@ -18,8 +19,13 @@ async function confirm(page) {
     const card = cards.nth(i);
     await card.getByLabel('Source author and year', { exact: false }).fill('Smith 2020');
     await card.getByLabel('Full reference').fill('Smith study report');
-    await card.getByLabel('Source location').fill('Table 2');
+    await card.getByLabel('Source type', { exact: true }).selectOption('Table');
+    await card.getByLabel('Source location', { exact: false }).fill('2');
     await card.getByLabel('Timepoint', { exact: false }).fill('Six months');
+    // Synthetic source tables do not state a randomisation unit. Record that
+    // explicitly; neither the app nor the test may infer it from study IDs.
+    await card.getByLabel('What was randomised?', { exact: true }).selectOption('not stated');
+    await card.getByLabel('Extractor initials', { exact: true }).fill('QA');
     await card.getByRole('checkbox').check();
   }
 }
@@ -160,10 +166,88 @@ test('REVIEW P2 disabled apply explains remaining confirmation requirements', as
   const use = page.getByRole('button', { name: 'Use these rows', exact: true });
   await expect(use).toHaveAttribute('aria-describedby', 'ml-entry-status');
   await expect(page.locator('#ml-entry-status')).toContainText('0 of 3 rows confirmed');
-  for (const field of ['label', 'reference', 'location', 'timepoint']) await expect(page.locator('#ml-entry-status')).toContainText(field);
+  for (const field of ['label', 'reference', 'location', 'timepoint', 'randomisation']) await expect(page.locator('#ml-entry-status')).toContainText(field);
   await confirm(page);
   await expect(page.locator('#ml-entry-status')).toContainText('3 of 3 rows confirmed');
   await expect(use).toBeEnabled();
+});
+
+test('CURRENT CORE: confirmation records explicit source, extractor and verbatim hash', async ({ page }) => {
+  await open(page); await preview(page, SE);
+  const cards = page.locator('#alm-f-panel-entry fieldset');
+  for (let i = 0; i < await cards.count(); i++) {
+    await expect(cards.nth(i).getByLabel('Source type', { exact: true })).toHaveValue('');
+    await expect(cards.nth(i).getByLabel('What was randomised?', { exact: true })).toHaveValue('');
+    await expect(cards.nth(i).getByRole('checkbox')).toBeDisabled();
+  }
+  await confirm(page);
+  await page.getByRole('button', { name: 'Use these rows', exact: true }).click();
+  const sources = await page.evaluate(() => AlmFeaturesState.provenance);
+  expect(sources).toHaveLength(3);
+  for (const source of sources) {
+    expect(source.source).toEqual({ type: 'Table', detail: '2' });
+    expect(source.location).toBe('Table 2');
+    expect(source.choice.randomisation).toBe('not stated');
+    expect(source.confirmed).toBe(true);
+    expect(source.confirmedBy).toBe('QA');
+    expect(source.confirmedVia).toBe('row');
+    expect(source.confirmedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(source.sourceHash).toBe(createHash('sha256').update(SE, 'utf8').digest('hex'));
+    expect(source.confirmedAgainst).toBe(source.sourceHash);
+  }
+  const validation = await page.evaluate(() => AlmFeaturesState.provenance.map(source => ({
+    valid: AlmMultilevelFeatures.entry.validateSource(source),
+    tampered: AlmMultilevelFeatures.entry.validateSource({ ...source, pastedText: source.pastedText + '\nchanged' })
+  })));
+  for (const row of validation) {
+    expect(row.valid).toEqual([]);
+    expect(row.tampered).toContain('source hash');
+  }
+});
+
+test('CURRENT CORE: provenance edits require fresh confirmation before apply or export', async ({ page }) => {
+  await open(page); await preview(page, SE); await confirm(page);
+  const card = page.locator('#alm-f-panel-entry fieldset').first();
+  const use = page.getByRole('button', { name: 'Use these rows', exact: true });
+  const edits = [
+    () => card.getByLabel('Extractor initials', { exact: true }).fill('QB'),
+    () => card.getByLabel('Source type', { exact: true }).selectOption('Figure'),
+    () => card.getByLabel('Source location', { exact: false }).fill('3'),
+    () => card.getByLabel('What was randomised?', { exact: true }).selectOption('individuals')
+  ];
+  for (const edit of edits) {
+    await expect(use).toBeEnabled();
+    await edit();
+    await expect(card.getByRole('checkbox')).not.toBeChecked();
+    await expect(use).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Export source records CSV', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Export source records DOCX', exact: true })).toBeDisabled();
+    await card.getByRole('checkbox').check();
+    await expect(use).toBeEnabled();
+  }
+  await card.getByLabel('Source location', { exact: false }).fill('');
+  await card.getByRole('checkbox').check();
+  await expect(use).toBeDisabled();
+  await expect(page.locator('#ml-entry-status')).toContainText('location');
+});
+
+test('CURRENT CORE: cluster randomisation needs explicit confirmation of adjusted input', async ({ page }) => {
+  await open(page); await preview(page, SE); await confirm(page);
+  const card = page.locator('#alm-f-panel-entry fieldset').first();
+  const use = page.getByRole('button', { name: 'Use these rows', exact: true });
+  await card.getByLabel('What was randomised?', { exact: true }).selectOption('clusters');
+  await card.getByRole('checkbox').check();
+  await expect(use).toBeDisabled();
+  await expect(page.locator('#ml-entry-status')).toContainText('cluster adjustment');
+  await card.getByLabel('Cluster randomisation analysis', { exact: true }).selectOption('already');
+  await expect(card.getByRole('checkbox')).not.toBeChecked();
+  await card.getByRole('checkbox').check();
+  await expect(use).toBeEnabled();
+  await use.click();
+  const source = await page.evaluate(() => AlmFeaturesState.provenance[0]);
+  expect(source.choice.randomisation).toBe('clusters');
+  expect(source.choice.cluster).toEqual({ action: 'already' });
+  expect(source.values.map(v => v.value)).toEqual([.3, .1]);
 });
 
 test('REVIEW P2 extracted values expose their field names to keyboard users', async ({ page }) => {

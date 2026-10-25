@@ -101,7 +101,10 @@
     if (!Object.keys(map).some(function (k) { return map[k] === 'study'; })) {
       extraFlags.push({ blocking: true, text: 'An explicit study column is required to preserve cluster membership.' });
     }
-    var out = core.convert(work, { mapping: map, questions: questions }, 'generic', answers || {});
+    // The page consumes effects and uncertainty already on the analysis scale.
+    // Declare that contract through the core schema: do not infer a ratio from
+    // positive values, ask an unrendered scale question, or log-transform input.
+    var out = core.convert(work, { mapping: map, questions: questions }, { name: 'generic', ratio: false }, answers || {});
     out.flags = out.flags.concat(extraFlags);
     out.records = out.records.map(function (r, i) {
       if (!(r.sei > 0) || !Number.isFinite(r.sei)) out.flags.push({ blocking: true, row: i, text: 'SE must be finite and positive.' });
@@ -220,20 +223,61 @@
         });
         node('span', source.pastedText.slice(end), pre);
         source.flags.filter(function (f) { return f.blocking; }).forEach(function (f) { node('p', 'Block: ' + f.text, card); });
-        ['label', 'reference', 'location', 'timepoint'].forEach(function (key) {
-          var labels = { label: 'Source author and year (for example Smith 2020)', reference: 'Full reference', location: 'Source location', timepoint: 'Timepoint (or not stated)' };
+        var provenance = global.AlmEntry.provenance;
+        function revise() {
+          sentence.textContent = provenance.sentence(source);
+          provenance.unconfirm(source); check.checked = false; gate();
+        }
+        function select(key, title, choices, parent) {
+          var lab = node('label', title, parent || card), el = node('select', null, parent || card);
+          // Keep option text outside the label so exact label lookup stays stable.
+          el.id = 'ml-entry-' + key + '-' + i; lab.htmlFor = el.id;
+          el.required = true;
+          [['', 'Choose…']].concat(choices).forEach(function (choice) {
+            var option = node('option', choice[1], el); option.value = choice[0];
+          });
+          return el;
+        }
+        ['label', 'reference', 'timepoint'].forEach(function (key) {
+          var labels = { label: 'Source author and year (for example Smith 2020)', reference: 'Full reference', timepoint: 'Timepoint (or not stated)' };
           var lab = node('label', labels[key], card);
           var input = node('input', null, lab); input.type = 'text'; input.required = true;
           input.addEventListener('input', function () {
             if (key === 'timepoint') source.choice.timepoint = input.value; else source[key] = input.value;
-            sentence.textContent = global.AlmEntry.provenance.sentence(source);
-            source.confirmed = false; source.confirmedAt = null; check.checked = false; gate();
+            revise();
           });
         });
+        var sourceType = select('source-type', 'Source type', global.AlmEntry.SOURCE_TYPES.map(function (type) { return [type, type]; }));
+        var locationLabel = node('label', 'Source location (number or page, for example 2 or p. 5)', card);
+        var location = node('input', null, locationLabel); location.type = 'text';
+        function updateLocation() {
+          source.source = { type: sourceType.value, detail: location.value.trim() };
+          source.location = provenance.sourceLocation(source.source); revise();
+        }
+        sourceType.addEventListener('change', updateLocation); location.addEventListener('input', updateLocation);
+        var randomisation = select('randomisation', 'What was randomised?', Object.entries(global.AlmEntry.RANDOMISATION_CHOICES));
+        var cluster = node('div', null, card); cluster.hidden = true;
+        node('p', 'Supply an effect and uncertainty from an analysis that already accounts for cluster randomisation. Study grouping in this app does not make that adjustment.', cluster);
+        var clusterAnalysis = select('cluster-analysis', 'Cluster randomisation analysis', [['already', 'The reported analysis already accounts for clustering']], cluster);
+        clusterAnalysis.required = false;
+        randomisation.addEventListener('change', function () {
+          source.choice.randomisation = randomisation.value;
+          delete source.choice.cluster; clusterAnalysis.value = '';
+          cluster.hidden = randomisation.value !== 'clusters'; clusterAnalysis.required = !cluster.hidden;
+          revise();
+        });
+        clusterAnalysis.addEventListener('change', function () {
+          source.choice.cluster = { action: clusterAnalysis.value }; revise();
+        });
+        var initialsLabel = node('label', 'Extractor initials', card);
+        var initials = node('input', null, initialsLabel); initials.type = 'text'; initials.required = true;
+        initials.addEventListener('input', function () { check.disabled = !initials.value.trim(); revise(); });
         var lab = node('label', 'I confirm this effect, uncertainty and study membership', card);
-        var check = node('input', null, lab); check.type = 'checkbox';
+        var check = node('input', null, lab); check.type = 'checkbox'; check.disabled = true;
         check.addEventListener('change', function () {
-          source.confirmed = check.checked; source.confirmedAt = check.checked ? new Date().toISOString() : null; gate();
+          if (check.checked) provenance.confirm(source, { by: initials.value, via: 'row' });
+          else provenance.unconfirm(source);
+          gate();
         });
       });
       gate();
