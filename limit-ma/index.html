@@ -85,6 +85,8 @@
 
 
       <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem">Studies &#8212; <code>effect, SE, label (optional)</code></label>
+      <label for="uncertainty-scale">Uncertainty column contains:</label>
+      <select id="uncertainty-scale"><option value="se">Standard error (default)</option><option value="variance">Variance</option></select>
       <textarea id="src" aria-describedby="limit-error" aria-label="Studies — effect, SE, label (one per line)">0.55, 0.08, S01
 0.48, 0.10, S02
 0.70, 0.15, S03
@@ -111,6 +113,7 @@
     </section>
     <section class="panel">
       <h2>Pooled vs limit</h2>
+      <p id="scale-provenance" aria-live="polite"></p>
       <div id="limit-error" role="alert"></div>
       <div id="limit-range-note" aria-live="polite"></div>
       <table>
@@ -202,10 +205,13 @@
     'use strict';
 
     var _lastResults = null;
+    var _lastProvenance = null;
     var _axisState = null;
     var _validationRun = false;
 
     function parse(text) {
+      var scale = typeof document !== 'undefined' && document.getElementById('uncertainty-scale');
+      var variance = scale && scale.value === 'variance';
       var rows = [], errors = [], first = true;
       var numeric = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
       // Keep the original default labels while reporting physical input line numbers.
@@ -213,7 +219,7 @@
       String(text).split(/\r?\n/).forEach(function (l, i) {
         if (!l.trim()) return;
         var parts = l.split(/,/).map(function (s) { return s.trim(); });
-        var header = first && /^(effect|yi|te)$/i.test(parts[0]) && /^se$/i.test(parts[1]) &&
+        var header = first && /^(effect|yi|te)$/i.test(parts[0]) && (variance ? /^(variance|vi|se)$/i : /^se$/i).test(parts[1]) &&
           (parts.length === 2 || (parts.length === 3 && /^label$/i.test(parts[2])));
         first = false;
         if (header) return;
@@ -225,8 +231,9 @@
         else if (!numeric.test(parts[1])) reason = 'SE must be a complete number';
         else if (!Number.isFinite(Number(parts[0])) || !Number.isFinite(Number(parts[1]))) reason = 'effect and SE must be finite';
         else if (!(Number(parts[1]) > 0)) reason = 'SE must be greater than 0';
+        if (variance) reason = reason.replace(/SE/g, 'variance');
         if (reason) errors.push('Line ' + (i + 1) + ': ' + reason);
-        else rows.push({ te: Number(parts[0]), se: Number(parts[1]), label: parts[2] || ('Study ' + (i + 1 - leading)) });
+        else rows.push({ te: Number(parts[0]), se: variance ? Math.sqrt(Number(parts[1])) : Number(parts[1]), label: parts[2] || ('Study ' + (i + 1 - leading)) });
       });
       if (errors.length) throw new Error(errors.join('; ') + '.');
       return rows;
@@ -345,6 +352,7 @@
 
     function refuse(message) {
       _lastResults = null;
+      _lastProvenance = null;
       document.getElementById('body').innerHTML = '';
       document.getElementById('plot').innerHTML = '';
       document.getElementById('limit-error').textContent = message;
@@ -357,6 +365,7 @@
 
     function run() {
       if (window.AlmLimitLoo) window.AlmLimitLoo.invalidate(_validationRun);
+      document.getElementById('scale-provenance').textContent = '';
       document.getElementById('limit-error').textContent = '';
       document.getElementById('limit-range-note').textContent = '';
       document.getElementById('limit-diagnostics').textContent = '';
@@ -408,6 +417,11 @@
         return values.every(Number.isFinite);
       });
       if (!valid) { refuse('Limit meta-analysis is numerically undefined for these studies.'); return; }
+
+      _lastProvenance = { uncertainty_scale: document.getElementById('uncertainty-scale').value };
+      _lastProvenance.methods = 'Limit meta-analysis (DL): uncertainty entered as ' +
+        (_lastProvenance.uncertainty_scale === 'variance' ? 'variance; converted to standard error by square root before analysis.' : 'standard error; used without conversion.');
+      document.getElementById('scale-provenance').textContent = _lastProvenance.methods;
 
       var diagnosticNotes = [];
       diagnosticKeys.forEach(function (key) {
@@ -628,11 +642,12 @@
 
     // ---- snapshot/restore for reset-undo ----
     function snapshot() {
-      return { src: document.getElementById('src').value };
+      return { src: document.getElementById('src').value, uncertaintyScale: document.getElementById('uncertainty-scale').value };
     }
 
     function restore(snap) {
       if (!snap) return;
+      document.getElementById('uncertainty-scale').value = snap.uncertaintyScale || 'se';
       if (snap.src !== undefined) document.getElementById('src').value = snap.src;
       run();
     }
@@ -649,6 +664,7 @@
         lines.push(te.toString() + ', ' + se.toString() + (label ? ', ' + label : ''));
       });
       if (lines.length < 1) return;
+      document.getElementById('uncertainty-scale').value = 'se';
       document.getElementById('src').value = lines.join('\n');
       run();
     };
@@ -656,11 +672,12 @@
 
     // Validation uses the page engine and preserves pending input separately from rendered results.
     window.__almLimitValidationSnapshot = function () {
-      return structuredClone({src:document.getElementById('src').value,result:_lastResults,axis:_axisState,
-        dom:['body','plot','limit-error','limit-range-note','limit-diagnostics'].map(id=>[id,document.getElementById(id).innerHTML])});
+      return structuredClone({src:document.getElementById('src').value,uncertaintyScale:document.getElementById('uncertainty-scale').value,result:_lastResults,provenance:_lastProvenance,axis:_axisState,
+        dom:['scale-provenance','body','plot','limit-error','limit-range-note','limit-diagnostics'].map(id=>[id,document.getElementById(id).innerHTML])});
     };
     window.__almLimitValidationRestore = function (s) {
-      document.getElementById('src').value=s.src;_lastResults=structuredClone(s.result);_axisState=structuredClone(s.axis);
+      document.getElementById('uncertainty-scale').value=s.uncertaintyScale || 'se';
+      document.getElementById('src').value=s.src;_lastResults=structuredClone(s.result);_lastProvenance=structuredClone(s.provenance);_axisState=structuredClone(s.axis);
       s.dom.forEach(([id,html])=>{document.getElementById(id).innerHTML=html;});
       if (window.AlmLimitLoo) window.AlmLimitLoo.restore(_lastResults);
     };
@@ -675,6 +692,7 @@
 
     // Expose for results-export
     window._almLastLimit = function () { return _lastResults; };
+    window._almExportLimit = function () { return _lastResults ? Object.assign({}, _lastResults, _lastProvenance) : null; };
 
     // Pure access to the SAME limitMA calculation used by run(), without DOM or state mutation.
     window.AlmLimitEngine = { parse: parse, fit: function (rows) {
@@ -690,6 +708,8 @@
         tau2: lim.tau2, te_limit: lim.te_limit};
     }};
 
+    document.getElementById('uncertainty-scale').addEventListener('change', run);
+
     // ---- events ----
     document.getElementById('btn-run').addEventListener('click', function () {
       if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
@@ -703,7 +723,7 @@
       MaStudies.attachButtons({
         btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
         textarea: "#src", format: "est-se-label",
-        onAfterLoad: run,
+        onAfterLoad: function () { document.getElementById('uncertainty-scale').value = 'se'; run(); },
       });
     }
 
@@ -760,7 +780,8 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'limit-ma-results',
-      getResults: function () { return window._almLastLimit ? window._almLastLimit() : {}; },
+      getResults: function () { return window._almExportLimit ? window._almExportLimit() : {}; },
+      methods: function () { return _lastProvenance ? _lastProvenance.methods : ''; },
     });
 
     window.alm.urlState({ version: 1 });
@@ -831,7 +852,7 @@
         container: "#alm-hero-mount",
         textarea: "#src",
         adapter: "effect-se-label",
-        onAfterLoad: function () { document.getElementById('btn-run').click(); },
+        onAfterLoad: function () { document.getElementById('uncertainty-scale').value = 'se'; document.getElementById('btn-run').click(); },
       });
     }
   });
