@@ -5,8 +5,8 @@ import { readZip, readTiff, decodePng } from './zip-reader.mjs';
 
 const APP = 'limit-ma', PAGE = '/limit-ma/index.html';
 const SNAP = new URL('./__snapshots__/text-limit-ma.json', import.meta.url);
-async function open(page) {
-  await page.goto(PAGE);
+async function open(page, query = '') {
+  await page.goto(PAGE + query);
   await expect(page.locator('#body tr')).toHaveCount(3);
   await expect(page.locator('#alm-features .alm-f-toggle')).toBeVisible();
   await page.locator('#alm-features .alm-f-toggle').click();
@@ -36,7 +36,9 @@ test('ENTRY: three table formats reproduce the built-in example through the shar
     const formats = [
       'Study\tyi\tsei\n' + rows.map(r => `${r.study}\t${r.yi}\t${r.sei}`).join('\n'),
       'Study  Mean difference\n' + rows.map(r => `${r.study}  ${r.yi} (${r.yi-z*r.sei}–${r.yi+z*r.sei})`).join('\n'),
-      'Study ID;Effect;Standard error\n' + rows.map(r => `${r.study};${r.yi};${r.sei}`).join('\n'),
+      // An unqualified "Effect" header needs measure confirmation in v2-core.
+      // This no-question round trip declares the same difference scale as the CI table.
+      'Study ID;Mean difference;Standard error\n' + rows.map(r => `${r.study};${r.yi};${r.sei}`).join('\n'),
     ];
     return { expected, outputs: formats.map(src => {
       const t = AlmEntry.parseTable(src), d = AlmEntry.detect(t, spec.entry.schema);
@@ -65,6 +67,41 @@ test('ENTRY: three table formats reproduce the built-in example through the shar
   await page.locator('#alm-f-panel-text .alm-text-regenerate').click();
   await expect(page.locator('[data-para=methods]')).toContainText('Data-entry conversions');
   console.log('ENTRYRT 3/3 rows=10 conversionSteps=10');
+});
+
+test('ENTRY: an ambiguous effect requires measure confirmation before use', async ({ page }) => {
+  await open(page);
+  const before = await page.evaluate(() => ({ source: document.getElementById('src').value, result: structuredClone(_almLastLimit()) }));
+  const pending = await page.evaluate(() => {
+    const spec = AlmFeatures.get('limit-ma');
+    const rows = document.getElementById('src').value.split('\n').map(line => {
+      const [yi, sei, study] = line.split(',').map(s => s.trim());
+      return `${study};${yi};${sei}`;
+    });
+    const src = 'Study ID;Effect;Standard error\n' + rows.join('\n');
+    const table = AlmEntry.parseTable(src), converted = AlmEntry.convert(table, AlmEntry.detect(table, spec.entry.schema), spec.entry.schema);
+    const host = document.createElement('div'); host.id = 'entry-confirm-probe'; document.body.append(host);
+    const ui = AlmEntryUI.mount(host, { schema: spec.entry.schema, apply: spec.entry.apply });
+    host.querySelector('textarea').value = src; ui.parse();
+    return { flags: converted.flags, questions: converted.questions };
+  });
+  expect(pending.flags.filter(f => f.blocking)).toEqual([
+    expect.objectContaining({ code: 'unanswered-question', questionId: 'measure:type', blocking: true }),
+  ]);
+  expect(pending.questions).toEqual([
+    expect.objectContaining({ id: 'measure:type', choices: ['ratio', 'difference'] }),
+  ]);
+  const host = page.locator('#entry-confirm-probe'), use = host.getByRole('button', { name: 'Use these rows', exact: true });
+  await expect(use).toBeDisabled();
+  expect(await page.evaluate(() => ({ source: document.getElementById('src').value, result: structuredClone(_almLastLimit()) }))).toEqual(before);
+  await host.getByRole('radio', { name: 'difference', exact: true }).check();
+  await expect(use).toBeEnabled();
+  await use.click();
+  const after = await page.evaluate(() => ({ result: structuredClone(_almLastLimit()), log: AlmFeaturesState.entryLog }));
+  expect(after.result).toEqual(before.result);
+  expect(after.log).toEqual([
+    expect.objectContaining({ method: 'measure confirmed', inputs: { measure: 'difference' }, citation: 'User confirmation' }),
+  ]);
 });
 
 test('ENTRY PLANTED: an estimate outside its CI blocks use; invalid app rows leave results intact', async ({ page }) => {
@@ -136,7 +173,8 @@ test('TEXT PLANTED: DOM discrepancy fails audit and withholds prose', async ({ p
 test('VERIFY: live browser R, funnel artifacts, current-state text gate and planted defect', async ({ page }) => {
   test.setTimeout(900000);
   const errors = []; page.on('pageerror', e => errors.push(e.message));
-  await open(page); await tab(page, 'Verify in R');
+  // v2-core only honours planted verification defects on an explicitly opted-in page.
+  await open(page, '?almtest=1'); await tab(page, 'Verify in R');
   const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
   const run = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
   await run.click();
@@ -151,8 +189,9 @@ test('VERIFY: live browser R, funnel artifacts, current-state text gate and plan
     await expect(panel.locator('td[data-result=pass]')).toHaveCount(0);
     console.log('VERIFY unavailable: ' + message); return;
   }
-  expect(message).toBe('32 of 32 quantities match R — PASS');
+  expect(message).toBe('32 of 32 computed quantities match R; 0 not computed — PASS');
   const state = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(state).toMatchObject({ n: 32, nPassed: 32, nNotComputed: 0, nOptional: 0, nNotApplicable: 0, passed: true, testHook: false });
   expect(state.rows).toHaveLength(32); expect(state.rows.every(r => r.pass)).toBe(true);
   expect(state.versions).toMatchObject({ meta: '8.3-0', metasens: '1.5-3' });
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('limit-ma'))).toBe(true);
@@ -189,7 +228,12 @@ test('VERIFY: live browser R, funnel artifacts, current-state text gate and plan
   await page.locator('#src').fill(original); await page.locator('#btn-run').click();
   await page.evaluate(() => { window.__almVerifyPerturb = { key: 'limit_est', delta: .01 }; });
   await tab(page, 'Verify in R'); await run.click();
-  await expect(summary).toHaveText('31 of 32 quantities match R — FAIL: 1 outside tolerance or unavailable', { timeout: 300000 });
+  await expect(summary).toHaveText('TEST MODE (test hook active; not a verification) — 31 of 32 computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active', { timeout: 300000 });
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
+  expect(await page.evaluate(() => AlmFeaturesState.verify)).toMatchObject({
+    n: 32, nPassed: 31, nNotComputed: 0, passed: false, testHook: true,
+    perturbed: { key: 'limit_est', delta: .01 },
+  });
   expect(await page.evaluate(() => AlmFeaturesState.verify.rows.filter(r => !r.pass).map(r => r.key))).toEqual(['limit_est']);
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('limit-ma'))).toBe(false);
   // Keep quantity diagnostics distinct from TEST.ps1's "N failed" test-summary parser.
@@ -275,16 +319,26 @@ test('ENTRY TEXT: conversion steps retain methods and citations without mutating
       sharedStateUnchanged: JSON.stringify(spec.share.get().entryLog) === stored,
     };
     // Full per-study provenance still takes precedence over the legacy log.
-    const records = rows.map((row, i) => ({ id: row.study, label: row.study, reference: 'Trial report',
+    // Synthetic provenance for the built-in example: ten reports need ten identities.
+    // Repeating a reference denotes multiple rows from one report in v2-core.
+    const records = rows.map((row, i) => ({ id: row.study, label: row.study, reference: `Built-in fixture report ${row.study}`,
       location: 'Table 2', conversions: [converted.steps[i]], flags: [], method: 'source extraction' }));
     AlmFeaturesState.provenance = records;
     const provenanceCtx = AlmText.context('limit-ma', spec.text);
     const provenanceText = AlmText.render(spec.text.templates, r, provenanceCtx);
-    const provenance = { methods: provenanceText.methods.text,
+    const provenance = { methods: provenanceText.methods.text, summary: AlmText.entrySummary(provenanceCtx.entryLog),
       audit: AlmText.audit(provenanceText, r, { ctx: provenanceCtx, dom: spec.text.dom() }),
       unchanged: JSON.stringify(provenanceCtx.entryLog) === JSON.stringify(records) };
+    // Preserve the original repeated-reference case as a regression against counting rows as reports.
+    const repeated = records.map(record => ({ ...record, reference: 'Trial report' }));
+    AlmFeaturesState.provenance = repeated;
+    const repeatedStored = JSON.stringify(repeated), repeatedCtx = AlmText.context('limit-ma', spec.text);
+    const repeatedText = AlmText.render(spec.text.templates, r, repeatedCtx);
+    const sharedReport = { methods: repeatedText.methods.text, summary: AlmText.entrySummary(repeatedCtx.entryLog),
+      audit: AlmText.audit(repeatedText, r, { ctx: repeatedCtx, dom: spec.text.dom() }),
+      unchanged: JSON.stringify(repeatedCtx.entryLog) === repeatedStored && JSON.stringify(AlmFeaturesState.provenance) === repeatedStored };
     AlmFeaturesState.provenance = [];
-    return { legacy, provenance };
+    return { legacy, provenance, sharedReport };
   });
   expect(out.legacy.summary.reports).toBe(0);
   expect(out.legacy.summary.groups).toHaveLength(1);
@@ -300,6 +354,14 @@ test('ENTRY TEXT: conversion steps retain methods and citations without mutating
   expect(out.provenance.methods).toContain('Data were extracted from 10 reports (source location recorded for each study)');
   expect(out.provenance.methods).toContain(out.legacy.method);
   expect(out.provenance.audit.failures).toEqual([]);
+  expect(out.provenance.summary).toMatchObject({ reports: 10, rows: 10, detail: null, allLocated: true });
+  expect(out.sharedReport.summary).toMatchObject({ reports: 1, rows: 10, detail: 'rows', allLocated: true });
+  expect(out.sharedReport.methods).toContain('Data were extracted from 1 report (10 rows; source location recorded for each)');
+  expect(out.sharedReport.methods).toContain(out.legacy.method);
+  expect(out.sharedReport.methods).toContain(out.legacy.citation);
+  expect(out.sharedReport.methods).not.toContain('Data were extracted from 10 reports');
+  expect(out.sharedReport.audit.failures).toEqual([]);
+  expect(out.sharedReport.unchanged).toBe(true);
   await tab(page, 'Report text');
   await expect(page.locator('[data-para=methods]')).toHaveText(out.legacy.methods);
   await expect(page.locator('.alm-text-body')).toBeVisible();
