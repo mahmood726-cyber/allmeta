@@ -6,8 +6,8 @@ import { readZip, decodePng, readTiff } from './zip-reader.mjs';
 const APP = 'dose-response-ma';
 const PAGE = '/dose-response-ma/index.html';
 const SNAP = new URL('./__snapshots__/text-dose-response-ma.json', import.meta.url);
-async function open(page, tab = 'Data entry') {
-  await page.goto(PAGE);
+async function open(page, tab = 'Data entry', search = '') {
+  await page.goto(PAGE + search);
   await expect(page.locator('#coef-body tr')).toHaveCount(1);
   await page.locator('#alm-features .alm-f-toggle').click();
   await page.getByRole('tab', { name: tab, exact: true }).click();
@@ -80,16 +80,22 @@ test('ENTRY: three explicit formats preserve the built-in example and log conver
   // Only the sanity UI gate is exercised through controls; round trips above
   // deliberately use the APIs, independent of the parallel entry UI upgrade.
   const panel = page.locator('#alm-f-panel-entry');
+  const beforePreview = await page.evaluate(() => AlmDoseFeatures.share.get());
   await panel.locator('textarea').fill(out.paper.replace('126/414', '415/414'));
   await panel.getByRole('button', { name: 'Preview and convert', exact: true }).click();
   await expect(panel.getByRole('heading', { name: 'Conversion log', exact: true })).toBeVisible();
-  await expect(panel).toContainText('cases must be between 0 and n');
+  // Current entry UX identifies the offending field, counts and source row.
+  await expect(panel.locator('li.alm-entry-block')).toHaveText([
+    "⛔ Block: Cases (415) cannot be more than the total in this group (414). Check row '1'."
+  ]);
   await expect(panel.getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
+  expect(await page.evaluate(() => AlmDoseFeatures.share.get())).toEqual(beforePreview);
   const bad = await page.evaluate(() => {
     const before = AlmDoseFeatures.share.get();
     try { AlmDoseFeatures.entry.apply([{ study: 'bad', dose: 1, cases: 3, n: 2, yi: 0, sei: 0, type: 'cc' }]); }
     catch (e) { return { error: e.message, unchanged: JSON.stringify(before) === JSON.stringify(AlmDoseFeatures.share.get()) }; }
   });
+  expect(bad.error).toBe('bad: cases must be between zero and n');
   expect(bad.unchanged).toBe(true);
   console.log('ENTRY planted bounds gate FAIL; inputs unchanged');
 });
@@ -156,7 +162,12 @@ test('TEXT: supported model variants retain a passing audit and accurate method 
 
 test('VERIFY: real R comparison, curve exports, ZIP and planted defect', async ({ page }) => {
   test.setTimeout(900000);
-  await open(page, 'Verify in R');
+  // v2-core ignores the planted-defect hook unless this explicit test gate is set.
+  await open(page, 'Verify in R', '?almtest=1');
+  const expectedKeys = await page.evaluate(() => {
+    const live = AlmDoseFeatures.verify.adapter().live;
+    return live.appValues(live.currentState()).map(v => v.key);
+  });
   const panel = page.locator('#alm-f-panel-verify');
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
   const summary = panel.getByTestId('verify-summary');
@@ -174,11 +185,15 @@ test('VERIFY: real R comparison, curve exports, ZIP and planted defect', async (
     console.log(`VERIFY unavailable: ${missing.join(',')}; no pass claimed`);
     return;
   }
-  const match = /^(\d+) of (\d+) quantities match R — PASS$/.exec(message);
+  const match = /^(\d+) of (\d+) computed quantities match R; 0 not computed — PASS$/.exec(message);
   expect(match, message).not.toBeNull();
   const n = +match[2];
   expect(n).toBeGreaterThanOrEqual(5);
   expect(+match[1]).toBe(n);
+  expect(n).toBe(expectedKeys.length);
+  expect(await panel.locator('tr[data-key]').evaluateAll(rows => rows.map(row => row.dataset.key))).toEqual(expectedKeys);
+  await expect(summary).toHaveAttribute('data-result', 'pass');
+  expect(await page.evaluate(() => AlmFeaturesState.verify.testHook)).toBe(false);
   console.log(`VERIFY ${match[1]}/${match[2]}`);
   expect(await panel.locator('td[data-result]').allTextContents()).toEqual(Array(n).fill('PASS'));
   expect(await page.evaluate(() => AlmDoseFeatures.verify.adapter() === AlmDoseValidate)).toBe(true);
@@ -194,12 +209,20 @@ test('VERIFY: real R comparison, curve exports, ZIP and planted defect', async (
   const tif = readTiff(entries[`${APP}-curve-R-300dpi.tiff`]);
   expect(tif.tags[282].value).toEqual([300, 1]);
   const receipt = JSON.parse(new TextDecoder().decode(entries['truthcert.json']));
+  expect(receipt.extra.results).toMatchObject({ passed: true, n, nPassed: n, nNotComputed: 0, testHook: false });
   expect(await page.evaluate(r => AlmTruthCertExport.verifyContentHash(r), receipt)).toBe(true);
   console.log(`VERIFY ZIP ${Object.keys(entries).length} entries; PNG/TIFF and receipt checked`);
   await page.evaluate(() => { window.__almVerifyPerturb = { key: 'coef_0', delta: 0.1 }; });
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
-  await expect(summary).toContainText('FAIL', { timeout: 300000 });
-  expect(await panel.locator('tr[data-key=coef_0] td[data-result]').textContent()).toBe('FAIL');
+  await expect(summary).toHaveText(
+    `TEST MODE (test hook active; not a verification) — ${n - 1} of ${n} computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active`,
+    { timeout: 300000 }
+  );
+  await expect(panel.locator('tr[data-key=coef_0] td[data-result]')).toHaveText('FAIL (test perturbation)');
+  expect(await panel.locator('tr[data-key]:has(td[data-result="fail"])').evaluateAll(rows => rows.map(row => row.dataset.key))).toEqual(['coef_0']);
+  expect(await page.evaluate(() => ({ passed: AlmFeaturesState.verify.passed,
+    testHook: AlmFeaturesState.verify.testHook, perturbed: AlmFeaturesState.verify.perturbed })))
+    .toEqual({ passed: false, testHook: true, perturbed: { key: 'coef_0', delta: 0.1 } });
   console.log(`VERIFY planted ${n - 1}/${n}`);
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('dose-response-ma'))).toBe(false);
   await page.getByRole('tab', { name: 'Report text', exact: true }).click();
