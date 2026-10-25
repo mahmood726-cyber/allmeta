@@ -34,6 +34,12 @@ async function open(page, tab = 'entry') {
   await page.waitForFunction(() => window.AlmFeatures?.get('multivariate-ma') && window._almLastMultivariate());
   await page.evaluate(tab => AlmFeatures.open('multivariate-ma', tab), tab);
 }
+async function currentFit(page) {
+  await page.waitForFunction(() => {
+    try { return !!AlmMultivariateFeatures.verify.adapter().currentState().result; }
+    catch { return false; }
+  });
+}
 async function render(page) {
   return page.evaluate(() => {
     const spec = AlmFeatures.get('multivariate-ma').text, r = spec.results();
@@ -90,7 +96,9 @@ test('ENTRY: three formats through shared parse/detect/convert and apply preserv
   expect(ciOnly.steps.some(s => s.method === 'SE from CI')).toBe(true);
   ciOnly.records.forEach((r, i) => expect(Math.abs(r.vi - LONG[i][3])).toBeLessThan(1e-10));
   const replay = await page.evaluate(record => {
-    const p = { ...record, label: 'Berkey 1998', reference: 'Berkey et al. 1998', location: 'Example', confirmed: true };
+    const p = { ...record, label: 'Berkey 1998', reference: 'Berkey et al. 1998', location: 'Example',
+      source: { type: 'Table', detail: 'Example' }, choice: { randomisation: 'not stated' } };
+    AlmEntry.provenance.confirm(p, { by: 'QA', via: 'row' });
     const entry = AlmFeatures.get('multivariate-ma').entry;
     const clean = entry.validateProvenance(p);
     p.conversions.find(c => c.method === 'variance = SE squared').output += 0.01;
@@ -100,6 +108,24 @@ test('ENTRY: three formats through shared parse/detect/convert and apply preserv
   expect(replay.planted).toContain('variance conversion replay');
 });
 
+test('ENTRY: apply completes the fit synchronously and uses supplied covariance in every input mode', async ({ page }) => {
+  await open(page);
+  const baseline = await page.evaluate(() => _almLastMultivariate());
+  for (const mode of ['r', 'rhoW']) {
+    await page.locator('#f-mode').selectOption(mode);
+    const result = await page.evaluate(source => {
+      const entry = AlmMultivariateFeatures.entry;
+      const applied = entry.apply(entry.convert(source).records);
+      return { applied, current: AlmMultivariateFeatures.verify.adapter().currentState().result,
+        mode: AlmMvPage.getMode(), text: AlmMultivariateFeatures.text.results() };
+    }, TSV);
+    expect(result.applied).toEqual({ ok: true, n: 5 });
+    expect(result.mode).toBe('cov');
+    expect(result.current).toEqual(baseline);
+    expect(result.text).not.toBeNull();
+  }
+});
+
 test('ENTRY: confirmation, conversion log and blocking covariance gate; planted row cannot change results', async ({ page }) => {
   await open(page);
   const panel = page.locator('#alm-f-panel-entry'), use = panel.getByRole('button', { name: 'Use these rows', exact: true });
@@ -107,11 +133,23 @@ test('ENTRY: confirmation, conversion log and blocking covariance gate; planted 
   await panel.getByRole('button', { name: 'Preview and convert' }).click();
   await expect(panel.getByTestId('entry-log')).toContainText('retained as supplied');
   await expect(use).toBeDisabled();
+  await panel.getByLabel('Your initials', { exact: true }).fill('QA');
   for (const fieldset of await panel.locator('fieldset').all()) {
     await fieldset.getByLabel('Source author and year').fill('Berkey 1998');
     await fieldset.getByLabel('Full reference').fill('Berkey et al. 1998, Stat Med');
     await fieldset.getByLabel('Source location').fill('Example data');
     await fieldset.getByLabel('Timepoint (or not stated)').fill('not stated');
+    await expect(fieldset.getByLabel('I confirm this outcome row')).toBeDisabled();
+    await fieldset.getByLabel('Source type', { exact: true }).selectOption('Table');
+    await fieldset.getByLabel('What was randomised?', { exact: true }).selectOption('not stated');
+    await fieldset.getByLabel('I confirm this outcome row').check();
+  }
+  await expect(use).toBeEnabled();
+  // Changing the extractor invalidates every prior confirmation.
+  await panel.getByLabel('Your initials', { exact: true }).fill('QC');
+  await expect(use).toBeDisabled();
+  for (const fieldset of await panel.locator('fieldset').all()) {
+    await expect(fieldset.getByLabel('I confirm this outcome row')).not.toBeChecked();
     await fieldset.getByLabel('I confirm this outcome row').check();
   }
   await expect(use).toBeEnabled();
@@ -120,6 +158,11 @@ test('ENTRY: confirmation, conversion log and blocking covariance gate; planted 
   expect(await page.evaluate(() => AlmFeaturesState.provenance.length)).toBe(10);
   expect(await page.evaluate(() => AlmFeaturesState.provenance.every(p =>
     p.values.length >= 3 && p.values.every(v => p.pastedText.slice(...v.span) === v.text)))).toBe(true);
+  expect(await page.evaluate(() => AlmFeaturesState.provenance.flatMap(p =>
+    AlmMultivariateFeatures.entry.validateProvenance(p)))).toEqual([]);
+  expect(await page.evaluate(() => AlmFeaturesState.provenance.every(p =>
+    p.source.type === 'Table' && p.confirmedBy === 'QC' && p.confirmedVia === 'row' &&
+    p.sourceHash === AlmEntry.sha256(p.pastedText) && p.choice.randomisation === 'not stated'))).toBe(true);
   const before = await page.locator('#stats').innerText();
   const planted = TSV.replaceAll('\t0.003\n', '\t1\n');
   await panel.getByLabel('Paired outcome table', { exact: true }).fill(planted);
@@ -192,9 +235,12 @@ test('VERIFY: real browser R, joint plot, ZIP and planted estimate', async ({ pa
     console.log('VERIFY unavailable: mvmeta; no pass claimed');
     return;
   }
-  expect(status).toBe('10 of 10 quantities match R — PASS');
+  expect(status).toBe('10 of 10 computed quantities match R; 0 not computed — PASS');
   const state = await page.evaluate(() => AlmFeaturesState.verify);
   console.log(`VERIFY ${state.nPassed}/${state.n} ${JSON.stringify(state.versions)}`);
+  expect({ passed: state.passed, n: state.n, nPassed: state.nPassed, nNotComputed: state.nNotComputed,
+    nOptional: state.nOptional, nNotApplicable: state.nNotApplicable, testHook: state.testHook })
+    .toEqual({ passed: true, n: 10, nPassed: 10, nNotComputed: 0, nOptional: 0, nNotApplicable: 0, testHook: false });
   expect(state.rows.filter(r => !r.pass)).toEqual([]);
   await expect(panel.locator('figure svg')).toHaveCount(1);
   await expect(panel.locator('figure img')).toHaveCount(1);
@@ -213,10 +259,16 @@ test('VERIFY: real browser R, joint plot, ZIP and planted estimate', async ({ pa
   expect(await page.evaluate(r => AlmTruthCertExport.verifyContentHash(r), receipt)).toBe(true);
   console.log(`ZIP ${Object.keys(entries).length} entries; PNG/PDF/TIFF/SVG and receipt present`);
   await axe(page, 'verify');
-  await page.evaluate(() => { window.__almVerifyPerturb = { key: 'mu1', delta: 0.01 }; });
+  await page.evaluate(() => {
+    const url = new URL(location.href); url.searchParams.set('almtest', '1');
+    history.replaceState(null, '', url);
+    window.__almVerifyPerturb = { key: 'mu1', delta: 0.01 };
+  });
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
-  await expect(summary).toContainText('9 of 10 quantities match R — FAIL', { timeout: 600_000 });
+  await expect(summary).toHaveText('TEST MODE (test hook active; not a verification) — 9 of 10 computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active', { timeout: 600_000 });
   expect(await page.evaluate(() => AlmFeaturesState.verify.rows.filter(r => !r.pass).map(r => r.key))).toEqual(['mu1']);
+  expect(await page.evaluate(() => ({ passed: AlmFeaturesState.verify.passed, testHook: AlmFeaturesState.verify.testHook,
+    perturbed: AlmFeaturesState.verify.perturbed }))).toEqual({ passed: false, testHook: true, perturbed: { key: 'mu1', delta: 0.01 } });
   console.log('VERIFY planted 9/10 FAIL mu1');
   expect(errors).toEqual([]);
 });
@@ -227,6 +279,7 @@ test('SHARE: full data and outcome names round trip; corrupted and malformed sta
   await page.locator('#f-data').fill(original.replace('0.47', '0.48'));
   await page.locator('#f-o1').fill('PD change');
   await page.locator('#f-o2').fill('AL change');
+  await currentFit(page);
   await page.evaluate(() => {
     AlmFeaturesState.provenance = [{ label: 'Berkey 1998', reference: 'Berkey et al. 1998',
       location: 'Example', pastedText: '0.48', choice: { outcome: 'PD change', timepoint: 'not stated' },
@@ -266,8 +319,28 @@ test('missing app result is withheld; adapter reads the fit without refitting', 
   });
   expect(n).toBe(10);
   await page.locator('#f-data').fill('');
+  expect(await page.evaluate(() => AlmMultivariateFeatures.text.results())).toBeNull();
   await page.locator('#alm-f-panel-text .alm-text-regenerate').click();
   await expect(page.locator('#alm-f-panel-text .alm-text-status')).toHaveText('Run the analysis first.');
+});
+
+test('TEXT: edited nonempty input is withheld during debounce and accepted after the new fit', async ({ page }) => {
+  await open(page, 'text');
+  const pending = await page.evaluate(() => {
+    const before = _almLastMultivariate(), input = document.getElementById('f-data');
+    input.value = input.value.replace('0.47', '0.48');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    // Check in the input's own task, before the page's 250 ms debounce can run.
+    return { retainedFit: _almLastMultivariate() === before, before,
+      text: AlmMultivariateFeatures.text.results() };
+  });
+  expect(pending.retainedFit).toBe(true);
+  expect(pending.text).toBeNull();
+  await currentFit(page);
+  expect(await page.evaluate(() => _almLastMultivariate().mu)).not.toEqual(pending.before.mu);
+  await page.locator('#alm-f-panel-text .alm-text-regenerate').click();
+  await expect(page.locator('#alm-f-panel-text .alm-text-status')).toHaveText('Text generated from the current results.');
+  expect((await render(page)).audit.ok).toBe(true);
 });
 
 test('REVIEW: decimal choice preserves comma source and requires fresh confirmation', async ({ page }) => {
@@ -281,11 +354,14 @@ test('REVIEW: decimal choice preserves comma source and requires fresh confirmat
   await panel.getByLabel('Decimal mark for this paste', { exact: true }).selectOption('comma');
   await expect(panel.locator('fieldset')).toHaveCount(10);
   await expect(panel.locator('mark').filter({ hasText: '0,0075' })).toHaveCount(1);
+  await panel.getByLabel('Your initials', { exact: true }).fill('QA');
   for (const box of await panel.locator('fieldset').all()) {
     await box.getByLabel('Source author and year').fill('Smith 2020');
     await box.getByLabel('Full reference').fill('Smith et al.');
     await box.getByLabel('Source location').fill('Table 1');
     await box.getByLabel('Timepoint (or not stated)').fill('not stated');
+    await box.getByLabel('Source type', { exact: true }).selectOption('Table');
+    await box.getByLabel('What was randomised?', { exact: true }).selectOption('not stated');
     await box.getByLabel('I confirm this outcome row').check();
   }
   await expect(use).toBeEnabled(); await use.click();
@@ -359,6 +435,7 @@ test('REVIEW: signed-zero confidence limits retain the report and changed limits
 test('REVIEW: natural-ratio intervals get a scale-neutral no-effect caveat', async ({ page }) => {
   await open(page, 'text');
   await page.locator('#f-data').fill(DATA.map((_, i) => `Trial ${i + 1}, 1, 0.01, 1, 0.01, 0.003`).join('\n'));
+  await currentFit(page);
   const out = await render(page);
   expect(out.audit.ok).toBe(true);
   expect(out.snapshot.plain).toContain('no-effect value for the supplied scale');

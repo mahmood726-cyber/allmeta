@@ -8,7 +8,9 @@
   'use strict';
   var APP = 'multivariate-ma';
   function el(id) { return document.getElementById(id); }
-  function run() { el('f-data').dispatchEvent(new Event('input', { bubbles: true })); }
+  // Feature actions must finish the fit before returning; input events schedule
+  // the page's debounced editor run and can leave the previous result visible.
+  function run() { global.AlmMvPage.run(); }
   function block(text, row) { return { code: 'multivariate-input', text: text, row: row, blocking: true }; }
   function numeric(value, decimal) {
     var token = global.AlmEntry.parseCell(String(value), { decimal: decimal });
@@ -165,9 +167,7 @@
   }
   function apply(records) {
     var p = pair(records); // Validate the entire batch before touching the app.
-    el('f-data').value = p.src;
-    el('f-o1').value = p.names[0]; el('f-o2').value = p.names[1];
-    run();
+    global.AlmMvPage.load(p.src, 'cov', p.names[0], p.names[1]);
     if (!global._almLastMultivariate()) throw Error('The app could not fit these rows.');
     return { ok: true, n: p.n };
   }
@@ -178,12 +178,12 @@
     if (parent) parent.appendChild(n);
     return n;
   }
-  function validateProvenance(record) {
+  function validateProvenance(record, options) {
     var square = record.conversions.filter(function (c) { return c.method === 'variance = SE squared'; });
     var copy = Object.assign({}, record, { conversions: record.conversions.filter(function (c) {
       return c.method !== 'variance = SE squared';
     }) });
-    var errors = global.AlmEntry.provenance.validate(copy);
+    var errors = global.AlmEntry.provenance.validate(copy, options);
     // The shared replay registry has no variance-from-SE rule. Replay this
     // elementary app-specific conversion here, without extending shared code.
     square.forEach(function (c) {
@@ -193,6 +193,7 @@
     return errors;
   }
   function mountEntry(panel) {
+    var core = global.AlmEntry, P = core.provenance;
     panel.classList.add('alm-entry');
     node('p', 'Paste one row per study and outcome, with columns study, outcome, yi, vi (or SE or an estimate with its confidence interval), and cov. Supply the same within-study covariance on both outcome rows. Values must already be on the intended analysis scale; no log transformation is applied.', panel);
     node('p', 'RevMan/Covidence tables need an explicit outcome and covariance column. Marginal effects alone cannot supply the missing covariance.', panel);
@@ -202,6 +203,9 @@
     decimal.id = 'mv-entry-decimal'; decimalLabel.htmlFor = decimal.id;
     ['point', 'comma'].forEach(function (value) { node('option', value, decimal).value = value; });
     decimal.value = 'point';
+    var initialsLabel = node('label', 'Your initials', panel), initials = node('input', undefined, panel);
+    initials.id = 'mv-entry-initials'; initialsLabel.htmlFor = initials.id;
+    initials.type = 'text';
     var preview = node('button', 'Preview and convert', panel);
     preview.type = 'button';
     var status = node('p', 'Paste a table to begin.', panel); status.setAttribute('role', 'status');
@@ -212,18 +216,36 @@
     use.setAttribute('aria-describedby', status.id);
     var out = null, confirmed = [], answers = { decimal: 'point' };
     function provenance(c, i) {
+      if (c.confirmed) return c.confirmed;
       var r = c.record;
-      return { id: 'mv-' + i, label: c.label.value, study: r.study, reference: c.reference.value, location: c.location.value,
-        pastedText: r.pastedText, decimal: r.decimal, choice: { study: r.study, outcome: r.outcome, timepoint: c.timepoint.value },
+      var p = { id: 'mv-' + i, label: c.label.value, study: r.study, reference: c.reference.value, location: c.location.value,
+        source: { type: c.sourceType.value, detail: c.location.value },
+        pastedText: r.pastedText, decimal: r.decimal,
+        choice: { study: r.study, outcome: r.outcome, timepoint: c.timepoint.value, randomisation: c.randomisation.value,
+          cluster: { action: c.cluster.value } },
         values: r.values, conversions: r.conversions, flags: [], usedAs: 'Paired analysis-scale effect, sampling variance and covariance',
-        confirmed: c.check.checked, confirmedAt: c.check.checked ? new Date().toISOString() : null };
+        confirmed: false, confirmedAt: null };
+      P.applyDesign(p, {});
+      if (p.choice.randomisation === 'not stated') {
+        p.statements = [{ facet: 'randomisation', value: 'not stated in source', by: 'user' }];
+        p.flags.push({ code: 'NOT_STATED_RANDOMISATION', text: 'Unit of randomisation: not stated in the source (your statement).', blocking: false });
+      }
+      return p;
     }
     function gate() {
+      confirmed.forEach(function (c, i) {
+        c.check.disabled = !initials.value.trim() || !c.timepoint.value.trim() ||
+          validateProvenance(provenance(c, i), { beforeConfirm: true }).length > 0;
+      });
       use.disabled = !out || !!out.questions.length || out.flags.some(function (f) { return f.blocking; }) ||
         !confirmed.length || confirmed.some(function (c, i) {
           return !c.timepoint.value.trim() || validateProvenance(provenance(c, i)).length;
         });
     }
+    initials.addEventListener('input', function () {
+      confirmed.forEach(function (c) { c.confirmed = null; c.check.checked = false; });
+      gate();
+    });
     paste.addEventListener('input', function () {
       out = null; confirmed = []; answers = { decimal: 'point' }; decimal.value = 'point';
       details.replaceChildren(); log.replaceChildren(); use.disabled = true;
@@ -267,16 +289,33 @@
           node('span', r.pastedText.slice(at), original);
           node('p', 'Effect ' + r.yi + '; variance ' + r.vi + '; covariance ' + r.cov + '. Used as supplied analysis-scale inputs to the joint model.', box);
           var c = { record: r };
-          [['label', 'Source author and year'], ['reference', 'Full reference'], ['location', 'Source location'], ['timepoint', 'Timepoint (or not stated)'], ['check', 'I confirm this outcome row']].forEach(function (field) {
-            var lab = node('label', field[1], box), input = node('input', undefined, lab);
+          [['label', 'Source author and year'], ['reference', 'Full reference'], ['sourceType', 'Source type'],
+            ['location', 'Source location'], ['timepoint', 'Timepoint (or not stated)'], ['randomisation', 'What was randomised?'],
+            ['cluster', 'Clustering in the supplied analysis'], ['check', 'I confirm this outcome row']].forEach(function (field) {
+            var choices = field[0] === 'sourceType' ? core.SOURCE_TYPES.map(function (v) { return [v, v]; }) :
+              field[0] === 'randomisation' ? Object.entries(core.RANDOMISATION_CHOICES) :
+              field[0] === 'cluster' ? [['already', 'Reported analysis accounts for clustering'], ['decline', 'No adjustment for clustering']] : null;
+            // Keep option text outside the label so exact label lookup uses
+            // only the prompt. The wrapper also hides the whole cluster field.
+            var fieldRow = node('div', undefined, box);
+            var lab = node('label', field[1], fieldRow), input = node(choices ? 'select' : 'input', undefined, fieldRow);
             input.id = 'mv-source-' + i + '-' + field[0]; lab.htmlFor = input.id;
-            input.type = field[0] === 'check' ? 'checkbox' : 'text';
-            input.addEventListener('input', function () {
+            if (choices) {
+              node('option', 'Choose an answer', input).value = '';
+              choices.forEach(function (choice) { node('option', choice[1], input).value = choice[0]; });
+            } else input.type = field[0] === 'check' ? 'checkbox' : 'text';
+            input.addEventListener(choices ? 'change' : 'input', function () {
+              c.confirmed = null;
               if (field[0] !== 'check') c.check.checked = false;
+              else if (c.check.checked && !c.check.disabled) {
+                c.confirmed = P.confirm(provenance(c, i), { by: initials.value, via: 'row' });
+              }
+              c.cluster.parentNode.hidden = c.randomisation.value !== 'clusters';
               gate();
             });
             c[field[0]] = input;
           });
+          c.cluster.parentNode.hidden = true;
           confirmed.push(c);
         });
       }
@@ -284,7 +323,7 @@
       status.textContent = blocking.length || out.questions.length
         ? 'Preview blocked: ' + blocking.length + ' blocking issues; ' + out.questions.length + ' unanswered questions. ' +
           (blocking.length ? blocking[0].text : out.questions[0].text)
-        : 'Review the conversion log and confirm the source of every outcome row.';
+        : 'Enter your initials, review the conversion log, and confirm the source and randomisation choice of every outcome row.';
       gate();
     }
     preview.addEventListener('click', showPreview);
@@ -336,8 +375,11 @@
     return out;
   }
   function results() {
-    var fit = global._almLastMultivariate && global._almLastMultivariate();
-    if (!fit) return null;
+    // The live adapter checks that the observed fit belongs to these inputs.
+    // During the editor debounce, the last-result accessor still holds the old
+    // fit; never generate a report from that stale result or trigger a refit.
+    var fit;
+    try { fit = oracle().currentState().result; } catch (e) { return null; }
     var r = { k: fit.k, outcomes: fit.mu.length, mua: fit.mu[0], mub: fit.mu[1],
       sea: fit.muSE[0], seb: fit.muSE[1], vara: fit.G[0][0], varb: fit.G[1][1],
       covariance: fit.G[0][1], rho: fit.rho, logLik: fit.logLik, level: 95 };
