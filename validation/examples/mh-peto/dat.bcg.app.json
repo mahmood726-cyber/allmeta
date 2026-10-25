@@ -1,0 +1,264 @@
+{
+  "app": "mh-peto",
+  "dataset": "dat.bcg",
+  "source_package": "metadat",
+  "version": "1.6-0",
+  "source_blob": "65156a2716521493f2c7e4a4bacf22deb4c120f3",
+  "citation": "Colditz GA et al. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: meta-analysis of the published literature. JAMA 271:698–702. doi:10.1001/jama.1994.03510330076038.",
+  "input": "Aronson 1948 [trial 1], 4, 123, 11, 139\nFerguson & Simes 1949 [trial 2], 6, 306, 29, 303\nRosenthal et al 1960 [trial 3], 3, 231, 11, 220\nHart & Sutherland 1977 [trial 4], 62, 13598, 248, 12867\nFrimodt-Moller et al 1973 [trial 5], 33, 5069, 47, 5808\nStein & Aronson 1953 [trial 6], 180, 1541, 372, 1451\nVandiviere et al 1973 [trial 7], 8, 2545, 10, 629\nTPT Madras 1980 [trial 8], 505, 88391, 499, 88391\nCoetzee & Berjak 1968 [trial 9], 29, 7499, 45, 7277\nRosenthal et al 1961 [trial 10], 17, 1716, 65, 1665\nComstock et al 1974 [trial 11], 186, 50634, 141, 27338\nComstock & Webster 1969 [trial 12], 5, 2498, 3, 2341\nComstock et al 1976 [trial 13], 27, 16913, 29, 17854",
+  "projection": {
+    "rows": [
+      {
+        "row": 1,
+        "study": "Aronson 1948 [trial 1]",
+        "e1": 4,
+        "n1": 123,
+        "e2": 11,
+        "n2": 139
+      },
+      {
+        "row": 2,
+        "study": "Ferguson & Simes 1949 [trial 2]",
+        "e1": 6,
+        "n1": 306,
+        "e2": 29,
+        "n2": 303
+      },
+      {
+        "row": 3,
+        "study": "Rosenthal et al 1960 [trial 3]",
+        "e1": 3,
+        "n1": 231,
+        "e2": 11,
+        "n2": 220
+      },
+      {
+        "row": 4,
+        "study": "Hart & Sutherland 1977 [trial 4]",
+        "e1": 62,
+        "n1": 13598,
+        "e2": 248,
+        "n2": 12867
+      },
+      {
+        "row": 5,
+        "study": "Frimodt-Moller et al 1973 [trial 5]",
+        "e1": 33,
+        "n1": 5069,
+        "e2": 47,
+        "n2": 5808
+      },
+      {
+        "row": 6,
+        "study": "Stein & Aronson 1953 [trial 6]",
+        "e1": 180,
+        "n1": 1541,
+        "e2": 372,
+        "n2": 1451
+      },
+      {
+        "row": 7,
+        "study": "Vandiviere et al 1973 [trial 7]",
+        "e1": 8,
+        "n1": 2545,
+        "e2": 10,
+        "n2": 629
+      },
+      {
+        "row": 8,
+        "study": "TPT Madras 1980 [trial 8]",
+        "e1": 505,
+        "n1": 88391,
+        "e2": 499,
+        "n2": 88391
+      },
+      {
+        "row": 9,
+        "study": "Coetzee & Berjak 1968 [trial 9]",
+        "e1": 29,
+        "n1": 7499,
+        "e2": 45,
+        "n2": 7277
+      },
+      {
+        "row": 10,
+        "study": "Rosenthal et al 1961 [trial 10]",
+        "e1": 17,
+        "n1": 1716,
+        "e2": 65,
+        "n2": 1665
+      },
+      {
+        "row": 11,
+        "study": "Comstock et al 1974 [trial 11]",
+        "e1": 186,
+        "n1": 50634,
+        "e2": 141,
+        "n2": 27338
+      },
+      {
+        "row": 12,
+        "study": "Comstock & Webster 1969 [trial 12]",
+        "e1": 5,
+        "n1": 2498,
+        "e2": 3,
+        "n2": 2341
+      },
+      {
+        "row": 13,
+        "study": "Comstock et al 1976 [trial 13]",
+        "e1": 27,
+        "n1": 16913,
+        "e2": 29,
+        "n2": 17854
+      }
+    ],
+    "excluded": [],
+    "text": "Aronson 1948 [trial 1], 4, 123, 11, 139\nFerguson & Simes 1949 [trial 2], 6, 306, 29, 303\nRosenthal et al 1960 [trial 3], 3, 231, 11, 220\nHart & Sutherland 1977 [trial 4], 62, 13598, 248, 12867\nFrimodt-Moller et al 1973 [trial 5], 33, 5069, 47, 5808\nStein & Aronson 1953 [trial 6], 180, 1541, 372, 1451\nVandiviere et al 1973 [trial 7], 8, 2545, 10, 629\nTPT Madras 1980 [trial 8], 505, 88391, 499, 88391\nCoetzee & Berjak 1968 [trial 9], 29, 7499, 45, 7277\nRosenthal et al 1961 [trial 10], 17, 1716, 65, 1665\nComstock et al 1974 [trial 11], 186, 50634, 141, 27338\nComstock & Webster 1969 [trial 12], 5, 2498, 3, 2341\nComstock et al 1976 [trial 13], 27, 16913, 29, 17854"
+  },
+  "options": {
+    "measure": "OR"
+  },
+  "packages": [
+    "metafor"
+  ],
+  "script": "ai <- as.numeric(c(4,6,3,62,33,180,8,505,29,17,186,5,27))\nbi <- as.numeric(c(119,300,228,13536,5036,1361,2537,87886,7470,1699,50448,2493,16886))\nci <- as.numeric(c(11,29,11,248,47,372,10,499,45,65,141,3,29))\ndi <- as.numeric(c(128,274,209,12619,5761,1079,619,87892,7232,1600,27197,2338,17825))\nmeasure <- \"OR\"\nget <- function(f) {\n if(inherits(f,'error')) return(setNames(rep(NA_real_,7),c('est','lo','hi','z','p','beta','se')))\n tr <- if(measure=='RD') identity else exp\n out <- c(est=tr(as.numeric(f$beta)),lo=tr(f$ci.lb),hi=tr(f$ci.ub),z=f$zval,p=f$pval,beta=as.numeric(f$beta),se=f$se)\n declared <- names(out)%in%c('z','p') & measure=='RD' & isTRUE(f$se==0) & isTRUE(as.numeric(f$beta)==0) & is.nan(out)\n if(any(is.na(out)&!declared)||any(is.infinite(out)))stop('Invalid R evidence')\n out[declared] <- NA_real_\n out\n}\nmh <- tryCatch(metafor::rma.mh(ai=ai,bi=bi,ci=ci,di=di,measure=measure,add=c(.5,0),to=c('only0','none'),drop00=c(FALSE,FALSE),correct=FALSE),error=function(e)e)\nx <- setNames(get(mh),paste0('mh_',names(get(mh))))\nif(measure=='OR') {\n pe <- tryCatch(metafor::rma.peto(ai=ai,bi=bi,ci=ci,di=di,add=0,to='none',drop00=TRUE),error=function(e)e)\n x <- c(x,setNames(get(pe),paste0('peto_',names(get(pe)))))\n}\nif(!is.numeric(x)||any(is.nan(x)|is.infinite(x))) stop('Invalid R evidence')\nv <- ifelse(is.na(x),'null',sprintf('%.17g',x))\napp_p <- c(mh_p=7.877167325444362e-31,peto_p=1.8380733863215435e-31)\nfor(key in names(app_p)) {\n b <- x[[key]]; a <- app_p[[key]]\n d <- if(is.na(b)) {if(is.na(a)) 0 else 1} else if(b>=0 && b<1e-12) {\n   if(is.na(a)) 1 else if(b==0) {if(a==0) 0 else 1} else abs(a-b)/b\n } else 0\n # A finite sentinel above tolerance ensures even overflow reports FAIL.\n v[paste0(key,'_tail')] <- sprintf('%.17g',if(is.finite(d))d else 1)\n}\ncat('ALMJSON:{',paste(paste0('\"',names(v),'\":',v),collapse=','),'}\\n',sep='')",
+  "compare": {
+    "tolerance": {
+      "default": 1e-9
+    },
+    "kind": {
+      "mh_est": "rel",
+      "mh_lo": "rel",
+      "mh_hi": "rel",
+      "mh_z": "rel",
+      "mh_p": "abs",
+      "mh_beta": "rel",
+      "mh_se": "rel",
+      "peto_est": "rel",
+      "peto_lo": "rel",
+      "peto_hi": "rel",
+      "peto_z": "rel",
+      "peto_p": "abs",
+      "peto_beta": "rel",
+      "peto_se": "rel"
+    }
+  },
+  "appValues": [
+    {
+      "key": "mh_est",
+      "label": "MH OR est",
+      "value": 0.6228740245735201
+    },
+    {
+      "key": "mh_lo",
+      "label": "MH OR lo",
+      "value": 0.5747703224801144
+    },
+    {
+      "key": "mh_hi",
+      "label": "MH OR hi",
+      "value": 0.6750036237332645
+    },
+    {
+      "key": "mh_z",
+      "label": "MH OR z",
+      "value": -11.544419298260156
+    },
+    {
+      "key": "mh_p",
+      "label": "MH OR p",
+      "value": 7.877167325444362e-31
+    },
+    {
+      "key": "mh_beta",
+      "label": "MH OR beta",
+      "value": -0.4734109883885855
+    },
+    {
+      "key": "mh_se",
+      "label": "MH OR se",
+      "value": 0.04100777840423145
+    },
+    {
+      "key": "mh_p_tail",
+      "label": "MH OR p tail relative error",
+      "value": 0
+    },
+    {
+      "key": "peto_est",
+      "label": "Peto OR est",
+      "value": 0.6222294827607029
+    },
+    {
+      "key": "peto_lo",
+      "label": "Peto OR lo",
+      "value": 0.5745681034558677
+    },
+    {
+      "key": "peto_hi",
+      "label": "Peto OR hi",
+      "value": 0.673844452707929
+    },
+    {
+      "key": "peto_z",
+      "label": "Peto OR z",
+      "value": -11.668889267819592
+    },
+    {
+      "key": "peto_p",
+      "label": "Peto OR p",
+      "value": 1.8380733863215435e-31
+    },
+    {
+      "key": "peto_beta",
+      "label": "Peto OR beta",
+      "value": -0.4744463109406366
+    },
+    {
+      "key": "peto_se",
+      "label": "Peto OR se",
+      "value": 0.04065908074464826
+    },
+    {
+      "key": "peto_p_tail",
+      "label": "Peto OR p tail relative error",
+      "value": 0
+    },
+    {
+      "key": "mh_I2",
+      "label": "I²",
+      "value": 92.68036404481771
+    }
+  ],
+  "display": [
+    {
+      "key": "mh_est",
+      "text": "0.623",
+      "value": 0.623,
+      "digits": 3,
+      "scale": 1
+    },
+    {
+      "key": "mh_lo",
+      "text": "[0.575, 0.675]",
+      "value": 0.575,
+      "digits": 3,
+      "scale": 1
+    },
+    {
+      "key": "mh_hi",
+      "text": "[0.575, 0.675]",
+      "value": 0.675,
+      "digits": 3,
+      "scale": 1
+    },
+    {
+      "key": "mh_I2",
+      "text": "92.7%",
+      "value": 92.7,
+      "digits": 1,
+      "scale": 1
+    }
+  ]
+}

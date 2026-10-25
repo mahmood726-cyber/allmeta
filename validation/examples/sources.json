@@ -1,0 +1,66 @@
+[
+  {
+    "source_package": "metadat",
+    "dataset": "dat.bcg",
+    "content": "H4sIAAAAAAAAA52UwW7TQBCGx6mTYhdoSBCXUsnl0AMiQYhKcAERChESKoI2\n0F43zpK6sb1ovaUqJ3gA3gAOFReQOIAECBAceQDegAMXzkgILoR/m7VxUhUB\nh0+zM56Znd2Z9eKFlZPuiktEY2RbBRorYknF661m7TSRXYBikU0O5HiHqXrb\n78K1ClWb9hksUNjOgRgdD0o6BOwxvnqPCbDXxJS3pUndkCJORGzUcpPL7jp0\nb9ZbCiKeGPvkokh4rFZZ6HHlsdCYD1xiUmnXdbXKZcjijvlwsCmDSHRUbUGE\nIZdDQZNLigd6g5GtbyA8uB1wyYfc3dbVlrfAOpKlxZTnBVd3OEeK81yusd6f\ni9w/L6JECb83ZK1k1llvmbcTxeUu/tlljz8AD8Fj8Aa8BFtGvgPPwBPwCjwH\nr3ONsk1jdKPOghnwYtAk6wfktL5O8NY0cSoXuwGfY5CfieY+EVWfwuUaevuF\nrOUrCK0j9SOiD2is856o8S0XO2Fya/kdHEcuNRgK6ytkDTTAfVPbdC72Lnwq\nkB+JTlwmOnQPxziFeeth3xbR4XPYF6ydwb5HiC5u5WJ1vfClo2AuZ6ua9ZT5\nVjF3MTMymCWJcRDRP2sOC9HKmCm+m+Hvc7nJJuYiYirw/9My/I6LMdNPanBQ\nJzUqGWRTWWJ4SSKdRHuTs2ytbokkW8e8m679nN3/bS+ydshUpoSh2FGNH7Ik\nrSY1uvjVsPpNiUJH3B0pNurpAXQHCxgP6vf7eop+an4B53cfqNIEAAA=\n",
+    "encoding": "base64",
+    "sha": "65156a2716521493f2c7e4a4bacf22deb4c120f3",
+    "display_url": "https://github.com/cran/metadat/blob/master/data/dat.bcg.rda",
+    "display_title": "dat.bcg.rda"
+  },
+  {
+    "source_package": "metadat",
+    "dataset": "dat.konstantopoulos2011",
+    "content": "H4sIAAAAAAAAA6WWa0gUURSAx9mHu5u9H/bUnmYPV82srYjbD3v9kN4h5Z9p\nd8ypdXfbGTfXJHpZEZX0fvwoogiECAIpi3DCip6C9qCgosIKpCLC+lGkdWbm\n3Gm7tYZ14ePMOfecc889d+4wC/MKclwFLo7jLJw1gecsNnjkbEsWz8rwcJyV\nByWBs3JOkMk+QXGvDgZkRQgowVCw1B+UJ2RlZ0Nob5i2A10BCOO6MCQx9Iph\nEIOHYWonmB3D0r+wPA7+3+G3/Iq5zwSA13sHvfqL3hlfTbdhTxMBB6AdgQv7\n2VFeNi7e/J/srC3ePjuqLQnjugHdgR5ATzxr7T3pA/QF+gHJQH9gADAQz38w\nMARIAVKBocAwYDgwAhgJjALSgNFAOjAGGAuMA8YDGYAbyASyAHhHuQlADjAR\nyAUmAZNxf7jPxFqG6wy3Y2B9GxjY+Y5gYzuisRPcQbBmXjsTj3rDNT108pFL\nvZv+ub6qcAxp0LTpa9T7OfogVzQ1dEptNCS5ueBtZUrtQvKg/OXss33Wkad3\ntdFAHqP9XlWhlolcw/lXOP/IWIc0Y94anD+FEvOqZ2v1B1oXxwy1SZtd8E7F\nOLPOc4ad+pHqI9o4quI66gVcn/p/0MssJK24f4xXadwWrGs/xh8z6jLz47x6\n0fAnL9D+OkVzTCW3DDtbD61TfYH9fFOkD5qfNEHW8pdz1If1WiOvkjq0N1fq\niWm/aJ3MZzmxRBTk0rCIV42aLYvy80C04030kLpcUvF+T7Ep6wOHds17Ps2U\nO884stNaoqbcjVUc3qdcXrX+K9G9fMvIaWt/zUK2ox27RUIr8u99rP5mygrM\no7t9eWLqCuNP4/diHdT/4LZxfNLcS+b8gY32kc8yB5EyXJfmiydp/VsxDz3d\n+bjuv0qah827CevfcbwucrNmiikNUWBKeuqsPD/zxO0rm3uRmrZWeLxDzqW1\nlD1o+0Qlc+q2gFAiynjmdjQ6fJKshCWvgrpd9hYHg34aIiulvigq1qgohPGZ\nj0r0KSIx6zjDwbVuupb2meQ3GG83+3dg8/oFmRbE0wJE2Sv4vai54AdCcBeF\nIRsTbPdJKyVFxi+Uc4bDWON/pbGK5TtW5aRXQ5Rph3hZpA1RflqtoYhAu8Z7\naXMsEbNjNln8qViKJBpoKRYV49L9sj1HVHLHnldCTOMZz0gcT+1g9Mvc/gMg\nhCppsgkAAA==\n",
+    "encoding": "base64",
+    "sha": "3e3be19578863bbf571e48f4ca48bfbf102f238d",
+    "display_url": "https://github.com/cran/metadat/blob/master/data/dat.konstantopoulos2011.rda",
+    "display_title": "dat.konstantopoulos2011.rda"
+  },
+  {
+    "source_package": "metadat",
+    "dataset": "dat.molloy2014",
+    "content": "H4sIAAAAAAAAA71WTWgTQRSe/Jkm1fhTL71IQaheEqwVFUF226SNlmpN609B\nQbbJNBmd7MTZiZoK4kHPnhX0YhG89ODFHgTBih5K/cHWUuulZxUF8eDF+HZ3\ntjYj1rQUB76897753tudmd236U8NtkcHowihAAr6/CgQAheFThzvju9HKOiH\nwIeCKAI2ljNEosgoZZXdu9r2QEYTsHbqJgeuamPHZUwti5ktWLQYNLE8vb6T\nl7O4ltuSLHBiCWxaWFE3LZ1pbRkoElHwCiVZQZXHUmxoCK5ay27oypE85sp9\nHIaaVBH2YG6YQhEeYUDWcpv7diQpJpzkC0qFY9jEOaZUyJSJqSw5NiAIpbii\nLPcUwUMYFrpk2XZVd8fDc4B5wHvAK8AkYBowA5gFvJPzUzJ+C/ggNVO/66Ai\nQv7PYPcBzgMOAToAY3D03WAPwEkHwMLzgE4DBOibwd6VuphdR3vx5c7DeOyk\n9uzxuas/5rdrM09vntn5fUKbHllIj229or2B35EFu7YztOfDztAe3LLHbe31\nvdnowdKodt3VP3kEEVDarJ2WHlvMm2h3hvZyPPPxxrZxbdTVK09h0GQmXmO/\noVimgpRoPXPLaev3lTcry5llxS2cFYSZBl2ebiwBXbLJi3jFyrVOXjW1dlet\n3ctGeNuH4xyXGBd/p0JMFDCvc/5f4hXlr6JYnfVr96FGETja1fenW4fkfybK\nfqPvdfuB3jMJXSDzSe9y+4SemnP6iZ5us9tDv55y+4ve0+r0Gz11zc0b0KW9\n7/K9Utf5zekvelLGGalLN7txr9eJFvunT8K/xHp+QPoBhfc4n/KNDZlGEVuy\ncFSSYaMsCoxbXm+oYMPbHb9JPI97XkOWmYIz6unX5bBF8qaMIsbZIjasMvfe\nkkhWIcIQmkZ+MbxQNigRFfVOs9SwvDv1yCj8RTASwxwWocgjnF1KeIuzd85v\nn0O1Wv0K5qeNX+4tnjqKCAAA\n",
+    "encoding": "base64",
+    "sha": "745db09c78a068d45a28f5d8df4cbd8edc2d042d",
+    "display_url": "https://github.com/cran/metadat/blob/master/data/dat.molloy2014.rda",
+    "display_title": "dat.molloy2014.rda"
+  },
+  {
+    "source_package": "metadat",
+    "dataset": "dat.berkey1998",
+    "content": "H4sIAAAAAAAAAwtyiTDmiuBiYGBgZmBhZGJgZgUyGVhDQ9x0LRgYWJiAHEYG\nFgZOIM2Xkliil5RalJ1aaWhpCZRlFgaKgmR4gZgLrBKCmaCYGYpZoJgVigXA\n6iGmCgRkZuQUlxTl5yqkligk5ugREOf1ycxLyUglQpDPOy+/PCe1mBhR/qDE\n3LSs/KIUooR5nVKTs1OL8ArCQ4V9PxTvg+LdUHwYio9AMDwU+aCYH4r9oDgS\nigWQMCwUmQJcYCxHH6qLMTCB3MNlf0+k6qH7OpH9V8BUtf3JmSAwa/9jYzCw\nvwnl79sR+LpVbof9hcXXuWwLluy/DKIWX7d/CBINfLP/xtdD/TEa39DSF3tu\namJxaVEq1GswYSZfFzSFTHmZZATXP6g6Lvs6qPPquziZ7jFcsi+PeCSZqn3F\n3svs0WsZZ137RBOWV149ovZhH9h6d+w6bp9+cO9SwTkP7CMml+zJqvtl3+df\nFn9j7Rr7+Yq65Yb9RzHMzYCqg5nrW7vfo/70JLi5bmjmwuRh5tZC+HBzYebB\n3AtTD3MvzDyYe2HyMPdCzUO4FyU0WfMSc1OLoYHECRMsKcpMzIFy2BJLSzLy\ni6A8lsrUxCKkmIBGXn5pSXJ+bipMohImwVQGYzGXGSKYRplozuAsyi/XgzkF\nFLdMDUDi////6MmELSUzPbOkGBo6jA4gZ4MBiiqOykw9ZI8xIjkMTWUZDpVl\n6CpZk3MSi2HKmGDOSS1OTsxJhvK4gGVkol5aEdA8aJL7BwBMbcK4YgUAAA==\n",
+    "encoding": "base64",
+    "sha": "0c248fcf810111f5b7133d9eebd27dfa97cf00b5",
+    "display_url": "https://github.com/cran/metadat/blob/master/data/dat.berkey1998.rda",
+    "display_title": "dat.berkey1998.rda"
+  },
+  {
+    "source_package": "netmeta",
+    "dataset": "smokingcessation",
+    "content": "H4sIAAAAAAAAA9WUzUobURTH79xJoomKaWtpK4gfKC6E0CRgwUVpkwhVWwVF\nCG7KaMYS00wgM2h3Bpel0JULVy7c9QG6KfgAgk/QFyiF7nVj/E3mTkwmEBAU\nbOB3z/+ce+d83EmymsunYvmYEEIKPSyF1JEhyaKJkIhi43a5Uipan7ZM2zac\nYsUSQn9C3N0bgOdK98FSI48Qc8L76I08QkRgBR7DGwjDkDrTCx9hEJZhXu31\nQH+gzjfvjPyN3cFOYcehAKMwTewUjuEA/zX8Vfkc5lrD/mLvHfoInYQMvIdX\nLXWeebW1kqr/T1m3xjA8gg/wFEpqhgl1xr2b7zAJCzDr3iGMqT70wDzr9HOG\nPeeaXmBfwqa6E2rIn0A/8hJ/Q/Xi5jlkBu5Iu2DvhLRfiM3APiyqPv067vsd\nqbHcBy11vsKPe6wTb9TxvpfaW19kOiIPVmQ6RPZGBObL3rXoWjwocrc53OXx\nFhGYr+OI+G9s+z9k2DLKpq3Gi6pgxNw1LSepPGkl2+KpZjzVFk83476KOFXT\naObxvFSblw60E61W9hJ+S+4vU9ZY6vX6n2DfW58N2+/bD8YKhmMktqs8j3fl\ncg11r5NhJAYAAA==\n",
+    "encoding": "base64",
+    "sha": "53c3c44ce7d62770aec072d284b8a04fcc635ae0",
+    "display_url": "https://github.com/cran/netmeta/blob/master/data/smokingcessation.rda",
+    "display_title": "smokingcessation.rda"
+  },
+  {
+    "source_package": "mada",
+    "dataset": "AuditC",
+    "content": "H4sIAAAAAAAABgtyiTDiiuBiYGBgYmDiY2RgYgYyWZiABCMQcwIxm2NpSmaJ\nMwMDszBICoj5QNjBvYEBBBziobQxA4R2gtIJDhA6FMoPhNLtUPW+UDrxAJRW\ngNA+UHFHqPpkBhiA2KsEFfeEqlOB8jkYUN3BgB04iMD0Q2kLVP32H1DNh9sb\nCfVPIVReA0oHQ92RlYDqzxgovdIEQntD1TXegNBRByB0JJQ2haoPgzsVYm+7\nAER8hgyEzoCqK4S6p/cHVB+UX1UAoZdDIsIhEap+6QkIXQZ1Z3UAhPaByhfA\n/IsS+6x5ibmpxUAGyBUsUEGmkAAYy80PzoKLhfihGcJZlF+uBzOIF6QEZNf/\n//8/oduWnJNYDLMNJsiVkliSqJdWBNQP5P0DYQCAC7/OtgIAAA==\n",
+    "encoding": "base64",
+    "sha": "1430d214ec9797c2105bbbd83e7b45cf9033020a",
+    "display_url": "https://github.com/cran/mada/blob/master/data/AuditC.rda",
+    "display_title": "AuditC.rda"
+  }
+,
+{
+  "source_package": "netmeta",
+  "dataset": "Baker2009",
+  "content": "H4sIAAAAAAAAA82YWWwbRRjHx1dCfCQmSctVSqDlDClpeiUCcdhpCG2aRkmB\nSiBgYk/sVdY70ew6IX0CCQkkEFSgSoB4QBwCHrmEeOIBCYHEUY5yCZ4Q4oEn\nJF4QouE/2W+J49S7seNIRPppd387O9/MN3t8zuTw8T3x43HGWIRFQyEWiWGX\nxe48NtI3yFg0jIMQi7I2bNsyfFaogf7+ITTugmgBaXAfNegeM8WCMM1Fq++Q\ntITds3toaP86zrVl5GJeiwO1RGqCFwoGV1LLQT+ZOMKLplBaDdVWqSy3+XRZ\nGT2YTr+fjGfKqiD8TXLMcBwLEQJcap5b41KqfKBMTgrL4q7b7eNWDXnATyaz\nRT5X4lagG5aWLJZFI659lDuOdMoLPNh6i9IMFZ+Utm34m1RGlW1u56SWe+qW\nnVmu5oUyxWLfwclDm3cmvXJmbDN8PItn0PA3yVFuccvgzXIdUyf4jOKWPbsc\nZm8zdfJoXlqWMINcIqOMQsHWal9thSenNDeNfATKjnFDLEhRpCc8QK96xn1l\nIsOVfjtC7a+t2jJCFH1FYrhs2+4gfFRlpup2U46cxf0V5NrvEmrWsPJKBNt0\nhpdLBa68F+eBAJ8cUULQC8zPtf/3NDTXJg7jfSztIDUhF5QhAlTqbpE/YeSK\ny4/OoK8c5ua4KKjVb611SIjlrzVr/ZT4jPic+II4HcCXxFcb4Osm8E0NzgTw\nbQN8Vyffr8XLP0oqlzARIaJEjGghWonziDYiTiSIZAUpor2KDiJdwflVdFbR\nRXRXsaWKrcQFxIXERcTFxCXENuJSYnsFlxE9xOXEFcSOKnYSVxJXEVdXkGYr\n1WpixCw7Ro7bKEdJtU6YPCempfdpnOJmSThCSfPcDZrQRfyYIR0l54xyqeEY\nQV0ED2LDo2yghyZk9xwt1va6taJRb+AwR6QqyebOAz8Y8gLRjbyoGWXLSpve\noCFswqwbWIqNhmxyUoLv0HUsXAOrHxxlTZ/15an+iFUN/MP9P98Nm3771ZuU\njWZ5zeUNr8pKEaH/dNFwA7gR9AFd5G0jp4+vRZ2Bj2VoO7XXRYcuFDrp44jz\n7CPwAtgLhsERMAnupf7j5G6h80dBGRwGD4Mn6frXwNvgCfA8+BnooudH8Du4\nn8apr78N3A7uYG5BoMeiP+L7mFvo6DHqMe8krz/4Sxj+NcwtkNqpjS4u3gET\n4C+c1/MP0zx14fQ0eJnmrn03XdPl9ht5EbwCkNfIJ3AoTNkfFBs5DD0LHmMr\nhVhLRf69YuxX8Avl4XHwKHgK1+kC6ANsHaCYW7zsoLUZAI+4bcOYe8jGvo6P\n4puhsGZn6DhNc30dYKzsVfAu2r+B7U/YYn6hU+AkCLk5Ymepvpyn2DPAQJzr\nsNV9vQfeBG+B92n9dazTAD8G2APgHrQdBQexj2KW/YD8IFbkGeyPAO2z7vpF\nUXCH4EN/AsRmN9M634rjm4A+7gXXg5NubtjH4EPUuGgfQ75j/wB9/d/gN+of\nfYcRM/zc6vyv+p9kzOIlYVOiWjxpO+X8Ih1EFwVXtB828t4PZkcJ7pSE5XjN\nxIM8513vSIeb1ZFyJre9SJ6M57nDd80oDKL6n6VKLuzyBqfvmPBDenmWll5y\nV4id/RciFsBZehUAAA==\n",
+  "encoding": "base64",
+  "sha": "b44dc87949b01c2b927e85b64c182da47811fd0e",
+  "display_url": "https://github.com/cran/netmeta/blob/master/data/Baker2009.rda",
+  "display_title": "Baker2009.rda"
+}
+]

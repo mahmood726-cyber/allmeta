@@ -1,0 +1,2035 @@
+{
+  "app": "influence",
+  "dataset": "dat.bcg",
+  "source_package": "metadat",
+  "version": "1.6-0",
+  "source_blob": "65156a2716521493f2c7e4a4bacf22deb4c120f3",
+  "citation": "Colditz GA et al. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: meta-analysis of the published literature. JAMA 271:698–702. doi:10.1001/jama.1994.03510330076038.",
+  "input": "-0.8893113339202054, 0.5706003548929507, Aronson 1948 [trial 1]\n-1.5853886572014306, 0.44111350171825825, Ferguson & Simes 1949 [trial 2]\n-1.348073148299693, 0.644490469571091, Rosenthal et al 1960 [trial 3]\n-1.4415511900213054, 0.14145681992130169, Hart & Sutherland 1977 [trial 4]\n-0.2175473222112957, 0.2262966463950159, Frimodt-Moller et al 1973 [trial 5]\n-0.786115585818864, 0.08310005087789513, Stein & Aronson 1953 [trial 6]\n-1.6208982235983924, 0.4722470196542432, Vandiviere et al 1973 [trial 7]\n0.011952333523841173, 0.06294107798423641, TPT Madras 1980 [trial 8]\n-0.4694176487381487, 0.2375588568402554, Coetzee & Berjak 1968 [trial 9]\n-1.3713448034727846, 0.27023100046632126, Rosenthal et al 1961 [trial 10]\n-0.33935882833839015, 0.11141011610962319, Comstock et al 1974 [trial 11]\n0.4459134005713783, 0.7297299810204818, Comstock & Webster 1969 [trial 12]\n-0.017313948216879493, 0.26721650339001574, Comstock et al 1976 [trial 13]",
+  "projection": {
+    "rows": [
+      {
+        "row": 1,
+        "study": "Aronson 1948 [trial 1]",
+        "yi": -0.8893113339202054,
+        "vi": 0.32558476500396133,
+        "se": 0.5706003548929507,
+        "year": 1948,
+        "moderator": 44,
+        "group": "random"
+      },
+      {
+        "row": 2,
+        "study": "Ferguson & Simes 1949 [trial 2]",
+        "yi": -1.5853886572014306,
+        "vi": 0.19458112139814385,
+        "se": 0.44111350171825825,
+        "year": 1949,
+        "moderator": 55,
+        "group": "random"
+      },
+      {
+        "row": 3,
+        "study": "Rosenthal et al 1960 [trial 3]",
+        "yi": -1.348073148299693,
+        "vi": 0.4153679653679654,
+        "se": 0.644490469571091,
+        "year": 1960,
+        "moderator": 42,
+        "group": "random"
+      },
+      {
+        "row": 4,
+        "study": "Hart & Sutherland 1977 [trial 4]",
+        "yi": -1.4415511900213054,
+        "vi": 0.020010031902247573,
+        "se": 0.14145681992130169,
+        "year": 1977,
+        "moderator": 52,
+        "group": "random"
+      },
+      {
+        "row": 5,
+        "study": "Frimodt-Moller et al 1973 [trial 5]",
+        "yi": -0.2175473222112957,
+        "vi": 0.05121017216963086,
+        "se": 0.2262966463950159,
+        "year": 1973,
+        "moderator": 13,
+        "group": "alternate"
+      },
+      {
+        "row": 6,
+        "study": "Stein & Aronson 1953 [trial 6]",
+        "yi": -0.786115585818864,
+        "vi": 0.0069056184559087574,
+        "se": 0.08310005087789513,
+        "year": 1953,
+        "moderator": 44,
+        "group": "alternate"
+      },
+      {
+        "row": 7,
+        "study": "Vandiviere et al 1973 [trial 7]",
+        "yi": -1.6208982235983924,
+        "vi": 0.22301724757231517,
+        "se": 0.4722470196542432,
+        "year": 1973,
+        "moderator": 19,
+        "group": "random"
+      },
+      {
+        "row": 8,
+        "study": "TPT Madras 1980 [trial 8]",
+        "yi": 0.011952333523841173,
+        "vi": 0.0039615792978177295,
+        "se": 0.06294107798423641,
+        "year": 1980,
+        "moderator": 13,
+        "group": "random"
+      },
+      {
+        "row": 9,
+        "study": "Coetzee & Berjak 1968 [trial 9]",
+        "yi": -0.4694176487381487,
+        "vi": 0.056434210463248966,
+        "se": 0.2375588568402554,
+        "year": 1968,
+        "moderator": 27,
+        "group": "random"
+      },
+      {
+        "row": 10,
+        "study": "Rosenthal et al 1961 [trial 10]",
+        "yi": -1.3713448034727846,
+        "vi": 0.07302479361302891,
+        "se": 0.27023100046632126,
+        "year": 1961,
+        "moderator": 42,
+        "group": "systematic"
+      },
+      {
+        "row": 11,
+        "study": "Comstock et al 1974 [trial 11]",
+        "yi": -0.33935882833839015,
+        "vi": 0.01241221397155972,
+        "se": 0.11141011610962319,
+        "year": 1974,
+        "moderator": 18,
+        "group": "systematic"
+      },
+      {
+        "row": 12,
+        "study": "Comstock & Webster 1969 [trial 12]",
+        "yi": 0.4459134005713783,
+        "vi": 0.5325058452001528,
+        "se": 0.7297299810204818,
+        "year": 1969,
+        "moderator": 33,
+        "group": "systematic"
+      },
+      {
+        "row": 13,
+        "study": "Comstock et al 1976 [trial 13]",
+        "yi": -0.017313948216879493,
+        "vi": 0.0714046596839863,
+        "se": 0.26721650339001574,
+        "year": 1976,
+        "moderator": 33,
+        "group": "systematic"
+      }
+    ],
+    "excluded": [],
+    "text": "-0.8893113339202054, 0.5706003548929507, Aronson 1948 [trial 1]\n-1.5853886572014306, 0.44111350171825825, Ferguson & Simes 1949 [trial 2]\n-1.348073148299693, 0.644490469571091, Rosenthal et al 1960 [trial 3]\n-1.4415511900213054, 0.14145681992130169, Hart & Sutherland 1977 [trial 4]\n-0.2175473222112957, 0.2262966463950159, Frimodt-Moller et al 1973 [trial 5]\n-0.786115585818864, 0.08310005087789513, Stein & Aronson 1953 [trial 6]\n-1.6208982235983924, 0.4722470196542432, Vandiviere et al 1973 [trial 7]\n0.011952333523841173, 0.06294107798423641, TPT Madras 1980 [trial 8]\n-0.4694176487381487, 0.2375588568402554, Coetzee & Berjak 1968 [trial 9]\n-1.3713448034727846, 0.27023100046632126, Rosenthal et al 1961 [trial 10]\n-0.33935882833839015, 0.11141011610962319, Comstock et al 1974 [trial 11]\n0.4459134005713783, 0.7297299810204818, Comstock & Webster 1969 [trial 12]\n-0.017313948216879493, 0.26721650339001574, Comstock et al 1976 [trial 13]"
+  },
+  "options": {},
+  "packages": [
+    "metafor"
+  ],
+  "script": "yi <- c(-0.8893113339202054,-1.5853886572014306,-1.348073148299693,-1.4415511900213054,-0.2175473222112957,-0.786115585818864,-1.6208982235983924,0.011952333523841173,-0.4694176487381487,-1.3713448034727846,-0.33935882833839015,0.4459134005713783,-0.017313948216879493)\nvi <- c(0.3255847650039613,0.19458112139814382,0.4153679653679654,0.020010031902247573,0.05121017216963086,0.006905618455908758,0.22301724757231517,0.0039615792978177295,0.056434210463248966,0.07302479361302892,0.01241221397155972,0.5325058452001528,0.0714046596839863)\nres <- metafor::rma(yi,vi,method='REML',control=list(threshold=1e-12,maxiter=10000))\nloo <- metafor::leave1out(res)\ninf <- influence(res)\npdf(NULL)\nbj <- metafor::baujat(res)\nfe <- metafor::rma(yi,vi,method='FE')\nrad <- metafor::radial(fe)\ndev.off()\nout <- list()\nput <- function(q,x) {for(i in seq_along(x))out[[paste0(q,'.',i-1)]] <<- x[i]}\nout[['full.mu']] <- as.numeric(coef(res));out[['full.seMu']]<-res$se\nout[['full.tau2']]<-res$tau2;out[['full.Q']]<-res$QE;out[['full.df']]<-res$k-1\nw<-1/(vi+res$tau2);out[['full.swRE']]<-sum(w);put('full.wRE',w)\nput('loo_mu',loo$estimate);put('loo_seMu',loo$se);put('loo.ci.lb',loo$ci.lb);put('loo.ci.ub',loo$ci.ub)\nput('resid',inf$inf$rstudent);put('dffits',inf$inf$dffits);put('cooksD',inf$inf$cook.d);put('covRatio',inf$inf$cov.r);put('hat',inf$inf$hat)\nstopifnot(is.logical(inf$is.infl),!anyNA(inf$is.infl))\nput('flags',as.numeric(inf$is.infl));put('weight.percent',inf$inf$weight)\nput('baujat.REML.x',bj$x);put('baujat.REML.y',bj$y)\nput('radial.x',rad$x);put('radial.z',rad$y);put('radial.resid',rad$y-as.numeric(coef(fe))*rad$x)\nout[['radial.slope']]<-as.numeric(coef(fe))\nemit <- function(x) {stopifnot(is.numeric(x),length(x)==1);if(is.na(x)&&!is.nan(x))'null' else {stopifnot(is.finite(x));sprintf('%.17g',x)}}\ncat('ALMJSON:{',paste(paste0('\"',names(out),'\":',vapply(out,emit,'')),collapse=','),'}\\n',sep='')",
+  "compare": {
+    "tolerance": {
+      "default": 0.000001,
+      "full.mu": 0.000001,
+      "full.seMu": 0.000001,
+      "full.tau2": 0.000001,
+      "full.Q": 1e-9,
+      "full.df": 1e-9,
+      "full.swRE": 0.000001,
+      "full.wRE.0": 0.000001,
+      "loo_mu.0": 0.000001,
+      "loo_seMu.0": 0.000001,
+      "resid.0": 0.000001,
+      "dffits.0": 0.000001,
+      "cooksD.0": 0.000001,
+      "covRatio.0": 0.000001,
+      "hat.0": 0.000001,
+      "loo.ci.lb.0": 0.000001,
+      "loo.ci.ub.0": 0.000001,
+      "flags.0": 0,
+      "weight.percent.0": 0.000001,
+      "baujat.REML.x.0": 0.000001,
+      "baujat.REML.y.0": 0.000001,
+      "radial.x.0": 1e-9,
+      "radial.z.0": 1e-9,
+      "radial.resid.0": 1e-9,
+      "full.wRE.1": 0.000001,
+      "loo_mu.1": 0.000001,
+      "loo_seMu.1": 0.000001,
+      "resid.1": 0.000001,
+      "dffits.1": 0.000001,
+      "cooksD.1": 0.000001,
+      "covRatio.1": 0.000001,
+      "hat.1": 0.000001,
+      "loo.ci.lb.1": 0.000001,
+      "loo.ci.ub.1": 0.000001,
+      "flags.1": 0,
+      "weight.percent.1": 0.000001,
+      "baujat.REML.x.1": 0.000001,
+      "baujat.REML.y.1": 0.000001,
+      "radial.x.1": 1e-9,
+      "radial.z.1": 1e-9,
+      "radial.resid.1": 1e-9,
+      "full.wRE.2": 0.000001,
+      "loo_mu.2": 0.000001,
+      "loo_seMu.2": 0.000001,
+      "resid.2": 0.000001,
+      "dffits.2": 0.000001,
+      "cooksD.2": 0.000001,
+      "covRatio.2": 0.000001,
+      "hat.2": 0.000001,
+      "loo.ci.lb.2": 0.000001,
+      "loo.ci.ub.2": 0.000001,
+      "flags.2": 0,
+      "weight.percent.2": 0.000001,
+      "baujat.REML.x.2": 0.000001,
+      "baujat.REML.y.2": 0.000001,
+      "radial.x.2": 1e-9,
+      "radial.z.2": 1e-9,
+      "radial.resid.2": 1e-9,
+      "full.wRE.3": 0.000001,
+      "loo_mu.3": 0.000001,
+      "loo_seMu.3": 0.000001,
+      "resid.3": 0.000001,
+      "dffits.3": 0.000001,
+      "cooksD.3": 0.000001,
+      "covRatio.3": 0.000001,
+      "hat.3": 0.000001,
+      "loo.ci.lb.3": 0.000001,
+      "loo.ci.ub.3": 0.000001,
+      "flags.3": 0,
+      "weight.percent.3": 0.000001,
+      "baujat.REML.x.3": 0.000001,
+      "baujat.REML.y.3": 0.000001,
+      "radial.x.3": 1e-9,
+      "radial.z.3": 1e-9,
+      "radial.resid.3": 1e-9,
+      "full.wRE.4": 0.000001,
+      "loo_mu.4": 0.000001,
+      "loo_seMu.4": 0.000001,
+      "resid.4": 0.000001,
+      "dffits.4": 0.000001,
+      "cooksD.4": 0.000001,
+      "covRatio.4": 0.000001,
+      "hat.4": 0.000001,
+      "loo.ci.lb.4": 0.000001,
+      "loo.ci.ub.4": 0.000001,
+      "flags.4": 0,
+      "weight.percent.4": 0.000001,
+      "baujat.REML.x.4": 0.000001,
+      "baujat.REML.y.4": 0.000001,
+      "radial.x.4": 1e-9,
+      "radial.z.4": 1e-9,
+      "radial.resid.4": 1e-9,
+      "full.wRE.5": 0.000001,
+      "loo_mu.5": 0.000001,
+      "loo_seMu.5": 0.000001,
+      "resid.5": 0.000001,
+      "dffits.5": 0.000001,
+      "cooksD.5": 0.000001,
+      "covRatio.5": 0.000001,
+      "hat.5": 0.000001,
+      "loo.ci.lb.5": 0.000001,
+      "loo.ci.ub.5": 0.000001,
+      "flags.5": 0,
+      "weight.percent.5": 0.000001,
+      "baujat.REML.x.5": 0.000001,
+      "baujat.REML.y.5": 0.000001,
+      "radial.x.5": 1e-9,
+      "radial.z.5": 1e-9,
+      "radial.resid.5": 1e-9,
+      "full.wRE.6": 0.000001,
+      "loo_mu.6": 0.000001,
+      "loo_seMu.6": 0.000001,
+      "resid.6": 0.000001,
+      "dffits.6": 0.000001,
+      "cooksD.6": 0.000001,
+      "covRatio.6": 0.000001,
+      "hat.6": 0.000001,
+      "loo.ci.lb.6": 0.000001,
+      "loo.ci.ub.6": 0.000001,
+      "flags.6": 0,
+      "weight.percent.6": 0.000001,
+      "baujat.REML.x.6": 0.000001,
+      "baujat.REML.y.6": 0.000001,
+      "radial.x.6": 1e-9,
+      "radial.z.6": 1e-9,
+      "radial.resid.6": 1e-9,
+      "full.wRE.7": 0.000001,
+      "loo_mu.7": 0.000001,
+      "loo_seMu.7": 0.000001,
+      "resid.7": 0.000001,
+      "dffits.7": 0.000001,
+      "cooksD.7": 0.000001,
+      "covRatio.7": 0.000001,
+      "hat.7": 0.000001,
+      "loo.ci.lb.7": 0.000001,
+      "loo.ci.ub.7": 0.000001,
+      "flags.7": 0,
+      "weight.percent.7": 0.000001,
+      "baujat.REML.x.7": 0.000001,
+      "baujat.REML.y.7": 0.000001,
+      "radial.x.7": 1e-9,
+      "radial.z.7": 1e-9,
+      "radial.resid.7": 1e-9,
+      "full.wRE.8": 0.000001,
+      "loo_mu.8": 0.000001,
+      "loo_seMu.8": 0.000001,
+      "resid.8": 0.000001,
+      "dffits.8": 0.000001,
+      "cooksD.8": 0.000001,
+      "covRatio.8": 0.000001,
+      "hat.8": 0.000001,
+      "loo.ci.lb.8": 0.000001,
+      "loo.ci.ub.8": 0.000001,
+      "flags.8": 0,
+      "weight.percent.8": 0.000001,
+      "baujat.REML.x.8": 0.000001,
+      "baujat.REML.y.8": 0.000001,
+      "radial.x.8": 1e-9,
+      "radial.z.8": 1e-9,
+      "radial.resid.8": 1e-9,
+      "full.wRE.9": 0.000001,
+      "loo_mu.9": 0.000001,
+      "loo_seMu.9": 0.000001,
+      "resid.9": 0.000001,
+      "dffits.9": 0.000001,
+      "cooksD.9": 0.000001,
+      "covRatio.9": 0.000001,
+      "hat.9": 0.000001,
+      "loo.ci.lb.9": 0.000001,
+      "loo.ci.ub.9": 0.000001,
+      "flags.9": 0,
+      "weight.percent.9": 0.000001,
+      "baujat.REML.x.9": 0.000001,
+      "baujat.REML.y.9": 0.000001,
+      "radial.x.9": 1e-9,
+      "radial.z.9": 1e-9,
+      "radial.resid.9": 1e-9,
+      "full.wRE.10": 0.000001,
+      "loo_mu.10": 0.000001,
+      "loo_seMu.10": 0.000001,
+      "resid.10": 0.000001,
+      "dffits.10": 0.000001,
+      "cooksD.10": 0.000001,
+      "covRatio.10": 0.000001,
+      "hat.10": 0.000001,
+      "loo.ci.lb.10": 0.000001,
+      "loo.ci.ub.10": 0.000001,
+      "flags.10": 0,
+      "weight.percent.10": 0.000001,
+      "baujat.REML.x.10": 0.000001,
+      "baujat.REML.y.10": 0.000001,
+      "radial.x.10": 1e-9,
+      "radial.z.10": 1e-9,
+      "radial.resid.10": 1e-9,
+      "full.wRE.11": 0.000001,
+      "loo_mu.11": 0.000001,
+      "loo_seMu.11": 0.000001,
+      "resid.11": 0.000001,
+      "dffits.11": 0.000001,
+      "cooksD.11": 0.000001,
+      "covRatio.11": 0.000001,
+      "hat.11": 0.000001,
+      "loo.ci.lb.11": 0.000001,
+      "loo.ci.ub.11": 0.000001,
+      "flags.11": 0,
+      "weight.percent.11": 0.000001,
+      "baujat.REML.x.11": 0.000001,
+      "baujat.REML.y.11": 0.000001,
+      "radial.x.11": 1e-9,
+      "radial.z.11": 1e-9,
+      "radial.resid.11": 1e-9,
+      "full.wRE.12": 0.000001,
+      "loo_mu.12": 0.000001,
+      "loo_seMu.12": 0.000001,
+      "resid.12": 0.000001,
+      "dffits.12": 0.000001,
+      "cooksD.12": 0.000001,
+      "covRatio.12": 0.000001,
+      "hat.12": 0.000001,
+      "loo.ci.lb.12": 0.000001,
+      "loo.ci.ub.12": 0.000001,
+      "flags.12": 0,
+      "weight.percent.12": 0.000001,
+      "baujat.REML.x.12": 0.000001,
+      "baujat.REML.y.12": 0.000001,
+      "radial.x.12": 1e-9,
+      "radial.z.12": 1e-9,
+      "radial.resid.12": 1e-9,
+      "radial.slope": 1e-9
+    },
+    "kind": {
+      "full.mu": "rel",
+      "full.seMu": "rel",
+      "full.tau2": "rel",
+      "full.Q": "rel",
+      "full.df": "rel",
+      "full.swRE": "rel",
+      "full.wRE.0": "rel",
+      "loo_mu.0": "rel",
+      "loo_seMu.0": "rel",
+      "resid.0": "rel",
+      "dffits.0": "rel",
+      "cooksD.0": "rel",
+      "covRatio.0": "rel",
+      "hat.0": "rel",
+      "loo.ci.lb.0": "rel",
+      "loo.ci.ub.0": "rel",
+      "flags.0": "rel",
+      "weight.percent.0": "rel",
+      "baujat.REML.x.0": "rel",
+      "baujat.REML.y.0": "rel",
+      "radial.x.0": "rel",
+      "radial.z.0": "rel",
+      "radial.resid.0": "rel",
+      "full.wRE.1": "rel",
+      "loo_mu.1": "rel",
+      "loo_seMu.1": "rel",
+      "resid.1": "rel",
+      "dffits.1": "rel",
+      "cooksD.1": "rel",
+      "covRatio.1": "rel",
+      "hat.1": "rel",
+      "loo.ci.lb.1": "rel",
+      "loo.ci.ub.1": "rel",
+      "flags.1": "rel",
+      "weight.percent.1": "rel",
+      "baujat.REML.x.1": "rel",
+      "baujat.REML.y.1": "rel",
+      "radial.x.1": "rel",
+      "radial.z.1": "rel",
+      "radial.resid.1": "rel",
+      "full.wRE.2": "rel",
+      "loo_mu.2": "rel",
+      "loo_seMu.2": "rel",
+      "resid.2": "rel",
+      "dffits.2": "rel",
+      "cooksD.2": "rel",
+      "covRatio.2": "rel",
+      "hat.2": "rel",
+      "loo.ci.lb.2": "rel",
+      "loo.ci.ub.2": "rel",
+      "flags.2": "rel",
+      "weight.percent.2": "rel",
+      "baujat.REML.x.2": "rel",
+      "baujat.REML.y.2": "rel",
+      "radial.x.2": "rel",
+      "radial.z.2": "rel",
+      "radial.resid.2": "rel",
+      "full.wRE.3": "rel",
+      "loo_mu.3": "rel",
+      "loo_seMu.3": "rel",
+      "resid.3": "rel",
+      "dffits.3": "rel",
+      "cooksD.3": "rel",
+      "covRatio.3": "rel",
+      "hat.3": "rel",
+      "loo.ci.lb.3": "rel",
+      "loo.ci.ub.3": "rel",
+      "flags.3": "rel",
+      "weight.percent.3": "rel",
+      "baujat.REML.x.3": "rel",
+      "baujat.REML.y.3": "rel",
+      "radial.x.3": "rel",
+      "radial.z.3": "rel",
+      "radial.resid.3": "rel",
+      "full.wRE.4": "rel",
+      "loo_mu.4": "rel",
+      "loo_seMu.4": "rel",
+      "resid.4": "rel",
+      "dffits.4": "rel",
+      "cooksD.4": "rel",
+      "covRatio.4": "rel",
+      "hat.4": "rel",
+      "loo.ci.lb.4": "rel",
+      "loo.ci.ub.4": "rel",
+      "flags.4": "rel",
+      "weight.percent.4": "rel",
+      "baujat.REML.x.4": "rel",
+      "baujat.REML.y.4": "rel",
+      "radial.x.4": "rel",
+      "radial.z.4": "rel",
+      "radial.resid.4": "rel",
+      "full.wRE.5": "rel",
+      "loo_mu.5": "rel",
+      "loo_seMu.5": "rel",
+      "resid.5": "rel",
+      "dffits.5": "rel",
+      "cooksD.5": "rel",
+      "covRatio.5": "rel",
+      "hat.5": "rel",
+      "loo.ci.lb.5": "rel",
+      "loo.ci.ub.5": "rel",
+      "flags.5": "rel",
+      "weight.percent.5": "rel",
+      "baujat.REML.x.5": "rel",
+      "baujat.REML.y.5": "rel",
+      "radial.x.5": "rel",
+      "radial.z.5": "rel",
+      "radial.resid.5": "rel",
+      "full.wRE.6": "rel",
+      "loo_mu.6": "rel",
+      "loo_seMu.6": "rel",
+      "resid.6": "rel",
+      "dffits.6": "rel",
+      "cooksD.6": "rel",
+      "covRatio.6": "rel",
+      "hat.6": "rel",
+      "loo.ci.lb.6": "rel",
+      "loo.ci.ub.6": "rel",
+      "flags.6": "rel",
+      "weight.percent.6": "rel",
+      "baujat.REML.x.6": "rel",
+      "baujat.REML.y.6": "rel",
+      "radial.x.6": "rel",
+      "radial.z.6": "rel",
+      "radial.resid.6": "rel",
+      "full.wRE.7": "rel",
+      "loo_mu.7": "rel",
+      "loo_seMu.7": "rel",
+      "resid.7": "rel",
+      "dffits.7": "rel",
+      "cooksD.7": "rel",
+      "covRatio.7": "rel",
+      "hat.7": "rel",
+      "loo.ci.lb.7": "rel",
+      "loo.ci.ub.7": "rel",
+      "flags.7": "rel",
+      "weight.percent.7": "rel",
+      "baujat.REML.x.7": "rel",
+      "baujat.REML.y.7": "rel",
+      "radial.x.7": "rel",
+      "radial.z.7": "rel",
+      "radial.resid.7": "rel",
+      "full.wRE.8": "rel",
+      "loo_mu.8": "rel",
+      "loo_seMu.8": "rel",
+      "resid.8": "rel",
+      "dffits.8": "rel",
+      "cooksD.8": "rel",
+      "covRatio.8": "rel",
+      "hat.8": "rel",
+      "loo.ci.lb.8": "rel",
+      "loo.ci.ub.8": "rel",
+      "flags.8": "rel",
+      "weight.percent.8": "rel",
+      "baujat.REML.x.8": "rel",
+      "baujat.REML.y.8": "rel",
+      "radial.x.8": "rel",
+      "radial.z.8": "rel",
+      "radial.resid.8": "rel",
+      "full.wRE.9": "rel",
+      "loo_mu.9": "rel",
+      "loo_seMu.9": "rel",
+      "resid.9": "rel",
+      "dffits.9": "rel",
+      "cooksD.9": "rel",
+      "covRatio.9": "rel",
+      "hat.9": "rel",
+      "loo.ci.lb.9": "rel",
+      "loo.ci.ub.9": "rel",
+      "flags.9": "rel",
+      "weight.percent.9": "rel",
+      "baujat.REML.x.9": "rel",
+      "baujat.REML.y.9": "rel",
+      "radial.x.9": "rel",
+      "radial.z.9": "rel",
+      "radial.resid.9": "rel",
+      "full.wRE.10": "rel",
+      "loo_mu.10": "rel",
+      "loo_seMu.10": "rel",
+      "resid.10": "rel",
+      "dffits.10": "rel",
+      "cooksD.10": "rel",
+      "covRatio.10": "rel",
+      "hat.10": "rel",
+      "loo.ci.lb.10": "rel",
+      "loo.ci.ub.10": "rel",
+      "flags.10": "rel",
+      "weight.percent.10": "rel",
+      "baujat.REML.x.10": "rel",
+      "baujat.REML.y.10": "rel",
+      "radial.x.10": "rel",
+      "radial.z.10": "rel",
+      "radial.resid.10": "rel",
+      "full.wRE.11": "rel",
+      "loo_mu.11": "rel",
+      "loo_seMu.11": "rel",
+      "resid.11": "rel",
+      "dffits.11": "rel",
+      "cooksD.11": "rel",
+      "covRatio.11": "rel",
+      "hat.11": "rel",
+      "loo.ci.lb.11": "rel",
+      "loo.ci.ub.11": "rel",
+      "flags.11": "rel",
+      "weight.percent.11": "rel",
+      "baujat.REML.x.11": "rel",
+      "baujat.REML.y.11": "rel",
+      "radial.x.11": "rel",
+      "radial.z.11": "rel",
+      "radial.resid.11": "rel",
+      "full.wRE.12": "rel",
+      "loo_mu.12": "rel",
+      "loo_seMu.12": "rel",
+      "resid.12": "rel",
+      "dffits.12": "rel",
+      "cooksD.12": "rel",
+      "covRatio.12": "rel",
+      "hat.12": "rel",
+      "loo.ci.lb.12": "rel",
+      "loo.ci.ub.12": "rel",
+      "flags.12": "rel",
+      "weight.percent.12": "rel",
+      "baujat.REML.x.12": "rel",
+      "baujat.REML.y.12": "rel",
+      "radial.x.12": "rel",
+      "radial.z.12": "rel",
+      "radial.resid.12": "rel",
+      "radial.slope": "rel"
+    }
+  },
+  "appValues": [
+    {
+      "key": "full.mu",
+      "label": "full.mu",
+      "value": -0.7145323421581392,
+      "tol": 0.000001
+    },
+    {
+      "key": "full.seMu",
+      "label": "full.seMu",
+      "value": 0.17978151610520576,
+      "tol": 0.000001
+    },
+    {
+      "key": "full.tau2",
+      "label": "full.tau2",
+      "value": 0.313243258136481,
+      "tol": 0.000001
+    },
+    {
+      "key": "full.Q",
+      "label": "full.Q",
+      "value": 152.2330080823734,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.df",
+      "label": "full.df",
+      "value": 12,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.swRE",
+      "label": "full.swRE",
+      "value": 30.939260059326724,
+      "tol": 0.000001
+    },
+    {
+      "key": "full.wRE.0",
+      "label": "full.wRE.0",
+      "value": 1.5653665208424277,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.0",
+      "label": "loo_mu.0",
+      "value": -0.7070837846992581,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.0",
+      "label": "loo_seMu.0",
+      "value": 0.18996101452886832,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.0",
+      "label": "resid.0",
+      "value": -0.21814248573608946,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.0",
+      "label": "dffits.0",
+      "value": -0.040707547501259586,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.0",
+      "label": "cooksD.0",
+      "value": 0.001716541341618166,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.0",
+      "label": "covRatio.0",
+      "value": 1.1164489861459002,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.0",
+      "label": "hat.0",
+      "value": 0.05059482734366634,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.0",
+      "label": "loo.ci.lb.0",
+      "value": -1.0794005316425301,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.0",
+      "label": "loo.ci.ub.0",
+      "value": -0.33476703775598626,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.0",
+      "label": "flags.0",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.0",
+      "label": "weight.percent.0",
+      "value": 5.059482734366634,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.0",
+      "label": "baujat.REML.x.0",
+      "value": 0.0478183405467933,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.0",
+      "label": "baujat.REML.y.0",
+      "value": 0.0015375009184645757,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.0",
+      "label": "radial.x.0",
+      "value": 1.7525400947000958,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.0",
+      "label": "radial.z.0",
+      "value": -1.5585537693663853,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.0",
+      "label": "radial.resid.0",
+      "value": -0.8044617679079993,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.1",
+      "label": "full.wRE.1",
+      "value": 1.9691847030195941,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.1",
+      "label": "loo_mu.1",
+      "value": -0.6540312002935262,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.1",
+      "label": "loo_seMu.1",
+      "value": 0.18069538623299397,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.1",
+      "label": "resid.1",
+      "value": -1.29179018551299,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.1",
+      "label": "dffits.1",
+      "value": -0.3435877098508964,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.1",
+      "label": "cooksD.1",
+      "value": 0.11324970141448278,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.1",
+      "label": "covRatio.1",
+      "value": 1.0101922917546016,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.1",
+      "label": "hat.1",
+      "value": 0.0636467937256301,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.1",
+      "label": "loo.ci.lb.1",
+      "value": -1.008187649482749,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.1",
+      "label": "loo.ci.ub.1",
+      "value": -0.29987475110430334,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.1",
+      "label": "flags.1",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.1",
+      "label": "weight.percent.1",
+      "value": 6.36467937256301,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.1",
+      "label": "baujat.REML.x.1",
+      "value": 1.4934114075928708,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.1",
+      "label": "baujat.REML.y.1",
+      "value": 0.11210707341448777,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.1",
+      "label": "radial.x.1",
+      "value": 2.2669902329099547,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.1",
+      "label": "radial.z.1",
+      "value": -3.5940606012418717,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.1",
+      "label": "radial.resid.1",
+      "value": -2.618608337871987,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.2",
+      "label": "full.wRE.2",
+      "value": 1.3724740543938347,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.2",
+      "label": "loo_mu.2",
+      "value": -0.6855544108366171,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.2",
+      "label": "loo_seMu.2",
+      "value": 0.1857061967395184,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.2",
+      "label": "resid.2",
+      "value": -0.7547197657482373,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.2",
+      "label": "dffits.2",
+      "value": -0.16036150401553093,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.2",
+      "label": "cooksD.2",
+      "value": 0.025980331040345157,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.2",
+      "label": "covRatio.2",
+      "value": 1.0669958110609836,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.2",
+      "label": "hat.2",
+      "value": 0.04436027402601371,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.2",
+      "label": "loo.ci.lb.2",
+      "value": -1.0495318681519827,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.2",
+      "label": "loo.ci.ub.2",
+      "value": -0.3215769535212514,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.2",
+      "label": "flags.2",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.2",
+      "label": "weight.percent.2",
+      "value": 4.436027402601371,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.2",
+      "label": "baujat.REML.x.2",
+      "value": 0.5508753366657966,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.2",
+      "label": "baujat.REML.y.2",
+      "value": 0.02434904689504939,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.2",
+      "label": "radial.x.2",
+      "value": 1.5516133243452008,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.2",
+      "label": "radial.z.2",
+      "value": -2.0916882590937877,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.2",
+      "label": "radial.resid.2",
+      "value": -1.4240520659000455,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.3",
+      "label": "full.wRE.3",
+      "value": 3.0007205626800753,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.3",
+      "label": "loo_mu.3",
+      "value": -0.6284093698076738,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.3",
+      "label": "loo_seMu.3",
+      "value": 0.17661889178477558,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.3",
+      "label": "resid.3",
+      "value": -1.4512006642510218,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.3",
+      "label": "dffits.3",
+      "value": -0.5200509884698525,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.3",
+      "label": "cooksD.3",
+      "value": 0.22948163911578617,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.3",
+      "label": "covRatio.3",
+      "value": 0.965126485135913,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.3",
+      "label": "hat.3",
+      "value": 0.09698747018920706,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.3",
+      "label": "loo.ci.lb.3",
+      "value": -0.9745760366952112,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.3",
+      "label": "loo.ci.ub.3",
+      "value": -0.2822427029201365,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.3",
+      "label": "flags.3",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.3",
+      "label": "weight.percent.3",
+      "value": 9.698747018920706,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.3",
+      "label": "baujat.REML.x.3",
+      "value": 1.5860500734647214,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.3",
+      "label": "baujat.REML.y.3",
+      "value": 0.23777364174548543,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.3",
+      "label": "radial.x.3",
+      "value": 7.069295072208901,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.3",
+      "label": "radial.z.3",
+      "value": -10.190750723954492,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.3",
+      "label": "radial.resid.3",
+      "value": -7.148937936890029,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.4",
+      "label": "full.wRE.4",
+      "value": 2.7438347861346224,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.4",
+      "label": "loo_mu.4",
+      "value": -0.7641700951402552,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.4",
+      "label": "loo_seMu.4",
+      "value": 0.19178764474374033,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.4",
+      "label": "resid.4",
+      "value": 0.8477105775974811,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.4",
+      "label": "dffits.4",
+      "value": 0.27074521821724734,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.4",
+      "label": "cooksD.4",
+      "value": 0.07623144461860373,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.4",
+      "label": "covRatio.4",
+      "value": 1.1380233540579894,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.4",
+      "label": "hat.4",
+      "value": 0.08868456391242899,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.4",
+      "label": "loo.ci.lb.4",
+      "value": -1.140066971517749,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.4",
+      "label": "loo.ci.ub.4",
+      "value": -0.3882732187627616,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.4",
+      "label": "flags.4",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.4",
+      "label": "weight.percent.4",
+      "value": 8.868456391242898,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.4",
+      "label": "baujat.REML.x.4",
+      "value": 0.6777110311298458,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.4",
+      "label": "baujat.REML.y.4",
+      "value": 0.06698583499782841,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.4",
+      "label": "radial.x.4",
+      "value": 4.418978433531151,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.4",
+      "label": "radial.z.4",
+      "value": -0.9613369251241679,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.4",
+      "label": "radial.resid.4",
+      "value": 0.9400839333316802,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.5",
+      "label": "full.wRE.5",
+      "value": 3.123546803111821,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.5",
+      "label": "loo_mu.5",
+      "value": -0.7108765555640079,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.5",
+      "label": "loo_seMu.5",
+      "value": 0.20025404840173913,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.5",
+      "label": "resid.5",
+      "value": -0.1179994905561754,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.5",
+      "label": "dffits.5",
+      "value": -0.019006348327280483,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.5",
+      "label": "cooksD.5",
+      "value": 0.00041349626859836367,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.5",
+      "label": "covRatio.5",
+      "value": 1.2407164270388062,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.5",
+      "label": "hat.5",
+      "value": 0.10095738544239101,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.5",
+      "label": "loo.ci.lb.5",
+      "value": -1.1033672781897574,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.5",
+      "label": "loo.ci.ub.5",
+      "value": -0.3183858329382584,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.5",
+      "label": "flags.5",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.5",
+      "label": "weight.percent.5",
+      "value": 10.0957385442391,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.5",
+      "label": "baujat.REML.x.5",
+      "value": 0.016005556001106078,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.5",
+      "label": "baujat.REML.y.5",
+      "value": 0.00033327218015904503,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.5",
+      "label": "radial.x.5",
+      "value": 12.033686976550372,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.5",
+      "label": "radial.z.5",
+      "value": -9.45986888713173,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.5",
+      "label": "radial.resid.5",
+      "value": -4.281951917064655,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.6",
+      "label": "full.wRE.6",
+      "value": 1.8647653320623743,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.6",
+      "label": "loo_mu.6",
+      "value": -0.6552475997846622,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.6",
+      "label": "loo_seMu.6",
+      "value": 0.18047336921036927,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.6",
+      "label": "resid.6",
+      "value": -1.3037270593577284,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.6",
+      "label": "dffits.6",
+      "value": -0.3361575037514276,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.6",
+      "label": "cooksD.6",
+      "value": 0.10874161953109103,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.6",
+      "label": "covRatio.6",
+      "value": 1.0077114082596952,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.6",
+      "label": "hat.6",
+      "value": 0.06027181414444447,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.6",
+      "label": "loo.ci.lb.6",
+      "value": -1.0089689036055858,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.6",
+      "label": "loo.ci.ub.6",
+      "value": -0.30152629596373853,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.6",
+      "label": "flags.6",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.6",
+      "label": "weight.percent.6",
+      "value": 6.027181414444447,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.6",
+      "label": "baujat.REML.x.6",
+      "value": 1.5319030625855248,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.6",
+      "label": "baujat.REML.y.6",
+      "value": 0.10790948543381722,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.6",
+      "label": "radial.x.6",
+      "value": 2.117535862337792,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.6",
+      "label": "radial.z.6",
+      "value": -3.432310117669217,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.6",
+      "label": "radial.resid.6",
+      "value": -2.521165852599794,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.7",
+      "label": "full.wRE.7",
+      "value": 3.152537042273593,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.7",
+      "label": "loo_mu.7",
+      "value": -0.7947676045155209,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.7",
+      "label": "loo_seMu.7",
+      "value": 0.1798776859805783,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.7",
+      "label": "resid.7",
+      "value": 1.4500805245681014,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.7",
+      "label": "dffits.7",
+      "value": 0.4774600073741761,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.7",
+      "label": "cooksD.7",
+      "value": 0.19917759173866698,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.7",
+      "label": "covRatio.7",
+      "value": 1.0010701389036885,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.7",
+      "label": "hat.7",
+      "value": 0.10189439037095693,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.7",
+      "label": "loo.ci.lb.7",
+      "value": -1.1473213906598598,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.7",
+      "label": "loo.ci.ub.7",
+      "value": -0.442213818371182,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.7",
+      "label": "flags.7",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.7",
+      "label": "weight.percent.7",
+      "value": 10.189439037095692,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.7",
+      "label": "baujat.REML.x.7",
+      "value": 1.6638459497329356,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.7",
+      "label": "baujat.REML.y.7",
+      "value": 0.19896467190280423,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.7",
+      "label": "radial.x.7",
+      "value": 15.887875327627054,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.7",
+      "label": "radial.z.7",
+      "value": 0.18989718490100588,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.7",
+      "label": "radial.resid.7",
+      "value": 7.026214220364801,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.8",
+      "label": "full.wRE.8",
+      "value": 2.705060721682107,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.8",
+      "label": "loo_mu.8",
+      "value": -0.7411972993044933,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.8",
+      "label": "loo_seMu.8",
+      "value": 0.19667491771497964,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.8",
+      "label": "resid.8",
+      "value": 0.4076131684001811,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.8",
+      "label": "dffits.8",
+      "value": 0.14154847300870274,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.8",
+      "label": "cooksD.8",
+      "value": 0.02199843081917405,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.8",
+      "label": "covRatio.8",
+      "value": 1.1967622379461302,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.8",
+      "label": "hat.8",
+      "value": 0.08743133211638199,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.8",
+      "label": "loo.ci.lb.8",
+      "value": -1.126673054688232,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.8",
+      "label": "loo.ci.ub.8",
+      "value": -0.35572154392075456,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.8",
+      "label": "flags.8",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.8",
+      "label": "weight.percent.8",
+      "value": 8.743133211638199,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.8",
+      "label": "baujat.REML.x.8",
+      "value": 0.1625233292089791,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.8",
+      "label": "baujat.REML.y.8",
+      "value": 0.018381621780553095,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.8",
+      "label": "radial.x.8",
+      "value": 4.209483128942829,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.8",
+      "label": "radial.z.8",
+      "value": -1.976005672791248,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.8",
+      "label": "radial.resid.8",
+      "value": -0.16472753575494936,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.9",
+      "label": "full.wRE.9",
+      "value": 2.5888757702604086,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.9",
+      "label": "loo_mu.9",
+      "value": -0.6530329153058757,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.9",
+      "label": "loo_seMu.9",
+      "value": 0.18426748788590036,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.9",
+      "label": "resid.9",
+      "value": -1.1277387762820512,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.9",
+      "label": "dffits.9",
+      "value": -0.3486946994772432,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.9",
+      "label": "cooksD.9",
+      "value": 0.11701783523922679,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.9",
+      "label": "covRatio.9",
+      "value": 1.0505273250988485,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.9",
+      "label": "hat.9",
+      "value": 0.08367607257885874,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.9",
+      "label": "loo.ci.lb.9",
+      "value": -1.014190555083911,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.9",
+      "label": "loo.ci.ub.9",
+      "value": -0.2918752755278403,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.9",
+      "label": "flags.9",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.9",
+      "label": "weight.percent.9",
+      "value": 8.367607257885874,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.9",
+      "label": "baujat.REML.x.9",
+      "value": 1.1168477625427895,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.9",
+      "label": "baujat.REML.y.9",
+      "value": 0.11138961590381864,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.9",
+      "label": "radial.x.9",
+      "value": 3.700537681740291,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.9",
+      "label": "radial.z.9",
+      "value": -5.074713119909774,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.9",
+      "label": "radial.resid.9",
+      "value": -3.4824266579140235,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.10",
+      "label": "full.wRE.10",
+      "value": 3.0707299144300455,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.10",
+      "label": "loo_mu.10",
+      "value": -0.7578586267235016,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.10",
+      "label": "loo_seMu.10",
+      "value": 0.19578686613163912,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.10",
+      "label": "resid.10",
+      "value": 0.6690791767968378,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.10",
+      "label": "dffits.10",
+      "value": 0.2315045128832009,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.10",
+      "label": "cooksD.10",
+      "value": 0.05807815595318197,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.10",
+      "label": "covRatio.10",
+      "value": 1.1859790918485196,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.10",
+      "label": "hat.10",
+      "value": 0.09925026999811412,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.10",
+      "label": "loo.ci.lb.10",
+      "value": -1.141593832987479,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.10",
+      "label": "loo.ci.ub.10",
+      "value": -0.374123420459524,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.10",
+      "label": "flags.10",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.10",
+      "label": "weight.percent.10",
+      "value": 9.925026999811411,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.10",
+      "label": "baujat.REML.x.10",
+      "value": 0.43222109722498364,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.10",
+      "label": "baujat.REML.y.10",
+      "value": 0.04897064067348673,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.10",
+      "label": "radial.x.10",
+      "value": 8.975845595709094,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.10",
+      "label": "radial.z.10",
+      "value": -3.0460324447061375,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.10",
+      "label": "radial.resid.10",
+      "value": 0.8161407463773984,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.11",
+      "label": "full.wRE.11",
+      "value": 1.1823837543011497,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.11",
+      "label": "loo_mu.11",
+      "value": -0.759812099334467,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.11",
+      "label": "loo_seMu.11",
+      "value": 0.18209098194195336,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.11",
+      "label": "resid.11",
+      "value": 1.2898409680932266,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.11",
+      "label": "dffits.11",
+      "value": 0.2526198948287231,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.11",
+      "label": "cooksD.11",
+      "value": 0.06343341625565835,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.11",
+      "label": "covRatio.11",
+      "value": 1.0258569349939357,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.11",
+      "label": "hat.11",
+      "value": 0.03821629062989556,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.11",
+      "label": "loo.ci.lb.11",
+      "value": -1.116703865850229,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.11",
+      "label": "loo.ci.ub.11",
+      "value": -0.4029203328187051,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.11",
+      "label": "flags.11",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.11",
+      "label": "weight.percent.11",
+      "value": 3.8216290629895555,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.11",
+      "label": "baujat.REML.x.11",
+      "value": 1.5922385451032048,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.11",
+      "label": "baujat.REML.y.11",
+      "value": 0.061834563955093146,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.11",
+      "label": "radial.x.11",
+      "value": 1.3703698984678723,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.11",
+      "label": "radial.z.11",
+      "value": 0.6110663014664633,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.11",
+      "label": "radial.resid.11",
+      "value": 1.2007161374953512,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.wRE.12",
+      "label": "full.wRE.12",
+      "value": 2.5997800941346716,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_mu.12",
+      "label": "loo_mu.12",
+      "value": -0.7775361848943679,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo_seMu.12",
+      "label": "loo_seMu.12",
+      "value": 0.1855359773679267,
+      "tol": 0.000001
+    },
+    {
+      "key": "resid.12",
+      "label": "resid.12",
+      "value": 1.1879028928821063,
+      "tol": 0.000001
+    },
+    {
+      "key": "dffits.12",
+      "label": "dffits.12",
+      "value": 0.3548608992530822,
+      "tol": 0.000001
+    },
+    {
+      "key": "cooksD.12",
+      "label": "cooksD.12",
+      "value": 0.12281290395069164,
+      "tol": 0.000001
+    },
+    {
+      "key": "covRatio.12",
+      "label": "covRatio.12",
+      "value": 1.065040678479209,
+      "tol": 0.000001
+    },
+    {
+      "key": "hat.12",
+      "label": "hat.12",
+      "value": 0.08402851552201103,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.lb.12",
+      "label": "loo.ci.lb.12",
+      "value": -1.141180018371943,
+      "tol": 0.000001
+    },
+    {
+      "key": "loo.ci.ub.12",
+      "label": "loo.ci.ub.12",
+      "value": -0.41389235141679304,
+      "tol": 0.000001
+    },
+    {
+      "key": "flags.12",
+      "label": "flags.12",
+      "value": 0,
+      "tol": 0
+    },
+    {
+      "key": "weight.percent.12",
+      "label": "weight.percent.12",
+      "value": 8.402851552201103,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.x.12",
+      "label": "baujat.REML.x.12",
+      "value": 1.2637881718026638,
+      "tol": 0.000001
+    },
+    {
+      "key": "baujat.REML.y.12",
+      "label": "baujat.REML.y.12",
+      "value": 0.11531287624249097,
+      "tol": 0.000001
+    },
+    {
+      "key": "radial.x.12",
+      "label": "radial.x.12",
+      "value": 3.7422838309520516,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.z.12",
+      "label": "radial.z.12",
+      "value": -0.06479370846196923,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.resid.12",
+      "label": "radial.resid.12",
+      "value": 1.5454555021792915,
+      "tol": 1e-9
+    },
+    {
+      "key": "radial.slope",
+      "label": "radial.slope",
+      "value": -0.4302851636540906,
+      "tol": 1e-9
+    },
+    {
+      "key": "full.ciLo",
+      "label": "ciLo",
+      "value": -1.0668976388103502
+    },
+    {
+      "key": "full.ciHi",
+      "label": "ciHi",
+      "value": -0.3621670455059282
+    },
+    {
+      "key": "full.I2",
+      "label": "I2",
+      "value": 92.22138452126894
+    }
+  ],
+  "display": [
+    {
+      "key": "full.mu",
+      "text": "-0.7145",
+      "value": -0.7145,
+      "digits": 4,
+      "scale": 1
+    },
+    {
+      "key": "full.ciLo",
+      "text": "-1.0669",
+      "value": -1.0669,
+      "digits": 4,
+      "scale": 1
+    },
+    {
+      "key": "full.ciHi",
+      "text": "-0.3622",
+      "value": -0.3622,
+      "digits": 4,
+      "scale": 1
+    },
+    {
+      "key": "full.tau2",
+      "text": "0.3132",
+      "value": 0.3132,
+      "digits": 4,
+      "scale": 1
+    },
+    {
+      "key": "full.I2",
+      "text": "92.2",
+      "value": 92.2,
+      "digits": 1,
+      "scale": 1
+    }
+  ]
+}

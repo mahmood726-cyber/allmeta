@@ -1,0 +1,248 @@
+{
+  "app": "correlation-ma",
+  "dataset": "dat.molloy2014",
+  "source_package": "metadat",
+  "version": "1.6-0",
+  "source_blob": "745db09c78a068d45a28f5d8df4cbd8edc2d042d",
+  "citation": "Molloy GJ, O’Carroll RE, Ferguson E (2014). Conscientiousness and medication adherence: a meta-analysis. Annals of Behavioral Medicine 47:92–101. doi:10.1007/s12160-013-9524-4.",
+  "input": "Axelsson et al. 2009, 0.187, 109\nAxelsson et al. 2011, 0.162, 749\nBruce et al. 2010, 0.34, 55\nChristensen et al. 1999, 0.32, 107\nChristensen & Smith 1995, 0.27, 72\nCohen et al. 2004, 0, 65\nDobbels et al. 2005, 0.175, 174\nEdiger et al. 2007, 0.05, 326\nInsel et al. 2006, 0.26, 58\nJerant et al. 2011, 0.01, 771\nMoran et al. 1997, -0.09, 56\nO'Cleirigh et al. 2007, 0.37, 91\nPenedo et al. 2003, 0, 116\nQuine et al. 2012, 0.15, 537\nStilley et al. 2004, 0.24, 158\nWiebe & Christensen 1997, 0.04, 65",
+  "projection": {
+    "rows": [
+      {
+        "row": 1,
+        "study": "Axelsson et al. 2009",
+        "r": 0.187,
+        "n": 109
+      },
+      {
+        "row": 2,
+        "study": "Axelsson et al. 2011",
+        "r": 0.162,
+        "n": 749
+      },
+      {
+        "row": 3,
+        "study": "Bruce et al. 2010",
+        "r": 0.34,
+        "n": 55
+      },
+      {
+        "row": 4,
+        "study": "Christensen et al. 1999",
+        "r": 0.32,
+        "n": 107
+      },
+      {
+        "row": 5,
+        "study": "Christensen & Smith 1995",
+        "r": 0.27,
+        "n": 72
+      },
+      {
+        "row": 6,
+        "study": "Cohen et al. 2004",
+        "r": 0,
+        "n": 65
+      },
+      {
+        "row": 7,
+        "study": "Dobbels et al. 2005",
+        "r": 0.175,
+        "n": 174
+      },
+      {
+        "row": 8,
+        "study": "Ediger et al. 2007",
+        "r": 0.05,
+        "n": 326
+      },
+      {
+        "row": 9,
+        "study": "Insel et al. 2006",
+        "r": 0.26,
+        "n": 58
+      },
+      {
+        "row": 10,
+        "study": "Jerant et al. 2011",
+        "r": 0.01,
+        "n": 771
+      },
+      {
+        "row": 11,
+        "study": "Moran et al. 1997",
+        "r": -0.09,
+        "n": 56
+      },
+      {
+        "row": 12,
+        "study": "O'Cleirigh et al. 2007",
+        "r": 0.37,
+        "n": 91
+      },
+      {
+        "row": 13,
+        "study": "Penedo et al. 2003",
+        "r": 0,
+        "n": 116
+      },
+      {
+        "row": 14,
+        "study": "Quine et al. 2012",
+        "r": 0.15,
+        "n": 537
+      },
+      {
+        "row": 15,
+        "study": "Stilley et al. 2004",
+        "r": 0.24,
+        "n": 158
+      },
+      {
+        "row": 16,
+        "study": "Wiebe & Christensen 1997",
+        "r": 0.04,
+        "n": 65
+      }
+    ],
+    "excluded": [],
+    "text": "Axelsson et al. 2009, 0.187, 109\nAxelsson et al. 2011, 0.162, 749\nBruce et al. 2010, 0.34, 55\nChristensen et al. 1999, 0.32, 107\nChristensen & Smith 1995, 0.27, 72\nCohen et al. 2004, 0, 65\nDobbels et al. 2005, 0.175, 174\nEdiger et al. 2007, 0.05, 326\nInsel et al. 2006, 0.26, 58\nJerant et al. 2011, 0.01, 771\nMoran et al. 1997, -0.09, 56\nO'Cleirigh et al. 2007, 0.37, 91\nPenedo et al. 2003, 0, 116\nQuine et al. 2012, 0.15, 537\nStilley et al. 2004, 0.24, 158\nWiebe & Christensen 1997, 0.04, 65"
+  },
+  "options": {
+    "f-method": "REML"
+  },
+  "packages": [
+    "metafor"
+  ],
+  "script": "\nr <- c(0.187,0.162,0.34,0.32,0.27,0,0.175,0.05,0.26,0.01,-0.09,0.37,0,0.15,0.24,0.04); n <- c(109,749,55,107,72,65,174,326,58,771,56,91,116,537,158,65); k <- length(r)\ne <- metafor::escalc(measure='ZCOR',ri=r,ni=n)\nm <- metafor::rma(yi=e$yi,vi=e$vi,method='REML',test='z',control=list(threshold=1e-12,maxiter=10000,stepadj=.5,tol=.Machine$double.eps^0.75))\nmu <- as.numeric(coef(m)); se <- m[['se',exact=TRUE]]; tau <- m[['tau2',exact=TRUE]]\npi <- if('REML'=='FE') c(NA_real_,NA_real_) else mu+c(-1,1)*qt(.975,k-1)*sqrt(tau+se^2)\nout <- list(mu_z=mu,se_z=se,tau2_z=tau,I2=m[['I2',exact=TRUE]]/100,r=tanh(mu),r_lo=tanh(m[['ci.lb',exact=TRUE]]),r_hi=tanh(m[['ci.ub',exact=TRUE]]),r_pi_lo=tanh(pi[1]),r_pi_hi=tanh(pi[2]),k=k,display=TRUE,controls=TRUE)\nemit <- function(x) if(is.logical(x)) {if(x)'true' else 'false'} else if(is.na(x)) 'null' else {stopifnot(is.finite(x));sprintf('%.17g',x)}\ncat('ALMJSON:{',paste(paste0('\"',names(out),'\":',vapply(out,emit,'')),collapse=','),'}\\n',sep='')\n",
+  "compare": {
+    "kind": {
+      "mu_z": "rel",
+      "se_z": "rel",
+      "tau2_z": "rel",
+      "I2": "rel",
+      "r": "rel",
+      "r_lo": "rel",
+      "r_hi": "rel",
+      "r_pi_lo": "rel",
+      "r_pi_hi": "rel",
+      "k": "exact",
+      "display": "exact",
+      "controls": "exact"
+    },
+    "tolerance": {
+      "default": 1e-9,
+      "mu_z": 1e-9,
+      "se_z": 1e-9,
+      "tau2_z": 0.000001,
+      "I2": 1e-9,
+      "r": 1e-9,
+      "r_lo": 1e-9,
+      "r_hi": 1e-9,
+      "r_pi_lo": 1e-9,
+      "r_pi_hi": 1e-9,
+      "k": 1e-9,
+      "display": 1e-9,
+      "controls": 1e-9
+    }
+  },
+  "appValues": [
+    {
+      "key": "mu_z",
+      "label": "mu_z",
+      "value": 0.14991714851736845
+    },
+    {
+      "key": "se_z",
+      "label": "se_z",
+      "value": 0.03155996016582571
+    },
+    {
+      "key": "tau2_z",
+      "label": "tau2_z",
+      "value": 0.008109560824156248
+    },
+    {
+      "key": "I2",
+      "label": "I2",
+      "value": 0.617296546888089
+    },
+    {
+      "key": "r",
+      "label": "r",
+      "value": 0.14880401768988308
+    },
+    {
+      "key": "r_lo",
+      "label": "r_lo",
+      "value": 0.0878338388464237
+    },
+    {
+      "key": "r_hi",
+      "label": "r_hi",
+      "value": 0.20866343935741188
+    },
+    {
+      "key": "r_pi_lo",
+      "label": "r_pi_lo",
+      "value": -0.053421734527710804
+    },
+    {
+      "key": "r_pi_hi",
+      "label": "r_pi_hi",
+      "value": 0.33930503834074266
+    },
+    {
+      "key": "k",
+      "label": "k",
+      "value": 16
+    },
+    {
+      "key": "display",
+      "label": "display",
+      "value": true
+    },
+    {
+      "key": "controls",
+      "label": "controls",
+      "value": true
+    }
+  ],
+  "display": [
+    {
+      "key": "r",
+      "text": "0.149",
+      "value": 0.149,
+      "digits": 3,
+      "scale": 1
+    },
+    {
+      "key": "r_lo",
+      "text": "k = 16 · pooled r = 0.149 [0.088, 0.209] · τ²(z) = 0.0081 · I² = 61.7% · 95% PI [-0.053, 0.339]",
+      "value": 0.088,
+      "digits": 3,
+      "scale": 1
+    },
+    {
+      "key": "r_hi",
+      "text": "k = 16 · pooled r = 0.149 [0.088, 0.209] · τ²(z) = 0.0081 · I² = 61.7% · 95% PI [-0.053, 0.339]",
+      "value": 0.209,
+      "digits": 3,
+      "scale": 1
+    },
+    {
+      "key": "tau2_z",
+      "text": "k = 16 · pooled r = 0.149 [0.088, 0.209] · τ²(z) = 0.0081 · I² = 61.7% · 95% PI [-0.053, 0.339]",
+      "value": 0.0081,
+      "digits": 4,
+      "scale": 1
+    },
+    {
+      "key": "I2",
+      "text": "k = 16 · pooled r = 0.149 [0.088, 0.209] · τ²(z) = 0.0081 · I² = 61.7% · 95% PI [-0.053, 0.339]",
+      "value": 61.7,
+      "digits": 1,
+      "scale": 100
+    }
+  ]
+}

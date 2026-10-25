@@ -1,0 +1,263 @@
+{
+  "app": "pubbias-tests",
+  "dataset": "dat.bcg",
+  "source_package": "metadat",
+  "version": "1.6-0",
+  "source_blob": "65156a2716521493f2c7e4a4bacf22deb4c120f3",
+  "citation": "Colditz GA et al. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: meta-analysis of the published literature. JAMA 271:698–702. doi:10.1001/jama.1994.03510330076038.",
+  "input": "Aronson 1948 [trial 1], -0.8893113339202054, 0.5706003548929507\nFerguson & Simes 1949 [trial 2], -1.5853886572014306, 0.44111350171825825\nRosenthal et al 1960 [trial 3], -1.348073148299693, 0.644490469571091\nHart & Sutherland 1977 [trial 4], -1.4415511900213054, 0.14145681992130169\nFrimodt-Moller et al 1973 [trial 5], -0.2175473222112957, 0.2262966463950159\nStein & Aronson 1953 [trial 6], -0.786115585818864, 0.08310005087789513\nVandiviere et al 1973 [trial 7], -1.6208982235983924, 0.4722470196542432\nTPT Madras 1980 [trial 8], 0.011952333523841173, 0.06294107798423641\nCoetzee & Berjak 1968 [trial 9], -0.4694176487381487, 0.2375588568402554\nRosenthal et al 1961 [trial 10], -1.3713448034727846, 0.27023100046632126\nComstock et al 1974 [trial 11], -0.33935882833839015, 0.11141011610962319\nComstock & Webster 1969 [trial 12], 0.4459134005713783, 0.7297299810204818\nComstock et al 1976 [trial 13], -0.017313948216879493, 0.26721650339001574",
+  "projection": {
+    "rows": [
+      {
+        "row": 1,
+        "study": "Aronson 1948 [trial 1]",
+        "yi": -0.8893113339202054,
+        "vi": 0.32558476500396133,
+        "se": 0.5706003548929507,
+        "year": 1948,
+        "moderator": 44,
+        "group": "random"
+      },
+      {
+        "row": 2,
+        "study": "Ferguson & Simes 1949 [trial 2]",
+        "yi": -1.5853886572014306,
+        "vi": 0.19458112139814385,
+        "se": 0.44111350171825825,
+        "year": 1949,
+        "moderator": 55,
+        "group": "random"
+      },
+      {
+        "row": 3,
+        "study": "Rosenthal et al 1960 [trial 3]",
+        "yi": -1.348073148299693,
+        "vi": 0.4153679653679654,
+        "se": 0.644490469571091,
+        "year": 1960,
+        "moderator": 42,
+        "group": "random"
+      },
+      {
+        "row": 4,
+        "study": "Hart & Sutherland 1977 [trial 4]",
+        "yi": -1.4415511900213054,
+        "vi": 0.020010031902247573,
+        "se": 0.14145681992130169,
+        "year": 1977,
+        "moderator": 52,
+        "group": "random"
+      },
+      {
+        "row": 5,
+        "study": "Frimodt-Moller et al 1973 [trial 5]",
+        "yi": -0.2175473222112957,
+        "vi": 0.05121017216963086,
+        "se": 0.2262966463950159,
+        "year": 1973,
+        "moderator": 13,
+        "group": "alternate"
+      },
+      {
+        "row": 6,
+        "study": "Stein & Aronson 1953 [trial 6]",
+        "yi": -0.786115585818864,
+        "vi": 0.0069056184559087574,
+        "se": 0.08310005087789513,
+        "year": 1953,
+        "moderator": 44,
+        "group": "alternate"
+      },
+      {
+        "row": 7,
+        "study": "Vandiviere et al 1973 [trial 7]",
+        "yi": -1.6208982235983924,
+        "vi": 0.22301724757231517,
+        "se": 0.4722470196542432,
+        "year": 1973,
+        "moderator": 19,
+        "group": "random"
+      },
+      {
+        "row": 8,
+        "study": "TPT Madras 1980 [trial 8]",
+        "yi": 0.011952333523841173,
+        "vi": 0.0039615792978177295,
+        "se": 0.06294107798423641,
+        "year": 1980,
+        "moderator": 13,
+        "group": "random"
+      },
+      {
+        "row": 9,
+        "study": "Coetzee & Berjak 1968 [trial 9]",
+        "yi": -0.4694176487381487,
+        "vi": 0.056434210463248966,
+        "se": 0.2375588568402554,
+        "year": 1968,
+        "moderator": 27,
+        "group": "random"
+      },
+      {
+        "row": 10,
+        "study": "Rosenthal et al 1961 [trial 10]",
+        "yi": -1.3713448034727846,
+        "vi": 0.07302479361302891,
+        "se": 0.27023100046632126,
+        "year": 1961,
+        "moderator": 42,
+        "group": "systematic"
+      },
+      {
+        "row": 11,
+        "study": "Comstock et al 1974 [trial 11]",
+        "yi": -0.33935882833839015,
+        "vi": 0.01241221397155972,
+        "se": 0.11141011610962319,
+        "year": 1974,
+        "moderator": 18,
+        "group": "systematic"
+      },
+      {
+        "row": 12,
+        "study": "Comstock & Webster 1969 [trial 12]",
+        "yi": 0.4459134005713783,
+        "vi": 0.5325058452001528,
+        "se": 0.7297299810204818,
+        "year": 1969,
+        "moderator": 33,
+        "group": "systematic"
+      },
+      {
+        "row": 13,
+        "study": "Comstock et al 1976 [trial 13]",
+        "yi": -0.017313948216879493,
+        "vi": 0.0714046596839863,
+        "se": 0.26721650339001574,
+        "year": 1976,
+        "moderator": 33,
+        "group": "systematic"
+      }
+    ],
+    "excluded": [],
+    "text": "Aronson 1948 [trial 1], -0.8893113339202054, 0.5706003548929507\nFerguson & Simes 1949 [trial 2], -1.5853886572014306, 0.44111350171825825\nRosenthal et al 1960 [trial 3], -1.348073148299693, 0.644490469571091\nHart & Sutherland 1977 [trial 4], -1.4415511900213054, 0.14145681992130169\nFrimodt-Moller et al 1973 [trial 5], -0.2175473222112957, 0.2262966463950159\nStein & Aronson 1953 [trial 6], -0.786115585818864, 0.08310005087789513\nVandiviere et al 1973 [trial 7], -1.6208982235983924, 0.4722470196542432\nTPT Madras 1980 [trial 8], 0.011952333523841173, 0.06294107798423641\nCoetzee & Berjak 1968 [trial 9], -0.4694176487381487, 0.2375588568402554\nRosenthal et al 1961 [trial 10], -1.3713448034727846, 0.27023100046632126\nComstock et al 1974 [trial 11], -0.33935882833839015, 0.11141011610962319\nComstock & Webster 1969 [trial 12], 0.4459134005713783, 0.7297299810204818\nComstock et al 1976 [trial 13], -0.017313948216879493, 0.26721650339001574"
+  },
+  "options": {
+    "format": "te-se"
+  },
+  "packages": [
+    "metafor",
+    "meta"
+  ],
+  "script": "library(metafor)\ny <- c(-0.8893113339202054,-1.5853886572014306,-1.348073148299693,-1.4415511900213054,-0.2175473222112957,-0.786115585818864,-1.6208982235983924,0.011952333523841173,-0.4694176487381487,-1.3713448034727846,-0.33935882833839015,0.4459134005713783,-0.017313948216879493)\nv <- c(0.3255847650039613,0.19458112139814382,0.4153679653679654,0.020010031902247573,0.05121017216963086,0.006905618455908758,0.22301724757231517,0.0039615792978177295,0.056434210463248966,0.07302479361302892,0.01241221397155972,0.5325058452001528,0.0714046596839863)\nm <- rma(y,v,method='REML')\ne <- regtest(m,model='lm',predictor='sei',ret.fit=TRUE)\nb <- ranktest(y,vi=v)\nt <- trimfill(m,estimator='L0')\nout <- list(egger_lm_statistic=e$zval,egger_lm_p=e$pval,egger_lm_b0=as.numeric(coef(e$fit)[2]),egger_lm_limit=as.numeric(coef(e$fit)[1]),begg_tau=b$tau,begg_p=b$pval,trimfill_k0=t$k0,trimfill_side=t$side,trimfill_est=as.numeric(t$b),trimfill_se=t$se,trimfill_tau2=t$tau2)\nencode <- function(x) { if(length(x)!=1 || is.na(x)) return(\"null\"); if(is.character(x)) return(paste0(\"\\\"\",x,\"\\\"\")); if(!is.finite(x)) return(\"null\"); sprintf(\"%.17g\",x) }\ncat(\"ALMJSON:{\",paste(sprintf(\"\\\"%s\\\":%s\",names(out),vapply(out,encode,\"\")),collapse=\",\"),\"}\\n\",sep=\"\")",
+  "compare": {
+    "tolerance": {
+      "default": 1e-9,
+      "egger_lm_statistic": 1e-9,
+      "egger_lm_p": 1e-9,
+      "egger_lm_b0": 1e-9,
+      "egger_lm_limit": 1e-9,
+      "begg_tau": 1e-9,
+      "begg_p": 1e-9,
+      "trimfill_k0": 1e-9,
+      "trimfill_side": 0,
+      "trimfill_est": 0.000001,
+      "trimfill_se": 0.000001,
+      "trimfill_tau2": 0.000001,
+      "peters_statistic": 1e-9,
+      "peters_p": 1e-9,
+      "harbord_statistic": 1e-9,
+      "harbord_p": 1e-9
+    },
+    "kind": {
+      "egger_lm_statistic": "rel",
+      "egger_lm_p": "abs",
+      "egger_lm_b0": "rel",
+      "egger_lm_limit": "rel",
+      "begg_tau": "rel",
+      "begg_p": "abs",
+      "trimfill_k0": "rel",
+      "trimfill_side": "exact",
+      "trimfill_est": "rel",
+      "trimfill_se": "rel",
+      "trimfill_tau2": "rel",
+      "peters_statistic": "rel",
+      "peters_p": "abs",
+      "harbord_statistic": "rel",
+      "harbord_p": "abs"
+    }
+  },
+  "appValues": [
+    {
+      "key": "egger_lm_statistic",
+      "label": "Egger statistic",
+      "value": -1.4012820022893326
+    },
+    {
+      "key": "egger_lm_p",
+      "label": "Egger p",
+      "value": 0.18870699508201338
+    },
+    {
+      "key": "egger_lm_b0",
+      "label": "Egger b0",
+      "value": -2.1120421208932973
+    },
+    {
+      "key": "egger_lm_limit",
+      "label": "Egger limit",
+      "value": -0.19092864235981977
+    },
+    {
+      "key": "begg_tau",
+      "label": "Begg tau",
+      "value": 0.02564102564102564
+    },
+    {
+      "key": "begg_p",
+      "label": "Begg p",
+      "value": 0.9523619079608662
+    },
+    {
+      "key": "trimfill_k0",
+      "label": "Trim-and-fill k0",
+      "value": 1
+    },
+    {
+      "key": "trimfill_side",
+      "label": "Trim-and-fill side",
+      "value": "right"
+    },
+    {
+      "key": "trimfill_est",
+      "label": "Trim-and-fill est",
+      "value": -0.6570828007603645
+    },
+    {
+      "key": "trimfill_se",
+      "label": "Trim-and-fill se",
+      "value": 0.17852846695558053
+    },
+    {
+      "key": "trimfill_tau2",
+      "label": "Trim-and-fill tau2",
+      "value": 0.33128803733658
+    }
+  ],
+  "display": [
+    {
+      "key": "egger_lm_statistic",
+      "text": "-1.401",
+      "value": -1.401,
+      "digits": 3,
+      "scale": 1
+    },
+    {
+      "key": "trimfill_est",
+      "text": "adjusted est=-0.657",
+      "value": -0.657,
+      "digits": 3,
+      "scale": 1
+    }
+  ]
+}

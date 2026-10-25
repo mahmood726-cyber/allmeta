@@ -1,0 +1,259 @@
+{
+  "app": "proportion-ma",
+  "dataset": "dat.bcg",
+  "source_package": "metadat",
+  "version": "1.6-0",
+  "source_blob": "65156a2716521493f2c7e4a4bacf22deb4c120f3",
+  "citation": "Colditz GA et al. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: meta-analysis of the published literature. JAMA 271:698–702. doi:10.1001/jama.1994.03510330076038.",
+  "input": "11, 139, Aronson 1948 [trial 1]\n29, 303, Ferguson & Simes 1949 [trial 2]\n11, 220, Rosenthal et al 1960 [trial 3]\n248, 12867, Hart & Sutherland 1977 [trial 4]\n47, 5808, Frimodt-Moller et al 1973 [trial 5]\n372, 1451, Stein & Aronson 1953 [trial 6]\n10, 629, Vandiviere et al 1973 [trial 7]\n499, 88391, TPT Madras 1980 [trial 8]\n45, 7277, Coetzee & Berjak 1968 [trial 9]\n65, 1665, Rosenthal et al 1961 [trial 10]\n141, 27338, Comstock et al 1974 [trial 11]\n3, 2341, Comstock & Webster 1969 [trial 12]\n29, 17854, Comstock et al 1976 [trial 13]",
+  "projection": {
+    "rows": [
+      {
+        "row": 1,
+        "study": "Aronson 1948 [trial 1]",
+        "x": 11,
+        "n": 139
+      },
+      {
+        "row": 2,
+        "study": "Ferguson & Simes 1949 [trial 2]",
+        "x": 29,
+        "n": 303
+      },
+      {
+        "row": 3,
+        "study": "Rosenthal et al 1960 [trial 3]",
+        "x": 11,
+        "n": 220
+      },
+      {
+        "row": 4,
+        "study": "Hart & Sutherland 1977 [trial 4]",
+        "x": 248,
+        "n": 12867
+      },
+      {
+        "row": 5,
+        "study": "Frimodt-Moller et al 1973 [trial 5]",
+        "x": 47,
+        "n": 5808
+      },
+      {
+        "row": 6,
+        "study": "Stein & Aronson 1953 [trial 6]",
+        "x": 372,
+        "n": 1451
+      },
+      {
+        "row": 7,
+        "study": "Vandiviere et al 1973 [trial 7]",
+        "x": 10,
+        "n": 629
+      },
+      {
+        "row": 8,
+        "study": "TPT Madras 1980 [trial 8]",
+        "x": 499,
+        "n": 88391
+      },
+      {
+        "row": 9,
+        "study": "Coetzee & Berjak 1968 [trial 9]",
+        "x": 45,
+        "n": 7277
+      },
+      {
+        "row": 10,
+        "study": "Rosenthal et al 1961 [trial 10]",
+        "x": 65,
+        "n": 1665
+      },
+      {
+        "row": 11,
+        "study": "Comstock et al 1974 [trial 11]",
+        "x": 141,
+        "n": 27338
+      },
+      {
+        "row": 12,
+        "study": "Comstock & Webster 1969 [trial 12]",
+        "x": 3,
+        "n": 2341
+      },
+      {
+        "row": 13,
+        "study": "Comstock et al 1976 [trial 13]",
+        "x": 29,
+        "n": 17854
+      }
+    ],
+    "excluded": [],
+    "text": "11, 139, Aronson 1948 [trial 1]\n29, 303, Ferguson & Simes 1949 [trial 2]\n11, 220, Rosenthal et al 1960 [trial 3]\n248, 12867, Hart & Sutherland 1977 [trial 4]\n47, 5808, Frimodt-Moller et al 1973 [trial 5]\n372, 1451, Stein & Aronson 1953 [trial 6]\n10, 629, Vandiviere et al 1973 [trial 7]\n499, 88391, TPT Madras 1980 [trial 8]\n45, 7277, Coetzee & Berjak 1968 [trial 9]\n65, 1665, Rosenthal et al 1961 [trial 10]\n141, 27338, Comstock et al 1974 [trial 11]\n3, 2341, Comstock & Webster 1969 [trial 12]\n29, 17854, Comstock et al 1976 [trial 13]"
+  },
+  "options": {
+    "trans": "logit",
+    "tau-est": "PM"
+  },
+  "packages": [
+    "metafor"
+  ],
+  "script": "x <- c(11,29,11,248,47,372,10,499,45,65,141,3,29)\nn <- c(139,303,220,12867,5808,1451,629,88391,7277,1665,27338,2341,17854)\nk <- length(x)\nes <- metafor::escalc(measure=\"PLO\",xi=x,ni=n,add=.5,to=\"only0\")\nf <- metafor::rma(es$yi,es$vi,method=\"PM\",test=\"z\",control=list(threshold=1e-12,tol=1e-18,maxiter=10000))\np <- predict(f)\npi <- if(k>=3) as.numeric(coef(f))+c(-1,1)*qt(.975,k-1)*sqrt(f$tau2+f$se^2) else c(NA,NA)\nback <- metafor::transf.ilogit\nb <- predict(f,transf=back)\nz <- c(mu_re=as.numeric(coef(f)),seRE=as.numeric(f$se),tau2=f$tau2,Q=f$QE,df=k-1,i2=if(f$QE>k-1)100*(f$QE-(k-1))/f$QE else 0,k=k,lo=p$ci.lb,hi=p$ci.ub,piLo=pi[1],piHi=pi[2],poolP=b$pred,poolLo=b$ci.lb,poolHi=b$ci.ub,poolPiLo=if(k>=3)back(pi[1]) else NA_real_,poolPiHi=if(k>=3)back(pi[2]) else NA_real_)\ncat('ALMJSON:{',paste(sprintf('\"%s\":%s',names(z),ifelse(is.na(z),'null',sprintf('%.17g',z))),collapse=','),'}\\n',sep='')",
+  "compare": {
+    "tolerance": {
+      "default": 1e-9,
+      "mu_re": 0.000001,
+      "seRE": 0.000001,
+      "tau2": 0.000001,
+      "Q": 1e-9,
+      "df": 1e-9,
+      "i2": 1e-9,
+      "k": 1e-9,
+      "lo": 0.000001,
+      "hi": 0.000001,
+      "piLo": 0.000001,
+      "piHi": 0.000001,
+      "poolP": 0.000001,
+      "poolLo": 0.000001,
+      "poolHi": 0.000001,
+      "poolPiLo": 0.000001,
+      "poolPiHi": 0.000001
+    },
+    "kind": {
+      "mu_re": "rel",
+      "seRE": "rel",
+      "tau2": "rel",
+      "Q": "rel",
+      "df": "rel",
+      "i2": "rel",
+      "k": "rel",
+      "lo": "rel",
+      "hi": "rel",
+      "piLo": "rel",
+      "piHi": "rel",
+      "poolP": "rel",
+      "poolLo": "rel",
+      "poolHi": "rel",
+      "poolPiLo": "rel",
+      "poolPiHi": "rel"
+    }
+  },
+  "appValues": [
+    {
+      "key": "mu_re",
+      "label": "mu_re",
+      "value": -4.090006698998533
+    },
+    {
+      "key": "seRE",
+      "label": "seRE",
+      "value": 0.4606124717592642
+    },
+    {
+      "key": "tau2",
+      "label": "tau2",
+      "value": 2.7007390604760877
+    },
+    {
+      "key": "Q",
+      "label": "Q",
+      "value": 3717.7208264382925
+    },
+    {
+      "key": "df",
+      "label": "df",
+      "value": 12
+    },
+    {
+      "key": "i2",
+      "label": "i2",
+      "value": 99.67722159462154
+    },
+    {
+      "key": "k",
+      "label": "k",
+      "value": 13
+    },
+    {
+      "key": "lo",
+      "label": "lo",
+      "value": -4.992790554476663
+    },
+    {
+      "key": "hi",
+      "label": "hi",
+      "value": -3.187222843520402
+    },
+    {
+      "key": "piLo",
+      "label": "piLo",
+      "value": -7.808636355884497
+    },
+    {
+      "key": "piHi",
+      "label": "piHi",
+      "value": -0.37137704211256795
+    },
+    {
+      "key": "poolP",
+      "label": "poolP",
+      "value": 0.016463536289849805
+    },
+    {
+      "key": "poolLo",
+      "label": "poolLo",
+      "value": 0.0067409505833966625
+    },
+    {
+      "key": "poolHi",
+      "label": "poolHi",
+      "value": 0.039649391129686115
+    },
+    {
+      "key": "poolPiLo",
+      "label": "poolPiLo",
+      "value": 0.0004060466575054108
+    },
+    {
+      "key": "poolPiHi",
+      "label": "poolPiHi",
+      "value": 0.4082083215986008
+    }
+  ],
+  "display": [
+    {
+      "key": "poolP",
+      "text": "1.6%",
+      "value": 1.6,
+      "digits": 1,
+      "scale": 100
+    },
+    {
+      "key": "poolLo",
+      "text": "0.7% – 4.0%",
+      "value": 0.7,
+      "digits": 1,
+      "scale": 100
+    },
+    {
+      "key": "poolHi",
+      "text": "0.7% – 4.0%",
+      "value": 4,
+      "digits": 1,
+      "scale": 100
+    },
+    {
+      "key": "tau2",
+      "text": "2.7007",
+      "value": 2.7007,
+      "digits": 4,
+      "scale": 1
+    },
+    {
+      "key": "i2",
+      "text": "99.7%",
+      "value": 99.7,
+      "digits": 1,
+      "scale": 1
+    }
+  ]
+}
