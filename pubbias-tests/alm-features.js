@@ -22,7 +22,7 @@
   var TESTS = [
     ['Egger (generic)', 'egger_t', 'egger_p'],
     ['Begg-Mazumdar', 'begg_tau', 'begg_p'],
-    ['Thompson-Sharp', 'thompson_t', 'thompson_p'],
+    ['Thompson-Sharp', 'thompson_z', 'thompson_p'],
     ['Peters (binary)', 'peters_t', 'peters_p'],
     ['Harbord (binary)', 'harbord_t', 'harbord_p']
   ];
@@ -104,7 +104,7 @@
           ' was added to every cell. Peters regressed log odds ratios on inverse total sample size, weighted by the reciprocal of the sum of inverse pooled event and non-event counts. Harbord regressed the efficient score divided by the square root of its information on the square root of that information. Both exclude studies with no events or no non-events across both arms and use two-sided t tests with informative-study count minus two degrees of freedom. ']),
         'Egger regressed the standardised effect on precision using unweighted least squares with multiplicative residual dispersion; the intercept used a two-sided t test with study count minus two degrees of freedom. ',
         'Begg–Mazumdar correlated fixed-effect-centred, studentised effects with their variances using Kendall’s tau-b; its two-sided test uses the exact permutation distribution without ties and a tie-corrected normal approximation without continuity correction otherwise. ',
-        'The quantity labelled Thompson–Sharp on the page tests the intercept of the effect-on-SE regression (effect extrapolated to SE zero), not a test of asymmetry. It uses inverse-variance weights and multiplies its already dispersion-adjusted standard error by the square root of the larger of unity and residual dispersion, with a two-sided t test with study count minus two degrees of freedom. ',
+        'Thompson–Sharp regressed the effect on standard error in a random-effects meta-regression, estimating residual heterogeneity by REML. The standard-error slope used a two-sided z test for funnel asymmetry. ',
         'Trim-and-fill uses the L-zero estimator, chooses the filling side from the sign of a REML meta-regression slope on standard error, and uses REML for the trimmed and augmented fits; absolute residual ranks break ties by sorted order. ',
         'The experimental Vevea–Hedges selection model uses maximum likelihood with Nelder–Mead optimisation and REML starting values, a one-sided normal p-value cutpoint of ',
         T.num('selectionCutpoint', 3),
@@ -120,8 +120,8 @@
       return ['There were ', T.int('k'), ' studies. Egger: t = ', T.num('egger_t', 3), ', ', T.p('egger_p'),
         T.when(r.format === 'binary', ' (Egger is not recommended for binary log odds ratios)'),
         '; Begg–Mazumdar: tau-b = ', T.num('begg_tau', 3), ', ', T.p('begg_p'), '. ',
-        'The effect-on-SE intercept (effect extrapolated to SE zero; labelled Thompson–Sharp on the page) is not a test of asymmetry: t = ',
-        T.num('thompson_t', 3), ', ', T.p('thompson_p'), '. ',
+        'Thompson–Sharp: z = ',
+        T.num('thompson_z', 3), ', ', T.p('thompson_p'), '. ',
         T.when(r.format === 'binary', function () { return [
           'Peters: t = ', T.num('peters_t', 3), ', ', T.p('peters_p'),
           '; Harbord: t = ', T.num('harbord_t', 3), ', ', T.p('harbord_p'), '. '

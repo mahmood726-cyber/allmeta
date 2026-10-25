@@ -1,23 +1,161 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import fs from 'node:fs';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { readZip, readTiff, decodePng } from './zip-reader.mjs';
 
 const APP = 'pubbias-tests';
 const PAGE = '/pubbias-tests/index.html';
 const SNAP = new URL('./__snapshots__/text-pubbias-tests.json', import.meta.url);
-test('REVIEW: focused failing-first regressions and planted audit failure', () => {
-  const run = spawnSync(process.execPath, ['--test', '--test-isolation=none',
-    fileURLToPath(new URL('./fixtures/features/pubbias-tests/review-regressions.cjs', import.meta.url))],
-  { encoding: 'utf8' });
-  expect(run.status, run.stdout + run.stderr).toBe(0);
+// The archived offline harness predates strict input validation (its Element
+// has no setAttribute) and the REML Thompson-Sharp fix. Run its review contracts
+// against the real page; keep the archived fixtures and numerical engines intact.
+async function reviewText(page, changes = {}, ctx = {}) {
+  const out = await page.evaluate(({ changes, ctx }) => {
+    const spec = AlmPubbiasFeatures.text, r = Object.assign(spec.results(), changes);
+    const rendered = AlmText.render(spec.templates, r, ctx);
+    return { rendered, audit: AlmText.audit(rendered, r, { ctx }) };
+  }, { changes, ctx });
+  expect(out.audit.ok, JSON.stringify(out.audit.failures)).toBe(true);
+  return out.rendered;
+}
+
+test('REVIEW: focused failing-first regressions and planted audit failure', async ({ page }) => {
+  await open(page, 'text');
+  const generic = await reviewText(page);
+  expect(generic.methods.text).toContain('estimating residual heterogeneity by REML');
+  expect(generic.methods.text).toContain('standard-error slope used a two-sided z test for funnel asymmetry');
+  expect(generic.results.text).toMatch(/Thompson–Sharp: z =/);
+  for (const text of [generic.methods.text, generic.results.text]) {
+    expect(text).not.toMatch(/effect extrapolated to (?:SE|standard error) (?:= )?zero|not a test of asymmetry/);
+  }
+
+  // Preserve the guards against accepting unavailable R packages or certifying
+  // unrun results. The live tests below still require every comparison to pass.
+  const source = fs.readFileSync(new URL(import.meta.url), 'utf8');
+  const liveStart = source.search(/^test\('VERIFY: live R/m);
+  const liveEnd = source.search(/^test\('SHARE:/m);
+  expect(liveStart).toBeGreaterThanOrEqual(0);
+  expect(liveEnd).toBeGreaterThan(liveStart);
+  const live = source.slice(liveStart, liveEnd);
+  expect(live).not.toMatch(/quantities match R\|unavailable|if \(message.includes\('unavailable'\)\)/);
+  expect(live).toContain('VERIFY planted');
+  expect(live).toContain("test('VERIFY BINARY:");
+  expect(live).toContain('verified inputs with unrun results');
+  expect(live).toContain('peters_statistic');
+  expect(live).toContain('harbord_statistic');
+
+  const ctx = { revision: 'run', verify: { revision: 'run', passed: true,
+    rows: [{ pass: true }], packages: ['metafor'], versions: { metafor: '4.8-0' } } };
+  expect((await reviewText(page, { verified: true }, ctx)).methods.text)
+    .not.toMatch(/This comparison covers|independently verified/);
+  ctx.verify.versions.webR = '0.5.8';
+  expect((await reviewText(page, { verified: true }, ctx)).methods.text).toContain('This comparison covers');
+
+  for (const tf_k0 of [0, 1, 2]) {
+    const text = (await reviewText(page, { tf_k0 })).results.text;
+    expect(text).toContain(`imputed ${tf_k0} ${tf_k0 === 1 ? 'study' : 'studies'},`);
+  }
+  const independentKeys = await page.evaluate(() => Object.keys(AlmPubbiasFeatures.text.dom())
+    .filter(key => Object.hasOwn(_almLastPubbias(), key)));
+  expect(independentKeys).toEqual(['egger_t', 'egger_p', 'begg_tau', 'begg_p',
+    'tf_k0', 'tf_est', 'sel_delta2', 'sel_LRTp', 'sel_mu']);
+
+  // Fixed settings still come from the current page source; planted drift must
+  // fail rather than teaching the report to accept an unrelated constant.
+  const html = fs.readFileSync(new URL('../../../pubbias-tests/index.html', import.meta.url), 'utf8');
+  const settings = await page.evaluate(() => {
+    const r = AlmPubbiasFeatures.text.results();
+    return { cutpoint: r.selectionCutpoint, cc: r.cc,
+      row: __almPubBiasEngine.parseBinary('0,10,2,12')[0] };
+  });
+  function settingsGate(html) {
+    expect(Number(/steps: \[([\d.]+)\]/.exec(html)[1])).toBe(settings.cutpoint);
+    const correction = /e1 \+= ([\d.]+); n1 \+= ([\d.]+); e2 \+= ([\d.]+); n2 \+= ([\d.]+)/
+      .exec(html).slice(1).map(Number);
+    expect(correction).toEqual([settings.cc, 2 * settings.cc, settings.cc, 2 * settings.cc]);
+  }
+  settingsGate(html);
+  expect(() => settingsGate(html.replace('steps: [0.025]', 'steps: [0.05]'))).toThrow();
+  expect(() => settingsGate(html.replace('e1 += 0.5', 'e1 += 0.1'))).toThrow();
+  expect(settings.row.te).toBe(Math.log((0.5 / 10.5) / (2.5 / 10.5)));
+  expect(settings.row.se).toBe(Math.sqrt(1 / 0.5 + 1 / 10.5 + 1 / 2.5 + 1 / 10.5));
+
+  await page.locator('#format').selectOption('binary');
+  const binary = await reviewText(page);
+  expect(binary.plain.text).toMatch(/Peters.*p = .*Harbord.*p = /);
+  expect(binary.plain.text).not.toMatch(/Egger.*gave t/);
+  for (const text of [binary.plain.text, binary.results.text]) {
+    expect(text).toMatch(/Egger.*not recommended for.*odds ratios/);
+  }
+  const tiny = await reviewText(page, { egger_p: 0.00001, begg_p: 0.00002,
+    thompson_p: 0, peters_p: 0, harbord_p: 0.0005, sel_LRTp: 0 });
+  expect(tiny.plain.text + tiny.results.text).not.toMatch(/p = 0\.000/);
+  expect(tiny.results.text.match(/p < 0\.001/g)).toHaveLength(6);
+  expect((await reviewText(page, { egger_p: 0.001 })).results.text).toMatch(/Egger:.*p = 0\.001/);
+  for (const sel_delta2 of [0, 0.0004, 99.9996, 100]) {
+    expect((await reviewText(page, { sel_delta2 })).results.text)
+      .toContain('selection weight reached its boundary; the model is not informative');
+  }
+  expect((await reviewText(page, { sel_delta2: 2 })).results.text).not.toContain('reached its boundary');
+
+  const rejected = await page.evaluate(() => {
+    const spec = AlmPubbiasFeatures, button = document.getElementById('btn-run');
+    const before = spec.share.get(), click = button.click;
+    const records = _almLastPubbias().studies.map(r => ({ yi: r.te + 1, sei: r.se }));
+    try {
+      button.click = () => {};
+      const noOp = spec.entry.apply(records), afterNoOp = spec.share.get();
+      button.click = () => { throw new Error('run refused'); };
+      let error = null;
+      try { spec.entry.apply(records); } catch (e) { error = e.message; }
+      return { before, noOp, afterNoOp, error, afterError: spec.share.get() };
+    } finally { button.click = click; }
+  });
+  expect(rejected.noOp.ok).toBe(false);
+  expect(rejected.afterNoOp).toEqual(rejected.before);
+  expect(rejected.error).toBe('run refused');
+  expect(rejected.afterError).toEqual(rejected.before);
+
+  await page.evaluate(() => { window.__almTextPerturb = { key: 'egger_t', delta: 1 }; });
+  try {
+    const planted = await textOutput(page);
+    expect(planted.audit.ok).toBe(false);
+    expect(planted.audit.failures.map(f => f.check)).toContain('dom:egger_t');
+  } finally { await page.evaluate(() => { delete window.__almTextPerturb; }); }
 });
-async function open(page, tab = 'entry') {
-  await page.goto(PAGE);
+
+function currentSnapshot() {
+  // Preserve the frozen pre-core snapshot on disk. Pin only the independently
+  // reviewed Thompson-Sharp correction here; every other byte is still checked.
+  // R 4.6.0 / metafor 5.0.1, regtest(yi, sei=sei, model="rma", method="REML")
+  // on the page's default rows: z=2.680747085168369, p=0.007345801161671218.
+  const expected = JSON.parse(fs.readFileSync(SNAP, 'utf8'));
+  const oldMethods = 'The quantity labelled Thompson–Sharp on the page tests the intercept of the effect-on-SE regression (effect extrapolated to SE zero), not a test of asymmetry. It uses inverse-variance weights and multiplies its already dispersion-adjusted standard error by the square root of the larger of unity and residual dispersion, with a two-sided t test with study count minus two degrees of freedom. ';
+  const oldResults = 'The effect-on-SE intercept (effect extrapolated to SE zero; labelled Thompson–Sharp on the page) is not a test of asymmetry: t = −0.501, p = 0.630. ';
+  expect(expected.methods).toContain(oldMethods);
+  expect(expected.results).toContain(oldResults);
+  expected.methods = expected.methods.replace(oldMethods,
+    'Thompson–Sharp regressed the effect on standard error in a random-effects meta-regression, estimating residual heterogeneity by REML. The standard-error slope used a two-sided z test for funnel asymmetry. ');
+  expected.results = expected.results.replace(oldResults, 'Thompson–Sharp: z = 2.681, p = 0.007. ');
+  return expected;
+}
+async function open(page, tab = 'entry', testMode = false) {
+  // v2-core permits planted verification failures only on an explicit test URL.
+  await page.goto(PAGE + (testMode ? '?almtest=1' : ''));
   await page.waitForFunction(() => window.AlmFeatures?.get('pubbias-tests') && window._almLastPubbias());
   await page.evaluate(tab => AlmFeatures.open('pubbias-tests', tab), tab);
+}
+async function verificationReceipt(page, n, perturbed = null) {
+  const receipt = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(receipt).toMatchObject({
+    passed: perturbed === null, n, nPassed: n - (perturbed ? 1 : 0),
+    nNotComputed: 0, nOptional: 0, nNotApplicable: 0,
+    testHook: perturbed !== null, perturbed,
+  });
+  expect(receipt.rows).toHaveLength(n);
+  expect(receipt.rows.filter(row => !row.pass).map(row => row.key))
+    .toEqual(perturbed ? [perturbed.key] : []);
+  return receipt;
 }
 async function textOutput(page) {
   return page.evaluate(() => {
@@ -138,7 +276,7 @@ test('TEXT: audit, every displayed result, snapshot and report downloads', async
   const actual = info.outputPath('text-pubbias-tests.json');
   fs.writeFileSync(actual, JSON.stringify(out.snapshot, null, 2) + '\n');
   await info.attach('reviewable-text', { path: actual, contentType: 'application/json' });
-  expect(out.snapshot).toEqual(JSON.parse(fs.readFileSync(SNAP, 'utf8')));
+  expect(out.snapshot).toEqual(currentSnapshot());
   await expect(page.locator('#alm-f-panel-text .alm-text-body')).toBeVisible();
   for (const ext of ['md', 'docx']) {
     const [dl] = await Promise.all([page.waitForEvent('download'), page.locator(`.alm-text-${ext}`).click()]);
@@ -178,16 +316,17 @@ test('TEXT PLANTED: DOM mismatch withholds text, recovery and binary coverage', 
 
 test('VERIFY: live R, funnel exports, receipt, planted failure and stale text', async ({ page }) => {
   test.setTimeout(900_000);
-  await open(page, 'verify');
+  await open(page, 'verify', true);
   const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
   await expect(panel).toContainText('Thompson–Sharp is excluded');
   await expect(panel).toContainText('not validated against metafor');
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
-  await expect(summary).toHaveText(/^11 of 11 quantities match R — PASS$/, { timeout: 600_000 });
+  await expect(summary).toHaveText(/^11 of 11 computed quantities match R; 0 not computed — PASS$/, { timeout: 600_000 });
   const message = await summary.innerText();
-  const m = /^(\d+) of (\d+) quantities match R — PASS$/.exec(message);
+  const m = /^(\d+) of (\d+) computed quantities match R; 0 not computed — PASS$/.exec(message);
   expect(m, message).not.toBeNull();
   const n = +m[2]; expect(n).toBe(11); expect(+m[1]).toBe(n);
+  await verificationReceipt(page, n);
   console.log(`VERIFY ${m[1]}/${n}`);
   expect(await panel.locator('tbody td[data-result]').allTextContents()).toEqual(Array(n).fill('PASS'));
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('pubbias-tests'))).toBe(true);
@@ -222,21 +361,24 @@ test('VERIFY: live R, funnel exports, receipt, planted failure and stale text', 
     AlmFeatures.open('pubbias-tests', 'verify');
   });
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
-  await expect(summary).toContainText('FAIL', { timeout: 300_000 });
-  expect(await panel.locator('tbody td[data-result]').allTextContents()).toEqual(['FAIL', ...Array(n - 1).fill('PASS')]);
+  await expect(summary).toHaveText('TEST MODE (test hook active; not a verification) — 10 of 11 computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active', { timeout: 300_000 });
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
+  await verificationReceipt(page, n, { key: 'egger_lm_statistic', delta: 0.1 });
+  expect(await panel.locator('tbody td[data-result]').allTextContents()).toEqual(['FAIL (test perturbation)', ...Array(n - 1).fill('PASS')]);
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('pubbias-tests'))).toBe(false);
   console.log(`VERIFY planted ${n - 1}/${n} FAIL`);
 });
 
 test('VERIFY BINARY: meta rows, planted failure and verified inputs with unrun results', async ({ page }) => {
   test.setTimeout(900_000);
-  await open(page, 'verify');
+  await open(page, 'verify', true);
   await page.locator('#format').selectOption('binary');
   const panel = page.locator('#alm-f-panel-verify');
   const summary = panel.locator('[data-testid=verify-summary]');
   const verify = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
   await verify.click();
-  await expect(summary).toHaveText('15 of 15 quantities match R — PASS', { timeout: 600_000 });
-  const receipt = await page.evaluate(() => AlmFeaturesState.verify);
+  await expect(summary).toHaveText('15 of 15 computed quantities match R; 0 not computed — PASS', { timeout: 600_000 });
+  const receipt = await verificationReceipt(page, 15);
   expect(receipt.rows).toHaveLength(15);
   expect(receipt.rows.every(row => row.pass)).toBe(true);
   for (const key of ['peters_statistic', 'peters_p', 'harbord_statistic', 'harbord_p']) {
@@ -256,7 +398,8 @@ test('VERIFY BINARY: meta rows, planted failure and verified inputs with unrun r
   await page.locator('#src').fill(src.replace(/\d+/, n => String(Number(n) + 1)));
   await page.evaluate(() => AlmFeatures.open('pubbias-tests', 'verify'));
   await verify.click();
-  await expect(summary).toHaveText('15 of 15 quantities match R — PASS', { timeout: 300_000 });
+  await expect(summary).toHaveText('15 of 15 computed quantities match R; 0 not computed — PASS', { timeout: 300_000 });
+  await verificationReceipt(page, 15);
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('pubbias-tests'))).toBe(true);
   expect(await page.evaluate(() => _almLastPubbias())).toEqual(before);
   expect(await page.evaluate(() => AlmPubbiasFeatures.text.results().verified)).toBe(false);
@@ -270,7 +413,9 @@ test('VERIFY BINARY: meta rows, planted failure and verified inputs with unrun r
     AlmFeatures.open('pubbias-tests', 'verify');
   });
   await verify.click();
-  await expect(summary).toContainText('14 of 15 quantities match R — FAIL', { timeout: 300_000 });
+  await expect(summary).toHaveText('TEST MODE (test hook active; not a verification) — 14 of 15 computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active', { timeout: 300_000 });
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
+  await verificationReceipt(page, 15, { key: 'peters_statistic', delta: 0.1 });
   const failed = await page.evaluate(() => AlmFeaturesState.verify.rows.filter(row => !row.pass).map(row => row.key));
   expect(failed).toEqual(['peters_statistic']);
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('pubbias-tests'))).toBe(false);
