@@ -102,10 +102,10 @@ test('longest aliases win, punctuation is literal, words are bounded, case matte
   gate(T.buildMatcher); assert.throws(() => gate(() => /Q/g));
 });
 
-test('English definitions retain mathematical symbols and Handbook section signs', () => {
+test('English definitions retain mathematical symbols and the Handbook chapter citation', () => {
   assert.match(glossary.FisherZ.long, /n−3/);
   assert.match(glossary.Tau.long, /τ²/);
-  assert.match(glossary.Q.long, /§10\.10\.2/);
+  assert.match(glossary.Q.long, /Cochrane Handbook, chapter 10\./);
   assert.ok(!raw.includes('?'), 'no encoding replacement question marks in definitions');
 });
 

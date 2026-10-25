@@ -1,7 +1,7 @@
 {
   "HKSJ": {
     "short": "Hartung–Knapp adjustment",
-    "long": "Adjusts pooled-mean uncertainty using residual scale q and t(k−1); intervals can narrow without a safeguard. Cochrane Handbook §10.10.4.4.",
+    "long": "Adjusts pooled-mean uncertainty using residual scale q and t(k−1); intervals can narrow without a safeguard. Cochrane Handbook, chapter 10.",
     "aliases": [
       "HKSJ",
       "Hartung-Knapp",
@@ -16,7 +16,7 @@
   },
   "REML": {
     "short": "Restricted maximum likelihood",
-    "long": "Estimates heterogeneity accounting for fitted means. Cochrane Handbook §10.10.4.4.",
+    "long": "Estimates heterogeneity accounting for fitted means. Cochrane Handbook, chapter 10.",
     "aliases": [
       "REML",
       "restricted maximum likelihood"
@@ -28,7 +28,7 @@
   },
   "DL": {
     "short": "DerSimonian–Laird estimator",
-    "long": "Moment-based estimate of heterogeneity. Cochrane Handbook §10.10.4.4.",
+    "long": "Moment-based estimate of heterogeneity; biased when there are few studies (k < 10); REML or Paule–Mandel are preferred. Cochrane Handbook, chapter 10.",
     "aliases": [
       "DL",
       "DerSimonian-Laird",
@@ -41,7 +41,7 @@
   },
   "PM": {
     "short": "Paule–Mandel estimator",
-    "long": "Matches weighted residual variation to degrees of freedom. Cochrane Handbook §10.10.4.4.",
+    "long": "Matches weighted residual variation to degrees of freedom. Cochrane Handbook, chapter 10.",
     "aliases": [
       "PM",
       "Paule-Mandel",
@@ -54,7 +54,7 @@
   },
   "I2": {
     "short": "I-squared",
-    "long": "Heterogeneity percentage, not magnitude; values depend on estimator. Rough, overlapping bands: 0–40% may be unimportant, 30–60% moderate, 50–90% substantial, 75–100% considerable. Cochrane Handbook §10.10.2.",
+    "long": "Heterogeneity percentage, not magnitude; values depend on estimator. Rough, overlapping bands: 0–40% may be unimportant, 30–60% moderate, 50–90% substantial, 75–100% considerable. Cochrane Handbook, chapter 10.",
     "aliases": [
       "I²",
       "I2",
@@ -67,7 +67,7 @@
   },
   "tau2": {
     "short": "Between-study variance",
-    "long": "Variance of underlying effects on the squared analysis scale. Cochrane Handbook §10.10.4.3.",
+    "long": "Variance of underlying effects on the squared analysis scale. Cochrane Handbook, chapter 10.",
     "aliases": [
       "τ²",
       "tau²",
@@ -85,7 +85,7 @@
   },
   "PI": {
     "short": "Prediction interval",
-    "long": "Approximate range for a true effect in a similar setting. The t-based 95% form is μ ± t(k−1)√(SE²+τ²); methods differ. Cochrane Handbook §10.10.4.3; metafor predict.rma.",
+    "long": "Approximate range for a true effect in a similar setting. The t-based 95% form is μ ± t(k−1)√(SE²+τ²); methods differ. Cochrane Handbook, chapter 10; metafor predict.rma.",
     "aliases": [
       "PI",
       "prediction interval",
@@ -162,7 +162,7 @@
   },
   "NMA": {
     "short": "Network meta-analysis",
-    "long": "Combines direct and indirect comparisons of multiple interventions. Cochrane Handbook §11.1.",
+    "long": "Combines direct and indirect comparisons of multiple interventions. Cochrane Handbook, chapter 11.",
     "aliases": [
       "NMA",
       "network meta-analysis"
@@ -170,7 +170,7 @@
   },
   "SUCRA": {
     "short": "Surface under the cumulative ranking curve",
-    "long": "Summarizes ranking; consider effect sizes and uncertainty too. Cochrane Handbook §11.4.3.3.",
+    "long": "Summarizes ranking; consider effect sizes and uncertainty too. Cochrane Handbook, chapter 11.",
     "aliases": [
       "SUCRA"
     ]
@@ -314,7 +314,7 @@
   },
   "Egger": {
     "short": "Egger's test",
-    "long": "Regression test for small-study effects; not proof of publication bias. Cochrane Handbook §13.3.4.4.",
+    "long": "Regression test for small-study effects; not proof of publication bias. Cochrane Handbook, chapter 13.",
     "aliases": [
       "Egger",
       "Egger's test",
@@ -323,7 +323,7 @@
   },
   "Peters": {
     "short": "Peters' test",
-    "long": "A small-study-effect regression test for binary outcomes. Cochrane Handbook §13.3.4.4.",
+    "long": "A small-study-effect regression test for binary outcomes. Cochrane Handbook, chapter 13.",
     "aliases": [
       "Peters",
       "Peters' test"
@@ -335,7 +335,7 @@
   },
   "TrimFill": {
     "short": "Trim-and-fill",
-    "long": "Imputes studies to restore funnel symmetry; a sensitivity analysis relying on strong assumptions. Cochrane Handbook §13.3.4.5.",
+    "long": "Imputes studies to restore funnel symmetry; a sensitivity analysis relying on strong assumptions. Cochrane Handbook, chapter 13.",
     "aliases": [
       "trim-and-fill",
       "trim and fill"
@@ -480,7 +480,7 @@
   },
   "Funnel": {
     "short": "Funnel plot",
-    "long": "Plots effects against precision or study size; asymmetry has several possible causes besides missing results. Cochrane Handbook §13.3.4.2.",
+    "long": "Plots effects against precision or study size; asymmetry has several possible causes besides missing results. Cochrane Handbook, chapter 13.",
     "aliases": [
       "funnel",
       "funnel plot"
@@ -496,7 +496,7 @@
   },
   "Network": {
     "short": "Treatment network",
-    "long": "Treatments linked by available direct comparisons. Cochrane Handbook §11.1.",
+    "long": "Treatments linked by available direct comparisons. Cochrane Handbook, chapter 11.",
     "aliases": [
       "network graph",
       "treatment network"
@@ -504,7 +504,7 @@
   },
   "Indirect": {
     "short": "Indirect evidence",
-    "long": "Comparison through other network interventions. Cochrane Handbook §11.1.",
+    "long": "Comparison through other network interventions. Cochrane Handbook, chapter 11.",
     "aliases": [
       "Indirect",
       "indirect evidence",
@@ -521,7 +521,7 @@
   },
   "Subgroup": {
     "short": "Subgroup analysis",
-    "long": "Compares effects across study groups. Cochrane Handbook §10.11.2.",
+    "long": "Compares effects across study groups. Cochrane Handbook, chapter 10.",
     "aliases": [
       "subgroup",
       "subgroup analysis"
@@ -592,7 +592,7 @@
   },
   "MetaRegression": {
     "short": "Meta-regression",
-    "long": "Relates study effects to study characteristics; associations need not be causal. Cochrane Handbook §10.11.4.",
+    "long": "Relates study effects to study characteristics; associations need not be causal. Cochrane Handbook, chapter 10.",
     "aliases": [
       "meta-regression"
     ]
@@ -631,7 +631,7 @@
   },
   "Q": {
     "short": "Cochran's Q",
-    "long": "Tests variation against sampling error; low power with few studies. Cochrane Handbook §10.10.2.",
+    "long": "Tests variation against sampling error; low power with few studies. Cochrane Handbook, chapter 10.",
     "aliases": [
       "Q",
       "Cochran Q",
@@ -645,7 +645,7 @@
   },
   "FE": {
     "short": "Fixed-effect model",
-    "long": "Assumes one underlying effect. Cochrane Handbook §10.10.4.1.",
+    "long": "Assumes one underlying effect. Cochrane Handbook, chapter 10.",
     "aliases": [
       "FE",
       "fixed-effect",
@@ -656,7 +656,7 @@
   },
   "RE": {
     "short": "Random-effects model",
-    "long": "Models a distribution of underlying effects. Cochrane Handbook §10.10.4.1.",
+    "long": "Models a distribution of underlying effects. Cochrane Handbook, chapter 10.",
     "aliases": [
       "RE",
       "random-effects",
@@ -780,7 +780,7 @@
   },
   "Harbord": {
     "short": "Harbord's test",
-    "long": "A score-based regression test for small-study effects with binary outcomes. Cochrane Handbook §13.3.4.4.",
+    "long": "A score-based regression test for small-study effects with binary outcomes. Cochrane Handbook, chapter 13.",
     "aliases": [
       "Harbord",
       "Harbord's test"
@@ -797,7 +797,7 @@
   },
   "SmallStudy": {
     "short": "Small-study effects",
-    "long": "Differences between smaller and larger studies, potentially caused by bias, heterogeneity or chance. Cochrane Handbook §13.3.4.",
+    "long": "Differences between smaller and larger studies, potentially caused by bias, heterogeneity or chance. Cochrane Handbook, chapter 13.",
     "aliases": [
       "small-study effects",
       "small-study-effect",
@@ -806,7 +806,7 @@
   },
   "PublicationBias": {
     "short": "Publication bias",
-    "long": "Selective publication related to findings can distort the available evidence. Cochrane Handbook §13.1.",
+    "long": "Selective publication related to findings can distort the available evidence. Cochrane Handbook, chapter 13.",
     "aliases": [
       "publication bias",
       "pub bias"
@@ -1401,7 +1401,7 @@
   },
   "Direct": {
     "short": "Direct evidence",
-    "long": "Studies comparing the interventions head to head. Cochrane Handbook §11.1.",
+    "long": "Studies comparing the interventions head to head. Cochrane Handbook, chapter 11.",
     "aliases": [
       "Direct",
       "direct evidence"
@@ -1409,7 +1409,7 @@
   },
   "Inconsistency": {
     "short": "Network inconsistency",
-    "long": "Disagreement between evidence sources; nonsignificance does not prove agreement. Cochrane Handbook §11.4.4.",
+    "long": "Disagreement between evidence sources; nonsignificance does not prove agreement. Cochrane Handbook, chapter 11.",
     "aliases": [
       "inconsistency",
       "incoherence"
@@ -1417,7 +1417,7 @@
   },
   "NodeSplit": {
     "short": "Node-splitting",
-    "long": "Compares direct and indirect evidence for the same contrast. Cochrane Handbook §11.4.4.2.",
+    "long": "Compares direct and indirect evidence for the same contrast. Cochrane Handbook, chapter 11.",
     "aliases": [
       "node-split",
       "node-splitting",
@@ -1427,7 +1427,7 @@
   },
   "DesignTreatment": {
     "short": "Design-by-treatment test",
-    "long": "Global assessment of disagreement across network designs. Cochrane Handbook §11.4.4.3.",
+    "long": "Global assessment of disagreement across network designs. Cochrane Handbook, chapter 11.",
     "aliases": [
       "design-by-treatment",
       "DBT"
@@ -1435,14 +1435,14 @@
   },
   "Transitivity": {
     "short": "Transitivity",
-    "long": "Comparability of effect modifiers across network comparisons. Cochrane Handbook §11.2.3.1.",
+    "long": "Comparability of effect modifiers across network comparisons. Cochrane Handbook, chapter 11.",
     "aliases": [
       "transitivity"
     ]
   },
   "PScore": {
     "short": "P-score",
-    "long": "Frequentist ranking summary; not a probability of being best. Cochrane Handbook §11.4.3.3.",
+    "long": "Frequentist ranking summary; not a probability of being best. Cochrane Handbook, chapter 11.",
     "aliases": [
       "P-score",
       "P-scores"
@@ -1450,14 +1450,14 @@
   },
   "PBest": {
     "short": "Probability of being best",
-    "long": "Model-based probability of first rank. Cochrane Handbook §11.4.3.3.",
+    "long": "Model-based probability of first rank. Cochrane Handbook, chapter 11.",
     "aliases": [
       "P(best)"
     ]
   },
   "League": {
     "short": "League table",
-    "long": "Matrix of pairwise intervention estimates. Cochrane Handbook §11.6.",
+    "long": "Matrix of pairwise intervention estimates. Cochrane Handbook, chapter 11.",
     "aliases": [
       "league table"
     ]
@@ -1870,7 +1870,7 @@
   },
   "i2": {
     "short": "I-squared",
-    "long": "Heterogeneity percentage, not magnitude; values depend on estimator. Rough, overlapping bands: 0–40% may be unimportant, 30–60% moderate, 50–90% substantial, 75–100% considerable. Cochrane Handbook §10.10.2.",
+    "long": "Heterogeneity percentage, not magnitude; values depend on estimator. Rough, overlapping bands: 0–40% may be unimportant, 30–60% moderate, 50–90% substantial, 75–100% considerable. Cochrane Handbook, chapter 10.",
     "r_check": {
       "expression": "c(100*max(0,(Q-(k-1))/Q), 100*tau/(tau+typical), c(0,30,50,75), c(40,60,90,100), as.numeric(100*tau/(tau+typical) >= c(0,30,50,75) & 100*tau/(tau+typical) <= c(40,60,90,100)))",
       "reference": "i2"
@@ -1886,7 +1886,7 @@
   },
   "Consistency": {
     "short": "Network consistency",
-    "long": "Agreement between direct and indirect evidence. Cochrane Handbook §11.2.3.2.",
+    "long": "Agreement between direct and indirect evidence. Cochrane Handbook, chapter 11.",
     "aliases": [
       "consistency",
       "coherence"
