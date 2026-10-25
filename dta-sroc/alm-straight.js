@@ -39,5 +39,6 @@
     return c;
   }
   (window.AlmStraightAdapters = window.AlmStraightAdapters || {})[APP] = { ctx: ctx };
-  window.AlmStraightUI.attach({ app: APP, ctx: ctx, anchor: '#stats-wrap', watch: ['#stats-wrap', '#deeks-host'] });
+  // Keep advice outside the results layout, after the measured plots and extras.
+  window.AlmStraightUI.attach({ app: APP, ctx: ctx, anchor: '#alm-features', watch: ['#stats-wrap', '#deeks-host'] });
 })();
