@@ -105,10 +105,26 @@ test('ENTRY: example as Excel, paper-style and RevMan tables -> same result; pla
   let passed = 0;
   const N = 3;
 
-  // 1. Excel / Covidence-style tab-separated paste.
+  // 1. Excel / Covidence-style tab-separated paste. "Estimate" does not identify a measure or scale:
+  //    current core requires both confirmations before these example log odds ratios can be applied.
   const excel = 'Study\tEstimate\tSE\n' + EX.map(r => r.join('\t')).join('\n');
-  const e1 = await enter(page, excel, {});
-  expect(e1.blocking, JSON.stringify(e1)).toEqual([]); expect(e1.questions).toEqual([]);
+  const unidentified = await enter(page, excel, {});
+  expect(unidentified.blocking).toEqual(['unanswered-question']);
+  expect(unidentified.questions).toEqual(['measure:type']);
+  expect(unidentified.res).toBeNull(); expect(unidentified.data).toBe(EXAMPLE_TEXT);
+  expect(await appResult(page)).toEqual(base);
+  const unscaled = await enter(page, excel, { 'measure:type': 'ratio' });
+  const scaleQuestions = EX.map((_, i) => `scale:${i}`);
+  expect(unscaled.questions).toEqual(['measure:type', ...scaleQuestions]);
+  expect(unscaled.blocking.filter(f => f === 'unanswered-question')).toHaveLength(EX.length);
+  expect(unscaled.res).toBeNull(); expect(unscaled.data).toBe(EXAMPLE_TEXT);
+  expect(await appResult(page)).toEqual(base);
+  const logRatios = { 'measure:type': 'ratio', ...Object.fromEntries(scaleQuestions.map(id => [id, 'log'])) };
+  const e1 = await enter(page, excel, logRatios);
+  expect(e1.blocking, JSON.stringify(e1)).toEqual([]);
+  expect(e1.questions).toEqual(['measure:type', ...scaleQuestions]);
+  expect(e1.steps).toContain('Effect measure confirmed as a ratio');
+  expect(e1.steps.filter(s => /log scale/.test(s))).toHaveLength(EX.length);
   expect(e1.records).toEqual(EX.map(r => ({ study: r[0], yi: Number(r[1]), sei: Number(r[2]) })));
   expect(e1.res).toEqual({ ok: true, n: 8 });
   const r1 = await appResult(page);
@@ -359,7 +375,8 @@ test('TEXT PLANTED: perturbing a DOM-cross-checked result makes the audit FAIL a
 test('VERIFY in R: every row passes on the built-in example; planted defect fails; downloads', async ({ page }) => {
   test.setTimeout(900_000);
   const errors = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto(PAGE);
+  // The perturbation hook is intentionally inert outside this explicit test URL.
+  await page.goto(PAGE + '?almtest=1');
   await expect(page.locator('#stats-wrap .stat').first()).toBeVisible();
   await expect(page.locator('#alm-features')).toBeVisible();
   await openPanel(page);
@@ -380,17 +397,24 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   await expect(summary).not.toBeEmpty({ timeout: 600_000 });
   const text = (await summary.textContent()).trim();
   console.log('VERIFY ' + text);
-  const m = /^(\d+) of (\d+) quantities match R — PASS$/.exec(text);
+  const m = /^(\d+) of (\d+) computed quantities match R; 0 not computed — PASS$/.exec(text);
   expect(m, text).not.toBeNull();
   const N = +m[2];
   expect(N).toBeGreaterThanOrEqual(5); expect(+m[1]).toBe(N);
   const results = await panel.locator('tbody td[data-result]').allTextContents();
   expect(results).toHaveLength(N); expect(results.filter(r => r !== 'PASS')).toEqual([]);
   const keys = await panel.locator('tbody tr').evaluateAll(trs => trs.map(tr => tr.dataset.key));
+  // Pin the complete live-adapter contract so dropping comparisons cannot shrink N into a pass.
+  expect(keys).toEqual(['tau2', 'mu', 'se', 'ci_lb', 'ci_ub', 'hk_lo', 'hk_hi', 'pi_lo', 'pi_hi',
+    'QE', 'pQ', 'I2', 'k', 'df', 'tau2_lo', 'tau2_hi', 'I2_lo', 'I2_hi']);
+  expect(N).toBe(keys.length);
   console.log('VERIFY keys ' + keys.join(','));
   const st = await page.evaluate(() => ({ verify: AlmFeaturesState.verify, revision: AlmFeatures.revision('heterogeneity') }));
   console.log('VERIFY versions ' + JSON.stringify(st.verify.versions) + ' graphics ' + JSON.stringify(st.verify.graphics));
   expect(st.verify.passed).toBe(true); expect(st.verify.nPassed).toBe(N);
+  expect(st.verify.n).toBe(N);
+  expect(st.verify.nNotComputed).toBe(0); expect(st.verify.nOptional).toBe(0); expect(st.verify.nNotApplicable).toBe(0);
+  expect(st.verify.testHook).toBe(false); expect(st.verify.perturbed).toBeNull();
   expect(st.verify.revision).toBe(st.revision);
   expect(st.verify.versions.webR).toBe('0.5.5');
   // R forest plot (R only: the page draws none) and R Baujat plot beside the app's Baujat SVG; no duplicate ids.
@@ -415,8 +439,14 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   expect(Object.keys(byName).filter(nm => /^heterogeneity-forest-app\.svg$/.test(nm))).toEqual([]);
   const dec = b => new TextDecoder().decode(b);
   const csv = dec(byName['heterogeneity-verify-comparison.csv']).trim().split('\n');
-  expect(csv[0]).toBe('quantity,key,app,R,abs_diff,tolerance,kind,result'); expect(csv).toHaveLength(N + 1);
+  expect(csv[0]).toBe('quantity,key,app,R,diff,abs_diff,tolerance,kind,result'); expect(csv).toHaveLength(N + 1);
   expect(csv.slice(1).every(l => l.endsWith(',PASS'))).toBe(true);
+  for (const [i, line] of csv.slice(1).entries()) {
+    const cells = line.split(','), row = st.verify.rows[i];
+    expect(cells).toEqual([row.label, row.key, row.app, row.ref, row.diff, row.absDiff, row.tol, row.kind, 'PASS'].map(String));
+    expect(Number.isFinite(row.diff)).toBe(true);
+    expect(row.diff).toBeLessThanOrEqual(row.tol);
+  }
   const script = dec(byName['heterogeneity-verify.R']);
   expect(script).toContain('rma(yi, vi'); expect(script).toContain('metafor::baujat('); expect(script).toContain('print(sessionInfo())');
   expect(dec(byName['sessionInfo.txt'])).toContain('metafor');
@@ -431,6 +461,8 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   const receipt = JSON.parse(dec(byName['truthcert.json']));
   const rr = receipt.extra.results;
   expect(rr.app).toBe('heterogeneity'); expect(rr.passed).toBe(true); expect(rr.n).toBe(N);
+  expect(rr.nPassed).toBe(N); expect(rr.nNotComputed).toBe(0); expect(rr.nOptional).toBe(0); expect(rr.nNotApplicable).toBe(0);
+  expect(rr.testHook).toBe(false); expect(rr.perturbed).toBeNull(); expect(rr.summary).toBe(text);
   expect(rr.stateRevision).toBe(st.verify.revision);
   expect(rr.files.map(f => f.name).sort()).toEqual(Object.keys(byName).filter(nm => nm !== 'truthcert.json').sort());
   for (const f of rr.files) expect(f.sha256, f.name).toBe(sha(byName[f.name]));
@@ -449,10 +481,18 @@ test('VERIFY in R: every row passes on the built-in example; planted defect fail
   await expect(summary).toContainText('FAIL', { timeout: 300_000 });
   const planted = (await summary.textContent()).trim();
   console.log('VERIFY PLANTED ' + planted);
-  expect(planted).toBe(`${N - 1} of ${N} quantities match R — FAIL: 1 outside tolerance or unavailable`);
+  expect(planted).toBe(`TEST MODE (test hook active; not a verification) — ${N - 1} of ${N} computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active`);
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
   const failing = await panel.locator('tbody tr').evaluateAll(trs => trs.filter(tr => tr.querySelector('td[data-result]').textContent !== 'PASS').map(tr => tr.dataset.key));
   expect(failing).toEqual(['tau2']);
-  expect(await page.evaluate(() => AlmFeaturesState.verify.passed)).toBe(false);
+  const plantedState = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(plantedState.passed).toBe(false); expect(plantedState.testHook).toBe(true);
+  expect(plantedState.perturbed).toEqual({ key: 'tau2', delta: 1e-3 });
+  expect(plantedState.n).toBe(N); expect(plantedState.nPassed).toBe(N - 1);
+  expect(plantedState.nNotComputed).toBe(0); expect(plantedState.nOptional).toBe(0); expect(plantedState.nNotApplicable).toBe(0);
+  const changedRow = plantedState.rows.find(r => r.key === 'tau2');
+  expect(changedRow.app).toBe(st.verify.rows.find(r => r.key === 'tau2').app + 1e-3);
+  expect(changedRow.diff).toBeGreaterThan(changedRow.tol);
   await page.evaluate(() => { delete window.__almVerifyPerturb; });
   expect(errors).toEqual([]);
 });
