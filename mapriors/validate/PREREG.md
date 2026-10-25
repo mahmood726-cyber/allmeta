@@ -87,4 +87,8 @@ AS placebo data (8 historical trials; Neuenschwander et al. 2010 Clin Trials; us
 the RBesT paper, Weber et al. 2021 J Stat Softw): MAP prior, robust MAP (w_vague = 0.2), ESS, captured from the real page.
 
 ## Amendments
-(none)
+- A1 (2026-10-25, before any R reference or gate result existed): PD1 moved from "grid point 11" to "the grid point with
+  the largest MAP-mixture density". Reason (manager review of the gate, C3): grid point 11 is p = 0.5, where the AS MAP
+  density is near 0, so a (1 + 1e-8) perturbation is ~1e-13 absolute and cannot exceed the 1e-9 x max(1, |R|) tolerance;
+  the plant would be undetectable by construction. At the density peak (density > 1) a 1e-8 relative change exceeds the
+  tolerance. No tolerance or quantity changed.
