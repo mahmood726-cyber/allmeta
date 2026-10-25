@@ -9,6 +9,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 
 const require = createRequire(import.meta.url);
 const F = require('../../../../shared/alm-features.js');
@@ -93,7 +95,7 @@ const CASES = {
   },
 };
 
-test('rule table: exactly the 8 rules + 2 uncertainty statements of STRAIGHT_PATH_RULES_v1, placed per app', () => {
+test('rule table: exactly the approved 7 rules + 2 uncertainty statements, placed per app', () => {
   eq(S.RULES.map(r => r.id).sort(), Object.keys(PLACEMENTS).sort());
   for (const r of S.RULES) {
     eq(r.apps, PLACEMENTS[r.id], r.id + ' placement');
@@ -104,12 +106,14 @@ test('rule table: exactly the 8 rules + 2 uncertainty statements of STRAIGHT_PAT
   }
   const perApp = app => S.RULES.filter(r => r.apps.includes(app));
   const count = (app, part) => perApp(app).filter(r => (part === 'uncertainty') === (r.part === 'uncertainty')).length;
-  // "P3 = 2 (+UNC), P9 = 3 (+2 UNC), P16 = 1 (+UNC), P17 = 3 (+2 UNC), P18 = 2 incl. #8 (+UNC)"
+  // Approval 2026-10-21 dropped #8 SP-PIT-WITHINCOR: P18 now has NONSIG + SMALLK uncertainty.
+  eq(S.RULES.filter(r => r.part !== 'uncertainty').length, 7);
+  eq(S.RULES.filter(r => r.part === 'uncertainty').length, 2);
   eq([count('dta-sroc'), count('dta-sroc', 'uncertainty')], [2, 1]);
   eq([count('proportion-ma'), count('proportion-ma', 'uncertainty')], [3, 2]);
   eq([count('nma-inconsistency'), count('nma-inconsistency', 'uncertainty')], [1, 1]);
   eq([count('correlation-ma'), count('correlation-ma', 'uncertainty')], [3, 2]);
-  eq([count('multivariate-ma'), count('multivariate-ma', 'uncertainty')], [2, 1]);
+  eq([count('multivariate-ma'), count('multivariate-ma', 'uncertainty')], [1, 1]);
   for (const [name, t] of Object.entries(S.THRESHOLDS)) ok(typeof t.value === 'number' && typeof t.source === 'string' && t.source.length > 10, 'threshold ' + name + ' has value + source');
 });
 
@@ -304,6 +308,42 @@ test('UI notice: hidden when nothing fires, advisory list when rules fire, dismi
   n.refresh();
   eq(n.element.hidden, false, 'new advice shows again');
   eq(UI.notice({ app: 'x', ctx: () => ({}), anchor: new Node('div', doc) }), null, 'detached anchor -> no notice, no throw');
+});
+
+test('app notices leave analysis DOM and control order intact; planted results mount fails', () => {
+  const apps = {
+    'dta-sroc': '#stats-wrap',
+    'proportion-ma': '#k-warn',
+    'nma-inconsistency': 'section.panel[aria-live="polite"] > h2',
+    'correlation-ma': '#headline',
+    'multivariate-ma': '#headline',
+  };
+  const source = path => readFileSync(new URL('../../../../' + path, import.meta.url), 'utf8');
+  for (const [app, oldAnchor] of Object.entries(apps)) {
+    const doc = fakeDoc(), body = new Node('body', doc), main = new Node('main', doc);
+    const result = new Node('div', doc), run = new Node('button', doc), features = new Node('div', doc);
+    body.appendChild(main); main.appendChild(run); main.appendChild(result); body.appendChild(features);
+    run.textContent = 'Run'; result.textContent = 'Result 0.25';
+    doc.readyState = 'complete';
+    doc.querySelector = sel => sel === '#alm-features' ? features : sel === oldAnchor ? result : null;
+    doc.querySelectorAll = () => [];
+    doc.getElementById = id => id === 'alm-features' ? features : null;
+    const env = { document: doc, setTimeout, clearTimeout };
+    env.window = env;
+    runInNewContext(source('shared/alm-straight.js'), env);
+    runInNewContext(source('shared/alm-straight-ui.js'), env);
+    // Use the real per-app registration and shared mounting code.
+    const before = main.children.slice(), text = main.textContent;
+    runInNewContext(source(app + '/alm-straight.js'), env);
+    const notice = body.children.find(n => n.attrs.class === 'alm-straight-notice');
+    ok(!!notice, app + ': notice is outside analysis landmarks');
+    eq(body.children, [main, notice, features], app + ': advice precedes features, after results');
+    eq(main.children, before, app + ': result/control order unchanged');
+    eq(main.textContent, text, app + ': result text unchanged');
+    // PLANTED original regression: even an empty/hidden notice changes the pinned DOM.
+    main.insertBefore(notice, result);
+    ok(main.children.length !== before.length, app + ': results insertion is detected');
+  }
 });
 
 test('feature panel: "Straight path" is an extension tab after Report text; core tab/block lists unchanged', () => {
