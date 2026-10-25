@@ -100,7 +100,6 @@
 0.40, 0.20, Study I</textarea>
         <span id="input-error" role="alert"></span></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
-      <div id="share-data-note" class="note" role="status" hidden>Data too long for a link — use Export/Download to share the data</div>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount"></div>
@@ -401,7 +400,17 @@
         // Let urlState apply its encoded-size budget to the complete dataset.
         var sharedData = window.alm.urlState.write({ model: model, src: text });
         if (!sharedData) window.alm.urlState.write({ model: model });
-        document.getElementById('share-data-note').hidden = sharedData;
+        var shareNote = document.getElementById('share-data-note');
+        if (sharedData) {
+          if (shareNote) shareNote.remove();
+        } else if (!shareNote) {
+          shareNote = document.createElement('div');
+          shareNote.id = 'share-data-note';
+          shareNote.className = 'note';
+          shareNote.setAttribute('role', 'status');
+          shareNote.textContent = 'Data too long for a link — use Export/Download to share the data';
+          document.getElementById('analysis-status').before(shareNote);
+        }
       }
     }
 

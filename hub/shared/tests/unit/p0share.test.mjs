@@ -29,12 +29,13 @@ for (const app of ['gosh', 'copas']) {
     await suspendedShare(false);
   });
   function share(src, legacy = false) {
-    const note = { hidden: true, textContent: '' };
+    const note = { hidden: true, textContent: '', remove() { this.hidden = true; }, setAttribute(k, v) { this[k] = v; } };
     const context = vm.createContext({ window: { location: { hash: '' } }, console: { warn() {} },
       btoa: s => Buffer.from(s, 'binary').toString('base64'),
       atob: s => Buffer.from(s, 'base64').toString('binary'),
       escape, unescape, encodeURIComponent, decodeURIComponent,
-      document: { getElementById: id => id === 'src' ? { value: src } : note },
+      document: { getElementById: id => id === 'src' ? { value: src } : id === 'share-data-note' ? (note.hidden ? null : note) : { before() {} },
+        createElement() { note.hidden = false; return note; } },
       text: src, model: 'FE' });
     vm.runInContext(writer, context);
     const code = legacy ? (app === 'gosh'

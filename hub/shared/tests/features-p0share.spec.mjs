@@ -48,7 +48,7 @@ for (const app of ['gosh','copas']) for (const kind of ['short','past-cut','over
       await expect(page.locator('#share-data-note')).toHaveText(note);
     } else {
       expect(state.src).toBe(src);
-      await expect(page.locator('#share-data-note')).toBeHidden();
+      await expect(page.locator('#share-data-note')).toHaveCount(0);
     }
     // Fresh storage proves this comes from the link, not autosave.
     const ctx=await browser.newContext();
@@ -72,7 +72,7 @@ for (const app of ['gosh','copas']) for (const kind of ['short','past-cut','over
     if(omitted) {
       await page.locator('#src').fill(dataset(0));
       await page.locator('#btn-run').click();
-      await expect(page.locator('#share-data-note')).toBeHidden();
+      await expect(page.locator('#share-data-note')).toHaveCount(0);
       expect(await page.evaluate(()=>window.alm.urlState.read().src)).toBe(dataset(0));
     }
   });
@@ -87,14 +87,14 @@ test('GOSH Plus suspended capture preserves notice and plot geometry', async ({p
   await ready(page,'gosh');
   await page.waitForFunction(()=>typeof AlmGoshPlus!=='undefined');
   await page.evaluate(()=>document.fonts.ready);
-  await expect(page.locator('#share-data-note')).toBeHidden();
+  await expect(page.locator('#share-data-note')).toHaveCount(0);
   await page.evaluate(c=>AlmGoshPlus.render(AlmGoshPlus.capture(c.te.map((x,i)=>[x,c.se[i],c.source_rows[i]].join(', ')).join('\n'),'DL',5000)),c);
   await page.locator('#plus-study').selectOption('3');
   await page.locator('#plus-het').selectOption('I2');
-  await expect(page.locator('#share-data-note')).toBeHidden();
+  await expect(page.locator('#share-data-note')).toHaveCount(0);
   const before=await page.locator('#plus-plot').boundingBox();
   expect(before).not.toBeNull();
-  await page.locator('#share-data-note').evaluate(el=>el.remove());
+  await page.evaluate(()=>document.getElementById('share-data-note')?.remove());
   expect(await page.locator('#plus-plot').boundingBox()).toEqual(before);
 });
 

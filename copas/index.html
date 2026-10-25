@@ -139,7 +139,6 @@
     </section>
     <section class="panel">
       <div id="k-warn" class="note" style="display:none;background:var(--warn-soft,#fbeedd);border-left:3px solid var(--warn,#b05a1c);color:var(--warn,#b05a1c)" role="status" aria-live="polite"></div>
-      <div id="share-data-note" class="note" role="status" hidden>Data too long for a link — use Export/Download to share the data</div>
       <div id="fit-status" style="display:none;font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem" role="status" aria-live="polite"></div>
       <h2>Adjusted estimate</h2>
       <table>
@@ -589,7 +588,17 @@
         // Let urlState apply its encoded-size budget to the complete dataset.
         var sharedData = window.alm.urlState.write({ src: document.getElementById('src').value });
         if (!sharedData) window.alm.urlState.write({});
-        document.getElementById('share-data-note').hidden = sharedData;
+        var shareNote = document.getElementById('share-data-note');
+        if (sharedData) {
+          if (shareNote) shareNote.remove();
+        } else if (!shareNote) {
+          shareNote = document.createElement('div');
+          shareNote.id = 'share-data-note';
+          shareNote.className = 'note';
+          shareNote.setAttribute('role', 'status');
+          shareNote.textContent = 'Data too long for a link — use Export/Download to share the data';
+          document.getElementById('fit-status').before(shareNote);
+        }
       }
     }
 
