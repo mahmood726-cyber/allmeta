@@ -340,6 +340,15 @@
 
     function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d || 3) : "—"; }
+    function coefficientLabels(names, p, centred) {
+      var slopes = [];
+      for (var j = 1; j < p; j++) slopes.push(names[j - 1] || "x" + j);
+      var intercept = "(intercept)";
+      if (slopes.length) intercept = centred
+        ? "Intercept (effect at predictor means; not an overall pooled effect)"
+        : "Intercept (effect when " + slopes.map(function (n) { return n + " = 0"; }).join(" and ") + "; not an overall pooled effect)";
+      return [intercept].concat(slopes);
+    }
     function kappaHtml(k) {
       if (!isFinite(k)) return "∞";
       if (k < 1e4) return k.toFixed(k < 10 ? 2 : 0);
@@ -425,7 +434,9 @@
       }
       var kappa = E.kappaXtWX(fitRows, fit.weights);
       var coefNames = E.coefficientNames(names, fit.p, centred);
+      var coefLabels = coefficientLabels(names, fit.p, centred);
       var lowDf = summary.map(function (s, j) { return s.df < 4 ? coefNames[j] + " (df " + fmt(s.df, 2) + ")" : null; }).filter(Boolean);
+      var lowDfLabels = summary.map(function (s, j) { return s.df < 4 ? coefLabels[j] + " (df " + fmt(s.df, 2) + ")" : null; }).filter(Boolean);
       if (lowDf.length) warnings.push("df < 4 for " + lowDf.join(", ") + ": inference may be unreliable (Tipton 2015).");
       var ill = kappa > E.KAPPA_THRESHOLD;
       if (ill) warnings.push("Ill-conditioned design: κ₂(XᵀWX) = " + E.kappaText(kappa) + " exceeds 9.0×10⁶, so results may be accurate to fewer than 9 significant digits." + (centred ? "" : " Centring the predictors usually fixes this."));
@@ -433,7 +444,8 @@
       var html = '<p class="summary-line">k = ' + fit.k_total + " effects, m = " + fit.m_clusters + " clusters, p = " + fit.p + " coefficients, τ²(CORR) = <code>" + fmt(fit.tau2, 4) + "</code>, ρ = " + fmt(fit.rho, 2) +
         ", condition number κ₂(XᵀWX) = <span id=\"kappa-value\" data-kappa=\"" + kappa + "\">" + kappaHtml(kappa) + "</span>" + (centred ? " (predictors centred)" : "") + ".</p>";
       if (centred) html += '<p class="note info" id="centre-note">Predictors centred at their means (' + names.map(function (n, i) { return esc(n) + " = " + fmt(means[i], 4); }).join(", ") + "). The intercept is the expected effect at these means.</p>";
-      if (lowDf.length) html += '<p class="note" id="lowdf-warning"><strong>Warning: df &lt; 4</strong> for ' + esc(lowDf.join(", ")) + "; inference may be unreliable. Treat these confidence intervals and p-values with caution.</p>";
+      if (nPred > 0 && !centred) html += '<p class="note info" id="intercept-note">Moderators are included: the intercept is the effect when all moderators equal zero, not an overall pooled effect. Select <strong>Centre predictors at their means</strong> and press <strong>Fit</strong> to interpret the intercept at the predictor means.</p>';
+      if (lowDf.length) html += '<p class="note" id="lowdf-warning"><strong>Warning: df &lt; 4</strong> for ' + esc(lowDfLabels.join(", ")) + "; inference may be unreliable. Treat these confidence intervals and p-values with caution.</p>";
       if (ill) html += '<div class="note" id="kappa-warning"><strong>Ill-conditioned design.</strong> κ₂(XᵀWX) = ' + kappaHtml(kappa) + " is above 9.0×10⁶, so rounding error may reach the ninth significant digit of the results (in R as well as here)." +
         (centred ? " The design is still ill-conditioned after centring; consider rescaling predictors (e.g. sample size in thousands)." : ' <button type="button" class="secondary" id="btn-centre">Centre predictors and refit</button>') + "</div>";
       if (warnings.length && warnings[0] && $("names-warning").hidden === false) html += '<p class="note" id="names-note">' + esc(warnings[0]) + "</p>";
@@ -444,7 +456,7 @@
       var rowsHtml = "";
       for (var j = 0; j < summary.length; j++) {
         var s = summary[j];
-        rowsHtml += '<tr><th scope="row">' + esc(coefNames[j]) + "</th>" +
+        rowsHtml += '<tr><th scope="row">' + esc(coefLabels[j]) + "</th>" +
           "<td>" + fmt(s.estimate, 3) + "</td>" +
           "<td>" + fmt(s.se, 3) + "</td>" +
           "<td>" + fmt(s.t, 2) + "</td>" +
@@ -464,7 +476,7 @@
 
     function runSensitivity() {
       if (!lastState) return;
-      var sens = E.rhoSensitivity(lastState.fitRows), cn = lastState.coefNames;
+      var sens = E.rhoSensitivity(lastState.fitRows), cn = coefficientLabels(lastState.names, lastState.coefNames.length, lastState.centred);
       var h = '<table id="rho-sens-table"><caption>Coefficients refitted at each working correlation ρ (CR2 SE, Satterthwaite df).</caption><thead><tr><th scope="col">Predictor</th><th scope="col">ρ</th><th scope="col">β̂</th><th scope="col">SE</th><th scope="col">df</th><th scope="col">95% CI</th><th scope="col">p</th><th scope="col">τ²</th></tr></thead><tbody>';
       for (var j = 0; j < cn.length; j++) {
         sens.fits.forEach(function (f, i) {

@@ -33,6 +33,8 @@
     th, td { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border); }
     .pooled-row { background: var(--accent-soft); font-weight: 600; }
     .stat { color: var(--muted); font-size: 0.9rem; }
+    /* Keep the pinned numerical headline intact; label its CI visibly and accessibly. */
+    #headline::before { content: "95% CI method: Wald z"; display: block; font-weight: 600; }
     .note { color: var(--muted); font-size: 0.8rem; }
     footer { padding: 1rem clamp(1rem,3vw,3rem) 2rem; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); max-width: 90ch; }
     a { color: var(--accent); }
@@ -86,7 +88,7 @@
   </section>
   <section class="panel">
     <h2>Pooled estimate</h2>
-    <div id="headline" class="stat"></div>
+    <div id="headline" class="stat" role="group" aria-label="Pooled estimate, 95% CI method: Wald z" aria-describedby="corr-ci-scope"></div>
     <table><thead><tr><th>Study</th><th>r</th><th>n</th><th>z</th><th>weight</th></tr></thead><tbody id="res-body"></tbody></table>
     <h2 style="margin-top:1rem">Forest (r scale)</h2>
     <div id="forest-host"></div>
@@ -193,7 +195,12 @@
     function ready(fn) { if (document.readyState !== "loading") fn(); else document.addEventListener("DOMContentLoaded", fn); }
     ready(function () {
       if (window.alm && window.alm.resultsExport) {
-        window.alm.resultsExport({ target: "#alm-export-mount", basename: "correlation-ma-results", getResults: function () { return _almLastCorrMA() || {}; } });
+        window.alm.resultsExport({ target: "#alm-export-mount", basename: "correlation-ma-results", getResults: function () { return _almLastCorrMA() || {}; },
+          methods: function () {
+            return document.querySelector("footer").textContent.replace(/\s+/g, " ").trim() +
+              ' Main results CI method: Wald z (metafor test = "z"). The panel\'s CI selection applies to its sensitivity, leave-one-out, reporting and R script.';
+          }
+        });
       }
     });
   })();
@@ -207,5 +214,30 @@
 <script src="validate/adapter.js"></script>
 <script src="validate/plus-pins.js"></script>
 <script src="validate/plus-adapter.js"></script>
+<script>
+(function () {
+  function labelCIMethods() {
+    var panel = document.getElementById("alm-plus");
+    var scope = document.createElement("p");
+    scope.id = "corr-ci-scope"; scope.className = "note"; scope.setAttribute("role", "status");
+    panel.insertBefore(scope, panel.querySelector("fieldset"));
+    function updateScope() {
+      var selected = panel.querySelector("input[name='alm-plus-test']:checked");
+      var method = selected ? window.AlmCorrPlus.TEST_NAMES[selected.value] : "Wald z";
+      scope.textContent = "Selected panel CI method: " + method + ". This selection applies to sensitivity, leave-one-out, reporting and Download R script in this panel. The main pooled estimate and forest, main downloads and live check use Wald z. To reproduce HKSJ results, select HKSJ here and use Download R script or this panel's sensitivity exports.";
+    }
+    panel.addEventListener("change", function (e) { if (e.target.name === "alm-plus-test") updateScope(); });
+    // Replay restores radio state programmatically, then re-renders this panel.
+    new MutationObserver(updateScope).observe(document.getElementById("alm-plus-prose"), { childList: true });
+    updateScope();
+    var live = document.createElement("p");
+    live.id = "corr-live-ci"; live.className = "note";
+    live.textContent = "Live check CI method: Wald z. This checks the main pooled estimate; use the panel's Download R script to check HKSJ.";
+    document.getElementById("alm-validate").prepend(live);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", labelCIMethods);
+  else labelCIMethods();
+})();
+</script>
 </body>
 </html>
