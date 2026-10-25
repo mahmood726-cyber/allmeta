@@ -193,11 +193,17 @@ test('VERIFY: live webR passes, forest downloads and ZIP; planted result fails',
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
   await expect(summary).not.toBeEmpty({ timeout: 600_000 });
   const text = await summary.innerText();
-  const m = /^(\d+) of (\d+) quantities match R — PASS$/.exec(text);
+  // v2-core distinguishes computed matches from missing quantities; none may be missing here.
+  const m = /^(\d+) of (\d+) computed quantities match R; 0 not computed — PASS$/.exec(text);
   expect(m, text).not.toBeNull();
   const n = +m[2];
   expect(n).toBeGreaterThanOrEqual(5); expect(+m[1]).toBe(n);
   expect(await panel.locator('td[data-result]').allTextContents()).toEqual(Array(n).fill('PASS'));
+  await expect(summary).toHaveAttribute('data-result', 'pass');
+  expect(await page.evaluate(() => AlmFeaturesState.verify)).toMatchObject({
+    passed: true, n, nPassed: n, nNotComputed: 0, nOptional: 0, nNotApplicable: 0,
+    testHook: false, perturbed: null
+  });
   console.log(`VERIFY ${m[1]}/${m[2]}`);
   await expect(panel.locator('figure svg')).toHaveCount(1);
   await expect(panel.locator('figure img')).toHaveCount(1);
@@ -220,6 +226,10 @@ test('VERIFY: live webR passes, forest downloads and ZIP; planted result fails',
   expect(tif.tags[282].value).toEqual([300, 1]); expect(tif.tags[283].value).toEqual([300, 1]);
   const receipt = JSON.parse(decode(entries['truthcert.json']));
   expect(receipt.extra.results.passed).toBe(true);
+  expect(receipt.extra.results).toMatchObject({
+    n, nPassed: n, nNotComputed: 0, nOptional: 0, nNotApplicable: 0,
+    testHook: false, perturbed: null, summary: text
+  });
   expect(await page.evaluate(r => AlmTruthCertExport.verifyContentHash(r), receipt)).toBe(true);
   console.log(`VERIFYZIP ${Object.keys(entries).length} entries; PNG/TIFF 300dpi`);
   await page.getByRole('tab', { name: 'Report text', exact: true }).click();
@@ -231,8 +241,23 @@ test('VERIFY: live webR passes, forest downloads and ZIP; planted result fails',
   await page.locator('#f-method').selectOption('REML');
   await page.getByRole('tab', { name: 'Verify in R', exact: true }).click();
   await page.evaluate(() => { window.__almVerifyPerturb = { key: 'tau2_z', delta: .01 }; });
+  // Production URLs must ignore the hook. Explicitly opt in for the planted failure only.
+  expect(await page.evaluate(() => AlmVerifyR.testHookActive())).toBe(false);
+  await page.evaluate(() => {
+    const url = new URL(location.href);
+    url.searchParams.set('almtest', '1');
+    history.replaceState(history.state, '', url);
+  });
+  expect(await page.evaluate(() => AlmVerifyR.testHookActive())).toBe(true);
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
   await expect(summary).toContainText('FAIL', { timeout: 300_000 });
+  await expect(summary).toHaveText(`TEST MODE (test hook active; not a verification) — ${n - 1} of ${n} computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active`);
+  await expect(summary).toHaveAttribute('data-result', 'fail');
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
+  expect(await page.evaluate(() => AlmFeaturesState.verify)).toMatchObject({
+    passed: false, n, nPassed: n - 1, nNotComputed: 0, testHook: true,
+    perturbed: { key: 'tau2_z', delta: .01 }
+  });
   const failed = await panel.locator('tbody tr').evaluateAll(rows => rows.filter(r => r.querySelector('[data-result]').textContent !== 'PASS').map(r => r.dataset.key));
   expect(failed).toEqual(['tau2_z']);
   console.log(`VERIFY planted ${n - 1}/${n} FAIL tau2_z`);
