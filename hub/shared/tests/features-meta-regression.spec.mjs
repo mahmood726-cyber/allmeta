@@ -8,14 +8,14 @@ const APP = 'meta-regression', PAGE = `/${APP}/index.html`;
 const SNAP = fileURLToPath(new URL('./__snapshots__/text-meta-regression.json', import.meta.url));
 function requireVerifiedSummary(text) {
   expect(text).not.toContain('unavailable');
-  expect(text).toMatch(/^\d+ of \d+ quantities match R — PASS$/);
+  expect(text).toMatch(/^\d+ of \d+ computed quantities match R; 0 not computed — PASS$/);
   const counts = text.match(/\d+/g).map(Number);
   expect(counts[1]).toBeGreaterThan(0);
   expect(counts[0]).toBe(counts[1]);
   return true;
 }
-async function open(page, tab = 'text') {
-  await page.goto(PAGE);
+async function open(page, tab = 'text', search = '') {
+  await page.goto(PAGE + search);
   await expect(page.locator('#alm-features .alm-f-toggle')).toBeVisible();
   await page.evaluate(({ app, tab }) => AlmFeatures.open(app, tab), { app: APP, tab });
 }
@@ -54,16 +54,20 @@ test('ENTRY: three source formats reproduce the example through the shared conve
           detection.questions = detection.questions.filter(q => q.id !== `column:${i}`);
         }
       });
-      const converted = AlmEntry.convert(table, detection, entry.schema, { decimal: 'point' });
+      const pending = AlmEntry.convert(table, detection, entry.schema, { decimal: 'point' });
+      // EXAMPLE in the app is explicitly logOR. Generic Estimate headers need the same
+      // ratio/log confirmations as the UI; these values must never be logged again.
+      const answers = { decimal: 'point', 'measure:type': 'ratio',
+        ...Object.fromEntries(original.map((_, i) => [`scale:${i}`, 'log'])) };
+      const converted = AlmEntry.convert(table, detection, entry.schema, answers);
       const blocked = converted.flags.filter(f => f.blocking);
       if (blocked.length) return { name, blocked, converted };
       const applied = entry.apply(converted.records);
       AlmFeaturesState.entryLog = converted.steps;
-      return { name, blocked, applied, baseline, actual: __almResults(), steps: converted.steps,
+      return { name, blocked, pending: pending.flags.filter(f => f.blocking), applied, baseline, actual: __almResults(), steps: converted.steps,
         rows: _almLastStudies(), original };
     });
-    // Exercise the public UI parse API to prove that the actual conversion log is populated,
-    // without clicking evolving source-confirmation controls.
+    // Exercise the same confirmations in the public UI below, including its blocking state.
     const host = document.createElement('div'); host.id = 'entry-log-probe'; document.body.appendChild(host);
     const ui = AlmEntryUI.mount(host, entry);
     ui.element.querySelector('textarea').value = formats[1][1]; ui.parse();
@@ -78,9 +82,31 @@ test('ENTRY: three source formats reproduce the example through the shared conve
     }
     expect(f.rows.map(r => r.x)).toEqual(f.original.map(r => r.x));
   }
-  expect(result[1].steps).toHaveLength(8);
-  expect(result[1].steps.every(s => /SE estimated from CI/.test(s.text))).toBe(true);
-  await expect(page.locator('#entry-log-probe')).toContainText('SE estimated from CI');
+  for (const f of result.slice(0, 2)) {
+    expect(f.pending.map(flag => flag.questionId)).toEqual(['measure:type']);
+    expect(f.steps.filter(s => s.method === 'measure confirmed').map(s => s.inputs)).toEqual([{ measure: 'ratio' }]);
+  }
+  expect(result[2].pending).toEqual([]);
+  for (const f of result) {
+    const scales = f.steps.filter(s => s.method === 'scale confirmed');
+    expect(scales.map(s => s.row)).toEqual(result[0].original.map((_, i) => i));
+    expect(scales.every(s => s.inputs.scale === 'log')).toBe(true);
+  }
+  const ciSteps = result[1].steps.filter(s => /SE estimated from CI/.test(s.text));
+  expect(ciSteps).toHaveLength(8);
+  expect(ciSteps.map(s => s.row)).toEqual(result[1].original.map((_, i) => i));
+  expect(result[1].steps).toHaveLength(17); // one measure confirmation, eight scales, eight CIs
+  const probe = page.locator('#entry-log-probe'), useRows = probe.getByRole('button', { name: 'Use these rows', exact: true });
+  await expect(useRows).toBeDisabled();
+  await probe.getByRole('radio', { name: 'ratio', exact: true }).check();
+  await expect(useRows).toBeDisabled();
+  await expect(probe.getByRole('radio', { name: 'log', exact: true })).toHaveCount(8);
+  for (let i = 0; i < 8; i++) {
+    await expect(useRows).toBeDisabled();
+    await probe.getByRole('radio', { name: 'log', exact: true }).nth(i).check();
+  }
+  await expect(useRows).toBeEnabled();
+  await expect(probe).toContainText('SE estimated from CI');
   console.log(`ENTRYRT ${result.length}/${result.length} formats; 8/8 paper CI conversions`);
 });
 
@@ -162,7 +188,8 @@ test('VERIFY: real browser R, all comparisons, bubble plots, ZIP, stale claim an
   test.setTimeout(900_000);
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
-  await open(page, 'verify');
+  // The shared core only honours the planted perturbation on an explicit test URL.
+  await open(page, 'verify', '?almtest=1');
   const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
   const button = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
   await button.click();
@@ -173,6 +200,10 @@ test('VERIFY: real browser R, all comparisons, bubble plots, ZIP, stale claim an
   console.log(`VERIFY ${state.nPassed}/${state.n}`);
   expect(state.n).toBeGreaterThanOrEqual(5);
   expect(state.n).toBe(28);
+  expect(state.rows).toHaveLength(28);
+  expect(state.passed).toBe(true);
+  expect(state.testHook).toBe(false);
+  expect([state.nNotComputed, state.nOptional, state.nNotApplicable]).toEqual([0, 0, 0]);
   expect(state.rows.every(r => r.pass)).toBe(true);
   await expect(panel.locator('figure img')).toHaveCount(1);
   await expect(panel.locator('figure svg')).toHaveCount(1);
@@ -190,6 +221,8 @@ test('VERIFY: real browser R, all comparisons, bubble plots, ZIP, stale claim an
   expect(readTiff(files[`${APP}-bubble-R-300dpi.tiff`]).tags[282].value).toEqual([300, 1]);
   const receipt = JSON.parse(dec(files['truthcert.json']));
   expect(receipt.extra.results.passed).toBe(true);
+  expect(receipt.extra.results.testHook).toBe(false);
+  expect(receipt.extra.results.nNotComputed).toBe(0);
   expect(await page.evaluate(r => AlmTruthCertExport.verifyContentHash(r), receipt)).toBe(true);
   console.log(`VERIFY ZIP ${Object.keys(files).length} entries; PNG/TIFF 300dpi`);
   await page.evaluate(app => AlmFeatures.open(app, 'text'), APP);
@@ -202,8 +235,12 @@ test('VERIFY: real browser R, all comparisons, bubble plots, ZIP, stale claim an
   await page.evaluate(app => { window.__almVerifyPerturb = { key: 'slope', delta: 0.01 }; AlmFeatures.open(app, 'verify'); }, APP);
   await button.click();
   await expect(summary).toContainText('FAIL', { timeout: 300_000 });
+  await expect(summary).toContainText('TEST MODE (test hook active; not a verification)');
   const failed = await page.evaluate(() => AlmFeaturesState.verify.rows.filter(r => !r.pass).map(r => r.key));
   expect(failed).toEqual(['slope']);
+  expect(await page.evaluate(app => ({ passed: AlmFeaturesState.verify.passed,
+    testHook: AlmFeaturesState.verify.testHook, current: AlmFeatures.verifiedCurrent(app) }), APP))
+    .toEqual({ passed: false, testHook: true, current: false });
   console.log(`VERIFY planted ${state.n - 1}/${state.n}; slope FAIL`);
   expect(errors).toEqual([]);
 });
@@ -346,7 +383,16 @@ test('REVIEW P2-1: changing moderator units cannot conceal a jointly scaled slop
 test('REVIEW P2-2 planted unavailable package must fail the real-R verification gate', () => {
   expect(() => requireVerifiedSummary('Not checked in the browser: R package metafor is unavailable.')).toThrow();
   expect(() => requireVerifiedSummary('0 of 0 quantities match R — PASS')).toThrow();
-  expect(requireVerifiedSummary('23 of 23 quantities match R — PASS')).toBe(true);
+  for (const summary of [
+    '0 of 0 computed quantities match R; 0 not computed — PASS',
+    '27 of 28 computed quantities match R; 0 not computed — PASS',
+    '28 of 28 computed quantities match R; 1 not computed — PASS',
+    '28 of 28 computed quantities match R; 0 not computed (1 optional not computed) — PASS',
+    '28 of 28 computed quantities match R; 0 not computed — FAIL',
+    'TEST MODE (test hook active; not a verification) — 28 of 28 computed quantities match R; 0 not computed — PASS',
+    'STALE (earlier version of the analysis): 28 of 28 computed quantities match R; 0 not computed — PASS'
+  ]) expect(() => requireVerifiedSummary(summary), summary).toThrow();
+  expect(requireVerifiedSummary('28 of 28 computed quantities match R; 0 not computed — PASS')).toBe(true);
 });
 
 test('REVIEW P2-3: distinguish undefined R squared from a genuinely zero reduction', async ({ page }) => {
