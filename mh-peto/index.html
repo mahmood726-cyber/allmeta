@@ -137,6 +137,7 @@ StudyE, 4, 600, 10, 600</textarea>
 
       <!-- axis-controls mount -->
       <div id="alm-axis-mount" style="margin-top:0.75rem"></div>
+      <p id="axis-note" role="status" aria-live="polite" hidden></p>
 
       <!-- reset-undo mount -->
       <div id="alm-undo-mount" style="margin-top:0.5rem"></div>
@@ -906,12 +907,27 @@ StudyE, 4, 600, 10, 600</textarea>
       var plotW = W - padL - padR;
       var all = studies.concat(pooled.filter(Boolean));
 
-      // Respect axis-controls override
+      // The measure determines the scale; axis-controls supplies data-scale limits only.
       var logScale = measure !== 'RD';
-      var xLog = _axisState && _axisState.xLog;
-      if (xLog !== undefined) logScale = xLog;
+      var logControl = document.querySelector('#alm-axis-mount [data-edge="log"]');
+      if (logControl) {
+        logControl.checked = logScale;
+        // Native disabled drops the legacy idx:8 autosave key; preserve it while locking activation.
+        logControl.setAttribute('aria-disabled', 'true');
+        logControl.onclick = function (event) { event.preventDefault(); };
+        logControl.title = 'Scale follows the effect measure: log for OR/RR, linear for RD.';
+      }
+      var range = _axisState && Array.isArray(_axisState.x) ? _axisState.x : null;
+      var invalidRange = range && range.some(function (v) { return v != null && (!Number.isFinite(v) || (logScale && v <= 0)); });
+      var axisNote = document.getElementById('axis-note');
+      axisNote.hidden = !invalidRange;
+      axisNote.textContent = invalidRange ? (logScale
+        ? 'Custom ratio axis limits were refused: limits must be finite and positive. Enter limits greater than 0 or clear them. Automatic log limits are shown; analysis results are unchanged.'
+        : 'Custom axis limits were refused: limits must be finite. Enter finite limits or clear them. Automatic limits are shown; analysis results are unchanged.') : '';
+      if (invalidRange) range = null;
+      var customRange = range && range.some(function (v) { return v != null; });
 
-      var mapFn = function (v) { return logScale ? Math.log(Math.max(v, 1e-6)) : v; };
+      var mapFn = function (v) { return logScale ? Math.log(customRange ? v : Math.max(v, 1e-6)) : v; };
 
       var loAll = all.map(function (r) { return r.lo; });
       var hiAll = all.map(function (r) { return r.hi; });
@@ -919,9 +935,9 @@ StudyE, 4, 600, 10, 600</textarea>
       var hi = Math.max.apply(null, hiAll.map(mapFn));
 
       // Apply axis range override if set
-      if (_axisState && Array.isArray(_axisState.x)) {
-        if (_axisState.x[0] !== null) lo = logScale ? Math.log(Math.max(_axisState.x[0], 1e-6)) : _axisState.x[0];
-        if (_axisState.x[1] !== null) hi = logScale ? Math.log(Math.max(_axisState.x[1], 1e-6)) : _axisState.x[1];
+      if (range) {
+        if (range[0] != null) lo = logScale ? Math.log(range[0]) : range[0];
+        if (range[1] != null) hi = logScale ? Math.log(range[1]) : range[1];
       }
 
       var pad = (hi - lo) * 0.1 || 0.3;
