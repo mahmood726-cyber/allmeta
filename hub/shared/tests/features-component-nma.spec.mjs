@@ -42,6 +42,22 @@ test('ENTRY: three formats reproduce every estimate, SE, Q and variance from the
   const expected = await page.evaluate(() => _almLastCnma());
   let passed = 0;
   for (const item of fixture) {
+    const answers = { ...item.answers };
+    if (item.name === 'Excel TSV') {
+      // "effect" does not identify a measure. The other two representations
+      // explicitly identify these same contrasts as MD: confirm, never infer.
+      const unresolved = await page.evaluate(text => {
+        const schema = AlmFeatures.get('component-nma').entry.schema;
+        const table = AlmEntry.parseTable(text);
+        return AlmEntry.convert(table, AlmEntry.detect(table, schema), schema, {});
+      }, item.text);
+      expect(unresolved.flags.filter(f => f.blocking)).toEqual([
+        expect.objectContaining({ code: 'unanswered-question', questionId: 'measure:type' })
+      ]);
+      expect(unresolved.questions).toContainEqual(expect.objectContaining({ id: 'measure:type', choices: ['ratio', 'difference'] }));
+      sameResult(await page.evaluate(() => _almLastCnma()), expected);
+      answers['measure:type'] = 'difference';
+    }
     const out = await page.evaluate(({ text, answers }) => {
       const entry = AlmFeatures.get('component-nma').entry;
       const table = AlmEntry.parseTable(text), detected = AlmEntry.detect(table, entry.schema);
@@ -49,8 +65,11 @@ test('ENTRY: three formats reproduce every estimate, SE, Q and variance from the
       if (converted.flags.some(f => f.blocking)) return { converted };
       AlmFeaturesState.entryLog = converted.steps;
       return { converted, applied: entry.apply(converted.records), result: _almLastCnma(), src: document.getElementById('src').value };
-    }, item);
+    }, { text: item.text, answers });
     expect(out.converted.flags.filter(f => f.blocking), item.name).toEqual([]);
+    if (item.name === 'Excel TSV') {
+      expect(out.converted.steps).toContainEqual(expect.objectContaining({ method: 'measure confirmed', inputs: { measure: 'difference' } }));
+    }
     expect(out.applied).toEqual({ ok: true, n: 8 });
     sameResult(out.result, expected);
     expect(out.src.trim().split('\n')).toHaveLength(8);
@@ -146,8 +165,10 @@ test('VERIFY: live netmeta example, plots and ZIP; planted defect FAILS; stale c
   const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
   const run = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
   await run.click();
-  await expect(summary).toHaveText(/^39 of 39 quantities match R — PASS$/, { timeout: 600_000 });
+  await expect(summary).toHaveText('39 of 39 computed quantities match R; 0 not computed — PASS', { timeout: 600_000 });
   const verified = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(verified).toMatchObject({ passed: true, n: 39, nPassed: 39, nNotComputed: 0, nOptional: 0, nNotApplicable: 0, testHook: false });
+  expect(verified.rows).toHaveLength(39);
   expect(verified.rows.every(r => r.pass)).toBe(true);
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(true);
   console.log(`VERIFY ${verified.nPassed}/${verified.n} ${JSON.stringify(verified.versions)}`);
@@ -181,11 +202,25 @@ test('VERIFY: live netmeta example, plots and ZIP; planted defect FAILS; stale c
   await expect(page.locator('.alm-text-body')).not.toContainText('Results were independently verified in R');
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(false);
   await page.locator('#src').fill(original); await page.locator('#btn-run').click();
-  await page.evaluate(() => { window.__almVerifyPerturb = { key: 'components_0_est', delta: .01 }; AlmFeatures.open('component-nma', 'verify'); });
+  await page.evaluate(() => {
+    // Current v2-core honours deliberate defects only with an explicit URL opt-in.
+    const url = new URL(location.href); url.searchParams.set('almtest', '1');
+    history.replaceState(null, '', url.href);
+    window.__almVerifyPerturb = { key: 'components_0_est', delta: .01 };
+    AlmFeatures.open('component-nma', 'verify');
+  });
   await run.click();
-  await expect(summary).toContainText('38 of 39 quantities match R — FAIL', { timeout: 300_000 });
+  await expect(summary).toHaveText('TEST MODE (test hook active; not a verification) — 38 of 39 computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active', { timeout: 300_000 });
+  await expect(summary).toHaveAttribute('data-result', 'fail');
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
   const planted = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(planted).toMatchObject({ passed: false, n: 39, nPassed: 38, nNotComputed: 0, nOptional: 0, nNotApplicable: 0, testHook: true,
+    perturbed: { key: 'components_0_est', delta: .01 } });
+  expect(planted.rows).toHaveLength(39);
   expect(planted.rows.filter(r => !r.pass).map(r => r.key)).toEqual(['components_0_est']);
+  const defect = planted.rows.find(r => r.key === 'components_0_est');
+  expect(defect.diff).toBeGreaterThan(defect.tol);
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(false);
   console.log(`VERIFY planted ${planted.nPassed}/${planted.n}`);
 });
 
@@ -200,21 +235,32 @@ test('VERIFY: heterogeneous live netmeta checks nonzero tau2 and all endpoints; 
   const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
   const run = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
   await run.click();
-  await expect(summary).toHaveText('23 of 23 quantities match R — PASS', { timeout: 600_000 });
+  await expect(summary).toHaveText('23 of 23 computed quantities match R; 0 not computed — PASS', { timeout: 600_000 });
   const verified = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(verified).toMatchObject({ passed: true, n: 23, nPassed: 23, nNotComputed: 0, nOptional: 0, nNotApplicable: 0, testHook: false });
+  expect(verified.rows).toHaveLength(23);
   expect(verified.rows.every(r => r.pass)).toBe(true);
   expect(verified.rows.filter(r => /_(lo|hi)$/.test(r.key))).toHaveLength(10);
   console.log(`VERIFY ${verified.nPassed}/${verified.n} heterogeneous tau2=${result.tau2}`);
-  await page.evaluate(() => { window.__almVerifyPerturb = { key: 'components_0_hi', delta: .01 }; });
+  await page.evaluate(() => {
+    const url = new URL(location.href); url.searchParams.set('almtest', '1');
+    history.replaceState(null, '', url.href);
+    window.__almVerifyPerturb = { key: 'components_0_hi', delta: .01 };
+  });
   await run.click();
-  // The shared renderer includes the failed-quantity count in its FAIL summary.
-  await expect(summary).toHaveText('22 of 23 quantities match R — FAIL: 1 outside tolerance or unavailable', { timeout: 300_000 });
+  await expect(summary).toHaveText('TEST MODE (test hook active; not a verification) — 22 of 23 computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active', { timeout: 300_000 });
   await expect(summary).toHaveAttribute('data-result', 'fail');
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
   const planted = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(planted).toMatchObject({ nNotComputed: 0, nOptional: 0, nNotApplicable: 0, testHook: true,
+    perturbed: { key: 'components_0_hi', delta: .01 } });
+  expect(planted.rows).toHaveLength(23);
   expect(planted.passed).toBe(false);
   expect(planted.n).toBe(23);
   expect(planted.nPassed).toBe(22);
   expect(planted.rows.filter(r => !r.pass).map(r => r.key)).toEqual(['components_0_hi']);
+  const defect = planted.rows.find(r => r.key === 'components_0_hi');
+  expect(defect.diff).toBeGreaterThan(defect.tol);
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(false);
   console.log(`VERIFY planted-CI ${planted.nPassed}/${planted.n}`);
 });
