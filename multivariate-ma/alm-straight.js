@@ -22,5 +22,6 @@
     return c;
   }
   (window.AlmStraightAdapters = window.AlmStraightAdapters || {})[APP] = { ctx: ctx };
-  window.AlmStraightUI.attach({ app: APP, ctx: ctx, anchor: '#headline', watch: ['#headline', '#stats'] });
+  // Keep advisory text and controls outside the analysis landmarks and results layout.
+  window.AlmStraightUI.attach({ app: APP, ctx: ctx, anchor: '#alm-features', watch: ['#headline', '#stats'] });
 })();

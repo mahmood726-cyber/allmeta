@@ -21,5 +21,6 @@
     return c;
   }
   (window.AlmStraightAdapters = window.AlmStraightAdapters || {})[APP] = { ctx: ctx };
-  window.AlmStraightUI.attach({ app: APP, ctx: ctx, anchor: '#headline', watch: ['#headline', '#res-body'] });
+  // The archived page-text contract includes main; advice belongs beside the feature panel.
+  window.AlmStraightUI.attach({ app: APP, ctx: ctx, anchor: '#alm-features', watch: ['#headline', '#res-body'] });
 })();
