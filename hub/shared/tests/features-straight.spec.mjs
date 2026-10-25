@@ -2,13 +2,14 @@
 // 18 multivariate-ma). Per app:
 //   - load the built-in example; the EXPECTED fired set is derived here from the example's own results (k, estimator,
 //     I², CI/PI bounds, test p-values, input mode), read straight from the app's result objects — not from the adapter;
-//     it must equal what the engine fired and what the notice above the results lists (prints STRAIGHT <app> fired=[...]);
+//     it must equal what the engine fired and what the notice beside the feature panel lists (prints STRAIGHT <app> fired=[...]);
 //   - PLANTED: change a choice/input that should trigger a rule (e.g. estimator -> DL in apps 9/17) -> that rule fires;
 //   - the "Straight path" tab renders the same advice; Why? expands Handbook + DOI links (rel=noopener);
 //   - axe: 0 serious/critical violations on the panel tab and on the notice.
 // Run: npx playwright test -c playwright.features.config.mjs features-straight
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { readFileSync } from 'node:fs';
 
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 // Thresholds as in shared/alm-straight.js THRESHOLDS (re-stated so a silent change there fails here).
@@ -27,6 +28,7 @@ async function expectFired(page, app, expected, label) {
   const got = await fired(page, app);
   console.log(`STRAIGHT ${app}${label ? ' ' + label : ''} fired=[${got.join(', ')}]`);
   const notice = page.locator(`.alm-straight-notice[data-app="${app}"]`);
+  expect(await notice.evaluate(n => n.parentElement === document.body && n.nextElementSibling?.id === 'alm-features')).toBe(true);
   await expect(notice).toHaveAttribute('data-fired', got.join(' '));
   if (got.length) await expect(notice).toBeVisible(); else await expect(notice).toBeHidden();
   return got;
@@ -126,6 +128,42 @@ test('app 9 proportion-ma: example advice, estimator -> DL, cluster provenance, 
   await expect(page.locator('#res-body .pooled-row')).toHaveCount(1);
   await checkTab(page, 'proportion-ma', got);
   expect(errors).toEqual([]);
+});
+
+for (const width of [390, 1280]) test(`dta-sroc: advice does not move measured results at width ${width}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto('/dta-sroc/index.html');
+  await expect(page.locator('.alm-straight-notice')).toBeVisible();
+  await expect(page.locator('#plus-example option')).toHaveCount(28);
+  const corpus = JSON.parse(readFileSync(new URL('../../../dta-sroc/validate/corpus/plus-reference.json', import.meta.url), 'utf8'));
+  const c = corpus.cases.find(c => c.id === 'dat.kearon1998/year/reml/all');
+  expect(c.ok).toBe(true);
+  expect(await page.evaluate(c => !!AlmDTAPlusUI.set({ rows: c.rows, method: c.method, correction: c.correction, at: 0, prevalence: 0.1 }), c)).toBe(true);
+  await settle(page);
+  const result = await page.evaluate(async () => {
+    await document.fonts.ready;
+    window.scrollTo(0, 0);
+    const notice = document.querySelector('.alm-straight-notice');
+    const features = document.getElementById('alm-features');
+    const targets = ['main', '#stats-wrap', '#alm-plus', '#plus-results table', '#plus-results dl', '#plus-results svg'];
+    const measure = () => targets.map(selector => {
+      const n = document.querySelector(selector), r = n.getBoundingClientRect();
+      return { selector, x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height, html: n.innerHTML };
+    });
+    notice.hidden = true;
+    const without = measure();
+    notice.hidden = false;
+    const withAdvice = measure();
+    // PLANTED: the original results anchor must violate the same layout gate.
+    const stats = document.getElementById('stats-wrap');
+    stats.parentNode.insertBefore(notice, stats);
+    const planted = measure();
+    features.parentNode.insertBefore(notice, features);
+    return { without, withAdvice, planted, restored: measure() };
+  });
+  expect(result.withAdvice).toEqual(result.without);
+  expect(result.planted).not.toEqual(result.without);
+  expect(result.restored).toEqual(result.without);
 });
 
 test('app 17 correlation-ma: example advice, estimator -> DL, I² = 0 with k = 4, panel + axe', async ({ page }) => {
