@@ -1,11 +1,11 @@
 // All numbers/identifiers are synthetic software fixtures, never research output.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
 const require = createRequire(import.meta.url);
-const R = require('../../../../shared/revman-reader.js');
+const R = require('../../../../shared/alm-revman.js').reader;
 const fixture = name => readFileSync(new URL('../fixtures/revman/' + name, import.meta.url), 'utf8');
 const xml = () => R.parseText(fixture('multi.rm5'));
 const pick = (review, outcome = 0, subgroup = 0, schema = 'binary2x2') => R.select(review, {comparison: 0, outcome, subgroup}, schema, {filename: 'multi.rm5'});
@@ -249,4 +249,41 @@ test('ZIP review selection cannot silently take the first review file',async()=>
   await assert.rejects(R.parse(magic,{jszip}),/exactly one/);
   jszip.loadAsync=async()=>({files:{'one.rm5':{dir:false}},file:()=>({async:async()=>fixture('multi.rm5')})});
   assert.equal((await R.parse(magic,{jszip})).comparisons.length,2);
+});
+
+test('continuous single-study app requires an explicit row choice for a multi-row subgroup',()=>{
+  const A=require('../../../../shared/alm-revman.js');
+  const spec={entry:require('../../../../effect-size-converter/alm-revman.js').entry};
+  const review=R.parseText(fixture('continuous.csv')),choice={comparison:0,outcome:0,subgroup:0};
+  assert.throws(()=>A.check(spec,review,choice,'continuous.csv'),/one study/);
+  assert.equal(A.check(spec,review,{...choice,study:1},'continuous.csv')[0].m1i,-1.5);
+  for(const study of [-1,2,'1',null])assert.throws(()=>A.check(spec,review,{...choice,study},'continuous.csv'),/study/i);
+  for(const study of [-1,1,'0',null])assert.throws(()=>A.check(spec,xml(),{comparison:0,outcome:1,subgroup:0,study},'multi.rm5'),/study/i);
+  assert.equal(A.check(spec,xml(),{comparison:0,outcome:1,subgroup:0,study:0},'multi.rm5').length,1);
+});
+
+test('every R witness selection maps to native input; manifest covers every valid fixture',()=>{
+  const lines=fixture('rcheck-cases.txt').trimEnd().split(/\r?\n/).map(l=>l.split('\t'));
+  const head=lines.shift(),cases=lines.map(r=>Object.fromEntries(head.map((k,i)=>[k,r[i]])));
+  const covered=[...new Set(cases.map(c=>c.file))].sort();
+  const actual=readdirSync(new URL('../fixtures/revman/',import.meta.url)).filter(n=>/\.(rm5|csv)$/.test(n)&&n!=='malformed.rm5').sort();
+  assert.deepEqual(covered,actual);
+  assert.equal(new Set(cases.map(c=>c.case)).size,cases.length);
+  for(const c of cases){
+    const review=R.parseText(fixture(c.file));
+    const spec={entry:require('../../../../'+c.app+'/alm-revman.js').entry};
+    const choice={comparison:Number(c.comparison),outcome:Number(c.outcome),subgroup:Number(c.subgroup),...(c.study!==''?{study:Number(c.study)}:{})};
+    const A=require('../../../../shared/alm-revman.js'),rows=A.check(spec,review,choice,c.file);
+    assert.ok(rows.length>0,c.case);
+    assert.ok(rows.every(r=>r.studyId&&r.year&&r.provenance.location.includes(c.file)),c.case);
+    assert.throws(()=>A.check(spec,review,{...choice,subgroup:999},c.file),/subgroup/i);
+  }
+});
+
+test('rm5 analysis settings survive parsing; natural-scale generic ratios fail closed',()=>{
+  const text=fixture('multi.rm5').replace('LOG_DATA="YES"','LOG_DATA="YES" RANDOM="YES" METHOD="IV"');
+  const r=R.parseText(text),o=r.comparisons[0].outcomes[2];
+  assert.deepEqual(o.settings,{random:'YES',method:'IV',ciStudy:null,ciTotal:null});
+  assert.equal(pick(r,2,0,'generic')[0].yi,-0.25);
+  assert.throws(()=>pick(R.parseText(text.replace('LOG_DATA="YES"','LOG_DATA="NO"')),2,0,'generic'),/log|scale/i);
 });

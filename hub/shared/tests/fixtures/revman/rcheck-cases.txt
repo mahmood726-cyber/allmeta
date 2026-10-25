@@ -1,0 +1,17 @@
+case	file	app	comparison	outcome	subgroup	study	measure	method
+multi-binary-first	multi.rm5	mh-peto	0	0	0		OR	MH
+multi-binary-second	multi.rm5	mh-peto	0	0	1		OR	MH
+multi-continuous-first	multi.rm5	effect-size-converter	0	1	0		SMD	STUDY
+multi-continuous-second	multi.rm5	effect-size-converter	0	1	1		SMD	STUDY
+multi-generic-first	multi.rm5	heterogeneity	0	2	0		HR	PM
+multi-generic-second	multi.rm5	heterogeneity	0	2	1		HR	PM
+multi-other-comparison	multi.rm5	mh-peto	1	0	0		RR	MH
+csv-binary-first	binary.csv	mh-peto	0	0	0		OR	MH
+csv-binary-second	binary.csv	mh-peto	1	0	0		RR	MH
+csv-continuous-first	continuous.csv	effect-size-converter	0	0	0	0	SMD	STUDY
+csv-continuous-second	continuous.csv	effect-size-converter	0	0	0	1	SMD	STUDY
+csv-generic	generic.csv	heterogeneity	0	0	0		HR	PM
+csv-pairwise	pairwise.csv	heterogeneity	0	0	0		MD	PM
+csv-pairwise-binary	pairwise-binary.csv	mh-peto	0	0	0		OR	MH
+settings-generic	settings.rm5	heterogeneity	0	0	0		HR	DL
+settings-binary	settings.rm5	mh-peto	0	1	0		RR	MH

@@ -1,7 +1,7 @@
 (function(global){
   'use strict';
   const A=global.AlmRevman||(typeof require==='function'?require('../shared/alm-revman.js'):null);
-  const R=()=>global.RevmanReader;
+  const R=()=>global.AlmRevmanReader;
   function validate(rows){
     R().validateRecords(rows,'generic');
     rows.forEach(r=>{

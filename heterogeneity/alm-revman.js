@@ -1,7 +1,7 @@
 (function(global){
   'use strict';
   function validate(rows){
-    global.RevmanReader.validateRecords(rows,'generic');
+    global.AlmRevmanReader.validateRecords(rows,'generic');
     rows.forEach(r=>{global.AlmRevman.label(r.study);if(/[,#]/.test(r.study))throw new Error('Study name contains a comma or # that the native input cannot preserve.');});
   }
   const entry={schema:'generic',validate,apply(rows){

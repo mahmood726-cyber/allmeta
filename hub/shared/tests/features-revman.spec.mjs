@@ -1,10 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 const fixture = name => fileURLToPath(new URL('./fixtures/revman/'+name,import.meta.url));
 const origin = () => 'http://127.0.0.1:'+(process.env.ALM_FEATURES_PORT||8089);
 async function open(page,app) {
   await page.goto(origin()+'/'+app+'/index.html');
+  expect(await page.locator('#alm-features').evaluate(n=>n.closest('main'))).toBeNull();
   await page.locator('#alm-features .alm-f-toggle').click();
   await page.getByRole('tab',{name:'RevMan',exact:true}).click();
 }
@@ -54,6 +56,18 @@ for(const c of cases) test(c.app+': import equals native input, planted changed 
   expect(csv).toContain(c.app==='heterogeneity'?'-0.15':c.app==='mh-peto'?'1,40,4,42':'6.25,1.2,40,4.5,1.4,42');
   await expect(page.locator('#alm-revman-note')).toContainText('recompute');
   expect(errors).toEqual([]);
+});
+
+test('continuous multi-row fixture can import an explicitly chosen study without pooling other rows',async({page})=>{
+  await open(page,'effect-size-converter');await load(page,'continuous.csv');await choose(page,0);
+  const use=page.getByRole('button',{name:'Import selected rows',exact:true});
+  await expect(use).toBeDisabled();
+  await page.getByLabel('Study (single-study app)',{exact:true}).selectOption('1');
+  await expect(use).toBeEnabled();await use.click();
+  await expect(page.locator('#alm-revman-status')).toContainText('Imported 1');
+  expect(await page.evaluate(()=>AlmFeaturesState.provenance.map(p=>p.label))).toEqual(['試験 β']);
+  expect(await page.locator('#alm-csv-mount textarea').inputValue()).toContain('-1.5,2,60,-2,2.5,61');
+  await page.getByLabel('Outcome',{exact:true}).selectOption('');await expect(use).toBeDisabled();
 });
 
 test('malformed file, wrong data type, and changed selection cannot apply stale data',async({page})=>{
@@ -192,4 +206,95 @@ for(const binary of [true,false])test('pubbias '+(binary?'binary':'generic')+' f
   const csv=readFileSync(await(await ready).path(),'utf8');expect(csv).toContain('Edited synthetic A');
   expect(csv).toContain(binary?'0,40,3,42':'-0.25,0.125');
   expect(errors).toEqual([]);
+});
+
+// R consumes actual page outputs and downloaded bytes, never a JS recomputation.
+const caseLines=readFileSync(fixture('rcheck-cases.txt'),'utf8').trimEnd().split(/\r?\n/).map(l=>l.split('\t'));
+const caseHeader=caseLines.shift();
+const rCases=caseLines.map(r=>Object.fromEntries(caseHeader.map((k,i)=>[k,r[i]])));
+const witnessDir=fileURLToPath(new URL('./rchecks-out/revman/',import.meta.url));
+const csvTable=rows=>rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n')+'\n';
+
+test.describe('page witnesses for independent RevMan R check',()=>{
+  test.describe.configure({mode:'serial'});
+  let run;
+  test.beforeAll(()=>{
+    run=randomUUID();mkdirSync(witnessDir,{recursive:true});
+    writeFileSync(new URL('./rchecks-out/.gitignore',import.meta.url),'*\n','utf8');
+    writeFileSync(witnessDir+'/run.txt',run,'utf8');
+  });
+  for(const c of rCases)test('R witness '+c.case,async({page})=>{
+    await open(page,c.app);
+    // Set the native controls explicitly: import transfers inputs, not model choices.
+    if(c.app==='heterogeneity')await page.locator('#f-tau2').selectOption(c.method.toLowerCase());
+    if(c.app==='mh-peto')await page.locator('#measure').selectOption(c.measure);
+    await load(page,c.file);
+    await page.getByLabel('Comparison',{exact:true}).selectOption(c.comparison);
+    await page.getByLabel('Outcome',{exact:true}).selectOption(c.outcome);
+    await page.getByLabel('Subgroup',{exact:true}).selectOption(c.subgroup);
+    if(c.study!=='')await page.getByLabel('Study (single-study app)',{exact:true}).selectOption(c.study);
+    await page.getByRole('button',{name:'Import selected rows',exact:true}).click();
+    await expect(page.locator('#alm-revman-status')).toContainText('Imported');
+    const produced=await page.evaluate(app=>{
+      const spec=AlmFeatures.get(app),rows=AlmRevman.current(spec),fields=AlmRevman.reader.fields[spec.entry.schema];
+      const raw=app==='mh-peto'?_almLastMhPeto():app==='heterogeneity'?__almResults():__almResultRows;
+      let values={k:rows.length};
+      if(app==='mh-peto'&&raw)values={...raw};
+      if(app==='heterogeneity'&&raw)values={...raw};
+      if(app==='effect-size-converter'){
+        const smd=raw.find(r=>r.scale.startsWith('SMD'));
+        if(!smd)throw new Error('No page SMD result');
+        values={k:1,yi:smd.point,sei:smd.se,ci_lb:smd.lo,ci_ub:smd.hi};
+      }
+      const keys=['studyId','study','year',...fields];
+      return {keys,rows:rows.map(r=>keys.map(k=>r[k]??'')),values:Object.entries(values).filter(([,v])=>typeof v==='number'&&Number.isFinite(v)),
+        pooled:app==='effect-size-converter'||rows.length>1,
+        settings:app==='heterogeneity'?document.getElementById('f-tau2').value:app==='mh-peto'?document.getElementById('measure').value:'SMD',
+        text:document.querySelector(app==='mh-peto'?'#pooled-body':app==='heterogeneity'?'#stats-wrap':'#results-body').innerText};
+    },c.app);
+    expect(produced.rows.length).toBeGreaterThan(0);
+    if(produced.pooled)expect(produced.text.trim()).not.toBe('');
+    expect(produced.settings).toBe(c.app==='heterogeneity'?c.method.toLowerCase():c.measure);
+    const prefix=witnessDir+'/'+c.case;
+    writeFileSync(prefix+'-inputs.csv',csvTable([produced.keys,...produced.rows]),'utf8');
+    writeFileSync(prefix+'-results.csv',csvTable([['key','value'],...produced.values]),'utf8');
+    writeFileSync(prefix+'-display.txt',produced.text,'utf8');
+    async function downloaded(label,suffix){
+      const ready=page.waitForEvent('download');
+      await page.getByRole('button',{name:label,exact:true}).click();
+      const contents=readFileSync(await(await ready).path(),'utf8');
+      writeFileSync(prefix+suffix,contents,'utf8');return contents;
+    }
+    const exported=await downloaded('Export study table CSV','-export.csv');
+    // Exercise the real RevMan Web package downloads as well as the wide table.
+    await page.getByLabel('Export outcome name',{exact:true}).fill('Synthetic R check outcome');
+    await page.getByLabel('Experimental arm / intervention',{exact:true}).fill('Experimental');
+    await page.getByLabel('Control arm / intervention',{exact:true}).fill('Control');
+    if(c.app==='heterogeneity')await page.getByLabel('Export effect measure',{exact:true}).selectOption(c.measure);
+    for(const part of ['information','arms','results'])await downloaded('Export study '+part+' CSV','-web-'+part+'.csv');
+    // Reimport the downloaded study table through the file UI. No in-memory shortcut.
+    await page.getByLabel('RevMan file',{exact:true}).setInputFiles({name:'roundtrip.csv',mimeType:'text/csv',buffer:Buffer.from(exported)});
+    await expect(page.locator('#alm-revman-status')).toContainText('Choose');await choose(page,0);
+    await page.getByRole('button',{name:'Import selected rows',exact:true}).click();
+    await expect(page.locator('#alm-revman-status')).toContainText('Imported');
+    const back=await page.evaluate(({app,keys})=>{
+      const spec=AlmFeatures.get(app);
+      return AlmRevman.current(spec).map(r=>keys.map(k=>r[k]??''));
+    },{app:c.app,keys:produced.keys});
+    expect(back).toEqual(produced.rows);
+    expect(await page.locator(c.app==='mh-peto'?'#pooled-body':c.app==='heterogeneity'?'#stats-wrap':'#results-body').innerText()).toBe(produced.text);
+    // Corrupt an actual downloaded export, swapping both fields of one arm pair.
+    if(c.case==='multi-binary-first'){
+      const planted=await page.evaluate(csv=>{
+        const R=AlmRevman.reader,t=R.splitTable(csv),h=t[0];
+        for(const [a,b] of [['Experimental Events','Control Events'],['Experimental Total','Control Total']]){
+          const i=h.indexOf(a),j=h.indexOf(b);[t[1][i],t[1][j]]=[t[1][j],t[1][i]];
+        }
+        return R.csvRows(t);
+      },exported);
+      expect(planted).not.toBe(exported);writeFileSync(witnessDir+'/planted-swapped-arm.csv',planted,'utf8');
+    }
+    // Completion token is written only after every assertion and download succeeds.
+    writeFileSync(prefix+'-run.txt',run,'utf8');
+  });
 });

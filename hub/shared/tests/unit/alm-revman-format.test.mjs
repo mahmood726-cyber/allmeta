@@ -56,7 +56,7 @@ function harness(){
   // The feature panel's existing bubble listener must remain effective through the adapter's guard.
   node('format').addEventListener('change',()=>{node('alm-revman-effect').disabled=adapter.entry.schema!=='generic';});
   function change(format){node('format').value=format;node('format').dispatchEvent({type:'change'});}
-  function review(binary){return context.RevmanReader.parseText(source('hub/shared/tests/fixtures/revman/'+(binary?'pairwise-binary.csv':'pairwise.csv')));}
+  function review(binary){return context.AlmRevmanReader.parseText(source('hub/shared/tests/fixtures/revman/'+(binary?'pairwise-binary.csv':'pairwise.csv')));}
   async function apply(binary){return context.AlmRevman.applySelection({entry:adapter.entry},review(binary),{comparison:0,outcome:0,subgroup:0},binary?'pairwise-binary.csv':'pairwise.csv');}
   return {node,runs,context,adapter,change,apply};
 }

@@ -1,14 +1,14 @@
 (function(global){
   'use strict';
-  function validate(rows){global.RevmanReader.validateRecords(rows,'binary2x2');rows.forEach(r=>global.AlmRevman.label(r.study));}
+  function validate(rows){global.AlmRevmanReader.validateRecords(rows,'binary2x2');rows.forEach(r=>global.AlmRevman.label(r.study));}
   const entry={schema:'binary2x2',validate,apply(rows){
     validate(rows);
-    document.getElementById('src').value=global.RevmanReader.csvRows(rows.map(r=>[r.study,r.ai,r.n1i,r.ci,r.n2i]));
+    document.getElementById('src').value=global.AlmRevmanReader.csvRows(rows.map(r=>[r.study,r.ai,r.n1i,r.ci,r.n2i]));
     document.getElementById('btn-run').click();return {ok:true,n:rows.length};
   }};
   function read(){
     const text=document.getElementById('src').value;
-    const matrix=global.RevmanReader.splitTable(text,text.includes('\t')?'\t':text.includes(',')?',':';');
+    const matrix=global.AlmRevmanReader.splitTable(text,text.includes('\t')?'\t':text.includes(',')?',':';');
     const numeric=s=>s.trim()!==''&&Number.isFinite(Number(s));
     if(matrix.length&&matrix[0].length>=4&&matrix[0].slice(0,5).every(s=>!numeric(s)))matrix.shift();
     return matrix.map((parts,i)=>{

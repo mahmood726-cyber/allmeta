@@ -103,7 +103,7 @@ test('all compatible pairwise pages load the RevMan host, reader and native adap
 });
 test('CSV round trip keeps edited per-row subgroups rather than restoring the imported group',()=>{
   const h=harness('cumulative-subgroup'),r={...generic()[0],subgroup:'Edited subgroup'};
-  const csv=h.context.RevmanReader.exportCSV([r],'generic',{comparison:'Synthetic',outcome:'Effect',subgroup:'Old subgroup'}).csv;
-  const review=h.context.RevmanReader.parseText(csv);
+  const csv=h.context.AlmRevmanReader.exportCSV([r],'generic',{comparison:'Synthetic',outcome:'Effect',subgroup:'Old subgroup'}).csv;
+  const review=h.context.AlmRevmanReader.parseText(csv);
   assert.equal(review.comparisons[0].outcomes[0].subgroups[0].name,'Edited subgroup');
 });
