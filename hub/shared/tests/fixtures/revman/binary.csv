@@ -1,0 +1,4 @@
+Comparison,Outcome,Subgroup,Study ID,Study,Year,Experimental Events,Experimental Total,Control Events,Control Total,Effect measure
+Synthetic A versus B,Synthetic events,First subgroup,s1,Étude α,2020,0,40,4,42,OR
+Synthetic A versus B,Synthetic events,First subgroup,s2,試験 β,2021,7,60,11,61,OR
+Synthetic C versus D,Other events,,s3,Synthetic Gamma,2022,2,50,6,50,RR

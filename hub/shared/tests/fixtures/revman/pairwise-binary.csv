@@ -1,0 +1,6 @@
+Comparison,Outcome,Subgroup,Study ID,Study,Year,Effect measure,Experimental Events,Experimental Total,Control Events,Control Total
+Synthetic comparison,Synthetic events,Selected group,synthetic-0,Synthetic A,2020,OR,0,40,3,42
+Synthetic comparison,Synthetic events,Selected group,synthetic-1,Synthetic B,2021,OR,1,40,4,42
+Synthetic comparison,Synthetic events,Selected group,synthetic-2,Synthetic C,2022,OR,2,40,5,42
+Synthetic comparison,Synthetic events,Selected group,synthetic-3,Synthetic D,2023,OR,3,40,6,42
+Synthetic comparison,Synthetic events,Selected group,synthetic-4,Synthetic E,2024,OR,4,40,7,42
