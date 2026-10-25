@@ -9,14 +9,13 @@
   function finite(x) { return typeof x === 'number' && Number.isFinite(x); }
   function nativeRows(src) {
     if (typeof src !== 'string' || src.length > 200000) throw new Error('Data text missing or too long.');
-    var rows = src.trim().split(/\n/).map(function (line, i) {
-      if (!line.trim()) return null;
-      var p = line.split(',').map(function (s) { return s.trim(); });
-      // Match the page parser, including numeric prefixes and ignored trailing fields.
-      var te = parseFloat(p[0]), se = parseFloat(p[1]);
-      if (!finite(te) || !finite(se) || se <= 0) throw new Error('Every row needs a finite effect and a positive SE.');
-      return { te: te, se: se, label: p[2] || 'Study ' + (i + 1) };
-    }).filter(Boolean);
+    if (typeof global.__almInfluenceParse !== 'function') throw new Error('The native input parser is unavailable.');
+    var parsed = global.__almInfluenceParse(src);
+    if (!parsed || !Array.isArray(parsed.rows) || !Array.isArray(parsed.errors)) throw new Error('Invalid native parser response.');
+    if (parsed.errors.length) throw new Error('Input refused: ' + parsed.errors.map(function (e) {
+      return 'line ' + e.line + ': ' + e.reason;
+    }).join('; '));
+    var rows = parsed.rows;
     if (rows.length < 3) throw new Error('Influence diagnostics require at least three studies.');
     return rows;
   }
@@ -59,19 +58,24 @@
   }
   function dom() {
     var out = {}, rows = Array.prototype.slice.call(document.querySelectorAll('#body tr'));
+    var ds = global._almLastDiag && global._almLastDiag();
+    if (!ds || rows.length !== ds.length + 1 || rows.some(function (row) { return row.cells.length !== 18; })) {
+      throw new Error('The diagnostics table does not match the current analysis.');
+    }
     function add(key, text, digits) { out[key] = { text: text.trim(), fmt: { kind: 'num', digits: digits } }; }
     function pair(prefix, cell, a, b) {
       var m = /^\s*([^()]+)\s*\(([^()]+)\)\s*$/.exec(cell.textContent);
-      if (m) { add(prefix + a, m[1], 3); add(prefix + b, m[2], 3); }
+      if (!m) throw new Error('The diagnostics table is missing a pooled estimate or standard error.');
+      add(prefix + a, m[1], 3); add(prefix + b, m[2], 3);
     }
     var full = rows.pop();
-    if (full) pair('', full.cells[1], 'mu', 'seMu');
+    pair('', full.cells[10], 'mu', 'seMu');
     rows.forEach(function (row, i) {
       var prefix = 'study' + i + '_';
-      ['te', 'resid', 'hat', 'cooksD', 'dffits', 'covRatio'].forEach(function (key, j) {
-        add(prefix + key, row.cells[j + 1].textContent, key === 'resid' ? 2 : 3);
+      [['te', 2], ['resid', 4], ['hat', 5], ['cooksD', 6], ['dffits', 7], ['covRatio', 9]].forEach(function (field) {
+        add(prefix + field[0], row.cells[field[1]].textContent, field[0] === 'resid' ? 2 : 3);
       });
-      pair(prefix, row.cells[7], 'loo_mu', 'loo_seMu');
+      pair(prefix, row.cells[10], 'loo_mu', 'loo_seMu');
     });
     return out;
   }
@@ -87,7 +91,7 @@
         'Within-study variances were the squared supplied standard errors. Effects were analysed on the supplied scale without transformation or back-transformation; ratio effects must already be on a log scale. ',
         'Each leave-one-out analysis refitted the model and re-estimated the between-study variance. The forest plot uses ', T.pct('ciLevel', 0),
         ' normal Wald confidence limits: the leave-one-out mean plus or minus the standard normal critical value times its standard error, without Hartung–Knapp adjustment. ',
-        'No pooled significance test, I² or prediction interval is computed by this app. ',
+        'Pooled significance tests and I² are shown in the model summary; no prediction interval is computed by this app. ',
         'Deleted studentized residuals use the omitted study variance, deleted-fit between-study variance and deleted mean variance. Hat values are random-effects weights divided by their sum. ',
         'Cook’s distance is the squared change in the mean divided by the full-fit mean variance. DFFITS divides the change by the square root of the hat value times the sum of the omitted study variance and deleted-fit between-study variance. ',
         'The covariance ratio is the deleted mean variance divided by the full-fit mean variance. DFBETAS scales the change by the square root of the full-design weight sum evaluated at the deleted-fit between-study variance. ',
@@ -112,10 +116,10 @@
       var small = global.AlmText.cochrane.smallK(r.k);
       return [T.when(small.indexOf('fewK') >= T.R.none, 'Few studies: heterogeneity estimates are imprecise.'),
         T.when(small.indexOf('funnelK') >= T.R.none, 'Tests for small-study effects would be underpowered; this app does not perform them.'),
-        'I² and a prediction interval are omitted because the app does not compute them. Influence flags require investigation of study methods and data.'];
+        'This report describes the full-sample fit. Additional diagnostics and exclusion refits are available in the diagnostics panel; no prediction interval is computed. Influence flags require investigation of study methods and data.'];
     }
   };
-  var textSpec = { app: APP, verifyPackage: 'metafor', results: results, dom: dom, templates: templates };
+  var textSpec = { app: APP, verifyPackage: 'metafor', results: results, dom: dom, domMin: 26, templates: templates };
   function axis(edge) { return document.querySelector('#alm-axis-mount [data-edge="' + edge + '"]'); }
   var spec = {
     paper: 11, title: 'Influence diagnostics',
@@ -133,7 +137,7 @@
       set: function (s) {
         nativeRows(s && s.src);
         var a = s.axis;
-        if (!a || typeof a.log !== 'boolean' || ['min', 'max'].some(function (k) {
+        if (!a || a.log !== false || ['min', 'max'].some(function (k) {
           return typeof a[k] !== 'string' || (a[k] !== '' && (!a[k].trim() || !Number.isFinite(Number(a[k]))));
         }) || (a.min !== '' && a.max !== '' && Number(a.min) >= Number(a.max))) throw new Error('Invalid axis settings.');
         byId('src').value = s.src;
