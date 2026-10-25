@@ -1,0 +1,69 @@
+"use strict";
+if(!process.execArgv.some(a=>a.startsWith('--max-old-space-size'))){
+ const child=require('child_process').spawnSync(process.execPath,['--max-old-space-size=128',__filename,...process.argv.slice(2)],{stdio:'inherit'});
+ if(child.error)throw child.error;process.exit(child.status===null?1:child.status);
+}
+const fs=require('fs'),path=require('path'),Module=require('module'),assert=require('assert');
+const page=path.resolve(process.argv[2]||'allmeta/mapriors/index.html');
+const loader=path.resolve('validation/harness/load_app.js');
+const mod=new Module(loader,module); mod.filename=loader;mod.paths=module.paths;
+mod._compile(fs.readFileSync(loader,'utf8').replace("const page = path.resolve(__dirname, '../../allmeta/mapriors/index.html');",'const page = '+JSON.stringify(page)+';'),loader);
+const app=mod.exports,E=app.MAPEngine;
+let passed=0,total=0;
+function close(a,b,t=1e-10){assert.ok(Number.isFinite(a)&&Math.abs(a-b)<=t*Math.max(Math.abs(b),1e-12),`${a} != ${b} (tol ${t})`);}
+function test(name,f){total++;try{assert.ok(E,'MAPEngine missing');f();passed++;console.log('PASS '+name);}catch(e){console.log('FAIL '+name+': '+e.message);}}
+const normal={family:'normal',data:[{y:0,se:1}],tauScale:.5,betaMean:0,betaSD:10,sigma:1};
+test('T1 D1 independent 2001 x 2001 trapezoid beta/tau variance',()=>{
+ let z=0,m=0,m2=0,t2=0;
+ for(let i=0;i<=2000;i++){let t=i*5/2000,wt=i===0||i===2000?.5:1;
+ for(let j=0;j<=2000;j++){let b=-20+j*.02,w=wt*(j===0||j===2000?.5:1)*Math.exp(-b*b/200-2*t*t-b*b/(2*(1+t*t)))/Math.sqrt(1+t*t);z+=w;m+=w*b;m2+=w*b*b;t2+=w*t*t;}}
+ const r=E.gMAP(normal);close(r.predictive.sd**2,(m2+t2)/z-(m/z)**2,1e-6);
+ assert.ok(r.convergence.converged);close(r.predictive.mean,0,1e-3);
+});
+test('T2 D1 AS independent beta/tau grid and 4001-point theta trapezoids',()=>{
+ const check=require('./independent_binary');const data=[0,1,3,0,0,0,1,0].map((r,i)=>({r,n:[43,12,20,16,6,17,16,14][i]}));
+ const independent=check(data);const result=E.gMAP({family:'binomial',data,tauScale:1,betaMean:0,betaSD:2});close(result.predictive.mean,independent,1e-6);assert.ok(result.convergence.converged);
+});
+test('T3 D2 unit-information robustification',()=>{
+ const b=E.robustify({family:'beta',comps:[{w:1,a:10,b:30}]},.2,.5);
+ close(b.comps[0].w,.8);close(b.comps[1].w,.2);close(b.comps[1].a,.5);close(b.comps[1].b,.5);
+ const n=E.robustify({family:'normal',comps:[{w:1,m:2,s:3}],sigma:4},.2,2,4,4);close(n.comps[1].m,2);close(n.comps[1].s,2);
+});
+test('T4 D3 mixture quantile inversion',()=>{
+ for(const mix of [{family:'beta',comps:[{w:.8,a:10,b:30},{w:.2,a:.5,b:.5}]},{family:'normal',comps:[{w:.8,m:2,s:.3},{w:.2,m:-1,s:4}],sigma:1}])for(const p of [.025,.5,.975])close(E.pmix(mix,E.qmix(mix,p)),p,1e-12);
+});
+test('T5 D4 moment ESS and conjugate postmix identities',()=>{
+ let b={family:'beta',comps:[{w:1,a:10,b:30}]};close(E.ess(b,'moment'),40);
+ let n={family:'normal',comps:[{w:1,m:2,s:3}],sigma:4};close(E.ess(n,'moment'),16/9);
+ b={family:'beta',comps:[{w:.4,a:1,b:1},{w:.6,a:2,b:1}]};
+ const mean=.4*.5+.6*2/3,variance=.4/3+.6*.5-mean*mean;close(E.ess(b,'moment'),mean*(1-mean)/variance-1);
+ let post=E.postmix(b,{r:1,n:2});close(post.comps[0].a,2);close(post.comps[0].b,2);close(post.comps[1].a,3);close(post.comps[1].b,2);close(post.comps[0].w,.4);
+ const unequal=E.postmix(b,{r:2,n:2});close(unequal.comps[0].w,4/13);close(unequal.comps[1].w,9/13);close(unequal.comps[0].a,3);close(unequal.comps[1].a,4);
+ n={family:'normal',comps:[{w:.3,m:0,s:1},{w:.7,m:2,s:2}],sigma:3};post=E.postmix(n,{m:1,n:9,sigma:3});close(post.comps[0].m,.5);close(post.comps[0].s,Math.sqrt(.5));close(post.comps[1].m,1.2);
+ let a=.3*Math.exp(-.25)/Math.sqrt(2),c=.7*Math.exp(-.1)/Math.sqrt(5);close(post.comps[0].w,a/(a+c));
+});
+test('T6 reproducible generated R settings',()=>{
+ const b=E.exportR({family:'binomial',data:[{r:1,n:10}],tauScale:.7,betaMean:-1,betaSD:3},.2,.1);
+ assert.ok(b.includes('cbind(r, n - r) ~ 1 | study'));assert.ok(b.includes('tau.prior = 0.7'));assert.ok(b.includes('c(-1, 3)'));assert.ok(b.includes('weight = 0.2, mean = 0.5'));
+ const n=E.exportR({...normal,tauScale:.8,betaMean:2,betaSD:7},.2,1.3);assert.ok(n.includes('cbind(y, y.se) ~ 1 | study'));assert.ok(n.includes('weight = 0.2, mean = 1.3, sigma = 1'));
+});
+
+test('T7 double-precision normal / beta numerical identities',()=>{
+ close(E.normalCDF(1),.8413447460685429,1e-15);close(E.normalCDF(-8),6.220960574271784e-16,1e-14);close(E.normalQuantile(.975),1.959963984540054,1e-15);
+ for(const p of [1e-10,.001,.1,.5,.9,.999,1-1e-10])close(E.normalCDF(E.normalQuantile(p)),p,2e-14);
+ close(E.incompleteBeta(.3,1,1),.3,1e-14);close(E.incompleteBeta(.3,2,1),.09,1e-14);close(E.betaQuantile(.3,1,1),.3,1e-14);
+});
+test('T8 k=1 and zero/all-event binomial symmetry',()=>{
+ const o={family:'binomial',data:[{r:0,n:50}],tauScale:1,betaMean:0,betaSD:2};
+ const a=E.gMAP(o),b=E.gMAP({...o,data:[{r:50,n:50}]});assert.ok(Math.abs(a.predictive.mean+b.predictive.mean-1)<1e-8);assert.ok(Math.abs(a.predictive.sd-b.predictive.sd)<1e-8);assert.ok(a.convergence.converged&&b.convergence.converged);assert.ok(a.predictive.mean>0&&b.predictive.mean<1);
+});
+test('T9 fitted mixture moments, AIC and live UI path',()=>{
+ const model=E.gMAP(normal),mix=E.fitMixture(model),sm=E.summary(mix);assert.ok(Math.abs(sm.mean-model.predictive.mean)<1e-12);close(sm.sd,model.predictive.sd,5e-3);assert.ok(mix.fit.K>=1&&mix.fit.K<=4);assert.equal(mix.fit.candidates.length,4);
+ const ids=new Set([...fs.readFileSync(page,"utf8").matchAll(/id="([^"]+)"/g)].map(m=>m[1]));const elements=new Map();app.document.getElementById=id=>{assert.ok(ids.has(id),"Unknown DOM ID "+id);if(!elements.has(id))elements.set(id,{value:'',style:{},innerHTML:'',textContent:'',setAttribute(){},scrollIntoView(){}});return elements.get(id);};
+ app.document.getElementById('engineMode').value='model';app.document.getElementById('endpointType').value='continuous';app.document.getElementById('wSlider').value='20';app.document.getElementById('confLevel').value='.95';
+ for(const name of ['renderPowerPrior','renderCommensuratePrior','renderComparisonTable','renderSampleSize','configureOCSliders','animReset','renderBorrowingHeatmap','runAutoConflictDetection','announce'])app[name]=()=>{};
+ const vm=require('vm');vm.runInContext('studies=[{trial:"single",mean:0,sd:1,n:1}];',app);app.applyEngineResult(model,mix,normal,.2,.95);
+ assert.ok(elements.get('metricsGrid').innerHTML.includes('RBesT-model posterior'));assert.ok(elements.get('essContent').innerHTML.includes('Moment'));assert.ok(elements.get('densityLegend').innerHTML.includes('components'));
+ vm.runInContext('engineCache={key:JSON.stringify(engineSettings()),result:mapResult.model,mix:mapResult.mixture};',app);app.runMAP();assert.equal(vm.runInContext('mapResult.w_vague',app),.2);
+});
+console.log(`${passed}/${total} PASS; page=${page}`);process.exitCode=passed===total?0:1;
