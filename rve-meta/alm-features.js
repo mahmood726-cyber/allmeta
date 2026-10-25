@@ -44,25 +44,18 @@
     return v.trim();
   }
   function get() {
-    return { src: byId('src').value, rho: byId('f-rho').value, names: byId('f-names').value };
+    return { src: byId('src').value, rho: byId('f-rho').value, names: byId('f-names').value,
+      centred: byId('f-centre').checked };
   }
   function validateState(s) {
     if (!s || typeof s.src !== 'string' || !s.src.trim() || s.src.length > 200000) throw new Error('Data text missing or too long.');
     if (typeof s.names !== 'string' || s.names.length > 10000 || /[<>\r\n]/.test(s.names)) throw new Error('Invalid predictor names.');
     var rho = number(s.rho, 'Working correlation');
-    if (rho < 0 || rho > 0.99) throw new Error('Working correlation must be between zero and 0.99.');
-    var width, count = 0;
-    s.src.split(/\r?\n/).forEach(function (line) {
-      if (!line.trim() || line.trim().charAt(0) === '#') return;
-      var cells = line.split(/\s*,\s*/);
-      if (cells.length < 3) throw new Error('Each row needs cluster, yi and vi.');
-      safeLabel(cells[0], 'Cluster');
-      cells.slice(1).forEach(function (v) { number(v, 'Data value'); });
-      if (Number(cells[2]) <= 0) throw new Error('Sampling variance must be positive.');
-      if (width !== undefined && width !== cells.length) throw new Error('Every row needs the same predictor columns.');
-      width = cells.length; count++;
-    });
-    if (!count) throw new Error('No data rows.');
+    if (rho < 0 || rho > 1) throw new Error('Working correlation must be between zero and one.');
+    if (s.centred !== undefined && typeof s.centred !== 'boolean') throw new Error('Invalid predictor centring option.');
+    // Share the page's parser contract: headers, reordered columns, SE, quoted
+    // labels and delimiters must round-trip just as they do in Studies.
+    global.AlmRVEExtras.parseStudies(s.src);
   }
   // Validate first; roll back if the original app refuses the fit (e.g. singular design).
   function set(s) {
@@ -70,6 +63,8 @@
     var before = get();
     function write(v) {
       byId('src').value = v.src; byId('f-rho').value = String(v.rho); byId('f-names').value = v.names;
+      // Links created before the centring option existed describe uncentred fits.
+      byId('f-centre').checked = v.centred === true;
       byId('btn-run').click();
     }
     write(s);
@@ -107,7 +102,7 @@
       }
       return [cluster, yi, vi].concat(mods.map(function (k) { return number(r[k], 'Moderator ' + k); })).join(', ');
     });
-    set({ src: lines.join('\n'), rho: byId('f-rho').value, names: mods.join(', ') });
+    set({ src: lines.join('\n'), rho: byId('f-rho').value, names: mods.join(', '), centred: byId('f-centre').checked });
     global.AlmFeaturesState.entryLog = (global.AlmFeaturesState.entryLog || []).concat(steps);
     // A new paste must never retain source records from an earlier analysis.
     global.AlmFeaturesState.provenance = records.map(function (r) { return r.provenance; }).filter(Boolean);
@@ -119,7 +114,7 @@
     var o = global.__almLastRVE();
     var r = { k: o.fit.k_total, clusters: o.fit.m_clusters, coefficients: o.fit.p,
       tau2: o.fit.tau2, rho: o.fit.rho, correction: Number(o.fit.method.slice(2)),
-      ciLevel: 95, nullValue: 0, coefficientKeys: [] };
+      ciLevel: 95, nullValue: 0, centred: !!o.inputs.centred, coefficientKeys: [] };
     o.summary.forEach(function (s, i) {
       var prefix = 'coef_' + i + '_';
       r.coefficientKeys.push({ prefix: prefix, indexKey: prefix + 'index' });
@@ -153,13 +148,16 @@
     plain: function (T, r) {
       return ['The analysis included ', T.int('k'), ' dependent effects in ', T.int('clusters'),
         ' clusters. A meta-regression accounted for dependence within each cluster. ',
-        'The intercept describes the estimated effect when every predictor is zero; it is not an overall pooled effect. ',
+        r.centred ? 'The intercept describes the estimated effect at the predictor means; it is not an overall pooled effect. ' :
+          'The intercept describes the estimated effect when every predictor is zero; it is not an overall pooled effect. ',
         'The estimates describe associations and do not establish causation or clinical importance.'];
     },
     methods: function (T, r) {
       return ['Effects and sampling variances on the supplied analysis scale were analysed using the Hedges–Tipton–Johnson correlated-effects (CORR) working model (',
         T.cite('rveHTJ'), '), with correlation ρ = ',
-        T.num('rho', 2), '. An intercept was added automatically. The between-cluster variance used the CORR moment estimator truncated at zero. ',
+        T.num('rho', 2), '. An intercept was added automatically. ',
+        r.centred ? 'Predictors were centred at their arithmetic means before fitting. ' : '',
+        'The between-cluster variance used the CORR moment estimator truncated at zero. ',
         'Each effect was weighted by the reciprocal of the product of its cluster size and the sum of that cluster’s mean sampling variance and τ². ',
         'Inference used the CR', T.int('correction'), ' bias-reduced sandwich correction and coefficient-specific Satterthwaite degrees of freedom (',
         T.cite('rveTipton'), '; ', T.cite('rvePustejovskyTipton'), '). ',
@@ -205,7 +203,7 @@
   } });
   var spec = {
     paper: 15, title: 'Robust variance estimation', entry: entry, text: textSpec,
-    verify: { adapter: live, inputs: '#src, #f-rho, #f-names', rObjects: 'd, f (robu fit), tab, cr2' },
+    verify: { adapter: live, inputs: '#src, #f-rho, #f-names, #f-centre', rObjects: 'd, f (robu fit), tab, cr2' },
     share: { get: get, set: set }
   };
   Object.defineProperty(spec.verify, 'plots', { enumerable: true, get: function () {

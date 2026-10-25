@@ -6,8 +6,10 @@ import { readZip } from './zip-reader.mjs';
 
 const APP = 'rve-meta', PAGE = '/rve-meta/index.html';
 const SNAP = fileURLToPath(new URL('./__snapshots__/text-rve-meta.json', import.meta.url));
-async function open(page) {
-  await page.goto(PAGE);
+async function open(page, { testHook = false } = {}) {
+  await page.goto(PAGE + (testHook ? '?almtest=1' : ''));
+  // Keep the reviewed small-example snapshot stable; corrdat is now the default.
+  await page.locator('#btn-example-small').click();
   await expect(page.locator('#coef-body tr')).toHaveCount(3);
   await page.waitForFunction(() => window.AlmFeatures?.get('rve-meta'));
 }
@@ -50,7 +52,13 @@ test('ENTRY: three table formats preserve the built-in example and all moderator
       const mapping = { ...detected.mapping };
       table.header.forEach((h, i) => { if (spec.entry.extras.includes(h)) mapping[i] = h; });
       // Passing the explicit map is the user's column decision (no inferred cluster/moderators).
-      const converted = AlmEntry.convert(table, mapping, spec.entry.schema, { decimal: 'point' });
+      const pending = AlmEntry.convert(table, mapping, spec.entry.schema, { decimal: 'point' });
+      if (paper && !pending.flags.some(f => f.blocking && f.questionId === 'measure:type')) {
+        throw Error('An unspecified CI measure must require confirmation before conversion.');
+      }
+      // This fixture constructs symmetric CIs on the supplied difference scale;
+      // explicitly answer the current core's measure question, as the user must.
+      const converted = AlmEntry.convert(table, mapping, spec.entry.schema, { decimal: 'point', 'measure:type': 'difference' });
       if (converted.flags.some(f => f.blocking)) throw Error(JSON.stringify(converted.flags));
       AlmFeaturesState.entryLog = converted.steps;
       const applied = spec.entry.apply(converted.records);
@@ -182,7 +190,7 @@ test('VERIFY: real browser runner reports missing packages, offers R and an expl
 });
 
 test('VERIFY PLANTED: comparator UI catches a changed estimate (synthetic reference; not R parity)', async ({ page }) => {
-  await open(page);
+  await open(page, { testHook: true });
   // Exercise the actual shared comparison/UI/hook without claiming this test executed R.
   await page.evaluate(() => {
     const adapter = AlmLiveAdapters['rve-meta'], state = adapter.currentState();
@@ -196,7 +204,7 @@ test('VERIFY PLANTED: comparator UI catches a changed estimate (synthetic refere
   await tab(page, 'verify');
   const panel = page.locator('#alm-f-panel-verify');
   await panel.getByRole('button', { name: 'Verify this analysis in R', exact: true }).click();
-  await expect(panel.locator('[data-testid=verify-summary]')).toHaveText('39 of 40 quantities match R — FAIL: 1 outside tolerance or unavailable');
+  await expect(panel.locator('[data-testid=verify-summary]')).toHaveText('TEST MODE (test hook active; not a verification) — 39 of 40 computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active');
   const failing = await panel.locator('tbody tr').evaluateAll(rows => rows.filter(r => r.querySelector('[data-result]').textContent !== 'PASS').map(r => r.dataset.key));
   expect(failing).toEqual(['coef.0.estimate']);
   expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('rve-meta'))).toBe(false);
@@ -205,6 +213,12 @@ test('VERIFY PLANTED: comparator UI catches a changed estimate (synthetic refere
 
 test('SHARE: round trip restores data, rho, names and provenance; corrupt and invalid links change nothing', async ({ page, browser }) => {
   await open(page);
+  const freshDefault = await page.evaluate(() => {
+    document.getElementById('btn-example').click();
+    const baseline = { state: AlmFeatures.get('rve-meta').share.get(), result: __almLastRVE() };
+    document.getElementById('btn-example-small').click();
+    return baseline;
+  });
   const original = await page.evaluate(() => AlmFeatures.get('rve-meta').share.get());
   await page.locator('#src').fill(original.src.replace('0.45', '0.46'));
   await page.locator('#f-rho').fill('0.35');
@@ -232,8 +246,8 @@ test('SHARE: round trip restores data, rho, names and provenance; corrupt and in
         const bad = await fresh.newPage();
         await bad.goto(link.split('#')[0] + '#s=' + suffix);
         await expect(bad.locator('[data-testid=share-status]')).toContainText('Nothing was changed.');
-        expect(await bad.evaluate(() => AlmFeatures.get('rve-meta').share.get())).toEqual(original);
-        expect(await bad.locator('#coef-body tr').count()).toBe(3);
+        expect(await bad.evaluate(() => ({ state: AlmFeatures.get('rve-meta').share.get(), result: __almLastRVE() }))).toEqual(freshDefault);
+        expect(await bad.locator('#coef-body tr').count()).toBe(4);
       } finally { await fresh.close(); }
     }
   } finally { await context.close(); }
@@ -254,6 +268,96 @@ test('AXE: all feature tabs have no serious or critical accessibility violations
     expect(serious.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) }))).toEqual([]);
   }
   expect(errors).toEqual([]);
+});
+
+test('SHARE: current corrdat default and centred rho=1 fits round trip through v2 links', async ({ page, browser }) => {
+  await page.goto(PAGE);
+  await expect(page.locator('#coef-body tr')).toHaveCount(4);
+  await page.waitForFunction(() => window.AlmFeatures?.get('rve-meta'));
+  for (const centred of [false, true]) {
+    await page.locator('#f-centre').setChecked(centred);
+    await page.locator('#f-rho').fill(centred ? '1' : '0.8');
+    await page.locator('#btn-run').click();
+    const expected = await page.evaluate(() => ({ state: AlmFeatures.get('rve-meta').share.get(), result: __almLastRVE() }));
+    expect(expected.state.centred).toBe(centred);
+    expect(expected.result.inputs.centred).toBe(centred);
+    await tab(page, 'share');
+    const shareButton = page.getByRole('button', { name: 'Share this analysis', exact: true });
+    await shareButton.click();
+    // The previous ready message persists while encoding clears and rebuilds the link.
+    // Wait for this action to finish before reading its output on either iteration.
+    await expect(shareButton).toBeEnabled();
+    await expect(page.locator('[data-testid=share-status]')).toContainText('Share link ready');
+    const shareLink = page.getByLabel('Share link', { exact: true });
+    await expect(shareLink).toHaveValue(/^https?:\/\/[^#]+#a2=/);
+    const link = await shareLink.inputValue();
+    expect(new URL(link).hash).toMatch(/^#a2=/);
+    const context = await browser.newContext();
+    try {
+      const restored = await context.newPage();
+      await restored.goto(link);
+      await expect(restored.locator('[data-testid=share-status]')).toHaveText('Analysis restored from the share link.');
+      expect(await restored.evaluate(() => ({ state: AlmFeatures.get('rve-meta').share.get(), result: __almLastRVE() }))).toEqual(expected);
+      await expect(restored.locator('#f-centre')).toBeChecked({ checked: centred });
+    } finally { await context.close(); }
+  }
+});
+
+test('SHARE: native header mappings, SE, delimiters and quoted clusters use the page parser', async ({ page }) => {
+  await open(page);
+  const out = await page.evaluate(() => {
+    const spec = AlmFeatures.get('rve-meta'), baseline = __almLastRVE();
+    const rows = AlmRVEExtras.parseStudies(spec.share.get().src).rows;
+    return [';', '\t'].map(delimiter => {
+      const src = [['SE', 'yi', 'cluster', 'intervention', 'dose_weeks'].join(delimiter),
+        ...rows.map(r => [Math.sqrt(r.vi), r.yi, JSON.stringify(r.cluster + ', subgroup'), ...r.X.slice(1)].join(delimiter))].join('\n');
+      spec.share.set({ ...spec.share.get(), src });
+      return { src: spec.share.get().src, expected: src, before: baseline.summary, after: __almLastRVE().summary };
+    });
+  });
+  for (const result of out) {
+    expect(result.src).toBe(result.expected);
+    expect(result.after).toHaveLength(result.before.length);
+    for (const [i, row] of result.after.entries()) {
+      for (const key of ['estimate', 'se', 't', 'df', 'ci_lo', 'ci_hi', 'p']) {
+        const expected = result.before[i][key];
+        expect(Math.abs(row[key] - expected), `${i}/${key}`).toBeLessThanOrEqual(1e-9 * Math.abs(expected));
+      }
+    }
+  }
+});
+
+test('TEXT/SHARE: centring invalidates verification, reports its interpretation and rolls back atomically', async ({ page }) => {
+  await open(page);
+  const initialHash = await page.evaluate(() => AlmFeatures.inputsHash('rve-meta'));
+  await page.locator('#f-centre').check();
+  expect(await page.evaluate(() => AlmFeatures.inputsHash('rve-meta'))).not.toBe(initialHash);
+  expect(await page.evaluate(() => AlmFeatures.get('rve-meta').text.results())).toBeNull();
+  await page.locator('#btn-run').click();
+  const text = await render(page);
+  expect(text.audit.ok, JSON.stringify(text.audit.failures)).toBe(true);
+  expect(text.snapshot.plain).toContain('at the predictor means');
+  expect(text.snapshot.methods).toContain('Predictors were centred at their arithmetic means before fitting.');
+  const out = await page.evaluate(() => {
+    const spec = AlmFeatures.get('rve-meta');
+    const read = () => ({ state: spec.share.get(), result: __almLastRVE() });
+    const before = read();
+    const refused = [{ centred: 'true' }, { src: 'a, 0.4, 0.03, 1, 1\nb, 0.5, 0.03, 1, 1', centred: false }].map(patch => {
+      let error;
+      try { spec.share.set({ ...before.state, ...patch }); } catch (e) { error = e.message; }
+      return { error, after: read() };
+    });
+    const legacy = { ...before.state };
+    delete legacy.centred;
+    spec.share.set(legacy);
+    return { before, refused, legacy: read() };
+  });
+  for (const result of out.refused) {
+    expect(result.error).toBeTruthy();
+    expect(result.after).toEqual(out.before);
+  }
+  expect(out.legacy.state.centred).toBe(false);
+  expect(out.legacy.result.inputs.centred).toBe(false);
 });
 
 test('REVIEW P1: desktop plots reuse coefficient intervals for moderator and intercept-only fits', async ({ page }) => {
