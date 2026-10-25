@@ -202,11 +202,18 @@ add_reported_values <- function(app,ref,p) {
     I2_study=between/den,I2_within=within/den,I2_sampling=typical/den)
   c(ref,setNames(vals,paste0('mom.',names(vals))))
 }
+validate_runtime_packages <- function(packages) {
+  # Reviewer D1: retain the original reference models. Source packages are
+  # provenance only; validate_source loads their pinned objects with base R.
+  allowed<-c('metafor','meta','netmeta','metadat','mada','metasens','robumeta','clubSandwich')
+  need(is.character(packages) && length(packages)>0L && !anyNA(packages) && all(nzchar(packages)),
+       'Missing or malformed runtime package list')
+  need(all(packages %in% allowed),paste('Unapproved runtime package:',paste(setdiff(packages,allowed),collapse=', ')))
+  invisible(TRUE)
+}
 check_one <- function(out,item,root) {
   evidence<-read_evidence(out,item);d<-evidence$data;a<-evidence$artifact
-  # The allowed package list is an explicit task constraint, not a skipped check.
-  allowed<-c('metafor','meta','netmeta','metadat')
-  need(all(c(d$source_package,a$packages) %in% allowed),paste('Task package restriction conflicts with existing live recipe:',paste(setdiff(c(d$source_package,a$packages),allowed),collapse=', ')))
+  validate_runtime_packages(a$packages)
   source<-validate_source(d,root)
   bad_identity<-d;bad_identity$version<-paste0(d$version,'-wrong')
   need(tryCatch({validate_source(bad_identity,root);FALSE},error=function(e)TRUE),'Planted source version escaped')
@@ -248,6 +255,8 @@ check_one <- function(out,item,root) {
 }
 run_examples <- function(root) {
   out<-normalizePath(file.path(root,'../../hub/shared/tests/rchecks-out/examples'),mustWork=FALSE)
+  source(file.path(root,'runtime-package-controls.R'),local=environment())
+  check_runtime_package_controls()
   need(same(.2,.2,'abs',1e-9),'Comparator control failed')
   need(!same(.2,.3,'abs',1e-9) && !same(NA_real_,NA_real_,'abs',1e-9) && !same(NULL,1,'abs',1e-9),'Comparator planted defect escaped')
   manifest<-read_csv(file.path(out,'manifest.csv'))

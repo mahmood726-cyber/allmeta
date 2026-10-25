@@ -1,20 +1,18 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
-import { csv, evidenceFiles, clearExampleEvidence } from '../../../validation/examples/plain-evidence.mjs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { evidenceFiles, clearExampleEvidence, prepareExampleEvidence } from '../../../validation/examples/plain-evidence.mjs';
 
 const root = new URL('../../../', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('validation/examples/manifest.json', root), 'utf8'));
 const url = app => `http://127.0.0.1:${process.env.ALM_FEATURES_PORT || 8089}/${app}/`;
 const plain = new URL('hub/shared/tests/rchecks-out/examples/', root);
 test.beforeAll(()=>{
-  mkdirSync(plain,{recursive:true});
-  writeFileSync(new URL('manifest.csv',plain),csv(['paper','app','dataset'],manifest.map(x=>[x.paper,x.app,x.dataset])));
+  prepareExampleEvidence(plain, manifest);
 });
 
 for (const item of manifest) {
   test(`${item.app}: real package example loads, runs and displays its citation`, async ({ page }) => {
-    const artifact = new URL(`validation/examples/${item.app}/${item.dataset}.app.json`, root);
-    rmSync(artifact, { force: true }); // A failed run cannot leave a previous passing artifact.
+    const artifact = new URL(item.app + '.app.json', plain);
     // Playwright restarts the worker after a failure, including beforeAll.
     // Clear this test's evidence only; retain prior successful page captures.
     clearExampleEvidence(plain, item.app);
@@ -38,8 +36,7 @@ for (const item of manifest) {
     expect(payload.appValues.length).toBeGreaterThan(0);
     expect(payload.display.length).toBeGreaterThan(0);
     expect(payload.display.every(v => v.text.length && Number.isFinite(v.value))).toBe(true);
-    mkdirSync(new URL(`validation/examples/${item.app}/`, root), { recursive: true });
-    writeFileSync(artifact, JSON.stringify(payload, null, 2) + '\n');
+    writeFileSync(artifact, JSON.stringify(payload) + '\n');
     for(const [name,content] of Object.entries(evidenceFiles(payload,data)))
       writeFileSync(new URL(item.app+'.'+name,plain),content);
     // Planted UI corruption must be detected even if a legacy live adapter rerenders.

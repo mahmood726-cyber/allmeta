@@ -1,0 +1,3 @@
+# Page captures and verification logs are generated under rchecks-out instead.
+*.app.json
+unit-verification*.txt

@@ -19,9 +19,10 @@ Validation order (from the repository root):
 2. Run `features-examples.spec.mjs` using the existing features Playwright
    configuration. It tests default preservation, explicit loading, citations,
    actual displayed results and a planted display mutation; a missing citation
-   must refuse loading. It writes `<app>/<dataset>.app.json` from the live page,
-   plus typed CSV/plain-text evidence under
-   `hub/shared/tests/rchecks-out/examples/` for the reviewer gate.
+   must refuse loading. It writes `<app>.app.json` from the live page and typed
+   CSV/plain-text evidence exclusively under the ignored
+   `hub/shared/tests/rchecks-out/examples/` directory for the reviewer gate.
+   Page captures and test logs must never be committed beside source datasets.
 3. `Rscript --vanilla hub/shared/tests/rchecks/examples.R`
 
 The R entry point delegates to `check_examples.R`, also runnable directly.
@@ -61,9 +62,11 @@ loads the existing R script builder before capture without booting R. The
 publication-bias display reader finds the named Trim-and-fill row, independently
 of any subsequent experimental selection-model output.
 
-Unresolved task constraint: the reviewer's package allowlist is
-`metafor/meta/netmeta/metadat`, while the required unchanged live recipes use
-`mada` (DTA), `metasens` (limit MA), and `robumeta/clubSandwich` (RVE). The gate
-currently fails closed for these three apps. Resolving that conflict requires a
-task decision; it cannot be made green by silently substituting another model
-or removing the three examples. See `STUCK_FAILURES.md`.
+Reviewer decision D1 permits the original runtime reference packages:
+`metafor`, `meta`, `netmeta`, `metadat`, `mada` (DTA), `metasens` (limit MA), and
+`robumeta`/`clubSandwich` (RVE). The runtime guard checks only analysis packages;
+source provenance remains independently checked against the pinned source
+objects. Base-R controls verify all approved packages, reject malformed or
+unapproved package lists, and exercise a source-only package through the
+independent source validator before any numerical comparisons. All sixteen
+examples remain mandatory, with no change to their models or tolerances.

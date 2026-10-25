@@ -1,8 +1,15 @@
 // Lossless, typed CSV transport. No findings or R reference values live here.
-import { rmSync } from 'node:fs';
+import { rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-const suffixes=['metadata.csv','source.csv','projection.csv','excluded.csv','values.csv','display.csv','packages.txt','recipe.R'];
+const suffixes=['app.json','metadata.csv','source.csv','projection.csv','excluded.csv','values.csv','display.csv','packages.txt','recipe.R'];
+export function prepareExampleEvidence(folder, manifest) {
+  const path=folder instanceof URL?fileURLToPath(folder):folder;
+  mkdirSync(path,{recursive:true});
+  // Standalone Playwright runs must be safe before TEST.ps1 creates its ignore.
+  writeFileSync(join(path,'.gitignore'),'*\n');
+  writeFileSync(join(path,'manifest.csv'),csv(['paper','app','dataset'],manifest.map(x=>[x.paper,x.app,x.dataset])));
+}
 export function clearExampleEvidence(folder, app) {
   if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(app))throw Error('Invalid evidence app');
   const path=folder instanceof URL?fileURLToPath(folder):folder;
