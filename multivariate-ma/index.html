@@ -73,6 +73,9 @@
       <input type="number" id="f-rhow" value="0.5" min="-0.99" max="0.99" step="0.05" aria-describedby="mode-help">
     </div>
     <p class="note" id="mode-help">One row per study, comma separated; lines starting with # are comments. Variances must be positive; a within-study correlation must satisfy |r| &lt; 1. Rows with a missing or non-numeric value, a non-positive variance or |r| &ge; 1 are omitted and listed below. At least two complete rows are required. Between-study correlation is undefined when a between-study variance is zero.</p>
+    <label for="effect-scale">Effects are:</label>
+    <select id="effect-scale" aria-describedby="effect-scale-help"><option value="additive">Additive scale, e.g. log ratios or mean differences (default)</option><option value="raw">Raw ratios (OR, RR, HR) — log-transform before analysis</option></select>
+    <p id="effect-scale-help">For raw ratios, both effects must be positive. Enter variances and covariances on the log scale; they are used unchanged.</p>
     <label class="note" for="f-data">Study data</label>
     <textarea id="f-data" spellcheck="false" aria-describedby="mode-help"></textarea>
     <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.6rem">
@@ -86,6 +89,7 @@
   </section>
   <section class="panel" aria-labelledby="pooled-title">
     <h2 id="pooled-title">Pooled estimates</h2>
+    <p id="scale-provenance" aria-live="polite"></p>
     <div id="headline" class="note" role="status" aria-live="polite"></div>
     <div id="stats" class="stats"></div>
     <p id="likelihood-diagnostic" class="note" role="status" hidden></p>
@@ -166,7 +170,8 @@
 
     function number(s) { return s.trim() ? Number(s) : NaN; }
     // Mode-aware parser. Returns used rows and every omitted data row with its line and reason.
-    function parse(text, mode, rhoW) {
+    function parse(text, mode, rhoW, effectScale) {
+      var invalid = null;
       var rows = [], omitted = [], need = mode === "rhoW" ? 4 : 5, firstData = true;
       String(text || "").split(/\r?\n/).forEach(function (line, idx) {
         var t = line.trim(); if (!t || t.charAt(0) === "#") return;
@@ -182,6 +187,10 @@
         }
         firstData = false;
         var y1 = nums[0], v1 = nums[1], y2 = nums[2], v2 = nums[3], cov, r;
+        if (effectScale === "raw") {
+          if (!(y1 > 0) || !(y2 > 0)) { invalid = "Raw ratios must be positive on line " + lineNo + " (" + label + "). Enter positive ratios or choose additive scale for log ratios or mean differences."; return; }
+          y1 = Math.log(y1); y2 = Math.log(y2);
+        }
         if (!(v1 > 0) || !(v2 > 0)) { omitted.push({ line: lineNo, label: label, reason: "variance must be > 0" }); return; }
         if (mode === "cov") { cov = nums[4]; r = cov / Math.sqrt(v1 * v2); }
         else if (mode === "r") { r = nums[4]; if (!(Math.abs(r) < 1)) { omitted.push({ line: lineNo, label: label, reason: "within-study r must satisfy |r| < 1" }); return; } cov = window.AlmMultivariate.covFromR(v1, v2, r); }
@@ -189,7 +198,7 @@
         else throw new Error("unknown input mode " + mode);
         rows.push({ line: lineNo, label: label || ("Study " + (rows.length + 1)), y: [y1, y2], v: [v1, v2], cov: cov, r: r });
       });
-      return { mode: mode, rhoW: mode === "rhoW" ? rhoW : null, rows: rows, omitted: omitted };
+      return { mode: mode, rhoW: mode === "rhoW" ? rhoW : null, rows: rows, omitted: omitted, invalid: invalid, effectScale: effectScale || "additive" };
     }
     // The mode is kept in a variable updated by the select's change event (select.value is
     // unreliable in some non-browser DOMs used for validation replays).
@@ -198,7 +207,8 @@
     function setMode(v) { if (["cov", "r", "rhoW"].indexOf(v) < 0) throw new Error("unknown input mode " + v); currentMode = v; Array.prototype.forEach.call(el("f-mode").querySelectorAll("option"), function (o) { if (o.value === v) { o.setAttribute("selected", ""); o.selected = true; } else { o.removeAttribute("selected"); o.selected = false; } }); }
     function currentParsed() {
       var mode = getMode(), rw = Number(el("f-rhow").value);
-      var parsed = parse(el("f-data").value, mode, rw);
+      var parsed = parse(el("f-data").value, mode, rw, el("effect-scale").value);
+      parsed.scaleMethods = parsed.effectScale === "raw" ? "Effects entered as raw ratios; log-transformed before analysis. Variances and covariances supplied on the log scale and used unchanged." : "Effects entered on an additive scale; used without conversion.";
       parsed.outcomes = [el("f-o1").value || "Outcome 1", el("f-o2").value || "Outcome 2"];
       if (mode === "rhoW" && !(Math.abs(rw) < 1)) { parsed.invalid = "Assumed within-study correlation must satisfy |ρw| < 1."; }
       return parsed;
@@ -223,7 +233,7 @@
     function run() {
       var parsed = currentParsed(), o1 = parsed.outcomes[0], o2 = parsed.outcomes[1];
       var head = el("headline"), stats = el("stats");
-      _parsed = parsed; clearOutputs(); renderDerived(parsed); renderOmitted(parsed);
+      _parsed = parsed; clearOutputs(); el("scale-provenance").textContent = ""; renderDerived(parsed); renderOmitted(parsed);
       var done = function (res) { if (window.AlmMvPlusUI) window.AlmMvPlusUI.update(parsed, res); };
       if (parsed.invalid) { head.textContent = "Refused: " + parsed.invalid; done({ status: "refused", reason: parsed.invalid, k: parsed.rows.length }); return; }
       if (parsed.rows.length < 2 || !window.AlmMultivariate) { head.textContent = "Enter ≥ 2 studies."; done({ status: "refused", reason: "At least two complete studies are required.", k: parsed.rows.length }); return; }
@@ -235,6 +245,7 @@
       }
       if (res) f = res.fit; else { try { f = window.AlmMultivariate.fit(parsed.rows.map(function (r) { return { y: r.y, S: [[r.v[0], r.cov], [r.cov, r.v[1]]] }; })); } catch (error) { head.textContent = error.message; return; } }
       _fit = f;
+      el("scale-provenance").textContent = parsed.scaleMethods;
       var diagnosticNote = el("likelihood-diagnostic"), verdict = f.diagnostic.verdict;
       diagnosticNote.textContent = verdict === "boundary maximum" ?
         "The fit is at a covariance boundary: a between-study variance is near zero or a correlation is near ±1. Treat these covariance estimates with care." :
@@ -253,6 +264,7 @@
       var tests = res ? res.tests : [null, null];
       _last = { _schema: "multivariate-ma-results-v2", k: f.k, mu: f.mu, muSE: f.muSE, G: f.G, rho: f.rho, logLik: f.logLik,
         muVcov: f.muVcov, z: tests.map(function (t) { return t ? t.z : null; }), p: tests.map(function (t) { return t ? t.p : null; }),
+        effect_scale: parsed.effectScale, methods: parsed.scaleMethods,
         outcomes: [o1, o2], mode: parsed.mode, rhoW: parsed.rhoW, labels: parsed.rows.map(function (r) { return r.label; }),
         omitted: parsed.omitted.slice(), optimizer: f.optimizer, diagnostic: f.diagnostic };
       done(res);
@@ -297,8 +309,9 @@
     function schedule() { if (timer) clearTimeout(timer); timer = setTimeout(function () { timer = null; run(); }, 250); }
     function now() { if (timer) { clearTimeout(timer); timer = null; } run(); }
     function syncMode() { var a = getMode() === "rhoW"; el("f-rhow").disabled = !a; el("rhow-label").style.opacity = a ? "1" : ".55"; }
-    function load(text, mode, o1, o2) { el("f-data").value = text; setMode(mode); el("f-o1").value = o1; el("f-o2").value = o2; syncMode(); now(); }
+    function load(text, mode, o1, o2) { el("effect-scale").value = "additive"; el("f-data").value = text; setMode(mode); el("f-o1").value = o1; el("f-o2").value = o2; syncMode(); now(); }
     ["f-data", "f-o1", "f-o2", "f-rhow"].forEach(function (id) { el(id).addEventListener("input", schedule); });
+    el("effect-scale").addEventListener("change", now);
     el("f-mode").addEventListener("change", function (e) { var v = e.target.value; if (["cov", "r", "rhoW"].indexOf(v) >= 0) currentMode = v; syncMode(); now(); });
     el("btn-ex-berkey").addEventListener("click", function () { load(EXAMPLE, "cov", "PD", "AL"); });
     el("btn-ex-hyp").addEventListener("click", function () { load(EXAMPLE_HYP, "r", "SBP", "DBP"); });

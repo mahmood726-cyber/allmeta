@@ -29,6 +29,7 @@
   function renderTexts() {
     var s = state; if (!s.parsed) return;
     var t = P.texts(s.parsed, s.res || { status: 'refused', reason: 'no data' }, s.sweep);
+    if (s.parsed.scaleMethods) t.methods += '\n' + s.parsed.scaleMethods;
     el('plus-interpretation').textContent = t.interpretation; el('plus-methods').value = t.methods; el('plus-results').value = t.results;
   }
 
