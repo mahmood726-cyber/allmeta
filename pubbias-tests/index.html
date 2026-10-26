@@ -49,6 +49,7 @@
     .chip { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.74rem; font-weight: 600; color: var(--chip-ink); }
     .chip.ok { background: var(--ok); }
     .chip.bad { background: var(--bad); }
+    .chip.undefined { color: var(--muted); background: var(--accent-soft); }
     svg { width: 100%; height: auto; display: block; }
     .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
                padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
@@ -112,6 +113,7 @@
 0.28, 0.10</textarea></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="share-data-note" role="status" hidden>Dataset too long for a share link. Export the data instead; the URL does not contain this analysis.</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount"></div>
         <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
@@ -392,6 +394,16 @@
       var m = pairs.length;
       if (m < 2) return { statistic: NaN, p: NaN, name: 'Begg-Mazumdar', tau: NaN };
 
+      // Canonicalize numerical residual ties once, so pair counts and the
+      // variance correction use identical groups. Anchor each sorted group at
+      // its minimum to avoid order-dependent or transitive tolerance chains.
+      var sorted = pairs.slice().sort(function (a, b) { return a.tStar - b.tStar; });
+      var anchor = sorted[0].tStar;
+      for (var a = 0; a < sorted.length; a++) {
+        if (sorted[a].tStar - anchor > 1e-12) anchor = sorted[a].tStar;
+        sorted[a].tStar = anchor;
+      }
+
       // Kendall's tau-b — corrects denominator for ties.  R's cor.test
       // (which metafor::ranktest uses) returns tau-b by default.  pb-tiny has
       // tied sei values, so tau-a vs tau-b differs at the ~1e-2 level.
@@ -408,6 +420,9 @@
         }
       }
       var n0 = m * (m - 1) / 2;
+      if (tiedX === n0 || tiedY === n0) {
+        return { statistic: NaN, p: NaN, name: 'Begg-Mazumdar', applicable: 'rank correlation', tau: NaN };
+      }
       var tau = (concordant - discordant) / Math.sqrt((n0 - tiedX) * (n0 - tiedY));
 
       // Begg & Mazumdar (1994) normal-approximation test on the Kendall score
@@ -740,8 +755,9 @@
       for (var ii = 0; ii < tests.length; ii++) {
         var t = tests[ii];
         if (!t) continue;
-        var cls = t.refused ? 'bad' : t.p < 0.05 ? 'bad' : 'ok';
-        var verdict = t.refused ? 'refused: ' + t.refused.replace(/</g, '&lt;') : t.p < 0.05 ? 'evidence of bias' : 'no evidence';
+        var undefinedTest = !Number.isFinite(t.statistic) || !Number.isFinite(t.p);
+        var cls = t.refused ? 'bad' : undefinedTest ? 'undefined' : t.p < 0.05 ? 'bad' : 'ok';
+        var verdict = t.refused ? 'refused: ' + t.refused.replace(/</g, '&lt;') : undefinedTest ? 'undefined' : t.p < 0.05 ? 'evidence of bias' : 'no evidence';
         body.innerHTML += '<tr><td><code>' + t.name + '</code></td><td>' + fmt(t.statistic, 3) + '</td><td>' + fmt(t.p, 3) + '</td><td>' + t.applicable + '</td><td><span class="chip ' + cls + '">' + verdict + '</span></td></tr>';
       }
       // Egger-on-binary caveat: for binary (log-OR) outcomes the standardised
@@ -791,7 +807,14 @@
 
       // URL state
       if (window.alm && window.alm.urlState) {
-        window.alm.urlState.write({ format: fmt_, src: text.substring(0, 600) });
+        var state = window.alm.urlState;
+        if (!state.isSuspended()) {
+          var shared = state.write({ format: fmt_, src: text });
+          // The writer enforces the encoded URL budget. Never leave an older
+          // dataset in the address bar when the current full dataset cannot fit.
+          if (!shared) state.clear();
+          document.getElementById('share-data-note').hidden = shared;
+        }
       }
     }
 
