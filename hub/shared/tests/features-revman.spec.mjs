@@ -298,3 +298,46 @@ test.describe('page witnesses for independent RevMan R check',()=>{
     writeFileSync(prefix+'-run.txt',run,'utf8');
   });
 });
+
+
+test('malformed split XML terminator is refused without changing native inputs; valid spacing imports',async({page})=>{
+  await open(page,'mh-peto');
+  const before=await page.locator('#src').inputValue();
+  const source=readFileSync(fixture('multi.rm5'),'utf8');
+  const malformed=source.replace(/(<DICH_DATA[^>]+)\/>/,'$1/ >');
+  expect(malformed).not.toBe(source);
+  await page.getByLabel('RevMan file',{exact:true}).setInputFiles({name:'malformed-terminator.rm5',mimeType:'application/xml',buffer:Buffer.from(malformed)});
+  await expect(page.locator('#alm-revman-status')).toContainText('Malformed XML');
+  await expect(page.getByRole('button',{name:'Import selected rows',exact:true})).toBeDisabled();
+  expect(await page.locator('#src').inputValue()).toBe(before);
+  const valid=source.replace(/(<DICH_DATA[^>]+)\/>/,'$1 />');
+  await page.getByLabel('RevMan file',{exact:true}).setInputFiles({name:'valid-spacing.rm5',mimeType:'application/xml',buffer:Buffer.from(valid)});
+  await expect(page.locator('#alm-revman-status')).toContainText('Choose');
+  await choose(page,0);
+  await page.getByRole('button',{name:'Import selected rows',exact:true}).click();
+  await expect(page.locator('#alm-revman-status')).toContainText('Imported 2');
+  expect(await page.evaluate(()=>AlmRevman.current(AlmFeatures.get('mh-peto')).map(r=>[r.ai,r.n1i,r.ci,r.n2i]))).toEqual([[0,40,4,42],[7,60,11,61]]);
+});
+
+for (const c of [
+  {app:'mh-peto', input:'#src', columns:'Events,Total,Events,Total', values:'0,40,4,42', alias:'Experimental Events'},
+  {app:'effect-size-converter', input:'#alm-csv-mount textarea', columns:'Mean,SD,Total,Mean,SD,Total', values:'5.25,1.2,40,4.5,1.4,42', alias:'Control SD'}
+]) test(c.app+': conflicting clipboard arm header refuses import; valid control recovers',async({page})=>{
+  await open(page,c.app);
+  const before=await page.locator(c.input).inputValue();
+  const upload=async(name,text)=>page.getByLabel('RevMan file',{exact:true}).setInputFiles({name,mimeType:'text/csv',buffer:Buffer.from(text)});
+  await upload('ambiguous.csv','Study or Subgroup,'+c.columns+','+c.alias+'\nSynthetic,'+c.values+',9');
+  await expect(page.locator('#alm-revman-status')).toContainText('Ambiguous duplicate header');
+  await expect(page.getByRole('button',{name:'Import selected rows',exact:true})).toBeDisabled();
+  expect(await page.locator(c.input).inputValue()).toBe(before);
+  await upload('valid-copy.csv','Study or Subgroup,'+c.columns+'\nSynthetic,'+c.values);
+  await expect(page.locator('#alm-revman-status')).toContainText('Choose');
+  await choose(page,0);
+  await page.getByRole('button',{name:'Import selected rows',exact:true}).click();
+  await expect(page.locator('#alm-revman-status')).toContainText('Imported 1');
+  const values=await page.evaluate(app=>{
+    const spec=AlmFeatures.get(app),row=AlmRevman.current(spec)[0];
+    return AlmRevman.reader.fields[spec.entry.schema].map(f=>row[f]);
+  },c.app);
+  expect(values).toEqual(c.values.split(',').map(Number));
+});

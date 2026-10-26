@@ -89,7 +89,8 @@
         if(raw.includes(']]>'))fail('Malformed XML text');parent.text+=entity(raw);continue;
       }
       const name=/^<([A-Za-z_][\w.:-]*)/.exec(raw)[1];
-      let rest=raw.slice(name.length+1).replace(/\/?\s*>$/,'');
+      // XML permits whitespace before '/>', never between '/' and '>'.
+      let rest=raw.slice(name.length+1).replace(/\/?>$/,'');
       const attrs=Object.create(null);
       while(rest.trim()){
         const a=/^\s+([A-Za-z_][\w.:-]*)\s*=\s*("[^"]*"|'[^']*')/.exec(rest);
@@ -97,7 +98,7 @@
         attrs[a[1]]=entity(a[2].slice(1,-1));rest=rest.slice(a[0].length);
       }
       const n={tag:name,attrs,children:[],text:'',start:m.index,end:pos};parent.children.push(n);
-      if(!/\/\s*>$/.test(raw))stack.push(n);
+      if(!/\/>$/.test(raw))stack.push(n);
       if(stack.length>128)fail('Malformed XML: nesting exceeds 128 levels.');
     }
     if(stack.length!==1||doc.children.length!==1)fail('Malformed XML: unclosed tags or multiple roots.');
@@ -194,7 +195,10 @@
     const binary=['events','total','events','total'],continuous=['mean','sd','total','mean','sd','total'];
     if(norm(header[0])==='study or subgroup'){
       const schema=continuous.every((v,i)=>repeated[i]===v)?'continuous':binary.every((v,i)=>repeated[i]===v)?'binary2x2':null;
-      if(schema)fields[schema].forEach((f,i)=>map[f]=i+1);
+      if(schema)fields[schema].forEach((f,i)=>{
+        if(map[f]!==undefined)fail('Ambiguous duplicate header: '+header[map[f]]);
+        map[f]=i+1;
+      });
     }
     if(map.study===undefined&&map.studyId===undefined)fail('Missing Study header in CSV.');
     const review={title:null,version:'CSV',studies:Object.create(null),comparisons:[],studyCount:0};
