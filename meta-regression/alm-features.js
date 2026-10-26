@@ -260,21 +260,21 @@
   global.AlmTextSpecs = global.AlmTextSpecs || {};
   global.AlmTextSpecs[APP] = textSpec;
   if (global.AlmFeatures) {
-    // The shared entry/text cores expose mount(), while the host expects render().
+    // Keep the moderator-specific notice, but follow the host's lazy onShow lifecycle.
+    // Report text uses the shared built-in module (lazy mount, then regenerate on show).
     if (typeof global.AlmFeatures.registerModule === 'function') {
       global.AlmFeatures.registerModule('entry', { render: function (panel, ctx) {
-      var ui = global.AlmEntryUI.mount(panel, ctx.block);
-      Array.from(ui.element.querySelectorAll('button')).forEach(function (button) {
-        if (button.textContent === 'Extract paper text with source confirmation') button.disabled = true;
-      });
-      var notice = document.createElement('p');
-      notice.textContent = 'Paper-text extraction is unavailable for meta-regression because the source-confirmation workflow cannot capture the required moderator. Table entry does not yet provide per-study source confirmation; check every estimate, SE and moderator against its source before applying rows.';
-      panel.appendChild(notice);
-      return ui;
-      } });
-      global.AlmFeatures.registerModule('text', { render: function (panel, ctx) {
-      var ui = global.AlmTextUI.mount(panel, { app: ctx.app, text: ctx.block });
-      return { onShow: function () { ui.regenerate(); } };
+        var ui;
+        return { onShow: function () {
+          if (ui) return;
+          ui = global.AlmEntryUI.mount(panel, ctx.block);
+          Array.from(ui.element.querySelectorAll('button')).forEach(function (button) {
+            if (button.textContent === 'Extract paper text with source confirmation') button.disabled = true;
+          });
+          var notice = document.createElement('p');
+          notice.textContent = 'Paper-text extraction is unavailable for meta-regression because the source-confirmation workflow cannot capture the required moderator. Table entry does not yet provide per-study source confirmation; check every estimate, SE and moderator against its source before applying rows.';
+          panel.appendChild(notice);
+        } };
       } });
     }
     global.AlmFeatures.register(APP, spec);

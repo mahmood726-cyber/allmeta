@@ -32,6 +32,49 @@ async function rendered(page) {
   }, APP);
 }
 
+test('FEATURE LIFECYCLE: collapsed controls stay unmounted; opening tabs preserves entry drafts', async ({ page }) => {
+  await page.goto(PAGE);
+  const toggle = page.locator('#alm-features .alm-f-toggle');
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#alm-f-panel-entry textarea')).toHaveCount(0);
+  await expect(page.locator('#alm-f-panel-text .alm-text')).toHaveCount(0);
+  await page.locator('#f-data').focus();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#btn-run')).toBeFocused();
+  await page.evaluate(app => AlmFeatures.open(app, 'entry'), APP);
+  const draft = page.locator('#alm-f-panel-entry textarea');
+  await draft.fill('Unapplied study rows');
+  await page.evaluate(app => AlmFeatures.open(app, 'text'), APP);
+  await expect(page.locator('#alm-f-panel-text .alm-text-body')).toBeVisible();
+  await page.evaluate(app => AlmFeatures.open(app, 'entry'), APP);
+  await expect(draft).toHaveValue('Unapplied study rows');
+  await expect(draft).toHaveCount(1);
+});
+
+test('AUTOSAVE: feature inputs never enter or renumber the original draft', async ({ page }) => {
+  // Same pinned original key contract as meta-regression-usability.spec.mjs.
+  const expected = ['alm-plot-1-format', 'alm-plot-1-physical-width', 'alm-plot-1-resolution', 'f-data', 'f-effectlabel',
+    'f-modlabel', 'f-scale', 'f-title', 'idx:1', 'idx:10', 'idx:11', 'idx:12', 'idx:13', 'idx:14', 'idx:15', 'idx:17', 'idx:2', 'idx:6'];
+  await open(page, 'entry');
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('alm-autosave:meta-regression') || 'null'));
+  await page.evaluate(() => {
+    localStorage.clear();
+    document.getElementById('f-data').dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect.poll(async () => Object.keys((await saved())?.values || {}).sort()).toEqual(expected);
+  const original = (await saved()).values;
+  await page.evaluate(() => localStorage.clear());
+  await page.locator('#alm-f-panel-entry textarea').fill('Study\tEstimate\tSE\tmoderator\nA\t0.2\t0.1\t30');
+  await page.locator('#alm-f-panel-entry').getByRole('button', { name: 'Preview and convert', exact: true }).click();
+  await page.waitForTimeout(1000); // beyond the original autosave's 600 ms debounce
+  expect(await saved()).toBeNull();
+  // A real edit to the original form still saves, after all feature controls exist.
+  await page.locator('#f-title').fill('Original form still saves');
+  await expect.poll(async () => (await saved())?.values?.['f-title']).toBe('Original form still saves');
+  expect((await saved()).values).toEqual({ ...original, 'f-title': 'Original form still saves' });
+});
+
 test('ENTRY: three source formats reproduce the example through the shared conversion APIs', async ({ page }) => {
   await open(page, 'entry');
   const result = await page.evaluate(app => {
