@@ -222,10 +222,13 @@
     if (preset) window.AlmFigPresets.applySvg(prepared, preset);
     const text = await _stamp(_serialize(prepared), getReceiptInput);
     if (format === 'svg') return new Blob([text], { type: 'image/svg+xml' });
+    // Check the requested dimensions before canvas's unsigned-long setters can wrap them.
+    const pixelWidth = Math.round(widthMm / 25.4 * dpi);
+    const pixelHeight = Math.max(1, Math.round(pixelWidth * h / w));
+    if (!Number.isSafeInteger(pixelWidth) || !Number.isSafeInteger(pixelHeight) || pixelWidth < 1 || pixelWidth > 32767 || pixelHeight > 32767 || pixelWidth * pixelHeight > 64000000) throw new Error('Figure exceeds raster export size; reduce width or resolution, or use SVG.');
     const canvas = document.createElement('canvas');
-    canvas.width = Math.round(widthMm / 25.4 * dpi);
-    canvas.height = Math.max(1, Math.round(canvas.width * h / w));
-    if (!canvas.width || canvas.width > 32767 || canvas.height > 32767 || canvas.width * canvas.height > 64000000) throw new Error('Figure exceeds raster export size; reduce width or resolution, or use SVG.');
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('Canvas unavailable');
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
