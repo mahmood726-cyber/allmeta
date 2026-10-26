@@ -544,12 +544,13 @@
       // Q-profile 95% CI for I² and τ² (Viechtbauer 2007). Distribution-free of the chosen point estimator — it
       // profiles the generalised Q-statistic directly.
       const qpci = qProfileCI(studies);
-      // Leave-one-out with τ² re-estimated by the chosen estimator (DL falls back to PM below k=10, as above).
+      // Refit diagnostics with the full model estimator. The k>=10 DL selection policy
+      // applies to the full dataset, not its leave-one-out subsets.
       const loo = [];
       for (let i=0;i<k;i++) {
         const subset = studies.slice(0,i).concat(studies.slice(i+1));
-        const looKey = chosenKey === "dl" && subset.length < 10 ? "pm" : chosenKey;
-        const t2 = subset.length >= 2 ? tau2For(looKey, subset) : 0;
+        const looKey = chosenKey;
+        const t2 = subset.length >= 2 ? (looKey === "dl" ? tau2_DL(subset) : tau2For(looKey, subset)) : 0;
         const s2 = poolSummary(subset, t2);
         loo.push({ label: studies[i].label, k: subset.length, mu: s2.mu, se: s2.se, ciLo: s2.ciLo, ciHi: s2.ciHi,
                    I2: s2.I2, tau2: t2, estimator: looKey });
@@ -858,9 +859,11 @@
           getStudies: function () { return parseStudies(document.getElementById("f-data").value).studies; } });
       }
       document.getElementById("btn-push-grade").addEventListener("click", onPushPooledToGrade);
-      document.getElementById("btn-validate-webr").addEventListener("click", function () {
-        if (onBusSave()) window.open("../webr-validator/index.html?fromBus=1", "_blank");
-      });
+      for (const id of ["btn-verify-in-r", "btn-validate-webr"]) {
+        document.getElementById(id).addEventListener("click", function () {
+          if (onBusSave()) window.open("../webr-validator/index.html?fromBus=1", "_blank");
+        });
+      }
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){
         const f = e.target.files && e.target.files[0];
@@ -1038,18 +1041,6 @@
   <script src="../shared/toast.js" defer></script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
-  });
-})();
-</script>
 
 <script>
 (function () {
