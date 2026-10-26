@@ -58,3 +58,30 @@ test('entry control: ordinary finite variances still round trip through the real
   assert.equal(h.state().snapshots, 1);
   assert.deepEqual(Array.from(h.state().studies, s => ({ study: s.label, yi: s.est, sei: s.se })), records);
 });
+
+function loadPageFeatureModules() {
+  const context = vm.createContext({});
+  // Execute the actual feature scripts selected by the page, in document order.
+  // No DOM is needed for the host's module resolution or adapter registration.
+  for (const [, src] of html.matchAll(/<script\s+src="([^"]+)"[^>]*>/g)) {
+    if (!/(?:^|\/)alm-(?:entry(?:-ui)?|features|text)\.js$/.test(src)) continue;
+    vm.runInContext(readFileSync(new URL('../../../../heterogeneity/' + src, import.meta.url), 'utf8'), context);
+  }
+  return context;
+}
+
+test('page wiring: registered entry adapter has a usable Data entry tab module', () => {
+  const page = loadPageFeatureModules();
+  assert.equal(typeof page.AlmFeatures.get('heterogeneity').entry.apply, 'function');
+  const entry = page.AlmFeatures.moduleFor('entry');
+  assert.ok(entry, 'the feature host hides Data entry when alm-entry-ui.js is absent');
+  assert.equal(typeof entry.render, 'function');
+  assert.equal(typeof page.AlmEntryUI.mount, 'function');
+  assert.match(html, /<link\b[^>]*href="\.\.\/shared\/alm-entry\.css"/);
+});
+
+test('page wiring control: Report text remains available with the entry module', () => {
+  const page = loadPageFeatureModules();
+  assert.equal(typeof page.AlmFeatures.get('heterogeneity').text.results, 'function');
+  assert.equal(typeof page.AlmFeatures.moduleFor('text').render, 'function');
+});
