@@ -99,7 +99,115 @@ const reviewRegressions = (() => {
     assert.ok(f.context.AlmFeaturesState.provenance.every(r => r.confirmedBy === 'EE' && r.confirmedVia === 'row' && r.confirmedAt));
   }
 
+  // Execute the real page analysis and live adapter with only rendering widgets
+  // stubbed. This checks the input/result association without requiring Chromium.
+  function analysisFixture() {
+    const html = fs.readFileSync(path.join(root, 'mh-peto/index.html'), 'utf8');
+    const elements = Object.fromEntries([...html.matchAll(/\bid="([^"]+)"/g)].map(([, id]) => [id, {
+      id, value: '', checked: false, innerHTML: '', textContent: '', hidden: true,
+      setAttribute() {}, removeAttribute() {}, addEventListener() {}, closest() { return null; }
+    }]));
+    elements.src.value = /<textarea id="src"[^>]*>([\s\S]*?)<\/textarea>/.exec(html)[1];
+    elements.measure.value = 'OR';
+    const context = { document: { readyState: 'loading', addEventListener() {},
+      getElementById: id => elements[id], querySelector: () => null,
+      querySelectorAll: sel => sel === '#src, #measure' ? [elements.src, elements.measure] : [] },
+      matchMedia: () => ({ matches: false }),
+      alm: { csvUpload() {}, plotExport() {}, axisControls() {}, resultsExport() {}, resetUndo() {}, tooltips() {},
+        urlState: Object.assign(() => {}, { read: () => ({}), write() {} }) },
+      AlmValidate: { mount() {} }, AlmText };
+    context.window = context;
+    vm.createContext(context);
+    const load = name => vm.runInContext(fs.readFileSync(path.join(root, name), 'utf8'), context);
+    load('hub/shared/analysis-lifecycle.js');
+    for (const name of ['shared/ma-core.js', 'shared/fragility.js', 'shared/diagnostic-plots.js']) load(name);
+    const main = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+      .map(m => m[1]).find(s => s.includes('var Z975 ='));
+    vm.runInContext(main, context);
+    load('mh-peto/validate/adapter.js');
+    context.AlmLiveAdapters = { 'mh-peto': context.AlmMhPetoValidationAdapter };
+    load('shared/alm-features.js'); load('mh-peto/alm-features.js');
+    return { context, elements };
+  }
+
   const cases = {
+    'real analysis state stays paired through edits, refusals and result restoration': () => {
+      const { context: c, elements: e } = analysisFixture();
+      const hook = c.__mhValidation, spec = c.AlmMhPetoFeatures;
+      const original = e.src.value, first = c._almLastMhPeto();
+      assert.equal(hook.isCurrent(), true);
+      const native = c.AlmMhPetoValidationAdapter.live, feature = spec.verify.adapter().live;
+      for (const measure of ['OR', 'RR', 'RD']) {
+        e.measure.value = measure; hook.run();
+        const state = feature.currentState(), expected = native.currentState();
+        assert.deepEqual(state.rows, expected.rows); assert.deepEqual(state.result, expected.result);
+        assert.equal(feature.buildScript(state), native.buildScript(expected));
+        assert.deepEqual(feature.appValues(state), native.appValues(expected));
+      }
+      e.measure.value = 'OR'; hook.run(); c.__mhPetoLoo.run();
+      const loo = c.__mhPetoLoo.last(), result = c._almLastMhPeto(), forest = e.forest.innerHTML;
+      assert.equal(loo.rows.length, 5);
+      const revision = c.AlmFeatures.revision('mh-peto');
+      assert.equal(typeof revision, 'string');
+      assert.equal(c.__mhPetoLoo.last(), loo);
+      e.src.value = 'Software A, 10, 100, 20, 100\nSoftware B, 4, 50, 9, 50';
+      assert.equal(spec.text.stale(), true);
+      assert.equal(c.AlmFeatures.revision('mh-peto'), null);
+      assert.equal(c._almLastMhPeto(), result); assert.equal(e.forest.innerHTML, forest);
+      assert.equal(c.__mhPetoLoo.last(), loo);
+      hook.run(); assert.equal(hook.isCurrent(), true); assert.equal(c._almLastMhPeto().k, 2);
+      assert.equal(c.__mhPetoLoo.last(), null);
+      assert.notEqual(c.AlmFeatures.revision('mh-peto'), revision);
+      // Replays restore the original result object after temporarily running other inputs.
+      hook.restoreResult(first); assert.equal(hook.isCurrent(), false);
+      e.src.value = original; assert.equal(hook.isCurrent(), true);
+      for (const src of ['', 'Software A,1,10,2,10', 'Software A,1.5,10,2,10\nSoftware B,2,10,3,10']) {
+        e.src.value = src; hook.run();
+        assert.equal(hook.isCurrent(), false); assert.equal(c._almLastMhPeto(), null);
+        assert.throws(() => feature.currentState(), /Run analysis/);
+        assert.equal(e['analysis-status'].hidden, true);
+      }
+    },
+    'feature state reads never run the analysis; stale inputs refuse without mutation': () => {
+      const f = fixture();
+      let runs = 0, current = true;
+      const rows = [{ label: 'Software fixture', e1: 3, n1: 500, e2: 8, n2: 500 }];
+      const live = { packages: ['metafor'], compare: { tolerance: { default: 1e-9 } },
+        currentState() { runs++; return { rows, measure: 'OR', result: f.last }; },
+        buildScript() {}, appValues() {} };
+      f.context.AlmLiveAdapters = { 'mh-peto': { live } };
+      f.context.__mhValidation = { isCurrent: () => current, parse: () => rows };
+      const adapted = f.spec.verify.adapter().live;
+      assert.equal(adapted.buildScript, live.buildScript);
+      assert.equal(adapted.appValues, live.appValues);
+      assert.equal(adapted.compare, live.compare);
+      assert.equal(adapted.currentState().result, f.last);
+      assert.equal(adapted.currentState().rows, rows);
+      assert.equal(runs, 0, 'reading feature state must not call the rendering validator');
+      assert.equal(f.spec.text.stale(), false);
+      current = false;
+      assert.equal(f.spec.text.stale(), true);
+      assert.throws(() => adapted.currentState(), /Run analysis/);
+      assert.equal(runs, 0);
+      // Control: the original live validator still owns its explicit run path.
+      live.currentState(); assert.equal(runs, 1);
+    },
+    'autosave excludes feature controls while retaining legacy selectors': () => {
+      const html = fs.readFileSync(path.join(root, 'mh-peto/index.html'), 'utf8');
+      const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+        .map(m => m[1]).find(s => s.includes('AlmAutosave.install'));
+      assert.ok(script);
+      let installed;
+      const context = { document: { readyState: 'complete' },
+        AlmAutosave: { install(opts) { installed = opts; } } };
+      context.window = context;
+      vm.runInNewContext(script, context);
+      assert.equal(installed.appKey, 'mh-peto');
+      const types = ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'];
+      assert.deepEqual(Array.from(installed.selectors), types.map(s =>
+        s + ':not(#loo-only-flagged):not(#alm-features *)'));
+    },
     'p values use threshold notation': () => {
       const { render } = fixture(), { out, audit } = render();
       assert.equal((out.results.text.match(/p < 0\.001/g) || []).length, 2);
@@ -571,6 +679,58 @@ test('REVIEW provenance UI: two confirmed sources apply exact counts; PLANTED fi
   });
   expect(planted).toBe(true);
   await expect(page.locator('#src')).toHaveValue(before);
+});
+
+test('LIFECYCLE: feature freshness preserves leave-one-out and pending edits until explicit Run', async ({ page }) => {
+  await open(page, 'Report text');
+  await page.locator('#btn-loo').click();
+  await expect(page.locator('#loo-body tr')).toHaveCount(6);
+  const before = await page.evaluate(() => ({ result: _almLastMhPeto(),
+    loo: __mhPetoLoo.last(), forest: document.getElementById('forest').innerHTML }));
+  const read = () => page.evaluate(() => {
+    const spec = AlmTextSpecs['mh-peto'];
+    const ctx = AlmText.context('mh-peto', spec);
+    return { revision: ctx.revision, stale: spec.stale(), current: __mhValidation.isCurrent() };
+  });
+  expect(await read()).toMatchObject({ stale: false, current: true });
+  expect(await page.evaluate(() => __mhPetoLoo.last())).toEqual(before.loo);
+  await page.locator('#src').fill('Software A, 10, 100, 20, 100\nSoftware B, 4, 50, 9, 50');
+  expect(await read()).toMatchObject({ revision: null, stale: true, current: false });
+  await expect(page.locator('#analysis-stale')).toBeVisible();
+  await expect(page.locator('#analysis-status')).toBeHidden();
+  await page.locator('#alm-f-panel-text .alm-text-copy').first().click();
+  await expect(page.locator('#alm-f-panel-text .alm-text-status')).toContainText('press Run analysis');
+  expect(await page.evaluate(() => ({ result: _almLastMhPeto(),
+    loo: __mhPetoLoo.last(), forest: document.getElementById('forest').innerHTML }))).toEqual(before);
+  await page.locator('#btn-run').click();
+  expect(await read()).toMatchObject({ stale: false, current: true });
+  await expect(page.locator('#analysis-status')).toBeVisible();
+  await expect(page.locator('#analysis-stale')).toBeHidden();
+  await expect(page.locator('#loo-body tr')).toHaveCount(0);
+  expect(await page.evaluate(() => _almLastMhPeto().k)).toBe(2);
+  expect(await page.locator('#forest').innerHTML()).not.toBe(before.forest);
+  await page.locator('#src').fill(''); await page.locator('#btn-run').click();
+  expect(await read()).toMatchObject({ revision: null, stale: true, current: false });
+  await expect(page.locator('#analysis-status')).toBeHidden();
+  expect(await page.evaluate(() => _almLastMhPeto())).toBeNull();
+});
+
+test('AUTOSAVE: feature-panel edits do not change legacy draft keys or plot indices', async ({ page }) => {
+  await open(page);
+  const keys = () => page.evaluate(() => Object.keys(JSON.parse(
+    localStorage.getItem('alm-autosave:mh-peto') || '{"values":{}}').values).sort());
+  await page.evaluate(() => {
+    localStorage.clear(); document.getElementById('src').dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect.poll(keys).toEqual(['alm-plot-1-format', 'alm-plot-1-physical-width', 'alm-plot-1-resolution',
+    'idx:1', 'idx:10', 'idx:6', 'idx:7', 'idx:8', 'idx:9', 'measure', 'src']);
+  expect(await page.locator('#alm-plot-mount input[type=checkbox]').evaluateAll(els =>
+    els.map(e => e.dataset.autosaveIndex))).toEqual(['9', '10']);
+  await page.evaluate(() => localStorage.clear());
+  await page.locator('#alm-f-panel-entry').getByLabel('Your initials (recorded with each confirmation)', { exact: true }).fill('QA');
+  // Wait past the autosave debounce to prove this edit alone did not schedule a draft.
+  await page.waitForTimeout(1000);
+  expect(await keys()).toEqual([]);
 });
 
 for (const [name, check] of Object.entries(reviewRegressions.cases)) {

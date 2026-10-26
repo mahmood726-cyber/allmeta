@@ -172,15 +172,31 @@
           ' studies: tests for small-study effects would be underpowered; none were performed.'])];
     }
   };
-  var textSpec = { app: APP, verifyPackage: 'metafor', results: results, dom: dom, templates: templates };
+  function stale() {
+    return !global.__mhValidation || !global.__mhValidation.isCurrent();
+  }
+  function featureAdapter() {
+    var adapter = global.AlmLiveAdapters && global.AlmLiveAdapters[APP] || global.AlmValidate.adapters[APP];
+    var live = adapter.live || adapter;
+    // Text freshness checks also call this accessor. The original validator's
+    // currentState() runs the page, clearing leave-one-out and pending edits.
+    // Read only the completed analysis here; reuse its parser, full-precision
+    // results and the original R script/comparison functions unchanged.
+    var readOnly = Object.assign({}, live, { currentState: function () {
+      if (stale()) throw new Error('Run analysis before verifying the current inputs.');
+      return { rows: global.__mhValidation.parse(el('src').value),
+        measure: el('measure').value, result: global._almLastMhPeto() };
+    } });
+    return adapter.live ? Object.assign({}, adapter, { live: readOnly }) : readOnly;
+  }
+  var textSpec = { app: APP, verifyPackage: 'metafor', results: results, dom: dom, templates: templates, stale: stale };
   var spec = {
     paper: 10, title: 'Mantel–Haenszel / Peto pooling',
     entry: { schema: 'binary2x2', apply: apply,
       usedAs: 'Treatment and control event counts and totals for MH pooling on the selected measure; Peto is also computed for odds ratios.' },
     text: textSpec,
     verify: {
-      adapter: function () { return global.AlmLiveAdapters && global.AlmLiveAdapters[APP] ||
-        global.AlmValidate.adapters[APP]; },
+      adapter: featureAdapter,
       inputs: '#src, #measure',
       rObjects: 'ai, bi, ci, di; mh (rma.mh); pe (rma.peto, OR only)',
       plots: [{
