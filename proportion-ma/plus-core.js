@@ -9,6 +9,8 @@
   }
   function parse(text) {
     if (!text.trim()) return [];
+    // CSV uploads and the transformed-scale analysis share the same input box.
+    if (root.AlmProportionInput) return root.AlmProportionInput.parse(text);
     return validateRows(text.trim().split(/\r?\n/).map((line,i) => {
       const p = line.split(',').map(s => s.trim());
       if (p.length < 2 || !/^\d+$/.test(p[0]) || !/^\d+$/.test(p[1])) throw new Error('Invalid counts on row ' + (i+1));
