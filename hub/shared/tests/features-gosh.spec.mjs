@@ -44,6 +44,7 @@ for (const variant of ['header', 'blank line', 'empty label', 'decimal and expon
     await page.locator('#btn-run').click();
     const expected = await page.evaluate(() => ({ state: AlmFeatures.get('gosh').share.get(), result: _almLastGosh() }));
     expect(expected.result.k).toBe(9);
+    expect(expected.state.src).toBe(input.replace(/\r\n/g, '\n'));
     await tab(page, 'share');
     await page.getByRole('button', { name: 'Copy share link', exact: true }).click();
     await expect(page.locator('[data-testid=share-status]')).toContainText('Share link');

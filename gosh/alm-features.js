@@ -94,7 +94,9 @@
     },
     share: {
       get: function () {
-        return { src: byId('src').value, model: byId('model').value, draws: byId('n-sample').value,
+        // Match textarea assignment on restore without editing the live input.
+        // Otherwise pasted CRLF data changes the serialized state on round-trip.
+        return { src: byId('src').value.replace(/\r\n/g, '\n'), model: byId('model').value, draws: byId('n-sample').value,
           axes: axes().map(function (e) { return e.type === 'checkbox' ? e.checked : e.value; }),
           entryLog: global.AlmFeaturesState.entryLog };
       },
