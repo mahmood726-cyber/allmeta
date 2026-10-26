@@ -313,13 +313,10 @@
   };
   global.AlmCumSubFeatures = spec;
   if (global.AlmFeatures) {
-    // These shared UI libraries expose mount(), but do not register host modules themselves.
+    // Keep the app's conversion log; Report text uses the host's lazy built-in
+    // module so hidden text listeners cannot re-render edits or validation replay.
     if (global.AlmFeatures.registerModule) {
       global.AlmFeatures.registerModule('entry', { render: function (panel, ctx) { return mountEntry(panel, ctx.block); } });
-      global.AlmFeatures.registerModule('text', { render: function (panel, ctx) {
-        var ui = global.AlmTextUI.mount(panel, { app: APP, text: ctx.block });
-        return { onShow: function () { ui.regenerate(); } };
-      } });
     }
     global.AlmFeatures.register(APP, spec);
   }

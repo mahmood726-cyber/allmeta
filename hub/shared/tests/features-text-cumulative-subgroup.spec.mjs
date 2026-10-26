@@ -108,6 +108,42 @@ test('TEXT REVIEW: small p-values and singleton subgroups retain the DOM number 
 // No browser, accessibility or webR coverage is claimed by that supplemental run.
 export function registerReviewCases(test, root) {
   const read = p => fs.readFileSync(new URL(p, root), 'utf8');
+  function textLifecycle() {
+    const ctx = vm.createContext({ console });
+    ctx.window = ctx;
+    vm.runInContext(read('shared/alm-features.js'), ctx);
+    let mounts = 0, regenerations = 0;
+    ctx.AlmTextUI = { mount(panel, options) {
+      mounts++;
+      assert.equal(options.app, 'cumulative-subgroup');
+      assert.equal(options.text, ctx.AlmCumSubFeatures.text);
+      return { regenerate() { regenerations++; } };
+    } };
+    vm.runInContext(read('cumulative-subgroup/alm-features.js'), ctx);
+    const hooks = ctx.AlmFeatures.moduleFor('text').render({}, {
+      app: 'cumulative-subgroup', block: ctx.AlmCumSubFeatures.text
+    });
+    return { hooks, counts: () => ({ mounts, regenerations }) };
+  }
+
+  test('LIFECYCLE PLANTED: hidden Report text never mounts analysis-reading listeners', () => {
+    const { counts } = textLifecycle();
+    // The former eager override mounted AlmTextUI during host creation. Its
+    // document listeners re-rendered the app on edits and added validation runs
+    // during corpus replay, even though Report text had never been opened.
+    assert.deepEqual(counts(), { mounts: 0, regenerations: 0 });
+  });
+
+  test('LIFECYCLE control: opening Report text mounts it and reopening refreshes it', () => {
+    const { hooks, counts } = textLifecycle();
+    hooks.onShow();
+    assert.equal(counts().mounts, 1);
+    const before = counts().regenerations;
+    hooks.onShow();
+    assert.equal(counts().mounts, 1);
+    assert.equal(counts().regenerations, before + 1);
+  });
+
   function setup(data = 'A, -0.2, 0.1, 2020, One\nB, 0.2, 0.1, 2021, Two', view = 'subgroup') {
     const html = read('cumulative-subgroup/index.html');
     const input = { value: data, dispatchEvent() {} };
