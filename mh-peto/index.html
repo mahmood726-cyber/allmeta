@@ -640,6 +640,8 @@ StudyE, 4, 600, 10, 600</textarea>
       _lastResults = null;
       ['pooled-body', 'per-body', 'forest', 'labbe', 'het-body', 'assoc-body', 'conv-body'].forEach(function (id) { document.getElementById(id).innerHTML = ''; });
       ['k-note', 'estimability-note', 'zero-note', 'conv-note'].forEach(function (id) { document.getElementById(id).textContent = ''; });
+      document.getElementById('axis-note').textContent = '';
+      document.getElementById('axis-note').hidden = true;
       clearLoo('');
     }
     // Leave-one-out output belongs to the input it was run on; any re-analysis clears it.
@@ -927,7 +929,8 @@ StudyE, 4, 600, 10, 600</textarea>
       if (invalidRange) range = null;
       var customRange = range && range.some(function (v) { return v != null; });
 
-      var mapFn = function (v) { return logScale ? Math.log(customRange ? v : Math.max(v, 1e-6)) : v; };
+      // Exp-transformed estimates can underflow to zero; keep log coordinates finite.
+      var mapFn = function (v) { return logScale ? Math.log(Math.max(v, customRange ? Number.MIN_VALUE : 1e-6)) : v; };
 
       var loAll = all.map(function (r) { return r.lo; });
       var hiAll = all.map(function (r) { return r.hi; });
