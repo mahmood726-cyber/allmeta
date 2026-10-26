@@ -193,6 +193,12 @@ A, D, -0.48, 0.14</textarea>
         } else if (c !== '\r' || quoted) field += c;
       }
       if (quoted) return [];
+      // Never analyse a truncated row or the remaining subset: extra delimiters
+      // can shift decimal-comma effects, SEs and study IDs into valid-looking fields.
+      // Keep the array API; inputIssue carries this refusal to both run() and the plus core.
+      if (records.some(parts => parts.length > 5)) return Object.assign([], {
+        parseIssue: 'Analysis refused: too many columns. Use four columns (t1, t2, effect, SE), optionally a fifth study ID; use decimal points for numbers and quote labels containing commas.'
+      });
       return records.map((parts, i) => {
         const te = Number(parts[2]), se = Number(parts[3]);
         if (!parts[0] || !parts[1] || parts[0] === parts[1] ||
@@ -211,6 +217,7 @@ A, D, -0.48, 0.14</textarea>
       document.getElementById("dbt").textContent = reason;
     }
     function inputIssue(rows) {
+      if (rows.parseIssue) return rows.parseIssue;
       if (rows.length < 3) return "At least 3 valid contrasts are required.";
       const studies = new Map();
       for (const r of rows) {
@@ -514,7 +521,7 @@ A, D, -0.48, 0.14</textarea>
       const __bodyParts = [""];
       for (const r of ns) {
         const flag = r.p < 0.05 ? "incon" : "cons";
-        const label = r.p < 0.05 ? "inconsistent" : "consistent";
+        const label = r.p < 0.05 ? "evidence of inconsistency" : "no evidence of inconsistency";
         __bodyParts.push(`<tr><td><code>${escapeMarkup(r.comparison)}</code></td>
           <td>${fmt(r.direct.mean)} (${fmt(r.direct.se)})</td>
           <td>${fmt(r.indirect.mean)} (${fmt(r.indirect.se)})</td>
