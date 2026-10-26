@@ -6,6 +6,24 @@ import {createHash} from 'node:crypto';
 import {pageHarness} from '../fixtures/p0prop/page-harness.mjs';
 import {badRows,withBadRow,valid} from '../fixtures/p0prop/cases.mjs';
 
+test('plant: successful runs restore the ordinary edit message; refusal control keeps its warning',()=>{
+  const page=pageHarness();
+  const editMessage='Results out of date — press Run analysis';
+  const refusalMessage='Results do not match the current input';
+  page.run(valid);
+  assert.equal(page.el('analysis-stale').textContent,editMessage);
+  page.run(withBadRow('12.5,150,Bad study'));
+  assert.equal(page.el('analysis-stale').textContent,refusalMessage);
+  assert.equal(page.el('analysis-stale').hidden,false);
+  const refused=page.context.__almPropValidation.save();
+  page.run(valid);
+  assert.equal(page.el('analysis-stale').textContent,editMessage);
+  assert.equal(page.el('analysis-stale').hidden,true);
+  page.context.__almPropValidation.restore(refused);
+  assert.equal(page.el('analysis-stale').textContent,refusalMessage);
+  assert.equal(page.el('analysis-stale').hidden,false);
+});
+
 test('control: actual page outputs across every archived corpus configuration',()=>{
   const page=pageHarness();
   const corpus=JSON.parse(fs.readFileSync(new URL('../../../../proportion-ma/validate/corpus/corpus.json',import.meta.url),'utf8'));
