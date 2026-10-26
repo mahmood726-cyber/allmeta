@@ -47,7 +47,7 @@ screening on average about 4 fewer records per 100 records in a review than ASRe
 | S8 cluster thresholds 5% / 20% | +0.042 / +0.040 |
 | S9 PRIMARY + 3 DEV-overlapping reviews (87) | +0.040 (+0.027, +0.052) |
 | S11 Screen at its UI cadence | not run: the app refits after every decision, the same cadence as the benchmark |
-| S12 cross-machine determinism (desktop-iljmsi3) | **not run**: that node was fully held by other work; owed |
+| S12 cross-machine determinism (desktop-iljmsi3) | 60 of 60 screening orders identical (3 tools x 10 reviews x 2 seeds; run 2026-10-25 from frozen commit 47f0cb2; `results/analysis/s12_determinism.json`) |
 
 ## What this does and does not show
 
