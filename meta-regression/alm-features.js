@@ -145,7 +145,7 @@
     var rows = records.map(function (r) {
       if (typeof r.study !== 'string' || !r.study.trim() || /[\r\n\t]/.test(r.study) || /^\s*#/.test(r.study)) throw new Error('Invalid study label.');
       if (!Number.isFinite(r.yi) || !Number.isFinite(r.sei) || r.sei <= 0 ||
-          r.moderator === null || r.moderator === undefined || String(r.moderator).trim() === '' ||
+          (typeof r.moderator !== 'number' && typeof r.moderator !== 'string') || String(r.moderator).trim() === '' ||
           !Number.isFinite(Number(r.moderator))) throw new Error('Each study needs an estimate, positive SE and numeric moderator.');
       return [r.study, r.yi, r.sei, Number(r.moderator)];
     });
