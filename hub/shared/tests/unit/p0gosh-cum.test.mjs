@@ -31,8 +31,7 @@ test('P0-30 fixed-effect Q differs from RE residual Q, agrees when tau2 is zero'
   assert.equal(sums(rows,2).Q, 2);
   assert.notEqual(sums(rows,2).Q, sums(rows,0).Q, 'planted RE weights cannot stand for Cochran Q');
   assert.equal(sums([0,0,0].map(est => ({est,v:1})),0).Q, 0);
-  assert.ok(cum.includes('Q (random-effects weights)'));
-  assert.ok(cum.includes("Cochran’s Q (fixed-effect weights)"));
+  assert.ok(cum.includes("Q_final: residual Q under random-effects (PM) weights, not Cochran's Q."));
 });
 test('missing-year note names every missing study, complete-year control is empty', () => {
   const note = extract(cum, 'missingYearNote');
@@ -61,34 +60,44 @@ test('missing-year banner guard rejects silent fallback and accepts complete-yea
   const source=read('cumulative-subgroup/validate/adapter.js');
   const message='Missing year for: A. Cumulative analysis uses input order for all studies. Add a year for every study to order chronologically.';
   let result={view:'cumulative',series:[{label:'A',year:null},{label:'B',year:2020}]};
+  const order={className:'warn-banner is-visible',textContent:message,children:[],checkVisibility(){return this.className.includes('is-visible');}};
   const el={className:'warn-banner is-visible',childNodes:[{tagName:'STRONG',textContent:'Notes',children:[]},{tagName:'UL',childNodes:[{tagName:'LI',children:[],textContent:message}]}],checkVisibility(){return this.className.includes('is-visible');}};
-  const check=extract(source,'bannerOk',{document:{getElementById:()=>el},window:{_almLastCumSub:()=>result}});
+  el.className='warn-banner';el.innerHTML='';el.childNodes=[];
+  const check=extract(source,'bannerOk',{document:{getElementById:id=>id==='ordering-note'?order:el},window:{_almLastCumSub:()=>result}});
   assert.equal(check([]),true);
-  el.className='warn-banner';el.innerHTML='';el.childNodes=[];assert.equal(check([]),false);
+  order.className='warn-banner';order.textContent='';assert.equal(check([]),false);
   result.series[0].year=2010;assert.equal(check([]),true);
   result.view='subgroup';result.series[0].year=null;assert.equal(check([]),true);
 });
 
-test('R1 renderer precision: one decimal I2 and two decimals for both Q cards', () => {
+test('R1 renderer precision: one decimal I2', () => {
   const i2 = gosh.match(/fullDataI2\(rows\)\.toFixed\((\d+)\)/);
   assert.ok(i2);
   const formatI2 = value => value.toFixed(Number(i2[1])) + '%';
   assert.equal(formatI2(100*4/6), '66.7%');
   assert.notEqual(formatI2(100*4/6), '66.666666667%');
-  for (const expression of ['fmt(final.Q,', 'fmt(weightedSums(parsed.studies, 0).Q,']) {
-    const digits = Number(cum.slice(cum.indexOf(expression) + expression.length).match(/^\d+/)[0]);
-    assert.equal((6).toFixed(digits), '6.00');
-    assert.notEqual((6).toFixed(digits), '6.000000000');
-  }
 });
-test('R1 cumulative adapter expects two decimal Q displays', () => {
+test('cumulative cards preserve paper-14 set and reject added Q cards', () => {
   const source = read('cumulative-subgroup/validate/adapter.js');
   const fmt = extract(source, 'fmt');
-  const fixedQText = extract(source, 'fixedQText', {fmt});
-  const cardsExpected = extract(source, 'cardsExpected', {fmt, fixedQText, pooledText:()=>''});
+  const cardsExpected = extract(source, 'cardsExpected', {fmt, fixedQText:()=> '6.00', pooledText:()=>''});
   const expected = cardsExpected('cumulative', {parsed:{studies:[0,0,3].map(est=>({est,v:1}))},summary:{},cum:{series:[{tau2:2,Q:2}]}});
-  assert.equal(expected[3][1], '2.00');
-  assert.equal(expected[4][1], '6.00');
-  assert.notEqual(expected[3][1], '2.000000000');
-  assert.notEqual(expected[4][1], '6.000000000');
+  assert.equal(JSON.stringify(expected.map(c=>c[0])), JSON.stringify(['k','Final pooled','Final τ²']));
+  const rendered = s => [...s.slice(s.indexOf('const cum = cumulative(parsed.studies);'),s.indexOf('svg = buildCumulativeSvg(state, cum);')).matchAll(/parts.push\(statCard\("([^"]+)"/g)].map(m=>m[1]);
+  assert.deepEqual(rendered(cum), ['Final pooled','Final τ²']);
+  assert.notDeepEqual(rendered(cum.replace('svg = buildCumulativeSvg(state, cum);', 'parts.push(statCard("Q", "2"));svg = buildCumulativeSvg(state, cum);')), ['Final pooled','Final τ²']);
+});
+
+test('ordering advisory uses its own status region; invalid-input warnings stay in the banner', () => {
+  assert.match(cum, /id="ordering-note" class="warn-banner" role="status" aria-live="polite"/);
+  assert.doesNotMatch(cum, /if \(orderNote\) extras.push\(orderNote\)/);
+  const el={textContent:'',classList:{toggle(name,on){el.visible=on;}}};
+  const renderNote=extract(cum,'renderOrderingNote',{orderEl:el,missingYearNote:extract(cum,'missingYearNote')});
+  renderNote([{label:'A < B',year:null}], 'cumulative');
+  assert.equal(el.visible,true); assert.match(el.textContent,/A < B/);
+  renderNote([{label:'A',year:2020}], 'cumulative');
+  assert.equal(el.visible,false); assert.equal(el.textContent,'');
+  renderNote([{label:'A',year:null}], 'subgroup');
+  assert.equal(el.visible,false); assert.equal(el.textContent,'');
+  assert.ok(cum.includes('const all = parsed.warnings.concat(extras);'));
 });

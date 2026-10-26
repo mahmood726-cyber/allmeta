@@ -23,14 +23,13 @@ for (id in c('heterogeneous','unequal','identical')) {
       all(d$full_label == 'Full-data I²'),
       all(d$median_label == 'median I² across subsets (not the full-data I²)'))
   }
-  d <- load_csv(paste0('cum-',id,'.csv'), c('yi','sei','q_fe','q_re','fe_label','re_label'))
+  d <- load_csv(paste0('cum-',id,'.csv'), c('yi','sei','q_fe','q_re','q_definition'))
   fe <- rma(yi=d$yi, sei=d$sei, method='FE')
   pm <- rma(yi=d$yi, sei=d$sei, method='PM', control=list(threshold=1e-12, tol=1e-12, maxiter=1000))
   w <- 1 / (d$sei^2 + pm$tau2)
   residual_q <- sum(w * (d$yi - as.numeric(coef(pm)))^2)
   stopifnot(close_enough(d$q_fe, fe$QE), close_enough(d$q_re, residual_q),
-    all(d$fe_label == 'Cochran’s Q (fixed-effect weights)'),
-    all(d$re_label == 'Q (random-effects weights)'))
+    all(d$q_definition == "Q_final: residual Q under random-effects (PM) weights, not Cochran's Q."))
   if (id == 'heterogeneous') {
     # Planted wrong row: claim the page's RE-weighted residual is Cochran's Q.
     planted <- d[1, , drop=FALSE]

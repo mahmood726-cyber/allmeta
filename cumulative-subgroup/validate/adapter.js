@@ -146,15 +146,10 @@ function subgroupPlot(sub, title, user, check) {
 }
 
 // ---- exact displayed-state contracts ----
-function fixedQText(studies) {
-  const w = studies.map(s => 1 / s.v), sw = w.reduce((a, b) => a + b, 0);
-  const mean = studies.reduce((a, s, i) => a + w[i] * s.est, 0) / sw;
-  return fmt(studies.reduce((a, s, i) => a + w[i] * (s.est - mean) * (s.est - mean), 0), 2);
-}
 function cardsExpected(view, a) {
   const k = String(a.parsed.studies.length);
   if (!a.summary) return [['k', k]];
-  if (view === 'cumulative') { const f = a.cum.series[a.cum.series.length - 1]; return [['k', k], ['Final pooled', pooledText(f)], ['Final τ²', fmt(f.tau2, 4)], ['Q (random-effects weights)', fmt(f.Q, 2)], ['Cochran’s Q (fixed-effect weights)', fixedQText(a.parsed.studies)]]; }
+  if (view === 'cumulative') { const f = a.cum.series[a.cum.series.length - 1]; return [['k', k], ['Final pooled', pooledText(f)], ['Final τ²', fmt(f.tau2, 4)]]; }
   const s = a.sub, o = s.overall, out = [['k', k], ['Groups', String(s.groups.length)], ['Overall pooled', pooledText(o)]];
   if (o.piLo != null) out.push(['95% prediction interval', '[' + fmt(o.piLo) + ', ' + fmt(o.piHi) + ']']);
   out.push(['Q_bw (df=' + s.df_bw + ')', fmt(s.Q_bw, 2) + ', p=' + fmt(s.pQ, 3)], ['I² diff', fmt(s.I2_bw, 1) + '%']);
@@ -172,11 +167,15 @@ function headingOk(view) { const h = document.getElementById('preview-heading');
 // Notes banner: hidden and empty, or exactly "Notes" + one list item per note, in order.
 function bannerOk(notes) {
   // Missing years are an advisory about the existing fallback, not a parser error.
+  let ordering = '';
   const result = window._almLastCumSub();
   if (result && result.view === 'cumulative') {
     const missing = result.series.filter(s => s.year == null).map(s => s.label);
-    if (missing.length) notes = notes.concat('Missing year for: ' + missing.join(', ') + '. Cumulative analysis uses input order for all studies. Add a year for every study to order chronologically.');
+    if (missing.length) ordering = 'Missing year for: ' + missing.join(', ') + '. Cumulative analysis uses input order for all studies. Add a year for every study to order chronologically.';
   }
+  const order = document.getElementById('ordering-note');
+  if (!order || order.textContent !== ordering || order.children.length !== 0 ||
+      order.className !== (ordering ? 'warn-banner is-visible' : 'warn-banner') || order.checkVisibility() !== !!ordering) return false;
   const el = document.getElementById('warn-banner');
   if (!notes.length) return el.className === 'warn-banner' && el.innerHTML === '' && !el.checkVisibility();
   const c = [...el.childNodes];
@@ -225,7 +224,7 @@ function userAxis() { const r = axisRow(); const v = el => el.value.trim() === '
 // user's data (textarea) are excluded. Overlays that shared scripts append to <body> (citation dialog, glossary tooltips, toasts) are
 // not template; the autosave draft banner has its own exact contract.
 const TEMPLATE_ROOTS = ['A', 'NAV', 'HEADER', 'MAIN', 'FOOTER'];
-const TEXT_SKIP = '#alm-validate,#svg-host,#stats-wrap,#preview-heading,#warn-banner,textarea,script,style,#f-view,#alm-axis-mount [data-error],.alm-axis-row > label:first-of-type,#alm-csv-mount [data-section=warnings]';
+const TEXT_SKIP = '#alm-validate,#svg-host,#stats-wrap,#preview-heading,#warn-banner,#ordering-note,textarea,script,style,#f-view,#alm-axis-mount [data-error],.alm-axis-row > label:first-of-type,#alm-csv-mount [data-section=warnings]';
 function templateRoots() { return [...document.body.children].filter(e => TEMPLATE_ROOTS.includes(e.tagName)); }
 function path(e, root) { const p = []; for (; e && e !== root; e = e.parentElement) p.push(e.tagName + [...e.parentElement.children].indexOf(e)); return [root.tagName, ...p.reverse()].join('>'); }
 function pageText() {
