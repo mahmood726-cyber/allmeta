@@ -45,6 +45,9 @@
     th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
     td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
     .pooled-row { background: var(--accent-soft); font-weight: 600; }
+    .results-stale table, .results-stale #het, .results-stale #forest { filter: grayscale(1); }
+    .results-stale #forest { opacity: 0.45; }
+    #parse-warn, #analysis-stale { padding: 0.55rem; background: var(--warn-soft); color: var(--ink); }
     svg { width: 100%; height: auto; display: block; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
@@ -55,6 +58,7 @@
   <!-- Cycle 2.6 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
   <script src="../hub/shared/csv-upload.js"></script>
+  <script src="input-validation.js"></script>
   <script src="../hub/shared/plot-export.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
@@ -93,7 +97,8 @@
 25, 300, Study G</textarea></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
-      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="analysis-stale" role="status" hidden>Results do not match the current input</div>
+      <div id="parse-warn" role="alert" hidden></div>
       <div id="alm-csv-mount"></div>
 
       <label>
@@ -122,7 +127,7 @@
       <div id="alm-undo-mount" style="margin-top:0.5rem"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="results-panel">
       <div id="k-warn" style="display:none;background:var(--warn-soft);border-left:3px solid var(--warn);color:var(--warn);padding:0.55rem 0.8rem;border-radius:4px;font-size:0.82rem;margin-bottom:0.6rem" role="status" aria-live="polite"></div>
       <h2>Studies &amp; pooled</h2>
       <table>
@@ -170,13 +175,7 @@
     // ---- engine (unchanged from pre-retrofit) ----
 
     function parseTable(text) {
-      return text.trim().split(/\n/).map(function (l, i) {
-        var parts = l.split(/,/).map(function (s) { return s.trim(); });
-        var x = parseInt(parts[0], 10);
-        var n = parseInt(parts[1], 10);
-        if (!Number.isFinite(x) || !Number.isFinite(n) || n <= 0 || x < 0 || x > n) return null;
-        return { x: x, n: n, label: parts[2] || ('Study ' + (i + 1)) };
-      }).filter(Boolean);
+      return window.AlmProportionInput.parse(text);
     }
 
     // --- inverse beta (Clopper-Pearson) via relation to F-distribution approximation ---
@@ -317,6 +316,32 @@
     // ---- results storage for export ----
     var _lastResults = null;
     var _validationDetails = null;
+    var _disabledExports = null;
+
+    function markRefused(refused) {
+      document.getElementById('results-panel').classList.toggle('results-stale', refused);
+      document.getElementById('analysis-stale').hidden = !refused;
+      if (refused && !_disabledExports) {
+        _disabledExports = Array.from(document.querySelectorAll('#alm-export-mount button, #alm-plot-mount button, #btn-bus-save, #btn-verify-in-r, #btn-truthcert')).map(function (button) {
+          var previous = button.disabled;
+          button.disabled = true;
+          return [button, previous];
+        });
+      } else if (!refused && _disabledExports) {
+        _disabledExports.forEach(function (entry) { entry[0].disabled = entry[1]; });
+        _disabledExports = null;
+      }
+    }
+    function refuseInput(message) {
+      _lastResults = null;
+      _validationDetails = null;
+      var warning = document.getElementById('parse-warn');
+      warning.textContent = message;
+      warning.hidden = false;
+      document.getElementById('analysis-status').hidden = true;
+      document.getElementById('k-warn').style.display = 'none';
+      markRefused(true);
+    }
 
     run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #trans, #tau-est");
 
@@ -325,7 +350,9 @@
       var text = document.getElementById('src').value;
       var trans = document.getElementById('trans').value;
       var tauEst = document.getElementById('tau-est').value;
-      var rows = parseTable(text);
+      var rows;
+      try { rows = parseTable(text); }
+      catch (error) { refuseInput(error.message); return; }
 
       // DL k<10 warning
       var kw = document.getElementById('k-warn');
@@ -339,7 +366,7 @@
       }
       if (rows.length < 2) {
         document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Need at least 2 studies.</td></tr>';
-        _lastResults = null; // do not leave a stale result exportable
+        refuseInput('Need at least 2 studies. Add another valid study and run again.');
         return;
       }
 
@@ -423,6 +450,9 @@
       };
 
       render(perStudy, { poolP: poolP, poolLo: poolLo, poolHi: poolHi, poolPiLo: poolPiLo, poolPiHi: poolPiHi, het: pooled });
+      document.getElementById('parse-warn').hidden = true;
+      document.getElementById('parse-warn').textContent = '';
+      markRefused(false);
 
       // Read-only validation snapshot of the actual computation and render path.
       _validationDetails = {
@@ -554,7 +584,7 @@
       var lines = rows.map(function (r) {
         return [r.events !== undefined ? r.events : (r.x !== undefined ? r.x : ''),
                 r.total  !== undefined ? r.total  : (r.n !== undefined ? r.n : ''),
-                r.label || r.study || ''].join(', ');
+                r.label || r.study || ''].map(window.AlmProportionInput.csvField).join(', ');
       });
       document.getElementById('src').value = lines.join('\n');
       run();
@@ -563,8 +593,22 @@
     // Expose last results for export
     window.__almPropValidation = {
       run: function () { run({suppressURL:true}); }, parse: parseTable,
-      save: function () { return {results:_lastResults, details:_validationDetails}; },
-      restore: function (s) { _lastResults=s.results; _validationDetails=s.details; },
+      save: function () { return {results:_lastResults, details:_validationDetails, ui:{
+        refused:!!_disabledExports, error:document.getElementById('parse-warn').textContent,
+        errorHidden:document.getElementById('parse-warn').hidden,
+        staleHidden:document.getElementById('analysis-stale').hidden,
+        statusHidden:document.getElementById('analysis-status').hidden
+      }}; },
+      restore: function (s) {
+        _lastResults=s.results; _validationDetails=s.details;
+        if (s.ui) {
+          markRefused(s.ui.refused);
+          document.getElementById('parse-warn').textContent=s.ui.error;
+          document.getElementById('parse-warn').hidden=s.ui.errorHidden;
+          document.getElementById('analysis-stale').hidden=s.ui.staleHidden;
+          document.getElementById('analysis-status').hidden=s.ui.statusHidden;
+        }
+      },
       snapshot: function () { return _validationDetails ? JSON.parse(JSON.stringify(_validationDetails)) : null; }
     };
     window._almLastPropMA = function () { return _lastResults; };
@@ -576,8 +620,10 @@
     // transform so the bus payload is single-scale and coherent. Recomputed from
     // current inputs so it always matches what is on screen.
     window.__propMaBusStudies = function () {
-      if (!window.MaStudies) return [];
-      var rows = parseTable(document.getElementById('src').value);
+      if (!window.MaStudies || _disabledExports) return [];
+      var rows;
+      try { rows = parseTable(document.getElementById('src').value); }
+      catch (error) { refuseInput(error.message); return []; }
       if (rows.length < 2) return [];
       var out = [];
       for (var i = 0; i < rows.length; i++) {
@@ -594,12 +640,14 @@
 
     window.alm.csvUpload({
       target: '#alm-csv-mount',
+      parse: window.AlmProportionInput.upload,
       columns: [
         { name: 'events', required: true,  type: 'int',    example: '12' },
         { name: 'total',  required: true,  type: 'int',    example: '150' },
         { name: 'label',  required: false, type: 'string', example: 'Study A' },
       ],
       onParse: function (result) {
+        if (result.error) { refuseInput(result.error); return; }
         window.alm.resetUndo.snapshot();
         window.__almLoad(result.rows);
       },
