@@ -174,7 +174,7 @@
   }
   function mountHelp() {
     if (!Object.keys(terms).length) return;
-    const host = document.getElementById('alm-features');
+    const host = document.getElementById('alm-features') || document.getElementById('alm-glossary-mount');
     // Never use results/main as a fallback host. The app can supply another
     // explicit help scope if it has no shared feature panel.
     if (!host || host.closest('main')) return;
