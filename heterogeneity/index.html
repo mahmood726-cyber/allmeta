@@ -220,7 +220,12 @@
       for (let i=0;i<lines.length;i++) {
         const raw=lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
-        const parts=raw.split(/\s*[,\t]\s*/);
+        // Imported labels may contain commas; only a quoted first field can contain delimiters.
+        // Split before trimming so empty tab-separated fields remain visible to validation.
+        const quoted=lines[i].match(/^[^\S\t]*"((?:[^"]|"")*)"[^\S\t]*[,\t]/);
+        const parts=(quoted
+          ? [quoted[1].replace(/""/g,'"'), ...lines[i].slice(quoted[0].length).split(/[,\t]/)]
+          : lines[i].split(/[,\t]/)).map(part=>part.trim());
         if (parts.length>3) {
           first=false;
           warnings.push("Line "+(i+1)+" ("+parts[0]+"): expected exactly 3 fields: label, estimate and SE. Possible decimal comma? Use a decimal point and remove extra fields or delimiters from labels.");
@@ -780,7 +785,7 @@
       try {
         const studies = (window.MaStudies && MaStudies.read()) || [];
         if (!studies.length) { Toast.show("No shared studies yet.", "warn"); return; }
-        const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
+        const lines = studies.map(s => ['"'+String(s.label).replace(/"/g,'""')+'"', s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
       } catch (e) { Toast.show("Could not load shared: " + e.message, "warn"); }
@@ -903,7 +908,7 @@
           const yi=number(r.yi),vi=number(r.vi);
           if (!Number.isFinite(yi) || !Number.isFinite(vi) || vi<=0 || !Number.isFinite(1/vi) || !Number.isFinite(yi/vi))
             throw new Error('CSV row '+(i+1)+': finite yi and positive, representable vi are required');
-          return String(r.study)+', '+String(yi)+', '+String(Math.sqrt(vi));
+          return '"'+String(r.study).replace(/"/g,'""')+'", '+String(yi)+', '+String(Math.sqrt(vi));
         });
         const ta=document.getElementById('f-data');ta.value=lines.join('\n');
         ta.dispatchEvent(new Event('input',{bubbles:true}));
