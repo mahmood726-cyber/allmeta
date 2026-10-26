@@ -7,6 +7,7 @@ name: features
 #              + three planted defects (large value, 1e-12-scale value, formula coefficient), each must FAIL
 #   yun      : Yun et al. 2024 candidate-recall harness, DEV split on the committed CC-BY texts (reports, never gates recall)
 #   browser  : Playwright features-*.spec.mjs (per-app entry round-trip, text audit + snapshot, verify-in-R panel via webR)
+#   figpresets-r : base R reads the browser's exported figures and rejects the wrong-DPI plant
 
 on:
   # No paths filter on PRs: a filter that misses an audited file (adapters, app pages, shared engines) lets the
@@ -132,6 +133,13 @@ jobs:
         env:
           CI: "true"
           PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/features-results.json
+      - name: preserve browser figure evidence for independent R validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: figpresets-evidence
+          path: hub/shared/tests/rchecks-out/figpresets/
+          if-no-files-found: error
+          retention-days: 14
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -140,6 +148,32 @@ jobs:
             hub/shared/tests/artifacts/
             hub/shared/tests/test-results/
           if-no-files-found: ignore
+          retention-days: 14
+
+  figpresets-r:
+    needs: browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: figpresets-evidence
+          path: hub/shared/tests/rchecks-out/figpresets/
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5.1"
+      - name: independently check exported files and detect the wrong-DPI plant
+        run: |
+          set -o pipefail
+          Rscript hub/shared/tests/rchecks/figpresets.R 2>&1 | tee figpresets-r.log
+          test "$(grep -cx 'PLANT_DETECTED' figpresets-r.log)" -eq 1
+          test "$(grep -cx 'R_CHECK_PASS' figpresets-r.log)" -eq 1
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: figpresets-r-log
+          path: figpresets-r.log
+          if-no-files-found: error
           retention-days: 14
 
   personas:
