@@ -2,7 +2,7 @@
   'use strict';
   function validate(rows){
     global.AlmRevmanReader.validateRecords(rows,'generic');
-    rows.forEach(r=>{global.AlmRevman.label(r.study);if(/[,#]/.test(r.study))throw new Error('Study name contains a comma or # that the native input cannot preserve.');});
+    rows.forEach(r=>{global.AlmRevman.label(r.study);if(r.study!==r.study.trim())throw new Error('Study name cannot be preserved by the native input.');if(/[,#]/.test(r.study))throw new Error('Study name contains a comma or # that the native input cannot preserve.');});
   }
   const entry={schema:'generic',validate,apply(rows){
     validate(rows);

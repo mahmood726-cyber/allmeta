@@ -6,6 +6,9 @@
     R().validateRecords(rows,'generic');
     rows.forEach(r=>{
       A.label(r.study);
+      if(r.study!==r.study.trim())throw new Error('Study name cannot be preserved by the native input.');
+      const subgroup=r.provenance&&r.provenance.choice?r.provenance.choice.subgroup:(r.subgroup||'');
+      if(typeof subgroup==='string'&&(/\t/.test(subgroup)||subgroup!==subgroup.trim()))throw new Error('Subgroup name cannot be preserved by the native input.');
       if(r.study.trim().startsWith('#'))throw new Error('Study name would be interpreted as a native input comment.');
       if(r.year!=null&&!Number.isInteger(r.year))throw new Error('This app requires a numeric year; a year suffix cannot be preserved.');
     });
