@@ -138,7 +138,7 @@
     r.warnings = capture(byId('msgs').textContent, 'warning', r, dom);
   }
   function results() {
-    var last = typeof global._almLastDoseResponse === 'function' ? global._almLastDoseResponse() : null;
+    var last = typeof global._almDoseValidationResult === 'function' ? global._almDoseValidationResult() : null;
     if (!last) return null;
     var r = {
       k: last.k, nobs: last.nobs, model: last.model, method: last.method,

@@ -114,3 +114,30 @@ test('CONTROL: default report retains its snapshot and detects a perturbed coeff
   context.__almTextPerturb = { key: 'coef_0_1_0', delta: 0.1 };
   assert.ok(report(context, spec).audit.failures.some(f => f.check === 'dom:coef_0_1_0'));
 });
+
+test('PLANTED: report refuses an old fit after a silent change to any analysis input', () => {
+  const { nodes, spec } = load();
+  const before = spec.text.results();
+  for (const [id, node] of nodes) {
+    if (!id.startsWith('f-')) continue;
+    const field = id === 'f-mod' ? 'checked' : 'value', value = node[field];
+    node[field] = field === 'checked' ? !value : value + ' changed';
+    assert.throws(() => spec.text.results(), /does not match the current inputs/, id);
+    node[field] = value;
+    assert.deepEqual(spec.text.results(), before, id + ' restored');
+  }
+});
+
+test('CONTROL: report uses a successful refit and returns no results after a refused refit', () => {
+  const { context, nodes, spec } = load();
+  const before = spec.text.results();
+  nodes.get('f-data').value = nodes.get('f-data').value.replace('-0.223144', '-0.323144');
+  nodes.get('btn-run').click();
+  const after = spec.text.results();
+  assert.notEqual(after.coef_0_1_0, before.coef_0_1_0);
+  assert.equal(after.coef_0_1_0, context._almLastDoseResponse().slope);
+  assert.equal(report(context, spec).audit.ok, true);
+  nodes.get('f-data').value = 'invalid';
+  nodes.get('btn-run').click();
+  assert.equal(spec.text.results(), null);
+});
