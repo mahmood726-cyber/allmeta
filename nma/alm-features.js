@@ -32,7 +32,10 @@
           !Number.isFinite(r.yi) || !Number.isFinite(r.sei) || r.sei <= 0) {
         throw new Error('Each contrast needs study and distinct treatment labels, a finite effect and a positive SE. Labels cannot contain commas, tabs or newlines, or start with #.');
       }
-      return [r.study.trim(), r.t1.trim(), r.t2.trim(), r.yi, r.sei].join(', ');
+      var labels = [r.study.trim(), r.t1.trim(), r.t2.trim()].map(function (s) {
+        return s.indexOf('"') < 0 ? s : '"' + s.replace(/"/g, '""') + '"';
+      });
+      return labels.concat([r.yi, r.sei]).join(', ');
     }).join('\n');
   }
   function checkData(data, ci, ref) {
