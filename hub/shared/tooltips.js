@@ -10,6 +10,11 @@
 .alm-lang-switch{position:fixed;bottom:8px;right:8px;z-index:9998;background:#fff;color:#0f172a;border:1px solid #64748b;border-radius:6px;padding:4px}
 .alm-lang-switch select{font:13px system-ui,sans-serif;background:#fff;color:#0f172a;border:0}
 [data-alm-choice]{display:block;font-size:.85em;margin:.25em 0}
+.alm-glossary-help{margin:1rem;padding:.75rem 1rem;border:1px solid #64748b;border-radius:6px;background:#fff;color:#0f172a;font:14px/1.5 system-ui,sans-serif}
+.alm-glossary-help summary{cursor:pointer;font-weight:600}
+.alm-glossary-help ul{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;list-style:none;padding:0}
+@media(prefers-color-scheme:dark){.alm-glossary-help{background:#0f172a;color:#f8fafc}}
+[data-theme=dark] .alm-glossary-help{background:#0f172a;color:#f8fafc}
 @media(prefers-color-scheme:dark){.alm-tooltip{background:#f8fafc;color:#0f172a;border-color:#475569}.alm-tooltip .alm-disclaimer{color:#334155}}
 [data-theme=dark] .alm-tooltip{background:#f8fafc;color:#0f172a;border-color:#475569}
 [data-theme=dark] .alm-tooltip .alm-disclaimer{color:#334155}`;
@@ -110,6 +115,11 @@
   }
   function mark(root) {
     if (!Object.keys(terms).length) return;
+    // App results and chart exports are display contracts. Only explanatory
+    // content explicitly opting in may acquire new wrappers or method help.
+    root.querySelectorAll('[data-gloss-scope]').forEach(markScope);
+  }
+  function markScope(root) {
     const re = buildMatcher(terms);
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
@@ -151,7 +161,7 @@
     });
   }
   function updateChoices() {
-    document.querySelectorAll('select:not(.alm-lang-switch select)').forEach(select => {
+    document.querySelectorAll('[data-gloss-scope] select:not(.alm-lang-switch select)').forEach(select => {
       const text = Array.from(select.selectedOptions, o => o.textContent).join('; ');
       const hits = [...text.matchAll(buildMatcher(terms))].filter(m => glossary[terms[m[0]]]);
       let record = choices.get(select);
@@ -164,19 +174,44 @@
     });
     for (const [select, record] of choices) if (!select.isConnected) { record.node.remove(); choices.delete(select); }
   }
+  function mountHelp() {
+    if (!Object.keys(terms).length) return;
+    const host = document.getElementById('alm-features') || document.getElementById('alm-glossary-mount');
+    // Never use results/main as a fallback host. The app can supply another
+    // explicit help scope if it has no shared feature panel.
+    if (!host || host.closest('main')) return;
+    let help = document.getElementById('alm-glossary-help');
+    if (!help) {
+      help = document.createElement('details'); help.id = 'alm-glossary-help';
+      help.className = 'alm-glossary-help'; help.setAttribute('data-gloss-scope', '');
+      const summary = document.createElement('summary'); summary.textContent = 'Statistical glossary';
+      const note = document.createElement('p'); note.textContent = 'Focus or tap a term to read its definition. Press Escape to close a tooltip.';
+      help.append(summary, note, document.createElement('ul')); host.after(help);
+    }
+    const seen = new Set(Array.from(help.querySelectorAll('[data-gloss]'), el => el.getAttribute('data-gloss')));
+    const list = help.querySelector('ul');
+    for (const [label, key] of Object.entries(terms)) {
+      if (!glossary[key] || seen.has(key)) continue;
+      seen.add(key);
+      const item = document.createElement('li'), term = document.createElement('span');
+      term.setAttribute('data-gloss', key); term.textContent = label;
+      item.append(term); list.append(item);
+    }
+  }
   function scan() {
     if (!document.body) return;
     // Disconnect during our own mutations to avoid scan-observer feedback loops.
     if (observer) observer.disconnect();
+    mountHelp();
     updateChoices(); mark(document.body);
     for (const [el, tip] of attached) {
       if (!el.isConnected) { if (active?.el === el) hide(); tip.remove(); attached.delete(el); }
     }
     document.querySelectorAll('[data-gloss]').forEach(el => {
-      // Resolve authored legacy marks using an exact, app-specific display
-      // alias (for example τ²_within is not between-study variance).
+      // Alias normalization is limited to opted-in help. Existing app marks
+      // retain their authored keys and display-contract attributes.
       const key = terms[el.textContent.trim()];
-      if (key && glossary[key] && key !== el.getAttribute('data-gloss')) {
+      if (key && el.closest('[data-gloss-scope]') && glossary[key] && key !== el.getAttribute('data-gloss')) {
         el.setAttribute('data-gloss', key);
         if (attached.has(el)) fill(attached.get(el), el);
       }
