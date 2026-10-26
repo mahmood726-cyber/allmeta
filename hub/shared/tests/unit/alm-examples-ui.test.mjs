@@ -13,6 +13,7 @@ function setup(transform=x=>x) {
     constructor(tag) {this.tagName=tag;this.children=[];this.style={};this.dataset={};this.handlers={};this.value='';this.textContent='';}
     set id(x) {this._id=x;nodes.set(x,this);} get id(){return this._id;}
     append(...x){this.children.push(...x);if(this.tagName==='select' && !this.value)this.value=x[0]?.value||'';}
+    attachShadow(){return this.shadowRoot=new Element('shadow-root');}
     setAttribute(k,v){this[k]=v;}
     addEventListener(k,fn){this.handlers[k]=fn;}
     dispatchEvent(e){this.handlers[e.type]?.(e);}

@@ -261,14 +261,21 @@
     const mount=()=>{
       const spec=active.spec, panel=document.createElement('section');
       panel.id='alm-real-example-panel'; panel.style.cssText='margin:1rem auto;padding:1rem;max-width:72rem;border:1px solid #aaa;border-radius:6px';
-      const heading=document.createElement('h2');heading.textContent='Real example';
+      const heading=document.createElement('h2');heading.id='alm-real-example-heading';heading.textContent='Real example';
+      panel.setAttribute('aria-labelledby',heading.id);
+      // Legacy autosave groups every document-level select before anonymous
+      // inputs. Keep this auxiliary picker out of that enumeration (and its
+      // delegated input/change handlers), preserving existing draft keys.
+      const picker=document.createElement('span');
+      const pickerRoot=picker.attachShadow({mode:'open'});
       const labelEl=document.createElement('label');labelEl.textContent='Published dataset: ';
       const select=document.createElement('select');select.id='alm-real-example-choice';
       const option=document.createElement('option');option.value=datasets[app];option.textContent=datasets[app];select.append(option);labelEl.append(select);
+      pickerRoot.append(labelEl);
       const button=document.createElement('button');button.id='alm-real-example-load';button.type='button';button.textContent='Load real example';button.style.marginLeft='0.5rem';
       const status=document.createElement('p');status.id='alm-real-example-status';status.setAttribute('role','status');
       const citation=document.createElement('p');citation.id='alm-real-example-citation';
-      panel.append(heading,labelEl,button,status,citation);
+      panel.append(heading,picker,button,status,citation);
       // Append beside the shared feature host after the original content, so
       // neither results text nor pinned plot positions include this new UI.
       mountPanel(document,panel);
