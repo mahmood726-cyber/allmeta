@@ -61,3 +61,16 @@ test('RVE entry controls: ordinary labels and named moderators retain rows and v
   assert.equal(h.fit().m_clusters, 8);
   assert.deepEqual(Array.from(h.parsed().rows, r => r.cluster), rows().map(r => r.cluster));
 });
+
+test('RVE entry refuses mixed named and alias moderators rather than silently dropping aliases', () => {
+  const h = load('dose');
+  const records = rows().map((r, i) => ({ ...r, dose: Math.floor(i / 2) % 2 }));
+  assert.throws(() => h.apply(records), /named.*alias|alias.*named/i);
+  assert.equal(h.nodes.src.value, 'previous inputs');
+});
+test('RVE entry control: a named x1 moderator is not mistaken for a mixed alias', () => {
+  const h = load('x1');
+  h.apply(rows());
+  assert.equal(h.fit().p, 2);
+  assert.deepEqual(Array.from(h.parsed().rows, r => r.X[1]), rows().map(r => r.x1));
+});

@@ -80,6 +80,9 @@
       .filter(function (k) { return /^x[1-9]\d*$/.test(k); })
       .sort(function (a, b) { return Number(a.slice(1)) - Number(b.slice(1)); });
     var mods = requested.filter(function (k) { return records.some(function (r) { return r[k] !== undefined; }); });
+    if (mods.length && aliases.some(function (k) { return mods.indexOf(k) < 0; })) {
+      throw new Error('Use named moderators or alias moderators consistently; no columns were applied.');
+    }
     if (!mods.length) mods = aliases;
     if (mods.length && requested.some(function (k) { return records.some(function (r) { return r[k] !== undefined; }); }) &&
         mods.length !== requested.length) throw new Error('Supply every named moderator, or omit all moderators for an intercept-only fit.');
