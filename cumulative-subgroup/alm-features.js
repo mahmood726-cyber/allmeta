@@ -189,10 +189,10 @@
         var q = cards[label].split(', p='); add('Qbw', q[0], 2);
         if (q[1] !== '--') add('pQ', q[1], 3);
       });
-      var rows = Array.from(document.querySelectorAll('#svg-host svg text')).filter(function (n) {
-        return /^-?\d+\.\d+ \[/.test(n.textContent);
-      });
-      rows.slice(0, -1).forEach(function (n, i) { interval(n.textContent, ['group' + i + 'mu', 'group' + i + 'lo', 'group' + i + 'hi']); });
+      // Only subgroup estimates carry this attribute; labels and titles may also
+      // begin with numbers and brackets, and must not shift the group indices.
+      var rows = Array.from(document.querySelectorAll('#svg-host svg text[font-variant-numeric="tabular-nums"]'));
+      rows.forEach(function (n, i) { interval(n.textContent, ['group' + i + 'mu', 'group' + i + 'lo', 'group' + i + 'hi']); });
     }
     return out;
   }
