@@ -97,7 +97,7 @@
 25, 300, Study G</textarea></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
-      <div id="analysis-stale" role="status" hidden>Results do not match the current input</div>
+      <div id="analysis-stale" role="status" hidden>Results out of date — press Run analysis</div>
       <div id="parse-warn" role="alert" hidden></div>
       <div id="alm-csv-mount"></div>
 
@@ -320,6 +320,10 @@
 
     function markRefused(refused) {
       document.getElementById('results-panel').classList.toggle('results-stale', refused);
+      // The lifecycle also shows this banner for edits awaiting a run.
+      document.getElementById('analysis-stale').textContent = refused
+        ? 'Results do not match the current input'
+        : 'Results out of date — press Run analysis';
       document.getElementById('analysis-stale').hidden = !refused;
       if (refused && !_disabledExports) {
         _disabledExports = Array.from(document.querySelectorAll('#alm-export-mount button, #alm-plot-mount button, #btn-bus-save, #btn-verify-in-r, #btn-truthcert')).map(function (button) {
@@ -352,7 +356,18 @@
       var tauEst = document.getElementById('tau-est').value;
       var rows;
       try { rows = parseTable(text); }
-      catch (error) { refuseInput(error.message); return; }
+      catch (error) {
+        refuseInput(error.message);
+        if (!text.trim()) {
+          // An empty run has no result to retain as stale. Keep the input
+          // error and export guards, but remove the previous analysis.
+          ['res-body', 'het', 'forest'].forEach(function (id) {
+            document.getElementById(id).innerHTML = '';
+          });
+          document.getElementById('analysis-stale').hidden = true;
+        }
+        return;
+      }
 
       // DL k<10 warning
       var kw = document.getElementById('k-warn');
