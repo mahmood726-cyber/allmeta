@@ -125,10 +125,10 @@ async function runCorpus(files, onProgress) {
 const repoUrl = 'https://github.com/mahmood726-cyber/dose-response-ma-reproducible';
 const liveCompare = { tolerance: { default: 1e-6 }, kind: {} };
 function currentState() {
-  // Recompute via the existing UI handler before taking one immutable input/result snapshot.
+  // Read the displayed fit without dispatching edits or refitting. Feature report
+  // revision checks also call this reader while a live R check may be running.
   const input = document.getElementById('f-data');
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-  const result = window._almLastDoseResponse();
+  const result = window._almDoseValidationResult();
   if (!result) throw new Error('Enter data that the dose-response app can fit before validating.');
   if (['PM', 'DL'].includes(result.method)) throw new Error('Live R comparison unavailable; R reference and re-execution are in the reproducible repository: dosresmeta does not implement the selected PM/DL estimator. ' + repoUrl);
   const excluded = new Set(result.excluded.map(x => String(x.id)));

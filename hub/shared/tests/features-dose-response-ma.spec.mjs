@@ -264,3 +264,70 @@ test('AXE: all four feature tabs have no serious or critical violations', async 
     await scan(page, name);
   }
 });
+
+
+test('VERIFY PLANTED: revision reads do not refit or emit edits, and silent edits are refused', async ({ page }) => {
+  await open(page, 'Report text');
+  const out = await page.evaluate(() => {
+    const live = AlmDoseValidate.live, before = _almLastDoseResponse();
+    let edits = 0, fits = 0;
+    const count = () => edits++, fitDR = AlmDoseResponse.fitDR;
+    document.addEventListener('input', count, true);
+    AlmDoseResponse.fitDR = (...args) => { fits++; return fitDR(...args); };
+    try {
+      const initial = live.currentState();
+      const revision = AlmFeatures.revision('dose-response-ma');
+      const sameRevision = revision === AlmFeatures.revision('dose-response-ma');
+      const refused = [], restored = [];
+      for (const id of Object.keys(AlmDoseFeatures.share.get()).filter(id => id.startsWith('f-'))) {
+        const input = document.getElementById(id), key = id === 'f-mod' ? 'checked' : 'value', old = input[key];
+        input[key] = key === 'checked' ? !old : old + ' changed';
+        try { live.currentState(); } catch (error) { if (error.message.includes('does not match the current inputs')) refused.push(id); }
+        input[key] = old;
+        if (JSON.stringify(live.currentState()) === JSON.stringify(initial)) restored.push(id);
+      }
+      return { edits, fits, sameRevision, revision, sameFit: before === _almLastDoseResponse(), refused, restored, rows: initial.rows.length };
+    } finally {
+      AlmDoseResponse.fitDR = fitDR;
+      document.removeEventListener('input', count, true);
+    }
+  });
+  expect(out.edits).toBe(0);
+  expect(out.fits).toBe(0);
+  expect(out.sameFit).toBe(true);
+  expect(out.sameRevision).toBe(true);
+  expect(out.revision).not.toBeNull();
+  expect(out.rows).toBe(25);
+  expect(out.refused).toHaveLength(10);
+  expect(out.restored).toEqual(out.refused);
+});
+
+test('VERIFY: deferred report checks preserve a pending validation; actual edits still invalidate it', async ({ page }) => {
+  await open(page, 'Report text');
+  // Deterministic lifecycle test only: the separate VERIFY test runs the real R oracle.
+  await page.evaluate(() => {
+    const live = AlmDoseValidate.live;
+    const values = Object.fromEntries(live.appValues(live.currentState()).map(v => [v.key, v.value]));
+    window.__doseRunnerCalls = 0;
+    AlmWebR.runR = () => {
+      window.__doseRunnerCalls++;
+      return new Promise(resolve => { window.__finishDoseR = () => resolve({ ok: true,
+        stdout: 'ALMJSON:' + JSON.stringify(values), versions: { dosresmeta: '2.2.0' } }); });
+    };
+  });
+  const panel = page.locator('#alm-validate');
+  const run = panel.getByRole('button', { name: 'Validate this analysis in R', exact: true });
+  await run.click();
+  await expect.poll(() => page.evaluate(() => window.__doseRunnerCalls)).toBe(1);
+  // Cross a timer turn so the report's deferred click check has run before R resolves.
+  await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 50)));
+  await page.evaluate(() => window.__finishDoseR());
+  await expect(panel.getByRole('status')).toContainText('live R quantities passed.');
+  expect(await panel.locator('tbody tr').count()).toBeGreaterThan(15);
+  await run.click();
+  await expect.poll(() => page.evaluate(() => window.__doseRunnerCalls)).toBe(2);
+  await page.locator('#f-xref').fill('1');
+  await page.evaluate(() => window.__finishDoseR());
+  await expect(panel.getByRole('status')).toContainText('Result out of date.');
+  await expect(panel.locator('tbody tr')).toHaveCount(0);
+});

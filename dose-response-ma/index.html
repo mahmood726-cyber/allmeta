@@ -187,7 +187,18 @@
       cells.push(cell.trim());
       return cells;
     }
-    var _last = null;
+    var _last = null, _fitInputs = null;
+    function fitInputs() {
+      return JSON.stringify(["f-data", "f-shape", "f-knots", "f-cov", "f-proc", "f-method",
+        "f-mod", "f-xref", "f-modval", "f-pdoses"].map(function (id) {
+        return [id, id === "f-mod" ? $(id).checked : $(id).value];
+      }));
+    }
+    window._almDoseValidationResult = function () {
+      if (!_last) return null;
+      if (_fitInputs !== fitInputs()) throw new Error("The displayed fit does not match the current inputs; run the analysis again before validating.");
+      return _last;
+    };
     window._almLastDoseResponse = function () { return _last; };
 
     function parse(text, useMod) {
@@ -244,7 +255,7 @@
     function clearOut(msg, kind) {
       $("headline").textContent = ""; ["coef-body", "tests-body", "pred-body", "res-body", "curve-host", "resid-host"].forEach(function (id) { $(id).innerHTML = ""; });
       $("msgs").innerHTML = msg ? "<div class='msg " + (kind || "err") + "' role='status'>" + esc(msg) + "</div>" : "";
-      _last = null;
+      _last = null; _fitInputs = null;
     }
 
     run = window.alm.analysisLifecycle(run, function (result) { return !!_last; }, "[id^=\"f-\"]");
@@ -256,7 +267,7 @@
 
     function analyse() {
       syncControls();
-      _last = null;
+      _last = null; _fitInputs = null;
       var shape = $("f-shape").value, proc = $("f-proc").value, cov = $("f-cov").value, M = $("f-method").value, useMod = $("f-mod").checked;
       var studies = parse($("f-data").value, useMod);
       if (studies.length < 2) { clearOut("Enter at least 2 studies.", "warn"); return; }
@@ -285,6 +296,7 @@
         r.predict = function (doses, xref) { xref = +xref || 0; return doses.map(function (d) { var x = +d - xref, lp = x * lf.slope, se = Math.abs(x) * lf.se; return { dose: +d, logRR: lp, se: se, ciLo: lp - 1.959963984540054 * se, ciHi: lp + 1.959963984540054 * se, rr: Math.exp(lp), rrLo: Math.exp(lp - 1.959963984540054 * se), rrHi: Math.exp(lp + 1.959963984540054 * se) }; }); };
       }
       render(r, { shape: shape, M: M, studies: studies, xref: xref, modv: modv, pd: pd });
+      _fitInputs = fitInputs();
     }
 
     function methodLabel(r, M) {
