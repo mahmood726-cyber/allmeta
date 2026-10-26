@@ -17,16 +17,25 @@ What the page shows:
   metafor's defaults: with its defaults (`drop00 = TRUE`, `correct = TRUE`) rma.mh gives the same pooled estimate but a
   different Q, I² and H² on data that include a table with no events (or only events) in both groups, and a
   continuity-corrected Cochran-Mantel-Haenszel test.
+- MH heterogeneity is labelled **retained-table convention**, with the actual k beside the row. For OR/RR
+  inputs containing double-zero (or both-all-event) tables, a warning above the table explains that this
+  convention can lower I² relative to excluding those tables. These are not default-exclusion results.
+  The calculations remain unchanged; the policy follows the explicit `drop00` settings documented by
+  [metafor](https://wviechtb.github.io/metafor/reference/rma.mh.html).
 - Rare-event conventions side by side: MH without correction (metafor), MH as meta::metabin computes it by
   default, Peto, and an inverse-variance fixed effect with 0.5 added to zero-cell tables, with a flag when
   they disagree on significance or differ by more than 10%.
 - One-click leave-one-out: MH (and, for the odds ratio, Peto) re-pooled with each table omitted in turn, with
   estimate, 95% CI, p and I², a flag when an omission moves p across 0.05, and a full-precision CSV.
+  The MH I² heading identifies retained tables. The CSV's existing `flags` column also records the
+  heterogeneity convention, k and any double-zero warning for each reduced set, including the full-data row.
 - Per-study table, forest plot (with x-axis) and L'Abbé plot; a separate DerSimonian-Laird fragility index.
 - Input checking: every line is either used or listed with its line number and reason (non-integer,
   negative, events larger than total, wrong number of values). Nothing is dropped or rounded silently.
 - "Export self-checking R script": a .R file with the data, the matching `rma.mh` / `rma.peto` calls
   and the page's numbers; running it in R prints a PASS/FAIL comparison at 1e-9.
+  Results exports include `mh_Q_k`, `mh_heterogeneity_convention`, `mh_heterogeneity_warning` and (for OR)
+  `peto_Q_k`; the self-checking R script includes the same MH disclosure in comments.
 - "Validate this analysis in R" (webR, in the browser) and an offline replay of the published validation.
 
 Part of the [allmeta](https://github.com/mahmood726-cyber/allmeta) collection.
