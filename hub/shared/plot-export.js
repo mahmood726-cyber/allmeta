@@ -226,6 +226,9 @@
     const pixelWidth = Math.round(widthMm / 25.4 * dpi);
     const pixelHeight = Math.max(1, Math.round(pixelWidth * h / w));
     if (!Number.isSafeInteger(pixelWidth) || !Number.isSafeInteger(pixelHeight) || pixelWidth < 1 || pixelWidth > 32767 || pixelHeight > 32767 || pixelWidth * pixelHeight > 64000000) throw new Error('Figure exceeds raster export size; reduce width or resolution, or use SVG.');
+    // Resolution fields are unsigned 32-bit values, independently of pixel size.
+    if ((format === 'png' && Math.round(dpi / 0.0254) > 0xffffffff) ||
+        (format === 'tiff' && dpi > 0xffffffff)) throw new Error('Requested resolution exceeds export metadata limits.');
     const canvas = document.createElement('canvas');
     canvas.width = pixelWidth;
     canvas.height = pixelHeight;

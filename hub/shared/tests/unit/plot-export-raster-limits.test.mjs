@@ -106,3 +106,25 @@ test('SVG remains independent of raster limits and makes no canvas', async () =>
   assert.match(await blob.text(), /25\.4mm/);
   assert.equal(f.canvases.length, 0);
 });
+
+// A small physical width keeps pixel dimensions valid even at overflowing DPI.
+for (const [format, dpi] of [['png', 109092170], ['tiff', 2 ** 32]]) {
+  test(format + ' rejects resolution metadata overflow before allocating a canvas', async () => {
+    const f = fixture();
+    await assert.rejects(f.artifact(format, dpi, 25.4 / dpi), /resolution.*metadata/i);
+    assert.equal(f.canvases.length, 0);
+  });
+}
+
+test('largest representable PNG and TIFF resolutions retain their exact metadata', async () => {
+  for (const [format, dpi] of [['png', 109092169], ['tiff', 2 ** 32 - 1]]) {
+    const f = fixture();
+    const blob = await f.artifact(format, dpi, 25.4 / dpi);
+    assert.equal(f.canvases[0].width, 1);
+    if (format === 'png') {
+      assert.equal(decodePng(new Uint8Array(await blob.arrayBuffer())).phys.x, Math.round(dpi / .0254));
+    } else {
+      assert.equal(readTiff(Buffer.from(await blob.arrayBuffer())).tags[282][0], dpi);
+    }
+  }
+});
