@@ -16,7 +16,9 @@
   let glossary = {}, english = {}, translated = {}, terms = {}, src = null, lang = 'en';
   let nextId = 0, generation = 0, observer = null, active = null, queued = false, hideTimer;
   const attached = new Map(), choices = new Map(), requests = new Map();
-  const SKIP = 'script,style,textarea,input,button,a,option,select,pre,kbd,samp,[contenteditable],[aria-hidden="true"],[inert],.gloss-skip,[data-gloss-skip],.alm-tooltip,.alm-lang-switch,[data-gloss]';
+  // SVGs are publication artifacts: automatic wrappers split exported warning
+  // text and alter metadata. Explicit data-gloss marks still attach in scan().
+  const SKIP = 'script,style,textarea,input,button,a,option,select,pre,kbd,samp,svg,[contenteditable],[aria-hidden="true"],[inert],.gloss-skip,[data-gloss-skip],.alm-tooltip,.alm-lang-switch,[data-gloss]';
 
   function mergeGlossaries(base, locale) {
     const merged = { ...base };
