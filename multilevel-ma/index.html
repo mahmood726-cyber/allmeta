@@ -96,6 +96,7 @@
 6, 0.42, 0.13, main
 6, 0.38, 0.14, follow-up</textarea>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="input-error" role="alert" hidden></div>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount"></div>
@@ -145,13 +146,27 @@
     // ---- engine (unchanged from pre-retrofit) ----
 
     function parse(text) {
-      return text.trim().split(/\n/).map(function (l) {
+      var rows = [];
+      var numeric = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+      text.split(/\r\n|\r|\n/).forEach(function (l, i) {
+        if (!l.trim()) return;
+        var line = 'Line ' + (i + 1) + ': ';
         var parts = l.split(/,/).map(function (s) { return s.trim(); });
+        if (parts.length < 3 || parts.length > 4) {
+          throw new Error(line + 'expected study, effect, SE, and optional label (3 or 4 fields).');
+        }
         var study = parts[0];
-        var te = parseFloat(parts[1]), se = parseFloat(parts[2]);
-        if (!study || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        return { study: study, te: te, se: se, label: parts[3] || '' };
-      }).filter(Boolean);
+        if (!study) throw new Error(line + 'study is required.');
+        var te = Number(parts[1]), se = Number(parts[2]);
+        if (!numeric.test(parts[1]) || !Number.isFinite(te)) {
+          throw new Error(line + 'effect must be a complete finite number.');
+        }
+        if (!numeric.test(parts[2]) || !Number.isFinite(se) || se <= 0) {
+          throw new Error(line + 'SE must be a complete finite number greater than zero.');
+        }
+        rows.push({ study: study, te: te, se: se, label: parts[3] || '' });
+      });
+      return rows;
     }
 
     function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
@@ -304,8 +319,22 @@
     run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src");
 
     function run() {
-      var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3) { _lastResults = null; _lastReml = null; return; }
+      var error = document.getElementById('input-error');
+      error.hidden = true;
+      error.textContent = '';
+      var rows;
+      try {
+        rows = parse(document.getElementById('src').value);
+        if (rows.length < 3) throw new Error('At least 3 effect sizes are required.');
+      } catch (err) {
+        _lastResults = null; _lastReml = null;
+        document.getElementById('summary').innerHTML = '';
+        document.getElementById('body').innerHTML = '';
+        document.getElementById('forest').innerHTML = '';
+        error.textContent = err.message;
+        error.hidden = false;
+        return;
+      }
       var f = fit(rows);
 
       var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };
@@ -450,7 +479,7 @@
     // ---- load CSV rows into textarea ----
     window.__almLoad = function (rows) {
       var lines = rows.map(function (r) {
-        return [r.study || '', r.effect || r.te || '', r.SE || r.se || '', r.label || ''].join(', ');
+        return [r.study ?? '', r.effect ?? r.te ?? '', r.SE ?? r.se ?? '', r.label ?? ''].join(', ');
       });
       document.getElementById('src').value = lines.join('\n');
       run();
@@ -469,6 +498,13 @@
         { name: 'SE',     required: true,  type: 'float',  example: '0.12' },
         { name: 'label',  required: false, type: 'string', example: 'outcome A' },
       ],
+      parse: function (text, columns) {
+        // Preserve numeric tokens for parse(): coercion would accept radix literals
+        // and turn malformed values into null, allowing __almLoad's alias fallback.
+        return window.alm.csvUpload.parse(text, columns.map(function (column) {
+          return { name: column.name, type: 'string' };
+        }));
+      },
       onParse: function (result) {
         window.alm.resetUndo.snapshot();
         window.__almLoad(result.rows);
