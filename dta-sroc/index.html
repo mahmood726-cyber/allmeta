@@ -118,7 +118,7 @@
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount" style="margin-bottom:0.75rem;"></div>
-          <span class="hint"><abbr data-gloss="TP">TP</abbr> = true positives, <abbr data-gloss="FP">FP</abbr> = false positives, <abbr data-gloss="FN">FN</abbr> = false negatives, <abbr data-gloss="TN">TN</abbr> = true negatives. With a covariate, add it as a last column.</span>
+          <span class="hint"><abbr data-gloss="TP">TP</abbr> = true positives, <abbr data-gloss="FP">FP</abbr> = false positives, <abbr data-gloss="FN">FN</abbr> = false negatives, <abbr data-gloss="TN">TN</abbr> = true negatives. With a covariate, add it as a last column. Use exactly the listed columns; quote labels containing commas (e.g. &quot;Smith, 2024&quot;). Enter counts without thousands separators or decimal commas.</span>
 
         <label>
           <span class="lbl">Example data (datasets shipped with the R package mada)</span>
@@ -332,7 +332,33 @@
       return Number.isSafeInteger(count) && count >= 0 ? count : NaN;
     }
 
-    // Rows: label, TP, FP, FN, TN [, covariate]. Labels may contain commas (all leading fields).
+    // Single-line CSV/TSV fields; quote labels containing delimiters or quotes.
+    function studyFields(raw) {
+      const fields = [];
+      let value = '', quoted = false, closed = false;
+      for (let i = 0; i < raw.length; i++) {
+        const ch = raw[i];
+        if (quoted) {
+          if (ch === '"' && raw[i + 1] === '"') { value += '"'; i++; }
+          else if (ch === '"') { quoted = false; closed = true; }
+          else value += ch;
+        } else if (ch === ',' || ch === '\t') {
+          fields.push(value.trim()); value = ''; closed = false;
+        } else if (ch === '"' && !closed && !value.trim()) {
+          value = ''; quoted = true;
+        } else if (ch === '"' || (closed && ch.trim())) {
+          throw new Error('invalid quoting; quote the entire field and double embedded quotes');
+        } else if (!closed) value += ch;
+      }
+      if (quoted) throw new Error('unterminated quoted field');
+      fields.push(value.trim());
+      return fields;
+    }
+    function formatStudyLabel(label) {
+      return /[,"\t]/.test(label) ? '"' + label.replace(/"/g, '""') + '"' : label;
+    }
+
+    // Rows: label, TP, FP, FN, TN [, covariate]. No extra columns are inferred as labels.
     function parseStudies(text, covMode) {
       const studies = [], warnings = [];
       const lines = String(text || '').split(/\r?\n/);
@@ -341,14 +367,25 @@
       for (let i = 0; i < lines.length; i++) {
         const raw = lines[i].trim();
         if (!raw || raw.startsWith('#')) continue;
-        const parts = raw.split(/\s*[,\t]\s*/);
+        let parts;
+        try { parts = studyFields(raw); }
+        catch (error) {
+          warnings.push(`Line ${i + 1}: ${error.message}`);
+          firstRecord = false;
+          continue;
+        }
+        if (parts.length > nc + 1) {
+          warnings.push(`Line ${i + 1}: expected label and exactly ${nc} data columns; found ${parts.length - 1}. Quote labels containing commas; do not use thousands separators or decimal commas in counts.`);
+          firstRecord = false;
+          continue;
+        }
         if (parts.length < nc + 1) {
           const missing = COUNT_FIELDS.concat(covMode === 'last' ? ['covariate'] : []).slice(parts.length - 1);
           warnings.push(`Line ${i + 1} (${parts[0] || 'unnamed study'}): missing ${missing.join(', ')}; need label and ${nc} data columns`);
           firstRecord = false;
           continue;
         }
-        const offset = parts.length - nc;
+        const offset = 1;
         const numericFields = parts.slice(offset, offset + 4);
         const cov = covMode === 'last' ? parts[parts.length - 1] : null;
         const isHeader = firstRecord &&
@@ -356,7 +393,7 @@
           (covMode !== 'last' || /^(cov|covariate)$/i.test(cov));
         firstRecord = false;
         if (isHeader) continue;
-        const label = parts.slice(0, offset).join(', ').trim();
+        const label = parts[0].trim();
         const rowName = `Line ${i + 1} (${label || 'unnamed study'})`;
         const counts = numericFields.map(parseCount);
         if (!counts.every(Number.isSafeInteger)) {
@@ -593,7 +630,7 @@
         parts.push(statCard("Moses α (intercept)", fmt(a.moses.A1, 3)));
         parts.push(statCard("Moses β (slope)", fmt(a.moses.B1, 3)));
       }
-      if (a.rho != null) parts.push(statCard("Spearman ρ (threshold)", fmt(a.rho, 3) + (Math.abs(a.rho) > 0.6 ? " ⚠" : "")));
+      if (a.rho != null) parts.push(statCard("Spearman ρ (threshold)", fmt(a.rho, 3) + (a.rho > 0.6 ? " ⚠" : "")));
       if (a.deeks) parts.push(statCard("Deeks' test p", fmt(a.deeks.p, 3) + (a.deeks.p < 0.10 ? " ⚠" : "")));
       _lastBivar = b; _lastDeeks = a.deeks; _lastMetareg = a.metareg;
       let tables = "";
@@ -605,7 +642,7 @@
       if (dh) dh.innerHTML = a.deeks ? deeksSvg(a.deeks) : "";
 
       const extras = a.errors.slice();
-      if (a.rho != null && Math.abs(a.rho) > 0.6) extras.push("Spearman |ρ| > 0.6 — threshold effect likely. Report the SROC curve rather than a single pooled Se/Sp pair.");
+      if (a.rho != null && a.rho > 0.6) extras.push("Spearman ρ > 0.6 between logit sensitivity and logit false-positive rate — a positive association suggests a threshold effect. Report the SROC curve rather than a single pooled Se/Sp pair.");
       const nz = studies.filter(s => s.zero).length;
       if (nz && a.opts.correctionControl === "all") extras.push(nz + " stud" + (nz === 1 ? "y has" : "ies have") + " a zero cell, so 0.5 was added to every cell of every study (mada's default rule).");
       if (nz && a.opts.correctionControl === "single") extras.push(nz + " stud" + (nz === 1 ? "y has" : "ies have") + " a zero cell; 0.5 was added to the cells of " + (nz === 1 ? "that study" : "those studies") + " only.");
@@ -811,7 +848,7 @@
               throw new Error('Row ' + (i + 1) + ' (' + label + '): TP + FN and FP + TN must both be positive safe-integer denominators');
             labels.push(label);
             countRows.push(cells);
-            return [label].concat(cells).join(', ');
+            return [formatStudyLabel(label)].concat(cells).join(', ');
           });
           const proposed = lines.join('\n');
           const check = parseStudies(proposed, '');

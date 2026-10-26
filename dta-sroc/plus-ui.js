@@ -5,7 +5,7 @@ host.innerHTML=`<h2>Bivariate meta-regression extras</h2>
 <p>One study-level covariate. Conditional summary point and 95% confidence and prediction regions in ROC space. No SROC curve is drawn for meta-regression, as in mada.</p>
 <label>Reference configuration <select id="plus-example"><option value="">Choose reference data</option></select></label> <button id="plus-load" type="button">Load reference data</button>
 <p id="plus-source"></p>
-<label>Study data: TP,FN,FP,TN,x (one row per study; x in the units supplied)<textarea id="plus-data" rows="7" style="width:100%"></textarea></label>
+<label>Study data: TP,FP,FN,TN,x (one row per study; x in the units supplied)<textarea id="plus-data" rows="7" style="width:100%"></textarea></label>
 <label>Method <select id="plus-method"><option value="reml">REML</option><option value="ml">ML</option><option value="fixed">Fixed effect</option></select></label>
 <label>Continuity correction (0.5) <select id="plus-correction"><option value="all">All studies when any cell is zero</option><option value="single">Studies with a zero cell</option><option value="none">None</option></select></label>
 <label>Covariate prediction value <input id="plus-at" type="number" step="any" value="0"></label>
@@ -18,7 +18,7 @@ const el=id=>document.getElementById('plus-'+id);
 let current=null;
 // Decimal and exponent numbers only: Number() would also accept 0x1F, 0b101, 0o17 and Infinity.
 const DECIMAL=/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
-function input(){const rows=el('data').value.trim().split(/\r?\n/).map(line=>{const a=line.split(',');if(a.length!==5||a.some(v=>!DECIMAL.test(v.trim())))throw Error('Each row must contain TP,FN,FP,TN,x');return Object.fromEntries(['TP','FN','FP','TN','x'].map((k,i)=>[k,Number(a[i])]));});
+function input(){const rows=el('data').value.trim().split(/\r?\n/).map(line=>{const a=line.split(',');if(a.length!==5||a.some(v=>!DECIMAL.test(v.trim())))throw Error('Each row must contain TP,FP,FN,TN,x');return Object.fromEntries(['TP','FP','FN','TN','x'].map((k,i)=>[k,Number(a[i])]));});
  if(!el('at').value.trim()||!el('prevalence').value.trim())throw Error('Prediction value and prevalence are required');
  return {rows,method:el('method').value,correction:el('correction').value,at:Number(el('at').value),prevalence:Number(el('prevalence').value)};}
 function model(s){const f=AlmDTAPlus.fit(s.rows,s.method,s.correction),q=AlmDTAPlus.predict(f,s.at,s.prevalence);return {input:s,coefficients:f.coefTable.map(v=>({outcome:v.outcome,term:v.term,estimate:v.estimate,se:v.se,z:v.z,p:v.p,lo:v.ci[0],hi:v.ci[1]})),prediction:q,studies:s.rows.length};}
@@ -34,7 +34,7 @@ function clear(){current=null;el('results').replaceChildren();el('export').disab
 function scaleNote(s){if(!AlmDTAPlus.scaleNoteShown(s.rows))return '';const m=AlmDTAPlus.covariateMoments(s.rows);
  return `The covariate is not standardised: its mean is ${(Math.abs(m.mean)/m.sd).toPrecision(3)} standard deviations from zero and its SD is ${m.sd.toPrecision(3)}. The intercept is the value at x = 0 (for raw calendar years, far outside the data). The fit is computed on the standardised covariate, (x - mean)/SD, and reported in the supplied units; in the validation sets it agrees with mada on the standardised covariate, back-transformed, apart from a few extreme-scale cases. mada::reitsma run on these raw values can differ from it by more than the 1e-6 validation tolerance in standard errors, intervals and regions, also for a centred covariate with a large or small SD. Standardise the covariate (x - mean)/SD to compare with R.`;}
 function render(){clear();try{const s=input();current=model(s);el('results').innerHTML=html(current);el('export').disabled=false;el('scale-note').textContent=scaleNote(s);}catch(e){el('error').textContent=e.message;}return current;}
-function set(s){el('data').value=s.rows.map(r=>['TP','FN','FP','TN','x'].map(k=>r[k]).join(',')).join('\n');for(const k of ['method','correction','at','prevalence'])el(k).value=s[k];return render();}
+function set(s){el('data').value=s.rows.map(r=>['TP','FP','FN','TN','x'].map(k=>r[k]).join(',')).join('\n');for(const k of ['method','correction','at','prevalence'])el(k).value=s[k];return render();}
 function exportJSON(){if(!current)throw Error('No current extras result');return JSON.stringify(current,null,2);}
 el('fit').onclick=render;el('export').onclick=()=>{const url=URL.createObjectURL(new Blob([exportJSON()],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='dta-sroc-extras.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),0);};
 for(const k of ['data','method','correction','at','prevalence'])el(k).addEventListener('input',()=>{clear();el('source').textContent='User data; covariate used in supplied units.';el('validation').textContent='';});
