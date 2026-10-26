@@ -41,9 +41,16 @@
       if (/[\r\n,]/.test(label)) throw new Error('Study labels cannot contain commas or line breaks in this app.');
       return r.yi + ', ' + r.sei + (label ? ', ' + label : '');
     });
-    var before = global.__almLimitValidationSnapshot();
-    try { el('src').value = lines.join('\n'); run(); }
-    catch (e) { global.__almLimitValidationRestore(before); throw e; }
+    var before = global.__almLimitValidationSnapshot(), plus = global.AlmLimitPlusUI.snapshot();
+    var plusStatus = el('plus-status').textContent;
+    try {
+      el('src').value = lines.join('\n'); run();
+      global.AlmLimitPlusUI.restore(null);
+    } catch (e) {
+      global.__almLimitValidationRestore(before); global.AlmLimitPlusUI.restore(plus);
+      el('plus-status').textContent = plusStatus;
+      throw e;
+    }
     return { ok: true, n: records.length };
   }
 
