@@ -874,10 +874,10 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      // The #alm-plus extras are kept out of the original autosave so its keys and
-      // positional idx:N indices stay exactly as before the extras were added.
+      // Keep both auxiliary panels out of the original autosave. Their controls
+      // must not shift legacy idx:N keys or trigger writes to the native draft.
       AlmAutosave.install({ appKey: 'dta-sroc', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-features *)'; }) });
     }
   });
 })();

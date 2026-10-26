@@ -349,3 +349,37 @@ test('AXE: all four feature tabs; keyboard navigation', async ({ page }) => {
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab', { name: 'Report text', exact: true })).toBeFocused();
 });
+
+
+test('AUTOSAVE: feature controls never enter or trigger the legacy draft', async ({ page }) => {
+  await open(page, 'entry');
+  await page.evaluate(() => AlmFeatures.open('dta-sroc', 'share'));
+  const keys = ['alm-plot-1-format', 'alm-plot-1-physical-width', 'alm-plot-1-resolution',
+    'f-cc', 'f-cov', 'f-data', 'f-example', 'f-method', 'f-title',
+    'idx:1', 'idx:9', 'idx:11', 'idx:12', 'idx:13', 'idx:14', 'idx:15',
+    'idx:16', 'idx:17', 'idx:18', 'idx:19'];
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('alm-autosave:dta-sroc')));
+  await page.evaluate(() => {
+    localStorage.removeItem('alm-autosave:dta-sroc');
+    document.getElementById('f-data').dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect.poll(saved).not.toBeNull();
+  const disabled = await page.evaluate(() => [...document.querySelectorAll('[data-autosave-index]')]
+    .filter(el => el.disabled && !el.closest('#alm-plus, #alm-features'))
+    .map(el => el.id || el.name || 'idx:' + el.dataset.autosaveIndex));
+  expect(Object.keys((await saved()).values).sort()).toEqual(keys.filter(k => !disabled.includes(k)).sort());
+  await page.evaluate(() => {
+    localStorage.removeItem('alm-autosave:dta-sroc');
+    const fields = document.querySelectorAll('#alm-features textarea, #alm-features select, #alm-features input');
+    if (!fields.length) throw new Error('Feature controls must be mounted');
+    fields.forEach(el => {
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+  await page.waitForTimeout(1500);
+  expect(await saved()).toBeNull();
+  // Positive control: the native title still saves after feature interaction.
+  await page.fill('#f-title', 'Native draft control');
+  await expect.poll(async () => (await saved())?.values['f-title']).toBe('Native draft control');
+});
