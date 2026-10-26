@@ -20,7 +20,8 @@ function harness({ adjusted = NaN, dropped = 0 } = {}) {
   const context = vm.createContext({ document, console, Event: class { constructor(type) { this.type = type; } },
     setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); } });
   context.window = context;
-  for (const file of ['shared/copas-core.js', 'shared/canonical-datasets.js', 'shared/hero-examples.js']) vm.runInContext(fs.readFileSync(new URL(file, root), 'utf8'), context);
+  for (const file of ['shared/copas-core.js', 'shared/canonical-datasets.js', 'shared/hero-examples.js', 'hub/shared/csv-upload.js']) vm.runInContext(fs.readFileSync(new URL(file, root), 'utf8'), context);
+  const csvParse = context.alm.csvUpload.parse;
   context.AlmMaCore = { pool: () => ({ mu: .3, se: .1, tau2: 0 }) };
   context.AlmCopasCore.copas = input => {
     calls++;
@@ -32,11 +33,13 @@ function harness({ adjusted = NaN, dropped = 0 } = {}) {
   const urlState = Object.assign(() => {}, { read: () => ({}), write: () => true, isSuspended: () => false });
   context.alm = { urlState };
   for (const name of ['csvUpload', 'chartDownload', 'axisControls', 'resultsExport', 'resetUndo', 'tooltips']) context.alm[name] = opts => { context[name + 'Options'] = opts; };
+  context.alm.csvUpload.parse = csvParse;
   for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) vm.runInContext(block[1], context);
   context.__almCopasProfileMLE = () => ({ TE: .2, seTE: .1, rho: .5, tau: 0 });
   function flush() { let guard = 0; while (timers.size) { assert.ok(++guard < 20); const pending = [...timers.values()]; timers.clear(); pending.forEach(fn => fn()); } }
   flush();
   return { context, el, flush, get calls() { return calls; },
+    csv(text) { const opts = context.csvUploadOptions; opts.onParse((opts.parse || csvParse)(text, opts.columns)); },
     edit(text) { el('src').value = text; el('src').dispatchEvent({ type: 'input' }); },
     run() { el('btn-run').dispatchEvent({ type: 'click' }); flush(); },
     hero() { el('alm-hero-mount').dispatchEvent({ type: 'change', target: { closest: () => ({ value: 'bcg' }) } }); } };
@@ -154,5 +157,76 @@ test('control: mixed whitespace/comma separators keep the existing effect-first 
 test('missing comma-delimited SE cannot be replaced by a numeric label', () => {
   const h = harness(); h.edit(valid + '\n.5,,.4'); h.run();
   assert.equal(h.context._almLastCopas().k, 3);
+  assert.equal(h.context._almLastCopas().dropped_rows, 1);
+});
+
+test('review-270: CSV upload preserves tokens for the same numeric validation as pasted input', () => {
+  const h = harness();
+  h.csv('yi,sei,study\n.2,.1,A\n.3,.2,B\n.4,.3,C\n0x10,.2,Hex effect\n.5,0b10,Binary SE\n0o10,.2,Octal effect');
+  h.flush();
+  assert.equal(h.context._almLastCopas().k, 3);
+  assert.equal(h.context._almLastCopas().dropped_rows, 3);
+  assert.match(h.el('k-warn').textContent, /3 .*row\(s\).*refused/);
+});
+
+test('review-270 control: real CSV parser accepts decimal, signed and scientific numbers with quoted labels', () => {
+  const h = harness();
+  h.csv('yi,sei,study\n0,1e-1,"Zero, study"\n-3e-1,+.2,Negative\n+.4,3E-1,Positive');
+  h.flush();
+  const result = h.context._almLastCopas();
+  assert.equal(result.k, 3);
+  assert.equal(result.dropped_rows, 0);
+  assert.deepEqual(Array.from(result.rows, r => [r.te, r.se]), [[0, .1], [-.3, .2], [.4, .3]]);
+});
+
+test('review-270: empty and header-only CSV invalidate the previous fit and cancel pending refits', () => {
+  for (const csv of ['', 'yi,sei,study\n']) {
+    const h = harness();
+    h.el('btn-run').dispatchEvent({ type: 'click' });
+    h.csv(csv);
+    assert.equal(h.el('src').value, '');
+    assert.equal(h.context._almLastCopas(), null);
+    assert.equal(h.el('body').innerHTML, '');
+    assert.equal(h.el('plot').innerHTML, '');
+    h.flush();
+    assert.equal(h.calls, 1);
+    assert.equal(h.context._almLastCopas(), null);
+    assert.match(h.el('fit-status').textContent, /0 rows read; 0 row\(s\) refused\. No fit/);
+    assert.equal(h.el('interpretation').textContent, '');
+    assert.equal(h.context.chartDownloadOptions.getReceiptInput(), null);
+  }
+});
+
+test('review-270 control: a nonempty CSV replaces the old dataset and produces a current fit', () => {
+  const h = harness();
+  h.csv('yi,sei\n-.2,.1\n-.3,.2\n-.4,.3\n-.5,.4');
+  assert.equal(h.context._almLastCopas(), null);
+  h.flush();
+  assert.equal(h.context._almLastCopas().k, 4);
+  assert.equal(h.context._almLastCopas().rows[0].te, -.2);
+  assert.equal(h.context._almLastCopas().dropped_rows, 0);
+});
+
+test('review-270: Undo restores uploaded refusal provenance with the restored dataset', () => {
+  const h = harness();
+  h.csv('yi,sei\n.2,.1\n.3,.2\n.4,.3\noops,.2'); h.flush();
+  assert.equal(h.context._almLastCopas().dropped_rows, 1);
+  const snap = h.context.resetUndoOptions.snapshot();
+  h.edit(valid); h.run();
+  assert.equal(h.context._almLastCopas().dropped_rows, 0);
+  h.context.resetUndoOptions.restore(snap); h.flush();
+  assert.equal(h.context._almLastCopas().dropped_rows, 1);
+  assert.match(h.el('k-warn').textContent, /1 .*row\(s\).*refused/);
+  h.run();
+  assert.equal(h.context._almLastCopas().dropped_rows, 1);
+});
+
+test('review-270 control: restoring ordinary text does not inherit unrelated upload refusals', () => {
+  const h = harness();
+  const clean = h.context.resetUndoOptions.snapshot();
+  h.csv('yi,sei\n.2,.1\n.3,.2\n.4,.3\noops,.2'); h.flush();
+  h.context.resetUndoOptions.restore(clean); h.flush();
+  assert.equal(h.context._almLastCopas().dropped_rows, 0);
+  h.context.resetUndoOptions.restore({ src: valid + '\ninvalid' }); h.flush();
   assert.equal(h.context._almLastCopas().dropped_rows, 1);
 });

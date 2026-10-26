@@ -734,8 +734,10 @@
 
     // ---- snapshot/restore helpers for reset-undo ----
     function snapshot() {
+      var src = document.getElementById('src').value;
       return {
-        src: document.getElementById('src').value,
+        src: src,
+        refusedOnLoad: src === _loadedText ? _refusedOnLoad : 0,
       };
     }
 
@@ -743,6 +745,8 @@
       if (!snap) return;
       if (snap.src    !== undefined) document.getElementById('src').value      = snap.src;
       inputChanged();
+      _refusedOnLoad = snap.refusedOnLoad || 0;
+      _loadedText = document.getElementById('src').value;
       runDeferred();
     }
 
@@ -752,7 +756,7 @@
     // as 30 for anyone who uploaded a CSV rather than pasting -- the textarea
     // fix covered one of the page's two readers (review-212 MAJOR-6).
     window.__almCopasLoad = function (rows) {
-      if (!rows || rows.length < 1) return;
+      if (!rows) return;
       var lines = [], refused = 0;
       rows.forEach(function (r) {
         var te  = num(r.yi  !== undefined ? r.yi  : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te)));
@@ -804,6 +808,13 @@
         { name: 'sei',   required: true,  type: 'float',  example: '0.08' },
         { name: 'study', required: false, type: 'string', example: 'S1'   },
       ],
+      // Keep numeric tokens intact until the Copas whole-token reader checks
+      // them; the generic float coercion accepts JavaScript hex/binary syntax.
+      parse: function (text, columns) {
+        return window.alm.csvUpload.parse(text, columns.map(function (column) {
+          return { name: column.name, type: 'string' };
+        }));
+      },
       onParse: function (result) {
         if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
           window.alm.resetUndo.snapshot();
