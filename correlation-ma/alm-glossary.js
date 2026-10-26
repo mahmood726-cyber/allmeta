@@ -94,6 +94,7 @@ window.alm.tooltips({
     "degrees of freedom": "DF",
     "Degrees of freedom": "DF",
     "z": "FisherZ",
+    "Wald z": "ZTest",
     "z-test": "ZTest",
     "Z-test": "ZTest",
     "Normal": "ZTest",

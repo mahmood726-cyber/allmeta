@@ -54,7 +54,7 @@ window.alm.tooltips({
     "TN": "TN",
     "Se": "Se",
     "sensitivity": "Se",
-    "Sensitivity": "Sensitivity",
+    "Sensitivity": "Se",
     "Sp": "Sp",
     "Specificity": "Sp",
     "FPR": "FPR",
