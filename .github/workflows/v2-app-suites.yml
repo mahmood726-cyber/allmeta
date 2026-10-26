@@ -108,15 +108,26 @@ jobs:
           python-version: "3.12"
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Include feature specs with the shared configuration
+      - name: Preserve shared and feature suite configurations
         run: |
-          # The default config excludes features-*.spec.mjs. Inherit everything
-          # else verbatim, including its browser, web server, timeouts and retries.
+          # Feature specs need their own webR timeout and single-worker limit.
+          # Keep each suite's settings and disjoint selection in separate projects
+          # so a mixed app shard still produces one report and one exit status.
           cat > playwright.v2-ci.config.mjs <<'CONFIG'
           import base from './playwright.config.mjs';
+          import features from './playwright.features.config.mjs';
+          const projectsFor = ({ projects, webServer, ...settings }, suite) =>
+            projects.map(project => ({
+              ...settings,
+              ...project,
+              name: `${project.name}-${suite}`,
+              testIgnore: project.testIgnore ?? settings.testIgnore ?? [],
+              use: { ...settings.use, ...project.use },
+            }));
           export default {
             ...base,
-            testIgnore: base.testIgnore.filter(pattern => pattern !== 'features-*.spec.mjs'),
+            webServer: [base.webServer, features.webServer],
+            projects: [...projectsFor(base, 'shared'), ...projectsFor(features, 'features')],
           };
           CONFIG
       - name: Run shard
