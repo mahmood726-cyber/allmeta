@@ -199,7 +199,6 @@ window.alm.tooltips({
     "R² (adjusted)": "Determination",
     "case-control": "CaseControl",
     "person-time": "PersonTime",
-    "incidence rate": "PersonTime",
     "cumulative incidence": "CumulativeIncidence",
     "non-linearity": "Nonlinearity",
     "sensitivity analysis": "Sensitivity",
