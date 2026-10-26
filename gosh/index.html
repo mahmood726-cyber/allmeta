@@ -593,6 +593,24 @@
     window._almLastGosh = function () { return _lastResults; };
     // Share restoration validates with the same side-effect-free input parser.
     window.__almGoshParse = function (text) { return parse(text); };
+    // The feature host asks for revisions while generating text as well as
+    // verifying. Its live adapter replays the page; keep that capture read-only.
+    window.__almGoshFeatureCapture = function (capture) {
+      var savedResults = _lastResults;
+      var saved = ['plot', 'plot-note', 'plot-error', 'input-error', 'sample-error',
+        'm-n', 'm-est', 'm-i2', 'sample-label', 'enum-label', 'analysis-status', 'analysis-stale'].map(function (id) {
+        var node = document.getElementById(id);
+        return { node: node, html: node.innerHTML, display: node.style.display, hidden: node.hidden };
+      });
+      try { return capture(); }
+      finally {
+        _lastResults = savedResults;
+        saved.forEach(function (s) {
+          if (s.node.innerHTML !== s.html) s.node.innerHTML = s.html;
+          s.node.style.display = s.display; s.node.hidden = s.hidden;
+        });
+      }
+    };
     // The controller loads after this inline script; rerun restored/default inputs once it is ready.
     window.__almGoshExactReady = function () { run(); };
 

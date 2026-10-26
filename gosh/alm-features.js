@@ -8,6 +8,20 @@
   var APP = 'gosh';
   function byId(id) { return document.getElementById(id); }
   function axes() { return Array.from(document.querySelectorAll('#alm-axis-mount input')); }
+  function verificationAdapter() {
+    var adapter = (global.AlmLiveAdapters && global.AlmLiveAdapters[APP]) || global.AlmGoshValidationAdapter;
+    if (!adapter || !adapter.live) return adapter;
+    return Object.assign({}, adapter, { live: Object.assign({}, adapter.live, {
+      currentState: function () {
+        var last = global._almLastGosh();
+        if (!last || !byId('analysis-stale').hidden) throw new Error('Run analysis before verifying the current inputs.');
+        if ((last.k > 15 && !last.sampled) || (byId('exact-progress') && !byId('exact-progress').hidden)) {
+          throw new Error('The live R adapter verifies sampled subsets, not streamed exact enumeration. Select Random sampling only and run analysis to verify that result.');
+        }
+        return global.__almGoshFeatureCapture(function () { return adapter.live.currentState(); });
+      }
+    }) });
+  }
   function validRecords(records) {
     if (!Array.isArray(records) || records.length < 3 || records.length > 100) throw new Error('Provide three through one hundred studies.');
     records.forEach(function (r) {
@@ -85,8 +99,8 @@
     entry: { schema: 'generic', apply: apply, provenance: true, usedAs: 'effect and standard error on the supplied analysis scale' },
     text: text,
     verify: {
-      adapter: function () { return (global.AlmLiveAdapters && global.AlmLiveAdapters[APP]) || global.AlmGoshValidationAdapter; },
-      inputs: '#src, #model, #n-sample, #alm-axis-mount input',
+      adapter: verificationAdapter,
+      inputs: '#src, #model, #n-sample, #enum-mode, #alm-axis-mount input',
       rObjects: 'base (rma), g (gosh for enumerated subsets), yi, vi, members, mus, i2s',
       plots: [{ id: 'gosh', title: 'GOSH scatter', width_in: 8, height_in: 6,
         r: 'if (length(yi) <= 15) { plot(g, het="I2") } else { plot(mus, i2s, xlab="Pooled effect", ylab="I squared (%)", main="Captured app subsets") }',
@@ -97,6 +111,7 @@
         // Match textarea assignment on restore without editing the live input.
         // Otherwise pasted CRLF data changes the serialized state on round-trip.
         return { src: byId('src').value.replace(/\r\n/g, '\n'), model: byId('model').value, draws: byId('n-sample').value,
+          enumeration: byId('enum-mode').value || 'auto',
           axes: axes().map(function (e) { return e.type === 'checkbox' ? e.checked : e.value; }),
           entryLog: global.AlmFeaturesState.entryLog };
       },
@@ -110,6 +125,8 @@
         });
         validRecords(records);
         if (['FE', 'DL'].indexOf(s.model) < 0) throw new Error('Unknown pooling model.');
+        var enumeration = s.enumeration === undefined ? 'auto' : s.enumeration;
+        if (['auto', 'exact', 'sample'].indexOf(enumeration) < 0) throw new Error('Unknown enumeration mode.');
         if (typeof s.draws !== 'string' || !Number.isInteger(Number(s.draws)) || Number(s.draws) < 1 || Number(s.draws) > 100000) throw new Error('Invalid draw count.');
         if (!Array.isArray(s.axes) || s.axes.length !== 6) throw new Error('Missing axis settings.');
         s.axes.forEach(function (v, i) {
@@ -118,6 +135,7 @@
         [0, 3].forEach(function (i) { if (s.axes[i] !== '' && s.axes[i + 1] !== '' && Number(s.axes[i]) >= Number(s.axes[i + 1])) throw new Error('Invalid axis range.'); });
         if (s.entryLog !== undefined && !Array.isArray(s.entryLog)) throw new Error('Invalid conversion log.');
         byId('src').value = s.src; byId('model').value = s.model; byId('n-sample').value = s.draws;
+        byId('enum-mode').value = enumeration;
         axes().forEach(function (e, i) {
           if (e.type === 'checkbox') e.checked = s.axes[i]; else e.value = s.axes[i];
           e.dispatchEvent(new Event('change', { bubbles: true }));
