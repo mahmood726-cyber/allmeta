@@ -220,10 +220,23 @@
       for (let i=0;i<lines.length;i++) {
         const raw=lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
-        const parts=raw.split(/\s*[,\t]\s*/);
+        // A quoted label is one field even when it contains commas. Keep the
+        // numeric tail strict so decimal commas cannot silently shift columns.
+        let parts;
+        if (raw.startsWith('"')) {
+          const quoted=raw.match(/^"((?:[^"]|"")*)"[ ]*[,\t](.*)$/);
+          if (!quoted) {
+            first=false;
+            warnings.push("Line "+(i+1)+": invalid quoted label; close the quote and separate label, estimate and SE with commas or tabs.");
+            continue;
+          }
+          parts=[quoted[1].replace(/""/g,'"'),...quoted[2].split(/\s*[,\t]\s*/)];
+        } else {
+          parts=raw.split(/\s*[,\t]\s*/);
+        }
         if (parts.length>3) {
           first=false;
-          warnings.push("Line "+(i+1)+" ("+parts[0]+"): expected exactly 3 fields: label, estimate and SE. Possible decimal comma? Use a decimal point and remove extra fields or delimiters from labels.");
+          warnings.push("Line "+(i+1)+" ("+parts[0]+"): expected exactly 3 fields: label, estimate and SE. Possible decimal comma? Use a decimal point, remove extra fields, and enclose labels containing commas in double quotes.");
           continue;
         }
         const ys=(parts[parts.length-2]||"").trim(), ss=(parts[parts.length-1]||"").trim();
@@ -906,7 +919,7 @@
           const yi=number(r.yi),vi=number(r.vi);
           if (!Number.isFinite(yi) || !Number.isFinite(vi) || vi<=0 || !Number.isFinite(1/vi) || !Number.isFinite(yi/vi))
             throw new Error('CSV row '+(i+1)+': finite yi and positive, representable vi are required');
-          return String(r.study)+', '+String(yi)+', '+String(Math.sqrt(vi));
+          return '"'+String(r.study).replace(/"/g,'""')+'", '+String(yi)+', '+String(Math.sqrt(vi));
         });
         const ta=document.getElementById('f-data');ta.value=lines.join('\n');
         ta.dispatchEvent(new Event('input',{bubbles:true}));
