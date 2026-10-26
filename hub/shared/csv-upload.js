@@ -107,7 +107,7 @@
     var hasCI = rawHeaders.some(function (h) { return /^(lower|upper|lcl|ucl)$/i.test(h); });
     var undeclaredRatioCI = rawHeaders.some(function (h) {
       return /^(or|rr|hr|lower|upper|lcl|ucl)$/i.test(h) &&
-        !columns.some(function (col) { return col.name === h; });
+        !columns.some(function (col) { return col.name.toLowerCase() === h.toLowerCase(); });
     });
 
     // Build headerMap: raw header string -> column descriptor (possibly fuzzy).
@@ -136,7 +136,7 @@
         var sourceName = h.toLowerCase(), targetName = columns[ci].name.toLowerCase();
         if ((/^(n|sd|sample size)$/.test(sourceName) && /^(vi|variance|se|sei)$/.test(targetName)) ||
             (/^(se|sei)$/.test(sourceName) && /^(vi|variance)$/.test(targetName))) continue;
-        if (/^(study|label)$/.test(sourceName) && columns[ci].type) continue;
+        if (/^(study|label)$/.test(sourceName) && (columns[ci].type === 'int' || columns[ci].type === 'float')) continue;
         var d = _lev(h, columns[ci].name, 3);
         if (d < bestDist) { bestDist = d; bestCol = columns[ci]; }
       }
@@ -168,7 +168,7 @@
             (invalidRatio && (col.type === 'int' || col.type === 'float' || /^(or|rr|hr|lower|upper|lcl|ucl)$/i.test(rawHeaders[i])))) {
           obj[col.name] = null; continue;
         }
-        if (col.required && !col.type && raw === '') {
+        if (col.required && (!col.type || col.type === 'string') && raw === '') {
           obj[col.name] = null;
           warnings.push('row ' + r + ': column "' + rawHeaders[i] + '": refused missing required value. Supply this column and its value.');
           continue;
