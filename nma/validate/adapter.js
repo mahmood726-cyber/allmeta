@@ -137,16 +137,8 @@ function currentState() {
   // Reuse the page's parser and the exact engine used to render its results.
   state.result = window.__almNmaCompute(state.text, state.ref, {randomCi:state.ci});
   if (state.result.error) throw new Error(state.result.error);
-  state.rows = [];
-  for (const [i, line] of state.text.split(/\r?\n/).entries()) {
-    if (!line.trim() || line.trim().startsWith('#')) continue;
-    const p = line.trim().split(/\s*[,\t]\s*/);
-    if (p.length < 5) throw new Error(`Line ${i+1}: need five columns`);
-    const est = Number(p[3]), se = Number(p[4]);
-    if ((!Number.isFinite(est) || !Number.isFinite(se)) && state.rows.length === 0 && i < 3 && /estimate|effect|^TE$/i.test(p[3])) continue;
-    if (!Number.isFinite(est) || !Number.isFinite(se) || se <= 0 || p[1] === p[2]) throw new Error(`Line ${i+1}: invalid contrast; validation refused`);
-    state.rows.push({study:p[0], t1:p[1], t2:p[2], est, se});
-  }
+  // Use the same validated, direction-normalized rows as the displayed fit.
+  state.rows = state.result.rows;
   return state;
 }
 function quantities(state) {
