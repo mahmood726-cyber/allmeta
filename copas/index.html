@@ -164,7 +164,7 @@
         <div id="alm-export-mount"></div>
       </div>
 
-      <div class="note"><strong>Interpretation:</strong> &#947; = 0 means no selection (observed = true). Larger &#947; attenuates effects more strongly. If the curve crosses zero as &#947; increases, the observed effect could be explained by selection; otherwise, it is robust.</div>
+      <div id="interpretation" class="note" style="display:none" role="status"></div>
     
       <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
@@ -218,15 +218,22 @@
     // that it can be tested without a browser. Do not re-implement it here.
     var num = CC.parseNumToken;
 
-    function parse(text) {
-      return text.split(/\r?\n/).map(function (l) {
-        var toks = l.trim().split(/[\s,]+/).filter(function (t) { return t.length > 0; });
-        if (toks.length < 2) return null;
-        var te = num(toks[0]), se = num(toks[1]);
-        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        return { te: te, se: se };
-      }).filter(Boolean);
+    function parseInput(text) {
+      var rows = [], refused = 0;
+      text.split(/\r?\n/).forEach(function (line) {
+        line = line.trim();
+        if (!line) return;
+        // Preserve empty comma-delimited fields: ", .2, .3" has no effect.
+        // Whitespace-delimited effect/SE and trailing study labels remain valid.
+        var toks = line.split(/\s*,\s*|\s+/);
+        var te = num((toks[0] || '').trim()), se = num((toks[1] || '').trim());
+        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) { refused++; return; }
+        rows.push({ te: te, se: se });
+      });
+      return { rows: rows, refused: refused };
     }
+
+    function parse(text) { return parseInput(text).rows; }
 
     function fmt(x, d) {
       d = d === undefined ? 3 : d;
@@ -349,12 +356,10 @@
     // ---- results storage for export ----
     var _lastResults = null;
 
-    // Rows the CSV reader refused on the last upload. Reported rather than
-    // dropped in silence: a refused row is the whole point of the whole-token
-    // rule, and a user who pasted a malformed file should be told so. Consumed
-    // by the run() the upload triggers, so it cannot go stale across a later
-    // control change.
+    // Upload refusals belong to the loaded dataset and survive option refits.
+    // Editing/replacing the source resets them; paste refusals are counted anew.
     var _refusedOnLoad = 0;
+    var _loadedText = null;
 
     // ---- cost of a fit, and how the page stays honest about it ----
     //
@@ -380,6 +385,7 @@
     //     being a figure that appears nowhere.
     var FIT_DEBOUNCE_MS = 300;
     var _debounceTimer = null;
+    var _fitTimer = null;
     var _sensResults = [];     // last rendered sensitivity rows, for redraw
 
     function statusEl() { return document.getElementById('fit-status'); }
@@ -392,21 +398,49 @@
       el.style.display = 'block';
     }
 
+    function invalidateResults() {
+      clearTimeout(_debounceTimer);
+      clearTimeout(_fitTimer);
+      _debounceTimer = _fitTimer = null;
+      _lastResults = null;
+      _sensResults = [];
+      ['summary', 'body', 'plot'].forEach(function (id) {
+        document.getElementById(id).innerHTML = '';
+      });
+      var note = document.getElementById('interpretation');
+      note.textContent = '';
+      note.style.display = 'none';
+      var warn = document.getElementById('k-warn');
+      warn.textContent = '';
+      warn.style.display = 'none';
+      showStatus('');
+    }
+
+    function inputChanged() {
+      _refusedOnLoad = 0;
+      _loadedText = null;
+      invalidateResults();
+      var parsed = parseInput(document.getElementById('src').value);
+      showStatus(parsed.rows.length + ' rows read; ' + parsed.refused +
+        ' row(s) refused. Fit the Copas selection model to update results.');
+    }
+
     // Announce, yield once so the browser paints, then fit. Every entry point
     // that is triggered by a user action goes through this; run() itself stays
     // synchronous so tests and the validation harness can call it directly.
     function runDeferred() {
+      invalidateResults();
       var o = readOpts();
       showStatus('Fitting the selection model: ' + o.ngrid + '×' + o.ngrid + ' = ' +
         (o.ngrid * o.ngrid) + ' profile maximum-likelihood fits. This runs in ' +
         'this tab and takes a few seconds.');
       // setTimeout, not requestAnimationFrame: rAF runs BEFORE paint, so the
       // message would not be visible until after the blocking work finished.
-      setTimeout(run, 0);
+      _fitTimer = setTimeout(function () { _fitTimer = null; run(); }, 0);
     }
 
     function runDebounced() {
-      if (_debounceTimer) clearTimeout(_debounceTimer);
+      invalidateResults();
       _debounceTimer = setTimeout(function () {
         _debounceTimer = null;
         runDeferred();
@@ -415,14 +449,15 @@
 
     function run() {
       var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
-      var refusedRows = _refusedOnLoad;
-      _refusedOnLoad = 0;
-      var rows = parse(document.getElementById('src').value);
+      var text = document.getElementById('src').value;
+      var parsed = parseInput(text);
+      var refusedRows = parsed.refused + (text === _loadedText ? _refusedOnLoad : 0);
+      var rows = parsed.rows;
       var warnEl = document.getElementById('k-warn');
       if (warnEl) {
         if (refusedRows > 0) {
-          warnEl.textContent = refusedRows + ' uploaded row(s) were refused: ' +
-            'a field was not a well-formed number end to end (a value like ' +
+          warnEl.textContent = refusedRows + ' input row(s) were refused: ' +
+            'each row needs a numeric effect and a positive SE (a value like ' +
             '".4oops" is rejected, not read as 0.4). ' + rows.length +
             ' row(s) were used.' +
             (rows.length < 15 && rows.length >= 3
@@ -480,9 +515,15 @@
         if (bodyEl) bodyEl.innerHTML = '';
         _sensResults = [];
         drawSens([]);
-        showStatus('');
+        showStatus(rows.length + ' rows read; ' + refusedRows + ' row(s) refused. No fit.');
         return;
       }
+
+      var note = document.getElementById('interpretation');
+      note.textContent = Number.isFinite(fit.TE_adjust)
+        ? 'Interpretation: the adjusted estimate is conditional on the assumed selection model. A curve that does not cross zero does not rule out publication bias.'
+        : 'Interpretation: residual selection bias at every selection level; the Copas model cannot rule out publication bias. No adjusted estimate is reported.';
+      note.style.display = 'block';
 
       var pct = (fit.level_ma * 100);
       var pctLabel = (pct === Math.round(pct) ? String(Math.round(pct)) : pct.toFixed(1)) + '%';
@@ -507,7 +548,7 @@
         k: fit.k,
         fe_pooled: CC.commonEffect(fit.TE, fit.seTE),
         fe_se: feSE,
-        dropped_rows: fit.dropped,
+        dropped_rows: refusedRows + (fit.dropped || 0),
         method: 'Copas & Shi (2000) selection model, metasens::copas pipeline',
         ngrid: fit.ngrid, nlevels: fit.nlevels_arg,
         sign_rsb: fit.sign_rsb, level_ma: fit.level_ma,
@@ -701,6 +742,7 @@
     function restore(snap) {
       if (!snap) return;
       if (snap.src    !== undefined) document.getElementById('src').value      = snap.src;
+      inputChanged();
       runDeferred();
     }
 
@@ -718,9 +760,9 @@
         if (!Number.isFinite(te) || !Number.isFinite(sei) || sei <= 0) { refused++; return; }
         lines.push(te.toString() + ', ' + sei.toString());
       });
-      if (lines.length < 1) return;
       document.getElementById('src').value = lines.join('\n');
       _refusedOnLoad = refused;
+      _loadedText = document.getElementById('src').value;
       runDeferred();
     };
 
@@ -736,6 +778,8 @@
       runDeferred();
     });
 
+    document.getElementById('src').addEventListener('input', inputChanged);
+
     // Debounced: each of these starts a multi-second synchronous fit, and
     // sign.rsb is a number input a user types into.
     ['opt-ngrid', 'opt-tau', 'opt-signrsb', 'opt-level'].forEach(function (id) {
@@ -749,7 +793,7 @@
       MaStudies.attachButtons({
         btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
         textarea: "#src", format: "est-se-label",
-        onAfterLoad: runDeferred,
+        onAfterLoad: function () { inputChanged(); runDeferred(); },
       });
     }
 
@@ -874,7 +918,7 @@
       AlmHero.attachHero({
         container: "#alm-hero-mount",
         textarea: "#src",
-        adapter: "forest",
+        adapter: "effect-se-label",
       });
     }
   });
