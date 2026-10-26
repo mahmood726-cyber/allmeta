@@ -266,7 +266,9 @@
     if (!s || typeof s.data !== 'string' || s.data.length > 200000 ||
         typeof s.title !== 'string' || s.title.length > 200000 || ['cumulative', 'subgroup'].indexOf(s.view) < 0 ||
         !Array.isArray(s.axis) || s.axis.length !== 2 || s.axis.some(function (v) {
-          return typeof v !== 'string' || (v !== '' && (!v.trim() || !Number.isFinite(Number(v))));
+          // Match HTML number-input syntax so assignment cannot silently clear a bound.
+          return typeof v !== 'string' || (v !== '' &&
+            (!/^-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(v) || !Number.isFinite(Number(v))));
         })) throw new Error('Invalid data, view, title or axis limits');
     // All validation precedes mutation. Even invalid min/max combinations are valid app
     // states: restore them so the app can display its existing axis-refusal message.
