@@ -49,6 +49,7 @@
   }
 
   function results() {
+    if (!global.__almLimitResultsCurrent()) return null;
     var last = typeof global._almLastLimit === 'function' && global._almLastLimit();
     if (!last) return null;
     var r = Object.assign({}, last);
@@ -105,7 +106,42 @@
         'This report covers the primary fixed-effect, random-effects and limit analysis. Optional bias sensitivity comparisons are reported separately on the page.'];
     }
   };
-  var text = { app: APP, verifyPackage: 'metasens', results: results, dom: dom, templates: templates };
+  var text = { app: APP, verifyPackage: 'metasens', results: results, dom: dom, templates: templates,
+    stale: function () { return !global.__almLimitResultsCurrent(); } };
+
+  // The archived adapter's currentState() deliberately reruns the page. The v2
+  // host also calls it for report fingerprints and quantity counts, including
+  // while LOO is yielding. Give those readers the completed primary fit instead.
+  // Keep the pinned R script, packages and tolerances; this is only field mapping
+  // from validate/adapter.js, with optional leave_one_out kept out of its schema.
+  var PRIMARY = ['k', 'fe_est', 'fe_se', 'fe_ci_lo', 'fe_ci_hi', 're_est', 're_se',
+    're_ci_lo', 're_ci_hi', 'tau2_dl', 'tau_dl', 'limit_est', 'limit_se',
+    'limit_ci_lo', 'limit_ci_hi', 'slope', 'alpha_r', 'beta_r', 'Q', 'Q_small', 'Q_resid', 'G_squared'];
+  var adapterSource, readAdapter;
+  function featureAdapter() {
+    var source = global.AlmLiveAdapters && global.AlmLiveAdapters[APP] || global.AlmLimitValidationAdapter;
+    if (!source || !source.live) return source;
+    if (source === adapterSource) return readAdapter;
+    adapterSource = source;
+    var live = Object.assign({}, source.live, { compare: Object.assign({}, source.live.compare) });
+    live.currentState = function () {
+      if (!global.__almLimitResultsCurrent()) throw new Error('Run analysis before checking the current inputs.');
+      var rows = global.AlmLimitEngine.parse(el('src').value), r = global._almLastLimit();
+      if (r.k !== rows.length || !Array.isArray(r.te_limit) || r.te_limit.length !== r.k) throw new Error('Invalid primary result dimensions.');
+      var values = PRIMARY.map(function (key) {
+        if (!Number.isFinite(r[key]) && !(key === 'G_squared' && r[key] === null)) throw new Error('Invalid primary quantity ' + key);
+        return { key: key, label: key, value: r[key] };
+      }).concat(r.te_limit.map(function (value, i) {
+        if (!Number.isFinite(value)) throw new Error('Invalid shrunken study effect.');
+        return { key: 'te_limit.' + i, label: 'te_limit.' + i, value: value };
+      }));
+      live.compare.kind = Object.fromEntries(values.map(function (v) { return [v.key, 'rel']; }));
+      return { te: rows.map(function (r) { return r.te; }), se: rows.map(function (r) { return r.se; }), values: values,
+        note: 'DL + beta0; all exported estimates, SEs, CIs, heterogeneity, Q decomposition and shrunken studies. Live meta 8.3-0 / metasens 1.5-3; paper meta 8.5-0 / metasens 1.5-3. R refusal is not a pass.' };
+    };
+    readAdapter = Object.assign({}, source, { live: live });
+    return readAdapter;
+  }
 
   // AlmEntry.convert steps also have flags[], which AlmText otherwise interprets
   // as a per-report provenance record, dropping the step's method and citation.
@@ -172,7 +208,7 @@
     entry: { schema: 'generic', usedAs: 'effect on the entered analysis scale and its standard error', apply: apply },
     text: text,
     verify: {
-      adapter: function () { return global.AlmLiveAdapters && global.AlmLiveAdapters[APP] || global.AlmLimitValidationAdapter; },
+      adapter: featureAdapter,
       inputs: '#src', rObjects: 'm (metagen), l (limitmeta), te, se, out',
       plots: [{ id: 'funnel', title: 'Limit funnel plot', r: 'meta::funnel(l)', width_in: 8, height_in: 6, app: function () { return el('plot'); } }]
     },
@@ -182,16 +218,8 @@
   global.AlmTextSpecs = global.AlmTextSpecs || {};
   global.AlmTextSpecs[APP] = text;
   if (global.AlmFeatures) {
-    if (typeof document !== 'undefined' && el('alm-features')) el('alm-features').style.gridColumn = '1 / -1';
     global.AlmFeatures.register(APP, spec);
-    // The shared UI modules expose mount() but do not register host tabs themselves.
-    if (typeof global.AlmFeatures.registerModule === 'function') {
-      global.AlmFeatures.registerModule('entry', { render: function (panel, ctx) { return global.AlmEntryUI.mount(panel, ctx.block); } });
-      global.AlmFeatures.registerModule('text', { render: function (panel, ctx) {
-        var ui = global.AlmTextUI.mount(panel, { app: ctx.app, text: ctx.block });
-        return { onShow: function () { ui.regenerate(); } };
-      } });
-    }
+    // v2-core supplies lazy Data entry and Report text modules.
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = spec;
 })(typeof window !== 'undefined' ? window : globalThis);

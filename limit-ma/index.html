@@ -157,7 +157,6 @@
       <svg id="loo-plot" role="img" aria-label="Leave-one-out limit estimates and 95% confidence intervals; dashed reference line at the full limit estimate. Refusals are listed in the table." hidden></svg>
     </section>
     <section id="alm-validate" aria-label="Independent R validation" style="grid-column:1/-1"></section>
-    <div id="alm-features"></div>
     <section id="alm-plus" class="panel" aria-labelledby="plus-title" style="grid-column:1/-1">
       <h2 id="plus-title">Bias sensitivity comparisons</h2>
       <p>Compare assumptions, not proof of publication bias. Trim-and-fill is a sensitivity analysis only. All effects use the entered scale.</p>
@@ -191,6 +190,7 @@
       <div id="alm-plus-validate" aria-label="Independent sensitivity R validation"></div>
     </section>
   </main>
+  <div id="alm-features"></div>
   <footer>
     R&#252;cker G, Schwarzer G, Carpenter JR, Binder H, Schumacher M. Treatment-effect estimates adjusted for small-study effects via a limit meta-analysis. Biostatistics 2011;12:122&#8211;142. Browser implementation: the full Rücker limit meta-analysis &mdash; DL &tau;&#178;, radial (Galbraith) regression of TE on the &tau;-inflated SE, limit estimate <code>&beta;<sub>r</sub> + &tau;&middot;&alpha;<sub>r</sub></code> (<code>method.adjust='beta0'</code>) with closed-form SE and the small-study/residual Q decomposition. R-parity: matches <code>metasens::limitmeta(metagen(TE=yi, seTE=sei, method.tau='DL'))</code> to 1e-9 on TE.adjust, seTE.adjust, &alpha;<sub>r</sub>, &beta;<sub>r</sub>, Q.small, Q.resid and G&#178; (pinned <code>meta 8.5-0 / metasens 1.5-3</code> oracle; see <code>limit-ma/validate/README.md</code>).
   </footer>
@@ -203,6 +203,7 @@
     'use strict';
 
     var _lastResults = null;
+    var _resultSource = null;
     var _axisState = null;
     var _validationRun = false;
 
@@ -346,6 +347,7 @@
 
     function refuse(message) {
       _lastResults = null;
+      _resultSource = null;
       document.getElementById('body').innerHTML = '';
       document.getElementById('plot').innerHTML = '';
       document.getElementById('limit-error').textContent = message;
@@ -428,6 +430,7 @@
       body.innerHTML = __bodyParts.join('');
 
       drawFunnel(rows, re, lim);
+      _resultSource = _lastResults ? document.getElementById('src').value : null;
     }
 
     function drawFunnel(rows, re, lim) {
@@ -657,11 +660,12 @@
 
     // Validation uses the page engine and preserves pending input separately from rendered results.
     window.__almLimitValidationSnapshot = function () {
-      return structuredClone({src:document.getElementById('src').value,result:_lastResults,axis:_axisState,
+      return structuredClone({src:document.getElementById('src').value,result:_lastResults,resultSource:_resultSource,axis:_axisState,
         dom:['body','plot','limit-error','limit-range-note','limit-diagnostics'].map(id=>[id,document.getElementById(id).innerHTML])});
     };
     window.__almLimitValidationRestore = function (s) {
       document.getElementById('src').value=s.src;_lastResults=structuredClone(s.result);_axisState=structuredClone(s.axis);
+      _resultSource=s.resultSource;
       s.dom.forEach(([id,html])=>{document.getElementById(id).innerHTML=html;});
       if (window.AlmLimitLoo) window.AlmLimitLoo.restore(_lastResults);
     };
@@ -676,6 +680,10 @@
 
     // Expose for results-export
     window._almLastLimit = function () { return _lastResults; };
+    // Feature fingerprints must read the completed fit, never rerun pending inputs.
+    window.__almLimitResultsCurrent = function () {
+      return !!_lastResults && _resultSource === document.getElementById('src').value;
+    };
 
     // Pure access to the SAME limitMA calculation used by run(), without DOM or state mutation.
     window.AlmLimitEngine = { parse: parse, fit: function (rows) {

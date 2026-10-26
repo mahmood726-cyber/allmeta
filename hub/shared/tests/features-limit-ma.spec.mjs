@@ -25,6 +25,57 @@ async function report(page) {
   });
 }
 
+test('LAYOUT: the feature host does not shift the existing results or sensitivity plots', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  async function capture() {
+    await page.goto(PAGE);
+    await page.evaluate(async () => {
+      await AlmLimitPlusReady;
+      AlmLimitPlusUI.run();
+      await document.fonts.ready;
+      await Promise.all(document.getAnimations().filter(a => a.effect.getComputedTiming().iterations !== Infinity).map(a => a.finished));
+    });
+    return page.evaluate(() => Object.fromEntries(['src', 'btn-run', 'plot', 'loo-plot', 'plus-forest', 'plus-funnel'].map(id => {
+      const n = document.getElementById(id), r = n.getBoundingClientRect();
+      return [id, { x: r.x, y: r.y, width: r.width, height: r.height, svg: n.tagName.toLowerCase() === 'svg' ? n.innerHTML : null }];
+    })));
+  }
+  const mounted = await capture();
+  await expect(page.locator('#alm-features .alm-f-toggle')).toBeVisible();
+  await page.route('**/limit-ma/index.html', async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: (await response.text()).replace('<div id="alm-features"></div>', '') });
+  });
+  const withoutFeatureHost = await capture();
+  await expect(page.locator('#alm-features')).toHaveCount(0);
+  expect(mounted).toEqual(withoutFeatureHost);
+});
+
+test('LIFECYCLE: report checks preserve pending input and completed leave-one-out', async ({ page }) => {
+  await open(page); await tab(page, 'Report text');
+  await expect(page.locator('.alm-text-body')).toBeVisible();
+  const before = await page.evaluate(() => ({ result: structuredClone(_almLastLimit()), plot: document.getElementById('plot').innerHTML }));
+  const original = await page.locator('#src').inputValue();
+  await page.locator('#src').fill(original.replace('0.55', '0.56'));
+  // This status proves the deferred report check ran, rather than racing its timer.
+  await expect(page.locator('.alm-text-status')).toContainText('press Run analysis');
+  await expect(page.locator('#analysis-stale')).toBeVisible();
+  expect(await page.evaluate(() => ({ result: structuredClone(_almLastLimit()), plot: document.getElementById('plot').innerHTML }))).toEqual(before);
+  await page.locator('#btn-run').click();
+  await expect(page.locator('#analysis-stale')).toBeHidden();
+  await page.locator('.alm-text-regenerate').click();
+  await expect(page.locator('.alm-text-body')).toBeVisible();
+  await page.locator('#loo-run').click();
+  await expect(page.locator('#loo-body tr')).toHaveCount(10);
+  const completed = await page.evaluate(() => structuredClone(_almLastLimit()));
+  await page.locator('.alm-text-regenerate').click();
+  expect(await page.evaluate(() => structuredClone(_almLastLimit()))).toEqual(completed);
+  expect(await page.evaluate(() => AlmFeatures.liveAdapter(AlmFeatures.get('limit-ma')).currentState().values.length)).toBe(32);
+  await page.locator('#src').fill(original);
+  await expect(page.locator('#loo-body tr')).toHaveCount(0);
+  await expect(page.locator('#loo-csv')).toBeDisabled();
+});
+
 test('ENTRY: three table formats reproduce the built-in example through the shared APIs', async ({ page }) => {
   await open(page);
   const out = await page.evaluate(() => {
