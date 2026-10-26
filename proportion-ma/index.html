@@ -356,7 +356,18 @@
       var tauEst = document.getElementById('tau-est').value;
       var rows;
       try { rows = parseTable(text); }
-      catch (error) { refuseInput(error.message); return; }
+      catch (error) {
+        refuseInput(error.message);
+        if (!text.trim()) {
+          // An empty run has no result to retain as stale. Keep the input
+          // error and export guards, but remove the previous analysis.
+          ['res-body', 'het', 'forest'].forEach(function (id) {
+            document.getElementById(id).innerHTML = '';
+          });
+          document.getElementById('analysis-stale').hidden = true;
+        }
+        return;
+      }
 
       // DL k<10 warning
       var kw = document.getElementById('k-warn');
