@@ -6,11 +6,12 @@ export const root = new URL('../../../../../../', import.meta.url);
 export function load(interceptOnly = false) {
   const read = path => fs.readFileSync(new URL(path, root), 'utf8');
   const html = read('rve-meta/index.html');
-  let src = /<textarea id="src"[^>]*>([\s\S]*?)<\/textarea>/.exec(html)[1];
+  let src = JSON.parse(/var SMALL_EXAMPLE = ("[^\r\n]*");/.exec(html)[1]);
   if (interceptOnly) src = src.split('\n').map(line => line.split(',').slice(0, 3).join(',')).join('\n');
   const nodes = {
     src: { value: src }, 'f-rho': { value: '0.8' },
-    'f-names': { value: interceptOnly ? '' : 'intervention, dose_weeks' }, 'coef-body': {}
+    'f-names': { value: interceptOnly ? '' : 'intervention, dose_weeks' },
+    'f-centre': { checked: false }, 'coef-body': {}
   };
   const context = vm.createContext({ console, structuredClone, setTimeout, clearTimeout });
   context.window = context;
@@ -23,7 +24,9 @@ export function load(interceptOnly = false) {
   });
   const fit = context.AlmRVE.fitCORR(rows, { rho: 0.8 });
   const summary = context.AlmRVE.summary(fit);
-  context.__almLastRVE = () => ({ fit, summary });
+  const inputs = { rows: rows.map(r => ({ cluster: r.cluster, yi: r.yi, vi: r.vi, x: r.X.slice(1) })),
+    predictor_names: interceptOnly ? [] : ['intervention', 'dose_weeks'], centred: false };
+  context.__almLastRVE = () => ({ fit, summary, inputs });
   context.document = { getElementById: id => nodes[id], querySelector: () => ({}), addEventListener() {} };
   context.MutationObserver = class { observe() {} };
   context.AlmValidate = { adapters: {} };

@@ -76,7 +76,8 @@
   function apply(records) {
     if (!Array.isArray(records) || !records.length) throw new Error('No rows to apply.');
     var requested = names();
-    var aliases = Object.keys(records[0]).filter(function (k) { return /^x[1-9]\d*$/.test(k); })
+    var aliases = Array.from(new Set(records.flatMap(function (r) { return Object.keys(r); })))
+      .filter(function (k) { return /^x[1-9]\d*$/.test(k); })
       .sort(function (a, b) { return Number(a.slice(1)) - Number(b.slice(1)); });
     var mods = requested.filter(function (k) { return records.some(function (r) { return r[k] !== undefined; }); });
     if (!mods.length) mods = aliases;
@@ -100,7 +101,8 @@
         var suppliedSE = number(r.sei, 'Standard error');
         if (!(suppliedSE > 0) || Math.abs(suppliedSE * suppliedSE - vi) > 1e-9 * vi) throw new Error('Variance and standard error disagree.');
       }
-      return [cluster, yi, vi].concat(mods.map(function (k) { return number(r[k], 'Moderator ' + k); })).join(', ');
+      // Quote cluster IDs so comment markers and literal quotes survive native parsing.
+      return ['"' + cluster.replace(/"/g, '""') + '"', yi, vi].concat(mods.map(function (k) { return number(r[k], 'Moderator ' + k); })).join(', ');
     });
     set({ src: lines.join('\n'), rho: byId('f-rho').value, names: mods.join(', '), centred: byId('f-centre').checked });
     global.AlmFeaturesState.entryLog = (global.AlmFeaturesState.entryLog || []).concat(steps);
