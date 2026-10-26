@@ -647,7 +647,11 @@
         { name: 'label',  required: false, type: 'string', example: 'Study A' },
       ],
       onParse: function (result) {
-        if (result.error) { refuseInput(result.error); return; }
+        if (result.error) {
+          if (window.AlmPropPlus) window.AlmPropPlus.clear();
+          refuseInput(result.error);
+          return;
+        }
         window.alm.resetUndo.snapshot();
         window.__almLoad(result.rows);
       },

@@ -72,7 +72,7 @@
     try {audit();const blob=new Blob([exported()],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='proportion-glmm.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),0);}
     catch(e){el('plus-status').textContent=e.message;}
   };
-  window.AlmPropPlus={run,render,snapshot,exported,display,labelsOK,audit,signature,
+  window.AlmPropPlus={run,render,snapshot,exported,display,labelsOK,audit,signature,clear,
     save:()=>({state:structuredClone(state),html:el('plus-result').innerHTML,status:el('plus-status').textContent,source:el('plus-provenance').textContent,parity:el('plus-parity').textContent,disabled:el('plus-export').disabled}),
     restore:s=>{if(s.state && s.state.inputSignature!==signature()){clear();return;}state=s.state;el('plus-result').innerHTML=s.html;el('plus-status').textContent=s.status;el('plus-provenance').textContent=s.source;el('plus-parity').textContent=s.parity;el('plus-export').disabled=s.disabled;}};
 })();
