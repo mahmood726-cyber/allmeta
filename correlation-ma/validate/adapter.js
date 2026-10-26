@@ -9,7 +9,7 @@ const $ = id => document.getElementById(id);
 const METHODS = ['REML', 'PM', 'DL', 'FE'];
 const OPTIONS = [['REML','REML'],['PM','Paule-Mandel'],['DL','DerSimonian-Laird'],['FE','Fixed-effect']];
 const NUMBERS = ['mu_z','se_z','tau2_z','I2','r','r_lo','r_hi','r_pi_lo','r_pi_hi'];
-const FIELDS = ['_schema','k','method',...NUMBERS,'studies'];
+const FIELDS = ['_schema','k','method','test',...NUMBERS,'studies'];
 const REFUSAL = 'Enter at least 2 studies (label, r, n).';
 const fmt = (n, d = 3) => Number.isFinite(n) ? n.toFixed(d) : '—';
 const serial = x => JSON.stringify(x);
