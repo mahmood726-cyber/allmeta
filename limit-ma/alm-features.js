@@ -24,9 +24,8 @@
   }
   function validateSource(src) {
     if (typeof src !== 'string' || !src.trim() || src.length > 200000) throw new Error('Missing or oversized study data.');
-    var rows = src.trim().split(/\n/).map(function (line) {
-      var p = line.split(',');
-      return { yi: p[0].trim() ? Number(p[0]) : NaN, sei: p[1] && p[1].trim() ? Number(p[1]) : NaN };
+    var rows = global.AlmLimitEngine.parse(src).map(function (row) {
+      return { yi: row.te, sei: row.se };
     });
     validateRows(rows);
   }
