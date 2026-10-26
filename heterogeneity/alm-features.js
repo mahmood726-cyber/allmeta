@@ -57,7 +57,7 @@
       if (/[\r\n\t]/.test(label) || label.charAt(0) === '#') return refuse(row + 'the study label must be one line and must not start with #.');
       if (typeof r.yi !== 'number' || !isFinite(r.yi)) return refuse(row + 'a finite effect estimate is required.');
       var se = r.sei;
-      if (typeof se !== 'number' || !isFinite(se) || !(se > 0) || !isFinite(1 / (se * se)) || !isFinite(r.yi / (se * se))) {
+      if (typeof se !== 'number' || !isFinite(se) || !(se > 0) || !isFinite(se * se) || !isFinite(1 / (se * se)) || !isFinite(r.yi / (se * se))) {
         return refuse(row + 'a positive, numerically representable standard error is required.');
       }
       lines.push(label + ', ' + String(r.yi) + ', ' + String(se));
