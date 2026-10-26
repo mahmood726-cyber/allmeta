@@ -89,3 +89,35 @@ test('P0-7 control: singleton studies retain their study count and REML interval
   assert.equal(a.captures.grade.getPooled().k,3);assert.equal(a.result.k,3);
   for(const key of ['seMuHK','ci_lb_hk','ci_ub_hk','pi_lb','pi_ub']) assert.equal(a.result[key],null);
 });
+
+test('review plant: insufficient input clears every previous rendered result', () => {
+  for (const input of ['', '1,0.1,0.1\n2,0.5,0.12']) {
+    const a = app();
+    assert.ok(a.node('forest').innerHTML.includes('<polygon'));
+    a.node('src').value = input;
+    a.ctx.__almMlmaRun();
+    assert.equal(a.ctx._almLastMlma(), null);
+    assert.equal(a.ctx.__almReml(), null);
+    assert.equal(a.captures.export.getResults(), null);
+    assert.equal(a.captures.plot.getReceiptInput(), null);
+    assert.equal(a.captures.grade.getPooled(), null);
+    assert.equal(a.node('body').innerHTML, '');
+    assert.equal(a.node('forest').innerHTML, '');
+    assert.ok(!a.node('summary').innerHTML.includes('<table'));
+  }
+});
+test('review control: valid input after refusal restores the current fit and plot', () => {
+  const a = app('');
+  const input = '1,0.1,0.1\n2,0.5,0.12\n3,-0.3,0.15';
+  a.node('src').value = input;
+  a.ctx.__almMlmaRun();
+  const expected = app(input).result, actual = a.ctx._almLastMlma();
+  close(actual.mu, expected.mu); close(actual.seMu, expected.seMu);
+  assert.equal(actual.method, 'REML');
+  assert.equal(a.captures.export.getResults(), actual);
+  assert.equal(a.captures.plot.getReceiptInput().results, actual);
+  close(a.captures.grade.getPooled().mu, actual.mu);
+  assert.ok(a.node('summary').innerHTML.includes('<table'));
+  assert.ok(a.node('body').innerHTML.includes('Pooled (REML)'));
+  assert.ok(a.node('forest').innerHTML.includes('<polygon'));
+});
