@@ -7,14 +7,14 @@
   function bounds(s){var m=String(s||'').match(/\[([^\]]+)\]/);return m?numbers(m[1]):[];}
   function estimate(label,lo,hi,nullValue,piLo,piHi){return {label:label,lo:lo,hi:hi,nullValue:nullValue,piLo:piLo,piHi:piHi};}
   function tableEstimates(selector,col,nul){return Array.from(document.querySelectorAll(selector)).map(function(tr){var b=bounds(tr.cells[col].textContent);return estimate(tr.cells[0].textContent,b[0],b[1],nul);});}
-  var observedPlus,plusMain;
+  var observedPlus,plusMain,invalidCnma;
   function ctx(){
     var c={app:APP,analysisType:'pairwise'};
     // Existing page lifecycle marks retained results stale until the next successful analysis.
     var stale=document.getElementById('analysis-stale')||document.getElementById('stale-note');
     if(stale&&!stale.hidden)return c;
 // index.html:109-125,243-274,280-291: displayed component/combination intervals; count input studies per arm comparison.
-    c.analysisType='network';var r=result('_almLastCnma');if(!r)return c;
+    c.analysisType='network';var r=result('_almLastCnma');if(!r||r===invalidCnma)return c;
     c.estimates=tableEstimates('#comp-body tr',3,0).concat(tableEstimates('#int-body tr',2,0));
     var n=document.getElementById('src');if(n && typeof window.parse==='function'){
       var per={};try{window.parse(n.value).forEach(function(row){var key=JSON.stringify([row.A.slice().sort(),row.B.slice().sort()].sort());per[key]=(per[key]||0)+1;});
@@ -25,6 +25,10 @@
   }
   (window.AlmStraightAdapters=window.AlmStraightAdapters||{})[APP]={ctx:ctx};
   function start(){
+    // This page retains its fit on edits and has no shared stale-result marker.
+    ['input','change'].forEach(function(type){document.addEventListener(type,function(e){
+      if(e.target && e.target.id==='src')invalidCnma=result('_almLastCnma');
+    },true);});
     // Keep advice outside the archived analysis landmarks, beside the feature panel.
     if(!document.getElementById('alm-features')){var mount=document.createElement('div');mount.id='alm-features';mount.setAttribute('data-app',APP);document.body.appendChild(mount);}
     ['alm-features','alm-straight'].forEach(function(name){if(!document.querySelector('link[data-straight-style="'+name+'"]')){var link=document.createElement('link');link.rel='stylesheet';link.href='../shared/'+name+'.css';link.setAttribute('data-straight-style',name);document.head.appendChild(link);}});
