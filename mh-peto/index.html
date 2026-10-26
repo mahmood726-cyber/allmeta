@@ -63,6 +63,7 @@
     #input-errors ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
     textarea[aria-invalid="true"] { border-color: var(--warn); outline: 2px solid var(--warn); }
     .note { font-size: 0.8rem; color: var(--muted); margin: 0.3rem 0 0.6rem; }
+    #het-warning { padding: 0.6rem 0.75rem; border: 1px solid var(--warn); background: var(--warn-soft); color: var(--ink); border-radius: 6px; }
     .not-estimable td { font-style: italic; color: var(--muted); }
     tr.loo-flagged { background: var(--warn-soft); }
     #loo th[scope="row"] { font-weight: normal; text-align: left; white-space: nowrap; }
@@ -155,6 +156,7 @@ StudyE, 4, 600, 10, 600</textarea>
       <p id="estimability-note" class="note" aria-live="polite"></p>
       <p id="fragility-note" class="stat" style="margin:0.4rem 0 0;font-size:0.85rem" aria-live="polite"></p>
       <h2 style="margin-top:0.9rem">Heterogeneity and association tests</h2>
+      <p id="het-warning" class="note" role="status" aria-live="polite" hidden></p>
       <div class="table-wrap">
       <table id="het">
         <caption>Cochran's Q, I&sup2; and H&sup2; for each pooled method, as printed by metafor rma.mh(&hellip;, add = c(0.5, 0), to = c("only0", "none"), drop00 = c(FALSE, FALSE), correct = FALSE) and rma.peto(&hellip;, add = 0, to = "none", drop00 = TRUE)</caption>
@@ -184,7 +186,7 @@ StudyE, 4, 600, 10, 600</textarea>
         <button type="button" id="btn-loo-csv" class="secondary" disabled>Download leave-one-out table (CSV)</button>
         <label style="display:inline-flex;gap:0.35rem;align-items:center;font-size:0.85rem"><input type="checkbox" id="loo-only-flagged"> Show only flagged omissions</label>
       </div>
-      <p class="note" id="loo-hint">Re-pools the current tables with each one omitted in turn (as metafor leave1out on rma.mh and rma.peto): estimate, 95% CI, p and I&sup2; for each method. An omission is flagged when it moves that method's p-value across 0.05. Needs at least 3 tables.</p>
+      <p class="note" id="loo-hint">Re-pools the current tables with each one omitted in turn (as metafor leave1out on rma.mh and rma.peto): estimate, 95% CI, p and I&sup2; for each method. MH I&sup2; uses the retained-table convention (drop00 = FALSE), including double-zero tables still present after the omission; it can be lower than with default exclusion for OR/RR. The CSV flags column includes this convention and the k used for each row. An omission is flagged in the table when it moves that method's p-value across 0.05. Needs at least 3 tables.</p>
       <p id="loo-status" role="status" aria-live="polite" class="note"></p>
       <div class="table-wrap">
       <table id="loo">
@@ -566,6 +568,23 @@ StudyE, 4, 600, 10, 600</textarea>
     // Every number the page reports for one set of tables (pure; used by run(), leave-one-out and the
     // Node cross-check against R). mh/peto are null when not estimable; beta/se are on the analysis scale
     // (log for OR/RR, identity for RD).
+    // Presentation metadata only: preserve the archived numerical convention.
+    function mhHeterogeneityDisclosure(rows, measure, h) {
+      var nDouble = rows.filter(function (r) {
+        return (r.e1 === 0 && r.e2 === 0) || (r.e1 === r.n1 && r.e2 === r.n2);
+      }).length;
+      var convention = 'retained-table convention (drop00 = FALSE; add = 0.5 only to tables with zero cells for Q)';
+      var warning = measure !== 'RD' && nDouble > 0
+        ? 'MH heterogeneity retains ' + nDouble + ' table' + (nDouble === 1 ? '' : 's') +
+          ' with no events (or no non-events) in both groups in Q and its degrees of freedom. ' +
+          'This non-default convention can make I² lower than when those tables are excluded. ' +
+          'Do not interpret these values as default-exclusion heterogeneity.'
+        : '';
+      return { convention: convention, warning: warning, k: h.k };
+    }
+    function mhHeterogeneityText(d) {
+      return 'MH heterogeneity: ' + d.convention + '; k = ' + d.k + (d.warning ? '. ' + d.warning : '.');
+    }
     function analyse(rows, measure) {
       var mh = measure === 'OR' ? mhOR(rows) : (measure === 'RR' ? mhRR(rows) : mhRD(rows));
       var pe = measure === 'OR' ? peto(rows) : null;
@@ -577,7 +596,7 @@ StudyE, 4, 600, 10, 600</textarea>
         het.peto = pe ? qStats(ep.yi, ep.vi, pe.logEst) : { QE: null, QEp: null, I2: null, H2: null, df: null, k: 0 };
         het.assoc = cmhTarone(rows, mh ? mh.est : null);
       }
-      return { measure: measure, mh: mh, peto: pe, het: het, mhFit: convPack(mhBeta, mhSe), petoFit: pe ? convPack(pe.logEst, pe.seLog) : null,
+      return { measure: measure, mh: mh, peto: pe, het: het, mhDisclosure: mhHeterogeneityDisclosure(rows, measure, het.mh), mhFit: convPack(mhBeta, mhSe), petoFit: pe ? convPack(pe.logEst, pe.seLog) : null,
         conv: { metaDefault: metaDefaultMH(rows, measure), iv: ivFixed(rows, measure) } };
     }
 
@@ -589,7 +608,7 @@ StudyE, 4, 600, 10, 600</textarea>
       if (rows.length < LOO_MIN) return { refused: 'leave-one-out needs at least ' + LOO_MIN + ' tables, so that each reduced set still has 2 to pool' };
       var full = analyse(rows, measure), out = [];
       var pick = function (a) {
-        var r = { mh: Object.assign({}, a.mhFit, a.het.mh) };
+        var r = { mh: Object.assign({}, a.mhFit, a.het.mh, { disclosure: a.mhDisclosure }) };
         if (measure === 'OR') r.peto = Object.assign({}, a.petoFit || convPack(null, null), a.het.peto);
         return r;
       };
@@ -640,6 +659,8 @@ StudyE, 4, 600, 10, 600</textarea>
       _lastResults = null;
       ['pooled-body', 'per-body', 'forest', 'labbe', 'het-body', 'assoc-body', 'conv-body'].forEach(function (id) { document.getElementById(id).innerHTML = ''; });
       ['k-note', 'estimability-note', 'zero-note', 'conv-note'].forEach(function (id) { document.getElementById(id).textContent = ''; });
+      document.getElementById('het-warning').textContent = '';
+      document.getElementById('het-warning').hidden = true;
       clearLoo('');
     }
     // Leave-one-out output belongs to the input it was run on; any re-analysis clears it.
@@ -748,12 +769,15 @@ StudyE, 4, 600, 10, 600</textarea>
 
       // Heterogeneity (Q, I2, H2) for each method, and CMH / Tarone / Breslow-Day for the OR.
       var het = res.het;
+      document.getElementById('het-warning').textContent = res.mhDisclosure.warning;
+      document.getElementById('het-warning').hidden = !res.mhDisclosure.warning;
       var mhPooled = pooled.find(function (q) { return q.name.indexOf('MH ') === 0; });
-      var hetRows = [['MH ' + measure, het.mh]].concat(het.peto ? [['Peto OR', het.peto]] : []);
+      var hetRows = [['MH ' + measure, het.mh, 'retained-table convention']].concat(het.peto ? [['Peto OR', het.peto, 'double-zero tables excluded']] : []);
       document.getElementById('het-body').innerHTML = hetRows.map(function (hr) {
         var h = hr[1];
-        if (h.QE === null) return '<tr class="not-estimable"><td><code>' + hr[0] + '</code></td><td colspan="4">not available: the pooled estimate is not estimable</td></tr>';
-        return '<tr><td><code>' + hr[0] + '</code></td><td>' + fmt(h.QE, 2) + ' (' + h.df + ')</td><td>' + fmtP(h.QEp) + '</td><td>' + fmt(h.I2, 1) + '%</td><td>' + fmt(h.H2, 2) + '</td></tr>';
+        var label = '<code>' + hr[0] + '</code><br><span class="note">' + hr[2] + '; k = ' + h.k + '</span>';
+        if (h.QE === null) return '<tr class="not-estimable"><td>' + label + '</td><td colspan="4">not available: the pooled estimate is not estimable</td></tr>';
+        return '<tr><td>' + label + '</td><td>' + fmt(h.QE, 2) + ' (' + h.df + ')</td><td>' + fmtP(h.QEp) + '</td><td>' + fmt(h.I2, 1) + '%</td><td>' + fmt(h.H2, 2) + '</td></tr>';
       }).join('');
       var assocBody = document.getElementById('assoc-body');
       if (het.assoc) {
@@ -845,8 +869,12 @@ StudyE, 4, 600, 10, 600</textarea>
       }
       // v2 heterogeneity / association statistics (full precision; null where metafor gives NA).
       _lastResults.mh_QE = het.mh.QE; _lastResults.mh_QEp = het.mh.QEp; _lastResults.mh_I2 = het.mh.I2; _lastResults.mh_H2 = het.mh.H2; _lastResults.mh_Q_df = het.mh.df;
+      _lastResults.mh_Q_k = het.mh.k;
+      _lastResults.mh_heterogeneity_convention = res.mhDisclosure.convention;
+      _lastResults.mh_heterogeneity_warning = res.mhDisclosure.warning;
       if (het.peto) {
         _lastResults.peto_QE = het.peto.QE; _lastResults.peto_QEp = het.peto.QEp; _lastResults.peto_I2 = het.peto.I2; _lastResults.peto_H2 = het.peto.H2; _lastResults.peto_Q_df = het.peto.df;
+        _lastResults.peto_Q_k = het.peto.k;
       }
       if (het.assoc) {
         _lastResults.cmh = het.assoc.MH; _lastResults.cmh_p = het.assoc.MHp;
@@ -1019,7 +1047,7 @@ StudyE, 4, 600, 10, 600</textarea>
       var ratio = measure !== 'RD', methods = measure === 'OR' ? [['mh', 'MH OR'], ['peto', 'Peto OR']] : [['mh', 'MH ' + measure]];
       var back = function (b) { return b === null ? null : (ratio ? Math.exp(b) : b); };
       var head = '<tr><th scope="col">Omitted table</th>' + methods.map(function (m) {
-        return '<th scope="col">' + m[1] + ' (95% CI)</th><th scope="col">' + m[1] + ' p</th><th scope="col">' + m[1] + ' I&sup2;</th>';
+        return '<th scope="col">' + m[1] + ' (95% CI)</th><th scope="col">' + m[1] + ' p</th><th scope="col">' + m[1] + ' I&sup2;' + (m[0] === 'mh' ? ' (retained tables)' : '') + '</th>';
       }).join('') + '<th scope="col">Flags</th></tr>';
       var cells = function (r) {
         return methods.map(function (m) {
@@ -1055,7 +1083,7 @@ StudyE, 4, 600, 10, 600</textarea>
       [{ omit: 'none', label: '', full: true }].concat(_lastLoo.rows).forEach(function (r) {
         var src = r.full ? _lastLoo.full : r;
         lines.push([r.omit, '"' + String(r.label).replace(/"/g, '""') + '"'].concat([].concat.apply([], ms.map(function (m) { return q.map(function (k) { return cell(src[m][k]); }); })))
-          .concat(['"' + (r.full ? '' : looFlags(r.flags).join('; ')) + '"']).join(','));
+          .concat(['"' + (r.full ? [] : looFlags(r.flags)).concat([mhHeterogeneityText(src.mh.disclosure)]).join('; ').replace(/"/g, '""') + '"']).join(','));
       });
       return lines.join('\n') + '\n';
     }
@@ -1099,6 +1127,8 @@ StudyE, 4, 600, 10, 600</textarea>
       L.push('# It refits the analysis shown on the page with metafor and compares every number with the');
       L.push('# page values recorded below. Tolerance 1e-9: relative to max(1, |R value|); p-values absolute.');
       L.push('# NA on the page must match NA in R. Requires the metafor package (validated against 5.2-1).');
+      L.push('# MH heterogeneity: ' + res.mh_heterogeneity_convention + '; k = ' + res.mh_Q_k + '.');
+      if (res.mh_heterogeneity_warning) L.push('# ' + res.mh_heterogeneity_warning);
       L.push('if (!requireNamespace("metafor", quietly = TRUE)) stop("Please install the metafor package: install.packages(\\"metafor\\")")');
       L.push('library(metafor)');
       L.push('dat <- data.frame(');
