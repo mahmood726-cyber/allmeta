@@ -498,6 +498,13 @@
         { name: 'SE',     required: true,  type: 'float',  example: '0.12' },
         { name: 'label',  required: false, type: 'string', example: 'outcome A' },
       ],
+      parse: function (text, columns) {
+        // Preserve numeric tokens for parse(): coercion would accept radix literals
+        // and turn malformed values into null, allowing __almLoad's alias fallback.
+        return window.alm.csvUpload.parse(text, columns.map(function (column) {
+          return { name: column.name, type: 'string' };
+        }));
+      },
       onParse: function (result) {
         window.alm.resetUndo.snapshot();
         window.__almLoad(result.rows);

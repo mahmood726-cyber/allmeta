@@ -71,11 +71,18 @@ function app() {
   context.alm = { csvUpload: noop, plotExport: noop, axisControls: noop, resultsExport: noop,
     urlState: Object.assign(noop, { read: () => ({}), write: noop }),
     resetUndo: Object.assign(noop, { snapshot: noop }), tooltips: noop };
+  vm.runInContext(readFileSync(new URL('hub/shared/csv-upload.js', root), 'utf8'), context);
+  const csvParse = context.alm.csvUpload.parse;
+  let csvOptions;
+  context.alm.csvUpload = Object.assign(options => { csvOptions = options; }, { parse: csvParse });
   for (const file of ['shared/stats-qt.js', 'shared/ma-core.js', 'shared/multilevel-reml.js', 'hub/shared/analysis-lifecycle.js']) {
     vm.runInContext(readFileSync(new URL(file, root), 'utf8'), context, { filename: file });
   }
   vm.runInContext(appCode, context, { filename: 'multilevel-ma/index.html' });
-  return { elements, context, run(text) { src.value = text; elements.get('btn-run').handlers.click(); } };
+  return { elements, context, run(text) { src.value = text; elements.get('btn-run').handlers.click(); },
+    importCsv(text) {
+      csvOptions.onParse((csvOptions.parse || csvParse)(text, csvOptions.columns));
+    } };
 }
 
 for (const row of ['study-c, 0.0O, 0.1', 'study-c, 0.2']) {
@@ -163,3 +170,52 @@ for (const count of [0, 1, 2]) {
     assert.match(h.elements.get('forest').innerHTML, /polygon/);
   });
 }
+
+for (const [field, index] of [['effect', 1], ['SE', 2]]) {
+  for (const token of ['0x10', '0b10', '0o10']) {
+    test(`review CSV: ${field} token ${token} must reach strict validation unchanged`, () => {
+      const h = app();
+      const row = ['study-c', '0.2', '0.1'];
+      row[index] = token;
+      let fits = 0;
+      const fit = h.context.AlmMultilevelREML.fit;
+      h.context.AlmMultilevelREML.fit = (...args) => { fits++; return fit(...args); };
+      h.importCsv('study,effect,SE,label\n' + valid + '\n' + row.join(','));
+      assert.equal(fits, 0, 'CSV coercion must not turn an invalid token into a valid decimal');
+      assert.equal(h.context._almLastMlma(), null);
+      assert.equal(h.context.__almReml(), null);
+      assert.equal(h.elements.get('input-error').hidden, false);
+      assert.match(h.elements.get('input-error').textContent, new RegExp(`Line 4:.*${field}`, 'i'));
+      assert.equal(h.elements.get('analysis-status').hidden, true);
+      for (const id of ['summary', 'body', 'forest']) assert.equal(h.elements.get(id).innerHTML, '');
+      h.importCsv('study,effect,SE,label\n' + valid);
+      assert.equal(h.context._almLastMlma().k, 3);
+      assert.equal(fits, 1);
+      assert.equal(h.elements.get('input-error').hidden, true);
+    });
+  }
+}
+
+for (const [field, alias, index] of [['effect', 'te', 1], ['SE', 'se', 2]]) {
+  test(`review CSV: malformed ${field} must not fall back to ${alias}`, () => {
+    const h = app();
+    const row = ['study-c', '0.2', '0.1', '', '0.15'];
+    row[index] = '0.0O';
+    h.importCsv(`study,effect,SE,label,${alias}\n` + valid + '\n' + row.join(','));
+    assert.equal(h.context._almLastMlma(), null);
+    assert.match(h.elements.get('input-error').textContent, new RegExp(`Line 4:.*${field}`, 'i'));
+  });
+}
+
+test('review CSV control: quoted decimal fields, exponents, zero and optional labels preserve results', () => {
+  const h = app();
+  h.run('0, 0, 0.12, first\n0, 0.28, 0.11\nstudy-b, -0.18, 0.09');
+  const expected = JSON.stringify(h.context._almLastMlma());
+  const expectedReml = JSON.stringify(h.context.__almReml());
+  h.importCsv('study,effect,SE,label\r\n0,"0","1.2e-1",first\r\n0,+.28,+0.11\r\nstudy-b,-.18,9E-2');
+  assert.equal(JSON.stringify(h.context._almLastMlma()), expected);
+  assert.equal(JSON.stringify(h.context.__almReml()), expectedReml);
+  assert.equal(h.elements.get('input-error').hidden, true);
+  assert.equal(h.elements.get('analysis-status').hidden, false);
+  assert.match(h.elements.get('forest').innerHTML, /polygon/);
+});
