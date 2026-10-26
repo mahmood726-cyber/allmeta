@@ -188,6 +188,21 @@
     return out;
   }
 
+  // Install before the host's DOMContentLoaded autosave callback. Keep its
+  // selector order (and therefore positional draft keys), excluding only this
+  // panel, whose inputs are persisted separately below.
+  function isolateAutosave(app) {
+    var autosave = global.AlmAutosave;
+    if (!autosave || typeof autosave.install !== 'function') return;
+    var install = autosave.install;
+    autosave.install = function (options) {
+      if (!options || options.appKey !== app) return install.apply(this, arguments);
+      var selectors = Array.isArray(options.selectors) && options.selectors.length ? options.selectors :
+        ['textarea', 'select', 'input[type=text]', 'input[type=number]', 'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'];
+      return install.call(this, Object.assign({}, options, { selectors: selectors.map(function (s) { return ':is(' + s + '):not(#alm-sof *)'; }) }));
+    };
+  }
+
   function mount(app) {
     var d = global.document; if (!d || d.getElementById('alm-sof')) return;
     var css = d.createElement('link'); css.rel = 'stylesheet'; css.href = '../shared/alm-sof.css'; d.head.appendChild(css);
@@ -210,11 +225,14 @@
     var key = 'alm-sof-v1:' + app, user = { outcome: '', certainty: '', reasons: {} }, current = null, available = false, lastRender = '';
     try { var saved = JSON.parse(global.localStorage.getItem(key)); if (saved && typeof saved === 'object') user = { outcome: typeof saved.outcome === 'string' ? saved.outcome : '', certainty: RATINGS.indexOf(saved.certainty) >= 0 ? saved.certainty : '', reasons: saved.reasons && typeof saved.reasons === 'object' ? saved.reasons : {}, acr: typeof saved.acr === 'string' ? saved.acr : undefined }; } catch (e) { /* Storage is optional. */ }
     var outcome = host.querySelector('#sof-outcome'), certainty = host.querySelector('#sof-certainty'), acr = host.querySelector('#sof-risk');
-    outcome.value = user.outcome; certainty.value = user.certainty;
+    outcome.value = user.outcome; certainty.value = user.certainty; acr.value = user.acr === undefined ? '' : user.acr;
     DOMAINS.forEach(function (name, i) { host.querySelector('#sof-reason-' + i).value = user.reasons[name.toLowerCase()] || ''; });
     function save() { try { global.localStorage.setItem(key, JSON.stringify(user)); } catch (e) { host.querySelector('[data-sof="status"]').textContent = 'Browser storage unavailable; changes last for this page session.'; } }
     function text(key, value) { var el = host.querySelector('[data-sof="' + key + '"]'); if (el && el.textContent !== value) el.textContent = value; }
     function refresh() {
+      // Corpus replay owns the disabled state until it restores the page.
+      // Do not publish transient replay results or re-enable its locked buttons.
+      if (outcome.disabled) return;
       var status = d.getElementById('analysis-status'), stale = d.getElementById('analysis-stale'), r = null;
       var blocked = (stale && !stale.hidden) || (status && status.hidden);
       try { if (!blocked) r = readResult(app); } catch (e) { r = null; }
@@ -227,7 +245,9 @@
       var ratio = r && ['RR', 'OR', 'HR'].indexOf(r.measure) >= 0;
       host.querySelector('#sof-risk-label').hidden = !ratio;
       host.querySelector('#sof-default').hidden = !ratio;
-      if (d.activeElement !== acr) acr.value = user.acr === undefined ? (r && finite(r.defaultRisk) ? r.defaultRisk : '') : user.acr;
+      // A default is not a user edit. Changing .value here changes the host's
+      // validation fingerprint after live R has captured its input revision.
+      acr.placeholder = r && finite(r.defaultRisk) ? String(r.defaultRisk) : '';
       text('risk-source', current.riskSource); text('model', current.model); text('absolute-note', current.absoluteNote); text('hint', current.hint);
       text('status', r ? '' : 'Run a valid analysis to display and export current findings.');
       var cells = [['Outcome', current.outcome, 'outcome'], ['№ participants (studies)', current.participants, 'participants'], ['Relative effect / effect (95% CI): ' + current.measure, current.effect, 'effect']];
@@ -248,7 +268,7 @@
       save(); refresh();
     });
     host.addEventListener('change', function (e) { if (e.target === certainty) { user.certainty = certainty.value; save(); refresh(); } });
-    host.querySelector('#sof-default').addEventListener('click', function () { delete user.acr; save(); refresh(); });
+    host.querySelector('#sof-default').addEventListener('click', function () { delete user.acr; acr.value = ''; save(); refresh(); });
     host.addEventListener('click', async function (e) {
       var kind = e.target.dataset.export; if (!kind) return; refresh(); if (!available) return;
       try {
@@ -264,7 +284,7 @@
     var pending = false;
     function schedule() { if (!pending) { pending = true; global.setTimeout(function () { pending = false; refresh(); }, 0); } }
     ['input', 'change', 'click'].forEach(function (event) { d.addEventListener(event, function (e) { if (!host.contains(e.target)) schedule(); }); });
-    new global.MutationObserver(function (changes) { if (changes.some(function (m) { return !host.contains(m.target); })) schedule(); }).observe(d.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['hidden'] });
+    new global.MutationObserver(function (changes) { if (changes.some(function (m) { return !host.contains(m.target) || (m.target === outcome && m.attributeName === 'disabled'); })) schedule(); }).observe(d.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'disabled'] });
     refresh();
   }
   var api = { risk: risk, absoluteEffects: absoluteEffects, round: round, per1000: per1000, participants: participants, medianControlRisk: medianControlRisk, buildFinding: buildFinding, csv: csv, docx: docx, copyText: copyText, readResult: readResult, mount: mount };
@@ -272,6 +292,6 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (global.document) {
     var script = global.document.currentScript, app = script && script.getAttribute('data-alm-sof-app');
-    if (app) { if (global.document.readyState === 'loading') global.document.addEventListener('DOMContentLoaded', function () { mount(app); }); else mount(app); }
+    if (app) { isolateAutosave(app); if (global.document.readyState === 'loading') global.document.addEventListener('DOMContentLoaded', function () { mount(app); }); else mount(app); }
   }
 })(typeof window !== 'undefined' ? window : globalThis);

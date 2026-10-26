@@ -4,6 +4,73 @@ import { readZip } from './zip-reader.mjs';
 
 const rcheckRoot = new URL('./rchecks-out/', import.meta.url);
 const rcheckOutput = new URL('sof/page.csv', rcheckRoot);
+
+for (const app of ['mh-peto', 'meta-regression', 'pubbias-tests']) {
+  test(`${app}: SoF keeps legacy draft keys and positions intact`, async ({ page }) => {
+    const input = app === 'meta-regression' ? '#f-data' : '#src';
+    const snapshot = () => page.evaluate(app => JSON.parse(localStorage.getItem('alm-autosave:' + app) || '{}').values || {}, app);
+    const saveHost = () => page.locator(input).dispatchEvent('input');
+    await page.route('**/shared/alm-sof.js', route => route.abort());
+    await page.goto(`/${app}/index.html`);
+    await saveHost();
+    await expect.poll(async () => Object.keys(await snapshot()).length).toBeGreaterThan(0);
+    const baseline = await snapshot();
+    await page.evaluate(() => localStorage.clear());
+    await page.unroute('**/shared/alm-sof.js');
+    await page.reload();
+    await expect(page.locator('#alm-sof')).toBeVisible();
+    await saveHost();
+    await expect.poll(snapshot).toEqual(baseline);
+    await page.evaluate(() => localStorage.clear());
+    await page.locator('#sof-outcome').fill('Mortality');
+    await page.waitForTimeout(800); // legacy autosave debounce is 600 ms
+    expect(await snapshot()).toEqual({});
+    expect(await page.evaluate(app => JSON.parse(localStorage.getItem('alm-sof-v1:' + app)).outcome, app)).toBe('Mortality');
+    // An unrelated app input remains in legacy autosave. This recreates the
+    // original leak outside the exclusion and must fail the same snapshot gate.
+    await page.evaluate(() => {
+      const plant = document.createElement('textarea'); plant.id = 'planted-draft-input';
+      document.body.appendChild(plant);
+    });
+    await saveHost();
+    await expect.poll(async () => Object.keys(await snapshot())).toContain('planted-draft-input');
+    const planted = await snapshot();
+    expect(() => expect(planted).toEqual(baseline)).toThrow();
+  });
+}
+
+test('SoF refresh preserves live-validation form values and corpus control locks', async ({ page }) => {
+  await page.goto('/mh-peto/index.html');
+  await expect(page.locator('#alm-sof [data-sof="effect"]')).not.toHaveText('Unavailable');
+  await expect(page.locator('#sof-risk')).toHaveValue('');
+  expect(await page.locator('#sof-risk').getAttribute('placeholder')).not.toBe('');
+  await page.locator('#measure').selectOption('RD');
+  await page.locator('#src').fill('A,0,100,0,100\nB,0,100,0,100');
+  const inputs = await page.evaluate(() => {
+    window.__mhValidation.run();
+    window.__sofFormValues = () => [...document.querySelectorAll('input,select,textarea')].map(n => [n.id, n.value, n.checked]);
+    return window.__sofFormValues();
+  });
+  await expect(page.locator('#alm-sof [data-sof="effect"]')).toContainText('0.000');
+  expect(await page.evaluate(() => window.__sofFormValues())).toEqual(inputs);
+  await page.locator('#sof-risk').evaluate(n => { n.value = '0.25'; });
+  expect(await page.evaluate(() => window.__sofFormValues())).not.toEqual(inputs);
+
+  await page.goto('/influence/index.html');
+  await expect(page.locator('#alm-sof [data-export="CSV"]')).toBeEnabled();
+  await page.evaluate(() => {
+    window.__sofLock = [...document.querySelectorAll('textarea,input,select,button')]
+      .filter(n => !n.closest('#alm-validate')).map(n => [n, n.disabled]);
+    window.__sofLock.forEach(([n]) => { n.disabled = true; });
+    window.__almRestore({ data: '0.1,0.1,A\n0.2,0.1,B\n0.3,0.1,C' });
+  });
+  await page.waitForTimeout(100); // drain SoF's scheduled refresh during the lock
+  expect(await page.evaluate(() => window.__sofLock.every(([n]) => n.disabled))).toBe(true);
+  await page.evaluate(() => window.__sofLock.forEach(([n, was]) => { n.disabled = was; }));
+  await expect(page.locator('#alm-sof [data-export="CSV"]')).toBeEnabled();
+  expect(await page.locator('#sof-outcome').isEnabled()).toBe(true);
+});
+
 test.beforeAll(() => {
   mkdirSync(new URL('sof/', rcheckRoot), { recursive: true });
   writeFileSync(new URL('.gitignore', rcheckRoot), '*\n', 'utf8');
