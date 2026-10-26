@@ -413,6 +413,8 @@
     // contain complete numeric tokens, not values with silently ignored suffixes.
     var invalidNumber = lines.some(function (line) {
       var cells = line.split(',');
+      // The page parser discards fields after the optional effect label.
+      if (cells.length > 4) return true;
       return [1, 2].some(function (col) {
         var token = (cells[col] || '').trim();
         return !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(token);
