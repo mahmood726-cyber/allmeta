@@ -76,7 +76,7 @@
       r[key] = value;
       dom[key] = { text: text, fmt: { kind: kind || 'num', digits: digits } };
     }
-    function nums(text) { return text.match(/-?\d+(?:\.\d+)?/g) || []; }
+    function nums(text) { return text.match(/-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g) || []; }
     function named(key, text) {
       // Numeric tokens in labels must also pass AlmText's provenance audit.
       r[key] = String(text).split(/(-?\d+(?:\.\d+)?)/).map(function (part, i) {
