@@ -35,6 +35,23 @@ async function render(page) {
   }, APP);
 }
 
+test('REGRESSION: hidden entry and text tabs stay unmounted until shown', async ({ page }) => {
+  await page.goto(PAGE);
+  await page.waitForFunction(() => window.AlmFeatures && AlmFeatures.get('correlation-ma'));
+  const entry = page.locator('#alm-f-panel-entry'), text = page.locator('#alm-f-panel-text');
+  await expect(entry).toBeEmpty();
+  await expect(text).toBeEmpty();
+  await page.locator('#alm-features .alm-f-toggle').click();
+  await expect(entry).not.toBeEmpty();
+  await expect(text).toBeEmpty();
+  await page.getByRole('tab', { name: 'Report text', exact: true }).click();
+  await expect(text.locator('.alm-text-body')).toBeVisible();
+  await page.getByRole('tab', { name: 'Data entry', exact: true }).click();
+  await page.locator('#f-method').selectOption('FE');
+  await page.getByRole('tab', { name: 'Report text', exact: true }).click();
+  await expect(text.locator('[data-para=methods]')).toContainText('fixed-effect (common-effect)');
+});
+
 test('ENTRY: three table formats reproduce the built-in analysis via entry APIs', async ({ page }) => {
   await open(page, 'Data entry');
   const checks = await page.evaluate(() => {
@@ -315,3 +332,33 @@ test('REGRESSION: published offline replay remains green with features mounted',
   expect(out.passed).toBe(out.checks);
   console.log(`REPLAY ${out.passed}/${out.checks}`);
 });
+
+for (const refused of [false, true]) {
+  test(`REGRESSION: collapsed features preserve ${refused ? 'refused' : 'accepted'} state across replay`, async ({ page }) => {
+    test.setTimeout(180_000);
+    await page.goto(PAGE);
+    await page.waitForFunction(app => window.AlmCorrValidation && window.AlmFeatures?.get(app), APP);
+    await page.locator('#f-method').selectOption('FE');
+    await page.locator('#f-data').fill(refused ? 'A, .3, 20' : 'A, .3, 20\nB, -.2, 30');
+    await page.evaluate(() => alm.chartExportAuto.scan());
+    const snapshot = () => ({
+      data: document.getElementById('f-data').value,
+      method: document.getElementById('f-method').value,
+      result: _almLastCorrMA(),
+      headline: document.getElementById('headline').innerHTML,
+      table: document.getElementById('res-body').innerHTML,
+      forest: document.getElementById('forest-host').innerHTML,
+      disabled: ['f-data', 'f-method'].map(id => document.getElementById(id).disabled),
+      storage: { ...localStorage }, href: location.href, history: history.length,
+    });
+    const before = await page.evaluate(snapshot);
+    const expectedChecks = await page.evaluate(() => AlmCorrValidationAdapter.corpus.quickChecks);
+    const out = await page.evaluate(() => AlmCorrValidation.runCorpus());
+    expect(out.checks).toBe(expectedChecks);
+    expect(out.failed).toEqual([]);
+    expect(out.passed).toBe(out.checks);
+    expect(await page.evaluate(snapshot)).toEqual(before);
+    await expect(page.locator('#alm-f-panel-text')).toBeEmpty();
+    await expect(page.locator('#alm-validate [role=status]')).toContainText(`${out.checks}/${out.checks} passed; 0 failed`);
+  });
+}

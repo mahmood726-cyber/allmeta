@@ -156,15 +156,8 @@
   global.AlmTextSpecs = global.AlmTextSpecs || {};
   global.AlmTextSpecs[APP] = textSpec;
   if (global.AlmFeatures) {
-    // The current entry/text modules expose mount(), while verify/share self-register.
-    if (typeof global.AlmFeatures.registerModule === 'function') {
-      global.AlmFeatures.registerModule('entry', { render: function (el, ctx) {
-        return global.AlmEntryUI.mount(el, ctx.block);
-      } });
-      global.AlmFeatures.registerModule('text', { render: function (el, ctx) {
-        return global.AlmTextUI.mount(el, { app: ctx.app, text: ctx.block });
-      } });
-    }
+    // Use the core's lazy entry/text modules: hidden tabs must not mount listeners
+    // that re-run the analysis while the offline validation replay owns the page.
     global.AlmFeatures.register(APP, spec);
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = spec;
