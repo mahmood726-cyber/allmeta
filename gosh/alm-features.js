@@ -110,8 +110,11 @@
       get: function () {
         // Match textarea assignment on restore without editing the live input.
         // Otherwise pasted CRLF data changes the serialized state on round-trip.
+        var last = global._almLastGosh();
         return { src: byId('src').value.replace(/\r\n/g, '\n'), model: byId('model').value, draws: byId('n-sample').value,
           enumeration: byId('enum-mode').value || 'auto',
+          // The separate exact button does not change the enumeration selector.
+          exactResult: !!(last && last.k > 15 && !last.sampled && byId('analysis-stale').hidden),
           axes: axes().map(function (e) { return e.type === 'checkbox' ? e.checked : e.value; }),
           entryLog: global.AlmFeaturesState.entryLog };
       },
@@ -127,6 +130,7 @@
         if (['FE', 'DL'].indexOf(s.model) < 0) throw new Error('Unknown pooling model.');
         var enumeration = s.enumeration === undefined ? 'auto' : s.enumeration;
         if (['auto', 'exact', 'sample'].indexOf(enumeration) < 0) throw new Error('Unknown enumeration mode.');
+        if (s.exactResult !== undefined && typeof s.exactResult !== 'boolean') throw new Error('Invalid exact-result setting.');
         if (typeof s.draws !== 'string' || !Number.isInteger(Number(s.draws)) || Number(s.draws) < 1 || Number(s.draws) > 100000) throw new Error('Invalid draw count.');
         if (!Array.isArray(s.axes) || s.axes.length !== 6) throw new Error('Missing axis settings.');
         s.axes.forEach(function (v, i) {
@@ -142,6 +146,7 @@
         });
         global.AlmFeaturesState.entryLog = s.entryLog || [];
         byId('btn-run').click();
+        if (s.exactResult && byId('exact-progress').hidden && global._almLastGosh().sampled) byId('exact-run').click();
       }
     }
   };

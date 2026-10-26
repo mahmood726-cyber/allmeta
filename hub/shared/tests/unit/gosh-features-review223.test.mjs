@@ -60,6 +60,7 @@ function app() {
     AlmValidate: { mount() {} } });
   function script(path) { vm.runInContext(readFileSync(new URL(path, root), 'utf8'), sandbox, { filename: path }); }
   script('gosh/exact-ui.js');
+  el('exact-run').click = () => el('exact-run').onclick();
   script('gosh/validate/adapter.js');
   script('shared/alm-features.js');
   script('shared/alm-text.js');
@@ -186,4 +187,30 @@ test('GOSH read-only feature capture restores results and DOM after an adapter e
     throw new Error('Synthetic capture failure');
   }), /Synthetic capture failure/);
   assert.deepEqual(h.capture(), before);
+});
+
+test('GOSH share preserves an exact result requested from sampling mode', () => {
+  const sender = app();
+  sender.nodes['enum-mode'].value = 'sample';
+  sender.nodes['n-sample'].value = '37';
+  sender.run(source);
+  assert.equal(sender.window._almLastGosh().n_subsets, 37);
+  sender.nodes['exact-run'].click(); sender.finish();
+  const expected = sender.capture();
+  assert.equal(expected.result.n_subsets, 65535);
+  assert.equal(sender.nodes['enum-mode'].value, 'sample', 'the exact button retains the selector');
+  const receiver = app();
+  receiver.spec.share.set(expected.state); receiver.finish();
+  assert.equal(receiver.window._almLastGosh().n_subsets, 65535);
+  assert.deepEqual(receiver.capture(), expected);
+});
+
+test('GOSH share control: sampling without the exact button stays sampled', () => {
+  const sender = app(), receiver = app();
+  sender.nodes['enum-mode'].value = 'sample';
+  sender.nodes['n-sample'].value = '37'; sender.run(source);
+  const expected = sender.capture();
+  receiver.spec.share.set(expected.state); receiver.finish();
+  assert.equal(receiver.window._almLastGosh().n_subsets, 37);
+  assert.deepEqual(receiver.capture(), expected);
 });
