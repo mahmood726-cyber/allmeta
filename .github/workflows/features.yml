@@ -7,6 +7,7 @@ name: features
 #              + three planted defects (large value, 1e-12-scale value, formula coefficient), each must FAIL
 #   yun      : Yun et al. 2024 candidate-recall harness, DEV split on the committed CC-BY texts (reports, never gates recall)
 #   browser  : Playwright features-*.spec.mjs (per-app entry round-trip, text audit + snapshot, verify-in-R panel via webR)
+#   sof-r    : SoF browser evidence vs independent base R, including the OR-as-RR planted defect
 
 on:
   # No paths filter on PRs: a filter that misses an audited file (adapters, app pages, shared engines) lets the
@@ -139,6 +140,46 @@ jobs:
           path: |
             hub/shared/tests/artifacts/
             hub/shared/tests/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  sof-r:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5.1"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: SoF browser contracts and fresh R evidence
+        run: npx playwright test -c playwright.features.config.mjs features-sof.spec.mjs --reporter=line --output="${{ runner.temp }}/sof-test-results"
+        env:
+          CI: "true"
+      - name: Independent SoF R check and planted defect
+        run: |
+          set -o pipefail
+          Rscript rchecks/sof.R "${{ runner.temp }}/sof-test-results/rchecks/sof/page.csv" 2>&1 | tee "${{ runner.temp }}/sof-r.log"
+          grep -Fx 'PLANT_DETECTED' "${{ runner.temp }}/sof-r.log"
+          grep -Fx 'R_CHECK_PASS' "${{ runner.temp }}/sof-r.log"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sof-r-evidence
+          path: |
+            ${{ runner.temp }}/sof-test-results/
+            ${{ runner.temp }}/sof-r.log
           if-no-files-found: ignore
           retention-days: 14
 
