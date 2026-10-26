@@ -448,12 +448,18 @@
   if (global.AlmFeatures && typeof global.AlmFeatures.registerModule === 'function') {
     global.AlmFeatures.registerModule('entry', { render: mountEntry });
     global.AlmFeatures.registerModule('text', { render: function (panel) {
-      var ui = global.AlmTextUI.mount(panel, { app: APP, text: textSpec });
-      document.addEventListener('input', function (event) {
-        if (event.target === byId('src')) ui.regenerate();
-      });
-      byId('btn-run').addEventListener('click', function () { ui.regenerate(); });
-      return { onShow: function () { ui.regenerate(); } };
+      // Follow the host's lazy Report text contract. Mounting while collapsed
+      // installs global freshness listeners; revision checks call the live
+      // adapter, which reruns this app even on Tab before Run is activated.
+      var ui = null;
+      return { onShow: function () {
+        if (ui) { ui.regenerate(); return; }
+        ui = global.AlmTextUI.mount(panel, { app: APP, text: textSpec });
+        document.addEventListener('input', function (event) {
+          if (event.target === byId('src')) ui.regenerate();
+        });
+        byId('btn-run').addEventListener('click', function () { ui.regenerate(); });
+      } };
     } });
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = spec;
