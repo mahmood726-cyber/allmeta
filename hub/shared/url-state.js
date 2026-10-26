@@ -35,6 +35,8 @@
     return true;
   };
 
+  init.isSuspended = () => suspended > 0;
+
   init.clear = function () { if (!suspended) window.location.hash = ''; };
 
   // Includes restoration in the callback; nesting and failures always release the guard.

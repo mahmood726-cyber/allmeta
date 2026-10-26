@@ -584,8 +584,21 @@
         'the CI level refits.');
 
       // URL state
-      if (window.alm && window.alm.urlState) {
-        window.alm.urlState.write({ src: document.getElementById('src').value.substring(0, 500) });
+      if (window.alm && window.alm.urlState && !window.alm.urlState.isSuspended()) {
+        // Let urlState apply its encoded-size budget to the complete dataset.
+        var sharedData = window.alm.urlState.write({ src: document.getElementById('src').value });
+        if (!sharedData) window.alm.urlState.write({});
+        var shareNote = document.getElementById('share-data-note');
+        if (sharedData) {
+          if (shareNote) shareNote.remove();
+        } else if (!shareNote) {
+          shareNote = document.createElement('div');
+          shareNote.id = 'share-data-note';
+          shareNote.className = 'note';
+          shareNote.setAttribute('role', 'status');
+          shareNote.textContent = 'Data too long for a link — use Export/Download to share the data';
+          document.getElementById('fit-status').before(shareNote);
+        }
       }
     }
 
