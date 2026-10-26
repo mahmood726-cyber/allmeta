@@ -95,13 +95,21 @@
   if (lint(presets).length) throw new Error(lint(presets).join('; '));
   presets.forEach(p => { Object.freeze(p.width_mm); if (p.formats) Object.freeze(p.formats); Object.freeze(p); });
   Object.freeze(presets);
-  const api = { presets, lint, settings, mmToPx, applySvg, mount };
+  const api = { presets, lint, settings, mmToPx, applySvg, mount, register, scan };
   global.AlmFigPresets = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (!global.document) return;
   const doc = global.document, self = doc.currentScript;
   const base = self && self.src;
-  const loads = new Map(), mounted = new WeakMap();
+  const loads = new Map(), mounted = new WeakMap(), instances = new WeakMap(), fields = new WeakMap();
+  // An anchor click starts a download; it does not report transfer completion.
+  // Keep its Blob URL alive for this document, including a bfcache round trip.
+  // A fixed timer can cancel a large PDF before the browser has consumed it.
+  const downloads = new Set();
+  if (global.addEventListener) global.addEventListener('pagehide', event => {
+    if (event.persisted) return;
+    downloads.forEach(url => URL.revokeObjectURL(url)); downloads.clear();
+  });
   function load(relative, available) {
     if (available()) return Promise.resolve();
     const url = new URL(relative, base).href;
@@ -114,24 +122,105 @@
     }).catch(e => { loads.delete(url); throw e; }));
     return loads.get(url);
   }
+  // Exporters register their source handles only. Their target is an identity/lifetime
+  // key, never a UI mount: pinned results and chart bars must remain untouched.
+  const registrations = new Map(), discovered = new Map();
+  let auto = false, observer, scheduled = false, host, currentPanel, currentPlots = [];
+  function register(opts) {
+    if (opts.auto) auto = true;
+    else if (opts.target) registrations.set(opts.target, opts);
+    schedule();
+  }
+  function schedule() {
+    if (scheduled || !doc.body || doc.readyState === 'loading') return;
+    scheduled = true;
+    (global.requestAnimationFrame || global.setTimeout)(scan);
+  }
+  function scan() {
+    scheduled = false;
+    if (!doc.body) return;
+    if (!observer && global.MutationObserver) {
+      observer = new global.MutationObserver(schedule);
+      observer.observe(doc.body, { childList: true, subtree: true });
+    }
+    if (auto) {
+      discovered.forEach((opts, svg) => { if (!svg.isConnected) discovered.delete(svg); });
+      doc.querySelectorAll('svg').forEach(svg => {
+        if (discovered.has(svg) || svg.hasAttribute('data-alm-noexport') ||
+            svg.closest('.js-plotly-plot, .alm-xbar, .alm-dl, #alm-features, button, a')) return;
+        const rect = svg.getBoundingClientRect();
+        const box = (svg.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+        const width = rect.width || parseFloat(svg.getAttribute('width')) || box[2] || 0;
+        const height = rect.height || parseFloat(svg.getAttribute('height')) || box[3] || 0;
+        if (width < 200 || height < 120) return;
+        const name = svg.getAttribute('data-alm-export') || svg.id || 'chart-' + (discovered.size + 1);
+        discovered.set(svg, { basename: name, plots: [{ id: name, name, getSvg: () => svg.isConnected ? svg : null }] });
+      });
+    }
+    registrations.forEach((opts, target) => {
+      if (!target.isConnected || (opts.isCurrent && !opts.isCurrent())) registrations.delete(target);
+    });
+    const entries = [...registrations.values(), ...discovered.values()], plots = [];
+    // Do not call getSvg here: some apps revalidate/re-render in that callback.
+    // Read the source only when the user requests an export.
+    entries.forEach(opts => (opts.plots || []).forEach(plot => { plots.push({ plot, opts }); }));
+    if (!entries.length) {
+      if (host) host.remove();
+      // A redraw can remove every SVG before the exporters register replacements.
+      // Detach stale controls, but keep the host identity and its saved form so
+      // the next mount restores the user's settings through the same WeakMap.
+      currentPanel = null; currentPlots = []; return;
+    }
+    let features = doc.getElementById('alm-features');
+    // Fallback for apps without feature modules: append after all existing content.
+    // Never insert into main, a plot host, a footer, or a chart download bar.
+    if (!features) {
+      features = doc.createElement('div'); features.id = 'alm-features'; doc.body.appendChild(features);
+    }
+    if (features.closest('main, header, footer, .alm-xbar, .alm-dl')) return;
+    if (!host) {
+      host = doc.createElement('div'); host.id = 'alm-figpresets-host'; host.className = 'alm-preset-auto';
+      host.setAttribute('role', 'region'); host.setAttribute('aria-label', 'Journal figure export');
+    }
+    if (host.parentNode !== features) features.appendChild(host);
+    if (currentPanel && currentPanel.parentNode === host && plots.length === currentPlots.length &&
+        plots.every((item, i) => item.plot === currentPlots[i].plot && item.opts === currentPlots[i].opts)) return;
+    currentPlots = plots;
+    currentPanel = mount({ target: host, plots: plots.map(({ plot, opts }) => ({ ...plot,
+      basename: opts.basename, getReceiptInput: opts.getReceiptInput })) });
+  }
   let serial = 0;
   function mount(opts) {
     const target = opts.target;
     if (!target) return;
     const previous = mounted.get(target);
+    const state = previous && fields.get(previous).map(el => el.value);
     if (previous) previous.remove();
     const panel = doc.createElement('fieldset'); panel.className = 'alm-figpresets';
     const legend = doc.createElement('legend'); legend.textContent = 'Journal figure export'; panel.appendChild(legend);
-    const instance = ++serial;
+    // An app redraw only replaces export handles. Keep the form's public identity
+    // and values stable: live validation fingerprints every input outside its panel.
+    const instance = previous ? instances.get(previous) : ++serial;
+    instances.set(panel, instance);
+    const inputs = []; fields.set(panel, inputs);
     function field(labelText, values, value, type) {
       const field = doc.createElement('span'); field.className = 'alm-figpresets-field';
+      // These are export settings, not analysis inputs. A native tree boundary
+      // keeps document-wide autosave selectors/indices and input fingerprints
+      // unchanged, including when the panel loads during an in-flight R check.
+      // Labels and controls share the same root; keyboard/AT access stays native.
+      const root = field.attachShadow({ mode: 'open' });
+      const css = doc.createElement('style');
+      if (self && self.nonce) css.nonce = self.nonce;
+      css.textContent = 'label{display:block}input,select{box-sizing:border-box;max-width:100%;font:inherit;color:CanvasText;background:Canvas}input{width:7rem}input:focus-visible,select:focus-visible{outline:2px solid currentColor;outline-offset:2px}';
+      root.appendChild(css);
       const label = doc.createElement('label'), el = doc.createElement(values ? 'select' : 'input');
       el.id = 'alm-fig-' + instance + '-' + panel.children.length;
       label.htmlFor = el.id; label.textContent = labelText + ' ';
       if (values) values.forEach(([v, text]) => { const option = doc.createElement('option'); option.value = v; option.textContent = text; el.appendChild(option); });
       else { el.type = type || 'number'; if (el.type === 'number') el.step = 'any'; }
       // Keep option text out of the label while retaining the native for/id association.
-      el.value = value; field.append(label, el); panel.appendChild(field); return el;
+      el.value = value; root.append(label, el); panel.appendChild(field); inputs.push(el); return el;
     }
     const warning = "Unverified — check the journal's current author guide";
     const journal = field('Journal preset', presets.map(p => [p.id, p.name + ' — ' + warning]), 'custom');
@@ -145,7 +234,7 @@
     const format = field('Preset export format', supported.map(f => [f, f === 'pdf' ? 'PDF (raster image)' : f.toUpperCase()]), 'svg');
     const note = doc.createElement('p'), source = doc.createElement('a');
     source.target = '_blank'; source.rel = 'noopener noreferrer'; source.textContent = 'Figure guidelines';
-    const status = doc.createElement('p'); status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
+    const status = doc.createElement('p'); status.setAttribute('aria-live', 'polite'); status.setAttribute('aria-atomic', 'true');
     panel.append(note, source);
     function refresh() {
       const p = presets.find(p => p.id === journal.value), s = settings(p.id, { column: column.value });
@@ -165,7 +254,12 @@
         (option.value === 'pdf' ? ' (raster image)' : '') +
         (p.formats && !p.formats.includes(option.value) ? ' (working format; not listed)' : '');
     }
-    journal.addEventListener('change', refresh); column.addEventListener('change', refresh); refresh();
+    journal.addEventListener('change', refresh); column.addEventListener('change', refresh);
+    if (state) { journal.value = state[0]; column.value = state[1]; }
+    refresh();
+    // Restore the user's overrides silently. Dispatching change here is an edit
+    // even with bubbles:false, because document capture listeners still see it.
+    if (state) inputs.forEach((el, i) => { el.value = state[i]; });
     let busy = false;
     for (const plot of opts.plots || []) {
       const button = doc.createElement('button'); button.type = 'button';
@@ -173,7 +267,10 @@
       button.addEventListener('click', async () => {
         if (busy) return;
         busy = true;
-        const controls = Array.from(panel.querySelectorAll('input, select, button'));
+        const controls = [...inputs, ...panel.querySelectorAll('button')];
+        // An idle export form has no status yet. Publish one for this action;
+        // loading presets alone must not add an empty legacy status competitor.
+        status.setAttribute('role', 'status');
         controls.forEach(c => { c.disabled = true; }); status.textContent = 'Preparing figure…';
         try {
           const config = settings(journal.value, { column: column.value, widthMm: Number(width.value), dpi: Number(dpi.value), minPt: Number(pt.value), fontFamily: font.value });
@@ -181,11 +278,12 @@
           if (!supported.includes(fmt)) throw new Error('Unsupported export format');
           await load('../hub/shared/plot-export.js', () => global.alm && global.alm.plotExport && global.alm.plotExport.artifact);
           if (fmt === 'tiff' && config.tiffCompression === 'none') await load('alm-zip.js', () => global.AlmZip);
-          const blob = await global.alm.plotExport.artifact(plot, fmt, config.dpi, config.widthMm, opts.getReceiptInput, config);
+          const blob = await global.alm.plotExport.artifact(plot, fmt, config.dpi, config.widthMm, plot.getReceiptInput || opts.getReceiptInput, config);
           const link = doc.createElement('a'); link.href = URL.createObjectURL(blob);
-          link.download = String(opts.basename || 'figure').replace(/[^a-zA-Z0-9._-]/g, '_') + '-' + String(plot.id || 'chart').replace(/[^a-zA-Z0-9_-]/g, '_') + '-' + journal.value + '.' + fmt;
+          downloads.add(link.href);
+          link.download = String(plot.basename || opts.basename || 'figure').replace(/[^a-zA-Z0-9._-]/g, '_') + '-' + String(plot.id || 'chart').replace(/[^a-zA-Z0-9_-]/g, '_') + '-' + journal.value + '.' + fmt;
           doc.body.appendChild(link); link.click(); link.remove();
-          setTimeout(() => URL.revokeObjectURL(link.href), 1500); status.textContent = 'Figure exported. Review labels and layout before submission.';
+          status.textContent = 'Figure exported. Review labels and layout before submission.';
         } catch (error) { status.textContent = 'Export failed: ' + error.message; }
         finally { controls.forEach(c => { c.disabled = false; }); busy = false; }
       });
@@ -196,7 +294,8 @@
   }
   const style = doc.createElement('style');
   if (self && self.nonce) style.nonce = self.nonce;
-  style.textContent = '.alm-figpresets{margin:.5rem 0;padding:.6rem;min-width:0;font:12px/1.5 system-ui,sans-serif;text-align:left}.alm-figpresets-field{display:inline-block;margin:.2rem .6rem .2rem 0}.alm-figpresets input{width:7rem}.alm-figpresets button{margin:.3rem}.alm-figpresets p{max-width:85ch;margin:.4rem 0}';
+  style.textContent = '.alm-figpresets{margin:.5rem 0;padding:.6rem;min-width:0;font:12px/1.5 system-ui,sans-serif;text-align:left}.alm-figpresets-field{display:inline-block;vertical-align:top;max-width:calc(100% - .6rem);margin:.2rem .6rem .2rem 0}.alm-figpresets button{margin:.3rem;max-width:calc(100% - .6rem);white-space:normal}.alm-figpresets p{max-width:85ch;margin:.4rem 0}';
   doc.head.appendChild(style);
-  (global.__almFigPresetQueue || []).splice(0).forEach(mount);
+  (global.__almFigPresetQueue || []).splice(0).forEach(register);
+  if (doc.addEventListener) doc.addEventListener('DOMContentLoaded', schedule);
 })(typeof window !== 'undefined' ? window : globalThis);

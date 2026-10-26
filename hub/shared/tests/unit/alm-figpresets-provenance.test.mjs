@@ -28,6 +28,7 @@ test('visible provenance follows every selection; Custom clears a previous journ
     get textContent() { return this.text + this.children.map(el => el.textContent).join(''); }
     appendChild(el) { this.children.push(el); return el; }
     append(...els) { els.forEach(el => this.appendChild(el)); }
+    attachShadow() { this.shadowRoot = new Element('shadow-root'); return this.shadowRoot; }
     setAttribute(key, value) { this[key] = value; }
     removeAttribute(key) { delete this[key]; }
     addEventListener(event, callback) { this.events[event] = callback; }
@@ -37,7 +38,7 @@ test('visible provenance follows every selection; Custom clears a previous journ
   const window = { document };
   vm.runInNewContext(readFileSync(new URL('../../../../shared/alm-figpresets.js', import.meta.url), 'utf8'), { window });
   const panel = window.AlmFigPresets.mount({ target: new Element('div'), plots: [] });
-  const all = el => el.children.flatMap(child => [child, ...all(child)]);
+  const all = el => el.children.flatMap(child => [child, ...all(child), ...(child.shadowRoot ? all(child.shadowRoot) : [])]);
   const elements = all(panel), select = elements.find(el => el.tag === 'select');
   const disclosure = elements.find(el => el.className === 'alm-figpresets-verification');
   const link = elements.find(el => el.tag === 'a');

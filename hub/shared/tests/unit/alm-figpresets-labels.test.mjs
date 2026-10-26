@@ -10,12 +10,13 @@ class Element {
   get textContent() { return this.text + this.children.map(el => el.textContent).join(''); }
   appendChild(el) { this.children.push(el); return el; }
   append(...els) { els.forEach(el => this.appendChild(el)); }
+  attachShadow() { this.shadowRoot = new Element('shadow-root'); return this.shadowRoot; }
   setAttribute() {}
   addEventListener() {}
   get options() { return this.children; }
 }
 function descendants(el, tag) {
-  return el.children.flatMap(child => [...(child.tagName === tag ? [child] : []), ...descendants(child, tag)]);
+  return el.children.flatMap(child => [...(child.tagName === tag ? [child] : []), ...descendants(child, tag), ...(child.shadowRoot ? descendants(child.shadowRoot, tag) : [])]);
 }
 
 test('mounted fields have exact visible labels, independent of select options', () => {

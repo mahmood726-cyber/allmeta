@@ -7,7 +7,7 @@
   const pdfUrl = selfScript && selfScript.src ? new URL('vendor/jspdf.min.js', selfScript.src).href : null;
   const scriptNonce = selfScript && selfScript.nonce;
   function mountPresets(opts) {
-    if (window.AlmFigPresets) return window.AlmFigPresets.mount(opts);
+    if (window.AlmFigPresets) return window.AlmFigPresets.register(opts);
     (window.__almFigPresetQueue = window.__almFigPresetQueue || []).push(opts);
     if (window.__almFigPresetLoading || !selfScript || !selfScript.src) return;
     window.__almFigPresetLoading = true;

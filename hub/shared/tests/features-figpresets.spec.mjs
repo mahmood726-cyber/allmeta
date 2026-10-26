@@ -1,10 +1,123 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { decodePng, readTiff as readPlainTiff } from './zip-reader.mjs';
 
 const apps = { 'proportion-ma': '#forest', heterogeneity: '#svg-host svg', nma: '#svg-host svg' };
 const evidenceDir = new URL('./rchecks-out/figpresets/', import.meta.url);
 const warning = "Unverified — check the journal's current author guide";
+
+// R must only see files from this run. In particular, a canceled download must
+// not leave a previous run's valid PDF masquerading as fresh browser evidence.
+test.beforeAll(() => {
+  const files = ['provenance.csv', 'plant-custom.png', 'control-custom.png', 'control-custom.svg', 'control-custom.pdf'];
+  for (const app of Object.keys(apps)) for (const preset of ['f1000', 'bmj'])
+    for (const format of ['svg', 'png', 'tiff', 'pdf']) files.push(`${app}-${preset}.${format}`);
+  for (const file of files) {
+    rmSync(new URL(file, evidenceDir), { force: true });
+    if (!file.endsWith('.csv')) rmSync(new URL(file + '.csv', evidenceDir), { force: true });
+  }
+});
+
+test('late preset mounting and edits preserve real autosave keys and analysis fingerprints', async ({ page }) => {
+  await page.goto('/hub/shared/tests/');
+  await page.setContent('<main><input id="study" type="text" value="1,2"><select><option>DL</option></select><div id="exports"></div><svg id="chart" viewBox="0 0 300 150"><path d="M1 2L3 4"/></svg></main><div id="alm-features"></div>');
+  await page.addScriptTag({ url: '/shared/autosave.js' });
+  const snapshot = () => page.evaluate(() => JSON.stringify(Array.from(document.querySelectorAll('input,select,textarea'), el => [el.id, el.value, el.checked])));
+  const save = async () => {
+    await page.locator('#study').dispatchEvent('input');
+    await expect.poll(() => page.evaluate(() => AlmAutosave.peek('preset-isolation')?.values || null)).not.toBeNull();
+    return page.evaluate(() => AlmAutosave.peek('preset-isolation').values);
+  };
+  await page.evaluate(() => { localStorage.clear(); AlmAutosave.install({ appKey: 'preset-isolation', debounceMs: 50 }); });
+  const before = await snapshot(), keys = await save();
+  await page.addScriptTag({ url: '/shared/alm-figpresets.js' });
+  await page.evaluate(() => AlmFigPresets.register({ target: document.getElementById('exports'), plots: [{ id: 'chart', getSvg: () => document.getElementById('chart') }] }));
+  const panel = page.locator('.alm-figpresets'); await expect(panel).toBeVisible();
+  await expect(panel.locator('input, select')).toHaveCount(7);
+  expect(await snapshot()).toBe(before);
+  await page.evaluate(() => AlmAutosave.clear('preset-isolation'));
+  await panel.getByLabel('Journal preset', { exact: true }).selectOption('bmj');
+  await panel.getByLabel('Preset width (mm)').fill('125');
+  expect(await snapshot()).toBe(before);
+  // Wait longer than the real debounce: presentation edits must not save analysis data.
+  await page.waitForTimeout(150);
+  expect(await page.evaluate(() => AlmAutosave.peek('preset-isolation'))).toBeNull();
+  expect(await save()).toEqual(keys);
+  // Plant the original document-level form pollution; the same checks must reject it.
+  await panel.evaluate(el => { const input = document.createElement('input'); input.type = 'text'; input.id = 'preset-plant'; input.value = 'bad'; el.append(input); });
+  expect(await snapshot()).not.toBe(before);
+  await page.evaluate(() => AlmAutosave.clear('preset-isolation'));
+  expect(await save()).not.toEqual(keys);
+  await page.locator('#preset-plant').evaluate(el => el.remove());
+  await page.evaluate(() => AlmAutosave.clear('preset-isolation'));
+  expect(await save()).toEqual(keys); expect(await snapshot()).toBe(before);
+});
+
+test('preset fields fit a narrow screen and keep their labels and focus visible', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/influence/index.html');
+  const panel = page.locator('.alm-figpresets'); await expect(panel).toBeVisible();
+  const width = () => page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+  let size = await width(); expect(size.scroll).toBeLessThanOrEqual(size.client + 1);
+  const journal = panel.getByLabel('Journal preset', { exact: true });
+  await journal.selectOption('cochrane'); await journal.focus(); await expect(journal).toBeFocused();
+  size = await width(); expect(size.scroll).toBeLessThanOrEqual(size.client + 1);
+  // Plant the unbounded long selector from the failed layout.
+  await journal.evaluate(el => { el.style.width = '700px'; el.style.maxWidth = 'none'; });
+  size = await width(); expect(size.scroll).toBeGreaterThan(size.client + 1);
+  await journal.evaluate(el => el.removeAttribute('style'));
+  size = await width(); expect(size.scroll).toBeLessThanOrEqual(size.client + 1);
+});
+
+test('dose-response live validation survives first preset mount; planted document inputs invalidate it', async ({ page }) => {
+  // Delay only the presentation module so it mounts during the actual validator's
+  // pending run. The unchanged contract spec remains responsible for real webR.
+  await page.route('**/shared/alm-figpresets.js', route => route.fulfill({ contentType: 'application/javascript', body: '/* presentation delayed */' }));
+  await page.goto('/dose-response-ma/index.html');
+  await page.evaluate(() => {
+    const live = AlmDoseValidate.live;
+    const ref = Object.fromEntries(live.appValues(live.currentState()).map(v => [v.key, v.value]));
+    window.AlmWebR = { runR: () => new Promise(resolve => {
+      window.__finishPresetR = () => resolve({ ok: true, stdout: 'ALMJSON:' + JSON.stringify(ref), versions: {} });
+    }) };
+    window.__presetValidator = AlmValidate.mount(document.getElementById('alm-validate'), AlmDoseValidate);
+    window.__pendingPresetR = __presetValidator.runLive();
+  });
+  await page.waitForFunction(() => !!window.__finishPresetR);
+  await page.unroute('**/shared/alm-figpresets.js');
+  await page.addScriptTag({ url: '/shared/alm-figpresets.js' });
+  await expect(page.locator('.alm-figpresets')).toBeVisible();
+  const control = await page.evaluate(async () => { __finishPresetR(); window.__finishPresetR = null; return await __pendingPresetR; });
+  expect(control.stale).not.toBe(true); expect(control.rows.length).toBeGreaterThan(0);
+  expect(control.rows.filter(row => !row.pass)).toEqual([]);
+  await page.evaluate(() => { window.__pendingPresetR = __presetValidator.runLive(); });
+  await page.waitForFunction(() => !!window.__finishPresetR);
+  // Reintroduce a document-visible preset input, without an analysis edit event.
+  await page.locator('.alm-figpresets').evaluate(el => { const input = document.createElement('input'); input.id = 'late-preset-plant'; el.append(input); });
+  const plant = await page.evaluate(async () => { __finishPresetR(); return await __pendingPresetR; });
+  expect(plant).toEqual({ stale: true, rows: [] });
+  await expect(page.locator('#alm-validate [role=status]')).toContainText('out of date');
+});
+
+test('idle presets preserve the legacy export status and have a named landmark', async ({ page }) => {
+  await page.goto('/hub/shared/tests/');
+  await page.setContent('<main><div id="exports"></div><svg id="chart" width="300" height="150" viewBox="0 0 300 150"><path d="M1 2L3 4"/></svg></main>');
+  await page.addScriptTag({ url: '/hub/shared/plot-export.js' });
+  await page.evaluate(() => alm.plotExport({ target: '#exports', plots: [{ id: 'chart', name: 'Chart', getSvg: () => document.getElementById('chart') }] }));
+  const panel = page.locator('.alm-figpresets'); await expect(panel).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Journal figure export', exact: true })).toBeVisible();
+  await expect(page.getByRole('status')).toHaveCount(1);
+  const legacy = page.getByRole('group', { name: 'Download plots', exact: true });
+  await legacy.getByRole('button', { name: 'Select none', exact: true }).click();
+  await legacy.getByRole('button', { name: 'Download selected', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Select at least one plot.');
+  await panel.evaluate(el => el.querySelector('[aria-live]').setAttribute('role', 'status'));
+  await expect(page.getByRole('status')).toHaveCount(2); // planted empty duplicate
+  await panel.evaluate(el => el.querySelector('[aria-live]').removeAttribute('role'));
+  await expect(page.getByRole('status')).toHaveCount(1);
+  await download(page, panel);
+  await expect(panel.getByRole('status')).toContainText('Figure exported.');
+});
 function csvFile(name, rows) {
   mkdirSync(evidenceDir, { recursive: true });
   const keys = Object.keys(rows[0]);
@@ -95,6 +208,54 @@ test('preset labels stay exact across option changes and multiple panels', async
 async function download(page, panel) {
   const [file] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: /^Export .* with preset$/ }).first().click()]);
   return readFileSync(await file.path());
+}
+
+test('a delayed download retains its bytes; premature URL revocation is detected', async ({ page }) => {
+  await page.goto('/hub/shared/tests/');
+  await page.setContent('<main><svg id="chart" viewBox="0 0 300 150"><path d="M1 2L3 4"/></svg></main><div id="alm-features"></div>');
+  await page.clock.install();
+  await page.addScriptTag({ url: '/shared/alm-figpresets.js' });
+  await page.evaluate(() => {
+    AlmFigPresets.register({ target: document.querySelector('main'), plots: [{ id: 'chart', getSvg: () => document.getElementById('chart') }] });
+    AlmFigPresets.scan();
+    window.__nativePresetClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () { window.__delayedPresetLink = this; };
+  });
+  const panel = page.locator('.alm-figpresets');
+  await panel.getByRole('button', { name: /^Export .* with preset$/ }).click();
+  await expect(panel.getByRole('status')).toContainText('Figure exported.');
+  await page.clock.runFor(2000); // beyond the old 1500 ms URL revocation
+  const [file] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => {
+    document.body.appendChild(__delayedPresetLink);
+    __nativePresetClick.call(__delayedPresetLink);
+    __delayedPresetLink.remove();
+  })]);
+  expect(readFileSync(await file.path(), 'utf8')).toContain('d="M1 2L3 4"');
+  const readable = () => page.evaluate(async () => {
+    try { return (await fetch(__delayedPresetLink.href)).ok; } catch { return false; }
+  });
+  expect(await readable()).toBe(true);
+  await page.evaluate(() => URL.revokeObjectURL(__delayedPresetLink.href));
+  expect(await readable()).toBe(false);
+});
+
+async function waitForPlotEntrance() {
+  // Visibility does not imply stationary geometry. app-style.css animates main
+  // and .panel from translateY(6px), with a delay on the second panel. Await the
+  // actual finite animations on plot ancestors before taking the baseline;
+  // preserve the app's motion and every subsequent exact geometry assertion.
+  const ancestors = new Set();
+  for (const svg of document.querySelectorAll('main svg')) {
+    for (let el = svg; el; el = el.parentElement) ancestors.add(el);
+  }
+  const animations = new Set();
+  for (const el of ancestors) {
+    for (const animation of el.getAnimations()) {
+      if (Number.isFinite(animation.effect?.getComputedTiming().endTime)) animations.add(animation);
+    }
+  }
+  // Cancellation also ends an entrance (for example when the app re-renders).
+  await Promise.allSettled(Array.from(animations, animation => animation.finished));
 }
 
 test('preset-only auto export preserves legacy SVG containers and removes stale controls', async ({ page }) => {
@@ -255,3 +416,160 @@ for (const exporter of ['chart-download', 'chart-export-auto']) {
     await expect(panel).toHaveCount(1);
   });
 }
+
+test('geometry readiness excludes entrance motion but still detects a planted layout shift', async ({ page }) => {
+  await page.goto('/hub/shared/tests/');
+  await page.setContent('<main><section id="plot-panel"><svg width="300" height="150" viewBox="0 0 300 150"><path d="M1 2L3 4"/></svg></section></main><div id="alm-features"></div>');
+  await page.addScriptTag({ url: '/shared/alm-figpresets.js' });
+  await page.evaluate(() => window.AlmFigPresets.register({ target: document.querySelector('main'),
+    plots: [{ id: 'chart', getSvg: () => document.querySelector('main svg') }] }));
+  const panel = page.locator('#alm-features .alm-figpresets');
+  await expect(panel).toHaveCount(1);
+  const geometry = () => page.locator('main svg').evaluate(el => {
+    const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height];
+  });
+  const baseline = await geometry();
+  await page.evaluate(() => {
+    const parent = document.getElementById('plot-panel');
+    // Hold a real browser animation midway, so the pre-readiness defect is deterministic.
+    window.__entrance = parent.animate([{ transform: 'translateY(6px)' }, { transform: 'none' }],
+      { duration: 300, fill: 'both' });
+    window.__entrance.pause(); window.__entrance.currentTime = 150;
+    const original = parent.getAnimations.bind(parent);
+    parent.getAnimations = (...args) => { window.__entranceRead = true; return original(...args); };
+  });
+  expect(await geometry()).not.toEqual(baseline);
+  const waiting = page.evaluate(waitForPlotEntrance);
+  await page.waitForFunction(() => window.__entranceRead === true);
+  await page.evaluate(() => window.__entrance.play());
+  await waiting;
+  expect(await geometry()).toEqual(baseline);
+  await panel.getByLabel('Journal preset', { exact: true }).selectOption('bmj');
+  expect(await geometry()).toEqual(baseline);
+  // Plant a one-pixel layout shift after readiness. The exact predicate must reject it.
+  await page.locator('#plot-panel').evaluate(el => { el.style.paddingTop = '1px'; });
+  expect(await geometry()).not.toEqual(baseline);
+  await page.locator('#plot-panel').evaluate(el => { el.style.paddingTop = ''; });
+  expect(await geometry()).toEqual(baseline);
+});
+
+// Exercise the unchanged archived adapters, not a substitute text comparator.
+for (const app of ['gosh', 'nma-inconsistency']) {
+  test(`${app}: features placement passes the display contract; a download-bar plant fails`, async ({ page }) => {
+    await page.goto(`/${app}/index.html`);
+    const panel = page.locator('.alm-figpresets');
+    await expect(page.locator('#alm-features .alm-figpresets')).toHaveCount(1);
+    await expect(panel).toBeVisible();
+    await expect(page.locator('main .alm-figpresets, .alm-xbar .alm-figpresets, .alm-dl .alm-figpresets')).toHaveCount(0);
+    const contract = () => page.evaluate(app => app === 'gosh'
+      ? window.AlmGoshValidationAdapter.live.currentState().values.find(v => v.key === 'display').value
+      : window.AlmIncoValidationAdapter.chartControls(), app);
+    expect(await contract()).toBe(true);
+    await page.evaluate(waitForPlotEntrance);
+    const geometry = () => page.locator('main svg').evaluateAll(els => els.map(el => {
+      const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height];
+    }));
+    const before = await geometry();
+    // plot-export names its fieldset through a legend, not an aria-label.
+    // Resolve the actual legacy control before taking snapshots or planting UI;
+    // an empty locator would otherwise make the markup comparison vacuous.
+    const plotGroup = page.locator('main').getByRole('group', { name: 'Download plots', exact: true });
+    const bars = page.locator('main .alm-xbar, main .alm-dl').or(plotGroup);
+    const plantTarget = app === 'gosh' ? plotGroup : page.locator('main .alm-xbar').first();
+    await expect(plantTarget).toHaveCount(1);
+    await expect(plantTarget).toBeVisible();
+    const markup = await bars.evaluateAll(els => els.map(el => el.outerHTML));
+    await panel.getByLabel('Journal preset', { exact: true }).selectOption('bmj');
+    expect(await geometry()).toEqual(before);
+    expect(await bars.evaluateAll(els => els.map(el => el.outerHTML))).toEqual(markup);
+    // Plant the reviewed defect. The real archived display predicate must reject it.
+    await plantTarget.evaluate((bar, source) => {
+      const plant = source.cloneNode(true); plant.className = 'alm-figpresets-plant';
+      bar.appendChild(plant);
+    }, await panel.elementHandle());
+    await expect(plantTarget.locator('.alm-figpresets-plant')).toHaveCount(1);
+    expect(await contract()).toBe(false);
+    await page.locator('.alm-figpresets-plant').evaluate(el => el.remove());
+    expect(await contract()).toBe(true);
+    expect(await bars.evaluateAll(els => els.map(el => el.outerHTML))).toEqual(markup);
+    expect(await geometry()).toEqual(before);
+    await panel.getByLabel('Preset export format').selectOption('svg');
+    expect((await download(page, panel)).toString()).toContain('width="85mm"');
+  });
+}
+
+test('one features panel aggregates plots, preserves settings and never changes legacy bars', async ({ page }) => {
+  await page.goto('/hub/shared/tests/');
+  await page.setContent('<main><div id="exports-a"></div><svg id="a" width="300" height="150" viewBox="0 0 300 150"><path d="M1 2L3 4"/></svg><div id="exports-b"></div><svg id="b" width="300" height="150" viewBox="0 0 300 150"><path d="M5 6L7 8"/></svg></main><div id="alm-features"></div>');
+  await page.addScriptTag({ url: '/hub/shared/chart-download.js' });
+  await page.evaluate(() => {
+    for (const id of ['a', 'b']) window.alm.chartDownload({ target: '#exports-' + id, basename: id, getSvg: () => document.getElementById(id) });
+  });
+  const panel = page.locator('#alm-features .alm-figpresets');
+  await expect(page.locator('.alm-figpresets')).toHaveCount(1);
+  await expect(panel.getByRole('button', { name: /^Export .* with preset$/ })).toHaveCount(2);
+  await expect(page.locator('main .alm-figpresets')).toHaveCount(0);
+  const before = await page.locator('main').innerHTML();
+  await panel.getByLabel('Journal preset', { exact: true }).selectOption('bmj');
+  await page.evaluate(() => window.alm.chartDownload({ target: '#exports-a', basename: 'a', getSvg: () => document.getElementById('a') }));
+  await expect(panel.getByLabel('Journal preset', { exact: true })).toHaveValue('bmj');
+  await expect(panel.getByRole('button', { name: /^Export .* with preset$/ })).toHaveCount(2);
+  expect(await page.locator('main').innerHTML()).toBe(before);
+  for (const [index, path] of [[0, 'M1 2L3 4'], [1, 'M5 6L7 8']]) {
+    const [file] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: /^Export .* with preset$/ }).nth(index).click()]);
+    expect(readFileSync(await file.path(), 'utf8')).toContain(`d="${path}"`);
+  }
+});
+
+test('chart refresh keeps live validation current, while a real analysis edit invalidates it', async ({ page }) => {
+  await page.goto('/correlation-ma/index.html');
+  const panel = page.locator('#alm-features .alm-figpresets');
+  await expect(panel).toBeVisible();
+  await panel.getByLabel('Journal preset', { exact: true }).selectOption('bmj');
+  await panel.getByLabel('Preset width (mm)').fill('125');
+  await page.evaluate(() => {
+    // A deferred runner isolates the revision lifecycle. The existing contract
+    // specs still execute real webR and independently check all 12 quantities.
+    const state = AlmCorrValidationAdapter.live.currentState();
+    const ref = Object.fromEntries(state.values.map(v => [v.key, v.value]));
+    ref.display = true; ref.controls = true;
+    window.AlmWebR = { runR: () => new Promise(resolve => {
+      window.__figFinishR = () => resolve({ ok: true, stdout: 'ALMJSON:' + JSON.stringify(ref), versions: { metafor: '4.8-0' } });
+    }) };
+    alm.chartExportAuto.scan(); AlmFigPresets.scan();
+    window.__figInputs = () => JSON.stringify(Array.from(document.querySelectorAll('input,select,textarea'),
+      el => [el.id, el.value, el.checked]));
+    window.__figBefore = __figInputs();
+    window.__figEvents = [];
+    document.addEventListener('change', e => __figEvents.push(e.target.id), true);
+  });
+  // Control and headline plant both redraw the chart in currentState(). Neither
+  // may be silently discarded as stale because the exporter rebuilt its form.
+  for (const tampered of [false, true]) {
+    await page.evaluate(tampered => {
+      if (tampered) {
+        const run = __almCorrValidationRun;
+        window.__almCorrValidationRun = () => { run(); document.getElementById('headline').textContent = 'Pooled r = 99'; };
+      }
+      window.__figResult = AlmCorrValidation.runLive();
+    }, tampered);
+    await page.waitForFunction(() => !!window.__figFinishR);
+    const observed = await page.evaluate(() => {
+      alm.chartExportAuto.scan(); AlmFigPresets.scan();
+      return { fingerprint: __figInputs(), before: __figBefore, events: __figEvents };
+    });
+    expect(observed.fingerprint).toBe(observed.before);
+    expect(observed.events).toEqual([]);
+    const result = await page.evaluate(async () => { __figFinishR(); window.__figFinishR = null; return await __figResult; });
+    expect(result.stale).not.toBe(true);
+    expect(result.rows).toHaveLength(12);
+    expect(result.rows.filter(row => !row.pass).map(row => row.label)).toEqual(tampered ? ['display'] : []);
+  }
+  await expect(panel.getByLabel('Preset width (mm)')).toHaveValue('125');
+  // A real edit must continue to trip the unchanged validator's stale guard.
+  await page.evaluate(() => { window.__figResult = AlmCorrValidation.runLive(); });
+  await page.waitForFunction(() => !!window.__figFinishR);
+  await page.locator('#f-data').fill('A, .3, 20\nB, -.2, 30');
+  const stale = await page.evaluate(async () => { __figFinishR(); return await __figResult; });
+  expect(stale).toEqual({ stale: true, rows: [] });
+});
