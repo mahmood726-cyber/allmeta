@@ -689,9 +689,7 @@
         const est = clampNum(r.estimate);
         if (est != null) set("in-est", est);
         const se = clampNum(r.se);
-        if (se != null && se > 0) {
-          set("in-se", se);
-        }
+        document.getElementById("in-se").value = se != null && se > 0 ? String(se) : "";
         // A new extracted estimate must not inherit the previous estimate's CI.
         // Import any supplied bounds even when an SE is present; Convert validates them.
         const lo = clampNum(r.ci_lower), hi = clampNum(r.ci_upper);

@@ -190,3 +190,25 @@ test('P0-55 import control: an SE-only AI result without prior CI keeps its SE',
   h.context.importAI({ type: 'OR', estimate: 0.7, se: 0.3 });
   assert.equal(h.export().rows[0].se, 0.3);
 });
+
+
+test('review: AI extraction without valid SE or CI cannot inherit previous uncertainty', () => {
+  for (const se of [undefined, null, 0, -0.1, 'invalid']) {
+    const h = harness({ 'in-est': 0.62, 'der-lo': 0.45, 'der-hi': 0.85 });
+    assert.ok(h.convert().length > 0);
+    h.context.importAI({ type: 'OR', estimate: 0.7, se });
+    assert.equal(h.el('in-se').value, '');
+    assert.equal(h.context.__almResultRows.length, 0);
+    assert.equal(h.export().rows.length, 0);
+    assert.match(h.el('warn-slot').innerHTML, /standard error/i);
+  }
+});
+
+test('review control: CI-only extraction derives fresh uncertainty without an SE', () => {
+  const h = harness({ 'in-se': 0.9 });
+  h.context.importAI({ type: 'OR', estimate: 0.7, ci_lower: 0.5, ci_upper: 0.9 });
+  const out = h.export();
+  close(out.input_se, Math.log(0.9 / 0.5) / (2 * Z95));
+  assert.equal(out.rows[0].ci_lower, 0.5);
+  assert.equal(out.rows[0].ci_upper, 0.9);
+});
