@@ -131,7 +131,7 @@
           <label>
             <span class="lbl">SE (on log scale for ratios)</span>
             <input id="in-se" type="number" step="any" value="0.12">
-            <span class="hint">Or derive below.</span>
+            <span class="hint">Entered CI bounds below take precedence over this SE when you Convert. Clear both bounds to use SE directly.</span>
           </label>
         </div>
       </fieldset>
@@ -277,7 +277,7 @@
 
     // --- conversion core ---
     // All ratio inputs (OR, RR, HR) are given on the NATURAL scale, SE on the LOG scale.
-    function convert(type, est, se, p0, pooledSd) {
+    function convert(type, est, se, p0, pooledSd, inputCI = null) {
       const rows = [];
       const push = (scale, point, se_, note) => rows.push({ scale, point, se: se_, note: note || "" });
 
@@ -310,14 +310,17 @@
           const or = est * (1 - p0) / (1 - est * p0);
           // SE(logOR) via delta from SE(logRR):
           //   d(ln OR)/d(ln RR) = 1 / (1 - p0 * RR)
-          // Singular as p0·RR → 1 (risk ceiling, p1 → 1). Guard with a ceiling.
+          // The entire RR interval must be below 1/p0, not just its point.
+          // Compare in log space so an overflowing upper CI also fails closed.
           const denom = 1 - p0 * est;
-          if (Math.abs(denom) < 0.001) {
-            push("OR", or, NaN,
-              "RR·p₀ ≈ 1 — OR SE undefined at risk ceiling (implied p₁ ≈ 1); point-only");
+          const logUpperRR = inputCI ? Math.log(inputCI.hi) : logRR + Z95 * se;
+          if (logUpperRR >= -Math.log(p0) || Math.abs(denom) < 0.001) {
+            const note = logUpperRR >= -Math.log(p0)
+              ? "RR 95% CI reaches or crosses the risk ceiling (1/p₀); OR/SMD SE and CI suppressed; point only."
+              : "RR·p₀ ≈ 1 — near the risk ceiling; OR/SMD SE and CI suppressed; point only.";
+            push("OR", or, NaN, note);
             push("RD", (est - 1) * p0, NaN, "point only");
-            push("SMD (Cox via OR)", Math.log(or) * COX, NaN,
-              "Cox's constant; SE undefined at risk ceiling");
+            push("SMD (Cox via OR)", Math.log(or) * COX, NaN, note);
           } else {
             const seLogOR = se / Math.abs(denom);
             push("OR", or, seLogOR, "via RR→OR given p₀; log-scale SE");
@@ -377,11 +380,19 @@
         push("IRR", est, se, "log-scale SE; ratio of event rates per person-time");
         push("ln(IRR)", Math.log(est), se, "no general mapping to OR or SMD");
       }
+      if (inputCI && rows.length) {
+        // Preserve the supplied interval, which need not be centred on the estimate.
+        Object.assign(rows[0], inputCI);
+        rows[0].note += "; supplied 95% CI; SE approximated from its width";
+        const logRow = rows.find(r => r.scale === "ln(" + type + ")");
+        if (logRow) Object.assign(logRow, { lo: Math.log(inputCI.lo), hi: Math.log(inputCI.hi) });
+      }
       return rows;
     }
 
     function withCI(row) {
       const out = { ...row };
+      if (Number.isFinite(row.lo) && Number.isFinite(row.hi)) return out;
       if (Number.isFinite(row.se) && row.se > 0 && Number.isFinite(row.point)) {
         // Tight word-boundary regex: matches "OR", "OR (approx)", "RR (implied)", "HR" —
         // but NOT "ORA", "HRZ", or arbitrary prefixes. Also requires row.point > 0 for
@@ -408,7 +419,8 @@
       const type = document.getElementById("in-type").value;
       const est = parseFloat(document.getElementById("in-est").value);
       const ratio = ["OR", "RR", "HR", "IRR"].includes(type);
-      if (Number.isFinite(lo) || Number.isFinite(hi)) {
+      if (document.getElementById("der-lo").value.trim() !== "" ||
+          document.getElementById("der-hi").value.trim() !== "") {
         if (!(Number.isFinite(lo) && Number.isFinite(hi) && lo < hi))
           throw new RangeError("Enter both CI bounds with lower < upper.");
         if (ratio && scale !== "log")
@@ -466,21 +478,22 @@
     function toSmdView(r) {
       // Only a true SMD, MD/known SD, OR/Cox, or log(OR)/Cox can be shown.
       // RR, HR and IRR have NO generic SMD conversion.
-      let pt, se;
-      if (/^SMD/.test(r.scale)) { pt = r.point; se = r.se; }
+      let pt, se, transform;
+      if (/^SMD/.test(r.scale)) { pt = r.point; se = r.se; transform = x => x; }
       else if (/^MD\b/.test(r.scale)) {
         const sd = parseFloat(document.getElementById("ctx-sd").value);
         if (!(Number.isFinite(sd) && sd > 0)) return null;
-        pt = r.point / sd; se = r.se / sd;
+        pt = r.point / sd; se = r.se / sd; transform = x => x / sd;
       } else if (/^OR\b/.test(r.scale)) {
         if (!(r.point > 0 && Number.isFinite(r.point))) return null;
-        pt = Math.log(r.point) * COX; se = r.se * COX;
+        pt = Math.log(r.point) * COX; se = r.se * COX; transform = x => Math.log(x) * COX;
       } else if (r.scale === "ln(OR)") {
-        pt = r.point * COX; se = r.se * COX;
+        pt = r.point * COX; se = r.se * COX; transform = x => x * COX;
       } else return null;
       if (!Number.isFinite(pt)) return null;
-      return { pt, se, lo: Number.isFinite(se) ? pt - Z95 * se : NaN,
-        hi: Number.isFinite(se) ? pt + Z95 * se : NaN };
+      const supplied = Number.isFinite(r.lo) && Number.isFinite(r.hi);
+      return { pt, se, lo: supplied ? transform(r.lo) : Number.isFinite(se) ? pt - Z95 * se : NaN,
+        hi: supplied ? transform(r.hi) : Number.isFinite(se) ? pt + Z95 * se : NaN };
     }
 
     function renderForest(rows) {
@@ -598,23 +611,41 @@
       const type = document.getElementById("in-type").value;
       document.getElementById("smd-kind-field").hidden = type !== "SMD";
       const est = parseFloat(document.getElementById("in-est").value);
-      const se = parseFloat(document.getElementById("in-se").value);
+      let se = parseFloat(document.getElementById("in-se").value);
       const p0 = parseFloat(document.getElementById("ctx-p0").value);
       const sd = parseFloat(document.getElementById("ctx-sd").value);
       if (!Number.isFinite(est)) { render([], "Enter a point estimate."); return; }
       if (["OR", "RR", "HR", "IRR"].includes(type) && !(est > 0)) { render([], "Ratio estimates (OR/RR/HR/IRR) must be greater than 0."); return; }
+      let inputCI = null;
+      if (["der-lo", "der-hi"].some(id => document.getElementById(id).value.trim() !== "")) {
+        try {
+          se = deriveSE();
+          if (!(Number.isFinite(se) && se > 0))
+            throw new RangeError("The supplied CI must imply a finite, strictly positive SE.");
+          inputCI = { lo: Number(document.getElementById("der-lo").value),
+            hi: Number(document.getElementById("der-hi").value) };
+          document.getElementById("in-se").value = String(se);
+        } catch (error) {
+          render([], null);
+          setWarn(error.message, "err");
+          return;
+        }
+      }
       if (!(Number.isFinite(se) && se > 0)) { render([], "Enter a finite, strictly positive standard error on the appropriate analysis scale."); return; }
       if (type === "RD" && !(est >= -1 && est <= 1)) { render([], "Risk difference must be between -1 and +1."); return; }
       if (Number.isFinite(p0) && !(p0 > 0 && p0 < 1)) { render([], "Baseline risk must be strictly between 0 and 1, or left blank."); return; }
       if (Number.isFinite(sd) && !(sd > 0)) { render([], "Pooled SD must be strictly positive, or left blank."); return; }
-      const rows = convert(type, est, se, p0, sd);
-      const warn = type === "HR" || type === "IRR"
+      const rows = convert(type, est, se, p0, sd, inputCI);
+      let warn = type === "HR" || type === "IRR"
         ? "No general mathematically valid conversion from a hazard/rate ratio to an odds ratio, risk ratio or SMD. A specified time horizon and data-generating model would be needed; use the original effect measure."
         : type === "OR" || type === "RR" || type === "RD"
         ? "Baseline risk is treated as fixed (its sampling uncertainty is not propagated). OR/RR conversions are conditional on a common p0; Cox OR-to-SMD is a separate distributional approximation."
         : type === "SMD"
         ? "Cox OR conversion assumes an unobserved logistic distribution. An imported Hedges' g is already bias-corrected; do not correct it again."
         : "";
+      if (inputCI) warn += " Supplied 95% CI bounds take precedence over the SE field. Original bounds are retained; SE is approximated from CI width for normal/Wald and delta-method conversions.";
+      const ceiling = rows.find(r => /risk ceiling/.test(r.note));
+      if (ceiling) warn += " " + ceiling.note;
       render(rows, warn);
     }
 
@@ -660,17 +691,15 @@
         const se = clampNum(r.se);
         if (se != null && se > 0) {
           set("in-se", se);
-        } else {
-          const lo = clampNum(r.ci_lower);
-          const hi = clampNum(r.ci_upper);
-          if (lo != null && hi != null && lo < hi) {
-            set("der-lo", lo);
-            set("der-hi", hi);
-            const sel = document.getElementById("der-scale");
-            if (sel && r.ci_scale) sel.value = /log/i.test(String(r.ci_scale)) ? "log" : "raw";
-            document.getElementById("btn-derive").click();
-          }
         }
+        // A new extracted estimate must not inherit the previous estimate's CI.
+        // Import any supplied bounds even when an SE is present; Convert validates them.
+        const lo = clampNum(r.ci_lower), hi = clampNum(r.ci_upper);
+        document.getElementById("der-lo").value = lo == null ? "" : String(lo);
+        document.getElementById("der-hi").value = hi == null ? "" : String(hi);
+        const ratio = ["OR", "RR", "HR", "IRR"].includes(document.getElementById("in-type").value);
+        document.getElementById("der-scale").value = r.ci_scale
+          ? (/log/i.test(String(r.ci_scale)) ? "log" : "raw") : (ratio ? "log" : "raw");
         runConvert();
       },
     });
