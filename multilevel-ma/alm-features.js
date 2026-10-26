@@ -409,7 +409,16 @@
       return typeof a[k] !== 'string' || (a[k] !== '' && !Number.isFinite(Number(a[k])));
     }) || (a.min !== '' && a.max !== '' && Number(a.min) >= Number(a.max))) throw new Error('Invalid axis options.');
     var lines = s.src.trim().split(/\n/), parsed = global.__almMlmaParse(s.src);
-    if (parsed.length !== lines.length || parsed.length < 3 || parsed.some(function (r) { return !identifier(r.study); })) throw new Error('Invalid effect rows.');
+    // The page parser uses parseFloat for manual input. A shared state must
+    // contain complete numeric tokens, not values with silently ignored suffixes.
+    var invalidNumber = lines.some(function (line) {
+      var cells = line.split(',');
+      return [1, 2].some(function (col) {
+        var token = (cells[col] || '').trim();
+        return !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(token);
+      });
+    });
+    if (invalidNumber || parsed.length !== lines.length || parsed.length < 3 || parsed.some(function (r) { return !identifier(r.study); })) throw new Error('Invalid effect rows.');
     if (s.entryLog !== undefined && !Array.isArray(s.entryLog)) throw new Error('Invalid conversion log.');
     // Validate everything before changing any controls.
     clearProvenance();
