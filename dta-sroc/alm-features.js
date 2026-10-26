@@ -333,10 +333,11 @@
         return ui;
       }
     });
-    // Like entry, the text UI supplies mount() but does not register a tab.
+    // Refresh when the tab is shown, including after a failed analysis.
     if (global.AlmTextUI) global.AlmFeatures.registerModule('text', {
       label: 'Report text', render: function (panel, ctx) {
-        return global.AlmTextUI.mount(panel, { app: ctx.app, text: ctx.block });
+        var ui = global.AlmTextUI.mount(panel, { app: ctx.app, text: ctx.block });
+        return { onShow: function () { ui.regenerate(); } };
       }
     });
     global.AlmFeatures.register(APP, spec);

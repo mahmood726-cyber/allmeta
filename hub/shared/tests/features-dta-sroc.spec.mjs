@@ -108,6 +108,18 @@ test('ENTRY PLANTED: negative counts block conversion; invalid imports leave dat
     for (const edit of [r => { r.tp = -1; }, r => { r.tp = 0; r.fn = 0; },
       r => { r.tp = 1.5; }, r => { r.study = '# hidden'; }, r => { r.study = 'bad\nlabel'; }]) {
       const bad = structuredClone(rows); edit(bad[0]);
+      // Supply matching synthetic provenance even for the edited row, so a
+      // missing source confirmation cannot hide a broken label/count guard.
+      bad.forEach(r => {
+        const pastedText = [r.study, r.tp, r.fp, r.fn, r.tn].join('\t');
+        let start = r.study.length + 1;
+        r.provenance = { label: r.study, reference: 'Synthetic invalid-input fixture', location: 'Fixture table',
+          pastedText, confirmed: true, values: ['tp', 'fp', 'fn', 'tn'].map(field => {
+            const text = String(r[field]), span = [start, start + text.length];
+            start += text.length + 1;
+            return { field, value: r[field], text, span };
+          }) };
+      });
       try { s.entry.apply(bad); failures.push(false); } catch { failures.push(true); }
     }
     return { flags: converted.flags, disabled, log, failures, before, after: s.share.get() };

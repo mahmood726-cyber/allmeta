@@ -20,7 +20,7 @@ const rows = [
 
 // Exercise the shipped adapter with real fits, report renderer and share codecs.
 // Only DOM access and the native Run button are doubled; no browser layout claims.
-function setup(data = rows) {
+function setup(data = rows, textUI = null, adapterSource = source) {
   const fields = Object.fromEntries(Object.entries({
     data: data.map((r, i) => ['Study ' + i, r.tp, r.fp, r.fn, r.tn].join(', ')).join('\n'),
     title: 'Original', method: 'fixed', cc: 'all', cov: '', example: 'generic'
@@ -33,15 +33,15 @@ function setup(data = rows) {
     type: typeof value === 'boolean' ? 'checkbox' : 'number', value,
     checked: value === false ? false : undefined, dispatchEvent() {}
   }));
-  const status = { textContent: '' }, handlers = {};
+  const status = { textContent: '' }, handlers = {}, modules = {};
   const fit = B.fit(data, { method: 'fixed' });
   const deeks = B.deeksTest(data);
   const window = {
     location: { hash: '' },
     addEventListener(type, handler) { handlers[type] = handler; },
-    AlmFeatures: { register() {}, open() {} },
+    AlmFeatures: { register() {}, open() {}, registerModule(key, mod) { modules[key] = mod; } },
     AlmFeaturesState: { entryLog: [], provenance: [] },
-    AlmShare: S, AlmText: T,
+    AlmShare: S, AlmText: T, AlmTextUI: textUI,
     alm: { urlState: { withoutWrites: fn => fn() } },
     __almBivariate: () => fit, __almDeeks: () => deeks, __almMetaRegression: () => null
   };
@@ -51,9 +51,9 @@ function setup(data = rows) {
     querySelector: selector => selector.includes('share-status') ? status :
       selector === '#fagan-host svg text:last-child' ? { textContent: 'pre 20% → +test 69%, −test 5%' } : null
   };
-  vm.runInNewContext(source, { window, document, URL, Event });
+  vm.runInNewContext(adapterSource, { window, document, URL, Event });
   const spec = window.AlmDTAFeatures;
-  return { spec, window, status, fields, deeks, runs: () => runs,
+  return { spec, window, status, fields, deeks, modules, runs: () => runs,
     async navigate(hash) {
       window.location.hash = hash;
       await handlers.hashchange({ newURL: 'https://example.test/dta-sroc/' + hash });
@@ -139,5 +139,79 @@ test('DTA navigation control ignores native hashes and cancels an older pending 
   release({ ok: true, state: { ...h.spec.share.get(), title: 'Obsolete' }, provenance: [] });
   await pending;
   assert.equal(h.fields['f-title'].value, 'Original');
+  assert.equal(h.runs(), 0);
+});
+
+function reportTab() {
+  let displayed;
+  const h = setup(rows, {
+    mount(panel, { text }) {
+      function regenerate() {
+        const r = text.results();
+        displayed = r ? T.render(text.templates, r, {}).results.text : null;
+      }
+      regenerate();
+      return { regenerate };
+    }
+  });
+  const hooks = h.modules.text.render({}, { app: 'dta-sroc', block: h.spec.text });
+  return { ...h, shown: () => displayed, show: () => hooks.onShow?.() };
+}
+
+test('DTA report tab refreshes on reopening after a different real fit', () => {
+  const h = reportTab(), original = h.shown();
+  const fit = B.fit(rows.map(r => ({ ...r, tp: r.tp * 2 })), { method: 'fixed' });
+  h.window.__almBivariate = () => fit;
+  const expected = report(h).results.text;
+  assert.notEqual(expected, original, 'the fixture changes the reported sensitivity');
+  h.show();
+  assert.equal(h.shown(), expected);
+});
+
+test('DTA report tab reopening with unchanged results preserves the report', () => {
+  const h = reportTab(), original = h.shown();
+  h.show();
+  assert.equal(h.shown(), original);
+});
+
+test('DTA report tab reopening after an invalid analysis clears the previous report', () => {
+  const h = reportTab();
+  assert.match(h.shown(), /summary sensitivity was/);
+  h.window.__almBivariate = () => null;
+  h.show();
+  assert.equal(h.shown(), null);
+});
+
+// Run the browser test's actual invalid-import fixtures through the adapter.
+// Removing only the label/count checks must defeat those fixtures; rejection
+// for unrelated missing provenance must not masquerade as input validation.
+function invalidEntryProbe(adapterSource = source) {
+  const browserTest = readFileSync(new URL('../features-dta-sroc.spec.mjs', import.meta.url), 'utf8');
+  const section = browserTest.slice(browserTest.indexOf("test('ENTRY PLANTED:"));
+  const fixture = section.slice(section.indexOf('const rows = __almResults()'),
+    section.indexOf('return { flags: converted.flags'));
+  assert.ok(fixture.includes('const failures = []'));
+  const h = setup(rows, null, adapterSource), before = JSON.stringify(h.spec.share.get());
+  const failures = vm.runInNewContext(fixture + '\nfailures;', {
+    s: h.spec, structuredClone,
+    __almResults: () => ({ rows: rows.map((r, i) => ({
+      study: 'Study ' + i, TP: r.tp, FP: r.fp, FN: r.fn, TN: r.tn
+    })) })
+  });
+  return { failures: Array.from(failures), h, before };
+}
+
+test('DTA invalid-import browser fixtures detect removed label and count guards', () => {
+  const planted = source
+    .replace(/      if \(typeof label !== 'string'[\s\S]*?\n      }/, '')
+    .replace(/      if \(!cells.every\(Number.isSafeInteger\)[\s\S]*?(?=      var p = r.provenance;)/, '');
+  assert.notEqual(planted, source);
+  assert.deepEqual(invalidEntryProbe(planted).failures, [false, false, false, false, false]);
+});
+
+test('DTA invalid-import browser fixture control rejects every bad row atomically', () => {
+  const { failures, h, before } = invalidEntryProbe();
+  assert.deepEqual(failures, [true, true, true, true, true]);
+  assert.equal(JSON.stringify(h.spec.share.get()), before);
   assert.equal(h.runs(), 0);
 });
