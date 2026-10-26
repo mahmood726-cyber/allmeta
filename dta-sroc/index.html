@@ -365,8 +365,8 @@
       const nc = covMode === 'last' ? 5 : 4;
       let firstRecord = true;
       for (let i = 0; i < lines.length; i++) {
-        const raw = lines[i].trim();
-        if (!raw || raw.startsWith('#')) continue;
+        const raw = lines[i]; // Preserve tabs: even boundary tabs delimit fields.
+        if (!raw.trim() || raw.trimStart().startsWith('#')) continue;
         let parts;
         try { parts = studyFields(raw); }
         catch (error) {
