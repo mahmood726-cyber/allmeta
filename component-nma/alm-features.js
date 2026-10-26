@@ -246,7 +246,9 @@
       return { src: input().value, entryLog: entryCurrent() ? state.entryLog || [] : [] };
     }, set: function (s) {
       if (!s || typeof s !== 'object') throw new Error('Missing analysis state.');
-      if (s.entryLog !== undefined && !Array.isArray(s.entryLog)) throw new Error('Invalid conversion log.');
+      if (s.entryLog !== undefined && (!Array.isArray(s.entryLog) || s.entryLog.some(function (step) {
+        return !step || typeof step !== 'object' || Array.isArray(step);
+      }))) throw new Error('Invalid conversion log.');
       load(s.src);
       var state = global.AlmFeaturesState = global.AlmFeaturesState || {};
       state.entryLog = s.entryLog || [];
