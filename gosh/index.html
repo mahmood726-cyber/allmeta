@@ -146,7 +146,7 @@
       <div class="metrics">
         <div class="card"><span class="k">Subsets computed</span><span class="v" id="m-n">0</span></div>
         <div class="card"><span class="k">Median estimate</span><span class="v" id="m-est">&#8212;</span></div>
-        <div class="card"><span class="k">Median <span data-gloss="i2">I&#178;</span></span><span class="v" id="m-i2">&#8212;</span></div>
+        <div class="card"><span class="k">median I² across subsets (not the full-data I²)</span><span class="v" id="m-i2">&#8212;</span><div class="full-data"><span class="k">Full-data I²</span><span class="v" id="m-full-i2">&#8212;</span></div></div>
       </div>
       <h2 style="margin-top:0.6rem">GOSH scatter</h2>
       <p id="plot-error" role="alert"></p>
@@ -165,7 +165,7 @@
         <div id="alm-export-mount"></div>
       </div>
 
-      <div class="note"><strong>Interpretation:</strong> multimodal clustering indicates subgroup heterogeneity (the meta-analysis averages two or more distinct populations). A thick &#8220;horizontal band&#8221; at one estimate means most subsets converge on the same answer &#8212; homogeneous evidence. Streaks along the <span data-gloss="i2">I&#178;</span> axis often indicate one or two highly influential outliers.</div>
+      <div class="note"><strong>Interpretation:</strong> multimodal clustering indicates subgroup heterogeneity (the meta-analysis averages two or more distinct populations). A band at one estimate means subsets share an estimate; this descriptive plot does not establish that heterogeneity is absent. Inspect full-data I² and study-level diagnostics to assess heterogeneity. Streaks along the <span data-gloss="i2">I&#178;</span> axis often indicate one or two highly influential outliers.</div>
     </section>
 
       <div id="alm-flow-mount" aria-live="polite"></div>
@@ -273,6 +273,16 @@
       return results;
     }
 
+    // Full-data descriptive statistic only; do not add a subset pooling call.
+    function fullDataI2(rows) {
+      var weights = rows.map(function (r) { return 1 / (r.se * r.se); });
+      var total = weights.reduce(function (a, b) { return a + b; }, 0);
+      var mean = rows.reduce(function (a, r, i) { return a + weights[i] * r.te; }, 0) / total;
+      var q = rows.reduce(function (a, r, i) { return a + weights[i] * (r.te - mean) * (r.te - mean); }, 0);
+      var df = rows.length - 1;
+      return df > 0 && q > df ? 100 * (q - df) / q : 0;
+    }
+
     function fmt(x, d) {
       d = d === undefined ? 3 : d;
       return Number.isFinite(x) ? x.toFixed(d) : '—';
@@ -287,6 +297,7 @@
     run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #model, #n-sample, #enum-mode");
 
     function run() {
+      document.getElementById('m-full-i2').textContent = '\u2014';
       document.getElementById('plot-note').textContent = '';
       document.getElementById('plot-error').textContent = '';
       document.getElementById('input-error').textContent = '';
@@ -374,6 +385,7 @@
       document.getElementById('m-n').textContent = results.length.toLocaleString();
       document.getElementById('m-est').textContent = fmt(medMu);
       document.getElementById('m-i2').textContent = medI2.toFixed(1) + '%';
+      document.getElementById('m-full-i2').textContent = fullDataI2(rows).toFixed(1) + '%';
 
       // Store for export
       _lastResults = {
@@ -558,7 +570,7 @@
     function clearInputResults(message) {
       _lastResults = null;
       document.getElementById('plot').innerHTML = '';
-      ['m-n', 'm-est', 'm-i2'].forEach(function (id) { document.getElementById(id).textContent = '\u2014'; });
+      ['m-n', 'm-est', 'm-i2', 'm-full-i2'].forEach(function (id) { document.getElementById(id).textContent = '\u2014'; });
       document.getElementById('sample-label').style.display = 'none';
       document.getElementById('input-error').textContent = message;
       if (window.AlmGoshPlus) window.AlmGoshPlus.clear('Analysis refused. Correct the input and refresh extras.');
@@ -601,12 +613,13 @@
       var originalParse=parse, originalPool=pool, rows, points=[];_exactSuppressed=true;
       parse=function(text){rows=originalParse(text);return rows;};
       pool=function(subset,model){var p=originalPool(subset,model);points.push(Object.assign({members:subset.map(function(r){return rows.indexOf(r)+1;})},p));return p;};
-      try {run();return {summary:_lastResults,points:points};}
+      // Full precision for presentation checks only; the exported summary stays unchanged.
+      try {run();return {summary:_lastResults,points:points,presentation:{full_i2:_lastResults ? fullDataI2(rows) : null}};}
       finally {parse=originalParse;pool=originalPool;_exactSuppressed=false;}
     };
     window.__almGoshValidationSnapshot = function() {
       return {controls:['src','model','n-sample'].map(function(id){return [id,document.getElementById(id).value];}),
-        dom:['plot','m-n','m-est','m-i2','plot-error','plot-note','sample-error','input-error'].map(function(id){return [id,document.getElementById(id).innerHTML];}),
+        dom:['plot','m-n','m-est','m-i2','m-full-i2','plot-error','plot-note','sample-error','input-error'].map(function(id){return [id,document.getElementById(id).innerHTML];}),
         sampleStyle:document.getElementById('sample-label').style.cssText,enumStyle:document.getElementById('enum-label').style.cssText,results:_lastResults,axes:_axisState};
     };
     window.__almGoshValidationRestore = function(s) {

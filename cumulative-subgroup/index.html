@@ -122,6 +122,7 @@
 
           <span class="hint">Year and group are optional. If omitted, cumulative view uses the row order; subgroup view needs the group column.</span>
         </label>
+        <div id="ordering-note" class="warn-banner" role="status" aria-live="polite"></div>
       </fieldset>
 
       <fieldset>
@@ -193,6 +194,7 @@
     const fields = { data:"f-data", view:"f-view", title:"f-title" };
     const EXAMPLE = "# label, logOR, SE, year, group\nTrial A, -0.22, 0.14, 2015, Low-risk\nTrial B, -0.30, 0.12, 2016, Low-risk\nTrial C, -0.18, 0.10, 2018, Low-risk\nTrial D, -0.42, 0.15, 2019, High-risk\nTrial E, -0.38, 0.11, 2020, High-risk\nTrial F, -0.10, 0.08, 2021, Low-risk\nTrial G, -0.48, 0.13, 2022, High-risk\nTrial H, -0.25, 0.09, 2023, Low-risk\nTrial I, -0.55, 0.16, 2023, High-risk";
 
+    const orderEl = document.getElementById("ordering-note");
     const warnEl = document.getElementById("warn-banner");
     const svgHost = document.getElementById("svg-host");
     const statsWrap = document.getElementById("stats-wrap");
@@ -269,6 +271,16 @@
       const pi = (window.AlmMaCore && k >= 2) ? window.AlmMaCore.predictionInterval({ mu: s.mu, se, tau2, k }) : null;
       return { mu: s.mu, se, lo: s.mu-Z975 *se, hi: s.mu+Z975 *se, tau2, Q: s.Q, k,
                piLo: pi ? pi.lo : null, piHi: pi ? pi.hi : null };
+    }
+
+    function missingYearNote(studies) {
+      const missing = studies.filter(s => s.year == null).map(s => s.label);
+      return missing.length ? 'Missing year for: ' + missing.join(', ') + '. Cumulative analysis uses input order for all studies. Add a year for every study to order chronologically.' : '';
+    }
+
+    function renderOrderingNote(studies, view) {
+      orderEl.textContent = view === "cumulative" ? missingYearNote(studies) : "";
+      orderEl.classList.toggle("is-visible", !!orderEl.textContent);
     }
 
     // Cumulative: sort by year (or row order) and compute pooled estimate at each step
@@ -578,6 +590,7 @@
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
+      renderOrderingNote(parsed.studies, state.view);
       _axisRefusal = null;
       heading.textContent = state.view === "subgroup" ? "Subgroup analysis" : "Cumulative meta-analysis";
 
@@ -820,7 +833,8 @@
       pool = function (rows) { const p = originalPool(rows); pools.push(Object.assign({ members: rows.map(function (r) { return parsed.studies.indexOf(r) + 1; }) }, p)); return p; };
       cumulative = function (rows) { cum = originalCumulative(rows); return cum; };
       subgroup = function (rows) { sub = originalSubgroup(rows); return sub; };
-      try { render(); return { summary: _lastResults, parsed: parsed, pools: pools, cum: cum, sub: sub, axisRefusal: _axisRefusal }; }
+      // Full precision for presentation checks only; Cochran Q is not an export key.
+      try { render(); return { summary: _lastResults, parsed: parsed, pools: pools, cum: cum, sub: sub, axisRefusal: _axisRefusal, presentation: { q_fe: _lastResults && cum ? weightedSums(parsed.studies, 0).Q : null } }; }
       finally { parseStudies = originalParse; pool = originalPool; cumulative = originalCumulative; subgroup = originalSubgroup; }
     };
     // Validation observes the autosave draft banner: shared/autosave.js builds the whole banner before it
@@ -844,12 +858,13 @@
     }).observe(document.body, { childList: true, subtree: true, characterData: true });
     window.__almCumSubValidationSnapshot = function () {
       return { controls: ["f-data", "f-view", "f-title"].map(function (id) { return [id, document.getElementById(id).value]; }),
-        dom: ["stats-wrap", "warn-banner", "svg-host", "preview-heading"].map(function (id) { return [id, document.getElementById(id).innerHTML]; }),
-        warnClass: warnEl.className, results: _lastResults, axes: _axisState, axisRefusal: _axisRefusal, saved: localStorage.getItem(LS_KEY) };
+        dom: ["ordering-note", "stats-wrap", "warn-banner", "svg-host", "preview-heading"].map(function (id) { return [id, document.getElementById(id).innerHTML]; }),
+        orderClass: orderEl.className, warnClass: warnEl.className, results: _lastResults, axes: _axisState, axisRefusal: _axisRefusal, saved: localStorage.getItem(LS_KEY) };
     };
     window.__almCumSubValidationRestore = function (s) {
       s.controls.forEach(function (x) { document.getElementById(x[0]).value = x[1]; });
       s.dom.forEach(function (x) { document.getElementById(x[0]).innerHTML = x[1]; });
+      orderEl.className = s.orderClass;
       warnEl.className = s.warnClass; _lastResults = s.results; _axisState = s.axes; _axisRefusal = s.axisRefusal;
       try { if (s.saved === null) localStorage.removeItem(LS_KEY); else localStorage.setItem(LS_KEY, s.saved); } catch (e) {}
     };
@@ -978,6 +993,10 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'cumsub-results',
+      methods: function () {
+        return document.querySelector('.footer-note').textContent.replace(/\s+/g, ' ').trim() +
+          " Q_final: residual Q under random-effects (PM) weights, not Cochran's Q.";
+      },
       getResults: function () { return window._almLastCumSub ? window._almLastCumSub() : {}; },
     });
 

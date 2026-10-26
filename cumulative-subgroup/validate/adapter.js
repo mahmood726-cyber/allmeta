@@ -159,12 +159,23 @@ function cardsOk(expected) {
   const wrap = document.getElementById('stats-wrap'), grid = wrap.children;
   if (grid.length !== 1 || grid[0].tagName !== 'DIV' || grid[0].className !== 'stats' || wrap.childNodes.length !== 1) return false;
   const cards = [...grid[0].childNodes];
+  if (cards.some(c => c.querySelector?.('.k')?.textContent === 'Q')) return false;
   return cards.length === expected.length && cards.every((c, i) => c.nodeType === 1 && c.tagName === 'DIV' && c.className === 'stat' && c.childNodes.length === 2 &&
     [...c.childNodes].every((s, m) => s.nodeType === 1 && s.tagName === 'SPAN' && s.className === ['k', 'v'][m] && s.childNodes.length === 1 && s.firstChild.nodeType === 3 && s.textContent === expected[i][m]));
 }
 function headingOk(view) { const h = document.getElementById('preview-heading'); return h.childNodes.length === 1 && h.textContent === HEADINGS[view]; }
 // Notes banner: hidden and empty, or exactly "Notes" + one list item per note, in order.
 function bannerOk(notes) {
+  // Missing years are an advisory about the existing fallback, not a parser error.
+  let ordering = '';
+  const result = window._almLastCumSub();
+  if (result && result.view === 'cumulative') {
+    const missing = result.series.filter(s => s.year == null).map(s => s.label);
+    if (missing.length) ordering = 'Missing year for: ' + missing.join(', ') + '. Cumulative analysis uses input order for all studies. Add a year for every study to order chronologically.';
+  }
+  const order = document.getElementById('ordering-note');
+  if (!order || order.textContent !== ordering || order.children.length !== 0 ||
+      order.className !== (ordering ? 'warn-banner is-visible' : 'warn-banner') || order.checkVisibility() !== !!ordering) return false;
   const el = document.getElementById('warn-banner');
   if (!notes.length) return el.className === 'warn-banner' && el.innerHTML === '' && !el.checkVisibility();
   const c = [...el.childNodes];
@@ -213,7 +224,7 @@ function userAxis() { const r = axisRow(); const v = el => el.value.trim() === '
 // user's data (textarea) are excluded. Overlays that shared scripts append to <body> (citation dialog, glossary tooltips, toasts) are
 // not template; the autosave draft banner has its own exact contract.
 const TEMPLATE_ROOTS = ['A', 'NAV', 'HEADER', 'MAIN', 'FOOTER'];
-const TEXT_SKIP = '#alm-validate,#svg-host,#stats-wrap,#preview-heading,#warn-banner,textarea,script,style,#f-view,#alm-axis-mount [data-error],.alm-axis-row > label:first-of-type,#alm-csv-mount [data-section=warnings]';
+const TEXT_SKIP = '#alm-validate,#svg-host,#stats-wrap,#preview-heading,#warn-banner,#ordering-note,textarea,script,style,#f-view,#alm-axis-mount [data-error],.alm-axis-row > label:first-of-type,#alm-csv-mount [data-section=warnings]';
 function templateRoots() { return [...document.body.children].filter(e => TEMPLATE_ROOTS.includes(e.tagName)); }
 function path(e, root) { const p = []; for (; e && e !== root; e = e.parentElement) p.push(e.tagName + [...e.parentElement.children].indexOf(e)); return [root.tagName, ...p.reverse()].join('>'); }
 function pageText() {
