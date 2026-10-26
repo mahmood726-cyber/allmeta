@@ -44,6 +44,7 @@
     .pooled-row { background: var(--accent-soft); font-weight: 600; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    #main:has(#analysis-stale:not([hidden])) :is(#summary, #body, #forest) { opacity: 0.45; }
     .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
                padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
   </style>
@@ -295,7 +296,7 @@
 
     // ---- results storage for export ----
     var _lastResults = null, _lastReml = null;
-    window.__almReml = function () { return _lastReml; };
+    window.__almReml = function () { return document.getElementById('analysis-stale').hidden ? _lastReml : null; };
 
     // Validation uses the same parser and render path as the Fit button.
     window.__almMlmaParse = parse;
@@ -304,8 +305,12 @@
     run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src");
 
     function run() {
+      // Refusals and exceptions must invalidate the previous fit before any work.
+      _lastResults = null; _lastReml = null;
+      document.getElementById('analysis-status').hidden = true;
+      document.getElementById('analysis-stale').hidden = false;
       var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3) { _lastResults = null; _lastReml = null; return; }
+      if (rows.length < 3) return;
       var f = fit(rows);
 
       var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };
@@ -374,6 +379,7 @@
       if (window.alm && window.alm.urlState) {
         window.alm.urlState.write({ src: document.getElementById('src').value });
       }
+      document.getElementById('analysis-stale').hidden = true;
     }
 
     function drawForest(rows, f) {
@@ -457,7 +463,17 @@
     };
 
     // Expose last results for export
-    window._almLastMlma = function () { return _lastResults; };
+    window._almLastMlma = function () { return document.getElementById('analysis-stale').hidden ? _lastResults : null; };
+
+    // Guard every export action, including plots and GRADE, while inputs are stale.
+    ['alm-plot-mount', 'alm-export-mount', 'alm-grade-push'].forEach(function (id) {
+      document.getElementById(id).addEventListener('click', function (event) {
+        if (!document.getElementById('analysis-stale').hidden) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      }, true);
+    });
 
     // ---- module init ----
 
