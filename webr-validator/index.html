@@ -243,7 +243,11 @@
       for (let i=0;i<lines.length;i++) {
         const raw = lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
-        const parts = raw.split(/\s*[,\t]\s*/);
+        // Bus imports quote labels so a leading # is data, not a comment.
+        const quoted = raw.match(/^"((?:[^"]|"")*)"[ ]*[,\t](.*)$/);
+        const parts = quoted
+          ? [quoted[1].replace(/""/g, '"'), ...quoted[2].split(/\s*[,\t]\s*/)]
+          : raw.split(/\s*[,\t]\s*/);
         if (parts.length < 3) { warnings.push("Line "+(i+1)+": <3 cols"); continue; }
         const est = parseFloat(parts[parts.length-2]);
         const se = parseFloat(parts[parts.length-1]);
@@ -597,7 +601,7 @@
       try {
         const studies = (window.MaStudies && MaStudies.read()) || [];
         if (!studies.length) { Toast.show("No shared studies.", "warn"); return; }
-        const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
+        const lines = studies.map(s => ['"'+String(s.label).replace(/"/g,'""')+'"', s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
       } catch(e) { Toast.show("Could not load: " + e.message, "warn"); }
@@ -669,7 +673,7 @@
         if (params.get("fromBus") !== "1") return;
         const studies = (window.MaStudies && MaStudies.read()) || [];
         if (!studies.length) return;
-        const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
+        const lines = studies.map(s => ['"'+String(s.label).replace(/"/g,'""')+'"', s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
       } catch (e) { /* silent — noisy alert on deep-link is worse than no-op */ }

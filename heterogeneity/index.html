@@ -794,7 +794,7 @@
       try {
         const studies = (window.MaStudies && MaStudies.read()) || [];
         if (!studies.length) { Toast.show("No shared studies yet.", "warn"); return; }
-        const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
+        const lines = studies.map(s => ['"'+String(s.label).replace(/"/g,'""')+'"', s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
       } catch (e) { Toast.show("Could not load shared: " + e.message, "warn"); }
