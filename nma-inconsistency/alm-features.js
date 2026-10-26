@@ -64,7 +64,7 @@
       if ([study, t1, t2].some(function (s) { return /[\r\n]/.test(s); })) return refuse(row + 'labels must be one line.');
       if (typeof r.yi !== 'number' || !isFinite(r.yi)) return refuse(row + 'a finite effect estimate (t1 versus t2) is required.');
       var se = r.sei;
-      if (typeof se !== 'number' || !isFinite(se) || !(se > 0) || !isFinite(1 / (se * se))) {
+      if (typeof se !== 'number' || !isFinite(se) || !(se > 0) || !isFinite(se * se) || !isFinite(1 / (se * se))) {
         return refuse(row + 'a positive, numerically representable standard error is required.');
       }
       lines.push([csvField(t1), csvField(t2), String(r.yi), String(se), csvField(study)].join(', '));
@@ -88,7 +88,15 @@
 
   // ------------------------------------------------------------------- text (F2)
 
+  function stale() {
+    var live = global.AlmLiveAdapters && global.AlmLiveAdapters[APP];
+    if (!live || typeof live.currentState !== 'function') return false;
+    try { live.currentState(); return false; }
+    catch (e) { return true; }
+  }
+
   function results() {
+    if (stale()) return null;
     var s = typeof global._almLastInco === 'function' ? global._almLastInco() : null;
     if (!s || s.status === 'refused' || !Array.isArray(s.nodeSplit) || !Array.isArray(s.trts) || !s.dbt) return null;
     var r = {
@@ -247,6 +255,7 @@
     app: APP,
     verifyPackage: 'netmeta',
     results: results,
+    stale: stale,
     templates: templates,
     dom: dom,
     mount: function (el) { return global.AlmTextUI ? global.AlmTextUI.mount(el, { app: APP, text: textSpec }) : null; }
