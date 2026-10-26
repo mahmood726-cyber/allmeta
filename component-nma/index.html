@@ -77,8 +77,12 @@ drug+exercise+education | control | -0.55 | 0.15
 exercise+education | control | -0.30 | 0.13
 drug | exercise | -0.12 | 0.10
 drug+exercise | drug | -0.18 | 0.11</textarea>
-        <span class="hint">Components separated by <code>+</code>. Use <code>control</code> for no intervention. Labels are case-insensitive. Empty or repeated components and malformed rows are refused. At least two contrasts and an identifiable component design are required. With zero residual degrees of freedom, heterogeneity is not estimable (exported as null); effects use sampling variances.</span>
+        <span class="hint">Components separated by <code>+</code>. Choose the inactive label below; it is removed even inside combinations. Labels are case-insensitive. Empty or repeated components and malformed rows are refused. At least two contrasts and an identifiable component design are required. With zero residual degrees of freedom, heterogeneity is not estimable (exported as null); effects use sampling variances.</span>
       </label>
+      <label for="inactive">Inactive treatment</label>
+      <select id="inactive" aria-describedby="inactive-help inactive-note"></select>
+      <p id="inactive-help" class="hint">Select the component with no effect, or None if all components are active.</p>
+      <div id="inactive-note" class="note" role="status" hidden></div>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit</button>
     </section>
     <section class="panel">
@@ -87,7 +91,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
         <thead><tr><th>Component</th><th>Effect</th><th>SE</th><th>95% CI</th></tr></thead>
         <tbody id="comp-body"></tbody>
       </table>
-      <h2 style="margin-top:0.6rem">Implied intervention effects vs control</h2>
+      <h2 id="intervention-heading" style="margin-top:0.6rem">Implied intervention effects vs control</h2>
       <table id="int-tbl">
         <thead><tr><th>Intervention</th><th>Effect</th><th>95% CI</th></tr></thead>
         <tbody id="int-body"></tbody>
@@ -107,22 +111,49 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
     var Z975 = 1.959963984540054;
 
     // Parse: arm A components, arm B components, effect, SE
-    function parse(text) {
+    function parse(text, inactive = "control") {
       return text.trim().split(/\n/).filter(l => l.trim()).map(l => {
         const parts = l.split(/\|/).map(s => s.trim());
         if (parts.length !== 4 || parts.some(s => !s)) throw new Error("Invalid contrast input.");
         const te = Number(parts[2]), se = Number(parts[3]);
         if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) throw new Error("Invalid contrast input.");
         const splitArm = s => {
-          if (s.toLowerCase() === "control") return [];
           const a = s.split(/\s*\+\s*/).map(c => c.toLowerCase());
           if (a.some(c => !c) || new Set(a).size !== a.length) throw new Error("Invalid contrast input.");
-          return a;
+          return a.filter(c => c !== inactive.toLowerCase());
         };
         const A = splitArm(parts[0]), B = splitArm(parts[1]);
         if (A.slice().sort().join("+") === B.slice().sort().join("+")) throw new Error("Invalid contrast input.");
         return { A, B, te, se };
       });
+    }
+
+    let inactiveLabelsKey = null;
+    function syncInactive() {
+      const text = document.getElementById("src").value;
+      const labels = [...new Set(text.split(/\n/).flatMap(line =>
+        line.split("|").slice(0, 2).flatMap(arm => arm.split("+")
+          .map(c => c.trim().toLowerCase()).filter(Boolean))))].sort();
+      const key = JSON.stringify(labels);
+      const select = document.getElementById("inactive");
+      if (key !== inactiveLabelsKey) {
+        inactiveLabelsKey = key;
+        const automatic = labels.includes("control") ? "control" :
+          labels.find(c => /^(placebo|pbo)$/.test(c)) || "control";
+        select.replaceChildren();
+        for (const label of ["", ...new Set(["control", ...labels])]) {
+          const option = document.createElement("option");
+          option.value = label;
+          option.textContent = label || "None (all components active)";
+          select.appendChild(option);
+        }
+        select.value = automatic;
+        const note = document.getElementById("inactive-note");
+        note.hidden = automatic === "control";
+        note.textContent = note.hidden ? "" :
+          'Detected placebo-like label "' + automatic + '" without control; pre-selected it as inactive. Review or change Inactive treatment before fitting.';
+      }
+      return select.value;
     }
 
     // --- matrix math (copy from NMA tool) ---
@@ -229,7 +260,10 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       clearResults();
       let rows, f;
       try {
-        rows = parse(document.getElementById("src").value);
+        const inactive = syncInactive();
+        rows = parse(document.getElementById("src").value, inactive);
+        document.getElementById("intervention-heading").textContent =
+          "Implied intervention effects vs " + (inactive || "no components");
         if (rows.length < 2) throw new Error("At least 2 valid contrasts are required.");
         f = fit(rows);
       } catch (e) {
@@ -278,6 +312,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
 
       // Engine-state exposure for R-parity tests (do-no-harm).
       _lastCnma = {
+        inactive: document.getElementById("inactive").value,
         comps: f.comps, tau2: f.tau2, Q: f.Q, df: f.df,
         components: Object.fromEntries(compRows.map(r => [r.name, { est: r.e, se: r.se }])),
         combinations: Object.fromEntries(intRows.map(r => [r.name, { est: r.e, se: r.se }])),
@@ -320,6 +355,14 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
 
     }
 
+    document.getElementById("src").addEventListener("input", function () {
+      syncInactive();
+      clearResults();
+    });
+    document.getElementById("inactive").addEventListener("change", function () {
+      document.getElementById("inactive-note").hidden = true;
+      run();
+    });
     document.getElementById("btn-run").addEventListener("click", run);
     run();
   </script>
