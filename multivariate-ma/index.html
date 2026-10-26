@@ -290,15 +290,21 @@
     function schedule() { if (timer) clearTimeout(timer); timer = setTimeout(function () { timer = null; run(); }, 250); }
     function now() { if (timer) { clearTimeout(timer); timer = null; } run(); }
     function syncMode() { var a = getMode() === "rhoW"; el("f-rhow").disabled = !a; el("rhow-label").style.opacity = a ? "1" : ".55"; }
-    function load(text, mode, o1, o2) { el("f-data").value = text; setMode(mode); el("f-o1").value = o1; el("f-o2").value = o2; syncMode(); now(); }
+    function replaceData(text) {
+      el("f-data").value = text;
+      // Programmatic replacements do not emit input/change events. Entry and
+      // share restore their own provenance after the replacement has fitted.
+      if (window.AlmFeaturesState) { window.AlmFeaturesState.provenance = []; window.AlmFeaturesState.entryLog = []; }
+    }
+    function load(text, mode, o1, o2) { replaceData(text); setMode(mode); el("f-o1").value = o1; el("f-o2").value = o2; syncMode(); now(); }
     ["f-data", "f-o1", "f-o2", "f-rhow"].forEach(function (id) { el(id).addEventListener("input", schedule); });
     el("f-mode").addEventListener("change", function (e) { var v = e.target.value; if (["cov", "r", "rhoW"].indexOf(v) >= 0) currentMode = v; syncMode(); now(); });
     el("btn-ex-berkey").addEventListener("click", function () { load(EXAMPLE, "cov", "PD", "AL"); });
     el("btn-ex-hyp").addEventListener("click", function () { load(EXAMPLE_HYP, "r", "SBP", "DBP"); });
-    el("btn-clear").addEventListener("click", function () { el("f-data").value = ""; now(); el("f-data").focus(); });
+    el("btn-clear").addEventListener("click", function () { replaceData(""); now(); el("f-data").focus(); });
     el("f-csv").addEventListener("change", function (e) {
       var file = e.target.files && e.target.files[0]; if (!file) return;
-      var rd = new FileReader(); rd.onload = function () { el("f-data").value = String(rd.result || ""); now(); }; rd.readAsText(file); e.target.value = "";
+      var rd = new FileReader(); rd.onload = function () { replaceData(String(rd.result || "")); now(); }; rd.readAsText(file); e.target.value = "";
     });
     function download(name, blob) { var url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 1000); }
     function svgPng(svgText, name) {

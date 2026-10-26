@@ -84,9 +84,11 @@ for (const mode of ['cov', 'r', 'rhoW']) {
     const from = page(); configure(from, mode);
     const before = plain(from.context._almLastMultivariate());
     const state = plain(from.spec.share.get());
+    state.entryLog = [{ text: 'confirmed conversion from the shared analysis' }];
     const to = page();
     to.spec.share.set(state);
     assert.deepEqual(plain(to.context._almLastMultivariate()), before);
+    assert.deepEqual(plain(to.context.AlmFeaturesState.entryLog), state.entryLog);
     assert.equal(to.context.AlmMvPage.getMode(), mode);
     assert.equal(to.el('f-rhow').value, from.el('f-rhow').value);
   });
@@ -133,6 +135,37 @@ const inputRows = [
 ];
 const table = (headers, rows) => [headers, ...rows].map(r => r.join('\t')).join('\n');
 const blocks = result => result.flags.filter(f => f.blocking);
+for (const id of ['btn-ex-berkey', 'btn-ex-hyp', 'btn-clear', 'f-csv']) {
+  test('ENTRY provenance is invalidated when data are replaced by ' + id, () => {
+    const h = page();
+    h.context.AlmFeaturesState.provenance = [{ label: 'confirmed extraction' }];
+    h.context.AlmFeaturesState.entryLog = [{ text: 'confirmed conversion' }];
+    h.fire('unrelated-control', 'click');
+    h.el('f-csv').files = []; h.fire('f-csv', 'change');
+    assert.equal(h.context.AlmFeaturesState.provenance.length, 1, 'unrelated clicks and cancelled uploads preserve provenance');
+    assert.equal(h.context.AlmFeaturesState.entryLog.length, 1);
+    let finishUpload;
+    if (id === 'f-csv') {
+      h.context.FileReader = class {
+        readAsText() {
+          this.result = h.el('f-data').value.replace('0.47', '0.48');
+          finishUpload = () => this.onload();
+        }
+      };
+      h.el(id).files = [{}];
+    }
+    h.fire(id, id === 'f-csv' ? 'change' : 'click');
+    if (finishUpload) {
+      assert.equal(h.context.AlmFeaturesState.provenance.length, 1, 'pending file read has not replaced the analysis');
+      finishUpload();
+    }
+    if (id === 'btn-clear') assert.equal(h.context._almLastMultivariate(), null);
+    else assert.ok(h.context._almLastMultivariate(), 'replacement data are actually fitted');
+    assert.deepEqual(plain(h.context.AlmFeaturesState.provenance), []);
+    assert.deepEqual(plain(h.spec.share.get().entryLog), []);
+  });
+}
+
 for (const [field, aliases] of [['vi', ['variance', 'se']], ['sei', ['se', 'standard error']]]) {
   test('ENTRY refuses ambiguous ' + field + ' columns instead of silently dropping supplied dispersion', () => {
     const h = page(), headers = ['study', 'outcome', 'yi', 'vi', 'cov'];
