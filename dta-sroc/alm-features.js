@@ -22,16 +22,25 @@
       var hash = global.location.hash;
       if (event.newURL && new URL(event.newURL).hash !== hash) return;
       var current = ++revision;
-      if (hash.indexOf('#s=') !== 0) return;
+      if (!/^#(?:s|a2)=/.test(hash)) return;
       var status = document.querySelector('#alm-features [data-testid="share-status"]');
       if (!status) return;
       status.textContent = 'Opening share link…';
       global.AlmFeatures.open(APP, 'share');
       function isCurrent() { return current === revision && global.location.hash === hash; }
       try {
-        var decoded = await global.AlmShare.decode(hash.slice(3), APP);
+        var v2 = hash.indexOf('#a2=') === 0;
+        var decoded = v2 ? await global.AlmShare.decodeV2(hash.slice(4), APP) :
+          await global.AlmShare.decode(hash.slice(3), APP);
         if (!isCurrent()) return;
-        if (!decoded.ok) throw new Error(decoded.reason);
+        if (!v2 && !decoded.ok) throw new Error(decoded.reason);
+        if (v2 && global.AlmShare.versionMismatch(decoded)) {
+          // The shared panel owns the version-consent UI on initial navigation.
+          // Preserve current inputs until that flow explicitly authorises restore.
+          status.textContent = global.AlmShare.versionNotice(decoded) +
+            ' Reload this page to review the version difference and choose whether to restore. Nothing was changed.';
+          return;
+        }
         var restore = function () {
           spec.share.set(decoded.state);
           global.AlmFeaturesState.provenance = decoded.provenance;
@@ -201,9 +210,9 @@
           '; partial AUC used the same grid size over the observed uncorrected false-positive-rate range clipped to those bounds. ']),
         T.when(T.has('mosesAlpha'), 'The comparison Moses–Littenberg curve used unweighted ordinary least squares of the difference of the logits on their sum, after the selected correction. '),
         T.when(T.has('thresholdRho'), 'The threshold correlation was Spearman correlation between logit sensitivity and logit false-positive rate, with average ranks for ties. '),
-        T.when(T.has('deeksP'), ['Deeks’ test regressed log diagnostic odds ratios on inverse square root effective sample size, weighted by effective sample size. Its slope used a two-sided t test with ',
+        T.when(T.has('deeksP'), function () { return ['Deeks’ test regressed log diagnostic odds ratios on inverse square root effective sample size, weighted by effective sample size. Its slope used a two-sided t test with ',
           T.int('deeksDf'), ' residual degrees of freedom. For this test, ', T.num('deeksCc', 1),
-          ' was added to all cells of each study containing a zero cell, independently of the bivariate correction choice. ']),
+          ' was added to all cells of each study containing a zero cell, independently of the bivariate correction choice. ']; }),
         T.when(T.has('pretest'), ['The Fagan display converted a pre-test probability of ', T.pct('pretest', 0),
           ' to odds, multiplied by each summary likelihood ratio, then converted back to probabilities. ']),
         T.when(r.hasCovariate, 'A separate bivariate meta-regression used the last input column: numeric values entered unchanged, and text categories used treatment coding with the alphabetically first category as reference. Coefficient intervals and two-sided tests were normal Wald; the summary point and plots still show the intercept-only fit. '),
