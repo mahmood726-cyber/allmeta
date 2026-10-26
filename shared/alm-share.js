@@ -304,7 +304,8 @@
     var warning = el('div', { hidden: '', 'data-testid': 'share-version' }, null, panel);
     var notice = el('p', { role: 'status', 'aria-live': 'polite' }, '', warning);
     var anyway = el('button', { type: 'button', class: 'alm-f-btn' }, 'Restore anyway', warning);
-    var archive = el('a', { target: '_blank', rel: 'noopener noreferrer' }, 'Open the archived version', warning);
+    var archive = el('a', { target: '_blank', rel: 'noopener noreferrer',
+      'aria-label': 'Open the archived version (opens in new tab)' }, 'Open the archived version', warning);
 
     function clearPending() { pending = null; warning.hidden = true; }
     function fail(e, source) {
