@@ -11,9 +11,16 @@ const rows = [['A', 'PD', 0.47, 0.0075, 0.003], ['A', 'AL', -0.32, 0.0077, 0.003
 const table = (header, data) => [header, ...data].map(r => r.join('\t')).join('\n');
 const tsv = table(['study', 'outcome', 'yi', 'vi', 'cov'], rows);
 const blocks = out => out.flags.filter(f => f.blocking);
+// These text tests isolate formatting/auditing. Freshness and real page fits are
+// exercised separately by unit/multivariate-review230.test.mjs and browser specs.
+globalThis.AlmLiveAdapters = { 'multivariate-ma': {
+  currentState: () => ({ result: globalThis._almLastMultivariate() })
+} };
 function replay(out) {
   for (const r of out.records) {
-    const p = { ...r, label: 'Smith 2020', reference: 'Smith et al.', location: 'Table 1', confirmed: true };
+    const p = { ...r, label: 'Smith 2020', reference: 'Smith et al.', location: 'Table 1',
+      source: { type: 'Table', detail: 'Table 1' }, choice: { randomisation: 'not stated' } };
+    AlmEntry.provenance.confirm(p, { by: 'QA', via: 'row' });
     assert.deepEqual(spec.entry.validateProvenance(p), []);
     p.values = structuredClone(p.values); p.values[0].value += 1;
     assert.ok(spec.entry.validateProvenance(p).length, 'planted source value must fail');
@@ -66,7 +73,7 @@ class Element {
   constructor(tag) { this.tagName = tag; this.children = []; this.attrs = {}; this.handlers = {}; this.dataset = {}; this.classList = { add() {} }; this.value = ''; this._text = ''; }
   set textContent(v) { this._text = String(v); this.children = []; }
   get textContent() { return this._text + this.children.map(c => c.textContent).join(''); }
-  appendChild(n) { this.children.push(n); return n; }
+  appendChild(n) { this.children.push(n); n.parentNode = this; return n; }
   replaceChildren() { this.children = []; this._text = ''; }
   setAttribute(k, v) { this.attrs[k] = v; }
   addEventListener(k, fn) { (this.handlers[k] ||= []).push(fn); }

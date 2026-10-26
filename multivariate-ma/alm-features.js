@@ -8,9 +8,6 @@
   'use strict';
   var APP = 'multivariate-ma';
   function el(id) { return document.getElementById(id); }
-  // Feature actions must finish the fit before returning; input events schedule
-  // the page's debounced editor run and can leave the previous result visible.
-  function run() { global.AlmMvPage.run(); }
   function block(text, row) { return { code: 'multivariate-input', text: text, row: row, blocking: true }; }
   function numeric(value, decimal) {
     var token = global.AlmEntry.parseCell(String(value), { decimal: decimal });
@@ -63,12 +60,12 @@
       vi: ['vi', 'variance'], sei: ['sei', 'se', 'standard error'],
       cov: ['cov', 'covariance', 'cov12', 'within-study covariance']
     };
-    var map = {};
+    var map = {}, out = { records: [], steps: [], flags: [], questions: [], source: source };
     Object.keys(aliases).forEach(function (key) {
       var found = headers.map(function (h, i) { return aliases[key].indexOf(h) >= 0 ? i : -1; }).filter(function (i) { return i >= 0; });
       if (found.length === 1) map[key] = found[0];
+      else if (found.length > 1) out.flags.push(block('Multiple ' + key + ' columns are ambiguous; supply one column for this field.'));
     });
-    var out = { records: [], steps: [], flags: [], questions: [], source: source };
     var sourceRows = source.split(/\r?\n/).filter(function (line) { return line.trim(); }).slice(1);
     if (sourceRows.length !== table.rows.length) out.flags.push(block('Use single-line table rows so every numeric source span can be reviewed.'));
     ['study', 'outcome', 'yi', 'cov'].forEach(function (k) {
@@ -449,20 +446,30 @@
       'polygon(ellipse,col=adjustcolor("firebrick",alpha.f=.1),border="firebrick")\npoints(mu[1],mu[2],pch=18,col="firebrick")';
   }
   var share = {
-    get: function () { return { src: el('f-data').value, names: [el('f-o1').value, el('f-o2').value], entryLog: global.AlmFeaturesState.entryLog }; },
+    get: function () { return { src: el('f-data').value, names: [el('f-o1').value, el('f-o2').value],
+      mode: global.AlmMvPage.getMode(), rhoW: el('f-rhow').value, entryLog: global.AlmFeaturesState.entryLog }; },
     set: function (s) {
       if (!s || typeof s.src !== 'string' || s.src.length > 200000 ||
           !Array.isArray(s.names) || s.names.length !== 2 || s.names.some(function (n) { return typeof n !== 'string' || n.length > 1000; }) ||
           (s.entryLog !== undefined && !Array.isArray(s.entryLog))) throw Error('Invalid multivariate analysis state.');
-      el('f-data').value = s.src; el('f-o1').value = s.names[0]; el('f-o2').value = s.names[1];
-      run();
+      // Links without a mode retain the historical covariance default. Never
+      // inherit the recipient's current interpretation of those same numbers.
+      var mode = s.mode === undefined ? 'cov' : s.mode;
+      var rhoW = s.rhoW === undefined ? '0.5' : s.rhoW;
+      if (['cov', 'r', 'rhoW'].indexOf(mode) < 0 || typeof rhoW !== 'string' || rhoW.length > 100 ||
+          (mode === 'rhoW' && (s.rhoW === undefined || !rhoW.trim() || !Number.isFinite(Number(rhoW)) || !(Math.abs(Number(rhoW)) < 1)))) {
+        throw Error('Invalid multivariate analysis state.');
+      }
+      el('f-rhow').value = rhoW;
+      // load synchronises mode controls and completes the fit synchronously.
+      global.AlmMvPage.load(s.src, mode, s.names[0], s.names[1]);
       global.AlmFeaturesState.entryLog = s.entryLog || [];
     }
   };
   var spec = { paper: 18, title: 'Multivariate meta-analysis',
     entry: { schema: 'multivariate', convert: convert, apply: apply, mount: mountEntry, validateProvenance: validateProvenance },
     text: text, share: share,
-    verify: { adapter: function () { return adapter; }, inputs: '#f-data, #f-o1, #f-o2',
+    verify: { adapter: function () { return adapter; }, inputs: '#f-data, #f-o1, #f-o2, #f-mode, #f-rhow',
       rObjects: 'f (mvmeta), Y, S, G, mu, CV (pooled covariance)',
       plots: [{ id: 'joint', title: 'Joint outcome plot', r: plotCode, app: function () { return document.querySelector('#plot-host svg'); } }] }
   };
@@ -470,12 +477,16 @@
   global.AlmTextSpecs = global.AlmTextSpecs || {}; global.AlmTextSpecs[APP] = text;
   // Edited analysis inputs no longer represent the confirmed extraction.
   // apply() records new provenance after running; AlmShare restores it after set().
-  if (typeof document !== 'undefined') document.addEventListener('input', function (event) {
-    if (event.target && ['f-data', 'f-o1', 'f-o2'].indexOf(event.target.id) >= 0 && global.AlmFeaturesState) {
+  function invalidateProvenance(event) {
+    if (event.target && ['f-data', 'f-o1', 'f-o2', 'f-mode', 'f-rhow'].indexOf(event.target.id) >= 0 && global.AlmFeaturesState) {
       global.AlmFeaturesState.provenance = [];
       global.AlmFeaturesState.entryLog = [];
     }
-  });
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('input', invalidateProvenance);
+    document.addEventListener('change', invalidateProvenance);
+  }
   if (global.AlmFeatures) {
     global.AlmFeatures.register(APP, spec);
     if (typeof global.AlmFeatures.registerModule === 'function') {
