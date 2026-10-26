@@ -15,6 +15,7 @@ for(const c of cases) test(c.id+' page parser and visible diagnostics',async({pa
  await page.locator('[data-action="parse-paste"]').click();
  const result=await page.evaluate(()=>window.result);
  expect(result.rows).toEqual(c.rows);
+ if(c.warningsExact) expect(result.warnings).toEqual(c.warningsExact);
  if(c.warning) {
   await expect(page.locator('[data-section="warnings"]')).toContainText(c.warning);
   await expect(page.locator('[data-section="warnings"]')).toContainText('1,234');
@@ -23,6 +24,6 @@ for(const c of cases) test(c.id+' page parser and visible diagnostics',async({pa
  expect(refused).toEqual(c.refused);
  for(const row of c.refused) await expect(page.locator('[data-section="warnings"]')).toContainText('row '+row+':');
  fs.mkdirSync(out,{recursive:true});
- fs.writeFileSync(new URL(c.id+'.csv',out),'study,yi,se,vi,year,or,lower,upper,e1,n1,e2,n2\n'+result.rows.map(r=>['study','yi','se','vi','year','or','lower','upper','e1','n1','e2','n2'].map(k=>csvCell(r[k])).join(',')).join('\n')+'\n');
+ fs.writeFileSync(new URL(c.id+'.csv',out),'study,yi,se,sei,vi,year,or,lower,upper,e1,n1,e2,n2,TP,FN,FP,TN\n'+result.rows.map(r=>["study","yi","se","sei","vi","year","or","lower","upper","e1","n1","e2","n2","TP","FN","FP","TN"].map(k=>csvCell(r[k])).join(',')).join('\n')+'\n');
  fs.writeFileSync(new URL(c.id+'-refused.csv',out),'row\n'+refused.join('\n')+'\n');
 });

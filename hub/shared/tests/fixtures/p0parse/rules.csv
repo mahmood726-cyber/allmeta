@@ -39,3 +39,15 @@ ratio-declared,comma
 ratio-partial,comma
 int-comma,semicolon
 int-control,semicolon
+missing-tp,comma
+missing-tp-space,comma
+missing-fn,comma
+missing-fn-space,comma
+missing-fp,comma
+missing-fp-space,comma
+missing-tn,comma
+missing-tn-space,comma
+dta-control,comma
+se-to-sei,comma
+sei-to-se,comma
+sei-exact-control,comma

@@ -103,6 +103,13 @@
     }
     var rawHeaders = matrix[0].map(function (h) { return h.trim(); });
 
+    var ratioHeader = rawHeaders.find(function (h) { return /^(or|rr|hr)$/i.test(h); });
+    var hasCI = rawHeaders.some(function (h) { return /^(lower|upper|lcl|ucl)$/i.test(h); });
+    var undeclaredRatioCI = rawHeaders.some(function (h) {
+      return /^(or|rr|hr|lower|upper|lcl|ucl)$/i.test(h) &&
+        !columns.some(function (col) { return col.name === h; });
+    });
+
     // Build headerMap: raw header string -> column descriptor (possibly fuzzy).
     // Two passes so a fuzzy near-match can NEVER hijack a column that another
     // header claims exactly (e.g. "sd" is Levenshtein 1 from "se" — without this
@@ -118,14 +125,17 @@
     }
     for (hi = 0; hi < rawHeaders.length; hi++) {
       var h = rawHeaders[hi];
+      if (ratioHeader && hasCI && undeclaredRatioCI && /^(or|rr|hr|lower|upper|lcl|ucl)$/i.test(h)) {
+        headerMap[h] = { name: h }; continue;
+      }
       if (headerMap[h]) continue;                     // already claimed exactly
       var bestCol = null, bestDist = Infinity;
       for (ci = 0; ci < columns.length; ci++) {
         if (claimed[columns[ci].name]) continue;      // don't hijack a claimed column
         // These are distinct measurements, never spelling variants of uncertainty.
         var sourceName = h.toLowerCase(), targetName = columns[ci].name.toLowerCase();
-        if (/^(n|sd|sample size|se|sei)$/.test(sourceName) &&
-            /^(vi|variance|se|sei)$/.test(targetName) && sourceName !== targetName) continue;
+        if ((/^(n|sd|sample size)$/.test(sourceName) && /^(vi|variance|se|sei)$/.test(targetName)) ||
+            (/^(se|sei)$/.test(sourceName) && /^(vi|variance)$/.test(targetName))) continue;
         if (/^(study|label)$/.test(sourceName) && columns[ci].type) continue;
         var d = _lev(h, columns[ci].name, 3);
         if (d < bestDist) { bestDist = d; bestCol = columns[ci]; }
@@ -138,50 +148,45 @@
       }
     }
 
-    var ratioHeader = rawHeaders.find(function (h) { return /^(or|rr|hr)$/i.test(h); });
-    var hasCI = rawHeaders.some(function (h) { return /^(lower|upper|lcl|ucl)$/i.test(h); });
-    var undeclaredRatioCI = rawHeaders.some(function (h) {
-      return /^(or|rr|hr|lower|upper|lcl|ucl)$/i.test(h) &&
-        !columns.some(function (col) { return col.name === h; });
-    });
     var rows = [];
     for (var r = 1; r < matrix.length; r++) {
       var rowArr = matrix[r];
-      var obj = {}, refused = false;
-      if (ratioHeader && hasCI && undeclaredRatioCI) {
+      var obj = {};
+      var invalidRatio = ratioHeader && hasCI && undeclaredRatioCI;
+      var overflow = rowArr.length > rawHeaders.length;
+      if (invalidRatio) {
         warnings.push('row ' + r + ': column "' + ratioHeader + '": refused ratio + CI input. Supply log-effects and SEs in the declared columns.');
-        continue;
       }
-      if (rowArr.length > rawHeaders.length) {
+      if (overflow) {
         warnings.push('row ' + r + ': columns "' + rawHeaders.join('", "') + '": refused ' + rowArr.length + ' fields; expected ' + rawHeaders.length + '. Use the declared separator and decimal points, or semicolon/tab for decimal commas.');
-        continue;
-      }
-      var missingRequired = columns.find(function (col) {
-        return col.required && !rawHeaders.some(function (h, index) {
-          return headerMap[h].name === col.name && rowArr[index] !== undefined && rowArr[index].trim() !== '';
-        });
-      });
-      if (missingRequired) {
-        warnings.push('row ' + r + ': column "' + missingRequired.name + '": refused missing required value. Supply this column and its value.');
-        continue;
       }
       for (var i = 0; i < rawHeaders.length; i++) {
         var col = headerMap[rawHeaders[i]];
         var raw = (rowArr[i] !== undefined ? rowArr[i] : '').trim();
+        // Preserve the record for consumer validation; never fit a valid subset.
+        if ((overflow && (col.type === 'int' || col.type === 'float')) ||
+            (invalidRatio && (col.type === 'int' || col.type === 'float' || /^(or|rr|hr|lower|upper|lcl|ucl)$/i.test(rawHeaders[i])))) {
+          obj[col.name] = null; continue;
+        }
+        if (col.required && !col.type && raw === '') {
+          obj[col.name] = null;
+          warnings.push('row ' + r + ': column "' + rawHeaders[i] + '": refused missing required value. Supply this column and its value.');
+          continue;
+        }
         if (col.type === 'int' && raw.indexOf(',') !== -1) {
           warnings.push('row ' + r + ': column "' + rawHeaders[i] + '": refused comma in an integer column (thousands separator or decimal comma?): ' + raw + '. Supply an integer without separators.');
-          refused = true; break;
+          obj[col.name] = null; continue;
         }
         if (col.type === 'float' && /\d,\d/.test(raw)) {
           if (delimiter === ',') {
             warnings.push('row ' + r + ': column "' + rawHeaders[i] + '": refused ambiguous decimal comma. Use decimal points or a semicolon/tab separator.');
-            refused = true; break;
+            obj[col.name] = null; continue;
           }
           raw = raw.replace(',', '.');
         }
         if (/^(se|sei)$/i.test(col.name) && /\d\s*(?:\(|[-–]\s*\d)/.test(raw)) {
           warnings.push('row ' + r + ': column "' + rawHeaders[i] + '": refused CI in an SE cell. Supply one numeric standard error.');
-          refused = true; break;
+          obj[col.name] = null; continue;
         }
         var result = _coerce(raw, col.type);
         if (result.err) {
@@ -189,7 +194,14 @@
         }
         obj[col.name] = result.value;
       }
-      if (!refused) rows.push(obj);
+      columns.forEach(function (col) {
+        if (!Object.prototype.hasOwnProperty.call(obj, col.name) &&
+            (col.required || (invalidRatio && col.type))) {
+          obj[col.name] = null;
+          if (!invalidRatio) warnings.push('row ' + r + ': column "' + col.name + '": refused missing required value. Supply this column and its value.');
+        }
+      });
+      rows.push(obj);
     }
 
     return { headers: rawHeaders, rows: rows, warnings: warnings };

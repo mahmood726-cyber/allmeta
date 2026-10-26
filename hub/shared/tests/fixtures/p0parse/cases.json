@@ -43,6 +43,11 @@
     "id": "ambiguous",
     "rows": [
       {
+        "study": "A",
+        "yi": null,
+        "se": null
+      },
+      {
         "study": "B",
         "yi": 0.2,
         "se": 0.1
@@ -56,6 +61,11 @@
     "id": "quoted-comma",
     "rows": [
       {
+        "study": "A",
+        "yi": null,
+        "se": 0.12
+      },
+      {
         "study": "B",
         "yi": 0.2,
         "se": 0.1
@@ -67,21 +77,48 @@
   },
   {
     "id": "ratio-or",
-    "rows": [],
+    "rows": [
+      {
+        "study": "A",
+        "or": null,
+        "lower": null,
+        "upper": null,
+        "yi": null,
+        "se": null
+      }
+    ],
     "refused": [
       1
     ]
   },
   {
     "id": "ratio-rr",
-    "rows": [],
+    "rows": [
+      {
+        "study": "A",
+        "rr": null,
+        "lower": null,
+        "upper": null,
+        "yi": null,
+        "se": null
+      }
+    ],
     "refused": [
       1
     ]
   },
   {
     "id": "ratio-hr",
-    "rows": [],
+    "rows": [
+      {
+        "study": "A",
+        "hr": null,
+        "lower": null,
+        "upper": null,
+        "yi": null,
+        "se": null
+      }
+    ],
     "refused": [
       1
     ]
@@ -89,6 +126,16 @@
   {
     "id": "ci",
     "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": null
+      },
+      {
+        "study": "B",
+        "yi": 0.2,
+        "se": null
+      },
       {
         "study": "C",
         "yi": 0.2,
@@ -703,7 +750,14 @@
         "required": false
       }
     ],
-    "rows": [],
+    "rows": [
+      {
+        "study": "A",
+        "yi": null,
+        "se": null,
+        "year": null
+      }
+    ],
     "refused": [
       1
     ]
@@ -731,9 +785,18 @@
         "required": false
       }
     ],
-    "rows": [],
-    "refused": [
-      1
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": null,
+        "year": null
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing float",
+      "row 1: missing int"
     ]
   },
   {
@@ -759,7 +822,14 @@
         "required": false
       }
     ],
-    "rows": [],
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "year": 2020,
+        "se": null
+      }
+    ],
     "refused": [
       1
     ]
@@ -808,7 +878,14 @@
         "required": true
       }
     ],
-    "rows": [],
+    "rows": [
+      {
+        "study": "A",
+        "or": null,
+        "lower": null,
+        "upper": null
+      }
+    ],
     "refused": [
       1
     ]
@@ -842,6 +919,13 @@
       }
     ],
     "rows": [
+      {
+        "study": "A",
+        "e1": 1,
+        "n1": null,
+        "e2": 2,
+        "n2": 345
+      },
       {
         "study": "B",
         "e1": 1,
@@ -893,5 +977,500 @@
       }
     ],
     "refused": []
+  },
+  {
+    "id": "missing-tp",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": null,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-tp-space",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": null,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-fn",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": null,
+        "FP": 3,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-fn-space",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": null,
+        "FP": 3,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-fp",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": 2,
+        "FP": null,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-fp-space",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": 2,
+        "FP": null,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-tn",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": null
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-tn-space",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": null
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "dta-control",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": []
+  },
+  {
+    "id": "se-to-sei",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "sei",
+        "type": "float"
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.1,
+        "sei": 0.05
+      },
+      {
+        "study": "B",
+        "yi": null,
+        "sei": 0.1
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "Header \"se\" mapped to \"sei\" (Levenshtein 1)",
+      "row 2: not float: x"
+    ]
+  },
+  {
+    "id": "sei-to-se",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.1,
+        "se": 0.05
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "Header \"sei\" mapped to \"se\" (Levenshtein 1)"
+    ]
+  },
+  {
+    "id": "sei-exact-control",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "sei",
+        "type": "float"
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.1,
+        "sei": 0.05
+      }
+    ],
+    "refused": [],
+    "warningsExact": []
   }
 ]
