@@ -71,7 +71,8 @@
       g.doses.add(r.dose); if (reference) g.refs++; else g.other++;
       var cov = r.covariate == null ? '' : String(r.covariate).trim();
       if (cov && !Number.isFinite(Number(cov))) throw new Error(study + ': covariate must be numeric');
-      return [study, r.dose, r.cases, r.n, r.yi, reference ? '' : r.sei, r.type, cov].join(', ');
+      var label = study.indexOf('"') >= 0 ? '"' + study.replace(/"/g, '""') + '"' : study;
+      return [label, r.dose, r.cases, r.n, r.yi, reference ? '' : r.sei, r.type, cov].join(', ');
     });
     var labels = Object.keys(groups);
     if (labels.length < 2 || labels.some(function (id) { return groups[id].refs !== 1 || !groups[id].other; })) {
@@ -92,6 +93,13 @@
     while ((m = re.exec(text))) {
       if (m.index > pos) parts.push(text.slice(pos, m.index));
       var key = prefix + '_' + n++, raw = m[0], digits = (raw.split('.')[1] || '').length;
+      // toFixed displays magnitudes >= 1e21 in scientific notation. Keep those
+      // values whole: their mantissas may exceed the text helper's digit limit,
+      // and prediction keys must still identify the RR and the two CI bounds.
+      var exponent = text.slice(re.lastIndex).match(/^e[+-]?\d+/i);
+      if (exponent && Math.abs(Number(raw + exponent[0])) >= 1e21) {
+        raw += exponent[0]; digits = 0; re.lastIndex += exponent[0].length;
+      }
       // Exponent signs/leading zeros are presentation, not separate statistics.
       var leading = /^[+-]?0+\d/.test(raw) ? raw.replace(/^[+-]?/, '').match(/^0+/)[0] : '';
       if (raw.charAt(0) === '+') parts.push('+');
