@@ -381,13 +381,16 @@
       var v = rows.map(function (r) { return r.se * r.se; });
       var sumInvV = v.reduce(function (a, b) { return a + 1 / b; }, 0);
       var vStar = 1 / sumInvV;
-      var thetaHat = rows.reduce(function (a, r, i) { return a + r.te / v[i]; }, 0) / sumInvV;
+      // Centre before averaging: rounding a common effect must not become
+      // artificial residual ranks when divided by small standard errors.
+      var origin = rows[0].te;
+      var thetaOffset = rows.reduce(function (a, r, i) { return a + (r.te - origin) / v[i]; }, 0) / sumInvV;
 
       var pairs = rows.map(function (r, i) {
         var diff = v[i] - vStar;
         // Begg-Mazumdar denominator can be zero or near-zero when v_i ≈ v*;
         // in that degenerate case skip (tStar undefined).
-        var tStar = diff > 0 ? (r.te - thetaHat) / Math.sqrt(diff) : null;
+        var tStar = diff > 0 ? ((r.te - origin) - thetaOffset) / Math.sqrt(diff) : null;
         return { tStar: tStar, v: v[i] };
       }).filter(function (p) { return p.tStar !== null; });
 

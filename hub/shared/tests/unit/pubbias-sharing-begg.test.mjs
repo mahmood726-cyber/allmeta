@@ -80,3 +80,23 @@ test('Begg: numerical partial ties use the same groups for tau and p (defect)', 
   assert.ok(Math.abs(actual.tau-expected.tau)<1e-12);
   assert.ok(Math.abs(actual.p-expected.p)<1e-12);
 });
+
+test('Begg: constant effects remain undefined with small SEs or a large offset (defect)', () => {
+  for (const [effect, scale] of [[.2, 1e-4], [2e6, 1]]) {
+    const data = rows(Array(6).fill(effect)).map(r => ({te:r.te, se:r.se * scale}));
+    undefinedBegg(data);
+    undefinedBegg(data.reverse());
+  }
+});
+
+test('Begg: nonconstant effects retain their ranks when effect and SE units change (control)', () => {
+  const data = rows([.55, .48, .70, .60, .30, .75]);
+  const expected = engine.beggMazumdar(data);
+  assert.ok(Number.isFinite(expected.tau));
+  assert.ok(Number.isFinite(expected.p));
+  for (const scale of [1e-4, 1e4]) {
+    const actual = engine.beggMazumdar(data.map(r => ({te:r.te * scale, se:r.se * scale})));
+    assert.equal(actual.tau, expected.tau);
+    assert.equal(actual.p, expected.p);
+  }
+});
