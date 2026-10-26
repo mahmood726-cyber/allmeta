@@ -52,7 +52,98 @@ function setup() {
 }
 const records = [{ study: 'Smith 2019', yi: .25, sei: .08 }, { study: 'Jones 2020', yi: .18, sei: .1 }, { study: 'Lee 2021', yi: .3, sei: .09 }];
 
+// Exercise the real page engine and live adapter together. Only DOM plumbing and
+// SVG drawing are stubbed here; the browser regression below covers those too.
+function liveSetup() {
+  const html = fs.readFileSync(new URL('../../../influence/index.html', import.meta.url), 'utf8');
+  const source = { value: /<textarea\b[^>]*id="src"[^>]*>([\s\S]*?)<\/textarea>/.exec(html)[1] };
+  const body = { innerHTML: '' }, plot = { children: [] };
+  const context = { structuredClone, showError() {}, clearResults() {}, pageLocked: () => false,
+    drawLOO() {}, drawInfluence() {}, updateExclusion() {} };
+  context.window = context;
+  vm.createContext(context);
+  for (const file of ['shared/ma-core.js', 'shared/diagnostic-plots.js', 'influence/influence-extra.js',
+    'shared/alm-features.js', 'shared/alm-text.js']) {
+    vm.runInContext(fs.readFileSync(new URL('../../../' + file, import.meta.url), 'utf8'), context);
+  }
+  context.document = {
+    readyState: 'loading', addEventListener() {},
+    documentElement: { hasAttribute: () => false },
+    getElementById: id => id === 'src' ? source : id === 'body' ? body : plot,
+    querySelectorAll: () => [...body.innerHTML.matchAll(/<tr\b([^>]*)>([\s\S]*?)<\/tr>/g)].map(row => ({
+      classList: { contains: name => name === 'flag' && /class="flag"/.test(row[1]) }
+    }))
+  };
+  context.drawBaujat = rows => { context.__almBaujat = context.AlmDiagPlots.baujat(rows.map(r => r.te), rows.map(r => r.se * r.se), 'REML'); };
+  context.drawRadial = rows => { context.__almRadial = context.AlmDiagPlots.radial(rows.map(r => r.te), rows.map(r => r.se * r.se)); };
+  vm.runInContext('var Z975 = AlmInfluenceExtra.Z975, X = AlmInfluenceExtra; var _lastStudies, _lastFull, _lastDiag, _excluded;\n' +
+    html.slice(html.indexOf('const NUM ='), html.indexOf('// Exposed for results-export')) +
+    html.slice(html.indexOf('function run() {'), html.indexOf('// ---- E1:')) + '\nrun();', context);
+  context._almStudies = () => context._lastStudies;
+  context._almLastInfluence = () => context._lastFull;
+  context._almLastDiag = () => context._lastDiag;
+  let restores = 0;
+  context.__almRestore = ({ data }) => { restores++; source.value = data; context.run(); };
+  context.AlmValidate = { adapters: {}, mount(_host, adapter) { this.adapters.influence = adapter; } };
+  vm.runInContext(fs.readFileSync(new URL('../../../influence/validate/adapter.js', import.meta.url), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(adapter, 'utf8'), context);
+  return { context, source, body, live: context.AlmInfluenceValidationAdapter.live, restores: () => restores };
+}
+
 export const regressions = [
+  ['PLANTED live revision reads preserve selected exclusions and current analysis; no-exclusion control', () => {
+    const h = liveSetup(), { context: c } = h;
+    const baseline = h.live.currentState(), full = c._almLastInfluence(), diag = c._almLastDiag();
+    const revision = c.AlmFeatures.revision('influence'), before = h.restores();
+    assert.equal(baseline.values.length, 177);
+    assert.deepEqual(h.live.currentState(), baseline);
+    assert.equal(c._excluded.size, 0); // Control: the ordinary full-sample read is unchanged.
+    c._excluded.add(5);
+    assert.equal(c.AlmFeatures.revision('influence'), revision);
+    c.AlmText.context('influence', c.AlmInfluenceFeatures.text); // Same path as report currency checks.
+    assert.deepEqual(Array.from(c._excluded), [5], 'A state read must not reset the user selection');
+    assert.equal(h.restores(), before, 'Unchanged inputs must not rerun the native page');
+    assert.equal(c._almLastInfluence(), full); assert.equal(c._almLastDiag(), diag);
+    assert.deepEqual(h.live.currentState(), baseline);
+  }],
+  ['LIVE controls: edited inputs reanalyse once; invalid inputs and missing evidence fail closed', () => {
+    const h = liveSetup(), { context: c } = h;
+    const baseline = h.live.currentState(), before = h.restores();
+    h.source.value = '0,0.1,A\n0.2,0.12,B\n0.4,0.15,C\n0.1,0.09,D';
+    const changed = h.live.currentState();
+    assert.equal(h.restores(), before + 1);
+    assert.equal(changed.values.length, 75);
+    assert.notEqual(changed.values[0].value, baseline.values[0].value);
+    assert.deepEqual(Array.from(changed.yi), [0, .2, .4, .1]);
+    const analysed = h.source.value, rendered = h.body.innerHTML;
+    h.source.value = analysed.replace('0,0.1,A', '+0.0, 1e-1, A');
+    c._excluded.add(1);
+    assert.deepEqual(h.live.currentState(), changed); // Equivalent native numeric notation.
+    assert.equal(h.restores(), before + 1); assert.deepEqual(Array.from(c._excluded), [1]);
+    for (const literal of ['0x10', '0.25suffix', 'NaN', 'Infinity', '', '1e309']) {
+      h.source.value = literal + ',0.1,A\n0.2,0.12,B\n0.4,0.15,C';
+      assert.throws(() => h.live.currentState(), /valid effect rows/);
+      assert.equal(h.restores(), before + 1); assert.equal(h.body.innerHTML, rendered);
+    }
+    h.source.value = analysed;
+    const full = c._almLastInfluence;
+    c._almLastInfluence = () => ({ ...full(), mu: undefined });
+    assert.throws(() => h.live.currentState(), /Invalid app quantity/);
+  }],
+  ['PLANTED invalid live inputs are refused before any native restore; valid input control', () => {
+    const h = liveSetup(), { context: c } = h;
+    const baseline = h.live.currentState(), input = h.source.value, rendered = h.body.innerHTML;
+    const before = h.restores();
+    c._excluded.add(5);
+    for (const literal of ['0x10', '0.25suffix', 'NaN', 'Infinity', '', '1e309']) {
+      h.source.value = literal + ',0.1,A\n0.2,0.12,B\n0.4,0.15,C';
+      assert.throws(() => h.live.currentState(), /valid effect rows/);
+      assert.equal(h.restores(), before, 'Invalid native input must be rejected before changing the analysis');
+      assert.equal(h.body.innerHTML, rendered); assert.deepEqual(Array.from(c._excluded), [5]);
+    }
+    h.source.value = input;
+    assert.deepEqual(h.live.currentState(), baseline);
+  }],
   ['REVIEW undo snapshots the previous input only after batch validation', () => {
     const h = setup();
     assert.throws(() => h.spec.entry.apply(records.map((r, i) => i === 1 ? { ...r, sei: 0 } : r)));
@@ -244,6 +335,40 @@ async function fillSourceDetails(panel, card, label) {
     await card.getByRole('combobox', { name, exact: true }).selectOption('not stated');
   }
 }
+
+test('PLANTED report currency checks preserve exclusions, refits and retained-study reruns', async ({ page }) => {
+  await open(page, 'text');
+  const panel = page.locator('#alm-f-panel-text');
+  const original = await page.locator('#src').inputValue();
+  const full = await page.evaluate(() => _almLastInfluence());
+  const excluded = page.locator('#body input.excl').nth(5);
+  await excluded.check();
+  // Regeneration calls the same revision read as the deferred click/change listener.
+  await panel.locator('.alm-text-regenerate').click();
+  await expect(excluded).toBeChecked();
+  const { ex, d } = await page.evaluate(() => ({ ex: _almLastExclusion(), d: _almLastDiag()[5] }));
+  expect(ex.excluded).toEqual([5]); expect(ex.kept.k).toBe(full.k - 1);
+  expect(ex.kept.mu).toBe(d.loo_mu); expect(ex.kept.seMu).toBe(d.loo_seMu);
+  expect(ex.kept.tau2).toBe(d.loo_tau2);
+  await expect(page.locator('#excl-sentence')).toContainText(ex.kept.mu.toFixed(4));
+  for (const id of ['loo-plot', 'influence-plot', 'baujat-plot', 'radial-plot']) {
+    await expect(page.locator(`#${id} g[data-i="5"]`)).toHaveAttribute('opacity', '0.22');
+    await expect(page.locator(`#${id} g[data-i="0"]`)).toHaveAttribute('opacity', '1');
+  }
+  expect(await page.evaluate(() => _almLastInfluence())).toEqual(full);
+  await expect(panel.locator('.alm-text-body')).toBeVisible();
+  await page.locator('#btn-excl-clear').click();
+  await panel.locator('.alm-text-regenerate').click();
+  expect((await page.evaluate(() => _almLastExclusion())).excluded).toEqual([]);
+  await expect(page.locator('#src')).toHaveValue(original);
+  await expect(page.locator('#model-summary thead th.excl-col').first()).toBeHidden();
+  await excluded.check();
+  await panel.locator('.alm-text-regenerate').click();
+  await page.locator('#btn-excl-apply').click();
+  await expect(page.locator('#body tr')).toHaveCount(10);
+  await expect(page.locator('#src')).not.toHaveValue(original);
+  expect((await page.evaluate(() => _almStudies())).map(r => r.label)).not.toContain('Outlier');
+});
 
 test('ENTRY: three formats reproduce the built-in example through parser APIs and the native input', async ({ page }) => {
   await open(page);
