@@ -261,7 +261,8 @@
     const mount=()=>{
       const spec=active.spec, panel=document.createElement('section');
       panel.id='alm-real-example-panel'; panel.style.cssText='margin:1rem auto;padding:1rem;max-width:72rem;border:1px solid #aaa;border-radius:6px';
-      const heading=document.createElement('h2');heading.textContent='Real example';
+      const heading=document.createElement('h2');heading.id='alm-real-example-title';heading.textContent='Real example';
+      panel.setAttribute('aria-labelledby',heading.id);
       const labelEl=document.createElement('label');labelEl.textContent='Published dataset: ';
       const select=document.createElement('select');select.id='alm-real-example-choice';
       const option=document.createElement('option');option.value=datasets[app];option.textContent=datasets[app];select.append(option);labelEl.append(select);

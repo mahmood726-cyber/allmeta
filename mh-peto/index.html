@@ -1279,8 +1279,9 @@ StudyE, 4, 600, 10, 600</textarea>
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
       // The leave-one-out view filter is not autosaved: it was added after main, and saving it would shift the
       // positional idx:N keys of the later plot controls, so drafts saved by the earlier page would restore wrongly.
+      // Example selection is transient; exclude it before assigning draft indices.
       AlmAutosave.install({ appKey: 'mh-peto', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#loo-only-flagged)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#loo-only-flagged):not(#alm-real-example-panel *)'; }) });
     }
   });
 })();

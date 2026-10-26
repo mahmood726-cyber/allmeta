@@ -55,3 +55,15 @@ test('planted display mutation and stale inputs are independently rejected',asyn
   h.result.textContent='0.125';assert.doesNotThrow(()=>h.ctx.AlmExamples.capture());
   h.input.value+='\nnew data';assert.throws(()=>h.ctx.AlmExamples.capture(),/inputs changed/);
 });
+
+test('example panel outside main is a named landmark with a visible heading',()=>{
+  const h=setup(), panel=h.nodes.get('alm-real-example-panel');
+  const title=h.nodes.get(panel['aria-labelledby']);
+  assert.ok(title, 'the panel must reference an existing heading');
+  assert.equal(title.tagName,'h2');
+  assert.equal(title.textContent,'Real example');
+  assert.ok(panel.children.includes(title));
+  // Control: the picker still has its visible enclosing label.
+  const picker=h.nodes.get('alm-real-example-choice');
+  assert.ok(panel.children.some(el=>el.tagName==='label' && el.children.includes(picker)));
+});
