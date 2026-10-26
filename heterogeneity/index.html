@@ -221,6 +221,11 @@
         const raw=lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
         const parts=raw.split(/\s*[,\t]\s*/);
+        if (parts.length>3) {
+          first=false;
+          warnings.push("Line "+(i+1)+" ("+parts[0]+"): expected exactly 3 fields: label, estimate and SE. Possible decimal comma? Use a decimal point and remove extra fields or delimiters from labels.");
+          continue;
+        }
         const ys=(parts[parts.length-2]||"").trim(), ss=(parts[parts.length-1]||"").trim();
         const header=first && parts.length>=3 && /^(yi|est|effect|estimate)$/i.test(ys) && /^(se|sei|standard[ _-]?error)$/i.test(ss);
         first=false;
