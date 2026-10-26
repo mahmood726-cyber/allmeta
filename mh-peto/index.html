@@ -1214,7 +1214,13 @@ StudyE, 4, 600, 10, 600</textarea>
     };
 
     // Validation hooks use the page parser and rendering path.
-    window.__mhValidation = {parse: parse, parseInput: parseInput, run: run, restoreResult: function (r) { _lastResults = r; }};
+    window.__mhValidation = {parse: parse, parseInput: parseInput, run: run, restoreResult: function (r) {
+      _lastResults = r;
+      // The replay restores saved panels separately; keep this disclosure with its saved results.
+      var warning = r && r.mh_heterogeneity_warning || '';
+      document.getElementById('het-warning').textContent = warning;
+      document.getElementById('het-warning').hidden = !warning;
+    }};
 
     // Expose last results for export
     window._almLastMhPeto = function () { return _lastResults; };
