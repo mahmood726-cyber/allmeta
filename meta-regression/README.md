@@ -2,6 +2,8 @@
 
 Interactive meta-regression app for exploring covariate-adjusted treatment effects. Paste study-level effect sizes, standard errors, and a continuous moderator; the app fits a weighted mixed-effects model and plots the regression line with confidence band.
 
+The **Shared pooled-only check (R)** and **Pooled-only check (R)** buttons open the WebR validator for an intercept-only model without the moderator. They do not validate the displayed regression coefficients, CIs, residual τ², Q_E, or R². The shared check uses studies already saved to the bus; the other check saves the entered studies first. Use **Export R script** to reproduce the meta-regression with `mods = ~ x`, `method = "PM"`, and `test = "adhoc"` (floored Knapp-Hartung intervals).
+
 ## Tests
 
 ```
@@ -27,6 +29,6 @@ Click **📑 Cite as** inside the app for ready-to-paste Vancouver + BibTeX cita
 
 - Receipts and JSON exports include `producedBy` (app version, git SHA, build timestamp) — see `shared/build-info.js`.
 - For apps with a parity-checked engine, `shared/specs/` contains the R-reference test vectors. Run `python -m pytest tests/` for the full suite.
-- Click **📝 Verify in R** to open a Shinylive R session with the current data pre-loaded for independent re-computation (where supported).
+- The R check buttons validate a pooled-only model. Use **Export R script** to reproduce the meta-regression in R.
 
 <!-- ALM-AUTO-README-END -->
