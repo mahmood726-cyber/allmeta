@@ -212,3 +212,65 @@ test('review control: CI-only extraction derives fresh uncertainty without an SE
   assert.equal(out.rows[0].ci_lower, 0.5);
   assert.equal(out.rows[0].ci_upper, 0.9);
 });
+
+test('review: supplied RR ceiling is compared without losing endpoint equality to logs', () => {
+  const h = harness({ 'in-type': 'RR', 'in-est': 1, 'ctx-p0': 0.7,
+    'der-lo': 0.8, 'der-hi': 1 / 0.7 });
+  const rows = h.convert();
+  assert.equal(rows[0].hi, 1 / 0.7);
+  for (const scale of ['OR', 'SMD (Cox via OR)']) {
+    assert.ok(!Number.isFinite(rows.find(r => r.scale === scale).se), scale);
+    assert.equal(h.export().rows.find(r => r.scale === scale).ci_upper, null);
+  }
+  assert.match(h.el('warn-slot').innerHTML, /risk ceiling/i);
+});
+
+test('review control: supplied RR interval below the ceiling retains uncertainty', () => {
+  const h = harness({ 'in-type': 'RR', 'in-est': 1, 'ctx-p0': 0.7,
+    'der-lo': 0.8, 'der-hi': 1.4 });
+  assert.ok(Number.isFinite(h.convert().find(r => r.scale === 'OR').se));
+  assert.doesNotMatch(h.el('warn-slot').innerHTML, /risk ceiling/i);
+});
+
+test('review: reconstructed RR interval at a non-power-of-two ceiling suppresses uncertainty', () => {
+  const h = harness({ 'in-type': 'RR', 'in-est': 1, 'ctx-p0': 0.7,
+    'in-se': Math.log(1 / 0.7) / Z95 });
+  const rows = h.convert();
+  assert.equal(rows[0].hi, 1 / 0.7);
+  assert.ok(!Number.isFinite(rows.find(r => r.scale === 'OR').se));
+});
+
+test('review control: RR ceiling remains finite in log space for a subnormal baseline risk', () => {
+  const h = harness({ 'in-type': 'RR', 'in-est': 1, 'ctx-p0': 1e-310, 'in-se': 362 });
+  assert.ok(Number.isFinite(h.convert().find(r => r.scale === 'OR').se));
+  h.set({ 'in-se': 365 });
+  assert.ok(!Number.isFinite(h.convert().find(r => r.scale === 'OR').se));
+});
+
+test('review: invalid supplied AI bounds cannot silently fall back to SE', () => {
+  for (const bounds of [
+    { ci_lower: 'invalid', ci_upper: 'invalid' },
+    { ci_lower: 'invalid' },
+    { ci_lower: Infinity, ci_upper: Infinity },
+    { ci_lower: 2e6, ci_upper: 3e6 },
+    { ci_lower: '0.5junk', ci_upper: '0.9junk' },
+  ]) {
+    const h = harness();
+    assert.ok(h.convert().length > 0);
+    h.context.importAI({ type: 'OR', estimate: 0.7, se: 0.3, ...bounds });
+    assert.match(h.el('warn-slot').innerHTML, /Error.*CI/i);
+    assert.equal(h.export().rows.length, 0, JSON.stringify(bounds));
+    assert.equal(h.el('forest-points').innerHTML, '');
+  }
+});
+
+test('review control: absent AI bounds allow SE and numeric strings retain their CI', () => {
+  const h = harness();
+  h.context.importAI({ type: 'OR', estimate: 0.7, se: 0.3,
+    ci_lower: null, ci_upper: '' });
+  assert.equal(h.export().rows[0].se, 0.3);
+  h.context.importAI({ type: 'OR', estimate: '0.7', se: '0.3',
+    ci_lower: '0.5', ci_upper: '0.9' });
+  assert.equal(h.export().rows[0].ci_lower, 0.5);
+  assert.equal(h.export().rows[0].ci_upper, 0.9);
+});

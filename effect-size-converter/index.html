@@ -311,11 +311,15 @@
           // SE(logOR) via delta from SE(logRR):
           //   d(ln OR)/d(ln RR) = 1 / (1 - p0 * RR)
           // The entire RR interval must be below 1/p0, not just its point.
-          // Compare in log space so an overflowing upper CI also fails closed.
+          // Keep supplied endpoints on their original scale to preserve equality.
+          // Compare reconstructed bounds in log space so overflow fails closed.
           const denom = 1 - p0 * est;
-          const logUpperRR = inputCI ? Math.log(inputCI.hi) : logRR + Z95 * se;
-          if (logUpperRR >= -Math.log(p0) || Math.abs(denom) < 0.001) {
-            const note = logUpperRR >= -Math.log(p0)
+          const riskCeiling = 1 / p0;
+          const logCeiling = Number.isFinite(riskCeiling) ? Math.log(riskCeiling) : -Math.log(p0);
+          const reachesCeiling = inputCI ? inputCI.hi >= riskCeiling
+            : logRR + Z95 * se >= logCeiling;
+          if (reachesCeiling || Math.abs(denom) < 0.001) {
+            const note = reachesCeiling
               ? "RR 95% CI reaches or crosses the risk ceiling (1/p₀); OR/SMD SE and CI suppressed; point only."
               : "RR·p₀ ≈ 1 — near the risk ceiling; OR/SMD SE and CI suppressed; point only.";
             push("OR", or, NaN, note);
@@ -695,6 +699,18 @@
         const lo = clampNum(r.ci_lower), hi = clampNum(r.ci_upper);
         document.getElementById("der-lo").value = lo == null ? "" : String(lo);
         document.getElementById("der-hi").value = hi == null ? "" : String(hi);
+        const invalidBound = v => v != null && String(v).trim() !== "" &&
+          (!(typeof v === "number" || typeof v === "string") ||
+            !Number.isFinite(Number(v)) || clampNum(v) == null);
+        if (invalidBound(r.ci_lower) || invalidBound(r.ci_upper)) {
+          // Export re-runs Convert: invalidate uncertainty in the form as well.
+          document.getElementById("in-se").value = "";
+          document.getElementById("der-lo").value = "";
+          document.getElementById("der-hi").value = "";
+          render([], null);
+          setWarn("Imported CI bounds must be finite numbers within the supported range.", "err");
+          return;
+        }
         const ratio = ["OR", "RR", "HR", "IRR"].includes(document.getElementById("in-type").value);
         document.getElementById("der-scale").value = r.ci_scale
           ? (/log/i.test(String(r.ci_scale)) ? "log" : "raw") : (ratio ? "log" : "raw");
