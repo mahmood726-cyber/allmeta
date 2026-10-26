@@ -1,6 +1,6 @@
 (function(global){
   'use strict';
-  function validate(rows){global.AlmRevmanReader.validateRecords(rows,'binary2x2');rows.forEach(r=>global.AlmRevman.label(r.study));}
+  function validate(rows){global.AlmRevmanReader.validateRecords(rows,'binary2x2');rows.forEach(r=>{global.AlmRevman.label(r.study);if(r.study!==r.study.trim())throw new Error('Study name cannot be preserved by the native input.');});}
   const entry={schema:'binary2x2',validate,apply(rows){
     validate(rows);
     document.getElementById('src').value=global.AlmRevmanReader.csvRows(rows.map(r=>[r.study,r.ai,r.n1i,r.ci,r.n2i]));

@@ -21,10 +21,14 @@
   }};
   function read(){
     const text=document.getElementById('f-data').value;
-    const matrix=R().splitTable(text,text.split('\n').find(l=>l.trim()&&!l.trim().startsWith('#'))?.includes('\t')?'\t':',');
+    // Match native logical records before decoding quotes: a quoted # label is data.
+    // Retain unmatched quotes for the strict CSV reader to reject.
+    const lines=(text.match(/(?:[^"\r\n]|"(?:[^"]|"")*"|")+/g)||[]).filter(l=>l.trim());
+    const isComment=l=>l.trim().startsWith('#');
+    const matrix=R().splitTable(lines.map(l=>isComment(l)?'#':l).join('\n'),lines.find(l=>!isComment(l))?.includes('\t')?'\t':',');
     const rows=[];
     matrix.forEach((p,i)=>{
-      if(p[0].trim().startsWith('#'))return;
+      if(isComment(lines[i]))return;
       if(i<3&&!rows.length&&/^(label|study)$/i.test(p[0].trim())&&/^(est|estimate|effect|yi|logOR)$/i.test(p[1]?.trim()||'')&&/^se$/i.test(p[2]?.trim()||''))return;
       if(p.length<3||p.length>5)throw new Error('Invalid native input columns.');
       let year=null,subgroup='';
