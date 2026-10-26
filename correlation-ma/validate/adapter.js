@@ -133,7 +133,7 @@ async function replay(files,progress=()=>{}) {
     for(let i=0;i<cs.length;i++) {
       const c=cs[i],r=rs.configurations[i];
       $('f-data').value=c.text; $('f-method').value=c.method;
-      window.__almCorrValidationRun();
+      window.__almCorrValidationRun('z'); // Archived main corpus specifies Wald fits.
       window.alm.chartExportAuto.scan();
       // Let the shared chart export observer finish before checking its controls.
       await new Promise(resolve=>setTimeout(resolve,0));
@@ -170,15 +170,16 @@ function currentState() {
   add('display',displayOK,'exact');
   add('controls',controls(a.method,$('f-data').value,false),'exact');
   adapter.live.compare={kind,tolerance};
-  return {method:a.method,studies:a.studies,values,note:'Live metafor uses the current accepted studies. Numerical results, table/headline consistency and analysis controls are checked. Replay additionally checks the pinned static text, forest geometry and refusal corpus. Paper metafor 5.2-1; the self-hosted live build is 4.8-0.'};
+  return {method:a.method,test:a.test,studies:a.studies,values,note:'Live metafor uses the current accepted studies. Numerical results, table/headline consistency and analysis controls are checked. Replay additionally checks the pinned static text, forest geometry and refusal corpus. Paper metafor 5.2-1; the self-hosted live build is 4.8-0.'};
 }
 function buildScript(s) {
   const nums=key=>s.studies.map(v=>{if(!finite(v[key]))throw Error('Nonfinite input');return String(v[key]);}).join(',');
   if(!METHODS.includes(s.method))throw Error('Invalid method');
+  if(!['z','knha','adhoc'].includes(s.test) || (s.method==='FE' && s.test!=='z')) throw Error('Invalid CI method');
   return `
 r <- c(${nums('r')}); n <- c(${nums('n')}); k <- length(r)
 e <- metafor::escalc(measure='ZCOR',ri=r,ni=n)
-m <- metafor::rma(yi=e$yi,vi=e$vi,method='${s.method}',test='z',control=list(threshold=1e-12,maxiter=10000,stepadj=.5,tol=.Machine$double.eps^0.75))
+m <- metafor::rma(yi=e$yi,vi=e$vi,method='${s.method}',test='${s.test}',control=list(threshold=1e-12,maxiter=10000,stepadj=.5,tol=.Machine$double.eps^0.75))
 mu <- as.numeric(coef(m)); se <- m[['se',exact=TRUE]]; tau <- m[['tau2',exact=TRUE]]
 pi <- if('${s.method}'=='FE') c(NA_real_,NA_real_) else mu+c(-1,1)*qt(.975,k-1)*sqrt(tau+se^2)
 out <- list(mu_z=mu,se_z=se,tau2_z=tau,I2=m[['I2',exact=TRUE]]/100,r=tanh(mu),r_lo=tanh(m[['ci.lb',exact=TRUE]]),r_hi=tanh(m[['ci.ub',exact=TRUE]]),r_pi_lo=tanh(pi[1]),r_pi_hi=tanh(pi[2]),k=k,display=TRUE,controls=TRUE)

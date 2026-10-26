@@ -105,7 +105,11 @@
     var Z975 = 1.959963984540054;
     function fmt(x, d) { return (typeof x === "number" && isFinite(x)) ? x.toFixed(d == null ? 3 : d) : "—"; }
     function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-    var _last = null;
+    var _last = null, selectedTest = "z";
+    window._almCorrSetTest = function (test) {
+      if (["z", "knha", "adhoc"].indexOf(test) < 0) throw new Error("Unknown CI method");
+      selectedTest = test; run();
+    };
     window._almLastCorrMA = function () { return _last; };
 
     function parse(text) {
@@ -124,20 +128,22 @@
       return rows;
     }
 
-    function run() {
+    function run(testOverride) {
       var rows = parse(document.getElementById("f-data").value);
       var method = document.getElementById("f-method").value;
+      var test = method === "FE" ? "z" : (typeof testOverride === "string" ? testOverride : selectedTest);
       var body = document.getElementById("res-body");
       var head = document.getElementById("headline");
       if (rows.length < 2) {
         head.textContent = "Enter at least 2 studies (label, r, n).";
         body.innerHTML = ""; document.getElementById("forest-host").innerHTML = ""; _last = null; return;
       }
-      var pooled = window.AlmMaCore.pool(rows.map(function (s) { return s.z; }), rows.map(function (s) { return s.v; }), { method: method, pi: true });
+      var pooled = window.AlmMaCore.pool(rows.map(function (s) { return s.z; }), rows.map(function (s) { return s.v; }), { method: method, pi: true, knha: test !== "z", knhaFloor: test === "adhoc" });
       var w = rows.map(function (s) { return 1 / (s.v + pooled.tau2); });
       var sw = w.reduce(function (a, b) { return a + b; }, 0);
       var r_pool = Math.tanh(pooled.mu), r_lo = Math.tanh(pooled.ciLo), r_hi = Math.tanh(pooled.ciHi);
       var r_piLo = pooled.piLo != null ? Math.tanh(pooled.piLo) : null, r_piHi = pooled.piHi != null ? Math.tanh(pooled.piHi) : null;
+      head.setAttribute("title", "95% CI: " + ({ z: "Wald z", knha: "HKSJ", adhoc: "HKSJ (ad-hoc floor)" })[test] + (method === "FE" && selectedTest !== "z" ? " (HKSJ is not applicable to fixed-effect pooling)" : ""));
       head.innerHTML = "k = " + rows.length + " · pooled r = <strong>" + fmt(r_pool) + "</strong> [" + fmt(r_lo) + ", " + fmt(r_hi) + "]"
         + " · τ²(z) = " + fmt(pooled.tau2, 4) + " · I² = " + fmt(pooled.I2, 1) + "%"
         + (r_piLo != null ? " · 95% PI [" + fmt(r_piLo) + ", " + fmt(r_piHi) + "]" : "");
@@ -146,7 +152,7 @@
       }).join("") + "<tr class='pooled-row'><td>Pooled</td><td>" + fmt(r_pool) + "</td><td>—</td><td>" + fmt(pooled.mu) + "</td><td>100%</td></tr>";
       document.getElementById("forest-host").innerHTML = forest(rows, { r: r_pool, lo: r_lo, hi: r_hi });
       _last = {
-        _schema: "corr-ma-results-v1", k: rows.length, method: method,
+        _schema: "corr-ma-results-v1", k: rows.length, method: method, test: test,
         mu_z: pooled.mu, se_z: pooled.se, tau2_z: pooled.tau2, I2: pooled.I2,
         r: r_pool, r_lo: r_lo, r_hi: r_hi, r_pi_lo: r_piLo, r_pi_hi: r_piHi,
         studies: rows.map(function (s) { return { label: s.label, r: s.r, n: s.n }; }),
@@ -178,11 +184,12 @@
     window.__almCorrValidationRun = run;
     window.__almCorrValidationSnapshot = function () {
       return { data: document.getElementById('f-data').value, method: document.getElementById('f-method').value,
-        last: _last, nodes: ['headline', 'res-body', 'forest-host'].map(function (id) { return Array.from(document.getElementById(id).childNodes); }) };
+        last: _last, test: selectedTest, title: document.getElementById('headline').getAttribute('title'), nodes: ['headline', 'res-body', 'forest-host'].map(function (id) { return Array.from(document.getElementById(id).childNodes); }) };
     };
     window.__almCorrValidationRestore = function (s) {
       document.getElementById('f-data').value = s.data; document.getElementById('f-method').value = s.method;
-      _last = s.last;
+      _last = s.last; selectedTest = s.test;
+      document.getElementById("headline").setAttribute("title", s.title || "");
       ['headline', 'res-body', 'forest-host'].forEach(function (id, i) { document.getElementById(id).replaceChildren.apply(document.getElementById(id), s.nodes[i]); });
     };
     document.getElementById("f-data").value = EXAMPLE;

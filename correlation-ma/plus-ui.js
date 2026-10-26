@@ -1,7 +1,7 @@
 /* correlation-ma/plus-ui.js — the "plus" panel (body-level <section id="alm-plus">) and usability helpers
  * (#f-tools, #f-notice, live summary, forest accessibility). All numbers come from AlmCorrPlus (plus-core.js),
  * which calls AlmMaCore.pool on the rows the page itself accepted (window._almLastCorrMA().studies).
- * The page's own parser, estimator, headline, table and forest are untouched.
+ * CI selection also recomputes the main results, forest and export snapshot.
  */
 (function () {
   "use strict";
@@ -217,7 +217,7 @@
       "<div id='alm-plus-prose'></div><div id='alm-plus-export'></div>" +
       "<div id='alm-live' class='plus-sr' aria-live='polite'></div>";
     sec.addEventListener("change", function (e) {
-      if (e.target.name === "alm-plus-test") { state.test = e.target.value; renderSensitivity(); if (state.loo) renderLoo(); }
+      if (e.target.name === "alm-plus-test") { state.test = e.target.value; window._almCorrSetTest(state.test); labelForest(); onHeadline(); renderSensitivity(); if (state.loo) renderLoo(); }
       if (e.target.name === "alm-plus-bench") { state.benchmark = e.target.value; renderProse(); }
     });
     $("alm-plus-loo-btn").addEventListener("click", function () { if (!$("f-data").disabled) renderLoo(); });
@@ -244,7 +244,7 @@
   // before replaying the pinned corpus through this panel and puts them back afterwards.
   function snapshot() { return { test: state.test, benchmark: state.benchmark, loo: !!state.loo }; }
   function restore(s) {
-    state.test = s.test; state.benchmark = s.benchmark; state.loo = null;
+    state.test = s.test; window._almCorrSetTest(state.test); labelForest(); onHeadline(); state.benchmark = s.benchmark; state.loo = null;
     document.querySelectorAll("input[name='alm-plus-test']").forEach(function (r) { r.checked = r.value === s.test; });
     document.querySelectorAll("input[name='alm-plus-bench']").forEach(function (r) { r.checked = r.value === s.benchmark; });
     var host = $("alm-plus-loo"); if (host) host.innerHTML = "";
