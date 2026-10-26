@@ -188,17 +188,22 @@
 
     function parseStudies(text) {
       const studies=[], warnings=[];
+      const decimal = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+      let firstRecord = true;
       const lines = String(text||"").split(/\r?\n/);
       for (let i=0;i<lines.length;i++) {
         const raw = lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
         const parts = raw.split(/\s*[,\t]\s*/);
+        // Only the documented header may be skipped, before any data record.
+        const isHeader = firstRecord && parts.length === 4 &&
+          parts.every((part, j) => part.toLowerCase() === ["label", "estimate", "se", "moderator"][j]);
+        firstRecord = false;
+        if (isHeader) continue;
         if (parts.length < 4) { warnings.push("Line "+(i+1)+": need 4 columns"); continue; }
-        const x = parseFloat(parts[parts.length-1]);
-        const se = parseFloat(parts[parts.length-2]);
-        const est = parseFloat(parts[parts.length-3]);
-        if (![est,se,x].every(Number.isFinite)) {
-          if (studies.length === 0 && i < 3) continue;
+        const values = parts.slice(-3);
+        const [est, se, x] = values.map(Number);
+        if (!values.every(value => decimal.test(value)) || ![est,se,x].every(Number.isFinite)) {
           warnings.push("Line "+(i+1)+": non-numeric"); continue;
         }
         if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }
