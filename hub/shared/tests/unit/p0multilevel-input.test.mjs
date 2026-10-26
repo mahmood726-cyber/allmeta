@@ -143,3 +143,23 @@ test('P0-8 load: missing SE remains invalid instead of falling back to a differe
   assert.equal(h.context._almLastMlma(), null);
   assert.match(h.elements.get('input-error').textContent, /Line 4:.*SE/i);
 });
+
+for (const count of [0, 1, 2]) {
+  test('review: insufficient input clears prior output (' + count + ' rows)', () => {
+    const h = app();
+    assert.ok(h.context._almLastMlma());
+    assert.match(h.elements.get('forest').innerHTML, /polygon/);
+    h.run(valid.split('\n').slice(0, count).join('\n'));
+    assert.equal(h.context._almLastMlma(), null);
+    assert.equal(h.context.__almReml(), null);
+    for (const id of ['summary', 'body', 'forest']) assert.equal(h.elements.get(id).innerHTML, '', id);
+    assert.equal(h.elements.get('input-error').hidden, false);
+    assert.match(h.elements.get('input-error').textContent, /at least 3/i);
+    assert.equal(h.elements.get('analysis-status').hidden, true);
+    h.run(valid);
+    assert.equal(h.context._almLastMlma().k, 3);
+    assert.equal(h.elements.get('input-error').hidden, true);
+    assert.equal(h.elements.get('analysis-status').hidden, false);
+    assert.match(h.elements.get('forest').innerHTML, /polygon/);
+  });
+}
