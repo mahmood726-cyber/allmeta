@@ -59,7 +59,7 @@ function page() {
   load('shared/alm-entry.js'); load('shared/alm-text.js'); load('multivariate-ma/alm-features.js');
   return { context, el, spec: context.AlmMultivariateFeatures,
     fire(id, type) {
-      const event = { target: el(id) };
+      const event = { type, target: el(id) };
       for (const fn of el(id).handlers[type] || []) fn(event);
       for (const fn of handlers[type] || []) fn(event);
     }
@@ -125,6 +125,33 @@ for (const [id, type, value] of [['f-data', 'input', 'pending'], ['f-mode', 'cha
     h.el(id).value = value; h.fire(id, type);
     assert.notEqual(h.context.AlmFeatures.inputsHash(app), hash, 'edited analysis settings must mark the R result stale');
     assert.deepEqual(plain(h.context.AlmFeaturesState.provenance), []);
+    assert.deepEqual(plain(h.context.AlmFeaturesState.entryLog), []);
+  });
+}
+
+for (const [id, value] of [['f-data', 'edited study data'], ['f-o1', 'PD change'],
+  ['f-o2', 'AL change'], ['f-rhow', '0.25']]) {
+  test('SHARE retains current provenance when ' + id + ' commits an already handled edit on blur', () => {
+    const h = page();
+    const provenance = [{ label: 'confirmed current extraction' }];
+    const entryLog = [{ text: 'Explicit supplied effect.' }];
+    const confirm = () => {
+      h.context.AlmFeaturesState.provenance = plain(provenance);
+      h.context.AlmFeaturesState.entryLog = plain(entryLog);
+    };
+    confirm();
+    h.el(id).value = value; h.fire(id, 'input');
+    assert.deepEqual(plain(h.context.AlmFeaturesState.provenance), [], 'the actual edit invalidates prior extraction');
+    assert.deepEqual(plain(h.context.AlmFeaturesState.entryLog), []);
+    // As in the browser SHARE test, the current extraction is recorded before
+    // clicking Copy share link blurs the last edited field and emits change.
+    confirm();
+    const before = plain(h.spec.share.get());
+    h.fire(id, 'change');
+    assert.deepEqual(plain(h.context.AlmFeaturesState.provenance), provenance);
+    assert.deepEqual(plain(h.spec.share.get()), before, 'the share payload must retain the current conversion log');
+    h.el(id).value = value + '1'; h.fire(id, 'input');
+    assert.deepEqual(plain(h.context.AlmFeaturesState.provenance), [], 'a subsequent edit still invalidates extraction');
     assert.deepEqual(plain(h.context.AlmFeaturesState.entryLog), []);
   });
 }

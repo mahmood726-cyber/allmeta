@@ -478,6 +478,11 @@
   // Edited analysis inputs no longer represent the confirmed extraction.
   // apply() records new provenance after running; AlmShare restores it after set().
   function invalidateProvenance(event) {
+    // Text/number edits are handled immediately on input. Their later change
+    // event only commits the same edit on blur (including a click on Share),
+    // and must not discard provenance recorded for the current inputs.
+    // The covariance select is handled by its change event, like the page fit.
+    if (!event.target || event.type !== (event.target.id === 'f-mode' ? 'change' : 'input')) return;
     if (event.target && ['f-data', 'f-o1', 'f-o2', 'f-mode', 'f-rhow'].indexOf(event.target.id) >= 0 && global.AlmFeaturesState) {
       global.AlmFeaturesState.provenance = [];
       global.AlmFeaturesState.entryLog = [];
