@@ -133,6 +133,10 @@
   }
   function schedule() {
     if (scheduled || !doc.body || doc.readyState === 'loading') return;
+    // Initial controls must exist before page-ready consumers snapshot/lock them.
+    // A first animation frame can arrive after corpus replay has locked the page,
+    // leaving newly mounted export buttons enabled and absent from its restore list.
+    if (!host) { scan(); return; }
     scheduled = true;
     (global.requestAnimationFrame || global.setTimeout)(scan);
   }
