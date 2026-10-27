@@ -163,19 +163,20 @@
     // cov(y_ij, y_ik) = tau2_study for j != k, same study
     //
     // Estimate tau2_study and tau2_within via moment-based iteration (Raudenbush/Cheung style).
-    // Row sums of V^-1 for V_s = diag(SE^2 + within) + between * 11'.
-    // Their sum is the information for the GLS pooled mean.
-    function covarianceWeights(rows, within, between) {
-      var sums = new Map();
-      rows.forEach(function (r) {
-        sums.set(r.study, (sums.get(r.study) || 0) + 1 / (r.se * r.se + within));
-      });
-      return rows.map(function (r) {
-        return 1 / (r.se * r.se + within) / (1 + between * sums.get(r.study));
-      });
-    }
-
     function fit(rows) {
+      // Keep the covariance calculation inside the independently callable fit.
+      // Return it for the REML rendering path to reuse with its variance estimates.
+      // Row sums of V^-1 for V_s = diag(SE^2 + within) + between * 11'.
+      function covarianceWeights(within, between) {
+        var sums = new Map();
+        rows.forEach(function (r) {
+          sums.set(r.study, (sums.get(r.study) || 0) + 1 / (r.se * r.se + within));
+        });
+        return rows.map(function (r) {
+          return 1 / (r.se * r.se + within) / (1 + between * sums.get(r.study));
+        });
+      }
+
       var studies = [];
       rows.forEach(function (r) { if (studies.indexOf(r.study) === -1) studies.push(r.study); });
       var byStudy = {};
@@ -260,7 +261,7 @@
         tau2_study = new_tau2_study; tau2_within = new_tau2_within;
       }
 
-      var wFinal = covarianceWeights(rows, tau2_within, tau2_study);
+      var wFinal = covarianceWeights(tau2_within, tau2_study);
       var swFinal = wFinal.reduce(function (a, b) { return a + b; }, 0);
       var mu = rows.reduce(function (acc, r, i) { return acc + wFinal[i] * r.te; }, 0) / swFinal;
       var seMu = Math.sqrt(1 / swFinal);
@@ -309,7 +310,7 @@
         ? window.AlmMaCore.predictionInterval({ mu: mu, se: seMuHK, tau2: tau2_study + tau2_within, k: J })
         : null;
       return { method: 'MoM', sigma2_typical: sigma2_typical, mu: mu, seMu: seMu, seMuHK: seMuHK, tCrit: tCrit, tau2_study: tau2_study, tau2_within: tau2_within, weights: wFinal, I2_study: I2_study, I2_within: I2_within, I2_sampling: I2_sampling, studies: studies, J: J,
-               piLo: pi ? pi.lo : null, piHi: pi ? pi.hi : null };
+               piLo: pi ? pi.lo : null, piHi: pi ? pi.hi : null, covarianceWeights: covarianceWeights };
     }
 
     // ---- axis state (overrideable by axis-controls) ----
@@ -372,7 +373,7 @@
         f = Object.assign({}, f, {
           method: 'REML', mu: _lastReml.mu, seMu: _lastReml.se,
           tau2_study: _lastReml.sigma2Between, tau2_within: _lastReml.sigma2Within,
-          weights: covarianceWeights(rows, _lastReml.sigma2Within, _lastReml.sigma2Between),
+          weights: f.covarianceWeights(_lastReml.sigma2Within, _lastReml.sigma2Between),
           I2_study: _lastReml.sigma2Between / totalVar,
           I2_within: _lastReml.sigma2Within / totalVar,
           I2_sampling: f.sigma2_typical / totalVar,
