@@ -229,6 +229,18 @@
       });
     }
 
+    // A heuristic, not scale inference: genuine positive log risks can look like RRs.
+    // Check each study separately so another study's negative values do not mask it.
+    function scaleWarnings(studies) {
+      var suspect = studies.filter(function (study) {
+        var effects = study.rows.filter(function (row) { return row.se > 0; });
+        return effects.length > 0 && effects.every(function (row) { return row.logrr >= 0.5 && row.logrr <= 2; });
+      });
+      if (!suspect.length) return [];
+      return ["Check the logRR scale: all non-reference values in study/studies " + suspect.map(function (s) { return s.id; }).join(", ") +
+        " are between 0.5 and 2 and may be raw relative risks rather than log risks. This is a heuristic; genuine log risks can also fall in this range. Results use your entries unchanged as logRR. Before interpreting them, verify the source scale. If these are raw RRs, replace them with their natural logarithm, ln(RR), keep each reference logRR at 0, and rerun. SE must be on the logRR scale; do not log-transform the SE. No automatic conversion has been applied."];
+    }
+
     function syncControls() {
       var shape = $("f-shape").value, proc = $("f-proc").value, cov = $("f-cov").value, mod = $("f-mod").checked;
       var custom = shape === "splinec"; $("f-knots").hidden = !custom; $("l-knots").hidden = !custom;
@@ -276,6 +288,7 @@
         var extra = r.excluded && r.excluded.length ? " Excluded: " + r.excluded.map(function (e) { return e.id + " (" + e.reason + ")"; }).join("; ") + "." : "";
         clearOut((r.error || "All studies must be usable; analysis refused.") + extra); return;
       }
+      r.warnings = (r.warnings || []).concat(scaleWarnings(studies));
       // Paule–Mandel / DerSimonian–Laird (linear, two-stage, GL): pool the per-study slopes on ma-core.
       if (M === "PM" || M === "DL") {
         var lf = DR.fit(studies.map(function (s) { return s.rows; }), { method: M });
