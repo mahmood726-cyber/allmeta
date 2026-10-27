@@ -133,7 +133,7 @@
     </section>
   </main>
   <footer>
-    Variance decomposition: var(&theta;_ij) = &sigma;&sup2;_ij (within-effect sampling) + <span data-gloss="tau2">&tau;&sup2;_within</span> (within-study heterogeneity across effect sizes) + &tau;&sup2;_study (between-study). Foundational 3-level MA: Konstantopoulos S. <em>Res Synth Methods</em> 2011;2:61&ndash;76. Two estimators are shown: an iterated method-of-moments per Cheung MWL. <em>Psychol Methods</em> 2014;19:211&ndash;229 (MoM), and an <strong>exact REML</strong> fit (<code>shared/multilevel-reml.js</code>) that matches <code>metafor::rma.mv(yi, vi, random=~1|study/effect)</code> to ~1e-7 on μ, SE, both variance components and the log-likelihood (verified &mdash; <code>multilevel-reml-parity.spec.mjs</code>). REML is the recommended result. For robust inference with highly clustered data, RVE is the gold standard: Hedges LV, Tipton E, Johnson MC. <em>Res Synth Methods</em> 2010;1:39&ndash;65 &mdash; the REML CI uses the normal 0.975 quantile; the MoM block also shows a floored residual-scale t interval with cluster degrees of freedom, which is not cluster-robust inference, so small-cluster Type-I error is inflated; treat the report as descriptive when number-of-clusters &lt; 10.
+    Variance decomposition: var(&theta;_ij) = &sigma;&sup2;_ij (within-effect sampling) + <span data-gloss="tau2">&tau;&sup2;_within</span> (within-study heterogeneity across effect sizes) + &tau;&sup2;_study (between-study). Foundational 3-level MA: Konstantopoulos S. <em>Res Synth Methods</em> 2011;2:61&ndash;76. Two estimators are shown: an iterated method-of-moments per Cheung MWL. <em>Psychol Methods</em> 2014;19:211&ndash;229 (MoM), and an <strong>exact REML</strong> fit (<code>shared/multilevel-reml.js</code>) that matches <code>metafor::rma.mv(yi, vi, random=~1|study/effect)</code> to ~1e-7 on μ, SE, both variance components and the log-likelihood (verified &mdash; <code>multilevel-reml-parity.spec.mjs</code>). REML is recommended for variance estimation; its normal CI is not a small-cluster correction. For robust inference with highly clustered data, RVE is the gold standard: Hedges LV, Tipton E, Johnson MC. <em>Res Synth Methods</em> 2010;1:39&ndash;65 &mdash; the REML block retains the normal CI and also shows an approximate t CI with J &minus; 1 degrees of freedom and a plug-in prediction interval; the MoM block also shows a floored residual-scale t interval with cluster degrees of freedom, which is not cluster-robust inference, so small-cluster Type-I error is inflated; treat the report as descriptive when number-of-clusters &lt; 10.
   </footer>
   <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
@@ -327,15 +327,35 @@
         '</tbody></table>';
 
       // Exact REML fit (matches metafor::rma.mv ~1|study/effect). Shown alongside the MoM
-      // estimates above; REML is the recommended (likelihood-based) result.
+      // estimates above. Keep the engine's z CI and add explicitly approximate
+      // cluster-df inference here, without changing the shared REML fit.
       _lastReml = null;
       if (window.AlmMultilevelREML) {
         var reml = window.AlmMultilevelREML.fit(rows.map(function (r) { return { cluster: r.study, y: r.te, v: r.se * r.se }; }));
         _lastReml = reml;
+        var remlJ = reml.nClusters, remlDf = remlJ - 1;
+        var remlT = remlDf > 0 && window.AlmStats && typeof window.AlmStats.qt === 'function'
+          ? window.AlmStats.qt(0.975, remlDf) : NaN;
+        var remlIntervals;
+        if (Number.isFinite(remlT) && remlT > 0) {
+          var ciHalf = remlT * reml.se;
+          // New study, new true effect: both heterogeneity components contribute;
+          // no new effect's sampling variance is included in this plug-in PI.
+          var piHalf = remlT * Math.sqrt(reml.se * reml.se + reml.sigma2Between + reml.sigma2Within);
+          remlIntervals =
+            '<tr><td>95% CI (t<sub>' + remlDf + '</sub>, approximate)</td><td colspan="2">[' + fmt(reml.mu - ciHalf) + ', ' + fmt(reml.mu + ciHalf) + ']</td></tr>' +
+            '<tr><td>95% prediction interval (t<sub>' + remlDf + '</sub>, plug-in)</td><td colspan="2">[' + fmt(reml.mu - piHalf) + ', ' + fmt(reml.mu + piHalf) + ']</td></tr>';
+        } else {
+          remlIntervals = '<tr><td colspan="3">t CI and prediction interval unavailable: ' +
+            (remlDf <= 0 ? 'at least two study clusters are required.' : 'Student-t quantiles could not be computed.') + '</td></tr>';
+        }
         document.getElementById('summary').innerHTML +=
           '<table style="margin-top:.6rem"><caption style="text-align:left;font-weight:600;font-size:.85rem;padding:.2rem 0">REML (exact &mdash; matches <code>metafor::rma.mv</code>)</caption><tbody>' +
+          (remlJ < 10 ? '<tr><td colspan="3" style="background:var(--warn-soft);color:var(--warn)"><strong>Small-cluster warning: J = ' + remlJ + '.</strong> With fewer than 10 study clusters, treat these results as descriptive. The z CI can be too narrow; the t CI and plug-in prediction interval are also fragile with so few clusters.</td></tr>' : '') +
           '<tr><td><strong>Pooled estimate</strong></td><td><strong>' + fmt(reml.mu) + '</strong></td><td>SE = ' + fmt(reml.se) + '</td></tr>' +
           '<tr><td>95% CI (z)</td><td colspan="2">[' + fmt(reml.ciLo) + ', ' + fmt(reml.ciHi) + ']</td></tr>' +
+          remlIntervals +
+          '<tr><td colspan="3">The t CI uses the model-based REML SE with J &minus; 1 degrees of freedom; it is not cluster-robust. The plug-in PI is for a true effect in a new study and adds both between-study and within-study heterogeneity to the squared REML SE. It ignores uncertainty in the estimated variance components. For CR2 inference, use Calculate extras below.</td></tr>' +
           '<tr><td>&sigma;&sup2;_study (between)</td><td colspan="2">' + fmt(reml.sigma2Between, 4) + '</td></tr>' +
           '<tr><td>&sigma;&sup2;_within</td><td colspan="2">' + fmt(reml.sigma2Within, 4) + '</td></tr>' +
           '<tr><td>REML log-likelihood</td><td colspan="2">' + fmt(reml.logLik, 3) + '</td></tr>' +
