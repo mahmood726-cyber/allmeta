@@ -1106,5 +1106,253 @@
 </script>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
+<details id="p14-panel" class="panel" role="region" aria-label="P14 conclusiveness"
+         style="margin:1.5rem clamp(1rem,3vw,3rem)">
+  <summary>Year-block conclusiveness (P14 rule)</summary>
+  <template id="p14-controls">
+  <p>Independent, opt-in analysis. Paste a JSON array of rows with yi, sei (or vi),
+    integer year, optional n and label. Use log effects for RR/OR/HR and the original
+    analysis scale for MD/SMD. Null = 0; confidence level = 95%.
+    Example row: <code>{"yi":0.3,"sei":0.1,"year":2020,"n":100}</code>.</p>
+  <p>The cumulative/subgroup controls and their validation panel above concern PM only.
+    P14 uses the separate inputs and exports below. All rows in a year enter together.</p>
+  <label for="p14-data">P14 rows (JSON)</label>
+  <textarea id="p14-data" spellcheck="false" aria-describedby="p14-input-note"></textarea>
+  <p id="p14-input-note">Every row needs a valid year (1 through 9999). Missing n is
+    retained as unknown; participant totals are incomplete when any counted row lacks n.</p>
+  <label for="p14-model">P14 model</label>
+  <select id="p14-model"><option value="FE">FE</option><option value="DL">DL</option><option value="REML">REML</option></select>
+  <label for="p14-ci">P14 confidence interval</label>
+  <select id="p14-ci" disabled><option value="wald">Wald</option><option value="hk">Hartung-Knapp (no truncation)</option></select>
+  <div class="actions">
+    <button type="button" id="p14-run">Evaluate P14</button>
+    <button type="button" id="p14-json" disabled>Download P14 JSON</button>
+    <button type="button" id="p14-csv" disabled>Download P14 CSV</button>
+  </div>
+  <p id="p14-message" role="status" aria-live="polite">No P14 analysis run.</p>
+  <div id="p14-summary"></div>
+  <div style="overflow-x:auto">
+    <table id="p14-table">
+      <caption>P14 year blocks (analysis scale)</caption>
+      <thead><tr><th scope="col">Year</th><th scope="col">Rows added</th><th scope="col">Cumulative k</th><th scope="col">Estimate</th><th scope="col">SE</th><th scope="col">CI lower</th><th scope="col">CI upper</th><th scope="col">Tau squared (RE)</th><th scope="col">Status</th><th scope="col">Evaluated</th><th scope="col">Reason</th></tr></thead>
+      <tbody id="p14-steps"></tbody>
+    </table>
+  </div>
+  </template>
+</details>
+<script id="p14-engine">
+(function (global) {
+  "use strict";
+  const VERSION = "cumsub-p14-v1";
+  const Z = 1.959963984540054;
+  const COLUMNS = ["year", "rows_added", "k", "estimate", "se", "lb", "ub",
+    "tau2", "status", "evaluated", "reason"];
+  const finite = x => typeof x === "number" && Number.isFinite(x);
+
+  function normalize(rows) {
+    if (!Array.isArray(rows) || !rows.length) throw Error("P14 requires a nonempty array of rows.");
+    let knownN = 0;
+    return rows.map((r, i) => {
+      const fail = message => { throw Error("Row " + (i + 1) + ": " + message); };
+      if (!r || typeof r !== "object" || Array.isArray(r)) fail("expected an object.");
+      if (!Number.isInteger(r.year) || r.year < 1 || r.year > 9999)
+        fail("a valid integer year (1 through 9999) is required.");
+      if (!finite(r.yi)) fail("yi must be a finite number on the analysis scale.");
+      const hasV = r.vi != null, hasSE = r.sei != null;
+      if (hasV === hasSE) fail("supply exactly one of vi or sei.");
+      if (!finite(hasV ? r.vi : r.sei) || (hasV ? r.vi : r.sei) <= 0)
+        fail("vi or sei must be finite and strictly positive.");
+      const vi = hasV ? r.vi : r.sei * r.sei;
+      if (!finite(vi) || vi <= 0) fail("variance is outside the numeric range.");
+      const n = r.n == null ? null : r.n;
+      if (n !== null && (!Number.isSafeInteger(n) || n < 0))
+        fail("n must be a nonnegative safe integer or null.");
+      knownN += n === null ? 0 : n;
+      if (!Number.isSafeInteger(knownN)) fail("total n exceeds the exact integer range.");
+      if (r.label != null && typeof r.label !== "string") fail("label must be a string.");
+      return { yi: r.yi, vi: vi, year: r.year, n: n, label: r.label || "" };
+    }).sort((a, b) => a.year - b.year || a.yi - b.yi || a.vi - b.vi ||
+      (a.n === null ? -1 : a.n) - (b.n === null ? -1 : b.n) ||
+      (a.label < b.label ? -1 : a.label > b.label ? 1 : 0));
+  }
+
+  function classify(p) {
+    if (![p.estimate, p.se, p.lb, p.ub].every(finite) || p.se < 0 || p.lb > p.ub)
+      return "UNDEFINED";
+    return p.lb > 0 ? "ABOVE" : p.ub < 0 ? "BELOW" : "INCLUDES";
+  }
+
+  function counts(rows) {
+    const incomplete = rows.some(r => r.n === null);
+    return { k: rows.length, n: incomplete ? null : rows.reduce((s, r) => s + r.n, 0),
+      incomplete: incomplete };
+  }
+
+  // j_star is one-based in the complete year-block table, including k<2 blocks.
+  function decide(blocks, rows, minK) {
+    const out = { result: "NOT_CONCLUSIVE", min_k: minK, j_star: null, year_star: null,
+      T: null, K_later: null, N_later: null, N_later_incomplete: null,
+      years_to_final: null, K_lag2: null, N_lag2: null, N_lag2_incomplete: null };
+    const last = blocks[blocks.length - 1];
+    if (!last || !last.evaluated) return out;
+    if (last.status === "UNDEFINED") return Object.assign(out, { result: "INDETERMINATE" });
+    if (last.status !== "ABOVE" && last.status !== "BELOW") return out;
+    const candidates = blocks.map((b, i) => i).filter(i =>
+      i < blocks.length - 1 && blocks[i].evaluated && blocks[i].k >= minK);
+    const suffix = i => blocks.slice(i).filter(b => b.evaluated);
+    const j = candidates.find(i => suffix(i).every(b => b.status === last.status));
+    if (j === undefined) {
+      // A run is uncertain only if replacing its unknown statuses by the final
+      // direction would make it pass. A known opposite/null block still defeats it.
+      if (candidates.some(i => suffix(i).some(b => b.status === "UNDEFINED") &&
+          suffix(i).every(b => b.status === last.status || b.status === "UNDEFINED")))
+        out.result = "INDETERMINATE";
+      return out;
+    }
+    const year = blocks[j].year;
+    const later = counts(rows.filter(r => r.year > year));
+    const lag = counts(rows.filter(r => r.year >= year + 2));
+    return Object.assign(out, { result: "CONCLUSIVE", j_star: j + 1, year_star: year,
+      T: String(year).padStart(4, "0") + "-12-31",
+      K_later: later.k, N_later: later.n, N_later_incomplete: later.incomplete,
+      years_to_final: last.year - year, K_lag2: lag.k, N_lag2: lag.n,
+      N_lag2_incomplete: lag.incomplete });
+  }
+
+  function analyze(input, settings) {
+    const rows = normalize(input);
+    const model = settings && settings.model, ci = settings && settings.ci;
+    if (!["FE", "DL", "REML"].includes(model) || !["wald", "hk"].includes(ci))
+      throw Error("Choose FE, DL or REML and wald or hk.");
+    if (model === "FE" && ci !== "wald") throw Error("FE supports Wald intervals only.");
+    if (!global.AlmMaCore || typeof global.AlmMaCore.pool !== "function")
+      throw Error("The local statistics engine is unavailable.");
+    const years = Array.from(new Set(rows.map(r => r.year)));
+    let previousK = 0;
+    const blocks = years.map(year => {
+      const subset = rows.filter(r => r.year <= year), k = subset.length;
+      const b = { year: year, rows_added: k - previousK, k: k, estimate: null,
+        se: null, lb: null, ub: null, tau2: null, status: "NOT_EVALUATED",
+        evaluated: k >= 2, reason: k < 2 ? "K_LT_2" : null };
+      previousK = k;
+      if (!b.evaluated) return b;
+      try {
+        const fit = global.AlmMaCore.pool(subset.map(r => r.yi), subset.map(r => r.vi),
+          { method: model, knha: ci === "hk", knhaFloor: false, level: 0.95 });
+        // The shared core's approximate qnorm is left unchanged for other views.
+        const lb = ci === "wald" ? fit.mu - Z * fit.se : fit.ciLo;
+        const ub = ci === "wald" ? fit.mu + Z * fit.se : fit.ciHi;
+        const p = { estimate: fit.mu, se: fit.se, lb: lb, ub: ub };
+        const status = classify(p);
+        if (status === "UNDEFINED" || !finite(fit.tau2) || fit.tau2 < 0)
+          throw Error("Non-finite or invalid fit.");
+        Object.assign(b, p, { tau2: model === "FE" ? null : fit.tau2, status: status });
+      } catch (error) {
+        b.status = "UNDEFINED";
+        b.reason = "FIT_FAILED";
+      }
+      return b;
+    });
+    return { schema: VERSION, app_version: global.AlmBuildInfo &&
+      typeof global.AlmBuildInfo.version === "string" ? global.AlmBuildInfo.version : "unknown",
+      settings: { model: model, ci: ci, level: 0.95, null: 0 },
+      rows: rows, blocks: blocks, primary: decide(blocks, rows, 2),
+      sensitivity_a: decide(blocks, rows, 10) };
+  }
+
+  // Rectangular CSV: each year row carries both complete summaries and settings.
+  function csv(result) {
+    const meta = { schema: result.schema, app_version: result.app_version,
+      model: result.settings.model, ci: result.settings.ci, level: result.settings.level,
+      null: result.settings.null };
+    for (const name of ["primary", "sensitivity_a"])
+      for (const [key, value] of Object.entries(result[name])) meta[name + "." + key] = value;
+    const keys = Object.keys(meta).concat(COLUMNS);
+    const quote = value => '"' + (value == null ? "" : String(value)).replace(/"/g, '""') + '"';
+    return [keys.map(quote).join(",")].concat(result.blocks.map(b =>
+      keys.map(key => quote(Object.hasOwn(meta, key) ? meta[key] : b[key])).join(","))).join("\r\n") + "\r\n";
+  }
+
+  global.AlmP14 = Object.freeze({ analyze: analyze, classify: classify, decide: decide,
+    csv: csv, columns: COLUMNS.slice(), version: VERSION });
+})(window);
+</script>
+<script id="p14-ui">
+(function () {
+  "use strict";
+  const el = id => document.getElementById(id);
+  const panel = el("p14-panel");
+  // Mount only when requested, after legacy autosave has captured its controls.
+  panel.addEventListener("toggle", function () {
+    if (!panel.open || panel.dataset.ready) return;
+    panel.dataset.ready = "1";
+    const template = el("p14-controls");
+    panel.appendChild(template.content.cloneNode(true));
+    template.remove();
+    const data = el("p14-data"), model = el("p14-model"), ci = el("p14-ci");
+  const message = el("p14-message"), summary = el("p14-summary"), body = el("p14-steps");
+  let result = null;
+  function invalidate() {
+    result = null;
+    el("p14-json").disabled = el("p14-csv").disabled = true;
+    body.replaceChildren(); summary.replaceChildren();
+    message.textContent = "Inputs changed. Evaluate P14 to update results.";
+  }
+  function syncModel() {
+    ci.disabled = model.value === "FE";
+    if (ci.disabled) ci.value = "wald";
+  }
+  panel.addEventListener("input", invalidate);
+  panel.addEventListener("change", invalidate);
+  model.addEventListener("change", syncModel);
+  function showValue(x) { return x === null ? "not available" : String(x); }
+  el("p14-run").addEventListener("click", function () {
+    invalidate();
+    syncModel();
+    try {
+      result = window.AlmP14.analyze(JSON.parse(data.value), { model: model.value, ci: ci.value });
+      message.textContent = "Primary: " + result.primary.result +
+        "; sensitivity (first passing k >= 10): " + result.sensitivity_a.result +
+        ". " + result.app_version + " / " + result.schema + "; " + model.value + " / " + ci.value + ".";
+      for (const name of ["primary", "sensitivity_a"]) {
+        const heading = document.createElement("h3"), list = document.createElement("dl");
+        heading.textContent = name === "primary" ? "Primary rule" : "Sensitivity (a): first passing k >= 10";
+        for (const [key, value] of Object.entries(result[name])) {
+          const term = document.createElement("dt"), detail = document.createElement("dd");
+          term.textContent = key; detail.textContent = showValue(value);
+          list.append(term, detail);
+        }
+        summary.append(heading, list);
+      }
+      for (const block of result.blocks) {
+        const row = document.createElement("tr");
+        for (const key of window.AlmP14.columns) {
+          const cell = document.createElement("td");
+          cell.textContent = key === "status" && !block.evaluated ?
+            "not evaluated (k<2)" : showValue(block[key]);
+          row.appendChild(cell);
+        }
+        body.appendChild(row);
+      }
+      el("p14-json").disabled = el("p14-csv").disabled = false;
+    } catch (error) {
+      result = null;
+      message.textContent = "P14 refused: " + error.message;
+    }
+  });
+  function download(kind) {
+    if (!result) return;
+    const text = kind === "json" ? JSON.stringify(result, null, 2) + "\n" : window.AlmP14.csv(result);
+    const blob = new Blob([text], { type: kind === "json" ? "application/json" : "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob), link = document.createElement("a");
+    link.href = url; link.download = "cumsub-p14." + kind;
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  el("p14-json").addEventListener("click", () => download("json"));
+  el("p14-csv").addEventListener("click", () => download("csv"));
+  });
+})();
+</script>
 </body>
 </html>

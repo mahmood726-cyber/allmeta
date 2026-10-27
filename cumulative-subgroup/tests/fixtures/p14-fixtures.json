@@ -1,0 +1,192 @@
+{
+  "description": "Deterministic synthetic software fixtures, not research data or clinical findings.",
+  "settings": [
+    {
+      "model": "FE",
+      "ci": "wald"
+    },
+    {
+      "model": "DL",
+      "ci": "wald"
+    },
+    {
+      "model": "REML",
+      "ci": "wald"
+    },
+    {
+      "model": "DL",
+      "ci": "hk"
+    },
+    {
+      "model": "REML",
+      "ci": "hk"
+    }
+  ],
+  "datasets": [
+    {
+      "id": "sustained_missing_n_sensitivity",
+      "rows": [
+        {"yi":-0.8,"vi":0.04,"year":2000,"n":80},
+        {"yi":-0.9,"vi":0.09,"year":2001,"n":90},
+        {"yi":-0.7,"vi":0.04,"year":2002,"n":null},
+        {"yi":-0.85,"vi":0.06,"year":2002,"n":70},
+        {"yi":-0.75,"vi":0.04,"year":2003,"n":80},
+        {"yi":-0.82,"vi":0.09,"year":2003,"n":90},
+        {"yi":-0.78,"vi":0.04,"year":2003,"n":80},
+        {"yi":-0.84,"vi":0.06,"year":2003,"n":70},
+        {"yi":-0.79,"vi":0.04,"year":2003,"n":80},
+        {"yi":-0.78,"vi":0.09,"year":2004,"n":90},
+        {"yi":-0.88,"vi":0.04,"year":2006,"n":80}
+      ]
+    },
+    {
+      "id": "transient",
+      "rows": [
+        {"yi":1,"vi":0.04,"year":2000,"n":10},
+        {"yi":1,"vi":0.04,"year":2000,"n":10},
+        {"yi":-1,"vi":0.04,"year":2001,"n":10},
+        {"yi":-1,"vi":0.04,"year":2001,"n":10}
+      ]
+    },
+    {
+      "id": "final_only",
+      "rows": [
+        {"yi":0,"vi":0.04,"year":2000,"n":10},
+        {"yi":0,"vi":0.04,"year":2000,"n":10},
+        {"yi":1,"vi":0.01,"year":2001,"n":10},
+        {"yi":1.2,"vi":0.01,"year":2001,"n":10}
+      ]
+    },
+    {
+      "id": "null_final",
+      "rows": [
+        {"yi":-0.1,"vi":0.04,"year":2000},
+        {"yi":0.1,"vi":0.04,"year":2000},
+        {"yi":0,"vi":0.04,"year":2002}
+      ]
+    },
+    {
+      "id": "heterogeneous",
+      "rows": [
+        {"yi":-0.2,"vi":0.03,"year":2000,"n":20},
+        {"yi":0.9,"vi":0.12,"year":2000,"n":30},
+        {"yi":0.3,"vi":0.05,"year":2001,"n":40},
+        {"yi":0.8,"vi":0.08,"year":2001,"n":50},
+        {"yi":0.2,"vi":0.02,"year":2003,"n":60},
+        {"yi":1.4,"vi":0.2,"year":2003,"n":70}
+      ]
+    },
+    {
+      "id": "zero_residual_hk",
+      "rows": [
+        {"yi":0.5,"vi":0.25,"year":2000,"n":0},
+        {"yi":0.5,"vi":0.25,"year":2000,"n":10},
+        {"yi":0.5,"vi":0.25,"year":2001,"n":10}
+      ]
+    },
+    {
+      "id": "single",
+      "rows": [
+        {"yi":0.5,"sei":0.2,"year":2000,"n":20}
+      ]
+    },
+    {
+      "id": "one_block",
+      "rows": [
+        {"yi":0.8,"sei":0.2,"year":2000,"n":20},
+        {"yi":0.9,"sei":0.2,"year":2000,"n":20},
+        {"yi":1,"sei":0.2,"year":2000,"n":20}
+      ]
+    }
+  ],
+  "faults": [
+    {
+      "id": "forced_reml_final",
+      "dataset": "heterogeneous",
+      "model": "REML",
+      "ci": "wald",
+      "fail_years": [
+        2003
+      ]
+    }
+  ],
+  "comparisons": [
+    {"estimate":1,"se":1,"lb":0,"ub":2,"expected":"INCLUDES"},
+    {"estimate":-1,"se":1,"lb":-2,"ub":0,"expected":"INCLUDES"},
+    {"estimate":0,"se":0,"lb":0,"ub":0,"expected":"INCLUDES"},
+    {"estimate":1,"se":0,"lb":1,"ub":1,"expected":"ABOVE"},
+    {"estimate":null,"se":1,"lb":-1,"ub":1,"expected":"UNDEFINED"}
+  ],
+  "decisions": [
+    {
+      "statuses": [
+        "ABOVE",
+        "UNDEFINED",
+        "ABOVE"
+      ],
+      "expected": "INDETERMINATE",
+      "j_star": null
+    },
+    {
+      "statuses": [
+        "UNDEFINED",
+        "ABOVE"
+      ],
+      "expected": "INDETERMINATE",
+      "j_star": null
+    },
+    {
+      "statuses": [
+        "ABOVE",
+        "UNDEFINED",
+        "INCLUDES"
+      ],
+      "expected": "NOT_CONCLUSIVE",
+      "j_star": null
+    },
+    {
+      "statuses": [
+        "ABOVE",
+        "UNDEFINED",
+        "BELOW",
+        "ABOVE"
+      ],
+      "expected": "NOT_CONCLUSIVE",
+      "j_star": null
+    },
+    {
+      "statuses": [
+        "ABOVE",
+        "UNDEFINED",
+        "ABOVE",
+        "ABOVE"
+      ],
+      "expected": "CONCLUSIVE",
+      "j_star": 3
+    },
+    {
+      "statuses": [
+        "INCLUDES",
+        "ABOVE"
+      ],
+      "expected": "NOT_CONCLUSIVE",
+      "j_star": null
+    },
+    {
+      "statuses": [
+        "BELOW",
+        "BELOW"
+      ],
+      "expected": "CONCLUSIVE",
+      "j_star": 1
+    },
+    {
+      "statuses": [
+        "INCLUDES",
+        "UNDEFINED"
+      ],
+      "expected": "INDETERMINATE",
+      "j_star": null
+    }
+  ]
+}
