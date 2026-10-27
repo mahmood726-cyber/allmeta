@@ -170,7 +170,6 @@
         <label>
           <span class="lbl">Plot title</span>
           <input type="text" id="f-title" placeholder="e.g. Troponin for acute MI — SROC" aria-label="Plot title">
-          <input type="hidden" id="example-title-source" value="null">
           <span class="hint">An example title clears when its study data change. A title you edit yourself is kept.</span>
         </label>
       </fieldset>
@@ -337,7 +336,6 @@
       }
       // Store only the known example title, not a second copy of its study data.
       o.exampleTitle = exampleTitle ? exampleTitle.title : null;
-      document.getElementById('example-title-source').value = JSON.stringify(o.exampleTitle);
       return o;
     }
     function knownExampleTitle(title) {
@@ -975,8 +973,28 @@
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
       // The #alm-plus extras are kept out of the original autosave so its keys and
       // positional idx:N indices stay exactly as before the extras were added.
-      AlmAutosave.install({ appKey: 'dta-sroc', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *)'; }).concat('#example-title-source'),
+      const selectors = ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *)'; });
+      // Keep provenance outside the established form-key schema. Match the exact
+      // title and data before applying it, so a stale sidecar cannot reattribute
+      // another draft. Capture it before restore dispatches per-field events.
+      const provenanceKey = 'dta-sroc-draft-title-v1';
+      let draftProvenance = null;
+      try { draftProvenance = JSON.parse(localStorage.getItem(provenanceKey)); } catch (_) {}
+      let provenanceTimer;
+      function saveProvenance(event) {
+        if (!event.target || !event.target.matches || !selectors.some(s => event.target.matches(s))) return;
+        if (provenanceTimer !== undefined) clearTimeout(provenanceTimer);
+        provenanceTimer = setTimeout(function () {
+          try {
+            const s = window.__almSnapshot();
+            localStorage.setItem(provenanceKey, JSON.stringify({data:s.data, title:s.title, exampleTitle:s.exampleTitle}));
+          } catch (_) {} // A storage refusal must not interrupt analysis.
+        }, 600);
+      }
+      document.addEventListener('input', saveProvenance, true);
+      document.addEventListener('change', saveProvenance, true);
+      AlmAutosave.install({ appKey: 'dta-sroc', selectors,
         onRestore: function (n, values) {
           // The generic draft writer dispatches input for each field. Restore the
           // saved provenance after those events, then reconcile the complete state.
@@ -986,6 +1004,9 @@
           }
           if ('example-title-source' in values) {
             try { snap.exampleTitle = JSON.parse(values['example-title-source']); } catch (_) {}
+          } else if (draftProvenance && draftProvenance.data === snap.data && draftProvenance.title === snap.title &&
+              Object.prototype.hasOwnProperty.call(draftProvenance, 'exampleTitle')) {
+            snap.exampleTitle = draftProvenance.exampleTitle;
           }
           window.__almRestore(snap);
         }
