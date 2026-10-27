@@ -29,6 +29,9 @@
            grid-template-columns: minmax(320px, 26rem) 1fr; align-items: start; }
     @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
     .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    /* Extras can be calculated and audited before the shared entrance fade advances.
+       Keep their plots visible from the first frame, including synchronous replays. */
+    #alm-plus { animation: none; }
     .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
                 text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
     textarea { width: 100%; min-height: 11rem; padding: 0.5rem 0.65rem;

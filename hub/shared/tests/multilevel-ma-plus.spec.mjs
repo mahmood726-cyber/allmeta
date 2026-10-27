@@ -218,6 +218,38 @@ test('multilevel-ma-plus clean table and plots pass at 1280 px and 375 px', asyn
   expect(await page.evaluate(() => { const r = document.getElementById('alm-plus').getBoundingClientRect(); return r.right <= window.innerWidth + 1; })).toBe(true);
 });
 
+test('multilevel-ma-plus plots are auditable at the first entrance-animation frame', async ({page}) => {
+  await page.emulateMedia({reducedMotion: 'no-preference'});
+  await page.goto(url); await loadExample(page);
+  const bad = await page.evaluate(async () => {
+    // Deterministically reproduce a fast replay before the panel's fade-in advances.
+    // Pausing existing animations also catches an accidental return of appFadeIn.
+    for (const animation of document.getElementById('alm-plus').getAnimations()) {
+      animation.pause(); animation.currentTime = 0;
+    }
+    return (await AlmMultilevelPlusAudit.audit(plusTestApp, plusTestRef)).filter(r => !r.pass).map(r => r.quantity);
+  });
+  expect(bad).toEqual([]);
+});
+
+test('multilevel-ma-plus plot visibility checks still reject hidden output', async ({page}) => {
+  await page.goto(url); await loadExample(page);
+  const checks = await page.evaluate(async () => {
+    // Isolate deliberate hiding from any entrance animation in the control.
+    for (const animation of document.getElementById('alm-plus').getAnimations()) animation.finish();
+    const output = document.getElementById('alm-plus-output');
+    output.style.opacity = '0';
+    const hidden = await AlmMultilevelPlusAudit.plotChecks(plusTestApp);
+    output.style.removeProperty('opacity');
+    const restored = await AlmMultilevelPlusAudit.plotChecks(plusTestApp);
+    return {hidden, restored};
+  });
+  expect(checks.hidden).toHaveLength(6);
+  expect(checks.hidden.every(r => !r.pass)).toBe(true);
+  expect(checks.restored).toHaveLength(6);
+  expect(checks.restored.every(r => r.pass)).toBe(true);
+});
+
 test('multilevel-ma-plus every numerical, display and export check can fail', async ({page}) => {
   test.setTimeout(300000);
   await page.goto(url); await loadExample(page);
