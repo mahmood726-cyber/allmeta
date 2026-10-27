@@ -7,8 +7,9 @@
 .alm-tooltip{position:fixed;box-sizing:border-box;background:#0f172a;color:#f8fafc;border:1px solid #94a3b8;padding:.5rem .65rem;border-radius:5px;font:14px/1.45 system-ui,sans-serif;width:max-content;max-width:min(320px,calc(100vw - 16px));z-index:2147483647;visibility:hidden;pointer-events:none;overflow-wrap:anywhere}
 .alm-tooltip.is-visible{visibility:visible;pointer-events:auto}
 .alm-tooltip .alm-disclaimer{display:block;margin-top:.3rem;font-size:12px;color:#e2e8f0}
-.alm-lang-switch{position:fixed;bottom:8px;right:8px;z-index:9998;background:#fff;color:#0f172a;border:1px solid #64748b;border-radius:6px;padding:4px}
-.alm-lang-switch select{font:13px system-ui,sans-serif;background:#fff;color:#0f172a;border:0}
+.alm-lang-switch{position:fixed;bottom:8px;right:8px;z-index:9998;background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:1px 3px;opacity:.7;transition:opacity .12s}
+.alm-lang-switch:hover,.alm-lang-switch:focus-within{opacity:1}
+.alm-lang-switch select{font:12px system-ui,sans-serif;border:0;background:transparent;color:#0f172a;cursor:pointer}
 [data-alm-choice]{display:block;font-size:.85em;margin:.25em 0}
 .alm-glossary-help{margin:1rem;padding:.75rem 1rem;border:1px solid #64748b;border-radius:6px;background:#fff;color:#0f172a;font:14px/1.5 system-ui,sans-serif}
 .alm-glossary-help summary{cursor:pointer;font-weight:600}
@@ -21,7 +22,9 @@
   let glossary = {}, english = {}, translated = {}, terms = {}, src = null, lang = 'en';
   let nextId = 0, generation = 0, observer = null, active = null, queued = false, hideTimer;
   const attached = new Map(), choices = new Map(), requests = new Map();
-  const SKIP = 'script,style,textarea,input,button,a,option,select,pre,kbd,samp,[contenteditable],[aria-hidden="true"],[inert],.gloss-skip,[data-gloss-skip],.alm-tooltip,.alm-lang-switch,[data-gloss]';
+  // Even inside help scopes, chart text/metadata and foreignObject content
+  // belong to the SVG export, not to automatic HTML glossary annotation.
+  const SKIP = 'svg,script,style,textarea,input,button,a,option,select,pre,kbd,samp,[contenteditable],[aria-hidden="true"],[inert],.gloss-skip,[data-gloss-skip],.alm-tooltip,.alm-lang-switch,[data-gloss]';
 
   function mergeGlossaries(base, locale) {
     const merged = { ...base };
@@ -85,10 +88,17 @@
   }
   function attach(el) {
     if (attached.has(el)) return;
-    const tip = document.createElement('span'); tip.id = 'alm-tip-' + (++nextId);
+    // Validation/session replay can restore annotated result HTML. Reuse its
+    // released ID so reattaching listeners does not change the saved markup.
+    // A live clone must instead get an independent, collision-free tooltip.
+    const restoredId = el.dataset.almTip;
+    let id = /^alm-tip-\d+$/.test(restoredId || '') && !document.getElementById(restoredId) ? restoredId : null;
+    if (!id) do { id = 'alm-tip-' + (++nextId); } while (document.getElementById(id));
+    const tip = document.createElement('span'); tip.id = id;
     tip.className = 'alm-tooltip'; tip.setAttribute('role', 'tooltip'); fill(tip, el);
     ensureUI().append(tip); attached.set(el, tip);
     const descriptions = new Set((el.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+    if (restoredId && restoredId !== tip.id) descriptions.delete(restoredId);
     // Restored result HTML can contain a stale ID from a prior render.
     for (const id of descriptions) if (/^alm-tip-\d+$/.test(id) && !document.getElementById(id)) descriptions.delete(id);
     descriptions.add(tip.id); el.setAttribute('aria-describedby', [...descriptions].join(' '));
@@ -147,8 +157,7 @@
       const frag = document.createDocumentFragment(); let offset = 0;
       for (const m of hits) {
         frag.append(document.createTextNode(text.slice(offset, m.index)));
-        const svg = n.parentElement.namespaceURI === 'http://www.w3.org/2000/svg';
-        const el = svg ? document.createElementNS('http://www.w3.org/2000/svg', 'tspan') : document.createElement('span');
+        const el = document.createElement('span');
         el.setAttribute('data-gloss', terms[m[0]]); el.textContent = m[0]; frag.append(el);
         offset = m.index + m[0].length;
       }
@@ -184,7 +193,9 @@
       help.className = 'alm-glossary-help'; help.setAttribute('data-gloss-scope', '');
       const summary = document.createElement('summary'); summary.textContent = 'Statistical glossary';
       const note = document.createElement('p'); note.textContent = 'Focus or tap a term to read its definition. Press Escape to close a tooltip.';
-      help.append(summary, note, document.createElement('ul')); host.after(help);
+      const content = document.createElement('div');
+      content.setAttribute('role', 'region'); content.setAttribute('aria-label', 'Statistical glossary');
+      content.append(note, document.createElement('ul')); help.append(summary, content); host.after(help);
     }
     const seen = new Set(Array.from(help.querySelectorAll('[data-gloss]'), el => el.getAttribute('data-gloss')));
     const list = help.querySelector('ul');
@@ -225,7 +236,7 @@
   function injectSwitch() {
     if (document.querySelector('.alm-lang-switch') || !document.querySelector('[data-gloss]')) return;
     const wrap = document.createElement('div'); wrap.className = 'alm-lang-switch';
-    wrap.setAttribute('role', 'group'); wrap.setAttribute('aria-label', 'Method-help language');
+    wrap.setAttribute('role', 'region'); wrap.setAttribute('aria-label', 'Method-help language');
     const select = document.createElement('select'); select.setAttribute('aria-label', 'Method-help language');
     for (const [code, label] of Object.entries(LANGS)) {
       const option = document.createElement('option'); option.value = code; option.textContent = label;

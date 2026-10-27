@@ -1056,7 +1056,7 @@
       // The shared default selectors, restricted to the original page: #alm-plus controls are not autosaved,
       // so the saved key set and positional indices are those of the page without the extras.
       AlmAutosave.install({ appKey: 'pubbias-tests', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *):not(.alm-lang-switch *)'; }) });
     }
   });
 })();
