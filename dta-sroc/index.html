@@ -170,6 +170,7 @@
         <label>
           <span class="lbl">Plot title</span>
           <input type="text" id="f-title" placeholder="e.g. Troponin for acute MI — SROC" aria-label="Plot title">
+          <span class="hint">An example title clears when its study data change. A title you edit yourself is kept.</span>
         </label>
       </fieldset>
 
@@ -218,6 +219,7 @@
     const METHOD_LABEL = { reml:"REML", ml:"ML", mm:"method of moments", vc:"variance components", fixed:"fixed effect" };
     const EXAMPLE = "# Example: TP, FP, FN, TN per study\nStudy A, 85, 10, 15, 140\nStudy B, 62, 12, 18, 108\nStudy C, 110, 25, 40, 200\nStudy D, 55, 6, 8, 90\nStudy E, 130, 40, 30, 300\nStudy F, 92, 18, 25, 185\nStudy G, 74, 8, 12, 130";
     const EXAMPLE_TITLE = "Example SROC - diagnostic test";  // ASCII-safe for btoa/url-state
+    let exampleTitle = null;
 
     const warnEl = document.getElementById("warn-banner");
     const svgHost = document.getElementById("svg-host");
@@ -274,6 +276,7 @@
       if (isEmpty) {
         document.getElementById('f-data').value = '';
         document.getElementById('f-title').value = '';
+        exampleTitle = null;
       } else {
         writeState(snap);
       }
@@ -311,8 +314,10 @@
           logLik: r10(b.logLik), AIC: r10(b.AIC), BIC: r10(b.BIC), converged: b.converged,
           sens: r6(b.sens), sens_ci: b.sensCI.map(r6), spec: r6(b.spec), spec_ci: b.specCI.map(r6),
           lr_pos: r6(b.lrPos), lr_pos_ci: b.lrPosCI.map(r6), lr_neg: r6(b.lrNeg), lr_neg_ci: b.lrNegCI.map(r6), dor: r6(b.dor),
-          cor_random: r6(b.corRandom), auc: b.auc ? r6(b.auc.rg[0]) : null, pauc: b.auc ? r6(b.auc.rg[1]) : null,
-          hsroc: b.hsroc ? Object.fromEntries(Object.entries(b.hsroc).map(([k, v]) => [k, r10(v)])) : null,
+          cor_random: srocNote(b) ? null : r6(b.corRandom),
+          auc: !srocNote(b) && b.auc ? r6(b.auc.rg[0]) : null, pauc: !srocNote(b) && b.auc ? r6(b.auc.rg[1]) : null,
+          hsroc: !srocNote(b) && b.hsroc ? Object.fromEntries(Object.entries(b.hsroc).map(([k, v]) => [k, r10(v)])) : null,
+          sroc_note: srocNote(b) || null,
         } : null,
         meta_regression: mr ? { method: mr.method, coefficients: mr.coefTable.map(c => ({ outcome: c.outcome, term: c.term,
           estimate: r10(c.estimate), se: r10(c.se), z: r6(c.z), p: r6(c.p), ci: c.ci.map(r10) })), logLik: r10(mr.logLik), AIC: r10(mr.AIC) } : null,
@@ -321,8 +326,35 @@
       };
     };
 
-    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
-    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+    function readState() {
+      const o={};
+      for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; }
+      // All input paths (typing, CSV, restore and exports) share this provenance check.
+      if (exampleTitle && o.title !== exampleTitle.title) exampleTitle = null;
+      if (exampleTitle && o.data !== exampleTitle.data) {
+        o.title = ''; document.getElementById('f-title').value = ''; exampleTitle = null;
+      }
+      // Store only the known example title, not a second copy of its study data.
+      o.exampleTitle = exampleTitle ? exampleTitle.title : null;
+      return o;
+    }
+    function knownExampleTitle(title) {
+      if (title === EXAMPLE_TITLE) return {title, data: EXAMPLE};
+      for (const [key, ex] of Object.entries(window.DTA_EXAMPLES || {})) {
+        if (title === key + ': ' + ex.title) return {title, data: ex.data};
+      }
+      return null;
+    }
+    function writeState(s) {
+      for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; }
+      if ('title' in s) {
+        // Legacy sessions have no provenance. Recognise shipped citations so that
+        // an already stale example title is also removed when such a session loads.
+        exampleTitle = Object.prototype.hasOwnProperty.call(s, 'exampleTitle')
+          ? knownExampleTitle(s.exampleTitle)
+          : knownExampleTitle(s.title);
+      }
+    }
 
     const COUNT_FIELDS = ['TP', 'FP', 'FN', 'TN'];
     function parseCount(value) {
@@ -483,6 +515,19 @@
     function escapeXml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;"); }
     function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?3:d); }
 
+    function srocNote(b) {
+      if (!b) return '';
+      if (b.method === 'fixed') return 'Fixed-effect model: no between-study variance; bivariate SROC shape, curve and AUC are unavailable.';
+      // Conservative presentation flags, not optimizer tolerances or a formal
+      // identifiability test: variance < 1e-6 means logit SD < 0.001;
+      // |rho| > 0.99 flags a nearly singular between-study correlation matrix.
+      // Keep the fitted covariance and pooled operating point unchanged.
+      if (b.Psi[0][0] < 1e-6 || b.Psi[1][1] < 1e-6 || Math.abs(b.corRandom) > 0.99)
+        return 'At or near a between-study covariance boundary (logit variance < 1e-6 or |correlation| > 0.99). SROC shape may be non-identifiable or unstable: between-study correlation, HSROC parameters, bivariate SROC curve and AUC/partial AUC are withheld. These are conservative display thresholds, not a formal identifiability test. Pooled Se/Sp and their confidence intervals remain available; interpret the prediction region cautiously.';
+      if (!b.hsroc) return 'Bivariate SROC shape is unavailable; HSROC parameters, curve and AUC are withheld.';
+      return '';
+    }
+
     function buildSvg(state, studies, fit, bivar) {
       const W=620, H=620, L=70, R=30, T=state.title?60:40, B=70;
       const plotW=W-L-R, plotH=H-T-B;
@@ -539,7 +584,8 @@
         const conf = AlmDTABivariate.regionEllipse(bivar, "confidence", 120);
         p.push("<polygon points=\""+poly(pred)+"\" fill=\"#b23a48\" fill-opacity=\"0.06\" stroke=\"#b23a48\" stroke-width=\"1.2\" stroke-dasharray=\"6 4\"/>");
         p.push("<polygon points=\""+poly(conf)+"\" fill=\"#b23a48\" fill-opacity=\"0.12\" stroke=\"#b23a48\" stroke-width=\"1.4\"/>");
-        const sroc = AlmDTABivariate.srocCurve(bivar, 80);
+        const note = srocNote(bivar);
+        const sroc = note ? [] : AlmDTABivariate.srocCurve(bivar, 80);
         if (sroc.length) p.push("<polyline points=\""+poly(sroc)+"\" fill=\"none\" stroke=\"#b23a48\" stroke-width=\"2\"/>");
         const sx = x(clip(1 - bivar.spec)), sy = y(clip(bivar.sens));
         p.push("<path d=\"M"+sx+" "+(sy-6)+"L"+(sx+6)+" "+sy+"L"+sx+" "+(sy+6)+"L"+(sx-6)+" "+sy+"Z\" fill=\"#b23a48\" stroke=\"#fff\" stroke-width=\"1\"/>");
@@ -549,9 +595,15 @@
         p.push("<rect x=\""+(lx-8)+"\" y=\""+(ly-10)+"\" width=\"206\" height=\"66\" fill=\"#fff\" fill-opacity=\"0.82\" stroke=\"#d9d5cc\" rx=\"4\"/>");
         if (fit) p.push("<line x1=\""+lx+"\" y1=\""+ly+"\" x2=\""+(lx+22)+"\" y2=\""+ly+"\" stroke=\"#2c5e8a\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+4)+"\">Moses SROC</text>");
         else p.push("<text x=\""+lx+"\" y=\""+(ly+4)+"\">Moses SROC unavailable</text>");
-        p.push("<line x1=\""+lx+"\" y1=\""+(ly+18)+"\" x2=\""+(lx+22)+"\" y2=\""+(ly+18)+"\" stroke=\"#b23a48\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+22)+"\">Bivariate SROC</text>");
+        if (sroc.length) p.push("<line x1=\""+lx+"\" y1=\""+(ly+18)+"\" x2=\""+(lx+22)+"\" y2=\""+(ly+18)+"\" stroke=\"#b23a48\" stroke-width=\"2\"/><text x=\""+(lx+28)+"\" y=\""+(ly+22)+"\">Bivariate SROC</text>");
+        else p.push("<text x=\""+lx+"\" y=\""+(ly+22)+"\">Bivariate SROC withheld</text>");
         p.push("<rect x=\""+lx+"\" y=\""+(ly+31)+"\" width=\"22\" height=\"10\" fill=\"#b23a48\" fill-opacity=\"0.12\" stroke=\"#b23a48\"/><text x=\""+(lx+28)+"\" y=\""+(ly+40)+"\">95% conf / pred (dashed)</text>");
         p.push("</g>");
+        if (note) {
+          p.push('<desc>' + escapeXml(note) + '</desc>');
+          p.push('<text x="' + (W/2) + '" y="' + (H-8) + '" text-anchor="middle" font-size="10" fill="#15181d">' +
+            (bivar.method === 'fixed' ? 'Fixed effect: no bivariate SROC shape or AUC.' : 'SROC shape / AUC withheld; covariance boundary or unavailable shape.') + '</text>');
+        }
       }
 
       if (!fit && !bivar && studies.length >= 3)
@@ -595,11 +647,13 @@
     }
     function hsrocHtml(b) {
       const h = b.hsroc;
+      const note = srocNote(b);
+      const derived = v => note ? 'withheld' : fmt(v, 4);
       return "<table class=\"coef\"><caption>Between-study covariance and Rutter–Gatsonis (HSROC) parameters</caption><tbody>" +
-        "<tr><th scope=\"row\">τ² logit Se</th><td>" + fmt(b.Psi[0][0], 4) + "</td><th scope=\"row\">Λ (accuracy)</th><td>" + fmt(h.Lambda, 4) + "</td></tr>" +
-        "<tr><th scope=\"row\">τ² logit FPR</th><td>" + fmt(b.Psi[1][1], 4) + "</td><th scope=\"row\">Θ (threshold)</th><td>" + fmt(h.Theta, 4) + "</td></tr>" +
-        "<tr><th scope=\"row\">ρ (between-study)</th><td>" + fmt(b.corRandom, 3) + "</td><th scope=\"row\">β (shape)</th><td>" + fmt(h.beta, 4) + "</td></tr>" +
-        "<tr><th scope=\"row\">log-likelihood</th><td>" + (b.logLik == null ? "--" : fmt(b.logLik, 2)) + "</td><th scope=\"row\">σ²θ / σ²α</th><td>" + fmt(h.sigma2theta, 4) + " / " + fmt(h.sigma2alpha, 4) + "</td></tr>" +
+        "<tr><th scope=\"row\">τ² logit Se</th><td>" + fmt(b.Psi[0][0], 4) + "</td><th scope=\"row\">Λ (accuracy)</th><td>" + derived(h.Lambda) + "</td></tr>" +
+        "<tr><th scope=\"row\">τ² logit FPR</th><td>" + fmt(b.Psi[1][1], 4) + "</td><th scope=\"row\">Θ (threshold)</th><td>" + derived(h.Theta) + "</td></tr>" +
+        "<tr><th scope=\"row\">ρ (between-study)</th><td>" + (note ? 'withheld' : fmt(b.corRandom, 3)) + "</td><th scope=\"row\">β (shape)</th><td>" + derived(h.beta) + "</td></tr>" +
+        "<tr><th scope=\"row\">log-likelihood</th><td>" + (b.logLik == null ? "--" : fmt(b.logLik, 2)) + "</td><th scope=\"row\">σ²θ / σ²α</th><td>" + derived(h.sigma2theta) + " / " + derived(h.sigma2alpha) + "</td></tr>" +
         "</tbody></table>";
     }
 
@@ -620,7 +674,7 @@
         parts.push(statCard("LR+", fmt(b.lrPos, 2) + " [" + fmt(b.lrPosCI[0], 2) + ", " + fmt(b.lrPosCI[1], 2) + "]"));
         parts.push(statCard("LR−", fmt(b.lrNeg, 2) + " [" + fmt(b.lrNegCI[0], 2) + ", " + fmt(b.lrNegCI[1], 2) + "]"));
         parts.push(statCard("Diagnostic OR", fmt(b.dor, 1)));
-        if (b.auc) parts.push(statCard("AUC (partial AUC)", fmt(b.auc.rg[0], 3) + " (" + fmt(b.auc.rg[1], 3) + ")"));
+        if (b.auc && !srocNote(b)) parts.push(statCard("AUC (partial AUC)", fmt(b.auc.rg[0], 3) + " (" + fmt(b.auc.rg[1], 3) + ")"));
         if (b.AIC != null) parts.push(statCard("AIC", fmt(b.AIC, 2)));
       } else if (a.mean) {
         parts.push(statCard("Mean Se", fmt(a.mean.se, 3)));
@@ -642,7 +696,8 @@
       if (dh) dh.innerHTML = a.deeks ? deeksSvg(a.deeks) : "";
 
       const extras = a.errors.slice();
-      if (a.rho != null && a.rho > 0.6) extras.push("Spearman ρ > 0.6 between logit sensitivity and logit false-positive rate — a positive association suggests a threshold effect. Report the SROC curve rather than a single pooled Se/Sp pair.");
+      if (srocNote(b)) extras.push(srocNote(b));
+      if (a.rho != null && a.rho > 0.6) extras.push("Spearman ρ > 0.6 between logit sensitivity and logit false-positive rate — a positive association suggests a threshold effect. A single pooled Se/Sp pair may not describe threshold variation; interpret any SROC curve in light of the model diagnostics.");
       const nz = studies.filter(s => s.zero).length;
       if (nz && a.opts.correctionControl === "all") extras.push(nz + " stud" + (nz === 1 ? "y has" : "ies have") + " a zero cell, so 0.5 was added to every cell of every study (mada's default rule).");
       if (nz && a.opts.correctionControl === "single") extras.push(nz + " stud" + (nz === 1 ? "y has" : "ies have") + " a zero cell; 0.5 was added to the cells of " + (nz === 1 ? "that study" : "those studies") + " only.");
@@ -749,6 +804,7 @@
       const ex = key !== "generic" && window.DTA_EXAMPLES && window.DTA_EXAMPLES[key];
       document.getElementById("f-data").value = ex ? ex.data : EXAMPLE;
       document.getElementById("f-title").value = ex ? key + ": " + ex.title : EXAMPLE_TITLE;
+      exampleTitle = {title:document.getElementById('f-title').value, data:document.getElementById('f-data').value};
       document.getElementById("f-cov").value = ex && ex.covariate ? "last" : "";
       render();
     }
@@ -764,6 +820,9 @@
           { id: "deeks", name: "Deeks plot", getSvg: function () { return requireValidResult() ? document.querySelector("#deeks-host svg") : null; } }
         ]
       });
+      // Explicit title edits opt out of automatic example attribution, even when
+      // the user deliberately types the same text as a shipped example title.
+      document.getElementById('f-title').addEventListener('input', function () { exampleTitle = null; });
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) { el.addEventListener("input", render); if (el.tagName === "SELECT") el.addEventListener("change", render); } }
       document.getElementById("btn-json").addEventListener("click", onDownloadJson);
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
@@ -791,6 +850,7 @@
     if (!loaded) {
       document.getElementById("f-data").value = EXAMPLE;
       document.getElementById("f-title").value = EXAMPLE_TITLE;
+      exampleTitle = {title:EXAMPLE_TITLE, data:EXAMPLE};
     }
     attach();
     render();
@@ -913,8 +973,44 @@
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
       // The #alm-plus extras are kept out of the original autosave so its keys and
       // positional idx:N indices stay exactly as before the extras were added.
-      AlmAutosave.install({ appKey: 'dta-sroc', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *)'; }) });
+      const selectors = ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *)'; });
+      // Keep provenance outside the established form-key schema. Match the exact
+      // title and data before applying it, so a stale sidecar cannot reattribute
+      // another draft. Capture it before restore dispatches per-field events.
+      const provenanceKey = 'dta-sroc-draft-title-v1';
+      let draftProvenance = null;
+      try { draftProvenance = JSON.parse(localStorage.getItem(provenanceKey)); } catch (_) {}
+      let provenanceTimer;
+      function saveProvenance(event) {
+        if (!event.target || !event.target.matches || !selectors.some(s => event.target.matches(s))) return;
+        if (provenanceTimer !== undefined) clearTimeout(provenanceTimer);
+        provenanceTimer = setTimeout(function () {
+          try {
+            const s = window.__almSnapshot();
+            localStorage.setItem(provenanceKey, JSON.stringify({data:s.data, title:s.title, exampleTitle:s.exampleTitle}));
+          } catch (_) {} // A storage refusal must not interrupt analysis.
+        }, 600);
+      }
+      document.addEventListener('input', saveProvenance, true);
+      document.addEventListener('change', saveProvenance, true);
+      AlmAutosave.install({ appKey: 'dta-sroc', selectors,
+        onRestore: function (n, values) {
+          // The generic draft writer dispatches input for each field. Restore the
+          // saved provenance after those events, then reconcile the complete state.
+          const snap = {};
+          for (const key of ['data', 'title', 'method', 'cc', 'cov']) {
+            if ('f-' + key in values) snap[key] = values['f-' + key];
+          }
+          if ('example-title-source' in values) {
+            try { snap.exampleTitle = JSON.parse(values['example-title-source']); } catch (_) {}
+          } else if (draftProvenance && draftProvenance.data === snap.data && draftProvenance.title === snap.title &&
+              Object.prototype.hasOwnProperty.call(draftProvenance, 'exampleTitle')) {
+            snap.exampleTitle = draftProvenance.exampleTitle;
+          }
+          window.__almRestore(snap);
+        }
+      });
     }
   });
 })();
