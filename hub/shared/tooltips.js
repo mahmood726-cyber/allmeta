@@ -16,6 +16,7 @@
   let glossary = {}, english = {}, translated = {}, terms = {}, src = null, lang = 'en';
   let nextId = 0, generation = 0, observer = null, active = null, queued = false, hideTimer;
   const attached = new Map(), choices = new Map(), requests = new Map();
+  const locationIds = new Map();
   // SVGs are publication artifacts: automatic wrappers split exported warning
   // text and alter metadata. Explicit data-gloss marks still attach in scan().
   const SKIP = 'script,style,textarea,input,button,a,option,select,pre,kbd,samp,svg,[contenteditable],[aria-hidden="true"],[inert],.gloss-skip,[data-gloss-skip],.alm-tooltip,.alm-lang-switch,[data-gloss]';
@@ -82,7 +83,19 @@
   }
   function attach(el) {
     if (attached.has(el)) return;
-    const tip = document.createElement('span'); tip.id = 'alm-tip-' + (++nextId);
+    // Replays rebuild identical result HTML. Keep its accessible descriptions
+    // stable instead of assigning a fresh ID on every render. Anchor the path
+    // at the nearest authored ID so unrelated panels cannot shift it.
+    const path = [];
+    for (let node = el; node; node = node.parentElement) {
+      if (node.id) { path.push('#' + node.id); break; }
+      path.push([node.localName, node.parentElement ? Array.from(node.parentElement.children).indexOf(node) : 0]);
+    }
+    const location = JSON.stringify(path);
+    let id = locationIds.get(location);
+    if (!id || document.getElementById(id)) id = 'alm-tip-' + (++nextId);
+    locationIds.set(location, id);
+    const tip = document.createElement('span'); tip.id = id;
     tip.className = 'alm-tooltip'; tip.setAttribute('role', 'tooltip'); fill(tip, el);
     ensureUI().append(tip); attached.set(el, tip);
     const descriptions = new Set((el.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
@@ -141,7 +154,8 @@
         frag.append(document.createTextNode(text.slice(offset, m.index)));
         const svg = n.parentElement.namespaceURI === 'http://www.w3.org/2000/svg';
         const el = svg ? document.createElementNS('http://www.w3.org/2000/svg', 'tspan') : document.createElement('span');
-        el.setAttribute('data-gloss', terms[m[0]]); el.textContent = m[0]; frag.append(el);
+        el.setAttribute('data-gloss', terms[m[0]]); el.setAttribute('data-alm-glossary', '');
+        el.textContent = m[0]; frag.append(el);
         offset = m.index + m[0].length;
       }
       frag.append(document.createTextNode(text.slice(offset))); n.replaceWith(frag);
@@ -152,9 +166,13 @@
   }
   function updateChoices() {
     document.querySelectorAll('select:not(.alm-lang-switch select)').forEach(select => {
+      let record = choices.get(select);
+      if (select.matches(':disabled') || select.closest('[inert],[data-gloss-skip],.gloss-skip')) {
+        if (record) { record.node.remove(); choices.delete(select); }
+        return;
+      }
       const text = Array.from(select.selectedOptions, o => o.textContent).join('; ');
       const hits = [...text.matchAll(buildMatcher(terms))].filter(m => glossary[terms[m[0]]]);
-      let record = choices.get(select);
       if (!hits.length) { if (record) { record.node.remove(); choices.delete(select); } return; }
       if (!record || !record.node.isConnected) {
         const node = document.createElement('span'); node.setAttribute('data-alm-choice', '');
