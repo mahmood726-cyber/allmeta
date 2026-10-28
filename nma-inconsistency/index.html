@@ -521,7 +521,7 @@ A, D, -0.48, 0.14</textarea>
       const __bodyParts = [""];
       for (const r of ns) {
         const flag = r.p < 0.05 ? "incon" : "cons";
-        const label = r.p < 0.05 ? "evidence of inconsistency" : "no evidence of inconsistency";
+        const label = r.p < 0.05 ? "inconsistent" : "no evidence of inconsistency";
         __bodyParts.push(`<tr><td><code>${escapeMarkup(r.comparison)}</code></td>
           <td>${fmt(r.direct.mean)} (${fmt(r.direct.se)})</td>
           <td>${fmt(r.indirect.mean)} (${fmt(r.indirect.se)})</td>
