@@ -543,6 +543,27 @@
     return knots.slice(1).map(function (_, j) { return j === 0 ? "dose" : "dose" + "'".repeat(j); });
   }
 
+  function predictionError(dose) {
+    return new DRError("Prediction overflow or non-finite result at dose " + dose + ". Use less extreme doses, reference dose or covariate values.");
+  }
+  // Shared with the app's PM/DL predictor: never publish unrepresentable uncertainty.
+  function predictionResult(dose, pred, se) {
+    var lo = pred - Z975 * se, hi = pred + Z975 * se;
+    var rr = Math.exp(pred), rrLo = Math.exp(lo), rrHi = Math.exp(hi);
+    if (![dose, pred, se, lo, hi, rr, rrLo, rrHi].every(Number.isFinite)) throw predictionError(dose);
+    return { dose: dose, logRR: pred, se: se, ciLo: lo, ciHi: hi, rr: rr, rrLo: rrLo, rrHi: rrHi };
+  }
+
+  function predictionSE(V, x) {
+    var variance = _quad(V, x);
+    // Preserve ordinary-range arithmetic; rescale only when the quadratic form overflows.
+    if (Number.isFinite(variance)) return Math.sqrt(Math.max(0, variance));
+    var scale = Math.max.apply(null, x.map(Math.abs));
+    if (!(scale > 0)) return NaN;
+    variance = _quad(V, x.map(function (v) { return v / scale; }));
+    return Number.isFinite(variance) ? Math.sqrt(Math.max(0, variance)) * scale : NaN;
+  }
+
   // studies: [{id, rows: [{dose, cases, n, logrr, se, type}], mod?: number}]; the reference
   // row of each study has se null/NaN/0. opts: {model, knots (count or array), covariance,
   // proc, method, mod (bool), maxiter (one-stage; default 100 as in dosresmeta)}.
@@ -607,9 +628,9 @@
         return doses.map(function (d) {
           var c = bf(+d).map(function (v, j) { return v - bx[j]; }), x = c;
           if (useMod) { var z = (modValue == null) ? 0 : +modValue; x = c.concat(c.map(function (v) { return v * z; })); }
+          if (!x.every(Number.isFinite)) throw predictionError(+d);
           var pred = 0; for (var j = 0; j < x.length; j++) pred += x[j] * coef[j];
-          var se = Math.sqrt(Math.max(0, _quad(V, x)));
-          return { dose: +d, logRR: pred, se: se, ciLo: pred - Z975 * se, ciHi: pred + Z975 * se, rr: Math.exp(pred), rrLo: Math.exp(pred - Z975 * se), rrHi: Math.exp(pred + Z975 * se) };
+          return predictionResult(+d, pred, predictionSE(V, x));
         });
       };
       out.doseRange = [Math.min.apply(null, allDoses), Math.max.apply(null, allDoses)];
@@ -719,7 +740,7 @@
   }
 
   var api = { fit: fit, fitSpline: fitSpline, fitDR: fitDR, rcsBasis: rcsBasis, rcsKnots: rcsKnots, _grl: _grl, _studySlope: _studySlope, _quantile7: _quantile7,
-    _internal: { nmmin: nmmin, vmmin: vmmin, covarLogRR: covarLogRR, pchisqUpper: pchisqUpper, symEigen: symEigen, qrLS: qrLS } };
+    _internal: { nmmin: nmmin, vmmin: vmmin, covarLogRR: covarLogRR, pchisqUpper: pchisqUpper, symEigen: symEigen, qrLS: qrLS, predictionResult: predictionResult } };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmDoseResponse = api;
 })(typeof window !== "undefined" ? window : globalThis);
