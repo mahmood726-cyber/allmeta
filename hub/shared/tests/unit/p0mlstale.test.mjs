@@ -72,3 +72,46 @@ test('parser exception marks previous results stale; valid parser control recove
   assert.equal(h.elements['analysis-stale'].hidden,true);
   assert.equal(h.context._lastResults.mu,0.3);
 });
+
+// Replay the multilevel branch of r1fix-lifecycle.spec.mjs with the real parser.
+// Its empty-input assertion conflicts with the explicit P07 refusal contract:
+// retained results must remain flagged until a successful refit.
+test('P07 lifecycle edits, empty refusal and recovery preserve the stale-result warning',()=>{
+  const h=harness();
+  const parseStart=html.indexOf('    function parse(text) {');
+  const parseEnd=html.indexOf('    function fmt(',parseStart);
+  assert.ok(parseStart>=0 && parseEnd>parseStart);
+  vm.runInContext(html.slice(parseStart,parseEnd),h.context);
+  h.elements.src.matches=selector=>selector==='#src';
+  const fill=text=>{
+    h.elements.src.value=text;
+    h.listeners.input({target:h.elements.src});
+  };
+  const clickRun=()=>{
+    // A textarea change can be committed on blur before the Run click.
+    h.listeners.change({target:h.elements.src});
+    h.run();
+  };
+  const initial=html.match(/<textarea\b[^>]*id="src"[^>]*>([\s\S]*?)<\/textarea>/)[1];
+  fill(initial);clickRun();
+  assert.equal(h.elements['analysis-status'].hidden,false);
+  assert.equal(h.elements['analysis-stale'].hidden,true);
+  const summary=h.elements.summary.innerHTML;
+  const body=h.elements.body.innerHTML;
+
+  const valid=initial.trim().split('\n').slice(0,-1).join('\n');
+  fill(valid);
+  assert.equal(h.elements['analysis-stale'].hidden,false);
+  fill('');clickRun();
+  assert.equal(h.elements['analysis-status'].hidden,true);
+  assert.equal(h.elements['analysis-stale'].hidden,false);
+  assert.equal(h.elements.summary.innerHTML,summary);
+  assert.equal(h.elements.body.innerHTML,body);
+  assert.equal(h.context._lastResults,null);
+  assert.equal(h.context._lastReml,null);
+
+  fill(valid);clickRun();
+  assert.equal(h.elements['analysis-status'].hidden,false);
+  assert.equal(h.elements['analysis-stale'].hidden,true);
+  assert.equal(h.context._lastResults.k,initial.trim().split('\n').length-1);
+});
