@@ -401,9 +401,13 @@
       function x(v) { return L + (v-xLo)/(xHi-xLo) * plotW; }
       function y(v) { return T + plotH - (v-yLo)/(yHi-yLo) * plotH; }
 
+      const plotName = escapeXml((state.title ? state.title + ". " : "") + "Bubble plot: " +
+        (state.effectlabel || "Effect") + " versus " + (state.modlabel || "Moderator") +
+        (fitted && fitted.fit ? ", with fitted regression line and 95% confidence band." : "."));
       const p = [];
       p.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\">");
+      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\" role=\"img\" aria-label=\""+plotName+"\">");
+      p.push("<title>"+plotName+"</title>");
       p.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
       if (state.title) p.push("<text x=\""+(W/2)+"\" y=\"28\" text-anchor=\"middle\" font-size=\"15\" font-weight=\"700\" fill=\"#15181d\">"+escapeXml(state.title)+"</text>");
 
