@@ -546,7 +546,7 @@
         window.__almRadial = rad;
         const W = 600, H = 300, padL = 50, padR = 20, padT = 20, padB = 42, pw = W - padL - padR, ph = H - padT - padB;
         const xMax = Math.max(...rad.x) * 1.08;
-        const zAbs = Math.max(...rad.z.map(Math.abs), rad.slope * xMax + 2, 2) * 1.05;
+        const zAbs = Math.max(...rad.z.map(Math.abs), Math.abs(rad.slope * xMax + 2), Math.abs(rad.slope * xMax - 2), 2) * 1.05;
         const X = v => padL + v / xMax * pw, Y = v => padT + ph / 2 - v / zAbs * (ph / 2);
         const s = [`<title>Radial (Galbraith) plot: precision against standardised effect, one point per study</title>`];
         s.push(`<line x1="${padL}" y1="${Y(0)}" x2="${padL + pw}" y2="${Y(0)}" stroke="currentColor" opacity="0.4"/>`);
