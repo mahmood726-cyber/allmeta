@@ -821,8 +821,13 @@ StudyE, 4, 600, 10, 600</textarea>
 
       // Build results for export
       var firstZ = firstPooled ? (firstPooled.logEst !== undefined ? firstPooled.logEst / firstPooled.seLog : firstPooled.est / firstPooled.se) : null;
+      var buildInfo = window.AlmBuildInfo || {};
       _lastResults = {
         _schema: 'mhpeto-results-v1',
+        software: {
+          version: buildInfo.version || 'unknown',
+          sha: buildInfo.sha || 'unknown',
+        },
         measure: measure,
         k: rows.length,
         mh_est: firstPooled ? firstPooled.est : null,
