@@ -628,6 +628,26 @@ StudyE, 4, 600, 10, 600</textarea>
 
     // ---- axis state (overrideable by axis-controls) ----
     var _axisState = {};
+    var _axisMeasure = document.getElementById('measure').value;
+    var _syncingAxis = false;
+
+    function syncAxisMeasure(measure) {
+      if (_axisMeasure === measure) return;
+      _axisMeasure = measure;
+      // Update the existing inputs so autosave keeps valid element references.
+      // Their change handlers also reset the shared widget's internal state.
+      _syncingAxis = true;
+      try {
+        document.getElementById('alm-axis-mount').querySelectorAll('input').forEach(function (input) {
+          if (input.dataset.edge === 'log') input.checked = measure !== 'RD';
+          else input.value = '';
+          input.dispatchEvent(new Event('change'));
+        });
+      } finally {
+        _syncingAxis = false;
+      }
+      _axisState = {};
+    }
 
     // ---- results storage for export ----
     var _lastResults = null;
@@ -692,6 +712,7 @@ StudyE, 4, 600, 10, 600</textarea>
     function run() {
       var parsed = parseInput(document.getElementById('src').value);
       var measure = document.getElementById('measure').value;
+      syncAxisMeasure(measure);
       showInputErrors(parsed);
       if (parsed.errors.length) {
         clearOutputs();
@@ -926,7 +947,7 @@ StudyE, 4, 600, 10, 600</textarea>
 
       var pad = (hi - lo) * 0.1 || 0.3;
       var X = function (v) { return padL + (mapFn(v) - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW; };
-      var nullV = logScale ? 1 : 0;
+      var nullV = measure === 'RD' ? 0 : 1;
       var axisY = H - AXIS_H + 4;
       parts.push('<line x1="' + X(nullV) + '" y1="10" x2="' + X(nullV) + '" y2="' + axisY + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
       // x-axis: ticks at round values inside the plotted range, labelled on the data scale.
@@ -1233,11 +1254,11 @@ StudyE, 4, 600, 10, 600</textarea>
     window.alm.axisControls({
       target: '#alm-axis-mount',
       axes: [
-        { key: 'x', label: 'X axis', range: [null, null], log: false },
+        { key: 'x', label: 'X axis', range: [null, null], log: _axisMeasure !== 'RD' },
       ],
       onChange: function (state) {
         _axisState = state;
-        run();
+        if (!_syncingAxis) run();
       },
     });
 
