@@ -602,7 +602,7 @@
       statsWrap.innerHTML = studies.length ? "<div class=\"stats\">" + parts.join("") + "</div>" + tables : "";
       const fh = document.getElementById("fagan-host"), dh = document.getElementById("deeks-host");
       if (fh) fh.innerHTML = b ? faganSvg(b) : "";
-      if (dh) dh.innerHTML = a.deeks ? deeksSvg(a.deeks) : "";
+      if (dh) dh.innerHTML = a.deeks ? deeksSvg(a.deeks) : "<p>Deeks test unavailable: slope inference could not be estimated (for example, when effective sample sizes are constant).</p>";
 
       const extras = a.errors.slice();
       if (a.rho != null && Math.abs(a.rho) > 0.6) extras.push("Spearman |ρ| > 0.6 — threshold effect likely. Report the SROC curve rather than a single pooled Se/Sp pair.");
