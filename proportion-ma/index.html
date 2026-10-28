@@ -339,6 +339,8 @@
       }
       if (rows.length < 2) {
         document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Need at least 2 studies.</td></tr>';
+        document.getElementById('het').innerHTML = '';
+        document.getElementById('forest').innerHTML = '';
         _lastResults = null; // do not leave a stale result exportable
         return;
       }
@@ -543,6 +545,8 @@
     }
     function restore(snap) {
       if (!snap) return;
+      // reset-undo passes {} for Clear all; nonempty snapshots may be partial.
+      if (Object.keys(snap).length === 0) snap = { src: '', trans: 'logit', tau: 'PM' };
       if (snap.src   !== undefined) document.getElementById('src').value = snap.src;
       if (snap.trans !== undefined) document.getElementById('trans').value = snap.trans;
       if (snap.tau   !== undefined) document.getElementById('tau-est').value = snap.tau;
