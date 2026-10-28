@@ -3,6 +3,7 @@
   'use strict';
   var P = window.AlmMvPlus, F = P.fmt, Z = P.Z;
   function el(id) { return document.getElementById(id); }
+  function number(s) { return s.trim() ? Number(s) : NaN; }
   var state = { parsed: null, res: null, sweep: null, grid: null };
   function td(tr, text, key, tag) { var c = document.createElement(tag || 'td'); c.textContent = text; if (key) c.setAttribute('data-q', key); tr.appendChild(c); return c; }
   function build() { return window.AlmBuildInfo && window.AlmBuildInfo.sha ? String(window.AlmBuildInfo.sha).slice(0, 12) : ''; }
@@ -103,7 +104,7 @@
   function runSweep() {
     clearSweep();
     if (!state.parsed) return null;
-    var g = P.makeGrid(Number(el('plus-from').value), Number(el('plus-to').value), Number(el('plus-step').value));
+    var g = P.makeGrid(number(el('plus-from').value), number(el('plus-to').value), number(el('plus-step').value));
     if (g.error) { el('plus-status').textContent = 'Refused: ' + g.error; return null; }
     if (state.parsed.rows.length < 2) { el('plus-status').textContent = 'Refused: at least two complete studies are required.'; return null; }
     state.grid = g.grid; state.sweep = P.sweep(state.parsed, g.grid);
@@ -119,7 +120,7 @@
       sweep: s.sweep && s.sweep.map(function (x) { return x.status === 'ok' ? { rhoW: x.rhoW, status: 'ok', mu: x.fit.mu, muSE: x.fit.muSE, muVcov: x.fit.muVcov, G: x.fit.G, rho: x.fit.rho, logLik: x.fit.logLik, z: x.tests.map(function (t) { return t.z; }), p: x.tests.map(function (t) { return t.p; }), boundary: x.boundary, diagnostic: x.fit.diagnostic } : x; }) || null };
   }
   function rScript() {
-    var g = state.grid || P.makeGrid(Number(el('plus-from').value), Number(el('plus-to').value), Number(el('plus-step').value)).grid;
+    var g = state.grid || P.makeGrid(number(el('plus-from').value), number(el('plus-to').value), number(el('plus-step').value)).grid;
     return P.rScript(state.parsed, g, { build: build() });
   }
   var page = window.AlmMvPage;
