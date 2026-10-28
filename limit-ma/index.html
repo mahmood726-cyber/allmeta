@@ -760,7 +760,12 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'limit-ma-results',
-      getResults: function () { return window._almLastLimit ? window._almLastLimit() : {}; },
+      getResults: function () {
+        var result = window._almLastLimit ? window._almLastLimit() : {};
+        if (!result || !window.AlmBuildInfo) return result;
+        // Keep provenance on the export copy, outside the fitted validation quantities.
+        return Object.assign({}, result, { producedBy: Object.assign({}, window.AlmBuildInfo) });
+      },
     });
 
     window.alm.urlState({ version: 1 });
