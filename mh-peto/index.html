@@ -1160,6 +1160,17 @@ StudyE, 4, 600, 10, 600</textarea>
 
     // ---- load CSV rows into textarea ----
     window.__almLoad = function (rows) {
+      // The textarea parser treats each physical line as a separate study.
+      // Reject unsupported labels before changing input or analysing any rows.
+      for (var i = 0; i < rows.length; i++) {
+        if (/[\r\n]/.test(rows[i].study || '')) {
+          var box = document.getElementById('input-errors');
+          box.textContent = 'CSV not loaded: the study label in data record ' + (i + 1) +
+            ' contains a line break. Put each study label on a single line and import again. Existing input and results are unchanged.';
+          box.hidden = false;
+          return;
+        }
+      }
       var lines = rows.map(function (r) {
         return [r.study || '', r.e1, r.n1, r.e2, r.n2].join(', ');
       });
