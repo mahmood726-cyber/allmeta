@@ -167,13 +167,19 @@
   (function () {
     'use strict';
 
-    // ---- engine (unchanged from pre-retrofit) ----
+    // ---- engine ----
 
     function parseTable(text) {
       return text.trim().split(/\n/).map(function (l, i) {
         var parts = l.split(/,/).map(function (s) { return s.trim(); });
         var x = parseInt(parts[0], 10);
         var n = parseInt(parts[1], 10);
+        // Reject the entire dataset rather than rounding or dropping an
+        // out-of-range count and analysing only the remaining studies.
+        if ((!Number.isNaN(x) && !Number.isSafeInteger(x)) ||
+            (!Number.isNaN(n) && !Number.isSafeInteger(n))) {
+          throw new RangeError('Unsupported numeric range: counts must be safe integers.');
+        }
         if (!Number.isFinite(x) || !Number.isFinite(n) || n <= 0 || x < 0 || x > n) return null;
         return { x: x, n: n, label: parts[2] || ('Study ' + (i + 1)) };
       }).filter(Boolean);
@@ -274,9 +280,10 @@
       // toward p = 0.5. Matches metafor::escalc(measure="PLO", add=1/2, to="only0").
       var extreme = (x === 0) || (x === n);
       var cx = extreme ? x + 0.5 : x;
-      var cn = extreme ? n + 1 : n;
-      var p = cx / cn;
-      return { y: Math.log(p / (1 - p)), v: 1 / cx + 1 / (cn - cx) };
+      // Form the complement before correction: (n+1)-(x+0.5) can round to
+      // zero for a full cell even when x and n are safe integers.
+      var nonEvents = (n - x) + (extreme ? 0.5 : 0);
+      return { y: Math.log(cx) - Math.log(nonEvents), v: 1 / cx + 1 / nonEvents };
     }
 
     function logitBack(y) {
@@ -320,12 +327,28 @@
 
     run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #trans, #tau-est");
 
+    function refuseNumericRange() {
+      _lastResults = null;
+      _validationDetails = null;
+      document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Unsupported numeric range. Check the event and total counts.</td></tr>';
+      document.getElementById('het').innerHTML = '';
+      document.getElementById('forest').innerHTML = '';
+      var kw = document.getElementById('k-warn');
+      if (kw) kw.style.display = 'none';
+    }
+
     function run(options) {
+      _lastResults = null;
       _validationDetails = null;
       var text = document.getElementById('src').value;
       var trans = document.getElementById('trans').value;
       var tauEst = document.getElementById('tau-est').value;
-      var rows = parseTable(text);
+      var rows;
+      try { rows = parseTable(text); }
+      catch (error) {
+        if (!(error instanceof RangeError)) throw error;
+        return refuseNumericRange();
+      }
 
       // DL k<10 warning
       var kw = document.getElementById('k-warn');
@@ -356,25 +379,40 @@
           var ext = (r.x === 0) || (r.x === r.n);
           var cx = ext ? r.x + 0.5 : r.x;
           var cn = ext ? r.n + 1 : r.n;
+          var nonEvents = (r.n - r.x) + (ext ? 0.5 : 0);
           var p = cx / cn;
-          t = { y: p, v: p * (1 - p) / cn };
+          // Keep the corrected complement even when p rounds to 1.
+          t = { y: p, v: p * (nonEvents / cn) / cn };
         }
         return Object.assign({}, r, t);
       });
+
+      if (!transformed.every(function (r) {
+        return Number.isFinite(r.y) && Number.isFinite(r.v) && r.v > 0;
+      })) return refuseNumericRange();
 
       // Pass the estimator through verbatim. pool() leaves tau2=0 for any value
       // other than 'DL'/'PM', so 'FE' correctly yields the fixed-effect inverse-
       // variance pool. (Previously FE was remapped to 'DL', so the "Fixed-effect"
       // option silently returned the random-effects DL result whenever Q>df.)
       var pooled = pool(transformed, tauEst);
+      if (!['mu_re', 'seRE', 'tau2', 'Q', 'df', 'i2'].every(function (key) {
+        return Number.isFinite(pooled[key]);
+      }) || !pooled.weights.every(function (w) { return Number.isFinite(w) && w > 0; })) {
+        return refuseNumericRange();
+      }
 
       // Per-study CIs on proportion scale (Clopper-Pearson)
       var totalW = pooled.weights.reduce(function (a, b) { return a + b; }, 0);
+      if (!Number.isFinite(totalW) || totalW <= 0) return refuseNumericRange();
       var perStudy = rows.map(function (r, i) {
         var cp = clopperPearson(r.x, r.n);
         var w = pooled.weights[i];
         return Object.assign({}, r, { p: r.x / r.n, lo: cp[0], hi: cp[1], w: w, rel: 100 * w / totalW });
       });
+      if (!perStudy.every(function (r) {
+        return [r.p, r.lo, r.hi, r.w, r.rel].every(Number.isFinite);
+      })) return refuseNumericRange();
 
       // Back-transform pooled estimate + 95% prediction interval. The PI (t_{k-1},
       // Cochrane v6.5) is formed on the TRANSFORM scale via the shared core, then
@@ -384,6 +422,10 @@
       var piT = (window.AlmMaCore && rows.length >= 3)
         ? window.AlmMaCore.predictionInterval({ mu: pooled.mu_re, se: pooled.seRE, tau2: pooled.tau2, k: rows.length })
         : null;
+      // Validate on the analysis scale before back-transforms/clipping can
+      // hide infinite limits as apparently valid proportions of 0 or 1.
+      if (![lo, hi].every(Number.isFinite) ||
+          (piT && ![piT.lo, piT.hi].every(Number.isFinite))) return refuseNumericRange();
       var poolP, poolLo, poolHi, poolPiLo = null, poolPiHi = null;
       if (trans === 'ft') {
         var nH = harmonicMean(rows.map(function (r) { return r.n; }));
@@ -403,7 +445,10 @@
         if (piT) { poolPiLo = Math.max(0, piT.lo); poolPiHi = Math.min(1, piT.hi); }
       }
 
-      // Store for export
+      if (![poolP, poolLo, poolHi].every(Number.isFinite) ||
+          (piT && ![poolPiLo, poolPiHi].every(Number.isFinite))) return refuseNumericRange();
+
+      // Store for export only after every computed result has been validated.
       _lastResults = {
         _schema:  'propma-results-v1',
         transform: trans,
@@ -577,7 +622,12 @@
     // current inputs so it always matches what is on screen.
     window.__propMaBusStudies = function () {
       if (!window.MaStudies) return [];
-      var rows = parseTable(document.getElementById('src').value);
+      var rows;
+      try { rows = parseTable(document.getElementById('src').value); }
+      catch (error) {
+        if (!(error instanceof RangeError)) throw error;
+        return [];
+      }
       if (rows.length < 2) return [];
       var out = [];
       for (var i = 0; i < rows.length; i++) {
