@@ -170,13 +170,27 @@
     // ---- engine (unchanged from pre-retrofit) ----
 
     function parseTable(text) {
-      return text.trim().split(/\n/).map(function (l, i) {
+      var rows = [], errors = [];
+      text.split(/\n/).forEach(function (l, i) {
+        if (!l.trim()) return; // Blank lines are not rows with missing count cells.
         var parts = l.split(/,/).map(function (s) { return s.trim(); });
-        var x = parseInt(parts[0], 10);
-        var n = parseInt(parts[1], 10);
-        if (!Number.isFinite(x) || !Number.isFinite(n) || n <= 0 || x < 0 || x > n) return null;
-        return { x: x, n: n, label: parts[2] || ('Study ' + (i + 1)) };
-      }).filter(Boolean);
+        var x = Number(parts[0]), n = Number(parts[1]);
+        var message = '';
+        if (!parts[0] || !parts[1]) message = 'Events and total are required.';
+        else if (!/^[+-]?\d+$/.test(parts[0]) || !/^[+-]?\d+$/.test(parts[1])) message = 'Events and total must be whole numbers.';
+        else if (!Number.isSafeInteger(x) || !Number.isSafeInteger(n)) message = 'Counts must be safe integers.';
+        else if (n <= 0) message = 'Total must be greater than zero.';
+        else if (x < 0 || x > n) message = 'Events must be between zero and total.';
+        if (message) errors.push({ line: i + 1, message: message });
+        else rows.push({ x: x, n: n, label: parts[2] || ('Study ' + (i + 1)) });
+      });
+      return { rows: rows, errors: errors };
+    }
+
+    function parseErrorMessage(errors) {
+      return 'Invalid input. Correct the count rows before running analysis. ' + errors.map(function (error) {
+        return 'Line ' + error.line + ': ' + error.message;
+      }).join(' ');
     }
 
     // --- inverse beta (Clopper-Pearson) via relation to F-distribution approximation ---
@@ -325,10 +339,23 @@
       var text = document.getElementById('src').value;
       var trans = document.getElementById('trans').value;
       var tauEst = document.getElementById('tau-est').value;
-      var rows = parseTable(text);
+      var parsed = parseTable(text);
+      var rows = parsed.rows;
+
+      var kw = document.getElementById('k-warn');
+      if (parsed.errors.length) {
+        _lastResults = null;
+        if (kw) {
+          kw.textContent = parseErrorMessage(parsed.errors);
+          kw.style.display = 'block';
+        }
+        document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Invalid input. Correct the count rows before running analysis.</td></tr>';
+        document.getElementById('het').innerHTML = '';
+        document.getElementById('forest').innerHTML = '';
+        return;
+      }
 
       // DL k<10 warning
-      var kw = document.getElementById('k-warn');
       if (kw) {
         if (tauEst === 'DL' && rows.length < 10 && rows.length >= 2) {
           kw.textContent = 'k = ' + rows.length + ' — DerSimonian-Laird τ² is biased low for k<10 (advanced-stats.md). Switch to Paule-Mandel for inference.';
@@ -562,7 +589,12 @@
 
     // Expose last results for export
     window.__almPropValidation = {
-      run: function () { run({suppressURL:true}); }, parse: parseTable,
+      run: function () { run({suppressURL:true}); },
+      parse: function (text) {
+        var parsed = parseTable(text);
+        if (parsed.errors.length) throw new Error(parseErrorMessage(parsed.errors));
+        return parsed.rows;
+      },
       save: function () { return {results:_lastResults, details:_validationDetails}; },
       restore: function (s) { _lastResults=s.results; _validationDetails=s.details; },
       snapshot: function () { return _validationDetails ? JSON.parse(JSON.stringify(_validationDetails)) : null; }
@@ -577,8 +609,9 @@
     // current inputs so it always matches what is on screen.
     window.__propMaBusStudies = function () {
       if (!window.MaStudies) return [];
-      var rows = parseTable(document.getElementById('src').value);
-      if (rows.length < 2) return [];
+      var parsed = parseTable(document.getElementById('src').value);
+      if (parsed.errors.length || parsed.rows.length < 2) return [];
+      var rows = parsed.rows;
       var out = [];
       for (var i = 0; i < rows.length; i++) {
         var t = logitTransform(rows[i].x, rows[i].n); // { y: logit(p), v: var }
