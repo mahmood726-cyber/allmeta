@@ -195,7 +195,7 @@
 
   ['src','model','n-sample','enum-mode'].forEach(function (id) {
     el(id).addEventListener('input', function () {
-      if (!current) return;
+      if (!current && !pending) return;
       stop(); pending = null; clearTables(); el('exact-run').hidden = true;
       el('exact-status').textContent = 'Inputs changed; press Run analysis to start exact enumeration for the new inputs.';
     });
