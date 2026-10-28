@@ -93,6 +93,7 @@
 25, 300, Study G</textarea></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="share-data-note" role="status" aria-live="polite"></div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount"></div>
 
@@ -432,8 +433,17 @@
       };
 
       // URL state
-      if (!(options && options.suppressURL) && window.alm && window.alm.urlState) {
-        window.alm.urlState.write({ src: text, trans: trans, tau: tauEst });
+      var urlState = window.alm && window.alm.urlState;
+      // Intentional write suppression must leave the URL and sharing notice alone.
+      if (!(options && options.suppressURL) && urlState && !urlState.isSuspended()) {
+        var shared = urlState.write({ src: text, trans: trans, tau: tauEst });
+        var shareNote = document.getElementById('share-data-note');
+        if (!shared) {
+          urlState.clear();
+          shareNote.textContent = 'This analysis is too large for the URL. The previous share link has been cleared. To share it, copy the study data and settings.';
+        } else {
+          shareNote.textContent = '';
+        }
       }
     }
 
