@@ -208,6 +208,7 @@
         if ($("f-cov").value !== "indep") {
           if (!(cases > 0)) inputError(where + ", cases", "must be greater than 0 for covariance reconstruction.");
           if (!(n > 0)) inputError(where + ", n", "must be greater than 0 for covariance reconstruction.");
+          if ((type === "cc" || type === "ci") && cases > n) inputError(where + ", cases", "must not exceed n for " + type + " covariance reconstruction.");
         }
         if (!byStudy[id]) { byStudy[id] = { id: id, rows: [], mod: cov, firstRow: row, references: 0 }; order.push(id); }
         var study = byStudy[id];

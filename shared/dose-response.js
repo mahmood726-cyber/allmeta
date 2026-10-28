@@ -497,10 +497,19 @@
     }
     return L.map(function (l, k) { return { A: Axp[k], N: l.n }; });
   }
-  function hamlingCounts(L, type) { // dosresmeta::hamling (optim Nelder–Mead, defaults), ported verbatim
+  function hamlingCounts(L, type) { // dosresmeta::hamling, with an exact one-contrast IR solution
     var cc = type === "cc", ref = -1, sNA = 0, sA = 0, sN = 0;
     L.forEach(function (l, k) { if (l.v === 0) ref = k; sNA += l.n - l.cases; sA += l.cases; sN += l.n; });
     var p0 = cc ? (L[ref].n - L[ref].cases) / sNA : L[ref].n / sN, z0 = cc ? sNA / sA : sN / sA;
+    if (type === "ir" && L.length === 2) {
+      // With one contrast, preserve the reference person-time fraction p0 and
+      // total person-time/cases z0, and solve RR and v = 1/A0 + 1/A1 directly.
+      // The general R port below can instead converge to negative IR counts.
+      var other = 1 - ref, ratio = Math.exp(L[other].y) * L[other].n / L[ref].n;
+      var a0 = (1 + 1 / ratio) / L[other].v, a1 = (1 + ratio) / L[other].v;
+      var totalN = z0 * (a0 + a1);
+      return L.map(function (l, k) { return { A: k === ref ? a0 : a1, N: l.n / sN * totalN }; });
+    }
     function ps(par) {
       var A0 = par[0], N0 = par[1];
       return L.map(function (l, k) {
@@ -524,9 +533,23 @@
     var nr = L.filter(function (l) { return l.v !== 0; }), m = nr.length, S = mz(m, m), a, b;
     if (covariance === "indep") { nr.forEach(function (l, i) { S[i][i] = l.v; }); return S; }
     var ps = covariance === "h" ? hamlingCounts(L, type) : grlCounts(L, type), ref = 0;
+    // Even a one-contrast matrix must have valid reconstructed counts: its
+    // diagonal alone is copied from the supplied variance and cannot prove this.
+    ps.forEach(function (p, k) {
+      if (!isFinite(p.A) || !isFinite(p.N) || !(p.A > 0) || !(p.N > 0) ||
+          (type === "cc" && !(p.A < p.N)) || (type === "ci" && p.A > p.N)) {
+        throw new DRError("covariance reconstruction failed at row " + (k + 1) + " (invalid reconstructed cases or n)");
+      }
+    });
     L.forEach(function (l, k) { if (l.v === 0) ref = k; });
     var A0 = ps[ref].A, N0 = ps[ref].N, s0 = type === "ir" ? 1 / A0 : (type === "ci" ? 1 / A0 - 1 / N0 : 1 / A0 + 1 / (N0 - A0));
-    var si = []; L.forEach(function (l, k) { if (k === ref) return; var A = ps[k].A, N = ps[k].N; si.push(s0 + (type === "ir" ? 1 / A : (type === "ci" ? 1 / A - 1 / N : 1 / A + 1 / (N - A)))); });
+    if (!isFinite(s0) || s0 < 0) throw new DRError("covariance reconstruction failed at row " + (ref + 1) + " (invalid reference variance)");
+    var si = []; L.forEach(function (l, k) {
+      if (k === ref) return;
+      var A = ps[k].A, N = ps[k].N, v = s0 + (type === "ir" ? 1 / A : (type === "ci" ? 1 / A - 1 / N : 1 / A + 1 / (N - A)));
+      if (!isFinite(v) || !(v > 0)) throw new DRError("covariance reconstruction failed at row " + (k + 1) + " (invalid contrast variance)");
+      si.push(v);
+    });
     for (a = 0; a < m; a++) for (b = 0; b < m; b++) S[a][b] = a === b ? nr[a].v : Math.sqrt(nr[a].v * nr[b].v) * s0 / Math.sqrt(si[a] * si[b]);
     for (a = 0; a < m; a++) if (!isFinite(S[a][a]) || S[a].some(function (v) { return !isFinite(v); })) throw new DRError("covariance reconstruction failed (non-finite values)");
     return S;
@@ -563,7 +586,14 @@
         var nref = L.filter(function (l) { return l.v === 0; }).length;
         if (nref !== 1) { out.excluded.push({ id: st.id, reason: nref ? "more than one reference row" : "no reference row (SE blank)" }); return; }
         if (L.length < 2) { out.excluded.push({ id: st.id, reason: "no non-reference dose" }); return; }
-        if (covariance !== "indep" && L.some(function (l) { return !(l.cases > 0) || !(l.n > 0); })) { out.excluded.push({ id: st.id, reason: "missing case or total counts" }); return; }
+        if (covariance !== "indep") {
+          for (var row = 0; row < L.length; row++) {
+            var l = L[row], reason = null;
+            if (!isFinite(l.cases) || !isFinite(l.n) || !(l.cases > 0) || !(l.n > 0)) reason = "cases and n must be finite and greater than 0 for covariance reconstruction";
+            else if ((type === "cc" || type === "ci") && l.cases > l.n) reason = "cases must not exceed n for " + type + " covariance reconstruction";
+            if (reason) { out.excluded.push({ id: st.id, reason: "row " + (row + 1) + ": " + reason }); return; }
+          }
+        }
         S.push({ id: st.id, type: type, L: L, mod: st.mod });
       });
       if (S.length < 2) throw new DRError("at least 2 studies are needed (" + S.length + " usable)");
@@ -583,7 +613,11 @@
         s.nr = s.L.filter(function (l) { return l.v !== 0; });
         s.Xb = s.nr.map(function (l) { return bf(l.dose).map(function (v, j) { return v - b0[j]; }); });
         s.y = s.nr.map(function (l) { return l.y; });
-        s.S = covarLogRR(s.L, s.type, covariance);
+        try { s.S = covarLogRR(s.L, s.type, covariance); }
+        catch (e) {
+          if (!(e instanceof DRError)) throw e;
+          throw new DRError("study " + s.id + ": " + e.message);
+        }
       });
       if (useMod && S.some(function (s) { return !isFinite(s.mod); })) throw new DRError("every study needs a numeric covariate value for meta-regression");
       out.k = S.length; out.nobs = S.reduce(function (a, s) { return a + s.nr.length; }, 0);
