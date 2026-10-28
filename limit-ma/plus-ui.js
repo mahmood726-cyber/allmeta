@@ -89,7 +89,7 @@ function clear(message='Run comparisons using the current input. Independent val
  el('plus-status').textContent=message;
 }
 function run(){
- try {window.__almLimitValidationRun(el('src').value,false);const c=current(),limit=window._almLastLimit();
+ try {window.__almLimitRun();const c=current(),limit=window._almLastLimit();
   render(AlmLimitPlus.compute(c,limit,+el('plus-alpha').value),c,limit);el('plus-status').textContent='Sensitivity calculations complete. Check the independent validation panel before interpreting results.';
  }catch(e){clear('Refused: '+e.message);}
 }

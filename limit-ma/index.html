@@ -670,7 +670,8 @@
       try { run(); } finally { _validationRun = false; }
     };
 
-    // Sensitivity comparisons share the same strict input contract.
+    // Sensitivity uses the normal run lifecycle, without validation's control lock.
+    window.__almLimitRun = run;
     window.__almLimitParse = parse;
 
     // Expose for results-export
