@@ -104,7 +104,6 @@ test.describe(`${APP} usability`, () => {
   }
 
   test('4 refusal does not leave the previous result on screen', async ({ page }) => {
-    test.fail(true, 'ISSUE: with <3 valid rows run() returns before touching #summary/#body/#forest, so the earlier pooled estimate is still displayed (exports are correctly cleared).');
     await page.goto(PAGE);
     await expect(page.locator('#summary')).toContainText(DEFAULT_POOLED);
     await enter(page, '');

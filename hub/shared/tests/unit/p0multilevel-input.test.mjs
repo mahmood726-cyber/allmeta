@@ -219,3 +219,66 @@ test('review CSV control: quoted decimal fields, exponents, zero and optional la
   assert.equal(h.elements.get('analysis-status').hidden, false);
   assert.match(h.elements.get('forest').innerHTML, /polygon/);
 });
+
+// Replay the failing browser case's own assertions against the real app script.
+// Only Playwright registration and the three DOM operations it uses are adapted;
+// no browser, installed Playwright package, or copied assertion is needed.
+function refusalUsabilityCase(h) {
+  const specUrl = new URL('../multilevel-ma-usability.spec.mjs', import.meta.url);
+  const cases = new Map();
+  let expectedStatus = 'passed';
+  const register = (name, body) => cases.set(name, body);
+  register.describe = Object.assign((_name, body) => body(), { configure() {} });
+  register.fail = condition => { if (condition) expectedStatus = 'failed'; };
+  register.skip = register.fixme = () => assert.fail('the refusal regression must run');
+  const expect = element => ({
+    toContainText(text) {
+      assert.ok(element.innerHTML.includes(text), `expected summary to contain ${text}`);
+    },
+    not: { toContainText(text) {
+      assert.ok(!element.innerHTML.includes(text), `previous result ${text} remains visible`);
+    } },
+  });
+  const code = readFileSync(specUrl, 'utf8')
+    .replace(/^import .*;\r?$/gm, '')
+    .replaceAll('import.meta.url', JSON.stringify(specUrl.href));
+  vm.runInNewContext(code, { test: register, expect, URL }, { filename: specUrl.pathname });
+  const body = cases.get('4 refusal does not leave the previous result on screen');
+  assert.equal(typeof body, 'function', 'the original browser regression must remain registered');
+  const page = {
+    async goto(path) { assert.equal(path, '/multilevel-ma/index.html'); },
+    locator(selector) {
+      const element = h.elements.get(selector.slice(1));
+      assert.ok(element, `missing app element ${selector}`);
+      return {
+        get innerHTML() { return element.innerHTML; },
+        async fill(text) { element.value = text; },
+        async click() { element.handlers.click(); },
+      };
+    },
+  };
+  return { run: () => body({ page }), get expectedStatus() { return expectedStatus; } };
+}
+
+test('CI #259: refusal usability case passes as an ordinary test on the real app', async () => {
+  const h = app();
+  const regression = refusalUsabilityCase(h);
+  await regression.run();
+  assert.equal(regression.expectedStatus, 'passed',
+    'the repaired refusal must not be marked test.fail (Playwright treats its pass as a failure)');
+  for (const id of ['summary', 'body', 'forest']) assert.equal(h.elements.get(id).innerHTML, '');
+  assert.equal(h.context._almLastMlma(), null);
+});
+
+test('CI #259 control: refusal usability assertion rejects a retained previous summary', async () => {
+  const h = app();
+  const summary = h.elements.get('summary');
+  let previous = summary.innerHTML;
+  // Plant the original stale-display defect without modifying production code.
+  Object.defineProperty(summary, 'innerHTML', {
+    get: () => previous,
+    set(value) { if (value !== '') previous = value; },
+  });
+  await assert.rejects(refusalUsabilityCase(h).run(), /previous result .* remains visible/);
+  assert.equal(h.context._almLastMlma(), null, 'the plant affects display, not export invalidation');
+});
