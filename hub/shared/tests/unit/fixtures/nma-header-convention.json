@@ -1,0 +1,166 @@
+{
+  "generator": "nma-header-convention.R",
+  "R": "R version 4.6.0 (2026-04-24 ucrt)",
+  "packages": [
+    {
+      "name": "netmeta",
+      "version": "3.7.0"
+    },
+    {
+      "name": "meta",
+      "version": "8.5.0"
+    },
+    {
+      "name": "jsonlite",
+      "version": "2.0.0"
+    }
+  ],
+  "native_rows": [
+    {
+      "study": "TRIAL1",
+      "treat1": "Placebo",
+      "treat2": "DrugA",
+      "est": -0.22,
+      "se": 0.12
+    },
+    {
+      "study": "TRIAL2",
+      "treat1": "Placebo",
+      "treat2": "DrugA",
+      "est": -0.31,
+      "se": 0.14000000000000001
+    },
+    {
+      "study": "TRIAL3",
+      "treat1": "Placebo",
+      "treat2": "DrugB",
+      "est": -0.14999999999999999,
+      "se": 0.11
+    },
+    {
+      "study": "TRIAL4",
+      "treat1": "Placebo",
+      "treat2": "DrugB",
+      "est": -0.19,
+      "se": 0.10000000000000001
+    },
+    {
+      "study": "TRIAL5",
+      "treat1": "Placebo",
+      "treat2": "DrugC",
+      "est": -0.050000000000000003,
+      "se": 0.13
+    },
+    {
+      "study": "TRIAL6",
+      "treat1": "DrugA",
+      "treat2": "DrugB",
+      "est": 0.080000000000000002,
+      "se": 0.13
+    },
+    {
+      "study": "TRIAL7",
+      "treat1": "DrugA",
+      "treat2": "DrugC",
+      "est": 0.17999999999999999,
+      "se": 0.14999999999999999
+    },
+    {
+      "study": "TRIAL8",
+      "treat1": "DrugB",
+      "treat2": "DrugC",
+      "est": 0.10000000000000001,
+      "se": 0.14000000000000001
+    },
+    {
+      "study": "TRIAL9",
+      "treat1": "DrugA",
+      "treat2": "DrugD",
+      "est": -0.059999999999999998,
+      "se": 0.16
+    },
+    {
+      "study": "TRIAL10",
+      "treat1": "Placebo",
+      "treat2": "DrugD",
+      "est": -0.28000000000000003,
+      "se": 0.13
+    }
+  ],
+  "native_as_netmeta": [
+    {
+      "treatment": "DrugB",
+      "estimate": 0.079885571923466542,
+      "se": 0.078215512945848178,
+      "lower": -0.073414016482722194,
+      "upper": 0.23318516032965528,
+      "p": 0.30708768991728314,
+      "display": "DrugB | 0.080 (-0.073 to 0.233) | 0.3071"
+    },
+    {
+      "treatment": "DrugC",
+      "estimate": 0.18747341046663749,
+      "se": 0.093131160882399658,
+      "lower": 0.0049396892987286778,
+      "upper": 0.37000713163454629,
+      "p": 0.04411419602669675,
+      "display": "DrugC | 0.187 (0.005 to 0.370) | 0.0441"
+    },
+    {
+      "treatment": "DrugD",
+      "estimate": -0.042152675583148114,
+      "se": 0.10893429825187985,
+      "lower": -0.25565997683797714,
+      "upper": 0.17135462567168092,
+      "p": 0.6987894939747985,
+      "display": "DrugD | -0.042 (-0.256 to 0.171) | 0.6988"
+    },
+    {
+      "treatment": "Placebo",
+      "estimate": 0.24962934717641022,
+      "se": 0.068186087980739885,
+      "lower": 0.11598707048748061,
+      "upper": 0.38327162386533986,
+      "p": 0.00025123162147868349,
+      "display": "Placebo | 0.250 (0.116 to 0.383) | 0.0003"
+    }
+  ],
+  "unchanged_rows_under_netmeta_header": [
+    {
+      "treatment": "DrugB",
+      "estimate": -0.079885571923466542,
+      "se": 0.078215512945848178,
+      "lower": -0.23318516032965528,
+      "upper": 0.073414016482722194,
+      "p": 0.30708768991728314,
+      "display": "DrugB | -0.080 (-0.233 to 0.073) | 0.3071"
+    },
+    {
+      "treatment": "DrugC",
+      "estimate": -0.18747341046663749,
+      "se": 0.093131160882399658,
+      "lower": -0.37000713163454629,
+      "upper": -0.0049396892987286778,
+      "p": 0.04411419602669675,
+      "display": "DrugC | -0.187 (-0.370 to -0.005) | 0.0441"
+    },
+    {
+      "treatment": "DrugD",
+      "estimate": 0.042152675583148114,
+      "se": 0.10893429825187985,
+      "lower": -0.17135462567168092,
+      "upper": 0.25565997683797714,
+      "p": 0.6987894939747985,
+      "display": "DrugD | 0.042 (-0.171 to 0.256) | 0.6988"
+    },
+    {
+      "treatment": "Placebo",
+      "estimate": -0.24962934717641022,
+      "se": 0.068186087980739885,
+      "lower": -0.38327162386533986,
+      "upper": -0.11598707048748061,
+      "p": 0.00025123162147868349,
+      "display": "Placebo | -0.250 (-0.383 to -0.116) | 0.0003"
+    }
+  ]
+}
