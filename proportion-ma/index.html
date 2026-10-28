@@ -160,6 +160,7 @@
     Freeman-Tukey: <code>FT = &frac12;(arcsin&radic;(x/(n+1)) + arcsin&radic;((x+1)/(n+1)))</code>, variance <code>1/(4n+2)</code> (Miller 1978). <strong>Caveat (Schwarzer G, Chemaitelly H, Abu-Raddad LJ, Rücker G. <em>Res Synth Methods</em> 2019;10:476-483):</strong> the Freeman-Tukey inverse (back-)transformation has no single well-defined value — it depends on the study size used (here the harmonic mean of n), so the pooled proportion and its back-transformed CI can be seriously misleading and may fall outside [0,1] or invert; prefer logit + boundary-only continuity correction or GLMM (<code>metafor::rma.glmm</code>) for rare-event proportions. Logit: <code>ln(p/(1-p))</code>, variance <code>1/x + 1/(n-x)</code>; the 0.5 continuity correction (giving <code>1/(x+0.5) + 1/(n-x+0.5)</code>, cn=n+1) is added <strong>only</strong> for boundary studies where events = 0 or events = n (Cochrane Handbook §10.4.4 / Sweeting 2004) — never unconditionally, which would bias every study toward 50%. Clopper-Pearson: <code>qbeta(&alpha;/2, x, n-x+1)</code>. R-parity: logit+PM matches <code>metafor::escalc(measure="PLO")</code> + <code>rma(method="PM")</code> to tolerance 1e-6 (see <code>tests/fixtures/prop-tiny.R</code>).
   </footer>
   <script src="../hub/shared/analysis-lifecycle.js"></script>
+  <script src="plus-core.js"></script>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
     var Z975 = 1.959963984540054;
@@ -167,11 +168,11 @@
   (function () {
     'use strict';
 
-    // ---- engine (unchanged from pre-retrofit) ----
+    // ---- engine ----
 
     function parseTable(text) {
-      return text.trim().split(/\n/).map(function (l, i) {
-        var parts = l.split(/,/).map(function (s) { return s.trim(); });
+      return window.AlmPropPlusCore.csvRecords(text.trim()).map(function (record, i) {
+        var parts = record.map(function (s) { return s.trim(); });
         var x = parseInt(parts[0], 10);
         var n = parseInt(parts[1], 10);
         if (!Number.isFinite(x) || !Number.isFinite(n) || n <= 0 || x < 0 || x > n) return null;
@@ -551,12 +552,12 @@
 
     // ---- load CSV rows into textarea ----
     window.__almLoad = function (rows) {
-      var lines = rows.map(function (r) {
+      var records = rows.map(function (r) {
         return [r.events !== undefined ? r.events : (r.x !== undefined ? r.x : ''),
                 r.total  !== undefined ? r.total  : (r.n !== undefined ? r.n : ''),
-                r.label || r.study || ''].join(', ');
+                r.label || r.study || ''];
       });
-      document.getElementById('src').value = lines.join('\n');
+      document.getElementById('src').value = window.AlmPropPlusCore.csvText(records);
       run();
     };
 
@@ -732,7 +733,6 @@
   <section id="alm-validate-plus" aria-label="Validate the extras in R"></section>
 </section>
 <script src="../shared/webr-runner.js"></script>
-<script src="plus-core.js"></script>
 <script src="plus-parity.js"></script>
 <script src="plus-ui.js"></script>
 <script src="validate/plus-pins.js"></script>

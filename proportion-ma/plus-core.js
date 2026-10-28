@@ -1,16 +1,42 @@
-/* Binomial-normal GLMM protocol. Fits are executed by R, never by corpus lookup. */
+/* CSV study records and binomial-normal GLMM protocol. Fits run in R, never by corpus lookup. */
 (function (root) {
   'use strict';
   const fields = ['k','mu','se','tau2','estimate','ciLo','ciHi','piLo','piHi'];
   const reasons = ['insufficient_studies','boundary_unidentifiable','nonfinite_fit','nonconvergence'];
+  // Shared by both analysis paths: label newlines belong to CSV fields, not studies.
+  function csvRecords(text) {
+    const rows = [];
+    let row = [], field = '', quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (quoted) {
+        if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+        else if (c === '"') quoted = false;
+        else field += c;
+      } else {
+        if (c === '"' && field.trim() === '') { field = ''; quoted = true; }
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+        else if (c !== '\r') field += c;
+      }
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  }
+  function csvText(rows) {
+    return rows.map(row => row.map(value => {
+      const field = String(value == null ? '' : value);
+      return /[",\r\n]/.test(field) ? '"' + field.replace(/"/g, '""') + '"' : field;
+    }).join(', ')).join('\n');
+  }
   function validateRows(rows) {
     if (!Array.isArray(rows) || rows.some(r => !Number.isSafeInteger(r.x) || !Number.isSafeInteger(r.n) || r.n <= 0 || r.x < 0 || r.x > r.n)) throw new Error('Invalid binomial counts');
     return rows;
   }
   function parse(text) {
     if (!text.trim()) return [];
-    return validateRows(text.trim().split(/\r?\n/).map((line,i) => {
-      const p = line.split(',').map(s => s.trim());
+    return validateRows(csvRecords(text.trim()).map((record,i) => {
+      const p = record.map(s => s.trim());
       if (p.length < 2 || !/^\d+$/.test(p[0]) || !/^\d+$/.test(p[1])) throw new Error('Invalid counts on row ' + (i+1));
       return {x:Number(p[0]),n:Number(p[1]),label:p.slice(2).join(',') || 'Study '+(i+1)};
     }));
@@ -71,5 +97,5 @@ cat('ALMJSON:{',paste(sprintf('"%s":%s',names(out),vapply(out,encode,'')),collap
     const r = f.status === 'ok' ? {status:f.status,values:Object.fromEntries(fields.map(k=>[k,f[k]]))} : {status:f.status,reason:f.reason};
     return validateResult(r);
   }
-  root.AlmPropPlusCore = {fields,reasons,validateRows,parse,validateResult,flat,format,close,buildScript,decode};
+  root.AlmPropPlusCore = {fields,reasons,csvRecords,csvText,validateRows,parse,validateResult,flat,format,close,buildScript,decode};
 })(globalThis);
