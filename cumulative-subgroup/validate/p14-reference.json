@@ -2,7 +2,7 @@
   "schema": "cumsub-p14-reference-v1",
   "versions": {
     "R": "R version 4.6.0 (2026-04-24 ucrt)",
-    "metafor": "5.0.1",
+    "metafor": "5.2.1",
     "jsonlite": "2.0.0"
   },
   "fixture_md5": "87d0c36f115fd9943544b7dcd220922c",
