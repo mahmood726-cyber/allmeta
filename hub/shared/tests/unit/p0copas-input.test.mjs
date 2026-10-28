@@ -4,8 +4,9 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const root = new URL('../../../../', import.meta.url);
 const html = fs.readFileSync(new URL('copas/index.html', root), 'utf8');
+const sample = html.match(/<textarea\b[^>]*id="src"[^>]*>([\s\S]*?)<\/textarea>/)[1].replace(/\r\n/g, '\n');
 const valid = '0.2, 0.1, A\n0.3, 0.2, B\n0.4, 0.3, C';
-function harness({ adjusted = NaN, dropped = 0 } = {}) {
+function harness({ adjusted = NaN, dropped = 0, realEngine = false } = {}) {
   const elements = new Map(), timers = new Map();
   let timerId = 0, calls = 0;
   function el(id) {
@@ -16,26 +17,31 @@ function harness({ adjusted = NaN, dropped = 0 } = {}) {
     return elements.get(id);
   }
   for (const [id, value] of Object.entries({ src: valid, 'opt-ngrid': '10', 'opt-tau': 'REML', 'opt-signrsb': '0.1', 'opt-level': '0.95' })) el(id).value = value;
+  el('src').defaultValue = sample;
   const document = { readyState: 'complete', getElementById: id => id === 'share-data-note' ? null : el(id), querySelector: s => el(s.slice(1)), createElement: () => el('created') };
   const context = vm.createContext({ document, console, Event: class { constructor(type) { this.type = type; } },
     setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); } });
   context.window = context;
   for (const file of ['shared/copas-core.js', 'shared/canonical-datasets.js', 'shared/hero-examples.js', 'hub/shared/csv-upload.js']) vm.runInContext(fs.readFileSync(new URL(file, root), 'utf8'), context);
   const csvParse = context.alm.csvUpload.parse;
-  context.AlmMaCore = { pool: () => ({ mu: .3, se: .1, tau2: 0 }) };
-  context.AlmCopasCore.copas = input => {
+  if (realEngine) {
+    vm.runInContext(fs.readFileSync(new URL('shared/ma-core.js', root), 'utf8'), context);
+  } else {
+    context.AlmMaCore = { pool: () => ({ mu: .3, se: .1, tau2: 0 }) };
+    context.AlmCopasCore.copas = input => {
     calls++;
     return { ...input, k: input.TE.length, dropped, TE_adjust: adjusted, seTE_adjust: .1, lower_adjust: .1, upper_adjust: .5,
       publprob: [1, .5], TE_slope: [.3, .2], seTE_slope: [.1, .1], lower_slope: [.1, 0], upper_slope: [.5, .4],
       rho_slope: [0, .5], tau_slope: [0, 0], pval_rsb: [.01, .01], N_unpubl: [0, 2], sel_adj: Number.isFinite(adjusted) ? 2 : null,
       n_orthogonal_points: 2, slope: 1 };
-  };
+    };
+  }
   const urlState = Object.assign(() => {}, { read: () => ({}), write: () => true, isSuspended: () => false });
   context.alm = { urlState };
   for (const name of ['csvUpload', 'chartDownload', 'axisControls', 'resultsExport', 'resetUndo', 'tooltips']) context.alm[name] = opts => { context[name + 'Options'] = opts; };
   context.alm.csvUpload.parse = csvParse;
   for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) vm.runInContext(block[1], context);
-  context.__almCopasProfileMLE = () => ({ TE: .2, seTE: .1, rho: .5, tau: 0 });
+  if (!realEngine) context.__almCopasProfileMLE = () => ({ TE: .2, seTE: .1, rho: .5, tau: 0 });
   function flush() { let guard = 0; while (timers.size) { assert.ok(++guard < 20); const pending = [...timers.values()]; timers.clear(); pending.forEach(fn => fn()); } }
   flush();
   return { context, el, flush, get calls() { return calls; },
@@ -229,4 +235,66 @@ test('review-270 control: restoring ordinary text does not inherit unrelated upl
   assert.equal(h.context._almLastCopas().dropped_rows, 0);
   h.context.resetUndoOptions.restore({ src: valid + '\ninvalid' }); h.flush();
   assert.equal(h.context._almLastCopas().dropped_rows, 1);
+});
+
+test('ci-270: the catalogue Load Sample action has a visible button on Copas', () => {
+  // tests/playwright/catalog-svg-plots.spec.mjs clicks this before #btn-run
+  // at both viewport widths. The benchmark selector is a separate control.
+  assert.match(html, /<button\b[^>]*id="btn-sample"[^>]*>Load Sample<\/button>/);
+});
+
+test('ci-270: Load Sample replaces uploaded input, cancels pending fits and preserves Undo', () => {
+  const h = harness();
+  h.csv('yi,sei\n.2,.1\n.3,.2\n.4,.3\noops,.2'); h.flush();
+  assert.equal(h.context._almLastCopas().dropped_rows, 1);
+  const uploaded = h.context.resetUndoOptions.snapshot();
+  const snapshots = [];
+  h.context.alm.resetUndo.snapshot = () => { snapshots.push(h.context.resetUndoOptions.snapshot()); };
+  h.el('btn-run').dispatchEvent({ type: 'click' });
+  const calls = h.calls;
+  h.el('btn-sample').dispatchEvent({ type: 'click' });
+  // Retain the sample action's snapshot even when the later Fit takes another.
+  const saved = snapshots[1];
+  assert.equal(h.el('src').value, sample);
+  assert.deepEqual(saved, uploaded);
+  assert.equal(h.context._almLastCopas(), null);
+  for (const id of ['summary', 'body', 'plot']) assert.equal(h.el(id).innerHTML, '');
+  assert.equal(h.context.chartDownloadOptions.getReceiptInput(), null);
+  h.flush();
+  assert.equal(h.calls, calls, 'loading sample must cancel the previous pending fit');
+  h.run();
+  assert.deepEqual(Array.from(h.context._almLastCopas().rows, r => [r.te, r.se]),
+    sample.trim().split('\n').map(line => line.split(',').map(Number)));
+  assert.equal(h.context._almLastCopas().dropped_rows, 0);
+  assert.match(h.el('plot').innerHTML, /<path\b/);
+  assert.match(h.el('plot').innerHTML, /<circle\b/);
+  h.context.resetUndoOptions.restore(saved); h.flush();
+  assert.equal(h.el('src').value, uploaded.src);
+  assert.equal(h.context._almLastCopas().dropped_rows, 1);
+});
+
+test('ci-270 control: fitting edited input does not replace it with the sample', () => {
+  const h = harness();
+  const edited = '-.2, .1\n-.3, .2\n-.4, .3\n-.5, .4';
+  h.edit(edited); h.run();
+  assert.equal(h.el('src').value, edited);
+  assert.equal(h.context._almLastCopas().k, 4);
+  assert.equal(h.context._almLastCopas().rows[0].te, -.2);
+  assert.equal(h.context._almLastCopas().dropped_rows, 0);
+});
+
+test('ci-270: Load Sample then Fit renders finite SVG marks with the real engines', () => {
+  const h = harness({ realEngine: true });
+  h.el('btn-sample').dispatchEvent({ type: 'click' });
+  assert.equal(h.el('src').value, sample);
+  // Match the page default used by the catalogue browser spec.
+  h.el('opt-ngrid').value = '20';
+  h.run();
+  const result = h.context._almLastCopas();
+  assert.ok(result, h.el('summary').innerHTML);
+  assert.equal(result.k, sample.trim().split('\n').length);
+  assert.equal(result.dropped_rows, 0);
+  assert.match(h.el('plot').innerHTML, /<path\b/);
+  assert.match(h.el('plot').innerHTML, /<circle\b/);
+  assert.doesNotMatch(h.el('plot').innerHTML, /NaN|Infinity/);
 });

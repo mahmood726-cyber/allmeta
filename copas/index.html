@@ -105,6 +105,7 @@
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
       </label>
+      <button type="button" id="btn-sample">Load Sample</button>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 0.6rem;margin:0.5rem 0">
         <label><span>Contour grid (<code>ngrid</code>)</span>
           <select id="opt-ngrid">
@@ -774,6 +775,15 @@
     window._almLastCopas = function () { return _lastResults; };
 
     // ---- module init ----
+
+    document.getElementById('btn-sample').addEventListener('click', function () {
+      if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
+        window.alm.resetUndo.snapshot();
+      }
+      var src = document.getElementById('src');
+      src.value = src.defaultValue;
+      src.dispatchEvent(new Event('input', { bubbles: true }));
+    });
 
     document.getElementById('btn-run').addEventListener('click', function () {
       if (window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot) {
