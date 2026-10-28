@@ -1,0 +1,422 @@
+[
+ {
+  "tool": "screen",
+  "review": "van_de_Schoot_2025",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "van_de_Schoot_2025",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "de_Matteis_2024b",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "de_Matteis_2024b",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Hilfiker_2017",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Hilfiker_2017",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Mohamed_2023",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Mohamed_2023",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Chueca_2023",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Chueca_2023",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Bindoli_2024a",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Bindoli_2024a",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Theobald_2021",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Theobald_2021",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Pijls_2018",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Pijls_2018",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Ramiro_2015",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Ramiro_2015",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Greca_2023",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "screen",
+  "review": "Greca_2023",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "van_de_Schoot_2025",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "van_de_Schoot_2025",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "de_Matteis_2024b",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "de_Matteis_2024b",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Hilfiker_2017",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Hilfiker_2017",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Mohamed_2023",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Mohamed_2023",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Chueca_2023",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Chueca_2023",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Bindoli_2024a",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Bindoli_2024a",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Theobald_2021",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Theobald_2021",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Pijls_2018",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Pijls_2018",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Ramiro_2015",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Ramiro_2015",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Greca_2023",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u4",
+  "review": "Greca_2023",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "van_de_Schoot_2025",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "van_de_Schoot_2025",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "de_Matteis_2024b",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "de_Matteis_2024b",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Hilfiker_2017",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Hilfiker_2017",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Mohamed_2023",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Mohamed_2023",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Chueca_2023",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Chueca_2023",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Bindoli_2024a",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Bindoli_2024a",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Theobald_2021",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Theobald_2021",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Pijls_2018",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Pijls_2018",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Ramiro_2015",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Ramiro_2015",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Greca_2023",
+  "seed": "101",
+  "status": "identical",
+  "first_diff": null
+ },
+ {
+  "tool": "asreview/elas_u3",
+  "review": "Greca_2023",
+  "seed": "606",
+  "status": "identical",
+  "first_diff": null
+ }
+]

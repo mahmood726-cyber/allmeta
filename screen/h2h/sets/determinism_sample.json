@@ -1,0 +1,19 @@
+{
+ "reviews": [
+  "van_de_Schoot_2025",
+  "de_Matteis_2024b",
+  "Hilfiker_2017",
+  "Mohamed_2023",
+  "Chueca_2023",
+  "Bindoli_2024a",
+  "Theobald_2021",
+  "Pijls_2018",
+  "Ramiro_2015",
+  "Greca_2023"
+ ],
+ "seeds": [
+  101,
+  606
+ ],
+ "rule": "first 10 PRIMARY reviews by sha256(review key); both tools rerun on desktop-iljmsi3; compare full screening orders with =="
+}
