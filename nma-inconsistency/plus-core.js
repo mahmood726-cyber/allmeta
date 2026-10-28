@@ -33,12 +33,13 @@
   function fitAll(E, rows, model) {
     const issue = E.inputIssue(rows);
     if (issue) return { status: 'refused', reason: issue };
-    let tau2;
-    try { tau2 = E.estimateTau2(rows, model); E.fitNMA(rows, undefined, tau2); }
+    try {
+      const tau2 = E.estimateTau2(rows, model); E.fitNMA(rows, undefined, tau2);
+      const ns = E.nodeSplit(rows, undefined, tau2), g = E.dbt(rows, tau2);
+      return normalizeFit({ status: 'ok', model, tau2, k: rows.length,
+        trts: [...new Set(rows.flatMap(r => [r.A, r.B]))].sort(), nodeSplit: ns, dbt: g });
+    }
     catch (_) { return { status: 'refused', reason: SINGULAR }; }
-    const ns = E.nodeSplit(rows, undefined, tau2), g = E.dbt(rows, tau2);
-    return normalizeFit({ status: 'ok', model, tau2, k: rows.length,
-      trts: [...new Set(rows.flatMap(r => [r.A, r.B]))].sort(), nodeSplit: ns, dbt: g });
   }
   // Canonical fit shape shared by app fits and R reference fits: splits in code-unit
   // order of their label, unavailable p as null.
