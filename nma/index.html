@@ -114,7 +114,7 @@
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
-            <span class="hint">Each row is one pairwise contrast. Effect is <code>treatment2 − treatment1</code> on the analysis scale (e.g. log OR). A multi-arm study needs a row for every pair of its arms.</span>
+            <span class="hint">Each row is one pairwise contrast. Effect is <code>treatment2 − treatment1</code> on the analysis scale (e.g. log OR). With the header <code>studlab, treat1, treat2, TE, seTE</code>, netmeta's opposite TE direction is converted automatically. A multi-arm study needs a row for every pair of its arms.</span>
 
           <label>
             <span class="lbl">Example data (datasets shipped with the R package netmeta)</span>
@@ -169,6 +169,7 @@
               <option value="log" selected>On the analysis scale, as entered</option>
               <option value="exp">Exponentiated (OR, RR, HR, IRR)</option>
             </select>
+            <span class="hint">Exponentiation changes the display only. For ratios, enter log effects and SEs on the log scale.</span>
           </label>
           <label>
             <span class="lbl">Plot title</span>
@@ -278,7 +279,7 @@
       const rows=[], warnings=[];
       const numberToken = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
       const lines = String(text||"").split(/\r?\n/);
-      let first = true;
+      let first = true, netmetaHeader = false;
       for (let i=0;i<lines.length;i++) {
         const raw = lines[i].trim();
         if (!raw || raw.startsWith("#")) continue;
@@ -294,7 +295,10 @@
         const isHeader = first && header && header.length === 5 &&
           HEADER_NAMES.every((pattern, j) => pattern.test(header[j]));
         first = false;
-        if (isHeader) continue;
+        if (isHeader) {
+          netmetaHeader = header.join(",") === "studlab,treat1,treat2,te,sete";
+          continue;
+        }
         const where = "Row " + (i+1) + (parts && parts[0] ? ' (study "' + parts[0] + '")' : "");
         if (!parts) { warnings.push(where + ": invalid CSV quoting in study, treatment or numeric field."); continue; }
         if (parts.length !== 5) {
@@ -307,13 +311,14 @@
         const bad = ["estimate", "SE"].filter((field, j) =>
           !numberToken.test(parts[j+3]) || !Number.isFinite(Number(parts[j+3])));
         if (bad.length) { warnings.push(where + ": " + bad.join(", ") + " must be a finite number (complete numeric token required)."); continue; }
-        const est = Number(parts[3]), se = Number(parts[4]);
+        // netmeta TE = treat1 - treat2; this app and its engine use t2 - t1.
+        const est = (netmetaHeader ? -1 : 1) * Number(parts[3]), se = Number(parts[4]);
         if (se <= 0) { warnings.push(where + ": SE must be greater than 0."); continue; }
         if (t1 === t2) { warnings.push(where + ": treatment2 must differ from treatment1."); continue; }
         rows.push({ study, t1, t2, est, se, v: se*se });
       }
       // Never expose a reduced network to any caller.
-      return { rows: warnings.length ? [] : rows, warnings };
+      return { rows: warnings.length ? [] : rows, warnings, netmetaHeader };
     }
 
     function clearResults() {
@@ -572,6 +577,14 @@
       const refTreat = document.getElementById("f-ref").value || treatments[0] || "";
 
       const extras = [...parsed.warnings];
+      if (parsed.netmetaHeader) extras.push("Detected netmeta header: TE (treat1 − treat2) was sign-reversed to treatment2 − treatment1; SEs are unchanged.");
+      // Advisory heuristic only: entered effects all within a factor of four of 1.
+      // Inspect the original values, before any netmeta direction conversion.
+      const ratioLike = rows.every(r => {
+        const entered = parsed.netmetaHeader ? -r.est : r.est;
+        return entered >= 0.25 && entered <= 4;
+      });
+      if (state.scale === "exp" && ratioLike) extras.push("Check the input scale: all entered effects are positive and ratio-like (0.25 to 4). Exponentiation changes the display only; positive log effects can be valid. If these are raw ORs, RRs, HRs or IRRs, replace each estimate with ln(ratio) and supply its SE on the log scale before rerunning. Inputs have not been log-transformed.");
       let connected = true;
       if (treatments.length >= 2) connected = isConnected(treatments, rows);
       if (!connected) extras.push("Network is DISCONNECTED — NMA cannot run. Check that every treatment is linked via at least one path of direct comparisons.");
@@ -603,7 +616,9 @@
           // heterogeneity and inconsistency
           const h = ["<table class=\"het\"><tbody>"];
           h.push("<tr><th scope=\"row\">τ² (DerSimonian–Laird), τ</th><td>" + (a.tau2 === null ? "not estimable" : fmt(a.tau2, 4) + ", " + fmt(a.tau, 4)) + "</td></tr>");
-          h.push("<tr><th scope=\"row\">I² (95% CI)</th><td>" + (a.I2 === null ? "not estimable" : fmt(100 * a.I2, 1) + "% (" + fmt(100 * a.lowerI2, 1) + "% to " + fmt(100 * a.upperI2, 1) + "%)") + "</td></tr>");
+          const i2Interval = Number.isFinite(a.lowerI2) && Number.isFinite(a.upperI2)
+            ? fmt(100 * a.lowerI2, 1) + "% to " + fmt(100 * a.upperI2, 1) + "%" : "95% CI not estimable";
+          h.push("<tr><th scope=\"row\">I² (95% CI)</th><td>" + (!Number.isFinite(a.I2) ? "not estimable" : fmt(100 * a.I2, 1) + "% (" + i2Interval + ")") + "</td></tr>");
           const qrow = (lab, q, d, p) => "<tr><th scope=\"row\">" + lab + "</th><td>Q = " + fmt(q, 2) + ", df = " + d + ", p " + (p === null ? "--" : (p < 0.0001 ? "< 0.0001" : "= " + fmt(p, 4))) + "</td></tr>";
           h.push(qrow("Total", a.Q, a.df, a.pvalQ));
           if (a.decomp) { h.push(qrow("Within designs (heterogeneity)", a.decomp.Q[1], a.decomp.df[1], a.decomp.pval[1])); h.push(qrow("Between designs (inconsistency)", a.decomp.Q[2], a.decomp.df[2], a.decomp.pval[2])); }
@@ -812,7 +827,7 @@
       const ref = refTreat || a.treatments[0], r = a.treatments.indexOf(ref);
       const pack = (L, tau2) => ({ tau2, est: Object.fromEntries(a.treatments.map((t, i) => [t, { d: L.TE[i][r], se: L.seTE[i][r] }])) });
       const named = (v) => Object.fromEntries(a.treatments.map((t, i) => [t, v[i]]));
-      return { treatments: a.treatments, ref, fe: pack(a.common, 0), re: pack(a.random, a.tau2 === null ? 0 : a.tau2),
+      return { rows, treatments: a.treatments, ref, fe: pack(a.common, 0), re: pack(a.random, a.tau2 === null ? 0 : a.tau2),
         pscore: { desirable: { fe: named(a.pscore.common), re: named(a.pscore.random) }, undesirable: { fe: named(b.pscore.common), re: named(b.pscore.random) } },
         analysis: a };
     };
