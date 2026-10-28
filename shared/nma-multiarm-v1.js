@@ -38,12 +38,16 @@
   }
   function transpose(A) { var m = A.length, n = A[0].length, B = zeros(n, m); for (var i = 0; i < m; i++) for (var j = 0; j < n; j++) B[j][i] = A[i][j]; return B; }
   function invert(A) {
-    var n = A.length, M = zeros(n, 2 * n), i, j, r;
-    for (i = 0; i < n; i++) { for (j = 0; j < n; j++) M[i][j] = A[i][j]; M[i][n + i] = 1; }
+    var n = A.length, M = zeros(n, 2 * n), scale = 0, i, j, r;
+    for (i = 0; i < n; i++) { for (j = 0; j < n; j++) { M[i][j] = A[i][j]; scale = Math.max(scale, Math.abs(A[i][j])); } M[i][n + i] = 1; }
     for (i = 0; i < n; i++) {
       var pivot = M[i][i], pr = i;
       for (r = i + 1; r < n; r++) if (Math.abs(M[r][i]) > Math.abs(pivot)) { pivot = M[r][i]; pr = r; }
-      if (Math.abs(pivot) < 1e-13) return null;
+      // Covariance and information matrices scale oppositely with outcome units.
+      // Check numerical rank relative to the input scale; a zero matrix also
+      // fails this comparison. Keep elimination arithmetic unchanged for fits
+      // that already passed, including the published validation corpus.
+      if (!(Math.abs(pivot) / scale >= 1e-13)) return null;
       if (pr !== i) { var tmp = M[i]; M[i] = M[pr]; M[pr] = tmp; }
       var inv = 1 / M[i][i];
       for (j = 0; j < 2 * n; j++) M[i][j] *= inv;
