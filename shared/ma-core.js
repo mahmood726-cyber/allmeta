@@ -46,11 +46,30 @@
   // Paule-Mandel: root of generalised Q(τ²) = k-1 (monotone decreasing).
   function tau2PM(yi, vi) {
     var k = yi.length, df = k - 1; if (df < 1) return 0;
-    if (_wsums(yi, vi, 0).Q <= df) return 0;
-    var lo = 0, hi = 1, guard = 0;
-    while (_wsums(yi, vi, hi).Q > df && guard++ < 200) { hi *= 2; if (hi > 1e9) break; }
-    for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_wsums(yi, vi, m).Q > df) lo = m; else hi = m; }
-    return (lo + hi) / 2;
+    var q0 = _wsums(yi, vi, 0).Q;
+    if (q0 <= df) return 0;
+    // Start in the input's variance units, including for very small roots.
+    // Keep the previous endpoint so growth leaves a tight lower bracket.
+    var lo = 0, hi = vi[0];
+    for (var j = 1; j < k; j++) hi = Math.min(hi, vi[j]);
+    if (!(q0 > df) || !(hi > 0) || !isFinite(hi))
+      throw new RangeError("PM could not establish a finite Q bracket");
+    var qHi = _wsums(yi, vi, hi).Q;
+    while (qHi > df && hi < Number.MAX_VALUE) {
+      lo = hi; hi = Math.min(hi * 2, Number.MAX_VALUE);
+      qHi = _wsums(yi, vi, hi).Q;
+    }
+    // A search limit or NaN is not a root; never silently return an endpoint.
+    if (!isFinite(qHi) || !(qHi <= df))
+      throw new RangeError("PM could not establish a finite Q bracket");
+    for (var i = 0; i < 200; i++) {
+      var m = lo + (hi - lo) / 2;
+      if (m === lo || m === hi) break;
+      var q = _wsums(yi, vi, m).Q;
+      if (isNaN(q)) throw new RangeError("PM could not resolve the Q bracket");
+      if (q > df) lo = m; else hi = m;
+    }
+    return lo + (hi - lo) / 2;
   }
 
   // (Restricted) profile log-likelihood of τ² for the normal-normal RE model,
