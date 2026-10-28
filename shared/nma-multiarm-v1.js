@@ -574,7 +574,7 @@
     var tDist = opts.randomCi === "t-dist" && df > 0, desirable = opts.smallValues !== "undesirable";
     var tq = tDist ? qtUpper(0.025, df) : Z975, tau2 = df > 0 ? re.tau2 : null;
     function league(f, isRandom) {
-      var ix = {}; f.nonref.forEach(function (t, k) { ix[t] = k; });
+      var ix = Object.create(null); f.nonref.forEach(function (t, k) { ix[t] = k; });
       var M = function () { return tr.map(function () { return new Array(n).fill(null); }); };
       var o = { TE: M(), seTE: M(), lower: M(), upper: M(), pval: M() };
       for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) {

@@ -558,6 +558,15 @@
     render = window.alm.analysisLifecycle(render, function (result) { return !!_lastAnalysis; }, "[id^=\"f-\"]");
 
     function render() {
+      try {
+        return renderResults();
+      } catch (error) {
+        clearResults();
+        showWarnings(["Analysis could not be completed: " + ((error && error.message) || String(error))]);
+      }
+    }
+
+    function renderResults() {
       const state = readState();
       const parsed = parseContrasts(state.data);
       const rows = parsed.rows;
