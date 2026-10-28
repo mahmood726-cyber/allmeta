@@ -305,7 +305,13 @@
 
     function run() {
       var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3) { _lastResults = null; _lastReml = null; return; }
+      if (rows.length < 3) {
+        _lastResults = null; _lastReml = null;
+        document.getElementById('summary').textContent = 'Analysis refused: enter at least 3 valid effect-size rows.';
+        document.getElementById('body').innerHTML = '';
+        document.getElementById('forest').innerHTML = '';
+        return;
+      }
       var f = fit(rows);
 
       var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };
