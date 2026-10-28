@@ -338,7 +338,9 @@
         }
       }
       if (rows.length < 2) {
-        document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Need at least 2 studies.</td></tr>';
+        document.getElementById('res-body').innerHTML = '<tr><td colspan="5"><span role="status" aria-live="polite">Need at least 2 studies.</span></td></tr>';
+        document.getElementById('forest').innerHTML = '';
+        document.getElementById('het').innerHTML = '';
         _lastResults = null; // do not leave a stale result exportable
         return;
       }
@@ -608,7 +610,7 @@
     window.alm.plotExport({
       target: '#alm-plot-mount',
       basename: 'propma-forest',
-      plots: [{ id: 'forest', name: 'Forest plot', getSvg: function () { return document.getElementById('forest'); } }],
+      plots: [{ id: 'forest', name: 'Forest plot', getSvg: function () { return _lastResults ? document.getElementById('forest') : null; } }],
       getReceiptInput: function () {
         if (!_lastResults) return null;
         return {
