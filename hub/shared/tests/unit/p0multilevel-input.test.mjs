@@ -219,3 +219,60 @@ test('review CSV control: quoted decimal fields, exponents, zero and optional la
   assert.equal(h.elements.get('analysis-status').hidden, false);
   assert.match(h.elements.get('forest').innerHTML, /polygon/);
 });
+
+// Replay the existing browser regression with its assertions and annotations.
+// Only the page adapter is stubbed; Run uses the real app harness above.
+async function refusalWalkthrough({ staleSummary = false } = {}) {
+  const name = '4 refusal does not leave the previous result on screen';
+  const source = readFileSync(new URL('hub/shared/tests/multilevel-ma-usability.spec.mjs', root), 'utf8');
+  const cases = new Map();
+  let expectedFailure = false;
+  const register = (title, body) => cases.set(title, body);
+  register.describe = (_title, body) => body();
+  register.describe.configure = () => {};
+  register.fail = condition => { expectedFailure = Boolean(condition); };
+  const expect = locator => ({
+    async toContainText(text) { assert.ok(locator.text().includes(text), `expected summary to contain ${text}`); },
+    not: {
+      async toContainText(text) { assert.ok(!locator.text().includes(text), `stale summary still contains ${text}`); },
+    },
+  });
+  vm.runInNewContext(source.replace(/^import .*;\r?\n/gm, '')
+    .replaceAll('import.meta.url', JSON.stringify(new URL('hub/shared/tests/multilevel-ma-usability.spec.mjs', root).href)),
+  { test: register, expect, URL }, { filename: 'multilevel-ma-usability.spec.mjs' });
+  assert.ok(cases.has(name), 'the existing browser refusal regression must be registered');
+  let h;
+  const page = {
+    async goto(path) {
+      assert.equal(path, '/multilevel-ma/index.html');
+      h = app();
+    },
+    locator(selector) {
+      assert.ok(h, 'the app must be loaded first');
+      const element = h.elements.get(selector.slice(1));
+      assert.ok(element, `missing element ${selector}`);
+      return {
+        text: () => element.innerHTML.replace(/<[^>]*>/g, ''),
+        async fill(value) { assert.equal(selector, '#src'); element.value = value; },
+        async click() {
+          assert.equal(selector, '#btn-run');
+          const previous = h.elements.get('summary').innerHTML;
+          element.handlers.click();
+          // Plant the historical stale-output defect only in the control.
+          if (staleSummary) h.elements.get('summary').innerHTML = previous;
+        },
+      };
+    },
+  };
+  await cases.get(name)({ page });
+  return expectedFailure;
+}
+
+test('CI #259: refusal walkthrough is required to pass', async () => {
+  assert.equal(await refusalWalkthrough(), false,
+    'the passing refusal regression must not be marked as an expected failure');
+});
+
+test('CI #259 control: refusal walkthrough rejects a planted stale summary', async () => {
+  await assert.rejects(refusalWalkthrough({ staleSummary: true }), /stale summary still contains/);
+});
