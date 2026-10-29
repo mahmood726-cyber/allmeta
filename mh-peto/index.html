@@ -280,6 +280,12 @@ StudyE, 4, 600, 10, 600</textarea>
     var COUNT_RE = /^\d+$/;
     function isCount(s) { return COUNT_RE.test(s); }
     function looksNumeric(s) { return s !== '' && Number.isFinite(Number(s)); }
+    function isHeader(fields) {
+      var f = fields.map(function (s) { return s.toLowerCase(); });
+      if (f.length === 5 && f[0] === 'study') f = f.slice(1);
+      else if (f.length === 5 && (f[4] === 'label' || f[4] === 'study')) f = f.slice(0, 4);
+      return f.length === 4 && f[0] === 'e1' && f[1] === 'n1' && f[2] === 'e2' && f[3] === 'n2';
+    }
     function parseInput(text) {
       var lines = String(text).replace(/\r\n?/g, '\n').split('\n');
       var rows = [], errors = [], notes = [], seenData = false;
@@ -289,8 +295,8 @@ StudyE, 4, 600, 10, 600</textarea>
         var sp = splitFields(raw);
         if (sp.error) { errors.push({ line: lineNo, text: raw, message: 'line ' + sp.error + '.' }); seenData = true; continue; }
         var f = sp.fields;
-        // A header row (first data line, no numeric count fields) is ignored and reported.
-        if (!seenData && f.length >= 4 && f.slice(1, 5).every(function (s) { return !looksNumeric(s); }) && !looksNumeric(f[0])) {
+        // Only an explicit supported header on the first nonblank line is ignored and reported.
+        if (!seenData && isHeader(f)) {
           seenData = true; notes.push('Line ' + lineNo + ' looks like a header row and was ignored.'); continue;
         }
         seenData = true;
