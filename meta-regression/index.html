@@ -821,6 +821,7 @@
       var r2      = window._almLastR2      ? window._almLastR2()      : 0;
       var qeObj   = window._almLastQE      ? window._almLastQE()      : null;
       var out = { _schema: 'meta-regression-results-v1', k: studies.length };
+      if (window.AlmBuildInfo) out.producedBy = Object.assign({}, window.AlmBuildInfo);
       if (fitted && fitted.fit && hk) {
         var f = fitted.fit;
         var df = hk.df;
