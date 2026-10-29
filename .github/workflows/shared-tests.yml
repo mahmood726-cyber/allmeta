@@ -31,6 +31,21 @@ jobs:
         with:
           python-version: "3.12"
       - run: npm ci
+      # The Playwright testMatch excludes Node *.test.mjs; run the exact
+      # production extraction-import refusal/control suite as a CI gate.
+      - name: Native Node extraction-bus refusal regressions
+        run: node --test unit/p04-r8-extraction-import.test.mjs
+      # P19 complete-data import and malformed-bus refusal are Node tests, not Playwright *.spec.mjs.
+      - name: Native Node component-NMA import refusal and positive controls
+        run: node --test unit/p19-r3-bus-completeness.test.mjs unit/p19-r4-bus-import.test.mjs
+      # P19 scaling invariance, refusal and pinned stored metafor comparisons.
+      # This executes Node *.test.mjs not selected by Playwright *.spec.mjs.
+      - name: Native Node component-NMA DL scale regression
+        run: node --test unit/p19-scale-defect.test.mjs
+      # P17 sensitivity JSON must carry accepted studies for independent replay.
+      # Explicit Node gate: Playwright excludes *.test.mjs.
+      - name: Native Node correlation-MA sensitivity export replay
+        run: node --test unit/p17-sensitivity-export.test.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --reporter=line,json
         env:
