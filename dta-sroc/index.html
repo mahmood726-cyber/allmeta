@@ -295,9 +295,14 @@
         };
       });
       const b = a.bivar, mr = a.metareg;
+      const build = window.AlmBuildInfo || {};
       return {
         _schema: "dta-sroc-results-v2",
         _savedAt: new Date().toISOString(),
+        _build: {
+          version: build.version || null,
+          sha: build.sha || null,
+        },
         k: a.studies.length,
         correction_control: a.opts.correctionControl,
         alpha: a.moses ? +a.moses.A1.toFixed(8) : null,
