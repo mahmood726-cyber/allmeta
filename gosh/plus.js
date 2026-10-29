@@ -87,8 +87,8 @@
     table();draw();return state;
   }
   function capture(text,model,draws) {
-    const input=text===undefined?el('src').value:text, lines=input.trim().split(/\n/);
-    if(lines.length<3||lines.length>100||lines.some(l=>{const v=l.split(',');return v.length<2||!v[0].trim()||!v[1].trim()||!Number.isFinite(Number(v[0]))||!Number.isFinite(Number(v[1]))||Number(v[1])<=0;}))throw Error('Need 3 through 100 valid effect rows; invalid lines refused');
+    const input=text===undefined?el('src').value:text;
+    // Use the main analysis's parsed studies and validation result, including headers and blank lines.
     if(document.querySelector('#alm-axis-mount [data-error]')?.textContent)throw Error('Correct invalid axis limits before validating');
     const snap=__almGoshValidationSnapshot();let a;
     try {alm.urlState.withoutWrites(()=>{a=__almGoshValidationRun(input,model,draws);});}
