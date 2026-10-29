@@ -151,6 +151,10 @@
         r: r_pool, r_lo: r_lo, r_hi: r_hi, r_pi_lo: r_piLo, r_pi_hi: r_piHi,
         studies: rows.map(function (s) { return { label: s.label, r: s.r, n: s.n }; }),
       };
+      var build = window.AlmBuildInfo;
+      if (build) {
+        _last.producedBy = { version: build.version, sha: build.sha };
+      }
     }
 
     function forest(rows, pool) {
