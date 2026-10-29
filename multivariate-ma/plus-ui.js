@@ -55,7 +55,9 @@
   function niceTicks(lo, hi, n) {
     var span = hi - lo || 1, raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), st = [1, 2, 5, 10].map(function (m) { return m * mag; }).find(function (s) { return s >= raw; });
     var out = []; for (var v = Math.ceil(lo / st) * st; v <= hi + st * 1e-9; v += st) out.push(Math.abs(v) < st * 1e-9 ? 0 : v);
-    var d = Math.max(0, -Math.floor(Math.log10(st) + 1e-9)); return out.map(function (x) { return { v: x, label: x.toFixed(d) }; });
+    // Match the joint plot's fallback beyond toFixed's 100-place limit.
+    var d = Math.max(0, -Math.floor(Math.log10(st) + 1e-9));
+    return out.map(function (x) { return { v: x, label: d > 100 ? (x === 0 ? '0' : x.toExponential(2)) : x.toFixed(d) }; });
   }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#39;'); }
   function sweepSVG(parsed, sw) {
