@@ -1244,6 +1244,19 @@ StudyE, 4, 600, 10, 600</textarea>
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'mhpeto-results',
+      // Describe the completed analysis, even if the selector has since changed.
+      get description() {
+        var measure = _lastResults ? _lastResults.measure : 'OR';
+        return 'Fixed-effect Mantel-Haenszel pooling of the ' + MEASURE_NAME[measure] +
+          (measure === 'OR' ? ', with Peto one-step odds ratio pooling.' : '.');
+      },
+      methods: function () {
+        var measure = _lastResults ? _lastResults.measure : 'OR';
+        if (measure === 'RD') return 'The pooled Mantel-Haenszel risk difference uses Greenland-Robins variance and no continuity correction.';
+        if (measure === 'RR') return 'The pooled Mantel-Haenszel risk ratio uses the log-scale MH variance and no continuity correction.';
+        return 'MH OR uses Robins-Breslow-Greenland variance. Peto OR is exp(sum(O-E) / sum(V)). ' +
+          'Both pooled estimates use no continuity correction; Peto requires roughly balanced arms.';
+      },
       getResults: function () { return window._almLastMhPeto ? window._almLastMhPeto() : {}; },
     });
 
