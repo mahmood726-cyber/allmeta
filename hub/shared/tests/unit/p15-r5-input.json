@@ -1,0 +1,16 @@
+{
+  "single": [{"cluster":"A","yi":0.2,"vi":0.04,"X":[1]}],
+  "intercept": [
+    {"cluster":"A","yi":0.1,"vi":0.04,"X":[1]},
+    {"cluster":"A","yi":0.2,"vi":0.04,"X":[1]},
+    {"cluster":"B","yi":0.4,"vi":0.04,"X":[1]},
+    {"cluster":"B","yi":0.5,"vi":0.04,"X":[1]},
+    {"cluster":"C","yi":0.6,"vi":0.04,"X":[1]},
+    {"cluster":"C","yi":0.7,"vi":0.04,"X":[1]}
+  ],
+  "collinear": [
+    {"cluster":"A","yi":0.1,"vi":0.04,"X":[1,1]},
+    {"cluster":"B","yi":0.4,"vi":0.04,"X":[1,1]},
+    {"cluster":"C","yi":0.6,"vi":0.04,"X":[1,1]}
+  ]
+}

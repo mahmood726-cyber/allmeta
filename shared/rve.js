@@ -415,6 +415,15 @@
 
     // Weighted IV fit for a per-row weight vector. Returns {M=(X'WX)^{-1}, beta}.
     function fitW(weights) {
+      var weightProblem = !weights.every(Number.isFinite) ? "non-finite" :
+        weights.some(function(w) { return w <= 0; }) ? "non-positive" : "";
+      if (weightProblem) {
+        // Unusable weights do not establish collinearity. Diagnose m<=p here
+        // only when they prevent fitting; finite-weight CR2 fits must still
+        // reach robumeta's eigenvalue check before the usual cluster guard.
+        if (m <= p) throw tooFewClusters(m);
+        throw new Error("RVE: " + weightProblem + " weights");
+      }
       var XtWX = zeros(p,p), Xty = new Array(p).fill(0);
       clusterOrder.forEach(function(key) {
         var idx=byCluster[key], Xj=idx.map(function(i) { return X[i]; });
