@@ -580,6 +580,16 @@
     // ---- CSV load: accept study,yi,vi or study,yi,sei columns ----
     window.__almGoshLoad = function (rows) {
       if (!rows || rows.length < 1) { document.getElementById('src').value = ''; run(); return; }
+      // CSV labels can contain quoted newlines; the study textarea is line-based.
+      // Refuse the whole import before a label can become another study.
+      if (rows.some(function (r) { return /[\r\n]/.test(r.study || r.label || r.Study || ''); })) {
+        document.getElementById('src').value = '';
+        exactRequest(null);
+        run(); // Clear previous results, extras and the analysis lifecycle status.
+        document.getElementById('input-error').textContent =
+          'Import refused: study labels must be single-line. Remove line breaks from labels and import again.';
+        return;
+      }
       var lines = [];
       rows.forEach(function (r) {
         var te  = parseFloat(r.yi  !== undefined ? r.yi  : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te)));
