@@ -122,7 +122,8 @@
     var data = [];
     for (var i = 0; i < lines.length; i++) {
       var raw = lines[i];
-      if (!raw.trim() || raw.trim().charAt(0) === "#") continue;
+      // Hash-prefixed labels are data; every nonblank line must reach validation.
+      if (!raw.trim()) continue;
       data.push({ no: i + 1, text: raw });
     }
     if (!data.length) throw UserError("No data rows. Paste one row per effect: cluster, yi, vi, then any predictors.");
