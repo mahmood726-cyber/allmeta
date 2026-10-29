@@ -1,0 +1,32 @@
+{
+  "three_exact": [
+    {"study":"Three","t1":"A","t2":"B","est":0.3,"se":0.2},
+    {"study":"Three","t1":"A","t2":"C","est":0.5,"se":0.2},
+    {"study":"Three","t1":"B","t2":"C","est":0.2,"se":0.2},
+    {"study":"Two","t1":"A","t2":"B","est":0.4,"se":0.3}
+  ],
+  "three_rounded": [
+    {"study":"Three","t1":"A","t2":"B","est":0.3,"se":0.2},
+    {"study":"Three","t1":"A","t2":"C","est":0.5,"se":0.2},
+    {"study":"Three","t1":"B","t2":"C","est":0.199,"se":0.2},
+    {"study":"Two","t1":"A","t2":"B","est":0.4,"se":0.3}
+  ],
+  "heterogeneous_rounded": [
+    {"study":"Three","t1":"A","t2":"B","est":0.3,"se":0.2},
+    {"study":"Three","t1":"A","t2":"C","est":0.5,"se":0.3},
+    {"study":"Three","t1":"B","t2":"C","est":0.199,"se":0.32},
+    {"study":"Two1","t1":"A","t2":"B","est":-1.2,"se":0.12},
+    {"study":"Two2","t1":"B","t2":"C","est":0.9,"se":0.15},
+    {"study":"Two3","t1":"A","t2":"C","est":1.6,"se":0.25}
+  ],
+  "four_rounded": [
+    {"study":"Four","t1":"A","t2":"B","est":0.3,"se":0.184},
+    {"study":"Four","t1":"A","t2":"C","est":0.5,"se":0.205},
+    {"study":"Four","t1":"A","t2":"D","est":0.8,"se":0.241},
+    {"study":"Four","t1":"B","t2":"C","est":0.199,"se":0.232},
+    {"study":"Four","t1":"B","t2":"D","est":0.5,"se":0.265},
+    {"study":"Four","t1":"C","t2":"D","est":0.301,"se":0.279},
+    {"study":"Two1","t1":"A","t2":"B","est":-0.8,"se":0.15},
+    {"study":"Two2","t1":"A","t2":"D","est":1.4,"se":0.2}
+  ]
+}

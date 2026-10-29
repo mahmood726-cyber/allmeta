@@ -10,7 +10,8 @@
  * This module does the generalised-least-squares (GLS) fit netmeta() does:
  *   - group contrasts by study (a multi-arm study = >2 treatments / >1 row);
  *   - within each multi-arm study, recover the arm variances from the full set
- *     of pairwise contrast SEs, reduce to (m-1) independent baseline contrasts,
+ *     of pairwise contrast SEs, project ALL supplied effects onto (m-1)
+ *     baseline coordinates using the covariance's adjusted edge weights,
  *     and build the within-study covariance block
  *         Var(y_{x,base}) = v_x + v_base ,  Cov(y_{x,base}, y_{x',base}) = v_base;
  *   - assemble a block-diagonal covariance V, GLS d = (XᵀV⁻¹X)⁻¹XᵀV⁻¹y;
@@ -141,7 +142,13 @@
         else estVal = (prow.t2 === toArm) ? estVal : -estVal;             // generic fallback
         contrasts.push({ to: toArm, from: base, est: estVal });
       }
-      studies.push({ id: id2, arms: arms, multiArm: true, contrasts: contrasts, v: varArm, cov: cov, base: base });
+      // Keep every accepted effect: rounded cliques need not lie exactly in
+      // the baseline-contrast space. Selecting only baseline rows loses data.
+      // Index -1 denotes the implicit zero baseline coordinate.
+      var effects = rs.map(function (r) {
+        return { from: arms.indexOf(r.t1) - 1, to: arms.indexOf(r.t2) - 1, est: r.est };
+      });
+      studies.push({ id: id2, arms: arms, multiArm: true, contrasts: contrasts, effects: effects, v: varArm, cov: cov, base: base });
     }
     return { studies: studies, errors: errors };
   }
@@ -175,9 +182,45 @@
       } else {
         for (var a = 0; a < len; a++) for (var b = 0; b < len; b++) V[start + a][start + b] = st.cov[a][b];
       }
-      blocks.push({ start: start, len: len, multiArm: st.multiArm });
+      blocks.push({ start: start, len: len, multiArm: st.multiArm, effects: st.effects });
     }
     return { X: X, y: y, V: V, nonref: nonref, K: K, N: N, rowStudy: rowStudy, blocks: blocks };
+  }
+
+  // Compress the all-edge weighted fit into baseline coordinates without
+  // discarding rounded effects. If C is the baseline covariance, C^-1 is
+  // the reduced study Laplacian: edge weights are -C^-1_ij (nonbaseline
+  // pairs) and its row sums (baseline pairs), as in netmeta::multiarm.
+  // The projected observations are C B' W y; retain the orthogonal residual
+  // contribution to Q as well. Recompute for V + tau2 R in random effects.
+  function projectObservations(asm, V) {
+    var y = asm.y.slice(), extraQ = 0;
+    asm.blocks.forEach(function (bl) {
+      if (!bl.multiArm) return;
+      var C = zeros(bl.len, bl.len);
+      for (var a = 0; a < bl.len; a++) for (var b = 0; b < bl.len; b++) C[a][b] = V[bl.start + a][bl.start + b];
+      var W = invert(C);
+      if (!W) return; // gls subsequently reports the singular covariance
+      var score = new Array(bl.len).fill(0), weights = [];
+      function effect(e, obs) {
+        return (e.to < 0 ? 0 : obs[bl.start + e.to]) - (e.from < 0 ? 0 : obs[bl.start + e.from]);
+      }
+      bl.effects.forEach(function (e) {
+        var w = e.from < 0 || e.to < 0 ? W[Math.max(e.from, e.to)].reduce(function (s, v) { return s + v; }, 0) : -W[e.from][e.to];
+        weights.push(w);
+        var r = e.est - effect(e, asm.y);
+        if (e.to >= 0) score[e.to] += w * r;
+        if (e.from >= 0) score[e.from] -= w * r;
+      });
+      // Apply a correction to the original coordinates to avoid cancellation
+      // when a clique is already consistent to floating-point precision.
+      for (a = 0; a < bl.len; a++) for (b = 0; b < bl.len; b++) y[bl.start + a] += C[a][b] * score[b];
+      bl.effects.forEach(function (e, i) {
+        var r = e.est - effect(e, y);
+        extraQ += weights[i] * r * r;
+      });
+    });
+    return { y: y, extraQ: extraQ };
   }
 
   // GLS solve given covariance V. Returns {d, cov, Vinv}.
@@ -197,17 +240,18 @@
   }
 
   // Generalised DerSimonian-Laird τ² for a variance component with a known
-  // within-study correlation structure R (Jackson-White-Riley 2012). This is
-  // exactly what netmeta delegates to metafor::rma.mv(method="DL",
-  // random=~factor(comparison)|studlab, rho=0.5): a single τ² added with the
+  // within-study correlation structure R (Jackson-White-Riley 2012): a single
+  // variance component tau2 added with the
   // multi-arm compound-symmetric correlation (1 on the diagonal, ρ=0.5 within
   // a multi-arm study's contrasts).
   //   Q  = (y-Xβ_FE)ᵀ W (y-Xβ_FE),  W = V_FE⁻¹
   //   P  = W − W X (XᵀWX)⁻¹ Xᵀ W       (the residual/projection weight)
   //   E[Q] = df + τ²·tr(P R)  ⇒  τ² = max(0, (Q − df)/tr(P R))
   // R = I for a network with no multi-arm trials, so tr(P R)=tr(P) and this
-  // reduces to the ordinary generalised DL.
-  function generalisedDL(X, y, V, feFit, blocks) {
+  // reduces to the ordinary generalised DL. For rounded multi-arm effects,
+  // add the all-edge projection residual to Q; df and tr(P R) still use the
+  // independent contrast space, matching netmeta's default DL estimator.
+  function generalisedDL(X, y, V, feFit, blocks, extraQ) {
     var W = feFit.Vinv;                        // N×N
     var N = X.length, K = X[0].length, i, j;
     // residual
@@ -217,7 +261,7 @@
       resid[i] = y[i] - yhat;
     }
     // Q = residᵀ W resid
-    var Q = 0;
+    var Q = extraQ || 0;
     for (var a = 0; a < N; a++) { var wr = 0; for (var b = 0; b < N; b++) wr += W[a][b] * resid[b]; Q += resid[a] * wr; }
     var df = N - K;
     // P = W − W X (XᵀWX)⁻¹ Xᵀ W
@@ -301,23 +345,25 @@
     var asm = assemble(built.studies, treatments, ref);
     if (asm.N < asm.K) return { ok: false, error: "insufficient contrasts (N=" + asm.N + " < K=" + asm.K + ")" };
 
-    var feFit = gls(asm.X, asm.y, asm.V);
+    var obs = projectObservations(asm, asm.V);
+    var feFit = gls(asm.X, obs.y, asm.V);
     if (!feFit) return { ok: false, error: "singular design (disconnected network?)", warnings: built.errors };
 
     var model = (opts.model || "fe").toLowerCase();
     var tau2 = 0, Qinfo = null;
     var fitUse = feFit;
     if (model === "re" || model === "random") {
-      Qinfo = generalisedDL(asm.X, asm.y, asm.V, feFit, asm.blocks);
+      Qinfo = generalisedDL(asm.X, obs.y, asm.V, feFit, asm.blocks, obs.extraQ);
       tau2 = Qinfo.tau2;
       if (tau2 > 0) {
         var Vr = reCovariance(asm, tau2);
-        var reFit = gls(asm.X, asm.y, Vr);
+        var reObs = projectObservations(asm, Vr);
+        var reFit = gls(asm.X, reObs.y, Vr);
         if (reFit) fitUse = reFit;
       }
     } else {
       // still expose Q/df for reporting
-      Qinfo = generalisedDL(asm.X, asm.y, asm.V, feFit, asm.blocks);
+      Qinfo = generalisedDL(asm.X, obs.y, asm.V, feFit, asm.blocks, obs.extraQ);
     }
 
     var multiArmStudies = built.studies.filter(function (s) { return s.multiArm; }).map(function (s) { return s.id; });
@@ -610,11 +656,17 @@
       });
     }
     var I = isquared(Q, df), built = buildStudies(rows);
+    // netmeta::decomp.design uses independent baseline contrasts. With
+    // rounded effects its total can differ from netmeta()'s all-edge Q.
+    // Preserve that diagnostic's existing convention and compute its own Q.
+    var designAsm = assemble(built.studies, tr, fe.refTreat);
+    var designFit = gls(designAsm.X, designAsm.y, designAsm.V);
+    var designQ = generalisedDL(designAsm.X, designAsm.y, designAsm.V, designFit, designAsm.blocks).Q;
     return {
       ok: true, treatments: tr, k: built.studies.length, m: rows.length, n: n, df: df, Q: Q,
       pvalQ: df > 0 ? pchisqUpper(Q, df) : null, tau2: tau2, tau: tau2 === null ? null : Math.sqrt(tau2),
       I2: I.I2, lowerI2: I.lower, upperI2: I.upper, randomCi: tDist ? "t-dist" : "classic", smallValues: desirable ? "desirable" : "undesirable",
-      common: common, random: random, predict: predict, decomp: decompDesign(built, Q, df, n),
+      common: common, random: random, predict: predict, decomp: decompDesign(built, designQ, df, n),
       pscore: { common: pscores(common), random: pscores(random) }, multiArmStudies: fe.multiArmStudies,
       varianceDisclosures: fe.varianceDisclosures,
     };

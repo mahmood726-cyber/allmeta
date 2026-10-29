@@ -31,6 +31,13 @@ jobs:
         with:
           python-version: "3.12"
       - run: npm ci
+      # The Playwright testMatch excludes Node *.test.mjs; run the exact
+      # production extraction-import refusal/control suite as a CI gate.
+      - name: Native Node extraction-bus refusal regressions
+        run: node --test unit/p04-r8-extraction-import.test.mjs
+      # P19 complete-data import and malformed-bus refusal are Node tests, not Playwright *.spec.mjs.
+      - name: Native Node component-NMA import refusal and positive controls
+        run: node --test unit/p19-r3-bus-completeness.test.mjs unit/p19-r4-bus-import.test.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --reporter=line,json
         env:

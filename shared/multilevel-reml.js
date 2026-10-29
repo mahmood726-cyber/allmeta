@@ -75,6 +75,10 @@
 
   function fit(rows, opts) {
     opts = opts || {};
+    // Remove the common effect location before squared block sums and the warm
+    // start; otherwise the residual quadratic subtracts large, nearly equal terms.
+    var offset = rows.length ? +rows[0].y : 0;
+    rows = rows.map(function (r) { return { cluster: r.cluster, y: +r.y - offset, v: +r.v }; });
     var clusters = _byCluster(rows), k = rows.length, nC = clusters.length;
     // warm start: total heterogeneity ~ DL, split half/half between levels.
     var sw = 0, swy = 0, i; for (i = 0; i < k; i++) { var w = 1 / rows[i].v; sw += w; swy += w * rows[i].y; }
@@ -91,8 +95,9 @@
     var N = k, p = 1;
     // REML logLik: −½[(N−p)log2π + log|V| + RSS + log|X'V⁻¹X|] + ½log|X'X|, X=1 ⇒ |X'X|=N.
     var logLik = -fin.negLL - 0.5 * (N - p) * LOG2PI + 0.5 * Math.log(N);
-    return { mu: fin.mu, se: se, sigma2Between: s2b, sigma2Within: s2w, logLik: logLik, k: k, nClusters: nC,
-      ciLo: fin.mu - 1.959963984540054 * se, ciHi: fin.mu + 1.959963984540054 * se };
+    var mu = fin.mu + offset;
+    return { mu: mu, se: se, sigma2Between: s2b, sigma2Within: s2w, logLik: logLik, k: k, nClusters: nC,
+      ciLo: mu - 1.959963984540054 * se, ciHi: mu + 1.959963984540054 * se };
   }
 
   var api = { fit: fit };

@@ -122,6 +122,8 @@ Readers must:
 | `MaComparisons.fromPairwise(rows, effectMeasure)` | Build an envelope from per-row `{name, t1, e1, n1, t2, e2, n2}`. |
 | `MaComparisons.fromBinaryTriplets(studies)`       | Build from nma-pro-v2's `{name, treatment1, events1, n1, treatment2, events2, n2}` shape. |
 | `MaComparisons.toNmaProStudies(env)`              | Inverse: flatten arms back to nma-pro-v2's per-row shape.        |
+| `MaComparisons.toContrasts(env, opts)`           | Flatten supported arm data into contrast rows; continuous pairs require finite positive sample sizes on both arms. |
+| `MaComparisons.toContrastsDetailed(env, opts)`   | Same rows, plus `omissions` for continuous pairs without finite positive sample sizes: `{rows, omissions: [{study, treatment1, treatment2, reason}]}`. NMA refuses an extraction import if these omissions are present. |
 
 ## Apps that should participate
 
