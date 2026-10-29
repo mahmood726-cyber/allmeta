@@ -1,0 +1,19 @@
+{
+  "schema": "gosh-r-parity-input-v1",
+  "models": ["FE", "DL"],
+  "cases": [
+    {"id":"singleton", "gap":"small-k", "te":[0.37], "se":[0.23]},
+    {"id":"pair-homogeneous", "gap":"small-k", "te":[0.2,0.3], "se":[0.4,0.7]},
+    {"id":"pair-heterogeneous", "gap":"small-k", "te":[-0.8,1.1], "se":[0.12,0.41]},
+    {"id":"heterogeneous", "gap":"enumerated-se", "te":[-0.8,0.15,1.1,0.45,-0.1], "se":[0.12,0.24,0.41,0.18,0.33]},
+    {"id":"null-effects", "gap":"tau-boundary", "te":[0,0,0], "se":[0.13,0.4,0.21]},
+    {"id":"below-boundary", "gap":"tau-boundary", "te":[-0.9999,0,0.9999], "se":[1,1,1]},
+    {"id":"at-boundary", "gap":"tau-boundary", "te":[-1,0,1], "se":[1,1,1]},
+    {"id":"above-boundary", "gap":"tau-boundary", "te":[-1.0001,0,1.0001], "se":[1,1,1]},
+    {"id":"separated-cluster", "gap":"subset-cancellation", "te":[0,0.2,1000000], "se":[0.1,0.2,0.3]},
+    {"id":"unequal-precision", "gap":"unequal-precision", "te":[0.15,-0.9,0.8,0.4], "se":[0.0001,0.2,0.35,0.15]},
+    {"id":"sampled-even", "gap":"sampled-order", "draws":38,
+     "te":[0.13,1.5,2.87,4.24,5.61,6.98,8.35,9.72,11.09,12.46,13.83,15.2,16.57,17.94,19.31,20.68],
+     "se":[0.231,0.301,0.371,0.441,0.511,0.581,0.651,0.721,0.791,0.861,0.931,1.001,1.071,1.141,1.211,1.281]}
+  ]
+}
