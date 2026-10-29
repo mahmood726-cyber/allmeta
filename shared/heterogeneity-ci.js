@@ -77,7 +77,9 @@
     function solve(target) {
       if (Q0 <= target) return 0;
       var lo = 0, hi = 1, guard = 0;
-      while (_genQ(studies, hi) > target && guard++ < 200) { hi *= 2; if (hi > 1e9) break; }
+      while (_genQ(studies, hi) > target && guard++ < 200) hi *= 2;
+      // A search endpoint is a confidence bound only after the target is bracketed.
+      if (!(_genQ(studies, hi) <= target)) throw new RangeError("Q-profile search could not bracket the confidence bound");
       for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_genQ(studies, m) > target) lo = m; else hi = m; }
       return (lo + hi) / 2;
     }
