@@ -685,6 +685,17 @@ A, D, -0.48, 0.14</textarea>
       }
       var rows = MaComparisons.toContrasts(env);
       if (!rows.length) { busRefuse("the shared network has no supported contrasts."); notify("Bus measure " + (env.effectMeasure || "?") + " yielded no contrasts (needs OR/RR with events/n, or MD/SMD with mean/sd/n)."); return; }
+      // Multi-arm sources were refused above: every source must yield one row.
+      // Check source objects individually, since repeated IDs can hide omissions.
+      if (rows.length !== env.studies.length) {
+        var omitted = env.studies.map(function (s, i) {
+          var converted = MaComparisons.toContrasts({ effectMeasure: env.effectMeasure, studies: [s] });
+          return converted.length ? null : '"' + String(s && s.id || "(unnamed)") + '" (source study ' + (i + 1) + ')';
+        }).filter(function (s) { return s !== null; });
+        busRefuse("No supported contrast could be derived for " + omitted.join(", ") +
+          ". Check the arm data, including sample size n on both arms for MD/SMD.");
+        return;
+      }
       function csv(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }
       ta.value = rows.map(function (r) { return [r.treatment1, r.treatment2, r.te, r.se, r.study].map(csv).join(","); }).join("\n");
       ta.dispatchEvent(new Event("input", { bubbles: true }));
