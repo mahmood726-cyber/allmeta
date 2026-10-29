@@ -692,7 +692,17 @@
         ["loo_H2", "loo_H2"], ["loo_Q", "loo_Q"], ["loo_Qp", "loo_Qp"], ["influential", "influential"]];
       window.__almInfluenceStudyRows = function () {
         if (!_lastDiag) return [];
-        return _lastDiag.map((d, i) => Object.assign(Object.fromEntries(STUDY_COLS.map(([k, f]) => [k, d[f]])), { excluded: _excluded.has(i) }));
+        const refused = !!(_lastExclusion && _lastExclusion.refused);
+        const applied = !!(_lastExclusion && _lastExclusion.kept);
+        return _lastDiag.map((d, i) => {
+          const requested = _excluded.has(i);
+          return Object.assign(Object.fromEntries(STUDY_COLS.map(([k, f]) => [k, d[f]])), {
+            excluded: requested, // Legacy checkbox membership, including refused requests.
+            exclusion_requested: requested,
+            exclusion_applied: requested && applied,
+            exclusion_refused: refused // Request-wide outcome repeated in every study row.
+          });
+        });
       };
       function csvCell(v) {
         let s = v === null || v === undefined ? "" : String(v);
