@@ -106,7 +106,7 @@
         <span class="hint">Freeman-Tukey was historically recommended for extreme event rates, but Schwarzer G, Chemaitelly H, Abu-Raddad LJ, Rücker G. <em>Res Synth Methods</em> 2019;10:476-483 showed the inverse (back-)transformation has no single well-defined value (it depends on the chosen study size, e.g. harmonic mean), so the pooled proportion and its back-transformed CI can be seriously misleading; for rare events prefer logit with a boundary-only continuity correction or a GLMM in <code>metafor::rma.glmm</code>.</span>
       </label>
       <label>
-        <span>Random-effects <span data-gloss="tau2">&tau;&sup2;</span> estimator</span>
+        <span>Random-effects <abbr data-gloss="tau2">&tau;&sup2;</abbr> estimator</span>
         <select id="tau-est" aria-label="Tau est">
           <option value="PM" selected>Paule-Mandel</option>
           <option value="DL">DerSimonian-Laird</option>
@@ -457,7 +457,8 @@
       var piTxt = (pooled.poolPiLo != null)
         ? ' &middot; 95% prediction interval = <code>' + fmtPct(pooled.poolPiLo) + ' – ' + fmtPct(pooled.poolPiHi) + '</code>'
         : '';
-      het.innerHTML = '<span data-gloss="tau2">&tau;&sup2;</span> = <code>' + fmt(pooled.het.tau2, 4) + '</code> &middot; Q = <code>' + fmt(pooled.het.Q, 2) + '</code> (df=' + pooled.het.df + ') &middot; <span data-gloss="i2">I&sup2;</span> = <code>' + pooled.het.i2.toFixed(1) + '%</code>' + piTxt;
+      het.innerHTML = '<abbr data-gloss="tau2">&tau;&sup2;</abbr> = <code>' + fmt(pooled.het.tau2, 4) + '</code> &middot; Q = <code>' + fmt(pooled.het.Q, 2) + '</code> (df=' + pooled.het.df + ') &middot; <abbr data-gloss="I2">I&sup2;</abbr> = <code>' + pooled.het.i2.toFixed(1) + '%</code>' + piTxt;
+      window.alm.tooltips.rescan();
 
       drawForest(rows, pooled);
     }
