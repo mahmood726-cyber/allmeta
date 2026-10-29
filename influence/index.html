@@ -746,6 +746,14 @@
     // textarea using the app's native "effect, SE, label" line format, then
     // trigger run().
     window.__almLoad = function (rows) {
+      // Native input has one study per line; decoded label newlines would become records.
+      if (rows.some(function (r) { return /[\r\n]/.test(r.study); })) {
+        window.__almRestore({}); // Clear input and stale results through the normal run lifecycle.
+        var error = document.getElementById('input-error');
+        error.textContent = 'CSV import refused: study labels cannot contain line breaks. Replace label line breaks with spaces and import again.';
+        error.hidden = false;
+        return;
+      }
       var lines = rows.filter(function (r) {
         return r.study != null && isFinite(r.yi) && isFinite(r.vi) && r.vi > 0;
       }).map(function (r) {
