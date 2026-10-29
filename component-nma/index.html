@@ -234,7 +234,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       let tr = 0;
       for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) tr += covFE[i][j] * XtW2X[j][i];
       const denom = sumW - tr;
-      // denom has inverse-variance units; an absolute cutoff would make tau2 depend on effect units.
+      // DL denominator has inverse-variance units; an absolute cutoff incorrectly depends on effect units.
       const tau2 = df === 0 ? null : (denom <= 0 ? 0 : Math.max(0, (Q - df) / denom));
       const wRE = rows.map(r => 1 / (r.se * r.se + tau2));
       const res2 = wls(wRE);
@@ -428,14 +428,25 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
     runBtn.insertAdjacentElement("afterend", btn);
     function notify(msg) { if (window.Toast && typeof Toast.show === "function") Toast.show(msg, "warn"); }
     btn.addEventListener("click", function () {
-      var env = MaComparisons.read();
-      if (!env || !Array.isArray(env.studies) || !env.studies.length) { clearResults(); notify("Shared network bus is empty."); return; }
-      if (env.studies.some(s => Array.isArray(s.arms) && s.arms.length > 2) || new Set(env.studies.map(s => s.id)).size !== env.studies.length) {
-        clearResults(); notify("Multi-arm or repeated-study bus inputs are unsupported: contrast covariance is required."); return;
+      clearResults();
+      var text, rows;
+      try {
+        var env = MaComparisons.read();
+        if (!env || !Array.isArray(env.studies) || !env.studies.length) { notify("Shared network bus is empty."); return; }
+        var validation = MaComparisons.validate(env);
+        if (!validation.ok) { notify("Invalid shared network bus: " + validation.errors.join("; ")); return; }
+        if (env.studies.some(s => Array.isArray(s.arms) && s.arms.length > 2) || new Set(env.studies.map(s => s.id)).size !== env.studies.length) {
+          notify("Multi-arm or repeated-study bus inputs are unsupported: contrast covariance is required."); return;
+        }
+        rows = MaComparisons.toContrasts(env);
+        if (!rows.length) { notify("Bus measure " + (env.effectMeasure || "?") + " yielded no contrasts (needs OR/RR with events/n, or MD/SMD with mean/sd/n)."); return; }
+        if (rows.length !== env.studies.length) { notify("Import refused: only " + rows.length + " of " + env.studies.length + " studies yielded contrasts; every study needs complete data, including mean/sd/n for MD/SMD, yielding a finite effect and positive standard error."); return; }
+        text = rows.map(function (r) { return r.treatment1 + " | " + r.treatment2 + " | " + r.te + " | " + r.se; }).join("\n");
+      } catch (_) {
+        notify("Cannot import shared network bus: invalid data or conversion failure.");
+        return;
       }
-      var rows = MaComparisons.toContrasts(env);
-      if (!rows.length) { clearResults(); notify("Bus measure " + (env.effectMeasure || "?") + " yielded no contrasts (needs OR/RR with events/n, or MD/SMD with mean/sd/n)."); return; }
-      ta.value = rows.map(function (r) { return r.treatment1 + " | " + r.treatment2 + " | " + r.te + " | " + r.se; }).join("\n");
+      ta.value = text;
       ta.dispatchEvent(new Event("input", { bubbles: true }));
       runBtn.click();
       notify("Loaded " + rows.length + " contrasts from the shared bus.");
