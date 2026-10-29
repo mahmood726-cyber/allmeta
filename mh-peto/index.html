@@ -911,17 +911,21 @@ StudyE, 4, 600, 10, 600</textarea>
       var xLog = _axisState && _axisState.xLog;
       if (xLog !== undefined) logScale = xLog;
 
-      var mapFn = function (v) { return logScale ? Math.log(Math.max(v, 1e-6)) : v; };
+      var plottable = function (v) { return Number.isFinite(v) && (!logScale || v > 0); };
+      var mapFn = function (v) { return logScale ? Math.log(v) : v; };
 
-      var loAll = all.map(function (r) { return r.lo; });
-      var hiAll = all.map(function (r) { return r.hi; });
-      var lo = Math.min.apply(null, loAll.map(mapFn));
-      var hi = Math.max.apply(null, hiAll.map(mapFn));
+      // Zero/undefined ratios cannot set log bounds, including underflowed pooled estimates.
+      var values = [];
+      all.forEach(function (r) {
+        [r.lo, r.est, r.hi].forEach(function (v) { if (plottable(v)) values.push(mapFn(v)); });
+      });
+      var lo = values.length ? Math.min.apply(null, values) : 0;
+      var hi = values.length ? Math.max.apply(null, values) : 0;
 
       // Apply axis range override if set
       if (_axisState && Array.isArray(_axisState.x)) {
-        if (_axisState.x[0] !== null) lo = logScale ? Math.log(Math.max(_axisState.x[0], 1e-6)) : _axisState.x[0];
-        if (_axisState.x[1] !== null) hi = logScale ? Math.log(Math.max(_axisState.x[1], 1e-6)) : _axisState.x[1];
+        if (plottable(_axisState.x[0])) lo = mapFn(_axisState.x[0]);
+        if (plottable(_axisState.x[1])) hi = mapFn(_axisState.x[1]);
       }
 
       var pad = (hi - lo) * 0.1 || 0.3;
@@ -950,12 +954,18 @@ StudyE, 4, 600, 10, 600</textarea>
         var axisName = { OR: 'Odds ratio', RR: 'Risk ratio', RD: 'Risk difference' }[measure] + (logScale ? ' (log scale)' : '') + '; dashed line: no difference';
         parts.push('<text class="forest-axis-label" x="' + (padL + plotW / 2) + '" y="' + (axisY + 34) + '" text-anchor="middle" font-size="11" fill="currentColor">' + escSvg(axisName) + '</text>');
       }
+      function unavailable(r, rowY) {
+        var note = !plottable(r.est) ? 'Estimate unavailable on this scale' :
+          (!plottable(r.lo) || !plottable(r.hi) ? 'CI unavailable on this scale' : '');
+        if (note) parts.push('<text x="' + (padL + plotW) + '" y="' + (rowY + 4) + '" text-anchor="end" font-size="10" fill="currentColor">' + note + '</text>');
+      }
       var y = 25;
       for (var i = 0; i < studies.length; i++) {
         var s = studies[i];
         parts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + escSvg(s.label) + '</text>');
-        parts.push('<line x1="' + X(s.lo) + '" y1="' + y + '" x2="' + X(s.hi) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>');
-        parts.push('<rect x="' + (X(s.est) - 3.5) + '" y="' + (y - 3.5) + '" width="7" height="7" fill="var(--accent)"/>');
+        if (plottable(s.est) && plottable(s.lo) && plottable(s.hi)) parts.push('<line x1="' + X(s.lo) + '" y1="' + y + '" x2="' + X(s.hi) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>');
+        if (plottable(s.est)) parts.push('<rect x="' + (X(s.est) - 3.5) + '" y="' + (y - 3.5) + '" width="7" height="7" fill="var(--accent)"/>');
+        unavailable(s, y);
         y += 22;
       }
       y += 6;
@@ -963,7 +973,8 @@ StudyE, 4, 600, 10, 600</textarea>
         var p = pooled[j];
         if (!p) continue;
         parts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="12" fill="currentColor" font-weight="700">' + escSvg(p.name) + '</text>');
-        parts.push('<polygon points="' + X(p.lo) + ',' + y + ' ' + X(p.est) + ',' + (y - 7) + ' ' + X(p.hi) + ',' + y + ' ' + X(p.est) + ',' + (y + 7) + '" fill="var(--warn)" opacity="0.9"/>');
+        if (plottable(p.est) && plottable(p.lo) && plottable(p.hi)) parts.push('<polygon points="' + X(p.lo) + ',' + y + ' ' + X(p.est) + ',' + (y - 7) + ' ' + X(p.hi) + ',' + y + ' ' + X(p.est) + ',' + (y + 7) + '" fill="var(--warn)" opacity="0.9"/>');
+        unavailable(p, y);
         y += 24;
       }
       svg.innerHTML = parts.join('');
