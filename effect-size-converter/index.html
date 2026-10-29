@@ -902,7 +902,16 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'effect-size-converter' });
+      AlmAutosave.install({
+        appKey: 'effect-size-converter',
+        onRestore: function () {
+          // Select events can convert before the numeric fields are restored.
+          if (typeof runConvert === 'function') runConvert();
+          if (window.alm && window.alm.urlState && window.__almSnapshot) {
+            window.alm.urlState.write(window.__almSnapshot());
+          }
+        }
+      });
     }
   });
 })();
