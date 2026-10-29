@@ -87,7 +87,7 @@
   <section class="panel">
     <h2>Pooled estimate</h2>
     <div id="headline" class="stat"></div>
-    <table><thead><tr><th>Study</th><th>r</th><th>n</th><th>z</th><th>weight</th></tr></thead><tbody id="res-body"></tbody></table>
+    <table id="forest-values"><caption>Forest plot values with 95% confidence intervals on the r scale.</caption><thead><tr><th scope="col">Study</th><th scope="col">r</th><th scope="col">n</th><th scope="col">z</th><th scope="col">weight</th><th scope="col">95% CI (r)</th></tr></thead><tbody id="res-body"></tbody></table>
     <h2 style="margin-top:1rem">Forest (r scale)</h2>
     <div id="forest-host"></div>
     <div id="alm-export-mount" style="margin-top:1rem"></div>
@@ -133,6 +133,11 @@
         head.textContent = "Enter at least 2 studies (label, r, n).";
         body.innerHTML = ""; document.getElementById("forest-host").innerHTML = ""; _last = null; return;
       }
+      // Share the plotted study bounds with the forest's text table.
+      rows.forEach(function (s) {
+        s.lo = Math.tanh(s.z - Z975 * Math.sqrt(s.v));
+        s.hi = Math.tanh(s.z + Z975 * Math.sqrt(s.v));
+      });
       var pooled = window.AlmMaCore.pool(rows.map(function (s) { return s.z; }), rows.map(function (s) { return s.v; }), { method: method, pi: true });
       var w = rows.map(function (s) { return 1 / (s.v + pooled.tau2); });
       var sw = w.reduce(function (a, b) { return a + b; }, 0);
@@ -142,8 +147,8 @@
         + " · τ²(z) = " + fmt(pooled.tau2, 4) + " · I² = " + fmt(pooled.I2, 1) + "%"
         + (r_piLo != null ? " · 95% PI [" + fmt(r_piLo) + ", " + fmt(r_piHi) + "]" : "");
       body.innerHTML = rows.map(function (s, i) {
-        return "<tr><td>" + esc(s.label) + "</td><td>" + fmt(s.r) + "</td><td>" + s.n + "</td><td>" + fmt(s.z) + "</td><td>" + fmt(100 * w[i] / sw, 1) + "%</td></tr>";
-      }).join("") + "<tr class='pooled-row'><td>Pooled</td><td>" + fmt(r_pool) + "</td><td>—</td><td>" + fmt(pooled.mu) + "</td><td>100%</td></tr>";
+        return "<tr><td>" + esc(s.label) + "</td><td>" + fmt(s.r) + "</td><td>" + s.n + "</td><td>" + fmt(s.z) + "</td><td>" + fmt(100 * w[i] / sw, 1) + "%</td><td>[" + fmt(s.lo) + ", " + fmt(s.hi) + "]</td></tr>";
+      }).join("") + "<tr class='pooled-row'><td>Pooled</td><td>" + fmt(r_pool) + "</td><td>—</td><td>" + fmt(pooled.mu) + "</td><td>100%</td><td>[" + fmt(r_lo) + ", " + fmt(r_hi) + "]</td></tr>";
       document.getElementById("forest-host").innerHTML = forest(rows, { r: r_pool, lo: r_lo, hi: r_hi });
       _last = {
         _schema: "corr-ma-results-v1", k: rows.length, method: method,
@@ -156,15 +161,15 @@
     function forest(rows, pool) {
       var W = 560, rowH = 24, H = 50 + (rows.length + 1) * rowH + 30, L = 150, R = 30, plotW = W - L - R;
       var lo = -1, hi = 1, x = function (v) { return L + (v - lo) / (hi - lo) * plotW; };
-      var p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      var p = ["<svg xmlns='http://www.w3.org/2000/svg' aria-describedby='forest-values' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
       p.push("<rect width='" + W + "' height='" + H + "' fill='" + (matchMedia('(prefers-color-scheme:dark)').matches ? '#1c1f23' : '#fff') + "'/>");
       var axEl = "#888";
       p.push("<line x1='" + x(0) + "' y1='40' x2='" + x(0) + "' y2='" + (H - 30) + "' stroke='" + axEl + "' stroke-dasharray='3,3'/>");
       [-1, -0.5, 0, 0.5, 1].forEach(function (t) { p.push("<text x='" + x(t) + "' y='" + (H - 14) + "' text-anchor='middle' font-size='10' fill='" + axEl + "'>" + t + "</text>"); });
       rows.forEach(function (s, i) {
-        var y = 50 + i * rowH, slo = Math.tanh(s.z - Z975 * Math.sqrt(s.v)), shi = Math.tanh(s.z + Z975 * Math.sqrt(s.v));
+        var y = 50 + i * rowH;
         p.push("<text x='10' y='" + (y + 4) + "' font-size='11' fill='currentColor'>" + esc(s.label) + "</text>");
-        p.push("<line x1='" + x(slo) + "' y1='" + y + "' x2='" + x(shi) + "' y2='" + y + "' stroke='#6aa6d4' stroke-width='1.5'/>");
+        p.push("<line x1='" + x(s.lo) + "' y1='" + y + "' x2='" + x(s.hi) + "' y2='" + y + "' stroke='#6aa6d4' stroke-width='1.5'/>");
         p.push("<circle cx='" + x(s.r) + "' cy='" + y + "' r='3.5' fill='#2c5e8a'/>");
       });
       var yp = 50 + rows.length * rowH;
