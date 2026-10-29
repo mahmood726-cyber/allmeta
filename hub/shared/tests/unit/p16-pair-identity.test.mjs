@@ -1,0 +1,73 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { P, E, labels, plainLabels, rowsFor, plainSplit, detailMarkup, liveScript, json } from './p16-pair-identity-support.mjs';
+
+for (const [kind, names] of [['plant', labels], ['control', plainLabels]]) {
+  const rows = rowsFor(names), base = P.fitAll(E, rows, 'FE');
+  const plain = P.fitAll(E, rowsFor(plainLabels), 'FE');
+  test(`P16-R3 ${kind}: graph retains six pairs and each pair's study count and p-value`, () => {
+    assert.equal(base.status, 'ok');
+    assert.equal(base.nodeSplit.length, 6, 'the underlying engine already retains every split');
+    const edges = P.graphEdges(base, rows);
+    assert.equal(edges.length, 6);
+    for (const e of edges) {
+      assert.equal(e.k, 1);
+      assert.equal(e.p, plainSplit([e.a, e.b], plain, names).p);
+    }
+    // A reversed duplicate contributes only to its own undirected edge.
+    const r = rows[1], duplicate = { ...r, A: r.B, B: r.A, te: -r.te, study: 'duplicate' };
+    const augmented = [...rows, duplicate].reverse();
+    const more = P.graphEdges(P.fitAll(E, augmented, 'FE'), augmented);
+    assert.equal(more.length, 6);
+    assert.deepEqual(more.map(e => e.k).sort(), [1, 1, 1, 1, 1, 2]);
+    assert.equal(more.find(e => e.a === r.A && e.b === r.B).k, 2);
+  });
+  test(`P16-R3 ${kind}: model comparison retains all six model-specific p-value triples`, () => {
+    const actual = P.compare3(E, rows), expected = P.compare3(E, rowsFor(plainLabels));
+    assert.equal(actual.status, 'ok');
+    assert.equal(actual.splits.length, 6);
+    // Labels may be identical; their numerical triples must still all survive.
+    const values = c => c.splits.map(s => JSON.stringify([s.p, s.agree])).sort();
+    assert.deepEqual(values(actual), values(expected));
+    assert.equal(actual.nDisagree, expected.nDisagree);
+  });
+  test(`P16-R3 ${kind}: unchanged sensitivity fit has six p-values and no false flips`, () => {
+    const d = P.summarizeDrop(base, base, 'unchanged', 0);
+    assert.equal(Object.keys(d.splitP).length, 6);
+    assert.deepEqual(json(d.splitFlips), []);
+    assert.deepEqual(json(d.splitLost), []);
+    // The page engine returns VM arrays; compare host arrays with the same values.
+    assert.deepEqual(Object.values(d.splitP).sort(), Array.from(base.nodeSplit, s => s.p).sort());
+  });
+  test(`P16-R3 ${kind}: sensitivity marks a missing pair even if a namesake survives`, () => {
+    const missing = base.nodeSplit.find(s => s.direct.mean === 1);
+    assert.ok(missing.p < 0.05);
+    const fit = { ...base, nodeSplit: base.nodeSplit.filter(s => s !== missing) };
+    const d = P.summarizeDrop(base, fit, 'removed direct edge', 0);
+    assert.deepEqual(json(d.splitLost), [missing.comparison]);
+    assert.deepEqual(json(d.splitFlips), []);
+    assert.equal(Object.values(d.splitP).filter(p => p === null).length, 1);
+  });
+  test(`P16-R3 ${kind}: detail table associates the full-data p with the correct pair`, () => {
+    const html = detailMarkup(base);
+    const rows = [...html.matchAll(/<tr><th scope="row">[\s\S]*?<\/tr>/g)];
+    assert.equal(rows.length, 6);
+    for (const [row] of rows) {
+      const cells = [...row.matchAll(/<td>(.*?)<\/td>/g)].map(m => m[1]);
+      assert.equal(cells.at(-1), cells.at(-2), row);
+    }
+  });
+  test(`P16-R3 ${kind}: R export addresses six independent split records`, () => {
+    const script = P.buildRScript({ rows, base }, { date: '2026-10-29' });
+    const lookups = [...script.matchAll(/^check\(".*?: direct", "rel", [^,]+, (.*)\)$/gm)].map(m => m[1]);
+    assert.equal(lookups.length, 6);
+    assert.equal(new Set(lookups).size, 6, 'different pairs must address different R records');
+  });
+  test(`P16-R3 ${kind}: live R validation addresses six independent split records`, () => {
+    const script = liveScript(rows);
+    const names = script.match(/^names_app <- (.*)$/m)[1];
+    const keys = [...names.matchAll(/"(?:[^"\\]|\\.)*"/g)].map(m => JSON.parse(m[0]));
+    assert.equal(keys.length, 6);
+    assert.equal(new Set(keys).size, 6, 'live R membership must use pair identity, not display text');
+  });
+}

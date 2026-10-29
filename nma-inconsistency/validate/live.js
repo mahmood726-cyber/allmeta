@@ -8,8 +8,11 @@ const fmt=(v,d=3)=>Number.isFinite(v)?v.toFixed(d):'—';
 function currentState() {
   const rows=window.parse($('src').value), reason=window.inputIssue(rows);
   if(reason) throw Error(reason);
-  const state=structuredClone(window._almLastInco());
+  const original=window._almLastInco(), state=structuredClone(original);
   if(!state || state.status==='refused') throw Error(state?.reason || 'Run the analysis first.');
+  // structuredClone omits non-enumerable join metadata. Carry it into the
+  // immutable snapshot, separately from the pinned numerical quantities.
+  state.nodeSplit.forEach((r,i)=>Object.defineProperty(r,'pairKey',{value:original.nodeSplit[i].pairKey}));
   // Recompute through the shipped page, but restore exactly what the user was viewing.
   const saved=a.snapshot(); let fresh;
   try {window.__almIncoLoad(saved.text); fresh=structuredClone(window._almLastInco());} finally {a.restore(saved);}
@@ -29,6 +32,7 @@ function currentState() {
 }
 function buildScript(s) {
   const vector=(key,numeric=false)=>'c('+s.rows.map(r=>numeric?r[key].toPrecision(17):JSON.stringify(r[key])).join(',')+')';
+  const pairId=r=>JSON.parse(r.pairKey).map(t=>s.state.trts.indexOf(t)+1).sort((a,b)=>a-b).join(':');
   return `suppressPackageStartupMessages(library(netmeta))
 suppressPackageStartupMessages(library(metafor))
 A <- ${vector('A')}; B <- ${vector('B')}; te <- ${vector('te',true)}; se <- ${vector('se',true)}; study <- ${vector('study')}
@@ -57,11 +61,11 @@ for(j in seq_len(nrow(cmp))) {
  pair<-strsplit(cmp$comparison[j],sep,fixed=TRUE)[[1]]; ord<-pair[order(match(pair,tr))];sign<-if(pair[1]==ord[1])1 else -1
  if(!is.finite(direct$TE[j]) || !path(ord[1],ord[2]))next
  stopifnot(is.finite(cmp$TE[j]))
- name<-paste(ord,collapse=' vs ')
- splits[[name]]<-list(comparison=name,direct=list(mean=sign*direct$TE[j],se=direct$seTE[j]),indirect=list(mean=sign*indirect$TE[j],se=indirect$seTE[j]),diff=sign*cmp$TE[j],seDiff=cmp$seTE[j],z=sign*cmp$statistic[j],p=cmp$p[j])
+ key<-paste(sort(match(ord,tr)),collapse=':')
+ splits[[key]]<-list(comparison=paste(ord,collapse=' vs '),direct=list(mean=sign*direct$TE[j],se=direct$seTE[j]),indirect=list(mean=sign*indirect$TE[j],se=indirect$seTE[j]),diff=sign*cmp$TE[j],seDiff=cmp$seTE[j],z=sign*cmp$statistic[j],p=cmp$p[j])
 }
 # Order is supplied only for emission; membership must match independently.
-names_app <- ${s.state.nodeSplit.length?'c('+[...s.state.nodeSplit].sort((x,y)=>x.comparison.localeCompare(y.comparison)).map(x=>JSON.stringify(x.comparison)).join(',')+')':'character(0)'}
+names_app <- ${s.state.nodeSplit.length?'c('+[...s.state.nodeSplit].sort((x,y)=>x.comparison.localeCompare(y.comparison)).map(x=>JSON.stringify(pairId(x))).join(',')+')':'character(0)'}
 stopifnot(!anyDuplicated(names_app),setequal(names_app,names(splits)))
 splits<-unname(splits[names_app])
 dec<-decomp.design(m,tau.preset=tau,warn=FALSE)

@@ -43,12 +43,30 @@
   // Canonical fit shape shared by app fits and R reference fits: splits in code-unit
   // order of their label, unavailable p as null.
   const byLabel = (a, b) => a.comparison < b.comparison ? -1 : a.comparison > b.comparison ? 1 : 0;
+  const pairKey = (a, b) => JSON.stringify([a, b].sort());
   function normalizeFit(f) {
     if (f.status !== 'ok') return { status: f.status, reason: f.reason };
+    // Archived R fits predate pairKey. Resolve their labels only when the
+    // treatment list identifies exactly one pair; never guess an ambiguous pair.
+    const legacy = new Map();
+    if (f.nodeSplit.some(r => !r.pairKey)) {
+      const trts = [...f.trts].sort();
+      for (let i = 0; i < trts.length; i++) for (let j = i + 1; j < trts.length; j++) {
+        const label = trts[i] + ' vs ' + trts[j];
+        legacy.set(label, legacy.has(label) ? null : pairKey(trts[i], trts[j]));
+      }
+    }
     return {
       status: 'ok', model: f.model, tau2: f.tau2, k: f.k, trts: [...f.trts],
-      nodeSplit: f.nodeSplit.map(r => ({ comparison: r.comparison, direct: { mean: r.direct.mean, se: r.direct.se },
-        indirect: { mean: r.indirect.mean, se: r.indirect.se }, diff: r.diff, seDiff: r.seDiff, z: r.z, p: r.p, kDirect: r.kDirect })).sort(byLabel),
+      nodeSplit: f.nodeSplit.map(r => {
+        const key = r.pairKey || legacy.get(r.comparison);
+        if (!key) throw Error('Missing or ambiguous treatment pair: ' + r.comparison);
+        // Join metadata is not an additional numerical reference quantity.
+        // Keep the archived enumerable fit schema and its check count intact.
+        return Object.defineProperty({ comparison: r.comparison, direct: { mean: r.direct.mean, se: r.direct.se },
+          indirect: { mean: r.indirect.mean, se: r.indirect.se }, diff: r.diff, seDiff: r.seDiff, z: r.z, p: r.p, kDirect: r.kDirect },
+        'pairKey', { value: key });
+      }).sort(byLabel),
       dbt: { Q: f.dbt.Q, df: f.dbt.df, p: finite(f.dbt.p) ? f.dbt.p : null },
     };
   }
@@ -56,16 +74,16 @@
   function summarizeDrop(base, fit, study, index) {
     const out = { study, index, status: fit.status };
     if (fit.status !== 'ok') { out.reason = fit.reason; return out; }
-    const byCmp = new Map(fit.nodeSplit.map(s => [s.comparison, s]));
+    const byCmp = new Map(fit.nodeSplit.map(s => [s.pairKey, s]));
     const splitP = {};
-    for (const s of base.nodeSplit) splitP[s.comparison] = byCmp.has(s.comparison) ? byCmp.get(s.comparison).p : null;
+    for (const s of base.nodeSplit) splitP[s.pairKey] = byCmp.has(s.pairKey) ? byCmp.get(s.pairKey).p : null;
     Object.assign(out, {
       tau2: fit.tau2, dbt: fit.dbt, nSplits: fit.nodeSplit.length,
       nInconsistent: fit.nodeSplit.filter(s => sig(s.p)).length, splitP,
       globalFlip: finite(base.dbt.p) && finite(fit.dbt.p) && sig(base.dbt.p) !== sig(fit.dbt.p),
       globalTestable: fit.dbt.p !== null,
-      splitFlips: base.nodeSplit.filter(s => splitP[s.comparison] !== null && sig(s.p) !== sig(splitP[s.comparison])).map(s => s.comparison),
-      splitLost: base.nodeSplit.filter(s => splitP[s.comparison] === null).map(s => s.comparison),
+      splitFlips: base.nodeSplit.filter(s => splitP[s.pairKey] !== null && sig(s.p) !== sig(splitP[s.pairKey])).map(s => s.comparison),
+      splitLost: base.nodeSplit.filter(s => splitP[s.pairKey] === null).map(s => s.comparison),
       dQ: fit.dbt.Q - base.dbt.Q,
       nodeSplit: fit.nodeSplit,
     });
@@ -101,9 +119,9 @@
   // p = node-split p of that pair (null when the pair cannot be split).
   function graphEdges(base, rows) {
     const m = new Map();
-    for (const r of rows) { const [a, b] = [r.A, r.B].sort(), c = a + ' vs ' + b; if (!m.has(c)) m.set(c, { comparison: c, a, b, k: 0 }); m.get(c).k++; }
-    const sp = new Map(base.nodeSplit.map(x => [x.comparison, x.p]));
-    return [...m.values()].sort(byLabel).map(e => Object.assign(e, { p: sp.has(e.comparison) ? sp.get(e.comparison) : null }));
+    for (const r of rows) { const [a, b] = [r.A, r.B].sort(), key = pairKey(a, b); if (!m.has(key)) m.set(key, { comparison: a + ' vs ' + b, a, b, k: 0 }); m.get(key).k++; }
+    const sp = new Map(base.nodeSplit.map(x => [x.pairKey, x.p]));
+    return [...m.values()].sort(byLabel).map(e => Object.assign(e, { p: sp.has(pairKey(e.a, e.b)) ? sp.get(pairKey(e.a, e.b)) : null }));
   }
   function pRange(ps) {
     const xs = ps.filter(finite);
@@ -140,12 +158,12 @@
   // Also used with R reference fits (normalizeFit) by the validator.
   function compareFits(fits) {
     if (MODELS.some(m => fits[m].status !== 'ok')) return { status: 'refused', reason: (fits.FE.status !== 'ok' ? fits.FE : fits.DL.status !== 'ok' ? fits.DL : fits.PM).reason };
-    const names = [...new Set(MODELS.flatMap(m => fits[m].nodeSplit.map(s => s.comparison)))].sort();
-    const splits = names.map(c => {
-      const p = {}; for (const m of MODELS) { const s = fits[m].nodeSplit.find(x => x.comparison === c); p[m] = s ? s.p : null; }
+    const pairs = new Map(MODELS.flatMap(m => fits[m].nodeSplit.map(s => [s.pairKey, s.comparison])));
+    const splits = [...pairs].map(([key, comparison]) => {
+      const p = {}; for (const m of MODELS) { const s = fits[m].nodeSplit.find(x => x.pairKey === key); p[m] = s ? s.p : null; }
       const flags = MODELS.filter(m => p[m] !== null).map(m => sig(p[m]));
-      return { comparison: c, p, agree: flags.length === 3 && flags.every(f => f === flags[0]) };
-    });
+      return { comparison, p, agree: flags.length === 3 && flags.every(f => f === flags[0]) };
+    }).sort(byLabel);
     const gflags = MODELS.map(m => fits[m].dbt.p === null ? null : sig(fits[m].dbt.p));
     return {
       status: 'ok', fits, splits,
@@ -224,7 +242,9 @@
     }
   }
   # DL tau2 is netmeta's own estimate; FE/PM supply tau as a preset.
-  m <- netmeta(TE = te, seTE = se, treat1 = A, treat2 = B, studlab = study, sm = "MD", reference.group = tr[1],
+  # Opaque treatment IDs keep arbitrary display text out of netmeta's pair separator.
+  ids <- setNames(sprintf("t%08d", seq_along(treatments)), treatments)
+  m <- netmeta(TE = te, seTE = se, treat1 = unname(ids[A]), treat2 = unname(ids[B]), studlab = study, sm = "MD", reference.group = unname(ids[tr[1]]),
                common = TRUE, random = TRUE, method.tau = "DL", tau.preset = if (model == "DL") NULL else tau,
                sep.trts = " ~~ ", warn = FALSE)
   tau <- if (model == "FE") 0 else m$tau
@@ -236,9 +256,10 @@
     b %in% seen }
   splits <- list()
   for (j in seq_len(nrow(cmp))) {
-    pair <- strsplit(cmp$comparison[j], " ~~ ", fixed = TRUE)[[1]]; ord <- sort(pair, method = "radix"); sgn <- if (pair[1] == ord[1]) 1 else -1
+    pair <- treatments[match(strsplit(cmp$comparison[j], " ~~ ", fixed = TRUE)[[1]], unname(ids))]
+    ord <- sort(pair, method = "radix"); sgn <- if (pair[1] == ord[1]) 1 else -1
     if (!is.finite(direct$TE[j]) || !path(ord[1], ord[2])) next
-    name <- paste(ord, collapse = " vs ")
+    name <- paste(sort(match(ord, treatments)), collapse = ":")
     splits[[name]] <- list(direct = sgn * direct$TE[j], direct.se = direct$seTE[j], indirect = sgn * indirect$TE[j], indirect.se = indirect$seTE[j],
                            diff = sgn * cmp$TE[j], diff.se = cmp$seTE[j], z = sgn * cmp$statistic[j], p = cmp$p[j])
   }
@@ -253,6 +274,9 @@
     const L = state.loo, b = L && L.status === 'ok' ? L.base : state.base;
     if (!b || b.status !== 'ok') throw Error('Run an accepted analysis first.');
     const rows = state.rows, model = b.model, withLoo = !!(opts.loo && L && L.status === 'ok');
+    // IDs refer to the full treatment list so a LOO fit cannot renumber a pair.
+    const treatments = [...b.trts].sort();
+    const rPairKey = s => JSON.parse(s.pairKey).map(t => treatments.indexOf(t) + 1).sort((a, b) => a - b).join(':');
     const relTol = model === 'PM' ? '1e-6' : '1e-9';
     const lines = [];
     const add = (label, kind, app, rexpr) => lines.push(`check(${str(label)}, ${str(kind)}, ${app === null ? 'NA_real_' : typeof app === 'string' ? str(app) : typeof app === 'boolean' ? (app ? 'TRUE' : 'FALSE') : num(app)}, ${rexpr})`);
@@ -261,9 +285,9 @@
       add(prefix + 'global Q', 'rel', f.dbt.Q, `${rx}$global$Q`);
       add(prefix + 'global df', 'exact', f.dbt.df, `${rx}$global$df`);
       add(prefix + 'global p', 'abs', f.dbt.p, `${rx}$global$p`);
-      lines.push(`check(${str(prefix + 'node-split comparisons')}, "exact", ${str(f.nodeSplit.map(s => s.comparison).sort().join(' | '))}, paste(sort(as.character(names(${rx}$splits)), method = "radix"), collapse = " | "))`);
+      lines.push(`check(${str(prefix + 'node-split comparisons')}, "exact", ${str(f.nodeSplit.map(rPairKey).sort().join(' | '))}, paste(sort(as.character(names(${rx}$splits)), method = "radix"), collapse = " | "))`);
       for (const s of f.nodeSplit) {
-        const sx = `${rx}$splits[[${str(s.comparison)}]]`;
+        const sx = `${rx}$splits[[${str(rPairKey(s))}]]`;
         add(`${prefix}${s.comparison}: direct`, 'rel', s.direct.mean, `${sx}$direct`);
         add(`${prefix}${s.comparison}: direct SE`, 'rel', s.direct.se, `${sx}$direct.se`);
         add(`${prefix}${s.comparison}: indirect`, 'rel', s.indirect.mean, `${sx}$indirect`);
@@ -304,6 +328,9 @@ d <- data.frame(
   study = ${rVector(rows, r => str(r.study))},
   stringsAsFactors = FALSE)
 model <- ${str(model)}
+treatments <- ${rVector(treatments, str)}
+# Key for the treatment IDs printed by netmeta below.
+print(data.frame(id = sprintf("t%08d", seq_along(treatments)), treatment = treatments))
 ${R_FIT}
 full <- fit(d, model)
 stopifnot(full$status == "ok")

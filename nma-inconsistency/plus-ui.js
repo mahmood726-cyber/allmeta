@@ -205,8 +205,8 @@
     const L = state.loo, d = L && L.status === 'ok' && state.selected !== null ? L.drops[state.selected] : null;
     if (!d) { box.innerHTML = '<p class="plus-sub">Select a study in the table to see its node-splits.</p>'; return; }
     if (d.status !== 'ok') { box.innerHTML = `<p>Without ${esc(d.study)}: ${esc(d.reason)}</p>`; return; }
-    const fullP = new Map(L.base.nodeSplit.map(s => [s.comparison, s.p]));
-    const rows = d.nodeSplit.map(s => `<tr><th scope="row">${esc(s.comparison)}</th><td>${fmt(s.direct.mean)} (${fmt(s.direct.se)})</td><td>${fmt(s.indirect.mean)} (${fmt(s.indirect.se)})</td><td>${fmt(s.diff)} (${fmt(s.seDiff)})</td><td>${fmt(s.z, 2)}</td><td>${fmtP(s.p)}</td><td>${fmtP(fullP.get(s.comparison))}</td></tr>`).join('');
+    const fullP = new Map(L.base.nodeSplit.map(s => [s.pairKey, s.p]));
+    const rows = d.nodeSplit.map(s => `<tr><th scope="row">${esc(s.comparison)}</th><td>${fmt(s.direct.mean)} (${fmt(s.direct.se)})</td><td>${fmt(s.indirect.mean)} (${fmt(s.indirect.se)})</td><td>${fmt(s.diff)} (${fmt(s.seDiff)})</td><td>${fmt(s.z, 2)}</td><td>${fmtP(s.p)}</td><td>${fmtP(fullP.get(s.pairKey))}</td></tr>`).join('');
     box.innerHTML = `<table class="plus-table"><caption>Node-splits without ${esc(d.study)} (τ² = ${fmt(d.tau2, 4)}; global Q = ${fmt(d.dbt.Q, 2)}, df ${d.dbt.df}, p ${fmtP(d.dbt.p)})</caption><thead><tr><th scope="col">Comparison</th><th scope="col">Direct (SE)</th><th scope="col">Indirect (SE)</th><th scope="col">Difference (SE)</th><th scope="col">z</th><th scope="col">p</th><th scope="col">p, all studies</th></tr></thead><tbody>${rows || '<tr><td colspan="7">No comparison can be split without this study.</td></tr>'}</tbody></table>`;
   }
   function drawChart() {
