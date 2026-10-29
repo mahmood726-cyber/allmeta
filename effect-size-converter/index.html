@@ -575,8 +575,8 @@
           el("in-smd-kind").value = "g";
           el("in-est").value = String(stat.g);
           el("in-se").value = String(stat.se);
-          runConvert();
-          setWarn("Derived Hedges' g and its large-sample SE from an independent two-sample pooled-variance test (df=" + stat.df + ").", "info");
+          if (runConvert())
+            setWarn("Derived Hedges' g and its large-sample SE from an independent two-sample pooled-variance test (df=" + stat.df + ").", "info");
           return;
         }
         const se = deriveSE();
@@ -601,12 +601,12 @@
       const se = parseFloat(document.getElementById("in-se").value);
       const p0 = parseFloat(document.getElementById("ctx-p0").value);
       const sd = parseFloat(document.getElementById("ctx-sd").value);
-      if (!Number.isFinite(est)) { render([], "Enter a point estimate."); return; }
-      if (["OR", "RR", "HR", "IRR"].includes(type) && !(est > 0)) { render([], "Ratio estimates (OR/RR/HR/IRR) must be greater than 0."); return; }
-      if (!(Number.isFinite(se) && se > 0)) { render([], "Enter a finite, strictly positive standard error on the appropriate analysis scale."); return; }
-      if (type === "RD" && !(est >= -1 && est <= 1)) { render([], "Risk difference must be between -1 and +1."); return; }
-      if (Number.isFinite(p0) && !(p0 > 0 && p0 < 1)) { render([], "Baseline risk must be strictly between 0 and 1, or left blank."); return; }
-      if (Number.isFinite(sd) && !(sd > 0)) { render([], "Pooled SD must be strictly positive, or left blank."); return; }
+      if (!Number.isFinite(est)) { render([], "Enter a point estimate."); return false; }
+      if (["OR", "RR", "HR", "IRR"].includes(type) && !(est > 0)) { render([], "Ratio estimates (OR/RR/HR/IRR) must be greater than 0."); return false; }
+      if (!(Number.isFinite(se) && se > 0)) { render([], "Enter a finite, strictly positive standard error on the appropriate analysis scale."); return false; }
+      if (type === "RD" && !(est >= -1 && est <= 1)) { render([], "Risk difference must be between -1 and +1."); return false; }
+      if (Number.isFinite(p0) && !(p0 > 0 && p0 < 1)) { render([], "Baseline risk must be strictly between 0 and 1, or left blank."); return false; }
+      if (Number.isFinite(sd) && !(sd > 0)) { render([], "Pooled SD must be strictly positive, or left blank."); return false; }
       const rows = convert(type, est, se, p0, sd);
       const warn = type === "HR" || type === "IRR"
         ? "No general mathematically valid conversion from a hazard/rate ratio to an odds ratio, risk ratio or SMD. A specified time horizon and data-generating model would be needed; use the original effect measure."
@@ -616,6 +616,7 @@
         ? "Cox OR conversion assumes an unobserved logistic distribution. An imported Hedges' g is already bias-corrected; do not correct it again."
         : "";
       render(rows, warn);
+      return true;
     }
 
     // initial render
@@ -809,10 +810,10 @@
         ['der-t','der-f','der-f-sign','der-p','der-lo','der-hi'].forEach(function (id) {
           var el = document.getElementById(id); if (el) el.value = '';
         });
-        runConvert();
+        var converted = runConvert();
         if (window.alm && window.alm.urlState)
           window.alm.urlState.write(window.__almSnapshot());
-        setWarn('Imported metafor-compatible Hedges g and LS variance from the first means/SDs CSV row (n1=' +
+        if (converted) setWarn('Imported metafor-compatible Hedges g and LS variance from the first means/SDs CSV row (n1=' +
           r.n1 + ', n2=' + r.n2 + ', df=' + stat.df + '). No additional J correction applied.' +
           (rows.length > 1 ? ' This single-estimate tool imported only the first of ' + rows.length + ' rows.' : ''));
       } catch (error) {
