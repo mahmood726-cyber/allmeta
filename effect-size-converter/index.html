@@ -215,7 +215,7 @@
       <div id="warn-slot" role="status" aria-live="polite"></div>
       <table>
         <thead>
-          <tr><th>Scale</th><th>Point</th><th>SE</th><th>95% CI</th></tr>
+          <tr><th>Scale</th><th>Point</th><th>SE</th><th>95% CI</th><th scope="col">Notes</th></tr>
         </thead>
         <tbody id="results-body"></tbody>
       </table>
@@ -455,7 +455,7 @@
           ? `[${fmt(r.lo)}, ${fmt(r.hi)}]`
           : "—";
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td><code>${r.scale}</code></td><td>${fmt(r.point)}</td><td>${fmt(r.se)}</td><td>${ci}</td>`;
+        tr.innerHTML = `<td><code>${r.scale}</code></td><td>${fmt(r.point)}</td><td>${fmt(r.se)}</td><td>${ci}</td><td>${escapeHTML(r.note || "")}</td>`;
         if (r.note) tr.title = r.note;
         tbody.appendChild(tr);
       }
