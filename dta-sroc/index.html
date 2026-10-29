@@ -228,10 +228,10 @@
     window.__almDeeks = function () { return _lastDeeks; };
 
     // Fagan nomogram: pre-test prob (left axis) → LR line → post-test prob (right axis).
-    function faganSvg(b) {
+    function faganSvg(fp) {
       const W = 360, H = 260, T = 24, B = 24, L = 70, R = 70, ph = H - T - B;
       const dark = matchMedia('(prefers-color-scheme:dark)').matches, fg = dark ? "#e7e4dc" : "#15181d";
-      const pre = 0.20, fp = window.AlmDTABivariate.fagan(b.lrPos, b.lrNeg, pre);
+      const pre = fp.preProb;
       const yPre = T + ph * (1 - pre);                      // pre-test on a 0..1 linear axis
       const yPos = p => T + ph * (1 - p);
       const p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
@@ -243,7 +243,7 @@
       p.push("<text x='" + (W - R) + "' y='" + (T - 8) + "' text-anchor='middle' font-size='9' fill='" + fg + "'>post-test %</text>");
       p.push("<line x1='" + L + "' y1='" + yPre + "' x2='" + (W - R) + "' y2='" + yPos(fp.postPos) + "' stroke='#2c5e8a' stroke-width='1.6'/>");
       p.push("<line x1='" + L + "' y1='" + yPre + "' x2='" + (W - R) + "' y2='" + yPos(fp.postNeg) + "' stroke='#b04444' stroke-width='1.6' stroke-dasharray='4,2'/>");
-      p.push("<text x='" + (W / 2) + "' y='" + (H - 6) + "' text-anchor='middle' font-size='10' fill='" + fg + "'>pre 20% → +test " + (fp.postPos * 100).toFixed(0) + "%, −test " + (fp.postNeg * 100).toFixed(0) + "%</text>");
+      p.push("<text x='" + (W / 2) + "' y='" + (H - 6) + "' text-anchor='middle' font-size='10' fill='" + fg + "'>pre " + (pre * 100).toFixed(0) + "% → +test " + (fp.postPos * 100).toFixed(0) + "%, −test " + (fp.postNeg * 100).toFixed(0) + "%</text>");
       p.push("</svg>"); return p.join("");
     }
 
@@ -294,7 +294,7 @@
           corrected: s.corrected ? 1 : 0,
         };
       });
-      const b = a.bivar, mr = a.metareg;
+      const b = a.bivar, mr = a.metareg, d = a.deeks, f = a.fagan;
       return {
         _schema: "dta-sroc-results-v2",
         _savedAt: new Date().toISOString(),
@@ -305,6 +305,10 @@
         spearman_rho: a.rho != null ? +a.rho.toFixed(8) : null,
         mean_se:  a.mean ? r6(a.mean.se) : null,
         mean_fpr: a.mean ? r6(a.mean.fpr) : null,
+        deeks: d ? {
+          slope: r10(d.slope), intercept: r10(d.intercept), t: r10(d.t), df: d.df, p: r10(d.p),
+        } : null,
+        fagan: f ? { pre_prob: r6(f.preProb), post_pos: r6(f.postPos), post_neg: r6(f.postNeg) } : null,
         bivariate: b ? {
           method: b.method, mu_logit_se: r10(b.muLogitSe), mu_logit_fpr: r10(b.muLogitFPR),
           Psi: b.Psi.map(r => r.map(r10)), vcov: b.vcov.map(r => r.map(r10)),
@@ -417,7 +421,7 @@
       const errors = [];
       const studies = withPoints(parsed.studies, opts.correctionControl);
       const finite = studies.every(s => isFinite(s.logitSe) && isFinite(s.logitFPR));
-      const out = { parsed, studies, opts, errors, moses: null, rho: null, mean: null, bivar: null, metareg: null, deeks: null, design: null };
+      const out = { parsed, studies, opts, errors, moses: null, rho: null, mean: null, bivar: null, metareg: null, deeks: null, fagan: null, design: null };
       if (studies.length) {
         let sse = 0, sfp = 0; studies.forEach(s => { sse += s.se; sfp += s.fpr; });
         out.mean = { se: sse / studies.length, fpr: sfp / studies.length };
@@ -433,6 +437,7 @@
       }
       if (B && finite && rows.length >= 4) {
         try { out.bivar = B.fit(rows, opts); } catch (e) { errors.push("Bivariate model: " + e.message); }
+        if (out.bivar) out.fagan = B.fagan(out.bivar.lrPos, out.bivar.lrNeg, 0.20);
         if (state.cov === "last") {
           const d = designFor(parsed.studies); out.design = d;
           if (d.error) errors.push("Meta-regression: " + d.error + ".");
@@ -601,7 +606,7 @@
       if (a.metareg) tables += coefTableHtml(a.metareg);
       statsWrap.innerHTML = studies.length ? "<div class=\"stats\">" + parts.join("") + "</div>" + tables : "";
       const fh = document.getElementById("fagan-host"), dh = document.getElementById("deeks-host");
-      if (fh) fh.innerHTML = b ? faganSvg(b) : "";
+      if (fh) fh.innerHTML = a.fagan ? faganSvg(a.fagan) : "";
       if (dh) dh.innerHTML = a.deeks ? deeksSvg(a.deeks) : "";
 
       const extras = a.errors.slice();
