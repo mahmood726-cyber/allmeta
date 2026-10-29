@@ -37,3 +37,6 @@ nma-inconsistency/validate/plus/*.json text eol=lf
 # Correlation replay pins are calculated over LF bytes, including reference.json.
 correlation-ma/validate/corpus/*.json text eol=lf
 correlation-ma/validate/corpus/reference.json text eol=lf
+
+# Byte-pinned fixture: its MD5 is recorded by p07-translation-reference.R, so never convert line endings (Windows checkouts broke it).
+hub/shared/tests/unit/p07-translation-input.json -text
