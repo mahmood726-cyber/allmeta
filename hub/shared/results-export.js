@@ -138,22 +138,39 @@
         <button type="button" data-action="json">JSON</button>
         <button type="button" data-action="csv">CSV</button>
         <button type="button" data-action="md">Data (.md)</button>
+        <span data-export-status role="status" aria-live="polite"></span>
       </div>`;
+    const status = target.querySelector('[data-export-status]');
+    function _snapshot() {
+      const r = getResults();
+      status.textContent = r == null ? 'No results yet - run the analysis first, then export.' : '';
+      return r;
+    }
     target.querySelector('[data-action="report-md"]').addEventListener('click', () => {
-      _download(new Blob([_toReport(getResults(), opts, false)], { type: 'text/markdown' }), basename + '-report.md');
+      const r = _snapshot();
+      if (r == null) return;
+      _download(new Blob([_toReport(r, opts, false)], { type: 'text/markdown' }), basename + '-report.md');
     });
     target.querySelector('[data-action="report-txt"]').addEventListener('click', () => {
-      _download(new Blob([_toReport(getResults(), opts, true)], { type: 'text/plain' }), basename + '-report.txt');
+      const r = _snapshot();
+      if (r == null) return;
+      _download(new Blob([_toReport(r, opts, true)], { type: 'text/plain' }), basename + '-report.txt');
     });
     target.querySelector('[data-action="json"]').addEventListener('click', async () => {
-      const out = await _maybeSign(getResults());
+      const r = _snapshot();
+      if (r == null) return;
+      const out = await _maybeSign(r);
       _download(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }), basename + '.json');
     });
     target.querySelector('[data-action="csv"]').addEventListener('click', () => {
-      _download(new Blob([_toCSV(getResults())], { type: 'text/csv' }), basename + '.csv');
+      const r = _snapshot();
+      if (r == null) return;
+      _download(new Blob([_toCSV(r)], { type: 'text/csv' }), basename + '.csv');
     });
     target.querySelector('[data-action="md"]').addEventListener('click', () => {
-      _download(new Blob([_toMD(getResults())], { type: 'text/markdown' }), basename + '.md');
+      const r = _snapshot();
+      if (r == null) return;
+      _download(new Blob([_toMD(r)], { type: 'text/markdown' }), basename + '.md');
     });
   }
 
