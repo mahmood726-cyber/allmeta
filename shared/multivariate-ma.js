@@ -395,7 +395,14 @@
   }
 
   // ---- within-study correlation helpers ----
-  function covFromR(v1, v2, r) { return r * Math.sqrt(v1 * v2); }
+  function covFromR(v1, v2, r) {
+    var product = v1 * v2;
+    // Keep normal-product rounding; split roots avoid overflow, underflow and
+    // precision loss in a subnormal product of positive finite variances.
+    var scale = product >= 2.2250738585072014e-308 && Number.isFinite(product) ?
+      Math.sqrt(product) : Math.sqrt(v1) * Math.sqrt(v2);
+    return r * scale;
+  }
   // rows: [{ y:[y1,y2], v:[v1,v2] }]; grid: within-study correlations, each |rho_w| < 1.
   // Every study receives the SAME assumed within-study correlation rho_w (supplied
   // covariances, if any, are replaced). Pure: no DOM, no state.
