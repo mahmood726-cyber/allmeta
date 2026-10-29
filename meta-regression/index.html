@@ -379,7 +379,13 @@
       const m=Math.pow(10,Math.floor(Math.log10(s0))), nm=s0/m;
       let step = nm<1.5?m:(nm<3?2*m:(nm<7?5*m:10*m));
       const start=Math.ceil(lo/step)*step; const t=[];
-      for (let v=start;v<=hi+1e-9;v+=step) t.push(v);
+      // Count candidates: adding step to a large offset may not advance it.
+      const count=Math.min(Math.ceil(r/step), 2*Math.max(1,n));
+      for (let i=0;i<=count;i++) {
+        const v=start+i*step;
+        if (!(v<=hi+1e-9)) break;
+        if (!t.length || v>t[t.length-1]) t.push(v);
+      }
       return t;
     }
 
@@ -422,8 +428,10 @@
         const tCrit = tQuantile975(hk.df);
 
         const linePts = [], upperPts = [], lowerPts = [];
-        const STEP = (xHi - xLo) / 200;
-        for (let xv = xLo; xv <= xHi + 1e-9; xv += STEP) {
+        // Integer progress stays bounded even when adjacent samples round alike.
+        const intervals = 200;
+        for (let i = 0; i <= intervals; i++) {
+          const xv = i === intervals ? xHi : xLo + (xHi - xLo) * (i / intervals);
           const yHat = f.b0 + f.b1 * xv;
           // Var(β0 + β1·x) = Var(β0) + x²·Var(β1) + 2x·Cov(β0, β1)
           // Cov(β0, β1) = -q·Σwx/det
