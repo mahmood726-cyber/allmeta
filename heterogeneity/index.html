@@ -910,7 +910,14 @@
     window.__almResults = function () {
       var info = window._almLastFE ? window._almLastFE() : null;
       var studies = window._almLastStudies ? window._almLastStudies() : [];
+      var build = window.AlmBuildInfo || {};
       var out = { _schema: 'heterogeneity-results-v1', k: studies.length,
+        producedBy: {
+          app: String(build.app || 'allmeta'),
+          version: String(build.version || 'unknown'),
+          sha: String(build.sha || 'unknown'),
+          builtAt: String(build.builtAt || '')
+        },
         I2_definition:'Q-based; retained for backwards compatibility',
         I2_model_definition:'100*tau2/(tau2+v_typical)',
         I2_ci_definition:'Model-based I2 obtained by transforming Q-profile tau2 limits',
