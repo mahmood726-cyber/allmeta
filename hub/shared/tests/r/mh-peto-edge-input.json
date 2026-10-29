@@ -1,0 +1,15 @@
+{
+  "schema": "mh-peto-edge-input-v1",
+  "cases": [
+    {"id":"regular_control","rows":[{"label":"A","e1":12,"n1":100,"e2":20,"n2":100},{"label":"B","e1":8,"n1":90,"e2":15,"n2":92},{"label":"C","e1":20,"n1":150,"e2":28,"n2":148}]},
+    {"id":"two_unbalanced","rows":[{"label":"A","e1":3,"n1":17,"e2":9,"n2":61},{"label":"B","e1":12,"n1":80,"e2":2,"n2":13}]},
+    {"id":"two_single_zero","rows":[{"label":"A","e1":0,"n1":20,"e2":3,"n2":29},{"label":"B","e1":2,"n1":15,"e2":0,"n2":31}]},
+    {"id":"exact_null","rows":[{"label":"A","e1":2,"n1":10,"e2":2,"n2":10},{"label":"B","e1":2,"n1":10,"e2":2,"n2":10},{"label":"C","e1":2,"n1":10,"e2":2,"n2":10}]},
+    {"id":"all_event","rows":[{"label":"A","e1":10,"n1":10,"e2":20,"n2":20},{"label":"B","e1":7,"n1":7,"e2":13,"n2":13}]},
+    {"id":"all_zero","rows":[{"label":"A","e1":0,"n1":10,"e2":0,"n2":20},{"label":"B","e1":0,"n1":7,"e2":0,"n2":13}]},
+    {"id":"one_informative","rows":[{"label":"informative","e1":2,"n1":13,"e2":5,"n2":21},{"label":"double-zero","e1":0,"n1":11,"e2":0,"n2":19},{"label":"all-event","e1":7,"n1":7,"e2":9,"n2":9}]},
+    {"id":"loo_boundary","rows":[{"label":"A","e1":1,"n1":10,"e2":4,"n2":20},{"label":"B","e1":3,"n1":20,"e2":1,"n2":10},{"label":"double-zero","e1":0,"n1":10,"e2":0,"n2":20}]},
+    {"id":"dl_heterogeneous","rows":[{"label":"A","e1":1,"n1":20,"e2":12,"n2":20},{"label":"B","e1":12,"n1":20,"e2":1,"n2":20},{"label":"C","e1":4,"n1":20,"e2":6,"n2":20}]},
+    {"id":"single_engine_only","rows":[{"label":"A","e1":2,"n1":13,"e2":5,"n2":21}]}
+  ]
+}
