@@ -38,6 +38,10 @@ jobs:
       # P19 complete-data import and malformed-bus refusal are Node tests, not Playwright *.spec.mjs.
       - name: Native Node component-NMA import refusal and positive controls
         run: node --test unit/p19-r3-bus-completeness.test.mjs unit/p19-r4-bus-import.test.mjs
+      # P19 scaling invariance, refusal and pinned stored metafor comparisons.
+      # This executes Node *.test.mjs not selected by Playwright *.spec.mjs.
+      - name: Native Node component-NMA DL scale regression
+        run: node --test unit/p19-scale-defect.test.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --reporter=line,json
         env:
