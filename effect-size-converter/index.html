@@ -703,11 +703,12 @@
     window.__almSnapshot = function () {
       var ids = ['in-type','in-smd-kind','in-est','in-se','ctx-p0','ctx-sd',
                  'der-t','der-n1','der-f','der-f-sign','der-n2','der-p',
-                 'der-lo','der-hi','der-scale'];
+                 'der-lo','der-hi','der-scale',
+                 'ev-measure','ev-point','ev-lo','ev-hi','ev-rare'];
       var snap = {};
       ids.forEach(function (id) {
         var el = document.getElementById(id);
-        if (el) snap[id] = el.value;
+        if (el) snap[id] = el.type === 'checkbox' ? el.checked : el.value;
       });
       return snap;
     };
@@ -717,7 +718,8 @@
       var isEmpty = !snap || Object.keys(snap).length === 0;
       var ids = ['in-type','in-smd-kind','in-est','in-se','ctx-p0','ctx-sd',
                  'der-t','der-n1','der-f','der-f-sign','der-n2','der-p',
-                 'der-lo','der-hi','der-scale'];
+                 'der-lo','der-hi','der-scale',
+                 'ev-measure','ev-point','ev-lo','ev-hi','ev-rare'];
       ids.forEach(function (id) {
         var el = document.getElementById(id);
         if (!el) return;
@@ -725,15 +727,19 @@
           // restore defaults by clearing derive fields; keep type/est at current
           if (['der-t','der-n1','der-f','der-f-sign','der-n2','der-p','der-lo','der-hi'].includes(id)) el.value = '';
         } else {
-          if (snap[id] != null) el.value = snap[id];
+          if (snap[id] != null) {
+            if (el.type === 'checkbox') el.checked = snap[id];
+            else el.value = snap[id];
+          }
         }
       });
       if (typeof runConvert === 'function') runConvert();
+      evRender();
     };
 
     // Return the current conversion table rows as a results object.
     // E-value widget (VanderWeele-Ding) — independent of the conversion table.
-    (function () {
+    var evRender = (function () {
       function evRender() {
         var out = document.getElementById('ev-out'); if (!out || !window.AlmEValue) return;
         var meas = document.getElementById('ev-measure').value;
@@ -753,10 +759,16 @@
         var el = document.getElementById(id); if (el) el.addEventListener('input', evRender);
       });
       if (document.readyState !== 'loading') evRender(); else document.addEventListener('DOMContentLoaded', evRender);
+      return evRender;
     })();
 
     window.__almResults = function () {
       if (typeof runConvert === 'function') runConvert();
+      evRender();
+      var evNumber = function (id) {
+        var value = parseFloat(document.getElementById(id).value);
+        return Number.isFinite(value) ? value : null;
+      };
       var type = document.getElementById('in-type').value;
       var est = parseFloat(document.getElementById('in-est').value);
       var se = parseFloat(document.getElementById('in-se').value);
@@ -782,7 +794,17 @@
           Number(document.getElementById('ctx-sd').value) : null,
         assumptions: 'Normal/Wald 95% CI; fixed p0 for OR/RR/RD; Cox OR/SMD assumes latent logistic distribution; no generic HR/IRR conversion.',
         numerical_reference: 'metafor::escalc(measure="SMD",correct=TRUE,vtype="LS"); metafor::cmicalc(method="exact")',
-        rows: rows
+        rows: rows,
+        e_value: {
+          inputs: {
+            measure: document.getElementById('ev-measure').value,
+            point: evNumber('ev-point'),
+            lo: evNumber('ev-lo'),
+            hi: evNumber('ev-hi'),
+            rare: document.getElementById('ev-rare').checked
+          },
+          results: typeof window.__almLastEValue === 'function' ? window.__almLastEValue() : null
+        }
       };
     };
 
