@@ -634,6 +634,23 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'propma-results',
+      description: 'Proportion meta-analysis of single-arm studies.',
+      methods: function () {
+        // Describe the exported fit, including when controls have pending edits.
+        var result = _lastResults;
+        if (!result) return 'No fitted analysis is available. Run the analysis before exporting.';
+        var model = result.tauEstimator === 'FE'
+          ? 'Common-effect (fixed-effect) inverse-variance pooling.'
+          : 'Random-effects inverse-variance pooling with the ' +
+            (result.tauEstimator === 'DL' ? 'DerSimonian-Laird (DL)' : 'Paule-Mandel (PM)') +
+            ' estimator of between-study variance.';
+        var transform = result.transform === 'ft'
+          ? 'Freeman-Tukey double-arcsine transformation; pooled estimates and CIs are back-transformed using the harmonic mean of study sizes. Caveat: this inverse depends on the chosen study size and can be seriously misleading.'
+          : result.transform === 'logit'
+            ? 'Logit transformation with a 0.5 continuity correction only for boundary studies; pooled estimates and CIs are back-transformed.'
+            : 'Raw proportions (no transformation) with a 0.5 continuity correction only for boundary studies; pooled CI limits are bounded to [0,1].';
+        return model + ' ' + transform + ' Per-study 95% CIs use Clopper-Pearson.';
+      },
       getResults: function () { return window._almLastPropMA ? window._almLastPropMA() : {}; },
     });
 
