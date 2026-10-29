@@ -579,8 +579,10 @@
       parts.push(statCard("Q (df=" + sum.df + ")", fmt(sum.Q, 2) + "  " + (sum.pQ < 0.0005 ? "p<0.001" : "p=" + fmt(sum.pQ, 3))));
       parts.push(statCard("I² (Q-based)",fmt(sum.I2,1)+"%"));
       parts.push(statCard("I² (model-based)",fmt(sum.I2Model,1)+"%"+
-        (qpci ? " ["+fmt(qpci.I2Lo,1)+", "+fmt(qpci.I2Hi,1)+"] (Q-profile)" : "")));
+        (qpci ? (qpci.empty ? "; empty confidence set; boundary limits " : " ")+
+          "["+fmt(qpci.I2Lo,1)+", "+fmt(qpci.I2Hi,1)+"] (Q-profile)" : "")));
       if (qpci) parts.push(statCard("τ² 95% CI (Q-profile)",
+        (qpci.empty ? "empty confidence set; boundary limits " : "")+
         "[" + fmt(qpci.tau2Lo, 4) + ", " + fmt(qpci.tau2Hi, 4) + "]"));
       parts.push(statCard("τ² (PM)", fmt(tauEstimates.pm, 4)));
       parts.push(statCard("τ² (REML)", fmt(tauEstimates.reml, 4)));
@@ -592,6 +594,7 @@
       parts.push(statCard("95% PI (model SE + t)", "[" + fmt(piLo, 3) + ", " + fmt(piHi, 3) + "]"));
 
       statsWrap.innerHTML = "<div class=\"stats\">" + parts.join("") + "</div>";
+      if (qpci && qpci.empty) statsWrap.innerHTML += "<p>The Q-profile confidence set is empty because Q(0) is below the lower chi-square quantile. The displayed zero boundary limits are placeholders, not a zero-width interval. Point estimates are still shown.</p>";
 
       // Leave-one-out
       const rows = [];
@@ -945,6 +948,8 @@
           out.tau2_ci_ub = qp.tau2Hi;
           out.I2_ci_lb = qp.I2Lo;
           out.I2_ci_ub = qp.I2Hi;
+          out.qprofile_empty = qp.empty;
+          out.qprofile_status = qp.empty ? 'Empty confidence set: Q(0) is below the lower chi-square quantile; zero limits are boundary placeholders, not a zero-width interval.' : 'Nonempty confidence set';
         }
       }
       return out;

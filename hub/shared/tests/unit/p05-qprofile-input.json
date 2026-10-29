@@ -1,0 +1,12 @@
+[
+  {"id":"tied_zero","text":"A, 0, 1\nB, 0, 1\nC, 0, 1","alpha":0.05,"empty":true},
+  {"id":"boundary","text":"A, -0.1, 1\nB, 0, 1\nC, 0.1, 1","alpha":0.05,"empty":true},
+  {"id":"nonempty_tau2_zero","text":"A, -0.5, 1\nB, 0, 1\nC, 0.5, 1","alpha":0.05,"empty":false},
+  {"id":"heterogeneous","text":"A, 0.1, 0.2\nB, 0.3, 0.25\nC, 0.5, 0.18\nD, 0.2, 0.3\nE, 0.9, 0.22\nF, 0.4, 0.28\nG, 1.1, 0.35\nH, 0.05, 0.15","alpha":0.05,"empty":false},
+  {"id":"alpha90","text":"A, -0.2, 1\nB, 0, 1\nC, 0.2, 1","alpha":0.1,"empty":true},
+  {"id":"alpha95","text":"A, -0.2, 1\nB, 0, 1\nC, 0.2, 1","alpha":0.05,"empty":false},
+  {"id":"dat.axfors2021#1","corpus":true,"alpha":0.05,"empty":true},
+  {"id":"dat.axfors2021#2","corpus":true,"alpha":0.05,"empty":true},
+  {"id":"dat.nissen2007#1","corpus":true,"alpha":0.05,"empty":true},
+  {"id":"dat.nissen2007#2","corpus":true,"alpha":0.05,"empty":true}
+]
