@@ -308,7 +308,7 @@
         bivariate: b ? {
           method: b.method, mu_logit_se: r10(b.muLogitSe), mu_logit_fpr: r10(b.muLogitFPR),
           Psi: b.Psi.map(r => r.map(r10)), vcov: b.vcov.map(r => r.map(r10)),
-          logLik: r10(b.logLik), AIC: r10(b.AIC), BIC: r10(b.BIC), converged: b.converged,
+          logLik: r10(b.logLik), AIC: r10(b.AIC), BIC: r10(b.BIC), converged: b.converged, negeigen: b.negeigen,
           sens: r6(b.sens), sens_ci: b.sensCI.map(r6), spec: r6(b.spec), spec_ci: b.specCI.map(r6),
           lr_pos: r6(b.lrPos), lr_pos_ci: b.lrPosCI.map(r6), lr_neg: r6(b.lrNeg), lr_neg_ci: b.lrNegCI.map(r6), dor: r6(b.dor),
           cor_random: r6(b.corRandom), auc: b.auc ? r6(b.auc.rg[0]) : null, pauc: b.auc ? r6(b.auc.rg[1]) : null,
@@ -317,6 +317,7 @@
         meta_regression: mr ? { method: mr.method, coefficients: mr.coefTable.map(c => ({ outcome: c.outcome, term: c.term,
           estimate: r10(c.estimate), se: r10(c.se), z: r6(c.z), p: r6(c.p), ci: c.ci.map(r10) })), logLik: r10(mr.logLik), AIC: r10(mr.AIC) } : null,
         errors: a.errors,
+        warnings: a.warnings,
         rows: rows,
       };
     };
@@ -417,7 +418,7 @@
       const errors = [];
       const studies = withPoints(parsed.studies, opts.correctionControl);
       const finite = studies.every(s => isFinite(s.logitSe) && isFinite(s.logitFPR));
-      const out = { parsed, studies, opts, errors, moses: null, rho: null, mean: null, bivar: null, metareg: null, deeks: null, design: null };
+      const out = { parsed, studies, opts, errors, warnings: [], moses: null, rho: null, mean: null, bivar: null, metareg: null, deeks: null, design: null };
       if (studies.length) {
         let sse = 0, sfp = 0; studies.forEach(s => { sse += s.se; sfp += s.fpr; });
         out.mean = { se: sse / studies.length, fpr: sfp / studies.length };
@@ -433,6 +434,8 @@
       }
       if (B && finite && rows.length >= 4) {
         try { out.bivar = B.fit(rows, opts); } catch (e) { errors.push("Bivariate model: " + e.message); }
+        const b = out.bivar;
+        if (b && b.negeigen) out.warnings.push("The " + METHOD_LABEL[b.method] + " estimate of the between-study covariance was not positive definite and was truncated (as mada does).");
         if (state.cov === "last") {
           const d = designFor(parsed.studies); out.design = d;
           if (d.error) errors.push("Meta-regression: " + d.error + ".");
@@ -611,7 +614,7 @@
       if (nz && a.opts.correctionControl === "single") extras.push(nz + " stud" + (nz === 1 ? "y has" : "ies have") + " a zero cell; 0.5 was added to the cells of " + (nz === 1 ? "that study" : "those studies") + " only.");
       if (b && b.method === "fixed") extras.push("Fixed-effect model: no between-study variance, so no SROC curve and the prediction region equals the confidence region.");
       if (b && b.converged === false) extras.push("The " + METHOD_LABEL[b.method] + " estimation did not converge within 100 iterations; interpret with caution.");
-      if (b && b.negeigen) extras.push("The " + METHOD_LABEL[b.method] + " estimate of the between-study covariance was not positive definite and was truncated (as mada does).");
+      extras.push(...a.warnings);
       if (studies.length < 4) extras.push("The bivariate model needs at least 4 studies with valid TP, FP, FN and TN counts (currently " + studies.length + ")." + (studies.length ? " Any displayed means and plots describe the entered studies; no bivariate fit is available." : ""));
       else if (studies.length && studies.length < 10) extras.push("k = " + studies.length + " — with fewer than about 10 studies the between-study covariance, and hence the prediction region, is imprecise.");
       const all = a.parsed.warnings.concat(extras);
