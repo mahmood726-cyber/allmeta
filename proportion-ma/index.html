@@ -634,7 +634,10 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'propma-results',
-      getResults: function () { return window._almLastPropMA ? window._almLastPropMA() : {}; },
+      getResults: function () {
+        var results = window._almLastPropMA ? window._almLastPropMA() : null;
+        return results || { status: 'No fitted results. Run the analysis with at least 2 valid studies before exporting.' };
+      },
     });
 
     window.alm.urlState({ version: 1 });
