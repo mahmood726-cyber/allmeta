@@ -29,15 +29,16 @@
   // ----- Parsing -------------------------------------------------------------
 
   function sniffDelimiter(line) {
-    if (line.indexOf("\t") >= 0) return "\t";
     // Count delimiters outside double quotes.
-    var inQ = false, semi = 0, comma = 0;
+    var inQ = false, tab = 0, semi = 0, comma = 0;
     for (var i = 0; i < line.length; i++) {
       var ch = line.charAt(i);
       if (ch === '"') inQ = !inQ;
+      else if (!inQ && ch === "\t") tab++;
       else if (!inQ && ch === ";") semi++;
       else if (!inQ && ch === ",") comma++;
     }
+    if (tab > 0) return "\t";
     if (semi > 0 && semi >= comma) return ";";
     return ",";
   }
