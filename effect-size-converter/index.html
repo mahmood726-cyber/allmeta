@@ -756,7 +756,7 @@
     })();
 
     window.__almResults = function () {
-      if (typeof runConvert === 'function') runConvert();
+      // Read rendered results; recalculating here would undo a rejected Derive.
       var type = document.getElementById('in-type').value;
       var est = parseFloat(document.getElementById('in-est').value);
       var se = parseFloat(document.getElementById('in-se').value);
