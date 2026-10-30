@@ -280,6 +280,17 @@
   function shareSet(s) {
     if (!s || typeof s.src !== 'string' || s.src.length > 200000) throw new Error('data text missing or too long');
     if (MODELS.indexOf(s.model) < 0) throw new Error('unknown model ' + String(s.model));
+    // The paste path's own row checker (plus-ui.js parseIssues) and the app's input rules, as apply() uses them, before
+    // anything is changed: a row parse() would drop silently makes the file invalid instead of quietly changing the analysis.
+    if (typeof global.__almIncoParseIssues !== 'function' || typeof global.parse !== 'function' ||
+        typeof global.inputIssue !== 'function') throw new Error('the app input checks are not available');
+    var rows = global.__almIncoParseIssues(s.src);
+    if (rows.unterminated) throw new Error('a quotation mark opened on line ' + rows.unterminated + ' is never closed');
+    // A first-line header is not a data row; any other ignored line is.
+    var bad = rows.ignored.filter(function (x) { return x.why !== 'looks like a header'; });
+    if (bad.length) throw new Error('line ' + bad[0].line + ' cannot be used: ' + bad[0].why);
+    var issue = global.inputIssue(global.parse(s.src));
+    if (issue) throw new Error(issue);
     byId('src').value = s.src;
     byId('f-model').value = s.model;
     byId('btn-run').click();

@@ -8,6 +8,8 @@
   'use strict';
   const P = window.AlmIncoPlusCore;
   const $ = id => document.getElementById(id);
+  // The same row checker for a restored analysis file (alm-features.js share set()), so it cannot be skipped silently.
+  window.__almIncoParseIssues = parseIssues;
   if (!P || !$('alm-plus')) return;
   const E = { inputIssue: window.inputIssue, estimateTau2: window.estimateTau2, fitNMA: window.fitNMA, nodeSplit: window.nodeSplit, dbt: window.dbt };
   const fmt = P.fmt, fmtP = P.fmtP;
