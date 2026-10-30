@@ -21,7 +21,8 @@ const kappaTolerance = 1e-4;
 
 test('P15-R4 control: native R fixture records inputs and package versions', () => {
   const ref = readReference();
-  assert.equal(ref.provenance.input_md5, createHash('md5').update(inputBytes).digest('hex'));
+  // The oracle records LF bytes; checkout CRLF must not change input identity.
+  assert.equal(ref.provenance.input_md5, createHash('md5').update(inputBytes.toString('utf8').replace(/\r\n/g, '\n')).digest('hex'));
   assert.deepEqual(ref.input, input);
   assert.ok(ref.provenance.R);
   for (const name of ['robumeta', 'jsonlite']) assert.ok(ref.provenance.packages[name]);
