@@ -838,6 +838,14 @@
       if (!rows || !rows.length) return;
       try {
         var r = rows[0];
+        // Validate before coercion: Number(null) would turn a missing mean into zero.
+        ['m1', 'sd1', 'n1', 'm2', 'sd2', 'n2'].forEach(function (field) {
+          var value = r[field];
+          if (value == null || (typeof value === 'string' && value.trim() === '') ||
+              !Number.isFinite(Number(value))) {
+            throw new Error(field + ' must be a finite number.');
+          }
+        });
         var stat = AlmEffectAccuracy.fromMeans(Number(r.m1), Number(r.sd1), Number(r.n1),
           Number(r.m2), Number(r.sd2), Number(r.n2));
         if (window.alm && window.alm.resetUndo) window.alm.resetUndo.snapshot();
