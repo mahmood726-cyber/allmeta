@@ -53,7 +53,7 @@
   }
 
   function link(doc, href, text, parent) {
-    var a = el(doc, 'a', { href: href, rel: 'noopener', target: '_blank' }, text, parent);
+    var a = el(doc, 'a', { href: href, rel: 'noopener', target: '_blank', 'aria-label': text + ' (opens in a new tab)' }, text, parent);
     return a;
   }
 
@@ -113,8 +113,11 @@
     var doc = root.ownerDocument;
     var box = el(doc, 'section', { class: 'alm-straight', 'aria-label': 'Straight path: methods guidance for this analysis' });
     root.appendChild(box);
+    var rendered = null;
     function refresh() {
-      var r = evaluate(spec);
+      var r = evaluate(spec), sig = JSON.stringify(r);
+      if (((box.querySelector && box.querySelector('button:disabled')) || (doc.querySelector && doc.querySelector('main textarea:disabled'))) || sig === rendered) return r;
+      rendered = sig;
       box.replaceChildren();
       el(doc, 'p', { class: 'alm-sp-intro' },
         'Advisory checks on this analysis’s own inputs, choices and results. They never block the analysis. Each check is linked to the Cochrane Handbook and, where one exists, to a published example of the error.', box);
@@ -142,10 +145,14 @@
     var box = el(doc, 'div', { class: 'alm-straight-notice', role: 'note', 'aria-label': 'Straight path advice', 'data-app': spec.app });
     box.hidden = true;
     anchor.parentNode.insertBefore(box, anchor);
-    var dismissed = null;
+    var dismissed = null, rendered = null;
     function refresh() {
       var r = evaluate(spec), items = firedItems(r);
       var sig = items.map(function (x) { return x.item.id + '|' + x.item.message; }).join('\n');
+      // A validation replay owns the disabled controls it captured. Keep those
+      // exact nodes until it unlocks them; never introduce an unlocked replacement.
+      if (((box.querySelector && box.querySelector('button:disabled')) || (doc.querySelector && doc.querySelector('main textarea:disabled'))) || sig === rendered) return r;
+      rendered = sig;
       box.replaceChildren();
       box.setAttribute('data-fired', items.map(function (x) { return x.item.id; }).join(' '));
       if (!items.length || sig === dismissed) { box.hidden = true; return r; }
@@ -173,13 +180,14 @@
     var handle = { notice: null, refresh: function () {} };
     var block = { ctx: spec.ctx };
     if (global.AlmFeatures && typeof global.AlmFeatures.register === 'function') global.AlmFeatures.register(spec.app, { straight: block });
-    var timer = null;
     function refresh() {
       if (!handle.notice) handle.notice = notice(spec);
       if (handle.notice) handle.notice.refresh(); else evaluate(spec);
       if (block.__panel) block.__panel.refresh();
     }
-    function schedule() { if (timer) clearTimeout(timer); timer = setTimeout(function () { timer = null; refresh(); }, 40); }
+    // MutationObserver already batches synchronous renders. Refresh at its checkpoint
+    // so a restored analysis never exposes advice from a temporary replay fixture.
+    function schedule() { refresh(); }
     handle.refresh = refresh;
     function start() {
       refresh();
@@ -189,6 +197,13 @@
         var n = doc.querySelector(sel);
         if (n) mo.observe(n, { childList: true, subtree: true, characterData: true });
       });
+      // Re-render deferred advice when the replay restores the captured controls.
+      // Attribute filtering avoids observing our own content/ARIA rendering.
+      if (handle.notice) mo.observe(handle.notice.element, { attributes: true, subtree: true, attributeFilter: ['disabled'] });
+      var features = doc.querySelector('#alm-features');
+      if (features) mo.observe(features, { attributes: true, subtree: true, attributeFilter: ['disabled'] });
+      var main = doc.querySelector('main');
+      if (main) mo.observe(main, { attributes: true, subtree: true, attributeFilter: ['disabled'] });
       handle.observer = mo;
     }
     if (doc.readyState === 'complete') start();
