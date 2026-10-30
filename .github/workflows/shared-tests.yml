@@ -88,7 +88,9 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: hub/shared/tests/package-lock.json
-      - uses: r-lib/actions/setup-r@v2
+      # r-lib/actions v2.14.0 (2026-09-21); pin exact authenticated source,
+      # not its moving major tag, for this numerical reference runner.
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05
         with:
           r-version: "4.6.0"
       - name: Install exact oracle package versions
