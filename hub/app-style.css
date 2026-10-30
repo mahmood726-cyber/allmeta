@@ -231,7 +231,9 @@ button {
   border-radius: var(--radius-sm) !important;
   font-family: var(--font-sans);
   font-weight: 500;
-  transition: transform 120ms, box-shadow 150ms, background 150ms, border-color 150ms;
+  /* No background transition: hover never changes a plain button's background-color, so it only ever
+     animated theme switches, leaving light text on a still-white button for 150 ms (axe contrast race). */
+  transition: transform 120ms, box-shadow 150ms, border-color 150ms;
   cursor: pointer;
 }
 button:hover:not(:disabled) {
