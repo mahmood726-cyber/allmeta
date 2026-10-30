@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 
-const inputBytes = readFileSync(new URL('./p07-translation-input.json', import.meta.url));
+// The recorded R input hash uses LF bytes, independent of checkout line endings.
+const inputBytes = Buffer.from(readFileSync(new URL('./p07-translation-input.json', import.meta.url), 'utf8').replace(/\r\n/g, '\n'), 'utf8');
 const input = JSON.parse(inputBytes);
 // Read the oracle inside its tests so a missing R fixture cannot mask the
 // independent translation-invariance regression assertions.
