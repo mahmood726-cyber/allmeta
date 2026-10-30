@@ -257,7 +257,16 @@
     const refHost = document.getElementById("ref-host");
 
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value; } return o; }
-    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+    function writeState(s) {
+      for (const [k,id] of Object.entries(fields)) {
+        const el = document.getElementById(id);
+        if (el && k in s) {
+          // The incoming network's reference options are created by render.
+          if (k === "ref") _pendingRef = String(s[k]);
+          else el.value = s[k];
+        }
+      }
+    }
 
     // CSV labels may contain commas or escaped quotes; tabs are also accepted.
     function contrastCells(raw) {
@@ -571,6 +580,7 @@
 
       populateRef(treatments, _pendingRef || state.ref); _pendingRef = null;
       const refTreat = document.getElementById("f-ref").value || treatments[0] || "";
+      state.ref = refTreat;
 
       const extras = [...parsed.warnings];
       let connected = true;
@@ -809,6 +819,10 @@
           } }
         ]
       });
+      // A later manual choice supersedes an import even while parsing is refused.
+      for (const type of ["input", "change"]) {
+        document.getElementById("f-ref").addEventListener(type, function () { _pendingRef = null; });
+      }
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) { el.addEventListener("input", render); if (el.tagName === "SELECT") el.addEventListener("change", render); } }
       document.getElementById("f-ref").addEventListener("change", render);
       document.getElementById("btn-league").addEventListener("click", onDownloadLeague);
