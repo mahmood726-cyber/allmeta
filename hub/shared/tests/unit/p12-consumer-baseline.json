@@ -1,0 +1,7 @@
+{
+  "description": "Exact supplied PR-head consumer blocks captured before the pass-3 fixes; reconstruct and hash-check source in memory for the unchanged consumer suite. This is not the unavailable pre-PR parser.",
+  "html_sha256_lf": "d5221a84eb48342014091fef68d4d276690e35da5b38f3603384f4d151cc6957",
+  "adapter_sha256_lf": "baf4e7658a6ca49d3405f6c02266a7e971e60207c4ce0c80437a72c33b70d6bc",
+  "html_bus": "    if (window.MaStudies && MaStudies.attachButtons) {\n      MaStudies.attachButtons({\n        btnLoad: \"#btn-bus-load\", btnSave: \"#btn-bus-save\",\n        textarea: \"#src\", format: \"est-se-label\",\n        onAfterLoad: run,\n      });\n    }\n\n",
+  "adapter_current_state": "function currentState(){\n const text=document.getElementById('src').value,lines=text.trim().split(/\\n/).filter(x=>x.trim());\n if(lines.length<3||lines.some(x=>{const p=x.split(',');return p.length<2||!p[0].trim()||!p[1].trim()||!finite(Number(p[0]))||!finite(Number(p[1]))||Number(p[1])<=0;}))throw Error('Need at least three valid effect rows; invalid lines refused');\n const te=lines.map(x=>Number(x.split(',')[0])),se=lines.map(x=>Number(x.split(',')[1]));\n __almLimitValidationRun(text,false);const v=values(_almLastLimit());\n adapter.live.compare.kind=Object.fromEntries(v.map(x=>[x.key,'rel']));\n return {te,se,values:v,note:'DL + beta0; all exported estimates, SEs, CIs, heterogeneity, Q decomposition and shrunken studies. Live meta 8.3-0 / metasens 1.5-3; paper meta 8.5-0 / metasens 1.5-3. R refusal is not a pass.'};\n}\n"
+}

@@ -741,11 +741,30 @@
     });
 
 
-    if (window.MaStudies && MaStudies.attachButtons) {
-      MaStudies.attachButtons({
-        btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
-        textarea: "#src", format: "est-se-label",
-        onAfterLoad: run,
+    if (window.MaStudies) {
+      // The shared textarea helpers split physical lines; this page uses CSV records.
+      function notifyBus(message, kind) {
+        if (window.Toast && typeof window.Toast.show === 'function') window.Toast.show(message, kind || 'warn');
+      }
+      document.getElementById('btn-bus-load').addEventListener('click', function () {
+        var studies = MaStudies.read();
+        if (!studies.length) { notifyBus('No shared studies yet.'); return; }
+        window.__almLimitLoad(studies.map(function (r) { return { te: r.est, se: r.se, label: r.label }; }));
+        document.getElementById('src').dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      document.getElementById('btn-bus-save').addEventListener('click', function () {
+        var rows;
+        try {
+          rows = parse(document.getElementById('src').value).map(function (r) {
+            return { label: r.label, est: r.te, se: r.se };
+          });
+        } catch (error) {
+          notifyBus(error.message, 'error');
+          return;
+        }
+        if (!rows.length) { notifyBus('Nothing to save.'); return; }
+        var ok = MaStudies.write(rows);
+        notifyBus(ok ? ('Saved ' + rows.length + ' studies to shared bus.') : 'Could not save to bus.', ok ? 'warn' : 'error');
       });
     }
 

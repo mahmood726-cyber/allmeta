@@ -83,9 +83,9 @@ async function replay(loaded,progress){
  return {checks,passed,failed,maxima,refusals:[{id:refusalId,reason:refusalReason}],summaryLines:['Full primary comparison: 169 configurations, 113 datasets, 9852 effect rows; page code and rendered geometry, no archived app outputs.','dat.hartmannboyce2018::001: R internal REML non-convergence remains a failed status comparison, never a pass.','Paper: meta 8.5-0 / metasens 1.5-3. Relative tolerance 1e-9.']};});
 }
 function currentState(){
- const text=document.getElementById('src').value,lines=text.trim().split(/\n/).filter(x=>x.trim());
- if(lines.length<3||lines.some(x=>{const p=x.split(',');return p.length<2||!p[0].trim()||!p[1].trim()||!finite(Number(p[0]))||!finite(Number(p[1]))||Number(p[1])<=0;}))throw Error('Need at least three valid effect rows; invalid lines refused');
- const te=lines.map(x=>Number(x.split(',')[0])),se=lines.map(x=>Number(x.split(',')[1]));
+ const text=document.getElementById('src').value,rows=window.__almLimitParse(text);
+ if(rows.length<3)throw Error('Need at least three valid effect rows; invalid lines refused');
+ const te=rows.map(r=>r.te),se=rows.map(r=>r.se);
  __almLimitValidationRun(text,false);const v=values(_almLastLimit());
  adapter.live.compare.kind=Object.fromEntries(v.map(x=>[x.key,'rel']));
  return {te,se,values:v,note:'DL + beta0; all exported estimates, SEs, CIs, heterogeneity, Q decomposition and shrunken studies. Live meta 8.3-0 / metasens 1.5-3; paper meta 8.5-0 / metasens 1.5-3. R refusal is not a pass.'};
