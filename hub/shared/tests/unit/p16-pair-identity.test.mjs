@@ -71,3 +71,15 @@ for (const [kind, names] of [['plant', labels], ['control', plainLabels]]) {
     assert.equal(new Set(keys).size, 6, 'live R membership must use pair identity, not display text');
   });
 }
+
+test('P16-R3 serialised treatment-pair identities fail closed if absent, duplicated or forged', () => {
+  const rows = rowsFor(labels);
+  assert.throws(() => liveScript(rows, 'FE', s => { delete s.pairKeys; }),
+    /Missing structural treatment-pair identity/);
+  assert.throws(() => liveScript(rows, 'FE', s => { s.pairKeys[1] = s.pairKeys[0]; }),
+    /Duplicate structural treatment-pair identity/);
+  assert.throws(() => liveScript(rows, 'FE', s => { s.pairKeys[0] = 'not-json'; }),
+    /Invalid structural treatment-pair identity/);
+  assert.throws(() => liveScript(rows, 'FE', s => { s.pairKeys[0] = JSON.stringify(['A', 'not-a-treatment']); }),
+    /Unknown structural treatment-pair identity/);
+});
