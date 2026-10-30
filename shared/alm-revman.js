@@ -1,6 +1,8 @@
 /* RevMan reader: strict, local .rm5 XML and CSV/tab study tables.
  * No pooling or effect-size conversion occurs here. Numeric inputs are retained.
- * XML vocabulary checked against meta::read.rm5 (R/read.rm5-internal.R).
+ * XML outcome vocabulary: DICH_, CONT_, IV_ and IPD_ OUTCOME/SUBGROUP/DATA, as read by meta::read.rm5
+ * (meta 8.5.0 extract_outcomes; IPD_DATA carries O_E and VAR). CONTINUOUS_* and O_E_AND_VARIANCE_* tags,
+ * and the N_1/ESTIMATE/O_MINUS_E/VARIANCE attribute names, are extra aliases that meta does not read.
  * Web CSV vocabulary: Cochrane RevMan Knowledge Base, data-package-specification-249561249.
  * parse(buffer) remains asynchronous; parseText(text) is pure and Node/browser compatible.
  * select(review, {comparison,outcome,subgroup}, schema, {filename}) requires all three choices.
@@ -124,7 +126,7 @@
       const id=prop(n,'ID');if(!id)fail('Missing study ID');if(studies[id])fail('Duplicate study ID: '+id);
       studies[id]={id,name:prop(n,'NAME')||id,year:year(prop(n,'YEAR')||prop(n,'YEAR_OF_PUB'))};
     });
-    const kinds={DICH_OUTCOME:['binary','DICH_DATA','DICH_SUBGROUP'],CONT_OUTCOME:['continuous','CONT_DATA','CONT_SUBGROUP'],CONTINUOUS_OUTCOME:['continuous','CONTINUOUS_DATA','CONTINUOUS_SUBGROUP'],IV_OUTCOME:['generic','IV_DATA','IV_SUBGROUP'],O_E_AND_VARIANCE_OUTCOME:['o_e_var','O_E_AND_VARIANCE_DATA','O_E_AND_VARIANCE_SUBGROUP']};
+    const kinds={DICH_OUTCOME:['binary','DICH_DATA','DICH_SUBGROUP'],CONT_OUTCOME:['continuous','CONT_DATA','CONT_SUBGROUP'],CONTINUOUS_OUTCOME:['continuous','CONTINUOUS_DATA','CONTINUOUS_SUBGROUP'],IV_OUTCOME:['generic','IV_DATA','IV_SUBGROUP'],O_E_AND_VARIANCE_OUTCOME:['o_e_var','O_E_AND_VARIANCE_DATA','O_E_AND_VARIANCE_SUBGROUP'],IPD_OUTCOME:['o_e_var','IPD_DATA','IPD_SUBGROUP']};
     const comparisons=descendants(root,'COMPARISON').map((n,ci)=>{
       const outcomes=n.children.filter(o=>/_OUTCOME$/.test(o.tag)).map((o,oi)=>{
         if(!kinds[o.tag])fail('Unsupported RevMan outcome type: '+o.tag);
@@ -141,7 +143,7 @@
             if(type==='binary')s.arms=[{treatment:arm1Name,events:num('EVENTS_1'),n:num('TOTAL_1')},{treatment:arm2Name,events:num('EVENTS_2'),n:num('TOTAL_2')}];
             else if(type==='continuous')s.arms=[{treatment:arm1Name,mean:num('MEAN_1'),sd:num('SD_1'),n:num('TOTAL_1','N_1')},{treatment:arm2Name,mean:num('MEAN_2'),sd:num('SD_2'),n:num('TOTAL_2','N_2')}];
             else if(type==='generic')s.precomputed={est:num('EFFECT_SIZE','ESTIMATE'),se:num('SE')};
-            else {const oe=num('O_MINUS_E','O_E'),v=num('VARIANCE','VAR');if(v<=0)fail('Invalid O-E variance');s.precomputed={est:oe/v,se:1/Math.sqrt(v)};}
+            else {const oe=num('O_MINUS_E','O_E'),v=num('VARIANCE','VAR');if(v<=0)fail('Invalid O-E variance');s.oeVar={oe,v};s.precomputed={est:oe/v,se:1/Math.sqrt(v)};}
             return s;
           });
           if(ss.length)validateRecords(ss.map(s=>rawRecord(s,type)),typeSchema[type]);
