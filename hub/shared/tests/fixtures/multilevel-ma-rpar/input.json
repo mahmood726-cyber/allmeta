@@ -1,0 +1,40 @@
+{
+  "description": "Synthetic edge cases for P07; k is effect rows, J is independent study clusters. No published corpus is modified.",
+  "cases": [
+    {"id":"few_two_unbalanced","reml":true,"cr2":true,"rows":[
+      {"cluster":"A","y":-0.8,"v":0.04},{"cluster":"A","y":-0.1,"v":0.09},
+      {"cluster":"B","y":0.6,"v":0.04},{"cluster":"B","y":0.9,"v":0.0625},{"cluster":"B","y":1.3,"v":0.16}]},
+    {"id":"few_three_interior","reml":true,"cr2":true,"rows":[
+      {"cluster":"A","y":-1.2,"v":0.0625},{"cluster":"A","y":-0.7,"v":0.0625},
+      {"cluster":"B","y":0.2,"v":0.0625},{"cluster":"B","y":0.7,"v":0.0625},
+      {"cluster":"C","y":1.7,"v":0.0625},{"cluster":"C","y":2.2,"v":0.0625}]},
+    {"id":"boundary_both","reml":true,"cr2":true,"rows":[
+      {"cluster":"A","y":0.10,"v":0.04},{"cluster":"A","y":0.11,"v":0.09},
+      {"cluster":"B","y":0.09,"v":0.04},{"cluster":"B","y":0.10,"v":0.09},
+      {"cluster":"C","y":0.12,"v":0.04},{"cluster":"C","y":0.08,"v":0.09}]},
+    {"id":"boundary_between","reml":true,"rows":[
+      {"cluster":"A","y":-1,"v":0.0625},{"cluster":"A","y":1,"v":0.0625},
+      {"cluster":"B","y":-0.9,"v":0.0625},{"cluster":"B","y":0.9,"v":0.0625},
+      {"cluster":"C","y":-1.1,"v":0.0625},{"cluster":"C","y":1.1,"v":0.0625}]},
+    {"id":"boundary_within","reml":true,"rows":[
+      {"cluster":"A","y":-1.01,"v":0.0625},{"cluster":"A","y":-0.99,"v":0.0625},
+      {"cluster":"B","y":-0.01,"v":0.0625},{"cluster":"B","y":0.01,"v":0.0625},
+      {"cluster":"C","y":0.99,"v":0.0625},{"cluster":"C","y":1.01,"v":0.0625}]},
+    {"id":"single_cluster","reml":true,"rows":[
+      {"cluster":"A","y":-0.7,"v":0.0625},{"cluster":"A","y":-0.4,"v":0.09},
+      {"cluster":"A","y":0.1,"v":0.04},{"cluster":"A","y":0.3,"v":0.16},
+      {"cluster":"A","y":0.8,"v":0.0625},{"cluster":"A","y":1.1,"v":0.09}]},
+    {"id":"mom_singletons_floor","mom":"DL","rows":[
+      {"cluster":"A","y":0.10,"v":0.04},{"cluster":"B","y":0.11,"v":0.09},{"cluster":"C","y":0.09,"v":0.16}]},
+    {"id":"mom_singletons_heterogeneous","mom":"DL","rows":[
+      {"cluster":"A","y":-1,"v":0.04},{"cluster":"B","y":0.1,"v":0.0625},
+      {"cluster":"C","y":0.3,"v":0.09},{"cluster":"D","y":1.4,"v":0.16},{"cluster":"E","y":2,"v":0.25}]},
+    {"id":"mom_two_clusters_pi","mom":"FE","rows":[
+      {"cluster":"A","y":0.125,"v":0.0625},{"cluster":"A","y":0.125,"v":0.25},
+      {"cluster":"B","y":0.125,"v":0.0625},{"cluster":"B","y":0.125,"v":0.25},{"cluster":"B","y":0.125,"v":0.0625}]},
+    {"id":"cr2_null","reml":true,"cr2":true,"rows":[
+      {"cluster":"A","y":-0.6,"v":0.0625},{"cluster":"A","y":-0.4,"v":0.0625},
+      {"cluster":"B","y":-0.1,"v":0.0625},{"cluster":"B","y":0.1,"v":0.0625},
+      {"cluster":"C","y":0.4,"v":0.0625},{"cluster":"C","y":0.6,"v":0.0625}]}
+  ]
+}
