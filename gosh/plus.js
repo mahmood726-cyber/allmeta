@@ -31,7 +31,7 @@
   function mean(a) { return a.reduce((s,x)=>s+x/a.length,0); }
   function median(a) { a=[...a].sort((x,y)=>x-y); const i=Math.floor(a.length/2);return a.length%2?a[i]:a[i-1]/2+a[i]/2; }
   function derive(a) {
-    if (!a.summary || !['FE','DL'].includes(a.summary.model)) throw Error('Need 3 through 100 valid studies');
+    if (!a.summary || !['FE','DL'].includes(a.summary.model)) throw Error('Need 3 through 100 valid effect rows');
     const k=a.summary.k;
     const points=a.points.map(p=>{
       if (!Array.isArray(p.members)||!p.members.length||new Set(p.members).size!==p.members.length||p.members.some(i=>!Number.isInteger(i)||i<1||i>k)||p.k!==p.members.length) throw Error('Invalid subset membership');
@@ -49,7 +49,7 @@
       }
       return row;
     });
-    return {rows,points,k,model:a.summary.model,sampled:a.summary.sampled,labels:a.summary.studies.map(s=>s.label)};
+    return {rows,points,k,model:a.summary.model,sampled:a.summary.sampled,labels:a.summary.studies.map(s=>s.label),studies:a.summary.studies.map(s=>({...s}))};
   }
   // Shared pure plot renderer: the validator renders fresh nodes in an isolated root.
   function drawPlot(svg,state,selected,q) {
@@ -87,8 +87,8 @@
     table();draw();return state;
   }
   function capture(text,model,draws) {
-    const input=text===undefined?el('src').value:text, lines=input.trim().split(/\n/);
-    if(lines.length<3||lines.length>100||lines.some(l=>{const v=l.split(',');return v.length<2||!v[0].trim()||!v[1].trim()||!Number.isFinite(Number(v[0]))||!Number.isFinite(Number(v[1]))||Number(v[1])<=0;}))throw Error('Need 3 through 100 valid effect rows; invalid lines refused');
+    const input=text===undefined?el('src').value:text;
+    // Use the main analysis's parsed studies and validation result, including headers and blank lines.
     if(document.querySelector('#alm-axis-mount [data-error]')?.textContent)throw Error('Correct invalid axis limits before validating');
     const snap=__almGoshValidationSnapshot();let a;
     try {alm.urlState.withoutWrites(()=>{a=__almGoshValidationRun(input,model,draws);});}
