@@ -495,6 +495,9 @@ test('TEXT: DL and sampled methods describe the actual result; no result refuses
   await expect(page.locator('#n-sample')).toBeHidden();
   await page.locator('#btn-run').click();
   await expect(page.locator('#n-sample')).toBeVisible();
+  // This test is about the SAMPLED description. With the default 'auto' mode a fast machine finishes exact enumeration
+  // (2^16 - 1 = 65,535 subsets) in the background and replaces the 37-draw preview, so the result depended on CPU speed.
+  await page.locator('#enum-mode').selectOption('sample');
   await page.locator('#n-sample').fill('37'); await page.locator('#btn-run').click();
   await expect(page.locator('#m-n')).toHaveText('37');
   const out = await report(page);
