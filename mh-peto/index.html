@@ -1244,6 +1244,13 @@ StudyE, 4, 600, 10, 600</textarea>
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'mhpeto-results',
+      methods: function (r) {
+        if (!r || !r.k) return '';
+        var measure = { OR: 'odds ratio (OR)', RR: 'risk ratio (RR)', RD: 'risk difference (RD)' }[r.measure] || r.measure;
+        return 'Fixed effect (FE) Mantel-Haenszel ' + measure + (r.measure === 'OR' ? ' and Peto OR' : '') +
+          '; no tau-squared estimator. 95% normal (Wald) confidence intervals' + (r.measure === 'RD' ? ' on the risk-difference scale.' : ' on the log scale, exponentiated for ratios.') +
+          ' No continuity correction for pooled estimates.' + (r.measure === 'RD' ? ' No per-study continuity correction.' : ' Per-study ratios add 0.5 to all cells of a table containing a zero cell.');
+      },
       getResults: function () { return window._almLastMhPeto ? window._almLastMhPeto() : {}; },
     });
 

@@ -47,6 +47,8 @@ jobs:
       - name: Native Node correlation-MA sensitivity export replay
         run: node --test unit/p17-sensitivity-export.test.mjs
       - run: npx playwright install --with-deps chromium
+      - run: node csv-upload-kinds.test.cjs && node results-export-fallback.test.cjs && node results-export-snapshots.test.cjs && node v181-negative-controls.cjs
+      - run: node v181-negative-controls.cjs --browser
       - run: npx playwright test --reporter=line,json
         env:
           CI: "true"

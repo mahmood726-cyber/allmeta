@@ -634,6 +634,15 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'propma-results',
+      methods: function (r) {
+        if (!r || !r.k) return '';
+        var model = r.tauEstimator === 'FE' ? 'Fixed effect (FE); tau-squared fixed at zero' :
+          'Random effects (RE); tau-squared estimator: ' + ({ PM: 'Paule-Mandel (PM)', DL: 'DerSimonian-Laird (DL)' }[r.tauEstimator] || r.tauEstimator);
+        var transformation = { ft: 'Freeman-Tukey double arcsine (harmonic-mean sample size for the inverse)', logit: 'logit', raw: 'raw proportion' }[r.transform] || r.transform;
+        return model + '. Transformation: ' + transformation +
+          '. 95% normal (Wald) pooled confidence intervals on the analysis scale, back-transformed; per-study intervals are Clopper-Pearson.' +
+          (r.transform === 'ft' ? ' No additional continuity correction.' : ' Boundary-only continuity correction: add 0.5 to events and 1 to sample size when events are zero or equal to sample size.');
+      },
       getResults: function () { return window._almLastPropMA ? window._almLastPropMA() : {}; },
     });
 
