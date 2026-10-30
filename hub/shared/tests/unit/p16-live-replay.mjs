@@ -25,6 +25,18 @@ for (const [kind, names] of [['plant', labels], ['control', plainLabels]]) {
     c.__almIncoLoad(text);
     const adapter = c.AlmIncoValidationAdapter, live = adapter.live;
     const before = JSON.stringify(adapter.snapshot()), snapshot = live.currentState();
+    if (name === 'plant-FE') {
+      // Log a bounded difference, not an altered or regenerated historic contract.
+      const actual = JSON.stringify(adapter.pageText());
+      const expected = JSON.stringify(adapter.contract.pageText);
+      let first = 0;
+      while (first < Math.min(actual.length, expected.length) && actual[first] === expected[first]) first++;
+      if (actual !== expected) console.log('P16_STATIC_TEXT_MISMATCH ' + JSON.stringify({
+        first, actualLength: actual.length, expectedLength: expected.length,
+        actual: actual.slice(Math.max(0, first - 80), first + 180),
+        expected: expected.slice(Math.max(0, first - 80), first + 180),
+      }));
+    }
     // Keep every assertion, but collect failures so one display mismatch cannot
     // prevent the other cases or their native-R checks from producing evidence.
     check(name, () => assert.equal(JSON.stringify(adapter.snapshot()), before, 'snapshot restores displayed state'));
