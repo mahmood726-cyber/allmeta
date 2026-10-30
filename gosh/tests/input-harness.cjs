@@ -17,6 +17,7 @@ module.exports = function load(page) {
   const noop = () => {};
   const window = { alm: { analysisLifecycle: run => run, csvUpload: noop, plotExport: options => { plotExport = options; },
     axisControls: noop, resultsExport: noop, resetUndo: noop, tooltips: noop,
+    // Model an active URL writer accepting the input; URL behavior has its own tests.
     urlState: Object.assign(noop, { read: () => null, write: () => true, isSuspended: () => false }) } };
   vm.runInNewContext(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1], {window, document: { getElementById: id => nodes[id] }});
   return {window, nodes, get plotExport() { return plotExport; }, run(text) { nodes.src.value = text; nodes['btn-run'].click(); return window._almLastGosh(); },
