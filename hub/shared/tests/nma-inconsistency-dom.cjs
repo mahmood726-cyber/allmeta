@@ -5,6 +5,14 @@ const root = path.resolve(__dirname, '../../..');
 function harness({adapter = true, live = false, transformPlus = code => code} = {}) {
   const html = fs.readFileSync(path.join(root, 'nma-inconsistency/index.html'), 'utf8');
   const {document, window} = parseHTML(html);
+  // LinkeDOM emits separate adjacent Text nodes for HTML entities such as
+  // '&gt;'. Browser-pinned pageText treats the same visible text as one node.
+  // DOM-standard normalization joins adjacent Text nodes without editing the
+  // rendered characters, historical contract or clinical/numerical values.
+  const textBefore = document.body.textContent;
+  document.body.normalize();
+  if (document.body.textContent !== textBefore)
+    throw Error('DOM normalization changed source text; refused');
   const storage = new Map(), downloads = [];
   // linkedom does not implement the select value setter or browser disabled properties.
   for (const el of document.querySelectorAll('select')) Object.defineProperty(el, 'value', {
