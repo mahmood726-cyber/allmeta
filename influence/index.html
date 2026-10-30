@@ -699,6 +699,7 @@
       window.__almInfluenceRScript = function () {
         const ex = _lastExclusion || { excluded: [], kept: null };
         return window.AlmInfluenceR.build({ rows: _lastStudies, full: _lastFull, diag: _lastDiag, excluded: ex.kept ? ex.excluded : [], kept: ex.kept,
+          baujat: window.__almBaujat, radial: window.__almRadial,
           version: (window.AlmBuildInfo && window.AlmBuildInfo.version) || "" });
       };
       document.getElementById("btn-rscript").addEventListener("click", () => {
