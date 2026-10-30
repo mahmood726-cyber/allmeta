@@ -282,21 +282,27 @@ StudyE, 4, 600, 10, 600</textarea>
     function looksNumeric(s) { return s !== '' && Number.isFinite(Number(s)); }
     function parseInput(text) {
       var lines = String(text).replace(/\r\n?/g, '\n').split('\n');
-      var rows = [], errors = [], notes = [], seenData = false;
+      var rows = [], errors = [], notes = [], seenData = false, columnOrder = '';
       for (var i = 0; i < lines.length; i++) {
         var raw = lines[i], lineNo = i + 1;
         if (!raw.trim()) continue;
         var sp = splitFields(raw);
         if (sp.error) { errors.push({ line: lineNo, text: raw, message: 'line ' + sp.error + '.' }); seenData = true; continue; }
         var f = sp.fields;
-        // A header row (first data line, no numeric count fields) is ignored and reported.
+        // A header row is reported; explicit count headings retain their column order.
         if (!seenData && f.length >= 4 && f.slice(1, 5).every(function (s) { return !looksNumeric(s); }) && !looksNumeric(f[0])) {
+          var headings = f.map(function (s) { return s.toLowerCase(); });
+          if (f.length === 5 && headings.slice(0, 4).join(',') === 'e1,n1,e2,n2') columnOrder = 'legacy';
+          else if (f.length === 5 && headings.slice(1, 5).join(',') === 'e1,n1,e2,n2') columnOrder = 'canonical';
           seenData = true; notes.push('Line ' + lineNo + ' looks like a header row and was ignored.'); continue;
         }
         seenData = true;
         var label, counts;
-        // A quoted first field in a five-field row is a canonical study label, even if n2 is missing.
-        if (f.length === 5 && (sp.firstQuoted || !(looksNumeric(f[0]) && !looksNumeric(f[4])))) { label = f[0]; counts = f.slice(1, 5); }
+        // Headers resolve ambiguity. Without one, a numeric first field and a named
+        // fifth field remain legacy; a quoted first field with an empty fifth field
+        // remains canonical so that missing n2 is refused rather than shifted.
+        if (f.length === 5 && columnOrder === 'legacy') { counts = f.slice(0, 4); label = f[4]; }
+        else if (f.length === 5 && (columnOrder === 'canonical' || (sp.firstQuoted && f[4] === '') || !(looksNumeric(f[0]) && !looksNumeric(f[4])))) { label = f[0]; counts = f.slice(1, 5); }
         else if ((f.length === 5 || f.length === 4) && looksNumeric(f[0])) { counts = f.slice(0, 4); label = f.length === 5 ? f[4] : ''; }
         else {
           errors.push({ line: lineNo, text: raw, message: 'expected 5 values (study, e1, n1, e2, n2) but found ' + f.length + '.' });

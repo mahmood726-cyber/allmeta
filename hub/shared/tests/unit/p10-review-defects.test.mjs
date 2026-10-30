@@ -136,3 +136,54 @@ test('control: missing n2 after a text label is refused and clears outputs', () 
   assert.match(app.element('input-errors').innerHTML, /Line 1 \(Trial\): n2 is empty/);
   assert.equal(app.element('pooled-body').innerHTML, '');
 });
+
+for (const [name, delimiter] of [['comma', ','], ['tab', '\t'], ['semicolon', ';']]) {
+  test(`plant P10-R2: ${name} named legacy rows preserve a quoted first count`, () => {
+    const app = page();
+    const expected = JSON.parse(JSON.stringify(app.run(good)));
+    for (const fields of [
+      ['"10"', '20', '100', '200', 'Legacy'],
+      ['"10"', '"20"', '"100"', '"200"', '"Legacy"'],
+      ['"10"', '20', '100', '200', '"Legacy ""trial"""'],
+    ]) {
+      const raw = fields.join(delimiter);
+      const label = fields[4].includes('trial') ? 'Legacy "trial"' : 'Legacy';
+      for (const header of ['', ['e1', 'n1', 'e2', 'n2', 'label'].join(delimiter) + '\n']) {
+        assert.deepEqual(app.parseInput(header + raw).errors, [], header + raw);
+        assert.deepEqual(app.parse(header + raw), [{ ...firstRow, label }], header + raw);
+      }
+      assert.deepEqual(JSON.parse(JSON.stringify(app.run(raw + '\nB,2,50,3,50'))), expected, raw);
+    }
+  });
+
+  test(`plant P10-R2: ${name} explicit legacy header determines column order`, () => {
+    const app = page();
+    for (const label of ['Legacy', '001', '']) {
+      const header = ['e1', 'n1', 'e2', 'n2', 'label'].map(s => '"' + s + '"').join(delimiter);
+      const raw = ['10', '20', '100', '200', label].map(s => '"' + s + '"').join(delimiter);
+      const text = header + '\r\n' + raw;
+      assert.deepEqual(app.parseInput(text).errors, [], text);
+      assert.equal(app.parseInput(text).notes.length, 1);
+      assert.deepEqual(app.parse(text), [{ ...firstRow, label: label || 'Study 1' }], text);
+    }
+  });
+
+  test(`control P10-R2: ${name} canonical numeric labels still require n2`, () => {
+    const app = page();
+    for (const header of ['', ['study', 'e1', 'n1', 'e2', 'n2'].join(delimiter) + '\n']) {
+      const complete = ['"001"', '"10"', '"20"', '"100"', '"200"'].join(delimiter);
+      assert.deepEqual(app.parse(header + complete), [{ ...firstRow, label: '001' }]);
+      for (const last of ['', '   ', '""']) {
+        const raw = ['"001"', '10', '20', '100', last].join(delimiter);
+        const parsed = app.parseInput(header + raw);
+        assert.deepEqual(parsed.errors, [{ line: header ? 2 : 1, label: '001', text: raw, message: 'n2 is empty.' }]);
+        assert.deepEqual(app.parse(header + raw), []);
+      }
+    }
+    const header = ['study', 'e1', 'n1', 'e2', 'n2'].join(delimiter);
+    const raw = ['"001"', '10', '20', '100', 'invalid'].join(delimiter);
+    assert.deepEqual(app.parseInput(header + '\n' + raw).errors, [
+      { line: 2, label: '001', text: raw, message: 'n2 = "invalid" is not a whole number.' },
+    ]);
+  });
+}
