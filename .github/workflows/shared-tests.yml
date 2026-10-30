@@ -42,6 +42,10 @@ jobs:
       # This executes Node *.test.mjs not selected by Playwright *.spec.mjs.
       - name: Native Node component-NMA DL scale regression
         run: node --test unit/p19-scale-defect.test.mjs
+      # P17 sensitivity JSON must carry accepted studies for independent replay.
+      # Explicit Node gate: Playwright excludes *.test.mjs.
+      - name: Native Node correlation-MA sensitivity export replay
+        run: node --test unit/p17-sensitivity-export.test.mjs
       # P17 numerical-range refusal, ordinary positive controls and pinned metafor fixtures.
       # Playwright *.spec.mjs does not select these Node *.test.mjs cases.
       - name: Native Node correlation-MA inverse-variance overflow refusals
