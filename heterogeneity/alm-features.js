@@ -313,6 +313,12 @@
   function shareSet(s) {
     if (!s || typeof s.data !== 'string' || s.data.length > 200000) throw new Error('data text missing or too long');
     if (KEYS.indexOf(s.tau2) < 0) throw new Error('unknown tau2 estimator ' + String(s.tau2));
+    // The page's own row checker (index.html parseStudies), before anything is changed: data the page would block
+    // makes the file invalid instead of replacing the current analysis.
+    if (typeof global.__almHetParse !== 'function') throw new Error('The app row checker is not available.');
+    var parsed = global.__almHetParse(s.data);
+    if (parsed.warnings.length) throw new Error(parsed.warnings[1] || parsed.warnings[0]);
+    if (parsed.studies.length < 2) throw new Error('At least two studies are required.');
     byId('f-data').value = s.data;
     byId('f-tau2').value = s.tau2;
     byId('btn-run').click();

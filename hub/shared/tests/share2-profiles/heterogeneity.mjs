@@ -1,5 +1,5 @@
 // share2 test profile: heterogeneity (share adapter {data: #f-data "label, estimate, SE" lines, tau2: #f-tau2}).
-export default {
+const profile = {
   plot: '#svg-host svg',
   results: { selector: '#stats-wrap' },
   custom: {
@@ -16,3 +16,15 @@ export default {
   },
   invalid: [{ tau2: 'unknown-estimator' }, { data: 42 }, { data: ['Trial A, -0.2, 0.1'] }]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ data: profile.custom.data + '\n' + row });
+profile.invalid.push(
+  bad('Eta, abc, 0.1'),
+  bad('Eta, 0.1x, 0.1'),
+  bad('Eta, 0.1, 0'),
+  bad('Eta, 0.1, -0.2'),
+  bad('Eta, 0.1, abc'),
+  bad('Eta, 0.1')
+);
+export default profile;

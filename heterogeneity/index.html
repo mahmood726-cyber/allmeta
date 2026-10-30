@@ -563,6 +563,9 @@
       return { k, requested: chosen, estimator: chosenKey, dlRefused, tau2, sum, tauEstimates, pi, qpci, loo, baujat };
     }
     window.__almHetCompute = function (text, chosen) { return computeAll(parseStudies(text).studies, chosen); };
+    // The same row checker for a restored analysis file (alm-features.js share set()), so a row this page would block
+    // cannot replace the current analysis with a blocked one.
+    window.__almHetParse = function (text) { return parseStudies(text); };
 
     function renderStats(studies, chosen) {
       const k = studies.length;
