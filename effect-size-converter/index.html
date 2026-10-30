@@ -406,13 +406,16 @@
     }
 
     // --- derive SE from one of several sources ---
-    function deriveSE() {
-      const lo = parseFloat(document.getElementById("der-lo").value);
-      const hi = parseFloat(document.getElementById("der-hi").value);
-      const scale = document.getElementById("der-scale").value;
-      const p = parseFloat(document.getElementById("der-p").value);
-      const type = document.getElementById("in-type").value;
-      const est = parseFloat(document.getElementById("in-est").value);
+    function deriveSE(input) {
+      // Extraction can validate a complete candidate before committing form fields.
+      const { lo, hi, scale, p, type, est } = input || {
+        lo: parseFloat(document.getElementById("der-lo").value),
+        hi: parseFloat(document.getElementById("der-hi").value),
+        scale: document.getElementById("der-scale").value,
+        p: parseFloat(document.getElementById("der-p").value),
+        type: document.getElementById("in-type").value,
+        est: parseFloat(document.getElementById("in-est").value),
+      };
       const ratio = ["OR", "RR", "HR", "IRR"].includes(type);
       if (Number.isFinite(lo) || Number.isFinite(hi)) {
         if (!(Number.isFinite(lo) && Number.isFinite(hi) && lo < hi))
@@ -650,35 +653,52 @@
 }`,
       onResult: (r) => {
         if (!r) return;
+        const el = id => document.getElementById(id);
+        // A new extraction must never inherit precision from the previous effect.
+        ["in-se", "der-t", "der-f", "der-f-sign", "der-n1", "der-n2", "der-p", "der-lo", "der-hi"]
+          .forEach(id => { el(id).value = ""; });
+        render([], null);
         // Clamp / sanitise LLM-supplied numerics to biomedical-plausible ranges.
         const clampNum = (v, max = 1e6) => {
           const n = typeof v === "number" ? v : parseFloat(v);
           if (!Number.isFinite(n) || Math.abs(n) > max) return null;
           return n;
         };
-        const set = (id, v) => {
-          const el = document.getElementById(id);
-          if (el && v != null && v !== "") el.value = String(v);
-        };
-        const T = (r.type || "").toUpperCase();
-        if (["OR", "RR", "RD", "SMD", "MD", "HR", "IRR"].includes(T)) set("in-type", T);
-        const est = clampNum(r.estimate);
-        if (est != null) set("in-est", est);
-        const se = clampNum(r.se);
-        if (se != null && se > 0) {
-          set("in-se", se);
-        } else {
-          const lo = clampNum(r.ci_lower);
-          const hi = clampNum(r.ci_upper);
-          if (lo != null && hi != null && lo < hi) {
-            set("der-lo", lo);
-            set("der-hi", hi);
-            const sel = document.getElementById("der-scale");
-            if (sel && r.ci_scale) sel.value = /log/i.test(String(r.ci_scale)) ? "log" : "raw";
-            document.getElementById("btn-derive").click();
+        try {
+          const type = typeof r.type === "string" ? r.type.toUpperCase() : "";
+          if (!["OR", "RR", "RD", "SMD", "MD", "HR", "IRR"].includes(type))
+            throw new RangeError("Extract a supported effect type with its estimate and precision.");
+          const est = clampNum(r.estimate);
+          const ratio = ["OR", "RR", "HR", "IRR"].includes(type);
+          if (est == null) throw new RangeError("Extract a finite point estimate with its precision.");
+          if (ratio && !(est > 0))
+            throw new RangeError("Ratio estimates (OR/RR/HR/IRR) must be greater than 0.");
+          if (type === "RD" && !(est >= -1 && est <= 1))
+            throw new RangeError("Risk difference must be between -1 and +1.");
+          const scale = r.ci_scale ? (/log/i.test(String(r.ci_scale)) ? "log" : "raw")
+            : (ratio ? "log" : "raw");
+          let se = clampNum(r.se);
+          let ci;
+          if (!(se != null && se > 0)) {
+            ci = { type, est, lo: clampNum(r.ci_lower) ?? NaN,
+              hi: clampNum(r.ci_upper) ?? NaN, scale, p: NaN };
+            se = deriveSE(ci);
+            if (!(Number.isFinite(se) && se > 0))
+              throw new RangeError("The derived SE is invalid; check the extracted estimate and CI.");
           }
+          // Commit only an estimate paired with its own validated precision.
+          el("in-type").value = type;
+          el("in-est").value = String(est);
+          el("in-se").value = String(se);
+          el("der-scale").value = scale;
+          if (ci) {
+            el("der-lo").value = String(ci.lo);
+            el("der-hi").value = String(ci.hi);
+          }
+          runConvert();
+        } catch (error) {
+          setWarn(error && error.message ? error.message : String(error), "err");
         }
-        runConvert();
       },
     });
     } catch (initErr) {
