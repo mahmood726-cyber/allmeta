@@ -40,8 +40,11 @@ for (const [kind, names] of [['plant', labels], ['control', plainLabels]]) {
     // Keep every assertion, but collect failures so one display mismatch cannot
     // prevent the other cases or their native-R checks from producing evidence.
     check(name, () => assert.equal(JSON.stringify(adapter.snapshot()), before, 'snapshot restores displayed state'));
-    check(name, () => assert.ok(snapshot.values.filter(v => v.key.startsWith('display.')).every(v => v.value),
-      JSON.stringify(snapshot.values.filter(v => v.key.startsWith('display.')))));
+    // Avoid vacuous PASS: Array.every([]) is true even when no display was read.
+    const displayValues = snapshot.values.filter(v => v.key.startsWith('display.'));
+    check(name, () => assert.ok(displayValues.length > 0, 'no displayed values to validate'));
+    check(name, () => assert.ok(displayValues.every(v => v.value),
+      JSON.stringify(displayValues)));
     check(name, () => assert.equal(new Set(snapshot.state.nodeSplit.map(s => s.pairKey)).size, 6,
       'all six identities survive the cloned live snapshot'));
     // The hosted validator serialises the snapshot before building its R script.
