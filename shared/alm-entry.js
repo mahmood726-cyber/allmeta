@@ -1119,18 +1119,19 @@
         const c=after.match(ruleRegex("R-EXTRACT-CUE-03"));
         return (a&&a[1]||c&&c[1]||b&&b[1]||"").trim();
       };
+      // Impossible printed counts are SHOWN as flagged candidates (never silently skipped, never offered clean) on every
+      // counts path: printed a/b, events with percentages + totals elsewhere, and events/total tables.
+      const countSanity=(printed,events,n)=>n<=0?[`Found ${printed} — the total cannot be 0; check the paper`]:events>n?[`Found ${printed} — events cannot exceed the total; check the paper`]:[];
       const pair=(arms,cue,extra={})=>{
         const spans={};arms.forEach((a,i)=>{spans["arms."+i+".events"]=a.span.events;spans["arms."+i+".n"]=a.span.n;});
-        const sanity=arms.flatMap((a,arm)=>(a.sanity||[]).map(text=>flag("COUNTS_IMPOSSIBLE",text,true,{arm})));
+        const sanity=arms.flatMap((a,arm)=>(a.sanity||countSanity(text.slice(...a.span.events)+"/"+text.slice(...a.span.n),a.events,a.n)).map(text=>flag("COUNTS_IMPOSSIBLE",text,true,{arm})));
         push({ruleId:extra.ruleId||"R-COUNTS-DIRECT",kind:"counts",values:{arms:arms.map(({sanity,...a})=>({...a}))},spans,cue,sanity,...extra});
       };
       const arms=[];
       for(const m of s.matchAll(ruleRegex("R-COUNTS-DIRECT"))){
         const e=capture(m,"events"),n=capture(m,"n");
         if(ruleRegex("R-EXTRACT-CUE-04").test(s.slice(m.index+m[0].length)))continue;
-        // Impossible printed counts are SHOWN as flagged candidates (never silently skipped).
-        const printed=text.slice(...e.span)+"/"+text.slice(...n.span);
-        const sanity=n.value<=0?[`Found ${printed} — the total cannot be 0; check the paper`]:e.value>n.value?[`Found ${printed} — events cannot exceed the total; check the paper`]:[];
+        const sanity=countSanity(text.slice(...e.span)+"/"+text.slice(...n.span),e.value,n.value);
         const pctKey=m.groups.pct?"pct":m.groups.afterpct?"afterpct":null;
         arms.push({sanity,events:e.value,n:n.value,...(pctKey?{pct:+m.groups[pctKey],pctText:m.groups[pctKey],pctSpan:capture(m,pctKey).span}:{}),label:labelAt(m.index,m.index+m[0].length),span:{events:e.span,n:n.span},start:m.index,end:m.index+m[0].length});
       }
@@ -1163,11 +1164,15 @@
           events.push({events:e.value,span:e.span,pct:+m.groups.pct,pctText:m.groups.pct,pctSpan:capture(m,"pct").span,digits:(m.groups.pct.split(".")[1]||"").length,start:m.index,end:m.index+m[0].length});
         }
         for(let i=0;i+1<events.length;i+=2){
-          const es=events.slice(i,i+2);
+          const es=events.slice(i,i+2),fits=[],misfits=[];
           for(let a=0;a<totals.length;a++)for(let b=0;b<totals.length;b++){
             if(a===b)continue;
             const ts=[totals[a],totals[b]];
-            if(es.some((e,j)=>e.events>ts[j].n))continue;
+            (es.some((e,j)=>e.events>ts[j].n)?misfits:fits).push(ts);
+          }
+          // An assignment putting more events than the total is skipped only when another one fits; when none fits the
+          // printed numbers are impossible and are offered as flagged candidates (never silently dropped).
+          for(const ts of fits.length?fits:misfits){
             const corroborated=es.every((e,j)=>Math.abs(100*e.events/ts[j].n-e.pct)<=.51*Math.pow(10,-e.digits));
             pair(es.map((e,j)=>({events:e.events,n:ts[j].n,pct:e.pct,pctText:e.pctText,pctSpan:e.pctSpan,pctDigits:e.digits,label:ts[j].label,span:{events:e.span,n:ts[j].span}})),text.slice(...mapped.span(es[0].start,es[1].end)),{ruleId:"R-COUNTS-PERCENT",assignmentRequired:true,percentagesCorroborate:corroborated});
           }
