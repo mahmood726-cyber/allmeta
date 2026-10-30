@@ -42,7 +42,7 @@ cat('ALMJSON:{',paste(sprintf('"%s":%s',names(z),ifelse(is.na(z),'null',sprintf(
     const names=corpus.flatMap(c=>['logit','ft','raw'].flatMap(t=>['PM','DL','FE'].map(m=>c.id+'|'+t+'|'+m)));
     if(names.length!==2160||new Set(names).size!==2160||Object.keys(refs).length!==2160||names.some(n=>!Object.hasOwn(refs,n)))throw new Error('Corpus configuration mismatch');
     const inputs=['src','trans','tau-est'].map(id=>[document.getElementById(id),document.getElementById(id).value]);
-    const dom=['res-body','het','forest','k-warn'].map(id=>{const e=document.getElementById(id);return [e,e.innerHTML,[...e.attributes].map(a=>[a.name,a.value])];});
+    const dom=['res-body','het','forest','k-warn','forest-axis-error'].map(id=>{const e=document.getElementById(id);return [e,e.innerHTML,[...e.attributes].map(a=>[a.name,a.value])];});
     const saved=api.save();let checks=0,passed=0,count=0;
     const failed=[],maxima={},refusals=[];
     function check(id,quantity,app,ref,tol) {
@@ -57,7 +57,7 @@ cat('ALMJSON:{',paste(sprintf('"%s":%s',names(z),ifelse(is.na(z),'null',sprintf(
         if(!Array.isArray(ca.rows)||ca.rows.some(x=>!Number.isInteger(x.x)||!Number.isInteger(x.n)||x.n<=0||x.x<0||x.x>x.n))throw new Error('Invalid counts: '+id);
         inputs[0][0].value=ca.rows.map((r,i)=>[r.x,r.n,'row_'+i].join(',')).join('\n');
         inputs[1][0].value=tr;inputs[2][0].value=method;
-        api.run();const a=api.snapshot(),status=a?'ok':'refused';
+        api.run({corpus:true});const a=api.snapshot(),status=a?'ok':'refused';
         check(id,'status',Number(status===r.status),1,0);
         if(status==='refused')refusals.push(id);
         if(a&&r.status==='ok') {

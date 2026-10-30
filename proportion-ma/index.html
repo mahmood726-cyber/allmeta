@@ -608,7 +608,14 @@
 
     // Expose last results for export
     window.__almPropValidation = {
-      run: function () { run({suppressURL:true}); }, parse: parseTable,
+      run: function (options) {
+        var savedAxis = _axisState;
+        try {
+          // Published-corpus DOM checks use the default automatic linear plot.
+          if (options && options.corpus) _axisState = {};
+          run({suppressURL:true});
+        } finally { _axisState = savedAxis; }
+      }, parse: parseTable,
       save: function () { return {results:_lastResults, details:_validationDetails}; },
       restore: function (s) { _lastResults=s.results; _validationDetails=s.details; },
       snapshot: function () { return _validationDetails ? JSON.parse(JSON.stringify(_validationDetails)) : null; }
