@@ -94,6 +94,8 @@ function run(){
  }catch(e){clear('Refused: '+e.message);}
 }
 root.querySelectorAll('input[type=checkbox]').forEach(n=>n.addEventListener('change',()=>draw()));
+el('src').addEventListener('input',()=>clear());
+el('src').addEventListener('change',()=>clear());
 el('plus-run').addEventListener('click',run);
 el('plus-alpha').addEventListener('change',()=>{if(state)run();});
 window.AlmLimitPlusUI={render,run,clear,drawReference:(results,c,limit,lookup)=>draw({results,c,limit},lookup),snapshot:()=>state,restore:s=>{if(s)render(s.results,s.c,s.limit);else clear();}};

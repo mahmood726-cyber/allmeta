@@ -357,6 +357,7 @@
 
     function run() {
       if (window.AlmLimitLoo) window.AlmLimitLoo.invalidate(_validationRun);
+      if (!_validationRun && window.AlmLimitPlusUI) window.AlmLimitPlusUI.clear();
       document.getElementById('limit-error').textContent = '';
       document.getElementById('limit-range-note').textContent = '';
       document.getElementById('limit-diagnostics').textContent = '';
