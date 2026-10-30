@@ -2,7 +2,7 @@
 // The state has no estimator option, so the non-default state changes the data and the conversion log (entryLog),
 // which feeds the report text results; the non-ASCII label is a component name.
 const COMPONENTS = ['drug', 'exercise', 'education', 'diet', 'sleep'];
-export default {
+const profile = {
   plot: '#forest',
   results: { selector: '#comp-body', closest: 'section' },
   custom: {
@@ -22,3 +22,14 @@ export default {
   },
   invalid: [{ src: 42 }, { src: 'drug | control | -0.3' }, { entryLog: 'not-a-log' }, { entryLog: [1] }]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ src: profile.custom.src + '\n' + row });
+profile.invalid.push(
+  bad('diet | control | abc | 0.1'),
+  bad('diet | control | -0.1 | 0'),
+  bad('diet | control | -0.1 | -0.1'),
+  bad('diet | diet | -0.1 | 0.1'),
+  bad('diet | control | -0.1 | abc')
+);
+export default profile;
