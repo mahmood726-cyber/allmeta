@@ -26,11 +26,19 @@ json <- function(x) {
   stopifnot(is.numeric(x), is.finite(x))
   trimws(formatC(x, digits=17, format="g", decimal.mark="."))
 }
+# Canonical source bytes for any new reference. The existing fixture is never
+# regenerated; p11-r4-provenance.json preserves its historical CRLF identity.
+oracle <- "tests/reml_reference.R"
+oracle_lf <- tempfile(fileext=".R")
+writeBin(charToRaw(gsub("\r\n", "\n", rawToChar(readBin(oracle, "raw", n=file.info(oracle)$size)),
+                       fixed=TRUE)), oracle_lf)
+oracle_md5 <- unname(tools::md5sum(oracle_lf))
+unlink(oracle_lf)
 result <- list(provenance=list(R=R.version.string, metafor=as.character(packageVersion("metafor")),
   jsonlite=if (requireNamespace("jsonlite", quietly=TRUE)) {
     paste(as.character(packageVersion("jsonlite")), "(not used)")
   } else "not installed (not used)", script="p11-r4-reference.R",
-  oracle="tests/reml_reference.R", oracle_md5=unname(tools::md5sum("tests/reml_reference.R")),
+  oracle=oracle, oracle_md5=oracle_md5,
   serialization="base R; 17 significant digits"), cases=fits)
 writeLines(json(result), fixture, useBytes=TRUE)
 cat("Recorded", length(fits), "independent native R cases\n")

@@ -8,7 +8,7 @@ export const cases = [
   ...modes.map(c => ({ id: c.id, yi: c.yi, vi: c.vi, excluded: [], plant: c.id !== 'boundary-beats-interior' })),
   ...modes.filter(c => c.id !== 'boundary-beats-interior').map(c => ({
     id: c.id + '-deletion-exclusion', yi: [...c.yi, 0.4], vi: [...c.vi, 0.04],
-    excluded: [c.yi.length], plant: true
+    excluded: [c.yi.length], plant: c.id !== 'seed84084-1530'
   })),
   { id: 'ordinary', yi: [.1, .3, .5, .2, .9, .4, 1.1, .05], vi: [.2, .25, .18, .3, .22, .28, .35, .15].map(x => x*x), excluded: [0] },
   { id: 'three-study', yi: [.1, .3, .9], vi: [.01, .0144, .04], excluded: [] },

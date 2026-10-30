@@ -1,0 +1,8 @@
+{
+  "oracle": "tests/reml_reference.R",
+  "historical_oracle_md5": "6f01a46c48696729b761c2405f911e3e",
+  "historical_eol": "CRLF",
+  "normalization": "CRLF->LF",
+  "oracle_lf_md5": "e7b7d431cbae27539da50ebe23b1b86d",
+  "script": "p11-r4-provenance.py"
+}

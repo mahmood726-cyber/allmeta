@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, existsSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { cases, stateFor, build, read } from './p11-r4-cases.mjs';
+import { verifyOracle } from './p11-r4-provenance.mjs';
 
 // Native R is required, not silently skipped. Prefer PATH; also support the
 // standard Windows installation used by this job's command runner.
@@ -28,7 +28,7 @@ const near = (a, b, label) => assert.ok(Number.isFinite(a) && Number.isFinite(b)
 test('P11-R4 control: native R reference records the oracle and package versions', () => {
   const ref = reference();
   for (const key of ['R', 'metafor', 'jsonlite']) assert.ok(ref.provenance[key]);
-  assert.equal(ref.provenance.oracle_md5, createHash('md5').update(read('tests/reml_reference.R')).digest('hex'));
+  verifyOracle(ref.provenance, read('tests/reml_reference.R'));
   assert.deepEqual(ref.cases.map(c => c.id), cases.map(c => c.id));
   for (const [i, c] of cases.entries()) {
     assert.deepEqual(ref.cases[i].yi, c.yi);
