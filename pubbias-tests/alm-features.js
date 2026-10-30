@@ -164,6 +164,11 @@
     for (var i = 0; i < state.axes.length; i += 3) {
       if (state.axes[i] !== '' && state.axes[i + 1] !== '' && Number(state.axes[i]) >= Number(state.axes[i + 1])) throw new Error('Axis minimum must be below maximum');
     }
+    // The page's own strict parser (index.html parseTESE / parseBinary, exposed on __almPubBiasEngine): it throws
+    // with the line number for any row the paste path refuses, so such a file is refused before anything changes.
+    var engine = global.__almPubBiasEngine;
+    if (!engine || typeof engine.parseTESE !== 'function' || typeof engine.parseBinary !== 'function') throw new Error('The app row checker is not available.');
+    if (state.format === 'te-se') engine.parseTESE(state.src); else engine.parseBinary(state.src);
     // Validate the complete state before changing any controls.
     byId('src').value = state.src;
     byId('format').value = state.format;

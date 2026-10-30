@@ -1,5 +1,5 @@
 // share2 test profile: pubbias-tests (small-study-effect tests; rows are "[label,] effect, SE" or "[label,] e1, n1, e2, n2").
-export default {
+const profile = {
   plot: '#funnel',
   results: { selector: '#body', closest: 'section' },
   custom: {
@@ -24,3 +24,15 @@ export default {
     { entryLog: 'none' }
   ]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ src: profile.custom.src + '\n' + row });
+profile.invalid.push(
+  bad('Iota, 50, 40, 3, 40'),
+  bad('Iota, -1, 40, 3, 40'),
+  bad('Iota, abc, 40, 3, 40'),
+  bad('Iota, 2.5, 40, 3, 40'),
+  bad('Iota, 3, 40, 3'),
+  bad('Iota, 3, 0, 3, 40')
+);
+export default profile;
