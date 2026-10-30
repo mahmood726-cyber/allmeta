@@ -1,7 +1,7 @@
 // share2 test profile: limit-ma (share adapter {src, options (7 sensitivity controls), axes (4 bounds), sensitivityRun, entryLog}).
 const options = { 'plus-alpha': '0.10', 'plus-binary-measure': '', 'plus-binary-counts': '',
   'plus-limit-toggle': true, 'plus-fill-toggle': true, 'plus-reg-toggle': true, 'plus-contour-toggle': false };
-export default {
+const profile = {
   plot: '#plot',
   results: { selector: '#body', closest: 'section' },
   custom: {
@@ -25,3 +25,14 @@ export default {
     { src: '0.5, 0.1, A\n0.4, 0.1, B\n0.6, 0.1, C' }
   ]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ src: profile.custom.src + '\n' + row });
+profile.invalid.push(
+  bad('abc, 0.1, Iota'),
+  bad('0.1, 0, Iota'),
+  bad('0.1, -0.2, Iota'),
+  bad('0.1, abc, Iota'),
+  bad('0.1')
+);
+export default profile;
