@@ -179,13 +179,15 @@
     opts = opts || {};
     const target = typeof opts.target === 'string' ? document.querySelector(opts.target) : opts.target;
     if (!target) { console.warn('[alm.csvUpload] target not found'); return; }
+    // XLSX remains opt-in; callers load xlsx-import.js and supply a stable target id.
+    if (opts.xlsx && !target.id) throw new Error('XLSX upload requires a stable target id');
     const columns = opts.columns || [];
     const onParse = typeof opts.onParse === 'function' ? opts.onParse : () => {};
     _ensureStyle();
     target.innerHTML = `
       <div class="alm-csv">
         <div class="alm-csv-row">
-          <label>Upload CSV: <input type="file" accept=".csv,text/csv"></label>
+          <label>${opts.xlsx ? 'Upload CSV or XLSX' : 'Upload CSV'}: <input type="file" accept="${opts.xlsx ? '.csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : '.csv,text/csv'}"></label>
           <span>or paste below:</span>
         </div>
         <textarea placeholder="Paste CSV here (with header row)"></textarea>
@@ -198,19 +200,47 @@
     const fileInput = target.querySelector('input[type="file"]');
     const ta = target.querySelector('textarea');
     const warnEl = target.querySelector('[data-section="warnings"]');
-    function _emit(text) {
+    if (opts.xlsx) {
+      fileInput.id = target.id + '-file';
+      ta.id = target.id + '-paste';
+      target.querySelector('[data-action="parse-paste"]').id = target.id + '-parse';
+      target.querySelector('[data-action="sample"]').id = target.id + '-sample';
+      warnEl.id = target.id + '-warnings';
+      warnEl.setAttribute('role', 'status');
+    }
+    let generation = 0;
+    function _emit(text, warnings) {
       const result = parse(text, columns);
+      if (warnings) result.warnings = warnings.concat(result.warnings);
       warnEl.textContent = result.warnings.map(w => String.fromCharCode(8226) + ' ' + w).join('\n');
       warnEl.style.whiteSpace = 'pre-wrap';
       onParse(result);
     }
-    fileInput.addEventListener('change', () => {
+    fileInput.addEventListener('change', async () => {
+      const ticket = ++generation;
       const f = fileInput.files[0]; if (!f) return;
+      if (opts.xlsx) {
+        try {
+          const excel = /\.xlsx?$/i.test(f.name) || f.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          if (excel) {
+            if (!window.alm.xlsxImport) throw new Error('Load xlsx-import.js before importing XLSX');
+            const result = await window.alm.xlsxImport.toCSV(f, typeof opts.xlsx === 'object' ? opts.xlsx : {});
+            if (ticket === generation) _emit(result.csv, result.warnings);
+          } else {
+            const text = await f.text();
+            if (ticket === generation) _emit(text);
+          }
+        } catch (error) {
+          if (ticket === generation) warnEl.textContent = 'Import refused: ' + error.message;
+        }
+        return;
+      }
       const reader = new FileReader();
       reader.onload = () => _emit(String(reader.result));
       reader.readAsText(f);
     });
     target.querySelector('[data-action="parse-paste"]').addEventListener('click', () => {
+      generation++;
       _emit(ta.value);
     });
     target.querySelector('[data-action="sample"]').addEventListener('click', () => {
