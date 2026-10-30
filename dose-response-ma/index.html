@@ -347,7 +347,7 @@
       }).join("");
 
       // studies
-      var per = {}; (r.perStudy || []).forEach(function (p) { per[p.id] = p; });
+      var per = Object.create(null); (r.perStudy || []).forEach(function (p) { per[p.id] = p; });
       $("res-body").innerHTML = r.studies.map(function (s) {
         var p = per[s.id], c = p ? p.beta.map(function (b, i) { return sig(b, 4) + " (" + sig(Math.sqrt(p.cov[i][i]), 3) + ")"; }).join("; ") : "— (one-stage)";
         return "<tr><td>" + esc(s.id) + "</td><td>" + esc(s.type) + "</td><td class='num'>" + sig(s.refDose, 4) + "</td><td class='num'>" + s.nNonRef + "</td><td>" + c + "</td></tr>";
