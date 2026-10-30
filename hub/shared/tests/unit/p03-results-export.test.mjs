@@ -114,7 +114,8 @@ test('P03-R1 control: stale and invalid results still refuse downloads', async (
 test('P03-R1 control: fresh R fixture records exact inputs and R/stats versions', () => {
   const ref = reference();
   assert.deepEqual(ref.rows, rows);
-  assert.equal(ref.provenance.input_md5, createHash('md5').update(inputBytes).digest('hex'));
+  // The retained oracle hashes LF bytes, independent of checkout line endings.
+  assert.equal(ref.provenance.input_md5, createHash('md5').update(inputBytes.toString().replace(/\r\n/g, '\n')).digest('hex'));
   for (const key of ['R', 'stats', 'script']) assert.ok(ref.provenance[key]);
   assert.equal(ref.provenance.serialization, 'base R; 17 significant digits');
 });

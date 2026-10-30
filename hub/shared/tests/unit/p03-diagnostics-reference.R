@@ -32,10 +32,19 @@ json <- function(x) {
   stopifnot(is.numeric(x), is.finite(x))
   sprintf("%.17g", x)
 }
+input_md5 <- (function() {
+  # Match the retained LF oracle on both LF and CRLF checkouts. Binary writing
+  # prevents Windows from converting the canonical bytes back to CRLF.
+  canonical_path <- tempfile("p03-lf-input-")
+  on.exit(unlink(canonical_path))
+  input_bytes <- readChar(input_path, file.info(input_path)$size, useBytes = TRUE)
+  writeBin(charToRaw(gsub("\r\n", "\n", input_bytes, fixed = TRUE)), canonical_path)
+  unname(tools::md5sum(canonical_path))
+})()
 out <- list(provenance = list(R = R.version.string,
   stats = as.character(packageVersion("stats")),
   script = "hub/shared/tests/unit/p03-diagnostics-reference.R",
-  input_md5 = unname(tools::md5sum(input_path)),
+  input_md5 = input_md5,
   serialization = "base R; 17 significant digits"), rows = rows, deeks = deeks, fagan = fagan)
 dest <- file.path(dirname(tempdir()), "p03-f1-reference.json")
 writeLines(json(out), dest, useBytes = TRUE)
