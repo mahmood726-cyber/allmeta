@@ -8,7 +8,7 @@ citations at ~4% misattribution and ~1% fabrication, and a prior incident
 (MAPriors) silently swapped seminal references for unrelated ones — wrong
 citations are worse than wrong code on a submission-grade tool.
 
-Source of truth scanned: shared/citation.js — the canonical CITATIONS registry
+Sources scanned: shared/method-refs.js and shared/citation.js — the canonical CITATIONS registry
 mapping each app to its method papers (Vancouver + BibTeX, DOI embedded). Every
 DOI there is a genuine claimed citation (unlike DOIs in app HTML, which may be
 example *input* data, e.g. citation-dedup's placeholder CSV).
@@ -25,6 +25,8 @@ Usage:
   python scripts/ground_citations.py            # offline gate (CI)
   python scripts/ground_citations.py --resolve  # fetch missing DOIs into cache
   python scripts/ground_citations.py --refresh  # re-fetch ALL DOIs
+  python scripts/ground_citations.py --require-complete  # refuse pending method references
+  python scripts/ground_citations.py --resolve --method-doi=ID=DOI  # host candidate, verified before writing
   python scripts/ground_citations.py --report   # list findings, exit 0
 """
 from __future__ import annotations
@@ -40,6 +42,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CITATION_JS = ROOT / "shared" / "citation.js"
+METHOD_REFS_JS = ROOT / "shared" / "method-refs.js"
 CACHE = ROOT / "shared" / "citations.cache.json"
 
 # DOI capture. The Vancouver string is a clean JS string literal with the DOI at
@@ -69,6 +72,47 @@ def _trim_doi(raw: str) -> str:
     return raw.rstrip(".,;)]}").strip()
 
 
+def method_refs() -> list[dict]:
+    """Read the explicit JSON block; malformed/missing registries fail closed."""
+    text = METHOD_REFS_JS.read_text(encoding="utf-8")
+    block = text.split("/* METHOD_REFS_START */", 1)[1].split("/* METHOD_REFS_END */", 1)[0]
+    refs = json.loads(block.strip().rstrip(";"))
+    if not isinstance(refs, list) or not refs:
+        raise ValueError("Empty or invalid method reference registry")
+    ids = set()
+    for ref in refs:
+        if not isinstance(ref.get("doi"), str) or not ref.get("vancouver") or not ref.get("id") or ref["id"] in ids:
+            raise ValueError("Invalid or duplicate method reference")
+        ids.add(ref["id"])
+    return refs
+
+
+def resolve_method_candidates(argv, cache):
+    """Host supplies candidates; only --resolve plus matching Crossref may write DOI fields."""
+    candidates = [a.split("=", 1)[1] for a in argv if a.startswith("--method-doi=")]
+    if not candidates:
+        return
+    if "--resolve" not in argv:
+        raise ValueError("--method-doi requires --resolve")
+    refs = method_refs()
+    by_id = {r["id"]: r for r in refs}
+    for candidate in candidates:
+        key, doi = candidate.split("=", 1)
+        if key not in by_id or not DOI_VALID.fullmatch(doi):
+            raise ValueError("Unknown reference or malformed candidate DOI")
+        meta = resolve_crossref(doi)
+        if not meta or title_overlap(meta.get("title", ""), by_id[key]["vancouver"]) < TITLE_OVERLAP_MIN:
+            raise ValueError("Method DOI candidate did not resolve to the claimed title")
+        by_id[key]["doi"] = doi
+        cache[doi] = meta
+    text = METHOD_REFS_JS.read_text(encoding="utf-8")
+    before, tail = text.split("/* METHOD_REFS_START */", 1)
+    _, after = tail.split("/* METHOD_REFS_END */", 1)
+    METHOD_REFS_JS.write_text(before + "/* METHOD_REFS_START */ " +
+        json.dumps(refs, indent=2, ensure_ascii=False) + " /* METHOD_REFS_END */" + after, encoding="utf-8")
+    save_cache(cache)
+
+
 def extract_claimed() -> list[dict]:
     """Every (doi, vancouver) claimed in shared/citation.js."""
     text = CITATION_JS.read_text(encoding="utf-8", errors="replace")
@@ -79,6 +123,7 @@ def extract_claimed() -> list[dict]:
         if not dm:
             continue  # not every cite carries a DOI (books, software) — skip
         out.append({"doi": _trim_doi(dm.group(1)), "vancouver": van})
+    out.extend({"doi": r["doi"], "vancouver": r["vancouver"]} for r in method_refs() if r["doi"])
     return out
 
 
@@ -135,8 +180,12 @@ def main(argv: list[str]) -> int:
     do_resolve = "--resolve" in argv or "--refresh" in argv
     refresh = "--refresh" in argv
 
-    claimed = extract_claimed()
     cache = load_cache()
+    resolve_method_candidates(argv, cache)
+    claimed = extract_claimed()
+    pending = [r["id"] for r in method_refs() if not r["doi"]]
+    if pending:
+        print("PENDING method DOI resolution: " + ", ".join(pending))
     by_doi: dict[str, str] = {}
     for c in claimed:
         by_doi.setdefault(c["doi"], c["vancouver"])
@@ -166,8 +215,8 @@ def main(argv: list[str]) -> int:
 
     # ---- gate layer (offline) ----
     bad_syntax, missing, unresolved, mismatch = [], [], [], []
-    for doi in sorted(by_doi):
-        van = by_doi[doi]
+    for claim in claimed:
+        doi, van = claim["doi"], claim["vancouver"]
         if not DOI_VALID.match(doi):
             bad_syntax.append(doi)
             continue
@@ -183,7 +232,8 @@ def main(argv: list[str]) -> int:
             mismatch.append((doi, round(ov, 2), entry["title"]))
 
     total = len(by_doi)
-    findings = []
+    findings = (["  PENDING-METHOD  " + key for key in pending]
+                if "--require-complete" in argv else [])
     for d in bad_syntax:
         findings.append(f"  BAD-SYNTAX  {d}  (not a valid DOI)")
     for d in missing:
