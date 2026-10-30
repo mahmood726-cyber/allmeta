@@ -289,6 +289,7 @@
       window.__almInfluenceValidationSnapshot = function () {
         return structuredClone({input: document.getElementById('src').value,
           autosave: localStorage.getItem('alm-autosave:influence'),
+          lifecycle: run.snapshot(),
           diag: _lastDiag, full: _lastFull, studies: _lastStudies,
           baujat: window.__almBaujat, radial: window.__almRadial,
           excluded: [..._excluded], exclusion: _lastExclusion,
@@ -308,6 +309,7 @@
         for (const [id, h] of Object.entries(state.hidden)) document.getElementById(id).hidden = h;
         document.querySelectorAll('#body input.excl').forEach((cb, i) => { cb.checked = state.checked[i]; });
         EXCL_BUTTONS.forEach((id, i) => { document.getElementById(id).disabled = state.disabled[i]; });
+        run.restore(state.lifecycle);
       };
 
     run = window.alm.analysisLifecycle(run, function (result) { return _lastStudies.length >= 3 && !!_lastFull; }, "#src");
