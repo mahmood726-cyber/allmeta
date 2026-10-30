@@ -123,7 +123,7 @@ for (const name of ['minimal-complex', 'complex']) {
 test('control: fresh R fixture records the inputs, versions and refused designs', () => {
   const ref = reference();
   for (const key of ['R', 'robumeta', 'jsonlite']) assert.ok(ref.provenance[key]);
-  assert.equal(ref.provenance.input_md5, createHash('md5').update(read('./p15-r5-input.json')).digest('hex'));
+  assert.equal(ref.provenance.input_md5, createHash('md5').update(read('./p15-r5-input.json').replace(/\r\n/g, '\n')).digest('hex'));
   for (const [name, rows] of Object.entries(inputs)) assert.deepEqual(ref.cases[name].input.rows, rows);
   for (const name of ['single', 'collinear', 'minimal-complex', 'complex']) {
     assert.equal(ref.cases[name].result.status, 'refused', name);
