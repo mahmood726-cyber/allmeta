@@ -19,5 +19,15 @@ export default {
   },
   invalid: [{ method: 'unknown-estimator' }, { method: null }, { data: 42 },
     bad('Zeta, 1.5, 40'), bad('Zeta, 1, 40'), bad('Zeta, -1, 40'), bad('Zeta, abc, 40'),
-    bad('Zeta, 0.3, 3'), bad('Zeta, 0.3, NA'), bad('Zeta, 0.3')]
+    bad('Zeta, 0.3, 3'), bad('Zeta, 0.3, NA'), bad('Zeta, 0.3'),
+  // Lenient number tokens (trailing text, comma decimal, embedded space, empty, NaN/Infinity, hex, non-integer count):
+  // parseFloat/parseInt/Number() would read these as a different number; the row checker refuses them.
+  bad('Zeta, 0x0, 40'),
+  bad('Zeta, 0.3, 0x10'),
+  bad('Zeta, 0.3x, 40'),
+  bad('Zeta, 0.3, 40x'),
+  bad('Zeta, 0 3, 40'),
+  bad('Zeta, , 40'),
+  bad('Zeta, NaN, 40'),
+  bad('Zeta, 0.3, Infinity')]
 };

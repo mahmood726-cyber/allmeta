@@ -116,6 +116,9 @@
         if (p.length < 3) return;
         // Require complete numeric fields; parseFloat silently accepted trailing text.
         if (!p[p.length - 1].trim() || !p[p.length - 2].trim()) return;
+        // Decimal and exponent numbers only: Number() would also read 0x10 as 16 (hexadecimal, binary, octal).
+        if (!/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(p[p.length - 1]) ||
+            !/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(p[p.length - 2])) return;
         var n = Number(p[p.length - 1]), r = Number(p[p.length - 2]);
         var label = p.slice(0, p.length - 2).join(", ") || ("Study " + (rows.length + 1));
         if (!isFinite(r) || !isFinite(n) || r <= -1 || r >= 1 || n <= 3) return;

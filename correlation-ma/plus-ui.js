@@ -20,6 +20,9 @@
       var p = t.split(/\s*,\s*/);
       if (p.length < 3) { rejected.push({ line: i + 1, text: t, reason: "fewer than 3 comma-separated fields" }); return; }
       if (!p[p.length - 1].trim() || !p[p.length - 2].trim()) { rejected.push({ line: i + 1, text: t, reason: "missing or malformed numeric field" }); return; }
+      // Same decimal-only rule as the page parser (Number() would read 0x10 as 16).
+      if (!/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(p[p.length - 1]) ||
+          !/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(p[p.length - 2])) { rejected.push({ line: i + 1, text: t, reason: "missing or malformed numeric field" }); return; }
       var n = Number(p[p.length - 1]), r = Number(p[p.length - 2]);
       if (isNaN(n) || isNaN(r)) { rejected.push({ line: i + 1, text: t, reason: "missing or malformed numeric field" }); return; }
       if (!isFinite(n) || !isFinite(r)) { rejected.push({ line: i + 1, text: t, reason: "nonfinite numeric field" }); return; }

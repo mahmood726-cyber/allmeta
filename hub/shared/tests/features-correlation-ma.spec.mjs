@@ -35,6 +35,26 @@ async function render(page) {
   }, APP);
 }
 
+test('PASTE PLANTED: lenient number tokens are excluded and listed, never read as another number', async ({ page }) => {
+  // Number('0x0') = 0 and Number('0x10') = 16: a hexadecimal token is not a decimal r or n and must not be analysed.
+  await page.goto(PAGE);
+  await page.waitForFunction(() => typeof window._almLastCorrMA === 'function' && typeof window._almCorrRejected === 'function');
+  const base = 'Alpha, 0.31, 120\nBeta, 0.18, 85\nGamma, 0.42, 64';
+  await page.fill('#f-data', base);
+  await expect.poll(() => page.evaluate(() => window._almLastCorrMA() && window._almLastCorrMA().k)).toBe(3);
+  const ref = await page.evaluate(() => window._almLastCorrMA().r);
+  for (const row of ['Delta, 0x0, 40', 'Delta, 0.3, 0x10', 'Delta, 0.3x, 40', 'Delta, 0.3, 40x', 'Delta, 0 3, 40',
+    'Delta, , 40', 'Delta, NaN, 40', 'Delta, 0.3, Infinity']) {
+    await page.fill('#f-data', base + '\n' + row);
+    await expect.poll(() => page.evaluate(() => window._almCorrRejected().map(x => x.line)), row).toEqual([4]);
+    const got = await page.evaluate(() => ({ k: window._almLastCorrMA().k, r: window._almLastCorrMA().r,
+      notice: document.getElementById('f-notice').textContent }));
+    expect(got.k, row).toBe(3);
+    expect(got.r, row).toBe(ref);
+    expect(got.notice, row).toContain('Line 4 (' + row + ')');
+  }
+});
+
 test('REGRESSION: hidden entry and text tabs stay unmounted until shown', async ({ page }) => {
   await page.goto(PAGE);
   await page.waitForFunction(() => window.AlmFeatures && AlmFeatures.get('correlation-ma'));
