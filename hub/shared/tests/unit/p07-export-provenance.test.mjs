@@ -198,3 +198,67 @@ test('P07-R4 control: editing input refuses stale extras and disables the downlo
   assert.equal(h.downloads.length, count);
   assert.throws(() => h.context.AlmMultilevelPlus.exportText(), /out of date/);
 });
+
+// Execute the adapter's actual export-schema block against the actual download.
+// Plot/layout checks need a browser and are covered by multilevel-ma-plus.spec.mjs.
+// Keeping the assertion here sourced from the adapter catches contract drift.
+function exportSchema(h, payload) {
+  const source = read('multilevel-ma/validate/plus-adapter.js');
+  const start = source.indexOf('    let exported;');
+  const end = source.indexOf('    let ev=', start);
+  assert.ok(start > 0 && end > start, 'locate the complete export-schema audit');
+  h.context.schemaPayload = JSON.stringify(payload);
+  return vm.runInContext(`(() => {
+    const api = {exportText: () => schemaPayload}, out = [];
+    ${source.slice(start, end)}
+    return out.find(row => row.quantity === 'export.schema').pass;
+  })()`, h.context);
+}
+
+test('P07-R4 schema plant: the real extras download passes the unchanged numerical contract with provenance', async () => {
+  const h = harness();
+  assert.equal(exportSchema(h, await h.extrasJSON()), true);
+});
+
+test('P07-R4 schema plant: a missing build stamp is accepted only as explicit null', async () => {
+  const h = harness(null), payload = await h.extrasJSON();
+  assert.equal(exportSchema(h, payload), true);
+  delete payload.producedBy;
+  assert.equal(exportSchema(h, payload), false);
+});
+
+test('P07-R4 schema plant: missing provenance is rejected when a build stamp is loaded', async () => {
+  const h = harness(), payload = await h.extrasJSON();
+  delete payload.producedBy;
+  assert.equal(exportSchema(h, payload), false);
+});
+
+test('P07-R4 schema control: a replacement stamp is checked by value, independent of key order', async () => {
+  const replacement = {app: 'allmeta', version: 'v9.8.7-test', sha: 'c'.repeat(40),
+    shortSha: 'ccccccc', builtAt: '2030-01-02T03:04:05Z', url: 'https://example.invalid/'};
+  const h = harness(replacement), payload = await h.extrasJSON();
+  payload.producedBy = Object.fromEntries(Object.entries(payload.producedBy).reverse());
+  assert.equal(exportSchema(h, payload), true);
+});
+
+test('P07-R4 schema controls: altered provenance, extra keys and malformed numerical schemas are rejected', async () => {
+  const h = harness(), original = await h.extrasJSON();
+  const mutations = [
+    p => { p.producedBy = null; },
+    p => { p.producedBy = 'unknown'; },
+    p => { p.producedBy.sha = 'd'.repeat(40); },
+    p => { delete p.producedBy.version; },
+    p => { p.producedBy.extra = true; },
+    p => { p.extra = true; },
+    p => { p.inference = 'CR1'; },
+    p => { delete p.robust.se; },
+    p => { p.robust.extra = 1; },
+    p => { p.profiles[0].x.pop(); },
+    p => { p.profiles[1].extra = 1; },
+  ];
+  for (const mutate of mutations) {
+    const payload = structuredClone(original);
+    mutate(payload);
+    assert.equal(exportSchema(h, payload), false, mutate.toString());
+  }
+});
