@@ -308,10 +308,11 @@
         head += "<br>Test for non-linearity: χ² = " + fmt(r.waldNonlin.chi2, 2) + " on " + r.waldNonlin.df + " df, " + ptxt(r.waldNonlin.p) + ".";
       }
       $("headline").innerHTML = head;
-      var msgs = (r.warnings || []).map(function (w) { return "<div class='msg warn' role='status'>" + esc(w) + "</div>"; });
-      if (r.excluded.length) msgs.push("<div class='msg warn' role='status'>Excluded " + r.excluded.length + " stud" + (r.excluded.length > 1 ? "ies" : "y") + ": " + esc(r.excluded.map(function (e) { return e.id + " (" + e.reason + ")"; }).join("; ")) + ".</div>");
+      var warnings = (r.warnings || []).slice();
       var hi = r.doseRange[1], lo = r.doseRange[0];
-      if (pd.some(function (d) { return d > hi || d < lo; })) msgs.push("<div class='msg warn' role='status'>Some requested doses lie outside the observed range (" + sig(lo, 4) + " to " + sig(hi, 4) + "); those predictions are extrapolations.</div>");
+      if (pd.some(function (d) { return d > hi || d < lo; })) warnings.push("Some requested doses lie outside the observed range (" + sig(lo, 4) + " to " + sig(hi, 4) + "); those predictions are extrapolations.");
+      var msgs = warnings.map(function (w) { return "<div class='msg warn' role='status'>" + esc(w) + "</div>"; });
+      if (r.excluded.length) msgs.push("<div class='msg warn' role='status'>Excluded " + r.excluded.length + " stud" + (r.excluded.length > 1 ? "ies" : "y") + ": " + esc(r.excluded.map(function (e) { return e.id + " (" + e.reason + ")"; }).join("; ")) + ".</div>");
       $("msgs").innerHTML = msgs.join("");
 
       // coefficients
@@ -360,7 +361,7 @@
         qtest: r.qtest, I2: r.I2, wald: r.wald, waldNonlinearity: r.waldNonlin || null,
         gof: { deviance: r.gof.D, df: r.gof.df, p: r.gof.p, R2: r.gof.R2, R2adj: r.gof.R2adj }, referenceDose: xref, covariateValue: modValue,
         predictions: preds.map(function (p) { return { dose: p.dose, rr: p.rr, lo: p.rrLo, hi: p.rrHi, logRR: p.logRR, se: p.se }; }),
-        perStudy: (r.perStudy || []).map(function (p) { return { id: p.id, beta: p.beta, cov: p.cov }; }), excluded: r.excluded, warnings: r.warnings };
+        perStudy: (r.perStudy || []).map(function (p) { return { id: p.id, beta: p.beta, cov: p.cov }; }), excluded: r.excluded, warnings: warnings };
       if (r.model === "linear" && !r.mod) { _last.slope = r.coef[0]; _last.se = Math.sqrt(r.vcov[0][0]); _last.tau2 = r.Psi ? r.Psi[0][0] : 0; }
     }
 
