@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { fixtureMD5 } from './p11-fixture-hash.mjs';
 import { page, plants, rows, normalize, entry } from './p11-plot-export-harness.mjs';
 
 for (const quantity of plants) {
@@ -41,7 +41,7 @@ test('plant P11-R3: incomplete plot state cannot produce an all-values verificat
 test('control: plot exports match a native metafor fixture at the existing plot tolerances', () => {
   const ref = JSON.parse(readFileSync(new URL('./p11-plot-reference.json', import.meta.url), 'utf8'));
   assert.ok(ref.provenance.R); assert.ok(ref.provenance.metafor);
-  assert.equal(ref.provenance.input_md5, createHash('md5').update(readFileSync(new URL('./p11-plot-input.csv', import.meta.url))).digest('hex'));
+  assert.equal(ref.provenance.input_md5, fixtureMD5(readFileSync(new URL('./p11-plot-input.csv', import.meta.url))));
   assert.deepEqual(ref.rows, rows);
   const script = page().script();
   for (const quantity of plants) {
