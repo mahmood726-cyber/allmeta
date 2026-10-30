@@ -17,7 +17,7 @@ function currentState() {
   const vals=a.leaves(a.sortedState(state));
   const optionsOK=a.controls(state.model,$('src').value);
   const table=[...$('ns-body').querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.textContent.trim()));
-  const expected=state.nodeSplit.map(s=>[s.comparison,`${fmt(s.direct.mean)} (${fmt(s.direct.se)})`,`${fmt(s.indirect.mean)} (${fmt(s.indirect.se)})`,`${fmt(s.diff)} (${fmt(s.seDiff)})`,fmt(s.z,2),fmt(s.p,3),s.p<.05?'inconsistent':'consistent']);
+  const expected=state.nodeSplit.map(s=>[s.comparison,`${fmt(s.direct.mean)} (${fmt(s.direct.se)})`,`${fmt(s.indirect.mean)} (${fmt(s.indirect.se)})`,`${fmt(s.diff)} (${fmt(s.seDiff)})`,fmt(s.z,2),fmt(s.p,3),s.p<.05?'evidence of inconsistency':'no evidence of inconsistency']);
   const g=state.dbt, tau=state.model==='FE'?'fixed-effect (τ²=0)':`${state.model} τ² = ${fmt(state.tau2,4)}`;
   const global=`Design-by-treatment Q = ${fmt(g.Q,2)}, df = ${g.df}, p = ${fmt(g.p,3)}. ${g.p===null?'inconsistency is not testable':g.p<.05?'evidence of inconsistency':'no evidence of inconsistency'} Model: ${tau}.`;
   vals.push({key:'display.table',value:JSON.stringify(table)===JSON.stringify(expected)},
