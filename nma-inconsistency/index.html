@@ -209,6 +209,8 @@ A, D, -0.48, 0.14</textarea>
       document.getElementById("ns-body").innerHTML = "";
       document.getElementById("ns-plot").innerHTML = "";
       document.getElementById("dbt").textContent = reason;
+      // Clear dependent results/exports before another action can read them.
+      if (window.AlmIncoPlus) window.AlmIncoPlus.refresh();
     }
     function inputIssue(rows) {
       if (rows.length < 3) return "At least 3 valid contrasts are required.";
