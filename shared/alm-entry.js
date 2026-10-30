@@ -1136,19 +1136,21 @@
         const sanity=arms.flatMap((a,arm)=>(a.sanity||countSanity(text.slice(...a.span.events)+"/"+text.slice(...a.span.n),a.events,a.n)).map(text=>flag("COUNTS_IMPOSSIBLE",text,true,{arm})));
         push({ruleId:extra.ruleId||arms.map(a=>a._rule).find(Boolean)||"R-COUNTS-DIRECT",kind:"counts",values:{arms:arms.map(({sanity,_rule,...a})=>({...a}))},spans,cue,sanity,...extra});
       };
-      // Worded counts only (a printed a/b keeps its established behaviour): not events of a total after a reference/age/
-      // summary label, before a non-participant unit, at the end of a range, or as a year (with a year total, or after a
-      // name or date word).
-      const notACount=m=>{
+      // Not events of a total: after a reference/age/summary label ("Table 2/4", "grade 3/4") or before a non-participant
+      // unit ("2/3 trials"), printed a/b and worded alike. Worded counts only (of / out of / (n = )): also at the end of a
+      // range, or as a year (with a year total, or after a name or date word). Never applied to participants, so an
+      // impossible "186/125" is still offered flagged (FU8).
+      const notACount=(m,worded)=>{
         const es=m.indices.groups.events[0],ne=m.indices.groups.n[1],before=s.slice(Math.max(0,es-40),es);
-        return ruleRegex("R-COUNTS-NOT-BEFORE").test(before)||ruleRegex("R-COUNTS-NOT-RANGE").test(before)||ruleRegex("R-COUNTS-NOT-AFTER").test(s.slice(ne,ne+120))||
-          ruleRegex("R-COUNTS-YEAR").test(m.groups.events)&&(ruleRegex("R-COUNTS-YEAR").test(m.groups.n)||ruleRegex("R-COUNTS-YEAR-BEFORE").test(before));
+        return ruleRegex("R-COUNTS-NOT-BEFORE").test(before)||ruleRegex("R-COUNTS-NOT-AFTER").test(s.slice(ne,ne+120))||
+          worded&&(ruleRegex("R-COUNTS-NOT-RANGE").test(before)||
+            ruleRegex("R-COUNTS-YEAR").test(m.groups.events)&&(ruleRegex("R-COUNTS-YEAR").test(m.groups.n)||ruleRegex("R-COUNTS-YEAR-BEFORE").test(before)));
       };
       const arms=[];
       for(const ruleId of ["R-COUNTS-DIRECT","R-COUNTS-OUT-OF","R-COUNTS-N-EQUALS"])for(const m of s.matchAll(ruleRegex(ruleId))){
         const e=capture(m,"events"),n=capture(m,"n"),direct=ruleId==="R-COUNTS-DIRECT";
         if(ruleRegex("R-EXTRACT-CUE-04").test(s.slice(m.index+m[0].length)))continue;
-        if((!direct||ruleRegex("R-COUNTS-WORD-OF").test(s.slice(m.indices.groups.events[1],m.indices.groups.n[0])))&&notACount(m))continue;
+        if(notACount(m,!direct||ruleRegex("R-COUNTS-WORD-OF").test(s.slice(m.indices.groups.events[1],m.indices.groups.n[0]))))continue;
         if(!direct&&arms.some(a=>e.span[0]<a.span.n[1]&&n.span[1]>a.span.events[0]))continue; // already part of a printed a/b
         const sanity=countSanity(text.slice(...e.span)+"/"+text.slice(...n.span),e.value,n.value);
         const pctKey=m.groups.pct?"pct":m.groups.afterpct?"afterpct":null;
