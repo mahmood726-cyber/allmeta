@@ -263,19 +263,19 @@ StudyE, 4, 600, 10, 600</textarea>
     // dropped. One invalid line stops the whole analysis (no partial pooling).
     function splitFields(line) {
       var delim = line.indexOf('\t') >= 0 ? '\t' : (line.indexOf(',') >= 0 ? ',' : (line.indexOf(';') >= 0 ? ';' : ','));
-      var out = [], cur = '', q = false, quoted = false;
+      var out = [], cur = '', q = false, quoted = false, firstQuoted = false;
       for (var i = 0; i < line.length; i++) {
         var ch = line.charAt(i);
         if (q) {
           if (ch === '"') { if (line.charAt(i + 1) === '"') { cur += '"'; i++; } else q = false; }
           else cur += ch;
-        } else if (ch === '"' && !cur.trim()) { q = true; quoted = true; cur = ''; }
+        } else if (ch === '"' && !cur.trim()) { q = true; quoted = true; if (!out.length) firstQuoted = true; cur = ''; }
         else if (ch === delim) { out.push(cur.trim()); cur = ''; }
         else cur += ch;
       }
       if (q) return { error: 'has an opening double quote with no closing quote' };
       out.push(cur.trim());
-      return { fields: out, quoted: quoted };
+      return { fields: out, quoted: quoted, firstQuoted: firstQuoted };
     }
     var COUNT_RE = /^\d+$/;
     function isCount(s) { return COUNT_RE.test(s); }
@@ -295,7 +295,8 @@ StudyE, 4, 600, 10, 600</textarea>
         }
         seenData = true;
         var label, counts;
-        if (f.length === 5 && !(looksNumeric(f[0]) && !looksNumeric(f[4]))) { label = f[0]; counts = f.slice(1, 5); }
+        // A quoted first field in a five-field row is a canonical study label, even if n2 is missing.
+        if (f.length === 5 && (sp.firstQuoted || !(looksNumeric(f[0]) && !looksNumeric(f[4])))) { label = f[0]; counts = f.slice(1, 5); }
         else if ((f.length === 5 || f.length === 4) && looksNumeric(f[0])) { counts = f.slice(0, 4); label = f.length === 5 ? f[4] : ''; }
         else {
           errors.push({ line: lineNo, text: raw, message: 'expected 5 values (study, e1, n1, e2, n2) but found ' + f.length + '.' });
