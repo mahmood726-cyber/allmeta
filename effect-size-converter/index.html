@@ -622,6 +622,11 @@
         ? "The logit OR conversion assumes an unobserved logistic distribution. An imported Hedges' g is already bias-corrected; do not correct it again."
         : "";
       render(rows, warn);
+      // Commit the share URL for every successful conversion, including Derive and restore.
+      // The first render precedes the snapshot adapter; startup commits after it is ready.
+      if (window.alm && window.alm.urlState && window.__almSnapshot) {
+        window.alm.urlState.write(window.__almSnapshot());
+      }
     }
 
     // initial render
@@ -818,8 +823,6 @@
           var el = document.getElementById(id); if (el) el.value = '';
         });
         runConvert();
-        if (window.alm && window.alm.urlState)
-          window.alm.urlState.write(window.__almSnapshot());
         setWarn('Imported metafor-compatible Hedges g and LS variance from the first means/SDs CSV row (n1=' +
           r.n1 + ', n2=' + r.n2 + ', df=' + stat.df + '). No additional J correction applied.' +
           (rows.length > 1 ? ' This single-estimate tool imported only the first of ' + rows.length + ' rows.' : ''));
@@ -869,10 +872,8 @@
     if (restored && Object.keys(restored).length > 0) {
       window.__almRestore(restored);
     } else {
-      // Write initial state so page link is shareable immediately.
-      if (window.__almSnapshot) {
-        window.alm.urlState.write(window.__almSnapshot());
-      }
+      // Commit the initial conversion once the snapshot adapter is available.
+      runConvert();
     }
 
     window.alm.resetUndo({
@@ -887,17 +888,6 @@
       glossaryUrl: '../hub/shared/glossary.json',
     });
 
-    // Update URL state after every conversion so the link stays shareable.
-    var _origRunConvert = (typeof runConvert === 'function') ? runConvert : null;
-    // Intercept the Convert button to snapshot + write URL after each run.
-    var btnConvert = document.getElementById('btn-convert');
-    if (btnConvert) {
-      btnConvert.addEventListener('click', function () {
-        if (window.alm && window.alm.urlState && window.__almSnapshot) {
-          window.alm.urlState.write(window.__almSnapshot());
-        }
-      });
-    }
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
