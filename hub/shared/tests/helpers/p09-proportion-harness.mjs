@@ -6,13 +6,21 @@ export const root = new URL('../../../../', import.meta.url);
 export const heterogeneous = '12,150\n8,40\n30,200\n3,100\n25,120';
 export const homogeneous = '10,100\n10,100\n10,100';
 
-// Execute the unmodified primary app script and shared numerical core. Only
-// unrelated UI mounts and the DOM surface are stubbed; run/render/export are real.
-export function createApp() {
+// By default execute the unmodified primary app script and shared numerical core.
+// Only unrelated UI mounts and the DOM surface are stubbed; run/render/export
+// are real. The explicit defect option below changes one guard in memory.
+export function createApp({ plantHistoricalFEPI = false } = {}) {
   const html = readFileSync(new URL('proportion-ma/index.html', root), 'utf8');
-  const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+  let script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
     .map(m => m[1]).find(s => s.includes('function parseTable('));
   assert.ok(script, 'primary app script found');
+  if (plantHistoricalFEPI) {
+    // Reproduce the archived FE-PI behavior in memory; never edit the app or
+    // its references. This is a controlled defect, not an archived checkout.
+    const guard = "tauEst !== 'FE' && ";
+    assert.equal(script.split(guard).length, 2, 'exactly one FE PI guard');
+    script = script.replace(guard, '');
+  }
   const nodes = new Map();
   function node(id) {
     if (!nodes.has(id)) {

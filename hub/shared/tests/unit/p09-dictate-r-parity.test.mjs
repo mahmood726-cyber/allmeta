@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createApp } from '../helpers/p09-proportion-harness.mjs';
 
-// Retained verbatim from the successful pass-2 Rscript output. The adjacent R
+// Verified against the successful Rscript output in the pass-1 feedback. The adjacent R
 // script records package versions and uses native predict() for FE evidence.
 const reference = JSON.parse(readFileSync(
   new URL('../fixtures/p09-dictate-reference.json', import.meta.url), 'utf8'));

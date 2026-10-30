@@ -15,7 +15,9 @@ app.evaluate('proportion-ma/validate/adapter.js');
 const adapter = app.window.AlmProportionValidationAdapter;
 const loaded = {};
 for (const spec of adapter.corpus.files) {
-  const bytes = readFileSync(new URL('proportion-ma/' + spec.path, root));
+  // Recorded provenance hashes describe LF text, independent of checkout EOLs.
+  const bytes = readFileSync(new URL('proportion-ma/' + spec.path, root), 'utf8')
+    .replace(/\r\n/g, '\n');
   assert.equal(createHash('sha256').update(bytes).digest('hex'), spec.sha256, spec.path);
   loaded[spec.path] = JSON.parse(bytes);
 }
