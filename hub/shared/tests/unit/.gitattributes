@@ -1,0 +1,2 @@
+# Preserve the raw LF bytes recorded by p20-csv-means-reference.R.
+/p20-csv-means-input.csv text eol=lf
