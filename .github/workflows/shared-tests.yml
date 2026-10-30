@@ -35,7 +35,7 @@ jobs:
       # The prior helper relied on a session-local /tmp module and could not run
       # on a fresh checkout. Lock its direct version and fail if it is missing.
       - name: Install pinned test-only P16 DOM dependency
-        run: npm install --no-save --ignore-scripts --package-lock=false --fund=false --audit=false linkedom@0.18.12
+        run: npm install --no-save --ignore-scripts --package-lock=false linkedom@0.18.12
       # The Playwright testMatch excludes Node *.test.mjs; run the exact
       # production extraction-import refusal/control suite as a CI gate.
       - name: Native Node extraction-bus refusal regressions
