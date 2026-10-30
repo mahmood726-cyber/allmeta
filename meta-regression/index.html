@@ -110,7 +110,15 @@
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
       <div id="alm-csv-mount"></div>
-        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset"></div>
+        <div id="alm-hero-mount" aria-label="Load a famous benchmark dataset">
+          <div class="alm-hero-bar" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;margin-top:0.5rem;font-size:0.85rem">
+            <label for="metareg-dataset" style="color:var(--muted,#5c6470);font-weight:600">Try with:</label>
+            <select id="metareg-dataset" data-alm-hero aria-label="Load a benchmark dataset" style="padding:0.3rem 0.5rem;border:1px solid var(--border,#d9d5cc);background:var(--input-bg,#fbfaf6);color:var(--ink,#15181d);border-radius:4px;font-size:0.83rem">
+              <option value="">— pick a dataset —</option>
+              <option value="bcg">BCG vaccine (Berkey 1995, log-RR)</option>
+            </select>
+          </div>
+        </div>
         <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 
           <span class="hint">Four columns required. Lines starting with <code>#</code> are ignored. One numeric moderator only; use the four-column format shown above.</span>
@@ -705,6 +713,7 @@
       document.getElementById("f-data").value = EXAMPLE;
       document.getElementById("f-title").value = "Example meta-regression";
       document.getElementById("f-modlabel").value = "Baseline LVEF (%)";
+      document.getElementById("f-effectlabel").value = "Effect (logOR)";
       render();
     }
 
@@ -982,13 +991,20 @@
     else document.addEventListener("DOMContentLoaded", fn);
   }
   ready(function () {
-    if (window.AlmHero && typeof AlmHero.attachHero === "function") {
-      AlmHero.attachHero({
-        container: "#alm-hero-mount",
-        textarea: "#f-data",
-        adapter: "forest",
-      });
-    }
+    var picker = document.querySelector("#alm-hero-mount [data-alm-hero]");
+    if (!picker || !window.AlmDatasets) return;
+    picker.addEventListener("change", function () {
+      var ds = window.AlmDatasets.get(picker.value);
+      var text = window.AlmDatasets.toMetaRegressionText(ds);
+      if (!text) return;
+      // Set all example fields before input triggers analysis and URL-state persistence.
+      document.getElementById("f-title").value = ds.name;
+      document.getElementById("f-modlabel").value = "Absolute latitude (degrees)";
+      document.getElementById("f-effectlabel").value = "Effect (logRR)";
+      var data = document.getElementById("f-data");
+      data.value = text;
+      data.dispatchEvent(new Event("input", { bubbles: true }));
+    });
   });
 })();
 </script>
