@@ -1,5 +1,5 @@
 // share2 test profile: mh-peto (share adapter {src: "study, e1, n1, e2, n2" lines, measure, axis {min, max, log, applied}, entryLog}).
-export default {
+const profile = {
   plot: '#forest',
   results: { selector: '#pooled', closest: 'section' },
   custom: {
@@ -24,3 +24,16 @@ export default {
     { src: 42 }
   ]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ src: profile.custom.src + '\n' + row });
+profile.invalid.push(
+  bad('Eta, 50, 40, 3, 40'),
+  bad('Eta, -1, 40, 3, 40'),
+  bad('Eta, abc, 40, 3, 40'),
+  bad('Eta, 2.5, 40, 3, 40'),
+  bad('Eta, 3, 40, 3'),
+  bad('Eta, 3, 0, 3, 40'),
+  bad('Eta, 3, 40, 3, 40, 9')
+);
+export default profile;

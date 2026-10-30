@@ -1177,6 +1177,9 @@ StudyE, 4, 600, 10, 600</textarea>
 
     // Expose last results for export
     window._almLastMhPeto = function () { return _lastResults; };
+    // The same row checker for a restored analysis file (alm-features.js share set()), so a row this page would block
+    // cannot replace the current analysis with a blocked one.
+    window.__almMhPetoParse = function (text) { return parseInput(text); };
 
     // Cross-tool bus producer (ma-studies-v1): build per-study {label, est, se}
     // on the contract scale — log for OR/RR ratios, identity for RD. Recomputed

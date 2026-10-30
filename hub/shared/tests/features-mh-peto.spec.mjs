@@ -40,6 +40,9 @@ const reviewRegressions = (() => {
     const context = { AlmText, AlmEntry, AlmFeaturesState: { entryLog: [] }, Event: class {},
       AlmFeatures: { register() {}, registerModule(key, mod) { modules[key] = mod; }, verifiedCurrent() { return false; } },
       AlmEntryUI: { mount() { return {}; } }, _almLastMhPeto: () => last,
+      // share set() now runs the page's row checker (index.html parseInput) first; like _almLastMhPeto it is a page
+      // global this adapter-only fixture stands in for. These tests are about the conversion log, so it reports no errors.
+      __almMhPetoParse: () => ({ rows: [], errors: [], notes: [] }),
       document: { getElementById: id => elements[id], createElement: node,
         querySelector: selector => axes[/data-edge="(.*?)"/.exec(selector)[1]],
         querySelectorAll: selector => selector === '#per-body tr' ? Array(last.k).fill({}) : [] }

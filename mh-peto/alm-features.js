@@ -233,6 +233,11 @@
             (a.min !== '' && a.max !== '' && Number(a.min) >= Number(a.max)) ||
             !Array.isArray(s.entryLog)) throw new Error('Invalid axis options or conversion log.');
         var entryLog = restoredLog(s.entryLog);
+        // The page's own row checker (index.html parseInput), before anything is changed: data the page would block
+        // makes the file invalid instead of replacing the current analysis.
+        if (typeof global.__almMhPetoParse !== 'function') throw new Error('The app row checker is not available.');
+        var parsed = global.__almMhPetoParse(s.src);
+        if (parsed.errors.length) throw new Error('Line ' + parsed.errors[0].line + ': ' + parsed.errors[0].message);
         el('src').value = s.src; el('measure').value = s.measure;
         // An untouched axis follows the measure automatically in the app. Preserve
         // that behaviour on fresh links; only emit overrides if one was used.
