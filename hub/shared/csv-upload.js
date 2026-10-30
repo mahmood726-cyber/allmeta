@@ -122,6 +122,19 @@
       }
     }
 
+    // Repeated raw headers reuse a descriptor; reject any repeated destination
+    // before row assignment can silently overwrite an earlier cell.
+    var destinations = new Set();
+    for (hi = 0; hi < rawHeaders.length; hi++) {
+      var destination = headerMap[rawHeaders[hi]].name;
+      if (destinations.has(destination)) {
+        warnings.push('CSV rejected: duplicate or ambiguous header "' + rawHeaders[hi] +
+          '" maps to "' + destination + '". Use unique column headers.');
+        return { headers: rawHeaders, rows: [], warnings: warnings };
+      }
+      destinations.add(destination);
+    }
+
     var rows = [];
     for (var r = 1; r < matrix.length; r++) {
       var rowArr = matrix[r];
