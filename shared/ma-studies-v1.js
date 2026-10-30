@@ -593,16 +593,27 @@
    * (e.g. /forest-plot/ → /webr-validator/). Apps at deeper paths should
    * pass an explicit `webrPath` arg.
    *
-   *   MaStudies.openInWebR();                          // push current bus + open
+   * Omitted studies use the saved bus. Explicit empty or failed current
+   * studies refuse navigation instead of falling back to saved data.
+   *
+   *   MaStudies.openInWebR();                          // open current bus
    *   MaStudies.openInWebR(studies);                   // push these studies + open
    *   MaStudies.openInWebR({ studies, webrPath: ... });
    */
   function openInWebR(arg, opts) {
     opts = (opts && typeof opts === "object") ? opts
          : (arg && typeof arg === "object" && !Array.isArray(arg) ? arg : {});
-    var studies = Array.isArray(arg) ? arg : (opts.studies || null);
-    if (Array.isArray(studies) && studies.length > 0) {
-      write(studies);
+    var hasStudies = Array.isArray(arg) || Object.prototype.hasOwnProperty.call(opts, "studies");
+    var studies = Array.isArray(arg) ? arg : opts.studies;
+    if (hasStudies) {
+      if (!Array.isArray(studies) || !studies.length) {
+        if (typeof global.alert === "function") global.alert("No valid current studies to open in WebR. Check your input first.");
+        return false;
+      }
+      if (!write(studies)) {
+        if (typeof global.alert === "function") global.alert("Could not save current studies to the shared bus. WebR was not opened.");
+        return false;
+      }
     }
     // sanity: if there's nothing on the bus, refuse — opening webr with
     // no studies just shows an empty form, confusing the user.
@@ -626,11 +637,11 @@
     var el = typeof opts.btn === "string" ? document.querySelector(opts.btn) : opts.btn;
     if (!el) return false;
     el.addEventListener("click", function () {
-      var studies = null;
+      var request = { webrPath: opts.webrPath };
       if (typeof opts.getStudies === "function") {
-        try { studies = opts.getStudies(); } catch (_) { studies = null; }
+        try { request.studies = opts.getStudies(); } catch (_) { request.studies = null; }
       }
-      openInWebR(studies, { webrPath: opts.webrPath });
+      openInWebR(request);
     });
     return true;
   }
