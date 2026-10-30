@@ -33,6 +33,7 @@ class Element {
       input.dataset = Object.fromEntries([...attrs.matchAll(/data-(\w+)="([^"]*)"/g)].map(m => [m[1], m[2]]));
       input.value = attrs.match(/value="([^"]*)"/)?.[1] ?? '';
       input.checked = /\bchecked\b/.test(attrs);
+      input.type = attrs.match(/type="([^"]*)"/)?.[1] ?? 'text';
       return input;
     });
   }
@@ -40,8 +41,11 @@ class Element {
   get firstChild() { return this.children[0]; }
   appendChild(child) { this.children.push(child); }
   setAttribute(key, value) { this.attrs[key] = String(value); }
+  removeAttribute(key) { delete this.attrs[key]; }
   addEventListener(event, handler) { this.listeners[event] = handler; }
   querySelectorAll(selector) {
+    // production asks for every input (listeners) and for the two range inputs (aria error linkage, #385); nothing else
+    if (selector === 'input[type="number"]') return this.inputs.filter(input => input.type === 'number');
     assert.equal(selector, 'input');
     return this.inputs;
   }
