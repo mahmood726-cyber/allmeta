@@ -22,7 +22,18 @@ let looRows = 0;
 for (const inp of ref.inputs) {
   const data = plus.prepare(inp.studies);
   const sens = plus.sensitivity(inp.studies);
-  all.sensitivity.push({ id: inp.id, result: sens });
+  // The independent sensitivity-export fix adds accepted input rows to JSON.
+  // Verify those rows without changing this frozen *numerical* publication replay.
+  // Original pre-fix results and their SHA-256 remain authenticated and unchanged.
+  let numericalSensitivity = sens;
+  if (Object.hasOwn(sens, 'studies')) {
+    const accepted = inp.studies.map(({ label, r, n }) => ({ label, r, n }));
+    assert.deepEqual(sens.studies, accepted,
+      `${inp.id}: exported sensitivity studies must exactly match accepted inputs`);
+    const { studies: _acceptedStudies, ...resultWithoutInputs } = sens;
+    numericalSensitivity = resultWithoutInputs;
+  }
+  all.sensitivity.push({ id: inp.id, result: numericalSensitivity });
   for (const m of plus.METHODS) {
     all.main.push({ id: inp.id, method: m, result: core.pool(data.z, data.v, { method: m, pi: true }) });
     for (const t of plus.TESTS) {
