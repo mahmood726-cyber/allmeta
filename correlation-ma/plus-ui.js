@@ -31,6 +31,8 @@
   }
   var _rejected = [];
   window._almCorrRejected = function () { return _rejected.slice(); };
+  // The same row checker for a restored analysis file (alm-features.js share set()), so it cannot be skipped silently.
+  window._almCorrClassify = classify;
   function renderNotice() {
     var c = classify($("f-data").value), el = $("f-notice");
     _rejected = c.rejected;

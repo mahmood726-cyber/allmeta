@@ -146,6 +146,14 @@
       set: function (s) {
         if (!s || typeof s.data !== 'string' || s.data.length > 200000) throw new Error('Data text missing or too long.');
         if (METHODS.indexOf(s.method) < 0) throw new Error('Unknown estimator.');
+        // The paste path's own row checker (plus-ui.js classify), before anything is changed: a row the page parser
+        // would skip silently makes the file invalid instead of quietly changing the analysis.
+        if (typeof global._almCorrClassify !== 'function') throw new Error('The app row checker is not available.');
+        var rows = global._almCorrClassify(s.data);
+        if (rows.rejected.length) {
+          throw new Error('Line ' + rows.rejected[0].line + ' cannot be used: ' + rows.rejected[0].reason + '.');
+        }
+        if (rows.accepted < 2) throw new Error('At least two studies are required.');
         byId('f-data').value = s.data;
         byId('f-method').value = s.method;
         run();
