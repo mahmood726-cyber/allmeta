@@ -6,7 +6,7 @@ const root=path.join(__dirname,'..'),html=fs.readFileSync(process.argv[2]||path.
 const nodes={};
 for(const m of html.matchAll(/<[^>]+\bid="([^"]+)"[^>]*>/g))nodes[m[1]]={value:m[0].match(/\bvalue="([^"]*)"/)?.[1]||'',textContent:'',innerHTML:'',style:{},addEventListener(){}};
 nodes.src.value='0,1\n.2,1\n.4,1';nodes.model.value='FE';
-const noop=()=>{},window={alm:{analysisLifecycle:run=>run,csvUpload:noop,plotExport:noop,axisControls:noop,resultsExport:noop,resetUndo:noop,tooltips:noop,urlState:Object.assign(noop,{read:()=>null,write:noop})}};
+const noop=()=>{},window={alm:{analysisLifecycle:run=>run,csvUpload:noop,plotExport:noop,axisControls:noop,resultsExport:noop,resetUndo:noop,tooltips:noop,urlState:Object.assign(noop,{read:()=>null,write:noop,isSuspended:()=>true})}};
 vm.runInNewContext(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1],{window,document:{getElementById:id=>nodes[id]}});
 const source=fs.readFileSync(path.join(root,'plus.js'),'utf8');
 const derive=vm.runInNewContext('(function(){'+source.slice(source.indexOf('  function number('),source.indexOf('  // Shared pure plot renderer'))+'; return derive;})()');

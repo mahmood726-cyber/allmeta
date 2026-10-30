@@ -569,7 +569,8 @@
       ['m-n', 'm-est', 'm-i2'].forEach(function (id) { document.getElementById(id).textContent = '\u2014'; });
       document.getElementById('sample-label').style.display = 'none';
       document.getElementById('input-error').textContent = message;
-      if (window.AlmGoshPlus) window.AlmGoshPlus.clear('Analysis refused. Correct the input and refresh extras.');
+      // Temporary validation must preserve extras, just as it preserves exact results.
+      if (!_exactSuppressed && window.AlmGoshPlus) window.AlmGoshPlus.clear('Analysis refused. Correct the input and refresh extras.');
     }
 
     // ---- CSV load: accept study,yi,vi or study,yi,sei columns ----

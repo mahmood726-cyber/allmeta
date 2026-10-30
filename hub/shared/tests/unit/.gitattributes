@@ -1,0 +1,2 @@
+# Preserve the LF bytes recorded by the native R fixture's input_md5.
+p07-translation-input.json text eol=lf

@@ -1,0 +1,3 @@
+# Browser and numerical replay verify the recorded hashes of these LF bytes.
+corpus/*.json text eol=lf
+plus/*.json text eol=lf
