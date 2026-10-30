@@ -401,7 +401,21 @@
     // precision loss in a subnormal product of positive finite variances.
     var scale = product >= 2.2250738585072014e-308 && Number.isFinite(product) ?
       Math.sqrt(product) : Math.sqrt(v1) * Math.sqrt(v2);
+    if (scale > 0 && scale < 2.2250738585072014e-308) {
+      // Both variances are tiny here. Lift by an exact power of two so the
+      // scale keeps its precision until the final covariance is rounded.
+      var lift = Math.pow(2, 1022);
+      return (r * Math.sqrt((v1 * lift) * (v2 * lift))) * 2.2250738585072014e-308;
+    }
     return r * scale;
+  }
+  function rFromCov(v1, v2, cov) {
+    var scale = covFromR(v1, v2, 1);
+    if (scale > 0 && scale < 2.2250738585072014e-308) {
+      var lift = Math.pow(2, 1022);
+      return (cov * lift) / Math.sqrt((v1 * lift) * (v2 * lift));
+    }
+    return cov / scale;
   }
   // rows: [{ y:[y1,y2], v:[v1,v2] }]; grid: within-study correlations, each |rho_w| < 1.
   // Every study receives the SAME assumed within-study correlation rho_w (supplied
@@ -417,7 +431,7 @@
     });
   }
 
-  var api = { fit: fit, fitUnivariate: fitUnivariate, sweepRho: sweepRho, zTest: zTest, chisqSF: chisqSF, covFromR: covFromR, _objG: _objG, _obj2: _obj2, _scoreInfo: _scoreInfo, _diagnostic: _diagnostic };
+  var api = { fit: fit, fitUnivariate: fitUnivariate, sweepRho: sweepRho, zTest: zTest, chisqSF: chisqSF, covFromR: covFromR, rFromCov: rFromCov, _objG: _objG, _obj2: _obj2, _scoreInfo: _scoreInfo, _diagnostic: _diagnostic };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmMultivariate = api;
 })(typeof window !== "undefined" ? window : globalThis);
