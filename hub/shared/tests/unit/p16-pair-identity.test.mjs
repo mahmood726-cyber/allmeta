@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { P, E, labels, plainLabels, rowsFor, plainSplit, detailMarkup, liveScript, json } from './p16-pair-identity-support.mjs';
+import { P, E, labels, plainLabels, rowsFor, plainSplit, detailMarkup, liveAdapter, liveScript, json } from './p16-pair-identity-support.mjs';
 
 for (const [kind, names] of [['plant', labels], ['control', plainLabels]]) {
   const rows = rowsFor(names), base = P.fitAll(E, rows, 'FE');
@@ -115,3 +115,46 @@ test('P16-R3 serialised treatment-pair identities fail closed if absent, duplica
     const first = s.pairKeys[0]; s.pairKeys[0] = s.pairKeys[1]; s.pairKeys[1] = first;
   }), /Structural treatment-pair identity disagrees with displayed comparison/);
 });
+
+// The shared widget clones currentState() again before calling buildScript().
+// Keep the JSON tests above and independently exercise that exact production call.
+function cloneContract(live) {
+  const snapshot = live.currentState(), cloned = structuredClone(snapshot);
+  assert.equal(JSON.stringify(cloned), JSON.stringify(snapshot), 'numerical state must be unchanged');
+  assert.ok(cloned.state.nodeSplit.every(row => !Object.hasOwn(row, 'pairKey')),
+    'this probe must really cross the boundary which drops hidden join metadata');
+  const script = live.buildScript(cloned);
+  assert.equal(script, live.buildScript(snapshot), 'second clone must preserve the entire R script');
+  assert.equal(script, live.buildScript(json(snapshot)), 'JSON boundary must preserve the same R script');
+  const names = script.match(/^names_app <- (.*)$/m)[1];
+  const keys = [...names.matchAll(/"(?:[^"\\]|\\.)*"/g)].map(m => JSON.parse(m[0]));
+  assert.equal(keys.length, 6);
+  assert.equal(new Set(keys).size, 6);
+  assert.deepEqual([...cloned.pairKeys], [...snapshot.pairKeys]);
+}
+
+function plantHiddenIdentityHandoff(source) {
+  // Reconstruct only the reviewed defect, not an unavailable historical tree:
+  // the snapshot exposes no enumerable pairKeys, and the builder reads the
+  // non-enumerable per-row pairKey using the historical JSON.parse operation.
+  const returned = 'return {rows,state,values:vals,pairKeys,note:';
+  const builder = 'function buildScript(s) {';
+  assert.ok(source.includes(returned) && source.includes(builder), 'plant anchors must exist');
+  return source.replace(returned, 'return {rows,state,values:vals,note:')
+    .replace(builder, builder + '\n  s={...s,pairKeys:s.state.nodeSplit.map(r=>JSON.stringify(JSON.parse(r.pairKey)))};');
+}
+
+for (const [kind, names] of [['plant', labels], ['control', plainLabels]]) {
+  for (const model of ['FE', 'DL', 'PM']) {
+    test(`P16 clone ${kind}-${model}: buildScript(structuredClone(currentState())) preserves all six identities`, () => {
+      cloneContract(liveAdapter(rowsFor(names), model));
+    });
+    test(`P16 clone ${kind}-${model}: regression assertion rejects the reviewed hidden-identity defect`, () => {
+      const defective = liveAdapter(rowsFor(names), model, plantHiddenIdentityHandoff);
+      assert.doesNotThrow(() => defective.buildScript(defective.currentState()),
+        'direct-call control explains why the earlier helper missed the defect');
+      assert.throws(() => cloneContract(defective), error => error.name === 'SyntaxError',
+        'the unchanged production-boundary assertion must fail on the planted defect');
+    });
+  }
+}

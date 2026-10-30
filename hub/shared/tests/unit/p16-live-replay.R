@@ -1,15 +1,31 @@
 # Run the shipped live-validator scripts and apply the unchanged live comparison
 # rules to every quantity emitted from the actual DOM snapshot.
 suppressPackageStartupMessages(library(jsonlite))
+manifest_path <- file.path(dirname(tempdir()), "p16-r3-live-generation.json")
+if (!file.exists(manifest_path)) stop("Missing fresh live generation manifest; run p16-live-replay.mjs successfully first")
+manifest <- fromJSON(manifest_path)
+stopifnot(is.character(manifest$generation), length(manifest$generation) == 1L,
+  nzchar(manifest$generation), length(manifest$cases) == 6L,
+  !anyDuplicated(manifest$cases),
+  setequal(manifest$cases, as.vector(outer(c("plant", "control"), c("FE", "DL", "PM"), paste, sep = "-"))))
+# No argument retains the complete six-case gate. Refusal controls may select
+# one named case while still requiring the entire fresh generation manifest.
+selected <- commandArgs(trailingOnly = TRUE)
+if (length(selected) > 1L || (length(selected) == 1L && !selected %in% manifest$cases))
+  stop("Expected one known live comparison case, or no argument for all six")
+if (!length(selected)) selected <- manifest$cases
 results <- list()
-for (case in c("plant", "control")) for (model in c("FE", "DL", "PM")) {
-  name <- paste(case, model, sep = "-")
+for (name in selected) {
   prefix <- file.path(dirname(tempdir()), paste0("p16-r3-live-", name))
   e <- new.env()
   outcome <- tryCatch({
     if (!file.exists(paste0(prefix, ".json")) || !file.exists(paste0(prefix, ".R")))
       stop("Missing live snapshot/script; run p16-live-replay.mjs first: ", name)
     app <- fromJSON(paste0(prefix, ".json"), simplifyVector = FALSE)
+    if (!identical(app$generation, manifest$generation) ||
+        !identical(readLines(paste0(prefix, ".R"), n = 1L, warn = FALSE),
+          paste0("# P16 snapshot generation: ", manifest$generation)))
+      stop("Stale or mixed live snapshot generation; regenerate all six cases: ", name)
     capture.output(sys.source(paste0(prefix, ".R"), envir = e))
     keys <- vapply(app$values, function(v) v$key, "")
     # A self-consistent empty snapshot and empty reference must never count as parity.

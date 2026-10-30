@@ -1,12 +1,18 @@
 // Execute the actual DOM snapshot, including structuredClone, before exporting R.
-import './p16-test-deps.cjs';
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { labels, plainLabels, rowsFor } from './p16-pair-identity-support.mjs';
 
+// Invalidate the last batch before loading optional dependencies. A failed
+// generator must not leave an older batch available to the separate R command.
+const manifest = join(tmpdir(), 'p16-r3-live-generation.json');
+if (existsSync(manifest)) unlinkSync(manifest);
+const generation = randomUUID(), generated = [];
+await import('./p16-test-deps.cjs');
 const require = createRequire(import.meta.url);
 const { harness } = require('../nma-inconsistency-dom.cjs');
 const failures = [];
@@ -47,21 +53,25 @@ for (const [kind, names] of [['plant', labels], ['control', plainLabels]]) {
       JSON.stringify(displayValues)));
     check(name, () => assert.equal(new Set(snapshot.state.nodeSplit.map(s => s.pairKey)).size, 6,
       'all six identities survive the cloned live snapshot'));
-    // The hosted validator serialises the snapshot before building its R script.
-    // Only top-level serialisable pairKeys, never non-enumerable fit metadata, may cross.
-    const script = live.buildScript(JSON.parse(JSON.stringify(snapshot)));
+    // Exercise the exact shared-widget boundary, retaining the JSON check too.
+    const script = live.buildScript(structuredClone(snapshot));
+    check(name, () => assert.equal(script, live.buildScript(JSON.parse(JSON.stringify(snapshot))),
+      'structuredClone and JSON handoffs must build identical R scripts'));
     const namesLine = script.match(/^names_app <- (.*)$/m)[1];
     const keys = [...namesLine.matchAll(/"(?:[^"\\]|\\.)*"/g)].map(m => JSON.parse(m[0]));
     check(name, () => assert.equal(keys.length, 6));
     check(name, () => assert.equal(new Set(keys).size, 6));
-    writeFileSync(join(tmpdir(), `p16-r3-live-${name}.R`), script);
+    writeFileSync(join(tmpdir(), `p16-r3-live-${name}.R`),
+      `# P16 snapshot generation: ${generation}\n` + script);
     writeFileSync(join(tmpdir(), `p16-r3-live-${name}.json`), JSON.stringify({
-      values: snapshot.values, rules: live.compare,
+      generation, values: snapshot.values, rules: live.compare,
     }, null, 2));
+    generated.push(name);
     console.log(`P16_LIVE_SNAPSHOT ${name}: ${JSON.stringify({
       pairs: new Set(keys).size, display: snapshot.values.filter(v => v.key.startsWith('display.')),
       failures: failures.filter(f => f.startsWith(name + ':')),
     })}`);
   }
 }
+writeFileSync(manifest, JSON.stringify({ generation, cases: generated }));
 assert.deepEqual(failures, [], 'all six live snapshots must satisfy every original assertion');

@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const path = join(tmpdir(), 'p16-r3-live-plant-FE.json');
 const original = readFileSync(path, 'utf8');
@@ -11,8 +12,15 @@ const base = JSON.parse(original);
 assert.ok(Array.isArray(base.values) && base.values.length > 7,
   'Run the real P16 DOM snapshot generator first; refusing an empty fixture');
 const marker = 'P16_LIVE_R plant-FE ';
+// CI exposes Rscript on PATH; the restricted wrapper can supply R.home's exact
+// executable. Pass it directly to spawnSync, including paths containing spaces.
+const rscript = process.argv[2] || 'Rscript';
+const nativeArgs = ['--vanilla', fileURLToPath(new URL('p16-live-replay.R', import.meta.url))];
+// Only plant-FE is mutated. The wrapper can scope each refusal check to that
+// case; the independent p16-live-replay.R command still verifies all six cases.
+if (process.argv[3]) nativeArgs.push(process.argv[3]);
 function runNativeR() {
-  const run = spawnSync('Rscript', ['--vanilla', 'unit/p16-live-replay.R'], {
+  const run = spawnSync(rscript, nativeArgs, {
     cwd: process.cwd(), encoding: 'utf8', timeout: 120000, maxBuffer: 4 * 1024 * 1024,
   });
   assert.ifError(run.error);
@@ -47,6 +55,9 @@ try {
   expectRefusal('empty-display', data => {
     data.values = data.values.filter(v => !v.key.startsWith('display.'));
   }, report => assert.match(report.error || '', /Insufficient native-R comparison coverage/));
+  expectRefusal('stale-generation', data => {
+    data.generation = 'previous-generation';
+  }, report => assert.match(report.error || '', /Stale or mixed live snapshot generation/));
   const restored = runNativeR();
   assert.equal(restored.status, 0, 'restored original input did not pass native R');
   assert.equal(restored.report.ok, true, 'restored original input parity failed');
