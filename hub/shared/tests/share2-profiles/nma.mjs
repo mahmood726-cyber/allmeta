@@ -1,5 +1,5 @@
 // share2 test profile: nma (contrast-based NMA; rows are "study, treatment1, treatment2, est, SE").
-export default {
+const profile = {
   plot: '#svg-host svg',
   results: { selector: '#ref-host', closest: 'section' },
   custom: {
@@ -26,3 +26,14 @@ export default {
     { data: 'T1, Placebo, DrugA, -0.2x, 0.12\nT2, Placebo, DrugB, -0.1, 0.1' }
   ]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ data: profile.custom.data + '\n' + row });
+profile.invalid.push(
+  bad('T9, DrugA, DrugB, abc, 0.1'),
+  bad('T9, DrugA, DrugB, 0.1, 0'),
+  bad('T9, DrugA, DrugB, 0.1, -0.1'),
+  bad('T9, DrugA, DrugA, 0.1, 0.1'),
+  bad('T9, DrugA, DrugB, 0.1')
+);
+export default profile;
