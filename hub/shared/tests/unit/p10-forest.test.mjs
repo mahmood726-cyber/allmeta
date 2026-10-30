@@ -155,7 +155,7 @@ test('P10-R4 control: linear ratio override preserves distinct tiny values', () 
 test('P10-R4 control: per-study values agree with the recorded native R oracle', () => {
   const ref = JSON.parse(readFileSync(new URL('./p10-forest-reference.json', import.meta.url), 'utf8'));
   for (const key of ['R', 'metafor', 'jsonlite']) assert.ok(ref.provenance[key]);
-  assert.equal(ref.provenance.input_md5, createHash('md5').update(inputBytes).digest('hex'));
+  assert.equal(ref.provenance.input_md5, createHash('md5').update(inputBytes.toString('utf8').replace(/\r\n/g, '\n')).digest('hex'));
   assert.deepEqual(ref.input, input);
   const { context } = app();
   for (const [name, csv] of Object.entries(input)) for (const measure of ['OR', 'RR', 'RD']) {
