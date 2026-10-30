@@ -749,8 +749,8 @@
         var el = document.getElementById(id);
         if (!el) return;
         if (isEmpty) {
-          // restore defaults by clearing derive fields; keep type/est at current
-          if (['der-t','der-n1','der-f','der-f-sign','der-n2','der-p','der-lo','der-hi'].includes(id)) el.value = '';
+          // Clear all data; keep selectors on their initial valid option.
+          el.value = el.tagName === 'SELECT' ? el.options[0].value : '';
         } else {
           if (snap[id] != null) el.value = snap[id];
         }
