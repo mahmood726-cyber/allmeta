@@ -154,11 +154,20 @@
       nDisagree: splits.filter(s => !s.agree).length,
     };
   }
+  function withinDesignCaveat(f) {
+    // Connected, independent two-arm data: total residual df = k - (T - 1).
+    // Subtract between-design df to obtain within-design df (= k - designs).
+    // Derive this from the existing fit shape so R reference fits get the same warning.
+    const df = f.k - (f.trts.length - 1) - f.dbt.df;
+    return df === 0 ? 'There are no replicated designs (within-design df = 0): heterogeneity and inconsistency cannot be separated. The consistency-model τ² may absorb inconsistency, so the random-effects tests are sensitivity analyses and cannot resolve that ambiguity.' : '';
+  }
   function compareSummary(C) {
     if (!C || C.status !== 'ok') return C ? 'Estimator comparison not available: ' + C.reason : '';
     const g = C.global, het = g.DL.tau2 > 0 || g.PM.tau2 > 0;
     const s = [`Global design-by-treatment p was ${fmtP(g.FE.p)} with fixed-effect, ${fmtP(g.DL.p)} with DerSimonian-Laird (τ² = ${fmt(g.DL.tau2, 4)}) and ${fmtP(g.PM.p)} with Paule-Mandel (τ² = ${fmt(g.PM.tau2, 4)}) weights.`];
-    if (!C.globalAgree) s.push('The models fall on different sides of 0.05' + (het ? '; with τ² > 0 the fixed-effect result is sensitive to unmodelled heterogeneity.' : '.'));
+    const caveat = withinDesignCaveat(C.fits.FE);
+    if (caveat) s.push(caveat);
+    if (!C.globalAgree) s.push('The models fall on different sides of 0.05' + (het ? '; the result is sensitive to τ² weighting, which does not establish heterogeneity as the cause.' : '.'));
     else if (g.FE.p !== null) s.push('All three models fall on the same side of 0.05.');
     if (C.splits.length) s.push(C.nDisagree ? `${C.nDisagree} of ${C.splits.length} node-split p-values fall on different sides of 0.05 depending on the model.` : `Each of the ${C.splits.length} node-split p-values falls on the same side of 0.05 under all three models.`);
     return s.join(' ');
@@ -170,13 +179,15 @@
     const b = state && state.loo && state.loo.status === 'ok' ? state.loo.base : state && state.base;
     if (!b || b.status !== 'ok') return [];
     const out = [], nS = b.nodeSplit.length, nI = b.nodeSplit.filter(s => sig(s.p)).length, p = b.dbt.p;
+    const caveat = withinDesignCaveat(b);
     if (p === null) out.push('This network has no closed loop, so direct and indirect evidence cannot be compared: inconsistency is not testable here.');
     else if (sig(p)) out.push(`The global design-by-treatment test rejected the hypothesis of no inconsistency (p = ${fmtP(p)}).` +
-      (b.model === 'FE' ? ' Under a fixed-effect model this can reflect unmodelled between-study heterogeneity as well as disagreement between direct and indirect evidence, so read it alongside the random-effects results.' : '') +
+      (b.model === 'FE' && !caveat ? ' Under a fixed-effect model this can reflect unmodelled between-study heterogeneity as well as disagreement between direct and indirect evidence, so read it alongside the random-effects results.' : '') +
       ' Examine the node-split results, the designs involved and study characteristics before relying on network estimates.');
     else out.push(`The global design-by-treatment test did not reject the hypothesis of no inconsistency (p = ${fmtP(p)}). This is not evidence that the network is consistent: the test may have low power, particularly with few studies per design, so a non-significant result does not exclude important inconsistency.` +
       (p < 0.10 ? ' The p-value is close to 0.05; some authors use 0.10 for this test because of its low power.' : ''));
     if (nS) out.push(`${nI} of ${nS} node-split comparisons had p < 0.05. These p-values are unadjusted: if there were no inconsistency, about ${fmt(ALPHA * nS, 1)} of ${nS} would be expected to reach p < 0.05 by chance, and the splits are correlated (several re-test the same loops). Treat isolated flags as hypothesis-generating, and look at the size of each direct–indirect difference, not only its p-value.`);
+    if (caveat) out.push(caveat);
     if (b.model === 'FE') out.push('Fixed-effect weights ignore between-study heterogeneity; when heterogeneity is present this inflates Q and makes node-split p-values too small. Compare with the random-effects results.');
     else out.push(`Random-effects weights fix τ² at the consistency-model ${b.model} estimate (${fmt(b.tau2, 4)}) for every test, including the global Q. That estimate can absorb inconsistency and its uncertainty is ignored, which tends to make the random-effects tests conservative.`);
     out.push('The comparison of fixed-effect and random-effects results below is a sensitivity analysis: prespecify the primary model rather than choosing it from these results.');
@@ -194,6 +205,7 @@
     R.push(`The global design-by-treatment test gave Q = ${fmt(b.dbt.Q, 2)} on ${b.dbt.df} df (p = ${fmtP(b.dbt.p)})${m === 'FE' ? '' : ` with τ² = ${fmt(b.tau2, 4)}`}; ${b.nodeSplit.filter(s => sig(s.p)).length} of ${b.nodeSplit.length} node-split comparisons had p < 0.05${b.nodeSplit.filter(s => sig(s.p)).length ? ' (' + b.nodeSplit.filter(s => sig(s.p)).map(s => `${s.comparison}, p = ${fmtP(s.p)}`).join('; ') + ')' : ''}.`);
     if (L && L.status === 'ok') R.push(looSummary(L));
     if (C && C.status === 'ok') R.push(compareSummary(C));
+    else if (withinDesignCaveat(b)) R.push(withinDesignCaveat(b));
     return 'Methods. ' + M.join(' ') + '\n\nResults. ' + R.join(' ');
   }
 
