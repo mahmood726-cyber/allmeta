@@ -415,10 +415,10 @@
 
       // Back-transform pooled estimate + 95% prediction interval. The PI (t_{k-1},
       // Cochrane v6.5) is formed on the TRANSFORM scale via the shared core, then
-      // back-transformed exactly like the CI so it stays in [0,1].
+      // back-transformed exactly like the CI so it stays in [0,1]. FE has no PI.
       var lo = pooled.mu_re - Z975 * pooled.seRE;
       var hi = pooled.mu_re + Z975 * pooled.seRE;
-      var piT = (window.AlmMaCore && rows.length >= 3)
+      var piT = (window.AlmMaCore && tauEst !== 'FE' && rows.length >= 3)
         ? window.AlmMaCore.predictionInterval({ mu: pooled.mu_re, se: pooled.seRE, tau2: pooled.tau2, k: rows.length })
         : null;
       var poolP, poolLo, poolHi, poolPiLo = null, poolPiHi = null;
