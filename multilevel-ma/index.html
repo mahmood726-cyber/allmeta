@@ -306,7 +306,15 @@
 
     function run() {
       var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3) { _lastResults = null; _lastReml = null; return; }
+      if (rows.length < 3) {
+        _lastResults = null;
+        _lastReml = null;
+        document.getElementById('summary').innerHTML =
+          '<p role="alert">Analysis needs at least 3 valid rows. Enter a study, numeric effect, and positive SE for each row, then press Run analysis.</p>';
+        document.getElementById('body').innerHTML = '';
+        document.getElementById('forest').innerHTML = '';
+        return;
+      }
       var f = fit(rows);
 
       var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };
