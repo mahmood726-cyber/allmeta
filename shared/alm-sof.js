@@ -82,7 +82,7 @@
     return pairs.concat([['Certainty of evidence (user-selected)', f.certainty], ['Downgrade reasons (user-entered)', f.reasons], ['Comparator risk source', f.riskSource], ['Notes', f.absoluteNote], ['Advisory', f.hint], ['References', f.citation]]);
   }
   function csvCell(s) {
-    s = String(s); if (/^[\s]*[=+@-]/.test(s) || /^[\t\r\n]/.test(s)) s = "'" + s;
+    s = String(s); if (/^[\s]*[=+@]/.test(s) || /^[\t\r\n]/.test(s)) s = "'" + s;  // not '-': negative differences stay numbers
     return '"' + s.replace(/"/g, '""') + '"';
   }
   function csv(f) { var c = columns(f); return c.map(function (p) { return csvCell(p[0]); }).join(',') + '\r\n' + c.map(function (p) { return csvCell(p[1]); }).join(',') + '\r\n'; }

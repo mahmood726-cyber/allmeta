@@ -216,3 +216,13 @@ test('influence preserves the full-model display precision, never the exclusion 
   assert.equal(noTable.estimate, full.mu);
   assert.equal(S.buildFinding(noTable, {}).effect, '0.123 [0.000, 0.247]');
 });
+
+// CSV injection guard escapes only cells that a spreadsheet would run as a formula (= + @, tab, CR). A leading minus is an
+// ordinary negative number here (a beneficial absolute difference, e.g. "-100 fewer per 1,000") and must stay readable.
+test('CSV keeps negative differences as written and still escapes formula cells', () => {
+  const f = S.buildFinding(result, { outcome: '+SUM(A1)', certainty: 'Low', acr: '.2' });
+  const csv = S.csv(f);
+  assert.match(csv, /"'\+SUM\(A1\)/);
+  assert.match(csv, /"-\d/, 'a negative absolute difference is exported');
+  assert.doesNotMatch(csv, /"'-/, 'a negative number must not be prefixed with a quote');
+});
