@@ -258,10 +258,17 @@
       // (NOT tau2-inflated weights). Without sigma2 the "shares" are tau2-only and
       // overstate heterogeneity proportions when sampling variance is large.
       var wSamp = rows.map(function (r) { return 1 / (r.se * r.se); });
-      var sumWsamp = wSamp.reduce(function (a, b) { return a + b; }, 0);
-      var sumW2samp = wSamp.reduce(function (a, b) { return a + b * b; }, 0);
-      var denomSig = sumWsamp * sumWsamp - sumW2samp;
-      var sigma2_typical = denomSig > 1e-12 ? ((rows.length - 1) * sumWsamp) / denomSig : 0;
+      var maxWsamp = wSamp.reduce(function (a, b) { return Math.max(a, b); }, 0);
+      // Normalise before forming the denominator: its magnitude must not depend
+      // on the units of SE. Sum 2*w_i*w_j (i<j) to avoid cancellation when one
+      // weight dominates. With positive weights, only a zero pair sum degenerates.
+      var sumWsamp = 0, denomSig = 0;
+      for (var wi = 0; wi < wSamp.length; wi++) {
+        var scaledW = wSamp[wi] / maxWsamp;
+        denomSig += 2 * scaledW * sumWsamp;
+        sumWsamp += scaledW;
+      }
+      var sigma2_typical = denomSig > 0 ? (rows.length - 1) / (maxWsamp * (denomSig / sumWsamp)) : NaN;
       var totalVar = tau2_study + tau2_within + sigma2_typical;
       var I2_study = tau2_study / totalVar;
       var I2_within = tau2_within / totalVar;

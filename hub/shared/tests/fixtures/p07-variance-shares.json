@@ -1,0 +1,30 @@
+{
+  "provenance": {
+    "R": "R version 4.6.0 (2026-04-24 ucrt)",
+    "base": "4.6.0",
+    "jsonlite": "2.0.0",
+    "method": "(k-1) / trace(W - w w' / sum(w)); leave-one-out sums"
+  },
+  "cases": {
+    "equal_unit": {
+      "se": [1, 1, 1, 1, 1, 1],
+      "sigma2_typical": 1
+    },
+    "equal_large": {
+      "se": [10000, 10000, 10000, 10000, 10000, 10000],
+      "sigma2_typical": 100000000
+    },
+    "unequal_unit": {
+      "se": [1, 2, 3, 1, 2, 3],
+      "sigma2_typical": 2.58726899383984
+    },
+    "unequal_large": {
+      "se": [10000, 20000, 30000, 10000, 20000, 30000],
+      "sigma2_typical": 258726899.383984
+    },
+    "dominant_weight": {
+      "se": [1e-10, 1, 1, 1, 1, 1],
+      "sigma2_typical": 0.5
+    }
+  }
+}
