@@ -746,9 +746,10 @@
     // textarea using the app's native "effect, SE, label" line format, then
     // trigger run().
     window.__almLoad = function (rows) {
-      var lines = rows.filter(function (r) {
-        return r.study != null && isFinite(r.yi) && isFinite(r.vi) && r.vi > 0;
-      }).map(function (r) {
+      // Keep one native line per CSV data row: invalid input must reach the
+      // all-or-nothing validator, which reports line numbers and clears results.
+      var lines = rows.map(function (r) {
+        if (r.study == null) return 'Missing required CSV study column';
         return r.yi + ', ' + Math.sqrt(r.vi) + ', ' + r.study;
       });
       var ta = document.getElementById('src');
