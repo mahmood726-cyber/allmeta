@@ -14,8 +14,10 @@ test('P05-R5 control: native R provenance and inputs are exact', () => {
   for (const key of ['R', 'metafor', 'metadat', 'jsonlite', 'session']) assert.ok(ref.provenance[key]);
   assert.equal(ref.provenance.serialization, 'base R; 17 significant digits');
   for (const [key, path] of Object.entries({ input_md5: 'hub/shared/tests/unit/p05-qprofile-input.json',
-    script_md5: 'hub/shared/tests/unit/p05-qprofile-reference.R', corpus_md5: 'heterogeneity/validate/corpus/corpus.json' })) {
-    assert.equal(ref.provenance[key], createHash('md5').update(read(path)).digest('hex'));
+    script_md5: 'hub/shared/tests/unit/p05-qprofile-reference.R', corpus_md5: 'heterogeneity/validate/corpus/corpus.json',
+    csv_md5: 'hub/shared/tests/unit/p05-qprofile-input.csv', prepare_md5: 'hub/shared/tests/unit/p05-qprofile-prepare.mjs' })) {
+    // Provenance records the LF bytes used by R and by the CI checkout.
+    assert.equal(ref.provenance[key], createHash('md5').update(read(path).replace(/\r\n/g, '\n')).digest('hex'));
   }
   assert.deepEqual(ref.fits.map(r => r.id), input.map(c => c.id));
   for (const c of input) {
