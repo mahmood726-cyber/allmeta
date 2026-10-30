@@ -31,15 +31,15 @@ const DOI_RE = /^10\.\d{4,9}\/\S+$/;
 // Rules allowed to ship without a Handbook entry (explicitly marked handbookExempt in the table).
 const HANDBOOK_EXEMPT = Object.freeze([]);
 const PLACEMENTS = Object.freeze({
-  'SP-REC-SMALLK': ['proportion-ma', 'correlation-ma'],
-  'SP-PIT-I2ZERO': ['proportion-ma', 'correlation-ma'],
-  'SP-PIT-NONSIG': ['correlation-ma', 'multivariate-ma'],
+  'SP-REC-SMALLK': ['proportion-ma', 'correlation-ma'].concat(["heterogeneity","meta-regression","influence","limit-ma","gosh","cumulative-subgroup"]),
+  'SP-PIT-I2ZERO': ['proportion-ma', 'correlation-ma'].concat(["heterogeneity","influence"]),
+  'SP-PIT-NONSIG': ['correlation-ma', 'multivariate-ma'].concat(["heterogeneity","pubbias-tests","meta-regression","influence","limit-ma","cumulative-subgroup","mh-peto","multilevel-ma","nma","component-nma","dose-response-ma","rve-meta"]),
   'SP-PIT-CLUSTER': ['proportion-ma'],
   'SP-REC-DTA-SROC': ['dta-sroc'],
-  'SP-PIT-FUNNELSMALLK': ['dta-sroc'],
-  'SP-PIT-NMACONSIST': ['nma-inconsistency'],
-  'SP-UNC-SMALLK': ['dta-sroc', 'proportion-ma', 'nma-inconsistency', 'correlation-ma', 'multivariate-ma'],
-  'SP-UNC-WIDEPI': ['proportion-ma', 'correlation-ma'],
+  'SP-PIT-FUNNELSMALLK': ['dta-sroc'].concat(["pubbias-tests","limit-ma"]),
+  'SP-PIT-NMACONSIST': ['nma-inconsistency'].concat(["nma"]),
+  'SP-UNC-SMALLK': ['dta-sroc', 'proportion-ma', 'nma-inconsistency', 'correlation-ma', 'multivariate-ma'].concat(["heterogeneity","pubbias-tests","meta-regression","influence","limit-ma","gosh","cumulative-subgroup","mh-peto","multilevel-ma","nma","component-nma","dose-response-ma","rve-meta"]),
+  'SP-UNC-WIDEPI': ['proportion-ma', 'correlation-ma'].concat(["heterogeneity","cumulative-subgroup","multilevel-ma"]),
 });
 
 let checks = 0;
@@ -363,4 +363,41 @@ test('checks counted', () => { ok(checks > 150, 'checks: ' + checks); console.lo
 test('approval 2026-10-21: SP-PIT-WITHINCOR is dropped for this round (v2 backlog)', () => {
   assert.equal(S.RULES.some((r) => r.id === 'SP-PIT-WITHINCOR'), false);
   for (const r of S.RULES) for (const e of r.evidence) if (e.kind === 'survey') assert.match(e.note, /^A (published|repeat) audit/, r.id);
+});
+
+// Regression: refresh must not replace controls captured by a replay lock.
+test('notice keeps locked controls until restoration, then publishes current advice', () => {
+  const doc = fakeDoc(), parent = new Node('div', doc), anchor = new Node('div', doc);
+  parent.appendChild(anchor);
+  let ctx = pair({k:4});
+  const n = UI.notice({app:'correlation-ma', ctx:()=>ctx, anchor});
+  n.element.querySelector = () => all(n.element).find(x => x.tagName === 'button' && x.disabled) || null;
+  n.refresh();
+  const original = all(n.element).filter(x => x.tagName === 'button');
+  original.forEach(x => {x.disabled=true;});
+  ctx = pair({k:3}); n.refresh();
+  assert.deepEqual(all(n.element).filter(x => x.tagName === 'button'), original);
+  assert.ok(all(n.element).filter(x => x.tagName === 'button').every(x => x.disabled));
+  original.forEach(x => {x.disabled=false;}); n.refresh();
+  assert.match(n.element.textContent, /k = 3/);
+  const settled = n.element.children.slice(); n.refresh();
+  assert.deepEqual(n.element.children, settled, 'unchanged advice preserves focus and controls');
+});
+test('all guidance links announce their new-tab destination', () => {
+  const doc=fakeDoc(), root=new Node('div',doc);
+  UI.mount(root,{app:'correlation-ma',ctx:()=>pair({k:4})});
+  const links=all(root).filter(x=>x.tagName==='a');
+  assert.ok(links.length>0);
+  for(const a of links)assert.match(a.textContent+' '+a.getAttribute('aria-label'),/new tab/i);
+});
+
+test('an initially empty notice cannot add buttons while page inputs are locked', () => {
+  const doc=fakeDoc(), parent=new Node('div',doc), anchor=new Node('div',doc);
+  parent.appendChild(anchor); let locked=false, ctx=pair({k:30,estimates:[]});
+  doc.querySelector=sel=>sel==='main textarea:disabled'&&locked?{}:null;
+  const n=UI.notice({app:'correlation-ma',ctx:()=>ctx,anchor}); n.refresh();
+  assert.equal(all(n.element).filter(x=>x.tagName==='button').length,0);
+  locked=true;ctx=pair({k:3});n.refresh();
+  assert.equal(all(n.element).filter(x=>x.tagName==='button').length,0);
+  locked=false;n.refresh();assert.ok(all(n.element).some(x=>x.tagName==='button'));
 });
