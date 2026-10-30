@@ -12,7 +12,13 @@ for (case in c("plant", "control")) for (model in c("FE", "DL", "PM")) {
     app <- fromJSON(paste0(prefix, ".json"), simplifyVector = FALSE)
     capture.output(sys.source(paste0(prefix, ".R"), envir = e))
     keys <- vapply(app$values, function(v) v$key, "")
-    stopifnot(!anyDuplicated(keys), setequal(keys, names(e$flat)))
+    # A self-consistent empty snapshot and empty reference must never count as parity.
+    # Require all six structural splits plus displayed results from the actual page.
+    if (length(keys) < 7L || anyDuplicated(keys) ||
+        sum(!startsWith(keys, "display.")) < 6L ||
+        sum(startsWith(keys, "display.")) < 1L)
+      stop("Insufficient native-R comparison coverage: required split and display values absent")
+    stopifnot(setequal(keys, names(e$flat)))
     failures <- character(); failed_keys <- character()
     for (v in app$values) {
       key <- v$key; actual <- v$value; expected <- e$flat[[key]]
