@@ -370,13 +370,21 @@
    * dose-on-every-arm rule in toDoseResponse).
    */
   function toContrasts(env, opts) {
+    return toContrastsDetailed(env, opts).rows;
+  }
+
+  /** Same rows as toContrasts, plus named continuous pairs omitted for missing
+   * or invalid sample sizes. Storage validation intentionally keeps n optional.
+   */
+  function toContrastsDetailed(env, opts) {
     opts = opts || {};
     var out = [];
-    if (!env || !Array.isArray(env.studies)) return out;
+    var result = { rows: out, omissions: [] };
+    if (!env || !Array.isArray(env.studies)) return result;
     var measure = nonEmptyString(env.effectMeasure) ? env.effectMeasure : (opts.measure || "OR");
     var isOR = measure === "OR", isRR = measure === "RR";
     var isMD = measure === "MD", isSMD = measure === "SMD";
-    if (!isOR && !isRR && !isMD && !isSMD) return out; // HR/RD: not derivable here
+    if (!isOR && !isRR && !isMD && !isSMD) return result; // HR/RD: not derivable here
     for (var i = 0; i < env.studies.length; i++) {
       var s = env.studies[i];
       if (!s || !Array.isArray(s.arms) || s.arms.length < 2) continue;
@@ -390,7 +398,13 @@
           for (var cb = ca + 1; cb < s.arms.length; cb++) {
             var cx = s.arms[ca], cy = s.arms[cb];
             // n is optional in the CONT schema → derive only when both present.
-            if (!(isFiniteNumber(cx.n) && cx.n > 0 && isFiniteNumber(cy.n) && cy.n > 0)) continue;
+            if (!(isFiniteNumber(cx.n) && cx.n > 0 && isFiniteNumber(cy.n) && cy.n > 0)) {
+              result.omissions.push({
+                study: s.id, treatment1: cx.treatment, treatment2: cy.treatment,
+                reason: "Both arms need a finite sample size (n) greater than 0."
+              });
+              continue;
+            }
             var cte, cse;
             if (isMD) {
               cte = cx.mean - cy.mean;
@@ -448,7 +462,7 @@
         }
       }
     }
-    return out;
+    return result;
   }
 
   /**
@@ -536,6 +550,7 @@
     fromBinaryTriplets: fromBinaryTriplets,
     toNmaProStudies: toNmaProStudies,
     toContrasts: toContrasts,
+    toContrastsDetailed: toContrastsDetailed,
     toDoseResponse: toDoseResponse,
     detLog: detLog,
   };
