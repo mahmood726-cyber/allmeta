@@ -273,6 +273,19 @@
       var x = se.map(function (s) { return 1 / s; });
       var y = te.map(function (t, i) { return t / se[i]; });
       var xb = _mean(x), yb = _mean(y);
+      // R's lm.fit (tol=1e-7) tests the residual precision-column norm
+      // after projecting out the intercept, relative to its original norm.
+      // Scale only this rank check; preserve the fitted arithmetic below.
+      var scale = x.reduce(function (a, b) { return Math.max(a, b); }, 0);
+      var scaledX = x.map(function (v) { return v / scale; });
+      var scaledMean = _mean(scaledX), rankTotal = 0, rankResidual = 0;
+      for (var r = 0; r < k; r++) {
+        rankTotal += scaledX[r] * scaledX[r];
+        rankResidual += (scaledX[r] - scaledMean) * (scaledX[r] - scaledMean);
+      }
+      if (Math.sqrt(rankResidual / rankTotal) < 1e-7) {
+        throw Error('Limit meta-analysis has a numerically rank-deficient radial design: study precisions are too similar, including after heterogeneity adjustment.');
+      }
       var Sxx = 0, Sxy = 0;
       for (var i = 0; i < k; i++) {
         Sxx += (x[i] - xb) * (x[i] - xb);
@@ -370,7 +383,9 @@
       var d = dl(rows);
       var fe = pool(rows, 0);
       var re = pool(rows, d.tau2);
-      var lim = limitMA(rows);
+      var lim;
+      try { lim = limitMA(rows); }
+      catch (error) { refuse(error.message); return; }
 
       _lastResults = {
         k:         rows.length,
