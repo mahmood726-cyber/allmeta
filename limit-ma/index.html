@@ -48,6 +48,8 @@
                padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
     footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    /* Validate panels: wrap long Maxima lines inside the panel. */
+    #alm-validate pre, #alm-plus-validate pre { white-space: pre-wrap; overflow-wrap: anywhere; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <!-- Cycle 2.8 Task 4 shared UX modules — wired per RETROFIT_AUDIT.md:

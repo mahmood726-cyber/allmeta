@@ -14,6 +14,9 @@
     #alm-plus tr[aria-selected="true"] {background:var(--accent-soft);}
     #plus-plot {max-width:840px;margin:1rem auto;}
     #plus-table button:focus-visible {outline:2px solid var(--accent);outline-offset:2px;}
+    /* The 12-column table is wider than the panel: scroll it inside a visible box. */
+    #alm-plus .plus-table-scroll {max-width:100%;overflow-x:auto;overflow-y:hidden;border:1px solid var(--border);border-radius:6px;margin-bottom:1rem;}
+    #alm-plus .plus-table-scroll table {margin:0;}
     </style><h2>Study inclusion and influence</h2>
     <p>Descriptive summaries of overlapping subsets; no p-values. Differences are with minus without.</p>
     <button type="button" id="plus-refresh">Refresh extras from current inputs</button>
@@ -22,7 +25,7 @@
     <label for="plus-het">Highlight plot heterogeneity</label><select id="plus-het"></select>
     <p id="plus-counts" aria-live="polite"></p>
     <svg id="plus-plot" viewBox="0 0 600 420" role="img" aria-label="Subset estimates coloured by study inclusion"></svg>
-    <div style="overflow:auto"><table id="plus-table"><caption>Per-study inclusion summaries; select a study to highlight its subsets</caption><thead><tr></tr></thead><tbody></tbody></table></div>
+    <div class="plus-table-scroll"><table id="plus-table"><caption>Per-study inclusion summaries; select a study to highlight its subsets</caption><thead><tr></tr></thead><tbody></tbody></table></div>
     <h2>Validate the extras in R</h2><div id="alm-plus-validate"></div>`;
   if(!panel.isConnected)document.querySelector('main').append(panel);
   const el = id => document.getElementById(id);

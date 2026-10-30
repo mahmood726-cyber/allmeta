@@ -46,6 +46,12 @@ Per `CLAUDE.md` rule: **only tag and release when explicitly requested.**
    git commit -m "release: bump to vX.Y.Z"
    git push origin main
    ```
+   The stamped SHA is `HEAD` when the script runs, i.e. the last code
+   commit *before* the bump commit (a file cannot contain the SHA of the
+   commit that adds it). Run this step only after every code change for
+   the release has merged; anything merged afterwards ships under an
+   older stamp. (v1.7.0 stamps 7899ce5; the E-value input repair, #125,
+   merged after the bump and is not covered by that stamp.)
    *Why:* Receipts signed without the new SHA point at the previous
    commit, so reviewers months later can't replay the exact code.
 4. **Tag and push:**

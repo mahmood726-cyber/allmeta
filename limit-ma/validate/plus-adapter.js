@@ -3,6 +3,7 @@
 const methods=['RE','limit','trimfill','PET','PEESE','conditional','selection','Egger','Peters','Qsmall','Qresid','shift','G2'];
 const fields={RE:['mu','se','ciLo','ciHi','tau2'],limit:['mu','se','ciLo','ciHi'],trimfill:['mu','se','ciLo','ciHi','tau2','k0','side','imputed','imputedSE'],PET:['mu','slope','se','ciLo','ciHi','t','p','df'],PEESE:['mu','slope','se','ciLo','ciHi','t','p','df'],selection:['mu','tau2','delta','se','ciLo','ciHi','logLik'],Egger:['statistic','df','p'],Peters:['statistic','df','p'],Qsmall:['statistic','df','p'],Qresid:['statistic','df','p'],shift:['value'],G2:['value']};fields.conditional=fields.PET;
 const finite=x=>typeof x==='number'&&Number.isFinite(x);
+const PAINT_EPSILON=1e-3; // CSS px; see intersects() in geometry().
 function validate(corpus,refs){
  if(!Array.isArray(corpus)||!Array.isArray(refs)||corpus.length!==169||refs.length!==169)throw Error('Expected 169 sensitivity configurations');
  const ids=new Set();
@@ -216,7 +217,15 @@ function geometry(r,c,limit){
    s.clipPath==='none'&&s.maskImage==='none'};
   ancestry.set(n,value);return value;
  }
- const intersects=(a,b)=>a.right>=b.left&&a.left<=b.right&&a.bottom>=b.top&&a.top<=b.bottom;
+ // Containment margin for every viewport / plot-area paint comparison.
+ // getBoundingClientRect() returns single-precision (float32) values while
+ // DOMPoint/CTM edges are double precision: a mark drawn exactly on the plot
+ // edge (the null line when every CI is on one side of zero) can read up to
+ // half a float32 ULP outside it (1.7e-5 CSS px observed at 1440x900). Half
+ // a float32 ULP is below PAINT_EPSILON for any coordinate under 32768 CSS px;
+ // 1e-3 CSS px is 1/500 of a device pixel at DPR 2, far below anything visible.
+ const intersects=(a,b)=>a.right>=b.left-PAINT_EPSILON&&a.left<=b.right+PAINT_EPSILON&&
+  a.bottom>=b.top-PAINT_EPSILON&&a.top<=b.bottom+PAINT_EPSILON;
  function rect(svg,x1,y1,x2,y2){const a=screen(svg,x1,y1),b=screen(svg,x2,y2);return {left:Math.min(a.x,b.x),right:Math.max(a.x,b.x),top:Math.min(a.y,b.y),bottom:Math.max(a.y,b.y)};}
  for(const id of ['plus-forest','plus-funnel']){
   const svg=document.getElementById(id),viewport=svg.getBoundingClientRect();
@@ -337,13 +346,15 @@ async function mount(){
   const corpus=loaded[files[0].path],refs=loaded[files[1].path];validate(corpus,refs);
   const snap=__almLimitValidationSnapshot(),ui=AlmLimitPlusUI.snapshot(),status=document.getElementById('plus-status').textContent;
   const locks=[...document.querySelectorAll('button,input,select,textarea')].filter(n=>!n.closest('#alm-plus-validate')).map(n=>[n,n.disabled]);locks.forEach(([n])=>n.disabled=true);
-  let checks=0,passed=0;const failed=[],maxima={},axisCoverage=[];
+  let checks=0,passed=0,refusals=0;const failed=[],maxima={},axisCoverage=[];
   function check(id,q,a,r,exact=false){const tol=tolerance(q),d=AlmValidate.compare(a,r,exact?'exact':'rel',tol);checks++;if(d.pass)passed++;else failed.push({id,quantity:q,app:a,ref:r,tol,...d});maxima[q]=Math.max(maxima[q]||0,d.diff);}
   return alm.urlState.withoutWrites(async()=>{try{
    for(let i=0;i<corpus.length;i++){
     const c=corpus[i];__almLimitValidationRun(c.te.map((v,j)=>v+','+c.se[j]+',row '+c.source_rows[j]).join('\n'),true);
     const limit=_almLastLimit(),a=AlmLimitPlus.compute(c,limit,.1),ref=refs[i].methods;
     AlmLimitPlusUI.render(a,c,limit);
+    // Reference method refusals; each passes only if the app refuses for the same reason.
+    for(const key of methods)if(ref[key].status==='refused')refusals++;
     const af=flatten(a),rf=flatten(ref);
     for(const [q,v] of Object.entries(rf))check(c.id,q,af[q],v,typeof v!=='number'||/\.(df|k0|length)$/.test(q));
     const renderFailures=displayed(af).concat(geometry(a,c,limit));check(c.id,'render',renderFailures.length,0,true);axisCoverage.push(...axisLabels.map(row=>({...row,id:c.id})));
@@ -352,7 +363,7 @@ async function mount(){
    }
   }finally{__almLimitValidationRestore(snap);AlmLimitPlusUI.restore(ui);document.getElementById('plus-status').textContent=status;locks.forEach(([n,d])=>n.disabled=d);}
   if(checks!==manifest.checks)throw Error('Sensitivity check cardinality mismatch: '+checks+' != '+manifest.checks);
-  return {checks,passed,failed,maxima,axisCoverage,summaryLines:[...axisSummary(axisCoverage),'Independent sensitivity oracle: meta 8.5-0, metafor 5.2-1, metasens 1.5-3.','Refusals pass only when both implementations refuse for the same reason.','Effective rendered geometry checked against rendered axis ticks within 0.02 CSS px; text character positions, paint visibility, viewport intersection and forest label row bounds included.','Rendered forest/funnel coordinates inverted to effect/SE units: 1e-9 relative tolerance with unit floor.','Closed-form tolerance 1e-9 relative; selection parameters/logLik 1e-6 and SE/CI 1e-4.']};
+  return {checks,passed,failed,maxima,refusals,axisCoverage,summaryLines:[...axisSummary(axisCoverage),'Independent sensitivity oracle: meta 8.5-0, metafor 5.2-1, metasens 1.5-3.','Refusals pass only when both implementations refuse for the same reason.','Effective rendered geometry checked against rendered axis ticks within 0.02 CSS px; text character positions, paint visibility, viewport and plot-area intersection (1e-3 CSS px containment margin for single-precision bounding boxes) and forest label row bounds included.','Rendered forest/funnel coordinates inverted to effect/SE units: 1e-9 relative tolerance with unit floor.','Closed-form tolerance 1e-9 relative; selection parameters/logLik 1e-6 and SE/CI 1e-4.']};
   });
  }
  const adapter={app:'limit-ma-plus',paper:{checks:manifest.checks,repoUrl:'https://github.com/mahmood726-cyber/allmeta',runLabel:'Sensitivity oracle protocol',runUrl:'validate/README-plus.md'},corpus:{files,run:replay}};

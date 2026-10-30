@@ -460,3 +460,52 @@ for(const [name,values,labels,status] of [
  if(status==='fail')expect(()=>run(values,labels)).toThrow(/calibrated axis/);
  else {const row=run(values,labels);expect(row.checked).toBe(status==='checked');if(status==='coarse')expect(row.message).toBe('axis labels: not checked (labels coarser than tick spacing)');}
 });
+
+// v1.7.1 regression: on these 17 configurations every interval is on one side
+// of zero, so the dashed null line is drawn exactly on the forest plot edge.
+// getBoundingClientRect() is single precision; the CTM edge is double. With a
+// zero containment margin, 1440x900 reported "line paint outside plot" for a
+// correct display (16,080/16,097). The 1e-3 CSS px margin must absorb that,
+// while marks moved 0.01 CSS px past the edge, hidden or clipped still fail.
+const edgeIds=['dat.crisafulli2020::001','dat.dong2013::001','dat.hasselblad1998::001','dat.huber2000::001','dat.ishak2007::001','dat.ishak2007::002','dat.ishak2007::003','dat.ishak2007::004','dat.karner2014::001','dat.karner2014::002','dat.lau1992::001','dat.lloyd2010::001','dat.lloyd2010::002','dat.roever2022::001','dat.senn2013::002','dat.spooner2002::001','dat.yusuf1985::001'];
+// Own context per viewport and scale factor; off-origin requests are refused here.
+for(const [width,height,scale] of [[1280,900,1],[1440,900,1],[1440,900,2],[1600,900,1],[1920,1080,1]])arithmeticTest(`limit-ma-plus null line on plot edge passes at ${width}x${height}@${scale}x`,async({browser,baseURL})=>{
+ arithmeticTest.setTimeout(180000);
+ const context=await browser.newContext({baseURL,viewport:{width,height},deviceScaleFactor:scale,colorScheme:'light'});
+ const outside=[];context.on('request',r=>{if(/^https?:/.test(r.url())&&new URL(r.url()).origin!==new URL(baseURL).origin)outside.push(r.url());});
+ try{
+  const page=await context.newPage();await page.goto(url);await page.evaluate(()=>AlmLimitPlusReady);
+  await page.evaluate(()=>Promise.all(document.getAnimations().map(a=>a.finished)));
+  const result=await page.evaluate(async ids=>{
+   const loaded=await AlmLimitPlusValidation.prepare(),files=AlmLimitPlusValidationAdapter.corpus.files,corpus=loaded[files[0].path];
+   const out=[];
+   for(const id of ids){
+    const c=corpus.find(c=>c.id===id);if(!c){out.push({id,missing:true});continue;}
+    // Same inputs, alpha and render path as the Validate replay.
+    __almLimitValidationRun(c.te.map((v,j)=>v+','+c.se[j]+',row '+c.source_rows[j]).join('\n'),true);
+    const limit=_almLastLimit(),r=AlmLimitPlus.compute(c,limit,.1);AlmLimitPlusUI.render(r,c,limit);
+    const check=()=>AlmLimitPlusContract.displayed(AlmLimitPlusContract.flatten(r)).concat(AlmLimitPlusContract.geometry(r,c,limit));
+    const svg=document.getElementById('plus-forest'),zero=svg.querySelector('line'),x=zero.getAttribute('x1');
+    const edge=x==='670'?1:x==='220'?-1:0,clean=check();
+    // Move the null line 0.01 CSS px beyond its edge (screen scale from the CTM).
+    const step=.01/svg.getScreenCTM().a,moved=String(+x+edge*step);
+    zero.setAttribute('x1',moved);zero.setAttribute('x2',moved);const outside=check();zero.setAttribute('x1',x);zero.setAttribute('x2',x);
+    zero.style.opacity='0';const hidden=check();zero.style.removeProperty('opacity');
+    zero.style.clipPath='inset(100%)';const clipped=check();zero.style.removeProperty('clip-path');
+    out.push({id,edge,clean,outside,hidden,clipped,restored:check()});
+   }
+   return out;
+  },edgeIds);
+  expect(result).toHaveLength(17);
+  for(const row of result){
+   expect(row.missing,row.id).toBeUndefined();
+   expect(row.edge,row.id+' null line on a plot edge').not.toBe(0);
+   expect(row.clean,row.id+' clean').toEqual([]);
+   expect(row.outside,row.id+' moved 0.01 CSS px').toContain('plus-forest line paint outside plot');
+   expect(row.hidden,row.id+' hidden').toContain('plus-forest line paint');
+   expect(row.clipped,row.id+' clipped').toContain('plus-forest line paint');
+   expect(row.restored,row.id+' restored').toEqual([]);
+  }
+  expect(outside,'requests must stay on the page origin').toEqual([]);
+ }finally{await context.close();}
+});
