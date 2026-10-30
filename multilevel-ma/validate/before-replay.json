@@ -1,7 +1,19 @@
 {
-  "status": "blocked",
-  "checks": null,
-  "passed": null,
-  "error": "browserType.launch: spawn EPERM",
-  "reason": "The before-integration Playwright attempt on the original page could not launch msedge. No browser replay checks ran. Recorded from the tool output; this is not a replay result."
+  "status": "passed",
+  "served": "faa5079 (origin/main, multilevel-ma identical to base 7966530)",
+  "browser": "Playwright 1.59.1 bundled Chromium (headless shell), 2026-10-18",
+  "spec": "hub/shared/tests/validate-multilevel-ma.spec.mjs (inputs and navigation restored)",
+  "checks": 528,
+  "passed": 528,
+  "failed": [],
+  "maxima": {
+    "REML": 8.494076118026328e-7,
+    "shares": 1.1102230246251565e-16,
+    "exact": 0
+  },
+  "refusals": [],
+  "summaryLines": [
+    "44 configurations; 12 checks each. Seven REML quantities: relative tolerance 1e-6; three MoM variance shares versus closed form: 1e-9; row count and historical rounded-value rendering contract: exact.",
+    "Reference: metafor 5.2-1. Relative difference = |App-R|/max(1,|R|). MoM estimates are not compared with R."
+  ]
 }

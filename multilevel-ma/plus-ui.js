@@ -21,8 +21,11 @@
     add('path',{d:'M75 45V245H565',fill:'none',stroke:'#172030','stroke-width':1});
     add('polyline',{points:p.x.map((v,i)=>`${x(v)},${y(p.ll[i])}`).join(' '),fill:'none',stroke:'#2457a6','stroke-width':2});
     p.x.forEach((v,i)=>add('circle',{cx:x(v),cy:y(p.ll[i]),r:3,fill:'#2457a6',stroke:'none'}));
-    const text=(xx,yy,s,anchor='middle')=>add('text',{x:xx,y:yy,fill:'#172030',stroke:'none','font-size':12,'font-family':'Arial, sans-serif','font-weight':'normal','text-anchor':anchor},s);
-    text(300,20,names[j]);text(320,290,'Variance');text(75,265,'0');text(565,265,xmax.toPrecision(5));text(68,248,ymin.toPrecision(5),'end');text(68,49,ymax.toPrecision(5),'end');text(75,36,'REML log-likelihood','start');
+    const text=(xx,yy,s,anchor='middle',axis)=>{const el=add('text',{x:xx,y:yy,fill:'#172030',stroke:'none','font-size':12,'font-family':'Arial, sans-serif','font-weight':'normal','text-anchor':anchor},s);if(axis)el.dataset.plusTickLabel=axis;return el;};
+    // Endpoint tick labels. The zero label carries the upper label's decimal
+    // resolution (fixed notation) so the tick-step label check can apply to it.
+    const upper=xmax.toPrecision(5),decimals=/e/i.test(upper)?null:(upper.split('.')[1]||'').length;
+    text(300,20,names[j]);text(320,290,'Variance');text(75,265,decimals===null?'0':(0).toFixed(decimals),'middle','x');text(565,265,upper,'middle','x');text(68,248,ymin.toPrecision(5),'end','y');text(68,49,ymax.toPrecision(5),'end','y');text(75,36,'REML log-likelihood','start');
     return svg;
   }
   function render(r,target=document.getElementById('alm-plus-output')){

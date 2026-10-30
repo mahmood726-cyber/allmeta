@@ -2,7 +2,7 @@
 
 This panel checks the separate intercept-only three-level REML extras: CR2 coefficient inference using study clusters, Satterthwaite degrees of freedom and 95% confidence intervals, and 95% profile-likelihood intervals and plotted coordinates for both variance components. The pinned replay checks the current numerical implementation, displayed cells, labels, exported JSON, and plot geometry and painted styles against a clean render in the same browser. It does not resist CSS deliberately injected into the page. It is not an assessment of whether a pooled effect is scientifically meaningful for a particular dataset.
 
-The original estimator and its 528-check contract are separate. `#alm-plus` contains all extras. The original adapter in the supplied base has no whole-page text contract: its rendering check is confined to `#summary`; its explicit extras exclusion preserves that scope and check count. The `limit-ma/validate/plus-adapter.js`, `MANIFEST-plus.json`, `plus-pins.js` and `README-plus.md` examples named in the task were absent at base `7966530de875d22253f0557c7b447ed9d917685d`; fetching main was unavailable. This panel uses the available shared `AlmValidate.mount` interface without changing shared code.
+The original estimator and its 528-check contract are separate. `#alm-plus` contains all extras. The original adapter in the supplied base has no whole-page text contract: its rendering check is confined to `#summary`; its explicit extras exclusion preserves that scope and check count. The panel was written at base `7966530de875d22253f0557c7b447ed9d917685d`, before the v1.7 limit-ma and gosh extras were available to it; after merging v1.7 its axis-label check, scope statement and button names follow those panels. It uses the shared `AlmValidate.mount` interface without changing shared code.
 
 ## Corpus and methods
 
@@ -16,7 +16,7 @@ The browser engine independently profiles the two-component restricted likelihoo
 
 Closed-form CR2 calculations conditional on the R variance estimates are checked at `1e-9` relative to `max(1,abs(R))`. Fitted quantities and profile values are checked at `1e-6` on that scale. All p-values use `1e-9` absolute error. Counts, quantity labels and refusal text are exact. The numerical script makes 59 checks per configuration, 2,596 total. Browser replay has 165 checks per configuration plus 12 checks for four refusals, 7,272 total. These are expected counts; see the run reports for actual outcomes.
 
-Plot checks compare effective screen coordinates (within 0.05 CSS pixels), computed paint, opacity and text with a clean same-browser SVG render. Scale marks must first match R. The clean render uses those validated marks so decimal rounding at a tick boundary cannot make a correct display fail. Axis labels are checked because the scale is determined by the validated marks. The nine-point line is a sampled profile, not a continuous optimisation trace.
+Plot checks compare effective screen coordinates (within 0.05 CSS pixels), computed paint, opacity and text with a clean same-browser SVG render. Scale marks must first match R. The clean render uses those validated marks so decimal rounding at a tick boundary cannot make a correct display fail. Axis labels are additionally checked by an independent oracle (the v1.7 tick-step rule, as in limit-ma and gosh); see "Scope and limits". The nine-point line is a sampled profile, not a continuous optimisation trace.
 
 ## Live and offline tiers
 
@@ -43,13 +43,16 @@ node validate/compare-plus.mjs
 
 The generator resumes completed configurations. To regenerate from scratch, rename the generated reference file before running it. Every R script prints `.libPaths()` and package versions. No package installation occurred in this task; the existing clubSandwich library is appended after the prescribed libraries.
 
-Serve the repository root on localhost:8088, then run the tests from the repository root:
+From `hub/shared/tests`, with the standard port 8088 free or serving this checkout:
 
-```powershell
-python -m http.server 8088 --bind 127.0.0.1
-node --test --test-isolation=none hub/shared/tests/multilevel-ma-plus.spec.mjs
-$env:REPLAY_STAGE='after'
-node hub/shared/tests/multilevel-ma-plus-baseline.spec.mjs
+```text
+node node_modules/@playwright/test/cli.js test multilevel-ma-plus.spec.mjs validate-multilevel-ma.spec.mjs --grep-invert @slow --workers=1 --reporter=line
 ```
 
-The tests use Playwright directly with `channel: 'msedge'`. They resolve `@playwright/test` first, then `PLAYWRIGHT_CORE_PATH` or the existing local Playwright Core installation. `ALM_ENGINE_ONLY=1` explicitly skips the browser suite; that is not a successful browser verification. `original-numerical-plus.mjs` separately checks the original 440 numerical quantities, excluding its 88 browser checks.
+`multilevel-ma-plus.spec.mjs` runs the 2,596 engine-versus-R checks, the 7,272-check extras replay, the individual negative controls (numbers, displayed cells, exports, labels, plot geometry, paint and axis labels, refusals, stale inputs, changed bytes) and, tagged `@slow`, the live webR profile tier (43 quantities). `validate-multilevel-ma.spec.mjs` is the paper's original 528-check replay, which must remain 528/528. Set `PW_CHANNEL=msedge` or `chrome` where bundled Chromium is unavailable. `original-numerical-plus.mjs` separately checks the original 440 numerical quantities, excluding its 88 browser checks.
+
+## Scope and limits
+
+The extras panel checks displayed result numbers, quantity labels, refusals, the JSON export, both profile-plot titles, captions, endpoint axis labels, marks and the profile line. Plot geometry and painted style are compared with a clean render in an isolated shadow tree in the same browser (0.05 CSS px). Axis labels are checked only when the R-validated marks (the nine profile variances on the horizontal axis and their profile log-likelihoods on the vertical axis) span at least 20% of the rendered axis length between the two endpoint labels and the affine least-squares fit has maximum residual at most 1e-7 CSS px. Constant, insufficiently spread or non-affine marks produce "axis labels: not checked (scale not determined by validated marks)", never an axis-label pass or failure. The panel and replay evidence report checked/not-checked counts and identify each unchecked axis. Each finite parsed label is compared with its independently inferred value using half the median adjacent inferred tick spacing. The tick positions are the label anchors: the text x coordinate for horizontal-axis labels and the text baseline for vertical-axis labels (3-4 px from the axis end). Non-numeric or non-finite labels fail. Adjacent labels that parse equally, or a shown last-digit unit larger than half the tick spacing, produce "axis labels: not checked (labels coarser than tick spacing)", never a pass or failure. The zero label carries the upper label's decimal resolution so that the rule can apply to it; when the upper label uses exponent notation the zero label is `0` and that axis is reported not checked. There are no exponent-range or precision-based error allowances. Only two endpoint labels exist; no interior-spacing coverage is claimed. Independent geometry checks still apply even when labels are not checked. These checks do not establish correctness of all prose, arbitrary injected CSS, or every visual detail; they are DOM/style contracts, not pixel-occlusion detection. No pixel-reference test covers these plots.
+
+The extras' replay and live buttons are named "Re-run extras validation" and "Validate the extras in R", distinct from the original panel's buttons.

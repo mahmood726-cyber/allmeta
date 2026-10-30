@@ -1,7 +1,19 @@
 {
-  "status": "blocked",
-  "checks": null,
-  "passed": null,
-  "error": "browserType.launch: spawn EPERM\nCall log:\n\u001b[2m  - <launching> C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate,RenderDocument,OptimizationHints --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=C:\\Users\\User\\AppData\\Local\\Temp\\playwright_chromiumdev_profile-OD3EWq --remote-debugging-pipe --no-startup-window\u001b[22m\n",
-  "reason": "Browser process could not be launched; no replay checks ran."
+  "status": "passed",
+  "served": "feat/multilevel-ma-plus (extras loaded)",
+  "browser": "Playwright 1.59.1 bundled Chromium (headless shell), 2026-10-18",
+  "spec": "hub/shared/tests/validate-multilevel-ma.spec.mjs (inputs and navigation restored)",
+  "checks": 528,
+  "passed": 528,
+  "failed": [],
+  "maxima": {
+    "REML": 8.494076118026328e-7,
+    "shares": 1.1102230246251565e-16,
+    "exact": 0
+  },
+  "refusals": [],
+  "summaryLines": [
+    "44 configurations; 12 checks each. Seven REML quantities: relative tolerance 1e-6; three MoM variance shares versus closed form: 1e-9; row count and historical rounded-value rendering contract: exact.",
+    "Reference: metafor 5.2-1. Relative difference = |App-R|/max(1,|R|). MoM estimates are not compared with R."
+  ]
 }
