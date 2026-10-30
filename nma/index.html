@@ -559,6 +559,15 @@
     render = window.alm.analysisLifecycle(render, function (result) { return !!_lastAnalysis; }, "[id^=\"f-\"]");
 
     function render() {
+      try {
+        return renderResults();
+      } catch (error) {
+        clearResults();
+        showWarnings(["Analysis could not be completed: " + ((error && error.message) || String(error))]);
+      }
+    }
+
+    function renderResults() {
       const state = readState();
       const parsed = parseContrasts(state.data);
       const rows = parsed.rows;
@@ -713,7 +722,7 @@
     function onDownloadJson() {
       if (!canExport()) return;
       const state = readState();
-      const out = Object.assign({_schema:"nma-v1", _savedAt:new Date().toISOString()}, state);
+      const out = Object.assign({_schema:"nma-v1", _savedAt:new Date().toISOString(), producedBy:window.AlmBuildInfo}, state);
       downloadBlob(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}), "nma-state.json");
     }
     function onImportJson(file) {

@@ -1,0 +1,170 @@
+{
+  "provenance": {
+    "R": "R version 4.6.0 (2026-04-24 ucrt)",
+    "meta": "8.5.0",
+    "metasens": "1.5.3",
+    "metafor": "5.2.1",
+    "jsonlite": "2.0.0"
+  },
+  "cases": {
+    "ordinary": {
+      "input": {
+        "te": [0.55, 0.48, 0.7, 0.6, 0.3, 0.75, 0.52, 0.65, 0.45, 0.58],
+        "se": [0.08, 0.1, 0.15, 0.09, 0.07, 0.2, 0.08, 0.12, 0.17, 0.1]
+      },
+      "tau2": 0.00723186926562673,
+      "native": {
+        "status": "ok",
+        "limit_est": 0.411998010092046,
+        "limit_se": 0.0887921158931855,
+        "ci_lo": 0.237968660830296,
+        "ci_hi": 0.586027359353796
+      },
+      "diagnostic": {
+        "rank": 2,
+        "raw_rank": 2,
+        "rank_ratio": 0.197401246715251,
+        "centered_se": 0.0887921158931855,
+        "lower_bound": 0.000723186926562673
+      }
+    },
+    "tau_zero": {
+      "input": {
+        "te": [0.1, 0.2, 0.3],
+        "se": [0.2, 0.3, 0.4]
+      },
+      "tau2": 0,
+      "native": {
+        "status": "ok",
+        "limit_est": -0.0999999999999997,
+        "limit_se": 0.555492059863531,
+        "ci_lo": -1.18874443103049,
+        "ci_hi": 0.988744431030488
+      },
+      "diagnostic": {
+        "rank": 2,
+        "raw_rank": 2,
+        "rank_ratio": 0.27659127289276,
+        "centered_se": 0.555492059863531,
+        "lower_bound": 0
+      }
+    },
+    "heterogeneous": {
+      "input": {
+        "te": [-1, 0.5, 1.2, 0.1],
+        "se": [0.1, 0.2, 0.3, 0.4]
+      },
+      "tau2": 1.22131868131868,
+      "native": {
+        "status": "ok",
+        "limit_est": -0.27385145553199,
+        "limit_se": 0.934404898718786,
+        "ci_lo": -2.10525140399861,
+        "ci_hi": 1.55754849293463
+      },
+      "diagnostic": {
+        "rank": 2,
+        "raw_rank": 2,
+        "rank_ratio": 0.0216392292789886,
+        "centered_se": 0.934404898718806,
+        "lower_bound": 0.30532967032967
+      }
+    },
+    "heterogeneous_x10": {
+      "input": {
+        "te": [-10, 5, 12, 1],
+        "se": [0.1, 0.2, 0.3, 0.4]
+      },
+      "tau2": 126.592307692308,
+      "native": {
+        "status": "ok",
+        "limit_est": -2.30676583700915,
+        "limit_se": 9.32117712034587,
+        "ci_lo": -20.5759372864058,
+        "ci_hi": 15.9624056123875
+      },
+      "diagnostic": {
+        "rank": 2,
+        "raw_rank": 2,
+        "rank_ratio": 0.000224135465904859,
+        "centered_se": 9.32117712018119,
+        "lower_bound": 31.6480769230769
+      }
+    },
+    "heterogeneous_x100": {
+      "input": {
+        "te": [-100, 50, 120, 10],
+        "se": [0.1, 0.2, 0.3, 0.4]
+      },
+      "tau2": 12663.6912087912,
+      "native": {
+        "status": "ok",
+        "limit_est": -23.0236999280751,
+        "limit_se": 93.2094415818484,
+        "ci_lo": -205.710848447588,
+        "ci_hi": 159.663448591438
+      },
+      "diagnostic": {
+        "rank": 2,
+        "raw_rank": 2,
+        "rank_ratio": 2.24218468292345e-06,
+        "centered_se": 93.2089980575372,
+        "lower_bound": 3165.9228021978
+      }
+    },
+    "heterogeneous_x1000": {
+      "input": {
+        "te": [-1000, 500, 1200, 100],
+        "se": [0.1, 0.2, 0.3, 0.4]
+      },
+      "tau2": 1266373.58131868,
+      "native": {
+        "status": "refused",
+        "reason": "0 (non-NA) cases"
+      },
+      "diagnostic": {
+        "rank": 1,
+        "raw_rank": 2,
+        "rank_ratio": 2.24219298187199e-08,
+        "centered_se": 932.089703256996,
+        "lower_bound": 316593.39532967
+      }
+    },
+    "cancellation_zero": {
+      "input": {
+        "te": [-10000, 5000, 12000, 1000],
+        "se": [0.1, 0.2, 0.3, 0.4]
+      },
+      "tau2": 126637362.592308,
+      "native": {
+        "status": "refused",
+        "reason": "0 (non-NA) cases"
+      },
+      "diagnostic": {
+        "rank": 1,
+        "raw_rank": 2,
+        "rank_ratio": 2.24219284390775e-10,
+        "centered_se": 9320.89960872186,
+        "lower_bound": 31659340.6480769
+      }
+    },
+    "nearly_equal": {
+      "input": {
+        "te": [0.1, 0.2, 0.3],
+        "se": [1, 1.000000001, 1.000000002]
+      },
+      "tau2": 0,
+      "native": {
+        "status": "refused",
+        "reason": "0 (non-NA) cases"
+      },
+      "diagnostic": {
+        "rank": 1,
+        "raw_rank": 1,
+        "rank_ratio": 8.16496558652125e-10,
+        "centered_se": 707106801.184891,
+        "lower_bound": 0
+      }
+    }
+  }
+}

@@ -51,6 +51,16 @@ jobs:
       # Explicit Node gate: Playwright excludes *.test.mjs.
       - name: Native Node correlation-MA sensitivity export replay
         run: node --test unit/p17-sensitivity-export.test.mjs
+      # P17 numerical-range refusal, ordinary positive controls and pinned metafor fixtures.
+      # Playwright *.spec.mjs does not select these Node *.test.mjs cases.
+      - name: Native Node correlation-MA inverse-variance overflow refusals
+        run: node --test unit/p17-range.test.mjs
+      # Capture baseline from the exact pre-fix Git parent and compare every
+      # publication replay byte; stored oracle tests alone cannot prove this.
+      - name: Native Node P17 authenticated pre-fix publication replay
+        run: bash scripts/p17-range-verify.sh
+        working-directory: .
+
       # P16 labels containing ' vs ' require a structural key across the
       # serialised live-R handoff. Playwright excludes native *.test.mjs.
       - name: Native Node P16 structural-pair and pinned R-reference regressions

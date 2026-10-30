@@ -1,5 +1,6 @@
-/* Published twelve-check contract: bench/compare.py and bench/run-app.mjs.
- * Corpus replay runs the current page; no archived app results are substituted. */
+/* Published twelve-check accounting: bench/compare.py and bench/run-app.mjs.
+ * Current replay strengthens the historical rounded-value rendering check by
+ * binding values to labelled cells. No archived app results are substituted. */
 (function () {
   'use strict';
   const files = [{"path": "validate/corpus/corpus.json", "sha256": "58d8fa87fdc1b83c57c3f278314a4313d047f6d332276ee3902df2f4655aabf3", "bytes": 598582}, {"path": "validate/corpus/reference.json", "sha256": "993942279a48d9244b49e6629b4aa2c08f71bdc9b9a46dea836c8f0fe6c01845", "bytes": 30221}];
@@ -27,10 +28,23 @@ stopifnot(all(is.finite(x)))
 cat('ALMJSON:{',paste(sprintf('"%s":%.17g',names(x),x),collapse=','),'}\\n',sep='')`;
   }
   function renderMatches(r) {
-    // The historical page-text contract is confined to #summary. Extras have
-    // their own contract and must never contribute text to this replay.
+    // Keep the historical precision and #summary scope, but require labelled
+    // cells and ordered CI endpoints, not merely values anywhere in the table.
+    // Extras have their own contract and must never contribute to this replay.
     const table = [...document.querySelectorAll('#summary table')].filter(t => !t.closest('#alm-plus'))[1];
-    return !!table && keys.every(k => table.innerText.includes(r[k].toFixed(k.startsWith('sigma2') ? 4 : 3)));
+    if (!table) return false;
+    const rows = [...table.rows].map(row => [...row.cells].map(cell => cell.innerText.replace(/\s+/g, ' ').trim()));
+    const expected = [
+      ['Pooled estimate', r.mu.toFixed(3), 'SE = ' + r.se.toFixed(3)],
+      ['95% CI (z)', '[' + r.ciLo.toFixed(3) + ', ' + r.ciHi.toFixed(3) + ']'],
+      ['σ²_study (between)', r.sigma2Between.toFixed(4)],
+      ['σ²_within', r.sigma2Within.toFixed(4)],
+      ['REML log-likelihood', r.logLik.toFixed(3)]
+    ];
+    return expected.every(cells => {
+      const matches = rows.filter(row => row[0] === cells[0]);
+      return matches.length === 1 && matches[0].length === cells.length && cells.every((value, i) => matches[0][i] === value);
+    });
   }
   async function replay(loaded, progress) {
     if (!window.alm || !alm.urlState || !alm.urlState.withoutWrites) throw new Error('URL-state replay guard unavailable');
@@ -67,7 +81,8 @@ cat('ALMJSON:{',paste(sprintf('"%s":%.17g',names(x),x),collapse=','),'}\\n',sep=
       input.value=original;window.__almMlmaRun();
     }
     return {checks,passed,failed,maxima,refusals:[],summaryLines:[
-      '44 configurations; 12 checks each. Seven REML quantities: relative tolerance 1e-6; three MoM variance shares versus closed form: 1e-9; row count and historical rounded-value rendering contract: exact.',
+      '44 configurations; 12 checks each. Seven REML quantities: relative tolerance 1e-6; three MoM variance shares versus closed form: 1e-9; row count and labelled rounded REML cells (including ordered CI endpoints): exact.',
+      'The published 528-check audit included 44 rendering checks for rounded values appearing anywhere in the REML table. This replay strengthens those 44 checks to require quantity-to-label agreement; it is not a re-execution of the historical rendering contract.',
       'Reference: metafor 5.2-1. Relative difference = |App-R|/max(1,|R|). MoM estimates are not compared with R.'
     ]};
   }

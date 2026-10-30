@@ -895,6 +895,9 @@
         const lines=rows.map(function(r,i) {
           if (!r || typeof r!=='object' || r.study==null || !String(r.study).trim() || /[\r\n\t]/.test(String(r.study)))
             throw new Error('CSV row '+(i+1)+': a single-line study label is required');
+          // The native parser ignores trimmed lines starting with # as comments.
+          if (String(r.study).trim().startsWith('#'))
+            throw new Error('CSV row '+(i+1)+': study label cannot begin with # (native comment marker); rename the label and retry');
           const yi=number(r.yi),vi=number(r.vi);
           if (!Number.isFinite(yi) || !Number.isFinite(vi) || vi<=0 || !Number.isFinite(1/vi) || !Number.isFinite(yi/vi))
             throw new Error('CSV row '+(i+1)+': finite yi and positive, representable vi are required');
@@ -910,7 +913,14 @@
     window.__almResults = function () {
       var info = window._almLastFE ? window._almLastFE() : null;
       var studies = window._almLastStudies ? window._almLastStudies() : [];
+      var build = window.AlmBuildInfo || {};
       var out = { _schema: 'heterogeneity-results-v1', k: studies.length,
+        producedBy: {
+          app: String(build.app || 'allmeta'),
+          version: String(build.version || 'unknown'),
+          sha: String(build.sha || 'unknown'),
+          builtAt: String(build.builtAt || '')
+        },
         I2_definition:'Q-based; retained for backwards compatibility',
         I2_model_definition:'100*tau2/(tau2+v_typical)',
         I2_ci_definition:'Model-based I2 obtained by transforming Q-profile tau2 limits',

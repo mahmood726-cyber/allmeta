@@ -128,26 +128,13 @@ function currentState() {
   // Recompute via the existing UI handler before taking one immutable input/result snapshot.
   const input = document.getElementById('f-data');
   input.dispatchEvent(new Event('input', { bubbles: true }));
-  const result = window._almLastDoseResponse();
-  if (!result) throw new Error('Enter data that the dose-response app can fit before validating.');
+  const snapshot = window._almLastDoseResponseValidation();
+  if (!snapshot) throw new Error('Enter data that the dose-response app can fit before validating.');
+  const result = snapshot.result;
   if (['PM', 'DL'].includes(result.method)) throw new Error('Live R comparison unavailable; R reference and re-execution are in the reproducible repository: dosresmeta does not implement the selected PM/DL estimator. ' + repoUrl);
-  const excluded = new Set(result.excluded.map(x => String(x.id)));
-  const groups = new Map();
-  for (const line of input.value.split(/\r?\n/)) {
-    const text = line.trim();
-    if (!text || text.startsWith('#')) continue;
-    const p = text.split(/\s*,\s*/);
-    if (p.length < 6 || !Number.isFinite(parseFloat(p[1])) || excluded.has(p[0])) continue;
-    if (!groups.has(p[0])) groups.set(p[0], { rows: [], mod: NaN });
-    const group = groups.get(p[0]), moderator = parseFloat(p[7]);
-    if (!Number.isFinite(group.mod) && Number.isFinite(moderator)) group.mod = moderator;
-    group.rows.push({ dose: parseFloat(p[1]), cases: parseFloat(p[2]), n: parseFloat(p[3]),
-      logrr: Number.isFinite(parseFloat(p[4])) ? parseFloat(p[4]) : 0,
-      se: p[5].trim() === '' ? null : parseFloat(p[5]), type: (p[6] || 'cc').trim().toLowerCase() });
-  }
-  const rows = [...groups.values()].flatMap((g, i) => g.rows.map(row => ({ ...row, id: i + 1, mod: g.mod })));
-  if (groups.size !== result.k) throw new Error('Current data and fitted study count differ; validation refused.');
-  const state = { result: JSON.parse(JSON.stringify(result)), rows };
+  const rows = snapshot.studies.flatMap((study, i) => study.rows.map(row => ({ ...row, id: i + 1, mod: study.mod })));
+  if (snapshot.studies.length !== result.k) throw new Error('Current data and fitted study count differ; validation refused.');
+  const state = { result, rows };
   // Paper scales, expressed as absolute tolerances using the displayed app's full-precision
   // SE/variance (R values do not exist until runR returns). Relative metrics stay relative.
   const iterative = result.approach === '2stage' && ['REML', 'ML'].includes(result.method);

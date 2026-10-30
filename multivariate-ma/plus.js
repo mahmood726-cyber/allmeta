@@ -96,11 +96,20 @@
   }
   function texts(parsed, res, sw) {
     var o = parsed.outcomes, k = parsed.rows.length, interp = [], methods, results;
+    // Replacement-correlation fits are independent of the main model's input covariance.
+    var ss = sweepSummary(parsed, sw);
     if (res.status !== 'ok') {
-      interp.push('No model was fitted: ' + res.reason);
+      var refusal = (ss ? 'The main bivariate model using the input within-study covariances was refused: ' : 'No model was fitted: ') + res.reason;
+      interp.push(refusal);
       if (k < 2) interp.push('A bivariate random-effects model needs at least two studies with both outcomes.');
+      if (ss) interp.push(ss);
       interp.push(omittedSentence(parsed).trim());
-      return { interpretation: interp.filter(Boolean).join(' '), methods: '', results: '' };
+      methods = ss ? modeSentence(parsed) + ' ' + refusal +
+        ' Sensitivity to the within-study correlation was examined by attempting bivariate REML fits of ' + o[0] + ' and ' + o[1] +
+        ' with an unstructured between-study covariance matrix on the same ' + k + ' studies, replacing the input within-study covariances with \u03c1w\u00b7sqrt(v1_i\u00b7v2_i), using a common within-study correlation \u03c1w for every study over ' + sw.length + ' values from ' + sw[0].rhoW + ' to ' + sw[sw.length - 1].rhoW +
+        '. Successful fits are summarised using pooled means and Wald 95% confidence intervals.' + omittedSentence(parsed) : '';
+      results = ss ? refusal + ' ' + ss : '';
+      return { interpretation: interp.filter(Boolean).join(' '), methods: methods, results: results };
     }
     var f = res.fit;
     interp.push('The two outcomes were pooled jointly from the same ' + k + ' studies.');
@@ -116,7 +125,7 @@
       if (r !== null) interp.push('For ' + o[j] + ', the variance of the jointly pooled mean is ' + f3(r) + ' times that of a separate (univariate) analysis of the same studies' + (r < 1 ? '.' : r > 1 ? ' (the joint model is less precise here, e.g. because it estimates a different between-study variance).' : '.'));
     });
     if (parsed.mode === 'rhoW') interp.push('The within-study correlation was assumed (\u03c1w = ' + parsed.rhoW + '); use the \u03c1w sweep to see how much the results depend on it.');
-    var ss = sweepSummary(parsed, sw); if (ss) interp.push(ss);
+    if (ss) interp.push(ss);
     var om = omittedSentence(parsed).trim(); if (om) interp.push(om);
 
     methods = 'A bivariate random-effects meta-analysis of ' + o[0] + ' and ' + o[1] + ' was fitted by restricted maximum likelihood (REML) with an unstructured between-study covariance matrix (the model of mvmeta::mvmeta(method = "reml", bscov = "unstr") and metafor::rma.mv(struct = "UN")), using the allmeta multivariate-ma page. ' +

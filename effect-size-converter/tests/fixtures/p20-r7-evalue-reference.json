@@ -1,0 +1,69 @@
+{
+  "provenance": {
+    "R": "R version 4.6.0 (2026-04-24 ucrt)",
+    "EValue": "4.1.4",
+    "jsonlite": "2.0.0",
+    "script": "p20-r7-evalue-reference.R",
+    "method": "Fresh execution of unmodified pinned EValue evalues.RR source; not an installed package namespace",
+    "disclosure": "Synthetic complete confidence intervals, not clinical data.",
+    "source": "https://github.com/cran/EValue/tree/44c2dc41ce49444619bc2d97c16d87c7caef6f07",
+    "source_git_blobs": {
+      "R/EValue.R": "13c8b75aef067f6e203e923a2b7342066179dc3b",
+      "R/effect_measures.R": "13af2244f6b1c04d13363fdc2b6a549351933105",
+      "R/utils.R": "83966e9c541da39100487711f54c4895e8ddd7f9"
+    },
+    "verification": "Python hashlib SHA-1 of git blob header and downloaded bytes; no git process"
+  },
+  "cases": [
+    {
+      "id": "reversed",
+      "measure": "RR",
+      "point": 2,
+      "lo": 3,
+      "hi": 1.5,
+      "accepted": false,
+      "error": "Lower confidence limit should be less than upper confidence limit"
+    },
+    {
+      "id": "outside",
+      "measure": "RR",
+      "point": 2,
+      "lo": 3,
+      "hi": 4,
+      "accepted": false,
+      "error": "Point estimate should be inside confidence interval"
+    },
+    {
+      "id": "valid",
+      "measure": "RR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "accepted": true,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 2.3660254037844384
+      },
+      "native": [
+        [2, 1.5, 2.7000000000000002],
+        [3.4142135623730949, 2.3660254037844384, "NA"]
+      ]
+    },
+    {
+      "id": "crossing",
+      "measure": "RR",
+      "point": 2,
+      "lo": 0.80000000000000004,
+      "hi": 3,
+      "accepted": true,
+      "expected": {
+        "point": 3.4142135623730949,
+        "ci": 1
+      },
+      "native": [
+        [2, 0.80000000000000004, 3],
+        [3.4142135623730949, 1, "NA"]
+      ]
+    }
+  ]
+}

@@ -183,8 +183,17 @@
     const svgHost = document.getElementById("svg-host");
     const statsWrap = document.getElementById("stats-wrap");
 
-    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
-    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+    function readState() {
+      const o={};
+      for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; }
+      o.scale = document.getElementById("f-scale").checked;
+      return o;
+    }
+    function writeState(s) {
+      for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; }
+      // Older saved states omit scale; restore their original unchecked default.
+      document.getElementById("f-scale").checked = s.scale === true;
+    }
 
     function parseStudies(text) {
       const studies=[], warnings=[];
@@ -223,6 +232,32 @@
       return {b0,b1,rss,sw,swx,swxx:sxx+sw*xMean*xMean,det,xMean,sxx};
     }
 
+    // Solve the PM equation only inside a finite sign bracket. Starting from a
+    // sampling variance makes the search follow changes in outcome units.
+    function pmTau2(studies, target, q0, Qat) {
+      if (!Number.isFinite(q0)) return null;
+      if (q0 <= target) return 0;
+      let lo = 0, hi = Infinity;
+      for (const s of studies) hi = Math.min(hi, s.v);
+      if (!Number.isFinite(hi) || hi <= 0) return null;
+      let qHi = Qat(hi);
+      while (Number.isFinite(qHi) && qHi > target) {
+        lo = hi;
+        if (hi === Number.MAX_VALUE) return null;
+        hi = Math.min(Number.MAX_VALUE, hi * 2);
+        qHi = Qat(hi);
+      }
+      if (!Number.isFinite(qHi)) return null;
+      // Here Q(lo) > target >= Q(hi). Never treat a search limit as a root.
+      while (true) {
+        const mid = lo + (hi - lo) / 2;
+        const qMid = Qat(mid);
+        if (!Number.isFinite(qMid)) return null;
+        if (mid === lo || mid === hi || hi - lo <= 1e-15 * Math.max(Number.MIN_VALUE, hi)) return mid;
+        if (qMid > target) lo = mid; else hi = mid;
+      }
+    }
+
     // PM τ² for the intercept-only (null) model. Used to compute R² (V6-03).
     function fitPMNull(studies) {
       const k = studies.length;
@@ -236,15 +271,8 @@
         for (const s of studies) q += (s.est - muFE)*(s.est - muFE)/s.v;
         return q;
       })();
-      if (Q0 <= targetN) return 0;
-      let lo = 0, hi = 100, guard = 0;
       const Qat = (t) => { let sw=0, swy=0; for (const s of studies) { const w=1/(s.v+t); sw+=w; swy+=w*s.est; } const mu=swy/sw; let q=0; for (const s of studies) { const w=1/(s.v+t); q+=w*(s.est-mu)*(s.est-mu); } return q; };
-      while (guard < 60 && hi < 1e9 && Qat(hi) > targetN) { hi *= 2; guard++; }
-      for (let i = 0; i < 80; i++) {
-        const mid = 0.5*(lo+hi);
-        if (Qat(mid) > targetN) lo = mid; else hi = mid;
-      }
-      return 0.5*(lo+hi);
+      return pmTau2(studies, targetN, Q0, Qat);
     }
 
     // τ² via Paule-Mandel: find τ² s.t. weighted RSS = k-2.
@@ -254,23 +282,13 @@
       if (k < 3) return null;
       const f0 = fit(studies, 0);
       if (!f0) return null;
-      if (f0.rss <= target) return { tau2: 0, fit: f0 };
-      let lo = 0, hi = 100, guard = 0;
-      while (guard < 60 && hi < 1e9) {
-        const fh = fit(studies, hi);
-        if (!fh) return null;
-        if (fh.rss <= target) break;
-        hi *= 2; guard++;
-      }
-      for (let i=0; i<100; i++) {
-        const mid = (lo+hi)/2;
-        const fm = fit(studies, mid);
-        if (!fm) return null;
-        if (fm.rss > target) lo = mid; else hi = mid;
-        if (hi-lo < 1e-15 * Math.max(Number.MIN_VALUE, hi)) break;
-      }
-      const tau2 = (lo+hi)/2;
-      return { tau2, fit: fit(studies, tau2) };
+      const tau2 = pmTau2(studies, target, f0.rss, t => {
+        const f = fit(studies, t);
+        return f ? f.rss : NaN;
+      });
+      if (tau2 === null) return null;
+      const fitted = tau2 === 0 ? f0 : fit(studies, tau2);
+      return fitted && Number.isFinite(fitted.rss) ? { tau2, fit: fitted } : null;
     }
 
     // Knapp-Hartung variance with HKSJ floor
@@ -495,6 +513,7 @@
       _lastStudies = parsed.studies;
       _lastFitted  = fitted;
 
+      const extras = [];
       const parts = [];
       parts.push(statCard("k", String(parsed.studies.length)));
       if (fitted) {
@@ -533,9 +552,10 @@
         // V6-03: R² = proportion of between-study τ² explained by the moderator.
         // Q_E (residual heterogeneity) tests whether residual heterogeneity remains.
         const tau2Null = fitPMNull(parsed.studies);
-        const r2 = tau2Null > 0 ? Math.max(0, 1 - fitted.tau2 / tau2Null) : 0;
+        const r2 = tau2Null === null ? null : (tau2Null > 0 ? Math.max(0, 1 - fitted.tau2 / tau2Null) : 0);
         _lastR2 = r2;
-        parts.push(statCard("R² (τ² explained)", fmt(100 * r2, 1) + "%"));
+        parts.push(statCard("R² (τ² explained)", r2 === null ? "--" : fmt(100 * r2, 1) + "%"));
+        if (tau2Null === null) extras.push("Paule-Mandel null-model fit failed; R² is unavailable because no finite estimate could be obtained.");
         // Residual heterogeneity test: Q_E = sum w_i * r_i² with w from null
         // model (Cochrane Handbook §10.11.4 follow-up). df = k-2.
         if (parsed.studies.length >= 3) {
@@ -570,7 +590,9 @@
       }
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
 
-      const extras = [];
+      if (!fitted && parsed.studies.length >= 3) {
+        extras.push("Paule-Mandel could not obtain a finite fit; check the input scale and moderator variation.");
+      }
       if (parsed.studies.length && parsed.studies.length < 4) {
         extras.push("k = " + parsed.studies.length + " — meta-regression with 1 moderator needs k ≥ 4 to be informative.");
       }
@@ -600,7 +622,12 @@
         "yi <- c(" + studies.map(s => s.est).join(", ") + ")",
         "se <- c(" + studies.map(s => s.se).join(", ") + ")",
         "x  <- c(" + studies.map(s => s.x).join(", ") + ")",
-        "labels <- c(" + studies.map(s => '"' + String(s.label).replace(/"/g, '\\"') + '"').join(", ") + ")",
+        // Escape backslashes before introducing R escapes for controls and quotes.
+        "labels <- c(" + studies.map(s => '"' + String(s.label)
+          .replace(/\\/g, '\\\\')
+          .replace(/\x07/g, '\\a').replace(/\x08/g, '\\b').replace(/\f/g, '\\f')
+          .replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
+          .replace(/\v/g, '\\v').replace(/"/g, '\\"') + '"').join(", ") + ")",
         "",
         "# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence",
         "# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).",
@@ -821,6 +848,7 @@
       var r2      = window._almLastR2      ? window._almLastR2()      : 0;
       var qeObj   = window._almLastQE      ? window._almLastQE()      : null;
       var out = { _schema: 'meta-regression-results-v1', k: studies.length };
+      if (window.AlmBuildInfo) out.producedBy = Object.assign({}, window.AlmBuildInfo);
       if (fitted && fitted.fit && hk) {
         var f = fitted.fit;
         var df = hk.df;

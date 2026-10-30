@@ -234,23 +234,58 @@ A, D, -0.48, 0.14</textarea>
     }
 
     // --- math utils (shared) ---
+    function finiteNumber(x) {
+      if (!Number.isFinite(x)) throw new RangeError("Non-finite numerical result.");
+      return x;
+    }
+    function positiveNumber(x) {
+      if (finiteNumber(x) <= 0) throw new RangeError("Numerically invalid variance or weight.");
+      return x;
+    }
+    function validTau2(tau2) {
+      if (tau2 === undefined) return 0;
+      if (finiteNumber(tau2) < 0) throw new RangeError("Numerically invalid variance.");
+      return tau2;
+    }
+    function weights(rows, t2) {
+      return rows.map(r => {
+        positiveNumber(r.se);
+        const variance = positiveNumber(r.se * r.se + t2);
+        return positiveNumber(1 / variance);
+      });
+    }
+    function validProbability(p) {
+      if (finiteNumber(p) < 0 || p > 1) throw new RangeError("Numerically invalid probability.");
+      return p;
+    }
+    function validateSplit(r) {
+      [r.direct.mean, r.indirect.mean, r.diff, r.z].forEach(finiteNumber);
+      [r.direct.se, r.indirect.se, r.seDiff].forEach(positiveNumber);
+      validProbability(r.p);
+    }
+    function validateGlobal(g) {
+      if (finiteNumber(g.Q) < 0 || !Number.isInteger(g.df) || g.df < 0)
+        throw new RangeError("Numerically invalid global statistic.");
+      if (g.df > 0) validProbability(g.p);
+      else if (g.Q !== 0) throw new RangeError("Numerically invalid no-loop statistic.");
+    }
     function zeros(n, m) { return Array.from({ length: n }, () => Array(m).fill(0)); }
     function transpose(A) { return A[0].map((_, j) => A.map(r => r[j])); }
     function matMul(A, B) { const n = A.length, m = B[0].length, k = B.length; const C = zeros(n, m);
-      for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) for (let p = 0; p < k; p++) C[i][j] += A[i][p] * B[p][j]; return C; }
-    function matVec(A, v) { return A.map(r => r.reduce((s, x, j) => s + x * v[j], 0)); }
+      for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) for (let p = 0; p < k; p++) C[i][j] = finiteNumber(C[i][j] + A[i][p] * B[p][j]); return C; }
+    function matVec(A, v) { return A.map(r => r.reduce((s, x, j) => finiteNumber(s + x * v[j]), 0)); }
     function invert(M) {
       const n = M.length;
-      const A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+      const A = M.map((r, i) => [...r.map(finiteNumber), ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
       for (let i = 0; i < n; i++) {
         let piv = A[i][i];
         if (Math.abs(piv) < 1e-14) {
           for (let k = i + 1; k < n; k++) if (Math.abs(A[k][i]) > 1e-14) { [A[i], A[k]] = [A[k], A[i]]; piv = A[i][i]; break; }
         }
         if (Math.abs(piv) < 1e-14) throw new Error("singular");
-        for (let j = 0; j < 2 * n; j++) A[i][j] /= piv;
+        for (let j = 0; j < 2 * n; j++) A[i][j] = finiteNumber(A[i][j] / piv);
         for (let k = 0; k < n; k++) if (k !== i) {
-          const f = A[k][i]; for (let j = 0; j < 2 * n; j++) A[k][j] -= f * A[i][j];
+          const f = A[k][i]; for (let j = 0; j < 2 * n; j++) A[k][j] = finiteNumber(A[k][j] - f * A[i][j]);
         }
       }
       return A.map(r => r.slice(n));
@@ -266,11 +301,11 @@ A, D, -0.48, 0.14</textarea>
     // Inverse-variance pool of a set of rows. tau2 ≥ 0 enables RE weights;
     // default (omitted) is FE (τ²=0).
     function ivPool(rows, tau2) {
-      const t2 = (typeof tau2 === "number" && Number.isFinite(tau2) && tau2 > 0) ? tau2 : 0;
-      const w = rows.map(r => 1 / (r.se * r.se + t2));
-      const sw = w.reduce((a, b) => a + b, 0);
-      const mean = rows.reduce((acc, r, i) => acc + w[i] * r.te, 0) / sw;
-      return { mean, se: Math.sqrt(1 / sw), k: rows.length };
+      const t2 = validTau2(tau2);
+      const w = weights(rows, t2);
+      const sw = positiveNumber(w.reduce((a, b) => a + b, 0));
+      const mean = finiteNumber(rows.reduce((acc, r, i) => finiteNumber(acc + w[i] * r.te), 0) / sw);
+      return { mean, se: positiveNumber(Math.sqrt(1 / sw)), k: rows.length };
     }
     // Backward-compat alias for any existing test that references fePool.
     function fePool(rows) { return ivPool(rows, 0); }
@@ -278,7 +313,7 @@ A, D, -0.48, 0.14</textarea>
     function fitNMA(rows, refTrt, tau2) {
       // V9-06 RE option: callers may pass tau2 ≥ 0 to inflate weights to
       // w_i = 1/(SE² + τ²). Defaults to tau2=0 (FE) for backward compat.
-      const t2 = (typeof tau2 === "number" && Number.isFinite(tau2) && tau2 > 0) ? tau2 : 0;
+      const t2 = validTau2(tau2);
       const trtSet = new Set();
       rows.forEach(r => { trtSet.add(r.A); trtSet.add(r.B); });
       let trts = [...trtSet].sort();
@@ -288,17 +323,18 @@ A, D, -0.48, 0.14</textarea>
       const nBasic = trts.length - 1;
       const X = zeros(rows.length, nBasic);
       const y = rows.map(r => r.te);
-      const w = rows.map(r => 1 / (r.se * r.se + t2));
+      const w = weights(rows, t2);
       rows.forEach((r, i) => { const iA = idx[r.A], iB = idx[r.B]; if (iA > 0) X[i][iA - 1] = 1; if (iB > 0) X[i][iB - 1] = -1; });
       const Xt = transpose(X);
       const XtW = Xt.map(rx => rx.map((x, j) => x * w[j]));
       const XtWX = matMul(XtW, X);
       const XtWy = matVec(XtW, y);
       const cov = invert(XtWX);
+      cov.forEach((r, i) => positiveNumber(r[i]));
       const beta = matVec(cov, XtWy);
-      const fit = y.map((yi, i) => X[i].reduce((s, x, j) => s + x * beta[j], 0));
-      const dev = y.map((yi, i) => w[i] * (yi - fit[i]) ** 2);
-      const Q = dev.reduce((a, b) => a + b, 0);
+      const fit = matVec(X, beta);
+      const dev = y.map((yi, i) => finiteNumber(w[i] * (yi - fit[i]) ** 2));
+      const Q = finiteNumber(dev.reduce((a, b) => a + b, 0));
       const df = Math.max(0, rows.length - nBasic);
       return { trts, idx, X, y, w, beta, cov, Q, df, dev, nBasic, refTrt, tau2: t2 };
     }
@@ -320,18 +356,18 @@ A, D, -0.48, 0.14</textarea>
       const X = fit0.X, w = fit0.w, cov = fit0.cov, p = fit0.nBasic, n = fit0.X.length;
       const XtW2X = zeros(p, p);
       for (let i = 0; i < n; i++) {
-        const wi2 = w[i] * w[i];
+        const wi2 = finiteNumber(w[i] * w[i]);
         for (let a = 0; a < p; a++) {
           const xa = X[i][a]; if (xa === 0) continue;
-          for (let b = 0; b < p; b++) XtW2X[a][b] += xa * wi2 * X[i][b];
+          for (let b = 0; b < p; b++) XtW2X[a][b] = finiteNumber(XtW2X[a][b] + xa * wi2 * X[i][b]);
         }
       }
       let trCW2 = 0;
-      for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) trCW2 += cov[a][b] * XtW2X[b][a];
-      const sumW = w.reduce((s, x) => s + x, 0);
-      const denom = sumW - trCW2;
+      for (let a = 0; a < p; a++) for (let b = 0; b < p; b++) trCW2 = finiteNumber(trCW2 + cov[a][b] * XtW2X[b][a]);
+      const sumW = finiteNumber(w.reduce((s, x) => s + x, 0));
+      const denom = finiteNumber(sumW - trCW2);
       if (denom <= 1e-12) return 0;
-      return Math.max(0, (fit0.Q - fit0.df) / denom);
+      return finiteNumber(Math.max(0, (fit0.Q - fit0.df) / denom));
     }
     function tau2_PM(rows) {
       // Iterative Paule-Mandel: find τ² s.t. weighted Q(τ²) = df. Bracket via
@@ -393,21 +429,24 @@ A, D, -0.48, 0.14</textarea>
           const est = fit.beta[iB - 1];
           const se = Math.sqrt(fit.cov[iB - 1][iB - 1]);
           ind = { mean: -est, se };
-        } catch (e) { continue; }
+        } catch (e) { if (e.message === "singular") continue; throw e; }
         const dirPool = ivPool(direct, tau2);
         if (!ind) continue;
-        const diff = dirPool.mean - ind.mean;
-        const seDiff = Math.sqrt(dirPool.se * dirPool.se + ind.se * ind.se);
-        const z = diff / seDiff;
-        const p = pz(z);
-        results.push({
+        const diff = finiteNumber(dirPool.mean - ind.mean);
+        const seDiff = positiveNumber(Math.sqrt(dirPool.se * dirPool.se + ind.se * ind.se));
+        const z = finiteNumber(diff / seDiff);
+        finiteNumber(z * z);
+        const p = validProbability(pz(z));
+        const result = {
           pairKey: key,
           comparison: `${a} vs ${b}`,
           direct: dirPool,
           indirect: ind,
           diff, seDiff, z, p,
           kDirect: direct.length, kIndirect: others.length,
-        });
+        };
+        validateSplit(result);
+        results.push(result);
       }
       return results;
     }
@@ -417,44 +456,42 @@ A, D, -0.48, 0.14</textarea>
       // (basic-parameter contrasts only) against a full-design model that gives each design
       // its own contrast parameter. Q_cons − Q_full ~ χ² on df_cons − df_full.
       // V9-06: tau2 ≥ 0 uses RE-inflated weights w_i = 1/(SE² + τ²) for both models.
-      const t2 = (typeof tau2 === "number" && Number.isFinite(tau2) && tau2 > 0) ? tau2 : 0;
-      try {
-        const cons = fitNMA(rows, null, t2);
-        const tagged = rows.map(r => ({ ...r, __design: JSON.stringify([r.A, r.B].sort()) }));
-        const designs = [...new Set(tagged.map(r => r.__design))];
-        if (designs.length <= cons.nBasic) {
-          return { Q: 0, df: 0, p: NaN, note: "No closed loops: inconsistency is not testable." };
-        }
-        const n = tagged.length;
-        const nCols = designs.length;
-        const X = Array.from({ length: n }, () => Array(nCols).fill(0));
-        tagged.forEach((r, i) => { X[i][designs.indexOf(r.__design)] = 1; });
-        tagged.forEach((r, i) => {
-          const [a, b] = [r.A, r.B].sort();
-          if (r.A !== a) X[i][designs.indexOf(r.__design)] = -1;
-        });
-        const y = tagged.map(r => r.te);
-        const w = tagged.map(r => 1 / (r.se * r.se + t2));
-        const Xt = X[0].map((_, j) => X.map(row => row[j]));
-        const XtW = Xt.map(rx => rx.map((x, j) => x * w[j]));
-        // XtWX
-        const k = Xt.length;
-        const XtWX = Array.from({ length: k }, () => Array(k).fill(0));
-        for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) for (let p = 0; p < n; p++) XtWX[i][j] += XtW[i][p] * X[p][j];
-        let inv;
-        try { inv = invert(XtWX); } catch (_) { return { Q: cons.Q, df: cons.df, p: NaN, note: "inconsistency model singular" }; }
-        if (!inv) return { Q: cons.Q, df: cons.df, p: NaN, note: "inconsistency model singular" };
-        const XtWy = XtW.map(row => row.reduce((s, v, p) => s + v * y[p], 0));
-        const beta = inv.map(row => row.reduce((s, v, i) => s + v * XtWy[i], 0));
-        const fit_ = y.map((yi, i) => X[i].reduce((s, x, j) => s + x * beta[j], 0));
-        const Qfull = y.reduce((s, yi, i) => s + w[i] * (yi - fit_[i]) ** 2, 0);
-        const dfFull = Math.max(0, n - nCols);
-        // Nested weighted projections: avoid cancellation of large residual sums.
-        const dQ = y.reduce((sum, _, i) => sum + w[i] * (fit_[i] - cons.X[i].reduce((v, x, j) => v + x * cons.beta[j], 0)) ** 2, 0);
-        const dDf = Math.max(0, cons.df - dfFull);
-        const p = dDf > 0 ? 1 - chiSqCDF(dQ, dDf) : NaN;
-        return { Q: dQ, df: dDf, p };
-      } catch (e) { return { Q: NaN, df: NaN, p: NaN }; }
+      const t2 = validTau2(tau2);
+      const cons = fitNMA(rows, null, t2);
+      const tagged = rows.map(r => ({ ...r, __design: JSON.stringify([r.A, r.B].sort()) }));
+      const designs = [...new Set(tagged.map(r => r.__design))];
+      if (designs.length <= cons.nBasic) {
+        return { Q: 0, df: 0, p: NaN, note: "No closed loops: inconsistency is not testable." };
+      }
+      const n = tagged.length;
+      const nCols = designs.length;
+      const X = Array.from({ length: n }, () => Array(nCols).fill(0));
+      tagged.forEach((r, i) => { X[i][designs.indexOf(r.__design)] = 1; });
+      tagged.forEach((r, i) => {
+        const [a, b] = [r.A, r.B].sort();
+        if (r.A !== a) X[i][designs.indexOf(r.__design)] = -1;
+      });
+      const y = tagged.map(r => r.te);
+      const w = weights(tagged, t2);
+      const Xt = X[0].map((_, j) => X.map(row => row[j]));
+      const XtW = Xt.map(rx => rx.map((x, j) => x * w[j]));
+      // XtWX
+      const k = Xt.length;
+      const XtWX = Array.from({ length: k }, () => Array(k).fill(0));
+      for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) for (let p = 0; p < n; p++) XtWX[i][j] = finiteNumber(XtWX[i][j] + XtW[i][p] * X[p][j]);
+      const inv = invert(XtWX);
+      const XtWy = matVec(XtW, y);
+      const beta = matVec(inv, XtWy);
+      const fit_ = matVec(X, beta);
+      const Qfull = finiteNumber(y.reduce((s, yi, i) => s + w[i] * (yi - fit_[i]) ** 2, 0));
+      const dfFull = Math.max(0, n - nCols);
+      // Nested weighted projections: avoid cancellation of large residual sums.
+      const dQ = finiteNumber(y.reduce((sum, _, i) => sum + w[i] * (fit_[i] - cons.X[i].reduce((v, x, j) => v + x * cons.beta[j], 0)) ** 2, 0));
+      const dDf = Math.max(0, cons.df - dfFull);
+      const p = dDf > 0 ? 1 - chiSqCDF(dQ, dDf) : NaN;
+      const result = { Q: dQ, df: dDf, p };
+      validateGlobal(result);
+      return result;
     }
 
     // (invert defined above in math utils; reusing it.)
@@ -507,10 +544,15 @@ A, D, -0.48, 0.14</textarea>
       if (issue) { refuse(issue); return; }
       const modelSel = document.getElementById("f-model");
       const method = modelSel ? modelSel.value : "FE";
-      let tau2;
-      try { tau2 = estimateTau2(rows, method); fitNMA(rows, undefined, tau2); }
+      let tau2, ns, g;
+      try {
+        tau2 = estimateTau2(rows, method); fitNMA(rows, undefined, tau2);
+        ns = nodeSplit(rows, undefined, tau2);
+        ns.forEach(validateSplit);
+        g = dbt(rows, tau2);
+        validateGlobal(g);
+      }
       catch (_) { refuse("Network fit is singular or numerically invalid."); return; }
-      const ns = nodeSplit(rows, undefined, tau2);
       const body = document.getElementById("ns-body");
       const __bodyParts = [""];
       for (const r of ns) {
@@ -524,7 +566,6 @@ A, D, -0.48, 0.14</textarea>
           <td>${fmt(r.p, 3)}</td>
           <td><span class="chip ${flag}">${label}</span></td></tr>`);
       }
-      const g = dbt(rows, tau2);
       const tauTxt = method === "FE" ? "fixed-effect (τ²=0)" : `${method} τ² = ${fmt(tau2, 4)}`;
       document.getElementById("dbt").innerHTML = `
         <p>Design-by-treatment Q = <code>${fmt(g.Q, 2)}</code>, df = <code>${g.df}</code>, p = <code>${fmt(g.p, 3)}</code>.
