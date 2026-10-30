@@ -72,6 +72,19 @@ for (const [kind, names] of [['plant', labels], ['control', plainLabels]]) {
   });
 }
 
+test('P16-R3 sparse network retains loop splits but correctly excludes a bridge', () => {
+  const rows = [
+    { A: 'A', B: 'B', te: 0.1, se: 0.2, study: 'AB' },
+    { A: 'B', B: 'C', te: 0.2, se: 0.2, study: 'BC' },
+    { A: 'A', B: 'C', te: 0.3, se: 0.2, study: 'AC' },
+    { A: 'C', B: 'D', te: 0.4, se: 0.2, study: 'CD-bridge' },
+  ];
+  const fit = P.fitAll(E, rows, 'FE');
+  assert.equal(fit.status, 'ok');
+  assert.equal(fit.nodeSplit.length, 3);
+  assert.doesNotThrow(() => liveScript(rows, 'FE'));
+});
+
 test('P16-R3 ambiguous identical display labels cannot exchange structural identities', () => {
   const rows = rowsFor(labels);
   assert.throws(() => liveScript(rows, 'FE', s => {
