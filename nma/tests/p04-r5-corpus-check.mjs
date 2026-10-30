@@ -5,7 +5,8 @@ import { createHash } from 'node:crypto';
 import { createContext, runInContext } from 'node:vm';
 
 const root = new URL('../../', import.meta.url);
-const read = path => readFileSync(new URL(path, root), 'utf8');
+// Recorded corpus hashes describe LF bytes, independent of checkout line endings.
+const read = path => readFileSync(new URL(path, root), 'utf8').replace(/\r\n/g, '\n');
 const context = createContext({ document: { getElementById: () => ({}) } });
 context.window = context;
 runInContext(read('shared/nma-multiarm-v1.js'), context);
