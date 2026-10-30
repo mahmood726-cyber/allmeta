@@ -1,0 +1,12 @@
+{
+  "description": "Synthetic repeated effects in three clusters; ties at zero and at one half have exactly zero CR2 residual variance.",
+  "ties": [0, 0.5],
+  "rows": [
+    {"cluster": "A", "y": -1.25, "v": 0.0625},
+    {"cluster": "A", "y": -0.75, "v": 0.0625},
+    {"cluster": "B", "y": 0.25, "v": 0.0625},
+    {"cluster": "B", "y": 0.75, "v": 0.0625},
+    {"cluster": "C", "y": 1.75, "v": 0.0625},
+    {"cluster": "C", "y": 2.25, "v": 0.0625}
+  ]
+}

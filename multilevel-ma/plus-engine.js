@@ -176,7 +176,14 @@
     const bound=options&&options.searchBound!==undefined?options.searchBound:Infinity;
     if(!(bound>0))throw Error('searchBound must be a positive number');
     const g=groups(rows),f=fitted(g);
-    const result={status:'ok',rows:rows.length,clusters:g.length,robust:cr2(g,f.b,f.w),logLik:f.logLik,profiles:profiles(g,f,bound)};
+    // CR2 availability does not determine whether variance profiles can be fitted.
+    let robust;
+    try {robust=cr2(g,f.b,f.w);}
+    catch(e){
+      if(!e.message.startsWith('CR2 unavailable:'))throw e;
+      robust={status:'unavailable',reason:e.message};
+    }
+    const result={status:'ok',rows:rows.length,clusters:g.length,robust,logLik:f.logLik,profiles:profiles(g,f,bound)};
     // A null upper limit is a declared unavailable quantity, not a failed fit.
     const unfinished=p=>![p.estimate,p.lower,...p.x,...p.ll].every(finite)||(p.upper!==null&&!finite(p.upper));
     if(!finite(result.logLik)||result.profiles.some(unfinished))throw Error('Variance profile did not converge');

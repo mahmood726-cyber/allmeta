@@ -11,7 +11,7 @@
   const display=value=>value===null?NOT_ESTIMABLE:String(value);
   function quantities(r){
     const out={rows:r.rows,clusters:r.clusters,logLik:r.logLik};
-    for(const [key,v] of Object.entries(r.robust))out['robust.'+key]=v;
+    if(r.robust.status!=='unavailable')for(const [key,v] of Object.entries(r.robust))out['robust.'+key]=v;
     r.profiles.forEach((p,j)=>{for(const key of ['estimate','lower','upper'])out[`profile.${j}.${key}`]=p[key];for(let i=0;i<p.x.length;i++){out[`profile.${j}.x.${i}`]=p.x[i];out[`profile.${j}.ll.${i}`]=p.ll[i];}});
     return out;
   }
@@ -35,7 +35,8 @@
     target.replaceChildren();
     if(r.status!=='ok'){const p=node('p',r.reason,target);p.dataset.refusal='';p.setAttribute('role','alert');return;}
     node('h3','CR2 cluster-robust inference',target);
-    const wrap=node('div',undefined,target);wrap.style.overflowX='auto';const table=node('table',undefined,wrap);node('caption','CR2 cluster-robust inference for the pooled effect (full precision)',table);const head=node('tr',undefined,node('thead',undefined,table));for(const h of ['Quantity','Value'])node('th',h,head).scope='col';
+    if(r.robust.status==='unavailable'){const p=node('p',r.robust.reason,target);p.dataset.robustUnavailable='';}
+    const wrap=node('div',undefined,target);wrap.style.overflowX='auto';const table=node('table',undefined,wrap);node('caption',r.robust.status==='unavailable'?'REML variance profiles (full precision)':'CR2 cluster-robust inference for the pooled effect (full precision)',table);const head=node('tr',undefined,node('thead',undefined,table));for(const h of ['Quantity','Value'])node('th',h,head).scope='col';
     const tbody=node('tbody',undefined,table);
     for(const [key,value] of Object.entries(quantities(r)).filter(([k])=>!/^profile\.[01]\.(x|ll)\./.test(k))){const tr=node('tr',undefined,tbody);node('th',label(key),tr).scope='row';const td=node('td',display(value),tr);td.dataset.quantity=key;}
     r.profiles.forEach((p,j)=>{const figure=node('figure',undefined,target);figure.style.margin='1rem 0';figure.append(plot(document,p,j));node('figcaption',names[j]+': the other component is re-estimated at each point. The interval uses the profile likelihood-ratio cutoff.',figure);});
@@ -64,13 +65,13 @@
   node('div',undefined,mount).id='alm-plus-validate';
   function calculate(){
     source=document.getElementById('src').value;
-    try {result=AlmMultilevelPlusEngine.fit(rows());render(result);status.textContent='Extras calculated.';download.disabled=false;return result;}
+    try {result=AlmMultilevelPlusEngine.fit(rows());render(result);status.textContent=result.robust.status==='unavailable'?'Variance profiles calculated. '+result.robust.reason:'Extras calculated.';download.disabled=false;return result;}
     catch(e){result=null;download.disabled=true;render({status:'refused',reason:e.message});status.textContent='Extras refused: '+e.message;throw e;}
   }
   run.onclick=()=>{status.textContent='Calculating extras… large inputs can take a minute or more.';run.disabled=true;setTimeout(()=>{try{calculate();}catch{}finally{run.disabled=false;}},0);};
   // One click: restore the page's built-in example rows, refit the original analysis, then the extras.
   example.onclick=()=>{const src=document.getElementById('src');src.value=src.defaultValue;src.dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('btn-run')?.click();run.onclick();};
-  function exportText(){if(!result||source!==document.getElementById('src').value)throw Error('Extras out of date — calculate again');return JSON.stringify({model:'Three-level REML; diagonal sampling V',inference:'CR2; Satterthwaite; 95% confidence',...result},null,2)+'\n';}
+  function exportText(){if(!result||source!==document.getElementById('src').value)throw Error('Extras out of date — calculate again');return JSON.stringify({model:'Three-level REML; diagonal sampling V',inference:result.robust.status==='unavailable'?result.robust.reason:'CR2; Satterthwaite; 95% confidence',...result},null,2)+'\n';}
   download.onclick=()=>{try{const url=URL.createObjectURL(new Blob([exportText()],{type:'application/json'}));const a=node('a');a.href=url;a.download='multilevel-extras.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),0);}catch(e){status.textContent=e.message;}};
   function stale(){if(source!==null&&source!==document.getElementById('src').value){result=null;source=null;download.disabled=true;document.getElementById('alm-plus-output').replaceChildren();status.textContent='Extras out of date — calculate again';}}
   document.getElementById('src').addEventListener('input',stale);setInterval(stale,150);
