@@ -1,7 +1,7 @@
 {
   "HKSJ": {
-    "short": "Hartung–Knapp adjustment",
-    "long": "Adjusts pooled-mean uncertainty using residual scale q and t(k−1); intervals can narrow without a safeguard. Cochrane Handbook, chapter 10.",
+    "short": "Hartung-Knapp adjustment",
+    "long": "A small-sample variance correction: adjusts pooled-mean uncertainty using residual scale q and t(k−1); intervals can narrow without a safeguard. Cochrane Handbook, chapter 10.",
     "aliases": [
       "HKSJ",
       "Hartung-Knapp",

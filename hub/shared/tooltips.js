@@ -9,11 +9,20 @@
 .alm-tooltip .alm-disclaimer{display:block;margin-top:.3rem;font-size:12px;color:#e2e8f0}
 .alm-lang-switch{position:fixed;bottom:8px;right:8px;z-index:9998;background:#fff;color:#0f172a;border:1px solid #64748b;border-radius:6px;padding:4px}
 .alm-lang-switch select{font:13px system-ui,sans-serif;background:#fff;color:#0f172a;border:0}
-[data-alm-choice]{display:block;font-size:.85em;margin:.25em 0}
-@media(prefers-color-scheme:dark){.alm-tooltip{background:#f8fafc;color:#0f172a;border-color:#475569}.alm-tooltip .alm-disclaimer{color:#334155}}
-[data-theme=dark] .alm-tooltip{background:#f8fafc;color:#0f172a;border-color:#475569}
+[data-alm-choice]{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;margin:0;padding:0;border:0}
+select:focus + [data-alm-choice],[data-alm-choice]:focus-within{z-index:2147483646;box-sizing:border-box;width:max-content;height:auto;max-width:min(320px,calc(100vw - 16px));overflow:visible;clip-path:none;white-space:normal;margin-top:4px;background:#0f172a;color:#f8fafc;border:1px solid #94a3b8;border-radius:5px;padding:.35rem .55rem;font:13px/1.45 system-ui,sans-serif}
+[data-alm-choice] [data-gloss]:focus-visible{outline-color:#f8fafc}
+@media(prefers-color-scheme:dark){.alm-tooltip,[data-alm-choice]{background:#f8fafc;color:#0f172a;border-color:#475569}[data-alm-choice] [data-gloss]:focus-visible{outline-color:#0f172a}.alm-tooltip .alm-disclaimer{color:#334155}}
+[data-theme=dark] .alm-tooltip,[data-theme=dark] [data-alm-choice]{background:#f8fafc;color:#0f172a;border-color:#475569}
 [data-theme=dark] .alm-tooltip .alm-disclaimer{color:#334155}`;
   let glossary = {}, english = {}, translated = {}, terms = {}, src = null, lang = 'en';
+  // Selected-method help ([data-alm-choice]) follows its select in the tab order but is positioned
+  // out of flow and visually hidden until the select or the help has focus, so it never moves page
+  // content (pixel-pinned plots and tables below the controls keep their exact position).
+  // Optional per-page limits (selectors): automatic marks and method help appear only inside
+  // `scope` and never inside `exclude`. Pages use them to keep the glossary out of regions whose
+  // text, markup or keyboard order is pinned by their own validation or usability contracts.
+  let scope = null, exclude = null;
   let nextId = 0, generation = 0, observer = null, active = null, queued = false, hideTimer;
   const attached = new Map(), choices = new Map(), requests = new Map();
   const locationIds = new Map();
@@ -32,6 +41,9 @@
     const keys = Object.keys(map).filter(Boolean).sort((a, b) => b.length - a.length);
     const escaped = keys.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     return new RegExp('(?<![\\p{L}\\p{N}_])(?:' + (escaped.join('|') || '(?!)') + ')(?![\\p{L}\\p{N}_])', 'gu');
+  }
+  function inScope(el) {
+    return (!scope || !!el.closest(scope)) && !(exclude && el.closest(exclude));
   }
   function ensureUI() {
     if (!document.getElementById('alm-tooltip-style')) {
@@ -128,6 +140,7 @@
       acceptNode(node) {
         const p = node.parentElement;
         if (!p || !node.nodeValue.trim() || p.closest(SKIP)) return NodeFilter.FILTER_REJECT;
+        if ((scope || exclude) && !inScope(p)) return NodeFilter.FILTER_REJECT;
         // Leave code/formula blocks intact; a code-styled standalone method name
         // can itself receive help without altering its text or markup.
         if (p.closest('code')) return NodeFilter.FILTER_REJECT;
@@ -161,13 +174,13 @@
       frag.append(document.createTextNode(text.slice(offset))); n.replaceWith(frag);
     }
     root.querySelectorAll('code').forEach(el => {
-      if (!el.closest(SKIP) && terms[el.textContent.trim()] && glossary[terms[el.textContent.trim()]]) el.setAttribute('data-gloss', terms[el.textContent.trim()]);
+      if (!el.closest(SKIP) && (!(scope || exclude) || inScope(el)) && terms[el.textContent.trim()] && glossary[terms[el.textContent.trim()]]) el.setAttribute('data-gloss', terms[el.textContent.trim()]);
     });
   }
   function updateChoices() {
     document.querySelectorAll('select:not(.alm-lang-switch select)').forEach(select => {
       let record = choices.get(select);
-      if (select.matches(':disabled') || select.closest('[inert],[data-gloss-skip],.gloss-skip')) {
+      if (select.matches(':disabled') || select.closest('[inert],[data-gloss-skip],.gloss-skip') || ((scope || exclude) && !inScope(select))) {
         if (record) { record.node.remove(); choices.delete(select); }
         return;
       }
@@ -209,6 +222,11 @@
   }
   function injectSwitch() {
     if (document.querySelector('.alm-lang-switch') || !document.querySelector('[data-gloss]')) return;
+    // Pages with authored method help (abbr[data-gloss]) have carried this switch as the last
+    // control in <body> since before automatic marking, and their autosave keys index it there.
+    // Elsewhere it is glossary-owned UI: inside the named tooltip region (a landmark) and in its
+    // own shadow root, so page-level control queries (autosave, validators) never collect it.
+    const legacy = !!document.querySelector('abbr[data-gloss]');
     const wrap = document.createElement('div'); wrap.className = 'alm-lang-switch';
     wrap.setAttribute('role', 'group'); wrap.setAttribute('aria-label', 'Method-help language');
     const select = document.createElement('select'); select.setAttribute('aria-label', 'Method-help language');
@@ -216,7 +234,11 @@
       const option = document.createElement('option'); option.value = code; option.textContent = label;
       option.selected = code === lang; select.append(option);
     }
-    select.addEventListener('change', () => setLang(select.value)); wrap.append(select); document.body.append(wrap);
+    select.addEventListener('change', () => setLang(select.value));
+    if (legacy) { wrap.append(select); document.body.append(wrap); return; }
+    const shadow = wrap.attachShadow({ mode: 'open' }), css = document.createElement('style');
+    css.textContent = 'select{font:13px system-ui,sans-serif;background:#fff;color:#0f172a;border:0}';
+    shadow.append(css, select); ensureUI().append(wrap);
   }
   function fetchJSON(url) {
     if (!requests.has(url)) requests.set(url, fetch(url).then(r => {
@@ -241,13 +263,17 @@
     if (!LANGS[value]) return Promise.resolve();
     lang = value; try { localStorage.setItem('alm-lang', lang); } catch (_) {}
     document.documentElement.setAttribute('data-alm-lang', lang);
-    const select = document.querySelector('.alm-lang-switch select'); if (select) select.value = lang;
+    const select = document.querySelector('.alm-lang-switch select') ||
+      document.querySelector('.alm-lang-switch')?.shadowRoot?.querySelector('select');
+    if (select) select.value = lang;
     if (src) return load();
     translated = {}; glossary = english; attached.forEach((tip, el) => fill(tip, el)); return Promise.resolve();
   }
   function init(opts = {}) {
     ensureUI();
     if (opts.terms) terms = { ...terms, ...opts.terms };
+    if (opts.scope) scope = opts.scope;
+    if (opts.exclude) exclude = opts.exclude;
     if (!observer) {
       try { const stored = localStorage.getItem('alm-lang'); if (LANGS[stored]) lang = stored; } catch (_) {}
       observer = new MutationObserver(schedule);
@@ -257,6 +283,8 @@
       window.addEventListener('resize', position); window.addEventListener('scroll', position, true);
     }
     document.documentElement.setAttribute('data-alm-lang', lang);
+    // As before automatic marking: authored help gets its switch at initialisation.
+    if (document.querySelector('abbr[data-gloss]')) injectSwitch();
     if (opts.glossary) { english = opts.glossary; translated = {}; glossary = english; scan(); return Promise.resolve(); }
     if (opts.src) src = opts.src;
     if (src) return load();

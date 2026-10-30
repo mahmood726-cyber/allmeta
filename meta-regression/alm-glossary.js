@@ -2,6 +2,9 @@
 // English definitions are shared; this file changes no analysis.
 window.alm.tooltips({
   src: "../hub/shared/glossary.json",
+  // meta-regression-usability pins the extras' keyboard order (data, interaction, run, example, export):
+  // no tab stops inside the extras' control labels.
+  exclude: "#alm-plus label",
   terms: {
     "HKSJ": "HKSJ",
     "Hartung-Knapp": "HKSJ",

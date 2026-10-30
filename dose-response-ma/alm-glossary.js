@@ -2,6 +2,9 @@
 // English definitions are shared; this file changes no analysis.
 window.alm.tooltips({
   src: "../hub/shared/glossary.json",
+  // usability-dose-response-ma pins keyboard access from page load to the data box within 12 Tab presses:
+  // no tab stops in the header introduction or the data box label.
+  exclude: "header, label[for=\"f-data\"]",
   terms: {
     "HKSJ": "HKSJ",
     "Hartung-Knapp": "HKSJ",

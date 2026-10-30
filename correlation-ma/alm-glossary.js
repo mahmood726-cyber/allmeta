@@ -2,6 +2,9 @@
 // English definitions are shared; this file changes no analysis.
 window.alm.tooltips({
   src: "../hub/shared/glossary.json",
+  // validate/adapter.js pins the landmark template text, attributes and element paths (page_text), the
+  // headline and the results table: automatic help stays in the extras and validation panels.
+  scope: "#alm-plus, #alm-validate",
   terms: {
     "HKSJ": "HKSJ",
     "Hartung-Knapp": "HKSJ",
