@@ -1,5 +1,5 @@
 // Read-only publication-data replay; all generated snapshots go to the OS temp directory.
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
@@ -9,7 +9,12 @@ import plus from '../correlation-ma/plus-core.js';
 
 const root = new URL('../', import.meta.url);
 const read = file => readFileSync(new URL(file, root), 'utf8');
-const baseline = join(tmpdir(), 'rev2-P17-f1-before.json');
+// A clean checkout obtains this snapshot from the immutable original Git commit
+// via scripts/p17-range-verify.sh, never from the corrected implementation.
+const baseline = process.env.P17_BASELINE_SNAPSHOT || join(tmpdir(), 'rev2-P17-f1-before.json');
+const mode = process.argv[2] || '--compare';
+assert.ok(['--compare', '--capture-pre-fix'].includes(mode), 'Expected --compare or --capture-pre-fix');
+assert.ok(process.argv.length <= 3, 'Unexpected replay arguments');
 const ref = JSON.parse(read('correlation-ma/validate/plus-corpus/reference-plus.json'));
 const subset = JSON.parse(read('correlation-ma/validate/corpus/reference.json'));
 const all = { main: [], sensitivity: [], loo: [] }, maxima = {};
@@ -54,10 +59,22 @@ console.log('P17_OUTPUT_SHA256', outputHash);
 // replacement baseline from fixed code if the temporary snapshot is missing.
 assert.equal(outputHash, '8511c3ed560d174725eddea9d28d9fe3dbbdb7356dddcfea089312d52af000dc',
   'Publication input results must match the recorded pre-fix SHA-256');
-assert.ok(existsSync(baseline), 'The pre-fix publication snapshot must still be available');
-const previous = readFileSync(baseline, 'utf8');
-assert.ok(serialized === previous, 'Publication input results must remain byte-identical to the pre-fix snapshot');
-console.log('P17_UNCHANGED: all captured publication inputs, example results and maxima are byte-identical');
+if (mode === '--capture-pre-fix') {
+  // The wrapper materialises these four source/data files with git show from
+  // immutable parent 66aeba..., and passes that authenticated commit identity.
+  // Refuse direct rebaselining from a fixed worktree; never overwrite evidence.
+  assert.equal(process.env.P17_AUTHENTICATED_PRE_FIX_SHA,
+    '66aeba6349060f5954e52b0c941495366f160e8a',
+    'Capture requires the original authenticated Git source');
+  writeFileSync(baseline, serialized, { encoding: 'utf8', flag: 'wx' });
+  console.log('P17_PRE_FIX_CAPTURED: immutable parent source output, SHA-256', outputHash);
+} else {
+  assert.ok(existsSync(baseline),
+    'Missing authenticated pre-fix snapshot: run bash scripts/p17-range-verify.sh');
+  const previous = readFileSync(baseline, 'utf8');
+  assert.ok(serialized === previous, 'Publication input results must remain byte-identical to the pre-fix snapshot');
+  console.log('P17_UNCHANGED: original-source and corrected publication inputs/results are byte-identical');
+}
 for (const method of plus.METHODS) {
   try {
     const p = core.pool([Math.atanh(.2), Math.atanh(.2)], [1e-308, 1e-308], { method, pi: true });
