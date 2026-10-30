@@ -253,6 +253,27 @@
       document.body.append(host,panel);
     }
   }
+  // Loading an example also sets the published analysis options; the status must name each one it changed,
+  // in the page's own visible words (field label, option text), so no option changes silently.
+  const squash=s=>String(s==null?'':s).replace(/\s+/g,' ').trim();
+  function fieldLabel(document,el,id) {
+    const label=(document.querySelector&&document.querySelector('label[for="'+id+'"]'))||(el.closest&&el.closest('label'));
+    if(label&&label.cloneNode) {
+      const copy=label.cloneNode(true);
+      copy.querySelectorAll('select,input,textarea,.hint,.help').forEach(n=>n.remove());
+      const text=squash(copy.textContent); if(text) return text;
+    }
+    return squash(el.getAttribute&&el.getAttribute('aria-label'))||id;
+  }
+  function valueText(el,value) {
+    if(typeof value==='boolean') return value?'on':'off';
+    const option=el.options&&Array.from(el.options).find(o=>o.value===value);
+    if(option) return squash(option.textContent)||value;
+    return value===''?'(empty)':'"'+value+'"';
+  }
+  function optionChange(document,el,id,before,after) {
+    return before===after?null:fieldLabel(document,el,id)+': '+valueText(el,before)+' -> '+valueText(el,after);
+  }
   function register(app, extension) {
     if(!specifications[app]) throw Error('Unknown example app '+app);
     if(active) throw Error('Example app already registered');
@@ -275,6 +296,7 @@
       mountPanel(document,panel);
       button.addEventListener('click',async()=>{
         button.disabled=true;selected=null;status.dataset.state='loading';status.textContent='Loading published dataset…';citation.textContent='';
+        const changes=[];
         try {
           const response=await fetch('../validation/examples/'+app+'/'+select.value+'.json',{cache:'no-store'});
           if(!response.ok) throw Error('Example download failed: '+response.status);
@@ -283,13 +305,17 @@
           const input=document.querySelector(spec.input); if(!input) throw Error('App input unavailable');
           for(const [id,value] of Object.entries(spec.options||{})) {
             const el=document.getElementById(id);if(!el) throw Error('App option unavailable: '+id);
+            const before=typeof value==='boolean'?el.checked:el.value;
             if(typeof value==='boolean') el.checked=value; else { el.value=value; if(el.value!==value) throw Error('Unsupported option '+id+': '+value); }
+            const change=optionChange(document,el,id,before,value); if(change) changes.push(change);
           }
           input.value=projection.text;input.dispatchEvent(new Event('input',{bubbles:true}));
           const run=document.getElementById('btn-run');if(run) run.click();
           if(app==='nma') {
-            const reference=document.getElementById('f-ref');reference.value='A';
+            const reference=document.getElementById('f-ref'), before=reference.value, beforeText=valueText(reference,before);
+            reference.value='A';
             if(reference.value!=='A') throw Error('Source reference treatment A unavailable');
+            if(before!=='A') changes.push(fieldLabel(document,reference,'f-ref')+': '+beforeText+' -> '+valueText(reference,'A'));
             run.click();
           }
           // Allow the page's own synchronous render and observation callbacks to finish.
@@ -299,8 +325,9 @@
           citation.textContent=data.citation+' Source: '+data.source_package+' '+data.version+', '+data.dataset+'. '+data.licence+' '+data.notes+
             (projection.excluded.length?' Excluded whole multi-arm package rows: '+projection.excluded.join(', ')+'.':'');
           const link=document.createElement('a');link.href=data.source_documentation;link.textContent=' Package documentation';citation.append(link);
-          status.dataset.state='ready';status.textContent='Loaded '+projection.rows.length+' source rows. Analysis updated.';
-        } catch(e) {selected=null;status.dataset.state='error';status.textContent=e.message;}
+          status.dataset.state='ready';status.textContent='Loaded '+projection.rows.length+' source rows. Analysis updated; '+
+            (changes.length?changes.join('; '):'no analysis options changed')+'.';
+        } catch(e) {selected=null;status.dataset.state='error';status.textContent=e.message+(changes.length?' Analysis options changed: '+changes.join('; ')+'.':'');}
         finally {button.disabled=false;}
       });
     };

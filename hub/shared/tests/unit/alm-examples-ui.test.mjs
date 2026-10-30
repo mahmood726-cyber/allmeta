@@ -67,3 +67,14 @@ test('example panel outside main is a named landmark with a visible heading',()=
   const picker=h.nodes.get('alm-real-example-choice');
   assert.ok(panel.children.some(el=>el.tagName==='label' && el.children.includes(picker)));
 });
+
+test('loading an example names every analysis option it changed, old -> new',async()=>{
+  const h=setup();await h.load();
+  const text=h.nodes.get('alm-real-example-status').textContent;
+  assert.equal(h.nodes.get('f-method').value,'REML');
+  // The double has no <label>/<option> elements, so the id and raw values are the fallback wording.
+  assert.match(text,/Analysis updated; f-method: "DL" -> "REML"\.$/);
+  // Control: an option that already has the published value is not reported as a change.
+  const same=setup();same.nodes.get('f-method').value='REML';await same.load();
+  assert.match(same.nodes.get('alm-real-example-status').textContent,/Analysis updated; no analysis options changed\.$/);
+});

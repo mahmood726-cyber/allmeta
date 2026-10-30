@@ -222,9 +222,11 @@
       _setStored(appKey, _snapshot(els));
     }, debounceMs);
 
+    // An edit inside an opted-out container is not an edit of the page's form: it must not start a draft either.
+    const edited = (ev, sel) => ev.target && ev.target.matches && _eligible(ev.target) && ev.target.matches(sel);
     selectors.forEach(sel => {
-      doc.addEventListener('input', (ev) => { if (ev.target && ev.target.matches && ev.target.matches(sel)) save(); }, true);
-      doc.addEventListener('change', (ev) => { if (ev.target && ev.target.matches && ev.target.matches(sel)) save(); }, true);
+      doc.addEventListener('input', (ev) => { if (edited(ev, sel)) save(); }, true);
+      doc.addEventListener('change', (ev) => { if (edited(ev, sel)) save(); }, true);
     });
 
     return { ok: true, appKey };

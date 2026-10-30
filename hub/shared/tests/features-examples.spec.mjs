@@ -93,3 +93,36 @@ for (const app of ['dta-sroc', 'limit-ma', 'gosh']) {
     expect(layout.restored).toEqual(layout.control);
   });
 }
+
+// Loading an example also applies the published analysis options; the status must name every option it changed,
+// old -> new, in the page's visible words (field label, option text). The user's choice is set first, as a user would.
+for (const [app, id, chosen, expected] of [
+  ['heterogeneity', 'f-tau2', 'reml', 'τ² estimator for CI / PI: REML (any k) -> Paule-Mandel (default, any k)'],
+  ['proportion-ma', 'trans', 'ft', 'Transformation: Freeman-Tukey double arcsine -> Logit'],
+  ['gosh', 'model', 'DL', 'Pooling model: Random effects (DerSimonian-Laird) -> Fixed effect'],
+  ['nma-inconsistency', 'f-model', 'PM', 'Model: Random-effects (Paule-Mandel τ²) -> Fixed-effect (common τ²=0)'],
+]) {
+  test(`${app}: loading the example names the analysis option it changed`, async ({ page }) => {
+    await page.goto(url(app));
+    await expect(page.locator('#alm-real-example-load')).toBeVisible();
+    await page.selectOption('#' + id, chosen);
+    await page.click('#alm-real-example-load');
+    const status = page.locator('#alm-real-example-status');
+    await expect(status).toHaveAttribute('data-state', 'ready');
+    await expect(status).toContainText('Analysis updated; ' + expected);
+    expect(await page.locator('#' + id).inputValue()).not.toBe(chosen);
+    // Loading again changes nothing further, and the status must say so instead of repeating the old change.
+    await page.click('#alm-real-example-load');
+    await expect(status).toHaveText(/Analysis updated; no analysis options changed\.$/);
+  });
+}
+
+test('nma: a fresh page reports the ranking direction and reference treatment the example sets', async ({ page }) => {
+  await page.goto(url('nma'));
+  await expect(page.locator('#alm-real-example-load')).toBeVisible();
+  await page.click('#alm-real-example-load');
+  const status = page.locator('#alm-real-example-status');
+  await expect(status).toHaveAttribute('data-state', 'ready');
+  await expect(status).toContainText('Ranking: which direction is better?: Smaller estimates');
+  await expect(status).not.toContainText('Model:');
+});
