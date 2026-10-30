@@ -1,6 +1,6 @@
 // share2 test profile: rve-meta (CR2 robust variance meta-regression; rows are "cluster, yi, vi, predictors...").
 // The page draws no plot: its main rendered output is the coefficient table, which stands in for the plot here.
-export default {
+const profile = {
   plot: '#coef-table',
   results: { selector: '#coef-body', closest: 'section' },
   custom: {
@@ -26,3 +26,15 @@ export default {
     { src: 42 }
   ]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ src: profile.custom.src + '\n' + row });
+profile.invalid.push(
+  bad('J,abc,0.03,1'),
+  bad('J,0.1,0,1'),
+  bad('J,0.1,-0.03,1'),
+  bad('J,0.1,0.03,abc'),
+  bad('J,0.1,0.03'),
+  bad('J,0.1,abc,1')
+);
+export default profile;
