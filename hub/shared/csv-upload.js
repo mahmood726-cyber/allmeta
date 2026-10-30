@@ -22,7 +22,7 @@
 
   // RFC-4180 parser. Handles quoted fields (embedded commas, newlines,
   // doubled-quote escapes). Returns array of arrays of strings.
-  function _splitCSV(text) {
+  function _splitCSV(text, delimiter) {
     var rows = [];
     var row = [], field = '', inQuotes = false;
     for (var i = 0; i < text.length; i++) {
@@ -33,7 +33,7 @@
         else { field += c; }
       } else {
         if (c === '"' && field === '') { inQuotes = true; }
-        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === delimiter) { row.push(field); field = ''; }
         else if (c === '\r') { /* swallow CR in CRLF */ }
         else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
         else { field += c; }
@@ -86,11 +86,29 @@
   function parse(text, columns) {
     columns = columns || [];
     var warnings = [];
-    var matrix = _splitCSV(text);
+    // Detect the separator from the header only, outside quoted fields.
+    var delimiter = ',', quoted = false, counts = { ',': 0, ';': 0, '\t': 0 };
+    for (var k = 0; k < text.length; k++) {
+      var ch = text[k];
+      if (ch === '"') { if (quoted && text[k + 1] === '"') { k++; } else { quoted = !quoted; } }
+      else if (!quoted) {
+        if (ch === '\n' || ch === '\r') break;
+        if (Object.prototype.hasOwnProperty.call(counts, ch)) counts[ch]++;
+      }
+    }
+    [';', '\t'].forEach(function (sep) { if (counts[sep] > counts[delimiter]) delimiter = sep; });
+    var matrix = _splitCSV(text, delimiter);
     if (matrix.length === 0) {
       return { headers: [], rows: [], warnings: ['empty CSV'] };
     }
     var rawHeaders = matrix[0].map(function (h) { return h.trim(); });
+
+    var ratioHeader = rawHeaders.find(function (h) { return /^(or|rr|hr)$/i.test(h); });
+    var hasCI = rawHeaders.some(function (h) { return /^(lower|upper|lcl|ucl)$/i.test(h); });
+    var undeclaredRatioCI = rawHeaders.some(function (h) {
+      return /^(or|rr|hr|lower|upper|lcl|ucl)$/i.test(h) &&
+        !columns.some(function (col) { return col.name.toLowerCase() === h.toLowerCase(); });
+    });
 
     // Build headerMap: raw header string -> column descriptor (possibly fuzzy).
     // Two passes so a fuzzy near-match can NEVER hijack a column that another
@@ -107,10 +125,18 @@
     }
     for (hi = 0; hi < rawHeaders.length; hi++) {
       var h = rawHeaders[hi];
+      if (ratioHeader && hasCI && undeclaredRatioCI && /^(or|rr|hr|lower|upper|lcl|ucl)$/i.test(h)) {
+        headerMap[h] = { name: h }; continue;
+      }
       if (headerMap[h]) continue;                     // already claimed exactly
       var bestCol = null, bestDist = Infinity;
       for (ci = 0; ci < columns.length; ci++) {
         if (claimed[columns[ci].name]) continue;      // don't hijack a claimed column
+        // These are distinct measurements, never spelling variants of uncertainty.
+        var sourceName = h.toLowerCase(), targetName = columns[ci].name.toLowerCase();
+        if ((/^(n|sd|sample size)$/.test(sourceName) && /^(vi|variance|se|sei)$/.test(targetName)) ||
+            (/^(se|sei)$/.test(sourceName) && /^(vi|variance)$/.test(targetName))) continue;
+        if (/^(study|label)$/.test(sourceName) && (columns[ci].type === 'int' || columns[ci].type === 'float')) continue;
         var d = _lev(h, columns[ci].name, 3);
         if (d < bestDist) { bestDist = d; bestCol = columns[ci]; }
       }
@@ -126,15 +152,55 @@
     for (var r = 1; r < matrix.length; r++) {
       var rowArr = matrix[r];
       var obj = {};
+      var invalidRatio = ratioHeader && hasCI && undeclaredRatioCI;
+      var overflow = rowArr.length > rawHeaders.length;
+      if (invalidRatio) {
+        warnings.push('row ' + r + ': column "' + ratioHeader + '": refused ratio + CI input. Supply log-effects and SEs in the declared columns.');
+      }
+      if (overflow) {
+        warnings.push('row ' + r + ': columns "' + rawHeaders.join('", "') + '": refused ' + rowArr.length + ' fields; expected ' + rawHeaders.length + '. Use the declared separator and decimal points, or semicolon/tab for decimal commas.');
+      }
       for (var i = 0; i < rawHeaders.length; i++) {
         var col = headerMap[rawHeaders[i]];
         var raw = (rowArr[i] !== undefined ? rowArr[i] : '').trim();
+        // Preserve the record for consumer validation; never fit a valid subset.
+        if ((overflow && (col.type === 'int' || col.type === 'float')) ||
+            (invalidRatio && (col.type === 'int' || col.type === 'float' || /^(or|rr|hr|lower|upper|lcl|ucl)$/i.test(rawHeaders[i])))) {
+          obj[col.name] = null; continue;
+        }
+        if (col.required && (!col.type || col.type === 'string') && raw === '') {
+          obj[col.name] = null;
+          warnings.push('row ' + r + ': column "' + rawHeaders[i] + '": refused missing required value. Supply this column and its value.');
+          continue;
+        }
+        if (col.type === 'int' && raw.indexOf(',') !== -1) {
+          warnings.push('row ' + r + ': column "' + rawHeaders[i] + '": refused comma in an integer column (thousands separator or decimal comma?): ' + raw + '. Supply an integer without separators.');
+          obj[col.name] = null; continue;
+        }
+        if (col.type === 'float' && /\d,\d/.test(raw)) {
+          if (delimiter === ',') {
+            warnings.push('row ' + r + ': column "' + rawHeaders[i] + '": refused ambiguous decimal comma. Use decimal points or a semicolon/tab separator.');
+            obj[col.name] = null; continue;
+          }
+          raw = raw.replace(',', '.');
+        }
+        if (/^(se|sei)$/i.test(col.name) && /\d\s*(?:\(|[-–]\s*\d)/.test(raw)) {
+          warnings.push('row ' + r + ': column "' + rawHeaders[i] + '": refused CI in an SE cell. Supply one numeric standard error.');
+          obj[col.name] = null; continue;
+        }
         var result = _coerce(raw, col.type);
         if (result.err) {
           warnings.push('row ' + r + ': ' + result.err);
         }
         obj[col.name] = result.value;
       }
+      columns.forEach(function (col) {
+        if (!Object.prototype.hasOwnProperty.call(obj, col.name) &&
+            (col.required || (invalidRatio && col.type))) {
+          obj[col.name] = null;
+          if (!invalidRatio) warnings.push('row ' + r + ': column "' + col.name + '": refused missing required value. Supply this column and its value.');
+        }
+      });
       rows.push(obj);
     }
 

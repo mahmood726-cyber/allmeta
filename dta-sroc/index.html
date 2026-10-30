@@ -769,9 +769,10 @@
         { name: 'FN',    required: true,  type: 'float',  example: '20' },
         { name: 'TN',    required: true,  type: 'float',  example: '88' },
       ],
-      // Keep raw tokens until app validation can name the study and count field.
+      // Defer required-cell checks as well as numeric coercion so app validation
+      // can name the study and count field. onParse still requires exact headers.
       parse: function (text, columns) {
-        return window.alm.csvUpload.parse(text, columns.map(c => Object.assign({}, c, { type: 'string' })));
+        return window.alm.csvUpload.parse(text, columns.map(c => Object.assign({}, c, { type: 'string', required: false })));
       },
       onParse: function (result) {
         // Reject the whole import: a partial study set must never be pooled.
