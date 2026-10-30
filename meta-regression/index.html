@@ -183,8 +183,17 @@
     const svgHost = document.getElementById("svg-host");
     const statsWrap = document.getElementById("stats-wrap");
 
-    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
-    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+    function readState() {
+      const o={};
+      for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; }
+      o.scale = document.getElementById("f-scale").checked;
+      return o;
+    }
+    function writeState(s) {
+      for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; }
+      // Older saved states omit scale; restore their original unchecked default.
+      document.getElementById("f-scale").checked = s.scale === true;
+    }
 
     function parseStudies(text) {
       const studies=[], warnings=[];
