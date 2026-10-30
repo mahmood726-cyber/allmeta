@@ -127,6 +127,33 @@
       data.push({ no: i + 1, text: raw });
     }
     if (!data.length) throw UserError("No data rows. Paste one row per effect: cluster, yi, vi, then any predictors.");
+    // Diagnose short leading lines without allowing them to hide a malformed
+    // observation below. The following table chooses its own delimiter/header,
+    // but any leading error still refuses the entire input: no rows are returned.
+    var errors = [], start = 0;
+    for (; start < data.length; start++) {
+      var leading = data[start], leadingDelim = sniffDelimiter(leading.text), fields;
+      try { fields = splitLine(leading.text, leadingDelim, leading.no); }
+      catch (e) {
+        if (!e.userFacing) throw e;
+        break; // The table parser reports this quoting error below.
+      }
+      if (fields.length >= 3) break;
+      var leadingName = leadingDelim === "\t" ? "tab" : (leadingDelim === ";" ? "semicolon" : "comma");
+      errors.push("Line " + leading.no + ": needs at least 3 " + leadingName + "-separated columns (cluster, yi, vi); found " + fields.length + ".");
+    }
+    if (!errors.length) return parseStudyTable(data);
+    if (start < data.length) {
+      try { parseStudyTable(data.slice(start)); }
+      catch (e) {
+        if (!e.userFacing) throw e;
+        errors.push(e.message);
+      }
+    }
+    throw UserError(errors.join("\n"));
+  }
+
+  function parseStudyTable(data) {
     var delim = sniffDelimiter(data[0].text);
     var delimName = delim === "\t" ? "tab" : (delim === ";" ? "semicolon" : "comma");
     var parsed = data.map(function (d) { return { no: d.no, f: splitLine(d.text, delim, d.no) }; });
