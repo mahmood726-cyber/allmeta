@@ -154,19 +154,48 @@
 
   // Allocation-free REML objective for two outcomes (same value as _objG up to rounding).
   // Returns Infinity when some S_i + G or the summed weight matrix is not positive definite.
+  // Resolve the finite predicate once; VM global lookups are costly in this hot loop.
+  var _obj2IsFinite = Number.isFinite;
   function _obj2(studies, g00, g01, g11) {
     var k = studies.length, i, ld = 0, s00 = 0, s01 = 0, s11 = 0, t0 = 0, t1 = 0, W = new Float64Array(3 * k);
     for (i = 0; i < k; i++) {
-      var S = studies[i].S, a = S[0][0] + g00, b = S[0][1] + g01, d = S[1][1] + g11, det = a * d - b * b;
-      if (!(a > 0) || !(det > 0)) return Infinity;
-      var w00 = d / det, w01 = -b / det, w11 = a / det, y = studies[i].y;
-      W[3 * i] = w00; W[3 * i + 1] = w01; W[3 * i + 2] = w11; ld += Math.log(det);
+      var S = studies[i].S, a = S[0][0] + g00, b = S[0][1] + g01, d = S[1][1] + g11;
+      if (!(a > 0) || !(d > 0) || !_obj2IsFinite(a) || !_obj2IsFinite(d)) return Infinity;
+      var det = a * d - b * b, w00, w01, w11, y = studies[i].y;
+      // Keep the original operation order when the determinant is normal and
+      // finite: changing ordinary rounding changes the optimizer's exact fits.
+      if (det >= 2.2250738585072014e-308 && _obj2IsFinite(det)) {
+        w00 = d / det; w01 = -b / det; w11 = a / det; ld += Math.log(det);
+      } else {
+        // Scale each axis by an exact power of two. Rounded square roots can
+        // erase a representable PD margin (e.g. a=d=1+EPSILON, b=1).
+        var sa = Math.pow(2, Math.floor(Math.log2(a) / 2)), sd = Math.pow(2, Math.floor(Math.log2(d) / 2));
+        var aa = a / sa / sa, bb = b / sa / sd, dd = d / sd / sd;
+        det = aa * dd - bb * bb;
+        if (!(det > 0)) return Infinity;
+        w00 = (dd / det) / sa / sa; w01 = (-bb / det) / sa / sd; w11 = (aa / det) / sd / sd;
+        ld += 2 * Math.log(sa) + 2 * Math.log(sd) + Math.log(det);
+      }
+      W[3 * i] = w00; W[3 * i + 1] = w01; W[3 * i + 2] = w11;
       s00 += w00; s01 += w01; s11 += w11; t0 += w00 * y[0] + w01 * y[1]; t1 += w01 * y[0] + w11 * y[1];
     }
-    var sd = s00 * s11 - s01 * s01; if (!(s00 > 0) || !(sd > 0)) return Infinity;
-    var m0 = (s11 * t0 - s01 * t1) / sd, m1 = (s00 * t1 - s01 * t0) / sd, q = 0;
+    if (!(s00 > 0) || !(s11 > 0) || !_obj2IsFinite(s00) || !_obj2IsFinite(s11)) return Infinity;
+    var sdet = s00 * s11 - s01 * s01, n0 = s11 * t0 - s01 * t1, n1 = s00 * t1 - s01 * t0;
+    var m0, m1, logSum, q = 0;
+    if (sdet >= 2.2250738585072014e-308 && _obj2IsFinite(sdet) && _obj2IsFinite(n0) && _obj2IsFinite(n1)) {
+      m0 = n0 / sdet; m1 = n1 / sdet; logSum = Math.log(sdet);
+    } else {
+      // The summed weights and weighted outcomes can also overflow/underflow.
+      var ss0 = Math.pow(2, Math.floor(Math.log2(s00) / 2)), ss1 = Math.pow(2, Math.floor(Math.log2(s11) / 2));
+      var a0 = s00 / ss0 / ss0, b0 = s01 / ss0 / ss1, d0 = s11 / ss1 / ss1;
+      sdet = a0 * d0 - b0 * b0;
+      if (!(sdet > 0)) return Infinity;
+      var u0 = t0 / ss0, u1 = t1 / ss1;
+      m0 = ((d0 * u0 - b0 * u1) / sdet) / ss0; m1 = ((a0 * u1 - b0 * u0) / sdet) / ss1;
+      logSum = 2 * Math.log(ss0) + 2 * Math.log(ss1) + Math.log(sdet);
+    }
     for (i = 0; i < k; i++) { var r0 = studies[i].y[0] - m0, r1 = studies[i].y[1] - m1; q += W[3 * i] * r0 * r0 + 2 * W[3 * i + 1] * r0 * r1 + W[3 * i + 2] * r1 * r1; }
-    return 0.5 * (ld + Math.log(sd) + q);
+    return 0.5 * (ld + logSum + q);
   }
 
   // Observational only: this never changes the selected fitted G.
@@ -305,6 +334,7 @@
         var v = [Math.sqrt(G[0][0]), G[0][1] / Math.sqrt(G[0][0])];
         function rankGradient(v) {
           var g = v.map(function (a) { return v.map(function (b) { return a * b; }); }), p = _profile(studies, g), sc = [[0, 0], [0, 0]];
+          if (!p) return null;
           studies.forEach(function (s, i) {
             var w = p.Ws[i], dr = s.y.map(function (y, j) { return y - p.mu[j]; }), wr = _matVec(w, dr);
             for (var a = 0; a < 2; a++) for (var b = 0; b < 2; b++) {
@@ -317,18 +347,21 @@
         }
         for (var iter = 0; iter < 12; iter++) {
           var grad = rankGradient(v), h = [[], []];
+          if (!grad) break;
           if (Math.max(Math.abs(grad[0]), Math.abs(grad[1])) < 1e-10) break;
           for (var j = 0; j < 2; j++) {
             var left = v.slice(), right = v.slice(), step = 1e-4 * Math.max(1, Math.abs(v[j]));
             left[j] -= step; right[j] += step;
             var gl = rankGradient(left), gr = rankGradient(right);
+            if (!gl || !gr) break;
             for (var i = 0; i < 2; i++) h[i][j] = (gr[i] - gl[i]) / (2 * step);
           }
+          if (j < 2) break;
           if (!(h[0][0] > 0 && h[1][1] > 0 && h[0][0] * h[1][1] > h[0][1] * h[1][0])) break;
           var delta = _matVec(_matInv(h), grad), accepted = false;
           for (var rate = 1; rate >= 1 / 1024; rate /= 2) {
             var next = v.map(function (x, j) { return x - rate * delta[j]; }), val = obj([next[0], next[1], 0]), ng = rankGradient(next);
-            if (val <= opt.f + 1e-12 * Math.max(1, Math.abs(opt.f)) && Math.hypot(ng[0], ng[1]) < Math.hypot(grad[0], grad[1])) { v = next; opt.f = val; accepted = true; break; }
+            if (ng && val <= opt.f + 1e-12 * Math.max(1, Math.abs(opt.f)) && Math.hypot(ng[0], ng[1]) < Math.hypot(grad[0], grad[1])) { v = next; opt.f = val; accepted = true; break; }
           }
           if (!accepted) break;
         }
