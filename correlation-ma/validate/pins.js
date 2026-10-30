@@ -8,8 +8,8 @@ window.AlmCorrValidationPins = {
     },
     {
       "path": "validate/corpus/reference.json",
-      "sha256": "24e9d41466f5092669316178c1d5b47132d7a86fe0d2394a3edfad64839fe992",
-      "bytes": 379944
+      "sha256": "f2e78dc267ae391384277ba1ab837deedc0abff5901ca3564529f2cdccd67a08",
+      "bytes": 379783
     }
   ],
   "checks": 17716,

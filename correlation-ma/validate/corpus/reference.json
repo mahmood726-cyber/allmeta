@@ -16078,15 +16078,7 @@
     ],
     [
       "FOOTER>CODE4",
-      "metafor::escalc(measure=\"ZCOR\") |"
-    ],
-    [
-      "FOOTER>CODE4",
-      ">"
-    ],
-    [
-      "FOOTER>CODE4",
-      "rma()"
+      "metafor::escalc(measure=\"ZCOR\") |> rma()"
     ],
     [
       "FOOTER",
@@ -16108,15 +16100,7 @@
     ],
     [
       "FOOTER",
-      "). References: Fisher RA 1921; Hedges"
-    ],
-    [
-      "FOOTER",
-      "&"
-    ],
-    [
-      "FOOTER",
-      "Olkin 1985,"
+      "). References: Fisher RA 1921; Hedges & Olkin 1985,"
     ],
     [
       "FOOTER>EM6",
