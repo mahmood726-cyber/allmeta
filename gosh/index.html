@@ -304,13 +304,8 @@
         clearInputResults('Enter at least 3 valid studies (effect, SE[, label]); found ' + rows.length + '.');
         return;
       }
-      if (rows.length < 3 || rows.length > 100) {
-        document.getElementById('m-n').textContent = '—';
-        _lastResults = null; // do not leave a stale result exportable
-        document.getElementById('m-est').textContent = '\u2014';
-        document.getElementById('m-i2').textContent = '\u2014';
-        document.getElementById('plot').innerHTML = '';
-        document.getElementById('sample-label').style.display = 'none';
+      if (rows.length > 100) {
+        clearInputResults('Enter at most 100 valid studies (effect, SE[, label]); found ' + rows.length + '.');
         exactRequest(null);
         return;
       }
