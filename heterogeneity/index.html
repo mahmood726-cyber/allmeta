@@ -116,7 +116,9 @@
         <legend>Data</legend>
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE</code></span>
-          <textarea id="f-data" spellcheck="false" aria-label="Studies" aria-describedby="warn-banner"></textarea></label>
+          <textarea id="f-data" spellcheck="false" aria-label="Studies" aria-describedby="input-scale-help warn-banner"></textarea>
+          <span id="input-scale-help" class="hint">For ratio measures, enter natural-log effects: <code>log(RR)</code>, <code>log(OR)</code> or <code>log(HR)</code>, with the SE of that log effect. Pooled estimates and intervals remain on the analysis scale.</span>
+        </label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
