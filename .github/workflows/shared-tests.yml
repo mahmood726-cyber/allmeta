@@ -50,6 +50,10 @@ jobs:
       # serialised live-R handoff. Playwright excludes native *.test.mjs.
       - name: Native Node P16 structural-pair and pinned R-reference regressions
         run: node --test unit/p16-pair-identity.test.mjs unit/p16-pair-identity-parity.test.mjs
+      # Exercise the actual displayed-state snapshot, JSON round-trip and R-script
+      # generation from a clean checkout (does not claim native R execution).
+      - name: Native Node P16 live-R snapshot/export generation
+        run: node unit/p16-live-replay.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --reporter=line,json
         env:
