@@ -13,7 +13,9 @@ h.evaluate('proportion-ma/validate/adapter.js');
 const manifest = JSON.parse(read('proportion-ma/validate/MANIFEST.json'));
 const loaded = {};
 for (const file of manifest.files) {
-  const bytes = readFileSync(new URL('proportion-ma/' + file.path, root));
+  // The published pins describe LF bytes, regardless of checkout line endings.
+  const bytes = Buffer.from(readFileSync(new URL('proportion-ma/' + file.path, root), 'utf8')
+    .replaceAll('\r\n', '\n'), 'utf8');
   assert.equal(bytes.length, file.bytes);
   assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256);
   loaded[file.path] = JSON.parse(bytes);

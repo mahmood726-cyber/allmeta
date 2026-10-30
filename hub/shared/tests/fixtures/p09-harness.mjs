@@ -32,7 +32,7 @@ function element(id, value = '') {
   };
 }
 
-export function harness() {
+export function harness({ transformMain = source => source } = {}) {
   const ids = ['src', 'trans', 'tau-est', 'btn-run', 'analysis-status', 'analysis-stale',
     'k-warn', 'res-body', 'het', 'forest', 'alm-validate'];
   const els = Object.fromEntries(ids.map(id => [id, element(id)]));
@@ -73,7 +73,7 @@ export function harness() {
   const pool = window.AlmMaCore.pool;
   window.AlmMaCore.pool = function (...args) { poolCalls++; return pool.apply(this, args); };
   evaluate('hub/shared/analysis-lifecycle.js');
-  vm.runInContext(main, context, { filename: 'proportion-ma/index.html' });
+  vm.runInContext(transformMain(main), context, { filename: 'proportion-ma/index.html' });
   return {
     els, window, context, evaluate, urlWrites,
     get poolCalls() { return poolCalls; },
