@@ -604,7 +604,8 @@
   function decompDesign(built, Q, df, nTreat) {
     if (nTreat <= 2) return null;
     var designs = {}, keys = [];
-    built.studies.forEach(function (st) { var k = st.arms.join(":"); if (!designs[k]) { designs[k] = []; keys.push(k); } designs[k].push(st); });
+    // Arms are sorted; serialize the array so punctuation in names cannot merge distinct designs.
+    built.studies.forEach(function (st) { var k = JSON.stringify(st.arms); if (!designs[k]) { designs[k] = []; keys.push(k); } designs[k].push(st); });
     var Qw = 0, dfw = 0;
     keys.forEach(function (k) {
       var sts = designs[k], p = sts[0].arms.length - 1;
