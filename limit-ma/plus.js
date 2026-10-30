@@ -75,13 +75,12 @@ function peters(c){
  const rss=c.te.reduce((a,b,i)=>a+w[i]*(b-intercept-slope*x[i])**2,0),statistic=slope/Math.sqrt(rss/(k-2)/xx);
  return Number.isFinite(statistic)?ok({statistic,df:k-2,p:tp(statistic,k-2)}):refusal('undefined-regression');
 }
-function compute(c,limit,alpha=.1){
+function compute(c,limit,alpha=.1,limitReason='limit-fit-unavailable'){
  const y=c.te,s=c.se;
  if(!Array.isArray(y)||!Array.isArray(s)||y.length!==s.length||y.length<3||!y.every(Number.isFinite)||!s.every(v=>Number.isFinite(v)&&v>0))throw Error('invalid-input');
  const v=s.map(x=>x*x),k=y.length,pool=g.AlmMaCore.pool(y,v,{method:'DL'}),r={};
  pool.ciLo=pool.mu-Z*pool.se;pool.ciHi=pool.mu+Z*pool.se;
  r.RE=ok(Object.fromEntries(['mu','se','ciLo','ciHi','tau2'].map(key=>[key,pool[key]])));
- let limitReason='limit-fit-unavailable';
  if(limit){try{g.AlmLimitPlusMLStart(limit.te_limit,v,'REML');}catch(e){limitReason=e.message;limit=null;}}
  if(limit){
   r.limit=ok({mu:limit.limit_est,se:limit.limit_se,ciLo:limit.limit_ci_lo,ciHi:limit.limit_ci_hi});

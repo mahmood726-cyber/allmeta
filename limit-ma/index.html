@@ -273,6 +273,19 @@
       var x = se.map(function (s) { return 1 / s; });
       var y = te.map(function (t, i) { return t / se[i]; });
       var xb = _mean(x), yb = _mean(y);
+      // R's lm.fit (tol=1e-7) tests the residual precision-column norm
+      // after projecting out the intercept, relative to its original norm.
+      // Scale only this rank check; preserve the fitted arithmetic below.
+      var scale = x.reduce(function (a, b) { return Math.max(a, b); }, 0);
+      var scaledX = x.map(function (v) { return v / scale; });
+      var scaledMean = _mean(scaledX), rankTotal = 0, rankResidual = 0;
+      for (var r = 0; r < k; r++) {
+        rankTotal += scaledX[r] * scaledX[r];
+        rankResidual += (scaledX[r] - scaledMean) * (scaledX[r] - scaledMean);
+      }
+      if (Math.sqrt(rankResidual / rankTotal) < 1e-7) {
+        throw Error('Limit meta-analysis has a numerically rank-deficient radial design: study precisions are too similar, including after heterogeneity adjustment.');
+      }
       var Sxx = 0, Sxy = 0;
       for (var i = 0; i < k; i++) {
         Sxx += (x[i] - xb) * (x[i] - xb);
@@ -370,7 +383,9 @@
       var d = dl(rows);
       var fe = pool(rows, 0);
       var re = pool(rows, d.tau2);
-      var lim = limitMA(rows);
+      var lim;
+      try { lim = limitMA(rows); }
+      catch (error) { refuse(error.message); return; }
 
       _lastResults = {
         k:         rows.length,
@@ -639,16 +654,30 @@
 
     // ---- CSV load ----
     window.__almLimitLoad = function (rows) {
-      if (!rows || rows.length < 1) return;
-      var lines = [];
-      rows.forEach(function (r) {
-        var te = parseFloat(r.yi !== undefined ? r.yi : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te)));
-        var se = parseFloat(r.sei !== undefined ? r.sei : (r.SE !== undefined ? r.SE : (r.seTE !== undefined ? r.seTE : r.se)));
-        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return;
+      var lines = [], errors = [];
+      var numeric = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+      if (!rows || rows.length < 1) errors.push('CSV contains no studies');
+      (rows || []).forEach(function (r, i) {
+        var te = r.yi !== undefined ? r.yi : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te));
+        var se = r.sei !== undefined ? r.sei : (r.SE !== undefined ? r.SE : (r.seTE !== undefined ? r.seTE : r.se));
+        var values = [te, se].map(function (v) { return v == null ? '' : String(v).trim(); });
+        var reason = '';
+        if (!numeric.test(values[0]) || !Number.isFinite(Number(values[0]))) reason = 'effect must be a complete finite number';
+        else if (!numeric.test(values[1]) || !Number.isFinite(Number(values[1]))) reason = 'SE must be a complete finite number';
+        else if (!(Number(values[1]) > 0)) reason = 'SE must be greater than 0';
+        if (reason) { errors.push('CSV row ' + (i + 1) + ': ' + reason); return; }
         var label = r.study || r.label || r.Study || '';
-        lines.push(te.toString() + ', ' + se.toString() + (label ? ', ' + label : ''));
+        lines.push(Number(values[0]).toString() + ', ' + Number(values[1]).toString() + (label ? ', ' + label : ''));
       });
-      if (lines.length < 1) return;
+      // Refuse the whole upload before replacing input; no subset may be analysed.
+      if (errors.length) {
+        if (window.AlmLimitLoo) window.AlmLimitLoo.invalidate(_validationRun);
+        refuse(errors.join('; ') + '.');
+        // Rejected CSV never enters run(), so clear its success/stale indicators here.
+        document.getElementById('analysis-status').hidden = true;
+        document.getElementById('analysis-stale').hidden = true;
+        return;
+      }
       document.getElementById('src').value = lines.join('\n');
       run();
     };
