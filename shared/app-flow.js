@@ -186,8 +186,9 @@
       html += '<button type="button" data-alm-flow="' + it +
         '" title="' + (info.blurb || "").replace(/"/g, "&quot;") +
         '" style="background:var(--panel,#fff);color:var(--ink,#15181d);border:1px solid var(--border,#d9d5cc);' +
-        'border-radius:4px;padding:0.3rem 0.65rem;font-size:0.83rem;font-weight:500;cursor:pointer;' +
-        'transition:background 0.15s">' +
+        // No background transition: nothing changes these buttons' background except a light/dark switch, and fading it while
+        // the text colour switches at once leaves light text on a light button for 150 ms (dark-scheme axe color-contrast race).
+        'border-radius:4px;padding:0.3rem 0.65rem;font-size:0.83rem;font-weight:500;cursor:pointer">' +
         info.label + '</button>';
     });
     html += '</div>';
