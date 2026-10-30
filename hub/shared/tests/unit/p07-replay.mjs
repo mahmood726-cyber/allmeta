@@ -6,10 +6,11 @@ import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 
 const root = new URL('../../../../', import.meta.url);
-const read = path => readFileSync(new URL(path, root), 'utf8');
+// Manifest hashes, byte counts and source provenance refer to LF UTF-8 bytes.
+const read = path => readFileSync(new URL(path, root), 'utf8').replace(/\r\n/g, '\n');
 const manifest = JSON.parse(read('multilevel-ma/validate/MANIFEST.json'));
 for (const file of manifest.files) {
-  const bytes = readFileSync(new URL(`multilevel-ma/${file.path}`, root));
+  const bytes = Buffer.from(read(`multilevel-ma/${file.path}`), 'utf8');
   assert.equal(bytes.length, file.bytes);
   assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256);
 }
