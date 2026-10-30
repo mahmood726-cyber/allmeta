@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:">
+  <title>Plot presets test fixture</title>
+  <link rel="stylesheet" href="addons-a3-fixture.css">
+</head>
+<body>
+  <!-- Identical page, but plot-export.js is the wave-0 base copy (git blob fcc33748). -->
+  <svg id="chart" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+    <rect x="10" y="10" width="40" height="30" fill="#14532d"/>
+    <rect x="50" y="10" width="40" height="30" fill="rgb(200, 30, 40)" stroke="#1d4ed8" stroke-width="2"/>
+    <line x1="0" y1="45" x2="100" y2="45" stroke="#808080"/>
+    <text x="20" y="30" fill="#000000">Fixture</text>
+  </svg>
+  <svg id="small" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+    <rect x="10" y="10" width="80" height="30" fill="#14532d"/>
+    <text class="tiny" x="20" y="30">tiny</text>
+  </svg>
+  <svg id="tall" viewBox="0 0 50 400" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="5" width="40" height="390" fill="#14532d"/>
+  </svg>
+  <div id="exports"></div>
+  <script src="../vendor/jspdf.min.js"></script>
+  <script src="addons-a3-base-plot-export.js"></script>
+  <script src="addons-a3-fixture.js"></script>
+</body>
+</html>

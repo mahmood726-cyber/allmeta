@@ -195,12 +195,19 @@
     return new Blob(parts, { type: 'image/png' });
   }
 
-  async function artifact(plot, format, dpi, widthMm, getReceiptInput) {
+  // extra (opt-in presets only): {onClone(clone, {viewBoxWidth, widthMm}), maxPixels} runs on the
+  // export clone before rendering and refuses oversized rasters. Absent for the default panel.
+  async function artifact(plot, format, dpi, widthMm, getReceiptInput, extra) {
     const src = await plot.getSvg();
     if (!src || src.localName !== 'svg') throw new Error('No SVG for ' + plot.name);
     const prepared = _prepareSvg(src);
     const [x, y, w, h] = prepared.getAttribute('viewBox').split(/[\s,]+/).map(Number);
     if (![x, y, w, h].every(Number.isFinite) || w <= 0 || h <= 0) throw new Error('Invalid SVG dimensions');
+    if (extra) {
+      extra.onClone(prepared, { viewBoxWidth: w, widthMm });
+      const px = Math.round(widthMm / 25.4 * dpi);
+      if (format !== 'svg' && px * Math.max(1, Math.round(px * h / w)) > extra.maxPixels) throw new Error('Raster would exceed ' + Math.round(extra.maxPixels / 1e6) + ' million pixels; choose a smaller width or resolution');
+    }
     const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     Object.entries({ x, y, width: w, height: h, fill: '#fff' }).forEach(([key, value]) => bg.setAttribute(key, value));
     prepared.insertBefore(bg, prepared.firstChild);
@@ -280,6 +287,22 @@
     const format = select('Format', formats, 'png');
     const resolution = select('Resolution', [['300', '300 dpi'], ['600', '600 dpi']], '300');
     const width = select('Physical width', [['85', '85 mm'], ['170', '170 mm']], '170');
+    // Opt-in (opts.presets): journal size presets and colour modes from plot-presets.js. Without
+    // it no control, listener or code path below is added and exports are byte-identical.
+    const presets = opts.presets ? (window.alm && window.alm.plotPresets) : null;
+    if (opts.presets && !presets) throw new Error('opts.presets requires hub/shared/plot-presets.js to be loaded first');
+    let preset = null, colours = null;
+    if (presets) {
+      preset = select('Journal preset', [['', 'None (use the width and resolution above)']].concat(presets.JOURNALS.map(p => [p.id, p.label])), '');
+      colours = select('Colours', presets.COLOUR_MODES, 'default');
+      const source = document.createElement('p'); source.setAttribute('data-alm-preset-source', '');
+      const describe = () => {
+        const p = presets.byId(preset.value);
+        source.textContent = p ? 'Preset overrides ' + (p.widthMm === null ? 'resolution' : 'width and resolution') + '. Source: ' + p.source.url +
+          ' (read ' + p.source.retrieved + '). ' + (p.source.note ? p.source.note + ' ' : '') + 'Check the current guidelines before submitting.' : '';
+      };
+      preset.addEventListener('change', describe); describe(); group.appendChild(source);
+    }
     const status = document.createElement('p'); status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite'); status.setAttribute('aria-atomic', 'true');
     format.addEventListener('change', () => { resolution.disabled = !['png', 'tiff'].includes(format.value); });
     // Keep the emitted message in closure state: neither arbitrary counts nor
@@ -291,19 +314,30 @@
       if (busy) return;
       if (!selected.length) { report('Select at least one plot.'); return; }
       busy = true;
-      const fmt = format.value, dpi = fmt === 'pdf' ? 300 : Number(resolution.value), mm = Number(width.value);
+      const fmt = format.value;
+      let dpi = fmt === 'pdf' ? 300 : Number(resolution.value), mm = Number(width.value), extra;
+      const notes = [];
+      if (presets) {
+        const p = presets.byId(preset.value), mode = colours.value;
+        if (p) { if (p.widthMm !== null) mm = p.widthMm; if (fmt !== 'pdf') dpi = p.dpi; }
+        extra = { maxPixels: 100e6, onClone(clone, geometry) {
+          notes.push(...presets.applyColourMode(clone, mode).warnings);
+          const warning = presets.fontWarning(presets.minFont(clone, geometry.viewBoxWidth, geometry.widthMm), p);
+          if (warning) notes.push(warning);
+        } };
+      }
       const controls = Array.from(group.querySelectorAll('input, select, button'));
       const disabled = controls.map(c => c.disabled); controls.forEach(c => { c.disabled = true; });
       report('Preparing downloads…');
       let count = 0;
       try {
         for (const plot of selected) {
-          const blob = await artifact(plot, fmt, dpi, mm, opts.getReceiptInput);
+          const blob = await artifact(plot, fmt, dpi, mm, opts.getReceiptInput, extra);
           _download(blob, basename + '-' + plot.id + '.' + fmt); count++;
           if (count < selected.length) await new Promise(resolve => setTimeout(resolve, 200));
         }
-        report('Downloaded ' + count + ' file(s)');
-      } catch (error) { report('Downloaded ' + count + ' file(s). Export failed: ' + error.message); }
+        report('Downloaded ' + count + ' file(s)' + (notes.length ? '. ' + [...new Set(notes)].join(' ') : ''));
+      } catch (error) { report('Downloaded ' + count + ' file(s). Export failed: ' + error.message + (notes.length ? ' ' + [...new Set(notes)].join(' ') : '')); }
       finally { controls.forEach((c, i) => { c.disabled = disabled[i]; }); busy = false; }
     }
     button('Download selected', () => run(plots.filter((_, i) => checks[i].checked)));
@@ -317,6 +351,8 @@
       // structure, attributes, labels and controls retain exact equality.
       clone.querySelectorAll('input, select, button').forEach(el => el.removeAttribute('disabled'));
       clone.querySelectorAll('input, select').forEach(el => el.removeAttribute('data-autosave-index'));
+      // The preset source line follows the chosen preset (opt-in panels only).
+      clone.querySelectorAll('[data-alm-preset-source]').forEach(el => { el.textContent = ''; });
       return clone.outerHTML;
     }
     const originalPanel = staticPanel();
