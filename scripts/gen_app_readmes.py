@@ -119,8 +119,20 @@ def _render_auto_section(app_key: str, entry: dict, citations: list, hero: dict 
     # 6. Reproducibility
     parts.append("## Reproducibility")
     parts.append("")
-    parts.append("- Receipts and JSON exports include `producedBy` "
-                 "(app version, git SHA, build timestamp) — see `shared/build-info.js`.")
+    if app_key == "nma-inconsistency":
+        parts.append('- JSON exports include `_provenance` with `app: "nma-inconsistency"`, '
+                     '`version` and full `sha` from `shared/build-info.js`. CSV and Markdown '
+                     'exports include the same metadata as `_provenance.app`, '
+                     '`_provenance.version` and `_provenance.sha`.')
+        parts.append("- Methods+Results TXT and Markdown reports include Application, "
+                     "Application version and Build SHA headers.")
+        parts.append("- These values describe the loaded build identity, which can differ "
+                     "from the source checkout commit. Record the checkout commit separately.")
+        parts.append("- If shared build information is unavailable, exports remain usable "
+                     "without provenance metadata; no build identity is invented.")
+    else:
+        parts.append("- Receipts and JSON exports include `producedBy` "
+                     "(app version, git SHA, build timestamp) — see `shared/build-info.js`.")
     parts.append("- For apps with a parity-checked engine, `shared/specs/` contains "
                  "the R-reference test vectors. Run `python -m pytest tests/` for the full suite.")
     parts.append("- Click **\U0001F4DD Verify in R** to open a Shinylive R session with the "

@@ -20,7 +20,10 @@ Click **📑 Cite as** inside the app for ready-to-paste Vancouver + BibTeX cita
 
 ## Reproducibility
 
-- This page exports its numerical result state as JSON, CSV and Markdown. Record the source checkout commit separately; the shared `build-info.js` identity is not attached to this page’s result exports.
+- JSON exports include `_provenance` with `app: "nma-inconsistency"`, `version` and full `sha` from `shared/build-info.js`. CSV and Markdown exports include the same metadata as `_provenance.app`, `_provenance.version` and `_provenance.sha`.
+- Methods+Results TXT and Markdown reports include Application, Application version and Build SHA headers.
+- These values describe the loaded build identity, which can differ from the source checkout commit. Record the checkout commit separately.
+- If shared build information is unavailable, exports remain usable without provenance metadata; no build identity is invented.
 - For apps with a parity-checked engine, `shared/specs/` contains the R-reference test vectors. Run `python -m pytest tests/` for the full suite.
 - Click **📝 Verify in R** to open a Shinylive R session with the current data pre-loaded for independent re-computation (where supported).
 

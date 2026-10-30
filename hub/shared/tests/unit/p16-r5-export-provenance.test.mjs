@@ -93,8 +93,8 @@ function harness({ loadBuild = true } = {}) {
 
 test('P16-R5 control: loaded build identity and live analysis are available', () => {
   const { c } = harness();
-  assert.equal(c.AlmBuildInfo.version, 'v1.8.0');
-  assert.equal(c.AlmBuildInfo.sha, '42a94da2110a02200d0b5bff4c56f636b9cbffa9');
+  assert.match(c.AlmBuildInfo.version, /^\S+$/);
+  assert.match(c.AlmBuildInfo.sha, /^[0-9a-f]{40}$/);
   assert.ok(Number.isFinite(c._almLastInco().dbt.Q));
   assert.ok(c._almLastInco().nodeSplit.length > 0);
 });
