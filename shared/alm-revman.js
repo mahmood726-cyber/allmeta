@@ -410,7 +410,7 @@
     el('p','Import local RevMan 5 XML or a CSV/tab study table. Choose comparison, outcome and subgroup explicitly. File import records the source; it does not confirm extraction against a paper.');
     const fileLabel=el('label','RevMan file '),file=el('input',null,fileLabel,{type:'file',accept:'.rm5,.xml,.csv,.tsv,.txt',id:'alm-revman-file'});
     const select=(label,id)=>{const l=el('label',label+' ');return el('select',null,l,{id,'aria-label':label});};
-    const comp=select('Comparison','alm-revman-comparison'),out=select('Outcome','alm-revman-outcome'),sub=select('Subgroup','alm-revman-subgroup');
+    const comp=select('Comparison','alm-revman-comparison'),out=select('RevMan outcome','alm-revman-outcome'),sub=select('Subgroup','alm-revman-subgroup');
     const study=spec.entry.maxRows===1?select('Study (single-study app)','alm-revman-study'):null;
     const status=el('p','Choose a RevMan file.',panel,{id:'alm-revman-status',role:'status','aria-live':'polite'});
     const preview=el('div',null,panel,{'aria-label':'Selected study preview'});

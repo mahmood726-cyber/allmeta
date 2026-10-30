@@ -16,7 +16,7 @@ async function load(page,name='multi.rm5') {
 }
 async function choose(page,outcome) {
   await page.getByLabel('Comparison',{exact:true}).selectOption('0');
-  await page.getByLabel('Outcome',{exact:true}).selectOption(String(outcome));
+  await page.getByLabel('RevMan outcome',{exact:true}).selectOption(String(outcome));
   await page.getByLabel('Subgroup',{exact:true}).selectOption('0');
 }
 const cases=[
@@ -39,7 +39,7 @@ for(const c of cases) test(c.app+': import equals native input, planted changed 
   const use=page.getByRole('button',{name:'Import selected rows',exact:true});
   await expect(use).toBeDisabled();
   await page.getByLabel('Comparison',{exact:true}).selectOption('0');await expect(use).toBeDisabled();
-  await page.getByLabel('Outcome',{exact:true}).selectOption(String(c.outcome));await expect(use).toBeDisabled();
+  await page.getByLabel('RevMan outcome',{exact:true}).selectOption(String(c.outcome));await expect(use).toBeDisabled();
   await page.getByLabel('Subgroup',{exact:true}).selectOption('0');await expect(use).toBeEnabled();
   await use.click();
   await expect(page.locator('#alm-revman-status')).toContainText('Imported');
@@ -67,7 +67,7 @@ test('continuous multi-row fixture can import an explicitly chosen study without
   await expect(page.locator('#alm-revman-status')).toContainText('Imported 1');
   expect(await page.evaluate(()=>AlmFeaturesState.provenance.map(p=>p.label))).toEqual(['試験 β']);
   expect(await page.locator('#alm-csv-mount textarea').inputValue()).toContain('-1.5,2,60,-2,2.5,61');
-  await page.getByLabel('Outcome',{exact:true}).selectOption('');await expect(use).toBeDisabled();
+  await page.getByLabel('RevMan outcome',{exact:true}).selectOption('');await expect(use).toBeDisabled();
 });
 
 test('malformed file, wrong data type, and changed selection cannot apply stale data',async({page})=>{
@@ -230,7 +230,7 @@ test.describe('page witnesses for independent RevMan R check',()=>{
     if(c.app==='mh-peto')await page.locator('#measure').selectOption(c.measure);
     await load(page,c.file);
     await page.getByLabel('Comparison',{exact:true}).selectOption(c.comparison);
-    await page.getByLabel('Outcome',{exact:true}).selectOption(c.outcome);
+    await page.getByLabel('RevMan outcome',{exact:true}).selectOption(c.outcome);
     await page.getByLabel('Subgroup',{exact:true}).selectOption(c.subgroup);
     if(c.study!=='')await page.getByLabel('Study (single-study app)',{exact:true}).selectOption(c.study);
     await page.getByRole('button',{name:'Import selected rows',exact:true}).click();
