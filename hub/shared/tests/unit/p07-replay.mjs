@@ -9,7 +9,7 @@ const root = new URL('../../../../', import.meta.url);
 const read = path => readFileSync(new URL(path, root), 'utf8');
 const manifest = JSON.parse(read('multilevel-ma/validate/MANIFEST.json'));
 for (const file of manifest.files) {
-  const bytes = readFileSync(new URL(`multilevel-ma/${file.path}`, root));
+  const bytes = Buffer.from(readFileSync(new URL(`multilevel-ma/${file.path}`, root), 'utf8').replace(/\r\n/g, '\n'));
   assert.equal(bytes.length, file.bytes);
   assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256);
 }
