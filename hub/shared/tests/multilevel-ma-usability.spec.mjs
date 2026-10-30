@@ -82,10 +82,8 @@ test.describe(`${APP} usability`, () => {
       known: 'ISSUE: nothing is shown; run() returns silently when fewer than 3 rows parse and the PREVIOUS data set\'s results stay on screen.' },
     { name: 'negative SE', text: '1, 0.35, 0.12, A\n1, 0.28, -0.11, B\n2, 0.18, 0.09, C\n2, 0.22, 0.10, D\n3, 0.50, 0.15, E\n3, 0.48, 0.14, F', want: /line 2.*(SE|standard error)/i,
       known: 'ISSUE: the row with SE = -0.11 is dropped silently and the model is fitted to 5 rows with no note.' },
-    { name: 'k = 1', text: '1, 0.35, 0.12, A', want: /at least 3|need/i,
-      known: 'ISSUE: no message; the previous data set\'s pooled estimate stays on screen.' },
-    { name: 'empty', text: '', want: /no studies|nothing entered|empty|enter (one|at least)/i,
-      known: 'ISSUE: no message; the previous data set\'s pooled estimate stays on screen.' },
+    { name: 'k = 1', text: '1, 0.35, 0.12, A', want: /at least 3|need/i },
+    { name: 'empty', text: '', want: /no studies|nothing entered|empty|enter (one|at least)/i },
     { name: 'mismatched columns', text: '1, 0.35\n1, 0.28, 0.11, B, extra\n2, 0.18, 0.09\n0.22, 0.10\n3, 0.50, 0.15, E', want: /column/i,
       known: 'ISSUE: short rows are dropped silently (the two-column row "0.22, 0.10" is read as cluster "0.22" with no SE) and the fit uses 3 rows.' },
   ];
@@ -104,7 +102,6 @@ test.describe(`${APP} usability`, () => {
   }
 
   test('4 refusal does not leave the previous result on screen', async ({ page }) => {
-    test.fail(true, 'ISSUE: with <3 valid rows run() returns before touching #summary/#body/#forest, so the earlier pooled estimate is still displayed (exports are correctly cleared).');
     await page.goto(PAGE);
     await expect(page.locator('#summary')).toContainText(DEFAULT_POOLED);
     await enter(page, '');

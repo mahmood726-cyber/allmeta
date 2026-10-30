@@ -34,7 +34,7 @@ function element(id) {
   };
 }
 
-function harness(initialInput = defaultInput) {
+function harness(initialInput = defaultInput, application = app) {
   const nodes = Object.fromEntries([...html.matchAll(/\bid="([^"]+)"/g)]
     .map(([, id]) => [id, element(id)]));
   nodes.src.value = initialInput;
@@ -68,7 +68,7 @@ function harness(initialInput = defaultInput) {
     'shared/stats-qt.js', 'hub/shared/analysis-lifecycle.js']) {
     vm.runInContext(read(path), context, { filename: path });
   }
-  vm.runInContext(app, context, { filename: 'multilevel-ma/index.html' });
+  vm.runInContext(application, context, { filename: 'multilevel-ma/index.html' });
   return {
     nodes, context,
     run() { nodes['btn-run'].dispatch('click'); },
@@ -176,4 +176,53 @@ test('P07-D5 control: correcting refused input restores the same results and ren
   assert.doesNotMatch(h.nodes.summary.textContent, /analysis refused/i);
   assert.equal(JSON.stringify([h.context._almLastMlma(), h.context.__almReml()]), beforeResults);
   assert.deepEqual([h.nodes.summary.innerHTML, h.nodes.body.innerHTML, h.nodes.forest.innerHTML], beforeRender);
+});
+
+// Reconstruct just the pre-fix defect in memory: the refusal clears caches but
+// returns without touching visible output. No historical checkout is required.
+const refusalOutput = /        document\.getElementById\('summary'\)\.textContent = 'Analysis refused: enter at least 3 valid effect-size rows\.';\r?\n        document\.getElementById\('body'\)\.innerHTML = '';\r?\n        document\.getElementById\('forest'\)\.innerHTML = '';\r?\n/;
+assert.equal([...app.matchAll(new RegExp(refusalOutput, 'g'))].length, 1,
+  'plant removes exactly the refusal output update');
+const oldRefusal = app.replace(refusalOutput, '');
+
+for (const [name, input] of [
+  ['empty input', ''],
+  ['one valid row', oneRow],
+  ['two valid rows', twoRows],
+  ['three lines with one rejected row', twoRows + '\nC, 0.50, 0, rejected'],
+  ['same-input change after refusal', twoRows],
+]) {
+  test('P07-D5 planted old refusal is caught: ' + name, t => {
+    for (const [label, application] of [['old refusal plant', oldRefusal], ['current page', app]]) {
+      const h = harness(defaultInput, application);
+      assertSuccessful(h);
+      h.nodes.src.value = input;
+      h.event('input');
+      h.run();
+      if (name === 'same-input change after refusal') h.event('change');
+      if (label === 'old refusal plant') {
+        assert.throws(() => assertRefused(h), {
+          name: 'AssertionError',
+          message: /a refused fit must remove prior output and explain the minimum-row requirement/,
+        });
+        t.diagnostic('Observed FAIL on the planted old refusal: prior output remains visible.');
+      } else {
+        assertRefused(h);
+        t.diagnostic('Observed PASS on the current page for the same refusal assertion.');
+      }
+    }
+  });
+}
+
+test('P07-D5 planted old refusal control: valid fit is identical', () => {
+  for (const input of [threeRows, defaultInput]) {
+    const old = harness(input, oldRefusal), current = harness(input);
+    assertSuccessful(old);
+    assertSuccessful(current);
+    assert.equal(JSON.stringify([old.context._almLastMlma(), old.context.__almReml()]),
+      JSON.stringify([current.context._almLastMlma(), current.context.__almReml()]));
+    for (const id of ['summary', 'body', 'forest']) {
+      assert.equal(old.nodes[id].innerHTML, current.nodes[id].innerHTML);
+    }
+  }
 });
