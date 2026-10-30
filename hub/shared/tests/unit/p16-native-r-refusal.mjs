@@ -42,7 +42,7 @@ try {
     const item = data.values.find(v => v.key === numerical.key);
     item.value += 1000 * (1 + Math.abs(item.value));
     assert.ok(Number.isFinite(item.value), 'numeric mutation overflowed');
-  }, report => assert.ok(report.failures?.some(s => s.startsWith(numerical.key + ' ')),
+  }, report => assert.ok([...(Array.isArray(report.failures) ? report.failures : [report.failures].filter(Boolean))].some(s => s.startsWith(numerical.key + ' ')),
     `numerical mutant was not identified at ${numerical.key}: ${JSON.stringify(report)}`));
   expectRefusal('empty-display', data => {
     data.values = data.values.filter(v => !v.key.startsWith('display.'));
