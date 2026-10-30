@@ -73,3 +73,49 @@ jobs:
             hub/shared/tests/test-results/
           if-no-files-found: ignore
           retention-days: 14
+
+  p16-native-r-parity:
+    # Separate, fail-closed native R gate: generation/stored R fixtures alone
+    # cannot demonstrate live, method-matched numerical parity.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.6.0"
+      - name: Install exact oracle package versions
+        run: |
+          Rscript --vanilla -e 'install.packages("remotes", repos="https://cloud.r-project.org")'
+          Rscript --vanilla -e 'for (p in list(c("jsonlite","2.0.0"),c("metafor","5.2.1"),c("netmeta","3.7.0"))) remotes::install_version(p[1], version=p[2], repos="https://cloud.r-project.org", upgrade="never", quiet=TRUE)'
+          Rscript --vanilla -e 'stopifnot(as.character(getRversion())=="4.6.0", as.character(packageVersion("jsonlite"))=="2.0.0", as.character(packageVersion("metafor"))=="5.2.1", as.character(packageVersion("netmeta"))=="3.7.0")'
+      - name: Install exact Node DOM test dependency
+        run: |
+          npm ci
+          npm install --no-save --ignore-scripts --package-lock=false linkedom@0.18.12
+      - name: Export six real DOM live-R snapshots and refuse malformed identities
+        run: |
+          node --test unit/p16-pair-identity.test.mjs unit/p16-pair-identity-parity.test.mjs
+          node unit/p16-live-replay.mjs
+      - name: Execute six live DOM-to-native-R comparisons
+        run: Rscript --vanilla unit/p16-live-replay.R
+      - name: Execute six complete export-to-native-R comparisons
+        run: |
+          node unit/p16-export-replay.mjs
+          Rscript --vanilla ../../../tests/fixtures/p16-pair-identity-reference.R
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p16-native-r-parity-results
+          path: |
+            /tmp/p16-r3-live-results.json
+            /tmp/p16-r3-export-results.json
+          if-no-files-found: ignore
+          retention-days: 14
