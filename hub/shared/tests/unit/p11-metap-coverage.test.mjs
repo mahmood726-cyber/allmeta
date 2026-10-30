@@ -21,7 +21,8 @@ test('P11-D13 disclosure: published replay documents the usable nested data it o
 
 test('P11-D13 control: the historical reference bytes and paper denominator remain pinned', () => {
   for (const file of manifest.files) {
-    const bytes = read(file.path);
+    // Published byte lengths and SHA-256 pins describe the LF checkout.
+    const bytes = Buffer.from(read(file.path).toString('utf8').replace(/\r\n/g, '\n'));
     assert.equal(bytes.length, file.bytes, file.path);
     assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256, file.path);
   }
