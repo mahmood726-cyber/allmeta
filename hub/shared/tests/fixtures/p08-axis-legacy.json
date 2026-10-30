@@ -1,0 +1,7 @@
+{
+    "description":  "PR #312 supplied head before the P08 rendering-loop fix; hash is over LF-normalized index.html. Only these two code blocks change in production.",
+    "source":  "meta-regression/index.html",
+    "sha256LF":  "4903b879add1c1ecf807385f12f8420fac3deefb075c705f8af323da6a69256f",
+    "niceTicks":  "    function niceTicks(lo,hi,n) {\n      if (!(hi\u003elo)) return [lo];\n      const r=hi-lo, s0=r/Math.max(1,n);\n      const m=Math.pow(10,Math.floor(Math.log10(s0))), nm=s0/m;\n      let step = nm\u003c1.5?m:(nm\u003c3?2*m:(nm\u003c7?5*m:10*m));\n      const start=Math.ceil(lo/step)*step; const t=[];\n      for (let v=start;v\u003c=hi+1e-9;v+=step) t.push(v);\n      return t;\n    }",
+    "sampling":  "        const STEP = (xHi - xLo) / 200;\n        for (let xv = xLo; xv \u003c= xHi + 1e-9; xv += STEP) {"
+}

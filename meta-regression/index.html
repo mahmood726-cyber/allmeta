@@ -393,15 +393,22 @@
     function fmt(x,d) { if (!isFinite(x)) return "--"; return x.toFixed(d==null?3:d); }
     function niceTicks(lo,hi,n) {
       if (!(hi>lo)) return [lo];
-      const r=hi-lo, s0=r/Math.max(1,n);
+      const count=Math.max(1,Math.floor(n)), s0=(hi-lo)/count;
       const m=Math.pow(10,Math.floor(Math.log10(s0))), nm=s0/m;
-      let step = nm<1.5?m:(nm<3?2*m:(nm<7?5*m:10*m));
-      const start=Math.ceil(lo/step)*step; const t=[];
-      for (let v=start;v<=hi+1e-9;v+=step) t.push(v);
-      return t;
+      // Round up to a readable step within the requested interval budget.
+      const step=nm<=1?m:(nm<=2?2*m:(nm<=5?5*m:10*m));
+      if (!(step>0) || !Number.isFinite(step)) return [lo,hi];
+      const first=Math.ceil(lo/step), t=[];
+      // Integer indices bound work even when a step is smaller than one ULP.
+      for (let i=0;i<=count;i++) {
+        const v=(first+i)*step;
+        if (!Number.isFinite(v) || v>hi) break;
+        if (v>=lo && (!t.length || v>t[t.length-1])) t.push(v);
+      }
+      return t.length>=2 ? t : [lo,hi];
     }
 
-    function buildSvg(state, studies, fitted) {
+    function buildSvg(state, studies, fitted, axis) {
       const W=720, H=520, L=70, R=30, T=state.title?60:40, B=80;
       const plotW=W-L-R, plotH=H-T-B;
 
@@ -416,6 +423,21 @@
       const xPad=(xHi-xLo)*0.08, yPad=(yHi-yLo)*0.1;
       xLo -= xPad; xHi += xPad; yLo -= yPad; yHi += yPad;
 
+      // Blank edges retain their padded data bounds. Reject invalid ranges
+      // after resolving those edges, including one-sided reversed ranges.
+      function axisRange(range, lo, hi) {
+        if (!Array.isArray(range) || range.length !== 2) return [lo, hi];
+        const min = range[0] == null ? lo : range[0];
+        const max = range[1] == null ? hi : range[1];
+        return Number.isFinite(min) && Number.isFinite(max) && max > min && Number.isFinite(max - min)
+          ? [min, max] : [lo, hi];
+      }
+      const xRange = axisRange(axis && axis.x, xLo, xHi);
+      const yRange = axisRange(axis && axis.y, yLo, yHi);
+      const customDomain = xRange[0] !== xLo || xRange[1] !== xHi || yRange[0] !== yLo || yRange[1] !== yHi;
+      [xLo, xHi] = xRange;
+      [yLo, yHi] = yRange;
+
       function x(v) { return L + (v-xLo)/(xHi-xLo) * plotW; }
       function y(v) { return T + plotH - (v-yLo)/(yHi-yLo) * plotH; }
 
@@ -427,6 +449,12 @@
 
       // Frame
       p.push("<rect x=\""+L+"\" y=\""+T+"\" width=\""+plotW+"\" height=\""+plotH+"\" fill=\"#fbfaf6\" stroke=\"#d9d5cc\"/>");
+
+      // Custom limits may place marks outside the frame; keep labels unclipped.
+      if (customDomain) {
+        p.push("<defs><clipPath id=\"metareg-plot-clip\"><rect x=\""+L+"\" y=\""+T+"\" width=\""+plotW+"\" height=\""+plotH+"\"/></clipPath></defs>");
+        p.push("<g clip-path=\"url(#metareg-plot-clip)\">");
+      }
 
       // Zero line
       if (yLo < 0 && yHi > 0) p.push("<line x1=\""+L+"\" y1=\""+y(0)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(0)+"\" stroke=\"#7a8294\" stroke-dasharray=\"3 3\"/>");
@@ -440,8 +468,10 @@
         const tCrit = tQuantile975(hk.df);
 
         const linePts = [], upperPts = [], lowerPts = [];
-        const STEP = (xHi - xLo) / 200;
-        for (let xv = xLo; xv <= xHi + 1e-9; xv += STEP) {
+        // Sample by index: adding a tiny floating-point step may never advance.
+        const intervals = 200;
+        for (let i = 0; i <= intervals; i++) {
+          const xv = i === intervals ? xHi : xLo + (xHi - xLo) * (i / intervals);
           const yHat = f.b0 + f.b1 * xv;
           // Var(β0 + β1·x) = Var(β0) + x²·Var(β1) + 2x·Cov(β0, β1)
           // Cov(β0, β1) = -q·Σwx/det
@@ -467,6 +497,8 @@
         const r = 4 + rel * 10;
         p.push("<circle cx=\""+x(s.x)+"\" cy=\""+y(s.est)+"\" r=\""+r+"\" fill=\"#2c5e8a\" fill-opacity=\"0.55\" stroke=\"#15181d\" stroke-width=\"0.8\"/>");
       }
+
+      if (customDomain) p.push("</g>");
 
       // Axes
       const axisY = T + plotH;
@@ -601,7 +633,7 @@
       else { warnEl.innerHTML = "<strong>Notes</strong><ul>"+all.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>"; warnEl.classList.add("is-visible"); }
 
       const svg = parsed.studies.length >= 3
-        ? buildSvg(state, parsed.studies, fitted)
+        ? buildSvg(state, parsed.studies, fitted, window.__almAxis)
         : "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\" width=\"400\" height=\"120\"><rect width=\"400\" height=\"120\" fill=\"#fff\"/><text x=\"200\" y=\"60\" text-anchor=\"middle\" font-family=\"system-ui\" font-size=\"13\" fill=\"#5c6470\">Need ≥3 studies.</text></svg>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
@@ -663,7 +695,7 @@
       const parsed = parseStudies(state.data);
       if (parsed.studies.length < 3) return null;
       const fitted = fitPM(parsed.studies);
-      return { state, studies: parsed.studies, fitted: fitted, svg: buildSvg(state, parsed.studies, fitted) };
+      return { state, studies: parsed.studies, fitted: fitted, svg: buildSvg(state, parsed.studies, fitted, window.__almAxis) };
     }
     // TruthCert on export — bound to the CURRENT studies + fitted model.
     function exportReceiptInput(r) {
@@ -802,10 +834,7 @@
   //            reset-undo, tooltips
   //   skipped (present-good): chart-download (native HiDPI SVG+PNG is superior)
   // Adapter shims map to the existing engine. No math changes.
-  // Deferred: axis-controls renders min/max inputs but does NOT yet drive the
-  //   SVG x/y axis domain. The buildSvg() function auto-computes its domain
-  //   from moderator values and CI bounds; wiring __almAxis lo/hi overrides
-  //   requires threading them through render() — deferred to a future cycle.
+  // Axis min/max overrides flow through render() and the native SVG export.
   // =======================================================================
   (function () {
     if (!window.alm) return;  // fail-open: modules not loaded, skip silently
@@ -927,11 +956,7 @@
       },
     });
 
-    // Both axes user-controllable; moderator (x) and effect (y).
-    // NOTE: axis-controls renders min/max inputs but does NOT yet drive the
-    // SVG axis domain. buildSvg() auto-computes its domain; wiring __almAxis
-    // lo/hi into buildSvg() requires threading overrides through render() —
-    // deferred to a future cycle. Controls are functional UI, domain override is no-op.
+    // Linear axis limits: moderator (x) and effect (y); blank edges are automatic.
     window.alm.axisControls({
       target: '#alm-axis-mount',
       axes: [
@@ -940,6 +965,7 @@
       ],
       onChange: function (state) {
         window.__almAxis = state;
+        document.getElementById('btn-run').click();
       },
     });
 
