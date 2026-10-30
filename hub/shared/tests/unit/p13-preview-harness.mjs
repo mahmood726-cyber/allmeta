@@ -1,8 +1,16 @@
 // Execute the real page engine and lifecycle; stub only DOM and optional UI integrations.
 import { readFileSync } from 'node:fs';
+import { resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import vm from 'node:vm';
 
-export const root = new URL('../../../../', import.meta.url);
+const sourceRootIndex = process.argv.indexOf('--p13-source-root');
+if (sourceRootIndex !== -1 && !process.argv[sourceRootIndex + 1]) {
+  throw new Error('--p13-source-root requires a tree path');
+}
+export const root = sourceRootIndex === -1
+  ? new URL('../../../../', import.meta.url)
+  : pathToFileURL(resolve(process.argv[sourceRootIndex + 1]) + sep);
 export const read = path => readFileSync(new URL(path, root), 'utf8');
 
 export function loadPreview() {
