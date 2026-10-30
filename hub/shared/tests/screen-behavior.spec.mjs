@@ -261,7 +261,9 @@ test.describe('screen audit fixes', () => {
     expect(out.asIrrelevant).toBeLessThan(out.ref);   // counting maybe as irrelevant was anti-conservative
     expect(out.seq390).toBeNull();
     expect(out.st2.unordered).toBe(1);
-    expect(out.st2.buscarP).toBe(1);
+    // refusal is an explicit state, not a sentinel p-value (PR #140 review finding 4)
+    expect(out.st2.status).toBe('unordered');
+    expect(out.st2.buscarP).toBeNull();
   });
 
   test('decisions made in the app are stamped in screening order', async ({ page }) => {
@@ -330,7 +332,14 @@ test.describe('screen audit fixes', () => {
     const flow = await page.evaluate(() => JSON.parse(localStorage.getItem('prisma-flow-v1')));
     expect(flow.db).toBe(8);
     expect(flow.removed).toBe(1);
-    expect(flow.screened).toBe(7);
+    // PR #140 review finding 2: "screened" was identified - duplicates (7), so 4
+    // records that never received a decision were reported as screened. Records
+    // screened = records with a completed title/abstract decision (1 include +
+    // 2 exclude); the pool available for screening is reported separately.
+    expect(flow.screened).toBe(3);
+    expect(flow.screeningPool).toBe(7);
+    expect(flow.screened).toBe(flow.excludedScreen + flow.includedAtScreen);
+    expect(notices[0]).not.toContain('7 screened');
     expect(flow.excludedScreen).toBe(2);               // decisive excludes only
     expect(flow.includedAtScreen).toBe(1);
     expect(flow.screenPending).toEqual({ maybe: 1, conflict: 1, undecided: 2 });
@@ -342,5 +351,229 @@ test.describe('screen audit fixes', () => {
     await page.goto(APP_URL.replace('/screen/', '/prisma-flow/'));
     await expect(page.locator('#f-excluded-screen')).toHaveValue('2');
     for (const id of ['#f-sought', '#f-assessed', '#f-studies', '#f-reports', '#f-excluded-breakdown']) await expect(page.locator(id)).toHaveValue('');
+  });
+});
+
+// ---- PR #140 review (Codex, 18 Oct 2026): four blocking findings ----
+test.describe('screen audit fixes, PR #140 review', () => {
+  const FOUR = [
+    { id: 'p1', title: 'alpha kestrel dapagliflozin trial', r1: { d: 'include' }, screenSeq: 1 },
+    { id: 'p2', title: 'bravo quartz murine fibrosis model', r1: { d: 'exclude' }, screenSeq: 2 },
+    { id: 'p3', title: 'cobalt raven empagliflozin outcomes', r1: { d: '' } },
+    { id: 'p4', title: 'delta tundra economic budget impact', r1: { d: '' } },
+  ];
+  const svgTexts = page => page.evaluate(() =>
+    Array.from(document.querySelectorAll('#svg-host svg text')).map(t => t.textContent));
+
+  // Finding 1: blank full-text fields were read back as 0, drawn as "(n = 0)" and
+  // re-saved as 0, and the pending/missingness metadata was dropped.
+  test('PRISMA Flow keeps not-provided counts unknown through render, re-save, reload and JSON export', async ({ page }) => {
+    await page.goto(APP_URL);
+    await page.waitForFunction(() => window.__almScreenpro, { timeout: 10_000 });
+    await page.evaluate(recs => window.__almScreenpro.setState({ mode: 'single', records: recs }), FOUR);
+    await page.locator('#btn-prisma').click();
+    await page.goto(APP_URL.replace('/screen/', '/prisma-flow/'));
+    await page.waitForSelector('#svg-host svg');
+    const check = async () => {
+      const t = await svgTexts(page);
+      const after = label => t[t.indexOf(label) + 1];
+      expect(t).toContain('Reports sought for retrieval');
+      expect(after('Reports sought for retrieval')).toBe('(n = not provided)');
+      expect(after('Reports not retrieved')).toBe('(n = not provided)');
+      expect(after('Reports assessed for eligibility')).toBe('(n = not provided)');
+      expect(t).toContain('With reasons (n = not provided)');
+      expect(t).toContain('Studies included in review (n = not provided)');
+      expect(t).toContain('Reports of included studies (n = not provided)');
+      expect(after('Records screened')).toBe('(n = 2)');
+      const desc = await page.evaluate(() => document.querySelector('#svg-host svg desc').textContent);
+      expect(desc).toContain('Reports sought for retrieval: not provided');
+      expect(desc).not.toMatch(/sought for retrieval: 0|assessed for eligibility: 0|included in review: 0/);
+      const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('prisma-flow-v1')));
+      for (const k of ['sought', 'notRetrieved', 'assessed', 'excludedEligible', 'studies', 'reports']) {
+        expect(saved[k], k + ' must stay unknown after PRISMA Flow re-saves').toBeNull();
+        expect(saved.notProvided).toContain(k);
+      }
+      expect(saved.screenPending).toEqual({ maybe: 0, conflict: 0, undecided: 2 });
+      expect(saved.includedAtScreen).toBe(1);
+      expect(saved.screeningPool).toBe(4);
+      await expect(page.locator('#warn-banner')).toContainText('not provided');
+      await expect(page.locator('#warn-banner')).toContainText('2 not yet screened');
+    };
+    await check();
+    await page.reload();
+    await page.waitForSelector('#svg-host svg');
+    await check();                      // the re-saved state round-trips
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('#btn-json').click()]);
+    const fs = await import('node:fs');
+    const out = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
+    expect(out.sought).toBeNull();
+    expect(out.notProvided).toContain('studies');
+    expect(out.screenPending).toEqual({ maybe: 0, conflict: 0, undecided: 2 });
+    // a value the user types is provided, including an explicit 0
+    await page.locator('#f-sought').fill('1');
+    await page.locator('#f-not-retrieved').fill('0');
+    const t2 = await svgTexts(page);
+    expect(t2[t2.indexOf('Reports sought for retrieval') + 1]).toBe('(n = 1)');
+    expect(t2[t2.indexOf('Reports not retrieved') + 1]).toBe('(n = 0)');
+    const s2 = await page.evaluate(() => JSON.parse(localStorage.getItem('prisma-flow-v1')));
+    expect(s2.sought).toBe(1);
+    expect(s2.notRetrieved).toBe(0);
+    expect(s2.notProvided).not.toContain('sought');
+    expect(s2.notProvided).not.toContain('notRetrieved');
+    expect(s2.notProvided).toContain('assessed');
+  });
+
+  // Finding 2: "screened" was identified - duplicates, so untouched records were
+  // exported, toasted and displayed as screened.
+  test('records screened counts completed decisions only, in the export, the notice and the stats', async ({ page }) => {
+    await page.goto(APP_URL);
+    await page.waitForFunction(() => window.__almScreenpro, { timeout: 10_000 });
+    await page.evaluate(recs => window.__almScreenpro.setState({ mode: 'single', records: recs }), FOUR);
+    const c = await page.evaluate(() => window.__almScreenpro.counts());
+    expect(c.screened).toBe(2);
+    expect(c.pool).toBe(4);
+    await expect(page.locator('.stat', { hasText: 'Screened' }).locator('.v')).toHaveText('2');
+    await page.evaluate(() => { window.__toasts = []; const show = Toast.show; Toast.show = (m, ...a) => { window.__toasts.push(m); return show(m, ...a); }; });
+    await page.locator('#btn-prisma').click();
+    const notice = (await page.evaluate(() => window.__toasts))[0];
+    expect(notice).not.toContain('4 screened');
+    expect(notice).toContain('2 of 4');
+    expect(notice).toContain('2 not yet screened');
+    const flow = await page.evaluate(() => JSON.parse(localStorage.getItem('prisma-flow-v1')));
+    expect(flow.screened).toBe(2);
+    expect(flow.screeningPool).toBe(4);
+    // maybe / unresolved conflict are pending, not screened
+    await page.evaluate(() => window.__almScreenpro.setState({ mode: 'dual', records: [
+      { id: 'q1', title: 'one alpha', r1: { d: 'include' }, r2: { d: 'include' } },
+      { id: 'q2', title: 'two bravo', r1: { d: 'maybe' }, r2: { d: 'maybe' } },
+      { id: 'q3', title: 'three cobalt', r1: { d: 'include' }, r2: { d: 'exclude' } },
+    ] }));
+    const c2 = await page.evaluate(() => window.__almScreenpro.counts());
+    expect(c2.screened).toBe(1);
+    expect(c2.pool).toBe(3);
+  });
+
+  // Finding 3: a single-to-dual merge reconciled stamps BEFORE switching mode, so
+  // a record that became a conflict kept its old stamp and, once resolved, was
+  // placed at its original position instead of the resolution's.
+  test('screening order is re-derived on merge, resolution, mode toggle and reload', async ({ page }) => {
+    await page.goto(APP_URL);
+    await page.waitForFunction(() => window.__almScreenpro, { timeout: 10_000 });
+    await page.evaluate(() => window.__almScreenpro.setState({ mode: 'single', sort: 'order', records: [
+      { id: 'a', title: 'first alpha record about kestrels' }, { id: 'b', title: 'second bravo record on quartz' },
+      { id: 'c', title: 'third cobalt record with ravens' } ] }));
+    await page.locator('#card-host [data-dec="exclude"]').click();   // a  -> 1
+    await page.locator('#card-host [data-dec="include"]').click();   // b  -> 2
+    const rec = id => page.evaluate(id => { const A = window.__almScreenpro, r = A.recordById(id); return { d: A.effDecision(r), seq: r.screenSeq }; }, id);
+    expect((await rec('a')).seq).toBe(1);
+    expect((await rec('b')).seq).toBe(2);
+    // merge an R2 file while the project is still in single-reviewer mode
+    const payload = { _schema: 'sr-reviewer-v1', reviewer: 'r2', decisions: [
+      { id: 'a', title: 'first alpha record about kestrels', d: 'include' },
+      { id: 'c', title: 'third cobalt record with ravens', d: 'exclude' } ] };
+    await page.locator('#rev-file').setInputFiles({ name: 'r2.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(payload)) });
+    await expect(page.locator('#merge-status')).toContainText('Merged into R2');
+    expect(await rec('a')).toEqual({ d: 'conflict', seq: null });     // was {conflict, 1}
+    expect(await rec('b')).toEqual({ d: 'include', seq: 2 });
+    expect(await rec('c')).toEqual({ d: 'exclude', seq: null });      // merged: order unknown
+    let st = await page.evaluate(() => window.__almScreenpro.mlStopping());
+    expect(st.status).toBe('unordered');
+    expect(st.buscarP).toBeNull();
+    // resolving the conflict makes it decisive NOW: it goes after b
+    await page.locator('[data-res-inc="a"]').click();
+    const ra = await rec('a');
+    expect(ra.d).toBe('include');
+    expect(ra.seq).toBeGreaterThan(2);
+    // reload: stamps persist and the counter does not reuse a position
+    await page.reload();
+    await page.waitForFunction(() => window.__almScreenpro);
+    expect(await rec('a')).toEqual(ra);
+    expect((await rec('b')).seq).toBe(2);
+    // toggling to single changes a's effective decision (R1 exclude): order unknown
+    await page.locator('#f-dual').uncheck();
+    expect(await rec('a')).toEqual({ d: 'exclude', seq: null });
+    expect(await rec('c')).toEqual({ d: '', seq: null });
+    st = await page.evaluate(() => window.__almScreenpro.mlStopping());
+    expect(st.status).toBe('unordered');
+    // ... and back to dual: the resolution is effective again but its order was lost
+    await page.locator('#f-dual').check();
+    expect(await rec('a')).toEqual({ d: 'include', seq: null });
+    expect((await rec('b')).seq).toBe(2);                              // unchanged decision keeps its stamp
+    // the test hook's mode switch goes through the same reconciliation
+    await page.evaluate(() => window.__almScreenpro.setMode('single'));
+    expect(await rec('c')).toEqual({ d: '', seq: null });
+    expect(await rec('a')).toEqual({ d: 'exclude', seq: null });
+  });
+
+  test('changing a decisive decision re-stamps it at the time of the change', async ({ page }) => {
+    await page.goto(APP_URL);
+    await page.waitForFunction(() => window.__almScreenpro, { timeout: 10_000 });
+    await page.evaluate(() => window.__almScreenpro.setState({ mode: 'single', sort: 'order', records: [
+      { id: 'a', title: 'first alpha record about kestrels' }, { id: 'b', title: 'second bravo record on quartz' },
+      { id: 'c', title: 'third cobalt record with ravens' } ] }));
+    await page.locator('#card-host [data-dec="exclude"]').click();   // a -> 1
+    await page.locator('#card-host [data-dec="exclude"]').click();   // b -> 2
+    await page.keyboard.press('k');                                   // back to b
+    await page.keyboard.press('k');                                   // back to a
+    await page.locator('#card-host [data-dec="include"]').click();   // a: exclude -> include
+    const s = await page.evaluate(() => ['a', 'b'].map(id => window.__almScreenpro.recordById(id)).map(r => [r.r1.d, r.screenSeq]));
+    expect(s[0][0]).toBe('include');
+    expect(s[1]).toEqual(['exclude', 2]);
+    expect(s[0][1]).toBeGreaterThan(2);
+  });
+
+  // Finding 4: with nothing left to screen, buscar's sentinel p = 1 was shown as
+  // "0.0% confidence ... keep screening".
+  test('stopping test states: complete, empty, no include yet, not started, unknown order, tested', async ({ page }) => {
+    await page.goto(APP_URL);
+    await page.waitForFunction(() => window.__almScreenpro, { timeout: 10_000 });
+    const st = await page.evaluate(() => {
+      const A = window.__almScreenpro, out = {};
+      const mk = (ds, seqs) => ds.map((d, i) => ({ id: 's' + i, title: 'record ' + i + ' ' + (i * 7919).toString(36), r1: { d }, screenSeq: seqs ? seqs[i] : (d === 'include' || d === 'exclude' ? i + 1 : null) }));
+      A.setState({ mode: 'single', records: mk(['include', 'exclude', 'include', 'exclude']) }); out.complete = A.mlStopping();
+      A.setState({ mode: 'single', records: mk(['exclude', 'exclude', 'exclude']) }); out.completeNoInc = A.mlStopping();
+      A.setState({ mode: 'single', records: [] }); out.empty = A.mlStopping();
+      A.setState({ mode: 'single', records: mk(['exclude', 'exclude', '', '']) }); out.noInc = A.mlStopping();
+      A.setState({ mode: 'single', records: mk(['', '']) }); out.notStarted = A.mlStopping();
+      A.setState({ mode: 'single', records: mk(['include', 'exclude', ''], [1, null, null]) }); out.unordered = A.mlStopping();
+      A.setState({ mode: 'single', records: mk(['include', 'exclude', 'maybe']) }); out.pendingMaybe = A.mlStopping();
+      return out;
+    });
+    expect(st.complete).toMatchObject({ status: 'complete', total: 4, screened: 4, found: 2, buscarP: null });
+    expect(st.completeNoInc).toMatchObject({ status: 'complete', found: 0, buscarP: null });
+    expect(st.empty).toMatchObject({ status: 'empty', total: 0, buscarP: null });
+    expect(st.noInc).toMatchObject({ status: 'no-include', buscarP: null });
+    expect(st.notStarted).toMatchObject({ status: 'not-started', buscarP: null });
+    expect(st.unordered).toMatchObject({ status: 'unordered', unordered: 1, buscarP: null });
+    expect(st.pendingMaybe.status).toBe('tested');       // a maybe is still unscreened
+    expect(typeof st.pendingMaybe.buscarP).toBe('number');
+  });
+
+  test('stopping panel says screening is complete instead of "0.0% ... keep screening"', async ({ page }) => {
+    await page.goto(APP_URL);
+    await page.waitForFunction(() => window.__almScreenpro, { timeout: 10_000 });
+    const r = (id, d, t, s) => ({ id, title: t, abstract: t + ' ' + t, r1: { d }, screenSeq: s });
+    const recs = [
+      r('i1', 'include', 'heart failure dapagliflozin sglt2 randomized trial ejection', 1),
+      r('e1', 'exclude', 'murine animal model cardiac fibrosis molecular signaling vitro', 2),
+      r('i2', 'include', 'empagliflozin heart failure hospitalization cardiovascular trial', 3),
+      r('e2', 'exclude', 'cost effectiveness economic model budget impact payer', 4),
+    ];
+    await page.evaluate(recs => window.__almScreenpro.setState({ mode: 'single', records: recs }), recs);
+    await page.locator('#btn-train').click();
+    const perf = page.locator('#ml-perf');
+    await expect(perf).toContainText('Experimental');
+    await expect(perf).toContainText('screening is complete');
+    await expect(perf).toContainText('not applicable');
+    await expect(perf).not.toContainText('keep screening');
+    await expect(perf).not.toContainText('0.0%');
+    await expect(perf).not.toContainText('Confidence');
+    // unknown order: the rendered panel refuses
+    const withGap = recs.map((x, i) => i === 1 ? Object.assign({}, x, { screenSeq: null }) : x)
+      .concat([{ id: 'u1', title: 'dapagliflozin heart failure preserved ejection trial', abstract: 'sglt2 randomized cardiovascular', r1: { d: '' } }]);
+    await page.evaluate(recs => window.__almScreenpro.setState({ mode: 'single', records: recs }), withGap);
+    await page.locator('#btn-train').click();
+    await expect(perf).toContainText('not applied');
+    await expect(perf).not.toContainText('Confidence');
   });
 });

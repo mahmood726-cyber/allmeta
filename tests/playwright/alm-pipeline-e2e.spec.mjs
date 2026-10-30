@@ -86,7 +86,14 @@ test("Screen → PRISMA: decisions propagate into prisma-flow-v1 counts", async 
   const flow = await page.evaluate(() => JSON.parse(localStorage.getItem("prisma-flow-v1")));
   expect(flow.db).toBe(4);            // identified
   expect(flow.removed).toBe(0);       // no duplicates in this set
-  expect(flow.screened).toBe(4);
+  // Rewritten again 2026-10-18 (PR #140 review, finding 2): this asserted
+  // screened = 4 after only two decisions, i.e. it pinned the defect that the
+  // two untouched records were reported as screened. Requirement: records
+  // screened = records with a completed title/abstract decision; the pool
+  // available for screening (identified - duplicates) is a separate field.
+  expect(flow.screened).toBe(2);
+  expect(flow.screeningPool).toBe(4);
+  expect(flow.screened).toBe(flow.excludedScreen + flow.includedAtScreen);
   // Rewritten 2026-10-18 (Paper-1 audit, finding 11b). This test used to assert
   // excludedScreen = excluded(1) + undecided(2) = 3 and sought = studies = 1, i.e.
   // it pinned the defect: unscreened records reported as excluded, and title/
