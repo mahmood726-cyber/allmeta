@@ -28,11 +28,29 @@ function currentState() {
     {key:'display.controls',value:optionsOK},
     {key:'display.pageText',value:JSON.stringify(a.pageText())===JSON.stringify(a.contract.pageText)},
     {key:'display.chartControls',value:a.chartControls()});
-  return {rows,state,values:vals,note:'Live: self-hosted netmeta 3.4-0 / metafor 4.8-0. Paper: netmeta 3.7-0 / metafor 5.2-1. Numerical checks and table/global text; the pinned replay additionally checks every plot element.'};
+  // Structural identities must survive the validator's serialisation boundary;
+  // do not add them to the historically pinned enumerable numerical state.
+  const pairKeys=state.nodeSplit.map(r=>r.pairKey);
+  if(pairKeys.some(k=>typeof k!=='string') || new Set(pairKeys).size!==pairKeys.length)
+    throw Error('Missing or duplicate structural treatment-pair identity; R validation refused.');
+  return {rows,state,values:vals,pairKeys,note:'Live: self-hosted netmeta 3.4-0 / metafor 4.8-0. Paper: netmeta 3.7-0 / metafor 5.2-1. Numerical checks and table/global text; the pinned replay additionally checks every plot element.'};
 }
 function buildScript(s) {
   const vector=(key,numeric=false)=>'c('+s.rows.map(r=>numeric?r[key].toPrecision(17):JSON.stringify(r[key])).join(',')+')';
-  const pairId=r=>JSON.parse(r.pairKey).map(t=>s.state.trts.indexOf(t)+1).sort((a,b)=>a-b).join(':');
+  if(!Array.isArray(s.pairKeys) || s.pairKeys.length!==s.state.nodeSplit.length)
+    throw Error('Missing structural treatment-pair identity; R validation refused.');
+  if(new Set(s.pairKeys).size!==s.pairKeys.length)
+    throw Error('Duplicate structural treatment-pair identity; R validation refused.');
+  const pairId=key=>{
+    let pair;
+    try { pair=JSON.parse(key); } catch (_) { throw Error('Invalid structural treatment-pair identity; R validation refused.'); }
+    if(!Array.isArray(pair) || pair.length!==2 || pair.some(t=>typeof t!=='string'))
+      throw Error('Invalid structural treatment-pair identity; R validation refused.');
+    const ids=pair.map(t=>s.state.trts.indexOf(t)+1);
+    if(ids.includes(0) || ids[0]===ids[1])
+      throw Error('Unknown structural treatment-pair identity; R validation refused.');
+    return ids.sort((a,b)=>a-b).join(':');
+  };
   return `suppressPackageStartupMessages(library(netmeta))
 suppressPackageStartupMessages(library(metafor))
 A <- ${vector('A')}; B <- ${vector('B')}; te <- ${vector('te',true)}; se <- ${vector('se',true)}; study <- ${vector('study')}
@@ -65,7 +83,7 @@ for(j in seq_len(nrow(cmp))) {
  splits[[key]]<-list(comparison=paste(ord,collapse=' vs '),direct=list(mean=sign*direct$TE[j],se=direct$seTE[j]),indirect=list(mean=sign*indirect$TE[j],se=indirect$seTE[j]),diff=sign*cmp$TE[j],seDiff=cmp$seTE[j],z=sign*cmp$statistic[j],p=cmp$p[j])
 }
 # Order is supplied only for emission; membership must match independently.
-names_app <- ${s.state.nodeSplit.length?'c('+[...s.state.nodeSplit].sort((x,y)=>x.comparison.localeCompare(y.comparison)).map(x=>JSON.stringify(pairId(x))).join(',')+')':'character(0)'}
+names_app <- ${s.state.nodeSplit.length?'c('+s.state.nodeSplit.map((row,i)=>({row,key:s.pairKeys[i]})).sort((x,y)=>x.row.comparison.localeCompare(y.row.comparison)).map(x=>JSON.stringify(pairId(x.key))).join(',')+')':'character(0)'}
 stopifnot(!anyDuplicated(names_app),setequal(names_app,names(splits)))
 splits<-unname(splits[names_app])
 dec<-decomp.design(m,tau.preset=tau,warn=FALSE)
