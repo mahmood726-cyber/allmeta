@@ -1,0 +1,44 @@
+{
+  "title": "proportion refuses changed reference.json",
+  "status": "passed",
+  "panels": [
+    {
+      "url": "http://127.0.0.1:8109/proportion-ma/index.html#eyJ2IjoxLCJzcmMiOiIxMiwgMTUwLCBTdHVkeSBBXG44LCA5MCwgU3R1ZHkgQlxuMjAsIDIyMCwgU3R1ZHkgQ1xuNSwgNjAsIFN0dWR5IERcbjE1LCAxODAsIFN0dWR5IEVcbjMsIDQwLCBTdHVkeSBGXG4yNSwgMzAwLCBTdHVkeSBHIiwidHJhbnMiOiJsb2dpdCIsInRhdSI6IlBNIn0=",
+      "panel": "Independent validation\nValidate this analysis in RRe-run full validation\n\nValidation refused: SHA-256 mismatch; refused: validate/corpus/reference.json\n\nFull R re-execution (one-command instructions) · Open Codespaces · Reproducible repository ·"
+    }
+  ],
+  "requests": [
+    "http://127.0.0.1:8109/proportion-ma/index.html",
+    "http://127.0.0.1:8109/shared/forced-colors.css",
+    "http://127.0.0.1:8109/hub/app-style.css",
+    "http://127.0.0.1:8109/hub/shared/csv-upload.js",
+    "http://127.0.0.1:8109/hub/shared/plot-export.js",
+    "http://127.0.0.1:8109/hub/shared/axis-controls.js",
+    "http://127.0.0.1:8109/hub/shared/results-export.js",
+    "http://127.0.0.1:8109/hub/shared/url-state.js",
+    "http://127.0.0.1:8109/hub/shared/reset-undo.js",
+    "http://127.0.0.1:8109/hub/shared/tooltips.js",
+    "http://127.0.0.1:8109/shared/ma-core.js",
+    "http://127.0.0.1:8109/shared/build-info.js",
+    "http://127.0.0.1:8109/shared/ma-studies-v1.js",
+    "http://127.0.0.1:8109/shared/truthcert-export.js",
+    "http://127.0.0.1:8109/shared/truthcert-ui.js",
+    "http://127.0.0.1:8109/shared/autosave.js",
+    "http://127.0.0.1:8109/hub/shared/analysis-lifecycle.js",
+    "http://127.0.0.1:8109/hub/shared/glossary.json",
+    "http://127.0.0.1:8109/hub/shared/a11y-landmarks.js",
+    "http://127.0.0.1:8109/shared/alm-validate.js",
+    "http://127.0.0.1:8109/proportion-ma/validate/adapter.js",
+    "http://127.0.0.1:8109/shared/webr-runner.js",
+    "http://127.0.0.1:8109/proportion-ma/plus-core.js",
+    "http://127.0.0.1:8109/proportion-ma/plus-parity.js",
+    "http://127.0.0.1:8109/proportion-ma/plus-ui.js",
+    "http://127.0.0.1:8109/proportion-ma/validate/plus-pins.js",
+    "http://127.0.0.1:8109/proportion-ma/validate/plus-adapter.js",
+    "http://127.0.0.1:8109/proportion-ma/validate/corpus/corpus.json",
+    "http://127.0.0.1:8109/proportion-ma/validate/corpus/reference.json"
+  ],
+  "hosts": [
+    "127.0.0.1:8109"
+  ]
+}

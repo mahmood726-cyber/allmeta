@@ -1,0 +1,61 @@
+{
+  "title": "proportion live built-in and every current transform estimator @slow",
+  "status": "passed",
+  "panels": [
+    {
+      "url": "http://127.0.0.1:8109/proportion-ma/index.html#eyJ2IjoxLCJzcmMiOiIxMiwgMTUwLCBTdHVkeSBBXG44LCA5MCwgU3R1ZHkgQlxuMjAsIDIyMCwgU3R1ZHkgQ1xuNSwgNjAsIFN0dWR5IERcbjE1LCAxODAsIFN0dWR5IEVcbjMsIDQwLCBTdHVkeSBGXG4yNSwgMzAwLCBTdHVkeSBHIiwidHJhbnMiOiJsb2dpdCIsInRhdSI6IlBNIn0=",
+      "panel": "Independent validation\nValidate this analysis in RRe-run full validation\n\n16/16 live R quantities passed.\n\nR R version 4.5.1 (2025-06-13)\n\nwebR 0.5.5\n\nmetafor 4.8-0\n\nValidated version in the paper: metafor 5.2-1. Any differences beyond tolerance are reported as FAIL.\n\nQUANTITY\tAPP\tR\tDIFFERENCE\tTOLERANCE\tPASS/FAIL\nmu_re\t0.09649012454396778\t0.09649012454396781\t2.7755575615628914e-17\t1e-9\tPASS\nseRE\t0.05139884960871702\t0.051398849608717025\t6.938893903907228e-18\t1e-9\tPASS\ntau2\t0\t0\t0\t1e-9\tPASS\nQ\t1.9996225940369858\t1.9996225940369858\t0\t1e-9\tPASS\ndf\t1\t1\t0\t1e-9\tPASS\ni2\t49.99056307014784\t49.99056307014784\t0\t1e-9\tPASS\nk\t2\t2\t0\t1e-9\tPASS\nlo\t-0.004249769535908221\t-0.004249769535908193\t2.7755575615628914e-17\t1e-9\tPASS\nhi\t0.1972300186238438\t0.19723001862384382\t2.7755575615628914e-17\t1e-9\tPASS\npiLo\tnull\tnull\t0\t1e-9\tPASS\npiHi\tnull\tnull\t0\t1e-9\tPASS\npoolP\t0.09649012454396778\t0.09649012454396781\t2.7755575615628914e-17\t1e-9\tPASS\npoolLo\t0\t0\t0\t1e-9\tPASS\npoolHi\t0.1972300186238438\t0.19723001862384382\t2.7755575615628914e-17\t1e-9\tPASS\npoolPiLo\tnull\tnull\t0\t1e-9\tPASS\npoolPiHi\tnull\tnull\t0\t1e-9\tPASS\n\nFull R re-execution (one-command instructions) · Open Codespaces · Reproducible repository ·"
+    }
+  ],
+  "requests": [
+    "http://127.0.0.1:8109/proportion-ma/index.html",
+    "http://127.0.0.1:8109/shared/forced-colors.css",
+    "http://127.0.0.1:8109/hub/app-style.css",
+    "http://127.0.0.1:8109/hub/shared/csv-upload.js",
+    "http://127.0.0.1:8109/hub/shared/plot-export.js",
+    "http://127.0.0.1:8109/hub/shared/axis-controls.js",
+    "http://127.0.0.1:8109/hub/shared/results-export.js",
+    "http://127.0.0.1:8109/hub/shared/url-state.js",
+    "http://127.0.0.1:8109/hub/shared/reset-undo.js",
+    "http://127.0.0.1:8109/hub/shared/tooltips.js",
+    "http://127.0.0.1:8109/shared/ma-core.js",
+    "http://127.0.0.1:8109/shared/build-info.js",
+    "http://127.0.0.1:8109/shared/ma-studies-v1.js",
+    "http://127.0.0.1:8109/shared/truthcert-export.js",
+    "http://127.0.0.1:8109/shared/truthcert-ui.js",
+    "http://127.0.0.1:8109/shared/autosave.js",
+    "http://127.0.0.1:8109/hub/shared/analysis-lifecycle.js",
+    "http://127.0.0.1:8109/hub/shared/glossary.json",
+    "http://127.0.0.1:8109/hub/shared/a11y-landmarks.js",
+    "http://127.0.0.1:8109/shared/alm-validate.js",
+    "http://127.0.0.1:8109/proportion-ma/validate/adapter.js",
+    "http://127.0.0.1:8109/shared/webr-runner.js",
+    "http://127.0.0.1:8109/proportion-ma/plus-core.js",
+    "http://127.0.0.1:8109/proportion-ma/plus-parity.js",
+    "http://127.0.0.1:8109/proportion-ma/plus-ui.js",
+    "http://127.0.0.1:8109/proportion-ma/validate/plus-pins.js",
+    "http://127.0.0.1:8109/proportion-ma/validate/plus-adapter.js",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/repo/manifest.json",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/packages/metafor/metafor_4.8-0.tgz",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/packages/Matrix/Matrix_1.7-5.tgz",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/packages/lattice/lattice_0.22-9.tgz",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/packages/metadat/metadat_1.4-0.tgz",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/packages/mathjaxr/mathjaxr_2.0-0.tgz",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/packages/numDeriv/numDeriv_2016.8-1.1.tgz",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/packages/nlme/nlme_3.1-169.tgz",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/packages/pbapply/pbapply_1.7-4.tgz",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/repo/bin/emscripten/contrib/4.5/digest_0.6.39.tgz",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/webr.mjs",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/webr-worker.js",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/R.js",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/R.wasm",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/libRblas.so",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/vfs/usr/lib/R/library/translations/DESCRIPTION",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/libRlapack.so",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/vfs/usr/lib/R/share.js.metadata",
+    "http://127.0.0.1:8109/r-shiny/shinylive/webr/vfs/usr/lib/R/share.data.gz"
+  ],
+  "hosts": [
+    "127.0.0.1:8109"
+  ]
+}
