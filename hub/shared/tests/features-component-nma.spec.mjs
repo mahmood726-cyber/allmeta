@@ -309,11 +309,12 @@ test('SHARE: complete state round trip and corrupted/invalid links leave the exa
   console.log('SHARE 3/3 (round trip, truncated link, invalid app state)');
 });
 
-test('AXE: all four feature tabs have no serious/critical findings after animations finish', async ({ page }) => {
+test('AXE: all five feature tabs have no serious/critical findings after animations finish', async ({ page }) => {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await open(page, 'entry');
-  await expect(page.locator('#alm-features [role=tab]')).toHaveCount(4);
-  for (const key of ['entry', 'text', 'verify', 'share']) {
+  // v2-core #254 adds the Straight path tab: every feature tab, including it, is audited.
+  await expect(page.locator('#alm-features [role=tab]')).toHaveCount(5);
+  for (const key of ['entry', 'text', 'verify', 'share', 'straight']) {
     await page.evaluate(tab => AlmFeatures.open('component-nma', tab), key);
     await page.evaluate(() => Promise.all(document.getAnimations().filter(a => !a.effect || a.effect.getComputedTiming().iterations !== Infinity).map(a => a.finished.catch(() => null))));
     const out = await new AxeBuilder({ page }).include('#alm-features').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
