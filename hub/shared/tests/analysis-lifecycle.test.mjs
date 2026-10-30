@@ -28,3 +28,26 @@ test('training state changes invalidate until retrained; refusals hide both noti
  run();run.refresh();assert.equal(x.updated.hidden,false);assert.equal(x.stale.hidden,true);
  ok=false;run();run.refresh();assert.equal(x.updated.hidden,true);assert.equal(x.stale.hidden,true);
 });
+
+
+test('completion observers preserve result, receiver and arguments; unsubscribe is idempotent',()=>{
+ const x=setup(), context={value:42}; let observed;
+ const run=x.wrap(function(arg){assert.equal(this,context);assert.equal(arg,'argument');return this.value;},r=>r===42,'#data');
+ const unsubscribe=run.onComplete(result=>{observed=result;assert.equal(x.updated.hidden,false);});
+ assert.equal(run.call(context,'argument'),42);assert.equal(observed,42);
+ unsubscribe();unsubscribe();observed=null;run.call(context,'argument');assert.equal(observed,null);
+ assert.throws(()=>run.onComplete(null),/function/);
+});
+
+test('refusals and exceptions never notify completion',()=>{
+ const x=setup();let calls=0,throws=false;
+ const run=x.wrap(()=>{if(throws)throw Error('failure');return false;},r=>r,'#data');
+ run.onComplete(()=>calls++);assert.equal(run(),false);throws=true;assert.throws(run,/failure/);assert.equal(calls,0);
+});
+
+test('live rejects invalid options before DOM mutation',()=>{
+ const x=setup(),run=x.wrap(()=>true,r=>r,'#data');
+ for(const options of [undefined,{}, {inputs:'#data',toggleId:'live',debounceMs:-1},{inputs:'#data',toggleId:'live',ready:false}])
+  assert.throws(()=>x.wrap.live(run,options),/Invalid live analysis options/);
+ assert.throws(()=>x.wrap.live(()=>true,{inputs:'#data',toggleId:'live'}),/Invalid live analysis options/);
+});
