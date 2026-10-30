@@ -1,0 +1,222 @@
+name: v2 app suites
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.coverage.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Group all non-pixel specs by app
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const specs = fs.readdirSync('hub/shared/tests')
+            .filter(name => name.endsWith('.spec.mjs') && !name.endsWith('-plus-pixels.spec.mjs')).sort();
+          const aliases = {
+            'bma-tau': 'bma-tau-priors',
+            'dose-response': 'dose-response-ma',
+            'dta': 'dta-sroc',
+            'forest': 'forest-plot',
+            'multilevel': 'multilevel-ma',
+            'nma-dose-response': 'nma-dose-response-app',
+            'pubbias-binary': 'pubbias-tests',
+            'rare-events-cmel': 'rare-events-glmm',
+          };
+          const apps = fs.readdirSync('.', { withFileTypes: true })
+            .filter(entry => entry.isDirectory() && !entry.name.startsWith('.'))
+            .map(entry => entry.name);
+          const prefixes = [...new Set([...apps, ...Object.keys(aliases)])]
+            .sort((a, b) => b.length - a.length || a.localeCompare(b));
+          const sweeps = new Set(['validate-integration', 'hero-sweep', 'a11y-sweep', 'app-smoke']);
+          const groups = new Map();
+          for (const spec of specs) {
+            const stem = spec.slice(0, -'.spec.mjs'.length);
+            const name = stem.replace(/^(?:validate-|features-(?:(?:live|text)-)?|usability-)/, '');
+            const app = prefixes.find(prefix => name === prefix || name.startsWith(`${prefix}-`));
+            const shard = stem.startsWith('r1fix') ? 'sweep-r1fix'
+              : sweeps.has(stem) ? `sweep-${stem}`
+              : app ? `app-${aliases[app] || app}` : 'shared';
+            if (!groups.has(shard)) groups.set(shard, []);
+            groups.get(shard).push(spec);
+          }
+          const matrix = { include: [...groups].sort(([a], [b]) => a.localeCompare(b))
+            .map(([shard, specs]) => ({ shard, specs })) };
+          fs.writeFileSync('v2-matrix.json', JSON.stringify(matrix));
+          NODE
+      - name: Check exact coverage and emit matrix
+        id: coverage
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          // Independently enumerate the full non-pixel corpus, not the grouping input.
+          const expected = fs.readdirSync('hub/shared/tests')
+            .filter(name => name.endsWith('.spec.mjs') && !name.endsWith('-plus-pixels.spec.mjs')).sort();
+          const matrix = JSON.parse(fs.readFileSync('v2-matrix.json', 'utf8'));
+          const actual = matrix.include.flatMap(shard => shard.specs).sort();
+          assert(expected.length > 0, 'No specs found');
+          assert(matrix.include.length > 0 && matrix.include.length <= 256, 'Invalid matrix size');
+          assert.equal(new Set(matrix.include.map(s => s.shard)).size, matrix.include.length, 'Duplicate shard names');
+          for (const shard of matrix.include) {
+            assert(/^[a-zA-Z0-9-]+$/.test(shard.shard), 'Unsafe shard name');
+            assert(shard.specs.length > 0, `Empty shard: ${shard.shard}`);
+          }
+          assert.equal(new Set(actual).size, actual.length, 'A spec belongs to more than one shard');
+          assert.deepEqual(actual, expected, 'Shard coverage differs from the full non-pixel spec list');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `matrix=${JSON.stringify(matrix)}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+            `Planned ${expected.length} specs in ${matrix.include.length} shards; maximum 20 concurrent suite jobs.\n`);
+          NODE
+
+  suite:
+    needs: plan
+    name: suite (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      # Keep these setup steps identical to shared-tests.yml.
+      - uses: actions/checkout@v4
+        with:
+          # Baseline replay tests read pinned historical files with git show.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      # The Playwright config's webServer launches `python -m http.server`,
+      # so make a `python` shim available on the runner.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Preserve shared and feature suite configurations
+        run: |
+          # Feature specs need their own webR timeout and single-worker limit.
+          # Keep each suite's settings and disjoint selection in separate projects
+          # so a mixed app shard still produces one report and one exit status.
+          cat > playwright.v2-ci.config.mjs <<'CONFIG'
+          import base from './playwright.config.mjs';
+          import features from './playwright.features.config.mjs';
+          const projectsFor = ({ projects, webServer, ...settings }, suite) =>
+            projects.map(project => ({
+              ...settings,
+              ...project,
+              name: `${project.name}-${suite}`,
+              testIgnore: project.testIgnore ?? settings.testIgnore ?? [],
+              use: { ...settings.use, ...project.use },
+            }));
+          export default {
+            ...base,
+            webServer: [base.webServer, features.webServer],
+            projects: [...projectsFor(base, 'shared'), ...projectsFor(features, 'features')],
+          };
+          CONFIG
+      - name: Run shard
+        id: tests
+        env:
+          CI: "true"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/results.json
+          SHARD_SPECS: ${{ toJSON(matrix.specs) }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          // Playwright treats positional arguments as regexes: anchor each full
+          // basename so e.g. nma-parity cannot also select bayesian-nma-parity.
+          const specs = JSON.parse(process.env.SHARD_SPECS).map(name =>
+            `(^|/)${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+          const result = spawnSync('npx', ['playwright', 'test', ...specs,
+            '--config=playwright.v2-ci.config.mjs', '--reporter=line,json'], { stdio: 'inherit' });
+          if (result.error) console.error(result.error);
+          process.exit(result.status ?? 1);
+          NODE
+      - name: Record shard outcome, including setup failures
+        if: always()
+        working-directory: ${{ github.workspace }}
+        env:
+          SHARD: ${{ matrix.shard }}
+          JOB_STATUS: ${{ job.status }}
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: |
+          mkdir -p hub/shared/tests/artifacts
+          printf '{"shard":"%s","job":"%s","tests":"%s"}\n' \
+            "$SHARD" "$JOB_STATUS" "$TEST_OUTCOME" > hub/shared/tests/artifacts/status.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v2-${{ matrix.shard }}
+          path: hub/shared/tests/artifacts/
+          if-no-files-found: error
+          retention-days: 14
+
+  summary:
+    needs: [plan, suite]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: v2-*
+          path: shard-reports
+      - name: Write per-shard results and enforce failures
+        if: always()
+        env:
+          MATRIX: ${{ needs.plan.outputs.matrix }}
+          PLAN_RESULT: ${{ needs.plan.result }}
+          SUITE_RESULT: ${{ needs.suite.result }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          lines = ['| Shard | Specs | Result | Passed | Failed | Skipped |',
+                   '| --- | ---: | --- | ---: | ---: | ---: |']
+          failed = os.environ['PLAN_RESULT'] != 'success' or os.environ['SUITE_RESULT'] != 'success'
+          try:
+              shards = json.loads(os.environ['MATRIX'])['include']
+              if not shards:
+                  raise ValueError('Empty matrix')
+          except (ValueError, KeyError, TypeError):
+              shards = []
+              failed = True
+              lines.append('| plan | — | FAIL: missing or invalid matrix | — | — | — |')
+          for shard in shards:
+              name = shard['shard']
+              result, passed, unexpected, skipped = 'FAIL: missing or invalid report/status', '—', '—', '—'
+              try:
+                  directory = Path('shard-reports') / f'v2-{name}'
+                  status = json.loads((directory / 'status.json').read_text())
+                  report = json.loads((directory / 'results.json').read_text())
+                  stats = report['stats']
+                  passed, unexpected, skipped = stats['expected'] + stats['flaky'], stats['unexpected'], stats['skipped']
+                  ok = (status['shard'] == name and status['job'] == 'success'
+                        and status['tests'] == 'success' and not report.get('errors')
+                        and unexpected == 0 and passed > 0)
+                  result = 'PASS' if ok else 'FAIL'
+              except (OSError, ValueError, KeyError, TypeError):
+                  pass
+              failed |= result != 'PASS'
+              lines.append(f"| {name} | {len(shard['specs'])} | {result} | {passed} | {unexpected} | {skipped} |")
+          lines.append(f"\nPlan: {os.environ['PLAN_RESULT']}; suite: {os.environ['SUITE_RESULT']}. Maximum concurrent suite jobs: 20.")
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('\n'.join(lines) + '\n')
+          raise SystemExit(1 if failed else 0)
+          PY
