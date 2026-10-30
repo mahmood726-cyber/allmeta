@@ -260,7 +260,7 @@
     if(typeof document==='undefined') return;
     const mount=()=>{
       const spec=active.spec, panel=document.createElement('section');
-      panel.id='alm-real-example-panel'; panel.style.cssText='margin:1rem auto;padding:1rem;max-width:72rem;border:1px solid #aaa;border-radius:6px';
+      panel.id='alm-real-example-panel'; panel.setAttribute('data-no-autosave',''); panel.style.cssText='margin:1rem auto;padding:1rem;max-width:72rem;border:1px solid #aaa;border-radius:6px';
       const heading=document.createElement('h2');heading.id='alm-real-example-title';heading.textContent='Real example';
       panel.setAttribute('aria-labelledby',heading.id);
       const labelEl=document.createElement('label');labelEl.textContent='Published dataset: ';

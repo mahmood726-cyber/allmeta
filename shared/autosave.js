@@ -93,6 +93,11 @@
     } catch (_) {}
   }
 
+  // Transient helper UI (e.g. the real-example picker) opts out with data-no-autosave on a container: it is never
+  // saved or restored and does not shift the positional idx: keys of the page's own fields. Nothing on the original
+  // pages carries this attribute, so their keys are unchanged.
+  function _eligible(el) { return !(el && el.closest && el.closest('[data-no-autosave]')); }
+
   function _fieldKey(el) {
     // Prefer id, fall back to name, then to a synthetic positional key.
     return el.id || el.name || ('idx:' + (el.dataset.autosaveIndex || ''));
@@ -115,7 +120,7 @@
 
   function _snapshot(elements) {
     const values = {};
-    elements.forEach((el, i) => {
+    elements.filter(_eligible).forEach((el, i) => {
       if (!el.dataset.autosaveIndex) el.dataset.autosaveIndex = String(i);
       const v = _readField(el);
       if (v === undefined) return;
@@ -129,7 +134,7 @@
   function _restore(elements, values) {
     if (!values || typeof values !== 'object') return 0;
     let n = 0;
-    elements.forEach(el => {
+    elements.filter(_eligible).forEach(el => {
       const k = _fieldKey(el);
       if (Object.prototype.hasOwnProperty.call(values, k)) {
         _writeField(el, values[k]);
