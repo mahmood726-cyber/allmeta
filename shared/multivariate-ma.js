@@ -377,6 +377,9 @@
     if (!Number.isFinite(x) || x < 0 || !(df > 0)) throw new Error("invalid chi-square argument");
     if (x === 0) return 1;
     var a = df / 2, z = x / 2, scale = Math.exp(-z + a * Math.log(z) - _lgamma(a)), n;
+    // For df=1 and z>=1.5, the upper tail is smaller than scale/z. Once
+    // scale underflows, avoid a needless continued fraction at extreme finite z.
+    if (df === 1 && z >= a + 1 && scale === 0) return 0;
     if (z < a + 1) { var term = 1 / a, sum = term; for (n = 1; n < 10000; n++) { term *= z / (a + n); sum += term; if (Math.abs(term) < Math.abs(sum) * 2e-16) return Math.max(0, 1 - sum * scale); } }
     else { var b = z + 1 - a, cc = 1e300, d = 1 / b, h = d; for (n = 1; n < 10000; n++) { var an = -n * (n - a); b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300; cc = b + an / cc; if (Math.abs(cc) < 1e-300) cc = 1e-300; d = 1 / d; var del = d * cc; h *= del; if (Math.abs(del - 1) < 2e-16) return scale * h; } }
     throw new Error("incomplete gamma did not converge");
@@ -384,7 +387,9 @@
   // Two-sided Wald test of mu = 0 using the normal distribution (as mvmeta and rma.mv with test="z").
   function zTest(mu, se) {
     if (!Number.isFinite(mu) || !Number.isFinite(se) || !(se > 0)) return { status: "refused", reason: "SE must be positive and finite" };
-    var z = mu / se; return { status: "ok", z: z, p: chisqSF(z * z, 1) };
+    var z = mu / se, square = z * z;
+    // A finite normal statistic whose square overflows has a zero double tail.
+    return { status: "ok", z: z, p: Number.isFinite(z) && square === Infinity ? 0 : chisqSF(square, 1) };
   }
 
   // ---- univariate REML (m = 1) on the same rows: y_i ~ N(mu, v_i + tau2) ----
