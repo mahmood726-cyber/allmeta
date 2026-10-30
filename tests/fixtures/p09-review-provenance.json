@@ -1,0 +1,15 @@
+{
+  "origin": "Native R output requested in pass 2; imported without numerical edits in pass 3.",
+  "provenance": {
+    "R": "R version 4.6.0 (2026-04-24 ucrt)",
+    "netmeta": "3.7.0",
+    "metafor": "5.2.1",
+    "meta": "8.5.0",
+    "jsonlite": "2.0.0"
+  },
+  "lf_sha256": {
+    "tests/fixtures/p09-review-reference.json": "6fcafc2dfb3ba3e5d646de2b0257b218ffc419af8ba18a309b0263d64b84debe",
+    "tests/fixtures/p09-review-reference.R": "efcb3f5be6d2ecf13a9b435b28ac6fc565b9d6e88778d5bbbf95e8e8e8127ee0",
+    "hub/shared/tests/_kon_data.json": "191a6ce1e866b1429d72efcc1c14181c082b91ee069445a2f2da799720f88e7c"
+  }
+}

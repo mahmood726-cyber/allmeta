@@ -1,0 +1,59 @@
+{
+  "description": "Reverse only this job repair; verify the LF fingerprint recorded before any fix. This authenticates supplied-head bytes, not absent base history.",
+  "files": [
+    {
+      "path": "shared/nma-multiarm-v1.js",
+      "original_lf_sha256": "eb917db58e51775f099b5e618e6a21189af7b87b6146f2bb53574aeb3e935e3a",
+      "hunks": [
+        {
+          "fixed": "    return Inv;\n  }\n  function trace(A) { var s = 0; for (var i = 0; i < A.length; i++) s += A[i][i]; return s; }\n\n  // C^-1 is the reduced study Laplacian. Its off-diagonals (and row sums\n  // for edges to the baseline) recover netmeta's adjusted all-edge weights.\n  // Project every supplied effect, retaining the cycle residual in Q. Merely\n  // selecting baseline rows loses accepted rounding information and depends on\n  // treatment labels. Random effects must repeat this projection with C + tau2 R.\n  function projectEdges(cov, edges) {\n    var precision = invert(cov);\n    if (!precision) return null;\n    var h = new Array(cov.length).fill(0), weights = [];\n    for (var e = 0; e < edges.length; e++) {\n      var edge = edges[e], w = 0;\n      if (edge.a === 0) {\n        for (var k = 0; k < cov.length; k++) w += precision[edge.b - 1][k];\n      } else w = -precision[edge.a - 1][edge.b - 1];\n      weights.push(w);\n      h[edge.b - 1] += w * edge.est;\n      if (edge.a !== 0) h[edge.a - 1] -= w * edge.est;\n    }\n    var y = matmul(cov, h.map(function (v) { return [v]; })).map(function (r) { return r[0]; });\n    var q = 0;\n    for (var i = 0; i < edges.length; i++) {\n      var ed = edges[i], residual = ed.est - y[ed.b - 1] + (ed.a === 0 ? 0 : y[ed.a - 1]);\n      q += weights[i] * residual * residual;\n    }\n    return { y: y, q: q };\n  }\n\n  // ---- group rows into studies; build independent baseline contrasts ------\n  // rows: [{study, t1, t2, est, se}] where est is (t2 - t1) on the analysis scale.\n",
+          "original": "    return Inv;\n  }\n  function trace(A) { var s = 0; for (var i = 0; i < A.length; i++) s += A[i][i]; return s; }\n\n  // ---- group rows into studies; build independent baseline contrasts ------\n  // rows: [{study, t1, t2, est, se}] where est is (t2 - t1) on the analysis scale.\n"
+        },
+        {
+          "fixed": "        var rowsum = 0; for (var y = 0; y < m; y++) if (y !== x) rowsum += s2[x][y];\n        varArm[arms[x]] = (rowsum - S) / (m - 2);\n      }\n      // Reduce to (m-1) baseline contrasts vs arms[0] using every supplied edge.\n      var base = arms[0];\n      // Covariance of the baseline contrasts implied by the SUPPLIED pairwise variances:\n      //   Cov(y_{a,base}, y_{b,base}) = (s2[base][a] + s2[base][b] - s2[a][b]) / 2.\n",
+          "original": "        var rowsum = 0; for (var y = 0; y < m; y++) if (y !== x) rowsum += s2[x][y];\n        varArm[arms[x]] = (rowsum - S) / (m - 2);\n      }\n      // Reduce to (m-1) baseline contrasts vs arms[0]; recover est from rows.\n      var base = arms[0];\n      // Covariance of the baseline contrasts implied by the SUPPLIED pairwise variances:\n      //   Cov(y_{a,base}, y_{b,base}) = (s2[base][a] + s2[base][b] - s2[a][b]) / 2.\n"
+        },
+        {
+          "fixed": "      for (var ca = 1; ca < m; ca++) for (var cb = 1; cb < m; cb++) {\n        cov[ca - 1][cb - 1] = (s2[0][ca] + s2[0][cb] - (ca === cb ? 0 : s2[ca][cb])) / 2;\n      }\n      var edges = [];\n      for (var ea = 0; ea < m; ea++) for (var eb = ea + 1; eb < m; eb++) {\n        var er = pairKey[[arms[ea], arms[eb]].join(\"|\")];\n        edges.push({ a: ea, b: eb, est: er.t1 === arms[ea] ? er.est : -er.est });\n      }\n      var projected = projectEdges(cov, edges);\n      if (!projected) { errors.push(\"study \" + id2 + \": singular multi-arm covariance\"); continue; }\n      var contrasts = [];\n      for (var z = 1; z < m; z++) {\n        contrasts.push({ to: arms[z], from: base, est: projected.y[z - 1] });\n      }\n      studies.push({ id: id2, arms: arms, multiArm: true, contrasts: contrasts, v: varArm,\n        cov: cov, base: base, edges: edges, roundingQ: projected.q });\n    }\n    return { studies: studies, errors: errors };\n  }\n",
+          "original": "      for (var ca = 1; ca < m; ca++) for (var cb = 1; cb < m; cb++) {\n        cov[ca - 1][cb - 1] = (s2[0][ca] + s2[0][cb] - (ca === cb ? 0 : s2[ca][cb])) / 2;\n      }\n      var contrasts = [];\n      for (var z = 1; z < m; z++) {\n        var toArm = arms[z];\n        var prow = pairKey[[base, toArm].sort().join(\"|\")];\n        var estVal = prow.est;                   // est = t2 - t1\n        // want (toArm - base):\n        if (prow.t1 === toArm && prow.t2 === base) estVal = -estVal;       // row is (base - toArm) ⇒ flip\n        else if (prow.t1 === base && prow.t2 === toArm) { /* already toArm-base */ }\n        else estVal = (prow.t2 === toArm) ? estVal : -estVal;             // generic fallback\n        contrasts.push({ to: toArm, from: base, est: estVal });\n      }\n      studies.push({ id: id2, arms: arms, multiArm: true, contrasts: contrasts, v: varArm, cov: cov, base: base });\n    }\n    return { studies: studies, errors: errors };\n  }\n"
+        },
+        {
+          "fixed": "      } else {\n        for (var a = 0; a < len; a++) for (var b = 0; b < len; b++) V[start + a][start + b] = st.cov[a][b];\n      }\n      blocks.push({ start: start, len: len, multiArm: st.multiArm, edges: st.edges, roundingQ: st.roundingQ || 0 });\n    }\n    return { X: X, y: y, V: V, nonref: nonref, K: K, N: N, rowStudy: rowStudy, blocks: blocks };\n  }\n",
+          "original": "      } else {\n        for (var a = 0; a < len; a++) for (var b = 0; b < len; b++) V[start + a][start + b] = st.cov[a][b];\n      }\n      blocks.push({ start: start, len: len, multiArm: st.multiArm });\n    }\n    return { X: X, y: y, V: V, nonref: nonref, K: K, N: N, rowStudy: rowStudy, blocks: blocks };\n  }\n"
+        },
+        {
+          "fixed": "    // Q = residᵀ W resid\n    var Q = 0;\n    for (var a = 0; a < N; a++) { var wr = 0; for (var b = 0; b < N; b++) wr += W[a][b] * resid[b]; Q += resid[a] * wr; }\n    if (Array.isArray(blocks)) blocks.forEach(function (bk) { Q += bk.roundingQ || 0; });\n    var df = N - K;\n    // P = W − W X (XᵀWX)⁻¹ Xᵀ W\n    var Xt = transpose(X);\n",
+          "original": "    // Q = residᵀ W resid\n    var Q = 0;\n    for (var a = 0; a < N; a++) { var wr = 0; for (var b = 0; b < N; b++) wr += W[a][b] * resid[b]; Q += resid[a] * wr; }\n    var df = N - K;\n    // P = W − W X (XᵀWX)⁻¹ Xᵀ W\n    var Xt = transpose(X);\n"
+        },
+        {
+          "fixed": "      tau2 = Qinfo.tau2;\n      if (tau2 > 0) {\n        var Vr = reCovariance(asm, tau2);\n        var yr = asm.y.slice();\n        for (var rb = 0; rb < asm.blocks.length; rb++) {\n          var block = asm.blocks[rb];\n          if (!block.multiArm) continue;\n          var covr = Vr.slice(block.start, block.start + block.len).map(function (row) {\n            return row.slice(block.start, block.start + block.len);\n          });\n          var projected = projectEdges(covr, block.edges);\n          if (!projected) return { ok: false, error: \"singular multi-arm random-effects covariance\" };\n          for (var ry = 0; ry < block.len; ry++) yr[block.start + ry] = projected.y[ry];\n        }\n        var reFit = gls(asm.X, yr, Vr);\n        if (reFit) fitUse = reFit;\n      }\n    } else {\n",
+          "original": "      tau2 = Qinfo.tau2;\n      if (tau2 > 0) {\n        var Vr = reCovariance(asm, tau2);\n        var reFit = gls(asm.X, asm.y, Vr);\n        if (reFit) fitUse = reFit;\n      }\n    } else {\n"
+        }
+      ]
+    },
+    {
+      "path": "shared/multilevel-reml.js",
+      "original_lf_sha256": "bf247bf6801a4f3629993c8fce78d8bbb7d11d94a66057d50487630dc4fc2a3e",
+      "hunks": [
+        {
+          "fixed": "\n  function fit(rows, opts) {\n    opts = opts || {};\n    // The expanded likelihood quadratic must not subtract squared large offsets.\n    // Center before both the warm start and optimization, then restore the location.\n    var origin = rows.length ? +rows[0].y : 0;\n    rows = rows.map(function (r) { return { cluster: r.cluster, y: +r.y - origin, v: r.v }; });\n    var clusters = _byCluster(rows), k = rows.length, nC = clusters.length;\n    // warm start: total heterogeneity ~ DL, split half/half between levels.\n    var sw = 0, swy = 0, i; for (i = 0; i < k; i++) { var w = 1 / rows[i].v; sw += w; swy += w * rows[i].y; }\n",
+          "original": "\n  function fit(rows, opts) {\n    opts = opts || {};\n    var clusters = _byCluster(rows), k = rows.length, nC = clusters.length;\n    // warm start: total heterogeneity ~ DL, split half/half between levels.\n    var sw = 0, swy = 0, i; for (i = 0; i < k; i++) { var w = 1 / rows[i].v; sw += w; swy += w * rows[i].y; }\n"
+        },
+        {
+          "fixed": "    var N = k, p = 1;\n    // REML logLik: −½[(N−p)log2π + log|V| + RSS + log|X'V⁻¹X|] + ½log|X'X|, X=1 ⇒ |X'X|=N.\n    var logLik = -fin.negLL - 0.5 * (N - p) * LOG2PI + 0.5 * Math.log(N);\n    var mu = fin.mu + origin;\n    return { mu: mu, se: se, sigma2Between: s2b, sigma2Within: s2w, logLik: logLik, k: k, nClusters: nC,\n      ciLo: mu - 1.959963984540054 * se, ciHi: mu + 1.959963984540054 * se };\n  }\n\n  var api = { fit: fit };\n",
+          "original": "    var N = k, p = 1;\n    // REML logLik: −½[(N−p)log2π + log|V| + RSS + log|X'V⁻¹X|] + ½log|X'X|, X=1 ⇒ |X'X|=N.\n    var logLik = -fin.negLL - 0.5 * (N - p) * LOG2PI + 0.5 * Math.log(N);\n    return { mu: fin.mu, se: se, sigma2Between: s2b, sigma2Within: s2w, logLik: logLik, k: k, nClusters: nC,\n      ciLo: fin.mu - 1.959963984540054 * se, ciHi: fin.mu + 1.959963984540054 * se };\n  }\n\n  var api = { fit: fit };\n"
+        }
+      ]
+    },
+    {
+      "path": "hub/shared/tests/limit-ma-plus-pixels.spec.mjs",
+      "original_lf_sha256": "4344e751348590c6959b93a3a0406946925be2cc7258840d6bdbe33685a3acf0",
+      "hunks": [
+        {
+          "fixed": "  }\n];\nasync function render(page,config){\n await page.waitForFunction(()=>typeof AlmLimitPlusReady!=='undefined');\n await page.evaluate(()=>AlmLimitPlusReady);\n const c=corpus.find(c=>c.id===config.id);expect(c).toBeTruthy();\n await page.evaluate(({c,mask})=>{\n",
+          "original": "  }\n];\nasync function render(page,config){\n await page.evaluate(()=>AlmLimitPlusReady);\n const c=corpus.find(c=>c.id===config.id);expect(c).toBeTruthy();\n await page.evaluate(({c,mask})=>{\n"
+        }
+      ]
+    }
+  ]
+}

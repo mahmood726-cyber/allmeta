@@ -55,6 +55,33 @@
   }
   function trace(A) { var s = 0; for (var i = 0; i < A.length; i++) s += A[i][i]; return s; }
 
+  // C^-1 is the reduced study Laplacian. Its off-diagonals (and row sums
+  // for edges to the baseline) recover netmeta's adjusted all-edge weights.
+  // Project every supplied effect, retaining the cycle residual in Q. Merely
+  // selecting baseline rows loses accepted rounding information and depends on
+  // treatment labels. Random effects must repeat this projection with C + tau2 R.
+  function projectEdges(cov, edges) {
+    var precision = invert(cov);
+    if (!precision) return null;
+    var h = new Array(cov.length).fill(0), weights = [];
+    for (var e = 0; e < edges.length; e++) {
+      var edge = edges[e], w = 0;
+      if (edge.a === 0) {
+        for (var k = 0; k < cov.length; k++) w += precision[edge.b - 1][k];
+      } else w = -precision[edge.a - 1][edge.b - 1];
+      weights.push(w);
+      h[edge.b - 1] += w * edge.est;
+      if (edge.a !== 0) h[edge.a - 1] -= w * edge.est;
+    }
+    var y = matmul(cov, h.map(function (v) { return [v]; })).map(function (r) { return r[0]; });
+    var q = 0;
+    for (var i = 0; i < edges.length; i++) {
+      var ed = edges[i], residual = ed.est - y[ed.b - 1] + (ed.a === 0 ? 0 : y[ed.a - 1]);
+      q += weights[i] * residual * residual;
+    }
+    return { y: y, q: q };
+  }
+
   // ---- group rows into studies; build independent baseline contrasts ------
   // rows: [{study, t1, t2, est, se}] where est is (t2 - t1) on the analysis scale.
   // Returns { studies:[{id, arms:[...], contrasts:[{to,from,est,armIdxTo,armIdxFrom}],
@@ -116,7 +143,7 @@
         var rowsum = 0; for (var y = 0; y < m; y++) if (y !== x) rowsum += s2[x][y];
         varArm[arms[x]] = (rowsum - S) / (m - 2);
       }
-      // Reduce to (m-1) baseline contrasts vs arms[0]; recover est from rows.
+      // Reduce to (m-1) baseline contrasts vs arms[0] using every supplied edge.
       var base = arms[0];
       // Covariance of the baseline contrasts implied by the SUPPLIED pairwise variances:
       //   Cov(y_{a,base}, y_{b,base}) = (s2[base][a] + s2[base][b] - s2[a][b]) / 2.
@@ -130,18 +157,19 @@
       for (var ca = 1; ca < m; ca++) for (var cb = 1; cb < m; cb++) {
         cov[ca - 1][cb - 1] = (s2[0][ca] + s2[0][cb] - (ca === cb ? 0 : s2[ca][cb])) / 2;
       }
+      var edges = [];
+      for (var ea = 0; ea < m; ea++) for (var eb = ea + 1; eb < m; eb++) {
+        var er = pairKey[[arms[ea], arms[eb]].join("|")];
+        edges.push({ a: ea, b: eb, est: er.t1 === arms[ea] ? er.est : -er.est });
+      }
+      var projected = projectEdges(cov, edges);
+      if (!projected) { errors.push("study " + id2 + ": singular multi-arm covariance"); continue; }
       var contrasts = [];
       for (var z = 1; z < m; z++) {
-        var toArm = arms[z];
-        var prow = pairKey[[base, toArm].sort().join("|")];
-        var estVal = prow.est;                   // est = t2 - t1
-        // want (toArm - base):
-        if (prow.t1 === toArm && prow.t2 === base) estVal = -estVal;       // row is (base - toArm) ⇒ flip
-        else if (prow.t1 === base && prow.t2 === toArm) { /* already toArm-base */ }
-        else estVal = (prow.t2 === toArm) ? estVal : -estVal;             // generic fallback
-        contrasts.push({ to: toArm, from: base, est: estVal });
+        contrasts.push({ to: arms[z], from: base, est: projected.y[z - 1] });
       }
-      studies.push({ id: id2, arms: arms, multiArm: true, contrasts: contrasts, v: varArm, cov: cov, base: base });
+      studies.push({ id: id2, arms: arms, multiArm: true, contrasts: contrasts, v: varArm,
+        cov: cov, base: base, edges: edges, roundingQ: projected.q });
     }
     return { studies: studies, errors: errors };
   }
@@ -175,7 +203,7 @@
       } else {
         for (var a = 0; a < len; a++) for (var b = 0; b < len; b++) V[start + a][start + b] = st.cov[a][b];
       }
-      blocks.push({ start: start, len: len, multiArm: st.multiArm });
+      blocks.push({ start: start, len: len, multiArm: st.multiArm, edges: st.edges, roundingQ: st.roundingQ || 0 });
     }
     return { X: X, y: y, V: V, nonref: nonref, K: K, N: N, rowStudy: rowStudy, blocks: blocks };
   }
@@ -219,6 +247,7 @@
     // Q = residᵀ W resid
     var Q = 0;
     for (var a = 0; a < N; a++) { var wr = 0; for (var b = 0; b < N; b++) wr += W[a][b] * resid[b]; Q += resid[a] * wr; }
+    if (Array.isArray(blocks)) blocks.forEach(function (bk) { Q += bk.roundingQ || 0; });
     var df = N - K;
     // P = W − W X (XᵀWX)⁻¹ Xᵀ W
     var Xt = transpose(X);
@@ -312,7 +341,18 @@
       tau2 = Qinfo.tau2;
       if (tau2 > 0) {
         var Vr = reCovariance(asm, tau2);
-        var reFit = gls(asm.X, asm.y, Vr);
+        var yr = asm.y.slice();
+        for (var rb = 0; rb < asm.blocks.length; rb++) {
+          var block = asm.blocks[rb];
+          if (!block.multiArm) continue;
+          var covr = Vr.slice(block.start, block.start + block.len).map(function (row) {
+            return row.slice(block.start, block.start + block.len);
+          });
+          var projected = projectEdges(covr, block.edges);
+          if (!projected) return { ok: false, error: "singular multi-arm random-effects covariance" };
+          for (var ry = 0; ry < block.len; ry++) yr[block.start + ry] = projected.y[ry];
+        }
+        var reFit = gls(asm.X, yr, Vr);
         if (reFit) fitUse = reFit;
       }
     } else {

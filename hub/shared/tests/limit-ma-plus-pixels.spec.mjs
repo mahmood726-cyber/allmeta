@@ -52,6 +52,7 @@ const configs=[
   }
 ];
 async function render(page,config){
+ await page.waitForFunction(()=>typeof AlmLimitPlusReady!=='undefined');
  await page.evaluate(()=>AlmLimitPlusReady);
  const c=corpus.find(c=>c.id===config.id);expect(c).toBeTruthy();
  await page.evaluate(({c,mask})=>{
