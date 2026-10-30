@@ -255,9 +255,10 @@ function calibratedTicks(samples,ticks,digits,name,domain) {
   }
   function currentState() {
     const a=P.capture();P.render(a);
-    const lines=document.getElementById('src').value.trim().split(/\n/).map(l=>l.split(','));
+    // Preserve the canonical study order used by subset membership indices.
+    const studies=a.studies;
     const v=values();adapter.live.compare.kind=Object.fromEntries(v.map(x=>[x.key,x.exact?'exact':'rel']));
-    return {...a,te:lines.map(l=>Number(l[0])),se:lines.map(l=>Number(l[1])),values:v,axisCoverage:axisLabels,note:axisSummary(axisLabels).join(' ')+' '+"Overlapping subsets: descriptive differences only. Sampled results use the app's own draws. Paper metafor 5.2-1; live 4.8-0."};
+    return {...a,te:studies.map(s=>s.te),se:studies.map(s=>s.se),values:v,axisCoverage:axisLabels,note:axisSummary(axisLabels).join(' ')+' '+"Overlapping subsets: descriptive differences only. Sampled results use the app's own draws. Paper metafor 5.2-1; live 4.8-0."};
   }
   function buildScript(s) {return `
 selected<-${Number(document.getElementById('plus-study').value)};het<-'${document.getElementById('plus-het').value}'

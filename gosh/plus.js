@@ -31,7 +31,7 @@
   function mean(a) { return a.reduce((s,x)=>s+x/a.length,0); }
   function median(a) { a=[...a].sort((x,y)=>x-y); const i=Math.floor(a.length/2);return a.length%2?a[i]:a[i-1]/2+a[i]/2; }
   function derive(a) {
-    if (!a.summary || !['FE','DL'].includes(a.summary.model)) throw Error('Need 3 through 100 valid studies');
+    if (!a.summary || !['FE','DL'].includes(a.summary.model)) throw Error('Need 3 through 100 valid effect rows');
     const k=a.summary.k;
     const points=a.points.map(p=>{
       if (!Array.isArray(p.members)||!p.members.length||new Set(p.members).size!==p.members.length||p.members.some(i=>!Number.isInteger(i)||i<1||i>k)||p.k!==p.members.length) throw Error('Invalid subset membership');
@@ -49,7 +49,7 @@
       }
       return row;
     });
-    return {rows,points,k,model:a.summary.model,sampled:a.summary.sampled,labels:a.summary.studies.map(s=>s.label)};
+    return {rows,points,k,model:a.summary.model,sampled:a.summary.sampled,labels:a.summary.studies.map(s=>s.label),studies:a.summary.studies.map(s=>({...s}))};
   }
   // Shared pure plot renderer: the validator renders fresh nodes in an isolated root.
   function drawPlot(svg,state,selected,q) {

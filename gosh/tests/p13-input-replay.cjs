@@ -5,7 +5,9 @@ let failed = false;
 for (const target of [
   'hub/shared/tests/unit/**/*.test.mjs',
   'gosh/tests/input-validation.test.cjs',
-  'hub/shared/tests/unit/p13-gosh-plus-input.test.mjs'
+  'hub/shared/tests/unit/p13-gosh-plus-input.test.mjs',
+  'hub/shared/tests/unit/p13-gosh-plus-live-input.test.mjs',
+  'hub/shared/tests/unit/p13-gosh-plus-before-fix.test.mjs'
 ]) {
   console.log('\nTEST ' + target);
   const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap', target], {
