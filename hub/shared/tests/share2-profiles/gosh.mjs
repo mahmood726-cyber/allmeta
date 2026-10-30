@@ -1,5 +1,5 @@
 // share2 test profile: gosh (share adapter {src, model, draws, enumeration, exactResult, axes (6), entryLog}).
-export default {
+const profile = {
   plot: '#plot',
   results: { selector: '#m-n', closest: 'section' },
   custom: {
@@ -26,3 +26,14 @@ export default {
     { src: '0.2, 0.1, A\n0.3, zero, B\n0.1, 0.2, C' }
   ]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ src: profile.custom.src + '\n' + row });
+profile.invalid.push(
+  bad('abc, 0.1, Iota'),
+  bad('0.1, 0, Iota'),
+  bad('0.1, -0.2, Iota'),
+  bad('0.1, abc, Iota'),
+  bad('0.1')
+);
+export default profile;
