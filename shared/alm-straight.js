@@ -71,7 +71,7 @@
 
   var RULES = [
     {
-      id: 'SP-REC-SMALLK', version: 1, apps: ['proportion-ma', 'correlation-ma'], part: 'recommend',
+      id: 'SP-REC-SMALLK', version: 1, apps: ['proportion-ma', 'correlation-ma', 'heterogeneity', 'meta-regression', 'influence', 'limit-ma', 'gosh', 'cumulative-subgroup'], part: 'recommend',
       requires: ['k', 'randomEffects', 'estimator', 'hksj'],
       trigger: function (c) {
         if (!c.randomEffects) return { fired: false, reason: 'fixed-effect model' };
@@ -95,7 +95,7 @@
       ],
     },
     {
-      id: 'SP-PIT-I2ZERO', version: 1, apps: ['proportion-ma', 'correlation-ma'], part: 'pitfall',
+      id: 'SP-PIT-I2ZERO', version: 1, apps: ['proportion-ma', 'correlation-ma', 'heterogeneity', 'influence'], part: 'pitfall',
       requires: ['k', 'i2'],
       trigger: function (c) {
         return { fired: c.i2 < T('ISQ_ZERO_BELOW') && c.k < T('FEW_K_ISQ'), facts: { k: c.k, isq: (Math.round(c.i2 * 10) / 10).toFixed(1) } };
@@ -111,7 +111,7 @@
       ],
     },
     {
-      id: 'SP-PIT-NONSIG', version: 1, apps: ['correlation-ma', 'multivariate-ma'], part: 'pitfall',
+      id: 'SP-PIT-NONSIG', version: 1, apps: ['correlation-ma', 'multivariate-ma', 'heterogeneity', 'pubbias-tests', 'meta-regression', 'influence', 'limit-ma', 'cumulative-subgroup', 'mh-peto', 'multilevel-ma', 'nma', 'component-nma', 'dose-response-ma', 'rve-meta'], part: 'pitfall',
       requires: ['estimates'],
       trigger: function (c) {
         var es = validEstimates(c, ['lo', 'hi', 'nullValue']);
@@ -176,7 +176,7 @@
       ],
     },
     {
-      id: 'SP-PIT-FUNNELSMALLK', version: 1, apps: ['dta-sroc'], part: 'pitfall',
+      id: 'SP-PIT-FUNNELSMALLK', version: 1, apps: ['dta-sroc', 'pubbias-tests', 'limit-ma'], part: 'pitfall',
       requires: ['k', 'smallStudyTest'],
       trigger: function (c) {
         var t = c.smallStudyTest;
@@ -194,7 +194,7 @@
       ],
     },
     {
-      id: 'SP-PIT-NMACONSIST', version: 1, apps: ['nma-inconsistency'], part: 'pitfall',
+      id: 'SP-PIT-NMACONSIST', version: 1, apps: ['nma-inconsistency', 'nma'], part: 'pitfall',
       requires: ['inconsistencyTests'],
       trigger: function (c) {
         var tests = Array.isArray(c.inconsistencyTests) ? c.inconsistencyTests.filter(function (t) { return t && isNum(t.p); }) : [];
@@ -215,7 +215,7 @@
       ],
     },
     {
-      id: 'SP-UNC-SMALLK', version: 1, apps: ['dta-sroc', 'proportion-ma', 'nma-inconsistency', 'correlation-ma', 'multivariate-ma'], part: 'uncertainty',
+      id: 'SP-UNC-SMALLK', version: 1, apps: ['dta-sroc', 'proportion-ma', 'nma-inconsistency', 'correlation-ma', 'multivariate-ma', 'heterogeneity', 'pubbias-tests', 'meta-regression', 'influence', 'limit-ma', 'gosh', 'cumulative-subgroup', 'mh-peto', 'multilevel-ma', 'nma', 'component-nma', 'dose-response-ma', 'rve-meta'], part: 'uncertainty',
       requires: ['analysisType'],
       trigger: function (c) {
         if (c.analysisType === 'network') {
@@ -240,7 +240,7 @@
       evidence: [],
     },
     {
-      id: 'SP-UNC-WIDEPI', version: 1, apps: ['proportion-ma', 'correlation-ma'], part: 'uncertainty',
+      id: 'SP-UNC-WIDEPI', version: 1, apps: ['proportion-ma', 'correlation-ma', 'heterogeneity', 'cumulative-subgroup', 'multilevel-ma'], part: 'uncertainty',
       requires: ['k', 'estimates'],
       trigger: function (c) {
         if (c.k < T('PI_MIN_K')) return NA('prediction interval needs k >= ' + T('PI_MIN_K'));
