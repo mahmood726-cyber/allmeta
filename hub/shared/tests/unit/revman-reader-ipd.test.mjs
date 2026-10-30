@@ -44,13 +44,16 @@ const attr = (tag, name) => { const m = new RegExp('\\b' + name + '="([^"]*)"').
 const ipdRows = [...source.matchAll(/<IPD_DATA\b[^>]*\/>/g)].map(m => ({ id: attr(m[0], 'STUDY_ID'), oe: Number(attr(m[0], 'O_E')), v: Number(attr(m[0], 'VAR')) }));
 const names = { 'STD-Synth-A': 'Synthetic Alpha', 'STD-Synth-B': 'Synthetic Beta', 'STD-Synth-C': 'Synthetic Gamma', 'STD-Synth-D': 'Synthetic Delta' };
 const buf = b => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
-// The dichotomous outcome exactly as the reader returned it before IPD support (attribute-only NAME/GROUP_LABEL/YEAR_OF_PUB
-// reads are pre-existing behaviour, deliberately not changed here).
+// The dichotomous outcome exactly, counts unchanged by IPD support. This object used to pin name 'Outcome', arms
+// 'Group 1'/'Group 2' and year null: the attribute-only NAME/GROUP_LABEL/YEAR_OF_PUB reads that misread this fixture's
+// RevMan 5 <NAME>/<GROUP_LABEL_n> children and YEAR attributes. Those are now read (unit/revman-reader-legacy.test.mjs),
+// so it pins the fixture's real values instead; same deepEqual strictness.
+const years = { 'STD-Synth-A': 2011, 'STD-Synth-B': 2014, 'STD-Synth-C': 2017, 'STD-Synth-D': 2019 };
 const dichBefore = {
-  name: 'Outcome', type: 'binary', effectMeasure: 'OR', arm1Name: 'Group 1', arm2Name: 'Group 2',
+  name: 'Synthetic dichotomous events', type: 'binary', effectMeasure: 'OR', arm1Name: 'Treatment', arm2Name: 'Control',
   studies: [['STD-Synth-A', 12, 101, 19, 99], ['STD-Synth-B', 0, 45, 3, 47], ['STD-Synth-C', 30, 250, 41, 248]].map(([id, e1, n1, e2, n2]) => ({
-    id, name: names[id], year: null, scale: 'OR',
-    arms: [{ treatment: 'Group 1', events: e1, n: n1 }, { treatment: 'Group 2', events: e2, n: n2 }] })),
+    id, name: names[id], year: years[id], scale: 'OR',
+    arms: [{ treatment: 'Treatment', events: e1, n: n1 }, { treatment: 'Control', events: e2, n: n2 }] })),
 };
 
 test('legacy reader imports the RevMan 5 IPD (O-E and variance) outcome next to the unchanged dichotomous one', async () => {
@@ -62,14 +65,15 @@ test('legacy reader imports the RevMan 5 IPD (O-E and variance) outcome next to 
   assert.deepEqual(JSON.parse(JSON.stringify(outcomes[0])), dichBefore);
   assert.equal(review.studyCount, 7);
   const ipd = outcomes[1];
-  assert.deepEqual([ipd.arm1Name, ipd.arm2Name], ['Experimental', 'Control']);
+  // GROUP_LABEL_1/2 children of the IPD outcome (previously ignored, giving the 'Experimental' default).
+  assert.deepEqual([ipd.name, ipd.arm1Name, ipd.arm2Name], ['Synthetic time to event', 'Treatment', 'Control']);
   ipd.studies.forEach((s, i) => {
     const want = ipdRows[i];
-    assert.equal(s.id, want.id); assert.equal(s.name, names[want.id]); assert.equal(s.scale, 'HR');
+    assert.equal(s.id, want.id); assert.equal(s.name, names[want.id]); assert.equal(s.year, years[want.id]); assert.equal(s.scale, 'HR');
     assert.deepEqual(s.oeVar, { oe: want.oe, v: want.v });
     assert.equal(s.precomputed.est, want.oe / want.v);
     assert.equal(s.precomputed.se, 1 / Math.sqrt(want.v));
-    assert.deepEqual(s.arms, [{ treatment: 'Experimental', oeVarianceEst: want.oe / want.v, se: 1 / Math.sqrt(want.v) }, { treatment: 'Control', isReference: true }]);
+    assert.deepEqual(s.arms, [{ treatment: 'Treatment', oeVarianceEst: want.oe / want.v, se: 1 / Math.sqrt(want.v) }, { treatment: 'Control', isReference: true }]);
   });
 });
 
@@ -83,7 +87,7 @@ test('bus push is unchanged: the dichotomous outcome is pushed, an IPD-only comp
   assert.match(source, dich);
   const onlyIpd = M._parseXmlString(source.replace(dich, '')).comparisons[0];
   assert.deepEqual(onlyIpd.outcomes.map(o => [o.type, o.studies.length]), [['o_e_var', 4]]);
-  assert.deepEqual(M.comparisonToBus(onlyIpd), { _unsupported: 'o_e_var', name: 'Outcome', effectMeasure: 'HR' });
+  assert.deepEqual(M.comparisonToBus(onlyIpd), { _unsupported: 'o_e_var', name: 'Synthetic time to event', effectMeasure: 'HR' });
 });
 
 test('IPD effect measure: EFFECT_MEASURE element text is mapped, attribute wins, absent defaults to HR', () => {

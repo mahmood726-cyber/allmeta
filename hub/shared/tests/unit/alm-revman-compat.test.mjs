@@ -10,8 +10,10 @@ const hash=b=>createHash('sha256').update(b).digest('hex');
 test('legacy reader retains the supplied bytes under the repository platform line-ending policy',()=>{
   // .gitattributes permits platform-default source endings. These are the exact
   // supplied CRLF bytes and the same source with LF, not a whitespace-insensitive hash.
-  // Re-pinned once, deliberately, for the IPD_OUTCOME import (unit/revman-reader-ipd.test.mjs); any other edit still fails here.
-  const expected=['8bba50fbacff15e2444f9b3afba19604a449c72ee723b9ad98db00fb5dfeac00','b8acdda46ea0e530b9bf5ca51cfc622fef2e62538c794781d6f07f95a000aaad'];
+  // Re-pinned deliberately: once for the IPD_OUTCOME import (unit/revman-reader-ipd.test.mjs), and again for CONT_OUTCOME /
+  // IV_OUTCOME import, child-element NAME/GROUP_LABEL + YEAR, and the explicit outcome.skipped list
+  // (unit/revman-reader-legacy.test.mjs). Same strictness: exact CRLF and LF bytes; any other edit still fails here.
+  const expected=['235fc47bb8b98cc6c71e353a37c1cd547ec85c22fafa2ba183cfd3f79fbf025b','f756b108b65a5ffb8f86b007ff18e419b14aaffa27bce920f4590f9c16f8e401'];
   assert.ok(expected.includes(hash(legacy)));
   assert.equal(expected.includes(hash(Buffer.concat([legacy,Buffer.from('// planted rewrite')]))),false);
 });
