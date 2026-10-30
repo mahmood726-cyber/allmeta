@@ -8,6 +8,20 @@ const apps = readdirSync(root, { withFileTypes: true }).filter(e => e.isDirector
   catch { return []; }
 });
 expect(apps).toContain('proportion-ma');
+// Per-app test profiles (share2-profiles/<app>.mjs): what to compare (main plot + results region), a valid non-default
+// state, a 1000-row dataset in the app's own format and states the adapter must refuse. The share contract is the same
+// for every app; only the app's DOM and state shape differ. An app that registers a share adapter WITHOUT a profile fails.
+const profiles = {};
+for (const app of apps) {
+  try { profiles[app] = (await import('./share2-profiles/' + app + '.mjs')).default; }
+  catch (e) { if (!e || e.code !== 'ERR_MODULE_NOT_FOUND') throw e; }
+}
+for (const app of apps.filter(a => !profiles[a])) {
+  test('SHARE2 ' + app + ': has a share2 test profile', () => {
+    throw new Error(app + ' registers a share adapter but hub/shared/tests/share2-profiles/' + app + '.mjs is missing');
+  });
+}
+const tested = apps.filter(a => profiles[a]);
 const openedContexts = [];
 async function freshPage(browser, baseURL) {
   const context = await browser.newContext({ baseURL, acceptDownloads: true });
@@ -27,23 +41,25 @@ async function ready(page, app) {
   // Any future share adapter must provide a working built-in example too.
   const run = page.getByRole('button', { name: 'Run analysis', exact: true });
   if (await run.count()) await run.click();
-  await expect(page.locator('#forest')).toBeVisible();
+  await expect(page.locator(profiles[app].plot)).toBeVisible();
 }
 async function showShare(page, app) {
   await page.evaluate(a => AlmFeatures.open(a, 'share'), app);
   await expect(page.getByRole('button', { name: 'Share this analysis', exact: true })).toBeVisible();
 }
 async function snapshot(page, app) {
-  return page.evaluate(a => {
+  const prof = profiles[app];
+  return page.evaluate(({ a, plot, region, closest, accessor }) => {
     const spec = AlmFeatures.get(a);
     let result;
     if (spec.text) result = spec.text.results();
-    else if (typeof window._almLastPropMA === 'function') result = window._almLastPropMA();
+    else if (accessor && typeof window[accessor] === 'function') result = window[accessor]();
     else throw new Error('Add the app last-results accessor for ' + a);
-    const regions = [document.querySelector('#res-body')?.closest('section')].filter(Boolean);
+    const node = document.querySelector(region);
+    const regions = [closest ? node?.closest(closest) : node].filter(Boolean);
     if (!regions.length) throw new Error('No main results region for ' + a);
     const text = regions.map(n => n.innerText).join('\n');
-    const svg = document.querySelector('#forest');
+    const svg = document.querySelector(plot);
     if (!svg) throw new Error('No main plot for ' + a);
     const clone = svg.cloneNode(true);
     clone.removeAttribute('id');
@@ -51,7 +67,7 @@ async function snapshot(page, app) {
     return { state: spec.share.get(), result: JSON.parse(JSON.stringify(result)),
       numbers: text.match(/[-+\u2212]?(?:\d+(?:[.,]\d+)*|\.\d+)(?:e[-+]?\d+)?/gi) || [],
       svg: clone.outerHTML, provenance: AlmFeaturesState.provenance };
-  }, app);
+  }, { a: app, plot: prof.plot, region: prof.results.selector, closest: prof.results.closest || null, accessor: prof.accessor || null });
 }
 async function share(page, app) {
   await showShare(page, app);
@@ -62,13 +78,13 @@ async function share(page, app) {
   return link;
 }
 async function custom(page, app) {
-  await page.evaluate(({ a, p }) => {
+  await page.evaluate(({ a, p, patch }) => {
     const b = AlmFeatures.get(a).share;
-    b.set({ ...b.get(), src: '5,40,Alpha \u00c9tude\n9,60,Beta\n14,75,Gamma\n2,30,Delta', trans: 'ft', tau: 'DL', axis: { x: [0, 0.8], xLog: false } });
+    b.set({ ...b.get(), ...patch });
     AlmFeaturesState.provenance = p;
-  }, { a: app, p: provenance });
+  }, { a: app, p: provenance, patch: profiles[app].custom });
 }
-for (const app of apps) {
+for (const app of tested) {
   test('SHARE2 ' + app + ': built-in example round-trip preserves every result and SVG', async ({ page, browser, baseURL }) => {
     await ready(page, app);
     const before = await snapshot(page, app);
@@ -129,16 +145,13 @@ for (const app of apps) {
   test('SHARE2 ' + app + ': 1000-row state downloads JSON and imports identical results', async ({ page, browser, baseURL }) => {
     test.setTimeout(180_000);
     await ready(page, app);
-    await page.evaluate(a => {
-      let seed = 773;
-      function rnd() { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return seed >>> 0; }
-      const rows = Array.from({ length: 1000 }, (_, i) => {
-        const n = 100 + rnd() % 900, x = 1 + rnd() % (n - 1);
-        const label = Array.from({ length: 32 }, () => String.fromCharCode(65 + rnd() % 26)).join('');
-        return x + ',' + n + ',Study ' + i + ' ' + label;
-      });
-      const b = AlmFeatures.get(a).share; b.set({ ...b.get(), src: rows.join('\n') });
-    }, app);
+    const big = profiles[app].big;
+    let seed = 773;
+    function rnd() { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return seed >>> 0; }
+    const bigRows = Array.from({ length: 1000 }, (_, i) => big.row(i, rnd));
+    await page.evaluate(({ a, field, text }) => {
+      const b = AlmFeatures.get(a).share; b.set({ ...b.get(), [field]: text });
+    }, { a: app, field: big.field, text: bigRows.join(big.join || '\n') });
     const expected = await snapshot(page, app);
     await showShare(page, app);
     await page.getByRole('button', { name: 'Share this analysis', exact: true }).click();
@@ -148,7 +161,7 @@ for (const app of apps) {
     expect(dl.suggestedFilename()).toMatch(new RegExp('^' + app + '-analysis-\\d{8}\\.json$'));
     const path = await dl.path(), text = readFileSync(path, 'utf8'), p = JSON.parse(text);
     expect(p.v).toBe(2); expect(text).toContain('\n  "app"');
-    expect(p.state.src.split('\n')).toHaveLength(1000);
+    expect(p.state[profiles[app].big.field].split(profiles[app].big.join || '\n')).toHaveLength(1000);
     await expect(page.getByLabel('Reproduce this analysis', { exact: true })).toHaveValue(new RegExp(dl.suggestedFilename().replaceAll('.', '\\.')));
     const restored = await freshPage(browser, baseURL); await ready(restored, app); await showShare(restored, app);
     await restored.getByLabel('Open analysis file', { exact: true }).setInputFiles(path);
@@ -189,7 +202,7 @@ for (const app of apps) {
   });
 }
 
-for (const app of apps) {
+for (const app of tested) {
   test('SHARE2 ' + app + ': PLANTED invalid analysis files preserve the current analysis', async ({ page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -204,9 +217,9 @@ for (const app of apps) {
       JSON.stringify({ ...payload, app: 'unknown-app' }),
       JSON.stringify({ ...payload, v: 99 }),
       JSON.stringify({ ...payload, provenance: [1] }),
-      JSON.stringify({ ...payload, state: { ...payload.state, trans: 'unknown-transform' } }),
-      JSON.stringify({ ...payload, state: { ...payload.state, axis: { x: [1, 0], xLog: false } } })
+      ...profiles[app].invalid.map(patch => JSON.stringify({ ...payload, state: { ...payload.state, ...patch } }))
     ];
+    expect(profiles[app].invalid.length).toBeGreaterThan(0);
     for (const contents of files) {
       const input = page.getByLabel('Open analysis file', { exact: true });
       await input.setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from(contents) });
