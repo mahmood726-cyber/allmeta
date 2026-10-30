@@ -30,7 +30,7 @@ function table(data, extra = false) {
   };
 }
 
-function harness(tables = [table([]), table(labelledRows())], values = result) {
+function harness(tables = [table([]), table(labelledRows())], values = result, source = adapterSource) {
   const input = {value: 'original input'};
   let runs = 0;
   const document = {
@@ -60,8 +60,8 @@ function harness(tables = [table([]), table(labelledRows())], values = result) {
   // Expose the private production predicate only inside this VM. Replay still
   // executes the complete adapter, including its original check accounting.
   const marker = '  async function replay(';
-  assert.ok(adapterSource.includes(marker));
-  vm.runInContext(adapterSource.replace(marker,
+  assert.ok(source.includes(marker));
+  vm.runInContext(source.replace(marker,
     '  window.testRenderMatches = renderMatches;\n' + marker), context);
   return {matches: () => window.testRenderMatches(values), input,
     get runs() { return runs; }, adapter: window.AlmMultilevelValidationAdapter};
@@ -157,4 +157,53 @@ test('P07-R3 control: full replay retains 528 checks and restores inputs', async
   assert.equal(replay.failed.length, 0);
   assert.equal(h.input.value, 'original input');
   assert.equal(h.runs, 45);
+});
+
+// Reconstruct only the documented historical defect (validate/README.md): all
+// seven rounded values occurring anywhere in the REML table. This is a mutation
+// of the current adapter in memory, not execution of a historical checkout.
+function valuePresenceAdapter() {
+  const start = adapterSource.indexOf('  function renderMatches(r) {');
+  const end = adapterSource.indexOf('  async function replay(', start);
+  assert.ok(start >= 0 && end > start);
+  return adapterSource.slice(0, start) + `  function renderMatches(r) {
+    const table = [...document.querySelectorAll('#summary table')].filter(t => !t.closest('#alm-plus'))[1];
+    if (!table) return false;
+    return keys.every(key => table.innerText.includes(r[key].toFixed(
+      key === 'sigma2Between' || key === 'sigma2Within' ? 4 : 3)));
+  }
+` + adapterSource.slice(end);
+}
+
+test('P07-R3 mutation: each labelled-cell assertion rejects the value-presence-only adapter', () => {
+  const loose = valuePresenceAdapter();
+  // A correctly rendered table passes both implementations.
+  assert.equal(harness(undefined, result, loose).matches(), true);
+  assert.equal(harness().matches(), true);
+  for (const [name, plant] of plants) {
+    const rows = labelledRows();
+    plant(rows);
+    const tables = [table([]), table(rows)];
+    const rejectsCorruption = source => assert.equal(harness(tables, result, source).matches(), false, name);
+    assert.throws(() => rejectsCorruption(loose), assert.AssertionError, name);
+    rejectsCorruption(adapterSource);
+  }
+});
+
+test('P07-R3 mutation: full-replay failure assertion rejects the value-presence-only adapter', async () => {
+  const rows = labelledRows(); plants[2][1](rows);
+  const rejectsCorruption = replay => {
+    assert.equal(replay.checks, 528);
+    assert.equal(replay.passed, 484);
+    assert.equal(replay.failed.length, 44);
+    assert.ok(replay.failed.every(f => f.quantity === 'UI_REML_render'));
+  };
+  for (const source of [valuePresenceAdapter(), adapterSource]) {
+    const h = harness([table([]), table(rows)], result, source);
+    const replay = await h.adapter.corpus.run(syntheticCorpus(), () => {});
+    if (source === adapterSource) rejectsCorruption(replay);
+    else assert.throws(() => rejectsCorruption(replay), assert.AssertionError);
+    assert.equal(h.input.value, 'original input');
+    assert.equal(h.runs, 45);
+  }
 });
