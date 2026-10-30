@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { engine, input, scaled } from './p16-dl-harness.mjs';
+import { referenceBytes } from './p16-dl-provenance.mjs';
 
 const E = engine();
 const fit = (rows, model = 'DL') => E.AlmIncoPlusCore.fitAll(E, rows, model);
@@ -80,7 +81,7 @@ test('P16-R1 control: native R fixture preserves exact input and script provenan
   assert.deepEqual(ref.input, input);
   for (const key of ['R', 'stats']) assert.ok(ref.provenance[key]);
   for (const [key, file] of [['input_md5', 'p16-dl-input.json'], ['input_r_md5', 'p16-dl-input.R'], ['script_md5', 'p16-dl-reference.R']]) {
-    assert.equal(ref.provenance[key], createHash('md5').update(readFileSync(new URL(file, import.meta.url))).digest('hex'));
+    assert.equal(ref.provenance[key], createHash('md5').update(referenceBytes(file)).digest('hex'));
   }
   assert.equal(ref.provenance.method, 'uncentred weighted QR; C=sum(w*(1-leverage)); native stats::pchisq');
   assert.equal(ref.provenance.serialization, 'base R; 17 significant digits');

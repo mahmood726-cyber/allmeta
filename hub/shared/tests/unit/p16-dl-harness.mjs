@@ -3,12 +3,12 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 export const appSource = readFileSync(new URL('../../../../nma-inconsistency/index.html', import.meta.url), 'utf8');
-export function engine() {
-  const start = appSource.indexOf('    function parse(text) {');
-  const end = appSource.indexOf('    let _lastInco = null;', start);
+export function engine(source = appSource) {
+  const start = source.indexOf('    function parse(text) {');
+  const end = source.indexOf('    let _lastInco = null;', start);
   assert.ok(start > 0 && end > start, 'Load the shipped parser and numerical functions without DOM startup');
   const context = vm.createContext({});
-  vm.runInContext(appSource.slice(start, end), context);
+  vm.runInContext(source.slice(start, end), context);
   vm.runInContext(readFileSync(new URL('../../../../nma-inconsistency/plus-core.js', import.meta.url), 'utf8'), context);
   return context;
 }

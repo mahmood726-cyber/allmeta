@@ -2,29 +2,19 @@
 // All reconstructed source and test output stay in the OS temporary directory.
 import assert from 'node:assert/strict';
 import { copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { appSource } from './p16-dl-harness.mjs';
+import { verifiedSources } from './p16-dl-source.mjs';
 
-const fixed = [
-  '      // C and sumW both scale as inverse squared measurement units. Judge',
-  '      // cancellation relative to sumW, so a change of units cannot zero tau2.',
-  '      if (denom <= Number.EPSILON * sumW) return 0;',
-].join('\r\n');
-assert.equal(appSource.split(fixed).length, 2, 'Reverse exactly one production patch');
-const oldSource = appSource.replace(fixed, '      if (denom <= 1e-12) return 0;');
-const oldHash = createHash('sha256').update(oldSource).digest('hex');
-assert.equal(oldHash, 'ce9a05a6bcd468f1b8d5ce655bd7e793f50e0d20084e5f36fa7cc9b386b43d54',
-  'Reconstructed source must match the recorded pre-fix app byte for byte');
+const { old: oldSource, historicalSha256: oldHash } = verifiedSources();
 
 const root = new URL('../../../../', import.meta.url);
 const temporaryRoot = mkdtempSync(join(tmpdir(), 'p16-dl-old-code-'));
 const unitDir = 'hub/shared/tests/unit/';
 const testPath = unitDir + 'p16-dl-scale.test.mjs';
 const files = ['nma-inconsistency/plus-core.js', testPath,
-  ...['p16-dl-harness.mjs', 'p16-dl-input.json', 'p16-dl-input.R',
+  ...['p16-dl-harness.mjs', 'p16-dl-provenance.mjs', 'p16-dl-input.json', 'p16-dl-input.R',
     'p16-dl-reference.R', 'p16-dl-reference.json'].map(file => unitDir + file)];
 for (const file of files) {
   const target = join(temporaryRoot, file);
@@ -33,7 +23,9 @@ for (const file of files) {
 }
 writeFileSync(join(temporaryRoot, 'nma-inconsistency/index.html'), oldSource);
 const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap', join(temporaryRoot, testPath)],
-  { cwd: temporaryRoot, encoding: 'utf8' });
+  // An isolated environment prevents an enclosing node:test worker context
+  // from suppressing this nested test run. No parent environment is read.
+  { cwd: temporaryRoot, encoding: 'utf8', env: {}, timeout: 30000 });
 if (result.error) throw result.error;
 const output = result.stdout + result.stderr;
 writeFileSync(join(temporaryRoot, 'old-code.tap'), output);
