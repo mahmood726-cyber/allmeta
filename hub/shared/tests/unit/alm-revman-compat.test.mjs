@@ -12,8 +12,9 @@ test('legacy reader retains the supplied bytes under the repository platform lin
   // supplied CRLF bytes and the same source with LF, not a whitespace-insensitive hash.
   // Re-pinned deliberately: once for the IPD_OUTCOME import (unit/revman-reader-ipd.test.mjs), and again for CONT_OUTCOME /
   // IV_OUTCOME import, child-element NAME/GROUP_LABEL + YEAR, and the explicit outcome.skipped list
-  // (unit/revman-reader-legacy.test.mjs). Same strictness: exact CRLF and LF bytes; any other edit still fails here.
-  const expected=['235fc47bb8b98cc6c71e353a37c1cd547ec85c22fafa2ba183cfd3f79fbf025b','f756b108b65a5ffb8f86b007ff18e419b14aaffa27bce920f4590f9c16f8e401'];
+  // (unit/revman-reader-legacy.test.mjs), and again for unread COMPARISON elements and impossible dichotomous counts on
+  // the skipped list (unit/revman-reader-gaps.test.mjs). Same strictness: exact CRLF and LF bytes; any other edit still fails here.
+  const expected=['e4fbc08f5fcef386497ec99b91e83102c6f4493927c9c24f9cec5de459a7469f','4705c4e1a09b74b7192fd7486632376e9282648916aca093effdbf6a732d709b'];
   assert.ok(expected.includes(hash(legacy)));
   assert.equal(expected.includes(hash(Buffer.concat([legacy,Buffer.from('// planted rewrite')]))),false);
 });

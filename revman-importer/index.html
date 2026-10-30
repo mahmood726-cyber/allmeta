@@ -157,7 +157,8 @@
         renderSkipped(parsed);
     }
 
-    // Rows the reader could not use (outcome.skipped) are listed by name, never dropped silently.
+    // Rows the reader could not use (outcome.skipped) are listed by name, never dropped silently; so is an
+    // element it does not read (an "unsupported" outcome; row null when the element holds no data rows).
     function skippedRows(parsed) {
       var out = [];
       parsed.comparisons.forEach(function (c) {
@@ -171,10 +172,10 @@
       var list = skippedRows(parsed);
       if (!list.length) return '';
       return '<div id="skipped-rows" class="err" role="alert" style="margin-top:0.5rem"><strong>' + list.length +
-        ' study row' + (list.length === 1 ? ' was' : 's were') + ' not imported</strong> (unusable values in the file):<ul style="margin:0.3rem 0 0 1.1rem;padding:0">' +
+        ' study row' + (list.length === 1 ? ' was' : 's were') + ' not imported</strong> (unusable values or unsupported content in the file):<ul style="margin:0.3rem 0 0 1.1rem;padding:0">' +
         list.map(function (x) {
-          return '<li>' + escapeHtml(x.comparison) + ' &#8250; ' + escapeHtml(x.outcome) + ', row ' + x.row.row + ', study ' +
-            escapeHtml(x.row.study || x.row.studyId || '(no STUDY_ID)') + ': ' + escapeHtml(x.row.reason) + '</li>';
+          var where = x.row.row == null ? '' : ', row ' + x.row.row + ', study ' + escapeHtml(x.row.study || x.row.studyId || '(no STUDY_ID)');
+          return '<li>' + escapeHtml(x.comparison) + ' &#8250; ' + escapeHtml(x.outcome) + where + ': ' + escapeHtml(x.row.reason) + '</li>';
         }).join('') + '</ul></div>';
     }
 

@@ -51,11 +51,21 @@
  * <GROUP_LABEL_1>…</GROUP_LABEL_1>); the study year from YEAR_OF_PUB, else YEAR.
  *
  * A data row that cannot be used (a missing or non-numeric value, SD/SE <= 0,
- * N <= 0, VAR <= 0) is never dropped silently: it is listed on its outcome as
+ * N <= 0, VAR <= 0; for dichotomous rows also events or totals that are not
+ * whole numbers, events < 0, totals <= 0, or events > total) is never dropped
+ * silently: it is listed on its outcome as
  * outcome.skipped = [ { row, studyId, study, reason } ] (row = 1-based position
  * among that outcome's data rows). The key is present only when a row was
  * skipped. meta::read.rm5 keeps such rows (NA or the stored value) and refuses
  * no file for them, so neither does this reader.
+ *
+ * An element directly inside a COMPARISON that this reader does not read (for
+ * example OTHER_OUTCOME, an outcome type it does not support) is not dropped
+ * either: it becomes an outcome { name, type: "unsupported", tag, studies: [],
+ * skipped } whose skipped list holds one entry per data row (element with a
+ * STUDY_ID) it contains, or a single { row: null, studyId: null, study: null,
+ * reason } entry when it holds none. Outcomes nested inside such an element
+ * are read as usual and not reported twice.
  *
  * Returns from parse(buffer):
  *   {
@@ -64,7 +74,7 @@
  *     comparisons: [ {
  *       id, name,
  *       outcomes: [ {
- *         name, type: "binary" | "continuous" | "o_e_var" | "generic_iv",
+ *         name, type: "binary" | "continuous" | "o_e_var" | "generic_iv" | "unsupported",
  *         effectMeasure: "OR" | "RR" | "RD" | "PETO_OR" | "MD" | "SMD" | "HR",
  *         arm1Name, arm2Name,
  *         studies: [ { id, name, year, scale, arms: [{treatment, events, n} | {treatment, mean, sd, n}] } ],
@@ -147,6 +157,22 @@
     var meta = studyIndex[sid];
     list.push({ row: i + 1, studyId: sid, study: meta ? meta.name : sid, reason: problems.join("; ") });
   }
+  // Dichotomous counts must be whole numbers, events >= 0, totals > 0 and events <= total
+  // (the arm rule ma-comparisons-v1 enforces at push time, plus whole numbers); checked
+  // here so an impossible row is reported at read time instead of passed on.
+  function _countProblems(d, v) {
+    var problems = [], ok = {};
+    ["EVENTS_1", "TOTAL_1", "EVENTS_2", "TOTAL_2"].forEach(function (k) {
+      var isTotal = k.indexOf("TOTAL") === 0;
+      ok[k] = Number.isInteger(v[k]) && (isTotal ? v[k] > 0 : v[k] >= 0);
+      if (!ok[k]) problems.push(k + " must be a whole number " + (isTotal ? "> 0" : ">= 0") + " (is " + _attr(d, k) + ")");
+    });
+    ["1", "2"].forEach(function (a) {
+      var e = "EVENTS_" + a, t = "TOTAL_" + a;
+      if (ok[e] && ok[t] && v[e] > v[t]) problems.push(e + " exceeds " + t + " (" + _attr(d, e) + " > " + _attr(d, t) + ")");
+    });
+    return problems;
+  }
   function _withSkipped(outcome, skipped) {
     if (skipped.length) outcome.skipped = skipped;
     return outcome;
@@ -198,6 +224,7 @@
       var d = dataNodes[i];
       var sid = _attr(d, "STUDY_ID");
       var v = {}, problems = _rowValues(d, ["EVENTS_1", "TOTAL_1", "EVENTS_2", "TOTAL_2"], [], v);
+      if (!problems.length) problems = _countProblems(d, v);
       if (problems.length) { _skip(skipped, i, sid, studyIndex, problems); continue; }
       var meta = studyIndex[sid] || { id: sid, name: sid, year: null };
       studies.push({
@@ -343,6 +370,33 @@
     }, skipped);
   }
 
+  // Direct children of a COMPARISON this reader reads; any other element is reported.
+  var _OUTCOME_TAGS = ["DICH_OUTCOME", "CONTINUOUS_OUTCOME", "CONT_OUTCOME", "O_E_AND_VARIANCE_OUTCOME", "IPD_OUTCOME", "IV_OUTCOME"];
+  var _KNOWN_CHILDREN = _OUTCOME_TAGS.concat(["NAME", "GROUP_LABEL_1", "GROUP_LABEL_2"]);
+  function _elementChildren(el) {
+    var out = [], kids = el && (el.children || el.childNodes);
+    for (var i = 0; kids && i < kids.length; i++) if (kids[i] && kids[i].nodeType !== 3 && kids[i].nodeType !== 8 && kids[i].tagName) out.push(kids[i]);
+    return out;
+  }
+  // Data rows (elements with a STUDY_ID) inside `el`, outside any outcome this reader reads
+  // (those are imported by the getElementsByTagName passes); hasKnown records whether one was seen.
+  function _unreadRows(el, acc) {
+    _elementChildren(el).forEach(function (c) {
+      if (_OUTCOME_TAGS.indexOf(c.tagName) >= 0) { acc.hasKnown = true; return; }
+      if (_attr(c, "STUDY_ID") != null) acc.rows.push(c);
+      _unreadRows(c, acc);
+    });
+    return acc;
+  }
+  function _readUnsupported(node, studyIndex) {
+    var tag = node.tagName, acc = _unreadRows(node, { rows: [], hasKnown: false }), skipped = [];
+    if (!acc.rows.length && acc.hasKnown) return null;
+    var reason = tag + " is not an outcome type this importer reads";
+    for (var i = 0; i < acc.rows.length; i++) _skip(skipped, i, _attr(acc.rows[i], "STUDY_ID"), studyIndex, [reason]);
+    if (!acc.rows.length) skipped.push({ row: null, studyId: null, study: null, reason: tag + " element is not read by this importer" });
+    return { name: _label(node, "NAME") || tag, type: "unsupported", tag: tag, studies: [], skipped: skipped };
+  }
+
   function _readComparison(node, studyIndex) {
     var name = _label(node, "NAME") || "Comparison";
     var g1 = _label(node, "GROUP_LABEL_1"), g2 = _label(node, "GROUP_LABEL_2");
@@ -360,6 +414,11 @@
     for (var p = 0; p < ipdNodes.length; p++) outcomes.push(_readOEVarianceOutcome(ipdNodes[p], studyIndex, g1, g2, _IPD));
     var ivNodes = node.getElementsByTagName("IV_OUTCOME");
     for (var r = 0; r < ivNodes.length; r++) outcomes.push(_readIVOutcome(ivNodes[r], studyIndex, g1, g2));
+    _elementChildren(node).forEach(function (c) {
+      if (_KNOWN_CHILDREN.indexOf(c.tagName) >= 0) return;
+      var u = _readUnsupported(c, studyIndex);
+      if (u) outcomes.push(u);
+    });
 
     return {
       id: _attr(node, "ID") || ("comp_" + Math.random().toString(36).slice(2, 8)),

@@ -42,3 +42,45 @@ test('revman-importer lists every row the reader skipped, imports CONT/IV outcom
   await expect(page.locator('#skipped-rows')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('revman-importer lists elements the reader does not read and impossible dichotomous counts at read time', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push('PAGE: ' + e.message));
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
+  await page.goto(origin() + '/revman-importer/index.html');
+  const status = page.locator('#status'), box = page.locator('#skipped-rows');
+
+  // Gap 1: an OTHER_OUTCOME and an unrecognised element inside the comparison are reported, not dropped.
+  await page.locator('#picker').setInputFiles(fixture('./fixtures/revman-gaps/unknown-element.rm5'));
+  await expect(status).toHaveText('Parsed: 1 comparisons, 2 study rows. 3 rows not imported (listed under Review metadata).');
+  await expect(status).toHaveClass('err');
+  await expect(box.locator('li')).toHaveText([
+    'Synthetic unknown-element comparison › Synthetic other data table, row 1, study Synthetic Unk Beta: OTHER_OUTCOME is not an outcome type this importer reads',
+    'Synthetic unknown-element comparison › Synthetic other data table, row 2, study Synthetic Unk Gamma: OTHER_OUTCOME is not an outcome type this importer reads',
+    'Synthetic unknown-element comparison › SYNTHETIC_NOTE: SYNTHETIC_NOTE element is not read by this importer',
+  ]);
+  await expect(page.locator('#preview-host tbody tr')).toHaveCount(2);
+  await page.locator('#btn-push').click();
+  await expect(page.locator('#push-status')).toContainText('2 studies pushed');
+  await expect(page.locator('#push-status')).not.toContainText('skipped');
+
+  // Gap 2: events > n, negative and non-whole counts are listed when the file is read; the push has nothing left to drop.
+  await page.locator('#picker').setInputFiles(fixture('./fixtures/revman-gaps/dich-counts.rm5'));
+  await expect(status).toHaveText('Parsed: 1 comparisons, 2 study rows. 5 rows not imported (listed under Review metadata).');
+  await expect(box.locator('li')).toHaveText([
+    'Synthetic count comparison › Synthetic dichotomous events, row 3, study Synthetic Cnt Gamma: EVENTS_1 exceeds TOTAL_1 (31 > 30)',
+    'Synthetic count comparison › Synthetic dichotomous events, row 4, study Synthetic Cnt Delta: EVENTS_2 must be a whole number >= 0 (is -2)',
+    'Synthetic count comparison › Synthetic dichotomous events, row 5, study Synthetic Cnt Epsilon: EVENTS_1 must be a whole number >= 0 (is 2.5)',
+    'Synthetic count comparison › Synthetic dichotomous events, row 6, study Synthetic Cnt Zeta: TOTAL_2 must be a whole number > 0 (is 0)',
+    'Synthetic count comparison › Synthetic dichotomous events, row 7, study Synthetic Cnt Eta: TOTAL_1 must be a whole number > 0 (is 40.5); EVENTS_2 exceeds TOTAL_2 (45 > 44)',
+  ]);
+  await expect(page.locator('#preview-host tbody tr')).toHaveCount(2);
+  await page.locator('#btn-push').click();
+  await expect(page.locator('#push-status')).toContainText('2 studies pushed');
+  await expect(page.locator('#push-status')).toContainText('5 rows of this outcome not imported from the file');
+  await expect(page.locator('#push-status')).not.toContainText('skipped (incomplete or impossible counts)');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('ma-comparisons-v1') || 'null'));
+  expect(stored.studies.map(s => [s.id, s.arms.map(a => [a.events, a.n])])).toEqual([
+    ['STD-Cnt-A', [[4, 40], [9, 42]]], ['STD-Cnt-B', [[0, 55], [13, 53]]]]);
+  expect(errors).toEqual([]);
+});
