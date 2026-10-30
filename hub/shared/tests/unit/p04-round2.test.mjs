@@ -208,3 +208,49 @@ test('control: unavailable saved comparator selects the first incoming treatment
   h.import(savedState('Missing'));
   assertReference(h, 'A');
 });
+
+for (const [refusal, rejectedData] of [
+  ['malformed contrasts', data.replace('0.2', 'oops')],
+  ['empty contrasts', '']
+]) {
+  function refusedImport() {
+    const h = harness(savedState('A'));
+    h.run(); // Establish the previous valid save even on the reconstructed pre-R2 code.
+    h.import({ ...savedState('B'), data: rejectedData });
+    assert.equal(h.get('stats-wrap').innerHTML, '', 'Refused import clears previous results');
+    assert.equal(h.get('ref-host').innerHTML, '', 'Refused import clears previous estimates');
+    assert.equal(h.get('analysis-status').hidden, true, 'Refused import is not successful');
+    assert.deepEqual(h.get('f-ref').children.map(option => option.value), ['A', 'B', 'C'],
+      'Previous comparator options remain available during refusal');
+    assertSaved(h, 'A');
+    return h;
+  }
+
+  for (const event of ['input', 'change']) {
+    test(`plant P04-R3: ${event} selection supersedes imported B after ${refusal}`, async () => {
+      const h = refusedImport();
+      h.get('f-ref').value = 'C'; h.get('f-ref').dispatch(event);
+      assert.equal(h.get('f-ref').value, 'C', 'Manual selection survives the refused rerender');
+      assert.equal(h.get('analysis-status').hidden, true);
+      h.get('f-data').value = data; h.get('f-data').dispatch('input');
+      assertReference(h, 'C'); assertSaved(h, 'C');
+      const exported = await h.export();
+      assert.equal(exported.ref, 'C');
+      const reloaded = harness(exported);
+      assertReference(reloaded, 'C'); assertSaved(reloaded, 'C');
+    });
+  }
+
+  test(`control: imported B survives ${refusal} without a later comparator selection`, async () => {
+    const h = refusedImport();
+    h.get('f-title').value = 'Correcting the input'; h.get('f-title').dispatch('input');
+    h.run();
+    assert.equal(h.get('analysis-status').hidden, true);
+    h.get('f-data').value = data; h.get('f-data').dispatch('input');
+    assertReference(h, 'B'); assertSaved(h, 'B');
+    const exported = await h.export();
+    assert.equal(exported.ref, 'B');
+    const reloaded = harness(exported);
+    assertReference(reloaded, 'B'); assertSaved(reloaded, 'B');
+  });
+}

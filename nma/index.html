@@ -797,6 +797,10 @@
           } }
         ]
       });
+      // A later manual choice supersedes an import even while parsing is refused.
+      for (const type of ["input", "change"]) {
+        document.getElementById("f-ref").addEventListener(type, function () { _pendingRef = null; });
+      }
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) { el.addEventListener("input", render); if (el.tagName === "SELECT") el.addEventListener("change", render); } }
       document.getElementById("f-ref").addEventListener("change", render);
       document.getElementById("btn-league").addEventListener("click", onDownloadLeague);
