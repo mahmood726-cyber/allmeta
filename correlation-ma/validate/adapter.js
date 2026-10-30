@@ -95,7 +95,17 @@ function evaluate(c,r,page,check,replaying) {
   check('page_text',serial(pageText()),serial(page),'exact');
   display(a,check);
   if(r.status==='refused') return;
-  check('output.fields',serial(a ? Object.keys(a).sort():[]),serial(FIELDS.slice().sort()),'exact');
+  // Validate provenance within the existing field check to retain the pinned count.
+  const build=window.AlmBuildInfo;
+  const actual={fields:a ? Object.keys(a).sort():[]};
+  const expected={fields:(build ? [...FIELDS,'producedBy']:FIELDS).slice().sort()};
+  if(build) {
+    const p=a?.producedBy;
+    actual.producedBy=p && typeof p==='object' && !Array.isArray(p)
+      ? {fields:Object.keys(p).sort(),version:p.version,sha:p.sha}:null;
+    expected.producedBy={fields:['sha','version'],version:build.version,sha:build.sha};
+  }
+  check('output.fields',serial(actual),serial(expected),'exact');
   check('schema',a?._schema,'corr-ma-results-v1','exact');
   check('k',a?.k,r.k,'exact'); check('method',a?.method,r.method,'exact');
   check('membership',serial(a?.studies),serial(r.studies.map(s=>({label:s.label,r:s.r,n:s.n}))),'exact');
