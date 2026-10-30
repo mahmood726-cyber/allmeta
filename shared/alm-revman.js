@@ -423,7 +423,7 @@
     const field=(label,id)=>{const l=el('label',label+' ');return el('input',null,l,{id,type:'text'});};
     const exportOutcome=field('Export outcome name','alm-revman-export-outcome');
     const arm1=field('Experimental arm / intervention','alm-revman-arm1'),arm2=field('Control arm / intervention','alm-revman-arm2');
-    const effect=select('Export effect measure','alm-revman-effect');
+    const effect=select('Measure written to the RevMan file','alm-revman-effect');
     el('option','Choose effect measure',effect,{value:''});
     ['OR','RR','HR','MD','SMD','RD'].forEach(m=>el('option',m,effect,{value:m}));effect.value='';
     if(spec.entry.schema!=='generic'){effect.disabled=true;el('p','Arm-level results are exported as entered; choose the pooling effect measure in RevMan.');}

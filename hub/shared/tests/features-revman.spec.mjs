@@ -103,7 +103,7 @@ test('Web export requires outcome/arm metadata and downloads three current-input
   await page.getByLabel('Export outcome name',{exact:true}).fill('Synthetic outcome');
   await page.getByLabel('Experimental arm / intervention',{exact:true}).fill('A');
   await page.getByLabel('Control arm / intervention',{exact:true}).fill('B');
-  await page.getByLabel('Export effect measure',{exact:true}).selectOption('HR');
+  await page.getByLabel('Measure written to the RevMan file',{exact:true}).selectOption('HR');
   for(const [label,header] of [['information','Study,Year'],['arms','Study,Arm,Description,Intervention'],['results','Study,Outcome,Data type,Effect measure,Arm,Reference arm']]){
     const ready=page.waitForEvent('download');
     await page.getByRole('button',{name:'Export study '+label+' CSV',exact:true}).click();
@@ -170,7 +170,7 @@ test('pubbias binary import uses native zero-cell inputs; incompatible generic m
 
 test('pubbias Web export measure follows the current native data type',async({page})=>{
   await open(page,'pubbias-tests');
-  const measure=page.getByLabel('Export effect measure',{exact:true});
+  const measure=page.getByLabel('Measure written to the RevMan file',{exact:true});
   await expect(measure).toBeEnabled();
   await page.locator('#format').selectOption('binary');await expect(measure).toBeDisabled();
   await page.locator('#format').selectOption('te-se');await expect(measure).toBeEnabled();
@@ -188,7 +188,7 @@ for(const binary of [true,false])test('pubbias '+(binary?'binary':'generic')+' f
   await page.locator('#src').fill(edited);await page.locator('#btn-run').click();
   const expected=await page.locator('#body').innerText();expect(expected.trim()).not.toBe('');
   const provenance=await page.evaluate(()=>AlmFeaturesState.provenance);
-  const measure=page.getByLabel('Export effect measure',{exact:true});
+  const measure=page.getByLabel('Measure written to the RevMan file',{exact:true});
   await page.locator('#format').selectOption(other);
   expect(await page.locator('#src').inputValue()).toBe(edited);
   await expect(page.locator('#input-error')).toContainText('Input not used');
@@ -270,7 +270,7 @@ test.describe('page witnesses for independent RevMan R check',()=>{
     await page.getByLabel('Export outcome name',{exact:true}).fill('Synthetic R check outcome');
     await page.getByLabel('Experimental arm / intervention',{exact:true}).fill('Experimental');
     await page.getByLabel('Control arm / intervention',{exact:true}).fill('Control');
-    if(c.app==='heterogeneity')await page.getByLabel('Export effect measure',{exact:true}).selectOption(c.measure);
+    if(c.app==='heterogeneity')await page.getByLabel('Measure written to the RevMan file',{exact:true}).selectOption(c.measure);
     for(const part of ['information','arms','results'])await downloaded('Export study '+part+' CSV','-web-'+part+'.csv');
     // Reimport the downloaded study table through the file UI. No in-memory shortcut.
     await page.getByLabel('RevMan file',{exact:true}).setInputFiles({name:'roundtrip.csv',mimeType:'text/csv',buffer:Buffer.from(exported)});
