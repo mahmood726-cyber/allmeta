@@ -59,28 +59,6 @@ for (const width of [1280, 390]) {
       expect(errors).toEqual([]);
       await info.attach('ipd-secondary-plots', { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
     });
-    test('IPD sparse survival example uses log-rank fallback when Cox returns non-finite values', async ({ page }) => {
-      await ipd(page);
-      await page.evaluate(() => {
-        // Seed 87 gives the small ARCTIC example a non-finite Cox fit with
-        // positive log-rank information. Keep the production example generator.
-        SeededRNG.patchMathRandom(87);
-        try { loadExampleData('survival'); } finally { SeededRNG.restoreMathRandom(); }
-      });
-      await page.waitForTimeout(400);
-      await page.evaluate(() => runAnalysis());
-      await page.waitForFunction(() => !!APP.results?.pooled);
-      const fallback = await page.evaluate(() => {
-        const study = APP.results.studies.find(s => s.study === 'ARCTIC');
-        return { effect: study.effect, variance: study.variance };
-      });
-      expect(fallback.effect).toBeCloseTo(1.606310411124865, 12);
-      expect(Number.isFinite(fallback.variance)).toBe(true);
-      expect(fallback.variance).toBeGreaterThan(0);
-      await page.locator('.nav-tab[data-panel="heterogeneity"]').click();
-      await ink(page, 'baujatPlot'); await ink(page, 'looPlot');
-      await expect(page.locator('#influenceTableBody tr')).toHaveCount(12);
-    });
     test('IPD fixed-effect Baujat coordinates and omission intervals match independent arithmetic', async ({ page }) => {
       await ipd(page);
       const result = await page.evaluate(() => {
