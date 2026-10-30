@@ -42,6 +42,7 @@
 
   // eValues(measure, point, lo, hi, {rare}) → { rr:{point,lo,hi}, point, ci }.
   // `ci` is the E-value for the CI bound nearest the null (1 if the CI crosses the null).
+  // It is null when that bound is unavailable.
   function eValues(measure, point, lo, hi, opts) {
     opts = opts || {};
     var rare = !!opts.rare;
@@ -49,7 +50,7 @@
     var rrLo = (lo != null && isFinite(lo)) ? approxRR(measure, lo, rare) : null;
     var rrHi = (hi != null && isFinite(hi)) ? approxRR(measure, hi, rare) : null;
     var ePoint = _e(rr);
-    var eCI = 1;
+    var eCI = null;
     if (rr >= 1) { // effect above null → the lower CI bound is nearest the null
       if (rrLo != null) eCI = (rrLo <= 1) ? 1 : _e(rrLo);
     } else {       // effect below null → the upper CI bound is nearest the null
