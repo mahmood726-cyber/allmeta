@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import vm from 'node:vm';
 
 export const root = new URL('../../../../', import.meta.url);
@@ -42,7 +43,11 @@ export function harness() {
   context.MaStudies = {};
   vm.runInContext(read('shared/ma-core.js'), context);
   vm.runInContext(read('hub/shared/analysis-lifecycle.js'), context);
-  const html = read('proportion-ma/index.html');
+  // Replay the same assertions against an explicit, unchanged historical page.
+  // Shared dependencies, corpus, references and test code stay in this tree.
+  const html = process.env.P09_PROPORTION_PAGE
+    ? readFileSync(resolve(process.env.P09_PROPORTION_PAGE), 'utf8')
+    : read('proportion-ma/index.html');
   const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).find(s => s.includes('function logitTransform'));
   const end = script.indexOf('    // ---- module init ----');
   if (end < 0) throw new Error('Page engine boundary missing');

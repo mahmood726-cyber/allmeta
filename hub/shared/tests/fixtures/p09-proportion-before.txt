@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <link rel="stylesheet" href="../shared/forced-colors.css">
+  <meta name="description" content="Meta-analysis of proportions — raw, logit, and Freeman-Tukey double-arcsine pooling with forest plot.">
+  <meta name="color-scheme" content="light dark">
+  <title>Proportion MA</title>
+  <style>
+    :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
+            --accent:#2c5e8a; --accent-soft:#e8f0f7; --warn:#b05a1c;
+            --warn-soft:#fbeedd; --border:#d9d5cc; --input-bg:#fbfaf6; }
+    @media (prefers-color-scheme:dark) {
+      :root { --bg:#141618; --panel:#1c1f23; --ink:#e7e4dc; --muted:#98a0ae;
+              --accent:#6aa6d4; --accent-soft:#223044; --warn:#e0a268;
+              --warn-soft:#3a2d1c; --border:#2f343a; --input-bg:#23272c; }
+    }
+    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; } }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; }
+    header { padding: 2rem clamp(1rem, 3vw, 3rem) 1rem; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 3rem); display: grid; gap: 1.5rem;
+           grid-template-columns: minmax(280px, 22rem) 1fr; align-items: start; }
+    @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 600;
+                text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    textarea { width: 100%; min-height: 10rem; padding: 0.5rem 0.65rem;
+               border: 1px solid var(--border); background: var(--input-bg); color: var(--ink);
+               border-radius: 6px; font: 0.86rem/1.4 "SF Mono", Consolas, monospace; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 0.55rem; }
+    label .hint { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+    select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
+      background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
+    button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
+                     border-radius: 6px; font-weight: 600; font-size: 0.88rem; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 1rem; }
+    th, td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    td code { background: var(--accent-soft); padding: 0.1rem 0.4rem; border-radius: 4px; }
+    .pooled-row { background: var(--accent-soft); font-weight: 600; }
+    svg { width: 100%; height: auto; display: block; }
+    footer { padding: 1rem clamp(1rem, 3vw, 3rem) 2rem; color: var(--muted); font-size: 0.8rem; }
+    footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
+               padding-top: 0.75rem; border-top: 1px dashed var(--border); align-items: center; }
+  </style>
+  <link rel="stylesheet" href="../hub/app-style.css">
+  <!-- Cycle 2.6 shared UX modules — wired per RETROFIT_AUDIT.md:
+       wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
+  <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/plot-export.js"></script>
+  <script src="../hub/shared/axis-controls.js"></script>
+  <script src="../hub/shared/results-export.js"></script>
+  <script src="../hub/shared/url-state.js"></script>
+  <script src="../hub/shared/reset-undo.js"></script>
+  <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/ma-core.js"></script>
+  <script src="../shared/build-info.js"></script>
+  <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../shared/truthcert-export.js"></script>
+  <script src="../shared/truthcert-ui.js"></script>
+  <script src="../shared/autosave.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main" style="position:absolute;left:-9999px;top:-9999px;z-index:99999;padding:6px 10px;background:#000;color:#fff;border-radius:4px;text-decoration:none" onfocus="this.style.left='12px';this.style.top='12px'" onblur="this.style.left='-9999px';this.style.top='-9999px'">Skip to main content</a>
+<a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">&#8592; allmeta</a>
+  <header>
+    <h1>Proportion MA — single-arm pooling</h1>
+    <p>Pool proportions (or incidences / event rates) across single-arm studies with three transformations. Random-effects DL / PM across studies. Clopper-Pearson per-study CIs; back-transformed pooled CI.</p>
+  </header>
+  <main id="main">
+    <section class="panel">
+      <h2>Input</h2>
+
+      <!-- csv-upload mount: file picker for events,total,label CSV files -->
+
+
+      <label style="display:block; font-size:0.85rem; margin-bottom:0.4rem; margin-top:0.6rem">
+        <span>Studies — <code>events, total, label (optional)</code></span>
+        <textarea id="src" aria-label="Input">12, 150, Study A
+8, 90, Study B
+20, 220, Study C
+5, 60, Study D
+15, 180, Study E
+3, 40, Study F
+25, 300, Study G</textarea></label>
+      <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+      <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
+      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <div id="alm-csv-mount"></div>
+
+      <label>
+        <span>Transformation</span>
+        <select id="trans" aria-label="Trans">
+          <option value="ft">Freeman-Tukey double arcsine</option>
+          <option value="logit" selected>Logit</option>
+          <option value="raw">Raw (no transform) — not recommended</option>
+        </select>
+        <span class="hint">Freeman-Tukey was historically recommended for extreme event rates, but Schwarzer G, Chemaitelly H, Abu-Raddad LJ, Rücker G. <em>Res Synth Methods</em> 2019;10:476-483 showed the inverse (back-)transformation has no single well-defined value (it depends on the chosen study size, e.g. harmonic mean), so the pooled proportion and its back-transformed CI can be seriously misleading; for rare events prefer logit with a boundary-only continuity correction or a GLMM in <code>metafor::rma.glmm</code>.</span>
+      </label>
+      <label>
+        <span>Random-effects <span data-gloss="tau2">&tau;&sup2;</span> estimator</span>
+        <select id="tau-est" aria-label="Tau est">
+          <option value="PM" selected>Paule-Mandel</option>
+          <option value="DL">DerSimonian-Laird</option>
+          <option value="FE">Fixed-effect only</option>
+        </select>
+        <span class="hint">Per advanced-stats.md, DL is biased low for k&lt;10 — Paule-Mandel is the safer default.</span>
+      </label>
+
+      <!-- axis-controls mount -->
+      <div id="alm-axis-mount" style="margin-top:0.75rem"></div>
+
+      <!-- reset-undo mount -->
+      <div id="alm-undo-mount" style="margin-top:0.5rem"></div>
+    </section>
+
+    <section class="panel">
+      <div id="k-warn" style="display:none;background:var(--warn-soft);border-left:3px solid var(--warn);color:var(--warn);padding:0.55rem 0.8rem;border-radius:4px;font-size:0.82rem;margin-bottom:0.6rem" role="status" aria-live="polite"></div>
+      <h2>Studies &amp; pooled</h2>
+      <table>
+        <thead><tr><th>Study</th><th>events/n</th><th>p</th><th>95% CI</th><th>weight</th></tr></thead>
+        <tbody id="res-body"></tbody>
+      </table>
+      <h2 style="margin-top:0.5rem">Heterogeneity</h2>
+      <div id="het"></div>
+      <h2 style="margin-top:0.8rem">Forest plot</h2>
+      <svg id="forest" viewBox="0 0 600 280" role="img" aria-label="Forest plot of proportions"></svg>
+
+      <!-- plot-export mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Download plots:</span>
+        <div id="alm-plot-mount"></div>
+      </div>
+
+      <!-- results-export mount -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Export results:</span>
+        <div id="alm-export-mount"></div>
+      </div>
+
+      <!-- cross-tool bus (ma-studies-v1) producer -->
+      <div class="actions">
+        <span style="font-size:0.8rem;color:var(--muted)">Cross-tool:</span>
+        <button type="button" id="btn-bus-save" title="Send per-study logit proportions + SE (metafor PLO scale) to the shared ma-studies-v1 bus so forest-plot, funnel-plot, influence and other tools can pool them without re-typing." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit">Send to bus</button>
+        <button type="button" id="btn-verify-in-r" title="Push the per-study logit proportions to the shared bus and open WebR Validator pre-loaded with metafor — independent R verification in your browser." style="background:#2a6cae;color:#fff;border:1px solid #2a6cae;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer">Verify in R</button>
+        <button type="button" id="btn-truthcert" title="Download an HMAC-signed TruthCert receipt of the current per-study logit proportions — re-verifiable offline with your signing key." style="background:#7c3aed;color:#fff;border:1px solid #7c3aed;border-radius:6px;padding:0.45rem 0.85rem;font-weight:600;cursor:pointer">TruthCert receipt</button>
+        <button type="button" id="btn-truthcert-key" title="Set or generate the TruthCert signing key (shared across all allmeta apps)." style="border:1px solid var(--border);border-radius:6px;padding:0.45rem 0.85rem;cursor:pointer;background:transparent;color:inherit">&#128273; Key</button>
+      </div>
+    </section>
+  </main>
+  <footer>
+    Freeman-Tukey: <code>FT = &frac12;(arcsin&radic;(x/(n+1)) + arcsin&radic;((x+1)/(n+1)))</code>, variance <code>1/(4n+2)</code> (Miller 1978). <strong>Caveat (Schwarzer G, Chemaitelly H, Abu-Raddad LJ, Rücker G. <em>Res Synth Methods</em> 2019;10:476-483):</strong> the Freeman-Tukey inverse (back-)transformation has no single well-defined value — it depends on the study size used (here the harmonic mean of n), so the pooled proportion and its back-transformed CI can be seriously misleading and may fall outside [0,1] or invert; prefer logit + boundary-only continuity correction or GLMM (<code>metafor::rma.glmm</code>) for rare-event proportions. Logit: <code>ln(p/(1-p))</code>, variance <code>1/x + 1/(n-x)</code>; the 0.5 continuity correction (giving <code>1/(x+0.5) + 1/(n-x+0.5)</code>, cn=n+1) is added <strong>only</strong> for boundary studies where events = 0 or events = n (Cochrane Handbook §10.4.4 / Sweeting 2004) — never unconditionally, which would bias every study toward 50%. Clopper-Pearson: <code>qbeta(&alpha;/2, x, n-x+1)</code>. R-parity: logit+PM matches <code>metafor::escalc(measure="PLO")</code> + <code>rma(method="PM")</code> to tolerance 1e-6 (see <code>tests/fixtures/prop-tiny.R</code>).
+  </footer>
+  <script src="../hub/shared/analysis-lifecycle.js"></script>
+  <script>
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
+  (function () {
+    'use strict';
+
+    // ---- engine (unchanged from pre-retrofit) ----
+
+    function parseTable(text) {
+      return text.trim().split(/\n/).map(function (l, i) {
+        var parts = l.split(/,/).map(function (s) { return s.trim(); });
+        var x = parseInt(parts[0], 10);
+        var n = parseInt(parts[1], 10);
+        if (!Number.isFinite(x) || !Number.isFinite(n) || n <= 0 || x < 0 || x > n) return null;
+        return { x: x, n: n, label: parts[2] || ('Study ' + (i + 1)) };
+      }).filter(Boolean);
+    }
+
+    // --- inverse beta (Clopper-Pearson) via relation to F-distribution approximation ---
+    function logBeta(a, b) { return logGamma(a) + logGamma(b) - logGamma(a + b); }
+
+    function logGamma(x) {
+      var c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+      var sum = 1.000000000190015;
+      var y = x;
+      for (var i = 0; i < 6; i++) { y += 1; sum += c[i] / y; }
+      return (-(x + 5.5) + (x + 0.5) * Math.log(x + 5.5) + Math.log(2.5066282746310005 * sum / x));
+    }
+
+    function betaIncReg(x, a, b) {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      var bt = Math.exp(-logBeta(a, b) + a * Math.log(x) + b * Math.log(1 - x));
+      if (x < (a + 1) / (a + b + 2)) return bt * betacf(x, a, b) / a;
+      return 1 - bt * betacf(1 - x, b, a) / b;
+    }
+
+    function betacf(x, a, b) {
+      var MAX = 200, EPS = 1e-14, FPMIN = 1e-30;
+      var qab = a + b, qap = a + 1, qam = a - 1;
+      var c = 1, d = 1 - qab * x / qap;
+      if (Math.abs(d) < FPMIN) d = FPMIN;
+      d = 1 / d;
+      var h = d;
+      for (var m = 1; m <= MAX; m++) {
+        var m2 = 2 * m;
+        var aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; h *= d * c;
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+        d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+        c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+        d = 1 / d; var del = d * c; h *= del;
+        if (Math.abs(del - 1) < EPS) return h;
+      }
+      return h;
+    }
+
+    function qbeta(p, a, b) {
+      if (p <= 0) return 0;
+      if (p >= 1) return 1;
+      var lo = 0, hi = 1;
+      for (var i = 0; i < 100; i++) {
+        var mid = (lo + hi) / 2;
+        var q = betaIncReg(mid, a, b);
+        if (q < p) lo = mid; else hi = mid;
+        if (hi - lo < 1e-14) break;
+      }
+      return (lo + hi) / 2;
+    }
+
+    function clopperPearson(x, n, alpha) {
+      alpha = alpha === undefined ? 0.05 : alpha;
+      if (x === 0) return [0, qbeta(1 - alpha / 2, x + 1, n - x)];
+      if (x === n) return [qbeta(alpha / 2, x, n - x + 1), 1];
+      return [qbeta(alpha / 2, x, n - x + 1), qbeta(1 - alpha / 2, x + 1, n - x)];
+    }
+
+    // --- transforms ---
+    function ftTransform(x, n) {
+      var asin1 = Math.asin(Math.sqrt(x / (n + 1)));
+      var asin2 = Math.asin(Math.sqrt((x + 1) / (n + 1)));
+      return { y: 0.5 * (asin1 + asin2), v: 1 / (4 * n + 2) };
+    }
+
+    function ftBack(y, n) {
+      if (!Number.isFinite(y) || !Number.isFinite(n) || n <= 0) return NaN;
+      // Match metafor::transf.ipft.hm outside the finite-n transform domain.
+      if (y < ftTransform(0, n).y) return 0;
+      if (y > ftTransform(n, n).y) return 1;
+      var s = Math.sin(2 * y);
+      if (Math.abs(s) < 1e-8 || !Number.isFinite(n) || n <= 0) return Math.sin(y) * Math.sin(y);
+      var inner = s + (s - 1 / s) / n;
+      var rad = 1 - inner * inner;
+      if (rad < 0 || !Number.isFinite(rad)) return Math.sin(y) * Math.sin(y);
+      return 0.5 * (1 - Math.sign(Math.cos(2 * y)) * Math.sqrt(rad));
+    }
+
+    function harmonicMean(ns) {
+      var v = ns.filter(function (n) { return n > 0; });
+      if (!v.length) return NaN;
+      return v.length / v.reduce(function (a, b) { return a + 1 / b; }, 0);
+    }
+
+    function logitTransform(x, n) {
+      // Cochrane Handbook §10.4.4 / Sweeting 2004: the 0.5 continuity correction is
+      // applied ONLY when the proportion is at a boundary (events = 0 or events = n),
+      // i.e. exactly when logit(p) is otherwise ±Infinity — NOT unconditionally to
+      // every study. Adding 0.5 to non-boundary studies would bias every estimate
+      // toward p = 0.5. Matches metafor::escalc(measure="PLO", add=1/2, to="only0").
+      var extreme = (x === 0) || (x === n);
+      var cx = extreme ? x + 0.5 : x;
+      var cn = extreme ? n + 1 : n;
+      var p = cx / cn;
+      return { y: Math.log(p / (1 - p)), v: 1 / cx + 1 / (cn - cx) };
+    }
+
+    function logitBack(y) {
+      return 1 / (1 + Math.exp(-y));
+    }
+
+    // --- inverse-variance pooling + DL or PM tau2 ---
+    function pool(rows, tauEst) {
+      var w = rows.map(function (r) { return 1 / r.v; });
+      var sw = w.reduce(function (a, b) { return a + b; }, 0);
+      var mu_fe = rows.reduce(function (a, r, i) { return a + w[i] * r.y; }, 0) / sw;
+      var Q = rows.reduce(function (a, r, i) { return a + w[i] * (r.y - mu_fe) * (r.y - mu_fe); }, 0);
+      var df = rows.length - 1;
+      // τ² delegated to the audited single source shared/ma-core.js (DL/PM/FE);
+      // verified bit-identical to the former inline closed-form / PM iteration on
+      // logit-transformed proportions (diff 0 / 4e-16; tests/test_proportion_ma_tau2_parity.py).
+      var yi = rows.map(function (r) { return r.y; });
+      var vi = rows.map(function (r) { return r.v; });
+      var tau2 = window.AlmMaCore.pool(yi, vi, { method: tauEst }).tau2;
+      var wRE = rows.map(function (r) { return 1 / (r.v + tau2); });
+      var swRE = wRE.reduce(function (a, b) { return a + b; }, 0);
+      var mu_re = rows.reduce(function (a, r, i) { return a + wRE[i] * r.y; }, 0) / swRE;
+      var seRE = Math.sqrt(1 / swRE);
+      // Reported I² is the Higgins-Thompson Q-based form 100·(Q−df)/Q (this app's
+      // convention; equals ma-core's τ²-based I² for DL, differs for PM). Kept
+      // inline deliberately — switching to ma-core's I² would change the displayed
+      // PM value. τ² above is the single-sourced estimator (shared/ma-core.js).
+      var i2 = Q > df ? 100 * (Q - df) / Q : 0;
+      return { mu_re: mu_re, seRE: seRE, tau2: tau2, Q: Q, df: df, i2: i2, weights: wRE };
+    }
+
+    function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
+    function fmtPct(x, d) { d = d === undefined ? 1 : d; return Number.isFinite(x) ? (100 * x).toFixed(d) + '%' : '—'; }
+
+    // ---- axis state (overrideable by axis-controls) ----
+    var _axisState = {};
+
+    // ---- results storage for export ----
+    var _lastResults = null;
+    var _validationDetails = null;
+
+    run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #trans, #tau-est");
+
+    function run(options) {
+      _validationDetails = null;
+      var text = document.getElementById('src').value;
+      var trans = document.getElementById('trans').value;
+      var tauEst = document.getElementById('tau-est').value;
+      var rows = parseTable(text);
+
+      // DL k<10 warning
+      var kw = document.getElementById('k-warn');
+      if (kw) {
+        if (tauEst === 'DL' && rows.length < 10 && rows.length >= 2) {
+          kw.textContent = 'k = ' + rows.length + ' — DerSimonian-Laird τ² is biased low for k<10 (advanced-stats.md). Switch to Paule-Mandel for inference.';
+          kw.style.display = 'block';
+        } else {
+          kw.style.display = 'none';
+        }
+      }
+      if (rows.length < 2) {
+        document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Need at least 2 studies.</td></tr>';
+        _lastResults = null; // do not leave a stale result exportable
+        return;
+      }
+
+      // transform
+      var transformed = rows.map(function (r) {
+        var t;
+        if (trans === 'ft') t = ftTransform(r.x, r.n);
+        else if (trans === 'logit') t = logitTransform(r.x, r.n);
+        else {
+          // Boundary-only continuity correction, mirroring logitTransform: a study
+          // with x=0 or x=n otherwise gets v=0 → weight ~1e8 that dominates the FE
+          // pool. Use cx=x+0.5, cn=n+1 at the boundary; the 1e-8 floor is no longer
+          // needed once the degenerate variance is corrected.
+          var ext = (r.x === 0) || (r.x === r.n);
+          var cx = ext ? r.x + 0.5 : r.x;
+          var cn = ext ? r.n + 1 : r.n;
+          var p = cx / cn;
+          t = { y: p, v: p * (1 - p) / cn };
+        }
+        return Object.assign({}, r, t);
+      });
+
+      // Pass the estimator through verbatim. pool() leaves tau2=0 for any value
+      // other than 'DL'/'PM', so 'FE' correctly yields the fixed-effect inverse-
+      // variance pool. (Previously FE was remapped to 'DL', so the "Fixed-effect"
+      // option silently returned the random-effects DL result whenever Q>df.)
+      var pooled = pool(transformed, tauEst);
+
+      // Per-study CIs on proportion scale (Clopper-Pearson)
+      var totalW = pooled.weights.reduce(function (a, b) { return a + b; }, 0);
+      var perStudy = rows.map(function (r, i) {
+        var cp = clopperPearson(r.x, r.n);
+        var w = pooled.weights[i];
+        return Object.assign({}, r, { p: r.x / r.n, lo: cp[0], hi: cp[1], w: w, rel: 100 * w / totalW });
+      });
+
+      // Back-transform pooled estimate + 95% prediction interval. The PI (t_{k-1},
+      // Cochrane v6.5) is formed on the TRANSFORM scale via the shared core, then
+      // back-transformed exactly like the CI so it stays in [0,1].
+      var lo = pooled.mu_re - Z975 * pooled.seRE;
+      var hi = pooled.mu_re + Z975 * pooled.seRE;
+      var piT = (window.AlmMaCore && rows.length >= 3)
+        ? window.AlmMaCore.predictionInterval({ mu: pooled.mu_re, se: pooled.seRE, tau2: pooled.tau2, k: rows.length })
+        : null;
+      var poolP, poolLo, poolHi, poolPiLo = null, poolPiHi = null;
+      if (trans === 'ft') {
+        var nH = harmonicMean(rows.map(function (r) { return r.n; }));
+        poolP  = ftBack(pooled.mu_re, nH);
+        poolLo = ftBack(lo, nH);
+        poolHi = ftBack(hi, nH);
+        if (piT) { poolPiLo = ftBack(piT.lo, nH); poolPiHi = ftBack(piT.hi, nH); }
+      } else if (trans === 'logit') {
+        poolP  = logitBack(pooled.mu_re);
+        poolLo = logitBack(lo);
+        poolHi = logitBack(hi);
+        if (piT) { poolPiLo = logitBack(piT.lo); poolPiHi = logitBack(piT.hi); }
+      } else {
+        poolP  = pooled.mu_re;
+        poolLo = Math.max(0, lo);
+        poolHi = Math.min(1, hi);
+        if (piT) { poolPiLo = Math.max(0, piT.lo); poolPiHi = Math.min(1, piT.hi); }
+      }
+
+      // Store for export
+      _lastResults = {
+        _schema:  'propma-results-v1',
+        transform: trans,
+        tauEstimator: tauEst,
+        k:        rows.length,
+        mu_re:    pooled.mu_re,
+        seRE:     pooled.seRE,
+        tau2:     pooled.tau2,
+        Q:        pooled.Q,
+        df:       pooled.df,
+        i2:       pooled.i2,
+        poolP:    poolP,
+        poolLo:   poolLo,
+        poolHi:   poolHi,
+        poolPiLo: poolPiLo,
+        poolPiHi: poolPiHi,
+      };
+
+      render(perStudy, { poolP: poolP, poolLo: poolLo, poolHi: poolHi, poolPiLo: poolPiLo, poolPiHi: poolPiHi, het: pooled });
+
+      // Read-only validation snapshot of the actual computation and render path.
+      _validationDetails = {
+        values: Object.assign({}, _lastResults, {lo:lo, hi:hi, piLo:piT ? piT.lo : null, piHi:piT ? piT.hi : null}),
+        yi: transformed.map(function(r) { return r.y; }),
+        vi: transformed.map(function(r) { return r.v; }), studies: perStudy
+      };
+
+      // URL state
+      if (!(options && options.suppressURL) && window.alm && window.alm.urlState) {
+        window.alm.urlState.write({ src: text, trans: trans, tau: tauEst });
+      }
+    }
+
+    var esc = function (s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]);
+      });
+    };
+
+    function render(rows, pooled) {
+      var body = document.getElementById('res-body');
+      var bodyParts = [''];
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        bodyParts.push('<tr><td>' + esc(r.label) + '</td><td>' + r.x + '/' + r.n + '</td><td>' + fmtPct(r.p) + '</td><td>' + fmtPct(r.lo) + ' – ' + fmtPct(r.hi) + '</td><td>' + r.rel.toFixed(1) + '%</td></tr>');
+      }
+      bodyParts.push('<tr class="pooled-row"><td><strong>Pooled</strong></td><td>—</td><td><strong>' + fmtPct(pooled.poolP) + '</strong></td><td><strong>' + fmtPct(pooled.poolLo) + ' – ' + fmtPct(pooled.poolHi) + '</strong></td><td>100%</td></tr>');
+      body.innerHTML = bodyParts.join('');
+
+      var het = document.getElementById('het');
+      var piTxt = (pooled.poolPiLo != null)
+        ? ' &middot; 95% prediction interval = <code>' + fmtPct(pooled.poolPiLo) + ' – ' + fmtPct(pooled.poolPiHi) + '</code>'
+        : '';
+      het.innerHTML = '<span data-gloss="tau2">&tau;&sup2;</span> = <code>' + fmt(pooled.het.tau2, 4) + '</code> &middot; Q = <code>' + fmt(pooled.het.Q, 2) + '</code> (df=' + pooled.het.df + ') &middot; <span data-gloss="i2">I&sup2;</span> = <code>' + pooled.het.i2.toFixed(1) + '%</code>' + piTxt;
+
+      drawForest(rows, pooled);
+    }
+
+    function drawForest(rows, pooled) {
+      var svg = document.getElementById('forest');
+      var W = 600, H = Math.max(200, 50 + (rows.length + 1) * 26 + 30);
+      var padL = 160, padR = 30, padT = 20, padB = 40;
+      var plotW = W - padL - padR;
+
+      // Apply axis range override if set
+      var xMin = null, xMax = null;
+      if (_axisState && Array.isArray(_axisState.x)) {
+        if (_axisState.x[0] !== null) xMin = _axisState.x[0];
+        if (_axisState.x[1] !== null) xMax = _axisState.x[1];
+      }
+
+      var autoLo = 0, autoHi = 1;
+      if (rows.length) {
+        autoLo = Math.min.apply(null, rows.map(function (r) { return r.lo; }));
+        autoHi = Math.max.apply(null, rows.map(function (r) { return r.hi; }));
+        var pad2 = (autoHi - autoLo) * 0.08 || 0.05;
+        autoLo = Math.max(0, autoLo - pad2);
+        autoHi = Math.min(1, autoHi + pad2);
+      }
+      autoLo = Math.min(autoLo, pooled.poolLo - 0.02);
+      autoHi = Math.max(autoHi, pooled.poolHi + 0.02);
+      var loP = xMin !== null ? xMin : autoLo;
+      var hiP = xMax !== null ? xMax : autoHi;
+      if (hiP <= loP) hiP = loP + 0.01;
+
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      var svgParts = [''];
+      var X = function (p) { return padL + (p - loP) / (hiP - loP) * plotW; };
+
+      // x-axis
+      svgParts.push('<line x1="' + padL + '" y1="' + (padT + H - padT - padB - 22) + '" x2="' + (padL + plotW) + '" y2="' + (padT + H - padT - padB - 22) + '" stroke="currentColor" opacity="0.5"/>');
+
+      var escSvg = esc;
+      var plotH = H - padT - padB;
+
+      // ticks
+      for (var t = 0; t <= 1.0001; t += 0.2) {
+        var xp = X(t);
+        if (xp < padL || xp > padL + plotW) continue;
+        svgParts.push('<line x1="' + xp + '" y1="' + (padT + plotH - 18) + '" x2="' + xp + '" y2="' + (padT + plotH - 26) + '" stroke="currentColor" opacity="0.5"/>');
+        svgParts.push('<text x="' + xp + '" y="' + (padT + plotH - 5) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">' + (t * 100).toFixed(0) + '%</text>');
+      }
+
+      rows.forEach(function (r, i) {
+        var y = padT + i * 26 + 10;
+        svgParts.push('<text x="' + (padL - 10) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="currentColor">' + escSvg(r.label) + '</text>');
+        svgParts.push('<line x1="' + X(r.lo) + '" y1="' + y + '" x2="' + X(r.hi) + '" y2="' + y + '" stroke="currentColor" stroke-width="1.2" opacity="0.55"/>');
+        var sz = 3 + Math.min(r.rel / 4, 7);
+        svgParts.push('<rect x="' + (X(r.p) - sz) + '" y="' + (y - sz) + '" width="' + (sz * 2) + '" height="' + (sz * 2) + '" fill="var(--accent)"/>');
+      });
+
+      // pooled diamond
+      var py = padT + rows.length * 26 + 18;
+      var px = X(pooled.poolP);
+      var pl = X(pooled.poolLo);
+      var ph = X(pooled.poolHi);
+      svgParts.push('<text x="' + (padL - 10) + '" y="' + (py + 4) + '" text-anchor="end" font-size="11" fill="currentColor" font-weight="600">Pooled</text>');
+      svgParts.push('<polygon points="' + pl + ',' + py + ' ' + px + ',' + (py - 8) + ' ' + ph + ',' + py + ' ' + px + ',' + (py + 8) + '" fill="var(--warn)" opacity="0.9"/>');
+      svg.innerHTML = svgParts.join('');
+    }
+
+    document.getElementById('btn-run').addEventListener('click', function () {
+      window.alm && window.alm.resetUndo && window.alm.resetUndo.snapshot && window.alm.resetUndo.snapshot();
+      run();
+    });
+
+    document.getElementById('trans').addEventListener('change', run);
+    document.getElementById('tau-est').addEventListener('change', run);
+
+    // ---- snapshot/restore helpers for reset-undo ----
+    function snapshot() {
+      return {
+        src:  document.getElementById('src').value,
+        trans: document.getElementById('trans').value,
+        tau:  document.getElementById('tau-est').value,
+      };
+    }
+    function restore(snap) {
+      if (!snap) return;
+      if (snap.src   !== undefined) document.getElementById('src').value = snap.src;
+      if (snap.trans !== undefined) document.getElementById('trans').value = snap.trans;
+      if (snap.tau   !== undefined) document.getElementById('tau-est').value = snap.tau;
+      run();
+    }
+
+    // ---- load CSV rows into textarea ----
+    window.__almLoad = function (rows) {
+      var lines = rows.map(function (r) {
+        return [r.events !== undefined ? r.events : (r.x !== undefined ? r.x : ''),
+                r.total  !== undefined ? r.total  : (r.n !== undefined ? r.n : ''),
+                r.label || r.study || ''].join(', ');
+      });
+      document.getElementById('src').value = lines.join('\n');
+      run();
+    };
+
+    // Expose last results for export
+    window.__almPropValidation = {
+      run: function () { run({suppressURL:true}); }, parse: parseTable,
+      save: function () { return {results:_lastResults, details:_validationDetails}; },
+      restore: function (s) { _lastResults=s.results; _validationDetails=s.details; },
+      snapshot: function () { return _validationDetails ? JSON.parse(JSON.stringify(_validationDetails)) : null; }
+    };
+    window._almLastPropMA = function () { return _lastResults; };
+
+    // Cross-tool bus producer (ma-studies-v1): per-study {label, est, se} on the
+    // LOGIT scale — ln(p/(1-p)) with the Cochrane §10.4.4 / Sweeting continuity
+    // correction at extremes, i.e. metafor::escalc(measure="PLO"). This is the
+    // recommended poolable scale, emitted regardless of the on-screen display
+    // transform so the bus payload is single-scale and coherent. Recomputed from
+    // current inputs so it always matches what is on screen.
+    window.__propMaBusStudies = function () {
+      if (!window.MaStudies) return [];
+      var rows = parseTable(document.getElementById('src').value);
+      if (rows.length < 2) return [];
+      var out = [];
+      for (var i = 0; i < rows.length; i++) {
+        var t = logitTransform(rows[i].x, rows[i].n); // { y: logit(p), v: var }
+        var se = Math.sqrt(t.v);
+        if (Number.isFinite(t.y) && Number.isFinite(se) && se > 0) {
+          out.push({ label: rows[i].label || ('Study ' + (i + 1)), est: t.y, se: se });
+        }
+      }
+      return out;
+    };
+
+    // ---- module init ----
+
+    window.alm.csvUpload({
+      target: '#alm-csv-mount',
+      columns: [
+        { name: 'events', required: true,  type: 'int',    example: '12' },
+        { name: 'total',  required: true,  type: 'int',    example: '150' },
+        { name: 'label',  required: false, type: 'string', example: 'Study A' },
+      ],
+      onParse: function (result) {
+        window.alm.resetUndo.snapshot();
+        window.__almLoad(result.rows);
+      },
+    });
+
+    window.alm.plotExport({
+      target: '#alm-plot-mount',
+      basename: 'propma-forest',
+      plots: [{ id: 'forest', name: 'Forest plot', getSvg: function () { return document.getElementById('forest'); } }],
+      getReceiptInput: function () {
+        if (!_lastResults) return null;
+        return {
+          studies: [], // bind only the current results below — never the (possibly stale) shared bus
+          method: 'Proportion meta-analysis (FT/logit/raw, DL/PM random-effects)',
+          label: 'propma-forest',
+          results: _lastResults,
+        };
+      },
+    });
+
+    window.alm.axisControls({
+      target: '#alm-axis-mount',
+      axes: [
+        { key: 'x', label: 'X axis (proportion)', range: [null, null], log: false },
+      ],
+      onChange: function (state) {
+        _axisState = state;
+        run();
+      },
+    });
+
+    window.alm.resultsExport({
+      target: '#alm-export-mount',
+      basename: 'propma-results',
+      getResults: function () { return window._almLastPropMA ? window._almLastPropMA() : {}; },
+    });
+
+    window.alm.urlState({ version: 1 });
+    var restored = window.alm.urlState.read();
+    if (restored && Object.keys(restored).length > 0) {
+      restore(restored);
+    } else {
+      run();
+    }
+
+    window.alm.resetUndo({
+      target: '#alm-undo-mount',
+      snapshot: snapshot,
+      restore: restore,
+      capacity: 20,
+    });
+
+    window.alm.tooltips({
+      src: '../hub/shared/glossary.json',
+    });
+
+  })();
+  </script>
+<script src="../hub/shared/a11y-landmarks.js"></script>
+
+<script>
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
+      AlmAutosave.install({ appKey: 'proportion-ma' });
+    }
+  });
+})();
+</script>
+
+<script>
+// Cross-tool bus producer wiring (ma-studies-v1). proportion-ma input is
+// events/total counts, which cannot represent a {est, se} bus row directly, so
+// this app is WRITE-only (a producer). It always emits LOGIT-scale proportions
+// (metafor PLO), independent of the display transform — see __propMaBusStudies.
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (!window.MaStudies) return;
+    function notify(msg, kind) {
+      if (window.Toast && typeof Toast.show === "function") Toast.show(msg, kind || "warn");
+      else if (kind === "error") alert(msg);
+    }
+    function current() {
+      return window.__propMaBusStudies ? window.__propMaBusStudies() : [];
+    }
+    var save = document.getElementById("btn-bus-save");
+    if (save) {
+      save.addEventListener("click", function () {
+        var s = current();
+        if (!s.length) { notify("Enter at least 2 valid studies before sending to the bus.", "warn"); return; }
+        var ok = MaStudies.write(s);
+        notify(ok
+          ? ("Sent " + s.length + " per-study logit proportion" + (s.length === 1 ? "" : "s") + " to the shared bus.")
+          : "Could not save to the bus.", ok ? "warn" : "error");
+      });
+    }
+    if (typeof MaStudies.attachVerifyInRButton === "function") {
+      MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r", getStudies: current });
+    }
+    if (window.TruthCertUI) {
+      TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
+      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "proportion-ma", getStudies: current });
+    }
+  });
+})();
+</script>
+<section id="alm-validate" aria-label="Independent validation"></section>
+<script src="../shared/alm-validate.js"></script>
+<script src="validate/adapter.js"></script>
+<!-- GLMM extras are separate from the original transformed-scale engine. -->
+<section id="alm-plus" aria-label="GLMM extras" style="margin:1rem;padding:1rem;border:1px solid #888;overflow-x:auto">
+  <h2>Binomial-normal GLMM</h2>
+  <p>Fit the event counts directly with a random intercept on the logit scale. The existing result is shown alongside it. Variances and standard errors use each method's analysis scale and are not directly comparable across transformations.</p>
+  <p>Maximum likelihood; seven adaptive quadrature points; bobyqa with maxfun 100000 and rhoend 1e-9. Normal Wald confidence limits; t-based prediction limits with k−1 degrees of freedom, available from three studies. Convergence warnings cause refusal.</p>
+  <button type="button" id="plus-run">Fit GLMM in R</button>
+  <button type="button" id="plus-export" disabled>Export GLMM JSON</button>
+  <p id="plus-status" role="status" aria-live="polite">Run the GLMM for the current inputs.</p>
+  <p id="plus-provenance"></p>
+  <p id="plus-parity" role="note"></p>
+  <div id="plus-result"></div>
+  <p>The offline validation tier checks archived native R fits and their presentation. It does not rerun the optimiser. Live fitting requires the bundled R packages.</p>
+  <section id="alm-validate-plus" aria-label="Validate the extras in R"></section>
+</section>
+<script src="../shared/webr-runner.js"></script>
+<script src="plus-core.js"></script>
+<script src="plus-parity.js"></script>
+<script src="plus-ui.js"></script>
+<script src="validate/plus-pins.js"></script>
+<script src="validate/plus-adapter.js"></script>
+</body>
+</html>
