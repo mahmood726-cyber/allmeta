@@ -1,5 +1,5 @@
 // share2 test profile: multivariate-ma (P18). State: { src, names[2], mode: cov|r|rhoW, rhoW, entryLog }.
-export default {
+const profile = {
   plot: '#plot-host svg',
   results: { selector: '#stats', closest: 'section' },
   // Non-default: assumed within-study correlation (rhoW mode, 4 numbers per row), renamed outcomes, a non-ASCII label.
@@ -21,3 +21,14 @@ export default {
   // set() refuses: an unknown mode, a names array of the wrong length, and |rhoW| >= 1 in rhoW mode.
   invalid: [{ mode: 'unknown-mode' }, { names: ['only one outcome'] }, { mode: 'rhoW', rhoW: '1.5' }]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ src: profile.custom.src + '\n' + row });
+profile.invalid.push(
+  bad('Trial 6, abc, 0.01, 0.1, 0.01'),
+  bad('Trial 6, 0.1, 0, 0.1, 0.01'),
+  bad('Trial 6, 0.1, -0.01, 0.1, 0.01'),
+  bad('Trial 6, 0.1, 0.01, 0.1'),
+  bad('Trial 6, 0.1, 0.01, 0.1, abc')
+);
+export default profile;

@@ -460,6 +460,11 @@
           (mode === 'rhoW' && (s.rhoW === undefined || !rhoW.trim() || !Number.isFinite(Number(rhoW)) || !(Math.abs(Number(rhoW)) < 1)))) {
         throw Error('Invalid multivariate analysis state.');
       }
+      // The page's own row parser (index.html parse, exposed as AlmMvPage.parse), before anything is changed: a row the
+      // page would omit (listed as omitted) makes the file invalid instead of quietly changing the analysis.
+      if (!global.AlmMvPage || typeof global.AlmMvPage.parse !== 'function') throw Error('The app row checker is not available.');
+      var omitted = global.AlmMvPage.parse(s.src, mode, Number(rhoW)).omitted;
+      if (omitted.length) throw Error('Line ' + omitted[0].line + ' cannot be used: ' + omitted[0].reason + '.');
       el('f-rhow').value = rhoW;
       // load synchronises mode controls and completes the fit synchronously.
       global.AlmMvPage.load(s.src, mode, s.names[0], s.names[1]);
