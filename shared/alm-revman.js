@@ -273,7 +273,8 @@
       return r;
     }),schema);
   }
-  function safeText(value){const s=String(value==null?'':value);if(/^[\s]*[=+@-]/.test(s)||/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(s))fail('Unsafe spreadsheet formula/control text: '+s.slice(0,40));return s;}
+  // Formula triggers (house rule): = + @ after optional whitespace, or a leading bare tab/CR. A leading '-' is ordinary text.
+  function safeText(value){const s=String(value==null?'':value);if(/^\s*[=+@]/.test(s)||/^[\t\r]/.test(s)||/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(s))fail('Unsafe spreadsheet formula/control text: '+s.slice(0,40));return s;}
   function csvRows(rows){return rows.map(row=>row.map(v=>{const s=String(v==null?'':v);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n')+'\r\n';}
   const headers={binary2x2:['Experimental Events','Experimental Total','Control Events','Control Total'],continuous:['Experimental Mean','Experimental SD','Experimental Total','Control Mean','Control SD','Control Total'],generic:['Effect Estimate','SE']};
   const note='RevMan will recompute study effects from arm data, weights, pooled estimates, confidence intervals and heterogeneity using its chosen analysis settings. Generic estimates and SE are on the analysis scale (log scale for ratio measures). No pooled results or analysis settings are exported.';

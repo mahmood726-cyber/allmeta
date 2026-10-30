@@ -95,7 +95,7 @@ test('full Web analysis columns choose populated data type; never use displayed 
 
 test('PLANTED spreadsheet formulas and unknown/ambiguous headers are refused, safe quotes preserved', () => {
   const good=pick(xml());
-  for(const study of ['=1+1','+SUM(A1)','@formula','-cmd']) assert.throws(()=>R.exportCSV([{...good[0],study}],'binary2x2'),/formula|unsafe/i);
+  for(const study of ['=1+1','+SUM(A1)','@formula','\tcmd']) assert.throws(()=>R.exportCSV([{...good[0],study}],'binary2x2'),/formula|unsafe/i);
   assert.throws(()=>R.parseText('Study,Mean,SE\nA,0.8,0.1'),/header|ambiguous|unsupported/i);
   assert.throws(()=>R.parseText('Study,Effect Estimate,SE,SE\nA,0.8,0.1,0.2'),/duplicate|ambiguous/i);
 });
