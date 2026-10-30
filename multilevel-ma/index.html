@@ -352,6 +352,7 @@
       // Build results for export
       _lastResults = {
         _schema: 'mlma-results-v1',
+        estimator: 'method-of-moments',
         k: rows.length,
         J: f.J,
         mu: f.mu,
@@ -504,6 +505,8 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'mlma-results',
+      methods: 'The exported results use the iterated method-of-moments (MoM) three-level meta-analysis (Cheung MWL. Psychol Methods 2014;19:211-229), with within-study and between-study variance components. The separately displayed REML fit is not included in these exports. ' +
+        'The MoM results include normal and floored residual-scale t intervals with cluster degrees of freedom; the latter is not cluster-robust inference. Treat the report as descriptive when number-of-clusters < 10.',
       getResults: function () { return window._almLastMlma ? window._almLastMlma() : {}; },
     });
 
