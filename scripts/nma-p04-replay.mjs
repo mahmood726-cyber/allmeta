@@ -10,9 +10,10 @@ const read = file => readFileSync(new URL(file, root), 'utf8');
 const manifest = JSON.parse(read('nma/validate/MANIFEST.json'));
 const files = {};
 for (const file of manifest.files) {
-  const raw = readFileSync(new URL(`nma/${file.path}`, root));
-  assert.equal(createHash('sha256').update(raw).digest('hex'), file.sha256, file.path);
-  files[file.path] = JSON.parse(raw.toString('utf8'));
+  // Recorded hashes describe LF UTF-8 text, independent of checkout line endings.
+  const text = read(`nma/${file.path}`).replace(/\r\n/g, '\n');
+  assert.equal(createHash('sha256').update(text, 'utf8').digest('hex'), file.sha256, file.path);
+  files[file.path] = JSON.parse(text);
 }
 const context = vm.createContext({ document: { getElementById: () => ({}) } });
 context.window = context;
