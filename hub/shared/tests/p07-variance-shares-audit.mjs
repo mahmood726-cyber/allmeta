@@ -27,7 +27,8 @@ function load(code) {
 const beforeFit = load(source.replace(block, historical)), afterFit = load(source);
 const manifest = JSON.parse(readFileSync(new URL('validate/MANIFEST.json', app), 'utf8'));
 for (const file of manifest.files) {
-  const bytes = readFileSync(new URL(file.path, app));
+  // Manifest pins describe UTF-8 LF bytes, independent of checkout line endings.
+  const bytes = Buffer.from(readFileSync(new URL(file.path, app), 'utf8').replace(/\r\n/g, '\n'), 'utf8');
   assert.equal(bytes.length, file.bytes, file.path);
   assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256, file.path);
 }
