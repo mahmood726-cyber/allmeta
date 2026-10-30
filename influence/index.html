@@ -350,6 +350,16 @@
           }
           return;
         }
+        try {
+          runAnalysis(rows);
+        } catch (e) {
+          // A failed fit or diagnostic must discard prior and partial results.
+          clearResults();
+          showError("Analysis failed: " + e.message);
+        }
+      }
+
+      function runAnalysis(rows) {
         showError("");
         _excluded = new Set();
         _lastStudies = rows;
