@@ -130,7 +130,10 @@ StudyD, 2, 400, 6, 400
 StudyE, 4, 600, 10, 600</textarea>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
-      <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      <!-- Keep the live container exposed before the lifecycle reveals its warning. -->
+      <div role="status" aria-live="polite" aria-atomic="true">
+        <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
+      </div>
       <div id="input-errors" role="alert" hidden></div>
       <a id="jump-results" href="#results">Jump to results &darr;</a>
       <div id="alm-csv-mount"></div>
