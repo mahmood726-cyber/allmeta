@@ -11,7 +11,7 @@ const manifest = JSON.parse(read('nma/validate/MANIFEST.json'));
 const files = {};
 for (const file of manifest.files) {
   const bytes = readFileSync(new URL(`nma/${file.path}`, root));
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256, file.path);
+  assert.equal(createHash('sha256').update(bytes.toString('utf8').replace(/\r\n/g, '\n'), 'utf8').digest('hex'), file.sha256, file.path);
   files[file.path] = JSON.parse(bytes.toString('utf8'));
 }
 const context = vm.createContext({
