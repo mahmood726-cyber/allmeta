@@ -1,0 +1,30 @@
+{
+  "intervals": [
+    {"name":"balanced-billion","x":500000000,"n":1000000000},
+    {"name":"balanced-trillion","x":500000000000,"n":1000000000000},
+    {"name":"balanced-safe-limit","x":4503599627370495,"n":9007199254740990},
+    {"name":"skew-billion","x":100000000,"n":1000000000},
+    {"name":"skew-trillion","x":100000000000,"n":1000000000000},
+    {"name":"rare-trillion","x":1000000,"n":1000000000000},
+    {"name":"few-trillion","x":8,"n":1000000000000},
+    {"name":"one-trillion","x":1,"n":1000000000000},
+    {"name":"almost-all-trillion","x":999999999999,"n":1000000000000},
+    {"name":"zero-trillion","x":0,"n":1000000000000},
+    {"name":"all-trillion","x":1000000000000,"n":1000000000000},
+    {"name":"balanced-million","x":500000,"n":1000000},
+    {"name":"ordinary","x":5,"n":100},
+    {"name":"balanced-small","x":50,"n":100},
+    {"name":"zero-small","x":0,"n":100},
+    {"name":"all-small","x":100,"n":100},
+    {"name":"one-small","x":1,"n":100},
+    {"name":"almost-all-small","x":99,"n":100},
+    {"name":"zero-single","x":0,"n":1},
+    {"name":"all-single","x":1,"n":1}
+  ],
+  "cdfs": [
+    {"name":"center-billion","x":0.5,"a":500000000,"b":500000001},
+    {"name":"center-trillion","x":0.5,"a":500000000000,"b":500000000001},
+    {"name":"tail-trillion","x":0.499999,"a":500000000000,"b":500000000001},
+    {"name":"ordinary","x":0.05,"a":5,"b":96}
+  ]
+}
