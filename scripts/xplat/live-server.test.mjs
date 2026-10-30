@@ -20,7 +20,7 @@ test('export server serves the real app and refuses encoded traversal', async ()
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   try {
     const base = `http://127.0.0.1:${server.address().port}`;
-    for (const app of ['nma-inconsistency', 'multivariate-ma', 'rve-meta']) {
+    for (const app of ['nma-inconsistency', 'multivariate-ma', 'rve-meta', 'component-nma']) {
       const response = await fetch(`${base}/${app}/index.html`);
       assert.equal(response.status, 200);
       assert.match(await response.text(), /<script src="alm-live.js"><\/script>/);
