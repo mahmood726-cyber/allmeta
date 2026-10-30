@@ -154,3 +154,101 @@ test('P09-R3 control: optional labels, aliases and count validation stay intact'
     assert.throws(h.plusRows, /Invalid/);
   }
 });
+
+const malformedCSV = [
+  ['unfinished LF label', '10,100,A\n20,100,"B\n90,100,C'],
+  ['unfinished CRLF label', '10,100,A\r\n20,100,"B\r\n90,100,C'],
+  ['digits after closing quote', '"1"2,100,A\n20,100,B'],
+  ['text after closing quote', '10,100,"A"junk\n20,100,B'],
+  ['quote reopened after whitespace', '10,100,"" "A"\n20,100,B'],
+];
+
+function mountPlus(h) {
+  let calls = 0;
+  h.context.structuredClone = structuredClone;
+  h.context.MutationObserver = class { observe() {} };
+  h.context.AlmWebR = { runR: async () => {
+    calls++;
+    return { ok: false, error: 'control runtime unavailable' };
+  } };
+  h.element('plus-result').replaceChildren = function () { this.innerHTML = ''; };
+  vm.runInContext(read('proportion-ma/plus-ui.js'), h.context);
+  return { run: () => h.context.AlmPropPlus.run(), calls: () => calls };
+}
+
+for (const [name, text] of malformedCSV) {
+  test(`P09-R1 plant: ${name} is rejected by both parsers`, () => {
+    const h = app();
+    h.element('src').value = text;
+    assert.throws(() => h.context.AlmPropPlusCore.csvRecords(text), /Invalid CSV/);
+    assert.throws(() => h.parse(text), /Invalid CSV/);
+    assert.throws(h.plusRows, /Invalid CSV/);
+  });
+
+  test(`P09-R1 plant: ${name} refuses pooling and clears the previous result`, () => {
+    const h = app();
+    assert.equal(h.result().k, 2, 'begin with a successful result');
+    h.element('src').value = text;
+    assert.doesNotThrow(h.run, 'the run button must display the refusal');
+    assert.equal(h.result(), null, 'no stale result may remain exportable');
+    assert.equal(h.details(), null);
+    assert.match(h.element('res-body').innerHTML, /Invalid CSV/);
+    assert.equal(h.element('forest').innerHTML, '');
+    assert.equal(h.element('het').innerHTML, '');
+    assert.equal(h.element('analysis-status').hidden, true);
+    assert.throws(h.bus, /Invalid CSV/, 'no shortened or altered dataset reaches the bus');
+    h.element('src').value = '10,100,A\n20,100,B';
+    h.run();
+    assert.equal(h.result().k, 2, 'valid edits recover after refusal');
+    assert.equal(h.element('analysis-status').hidden, false);
+  });
+
+  test(`P09-R1 plant: ${name} never invokes the GLMM runtime`, async () => {
+    const h = app();
+    const plus = mountPlus(h);
+    h.element('src').value = text;
+    await plus.run();
+    assert.equal(plus.calls(), 0);
+    assert.match(h.element('plus-status').textContent, /GLMM unavailable: Invalid CSV/);
+    assert.equal(h.element('plus-export').disabled, true);
+    assert.throws(() => h.context.AlmPropPlus.exported(), /Run the GLMM/);
+  });
+}
+
+test('P09-R1 control: valid quoted counts, multiline labels and escaped quotes still analyse', async () => {
+  for (const newline of ['\n', '\r\n']) {
+    const h = app();
+    const original = h.result();
+    const label = 'A, "quoted"' + newline + '90,100,C';
+    h.element('src').value = ' "10" \t, "100", "A, ""quoted""' + newline + '90,100,C" \t' + newline + '20,100,"B"';
+    const expected = [{ x: 10, n: 100, label }, { x: 20, n: 100, label: 'B' }];
+    assert.deepEqual(h.plusRows(), expected);
+    assert.deepEqual(h.parse(h.element('src').value), expected);
+    h.run();
+    assert.deepEqual(h.result(), original);
+    assert.equal(h.element('analysis-status').hidden, false);
+    const plus = mountPlus(h);
+    await plus.run();
+    assert.equal(plus.calls(), 1, 'valid syntax reaches the runtime');
+    assert.match(h.element('plus-status').textContent, /control runtime unavailable/);
+  }
+});
+
+test('P09-R1 control: archived corpus records and GLMM scripts are unchanged', t => {
+  const h = app();
+  const C = h.context.AlmPropPlusCore;
+  const oldReader = vm.runInNewContext(read('hub/shared/tests/fixtures/p09-pr316-csv-records.js') + '\ncsvRecords;');
+  const corpus = JSON.parse(read('proportion-ma/validate/corpus/corpus.json'));
+  let studies = 0;
+  for (const { id, rows } of corpus) {
+    const expected = rows.map(({ x, n, label }) => ({ x, n, label }));
+    const text = C.csvText(rows.map(({ x, n, label }) => [x, n, label]));
+    h.element('src').value = text;
+    assert.deepEqual(copy(C.csvRecords(text)), copy(oldReader(text)), id);
+    assert.deepEqual(h.parse(text), expected, id);
+    assert.deepEqual(h.plusRows(), expected, id);
+    assert.equal(C.buildScript(h.plusRows()), C.buildScript(rows), id);
+    studies += rows.length;
+  }
+  t.diagnostic(`Replayed ${corpus.length} archived input configurations, ${studies} study rows; no R fits executed.`);
+});

@@ -6,20 +6,24 @@
   // Shared by both analysis paths: label newlines belong to CSV fields, not studies.
   function csvRecords(text) {
     const rows = [];
-    let row = [], field = '', quoted = false;
+    let row = [], field = '', quoted = false, closedQuote = false;
     for (let i = 0; i < text.length; i++) {
       const c = text[i];
       if (quoted) {
         if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
-        else if (c === '"') quoted = false;
+        else if (c === '"') { quoted = false; closedQuote = true; }
         else field += c;
       } else {
+        if (closedQuote && c !== ',' && c !== '\n' && c !== '\r' && c !== ' ' && c !== '\t') {
+          throw new Error('Invalid CSV: unexpected character after closing quote');
+        }
         if (c === '"' && field.trim() === '') { field = ''; quoted = true; }
-        else if (c === ',') { row.push(field); field = ''; }
-        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+        else if (c === ',') { row.push(field); field = ''; closedQuote = false; }
+        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; closedQuote = false; }
         else if (c !== '\r') field += c;
       }
     }
+    if (quoted) throw new Error('Invalid CSV: unclosed quoted field');
     if (field.length || row.length) { row.push(field); rows.push(row); }
     return rows;
   }

@@ -326,7 +326,17 @@
       var text = document.getElementById('src').value;
       var trans = document.getElementById('trans').value;
       var tauEst = document.getElementById('tau-est').value;
-      var rows = parseTable(text);
+      var rows;
+      try {
+        rows = parseTable(text);
+      } catch (error) {
+        _lastResults = null;
+        document.getElementById('res-body').innerHTML = '<tr><td colspan="5">' + esc(error.message) + '</td></tr>';
+        document.getElementById('forest').innerHTML = '';
+        document.getElementById('het').innerHTML = '';
+        document.getElementById('k-warn').style.display = 'none';
+        return;
+      }
 
       // DL k<10 warning
       var kw = document.getElementById('k-warn');
