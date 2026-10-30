@@ -42,6 +42,10 @@ jobs:
       # This executes Node *.test.mjs not selected by Playwright *.spec.mjs.
       - name: Native Node component-NMA DL scale regression
         run: node --test unit/p19-scale-defect.test.mjs
+      # P17 sensitivity JSON must carry accepted studies for independent replay.
+      # Explicit Node gate: Playwright excludes *.test.mjs.
+      - name: Native Node correlation-MA sensitivity export replay
+        run: node --test unit/p17-sensitivity-export.test.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --reporter=line,json
         env:
