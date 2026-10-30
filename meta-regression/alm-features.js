@@ -234,6 +234,11 @@
         if (s[key] !== undefined && (!Array.isArray(s[key]) || s[key].some(function (v) { return !v || typeof v !== 'object' || Array.isArray(v); }))) throw new Error('Invalid entry metadata.');
         metadata[key] = clone(s[key] || []);
       });
+      // The page's own row checker (index.html parseStudies), before anything is changed: a row the page would skip
+      // with a note makes the file invalid instead of quietly changing the analysis.
+      if (typeof global.__almMetaRegParse !== 'function') throw new Error('The app row checker is not available.');
+      var parsed = global.__almMetaRegParse(s.data);
+      if (parsed.warnings.length) throw new Error(parsed.warnings[0] + ' cannot be used.');
       fields.forEach(function (k) { el('f-' + k).value = s[k]; });
       el('f-scale').checked = s.scale;
       axisInputs().forEach(function (n, i) {

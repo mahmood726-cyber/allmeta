@@ -483,6 +483,9 @@
     window._almLastR2      = function () { return _lastR2; };
     window._almLastQE      = function () { return _lastQE; };
     window._almLastPI      = function () { return _lastPI; };
+    // The same row checker for a restored analysis file (alm-features.js share set()), so a row this page would skip
+    // with a note cannot silently change the analysis.
+    window.__almMetaRegParse = function (text) { return parseStudies(text); };
 
     render = window.alm.analysisLifecycle(render, function (result) { return !!_lastFitted; }, "[id^=\"f-\"]");
 

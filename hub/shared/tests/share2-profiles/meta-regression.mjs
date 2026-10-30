@@ -1,5 +1,5 @@
 // share2 test profile: meta-regression (P02-series app). State: { data, title, modlabel, effectlabel, scale, axes[], provenance, entryLog }.
-export default {
+const profile = {
   plot: '#svg-host svg',
   results: { selector: '#stats-wrap' },
   // Non-default: new data with a non-ASCII label and new plot labels. The model option (scale) stays off: it selects the
@@ -21,3 +21,15 @@ export default {
   // set() refuses: a non-boolean scale, an axis list of the wrong length, and a non-string data field.
   invalid: [{ scale: 'yes' }, { axes: [] }, { data: 5 }]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ data: profile.custom.data + '\n' + row });
+profile.invalid.push(
+  bad('Trial G, abc, 0.1, 40'),
+  bad('Trial G, 0.1, 0, 40'),
+  bad('Trial G, 0.1, -0.1, 40'),
+  bad('Trial G, 0.1, abc, 40'),
+  bad('Trial G, 0.1, 0.1, abc'),
+  bad('Trial G, 0.1, 0.1')
+);
+export default profile;
