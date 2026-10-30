@@ -72,6 +72,20 @@ for (const [kind, names] of [['plant', labels], ['control', plainLabels]]) {
   });
 }
 
+test('P16-R3 ambiguous identical display labels cannot exchange structural identities', () => {
+  const rows = rowsFor(labels);
+  assert.throws(() => liveScript(rows, 'FE', s => {
+    const first = s.state.nodeSplit.findIndex((r, i, all) =>
+      all.some((other, j) => j > i && other.comparison === r.comparison));
+    assert.notEqual(first, -1, 'fixture must contain two different pairs with the same displayed label');
+    const second = s.state.nodeSplit.findIndex((r, j) =>
+      j > first && r.comparison === s.state.nodeSplit[first].comparison);
+    assert.notEqual(second, -1);
+    assert.notEqual(s.pairKeys[first], s.pairKeys[second]);
+    [s.pairKeys[first], s.pairKeys[second]] = [s.pairKeys[second], s.pairKeys[first]];
+  }), /Structural treatment-pair identity disagrees with (displayed comparison|input evidence)/);
+});
+
 test('P16-R3 serialised treatment-pair identities fail closed if absent, duplicated or forged', () => {
   const rows = rowsFor(labels);
   assert.throws(() => liveScript(rows, 'FE', s => { delete s.pairKeys; }),
