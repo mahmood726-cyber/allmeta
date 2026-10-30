@@ -455,9 +455,14 @@
         if (piT) { poolPiLo = Math.max(0, piT.lo); poolPiHi = Math.min(1, piT.hi); }
       }
 
-      // Store for export
+      // Snapshot the producing build so later exports retain this analysis's identity.
+      var buildInfo = window.AlmBuildInfo || {};
       _lastResults = {
         _schema:  'propma-results-v1',
+        build: {
+          version: buildInfo.version || null,
+          sha: buildInfo.sha || null,
+        },
         transform: trans,
         tauEstimator: tauEst,
         k:        rows.length,
