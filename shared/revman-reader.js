@@ -23,6 +23,11 @@
  *         <O_E_AND_VARIANCE_OUTCOME EFFECT_MEASURE="HR|OR">
  *           <O_E_AND_VARIANCE_DATA STUDY_ID O_MINUS_E VARIANCE />
  *         </O_E_AND_VARIANCE_OUTCOME>
+ *         <IPD_OUTCOME>                      (RevMan 5 time-to-event, as meta::read.rm5 reads it)
+ *           <EFFECT_MEASURE>Hazard Ratio</EFFECT_MEASURE>
+ *           <IPD_SUBGROUP><IPD_DATA STUDY_ID O_E VAR /></IPD_SUBGROUP>
+ *         </IPD_OUTCOME>                     (→ type "o_e_var", est = O_E/VAR, se = 1/sqrt(VAR),
+ *                                             raw values kept as study.oeVar = {oe, v})
  *       </COMPARISON>
  *     </ANALYSES_AND_DATA>
  *     <STUDIES_AND_REFERENCES>
@@ -172,27 +177,38 @@
     };
   }
 
-  function _readOEVarianceOutcome(node, studyIndex, group1, group2) {
+  // RevMan 5 writes time-to-event data as IPD_OUTCOME > IPD_SUBGROUP > IPD_DATA
+  // with O_E and VAR attributes (the tags meta::read.rm5 reads); the effect
+  // measure is an <EFFECT_MEASURE> child such as "Hazard Ratio".
+  var _IPD = { data: "IPD_DATA", oe: "O_E", v: "VAR", raw: true };
+  function _ipdMeasure(node) {
+    var a = _attr(node, "EFFECT_MEASURE");
+    var s = String(a || _textOf(node, "EFFECT_MEASURE") || "HR").trim().toUpperCase();
+    return ({ "HAZARD RATIO": "HR", "PETO ODDS RATIO": "OR", "ODDS RATIO": "OR", "PETO_OR": "OR" })[s] || s;
+  }
+
+  function _readOEVarianceOutcome(node, studyIndex, group1, group2, tags) {
     // O-E/Var outcomes carry a per-study log-HR (or log-OR for Peto) and its
     // variance directly. The bus doesn't carry pre-computed effects natively
     // (it carries arm-level counts), so we surface this as a "summary"
     // outcome whose arms carry a synthetic effect column. NMA consumers that
     // can ingest yi/vi (forest-plot path) will pick it up via the bus reader.
-    var em = (_attr(node, "EFFECT_MEASURE") || "HR").toUpperCase();
+    var em = tags ? _ipdMeasure(node) : (_attr(node, "EFFECT_MEASURE") || "HR").toUpperCase();
     var t1 = _attr(node, "GROUP_LABEL_1") || group1 || "Experimental";
     var t2 = _attr(node, "GROUP_LABEL_2") || group2 || "Control";
+    tags = tags || { data: "O_E_AND_VARIANCE_DATA", oe: "O_MINUS_E", v: "VARIANCE" };
 
     var studies = [];
-    var dataNodes = node.getElementsByTagName("O_E_AND_VARIANCE_DATA");
+    var dataNodes = node.getElementsByTagName(tags.data);
     for (var i = 0; i < dataNodes.length; i++) {
       var d = dataNodes[i];
       var sid = _attr(d, "STUDY_ID");
-      var oe = _numAttr(d, "O_MINUS_E"), va = _numAttr(d, "VARIANCE");
+      var oe = _numAttr(d, tags.oe), va = _numAttr(d, tags.v);
       if (oe == null || va == null || va <= 0) continue;
       var meta = studyIndex[sid] || { id: sid, name: sid, year: null };
       // Peto/O-E log estimate is oe/va; SE is 1/sqrt(va).
       var yi = oe / va, se = 1 / Math.sqrt(va);
-      studies.push({
+      var row = {
         id: meta.id, name: meta.name, year: meta.year,
         scale: em,
         precomputed: { est: yi, se: se },
@@ -200,7 +216,9 @@
           { treatment: t1, oeVarianceEst: yi, se: se },
           { treatment: t2, isReference: true },
         ],
-      });
+      };
+      if (tags.raw) row.oeVar = { oe: oe, v: va };
+      studies.push(row);
     }
     return {
       name: _attr(node, "NAME") || "Outcome",
@@ -222,6 +240,8 @@
     for (var j = 0; j < contNodes.length; j++) outcomes.push(_readContinuousOutcome(contNodes[j], studyIndex, g1, g2));
     var oeNodes = node.getElementsByTagName("O_E_AND_VARIANCE_OUTCOME");
     for (var k = 0; k < oeNodes.length; k++) outcomes.push(_readOEVarianceOutcome(oeNodes[k], studyIndex, g1, g2));
+    var ipdNodes = node.getElementsByTagName("IPD_OUTCOME");
+    for (var p = 0; p < ipdNodes.length; p++) outcomes.push(_readOEVarianceOutcome(ipdNodes[p], studyIndex, g1, g2, _IPD));
 
     return {
       id: _attr(node, "ID") || ("comp_" + Math.random().toString(36).slice(2, 8)),
