@@ -1,5 +1,5 @@
 // share2 test profile: influence (share adapter {src: #src "effect, SE, label" lines, axis: {min, max, log}}).
-export default {
+const profile = {
   plot: '#influence-plot',
   results: { selector: '#model-summary', closest: 'section' },
   custom: {
@@ -21,3 +21,14 @@ export default {
     { src: 17 }
   ]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ src: profile.custom.src + '\n' + row });
+profile.invalid.push(
+  bad('abc, 0.1, Eps'),
+  bad('0.1, 0, Eps'),
+  bad('0.1, -0.2, Eps'),
+  bad('0.1, abc, Eps'),
+  bad('0.1')
+);
+export default profile;
