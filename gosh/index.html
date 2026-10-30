@@ -572,6 +572,7 @@
     }
 
     function clearInputResults(message) {
+      exactRequest(null);
       _lastResults = null;
       document.getElementById('plot').innerHTML = '';
       ['m-n', 'm-est', 'm-i2'].forEach(function (id) { document.getElementById(id).textContent = '\u2014'; });
