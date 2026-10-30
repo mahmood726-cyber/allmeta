@@ -8,6 +8,8 @@
 
 Open, browser-only tools for evidence synthesis.
 
+[v2 feature guides](docs/v2/README.md): data entry, report text, R verification and downloads, sharing, Straight Path advice, and the Yun benchmark harness, with current app coverage and limits.
+
 **Live:** https://mahmood726-cyber.github.io/allmeta/
 
 A catalog of research tools for systematic review, meta-analysis, trial design, diagnostic test accuracy, risk-of-bias assessment, GRADE, PRISMA, TSA, and clinical decision support. Each app is self-contained HTML + JS + CSS. No backend. Data stays on your device.
