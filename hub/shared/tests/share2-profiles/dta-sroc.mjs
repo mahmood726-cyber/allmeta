@@ -1,6 +1,6 @@
 // share2 test profile: dta-sroc (rows `label, TP, FP, FN, TN`; bivariate method, continuity correction, title).
 // #stats-wrap sits inside the input panel, so it is compared on its own (no closest()).
-export default {
+const profile = {
   plot: '#svg-host svg',
   results: { selector: '#stats-wrap' },
   custom: {
@@ -20,3 +20,15 @@ export default {
   },
   invalid: [{ method: 'unknown-method' }, { cc: 'maybe' }, { axes: 'not-a-list' }, { entryLog: [1] }, { title: 7 }]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ data: profile.custom.data + '\n' + row });
+profile.invalid.push(
+  bad('Study H, -1, 5, 5, 5'),
+  bad('Study H, abc, 5, 5, 5'),
+  bad('Study H, 2.5, 5, 5, 5'),
+  bad('Study H, 5, 5, 5'),
+  bad('Study H, 0, 5, 0, 5'),
+  bad('Study H, 5, 0, 5, 0')
+);
+export default profile;

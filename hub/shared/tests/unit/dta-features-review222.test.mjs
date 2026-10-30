@@ -43,7 +43,10 @@ function setup(data = rows, textUI = null, adapterSource = source) {
     AlmFeaturesState: { entryLog: [], provenance: [] },
     AlmShare: S, AlmText: T, AlmTextUI: textUI,
     alm: { urlState: { withoutWrites: fn => fn() } },
-    __almBivariate: () => fit, __almDeeks: () => deeks, __almMetaRegression: () => null
+    __almBivariate: () => fit, __almDeeks: () => deeks, __almMetaRegression: () => null,
+    // share set() now runs the page's row checker (index.html parseStudies) first; like the fits above it is a page
+    // global this adapter-only fixture doubles. The fixture rows are valid, so the double reports no warnings.
+    __almDtaParse: () => ({ studies: [], warnings: [] })
   };
   const document = {
     getElementById: id => fields[id] || null,

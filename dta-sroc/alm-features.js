@@ -300,6 +300,11 @@
           return axes[i].type === 'checkbox' ? typeof v !== 'boolean' : typeof v !== 'string' || (v !== '' && !Number.isFinite(Number(v)));
         })) throw new Error('Invalid axis options');
         if (!Array.isArray(s.entryLog) || s.entryLog.some(function (e) { return !e || typeof e !== 'object' || Array.isArray(e); })) throw new Error('Invalid conversion log');
+        // The page's own row checker (index.html parseStudies), before anything is changed: data the page would block
+        // makes the file invalid instead of replacing the current analysis.
+        if (typeof global.__almDtaParse !== 'function') throw new Error('The app row checker is not available.');
+        var parsed = global.__almDtaParse(s.data, s.cov);
+        if (parsed.warnings.length) throw new Error(parsed.warnings[1] || parsed.warnings[0]);
         FIELDS.forEach(function (k) { byId('f-' + k).value = s[k]; });
         axes.forEach(function (el, i) {
           if (el.type === 'checkbox') el.checked = s.axes[i]; else el.value = s.axes[i];

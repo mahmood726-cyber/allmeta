@@ -226,6 +226,9 @@
     window.__almBivariate = function () { return _lastBivar; };
     window.__almMetaRegression = function () { return _lastMetareg; };
     window.__almDeeks = function () { return _lastDeeks; };
+    // The same row checker for a restored analysis file (alm-features.js share set()), so a row this page would block
+    // cannot replace the current analysis with a blocked one.
+    window.__almDtaParse = function (text, covMode) { return parseStudies(text, covMode); };
 
     // Fagan nomogram: pre-test prob (left axis) → LR line → post-test prob (right axis).
     function faganSvg(b) {
