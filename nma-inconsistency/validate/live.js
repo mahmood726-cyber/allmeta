@@ -55,6 +55,35 @@ function buildScript(s) {
       throw Error('Structural treatment-pair identity disagrees with displayed comparison; R validation refused.');
     return ids.sort((a,b)=>a-b).join(':');
   };
+  // A displayed label is not a unique key: e.g. (A, B vs C) and
+  // (A vs B, C) both render as "A vs B vs C". Reconstruct the page
+  // node-split order from accepted source edges, not the supplied key array.
+  // A comparison lacking an alternative path is not node-split estimable.
+  // If a numerically singular split was skipped, refuse verification rather
+  // than silently associate another pair with its position.
+  s.state.nodeSplit.forEach((row, i) => pairId(s.pairKeys[i], row.comparison));
+  if(!Array.isArray(s.rows)) throw Error('Missing input evidence for structural treatment-pair identity; R validation refused.');
+  const candidates = [], seen = new Set();
+  for(const row of s.rows) {
+    if(typeof row.A !== 'string' || typeof row.B !== 'string')
+      throw Error('Invalid input evidence for structural treatment-pair identity; R validation refused.');
+    const key = JSON.stringify([row.A, row.B].sort());
+    if(seen.has(key)) continue;
+    seen.add(key);
+    const [a, b] = JSON.parse(key);
+    const others = s.rows.filter(r => !((r.A === a && r.B === b) || (r.A === b && r.B === a)));
+    const reachable = new Set([a]);
+    let previous = -1;
+    while(previous !== reachable.size) {
+      previous = reachable.size;
+      for(const r of others) if(reachable.has(r.A) || reachable.has(r.B)) {
+        reachable.add(r.A); reachable.add(r.B);
+      }
+    }
+    if(reachable.has(b)) candidates.push(key);
+  }
+  if(candidates.length !== s.pairKeys.length || candidates.some((key, i) => key !== s.pairKeys[i]))
+    throw Error('Structural treatment-pair identity disagrees with input evidence; R validation refused.');
   return `suppressPackageStartupMessages(library(netmeta))
 suppressPackageStartupMessages(library(metafor))
 A <- ${vector('A')}; B <- ${vector('B')}; te <- ${vector('te',true)}; se <- ${vector('se',true)}; study <- ${vector('study')}
