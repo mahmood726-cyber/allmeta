@@ -8,12 +8,13 @@ import NM from '../../../../shared/nma-multiarm-v1.js';
 import { jobsOf, runAll } from '../_nma_parity_check.mjs';
 
 const root = new URL('../../../../', import.meta.url);
-const read = path => readFileSync(new URL(path, root), 'utf8');
+// Canonical LF text preserves the archived hashes across checkout platforms.
+const read = path => readFileSync(new URL(path, root), 'utf8').replace(/\r\n/g, '\n');
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const manifest = JSON.parse(read('nma/validate/MANIFEST.json'));
 const files = {};
 for (const file of manifest.files) {
-  const bytes = readFileSync(new URL(`nma/${file.path}`, root));
+  const bytes = read(`nma/${file.path}`);
   assert.equal(sha(bytes), file.sha256, file.path);
   files[file.path] = JSON.parse(bytes.toString('utf8'));
 }

@@ -9,12 +9,13 @@ import NM from '../shared/nma-multiarm-v1.js';
 import { compare, jobsOf, runAll } from '../hub/shared/tests/_nma_parity_check.mjs';
 globalThis.AlmNmaMultiarm = NM;
 const root = new URL('../nma/', import.meta.url);
-const read = p => readFileSync(new URL(p, root), 'utf8');
+// Canonical LF text preserves the archived hashes across checkout platforms.
+const read = p => readFileSync(new URL(p, root), 'utf8').replace(/\r\n/g, '\n');
 const manifest = JSON.parse(read('validate/MANIFEST.json'));
 const files = {};
 for (const f of manifest.files) {
-  const bytes = readFileSync(new URL(f.path, root));
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), f.sha256);
+  const bytes = read(f.path);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), f.sha256, f.path);
   files[f.path] = JSON.parse(bytes);
 }
 const ctx = vm.createContext({ window: {}, document: { getElementById: () => ({}) }, AlmNmaMultiarm: NM });

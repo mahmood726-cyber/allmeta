@@ -55,7 +55,8 @@ test('P04-R2 control: fresh R oracle records exact inputs and package versions',
   for (const key of ['R', 'netmeta', 'meta']) assert.ok(oracle.provenance[key], key);
   assert.equal(oracle.provenance.generator, 'p04-design-labels-reference.R');
   assert.equal(oracle.provenance.serialization, 'base R; 17 significant digits');
-  const inputBytes = readFileSync(new URL('../../../../nma/tests/fixtures/p04-design-labels-input.json', import.meta.url));
+  // The recorded R hash is over LF bytes; checkout line endings are not data changes.
+  const inputBytes = readFileSync(new URL('../../../../nma/tests/fixtures/p04-design-labels-input.json', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
   assert.equal(oracle.provenance.input_md5, createHash('md5').update(inputBytes).digest('hex'));
   assert.deepEqual(Object.keys(oracle.cases).sort(), Object.keys(inputs).sort());
   for (const [name, rows] of Object.entries(inputs)) assert.deepEqual(oracle.cases[name].rows, rows, name);
