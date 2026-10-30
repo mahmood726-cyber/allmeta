@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { lfBytes } from '../p08-lf-bytes.mjs';
 const base = new URL('../../../../meta-regression/', import.meta.url);
 await import(new URL('plus-engine.js', base));
 await import(new URL('validate/contract.js', base));
@@ -10,7 +11,7 @@ const manifest = read('validate/MANIFEST-plus.json');
 
 test('control P08-R3: published pinned corpus retains all numerical and structural checks', () => {
   for (const file of manifest.files) {
-    const bytes = readFileSync(new URL(file.path, base));
+    const bytes = lfBytes(readFileSync(new URL(file.path, base)));
     assert.equal(bytes.length, file.bytes, file.path);
     assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256, file.path);
   }

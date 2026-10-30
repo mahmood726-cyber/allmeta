@@ -208,6 +208,23 @@ node meta-regression/validate/check-live-script.mjs
 ```
 
 Keep `baseline-dom.json` unchanged: it was captured before the page edit.
+
+### Current-input convergence repair (P08 review)
+
+The archived corpus, manifest controls, hashes and numerical evidence above
+describe the original reference run and remain unchanged. The current-input
+`reference.R` now fits in units of `sqrt(min(vi))` with threshold `1e-12`, then
+converts estimates, uncertainty, predictions and likelihood statistics back to
+the entered units. Its executable copy in `plus-pins.js` is identical. The
+JavaScript variance-step threshold is `1e-12 * min(vi)`, so an imprecise study
+cannot inflate the stopping tolerance.
+
+Run `Rscript hub/shared/tests/unit/fixtures/p08-check-live-reference.R` from the
+repository root to compare the repaired current-input function with independent
+R fixtures, and to replay the original function from the archived protocol.
+This checks desktop R behavior; it is not a browser/webR execution. Run
+`node hub/shared/tests/p08-measure-derived.mjs` for the derived-output disclosure
+without overwriting the published numerical evidence.
 `baseline.mjs` is an optional browser counterpart; the stronger before/after
 evidence is the archive replay described above. `baseline-dom.mjs` loads the extras for the after comparison but
 uses a minimal validation-widget mount in the DOM emulator.

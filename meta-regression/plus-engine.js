@@ -55,8 +55,9 @@
     }
     if(A.some((r,i)=>r[i]<=1e-7))throw Error('Model matrix not of full rank. Cannot fit model.');
     const trPV=sum(v.map((vi,i)=>vi*(1-dot(Z[i],unweighted.vcov.map(r=>dot(r,Z[i]))))));
-    // Keep the stopping tolerance in the data's variance units, including flat outcomes.
-    const meanY=sum(y)/k,threshold=1e-12*Math.max(sum(v)/k,sum(y.map(v=>(v-meanY)**2))/(k-1));
+    // Harmonic sampling variance limits imprecise rows; outcome variance keeps
+    // the tolerance commensurate with the fitted spread, above rounding noise.
+    const meanY=sum(y)/k,threshold=1e-12*Math.max(k/sum(v.map(vi=>1/vi)),sum(y.map(v=>(v-meanY)**2))/(k-1));
     let tau2=Math.max(0,(unweighted.rss-trPV)/(k-p)),converged=false;
     for(let iter=0;iter<=10000;iter++){
       const w=v.map(vi=>1/(vi+tau2)),f=wls(y,Z,w);
