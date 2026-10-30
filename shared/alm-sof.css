@@ -1,0 +1,16 @@
+#alm-sof { margin: 2rem 0; padding: 1.25rem; border: 1px solid var(--border, #aaa); border-radius: .5rem; color: var(--ink, inherit); background: var(--panel, transparent); }
+#alm-sof [hidden] { display: none !important; }
+#alm-sof .sof-controls, #alm-sof fieldset { display: flex; flex-wrap: wrap; gap: 1rem; }
+#alm-sof label { display: flex; flex-direction: column; gap: .35rem; flex: 1 1 13rem; }
+#alm-sof input, #alm-sof select, #alm-sof textarea { font: inherit; color: inherit; background: var(--input-bg, transparent); border: 1px solid var(--border, #888); padding: .5rem; max-width: 100%; }
+#alm-sof fieldset { margin: 1rem 0; padding: 1rem; border: 1px solid var(--border, #888); }
+#alm-sof .sof-scroll { overflow-x: auto; }
+#alm-sof table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+#alm-sof caption { text-align: left; font-weight: 600; margin-bottom: .5rem; }
+#alm-sof th, #alm-sof td { padding: .6rem; border: 1px solid var(--border, #888); text-align: left; vertical-align: top; min-width: 8rem; }
+#alm-sof .sof-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+#alm-sof button { padding: .6rem .8rem; cursor: pointer; }
+#alm-sof button:disabled { cursor: default; opacity: .6; }
+#alm-sof :focus-visible { outline: 3px solid var(--accent, #176399); outline-offset: 2px; }
+#alm-sof .sof-references { font-size: .85rem; }
+@media print { #alm-sof .sof-controls, #alm-sof fieldset, #alm-sof .sof-actions { display: none; } #alm-sof .sof-scroll { overflow: visible; } }
