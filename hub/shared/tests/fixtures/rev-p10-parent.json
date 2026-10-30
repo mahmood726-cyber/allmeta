@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "repository": "mahmood726-cyber/allmeta",
+  "parent": "0dd16ee676da6334b177dce39226e5ffe925bafe",
+  "head": "b6400e962188d05fbd065b0cda5bc8d28bf0e52a",
+  "comparisonUrl": "https://github.com/mahmood726-cyber/allmeta/compare/0dd16ee676da6334b177dce39226e5ffe925bafe...b6400e962188d05fbd065b0cda5bc8d28bf0e52a",
+  "changedFiles": [
+    {
+      "filename": "hub/shared/csv-upload.js",
+      "status": "modified",
+      "additions": 17,
+      "deletions": 1,
+      "changes": 18,
+      "previous_filename": null
+    },
+    {
+      "filename": "hub/shared/tests/unit/rev-p10-duplicate-count-headers.test.mjs",
+      "status": "added",
+      "additions": 149,
+      "deletions": 0,
+      "changes": 149,
+      "previous_filename": null
+    }
+  ],
+  "parentUnitFiles": [
+    {
+      "name": "p0cnma-inactive.test.mjs",
+      "blob": "ed470f7a65d0e23f00057cb27c99a2718da654df"
+    },
+    {
+      "name": "p0share-dom.test.mjs",
+      "blob": "9c1f1dad564bad1c8aa4f4138a0ec6e01ed6fe50"
+    },
+    {
+      "name": "p0share.test.mjs",
+      "blob": "af01aa0cd8dc93b2e66be0a66a1ec37ec97ef5b9"
+    }
+  ],
+  "parentCsv": {
+    "path": "hub/shared/csv-upload.js",
+    "blob": "a6353f07415923ddbce376ad8803e7d74732e84f",
+    "url": "https://github.com/mahmood726-cyber/allmeta/blob/0dd16ee676da6334b177dce39226e5ffe925bafe/hub/shared/csv-upload.js",
+    "source": "(function () {\n  // Levenshtein distance <= 3 (early-exit) — used for fuzzy column matching.\n  function _lev(a, b, max) {\n    a = a.toLowerCase(); b = b.toLowerCase();\n    if (a === b) return 0;\n    var la = a.length, lb = b.length;\n    if (Math.abs(la - lb) > max) return max + 1;\n    var prev = Array.from({ length: lb + 1 }, function (_, i) { return i; });\n    for (var i = 1; i <= la; i++) {\n      var curr = [i];\n      var rowMin = i;\n      for (var j = 1; j <= lb; j++) {\n        var cost = a[i - 1] === b[j - 1] ? 0 : 1;\n        curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);\n        if (curr[j] < rowMin) rowMin = curr[j];\n      }\n      if (rowMin > max) return max + 1;\n      prev = curr;\n    }\n    return prev[lb];\n  }\n\n  // RFC-4180 parser. Handles quoted fields (embedded commas, newlines,\n  // doubled-quote escapes). Returns array of arrays of strings.\n  function _splitCSV(text) {\n    var rows = [];\n    var row = [], field = '', inQuotes = false;\n    for (var i = 0; i < text.length; i++) {\n      var c = text[i];\n      if (inQuotes) {\n        if (c === '\"' && text[i + 1] === '\"') { field += '\"'; i++; }\n        else if (c === '\"') { inQuotes = false; }\n        else { field += c; }\n      } else {\n        if (c === '\"' && field === '') { inQuotes = true; }\n        else if (c === ',') { row.push(field); field = ''; }\n        else if (c === '\\r') { /* swallow CR in CRLF */ }\n        else if (c === '\\n') { row.push(field); rows.push(row); row = []; field = ''; }\n        else { field += c; }\n      }\n    }\n    // Flush final field/row (no trailing newline).\n    if (field.length || row.length) { row.push(field); rows.push(row); }\n    // Drop trailing empty row that some editors append.\n    if (rows.length &&\n        rows[rows.length - 1].length === 1 &&\n        rows[rows.length - 1][0] === '') {\n      rows.pop();\n    }\n    return rows;\n  }\n\n  function _coerce(value, type) {\n    if (type === 'int') {\n      if (value === '') {\n        return { value: null, err: 'missing int' };\n      }\n      var n = Number(value);\n      if (!Number.isFinite(n) || !Number.isInteger(n)) {\n        return { value: null, err: 'not int: ' + value };\n      }\n      return { value: n };\n    }\n    if (type === 'float') {\n      if (value === '') {\n        return { value: null, err: 'missing float' };\n      }\n      var f = Number(value);\n      if (!Number.isFinite(f)) {\n        return { value: null, err: 'not float: ' + value };\n      }\n      return { value: f };\n    }\n    return { value: value };\n  }\n\n  /**\n   * parse(text, columns) -> { headers, rows, warnings }\n   *\n   * text    — raw CSV string (RFC-4180)\n   * columns — array of { name: string, type?: 'int'|'float'|'string' }\n   *\n   * Fuzzy header matching: any header within Levenshtein <= 2 of a declared\n   * column name is silently remapped (with a warning in the warnings array).\n   */\n  function parse(text, columns) {\n    columns = columns || [];\n    var warnings = [];\n    var matrix = _splitCSV(text);\n    if (matrix.length === 0) {\n      return { headers: [], rows: [], warnings: ['empty CSV'] };\n    }\n    var rawHeaders = matrix[0].map(function (h) { return h.trim(); });\n\n    // Build headerMap: raw header string -> column descriptor (possibly fuzzy).\n    // Two passes so a fuzzy near-match can NEVER hijack a column that another\n    // header claims exactly (e.g. \"sd\" is Levenshtein 1 from \"se\" — without this\n    // it would overwrite the real \"se\" with the standard deviation). Pass 1 takes\n    // exact matches; pass 2 fuzzes only over columns not already claimed, and no\n    // two headers may map to the same column.\n    var headerMap = {}, claimed = {}, hi, ci;\n    for (hi = 0; hi < rawHeaders.length; hi++) {\n      var he = rawHeaders[hi];\n      for (ci = 0; ci < columns.length; ci++) {\n        if (he === columns[ci].name && !claimed[columns[ci].name]) { headerMap[he] = columns[ci]; claimed[columns[ci].name] = true; break; }\n      }\n    }\n    for (hi = 0; hi < rawHeaders.length; hi++) {\n      var h = rawHeaders[hi];\n      if (headerMap[h]) continue;                     // already claimed exactly\n      var bestCol = null, bestDist = Infinity;\n      for (ci = 0; ci < columns.length; ci++) {\n        if (claimed[columns[ci].name]) continue;      // don't hijack a claimed column\n        var d = _lev(h, columns[ci].name, 3);\n        if (d < bestDist) { bestDist = d; bestCol = columns[ci]; }\n      }\n      if (bestCol && bestDist <= 2) {\n        headerMap[h] = bestCol; claimed[bestCol.name] = true;\n        warnings.push('Header \"' + h + '\" mapped to \"' + bestCol.name + '\" (Levenshtein ' + bestDist + ')');\n      } else {\n        headerMap[h] = { name: h };                   // pass through as a plain column\n      }\n    }\n\n    var rows = [];\n    for (var r = 1; r < matrix.length; r++) {\n      var rowArr = matrix[r];\n      var obj = {};\n      for (var i = 0; i < rawHeaders.length; i++) {\n        var col = headerMap[rawHeaders[i]];\n        var raw = (rowArr[i] !== undefined ? rowArr[i] : '').trim();\n        var result = _coerce(raw, col.type);\n        if (result.err) {\n          warnings.push('row ' + r + ': ' + result.err);\n        }\n        obj[col.name] = result.value;\n      }\n      rows.push(obj);\n    }\n\n    return { headers: rawHeaders, rows: rows, warnings: warnings };\n  }\n\n  const _STYLE = `.alm-csv{display:grid;gap:.6rem;font:13px/1.4 system-ui,sans-serif}.alm-csv-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.alm-csv input[type=file]{font:inherit}.alm-csv textarea{min-height:6rem;width:100%;font:12px/1.35 ui-monospace,Consolas,monospace;padding:.4rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--input-bg,#fff);color:var(--ink,#15181d)}.alm-csv button{padding:.3rem .6rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--panel,#fff);color:var(--ink,#15181d);cursor:pointer;font:inherit}.alm-csv details summary{cursor:pointer;font-weight:600}.alm-csv [data-section=warnings]{color:#b45309;font-size:12px}.alm-csv [data-section=warnings]:empty{display:none}.alm-csv table{border-collapse:collapse;font-size:12px;margin-top:.4rem}.alm-csv th,.alm-csv td{padding:.2rem .4rem;border:1px solid var(--border,#e2e8f0);text-align:left}@media (prefers-color-scheme:dark){.alm-csv textarea{background:var(--input-bg,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv button{background:var(--panel,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv [data-section=warnings]{color:#e0a85e}.alm-csv th,.alm-csv td{border-color:var(--border,#3a4048)}}`;\n  let _stylesInjected = false;\n  function _ensureStyle() {\n    if (_stylesInjected) return;\n    const s = document.createElement('style'); s.textContent = _STYLE;\n    document.head.appendChild(s); _stylesInjected = true;\n  }\n  function _formatPanel(columns) {\n    const rows = columns.map(c =>\n      `<tr><td>${c.name}</td><td>${c.type || 'string'}</td><td>${c.required ? 'yes' : ''}</td><td>${c.example != null ? c.example : ''}</td></tr>`\n    ).join('');\n    return `<details data-section=\"format\" open><summary>Expected CSV format</summary>\n      <table><thead><tr><th>column</th><th>type</th><th>required</th><th>example</th></tr></thead><tbody>${rows}</tbody></table>\n      <p style=\"margin-top:.4rem\"><button type=\"button\" data-action=\"sample\">Download sample CSV</button></p>\n    </details>`;\n  }\n  function _sampleCSV(columns) {\n    const header = columns.map(c => c.name).join(',');\n    const example = columns.map(c => {\n      if (c.example != null) return c.example;\n      if (c.type === 'int') return '1';\n      if (c.type === 'float') return '0.1';\n      return c.name === 'study' ? 'StudyA' : 'x';\n    }).join(',');\n    return header + '\\n' + example;\n  }\n  function _download(blob, name) {\n    const a = document.createElement('a');\n    a.href = URL.createObjectURL(blob);\n    a.download = name;\n    document.body.appendChild(a); a.click(); document.body.removeChild(a);\n    setTimeout(() => URL.revokeObjectURL(a.href), 1000);\n  }\n\n  function init(opts) {\n    opts = opts || {};\n    const target = typeof opts.target === 'string' ? document.querySelector(opts.target) : opts.target;\n    if (!target) { console.warn('[alm.csvUpload] target not found'); return; }\n    const columns = opts.columns || [];\n    const onParse = typeof opts.onParse === 'function' ? opts.onParse : () => {};\n    _ensureStyle();\n    target.innerHTML = `\n      <div class=\"alm-csv\">\n        <div class=\"alm-csv-row\">\n          <label>Upload CSV: <input type=\"file\" accept=\".csv,text/csv\"></label>\n          <span>or paste below:</span>\n        </div>\n        <textarea placeholder=\"Paste CSV here (with header row)\"></textarea>\n        <div class=\"alm-csv-row\">\n          <button type=\"button\" data-action=\"parse-paste\">Parse pasted text</button>\n        </div>\n        <div data-section=\"warnings\"></div>\n        ${_formatPanel(columns)}\n      </div>`;\n    const fileInput = target.querySelector('input[type=\"file\"]');\n    const ta = target.querySelector('textarea');\n    const warnEl = target.querySelector('[data-section=\"warnings\"]');\n    function _emit(text) {\n      // Apps needing stricter schemas may supply their own parser; default unchanged.\n      const result = (typeof opts.parse === 'function' ? opts.parse : parse)(text, columns);\n      warnEl.textContent = result.warnings.map(w => String.fromCharCode(8226) + ' ' + w).join('\\n');\n      warnEl.style.whiteSpace = 'pre-wrap';\n      onParse(result);\n    }\n    fileInput.addEventListener('change', () => {\n      const f = fileInput.files[0]; if (!f) return;\n      const reader = new FileReader();\n      reader.onload = () => _emit(String(reader.result));\n      reader.readAsText(f);\n    });\n    target.querySelector('[data-action=\"parse-paste\"]').addEventListener('click', () => {\n      _emit(ta.value);\n    });\n    target.querySelector('[data-action=\"sample\"]').addEventListener('click', () => {\n      _download(new Blob([_sampleCSV(columns)], { type: 'text/csv' }), 'sample.csv');\n    });\n  }\n\n  // Attach parse directly onto init so callers can use\n  // window.alm.csvUpload.parse(text, columns).\n  init.parse = parse;\n\n  window.alm = window.alm || {};\n  window.alm.csvUpload = init;\n})();\n"
+  },
+  "unchangedFiles": [
+    {
+      "path": "mh-peto/index.html",
+      "blob": "84150a5b915447ff57e67067e85992f3384901d7"
+    },
+    {
+      "path": "shared/multilevel-reml.js",
+      "blob": "cb672e070cf151ba618b20c5249febb69ba2c962"
+    },
+    {
+      "path": "shared/nma-multiarm-v1.js",
+      "blob": "b57de1c02ec304fa7448b7a804b4d75f52ae5386"
+    }
+  ],
+  "headFiles": [
+    {
+      "path": "hub/shared/csv-upload.js",
+      "blob": "0df55803856281a4a13a62fda5c3493469679b66"
+    },
+    {
+      "path": "hub/shared/tests/unit/rev-p10-duplicate-count-headers.test.mjs",
+      "blob": "77120848e1c8a903e795cccc28132db2182ea526"
+    }
+  ]
+}
