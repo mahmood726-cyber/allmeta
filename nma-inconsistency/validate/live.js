@@ -46,13 +46,13 @@ function buildScript(s) {
     try { pair=JSON.parse(key); } catch (_) { throw Error('Invalid structural treatment-pair identity; R validation refused.'); }
     if(!Array.isArray(pair) || pair.length!==2 || pair.some(t=>typeof t!=='string'))
       throw Error('Invalid structural treatment-pair identity; R validation refused.');
-    // A well-formed but transposed pair key must not silently attach an R
-    // comparison to a different displayed result during validation export.
-    if(pair.slice().sort().join(' vs ')!==comparison)
-      throw Error('Structural treatment-pair identity disagrees with displayed comparison; R validation refused.');
     const ids=pair.map(t=>s.state.trts.indexOf(t)+1);
     if(ids.includes(0) || ids[0]===ids[1])
       throw Error('Unknown structural treatment-pair identity; R validation refused.');
+    // Preserve the pre-existing unknown-ID refusal reason, then reject valid
+    // keys that have been transposed onto a different displayed comparison.
+    if(pair.slice().sort().join(' vs ')!==comparison)
+      throw Error('Structural treatment-pair identity disagrees with displayed comparison; R validation refused.');
     return ids.sort((a,b)=>a-b).join(':');
   };
   return `suppressPackageStartupMessages(library(netmeta))
