@@ -20,6 +20,9 @@
     target.innerHTML = '<div class="alm-axis"></div>';
     const root = target.firstChild;
     const errEl = document.createElement('div'); errEl.setAttribute('data-error', '');
+    errEl.setAttribute('aria-live', 'polite');
+    errEl.setAttribute('aria-atomic', 'true');
+    const rangeInputs = new Map();
 
     function fmtState() {
       const state = { ticks: opts.ticks || 'auto' };
@@ -32,11 +35,16 @@
     function validateAndEmit() {
       errEl.textContent = '';
       for (const a of axes) {
-        if (a.range[0] != null && a.range[1] != null && a.range[0] >= a.range[1]) {
+        const invalid = a.range[0] != null && a.range[1] != null && a.range[0] >= a.range[1];
+        for (const inp of rangeInputs.get(a)) {
+          if (invalid) inp.setAttribute('aria-invalid', 'true');
+          else inp.removeAttribute('aria-invalid');
+        }
+        if (invalid && !errEl.textContent) {
           errEl.textContent = a.label + ' min must be < max';
-          return;
         }
       }
+      if (errEl.textContent) return;
       onChange(fmtState());
     }
     for (const a of axes) {
@@ -48,6 +56,7 @@
         <span>max</span>
         <input type="number" aria-label="${a.label} axis maximum" data-axis="${a.key}" data-edge="max" value="${a.range[1] ?? ''}">
         <label style="font-weight:400"><input type="checkbox" data-axis="${a.key}" data-edge="log" ${a.log ? 'checked' : ''}> log</label>`;
+      rangeInputs.set(a, row.querySelectorAll('input[type="number"]'));
       row.querySelectorAll('input').forEach(inp => {
         inp.addEventListener('change', () => {
           if (inp.dataset.edge === 'min' || inp.dataset.edge === 'max') {

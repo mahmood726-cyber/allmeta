@@ -3,6 +3,7 @@ const fs = require('node:fs'), vm = require('node:vm'), path = require('node:pat
 const enginePath = process.env.GOSH_EXACT_ENGINE || path.join(__dirname, '../exact-enum.js');
 const uiPath = process.env.GOSH_EXACT_UI || path.join(__dirname, '../exact-ui.js');
 const E = require(enginePath);
+const tickLabels = require('./input-harness.cjs')(path.join(__dirname, '../index.html')).window.__almGoshTickLabels;
 
 function page(noWorker=false) {
   const nodes = {}, workers = [];
@@ -13,7 +14,7 @@ function page(noWorker=false) {
   for (const id of ['exact-summary','exact-perstudy']) { el(id).tBodies=[node()]; el(id).tHead=node(); el(id).caption=node(); }
   class Worker { constructor() { if(noWorker)throw Error('worker unavailable'); workers.push(this); } postMessage() {} terminate() { this.stopped=true; } }
   let readyCalls=0;
-  const window={AlmGoshExactEngine:E,__almGoshExactReady(){readyCalls++;}};
+  const window={AlmGoshExactEngine:E,__almGoshTickLabels:tickLabels,__almGoshExactReady(){readyCalls++;}};
   vm.runInNewContext(fs.readFileSync(uiPath,'utf8'), {window, document:{getElementById:el,createElement:node}, Worker, setTimeout,clearTimeout,console});
   const request = (k=16) => ({rows:Array.from({length:k},(_,i)=>({te:i/10,se:1,label:'S'+i})),model:'FE',apply(){}});
   const complete = () => { const res=E.run([0,.2,.3],[.1,.2,.3],'FE'); res.k=16; workers.at(-1).onmessage({data:{type:'done',id:1,result:res}}); };

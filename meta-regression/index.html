@@ -183,8 +183,17 @@
     const svgHost = document.getElementById("svg-host");
     const statsWrap = document.getElementById("stats-wrap");
 
-    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
-    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+    function readState() {
+      const o={};
+      for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; }
+      o.scale = document.getElementById("f-scale").checked;
+      return o;
+    }
+    function writeState(s) {
+      for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; }
+      // Older saved states omit scale; restore their original unchecked default.
+      document.getElementById("f-scale").checked = s.scale === true;
+    }
 
     function parseStudies(text) {
       const studies=[], warnings=[];
@@ -600,7 +609,12 @@
         "yi <- c(" + studies.map(s => s.est).join(", ") + ")",
         "se <- c(" + studies.map(s => s.se).join(", ") + ")",
         "x  <- c(" + studies.map(s => s.x).join(", ") + ")",
-        "labels <- c(" + studies.map(s => '"' + String(s.label).replace(/"/g, '\\"') + '"').join(", ") + ")",
+        // Escape backslashes before introducing R escapes for controls and quotes.
+        "labels <- c(" + studies.map(s => '"' + String(s.label)
+          .replace(/\\/g, '\\\\')
+          .replace(/\x07/g, '\\a').replace(/\x08/g, '\\b').replace(/\f/g, '\\f')
+          .replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
+          .replace(/\v/g, '\\v').replace(/"/g, '\\"') + '"').join(", ") + ")",
         "",
         "# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence",
         "# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).",
@@ -821,6 +835,7 @@
       var r2      = window._almLastR2      ? window._almLastR2()      : 0;
       var qeObj   = window._almLastQE      ? window._almLastQE()      : null;
       var out = { _schema: 'meta-regression-results-v1', k: studies.length };
+      if (window.AlmBuildInfo) out.producedBy = Object.assign({}, window.AlmBuildInfo);
       if (fitted && fitted.fit && hk) {
         var f = fitted.fit;
         var df = hk.df;

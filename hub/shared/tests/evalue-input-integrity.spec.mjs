@@ -122,3 +122,22 @@ test('can recover from refusal and correctly handle CI crossing RR=1',async({pag
   expect((await page.evaluate(()=>window.__almLastEValue())).ci).toBe(1);
   expect(await page.locator('#plot circle').count()).toBeGreaterThan(0);
 });
+
+// Persona P0-42 (paper 22): a protective RR is plotted at its reciprocal (1/RR) so it can sit on the
+// one-sided RR>=1 axis; the marker label must say so. RR 0.6 and RR 1.6667 are at the same position
+// but must not carry the same label, and every E-value must be unchanged.
+test('P0-42: reciprocal marker for a protective RR is labelled 1/RR, not RR', async ({page}) => {
+  const label = async (point, lo, hi) => {
+    await configure(page, point, lo, hi);
+    return page.evaluate(() => ({
+      text: [...document.querySelectorAll('#plot text')].map(t => t.textContent),
+      ev: window.__almLastEValue(),
+    }));
+  };
+  const harm = await label('1.6667', '1.2', '2.3');
+  const protect = await label('0.6', '0.4348', '0.8333');
+  expect(harm.text).toContain('RR');
+  expect(protect.text).not.toContain('RR');
+  expect(protect.text.some(t => t.startsWith('1/RR'))).toBe(true);
+  expect(protect.ev.point).toBeCloseTo(harm.ev.point, 3);
+});
