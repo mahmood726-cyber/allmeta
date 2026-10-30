@@ -32,7 +32,9 @@ for (const [kind, names] of [['plant', labels], ['control', plainLabels]]) {
       JSON.stringify(snapshot.values.filter(v => v.key.startsWith('display.')))));
     check(name, () => assert.equal(new Set(snapshot.state.nodeSplit.map(s => s.pairKey)).size, 6,
       'all six identities survive the cloned live snapshot'));
-    // The hosted validator serialises the snapshot before building its R script.\n    // Only top-level serialisable pairKeys, never non-enumerable fit metadata, may cross.\n    const script = live.buildScript(JSON.parse(JSON.stringify(snapshot)));
+    // The hosted validator serialises the snapshot before building its R script.
+    // Only top-level serialisable pairKeys, never non-enumerable fit metadata, may cross.
+    const script = live.buildScript(JSON.parse(JSON.stringify(snapshot)));
     const namesLine = script.match(/^names_app <- (.*)$/m)[1];
     const keys = [...namesLine.matchAll(/"(?:[^"\\]|\\.)*"/g)].map(m => JSON.parse(m[0]));
     check(name, () => assert.equal(keys.length, 6));
