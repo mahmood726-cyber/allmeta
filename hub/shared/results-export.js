@@ -92,6 +92,12 @@
     L.push((plain ? '' : '_') + 'Generated ' + today +
       ' with allmeta — browser-only evidence synthesis (https://github.com/).' + (plain ? '' : '_'));
     L.push('');
+    const by = obj.producedBy;
+    if (by && (by.version || by.sha)) {
+      L.push([by.version && 'Release: ' + by.version, by.sha && 'Source commit: ' + by.sha]
+        .filter(Boolean).join('; ') + '.');
+      L.push('');
+    }
     L.push((plain ? 'METHODS' : '## Methods'));
     L.push('');
     if (m.desc) L.push(m.desc);

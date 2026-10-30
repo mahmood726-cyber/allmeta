@@ -107,8 +107,11 @@
     const gen = ++state.gen;
     shownText = src.value;
     showInputMessage();
-    state.rows = window.parse(src.value); state.model = model.value; state.selected = null;
-    state.base = P.fitAll(E, state.rows, state.model);
+    // A refused import retains the input text; only a new base run may accept it.
+    const last = typeof window._almLastInco === 'function' ? window._almLastInco() : null;
+    const refused = last && last.status === 'refused';
+    state.rows = refused ? [] : window.parse(src.value); state.model = model.value; state.selected = null;
+    state.base = refused ? { status: 'refused', reason: last.reason } : P.fitAll(E, state.rows, state.model);
     state.compare = state.base.status === 'ok' ? P.compare3(E, state.rows) : null;
     state.loo = null;
     renderInterpret(); renderGraph(); renderCompare(); renderLoo(); renderMethods();

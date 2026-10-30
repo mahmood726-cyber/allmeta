@@ -178,6 +178,7 @@
 
         <div id="stats-wrap"></div>
         <div id="warn-banner" class="warn-banner" role="status" aria-live="polite"></div>
+        <div id="bus-import-error" class="warn-banner" role="alert" hidden></div>
 
         <div class="actions">
           <div id="alm-plot-mount"></div>
@@ -712,7 +713,7 @@
     function onDownloadJson() {
       if (!canExport()) return;
       const state = readState();
-      const out = Object.assign({_schema:"nma-v1", _savedAt:new Date().toISOString()}, state);
+      const out = Object.assign({_schema:"nma-v1", _savedAt:new Date().toISOString(), producedBy:window.AlmBuildInfo}, state);
       downloadBlob(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}), "nma-state.json");
     }
     function onImportJson(file) {
@@ -758,7 +759,13 @@
       if (!window.MaComparisons) return null;
       const env = window.MaComparisons.read();
       if (!env || !Array.isArray(env.studies) || !env.studies.length) return null;
-      const rows = window.MaComparisons.toContrasts(env);
+      const converted = window.MaComparisons.toContrastsDetailed(env);
+      if (converted.omissions.length) {
+        return { error: "Import refused. " + converted.omissions.map(o =>
+          o.study + " (" + o.treatment1 + " vs " + o.treatment2 + "): " + o.reason
+        ).join(" ") + " Correct the sample sizes in Extract and load again. No extraction data were imported." };
+      }
+      const rows = converted.rows;
       if (!rows || !rows.length) return null;
       // est convention here is treatment2 − treatment1; toContrasts te is
       // (treatment1 − treatment2), so swap the labels to keep est = t2 − t1.
@@ -768,9 +775,24 @@
       }
       return { text: lines.join("\n"), measure: env.effectMeasure, n: rows.length };
     }
+    function showBusImportError(message) {
+      const notice = document.getElementById("bus-import-error");
+      notice.textContent = message;
+      notice.hidden = !message;
+      if (message) {
+        notice.classList.add("is-visible");
+        clearResults();
+        warnEl.innerHTML = "";
+        warnEl.classList.remove("is-visible");
+        document.getElementById("analysis-status").hidden = true;
+        document.getElementById("analysis-stale").hidden = true;
+      } else notice.classList.remove("is-visible");
+    }
     function onLoadBus() {
       const bus = busContrastsText();
       if (!bus) { alert("No arm-level contrasts on the extraction bus yet. In Extract, send records with per-arm event/sample data to the comparisons bus first."); return; }
+      if (bus.error) { showBusImportError(bus.error); return; }
+      showBusImportError("");
       document.getElementById("f-data").value = bus.text;
       if (!document.getElementById("f-title").value) document.getElementById("f-title").value = "NMA from extraction (" + bus.measure + ")";
       render();
@@ -818,10 +840,14 @@
     };
 
     const loaded = loadSaved();
+    let importRefused = false;
     if (!loaded) {
       // Prefer real arm-level data from the extraction bus over the demo.
       const bus = busContrastsText();
-      if (bus) {
+      if (bus && bus.error) {
+        showBusImportError(bus.error);
+        importRefused = true;
+      } else if (bus) {
         document.getElementById("f-data").value = bus.text;
         document.getElementById("f-title").value = "NMA from extraction (" + bus.measure + ")";
       } else {
@@ -830,7 +856,7 @@
       }
     }
     attach();
-    render();
+    if (!importRefused) render();
   })();
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>

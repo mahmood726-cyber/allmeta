@@ -91,7 +91,7 @@
       </table>
       <p id="interp"></p>
       <h2 style="margin-top:0.7rem">On the risk-ratio scale</h2>
-      <svg id="plot" viewBox="0 0 600 150" role="img" aria-label="Observed risk ratio and E-value on a log scale"></svg>
+      <svg id="plot" viewBox="0 0 600 150" role="img" aria-label="Observed risk ratio (its reciprocal, 1/RR, for a protective effect) and E-value on a log scale"></svg>
     </section>
   </main>
   <footer>
@@ -178,7 +178,7 @@
       // observed RR marker
       if (r.rr.point > 0) {
         parts.push("<circle cx='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' cy='" + y + "' r='5' fill='var(--accent)'/>");
-        parts.push("<text x='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' y='" + (y - 12) + "' text-anchor='middle' font-size='10' fill='var(--accent)'>RR</text>");
+        parts.push("<text x='" + x(Math.max(1, r.rr.point >= 1 ? r.rr.point : 1 / r.rr.point)) + "' y='" + (y - 12) + "' text-anchor='middle' font-size='10' fill='var(--accent)'>" + (r.rr.point >= 1 ? "RR" : "1/RR = " + fmt(1 / r.rr.point)) + "</text>");
       }
       // E-value marker
       parts.push("<line x1='" + x(r.point) + "' y1='" + (y - 28) + "' x2='" + x(r.point) + "' y2='" + (y + 8) + "' stroke='var(--warn)' stroke-width='2'/>");
