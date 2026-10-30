@@ -21,15 +21,13 @@ test.describe("Screen · blocked dedup", () => {
       for (let i = 0; i < 150; i++) {
         const ws = []; for (let k = 0; k < 10; k++) ws.push("w" + Math.floor(r() * 4000));
         const t = ws.join(" ") + " s" + i;
-        recs.push({ id: "a" + i, title: t });
-        recs.push({ id: "b" + i, title: t.toUpperCase() + "." });   // reformatted duplicate
+        recs.push({ id: "__control_a" + i, title: t });
+        recs.push({ id: "__control_b" + i, title: t.toUpperCase() + "." });   // reformatted duplicate
       }
       window.__almScreenpro.setState({ records: recs });
-      window.__almScreenpro.dedupBlocked();
-      const blocked = new Set(window.__almScreenpro.dupIds());
+      const blocked = new Set(window.__almScreenpro.dedupBlocked().pairs.map(p=>p.id));
       window.__almScreenpro.setState({ records: recs });
-      window.__almScreenpro.dedupBrute();
-      const brute = new Set(window.__almScreenpro.dupIds());
+      const brute = new Set(window.__almScreenpro.dedupBrute().pairs.map(p=>p.id));
       let missedByBlocking = 0; brute.forEach((id) => { if (!blocked.has(id)) missedByBlocking++; });
       return { blocked: blocked.size, brute: brute.size, missedByBlocking };
     });
@@ -38,20 +36,20 @@ test.describe("Screen · blocked dedup", () => {
     expect(out.missedByBlocking).toBe(0);
   });
 
-  test("multi-field assist: reformatted title + same author/year, different DOI -> merged", async ({ page }) => {
+  test("multi-field assist: reformatted title + same author/year, different DOI -> retained", async ({ page }) => {
     await hook(page);
     const out = await page.evaluate(() => {
       window.__almScreenpro.setState({ records: [
-        { id: "a", title: "Dapagliflozin in patients with heart failure and reduced ejection fraction: the DAPA-HF trial", authors: ["McMurray JJV"], year: "2019", doi: "10.1056/x" },
+        { id: "__control_a", title: "Dapagliflozin in patients with heart failure and reduced ejection fraction: the DAPA-HF trial", authors: ["McMurray JJV"], year: "2019", doi: "10.1056/x" },
         // reformatted (truncated trailing clause), DIFFERENT doi, same first author+year
-        { id: "b", title: "Dapagliflozin in patients with heart failure and reduced ejection", authors: ["McMurray J"], year: "2019", doi: "10.9999/y" },
+        { id: "__control_b", title: "Dapagliflozin in patients with heart failure and reduced ejection", authors: ["McMurray J"], year: "2019", doi: "10.9999/y" },
         // same title family but different year -> must NOT merge via assist
-        { id: "c", title: "Dapagliflozin in patients with heart failure and reduced ejection", authors: ["McMurray J"], year: "2021", doi: "10.3/z" },
+        { id: "__control_c", title: "Dapagliflozin in patients with heart failure and reduced ejection", authors: ["McMurray J"], year: "2021", doi: "10.3/z" },
       ]});
       window.__almScreenpro.dedupBlocked();
-      return { b: window.__almScreenpro.recordById("b").dup, c: window.__almScreenpro.recordById("c").dup };
+      return { b: window.__almScreenpro.recordById("__control_b").dup, c: window.__almScreenpro.recordById("__control_c").dup };
     });
-    expect(out.b).toBe(true);   // recovered by author+year assist despite different DOI
+    expect(out.b).toBe(false);  // different DOIs must not merge despite author/year similarity
     expect(out.c).toBe(false);  // different year -> not merged on the relaxed threshold
   });
 
@@ -62,7 +60,7 @@ test.describe("Screen · blocked dedup", () => {
         { id: "a", title: "Effects of statins on cardiovascular mortality in older adults", authors: ["Smith J"], year: "2020", doi: "" },
         { id: "b", title: "Aspirin for primary prevention of stroke in women", authors: ["Smith J"], year: "2020", doi: "" },
       ]});
-      return window.__almScreenpro.dedupBlocked().merges;
+      return window.__almScreenpro.dedupBlocked().pairs.length;
     });
     expect(c).toBe(0);
   });
