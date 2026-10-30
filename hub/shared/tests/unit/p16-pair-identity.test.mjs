@@ -82,4 +82,9 @@ test('P16-R3 serialised treatment-pair identities fail closed if absent, duplica
     /Invalid structural treatment-pair identity/);
   assert.throws(() => liveScript(rows, 'FE', s => { s.pairKeys[0] = JSON.stringify(['A', 'not-a-treatment']); }),
     /Unknown structural treatment-pair identity/);
+  // Both keys are valid and unique; swapping their assigned comparisons must
+  // nevertheless refuse rather than publish a false R verification mapping.
+  assert.throws(() => liveScript(rows, 'FE', s => {
+    const first = s.pairKeys[0]; s.pairKeys[0] = s.pairKeys[1]; s.pairKeys[1] = first;
+  }), /Structural treatment-pair identity disagrees with displayed comparison/);
 });
