@@ -208,11 +208,50 @@
     function parse(text) {
       var rows = [], errors = [], first = true;
       var numeric = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+      text = String(text);
       // Keep the original default labels while reporting physical input line numbers.
-      var leading = (String(text).match(/^\s*/) || [''])[0].split('\n').length - 1;
-      String(text).split(/\r?\n/).forEach(function (l, i) {
-        if (!l.trim()) return;
-        var parts = l.split(/,/).map(function (s) { return s.trim(); });
+      var leading = (text.match(/^\s*/) || [''])[0].split('\n').length - 1;
+      var records = [], parts = [], field = '', quoted = false, inQuotes = false, closed = false;
+      var line = 1, startLine = 1, start = 0, syntax = '';
+      function endField() {
+        parts.push(quoted ? field : field.trim());
+        field = ''; quoted = false; closed = false;
+      }
+      function endRecord(end) {
+        endField();
+        if (text.slice(start, end).trim()) records.push({ parts: parts, line: startLine, reason: syntax });
+        parts = []; syntax = ''; start = end + 1; startLine = line + 1;
+      }
+      // Only the optional label is quoted; numeric fields retain their strict grammar.
+      // A newline inside that label is data, never another study.
+      for (var at = 0; at < text.length; at++) {
+        var c = text[at];
+        if (inQuotes) {
+          if (c === '"' && text[at + 1] === '"') { field += '"'; at++; }
+          else if (c === '"') { inQuotes = false; closed = true; }
+          else field += c;
+        } else if (c === ',') {
+          endField();
+        } else if (c === '\n') {
+          endRecord(at);
+        } else if (closed) {
+          if (c.trim()) syntax = 'unexpected text after closing label quote';
+        } else if (parts.length === 2 && c === '"' && !field.trim()) {
+          field = ''; quoted = true; inQuotes = true;
+        } else {
+          field += c;
+        }
+        if (c === '\n') line++;
+      }
+      if (inQuotes) syntax = 'unterminated quoted label';
+      endRecord(text.length);
+      records.forEach(function (record) {
+        var parts = record.parts, i = record.line - 1;
+        if (record.reason) {
+          first = false;
+          errors.push('Line ' + (i + 1) + ': ' + record.reason);
+          return;
+        }
         var header = first && /^(effect|yi|te)$/i.test(parts[0]) && /^se$/i.test(parts[1]) &&
           (parts.length === 2 || (parts.length === 3 && /^label$/i.test(parts[2])));
         first = false;
@@ -646,6 +685,9 @@
         var se = parseFloat(r.sei !== undefined ? r.sei : (r.SE !== undefined ? r.SE : (r.seTE !== undefined ? r.seTE : r.se)));
         if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return;
         var label = r.study || r.label || r.Study || '';
+        // Pair CSV label escaping with parse() so decoded record boundaries survive Run/restore.
+        label = String(label);
+        if (/[",\r\n]/.test(label)) label = '"' + label.replace(/"/g, '""') + '"';
         lines.push(te.toString() + ', ' + se.toString() + (label ? ', ' + label : ''));
       });
       if (lines.length < 1) return;
