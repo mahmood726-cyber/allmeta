@@ -432,6 +432,18 @@
       window.AlmGoshExact.labelResult(_lastResults);
     }
 
+    // Shared by the sampled scatter and exact density so distinct ticks retain distinct labels.
+    function labels(ticks, fixedDigits) {
+      var magnitude = Math.max.apply(null, ticks.map(Math.abs));
+      var scientific = magnitude !== 0 && (magnitude < 1e-4 || magnitude >= 1e7);
+      for (var digits = scientific ? 2 : fixedDigits; digits <= 17; digits++) {
+        var values = ticks.map(function (v) { return scientific ? v.toExponential(digits) : v.toFixed(digits); });
+        if (values.every(function (v, i) { return i === 0 || ticks[i] === ticks[i - 1] || v !== values[i - 1]; })) return values;
+      }
+      return ticks.map(String);
+    }
+    window.__almGoshTickLabels = labels;
+
     function draw(pts) {
       var svg = document.getElementById('plot');
       var W = 600, H = 420;
@@ -478,15 +490,6 @@
         var dl = Math.abs(v - lo), dh = Math.abs(v - hi);
         if (Math.min(dl, dh) <= eps) return dl <= dh ? lo : hi;
         return v;
-      }
-      function labels(ticks, fixedDigits) {
-        var magnitude = Math.max.apply(null, ticks.map(Math.abs));
-        var scientific = magnitude !== 0 && (magnitude < 1e-4 || magnitude >= 1e7);
-        for (var digits = scientific ? 2 : fixedDigits; digits <= 17; digits++) {
-          var values = ticks.map(function (v) { return scientific ? v.toExponential(digits) : v.toFixed(digits); });
-          if (values.every(function (v, i) { return i === 0 || ticks[i] === ticks[i - 1] || v !== values[i - 1]; })) return values;
-        }
-        return ticks.map(String);
       }
       var X = function (v) { return padL + fraction(v, xMin, xMax) * plotW; };
       var Y = function (v) { return padT + (1 - fraction(v, yMin, yMax)) * plotH; };
