@@ -768,6 +768,8 @@
       var type = document.getElementById('in-type').value;
       var est = parseFloat(document.getElementById('in-est').value);
       var se = parseFloat(document.getElementById('in-se').value);
+      var n1 = parseFloat(document.getElementById('der-n1').value);
+      var n2 = parseFloat(document.getElementById('der-n2').value);
       var rows = (window.__almResultRows || []).map(function (r) {
         return {
           scale: r.scale,
@@ -780,10 +782,13 @@
       });
       return {
         _schema: 'esc-results-v1',
+        build: window.AlmBuildInfo ? Object.assign({}, window.AlmBuildInfo) : null,
         type: type,
         smd_estimator: type === 'SMD' ? document.getElementById('in-smd-kind').value : null,
         input_estimate: Number.isFinite(est) ? est : null,
         input_se: Number.isFinite(se) ? se : null,
+        n1: Number.isFinite(n1) ? n1 : null,
+        n2: Number.isFinite(n2) ? n2 : null,
         baseline_risk: document.getElementById('ctx-p0').value.trim() !== '' ?
           Number(document.getElementById('ctx-p0').value) : null,
         pooled_sd: document.getElementById('ctx-sd').value.trim() !== '' ?
