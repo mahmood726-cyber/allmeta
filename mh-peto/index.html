@@ -791,6 +791,13 @@ StudyE, 4, 600, 10, 600</textarea>
       var defined = convRows.filter(function (cr) { return cr[1].beta !== null && cr[1].se !== null && cr[1].p !== null; });
       var sigs = defined.map(function (cr) { return cr[1].p < 0.05; });
       var flags = [];
+      // All betas have a zero null: log OR/RR and identity RD.
+      var directions = defined.map(function (cr) { return Math.sign(cr[1].beta); });
+      if (directions.length > 1 && directions.some(function (d) { return d !== directions[0]; })) {
+        var opposite = directions.indexOf(-1) !== -1 && directions.indexOf(1) !== -1;
+        flags.push('the conventions disagree on direction' + (opposite
+          ? ' (estimates lie on opposite sides of the null)' : ' (some estimates are at the null and others are not)'));
+      }
       if (sigs.length > 1 && sigs.some(function (s) { return s !== sigs[0]; })) flags.push('the conventions disagree on statistical significance at the 5% level');
       if (ratio && defined.length > 1) {
         var bs = defined.map(function (cr) { return cr[1].beta; });
