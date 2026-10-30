@@ -11,6 +11,22 @@ function installExports(w) {
   const result=safe(()=>registrations.resultsExport.getResults());
   const receipt=safe(()=>registrations.plotExport.getReceiptInput());
   const chart=safe(()=>registrations.plotExport.plots[0].getSvg());
+  // Software is a required export extension, checked independently of the
+  // unchanged numerical oracle. Project only this validated field; keep every
+  // other key/value so the oracle still rejects missing or unexpected data.
+  const numericalResult=(payload,location)=>{
+   if(payload===null)return null;
+   const build=w.AlmBuildInfo||{},software=payload?.software;
+   if(!software||typeof software!=='object'||Array.isArray(software)||
+      Object.keys(software).sort().join(',')!=='sha,version'||
+      software.version!==(build.version||'unknown')||software.sha!==(build.sha||'unknown')){
+    throw new Error(location+'.software must contain exactly the loaded version and SHA (or explicit unknown fields)');
+   }
+   const {software:validated,...numerical}=payload;
+   return numerical;
+  };
+  const results=numericalResult(result,'results');
+  const numericalReceipt=receipt===null?null:{...receipt,results:numericalResult(receipt?.results,'receipt.results')};
   let signed=[];
   const original=w.MaStudies.toTruthCert;
   w.TruthCertUI.setKey('test-only-not-a-real-signing-key');
@@ -20,7 +36,7 @@ function installExports(w) {
   w.TruthCertUI.setKey('');
   w.MaStudies.clear();
   w.document.querySelector('#btn-bus-save').click();
-  return JSON.parse(JSON.stringify({results:result,receipt,chart:chart?.innerHTML??null,input_receipt:signed,bus:w.MaStudies.read()}));
+  return JSON.parse(JSON.stringify({results,receipt:numericalReceipt,chart:chart?.innerHTML??null,input_receipt:signed,bus:w.MaStudies.read()}));
  };
 }
 if(typeof module!=='undefined')module.exports=installExports;
