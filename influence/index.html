@@ -194,7 +194,8 @@
       <svg id="baujat-plot" viewBox="0 0 600 300" role="img" aria-label="Baujat plot: heterogeneity contribution vs influence on the pooled estimate"></svg>
       <h2 style="margin-top:0.6rem">Radial (Galbraith) plot</h2>
       <p class="hint">Precision (1/SE) vs standardised effect (effect/SE). The slope of the through-origin line is the fixed-effect estimate; points outside the ±2 band are outliers. Matches <code>metafor::radial</code>.</p>
-      <svg id="radial-plot" viewBox="0 0 600 300" role="img" aria-label="Radial Galbraith plot of precision vs standardised effect"></svg>
+      <svg id="radial-plot" viewBox="0 0 600 300" role="img" aria-label="Radial Galbraith plot of precision vs standardised effect" aria-describedby="radial-description"></svg>
+      <div id="radial-summary" class="table-wrap"></div>
 
       <div id="alm-plot-mount"></div>
       <div id="alm-flow-mount" aria-live="polite"></div>
@@ -283,7 +284,7 @@
 
       // Preserve both edited inputs and the last rendered analysis across corpus validation.
       // Recomputing the input on restore would silently change an unsubmitted edit's results.
-      const SNAPSHOT_IDS = ['body', 'loo-plot', 'influence-plot', 'baujat-plot', 'radial-plot', 'model-summary', 'excl-sentence', 'excl-msg', 'input-error'];
+      const SNAPSHOT_IDS = ['body', 'loo-plot', 'influence-plot', 'baujat-plot', 'radial-plot', 'radial-summary', 'model-summary', 'excl-sentence', 'excl-msg', 'input-error'];
       const HIDDEN_IDS = ['input-error'];
       const EXCL_BUTTONS = ['btn-excl-flagged', 'btn-excl-clear', 'btn-excl-apply'];
       window.__almInfluenceValidationSnapshot = function () {
@@ -327,7 +328,7 @@
       function clearResults() {
         _lastDiag = null; _lastFull = null; _lastStudies = []; _excluded = new Set(); _lastExclusion = null;
         window.__almBaujat = null; window.__almRadial = null;
-        for (const id of ["body", "model-body", "loo-plot", "influence-plot", "baujat-plot", "radial-plot"]) document.getElementById(id).innerHTML = "";
+        for (const id of ["body", "model-body", "loo-plot", "influence-plot", "baujat-plot", "radial-plot", "radial-summary"]) document.getElementById(id).innerHTML = "";
         document.getElementById("excl-sentence").textContent = "";
         document.getElementById("excl-msg").textContent = "";
         document.querySelectorAll("#model-summary .excl-col").forEach(el => { el.hidden = true; });
@@ -549,6 +550,8 @@
         const zAbs = Math.max(...rad.z.map(Math.abs), rad.slope * xMax + 2, 2) * 1.05;
         const X = v => padL + v / xMax * pw, Y = v => padT + ph / 2 - v / zAbs * (ph / 2);
         const s = [`<title>Radial (Galbraith) plot: precision against standardised effect, one point per study</title>`];
+        s.push(`<desc id="radial-description">Fixed-effect radial plot. Residual = (effect - fixed-effect estimate) / SE; outliers have absolute residual &gt; 2. The table below lists each study's residual and outlier status.</desc>`);
+        const summaryRows = [];
         s.push(`<line x1="${padL}" y1="${Y(0)}" x2="${padL + pw}" y2="${Y(0)}" stroke="currentColor" opacity="0.4"/>`);
         // slope line + ±2 band
         s.push(`<line x1="${X(0)}" y1="${Y(0)}" x2="${X(xMax)}" y2="${Y(rad.slope * xMax)}" stroke="var(--warn)" stroke-width="1.5"/>`);
@@ -556,11 +559,18 @@
         s.push(`<line x1="${X(0)}" y1="${Y(-2)}" x2="${X(xMax)}" y2="${Y(rad.slope * xMax - 2)}" stroke="var(--warn)" stroke-dasharray="4 3" opacity="0.6"/>`);
         rad.x.forEach((xi, i) => {
           const out = Math.abs(rad.resid[i]) > 2;
-          s.push(`<g data-i="${i}"><title>${esc(rows[i].label || (i + 1))}</title><circle cx="${X(xi)}" cy="${Y(rad.z[i])}" r="4" fill="${out ? 'var(--warn)' : 'var(--accent)'}" fill-opacity="0.6" stroke="currentColor" stroke-width="0.6"/></g>`);
+          const label = esc(rows[i].label || (i + 1)), residual = fmt(rad.resid[i]);
+          const status = out ? "Outlier" : "Not an outlier";
+          s.push(`<g data-i="${i}"><title>${label}: fixed-effect residual ${residual}; ${status}</title><circle cx="${X(xi)}" cy="${Y(rad.z[i])}" r="4" fill="${out ? 'var(--warn)' : 'var(--accent)'}" fill-opacity="0.6" stroke="currentColor" stroke-width="0.6"/></g>`);
+          summaryRows.push(`<tr><th scope="row">${label}</th><td>${residual}</td><td>${status}</td></tr>`);
         });
         s.push(`<text x="${padL + pw / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="currentColor">Precision (1/SE)</text>`);
         s.push(`<text x="14" y="${padT + ph / 2}" transform="rotate(-90 14 ${padT + ph / 2})" text-anchor="middle" font-size="11" fill="currentColor">Standardised effect (effect/SE)</text>`);
         svg.innerHTML = s.join("");
+        document.getElementById("radial-summary").innerHTML = `<table>
+          <caption>Fixed-effect radial diagnostics for all studies: residual = (effect - fixed-effect estimate) / SE. Outliers have absolute residual &gt; 2 (unrounded); displayed residuals are rounded to 3 decimal places. Random-effects influence flags use a separate diagnostic.</caption>
+          <thead><tr><th scope="col">Study</th><th scope="col">Standardised residual (FE)</th><th scope="col">Radial outlier status</th></tr></thead>
+          <tbody>${summaryRows.join("")}</tbody></table>`;
       }
 
       function drawLOO(diag, full) {
@@ -746,9 +756,10 @@
     // textarea using the app's native "effect, SE, label" line format, then
     // trigger run().
     window.__almLoad = function (rows) {
-      var lines = rows.filter(function (r) {
-        return r.study != null && isFinite(r.yi) && isFinite(r.vi) && r.vi > 0;
-      }).map(function (r) {
+      // Keep one native line per CSV data row: invalid input must reach the
+      // all-or-nothing validator, which reports line numbers and clears results.
+      var lines = rows.map(function (r) {
+        if (r.study == null) return 'Missing required CSV study column';
         return r.yi + ', ' + Math.sqrt(r.vi) + ', ' + r.study;
       });
       var ta = document.getElementById('src');

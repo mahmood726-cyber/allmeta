@@ -90,6 +90,7 @@
     return {
       _schema: "corr-ma-plus-v1", refused: false, k: d.k,
       current: { method: current.method || "REML", test: current.test || "z" },
+      studies: studies.map(function (s) { return { label: s.label, r: s.r, n: s.n }; }),
       cells: cells,
     };
   }

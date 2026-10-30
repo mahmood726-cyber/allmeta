@@ -54,6 +54,7 @@ test('imported Hedges g is not corrected twice and export retains numerical prec
   expect(rows.find(r => r.scale === "SMD (Cohen's d, recovered)").point).toBeCloseTo(0.6706910285986036, 10);
   expect(rows.find(r => r.scale === 'MD').point).toBeCloseTo(5.4, 11);
   expect(result.exported.numerical_reference).toContain('metafor::escalc');
+  expect(result.exported.numerical_reference).toContain('measure="MD",vtype="HO"');
   expect(typeof rows[0].point).toBe('number');
   expect(rows[0].point.toString().length).toBeGreaterThan(10);
 });
@@ -143,4 +144,110 @@ test('Wald p quantile derives ratio log-scale SE at p=0.05', async ({ page }) =>
   await page.locator('#btn-derive').click();
   const got = await page.evaluate(() => window.__almResults().input_se);
   expect(got).toBeCloseTo(Math.abs(Math.log(0.75)) / 1.959963984540054, 8);
+});
+
+// ---- Persona P0 regressions for paper 20 (P0-47, P0-46, P0-57, P0-45) ----
+// Independent reference: the raw mean difference m1 - m2 has sampling variance
+// s_p^2 (1/n1 + 1/n2) under the pooled (equal) variance that the SMD itself assumes
+// (metafor::escalc measure="MD", vtype="HO"); with n1 = n2 this equals vtype="LS",
+// sd1^2/n1 + sd2^2/n2. It does not depend on g, so it must be computed from the
+// visible pooled SD and group sizes, never from a cached import.
+const pooledSd = c => Math.sqrt(((c.n1 - 1) * c.sd1 ** 2 + (c.n2 - 1) * c.sd2 ** 2) / (c.n1 + c.n2 - 2));
+const mdSeHO = c => pooledSd(c) * Math.sqrt(1 / c.n1 + 1 / c.n2);
+const EDINBURGH = { m1: 55, sd1: 47, n1: 155, m2: 75, sd2: 64, n2: 156 };   // dat.normand1999 (paper 20 worked example)
+const SMALL = { m1: 61.2, sd1: 9.4, n1: 5, m2: 52, sd2: 8.8, n2: 5 };      // equal n: HO = LS = 5.758472019555189
+
+test('P0-47: raw MD SE after a means/SD import is s_p*sqrt(1/n1+1/n2), not the SMD SE scaled up', async ({ page }) => {
+  await open(page);
+  for (const c of [EDINBURGH, SMALL]) {
+    const md = await page.evaluate((row) => {
+      window.__almLoadCSV([row]);
+      return window.__almResults().rows.find(r => r.scale === 'MD');
+    }, c);
+    expect(md.point).toBeCloseTo(c.m1 - c.m2, 10);
+    expect(md.se).toBeCloseTo(mdSeHO(c), 10);
+    // The app's own exported CI, not one recomputed in the test.
+    expect(md.ci_lower).toBeCloseTo(c.m1 - c.m2 - 1.959963984540054 * mdSeHO(c), 8);
+    expect(md.ci_upper).toBeCloseTo(c.m1 - c.m2 + 1.959963984540054 * mdSeHO(c), 8);
+  }
+  expect(mdSeHO(SMALL)).toBeCloseTo(Math.sqrt(SMALL.sd1 ** 2 / SMALL.n1 + SMALL.sd2 ** 2 / SMALL.n2), 12);
+  // Edinburgh 95% CI to one decimal, as paper 20 reports it: -32.5 to -7.5.
+  const z = 1.959963984540054, se = mdSeHO(EDINBURGH);
+  expect((-20 - z * se).toFixed(1)).toBe('-32.5');
+  expect((-20 + z * se).toFixed(1)).toBe('-7.5');
+});
+
+test('P0-47: the MD follows the visible inputs (pooled SD edit, a same-g scaled study, snapshot restore)', async ({ page }) => {
+  await open(page);
+  const SCALED = { m1: 110, sd1: 94, n1: 155, m2: 150, sd2: 128, n2: 156 }; // same g and SE as Edinburgh, MD doubled
+  const got = await page.evaluate(({ A, B }) => {
+    const md = () => window.__almResults().rows.find(r => r.scale === 'MD');
+    window.__almLoadCSV([A]);
+    const snapA = window.__almSnapshot();
+    const a = md();
+    const sd = document.getElementById('ctx-sd');
+    sd.value = String(2 * Number(sd.value));
+    const doubled = md();
+    window.__almLoadCSV([B]);
+    const b = md();
+    window.__almRestore(snapA);
+    const restored = md();
+    return { a, doubled, b, restored, snapA };
+  }, { A: EDINBURGH, B: SCALED });
+  expect(got.a.point).toBeCloseTo(-20, 10);
+  expect(got.doubled.point).toBeCloseTo(-40, 8);
+  expect(got.doubled.se).toBeCloseTo(2 * mdSeHO(EDINBURGH), 8);
+  expect(got.b.point).toBeCloseTo(-40, 10);
+  expect(got.b.se).toBeCloseTo(mdSeHO(SCALED), 10);
+  expect(got.restored.point).toBeCloseTo(-20, 10);
+  expect(got.restored.se).toBeCloseTo(mdSeHO(EDINBURGH), 10);
+  // A fresh page restoring the same snapshot gives the same MD and SE (no session-only state).
+  await open(page);
+  const fresh = await page.evaluate((snap) => {
+    window.__almRestore(snap);
+    return window.__almResults().rows.find(r => r.scale === 'MD');
+  }, got.snapA);
+  expect(fresh.point).toBeCloseTo(-20, 10);
+  expect(fresh.se).toBeCloseTo(mdSeHO(EDINBURGH), 10);
+});
+
+test('P0-46: MD divided by the pooled SD is labelled as uncorrected Cohen d, never as plain "SMD"', async ({ page }) => {
+  await open(page);
+  await page.locator('#in-type').selectOption('MD');
+  await page.locator('#in-est').fill('9.2');
+  await page.locator('#in-se').fill('5.7585');
+  await page.locator('#ctx-sd').fill('9.105');
+  await page.locator('#btn-convert').click();
+  const scales = (await page.evaluate(() => window.__almResults())).rows.map(r => r.scale);
+  expect(scales).toContain("SMD (Cohen's d, uncorrected)");
+  expect(scales).not.toContain('SMD');
+});
+
+test('P0-57: OR to SMD uses ln(OR)*sqrt(3)/pi and is named the logit method, not Cox', async ({ page }) => {
+  await open(page);
+  await page.locator('#in-type').selectOption('OR');
+  await page.locator('#in-est').fill('0.75');
+  await page.locator('#in-se').fill('0.12');
+  await page.locator('#btn-convert').click();
+  const got = await page.evaluate(() => window.__almResults());
+  const smd = got.rows.find(r => /^SMD/.test(r.scale));
+  expect(smd.point).toBeCloseTo(Math.log(0.75) * Math.sqrt(3) / Math.PI, 12);
+  expect(smd.scale).toContain('logit');
+  expect(JSON.stringify(got)).not.toMatch(/Cox/);
+  await expect(page.locator('main')).not.toContainText('Cox');
+});
+
+test('P0-45: E-value with no CI entered says so; it is not shown as 1 (a CI crossing the null)', async ({ page }) => {
+  await open(page);
+  await page.locator('#ev-lo').fill('');
+  await page.locator('#ev-hi').fill('');
+  await page.locator('#ev-point').fill('2');
+  await page.locator('#ev-point').dispatchEvent('input');
+  await expect(page.locator('#ev-out')).toContainText('no CI entered');
+  await expect(page.locator('#ev-out')).not.toContainText('1.000');
+  // A real null-crossing CI still gives 1.
+  await page.locator('#ev-lo').fill('0.8');
+  await page.locator('#ev-hi').fill('5');
+  await page.locator('#ev-hi').dispatchEvent('input');
+  await expect(page.locator('#ev-out')).toContainText('nearest null) = 1.000');
 });

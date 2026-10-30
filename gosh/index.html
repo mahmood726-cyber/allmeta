@@ -432,6 +432,18 @@
       window.AlmGoshExact.labelResult(_lastResults);
     }
 
+    // Shared by the sampled scatter and exact density so distinct ticks retain distinct labels.
+    function labels(ticks, fixedDigits) {
+      var magnitude = Math.max.apply(null, ticks.map(Math.abs));
+      var scientific = magnitude !== 0 && (magnitude < 1e-4 || magnitude >= 1e7);
+      for (var digits = scientific ? 2 : fixedDigits; digits <= 17; digits++) {
+        var values = ticks.map(function (v) { return scientific ? v.toExponential(digits) : v.toFixed(digits); });
+        if (values.every(function (v, i) { return i === 0 || ticks[i] === ticks[i - 1] || v !== values[i - 1]; })) return values;
+      }
+      return ticks.map(String);
+    }
+    window.__almGoshTickLabels = labels;
+
     function draw(pts) {
       var svg = document.getElementById('plot');
       var W = 600, H = 420;
@@ -478,15 +490,6 @@
         var dl = Math.abs(v - lo), dh = Math.abs(v - hi);
         if (Math.min(dl, dh) <= eps) return dl <= dh ? lo : hi;
         return v;
-      }
-      function labels(ticks, fixedDigits) {
-        var magnitude = Math.max.apply(null, ticks.map(Math.abs));
-        var scientific = magnitude !== 0 && (magnitude < 1e-4 || magnitude >= 1e7);
-        for (var digits = scientific ? 2 : fixedDigits; digits <= 17; digits++) {
-          var values = ticks.map(function (v) { return scientific ? v.toExponential(digits) : v.toFixed(digits); });
-          if (values.every(function (v, i) { return i === 0 || ticks[i] === ticks[i - 1] || v !== values[i - 1]; })) return values;
-        }
-        return ticks.map(String);
       }
       var X = function (v) { return padL + fraction(v, xMin, xMax) * plotW; };
       var Y = function (v) { return padT + (1 - fraction(v, yMin, yMax)) * plotH; };
@@ -580,19 +583,36 @@
     // ---- CSV load: accept study,yi,vi or study,yi,sei columns ----
     window.__almGoshLoad = function (rows) {
       if (!rows || rows.length < 1) { document.getElementById('src').value = ''; run(); return; }
-      var lines = [];
-      rows.forEach(function (r) {
-        var te  = parseFloat(r.yi  !== undefined ? r.yi  : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te)));
-        // Accept vi (variance) or sei/SE (standard error)
-        var se;
-        if (r.vi !== undefined && Number.isFinite(parseFloat(r.vi)) && parseFloat(r.vi) > 0) {
-          se = Math.sqrt(parseFloat(r.vi));
-        } else {
-          se = parseFloat(r.sei !== undefined ? r.sei : (r.SE !== undefined ? r.SE : (r.seTE !== undefined ? r.seTE : r.se)));
-        }
-        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return;
-        var label = r.study || r.label || r.Study || '';
-        lines.push(te.toString() + ', ' + se.toString() + (label ? ', ' + label : ''));
+      var validated = [], errors = [];
+      function number(value) {
+        if (typeof value === 'number') return value;
+        if (typeof value !== 'string' || !/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(value.trim())) return NaN;
+        return Number(value);
+      }
+      rows.forEach(function (r, i) {
+        var te = number(r.yi !== undefined ? r.yi : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te)));
+        // A supplied variance takes precedence, including when it is invalid.
+        var variance = r.vi !== undefined;
+        var uncertainty = number(variance ? r.vi : (r.sei !== undefined ? r.sei : (r.SE !== undefined ? r.SE : (r.seTE !== undefined ? r.seTE : r.se))));
+        var name = variance ? 'variance' : 'SE', reasons = [];
+        if (!Number.isFinite(te)) reasons.push('effect must be a finite number');
+        if (!Number.isFinite(uncertainty)) reasons.push(name + ' must be a finite number');
+        else if (uncertainty <= 0) reasons.push(name + ' must be greater than 0');
+        // The CSV parser keeps every data record, including interior blank rows.
+        if (reasons.length) errors.push('row ' + (i + 2) + ': ' + reasons.join(', '));
+        else validated.push({ te: te, se: variance ? Math.sqrt(uncertainty) : uncertainty, label: r.study || r.label || r.Study || '' });
+      });
+      if (errors.length) {
+        exactRequest(null);
+        clearInputResults('CSV analysis refused. ' + errors.join('; ') + '. Correct the CSV and import again.');
+        document.getElementById('enum-label').style.display = 'none';
+        ['plot-note', 'plot-error', 'sample-error'].forEach(function (id) { document.getElementById(id).textContent = ''; });
+        ['analysis-status', 'analysis-stale'].forEach(function (id) { document.getElementById(id).hidden = true; });
+        return;
+      }
+      // Commit only after every imported record passes validation.
+      var lines = validated.map(function (r) {
+        return r.te.toString() + ', ' + r.se.toString() + (r.label ? ', ' + r.label : '');
       });
 
       document.getElementById('src').value = lines.join('\n');
