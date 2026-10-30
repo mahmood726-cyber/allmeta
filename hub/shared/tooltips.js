@@ -93,6 +93,8 @@
     abbr.addEventListener('blur', hide);
     abbr.addEventListener('click', show);
     document.addEventListener('click', (e) => { if (e.target !== abbr) hide(); });
+    // Hovered tips must also dismiss when keyboard focus is elsewhere.
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
   }
 
   function _scan() {
