@@ -11,7 +11,10 @@ function fixture() {
       getElementById: id => controls[id],
       querySelector: selector => axes[selector.includes('"min"') ? 0 : 1]
     },
-    Event: class { constructor(type) { this.type = type; } }
+    Event: class { constructor(type) { this.type = type; } },
+    // share set() now runs the page's row checker (index.html parseStudies) first; this adapter-only fixture has no page,
+    // so it supplies a checker that accepts the rows: these tests are about the axis and control fields only.
+    __almCumSubParse: () => ({ studies: [], warnings: [] })
   };
   vm.runInNewContext(readFileSync(new URL('../../../../cumulative-subgroup/alm-features.js', import.meta.url), 'utf8'), context);
   return { share: context.AlmCumSubFeatures.share, controls, axes };

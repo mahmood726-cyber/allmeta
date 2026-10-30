@@ -270,6 +270,11 @@
           return typeof v !== 'string' || (v !== '' &&
             (!/^-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(v) || !Number.isFinite(Number(v))));
         })) throw new Error('Invalid data, view, title or axis limits');
+    // The page's own row checker (index.html parseStudies, as entry apply() requires): a row the page would skip
+    // with a note makes the file invalid instead of quietly changing the analysis.
+    if (typeof global.__almCumSubParse !== 'function') throw new Error('The app row checker is not available.');
+    var parsed = global.__almCumSubParse(s.data);
+    if (parsed.warnings.length) throw new Error(parsed.warnings[0] + ' cannot be used.');
     // All validation precedes mutation. Even invalid min/max combinations are valid app
     // states: restore them so the app can display its existing axis-refusal message.
     el('f-data').value = s.data; el('f-view').value = s.view; el('f-title').value = s.title;

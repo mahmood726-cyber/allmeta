@@ -1,5 +1,5 @@
 // share2 test profile: cumulative-subgroup (rows `label, estimate, SE, year, group`; view, plot title and axis limits).
-export default {
+const profile = {
   plot: '#svg-host svg',
   results: { selector: '#stats-wrap', closest: 'section' },
   custom: {
@@ -21,3 +21,14 @@ export default {
   },
   invalid: [{ view: 'unknown-view' }, { axis: ['abc', ''] }, { axis: ['1'] }, { title: 5 }]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ data: profile.custom.data + '\n' + row });
+profile.invalid.push(
+  bad('Trial G, abc, 0.1, 2020, Adults'),
+  bad('Trial G, -0.1, 0, 2020, Adults'),
+  bad('Trial G, -0.1, -0.1, 2020, Adults'),
+  bad('Trial G, -0.1, abc, 2020, Adults'),
+  bad('Trial G, -0.1')
+);
+export default profile;

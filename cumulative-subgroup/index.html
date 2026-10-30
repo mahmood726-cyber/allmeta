@@ -330,6 +330,9 @@
       return { groups, overall, M_bw, Q_bw, df_bw, I2_bw, pQ };
     }
     window.__almSubgroup = subgroup; // exposed for R-parity tests
+    // The same row checker for a restored analysis file (alm-features.js share set()), so a row this page would skip
+    // with a note cannot silently change the analysis.
+    window.__almCumSubParse = function (text) { return parseStudies(text); };
 
     // ---- Chi-square CDF (shared with heterogeneity app) ----
     function lnGamma(x) {
