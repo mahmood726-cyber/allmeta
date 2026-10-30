@@ -294,7 +294,7 @@
     function render(r, ui) {
       var xrefIn = ui.xref, xref = xrefIn.length ? xrefIn[0] : r.doseRange[0];
       var modv = ui.modv, modValue = r.mod ? (modv.length ? modv[0] : 0) : null;
-      var nonref = []; ui.studies.forEach(function (s) { s.rows.forEach(function (row) { if (row.se != null && isFinite(row.se)) nonref.push(row.dose); }); });
+      var nonref = []; ui.studies.forEach(function (s) { s.rows.forEach(function (row) { if (row.se > 0 && isFinite(row.se)) nonref.push(row.dose); }); });
       nonref.sort(function (a, b) { return a - b; });
       var pd = ui.pd;
       if (!pd.length) pd = [0.1, 0.25, 0.5, 0.75, 0.9].map(function (p) { return +DR._quantile7(nonref, p).toPrecision(3); }).filter(function (d, i, a) { return a.indexOf(d) === i; });
