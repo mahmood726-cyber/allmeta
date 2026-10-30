@@ -154,28 +154,48 @@
 
   // Allocation-free REML objective for two outcomes (same value as _objG up to rounding).
   // Returns Infinity when some S_i + G or the summed weight matrix is not positive definite.
+  // Resolve the finite predicate once; VM global lookups are costly in this hot loop.
+  var _obj2IsFinite = Number.isFinite;
   function _obj2(studies, g00, g01, g11) {
     var k = studies.length, i, ld = 0, s00 = 0, s01 = 0, s11 = 0, t0 = 0, t1 = 0, W = new Float64Array(3 * k);
     for (i = 0; i < k; i++) {
       var S = studies[i].S, a = S[0][0] + g00, b = S[0][1] + g01, d = S[1][1] + g11;
-      if (!(a > 0) || !(d > 0) || !Number.isFinite(a) || !Number.isFinite(d)) return Infinity;
-      // Standardize each axis: |V| = a*d*(1-rho^2). Never form a*d
-      // (or b*b), which can underflow/overflow for finite PD covariances.
-      var sa = Math.sqrt(a), sd = Math.sqrt(d), rho = b / sa / sd, det = 1 - rho * rho;
-      if (!(det > 0)) return Infinity;
-      var w00 = (1 / det) / a, w01 = (-rho / det) / sa / sd, w11 = (1 / det) / d, y = studies[i].y;
-      W[3 * i] = w00; W[3 * i + 1] = w01; W[3 * i + 2] = w11; ld += Math.log(a) + Math.log(d) + Math.log(det);
+      if (!(a > 0) || !(d > 0) || !_obj2IsFinite(a) || !_obj2IsFinite(d)) return Infinity;
+      var det = a * d - b * b, w00, w01, w11, y = studies[i].y;
+      // Keep the original operation order when the determinant is normal and
+      // finite: changing ordinary rounding changes the optimizer's exact fits.
+      if (det >= 2.2250738585072014e-308 && _obj2IsFinite(det)) {
+        w00 = d / det; w01 = -b / det; w11 = a / det; ld += Math.log(det);
+      } else {
+        // Scale each axis by an exact power of two. Rounded square roots can
+        // erase a representable PD margin (e.g. a=d=1+EPSILON, b=1).
+        var sa = Math.pow(2, Math.floor(Math.log2(a) / 2)), sd = Math.pow(2, Math.floor(Math.log2(d) / 2));
+        var aa = a / sa / sa, bb = b / sa / sd, dd = d / sd / sd;
+        det = aa * dd - bb * bb;
+        if (!(det > 0)) return Infinity;
+        w00 = (dd / det) / sa / sa; w01 = (-bb / det) / sa / sd; w11 = (aa / det) / sd / sd;
+        ld += 2 * Math.log(sa) + 2 * Math.log(sd) + Math.log(det);
+      }
+      W[3 * i] = w00; W[3 * i + 1] = w01; W[3 * i + 2] = w11;
       s00 += w00; s01 += w01; s11 += w11; t0 += w00 * y[0] + w01 * y[1]; t1 += w01 * y[0] + w11 * y[1];
     }
-    if (!(s00 > 0) || !(s11 > 0) || !Number.isFinite(s00) || !Number.isFinite(s11)) return Infinity;
-    // Apply the same scaling to the summed weights and solve in standardized
-    // coordinates, avoiding products of a weight with a weighted outcome.
-    var ss0 = Math.sqrt(s00), ss1 = Math.sqrt(s11), sr = s01 / ss0 / ss1, sdet = 1 - sr * sr;
-    if (!(sdet > 0)) return Infinity;
-    var u0 = t0 / ss0, u1 = t1 / ss1;
-    var m0 = ((u0 - sr * u1) / sdet) / ss0, m1 = ((u1 - sr * u0) / sdet) / ss1, q = 0;
+    if (!(s00 > 0) || !(s11 > 0) || !_obj2IsFinite(s00) || !_obj2IsFinite(s11)) return Infinity;
+    var sdet = s00 * s11 - s01 * s01, n0 = s11 * t0 - s01 * t1, n1 = s00 * t1 - s01 * t0;
+    var m0, m1, logSum, q = 0;
+    if (sdet >= 2.2250738585072014e-308 && _obj2IsFinite(sdet) && _obj2IsFinite(n0) && _obj2IsFinite(n1)) {
+      m0 = n0 / sdet; m1 = n1 / sdet; logSum = Math.log(sdet);
+    } else {
+      // The summed weights and weighted outcomes can also overflow/underflow.
+      var ss0 = Math.pow(2, Math.floor(Math.log2(s00) / 2)), ss1 = Math.pow(2, Math.floor(Math.log2(s11) / 2));
+      var a0 = s00 / ss0 / ss0, b0 = s01 / ss0 / ss1, d0 = s11 / ss1 / ss1;
+      sdet = a0 * d0 - b0 * b0;
+      if (!(sdet > 0)) return Infinity;
+      var u0 = t0 / ss0, u1 = t1 / ss1;
+      m0 = ((d0 * u0 - b0 * u1) / sdet) / ss0; m1 = ((a0 * u1 - b0 * u0) / sdet) / ss1;
+      logSum = 2 * Math.log(ss0) + 2 * Math.log(ss1) + Math.log(sdet);
+    }
     for (i = 0; i < k; i++) { var r0 = studies[i].y[0] - m0, r1 = studies[i].y[1] - m1; q += W[3 * i] * r0 * r0 + 2 * W[3 * i + 1] * r0 * r1 + W[3 * i + 2] * r1 * r1; }
-    return 0.5 * (ld + Math.log(s00) + Math.log(s11) + Math.log(sdet) + q);
+    return 0.5 * (ld + logSum + q);
   }
 
   // Observational only: this never changes the selected fitted G.

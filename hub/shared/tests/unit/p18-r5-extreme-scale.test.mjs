@@ -10,14 +10,29 @@ const source = readFileSync(new URL('../../../../shared/multivariate-ma.js', imp
 const zeroStudies = v => Array.from({ length: 3 }, () => ({ y: [0, 0], S: [[v, 0], [0, v]] }));
 const near = (actual, expected, tolerance, label) => assert.ok(Number.isFinite(actual) && Math.abs(actual - expected) <= tolerance,
   `${label}: ${actual} versus ${expected}; tolerance ${tolerance}`);
+// The recorded generator ran with LF bytes; checkout line endings are not provenance.
+const scriptHash = script => createHash('md5').update(script.toString().replace(/\r\n/g, '\n')).digest('hex');
 
 test('control: P18-R5 reference records the executed R script and package version', () => {
   const ref = fixture();
   assert.ok(ref.provenance.R);
   assert.ok(ref.provenance.metafor);
   const script = readFileSync(new URL('./p18-r5-reference.R', import.meta.url));
-  assert.equal(ref.provenance.script_md5, createHash('md5').update(script).digest('hex'));
+  assert.equal(ref.provenance.script_md5, scriptHash(script));
   assert.equal(ref.cases.length, 10);
+});
+
+test('plant P18-R5 review: R provenance survives a CRLF checkout', () => {
+  const lf = readFileSync(new URL('./p18-r5-reference.R', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+  assert.equal(scriptHash(lf.replace(/\n/g, '\r\n')), fixture().provenance.script_md5);
+});
+
+test('control: LF R provenance matches and a changed calculation is detected', () => {
+  const lf = readFileSync(new URL('./p18-r5-reference.R', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+  assert.equal(scriptHash(lf), fixture().provenance.script_md5);
+  const changed = lf.replace('scales <- c(1,', 'scales <- c(2,');
+  assert.notEqual(changed, lf);
+  assert.notEqual(scriptHash(changed), fixture().provenance.script_md5);
 });
 
 for (const v of [1, 1e-100, 1e100, 1e-200, 1e200]) {
