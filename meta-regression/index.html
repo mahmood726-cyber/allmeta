@@ -609,7 +609,12 @@
         "yi <- c(" + studies.map(s => s.est).join(", ") + ")",
         "se <- c(" + studies.map(s => s.se).join(", ") + ")",
         "x  <- c(" + studies.map(s => s.x).join(", ") + ")",
-        "labels <- c(" + studies.map(s => '"' + String(s.label).replace(/"/g, '\\"') + '"').join(", ") + ")",
+        // Escape backslashes before introducing R escapes for controls and quotes.
+        "labels <- c(" + studies.map(s => '"' + String(s.label)
+          .replace(/\\/g, '\\\\')
+          .replace(/\x07/g, '\\a').replace(/\x08/g, '\\b').replace(/\f/g, '\\f')
+          .replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')
+          .replace(/\v/g, '\\v').replace(/"/g, '\\"') + '"').join(", ") + ")",
         "",
         "# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence",
         "# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).",
