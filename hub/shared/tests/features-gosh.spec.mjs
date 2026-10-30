@@ -453,6 +453,8 @@ test('VERIFY: real webR example passes, plot/ZIP downloads, planted mismatch fai
   await expect(page.locator('[data-para=methods]')).not.toContainText('Results were independently verified in R');
   await tab(page, 'verify'); await expect(panel.locator('[data-testid=verify-stale]')).toBeVisible();
   await page.locator('#src').fill(src);
+  // Verification refuses inputs that were edited but not run (rev223 P1, 356f8517): run the restored data first.
+  await page.locator('#btn-run').click();
   await page.evaluate(() => { window.__almVerifyPerturb = { key: 'median_est', delta: 0.01 }; });
   await run.click();
   await expect(summary).toHaveText(/^TEST MODE .* — FAIL: 1 not matching R; test hook active$/, { timeout: 600_000 });
