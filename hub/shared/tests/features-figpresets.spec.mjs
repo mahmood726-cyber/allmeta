@@ -573,3 +573,56 @@ test('chart refresh keeps live validation current, while a real analysis edit in
   const stale = await page.evaluate(async () => { __figFinishR(); return await __figResult; });
   expect(stale).toEqual({ stale: true, rows: [] });
 });
+
+async function presetsOnly(page) {
+  await page.evaluate(() => new Promise((resolve, reject) => {
+    const script = document.createElement('script'); script.src = '/hub/shared/chart-export-auto.js';
+    script.setAttribute('data-presets-only', ''); script.onload = resolve; script.onerror = reject;
+    document.head.appendChild(script);
+  }));
+}
+const autoSvg = path => `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"><path d="${path}"/></svg>`;
+async function exportName(page, panel, button) {
+  const [file] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: button, exact: true }).click()]);
+  return file.suggestedFilename();
+}
+
+test('auto-discovered figures are named after the app and a redraw never reuses a number', async ({ page }) => {
+  await page.goto('/hub/shared/tests/');
+  await page.setContent(`<main><div id="chart-host">${autoSvg('M10 10L200 100')}</div></main><div id="alm-features" data-app="demo-app"></div>`);
+  await presetsOnly(page);
+  const panel = page.locator('.alm-figpresets');
+  await expect(panel).toHaveCount(1);
+  // Formerly 'chart-1-chart-1-custom.svg': no app name, and the number restarted after every redraw.
+  expect(await exportName(page, panel, 'Export chart-1 with preset')).toBe('demo-app-chart-1-custom.svg');
+  await page.locator('#chart-host').evaluate((host, xml) => { host.innerHTML = xml; }, autoSvg('M20 20L100 50'));
+  await expect(panel.getByRole('button', { name: 'Export chart-2 with preset', exact: true })).toHaveCount(1);
+  await expect(panel.getByRole('button', { name: 'Export chart-1 with preset', exact: true })).toHaveCount(0);
+  expect(await exportName(page, panel, 'Export chart-2 with preset')).toBe('demo-app-chart-2-custom.svg');
+  // Without data-app the page's own folder names the app, as chart-export-auto.js names its downloads.
+  await page.goto('/hub/shared/tests/');
+  await page.setContent(`<main><div id="chart-host">${autoSvg('M10 10L200 100')}</div></main>`);
+  await presetsOnly(page);
+  expect(await exportName(page, page.locator('.alm-figpresets'), 'Export chart-1 with preset')).toBe('tests-chart-1-custom.svg');
+});
+
+test('the presets host survives AlmFeatures building its panel in the same #alm-features', async ({ page }) => {
+  await page.goto('/hub/shared/tests/');
+  await page.setContent(`<main><div id="chart-host">${autoSvg('M10 10L200 100')}</div></main><div id="alm-features" data-app="demo-app"></div>`);
+  await presetsOnly(page);
+  const host = page.locator('#alm-features > #alm-figpresets-host');
+  await expect(host.locator('.alm-figpresets')).toBeVisible();
+  await host.getByLabel('Journal preset', { exact: true }).selectOption('bmj');
+  // AlmFeatures.buildHost() starts with mountEl.replaceChildren(), which detaches the presets host.
+  await page.addScriptTag({ url: '/shared/alm-features.js' });
+  await page.evaluate(() => {
+    AlmFeatures.registerModule('share', { render(panel) { panel.textContent = 'Demo share tab'; } });
+    AlmFeatures.register('demo-app', { title: 'Demo', share: {} });
+  });
+  await expect(page.locator('#alm-features .alm-f-heading')).toBeVisible();
+  await expect(host).toHaveCount(1);
+  await expect(host.locator('.alm-figpresets')).toBeVisible();
+  await expect(page.locator('.alm-figpresets')).toHaveCount(1);
+  await expect(host.getByLabel('Journal preset', { exact: true })).toHaveValue('bmj');
+  expect(await exportName(page, host, 'Export chart-1 with preset')).toBe('demo-app-chart-1-bmj.svg');
+});

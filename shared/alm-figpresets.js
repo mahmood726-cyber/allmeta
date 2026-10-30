@@ -126,6 +126,18 @@
   // key, never a UI mount: pinned results and chart bars must remain untouched.
   const registrations = new Map(), discovered = new Map();
   let auto = false, observer, scheduled = false, host, currentPanel, currentPlots = [];
+  // Auto-discovered figures are named after the app, as chart-export-auto.js names its downloads
+  // (#alm-features data-app first, else the page's folder), and numbered by a counter that never repeats
+  // within the page, so a redrawn chart cannot take an earlier chart's file name.
+  let autoSerial = 0;
+  function appId() {
+    const features = doc.getElementById('alm-features');
+    const attr = features && features.getAttribute('data-app');
+    const segs = String((global.location && global.location.pathname) || '').split('/').filter(Boolean);
+    let i = segs.length - 1;
+    if (/\.html?$/i.test(segs[i] || '')) i--;
+    return String(attr || segs[i] || '').replace(/[^a-z0-9_-]/gi, '') || 'chart';
+  }
   function register(opts) {
     if (opts.auto) auto = true;
     else if (opts.target) registrations.set(opts.target, opts);
@@ -153,8 +165,8 @@
         const width = rect.width || parseFloat(svg.getAttribute('width')) || box[2] || 0;
         const height = rect.height || parseFloat(svg.getAttribute('height')) || box[3] || 0;
         if (width < 200 || height < 120) return;
-        const name = svg.getAttribute('data-alm-export') || svg.id || 'chart-' + (discovered.size + 1);
-        discovered.set(svg, { basename: name, plots: [{ id: name, name, getSvg: () => svg.isConnected ? svg : null }] });
+        const name = svg.getAttribute('data-alm-export') || svg.id || 'chart-' + (++autoSerial);
+        discovered.set(svg, { basename: appId(), plots: [{ id: name, name, getSvg: () => svg.isConnected ? svg : null }] });
       });
     }
     registrations.forEach((opts, target) => {
