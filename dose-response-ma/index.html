@@ -186,8 +186,9 @@
       cells.push(cell.trim());
       return cells;
     }
-    var _last = null;
+    var _last = null, _lastValidation = null;
     window._almLastDoseResponse = function () { return _last; };
+    window._almLastDoseResponseValidation = function () { return _lastValidation === null ? null : JSON.parse(_lastValidation); };
 
     function parse(text, useMod) {
       var byStudy = Object.create(null), order = [];
@@ -243,7 +244,7 @@
     function clearOut(msg, kind) {
       $("headline").textContent = ""; ["coef-body", "tests-body", "pred-body", "res-body", "curve-host", "resid-host"].forEach(function (id) { $(id).innerHTML = ""; });
       $("msgs").innerHTML = msg ? "<div class='msg " + (kind || "err") + "' role='status'>" + esc(msg) + "</div>" : "";
-      _last = null;
+      _last = null; _lastValidation = null;
     }
 
     run = window.alm.analysisLifecycle(run, function (result) { return !!_last; }, "[id^=\"f-\"]");
@@ -255,7 +256,7 @@
 
     function analyse() {
       syncControls();
-      _last = null;
+      _last = null; _lastValidation = null;
       var shape = $("f-shape").value, proc = $("f-proc").value, cov = $("f-cov").value, M = $("f-method").value, useMod = $("f-mod").checked;
       var studies = parse($("f-data").value, useMod);
       if (studies.length < 2) { clearOut("Enter at least 2 studies.", "warn"); return; }
@@ -363,6 +364,8 @@
         predictions: preds.map(function (p) { return { dose: p.dose, rr: p.rr, lo: p.rrLo, hi: p.rrHi, logRR: p.logRR, se: p.se }; }),
         perStudy: (r.perStudy || []).map(function (p) { return { id: p.id, beta: p.beta, cov: p.cov }; }), excluded: r.excluded, warnings: warnings };
       if (r.model === "linear" && !r.mod) { _last.slope = r.coef[0]; _last.se = Math.sqrt(r.vcov[0][0]); _last.tau2 = r.Psi ? r.Psi[0][0] : 0; }
+      // Keep the successful fit's parsed input and result together; readers get independent copies.
+      _lastValidation = JSON.stringify({ result: _last, studies: ui.studies });
     }
 
     function dark() { return window.matchMedia && matchMedia("(prefers-color-scheme:dark)").matches; }
