@@ -3023,12 +3023,23 @@ function updateMetaoverfitResults() {
     console.error('updateMetaoverfitResults error:', e);
   }
 }
+// Finalize overfitting metadata in the same results-render transaction as
+// the accepted pooled analysis. runAnalysis schedules its actual fit asynchronously;
+// a later fixed-delay update could mutate results *after* a project was saved.
+// Preserve already-computed results when reopening a saved project.
+const originalRenderResultsForMetaoverfit = window.renderResults;
+if (typeof originalRenderResultsForMetaoverfit === 'function') {
+  window.renderResults = function(...args) {
+    if (AppState.results?.metaoverfit?.skipped === true) updateMetaoverfitResults();
+    return originalRenderResultsForMetaoverfit.apply(this, args);
+  };
+}
 // Update on analysis - also trigger TruthCert analysis for Verdict tab
 const originalRunAnalysis2 = window.runAnalysis;
 if (originalRunAnalysis2) {
   window.runAnalysis = function() {
     const result = originalRunAnalysis2.apply(this, arguments);
-    setTimeout(updateMetaoverfitResults, 500);
+    // No delayed results mutation: renderResults finalizes metaoverfit synchronously.
     // Trigger TruthCert analysis for Verdict and HTA tabs
     setTimeout(() => {
       if (typeof runTruthCertAnalysis === 'function') {
