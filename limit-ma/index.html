@@ -286,11 +286,17 @@
       if (Math.sqrt(rankResidual / rankTotal) < 1e-7) {
         throw Error('Limit meta-analysis has a numerically rank-deficient radial design: study precisions are too similar, including after heterogeneity adjustment.');
       }
-      var Sxx = 0, Sxy = 0;
+      var Sxx = 0, Sxy = 0, sumX2 = 0;
       for (var i = 0; i < k; i++) {
         Sxx += (x[i] - xb) * (x[i] - xb);
         Sxy += (x[i] - xb) * (y[i] - yb);
+        sumX2 += x[i] * x[i];
       }
+      // Relative residual norm of x after removing the intercept column;
+      // use the numerical-rank tolerance of R's lm.fit (used by metasens).
+      var rankRatio = Math.sqrt(Sxx / sumX2);
+      if (!Number.isFinite(rankRatio) || rankRatio < 1e-7)
+        throw Error('Limit meta-analysis is numerically rank deficient: insufficient variation in study precisions.');
       var slope = Sxy / Sxx;
       var intercept = yb - slope * xb;
       var sse = 0, sst = 0;
@@ -305,7 +311,8 @@
       var seSlope = 1 / Math.sqrt(_varS(invSe)) / Math.sqrt(k - 1);
       var seInt = seSlope * _mean(se.map(function (s) { return 1 / (s * s); }));
       return { intercept: intercept, slope: slope, sigma: sigma,
-               r_squared: rsq, se_slope: seSlope, se_intercept: seInt };
+               r_squared: rsq, se_slope: seSlope, se_intercept: seInt,
+               x_mean: xb, Sxx: Sxx };
     }
 
     // Rücker et al. (2011) limit meta-analysis — faithful port of
@@ -334,12 +341,14 @@
 
       // beta0 adjusted (limit) estimate + closed-form SE.
       var TEadjust = betaR + tau * alphaR;
-      var sqrtW = wRandom.map(Math.sqrt);
-      var vsw = _varS(sqrtW);
-      var varBeta = 1 / vsw / (k - 1);
-      var varAlpha = _mean(wRandom) / vsw / (k - 1);
-      var covAB = -_mean(sqrtW) / vsw / (k - 1);
-      var seAdjust = Math.sqrt(varBeta + tau2 * varAlpha + 2 * tau * covAB);
+      // Center the radial design before combining coefficient uncertainty.
+      // This equivalent sum of nonnegative terms avoids covariance cancellation
+      // and retains the analytic lower bound tau2 / k.
+      var centered = 1 - tau * regR.x_mean;
+      var varAdjust = centered * centered / regR.Sxx + tau2 / k;
+      if (!Number.isFinite(TEadjust) || !Number.isFinite(varAdjust) || !(varAdjust > 0))
+        throw Error('Limit meta-analysis has numerically invalid uncertainty for these studies.');
+      var seAdjust = Math.sqrt(varAdjust);
 
       // Q decomposition (small-study vs residual) and G².
       var Q = pool(rows, 0).Q;            // FE Cochran Q (= metagen $Q)
