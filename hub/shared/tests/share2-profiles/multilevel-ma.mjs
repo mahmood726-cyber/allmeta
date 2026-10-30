@@ -1,5 +1,5 @@
 // share2 test profile: multilevel-ma (three-level MoM + REML; rows are "study, effect, SE, label").
-export default {
+const profile = {
   plot: '#forest',
   results: { selector: '#summary', closest: 'section' },
   custom: {
@@ -21,3 +21,14 @@ export default {
     { src: 42 }
   ]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ src: profile.custom.src + '\n' + row });
+profile.invalid.push(
+  bad('6, abc, 0.1, main'),
+  bad('6, 0.1, 0, main'),
+  bad('6, 0.1, -0.1, main'),
+  bad('6, 0.1, abc, main'),
+  bad('6, 0.1')
+);
+export default profile;
