@@ -234,7 +234,7 @@
       const pre = 0.20, fp = window.AlmDTABivariate.fagan(b.lrPos, b.lrNeg, pre);
       const yPre = T + ph * (1 - pre);                      // pre-test on a 0..1 linear axis
       const yPos = p => T + ph * (1 - p);
-      const p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      const p = ["<svg xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Fagan nomogram' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
       p.push("<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>");
       p.push("<line x1='" + L + "' y1='" + T + "' x2='" + L + "' y2='" + (T + ph) + "' stroke='" + fg + "'/>");
       p.push("<line x1='" + (W - R) + "' y1='" + T + "' x2='" + (W - R) + "' y2='" + (T + ph) + "' stroke='" + fg + "'/>");
@@ -254,7 +254,7 @@
       const xs = d.y, ys = d.x; // x-axis = lnDOR (d.y), y-axis = 1/sqrt(ESS) (d.x)
       let xlo = Math.min.apply(null, xs), xhi = Math.max.apply(null, xs); if (xhi === xlo) { xhi += 1; xlo -= 1; }
       const yhi = Math.max.apply(null, ys), x = v => L + (v - xlo) / (xhi - xlo) * pw, y = v => T + v / yhi * ph;
-      const p = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
+      const p = ["<svg xmlns='http://www.w3.org/2000/svg' role='img' aria-label='Deeks funnel plot' viewBox='0 0 " + W + " " + H + "' width='" + W + "' height='" + H + "' font-family='system-ui,sans-serif'>"];
       p.push("<rect width='" + W + "' height='" + H + "' fill='" + (dark ? '#1c1f23' : '#fff') + "'/>");
       // regression line: lnDOR = intercept + slope·(1/√ESS) ⇒ for y-values 0..yhi
       p.push("<line x1='" + x(d.intercept) + "' y1='" + y(0) + "' x2='" + x(d.intercept + d.slope * yhi) + "' y2='" + y(yhi) + "' stroke='#888' stroke-dasharray='4,2'/>");
@@ -463,7 +463,7 @@
 
       const p = [];
       p.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\">");
+      p.push("<svg xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Summary receiver operating characteristic (SROC) plot\" viewBox=\"0 0 "+W+" "+H+"\" width=\""+W+"\" height=\""+H+"\" font-family=\"system-ui, sans-serif\">");
       p.push("<rect x=\"0\" y=\"0\" width=\""+W+"\" height=\""+H+"\" fill=\"#fff\"/>");
       if (state.title) {
         p.push("<text x=\""+(W/2)+"\" y=\"28\" text-anchor=\"middle\" font-size=\"15\" font-weight=\"700\" fill=\"#15181d\">"+escapeXml(state.title)+"</text>");
