@@ -52,7 +52,7 @@ export function pageState(rows, model = 'FE') {
   return vm.runInContext('_lastInco', engine);
 }
 
-export function liveScript(rows, model = 'FE') {
+export function liveScript(rows, model = 'FE', mutate = () => {}) {
   const source = readFileSync(new URL('validate/live.js', app), 'utf8');
   const start = source.indexOf('function currentState()');
   const end = source.indexOf('const live=', start);
@@ -66,12 +66,12 @@ export function liveScript(rows, model = 'FE') {
   // placeholders here; p16-live-replay.mjs checks those using the full DOM harness.
   const elements = { src: { value: text }, 'ns-body': { querySelectorAll: () => [] }, dbt: { textContent: '' } };
   const context = {
-    structuredClone, fmt: P.fmt, $: id => elements[id],
+    structuredClone, fmt: P.fmt, $: id => elements[id], mutate,
     window: { parse: E.parse, inputIssue: E.inputIssue, _almLastInco: () => current,
       __almIncoLoad: () => { current = pageState(rows, model); } },
     a: { snapshot: () => ({ text, state: current }), restore: s => { current = s.state; },
       controls: () => true, pageText: () => [], contract: { pageText: [] }, chartControls: () => true },
   };
   return vm.runInNewContext(helpers + '\na.leaves=leaves; a.sortedState=sortedState;\n' +
-    source.slice(start, end) + '\nbuildScript(currentState());', context);
+    source.slice(start, end) + '\nconst persisted=JSON.parse(JSON.stringify(currentState())); mutate(persisted); buildScript(persisted);', context);
 }
