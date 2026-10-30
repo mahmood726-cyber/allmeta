@@ -4,7 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const apps = readdirSync(root, { withFileTypes: true }).filter(e => e.isDirectory()).flatMap(e => {
-  try { return /\bshare\s*:\s*\{/.test(readFileSync(root + e.name + '/alm-features.js', 'utf8')) ? [e.name] : []; }
+  // Inline (`share: {`) OR by reference (`share: share`): the inline-only form silently skipped two apps. A false match cannot
+  // pass silently: ready() waits for the registered adapter at runtime and the test fails without it.
+  try { return /\bshare\s*:\s*(\{|[A-Za-z_$][\w$]*\s*[,}\n])/.test(readFileSync(root + e.name + '/alm-features.js', 'utf8')) ? [e.name] : []; }
   catch { return []; }
 });
 expect(apps).toContain('proportion-ma');
