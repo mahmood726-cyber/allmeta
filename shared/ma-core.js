@@ -46,11 +46,63 @@
   // Paule-Mandel: root of generalised Q(τ²) = k-1 (monotone decreasing).
   function tau2PM(yi, vi) {
     var k = yi.length, df = k - 1; if (df < 1) return 0;
-    if (_wsums(yi, vi, 0).Q <= df) return 0;
-    var lo = 0, hi = 1, guard = 0;
-    while (_wsums(yi, vi, hi).Q > df && guard++ < 200) { hi *= 2; if (hi > 1e9) break; }
-    for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_wsums(yi, vi, m).Q > df) lo = m; else hi = m; }
-    return (lo + hi) / 2;
+    var vmin = vi[0], vmax = vi[0];
+    for (var j = 1; j < k; j++) {
+      vmin = Math.min(vmin, vi[j]); vmax = Math.max(vmax, vi[j]);
+    }
+    function qAt(t2) {
+      var ws = _wsums(yi, vi, t2);
+      if (isFinite(ws.Q) && isFinite(ws.sw) && ws.sw > 0 && t2 <= Number.MAX_VALUE - vmax) return ws.Q;
+      if (!(vmin > 0) || !isFinite(vmax)) return NaN;
+      // An overflowing weighted product/sum is not evidence against a root.
+      // Use relative weights and centred, scaled effects for the mean. Form
+      // sqrt(v+t) without overflowing v+t, then standardise before squaring.
+      var origin = yi[0], scale = 0, i;
+      for (i = 0; i < k; i++) scale = Math.max(scale, Math.abs(yi[i] - origin));
+      if (!isFinite(scale)) {
+        origin = 0; scale = 0;
+        for (i = 0; i < k; i++) scale = Math.max(scale, Math.abs(yi[i]));
+      }
+      if (scale === 0) return 0;
+      var y = [], sd = [], sw = 0, swy = 0;
+      for (i = 0; i < k; i++) {
+        var s = Math.max(vi[i], t2), d = vi[i] / s + t2 / s;
+        var w = (vmin / s + t2 / s) / d;
+        y[i] = (yi[i] - origin) / scale;
+        sd[i] = Math.sqrt(s) * Math.sqrt(d);
+        sw += w; swy += w * y[i];
+      }
+      var mu = swy / sw, Q = 0;
+      for (i = 0; i < k; i++) {
+        var delta = (y[i] - mu) * scale;
+        var z = isFinite(delta) ? delta / sd[i] : ((y[i] - mu) / sd[i]) * scale;
+        Q += z * z;
+      }
+      return Q;
+    }
+    var q0 = qAt(0);
+    if (q0 <= df) return 0;
+    // Start in the input's variance units, including for very small roots.
+    // Keep the previous endpoint so growth leaves a tight lower bracket.
+    var lo = 0, hi = vmin;
+    if (!(q0 > df) || !(hi > 0) || !isFinite(hi))
+      throw new RangeError("PM could not establish a finite Q bracket");
+    var qHi = qAt(hi);
+    while (qHi > df && hi < Number.MAX_VALUE) {
+      lo = hi; hi = Math.min(hi * 2, Number.MAX_VALUE);
+      qHi = qAt(hi);
+    }
+    // A search limit or NaN is not a root; never silently return an endpoint.
+    if (!isFinite(qHi) || !(qHi <= df))
+      throw new RangeError("PM could not establish a finite Q bracket");
+    for (var i = 0; i < 200; i++) {
+      var m = lo + (hi - lo) / 2;
+      if (m === lo || m === hi) break;
+      var q = qAt(m);
+      if (isNaN(q)) throw new RangeError("PM could not resolve the Q bracket");
+      if (q > df) lo = m; else hi = m;
+    }
+    return lo + (hi - lo) / 2;
   }
 
   // (Restricted) profile log-likelihood of τ² for the normal-normal RE model,
