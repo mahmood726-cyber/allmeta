@@ -62,7 +62,7 @@
     return Q;
   }
 
-  // 95% Q-profile CI for τ² and I². Returns {tau2Lo, tau2Hi, I2Lo, I2Hi, s2} or null (k<2).
+  // Q-profile CI for τ² and I². Returns {tau2Lo, tau2Hi, I2Lo, I2Hi, s2, empty} or null (k<2).
   function qProfileCI(studies, alpha) {
     alpha = alpha || 0.05;
     var k = studies.length, df = k - 1;
@@ -83,7 +83,9 @@
     }
     var tau2Hi = solve(qLo), tau2Lo = solve(qHi);
     var i2 = function (t) { return (t + s2) > 0 ? 100 * t / (t + s2) : 0; };
-    return { tau2Lo: tau2Lo, tau2Hi: tau2Hi, I2Lo: i2(tau2Lo), I2Hi: i2(tau2Hi), s2: s2 };
+    // Q decreases with τ²: below qLo at zero, no nonnegative τ² is in the set.
+    // Keep the zero boundary limits for compatibility; they are not an interval when empty.
+    return { tau2Lo: tau2Lo, tau2Hi: tau2Hi, I2Lo: i2(tau2Lo), I2Hi: i2(tau2Hi), s2: s2, empty: Q0 < qLo };
   }
 
   var api = { qProfileCI: qProfileCI, chiSqCDF: chiSqCDF, chiSqQuantile: chiSqQuantile };
