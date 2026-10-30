@@ -75,7 +75,8 @@
   }
 
   /**
-   * parse(text, columns) -> { headers, rows, warnings }
+   * parse(text, columns) -> { headers, rows, warnings, rejected? }
+   * Duplicate mapped integer count columns return no rows and rejected: true.
    *
    * text    — raw CSV string (RFC-4180)
    * columns — array of { name: string, type?: 'int'|'float'|'string' }
@@ -120,6 +121,20 @@
       } else {
         headerMap[h] = { name: h };                   // pass through as a plain column
       }
+    }
+
+    // Check positions before assigning any rows: repeated header text reuses
+    // one descriptor in headerMap and would silently overwrite earlier counts.
+    var countPositions = Object.create(null);
+    for (hi = 0; hi < rawHeaders.length; hi++) {
+      var countCol = headerMap[rawHeaders[hi]];
+      if (countCol.type !== 'int') continue;
+      if (countPositions[countCol.name] !== undefined) {
+        warnings.push('Duplicate count column "' + countCol.name + '" at CSV columns ' +
+          countPositions[countCol.name] + ' and ' + (hi + 1) + ': import refused. Use unique count headers.');
+        return { headers: rawHeaders, rows: [], warnings: warnings, rejected: true };
+      }
+      countPositions[countCol.name] = hi + 1;
     }
 
     var rows = [];
@@ -203,6 +218,7 @@
       const result = (typeof opts.parse === 'function' ? opts.parse : parse)(text, columns);
       warnEl.textContent = result.warnings.map(w => String.fromCharCode(8226) + ' ' + w).join('\n');
       warnEl.style.whiteSpace = 'pre-wrap';
+      if (result.rejected) return;
       onParse(result);
     }
     fileInput.addEventListener('change', () => {
