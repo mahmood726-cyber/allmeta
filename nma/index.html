@@ -769,9 +769,11 @@
       if (!rows || !rows.length) return null;
       // est convention here is treatment2 − treatment1; toContrasts te is
       // (treatment1 − treatment2), so swap the labels to keep est = t2 − t1.
+      // Quote every label so leading #, delimiters and quotes remain data.
+      const quoteLabel = label => '"' + String(label).replace(/"/g, '""') + '"';
       const lines = ["# study, treatment1, treatment2, est, SE  (from extraction bus, " + (env.effectMeasure || "?") + " log-scale)"];
       for (const r of rows) {
-        lines.push([r.study, r.treatment2, r.treatment1, r.te.toFixed(6), r.se.toFixed(6)].join(", "));
+        lines.push([r.study, r.treatment2, r.treatment1].map(quoteLabel).concat([r.te.toFixed(6), r.se.toFixed(6)]).join(", "));
       }
       return { text: lines.join("\n"), measure: env.effectMeasure, n: rows.length };
     }
