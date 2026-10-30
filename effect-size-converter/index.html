@@ -765,12 +765,24 @@
         var out = document.getElementById('ev-out'); if (!out || !window.AlmEValue) return;
         var meas = document.getElementById('ev-measure').value;
         var pt = parseFloat(document.getElementById('ev-point').value);
-        var lo = parseFloat(document.getElementById('ev-lo').value);
-        var hi = parseFloat(document.getElementById('ev-hi').value);
+        var loInput = document.getElementById('ev-lo');
+        var hiInput = document.getElementById('ev-hi');
+        var lo = loInput.value.trim() === '' ? null : parseFloat(loInput.value);
+        var hi = hiInput.value.trim() === '' ? null : parseFloat(hiInput.value);
         var rare = document.getElementById('ev-rare').checked;
         var ratio = meas !== 'SMD';
-        if (!isFinite(pt) || (ratio && pt <= 0)) { out.textContent = 'Enter a positive estimate.'; window.__almLastEValue = function () { return null; }; return; }
-        var r = window.AlmEValue.eValues(meas, pt, isFinite(lo) ? lo : null, isFinite(hi) ? hi : null, { rare: rare });
+        window.__almLastEValue = function () { return null; };
+        if (!isFinite(pt) || (ratio && pt <= 0)) { out.textContent = 'Enter a positive estimate.'; return; }
+        var r;
+        try {
+          if ((loInput.validity && loInput.validity.badInput) || (hiInput.validity && hiInput.validity.badInput))
+            throw new RangeError('Invalid confidence interval: bounds must be finite numbers.');
+          r = window.AlmEValue.eValues(meas, pt, lo, hi, { rare: rare });
+        } catch (error) {
+          if (error.name !== 'RangeError') throw error;
+          out.textContent = 'Refused: ' + error.message;
+          return;
+        }
         var f = function (x) { return (typeof x === 'number' && isFinite(x)) ? x.toFixed(3) : '—'; };
         var needLo = r.rr.point >= 1, noCI = needLo ? (r.rr.lo == null) : (r.rr.hi == null);  // the bound nearest the null is missing
         var noCIText = (r.rr.lo == null && r.rr.hi == null) ? 'not available (no CI entered)' : 'not available (the CI bound nearest the null is missing)';
