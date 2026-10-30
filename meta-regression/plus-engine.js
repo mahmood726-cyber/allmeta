@@ -55,7 +55,9 @@
     }
     if(A.some((r,i)=>r[i]<=1e-7))throw Error('Model matrix not of full rank. Cannot fit model.');
     const trPV=sum(v.map((vi,i)=>vi*(1-dot(Z[i],unweighted.vcov.map(r=>dot(r,Z[i]))))));
-    const meanY=sum(y)/k,threshold=1e-12*Math.max(1,sum(y.map(v=>(v-meanY)**2))/(k-1));
+    // Harmonic sampling variance limits imprecise rows; outcome variance keeps
+    // the tolerance commensurate with the fitted spread, above rounding noise.
+    const meanY=sum(y)/k,threshold=1e-12*Math.max(k/sum(v.map(vi=>1/vi)),sum(y.map(v=>(v-meanY)**2))/(k-1));
     let tau2=Math.max(0,(unweighted.rss-trPV)/(k-p)),converged=false;
     for(let iter=0;iter<=10000;iter++){
       const w=v.map(vi=>1/(vi+tau2)),f=wls(y,Z,w);
@@ -85,7 +87,11 @@
       const X=z.map(r=>[1,...r,...(c.interaction?[r[0]*r[1]]:[])]);
       if(k<=X[0].length)return {status:'refused',reason:'Need more studies than coefficients'};
       const full=fit(y,v,X),reducedX=X.map(r=>c.interaction?r.slice(0,-1):r.slice(0,2)),reduced=fit(y,v,reducedX);
-      const df=full.values.p-reduced.values.p,LRT=Math.max(0,2*(full.values.logLik-reduced.values.logLik));
+      const likelihoodGain=full.values.logLik-reduced.values.logLik;
+      const likelihoodRoundoff=64*Number.EPSILON*Math.max(1,Math.abs(full.values.logLik),Math.abs(reduced.values.logLik));
+      // A nested full model cannot have a lower optimum; only clamp floating-point roundoff.
+      if(likelihoodGain < -likelihoodRoundoff)throw Error('Full-model likelihood is lower than reduced-model likelihood; ML optimization did not converge.');
+      const df=full.values.p-reduced.values.p,LRT=Math.max(0,2*likelihoodGain);
       const means=c.names.map((_,j)=>sum(z.map(r=>r[j]))/k),lo=Math.min(...z.map(r=>r[0])),hi=Math.max(...z.map(r=>r[0]));
       const x=Array.from({length:41},(_,i)=>lo+(hi-lo)*i/40),pred=[],se=[];
       for(const xi of x){const r=[1,xi,...means.slice(1),...(c.interaction?[xi*means[1]]:[])];pred.push(dot(r,full.values.beta));se.push(Math.sqrt(Math.max(0,dot(r,full.vcov.map(s=>dot(s,r))))));}

@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {lfBytes} from '../../hub/shared/tests/p08-lf-bytes.mjs';
 const base=new URL('../',import.meta.url);
 await import(new URL('plus-engine.js',base));await import(new URL('validate/contract.js',base));
 const read=p=>JSON.parse(readFileSync(new URL(p,base),'utf8'));
 const corpus=read('validate/plus/corpus.json'),refs=read('validate/plus/reference.json'),manifest=read('validate/MANIFEST-plus.json');
 const evidence={positiveNumeric:0,negativeNumeric:0,positiveDOM:0,negativeDOM:0,positivePlotValues:0,negativePlotValues:0};
 test('pinned LF bytes, coverage and all R numerical comparisons',()=>{
- for(const f of manifest.files){const b=readFileSync(new URL(f.path,base));assert.equal(b.length,f.bytes);assert.equal(b.includes(13),false);assert.equal(createHash('sha256').update(b).digest('hex'),f.sha256);const bad=Buffer.from(b);bad[20]^=1;assert.notEqual(createHash('sha256').update(bad).digest('hex'),f.sha256);}
+ for(const f of manifest.files){const b=lfBytes(readFileSync(new URL(f.path,base)));assert.equal(b.length,f.bytes);assert.equal(b.includes(13),false);assert.equal(createHash('sha256').update(b).digest('hex'),f.sha256);const bad=Buffer.from(b);bad[20]^=1;assert.notEqual(createHash('sha256').update(bad).digest('hex'),f.sha256);}
  assert.equal(corpus.length,manifest.configurations);assert.equal(new Set(corpus.map(c=>c.id)).size,corpus.length);
  for(let i=0;i<corpus.length;i++){
   assert.equal(refs[i].id,corpus[i].id);const r=AlmMetaPlus.compute(corpus[i]),rows=AlmMetaPlusContract.audit(r,refs[i].result);
