@@ -46,11 +46,66 @@
   // Paule-Mandel: root of generalised Q(τ²) = k-1 (monotone decreasing).
   function tau2PM(yi, vi) {
     var k = yi.length, df = k - 1; if (df < 1) return 0;
-    if (_wsums(yi, vi, 0).Q <= df) return 0;
-    var lo = 0, hi = 1, guard = 0;
-    while (_wsums(yi, vi, hi).Q > df && guard++ < 200) { hi *= 2; if (hi > 1e9) break; }
-    for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_wsums(yi, vi, m).Q > df) lo = m; else hi = m; }
-    return (lo + hi) / 2;
+    // Center before any arithmetic on effect scales. A most precise study
+    // keeps a very imprecise outlier from rounding away the other contrasts.
+    var anchor = 0;
+    for (var j = 1; j < k; j++) {
+      if (vi[j] < vi[anchor] || (vi[j] === vi[anchor] && Math.abs(yi[j]) < Math.abs(yi[anchor]))) anchor = j;
+    }
+    var y = yi.map(function (value) {
+      var delta = value - yi[anchor];
+      if (!isFinite(delta)) throw new RangeError("PM contrasts exceed floating-point range");
+      return delta;
+    });
+    function q(t2) {
+      var sw = 0, swy = 0, n, d, w;
+      for (n = 0; n < k; n++) {
+        // Weights relative to the largest weight avoid overflowing sum(w).
+        // Divide before adding so even vi + t2 > MAX_VALUE is evaluable.
+        d = Math.max(vi[n], t2);
+        w = (vi[anchor] / d + t2 / d) / (vi[n] / d + t2 / d);
+        sw += w; swy += w * y[n];
+      }
+      var mu = swy / sw, Q = 0;
+      for (n = 0; n < k; n++) {
+        d = Math.max(vi[n], t2);
+        var sd = Math.sqrt(d) * Math.sqrt(vi[n] / d + t2 / d);
+        var residual = (y[n] - mu) / sd;
+        Q += residual * residual;
+      }
+      if (isNaN(Q)) throw new RangeError("PM Q cannot be evaluated within floating-point range");
+      return Q;
+    }
+    var qLo = q(0); if (qLo <= df) return 0;
+    var lo = 0, hi = 1, qHi = q(hi);
+    if (qHi > df) {
+      while (qHi > df) {
+        lo = hi; qLo = qHi;
+        if (hi === Number.MAX_VALUE) throw new RangeError("PM variance exceeds floating-point range");
+        hi = Math.min(hi * 2, Number.MAX_VALUE);
+        qHi = q(hi);
+      }
+    } else {
+      // Find the local scale of small roots too, rather than accepting a
+      // fixed number of halvings of an interval many exponents too large.
+      while (hi / 2 > 0) {
+        var half = hi / 2, qHalf = q(half);
+        if (qHalf > df) { lo = half; qLo = qHalf; break; }
+        hi = half; qHi = qHalf;
+      }
+    }
+    for (var i = 0; i < 64; i++) {
+      var m = lo + (hi - lo) / 2;
+      if (m === lo || m === hi) break;
+      var qMid = q(m);
+      if (qMid === df) return m;
+      if (qMid > df) { lo = m; qLo = qMid; } else { hi = m; qHi = qMid; }
+    }
+    var result = Math.abs(qLo - df) < Math.abs(qHi - df) ? lo : hi;
+    if (!(result > 0) || Math.abs(q(result) - df) > 1e-12 * df) {
+      throw new RangeError("PM root did not converge within floating-point range");
+    }
+    return result;
   }
 
   // (Restricted) profile log-likelihood of τ² for the normal-normal RE model,

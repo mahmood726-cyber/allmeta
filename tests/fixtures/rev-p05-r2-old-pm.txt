@@ -1,0 +1,22 @@
+  function tau2PM(yi, vi) {
+    var k = yi.length, df = k - 1; if (df < 1) return 0;
+    if (_wsums(yi, vi, 0).Q <= df) return 0;
+    var lo = 0, hi = 1, scale = 1, y = yi, v = vi;
+    var qHi = _wsums(y, v, hi).Q;
+    if (!(qHi <= df)) {
+      // Keep the ordinary [0, 1] solve unchanged; otherwise work in effect
+      // units so neither a fixed ceiling nor squaring the scale limits tau2.
+      for (var j = 0; j < k; j++) scale = Math.max(scale, Math.abs(yi[j]));
+      y = yi.map(function (value) { return value / scale; });
+      v = vi.map(function (value) { return (value / scale) / scale; });
+      // For |y| <= 1 and v >= 0, the weighted mean minimises the residual
+      // sum, so Q(2) <= sum(y*y/(v+2)) <= k/2 <= k-1.
+      hi = 2;
+      qHi = _wsums(y, v, hi).Q;
+    }
+    if (!isFinite(qHi) || qHi > df) throw new RangeError("PM root cannot be bracketed within floating-point range");
+    for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_wsums(y, v, m).Q > df) lo = m; else hi = m; }
+    var result = ((lo + hi) / 2 * scale) * scale;
+    if (!isFinite(result)) throw new RangeError("PM variance exceeds floating-point range");
+    return result;
+  }
