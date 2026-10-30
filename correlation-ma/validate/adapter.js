@@ -37,6 +37,23 @@ function pageText() {
   for (const el of document.body.children) if (['A','NAV','HEADER','MAIN','FOOTER'].includes(el.tagName)) visit(el,el.tagName + (el.id ? '#'+el.id : ''));
   return out;
 }
+function expectedPageText(archived) {
+  // Extend the pinned five-column contract explicitly for the forest's CI table.
+  // Preserve every archived entry and check the additions exactly; never learn
+  // expected text from the current DOM or regenerate the archived reference.
+  const table = 'MAIN#main>SECTION1>TABLE2', head = table + '>THEAD0';
+  const attrs = () => [null,null,null,null,null];
+  return archived.flatMap(([path,value]) => {
+    const entries = [[path.replace(head, table + '>THEAD1'),value]];
+    if(path === table) entries.push(
+      [table + '>CAPTION0',attrs()],
+      [table + '>CAPTION0','Forest plot values with 95% confidence intervals on the r scale.']);
+    if(path === head + '>TR0>TH4' && typeof value === 'string') entries.push(
+      [table + '>THEAD1>TR0>TH5',attrs()],
+      [table + '>THEAD1>TR0>TH5','95% CI (r)']);
+    return entries;
+  });
+}
 function controls(method, text, replaying) {
   const a = $('f-data'), b = $('f-method');
   return a.value === text && b.value === method &&
@@ -57,8 +74,12 @@ function display(a, check) {
     (a.r_pi_lo === null ? '' : ` · 95% PI [${fmt(a.r_pi_lo)}, ${fmt(a.r_pi_hi)}]`);
   check('display.headline', $('headline').textContent, head, 'exact');
   const table = [...$('res-body').querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>td.textContent));
-  const expected = a.studies.map((s,i)=>[s.label,fmt(s.r),String(s.n),fmt(Math.atanh(s.r)),fmt(100*w[i]/sw,1)+'%']);
-  expected.push(['Pooled',fmt(a.r),'—',fmt(a.mu_z),'100%']);
+  const expected = a.studies.map((s,i)=>{
+    const z = Math.atanh(s.r), margin = 1.959963984540054 * Math.sqrt(1/(s.n-3));
+    return [s.label,fmt(s.r),String(s.n),fmt(z),fmt(100*w[i]/sw,1)+'%',
+      `[${fmt(Math.tanh(z-margin))}, ${fmt(Math.tanh(z+margin))}]`];
+  });
+  expected.push(['Pooled',fmt(a.r),'—',fmt(a.mu_z),'100%',`[${fmt(a.r_lo)}, ${fmt(a.r_hi)}]`]);
   check('display.table',serial(table),serial(expected),'exact');
   check('display.pooled_label', $('res-body').querySelectorAll('tr.pooled-row').length, 1, 'exact');
 }
@@ -137,7 +158,7 @@ async function replay(files,progress=()=>{}) {
       window.alm.chartExportAuto.scan();
       // Let the shared chart export observer finish before checking its controls.
       await new Promise(resolve=>setTimeout(resolve,0));
-      evaluate(c,r,rs.pageText,(quantity,app,ref,kind)=>{
+      evaluate(c,r,expectedPageText(rs.pageText),(quantity,app,ref,kind)=>{
         const tol=kind==='exact'?0:kind==='tau2'?1e-6:kind==='plot'?190e-9:1e-9;
         const d=AlmValidate.compare(app,ref,kind==='tau2'?'rel':kind==='plot'?'abs':kind,tol);
         result.checks++; if(d.pass) result.passed++; else result.failed.push({id:c.id,quantity,app,ref,tol,...d});
