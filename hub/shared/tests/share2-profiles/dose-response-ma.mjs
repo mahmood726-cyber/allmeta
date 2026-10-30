@@ -1,5 +1,5 @@
 // share2 test profile: dose-response-ma (rows `study, dose, cases, n, logRR, SE, type`; reference rows have blank SE).
-export default {
+const profile = {
   plot: '#curve-host svg',
   // The results section also hosts the shared #alm-features mount (share status/version text), so compare the
   // predicted relative-risk table only; text.results() still compares every fitted value.
@@ -33,3 +33,16 @@ export default {
   },
   invalid: [{ 'f-shape': 'cubic' }, { 'f-mod': 'yes' }, { 'f-method': 'PM', 'f-shape': 'quadratic' }, { entryLog: 'not-a-log' }]
 };
+// Well-typed state whose data has ONE malformed row appended to the valid custom data: the page's own row
+// checker refuses such a row, so share set() must refuse the file too (not drop the row or replace the analysis).
+const bad = row => ({ "f-data": profile.custom["f-data"] + '\n' + row });
+profile.invalid.push(
+  bad('B, 90, 10, 60, abc, 0.2, cc'),
+  bad('B, 90, 10, 60, 0.1, -0.2, cc'),
+  bad('B, 90, 10, 60, 0.1, 0, cc'),
+  bad('B, abc, 10, 60, 0.1, 0.2, cc'),
+  bad('B, 90, 10, 60, 0.1, 0.2, xx'),
+  bad('B, 90, 10'),
+  bad('B, 90, 70, 60, 0.1, 0.2, cc')
+);
+export default profile;
