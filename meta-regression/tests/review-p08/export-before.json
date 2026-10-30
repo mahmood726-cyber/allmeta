@@ -1,0 +1,65 @@
+{
+  "provenance": "Actual unmodified exports run by replay-exports.mjs in pass 2, preserved from FEEDBACK.md. Only the Windows console mojibake in script comments was decoded from cp1252/UTF-8; all numeric values are unchanged. tiny is known defective, not a correct reference.",
+  "cases": [
+    {
+      "id": "ordinary",
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-3, -1, 3, 9)\nse <- c(1, 1, 1, 1)\nx  <- c(-1.5, -0.5, 0.5, 1.5)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# β0 (intercept), β1 (slope), τ², HKSJ q, t-stat on β1, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 1.999999999999999,
+        "slope": 4,
+        "intercept_se": 0.7071067811865515,
+        "slope_se": 0.6324555320336794,
+        "intercept_ci_lb": -1.0424349222966736,
+        "intercept_ci_ub": 5.042434922296671,
+        "slope_ci_lb": 1.2787634786501396,
+        "slope_ci_ub": 6.72123652134986,
+        "tau2_pm": 1.0000000000000226,
+        "R2_tau2": 0.9629629629629622,
+        "QE": 4.000000000000017,
+        "QE_p": 0.13533528323661154,
+        "QE_df": 2,
+        "pred": 1.999999999999999,
+        "pred_se": 0.7071067811865515,
+        "pi_lo": -3.2696518641397265,
+        "pi_hi": 7.269651864139725
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "tiny",
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-3.0000000000000002e-15, -1e-15, 3.0000000000000002e-15, 9.000000000000001e-15)\nse <- c(1e-15, 1e-15, 1e-15, 1e-15)\nx  <- c(-1.5, -0.5, 0.5, 1.5)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# β0 (intercept), β1 (slope), τ², HKSJ q, t-stat on β1, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 2.0000000000000005e-15,
+        "slope": 3.9999999999999995e-15,
+        "intercept_se": 4.21468485108941e-07,
+        "slope_se": 3.769728732309799e-07,
+        "intercept_ci_lb": -1.8134325259573562e-06,
+        "intercept_ci_ub": 1.8134325299573563e-06,
+        "slope_ci_lb": -1.6219833580487741e-06,
+        "slope_ci_ub": 1.6219833660487742e-06,
+        "tau2_pm": 7.105427357601024e-13,
+        "R2_tau2": 0,
+        "QE": 4.000000000000012,
+        "QE_p": 0.13533528323661184,
+        "QE_df": 2,
+        "pred": 2.0000000000000005e-15,
+        "pred_se": 4.21468485108941e-07,
+        "pi_lo": -4.0549584031219364e-06,
+        "pi_hi": 4.054958407121936e-06
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    }
+  ]
+}

@@ -605,6 +605,14 @@
     }
 
     function rScript(studies, state) {
+      // Below this variance, the ordinary absolute tolerance is coarser than
+      // 1e-6 in outcome-variance units. Scale both the tolerance and the search
+      // bound for these inputs; retain the established ordinary export bytes.
+      const minVariance = studies.reduce((v, s) => Math.min(v, s.se * s.se), 1);
+      const smallVariances = minVariance < 1e-6;
+      const pmControl = smallVariances
+        ? "tol = " + Math.max(Number.MIN_VALUE, 1e-12 * minVariance) + ", tau2.max = 100 * max(var(yi), se^2)"
+        : "tol = 1e-12";
       const lines = [
         "# Auto-generated from the browser Meta-Regression app",
         "# Run with: Rscript this_file.R  (requires the 'metafor' package)",
@@ -615,10 +623,12 @@
         "x  <- c(" + studies.map(s => s.x).join(", ") + ")",
         "labels <- c(" + studies.map(s => '"' + String(s.label).replace(/"/g, '\\"') + '"').join(", ") + ")",
         "",
-        "# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence",
+        smallVariances
+          ? "# PM tau^2 is solved by uniroot(); tolerance and search bound use the outcome-variance scale."
+          : "# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence",
         "# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).",
         "res <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,",
-        "           control = list(tol = 1e-12))",
+        "           control = list(" + pmControl + "))",
         "print(res)",
         "",
         "# Expected browser output (for diff):",

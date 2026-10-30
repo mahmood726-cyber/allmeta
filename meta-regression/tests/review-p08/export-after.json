@@ -1,0 +1,1299 @@
+{
+  "provenance": "Actual production R exports executed unchanged by replay-exports.mjs and check-export.R after the pass-3 source fix. Preserved verbatim as parsed JSON from FEEDBACK.md after pass 3; no expected value was calculated by JavaScript or replaced in an earlier fixture.",
+  "runner": "replay-exports.mjs",
+  "R_driver": "check-export.R",
+  "fields_per_case": 17,
+  "tolerances": {
+    "zero_tau2": 1e-09,
+    "positive_tau2": 1e-06
+  },
+  "normalization": "Divide both page and R values by scale for coefficients/SEs/intervals/prediction, scale^2 for tau2, and 1 for other fields before applying the existing tolerance.",
+  "cases": [
+    {
+      "id": "ordinary",
+      "scale": 1,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -3,
+          "se": 1,
+          "v": 1,
+          "x": -1.5
+        },
+        {
+          "label": "S2",
+          "est": -1,
+          "se": 1,
+          "v": 1,
+          "x": -0.5
+        },
+        {
+          "label": "S3",
+          "est": 3,
+          "se": 1,
+          "v": 1,
+          "x": 0.5
+        },
+        {
+          "label": "S4",
+          "est": 9,
+          "se": 1,
+          "v": 1,
+          "x": 1.5
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-3, -1, 3, 9)\nse <- c(1, 1, 1, 1)\nx  <- c(-1.5, -0.5, 0.5, 1.5)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 1.999999999999999,
+        "slope": 4,
+        "intercept_se": 0.7071067811865515,
+        "slope_se": 0.6324555320336794,
+        "intercept_ci_lb": -1.0424349222966736,
+        "intercept_ci_ub": 5.042434922296671,
+        "slope_ci_lb": 1.2787634786501396,
+        "slope_ci_ub": 6.72123652134986,
+        "tau2_pm": 1.0000000000000226,
+        "R2_tau2": 0.9629629629629622,
+        "QE": 4.000000000000017,
+        "QE_p": 0.13533528323661154,
+        "QE_df": 2,
+        "pred": 1.999999999999999,
+        "pred_se": 0.7071067811865515,
+        "pi_lo": -3.2696518641397265,
+        "pi_hi": 7.269651864139725
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "scaled",
+      "scale": 1000000,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -3000000,
+          "se": 1000000,
+          "v": 1000000000000,
+          "x": -1.5
+        },
+        {
+          "label": "S2",
+          "est": -1000000,
+          "se": 1000000,
+          "v": 1000000000000,
+          "x": -0.5
+        },
+        {
+          "label": "S3",
+          "est": 3000000,
+          "se": 1000000,
+          "v": 1000000000000,
+          "x": 0.5
+        },
+        {
+          "label": "S4",
+          "est": 9000000,
+          "se": 1000000,
+          "v": 1000000000000,
+          "x": 1.5
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-3000000, -1000000, 3000000, 9000000)\nse <- c(1000000, 1000000, 1000000, 1000000)\nx  <- c(-1.5, -0.5, 0.5, 1.5)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 2000000,
+        "slope": 3999999.999999999,
+        "intercept_se": 707106.7811865492,
+        "slope_se": 632455.5320336773,
+        "intercept_ci_lb": -1042434.9222966628,
+        "intercept_ci_ub": 5042434.922296663,
+        "slope_ci_lb": 1278763.478650148,
+        "slope_ci_ub": 6721236.52134985,
+        "tau2_pm": 1000000000000.0103,
+        "R2_tau2": 0.9629629629629626,
+        "QE": 3.9999999999999956,
+        "QE_p": 0.13533528323661298,
+        "QE_df": 2,
+        "pred": 2000000,
+        "pred_se": 707106.7811865492,
+        "pi_lo": -3269651.8641396984,
+        "pi_hi": 7269651.864139698
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "unequal-variances",
+      "scale": 1,
+      "rows": [
+        {
+          "label": "S1",
+          "est": 0.1,
+          "se": 0.2,
+          "v": 0.04000000000000001,
+          "x": 1
+        },
+        {
+          "label": "S2",
+          "est": 0.3,
+          "se": 0.25,
+          "v": 0.0625,
+          "x": 2
+        },
+        {
+          "label": "S3",
+          "est": 0.5,
+          "se": 0.18,
+          "v": 0.0324,
+          "x": 3
+        },
+        {
+          "label": "S4",
+          "est": 0.2,
+          "se": 0.3,
+          "v": 0.09,
+          "x": 4
+        },
+        {
+          "label": "S5",
+          "est": 0.9,
+          "se": 0.22,
+          "v": 0.0484,
+          "x": 5
+        },
+        {
+          "label": "S6",
+          "est": 0.4,
+          "se": 0.28,
+          "v": 0.07840000000000001,
+          "x": 6
+        },
+        {
+          "label": "S7",
+          "est": 1.1,
+          "se": 0.35,
+          "v": 0.12249999999999998,
+          "x": 7
+        },
+        {
+          "label": "S8",
+          "est": 0.05,
+          "se": 0.15,
+          "v": 0.0225,
+          "x": 8
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(0.1, 0.3, 0.5, 0.2, 0.9, 0.4, 1.1, 0.05)\nse <- c(0.2, 0.25, 0.18, 0.3, 0.22, 0.28, 0.35, 0.15)\nx  <- c(1, 2, 3, 4, 5, 6, 7, 8)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\", \"S5\", \"S6\", \"S7\", \"S8\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 0.29081009460149054,
+        "slope": 0.026813115134035816,
+        "intercept_se": 0.28801254185313635,
+        "slope_se": 0.057150496562595986,
+        "intercept_ci_lb": -0.41393120733733535,
+        "intercept_ci_ub": 0.9955513965403164,
+        "slope_ci_lb": -0.11302911220380016,
+        "slope_ci_ub": 0.16665534247187178,
+        "tau2_pm": 0.09091152375886506,
+        "R2_tau2": 0,
+        "QE": 17.37249712487123,
+        "QE_p": 0.008007478107404573,
+        "QE_df": 6,
+        "pred": 0.4114691127046517,
+        "pred_se": 0.13563915623471887,
+        "pi_lo": -0.3975285877145406,
+        "pi_hi": 1.2204668131238439
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "app-example",
+      "scale": 1,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -0.28,
+          "se": 0.12,
+          "v": 0.0144,
+          "x": 32
+        },
+        {
+          "label": "S2",
+          "est": -0.22,
+          "se": 0.09,
+          "v": 0.0081,
+          "x": 35
+        },
+        {
+          "label": "S3",
+          "est": -0.15,
+          "se": 0.11,
+          "v": 0.0121,
+          "x": 42
+        },
+        {
+          "label": "S4",
+          "est": -0.1,
+          "se": 0.13,
+          "v": 0.016900000000000002,
+          "x": 48
+        },
+        {
+          "label": "S5",
+          "est": 0.04,
+          "se": 0.15,
+          "v": 0.0225,
+          "x": 55
+        },
+        {
+          "label": "S6",
+          "est": -0.05,
+          "se": 0.14,
+          "v": 0.019600000000000003,
+          "x": 51
+        },
+        {
+          "label": "S7",
+          "est": -0.32,
+          "se": 0.11,
+          "v": 0.0121,
+          "x": 29
+        },
+        {
+          "label": "S8",
+          "est": -0.2,
+          "se": 0.1,
+          "v": 0.010000000000000002,
+          "x": 38
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-0.28, -0.22, -0.15, -0.1, 0.04, -0.05, -0.32, -0.2)\nse <- c(0.12, 0.09, 0.11, 0.13, 0.15, 0.14, 0.11, 0.1)\nx  <- c(32, 35, 42, 48, 55, 51, 29, 38)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\", \"S5\", \"S6\", \"S7\", \"S8\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": -0.6729369519251744,
+        "slope": 0.01245992657595877,
+        "intercept_se": 0.2058789722755411,
+        "slope_se": 0.005133922827284468,
+        "intercept_ci_lb": -1.1767046490877426,
+        "intercept_ci_ub": -0.16916925476260625,
+        "slope_ci_lb": -0.00010233003298728421,
+        "slope_ci_ub": 0.025022183184904824,
+        "tau2_pm": 0,
+        "R2_tau2": 0,
+        "QE": 0.12255237760123384,
+        "QE_p": 0.9999633734736051,
+        "QE_df": 6,
+        "pred": -0.15896498066687514,
+        "pred_se": 0.04159010297334942,
+        "pi_lo": -0.26073229652270347,
+        "pi_hi": -0.05719766481104681
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "dat.bcg/e1/ablat",
+      "scale": 1,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -0.8893113339202054,
+          "se": 0.5706003548929507,
+          "v": 0.3255847650039613,
+          "x": 44
+        },
+        {
+          "label": "S2",
+          "est": -1.5853886572014306,
+          "se": 0.44111350171825825,
+          "v": 0.19458112139814382,
+          "x": 55
+        },
+        {
+          "label": "S3",
+          "est": -1.3480731482996933,
+          "se": 0.644490469571091,
+          "v": 0.4153679653679654,
+          "x": 42
+        },
+        {
+          "label": "S4",
+          "est": -1.4415511900213054,
+          "se": 0.14145681992130169,
+          "v": 0.020010031902247573,
+          "x": 52
+        },
+        {
+          "label": "S5",
+          "est": -0.21754732221129558,
+          "se": 0.2262966463950159,
+          "v": 0.05121017216963086,
+          "x": 13
+        },
+        {
+          "label": "S6",
+          "est": -0.786115585818864,
+          "se": 0.08310005087789513,
+          "v": 0.006905618455908758,
+          "x": 44
+        },
+        {
+          "label": "S7",
+          "est": -1.6208982235983918,
+          "se": 0.4722470196542432,
+          "v": 0.22301724757231517,
+          "x": 19
+        },
+        {
+          "label": "S8",
+          "est": 0.011952333523840508,
+          "se": 0.06294107798423641,
+          "v": 0.0039615792978177295,
+          "x": 13
+        },
+        {
+          "label": "S9",
+          "est": -0.4694176487381494,
+          "se": 0.2375588568402554,
+          "v": 0.056434210463248966,
+          "x": 27
+        },
+        {
+          "label": "S10",
+          "est": -1.3713448034727844,
+          "se": 0.27023100046632126,
+          "v": 0.07302479361302892,
+          "x": 42
+        },
+        {
+          "label": "S11",
+          "est": -0.3393588283383906,
+          "se": 0.11141011610962319,
+          "v": 0.01241221397155972,
+          "x": 18
+        },
+        {
+          "label": "S12",
+          "est": 0.44591340057137874,
+          "se": 0.7297299810204818,
+          "v": 0.5325058452001528,
+          "x": 33
+        },
+        {
+          "label": "S13",
+          "est": -0.017313948216879815,
+          "se": 0.26721650339001574,
+          "v": 0.0714046596839863,
+          "x": 33
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-0.8893113339202054, -1.5853886572014306, -1.3480731482996933, -1.4415511900213054, -0.21754732221129558, -0.786115585818864, -1.6208982235983918, 0.011952333523840508, -0.4694176487381494, -1.3713448034727844, -0.3393588283383906, 0.44591340057137874, -0.017313948216879815)\nse <- c(0.5706003548929507, 0.44111350171825825, 0.644490469571091, 0.14145681992130169, 0.2262966463950159, 0.08310005087789513, 0.4722470196542432, 0.06294107798423641, 0.2375588568402554, 0.27023100046632126, 0.11141011610962319, 0.7297299810204818, 0.26721650339001574)\nx  <- c(44, 55, 42, 52, 13, 44, 19, 13, 27, 42, 18, 33, 33)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\", \"S5\", \"S6\", \"S7\", \"S8\", \"S9\", \"S10\", \"S11\", \"S12\", \"S13\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 0.22191596450735987,
+        "slope": -0.02856452589440606,
+        "intercept_se": 0.3174736965473165,
+        "slope_se": 0.009070188871182314,
+        "intercept_ci_lb": -0.47683893031271996,
+        "intercept_ci_ub": 0.9206708593274396,
+        "slope_ci_lb": -0.04852787699910667,
+        "slope_ci_ub": -0.008601174789705453,
+        "tau2_pm": 0.14213194147275915,
+        "R2_tau2": 0.5531403995353106,
+        "QE": 30.73309001074926,
+        "QE_p": 0.001214290987420035,
+        "QE_df": 11,
+        "pred": -0.7338970173439198,
+        "pred_se": 0.13347477464172355,
+        "pi_lo": -1.6141465113871067,
+        "pi_hi": 0.1463524766992671
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "dat.bcg/e1/year",
+      "scale": 1,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -0.8893113339202054,
+          "se": 0.5706003548929507,
+          "v": 0.3255847650039613,
+          "x": 1948
+        },
+        {
+          "label": "S2",
+          "est": -1.5853886572014306,
+          "se": 0.44111350171825825,
+          "v": 0.19458112139814382,
+          "x": 1949
+        },
+        {
+          "label": "S3",
+          "est": -1.3480731482996933,
+          "se": 0.644490469571091,
+          "v": 0.4153679653679654,
+          "x": 1960
+        },
+        {
+          "label": "S4",
+          "est": -1.4415511900213054,
+          "se": 0.14145681992130169,
+          "v": 0.020010031902247573,
+          "x": 1977
+        },
+        {
+          "label": "S5",
+          "est": -0.21754732221129558,
+          "se": 0.2262966463950159,
+          "v": 0.05121017216963086,
+          "x": 1973
+        },
+        {
+          "label": "S6",
+          "est": -0.786115585818864,
+          "se": 0.08310005087789513,
+          "v": 0.006905618455908758,
+          "x": 1953
+        },
+        {
+          "label": "S7",
+          "est": -1.6208982235983918,
+          "se": 0.4722470196542432,
+          "v": 0.22301724757231517,
+          "x": 1973
+        },
+        {
+          "label": "S8",
+          "est": 0.011952333523840508,
+          "se": 0.06294107798423641,
+          "v": 0.0039615792978177295,
+          "x": 1980
+        },
+        {
+          "label": "S9",
+          "est": -0.4694176487381494,
+          "se": 0.2375588568402554,
+          "v": 0.056434210463248966,
+          "x": 1968
+        },
+        {
+          "label": "S10",
+          "est": -1.3713448034727844,
+          "se": 0.27023100046632126,
+          "v": 0.07302479361302892,
+          "x": 1961
+        },
+        {
+          "label": "S11",
+          "est": -0.3393588283383906,
+          "se": 0.11141011610962319,
+          "v": 0.01241221397155972,
+          "x": 1974
+        },
+        {
+          "label": "S12",
+          "est": 0.44591340057137874,
+          "se": 0.7297299810204818,
+          "v": 0.5325058452001528,
+          "x": 1969
+        },
+        {
+          "label": "S13",
+          "est": -0.017313948216879815,
+          "se": 0.26721650339001574,
+          "v": 0.0714046596839863,
+          "x": 1976
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-0.8893113339202054, -1.5853886572014306, -1.3480731482996933, -1.4415511900213054, -0.21754732221129558, -0.786115585818864, -1.6208982235983918, 0.011952333523840508, -0.4694176487381494, -1.3713448034727844, -0.3393588283383906, 0.44591340057137874, -0.017313948216879815)\nse <- c(0.5706003548929507, 0.44111350171825825, 0.644490469571091, 0.14145681992130169, 0.2262966463950159, 0.08310005087789513, 0.4722470196542432, 0.06294107798423641, 0.2375588568402554, 0.27023100046632126, 0.11141011610962319, 0.7297299810204818, 0.26721650339001574)\nx  <- c(1948, 1949, 1960, 1977, 1973, 1953, 1973, 1980, 1968, 1961, 1974, 1969, 1976)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\", \"S5\", \"S6\", \"S7\", \"S8\", \"S9\", \"S10\", \"S11\", \"S12\", \"S13\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": -53.16318386528893,
+        "slope": 0.026658645484306544,
+        "intercept_se": 31.937387706542644,
+        "slope_se": 0.01623136915332697,
+        "intercept_ci_lb": -123.45690025948242,
+        "intercept_ci_ub": 17.130532528904567,
+        "slope_ci_lb": -0.009066357150135308,
+        "slope_ci_ub": 0.0623836481187484,
+        "tau2_pm": 0.2649359541659069,
+        "R2_tau2": 0.16704736879993484,
+        "QE": 100.17824942211875,
+        "QE_p": 1.6464298575064077e-16,
+        "QE_df": 11,
+        "pred": -0.7461348480305006,
+        "pred_se": 0.16963845069829842,
+        "pi_lo": -1.938965569502332,
+        "pi_hi": 0.4466958734413309
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "dat.aloe2013/e1/n",
+      "scale": 1,
+      "rows": [
+        {
+          "label": "S1",
+          "est": 0.30120292079127586,
+          "se": 0.062156882459646366,
+          "v": 0.003863478037102294,
+          "x": 218
+        },
+        {
+          "label": "S2",
+          "est": 0.38218899330617917,
+          "se": 0.05692877155970729,
+          "v": 0.0032408850312973378,
+          "x": 232
+        },
+        {
+          "label": "S3",
+          "est": 0.31630807101725006,
+          "se": 0.07348054482455592,
+          "v": 0.0053993904677135714,
+          "x": 156
+        },
+        {
+          "label": "S4",
+          "est": -0.04043720011356849,
+          "se": 0.05240056409033244,
+          "v": 0.0027458191169850376,
+          "x": 382
+        },
+        {
+          "label": "S5",
+          "est": 0.07420885448992089,
+          "se": 0.06366589335697824,
+          "v": 0.004053345976942126,
+          "x": 259
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(0.30120292079127586, 0.38218899330617917, 0.31630807101725006, -0.04043720011356849, 0.07420885448992089)\nse <- c(0.062156882459646366, 0.05692877155970729, 0.07348054482455592, 0.05240056409033244, 0.06366589335697824)\nx  <- c(218, 232, 156, 382, 259)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\", \"S5\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 0.6701472652693675,
+        "slope": -0.001846191827633085,
+        "intercept_se": 0.18004432863603062,
+        "slope_se": 0.0006807243555141031,
+        "intercept_ci_lb": 0.09716585681434597,
+        "intercept_ci_ub": 1.2431286737243892,
+        "slope_ci_lb": -0.004012560537755576,
+        "slope_ci_ub": 0.0003201768824894068,
+        "tau2_pm": 0.009266354752958216,
+        "R2_tau2": 0.6831782073356429,
+        "QE": 10.510458298304638,
+        "QE_p": 0.014690120050051172,
+        "QE_df": 3,
+        "pred": 0.2097070234576761,
+        "pred_se": 0.051202460847967785,
+        "pi_lo": -0.13728247968400753,
+        "pi_hi": 0.5566965265993598
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "dat.hart1999/e1/year",
+      "scale": 1,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -0.7842099895068162,
+          "se": 0.40465131911125596,
+          "v": 0.1637426900584795,
+          "x": 1989
+        },
+        {
+          "label": "S2",
+          "est": -0.9358932591196418,
+          "se": 0.4214636152117623,
+          "v": 0.17763157894736842,
+          "x": 1991
+        },
+        {
+          "label": "S3",
+          "est": -1.5792551607873322,
+          "se": 0.6405126152203485,
+          "v": 0.41025641025641024,
+          "x": 1990
+        },
+        {
+          "label": "S4",
+          "est": -0.38872831575264044,
+          "se": 0.5270462766947299,
+          "v": 0.2777777777777778,
+          "x": 1991
+        },
+        {
+          "label": "S5",
+          "est": -1.2019299026961359,
+          "se": 0.43166584730171564,
+          "v": 0.1863354037267081,
+          "x": 1992
+        },
+        {
+          "label": "S6",
+          "est": -1.140914668358799,
+          "se": 0.2645751311064591,
+          "v": 0.07,
+          "x": 1993
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-0.7842099895068162, -0.9358932591196418, -1.5792551607873322, -0.38872831575264044, -1.2019299026961359, -1.140914668358799)\nse <- c(0.40465131911125596, 0.4214636152117623, 0.6405126152203485, 0.5270462766947299, 0.43166584730171564, 0.2645751311064591)\nx  <- c(1989, 1991, 1990, 1991, 1992, 1993)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\", \"S5\", \"S6\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 149.63817680295716,
+        "slope": -0.07564842298726954,
+        "intercept_se": 223.44562953098887,
+        "slope_se": 0.1121987707944307,
+        "intercept_ci_lb": -470.7463475861966,
+        "intercept_ci_ub": 770.0227011921108,
+        "slope_ci_lb": -0.3871621509686759,
+        "slope_ci_ub": 0.23586530499413683,
+        "tau2_pm": 0,
+        "R2_tau2": 0,
+        "QE": 2.5078616504794335,
+        "QE_p": 0.6432285981091824,
+        "QE_df": 4,
+        "pred": -0.9778333646964938,
+        "pred_se": 0.17338322417473148,
+        "pi_lo": -1.459222368779839,
+        "pi_hi": -0.4964443606131487
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "dat.bangertdrowns2004/e1/minutes",
+      "scale": 1,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -0.04,
+          "se": 0.13784048752090222,
+          "v": 0.019,
+          "x": 10
+        },
+        {
+          "label": "S2",
+          "est": 0.23,
+          "se": 0.14832396974191325,
+          "v": 0.022,
+          "x": 10
+        },
+        {
+          "label": "S3",
+          "est": 0.03,
+          "se": 0.09486832980505137,
+          "v": 0.009,
+          "x": 20
+        },
+        {
+          "label": "S4",
+          "est": 0.12,
+          "se": 0.22803508501982758,
+          "v": 0.05199999999999999,
+          "x": 10
+        },
+        {
+          "label": "S5",
+          "est": 0.52,
+          "se": 0.19235384061671346,
+          "v": 0.037000000000000005,
+          "x": 6
+        },
+        {
+          "label": "S6",
+          "est": 0.54,
+          "se": 0.28809720581775866,
+          "v": 0.08299999999999999,
+          "x": 4
+        },
+        {
+          "label": "S7",
+          "est": 0.2,
+          "se": 0.30166206257996714,
+          "v": 0.09100000000000001,
+          "x": 10
+        },
+        {
+          "label": "S8",
+          "est": -0.16,
+          "se": 0.408656334834051,
+          "v": 0.167,
+          "x": 10
+        },
+        {
+          "label": "S9",
+          "est": 0.42,
+          "se": 0.22803508501982758,
+          "v": 0.05199999999999999,
+          "x": 8
+        },
+        {
+          "label": "S10",
+          "est": 0.6,
+          "se": 0.30166206257996714,
+          "v": 0.09100000000000001,
+          "x": 8
+        },
+        {
+          "label": "S11",
+          "est": 0.58,
+          "se": 0.2701851217221259,
+          "v": 0.07299999999999998,
+          "x": 10
+        },
+        {
+          "label": "S12",
+          "est": 0.09,
+          "se": 0.31622776601683794,
+          "v": 0.1,
+          "x": 15
+        },
+        {
+          "label": "S13",
+          "est": -0.13,
+          "se": 0.19235384061671346,
+          "v": 0.037000000000000005,
+          "x": 35
+        },
+        {
+          "label": "S14",
+          "est": 0.18,
+          "se": 0.26267851073127396,
+          "v": 0.069,
+          "x": 20
+        },
+        {
+          "label": "S15",
+          "est": 0.27,
+          "se": 0.1341640786499874,
+          "v": 0.018000000000000002,
+          "x": 15
+        },
+        {
+          "label": "S16",
+          "est": -0.02,
+          "se": 0.09486832980505137,
+          "v": 0.009,
+          "x": 15
+        },
+        {
+          "label": "S17",
+          "est": 0.33,
+          "se": 0.23021728866442676,
+          "v": 0.053,
+          "x": 8
+        },
+        {
+          "label": "S18",
+          "est": 0.84,
+          "se": 0.3346640106136302,
+          "v": 0.112,
+          "x": 10
+        },
+        {
+          "label": "S19",
+          "est": -0.44,
+          "se": 0.4527692569068708,
+          "v": 0.205,
+          "x": 55
+        },
+        {
+          "label": "S20",
+          "est": 0.49,
+          "se": 0.19748417658131498,
+          "v": 0.03899999999999999,
+          "x": 15
+        },
+        {
+          "label": "S21",
+          "est": 0.58,
+          "se": 0.2588435821108957,
+          "v": 0.067,
+          "x": 5
+        },
+        {
+          "label": "S22",
+          "est": 0.63,
+          "se": 0.40987803063838396,
+          "v": 0.168,
+          "x": 3
+        },
+        {
+          "label": "S23",
+          "est": 0.04,
+          "se": 0.12649110640673517,
+          "v": 0.015999999999999997,
+          "x": 15
+        },
+        {
+          "label": "S24",
+          "est": 0.25,
+          "se": 0.2683281572999748,
+          "v": 0.07200000000000001,
+          "x": 10
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-0.04, 0.23, 0.03, 0.12, 0.52, 0.54, 0.2, -0.16, 0.42, 0.6, 0.58, 0.09, -0.13, 0.18, 0.27, -0.02, 0.33, 0.84, -0.44, 0.49, 0.58, 0.63, 0.04, 0.25)\nse <- c(0.13784048752090222, 0.14832396974191325, 0.09486832980505137, 0.22803508501982758, 0.19235384061671346, 0.28809720581775866, 0.30166206257996714, 0.408656334834051, 0.22803508501982758, 0.30166206257996714, 0.2701851217221259, 0.31622776601683794, 0.19235384061671346, 0.26267851073127396, 0.1341640786499874, 0.09486832980505137, 0.23021728866442676, 0.3346640106136302, 0.4527692569068708, 0.19748417658131498, 0.2588435821108957, 0.40987803063838396, 0.12649110640673517, 0.2683281572999748)\nx  <- c(10, 10, 20, 10, 6, 4, 10, 10, 8, 8, 10, 15, 35, 20, 15, 15, 8, 10, 55, 15, 5, 3, 15, 10)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\", \"S5\", \"S6\", \"S7\", \"S8\", \"S9\", \"S10\", \"S11\", \"S12\", \"S13\", \"S14\", \"S15\", \"S16\", \"S17\", \"S18\", \"S19\", \"S20\", \"S21\", \"S22\", \"S23\", \"S24\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 0.4550646229536129,
+        "slope": -0.02011588200970445,
+        "intercept_se": 0.0876805928803823,
+        "slope_se": 0.005493499889661479,
+        "intercept_ci_lb": 0.2732262028011305,
+        "intercept_ci_ub": 0.6369030431060952,
+        "slope_ci_lb": -0.03150870347940713,
+        "slope_ci_ub": -0.00872306054000177,
+        "tau2_pm": 0.0010998869627327594,
+        "R2_tau2": 0.9492378861792797,
+        "QE": 22.931616148857703,
+        "QE_p": 0.4055996443338829,
+        "QE_df": 22,
+        "pred": 0.18098573057138972,
+        "pred_se": 0.03908367634347534,
+        "pi_lo": 0.0746823729883056,
+        "pi_hi": 0.28728908815447385
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "tiny",
+      "scale": 1e-15,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -3.0000000000000002e-15,
+          "se": 1e-15,
+          "v": 1e-30,
+          "x": -1.5
+        },
+        {
+          "label": "S2",
+          "est": -1e-15,
+          "se": 1e-15,
+          "v": 1e-30,
+          "x": -0.5
+        },
+        {
+          "label": "S3",
+          "est": 3.0000000000000002e-15,
+          "se": 1e-15,
+          "v": 1e-30,
+          "x": 0.5
+        },
+        {
+          "label": "S4",
+          "est": 9.000000000000001e-15,
+          "se": 1e-15,
+          "v": 1e-30,
+          "x": 1.5
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-3.0000000000000002e-15, -1e-15, 3.0000000000000002e-15, 9.000000000000001e-15)\nse <- c(1e-15, 1e-15, 1e-15, 1e-15)\nx  <- c(-1.5, -0.5, 0.5, 1.5)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\")\n\n# PM tau^2 is solved by uniroot(); tolerance and search bound use the outcome-variance scale.\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-42, tau2.max = 100 * max(var(yi), se^2)))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 2e-15,
+        "slope": 3.999999999999999e-15,
+        "intercept_se": 7.071067811865476e-16,
+        "slope_se": 6.324555320336759e-16,
+        "intercept_ci_lb": -1.0424349222966559e-15,
+        "intercept_ci_ub": 5.0424349222966566e-15,
+        "slope_ci_lb": 1.2787634786501537e-15,
+        "slope_ci_ub": 6.721236521349844e-15,
+        "tau2_pm": 9.999999999999926e-31,
+        "R2_tau2": 0.9629629629629632,
+        "QE": 4.000000000000012,
+        "QE_p": 0.13533528323661184,
+        "QE_df": 2,
+        "pred": 2e-15,
+        "pred_se": 7.071067811865476e-16,
+        "pi_lo": -3.269651864139664e-15,
+        "pi_hi": 7.269651864139664e-15
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "small-0.001",
+      "scale": 0.001,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -0.003,
+          "se": 0.001,
+          "v": 1e-06,
+          "x": -1.5
+        },
+        {
+          "label": "S2",
+          "est": -0.001,
+          "se": 0.001,
+          "v": 1e-06,
+          "x": -0.5
+        },
+        {
+          "label": "S3",
+          "est": 0.003,
+          "se": 0.001,
+          "v": 1e-06,
+          "x": 0.5
+        },
+        {
+          "label": "S4",
+          "est": 0.009000000000000001,
+          "se": 0.001,
+          "v": 1e-06,
+          "x": 1.5
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-0.003, -0.001, 0.003, 0.009000000000000001)\nse <- c(0.001, 0.001, 0.001, 0.001)\nx  <- c(-1.5, -0.5, 0.5, 1.5)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\")\n\n# PM tau^2 is solved by uniroot(); tol = 1e-12 matches the page's convergence\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-12))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 0.0020000000000000005,
+        "slope": 0.004,
+        "intercept_se": 0.0007071067977752691,
+        "slope_se": 0.0006324555468710795,
+        "intercept_ci_lb": -0.0010424349936721633,
+        "intercept_ci_ub": 0.005042434993672164,
+        "slope_ci_lb": 0.0012787634148099599,
+        "slope_ci_ub": 0.006721236585190041,
+        "tau2_pm": 1.0000000938399816e-06,
+        "R2_tau2": 0.9629629595073458,
+        "QE": 4.000000000000021,
+        "QE_p": 0.13533528323661126,
+        "QE_df": 2,
+        "pred": 0.0020000000000000005,
+        "pred_se": 0.0007071067977752691,
+        "pi_lo": -0.003269652070183019,
+        "pi_hi": 0.0072696520701830206
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "small-0.0001",
+      "scale": 0.0001,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -0.00030000000000000003,
+          "se": 0.0001,
+          "v": 1e-08,
+          "x": -1.5
+        },
+        {
+          "label": "S2",
+          "est": -0.0001,
+          "se": 0.0001,
+          "v": 1e-08,
+          "x": -0.5
+        },
+        {
+          "label": "S3",
+          "est": 0.00030000000000000003,
+          "se": 0.0001,
+          "v": 1e-08,
+          "x": 0.5
+        },
+        {
+          "label": "S4",
+          "est": 0.0009000000000000001,
+          "se": 0.0001,
+          "v": 1e-08,
+          "x": 1.5
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-0.00030000000000000003, -0.0001, 0.00030000000000000003, 0.0009000000000000001)\nse <- c(0.0001, 0.0001, 0.0001, 0.0001)\nx  <- c(-1.5, -0.5, 0.5, 1.5)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\")\n\n# PM tau^2 is solved by uniroot(); tolerance and search bound use the outcome-variance scale.\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-20, tau2.max = 100 * max(var(yi), se^2)))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 0.00019999999999999998,
+        "slope": 0.00039999999999999975,
+        "intercept_se": 7.071067811865485e-05,
+        "slope_se": 6.324555320336766e-05,
+        "intercept_ci_lb": -0.00010424349222966595,
+        "intercept_ci_ub": 0.0005042434922296659,
+        "slope_ci_lb": 0.00012787634786501497,
+        "slope_ci_ub": 0.0006721236521349845,
+        "tau2_pm": 1.0000000000000058e-08,
+        "R2_tau2": 0.9629629629629626,
+        "QE": 4.000000000000016,
+        "QE_p": 0.13533528323661162,
+        "QE_df": 2,
+        "pred": 0.00019999999999999998,
+        "pred_se": 7.071067811865485e-05,
+        "pi_lo": -0.0003269651864139689,
+        "pi_hi": 0.0007269651864139689
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "small-1e-8",
+      "scale": 1e-08,
+      "rows": [
+        {
+          "label": "S1",
+          "est": -3.0000000000000004e-08,
+          "se": 1e-08,
+          "v": 1.0000000000000001e-16,
+          "x": -1.5
+        },
+        {
+          "label": "S2",
+          "est": -1e-08,
+          "se": 1e-08,
+          "v": 1.0000000000000001e-16,
+          "x": -0.5
+        },
+        {
+          "label": "S3",
+          "est": 3.0000000000000004e-08,
+          "se": 1e-08,
+          "v": 1.0000000000000001e-16,
+          "x": 0.5
+        },
+        {
+          "label": "S4",
+          "est": 9e-08,
+          "se": 1e-08,
+          "v": 1.0000000000000001e-16,
+          "x": 1.5
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(-3.0000000000000004e-8, -1e-8, 3.0000000000000004e-8, 9e-8)\nse <- c(1e-8, 1e-8, 1e-8, 1e-8)\nx  <- c(-1.5, -0.5, 0.5, 1.5)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\")\n\n# PM tau^2 is solved by uniroot(); tolerance and search bound use the outcome-variance scale.\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1.0000000000000001e-28, tau2.max = 100 * max(var(yi), se^2)))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 1.9999999999999994e-08,
+        "slope": 4.0000000000000014e-08,
+        "intercept_se": 7.071067811865485e-09,
+        "slope_se": 6.324555320336769e-09,
+        "intercept_ci_lb": -1.0424349222966604e-08,
+        "intercept_ci_ub": 5.042434922296659e-08,
+        "slope_ci_lb": 1.2787634786501522e-08,
+        "slope_ci_ub": 6.72123652134985e-08,
+        "tau2_pm": 1.0000000000000059e-16,
+        "R2_tau2": 0.9629629629629628,
+        "QE": 3.999999999999945,
+        "QE_p": 0.13533528323661642,
+        "QE_df": 2,
+        "pred": 1.9999999999999994e-08,
+        "pred_se": 7.071067811865485e-09,
+        "pi_lo": -3.2696518641396896e-08,
+        "pi_hi": 7.269651864139688e-08
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "tiny-zero",
+      "scale": 1e-15,
+      "rows": [
+        {
+          "label": "S1",
+          "est": 2e-15,
+          "se": 1e-15,
+          "v": 1e-30,
+          "x": -1.5
+        },
+        {
+          "label": "S2",
+          "est": 2e-15,
+          "se": 1e-15,
+          "v": 1e-30,
+          "x": -0.5
+        },
+        {
+          "label": "S3",
+          "est": 2e-15,
+          "se": 1e-15,
+          "v": 1e-30,
+          "x": 0.5
+        },
+        {
+          "label": "S4",
+          "est": 2e-15,
+          "se": 1e-15,
+          "v": 1e-30,
+          "x": 1.5
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(2e-15, 2e-15, 2e-15, 2e-15)\nse <- c(1e-15, 1e-15, 1e-15, 1e-15)\nx  <- c(-1.5, -0.5, 0.5, 1.5)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\")\n\n# PM tau^2 is solved by uniroot(); tolerance and search bound use the outcome-variance scale.\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 1e-42, tau2.max = 100 * max(var(yi), se^2)))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 2e-15,
+        "slope": 9.860761315262648e-32,
+        "intercept_se": 5e-16,
+        "slope_se": 4.472135954999579e-16,
+        "intercept_ci_lb": -1.5132636487473194e-16,
+        "intercept_ci_ub": 4.151326364874732e-15,
+        "slope_ci_lb": -1.9242047974589665e-15,
+        "slope_ci_ub": 1.9242047974589665e-15,
+        "tau2_pm": 0,
+        "R2_tau2": 0,
+        "QE": 0,
+        "QE_p": 1,
+        "QE_df": 2,
+        "pred": 2e-15,
+        "pred_se": 5e-16,
+        "pi_lo": -1.5132636487473194e-16,
+        "pi_hi": 4.151326364874732e-15
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    },
+    {
+      "id": "tiny-unequal",
+      "scale": 1e-15,
+      "rows": [
+        {
+          "label": "S1",
+          "est": 1.0000000000000001e-16,
+          "se": 2.0000000000000002e-16,
+          "v": 4.0000000000000013e-32,
+          "x": 1
+        },
+        {
+          "label": "S2",
+          "est": 3e-16,
+          "se": 2.5e-16,
+          "v": 6.25e-32,
+          "x": 2
+        },
+        {
+          "label": "S3",
+          "est": 5e-16,
+          "se": 1.8000000000000002e-16,
+          "v": 3.24e-32,
+          "x": 3
+        },
+        {
+          "label": "S4",
+          "est": 2.0000000000000002e-16,
+          "se": 3e-16,
+          "v": 9e-32,
+          "x": 4
+        },
+        {
+          "label": "S5",
+          "est": 9e-16,
+          "se": 2.2000000000000002e-16,
+          "v": 4.84e-32,
+          "x": 5
+        },
+        {
+          "label": "S6",
+          "est": 4.0000000000000004e-16,
+          "se": 2.8000000000000006e-16,
+          "v": 7.840000000000002e-32,
+          "x": 6
+        },
+        {
+          "label": "S7",
+          "est": 1.1000000000000001e-15,
+          "se": 3.5e-16,
+          "v": 1.2249999999999998e-31,
+          "x": 7
+        },
+        {
+          "label": "S8",
+          "est": 5.0000000000000005e-17,
+          "se": 1.5e-16,
+          "v": 2.25e-32,
+          "x": 8
+        }
+      ],
+      "script": "# Auto-generated from the browser Meta-Regression app\n# Run with: Rscript this_file.R  (requires the 'metafor' package)\nlibrary(metafor)\n\nyi <- c(1.0000000000000001e-16, 3e-16, 5e-16, 2.0000000000000002e-16, 9e-16, 4.0000000000000004e-16, 1.1000000000000001e-15, 5.0000000000000005e-17)\nse <- c(2.0000000000000002e-16, 2.5e-16, 1.8000000000000002e-16, 3e-16, 2.2000000000000002e-16, 2.8000000000000006e-16, 3.5e-16, 1.5e-16)\nx  <- c(1, 2, 3, 4, 5, 6, 7, 8)\nlabels <- c(\"S1\", \"S2\", \"S3\", \"S4\", \"S5\", \"S6\", \"S7\", \"S8\")\n\n# PM tau^2 is solved by uniroot(); tolerance and search bound use the outcome-variance scale.\n# (metafor's default tol, .Machine$double.eps^0.25, can differ from the page at 1e-6).\nres <- rma(yi = yi, sei = se, mods = ~ x, method = \"PM\", test = \"adhoc\", slab = labels,\n           control = list(tol = 2.25e-44, tau2.max = 100 * max(var(yi), se^2)))\nprint(res)\n\n# Expected browser output (for diff):\n# \u03b20 (intercept), \u03b21 (slope), \u03c4\u00b2, HKSJ q, t-stat on \u03b21, p-value.",
+      "status": "ok",
+      "expected": {
+        "intercept": 2.908100946014856e-16,
+        "slope": 2.6813115134037573e-17,
+        "intercept_se": 2.880125418531374e-16,
+        "slope_se": 5.715049656259623e-17,
+        "intercept_ci_lb": -4.13931207337343e-16,
+        "intercept_ci_ub": 9.955513965403141e-16,
+        "slope_ci_lb": -1.13029112203799e-16,
+        "slope_ci_ub": 1.6665534247187413e-16,
+        "tau2_pm": 9.091152375887858e-32,
+        "R2_tau2": 0,
+        "QE": 17.37249712487123,
+        "QE_p": 0.008007478107404573,
+        "QE_df": 6,
+        "pred": 4.114691127046547e-16,
+        "pred_se": 1.3563915623471902e-16,
+        "pi_lo": -3.9752858771458765e-16,
+        "pi_hi": 1.2204668131238971e-15
+      },
+      "R": "R version 4.6.0 (2026-04-24 ucrt)",
+      "packages": {
+        "metafor": "5.2.1",
+        "stats": "4.6.0",
+        "utils": "4.6.0"
+      }
+    }
+  ]
+}

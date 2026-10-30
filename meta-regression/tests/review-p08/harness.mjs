@@ -8,7 +8,7 @@ const engine = scripts.find(s => s.includes('function fitPM(studies)'));
 const adapter = scripts.find(s => s.includes('window.__almResults = function'));
 assert.ok(engine && adapter, 'load the actual inline engine and results adapter');
 
-export function loadApp() {
+export function loadApp({ transformEngine = source => source } = {}) {
   const elements = new Map();
   const document = { getElementById(id) {
     if (!elements.has(id)) elements.set(id, {
@@ -22,10 +22,11 @@ export function loadApp() {
   vm.runInContext(readFileSync(new URL('../../../shared/ma-core.js', import.meta.url), 'utf8'), context);
   // Expose private functions and suppress event attachment/autoload only. The
   // production computations, render(), caches and export adapter run unchanged.
-  const init = engine.indexOf('    const loaded = loadSaved();');
+  const source = transformEngine(engine);
+  const init = source.indexOf('    const loaded = loadSaved();');
   assert.ok(init > 0);
-  vm.runInContext(engine.slice(0, init) +
-    'window.p08 = { fit, fitPM, fitPMNull, parseStudies, render };\n})();', context);
+  vm.runInContext(source.slice(0, init) +
+    'window.p08 = { fit, fitPM, fitPMNull, parseStudies, render, rScript };\n})();', context);
   const adapterStart = adapter.indexOf('    window.__almResults = function');
   const adapterEnd = adapter.indexOf('    // Snapshot:', adapterStart);
   assert.ok(adapterEnd > adapterStart);
