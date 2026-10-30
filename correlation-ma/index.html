@@ -200,7 +200,17 @@
     function ready(fn) { if (document.readyState !== "loading") fn(); else document.addEventListener("DOMContentLoaded", fn); }
     ready(function () {
       if (window.alm && window.alm.resultsExport) {
-        window.alm.resultsExport({ target: "#alm-export-mount", basename: "correlation-ma-results", getResults: function () { return _almLastCorrMA() || {}; } });
+        window.alm.resultsExport({
+          target: "#alm-export-mount", basename: "correlation-ma-results",
+          getResults: function () { return _almLastCorrMA() || {}; },
+          methods: function () {
+            var last = _almLastCorrMA();
+            if (!last) return "No main results. Enter at least 2 studies (label, r, n).";
+            // The main payload always uses Wald, independent of the panel's interval selection.
+            var cell = Object.assign({}, last, { applicable: true, test: "z" });
+            return "Main analysis (" + last.method + "). " + window.AlmCorrPlus.methodsText(cell).methods;
+          }
+        });
       }
     });
   })();

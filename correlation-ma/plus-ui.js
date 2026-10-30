@@ -236,7 +236,17 @@
     new MutationObserver(syncToolState).observe($("f-data"), { attributes: true, attributeFilter: ["disabled"] });
     new MutationObserver(labelForest).observe($("forest-host"), { childList: true });
     if (window.alm && window.alm.resultsExport) {
-      window.alm.resultsExport({ target: "#alm-plus-export", basename: "correlation-ma-sensitivity", getResults: function () { return _plus || {}; } });
+      window.alm.resultsExport({
+        target: "#alm-plus-export", basename: "correlation-ma-sensitivity",
+        getResults: function () { return _plus || {}; },
+        methods: function () {
+          var c = currentCell();
+          if (!c) return "No sensitivity results. Enter at least 2 studies (label, r, n).";
+          var grid = "The sensitivity comparison grid compares REML, PM, DL and FE using Wald z, HKSJ and HKSJ with the ad-hoc floor; FE/HKSJ combinations are not applicable. ";
+          var selected = "Selected analysis (" + c.method + ", " + P.TEST_NAMES[c.test] + "): ";
+          return grid + selected + (c.applicable ? P.methodsText(c, { text: (window.AlmCorrPlusScope && window.AlmCorrPlusScope.text) || "" }).methods : c.reason + ".");
+        }
+      });
     }
     refresh();
   }
