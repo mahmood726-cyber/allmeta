@@ -1,0 +1,4 @@
+YUN DEV PC-EXACT binary=1/8 continuous=0/19 gold_incomplete=16
+YUN DEV RECALL binary=1/8 continuous=0/19 gold_incomplete=16 rank1=100.0% mean_rank=1.00 confusable=0
+YUN DEV PER-VALUE binary=8/32 continuous=0/114
+NOTES no_text=20 errors=2 gold_incomplete_flag_false=16 sd_question=0 continuous_with_n=0/19 (continuous mode offers no group sizes) median_candidates=0 rules=entry6.1

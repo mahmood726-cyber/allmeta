@@ -1,0 +1,179 @@
+name: features
+
+# Shared-feature gates (smart data entry, in-app text, verify-in-R, share link) for the
+# paper 2-19 apps. Every gate prints an n/N count; each has a planted defect that must FAIL.
+#   unit     : node:test suites in hub/shared/tests/unit (parsers, converters, text audit)
+#   entry-r  : F1 conversion grid vs metafor conv.wald / conv.fivenum, |js-r| <= 1e-10*|r| (exact when r == 0)
+#              + three planted defects (large value, 1e-12-scale value, formula coefficient), each must FAIL
+#   yun      : Yun et al. 2024 candidate-recall harness, DEV split on the committed CC-BY texts (reports, never gates recall)
+#   browser  : Playwright features-*.spec.mjs (per-app entry round-trip, text audit + snapshot, verify-in-R panel via webR)
+
+on:
+  # No paths filter on PRs: a filter that misses an audited file (adapters, app pages, shared engines) lets the
+  # text/entry/verify gates silently not run (review of PR #178). These jobs are cheap; run them on every PR.
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: node unit tests
+        run: |
+          set -o pipefail
+          node --test --test-reporter=tap "hub/shared/tests/unit/**/*.test.mjs" 2>&1 | tee unit.log
+          grep -E '^# (pass|fail) ' unit.log
+          # A run that matched no test files prints "# pass 0" and would pass vacuously (review of PR #182): require pass > 0.
+          test "$(grep -E '^# fail ' unit.log | awk '{print $3}')" = "0"
+          test "$(grep -E '^# pass ' unit.log | awk '{print $3}')" -gt 0
+      - name: real-paper extraction gate (dev split; exits 1 on any WRONG_VALUE or OTHER)
+        run: node validation/realpaper/run.mjs validation/realpaper/dev.json
+
+  entry-r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5.1"
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::jsonlite
+            metafor@5.2-1
+          dependencies: '"hard"'
+      - name: generate case grid (JS outputs)
+        run: node validation/entry/gen_cases.mjs
+      - name: R cross-check (must print ENTRY n/n)
+        run: |
+          set -o pipefail
+          Rscript validation/entry/check_entry.R validation/entry/cases.json 2>&1 | tee entry.log
+          line=$(grep -E '^ENTRY [0-9]+/[0-9]+$' entry.log | tail -1)
+          echo "$line"
+          n=${line#ENTRY }; passed=${n%/*}; total=${n#*/}
+          test "$total" -ge 2000 && test "$passed" = "$total"
+      - name: planted defects (each must FAIL)
+        # cases.planted.json: one large stored value x(1+1e-6); cases.planted-tiny.json: one 1e-12-scale
+        # stored value x(1+1e-6), invisible to an absolute 1e-10 tolerance; cases.planted-formula.json:
+        # outputs from a copy of alm-entry.js with the Luo 0.39/n coefficient changed to 0.40/n;
+        # cases.planted-de.json: the cluster design effect 1 + (M - 1) * ICC changed to 1 + M * ICC.
+        run: |
+          for corpus in planted planted-tiny planted-formula planted-de; do
+            if Rscript validation/entry/check_entry.R "validation/entry/cases.$corpus.json" > "$corpus.log" 2>&1; then
+              echo "planted defect in cases.$corpus.json was NOT detected"; cat "$corpus.log"; exit 1
+            fi
+            grep -E '^ENTRY [0-9]+/[0-9]+$' "$corpus.log"
+            grep -E '^FAIL ' "$corpus.log" | head -5
+          done
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: entry-r-logs
+          path: |
+            entry.log
+            planted.log
+            planted-tiny.log
+            planted-formula.log
+            planted-de.log
+          if-no-files-found: ignore
+
+  yun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Yun DEV on CC-BY texts (must print the YUN line; exits nonzero only on harness errors)
+        run: |
+          set -o pipefail
+          node validation/yun/run.mjs DEV 2>&1 | tee yun.log
+          sh validation/yun/check-ci.sh yun.log
+
+  browser:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: feature specs
+        run: |
+          # No green no-op: fail (never exit 0) when no feature spec matches or no test ran.
+          shopt -s nullglob
+          specs=(features-*.spec.mjs)
+          if [ "${#specs[@]}" -eq 0 ]; then echo "::error::no features-*.spec.mjs matched"; exit 1; fi
+          echo "${#specs[@]} feature specs"
+          npx playwright test -c playwright.features.config.mjs --reporter=line,json
+          node -e "const s=require('./artifacts/features-results.json').stats;console.log('features tests: expected',s.expected,'unexpected',s.unexpected,'flaky',s.flaky,'skipped',s.skipped);if(!(s.expected+s.flaky>0)){console.error('no feature test ran');process.exit(1);}"
+        env:
+          CI: "true"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/features-results.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: features-browser-artifacts
+          path: |
+            hub/shared/tests/artifacts/
+            hub/shared/tests/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  personas:
+    # Persona walkthrough PACK for the data-entry UX (capture tool): screenshots, visible text and provenance
+    # state for each step, uploaded as artifact persona-pack. Asserts only that every step rendered.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+        working-directory: hub/shared/tests
+      - run: npx playwright install --with-deps chromium
+        working-directory: hub/shared/tests
+      - name: persona walkthrough
+        run: |
+          # The spec imports @playwright/test: resolve it from the features test package (one Playwright instance).
+          ln -s "$GITHUB_WORKSPACE/hub/shared/tests/node_modules" scripts/personas/node_modules
+          cd scripts/personas
+          ./node_modules/.bin/playwright test -c playwright.personas.config.mjs --reporter=line
+        env:
+          CI: "true"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: persona-pack
+          path: |
+            scripts/personas/pack/
+            scripts/personas/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
