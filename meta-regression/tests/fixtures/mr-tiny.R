@@ -1,11 +1,10 @@
 suppressPackageStartupMessages(library(metafor))
 suppressPackageStartupMessages(library(jsonlite))
 d <- read.csv(commandArgs(trailingOnly = TRUE)[1])
-# Cycle 7.11: JS engine uses Paule-Mandel for tau^2 + HKSJ variance correction.
-# To preserve real engine R-parity at tol=1e-6, this script matches:
-#   method='PM' for tau^2 estimation
-#   test='knha' to invoke the Knapp-Hartung-Sidik-Jonkman adjustment (HKSJ)
-r <- rma.uni(yi = d$yi, vi = d$vi, mods = ~ d$year, method = "PM", test = "knha")
+# Match the page's PM fit, max(1, RSS/df) KH floor, and exported solver control.
+# The original PM/knha reference is retained separately in mr-tiny-knha.R.
+r <- rma.uni(yi = d$yi, vi = d$vi, mods = ~ d$year, method = "PM", test = "adhoc",
+             control = list(tol = 1e-12))
 cat(toJSON(list(
   intercept = r$b[1,1], intercept_se = r$se[1], intercept_pval = r$pval[1],
   intercept_ci_lb = r$ci.lb[1], intercept_ci_ub = r$ci.ub[1],
