@@ -1,0 +1,13 @@
+{
+  "app": "influence",
+  "configId": "influence/default-example",
+  "scriptSha256": "c095a5cefb1c438f0d0df701581225d6767e2dd40dfe42b9a6229763a971f8dc",
+  "R": "4.6.0",
+  "pkgs": {
+    "metafor": "5.2.1"
+  },
+  "quantities": 177,
+  "passed": 177,
+  "pass": true,
+  "negativeControl": "FAIL"
+}
