@@ -29,6 +29,16 @@ profile.invalid.push(
   bad('6, 0.1, 0, main'),
   bad('6, 0.1, -0.1, main'),
   bad('6, 0.1, abc, main'),
-  bad('6, 0.1')
+  bad('6, 0.1'),
+  // Lenient number tokens (trailing text, comma decimal, embedded space, empty, NaN/Infinity, hex, non-integer count):
+  // parseFloat/parseInt/Number() would read these as a different number; the row checker refuses them.
+  bad('6, 0.1x, 0.1, main'),
+  bad('6, 0x10, 0.1, main'),
+  bad('6, 0 1, 0.1, main'),
+  bad('6, 0.1, 0.1x, main'),
+  bad('6, 0.1, 0x1, main'),
+  bad('6, 0.1, , main'),
+  bad('6, NaN, 0.1, main'),
+  bad('6, 0.1, Infinity, main')
 );
 export default profile;
