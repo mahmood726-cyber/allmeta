@@ -582,6 +582,14 @@
       if (parsed.studies.length && parsed.studies.length < 4) {
         extras.push("k = " + parsed.studies.length + " — meta-regression with 1 moderator needs k ≥ 4 to be informative.");
       }
+      // A moderator with the same value in every study has zero weighted variance: fit() returns null and only k was shown,
+      // with no reason. metafor drops the redundant predictor and fits the intercept-only model; the page says why instead.
+      if (parsed.studies.length >= 3 && !fitted) {
+        const x0 = parsed.studies[0].x;
+        extras.push(parsed.studies.every(s => s.x === x0)
+          ? "The moderator has the same value (" + x0 + ") in every study, so its slope cannot be estimated. Use a moderator that varies across studies."
+          : "The meta-regression could not be fitted: the weighted variance of the moderator is not positive and finite.");
+      }
       const all = parsed.warnings.concat(extras);
       if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
       else { warnEl.innerHTML = "<strong>Notes</strong><ul>"+all.map(w=>"<li>"+escapeXml(w)+"</li>").join("")+"</ul>"; warnEl.classList.add("is-visible"); }
