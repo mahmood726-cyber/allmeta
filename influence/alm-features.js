@@ -4,6 +4,17 @@
  */
 (function (global) {
   'use strict';
+  // Number settings go into type=number inputs. A value must be a complete decimal number: Number() also reads
+  // 0x10 / 0b1 / ' ', and the input then silently clears such text to '' (automatic or zero). Valid forms the input
+  // itself cannot hold ('+1', ' 0.5', '5.') are written as the same number.
+  var DECIMAL_SETTING = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function decimalSetting(v) { return typeof v === 'string' && DECIMAL_SETTING.test(v.trim()) && Number.isFinite(Number(v)); }
+  function axisBoundOk(v) { return v === '' || decimalSetting(v); }
+  function writeNumberSetting(el, v) {
+    var t = String(v).trim();
+    el.value = t;
+    if (el.value === '' && t !== '') el.value = String(Number(t));
+  }
   var APP = 'influence';
   function byId(id) { return document.getElementById(id); }
   function finite(x) { return typeof x === 'number' && Number.isFinite(x); }
@@ -144,12 +155,12 @@
         nativeRows(s && s.src);
         var a = s.axis;
         if (!a || a.log !== false || ['min', 'max'].some(function (k) {
-          return typeof a[k] !== 'string' || (a[k] !== '' && (!a[k].trim() || !Number.isFinite(Number(a[k]))));
+          return !axisBoundOk(a[k]);
         }) || (a.min !== '' && a.max !== '' && Number(a.min) >= Number(a.max))) throw new Error('Invalid axis settings.');
         byId('src').value = s.src;
         ['min', 'max', 'log'].forEach(function (key) {
           var el = axis(key);
-          if (key === 'log') el.checked = a.log; else el.value = a[key];
+          if (key === 'log') el.checked = a.log; else writeNumberSetting(el, a[key]);
           el.dispatchEvent(new Event('change', { bubbles: true }));
         });
         byId('src').dispatchEvent(new Event('input', { bubbles: true }));

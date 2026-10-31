@@ -26,6 +26,7 @@
   function _flatKVs(obj, prefix) {
     prefix = prefix || '';
     const out = [];
+    if (obj === null || typeof obj !== 'object') return out;
     for (const [k, v] of Object.entries(obj)) {
       const path = prefix ? prefix + '.' + k : k;
       if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
@@ -109,7 +110,9 @@
     const target = typeof opts.target === 'string' ? document.querySelector(opts.target) : opts.target;
     if (!target) { console.warn('[alm.resultsExport] target not found'); return; }
     const basename = opts.basename || 'results';
-    const getResults = typeof opts.getResults === 'function' ? opts.getResults : () => ({});
+    const _getRaw = typeof opts.getResults === 'function' ? opts.getResults : () => ({});
+    // An app whose last run was refused holds no result (null): export it as empty, exactly like the {} default.
+    const getResults = () => { const r = _getRaw(); return (r !== null && typeof r === 'object') ? r : {}; };
     // Optional: bind a verifiable TruthCert receipt to the JSON export.
     // getReceiptInput() -> { studies, method, results, label } for the current
     // analysis (or null to skip). Needs shared/ma-studies-v1.js +
