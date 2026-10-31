@@ -720,7 +720,8 @@
       var body = document.getElementById('body');
       body.innerHTML = '';
       if (rows.length < 5) {
-        body.innerHTML = '<tr><td colspan="5">Pub-bias tests have very low power below k=10. Current k = ' + rows.length + '.</td></tr>';
+        // Name the rule that stopped the analysis; "Current k = N." is parsed by alm-straight.js.
+        body.innerHTML = '<tr><td colspan="5">Not computed: the publication-bias tests need at least 5 studies (and have very low power below k=10). Current k = ' + rows.length + '.</td></tr>';
         _lastResults = null; // do not leave a stale result exportable
         return;
       }
