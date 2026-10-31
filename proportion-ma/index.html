@@ -654,7 +654,7 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'propma-results',
-      getResults: function () { return window._almLastPropMA ? window._almLastPropMA() : {}; },
+      getResults: function () { return (window._almLastPropMA && window._almLastPropMA()) || {}; },
     });
 
     window.alm.urlState({ version: 1 });
