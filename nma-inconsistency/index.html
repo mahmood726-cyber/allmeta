@@ -733,22 +733,33 @@ A, D, -0.48, 0.14</textarea>
       var isContinuous = env.effectMeasure === "MD" || env.effectMeasure === "SMD";
       var isBinary = env.effectMeasure === "OR" || env.effectMeasure === "RR";
       if (isContinuous || isBinary) {
+        // Collect ALL invalid source positions before refusing. A first-error
+        // return concealed later omitted studies, even though no import ran.
+        // Source positions, not IDs, are authoritative: IDs can be repeated.
+        var badSources = [];
+        var badCounts = [];
         for (var si = 0; si < env.studies.length; si++) {
           var study = env.studies[si];
           var sourceName = '"' + String(study && study.id || "(unnamed)") + '" (source study ' + (si + 1) + ')';
           if (!study || !Array.isArray(study.arms) || study.arms.length !== 2) {
-            busRefuse("invalid two-arm source at " + sourceName + ".");
-            return;
+            badSources.push(sourceName);
+            continue;
           }
+          var badArms = [];
           for (var ai = 0; ai < study.arms.length; ai++) {
             var arm = study.arms[ai];
             if (!arm || !Number.isSafeInteger(arm.n) || arm.n < (isContinuous ? 2 : 1) ||
                 (isBinary && (!Number.isSafeInteger(arm.events) || arm.events < 0 || arm.events > arm.n))) {
-              busRefuse("invalid sample size n or binary event count at " + sourceName +
-                ", arm " + (ai + 1) + ". Raw counts must be safe integers; MD/SMD n must be at least 2.");
-              return;
+              badArms.push(ai + 1);
             }
           }
+          if (badArms.length) badCounts.push(sourceName + ", arm " + badArms.join("/"));
+        }
+        if (badSources.length || badCounts.length) {
+          busRefuse((badSources.length ? "invalid two-arm source at " + badSources.join(", ") + ". " : "") +
+            (badCounts.length ? "invalid sample size n or binary event count at " + badCounts.join(", ") +
+              ". Raw counts must be safe integers; MD/SMD n must be at least 2." : ""));
+          return;
         }
       }
       var rows = MaComparisons.toContrasts(env);
