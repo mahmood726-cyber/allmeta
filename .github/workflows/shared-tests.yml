@@ -77,6 +77,13 @@ jobs:
       # Node *.test.mjs files are not selected by the Playwright *.spec.mjs run.
       - name: Native Node NMA-inconsistency source-completeness refusal and controls
         run: node --test unit/p16-r4-bus-import.test.mjs
+      # Fail closed on the entire 4,627-check original P16 DOM publication contract.
+      # This previously non-gated strict replay is known to expose a 190-check
+      # shortfall in Node DOM; do not substitute the green subset or silently
+      # classify a parser mismatch as a clinical/source validation PASS.
+      # The runner logs quantity-level differences before rejecting failures.
+      - name: Native Node P16 complete LF-pinned replay and restoration
+        run: node unit/p16-dom-current.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --reporter=line,json
         env:
