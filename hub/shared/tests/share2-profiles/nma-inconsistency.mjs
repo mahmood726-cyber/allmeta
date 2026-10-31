@@ -25,6 +25,16 @@ export default {
     { model: 42 },
     { src: 42 },
     bad('C, D, abc, 0.10, S11'), bad('C, D, -0.30, 0, S11'), bad('C, D, -0.30, -0.10, S11'),
-    bad('C, C, -0.30, 0.10, S11'), bad('C, D, -0.30'), bad('C, D, -0.30, abc, S11')
+    bad('C, C, -0.30, 0.10, S11'), bad('C, D, -0.30'), bad('C, D, -0.30, abc, S11'),
+  // Lenient number tokens (trailing text, comma decimal, embedded space, empty, NaN/Infinity, hex, non-integer count):
+  // parseFloat/parseInt/Number() would read these as a different number; the row checker refuses them.
+  bad('C, D, 0x0, 0.10, S11'),
+  bad('C, D, 0x10, 0.10, S11'),
+  bad('C, D, -0.30, 0x10, S11'),
+  bad('C, D, -0.30x, 0.10, S11'),
+  bad('C, D, -0.30, 0.10x, S11'),
+  bad('C, D, -0 30, 0.10, S11'),
+  bad('C, D, NaN, 0.10, S11'),
+  bad('C, D, -0.30, Infinity, S11')
   ]
 };

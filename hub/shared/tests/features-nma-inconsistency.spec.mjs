@@ -99,6 +99,20 @@ async function enter(page, text, answers) {
   }, { text, answers, app: APP });
 }
 
+test('PASTE PLANTED: lenient number tokens are excluded and listed, never read as another number', async ({ page }) => {
+  // Number('0x10') = 16 and Number('0x0') = 0: a hexadecimal token is not a decimal effect or SE and must not be analysed.
+  await page.goto(PAGE);
+  await page.waitForFunction(() => typeof window.__almIncoParseIssues === 'function' && typeof window.parse === 'function');
+  const base = 'A, B, -0.28, 0.10, S1\nA, C, -0.18, 0.12, S2\nB, C, 0.14, 0.11, S3\nA, D, -0.55, 0.15, S4';
+  const check = text => page.evaluate(t => ({ n: window.parse(t).length, ignored: window.__almIncoParseIssues(t).ignored.map(x => x.line) }), text);
+  for (const row of ['C, D, 0x0, 0.10, S5', 'C, D, 0x10, 0.10, S5', 'C, D, -0.30, 0x1, S5', 'C, D, -0.30x, 0.10, S5',
+    'C, D, -0.30, 0.10x, S5', 'C, D, -0 30, 0.10, S5', 'C, D, NaN, 0.10, S5', 'C, D, -0.30, Infinity, S5', 'C, D, , 0.10, S5']) {
+    expect(await check(base + '\n' + row), row).toEqual({ n: 4, ignored: [5] });
+  }
+  // Valid forms stay accepted: leading '+', exponent, surrounding spaces.
+  expect(await check(base + '\nC, D,  +0.30 , 1e-1, S5')).toEqual({ n: 5, ignored: [] });
+});
+
 test('ENTRY: example as Excel, paper-style and Covidence tables -> same result; planted bad row blocks', async ({ page }) => {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(PAGE);

@@ -36,7 +36,9 @@
     records.forEach((r, i) => {
       const p = r.parts;
       if (p.every(x => x === '')) return;
-      const te = Number(p[2]), se = Number(p[3]);
+      // Same decimal-only rule as the page parser (Number() would read 0x10 as 16).
+      const decimal = v => /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(v || '') ? Number(v) : NaN;
+      const te = decimal(p[2]), se = decimal(p[3]);
       let why = null;
       if (!p[0] || !p[1]) why = 'a treatment label is missing';
       else if (p[0] === p[1]) why = `both treatments are “${p[0]}”`;
