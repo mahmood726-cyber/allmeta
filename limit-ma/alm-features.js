@@ -10,6 +10,15 @@
     'plus-limit-toggle', 'plus-fill-toggle', 'plus-reg-toggle', 'plus-contour-toggle'];
   function el(id) { return document.getElementById(id); }
   function axes() { return Array.from(document.querySelectorAll('#alm-axis-mount input[type=number]')); }
+  // index.html axisControls mounts x and y, each with a minimum and maximum: share state carries exactly four bounds.
+  // If page setup stopped before the axis controls mounted (e.g. a script failed to load), refuse instead of writing
+  // a link set() rejects or skipping the axes on restore.
+  var AXIS_BOUNDS = 4;
+  function shareAxes() {
+    var list = axes();
+    if (list.length !== AXIS_BOUNDS) throw new Error('Axis controls did not load; reload the page.');
+    return list;
+  }
 
   function validateRows(rows) {
     if (!Array.isArray(rows) || rows.length < 3) throw new Error('At least three studies are required.');
@@ -173,14 +182,14 @@
   function get() {
     var options = {};
     OPTIONS.forEach(function (id) { var n = el(id); options[id] = n.type === 'checkbox' ? n.checked : n.value; });
-    return { src: el('src').value, options: options, axes: axes().map(function (n) { return n.value; }),
+    return { src: el('src').value, options: options, axes: shareAxes().map(function (n) { return n.value; }),
       sensitivityRun: !!(global.AlmLimitPlusUI && global.AlmLimitPlusUI.snapshot()),
       entryLog: global.AlmFeaturesState.entryLog || [] };
   }
   function validateState(s) {
     if (!s || typeof s !== 'object') throw new Error('Invalid analysis state.');
     validateSource(s.src);
-    if (!s.options || !Array.isArray(s.axes) || s.axes.length !== 4 || typeof s.sensitivityRun !== 'boolean' || !Array.isArray(s.entryLog)) throw new Error('Missing options.');
+    if (!s.options || !Array.isArray(s.axes) || s.axes.length !== AXIS_BOUNDS || typeof s.sensitivityRun !== 'boolean' || !Array.isArray(s.entryLog)) throw new Error('Missing options.');
     OPTIONS.forEach(function (id) {
       if (typeof s.options[id] !== (el(id).type === 'checkbox' ? 'boolean' : 'string')) throw new Error('Invalid option: ' + id);
     });
@@ -193,7 +202,7 @@
     el('src').value = s.src;
     OPTIONS.forEach(function (id) { var n = el(id); if (n.type === 'checkbox') n.checked = s.options[id]; else n.value = s.options[id]; });
     // Reset the axis module's private ranges before installing a new interval.
-    var controls = axes();
+    var controls = shareAxes();
     controls.forEach(function (n) { n.value = ''; n.dispatchEvent(new Event('change', { bubbles: true })); });
     controls.forEach(function (n, i) { n.value = s.axes[i]; n.dispatchEvent(new Event('change', { bubbles: true })); });
   }
