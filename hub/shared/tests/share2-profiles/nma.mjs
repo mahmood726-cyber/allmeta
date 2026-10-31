@@ -34,6 +34,16 @@ profile.invalid.push(
   bad('T9, DrugA, DrugB, 0.1, 0'),
   bad('T9, DrugA, DrugB, 0.1, -0.1'),
   bad('T9, DrugA, DrugA, 0.1, 0.1'),
-  bad('T9, DrugA, DrugB, 0.1')
+  bad('T9, DrugA, DrugB, 0.1'),
+  // Lenient number tokens (trailing text, comma decimal, embedded space, empty, NaN/Infinity, hex, non-integer count):
+  // parseFloat/parseInt/Number() would read these as a different number; the row checker refuses them.
+  bad('T9, DrugA, DrugB, 0.1x, 0.1'),
+  bad('T9, DrugA, DrugB, 0x10, 0.1'),
+  bad('T9, DrugA, DrugB, 0 1, 0.1'),
+  bad('T9, DrugA, DrugB, 0.1, 0.1x'),
+  bad('T9, DrugA, DrugB, 0.1, 0x1'),
+  bad('T9, DrugA, DrugB, 0.1, '),
+  bad('T9, DrugA, DrugB, NaN, 0.1'),
+  bad('T9, DrugA, DrugB, 0.1, Infinity')
 );
 export default profile;
