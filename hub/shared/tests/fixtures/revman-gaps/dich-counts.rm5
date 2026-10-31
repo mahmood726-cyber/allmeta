@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic software fixture written for AllMeta tests; invented studies and values, no clinical review or research findings. -->
+<!-- Planted impossible dichotomous rows (deliberate): STD-Cnt-C EVENTS_1 > TOTAL_1; STD-Cnt-D EVENTS_2 negative;
+     STD-Cnt-E EVENTS_1 not a whole number; STD-Cnt-F TOTAL_2 = 0; STD-Cnt-G TOTAL_1 not a whole number and EVENTS_2 > TOTAL_2.
+     STD-Cnt-A and STD-Cnt-B are valid. -->
+<COCHRANE_REVIEW VERSION="5.4">
+<COVER_SHEET>
+<TITLE>Synthetic RevMan dichotomous-count fixture</TITLE>
+</COVER_SHEET>
+<STUDIES_AND_REFERENCES>
+<STUDIES>
+<INCLUDED_STUDIES>
+<STUDY ID="STD-Cnt-A" NAME="Synthetic Cnt Alpha" YEAR="2010"></STUDY>
+<STUDY ID="STD-Cnt-B" NAME="Synthetic Cnt Beta" YEAR="2012"></STUDY>
+<STUDY ID="STD-Cnt-C" NAME="Synthetic Cnt Gamma" YEAR="2013"></STUDY>
+<STUDY ID="STD-Cnt-D" NAME="Synthetic Cnt Delta" YEAR="2015"></STUDY>
+<STUDY ID="STD-Cnt-E" NAME="Synthetic Cnt Epsilon" YEAR="2017"></STUDY>
+<STUDY ID="STD-Cnt-F" NAME="Synthetic Cnt Zeta" YEAR="2019"></STUDY>
+<STUDY ID="STD-Cnt-G" NAME="Synthetic Cnt Eta" YEAR="2020"></STUDY>
+</INCLUDED_STUDIES>
+</STUDIES>
+</STUDIES_AND_REFERENCES>
+<ANALYSES_AND_DATA>
+<COMPARISON ID="CMP-001" NO="1">
+<NAME>Synthetic count comparison</NAME>
+<DICH_OUTCOME DF="1" EFFECT_MEASURE="OR" ID="CMP-001.01" METHOD="MH" NO="1" RANDOM="NO" SUBGROUPS="NO" SWAP_EVENTS="NO" TOTALS="YES">
+<NAME>Synthetic dichotomous events</NAME>
+<GROUP_LABEL_1>Synthetic treatment</GROUP_LABEL_1>
+<GROUP_LABEL_2>Synthetic control</GROUP_LABEL_2>
+<DICH_DATA EVENTS_1="4" EVENTS_2="9" STUDY_ID="STD-Cnt-A" TOTAL_1="40" TOTAL_2="42"/>
+<DICH_DATA EVENTS_1="0" EVENTS_2="13" STUDY_ID="STD-Cnt-B" TOTAL_1="55" TOTAL_2="53"/>
+<DICH_DATA EVENTS_1="31" EVENTS_2="5" STUDY_ID="STD-Cnt-C" TOTAL_1="30" TOTAL_2="30"/>
+<DICH_DATA EVENTS_1="3" EVENTS_2="-2" STUDY_ID="STD-Cnt-D" TOTAL_1="25" TOTAL_2="26"/>
+<DICH_DATA EVENTS_1="2.5" EVENTS_2="4" STUDY_ID="STD-Cnt-E" TOTAL_1="20" TOTAL_2="22"/>
+<DICH_DATA EVENTS_1="1" EVENTS_2="0" STUDY_ID="STD-Cnt-F" TOTAL_1="18" TOTAL_2="0"/>
+<DICH_DATA EVENTS_1="6" EVENTS_2="45" STUDY_ID="STD-Cnt-G" TOTAL_1="40.5" TOTAL_2="44"/>
+</DICH_OUTCOME>
+</COMPARISON>
+</ANALYSES_AND_DATA>
+</COCHRANE_REVIEW>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic software fixture written for AllMeta tests; invented studies and values, no clinical review or research findings. -->
+<!-- Planted (deliberate): an OTHER_OUTCOME (an outcome type the legacy reader does not read) with two data rows, and an
+     unrecognised SYNTHETIC_NOTE element with no data rows, both direct children of the COMPARISON. The DICH_OUTCOME is valid. -->
+<COCHRANE_REVIEW VERSION="5.4">
+<COVER_SHEET>
+<TITLE>Synthetic RevMan unknown-element fixture</TITLE>
+</COVER_SHEET>
+<STUDIES_AND_REFERENCES>
+<STUDIES>
+<INCLUDED_STUDIES>
+<STUDY ID="STD-Unk-A" NAME="Synthetic Unk Alpha" YEAR="2011"></STUDY>
+<STUDY ID="STD-Unk-B" NAME="Synthetic Unk Beta" YEAR="2014"></STUDY>
+<STUDY ID="STD-Unk-C" NAME="Synthetic Unk Gamma" YEAR="2019"></STUDY>
+</INCLUDED_STUDIES>
+</STUDIES>
+</STUDIES_AND_REFERENCES>
+<ANALYSES_AND_DATA>
+<COMPARISON ID="CMP-001" NO="1">
+<NAME>Synthetic unknown-element comparison</NAME>
+<DICH_OUTCOME DF="1" EFFECT_MEASURE="RR" ID="CMP-001.01" METHOD="MH" NO="1" RANDOM="NO" SUBGROUPS="NO" SWAP_EVENTS="NO" TOTALS="YES">
+<NAME>Synthetic dichotomous events</NAME>
+<GROUP_LABEL_1>Synthetic treatment</GROUP_LABEL_1>
+<GROUP_LABEL_2>Synthetic control</GROUP_LABEL_2>
+<DICH_DATA EVENTS_1="4" EVENTS_2="9" STUDY_ID="STD-Unk-A" TOTAL_1="40" TOTAL_2="42"/>
+<DICH_DATA EVENTS_1="11" EVENTS_2="13" STUDY_ID="STD-Unk-B" TOTAL_1="55" TOTAL_2="53"/>
+</DICH_OUTCOME>
+<OTHER_OUTCOME ID="CMP-001.02" NO="2" SUBGROUPS="NO">
+<NAME>Synthetic other data table</NAME>
+<GROUP_LABEL_1>Synthetic treatment</GROUP_LABEL_1>
+<GROUP_LABEL_2>Synthetic control</GROUP_LABEL_2>
+<OTHER_DATA STUDY_ID="STD-Unk-B"></OTHER_DATA>
+<OTHER_DATA STUDY_ID="STD-Unk-C"></OTHER_DATA>
+</OTHER_OUTCOME>
+<SYNTHETIC_NOTE>Synthetic unrecognised element</SYNTHETIC_NOTE>
+</COMPARISON>
+</ANALYSES_AND_DATA>
+</COCHRANE_REVIEW>

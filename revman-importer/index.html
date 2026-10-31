@@ -115,7 +115,8 @@
   <footer>
     Cochrane RevMan format reference: <code>https://documentation.cochrane.org/revman-kb/revman-data-formats</code>.
     Parsing supports the documented <code>DICH_OUTCOME</code> (binary 2&times;2),
-    <code>CONTINUOUS_OUTCOME</code> (mean &plusmn; SD), and <code>O_E_AND_VARIANCE</code> (logHR / logOR) schemas.
+    <code>CONTINUOUS_OUTCOME</code> / <code>CONT_OUTCOME</code> (mean &plusmn; SD), <code>O_E_AND_VARIANCE</code> /
+    <code>IPD_OUTCOME</code> (logHR / logOR) and <code>IV_OUTCOME</code> (generic inverse variance) schemas.
     Outcomes with non-standard subgroup structures may need manual review.
   </footer>
 
@@ -152,7 +153,30 @@
         '<div><strong>Title:</strong> ' + escapeHtml(parsed.title || "(untitled)") + '</div>' +
         '<div><strong>Version:</strong> ' + escapeHtml(parsed.version || "?") + '</div>' +
         '<div><strong>Comparisons:</strong> ' + parsed.comparisons.length + '</div>' +
-        '<div><strong>Total study rows:</strong> ' + totalStudies + '</div>';
+        '<div><strong>Total study rows:</strong> ' + totalStudies + '</div>' +
+        renderSkipped(parsed);
+    }
+
+    // Rows the reader could not use (outcome.skipped) are listed by name, never dropped silently; so is an
+    // element it does not read (an "unsupported" outcome; row null when the element holds no data rows).
+    function skippedRows(parsed) {
+      var out = [];
+      parsed.comparisons.forEach(function (c) {
+        c.outcomes.forEach(function (o) {
+          (o.skipped || []).forEach(function (s) { out.push({ comparison: c.name, outcome: o.name, row: s }); });
+        });
+      });
+      return out;
+    }
+    function renderSkipped(parsed) {
+      var list = skippedRows(parsed);
+      if (!list.length) return '';
+      return '<div id="skipped-rows" class="err" role="alert" style="margin-top:0.5rem"><strong>' + list.length +
+        ' study row' + (list.length === 1 ? ' was' : 's were') + ' not imported</strong> (unusable values or unsupported content in the file):<ul style="margin:0.3rem 0 0 1.1rem;padding:0">' +
+        list.map(function (x) {
+          var where = x.row.row == null ? '' : ', row ' + x.row.row + ', study ' + escapeHtml(x.row.study || x.row.studyId || '(no STUDY_ID)');
+          return '<li>' + escapeHtml(x.comparison) + ' &#8250; ' + escapeHtml(x.outcome) + where + ': ' + escapeHtml(x.row.reason) + '</li>';
+        }).join('') + '</ul></div>';
     }
 
     function renderPreview(comparison) {
@@ -169,6 +193,7 @@
             "<td>" + (s.arms || []).map(function (a) {
               if (a.events != null) return escapeHtml(a.treatment) + ": " + a.events + "/" + a.n;
               if (a.mean != null) return escapeHtml(a.treatment) + ": " + a.mean + "±" + a.sd + " (n=" + a.n + ")";
+              if (a.est != null) return escapeHtml(a.treatment) + ": estimate " + a.est + " (SE " + a.se + ")";
               return escapeHtml(a.treatment) + ": (no data)";
             }).join(" vs ") + "</td></tr>"
           );
@@ -213,14 +238,23 @@
       var env = window.RevmanReader.comparisonToBus(comparison);
       if (env && env._unsupported === "o_e_var") {
         pushStatus.style.display = "block";
-        pushStatus.innerHTML = '<strong class="err">Not pushed.</strong> This comparison only has an O&#8211;E &amp; Variance outcome (' + env.effectMeasure + ', e.g. Peto / log&#8209;hazard&#8209;ratio) &#8212; a summary effect, not 2&#215;2 counts, so it cannot go on the counts&#8209;based bus without corrupting the result. Pool it in a dedicated time&#8209;to&#8209;event / HR tool.';
+        pushStatus.innerHTML = '<strong class="err">Not pushed.</strong> This comparison only has an O&#8211;E &amp; Variance outcome (' + escapeHtml(env.effectMeasure) + ', e.g. Peto / log&#8209;hazard&#8209;ratio) &#8212; a summary effect, not 2&#215;2 counts, so it cannot go on the counts&#8209;based bus without corrupting the result. Pool it in a dedicated time&#8209;to&#8209;event / HR tool.';
+        return;
+      }
+      if (env && env._unsupported === "generic_iv") {
+        pushStatus.style.display = "block";
+        pushStatus.innerHTML = '<strong class="err">Not pushed.</strong> This comparison only has a generic inverse&#8209;variance outcome (' + escapeHtml(env.effectMeasure || "estimate") + ' with SE) &#8212; a summary effect, not arm&#8209;level counts, so it cannot go on the counts&#8209;based bus without corrupting the result. Pool it in a generic inverse&#8209;variance tool.';
         return;
       }
       var skipped = (env && env._dropped) || 0;
+      var readerSkipped = (env && env._readerSkipped) || 0;
+      var readerNote = readerSkipped > 0
+        ? ' <span class="err">' + readerSkipped + ' row' + (readerSkipped === 1 ? '' : 's') + ' of this outcome not imported from the file (listed under Review metadata).</span>'
+        : '';
       if (env && env.studies && env.studies.length === 0) {
         pushStatus.style.display = "block";
         pushStatus.innerHTML = '<strong class="err">Not pushed.</strong> None of the ' +
-          skipped + ' study rows had complete, valid counts (need two arms with events 0&#8211;n and n&gt;0, or mean with sd&gt;0). Nothing was written to the bus.';
+          skipped + ' study rows had complete, valid counts (need two arms with events 0&#8211;n and n&gt;0, or mean with sd&gt;0). Nothing was written to the bus.' + readerNote;
         return;
       }
       var ok = MaComparisons.write(env);
@@ -230,7 +264,7 @@
           ? ' <span class="err">' + skipped + ' row' + (skipped === 1 ? '' : 's') + ' skipped (incomplete or impossible counts).</span>'
           : '';
         pushStatus.innerHTML = '<strong style="color:var(--ok)">✓ Saved.</strong> ' +
-          env.studies.length + ' studies pushed to <code>ma-comparisons-v1</code>.' + note + ' ' +
+          env.studies.length + ' studies pushed to <code>ma-comparisons-v1</code>.' + note + readerNote + ' ' +
           'Open <a href="../nma-pro-v2/">NMA Pro</a> and click <strong>Load from bus</strong>.';
       } else {
         pushStatus.innerHTML = '<strong class="err">Could not save to bus.</strong> The comparison may have unsupported outcome types.';
@@ -246,8 +280,11 @@
         STATE.parsed = parsed;
         renderMeta(parsed);
         populateComparisons(parsed);
+        var nSkipped = skippedRows(parsed).length;
         setStatus("Parsed: " + parsed.comparisons.length + " comparisons, " +
-                  parsed.studyCount + " study rows.");
+                  parsed.studyCount + " study rows." +
+                  (nSkipped ? " " + nSkipped + " row" + (nSkipped === 1 ? "" : "s") + " not imported (listed under Review metadata)." : ""),
+                  nSkipped ? "err" : "");
       }).catch(function (err) {
         STATE.parsed = null;
         comparisonSel.disabled = true;
