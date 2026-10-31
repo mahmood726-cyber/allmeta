@@ -5,6 +5,17 @@
  */
 (function (global) {
   'use strict';
+  // Number settings go into type=number inputs. A value must be a complete decimal number: Number() also reads
+  // 0x10 / 0b1 / ' ', and the input then silently clears such text to '' (automatic or zero). Valid forms the input
+  // itself cannot hold ('+1', ' 0.5', '5.') are written as the same number.
+  var DECIMAL_SETTING = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function decimalSetting(v) { return typeof v === 'string' && DECIMAL_SETTING.test(v.trim()) && Number.isFinite(Number(v)); }
+  function axisBoundOk(v) { return v === '' || decimalSetting(v); }
+  function writeNumberSetting(el, v) {
+    var t = String(v).trim();
+    el.value = t;
+    if (el.value === '' && t !== '') el.value = String(Number(t));
+  }
   var APP = 'limit-ma';
   var OPTIONS = ['plus-alpha', 'plus-binary-measure', 'plus-binary-counts',
     'plus-limit-toggle', 'plus-fill-toggle', 'plus-reg-toggle', 'plus-contour-toggle'];
@@ -195,7 +206,7 @@
     });
     var alpha = Number(s.options['plus-alpha']);
     if (!(alpha >= .001 && alpha <= .999) || !['', 'OR', 'RR'].includes(s.options['plus-binary-measure']) || s.options['plus-binary-counts'].length > 200000) throw new Error('Invalid sensitivity options.');
-    s.axes.forEach(function (v) { if (typeof v !== 'string' || (v !== '' && (!v.trim() || !Number.isFinite(Number(v))))) throw new Error('Invalid axis bound.'); });
+    s.axes.forEach(function (v) { if (!axisBoundOk(v)) throw new Error('Invalid axis bound.'); });
     [0, 2].forEach(function (i) { if (s.axes[i] !== '' && s.axes[i + 1] !== '' && Number(s.axes[i]) >= Number(s.axes[i + 1])) throw new Error('Axis minimum must be below maximum.'); });
   }
   function write(s) {
@@ -204,7 +215,7 @@
     // Reset the axis module's private ranges before installing a new interval.
     var controls = shareAxes();
     controls.forEach(function (n) { n.value = ''; n.dispatchEvent(new Event('change', { bubbles: true })); });
-    controls.forEach(function (n, i) { n.value = s.axes[i]; n.dispatchEvent(new Event('change', { bubbles: true })); });
+    controls.forEach(function (n, i) { writeNumberSetting(n, s.axes[i]); n.dispatchEvent(new Event('change', { bubbles: true })); });
   }
   function set(s) {
     validateState(s);
