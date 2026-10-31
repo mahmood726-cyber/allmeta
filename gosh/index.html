@@ -705,7 +705,7 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'gosh-results',
-      getResults: function () { return window._almLastGosh ? window._almLastGosh() : {}; },
+      getResults: function () { return (window._almLastGosh && window._almLastGosh()) || {}; },
     });
 
     window.alm.urlState({ version: 1 });
