@@ -147,15 +147,24 @@
   var textSpec = { app: APP, verifyPackage: 'metafor', results: results, dom: dom, templates: templates };
 
   function axisControls() { return Array.from(document.querySelectorAll('#alm-axis-mount input')); }
+  // index.html axisControls mounts x and y, each with minimum, maximum and log inputs: share state carries exactly six.
+  // If page setup stopped before the axis controls mounted (e.g. a script failed to load), refuse instead of writing
+  // a link a healthy page rejects or skipping the axes on restore.
+  var AXIS_INPUTS = 6;
+  function shareAxes() {
+    var list = axisControls();
+    if (list.length !== AXIS_INPUTS) throw new Error('Axis controls did not load; reload the page.');
+    return list;
+  }
   function shareGet() {
     return { src: byId('src').value, format: byId('format').value,
-      axes: axisControls().map(function (el) { return el.type === 'checkbox' ? el.checked : el.value; }),
+      axes: shareAxes().map(function (el) { return el.type === 'checkbox' ? el.checked : el.value; }),
       entryLog: JSON.parse(JSON.stringify(global.AlmFeaturesState.entryLog)) };
   }
   function shareSet(state) {
     if (!state || typeof state.src !== 'string' || state.src.length > 200000 ||
         ['te-se', 'binary'].indexOf(state.format) < 0) throw new Error('Invalid data or input format');
-    var controls = axisControls();
+    var controls = shareAxes();
     if (!Array.isArray(state.axes) || state.axes.length !== controls.length ||
         state.axes.some(function (value, i) {
           return controls[i].type === 'checkbox' ? typeof value !== 'boolean'
