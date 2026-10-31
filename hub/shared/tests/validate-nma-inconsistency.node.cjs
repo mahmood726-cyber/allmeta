@@ -7,7 +7,7 @@ test('pinned corpus executes page code, exact totals and state restoration',asyn
  const {c,document,storage}=harness();
  document.getElementById('src').value='pending input';storage.set('ma-comparisons-v1','pending bus');storage.set('alm-autosave:nma-inconsistency','draft');
  const a=c.AlmIncoValidationAdapter,before=JSON.stringify(a.snapshot()),r=await a.corpus.run(files());
- assert.equal(r.checks,4627);assert.equal(r.passed,4627);assert.equal(r.failed.length,0);
+ assert.equal(r.checks,4723);assert.equal(r.passed,4723);assert.equal(r.failed.length,0);
  assert.equal(r.refusals.expected,54);assert.equal(r.refusals.matched,54);assert.equal(JSON.stringify(a.snapshot()),before);
 });
 for(const kind of ['number','label','refusal','static text','control'])test('detects tampered '+kind,async()=>{
@@ -21,7 +21,7 @@ for(const kind of ['number','label','refusal','static text','control'])test('det
   if(kind==='label'&&s.nodeSplit?.length)document.querySelector('#ns-body tr td:first-child').textContent='wrong label';
   if(kind==='refusal'&&s.status==='refused'){s.reason='wrong refusal';document.getElementById('dbt').textContent=s.reason;}
  };
- const r=await a.corpus.run(files());assert.ok(r.failed.length>0);assert.equal(r.passed+r.failed.length,4627);
+ const r=await a.corpus.run(files());assert.ok(r.failed.length>0);assert.equal(r.passed+r.failed.length,4723);
  console.log(kind+': '+r.failed.length+' failures detected');
 });
 for(const index of [0,1])test('rejects changed pin '+index+' before engine execution',async()=>{

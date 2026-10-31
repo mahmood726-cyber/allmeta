@@ -32,6 +32,7 @@
     return out;
   }
   const COUNT = /(^|\.)(df|k|kDirect|index|nSplits|nInconsistent|nDisagree)$/;
+  const PLUS_MIN_CONTRASTS = 3, PLUS_MIN_REASON = 'At least 3 valid contrasts are required.';
   const PVAL = /(^|\.)p$|(^|\.)splitP\.[^.]+$|(^|\.)p\.(FE|DL|PM)$/;
   // R reference -> the same canonical summaries the panel shows.
   function refLoo(c, x) {
@@ -103,7 +104,11 @@
       for (let i = 0; i < v1corpus.length; i++) {
         const r = v1reference.cases[i].numeric;
         if (!r || r.status !== 'ok' || v1corpus[i].key !== v1reference.cases[i].key) continue;
-        const app = P.fitAll(E, window.parse(v1corpus[i].text), v1corpus[i].model), ref = P.normalizeFit(r);
+        // The plus panel keeps its own three-contrast minimum (its R corpus, generate-plus.R, refuses below 3), while the
+        // base analysis fits from one contrast as netmeta does (2026-10-31). For such base cases the expected plus state
+        // is that policy refusal, stated here, not taken from the app.
+        const rows = window.parse(v1corpus[i].text), app = P.fitAll(E, rows, v1corpus[i].model);
+        const ref = rows.length < PLUS_MIN_CONTRASTS ? { status: 'refused', reason: PLUS_MIN_REASON } : P.normalizeFit(r);
         check(v1corpus[i].key, 'text.base.interpret', P.interpret({ base: app }), P.interpret({ base: ref }), 'exact', 0, 'text');
         check(v1corpus[i].key, 'text.base.methods', P.methodsText({ base: app }), P.methodsText({ base: ref }), 'exact', 0, 'text');
       }

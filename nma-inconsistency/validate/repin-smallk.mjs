@@ -1,0 +1,82 @@
+// Re-derive ONLY the reference cases whose archived status was the app's old "At least 3 valid contrasts" refusal,
+// after the 2026-10-31 decision (Mahmood: fit small-k networks as netmeta does). For each such case the numeric
+// reference is the archive reference.R output with only its input gate lowered to one contrast (run separately with
+// R 4.6.0 / netmeta 3.7-0 and passed in as a directory of reference/*.json), and the parsed-row and display contracts
+// are re-derived in two Chromium-family browsers, exactly as repin-pagetext.mjs does for page text. Every other case,
+// the page text and the corpus file stay byte-identical; the script refuses if anything else would change.
+//   node nma-inconsistency/validate/repin-smallk.mjs <dir with NNNNN.json R references>   (from hub/shared/tests)
+import { createRequire } from 'node:module';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import path from 'node:path';
+const { chromium } = createRequire(process.cwd() + '/')('@playwright/test');
+const dir = fileURLToPath(new URL('.', import.meta.url));
+const refPath = dir + 'corpus/reference.json', corpusPath = dir + 'corpus/corpus.json', manPath = dir + 'MANIFEST.json', adapterPath = dir + 'adapter.js';
+const OLD = 'At least 3 valid contrasts are required.';
+const rdir = process.argv[2]; if (!rdir) throw Error('usage: repin-smallk.mjs <R reference dir>');
+const newR = Object.fromEntries(readdirSync(rdir).filter(f => f.endsWith('.json')).map(f => JSON.parse(readFileSync(path.join(rdir, f), 'utf8'))).map(r => [r.key, r]));
+const raw = readFileSync(refPath, 'utf8'), ref = JSON.parse(raw), corpusRaw = readFileSync(corpusPath, 'utf8'), corpus = JSON.parse(corpusRaw);
+if (JSON.stringify(ref) + '\n' !== raw) throw Error('reference.json does not round-trip; refusing');
+const targets = ref.cases.map((c, i) => [c, i]).filter(([c]) => c.reason === OLD && c.numeric && c.numeric.status === 'refused' && c.numeric.reason === OLD);
+for (const [c, i] of targets) {
+  if (corpus[i].key !== c.key) throw Error('corpus/reference order differs at ' + i);
+  const r = newR[c.key]; if (!r || r.status !== 'ok' || r.model !== corpus[i].model) throw Error('no accepted R reference for ' + c.key);
+}
+if (Object.keys(newR).length !== targets.length) throw Error('R references (' + Object.keys(newR).length + ') do not match the ' + targets.length + ' old-gate refusals');
+const app = pathToFileURL(dir + '../index.html').href, derived = {};
+for (const channel of (process.env.REPIN_CHANNELS || 'chrome,msedge').split(',')) {
+  const browser = await chromium.launch(channel === 'chromium' ? {} : { channel });
+  const page = await browser.newPage();
+  await page.goto(app);
+  await page.waitForFunction(() => window.AlmIncoValidationAdapter && window.AlmIncoPlus);
+  await page.evaluate(() => AlmIncoPlus.whenIdle());
+  derived[channel] = { version: browser.version(), cases: await page.evaluate(confs => confs.map(conf => {
+    const a = AlmIncoValidationAdapter, s = a.execute(conf);
+    if (s.status === 'refused') throw Error('page still refuses ' + conf.key + ': ' + s.reason);
+    const text = document.getElementById('src').value;
+    return { text, parsed: window.parse(text), display: a.display() };
+  }), targets.map(([, i]) => corpus[i])) };
+  await browser.close();
+}
+const [A, B] = Object.values(derived);
+if (B && JSON.stringify(A.cases) !== JSON.stringify(B.cases)) throw Error('the two browsers derive different contracts');
+const before = JSON.stringify({ ...ref, cases: ref.cases.map((c, i) => targets.some(t => t[1] === i) ? null : c) });
+targets.forEach(([c, i], j) => {
+  const d = A.cases[j];
+  if (d.text !== c.text || JSON.stringify(d.parsed) !== JSON.stringify(c.parsed)) throw Error('input text or parsed rows changed for ' + c.key);
+  ref.cases[i] = { key: c.key, numeric: newR[c.key], reason: null, text: c.text, parsed: c.parsed, display: d.display };
+});
+if (JSON.stringify({ ...ref, cases: ref.cases.map((c, i) => targets.some(t => t[1] === i) ? null : c) }) !== before) throw Error('Only the old-gate cases may change');
+if (readFileSync(corpusPath, 'utf8') !== corpusRaw) throw Error('corpus.json changed');
+const out = JSON.stringify(ref) + '\n';
+writeFileSync(refPath, out);
+const sha = createHash('sha256').update(out).digest('hex'), bytes = Buffer.byteLength(out);
+const manRaw = readFileSync(manPath, 'utf8'), man = JSON.parse(manRaw);
+const nl = manRaw.endsWith('\r\n') ? '\r\n' : '\n';
+if (JSON.stringify(man) + nl !== manRaw || !readFileSync(adapterPath, 'utf8').includes('const CONTRACT = ' + JSON.stringify(man) + '; // generated')) throw Error('MANIFEST.json and adapter CONTRACT disagree; refusing');
+function writeContract() {
+  writeFileSync(manPath, JSON.stringify(man) + nl);
+  const src = readFileSync(adapterPath, 'utf8');
+  const next = src.replace(/^const CONTRACT = .*; \/\/ generated by build-fixtures.cjs$/m, () => 'const CONTRACT = ' + JSON.stringify(man) + '; // generated by build-fixtures.cjs');
+  if (next === src) throw Error('CONTRACT line not found or unchanged');
+  writeFileSync(adapterPath, next);
+}
+const f = man.files.find(x => x.path === 'validate/corpus/reference.json'); f.sha256 = sha; f.bytes = bytes;
+writeContract();
+// Replay the new pinned corpus in the browser; the check count is derived, as build-fixtures.cjs derives it.
+// Accepted cases carry more checks than refusals, so the adapter's declared cardinality is re-derived from its own
+// mismatch report (the same count build-fixtures.cjs derives) and the replay is then repeated against it.
+const files = Object.fromEntries(man.files.map(x => [x.path, [...readFileSync(dir + x.path.replace(/^validate\//, ''))]]));
+async function replay() {
+  const browser = await chromium.launch(); const page = await browser.newPage(); await page.goto(app);
+  await page.waitForFunction(() => window.AlmIncoValidationAdapter && window.AlmIncoPlus);
+  try { return await page.evaluate(async files => { try { const r = await AlmIncoValidationAdapter.corpus.run(Object.fromEntries(Object.entries(files).map(([k, v]) => [k, new Uint8Array(v)]))); return { checks: r.checks, passed: r.passed, failed: r.failed.slice(0, 5), refusals: r.refusals }; } catch (e) { return { error: String(e.message) }; } }, files); }
+  finally { await browser.close(); }
+}
+const oldChecks = man.checks;
+let result = await replay();
+const m = /cardinality mismatch: (\d+)$/.exec(result.error || '');
+if (m) { man.checks = Number(m[1]); writeContract(); result = await replay(); }
+if (result.error || result.failed.length || result.passed !== result.checks || result.checks !== man.checks) throw Error('replay failed: ' + JSON.stringify(result));
+console.log(JSON.stringify({ browsers: Object.fromEntries(Object.entries(derived).map(([k, v]) => [k, v.version])), changed: targets.map(([c]) => c.key), sha256: sha, bytes, checks: result.checks, oldChecks, refusals: result.refusals }));

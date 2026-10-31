@@ -22,15 +22,15 @@
     },
     {
       "path": "validate/corpus/reference.json",
-      "sha256": "aa0e07ae7f6885dcd0f6c5eeff93b4d01658ad82858ed7dcf4184723c16f8787",
-      "bytes": 852554
+      "sha256": "5cc565f3c52876e06b9460473217602e97d46f717be6ab388aa63ab3ca5536d0",
+      "bytes": 862287
     }
   ],
   "configurations": 153,
   "loop_configurations": 144,
   "drop_fits": 5016,
   "estimator_triples": 97,
-  "checks": 643413,
+  "checks": 643425,
   "referenceVersions": {
     "R": "4.6.0",
     "netmeta": "3.7.0",

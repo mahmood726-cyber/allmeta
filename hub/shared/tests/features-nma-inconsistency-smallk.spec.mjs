@@ -31,6 +31,14 @@ test('SMALLK two contrasts (star) are fitted as netmeta fits them; inconsistency
   }
 });
 
+test('SMALLK the extras panel keeps its three-contrast minimum and says so visibly', async ({ page }) => {
+  await load(page, 'A, B, 0.20, 0.10, S1\nA, C, 0.30, 0.12, S2');
+  await page.evaluate(() => window.AlmIncoPlus.whenIdle());
+  const s = page.locator('#plus-loo-status');
+  await expect(s).toBeVisible();
+  await expect(s).toHaveText('Sensitivity analysis not available: At least 3 valid contrasts are required.');
+});
+
 test('SMALLK one contrast is fitted (k = 1), with the warning', async ({ page }) => {
   const r = await load(page, 'A, B, 0.20, 0.10, S1');
   expect(r.status).not.toBe('refused');
