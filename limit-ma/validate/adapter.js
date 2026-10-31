@@ -86,7 +86,10 @@ function currentState(){
  const text=document.getElementById('src').value,lines=text.trim().split(/\n/).filter(x=>x.trim());
  if(lines.length<3||lines.some(x=>{const p=x.split(',');return p.length<2||!p[0].trim()||!p[1].trim()||!finite(Number(p[0]))||!finite(Number(p[1]))||Number(p[1])<=0;}))throw Error('Need at least three valid effect rows; invalid lines refused');
  const te=lines.map(x=>Number(x.split(',')[0])),se=lines.map(x=>Number(x.split(',')[1]));
- __almLimitValidationRun(text,false);const v=values(_almLastLimit());
+ __almLimitValidationRun(text,false);const last=_almLastLimit();
+ // A page refusal (e.g. no variation in the SEs) leaves no result: report the page's reason, not a TypeError.
+ if(!last)throw Error((document.getElementById('limit-error').textContent.trim()||'The page refused the current analysis.')+' Fix the input before validating.');
+ const v=values(last);
  adapter.live.compare.kind=Object.fromEntries(v.map(x=>[x.key,'rel']));
  return {te,se,values:v,note:'DL + beta0; all exported estimates, SEs, CIs, heterogeneity, Q decomposition and shrunken studies. Live meta 8.3-0 / metasens 1.5-3; paper meta 8.5-0 / metasens 1.5-3. R refusal is not a pass.'};
 }
