@@ -4,7 +4,7 @@
  *         "t1, t2, effect, SE, study" line per record into the app's OWN input (#src, the format parse() reads:
  *         effect = t1 relative to t2, i.e. t1 minus t2 on the analysis scale), numbers by String() (shortest
  *         round-trip form), labels CSV-quoted only when needed. Before anything is changed the candidate text is
- *         checked with the app's own parse() + inputIssue() (>= 3 contrasts, no multi-arm / repeated study IDs,
+ *         checked with the app's own parse() + inputIssue(rows, 1) (>= 1 contrast, as netmeta; no multi-arm / repeated study IDs,
  *         connected network); refused records leave the input untouched. Then the app is run (#btn-run).
  * text  : results() reads ONLY the app's own last result (window._almLastInco(), the object run() stores and the
  *         page renders from); nothing statistical is recomputed. Counts: k = consistency-model df + number of
@@ -75,7 +75,7 @@
     // The app's own parser and input rules, before anything is changed.
     var parsed = global.parse(text);
     if (parsed.length !== records.length) return refuse('The app could not read every row (' + parsed.length + ' of ' + records.length + ').');
-    var issue = global.inputIssue(parsed);
+    var issue = global.inputIssue(parsed, 1);
     if (issue) return refuse('The app refuses these rows: ' + issue);
     ta.value = text;
     run.click();
@@ -289,7 +289,7 @@
     // A first-line header is not a data row; any other ignored line is.
     var bad = rows.ignored.filter(function (x) { return x.why !== 'looks like a header'; });
     if (bad.length) throw new Error('line ' + bad[0].line + ' cannot be used: ' + bad[0].why);
-    var issue = global.inputIssue(global.parse(s.src));
+    var issue = global.inputIssue(global.parse(s.src), 1);
     if (issue) throw new Error(issue);
     byId('src').value = s.src;
     byId('f-model').value = s.model;

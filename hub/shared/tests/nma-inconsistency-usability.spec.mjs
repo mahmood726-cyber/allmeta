@@ -48,9 +48,12 @@ test('edited valid input re-runs after a pause; invalid input explains and clear
  await expect(page.locator('#inco-input-msg')).toContainText('opened on line 1 is never closed');
 });
 test('Ctrl+Enter runs the analysis from the input box',async({page})=>{
+ // One contrast was refused ("At least 3"); since 2026-10-31 it is fitted as netmeta fits it, with a small-k note
+ // (Mahmood: match R). Ctrl+Enter must still run the analysis, so assert that run's output.
  await page.goto(app);await page.fill('#src','A,B,.1,.1');
  await page.locator('#src').press('Control+Enter');
- await expect(page.locator('#dbt')).toHaveText('At least 3 valid contrasts are required.');
+ await expect(page.locator('#dbt')).toContainText('inconsistency is not testable');
+ await expect(page.locator('#smallk-note')).toContainText('Only 1 contrast');
 });
 test('restored draft is analysed, not shown under the example results',async({page})=>{
  await page.goto(app);

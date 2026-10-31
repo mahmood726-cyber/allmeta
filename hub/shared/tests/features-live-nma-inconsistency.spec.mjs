@@ -23,8 +23,10 @@ test('current snapshot reads results without fitting and rejects pending/refused
     return a.appValues(s);
   });
   expect(before.length).toBeGreaterThanOrEqual(6);
-  await page.fill('#src','A,B,.2,.1');
+  // The refused input was one contrast ("At least 3"); since 2026-10-31 one contrast is fitted as netmeta fits it,
+  // so a disconnected network (still refused by the page) is the refused input here.
+  await page.fill('#src','A,B,.2,.1\nC,D,.3,.1');
   await expect(page.evaluate(()=>AlmLiveAdapters['nma-inconsistency'].currentState())).rejects.toThrow(/out of date/);
   await page.click('#btn-run');
-  await expect(page.evaluate(()=>AlmLiveAdapters['nma-inconsistency'].currentState())).rejects.toThrow(/At least 3/);
+  await expect(page.evaluate(()=>AlmLiveAdapters['nma-inconsistency'].currentState())).rejects.toThrow(/disconnected/);
 });

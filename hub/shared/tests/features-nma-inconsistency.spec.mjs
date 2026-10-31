@@ -203,7 +203,7 @@ test('ENTRY: example as Excel, paper-style and Covidence tables -> same result; 
       a(ok.map((r, i) => i === 2 ? { ...r, yi: NaN } : r)),
       a([...ok, { study: 's4', t1: 'D', t2: 'E', yi: 0.1, sei: 0.1 }]),   // disconnected network (app's own rule)
       a(ok.map(r => ({ ...r, study: 'same' }))),                         // multi-arm / repeated study ID
-      a(ok.slice(0, 2)),                                                  // fewer than 3 contrasts
+      a(ok.slice(0, 2).map((r, i) => i === 1 ? { ...r, t1: 'C', t2: 'D' } : r)), // 2 contrasts, disconnected (was: fewer than 3 contrasts, fitted since 2026-10-31)
       a([]),
     ].map(r => [r.ok, r.error || '']);
   }, APP);
@@ -211,6 +211,11 @@ test('ENTRY: example as Excel, paper-style and Covidence tables -> same result; 
   expect(refusals.map(r => r[0])).toEqual([false, false, false, false, false, false, false]);
   expect(refusals[3][1]).toContain('disconnected');
   expect(await page.locator('#src').inputValue()).toBe(before);
+  // Two contrasts were refused ("fewer than 3"); netmeta fits them, so apply() accepts them now (Mahmood 2026-10-31: match R).
+  const two = await page.evaluate(app => AlmFeatures.get(app).entry.apply([
+    { study: 's1', t1: 'A', t2: 'B', yi: 0.1, sei: 0.1 }, { study: 's2', t1: 'B', t2: 'C', yi: 0.1, sei: 0.1 }]), APP);
+  expect(two.ok, two.error).toBe(true);
+  await expect(page.locator('#smallk-note')).toContainText('Only 2 contrasts');
   expect(errors).toEqual([]);
 });
 

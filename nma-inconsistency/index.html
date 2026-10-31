@@ -212,8 +212,12 @@ A, D, -0.48, 0.14</textarea>
       document.getElementById("ns-plot").innerHTML = "";
       document.getElementById("dbt").textContent = reason;
     }
-    function inputIssue(rows) {
-      if (rows.length < 3) return "At least 3 valid contrasts are required.";
+    // minContrasts: the analysis itself fits from 1 contrast, as netmeta does (Mahmood 2026-10-31: match R, warn
+    // visibly), so run() and the share/entry adapters pass 1. Callers that pass nothing keep the minimum of 3:
+    // the extras (plus) panel and the validation/live-R replays, whose own R scripts refuse below 3 contrasts.
+    function inputIssue(rows, minContrasts) {
+      const need = Number.isInteger(minContrasts) && minContrasts >= 1 ? minContrasts : 3;
+      if (rows.length < need) return need === 1 ? "Enter at least one valid contrast." : "At least " + need + " valid contrasts are required.";
       const studies = new Map();
       for (const r of rows) {
         if (!studies.has(r.study)) studies.set(r.study, []);
@@ -504,7 +508,7 @@ A, D, -0.48, 0.14</textarea>
 
     function run() {
       const rows = parse(document.getElementById("src").value);
-      const issue = inputIssue(rows);
+      const issue = inputIssue(rows, 1);
       if (issue) { refuse(issue); return; }
       const modelSel = document.getElementById("f-model");
       const method = modelSel ? modelSel.value : "FE";
@@ -533,6 +537,17 @@ A, D, -0.48, 0.14</textarea>
         <p style="font-size:0.83rem;color:var(--muted);margin-top:0.3rem">Model: ${tauTxt}.</p>`;
       drawNS(ns);
       body.innerHTML = __bodyParts.join("");
+      // Fewer than 3 contrasts: netmeta fits these networks too, but there is no closed loop to test.
+      const warnings = [];
+      if (rows.length < 3) {
+        let dfNet = null; try { dfNet = fitNMA(rows).df; } catch (_) { dfNet = null; }
+        warnings.push("Only " + rows.length + " contrast" + (rows.length === 1 ? "" : "s") + ": netmeta fits this network as well, but it has no closed loop, so neither node-splitting nor the design-by-treatment test can assess inconsistency (netmeta's netsplit finds no comparison with both direct and indirect evidence, and decomp.design has 0 degrees of freedom)." +
+          (dfNet === 0 ? " With no residual degrees of freedom the between-study variance τ² cannot be estimated either (netmeta reports NA; a τ² shown as 0 is the truncated moment estimate)." : "") +
+          " Interpret with great caution.");
+      }
+      // Inside the dynamic #dbt output (the page's static text is pinned by the validation corpus).
+      if (warnings.length) document.getElementById("dbt").insertAdjacentHTML("beforeend",
+        '<p class="note" id="smallk-note" role="status">' + escapeMarkup(warnings.join(" ")) + "</p>");
 
       // Engine-state exposure for R-parity tests (do-no-harm).
       try {
