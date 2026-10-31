@@ -33,6 +33,32 @@ profile.invalid.push(
   bad('Iota, abc, 40, 3, 40'),
   bad('Iota, 2.5, 40, 3, 40'),
   bad('Iota, 3, 40, 3'),
-  bad('Iota, 3, 0, 3, 40')
+  bad('Iota, 3, 0, 3, 40'),
+  // Lenient number tokens (trailing text, comma decimal, embedded space, empty, NaN/Infinity, hex, non-integer count):
+  // parseFloat/parseInt/Number() would read these as a different number; the row checker refuses them.
+  bad('Iota, 3x, 40, 3, 40'),
+  bad('Iota, 0x3, 40, 3, 40'),
+  bad('Iota, 3, 4 0, 3, 40'),
+  bad('Iota, 3, 40, , 40'),
+  bad('Iota, 3, 40, 3, NaN'),
+  bad('Iota, 3, 40, 3, Infinity'),
+  bad('Iota, 3, 40.5, 3, 40')
+);
+// The effect/SE format through the same strict line parser: a valid effect/SE file plus ONE lenient-token row.
+const TESE = '\u00c9tude 1, -0.51, 0.20\nBeta, -0.33, 0.25\nGamma, -0.22, 0.12\nDelta, -0.61, 0.30\nEpsilon, -0.15, 0.14\nZeta, -0.80, 0.35\nEta, -0.05, 0.10\nTheta, -0.40, 0.22';
+const badTESE = row => ({ format: 'te-se', src: TESE + '\n' + row });
+profile.invalid.push(
+  badTESE('Iota, abc, 0.1'),
+  badTESE('Iota, 0.1, 0'),
+  badTESE('Iota, 0.1, -0.1'),
+  badTESE('Iota, 0.1'),
+  badTESE('Iota, 0.1x, 0.1'),
+  badTESE('Iota, 0x10, 0.1'),
+  badTESE('Iota, 0 1, 0.1'),
+  badTESE('Iota, 0.1, 0.1x'),
+  badTESE('Iota, 0.1, 0x1'),
+  badTESE('Iota, 0.1, '),
+  badTESE('Iota, NaN, 0.1'),
+  badTESE('Iota, 0.1, Infinity')
 );
 export default profile;
