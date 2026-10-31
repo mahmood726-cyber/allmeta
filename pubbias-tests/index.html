@@ -720,7 +720,8 @@
       var body = document.getElementById('body');
       body.innerHTML = '';
       if (rows.length < 5) {
-        body.innerHTML = '<tr><td colspan="5">Pub-bias tests have very low power below k=10. Current k = ' + rows.length + '.</td></tr>';
+        // Name the rule that stopped the analysis; "Current k = N." is parsed by alm-straight.js.
+        body.innerHTML = '<tr><td colspan="5">Not computed: the publication-bias tests need at least 5 studies (and have very low power below k=10). Current k = ' + rows.length + '.</td></tr>';
         _lastResults = null; // do not leave a stale result exportable
         return;
       }
@@ -945,7 +946,7 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'pubbias-tests-results',
-      getResults: function () { return window._almLastPubbias ? window._almLastPubbias() : {}; },
+      getResults: function () { return (window._almLastPubbias && window._almLastPubbias()) || {}; },
     });
 
     window.alm.urlState({ version: 1 });
@@ -1053,15 +1054,16 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      // The shared default selectors, restricted to the original page: #alm-plus controls are not autosaved,
+      // Restrict autosave to the original page: extras and feature-panel drafts are not autosaved,
       // so the saved key set and positional indices are those of the page without the extras.
       AlmAutosave.install({ appKey: 'pubbias-tests', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *):not(#alm-features *)'; }) });
     }
   });
 })();
 </script>
 <div id="alm-validate"></div>
+<div id="alm-features"></div>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
 <script src="plus-engine.js"></script>
@@ -1069,9 +1071,19 @@
 <script src="validate/plus-compare.js"></script>
 <script src="validate/plus-pins.js"></script>
 <script src="validate/plus-adapter.js"></script>
+<link rel="stylesheet" href="../shared/alm-features.css">
+<link rel="stylesheet" href="../shared/alm-entry.css">
+<script src="../shared/url-pack.js"></script>
 <script src="../shared/alm-zip.js"></script>
-<script src="../shared/alm-sof.js" data-alm-sof-app="pubbias-tests"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-entry-ui.js"></script>
+<script src="../shared/alm-text.js"></script>
 <script src="../shared/alm-features.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/vendor/share-deflate.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="alm-features.js"></script>
+<script src="../shared/alm-sof.js" data-alm-sof-app="pubbias-tests"></script>
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>
