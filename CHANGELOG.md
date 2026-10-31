@@ -12,6 +12,21 @@ the section is renamed to that version and dated, and a fresh
 ## [Unreleased]
 
 ### Added
+- _(items added since the most recent tag will be listed here)_
+
+---
+
+## [1.9.0] — 2026-10-31
+
+### Release contents
+- Merged pull requests in this release (merge order): #211, #209, #210, #212, #240, #239, #278, #303, #306,
+  #366, #339, #440, #432, #235, #236. The release tree is main at the #236 merge (6ce55eb) plus this
+  metadata commit; later main commits are not included.
+- Effect-size converter (PR #235): the MD standard error follows the visible pooled SD and group sizes
+  (no import cache); SMD and logit labels corrected; no-CI E-value handling.
+- E-value (PR #236): a protective effect’s reciprocal marker is labelled "1/RR = x".
+
+### Added
 - RVE: `shared/numerics/LICENSES-rve-eigen.md` reproduces the licences of the
   webR BLAS/LAPACK binaries embedded in `shared/rve-eigen.js` (R's
   `doc/COPYRIGHTS` LAPACK/BLAS entries, the LAPACK modified-BSD licence, the
