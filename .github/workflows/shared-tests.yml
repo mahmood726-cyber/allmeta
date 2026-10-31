@@ -31,6 +31,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: npm ci
+      # P16 DOM replay is a test-only dependency (not shipped application code).
+      # Install outside the npm-ci Playwright tree: the former unisolated npm install
+      # changed five packages and coincided with 17 unrelated shared-tests failures.
+      # Retain exact lockfile Playwright versions and fail on any dependency drift.
+      - name: Install pinned test-only P16 DOM dependency
+        run: |
+          npm install --prefix "${RUNNER_TEMP}/p16-dom-deps" --no-save --ignore-scripts --package-lock=false linkedom@0.18.12
+          echo "NODE_PATH=${RUNNER_TEMP}/p16-dom-deps/node_modules" >> "$GITHUB_ENV"
+          node -e 'const fs=require("fs"), pkgs=require("./package-lock.json").packages; for(const name of ["@playwright/test","playwright","playwright-core"]){const pinned=pkgs["node_modules/"+name].version; const installed=JSON.parse(fs.readFileSync("node_modules/"+name+"/package.json","utf8")).version; if(pinned!==installed)throw Error("locked Playwright dependency drift: "+name+" "+installed+" vs "+pinned);} console.log("PINNED_PLAYWRIGHT_TREE_PASS")'
       # The Playwright testMatch excludes Node *.test.mjs; run the exact
       # production extraction-import refusal/control suite as a CI gate.
       - name: Native Node extraction-bus refusal regressions
@@ -56,6 +65,14 @@ jobs:
         run: bash scripts/p17-range-verify.sh
         working-directory: .
 
+      # P16 labels containing ' vs ' require a structural key across the
+      # serialised live-R handoff. Playwright excludes native *.test.mjs.
+      - name: Native Node P16 structural-pair and pinned R-reference regressions
+        run: node --test unit/p16-pair-identity.test.mjs unit/p16-pair-identity-parity.test.mjs
+      # Exercise the actual displayed-state snapshot, JSON round-trip and R-script
+      # generation from a clean checkout (does not claim native R execution).
+      - name: Native Node P16 live-R snapshot/export generation
+        run: node unit/p16-live-replay.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --reporter=line,json
         env:
@@ -68,5 +85,59 @@ jobs:
           path: |
             hub/shared/tests/artifacts/
             hub/shared/tests/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  p16-native-r-parity:
+    # Separate, fail-closed native R gate: generation/stored R fixtures alone
+    # cannot demonstrate live, method-matched numerical parity.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      # r-lib/actions v2.14.0 (2026-09-21); pin exact authenticated source,
+      # not its moving major tag, for this numerical reference runner.
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05
+        with:
+          r-version: "4.6.0"
+      - name: Install exact oracle package versions
+        run: |
+          Rscript --vanilla -e 'install.packages("remotes", repos="https://cloud.r-project.org")'
+          Rscript --vanilla -e 'for (p in list(c("jsonlite","2.0.0"),c("metafor","5.2.1"),c("netmeta","3.7.0"))) remotes::install_version(p[1], version=p[2], repos="https://cloud.r-project.org", upgrade="never", quiet=TRUE)'
+          Rscript --vanilla -e 'stopifnot(as.character(getRversion())=="4.6.0", as.character(packageVersion("jsonlite"))=="2.0.0", as.character(packageVersion("metafor"))=="5.2.1", as.character(packageVersion("netmeta"))=="3.7.0")'
+      - name: Install exact Node DOM test dependency
+        run: |
+          npm ci
+          npm install --prefix "${RUNNER_TEMP}/p16-dom-deps" --no-save --ignore-scripts --package-lock=false linkedom@0.18.12
+          echo "NODE_PATH=${RUNNER_TEMP}/p16-dom-deps/node_modules" >> "$GITHUB_ENV"
+          node -e 'const fs=require("fs"), pkgs=require("./package-lock.json").packages; for(const name of ["@playwright/test","playwright","playwright-core"]){const pinned=pkgs["node_modules/"+name].version; const installed=JSON.parse(fs.readFileSync("node_modules/"+name+"/package.json","utf8")).version; if(pinned!==installed)throw Error("locked Playwright dependency drift: "+name+" "+installed+" vs "+pinned);} console.log("PINNED_PLAYWRIGHT_TREE_PASS")'
+      - name: Export six real DOM live-R snapshots and refuse malformed identities
+        run: |
+          node --test unit/p16-pair-identity.test.mjs unit/p16-pair-identity-parity.test.mjs
+          node unit/p16-live-replay.mjs
+      - name: Execute six live DOM-to-native-R comparisons
+        run: Rscript --vanilla unit/p16-live-replay.R
+      - name: Execute six complete export-to-native-R comparisons
+        run: |
+          node unit/p16-export-replay.mjs
+          Rscript --vanilla ../../../tests/fixtures/p16-pair-identity-reference.R
+      # A green numerical oracle must turn red on altered app output or
+      # missing displayed-result checks. Restore the unmodified snapshots.
+      - name: Native-R mutation and vacuous-comparison refusal controls
+        run: node unit/p16-native-r-refusal.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p16-native-r-parity-results
+          path: |
+            /tmp/p16-r3-live-results.json
+            /tmp/p16-r3-export-results.json
           if-no-files-found: ignore
           retention-days: 14

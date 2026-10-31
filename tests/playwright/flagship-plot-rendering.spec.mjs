@@ -61,10 +61,23 @@ for (const width of [1280, 390]) {
         await page.waitForFunction(() => !!AppState.results?.pooled);
         await pairwisePlots(page);
         const before = await page.evaluate(() => JSON.parse(JSON.stringify(AppState.results)));
+        if (name === 'TruthCert Pairwise Pro') {
+          // A completed result must never expose a placeholder overfitting verdict,
+          // then mutate the saved analysis several hundred milliseconds later.
+          expect(before.metaoverfit?.skipped).not.toBe(true);
+          expect(before.metaoverfit?.risk_level).toBe('SEVERE');
+          expect(before.metaoverfit?.ESS).toBeGreaterThan(0);
+        }
         const input = await page.evaluate(() => JSON.parse(JSON.stringify(getStudyData())));
         const downloadPromise = page.waitForEvent('download');
         await page.evaluate(() => saveProject('plot-regression.json'));
         const saved = JSON.parse(await readFile(await (await downloadPromise).path(), 'utf8'));
+        if (name === 'TruthCert Pairwise Pro') {
+          // Reproduce the historical delayed-update window, without changing or
+          // weakening any whole-result save/reopen identity assertions below.
+          await page.waitForTimeout(700);
+          expect(await page.evaluate(() => JSON.parse(JSON.stringify(AppState.results.metaoverfit)))).toEqual(before.metaoverfit);
+        }
         await info.attach('saved-result-keys', { body: JSON.stringify({ before: Object.keys(before), saved: Object.keys(saved.results || {}) }), contentType: 'application/json' });
         await page.reload({ waitUntil: 'load' });
         await dismissTutorial(page);

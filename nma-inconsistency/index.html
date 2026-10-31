@@ -438,6 +438,7 @@ A, D, -0.48, 0.14</textarea>
         finiteNumber(z * z);
         const p = validProbability(pz(z));
         const result = {
+          pairKey: key,
           comparison: `${a} vs ${b}`,
           direct: dirPool,
           indirect: ind,
@@ -595,12 +596,13 @@ A, D, -0.48, 0.14</textarea>
           trts: net.trts, Q: net.Q, df: net.df, estimates: estimates,
           estimatesRandom: estimatesRandom, Qrandom: netRE.Q,
           model: method, tau2: tau2,
-          nodeSplit: ns.map(r => ({
+          // Preserve join identity without changing the numerical replay schema.
+          nodeSplit: ns.map(r => Object.defineProperty({
             comparison: r.comparison,
             direct: { mean: r.direct.mean, se: r.direct.se },
             indirect: { mean: r.indirect.mean, se: r.indirect.se },
             diff: r.diff, seDiff: r.seDiff, z: r.z, p: r.p,
-          })),
+          }, 'pairKey', { value: r.pairKey })),
           dbt: { Q: g.Q, df: g.df, p: Number.isFinite(g.p) ? g.p : null },
         };
       } catch (_) { refuse("Network fit is singular or numerically invalid."); }
