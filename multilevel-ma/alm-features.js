@@ -397,12 +397,19 @@
   };
   var textSpec = { app: APP, verifyPackage: 'metafor', results: results, dom: dom, templates: templates };
   function axis(edge) { return document.querySelector('#alm-axis-mount [data-edge="' + edge + '"]'); }
+  // Share state carries the axis minimum, maximum and log mounted by index.html axisControls. If page setup stopped
+  // before the axis controls mounted (e.g. a script failed to load), refuse with an actionable message, changing nothing.
+  function shareAxes() {
+    if (!axis('min') || !axis('max') || !axis('log')) throw new Error('Axis controls did not load; reload the page.');
+  }
   function shareGet() {
+    shareAxes();
     currentProvenance();
     return { src: byId('src').value, axis: { min: axis('min').value, max: axis('max').value, log: axis('log').checked },
       entryInput: byId('src').value, entryLog: global.AlmFeaturesState.entryLog.slice() };
   }
   function shareSet(s) {
+    shareAxes();
     if (!s || typeof s.src !== 'string' || s.src.length > 200000) throw new Error('Data text missing or too long.');
     var a = s.axis;
     if (!a || typeof a.log !== 'boolean' || ['min', 'max'].some(function (k) {
