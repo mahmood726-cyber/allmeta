@@ -186,6 +186,10 @@
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
 
+    // A complete decimal/exponent token or NaN: parseFloat would read "0.1x" as 0.1 and "40 5" as 40, and Number would
+    // read "0x10" as 16, so a typo would be analysed as a different number without a note.
+    const NUMBER_TOKEN = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+    function strictNumber(token) { const t = String(token == null ? "" : token).trim(); return NUMBER_TOKEN.test(t) ? Number(t) : NaN; }
     function parseStudies(text) {
       const studies=[], warnings=[];
       const lines = String(text||"").split(/\r?\n/);
@@ -194,11 +198,12 @@
         if (!raw || raw.startsWith("#")) continue;
         const parts = raw.split(/\s*[,\t]\s*/);
         if (parts.length < 4) { warnings.push("Line "+(i+1)+": need 4 columns"); continue; }
-        const x = parseFloat(parts[parts.length-1]);
-        const se = parseFloat(parts[parts.length-2]);
-        const est = parseFloat(parts[parts.length-3]);
+        const x = strictNumber(parts[parts.length-1]);
+        const se = strictNumber(parts[parts.length-2]);
+        const est = strictNumber(parts[parts.length-3]);
         if (![est,se,x].every(Number.isFinite)) {
-          if (studies.length === 0 && i < 3) continue;
+          // A header line (no numeric-looking value) near the top is skipped; a mistyped number is listed.
+          if (studies.length === 0 && i < 3 && ![parts.length-1, parts.length-2, parts.length-3].some(j => Number.isFinite(parseFloat(parts[j])))) continue;
           warnings.push("Line "+(i+1)+": non-numeric"); continue;
         }
         if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }

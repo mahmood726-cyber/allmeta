@@ -32,6 +32,31 @@ async function rendered(page) {
   }, APP);
 }
 
+test('PASTE PLANTED: lenient number tokens are excluded and listed, never read as another number', async ({ page }) => {
+  // parseFloat('0.1x') = 0.1, parseFloat('40 5') = 40 and Number('0x10') = 16: each was analysed silently.
+  await page.goto(PAGE);
+  await page.waitForFunction(() => typeof window.__almMetaRegParse === 'function');
+  const base = 'Trial A, -0.28, 0.12, 32\nTrial B, -0.22, 0.09, 35\nTrial C, -0.15, 0.11, 42';
+  const parse = text => page.evaluate(t => window.__almMetaRegParse(t), text);
+  for (const row of ['Trial D, 0.1x, 0.1, 40', 'Trial D, 0x10, 0.1, 40', 'Trial D, 0 1, 0.1, 40', 'Trial D, 0.1, 0.1x, 40',
+    'Trial D, 0.1, 0x1, 40', 'Trial D, 0.1, 0.1, 40x', 'Trial D, 0.1, 0.1, 40 5', 'Trial D, 0.1, 0.1, 0x10', 'Trial D, 0.1, 0.1, NaN',
+    'Trial D, 0.1, 0.1, Infinity', 'Trial D, 0.1, , 40']) {
+    const p = await parse(base + '\n' + row);
+    expect(p.studies.length, row).toBe(3);
+    expect(p.warnings.join(' | '), row).toContain('Line 4');
+    await page.locator('#f-data').fill(base + '\n' + row);
+    await expect(page.locator('#warn-banner'), row).toContainText('Line 4');
+  }
+  // A mistyped first row is listed, not skipped as if it were a header; a real header is still skipped.
+  const top = await parse('Trial A, -0.28x, 0.12, 32\n' + base);
+  expect(top.warnings.join(' | ')).toContain('Line 1');
+  const head = await parse('label, logOR, SE, moderator\n' + base);
+  expect([head.studies.length, head.warnings]).toEqual([3, []]);
+  // Valid forms stay accepted: leading '+', exponent.
+  const ok = await parse(base + '\nTrial D, +0.1, 1e-1, 4.5e1');
+  expect([ok.warnings, ok.studies[3].est, ok.studies[3].se, ok.studies[3].x]).toEqual([[], 0.1, 0.1, 45]);
+});
+
 test('FEATURE LIFECYCLE: collapsed controls stay unmounted; opening tabs preserves entry drafts', async ({ page }) => {
   await page.goto(PAGE);
   const toggle = page.locator('#alm-features .alm-f-toggle');
