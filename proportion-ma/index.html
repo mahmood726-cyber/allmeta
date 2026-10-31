@@ -360,6 +360,9 @@
       if (rows.length < 2) {
         document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Need at least 2 studies.</td></tr>';
         _lastResults = null; // do not leave a stale result exportable
+        // Nor displayed: the heterogeneity line and forest plot of the previous analysis must not sit beside the refusal.
+        document.getElementById('het').innerHTML = '';
+        document.getElementById('forest').innerHTML = '';
         return;
       }
 

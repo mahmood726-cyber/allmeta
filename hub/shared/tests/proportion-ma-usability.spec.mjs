@@ -114,7 +114,7 @@ test.describe(`${APP} usability`, () => {
   }
 
   test('4 refusal does not leave the previous result on screen', async ({ page }) => {
-    test.fail(true, 'ISSUE: after a refusal ("Need at least 2 studies.") the previous data set\'s heterogeneity line (#het) and forest-plot diamond stay on screen.');
+    // Fixed 2026-10-31 (edge-case sweep): the refusal now clears #het and #forest; this is a live assertion again.
     await page.goto(PAGE);
     await coreVisible(page);
     await enter(page, '12, 150, A');
