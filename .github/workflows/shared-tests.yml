@@ -32,10 +32,13 @@ jobs:
           python-version: "3.12"
       - run: npm ci
       # P16 DOM replay is a test-only dependency (not shipped application code).
-      # The prior helper relied on a session-local /tmp module and could not run
-      # on a fresh checkout. Lock its direct version and fail if it is missing.
+      # Install outside the npm-ci Playwright tree: the former unisolated npm install
+      # changed five packages and coincided with 17 unrelated shared-tests failures.
+      # Retain exact lockfile Playwright versions and fail on any dependency drift.
       - name: Install pinned test-only P16 DOM dependency
-        run: npm install --no-save --ignore-scripts --package-lock=false linkedom@0.18.12
+        run: npm install --prefix "${RUNNER_TEMP}/p16-dom-deps" --no-save --ignore-scripts --package-lock=false linkedom@0.18.12
+          echo "NODE_PATH=${RUNNER_TEMP}/p16-dom-deps/node_modules" >> "$GITHUB_ENV"
+          node -e 'const fs=require("fs"), pkgs=require("./package-lock.json").packages; for(const name of ["@playwright/test","playwright","playwright-core"]){const pinned=pkgs["node_modules/"+name].version; const installed=JSON.parse(fs.readFileSync("node_modules/"+name+"/package.json","utf8")).version; if(pinned!==installed)throw Error("locked Playwright dependency drift: "+name+" "+installed+" vs "+pinned);} console.log("PINNED_PLAYWRIGHT_TREE_PASS")'
       # The Playwright testMatch excludes Node *.test.mjs; run the exact
       # production extraction-import refusal/control suite as a CI gate.
       - name: Native Node extraction-bus refusal regressions
@@ -111,7 +114,9 @@ jobs:
       - name: Install exact Node DOM test dependency
         run: |
           npm ci
-          npm install --no-save --ignore-scripts --package-lock=false linkedom@0.18.12
+          npm install --prefix "${RUNNER_TEMP}/p16-dom-deps" --no-save --ignore-scripts --package-lock=false linkedom@0.18.12
+          echo "NODE_PATH=${RUNNER_TEMP}/p16-dom-deps/node_modules" >> "$GITHUB_ENV"
+          node -e 'const fs=require("fs"), pkgs=require("./package-lock.json").packages; for(const name of ["@playwright/test","playwright","playwright-core"]){const pinned=pkgs["node_modules/"+name].version; const installed=JSON.parse(fs.readFileSync("node_modules/"+name+"/package.json","utf8")).version; if(pinned!==installed)throw Error("locked Playwright dependency drift: "+name+" "+installed+" vs "+pinned);} console.log("PINNED_PLAYWRIGHT_TREE_PASS")'
       - name: Export six real DOM live-R snapshots and refuse malformed identities
         run: |
           node --test unit/p16-pair-identity.test.mjs unit/p16-pair-identity-parity.test.mjs
