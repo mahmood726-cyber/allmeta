@@ -1,0 +1,19 @@
+{
+  "description": "Reverse only this follow-up fix; original LF hashes were recorded before edits in pass 1. The preGuard variant additionally removes the eleven-line PR guard; it is a reconstruction, not an authoritative base checkout.",
+  "reverseEdits": [
+    {
+      "path": "nma-inconsistency/index.html",
+      "current": "      // Clear dependent results/exports before another action can read them.\n      if (window.AlmIncoPlus) window.AlmIncoPlus.refresh();\n",
+      "original": ""
+    },
+    {
+      "path": "nma-inconsistency/plus-ui.js",
+      "current": "  function refresh() {\n    const gen = ++state.gen;\n    if (pending !== null && typeof window.clearTimeout === 'function') window.clearTimeout(pending);\n    pending = null;\n    const main = window._almLastInco && window._almLastInco();\n    const refused = main && main.status === 'refused';\n    // Refusal preserves the input for correction; it must not trigger a refit.\n    // Invalidate queued LOO work (gen above) and any edit queued before refusal.\n    if (refused) {\n      if (typing !== null && typeof window.clearTimeout === 'function') window.clearTimeout(typing);\n      typing = null;\n    }\n    shownText = refused ? null : src.value;\n    showInputMessage();\n    state.rows = refused ? [] : window.parse(src.value); state.model = model.value; state.selected = null;\n    state.base = refused ? { status: 'refused', reason: main.reason } : P.fitAll(E, state.rows, state.model);\n",
+      "original": "  function refresh() {\n    const gen = ++state.gen;\n    shownText = src.value;\n    showInputMessage();\n    state.rows = window.parse(src.value); state.model = model.value; state.selected = null;\n    state.base = P.fitAll(E, state.rows, state.model);\n"
+    }
+  ],
+  "preGuard": {
+    "remove": "      // Multi-arm sources were refused above: every source must yield one row.\n      // Check source objects individually, since repeated IDs can hide omissions.\n      if (rows.length !== env.studies.length) {\n        var omitted = env.studies.map(function (s, i) {\n          var converted = MaComparisons.toContrasts({ effectMeasure: env.effectMeasure, studies: [s] });\n          return converted.length ? null : '\"' + String(s && s.id || \"(unnamed)\") + '\" (source study ' + (i + 1) + ')';\n        }).filter(function (s) { return s !== null; });\n        busRefuse(\"No supported contrast could be derived for \" + omitted.join(\", \") +\n          \". Check the arm data, including sample size n on both arms for MD/SMD.\");\n        return;\n      }\n",
+    "sha256": "23d2ad71d0cef30842323c6bd24ca4a4eb4cdcdd0e2321620021572701e88d24"
+  }
+}

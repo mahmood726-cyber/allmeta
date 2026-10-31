@@ -56,6 +56,10 @@ jobs:
         run: bash scripts/p17-range-verify.sh
         working-directory: .
 
+      # P16 shared-network continuous MD/SMD missing-N must refuse partial imports;
+      # Node *.test.mjs files are not selected by the Playwright *.spec.mjs run.
+      - name: Native Node NMA-inconsistency source-completeness refusal and controls
+        run: node --test unit/p16-r4-bus-import.test.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --reporter=line,json
         env:
