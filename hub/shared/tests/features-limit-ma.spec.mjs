@@ -25,6 +25,27 @@ async function report(page) {
   });
 }
 
+test('PASTE PLANTED: lenient binary arm counts are refused as invalid input, never read as another number', async ({ page }) => {
+  // Number('0x5') = 5: a hexadecimal token is not a whole-number count and must not be analysed.
+  await open(page);
+  await page.locator('#src').fill('0.62, 0.09, A\n0.41, 0.11, B\n0.80, 0.18, C\n0.55, 0.08, D');
+  await page.locator('#btn-run').click();
+  await page.locator('#alm-plus details summary').click();
+  await page.locator('#plus-binary-measure').selectOption('OR');
+  const counts = ['5, 40, 3, 40', '7, 50, 4, 52', '9, 60, 5, 61', '6, 45, 4, 44'];
+  const peters = async rows => {
+    await page.locator('#plus-binary-counts').fill(rows.join('\n'));
+    await page.locator('#plus-run').click();
+    await expect(page.locator('#plus-status')).not.toHaveText('');
+    return page.locator('[data-plus-refusal="Peters"]').allTextContents();
+  };
+  // Decimal counts are read (whatever Peters then concludes, the input itself is not refused).
+  expect((await peters(counts)).join(' ')).not.toContain('invalid-binary-input');
+  for (const bad of ['0x5, 40, 3, 40', '5, 0x28, 3, 40', '5, 40, 0b11, 40', '5, 40, 3, 0o50']) {
+    expect((await peters([bad, ...counts.slice(1)])).join(' '), bad).toContain('invalid-binary-input');
+  }
+});
+
 test('LAYOUT: the feature host does not shift the existing results or sensitivity plots', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   async function capture() {
