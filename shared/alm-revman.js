@@ -6,6 +6,13 @@
  * Web CSV vocabulary: Cochrane RevMan Knowledge Base, data-package-specification-249561249.
  * parse(buffer) remains asynchronous; parseText(text) is pure and Node/browser compatible.
  * select(review, {comparison,outcome,subgroup}, schema, {filename}) requires all three choices.
+ * An XML data row that cannot be used (non-numeric/missing value, impossible count, SD/SE/VAR <= 0, unresolved
+ * STUDY_ID) never refuses the whole file and is never dropped silently: it is left out of its subgroup's studies and
+ * listed, as the legacy shared/revman-reader.js lists it, on subgroup.skipped and outcome.skipped =
+ * [{row, studyId, study, reason}] (row = 1-based among the outcome's data rows; key present only when non-empty).
+ * An outcome element of a type this reader does not import (e.g. OTHER_OUTCOME) becomes
+ * {type:'unsupported', tag, subgroups:[], studies:[], skipped}. select() validates strictly only the chosen subgroup
+ * and refuses one that holds a listed row, naming the row and its reason.
  */
 (function (global) {
   'use strict';
@@ -28,34 +35,45 @@
     if (!/^[12]\d{3}[a-z]?$/.test(text)) fail('Invalid study year: '+text);
     return /^\d+$/.test(text) ? Number(text) : text;
   }
+  // The first problem with one record, as a function of where it is (null when usable). `ids` (optional) detects
+  // duplicates within the records validated together; messages are those validateRecords has always thrown.
+  function recordProblem(r, schema, ids) {
+    if (typeof r.study !== 'string' || !r.study.trim()) return w=>'Missing study name in '+w;
+    for (const f of fields[schema]) if (typeof r[f] !== 'number' || !Number.isFinite(r[f])) return w=>'Invalid number '+f+' in '+w;
+    if (r.year != null) { try { year(r.year); } catch (e) { return ()=>e.message; } }
+    if (ids) {
+      const id = r.studyId || r.study;
+      if (ids.has(id)) return ()=>'Duplicate study ID in selected subgroup: '+id;
+      ids.add(id);
+    }
+    if (schema === 'generic') {
+      const v = r.sei*r.sei;
+      if (!(r.sei>0 && Number.isFinite(v) && v>0 && Number.isFinite(1/v) && Number.isFinite(r.yi/v))) return w=>'SE must be positive and numerically representable in '+w;
+    } else {
+      for (const f of ['n1i','n2i']) if (!Number.isSafeInteger(r[f]) || r[f]<=0) return w=>'Invalid positive whole total '+f+' in '+w;
+      if (schema==='binary2x2') {
+        if (!Number.isSafeInteger(r.ai) || !Number.isSafeInteger(r.ci) || r.ai<0 || r.ci<0 || r.ai>r.n1i || r.ci>r.n2i) return w=>'Invalid events/total in '+w;
+      } else if (!(r.sd1i>0 && r.sd2i>0 && r.n1i>1 && r.n2i>1)) return w=>'Invalid SD or continuous total in '+w+' (SD > 0 and total > 1 required).';
+    }
+    return null;
+  }
   function validateRecords(records, schema) {
     if (!fields[schema]) fail('Unsupported input schema: '+schema);
     if (!Array.isArray(records) || !records.length) fail('No study rows to import or export.');
     const ids = new Set();
     records.forEach((r,i) => {
-      const where = 'row '+(i+1)+' ('+r.study+')';
-      if (typeof r.study !== 'string' || !r.study.trim()) fail('Missing study name in '+where);
-      fields[schema].forEach(f => { if (typeof r[f] !== 'number' || !Number.isFinite(r[f])) fail('Invalid number '+f+' in '+where); });
-      if (r.year != null) year(r.year);
-      const id = r.studyId || r.study;
-      if (ids.has(id)) fail('Duplicate study ID in selected subgroup: '+id);
-      ids.add(id);
-      if (schema === 'generic') {
-        const v = r.sei*r.sei;
-        if (!(r.sei>0 && Number.isFinite(v) && v>0 && Number.isFinite(1/v) && Number.isFinite(r.yi/v))) fail('SE must be positive and numerically representable in '+where);
-      } else {
-        for (const f of ['n1i','n2i']) if (!Number.isSafeInteger(r[f]) || r[f]<=0) fail('Invalid positive whole total '+f+' in '+where);
-        if (schema==='binary2x2') {
-          if (!Number.isSafeInteger(r.ai) || !Number.isSafeInteger(r.ci) || r.ai<0 || r.ci<0 || r.ai>r.n1i || r.ci>r.n2i) fail('Invalid events/total in '+where);
-        } else if (!(r.sd1i>0 && r.sd2i>0 && r.n1i>1 && r.n2i>1)) fail('Invalid SD or continuous total in '+where+' (SD > 0 and total > 1 required).');
-      }
+      const problem = recordProblem(r, schema, ids);
+      if (problem) fail(problem('row '+(i+1)+' ('+r.study+')'));
     });
     return records;
   }
   function measure(value) {
     const s=String(value||'').trim().toUpperCase();
-    return ({'ODDS RATIO':'OR','PETO_OR':'OR','PETO ODDS RATIO':'OR','RISK RATIO':'RR','RISK DIFFERENCE':'RD','MEAN DIFFERENCE':'MD','STANDARDIZED MEAN DIFFERENCE':'SMD','STD. MEAN DIFFERENCE':'SMD','HAZARD RATIO':'HR'})[s] || s || 'OTHER';
+    // Same mapping as the legacy reader's _MEASURES (shared/revman-reader.js); other names are kept as written.
+    return ({'ODDS RATIO':'OR','PETO_OR':'OR','PETO ODDS RATIO':'OR','ODDS RATIO (NON-EVENT)':'OR','RISK RATIO':'RR','RISK DIFFERENCE':'RD','MEAN DIFFERENCE':'MD','STANDARDIZED MEAN DIFFERENCE':'SMD','STD. MEAN DIFFERENCE':'SMD','HAZARD RATIO':'HR'})[s] || s || 'OTHER';
   }
+  // Every ratio-named measure (Odds/Risk/Rate/Hazard Ratio, Peto OR, Ratio of Means, ...) is analysed on the log scale.
+  const ratioMeasure = m => ['OR','RR','HR'].includes(m) || /RATIO|PETO/.test(String(m||'').toUpperCase());
 
   // Deliberately bounded XML subset: no DTD, entities, network or recovery parsing.
   // One strict parser is used in Node and browsers so malformed files cannot pass only in tests.
@@ -127,31 +145,53 @@
       studies[id]={id,name:prop(n,'NAME')||id,year:year(prop(n,'YEAR')||prop(n,'YEAR_OF_PUB'))};
     });
     const kinds={DICH_OUTCOME:['binary','DICH_DATA','DICH_SUBGROUP'],CONT_OUTCOME:['continuous','CONT_DATA','CONT_SUBGROUP'],CONTINUOUS_OUTCOME:['continuous','CONTINUOUS_DATA','CONTINUOUS_SUBGROUP'],IV_OUTCOME:['generic','IV_DATA','IV_SUBGROUP'],O_E_AND_VARIANCE_OUTCOME:['o_e_var','O_E_AND_VARIANCE_DATA','O_E_AND_VARIANCE_SUBGROUP'],IPD_OUTCOME:['o_e_var','IPD_DATA','IPD_SUBGROUP']};
+    const skip=(list,row,sid,reason)=>{const meta=sid!=null?studies[sid]:null;list.push({row,studyId:sid,study:meta?meta.name:sid,reason});};
+    // An outcome type this reader does not import is listed (legacy reader wording), never fatal and never dropped.
+    function unsupported(o,oi){
+      const reason=o.tag+' is not an outcome type this importer reads',skipped=[];
+      const rows=(function walk(x){return x.children.flatMap(c=>(prop(c,'STUDY_ID')!=null?[c]:[]).concat(walk(c)));})(o);
+      rows.forEach((d,i)=>skip(skipped,i+1,prop(d,'STUDY_ID'),reason));
+      if(!rows.length)skipped.push({row:null,studyId:null,study:null,reason:o.tag+' element is not read by this importer'});
+      return {id:prop(o,'ID')||prop(o,'NO')||String(oi+1),name:prop(o,'NAME')||o.tag,type:'unsupported',tag:o.tag,effectMeasure:null,subgroups:[],studies:[],skipped};
+    }
     const comparisons=descendants(root,'COMPARISON').map((n,ci)=>{
       const outcomes=n.children.filter(o=>/_OUTCOME$/.test(o.tag)).map((o,oi)=>{
-        if(!kinds[o.tag])fail('Unsupported RevMan outcome type: '+o.tag);
+        if(!kinds[o.tag])return unsupported(o,oi);
         const [type,dataTag,groupTag]=kinds[o.tag], em=measure(prop(o,'EFFECT_MEASURE'));
+        const order=new Map(descendants(o,dataTag).map((d,i)=>[d,i+1])),outcomeSkipped=[];
         const arm1Name=prop(o,'GROUP_LABEL_1')||prop(n,'GROUP_LABEL_1')||'Experimental';
         const arm2Name=prop(o,'GROUP_LABEL_2')||prop(n,'GROUP_LABEL_2')||'Control';
         const groups=children(o,groupTag), direct=children(o,dataTag);
         const containers=groups.slice();if(direct.length||!groups.length)containers.unshift(o);
         const subgroups=containers.map((g,gi)=>{
-          const data=children(g,dataTag), ss=data.map(d=>{
-            const sid=prop(d,'STUDY_ID'),meta=studies[sid];if(!meta)fail('Unresolved study ID: '+sid);
-            const s={...meta,scale:em,source:text.slice(d.start,d.end),arms:[]};
-            const num=(...keys)=>number(keys.map(k=>prop(d,k)).find(v=>v!==null),sid+' '+keys[0]);
-            if(type==='binary')s.arms=[{treatment:arm1Name,events:num('EVENTS_1'),n:num('TOTAL_1')},{treatment:arm2Name,events:num('EVENTS_2'),n:num('TOTAL_2')}];
-            else if(type==='continuous')s.arms=[{treatment:arm1Name,mean:num('MEAN_1'),sd:num('SD_1'),n:num('TOTAL_1','N_1')},{treatment:arm2Name,mean:num('MEAN_2'),sd:num('SD_2'),n:num('TOTAL_2','N_2')}];
-            else if(type==='generic')s.precomputed={est:num('EFFECT_SIZE','ESTIMATE'),se:num('SE')};
-            else {const oe=num('O_MINUS_E','O_E'),v=num('VARIANCE','VAR');if(v<=0)fail('Invalid O-E variance');s.oeVar={oe,v};s.precomputed={est:oe/v,se:1/Math.sqrt(v)};}
-            return s;
+          const ss=[],skipped=[];
+          children(g,dataTag).forEach(d=>{
+            const sid=prop(d,'STUDY_ID'),meta=studies[sid];
+            // One unusable row is reported, not fatal: the whole file is never refused for it (review of #249).
+            try{
+              if(!meta)fail('Unresolved study ID: '+sid);
+              const s={...meta,scale:em,source:text.slice(d.start,d.end),arms:[]};
+              const num=(...keys)=>number(keys.map(k=>prop(d,k)).find(v=>v!==null),sid+' '+keys[0]);
+              if(type==='binary')s.arms=[{treatment:arm1Name,events:num('EVENTS_1'),n:num('TOTAL_1')},{treatment:arm2Name,events:num('EVENTS_2'),n:num('TOTAL_2')}];
+              else if(type==='continuous')s.arms=[{treatment:arm1Name,mean:num('MEAN_1'),sd:num('SD_1'),n:num('TOTAL_1','N_1')},{treatment:arm2Name,mean:num('MEAN_2'),sd:num('SD_2'),n:num('TOTAL_2','N_2')}];
+              else if(type==='generic')s.precomputed={est:num('EFFECT_SIZE','ESTIMATE'),se:num('SE')};
+              else {const oe=num('O_MINUS_E','O_E'),v=num('VARIANCE','VAR');if(v<=0)fail('Invalid O-E variance');s.oeVar={oe,v};s.precomputed={est:oe/v,se:1/Math.sqrt(v)};}
+              const problem=recordProblem(rawRecord(s,type),typeSchema[type]);
+              if(problem)fail(problem('this row'));
+              ss.push(s);
+            }catch(e){skip(skipped,order.get(d),sid,e.message);}
           });
-          if(ss.length)validateRecords(ss.map(s=>rawRecord(s,type)),typeSchema[type]);
-          return {id:g===o?'ungrouped':(prop(g,'ID')||prop(g,'NO')||String(gi+1)),name:g===o?'No subgroup':(prop(g,'NAME')||'Subgroup '+(gi+1)),studies:ss};
+          outcomeSkipped.push(...skipped);
+          const sub={id:g===o?'ungrouped':(prop(g,'ID')||prop(g,'NO')||String(gi+1)),name:g===o?'No subgroup':(prop(g,'NAME')||'Subgroup '+(gi+1)),studies:ss};
+          if(skipped.length)sub.skipped=skipped;
+          return sub;
         });
-        if(descendants(o,dataTag).length!==subgroups.reduce((s,g)=>s+g.studies.length,0))fail('Unsupported nested subgroup data in '+prop(o,'NAME'));
+        if(descendants(o,dataTag).length!==subgroups.reduce((s,g)=>s+g.studies.length+(g.skipped?g.skipped.length:0),0))fail('Unsupported nested subgroup data in '+prop(o,'NAME'));
+        outcomeSkipped.sort((a,b)=>a.row-b.row);
         const settings={random:prop(o,'RANDOM'),method:prop(o,'METHOD'),ciStudy:prop(o,'CI_STUDY'),ciTotal:prop(o,'CI_TOTAL')};
-        return {id:prop(o,'ID')||prop(o,'NO')||String(oi+1),name:prop(o,'NAME')||'Outcome '+(oi+1),type,effectMeasure:em,logData:prop(o,'LOG_DATA'),settings,arm1Name,arm2Name,subgroups,studies:subgroups.flatMap(g=>g.studies)};
+        const outcome={id:prop(o,'ID')||prop(o,'NO')||String(oi+1),name:prop(o,'NAME')||'Outcome '+(oi+1),type,effectMeasure:em,logData:prop(o,'LOG_DATA'),settings,arm1Name,arm2Name,subgroups,studies:subgroups.flatMap(g=>g.studies)};
+        if(outcomeSkipped.length)outcome.skipped=outcomeSkipped;
+        return outcome;
       });
       return {id:prop(n,'ID')||prop(n,'NO')||String(ci+1),name:prop(n,'NAME')||'Comparison '+(ci+1),outcomes};
     });
@@ -255,14 +295,21 @@
     const at=(list,key)=>{
       const i=choice&&choice[key];if(!Number.isInteger(i)||i<0||!list||!list[i])fail('Choose a valid '+key+'.');return list[i];
     };
-    const comparison=at(review&&review.comparisons,'comparison'),outcome=at(comparison.outcomes,'outcome'),subgroup=at(outcome.subgroups,'subgroup');
+    const comparison=at(review&&review.comparisons,'comparison'),outcome=at(comparison.outcomes,'outcome');
+    if(outcome.type==='unsupported')fail(outcome.tag+' is not an outcome type this importer reads; it cannot be imported (listed as not imported).');
+    const subgroup=at(outcome.subgroups,'subgroup');
     return {comparison,outcome,subgroup};
   }
   function select(review,choice,schema,opts){
     const {comparison,outcome,subgroup}=selected(review,choice);
     if(outcome.type==='o_e_var')fail('O-E/variance rows require a separate conversion workflow; select a generic IV estimate/SE outcome.');
-    if(outcome.type==='generic'&&['OR','RR','HR'].includes(outcome.effectMeasure)&&outcome.logData==='NO')fail('Generic ratio data are not on the log scale. Supply log estimates and their SE explicitly; no scale conversion is inferred.');
+    if(outcome.type==='generic'&&ratioMeasure(outcome.effectMeasure)&&outcome.logData==='NO')fail('Generic ratio data are not on the log scale. Supply log estimates and their SE explicitly; no scale conversion is inferred.');
     if(typeSchema[outcome.type]!==schema)fail('This '+outcome.type+' outcome is not compatible with the app input schema '+schema+'.');
+    // Strict for the chosen subgroup: a listed (unusable) row refuses it; the remaining rows are never imported without it.
+    if(subgroup.skipped&&subgroup.skipped.length){
+      const n=subgroup.skipped.length;
+      fail('The selected subgroup has '+n+' study row'+(n===1?'':'s')+' that cannot be imported: '+subgroup.skipped.map(s=>'row '+s.row+', study '+(s.study||s.studyId||'(no STUDY_ID)')+': '+s.reason).join('; ')+'. Nothing from this subgroup is imported.');
+    }
     const filename=(opts&&opts.filename)||'unnamed file';
     return validateRecords(subgroup.studies.map(s=>{
       const r=rawRecord(s,outcome.type);
@@ -273,8 +320,10 @@
       return r;
     }),schema);
   }
-  // Formula triggers (house rule): = + @ after optional whitespace, or a leading bare tab/CR. A leading '-' is ordinary text.
-  function safeText(value){const s=String(value==null?'':value);if(/^\s*[=+@]/.test(s)||/^[\t\r]/.test(s)||/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(s))fail('Unsafe spreadsheet formula/control text: '+s.slice(0,40));return s;}
+  // Formula triggers (house rule): = + @ after optional whitespace, or a leading bare tab/CR, are refused. A TEXT cell
+  // starting with '-' (after optional whitespace) is quote-prefixed, since '-2+3' would run as a formula; numbers never
+  // pass through here, so negative estimates stay numbers.
+  function safeText(value){const s=String(value==null?'':value);if(/^\s*[=+@]/.test(s)||/^[\t\r]/.test(s)||/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(s))fail('Unsafe spreadsheet formula/control text: '+s.slice(0,40));return /^\s*-/.test(s)?"'"+s:s;}
   function csvRows(rows){return rows.map(row=>row.map(v=>{const s=String(v==null?'':v);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n')+'\r\n';}
   const headers={binary2x2:['Experimental Events','Experimental Total','Control Events','Control Total'],continuous:['Experimental Mean','Experimental SD','Experimental Total','Control Mean','Control SD','Control Total'],generic:['Effect Estimate','SE']};
   const note='RevMan will recompute study effects from arm data, weights, pooled estimates, confidence intervals and heterogeneity using its chosen analysis settings. Generic estimates and SE are on the analysis scale (log scale for ratio measures). No pooled results or analysis settings are exported.';
@@ -341,13 +390,16 @@
         id: s.id, year: s.year, arms: s.arms,
       };
     });
+    var readerSkipped = (firstOutcome.skipped && firstOutcome.skipped.length) || 0;
     if (!global.MaComparisons) {
-      return {
+      var plain = {
         _schema: "ma-comparisons-v1",
         _savedAt: new Date().toISOString(),
         effectMeasure: firstOutcome.effectMeasure,
         studies: studies,
       };
+      if (readerSkipped > 0) plain._readerSkipped = readerSkipped;
+      return plain;
     }
     // buildEnvelope drops studies whose rows are incomplete or impossible
     // (missing counts, events>n, sd<=0). Report how many so the importer can
@@ -355,6 +407,7 @@
     var env = global.MaComparisons.buildEnvelope(studies, firstOutcome.effectMeasure);
     var dropped = studies.length - (env.studies ? env.studies.length : 0);
     if (dropped > 0) env._dropped = dropped;
+    if (readerSkipped > 0) env._readerSkipped = readerSkipped;
     return env;
   }
 
@@ -416,6 +469,21 @@
     const comp=select('Comparison','alm-revman-comparison'),out=select('RevMan outcome','alm-revman-outcome'),sub=select('Subgroup','alm-revman-subgroup');
     const study=spec.entry.maxRows===1?select('Study (single-study app)','alm-revman-study'):null;
     const status=el('p','Choose a RevMan file.',panel,{id:'alm-revman-status',role:'status','aria-live':'polite'});
+    let skippedBox=null;
+    // Rows the reader could not use are listed by name (same wording as the legacy revman-importer), never dropped silently.
+    function showSkipped(parsed){
+      if(skippedBox){skippedBox.remove();skippedBox=null;}
+      const list=[];
+      if(parsed)parsed.comparisons.forEach(c=>c.outcomes.forEach(o=>(o.skipped||[]).forEach(s=>list.push({comparison:c.name,outcome:o.name,row:s}))));
+      if(!list.length)return 0;
+      skippedBox=doc.createElement('div');skippedBox.id='alm-revman-skipped';skippedBox.className='err';skippedBox.setAttribute('role','alert');
+      status.after(skippedBox);
+      el('strong',list.length+' study row'+(list.length===1?' was':'s were')+' not imported',skippedBox);
+      skippedBox.appendChild(doc.createTextNode(' (unusable values or unsupported content in the file):'));
+      const ul=el('ul',null,skippedBox);
+      list.forEach(x=>el('li',x.comparison+' \u203a '+x.outcome+(x.row.row==null?'':', row '+x.row.row+', study '+(x.row.study||x.row.studyId||'(no STUDY_ID)'))+': '+x.row.reason,ul));
+      return list.length;
+    }
     const preview=el('div',null,panel,{'aria-label':'Selected study preview'});
     const use=el('button','Import selected rows',panel,{type:'button'});use.disabled=true;
     el('p',reader().note,panel,{id:'alm-revman-note'});
@@ -446,7 +514,7 @@
     let review=null,filename='',revision=0,busy=false;
     function options(node,items){node.replaceChildren();el('option','Choose…',node,{value:''});items.forEach((x,i)=>el('option',x.name,node,{value:String(i)}));node.value='';node.disabled=!items.length;}
     function choice(){return {comparison:comp.value===''?null:Number(comp.value),outcome:out.value===''?null:Number(out.value),subgroup:sub.value===''?null:Number(sub.value),...(study&&study.value!==''?{study:Number(study.value)}:{})};}
-    function reset(){review=null;options(comp,[]);options(out,[]);options(sub,[]);if(study)options(study,[]);preview.replaceChildren();use.disabled=true;}
+    function reset(){review=null;showSkipped(null);options(comp,[]);options(out,[]);options(sub,[]);if(study)options(study,[]);preview.replaceChildren();use.disabled=true;}
     function studyOptions(){
       if(!study)return;options(study,[]);
       try{const rows=reader().selected(review,choice()).subgroup.studies;if(rows.length>1)options(study,rows);}catch(e){/* Incomplete selection keeps the study chooser empty. */}
@@ -465,7 +533,7 @@
     file.addEventListener('change',async()=>{
       const token=++revision;reset();const f=file.files&&file.files[0];if(!f){status.textContent='Choose a RevMan file.';return;}
       filename=f.name;status.textContent='Reading '+filename+'…';
-      try{if(f.size>20*1024*1024)throw new Error('RevMan file exceeds 20 MB limit.');const parsed=await reader().parse(await f.arrayBuffer());if(token!==revision)return;review=parsed;options(comp,review.comparisons);status.textContent='Choose comparison, outcome and subgroup.';}
+      try{if(f.size>20*1024*1024)throw new Error('RevMan file exceeds 20 MB limit.');const parsed=await reader().parse(await f.arrayBuffer());if(token!==revision)return;review=parsed;options(comp,review.comparisons);const n=showSkipped(review);status.textContent='Choose comparison, outcome and subgroup.'+(n?' '+n+' row'+(n===1?'':'s')+' not imported (listed below).':'');}
       catch(e){if(token===revision){reset();status.textContent=e.message;}}
     });
     comp.addEventListener('change',()=>{options(out,review&&comp.value!==''?review.comparisons[Number(comp.value)].outcomes:[]);options(sub,[]);studyOptions();update();});

@@ -341,3 +341,31 @@ for (const c of [
   },c.app);
   expect(values).toEqual(c.values.split(',').map(Number));
 });
+
+test('one unusable row elsewhere in the file is listed as not imported; its subgroup is refused; other outcomes still import',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await open(page,'mh-peto');
+  const before=await page.locator('#src').inputValue();
+  const text=readFileSync(fixture('multi.rm5'),'utf8').replace('EVENTS_1="2" TOTAL_1="50"','EVENTS_1="0" TOTAL_1="0"').replace('SE="0.125"','SE="0"');
+  await page.getByLabel('RevMan file',{exact:true}).setInputFiles({name:'two-bad-rows.rm5',mimeType:'application/xml',buffer:Buffer.from(text)});
+  await expect(page.locator('#alm-revman-status')).toHaveText('Choose comparison, outcome and subgroup. 2 rows not imported (listed below).');
+  const box=page.locator('#alm-revman-skipped');
+  await expect(box).toContainText('2 study rows were not imported (unusable values or unsupported content in the file):');
+  await expect(box.locator('li')).toHaveText([
+    'Synthetic A versus B › Synthetic log effect, row 1, study Étude α: SE must be positive and numerically representable in this row',
+    'Synthetic C versus D › Other events, row 1, study Étude α: Invalid positive whole total n1i in this row']);
+  const use=page.getByRole('button',{name:'Import selected rows',exact:true});
+  await page.getByLabel('Comparison',{exact:true}).selectOption('1');
+  await page.getByLabel('RevMan outcome',{exact:true}).selectOption('0');
+  await page.getByLabel('Subgroup',{exact:true}).selectOption('0');
+  await expect(page.locator('#alm-revman-status')).toContainText('cannot be imported');
+  await expect(page.locator('#alm-revman-status')).toContainText('row 1, study Étude α: Invalid positive whole total n1i');
+  await expect(use).toBeDisabled();
+  expect(await page.locator('#src').inputValue()).toBe(before);
+  await choose(page,0);await expect(use).toBeEnabled();await use.click();
+  await expect(page.locator('#alm-revman-status')).toContainText('Imported 2');
+  expect(await page.evaluate(()=>AlmFeaturesState.provenance.map(p=>p.studyId))).toEqual(['s1','s2']);
+  // A clean file clears the list.
+  await load(page);await expect(box).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

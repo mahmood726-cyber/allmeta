@@ -84,3 +84,27 @@ test('revman-importer lists elements the reader does not read and impossible dic
     ['STD-Cnt-A', [[4, 40], [9, 42]]], ['STD-Cnt-B', [[0, 55], [13, 53]]]]);
   expect(errors).toEqual([]);
 });
+
+test('PLANTED: file text in the O-E/IPD "Not pushed" message is shown literally and never parsed as HTML', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push('PAGE: ' + e.message));
+  page.on('console', m => { if (m.type() === 'error' && !BENIGN.test(m.text())) errors.push(m.text()); });
+  await page.goto(origin() + '/revman-importer/index.html');
+  // <EFFECT_MEASURE> child text is read from the file (and upper-cased); numeric character references survive upper-casing.
+  const handler = [...'window.__rv249xss=1'].map(c => '&amp;#' + c.charCodeAt(0) + ';').join('');
+  const xml = '<?xml version="1.0" encoding="UTF-8"?><COCHRANE_REVIEW><STUDIES><STUDY ID="x1" NAME="Synthetic X" YEAR="2020"/></STUDIES>' +
+    '<ANALYSES_AND_DATA><COMPARISON ID="c1" NAME="Synthetic IPD only"><IPD_OUTCOME NAME="Synthetic time to event">' +
+    '<EFFECT_MEASURE>&lt;img src=x onerror=' + handler + '&gt;</EFFECT_MEASURE><IPD_DATA STUDY_ID="x1" O_E="-1" VAR="4"/>' +
+    '</IPD_OUTCOME></COMPARISON></ANALYSES_AND_DATA></COCHRANE_REVIEW>';
+  await page.locator('#picker').setInputFiles({ name: 'planted-markup.rm5', mimeType: 'application/xml', buffer: Buffer.from(xml) });
+  await expect(page.locator('#status')).toHaveText('Parsed: 1 comparisons, 1 study rows.');
+  await page.locator('#btn-push').click();
+  const push = page.locator('#push-status');
+  await expect(push).toContainText('Not pushed.');
+  await expect(push).toContainText('(<IMG SRC=X ONERROR=&#119;&#105;&#110;');
+  await expect(push.locator('img')).toHaveCount(0);
+  expect(await push.evaluate(n => n.querySelectorAll('[onerror]').length)).toBe(0);
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.__rv249xss)).toBeUndefined();
+  expect(errors).toEqual([]);
+});

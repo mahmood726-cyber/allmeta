@@ -67,10 +67,28 @@ for (const [file,schema,values] of [
   assert.throws(()=>R.parseText(text.replace(/,40,|,0.125,/,',NaN,')), /number|numeric|invalid/i);
 });
 
-test('PLANTED malformed XML/CSV, missing values, trailing junk, invalid year and unresolved study refused', () => {
+test('PLANTED malformed XML/CSV, trailing junk and invalid year refuse the file; unusable rows are never imported', () => {
   const good=fixture('multi.rm5');
-  for(const bad of [fixture('malformed.rm5'),good.replace('EVENTS_1="0"','EVENTS_1="4oops"'),good.replace('TOTAL_1="40"','TOTAL_1=""'),good.replace('EVENTS_1="0"','EVENTS_1="41"'),good.replace('SD_1="1.2"','SD_1="-1"'),good.replace('SE="0.125"','SE="0"'),good.replace('YEAR="2020"','YEAR="20xx"'),good.replace('STUDY_ID="s1"','STUDY_ID="missing"')]) {
-    assert.throws(()=>R.parseText(bad), /malformed|invalid|missing|study|number|SD|SE|year|events|total/i);
+  for(const bad of [fixture('malformed.rm5'),good.replace('YEAR="2020"','YEAR="20xx"')]) {
+    assert.throws(()=>R.parseText(bad), /malformed|invalid|year/i);
+  }
+  // Review of PR #249: one unusable data row no longer refuses the WHOLE file (the legacy reader and meta::read.rm5 keep
+  // reading too). Strictness on the bad row itself is unchanged: it is NOT imported, it IS listed (outcome.skipped) with its
+  // reason, choosing its subgroup is refused with that reason, and every other outcome imports exactly as from the clean file.
+  const clean=R.parseText(good),schemaOf={binary:'binary2x2',continuous:'continuous',generic:'generic'};
+  const sel=(r,c,o,g)=>R.select(r,{comparison:c,outcome:o,subgroup:g},schemaOf[r.comparisons[c].outcomes[o].type],{filename:'multi.rm5'});
+  for(const [bad,[c,o],why] of [[good.replace('EVENTS_1="0"','EVENTS_1="4oops"'),[0,0],/number/i],[good.replace('TOTAL_1="40"','TOTAL_1=""'),[0,0],/number/i],
+    [good.replace('EVENTS_1="0"','EVENTS_1="41"'),[0,0],/events\/total/i],[good.replace('SD_1="1.2"','SD_1="-1"'),[0,1],/SD/],
+    [good.replace('SE="0.125"','SE="0"'),[0,2],/SE/],[good.replace('STUDY_ID="s1"','STUDY_ID="missing"'),[0,0],/study/i]]) {
+    assert.notEqual(bad,good);
+    const r=R.parseText(bad),out=r.comparisons[c].outcomes[o];
+    assert.equal(out.skipped.length,1,String(why));assert.equal(out.skipped[0].row,1);assert.match(out.skipped[0].reason,why);
+    assert.equal(out.subgroups[0].studies.length,clean.comparisons[c].outcomes[o].subgroups[0].studies.length-1,'the bad row is not imported');
+    assert.throws(()=>sel(r,c,o,0),why);
+    clean.comparisons.forEach((cc,ci)=>cc.outcomes.forEach((oo,oi)=>oo.subgroups.forEach((g,gi)=>{
+      if(ci===c&&oi===o&&gi===0)return;
+      assert.deepEqual(sel(r,ci,oi,gi),sel(clean,ci,oi,gi));
+    })));
   }
   assert.throws(()=>R.parseText('Study,Effect Estimate,SE\n"unclosed,0.1,0.2'), /quote|CSV/i);
   assert.throws(()=>R.parseText('Study,Effect Estimate,SE\nA,0.1'), /column|row|CSV/i);
@@ -80,7 +98,8 @@ test('PLANTED malformed XML/CSV, missing values, trailing junk, invalid year and
 
 test('PLANTED duplicate studies within chosen group refused; duplicate labels with distinct IDs retained', () => {
   const good=fixture('multi.rm5');
-  assert.throws(()=>R.parseText(good.replace('STUDY_ID="s2" EVENTS','STUDY_ID="s1" EVENTS')),/duplicate/i);
+  // Validated strictly for the subgroup the user selects (review of #249), so the refusal is at selection, not file read.
+  assert.throws(()=>pick(R.parseText(good.replace('STUDY_ID="s2" EVENTS','STUDY_ID="s1" EVENTS'))),/duplicate/i);
   const rows=pick(R.parseText(good.replace('NAME="試験 β"','NAME="Étude α"')));
   assert.equal(rows.length,2);assert.notEqual(rows[0].studyId,rows[1].studyId);
 });
@@ -229,7 +248,9 @@ test('continuous entry uses native means/SD controls; PLANTED numerical overflow
 
 test('PLANTED invalid XML syntax never recovered; valid entities and deterministic empty subgroup preserved',()=>{
   const good=fixture('multi.rm5');
-  for(const bad of [good.replace('NAME="Étude α"','NAME="A &wrong;"'),good.replace('ID="s1"','ID="s1" ID="x"'),good+'<COCHRANE_REVIEW/>',good.replace('STUDY_ID="s1"','STUDY_ID="s1"bad="x"'),good.replace('EVENTS_1="0"','EVENTS_1="0x10"')])assert.throws(()=>R.parseText(bad),/Malformed|Invalid/);
+  for(const bad of [good.replace('NAME="Étude α"','NAME="A &wrong;"'),good.replace('ID="s1"','ID="s1" ID="x"'),good+'<COCHRANE_REVIEW/>',good.replace('STUDY_ID="s1"','STUDY_ID="s1"bad="x"')])assert.throws(()=>R.parseText(bad),/Malformed|Invalid/);
+  // A hex number is a value problem, not XML syntax: the row is never imported, is listed, and its subgroup is refused (review of #249).
+  {const r=R.parseText(good.replace('EVENTS_1="0"','EVENTS_1="0x10"'));assert.match(r.comparisons[0].outcomes[0].skipped[0].reason,/Invalid/);assert.throws(()=>pick(r),/Invalid/);}
   assert.equal(pick(R.parseText(good.replace('NAME="Étude α"','NAME="Étude &amp; &#945;"')))[0].study,'Étude & α');
 });
 

@@ -35,14 +35,21 @@ test('rm5 with a dichotomous AND an IPD (O-E/variance) outcome imports both', ()
   assert.throws(() => R.select(review, {comparison: 0, outcome: 1, subgroup: 0}, 'generic'), /O-E\/variance/);
 });
 
-test('IPD_DATA with a non-positive or missing VAR, or a missing O_E, is refused', () => {
+test('IPD_DATA with a non-positive or missing VAR, or a missing O_E, is never imported and is listed with its reason', () => {
   const first = /<IPD_DATA O_E="-3.4567" STUDY_ID="STD-Synth-A" VAR="7.891"\/>/;
   assert.match(source, first);
+  const clean = R.parseText(source), dich = r => R.select(r, {comparison: 0, outcome: 0, subgroup: 0}, 'binary2x2');
   for (const [bad, why] of [['<IPD_DATA O_E="-3.4567" STUDY_ID="STD-Synth-A" VAR="0"/>', /variance/i],
     ['<IPD_DATA O_E="-3.4567" STUDY_ID="STD-Synth-A" VAR="-1"/>', /variance/i],
     ['<IPD_DATA O_E="-3.4567" STUDY_ID="STD-Synth-A"/>', /Invalid number/],
     ['<IPD_DATA STUDY_ID="STD-Synth-A" VAR="7.891"/>', /Invalid number/]]) {
-    assert.throws(() => R.parseText(source.replace(first, bad)), why);
+    // Review of #249: the row no longer refuses the whole file; it is not imported, is listed, and the rest is unchanged.
+    const review = R.parseText(source.replace(first, bad)), ipd = review.comparisons[0].outcomes[1];
+    assert.deepEqual(ipd.skipped.map(s => [s.row, s.studyId]), [[1, 'STD-Synth-A']]);
+    assert.match(ipd.skipped[0].reason, why);
+    assert.deepEqual(ipd.subgroups.map(g => g.studies.map(s => s.id)), [['STD-Synth-B'], ['STD-Synth-C', 'STD-Synth-D']]);
+    assert.deepEqual(dich(review), dich(clean));
+    assert.throws(() => R.select(review, {comparison: 0, outcome: 1, subgroup: 0}, 'generic'), /O-E\/variance/);
   }
 });
 
