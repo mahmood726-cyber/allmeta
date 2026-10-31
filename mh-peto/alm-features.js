@@ -7,6 +7,11 @@
   var APP = 'mh-peto', axisApplied = false, defaultAxisOverride = false;
   function el(id) { return document.getElementById(id); }
   function axis(edge) { return document.querySelector('#alm-axis-mount [data-edge="' + edge + '"]'); }
+  // Share state carries the axis minimum, maximum and log mounted by index.html axisControls. If page setup stopped
+  // before the axis controls mounted (e.g. a script failed to load), refuse with an actionable message, changing nothing.
+  function shareAxes() {
+    if (!axis('min') || !axis('max') || !axis('log')) throw new Error('Axis controls did not load; reload the page.');
+  }
 
   function restoredLog(log) {
     function invalid() { throw new Error('Invalid conversion log.'); }
@@ -220,11 +225,13 @@
     },
     share: {
       get: function () {
+        shareAxes();
         return { src: el('src').value, measure: el('measure').value,
           axis: { min: axis('min').value, max: axis('max').value, log: axis('log').checked, applied: axisApplied },
           entryLog: global.AlmFeaturesState.entryLog };
       },
       set: function (s) {
+        shareAxes();
         if (!s || typeof s.src !== 'string' || s.src.length > 200000 ||
             ['OR', 'RR', 'RD'].indexOf(s.measure) < 0) throw new Error('Invalid data or effect measure.');
         var a = s.axis;
