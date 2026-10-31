@@ -769,7 +769,7 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'limit-ma-results',
-      getResults: function () { return window._almLastLimit ? window._almLastLimit() : {}; },
+      getResults: function () { return (window._almLastLimit && window._almLastLimit()) || {}; },
     });
 
     window.alm.urlState({ version: 1 });
