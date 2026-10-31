@@ -418,6 +418,13 @@ function runAnalysis() {
 
  variance = se * se;
 
+ // Sparse survival samples can return a non-finite Cox fit without throwing.
+ // Use the same log-rank fallback as a thrown fit, before pooling the studies.
+ if (!Number.isFinite(effect) || !Number.isFinite(se) || se <= 0 ||
+     !Number.isFinite(variance) || variance <= 0) {
+ throw new Error('Cox fit has no finite estimate and positive variance');
+ }
+
  } catch (e) {
 
 
