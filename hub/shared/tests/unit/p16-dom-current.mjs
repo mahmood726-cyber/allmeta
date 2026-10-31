@@ -41,7 +41,7 @@ assert.equal(report.restored, true);
 // Negative-control/mutation: never make all pinned plots pass by erasing
 // SVG subtree differences. The shipped plot must have genuinely empty line
 // and rectangle shapes, and planting a child must change the exact tree.
-c.__almIncoLoad('A,B,.2,.1\\nB,C,.3,.2\\nA,C,.6,.15');
+c.__almIncoLoad('A,B,.2,.1\nB,C,.3,.2\nA,C,.6,.15');
 const plot = c.document.getElementById('ns-plot');
 const shapes = [...plot.querySelectorAll('line,rect')];
 assert.ok(shapes.length >= 3, 'the shipped network plot must render its shapes');
