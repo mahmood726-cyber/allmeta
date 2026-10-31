@@ -213,8 +213,8 @@ A, D, -0.48, 0.14</textarea>
       document.getElementById("dbt").textContent = reason;
     }
     // minContrasts: the analysis itself fits from 1 contrast, as netmeta does (Mahmood 2026-10-31: match R, warn
-    // visibly), so run() and the share/entry adapters pass 1. Callers that pass nothing keep the minimum of 3:
-    // the extras (plus) panel and the validation/live-R replays, whose own R scripts refuse below 3 contrasts.
+    // visibly), so run(), the share/entry adapters and the extras (plus) panel pass 1. Callers that pass nothing keep
+    // the minimum of 3: the validation/live-R replays, whose own R scripts refuse below 3 contrasts.
     function inputIssue(rows, minContrasts) {
       const need = Number.isInteger(minContrasts) && minContrasts >= 1 ? minContrasts : 3;
       if (rows.length < need) return need === 1 ? "Enter at least one valid contrast." : "At least " + need + " valid contrasts are required.";

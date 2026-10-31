@@ -67,7 +67,7 @@
     if (!msg) return;
     const text = src.value, parts = [issueMessage(text)];
     if (shownText !== null && text !== shownText) {
-      const why = window.inputIssue(window.parse(text));
+      const why = window.inputIssue(window.parse(text), 1);
       parts.push(why ? `Results below are for the previous input (${why.replace(/\.$/, '')}). Press Run tests to analyse the current text anyway.` : 'Results below are for the previous input.');
     }
     msg.textContent = parts.filter(Boolean).join(' ');

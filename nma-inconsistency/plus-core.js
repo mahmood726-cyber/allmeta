@@ -29,9 +29,10 @@
   function fmtSigned(x, d = 2) { const s = fmt(x, d); return !finite(x) || Number(s) === 0 ? fmt(finite(x) ? 0 : x, d) : (x > 0 ? '+' : '') + s; }
   function fmtP(p) { return p === null || !finite(p) ? 'not testable' : p < 0.001 ? '< 0.001' : fmt(p, 3); }
 
-  // Identical sequence to the page's run(): gate, tau2, singular check, splits, global.
+  // Identical sequence to the page's run(): gate, tau2, singular check, splits, global. Like run(), the gate admits one
+  // contrast, as netmeta fits it (Mahmood 2026-10-31: match R, warn visibly); an empty network is refused.
   function fitAll(E, rows, model) {
-    const issue = E.inputIssue(rows);
+    const issue = E.inputIssue(rows, 1);
     if (issue) return { status: 'refused', reason: issue };
     let tau2;
     try { tau2 = E.estimateTau2(rows, model); E.fitNMA(rows, undefined, tau2); }
@@ -129,6 +130,8 @@
     }
     if (L.untestableDrops.length) parts.push('Inconsistency becomes untestable (no closed loop left) after removing: ' + L.untestableDrops.join(', ') + '.');
     if (L.refusedDrops.length) parts.push('Not analysable after removing: ' + L.refusedDrops.map(d => d.study + ' (' + d.reason.replace(/\.$/, '') + ')').join('; ') + '.');
+    const left = b.k - 1;
+    if (left >= 1 && left < 3 && L.drops.some(d => d.status === 'ok')) parts.push(`Each removal leaves only ${left} contrast${left === 1 ? '' : 's'}: netmeta fits such networks as well, but with no closed loop inconsistency cannot be assessed after any removal, and τ² is poorly estimated (where no residual degrees of freedom remain, netmeta reports τ² as NA and a τ² shown as 0 is the truncated moment estimate). Interpret these refits with great caution.`);
     return parts.join(' ');
   }
 
@@ -206,7 +209,7 @@
   tr <- sort(unique(c(A, B)), method = "radix")
   reached <- tr[1]
   repeat { nxt <- unique(c(reached, B[A %in% reached], A[B %in% reached])); if (length(nxt) == length(reached)) break; reached <- nxt }
-  if (nrow(d) < 3) return(list(status = "refused", reason = "At least 3 valid contrasts are required."))
+  if (nrow(d) < 1) return(list(status = "refused", reason = "Enter at least one valid contrast."))
   if (anyDuplicated(study)) return(list(status = "refused", reason = "Repeated study IDs are unsupported: enter one independent contrast per study."))
   if (length(reached) < length(tr)) return(list(status = "refused", reason = "The treatment network is disconnected."))
   tau <- 0
@@ -228,6 +231,9 @@
                common = TRUE, random = TRUE, method.tau = "DL", tau.preset = if (model == "DL") NULL else tau,
                sep.trts = " ~~ ", warn = FALSE)
   tau <- if (model == "FE") 0 else m$tau
+  # With no residual df (e.g. one or two contrasts) netmeta reports the DL tau as NA; the app shows the truncated
+  # moment estimate 0 and says so. Only that case maps NA to 0; any other NA still fails the check.
+  tau2 <- if (is.na(tau) && m$df.Q == 0) 0 else tau^2
   s <- netsplit(m, method = "Back-calculation", tol.direct = 0)
   suffix <- if (model == "FE") "common" else "random"
   direct <- s[[paste0("direct.", suffix)]]; indirect <- s[[paste0("indirect.", suffix)]]; cmp <- s[[paste0("compare.", suffix)]]
@@ -246,7 +252,7 @@
   q <- if (model == "FE") dec$Q.decomp else dec$Q.inc.random.preset
   g <- list(Q = 0, df = 0, p = NA_real_)
   if (!is.null(q)) { r <- match("Between designs", rownames(q)); g <- list(Q = q$Q[r], df = q$df[r], p = q$pval[r]); if (g$df == 0) { g$Q <- 0; g$p <- NA_real_ } }
-  list(status = "ok", tau2 = tau^2, splits = splits, global = g, netmeta = m, netsplit = s, decomp = dec)
+  list(status = "ok", tau2 = tau2, splits = splits, global = g, netmeta = m, netsplit = s, decomp = dec)
 }`;
   function buildRScript(state, opts) {
     opts = opts || {};

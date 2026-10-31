@@ -31,12 +31,51 @@ test('SMALLK two contrasts (star) are fitted as netmeta fits them; inconsistency
   }
 });
 
-test('SMALLK the extras panel keeps its three-contrast minimum and says so visibly', async ({ page }) => {
-  await load(page, 'A, B, 0.20, 0.10, S1\nA, C, 0.30, 0.12, S2');
-  await page.evaluate(() => window.AlmIncoPlus.whenIdle());
-  const s = page.locator('#plus-loo-status');
-  await expect(s).toBeVisible();
-  await expect(s).toHaveText('Sensitivity analysis not available: At least 3 valid contrasts are required.');
+// Extras (plus) panel, leave-one-study-out. Rewritten 2026-10-31 from "the extras panel keeps its three-contrast minimum"
+// to the requirement (fit as netmeta fits, warn visibly). Reference: the plus oracle's own fit()
+// (validate/generate-plus.R) with only its input gate lowered, R 4.6.0, netmeta 3.7.0, metafor 5.2.1:
+//   A-B x3 (S1 0.20/0.10, S2 0.35/0.12, S3 0.10/0.15); every drop leaves 2 contrasts and is fitted:
+//     DL tau2 without S1 0.012799999999999916, without S2 0, without S3 0; PM 0.012800000000000434, 0, 0; FE 0.
+//     Every drop: decomp.design Q = 0, df = 0, p NA ("No decomposition possible ... only two treatments"); no split.
+//   A-B, A-C (2 contrasts): each drop leaves 1 contrast and is fitted (Q = 0, df = 0, p NA; DL tau2 NA: no residual df).
+//   A-B (1 contrast): the only drop leaves no contrast; netmeta cannot fit an empty network, so the drop is refused.
+const plus = async page => { await page.evaluate(() => window.AlmIncoPlus.whenIdle()); return page.evaluate(() => JSON.parse(JSON.stringify(window.AlmIncoPlus.state().loo))); };
+const PAIR3 = 'A, B, 0.20, 0.10, S1\nA, B, 0.35, 0.12, S2\nA, B, 0.10, 0.15, S3';
+const R_TAU2 = { FE: [0, 0, 0], DL: [0.012799999999999916, 0, 0], PM: [0.012800000000000434, 0, 0] };
+
+test('PLUSK leave-one-out drops that leave 2 contrasts are fitted with netmeta values and a visible small-k warning', async ({ page }) => {
+  for (const model of ['FE', 'DL', 'PM']) {
+    await load(page, PAIR3, model);
+    const L = await plus(page);
+    expect(L.status, model).toBe('ok');
+    expect(L.drops.map(d => d.status), model + ': drops leaving 2 contrasts must not be refused').toEqual(['ok', 'ok', 'ok']);
+    L.drops.forEach((d, i) => {
+      close(d.tau2, R_TAU2[model][i], model === 'PM' ? 1e-6 : 1e-9);
+      expect(d.dbt).toEqual({ Q: 0, df: 0, p: null }); expect(d.nSplits).toBe(0);
+    });
+    await expect(page.locator('#plus-loo-status')).toHaveText(/Leave-one-study-out complete: 3 refits/);
+    const sum = page.locator('#plus-loo-summary');
+    await expect(sum).toBeVisible();
+    await expect(sum).toContainText('Each removal leaves only 2 contrasts');
+    await expect(sum).toContainText('Interpret these refits with great caution.');
+    expect(await page.evaluate(() => window.AlmIncoPlus.methodsText())).toContain('Each removal leaves only 2 contrasts');
+    await expect(page.locator('#plus-loo-body tr')).toHaveCount(3);
+  }
+});
+
+test('PLUSK the extras panel fits two contrasts (drops leave 1) and refuses, with its reason, only a drop that leaves none', async ({ page }) => {
+  await load(page, 'A, B, 0.20, 0.10, S1\nA, C, 0.30, 0.12, S2', 'DL');
+  const L = await plus(page);
+  expect(L.status).toBe('ok');
+  expect(L.drops.map(d => [d.study, d.status, d.dbt.df, d.dbt.p, d.nSplits])).toEqual([['S1', 'ok', 0, null, 0], ['S2', 'ok', 0, null, 0]]);
+  await expect(page.locator('#plus-loo-status')).toHaveText(/Leave-one-study-out complete: 2 refits/);
+  await expect(page.locator('#plus-loo-summary')).toContainText('Each removal leaves only 1 contrast:');
+  await load(page, 'A, B, 0.20, 0.10, S1');
+  const one = await plus(page);
+  expect(one.status).toBe('ok');
+  expect(one.drops.map(d => [d.study, d.status, d.reason])).toEqual([['S1', 'refused', 'Enter at least one valid contrast.']]);
+  await expect(page.locator('#plus-loo-summary')).toContainText('Not analysable after removing: S1 (Enter at least one valid contrast).');
+  await expect(page.locator('#plus-loo-body')).toContainText('Not analysable: Enter at least one valid contrast.');
 });
 
 test('SMALLK one contrast is fitted (k = 1), with the warning', async ({ page }) => {
