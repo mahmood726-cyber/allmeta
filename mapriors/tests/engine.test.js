@@ -84,4 +84,10 @@ test('T11 D4 ELIR on the response scale (independent scipy quad, epsrel 1e-13)',
  close(E.ess({family:'normal',sigma:2,comps:[{w:.8,m:0,s:1},{w:.2,m:1,s:3}]},'elir'),2.6145630576689007,1e-9);
  close(E.ess({family:'beta',comps:[{w:1,a:10,b:30}]},'elir'),40,1e-9);
 });
+test('T12 D4 ELIR keeps the near-boundary tail (component a = 1 + 1e-8; mpmath 40-digit quadrature)',()=>{
+ // Probe P1 MAP mixture from RBesT 1.12-0 automixfit (validation/reference/P1.json). 0.536 of the ELIR lies below
+ // logit(p) = -35, which the 2026-10-31 first fix truncated (108.17). Independent value: mpmath quad, dps 40.
+ const m={family:'beta',comps:[{w:0.824298358074023,a:1.18480684995884,b:155.399097711833},{w:0.125738130707861,a:2.33685793864902,b:64.9370851184699},{w:0.0348697160538972,a:2.10975627102983,b:14.1965506442341},{w:0.0150937951642185,a:1.00000001,b:1.31571656257033}]};
+ close(E.ess(m,'elir'),108.709300542293,1e-9);
+});
 console.log(`${passed}/${total} PASS; page=${page}`);process.exitCode=passed===total?0:1;
