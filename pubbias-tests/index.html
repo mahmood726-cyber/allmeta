@@ -945,7 +945,7 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'pubbias-tests-results',
-      getResults: function () { return window._almLastPubbias ? window._almLastPubbias() : {}; },
+      getResults: function () { return (window._almLastPubbias && window._almLastPubbias()) || {}; },
     });
 
     window.alm.urlState({ version: 1 });
