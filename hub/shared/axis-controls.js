@@ -1,6 +1,7 @@
 (function () {
   const _STYLE = `.alm-axis{display:grid;gap:.5rem;font:13px/1.4 system-ui,sans-serif}.alm-axis-row{display:grid;grid-template-columns:auto auto 1fr auto 1fr auto;gap:.4rem;align-items:center}.alm-axis input[type=number]{width:6rem;padding:.25rem .4rem;border:1px solid var(--border,#cbd5e1);border-radius:4px;font:inherit;background:var(--input-bg,#fff);color:var(--ink,#15181d)}.alm-axis label{font-weight:600}.alm-axis [data-error]{color:#b91c1c;font-size:12px;grid-column:1/-1;min-height:1.2em}@media (prefers-color-scheme:dark){.alm-axis input[type=number]{background:var(--input-bg,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-axis [data-error]{color:#f1a8a0}}`;
   let _stylesInjected = false;
+  const _DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
 
   function _ensureStyle() {
     if (_stylesInjected) return;
@@ -13,7 +14,7 @@
     opts = opts || {};
     const target = typeof opts.target === 'string' ? document.querySelector(opts.target) : opts.target;
     if (!target) { console.warn('[alm.axisControls] target not found'); return; }
-    const axes = (opts.axes || []).map(a => ({ ...a, range: a.range ? a.range.slice() : [null, null], log: !!a.log }));
+    const axes = (opts.axes || []).map(a => ({ ...a, range: a.range ? a.range.slice() : [null, null], log: !!a.log, bad: [false, false] }));
     const onChange = typeof opts.onChange === 'function' ? opts.onChange : () => {};
     _ensureStyle();
 
@@ -31,6 +32,13 @@
     }
     function validateAndEmit() {
       errEl.textContent = '';
+      for (const a of axes) {
+        const bad = a.bad.indexOf(true);
+        if (bad >= 0) {
+          errEl.textContent = a.label + (bad === 0 ? ' min' : ' max') + ' must be a number';
+          return;
+        }
+      }
       for (const a of axes) {
         if (a.range[0] != null && a.range[1] != null && a.range[0] >= a.range[1]) {
           errEl.textContent = a.label + ' min must be < max';
@@ -51,9 +59,12 @@
       row.querySelectorAll('input').forEach(inp => {
         inp.addEventListener('change', () => {
           if (inp.dataset.edge === 'min' || inp.dataset.edge === 'max') {
-            const v = inp.value === '' ? null : Number(inp.value);
+            // A bound the browser cannot read (type=number leaves value '' with validity.badInput, e.g. "1e", "-",
+            // "1e999") is refused with the inline message, never read as '' = automatic. Empty means automatic.
             const idx = inp.dataset.edge === 'min' ? 0 : 1;
-            a.range[idx] = v;
+            const text = inp.value.trim();
+            a.bad[idx] = text === '' ? !!(inp.validity && inp.validity.badInput) : !_DECIMAL.test(text);
+            a.range[idx] = a.bad[idx] || text === '' ? null : Number(text);
           } else if (inp.dataset.edge === 'log') {
             a.log = inp.checked;
           }

@@ -97,6 +97,15 @@
     }
     return webR;
   }
+  // Run a caller script and return its stdout lines. An R error must fail the run with R's own message:
+  // with captureConditions:false webR caught the error, wrote it to stderr and resolved, so callers got
+  // ok:true with empty stdout and the message was lost. Capturing conditions makes webR reject with the
+  // R error text; warnings and messages are captured as conditions and do not fail the run.
+  async function _runScript(shelter, script) {
+    var cap = await shelter.captureR(script, { captureStreams: true, captureConditions: true, throwJsException: true, captureGraphics: false, withAutoprint: false });
+    if (cap.output.some(function (o) { return o.type === 'error'; })) throw new Error('R reported an error');
+    return cap.output.filter(function (o) { return o.type === 'stdout'; }).map(function (o) { return o.data; }).join('\n');
+  }
   function runR(opts) {
     opts = opts || {};
     var task = async function () {
@@ -108,8 +117,7 @@
         var w = await _ensurePackages(packages, status);
         status('Running R...');
         shelter = await new w.Shelter();
-        var cap = await shelter.captureR(opts.script, { captureStreams: true, captureConditions: false, captureGraphics: false, withAutoprint: false });
-        var stdout = cap.output.filter(function (o) { return o.type === 'stdout'; }).map(function (o) { return o.data; }).join('\n');
+        var stdout = await _runScript(shelter, opts.script);
         var versions = { R: await w.evalRString('R.version.string'), webR: w.version };
         for (var p of packages) versions[p] = await w.evalRString('as.character(packageVersion(' + JSON.stringify(p) + '))');
         // R normalizes 4.8-0 to 4.8.0; report the verified DESCRIPTION spelling.
@@ -443,8 +451,7 @@
         var w = await _ensurePackages(packages, status);
         status('Running R...');
         shelter = await new w.Shelter();
-        var cap = await shelter.captureR(opts.script, { captureStreams: true, captureConditions: false, captureGraphics: false, withAutoprint: false });
-        var stdout = cap.output.filter(function (o) { return o.type === 'stdout'; }).map(function (o) { return o.data; }).join('\n');
+        var stdout = await _runScript(shelter, opts.script);
         await shelter.purge(); shelter = null;
         var versions = { R: await w.evalRString('R.version.string'), webR: w.version };
         for (var p of packages) versions[p] = await w.evalRString('as.character(packageVersion(' + JSON.stringify(p) + '))');
