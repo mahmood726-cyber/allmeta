@@ -7,6 +7,17 @@
  */
 (function (global) {
   'use strict';
+  // Number settings go into type=number inputs. A value must be a complete decimal number: Number() also reads
+  // 0x10 / 0b1 / ' ', and the input then silently clears such text to '' (automatic or zero). Valid forms the input
+  // itself cannot hold ('+1', ' 0.5', '5.') are written as the same number.
+  var DECIMAL_SETTING = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function decimalSetting(v) { return typeof v === 'string' && DECIMAL_SETTING.test(v.trim()) && Number.isFinite(Number(v)); }
+  function axisBoundOk(v) { return v === '' || decimalSetting(v); }
+  function writeNumberSetting(el, v) {
+    var t = String(v).trim();
+    el.value = t;
+    if (el.value === '' && t !== '') el.value = String(Number(t));
+  }
   var APP = 'multilevel-ma';
   var VARIANCE_RULE = 'multilevel-variance.1';
   function byId(id) { return document.getElementById(id); }
@@ -413,7 +424,7 @@
     if (!s || typeof s.src !== 'string' || s.src.length > 200000) throw new Error('Data text missing or too long.');
     var a = s.axis;
     if (!a || typeof a.log !== 'boolean' || ['min', 'max'].some(function (k) {
-      return typeof a[k] !== 'string' || (a[k] !== '' && !Number.isFinite(Number(a[k])));
+      return !axisBoundOk(a[k]);
     }) || (a.min !== '' && a.max !== '' && Number(a.min) >= Number(a.max))) throw new Error('Invalid axis options.');
     var lines = s.src.trim().split(/\n/), parsed = global.__almMlmaParse(s.src);
     // The page parser uses parseFloat for manual input. A shared state must
@@ -433,7 +444,7 @@
     clearProvenance();
     byId('src').value = s.src;
     ['min', 'max', 'log'].forEach(function (k) {
-      if (k === 'log') axis(k).checked = a[k]; else axis(k).value = a[k];
+      if (k === 'log') axis(k).checked = a[k]; else writeNumberSetting(axis(k), a[k]);
     });
     ['min', 'max', 'log'].forEach(function (k) { axis(k).dispatchEvent(new Event('change', { bubbles: true })); });
     global.AlmFeaturesState.entryLog = s.entryInput === s.src ? (s.entryLog || []) : [];
