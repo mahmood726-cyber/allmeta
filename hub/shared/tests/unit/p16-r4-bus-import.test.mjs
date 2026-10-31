@@ -181,3 +181,56 @@ for (const measure of ['OR', 'RR']) {
     assert.equal(h.storage.get('ma-comparisons-v1'), saved);
   });
 }
+
+
+for (const measure of ['MD', 'SMD']) {
+  for (const [label, badN] of [
+    ['fractional n', 40.5],
+    ['unsafe n', Number.MAX_SAFE_INTEGER + 1],
+    ['singleton sample-SD n', 1]
+  ]) {
+    test(`plant P16-R4-count-domain: ${measure} rejects ${label} before numerical import`, () => {
+      const h = harness(), env = continuous(measure);
+      env.studies[1].arms[0].n = badN;
+      const saved = publish(h, env);
+      // The shared schema deliberately allows n to remain optional and
+      // currently accepts these values: the consumer must not silently use them.
+      const source = h.c.MaComparisons.read();
+      assert.equal(source.studies[1].arms[0].n, badN);
+      if (label === 'fractional n' || label === 'singleton sample-SD n') {
+        assert.equal(h.c.MaComparisons.toContrasts(source).length, 4,
+          'without the new consumer guard an invalid sample size produces a contrast');
+      }
+      h.elements.get('btn-bus-load').click();
+      const reason = assertRefused(h, saved);
+      assert.match(reason, /study2/);
+      assert.match(reason, /sample size n|safe integers/);
+    });
+  }
+}
+
+for (const measure of ['OR', 'RR']) {
+  for (const [label, changed] of [
+    ['fractional events', { events: 5.5 }],
+    ['fractional denominator', { n: 40.5 }],
+    ['unsafe denominator', { n: Number.MAX_SAFE_INTEGER + 1 }]
+  ]) {
+    test(`plant P16-R4-count-domain: ${measure} rejects ${label} before numerical import`, () => {
+      const h = harness(), env = continuous(measure);
+      for (const study of env.studies) study.arms = study.arms.map((arm, i) => ({
+        treatment: arm.treatment, events: 5 + i, n: 40
+      }));
+      Object.assign(env.studies[1].arms[0], changed);
+      const saved = publish(h, env);
+      const source = h.c.MaComparisons.read();
+      if (label !== 'unsafe denominator') {
+        assert.equal(h.c.MaComparisons.toContrasts(source).length, 4,
+          'without the new consumer guard fractional counts produce plausible contrasts');
+      }
+      h.elements.get('btn-bus-load').click();
+      const reason = assertRefused(h, saved);
+      assert.match(reason, /study2/);
+      assert.match(reason, /event count|sample size n/);
+    });
+  }
+}
