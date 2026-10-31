@@ -326,3 +326,30 @@ test('AXE: every feature tab has no serious/critical violations after animations
     console.log(`AXE ${key}: ${result.passes.length} rules passed; ${bad.length} serious/critical`);
   }
 });
+
+test('EXPORT: after a refused run every results export downloads an empty result without a page error', async ({ page }) => {
+  // Data the app refuses (one malformed row, below the minimum study count) leaves it holding no result. Every export
+  // button must still answer (empty result / "No results yet"), never throw an uncaught TypeError on the null result,
+  // never export a stale one.
+  const errors = [];
+  page.on('pageerror', e => errors.push(String(e && e.stack || e)));
+  await page.goto('/cumulative-subgroup/index.html');
+  await page.waitForFunction(() => typeof window._almLastCumSub === 'function' && window._almLastCumSub() !== null);
+  await page.locator('#f-data').fill('abc, xyz');
+  await expect.poll(() => page.evaluate(() => window._almLastCumSub())).toBeNull();
+  const expected = {
+    json: t => expect(JSON.parse(t)).toEqual({}),
+    csv: t => expect(t).toBe('key,value'),
+    md: t => expect(t.split('\n').length).toBe(2),
+    'report-md': t => expect(t).toContain('No results yet'),
+    'report-txt': t => expect(t).toContain('No results yet')
+  };
+  for (const [action, check] of Object.entries(expected)) {
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 10_000 }),
+      page.locator('#alm-export-mount [data-action="' + action + '"]').click()
+    ]);
+    check(readFileSync(await download.path(), 'utf8'));
+  }
+  expect(errors).toEqual([]);
+});

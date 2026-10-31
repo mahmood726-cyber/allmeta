@@ -992,7 +992,7 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'cumsub-results',
-      getResults: function () { return window._almLastCumSub ? window._almLastCumSub() : {}; },
+      getResults: function () { return (window._almLastCumSub && window._almLastCumSub()) || {}; },
     });
 
     window.alm.urlState({ version: 1 });
