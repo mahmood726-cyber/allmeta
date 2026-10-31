@@ -4,7 +4,8 @@
  *     x, n      events and totals;  es  metafor::escalc(...) on the analysis scale (PLO / PFT / PR);
  *     f         metafor::rma(es$yi, es$vi, method=<PM|DL|FE>) fit;  back  back-transform to proportions.
  *   optional(state): prediction-interval keys when k < 3 (not applicable; see shared/alm-verify-r.js).
- * share: the #src text plus every option control (#trans, #tau-est); set() validates, restores and re-runs.
+ * share: the #src text plus every option control (#trans, #tau-est); set() validates (every #src row with row-check.js,
+ *   refusing the file if any row is unusable), restores and re-runs.
  * entry: schema proportion; apply() writes "events, total, label" lines into #src and runs (AlmFeatures.register merges blocks).
  */
 (function () {
@@ -83,11 +84,19 @@
             typeof axis.xLog !== 'boolean' || (axis.x[0] !== null && axis.x[1] !== null && axis.x[0] >= axis.x[1])) {
           throw new Error('invalid forest plot axis options');
         }
-        var validRows = s.src.trim().split(/\n/).filter(function (line) {
-          var cells = line.split(','), x = parseInt(cells[0], 10), n = parseInt(cells[1], 10);
-          return Number.isFinite(x) && Number.isFinite(n) && n > 0 && x >= 0 && x <= n;
-        });
-        if (validRows.length < 2) throw new Error('at least two valid studies are required');
+        // The page's own row checker (row-check.js, also used by the paste path), before anything is changed:
+        // a row the page would exclude (non-whole counts such as 2.5 or 40.5, events < 0 or > total, total <= 0,
+        // non-numeric or missing fields) makes the file invalid instead of being dropped or truncated.
+        if (typeof AlmPropRows === 'undefined' || typeof AlmPropRows.classify !== 'function') {
+          throw new Error('the app row checker is not available');
+        }
+        var checked = AlmPropRows.classify(s.src);
+        if (checked.excluded.length) {
+          var bad = checked.excluded[0];
+          throw new Error('line ' + bad.line + ' (' + (bad.text.length > 60 ? bad.text.slice(0, 60) + '…' : bad.text) + '): ' + bad.reason +
+            (checked.excluded.length > 1 ? ' (and ' + (checked.excluded.length - 1) + ' more unusable rows)' : ''));
+        }
+        if (checked.rows.length < 2) throw new Error('at least two valid studies are required');
         var controls = byId('alm-axis-mount').querySelectorAll('input');
         if (controls.length !== 3) throw new Error('forest plot axis controls are unavailable');
         byId('src').value = s.src;
