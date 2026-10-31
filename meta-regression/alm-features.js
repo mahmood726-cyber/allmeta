@@ -6,6 +6,17 @@
  */
 (function (global) {
   'use strict';
+  // Number settings go into type=number inputs. A value must be a complete decimal number: Number() also reads
+  // 0x10 / 0b1 / ' ', and the input then silently clears such text to '' (automatic or zero). Valid forms the input
+  // itself cannot hold ('+1', ' 0.5', '5.') are written as the same number.
+  var DECIMAL_SETTING = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function decimalSetting(v) { return typeof v === 'string' && DECIMAL_SETTING.test(v.trim()) && Number.isFinite(Number(v)); }
+  function axisBoundOk(v) { return v === '' || decimalSetting(v); }
+  function writeNumberSetting(el, v) {
+    var t = String(v).trim();
+    el.value = t;
+    if (el.value === '' && t !== '') el.value = String(Number(t));
+  }
   var APP = 'meta-regression';
   var fields = ['data', 'title', 'modlabel', 'effectlabel'];
   var entryData = null;
@@ -237,7 +248,7 @@
       var axisList = shareAxes();
       axisList.forEach(function (n, i) {
         var v = s.axes[i];
-        if (n.type === 'checkbox' ? typeof v !== 'boolean' : typeof v !== 'string' || (v !== '' && !Number.isFinite(Number(v)))) throw new Error('Invalid axis option.');
+        if (n.type === 'checkbox' ? typeof v !== 'boolean' : !axisBoundOk(v)) throw new Error('Invalid axis option.');
       });
       var metadata = {};
       ['provenance', 'entryLog'].forEach(function (key) {
@@ -252,7 +263,7 @@
       fields.forEach(function (k) { el('f-' + k).value = s[k]; });
       el('f-scale').checked = s.scale;
       axisList.forEach(function (n, i) {
-        if (n.type === 'checkbox') n.checked = s.axes[i]; else n.value = s.axes[i];
+        if (n.type === 'checkbox') n.checked = s.axes[i]; else writeNumberSetting(n, s.axes[i]);
         n.dispatchEvent(new Event('change', { bubbles: true }));
       });
       entryData = s.data;
