@@ -186,8 +186,9 @@
       cells.push(cell.trim());
       return cells;
     }
-    var _last = null;
+    var _last = null, _lastValidation = null;
     window._almLastDoseResponse = function () { return _last; };
+    window._almLastDoseResponseValidation = function () { return _lastValidation === null ? null : JSON.parse(_lastValidation); };
 
     function parse(text, useMod) {
       var byStudy = Object.create(null), order = [];
@@ -208,6 +209,7 @@
         if ($("f-cov").value !== "indep") {
           if (!(cases > 0)) inputError(where + ", cases", "must be greater than 0 for covariance reconstruction.");
           if (!(n > 0)) inputError(where + ", n", "must be greater than 0 for covariance reconstruction.");
+          if ((type === "cc" || type === "ci") && cases > n) inputError(where + ", cases", "must not exceed n for " + type + " covariance reconstruction.");
         }
         if (!byStudy[id]) { byStudy[id] = { id: id, rows: [], mod: cov, firstRow: row, references: 0 }; order.push(id); }
         var study = byStudy[id];
@@ -243,7 +245,7 @@
     function clearOut(msg, kind) {
       $("headline").textContent = ""; ["coef-body", "tests-body", "pred-body", "res-body", "curve-host", "resid-host"].forEach(function (id) { $(id).innerHTML = ""; });
       $("msgs").innerHTML = msg ? "<div class='msg " + (kind || "err") + "' role='status'>" + esc(msg) + "</div>" : "";
-      _last = null;
+      _last = null; _lastValidation = null;
     }
 
     run = window.alm.analysisLifecycle(run, function (result) { return !!_last; }, "[id^=\"f-\"]");
@@ -255,7 +257,7 @@
 
     function analyse() {
       syncControls();
-      _last = null;
+      _last = null; _lastValidation = null;
       var shape = $("f-shape").value, proc = $("f-proc").value, cov = $("f-cov").value, M = $("f-method").value, useMod = $("f-mod").checked;
       var studies = parse($("f-data").value, useMod);
       if (studies.length < 2) { clearOut("Enter at least 2 studies.", "warn"); return; }
@@ -281,7 +283,7 @@
         var lf = DR.fit(studies.map(function (s) { return s.rows; }), { method: M });
         r.coef = [lf.slope]; r.vcov = [[lf.se * lf.se]]; r.Psi = [[lf.tau2]]; r.logLik = null; r.aic = null;
         r.wald = { chi2: Math.pow(lf.slope / lf.se, 2), df: 1, p: DR._internal.pchisqUpper(Math.pow(lf.slope / lf.se, 2), 1) };
-        r.predict = function (doses, xref) { xref = +xref || 0; return doses.map(function (d) { var x = +d - xref, lp = x * lf.slope, se = Math.abs(x) * lf.se; return { dose: +d, logRR: lp, se: se, ciLo: lp - 1.959963984540054 * se, ciHi: lp + 1.959963984540054 * se, rr: Math.exp(lp), rrLo: Math.exp(lp - 1.959963984540054 * se), rrHi: Math.exp(lp + 1.959963984540054 * se) }; }); };
+        r.predict = function (doses, xref) { xref = +xref || 0; return doses.map(function (d) { var x = +d - xref, lp = x * lf.slope, se = Math.abs(x) * lf.se; return DR._internal.predictionResult(+d, lp, se); }); };
       }
       render(r, { shape: shape, M: M, studies: studies, xref: xref, modv: modv, pd: pd });
     }
@@ -294,7 +296,7 @@
     function render(r, ui) {
       var xrefIn = ui.xref, xref = xrefIn.length ? xrefIn[0] : r.doseRange[0];
       var modv = ui.modv, modValue = r.mod ? (modv.length ? modv[0] : 0) : null;
-      var nonref = []; ui.studies.forEach(function (s) { s.rows.forEach(function (row) { if (row.se != null && isFinite(row.se)) nonref.push(row.dose); }); });
+      var nonref = []; ui.studies.forEach(function (s) { s.rows.forEach(function (row) { if (row.se > 0 && isFinite(row.se)) nonref.push(row.dose); }); });
       nonref.sort(function (a, b) { return a - b; });
       var pd = ui.pd;
       if (!pd.length) pd = [0.1, 0.25, 0.5, 0.75, 0.9].map(function (p) { return +DR._quantile7(nonref, p).toPrecision(3); }).filter(function (d, i, a) { return a.indexOf(d) === i; });
@@ -308,10 +310,11 @@
         head += "<br>Test for non-linearity: χ² = " + fmt(r.waldNonlin.chi2, 2) + " on " + r.waldNonlin.df + " df, " + ptxt(r.waldNonlin.p) + ".";
       }
       $("headline").innerHTML = head;
-      var msgs = (r.warnings || []).map(function (w) { return "<div class='msg warn' role='status'>" + esc(w) + "</div>"; });
-      if (r.excluded.length) msgs.push("<div class='msg warn' role='status'>Excluded " + r.excluded.length + " stud" + (r.excluded.length > 1 ? "ies" : "y") + ": " + esc(r.excluded.map(function (e) { return e.id + " (" + e.reason + ")"; }).join("; ")) + ".</div>");
+      var warnings = (r.warnings || []).slice();
       var hi = r.doseRange[1], lo = r.doseRange[0];
-      if (pd.some(function (d) { return d > hi || d < lo; })) msgs.push("<div class='msg warn' role='status'>Some requested doses lie outside the observed range (" + sig(lo, 4) + " to " + sig(hi, 4) + "); those predictions are extrapolations.</div>");
+      if (pd.some(function (d) { return d > hi || d < lo; })) warnings.push("Some requested doses lie outside the observed range (" + sig(lo, 4) + " to " + sig(hi, 4) + "); those predictions are extrapolations.");
+      var msgs = warnings.map(function (w) { return "<div class='msg warn' role='status'>" + esc(w) + "</div>"; });
+      if (r.excluded.length) msgs.push("<div class='msg warn' role='status'>Excluded " + r.excluded.length + " stud" + (r.excluded.length > 1 ? "ies" : "y") + ": " + esc(r.excluded.map(function (e) { return e.id + " (" + e.reason + ")"; }).join("; ")) + ".</div>");
       $("msgs").innerHTML = msgs.join("");
 
       // coefficients
@@ -345,7 +348,7 @@
       }).join("");
 
       // studies
-      var per = {}; (r.perStudy || []).forEach(function (p) { per[p.id] = p; });
+      var per = Object.create(null); (r.perStudy || []).forEach(function (p) { per[p.id] = p; });
       $("res-body").innerHTML = r.studies.map(function (s) {
         var p = per[s.id], c = p ? p.beta.map(function (b, i) { return sig(b, 4) + " (" + sig(Math.sqrt(p.cov[i][i]), 3) + ")"; }).join("; ") : "— (one-stage)";
         return "<tr><td>" + esc(s.id) + "</td><td>" + esc(s.type) + "</td><td class='num'>" + sig(s.refDose, 4) + "</td><td class='num'>" + s.nNonRef + "</td><td>" + c + "</td></tr>";
@@ -360,8 +363,10 @@
         qtest: r.qtest, I2: r.I2, wald: r.wald, waldNonlinearity: r.waldNonlin || null,
         gof: { deviance: r.gof.D, df: r.gof.df, p: r.gof.p, R2: r.gof.R2, R2adj: r.gof.R2adj }, referenceDose: xref, covariateValue: modValue,
         predictions: preds.map(function (p) { return { dose: p.dose, rr: p.rr, lo: p.rrLo, hi: p.rrHi, logRR: p.logRR, se: p.se }; }),
-        perStudy: (r.perStudy || []).map(function (p) { return { id: p.id, beta: p.beta, cov: p.cov }; }), excluded: r.excluded, warnings: r.warnings };
+        perStudy: (r.perStudy || []).map(function (p) { return { id: p.id, beta: p.beta, cov: p.cov }; }), excluded: r.excluded, warnings: warnings };
       if (r.model === "linear" && !r.mod) { _last.slope = r.coef[0]; _last.se = Math.sqrt(r.vcov[0][0]); _last.tau2 = r.Psi ? r.Psi[0][0] : 0; }
+      // Keep the successful fit's parsed input and result together; readers get independent copies.
+      _lastValidation = JSON.stringify({ result: _last, studies: ui.studies });
     }
 
     function dark() { return window.matchMedia && matchMedia("(prefers-color-scheme:dark)").matches; }

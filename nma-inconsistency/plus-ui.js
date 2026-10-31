@@ -105,12 +105,11 @@
   function settle() { state.busy = false; const w = idleWaiters; idleWaiters = []; w.forEach(f => f()); }
   function refresh() {
     const gen = ++state.gen;
+    // Cancel any pending sensitivity rerun before propagating source refusal.
     if (pending !== null && typeof window.clearTimeout === 'function') window.clearTimeout(pending);
     pending = null;
-    const main = window._almLastInco && window._almLastInco();
-    const refused = main && main.status === 'refused';
-    // Refusal preserves the input for correction; it must not trigger a refit.
-    // Invalidate queued LOO work (gen above) and any edit queued before refusal.
+    const last = typeof window._almLastInco === 'function' ? window._almLastInco() : null;
+    const refused = last && last.status === 'refused';
     if (refused) {
       if (typing !== null && typeof window.clearTimeout === 'function') window.clearTimeout(typing);
       typing = null;
@@ -118,7 +117,7 @@
     shownText = refused ? null : src.value;
     showInputMessage();
     state.rows = refused ? [] : window.parse(src.value); state.model = model.value; state.selected = null;
-    state.base = refused ? { status: 'refused', reason: main.reason } : P.fitAll(E, state.rows, state.model);
+    state.base = refused ? { status: 'refused', reason: last.reason } : P.fitAll(E, state.rows, state.model);
     state.compare = state.base.status === 'ok' ? P.compare3(E, state.rows) : null;
     state.loo = null;
     renderInterpret(); renderGraph(); renderCompare(); renderLoo(); renderMethods();

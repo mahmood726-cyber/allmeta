@@ -170,11 +170,16 @@
     // ---- engine (unchanged from pre-retrofit) ----
 
     function parseTable(text) {
-      return text.trim().split(/\n/).map(function (l, i) {
+      return text.split(/\n/).map(function (l, i) {
+        if (!l.trim()) return null;
         var parts = l.split(/,/).map(function (s) { return s.trim(); });
-        var x = parseInt(parts[0], 10);
-        var n = parseInt(parts[1], 10);
-        if (!Number.isFinite(x) || !Number.isFinite(n) || n <= 0 || x < 0 || x > n) return null;
+        var x = Number(parts[0]);
+        var n = Number(parts[1]);
+        // Validate whole tokens; never truncate a count or silently drop a study.
+        if (!/^[+-]?\d+$/.test(parts[0]) || !/^[+-]?\d+$/.test(parts[1]) ||
+            !Number.isSafeInteger(x) || !Number.isSafeInteger(n) || n <= 0 || x < 0 || x > n) {
+          throw new Error('Row ' + (i + 1) + ': counts must be safe integers with 0 <= events <= total and total > 0.');
+        }
         return { x: x, n: n, label: parts[2] || ('Study ' + (i + 1)) };
       }).filter(Boolean);
     }
@@ -190,16 +195,52 @@
       return (-(x + 5.5) + (x + 0.5) * Math.log(x + 5.5) + Math.log(2.5066282746310005 * sum / x));
     }
 
+    // Stirling remainder and binomial deviance avoid subtracting O(n log n)
+    // log-gamma terms to obtain an O(log n) beta prefactor at large counts.
+    function betaStirlingError(z) {
+      if (z < 16) return logGamma(z) - (z - 0.5) * Math.log(z) + z - 0.5 * Math.log(2 * Math.PI);
+      var z2 = z * z;
+      return (1 / 12 - (1 / 360 - (1 / 1260 - (1 / 1680 - 1 / (1188 * z2)) / z2) / z2) / z2) / z;
+    }
+
+    // x*log(x/mean) + mean-x, evaluated by a convergent series near x=mean.
+    function betaDeviance(x, mean) {
+      if (Math.abs(x - mean) < 0.1 * (x + mean)) {
+        var v = (x - mean) / (x + mean), term = 2 * x * v;
+        var sum = (x - mean) * v;
+        v *= v;
+        for (var j = 1; j < 1000; j++) {
+          term *= v;
+          var next = sum + term / (2 * j + 1);
+          if (next === sum) return sum;
+          sum = next;
+        }
+        throw new Error('Beta deviance did not converge');
+      }
+      return x * Math.log(x / mean) + mean - x;
+    }
+
+    function betaLogPrefactor(x, a, b) {
+      var s = a + b;
+      // Retain the ordinary-count path; cancellation grows with s*log(s).
+      if (s < 100000) return -logBeta(a, b) + a * Math.log(x) + b * Math.log(1 - x);
+      return 0.5 * (Math.log(a) + Math.log(b) - Math.log(s) - Math.log(2 * Math.PI)) +
+        betaStirlingError(s) - betaStirlingError(a) - betaStirlingError(b) -
+        betaDeviance(a, s * x) - betaDeviance(b, s * (1 - x));
+    }
+
     function betaIncReg(x, a, b) {
       if (x <= 0) return 0;
       if (x >= 1) return 1;
-      var bt = Math.exp(-logBeta(a, b) + a * Math.log(x) + b * Math.log(1 - x));
-      if (x < (a + 1) / (a + b + 2)) return bt * betacf(x, a, b) / a;
-      return 1 - bt * betacf(1 - x, b, a) / b;
+      var bt = Math.exp(betaLogPrefactor(x, a, b));
+      var value = x < (a + 1) / (a + b + 2) ?
+        bt * betacf(x, a, b) / a : 1 - bt * betacf(1 - x, b, a) / b;
+      if (!Number.isFinite(value) || value < 0 || value > 1) throw new Error('Invalid beta CDF');
+      return value;
     }
 
     function betacf(x, a, b) {
-      var MAX = 200, EPS = 1e-14, FPMIN = 1e-30;
+      var MAX = 2000000, EPS = 1e-14, FPMIN = 1e-30;
       var qab = a + b, qap = a + 1, qam = a - 1;
       var c = 1, d = 1 - qab * x / qap;
       if (Math.abs(d) < FPMIN) d = FPMIN;
@@ -215,9 +256,9 @@
         d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
         c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
         d = 1 / d; var del = d * c; h *= del;
-        if (Math.abs(del - 1) < EPS) return h;
+        if (Math.abs(del - 1) < EPS && Number.isFinite(h) && h > 0) return h;
       }
-      return h;
+      throw new Error('Beta continued fraction did not converge');
     }
 
     function qbeta(p, a, b) {
@@ -227,6 +268,7 @@
       for (var i = 0; i < 100; i++) {
         var mid = (lo + hi) / 2;
         var q = betaIncReg(mid, a, b);
+        if (!Number.isFinite(q) || q < 0 || q > 1) throw new Error('Invalid beta CDF during inversion');
         if (q < p) lo = mid; else hi = mid;
         if (hi - lo < 1e-14) break;
       }
@@ -325,10 +367,20 @@
       var text = document.getElementById('src').value;
       var trans = document.getElementById('trans').value;
       var tauEst = document.getElementById('tau-est').value;
-      var rows = parseTable(text);
+      var rows;
+      var kw = document.getElementById('k-warn');
+      try {
+        rows = parseTable(text);
+      } catch (error) {
+        _lastResults = null;
+        document.getElementById('res-body').innerHTML = '<tr><td colspan="5">' + esc(error.message) + '</td></tr>';
+        document.getElementById('forest').innerHTML = '';
+        document.getElementById('het').innerHTML = '';
+        if (kw) kw.style.display = 'none';
+        return;
+      }
 
       // DL k<10 warning
-      var kw = document.getElementById('k-warn');
       if (kw) {
         if (tauEst === 'DL' && rows.length < 10 && rows.length >= 2) {
           kw.textContent = 'k = ' + rows.length + ' — DerSimonian-Laird τ² is biased low for k<10 (advanced-stats.md). Switch to Paule-Mandel for inference.';
@@ -577,7 +629,12 @@
     // current inputs so it always matches what is on screen.
     window.__propMaBusStudies = function () {
       if (!window.MaStudies) return [];
-      var rows = parseTable(document.getElementById('src').value);
+      var rows;
+      try {
+        rows = parseTable(document.getElementById('src').value);
+      } catch (error) {
+        return [];
+      }
       if (rows.length < 2) return [];
       var out = [];
       for (var i = 0; i < rows.length; i++) {
@@ -634,7 +691,10 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'propma-results',
-      getResults: function () { return window._almLastPropMA ? window._almLastPropMA() : {}; },
+      getResults: function () {
+        var results = window._almLastPropMA ? window._almLastPropMA() : null;
+        return results || { status: 'No fitted results. Run the analysis with at least 2 valid studies before exporting.' };
+      },
     });
 
     window.alm.urlState({ version: 1 });

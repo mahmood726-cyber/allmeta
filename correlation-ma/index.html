@@ -133,7 +133,14 @@
         head.textContent = "Enter at least 2 studies (label, r, n).";
         body.innerHTML = ""; document.getElementById("forest-host").innerHTML = ""; _last = null; return;
       }
-      var pooled = window.AlmMaCore.pool(rows.map(function (s) { return s.z; }), rows.map(function (s) { return s.v; }), { method: method, pi: true });
+      var pooled;
+      try {
+        pooled = window.AlmMaCore.pool(rows.map(function (s) { return s.z; }), rows.map(function (s) { return s.v; }), { method: method, pi: true });
+      } catch (e) {
+        if (!(e instanceof RangeError) || e.code !== "ERR_MA_WEIGHT_RANGE") throw e;
+        head.textContent = "Cannot pool: " + e.message + ".";
+        body.innerHTML = ""; document.getElementById("forest-host").innerHTML = ""; _last = null; return;
+      }
       var w = rows.map(function (s) { return 1 / (s.v + pooled.tau2); });
       var sw = w.reduce(function (a, b) { return a + b; }, 0);
       var r_pool = Math.tanh(pooled.mu), r_lo = Math.tanh(pooled.ciLo), r_hi = Math.tanh(pooled.ciHi);

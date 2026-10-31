@@ -30,25 +30,43 @@
 (function (global) {
   "use strict";
 
+  function numericalRange(where) {
+    var error = new RangeError("NMA numerical range exceeded: " + where + ". No analysis was fitted.");
+    error.code = "NMA_NUMERICAL_RANGE";
+    return error;
+  }
+  function finite(value, where) {
+    if (!Number.isFinite(value)) throw numericalRange(where);
+    return value;
+  }
+  // Only numerical refusals become public failure results; programming errors still surface.
+  function refuseRange(compute) {
+    try { return compute(); }
+    catch (error) {
+      if (error.code !== "NMA_NUMERICAL_RANGE") throw error;
+      return { ok: false, error: error.message };
+    }
+  }
+
   // ---- small dense linear algebra (networks are small, ≤ ~30 nodes) -------
   function zeros(r, c) { var M = new Array(r); for (var i = 0; i < r; i++) M[i] = new Array(c).fill(0); return M; }
   function matmul(A, B) {
     var m = A.length, n = A[0].length, p = B[0].length, C = zeros(m, p);
-    for (var i = 0; i < m; i++) for (var j = 0; j < p; j++) { var s = 0; for (var k = 0; k < n; k++) s += A[i][k] * B[k][j]; C[i][j] = s; }
+    for (var i = 0; i < m; i++) for (var j = 0; j < p; j++) { var s = 0; for (var k = 0; k < n; k++) s += A[i][k] * B[k][j]; C[i][j] = finite(s, "GLS matrix product"); }
     return C;
   }
   function transpose(A) { var m = A.length, n = A[0].length, B = zeros(n, m); for (var i = 0; i < m; i++) for (var j = 0; j < n; j++) B[j][i] = A[i][j]; return B; }
   function invert(A) {
     var n = A.length, M = zeros(n, 2 * n), i, j, r;
-    for (i = 0; i < n; i++) { for (j = 0; j < n; j++) M[i][j] = A[i][j]; M[i][n + i] = 1; }
+    for (i = 0; i < n; i++) { for (j = 0; j < n; j++) M[i][j] = finite(A[i][j], "GLS covariance/design matrix"); M[i][n + i] = 1; }
     for (i = 0; i < n; i++) {
       var pivot = M[i][i], pr = i;
       for (r = i + 1; r < n; r++) if (Math.abs(M[r][i]) > Math.abs(pivot)) { pivot = M[r][i]; pr = r; }
       if (Math.abs(pivot) < 1e-13) return null;
       if (pr !== i) { var tmp = M[i]; M[i] = M[pr]; M[pr] = tmp; }
       var inv = 1 / M[i][i];
-      for (j = 0; j < 2 * n; j++) M[i][j] *= inv;
-      for (r = 0; r < n; r++) if (r !== i) { var f = M[r][i]; if (f !== 0) for (j = 0; j < 2 * n; j++) M[r][j] -= f * M[i][j]; }
+      for (j = 0; j < 2 * n; j++) M[i][j] = finite(M[i][j] * inv, "GLS matrix inversion");
+      for (r = 0; r < n; r++) if (r !== i) { var f = M[r][i]; if (f !== 0) for (j = 0; j < 2 * n; j++) M[r][j] = finite(M[r][j] - f * M[i][j], "GLS matrix inversion"); }
     }
     var Inv = zeros(n, n);
     for (i = 0; i < n; i++) for (j = 0; j < n; j++) Inv[i][j] = M[i][n + j];
@@ -108,7 +126,7 @@
       var T = 0;
       for (var ii = 0; ii < m; ii++) for (var jj = ii + 1; jj < m; jj++) {
         var pr = pairKey[[arms[ii], arms[jj]].sort().join("|")];
-        var v = pr.se * pr.se;
+        var v = finite(pr.se * pr.se, "study variance");
         s2[ii][jj] = v; s2[jj][ii] = v; T += v;
       }
       var S = T / (m - 1);                       // Σ arm variances
@@ -178,7 +196,7 @@
       // covariance block
       if (!st.multiArm) {
         var se = st.contrasts[0].se;
-        V[start][start] = se * se;
+        V[start][start] = finite(se * se, "study variance");
       } else {
         for (var a = 0; a < len; a++) for (var b = 0; b < len; b++) V[start + a][start + b] = st.cov[a][b];
       }
@@ -214,10 +232,10 @@
       });
       // Apply a correction to the original coordinates to avoid cancellation
       // when a clique is already consistent to floating-point precision.
-      for (a = 0; a < bl.len; a++) for (b = 0; b < bl.len; b++) y[bl.start + a] += C[a][b] * score[b];
+      for (a = 0; a < bl.len; a++) for (b = 0; b < bl.len; b++) y[bl.start + a] = finite(y[bl.start + a] + C[a][b] * score[b], "multi-arm projected effect");
       bl.effects.forEach(function (e, i) {
         var r = e.est - effect(e, y);
-        extraQ += weights[i] * r * r;
+        extraQ = finite(extraQ + weights[i] * r * r, "multi-arm residual Q");
       });
     });
     return { y: y, extraQ: extraQ };
@@ -258,11 +276,11 @@
     var resid = new Array(N);
     for (i = 0; i < N; i++) {
       var yhat = 0; for (var k = 0; k < K; k++) yhat += X[i][k] * feFit.d[k];
-      resid[i] = y[i] - yhat;
+      resid[i] = finite(y[i] - yhat, "GLS residual");
     }
     // Q = residᵀ W resid
-    var Q = extraQ || 0;
-    for (var a = 0; a < N; a++) { var wr = 0; for (var b = 0; b < N; b++) wr += W[a][b] * resid[b]; Q += resid[a] * wr; }
+    var Q = extraQ == null ? 0 : finite(extraQ, "multi-arm residual Q");
+    for (var a = 0; a < N; a++) { var wr = 0; for (var b = 0; b < N; b++) wr += W[a][b] * resid[b]; Q = finite(Q + resid[a] * wr, "residual Q"); }
     var df = N - K;
     // P = W − W X (XᵀWX)⁻¹ Xᵀ W
     var Xt = transpose(X);
@@ -290,7 +308,8 @@
     // C = tr(P R) = Σ_ij P[i][j] R[i][j]   (R symmetric)
     var C = 0;
     for (i = 0; i < N; i++) for (j = 0; j < N; j++) C += P[i][j] * R[i][j];
-    var tau2 = C > 0 ? Math.max(0, (Q - df) / C) : 0;
+    finite(C, "DL variance denominator");
+    var tau2 = finite(C > 0 ? Math.max(0, (Q - df) / C) : 0, "DL tau2");
     return { tau2: tau2, Q: Q, df: df, C: C };
   }
 
@@ -303,11 +322,11 @@
     for (var b = 0; b < asm.blocks.length; b++) {
       var bl = asm.blocks[b];
       for (var a = 0; a < bl.len; a++) {
-        Vr[bl.start + a][bl.start + a] += tau2;
+        Vr[bl.start + a][bl.start + a] = finite(Vr[bl.start + a][bl.start + a] + tau2, "random-effects covariance");
         if (bl.multiArm) {
           for (var c = a + 1; c < bl.len; c++) {
-            Vr[bl.start + a][bl.start + c] += tau2 / 2;
-            Vr[bl.start + c][bl.start + a] += tau2 / 2;
+            Vr[bl.start + a][bl.start + c] = finite(Vr[bl.start + a][bl.start + c] + tau2 / 2, "random-effects covariance");
+            Vr[bl.start + c][bl.start + a] = finite(Vr[bl.start + c][bl.start + a] + tau2 / 2, "random-effects covariance");
           }
         }
       }
@@ -324,6 +343,9 @@
    * d[k]/cov are relative to refTreat (ref implicit zero), in nonref order.
    */
   function fit(rows, opts) {
+    return refuseRange(function () { return fitFinite(rows, opts); });
+  }
+  function fitFinite(rows, opts) {
     opts = opts || {};
     if (!Array.isArray(rows) || rows.length === 0) return { ok: false, error: "no contrasts" };
     // Refuse, as netmeta's chkmultiarm() does, rather than fitting a network with a study left out
@@ -359,7 +381,8 @@
         var Vr = reCovariance(asm, tau2);
         var reObs = projectObservations(asm, Vr);
         var reFit = gls(asm.X, reObs.y, Vr);
-        if (reFit) fitUse = reFit;
+        if (!reFit) throw numericalRange("random-effects GLS could not be solved");
+        fitUse = reFit;
       }
     } else {
       // still expose Q/df for reporting
@@ -581,7 +604,8 @@
   function decompDesign(built, Q, df, nTreat) {
     if (nTreat <= 2) return null;
     var designs = {}, keys = [];
-    built.studies.forEach(function (st) { var k = st.arms.join(":"); if (!designs[k]) { designs[k] = []; keys.push(k); } designs[k].push(st); });
+    // Arms are sorted; serialize the array so punctuation in names cannot merge distinct designs.
+    built.studies.forEach(function (st) { var k = JSON.stringify(st.arms); if (!designs[k]) { designs[k] = []; keys.push(k); } designs[k].push(st); });
     var Qw = 0, dfw = 0;
     keys.forEach(function (k) {
       var sts = designs[k], p = sts[0].arms.length - 1;
@@ -613,24 +637,28 @@
    *   "undesirable" (direction of benefit for P-scores; netmeta's default is "desirable") }.
    */
   function analyse(rows, opts) {
+    return refuseRange(function () { return analyseFinite(rows, opts); });
+  }
+  function analyseFinite(rows, opts) {
     opts = opts || {};
     var fe = fit(rows, { model: "fe", seDecimals: opts.seDecimals });
     if (!fe.ok) return fe;
     var re = fit(rows, { model: "re", ref: fe.refTreat, seDecimals: opts.seDecimals }), df = fe.df, Q = fe.Q, tr = fe.treatments, n = tr.length;
+    if (!re.ok) return re;
     var tDist = opts.randomCi === "t-dist" && df > 0, desirable = opts.smallValues !== "undesirable";
     var tq = tDist ? qtUpper(0.025, df) : Z975, tau2 = df > 0 ? re.tau2 : null;
     function league(f, isRandom) {
-      var ix = {}; f.nonref.forEach(function (t, k) { ix[t] = k; });
+      var ix = Object.create(null); f.nonref.forEach(function (t, k) { ix[t] = k; });
       var M = function () { return tr.map(function () { return new Array(n).fill(null); }); };
       var o = { TE: M(), seTE: M(), lower: M(), upper: M(), pval: M() };
       for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) {
         var a = ix[tr[i]], b = ix[tr[j]], di = a === undefined ? 0 : f.d[a], dj = b === undefined ? 0 : f.d[b], v = 0;
         if (a !== undefined) v += f.cov[a][a]; if (b !== undefined) v += f.cov[b][b]; if (a !== undefined && b !== undefined) v -= 2 * f.cov[a][b];
-        var te = di - dj, se = Math.sqrt(Math.max(0, v)), crit = isRandom && tDist ? tq : Z975;
+        var te = finite(di - dj, "league effect"), se = Math.sqrt(Math.max(0, finite(v, "league variance"))), crit = isRandom && tDist ? tq : Z975;
         o.TE[i][j] = te; o.seTE[i][j] = se;
         if (i === j) continue;
-        o.lower[i][j] = te - crit * se; o.upper[i][j] = te + crit * se;
-        o.pval[i][j] = isRandom && tDist ? 2 * ptUpper(Math.abs(te / se), df) : 2 * pnormUpper(Math.abs(te / se));
+        o.lower[i][j] = finite(te - crit * se, "league confidence limit"); o.upper[i][j] = finite(te + crit * se, "league confidence limit");
+        o.pval[i][j] = finite(isRandom && tDist ? 2 * ptUpper(Math.abs(te / se), df) : 2 * pnormUpper(Math.abs(te / se)), "league p-value");
       }
       return o;
     }
@@ -640,8 +668,8 @@
       predict = { lower: random.TE.map(function (row) { return row.slice(); }), upper: random.TE.map(function (row) { return row.slice(); }) };
       for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) {
         if (i === j) { predict.lower[i][j] = predict.upper[i][j] = null; continue; }
-        var sp = Math.sqrt(random.seTE[i][j] * random.seTE[i][j] + tau2);
-        predict.lower[i][j] = random.TE[i][j] - tp * sp; predict.upper[i][j] = random.TE[i][j] + tp * sp;
+        var sp = Math.sqrt(finite(random.seTE[i][j] * random.seTE[i][j] + tau2, "prediction variance"));
+        predict.lower[i][j] = finite(random.TE[i][j] - tp * sp, "prediction limit"); predict.upper[i][j] = finite(random.TE[i][j] + tp * sp, "prediction limit");
       }
     }
     function pscores(L) { // netrank: mean over j != i of P(i better than j), from the two-sided p-values

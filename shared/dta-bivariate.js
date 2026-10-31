@@ -447,19 +447,26 @@
   // (ESS = 4·n₁·n₀/(n₁+n₀)), weighted by ESS; t-test on the slope. +0.5 to studies with a zero cell.
   function deeksTest(rows) {
     var x = [], y = [], w = [], n = rows.length;
+    if (n < 3) return null;
     rows.forEach(function (r) {
       var tp = r.tp, fp = r.fp, fn = r.fn, tn = r.tn;
       if (tp === 0 || fp === 0 || fn === 0 || tn === 0) { tp += 0.5; fp += 0.5; fn += 0.5; tn += 0.5; }
       var n1 = tp + fn, n0 = fp + tn, ess = 4 * n1 * n0 / (n1 + n0);
       x.push(1 / Math.sqrt(ess)); y.push(Math.log((tp * tn) / (fp * fn))); w.push(ess);
     });
-    var sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
-    for (var i = 0; i < n; i++) { sw += w[i]; swx += w[i] * x[i]; swy += w[i] * y[i]; swxx += w[i] * x[i] * x[i]; swxy += w[i] * x[i] * y[i]; }
-    var det = sw * swxx - swx * swx; if (det === 0) return null;
-    var slope = (sw * swxy - swx * swy) / det, intercept = (swxx * swy - swx * swxy) / det;
-    var rs = 0; for (var j = 0; j < n; j++) { var e = y[j] - intercept - slope * x[j]; rs += w[j] * e * e; }
-    var df = n - 2; if (df <= 0) return null;
-    var sigma2 = rs / df, seSlope = Math.sqrt(sigma2 * sw / det);
+    var sw = 0, swx = 0, swy = 0, swxx = 0;
+    for (var i = 0; i < n; i++) { sw += w[i]; swx += w[i] * x[i]; swy += w[i] * y[i]; swxx += w[i] * x[i] * x[i]; }
+    var mx = swx / sw, my = swy / sw, sxx = 0, sxy = 0;
+    for (i = 0; i < n; i++) { var dx = x[i] - mx; sxx += w[i] * dx * dx; sxy += w[i] * dx * (y[i] - my); }
+    // Compare the weighted predictor's norm after removing the intercept with
+    // its original norm, using stats::lm's 1e-7 relative rank tolerance.
+    // Centered sums avoid cancellation in sw*swxx - swx*swx; the rank check
+    // also rejects constant predictors with roundoff in their weighted mean.
+    if (!(Math.sqrt(sxx) > 1e-7 * Math.sqrt(swxx))) return null;
+    var slope = sxy / sxx, intercept = my - slope * mx;
+    var rs = 0; for (var j = 0; j < n; j++) { var e = (y[j] - my) - slope * (x[j] - mx); rs += w[j] * e * e; }
+    var df = n - 2;
+    var sigma2 = rs / df, seSlope = Math.sqrt(sigma2 / sxx);
     var t = slope / seSlope, pv = 2 * (1 - _tcdf(Math.abs(t), df));
     return { slope: slope, intercept: intercept, t: t, df: df, p: pv, x: x, y: y };
   }

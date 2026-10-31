@@ -67,7 +67,7 @@
   try{const c=parse($('plus-data').value,$('plus-interaction').checked);render(AlmMetaPlus.compute(c),c);}
   catch(e){current=null;advise(e.message);$('plus-status').textContent='Refused: '+e.message;$('plus-status').classList.add('plus-refused');$('plus-results').replaceChildren();$('plus-plot').replaceChildren();$('plus-export').disabled=true;}
  }
- function exportPayload(){if(!current||current.result.status!=='ok')throw Error('Fit valid inputs before exporting');return structuredClone({schema:'meta-regression-plus-v1',...current});}
+ function exportPayload(){if(!current||current.result.status!=='ok')throw Error('Fit valid inputs before exporting');return structuredClone({schema:'meta-regression-plus-v1',...current,...(window.AlmBuildInfo?{producedBy:window.AlmBuildInfo}:{})});}
  $('plus-run').onclick=run;
  const example=$('plus-data').defaultValue;
  $('plus-example').onclick=()=>{$('plus-data').value=example;$('plus-interaction').checked=false;run();$('plus-status').textContent='Example loaded (metadat::dat.bcg: year and absolute latitude). '+$('plus-status').textContent;};

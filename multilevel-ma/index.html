@@ -115,6 +115,7 @@
         <tbody id="body"></tbody>
       </table>
       <h2 style="margin-top:0.4rem">Forest (grouped by study)</h2>
+      <p id="forest-axis-error" role="status" aria-live="polite" hidden></p>
       <svg id="forest" viewBox="0 0 600 400" role="img" aria-label="Forest plot with per-study grouping"></svg>
 
       <!-- plot-export mount -->
@@ -257,10 +258,17 @@
       // (NOT tau2-inflated weights). Without sigma2 the "shares" are tau2-only and
       // overstate heterogeneity proportions when sampling variance is large.
       var wSamp = rows.map(function (r) { return 1 / (r.se * r.se); });
-      var sumWsamp = wSamp.reduce(function (a, b) { return a + b; }, 0);
-      var sumW2samp = wSamp.reduce(function (a, b) { return a + b * b; }, 0);
-      var denomSig = sumWsamp * sumWsamp - sumW2samp;
-      var sigma2_typical = denomSig > 1e-12 ? ((rows.length - 1) * sumWsamp) / denomSig : 0;
+      var maxWsamp = wSamp.reduce(function (a, b) { return Math.max(a, b); }, 0);
+      // Normalise before forming the denominator: its magnitude must not depend
+      // on the units of SE. Sum 2*w_i*w_j (i<j) to avoid cancellation when one
+      // weight dominates. With positive weights, only a zero pair sum degenerates.
+      var sumWsamp = 0, denomSig = 0;
+      for (var wi = 0; wi < wSamp.length; wi++) {
+        var scaledW = wSamp[wi] / maxWsamp;
+        denomSig += 2 * scaledW * sumWsamp;
+        sumWsamp += scaledW;
+      }
+      var sigma2_typical = denomSig > 0 ? (rows.length - 1) / (maxWsamp * (denomSig / sumWsamp)) : NaN;
       var totalVar = tau2_study + tau2_within + sigma2_typical;
       var I2_study = tau2_study / totalVar;
       var I2_within = tau2_within / totalVar;
@@ -391,20 +399,37 @@
       var allHi = rows.map(function (r) { return r.te + Z975 * r.se; });
 
       // Apply axis range override if set
+      var axisError = document.getElementById('forest-axis-error');
+      axisError.hidden = true;
+      axisError.textContent = '';
       var xMin = null, xMax = null;
       if (_axisState && Array.isArray(_axisState.x)) {
         if (_axisState.x[0] !== null) xMin = _axisState.x[0];
         if (_axisState.x[1] !== null) xMax = _axisState.x[1];
       }
 
-      var lo = xMin !== null ? xMin : Math.min(0, Math.min.apply(null, allLo), f.mu - Z975 * f.seMu);
-      var hi = xMax !== null ? xMax : Math.max(0, Math.max.apply(null, allHi), f.mu + Z975 * f.seMu);
+      var xLog = !!_axisState.xLog;
+      var pooledLo = f.mu - Z975 * f.seMu, pooledHi = f.mu + Z975 * f.seMu;
+      var lo = xMin !== null ? xMin : Math.min(xLog ? Infinity : 0, Math.min.apply(null, allLo), pooledLo);
+      var hi = xMax !== null ? xMax : Math.max(xLog ? -Infinity : 0, Math.max.apply(null, allHi), pooledHi);
+      if (xLog) {
+        // Log plotting transforms coordinates only; every displayed CI must be positive.
+        var domain = allLo.concat(allHi, rows.map(function (r) { return r.te; }), [f.mu, pooledLo, pooledHi, lo, hi]);
+        if (!domain.every(function (v) { return Number.isFinite(v) && v > 0; }) || lo >= hi) {
+          svg.innerHTML = '';
+          axisError.textContent = 'Log axis requires positive, finite effects, confidence limits and axis bounds, with min < max. Adjust the bounds or use a linear axis.';
+          axisError.hidden = false;
+          return;
+        }
+        lo = Math.log(lo);
+        hi = Math.log(hi);
+      }
       var pad = (hi - lo) * 0.1 || 0.3;
       var loP = xMin !== null ? lo : lo - pad;
       var hiP = xMax !== null ? hi : hi + pad;
-      var X = function (v) { return padL + (v - loP) / (hiP - loP) * plotW; };
+      var X = function (v) { return padL + ((xLog ? Math.log(v) : v) - loP) / (hiP - loP) * plotW; };
 
-      svgParts.push('<line x1="' + X(0) + '" y1="15" x2="' + X(0) + '" y2="' + (H - 25) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
+      if (!xLog) svgParts.push('<line x1="' + X(0) + '" y1="15" x2="' + X(0) + '" y2="' + (H - 25) + '" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>');
 
       // V11-E03 — escape user-controlled study/label in SVG text nodes.
       var escSvg = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };

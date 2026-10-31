@@ -497,10 +497,19 @@
     }
     return L.map(function (l, k) { return { A: Axp[k], N: l.n }; });
   }
-  function hamlingCounts(L, type) { // dosresmeta::hamling (optim Nelder–Mead, defaults), ported verbatim
+  function hamlingCounts(L, type) { // dosresmeta::hamling, with an exact one-contrast IR solution
     var cc = type === "cc", ref = -1, sNA = 0, sA = 0, sN = 0;
     L.forEach(function (l, k) { if (l.v === 0) ref = k; sNA += l.n - l.cases; sA += l.cases; sN += l.n; });
     var p0 = cc ? (L[ref].n - L[ref].cases) / sNA : L[ref].n / sN, z0 = cc ? sNA / sA : sN / sA;
+    if (type === "ir" && L.length === 2) {
+      // With one contrast, preserve the reference person-time fraction p0 and
+      // total person-time/cases z0, and solve RR and v = 1/A0 + 1/A1 directly.
+      // The general R port below can instead converge to negative IR counts.
+      var other = 1 - ref, ratio = Math.exp(L[other].y) * L[other].n / L[ref].n;
+      var a0 = (1 + 1 / ratio) / L[other].v, a1 = (1 + ratio) / L[other].v;
+      var totalN = z0 * (a0 + a1);
+      return L.map(function (l, k) { return { A: k === ref ? a0 : a1, N: l.n / sN * totalN }; });
+    }
     function ps(par) {
       var A0 = par[0], N0 = par[1];
       return L.map(function (l, k) {
@@ -524,9 +533,23 @@
     var nr = L.filter(function (l) { return l.v !== 0; }), m = nr.length, S = mz(m, m), a, b;
     if (covariance === "indep") { nr.forEach(function (l, i) { S[i][i] = l.v; }); return S; }
     var ps = covariance === "h" ? hamlingCounts(L, type) : grlCounts(L, type), ref = 0;
+    // Even a one-contrast matrix must have valid reconstructed counts: its
+    // diagonal alone is copied from the supplied variance and cannot prove this.
+    ps.forEach(function (p, k) {
+      if (!isFinite(p.A) || !isFinite(p.N) || !(p.A > 0) || !(p.N > 0) ||
+          (type === "cc" && !(p.A < p.N)) || (type === "ci" && p.A > p.N)) {
+        throw new DRError("covariance reconstruction failed at row " + (k + 1) + " (invalid reconstructed cases or n)");
+      }
+    });
     L.forEach(function (l, k) { if (l.v === 0) ref = k; });
     var A0 = ps[ref].A, N0 = ps[ref].N, s0 = type === "ir" ? 1 / A0 : (type === "ci" ? 1 / A0 - 1 / N0 : 1 / A0 + 1 / (N0 - A0));
-    var si = []; L.forEach(function (l, k) { if (k === ref) return; var A = ps[k].A, N = ps[k].N; si.push(s0 + (type === "ir" ? 1 / A : (type === "ci" ? 1 / A - 1 / N : 1 / A + 1 / (N - A)))); });
+    if (!isFinite(s0) || s0 < 0) throw new DRError("covariance reconstruction failed at row " + (ref + 1) + " (invalid reference variance)");
+    var si = []; L.forEach(function (l, k) {
+      if (k === ref) return;
+      var A = ps[k].A, N = ps[k].N, v = s0 + (type === "ir" ? 1 / A : (type === "ci" ? 1 / A - 1 / N : 1 / A + 1 / (N - A)));
+      if (!isFinite(v) || !(v > 0)) throw new DRError("covariance reconstruction failed at row " + (k + 1) + " (invalid contrast variance)");
+      si.push(v);
+    });
     for (a = 0; a < m; a++) for (b = 0; b < m; b++) S[a][b] = a === b ? nr[a].v : Math.sqrt(nr[a].v * nr[b].v) * s0 / Math.sqrt(si[a] * si[b]);
     for (a = 0; a < m; a++) if (!isFinite(S[a][a]) || S[a].some(function (v) { return !isFinite(v); })) throw new DRError("covariance reconstruction failed (non-finite values)");
     return S;
@@ -541,6 +564,27 @@
     if (model === "linear") return ["dose"];
     if (model === "quadratic") return ["dose", "dose²"];
     return knots.slice(1).map(function (_, j) { return j === 0 ? "dose" : "dose" + "'".repeat(j); });
+  }
+
+  function predictionError(dose) {
+    return new DRError("Prediction overflow or non-finite result at dose " + dose + ". Use less extreme doses, reference dose or covariate values.");
+  }
+  // Shared with the app's PM/DL predictor: never publish unrepresentable uncertainty.
+  function predictionResult(dose, pred, se) {
+    var lo = pred - Z975 * se, hi = pred + Z975 * se;
+    var rr = Math.exp(pred), rrLo = Math.exp(lo), rrHi = Math.exp(hi);
+    if (![dose, pred, se, lo, hi, rr, rrLo, rrHi].every(Number.isFinite)) throw predictionError(dose);
+    return { dose: dose, logRR: pred, se: se, ciLo: lo, ciHi: hi, rr: rr, rrLo: rrLo, rrHi: rrHi };
+  }
+
+  function predictionSE(V, x) {
+    var variance = _quad(V, x);
+    // Preserve ordinary-range arithmetic; rescale only when the quadratic form overflows.
+    if (Number.isFinite(variance)) return Math.sqrt(Math.max(0, variance));
+    var scale = Math.max.apply(null, x.map(Math.abs));
+    if (!(scale > 0)) return NaN;
+    variance = _quad(V, x.map(function (v) { return v / scale; }));
+    return Number.isFinite(variance) ? Math.sqrt(Math.max(0, variance)) * scale : NaN;
   }
 
   // studies: [{id, rows: [{dose, cases, n, logrr, se, type}], mod?: number}]; the reference
@@ -563,7 +607,14 @@
         var nref = L.filter(function (l) { return l.v === 0; }).length;
         if (nref !== 1) { out.excluded.push({ id: st.id, reason: nref ? "more than one reference row" : "no reference row (SE blank)" }); return; }
         if (L.length < 2) { out.excluded.push({ id: st.id, reason: "no non-reference dose" }); return; }
-        if (covariance !== "indep" && L.some(function (l) { return !(l.cases > 0) || !(l.n > 0); })) { out.excluded.push({ id: st.id, reason: "missing case or total counts" }); return; }
+        if (covariance !== "indep") {
+          for (var row = 0; row < L.length; row++) {
+            var l = L[row], reason = null;
+            if (!isFinite(l.cases) || !isFinite(l.n) || !(l.cases > 0) || !(l.n > 0)) reason = "cases and n must be finite and greater than 0 for covariance reconstruction";
+            else if ((type === "cc" || type === "ci") && l.cases > l.n) reason = "cases must not exceed n for " + type + " covariance reconstruction";
+            if (reason) { out.excluded.push({ id: st.id, reason: "row " + (row + 1) + ": " + reason }); return; }
+          }
+        }
         S.push({ id: st.id, type: type, L: L, mod: st.mod });
       });
       if (S.length < 2) throw new DRError("at least 2 studies are needed (" + S.length + " usable)");
@@ -583,7 +634,11 @@
         s.nr = s.L.filter(function (l) { return l.v !== 0; });
         s.Xb = s.nr.map(function (l) { return bf(l.dose).map(function (v, j) { return v - b0[j]; }); });
         s.y = s.nr.map(function (l) { return l.y; });
-        s.S = covarLogRR(s.L, s.type, covariance);
+        try { s.S = covarLogRR(s.L, s.type, covariance); }
+        catch (e) {
+          if (!(e instanceof DRError)) throw e;
+          throw new DRError("study " + s.id + ": " + e.message);
+        }
       });
       if (useMod && S.some(function (s) { return !isFinite(s.mod); })) throw new DRError("every study needs a numeric covariate value for meta-regression");
       out.k = S.length; out.nobs = S.reduce(function (a, s) { return a + s.nr.length; }, 0);
@@ -607,9 +662,9 @@
         return doses.map(function (d) {
           var c = bf(+d).map(function (v, j) { return v - bx[j]; }), x = c;
           if (useMod) { var z = (modValue == null) ? 0 : +modValue; x = c.concat(c.map(function (v) { return v * z; })); }
+          if (!x.every(Number.isFinite)) throw predictionError(+d);
           var pred = 0; for (var j = 0; j < x.length; j++) pred += x[j] * coef[j];
-          var se = Math.sqrt(Math.max(0, _quad(V, x)));
-          return { dose: +d, logRR: pred, se: se, ciLo: pred - Z975 * se, ciHi: pred + Z975 * se, rr: Math.exp(pred), rrLo: Math.exp(pred - Z975 * se), rrHi: Math.exp(pred + Z975 * se) };
+          return predictionResult(+d, pred, predictionSE(V, x));
         });
       };
       out.doseRange = [Math.min.apply(null, allDoses), Math.max.apply(null, allDoses)];
@@ -719,7 +774,7 @@
   }
 
   var api = { fit: fit, fitSpline: fitSpline, fitDR: fitDR, rcsBasis: rcsBasis, rcsKnots: rcsKnots, _grl: _grl, _studySlope: _studySlope, _quantile7: _quantile7,
-    _internal: { nmmin: nmmin, vmmin: vmmin, covarLogRR: covarLogRR, pchisqUpper: pchisqUpper, symEigen: symEigen, qrLS: qrLS } };
+    _internal: { nmmin: nmmin, vmmin: vmmin, covarLogRR: covarLogRR, pchisqUpper: pchisqUpper, symEigen: symEigen, qrLS: qrLS, predictionResult: predictionResult } };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmDoseResponse = api;
 })(typeof window !== "undefined" ? window : globalThis);

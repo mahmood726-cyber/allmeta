@@ -42,8 +42,20 @@
 
   // eValues(measure, point, lo, hi, {rare}) → { rr:{point,lo,hi}, point, ci }.
   // `ci` is the E-value for the CI bound nearest the null (1 if the CI crosses the null).
+  // Impossible complete intervals throw RangeError before any scale conversion.
   function eValues(measure, point, lo, hi, opts) {
     opts = opts || {};
+    if (lo != null && hi != null) {
+      var scale = (measure || "RR").toUpperCase();
+      if (!Number.isFinite(point) || !Number.isFinite(lo) || !Number.isFinite(hi))
+        throw new RangeError("Invalid confidence interval: estimate and bounds must be finite numbers.");
+      if (scale !== "SMD" && scale !== "D" && !(point > 0 && lo > 0 && hi > 0))
+        throw new RangeError("Invalid confidence interval: ratio estimates and bounds must be positive.");
+      if (lo > hi)
+        throw new RangeError("Invalid confidence interval: lower bound must not exceed upper bound.");
+      if (point < lo || point > hi)
+        throw new RangeError("Invalid confidence interval: bounds must contain the point estimate.");
+    }
     var rare = !!opts.rare;
     var rr = approxRR(measure, point, rare);
     var rrLo = (lo != null && isFinite(lo)) ? approxRR(measure, lo, rare) : null;
