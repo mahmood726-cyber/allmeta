@@ -49,6 +49,31 @@ async function convert(page, source, apply = true, answers = {}) {
     return { ...out, blocking, applied, result: _almLastCumSub(), source: document.getElementById('f-data').value };
   }, { source, apply, answers });
 }
+test('PASTE PLANTED: lenient number tokens are excluded and listed, never read as another number', async ({ page }) => {
+  // parseFloat('-0.2x') = -0.2, parseFloat('20 18') = 20, parseFloat('18-65') = 18: each was analysed silently.
+  await page.goto(PAGE);
+  await page.waitForFunction(() => typeof window.__almCumSubParse === 'function' && typeof window._almLastCumSub === 'function');
+  const base = 'Trial A, -0.35, 0.13, 2012, Adults\nTrial B, -0.12, 0.11, 2014, Adults\nTrial C, -0.41, 0.17, 2016, Children';
+  const parse = text => page.evaluate(t => window.__almCumSubParse(t), text);
+  for (const row of ['Trial D, -0.2x, 0.1, 2018, Adults', 'Trial D, 0x10, 0.1, 2018, Adults', 'Trial D, -0 2, 0.1, 2018, Adults',
+    'Trial D, -0.2, 0.1x, 2018, Adults', 'Trial D, -0.2, Infinity, 2018, Adults', 'Trial D, -0.2, 0.1, abcd, Adults',
+    'Trial D, -0.2, 0.1, 2018xy, Adults', 'Trial D, -0.2, 0.1, 0x7E2, Adults', 'Trial D, -0.2, 0.1, NaN, Adults',
+    'Trial D, -0.2, 0.1, 20 18, Adults', 'Trial D, -0.2x, 0.1', 'Trial D, -0.2, 0.1x, 2018', 'Trial D, -0.2, 0.1x, Adults']) {
+    const p = await parse(base + '\n' + row);
+    expect(p.studies.length, row).toBe(3);
+    expect(p.warnings.join(' | '), row).toContain('Line 4');
+    await page.locator('#f-data').fill(base + '\n' + row);
+    await expect(page.locator('#warn-banner'), row).toContainText('Line 4');
+  }
+  // Valid forms stay accepted: leading '+', exponent, blank year, a publication year with a one-letter suffix (read as
+  // that year, as in dat.curtin2002); a 4-column trailing group is never read as a year.
+  const ok = await parse(base + '\nTrial D, +0.2, 2e-1, 2018, Adults\nTrial E, -0.1, 0.1, , Adults\nTrial F, -0.1, 0.1, 18-65\nTrial G, -0.1, 0.1, 2019' +
+    '\nTrial H, -0.1, 0.1, 1994b, Adults\nTrial I, -0.1, 0.1, 1990a');
+  expect(ok.warnings).toEqual([]);
+  expect(ok.studies.slice(3).map(s => [s.est, s.se, s.year, s.group])).toEqual([[0.2, 0.2, 2018, 'Adults'], [-0.1, 0.1, null, 'Adults'],
+    [-0.1, 0.1, null, '18-65'], [-0.1, 0.1, 2019, null], [-0.1, 0.1, 1994, 'Adults'], [-0.1, 0.1, 1990, null]]);
+});
+
 test('ENTRY: three example layouts round trip through the parsing APIs in both views', async ({ page }) => {
   await open(page);
   const rows = await example(page), inputs = formats(rows);

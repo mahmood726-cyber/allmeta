@@ -29,6 +29,16 @@ profile.invalid.push(
   bad('Trial G, -0.1, 0, 2020, Adults'),
   bad('Trial G, -0.1, -0.1, 2020, Adults'),
   bad('Trial G, -0.1, abc, 2020, Adults'),
-  bad('Trial G, -0.1')
+  bad('Trial G, -0.1'),
+  // Lenient number tokens (trailing text, comma decimal, embedded space, empty, NaN/Infinity, hex, non-integer count):
+  // parseFloat/parseInt/Number() would read these as a different number; the row checker refuses them.
+  bad('Trial G, -0.1x, 0.1, 2020, Adults'),
+  bad('Trial G, 0x10, 0.1, 2020, Adults'),
+  bad('Trial G, -0 1, 0.1, 2020, Adults'),
+  bad('Trial G, -0.1, 0.1x, 2020, Adults'),
+  bad('Trial G, -0.1, 0.1, abcd, Adults'),
+  bad('Trial G, -0.1, 0.1, 2020xy, Adults'),
+  bad('Trial G, -0.1, 0.1, 0x10, Adults'),
+  bad('Trial G, -0.1, 0.1, NaN, Adults')
 );
 export default profile;
