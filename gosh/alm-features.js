@@ -8,6 +8,13 @@
   var APP = 'gosh';
   function byId(id) { return document.getElementById(id); }
   function axes() { return Array.from(document.querySelectorAll('#alm-axis-mount input')); }
+  // Share state carries exactly six axis values. If page setup stopped before the axis controls mounted
+  // (e.g. a script failed to load), refuse instead of writing a link set() rejects or skipping the axes on restore.
+  function shareAxes() {
+    var list = axes();
+    if (list.length !== 6) throw new Error('Axis controls did not load; reload the page.');
+    return list;
+  }
   function verificationAdapter() {
     var adapter = (global.AlmLiveAdapters && global.AlmLiveAdapters[APP]) || global.AlmGoshValidationAdapter;
     if (!adapter || !adapter.live) return adapter;
@@ -115,7 +122,7 @@
           enumeration: byId('enum-mode').value || 'auto',
           // The separate exact button does not change the enumeration selector.
           exactResult: !!(last && last.k > 15 && !last.sampled && byId('analysis-stale').hidden),
-          axes: axes().map(function (e) { return e.type === 'checkbox' ? e.checked : e.value; }),
+          axes: shareAxes().map(function (e) { return e.type === 'checkbox' ? e.checked : e.value; }),
           entryLog: global.AlmFeaturesState.entryLog };
       },
       set: function (s) {
@@ -138,9 +145,10 @@
         });
         [0, 3].forEach(function (i) { if (s.axes[i] !== '' && s.axes[i + 1] !== '' && Number(s.axes[i]) >= Number(s.axes[i + 1])) throw new Error('Invalid axis range.'); });
         if (s.entryLog !== undefined && !Array.isArray(s.entryLog)) throw new Error('Invalid conversion log.');
+        var axisInputs = shareAxes();
         byId('src').value = s.src; byId('model').value = s.model; byId('n-sample').value = s.draws;
         byId('enum-mode').value = enumeration;
-        axes().forEach(function (e, i) {
+        axisInputs.forEach(function (e, i) {
           if (e.type === 'checkbox') e.checked = s.axes[i]; else e.value = s.axes[i];
           e.dispatchEvent(new Event('change', { bubbles: true }));
         });
