@@ -25,7 +25,7 @@ try {
       const data = await payload(page, app);
       await writeFile(path.join(output, app + '.json'), JSON.stringify(data, null, 2) + '\n');
       const planted = structuredClone(data);
-      const target = planted.appValues.find(v => /^(split\.0\.direct|mu1|coef\.0\.estimate)$/.test(v.key));
+      const target = planted.appValues.find(v => /^(split\.0\.direct|mu1|coef\.0\.estimate|components_0_est)$/.test(v.key));
       if (!target || !Number.isFinite(target.value) || target.value === 0) throw Error('No nonzero defect target');
       target.value *= 1.001;
       await writeFile(path.join(output, app + '.planted.json'), JSON.stringify(planted, null, 2) + '\n');

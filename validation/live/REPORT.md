@@ -25,3 +25,23 @@ nma-inconsistency and multivariate-ma were not re-run here; their rows above are
 Commands: `node scripts/xplat/dump-live.mjs` (writes `validation/live/<app>.json` from the app's built-in example) then
 `Rscript validation/live/check_live.R validation/live/<app>.json` (prints `LIVECHECK <app> n/N`, exit 1 on any miss); planted copies
 `<app>.planted.json` must fail.
+
+## component-nma (19) — added Fri 30 Oct 2026
+
+Adapter: `component-nma/alm-live.js` (window.AlmLiveAdapters['component-nma']; same contract). It reads the page's displayed
+result (`_almLastCnma`) and the input it was fitted on; it never fits. The R recipe is `netmeta::discomb(inactive = "control")`
+(additive CNMA, generalized DerSimonian-Laird), the model of `component-nma/tests/fixtures/cnma-oracle.R`. Tolerance is the one in
+`hub/shared/tests/component-nma-parity.spec.mjs`: 1e-9 relative to max(1, |R|) for tau2, Q, component and intervention
+estimates/SEs/95% limits; residual df equal (relative tolerance 0). The Verify-in-R panel (`alm-features.js` verify.adapter) now resolves to this adapter.
+
+Results (baseimage, Windows):
+
+| dataset | webR (R 4.5.1, webR 0.5.5, netmeta 3.4-0) | desktop R (R 4.6.0, netmeta 3.7.0) | desktop MAX_ABS_DIFF | planted copy |
+|---|---|---|---|---|
+| built-in example (8 contrasts, 3 components) | 39/39 | 39/39 | 2.2e-16 | 38/39 (miss `components_0_est`) |
+| oracle `heterogeneous` (tau2 = 7.16) | 23/23 | 23/23 | 1.1e-13 (Q = 633.8; relative 4.4e-16) | 22/23 |
+| oracle `disconnected-identifiable` | 23/23 | 23/23 | 2.8e-16 | 22/23 |
+
+The webR runs also reproduce the archived R references in `cnma-validation-oracle.json` at 1e-9
+(`hub/shared/tests/features-live-component-nma.spec.mjs`). Exports: `validation/live/component-nma.json` and `.planted.json`
+(`node scripts/xplat/dump-live.mjs`, then `Rscript validation/live/check_live.R validation/live/component-nma.json`).
