@@ -179,6 +179,7 @@
 </section>
     <div style="grid-column:1/-1"><section id="alm-validate"></section></div>
   </main>
+  <div id="alm-features"></div>
 
   <p class="footer-note">Subgroup between-group Q compares <strong>random-effects</strong> pooled estimates across groups (each group pooled with Paule-Mandel τ², per Borenstein 2009 §19); Q_bw = Σ w_g (μ_g − M)², df = G − 1, where w_g = 1/SE(μ_g)² and the centre M = Σ w_g μ_g / Σ w_g is the inverse-variance-weighted mean of the subgroup estimates (matches <code>meta::metagen</code> Q.b.random). I² of differences = max(0, 100·(Q − df)/Q).</p>
 
@@ -201,6 +202,13 @@
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
 
+    // A complete decimal/exponent token or NaN: parseFloat would read "0.1x" as 0.1 and "18-65" as 18, and Number would
+    // read "0x10" as 16, so a typo would be analysed as a different number without a note.
+    const NUMBER_TOKEN = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+    function strictNumber(token) { const t = String(token == null ? "" : token).trim(); return NUMBER_TOKEN.test(t) ? Number(t) : NaN; }
+    // A year is a number, or a four-digit publication year with a one-letter suffix ("1994a", "1994b": two reports of
+    // one year), which is read as that year as before.
+    function yearNumber(token) { const t = String(token == null ? "" : token).trim(); return /^\d{4}[a-z]$/i.test(t) ? Number(t.slice(0, 4)) : strictNumber(t); }
     function parseStudies(text) {
       const studies=[], warnings=[];
       const lines = String(text||"").match(/(?:[^"\r\n]|"(?:[^"]|"")*")+/g) || [];
@@ -220,27 +228,30 @@
         // Strategy: rightmost numeric column is either SE or year; classify by pattern.
         // Simplest: require at least (label, est, SE) — extra trailing columns are year then group.
         // If 3 cols → label, est, SE. If 4 cols → label, est, SE, year OR group. If 5 cols → label, est, SE, year, group.
-        let est, se, year = null, group = null, label;
+        let est, se, year = null, group = null, label, badYear = false;
         if (parts.length === 3) {
-          est = parseFloat(parts[1]); se = parseFloat(parts[2]); label = parts[0];
+          est = strictNumber(parts[1]); se = strictNumber(parts[2]); label = parts[0];
         } else if (parts.length === 4) {
-          est = parseFloat(parts[1]); se = parseFloat(parts[2]); label = parts[0];
+          est = strictNumber(parts[1]); se = strictNumber(parts[2]); label = parts[0];
           const trail = parts[3];
-          const trailNum = parseFloat(trail);
+          const trailNum = yearNumber(trail);
           if (Number.isFinite(trailNum) && trail.length >= 4) year = trailNum;
           else group = trail;
         } else {
           label = parts[0];
-          est = parseFloat(parts[1]); se = parseFloat(parts[2]);
-          const yr = parseFloat(parts[3]);
-          year = Number.isFinite(yr) ? yr : null;
+          est = strictNumber(parts[1]); se = strictNumber(parts[2]);
+          const yr = yearNumber(parts[3]);
+          // A blank year means no year; any other non-number is a typo, never "no year".
+          if (Number.isFinite(yr)) year = yr; else if (String(parts[3]).trim() !== "") badYear = true;
           group = parts[4] || null;
         }
         if (!Number.isFinite(est) || !Number.isFinite(se)) {
-          if (studies.length === 0 && i < 3) continue;
+          // A header line (no numeric-looking estimate or SE) near the top is skipped; a mistyped number is listed.
+          if (studies.length === 0 && i < 3 && !Number.isFinite(parseFloat(parts[1])) && !Number.isFinite(parseFloat(parts[2]))) continue;
           warnings.push("Line "+(i+1)+": non-numeric est or SE"); continue;
         }
         if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }
+        if (badYear) { warnings.push("Line "+(i+1)+": non-numeric year"); continue; }
         studies.push({ label, est, se, year, group, v: se*se });
       }
       return { studies, warnings };
@@ -329,6 +340,9 @@
       return { groups, overall, M_bw, Q_bw, df_bw, I2_bw, pQ };
     }
     window.__almSubgroup = subgroup; // exposed for R-parity tests
+    // The same row checker for a restored analysis file (alm-features.js share set()), so a row this page would skip
+    // with a note cannot silently change the analysis.
+    window.__almCumSubParse = function (text) { return parseStudies(text); };
 
     // ---- Chi-square CDF (shared with heterogeneity app) ----
     function lnGamma(x) {
@@ -978,7 +992,7 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'cumsub-results',
-      getResults: function () { return window._almLastCumSub ? window._almLastCumSub() : {}; },
+      getResults: function () { return (window._almLastCumSub && window._almLastCumSub()) || {}; },
     });
 
     window.alm.urlState({ version: 1 });
@@ -1106,9 +1120,19 @@
 </script>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
+<link rel="stylesheet" href="../shared/alm-features.css">
+<link rel="stylesheet" href="../shared/alm-entry.css">
+<script src="../shared/url-pack.js"></script>
 <script src="../shared/alm-zip.js"></script>
-<script src="../shared/alm-sof.js" data-alm-sof-app="cumulative-subgroup"></script>
 <script src="../shared/alm-features.js"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-entry-ui.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/vendor/share-deflate.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="alm-features.js"></script>
+<script src="../shared/alm-sof.js" data-alm-sof-app="cumulative-subgroup"></script>
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>
