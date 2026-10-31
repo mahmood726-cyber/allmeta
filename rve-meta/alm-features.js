@@ -5,6 +5,16 @@
  */
 (function (global) {
   'use strict';
+  // Number settings go into type=number inputs. A value must be a complete decimal number: Number() also reads
+  // 0x10 / 0b1 / ' ', and the input then silently clears such text to '' (automatic or zero). Valid forms the input
+  // itself cannot hold ('+1', ' 0.5', '5.') are written as the same number.
+  var DECIMAL_SETTING = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function decimalSetting(v) { return typeof v === 'string' && DECIMAL_SETTING.test(v.trim()) && Number.isFinite(Number(v)); }
+  function writeNumberSetting(el, v) {
+    var t = String(v).trim();
+    el.value = t;
+    if (el.value === '' && t !== '') el.value = String(Number(t));
+  }
   var APP = 'rve-meta';
   // Bridge the existing desktop adapter into the documented feature registry.
   if (global.AlmValidate && global.AlmLiveAdapters && global.AlmLiveAdapters[APP]) {
@@ -32,7 +42,7 @@
   function live() { return global.AlmValidate && global.AlmValidate.adapters[APP]; }
   function names() { return byId('f-names').value.split(/\s*,\s*/).filter(Boolean); }
   function number(v, label) {
-    if (v === null || v === undefined || String(v).trim() === '' || !Number.isFinite(Number(v))) {
+    if (!(typeof v === 'number' ? Number.isFinite(v) : decimalSetting(v))) {
       throw new Error(label + ' must be a finite number.');
     }
     return Number(v);
@@ -62,7 +72,7 @@
     validateState(s);
     var before = get();
     function write(v) {
-      byId('src').value = v.src; byId('f-rho').value = String(v.rho); byId('f-names').value = v.names;
+      byId('src').value = v.src; writeNumberSetting(byId('f-rho'), v.rho); byId('f-names').value = v.names;
       // Links created before the centring option existed describe uncentred fits.
       byId('f-centre').checked = v.centred === true;
       byId('btn-run').click();
