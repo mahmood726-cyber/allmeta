@@ -6,6 +6,17 @@
   const selfScript = document.currentScript;
   const pdfUrl = selfScript && selfScript.src ? new URL('vendor/jspdf.min.js', selfScript.src).href : null;
   const scriptNonce = selfScript && selfScript.nonce;
+  function mountPresets(opts) {
+    if (window.AlmFigPresets) return window.AlmFigPresets.register(opts);
+    (window.__almFigPresetQueue = window.__almFigPresetQueue || []).push(opts);
+    if (window.__almFigPresetLoading || !selfScript || !selfScript.src) return;
+    window.__almFigPresetLoading = true;
+    const script = document.createElement('script');
+    script.src = new URL('../../shared/alm-figpresets.js', selfScript.src).href;
+    if (scriptNonce) script.nonce = scriptNonce;
+    script.onerror = () => { window.__almFigPresetLoading = false; script.remove(); console.warn('Journal preset controls could not load'); };
+    document.head.appendChild(script);
+  }
   let pdfLoading;
   function loadPdf() {
     const available = () => (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
@@ -195,7 +206,9 @@
     return new Blob(parts, { type: 'image/png' });
   }
 
-  async function artifact(plot, format, dpi, widthMm, getReceiptInput) {
+  async function artifact(plot, format, dpi, widthMm, getReceiptInput, preset) {
+    if (!['svg', 'png', 'tiff', 'pdf'].includes(format)) throw new Error('Unsupported export format');
+    if (!Number.isFinite(widthMm) || widthMm <= 0 || !Number.isInteger(dpi) || dpi <= 0) throw new Error('Invalid physical size or resolution');
     const src = await plot.getSvg();
     if (!src || src.localName !== 'svg') throw new Error('No SVG for ' + plot.name);
     const prepared = _prepareSvg(src);
@@ -206,11 +219,19 @@
     prepared.insertBefore(bg, prepared.firstChild);
     prepared.setAttribute('width', widthMm + 'mm');
     prepared.setAttribute('height', (widthMm * h / w) + 'mm');
+    if (preset) window.AlmFigPresets.applySvg(prepared, preset);
     const text = await _stamp(_serialize(prepared), getReceiptInput);
     if (format === 'svg') return new Blob([text], { type: 'image/svg+xml' });
+    // Check the requested dimensions before canvas's unsigned-long setters can wrap them.
+    const pixelWidth = Math.round(widthMm / 25.4 * dpi);
+    const pixelHeight = Math.max(1, Math.round(pixelWidth * h / w));
+    if (!Number.isSafeInteger(pixelWidth) || !Number.isSafeInteger(pixelHeight) || pixelWidth < 1 || pixelWidth > 32767 || pixelHeight > 32767 || pixelWidth * pixelHeight > 64000000) throw new Error('Figure exceeds raster export size; reduce width or resolution, or use SVG.');
+    // Resolution fields are unsigned 32-bit values, independently of pixel size.
+    if ((format === 'png' && Math.round(dpi / 0.0254) > 0xffffffff) ||
+        (format === 'tiff' && dpi > 0xffffffff)) throw new Error('Requested resolution exceeds export metadata limits.');
     const canvas = document.createElement('canvas');
-    canvas.width = Math.round(widthMm / 25.4 * dpi);
-    canvas.height = Math.max(1, Math.round(canvas.width * h / w));
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('Canvas unavailable');
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -224,6 +245,10 @@
     } finally { URL.revokeObjectURL(url); }
     if (format === 'tiff') {
       const rgba = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      if (preset && preset.tiffCompression === 'none') {
+        if (!window.AlmZip) throw new Error('Uncompressed TIFF writer unavailable');
+        return new Blob([window.AlmZip.tiff({ width: canvas.width, height: canvas.height, rgba, dpi })], { type: 'image/tiff' });
+      }
       const rgb = new Uint8Array(canvas.width * canvas.height * 3);
       for (let i = 0, j = 0; i < rgba.length; i += 4) { rgb[j++] = rgba[i]; rgb[j++] = rgba[i + 1]; rgb[j++] = rgba[i + 2]; }
       return new Blob([tiff(rgb, canvas.width, canvas.height, dpi)], { type: 'image/tiff' });
@@ -323,6 +348,7 @@
     panelContracts.set(group, () => group.lastElementChild === status &&
       status.children.length === 0 && status.textContent === emittedStatus &&
       staticPanel() === originalPanel);
+    mountPresets({ target, plots, basename, getReceiptInput: opts.getReceiptInput });
     return group;
   }
   // Binary codec hooks allow independent conformance tests without a DOM canvas.
@@ -332,6 +358,8 @@
   };
   init._lzw = lzw;
   init._tiff = tiff;
+  init._pngDpi = pngDpi;
+  init.artifact = artifact;
   window.alm = window.alm || {};
   window.alm.plotExport = init;
 })();

@@ -30,6 +30,27 @@
     return '';
   })();
   var _pdfState = 0; // 0 = not requested, 1 = loading, 2 = ready, -1 = failed
+  // Journal presets: begin
+  const presetNonce = (document.currentScript && document.currentScript.nonce);
+  function registerPresets(opts) {
+    if (window.AlmFigPresets) return window.AlmFigPresets.register(opts);
+    (window.__almFigPresetQueue = window.__almFigPresetQueue || []).push(opts);
+    if (window.__almFigPresetLoading || !SELF_SRC) return;
+    window.__almFigPresetLoading = true;
+    const script = document.createElement('script');
+    script.src = new URL('../../shared/alm-figpresets.js', SELF_SRC).href;
+    if (presetNonce) script.nonce = presetNonce;
+    script.onerror = () => { window.__almFigPresetLoading = false; script.remove(); console.warn('Journal preset controls could not load'); };
+    document.head.appendChild(script);
+  }
+  if (document.currentScript && document.currentScript.hasAttribute('data-presets-only')) {
+    // Bespoke exporters need discovery only; leave the legacy bar path below untouched.
+    window.alm = window.alm || {};
+    window.alm.chartExportAuto = { scan: () => registerPresets({ auto: true }) };
+    registerPresets({ auto: true });
+    return;
+  }
+  // Journal presets: end
   var _pdfCbs = [];
   function loadJsPdf(cb) {
     if ((window.jspdf && window.jspdf.jsPDF) || window.jsPDF) { _pdfState = 2; return cb(true); }
@@ -193,6 +214,10 @@
         });
       }
     });
+  // Journal presets: begin
+    registerPresets({ target: bar, basename, isCurrent: () => !!(isSvg ? getSvgEl() : getCanvasEl()),
+      plots: isSvg ? [{ id: 'chart', name: basename, getSvg: getSvgEl }] : [] });
+  // Journal presets: end
     return bar;
   }
 
