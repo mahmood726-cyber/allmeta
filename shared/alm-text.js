@@ -198,8 +198,27 @@
   // Groups by conversion/flag code; counts are numbers of distinct studies.
   // Distinct reports are counted by F1 itself (AlmEntry.provenance.summary: rows sharing a DOI, PMID or normalised
   // reference are one report), so two arms of one trial read "1 report (2 arms)", never "2 reports".
+  // The same identifiers and union rule as AlmEntry.provenance.summary (DOI > PMID > normalised reference; rows with
+  // different DOIs, or different PMIDs, are different reports), so the count never falls back to rows when AlmEntry
+  // is not loaded. A row with no identifier at all is its own report, and the Methods sentence says how many there were.
+  function normDoi(d) { return String(d || '').trim().toLowerCase().replace(/^(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:\s*)/, ''); }
+  function normPmid(p) { return String(p || '').replace(/\D/g, ''); }
+  function normRef(r) { return String(r || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim(); }
+  function recordIds(r) { return { doi: normDoi(r.doi), pmid: normPmid(r.pmid), ref: normRef(r.reference) }; }
+  function distinctReports(records) {
+    var ids = records.map(recordIds), parent = ids.map(function (_, i) { return i; }), roots = {};
+    function find(i) { return parent[i] === i ? i : (parent[i] = find(parent[i])); }
+    function differ(a, b, k) { return a[k] && b[k] && a[k] !== b[k]; }
+    for (var i = 0; i < ids.length; i++) for (var j = i + 1; j < ids.length; j++) {
+      var a = ids[i], b = ids[j];
+      if ((a.doi && a.doi === b.doi) || (!differ(a, b, 'doi') && ((a.pmid && a.pmid === b.pmid) || (!differ(a, b, 'pmid') && a.ref && a.ref === b.ref)))) parent[find(j)] = find(i);
+    }
+    ids.forEach(function (_, i) { roots[find(i)] = true; });
+    return Object.keys(roots).length;
+  }
+
   function entryRecords(log) {
-    if (!Array.isArray(log)) return { groups: [], reports: 0, rows: 0, arms: 0, detail: null, allLocated: false };
+    if (!Array.isArray(log)) return { groups: [], reports: 0, rows: 0, arms: 0, unidentified: 0, detail: null, allLocated: false };
     var map = {}, order = [], reports = 0, located = 0, f1 = [];
     function add(key, info, who) {
       if (!map[key]) { map[key] = { desc: info.desc, cite: info.cite || null, citeText: info.citeText || null, seen: {}, n: 0 }; order.push(key); }
@@ -254,17 +273,22 @@
       }
     });
     var rows = reports, arms = 0, detail = null, E = global.AlmEntry;
+    var unidentified = f1.filter(function (r) { var k = recordIds(r); return !k.doi && !k.pmid && !k.ref; }).length;
     if (f1.length && E && E.provenance && typeof E.provenance.summary === 'function') {
       var sm = E.provenance.summary(f1);
       reports = sm.reports; arms = sm.arms;
       // Same wording rule as AlmEntry.provenance.summarySentence: arms when every row is one printed arm, else rows.
       if (reports !== rows) detail = arms && f1.every(function (r) { return r.choice && r.choice.armIndex !== undefined; }) ? 'arms' : 'rows';
+    } else if (f1.length) {
+      reports = distinctReports(f1);
+      if (reports !== rows) detail = 'rows';
     }
     return {
       groups: order.map(function (k) { var g = map[k]; return { desc: g.desc, count: g.n, cite: g.cite, citeText: g.citeText }; }),
       reports: reports,
       rows: rows,
       arms: arms,
+      unidentified: unidentified,
       detail: detail,
       allLocated: rows > 0 && located === rows
     };
@@ -326,6 +350,7 @@
     out['entry.groups'] = e.groups.length;
     if (e.reports) out['entry.reports'] = e.reports;
     if (e.reports && e.detail) { out['entry.' + e.detail] = e[e.detail]; out.__entryDetail = e.detail; }
+    if (e.reports && e.unidentified) out['entry.unidentified'] = e.unidentified;
     e.groups.forEach(function (g, i) {
       out['entry.' + i + '.desc'] = g.desc;
       out['entry.' + i + '.count'] = g.count;
@@ -445,15 +470,23 @@
         var parts = [];
         if (hasReports) {
           parts.push('Data were extracted from ', ctxSeg('entry.reports'), cv['entry.reports'] === 1 ? ' report' : ' reports');
-          var d = cv.__entryDetail;
+          var d = cv.__entryDetail, inner = [];
           if (d) {
             // "1 report (2 arms; source location recorded for each)".
             var unit = d === 'arms' ? ' arm' : ' row';
-            parts.push(' (', ctxSeg('entry.' + d), cv['entry.' + d] === 1 ? unit : unit + 's',
-              cv.__entryAllLocated ? '; source location recorded for each)' : ')');
+            inner.push([ctxSeg('entry.' + d), cv['entry.' + d] === 1 ? unit : unit + 's',
+              cv.__entryAllLocated ? '; source location recorded for each' : '']);
           } else if (cv.__entryAllLocated) {
-            parts.push(' (source location recorded for each study)');
+            inner.push(['source location recorded for each study']);
           }
+          // Rows with no DOI, PMID or reference are counted one report each; the sentence states that rule.
+          if (T.hasCtx('entry.unidentified')) {
+            inner.push([ctxSeg('entry.unidentified'), cv['entry.unidentified'] === 1
+              ? ' row had no DOI, PMID or reference and was counted as a separate report'
+              : ' rows had no DOI, PMID or reference and were each counted as a separate report']);
+          }
+          inner.forEach(function (bit, i) { parts.push(i ? '; ' : ' ('); parts.push.apply(parts, bit.filter(function (x) { return x !== ''; })); });
+          if (inner.length) parts.push(')');
         } else {
           parts.push('Data-entry conversions');
         }

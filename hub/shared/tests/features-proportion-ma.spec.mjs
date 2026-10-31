@@ -344,3 +344,31 @@ test('k = 2: prediction-interval keys are "not applicable" (verify.optional), th
   expect(v.rows.filter(r => r.status === 'pass').map(r => r.key)).not.toContain('piLo');
   expect(errors).toEqual([]);
 });
+
+test('EXPORT: after a refused run every results export downloads an empty result without a page error', async ({ page }) => {
+  // Data the app refuses (one malformed row, below the minimum study count) leaves it holding no result. Every export
+  // button must still answer (empty result / "No results yet"), never throw an uncaught TypeError on the null result,
+  // never export a stale one.
+  const errors = [];
+  page.on('pageerror', e => errors.push(String(e && e.stack || e)));
+  await page.goto('/proportion-ma/index.html');
+  await page.waitForFunction(() => typeof window._almLastPropMA === 'function' && window._almLastPropMA() !== null);
+  await page.locator('#src').fill('abc, xyz');
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window._almLastPropMA())).toBeNull();
+  const expected = {
+    json: t => expect(JSON.parse(t)).toEqual({}),
+    csv: t => expect(t).toBe('key,value'),
+    md: t => expect(t.split('\n').length).toBe(2),
+    'report-md': t => expect(t).toContain('No results yet'),
+    'report-txt': t => expect(t).toContain('No results yet')
+  };
+  for (const [action, check] of Object.entries(expected)) {
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 10_000 }),
+      page.locator('#alm-export-mount [data-action="' + action + '"]').click()
+    ]);
+    check(readFileSync(await download.path(), 'utf8'));
+  }
+  expect(errors).toEqual([]);
+});
