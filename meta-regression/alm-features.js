@@ -210,13 +210,22 @@
   global.AlmLiveAdapters = global.AlmLiveAdapters || {};
   global.AlmLiveAdapters[APP] = live;
   function axisInputs() { return Array.from(document.querySelectorAll('#alm-axis-mount input')); }
+  // index.html axisControls mounts x and y, each with minimum, maximum and log inputs: share state carries exactly six.
+  // If page setup stopped before the axis controls mounted (e.g. a script failed to load), refuse instead of writing
+  // a link a healthy page rejects or skipping the axes on restore.
+  var AXIS_INPUTS = 6;
+  function shareAxes() {
+    var list = axisInputs();
+    if (list.length !== AXIS_INPUTS) throw new Error('Axis controls did not load; reload the page.');
+    return list;
+  }
   var share = {
     get: function () {
       clearStaleEntry();
       var s = {};
       fields.forEach(function (k) { s[k] = el('f-' + k).value; });
       s.scale = el('f-scale').checked;
-      s.axes = axisInputs().map(function (n) { return n.type === 'checkbox' ? n.checked : n.value; });
+      s.axes = shareAxes().map(function (n) { return n.type === 'checkbox' ? n.checked : n.value; });
       var state = global.AlmFeaturesState || {}, current = entryData === s.data;
       s.provenance = clone(current && Array.isArray(state.provenance) ? state.provenance : []);
       s.entryLog = clone(current && Array.isArray(state.entryLog) ? state.entryLog : []);
@@ -224,8 +233,9 @@
     },
     set: function (s) {
       if (!s || fields.some(function (k) { return typeof s[k] !== 'string' || s[k].length > 200000; }) ||
-          typeof s.scale !== 'boolean' || !Array.isArray(s.axes) || s.axes.length !== axisInputs().length) throw new Error('Invalid analysis state.');
-      axisInputs().forEach(function (n, i) {
+          typeof s.scale !== 'boolean' || !Array.isArray(s.axes) || s.axes.length !== AXIS_INPUTS) throw new Error('Invalid analysis state.');
+      var axisList = shareAxes();
+      axisList.forEach(function (n, i) {
         var v = s.axes[i];
         if (n.type === 'checkbox' ? typeof v !== 'boolean' : typeof v !== 'string' || (v !== '' && !Number.isFinite(Number(v)))) throw new Error('Invalid axis option.');
       });
@@ -241,7 +251,7 @@
       if (parsed.warnings.length) throw new Error(parsed.warnings[0] + ' cannot be used.');
       fields.forEach(function (k) { el('f-' + k).value = s[k]; });
       el('f-scale').checked = s.scale;
-      axisInputs().forEach(function (n, i) {
+      axisList.forEach(function (n, i) {
         if (n.type === 'checkbox') n.checked = s.axes[i]; else n.value = s.axes[i];
         n.dispatchEvent(new Event('change', { bubbles: true }));
       });

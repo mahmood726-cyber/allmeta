@@ -13,9 +13,11 @@ function setup() {
     click() { runs++; }, dispatchEvent() {}, querySelectorAll() { return []; } });
   const paper = element();
   paper.textContent = 'Extract paper text with source confirmation';
+  // A loaded page: index.html axisControls mounts six axis inputs (x and y minimum, maximum, log), which share get() requires.
+  const axisInputs = Array.from({ length: 6 }, element);
   const context = {
     document: { getElementById: id => nodes[id] ||= element(), createElement: element,
-      querySelectorAll: () => [] },
+      querySelectorAll: selector => selector === '#alm-axis-mount input' ? axisInputs : [] },
     Event: function () {},
     AlmFeaturesState: {},
     AlmFeatures: { register() {}, registerModule: (key, value) => { modules[key] = value; } },
