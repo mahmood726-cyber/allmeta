@@ -70,7 +70,8 @@
       if (g.type !== r.type || g.doses.has(r.dose)) throw new Error(study + ': inconsistent type or duplicate dose');
       g.doses.add(r.dose); if (reference) g.refs++; else g.other++;
       var cov = r.covariate == null ? '' : String(r.covariate).trim();
-      if (cov && !Number.isFinite(Number(cov))) throw new Error(study + ': covariate must be numeric');
+      // Same strict token rule as the page's row checker: Number() would read 0x10 as 16 and accept 0b1/0o7.
+      if (cov) global._almDoseNumber(cov, study + ': covariate');
       var label = study.indexOf('"') >= 0 ? '"' + study.replace(/"/g, '""') + '"' : study;
       return [label, r.dose, r.cases, r.n, r.yi, reference ? '' : r.sei, r.type, cov].join(', ');
     });

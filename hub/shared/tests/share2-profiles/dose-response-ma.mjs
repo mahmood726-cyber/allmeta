@@ -53,6 +53,12 @@ profile.invalid.push(
   bad('B, 90, 10, 60, 0.1, 0x1, cc'),
   bad('B, 90, 10, 60, NaN, 0.2, cc'),
   bad('B, 90, 10, 60, 0.1, Infinity, cc'),
-  bad('B, 90, 10x, 60, 0.1, 0.2, cc')
+  bad('B, 90, 10x, 60, 0.1, 0.2, cc'),
+  // Covariate column (8th): Number() would read hex/binary/octal as 16/1/7 and accept '1e'; the row checker refuses them.
+  // A whitespace-only covariate is a blank optional cell (no covariate), so it is valid and not listed.
+  bad('B, 90, 10, 60, 0.1, 0.2, cc, 0x10'),
+  bad('B, 90, 10, 60, 0.1, 0.2, cc, 0b1'),
+  bad('B, 90, 10, 60, 0.1, 0.2, cc, 0o7'),
+  bad('B, 90, 10, 60, 0.1, 0.2, cc, 1e')
 );
 export default profile;

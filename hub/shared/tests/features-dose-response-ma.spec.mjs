@@ -100,6 +100,37 @@ test('ENTRY: three explicit formats preserve the built-in example and log conver
   console.log('ENTRY planted bounds gate FAIL; inputs unchanged');
 });
 
+test('ENTRY: a malformed covariate token is refused with its reason; valid covariates are written unchanged', async ({ page }) => {
+  await open(page);
+  const out = await page.evaluate(() => {
+    const rows = document.getElementById('f-data').value.split('\n').filter(l => l.trim() && !l.startsWith('#'))
+      .map(l => l.split(',').map(c => c.trim()));
+    const records = cov => rows.map(r => ({ study: r[0], dose: +r[1], cases: +r[2], n: +r[3], yi: +r[4],
+      sei: r[5] === '' ? 0 : +r[5], type: r[6], covariate: cov }));
+    const base = AlmDoseFeatures.share.get(), res = { bad: {}, good: {} };
+    // Number() reads hex/binary/octal as other numbers; the page's row checker accepts none of them.
+    for (const tok of ['0x10', '0b1', '0o7', '1e', '1,5', '0.1x']) {
+      try { AlmDoseFeatures.entry.apply(records(tok)); res.bad[tok] = 'accepted'; }
+      catch (e) { res.bad[tok] = { error: e.message, unchanged: JSON.stringify(AlmDoseFeatures.share.get()) === JSON.stringify(base) }; }
+      AlmDoseFeatures.share.set(base);
+    }
+    for (const tok of ['+1', '1e-3', ' 0.5 ']) {
+      try { AlmDoseFeatures.entry.apply(records(tok));
+        res.good[tok] = AlmDoseFeatures.share.get()['f-data'].split('\n')[1].split(',').pop().trim(); }
+      catch (e) { res.good[tok] = 'refused: ' + e.message; }
+      AlmDoseFeatures.share.set(base);
+    }
+    return res;
+  });
+  for (const [tok, r] of Object.entries(out.bad)) {
+    expect(r.error, tok).toContain('covariate');
+    expect(r.error, tok).toContain(tok);
+    expect(r.unchanged, tok).toBe(true);
+  }
+  expect(out.good).toEqual({ '+1': '+1', '1e-3': '1e-3', ' 0.5 ': '0.5' });
+  console.log('ENTRYCOV ' + Object.keys(out.bad).length + ' malformed covariates refused with reason; 3 valid written unchanged');
+});
+
 test('TEXT: number audit, page digits, snapshot and downloads', async ({ page }, info) => {
   await open(page, 'Report text');
   const out = await report(page);

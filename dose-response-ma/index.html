@@ -200,6 +200,8 @@
       return _last;
     };
     window._almLastDoseResponse = function () { return _last; };
+    // The row checker's strict number rule, reused by the shared entry converter (alm-features.js apply) for the covariate cell.
+    window._almDoseNumber = number;
 
     function parse(text, useMod) {
       var byStudy = Object.create(null), order = [];
