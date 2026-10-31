@@ -92,3 +92,15 @@ the RBesT paper, Weber et al. 2021 J Stat Softw): MAP prior, robust MAP (w_vague
   density is near 0, so a (1 + 1e-8) perturbation is ~1e-13 absolute and cannot exceed the 1e-9 x max(1, |R|) tolerance;
   the plant would be undetectable by construction. At the density peak (density > 1) a 1e-8 relative change exceeds the
   tolerance. No tolerance or quantity changed.
+- A2 (2026-10-31, written after the R API smoke and BEFORE any reference value, app-vs-R comparison or gate result existed;
+  the smoke stopped at the API, see validation/evidence/R_smoke_api.json): RBesT 1.12-0 (CRAN, released 2026-09-18) changed
+  the gMAP interface the oracle scripts were drafted against: (i) `gMAP()` has no `seed` argument ("unused argument (seed =
+  36001)"); rstan's seed is drawn from R's RNG, so the per-configuration seed 36000 + index is applied by `set.seed()`
+  immediately before each `gMAP()` call (probe tools/probe_api.R: identical draws for the same set.seed, different draws for
+  another seed); (ii) the result holds no stanfit (`fit$fit` is NULL); post-warmup draws are read from `fit$draws`
+  (posterior draws_array; variables beta[1], tau[1], theta_resp_pred) and divergences from `fit$draws_diag[,, "divergent__"]`.
+  The model, priors, chains, warmup, iterations, thinning, seeds' values, quantities, tolerances and corpus are unchanged.
+  Also recorded (no change): for crohn, `weights = n` enters gMAP only through the reference scale sigma_ref and the
+  sampler's initial/scale guesses, not the likelihood, so the target posterior is the same with or without weights; the
+  vignette call (with weights) is kept and the mixture sigma is set to 88 explicitly. Windows binary note: R warns
+  "package RBesT was built under R version 4.6.1"; R itself is 4.6.0 as pinned.
