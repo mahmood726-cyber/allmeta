@@ -5,6 +5,17 @@
  */
 (function (global) {
   'use strict';
+  // Number settings go into type=number inputs. A value must be a complete decimal number: Number() also reads
+  // 0x10 / 0b1 / ' ', and the input then silently clears such text to '' (automatic or zero). Valid forms the input
+  // itself cannot hold ('+1', ' 0.5', '5.') are written as the same number.
+  var DECIMAL_SETTING = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function decimalSetting(v) { return typeof v === 'string' && DECIMAL_SETTING.test(v.trim()) && Number.isFinite(Number(v)); }
+  function axisBoundOk(v) { return v === '' || decimalSetting(v); }
+  function writeNumberSetting(el, v) {
+    var t = String(v).trim();
+    el.value = t;
+    if (el.value === '' && t !== '') el.value = String(Number(t));
+  }
   var APP = 'gosh';
   function byId(id) { return document.getElementById(id); }
   function axes() { return Array.from(document.querySelectorAll('#alm-axis-mount input')); }
@@ -138,18 +149,18 @@
         var enumeration = s.enumeration === undefined ? 'auto' : s.enumeration;
         if (['auto', 'exact', 'sample'].indexOf(enumeration) < 0) throw new Error('Unknown enumeration mode.');
         if (s.exactResult !== undefined && typeof s.exactResult !== 'boolean') throw new Error('Invalid exact-result setting.');
-        if (typeof s.draws !== 'string' || !Number.isInteger(Number(s.draws)) || Number(s.draws) < 1 || Number(s.draws) > 100000) throw new Error('Invalid draw count.');
+        if (!decimalSetting(s.draws) || !Number.isInteger(Number(s.draws)) || Number(s.draws) < 1 || Number(s.draws) > 100000) throw new Error('Invalid draw count.');
         if (!Array.isArray(s.axes) || s.axes.length !== 6) throw new Error('Missing axis settings.');
         s.axes.forEach(function (v, i) {
-          if (i % 3 === 2 ? typeof v !== 'boolean' : typeof v !== 'string' || (v !== '' && !Number.isFinite(Number(v)))) throw new Error('Invalid axis setting.');
+          if (i % 3 === 2 ? typeof v !== 'boolean' : !axisBoundOk(v)) throw new Error('Invalid axis setting.');
         });
         [0, 3].forEach(function (i) { if (s.axes[i] !== '' && s.axes[i + 1] !== '' && Number(s.axes[i]) >= Number(s.axes[i + 1])) throw new Error('Invalid axis range.'); });
         if (s.entryLog !== undefined && !Array.isArray(s.entryLog)) throw new Error('Invalid conversion log.');
         var axisInputs = shareAxes();
-        byId('src').value = s.src; byId('model').value = s.model; byId('n-sample').value = s.draws;
+        byId('src').value = s.src; byId('model').value = s.model; writeNumberSetting(byId('n-sample'), s.draws);
         byId('enum-mode').value = enumeration;
         axisInputs.forEach(function (e, i) {
-          if (e.type === 'checkbox') e.checked = s.axes[i]; else e.value = s.axes[i];
+          if (e.type === 'checkbox') e.checked = s.axes[i]; else writeNumberSetting(e, s.axes[i]);
           e.dispatchEvent(new Event('change', { bubbles: true }));
         });
         global.AlmFeaturesState.entryLog = s.entryLog || [];
