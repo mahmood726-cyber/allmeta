@@ -34,6 +34,15 @@ profile.invalid.push(
   bad('Eta, 2.5, 40, 3, 40'),
   bad('Eta, 3, 40, 3'),
   bad('Eta, 3, 0, 3, 40'),
-  bad('Eta, 3, 40, 3, 40, 9')
+  bad('Eta, 3, 40, 3, 40, 9'),
+  // Lenient number tokens (trailing text, comma decimal, embedded space, empty, NaN/Infinity, hex, non-integer count):
+  // parseFloat/parseInt/Number() would read these as a different number; the row checker refuses them.
+  bad('Eta, 3x, 40, 3, 40'),
+  bad('Eta, 0x3, 40, 3, 40'),
+  bad('Eta, 3, 4 0, 3, 40'),
+  bad('Eta, 3, 40, , 40'),
+  bad('Eta, 3, 40, 3, NaN'),
+  bad('Eta, 3, 40, 3, Infinity'),
+  bad('Eta, 3, 40.5, 3, 40')
 );
 export default profile;
