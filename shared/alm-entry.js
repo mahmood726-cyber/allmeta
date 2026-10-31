@@ -1054,6 +1054,15 @@
   defineRule("R-EFFECT-BARE","extract",new RegExp(`(?<![\\w.])(?<effect>${numberPattern})(?![\\d.%])\\s*[,;]?\\s*[\\[(]?\\s*${ci}${bounds}`,"gdi"),"reBare source grammar");
   defineRule("R-COUNTS-DIRECT","extract",new RegExp(`(?<![\\w./])(?<events>\\d+(?:,\\d{3})*)${pct}\\s*(?:of\\s+(?:the\\s+)?|/)\\s*(?<n>\\d+(?:,\\d{3})*)(?!\\d|/|\\.\\d)(?:\\s*[\\[(]\\s*(?<afterpct>\\d+(?:\\.\\d+)?)\\s*%\\s*[\\])])?`,"gd"),"Printed event/total with an optional reported percentage");
   defineRule("R-COUNTS-PERCENT","extract",new RegExp(`(?<![\\w.])(?<events>\\d+(?:,\\d{3})*)\\s*(?:patients|participants|events)?\\s*[\\[(]\\s*(?<pct>\\d+(?:\\.\\d+)?)\\s*%?\\s*[\\])]`,"gd"),"np source grammar");
+  defineRule("R-COUNTS-OUT-OF","extract",new RegExp(`(?<![\\w./])(?<events>\\d+(?:,\\d{3})*)${pct}\\s*out\\s+of\\s+(?:the\\s+)?(?<n>\\d+(?:,\\d{3})*)(?!\\d|/|\\.\\d)(?:\\s*[\\[(]\\s*(?<afterpct>\\d+(?:\\.\\d+)?)\\s*%\\s*[\\])])?`,"gd"),"Printed 'events out of total' with an optional reported percentage");
+  defineRule("R-COUNTS-N-EQUALS","extract",new RegExp(`(?<![\\w./])(?<events>\\d+(?:,\\d{3})*)\\s*[\\[(]\\s*n\\s*=\\s*(?<n>\\d+(?:,\\d{3})*)\\s*[\\])]`,"gdi"),"Printed 'events (n = total)'");
+  // A worded count (a of b, a out of b, a (n = b)) is not events of a total when one of these surrounds it.
+  defineRule("R-COUNTS-WORD-OF","context",/\bof\b/i,"Worded 'of' between the printed event count and total");
+  defineRule("R-COUNTS-NOT-BEFORE","context",/\b(?:page|p\.|pp\.|fig\.|figure|table|panel|appendix|supplement|chapter|section|item|question|step|stage|phase|part|grade|level|version|vol\.|volume|issue|no\.|aged?|ages|mean|median|average|score)\s*$/i,"Reference, age or summary label before the first number");
+  defineRule("R-COUNTS-NOT-AFTER","context",/^\s*(?:(?:included|eligible|participating|randomi[sz]ed|controlled|clinical|selected|other|remaining|available|published|individual|primary|secondary)\s+){0,3}(?:trials?|studies|study|RCTs?|centres?|centers?|sites?|hospitals?|clinics?|countries|regions?|practices|wards?|clusters?|databases?|reviews?|reports?|papers?|articles?|publications?|items?|questions?|domains?|criteria|outcomes?|endpoints?|pages?|figures?|tables?|comparisons?|analyses|scales?|subscales?)\b/i,"Unit after the total that is not participants or events (trials, centres, pages...)");
+  defineRule("R-COUNTS-NOT-RANGE","context",/\d\s*(?:-|–|—|to)\s*$/,"The first number closes a range (18-65, 18 to 65)");
+  defineRule("R-COUNTS-YEAR","context",/^(?:19|20)\d\d$/,"Four-digit year");
+  defineRule("R-COUNTS-YEAR-BEFORE","context",/(?:\b[A-Z][\p{L}'’-]+|\bet al\.?|\b(?:in|since|until|from|between|during))\s*,?\s*$/u,"Author name, et al. or a date word before a year");
   defineRule("R-MEAN-SD","mean_sd",new RegExp(`\\bmean\\s*[:=]?\\s*(?<mean>${numberPattern})\\s*(?:\\(\\s*SD\\s*[:=]?\\s*|[,;]\\s*SD\\s*[:=]?\\s*|±\\s*(?:SD\\s*)?)(?<sd>${numberPattern})`,"gdi"),"Explicit mean_sd summary");
   defineRule("R-MEDIAN-IQR","median_iqr",new RegExp(`\\bmedian\\s*[:=]?\\s*(?<median>${numberPattern})\\s*[,;]?\\s*[\\[(]?\\s*IQR\\s*[:=]?\\s*(?<q1>${numberPattern})\\s*(?:-|to|,)\\s*(?<q3>${numberPattern})`,"gdi"),"Explicit median_iqr summary");
   defineRule("R-EXTRACT-CUE-01","context",/\d,$/,"R-EXTRACT-CUE cue 1");
@@ -1119,21 +1128,35 @@
         const c=after.match(ruleRegex("R-EXTRACT-CUE-03"));
         return (a&&a[1]||c&&c[1]||b&&b[1]||"").trim();
       };
+      // Impossible printed counts are SHOWN as flagged candidates (never silently skipped, never offered clean) on every
+      // counts path: printed a/b, events with percentages + totals elsewhere, and events/total tables.
+      const countSanity=(printed,events,n)=>n<=0?[`Found ${printed} — the total cannot be 0; check the paper`]:events>n?[`Found ${printed} — events cannot exceed the total; check the paper`]:[];
       const pair=(arms,cue,extra={})=>{
         const spans={};arms.forEach((a,i)=>{spans["arms."+i+".events"]=a.span.events;spans["arms."+i+".n"]=a.span.n;});
-        const sanity=arms.flatMap((a,arm)=>(a.sanity||[]).map(text=>flag("COUNTS_IMPOSSIBLE",text,true,{arm})));
-        push({ruleId:extra.ruleId||"R-COUNTS-DIRECT",kind:"counts",values:{arms:arms.map(({sanity,...a})=>({...a}))},spans,cue,sanity,...extra});
+        const sanity=arms.flatMap((a,arm)=>(a.sanity||countSanity(text.slice(...a.span.events)+"/"+text.slice(...a.span.n),a.events,a.n)).map(text=>flag("COUNTS_IMPOSSIBLE",text,true,{arm})));
+        push({ruleId:extra.ruleId||arms.map(a=>a._rule).find(Boolean)||"R-COUNTS-DIRECT",kind:"counts",values:{arms:arms.map(({sanity,_rule,...a})=>({...a}))},spans,cue,sanity,...extra});
+      };
+      // Not events of a total: after a reference/age/summary label ("Table 2/4", "grade 3/4") or before a non-participant
+      // unit ("2/3 trials"), printed a/b and worded alike. Worded counts only (of / out of / (n = )): also at the end of a
+      // range, or as a year (with a year total, or after a name or date word). Never applied to participants, so an
+      // impossible "186/125" is still offered flagged (FU8).
+      const notACount=(m,worded)=>{
+        const es=m.indices.groups.events[0],ne=m.indices.groups.n[1],before=s.slice(Math.max(0,es-40),es);
+        return ruleRegex("R-COUNTS-NOT-BEFORE").test(before)||ruleRegex("R-COUNTS-NOT-AFTER").test(s.slice(ne,ne+120))||
+          worded&&(ruleRegex("R-COUNTS-NOT-RANGE").test(before)||
+            ruleRegex("R-COUNTS-YEAR").test(m.groups.events)&&(ruleRegex("R-COUNTS-YEAR").test(m.groups.n)||ruleRegex("R-COUNTS-YEAR-BEFORE").test(before)));
       };
       const arms=[];
-      for(const m of s.matchAll(ruleRegex("R-COUNTS-DIRECT"))){
-        const e=capture(m,"events"),n=capture(m,"n");
+      for(const ruleId of ["R-COUNTS-DIRECT","R-COUNTS-OUT-OF","R-COUNTS-N-EQUALS"])for(const m of s.matchAll(ruleRegex(ruleId))){
+        const e=capture(m,"events"),n=capture(m,"n"),direct=ruleId==="R-COUNTS-DIRECT";
         if(ruleRegex("R-EXTRACT-CUE-04").test(s.slice(m.index+m[0].length)))continue;
-        // Impossible printed counts are SHOWN as flagged candidates (never silently skipped).
-        const printed=text.slice(...e.span)+"/"+text.slice(...n.span);
-        const sanity=n.value<=0?[`Found ${printed} — the total cannot be 0; check the paper`]:e.value>n.value?[`Found ${printed} — events cannot exceed the total; check the paper`]:[];
+        if(notACount(m,!direct||ruleRegex("R-COUNTS-WORD-OF").test(s.slice(m.indices.groups.events[1],m.indices.groups.n[0]))))continue;
+        if(!direct&&arms.some(a=>e.span[0]<a.span.n[1]&&n.span[1]>a.span.events[0]))continue; // already part of a printed a/b
+        const sanity=countSanity(text.slice(...e.span)+"/"+text.slice(...n.span),e.value,n.value);
         const pctKey=m.groups.pct?"pct":m.groups.afterpct?"afterpct":null;
-        arms.push({sanity,events:e.value,n:n.value,...(pctKey?{pct:+m.groups[pctKey],pctText:m.groups[pctKey],pctSpan:capture(m,pctKey).span}:{}),label:labelAt(m.index,m.index+m[0].length),span:{events:e.span,n:n.span},start:m.index,end:m.index+m[0].length});
+        arms.push({...(direct?{}:{_rule:ruleId}),sanity,events:e.value,n:n.value,...(pctKey?{pct:+m.groups[pctKey],pctText:m.groups[pctKey],pctSpan:capture(m,pctKey).span}:{}),label:labelAt(m.index,m.index+m[0].length),span:{events:e.span,n:n.span},start:m.index,end:m.index+m[0].length});
       }
+      arms.sort((a,b)=>a.start-b.start); // stable: printed a/b order is unchanged
       // Separate explicit outcome clauses. Within an unsplit multi-arm clause, expose
       // every comparison in printed order rather than silently pairing adjacent arms.
       const groups=[];let group=[];
@@ -1163,11 +1186,15 @@
           events.push({events:e.value,span:e.span,pct:+m.groups.pct,pctText:m.groups.pct,pctSpan:capture(m,"pct").span,digits:(m.groups.pct.split(".")[1]||"").length,start:m.index,end:m.index+m[0].length});
         }
         for(let i=0;i+1<events.length;i+=2){
-          const es=events.slice(i,i+2);
+          const es=events.slice(i,i+2),fits=[],misfits=[];
           for(let a=0;a<totals.length;a++)for(let b=0;b<totals.length;b++){
             if(a===b)continue;
             const ts=[totals[a],totals[b]];
-            if(es.some((e,j)=>e.events>ts[j].n))continue;
+            (es.some((e,j)=>e.events>ts[j].n)?misfits:fits).push(ts);
+          }
+          // An assignment putting more events than the total is skipped only when another one fits; when none fits the
+          // printed numbers are impossible and are offered as flagged candidates (never silently dropped).
+          for(const ts of fits.length?fits:misfits){
             const corroborated=es.every((e,j)=>Math.abs(100*e.events/ts[j].n-e.pct)<=.51*Math.pow(10,-e.digits));
             pair(es.map((e,j)=>({events:e.events,n:ts[j].n,pct:e.pct,pctText:e.pctText,pctSpan:e.pctSpan,pctDigits:e.digits,label:ts[j].label,span:{events:e.span,n:ts[j].span}})),text.slice(...mapped.span(es[0].start,es[1].end)),{ruleId:"R-COUNTS-PERCENT",assignmentRequired:true,percentagesCorroborate:corroborated});
           }
