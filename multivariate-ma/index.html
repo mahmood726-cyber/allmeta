@@ -163,7 +163,8 @@
     var _last = null, _parsed = null, _fit = null;
     window._almLastMultivariate = function () { return _last; };
 
-    function number(s) { return s.trim() ? Number(s) : NaN; }
+    // Decimal and exponent numbers only: Number() would also read 0x10 as 16 (hexadecimal, binary, octal).
+    function number(s) { var t = s.trim(); return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(t) ? Number(t) : NaN; }
     // Mode-aware parser. Returns used rows and every omitted data row with its line and reason.
     function parse(text, mode, rhoW) {
       var rows = [], omitted = [], need = mode === "rhoW" ? 4 : 5, firstData = true;

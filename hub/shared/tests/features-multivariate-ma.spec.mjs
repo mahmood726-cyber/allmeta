@@ -59,6 +59,24 @@ async function axe(page, label) {
   expect(bad.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }))).toEqual([]);
 }
 
+test('PASTE PLANTED: lenient number tokens are omitted and listed, never read as another number', async ({ page }) => {
+  // Number('0x10') = 16 and Number('0x0') = 0: a hexadecimal token is not a decimal estimate or variance.
+  await page.goto(PAGE);
+  await page.waitForFunction(() => window.AlmMvPage && typeof window.AlmMvPage.parse === 'function');
+  const base = 'Trial 1, 0.47, 0.0075, -0.32, 0.0077, 0.002\nTrial 2, 0.20, 0.0057, -0.60, 0.0008, 0.001\nTrial 3, 0.40, 0.0021, -0.12, 0.0014, 0.0005';
+  const parse = text => page.evaluate(t => {
+    const p = window.AlmMvPage.parse(t, 'cov', NaN);
+    return { k: p.rows.length, omitted: p.omitted.map(o => o.line) };
+  }, text);
+  for (const row of ['Trial 4, 0x0, 0.01, 0.1, 0.01, 0.001', 'Trial 4, 0x10, 0.01, 0.1, 0.01, 0.001', 'Trial 4, 0.1, 0x10, 0.1, 0.01, 0.001',
+    'Trial 4, 0.1, 0.01, 0x0, 0.01, 0.001', 'Trial 4, 0.1, 0.01, 0.1, 0x10, 0.001', 'Trial 4, 0.1, 0.01, 0.1, 0.01, 0x0',
+    'Trial 4, 0.1x, 0.01, 0.1, 0.01, 0.001', 'Trial 4, 0.1, 0.01, 0 1, 0.01, 0.001', 'Trial 4, 0.1, 0.01, 0.1, Infinity, 0.001']) {
+    expect(await parse(base + '\n' + row), row).toEqual({ k: 3, omitted: [4] });
+  }
+  // Valid forms stay accepted: leading '+', exponent.
+  expect(await parse(base + '\nTrial 4, +0.1, 1e-2, 0.1, 0.01, 1e-3')).toEqual({ k: 4, omitted: [] });
+});
+
 test('ENTRY: three formats through shared parse/detect/convert and apply preserve the example', async ({ page }) => {
   await open(page);
   const baseline = await page.evaluate(() => _almLastMultivariate());
