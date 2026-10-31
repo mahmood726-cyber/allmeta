@@ -57,7 +57,7 @@ for (const app of apps) {
   assert.ok(data.appValues.length>=6);
   assert.equal(new Set(data.appValues.map(v=>v.key)).size,data.appValues.length);
   await writeFile(new URL(`${app}.json`,output),JSON.stringify(data,null,2)+'\n');
-  const target=data.appValues.find(v=>/^(split\.0\.direct|mu1|coef\.0\.estimate)$/.test(v.key));
+  const target=data.appValues.find(v=>/^(split\.0\.direct|mu1|coef\.0\.estimate|components_0_est)$/.test(v.key));
   assert.ok(Number.isFinite(target.value)&&target.value!==0);
   target.value*=1.001;
   await writeFile(new URL(`${app}.planted.json`,output),JSON.stringify(data,null,2)+'\n');
@@ -65,11 +65,13 @@ for (const app of apps) {
   if(app==='nma-inconsistency') context.fitNMA=()=>{throw Error('Unexpected fit');};
   if(app==='multivariate-ma') context.AlmMultivariate.fit=()=>{throw Error('Unexpected fit');};
   if(app==='rve-meta') context.AlmRVE.fitCORR=()=>{throw Error('Unexpected fit');};
+  if(app==='component-nma') context.fit=()=>{throw Error('Unexpected fit');};
   assert.deepEqual(structuredClone(a.appValues(a.currentState())),structuredClone(a.appValues(state)));
   elements.get(app==='multivariate-ma'?'f-data':'src').value='pending edit';
   assert.throws(()=>a.currentState(),/out of date/);
   if(app==='rve-meta') elements.get('coef-body').innerHTML='';
   else if(app==='multivariate-ma') context._almLastMultivariate=()=>null;
+  else if(app==='component-nma') context._almLastCnma=()=>null;
   else context._almLastInco=()=>null;
   assert.throws(()=>a.currentState(),/no .*result/);
   // Module exports also work in Node without a DOM.

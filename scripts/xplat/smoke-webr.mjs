@@ -71,7 +71,7 @@ try {
       data.compare.kind[v.key] || 'abs', data.compare.tolerance[v.key] ?? data.compare.tolerance.default).pass);
     assert.deepEqual(misses(data.appValues), []);
     const planted = structuredClone(data.appValues);
-    const target = planted.find(v => /^(split\.0\.direct|mu1)$/.test(v.key));
+    const target = planted.find(v => /^(split\.0\.direct|mu1|components_0_est)$/.test(v.key));
     target.value *= 1.001;
     assert.deepEqual(misses(planted).map(v => v.key), [target.key]);
     console.log(`NODE WEBR ${app} ${data.appValues.length}/${data.appValues.length}; planted ${target.key} failed`, result.versions);
