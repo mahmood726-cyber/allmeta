@@ -364,7 +364,10 @@ test('multilevel-ma-plus the extras stay out of the original autosave', async ({
     }, selectors);
   };
   const withDefaults = await measure(PLUS_SELECTORS);
-  const withExclusion = await measure(PLUS_SELECTORS.map(s => s + ':not(#alm-plus *)'));
+  // Mirror the selectors index.html installs: since 861a8133 they also exclude the #alm-features
+  // panel (entry/share controls), so modelling only the #alm-plus exclusion measured a selector
+  // set the app does not use. The real-save assertion above is the requirement; this is its model.
+  const withExclusion = await measure(PLUS_SELECTORS.map(s => s + ':not(#alm-plus *):not(#alm-features *)'));
   expect(withExclusion).toEqual(MAIN_AUTOSAVE_KEYS);
   expect(withDefaults).toContain('plus-data');
   expect(withDefaults).toContain('plus-interaction');
