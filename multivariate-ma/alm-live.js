@@ -26,7 +26,7 @@
       if (!t || t.startsWith('#')) return;
       const parts = t.split(/\s*,\s*/);
       if (parts.length < need + 1) return;
-      const numbers = parts.slice(-need).map(x => x.trim() ? Number(x) : NaN);
+      const numbers = parts.slice(-need).map(x => /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(x.trim()) ? Number(x.trim()) : NaN);
       if (!numbers.every(Number.isFinite) || numbers[1] <= 0 || numbers[3] <= 0) return;
       if (mode === 'r' && !(Math.abs(numbers[4]) < 1)) return;
       rows.push(mode === 'rhoW' ? [...numbers, result.rhoW] : numbers);
