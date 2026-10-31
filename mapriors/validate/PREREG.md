@@ -104,3 +104,23 @@ the RBesT paper, Weber et al. 2021 J Stat Softw): MAP prior, robust MAP (w_vague
   sampler's initial/scale guesses, not the likelihood, so the target posterior is the same with or without weights; the
   vignette call (with weights) is kept and the mixture sigma is set to 88 explicitly. Windows binary note: R warns
   "package RBesT was built under R version 4.6.1"; R itself is 4.6.0 as pinned.
+- A3 (2026-10-31, written AFTER the full reference run and the gate results; disclosed as POST-RESULT). Nothing in
+  sections 0-5 is edited; tolerances, quantities, corpus, seeds and MCMC settings are unchanged. Recorded:
+  (i) Planted defects. The fixed page does not pass every check (gate/fixed_summary.json 27098/28874; 3 ORACLE_FAILURE
+  configurations), so "each must turn the gate to FAIL" (section 4) is vacuous and gate/plant.js reports
+  BLOCKED_OR_FAILED for all three. Detection is evaluated instead as: the target check passes in the baseline ledger
+  and fails in the plant ledger, with no other status change (analysis/post_result/plant_delta.py,
+  evidence/P36_plant_delta.json). PD1 and PD2 are detected. PD3 as preregistered (+5 MCSE) is NOT detected: the
+  baseline AS difference is -1.68 MCSE, so the shifted value lies +3.32 MCSE from R, inside the 4 MCSE tolerance.
+  A post-result PD3b (-5 MCSE) is detected; PD3 is still reported as not detected.
+  (ii) An independent arbiter (mpmath, analysis/post_result/arbiter.py, evidence/P36_arbiter.json) recomputes every
+  failing A2 quantile / Morita / ELIR check on the 82 oracle-OK configurations; it is a secondary analysis and does not
+  change any gate count.
+  (iii) The archive's validate.R checks that the recorded result is reproduced exactly (fresh MCMC equal, every gate
+  count equal to expected/paper_values.json); it no longer requires the fixed page to pass every check or zero
+  oracle failures, because the reviewed result does not.
+  (iv) Engine changes made after results: allmeta d026077 (robustify Beta(1,1), RBesT Morita and response-scale ELIR;
+  made after the R smoke comparison, before the full reference) and 949eb84, b25290f, df84d18 (ELIR numerical
+  integration; made after the first gate runs and the arbiter). Each implements RBesT 1.12-0's ess()/robustify()
+  definitions as planned in section 0, with failing tests first. Test T3 was rewritten because it asserted the page's
+  Beta(0.5,0.5) robust component rather than RBesT's Beta(1,1).
