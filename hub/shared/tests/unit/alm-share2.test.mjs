@@ -9,6 +9,8 @@ require('../../../../shared/url-pack.js');
 const S = require('../../../../shared/alm-share.js');
 const codec = require('../../../../shared/vendor/share-deflate.js');
 const B = require('../../../../shared/build-info.js');
+// The proportion page's row checker; index.html loads it before alm-features.js, whose share set() uses it.
+const AlmPropRows = require('../../../../proportion-ma/row-check.js');
 const app = 'proportion-ma';
 const state = { src: '12,150,\u65e5\u672c \ud83d\udcca\n8,90,Smith \u2013 2019', trans: 'ft', tau: 'DL' };
 const provenance = [{ label: '\u00c9tude', pastedText: '12/150 \u00b7 8%', confirmed: true, values: [{ span: [0, 2], text: '12', value: 12 }] }];
@@ -148,6 +150,7 @@ test('proportion adapter includes axis controls and refuses invalid input before
     'alm-axis-mount': { querySelectorAll: () => controls }, 'btn-run': { click: () => { runs++; } }
   };
   runInNewContext(readFileSync(new URL('../../../../proportion-ma/alm-features.js', import.meta.url), 'utf8'), {
+    AlmPropRows,
     AlmFeatures: { register: (app, spec) => { registered = spec; } },
     document: { getElementById: id => nodes[id] }, Event
   });
@@ -181,6 +184,7 @@ test('proportion data accepted by the v2 codec restores through both links and f
     'alm-axis-mount': { querySelectorAll: () => controls }, 'btn-run': { click: () => { runs++; } }
   };
   runInNewContext(readFileSync(new URL('../../../../proportion-ma/alm-features.js', import.meta.url), 'utf8'), {
+    AlmPropRows,
     AlmFeatures: { register: (_app, spec) => { share = spec.share; } },
     document: { getElementById: id => nodes[id] }, Event
   });
