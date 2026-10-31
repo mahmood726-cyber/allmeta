@@ -582,6 +582,13 @@
       if (parsed.studies.length && parsed.studies.length < 4) {
         extras.push("k = " + parsed.studies.length + " — meta-regression with 1 moderator needs k ≥ 4 to be informative.");
       }
+      // k <= 2 is never fitted; say why (never refuse silently). metafor, with the settings this page documents, fails at
+      // k = 2 and at k = 1 only returns a moderator-free model (the constant-moderator case below, refused here too).
+      if (parsed.studies.length === 2) {
+        extras.push("k = 2: not fitted. With 2 studies and 2 coefficients (intercept and slope) there are no residual degrees of freedom, so τ² and the standard errors cannot be estimated; metafor::rma refuses this too (\"Number of parameters to be estimated is larger than the number of observations\"). Add studies.");
+      } else if (parsed.studies.length === 1) {
+        extras.push("k = 1: not fitted. One study cannot estimate a slope. metafor::rma drops the moderator here (\"Redundant predictors dropped from the model\") and reports that study's own estimate with a z-test, which is not a meta-regression; as for a constant moderator, this page does not fit a moderator-free model. Add studies.");
+      }
       // A moderator with the same value in every study has zero weighted variance: fit() returns null and only k was shown,
       // with no reason. metafor drops the redundant predictor and fits the intercept-only model; the page says why instead.
       if (parsed.studies.length >= 3 && !fitted) {
