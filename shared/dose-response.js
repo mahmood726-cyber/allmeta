@@ -566,7 +566,13 @@
         if (covariance !== "indep" && L.some(function (l) { return !(l.cases > 0) || !(l.n > 0); })) { out.excluded.push({ id: st.id, reason: "missing case or total counts" }); return; }
         S.push({ id: st.id, type: type, L: L, mod: st.mod });
       });
-      if (S.length < 2) throw new DRError("at least 2 studies are needed (" + S.length + " usable)");
+      if (S.length < 1) throw new DRError("at least 1 usable study is needed");
+      // dosresmeta(): if (length(unique(id)) == 1L) { proc <- "1stage"; method <- "fixed" }. With a covariate it then
+      // stops ("singular matrix 'a' in solve"), so meta-regression on a single study is refused.
+      if (S.length === 1) {
+        if (useMod) throw new DRError("meta-regression needs at least 2 studies; dosresmeta cannot fit a covariate to a single study");
+        proc = out.proc = "1stage"; method = out.method = "fixed"; out.singleStudy = true;
+      }
       var allDoses = []; S.forEach(function (s) { s.L.forEach(function (l) { allDoses.push(l.dose); }); });
       var knots = null;
       if (model === "rcs") {

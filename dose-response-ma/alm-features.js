@@ -76,8 +76,9 @@
       return [label, r.dose, r.cases, r.n, r.yi, reference ? '' : r.sei, r.type, cov].join(', ');
     });
     var labels = Object.keys(groups);
-    if (labels.length < 2 || labels.some(function (id) { return groups[id].refs !== 1 || !groups[id].other; })) {
-      throw new Error('Supply at least two studies, each with exactly one reference row and non-reference doses');
+    // A single study is fitted as dosresmeta fits it (one-stage, fixed effect), with a notice on the page.
+    if (labels.length < 1 || labels.some(function (id) { return groups[id].refs !== 1 || !groups[id].other; })) {
+      throw new Error('Supply at least one study, each with exactly one reference row and non-reference doses');
     }
     var state = getState();
     state['f-data'] = '# study, dose, cases, n, logRR, SE, type, covariate\n' + lines.join('\n');
@@ -144,7 +145,8 @@
     var r = {
       k: last.k, nobs: last.nobs, model: last.model, method: last.method,
       approach: last.approach === '2stage' ? 'two' : 'one', covariance: last.covariance, metaRegression: last.metaRegression,
-      i2: last.I2, converged: last.converged, ciLevel: 95
+      i2: last.I2, converged: last.converged, ciLevel: 95,
+      singleStudy: !!last.singleStudy, negativeDoses: !!last.negativeDoseRows, fractionalCounts: !!last.fractionalCountRows
     };
     display(r, {});
     // Independent full-precision sources where their page formatting is decimal.
@@ -173,8 +175,10 @@
   }
   var templates = {
     plain: function (T, r) {
-      return ['This analysis combined ', T.int('k'), ' studies with ', T.int('nobs'),
-        ' non-reference dose levels to estimate how relative risk varies with dose. ',
+      return [T.when(!r.singleStudy, ['This analysis combined ', T.int('k'), ' studies with ', T.int('nobs'),
+        ' non-reference dose levels to estimate how relative risk varies with dose. ']),
+        T.when(r.singleStudy, ['This analysis used a single study with ', T.int('nobs'),
+          ' non-reference dose levels; it describes how relative risk varies with dose in that study, not a pooled estimate. ']),
         emit(T, r.headline), '. ',
         T.when(r.effectWording, ['For the linear trend there is ', r.effectWording, '. ']),
         T.when(T.has('i2'), function () { return ['Variation beyond chance ', T.band('i2', 1), ' (I² = ', T.pct('i2', 1), '). ']; }),
@@ -215,7 +219,10 @@
         T.when(r.warnings.length, ['App notices: ', emit(T, r.warnings)])];
     },
     flags: function (T, r) {
-      return [T.when(r.k < T.R.fewK, 'Few studies: heterogeneity estimates are imprecise.'),
+      return [T.when(r.singleStudy, 'Single study: fitted as dosresmeta fits one study (one-stage, fixed effect); between-study heterogeneity cannot be estimated and the curve is not a pooled estimate.'),
+        T.when(r.negativeDoses, 'Some doses are negative; they were analysed as entered, as dosresmeta does. Check that the dose scale is intended.'),
+        T.when(r.fractionalCounts, 'Some case or total counts are not whole numbers; they were analysed as entered, as dosresmeta does. Check them against the source.'),
+        T.when(r.k < T.R.fewK, 'Few studies: heterogeneity estimates are imprecise.'),
         T.when(r.k < T.R.funnelK, 'Tests for small-study effects would be underpowered; none were performed.'),
         T.when(r.converged === false, 'The optimiser did not converge; interpret the displayed fit with caution.'),
         'No prediction interval is available from this app. Confidence intervals describe the mean curve.'];

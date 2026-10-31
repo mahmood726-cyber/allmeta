@@ -231,7 +231,7 @@
           study.references++;
           if (study.references > 1) inputError(where + ", SE", "each study must have exactly one reference row (SE blank or 0).");
         }
-        study.rows.push({ dose: dose, cases: cases, n: n, logrr: logrr, se: se, type: type });
+        study.rows.push({ dose: dose, cases: cases, n: n, logrr: logrr, se: se, type: type, row: row });
         if (!isFinite(study.mod) && isFinite(cov)) study.mod = cov;
       });
       return order.map(function (id) {
@@ -241,6 +241,32 @@
         if (useMod && !isFinite(study.mod)) inputError(where + ", covariate", "a number is required for meta-regression.");
         return { id: study.id, rows: study.rows, mod: study.mod };
       });
+    }
+
+    // Accepted as dosresmeta accepts them, but unusual: negative doses, and counts that are not whole numbers
+    // (an incidence-rate row's n may be person-time, so only its cases are checked). Each notice names the rows.
+    function inputNotes(studies) {
+      var neg = [], frac = [];
+      studies.forEach(function (s) {
+        s.rows.forEach(function (row) {
+          if (row.dose < 0) neg.push("row " + row.row + " (study " + s.id + ")");
+          var bits = [];
+          if (!Number.isInteger(row.cases)) bits.push("cases " + row.cases);
+          if (row.type !== "ir" && !Number.isInteger(row.n)) bits.push("n " + row.n);
+          if (bits.length) frac.push("row " + row.row + " (study " + s.id + ": " + bits.join(", ") + ")");
+        });
+      });
+      function list(items) {
+        return items.slice(0, 10).join(", ") + (items.length > 10 ? ", and " + (items.length - 10) + " more" : "");
+      }
+      function rows(n) { return n + " row" + (n === 1 ? "" : "s"); }
+      var messages = [];
+      if (neg.length) messages.push("Negative doses in " + rows(neg.length) + ": " + list(neg) + ". " + (neg.length === 1 ? "It was" : "They were") +
+        " analysed as entered, as dosresmeta does (for example a centred or log-scale dose); check that this dose scale is intended.");
+      if (frac.length) messages.push("Counts that are not whole numbers in " + rows(frac.length) + ": " + list(frac) + ". A case or participant count is normally a whole number " +
+        "in case-control and cumulative-incidence data (an incidence-rate n may be person-time and is not listed). " + (frac.length === 1 ? "It was" : "They were") +
+        " analysed as entered, as dosresmeta does; check against the source.");
+      return { messages: messages, negative: neg.length, fractional: frac.length };
     }
 
     function syncControls() {
@@ -272,7 +298,9 @@
       _last = null; _fitInputs = null;
       var shape = $("f-shape").value, proc = $("f-proc").value, cov = $("f-cov").value, M = $("f-method").value, useMod = $("f-mod").checked;
       var studies = parse($("f-data").value, useMod);
-      if (studies.length < 2) { clearOut("Enter at least 2 studies.", "warn"); return; }
+      if (!studies.length) { clearOut("Enter at least one study.", "warn"); return; }
+      // dosresmeta fits a single study (one-stage, fixed effect) but cannot fit a covariate to it.
+      if (studies.length === 1 && useMod) throw new Error("Meta-regression needs at least 2 studies: with a single study dosresmeta cannot fit the covariate. Clear the meta-regression option or add studies.");
       var xref = nums($("f-xref").value, "Reference dose", true), modv = useMod ? nums($("f-modval").value, "Covariate value", true) : [],
           pd = nums($("f-pdoses").value, "Doses to report");
       var model = shape === "linear" ? "linear" : shape === "quadratic" ? "quadratic" : "rcs", knots;
@@ -290,6 +318,14 @@
         var extra = r.excluded && r.excluded.length ? " Excluded: " + r.excluded.map(function (e) { return e.id + " (" + e.reason + ")"; }).join("; ") + "." : "";
         clearOut((r.error || "All studies must be usable; analysis refused.") + extra); return;
       }
+      // A single study is fitted as dosresmeta fits it, whatever approach and estimator are selected.
+      if (r.singleStudy) {
+        M = "FE";
+        r.warnings.push("Only 1 study: fitted as dosresmeta fits a single study (one-stage, fixed effect), whatever approach and pooling method are selected. " +
+          "Between-study heterogeneity cannot be estimated and the curve describes this one study, not a pooled estimate; interpret with caution.");
+      }
+      var notes = inputNotes(studies);
+      Array.prototype.push.apply(r.warnings, notes.messages);
       // Paule–Mandel / DerSimonian–Laird (linear, two-stage, GL): pool the per-study slopes on ma-core.
       if (M === "PM" || M === "DL") {
         var lf = DR.fit(studies.map(function (s) { return s.rows; }), { method: M });
@@ -298,6 +334,10 @@
         r.predict = function (doses, xref) { xref = +xref || 0; return doses.map(function (d) { var x = +d - xref, lp = x * lf.slope, se = Math.abs(x) * lf.se; return { dose: +d, logRR: lp, se: se, ciLo: lp - 1.959963984540054 * se, ciHi: lp + 1.959963984540054 * se, rr: Math.exp(lp), rrLo: Math.exp(lp - 1.959963984540054 * se), rrHi: Math.exp(lp + 1.959963984540054 * se) }; }); };
       }
       render(r, { shape: shape, M: M, studies: studies, xref: xref, modv: modv, pd: pd });
+      // Present only when they apply, so an ordinary analysis keeps its result object unchanged.
+      if (r.singleStudy) _last.singleStudy = true;
+      if (notes.negative) _last.negativeDoseRows = notes.negative;
+      if (notes.fractional) _last.fractionalCountRows = notes.fractional;
       _fitInputs = fitInputs();
     }
 
@@ -315,7 +355,7 @@
       if (!pd.length) pd = [0.1, 0.25, 0.5, 0.75, 0.9].map(function (p) { return +DR._quantile7(nonref, p).toPrecision(3); }).filter(function (d, i, a) { return a.indexOf(d) === i; });
       var preds = r.predict(pd, xref, modValue);
       var shapeTxt = r.model === "linear" ? "linear trend" : r.model === "quadratic" ? "quadratic curve" : r.knots.length + "-knot restricted cubic spline (knots at " + r.knots.map(function (k) { return sig(k, 4); }).join(", ") + ")";
-      var head = "k = " + r.k + " studies, " + r.nobs + " non-reference doses · " + shapeTxt + " · " + methodLabel(r, ui.M) + (r.mod ? " · meta-regression on the covariate" : "");
+      var head = "k = " + r.k + (r.k === 1 ? " study, " : " studies, ") + r.nobs + " non-reference doses · " + shapeTxt + " · " + methodLabel(r, ui.M) + (r.mod ? " · meta-regression on the covariate" : "");
       if (r.model === "linear" && !r.mod) {
         var b = r.coef[0], se = Math.sqrt(r.vcov[0][0]);
         head += "<br>Pooled slope <strong>" + sig(b, 4) + "</strong> log RR per unit of dose (SE " + sig(se, 3) + "); RR per unit = <strong>" + fmt(Math.exp(b), 4) + "</strong> [" + fmt(Math.exp(b - 1.959963984540054 * se), 4) + ", " + fmt(Math.exp(b + 1.959963984540054 * se), 4) + "].";
