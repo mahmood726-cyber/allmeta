@@ -131,6 +131,7 @@
   <p>Verification: every multi-study binary dataset shipped with dosresmeta (16 datasets, 724 model × covariance × approach × method combinations) is reproduced within numerical tolerance, and every fit dosresmeta refuses is refused (<code>hub/shared/tests/dose-response-dosresmeta-parity.spec.mjs</code>).</p>
   <p>References: Greenland &amp; Longnecker 1992, <em>Am J Epidemiol</em> 135:1301; Orsini, Bellocco &amp; Greenland 2006, <em>Stata J</em> 6:40; Hamling et al. 2008, <em>Stat Med</em> 27:954; Orsini et al. 2012, <em>Am J Epidemiol</em> 175:66; Gasparrini, Armstrong &amp; Kenward 2012, <em>Stat Med</em> 31:3821; Crippa &amp; Orsini 2016, <em>J Stat Softw</em> 72(c01); Harrell 2015, <em>Regression Modeling Strategies</em>.</p>
 </footer>
+<div id="alm-features"></div>
 <script src="../hub/shared/analysis-lifecycle.js"></script>
   <script>
   (function () {
@@ -186,8 +187,21 @@
       cells.push(cell.trim());
       return cells;
     }
-    var _last = null;
+    var _last = null, _fitInputs = null;
+    function fitInputs() {
+      return JSON.stringify(["f-data", "f-shape", "f-knots", "f-cov", "f-proc", "f-method",
+        "f-mod", "f-xref", "f-modval", "f-pdoses"].map(function (id) {
+        return [id, id === "f-mod" ? $(id).checked : $(id).value];
+      }));
+    }
+    window._almDoseValidationResult = function () {
+      if (!_last) return null;
+      if (_fitInputs !== fitInputs()) throw new Error("The displayed fit does not match the current inputs; run the analysis again before validating.");
+      return _last;
+    };
     window._almLastDoseResponse = function () { return _last; };
+    // The row checker's strict number rule, reused by the shared entry converter (alm-features.js apply) for the covariate cell.
+    window._almDoseNumber = number;
 
     function parse(text, useMod) {
       var byStudy = Object.create(null), order = [];
@@ -243,7 +257,7 @@
     function clearOut(msg, kind) {
       $("headline").textContent = ""; ["coef-body", "tests-body", "pred-body", "res-body", "curve-host", "resid-host"].forEach(function (id) { $(id).innerHTML = ""; });
       $("msgs").innerHTML = msg ? "<div class='msg " + (kind || "err") + "' role='status'>" + esc(msg) + "</div>" : "";
-      _last = null;
+      _last = null; _fitInputs = null;
     }
 
     run = window.alm.analysisLifecycle(run, function (result) { return !!_last; }, "[id^=\"f-\"]");
@@ -255,7 +269,7 @@
 
     function analyse() {
       syncControls();
-      _last = null;
+      _last = null; _fitInputs = null;
       var shape = $("f-shape").value, proc = $("f-proc").value, cov = $("f-cov").value, M = $("f-method").value, useMod = $("f-mod").checked;
       var studies = parse($("f-data").value, useMod);
       if (studies.length < 2) { clearOut("Enter at least 2 studies.", "warn"); return; }
@@ -284,6 +298,7 @@
         r.predict = function (doses, xref) { xref = +xref || 0; return doses.map(function (d) { var x = +d - xref, lp = x * lf.slope, se = Math.abs(x) * lf.se; return { dose: +d, logRR: lp, se: se, ciLo: lp - 1.959963984540054 * se, ciHi: lp + 1.959963984540054 * se, rr: Math.exp(lp), rrLo: Math.exp(lp - 1.959963984540054 * se), rrHi: Math.exp(lp + 1.959963984540054 * se) }; }); };
       }
       render(r, { shape: shape, M: M, studies: studies, xref: xref, modv: modv, pd: pd });
+      _fitInputs = fitInputs();
     }
 
     function methodLabel(r, M) {
@@ -449,7 +464,19 @@
 <script src="../shared/alm-validate.js"></script>
 <script src="../shared/webr-runner.js"></script>
 <script src="validate/adapter.js"></script>
+<link rel="stylesheet" href="../shared/alm-features.css">
+<link rel="stylesheet" href="../shared/alm-entry.css">
+<script src="../shared/url-pack.js"></script>
+<script src="../shared/alm-zip.js"></script>
 <script src="../shared/alm-features.js"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-entry-ui.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="../shared/truthcert-export.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/vendor/share-deflate.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="alm-features.js"></script>
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>
