@@ -8,15 +8,33 @@ const $ = id => document.getElementById(id);
 const eq = (a,b) => JSON.stringify(a) === JSON.stringify(b);
 const normal = s => s.replace(/\s+/g, ' ').trim();
 // #alm-plus, #inco-example and #inco-input-msg hold the plus panel and input helpers; they have their own validation and specs.
-const SKIP = 'script,style,textarea,#alm-validate,#ns-body,#dbt,#ns-plot,.alm-xbar,#alm-plus,#inco-example,#inco-input-msg';
+const SKIP = 'script,style,textarea,#alm-validate,#ns-body,#dbt,#ns-plot,.alm-xbar,#alm-plus,#inco-example,#inco-input-msg,[data-alm-choice]';
 // Text-node positions and accessible labels, including shared continue/export controls.
 // Dynamic chart-download controls are audited separately; overlays outside landmarks are not template.
 function pageText() {
+  // Glossary wrappers split a single authored text node. Flatten only those
+  // generated spans, then join their raw text before whitespace normalization.
+  // Authored elements, accessible labels and every underlying word still count.
+  function children(e) {
+    const nodes = [];
+    for (const child of e.childNodes) {
+      if (child.nodeType === 1 && child.matches('[data-alm-glossary]')) nodes.push(...children(child));
+      else nodes.push(child);
+    }
+    return nodes;
+  }
   function visit(e) {
     if (e.nodeType === 3) return normal(e.textContent) || null;
     if (e.nodeType !== 1 || e.matches(SKIP)) return null;
+    const content = []; let text = '';
+    function flush() { if (normal(text)) content.push(normal(text)); text = ''; }
+    for (const child of children(e)) {
+      if (child.nodeType === 3) text += child.textContent;
+      else { flush(); const value = visit(child); if (value !== null) content.push(value); }
+    }
+    flush();
     return [e.localName.toLowerCase(), ['aria-label','title'].map(k => e.getAttribute(k)),
-      [...e.childNodes].map(visit).filter(x => x !== null)];
+      content];
   }
   return [...document.body.children].filter(e => e.matches('a,nav,header,main,footer,#alm-export-mount')).map(visit).filter(Boolean);
 }
