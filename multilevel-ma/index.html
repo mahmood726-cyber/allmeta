@@ -504,7 +504,7 @@
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'mlma-results',
-      getResults: function () { return window._almLastMlma ? window._almLastMlma() : {}; },
+      getResults: function () { return (window._almLastMlma && window._almLastMlma()) || {}; },
     });
 
     window.alm.urlState({ version: 1 });
