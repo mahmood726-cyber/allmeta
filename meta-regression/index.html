@@ -186,6 +186,10 @@
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
 
+    // A complete decimal/exponent token or NaN: parseFloat would read "0.1x" as 0.1 and "40 5" as 40, and Number would
+    // read "0x10" as 16, so a typo would be analysed as a different number without a note.
+    const NUMBER_TOKEN = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+    function strictNumber(token) { const t = String(token == null ? "" : token).trim(); return NUMBER_TOKEN.test(t) ? Number(t) : NaN; }
     function parseStudies(text) {
       const studies=[], warnings=[];
       const lines = String(text||"").split(/\r?\n/);
@@ -194,11 +198,12 @@
         if (!raw || raw.startsWith("#")) continue;
         const parts = raw.split(/\s*[,\t]\s*/);
         if (parts.length < 4) { warnings.push("Line "+(i+1)+": need 4 columns"); continue; }
-        const x = parseFloat(parts[parts.length-1]);
-        const se = parseFloat(parts[parts.length-2]);
-        const est = parseFloat(parts[parts.length-3]);
+        const x = strictNumber(parts[parts.length-1]);
+        const se = strictNumber(parts[parts.length-2]);
+        const est = strictNumber(parts[parts.length-3]);
         if (![est,se,x].every(Number.isFinite)) {
-          if (studies.length === 0 && i < 3) continue;
+          // A header line (no numeric-looking value) near the top is skipped; a mistyped number is listed.
+          if (studies.length === 0 && i < 3 && ![parts.length-1, parts.length-2, parts.length-3].some(j => Number.isFinite(parseFloat(parts[j])))) continue;
           warnings.push("Line "+(i+1)+": non-numeric"); continue;
         }
         if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }
@@ -483,6 +488,9 @@
     window._almLastR2      = function () { return _lastR2; };
     window._almLastQE      = function () { return _lastQE; };
     window._almLastPI      = function () { return _lastPI; };
+    // The same row checker for a restored analysis file (alm-features.js share set()), so a row this page would skip
+    // with a note cannot silently change the analysis.
+    window.__almMetaRegParse = function (text) { return parseStudies(text); };
 
     render = window.alm.analysisLifecycle(render, function (result) { return !!_lastFitted; }, "[id^=\"f-\"]");
 
@@ -573,6 +581,14 @@
       const extras = [];
       if (parsed.studies.length && parsed.studies.length < 4) {
         extras.push("k = " + parsed.studies.length + " — meta-regression with 1 moderator needs k ≥ 4 to be informative.");
+      }
+      // A moderator with the same value in every study has zero weighted variance: fit() returns null and only k was shown,
+      // with no reason. metafor drops the redundant predictor and fits the intercept-only model; the page says why instead.
+      if (parsed.studies.length >= 3 && !fitted) {
+        const x0 = parsed.studies[0].x;
+        extras.push(parsed.studies.every(s => s.x === x0)
+          ? "The moderator has the same value (" + x0 + ") in every study, so its slope cannot be estimated. Use a moderator that varies across studies."
+          : "The meta-regression could not be fitted: the weighted variance of the moderator is not positive and finite.");
       }
       const all = parsed.warnings.concat(extras);
       if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
@@ -1015,15 +1031,14 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      // The #alm-plus extras are kept out of the original autosave so its keys and
-      // positional idx:N indices stay exactly as before the extras were added.
+      // Keep extras and feature controls out of the original autosave, including
+      // controls mounted after opening a tab, so positional idx:N keys stay stable.
       AlmAutosave.install({ appKey: 'meta-regression', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-features *)'; }) });
     }
   });
 })();
 </script>
-
 <section id="alm-plus" aria-labelledby="plus-title">
  <h2 id="plus-title">Multiple moderators and model comparison</h2>
  <p>Fit nested maximum-likelihood models with two or three numeric moderators. Enter independent study effects and their sampling variances. For categorical moderators, supply numeric indicator columns. Missing or invalid rows are refused.</p>
@@ -1062,9 +1077,20 @@
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/plus-pins.js"></script>
 <script src="validate/plus-adapter.js"></script>
+<div id="alm-features"></div>
+<link rel="stylesheet" href="../shared/alm-features.css">
+<link rel="stylesheet" href="../shared/alm-entry.css">
+<script src="../shared/url-pack.js"></script>
 <script src="../shared/alm-zip.js"></script>
-<script src="../shared/alm-sof.js" data-alm-sof-app="meta-regression"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-entry-ui.js"></script>
 <script src="../shared/alm-features.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/vendor/share-deflate.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="alm-features.js"></script>
+<script src="../shared/alm-sof.js" data-alm-sof-app="meta-regression"></script>
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>

@@ -1,0 +1,17 @@
+{
+  "app": "meta-regression",
+  "source": "Built-in eight-study example; PM, floored Knapp–Hartung; location-scale off.",
+  "plain": "Across 8 studies, the estimated change in effect per unit increase in the moderator was 0.0125 (95% confidence interval −0.0001 to 0.0250). There was no clear evidence of an association; the interval includes no change. This study-level association does not establish causation or clinical importance.",
+  "methods": "An inverse-variance random-effects meta-regression with an intercept and one numeric moderator was fitted. Paule–Mandel residual variance was estimated by bisection. Estimates and standard errors were used on the supplied analysis scale; no transformation or back-transformation was applied. Knapp–Hartung coefficient tests and 95% confidence intervals used a Student t distribution with 6 degrees of freedom (studies minus two), scaling the covariance by the residual weighted sum of squares divided by these degrees of freedom, floored at unity. The prediction interval at the arithmetic mean moderator is the fitted effect plus or minus the same t critical value times the square root of residual variance plus the Knapp–Hartung variance of the fitted mean (Cochrane Handbook v6.5, §10.10.4.3). The plot band is a confidence interval for the fitted mean, not a prediction band. Bubble radii increase linearly with relative inverse sampling variance. Residual heterogeneity Q_E uses the fixed-effect weighted regression residuals and a chi-square test. R² is the proportional reduction in Paule–Mandel variance from the intercept-only model, truncated below at zero; the page uses zero when the null variance is zero, in which case the proportion is not estimable. The two-sided slope permutation test refits Paule–Mandel with the same variance floor after permuting the moderator. Monte Carlo used 2,000 permutations with a fixed seed, including the observed ordering. Analyses were run in allmeta meta-regression <build.version> (commit <build.shortSha>).",
+  "results": "The analysis included 8 studies. The intercept was −0.673 (95% CI −1.177 to −0.169); the slope was 0.0125 (95% CI −0.0001 to 0.0250), t(6) = 2.43, p = 0.051. The permutation test gave p = 0.001. Residual τ² = 0.0000; HKSJ q = 1.000 (floored); R² not estimable (no between-study variance in the intercept-only model); Q_E = 0.12 (df = 6), p > 0.999. The 95% prediction interval for a new study at mean moderator 41.25 was −0.261 to −0.057.",
+  "flags": [
+    "Fewer than ten studies: the Cochrane Handbook advises generally at least ten studies per characteristic for meta-regression (Cochrane Handbook v6.5, §§10.11.4–10.11.6).",
+    "Meta-regression findings are observational and prone to aggregation bias (Cochrane Handbook v6.5, §§10.11.4–10.11.6).",
+    "The slope interval includes no association and associations in either direction; the estimate is imprecise.",
+    "P-values use the page’s precision; rounded endpoints are reported as bounds."
+  ],
+  "references": [
+    "Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, section 10.10.4.3 (Prediction intervals in random-effects meta-analysis).",
+    "Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, sections 10.11.4–10.11.6 (Meta-regression, selection of study characteristics, and interpretation)."
+  ]
+}
