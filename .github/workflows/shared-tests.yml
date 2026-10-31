@@ -36,7 +36,8 @@ jobs:
       # changed five packages and coincided with 17 unrelated shared-tests failures.
       # Retain exact lockfile Playwright versions and fail on any dependency drift.
       - name: Install pinned test-only P16 DOM dependency
-        run: npm install --prefix "${RUNNER_TEMP}/p16-dom-deps" --no-save --ignore-scripts --package-lock=false linkedom@0.18.12
+        run: |
+          npm install --prefix "${RUNNER_TEMP}/p16-dom-deps" --no-save --ignore-scripts --package-lock=false linkedom@0.18.12
           echo "NODE_PATH=${RUNNER_TEMP}/p16-dom-deps/node_modules" >> "$GITHUB_ENV"
           node -e 'const fs=require("fs"), pkgs=require("./package-lock.json").packages; for(const name of ["@playwright/test","playwright","playwright-core"]){const pinned=pkgs["node_modules/"+name].version; const installed=JSON.parse(fs.readFileSync("node_modules/"+name+"/package.json","utf8")).version; if(pinned!==installed)throw Error("locked Playwright dependency drift: "+name+" "+installed+" vs "+pinned);} console.log("PINNED_PLAYWRIGHT_TREE_PASS")'
       # The Playwright testMatch excludes Node *.test.mjs; run the exact
