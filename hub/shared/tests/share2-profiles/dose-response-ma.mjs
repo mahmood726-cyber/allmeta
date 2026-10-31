@@ -43,6 +43,16 @@ profile.invalid.push(
   bad('B, abc, 10, 60, 0.1, 0.2, cc'),
   bad('B, 90, 10, 60, 0.1, 0.2, xx'),
   bad('B, 90, 10'),
-  bad('B, 90, 70, 60, 0.1, 0.2, cc')
+  bad('B, 90, 70, 60, 0.1, 0.2, cc'),
+  // Lenient number tokens (trailing text, comma decimal, embedded space, empty, NaN/Infinity, hex, non-integer count):
+  // parseFloat/parseInt/Number() would read these as a different number; the row checker refuses them.
+  bad('B, 90x, 10, 60, 0.1, 0.2, cc'),
+  bad('B, 0x10, 10, 60, 0.1, 0.2, cc'),
+  bad('B, 90, 10, 60, 0.1x, 0.2, cc'),
+  bad('B, 90, 10, 60, 0 1, 0.2, cc'),
+  bad('B, 90, 10, 60, 0.1, 0x1, cc'),
+  bad('B, 90, 10, 60, NaN, 0.2, cc'),
+  bad('B, 90, 10, 60, 0.1, Infinity, cc'),
+  bad('B, 90, 10x, 60, 0.1, 0.2, cc')
 );
 export default profile;
