@@ -37,6 +37,25 @@ async function render(page) {
   });
 }
 
+test('PASTE PLANTED: lenient number tokens refuse the input, never read as another number', async ({ page }) => {
+  // Number('0x10') = 16 and Number('0x0') = 0: a hexadecimal token is not a decimal effect or SE and must not be analysed.
+  await page.goto(PAGE);
+  await page.waitForFunction(() => typeof window.__almCnmaLoad === 'function');
+  const base = 'diet | control | -0.15 | 0.12\nexercise | control | -0.22 | 0.12\ndiet+exercise | control | -0.35 | 0.14';
+  const rows = () => page.evaluate(() => document.getElementById('comp-body').children.length);
+  for (const row of ['diet | exercise | 0x0 | 0.1', 'diet | exercise | 0x10 | 0.1', 'diet | exercise | -0.1 | 0x10',
+    'diet | exercise | -0.1x | 0.1', 'diet | exercise | -0.1 | 0.1x', 'diet | exercise | -0 1 | 0.1', 'diet | exercise | NaN | 0.1',
+    'diet | exercise | -0.1 | Infinity', 'diet | exercise | -0,1 | 0.1']) {
+    await page.evaluate(t => window.__almCnmaLoad(t), base);
+    expect(await rows(), 'valid base').toBeGreaterThan(0);
+    await page.evaluate(t => window.__almCnmaLoad(t), base + '\n' + row);
+    expect(await rows(), row).toBe(0);
+  }
+  // Valid forms stay accepted: leading '+', exponent, surrounding spaces.
+  await page.evaluate(t => window.__almCnmaLoad(t), base + '\ndiet | exercise |  +0.07  | 1e-1');
+  expect(await rows()).toBeGreaterThan(0);
+});
+
 test('ENTRY: three formats reproduce every estimate, SE, Q and variance from the built-in example', async ({ page }) => {
   await open(page, 'entry');
   const expected = await page.evaluate(() => _almLastCnma());

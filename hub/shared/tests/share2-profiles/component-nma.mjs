@@ -30,6 +30,16 @@ profile.invalid.push(
   bad('diet | control | -0.1 | 0'),
   bad('diet | control | -0.1 | -0.1'),
   bad('diet | diet | -0.1 | 0.1'),
-  bad('diet | control | -0.1 | abc')
+  bad('diet | control | -0.1 | abc'),
+  // Lenient number tokens (trailing text, comma decimal, embedded space, empty, NaN/Infinity, hex, non-integer count):
+  // parseFloat/parseInt/Number() would read these as a different number; the row checker refuses them.
+  bad('diet | control | 0x0 | 0.1'),
+  bad('diet | control | 0x10 | 0.1'),
+  bad('diet | control | -0.1 | 0x10'),
+  bad('diet | control | -0.1x | 0.1'),
+  bad('diet | control | -0.1 | 0.1x'),
+  bad('diet | control | -0 1 | 0.1'),
+  bad('diet | control | NaN | 0.1'),
+  bad('diet | control | -0.1 | Infinity')
 );
 export default profile;
