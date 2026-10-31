@@ -121,6 +121,11 @@
   };
   var textSpec = { app: APP, verifyPackage: 'metafor', results: results, dom: dom, domMin: 26, templates: templates };
   function axis(edge) { return document.querySelector('#alm-axis-mount [data-edge="' + edge + '"]'); }
+  // Share state carries the axis minimum, maximum and log mounted by index.html axisControls. If page setup stopped
+  // before the axis controls mounted (e.g. a script failed to load), refuse with an actionable message, changing nothing.
+  function shareAxes() {
+    if (!axis('min') || !axis('max') || !axis('log')) throw new Error('Axis controls did not load; reload the page.');
+  }
   var spec = {
     paper: 11, title: 'Influence diagnostics',
     entry: { schema: 'generic', usedAs: 'effect and standard error on the supplied analysis scale; REML influence diagnostics', apply: apply },
@@ -133,8 +138,9 @@
         app: function () { return byId('influence-plot'); } }]
     },
     share: {
-      get: function () { return { src: byId('src').value, axis: { min: axis('min').value, max: axis('max').value, log: axis('log').checked } }; },
+      get: function () { shareAxes(); return { src: byId('src').value, axis: { min: axis('min').value, max: axis('max').value, log: axis('log').checked } }; },
       set: function (s) {
+        shareAxes();
         nativeRows(s && s.src);
         var a = s.axis;
         if (!a || a.log !== false || ['min', 'max'].some(function (k) {
