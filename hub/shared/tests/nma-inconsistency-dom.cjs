@@ -2,8 +2,8 @@
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
 const {parseHTML} = require('linkedom');
 const root = path.resolve(__dirname, '../../..');
-function harness({adapter = true, live = false, transformPlus = code => code} = {}) {
-  const html = fs.readFileSync(path.join(root, 'nma-inconsistency/index.html'), 'utf8');
+function harness({adapter = true, live = false, transformPlus = code => code, transformPage = code => code} = {}) {
+  const html = transformPage(fs.readFileSync(path.join(root, 'nma-inconsistency/index.html'), 'utf8'));
   const {document, window} = parseHTML(html);
   // LinkeDOM emits separate adjacent Text nodes for HTML entities such as
   // '&gt;'. Browser-pinned pageText treats the same visible text as one node.

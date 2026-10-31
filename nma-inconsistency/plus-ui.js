@@ -105,11 +105,17 @@
   function settle() { state.busy = false; const w = idleWaiters; idleWaiters = []; w.forEach(f => f()); }
   function refresh() {
     const gen = ++state.gen;
-    shownText = src.value;
-    showInputMessage();
-    // A refused import retains the input text; only a new base run may accept it.
+    // Cancel any pending sensitivity rerun before propagating source refusal.
+    if (pending !== null && typeof window.clearTimeout === 'function') window.clearTimeout(pending);
+    pending = null;
     const last = typeof window._almLastInco === 'function' ? window._almLastInco() : null;
     const refused = last && last.status === 'refused';
+    if (refused) {
+      if (typing !== null && typeof window.clearTimeout === 'function') window.clearTimeout(typing);
+      typing = null;
+    }
+    shownText = refused ? null : src.value;
+    showInputMessage();
     state.rows = refused ? [] : window.parse(src.value); state.model = model.value; state.selected = null;
     state.base = refused ? { status: 'refused', reason: last.reason } : P.fitAll(E, state.rows, state.model);
     state.compare = state.base.status === 'ok' ? P.compare3(E, state.rows) : null;
