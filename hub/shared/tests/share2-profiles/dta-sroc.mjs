@@ -29,6 +29,15 @@ profile.invalid.push(
   bad('Study H, 2.5, 5, 5, 5'),
   bad('Study H, 5, 5, 5'),
   bad('Study H, 0, 5, 0, 5'),
-  bad('Study H, 5, 0, 5, 0')
+  bad('Study H, 5, 0, 5, 0'),
+  // Lenient number tokens (trailing text, comma decimal, embedded space, empty, NaN/Infinity, hex, non-integer count):
+  // parseFloat/parseInt/Number() would read these as a different number; the row checker refuses them.
+  bad('Study H, 5x, 5, 5, 5'),
+  bad('Study H, 0x5, 5, 5, 5'),
+  bad('Study H, 5, 5 5, 5, 5'),
+  bad('Study H, 5, 5, , 5'),
+  bad('Study H, 5, 5, 5, NaN'),
+  bad('Study H, 5, 5, 5, Infinity'),
+  bad('Study H, 5, 5.5, 5, 5')
 );
 export default profile;
