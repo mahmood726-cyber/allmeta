@@ -305,7 +305,19 @@
 
     function run() {
       var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3) { _lastResults = null; _lastReml = null; return; }
+      // Fewer than 3 effects, or every effect from one study (the between-study variance is then not identifiable: metafor
+      // fixes it at 0, and the REML optimiser here stopped at an arbitrary value that inflated the pooled SE). Before this,
+      // fewer than 3 rows returned silently and left the previous analysis on screen. Clear it and say why.
+      var nStudies = rows.reduce(function (acc, r) { if (acc.indexOf(r.study) === -1) acc.push(r.study); return acc; }, []).length;
+      if (rows.length < 3 || nStudies < 2) {
+        _lastResults = null; _lastReml = null;
+        document.getElementById('summary').innerHTML = '<p class="note" id="mlma-refusal" role="alert">' + (rows.length < 3
+          ? 'At least 3 valid effect sizes (study, effect, SE &gt; 0) are needed for a three-level model; ' + rows.length + (rows.length === 1 ? ' is' : ' are') + ' entered.'
+          : 'All effect sizes come from one study, so the between-study variance is not identifiable and a three-level model cannot be fitted. Enter effect sizes from at least 2 studies.') + '</p>';
+        document.getElementById('body').innerHTML = '';
+        document.getElementById('forest').innerHTML = '';
+        return;
+      }
       var f = fit(rows);
 
       var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };
@@ -335,6 +347,12 @@
           '<tr><td>&sigma;&sup2;_within</td><td colspan="2">' + fmt(reml.sigma2Within, 4) + '</td></tr>' +
           '<tr><td>REML log-likelihood</td><td colspan="2">' + fmt(reml.logLik, 3) + '</td></tr>' +
           '</tbody></table>';
+        // One effect per study: only the sum of the two variance components is identified (the likelihood is flat along
+        // the split, so the split shown is wherever the optimiser stopped; metafor stops elsewhere). Say so.
+        if (nStudies === rows.length) {
+          document.getElementById('summary').innerHTML += '<p class="note" id="mlma-singletons">Every study contributes one effect size, so &sigma;&sup2;_study and &sigma;&sup2;_within are not separately identifiable: only their sum (' +
+            fmt(reml.sigma2Between + reml.sigma2Within, 4) + ') is estimated and the split shown is arbitrary. The pooled estimate and its SE depend only on the sum; a two-level random-effects meta-analysis is the appropriate model.</p>';
+        }
       }
 
       // per-row table
