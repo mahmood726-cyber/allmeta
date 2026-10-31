@@ -4,6 +4,17 @@
  */
 (function (global) {
   'use strict';
+  // Number settings go into type=number inputs. A value must be a complete decimal number: Number() also reads
+  // 0x10 / 0b1 / ' ', and the input then silently clears such text to '' (automatic or zero). Valid forms the input
+  // itself cannot hold ('+1', ' 0.5', '5.') are written as the same number.
+  var DECIMAL_SETTING = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function decimalSetting(v) { return typeof v === 'string' && DECIMAL_SETTING.test(v.trim()) && Number.isFinite(Number(v)); }
+  function axisBoundOk(v) { return v === '' || decimalSetting(v); }
+  function writeNumberSetting(el, v) {
+    var t = String(v).trim();
+    el.value = t;
+    if (el.value === '' && t !== '') el.value = String(Number(t));
+  }
   var APP = 'mh-peto', axisApplied = false, defaultAxisOverride = false;
   function el(id) { return document.getElementById(id); }
   function axis(edge) { return document.querySelector('#alm-axis-mount [data-edge="' + edge + '"]'); }
@@ -229,7 +240,7 @@
             ['OR', 'RR', 'RD'].indexOf(s.measure) < 0) throw new Error('Invalid data or effect measure.');
         var a = s.axis;
         if (!a || typeof a.log !== 'boolean' || typeof a.applied !== 'boolean' ||
-            ![a.min, a.max].every(function (v) { return typeof v === 'string' && (v === '' || Number.isFinite(Number(v))); }) ||
+            ![a.min, a.max].every(axisBoundOk) ||
             (a.min !== '' && a.max !== '' && Number(a.min) >= Number(a.max)) ||
             !Array.isArray(s.entryLog)) throw new Error('Invalid axis options or conversion log.');
         var entryLog = restoredLog(s.entryLog);
@@ -245,7 +256,7 @@
           axis('min').value = ''; axis('max').value = '';
           axis('min').dispatchEvent(new Event('change', { bubbles: true }));
           axis('max').dispatchEvent(new Event('change', { bubbles: true }));
-          axis('min').value = a.min; axis('max').value = a.max;
+          writeNumberSetting(axis('min'), a.min); writeNumberSetting(axis('max'), a.max);
           axis('min').dispatchEvent(new Event('change', { bubbles: true }));
           axis('max').dispatchEvent(new Event('change', { bubbles: true }));
           axis('log').checked = a.applied ? a.log : s.measure !== 'RD';
