@@ -37,3 +37,23 @@ assert.equal(result.failed.length, 0);
 assert.equal(result.refusals.expected, 54);
 assert.equal(result.refusals.matched, 54);
 assert.equal(report.restored, true);
+
+// Negative-control/mutation: never make all pinned plots pass by erasing
+// SVG subtree differences. The shipped plot must have genuinely empty line
+// and rectangle shapes, and planting a child must change the exact tree.
+c.__almIncoLoad('A,B,.2,.1\\nB,C,.3,.2\\nA,C,.6,.15');
+const plot = c.document.getElementById('ns-plot');
+const shapes = [...plot.querySelectorAll('line,rect')];
+assert.ok(shapes.length >= 3, 'the shipped network plot must render its shapes');
+assert.ok(shapes.every(shape => shape.childNodes.length === 0),
+  'SVG line/rect children are not browser-compatible; refuse nested plot DOM');
+const cleanPlot = JSON.stringify(a.display()[2]);
+const planted = c.document.createElement('text');
+planted.textContent = 'PLANTED_INVALID_PLOT_CHILD';
+shapes[0].appendChild(planted);
+assert.notEqual(JSON.stringify(a.display()[2]), cleanPlot,
+  'a planted SVG subtree mutation must not pass the plot-tree comparator');
+shapes[0].removeChild(planted);
+assert.equal(JSON.stringify(a.display()[2]), cleanPlot,
+  'restored plot tree must match after removal of planted mutation');
+console.log('P16_SVG_MUTATION detected nested-child tamper; clean plot restored');
