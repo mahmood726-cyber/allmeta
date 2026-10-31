@@ -1,3 +1,8 @@
 node_modules/
 test-results/
 playwright-report/
+# Test-run output (spec artifacts, walkthrough screenshots, R cross-check exports). Never committed: a 2026-10-25 harvest
+# with git add -A pushed a browser profile and a crash dump from artifacts/ to a public branch.
+artifacts/
+walkthrough-out/
+rchecks-out/
