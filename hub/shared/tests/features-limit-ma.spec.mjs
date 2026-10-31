@@ -418,3 +418,31 @@ test('ENTRY TEXT: conversion steps retain methods and citations without mutating
   await expect(page.locator('.alm-text-body')).toBeVisible();
   console.log(`ENTRYTEXT legacy=${out.legacy.audit.passed}/${out.legacy.audit.checks} provenance=${out.provenance.audit.passed}/${out.provenance.audit.checks}`);
 });
+
+test('EXPORT: after a refused run every results export downloads an empty result without a page error', async ({ page }) => {
+  // A malformed row makes Run refuse the input, so the app holds no result. Every export button must still answer
+  // (empty result / "No results yet"), never throw an uncaught TypeError on the null result, never export a stale one.
+  const errors = [];
+  page.on('pageerror', e => errors.push(String(e && e.stack || e)));
+  await page.goto('/limit-ma/index.html');
+  await page.waitForFunction(() => typeof window._almLastLimit === 'function' && window._almLastLimit() !== null);
+  const src = page.locator('#src');
+  await src.fill((await src.inputValue()).trimEnd() + '\nabc, xyz');
+  await page.getByRole('button', { name: 'Run analysis', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window._almLastLimit())).toBeNull();
+  const expected = {
+    json: t => expect(JSON.parse(t)).toEqual({}),
+    csv: t => expect(t).toBe('key,value'),
+    md: t => expect(t.split('\n').length).toBe(2),
+    'report-md': t => expect(t).toContain('No results yet'),
+    'report-txt': t => expect(t).toContain('No results yet')
+  };
+  for (const [action, check] of Object.entries(expected)) {
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 10_000 }),
+      page.locator('#alm-export-mount [data-action="' + action + '"]').click()
+    ]);
+    check(fs.readFileSync(await download.path(), 'utf8'));
+  }
+  expect(errors).toEqual([]);
+});
