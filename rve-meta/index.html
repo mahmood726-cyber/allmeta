@@ -325,7 +325,7 @@
   </main>
     <div id="alm-features"></div>
   <footer>
-    <p>Engine: <code>shared/rve.js</code>: Hedges-Tipton-Johnson 2010 correlated-effects (CORR) working model; τ² from the CORR method-of-moments estimator; <strong>CR2 bias-reduced</strong> cluster-robust standard errors (Tipton 2015; Pustejovsky and Tipton 2018) and per-coefficient <strong>Satterthwaite degrees of freedom</strong>; Student-t confidence intervals and p-values. Reference implementation: <code>robumeta::robu(modelweights = "CORR", small = TRUE)</code>, cross-checked with <code>clubSandwich::coef_test(vcov = "CR2", test = "Satterthwaite")</code>. Designs with no more clusters than coefficients, or with collinear predictors, are refused.</p>
+    <p>Engine: <code>shared/rve.js</code>: Hedges-Tipton-Johnson 2010 correlated-effects (CORR) working model; τ² from the CORR method-of-moments estimator; <strong>CR2 bias-reduced</strong> cluster-robust standard errors (Tipton 2015; Pustejovsky and Tipton 2018) and per-coefficient <strong>Satterthwaite degrees of freedom</strong>; Student-t confidence intervals and p-values. Reference implementation: <code>robumeta::robu(modelweights = "CORR", small = TRUE)</code>, cross-checked with <code>clubSandwich::coef_test(vcov = "CR2", test = "Satterthwaite")</code>. Designs with a single cluster, with collinear predictors, or with no estimable τ² are refused (robumeta fails on them too). Designs with no more clusters than coefficients are fitted exactly as robumeta fits them, with a visible warning that the CR2 standard errors and df are then very unstable.</p>
     <p>Conditioning: each fit reports κ₂(XᵀWX), the condition number of the weighted cross-product matrix at the fitted weights. When κ exceeds 9.0×10⁶ (κ·u &gt; 10⁻⁹, u = 2⁻⁵³), the first-order rounding-error bound κ·u exceeds 10⁻⁹, so agreement to the ninth significant digit is no longer guaranteed, and the app offers to centre the predictors. robumeta itself gives no such warning. The hierarchical (HIER) working model is not implemented; use <code>robumeta::robu(modelweights = "HIER")</code> in R.</p>
   </footer>
 
@@ -366,7 +366,8 @@
 
     function friendlyEngineError(e, m, p) {
       var s = String(e && e.message || e);
-      if (/m<=p/.test(s)) return m + " cluster" + (m === 1 ? "" : "s") + " cannot support " + p + " coefficient" + (p === 1 ? "" : "s") + " (intercept + " + (p - 1) + " predictor" + (p === 2 ? "" : "s") + "): robust variance estimation needs more clusters than coefficients. Add clusters or remove predictors.";
+      if (/m<2/.test(s)) return m + " cluster" + (m === 1 ? "" : "s") + " cannot support " + p + " coefficient" + (p === 1 ? "" : "s") + " (intercept + " + (p - 1) + " predictor" + (p === 2 ? "" : "s") + "): robust variance estimation needs at least 2 clusters (robumeta fails on this design too). Add clusters.";
+      if (/tau2 not estimable/.test(s)) return "τ² cannot be estimated: with no more clusters than coefficients and every predictor constant within its cluster, the data carry no information about the between-cluster variance (robumeta fails on this design too). Add clusters or remove predictors.";
       if (/singular/i.test(s)) return "The coefficients cannot be estimated because the predictors are collinear (for example a constant column, or one predictor equal to a combination of others). Remove or recode a predictor.";
       if (/rho/.test(s)) return "ρ must be a number between 0 and 1.";
       return s;
@@ -423,12 +424,21 @@
       var zeroSe = summary.map(function (s, j) { return s.se === 0 ? coefNames[j] : null; }).filter(Boolean);
       var zeroSeText = zeroSe.length ? "Robust SE = 0 for " + zeroSe.join(", ") + ": every residual is zero (for example, identical effect sizes), so t is infinite (shown as —) and the confidence interval has zero width. This reflects no residual variation, not real precision." : "";
       if (zeroSe.length) warnings.push(zeroSeText);
+      // m <= p: robumeta fits these designs and so does the app (Mahmood 2026-10-31: match R, warn visibly).
+      var fewClusters = fit.m_clusters <= fit.p;
+      var fewClustersText = fewClusters ? "Only " + fit.m_clusters + " clusters for " + fit.p + " coefficients: robumeta fits this design and so does this app, but with no more clusters than coefficients the CR2 standard errors and Satterthwaite df (near 1) are very unstable; interpret with great caution and add clusters if you can." : "";
+      if (fewClusters) warnings.push(fewClustersText);
+      var dfNa = summary.map(function (s, j) { return isNaN(s.df) ? coefNames[j] : null; }).filter(Boolean);
+      var dfNaText = dfNa.length ? "Satterthwaite df not estimable for " + dfNa.join(", ") + ": the model reproduces every effect exactly, so there is no residual information and no confidence interval or p-value can be given (robumeta returns NaN here too)." : "";
+      if (dfNa.length) warnings.push(dfNaText);
       var ill = kappa > E.KAPPA_THRESHOLD;
       if (ill) warnings.push("Ill-conditioned design: κ₂(XᵀWX) = " + E.kappaText(kappa) + " exceeds 9.0×10⁶, so results may be accurate to fewer than 9 significant digits." + (centred ? "" : " Centring the predictors usually fixes this."));
 
       var html = '<p class="summary-line">k = ' + fit.k_total + " effects, m = " + fit.m_clusters + " clusters, p = " + fit.p + " coefficients, τ²(CORR) = <code>" + fmt(fit.tau2, 4) + "</code>, ρ = " + fmt(fit.rho, 2) +
         ", condition number κ₂(XᵀWX) = <span id=\"kappa-value\" data-kappa=\"" + kappa + "\">" + kappaHtml(kappa) + "</span>" + (centred ? " (predictors centred)" : "") + ".</p>";
       if (centred) html += '<p class="note info" id="centre-note">Predictors centred at their means (' + names.map(function (n, i) { return esc(n) + " = " + fmt(means[i], 4); }).join(", ") + "). The intercept is the expected effect at these means.</p>";
+      if (fewClusters) html += '<p class="note" id="few-clusters-warning"><strong>Few clusters.</strong> ' + esc(fewClustersText) + "</p>";
+      if (dfNa.length) html += '<p class="note" id="df-na-warning">' + esc(dfNaText) + "</p>";
       if (zeroSe.length) html += '<p class="note" id="zero-se-warning">' + esc(zeroSeText) + "</p>";
       if (lowDf.length) html += '<p class="note" id="lowdf-warning"><strong>Warning: df &lt; 4</strong> for ' + esc(lowDf.join(", ")) + "; inference may be unreliable. Treat these confidence intervals and p-values with caution.</p>";
       if (ill) html += '<div class="note" id="kappa-warning"><strong>Ill-conditioned design.</strong> κ₂(XᵀWX) = ' + kappaHtml(kappa) + " is above 9.0×10⁶, so rounding error may reach the ninth significant digit of the results (in R as well as here)." +

@@ -204,6 +204,10 @@
             '. This does not establish absence of an association.']);
         }
       });
+      if (r.clusters <= r.coefficients) {
+        flags.push(['With ', T.int('clusters'), ' clusters for ', T.int('coefficients'),
+          ' coefficients (no more clusters than coefficients), the robust standard errors and degrees of freedom are very unstable; interpret with great caution.']);
+      }
       if (r.coefficientKeys.some(function (c) { return r[c.prefix + 'df'] < lowDfRule.value; })) {
         flags.push(['For coefficients with low Satterthwaite degrees of freedom, p-values and confidence intervals may not be trustworthy (Satterthwaite df < ',
           T.rule('rveLowDf'), '; ', T.cite('rveTipton'), ').']);
