@@ -90,6 +90,7 @@
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/fragility.js"></script>
   <script src="../shared/diagnostic-plots.js"></script>
+  <script src="../shared/variance-ratio.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
@@ -152,6 +153,7 @@ StudyE, 4, 600, 10, 600</textarea>
       </table>
       </div>
       <p id="estimability-note" class="note" aria-live="polite"></p>
+      <p id="varratio-note" class="note" aria-live="polite"></p>
       <p id="fragility-note" class="stat" style="margin:0.4rem 0 0;font-size:0.85rem" aria-live="polite"></p>
       <h2 style="margin-top:0.9rem">Heterogeneity and association tests</h2>
       <div class="table-wrap">
@@ -638,6 +640,7 @@ StudyE, 4, 600, 10, 600</textarea>
     function clearOutputs() {
       _lastResults = null;
       ['pooled-body', 'per-body', 'forest', 'labbe', 'het-body', 'assoc-body', 'conv-body'].forEach(function (id) { document.getElementById(id).innerHTML = ''; });
+      { const vrn = document.getElementById('varratio-note'); if (vrn) vrn.textContent = ''; }
       ['k-note', 'estimability-note', 'zero-note', 'conv-note'].forEach(function (id) { document.getElementById(id).textContent = ''; });
       clearLoo('');
     }
@@ -730,6 +733,9 @@ StudyE, 4, 600, 10, 600</textarea>
         ? (undefinedMethods.join(' and ') + (undefinedMethods.length === 1 ? ' is' : ' are') + ' not estimable for these tables; metafor also returns NA here, and the export records null.')
         : '';
 
+      // Per-study sampling variances of the inverse-variance / Q analysis (escalc, 0.5 added to zero-cell tables).
+      var varRatio = window.AlmVarianceRatio ? window.AlmVarianceRatio.check(escalcMH(rows, measure).vi) : null;
+      var vrn = document.getElementById('varratio-note'); if (vrn) vrn.textContent = varRatio ? varRatio.message : '';
       // Study counts and zero-cell handling (always stated, never implied).
       var nZero = 0, nDouble = 0;
       rows.forEach(function (r) {

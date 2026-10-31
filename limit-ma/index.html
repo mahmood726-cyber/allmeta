@@ -60,6 +60,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/variance-ratio.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
@@ -417,6 +418,8 @@
           diagnosticNotes.push(key + ': undefined (' + reason + ').');
         }
       });
+      var varRatio = window.AlmVarianceRatio ? window.AlmVarianceRatio.checkSE(rows.map(function (r) { return r.se; })) : null;
+      if (varRatio) diagnosticNotes.push(varRatio.message);
       document.getElementById('limit-diagnostics').textContent = diagnosticNotes.join(' ');
 
       var body = document.getElementById('body');

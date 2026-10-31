@@ -24,6 +24,11 @@
   'use strict';
   var APP = 'proportion-ma';
 
+  function varianceRatioFired() {
+    var o = typeof global._almLastPropMA === 'function' ? global._almLastPropMA() : null;
+    return !!(o && o.varianceRatioWarning);
+  }
+
   function results() {
     var o = typeof global._almLastPropMA === 'function' ? global._almLastPropMA() : null;
     if (!o) return null;
@@ -204,7 +209,11 @@
         T.when(r.transform === 'ft', ['Freeman–Tukey back-transformed results can be seriously misleading (', T.cite('schwarzer'),
           '); a logit analysis is preferred for rare or extreme proportions.']),
         T.when(fe && T.has('poolPiLo'), 'The app also displays a prediction interval for the fixed-effect model; it assumes no between-study variance and is not reported here.'),
-        T.when(r.k < T.R.piMinK, ['With fewer than ', T.rule('piMinK'), ' studies, no prediction interval was computed.'])
+        T.when(r.k < T.R.piMinK, ['With fewer than ', T.rule('piMinK'), ' studies, no prediction interval was computed.']),
+        // shared/variance-ratio.js fired on this analysis (index.html stores its message only when it fires).
+        T.when(varianceRatioFired(), 'The ratio of the largest to the smallest within-study sampling variance is extremely large ' +
+          '(at or above the level at which R’s metafor warns that it may not be able to obtain stable results); ' +
+          'check the counts of the most precise study.')
       ];
     }
   };

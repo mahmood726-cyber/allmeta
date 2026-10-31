@@ -118,6 +118,8 @@
     if (parsed.mode === 'rhoW') interp.push('The within-study correlation was assumed (\u03c1w = ' + parsed.rhoW + '); use the \u03c1w sweep to see how much the results depend on it.');
     var ss = sweepSummary(parsed, sw); if (ss) interp.push(ss);
     var om = omittedSentence(parsed).trim(); if (om) interp.push(om);
+    var vis = []; parsed.rows.forEach(function (r) { vis.push(r.v[0], r.v[1]); });
+    var vr = g.AlmVarianceRatio ? g.AlmVarianceRatio.check(vis) : null; if (vr) interp.push(vr.message);
 
     methods = 'A bivariate random-effects meta-analysis of ' + o[0] + ' and ' + o[1] + ' was fitted by restricted maximum likelihood (REML) with an unstructured between-study covariance matrix (the model of mvmeta::mvmeta(method = "reml", bscov = "unstr") and metafor::rma.mv(struct = "UN")), using the allmeta multivariate-ma page. ' +
       modeSentence(parsed) + ' Pooled means are reported with Wald 95% confidence intervals and two-sided z tests (normal distribution). Separate univariate REML meta-analyses of each outcome on the same ' + k + ' studies are reported for comparison.' +

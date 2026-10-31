@@ -89,6 +89,7 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/dta-bivariate.js"></script>
   <script src="example-datasets.js"></script>
+  <script src="../shared/variance-ratio.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/autosave.js"></script>
@@ -439,6 +440,14 @@
           else { try { out.metareg = B.fit(rows, Object.assign({}, opts, { X: d.X, covariateNames: d.names })); } catch (e) { errors.push("Meta-regression: " + e.message); } }
         }
         try { out.deeks = B.deeksTest(rows); } catch (e) { out.deeks = null; }
+      }
+      // Within-study variances of logit sensitivity and logit FPR (the diagonal the bivariate model pools; 0.5 is the
+      // app's continuity correction when s.corrected), checked together as metafor rma.mv does over all vi.
+      if (out.bivar && window.AlmVarianceRatio) {
+        const vis = [];
+        studies.forEach(s => { const c = s.corrected ? 0.5 : 0; vis.push(1 / (s.tp + c) + 1 / (s.fn + c), 1 / (s.fp + c) + 1 / (s.tn + c)); });
+        const vr = window.AlmVarianceRatio.check(vis);
+        if (vr) errors.push(vr.message);
       }
       return out;
     }

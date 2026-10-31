@@ -76,6 +76,7 @@
   <script src="../shared/stats-qt.js"></script>
   <script src="../shared/rve.js"></script>
   <script src="../shared/rve-extras.js"></script>
+  <script src="../shared/variance-ratio.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/autosave.js"></script>
@@ -419,6 +420,8 @@
       var lowDf = summary.map(function (s, j) { return s.df < 4 ? coefNames[j] + " (df " + fmt(s.df, 2) + ")" : null; }).filter(Boolean);
       if (lowDf.length) warnings.push("df < 4 for " + lowDf.join(", ") + ": inference may be unreliable (Tipton 2015).");
       var ill = kappa > E.KAPPA_THRESHOLD;
+      var varRatio = window.AlmVarianceRatio ? window.AlmVarianceRatio.check(fitRows.map(function (r) { return r.vi; })) : null;
+      if (varRatio) warnings.push(varRatio.message);
       if (ill) warnings.push("Ill-conditioned design: κ₂(XᵀWX) = " + E.kappaText(kappa) + " exceeds 9.0×10⁶, so results may be accurate to fewer than 9 significant digits." + (centred ? "" : " Centring the predictors usually fixes this."));
 
       var html = '<p class="summary-line">k = ' + fit.k_total + " effects, m = " + fit.m_clusters + " clusters, p = " + fit.p + " coefficients, τ²(CORR) = <code>" + fmt(fit.tau2, 4) + "</code>, ρ = " + fmt(fit.rho, 2) +
@@ -427,6 +430,7 @@
       if (lowDf.length) html += '<p class="note" id="lowdf-warning"><strong>Warning: df &lt; 4</strong> for ' + esc(lowDf.join(", ")) + "; inference may be unreliable. Treat these confidence intervals and p-values with caution.</p>";
       if (ill) html += '<div class="note" id="kappa-warning"><strong>Ill-conditioned design.</strong> κ₂(XᵀWX) = ' + kappaHtml(kappa) + " is above 9.0×10⁶, so rounding error may reach the ninth significant digit of the results (in R as well as here)." +
         (centred ? " The design is still ill-conditioned after centring; consider rescaling predictors (e.g. sample size in thousands)." : ' <button type="button" class="secondary" id="btn-centre">Centre predictors and refit</button>') + "</div>";
+      if (varRatio) html += '<p class="note" id="varratio-warning" role="status">' + esc(varRatio.message) + "</p>";
       if (warnings.length && warnings[0] && $("names-warning").hidden === false) html += '<p class="note" id="names-note">' + esc(warnings[0]) + "</p>";
       $("meta-row").innerHTML = html;
       var b = $("btn-centre");
