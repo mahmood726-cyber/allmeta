@@ -1252,7 +1252,7 @@ StudyE, 4, 600, 10, 600</textarea>
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'mhpeto-results',
-      getResults: function () { return window._almLastMhPeto ? window._almLastMhPeto() : {}; },
+      getResults: function () { return (window._almLastMhPeto && window._almLastMhPeto()) || {}; },
     });
 
     window.alm.urlState({ version: 1 });
