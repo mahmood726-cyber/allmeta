@@ -369,3 +369,40 @@ test('one unusable row elsewhere in the file is listed as not imported; its subg
   await load(page);await expect(box).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('CSV table: one unusable row is listed as not imported; its subgroup is refused; the other comparison imports',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await open(page,'mh-peto');
+  const before=await page.locator('#src').inputValue();
+  const good=readFileSync(fixture('binary.csv'),'utf8'),text=good.replace(',2,50,6,50,',',2,0,6,50,');
+  expect(text).not.toBe(good);
+  const upload=(name,body)=>page.getByLabel('RevMan file',{exact:true}).setInputFiles({name,mimeType:'text/csv',buffer:Buffer.from(body)});
+  await upload('one-bad-row.csv',text);
+  await expect(page.locator('#alm-revman-status')).toHaveText('Choose comparison, outcome and subgroup. 1 row not imported (listed below).');
+  const box=page.locator('#alm-revman-skipped');
+  await expect(box).toContainText('1 study row was not imported');
+  await expect(box.locator('li')).toHaveText(['Synthetic C versus D › Other events, row 4, study Synthetic Gamma: Invalid positive whole total n1i in this row']);
+  const use=page.getByRole('button',{name:'Import selected rows',exact:true});
+  await page.getByLabel('Comparison',{exact:true}).selectOption('1');
+  await page.getByLabel('RevMan outcome',{exact:true}).selectOption('0');
+  await page.getByLabel('Subgroup',{exact:true}).selectOption('0');
+  await expect(page.locator('#alm-revman-status')).toContainText('cannot be imported');
+  await expect(page.locator('#alm-revman-status')).toContainText('row 4, study Synthetic Gamma: Invalid positive whole total n1i');
+  await expect(use).toBeDisabled();
+  expect(await page.locator('#src').inputValue()).toBe(before);
+  await choose(page,0);await expect(use).toBeEnabled();await use.click();
+  await expect(page.locator('#alm-revman-status')).toContainText('Imported 2');
+  expect(await page.evaluate(()=>AlmFeaturesState.provenance.map(p=>p.studyId))).toEqual(['s1','s2']);
+  // A row that cannot be placed in a subgroup (wrong column count) is listed and refuses every selection.
+  const after=await page.locator('#src').inputValue();
+  await upload('short-row.csv',good.replace('11,61,OR','11,61'));
+  await expect(box.locator('li')).toHaveText(['row 3, study 試験 β: CSV row 3 has 10 columns; expected 11.']);
+  await page.getByLabel('Comparison',{exact:true}).selectOption('1');
+  await page.getByLabel('RevMan outcome',{exact:true}).selectOption('0');
+  await page.getByLabel('Subgroup',{exact:true}).selectOption('0');
+  await expect(page.locator('#alm-revman-status')).toContainText('could not be placed in a subgroup');
+  await expect(use).toBeDisabled();
+  expect(await page.locator('#src').inputValue()).toBe(after);
+  await load(page,'binary.csv');await expect(box).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

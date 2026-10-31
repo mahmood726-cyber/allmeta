@@ -11,8 +11,12 @@
  * listed, as the legacy shared/revman-reader.js lists it, on subgroup.skipped and outcome.skipped =
  * [{row, studyId, study, reason}] (row = 1-based among the outcome's data rows; key present only when non-empty).
  * An outcome element of a type this reader does not import (e.g. OTHER_OUTCOME) becomes
- * {type:'unsupported', tag, subgroups:[], studies:[], skipped}. select() validates strictly only the chosen subgroup
- * and refuses one that holds a listed row, naming the row and its reason.
+ * {type:'unsupported', tag, subgroups:[], studies:[], skipped}; so does any other COMPARISON child this reader does not
+ * read (e.g. SYNTHETIC_NOTE; NAME, GROUP_LABEL_1/2, ID, NO and nested COMPARISON are read), listed after the outcomes.
+ * select() validates strictly only the chosen subgroup and refuses one that holds a listed row, naming the row and its reason.
+ * CSV/tab tables follow the same rule: an unusable row is listed on its subgroup/outcome skipped list (row = table row
+ * number, header = row 1); a row that cannot be placed in a subgroup is listed on review.skipped and refuses every
+ * selection; a table with no usable row, or a header/quoting problem, is refused.
  */
 (function (global) {
   'use strict';
@@ -56,6 +60,10 @@
       } else if (!(r.sd1i>0 && r.sd2i>0 && r.n1i>1 && r.n2i>1)) return w=>'Invalid SD or continuous total in '+w+' (SD > 0 and total > 1 required).';
     }
     return null;
+  }
+  // 'row N, study S: reason; ...' for listed rows (XML and CSV), the reason without a trailing period.
+  function describeRows(list, none) {
+    return list.map(s=>(s.row==null?'':'row '+s.row+', study '+(s.study||s.studyId||none)+': ')+String(s.reason).replace(/\.$/,'')).join('; ');
   }
   function validateRecords(records, schema) {
     if (!fields[schema]) fail('Unsupported input schema: '+schema);
@@ -147,16 +155,20 @@
     const kinds={DICH_OUTCOME:['binary','DICH_DATA','DICH_SUBGROUP'],CONT_OUTCOME:['continuous','CONT_DATA','CONT_SUBGROUP'],CONTINUOUS_OUTCOME:['continuous','CONTINUOUS_DATA','CONTINUOUS_SUBGROUP'],IV_OUTCOME:['generic','IV_DATA','IV_SUBGROUP'],O_E_AND_VARIANCE_OUTCOME:['o_e_var','O_E_AND_VARIANCE_DATA','O_E_AND_VARIANCE_SUBGROUP'],IPD_OUTCOME:['o_e_var','IPD_DATA','IPD_SUBGROUP']};
     const skip=(list,row,sid,reason)=>{const meta=sid!=null?studies[sid]:null;list.push({row,studyId:sid,study:meta?meta.name:sid,reason});};
     // An outcome type this reader does not import is listed (legacy reader wording), never fatal and never dropped.
-    function unsupported(o,oi){
+    function unsupported(o,fallbackId){
       const reason=o.tag+' is not an outcome type this importer reads',skipped=[];
       const rows=(function walk(x){return x.children.flatMap(c=>(prop(c,'STUDY_ID')!=null?[c]:[]).concat(walk(c)));})(o);
       rows.forEach((d,i)=>skip(skipped,i+1,prop(d,'STUDY_ID'),reason));
       if(!rows.length)skipped.push({row:null,studyId:null,study:null,reason:o.tag+' element is not read by this importer'});
-      return {id:prop(o,'ID')||prop(o,'NO')||String(oi+1),name:prop(o,'NAME')||o.tag,type:'unsupported',tag:o.tag,effectMeasure:null,subgroups:[],studies:[],skipped};
+      return {id:prop(o,'ID')||prop(o,'NO')||fallbackId,name:prop(o,'NAME')||o.tag,type:'unsupported',tag:o.tag,effectMeasure:null,subgroups:[],studies:[],skipped};
     }
+    // COMPARISON children this reader reads itself; any other child that is not an *_OUTCOME (e.g. SYNTHETIC_NOTE) is
+    // listed after the outcomes as unsupported content (legacy reader wording and order), never ignored silently.
+    const knownChildren=new Set(['NAME','GROUP_LABEL_1','GROUP_LABEL_2','ID','NO','COMPARISON']);
     const comparisons=descendants(root,'COMPARISON').map((n,ci)=>{
+      const unread=n.children.filter(o=>!/_OUTCOME$/.test(o.tag)&&!knownChildren.has(o.tag));
       const outcomes=n.children.filter(o=>/_OUTCOME$/.test(o.tag)).map((o,oi)=>{
-        if(!kinds[o.tag])return unsupported(o,oi);
+        if(!kinds[o.tag])return unsupported(o,String(oi+1));
         const [type,dataTag,groupTag]=kinds[o.tag], em=measure(prop(o,'EFFECT_MEASURE'));
         const order=new Map(descendants(o,dataTag).map((d,i)=>[d,i+1])),outcomeSkipped=[];
         const arm1Name=prop(o,'GROUP_LABEL_1')||prop(n,'GROUP_LABEL_1')||'Experimental';
@@ -193,6 +205,7 @@
         if(outcomeSkipped.length)outcome.skipped=outcomeSkipped;
         return outcome;
       });
+      unread.forEach((o,ui)=>outcomes.push(unsupported(o,'unread-'+(ui+1))));
       return {id:prop(n,'ID')||prop(n,'NO')||String(ci+1),name:prop(n,'NAME')||'Comparison '+(ci+1),outcomes};
     });
     if(!comparisons.length)fail('No comparisons in RevMan file.');
@@ -244,34 +257,67 @@
     }
     if(map.study===undefined&&map.studyId===undefined)fail('Missing Study header in CSV.');
     const review={title:null,version:'CSV',studies:Object.create(null),comparisons:[],studyCount:0};
+    // An unusable row never refuses the whole table and is never imported or altered (same rule as the XML path): it is
+    // listed as {row, studyId, study, reason} (row = table row number, header = row 1, as the CSV messages count) on its
+    // subgroup's and outcome's skipped list, and select() refuses that subgroup. A row that cannot be placed in a subgroup
+    // (wrong column count when the table has grouping columns, unsupported applicability) is listed on review.skipped and
+    // select() refuses every selection. Duplicates are refused at selection, as for XML. Header and quoting problems, and
+    // a table with no usable row, still refuse the table.
+    const grouped=['comparison','outcome','outcomeId','subgroup','applicability'].some(k=>map[k]!==undefined);
+    const cell=(row,k)=>map[k]===undefined||map[k]>=row.length?'':row[map[k]].trim();
+    const entry=(rowNo,row,reason)=>{const name=cell(row,'study')||cell(row,'studyId'),id=cell(row,'studyId')||name;return {row:rowNo,studyId:id||null,study:name||null,reason};};
+    const loose=[],usable=[],bad=[];
     rows.forEach((row,ri)=>{
-      if(row.length!==header.length)fail('CSV row '+(ri+2)+' has '+row.length+' columns; expected '+header.length+'.');
-      const get=k=>map[k]===undefined?'':row[map[k]].trim();
-      const populated=list=>list.some(k=>get(k)!=='');
-      const types=[populated(['ai','ci'])?'binary2x2':null,populated(['m1i','sd1i','m2i','sd2i'])?'continuous':null,populated(['yi','sei'])?'generic':null].filter(Boolean);
-      if(types.length!==1)fail('Unsupported or ambiguous mixed data/header in CSV row '+(ri+2));
-      if(get('applicability')&&!['SUBGROUP_AND_OVERALL','SUBGROUP_ONLY','OVERALL_ONLY'].includes(get('applicability')))fail('Unsupported applicability in row '+(ri+2));
+      const rowNo=ri+2,get=k=>cell(row,k);
       // Separate overall-only rows explicitly: never double-count combined and subgroup arms.
-      const subgroup=get('subgroup')||'No subgroup';
-      const groupName=get('applicability')==='OVERALL_ONLY'?'Overall only (combined arms)':subgroup;
-      const schema=types[0], name=get('study')||get('studyId'), id=get('studyId')||name;
-      for(const f of fields[schema]) if(map[f]===undefined) fail('Missing or unsupported CSV header for '+f+'.');
-      const record={study:name,studyId:id,year:year(get('year')),effectMeasure:measure(get('effectMeasure'))};
-      fields[schema].forEach(f=>record[f]=number(get(f),'row '+(ri+2)+' '+f));validateRecords([record],schema);
-      const compName=get('comparison')||'Unspecified comparison',outName=get('outcome')||'Unspecified outcome',outId=get('outcomeId')||outName;
-      let c=review.comparisons.find(c=>c.id===compName);if(!c)review.comparisons.push(c={id:compName,name:compName,outcomes:[]});
-      let o=c.outcomes.find(o=>o.id===outId);
-      const type=schema==='binary2x2'?'binary':schema;
-      if(!o)c.outcomes.push(o={id:outId,name:outName,type,effectMeasure:record.effectMeasure,subgroups:[],studies:[],arm1Name:'Experimental',arm2Name:'Control'});
-      if(o.type!==type||o.effectMeasure!==record.effectMeasure||o.name!==outName)fail('Mixed data types or effect measures in outcome '+outName);
-      let g=o.subgroups.find(g=>g.name===groupName);if(!g)o.subgroups.push(g={id:groupName,name:groupName,studies:[]});
+      const place=()=>({compName:get('comparison')||'Unspecified comparison',outName:get('outcome')||'Unspecified outcome',outId:get('outcomeId')||get('outcome')||'Unspecified outcome',
+        groupName:get('applicability')==='OVERALL_ONLY'?'Overall only (combined arms)':(get('subgroup')||'No subgroup')});
+      if(row.length!==header.length){
+        const e=entry(rowNo,row,'CSV row '+rowNo+' has '+row.length+' columns; expected '+header.length+'.');
+        if(grouped)loose.push(e);else bad.push({e,...place(),schema:null});
+        return;
+      }
+      if(get('applicability')&&!['SUBGROUP_AND_OVERALL','SUBGROUP_ONLY','OVERALL_ONLY'].includes(get('applicability'))){loose.push(entry(rowNo,row,'Unsupported applicability in row '+rowNo));return;}
+      const p=place(),populated=list=>list.some(k=>get(k)!=='');
+      const types=[populated(['ai','ci'])?'binary2x2':null,populated(['m1i','sd1i','m2i','sd2i'])?'continuous':null,populated(['yi','sei'])?'generic':null].filter(Boolean);
+      const schema=types.length===1?types[0]:null;
+      try{
+        if(!schema)fail('Unsupported or ambiguous mixed data/header in CSV row '+rowNo);
+        const name=get('study')||get('studyId'), id=get('studyId')||name;
+        for(const f of fields[schema]) if(map[f]===undefined) fail('Missing or unsupported CSV header for '+f+'.');
+        const record={study:name,studyId:id,year:year(get('year')),effectMeasure:measure(get('effectMeasure'))};
+        fields[schema].forEach(f=>record[f]=number(get(f),'row '+rowNo+' '+f));
+        const problem=recordProblem(record,schema);if(problem)fail(problem('this row'));
+        usable.push({rowNo,row,p,schema,record});
+      }catch(e){bad.push({e:entry(rowNo,row,e.message),...p,schema});}
+    });
+    const comparison=name=>{let c=review.comparisons.find(c=>c.id===name);if(!c)review.comparisons.push(c={id:name,name,outcomes:[]});return c;};
+    const subgroup=(o,name)=>{let g=o.subgroups.find(g=>g.name===name);if(!g)o.subgroups.push(g={id:name,name,studies:[]});return g;};
+    const typeOf=schema=>schema==='binary2x2'?'binary':schema;
+    usable.forEach(({rowNo,row,p,schema,record})=>{
+      const c=comparison(p.compName),type=typeOf(schema),id=record.studyId,name=record.study;
+      let o=c.outcomes.find(o=>o.id===p.outId);
+      if(!o)c.outcomes.push(o={id:p.outId,name:p.outName,type,effectMeasure:record.effectMeasure,subgroups:[],studies:[],arm1Name:'Experimental',arm2Name:'Control'});
+      if(o.type!==type||o.effectMeasure!==record.effectMeasure||o.name!==p.outName){bad.push({e:entry(rowNo,row,'Mixed data types or effect measures in outcome '+p.outName),...p,schema});return;}
+      const g=subgroup(o,p.groupName);
       const s={id,name,year:record.year,scale:record.effectMeasure,source:csvRows([header,row]),arms:[]};
       if(schema==='generic')s.precomputed={est:record.yi,se:record.sei};
       else if(schema==='binary2x2')s.arms=[{treatment:o.arm1Name,events:record.ai,n:record.n1i},{treatment:o.arm2Name,events:record.ci,n:record.n2i}];
       else s.arms=[{treatment:o.arm1Name,mean:record.m1i,sd:record.sd1i,n:record.n1i},{treatment:o.arm2Name,mean:record.m2i,sd:record.sd2i,n:record.n2i}];
       g.studies.push(s);o.studies.push(s);review.studies[id]={id,name,year:s.year};review.studyCount++;
     });
-    review.comparisons.forEach(c=>c.outcomes.forEach(o=>o.subgroups.forEach(g=>validateRecords(g.studies.map(s=>rawRecord(s,o.type)),typeSchema[o.type]))));
+    const listed=loose.concat(bad.map(b=>b.e)).sort((a,b)=>a.row-b.row);
+    if(!review.studyCount)fail('No usable study row in CSV: '+describeRows(listed,'(no study name)')+'.');
+    bad.sort((a,b)=>a.e.row-b.e.row).forEach(b=>{
+      const c=comparison(b.compName);
+      let o=c.outcomes.find(o=>o.id===b.outId);
+      // An outcome made only of listed rows: typed when the row's data type is known, otherwise it cannot be chosen.
+      if(!o)c.outcomes.push(o=b.schema?{id:b.outId,name:b.outName,type:typeOf(b.schema),effectMeasure:null,subgroups:[],studies:[],arm1Name:'Experimental',arm2Name:'Control'}
+        :{id:b.outId,name:b.outName,type:'unsupported',tag:null,effectMeasure:null,subgroups:[],studies:[]});
+      (o.skipped||(o.skipped=[])).push(b.e);
+      if(o.type!=='unsupported'){const g=subgroup(o,b.groupName);(g.skipped||(g.skipped=[])).push(b.e);}
+    });
+    if(loose.length)review.skipped=loose;
     return review;
   }
   function parseText(text){
@@ -296,19 +342,25 @@
       const i=choice&&choice[key];if(!Number.isInteger(i)||i<0||!list||!list[i])fail('Choose a valid '+key+'.');return list[i];
     };
     const comparison=at(review&&review.comparisons,'comparison'),outcome=at(comparison.outcomes,'outcome');
-    if(outcome.type==='unsupported')fail(outcome.tag+' is not an outcome type this importer reads; it cannot be imported (listed as not imported).');
+    if(outcome.type==='unsupported')fail(outcome.tag?outcome.tag+' is not an outcome type this importer reads; it cannot be imported (listed as not imported).'
+      :'This outcome has no study row that can be imported: '+describeRows(outcome.skipped||[],'(no study name)')+'. Nothing from it is imported.');
     const subgroup=at(outcome.subgroups,'subgroup');
     return {comparison,outcome,subgroup};
   }
   function select(review,choice,schema,opts){
     const {comparison,outcome,subgroup}=selected(review,choice);
+    // A CSV row that could not be placed in any subgroup might belong to this one, so no subgroup is complete without it.
+    if(review.skipped&&review.skipped.length){
+      const n=review.skipped.length;
+      fail('The table has '+n+' row'+(n===1?'':'s')+' that could not be placed in a subgroup: '+describeRows(review.skipped,'(no study name)')+'. Nothing is imported from this table until '+(n===1?'it is':'they are')+' corrected.');
+    }
     if(outcome.type==='o_e_var')fail('O-E/variance rows require a separate conversion workflow; select a generic IV estimate/SE outcome.');
     if(outcome.type==='generic'&&ratioMeasure(outcome.effectMeasure)&&outcome.logData==='NO')fail('Generic ratio data are not on the log scale. Supply log estimates and their SE explicitly; no scale conversion is inferred.');
     if(typeSchema[outcome.type]!==schema)fail('This '+outcome.type+' outcome is not compatible with the app input schema '+schema+'.');
     // Strict for the chosen subgroup: a listed (unusable) row refuses it; the remaining rows are never imported without it.
     if(subgroup.skipped&&subgroup.skipped.length){
       const n=subgroup.skipped.length;
-      fail('The selected subgroup has '+n+' study row'+(n===1?'':'s')+' that cannot be imported: '+subgroup.skipped.map(s=>'row '+s.row+', study '+(s.study||s.studyId||'(no STUDY_ID)')+': '+s.reason).join('; ')+'. Nothing from this subgroup is imported.');
+      fail('The selected subgroup has '+n+' study row'+(n===1?'':'s')+' that cannot be imported: '+describeRows(subgroup.skipped,review.version==='CSV'?'(no study name)':'(no STUDY_ID)')+'. Nothing from this subgroup is imported.');
     }
     const filename=(opts&&opts.filename)||'unnamed file';
     return validateRecords(subgroup.studies.map(s=>{
@@ -474,14 +526,20 @@
     function showSkipped(parsed){
       if(skippedBox){skippedBox.remove();skippedBox=null;}
       const list=[];
+      // CSV rows that could not be placed in a subgroup come first, without a comparison/outcome.
+      if(parsed)(parsed.skipped||[]).forEach(s=>list.push({row:s}));
       if(parsed)parsed.comparisons.forEach(c=>c.outcomes.forEach(o=>(o.skipped||[]).forEach(s=>list.push({comparison:c.name,outcome:o.name,row:s}))));
+      const none=parsed&&parsed.version==='CSV'?'(no study name)':'(no STUDY_ID)';
       if(!list.length)return 0;
       skippedBox=doc.createElement('div');skippedBox.id='alm-revman-skipped';skippedBox.className='err';skippedBox.setAttribute('role','alert');
       status.after(skippedBox);
       el('strong',list.length+' study row'+(list.length===1?' was':'s were')+' not imported',skippedBox);
       skippedBox.appendChild(doc.createTextNode(' (unusable values or unsupported content in the file):'));
       const ul=el('ul',null,skippedBox);
-      list.forEach(x=>el('li',x.comparison+' \u203a '+x.outcome+(x.row.row==null?'':', row '+x.row.row+', study '+(x.row.study||x.row.studyId||'(no STUDY_ID)'))+': '+x.row.reason,ul));
+      list.forEach(x=>{
+        const where=x.row.row==null?'':'row '+x.row.row+', study '+(x.row.study||x.row.studyId||none);
+        el('li',(x.comparison==null?where:x.comparison+' \u203a '+x.outcome+(where?', '+where:''))+': '+x.row.reason,ul);
+      });
       return list.length;
     }
     const preview=el('div',null,panel,{'aria-label':'Selected study preview'});

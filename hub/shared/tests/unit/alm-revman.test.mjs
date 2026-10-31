@@ -64,7 +64,12 @@ for (const [file,schema,values] of [
   assert.deepEqual(back.map(x=>[x.study,x.studyId,x.year]),rows.map(x=>[x.study,x.studyId,x.year]));
   assert.match(out.note,/recompute/i);
   assert.throws(()=>R.exportCSV([{...rows[0],[fields.at(-1)]:-1}],schema), /invalid|positive|total|SD|SE/i);
-  assert.throws(()=>R.parseText(text.replace(/,40,|,0.125,/,',NaN,')), /number|numeric|invalid/i);
+  // One unusable CSV row no longer refuses the WHOLE table (same rule as the XML path, review of #249). Strictness on the row
+  // is unchanged: it is NOT imported, it IS listed with its reason, and choosing its subgroup is refused with that reason.
+  const bad=R.parseText(text.replace(/,40,|,0.125,/,',NaN,')),o=bad.comparisons[0].outcomes[0];
+  assert.equal(o.skipped.length,1);assert.equal(o.skipped[0].row,2);assert.match(o.skipped[0].reason,/number|numeric|invalid/i);
+  assert.equal(o.subgroups[0].studies.length,r.comparisons[0].outcomes[0].subgroups[0].studies.length-1,'the bad row is not imported');
+  assert.throws(()=>pick(bad,0,0,schema), /number|numeric|invalid/i);
 });
 
 test('PLANTED malformed XML/CSV, trailing junk and invalid year refuse the file; unusable rows are never imported', () => {
@@ -109,7 +114,11 @@ test('full Web analysis columns choose populated data type; never use displayed 
   const r=R.parseText(csv);
   assert.equal(pick(r)[0].ai,0);
   assert.equal(pick(r,1,0,'generic')[0].yi,-0.25);
-  assert.throws(()=>R.parseText(csv.replace('SUBGROUP','SUBGROUP').replace('0.125,,,,','0.125,2,1,3,')),/mixed|ambiguous/i);
+  // A row with two populated data types is listed (not imported, its outcome cannot be chosen); the other row still imports.
+  const mixed=R.parseText(csv.replace('SUBGROUP','SUBGROUP').replace('0.125,,,,','0.125,2,1,3,'));
+  assert.deepEqual(pick(mixed),pick(r));
+  assert.match(mixed.comparisons[0].outcomes[1].skipped[0].reason,/mixed|ambiguous/i);
+  assert.throws(()=>pick(mixed,1,0,'generic'),/mixed|ambiguous/i);
 });
 
 test('PLANTED spreadsheet formulas and unknown/ambiguous headers are refused, safe quotes preserved', () => {
