@@ -453,6 +453,12 @@
           else { try { out.metareg = B.fit(rows, Object.assign({}, opts, { X: d.X, covariateNames: d.names })); } catch (e) { errors.push("Meta-regression: " + e.message); } }
         }
         try { out.deeks = B.deeksTest(rows); } catch (e) { out.deeks = null; }
+        // With no spread in 1/sqrt(ESS) (e.g. identical studies) the regression slope SE is 0/0 and p is NaN: say so
+        // instead of showing a bare "--" card.
+        if (!out.deeks || !Number.isFinite(out.deeks.p)) {
+          out.deeks = null;
+          errors.push("Deeks' funnel-plot asymmetry test is not estimable: the studies' effective sample sizes (1/√ESS) or log diagnostic odds ratios do not vary enough to fit its regression.");
+        }
       }
       return out;
     }
