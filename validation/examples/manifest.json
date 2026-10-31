@@ -1,0 +1,98 @@
+[
+  {
+    "paper": 3,
+    "app": "dta-sroc",
+    "dataset": "AuditC",
+    "input": "#f-data"
+  },
+  {
+    "paper": 4,
+    "app": "nma",
+    "dataset": "smokingcessation",
+    "input": "#f-data"
+  },
+  {
+    "paper": 5,
+    "app": "heterogeneity",
+    "dataset": "dat.bcg",
+    "input": "#f-data"
+  },
+  {
+    "paper": 6,
+    "app": "pubbias-tests",
+    "dataset": "dat.bcg",
+    "input": "#src"
+  },
+  {
+    "paper": 7,
+    "app": "multilevel-ma",
+    "dataset": "dat.konstantopoulos2011",
+    "input": "#src"
+  },
+  {
+    "paper": 8,
+    "app": "meta-regression",
+    "dataset": "dat.bcg",
+    "input": "#f-data"
+  },
+  {
+    "paper": 9,
+    "app": "proportion-ma",
+    "dataset": "dat.bcg",
+    "input": "#src"
+  },
+  {
+    "paper": 10,
+    "app": "mh-peto",
+    "dataset": "dat.bcg",
+    "input": "#src"
+  },
+  {
+    "paper": 11,
+    "app": "influence",
+    "dataset": "dat.bcg",
+    "input": "#src"
+  },
+  {
+    "paper": 12,
+    "app": "limit-ma",
+    "dataset": "dat.bcg",
+    "input": "#src"
+  },
+  {
+    "paper": 13,
+    "app": "gosh",
+    "dataset": "dat.bcg",
+    "input": "#src"
+  },
+  {
+    "paper": 14,
+    "app": "cumulative-subgroup",
+    "dataset": "dat.bcg",
+    "input": "#f-data"
+  },
+  {
+    "paper": 15,
+    "app": "rve-meta",
+    "dataset": "dat.konstantopoulos2011",
+    "input": "#src"
+  },
+  {
+    "paper": 16,
+    "app": "nma-inconsistency",
+    "dataset": "smokingcessation",
+    "input": "#src"
+  },
+  {
+    "paper": 17,
+    "app": "correlation-ma",
+    "dataset": "dat.molloy2014",
+    "input": "#f-data"
+  },
+  {
+    "paper": 19,
+    "app": "component-nma",
+    "dataset": "Baker2009",
+    "input": "#src"
+  }
+]

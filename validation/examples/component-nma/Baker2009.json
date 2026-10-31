@@ -1,0 +1,773 @@
+{
+  "source_package": "netmeta",
+  "version": "3.7-0",
+  "dataset": "Baker2009",
+  "citation": "Baker WL, Baker EL, Coleman CI (2009). Pharmacologic Treatments for Chronic Obstructive Pulmonary Disease: A Mixed-Treatment Comparison Meta-analysis. Pharmacotherapy 29:891–905.",
+  "licence": "Data values are facts; cite the source paper and the R package. Package licence: GPL (>= 2).",
+  "source_url": "https://github.com/cran/netmeta/blob/master/data/Baker2009.rda",
+  "source_blob": "b44dc87949b01c2b927e85b64c182da47811fd0e",
+  "columns": [
+    "study",
+    "year",
+    "id",
+    "treatment",
+    "exac",
+    "total"
+  ],
+  "values": [
+    {
+      "study": "Llewellyn-Jones 1996",
+      "year": 1996,
+      "id": 1,
+      "treatment": "Fluticasone",
+      "exac": 0,
+      "total": 8
+    },
+    {
+      "study": "Llewellyn-Jones 1996",
+      "year": 1996,
+      "id": 1,
+      "treatment": "Placebo",
+      "exac": 3,
+      "total": 8
+    },
+    {
+      "study": "Boyd 1997",
+      "year": 1997,
+      "id": 2,
+      "treatment": "Salmeterol",
+      "exac": 47,
+      "total": 229
+    },
+    {
+      "study": "Boyd 1997",
+      "year": 1997,
+      "id": 2,
+      "treatment": "Placebo",
+      "exac": 59,
+      "total": 227
+    },
+    {
+      "study": "Paggiaro 1998",
+      "year": 1998,
+      "id": 3,
+      "treatment": "Fluticasone",
+      "exac": 45,
+      "total": 142
+    },
+    {
+      "study": "Paggiaro 1998",
+      "year": 1998,
+      "id": 3,
+      "treatment": "Placebo",
+      "exac": 51,
+      "total": 139
+    },
+    {
+      "study": "Mahler 1999",
+      "year": 1999,
+      "id": 4,
+      "treatment": "Salmeterol",
+      "exac": 28,
+      "total": 135
+    },
+    {
+      "study": "Mahler 1999",
+      "year": 1999,
+      "id": 4,
+      "treatment": "Placebo",
+      "exac": 47,
+      "total": 143
+    },
+    {
+      "study": "Casaburi 2000",
+      "year": 2000,
+      "id": 5,
+      "treatment": "Tiotropium",
+      "exac": 45,
+      "total": 279
+    },
+    {
+      "study": "Casaburi 2000",
+      "year": 2000,
+      "id": 5,
+      "treatment": "Placebo",
+      "exac": 41,
+      "total": 191
+    },
+    {
+      "study": "Burge 2000",
+      "year": 2000,
+      "id": 6,
+      "treatment": "Fluticasone",
+      "exac": 290,
+      "total": 372
+    },
+    {
+      "study": "Burge 2000",
+      "year": 2000,
+      "id": 6,
+      "treatment": "Placebo",
+      "exac": 286,
+      "total": 370
+    },
+    {
+      "study": "Littner 2000",
+      "year": 2000,
+      "id": 7,
+      "treatment": "Tiotropium",
+      "exac": 0,
+      "total": 33
+    },
+    {
+      "study": "Littner 2000",
+      "year": 2000,
+      "id": 7,
+      "treatment": "Placebo",
+      "exac": 1,
+      "total": 35
+    },
+    {
+      "study": "vanNoord 2000",
+      "year": 2000,
+      "id": 8,
+      "treatment": "Salmeterol",
+      "exac": 11,
+      "total": 47
+    },
+    {
+      "study": "vanNoord 2000",
+      "year": 2000,
+      "id": 8,
+      "treatment": "Placebo",
+      "exac": 18,
+      "total": 50
+    },
+    {
+      "study": "Rennard 2001",
+      "year": 2001,
+      "id": 9,
+      "treatment": "Salmeterol",
+      "exac": 38,
+      "total": 132
+    },
+    {
+      "study": "Rennard 2001",
+      "year": 2001,
+      "id": 9,
+      "treatment": "Placebo",
+      "exac": 41,
+      "total": 135
+    },
+    {
+      "study": "Casaburi 2002",
+      "year": 2002,
+      "id": 10,
+      "treatment": "Tiotropium",
+      "exac": 198,
+      "total": 550
+    },
+    {
+      "study": "Casaburi 2002",
+      "year": 2002,
+      "id": 10,
+      "treatment": "Placebo",
+      "exac": 156,
+      "total": 371
+    },
+    {
+      "study": "Chapman 2002",
+      "year": 2002,
+      "id": 11,
+      "treatment": "Salmeterol",
+      "exac": 52,
+      "total": 201
+    },
+    {
+      "study": "Chapman 2002",
+      "year": 2002,
+      "id": 11,
+      "treatment": "Placebo",
+      "exac": 68,
+      "total": 207
+    },
+    {
+      "study": "Donohue 2002",
+      "year": 2002,
+      "id": 12,
+      "treatment": "Tiotropium",
+      "exac": 77,
+      "total": 209
+    },
+    {
+      "study": "Donohue 2002",
+      "year": 2002,
+      "id": 12,
+      "treatment": "Salmeterol",
+      "exac": 82,
+      "total": 213
+    },
+    {
+      "study": "Donohue 2002",
+      "year": 2002,
+      "id": 12,
+      "treatment": "Placebo",
+      "exac": 92,
+      "total": 201
+    },
+    {
+      "study": "Hattotuwa 2002",
+      "year": 2002,
+      "id": 13,
+      "treatment": "Fluticasone",
+      "exac": 3,
+      "total": 16
+    },
+    {
+      "study": "Hattotuwa 2002",
+      "year": 2002,
+      "id": 13,
+      "treatment": "Placebo",
+      "exac": 10,
+      "total": 14
+    },
+    {
+      "study": "Mahler 2002",
+      "year": 2002,
+      "id": 14,
+      "treatment": "Fluticasone",
+      "exac": 77,
+      "total": 168
+    },
+    {
+      "study": "Mahler 2002",
+      "year": 2002,
+      "id": 14,
+      "treatment": "Salmeterol",
+      "exac": 63,
+      "total": 160
+    },
+    {
+      "study": "Mahler 2002",
+      "year": 2002,
+      "id": 14,
+      "treatment": "Fluticasone+Salmeterol",
+      "exac": 68,
+      "total": 165
+    },
+    {
+      "study": "Mahler 2002",
+      "year": 2002,
+      "id": 14,
+      "treatment": "Placebo",
+      "exac": 79,
+      "total": 181
+    },
+    {
+      "study": "Rossi 2002",
+      "year": 2002,
+      "id": 15,
+      "treatment": "Formoterol",
+      "exac": 117,
+      "total": 425
+    },
+    {
+      "study": "Rossi 2002",
+      "year": 2002,
+      "id": 15,
+      "treatment": "Placebo",
+      "exac": 75,
+      "total": 220
+    },
+    {
+      "study": "Brusasco 2003",
+      "year": 2003,
+      "id": 16,
+      "treatment": "Tiotropium",
+      "exac": 129,
+      "total": 402
+    },
+    {
+      "study": "Brusasco 2003",
+      "year": 2003,
+      "id": 16,
+      "treatment": "Salmeterol",
+      "exac": 142,
+      "total": 405
+    },
+    {
+      "study": "Brusasco 2003",
+      "year": 2003,
+      "id": 16,
+      "treatment": "Placebo",
+      "exac": 156,
+      "total": 400
+    },
+    {
+      "study": "Carverley-ERJ 2003",
+      "year": 2003,
+      "id": 17,
+      "treatment": "Budesonide",
+      "exac": 167,
+      "total": 257
+    },
+    {
+      "study": "Carverley-ERJ 2003",
+      "year": 2003,
+      "id": 17,
+      "treatment": "Formoterol",
+      "exac": 179,
+      "total": 255
+    },
+    {
+      "study": "Carverley-ERJ 2003",
+      "year": 2003,
+      "id": 17,
+      "treatment": "Budesonide+Formoterol",
+      "exac": 140,
+      "total": 254
+    },
+    {
+      "study": "Carverley-ERJ 2003",
+      "year": 2003,
+      "id": 17,
+      "treatment": "Placebo",
+      "exac": 154,
+      "total": 256
+    },
+    {
+      "study": "Carverley-L 2003",
+      "year": 2003,
+      "id": 18,
+      "treatment": "Fluticasone",
+      "exac": 221,
+      "total": 374
+    },
+    {
+      "study": "Carverley-L 2003",
+      "year": 2003,
+      "id": 18,
+      "treatment": "Salmeterol",
+      "exac": 216,
+      "total": 372
+    },
+    {
+      "study": "Carverley-L 2003",
+      "year": 2003,
+      "id": 18,
+      "treatment": "Fluticasone+Salmeterol",
+      "exac": 218,
+      "total": 358
+    },
+    {
+      "study": "Carverley-L 2003",
+      "year": 2003,
+      "id": 18,
+      "treatment": "Placebo",
+      "exac": 235,
+      "total": 361
+    },
+    {
+      "study": "Celli 2003",
+      "year": 2003,
+      "id": 19,
+      "treatment": "Salmeterol",
+      "exac": 95,
+      "total": 554
+    },
+    {
+      "study": "Celli 2003",
+      "year": 2003,
+      "id": 19,
+      "treatment": "Placebo",
+      "exac": 59,
+      "total": 270
+    },
+    {
+      "study": "Hanania 2003",
+      "year": 2003,
+      "id": 20,
+      "treatment": "Fluticasone",
+      "exac": 79,
+      "total": 183
+    },
+    {
+      "study": "Hanania 2003",
+      "year": 2003,
+      "id": 20,
+      "treatment": "Salmeterol",
+      "exac": 65,
+      "total": 177
+    },
+    {
+      "study": "Hanania 2003",
+      "year": 2003,
+      "id": 20,
+      "treatment": "Fluticasone+Salmeterol",
+      "exac": 71,
+      "total": 178
+    },
+    {
+      "study": "Hanania 2003",
+      "year": 2003,
+      "id": 20,
+      "treatment": "Placebo",
+      "exac": 73,
+      "total": 185
+    },
+    {
+      "study": "Szafranski 2004",
+      "year": 2004,
+      "id": 21,
+      "treatment": "Budesonide",
+      "exac": 26,
+      "total": 198
+    },
+    {
+      "study": "Szafranski 2004",
+      "year": 2004,
+      "id": 21,
+      "treatment": "Formoterol",
+      "exac": 38,
+      "total": 201
+    },
+    {
+      "study": "Szafranski 2004",
+      "year": 2004,
+      "id": 21,
+      "treatment": "Budesonide+Formoterol",
+      "exac": 35,
+      "total": 208
+    },
+    {
+      "study": "Szafranski 2004",
+      "year": 2004,
+      "id": 21,
+      "treatment": "Placebo",
+      "exac": 53,
+      "total": 205
+    },
+    {
+      "study": "Odonnel 2004",
+      "year": 2004,
+      "id": 22,
+      "treatment": "Tiotropium",
+      "exac": 7,
+      "total": 96
+    },
+    {
+      "study": "Odonnel 2004",
+      "year": 2004,
+      "id": 22,
+      "treatment": "Placebo",
+      "exac": 11,
+      "total": 91
+    },
+    {
+      "study": "Briggs 2005",
+      "year": 2005,
+      "id": 23,
+      "treatment": "Tiotropium",
+      "exac": 30,
+      "total": 328
+    },
+    {
+      "study": "Briggs 2005",
+      "year": 2005,
+      "id": 23,
+      "treatment": "Salmeterol",
+      "exac": 36,
+      "total": 325
+    },
+    {
+      "study": "Campbell 2005",
+      "year": 2005,
+      "id": 24,
+      "treatment": "Formoterol",
+      "exac": 35,
+      "total": 215
+    },
+    {
+      "study": "Campbell 2005",
+      "year": 2005,
+      "id": 24,
+      "treatment": "Placebo",
+      "exac": 34,
+      "total": 217
+    },
+    {
+      "study": "Niewoehner 2005",
+      "year": 2005,
+      "id": 25,
+      "treatment": "Tiotropium",
+      "exac": 255,
+      "total": 914
+    },
+    {
+      "study": "Niewoehner 2005",
+      "year": 2005,
+      "id": 25,
+      "treatment": "Placebo",
+      "exac": 296,
+      "total": 915
+    },
+    {
+      "study": "vanNoord 2005",
+      "year": 2005,
+      "id": 26,
+      "treatment": "Tiotropium",
+      "exac": 4,
+      "total": 70
+    },
+    {
+      "study": "vanNoord 2005",
+      "year": 2005,
+      "id": 26,
+      "treatment": "Formoterol",
+      "exac": 14,
+      "total": 69
+    },
+    {
+      "study": "Barnes 2006",
+      "year": 2006,
+      "id": 27,
+      "treatment": "Fluticasone+Salmeterol",
+      "exac": 11,
+      "total": 67
+    },
+    {
+      "study": "Barnes 2006",
+      "year": 2006,
+      "id": 27,
+      "treatment": "Placebo",
+      "exac": 24,
+      "total": 73
+    },
+    {
+      "study": "Beeh 2006",
+      "year": 2006,
+      "id": 28,
+      "treatment": "Tiotropium",
+      "exac": 180,
+      "total": 1236
+    },
+    {
+      "study": "Beeh 2006",
+      "year": 2006,
+      "id": 28,
+      "treatment": "Placebo",
+      "exac": 80,
+      "total": 403
+    },
+    {
+      "study": "Dusser 2006",
+      "year": 2006,
+      "id": 29,
+      "treatment": "Tiotropium",
+      "exac": 249,
+      "total": 500
+    },
+    {
+      "study": "Dusser 2006",
+      "year": 2006,
+      "id": 29,
+      "treatment": "Placebo",
+      "exac": 307,
+      "total": 510
+    },
+    {
+      "study": "Odonnel 2006",
+      "year": 2006,
+      "id": 30,
+      "treatment": "Fluticasone+Salmeterol",
+      "exac": 2,
+      "total": 62
+    },
+    {
+      "study": "Odonnel 2006",
+      "year": 2006,
+      "id": 30,
+      "treatment": "Salmeterol",
+      "exac": 1,
+      "total": 59
+    },
+    {
+      "study": "Odonnel 2006",
+      "year": 2006,
+      "id": 30,
+      "treatment": "Placebo",
+      "exac": 6,
+      "total": 64
+    },
+    {
+      "study": "Stokley 2006",
+      "year": 2006,
+      "id": 31,
+      "treatment": "Salmeterol",
+      "exac": 146,
+      "total": 316
+    },
+    {
+      "study": "Stokley 2006",
+      "year": 2006,
+      "id": 31,
+      "treatment": "Placebo",
+      "exac": 163,
+      "total": 318
+    },
+    {
+      "study": "Verkindre 2006",
+      "year": 2006,
+      "id": 32,
+      "treatment": "Tiotropium",
+      "exac": 0,
+      "total": 43
+    },
+    {
+      "study": "Verkindre 2006",
+      "year": 2006,
+      "id": 32,
+      "treatment": "Placebo",
+      "exac": 2,
+      "total": 44
+    },
+    {
+      "study": "Baumgartner 2007",
+      "year": 2007,
+      "id": 33,
+      "treatment": "Salmeterol",
+      "exac": 20,
+      "total": 144
+    },
+    {
+      "study": "Baumgartner 2007",
+      "year": 2007,
+      "id": 33,
+      "treatment": "Placebo",
+      "exac": 24,
+      "total": 143
+    },
+    {
+      "study": "Freeman 2007",
+      "year": 2007,
+      "id": 34,
+      "treatment": "Tiotropium",
+      "exac": 19,
+      "total": 200
+    },
+    {
+      "study": "Freeman 2007",
+      "year": 2007,
+      "id": 34,
+      "treatment": "Placebo",
+      "exac": 35,
+      "total": 195
+    },
+    {
+      "study": "Carverley 2007",
+      "year": 2007,
+      "id": 35,
+      "treatment": "Fluticasone",
+      "exac": 928,
+      "total": 1534
+    },
+    {
+      "study": "Carverley 2007",
+      "year": 2007,
+      "id": 35,
+      "treatment": "Salmeterol",
+      "exac": 932,
+      "total": 1521
+    },
+    {
+      "study": "Carverley 2007",
+      "year": 2007,
+      "id": 35,
+      "treatment": "Fluticasone+Salmeterol",
+      "exac": 879,
+      "total": 1533
+    },
+    {
+      "study": "Carverley 2007",
+      "year": 2007,
+      "id": 35,
+      "treatment": "Placebo",
+      "exac": 969,
+      "total": 1524
+    },
+    {
+      "study": "Kardos 2007",
+      "year": 2007,
+      "id": 36,
+      "treatment": "Fluticasone+Salmeterol",
+      "exac": 210,
+      "total": 507
+    },
+    {
+      "study": "Kardos 2007",
+      "year": 2007,
+      "id": 36,
+      "treatment": "Salmeterol",
+      "exac": 241,
+      "total": 487
+    },
+    {
+      "study": "Powrie 2007",
+      "year": 2007,
+      "id": 37,
+      "treatment": "Tiotropium",
+      "exac": 30,
+      "total": 69
+    },
+    {
+      "study": "Powrie 2007",
+      "year": 2007,
+      "id": 37,
+      "treatment": "Placebo",
+      "exac": 47,
+      "total": 73
+    },
+    {
+      "study": "Wedzicha 2008",
+      "year": 2008,
+      "id": 38,
+      "treatment": "Fluticasone+Salmeterol",
+      "exac": 408,
+      "total": 658
+    },
+    {
+      "study": "Wedzicha 2008",
+      "year": 2008,
+      "id": 38,
+      "treatment": "Tiotropium",
+      "exac": 392,
+      "total": 665
+    },
+    {
+      "study": "DalNegro 2003",
+      "year": 2008,
+      "id": 39,
+      "treatment": "Fluticasone+Salmeterol",
+      "exac": 6,
+      "total": 6
+    },
+    {
+      "study": "DalNegro 2003",
+      "year": 2008,
+      "id": 39,
+      "treatment": "Salmeterol",
+      "exac": 6,
+      "total": 6
+    },
+    {
+      "study": "DalNegro 2003",
+      "year": 2008,
+      "id": 39,
+      "treatment": "Placebo",
+      "exac": 6,
+      "total": 6
+    }
+  ],
+  "notes": "Independent two-arm subset of Baker2009; entire multi-arm trials excluded. Placebo is renamed control; drug components and Fluticasone+Salmeterol are the source package treatment names. Log odds ratios for COPD exacerbation (lower is better). Additivity is a model assumption, not a finding of the source review.",
+  "source_documentation": "https://github.com/cran/netmeta/blob/master/man/Baker2009.Rd"
+}

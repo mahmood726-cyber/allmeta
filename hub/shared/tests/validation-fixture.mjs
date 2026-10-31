@@ -11,7 +11,9 @@ export const test = base.extend({
       // Edge adds a blank (url "") page to the context after a blob download; it has no panel, and
       // waiting for #alm-validate there would hang the teardown until the test timeout.
       if(page.isClosed() || !/^https?:/.test(page.url()))continue;
-      panels.push({url:page.url(),panel:await page.locator('#alm-validate').innerText().catch(()=>null)});
+      // A page without the validation panel records null instead of waiting for it until the test timeout.
+      const panel=page.locator('#alm-validate');
+      panels.push({url:page.url(),panel:(await panel.count())?await panel.innerText().catch(()=>null):null});
     }
     const outside = requests.filter(u=>/^https?:/.test(u) && new URL(u).origin !== new URL(page.url()).origin);
     expect(outside, 'Validation requests must stay on the page origin').toEqual([]);

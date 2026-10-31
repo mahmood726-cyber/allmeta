@@ -1,0 +1,103 @@
+{
+  "source_package": "mada",
+  "version": "0.5.12",
+  "dataset": "AuditC",
+  "citation": "Kriston L, Hölzel L, Weiser A, Berner M, Haerter M (2008). Meta-analysis: Are 3 Questions Enough to Detect Unhealthy Alcohol Use? Annals of Internal Medicine 149:879–888.",
+  "licence": "Data values are facts; cite the source paper and the R package. Package licence: GPL-2.",
+  "source_url": "https://github.com/cran/mada/blob/master/data/AuditC.rda",
+  "source_blob": "1430d214ec9797c2105bbbd83e7b45cf9033020a",
+  "columns": [
+    "TP",
+    "FN",
+    "FP",
+    "TN"
+  ],
+  "values": [
+    {
+      "TP": 47.0,
+      "FN": 9.0,
+      "FP": 101.0,
+      "TN": 738.0
+    },
+    {
+      "TP": 126.0,
+      "FN": 51.0,
+      "FP": 272.0,
+      "TN": 1543.0
+    },
+    {
+      "TP": 19.0,
+      "FN": 10.0,
+      "FP": 12.0,
+      "TN": 192.0
+    },
+    {
+      "TP": 36.0,
+      "FN": 3.0,
+      "FP": 78.0,
+      "TN": 276.0
+    },
+    {
+      "TP": 130.0,
+      "FN": 19.0,
+      "FP": 211.0,
+      "TN": 959.0
+    },
+    {
+      "TP": 84.0,
+      "FN": 2.0,
+      "FP": 68.0,
+      "TN": 89.0
+    },
+    {
+      "TP": 68.0,
+      "FN": 0.0,
+      "FP": 112.0,
+      "TN": 423.0
+    },
+    {
+      "TP": 752.0,
+      "FN": 0.0,
+      "FP": 3226.0,
+      "TN": 2977.0
+    },
+    {
+      "TP": 59.0,
+      "FN": 5.0,
+      "FP": 55.0,
+      "TN": 136.0
+    },
+    {
+      "TP": 142.0,
+      "FN": 50.0,
+      "FP": 571.0,
+      "TN": 2788.0
+    },
+    {
+      "TP": 137.0,
+      "FN": 24.0,
+      "FP": 107.0,
+      "TN": 358.0
+    },
+    {
+      "TP": 57.0,
+      "FN": 3.0,
+      "FP": 103.0,
+      "TN": 437.0
+    },
+    {
+      "TP": 34.0,
+      "FN": 1.0,
+      "FP": 21.0,
+      "TN": 56.0
+    },
+    {
+      "TP": 152.0,
+      "FN": 51.0,
+      "FP": 88.0,
+      "TN": 264.0
+    }
+  ],
+  "notes": "The package supplies 14 count rows without study names; labels are package row numbers, not invented study identifiers.",
+  "source_documentation": "https://github.com/cran/mada/blob/master/man/mada-data.Rd"
+}
