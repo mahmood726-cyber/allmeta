@@ -631,6 +631,9 @@ StudyE, 4, 600, 10, 600</textarea>
 
     // ---- results storage for export ----
     var _lastResults = null;
+    // Associate completed results with their exact inputs without changing the
+    // export schema. A validation replay can restore an earlier result object.
+    var _resultInputs = new WeakMap();
 
     run = window.alm.analysisLifecycle(run, function (result) { return !!_lastResults; }, "#src, #measure");
 
@@ -861,6 +864,7 @@ StudyE, 4, 600, 10, 600</textarea>
       });
       _lastResults.k_double_zero = nDouble;
       _lastResults.zero_cell_convention = 'metafor: pooled MH/Peto without continuity correction; per-study OR/RR add 0.5 to tables with a zero cell';
+      _resultInputs.set(_lastResults, JSON.stringify(snapshot()));
 
       // Persist URL state
       if (window.alm && window.alm.urlState) {
@@ -1168,10 +1172,14 @@ StudyE, 4, 600, 10, 600</textarea>
     };
 
     // Validation hooks use the page parser and rendering path.
-    window.__mhValidation = {parse: parse, parseInput: parseInput, run: run, restoreResult: function (r) { _lastResults = r; }};
+    window.__mhValidation = {parse: parse, parseInput: parseInput, run: run, restoreResult: function (r) { _lastResults = r; },
+      isCurrent: function () { return !!_lastResults && _resultInputs.get(_lastResults) === JSON.stringify(snapshot()); } };
 
     // Expose last results for export
     window._almLastMhPeto = function () { return _lastResults; };
+    // The same row checker for a restored analysis file (alm-features.js share set()), so a row this page would block
+    // cannot replace the current analysis with a blocked one.
+    window.__almMhPetoParse = function (text) { return parseInput(text); };
 
     // Cross-tool bus producer (ma-studies-v1): build per-study {label, est, se}
     // on the contract scale — log for OR/RR ratios, identity for RD. Recomputed
@@ -1244,7 +1252,7 @@ StudyE, 4, 600, 10, 600</textarea>
     window.alm.resultsExport({
       target: '#alm-export-mount',
       basename: 'mhpeto-results',
-      getResults: function () { return window._almLastMhPeto ? window._almLastMhPeto() : {}; },
+      getResults: function () { return (window._almLastMhPeto && window._almLastMhPeto()) || {}; },
     });
 
     window.alm.urlState({ version: 1 });
@@ -1279,8 +1287,9 @@ StudyE, 4, 600, 10, 600</textarea>
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
       // The leave-one-out view filter is not autosaved: it was added after main, and saving it would shift the
       // positional idx:N keys of the later plot controls, so drafts saved by the earlier page would restore wrongly.
+      // Feature-panel fields must also stay outside this legacy draft and its positional keys.
       AlmAutosave.install({ appKey: 'mh-peto', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#loo-only-flagged)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#loo-only-flagged):not(#alm-features *)'; }) });
     }
   });
 })();
@@ -1328,9 +1337,20 @@ StudyE, 4, 600, 10, 600</textarea>
 </script>
 <script src="../shared/alm-validate.js"></script>
 <script src="validate/adapter.js"></script>
+<div id="alm-features"></div>
+<link rel="stylesheet" href="../shared/alm-features.css">
+<link rel="stylesheet" href="../shared/alm-entry.css">
+<script src="../shared/url-pack.js"></script>
 <script src="../shared/alm-zip.js"></script>
-<script src="../shared/alm-sof.js" data-alm-sof-app="mh-peto"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-entry-ui.js"></script>
 <script src="../shared/alm-features.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/vendor/share-deflate.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="alm-features.js"></script>
+<script src="../shared/alm-sof.js" data-alm-sof-app="mh-peto"></script>
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>
