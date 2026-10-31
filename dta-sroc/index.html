@@ -226,6 +226,9 @@
     window.__almBivariate = function () { return _lastBivar; };
     window.__almMetaRegression = function () { return _lastMetareg; };
     window.__almDeeks = function () { return _lastDeeks; };
+    // The same row checker for a restored analysis file (alm-features.js share set()), so a row this page would block
+    // cannot replace the current analysis with a blocked one.
+    window.__almDtaParse = function (text, covMode) { return parseStudies(text, covMode); };
 
     // Fagan nomogram: pre-test prob (left axis) → LR line → post-test prob (right axis).
     function faganSvg(b) {
@@ -399,10 +402,21 @@
 
     // Design matrix for a single covariate column, as R's model.matrix: numeric as is; otherwise
     // treatment-coded categories with alphabetically sorted levels (first level = reference).
+    // Numeric only when every value is a complete decimal number (the token rule of the counts): Number() would
+    // also read 0x10 as 16. A column that is mostly numbers (or Number()-readable) but not entirely decimal
+    // numbers is refused with those studies listed, never silently switched to categories.
+    const COV_DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
     function designFor(studies) {
       const v = studies.map(s => s.cov);
       if (v.some(x => x == null || x === "")) return { error: "every study needs a covariate value in the last column" };
-      if (v.every(x => Number.isFinite(Number(x)))) return { X: v.map(x => [1, Number(x)]), names: ["(Intercept)", "covariate"], kind: "numeric" };
+      if (v.every(x => COV_DECIMAL.test(x))) return { X: v.map(x => [1, Number(x)]), names: ["(Intercept)", "covariate"], kind: "numeric" };
+      const looksNumeric = v.filter(x => COV_DECIMAL.test(x) || Number.isFinite(Number(x))).length;
+      if (2 * looksNumeric > v.length) {
+        const bad = studies.filter(s => !COV_DECIMAL.test(s.cov)).map(s => s.label + " (" + s.cov + ")");
+        return { error: "the covariate looks numeric but these values are not decimal numbers: " +
+          bad.slice(0, 5).join(", ") + (bad.length > 5 ? " and " + (bad.length - 5) + " more" : "") +
+          ". Correct them, or give every study a text label to treat the covariate as categories" };
+      }
       const lev = Array.from(new Set(v)).sort();
       if (lev.length < 2) return { error: "the covariate has a single category" };
       return { X: v.map(x => [1].concat(lev.slice(1).map(l => (x === l ? 1 : 0)))), names: ["(Intercept)"].concat(lev.slice(1).map(l => "covariate = " + l)), kind: "categorical", levels: lev };
@@ -439,6 +453,12 @@
           else { try { out.metareg = B.fit(rows, Object.assign({}, opts, { X: d.X, covariateNames: d.names })); } catch (e) { errors.push("Meta-regression: " + e.message); } }
         }
         try { out.deeks = B.deeksTest(rows); } catch (e) { out.deeks = null; }
+        // With no spread in 1/sqrt(ESS) (e.g. identical studies) the regression slope SE is 0/0 and p is NaN: say so
+        // instead of showing a bare "--" card.
+        if (!out.deeks || !Number.isFinite(out.deeks.p)) {
+          out.deeks = null;
+          errors.push("Deeks' funnel-plot asymmetry test is not estimable: the studies' effective sample sizes (1/√ESS) or log diagnostic odds ratios do not vary enough to fit its regression.");
+        }
       }
       return out;
     }
@@ -874,10 +894,10 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      // The #alm-plus extras are kept out of the original autosave so its keys and
-      // positional idx:N indices stay exactly as before the extras were added.
+      // Keep both auxiliary panels out of the original autosave. Their controls
+      // must not shift legacy idx:N keys or trigger writes to the native draft.
       AlmAutosave.install({ appKey: 'dta-sroc', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-features *)'; }) });
     }
   });
 })();
@@ -902,5 +922,16 @@
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>
+<link rel="stylesheet" href="../shared/alm-entry.css">
+<script src="../shared/url-pack.js"></script>
+<script src="../shared/alm-zip.js"></script>
+<script src="../shared/truthcert-export.js"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-entry-ui.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/vendor/share-deflate.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="alm-features.js"></script>
 </body>
 </html>
