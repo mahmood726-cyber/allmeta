@@ -77,12 +77,13 @@ drug+exercise+education | control | -0.55 | 0.15
 exercise+education | control | -0.30 | 0.13
 drug | exercise | -0.12 | 0.10
 drug+exercise | drug | -0.18 | 0.11</textarea>
-        <span class="hint">Components separated by <code>+</code>. Use <code>control</code> for no intervention. Labels are case-insensitive. Empty or repeated components and malformed rows are refused. At least two contrasts and an identifiable component design are required. With zero residual degrees of freedom, heterogeneity is not estimable (exported as null); effects use sampling variances.</span>
+        <span class="hint">Components separated by <code>+</code>. Use <code>control</code> for no intervention. Labels are case-insensitive. Empty or repeated components and malformed rows are refused. At least one contrast and an identifiable component design are required. With zero residual degrees of freedom, heterogeneity is not estimable (exported as null), effects use sampling variances, and the page warns (netmeta::discomb fits these designs too).</span>
       </label>
       <button type="button" id="btn-run" class="primary" style="width:100%">Fit</button>
     </section>
     <section class="panel">
       <h2>Component effects</h2>
+      <div class="note" id="smallk-note" role="status" hidden></div>
       <table id="comp-tbl">
         <thead><tr><th>Component</th><th>Effect</th><th>SE</th><th>95% CI</th></tr></thead>
         <tbody id="comp-body"></tbody>
@@ -225,6 +226,8 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
     function clearResults() {
       _lastCnma = null;
       for (const id of ["comp-body", "int-body", "forest"]) document.getElementById(id).innerHTML = "";
+      const note = document.getElementById("smallk-note");
+      if (note) { note.hidden = true; note.textContent = ""; }
     }
     function escapeLabel(s) {
       return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -234,12 +237,22 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       let rows, f;
       try {
         rows = parse(document.getElementById("src").value);
-        if (rows.length < 2) throw new Error("At least 2 valid contrasts are required.");
+        // netmeta::discomb fits a single contrast too (Mahmood 2026-10-31: match R, warn visibly below).
+        if (rows.length < 1) throw new Error("Enter at least one valid contrast.");
         f = fit(rows);
       } catch (e) {
         if (window.Toast) window.Toast.show(e.message, "warn");
         return;
       }
+
+      // No residual degrees of freedom (e.g. one contrast): netmeta::discomb fits it as well; say what that means.
+      const warnings = [];
+      if (f.df === 0) {
+        const k = rows.length, p = f.comps.length;
+        warnings.push("Only " + k + " contrast" + (k === 1 ? "" : "s") + " for " + p + " component" + (p === 1 ? "" : "s") + ": netmeta::discomb fits this design as well, but with no residual degrees of freedom the between-contrast variance τ² and the additivity assumption cannot be checked, and each component effect simply reproduces the contrasts; interpret with great caution.");
+      }
+      const note = document.getElementById("smallk-note");
+      if (note && warnings.length) { note.textContent = warnings.join(" "); note.hidden = false; }
 
       // Component table
       const cBody = document.getElementById("comp-body");
@@ -282,7 +295,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
 
       // Engine-state exposure for R-parity tests (do-no-harm).
       _lastCnma = {
-        comps: f.comps, tau2: f.tau2, Q: f.Q, df: f.df,
+        comps: f.comps, tau2: f.tau2, Q: f.Q, df: f.df, warnings: warnings,
         components: Object.fromEntries(compRows.map(r => [r.name, { est: r.e, se: r.se }])),
         combinations: Object.fromEntries(intRows.map(r => [r.name, { est: r.e, se: r.se }])),
       };

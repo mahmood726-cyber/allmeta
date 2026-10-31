@@ -37,7 +37,7 @@
     if (typeof src !== 'string' || src.length > 200000) throw new Error('Data text missing or too long.');
     var rows = global.parse(src);
     checkComponents(rows);
-    if (rows.length < 2) throw new Error('At least two independent contrasts are required.');
+    if (rows.length < 1) throw new Error('At least one contrast is required.');
     // Preflight with the app's own parser and fit, without changing inputs/results.
     global.fit(rows);
     return rows;
@@ -48,7 +48,7 @@
     input().dispatchEvent(new Event('input', { bubbles: true }));
   }
   function apply(records) {
-    if (!Array.isArray(records) || records.length < 2) throw new Error('At least two independent contrasts are required.');
+    if (!Array.isArray(records) || records.length < 1) throw new Error('At least one contrast is required.');
     var studies = new Set();
     var src = records.map(function (r) {
       if (!r || !Number.isFinite(r.yi) || !Number.isFinite(r.sei) || r.sei <= 0) throw new Error('Each contrast needs a finite effect and positive SE.');
