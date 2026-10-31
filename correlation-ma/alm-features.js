@@ -35,6 +35,9 @@
     r.level = 95;
     r.varianceOffset = 3;
     r.piMinStudies = 2;
+    // Non-integer sample sizes are analysed as entered (as metafor does) and named in a note.
+    r.nonIntegerLabels = (o.studies || []).filter(function (s) { return !Number.isInteger(s.n); }).map(function (s) { return String(s.label); });
+    r.nonIntegerN = r.nonIntegerLabels.length;
     r.includesNull = global.AlmText.cochrane.ciIncludesNull(o.r_lo, o.r_hi, 0);
     r.imprecise = global.AlmText.cochrane.imprecise(o.r_lo, o.r_hi, 0);
     var pt = global.__almTextPerturb;
@@ -116,6 +119,12 @@
     },
     flags: function (T, r) {
       return [
+        T.when(r.nonIntegerN, function () {
+          var parts = ['Sample sizes that are not whole numbers were analysed as entered, as metafor does (Fisher-z variance from n as given): '];
+          r.nonIntegerLabels.forEach(function (l, i) { if (i) parts.push(', '); parts.push(T.label({ key: 'nonIntegerLabels', index: i })); });
+          parts.push('. Check them against the source.');
+          return parts;
+        }),
         T.when(r.k < T.R.fewK, 'Few studies: heterogeneity estimates and prediction limits are imprecise.'),
         T.when(r.k < T.R.funnelK, 'Tests for small-study effects would be underpowered; none were performed.'),
         T.when(T.zero('I2', 1), 'An I² near zero does not establish homogeneity.'),

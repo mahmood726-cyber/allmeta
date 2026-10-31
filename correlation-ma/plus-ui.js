@@ -14,7 +14,7 @@
 
   // ---------- U1: rejected-row notice (same rules, same order of tests as the page parser) ----------
   function classify(text) {
-    var accepted = [], rejected = [];
+    var accepted = [], rejected = [], fractional = [];
     String(text || "").split(/\r?\n/).forEach(function (line, i) {
       var t = line.trim(); if (!t || t.charAt(0) === "#") return;
       var p = t.split(/\s*,\s*/);
@@ -28,9 +28,12 @@
       if (!isFinite(n) || !isFinite(r)) { rejected.push({ line: i + 1, text: t, reason: "nonfinite numeric field" }); return; }
       if (r <= -1 || r >= 1) { rejected.push({ line: i + 1, text: t, reason: "|r| >= 1" }); return; }
       if (n <= 3) { rejected.push({ line: i + 1, text: t, reason: "n <= 3" }); return; }
+      // Accepted as metafor accepts it (escalc ZCOR: vi = 1/(ni - 3) with ni as given), but warned about:
+      // a sample size is normally a whole number. Label rule as the page parser.
+      if (!Number.isInteger(n)) fractional.push({ line: i + 1, label: p.slice(0, p.length - 2).join(", ") || ("Study " + (accepted.length + 1)), n: n });
       accepted.push({ line: i + 1 });
     });
-    return { accepted: accepted.length, rejected: rejected };
+    return { accepted: accepted.length, rejected: rejected, fractional: fractional };
   }
   var _rejected = [];
   window._almCorrRejected = function () { return _rejected.slice(); };
@@ -40,11 +43,21 @@
     var c = classify($("f-data").value), el = $("f-notice");
     _rejected = c.rejected;
     if (!el) return;
-    if (!c.rejected.length) { el.textContent = ""; el.hidden = true; return; }
+    if (!c.rejected.length && !c.fractional.length) { el.textContent = ""; el.hidden = true; return; }
     el.hidden = false;
-    var items = c.rejected.slice(0, 20).map(function (x) { return "<li>Line " + x.line + " (" + esc(x.text) + "): " + esc(x.reason) + "</li>"; }).join("");
-    el.innerHTML = "<strong>" + c.rejected.length + " row" + (c.rejected.length === 1 ? " was" : "s were") + " excluded</strong> (" + c.accepted + " accepted)." +
-      "<ul>" + items + "</ul>" + (c.rejected.length > 20 ? "<p>… and " + (c.rejected.length - 20) + " more.</p>" : "");
+    var html = "";
+    if (c.rejected.length) {
+      var items = c.rejected.slice(0, 20).map(function (x) { return "<li>Line " + x.line + " (" + esc(x.text) + "): " + esc(x.reason) + "</li>"; }).join("");
+      html = "<strong>" + c.rejected.length + " row" + (c.rejected.length === 1 ? " was" : "s were") + " excluded</strong> (" + c.accepted + " accepted)." +
+        "<ul>" + items + "</ul>" + (c.rejected.length > 20 ? "<p>… and " + (c.rejected.length - 20) + " more.</p>" : "");
+    }
+    if (c.fractional.length) {
+      var f = c.fractional, fi = f.slice(0, 20).map(function (x) { return "<li>Line " + x.line + ": " + esc(x.label) + " (n = " + esc(String(x.n)) + ")</li>"; }).join("");
+      html += "<p><strong>Warning: sample size is not a whole number in " + f.length + " row" + (f.length === 1 ? "" : "s") + ".</strong> " +
+        (f.length === 1 ? "It was" : "They were") + " analysed as entered, with Fisher-z variance 1/(n − 3), as metafor::escalc does. Check " +
+        (f.length === 1 ? "it" : "them") + " against the source.</p><ul>" + fi + "</ul>" + (f.length > 20 ? "<p>… and " + (f.length - 20) + " more.</p>" : "");
+    }
+    el.innerHTML = html;
   }
 
   // ---------- U2: Load example / Clear / Convert tabs or semicolons ----------
