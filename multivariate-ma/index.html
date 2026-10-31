@@ -197,7 +197,10 @@
     function getMode() { return currentMode; }
     function setMode(v) { if (["cov", "r", "rhoW"].indexOf(v) < 0) throw new Error("unknown input mode " + v); currentMode = v; Array.prototype.forEach.call(el("f-mode").querySelectorAll("option"), function (o) { if (o.value === v) { o.setAttribute("selected", ""); o.selected = true; } else { o.removeAttribute("selected"); o.selected = false; } }); }
     function currentParsed() {
-      var mode = getMode(), rw = Number(el("f-rhow").value);
+      // f-rhow is a type=number input: text the browser cannot read ("1e", "-") or an emptied field leaves value '',
+      // which Number() reads as 0. Only a complete decimal number is a correlation; anything else is refused below.
+      var mode = getMode(), rwText = String(el("f-rhow").value).trim(),
+          rw = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(rwText) ? Number(rwText) : NaN;
       var parsed = parse(el("f-data").value, mode, rw);
       parsed.outcomes = [el("f-o1").value || "Outcome 1", el("f-o2").value || "Outcome 2"];
       if (mode === "rhoW" && !(Math.abs(rw) < 1)) { parsed.invalid = "Assumed within-study correlation must satisfy |ρw| < 1."; }

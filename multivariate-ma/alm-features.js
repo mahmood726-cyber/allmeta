@@ -6,6 +6,16 @@
  */
 (function (global) {
   'use strict';
+  // Number settings go into type=number inputs. A value must be a complete decimal number: Number() also reads
+  // 0x10 / 0b1 / ' ', and the input then silently clears such text to '' (automatic or zero). Valid forms the input
+  // itself cannot hold ('+1', ' 0.5', '5.') are written as the same number.
+  var DECIMAL_SETTING = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function decimalSetting(v) { return typeof v === 'string' && DECIMAL_SETTING.test(v.trim()) && Number.isFinite(Number(v)); }
+  function writeNumberSetting(el, v) {
+    var t = String(v).trim();
+    el.value = t;
+    if (el.value === '' && t !== '') el.value = String(Number(t));
+  }
   var APP = 'multivariate-ma';
   function el(id) { return document.getElementById(id); }
   function block(text, row) { return { code: 'multivariate-input', text: text, row: row, blocking: true }; }
@@ -457,7 +467,7 @@
       var mode = s.mode === undefined ? 'cov' : s.mode;
       var rhoW = s.rhoW === undefined ? '0.5' : s.rhoW;
       if (['cov', 'r', 'rhoW'].indexOf(mode) < 0 || typeof rhoW !== 'string' || rhoW.length > 100 ||
-          (mode === 'rhoW' && (s.rhoW === undefined || !rhoW.trim() || !Number.isFinite(Number(rhoW)) || !(Math.abs(Number(rhoW)) < 1)))) {
+          (mode === 'rhoW' && (s.rhoW === undefined || !decimalSetting(rhoW) || !(Math.abs(Number(rhoW)) < 1)))) {
         throw Error('Invalid multivariate analysis state.');
       }
       // The page's own row parser (index.html parse, exposed as AlmMvPage.parse), before anything is changed: a row the
@@ -465,7 +475,7 @@
       if (!global.AlmMvPage || typeof global.AlmMvPage.parse !== 'function') throw Error('The app row checker is not available.');
       var omitted = global.AlmMvPage.parse(s.src, mode, Number(rhoW)).omitted;
       if (omitted.length) throw Error('Line ' + omitted[0].line + ' cannot be used: ' + omitted[0].reason + '.');
-      el('f-rhow').value = rhoW;
+      writeNumberSetting(el('f-rhow'), rhoW);
       // load synchronises mode controls and completes the fit synchronously.
       global.AlmMvPage.load(s.src, mode, s.names[0], s.names[1]);
       global.AlmFeaturesState.entryLog = s.entryLog || [];
