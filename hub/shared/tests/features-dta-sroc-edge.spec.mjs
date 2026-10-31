@@ -35,8 +35,9 @@ test('EDGE k = 4 and an all-TP = 0 network match mada::reitsma (REML)', async ({
   await expect(page.locator('#warn-banner')).toContainText('0.5 was added to every cell of every study');
 });
 
-test('EDGE k = 3 refuses the bivariate fit with the reason', async ({ page }) => {
+test('EDGE k = 3 is fitted as mada::reitsma fits it (REML), with the small-k warning', async ({ page }) => {
+  // Was a refusal; Mahmood 2026-10-31: match R. mada 0.5.12 fits k = 3 and warns "There are very few primary studies!".
   const r = await run(page, [[80, 12, 20, 138], [60, 14, 19, 105], [115, 22, 37, 205]]);
-  expect(r.bivariate).toBeNull();
-  await expect(page.locator('#warn-banner')).toContainText('The bivariate model needs at least 4 studies');
+  close(r.bivariate.mu_logit_se, 1.20702899280995, 1e-6); close(r.bivariate.mu_logit_fpr, -2.22367374893239, 1e-6);
+  await expect(page.locator('#warn-banner')).toContainText('Only k = 3 studies');
 });

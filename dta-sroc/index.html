@@ -445,13 +445,20 @@
           if (out.rho == null) errors.push("Spearman threshold correlation is undefined: sensitivity or false-positive rate has no rank variation.");
         } catch (e) { errors.push("Spearman threshold correlation unavailable: " + e.message); }
       }
-      if (B && finite && rows.length >= 4) {
+      // mada::reitsma fits k = 1..3 too (warning "There are very few primary studies!"), so the page does as well
+      // (Mahmood 2026-10-31: match R, warn visibly); the warning is part of the exported errors list.
+      if (B && finite && rows.length >= 1 && rows.length < 4) {
+        errors.push("Only k = " + rows.length + " stud" + (rows.length === 1 ? "y" : "ies") + ": mada::reitsma fits the bivariate model with this few studies (it warns \"There are very few primary studies!\") and so does this page, but the between-study covariance Ψ is barely identified (it usually sits on its boundary, near zero), so the confidence and prediction regions and the SROC curve are unreliable; interpret with great caution.");
+      }
+      if (B && finite && rows.length >= 1) {
         try { out.bivar = B.fit(rows, opts); } catch (e) { errors.push("Bivariate model: " + e.message); }
         if (state.cov === "last") {
           const d = designFor(parsed.studies); out.design = d;
           if (d.error) errors.push("Meta-regression: " + d.error + ".");
           else { try { out.metareg = B.fit(rows, Object.assign({}, opts, { X: d.X, covariateNames: d.names })); } catch (e) { errors.push("Meta-regression: " + e.message); } }
         }
+      }
+      if (B && finite && rows.length >= 4) {
         try { out.deeks = B.deeksTest(rows); } catch (e) { out.deeks = null; }
         // With no spread in 1/sqrt(ESS) (e.g. identical studies) the regression slope SE is 0/0 and p is NaN: say so
         // instead of showing a bare "--" card.
@@ -632,15 +639,15 @@
       if (b && b.method === "fixed") extras.push("Fixed-effect model: no between-study variance, so no SROC curve and the prediction region equals the confidence region.");
       if (b && b.converged === false) extras.push("The " + METHOD_LABEL[b.method] + " estimation did not converge within 100 iterations; interpret with caution.");
       if (b && b.negeigen) extras.push("The " + METHOD_LABEL[b.method] + " estimate of the between-study covariance was not positive definite and was truncated (as mada does).");
-      if (studies.length < 4) extras.push("The bivariate model needs at least 4 studies with valid TP, FP, FN and TN counts (currently " + studies.length + ")." + (studies.length ? " Any displayed means and plots describe the entered studies; no bivariate fit is available." : ""));
-      else if (studies.length && studies.length < 10) extras.push("k = " + studies.length + " — with fewer than about 10 studies the between-study covariance, and hence the prediction region, is imprecise.");
+      if (!studies.length) extras.push("Enter at least one study with valid TP, FP, FN and TN counts (currently 0).");
+      else if (studies.length >= 4 && studies.length < 10) extras.push("k = " + studies.length + " — with fewer than about 10 studies the between-study covariance, and hence the prediction region, is imprecise.");
       const all = a.parsed.warnings.concat(extras);
       if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
       else { warnEl.innerHTML = "<strong>Notes</strong><ul>" + all.map(w => "<li>" + escapeXml(w) + "</li>").join("") + "</ul>"; warnEl.classList.add("is-visible"); }
 
       const svg = studies.length
         ? buildSvg(state, studies, a.moses ? { alpha: a.moses.A1, beta: a.moses.B1 } : null, b)
-        : "<p>Enter at least 4 studies with valid TP, FP, FN and TN counts for bivariate analysis.</p>";
+        : "<p>Enter at least one study with valid TP, FP, FN and TN counts for bivariate analysis.</p>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
       // Update URL state after every render so link stays shareable.

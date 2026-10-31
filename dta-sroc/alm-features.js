@@ -175,6 +175,8 @@
       rho: b.corRandom, logLik: b.logLik, AIC: b.AIC,
       auc: b.auc && b.auc.rg[0], pauc: b.auc && b.auc.rg[1],
       converged: b.converged, truncated: b.negeigen,
+      // Below 4 studies the page warns that mada fits but the covariance is barely identified (index.html analyse()).
+      belowBivariateMinK: b.k < 4,
       hasCovariate: byId('f-cov').value === 'last', coefficients: []
     };
     if (b.hsroc) Object.assign(r, b.hsroc);
@@ -268,6 +270,7 @@
     },
     flags: function (T, r) {
       return [
+        T.when(r.belowBivariateMinK, ['Only ', T.int('k'), ' studies: mada fits the bivariate model with this few studies (it warns that there are very few primary studies), but the between-study covariance is barely identified; interpret the summary point, its regions and the SROC curve with great caution.']),
         T.when(r.smallK && r.smallK.indexOf('fewK') >= T.R.none, 'Few studies: heterogeneity estimates are imprecise.'),
         T.when(r.smallK && r.smallK.indexOf('funnelK') >= T.R.none, 'With few studies, the between-study covariance and prediction region are imprecise, and Deeks’ small-study test is underpowered.'),
         T.when(T.has('thresholdRho') && Math.abs(r.thresholdRho) > r.thresholdLimit,

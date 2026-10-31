@@ -223,8 +223,10 @@ test('app 3 dta-sroc: example advice (Deeks with k < 10), 3 studies -> separate 
   console.log(`STRAIGHT dta-sroc example k=${d.k} bivariate=${d.bivariate} rho=${d.rho} deeksP=${d.deeks}`);
   await expectFired(page, 'dta-sroc', d.e, 'example');
   await axe(page, '.alm-straight-notice[data-app="dta-sroc"]', 'dta-sroc notice');
-  // PLANTED: only 3 studies -> no bivariate fit; the app shows separately averaged Se/Sp -> SP-REC-DTA-SROC fires.
-  await page.locator('#f-data').fill('A, 85, 10, 15, 140\nB, 62, 12, 18, 108\nC, 110, 25, 40, 200');
+  // PLANTED: a zero cell with no continuity correction -> no bivariate fit (mada refuses it too); the app shows
+  // separately averaged Se/Sp -> SP-REC-DTA-SROC fires. (Was: only 3 studies; since 2026-10-31 k = 3 is fitted as mada.)
+  await page.locator('#f-cc').selectOption('none');
+  await page.locator('#f-data').fill('A, 85, 0, 15, 140\nB, 62, 12, 18, 108\nC, 110, 25, 40, 200');
   await page.locator('#btn-run').click();
   await expect(page.locator('#stats-wrap .stat .k', { hasText: 'Mean Se' })).toHaveCount(1);
   d = await derive();

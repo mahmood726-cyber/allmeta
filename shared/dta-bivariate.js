@@ -269,17 +269,22 @@
   // fit(rows, opts) — rows: [{tp, fp, fn, tn}]; opts: { method: "reml" (default) | "ml" | "fixed" |
   //   "mm" | "vc", correction: 0.5, correctionControl: "all" (default) | "single" | "none",
   //   X: [[1, x1, ...], ...] (optional design, one row per study, intercept first: bivariate
-  //   meta-regression), covariateNames: ["(Intercept)", ...] }. Needs k >= 4 studies.
+  //   meta-regression), covariateNames: ["(Intercept)", ...] }. Fits every k that mada::reitsma fits (Mahmood
+  //   2026-10-31: match R): k >= 1 for REML / ML / fixed, k >= 2 for mm / vc (mada fails at k = 1 there).
+  //   The page warns visibly below k = 4.
   function fit(rows, opts) {
     opts = opts || {};
     var method = String(opts.method || "reml").toLowerCase();
     if (["reml", "ml", "fixed", "mm", "vc"].indexOf(method) < 0) throw new DTAError("unknown method '" + method + "'");
     var k = rows.length;
-    if (k < 4) throw new DTAError("dta-bivariate: the bivariate model needs k >= 4 studies (got k=" + k + "); the between-study covariance is not identifiable below k=4.");
+    if (k < 1) throw new DTAError("dta-bivariate: no studies");
+    if (k < 2 && (method === "mm" || method === "vc")) throw new DTAError("the " + (method === "mm" ? "method-of-moments" : "variance-components") +
+      " estimator needs at least 2 studies (mada fails at k = 1 too: " + (method === "mm" ? "'non-conformable arrays'" : "'infinite or missing values in x'") + "). Use REML, ML or the fixed-effect model.");
     var st = _prep(rows, opts);
     var Xd = opts.X || rows.map(function () { return [1]; }), p = Xd[0].length;
     if (Xd.length !== k || Xd.some(function (r) { return r.length !== p; })) throw new DTAError("the design matrix must have one row per study");
-    if (k <= p + 1) throw new DTAError("too few studies for this many covariates");
+    // mvmeta fits saturated designs (k = p) as well; only more coefficients than studies is impossible.
+    if (k < p) throw new DTAError("too few studies for this many covariates");
     var ctx = { m: k, P: 2 * p, nall: 2 * k, y: st.map(function (s) { return s.y; }), S: st.map(function (s) { return s.S; }),
       X: Xd.map(function (x) { var z = new Array(p).fill(0); return [x.concat(z), z.concat(x)]; }) };
     var Psi, g, ll = NaN, converged = null, niter = null, negeigen = null;
