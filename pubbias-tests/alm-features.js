@@ -5,6 +5,17 @@
  */
 (function (global) {
   'use strict';
+  // Number settings go into type=number inputs. A value must be a complete decimal number: Number() also reads
+  // 0x10 / 0b1 / ' ', and the input then silently clears such text to '' (automatic or zero). Valid forms the input
+  // itself cannot hold ('+1', ' 0.5', '5.') are written as the same number.
+  var DECIMAL_SETTING = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function decimalSetting(v) { return typeof v === 'string' && DECIMAL_SETTING.test(v.trim()) && Number.isFinite(Number(v)); }
+  function axisBoundOk(v) { return v === '' || decimalSetting(v); }
+  function writeNumberSetting(el, v) {
+    var t = String(v).trim();
+    el.value = t;
+    if (el.value === '' && t !== '') el.value = String(Number(t));
+  }
   var APP = 'pubbias-tests';
   function byId(id) { return document.getElementById(id); }
   function tableRow(name) {
@@ -168,7 +179,7 @@
     if (!Array.isArray(state.axes) || state.axes.length !== controls.length ||
         state.axes.some(function (value, i) {
           return controls[i].type === 'checkbox' ? typeof value !== 'boolean'
-            : typeof value !== 'string' || (value !== '' && !Number.isFinite(Number(value)));
+            : !axisBoundOk(value);
         }) || !Array.isArray(state.entryLog)) throw new Error('Invalid axis options or conversion log');
     for (var i = 0; i < state.axes.length; i += 3) {
       if (state.axes[i] !== '' && state.axes[i + 1] !== '' && Number(state.axes[i]) >= Number(state.axes[i + 1])) throw new Error('Axis minimum must be below maximum');
@@ -182,7 +193,7 @@
     byId('src').value = state.src;
     byId('format').value = state.format;
     controls.forEach(function (el, i) {
-      if (el.type === 'checkbox') el.checked = state.axes[i]; else el.value = state.axes[i];
+      if (el.type === 'checkbox') el.checked = state.axes[i]; else writeNumberSetting(el, state.axes[i]);
     });
     controls.forEach(function (el) { el.dispatchEvent(new Event('change', { bubbles: true })); });
     global.AlmFeaturesState.entryLog = JSON.parse(JSON.stringify(state.entryLog));
