@@ -402,10 +402,21 @@
 
     // Design matrix for a single covariate column, as R's model.matrix: numeric as is; otherwise
     // treatment-coded categories with alphabetically sorted levels (first level = reference).
+    // Numeric only when every value is a complete decimal number (the token rule of the counts): Number() would
+    // also read 0x10 as 16. A column that is mostly numbers (or Number()-readable) but not entirely decimal
+    // numbers is refused with those studies listed, never silently switched to categories.
+    const COV_DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
     function designFor(studies) {
       const v = studies.map(s => s.cov);
       if (v.some(x => x == null || x === "")) return { error: "every study needs a covariate value in the last column" };
-      if (v.every(x => Number.isFinite(Number(x)))) return { X: v.map(x => [1, Number(x)]), names: ["(Intercept)", "covariate"], kind: "numeric" };
+      if (v.every(x => COV_DECIMAL.test(x))) return { X: v.map(x => [1, Number(x)]), names: ["(Intercept)", "covariate"], kind: "numeric" };
+      const looksNumeric = v.filter(x => COV_DECIMAL.test(x) || Number.isFinite(Number(x))).length;
+      if (2 * looksNumeric > v.length) {
+        const bad = studies.filter(s => !COV_DECIMAL.test(s.cov)).map(s => s.label + " (" + s.cov + ")");
+        return { error: "the covariate looks numeric but these values are not decimal numbers: " +
+          bad.slice(0, 5).join(", ") + (bad.length > 5 ? " and " + (bad.length - 5) + " more" : "") +
+          ". Correct them, or give every study a text label to treat the covariate as categories" };
+      }
       const lev = Array.from(new Set(v)).sort();
       if (lev.length < 2) return { error: "the covariate has a single category" };
       return { X: v.map(x => [1].concat(lev.slice(1).map(l => (x === l ? 1 : 0)))), names: ["(Intercept)"].concat(lev.slice(1).map(l => "covariate = " + l)), kind: "categorical", levels: lev };
