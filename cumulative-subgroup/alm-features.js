@@ -8,6 +8,11 @@
   var APP = 'cumulative-subgroup';
   function el(id) { return document.getElementById(id); }
   function axis(edge) { return document.querySelector('#alm-axis-mount input[data-edge="' + edge + '"]'); }
+  // Share state carries the effect-axis minimum and maximum mounted by index.html axisControls. If page setup stopped
+  // before the axis controls mounted (e.g. a script failed to load), refuse with an actionable message, changing nothing.
+  function shareAxes() {
+    if (!axis('min') || !axis('max')) throw new Error('Axis controls did not load; reload the page.');
+  }
   function run() { el('f-data').dispatchEvent(new Event('input', { bubbles: true })); }
   function observed() {
     var a;
@@ -259,10 +264,12 @@
     }
   };
   function shareGet() {
+    shareAxes();
     return { data: el('f-data').value, view: el('f-view').value, title: el('f-title').value,
       axis: ['min', 'max'].map(function (edge) { return axis(edge).value; }) };
   }
   function shareSet(s) {
+    shareAxes();
     if (!s || typeof s.data !== 'string' || s.data.length > 200000 ||
         typeof s.title !== 'string' || s.title.length > 200000 || ['cumulative', 'subgroup'].indexOf(s.view) < 0 ||
         !Array.isArray(s.axis) || s.axis.length !== 2 || s.axis.some(function (v) {
