@@ -84,11 +84,13 @@ test('T11 D4 ELIR on the response scale (independent scipy quad, epsrel 1e-13)',
  close(E.ess({family:'normal',sigma:2,comps:[{w:.8,m:0,s:1},{w:.2,m:1,s:3}]},'elir'),2.6145630576689007,1e-9);
  close(E.ess({family:'beta',comps:[{w:1,a:10,b:30}]},'elir'),40,1e-9);
 });
-test('T12 D4 ELIR keeps the near-boundary tail (component a = 1 + 1e-8; mpmath 40-digit quadrature)',()=>{
- // Probe P1 MAP mixture from RBesT 1.12-0 automixfit (validation/reference/P1.json). 0.536 of the ELIR lies below
- // logit(p) = -35, which the 2026-10-31 first fix truncated (108.17). Independent value: mpmath quad, dps 40.
+test('T12 D4 ELIR keeps the near-boundary tail (component a = 1 + eps; mpmath whole-line quadrature, dps 30)',()=>{
+ // MAP mixtures from RBesT 1.12-0 automixfit (validation/reference/P1.json, bin_k3_p0.20_s1.5.json). A component at
+ // the constrain_gt1 floor decays like exp((a-1) logit p): P1 has 0.536 below logit -35 and 0.0199 below logit -700
+ // (beyond double precision of p), bin_k3_p0.20_s1.5 has 0.0052 below -700. Values: elir_whole.py over (-inf, inf).
  const m={family:'beta',comps:[{w:0.824298358074023,a:1.18480684995884,b:155.399097711833},{w:0.125738130707861,a:2.33685793864902,b:64.9370851184699},{w:0.0348697160538972,a:2.10975627102983,b:14.1965506442341},{w:0.0150937951642185,a:1.00000001,b:1.31571656257033}]};
- close(E.ess(m,'elir'),108.709300542293,1e-9);
+ close(E.ess(m,'elir'),108.7291596590999,1e-9);
+ close(E.ess({family:'beta',comps:[{w:0.576043960354339,a:1.27569562792631,b:5.06315135609074},{w:0.423956039645655,a:1.00666284361273,b:1.28450570774891}]},'elir'),3.5129665397881295,1e-9);
 });
 test('T13 D4 ELIR resolves narrow components next to wide ones (corpus mixtures; mpmath 40-digit quadrature)',()=>{
  // From validation/reference (RBesT 1.12-0 automixfit + robustify): crohn robust w=0.1, bin_k10_p0.50_s0.0 MAP,
