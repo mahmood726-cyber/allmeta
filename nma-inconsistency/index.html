@@ -193,8 +193,10 @@ A, D, -0.48, 0.14</textarea>
         } else if (c !== '\r' || quoted) field += c;
       }
       if (quoted) return [];
+      // Decimal and exponent numbers only: Number() would also read 0x10 as 16 (hexadecimal, binary, octal).
+      const decimal = v => /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(v || "") ? Number(v) : NaN;
       return records.map((parts, i) => {
-        const te = Number(parts[2]), se = Number(parts[3]);
+        const te = decimal(parts[2]), se = decimal(parts[3]);
         if (!parts[0] || !parts[1] || parts[0] === parts[1] ||
             !parts[2] || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
         return { A: parts[0], B: parts[1], te, se, study: parts[4] || `row_${i + 1}` };
@@ -708,5 +710,15 @@ A, D, -0.48, 0.14</textarea>
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>
+<!-- Shared feature panel (Verify in R, Share; data-entry and report-text blocks registered for their modules). -->
+<script src="../shared/url-pack.js"></script>
+<script src="../shared/alm-zip.js"></script>
+<script src="../shared/truthcert-export.js"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/vendor/share-deflate.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="alm-features.js"></script>
 </body>
 </html>
