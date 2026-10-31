@@ -50,12 +50,15 @@
     return rows;
   }
 
+  // Decimal and exponent tokens only: Number() would also read 0x10 as 16 (hexadecimal, binary, octal),
+  // so a file value that is not a plain number is reported instead of analysed as a different number.
+  var _DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
   function _coerce(value, type) {
     if (type === 'int') {
       if (value === '') {
         return { value: null, err: 'missing int' };
       }
-      var n = Number(value);
+      var n = _DECIMAL.test(value) ? Number(value) : NaN;
       if (!Number.isFinite(n) || !Number.isInteger(n)) {
         return { value: null, err: 'not int: ' + value };
       }
@@ -65,7 +68,7 @@
       if (value === '') {
         return { value: null, err: 'missing float' };
       }
-      var f = Number(value);
+      var f = _DECIMAL.test(value) ? Number(value) : NaN;
       if (!Number.isFinite(f)) {
         return { value: null, err: 'not float: ' + value };
       }
