@@ -5,6 +5,17 @@
  */
 (function (global) {
   'use strict';
+  // Number settings go into type=number inputs. A value must be a complete decimal number: Number() also reads
+  // 0x10 / 0b1 / ' ', and the input then silently clears such text to '' (automatic or zero). Valid forms the input
+  // itself cannot hold ('+1', ' 0.5', '5.') are written as the same number.
+  var DECIMAL_SETTING = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function decimalSetting(v) { return typeof v === 'string' && DECIMAL_SETTING.test(v.trim()) && Number.isFinite(Number(v)); }
+  function axisBoundOk(v) { return v === '' || decimalSetting(v); }
+  function writeNumberSetting(el, v) {
+    var t = String(v).trim();
+    el.value = t;
+    if (el.value === '' && t !== '') el.value = String(Number(t));
+  }
   var APP = 'dta-sroc';
   var METHODS = { reml: 'restricted maximum likelihood (REML)', ml: 'maximum likelihood (ML)',
     mm: 'method of moments', vc: 'variance components', fixed: 'fixed effect' };
@@ -306,7 +317,7 @@
             !Array.from(byId('f-example').options).some(function (o) { return o.value === s.example; })) throw new Error('Unknown analysis option');
         var axes = shareAxes();
         if (!Array.isArray(s.axes) || s.axes.length !== axes.length || s.axes.some(function (v, i) {
-          return axes[i].type === 'checkbox' ? typeof v !== 'boolean' : typeof v !== 'string' || (v !== '' && !Number.isFinite(Number(v)));
+          return axes[i].type === 'checkbox' ? typeof v !== 'boolean' : !axisBoundOk(v);
         })) throw new Error('Invalid axis options');
         if (!Array.isArray(s.entryLog) || s.entryLog.some(function (e) { return !e || typeof e !== 'object' || Array.isArray(e); })) throw new Error('Invalid conversion log');
         // The page's own row checker (index.html parseStudies), before anything is changed: data the page would block
@@ -316,7 +327,7 @@
         if (parsed.warnings.length) throw new Error(parsed.warnings[1] || parsed.warnings[0]);
         FIELDS.forEach(function (k) { byId('f-' + k).value = s[k]; });
         axes.forEach(function (el, i) {
-          if (el.type === 'checkbox') el.checked = s.axes[i]; else el.value = s.axes[i];
+          if (el.type === 'checkbox') el.checked = s.axes[i]; else writeNumberSetting(el, s.axes[i]);
           el.dispatchEvent(new Event('change', { bubbles: true }));
         });
         global.AlmFeaturesState.entryLog = s.entryLog;
