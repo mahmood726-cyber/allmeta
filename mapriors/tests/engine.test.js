@@ -25,8 +25,12 @@ test('T2 D1 AS independent beta/tau grid and 4001-point theta trapezoids',()=>{
  const independent=check(data);const result=E.gMAP({family:'binomial',data,tauScale:1,betaMean:0,betaSD:2});close(result.predictive.mean,independent,1e-6);assert.ok(result.convergence.converged);
 });
 test('T3 D2 unit-information robustification',()=>{
+ // Requirement = RBesT 1.12-0 robustify.betaMix: mixbeta(c(1, mean, n + 1), param = "mn"), i.e. Beta(1,1) at
+ // mean 0.5, n = 1 (R smoke 2026-10-31: beta_robust component 2 a = b = 1). The earlier Beta(0.5,0.5) expectation
+ // asserted the page's own convention, not RBesT's.
  const b=E.robustify({family:'beta',comps:[{w:1,a:10,b:30}]},.2,.5);
- close(b.comps[0].w,.8);close(b.comps[1].w,.2);close(b.comps[1].a,.5);close(b.comps[1].b,.5);
+ close(b.comps[0].w,.8);close(b.comps[1].w,.2);close(b.comps[1].a,1);close(b.comps[1].b,1);
+ const b2=E.robustify({family:'beta',comps:[{w:1,a:10,b:30}]},.2,.25,3);close(b2.comps[1].a,1);close(b2.comps[1].b,3);
  const n=E.robustify({family:'normal',comps:[{w:1,m:2,s:3}],sigma:4},.2,2,4,4);close(n.comps[1].m,2);close(n.comps[1].s,2);
 });
 test('T4 D3 mixture quantile inversion',()=>{
@@ -65,5 +69,19 @@ test('T9 fitted mixture moments, AIC and live UI path',()=>{
  const vm=require('vm');vm.runInContext('studies=[{trial:"single",mean:0,sd:1,n:1}];',app);app.applyEngineResult(model,mix,normal,.2,.95);
  assert.ok(elements.get('metricsGrid').innerHTML.includes('RBesT-model posterior'));assert.ok(elements.get('essContent').innerHTML.includes('Moment'));assert.ok(elements.get('densityLegend').innerHTML.includes('components'));
  vm.runInContext('engineCache={key:JSON.stringify(engineSettings()),result:mapResult.model,mix:mapResult.mixture};',app);app.runMAP();assert.equal(vm.runInContext('mapResult.w_vague',app),.2);
+});
+test('T10 D4 Morita ESS = RBesT 1.12-0 finite-sample definition (s = 100 baseline, predictive expected information)',()=>{
+ // R values: validation/evidence/R_smoke_api.json (RBesT 1.12-0, 2026-10-31). PREREG Morita tolerance 1e-4 x max(1,|R|):
+ // RBesT locates the mode with optimise(tol = eps^0.25), the page with an exact search.
+ const beta=(...c)=>({family:'beta',comps:c.map(([w,a,b])=>({w,a,b}))}),norm=(...c)=>({family:'normal',sigma:2,comps:c.map(([w,m,s])=>({w,m,s}))});
+ const t=(x,r)=>assert.ok(Math.abs(x-r)<=1e-4*Math.max(1,Math.abs(r)),`${x} vs R ${r}`);
+ t(E.ess(beta([1,10,30]),'morita'),39.990368937358902);t(E.ess(beta([.7,10,30],[.3,3,3]),'morita'),31.0708770010677);
+ t(E.ess(norm([1,0,1]),'morita'),3.96);t(E.ess(norm([.8,0,1],[.2,1,3]),'morita'),3.73168155869655);
+});
+test('T11 D4 ELIR on the response scale (independent scipy quad, epsrel 1e-13)',()=>{
+ // RBesT ess.betaMix elir = integral of dmix * (-d2 log dmix / dp2) * p(1-p) dp. Independent values: scipy.integrate.quad.
+ close(E.ess({family:'beta',comps:[{w:.7,a:10,b:30},{w:.3,a:3,b:3}]},'elir'),22.637871661093087,1e-9);
+ close(E.ess({family:'normal',sigma:2,comps:[{w:.8,m:0,s:1},{w:.2,m:1,s:3}]},'elir'),2.6145630576689007,1e-9);
+ close(E.ess({family:'beta',comps:[{w:1,a:10,b:30}]},'elir'),40,1e-9);
 });
 console.log(`${passed}/${total} PASS; page=${page}`);process.exitCode=passed===total?0:1;
