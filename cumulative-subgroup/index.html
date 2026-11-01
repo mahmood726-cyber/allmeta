@@ -77,6 +77,7 @@
   <!-- Cycle 2.7 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
   <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/decimal-sep.js"></script>
   <script src="../hub/shared/chart-download.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
@@ -103,6 +104,16 @@
     <h1>Cumulative + Subgroup Meta-Analysis</h1>
     <p>Two views on the same studies: cumulative pooled estimate as studies accrue (optionally by year), and subgroup pooled estimates with a between-subgroup Q test. Random-effects pooling via Paule-Mandel.</p>
   </header>
+
+  <div id="decsep-bar" style="max-width:1200px;margin:0 auto 0.5rem;padding:0 1rem;font-size:0.85rem">
+    <label>Decimal separator in the study data
+      <select id="f-decsep" aria-describedby="decsep-hint">
+        <option value=".">Point: 0.25</option>
+        <option value=",">Comma: 0,25</option>
+      </select>
+    </label>
+    <span class="hint" id="decsep-hint">With a decimal comma, separate fields with tabs or semicolons, e.g. <code>Trial A; -0,22; 0,14; 2015; Low-risk</code>.</span>
+  </div>
 
   <main id="main" class="layout">
     <section class="panel" aria-label="Input form">
@@ -190,7 +201,7 @@
     "use strict";
     const LS_KEY = "cumulative-subgroup-v1";
 
-    const fields = { data:"f-data", view:"f-view", title:"f-title" };
+    const fields = { data:"f-data", view:"f-view", title:"f-title", decsep:"f-decsep" };
     const EXAMPLE = "# label, logOR, SE, year, group\nTrial A, -0.22, 0.14, 2015, Low-risk\nTrial B, -0.30, 0.12, 2016, Low-risk\nTrial C, -0.18, 0.10, 2018, Low-risk\nTrial D, -0.42, 0.15, 2019, High-risk\nTrial E, -0.38, 0.11, 2020, High-risk\nTrial F, -0.10, 0.08, 2021, Low-risk\nTrial G, -0.48, 0.13, 2022, High-risk\nTrial H, -0.25, 0.09, 2023, Low-risk\nTrial I, -0.55, 0.16, 2023, High-risk";
 
     const warnEl = document.getElementById("warn-banner");
@@ -199,10 +210,16 @@
     const heading = document.getElementById("preview-heading");
 
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
-    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; }
+      // A saved state from before the setting existed restores the default ".".
+      if (window.AlmDecimalSep && !("decsep" in s)) window.AlmDecimalSep.restore("f-decsep", "."); }
 
     function parseStudies(text) {
       const studies=[], warnings=[];
+      // Decimal separator (hub/shared/decimal-sep.js): "." leaves the text unchanged and only warns about rows
+      // that look like decimal commas; "," rewrites tab/semicolon rows to quoted "label, est, SE, ..." rows, refusing the rest.
+      const DS=window.AlmDecimalSep, prep=DS ? DS.prepare(text, DS.read("f-decsep"), {join:", ", quote:true}) : null;
+      if (prep) { text=prep.text; warnings.push(...DS.errorMessages(prep)); if (prep.warning) warnings.push(prep.warning); }
       const lines = String(text||"").match(/(?:[^"\r\n]|"(?:[^"]|"")*")+/g) || [];
       for (let i=0;i<lines.length;i++) {
         const raw = lines[i].trim();
@@ -649,8 +666,9 @@
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
 
       // notify url-state
-      if (window.alm && window.alm.urlState) {
-        window.alm.urlState.write({ data: state.data, view: state.view, title: state.title });
+      if (window.alm && window.alm.urlState && window.__almUrlRead) {
+        // Only a non-default separator is stored, so links with "." are byte-identical to before.
+        window.alm.urlState.write(Object.assign({ data: state.data, view: state.view, title: state.title }, state.decsep === "," ? { decsep: "," } : {}));
       }
     }
 
@@ -766,6 +784,7 @@
       document.getElementById("f-data").value = "";
       document.getElementById("f-view").value = "cumulative";
       document.getElementById("f-title").value = "";
+      document.getElementById("f-decsep").value = ".";
       render();
     }
     function onExample() {
@@ -774,22 +793,27 @@
       }
       document.getElementById("f-data").value = EXAMPLE;
       document.getElementById("f-title").value = "Example cumulative + subgroup MA";
+      document.getElementById("f-decsep").value = ".";
       render();
     }
 
     // ---- snapshot/restore for reset-undo ----
     function snapshot() {
-      return {
+      const snap = {
         data:  document.getElementById("f-data").value,
         view:  document.getElementById("f-view").value,
         title: document.getElementById("f-title").value,
       };
+      if (document.getElementById("f-decsep").value === ",") snap.decsep = ",";
+      return snap;
     }
     function restore(snap) {
       if (!snap) return;
       if (snap.data  !== undefined) document.getElementById("f-data").value  = snap.data;
       if (snap.view  !== undefined) document.getElementById("f-view").value  = snap.view;
       if (snap.title !== undefined) document.getElementById("f-title").value = snap.title;
+      // A link made before the setting existed has no decsep: it restores ".".
+      if (window.AlmDecimalSep) window.AlmDecimalSep.restore("f-decsep", snap.decsep);
       render();
     }
 
@@ -802,11 +826,15 @@
         return cols.map(value => /[",\t\r\n]|^\s|\s$/.test(String(value)) ? '"' + String(value).replace(/"/g, '""') + '"' : String(value)).join(", ");
       });
       document.getElementById("f-data").value = lines.join("\n");
+      document.getElementById("f-decsep").value = ".";  // CSV rows are written with "."
       render();
     };
 
     // Expose last results for export
-    window._almLastCumSub = function () { return _lastResults; };
+    window._almLastCumSub = function () {
+      if (!_lastResults || document.getElementById("f-decsep").value !== ",") return _lastResults;
+      return Object.assign({}, _lastResults, { decimal_separator: ",", decimal_separator_note: window.AlmDecimalSep.methodsNote(",") });
+    };
 
     // Validation observes calls to the unchanged parser and pooling engine.
     window.__almCumSubValidationRun = function (text, view, title, axes) {
@@ -814,6 +842,7 @@
       if (view !== undefined) document.getElementById("f-view").value = view;
       if (title !== undefined) document.getElementById("f-title").value = title;
       if (axes !== undefined) _axisState = axes;
+      const decsepEl = document.getElementById("f-decsep"), decsepWas = decsepEl.value; decsepEl.value = ".";
       const originalParse = parseStudies, originalPool = pool, originalCumulative = cumulative, originalSubgroup = subgroup;
       let parsed = null, cum = null, sub = null; const pools = [];
       parseStudies = function (t) { const r = originalParse(t); if (!parsed) parsed = r; return r; };
@@ -821,7 +850,7 @@
       cumulative = function (rows) { cum = originalCumulative(rows); return cum; };
       subgroup = function (rows) { sub = originalSubgroup(rows); return sub; };
       try { render(); return { summary: _lastResults, parsed: parsed, pools: pools, cum: cum, sub: sub, axisRefusal: _axisRefusal }; }
-      finally { parseStudies = originalParse; pool = originalPool; cumulative = originalCumulative; subgroup = originalSubgroup; }
+      finally { parseStudies = originalParse; pool = originalPool; cumulative = originalCumulative; subgroup = originalSubgroup; decsepEl.value = decsepWas; }
     };
     // Validation observes the autosave draft banner: shared/autosave.js builds the whole banner before it
     // appends it to <body>, so the text seen when the insertion is observed is autosave's own output. The
@@ -983,8 +1012,12 @@
 
     window.alm.urlState({ version: 1 });
     const restored = window.alm.urlState.read();
+    window.__almUrlRead = true;
     if (restored && Object.keys(restored).length > 0) {
       restore(restored);
+    } else {
+      const st = readState();
+      window.alm.urlState.write(Object.assign({ data: st.data, view: st.view, title: st.title }, st.decsep === "," ? { decsep: "," } : {}));
     }
 
     window.alm.resetUndo({
@@ -1077,8 +1110,11 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'cumulative-subgroup' });
+      AlmAutosave.install({ appKey: 'cumulative-subgroup', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#f-decsep)'; }) });
     }
+    // Decimal separator: kept out of the draft (its key set is unchanged) and restored with it (hub/shared/decimal-sep.js).
+    if (window.AlmDecimalSep) window.AlmDecimalSep.persist('f-decsep', 'cumulative-subgroup');
   });
 })();
 </script>

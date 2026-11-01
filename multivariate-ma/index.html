@@ -43,6 +43,7 @@
     footer{padding:1rem clamp(1rem,3vw,3rem) 2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);max-width:92ch}
   </style>
   <script src="../shared/multivariate-ma.js"></script>
+  <script src="../hub/shared/decimal-sep.js"></script>
   <script src="plus.js"></script>
   <script src="../shared/build-info.js"></script>
 </head>
@@ -71,7 +72,14 @@
       </select>
       <label for="f-rhow" id="rhow-label">Assumed &rho;w</label>
       <input type="number" id="f-rhow" value="0.5" min="-0.99" max="0.99" step="0.05" aria-describedby="mode-help">
+      <label for="f-decsep">Decimal separator</label>
+      <select id="f-decsep" aria-describedby="decsep-hint decsep-note">
+        <option value=".">Point: 0.25</option>
+        <option value=",">Comma: 0,25</option>
+      </select>
     </div>
+    <p class="note" id="decsep-hint">With a decimal comma, separate fields with tabs or semicolons, e.g. <code>Study 1; 0,47; 0,0075; -0,32; 0,0077; 0,0030</code>.</p>
+    <p class="note" id="decsep-note" role="status" style="color:var(--warn,#b05a1c)" hidden></p>
     <p class="note" id="mode-help">One row per study, comma separated; lines starting with # are comments. Variances must be positive; a within-study correlation must satisfy |r| &lt; 1. Rows with a missing or non-numeric value, a non-positive variance or |r| &ge; 1 are omitted and listed below. At least two complete rows are required. Between-study correlation is undefined when a between-study variance is zero.</p>
     <label class="note" for="f-data">Study data</label>
     <textarea id="f-data" spellcheck="false" aria-describedby="mode-help"></textarea>
@@ -167,6 +175,10 @@
     // Mode-aware parser. Returns used rows and every omitted data row with its line and reason.
     function parse(text, mode, rhoW) {
       var rows = [], omitted = [], need = mode === "rhoW" ? 4 : 5, firstData = true;
+      // Decimal separator (hub/shared/decimal-sep.js): "." leaves the text unchanged and only warns about rows
+      // that look like decimal commas; "," rewrites tab/semicolon rows to "label, numbers", omitting the rest with the reason.
+      var DS = window.AlmDecimalSep, sep = DS ? DS.read("f-decsep") : ".", prep = DS ? DS.prepare(text, sep, { join: ", " }) : null;
+      if (prep) { text = prep.text; prep.errors.forEach(function (e) { omitted.push({ line: e.line, label: e.text.slice(0, 40), reason: e.reason }); }); }
       String(text || "").split(/\r?\n/).forEach(function (line, idx) {
         var t = line.trim(); if (!t || t.charAt(0) === "#") return;
         var p = t.split(/\s*,\s*/), lineNo = idx + 1;
@@ -188,7 +200,11 @@
         else throw new Error("unknown input mode " + mode);
         rows.push({ line: lineNo, label: label || ("Study " + (rows.length + 1)), y: [y1, y2], v: [v1, v2], cov: cov, r: r });
       });
-      return { mode: mode, rhoW: mode === "rhoW" ? rhoW : null, rows: rows, omitted: omitted };
+      omitted.sort(function (a, b) { return a.line - b.line; });
+      var out = { mode: mode, rhoW: mode === "rhoW" ? rhoW : null, rows: rows, omitted: omitted };
+      if (sep === ",") out.decsep = ",";
+      if (prep && prep.warning) out.decsepNote = prep.warning;
+      return out;
     }
     // The mode is kept in a variable updated by the select's change event (select.value is
     // unreliable in some non-browser DOMs used for validation replays).
@@ -223,6 +239,7 @@
       var parsed = currentParsed(), o1 = parsed.outcomes[0], o2 = parsed.outcomes[1];
       var head = el("headline"), stats = el("stats");
       _parsed = parsed; clearOutputs(); renderDerived(parsed); renderOmitted(parsed);
+      el("decsep-note").textContent = parsed.decsepNote || ""; el("decsep-note").hidden = !parsed.decsepNote;
       var done = function (res) { if (window.AlmMvPlusUI) window.AlmMvPlusUI.update(parsed, res); };
       if (parsed.invalid) { head.textContent = "Refused: " + parsed.invalid; done({ status: "refused", reason: parsed.invalid, k: parsed.rows.length }); return; }
       if (parsed.rows.length < 2 || !window.AlmMultivariate) { head.textContent = "Enter ≥ 2 studies."; done({ status: "refused", reason: "At least two complete studies are required.", k: parsed.rows.length }); return; }
@@ -248,6 +265,7 @@
         muVcov: f.muVcov, z: tests.map(function (t) { return t ? t.z : null; }), p: tests.map(function (t) { return t ? t.p : null; }),
         outcomes: [o1, o2], mode: parsed.mode, rhoW: parsed.rhoW, labels: parsed.rows.map(function (r) { return r.label; }),
         omitted: parsed.omitted.slice(), optimizer: f.optimizer };
+      if (parsed.decsep === ",") { _last.decimal_separator = ","; _last.decimal_separator_note = window.AlmDecimalSep.methodsNote(","); }
       done(res);
     }
     function ticks(lo, hi, n) {
@@ -290,8 +308,9 @@
     function schedule() { if (timer) clearTimeout(timer); timer = setTimeout(function () { timer = null; run(); }, 250); }
     function now() { if (timer) { clearTimeout(timer); timer = null; } run(); }
     function syncMode() { var a = getMode() === "rhoW"; el("f-rhow").disabled = !a; el("rhow-label").style.opacity = a ? "1" : ".55"; }
-    function load(text, mode, o1, o2) { el("f-data").value = text; setMode(mode); el("f-o1").value = o1; el("f-o2").value = o2; syncMode(); now(); }
+    function load(text, mode, o1, o2) { el("f-data").value = text; el("f-decsep").value = "."; setMode(mode); el("f-o1").value = o1; el("f-o2").value = o2; syncMode(); now(); }
     ["f-data", "f-o1", "f-o2", "f-rhow"].forEach(function (id) { el(id).addEventListener("input", schedule); });
+    el("f-decsep").addEventListener("change", now);
     el("f-mode").addEventListener("change", function (e) { var v = e.target.value; if (["cov", "r", "rhoW"].indexOf(v) >= 0) currentMode = v; syncMode(); now(); });
     el("btn-ex-berkey").addEventListener("click", function () { load(EXAMPLE, "cov", "PD", "AL"); });
     el("btn-ex-hyp").addEventListener("click", function () { load(EXAMPLE_HYP, "r", "SBP", "DBP"); });

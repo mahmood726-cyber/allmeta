@@ -122,7 +122,7 @@
     methods = 'A bivariate random-effects meta-analysis of ' + o[0] + ' and ' + o[1] + ' was fitted by restricted maximum likelihood (REML) with an unstructured between-study covariance matrix (the model of mvmeta::mvmeta(method = "reml", bscov = "unstr") and metafor::rma.mv(struct = "UN")), using the allmeta multivariate-ma page. ' +
       modeSentence(parsed) + ' Pooled means are reported with Wald 95% confidence intervals and two-sided z tests (normal distribution). Separate univariate REML meta-analyses of each outcome on the same ' + k + ' studies are reported for comparison.' +
       (sw && sw.length ? ' Sensitivity to the within-study correlation was examined by refitting the model with a common within-study correlation \u03c1w for every study over ' + sw.length + ' values from ' + sw[0].rhoW + ' to ' + sw[sw.length - 1].rhoW + '.' : '') +
-      omittedSentence(parsed);
+      omittedSentence(parsed) + (parsed.decsep === ',' && g.AlmDecimalSep ? ' ' + g.AlmDecimalSep.methodsNote(',') : '');
     var bs = res.boundary === 'zero' ? 'Both between-study variances were estimated as zero; the between-study correlation is undefined.' :
       res.boundary === 'undefined-rho' ? 'The between-study variance of ' + (f.G[0][0] === 0 ? o[0] : o[1]) + ' was estimated as zero; the between-study correlation is undefined.' :
       'The between-study SDs were ' + f4(Math.sqrt(f.G[0][0])) + ' (' + o[0] + ') and ' + f4(Math.sqrt(f.G[1][1])) + ' (' + o[1] + '), with between-study correlation ' + f3(f.rho) + (res.boundary === 'rho-boundary' ? ' (at the boundary; rank-deficient between-study covariance)' : '') + '.';

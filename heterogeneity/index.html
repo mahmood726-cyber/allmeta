@@ -79,6 +79,7 @@
        wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
        skipped (present-good): chart-download -->
   <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/decimal-sep.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
@@ -117,6 +118,14 @@
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE</code></span>
           <textarea id="f-data" spellcheck="false" aria-label="Studies" aria-describedby="warn-banner"></textarea></label>
+        <label>
+          <span class="lbl">Decimal separator</span>
+          <select id="f-decsep" aria-describedby="decsep-hint">
+            <option value=".">Point: 0.25</option>
+            <option value=",">Comma: 0,25</option>
+          </select>
+          <span class="hint" id="decsep-hint">With a decimal comma, separate fields with tabs or semicolons, e.g. <code>Trial A; -0,20; 0,10</code>.</span>
+        </label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
@@ -201,7 +210,7 @@
     "use strict";
     const LS_KEY = "heterogeneity-v1";
 
-    const fields = { data:"f-data", tau2:"f-tau2" };
+    const fields = { data:"f-data", tau2:"f-tau2", decsep:"f-decsep" };
     const EXAMPLE = "# Example: logOR across trials\nTrial A, -0.20, 0.10\nTrial B, -0.35, 0.12\nTrial C, 0.05, 0.18\nTrial D, -0.50, 0.15\nTrial E, 0.12, 0.11\nTrial F, -0.28, 0.09\nTrial G, -0.10, 0.14\nTrial H, -0.45, 0.20";
 
     const warnEl = document.getElementById("warn-banner");
@@ -210,10 +219,15 @@
     const looTable = document.getElementById("loo-table");
 
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
-    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value=s[k]; } }
+    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value=s[k]; }
+      if (window.AlmDecimalSep && !("decsep" in s)) window.AlmDecimalSep.restore("f-decsep", "."); }
 
     function parseStudies(text) {
-      const studies=[], warnings=[];
+      const studies=[], warnings=[], notes=[];
+      // Decimal separator (hub/shared/decimal-sep.js): "." leaves the text unchanged and only warns about rows
+      // that look like decimal commas; "," rewrites tab/semicolon rows to this parser's format, refusing the rest.
+      const DS=window.AlmDecimalSep, prep=DS ? DS.prepare(text, DS.read("f-decsep"), {join:"\t"}) : null;
+      if (prep) { text=prep.text; if (prep.warning) notes.push(prep.warning); }
       const numberToken=/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
       let first=true;
       const lines=String(text||"").split(/\r?\n/);
@@ -241,8 +255,9 @@
         }
         studies.push({label,est,se,v});
       }
+      if (prep) warnings.unshift(...DS.errorMessages(prep));
       if (warnings.length) warnings.unshift("Analysis blocked: correct all study rows; no partial dataset was pooled.");
-      return {studies:warnings.length?[]:studies,warnings};
+      return {studies:warnings.length?[]:studies,warnings,notes};
     }
 
     function weightedSums(studies, tau2) {
@@ -622,7 +637,7 @@
     function render() {
       const state = readState();
       const parsed = parseStudies(state.data);
-      const extras = [];
+      const extras = parsed.notes.slice();
       if (parsed.studies.length < 2) extras.push("Need ≥2 study rows. Enter at least two studies with an estimate and a positive SE.");
       if (state.tau2 === "dl" && parsed.studies.length < 10) {
         extras.push("DerSimonian-Laird is not offered for fewer than 10 studies (it is biased for small k); Paule-Mandel is used instead.");
@@ -764,10 +779,12 @@
       if (!confirm("Clear all inputs?")) return;
       document.getElementById("f-data").value = "";
       document.getElementById("f-tau2").value = "pm";
+      document.getElementById("f-decsep").value = ".";
       render();
     }
     function onExample() {
       document.getElementById("f-data").value = EXAMPLE;
+      document.getElementById("f-decsep").value = ".";
       render();
     }
     // ---- Shared MA bus (ma-studies-v1) — delegated to shared/ma-studies-v1.js ----
@@ -901,6 +918,7 @@
           return String(r.study)+', '+String(yi)+', '+String(Math.sqrt(vi));
         });
         const ta=document.getElementById('f-data');ta.value=lines.join('\n');
+        document.getElementById('f-decsep').value='.';
         ta.dispatchEvent(new Event('input',{bubbles:true}));
       } catch(error) { window.__almRejectImport('CSV rejected: '+(error.message||String(error))); }
     };
@@ -938,6 +956,8 @@
         out.pi_lb = info.pi.lo;
         out.pi_ub = info.pi.hi;
       }
+      var ds = document.getElementById('f-decsep');
+      if (ds && ds.value === ',') { out.decimal_separator = ','; out.decimal_separator_note = window.AlmDecimalSep.methodsNote(','); }
       if (studies.length >= 2 && window.__almQProfileCI) {
         var qp = window.__almQProfileCI(studies);
         if (qp) {
@@ -954,10 +974,14 @@
     window.__almSnapshot = function () {
       var ta = document.getElementById('f-data');
       var t2 = document.getElementById('f-tau2');
-      return {
+      var snap = {
         data: ta ? ta.value : '',
         tau2: t2 ? t2.value : 'pm'
       };
+      // Only a non-default separator is stored, so links with "." are byte-identical to before.
+      var ds = document.getElementById('f-decsep');
+      if (ds && ds.value === ',') snap.decsep = ',';
+      return snap;
     };
 
     // Restore: apply snapshot back to form controls and re-render.
@@ -968,6 +992,8 @@
       var t2 = document.getElementById('f-tau2');
       if (ta) ta.value = isEmpty ? '' : (snap.data != null ? snap.data : '');
       if (t2) t2.value = isEmpty ? 'pm' : (snap.tau2 != null ? snap.tau2 : 'pm');
+      // A link made before the setting existed has no decsep: it restores ".".
+      if (window.AlmDecimalSep) window.AlmDecimalSep.restore('f-decsep', isEmpty ? '.' : snap.decsep);
       if (ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     };
 
@@ -1103,8 +1129,11 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'heterogeneity' });
+      AlmAutosave.install({ appKey: 'heterogeneity', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#f-decsep)'; }) });
     }
+    // Decimal separator: kept out of the draft (its key set is unchanged) and restored with it (hub/shared/decimal-sep.js).
+    if (window.AlmDecimalSep) window.AlmDecimalSep.persist('f-decsep', 'heterogeneity');
   });
 })();
 </script>

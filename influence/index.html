@@ -83,6 +83,7 @@
        wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
        skipped (out-of-scope): chart-download (SVG plots rendered inline; deferred) -->
   <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/decimal-sep.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
@@ -131,6 +132,15 @@
 0.45, 0.17, Ahmed
 0.28, 0.10, Brown</textarea></label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
+        <label>
+          <span class="lbl">Decimal separator</span>
+          <select id="f-decsep" aria-describedby="decsep-hint decsep-note">
+            <option value=".">Point: 0.25</option>
+            <option value=",">Comma: 0,25</option>
+          </select>
+          <span class="hint" id="decsep-hint">With a decimal comma, separate fields with tabs or semicolons, e.g. <code>0,25; 0,08; Smith</code>.</span>
+        </label>
+        <p id="decsep-note" class="hint" role="status" style="color:var(--flag)" hidden></p>
       <div id="input-error" class="input-error" role="alert" hidden></div>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
@@ -215,6 +225,10 @@
       const NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
       function parse(text) {
         const rows = [], errors = [];
+        // Decimal separator (hub/shared/decimal-sep.js): "." leaves the text unchanged and only warns about rows
+        // that look like decimal commas; "," rewrites tab/semicolon rows to "effect, SE, label", refusing the rest.
+        const DS = window.AlmDecimalSep, prep = DS ? DS.prepare(text, DS.read("f-decsep"), { join: ", " }) : null;
+        if (prep) { text = prep.text; prep.errors.forEach(e => errors.push({ line: e.line, reason: e.reason })); }
         String(text).split(/\r?\n/).forEach((l, i) => {
           if (!l.trim()) return;
           const parts = l.split(/,/).map(s => s.trim());
@@ -227,7 +241,8 @@
           if (!(se > 0)) { errors.push({ line, reason: 'SE must be greater than 0' }); return; }
           rows.push({ te, se, label: parts.slice(2).join(', ') || `Study ${line}` });
         });
-        return { rows, errors };
+        errors.sort((a, b) => a.line - b.line);
+        return { rows, errors, note: prep ? prep.warning : '' };
       }
       window.__almInfluenceParse = parse;
 
@@ -335,6 +350,7 @@
 
       function run() {
         const parsed = parse(document.getElementById("src").value);
+        { const dn = document.getElementById("decsep-note"); if (dn) { dn.textContent = parsed.note || ""; dn.hidden = !parsed.note; } }
         const rows = parsed.rows;
         if (parsed.errors.length || rows.length < 3) {
           clearResults();
@@ -632,17 +648,24 @@
       // ---- State helpers for reset-undo / url-state --
       window.__almSnapshot = function () {
         const ta = document.getElementById('src');
-        return { data: ta ? ta.value : '' };
+        const snap = { data: ta ? ta.value : '' };
+        // Only a non-default separator is stored, so links with "." are byte-identical to before.
+        const ds = document.getElementById('f-decsep');
+        if (ds && ds.value === ',') snap.decsep = ',';
+        return snap;
       };
 
       window.__almRestore = function (snap) {
         const isEmpty = !snap || Object.keys(snap).length === 0;
         const ta = document.getElementById('src');
         if (ta) ta.value = isEmpty ? '' : (snap.data != null ? snap.data : '');
+        // A link made before the setting existed has no decsep: it restores ".".
+        if (window.AlmDecimalSep) window.AlmDecimalSep.restore('f-decsep', isEmpty ? '.' : snap.decsep);
         run();
       };
 
       document.getElementById("btn-run").addEventListener("click", run);
+      document.getElementById("f-decsep").addEventListener("change", run);
 
       // ---- E1 controls ----
       document.getElementById("body").addEventListener("change", e => {
@@ -754,6 +777,7 @@
       var ta = document.getElementById('src');
       if (!ta) return;
       ta.value = lines.join('\n');
+      var ds = document.getElementById('f-decsep'); if (ds) ds.value = '.';  // CSV rows are written with "."
       var btn = document.getElementById('btn-run');
       if (btn) btn.click();
     };
@@ -794,6 +818,8 @@
                             refused: ex.refused, refit: ex.kept };
         }
       }
+      var ds = document.getElementById('f-decsep');
+      if (ds && ds.value === ',') { out.decimal_separator = ','; out.decimal_separator_note = window.AlmDecimalSep.methodsNote(','); }
       return out;
     };
 
@@ -927,6 +953,7 @@
         onAfterLoad: function (ds) {
           var ta = document.getElementById("src");
           ta.value = ds.effect_se.map(function (s) { return s.yi + ", " + Math.sqrt(s.vi) + ", " + s.label; }).join(String.fromCharCode(10));
+          var sep = document.getElementById("f-decsep"); if (sep) sep.value = ".";  // the example is written with "."
           ta.dispatchEvent(new Event("input", { bubbles: true }));
           document.getElementById("btn-run").click();
         },
@@ -958,8 +985,11 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'influence' });
+      AlmAutosave.install({ appKey: 'influence', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#f-decsep)'; }) });
     }
+    // Decimal separator: kept out of the draft (its key set is unchanged) and restored with it (hub/shared/decimal-sep.js).
+    if (window.AlmDecimalSep) window.AlmDecimalSep.persist('f-decsep', 'influence');
   });
 })();
 </script>
