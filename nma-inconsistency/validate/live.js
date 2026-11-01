@@ -8,8 +8,11 @@ const fmt=(v,d=3)=>Number.isFinite(v)?v.toFixed(d):'—';
 function currentState() {
   const rows=window.parse($('src').value), reason=window.inputIssue(rows);
   if(reason) throw Error(reason);
-  const state=structuredClone(window._almLastInco());
+  const original=window._almLastInco(), state=structuredClone(original);
   if(!state || state.status==='refused') throw Error(state?.reason || 'Run the analysis first.');
+  // structuredClone omits non-enumerable join metadata. Carry it into the
+  // immutable snapshot, separately from the pinned numerical quantities.
+  state.nodeSplit.forEach((r,i)=>Object.defineProperty(r,'pairKey',{value:original.nodeSplit[i].pairKey}));
   // Recompute through the shipped page, but restore exactly what the user was viewing.
   const saved=a.snapshot(); let fresh;
   try {window.__almIncoLoad(saved.text); fresh=structuredClone(window._almLastInco());} finally {a.restore(saved);}
@@ -25,10 +28,62 @@ function currentState() {
     {key:'display.controls',value:optionsOK},
     {key:'display.pageText',value:JSON.stringify(a.pageText())===JSON.stringify(a.contract.pageText)},
     {key:'display.chartControls',value:a.chartControls()});
-  return {rows,state,values:vals,note:'Live: self-hosted netmeta 3.4-0 / metafor 4.8-0. Paper: netmeta 3.7-0 / metafor 5.2-1. Numerical checks and table/global text; the pinned replay additionally checks every plot element.'};
+  // Structural identities must survive the validator's serialisation boundary;
+  // do not add them to the historically pinned enumerable numerical state.
+  const pairKeys=state.nodeSplit.map(r=>r.pairKey);
+  if(pairKeys.some(k=>typeof k!=='string') || new Set(pairKeys).size!==pairKeys.length)
+    throw Error('Missing or duplicate structural treatment-pair identity; R validation refused.');
+  return {rows,state,values:vals,pairKeys,note:'Live: self-hosted netmeta 3.4-0 / metafor 4.8-0. Paper: netmeta 3.7-0 / metafor 5.2-1. Numerical checks and table/global text; the pinned replay additionally checks every plot element.'};
 }
 function buildScript(s) {
   const vector=(key,numeric=false)=>'c('+s.rows.map(r=>numeric?r[key].toPrecision(17):JSON.stringify(r[key])).join(',')+')';
+  if(!Array.isArray(s.pairKeys) || s.pairKeys.length!==s.state.nodeSplit.length)
+    throw Error('Missing structural treatment-pair identity; R validation refused.');
+  if(new Set(s.pairKeys).size!==s.pairKeys.length)
+    throw Error('Duplicate structural treatment-pair identity; R validation refused.');
+  const pairId=(key, comparison)=>{
+    let pair;
+    try { pair=JSON.parse(key); } catch (_) { throw Error('Invalid structural treatment-pair identity; R validation refused.'); }
+    if(!Array.isArray(pair) || pair.length!==2 || pair.some(t=>typeof t!=='string'))
+      throw Error('Invalid structural treatment-pair identity; R validation refused.');
+    const ids=pair.map(t=>s.state.trts.indexOf(t)+1);
+    if(ids.includes(0) || ids[0]===ids[1])
+      throw Error('Unknown structural treatment-pair identity; R validation refused.');
+    // Preserve the pre-existing unknown-ID refusal reason, then reject valid
+    // keys that have been transposed onto a different displayed comparison.
+    if(pair.slice().sort().join(' vs ')!==comparison)
+      throw Error('Structural treatment-pair identity disagrees with displayed comparison; R validation refused.');
+    return ids.sort((a,b)=>a-b).join(':');
+  };
+  // A displayed label is not a unique key: e.g. (A, B vs C) and
+  // (A vs B, C) both render as "A vs B vs C". Reconstruct the page
+  // node-split order from accepted source edges, not the supplied key array.
+  // A comparison lacking an alternative path is not node-split estimable.
+  // If a numerically singular split was skipped, refuse verification rather
+  // than silently associate another pair with its position.
+  s.state.nodeSplit.forEach((row, i) => pairId(s.pairKeys[i], row.comparison));
+  if(!Array.isArray(s.rows)) throw Error('Missing input evidence for structural treatment-pair identity; R validation refused.');
+  const candidates = [], seen = new Set();
+  for(const row of s.rows) {
+    if(typeof row.A !== 'string' || typeof row.B !== 'string')
+      throw Error('Invalid input evidence for structural treatment-pair identity; R validation refused.');
+    const key = JSON.stringify([row.A, row.B].sort());
+    if(seen.has(key)) continue;
+    seen.add(key);
+    const [a, b] = JSON.parse(key);
+    const others = s.rows.filter(r => !((r.A === a && r.B === b) || (r.A === b && r.B === a)));
+    const reachable = new Set([a]);
+    let previous = -1;
+    while(previous !== reachable.size) {
+      previous = reachable.size;
+      for(const r of others) if(reachable.has(r.A) || reachable.has(r.B)) {
+        reachable.add(r.A); reachable.add(r.B);
+      }
+    }
+    if(reachable.has(b)) candidates.push(key);
+  }
+  if(candidates.length !== s.pairKeys.length || candidates.some((key, i) => key !== s.pairKeys[i]))
+    throw Error('Structural treatment-pair identity disagrees with input evidence; R validation refused.');
   return `suppressPackageStartupMessages(library(netmeta))
 suppressPackageStartupMessages(library(metafor))
 A <- ${vector('A')}; B <- ${vector('B')}; te <- ${vector('te',true)}; se <- ${vector('se',true)}; study <- ${vector('study')}
@@ -57,11 +112,11 @@ for(j in seq_len(nrow(cmp))) {
  pair<-strsplit(cmp$comparison[j],sep,fixed=TRUE)[[1]]; ord<-pair[order(match(pair,tr))];sign<-if(pair[1]==ord[1])1 else -1
  if(!is.finite(direct$TE[j]) || !path(ord[1],ord[2]))next
  stopifnot(is.finite(cmp$TE[j]))
- name<-paste(ord,collapse=' vs ')
- splits[[name]]<-list(comparison=name,direct=list(mean=sign*direct$TE[j],se=direct$seTE[j]),indirect=list(mean=sign*indirect$TE[j],se=indirect$seTE[j]),diff=sign*cmp$TE[j],seDiff=cmp$seTE[j],z=sign*cmp$statistic[j],p=cmp$p[j])
+ key<-paste(sort(match(ord,tr)),collapse=':')
+ splits[[key]]<-list(comparison=paste(ord,collapse=' vs '),direct=list(mean=sign*direct$TE[j],se=direct$seTE[j]),indirect=list(mean=sign*indirect$TE[j],se=indirect$seTE[j]),diff=sign*cmp$TE[j],seDiff=cmp$seTE[j],z=sign*cmp$statistic[j],p=cmp$p[j])
 }
 # Order is supplied only for emission; membership must match independently.
-names_app <- ${s.state.nodeSplit.length?'c('+[...s.state.nodeSplit].sort((x,y)=>x.comparison.localeCompare(y.comparison)).map(x=>JSON.stringify(x.comparison)).join(',')+')':'character(0)'}
+names_app <- ${s.state.nodeSplit.length?'c('+s.state.nodeSplit.map((row,i)=>({row,key:s.pairKeys[i]})).sort((x,y)=>x.row.comparison.localeCompare(y.row.comparison)).map(x=>JSON.stringify(pairId(x.key,x.row.comparison))).join(',')+')':'character(0)'}
 stopifnot(!anyDuplicated(names_app),setequal(names_app,names(splits)))
 splits<-unname(splits[names_app])
 dec<-decomp.design(m,tau.preset=tau,warn=FALSE)

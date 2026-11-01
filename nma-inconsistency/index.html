@@ -209,6 +209,8 @@ A, D, -0.48, 0.14</textarea>
       document.getElementById("ns-body").innerHTML = "";
       document.getElementById("ns-plot").innerHTML = "";
       document.getElementById("dbt").textContent = reason;
+      // Clear dependent results/exports before another action can read them.
+      if (window.AlmIncoPlus) window.AlmIncoPlus.refresh();
     }
     function inputIssue(rows) {
       if (rows.length < 3) return "At least 3 valid contrasts are required.";
@@ -438,6 +440,7 @@ A, D, -0.48, 0.14</textarea>
         finiteNumber(z * z);
         const p = validProbability(pz(z));
         const result = {
+          pairKey: key,
           comparison: `${a} vs ${b}`,
           direct: dirPool,
           indirect: ind,
@@ -595,12 +598,13 @@ A, D, -0.48, 0.14</textarea>
           trts: net.trts, Q: net.Q, df: net.df, estimates: estimates,
           estimatesRandom: estimatesRandom, Qrandom: netRE.Q,
           model: method, tau2: tau2,
-          nodeSplit: ns.map(r => ({
+          // Preserve join identity without changing the numerical replay schema.
+          nodeSplit: ns.map(r => Object.defineProperty({
             comparison: r.comparison,
             direct: { mean: r.direct.mean, se: r.direct.se },
             indirect: { mean: r.indirect.mean, se: r.indirect.se },
             diff: r.diff, seDiff: r.seDiff, z: r.z, p: r.p,
-          })),
+          }, 'pairKey', { value: r.pairKey })),
           dbt: { Q: g.Q, df: g.df, p: Number.isFinite(g.p) ? g.p : null },
         };
       } catch (_) { refuse("Network fit is singular or numerically invalid."); }
@@ -622,22 +626,22 @@ A, D, -0.48, 0.14</textarea>
       const allLimits = ns.flatMap(r => [r.direct.mean - Z975 * r.direct.se, r.direct.mean + Z975 * r.direct.se, r.indirect.mean - Z975 * r.indirect.se, r.indirect.mean + Z975 * r.indirect.se]);
       const lo = Math.min(0, ...allLimits) - 0.3, hi = Math.max(0, ...allLimits) + 0.3;
       const X = v => padL + (v - lo) / (hi - lo) * plotW;
-      __svgParts.push(`<line x1="${X(0)}" y1="${10}" x2="${X(0)}" y2="${10 + ns.length * 30}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.35"/>`);
+      __svgParts.push(`<line x1="${X(0)}" y1="${10}" x2="${X(0)}" y2="${10 + ns.length * 30}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.35"></line>`);
       ns.forEach((r, i) => {
         const y = 30 + i * 30;
         __svgParts.push(`<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor">${escapeMarkup(r.comparison)}</text>`);
         // direct
         const dLo = r.direct.mean - Z975 * r.direct.se, dHi = r.direct.mean + Z975 * r.direct.se;
-        __svgParts.push(`<line x1="${X(dLo)}" y1="${y - 6}" x2="${X(dHi)}" y2="${y - 6}" stroke="var(--accent)" stroke-width="1.3"/>`);
-        __svgParts.push(`<rect x="${X(r.direct.mean) - 3.5}" y="${y - 9.5}" width="7" height="7" fill="var(--accent)"/>`);
+        __svgParts.push(`<line x1="${X(dLo)}" y1="${y - 6}" x2="${X(dHi)}" y2="${y - 6}" stroke="var(--accent)" stroke-width="1.3"></line>`);
+        __svgParts.push(`<rect x="${X(r.direct.mean) - 3.5}" y="${y - 9.5}" width="7" height="7" fill="var(--accent)"></rect>`);
         // indirect
         const iLo = r.indirect.mean - Z975 * r.indirect.se, iHi = r.indirect.mean + Z975 * r.indirect.se;
-        __svgParts.push(`<line x1="${X(iLo)}" y1="${y + 6}" x2="${X(iHi)}" y2="${y + 6}" stroke="var(--warn)" stroke-width="1.3" stroke-dasharray="3 2"/>`);
-        __svgParts.push(`<rect x="${X(r.indirect.mean) - 3.5}" y="${y + 2.5}" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"/>`);
+        __svgParts.push(`<line x1="${X(iLo)}" y1="${y + 6}" x2="${X(iHi)}" y2="${y + 6}" stroke="var(--warn)" stroke-width="1.3" stroke-dasharray="3 2"></line>`);
+        __svgParts.push(`<rect x="${X(r.indirect.mean) - 3.5}" y="${y + 2.5}" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"></rect>`);
       });
       // legend
-      __svgParts.push(`<rect x="${padL}" y="10" width="7" height="7" fill="var(--accent)"/><text x="${padL + 12}" y="17" font-size="10" fill="currentColor">direct</text>`);
-      __svgParts.push(`<rect x="${padL + 70}" y="10" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"/><text x="${padL + 82}" y="17" font-size="10" fill="currentColor">indirect</text>`);
+      __svgParts.push(`<rect x="${padL}" y="10" width="7" height="7" fill="var(--accent)"></rect><text x="${padL + 12}" y="17" font-size="10" fill="currentColor">direct</text>`);
+      __svgParts.push(`<rect x="${padL + 70}" y="10" width="7" height="7" fill="none" stroke="var(--warn)" stroke-width="1.5"></rect><text x="${padL + 82}" y="17" font-size="10" fill="currentColor">indirect</text>`);
       svg.innerHTML = __svgParts.join("");
 
     }
@@ -684,7 +688,7 @@ A, D, -0.48, 0.14</textarea>
   });
 })();
 </script>
-<script>(function(){function b(){if(!(window.alm&&window.alm.resultsExport))return setTimeout(b,200);if(document.getElementById("alm-export-mount"))return;var m=document.createElement("div");m.id="alm-export-mount";m.style.margin="1rem clamp(1rem,3vw,3rem)";var ft=document.querySelector("footer"),mn=document.querySelector("main")||document.body;if(ft&&ft.parentNode)ft.parentNode.insertBefore(m,ft);else mn.appendChild(m);window.alm.resultsExport({target:m,basename:"nma-inconsistency",getResults:function(){var f=window._almLastInco;var r=f&&f();return r||{};},methods:function(){var t=window.AlmIncoPlus&&window.AlmIncoPlus.methodsText();var ft=document.querySelector("footer");return (t?t+"\n\n":"")+(ft?ft.textContent.replace(/\s+/g," ").trim():"");}});}if(document.readyState!=="loading")b();else document.addEventListener("DOMContentLoaded",b);})();</script>
+<script>(function(){function b(){if(!(window.alm&&window.alm.resultsExport))return setTimeout(b,200);if(document.getElementById("alm-export-mount"))return;var m=document.createElement("div");m.id="alm-export-mount";m.style.margin="1rem clamp(1rem,3vw,3rem)";var ft=document.querySelector("footer"),mn=document.querySelector("main")||document.body;if(ft&&ft.parentNode)ft.parentNode.insertBefore(m,ft);else mn.appendChild(m);window.alm.resultsExport({target:m,basename:"nma-inconsistency",getResults:function(){var f=window._almLastInco;var r=f&&f();var build=window.AlmBuildInfo;return r&&build?Object.assign({},r,{_provenance:{app:"nma-inconsistency",version:build.version,sha:build.sha}}):r||{};},methods:function(){var t=window.AlmIncoPlus&&window.AlmIncoPlus.methodsText();var ft=document.querySelector("footer");return (t?t+"\n\n":"")+(ft?ft.textContent.replace(/\s+/g," ").trim():"");}});}if(document.readyState!=="loading")b();else document.addEventListener("DOMContentLoaded",b);})();</script>
 
 <script>
 // ma-comparisons-v1 reader: import the shared arm-level network (events/n from
@@ -724,8 +728,55 @@ A, D, -0.48, 0.14</textarea>
           ". Multi-arm studies are unsupported: correlated contrasts require study covariance.");
         return;
       }
+      // P16-R4-count-domain: the shared bus permits finite fractional or unsafe
+      // source counts (and continuous n=1), although such raw trial arms cannot
+      // support the corresponding binomial or sample-SD contrasts. Refuse at
+      // this consumer boundary rather than fitting plausible invented effects.
+      var isContinuous = env.effectMeasure === "MD" || env.effectMeasure === "SMD";
+      var isBinary = env.effectMeasure === "OR" || env.effectMeasure === "RR";
+      if (isContinuous || isBinary) {
+        // Collect ALL invalid source positions before refusing. A first-error
+        // return concealed later omitted studies, even though no import ran.
+        // Source positions, not IDs, are authoritative: IDs can be repeated.
+        var badSources = [];
+        var badCounts = [];
+        for (var si = 0; si < env.studies.length; si++) {
+          var study = env.studies[si];
+          var sourceName = '"' + String(study && study.id || "(unnamed)") + '" (source study ' + (si + 1) + ')';
+          if (!study || !Array.isArray(study.arms) || study.arms.length !== 2) {
+            badSources.push(sourceName);
+            continue;
+          }
+          var badArms = [];
+          for (var ai = 0; ai < study.arms.length; ai++) {
+            var arm = study.arms[ai];
+            if (!arm || !Number.isSafeInteger(arm.n) || arm.n < (isContinuous ? 2 : 1) ||
+                (isBinary && (!Number.isSafeInteger(arm.events) || arm.events < 0 || arm.events > arm.n))) {
+              badArms.push(ai + 1);
+            }
+          }
+          if (badArms.length) badCounts.push(sourceName + ", arm " + badArms.join("/"));
+        }
+        if (badSources.length || badCounts.length) {
+          busRefuse((badSources.length ? "invalid two-arm source at " + badSources.join(", ") + ". " : "") +
+            (badCounts.length ? "invalid sample size n or binary event count at " + badCounts.join(", ") +
+              ". Raw counts must be safe integers; MD/SMD n must be at least 2." : ""));
+          return;
+        }
+      }
       var rows = MaComparisons.toContrasts(env);
       if (!rows.length) { busRefuse("the shared network has no supported contrasts."); notify("Bus measure " + (env.effectMeasure || "?") + " yielded no contrasts (needs OR/RR with events/n, or MD/SMD with mean/sd/n)."); return; }
+      // Multi-arm sources were refused above: every source must yield one row.
+      // Check source objects individually, since repeated IDs can hide omissions.
+      if (rows.length !== env.studies.length) {
+        var omitted = env.studies.map(function (s, i) {
+          var converted = MaComparisons.toContrasts({ effectMeasure: env.effectMeasure, studies: [s] });
+          return converted.length ? null : '"' + String(s && s.id || "(unnamed)") + '" (source study ' + (i + 1) + ')';
+        }).filter(function (s) { return s !== null; });
+        busRefuse("No supported contrast could be derived for " + omitted.join(", ") +
+          ". Check the arm data, including sample size n on both arms for MD/SMD.");
+        return;
+      }
       function csv(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }
       ta.value = rows.map(function (r) { return [r.treatment1, r.treatment2, r.te, r.se, r.study].map(csv).join(","); }).join("\n");
       ta.dispatchEvent(new Event("input", { bubbles: true }));

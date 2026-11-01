@@ -98,6 +98,13 @@
         .filter(Boolean).join('; ') + '.');
       L.push('');
     }
+    const provenance = obj._provenance;
+    if (provenance) {
+      if (provenance.app) L.push('Application: ' + provenance.app);
+      if (provenance.version) L.push('Application version: ' + provenance.version);
+      if (provenance.sha) L.push('Build SHA: ' + provenance.sha);
+      L.push('');
+    }
     L.push((plain ? 'METHODS' : '## Methods'));
     L.push('');
     if (m.desc) L.push(m.desc);
