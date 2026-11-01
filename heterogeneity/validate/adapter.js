@@ -7,13 +7,20 @@
   const KEYS = ['pm','reml','ml','eb','sj','he','hs','dl'];
   const files = [{"path":"validate/corpus/corpus.json","sha256":"b3d7ea381e31a70dc45d2d2f613ac390592fef4184e3fb989cb21ef54ee21fac","bytes":109686},{"path":"validate/corpus/reference.json","sha256":"aecb7c1ef7f3d290fd53b6709c2ce11d3d8f02fe0fcef4cb0e3d6febe47ad8f2","bytes":3128201}];
   const repo = 'https://github.com/mahmood726-cyber/heterogeneity-reproducible';
+  // Reading state must have no side effects. This used to dispatch an input event on #f-data to refresh
+  // _almLastStudies(); AlmAutosave took that synthetic event for a user edit and saved a draft on every read (the
+  // Verify-in-R panel reads on each render). Parse the current text with the page's own parser instead: these are
+  // exactly the rows render() would keep, and __almHetCompute fits exactly those rows.
   function liveState() {
-    document.getElementById('f-data').dispatchEvent(new Event('input', {bubbles:true}));
     const text = document.getElementById('f-data').value;
     const requested = document.getElementById('f-tau2').value;
     const result = window.__almHetCompute(text, requested);
     if (result.notPooled) throw new Error('Need at least two valid studies');
-    return { result, studies: window._almLastStudies().map(s => ({ est: s.est, se: Math.sqrt(s.v) })),
+    const s0 = result.sum;
+    // render() blocks (and shows no analysis for) a non-finite result; never verify one the page would not display.
+    if (![s0.mu,s0.se,s0.ciLo,s0.ciHi,s0.seHKSJ,s0.ciLoHKSJ,s0.ciHiHKSJ,s0.Q,s0.I2,s0.I2Model,result.tau2,result.pi.lo,result.pi.hi].every(Number.isFinite))
+      throw new Error('Analysis blocked: non-finite numerical result');
+    return { result, studies: window.__almHetParse(text).studies.map(s => ({ est: s.est, se: Math.sqrt(s.v) })),
       note: result.dlRefused ? 'DL refused for k < 10; PM is the analysis currently displayed and validated.' : '' };
   }
   function values(state) {
