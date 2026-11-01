@@ -1,0 +1,469 @@
+{
+  "source_package": "metadat",
+  "version": "1.6-0",
+  "dataset": "dat.konstantopoulos2011",
+  "citation": "Konstantopoulos S (2011). Fixed effects and variance components estimation in three-level meta-analysis. Research Synthesis Methods 2:61–76. doi:10.1002/jrsm.35. Original review: Cooper et al. (2003), Review of Educational Research 73:1–52.",
+  "licence": "Data values are facts; cite the source paper and the R package. Package licence: GPL (>= 2).",
+  "source_url": "https://github.com/cran/metadat/blob/master/data/dat.konstantopoulos2011.rda",
+  "source_blob": "3e3be19578863bbf571e48f4ca48bfbf102f238d",
+  "columns": [
+    "district",
+    "school",
+    "study",
+    "year",
+    "yi",
+    "vi"
+  ],
+  "values": [
+    {
+      "district": 11,
+      "school": 1,
+      "study": 1,
+      "year": 1976,
+      "yi": -0.18,
+      "vi": 0.118
+    },
+    {
+      "district": 11,
+      "school": 2,
+      "study": 2,
+      "year": 1976,
+      "yi": -0.22,
+      "vi": 0.118
+    },
+    {
+      "district": 11,
+      "school": 3,
+      "study": 3,
+      "year": 1976,
+      "yi": 0.23,
+      "vi": 0.144
+    },
+    {
+      "district": 11,
+      "school": 4,
+      "study": 4,
+      "year": 1976,
+      "yi": -0.3,
+      "vi": 0.144
+    },
+    {
+      "district": 12,
+      "school": 1,
+      "study": 5,
+      "year": 1989,
+      "yi": 0.13,
+      "vi": 0.014
+    },
+    {
+      "district": 12,
+      "school": 2,
+      "study": 6,
+      "year": 1989,
+      "yi": -0.26,
+      "vi": 0.014
+    },
+    {
+      "district": 12,
+      "school": 3,
+      "study": 7,
+      "year": 1989,
+      "yi": 0.19,
+      "vi": 0.015
+    },
+    {
+      "district": 12,
+      "school": 4,
+      "study": 8,
+      "year": 1989,
+      "yi": 0.32,
+      "vi": 0.024
+    },
+    {
+      "district": 18,
+      "school": 1,
+      "study": 9,
+      "year": 1994,
+      "yi": 0.45,
+      "vi": 0.023
+    },
+    {
+      "district": 18,
+      "school": 2,
+      "study": 10,
+      "year": 1994,
+      "yi": 0.38,
+      "vi": 0.043
+    },
+    {
+      "district": 18,
+      "school": 3,
+      "study": 11,
+      "year": 1994,
+      "yi": 0.29,
+      "vi": 0.012
+    },
+    {
+      "district": 27,
+      "school": 1,
+      "study": 12,
+      "year": 1976,
+      "yi": 0.16,
+      "vi": 0.02
+    },
+    {
+      "district": 27,
+      "school": 2,
+      "study": 13,
+      "year": 1976,
+      "yi": 0.65,
+      "vi": 0.004
+    },
+    {
+      "district": 27,
+      "school": 3,
+      "study": 14,
+      "year": 1976,
+      "yi": 0.36,
+      "vi": 0.004
+    },
+    {
+      "district": 27,
+      "school": 4,
+      "study": 15,
+      "year": 1976,
+      "yi": 0.6,
+      "vi": 0.007
+    },
+    {
+      "district": 56,
+      "school": 1,
+      "study": 16,
+      "year": 1997,
+      "yi": 0.08,
+      "vi": 0.019
+    },
+    {
+      "district": 56,
+      "school": 2,
+      "study": 17,
+      "year": 1997,
+      "yi": 0.04,
+      "vi": 0.007
+    },
+    {
+      "district": 56,
+      "school": 3,
+      "study": 18,
+      "year": 1997,
+      "yi": 0.19,
+      "vi": 0.005
+    },
+    {
+      "district": 56,
+      "school": 4,
+      "study": 19,
+      "year": 1997,
+      "yi": -0.06,
+      "vi": 0.004
+    },
+    {
+      "district": 58,
+      "school": 1,
+      "study": 20,
+      "year": 1976,
+      "yi": -0.18,
+      "vi": 0.02
+    },
+    {
+      "district": 58,
+      "school": 2,
+      "study": 21,
+      "year": 1976,
+      "yi": 0.0,
+      "vi": 0.018
+    },
+    {
+      "district": 58,
+      "school": 3,
+      "study": 22,
+      "year": 1976,
+      "yi": 0.0,
+      "vi": 0.019
+    },
+    {
+      "district": 58,
+      "school": 4,
+      "study": 23,
+      "year": 1976,
+      "yi": -0.28,
+      "vi": 0.022
+    },
+    {
+      "district": 58,
+      "school": 5,
+      "study": 24,
+      "year": 1976,
+      "yi": -0.04,
+      "vi": 0.02
+    },
+    {
+      "district": 58,
+      "school": 6,
+      "study": 25,
+      "year": 1976,
+      "yi": -0.3,
+      "vi": 0.021
+    },
+    {
+      "district": 58,
+      "school": 7,
+      "study": 26,
+      "year": 1976,
+      "yi": 0.07,
+      "vi": 0.006
+    },
+    {
+      "district": 58,
+      "school": 8,
+      "study": 27,
+      "year": 1976,
+      "yi": 0.0,
+      "vi": 0.007
+    },
+    {
+      "district": 58,
+      "school": 9,
+      "study": 28,
+      "year": 1976,
+      "yi": 0.05,
+      "vi": 0.007
+    },
+    {
+      "district": 58,
+      "school": 10,
+      "study": 29,
+      "year": 1976,
+      "yi": -0.08,
+      "vi": 0.007
+    },
+    {
+      "district": 58,
+      "school": 11,
+      "study": 30,
+      "year": 1976,
+      "yi": -0.09,
+      "vi": 0.007
+    },
+    {
+      "district": 71,
+      "school": 1,
+      "study": 31,
+      "year": 1997,
+      "yi": 0.3,
+      "vi": 0.015
+    },
+    {
+      "district": 71,
+      "school": 2,
+      "study": 32,
+      "year": 1997,
+      "yi": 0.98,
+      "vi": 0.011
+    },
+    {
+      "district": 71,
+      "school": 3,
+      "study": 33,
+      "year": 1997,
+      "yi": 1.19,
+      "vi": 0.01
+    },
+    {
+      "district": 86,
+      "school": 1,
+      "study": 34,
+      "year": 1997,
+      "yi": -0.07,
+      "vi": 0.001
+    },
+    {
+      "district": 86,
+      "school": 2,
+      "study": 35,
+      "year": 1997,
+      "yi": -0.05,
+      "vi": 0.001
+    },
+    {
+      "district": 86,
+      "school": 3,
+      "study": 36,
+      "year": 1997,
+      "yi": -0.01,
+      "vi": 0.001
+    },
+    {
+      "district": 86,
+      "school": 4,
+      "study": 37,
+      "year": 1997,
+      "yi": 0.02,
+      "vi": 0.001
+    },
+    {
+      "district": 86,
+      "school": 5,
+      "study": 38,
+      "year": 1997,
+      "yi": -0.03,
+      "vi": 0.001
+    },
+    {
+      "district": 86,
+      "school": 6,
+      "study": 39,
+      "year": 1997,
+      "yi": 0.0,
+      "vi": 0.001
+    },
+    {
+      "district": 86,
+      "school": 7,
+      "study": 40,
+      "year": 1997,
+      "yi": 0.01,
+      "vi": 0.001
+    },
+    {
+      "district": 86,
+      "school": 8,
+      "study": 41,
+      "year": 1997,
+      "yi": -0.1,
+      "vi": 0.001
+    },
+    {
+      "district": 91,
+      "school": 1,
+      "study": 42,
+      "year": 2000,
+      "yi": 0.5,
+      "vi": 0.01
+    },
+    {
+      "district": 91,
+      "school": 2,
+      "study": 43,
+      "year": 2000,
+      "yi": 0.66,
+      "vi": 0.011
+    },
+    {
+      "district": 91,
+      "school": 3,
+      "study": 44,
+      "year": 2000,
+      "yi": 0.2,
+      "vi": 0.01
+    },
+    {
+      "district": 91,
+      "school": 4,
+      "study": 45,
+      "year": 2000,
+      "yi": 0.0,
+      "vi": 0.009
+    },
+    {
+      "district": 91,
+      "school": 5,
+      "study": 46,
+      "year": 2000,
+      "yi": 0.05,
+      "vi": 0.013
+    },
+    {
+      "district": 91,
+      "school": 6,
+      "study": 47,
+      "year": 2000,
+      "yi": 0.07,
+      "vi": 0.013
+    },
+    {
+      "district": 108,
+      "school": 1,
+      "study": 48,
+      "year": 2000,
+      "yi": -0.52,
+      "vi": 0.031
+    },
+    {
+      "district": 108,
+      "school": 2,
+      "study": 49,
+      "year": 2000,
+      "yi": 0.7,
+      "vi": 0.031
+    },
+    {
+      "district": 108,
+      "school": 3,
+      "study": 50,
+      "year": 2000,
+      "yi": -0.03,
+      "vi": 0.03
+    },
+    {
+      "district": 108,
+      "school": 4,
+      "study": 51,
+      "year": 2000,
+      "yi": 0.27,
+      "vi": 0.03
+    },
+    {
+      "district": 108,
+      "school": 5,
+      "study": 52,
+      "year": 2000,
+      "yi": -0.34,
+      "vi": 0.03
+    },
+    {
+      "district": 644,
+      "school": 1,
+      "study": 53,
+      "year": 1995,
+      "yi": 0.12,
+      "vi": 0.087
+    },
+    {
+      "district": 644,
+      "school": 2,
+      "study": 54,
+      "year": 1995,
+      "yi": 0.61,
+      "vi": 0.082
+    },
+    {
+      "district": 644,
+      "school": 3,
+      "study": 55,
+      "year": 1994,
+      "yi": 0.04,
+      "vi": 0.067
+    },
+    {
+      "district": 644,
+      "school": 4,
+      "study": 56,
+      "year": 1994,
+      "yi": -0.05,
+      "vi": 0.067
+    }
+  ],
+  "notes": "Schools nested within districts; sampling variances retained exactly and converted to SE only at the app input boundary.",
+  "source_documentation": "https://wviechtb.github.io/metadat/reference/dat.konstantopoulos2011.html"
+}
