@@ -2,6 +2,20 @@
   const selfScript = document.currentScript;
   const pdfUrl = selfScript && selfScript.src ? new URL('vendor/jspdf.min.js', selfScript.src).href : null;
   const scriptNonce = selfScript && selfScript.nonce;
+  // Journal presets: begin
+  const presetNonce = scriptNonce;
+  function registerPresets(opts) {
+    if (window.AlmFigPresets) return window.AlmFigPresets.register(opts);
+    (window.__almFigPresetQueue = window.__almFigPresetQueue || []).push(opts);
+    if (window.__almFigPresetLoading || !(selfScript && selfScript.src)) return;
+    window.__almFigPresetLoading = true;
+    const script = document.createElement('script');
+    script.src = new URL('../../shared/alm-figpresets.js', (selfScript && selfScript.src)).href;
+    if (presetNonce) script.nonce = presetNonce;
+    script.onerror = () => { window.__almFigPresetLoading = false; script.remove(); console.warn('Journal preset controls could not load'); };
+    document.head.appendChild(script);
+  }
+  // Journal presets: end
   let pdfLoading;
   function loadPdf() {
     const available = () => (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
@@ -188,6 +202,10 @@
       };
       img.src = blobURL;
     });
+  // Journal presets: begin
+    registerPresets({ target, basename, getReceiptInput,
+      plots: [{ id: 'chart', name: basename, getSvg }] });
+  // Journal presets: end
   }
   init._prepareSvg = _prepareSvg;
   init._serialize = _serialize;
