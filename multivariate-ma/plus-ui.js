@@ -100,10 +100,16 @@
     el('plus-status').textContent = res && res.status === 'ok' ? 'Sweep not run for the current data.' : 'Sweep unavailable: ' + (res ? res.reason : 'no data');
     renderTexts();
   }
+  // Grid inputs are type=number: unreadable text or an emptied field leaves value '', which Number() reads as 0.
+  // Only a complete decimal number counts; anything else is NaN, which makeGrid refuses ('must be numbers').
+  function gridNumber(id) {
+    var t = String(el(id).value).trim();
+    return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(t) ? Number(t) : NaN;
+  }
   function runSweep() {
     clearSweep();
     if (!state.parsed) return null;
-    var g = P.makeGrid(Number(el('plus-from').value), Number(el('plus-to').value), Number(el('plus-step').value));
+    var g = P.makeGrid(gridNumber('plus-from'), gridNumber('plus-to'), gridNumber('plus-step'));
     if (g.error) { el('plus-status').textContent = 'Refused: ' + g.error; return null; }
     if (state.parsed.rows.length < 2) { el('plus-status').textContent = 'Refused: at least two complete studies are required.'; return null; }
     state.grid = g.grid; state.sweep = P.sweep(state.parsed, g.grid);
@@ -119,7 +125,7 @@
       sweep: s.sweep && s.sweep.map(function (x) { return x.status === 'ok' ? { rhoW: x.rhoW, status: 'ok', mu: x.fit.mu, muSE: x.fit.muSE, muVcov: x.fit.muVcov, G: x.fit.G, rho: x.fit.rho, logLik: x.fit.logLik, z: x.tests.map(function (t) { return t.z; }), p: x.tests.map(function (t) { return t.p; }), boundary: x.boundary } : x; }) || null };
   }
   function rScript() {
-    var g = state.grid || P.makeGrid(Number(el('plus-from').value), Number(el('plus-to').value), Number(el('plus-step').value)).grid;
+    var g = state.grid || P.makeGrid(gridNumber('plus-from'), gridNumber('plus-to'), gridNumber('plus-step')).grid;
     return P.rScript(state.parsed, g, { build: build() });
   }
   var page = window.AlmMvPage;
