@@ -1,0 +1,6 @@
+Comparison,Outcome,Subgroup,Study ID,Study,Year,Effect measure,Effect Estimate,SE
+Synthetic comparison,Synthetic effect,Selected group,synthetic-0,Synthetic A,2020,MD,-0.25,0.125
+Synthetic comparison,Synthetic effect,Selected group,synthetic-1,Synthetic B,2021,MD,0.1,0.2
+Synthetic comparison,Synthetic effect,Selected group,synthetic-2,Synthetic C,2022,MD,-0.4,0.25
+Synthetic comparison,Synthetic effect,Selected group,synthetic-3,Synthetic D,2023,MD,0.2,0.15
+Synthetic comparison,Synthetic effect,Selected group,synthetic-4,Synthetic E,2024,MD,0.05,0.1
