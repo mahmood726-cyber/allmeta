@@ -1,0 +1,19 @@
+[
+  {
+    "name": "Excel TSV",
+    "text": "study\tt1\tt2\teffect\tSE\nStudy 1\tdrug+exercise\tcontrol\t-0.45\t0.12\nStudy 2\tdrug\tcontrol\t-0.30\t0.10\nStudy 3\texercise\tcontrol\t-0.20\t0.11\nStudy 4\tdrug+education\tcontrol\t-0.40\t0.14\nStudy 5\tdrug+exercise+education\tcontrol\t-0.55\t0.15\nStudy 6\texercise+education\tcontrol\t-0.30\t0.13\nStudy 7\tdrug\texercise\t-0.12\t0.10\nStudy 8\tdrug+exercise\tdrug\t-0.18\t0.11",
+    "answers": {}
+  },
+  {
+    "name": "paper-style MD and CI",
+    "text": "study  t1  t2  MD\nStudy 1  drug+exercise  control  -0.45 (-0.6851956781448065–-0.21480432185519355)\nStudy 2  drug  control  -0.30 (-0.4959963984540054–-0.10400360154599458)\nStudy 3  exercise  control  -0.20 (-0.41559603829940595–0.015596038299405923)\nStudy 4  drug+education  control  -0.40 (-0.6743949578356077–-0.12560504216439244)\nStudy 5  drug+exercise+education  control  -0.55 (-0.8439945976810082–-0.25600540231899194)\nStudy 6  exercise+education  control  -0.30 (-0.554795317990207–-0.04520468200979294)\nStudy 7  drug  exercise  -0.12 (-0.3159963984540054–0.07599639845400541)\nStudy 8  drug+exercise  drug  -0.18 (-0.3955960382994059–0.03559603829940594)",
+    "answers": {}
+  },
+  {
+    "name": "Covidence-style CSV",
+    "text": "Study ID,t1,t2,Mean Difference,Standard Error\nStudy 1,drug+exercise,control,-0.45,0.12\nStudy 2,drug,control,-0.30,0.10\nStudy 3,exercise,control,-0.20,0.11\nStudy 4,drug+education,control,-0.40,0.14\nStudy 5,drug+exercise+education,control,-0.55,0.15\nStudy 6,exercise+education,control,-0.30,0.13\nStudy 7,drug,exercise,-0.12,0.10\nStudy 8,drug+exercise,drug,-0.18,0.11",
+    "answers": {
+      "table:delimiter": "columns"
+    }
+  }
+]

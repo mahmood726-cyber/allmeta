@@ -1,0 +1,345 @@
+// App 19: feature contract. Entry uses the core APIs + spec.entry.apply, so the
+// separately maintained provenance UI can evolve without changing the round trips.
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import fs from 'node:fs';
+import { readZip, readTiff, decodePng } from './zip-reader.mjs';
+
+const APP = 'component-nma', PAGE = '/component-nma/index.html';
+const fixture = JSON.parse(fs.readFileSync(new URL('./fixtures/features/component-nma/entry.json', import.meta.url), 'utf8'));
+const snapshot = JSON.parse(fs.readFileSync(new URL('./__snapshots__/text-component-nma.json', import.meta.url), 'utf8'));
+const normal = s => s.replace(/−/g, '-');
+const near = (a, b, key) => expect(Math.abs(a - b) / Math.max(1, Math.abs(b)), key).toBeLessThanOrEqual(1e-9);
+function sameResult(a, b) {
+  expect(a.comps).toEqual(b.comps);
+  expect(a.df).toBe(b.df);
+  for (const key of ['Q', 'tau2']) b[key] === null ? expect(a[key]).toBeNull() : near(a[key], b[key], key);
+  for (const group of ['components', 'combinations']) {
+    expect(Object.keys(a[group])).toEqual(Object.keys(b[group]));
+    for (const name of Object.keys(b[group])) for (const q of ['est', 'se']) near(a[group][name][q], b[group][name][q], `${group}/${name}/${q}`);
+  }
+}
+async function open(page, tab) {
+  await page.goto(PAGE);
+  await expect(page.locator('#comp-body tr')).toHaveCount(3);
+  await expect(page.locator('#alm-features .alm-f-toggle')).toBeVisible();
+  if (tab) await page.evaluate(key => AlmFeatures.open('component-nma', key), tab);
+}
+async function render(page) {
+  return page.evaluate(() => {
+    const spec = AlmFeatures.get('component-nma').text, r = spec.results();
+    const ctx = { app: 'component-nma', build: AlmBuildInfo, entryLog: [], verify: null };
+    const text = AlmText.render(spec.templates, r, ctx);
+    const norm = p => p.segments.map(s => s.type === 'ctx' && s.key.startsWith('build.') ? '<' + s.key + '>' : s.text).join('');
+    return { audit: AlmText.audit(text, r, { ctx, dom: spec.dom() }), text: text.results.text,
+      snapshot: { app: 'component-nma', source: 'Built-in example; additive generalized DerSimonian–Laird random effects; normal confidence intervals.',
+        plain: norm(text.plain), methods: norm(text.methods), results: norm(text.results), flags: text.flags.map(norm), references: text.cites.map(c => c.full) } };
+  });
+}
+
+test('PASTE PLANTED: lenient number tokens refuse the input, never read as another number', async ({ page }) => {
+  // Number('0x10') = 16 and Number('0x0') = 0: a hexadecimal token is not a decimal effect or SE and must not be analysed.
+  await page.goto(PAGE);
+  await page.waitForFunction(() => typeof window.__almCnmaLoad === 'function');
+  const base = 'diet | control | -0.15 | 0.12\nexercise | control | -0.22 | 0.12\ndiet+exercise | control | -0.35 | 0.14';
+  const rows = () => page.evaluate(() => document.getElementById('comp-body').children.length);
+  for (const row of ['diet | exercise | 0x0 | 0.1', 'diet | exercise | 0x10 | 0.1', 'diet | exercise | -0.1 | 0x10',
+    'diet | exercise | -0.1x | 0.1', 'diet | exercise | -0.1 | 0.1x', 'diet | exercise | -0 1 | 0.1', 'diet | exercise | NaN | 0.1',
+    'diet | exercise | -0.1 | Infinity', 'diet | exercise | -0,1 | 0.1']) {
+    await page.evaluate(t => window.__almCnmaLoad(t), base);
+    expect(await rows(), 'valid base').toBeGreaterThan(0);
+    await page.evaluate(t => window.__almCnmaLoad(t), base + '\n' + row);
+    expect(await rows(), row).toBe(0);
+  }
+  // Valid forms stay accepted: leading '+', exponent, surrounding spaces.
+  await page.evaluate(t => window.__almCnmaLoad(t), base + '\ndiet | exercise |  +0.07  | 1e-1');
+  expect(await rows()).toBeGreaterThan(0);
+});
+
+test('ENTRY: three formats reproduce every estimate, SE, Q and variance from the built-in example', async ({ page }) => {
+  await open(page, 'entry');
+  const expected = await page.evaluate(() => _almLastCnma());
+  let passed = 0;
+  for (const item of fixture) {
+    const answers = { ...item.answers };
+    if (item.name === 'Excel TSV') {
+      // "effect" does not identify a measure. The other two representations
+      // explicitly identify these same contrasts as MD: confirm, never infer.
+      const unresolved = await page.evaluate(text => {
+        const schema = AlmFeatures.get('component-nma').entry.schema;
+        const table = AlmEntry.parseTable(text);
+        return AlmEntry.convert(table, AlmEntry.detect(table, schema), schema, {});
+      }, item.text);
+      expect(unresolved.flags.filter(f => f.blocking)).toEqual([
+        expect.objectContaining({ code: 'unanswered-question', questionId: 'measure:type' })
+      ]);
+      expect(unresolved.questions).toContainEqual(expect.objectContaining({ id: 'measure:type', choices: ['ratio', 'difference'] }));
+      sameResult(await page.evaluate(() => _almLastCnma()), expected);
+      answers['measure:type'] = 'difference';
+    }
+    const out = await page.evaluate(({ text, answers }) => {
+      const entry = AlmFeatures.get('component-nma').entry;
+      const table = AlmEntry.parseTable(text), detected = AlmEntry.detect(table, entry.schema);
+      const converted = AlmEntry.convert(table, detected, entry.schema, answers);
+      if (converted.flags.some(f => f.blocking)) return { converted };
+      AlmFeaturesState.entryLog = converted.steps;
+      return { converted, applied: entry.apply(converted.records), result: _almLastCnma(), src: document.getElementById('src').value };
+    }, { text: item.text, answers });
+    expect(out.converted.flags.filter(f => f.blocking), item.name).toEqual([]);
+    if (item.name === 'Excel TSV') {
+      expect(out.converted.steps).toContainEqual(expect.objectContaining({ method: 'measure confirmed', inputs: { measure: 'difference' } }));
+    }
+    expect(out.applied).toEqual({ ok: true, n: 8 });
+    sameResult(out.result, expected);
+    expect(out.src.trim().split('\n')).toHaveLength(8);
+    if (item.name.startsWith('paper')) {
+      expect(out.converted.steps).toHaveLength(8);
+      expect(out.converted.steps.every(s => /SE estimated from CI/.test(s.text))).toBe(true);
+      await page.evaluate(() => AlmFeatures.open('component-nma', 'text'));
+      await expect(page.locator('.alm-text-body')).toContainText('SEs were derived from confidence intervals for 8 contrasts');
+      await page.evaluate(() => AlmFeatures.open('component-nma', 'entry'));
+    }
+    passed++;
+  }
+  console.log(`ENTRYRT ${passed}/${fixture.length}`);
+});
+
+test('ENTRY PLANTED: reversed CI blocks use; conversion log is visible; invalid apply is atomic', async ({ page }) => {
+  await open(page, 'entry');
+  // Exercise the shared mount's public parse API, not its evolving button flow.
+  await page.evaluate(() => {
+    const host = document.createElement('div'); host.id = 'entry-check'; document.body.appendChild(host);
+    window.entryCheck = AlmEntryUI.mount(host, AlmFeatures.get('component-nma').entry);
+  });
+  await page.locator('#entry-check textarea').fill(fixture[1].text);
+  await page.evaluate(() => entryCheck.parse());
+  await expect(page.locator('#entry-check')).toContainText('SE estimated from CI');
+  await expect(page.locator('#entry-check').getByRole('button', { name: 'Use these rows', exact: true })).toBeEnabled();
+  const bad = 'study\tt1\tt2\tMD\nBad\tdrug\tcontrol\t-0.3 (0.1–-0.7)\nGood\texercise\tcontrol\t-0.2 (-0.4–0.0)';
+  await page.locator('#entry-check textarea').fill(bad);
+  await page.evaluate(() => entryCheck.parse());
+  const flags = await page.evaluate(() => entryCheck.getResult().flags);
+  expect(flags.some(f => f.blocking && f.code === 'ci-order')).toBe(true);
+  await expect(page.locator('#entry-check').getByRole('button', { name: 'Use these rows', exact: true })).toBeDisabled();
+  const unchanged = await page.evaluate(() => {
+    const spec = AlmFeatures.get('component-nma'), before = JSON.stringify([spec.share.get(), _almLastCnma()]);
+    const attempts = [
+      [{ study: 'A', t1: 'drug', t2: 'control', yi: -.3, sei: 0 }, { study: 'B', t1: 'exercise', t2: 'control', yi: -.2, sei: .1 }],
+      [{ study: 'A', t1: 'drug', t2: 'control', yi: -.3, sei: .1 }, { study: 'A', t1: 'exercise', t2: 'control', yi: -.2, sei: .1 }],
+      [{ study: 'A', t1: 'drug|control', t2: 'control', yi: -.3, sei: .1 }, { study: 'B', t1: 'exercise', t2: 'control', yi: -.2, sei: .1 }]
+    ];
+    return attempts.map(records => {
+      try { spec.entry.apply(records); return false; } catch { return before === JSON.stringify([spec.share.get(), _almLastCnma()]); }
+    });
+  });
+  expect(unchanged).toEqual([true, true, true]);
+  console.log('ENTRYBLOCK 4/4 (reversed CI, zero SE, repeated study, delimiter injection)');
+});
+
+test('TEXT: audit, every displayed value and reviewed snapshot; Markdown and DOCX downloads', async ({ page }, testInfo) => {
+  await open(page, 'text');
+  const out = await render(page);
+  console.log(`TEXTAUDIT ${out.audit.passed}/${out.audit.checks} domChecked=${out.audit.domChecked}`);
+  expect(out.audit.failures).toEqual([]); expect(out.audit.ok).toBe(true); expect(out.audit.domChecked).toBe(30);
+  const displayed = await page.evaluate(() => Array.from(document.querySelectorAll('#comp-body tr, #int-body tr'), tr =>
+    Array.from(tr.cells).slice(1).flatMap(c => c.textContent.match(/-?\d+\.\d+/g) || [])).flat());
+  for (const value of displayed) expect(normal(out.text)).toContain(value);
+  console.log(`TEXTDOM ${displayed.length}/${displayed.length}`);
+  await testInfo.attach('text-component-nma.json', { body: JSON.stringify(out.snapshot, null, 2), contentType: 'application/json' });
+  expect(out.snapshot).toEqual(snapshot);
+  await expect(page.locator('.alm-text-body')).toBeVisible();
+  await expect(page.locator('.alm-text-audit')).toContainText('Number audit:');
+  const [md] = await Promise.all([page.waitForEvent('download'), page.locator('.alm-text-md').click()]);
+  expect(fs.readFileSync(await md.path(), 'utf8')).toContain(out.text);
+  const [dx] = await Promise.all([page.waitForEvent('download'), page.locator('.alm-text-docx').click()]);
+  const entries = readZip(fs.readFileSync(await dx.path()));
+  expect(entries.map(e => e.name)).toEqual(expect.arrayContaining(['[Content_Types].xml', '_rels/.rels', 'word/document.xml']));
+  const xml = new TextDecoder().decode(entries.find(e => e.name === 'word/document.xml').bytes);
+  expect(xml).toContain(out.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+  console.log('TEXTEXPORT 2/2');
+});
+
+test('TEXT PLANTED: perturbed table value fails audit and withholds prose; no fit withholds text', async ({ page }) => {
+  await open(page, 'text');
+  await page.evaluate(() => { window.__almTextPerturb = { key: 'c0_est', delta: .01 }; });
+  const bad = await render(page);
+  expect(bad.audit.ok).toBe(false);
+  expect(bad.audit.failures.map(f => f.check)).toContain('dom:c0_est');
+  console.log(`TEXTAUDIT planted ${bad.audit.passed}/${bad.audit.checks}`);
+  await page.locator('.alm-text-regenerate').click();
+  await expect(page.locator('.alm-text-status')).toContainText('Number audit failed');
+  await expect(page.locator('.alm-text-body')).toBeHidden();
+  await page.evaluate(() => { delete window.__almTextPerturb; });
+  await page.locator('.alm-text-regenerate').click();
+  await expect(page.locator('.alm-text-body')).toBeVisible();
+  await page.locator('#src').fill('invalid'); await page.locator('#btn-run').click();
+  await page.locator('.alm-text-regenerate').click();
+  await expect(page.locator('.alm-text-status')).toHaveText('Run the analysis first.');
+  await expect(page.locator('.alm-text-body')).toBeHidden();
+});
+
+test('VERIFY: live netmeta example, plots and ZIP; planted defect FAILS; stale check suppresses verification prose', async ({ page }) => {
+  test.setTimeout(900_000);
+  await open(page, 'verify');
+  const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
+  const run = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
+  await run.click();
+  await expect(summary).toHaveText('39 of 39 computed quantities match R; 0 not computed — PASS', { timeout: 600_000 });
+  const verified = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(verified).toMatchObject({ passed: true, n: 39, nPassed: 39, nNotComputed: 0, nOptional: 0, nNotApplicable: 0, testHook: false });
+  expect(verified.rows).toHaveLength(39);
+  expect(verified.rows.every(r => r.pass)).toBe(true);
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(true);
+  console.log(`VERIFY ${verified.nPassed}/${verified.n} ${JSON.stringify(verified.versions)}`);
+  await expect(panel.locator('figure img')).toHaveCount(1);
+  await expect(panel.locator('figure svg')).toHaveCount(1);
+  const [dl] = await Promise.all([page.waitForEvent('download'), panel.getByRole('button', { name: 'Download everything (ZIP)', exact: true }).click()]);
+  const files = Object.fromEntries(readZip(fs.readFileSync(await dl.path())).map(e => [e.name, e.bytes]));
+  const required = [`${APP}-verify.R`, `${APP}-verify-comparison.csv`, 'sessionInfo.txt', 'console.txt', 'truthcert.json',
+    `${APP}-forest-R-300dpi.png`, `${APP}-forest-R.pdf`, `${APP}-forest-R-300dpi.tiff`];
+  for (const name of required) expect(files[name], name).toBeDefined();
+  expect(Object.keys(files).filter(n => /forest-(R|app)\.svg$/.test(n))).toHaveLength(1);
+  const decode = b => new TextDecoder().decode(b);
+  expect(decode(files[`${APP}-verify.R`])).toContain('netmeta::discomb');
+  expect(decode(files[`${APP}-verify.R`])).toContain('forest(dc, pooled = "random"');
+  expect(decode(files[`${APP}-verify-comparison.csv`]).trim().split('\n')).toHaveLength(40);
+  expect(decode(files[`${APP}-forest-R.pdf`]).slice(0, 5)).toBe('%PDF-');
+  const png = decodePng(files[`${APP}-forest-R-300dpi.png`]);
+  expect([png.width, png.height]).toEqual([2400, 1800]);
+  const tiff = readTiff(files[`${APP}-forest-R-300dpi.tiff`]);
+  expect(tiff.tags[282].value).toEqual([300, 1]);
+  const receipt = JSON.parse(decode(files['truthcert.json']));
+  expect(await page.evaluate(r => AlmTruthCertExport.verifyContentHash(r), receipt)).toBe(true);
+  console.log(`VERIFYZIP ${Object.keys(files).length} entries; PNG/PDF/TIFF/SVG and receipt checked`);
+  await page.evaluate(() => AlmFeatures.open('component-nma', 'text'));
+  await expect(page.locator('.alm-text-body')).toContainText('Results were independently verified in R');
+  const original = await page.locator('#src').inputValue();
+  await page.locator('#src').fill(original.replace('-0.45', '-0.46'));
+  await page.locator('#btn-run').click();
+  await page.locator('.alm-text-regenerate').click();
+  // Reading context is side-effect free; changed inputs invalidate the verification claim.
+  await expect(page.locator('.alm-text-body')).not.toContainText('Results were independently verified in R');
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(false);
+  await page.locator('#src').fill(original); await page.locator('#btn-run').click();
+  await page.evaluate(() => {
+    // Current v2-core honours deliberate defects only with an explicit URL opt-in.
+    const url = new URL(location.href); url.searchParams.set('almtest', '1');
+    history.replaceState(null, '', url.href);
+    window.__almVerifyPerturb = { key: 'components_0_est', delta: .01 };
+    AlmFeatures.open('component-nma', 'verify');
+  });
+  await run.click();
+  await expect(summary).toHaveText('TEST MODE (test hook active; not a verification) — 38 of 39 computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active', { timeout: 300_000 });
+  await expect(summary).toHaveAttribute('data-result', 'fail');
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
+  const planted = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(planted).toMatchObject({ passed: false, n: 39, nPassed: 38, nNotComputed: 0, nOptional: 0, nNotApplicable: 0, testHook: true,
+    perturbed: { key: 'components_0_est', delta: .01 } });
+  expect(planted.rows).toHaveLength(39);
+  expect(planted.rows.filter(r => !r.pass).map(r => r.key)).toEqual(['components_0_est']);
+  const defect = planted.rows.find(r => r.key === 'components_0_est');
+  expect(defect.diff).toBeGreaterThan(defect.tol);
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(false);
+  console.log(`VERIFY planted ${planted.nPassed}/${planted.n}`);
+});
+
+test('VERIFY: heterogeneous live netmeta checks nonzero tau2 and all endpoints; planted CI FAILS', async ({ page }) => {
+  test.setTimeout(900_000);
+  await open(page, 'verify');
+  const ref = JSON.parse(fs.readFileSync(new URL('../../../component-nma/tests/fixtures/cnma-validation-oracle.json', import.meta.url), 'utf8')).cases.heterogeneous;
+  await page.evaluate(src => __almCnmaLoad(src), ref.text);
+  const result = await page.evaluate(() => _almLastCnma());
+  expect(result.tau2).toBeGreaterThan(0);
+  sameResult(result, { ...ref, comps: Object.keys(ref.components).sort() });
+  const panel = page.locator('#alm-f-panel-verify'), summary = panel.locator('[data-testid=verify-summary]');
+  const run = panel.getByRole('button', { name: 'Verify this analysis in R', exact: true });
+  await run.click();
+  await expect(summary).toHaveText('23 of 23 computed quantities match R; 0 not computed — PASS', { timeout: 600_000 });
+  const verified = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(verified).toMatchObject({ passed: true, n: 23, nPassed: 23, nNotComputed: 0, nOptional: 0, nNotApplicable: 0, testHook: false });
+  expect(verified.rows).toHaveLength(23);
+  expect(verified.rows.every(r => r.pass)).toBe(true);
+  expect(verified.rows.filter(r => /_(lo|hi)$/.test(r.key))).toHaveLength(10);
+  console.log(`VERIFY ${verified.nPassed}/${verified.n} heterogeneous tau2=${result.tau2}`);
+  await page.evaluate(() => {
+    const url = new URL(location.href); url.searchParams.set('almtest', '1');
+    history.replaceState(null, '', url.href);
+    window.__almVerifyPerturb = { key: 'components_0_hi', delta: .01 };
+  });
+  await run.click();
+  await expect(summary).toHaveText('TEST MODE (test hook active; not a verification) — 22 of 23 computed quantities match R; 0 not computed — FAIL: 1 not matching R; test hook active', { timeout: 300_000 });
+  await expect(summary).toHaveAttribute('data-result', 'fail');
+  await expect(summary).toHaveAttribute('data-test-mode', 'true');
+  const planted = await page.evaluate(() => AlmFeaturesState.verify);
+  expect(planted).toMatchObject({ nNotComputed: 0, nOptional: 0, nNotApplicable: 0, testHook: true,
+    perturbed: { key: 'components_0_hi', delta: .01 } });
+  expect(planted.rows).toHaveLength(23);
+  expect(planted.passed).toBe(false);
+  expect(planted.n).toBe(23);
+  expect(planted.nPassed).toBe(22);
+  expect(planted.rows.filter(r => !r.pass).map(r => r.key)).toEqual(['components_0_hi']);
+  const defect = planted.rows.find(r => r.key === 'components_0_hi');
+  expect(defect.diff).toBeGreaterThan(defect.tol);
+  expect(await page.evaluate(() => AlmFeatures.verifiedCurrent('component-nma'))).toBe(false);
+  console.log(`VERIFY planted-CI ${planted.nPassed}/${planted.n}`);
+});
+
+test('SHARE: complete state round trip and corrupted/invalid links leave the example untouched', async ({ page, browser }) => {
+  await open(page, 'share');
+  const defaultSrc = await page.locator('#src').inputValue();
+  const defaultResult = await page.evaluate(() => _almLastCnma());
+  const changed = defaultSrc.replace('-0.45', '-0.65');
+  await page.locator('#src').fill(changed); await page.locator('#btn-run').click();
+  const result = await page.evaluate(() => _almLastCnma());
+  const saved = await page.evaluate(() => {
+    // This synthetic provenance was recorded for the current input, like entry.apply does.
+    AlmFeaturesState.entrySrc = document.getElementById('src').value;
+    AlmFeaturesState.entryLog = [{ study: 'Example row', method: 'scale confirmed', citation: 'User confirmation', inputs: { scale: 'analysis' } }];
+    AlmFeaturesState.provenance = [{ id: 'example', label: 'Built-in example', reference: 'Synthetic test data', location: 'Input row one',
+      pastedText: document.getElementById('src').value.split('\n')[0], values: [], conversions: [], flags: [], confirmed: true }];
+    return { log: AlmFeaturesState.entryLog, provenance: AlmFeaturesState.provenance };
+  });
+  const options = await page.locator('main select, main input').count();
+  expect(options, 'this app has no estimator/scale option controls').toBe(0);
+  await page.getByRole('button', { name: 'Copy share link', exact: true }).click();
+  await expect(page.getByLabel('Share link', { exact: true })).toHaveValue(/#s=/);
+  const link = await page.getByLabel('Share link', { exact: true }).inputValue();
+  const ctx = await browser.newContext();
+  try {
+    const p2 = await ctx.newPage(); await p2.goto(link);
+    await expect(p2.locator('[data-testid=share-status]')).toHaveText('Analysis restored from the share link.');
+    expect(await p2.locator('#src').inputValue()).toBe(changed);
+    sameResult(await p2.evaluate(() => _almLastCnma()), result);
+    expect(await p2.evaluate(() => AlmFeaturesState.entryLog)).toEqual(saved.log);
+    expect(await p2.evaluate(() => AlmFeaturesState.provenance)).toEqual(saved.provenance);
+    // Fresh contexts prevent autosave from masking a failed restore.
+  } finally { await ctx.close(); }
+  const invalid = await page.evaluate(() => AlmShare.encode('component-nma', { src: 'broken data' }, []));
+  for (const suffix of [link.split('#s=')[1].slice(0, -10), invalid]) {
+    const fresh = await browser.newContext();
+    try {
+      const p = await fresh.newPage(); await p.goto(link.split('#')[0] + '#s=' + suffix);
+      await expect(p.locator('[data-testid=share-status]')).toContainText('Nothing was changed.');
+      expect(await p.locator('#src').inputValue()).toBe(defaultSrc);
+      sameResult(await p.evaluate(() => _almLastCnma()), defaultResult);
+      expect(await p.evaluate(() => AlmFeaturesState.provenance)).toEqual([]);
+    } finally { await fresh.close(); }
+  }
+  console.log('SHARE 3/3 (round trip, truncated link, invalid app state)');
+});
+
+test('AXE: all five feature tabs have no serious/critical findings after animations finish', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await open(page, 'entry');
+  // v2-core #254 adds the Straight path tab: every feature tab, including it, is audited.
+  await expect(page.locator('#alm-features [role=tab]')).toHaveCount(5);
+  for (const key of ['entry', 'text', 'verify', 'share', 'straight']) {
+    await page.evaluate(tab => AlmFeatures.open('component-nma', tab), key);
+    await page.evaluate(() => Promise.all(document.getAnimations().filter(a => !a.effect || a.effect.getComputedTiming().iterations !== Infinity).map(a => a.finished.catch(() => null))));
+    const out = await new AxeBuilder({ page }).include('#alm-features').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+    const bad = out.violations.filter(v => ['serious', 'critical'].includes(v.impact));
+    console.log(`AXE ${key}: ${out.passes.length} rules passed; ${bad.length} serious/critical`);
+    expect(bad).toEqual([]);
+  }
+  expect(errors).toEqual([]);
+});

@@ -1,0 +1,251 @@
+{
+  "app": "component-nma",
+  "script": "# P19 reference recipe: additive component NMA (Welton 2009), generalized DerSimonian-Laird random effects.\nlibrary(netmeta)\nTE <- c(-0.45, -0.3, -0.2, -0.4, -0.55, -0.3, -0.12, -0.18)\nseTE <- c(0.12, 0.1, 0.11, 0.14, 0.15, 0.13, 0.1, 0.11)\ntreat1 <- c(\"drug+exercise\", \"drug\", \"exercise\", \"drug+education\", \"drug+education+exercise\", \"education+exercise\", \"drug\", \"drug+exercise\")\ntreat2 <- c(\"control\", \"control\", \"control\", \"control\", \"control\", \"control\", \"exercise\", \"drug\")\ndc <- netmeta::discomb(TE, seTE, treat1, treat2, studlab = seq_along(TE),\n  inactive = \"control\", sep.comps = \"+\", common = TRUE, random = TRUE, backtransf = FALSE)\n# tau2 is R's own value: NA (exported as null) when the additive model has zero residual df.\nz <- list(tau2 = dc$tau^2, Q = dc$Q.additive, df = dc$df.Q.additive)\nz[[\"components_0_est\"]] <- unname(dc$Comp.random[match(\"drug\", dc$comps)])\nz[[\"components_0_se\"]] <- unname(dc$seComp.random[match(\"drug\", dc$comps)])\nz[[\"components_0_lo\"]] <- unname(dc$lower.Comp.random[match(\"drug\", dc$comps)])\nz[[\"components_0_hi\"]] <- unname(dc$upper.Comp.random[match(\"drug\", dc$comps)])\nz[[\"components_1_est\"]] <- unname(dc$Comp.random[match(\"education\", dc$comps)])\nz[[\"components_1_se\"]] <- unname(dc$seComp.random[match(\"education\", dc$comps)])\nz[[\"components_1_lo\"]] <- unname(dc$lower.Comp.random[match(\"education\", dc$comps)])\nz[[\"components_1_hi\"]] <- unname(dc$upper.Comp.random[match(\"education\", dc$comps)])\nz[[\"components_2_est\"]] <- unname(dc$Comp.random[match(\"exercise\", dc$comps)])\nz[[\"components_2_se\"]] <- unname(dc$seComp.random[match(\"exercise\", dc$comps)])\nz[[\"components_2_lo\"]] <- unname(dc$lower.Comp.random[match(\"exercise\", dc$comps)])\nz[[\"components_2_hi\"]] <- unname(dc$upper.Comp.random[match(\"exercise\", dc$comps)])\nz[[\"combinations_0_est\"]] <- unname(dc$Comb.random[match(\"drug\", dc$trts)])\nz[[\"combinations_0_se\"]] <- unname(dc$seComb.random[match(\"drug\", dc$trts)])\nz[[\"combinations_0_lo\"]] <- unname(dc$lower.Comb.random[match(\"drug\", dc$trts)])\nz[[\"combinations_0_hi\"]] <- unname(dc$upper.Comb.random[match(\"drug\", dc$trts)])\nz[[\"combinations_1_est\"]] <- unname(dc$Comb.random[match(\"drug+education\", dc$trts)])\nz[[\"combinations_1_se\"]] <- unname(dc$seComb.random[match(\"drug+education\", dc$trts)])\nz[[\"combinations_1_lo\"]] <- unname(dc$lower.Comb.random[match(\"drug+education\", dc$trts)])\nz[[\"combinations_1_hi\"]] <- unname(dc$upper.Comb.random[match(\"drug+education\", dc$trts)])\nz[[\"combinations_2_est\"]] <- unname(dc$Comb.random[match(\"drug+education+exercise\", dc$trts)])\nz[[\"combinations_2_se\"]] <- unname(dc$seComb.random[match(\"drug+education+exercise\", dc$trts)])\nz[[\"combinations_2_lo\"]] <- unname(dc$lower.Comb.random[match(\"drug+education+exercise\", dc$trts)])\nz[[\"combinations_2_hi\"]] <- unname(dc$upper.Comb.random[match(\"drug+education+exercise\", dc$trts)])\nz[[\"combinations_3_est\"]] <- unname(dc$Comb.random[match(\"drug+exercise\", dc$trts)])\nz[[\"combinations_3_se\"]] <- unname(dc$seComb.random[match(\"drug+exercise\", dc$trts)])\nz[[\"combinations_3_lo\"]] <- unname(dc$lower.Comb.random[match(\"drug+exercise\", dc$trts)])\nz[[\"combinations_3_hi\"]] <- unname(dc$upper.Comb.random[match(\"drug+exercise\", dc$trts)])\nz[[\"combinations_4_est\"]] <- unname(dc$Comb.random[match(\"education+exercise\", dc$trts)])\nz[[\"combinations_4_se\"]] <- unname(dc$seComb.random[match(\"education+exercise\", dc$trts)])\nz[[\"combinations_4_lo\"]] <- unname(dc$lower.Comb.random[match(\"education+exercise\", dc$trts)])\nz[[\"combinations_4_hi\"]] <- unname(dc$upper.Comb.random[match(\"education+exercise\", dc$trts)])\nz[[\"combinations_5_est\"]] <- unname(dc$Comb.random[match(\"exercise\", dc$trts)])\nz[[\"combinations_5_se\"]] <- unname(dc$seComb.random[match(\"exercise\", dc$trts)])\nz[[\"combinations_5_lo\"]] <- unname(dc$lower.Comb.random[match(\"exercise\", dc$trts)])\nz[[\"combinations_5_hi\"]] <- unname(dc$upper.Comb.random[match(\"exercise\", dc$trts)])\ncat(\"ALMJSON:{\", paste(sprintf('\"%s\":%s', names(z), vapply(z, function(x) if (length(x) != 1L || is.na(x)) \"null\" else sprintf(\"%.17g\", x), \"\")), collapse = \",\"), \"}\\n\", sep = \"\")\n",
+  "packages": [
+    "netmeta"
+  ],
+  "appValues": [
+    {
+      "key": "tau2",
+      "label": "Between-contrast variance (tau²; null when df = 0)",
+      "value": 0
+    },
+    {
+      "key": "Q",
+      "label": "Additive-model residual Q",
+      "value": 0.12006102473839246
+    },
+    {
+      "key": "df",
+      "label": "Additive-model residual degrees of freedom",
+      "value": 5
+    },
+    {
+      "key": "components_0_est",
+      "label": "Component drug: estimate",
+      "value": -0.2889600034151054
+    },
+    {
+      "key": "components_0_se",
+      "label": "Component drug: standard error",
+      "value": 0.05781445849016328
+    },
+    {
+      "key": "components_0_lo",
+      "label": "Component drug: lower 95% limit",
+      "value": -0.4019855885094284
+    },
+    {
+      "key": "components_0_hi",
+      "label": "Component drug: upper 95% limit",
+      "value": -0.17535707565661646
+    },
+    {
+      "key": "components_1_est",
+      "label": "Component education: estimate",
+      "value": -0.10792642213158277
+    },
+    {
+      "key": "components_1_se",
+      "label": "Component education: standard error",
+      "value": 0.09675087894956219
+    },
+    {
+      "key": "components_1_lo",
+      "label": "Component education: lower 95% limit",
+      "value": -0.2975546603453191
+    },
+    {
+      "key": "components_1_hi",
+      "label": "Component education: upper 95% limit",
+      "value": 0.08170181608215357
+    },
+    {
+      "key": "components_2_est",
+      "label": "Component exercise: estimate",
+      "value": -0.17716138984489616
+    },
+    {
+      "key": "components_2_se",
+      "label": "Component exercise: standard error",
+      "value": 0.05265169222189345
+    },
+    {
+      "key": "components_2_lo",
+      "label": "Component exercise: lower 95% limit",
+      "value": -0.280356810324895
+    },
+    {
+      "key": "components_2_hi",
+      "label": "Component exercise: upper 95% limit",
+      "value": -0.0739659693648973
+    },
+    {
+      "key": "combinations_0_est",
+      "label": "Intervention vs control drug: estimate",
+      "value": -0.2886713320830224
+    },
+    {
+      "key": "combinations_0_se",
+      "label": "Intervention vs control drug: standard error",
+      "value": 0.05781445849016328
+    },
+    {
+      "key": "combinations_0_lo",
+      "label": "Intervention vs control drug: lower 95% limit",
+      "value": -0.4019855885094284
+    },
+    {
+      "key": "combinations_0_hi",
+      "label": "Intervention vs control drug: upper 95% limit",
+      "value": -0.17535707565661646
+    },
+    {
+      "key": "combinations_1_est",
+      "label": "Intervention vs control drug+education: estimate",
+      "value": -0.3965977542146052
+    },
+    {
+      "key": "combinations_1_se",
+      "label": "Intervention vs control drug+education: standard error",
+      "value": 0.08926475924379013
+    },
+    {
+      "key": "combinations_1_lo",
+      "label": "Intervention vs control drug+education: lower 95% limit",
+      "value": -0.5715534674210727
+    },
+    {
+      "key": "combinations_1_hi",
+      "label": "Intervention vs control drug+education: upper 95% limit",
+      "value": -0.22164204100813767
+    },
+    {
+      "key": "combinations_2_est",
+      "label": "Intervention vs control drug+education+exercise: estimate",
+      "value": -0.5737591440595013
+    },
+    {
+      "key": "combinations_2_se",
+      "label": "Intervention vs control drug+education+exercise: standard error",
+      "value": 0.08586348779616264
+    },
+    {
+      "key": "combinations_2_lo",
+      "label": "Intervention vs control drug+education+exercise: lower 95% limit",
+      "value": -0.7420484877269746
+    },
+    {
+      "key": "combinations_2_hi",
+      "label": "Intervention vs control drug+education+exercise: upper 95% limit",
+      "value": -0.4054698003920281
+    },
+    {
+      "key": "combinations_3_est",
+      "label": "Intervention vs control drug+exercise: estimate",
+      "value": -0.4658327219279186
+    },
+    {
+      "key": "combinations_3_se",
+      "label": "Intervention vs control drug+exercise: standard error",
+      "value": 0.08379832681872637
+    },
+    {
+      "key": "combinations_3_lo",
+      "label": "Intervention vs control drug+exercise: lower 95% limit",
+      "value": -0.6300744244573392
+    },
+    {
+      "key": "combinations_3_hi",
+      "label": "Intervention vs control drug+exercise: upper 95% limit",
+      "value": -0.301591019398498
+    },
+    {
+      "key": "combinations_4_est",
+      "label": "Intervention vs control education+exercise: estimate",
+      "value": -0.2850878119764789
+    },
+    {
+      "key": "combinations_4_se",
+      "label": "Intervention vs control education+exercise: standard error",
+      "value": 0.08864325466669488
+    },
+    {
+      "key": "combinations_4_lo",
+      "label": "Intervention vs control education+exercise: lower 95% limit",
+      "value": -0.458825398595613
+    },
+    {
+      "key": "combinations_4_hi",
+      "label": "Intervention vs control education+exercise: upper 95% limit",
+      "value": -0.11135022535734487
+    },
+    {
+      "key": "combinations_5_est",
+      "label": "Intervention vs control exercise: estimate",
+      "value": -0.17716138984489616
+    },
+    {
+      "key": "combinations_5_se",
+      "label": "Intervention vs control exercise: standard error",
+      "value": 0.05265169222189345
+    },
+    {
+      "key": "combinations_5_lo",
+      "label": "Intervention vs control exercise: lower 95% limit",
+      "value": -0.280356810324895
+    },
+    {
+      "key": "combinations_5_hi",
+      "label": "Intervention vs control exercise: upper 95% limit",
+      "value": -0.0739659693648973
+    }
+  ],
+  "compare": {
+    "tolerance": {
+      "default": 1e-9,
+      "df": 0
+    },
+    "kind": {
+      "tau2": "rel",
+      "Q": "rel",
+      "df": "rel",
+      "components_0_est": "rel",
+      "components_0_se": "rel",
+      "components_0_lo": "rel",
+      "components_0_hi": "rel",
+      "components_1_est": "rel",
+      "components_1_se": "rel",
+      "components_1_lo": "rel",
+      "components_1_hi": "rel",
+      "components_2_est": "rel",
+      "components_2_se": "rel",
+      "components_2_lo": "rel",
+      "components_2_hi": "rel",
+      "combinations_0_est": "rel",
+      "combinations_0_se": "rel",
+      "combinations_0_lo": "rel",
+      "combinations_0_hi": "rel",
+      "combinations_1_est": "rel",
+      "combinations_1_se": "rel",
+      "combinations_1_lo": "rel",
+      "combinations_1_hi": "rel",
+      "combinations_2_est": "rel",
+      "combinations_2_se": "rel",
+      "combinations_2_lo": "rel",
+      "combinations_2_hi": "rel",
+      "combinations_3_est": "rel",
+      "combinations_3_se": "rel",
+      "combinations_3_lo": "rel",
+      "combinations_3_hi": "rel",
+      "combinations_4_est": "rel",
+      "combinations_4_se": "rel",
+      "combinations_4_lo": "rel",
+      "combinations_4_hi": "rel",
+      "combinations_5_est": "rel",
+      "combinations_5_se": "rel",
+      "combinations_5_lo": "rel",
+      "combinations_5_hi": "rel"
+    }
+  }
+}

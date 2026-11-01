@@ -1,5 +1,5 @@
 // Shared by the browser specs and the portable desktop-R exporter.
-export const apps = ['nma-inconsistency', 'multivariate-ma', 'rve-meta'];
+export const apps = ['nma-inconsistency', 'multivariate-ma', 'rve-meta', 'component-nma'];
 
 export async function loadExample(page, app, baseURL = '') {
   await page.goto(`${baseURL}/${app}/index.html`);
@@ -42,7 +42,7 @@ export async function compareInPage(page, data, reference, planted = false) {
   return page.evaluate(({ data, reference, planted }) => {
     const values = structuredClone(data.appValues);
     // A real nonzero estimate, perturbed multiplicatively by 1e-3.
-    const target = values.find(v => /^(split\.0\.direct|mu1|coef\.0\.estimate)$/.test(v.key));
+    const target = values.find(v => /^(split\.0\.direct|mu1|coef\.0\.estimate|components_0_est)$/.test(v.key));
     if (planted) {
       if (!target || !Number.isFinite(target.value) || target.value === 0) throw Error('No nonzero defect target');
       target.value *= 1.001;
