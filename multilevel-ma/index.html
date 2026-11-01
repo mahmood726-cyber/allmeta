@@ -558,8 +558,9 @@
       // Additive panels have their own state. Keep their controls out of the
       // original draft so unconfirmed source text is not saved and positional
       // idx:N keys still identify the same main controls in older drafts.
+      // Example selection is transient; exclude it before assigning draft indices.
       AlmAutosave.install({ appKey: 'multilevel-ma', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-features *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-features *):not(#alm-real-example-panel *)'; }) });
     }
   });
 })();
@@ -606,5 +607,7 @@
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>
+<script src="../shared/alm-examples.js"></script>
+<script src="alm-examples.js"></script>
 </body>
 </html>
