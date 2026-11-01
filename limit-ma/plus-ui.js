@@ -80,7 +80,9 @@ function draw(plotState=state,lookup=el){
 function current(){
  const rows=window.__almLimitParse(el('src').value),te=rows.map(r=>r.te),se=rows.map(r=>r.se);
  if(te.length<3)throw Error('At least three studies required.');const c={te,se},measure=el('plus-binary-measure').value;
- if(measure)c.binary={measure,rows:el('plus-binary-counts').value.trim().split(/\n/).map(line=>line.split(',').map(x=>x.trim()?Number(x):NaN))};
+ // Decimal and exponent tokens only: Number() would also read 0x28 as 40 (hexadecimal, binary, octal); anything else is NaN,
+ // which the Peters test refuses as invalid-binary-input.
+ if(measure)c.binary={measure,rows:el('plus-binary-counts').value.trim().split(/\n/).map(line=>line.split(',').map(x=>/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(x.trim())?Number(x):NaN))};
  return c;
 }
 function clear(message='Run comparisons using the current input. Independent validation is separate below.'){

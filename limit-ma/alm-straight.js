@@ -26,7 +26,9 @@
   (window.AlmStraightAdapters=window.AlmStraightAdapters||{})[APP]={ctx:ctx};
   function start(){
     // Keep advice outside the archived analysis landmarks, beside the feature panel.
-    if(!document.getElementById('alm-features')){var mount=document.createElement('div');mount.id='alm-features';mount.setAttribute('data-app',APP);document.body.appendChild(mount);}
+    // The page's own #alm-features host is the only place feature UI may appear: without it (a page variant with the host
+    // removed) nothing is injected, as features-limit-ma LAYOUT requires. This branch's index.html provides the host.
+    if(!document.getElementById('alm-features'))return;
     ['alm-features','alm-straight'].forEach(function(name){if(!document.querySelector('link[data-straight-style="'+name+'"]')){var link=document.createElement('link');link.rel='stylesheet';link.href='../shared/'+name+'.css';link.setAttribute('data-straight-style',name);document.head.appendChild(link);}});
     var handle=window.AlmStraightUI.attach({app:APP,ctx:ctx,anchor:'#alm-features',watch:["#body","#plus-details"]});
     // Refresh after input handlers update the page's stale state, including attribute-only changes.
