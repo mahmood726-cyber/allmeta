@@ -134,12 +134,21 @@
   function _restore(elements, values) {
     if (!values || typeof values !== 'object') return 0;
     let n = 0;
+    const written = [];
     elements.filter(_eligible).forEach(el => {
       const k = _fieldKey(el);
       if (Object.prototype.hasOwnProperty.call(values, k)) {
         _writeField(el, values[k]);
+        written.push([el, values[k]]);
         n++;
       }
+    });
+    // Fields are written grouped by selector (every textarea before every select), and each write fires change. A later
+    // field's handler can overwrite one restored earlier (a format selector loading its example into the data box), so
+    // write back, once, any field that no longer holds its draft value.
+    written.forEach(([el, v]) => {
+      const now = _readField(el);
+      if (now !== undefined && String(now) !== String(v)) _writeField(el, v);
     });
     return n;
   }
