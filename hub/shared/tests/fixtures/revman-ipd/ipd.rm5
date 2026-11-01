@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic software fixture written for AllMeta tests; invented studies and values, no clinical review or research findings. -->
+<COCHRANE_REVIEW VERSION="5.4">
+<COVER_SHEET>
+<TITLE>Synthetic RevMan IPD (O-E and variance) fixture</TITLE>
+</COVER_SHEET>
+<STUDIES_AND_REFERENCES>
+<STUDIES>
+<INCLUDED_STUDIES>
+<STUDY ID="STD-Synth-A" NAME="Synthetic Alpha" YEAR="2011"></STUDY>
+<STUDY ID="STD-Synth-B" NAME="Synthetic Beta" YEAR="2014"></STUDY>
+<STUDY ID="STD-Synth-C" NAME="Synthetic Gamma" YEAR="2017"></STUDY>
+<STUDY ID="STD-Synth-D" NAME="Synthetic Delta" YEAR="2019"></STUDY>
+</INCLUDED_STUDIES>
+</STUDIES>
+</STUDIES_AND_REFERENCES>
+<ANALYSES_AND_DATA>
+<COMPARISON ID="CMP-001" NO="1">
+<NAME>Synthetic treatment versus control</NAME>
+<DICH_OUTCOME DF="2" EFFECT_MEASURE="OR" ID="CMP-001.01" METHOD="MH" NO="1" RANDOM="NO" SUBGROUPS="NO" SWAP_EVENTS="NO" TOTALS="YES">
+<NAME>Synthetic dichotomous events</NAME>
+<GROUP_LABEL_1>Treatment</GROUP_LABEL_1>
+<GROUP_LABEL_2>Control</GROUP_LABEL_2>
+<GRAPH_LABEL_1>Favours treatment</GRAPH_LABEL_1>
+<GRAPH_LABEL_2>Favours control</GRAPH_LABEL_2>
+<DICH_DATA EVENTS_1="12" EVENTS_2="19" STUDY_ID="STD-Synth-A" TOTAL_1="101" TOTAL_2="99"/>
+<DICH_DATA EVENTS_1="0" EVENTS_2="3" STUDY_ID="STD-Synth-B" TOTAL_1="45" TOTAL_2="47"/>
+<DICH_DATA EVENTS_1="30" EVENTS_2="41" STUDY_ID="STD-Synth-C" TOTAL_1="250" TOTAL_2="248"/>
+</DICH_OUTCOME>
+<IPD_OUTCOME DF="3" ID="CMP-001.02" METHOD="PETO" NO="2" RANDOM="NO" SUBGROUPS="YES" SUBGROUP_TEST="YES" TOTALS="YES">
+<NAME>Synthetic time to event</NAME>
+<GROUP_LABEL_1>Treatment</GROUP_LABEL_1>
+<GROUP_LABEL_2>Control</GROUP_LABEL_2>
+<GRAPH_LABEL_1>Favours treatment</GRAPH_LABEL_1>
+<GRAPH_LABEL_2>Favours control</GRAPH_LABEL_2>
+<EFFECT_MEASURE>Hazard Ratio</EFFECT_MEASURE>
+<IPD_SUBGROUP ID="CMP-001.02.01" NO="1">
+<NAME>Synthetic first subgroup</NAME>
+<IPD_DATA O_E="-3.4567" STUDY_ID="STD-Synth-A" VAR="7.891"/>
+<IPD_DATA O_E="1.25" STUDY_ID="STD-Synth-B" VAR="4.5"/>
+</IPD_SUBGROUP>
+<IPD_SUBGROUP ID="CMP-001.02.02" NO="2">
+<NAME>Synthetic second subgroup</NAME>
+<IPD_DATA O_E="-0.0371" STUDY_ID="STD-Synth-C" VAR="12.3456"/>
+<IPD_DATA O_E="-6.02" STUDY_ID="STD-Synth-D" VAR="21.7"/>
+</IPD_SUBGROUP>
+</IPD_OUTCOME>
+</COMPARISON>
+</ANALYSES_AND_DATA>
+</COCHRANE_REVIEW>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic settings fixture: invented inputs, never research findings. -->
+<COCHRANE_REVIEW VERSION="5.4">
+  <STUDIES_AND_REFERENCES><STUDIES>
+    <STUDY ID="set0" NAME="Synthetic settings A" YEAR="2020"/>
+    <STUDY ID="set1" NAME="Synthetic settings B" YEAR="2021"/>
+    <STUDY ID="set2" NAME="Synthetic settings C" YEAR="2022"/>
+    <STUDY ID="set3" NAME="Synthetic settings D" YEAR="2023"/>
+    <STUDY ID="set4" NAME="Synthetic settings E" YEAR="2024"/>
+    <STUDY ID="set5" NAME="Synthetic settings F" YEAR="2020"/>
+    <STUDY ID="set6" NAME="Synthetic settings G" YEAR="2021"/>
+    <STUDY ID="set7" NAME="Synthetic settings H" YEAR="2022"/>
+    <STUDY ID="set8" NAME="Synthetic settings I" YEAR="2023"/>
+    <STUDY ID="set9" NAME="Synthetic settings J" YEAR="2024"/>
+  </STUDIES></STUDIES_AND_REFERENCES>
+  <ANALYSES_AND_DATA><COMPARISON NO="1"><NAME>Synthetic configured analyses</NAME>
+    <IV_OUTCOME NO="1" METHOD="IV" RANDOM="YES" LOG_DATA="YES" CI_STUDY="95" CI_TOTAL="95" EFFECT_MEASURE="HR">
+      <NAME>Synthetic random log effect</NAME>
+      <IV_DATA STUDY_ID="set0" EFFECT_SIZE="-0.25" SE="0.125"/>
+      <IV_DATA STUDY_ID="set1" EFFECT_SIZE="0.1" SE="0.2"/>
+      <IV_DATA STUDY_ID="set2" EFFECT_SIZE="-0.4" SE="0.25"/>
+      <IV_DATA STUDY_ID="set3" EFFECT_SIZE="0.2" SE="0.15"/>
+      <IV_DATA STUDY_ID="set4" EFFECT_SIZE="0.05" SE="0.1"/>
+      <IV_DATA STUDY_ID="set5" EFFECT_SIZE="-0.3" SE="0.18"/>
+      <IV_DATA STUDY_ID="set6" EFFECT_SIZE="0.15" SE="0.22"/>
+      <IV_DATA STUDY_ID="set7" EFFECT_SIZE="-0.1" SE="0.12"/>
+      <IV_DATA STUDY_ID="set8" EFFECT_SIZE="0.35" SE="0.3"/>
+      <IV_DATA STUDY_ID="set9" EFFECT_SIZE="-0.2" SE="0.16"/>
+    </IV_OUTCOME>
+    <DICH_OUTCOME NO="2" METHOD="MH" RANDOM="NO" CI_STUDY="95" CI_TOTAL="95" EFFECT_MEASURE="RR">
+      <NAME>Synthetic fixed risk ratio</NAME>
+      <DICH_DATA STUDY_ID="set0" EVENTS_1="0" TOTAL_1="40" EVENTS_2="4" TOTAL_2="42"/>
+      <DICH_DATA STUDY_ID="set1" EVENTS_1="7" TOTAL_1="60" EVENTS_2="11" TOTAL_2="61"/>
+    </DICH_OUTCOME>
+  </COMPARISON></ANALYSES_AND_DATA>
+</COCHRANE_REVIEW>
