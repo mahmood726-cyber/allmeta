@@ -125,9 +125,20 @@
       }
     }
 
-    var rows = [];
+    var rows = [], notices = [];
     for (var r = 1; r < matrix.length; r++) {
       var rowArr = matrix[r];
+      // An unquoted decimal comma ("Smith,0,1,0.04") splits a number in two and pushes the row past the header:
+      // the fields beyond the header are not read. Say so (a notice, so what an app accepts is unchanged).
+      if (rowArr.length > rawHeaders.length && rowArr.slice(rawHeaders.length).some(function (f) { return f.trim() !== ''; })) {
+        for (var q = 0; q + 1 < rowArr.length; q++) {
+          if (/^\s*[+-]?\d+$/.test(rowArr[q]) && /^\d+\s*$/.test(rowArr[q + 1])) {
+            notices.push('row ' + r + ': ' + rowArr.length + ' fields but the header has ' + rawHeaders.length +
+              '; "' + rowArr[q].trim() + ',' + rowArr[q + 1].trim() + '" may be a decimal comma. Use "." as the decimal point, or quote the value.');
+            break;
+          }
+        }
+      }
       var obj = {};
       for (var i = 0; i < rawHeaders.length; i++) {
         var col = headerMap[rawHeaders[i]];
@@ -141,7 +152,7 @@
       rows.push(obj);
     }
 
-    return { headers: rawHeaders, rows: rows, warnings: warnings };
+    return { headers: rawHeaders, rows: rows, warnings: warnings, notices: notices };
   }
 
   const _STYLE = `.alm-csv{display:grid;gap:.6rem;font:13px/1.4 system-ui,sans-serif}.alm-csv-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.alm-csv input[type=file]{font:inherit}.alm-csv textarea{min-height:6rem;width:100%;font:12px/1.35 ui-monospace,Consolas,monospace;padding:.4rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--input-bg,#fff);color:var(--ink,#15181d)}.alm-csv button{padding:.3rem .6rem;border:1px solid var(--border,#cbd5e1);border-radius:6px;background:var(--panel,#fff);color:var(--ink,#15181d);cursor:pointer;font:inherit}.alm-csv details summary{cursor:pointer;font-weight:600}.alm-csv [data-section=warnings]{color:#b45309;font-size:12px}.alm-csv [data-section=warnings]:empty{display:none}.alm-csv table{border-collapse:collapse;font-size:12px;margin-top:.4rem}.alm-csv th,.alm-csv td{padding:.2rem .4rem;border:1px solid var(--border,#e2e8f0);text-align:left}@media (prefers-color-scheme:dark){.alm-csv textarea{background:var(--input-bg,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv button{background:var(--panel,#23272c);color:var(--ink,#e7e4dc);border-color:var(--border,#3a4048)}.alm-csv [data-section=warnings]{color:#e0a85e}.alm-csv th,.alm-csv td{border-color:var(--border,#3a4048)}}`;
@@ -204,7 +215,7 @@
     function _emit(text) {
       // Apps needing stricter schemas may supply their own parser; default unchanged.
       const result = (typeof opts.parse === 'function' ? opts.parse : parse)(text, columns);
-      warnEl.textContent = result.warnings.map(w => String.fromCharCode(8226) + ' ' + w).join('\n');
+      warnEl.textContent = result.warnings.concat(result.notices || []).map(w => String.fromCharCode(8226) + ' ' + w).join('\n');
       warnEl.style.whiteSpace = 'pre-wrap';
       onParse(result);
     }

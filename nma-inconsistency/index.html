@@ -88,6 +88,7 @@
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
+  <script src="../hub/shared/decimal-sep.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
   <script src="../shared/app-flow.js"></script>
   <script src="../shared/autosave.js"></script>
@@ -118,7 +119,7 @@ A, D, -0.48, 0.14</textarea>
         <span class="hint" id="src-hint">Independent two-arm studies only. Multiple rows per comparison allowed. Supply study IDs to detect repeated or multi-arm studies; correlated contrasts are unsupported.</span>
       </label>
       <p id="inco-input-msg" class="plus-msg" role="status" aria-live="polite"></p>
-      <div id="inco-example" style="margin:0.2rem 0 0.6rem"><span class="plus-sub">Try real data (one click):</span> <span data-examples></span><p id="inco-example-note" class="plus-sub" aria-live="polite" style="margin:0.3rem 0 0"></p></div>
+      <div id="inco-example" style="margin:0.2rem 0 0.6rem"><span class="plus-sub">Try real data (one click):</span> <span data-examples></span><p id="inco-example-note" class="plus-sub" aria-live="polite" style="margin:0.3rem 0 0"></p><label style="margin-top:0.4rem;display:block"><span style="font-size:0.85rem;color:var(--muted)">Decimal separator</span> <select id="f-decsep" style="padding:0.3rem 0.4rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px;" aria-describedby="decsep-hint inco-input-msg"><option value=".">Point: 0.25</option><option value=",">Comma: 0,25</option></select><span class="hint" id="decsep-hint" style="display:block;color:var(--muted);font-size:0.78rem;margin-top:0.25rem">With a decimal comma, separate fields with tabs or semicolons, e.g. <code>A; B; -0,30; 0,10</code>.</span></label></div>
       <label style="margin-top:0.5rem;display:block">
         <span style="font-size:0.85rem;color:var(--muted)">Model</span>
         <select id="f-model" style="width:100%;padding:0.4rem 0.5rem;margin-top:0.25rem;border:1px solid var(--border);background:var(--input-bg);color:var(--ink);border-radius:6px;" aria-label="Model" aria-describedby="model-hint">
@@ -180,6 +181,10 @@ A, D, -0.48, 0.14</textarea>
     var Z975 = 1.959963984540054;
 
     function parse(text) {
+      // Decimal separator (hub/shared/decimal-sep.js): "." leaves the text unchanged; "," rewrites tab/semicolon rows
+      // to quoted "A, B, effect, SE, study" rows and blanks the rest (plus-ui.js lists them with the reason).
+      const DS = window.AlmDecimalSep;
+      if (DS) text = DS.prepare(text, DS.read("f-decsep"), { join: ", ", quote: true }).text;
       // Preserve quoted treatment/study labels and optional study identifiers.
       const records = []; let row = [], field = "", quoted = false;
       for (let i = 0; i <= text.length; i++) {
@@ -567,9 +572,13 @@ A, D, -0.48, 0.14</textarea>
 
     window.__almIncoLoad = function (text) {
       document.getElementById("src").value = text;
+      document.getElementById("f-decsep").value = ".";  // the examples are written with "."
       run();
     };
-    window._almLastInco = function () { return _lastInco; };
+    window._almLastInco = function () {
+      if (!_lastInco || _lastInco.status === "refused" || document.getElementById("f-decsep").value !== ",") return _lastInco;
+      return Object.assign({}, _lastInco, { decimal_separator: ",", decimal_separator_note: window.AlmDecimalSep.methodsNote(",") });
+    };
 
     function drawNS(ns) {
       const svg = document.getElementById("ns-plot");
@@ -638,8 +647,11 @@ A, D, -0.48, 0.14</textarea>
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      AlmAutosave.install({ appKey: 'nma-inconsistency' });
+      AlmAutosave.install({ appKey: 'nma-inconsistency', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#f-decsep)'; }) });
     }
+    // Decimal separator: kept out of the draft (its key set is unchanged) and restored with it (hub/shared/decimal-sep.js).
+    if (window.AlmDecimalSep) window.AlmDecimalSep.persist('f-decsep', 'nma-inconsistency');
   });
 })();
 </script>

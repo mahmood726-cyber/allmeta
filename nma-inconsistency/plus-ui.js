@@ -48,11 +48,15 @@
     return { unterminated: 0, ignored, extra };
   }
   function issueMessage(text) {
-    const r = parseIssues(text);
+    // Same decimal-separator step as parse(): the issues are those of the rows parse() actually reads.
+    const DS = window.AlmDecimalSep, prep = DS ? DS.prepare(text, DS.read('f-decsep'), { join: ', ', quote: true }) : null;
+    const r = parseIssues(prep ? prep.text : text);
     if (r.unterminated) return `A quotation mark opened on line ${r.unterminated} is never closed, so no rows can be read. Close the quote (or remove it) and run again.`;
     const parts = [];
     if (r.ignored.length) parts.push(`${r.ignored.length} line${r.ignored.length > 1 ? 's' : ''} ignored: ` + r.ignored.slice(0, 6).map(x => `line ${x.line} ${x.why}`).join('; ') + (r.ignored.length > 6 ? `; and ${r.ignored.length - 6} more` : '') + '.');
     if (r.extra.length) parts.push(`Columns after the fifth are ignored (line${r.extra.length > 1 ? 's' : ''} ${r.extra.slice(0, 6).join(', ')}).`);
+    if (prep && prep.errors.length) parts.unshift(`${prep.errors.length} line${prep.errors.length > 1 ? 's' : ''} ignored: ` + DS.errorMessages(prep).slice(0, 6).join('; ') + '.');
+    if (prep && prep.warning) parts.push(prep.warning);
     return parts.join(' ');
   }
 
@@ -83,6 +87,7 @@
     }
   }
   if (model) model.addEventListener('change', () => window.run());
+  if ($('f-decsep')) $('f-decsep').addEventListener('change', () => window.run());
   let typing = null;
   if (src) {
     src.addEventListener('input', () => {
@@ -234,7 +239,9 @@
   }
   function renderMethods() {
     const box = $('plus-methods-text'); if (!box) return;
-    box.textContent = P.methodsText({ base: state.base, loo: state.loo, compare: state.compare }) || 'Run an accepted analysis to generate the text.';
+    const text = P.methodsText({ base: state.base, loo: state.loo, compare: state.compare });
+    const dsNote = text && window.AlmDecimalSep && $('f-decsep') ? window.AlmDecimalSep.methodsNote($('f-decsep').value) : '';
+    box.textContent = text ? text + (dsNote ? '\n\n' + dsNote : '') : 'Run an accepted analysis to generate the text.';
   }
 
   // Graph edges: focus or hover announces the comparison.

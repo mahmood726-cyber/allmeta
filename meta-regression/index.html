@@ -69,6 +69,7 @@
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
   <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/decimal-sep.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
@@ -106,6 +107,14 @@
         <label>
           <span class="lbl">CSV: <code>label, estimate, SE, moderator</code></span>
           <textarea id="f-data" spellcheck="false" aria-label="Studies"></textarea></label>
+        <label>
+          <span class="lbl">Decimal separator</span>
+          <select id="f-decsep" aria-describedby="decsep-hint">
+            <option value=".">Point: 0.25</option>
+            <option value=",">Comma: 0,25</option>
+          </select>
+          <span class="hint" id="decsep-hint">With a decimal comma, separate fields with tabs or semicolons, e.g. <code>Trial A; -0,28; 0,12; 32</code>.</span>
+        </label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
@@ -176,7 +185,7 @@
     "use strict";
     const LS_KEY = "meta-regression-v1";
 
-    const fields = { data:"f-data", title:"f-title", modlabel:"f-modlabel", effectlabel:"f-effectlabel" };
+    const fields = { data:"f-data", title:"f-title", modlabel:"f-modlabel", effectlabel:"f-effectlabel", decsep:"f-decsep" };
     const EXAMPLE = "# label, logOR, SE, moderator (baseline LVEF %)\nTrial A, -0.28, 0.12, 32\nTrial B, -0.22, 0.09, 35\nTrial C, -0.15, 0.11, 42\nTrial D, -0.10, 0.13, 48\nTrial E, 0.04, 0.15, 55\nTrial F, -0.05, 0.14, 51\nTrial G, -0.32, 0.11, 29\nTrial H, -0.20, 0.10, 38";
 
     const warnEl = document.getElementById("warn-banner");
@@ -184,10 +193,15 @@
     const statsWrap = document.getElementById("stats-wrap");
 
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
-    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; }
+      if (window.AlmDecimalSep && !("decsep" in s)) window.AlmDecimalSep.restore("f-decsep", "."); }
 
     function parseStudies(text) {
       const studies=[], warnings=[];
+      // Decimal separator (hub/shared/decimal-sep.js): "." leaves the text unchanged and only warns about rows
+      // that look like decimal commas; "," rewrites tab/semicolon rows to this parser's format, refusing the rest.
+      const DS=window.AlmDecimalSep, prep=DS ? DS.prepare(text, DS.read("f-decsep"), {join:"\t"}) : null;
+      if (prep) { text=prep.text; warnings.push(...DS.errorMessages(prep)); if (prep.warning) warnings.push(prep.warning); }
       const lines = String(text||"").split(/\r?\n/);
       for (let i=0;i<lines.length;i++) {
         const raw = lines[i].trim();
@@ -699,10 +713,12 @@
       if (!confirm("Clear inputs?")) return;
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.value = ""; }
       document.getElementById("f-effectlabel").value = "Effect (logOR)";
+      document.getElementById("f-decsep").value = ".";
       render();
     }
     function onExample() {
       document.getElementById("f-data").value = EXAMPLE;
+      document.getElementById("f-decsep").value = ".";
       document.getElementById("f-title").value = "Example meta-regression";
       document.getElementById("f-modlabel").value = "Baseline LVEF (%)";
       render();
@@ -809,6 +825,7 @@
       var ta = document.getElementById('f-data');
       if (!ta) return;
       ta.value = lines.join('\n');
+      var ds = document.getElementById('f-decsep'); if (ds) ds.value = '.';  // CSV rows are written with "."
       ta.dispatchEvent(new Event('input', { bubbles: true }));
     };
 
@@ -848,6 +865,8 @@
           out.QE_p  = qeObj.pQE;
         }
       }
+      var ds = document.getElementById('f-decsep');
+      if (ds && ds.value === ',') { out.decimal_separator = ','; out.decimal_separator_note = window.AlmDecimalSep.methodsNote(','); }
       return out;
     };
 
@@ -857,12 +876,16 @@
       var ti = document.getElementById('f-title');
       var ml = document.getElementById('f-modlabel');
       var el = document.getElementById('f-effectlabel');
-      return {
+      var snap = {
         data:        ta ? ta.value : '',
         title:       ti ? ti.value : '',
         modlabel:    ml ? ml.value : '',
         effectlabel: el ? el.value : 'Effect (logOR)'
       };
+      // Only a non-default separator is stored, so links with "." are byte-identical to before.
+      var ds = document.getElementById('f-decsep');
+      if (ds && ds.value === ',') snap.decsep = ',';
+      return snap;
     };
 
     // Restore: apply snapshot back to form controls and re-render.
@@ -877,6 +900,8 @@
       if (ti) ti.value = isEmpty ? '' : (snap.title       != null ? snap.title       : '');
       if (ml) ml.value = isEmpty ? '' : (snap.modlabel    != null ? snap.modlabel    : '');
       if (el) el.value = isEmpty ? 'Effect (logOR)' : (snap.effectlabel != null ? snap.effectlabel : 'Effect (logOR)');
+      // A link made before the setting existed has no decsep: it restores ".".
+      if (window.AlmDecimalSep) window.AlmDecimalSep.restore('f-decsep', isEmpty ? '.' : snap.decsep);
       // Dispatch input on f-data to trigger the engine's render() listener.
       if (ta) ta.dispatchEvent(new Event('input', { bubbles: true }));
     };
@@ -1019,8 +1044,10 @@
       // positional idx:N indices stay exactly as before the extras were added.
       // Example selection is transient; exclude it before assigning draft indices.
       AlmAutosave.install({ appKey: 'meta-regression', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-real-example-panel *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-real-example-panel *):not(#f-decsep)'; }) });
     }
+    // Decimal separator: kept out of the draft (its key set is unchanged) and restored with it (hub/shared/decimal-sep.js).
+    if (window.AlmDecimalSep) window.AlmDecimalSep.persist('f-decsep', 'meta-regression');
   });
 })();
 </script>

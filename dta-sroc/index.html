@@ -82,6 +82,7 @@
        wired:   csv-upload, axis-controls, results-export, url-state, reset-undo, tooltips
        skipped: chart-download — native buildSvg() + PNG/SVG buttons already present-good -->
   <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/decimal-sep.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
   <script src="../hub/shared/url-state.js"></script>
@@ -114,6 +115,14 @@
         <label>
           <span class="lbl">CSV: <code>label, <abbr data-gloss="TP">TP</abbr>, <abbr data-gloss="FP">FP</abbr>, <abbr data-gloss="FN">FN</abbr>, <abbr data-gloss="TN">TN</abbr></code></span>
           <textarea id="f-data" spellcheck="false" aria-label="Study data"></textarea></label>
+        <label>
+          <span class="lbl">Decimal separator</span>
+          <select id="f-decsep" aria-describedby="decsep-hint">
+            <option value=".">Point: 0.25</option>
+            <option value=",">Comma: 0,25</option>
+          </select>
+          <span class="hint" id="decsep-hint">Counts are whole numbers either way; the setting matters for a decimal covariate. With a decimal comma, separate fields with tabs or semicolons, e.g. <code>Study A; 85; 10; 15; 140; 0,5</code>.</span>
+        </label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
@@ -214,7 +223,7 @@
     "use strict";
     const LS_KEY = "dta-sroc-v1";
 
-    const fields = { data:"f-data", title:"f-title", method:"f-method", cc:"f-cc", cov:"f-cov" };
+    const fields = { data:"f-data", title:"f-title", method:"f-method", cc:"f-cc", cov:"f-cov", decsep:"f-decsep" };
     const METHOD_LABEL = { reml:"REML", ml:"ML", mm:"method of moments", vc:"variance components", fixed:"fixed effect" };
     const EXAMPLE = "# Example: TP, FP, FN, TN per study\nStudy A, 85, 10, 15, 140\nStudy B, 62, 12, 18, 108\nStudy C, 110, 25, 40, 200\nStudy D, 55, 6, 8, 90\nStudy E, 130, 40, 30, 300\nStudy F, 92, 18, 25, 185\nStudy G, 74, 8, 12, 130";
     const EXAMPLE_TITLE = "Example SROC - diagnostic test";  // ASCII-safe for btoa/url-state
@@ -267,13 +276,15 @@
     const statsWrap = document.getElementById("stats-wrap");
 
     // Snapshot / restore helpers for reset-undo and url-state
-    window.__almSnapshot = function () { return readState(); };
+    // Only a non-default separator is stored, so links with "." are byte-identical to before.
+    window.__almSnapshot = function () { const s = readState(); if (s.decsep !== ",") delete s.decsep; return s; };
     window.__almRestore  = function (snap) {
       // When snap is empty ({}) — called by reset-undo "Clear all" — treat as reset.
       var isEmpty = !snap || Object.keys(snap).length === 0;
       if (isEmpty) {
         document.getElementById('f-data').value = '';
         document.getElementById('f-title').value = '';
+        document.getElementById('f-decsep').value = '.';
       } else {
         writeState(snap);
       }
@@ -318,11 +329,14 @@
           estimate: r10(c.estimate), se: r10(c.se), z: r6(c.z), p: r6(c.p), ci: c.ci.map(r10) })), logLik: r10(mr.logLik), AIC: r10(mr.AIC) } : null,
         errors: a.errors,
         rows: rows,
+        ...(readState().decsep === "," ? { decimal_separator: ",", decimal_separator_note: window.AlmDecimalSep.methodsNote(",") } : {}),
       };
     };
 
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
-    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
+    function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; }
+      // A saved or shared state from before the setting existed restores the default ".".
+      if (window.AlmDecimalSep && !("decsep" in s)) window.AlmDecimalSep.restore("f-decsep", "."); }
 
     const COUNT_FIELDS = ['TP', 'FP', 'FN', 'TN'];
     function parseCount(value) {
@@ -333,8 +347,12 @@
     }
 
     // Rows: label, TP, FP, FN, TN [, covariate]. Labels may contain commas (all leading fields).
-    function parseStudies(text, covMode) {
-      const studies = [], warnings = [];
+    function parseStudies(text, covMode, sep) {
+      const studies = [], warnings = [], notes = [];
+      // Decimal separator (hub/shared/decimal-sep.js): "." leaves the text unchanged and only warns about rows
+      // that look like decimal commas; "," rewrites tab/semicolon rows to this parser's format, refusing the rest.
+      const DS = window.AlmDecimalSep, prep = DS ? DS.prepare(text, sep === undefined ? DS.read("f-decsep") : sep, { join: "\t" }) : null;
+      if (prep) { text = prep.text; warnings.push(...DS.errorMessages(prep)); if (prep.warning) notes.push(prep.warning); }
       const lines = String(text || '').split(/\r?\n/);
       const nc = covMode === 'last' ? 5 : 4;
       let firstRecord = true;
@@ -381,7 +399,7 @@
         studies.push({label, tp, fp, fn, tn, cov});
       }
       if (warnings.length) warnings.unshift('Analysis blocked: correct all study rows before fitting any model.');
-      return {studies: warnings.length ? [] : studies, warnings};
+      return {studies: warnings.length ? [] : studies, warnings, notes};
     }
 
     // Per-study points after the chosen continuity-correction rule (the same rule as the model).
@@ -614,7 +632,7 @@
       if (b && b.negeigen) extras.push("The " + METHOD_LABEL[b.method] + " estimate of the between-study covariance was not positive definite and was truncated (as mada does).");
       if (studies.length < 4) extras.push("The bivariate model needs at least 4 studies with valid TP, FP, FN and TN counts (currently " + studies.length + ")." + (studies.length ? " Any displayed means and plots describe the entered studies; no bivariate fit is available." : ""));
       else if (studies.length && studies.length < 10) extras.push("k = " + studies.length + " — with fewer than about 10 studies the between-study covariance, and hence the prediction region, is imprecise.");
-      const all = a.parsed.warnings.concat(extras);
+      const all = a.parsed.warnings.concat(a.parsed.notes, extras);
       if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
       else { warnEl.innerHTML = "<strong>Notes</strong><ul>" + all.map(w => "<li>" + escapeXml(w) + "</li>").join("") + "</ul>"; warnEl.classList.add("is-visible"); }
 
@@ -627,7 +645,7 @@
       // Wrapped in try-catch: btoa in url-state.js rejects non-Latin1 chars
       // (e.g. em dashes in custom titles). write() silently fails — no data loss.
       try {
-        if (window.alm && window.alm.urlState && window.__almSnapshot) {
+        if (window.alm && window.alm.urlState && window.__almSnapshot && window.__almUrlRead) {
           window.alm.urlState.write(window.__almSnapshot());
         }
       } catch(e) { /* non-ASCII title — url-state silently unavailable for this state */ }
@@ -713,6 +731,7 @@
       document.getElementById("f-data").value = ex ? ex.data : EXAMPLE;
       document.getElementById("f-title").value = ex ? key + ": " + ex.title : EXAMPLE_TITLE;
       document.getElementById("f-cov").value = ex && ex.covariate ? "last" : "";
+      document.getElementById("f-decsep").value = ".";
       render();
     }
     function attach() {
@@ -814,13 +833,14 @@
             return [label].concat(cells).join(', ');
           });
           const proposed = lines.join('\n');
-          const check = parseStudies(proposed, '');
+          const check = parseStudies(proposed, '', '.');  // CSV rows are written with "."
           if (check.warnings.length || check.studies.length !== result.rows.length ||
               check.studies.some((s, i) => s.label !== labels[i] ||
                 s.tp !== countRows[i][0] || s.fp !== countRows[i][1] ||
                 s.fn !== countRows[i][2] || s.tn !== countRows[i][3]))
             throw new Error('Study labels and counts could not be round-tripped losslessly');
           document.getElementById('f-data').value = proposed;
+          document.getElementById('f-decsep').value = '.';
           render();
         } catch (error) { reject(error.message || String(error)); }
       },
@@ -848,8 +868,11 @@
 
     window.alm.urlState({ version: 1 });
     var restored = window.alm.urlState.read();
+    window.__almUrlRead = true;
     if (restored && Object.keys(restored).length > 0) {
       window.__almRestore(restored);
+    } else {
+      try { window.alm.urlState.write(window.__almSnapshot()); } catch (e) { /* non-ASCII title: as in render() */ }
     }
 
     window.alm.resetUndo({
@@ -878,8 +901,10 @@
       // positional idx:N indices stay exactly as before the extras were added.
       // Example selection is transient; exclude it before assigning draft indices.
       AlmAutosave.install({ appKey: 'dta-sroc', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-real-example-panel *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-real-example-panel *):not(#f-decsep)'; }) });
     }
+    // Decimal separator: kept out of the draft (its key set is unchanged) and restored with it (hub/shared/decimal-sep.js).
+    if (window.AlmDecimalSep) window.AlmDecimalSep.persist('f-decsep', 'dta-sroc');
   });
 })();
 </script>

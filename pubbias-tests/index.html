@@ -59,6 +59,7 @@
   <!-- Cycle 2.8 Task 3 shared UX modules — wired per RETROFIT_AUDIT.md:
        wired: csv-upload, chart-download, axis-controls, results-export, url-state, reset-undo, tooltips -->
   <script src="../hub/shared/csv-upload.js"></script>
+  <script src="../hub/shared/decimal-sep.js"></script>
   <script src="../hub/shared/plot-export.js"></script>
   <script src="../hub/shared/axis-controls.js"></script>
   <script src="../hub/shared/results-export.js"></script>
@@ -110,6 +111,15 @@
 0.32, 0.12
 0.45, 0.17
 0.28, 0.10</textarea></label>
+      <label>
+        <span>Decimal separator</span>
+        <select id="f-decsep" aria-describedby="decsep-hint decsep-note">
+          <option value=".">Point: 0.25</option>
+          <option value=",">Comma: 0,25</option>
+        </select>
+      </label>
+      <p class="hint" id="decsep-hint" style="font-size:0.78rem;margin:0.2rem 0">With a decimal comma, separate fields with tabs or semicolons, e.g. <code>0,25; 0,08</code>.</p>
+      <p id="decsep-note" role="status" style="color:var(--warn);font-size:0.82rem;margin:0.2rem 0" hidden></p>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.5rem">Run analysis</button>
       <div id="analysis-status" role="status" aria-live="polite" hidden>Analysis updated</div>
       <div id="analysis-stale" hidden>Results out of date — press Run analysis</div>
@@ -284,7 +294,12 @@
     // (Previously every numeric token was kept, so "Aronson 1948, -0.889, 0.571" read te=1948, se=-0.889 and the
     // row vanished: 3 of the 13 BCG rows survived.)
     function parseLines(text, names, check) {
-      var out = [], errors = [], lines = String(text).split(/\r?\n/);
+      // Decimal separator (hub/shared/decimal-sep.js): "." leaves the text unchanged; "," rewrites tab/semicolon
+      // rows to tab-separated "." numbers and refuses the rest (listed with the other unreadable lines).
+      // typeof guard: this parser is also evaluated on its own, outside a page (alm-examples-native unit test).
+      var DS = typeof window !== 'undefined' ? window.AlmDecimalSep : null, prep = DS ? DS.prepare(text, DS.read('f-decsep'), { join: '\t' }) : null;
+      if (prep) text = prep.text;
+      var out = [], errors = prep ? prep.errors.map(function (e) { return 'line ' + e.line + ': ' + e.reason; }) : [], lines = String(text).split(/\r?\n/);
       var num = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i].trim();
@@ -301,6 +316,7 @@
         if (msg) errors.push('line ' + (i + 1) + ': ' + msg);
         else out.push(fields.map(Number));
       }
+      errors.sort(function (a, b) { return parseInt(a.slice(5), 10) - parseInt(b.slice(5), 10); });
       if (errors.length) {
         var e = new Error('Input not used. ' + errors.length + ' line' + (errors.length > 1 ? 's' : '') + ' could not be read; fix ' + (errors.length > 1 ? 'them' : 'it') + ' and run again. ' + errors.slice(0, 5).join('; ') + (errors.length > 5 ? '; and ' + (errors.length - 5) + ' more.' : '.'));
         e.inputErrors = errors;
@@ -701,6 +717,9 @@
 
     function run() {
       _lastResults = null;
+      // A row that looks like it holds a decimal comma is reported, never reinterpreted (non-blocking).
+      var dsNote = document.getElementById('decsep-note'), dsW = window.AlmDecimalSep ? window.AlmDecimalSep.prepare(document.getElementById('src').value, window.AlmDecimalSep.read('f-decsep')).warning : '';
+      if (dsNote) { dsNote.textContent = dsW; dsNote.hidden = !dsW; }
       try { runAnalysis(); }
       catch (error) {
         var body = document.getElementById('body'), tr = document.createElement('tr'), td = document.createElement('td');
@@ -791,7 +810,8 @@
 
       // URL state
       if (window.alm && window.alm.urlState) {
-        window.alm.urlState.write({ format: fmt_, src: text.substring(0, 600) });
+        // Only a non-default separator is stored, so links with "." are byte-identical to before.
+        window.alm.urlState.write(Object.assign({ format: fmt_, src: text.substring(0, 600) }, document.getElementById('f-decsep').value === ',' ? { decsep: ',' } : {}));
       }
     }
 
@@ -833,16 +853,19 @@
 
     // ---- snapshot/restore for reset-undo ----
     function snapshot() {
-      return {
+      var snap = {
         format: document.getElementById('format').value,
         src:    document.getElementById('src').value,
       };
+      if (document.getElementById('f-decsep').value === ',') snap.decsep = ',';
+      return snap;
     }
 
     function restore(snap) {
       if (!snap) return;
       if (snap.format !== undefined) document.getElementById('format').value = snap.format;
       if (snap.src    !== undefined) document.getElementById('src').value    = snap.src;
+      if (window.AlmDecimalSep) window.AlmDecimalSep.restore('f-decsep', snap.decsep);
       run();
     }
 
@@ -857,11 +880,15 @@
       });
       document.getElementById('src').value = lines.join('\n');
       document.getElementById('format').value = 'te-se';
+      document.getElementById('f-decsep').value = '.';  // CSV rows are written with "."
       run();
     };
 
     // Expose for export
-    window._almLastPubbias = function () { return _lastResults; };
+    window._almLastPubbias = function () {
+      if (!_lastResults || document.getElementById('f-decsep').value !== ',') return _lastResults;
+      return Object.assign({}, _lastResults, { decimal_separator: ',', decimal_separator_note: window.AlmDecimalSep.methodsNote(',') });
+    };
     // Expose the test engine for R-parity tests (parseBinary + each test).
     window.__almPubBiasEngine = {
       parseTESE: parseTESE, trimFill: trimFill, remlSlopeNeg: remlSlopeNeg, wls: wls,
@@ -896,8 +923,10 @@
       } else {
         document.getElementById('src').value = '0.25, 0.08\n0.18, 0.10\n0.40, 0.15\n0.30, 0.09\n0.12, 0.07\n0.55, 0.20\n0.22, 0.08\n0.32, 0.12\n0.45, 0.17\n0.28, 0.10';
       }
+      document.getElementById('f-decsep').value = '.';  // the examples are written with "."
       run();
     });
+    document.getElementById('f-decsep').addEventListener('change', function () { run(); });
 
     // ---- module init ----
     window.alm.csvUpload({
@@ -953,6 +982,8 @@
     if (restored && Object.keys(restored).length > 0) {
       if (restored.format !== undefined) document.getElementById('format').value = restored.format;
       if (restored.src    !== undefined) document.getElementById('src').value    = restored.src;
+      // A link made before the setting existed has no decsep: it restores ".".
+      if (window.AlmDecimalSep) window.AlmDecimalSep.restore('f-decsep', restored.decsep);
       run();
     } else {
       run();
@@ -1022,6 +1053,7 @@
         onAfterLoad: function (ds) {
           if (!ds || !Array.isArray(ds.effect_se)) return;
           document.getElementById('format').value = 'te-se';
+          document.getElementById('f-decsep').value = '.';
           document.getElementById('src').value = ds.effect_se.map(function (r) { return String(r.yi) + ', ' + String(Math.sqrt(r.vi)); }).join('\n');
           document.getElementById('btn-run').click();
         },
@@ -1057,8 +1089,10 @@
       // so the saved key set and positional indices are those of the page without the extras.
       // Example selection is transient; exclude it before assigning draft indices.
       AlmAutosave.install({ appKey: 'pubbias-tests', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *):not(#alm-real-example-panel *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *):not(#alm-real-example-panel *):not(#f-decsep)'; }) });
     }
+    // Decimal separator: kept out of the draft (its key set is unchanged) and restored with it (hub/shared/decimal-sep.js).
+    if (window.AlmDecimalSep) window.AlmDecimalSep.persist('f-decsep', 'pubbias-tests');
   });
 })();
 </script>
