@@ -1,0 +1,7 @@
+source_package,version,dataset,source_blob,file,md5
+mada,0.5.12,AuditC,1430d214ec9797c2105bbbd83e7b45cf9033020a,mada/0.5.12/AuditC.rda,965cde92a8e1a86e1aa447804ae4cd75
+netmeta,3.7-0,Baker2009,b44dc87949b01c2b927e85b64c182da47811fd0e,netmeta/3.7-0/Baker2009.rda,9c7d60b8053fdc53c8f9112948540401
+metadat,1.6-0,dat.bcg,65156a2716521493f2c7e4a4bacf22deb4c120f3,metadat/1.6-0/dat.bcg.rda,3ec26e60ec2de37793d06a9bfa05b73f
+metadat,1.6-0,dat.konstantopoulos2011,3e3be19578863bbf571e48f4ca48bfbf102f238d,metadat/1.6-0/dat.konstantopoulos2011.rda,2b4a3edf628b3ca0a0bde4f208d98df8
+metadat,1.6-0,dat.molloy2014,745db09c78a068d45a28f5d8df4cbd8edc2d042d,metadat/1.6-0/dat.molloy2014.rda,85d2235e377ece9de592f7aeb0e389c5
+netmeta,3.7-0,smokingcessation,53c3c44ce7d62770aec072d284b8a04fcc635ae0,netmeta/3.7-0/smokingcessation.rda,49172d65aaa27adb2e5e9c08588da664
