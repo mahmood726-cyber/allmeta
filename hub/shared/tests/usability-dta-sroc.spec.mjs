@@ -110,23 +110,27 @@ test('default example retains full displayed headline precision', async ({ page 
 });
 
 for (const count of [0, 1, 2, 3]) {
-  test('U1: ' + count + ' studies explains the four-study minimum and recovers', async ({ page }) => {
+  // Was "explains the four-study minimum". Mahmood 2026-10-31 (match R): mada::reitsma fits k = 1..3, so the page fits
+  // them with a visible small-k warning; only an empty table has nothing to fit.
+  test('U1: ' + count + ' studies is fitted with a small-k warning (none: says what to enter) and recovers', async ({ page }) => {
     await ready(page);
     await page.locator('#f-data').fill(GOOD.split('\n').slice(0, count).join('\n'));
     const warning = page.locator('#warn-banner');
     await expect(warning).toBeVisible();
     await expect(warning).toHaveAttribute('aria-live', 'polite');
-    await expect(warning).toContainText('needs at least 4 studies');
-    await expect(warning).toContainText('currently ' + count);
-    expect((await current(page)).bivariate).toBeNull();
-    await expect(page.locator('#stats-wrap')).not.toContainText('Summary Se');
     if (count === 0) {
-      await expect(page.locator('#svg-host')).toContainText('Enter at least 4 studies');
+      await expect(warning).toContainText('currently 0');
+      expect((await current(page)).bivariate).toBeNull();
+      await expect(page.locator('#stats-wrap')).not.toContainText('Summary Se');
+      await expect(page.locator('#svg-host')).toContainText('Enter at least one study');
       await expect(page.locator('#svg-host svg')).toHaveCount(0);
+      await noExports(page);
     } else {
-      await expect(warning).toContainText('no bivariate fit is available');
+      await expect(warning).toContainText('Only k = ' + count + ' stud');
+      await expect(warning).toContainText('There are very few primary studies!');
+      expect((await current(page)).bivariate).not.toBeNull();
+      await expect(page.locator('#stats-wrap')).toContainText('Summary Se');
     }
-    await noExports(page);
     await page.locator('#f-data').fill(GOOD);
     await expect(page.locator('#analysis-status')).toHaveText('Analysis updated');
     await headlines(page);

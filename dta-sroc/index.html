@@ -226,6 +226,9 @@
     window.__almBivariate = function () { return _lastBivar; };
     window.__almMetaRegression = function () { return _lastMetareg; };
     window.__almDeeks = function () { return _lastDeeks; };
+    // The same row checker for a restored analysis file (alm-features.js share set()), so a row this page would block
+    // cannot replace the current analysis with a blocked one.
+    window.__almDtaParse = function (text, covMode) { return parseStudies(text, covMode); };
 
     // Fagan nomogram: pre-test prob (left axis) → LR line → post-test prob (right axis).
     function faganSvg(b) {
@@ -399,10 +402,21 @@
 
     // Design matrix for a single covariate column, as R's model.matrix: numeric as is; otherwise
     // treatment-coded categories with alphabetically sorted levels (first level = reference).
+    // Numeric only when every value is a complete decimal number (the token rule of the counts): Number() would
+    // also read 0x10 as 16. A column that is mostly numbers (or Number()-readable) but not entirely decimal
+    // numbers is refused with those studies listed, never silently switched to categories.
+    const COV_DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
     function designFor(studies) {
       const v = studies.map(s => s.cov);
       if (v.some(x => x == null || x === "")) return { error: "every study needs a covariate value in the last column" };
-      if (v.every(x => Number.isFinite(Number(x)))) return { X: v.map(x => [1, Number(x)]), names: ["(Intercept)", "covariate"], kind: "numeric" };
+      if (v.every(x => COV_DECIMAL.test(x))) return { X: v.map(x => [1, Number(x)]), names: ["(Intercept)", "covariate"], kind: "numeric" };
+      const looksNumeric = v.filter(x => COV_DECIMAL.test(x) || Number.isFinite(Number(x))).length;
+      if (2 * looksNumeric > v.length) {
+        const bad = studies.filter(s => !COV_DECIMAL.test(s.cov)).map(s => s.label + " (" + s.cov + ")");
+        return { error: "the covariate looks numeric but these values are not decimal numbers: " +
+          bad.slice(0, 5).join(", ") + (bad.length > 5 ? " and " + (bad.length - 5) + " more" : "") +
+          ". Correct them, or give every study a text label to treat the covariate as categories" };
+      }
       const lev = Array.from(new Set(v)).sort();
       if (lev.length < 2) return { error: "the covariate has a single category" };
       return { X: v.map(x => [1].concat(lev.slice(1).map(l => (x === l ? 1 : 0)))), names: ["(Intercept)"].concat(lev.slice(1).map(l => "covariate = " + l)), kind: "categorical", levels: lev };
@@ -431,14 +445,27 @@
           if (out.rho == null) errors.push("Spearman threshold correlation is undefined: sensitivity or false-positive rate has no rank variation.");
         } catch (e) { errors.push("Spearman threshold correlation unavailable: " + e.message); }
       }
-      if (B && finite && rows.length >= 4) {
+      // mada::reitsma fits k = 1..3 too (warning "There are very few primary studies!"), so the page does as well
+      // (Mahmood 2026-10-31: match R, warn visibly); the warning is part of the exported errors list.
+      if (B && finite && rows.length >= 1 && rows.length < 4) {
+        errors.push("Only k = " + rows.length + " stud" + (rows.length === 1 ? "y" : "ies") + ": mada::reitsma fits the bivariate model with this few studies (it warns \"There are very few primary studies!\") and so does this page, but the between-study covariance Ψ is barely identified (it usually sits on its boundary, near zero), so the confidence and prediction regions and the SROC curve are unreliable; interpret with great caution.");
+      }
+      if (B && finite && rows.length >= 1) {
         try { out.bivar = B.fit(rows, opts); } catch (e) { errors.push("Bivariate model: " + e.message); }
         if (state.cov === "last") {
           const d = designFor(parsed.studies); out.design = d;
           if (d.error) errors.push("Meta-regression: " + d.error + ".");
           else { try { out.metareg = B.fit(rows, Object.assign({}, opts, { X: d.X, covariateNames: d.names })); } catch (e) { errors.push("Meta-regression: " + e.message); } }
         }
+      }
+      if (B && finite && rows.length >= 4) {
         try { out.deeks = B.deeksTest(rows); } catch (e) { out.deeks = null; }
+        // With no spread in 1/sqrt(ESS) (e.g. identical studies) the regression slope SE is 0/0 and p is NaN: say so
+        // instead of showing a bare "--" card.
+        if (!out.deeks || !Number.isFinite(out.deeks.p)) {
+          out.deeks = null;
+          errors.push("Deeks' funnel-plot asymmetry test is not estimable: the studies' effective sample sizes (1/√ESS) or log diagnostic odds ratios do not vary enough to fit its regression.");
+        }
       }
       return out;
     }
@@ -612,15 +639,15 @@
       if (b && b.method === "fixed") extras.push("Fixed-effect model: no between-study variance, so no SROC curve and the prediction region equals the confidence region.");
       if (b && b.converged === false) extras.push("The " + METHOD_LABEL[b.method] + " estimation did not converge within 100 iterations; interpret with caution.");
       if (b && b.negeigen) extras.push("The " + METHOD_LABEL[b.method] + " estimate of the between-study covariance was not positive definite and was truncated (as mada does).");
-      if (studies.length < 4) extras.push("The bivariate model needs at least 4 studies with valid TP, FP, FN and TN counts (currently " + studies.length + ")." + (studies.length ? " Any displayed means and plots describe the entered studies; no bivariate fit is available." : ""));
-      else if (studies.length && studies.length < 10) extras.push("k = " + studies.length + " — with fewer than about 10 studies the between-study covariance, and hence the prediction region, is imprecise.");
+      if (!studies.length) extras.push("Enter at least one study with valid TP, FP, FN and TN counts (currently 0).");
+      else if (studies.length >= 4 && studies.length < 10) extras.push("k = " + studies.length + " — with fewer than about 10 studies the between-study covariance, and hence the prediction region, is imprecise.");
       const all = a.parsed.warnings.concat(extras);
       if (!all.length) { warnEl.classList.remove("is-visible"); warnEl.innerHTML = ""; }
       else { warnEl.innerHTML = "<strong>Notes</strong><ul>" + all.map(w => "<li>" + escapeXml(w) + "</li>").join("") + "</ul>"; warnEl.classList.add("is-visible"); }
 
       const svg = studies.length
         ? buildSvg(state, studies, a.moses ? { alpha: a.moses.A1, beta: a.moses.B1 } : null, b)
-        : "<p>Enter at least 4 studies with valid TP, FP, FN and TN counts for bivariate analysis.</p>";
+        : "<p>Enter at least one study with valid TP, FP, FN and TN counts for bivariate analysis.</p>";
       svgHost.innerHTML = svg;
       try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
       // Update URL state after every render so link stays shareable.
@@ -874,11 +901,11 @@
   }
   ready(function () {
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
-      // The #alm-plus extras are kept out of the original autosave so its keys and
-      // positional idx:N indices stay exactly as before the extras were added.
+      // Keep both auxiliary panels out of the original autosave. Their controls
+      // must not shift legacy idx:N keys or trigger writes to the native draft.
       // Example selection is transient; exclude it before assigning draft indices.
       AlmAutosave.install({ appKey: 'dta-sroc', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-real-example-panel *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-features *):not(#alm-real-example-panel *)'; }) });
     }
   });
 })();
@@ -903,6 +930,17 @@
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>
+<link rel="stylesheet" href="../shared/alm-entry.css">
+<script src="../shared/url-pack.js"></script>
+<script src="../shared/alm-zip.js"></script>
+<script src="../shared/truthcert-export.js"></script>
+<script src="../shared/alm-entry.js"></script>
+<script src="../shared/alm-entry-ui.js"></script>
+<script src="../shared/alm-text.js"></script>
+<script src="../shared/alm-verify-r.js"></script>
+<script src="../shared/vendor/share-deflate.js"></script>
+<script src="../shared/alm-share.js"></script>
+<script src="alm-features.js"></script>
 <script src="../shared/alm-examples.js"></script>
 <script src="alm-examples.js"></script>
 </body>
