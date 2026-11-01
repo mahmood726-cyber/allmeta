@@ -125,11 +125,14 @@
     });
   }
   function currentState() {
-    // Direct restore runs the actual page without synthesizing clicks or changing browser history.
     const data=document.getElementById('src').value;
-    const lines=data.trim().split(/\n/).filter(s=>s.trim());
-    if(lines.length<3||lines.some(line=>{const p=line.split(',');return p.length<2||!p[0].trim()||!p[1].trim()||!finite(Number(p[0]))||!finite(Number(p[1]))||Number(p[1])<=0;}))throw new Error('Need at least three valid effect rows; invalid lines are refused');
-    window.__almRestore({data});
+    const parsed=window.__almInfluenceParse(data);
+    if(parsed.errors.length||parsed.rows.length<3)throw new Error('Need at least three valid effect rows; invalid lines are refused');
+    // Report freshness checks also read this state. Rerunning unchanged input
+    // would clear exclusions after every checkbox/button event. Reuse the live
+    // evidence when it matches the native parser; explicit checks of edited data
+    // still run the page without synthesizing clicks or changing browser history.
+    if(JSON.stringify(parsed.rows)!==JSON.stringify(window._almStudies()))window.__almRestore({data});
     const rows=window._almStudies(),a=capture(),values=appValues(a,rows.length,false);
     adapter.live.compare={tolerance:{default:1e-6,...Object.fromEntries(values.map(v=>[v.key,v.tol]))},kind:Object.fromEntries(values.map(v=>[v.key,'rel']))};
     return {yi:rows.map(r=>r.te),vi:rows.map(r=>r.se*r.se),values,note:'Current data: intercept-only REML; flags exact, relative REML tolerance 1e-6, Q/df and FE radial 1e-9. Paper metafor 5.2-1; live metafor 4.8-0.'};
