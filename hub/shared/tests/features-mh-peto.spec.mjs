@@ -195,7 +195,10 @@ const reviewRegressions = (() => {
       // Control: the original live validator still owns its explicit run path.
       live.currentState(); assert.equal(runs, 1);
     },
-    'autosave excludes feature controls while retaining legacy selectors': () => {
+    // Requirement, not a string pin: the autosave selectors save every legacy input type and nothing
+    // inside the feature panel, the real-example panel, or the LOO "only flagged" filter. Rewritten from
+    // an exact-string assertion when core 2755b1ca legitimately added the real-example-panel exclusion.
+    'autosave excludes feature controls while retaining legacy selectors': async ({ page }) => {
       const html = fs.readFileSync(path.join(root, 'mh-peto/index.html'), 'utf8');
       const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
         .map(m => m[1]).find(s => s.includes('AlmAutosave.install'));
@@ -208,8 +211,57 @@ const reviewRegressions = (() => {
       assert.equal(installed.appKey, 'mh-peto');
       const types = ['textarea', 'select', 'input[type=text]', 'input[type=number]',
         'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'];
-      assert.deepEqual(Array.from(installed.selectors), types.map(s =>
-        s + ':not(#loo-only-flagged):not(#alm-features *)'));
+      const sels = Array.from(installed.selectors);
+      // Behaviour on the live page: probe inputs of every legacy type are planted outside and inside
+      // both excluded panels, then the union of what the selectors match is inspected.
+      await page.goto('/mh-peto/index.html');
+      const seen = await page.evaluate(({ sels, types }) => {
+        const host = document.createElement('div');
+        host.id = 'zz-autosave-probe';
+        document.body.appendChild(host);
+        const panels = ['alm-features', 'alm-real-example-panel'].map(id => document.getElementById(id));
+        if (panels.some(p => !p)) return { missingPanel: panels.map(p => !!p) };
+        const make = (parent, tag) => {
+          const t = /^input\[type=(\w+)\]$/.exec(tag);
+          const el = document.createElement(t ? 'input' : tag);
+          if (t) el.type = t[1];
+          el.dataset.zzProbe = parent.id + '|' + tag;
+          parent.appendChild(el);
+        };
+        types.forEach(tag => { make(host, tag); panels.forEach(p => make(p, tag)); });
+        const matched = new Set(sels.flatMap(s => [...document.querySelectorAll(s)]));
+        const inside = id => [...matched].filter(e => e.closest('#' + id))
+          .map(e => e.dataset.zzProbe || e.id || e.tagName);
+        const loo = document.getElementById('loo-only-flagged');
+        const out = {
+          features: inside('alm-features'),
+          example: inside('alm-real-example-panel'),
+          looExists: !!loo, looMatched: matched.has(loo),
+          legacy: types.filter(tag => matched.has(host.querySelector('[data-zz-probe="zz-autosave-probe|' + tag + '"]'))),
+          srcMatched: matched.has(document.getElementById('src'))
+        };
+        document.querySelectorAll('[data-zz-probe]').forEach(e => e.remove());
+        host.remove();
+        return out;
+      }, { sels, types });
+      assert.equal(seen.missingPanel, undefined, 'feature and real-example panels must both be mounted');
+      assert.deepEqual(seen.features, [], 'autosave must not match controls inside #alm-features');
+      assert.deepEqual(seen.example, [], 'autosave must not match controls inside #alm-real-example-panel');
+      assert.equal(seen.looExists, true);
+      assert.equal(seen.looMatched, false, 'autosave must not match #loo-only-flagged');
+      assert.deepEqual(seen.legacy, types, 'autosave must match every legacy input type outside the panels');
+      assert.equal(seen.srcMatched, true, 'positive control: the 2x2 data textarea is saved');
+      // Structure, so nothing the old exact string guaranteed is lost: one selector per legacy type, in
+      // order, each carrying exactly the required exclusions (an extra exclusion could silently drop a
+      // legacy field and needs its own stated requirement).
+      const required = ['#alm-features *', '#alm-real-example-panel *', '#loo-only-flagged'];
+      assert.equal(sels.length, types.length);
+      sels.forEach((sel, i) => {
+        const m = /^([^:]+)((?::not\([^()]*\))*)$/.exec(sel);
+        assert.ok(m, 'unexpected selector shape: ' + sel);
+        assert.equal(m[1], types[i]);
+        assert.deepEqual([...m[2].matchAll(/:not\(([^()]*)\)/g)].map(x => x[1]).sort(), required, sel);
+      });
     },
     'p values use threshold notation': () => {
       const { render } = fixture(), { out, audit } = render();
