@@ -84,6 +84,13 @@ jobs:
       # The runner logs quantity-level differences before rejecting failures.
       - name: Native Node P16 complete LF-pinned replay and restoration
         run: node unit/p16-dom-current.mjs
+      # Playwright excludes Node *.test.mjs. P16-R5 must exercise the real
+      # export callback, provenance headers, regenerated documentation and
+      # planted missing-export/missing-report regressions on this exact head.
+      - name: Native Node P16 export provenance and mutation/refusal regressions
+        run: |
+          node --test unit/p16-r5-export-provenance.test.mjs unit/p16-r5-review-regressions.test.mjs
+          node ../../../scripts/p16-r5-review-replay.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --reporter=line,json
         env:
