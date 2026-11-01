@@ -54,7 +54,7 @@ fit<-function(d,model) {
  tr<-sort(unique(c(A,B)),method="radix"); adjacency<-lapply(tr,function(t) unique(c(B[A==t],A[B==t])));names(adjacency)<-tr
  reached<-tr[1];repeat{nextset<-unique(c(reached,unlist(adjacency[reached])));if(length(nextset)==length(reached))break;reached<-nextset}
  # Plus corpus inputs are accepted two-arm networks, so the multi-arm gate cannot fire.
- reason<-if(nrow(d)<3)"At least 3 valid contrasts are required." else if(anyDuplicated(study))"Repeated study IDs are unsupported: enter one independent contrast per study." else if(length(reached)<length(tr))"The treatment network is disconnected." else NULL
+ reason<-if(nrow(d)<1)"Enter at least one valid contrast." else if(anyDuplicated(study))"Repeated study IDs are unsupported: enter one independent contrast per study." else if(length(reached)<length(tr))"The treatment network is disconnected." else NULL
  if(!is.null(reason)) return(list(status="refused",reason=reason))
  tau<-0
  if(model=="PM") {

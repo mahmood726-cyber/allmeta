@@ -32,7 +32,11 @@ test('LOO refusals use the exact page reasons and a dropped treatment is recompu
  assert.deepEqual(L.drops.find(d=>d.study==='s5').status,'ok');assert.equal(L.drops.find(d=>d.study==='s5').nSplits,L.base.nodeSplit.length);
  const s1=L.drops.find(d=>d.study==='s1');assert.equal(s1.dbt.p,null);assert.equal(s1.globalTestable,false);
  const three=P.loo(E,c.parse('A,B,.2,.1\nB,C,.3,.2\nA,C,.6,.15'),'DL');
- assert.ok(three.drops.every(d=>d.status==='refused'&&d.reason==='At least 3 valid contrasts are required.'));
+ // Was: every drop refused ("At least 3 valid contrasts are required."). Since 2026-10-31 drops that leave 1-2 contrasts
+ // are fitted as netmeta fits them (no loop left: Q = 0, df = 0, p NA); only an empty network is refused.
+ assert.ok(three.drops.every(d=>d.status==='ok'&&d.dbt.Q===0&&d.dbt.df===0&&d.dbt.p===null&&d.nSplits===0));
+ assert.match(P.looSummary(three),/Each removal leaves only 2 contrasts/);
+ assert.equal(JSON.stringify(P.loo(E,c.parse('A,B,.2,.1,s1'),'FE').drops.map(d=>[d.status,d.reason])),JSON.stringify([['refused','Enter at least one valid contrast.']]));
  const bridge=P.loo(E,c.parse('A,B,.2,.1,s1\nB,C,.3,.2,s2\nA,C,.6,.15,s3\nC,D,.1,.3,s4\nD,E,.2,.2,s5\nC,E,.4,.2,s6'),'FE');
  assert.equal(bridge.drops.find(d=>d.study==='s4').status,'ok');
  const cut=P.loo(E,c.parse('A,B,.2,.1,s1\nB,C,.3,.2,s2\nA,C,.6,.15,s3\nC,D,.1,.3,s4\nD,E,.2,.2,s5'),'FE');

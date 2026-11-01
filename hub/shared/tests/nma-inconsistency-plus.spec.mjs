@@ -21,11 +21,12 @@ test('offline plus replay: every LOO refit, FE/DL/PM triple and sentence matches
  expect(r.failed.slice(0,5)).toEqual([]);expect(r.passed).toBe(manifest.checks);expect(r.checks).toBe(manifest.checks);
  expect(await page.evaluate(()=>JSON.stringify(AlmIncoValidationAdapter.snapshot()))).toBe(before);
 });
-test('pinned 4627-check replay still passes with the plus panel mounted and computed',async({page,context})=>{
+// 4723 checks / 48 refusals since 2026-10-31 (was 4627 / 54): six small-k configurations are fitted as netmeta fits them.
+test('pinned 4723-check replay still passes with the plus panel mounted and computed',async({page,context})=>{
  test.setTimeout(300000);await context.setOffline(true);await page.goto(app);
  await page.getByRole('button',{name:/Linde 2015/}).click();await idle(page);
  const r=await page.evaluate(entries=>AlmIncoValidationAdapter.corpus.run(Object.fromEntries(entries.map(([k,v])=>[k,Uint8Array.from(atob(v),c=>c.charCodeAt(0))]))),v1raw);
- expect(r.failed).toEqual([]);expect(r.passed).toBe(4627);expect(r.checks).toBe(4627);
+ expect(r.failed).toEqual([]);expect(r.passed).toBe(4723);expect(r.checks).toBe(4723);
 });
 for(const index of [0,1,2])test('tampered plus pin '+index+' refuses before execution',async({page,context})=>{
  await context.setOffline(true);await page.goto(app);

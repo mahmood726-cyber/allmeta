@@ -8,6 +8,8 @@
   'use strict';
   const P = window.AlmIncoPlusCore;
   const $ = id => document.getElementById(id);
+  // The same row checker for a restored analysis file (alm-features.js share set()), so it cannot be skipped silently.
+  window.__almIncoParseIssues = parseIssues;
   if (!P || !$('alm-plus')) return;
   const E = { inputIssue: window.inputIssue, estimateTau2: window.estimateTau2, fitNMA: window.fitNMA, nodeSplit: window.nodeSplit, dbt: window.dbt };
   const fmt = P.fmt, fmtP = P.fmtP;
@@ -34,7 +36,9 @@
     records.forEach((r, i) => {
       const p = r.parts;
       if (p.every(x => x === '')) return;
-      const te = Number(p[2]), se = Number(p[3]);
+      // Same decimal-only rule as the page parser (Number() would read 0x10 as 16).
+      const decimal = v => /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(v || '') ? Number(v) : NaN;
+      const te = decimal(p[2]), se = decimal(p[3]);
       let why = null;
       if (!p[0] || !p[1]) why = 'a treatment label is missing';
       else if (p[0] === p[1]) why = `both treatments are “${p[0]}”`;
@@ -63,7 +67,7 @@
     if (!msg) return;
     const text = src.value, parts = [issueMessage(text)];
     if (shownText !== null && text !== shownText) {
-      const why = window.inputIssue(window.parse(text));
+      const why = window.inputIssue(window.parse(text), 1);
       parts.push(why ? `Results below are for the previous input (${why.replace(/\.$/, '')}). Press Run tests to analyse the current text anyway.` : 'Results below are for the previous input.');
     }
     msg.textContent = parts.filter(Boolean).join(' ');

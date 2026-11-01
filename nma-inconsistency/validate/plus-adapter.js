@@ -103,7 +103,7 @@
       for (let i = 0; i < v1corpus.length; i++) {
         const r = v1reference.cases[i].numeric;
         if (!r || r.status !== 'ok' || v1corpus[i].key !== v1reference.cases[i].key) continue;
-        const app = P.fitAll(E, window.parse(v1corpus[i].text), v1corpus[i].model), ref = P.normalizeFit(r);
+        const rows = window.parse(v1corpus[i].text), app = P.fitAll(E, rows, v1corpus[i].model), ref = P.normalizeFit(r);
         check(v1corpus[i].key, 'text.base.interpret', P.interpret({ base: app }), P.interpret({ base: ref }), 'exact', 0, 'text');
         check(v1corpus[i].key, 'text.base.methods', P.methodsText({ base: app }), P.methodsText({ base: ref }), 'exact', 0, 'text');
       }
