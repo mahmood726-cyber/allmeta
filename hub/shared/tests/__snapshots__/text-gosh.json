@@ -1,0 +1,13 @@
+{
+  "app": "gosh",
+  "source": "Built-in nine-study example; fixed effect; all nonempty subsets.",
+  "plain": "This exploratory analysis examined 511 subsets of 9 studies. The median of the subset estimates was 0.199 on the supplied effect scale. Median subset I² was 0.0%. The plot helps explore how results change with study selection; it does not establish distinct populations, causation or clinical importance.",
+  "methods": "GOSH pooled the supplied effects using fixed-effect inverse-variance weighting. Within-study variances were squared standard errors. No transformation or back-transformation was applied. Subset I² was the positive part of (Q minus degrees of freedom) divided by Q, expressed as a percentage; Q used fixed-effect weights and degrees of freedom equalled subset size minus one. Single-study subsets had I² set to zero and used the study effect. Every nonempty subset was enumerated, including single-study subsets. Medians used linear interpolation between ordered observations. The app computes no confidence intervals, hypothesis tests or prediction intervals, and does not export subset variance estimates. Analyses were run in allmeta gosh <build.version> (commit <build.shortSha>).",
+  "results": "Across 9 studies, 511 subsets were computed. Median estimate = 0.199; median I² = 0.0%. Applied descriptively to this median, the overlapping Cochrane heterogeneity bands suggest that heterogeneity might not be important (Cochrane Handbook v6.5, §10.10.2). This is a median across subsets, not a full-data pooled estimate or full-data heterogeneity statistic.",
+  "flags": [
+    "A median subset I² of zero does not establish homogeneous evidence."
+  ],
+  "references": [
+    "Cochrane Handbook for Systematic Reviews of Interventions, version 6.5, section 10.10.2 (Identifying and measuring heterogeneity)."
+  ]
+}
