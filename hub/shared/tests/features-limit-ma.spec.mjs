@@ -47,29 +47,48 @@ test('PASTE PLANTED: lenient binary arm counts are refused as invalid input, nev
 });
 
 test('LAYOUT: the feature host does not shift the existing results or sensitivity plots', async ({ page }) => {
+  // Requirement on the real mounted page. This replaces a comparison page built by stripping the static
+  // <div id="alm-features"> from the HTML: core alm-revman.js and alm-examples.js now create a fallback
+  // host when the page has none, and alm-figpresets.js re-creates it from a MutationObserver after any
+  // removal, so a page without a host can no longer be built. Hiding every host (display:none) in the
+  // same page is the same "host absent" layout, without a reload that the core scripts would undo.
   await page.setViewportSize({ width: 1280, height: 900 });
-  async function capture() {
-    await page.goto(PAGE);
-    await page.evaluate(async () => {
-      await AlmLimitPlusReady;
-      AlmLimitPlusUI.run();
-      await document.fonts.ready;
-      await Promise.all(document.getAnimations().filter(a => a.effect.getComputedTiming().iterations !== Infinity).map(a => a.finished));
-    });
-    return page.evaluate(() => Object.fromEntries(['src', 'btn-run', 'plot', 'loo-plot', 'plus-forest', 'plus-funnel'].map(id => {
+  await page.goto(PAGE);
+  await page.evaluate(async () => {
+    await AlmLimitPlusReady;
+    AlmLimitPlusUI.run();
+    await document.fonts.ready;
+    await Promise.all(document.getAnimations().filter(a => a.effect.getComputedTiming().iterations !== Infinity).map(a => a.finished));
+  });
+  await expect(page.locator('#alm-features .alm-f-toggle')).toBeVisible();
+  const seen = await page.evaluate(() => {
+    const ids = ['src', 'btn-run', 'plot', 'loo-plot', 'plus-forest', 'plus-funnel'];
+    if (document.getElementById('results')) ids.push('results');
+    const boxes = () => Object.fromEntries(ids.map(id => {
       const n = document.getElementById(id), r = n.getBoundingClientRect();
       return [id, { x: r.x, y: r.y, width: r.width, height: r.height, svg: n.tagName.toLowerCase() === 'svg' ? n.innerHTML : null }];
-    })));
-  }
-  const mounted = await capture();
-  await expect(page.locator('#alm-features .alm-f-toggle')).toBeVisible();
-  await page.route('**/limit-ma/index.html', async route => {
-    const response = await route.fetch();
-    await route.fulfill({ response, body: (await response.text()).replace('<div id="alm-features"></div>', '') });
+    }));
+    const hosts = [...document.querySelectorAll('#alm-features, #alm-real-example-panel')];
+    // Plot containers: each plot's parent and its enclosing panel/section, plus the shared plot wrappers.
+    const containers = [document.querySelector('main'), document.getElementById('results'),
+      ...document.querySelectorAll('.plot-container, .chart-download-bar'),
+      ...['plot', 'loo-plot', 'plus-forest', 'plus-funnel'].flatMap(id => {
+        const n = document.getElementById(id);
+        return [n.parentElement, n.closest('.panel, section')];
+      })].filter(Boolean);
+    const misplaced = hosts.flatMap(h => containers.filter(c => c.contains(h))
+      .map(c => h.id + ' inside ' + (c.id ? '#' + c.id : c.tagName.toLowerCase())));
+    const mounted = boxes();
+    const previous = hosts.map(h => h.style.display);
+    hosts.forEach(h => { h.style.display = 'none'; });
+    const hidden = boxes();
+    hosts.forEach((h, i) => { h.style.display = previous[i]; });
+    return { hosts: hosts.map(h => h.id), misplaced, mounted, hidden };
   });
-  const withoutFeatureHost = await capture();
-  await expect(page.locator('#alm-features')).toHaveCount(0);
-  expect(mounted).toEqual(withoutFeatureHost);
+  // Not vacuous: the feature host is really mounted.
+  expect(seen.hosts).toContain('alm-features');
+  expect(seen.misplaced).toEqual([]);
+  expect(seen.mounted).toEqual(seen.hidden);
 });
 
 test('LIFECYCLE: report checks preserve pending input and completed leave-one-out', async ({ page }) => {
