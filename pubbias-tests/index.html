@@ -296,7 +296,8 @@
     function parseLines(text, names, check) {
       // Decimal separator (hub/shared/decimal-sep.js): "." leaves the text unchanged; "," rewrites tab/semicolon
       // rows to tab-separated "." numbers and refuses the rest (listed with the other unreadable lines).
-      var DS = window.AlmDecimalSep, prep = DS ? DS.prepare(text, DS.read('f-decsep'), { join: '\t' }) : null;
+      // typeof guard: this parser is also evaluated on its own, outside a page (alm-examples-native unit test).
+      var DS = typeof window !== 'undefined' ? window.AlmDecimalSep : null, prep = DS ? DS.prepare(text, DS.read('f-decsep'), { join: '\t' }) : null;
       if (prep) text = prep.text;
       var out = [], errors = prep ? prep.errors.map(function (e) { return 'line ' + e.line + ': ' + e.reason; }) : [], lines = String(text).split(/\r?\n/);
       var num = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
