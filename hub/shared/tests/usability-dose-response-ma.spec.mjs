@@ -183,12 +183,14 @@ test('U2 retains exact valid prediction controls and deliberate blank defaults',
   expect(result.knots).toEqual([0, 10, 30, 60]);
 });
 
-for (const state of ['empty data', 'one study', 'engine refusal']) {
+// 'one study' used to be refused here ("Enter at least 2 studies."). dosresmeta fits a single study (one-stage, fixed
+// effect), so the app now fits it with a small-k warning (Mahmood, 2026-10-31); that case is asserted in the next test.
+for (const state of ['empty data', 'engine refusal']) {
   test('U3 blocks every result and plot export after ' + state + ' and recovers automatically', async ({ page }) => {
     const data = await page.locator('#f-data').inputValue(), before = await resultJSON(page);
     if (state === 'engine refusal') await page.locator('#f-shape').selectOption('spline5');
-    else await page.locator('#f-data').fill(state === 'empty data' ? '' : data.split('\n').filter(line => line.startsWith('1,')).join('\n'));
-    await expectRefusal(page, state === 'engine refusal' ? 'at least 4 non-reference dose levels' : 'Enter at least 2 studies.');
+    else await page.locator('#f-data').fill('');
+    await expectRefusal(page, state === 'engine refusal' ? 'at least 4 non-reference dose levels' : 'Enter at least one study.');
     if (state === 'engine refusal') await page.locator('#f-shape').selectOption('linear');
     else await page.locator('#f-data').fill(data);
     expect(await resultJSON(page)).toBe(before);
@@ -208,6 +210,23 @@ for (const state of ['empty data', 'one study', 'engine refusal']) {
     expect((await svgDownload).suggestedFilename()).toBe('dose-response-ma-curve.svg');
   });
 }
+
+test('U3 one study is fitted as dosresmeta does, with a visible small-k warning, and recovers automatically', async ({ page }) => {
+  const data = await page.locator('#f-data').inputValue(), before = await resultJSON(page);
+  await page.locator('#f-data').fill(data.split('\n').filter(line => line.startsWith('1,')).join('\n'));
+  await expect(page.locator('#msgs .msg.warn')).toContainText(['Only 1 study: fitted as dosresmeta fits a single study (one-stage, fixed effect)']);
+  const one = await page.evaluate(() => window._almLastDoseResponse());
+  expect(one.k).toBe(1);
+  expect(one.approach).toBe('1stage');
+  expect(one.method).toBe('FE');
+  await expect(page.locator('#headline')).toContainText('k = 1 study, 4 non-reference doses');
+  await expect(page.locator('#analysis-status')).toBeVisible();
+  await page.locator('#f-data').fill(data);
+  expect(await resultJSON(page)).toBe(before);
+  await expect(page.locator('#msgs')).not.toContainText('Only 1 study');
+  await expect(page.locator('#analysis-status')).toBeVisible();
+  await expect(page.locator('#analysis-stale')).toBeHidden();
+});
 
 test('keyboard Tab reaches Run; Enter and Space rerun without a stale-wait state', async ({ page }) => {
   const before = await resultJSON(page);
