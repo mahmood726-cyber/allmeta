@@ -1056,9 +1056,10 @@
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
       // Restrict autosave to the original page: extras and feature-panel drafts are not autosaved,
       // so the saved key set and positional indices are those of the page without the extras.
+      // Feature-panel inputs (including RevMan) likewise belong outside this legacy snapshot and its event handlers.
       // Example selection is transient; exclude it before assigning draft indices.
       AlmAutosave.install({ appKey: 'pubbias-tests', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *):not(#alm-features *):not(#alm-real-example-panel *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *):not(#alm-real-example-panel *):not(#alm-features *)'; }) });
     }
   });
 })();
@@ -1090,5 +1091,8 @@
 <script src="alm-straight.js"></script>
 <script src="../shared/alm-examples.js"></script>
 <script src="alm-examples.js"></script>
+<script src="../shared/revman-reader.js"></script>
+<script src="../shared/alm-revman.js"></script>
+<script src="alm-revman.js"></script>
 </body>
 </html>
