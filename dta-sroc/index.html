@@ -903,8 +903,9 @@
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
       // Keep both auxiliary panels out of the original autosave. Their controls
       // must not shift legacy idx:N keys or trigger writes to the native draft.
+      // Example selection is transient; exclude it before assigning draft indices.
       AlmAutosave.install({ appKey: 'dta-sroc', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-features *)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-features *):not(#alm-real-example-panel *)'; }) });
     }
   });
 })();
@@ -940,5 +941,7 @@
 <script src="../shared/vendor/share-deflate.js"></script>
 <script src="../shared/alm-share.js"></script>
 <script src="alm-features.js"></script>
+<script src="../shared/alm-examples.js"></script>
+<script src="alm-examples.js"></script>
 </body>
 </html>
