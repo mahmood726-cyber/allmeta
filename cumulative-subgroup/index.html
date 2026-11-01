@@ -202,14 +202,14 @@
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
 
-    // A complete decimal/exponent token or NaN: parseFloat would read "0.1x" as 0.1 and "18-65" as 18, and Number would
-    // read "0x10" as 16, so a typo would be analysed as a different number without a note.
-    const NUMBER_TOKEN = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
-    function strictNumber(token) { const t = String(token == null ? "" : token).trim(); return NUMBER_TOKEN.test(t) ? Number(t) : NaN; }
-    // A year is a number, or a four-digit publication year with a one-letter suffix ("1994a", "1994b": two reports of
-    // one year), which is read as that year as before.
-    function yearNumber(token) { const t = String(token == null ? "" : token).trim(); return /^\d{4}[a-z]$/i.test(t) ? Number(t.slice(0, 4)) : strictNumber(t); }
     function parseStudies(text) {
+      // A complete decimal/exponent token or NaN: parseFloat would read "0.1x" as 0.1 and "18-65" as 18, and Number would
+      // read "0x10" as 16, so a typo would be analysed as a different number without a note.
+      const NUMBER_TOKEN = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+      function strictNumber(token) { const t = String(token == null ? "" : token).trim(); return NUMBER_TOKEN.test(t) ? Number(t) : NaN; }
+      // A year is a number, or a four-digit publication year with a one-letter suffix ("1994a", "1994b": two reports of
+      // one year), which is read as that year as before.
+      function yearNumber(token) { const t = String(token == null ? "" : token).trim(); return /^\d{4}[a-z]$/i.test(t) ? Number(t.slice(0, 4)) : strictNumber(t); }
       const studies=[], warnings=[];
       const lines = String(text||"").match(/(?:[^"\r\n]|"(?:[^"]|"")*")+/g) || [];
       for (let i=0;i<lines.length;i++) {
