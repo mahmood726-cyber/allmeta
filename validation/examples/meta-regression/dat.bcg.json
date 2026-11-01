@@ -1,0 +1,167 @@
+{
+  "source_package": "metadat",
+  "version": "1.6-0",
+  "dataset": "dat.bcg",
+  "citation": "Colditz GA et al. (1994). Efficacy of BCG vaccine in the prevention of tuberculosis: meta-analysis of the published literature. JAMA 271:698–702. doi:10.1001/jama.1994.03510330076038.",
+  "licence": "Data values are facts; cite the source paper and the R package. Package licence: GPL (>= 2).",
+  "source_url": "https://github.com/cran/metadat/blob/master/data/dat.bcg.rda",
+  "source_blob": "65156a2716521493f2c7e4a4bacf22deb4c120f3",
+  "columns": [
+    "trial",
+    "author",
+    "year",
+    "tpos",
+    "tneg",
+    "cpos",
+    "cneg",
+    "ablat",
+    "alloc"
+  ],
+  "values": [
+    {
+      "trial": 1,
+      "author": "Aronson",
+      "year": 1948,
+      "tpos": 4,
+      "tneg": 119,
+      "cpos": 11,
+      "cneg": 128,
+      "ablat": 44,
+      "alloc": "random"
+    },
+    {
+      "trial": 2,
+      "author": "Ferguson & Simes",
+      "year": 1949,
+      "tpos": 6,
+      "tneg": 300,
+      "cpos": 29,
+      "cneg": 274,
+      "ablat": 55,
+      "alloc": "random"
+    },
+    {
+      "trial": 3,
+      "author": "Rosenthal et al",
+      "year": 1960,
+      "tpos": 3,
+      "tneg": 228,
+      "cpos": 11,
+      "cneg": 209,
+      "ablat": 42,
+      "alloc": "random"
+    },
+    {
+      "trial": 4,
+      "author": "Hart & Sutherland",
+      "year": 1977,
+      "tpos": 62,
+      "tneg": 13536,
+      "cpos": 248,
+      "cneg": 12619,
+      "ablat": 52,
+      "alloc": "random"
+    },
+    {
+      "trial": 5,
+      "author": "Frimodt-Moller et al",
+      "year": 1973,
+      "tpos": 33,
+      "tneg": 5036,
+      "cpos": 47,
+      "cneg": 5761,
+      "ablat": 13,
+      "alloc": "alternate"
+    },
+    {
+      "trial": 6,
+      "author": "Stein & Aronson",
+      "year": 1953,
+      "tpos": 180,
+      "tneg": 1361,
+      "cpos": 372,
+      "cneg": 1079,
+      "ablat": 44,
+      "alloc": "alternate"
+    },
+    {
+      "trial": 7,
+      "author": "Vandiviere et al",
+      "year": 1973,
+      "tpos": 8,
+      "tneg": 2537,
+      "cpos": 10,
+      "cneg": 619,
+      "ablat": 19,
+      "alloc": "random"
+    },
+    {
+      "trial": 8,
+      "author": "TPT Madras",
+      "year": 1980,
+      "tpos": 505,
+      "tneg": 87886,
+      "cpos": 499,
+      "cneg": 87892,
+      "ablat": 13,
+      "alloc": "random"
+    },
+    {
+      "trial": 9,
+      "author": "Coetzee & Berjak",
+      "year": 1968,
+      "tpos": 29,
+      "tneg": 7470,
+      "cpos": 45,
+      "cneg": 7232,
+      "ablat": 27,
+      "alloc": "random"
+    },
+    {
+      "trial": 10,
+      "author": "Rosenthal et al",
+      "year": 1961,
+      "tpos": 17,
+      "tneg": 1699,
+      "cpos": 65,
+      "cneg": 1600,
+      "ablat": 42,
+      "alloc": "systematic"
+    },
+    {
+      "trial": 11,
+      "author": "Comstock et al",
+      "year": 1974,
+      "tpos": 186,
+      "tneg": 50448,
+      "cpos": 141,
+      "cneg": 27197,
+      "ablat": 18,
+      "alloc": "systematic"
+    },
+    {
+      "trial": 12,
+      "author": "Comstock & Webster",
+      "year": 1969,
+      "tpos": 5,
+      "tneg": 2493,
+      "cpos": 3,
+      "cneg": 2338,
+      "ablat": 33,
+      "alloc": "systematic"
+    },
+    {
+      "trial": 13,
+      "author": "Comstock et al",
+      "year": 1976,
+      "tpos": 27,
+      "tneg": 16886,
+      "cpos": 29,
+      "cneg": 17825,
+      "ablat": 33,
+      "alloc": "systematic"
+    }
+  ],
+  "notes": "Log risk ratio on absolute latitude in degrees; ecological moderator analysis.",
+  "source_documentation": "https://wviechtb.github.io/metadat/reference/dat.bcg.html"
+}

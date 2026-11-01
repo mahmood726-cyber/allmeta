@@ -899,8 +899,9 @@
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
       // The #alm-plus extras are kept out of the original autosave so its keys and
       // positional idx:N indices stay exactly as before the extras were added.
+      // Example selection is transient; exclude it before assigning draft indices.
       AlmAutosave.install({ appKey: 'dta-sroc', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#f-decsep)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (s) { return s + ':not(#alm-plus *):not(#alm-real-example-panel *):not(#f-decsep)'; }) });
     }
     // Decimal separator: kept out of the draft (its key set is unchanged) and restored with it (hub/shared/decimal-sep.js).
     if (window.AlmDecimalSep) window.AlmDecimalSep.persist('f-decsep', 'dta-sroc');
@@ -927,5 +928,7 @@
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>
+<script src="../shared/alm-examples.js"></script>
+<script src="alm-examples.js"></script>
 </body>
 </html>

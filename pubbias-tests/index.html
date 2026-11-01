@@ -1086,8 +1086,9 @@
     if (window.AlmAutosave && typeof AlmAutosave.install === "function") {
       // The shared default selectors, restricted to the original page: #alm-plus controls are not autosaved,
       // so the saved key set and positional indices are those of the page without the extras.
+      // Example selection is transient; exclude it before assigning draft indices.
       AlmAutosave.install({ appKey: 'pubbias-tests', selectors: ['textarea', 'select', 'input[type=text]', 'input[type=number]',
-        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *):not(#f-decsep)'; }) });
+        'input[type=checkbox]', 'input[type=radio]', 'input[type=range]'].map(function (sel) { return sel + ':not(#alm-plus *):not(#alm-real-example-panel *):not(#f-decsep)'; }) });
     }
     // Decimal separator: kept out of the draft (its key set is unchanged) and restored with it (hub/shared/decimal-sep.js).
     if (window.AlmDecimalSep) window.AlmDecimalSep.persist('f-decsep', 'pubbias-tests');
@@ -1108,5 +1109,7 @@
 <script src="../shared/alm-straight.js"></script>
 <script src="../shared/alm-straight-ui.js"></script>
 <script src="alm-straight.js"></script>
+<script src="../shared/alm-examples.js"></script>
+<script src="alm-examples.js"></script>
 </body>
 </html>
