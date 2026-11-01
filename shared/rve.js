@@ -198,6 +198,8 @@
       byCluster[c].push(i);
     }
     var m = clusterOrder.length; // N in robumeta (number of studies/clusters)
+    // One cluster carries no between-cluster information; robumeta fails here too ("infinite or missing values in 'x'").
+    if (m < 2) throw new Error("RVE: m<2; a single cluster gives no between-cluster information");
 
 
     // Per-cluster size k_j and mean sampling variance v̄_j.
@@ -272,12 +274,19 @@
       var denom = sumW - trace(matMul(f0.M, sumXWJWX));
       var termA = trace(matMul(f0.M, MWKXX));
       var termB = trace(matMul(f0.M, MwkXJ));
+      // With no more clusters than coefficients the moment estimator's denominator can be exactly zero (every
+      // predictor constant within its cluster). robumeta then fails ("infinite or missing values in 'x'"), so refuse
+      // rather than report a tau2 made of rounding noise. A perfect fit (numerator zero too) is left to the plain
+      // arithmetic, which reproduces robumeta's result.
+      var tau2Num = Qe - m + termA + rho * termB;
+      if (Math.abs(denom) <= 1e-9 * Math.abs(sumW) && Math.abs(tau2Num) > 1e-9 * m) throw new Error("RVE: tau2 not estimable; zero denominator in the CORR moment estimator");
       var term1 = (Qe - m + termA) / denom;
       var term2 = termB / denom;
       tau2 = Math.max(0, term1 + rho * term2);
     }
 
-    if (m <= p) throw new Error("RVE: m<=p; insufficient clusters for inference");
+    // m <= p is fitted exactly as robumeta::robu(small = TRUE) fits it (Mahmood 2026-10-31: match R, warn visibly);
+    // the app shows a few-clusters warning. Only designs R cannot fit are refused (m < 2, singular X'WX, tau2 above).
 
     // ---- Re-weighted fit with the RVE weights ----------------------------
     var weights = clusterWeights(tau2);
@@ -361,7 +370,8 @@
             if (jA === jB) traceB += dotv;
           }
         }
-        dfArr.push(sumSq > 0 ? (traceB * traceB) / sumSq : Math.max(1, m - p));
+        // sumSq = 0 only when the model reproduces every effect exactly (k <= p): robumeta's df is 0/0 = NaN there.
+        dfArr.push(sumSq > 0 ? (traceB * traceB) / sumSq : NaN);
       }
     }
 

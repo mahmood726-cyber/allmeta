@@ -2,8 +2,8 @@
 
 Checks the CORR working model with the default CR2 small-sample correction
 and Satterthwaite df (robumeta::robu(modelweights="CORR", small=TRUE)):
-cluster grouping, the refusal of designs with no more clusters than
-coefficients, Student-t intervals, tau^2 estimation and the dominance of
+cluster grouping, m <= p designs fitted as robumeta fits them (and the refusal
+of the designs robumeta cannot fit), Student-t intervals, tau^2 estimation and the dominance of
 clusters (not effects) in the robust SE. Full R parity is asserted in
 hub/shared/tests/rve-meta-cr2-parity.spec.mjs and the paper-15 corpus.
 """
@@ -48,11 +48,22 @@ def _run_node(script: str) -> object:
 # --- Cluster-grouping basics --------------------------------------------------
 
 
-def test_fitCORR_refuses_design_with_no_more_clusters_than_coefficients():
-    # Requirement: RVE needs m > p. Two clusters cannot support an intercept plus
-    # one predictor (m = 2, p = 2), so the fit must be refused, not reported.
+def test_fitCORR_fits_m_equal_p_as_robumeta_and_refuses_what_robumeta_cannot_fit():
+    # Requirement (Mahmood 2026-10-31: match R): m = p = 2 is fitted exactly as
+    # robumeta 2.1 robu(modelweights = "CORR", rho = 0.8, small = TRUE) fits it
+    # (R 4.6.0: b = 0.207269789983845, -0.00105008077544433; df = 1.07302231237323,
+    # 1.04812834224599). Designs robumeta cannot fit stay refused: one cluster, and
+    # m = p with the predictor constant within clusters (zero tau2 denominator);
+    # robumeta errors "infinite or missing values in 'x'" on both.
     out = _run_node(f"""
-        const rows = [
+        const fitRows = [
+          {{ cluster: "A", yi: 0.30, vi: 0.04, X: [1, 1] }},
+          {{ cluster: "A", yi: 0.40, vi: 0.05, X: [1, 2] }},
+          {{ cluster: "B", yi: 0.10, vi: 0.03, X: [1, 1] }},
+          {{ cluster: "B", yi: 0.15, vi: 0.02, X: [1, 3] }},
+        ];
+        const fit = M.fitCORR(fitRows, {{ rho: 0.8 }});
+        const constWithin = [
           {{ cluster: "A", yi: 0.1, vi: 0.04, X: [1, 1] }},
           {{ cluster: "A", yi: 0.2, vi: 0.04, X: [1, 1] }},
           {{ cluster: "A", yi: 0.3, vi: 0.04, X: [1, 1] }},
@@ -60,12 +71,19 @@ def test_fitCORR_refuses_design_with_no_more_clusters_than_coefficients():
           {{ cluster: "B", yi: 0.5, vi: 0.04, X: [1, 0] }},
           {{ cluster: "B", yi: 0.6, vi: 0.04, X: [1, 0] }},
         ];
-        let refused = null;
-        try {{ M.fitCORR(rows, {{ rho: 0.8, tau2: 0 }}); }} catch (e) {{ refused = e.message; }}
-        console.log(JSON.stringify({{ refused }}));
+        const one = [
+          {{ cluster: "A", yi: 0.30, vi: 0.04, X: [1] }},
+          {{ cluster: "A", yi: 0.40, vi: 0.05, X: [1] }},
+        ];
+        const refuse = rows => {{ try {{ M.fitCORR(rows, {{ rho: 0.8 }}); return null; }} catch (e) {{ return e.message; }} }};
+        console.log(JSON.stringify({{ beta: fit.beta, df: fit.df, m: fit.m_clusters, p: fit.p,
+          constWithin: refuse(constWithin), one: refuse(one) }}));
     """)
-    assert out["refused"] is not None, "m <= p design must be refused"
-    assert "m<=p" in out["refused"]
+    assert out["m"] == 2 and out["p"] == 2
+    assert out["beta"] == pytest.approx([0.207269789983845, -0.00105008077544433], rel=1e-6, abs=1e-9)
+    assert out["df"] == pytest.approx([1.07302231237323, 1.04812834224599], rel=1e-6)
+    assert out["constWithin"] is not None and "tau2 not estimable" in out["constWithin"]
+    assert out["one"] is not None and "m<2" in out["one"]
 
 
 def test_fitCORR_recognizes_balanced_clusters():

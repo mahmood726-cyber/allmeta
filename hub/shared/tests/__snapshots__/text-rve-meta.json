@@ -1,0 +1,18 @@
+{
+  "app": "rve-meta",
+  "source": "Built-in example; CORR, CR2, rho 0.8; intervention and dose_weeks predictors.",
+  "plain": "The analysis included 13 dependent effects in 5 clusters. A meta-regression accounted for dependence within each cluster. The intercept describes the estimated effect when every predictor is zero; it is not an overall pooled effect. The estimates describe associations and do not establish causation or clinical importance.",
+  "methods": "Effects and sampling variances on the supplied analysis scale were analysed using the Hedges–Tipton–Johnson correlated-effects (CORR) working model (Hedges, Tipton and Johnson 2010), with correlation ρ = 0.80. An intercept was added automatically. The between-cluster variance used the CORR moment estimator truncated at zero. Each effect was weighted by the reciprocal of the product of its cluster size and the sum of that cluster’s mean sampling variance and τ². Inference used the CR2 bias-reduced sandwich correction and coefficient-specific Satterthwaite degrees of freedom (Tipton 2015; Pustejovsky and Tipton 2018). Two-sided t tests compared each coefficient with zero; 95% confidence limits were the estimate plus or minus the corresponding t quantile times its robust standard error. The app applied no effect transformation or back-transformation. It computed no prediction interval or I² statistic. Analyses were run in allmeta rve-meta <build.version> (commit <build.shortSha>).",
+  "results": "There were 13 effects, 5 clusters and 3 coefficients. Between-cluster variance τ²(CORR) = 0.0000; working correlation ρ = 0.80. Coefficient 1: estimate 0.767, robust SE 0.222, t = 3.45, df = 1.50, 95% CI −0.570 to 2.104, p = 0.110. Coefficient 2: estimate −0.144, robust SE 0.155, t = −0.93, df = 1.15, 95% CI −1.602 to 1.313, p = 0.506. Coefficient 3: estimate −0.027, robust SE 0.010, t = −2.63, df = 1.52, 95% CI −0.087 to 0.033, p = 0.156. Coefficients follow the displayed table order, beginning with the intercept.",
+  "flags": [
+    "Coefficient 1: no clear evidence of a difference (the confidence interval includes no effect). This does not establish absence of an association.",
+    "Coefficient 2: no clear evidence of a difference (the confidence interval includes no effect). This does not establish absence of an association.",
+    "Coefficient 3: no clear evidence of a difference (the confidence interval includes no effect). This does not establish absence of an association.",
+    "For coefficients with low Satterthwaite degrees of freedom, p-values and confidence intervals may not be trustworthy (Satterthwaite df < 4; Tipton 2015)."
+  ],
+  "references": [
+    "Hedges LV, Tipton E, Johnson MC. Robust variance estimation in meta-regression with dependent effect size estimates. Research Synthesis Methods. 2010;1:39–65. https://doi.org/10.1002/jrsm.5",
+    "Tipton E. Small sample adjustments for robust variance estimation with meta-regression. Psychological Methods. 2015;20:375–393. https://doi.org/10.1037/met0000011",
+    "Pustejovsky JE, Tipton E. Small-sample methods for cluster-robust variance estimation and hypothesis testing in fixed effects models. Journal of Business & Economic Statistics. 2018;36:672–683. https://doi.org/10.1080/07350015.2016.1247004"
+  ]
+}

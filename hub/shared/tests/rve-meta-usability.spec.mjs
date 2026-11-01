@@ -121,8 +121,12 @@ test('D8: a missing predictor value names the column and says it is not imputed'
 
 test('D9: engine refusals are explained in plain language', async ({ page }) => {
   await open(page);
+  // 2 clusters for 2 coefficients: robumeta fits it (perfect fit, df NaN), so the app fits it and warns (Mahmood 2026-10-31).
   await fitWith(page, 'a,0.2,0.03,1\nb,0.4,0.04,2', { names: 'dose' });
-  await expect(page.locator('#meta-row')).toContainText('2 clusters cannot support 2 coefficients');
+  await expect(page.locator('#few-clusters-warning')).toContainText('2 clusters for 2 coefficients');
+  await expect(page.locator('#df-na-warning')).toContainText('df not estimable');
+  await fitWith(page, 'a,0.2,0.03\na,0.4,0.04', {});
+  await expect(page.locator('#meta-row')).toContainText('1 cluster cannot support 1 coefficient');
   await fitWith(page, 'a,0.2,0.03,1\nb,0.4,0.04,1\nc,0.1,0.02,1\nd,0.6,0.05,1', { names: 'dose' });
   await expect(page.locator('#meta-row')).toContainText('collinear');
   await expect(page.locator('#meta-row')).not.toContainText("X'WX");
