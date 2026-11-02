@@ -4051,21 +4051,108 @@ function gMAP(options){const c=config(options),binary=c.family==='binomial';let 
 function digamma(x){let s=0;while(x<10){s-=1/x;x++;}let r=1/x,r2=r*r;return s+Math.log(x)-r/2-r2*(1/12-r2*(1/120-r2/252));}
 function trigamma(x){let s=0;while(x<10){s+=1/(x*x);x++;}let r=1/x,r2=r*r;return s+r+r2/2+r*r2*(1/6-r2*(1/30-r2/42));}
 function betaMLE(a,b,lx,ly){for(let i=0;i<30;i++){let common=digamma(a+b),g1=digamma(a)-common-lx,g2=digamma(b)-common-ly,t=trigamma(a+b),aa=trigamma(a)-t,bb=trigamma(b)-t,det=aa*bb-t*t,da=(bb*g1+t*g2)/det,db=(t*g1+aa*g2)/det;let f=1;while(a-f*da<=1e-5||b-f*db<=1e-5)f/=2;a-=f*da;b-=f*db;if(Math.max(Math.abs(f*da)/a,Math.abs(f*db)/b)<1e-9)break;}return{a,b};}
-function fitMixture(result){const binary=result.settings.family==='binomial',nodes=result._nodes;
- const low=predQuantile(nodes,1e-10,false),high=predQuantile(nodes,1-1e-10,false),grid=[];
- for(const v of gl(768)){let t=(low+high)/2+(high-low)*v.x/2,d=latent(nodes,t,true),x=binary?expit(t):t;grid.push({x,w:d*v.w*(high-low)/2});}let mass=grid.reduce((s,v)=>s+v.w,0);grid.forEach(v=>v.w/=mass);
- // AIC uses 16,000 retained draws: assumed RBesT defaults of 4 chains,
- // 6,000 iterations minus 2,000 warmup. Needs version-specific oracle review;
- // this is NOT the preregistered oracle's deliberately larger 80,000 draws.
- const effectiveDraws=16000,candidates=[];let best;
- for(let K=1;K<=4;K++){let sd=result.predictive.sd,mean=result.predictive.mean,comps=[];for(let k=0;k<K;k++){let m=binary?Math.min(.999,Math.max(.001,mean+(k-(K-1)/2)*sd)):mean+(k-(K-1)/2)*sd;if(binary){let v=Math.min(m*(1-m)*.9,sd*sd/K),prec=Math.max(.1,m*(1-m)/v-1);comps.push({w:1/K,a:m*prec,b:(1-m)*prec});}else comps.push({w:1/K,m,s:sd/Math.sqrt(K)});}
- let last=-Infinity,ll=-Infinity,iterations=0;
- for(let iter=0;iter<600;iter++){let sums=comps.map(()=>({w:0,x:0,x2:0,lx:0,ly:0}));ll=0;const norms=comps.map(c=>binary?lbeta(c.a,c.b):Math.log(c.s*SQRT2PI));for(const g of grid){let lx=Math.log(g.x),ly=Math.log1p(-g.x),logs=comps.map((c,i)=>Math.log(c.w)+(binary?(c.a-1)*lx+(c.b-1)*ly-norms[i]:-.5*((g.x-c.m)/c.s)**2-norms[i])),mx=Math.max(...logs),z=logs.reduce((s,v)=>s+Math.exp(v-mx),0);ll+=g.w*(mx+Math.log(z));for(let k=0;k<K;k++){let w=g.w*Math.exp(logs[k]-mx)/z,a=sums[k];a.w+=w;a.x+=w*g.x;a.x2+=w*g.x*g.x;if(binary){a.lx+=w*lx;a.ly+=w*ly;}}}
- iterations=iter+1;if(iter>2&&Math.abs(ll-last)<1e-10)break;last=ll;
- comps=comps.map((c,k)=>{let s=sums[k],w=Math.max(s.w,1e-12);if(binary)return{w,...betaMLE(c.a,c.b,s.lx/w,s.ly/w)};let m=s.x/w;return{w,m,s:Math.sqrt(Math.max(1e-12,s.x2/w-m*m))};});let z=comps.reduce((s,c)=>s+c.w,0);comps.forEach(c=>c.w/=z);}
- let aic=2*(3*K-1)-2*effectiveDraws*ll,mix={family:binary?'beta':'normal',comps,sigma:result.settings.sigma},candidate={K,aic,logLikelihood:ll*effectiveDraws,iterations};candidates.push(candidate);if(!best||aic<best.aic)best={...candidate,mix};}
- return{...best.mix,fit:{K:best.K,effectiveDraws,candidates,gridMass:mass,defaultDrawsNeedsOracleReview:true}};
-}
+// RBesT 1.12-0 automixfit, ported (amendment A5, 2026-11-02). RBesT fits the MAP mixture to MCMC draws with
+// automixfit(): Nc = 1..4 components, model chosen by AIC with penalty k = 6 per parameter, EM_bmm_ab for beta
+// (a, b constrained > 1: constrain_gt1 = TRUE; knn initialisation; Niter.max 500; stop when the last 5 iterations'
+// logit weights move < 0.005 on average) and EM_mnmm for normal (initialised by the Student-t EM EM_msmm). The
+// page has no MCMC draws, so it applies the same algorithm to N deterministic stratified draws of its own
+// quadrature predictive (inverse CDF at (i - 0.5)/N, cubic Hermite inversion of an exact CDF/density table),
+// put in a fixed pseudo-random order (xoshiro128**, seed 36) because RBesT's knn start reads draws by position.
+// N defaults to RBesT's gMAP default of 4 chains x (6000 - 2000) / 4 = 4000 retained draws; a different MCMC
+// configuration (e.g. the validation oracle's 4 x 20000) is matched with fitMixture(result, {draws}).
+// The M-step solves RBesT's moment equations exactly (Newton) instead of Nelder-Mead; boundary solutions are
+// put at RBesT's floor a = 1 + 1e-8.
+const RB_DRAWS=4000,RB_SEED=36,RB_EPS=2.220446049250313e-16;
+function xoshiro128(seed){let s=seed>>>0;const sm=()=>{s=(s+0x9e3779b9)>>>0;let z=s;z=Math.imul(z^(z>>>16),0x85ebca6b)>>>0;z=Math.imul(z^(z>>>13),0xc2b2ae35)>>>0;return(z^(z>>>16))>>>0;};let a=sm(),b=sm(),c=sm(),d=sm();
+ return()=>{const r=Math.imul(((x=>(x<<7|x>>>25))(Math.imul(b,5)>>>0)),9)>>>0,t=(b<<9)>>>0;c^=a;d^=b;b^=c;a^=d;c^=t;d=(d<<11|d>>>21)>>>0;a>>>=0;b>>>=0;c>>>=0;return r/4294967296;};}
+function predictiveDraws(result,N,seed){const binary=result.settings.family==='binomial',nodes=result._nodes,M=400;
+ const lo=predQuantile(nodes,1e-10,false),hi=predQuantile(nodes,1-1e-10,false),xs=[],F=[],f=[];
+ for(let j=0;j<M;j++){let x=lo+(hi-lo)*j/(M-1);xs.push(x);F.push(latent(nodes,x));f.push(latent(nodes,x,true));}
+ for(let j=1;j<M;j++)if(F[j]<F[j-1])F[j]=F[j-1];
+ const out=new Float64Array(N);let j=0;
+ for(let i=0;i<N;i++){const u=(i+.5)/N;while(j<M-2&&F[j+1]<u)j++;let x;
+  if(u<=F[0])x=xs[0];else if(u>=F[M-1])x=xs[M-1];else{const h=xs[j+1]-xs[j],F0=F[j],F1=F[j+1],m0=f[j]*h,m1=f[j+1]*h,H=t=>{const t2=t*t,t3=t2*t;return(2*t3-3*t2+1)*F0+(t3-2*t2+t)*m0+(-2*t3+3*t2)*F1+(t3-t2)*m1;};
+   let a=0,b=1;for(let k=0;k<60;k++){const t=(a+b)/2;if(H(t)<u)a=t;else b=t;}x=xs[j]+h*(a+b)/2;}
+  out[i]=binary?expit(x):x;}
+ const rnd=xoshiro128(seed);for(let i=N-1;i>0;i--){const k=Math.floor(rnd()*(i+1)),t=out[i];out[i]=out[k];out[k]=t;}
+ return out;}
+const rSeqIdx=(N,Nc,Ninit)=>{const to=N-Nc,by=(to-1)/(Ninit-1),r=[];for(let i=0;i<Ninit;i++)r.push(i===Ninit-1?to:1+i*by);return r;};
+const rmean=a=>{let s=0;for(const v of a)s+=v;return s/a.length;},rvar=a=>{const m=rmean(a);let s=0;for(const v of a)s+=(v-m)**2;return s/(a.length-1);};
+function rbKnn(x,K,mu0){const N=x.length,tol=rvar(x)/5,mu=mu0.slice(),cl=new Int32Array(N);let J=Infinity,counts;
+ for(let iter=1;iter<50;iter++){const Jprev=J;counts=new Float64Array(K);const sums=new Float64Array(K);
+  for(let i=0;i<N;i++){let best=0,bd=(x[i]-mu[0])**2;for(let k=1;k<K;k++){const dd=(x[i]-mu[k])**2;if(dd<bd){bd=dd;best=k;}}cl[i]=best;counts[best]++;sums[best]+=x[i];}
+  for(let k=0;k<K;k++)mu[k]=sums[k]/(counts[k]===0?1:counts[k]);
+  J=0;for(let i=0;i<N;i++)J+=(x[i]-mu[cl[i]])**2;if(Jprev-J<tol)break;}
+ return{center:mu,p:Array.from(counts,v=>v/N),cluster:cl};}
+function epsConverged(run,order,rows,eps){// RBesT: mean |diff| over the last Neps stored parameter sets, per row and component
+ let count=0;for(const r of rows)for(let k=0;k<run[0][r].length;k++){const seq=order.map(i=>run[i][r][k]);let s=0;for(let i=1;i<seq.length;i++){const d=Math.abs(seq[i]-seq[i-1]);if(Number.isNaN(d))return 0;s+=d;}if(s/(seq.length-1)<eps[r])count++;}return count;}
+function betaMStep(c1,c2){// RBesT EM_bmm_ab M-step: digamma(a)-digamma(a+b)=c1, digamma(b)-digamma(a+b)=c2, a,b > 1
+ const res=(a,b)=>{const s=digamma(a+b);return[digamma(a)-s-c1,digamma(b)-s-c2];},S=(a,b)=>{const r=res(a,b);return r[0]*r[0]+r[1]*r[1];};
+ const g1=Math.exp(c1),g2=Math.exp(c2),den=Math.max(1-g1-g2,1e-12);let a=.5+g1/(2*den),b=.5+g2/(2*den);
+ for(let i=0;i<200;i++){const[r1,r2]=res(a,b),t=trigamma(a+b),aa=trigamma(a)-t,bb=trigamma(b)-t,det=aa*bb-t*t;let da=(bb*r1+t*r2)/det,db=(t*r1+aa*r2)/det,f=1;while(a-f*da<=1e-12*a||b-f*db<=1e-12*b)f/=2;a-=f*da;b-=f*db;if(Math.max(Math.abs(f*da)/a,Math.abs(f*db)/b)<1e-13)break;}
+ const fl=1+1e-8;if(a>=fl&&b>=fl)return{a,b};
+ const line=(fix,which)=>{let lo=-40,hi=40,g=v=>{const z=1+Math.exp(v);return which==='a'?S(fix,z):S(z,fix);};for(let i=0;i<200;i++){const m1_=lo+(hi-lo)/3,m2_=hi-(hi-lo)/3;if(g(m1_)<g(m2_))hi=m2_;else lo=m1_;}const z=Math.max(1+Math.exp((lo+hi)/2),fl);return which==='a'?{a:fix,b:z}:{a:z,b:fix};};
+ const cands=[line(fl,'a'),line(fl,'b'),{a:fl,b:fl}];return cands.reduce((m,c)=>S(c.a,c.b)<S(m.a,m.b)?c:m);}
+function emBeta(xin,Nc){const N=xin.length,x=Float64Array.from(xin,v=>v===0?RB_EPS:v===1?1-RB_EPS:v),Lx=Float64Array.from(x,Math.log),LxC=Float64Array.from(x,v=>Math.log1p(-v));
+ const ind=rSeqIdx(N,Nc,50),mu0=[];for(let k=0;k<Nc;k++){let s=0;for(const v of ind)s+=x[Math.floor(v+k-1)-1];mu0.push(s/ind.length);}
+ const KNN=rbKnn(x,Nc,mu0),mx=rmean(x),vx=rvar(x),muI=Array(Nc).fill(mx),vI=Array(Nc).fill(1.5*vx);
+ for(let k=0;k<Nc;k++){const sel=[];for(let i=0;i<N;i++)if(KNN.cluster[i]===k)sel.push(x[i]);if(sel.length>10){muI[k]=KNN.center[k];vI[k]=rvar(sel);}}
+ const nI=muI.map((m,k)=>{const v=m*(1-m)/vI[k]-1;return Number.isNaN(v)?1:Math.max(v,1);});let cmin=0;for(let k=1;k<Nc;k++)if(KNN.p[k]<KNN.p[cmin])cmin=k;
+ muI[cmin]=KNN.p.reduce((s,p,k)=>s+p*KNN.center[k],0);{const v=muI[cmin]*(1-muI[cmin])/vx-1;nI[cmin]=Number.isNaN(v)?1:Math.max(v,1);}
+ let w=KNN.p.slice(),a=nI.map((n,k)=>1+Math.max(n*muI[k]-1,1e-8)),b=nI.map((n,k)=>1+Math.max(n*(1-muI[k])-1,1e-8));
+ const la0=a.map(v=>Math.log(Math.max(v-1,1e-8))),lb0=b.map(v=>Math.log(Math.max(v-1,1e-8)));// RBesT never updates these rows
+ const Neps=5,run=Array.from({length:Neps},()=>[Array(Nc).fill(-Infinity),Array(Nc).fill(-Infinity),Array(Nc).fill(-Infinity)]),runOrder=[0,1,2,3,4],Npar=Nc===1?2:3*Nc,rows=Nc===1?[1,2]:[0,1,2];
+ const lli=new Float64Array(N*Nc),lnresp=new Float64Array(N);let iter=0,lliCur=0;
+ while(iter<500){const lb=a.map((v,k)=>Math.log(w[k])-lbeta(v,b[k]));lliCur=0;
+  for(let i=0;i<N;i++){let m=-Infinity;for(let k=0;k<Nc;k++){let v=(a[k]-1)*Lx[i]+(b[k]-1)*LxC[i]+lb[k];if(!(v>=-30))v=-30;lli[i*Nc+k]=v;if(v>m)m=v;}let s=0;for(let k=0;k<Nc;k++)s+=Math.exp(lli[i*Nc+k]-m);lnresp[i]=m+Math.log(s);lliCur+=lnresp[i];}
+  const order=runOrder.map((o,i)=>[o,i]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
+  if(iter>=Neps&&epsConverged(run,order,rows,[.005,.005,.005])===Npar)break;
+  const lz=[];for(let k=0;k<Nc;k++){let m=-Infinity;for(let i=0;i<N;i++){const v=lli[i*Nc+k]-lnresp[i];if(v>m)m=v;}let s=0;for(let i=0;i<N;i++)s+=Math.exp(lli[i*Nc+k]-lnresp[i]-m);lz.push(m+Math.log(s));}
+  w=lz.map(v=>Math.exp(v-Math.log(N)));
+  for(let k=0;k<Nc;k++){let c1=0,c2=0;for(let i=0;i<N;i++){const r=Math.exp(lli[i*Nc+k]-lnresp[i]-lz[k]);c1+=Lx[i]*r;c2+=LxC[i]*r;}const s=betaMStep(c1,c2);a[k]=s.a;b[k]=s.b;}
+  const slot=iter%Neps;run[slot]=[w.map(v=>Math.log(v/(1-v))),la0.slice(),lb0.slice()];runOrder[slot]=iter;iter++;}
+ const comps=w.map((v,k)=>({w:v,a:a[k],b:b[k]})).sort((p,q)=>q.w-p.w);return{comps,lli:lliCur,df:3*Nc-1,iterations:iter};}
+function brentFmin(f,ax,bx,tol){// R's optimize() (Brent_fmin, src/library/stats/src/optimize.c)
+ const c=(3-Math.sqrt(5))*.5,eps=Math.sqrt(2.220446049250313e-16);let a=ax,b=bx,v=a+c*(b-a),w=v,x=v,d=0,e=0,fx=f(x),fv=fx,fw=fx;const tol3=tol/3;
+ for(;;){const xm=(a+b)*.5,tol1=eps*Math.abs(x)+tol3,t2=tol1*2;if(Math.abs(x-xm)<=t2-(b-a)*.5)break;let p=0,q=0,r=0;
+  if(Math.abs(e)>tol1){r=(x-w)*(fx-fv);q=(x-v)*(fx-fw);p=(x-v)*q-(x-w)*r;q=(q-r)*2;if(q>0)p=-p;else q=-q;r=e;e=d;}
+  if(Math.abs(p)>=Math.abs(q*.5*r)||p<=q*(a-x)||p>=q*(b-x)){e=x<xm?b-x:a-x;d=c*e;}else{d=p/q;const u=x+d;if(u-a<t2||b-u<t2){d=tol1;if(x>=xm)d=-d;}}
+  const u=Math.abs(d)>=tol1?x+d:d>0?x+tol1:x-tol1,fu=f(u);
+  if(fu<=fx){if(u<x)b=x;else a=x;v=w;w=x;x=u;fv=fw;fw=fx;fx=fu;}else{if(u<x)a=u;else b=u;if(fu<=fw||w===x){v=w;fv=fw;w=u;fw=fu;}else if(fu<=fv||v===x||v===w){v=u;fv=fu;}}}
+ return x;}
+function emNormal(x,Nc){const N=x.length,logN=Math.log(N),ind=rSeqIdx(N,Nc,50),mu0=[];for(let k=0;k<Nc;k++){let s=0;for(const v of ind)s+=x[Math.floor(v+k-1)-1];mu0.push(s/ind.length);}
+ // EM_msmm (Student-t mixture EM, Niter.max 250, tol 0.1) provides RBesT's starting values
+ const KNN=rbKnn(x,Nc,mu0);let p=KNN.p.slice(),mu=KNN.center.slice(),nu=Array(Nc).fill(12),cv=Array(Nc).fill(0);const Xtau=Math.sqrt(rvar(x));let cmin=0;for(let k=1;k<Nc;k++)if(p[k]<p[cmin])cmin=k;
+ for(let k=0;k<Nc;k++){if(k===cmin)continue;const sel=[];for(let i=0;i<N;i++)if(KNN.cluster[i]===k)sel.push(x[i]);let tau=Xtau;if(sel.length>10){tau=Math.sqrt(rvar(sel));if(tau<=0)tau=Xtau;}tau=Math.max(tau,Xtau/100);cv[k]=tau*tau;}
+ cv[cmin]=Xtau*Xtau;mu[cmin]=p.reduce((s,v,k)=>s+v*mu[k],0);
+ const lli=new Float64Array(N*Nc),lnresp=new Float64Array(N),lU=new Float64Array(N*Nc),trace=[];let iter=0,Dlli=Infinity;
+ while(iter<250){for(let k=0;k<Nc;k++){const n=nu[k],cst=Math.log(p[k])+lgamma((n+1)/2)-lgamma(n/2)-.5*Math.log(PI*n)-.5*Math.log(cv[k]);for(let i=0;i<N;i++){let v=cst-(n+1)/2*Math.log1p((x[i]-mu[k])**2/(n*cv[k]));if(!(v>=-30))v=-30;lli[i*Nc+k]=v;}}
+  let cur=0;for(let i=0;i<N;i++){let m=-Infinity;for(let k=0;k<Nc;k++)if(lli[i*Nc+k]>m)m=lli[i*Nc+k];let s=0;for(let k=0;k<Nc;k++)s+=Math.exp(lli[i*Nc+k]-m);lnresp[i]=m+Math.log(s);cur+=lnresp[i];}trace.push(cur);
+  if(iter>1)Dlli=(trace[iter]-trace[iter-2])/2;if(Dlli<.1)break;
+  for(let k=0;k<Nc;k++)for(let i=0;i<N;i++)lU[i*Nc+k]=Math.log(nu[k]+1)-Math.log(nu[k]+(x[i]-mu[k])**2/cv[k]);
+  const lz=[],lw=[];for(let k=0;k<Nc;k++){let m1=-Infinity,m2=-Infinity;for(let i=0;i<N;i++){const l=lli[i*Nc+k]-lnresp[i];if(l>m1)m1=l;if(l+lU[i*Nc+k]>m2)m2=l+lU[i*Nc+k];}let s1=0,s2=0;for(let i=0;i<N;i++){const l=lli[i*Nc+k]-lnresp[i];s1+=Math.exp(l-m1);s2+=Math.exp(l+lU[i*Nc+k]-m2);}lz.push(m1+Math.log(s1));lw.push(m2+Math.log(s2));}
+  p=lz.map(v=>Math.exp(v-logN));{const z=p.reduce((s,v)=>s+v,0);p=p.map(v=>v/z);}
+  for(let k=0;k<Nc;k++){let c=0,m=0;for(let i=0;i<N;i++){const l=lli[i*Nc+k]-lnresp[i]+lU[i*Nc+k];c+=Math.exp(l-lz[k])*(x[i]-mu[k])**2;m+=Math.exp(l)*x[i];}cv[k]=Math.max(c,RB_EPS);mu[k]=m/Math.exp(lw[k]);}
+  for(let k=0;k<Nc;k++){let s=0;for(let i=0;i<N;i++){const l=lU[i*Nc+k];s+=Math.exp(lli[i*Nc+k]-lnresp[i])*(l-Math.exp(l));}const c1=1+s/Math.exp(lz[k]);
+   nu[k]=brentFmin(n=>(Math.log(n/2)-digamma(n/2)+c1+digamma((n+1)/2)-Math.log((n+1)/2))**2,0,150,Math.pow(2.220446049250313e-16,.25));}
+  iter++;}
+ let o=p.map((v,k)=>k).sort((i,j)=>p[j]-p[i]);p=o.map(k=>p[k]);mu=o.map(k=>mu[k]);cv=o.map(k=>cv[k]);
+ // EM_mnmm
+ const Neps=5,run=Array.from({length:Neps},()=>[Array(Nc).fill(-Infinity),Array(Nc).fill(-Infinity),Array(Nc).fill(-Infinity)]),runOrder=[0,1,2,3,4],Npar=Nc===1?2:3*Nc,rows=Nc===1?[1,2]:[0,1,2];let it=0,lliCur=0;
+ while(it<500){for(let k=0;k<Nc;k++){const cst=Math.log(p[k])-.5*Math.log(2*PI*cv[k]);for(let i=0;i<N;i++){let v=cst-.5*(x[i]-mu[k])**2/cv[k];if(!(v>=-30))v=-30;lli[i*Nc+k]=v;}}
+  lliCur=0;for(let i=0;i<N;i++){let m=-Infinity;for(let k=0;k<Nc;k++)if(lli[i*Nc+k]>m)m=lli[i*Nc+k];let s=0;for(let k=0;k<Nc;k++)s+=Math.exp(lli[i*Nc+k]-m);lnresp[i]=m+Math.log(s);lliCur+=lnresp[i];}
+  const order=runOrder.map((v,i)=>[v,i]).sort((a,b)=>a[0]-b[0]).map(q=>q[1]);if(it>=Neps&&epsConverged(run,order,rows,[.005,.005,.005])===Npar)break;
+  const lz=[];for(let k=0;k<Nc;k++){let m=-Infinity;for(let i=0;i<N;i++){const l=lli[i*Nc+k]-lnresp[i];if(l>m)m=l;}let s=0;for(let i=0;i<N;i++)s+=Math.exp(lli[i*Nc+k]-lnresp[i]-m);lz.push(m+Math.log(s));}
+  p=lz.map(v=>Math.exp(v-logN));{const z=p.reduce((s,v)=>s+v,0);p=p.map(v=>v/z);}
+  for(let k=0;k<Nc;k++){let sw=0,sx=0;const wt=new Float64Array(N);for(let i=0;i<N;i++){wt[i]=Math.exp(lli[i*Nc+k]-lnresp[i]-lz[k]);sw+=wt[i];}for(let i=0;i<N;i++)sx+=wt[i]/sw*x[i];let c=0;for(let i=0;i<N;i++)c+=wt[i]/sw*(x[i]-sx)**2;mu[k]=sx;cv[k]=Math.max(c,RB_EPS);}
+  const slot=it%Neps;run[slot]=[p.map(v=>Math.log(v/(1-v))),mu.slice(),cv.map(v=>Math.log(Math.sqrt(v)))];runOrder[slot]=it;it++;}
+ const comps=p.map((v,k)=>({w:v,m:mu[k],s:Math.sqrt(cv[k])})).sort((a,b)=>b.w-a.w);return{comps,lli:lliCur,df:3*Nc-1,iterations:it};}
+function fitMixture(result,options={}){const binary=result.settings.family==='binomial',N=options.draws??RB_DRAWS,seed=options.seed??RB_SEED;
+ if(!(Number.isInteger(N)&&N>=100))throw Error('draws must be an integer >= 100');
+ const x=predictiveDraws(result,N,seed),candidates=[];let best;
+ for(let K=1;K<=4;K++){const fit=binary?emBeta(x,K):emNormal(x,K),aic=-2*fit.lli+6*fit.df,candidate={K,aic,logLikelihood:fit.lli,iterations:fit.iterations};candidates.push(candidate);
+  if(!best||aic<best.aic)best={...candidate,mix:{family:binary?'beta':'normal',comps:fit.comps,sigma:result.settings.sigma}};}
+ return{...best.mix,fit:{K:best.K,method:'RBesT 1.12-0 automixfit (k = 6) on '+N+' stratified predictive draws',draws:N,seed,candidates}};}
 function exportR(options,weight,mapMean){let c=config(options),binary=c.family==='binomial';let code='# Deterministic page model reproduced by RBesT gMAP (MCMC results vary).\nlibrary(RBesT)\n';code+='d <- data.frame(study = seq_len('+c.data.length+'), '+(binary?'r = c('+c.data.map(d=>d.r).join(',')+'), n = c('+c.data.map(d=>d.n).join(',')+')':'y = c('+c.data.map(d=>d.y).join(',')+'), y.se = c('+c.data.map(d=>d.se).join(',')+')')+')\n';code+='fit <- gMAP('+(binary?'cbind(r, n - r) ~ 1 | study':'cbind(y, y.se) ~ 1 | study')+', data = d, family = '+(binary?'binomial':'gaussian')+', tau.dist = "HalfNormal", tau.prior = '+c.tauScale+', beta.prior = matrix(c('+c.betaMean+', '+c.betaSD+'), nrow = 1))\n';code+='map_prior <- automixfit(fit)\nrobust_prior <- robustify(map_prior, weight = '+weight+', mean = '+(binary?.5:mapMean)+(binary?'':', sigma = '+c.sigma)+')\n';code+='summary(map_prior)\nsummary(robust_prior)\nqmix(robust_prior, c(0.025, 0.5, 0.975))\n';for(const method of ['moment','morita','elir'])code+='ess(robust_prior, method = "'+method+'"'+(binary?'':', sigma = '+c.sigma)+')\n';return code;}
 return {normalPDF:pdf,normalCDF:cdf,normalQuantile:qnorm,logGamma:lgamma,incompleteBeta:ibeta,betaQuantile:(p,a,b)=>qmix({family:'beta',comps:[{w:1,a,b}]},p),dmix,pmix,qmix,summary,robustify,postmix,ess,gMAP,fitMixture,exportR,expit,logit};
 })();
