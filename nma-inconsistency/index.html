@@ -97,7 +97,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>NMA Inconsistency</h1>
-    <p>Detect inconsistency between direct and indirect evidence in network meta-analysis. Performs node-splitting (Dias et al. 2010) on every comparison with a closed loop, and a global design-by-treatment test (Higgins et al. 2012), restricted to independent two-arm studies.</p>
+    <p>Detect inconsistency between direct and indirect evidence in network meta-analysis. Performs node-splitting (Dias et al. 2010) on every comparison with a closed loop, and a global design-by-treatment test (Higgins et al. 2012). Multi-arm studies are supported when all their pairwise contrasts are entered.</p>
   </header>
   <main id="main">
     <section class="panel">
@@ -115,7 +115,7 @@ A, D, -0.50, 0.15
 B, D, -0.25, 0.18
 C, D, -0.35, 0.14
 A, D, -0.48, 0.14</textarea>
-        <span class="hint" id="src-hint">Independent two-arm studies only. Multiple rows per comparison allowed. Supply study IDs to detect repeated or multi-arm studies; correlated contrasts are unsupported.</span>
+        <span class="hint" id="src-hint">One row per two-arm study; multiple rows per comparison allowed. A multi-arm study needs a study ID and all k(k−1)/2 of its pairwise contrasts, consistent with one set of arm estimates and arm variances; incomplete or inconsistent multi-arm studies and repeated two-arm study IDs are refused.</span>
       </label>
       <p id="inco-input-msg" class="plus-msg" role="status" aria-live="polite"></p>
       <div id="inco-example" style="margin:0.2rem 0 0.6rem"><span class="plus-sub">Try real data (one click):</span> <span data-examples></span><p id="inco-example-note" class="plus-sub" aria-live="polite" style="margin:0.3rem 0 0"></p></div>
@@ -173,7 +173,7 @@ A, D, -0.48, 0.14</textarea>
       <section id="alm-validate" style="grid-column:1/-1"></section>
 </main>
   <footer>
-    For independent two-arm studies, removing each direct comparison gives the same split as netmeta back-calculation / SIDE at a fixed shared τ². RE global Q uses this consistency-model τ² as a preset; it is not the default within-design τ² test from decomp.design. Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-9 (relative; p-values 1e-9 absolute) on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; pinned replay in <code>validate/</code>; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-06-03):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. The DL path matches <code>netmeta(random=TRUE, method.tau="DL")</code> τ², network estimates and <code>netsplit()</code> using the generalized DerSimonian-Kacker/Jackson moment denominator (see <code>hub/shared/tests/nma-inconsistency-re-parity.spec.mjs</code>); PM uses the generalized Paule-Mandel <code>Q(τ²)=df</code> moment condition (validated to 1e-6 relative against the uncentred metafor equation, p-values 1e-9 absolute). Recommended k≥5 per design.
+    For independent two-arm studies, removing each direct comparison gives the same split as netmeta back-calculation / SIDE at a fixed shared τ². <strong>Multi-arm studies (2026-11-02):</strong> fitted by generalised least squares with the within-study covariance implied by their contrasts (netmeta's graph-theoretical method, Rücker 2012); node-splits use netsplit back-calculation and the global test uses decomp.design designs (each study's full treatment set); validated against netmeta 3.6-1 to 1e-6 absolute (<code>validate/multiarm-oracle.R</code>, <code>tests/multiarm-parity.mjs</code>). RE global Q uses this consistency-model τ² as a preset; it is not the default within-design τ² test from decomp.design. Node-splitting: Dias S et al. <em>Stat Med</em> 2010;29:932-944. Design-by-treatment inconsistency model: Higgins JPT, Jackson D, Barrett JK et al. <em>Res Synth Methods</em> 2012;3:98-110. <strong>R-parity:</strong> the fixed-effect engine matches <code>netmeta(common=TRUE)</code> + <code>netsplit()</code> + <code>decomp.design()</code> to 1e-9 (relative; p-values 1e-9 absolute) on network estimates, per-comparison direct/indirect/diff/z/p, and the design-by-treatment Q/df/p (exact χ²; pinned replay in <code>validate/</code>; see <code>hub/shared/tests/nma-inconsistency-parity.spec.mjs</code>). <strong>Random-effects (2026-06-03):</strong> select PM or DL above to use shared τ² inflated weights (τ² from the consistency-model residuals) for both consistency and inconsistency models — addresses the prior FE-only caveat. The DL path matches <code>netmeta(random=TRUE, method.tau="DL")</code> τ², network estimates and <code>netsplit()</code> using the generalized DerSimonian-Kacker/Jackson moment denominator (see <code>hub/shared/tests/nma-inconsistency-re-parity.spec.mjs</code>); PM uses the generalized Paule-Mandel <code>Q(τ²)=df</code> moment condition (validated to 1e-6 relative against the uncentred metafor equation, p-values 1e-9 absolute). Recommended k≥5 per design.
   </footer>
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -217,11 +217,16 @@ A, D, -0.48, 0.14</textarea>
         if (!studies.has(r.study)) studies.set(r.study, []);
         studies.get(r.study).push(r);
       }
-      for (const group of studies.values()) {
-        if (new Set(group.flatMap(r => [r.A, r.B])).size > 2)
-          return "Multi-arm studies are unsupported: correlated contrasts require study covariance.";
+      // A study ID with more than two treatments is a multi-arm study: accepted
+      // only when it supplies all k(k-1)/2 contrasts and they are consistent
+      // (maStudy). Repeated rows of a two-treatment study remain unsupported.
+      for (const [id, group] of studies) {
+        if (new Set(group.flatMap(r => [r.A, r.B])).size > 2) {
+          const s = maStudy(id, group);
+          if (s.issue) return s.issue;
+        }
       }
-      if ([...studies.values()].some(group => group.length > 1))
+      if ([...studies.values()].some(group => group.length > 1 && new Set(group.flatMap(r => [r.A, r.B])).size <= 2))
         return "Repeated study IDs are unsupported: enter one independent contrast per study.";
       const all = new Set(rows.flatMap(r => [r.A, r.B]));
       const seen = new Set([rows[0].A]);
@@ -313,6 +318,7 @@ A, D, -0.48, 0.14</textarea>
     function fitNMA(rows, refTrt, tau2) {
       // V9-06 RE option: callers may pass tau2 ≥ 0 to inflate weights to
       // w_i = 1/(SE² + τ²). Defaults to tau2=0 (FE) for backward compat.
+      if (hasMultiArm(rows)) return fitNMAMultiArm(rows, refTrt, tau2);
       const t2 = validTau2(tau2);
       const trtSet = new Set();
       rows.forEach(r => { trtSet.add(r.A); trtSet.add(r.B); });
@@ -342,6 +348,7 @@ A, D, -0.48, 0.14</textarea>
     // V9-06: τ² estimators using the consistency-model residuals. Caller
     // re-fits fitNMA with the estimated τ² to get RE-weighted estimates.
     function tau2_DL(rows) {
+      if (hasMultiArm(rows)) return tau2_DLMultiArm(rows);
       const fit0 = fitNMA(rows, null, 0);
       if (fit0.df <= 0) return 0;
       // Generalized DerSimonian-Laird / Jackson moment denominator for a
@@ -392,9 +399,255 @@ A, D, -0.48, 0.14</textarea>
       return 0;  // FE
     }
 
+    // --- Multi-arm studies (netmeta parity) ---------------------------------
+    // A study ID with more than two treatments is a multi-arm study. It must
+    // supply every one of its k(k-1)/2 pairwise contrasts, and they must be
+    // internally consistent: effects satisfy (A vs C) = (A vs B) + (B vs C) and
+    // the contrast variances decompose into non-negative arm variances
+    // (var(A vs B) = s2_A + s2_B), as in netmeta's chkmultiarm()/multiarm().
+    // The within-study covariance is then exact: in baseline coordinates
+    // (each treatment minus the study's first treatment in code-unit order)
+    //   Var(y_j) = s2_j + s2_1 + tau2,  Cov(y_j, y_l) = s2_1 + tau2/2,
+    // and every fit below is generalised least squares with that block
+    // covariance -- algebraically the graph-theoretical fit of netmeta
+    // (Ruecker 2012) and the aggregate model of nma_krahn()/decomp.design().
+    // Networks without a multi-arm study never enter this code: the two-arm
+    // functions above are unchanged.
+    var MA_TE_TOL = 1e-8;   // |observed - implied| contrast, relative to max(1, |te|)
+    var MA_VAR_TOL = 1e-8;  // contrast-variance decomposition residual, relative to max variance
+    function maGroups(rows) {
+      const studies = new Map();
+      for (const r of rows) {
+        if (!studies.has(r.study)) studies.set(r.study, []);
+        studies.get(r.study).push(r);
+      }
+      return studies;
+    }
+    function hasMultiArm(rows) {
+      for (const group of maGroups(rows).values())
+        if (group.length > 1 && new Set(group.flatMap(r => [r.A, r.B])).size > 2) return true;
+      return false;
+    }
+    function byCodeUnit(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+    // Validate one multi-arm study and return its baseline-coordinate summary.
+    function maStudy(id, group) {
+      const label = "“" + id + "”";
+      const trts = [...new Set(group.flatMap(r => [r.A, r.B]))].sort(byCodeUnit);
+      const k = trts.length, m = k * (k - 1) / 2;
+      const pairKey = r => JSON.stringify([r.A, r.B].sort(byCodeUnit));
+      const keys = group.map(pairKey);
+      if (new Set(keys).size !== keys.length)
+        return { issue: `Multi-arm study ${label} lists the same comparison more than once.` };
+      if (group.length !== m)
+        return { issue: `Multi-arm study ${label} has ${k} treatments but ${group.length} contrasts: all ${m} pairwise contrasts (k(k−1)/2) are required.` };
+      const pos = Object.fromEntries(trts.map((t, i) => [t, i]));
+      // effect of treatment t minus the baseline trts[0], read from the baseline rows
+      const y = Array(k).fill(0);
+      for (const r of group) {
+        if (r.B === trts[0]) y[pos[r.A]] = r.te;
+        else if (r.A === trts[0]) y[pos[r.B]] = -r.te;
+      }
+      let resid = 0, scale = 1;
+      for (const r of group) {
+        resid = Math.max(resid, Math.abs(r.te - (y[pos[r.A]] - y[pos[r.B]])));
+        scale = Math.max(scale, Math.abs(r.te));
+      }
+      if (!(resid <= MA_TE_TOL * scale))
+        return { issue: `Multi-arm study ${label} is internally inconsistent: its contrasts do not satisfy (A vs C) = (A vs B) + (B vs C) (largest discrepancy ${resid.toPrecision(3)}). Enter the contrasts of one consistent set of arm estimates.` };
+      // arm variances: least squares on var(i vs j) = s2_i + s2_j (exact for k = 3)
+      const AtA = zeros(k, k), Atc = Array(k).fill(0);
+      let vmax = 0;
+      for (const r of group) {
+        const i = pos[r.A], j = pos[r.B], v = r.se * r.se;
+        vmax = Math.max(vmax, v);
+        AtA[i][i] += 1; AtA[j][j] += 1; AtA[i][j] += 1; AtA[j][i] += 1;
+        Atc[i] += v; Atc[j] += v;
+      }
+      const s2 = matVec(invert(AtA), Atc);
+      let vres = 0;
+      for (const r of group) vres = Math.max(vres, Math.abs(r.se * r.se - s2[pos[r.A]] - s2[pos[r.B]]));
+      if (!(vres <= MA_VAR_TOL * vmax))
+        return { issue: `Multi-arm study ${label} has contrast standard errors that do not correspond to one set of arm variances (var(A vs B) = var(A) + var(B)). Enter the SEs computed from the same arm-level data.` };
+      if (s2.some(v => v < 0))
+        return { issue: `Multi-arm study ${label} implies a negative arm variance from its contrast standard errors; check the SEs.` };
+      return { id, trts, y, s2, multi: true };
+    }
+    // Every study in baseline coordinates; two-arm rows become one observation
+    // (second treatment in code-unit order minus the first).
+    function maStudies(rows) {
+      const out = [];
+      for (const [id, group] of maGroups(rows)) {
+        if (group.length === 1) {
+          const r = group[0];
+          const [a, b] = [r.A, r.B].sort(byCodeUnit);
+          out.push({ id, trts: [a, b], y: [0, r.A === b ? r.te : -r.te], v2: r.se * r.se, multi: false });
+        } else {
+          const s = maStudy(id, group);
+          if (s.issue) throw new RangeError(s.issue);
+          out.push(s);
+        }
+      }
+      return out;
+    }
+    // Covariance block of one study's baseline contrasts at tau2.
+    function maBlock(s, t2) {
+      const n = s.trts.length - 1;
+      if (!s.multi) return [[positiveNumber(s.v2 + t2)]];
+      const B = zeros(n, n);
+      for (let a = 0; a < n; a++) for (let b = 0; b < n; b++)
+        B[a][b] = finiteNumber(s.s2[0] + t2 / 2 + (a === b ? s.s2[a + 1] + t2 / 2 : 0));
+      return B;
+    }
+    // GLS of the consistency model (cols = treatments minus ref) or of any
+    // design matrix supplied as colOf(study, j) -> column index.
+    function maGLS(studies, nCols, colOf, sign, t2) {
+      const XtWX = zeros(nCols, nCols), XtWy = Array(nCols).fill(0);
+      const blocks = [];
+      for (const s of studies) {
+        const n = s.trts.length - 1;
+        const Vi = invert(maBlock(s, t2));
+        const X = Array.from({ length: n }, (_, j) => { const row = Array(nCols).fill(0); for (const [c, v] of colOf(s, j)) row[c] += v; return row; });
+        const yv = s.y.slice(1);
+        const XtVi = X[0].map((_, c) => Vi.map((_, b) => X.reduce((acc, xr, a) => acc + xr[c] * Vi[a][b], 0)));
+        for (let c = 0; c < nCols; c++) {
+          for (let d = 0; d < nCols; d++) XtWX[c][d] = finiteNumber(XtWX[c][d] + XtVi[c].reduce((acc, w, b) => acc + w * X[b][d], 0));
+          XtWy[c] = finiteNumber(XtWy[c] + XtVi[c].reduce((acc, w, b) => acc + w * yv[b], 0));
+        }
+        blocks.push({ s, X, Vi, yv });
+      }
+      const cov = invert(XtWX);
+      cov.forEach((r, i) => positiveNumber(r[i]));
+      const beta = matVec(cov, XtWy);
+      let Q = 0;
+      for (const b of blocks) {
+        b.fit = matVec(b.X, beta);
+        const r = b.yv.map((v, a) => v - b.fit[a]);
+        Q = finiteNumber(Q + r.reduce((acc, ra, a) => acc + ra * b.Vi[a].reduce((u, w, c) => u + w * r[c], 0), 0));
+      }
+      return { beta, cov, Q, blocks, XtWX };
+    }
+    function maConsistency(studies, refTrt, t2) {
+      const trtSet = new Set(studies.flatMap(s => s.trts));
+      let trts = [...trtSet].sort();
+      if (!refTrt || !trts.includes(refTrt)) refTrt = trts[0];
+      trts = [refTrt, ...trts.filter(t => t !== refTrt)];
+      const idx = Object.fromEntries(trts.map((t, i) => [t, i]));
+      const nBasic = trts.length - 1;
+      const colOf = (s, j) => {
+        const out = [], hi = idx[s.trts[j + 1]], lo = idx[s.trts[0]];
+        if (hi > 0) out.push([hi - 1, 1]);
+        if (lo > 0) out.push([lo - 1, -1]);
+        return out;
+      };
+      const g = maGLS(studies, nBasic, colOf, 1, t2);
+      const nObs = studies.reduce((a, s) => a + s.trts.length - 1, 0);
+      return { trts, idx, nBasic, refTrt, beta: g.beta, cov: g.cov, Q: g.Q, df: Math.max(0, nObs - nBasic), blocks: g.blocks, tau2: t2, nObs, multiArm: true };
+    }
+    function fitNMAMultiArm(rows, refTrt, tau2) {
+      return maConsistency(maStudies(rows), refTrt, validTau2(tau2));
+    }
+    // Generalised DerSimonian-Laird (netmeta method.tau = "DL"; Jackson, White &
+    // Riley 2012): tau2 = (Q - df) / (tr(W R) - tr(C X'W R W X)), where R is the
+    // tau2 structure (1 on the diagonal, 1/2 between a multi-arm study's contrasts).
+    function tau2_DLMultiArm(rows) {
+      const studies = maStudies(rows);
+      const fit0 = maConsistency(studies, null, 0);
+      if (fit0.df <= 0) return 0;
+      const p = fit0.nBasic;
+      let tr1 = 0;
+      const M = zeros(p, p);           // X' W R W X
+      for (const b of fit0.blocks) {
+        const n = b.yv.length;
+        const R = Array.from({ length: n }, (_, a) => Array.from({ length: n }, (_, c) => a === c ? 1 : 0.5));
+        const WR = matMul(b.Vi, R);
+        for (let a = 0; a < n; a++) tr1 = finiteNumber(tr1 + WR[a][a]);
+        const WRW = matMul(WR, b.Vi);
+        const XtWRW = transpose(b.X).map(xc => WRW[0].map((_, c) => xc.reduce((acc, x, a) => acc + x * WRW[a][c], 0)));
+        const T = matMul(XtWRW, b.X);
+        for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) M[i][j] = finiteNumber(M[i][j] + T[i][j]);
+      }
+      let tr2 = 0;
+      for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) tr2 = finiteNumber(tr2 + fit0.cov[i][j] * M[j][i]);
+      const denom = finiteNumber(tr1 - tr2);
+      if (denom <= 1e-12) return 0;
+      return finiteNumber(Math.max(0, (fit0.Q - fit0.df) / denom));
+    }
+    // netsplit(method = "Back-calculation") semantics. Direct: inverse-variance
+    // pool of every contrast of the pair (two-arm and multi-arm, unadjusted
+    // SE^2 + tau2). P = Var(network) / Var(direct); indirect =
+    // (network - P * direct) / (1 - P) with SE = SE(network) / sqrt(1 - P).
+    // P within sqrt(machine eps) of 1 (no indirect evidence) or above 1 leaves
+    // the comparison unsplit, as netmeta does.
+    function nodeSplitMultiArm(rows, refTrt, tau2) {
+      const t2 = validTau2(tau2);
+      const net = fitNMAMultiArm(rows, refTrt, t2);
+      const pairs = [];
+      for (const r of rows) { const k = JSON.stringify([r.A, r.B].sort()); if (!pairs.includes(k)) pairs.push(k); }
+      const netContrast = (a, b) => {   // a minus b, with variance
+        const ia = net.idx[a], ib = net.idx[b];
+        const ga = ia > 0 ? net.beta[ia - 1] : 0, gb = ib > 0 ? net.beta[ib - 1] : 0;
+        const vaa = ia > 0 ? net.cov[ia - 1][ia - 1] : 0, vbb = ib > 0 ? net.cov[ib - 1][ib - 1] : 0;
+        const vab = ia > 0 && ib > 0 ? net.cov[ia - 1][ib - 1] : 0;
+        return { mean: ga - gb, v: positiveNumber(vaa + vbb - 2 * vab) };
+      };
+      const results = [];
+      for (const key of pairs) {
+        const [a, b] = JSON.parse(key);
+        const direct = rows.filter(r => (r.A === a && r.B === b) || (r.A === b && r.B === a)).map(r => ({ ...r, te: r.A === a ? r.te : -r.te, A: a, B: b }));
+        const dirPool = ivPool(direct, t2);
+        const nc = netContrast(a, b);
+        const P = nc.v / (dirPool.se * dirPool.se);
+        if (!Number.isFinite(P) || Math.abs(P - 1) < 1.4901161193847656e-8 || P > 1) continue;
+        const ind = { mean: finiteNumber((nc.mean - P * dirPool.mean) / (1 - P)), se: positiveNumber(Math.sqrt(nc.v / (1 - P))) };
+        const diff = finiteNumber(dirPool.mean - ind.mean);
+        const seDiff = positiveNumber(Math.sqrt(dirPool.se * dirPool.se + ind.se * ind.se));
+        const z = finiteNumber(diff / seDiff);
+        const p = validProbability(pz(z));
+        const result = { comparison: `${a} vs ${b}`, direct: dirPool, indirect: ind, diff, seDiff, z, p,
+          kDirect: direct.length, kIndirect: rows.length - direct.length };
+        validateSplit(result);
+        results.push(result);
+      }
+      return results;
+    }
+    // Design-by-treatment interaction (decomp.design semantics): a design is
+    // the full treatment set of a study; the inconsistency model gives every
+    // design its own (narms - 1) contrasts. Q between designs = Q(consistency)
+    // - Q(designs) at the same tau2 (0 for FE: Q.decomp; the model tau2 for
+    // DL/PM: Q.inc.random.preset), on sum(narms_d - 1) - (n - 1) df.
+    function dbtMultiArm(rows, tau2) {
+      const t2 = validTau2(tau2);
+      const studies = maStudies(rows);
+      const cons = maConsistency(studies, null, t2);
+      const designKey = s => JSON.stringify(s.trts);
+      const designs = [];
+      const colStart = new Map();
+      let nCols = 0;
+      for (const s of studies) {
+        const k = designKey(s);
+        if (!colStart.has(k)) { colStart.set(k, nCols); designs.push(k); nCols += s.trts.length - 1; }
+      }
+      const full = maGLS(studies, nCols, (s, j) => [[colStart.get(designKey(s)) + j, 1]], 1, t2);
+      const dfFull = cons.nObs - nCols;
+      const dDf = Math.max(0, cons.df - dfFull);
+      const base = { Qtotal: cons.Q, dfTotal: cons.df, Qwithin: full.Q, dfWithin: dfFull, nDesigns: designs.length };
+      if (dDf === 0) return Object.assign({ Q: 0, df: 0, p: NaN, note: "No closed loops: inconsistency is not testable." }, base);
+      // Nested GLS projections: dQ = (fit_full - fit_cons)' V^-1 (fit_full - fit_cons).
+      let dQ = 0;
+      full.blocks.forEach((b, i) => {
+        const c = cons.blocks[i];
+        const d = b.fit.map((v, a) => v - c.fit[a]);
+        dQ = finiteNumber(dQ + d.reduce((acc, da, a) => acc + da * b.Vi[a].reduce((u, w, e) => u + w * d[e], 0), 0));
+      });
+      const result = Object.assign({ Q: dQ, df: dDf, p: 1 - chiSqCDF(dQ, dDf) }, base);
+      validateGlobal(result);
+      return result;
+    }
+
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
 
     function nodeSplit(rows, refTrt, tau2) {
+      if (hasMultiArm(rows)) return nodeSplitMultiArm(rows, refTrt, tau2);
       const pairs = new Set();
       for (const r of rows) { pairs.add(JSON.stringify([r.A, r.B].sort())); }
       const results = [];
@@ -455,6 +708,7 @@ A, D, -0.48, 0.14</textarea>
       // (basic-parameter contrasts only) against a full-design model that gives each design
       // its own contrast parameter. Q_cons − Q_full ~ χ² on df_cons − df_full.
       // V9-06: tau2 ≥ 0 uses RE-inflated weights w_i = 1/(SE² + τ²) for both models.
+      if (hasMultiArm(rows)) return dbtMultiArm(rows, tau2);
       const t2 = validTau2(tau2);
       const cons = fitNMA(rows, null, t2);
       const tagged = rows.map(r => ({ ...r, __design: JSON.stringify([r.A, r.B].sort()) }));

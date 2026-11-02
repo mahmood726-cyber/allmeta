@@ -12,6 +12,8 @@ FE/DL estimates, SEs, Q and tau² use `abs(App-R)/max(1,abs(R)) <= 1e-9`; PM-der
 
 The live tier rejects unsupported input and results that no longer correspond to the current input or model. It compares all numerical result fields and exact table/global text against the displayed result state, model controls and static page text. The pinned replay additionally checks the entire generated plot. R errors are refusals, never passes. The generated live scripts passed 115 quantities each for FE, DL and PM against native R on the archived Baker OR two-arm input; **the webR browser execution is not yet verified**.
 
+**Multi-arm support (2026-11-02).** The page now analyses complete, consistent multi-arm studies, so the 15 corpus configurations pinned with the refusal "Multi-arm studies are unsupported: correlated contrasts require study covariance." (Baker2009 OR/RR, Franchini2012 MD/SMD and dietaryfat IRR, each FE/DL/PM) no longer refuse. The corpus and reference files are unchanged. `tests/numerics-replay.mjs` now checks those 15 cases differently: the pre-change source must still reproduce the pinned refusal, and the current page must match the netmeta multi-arm oracle (`multiarm-oracle.json`, 1e-6 absolute; see `../README.md`). All other configurations keep the exact pre/post comparison. The browser replay (`adapter.js`, 4,627 checks) still pins those 15 refusals and the previous static page text (header, input hint, footer); it needs a browser re-derivation (`repin-pagetext.mjs` for the static text, a reference rebuild for the 15 cases) before it can pass again. The bus importer still refuses multi-arm bus networks.
+
 ## Declared deterministic replay
 
 **122 configurations / 4,627 checks**, comprising:

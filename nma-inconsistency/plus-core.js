@@ -29,6 +29,14 @@
   function fmtSigned(x, d = 2) { const s = fmt(x, d); return !finite(x) || Number(s) === 0 ? fmt(finite(x) ? 0 : x, d) : (x > 0 ? '+' : '') + s; }
   function fmtP(p) { return p === null || !finite(p) ? 'not testable' : p < 0.001 ? '< 0.001' : fmt(p, 3); }
 
+  // Studies in first-appearance order, and the multi-arm ones among them (a study
+  // ID whose rows span more than two treatments). Two-arm networks: one row each.
+  function studyIds(rows) { return [...new Set(rows.map(r => r.study))]; }
+  function multiArmCount(rows) {
+    const t = new Map();
+    for (const r of rows) { if (!t.has(r.study)) t.set(r.study, new Set()); t.get(r.study).add(r.A).add(r.B); }
+    return [...t.values()].filter(x => x.size > 2).length;
+  }
   // Identical sequence to the page's run(): gate, tau2, singular check, splits, global.
   function fitAll(E, rows, model) {
     const issue = E.inputIssue(rows);
@@ -36,8 +44,10 @@
     try {
       const tau2 = E.estimateTau2(rows, model); E.fitNMA(rows, undefined, tau2);
       const ns = E.nodeSplit(rows, undefined, tau2), g = E.dbt(rows, tau2);
-      return normalizeFit({ status: 'ok', model, tau2, k: rows.length,
-        trts: [...new Set(rows.flatMap(r => [r.A, r.B]))].sort(), nodeSplit: ns, dbt: g });
+      const nMulti = multiArmCount(rows);
+      return normalizeFit(Object.assign({ status: 'ok', model, tau2, k: rows.length,
+        trts: [...new Set(rows.flatMap(r => [r.A, r.B]))].sort(), nodeSplit: ns, dbt: g },
+        nMulti ? { multiArm: { studies: studyIds(rows).length, multiArm: nMulti } } : {}));
     }
     catch (_) { return { status: 'refused', reason: SINGULAR }; }
   }
@@ -51,6 +61,7 @@
       nodeSplit: f.nodeSplit.map(r => ({ comparison: r.comparison, direct: { mean: r.direct.mean, se: r.direct.se },
         indirect: { mean: r.indirect.mean, se: r.indirect.se }, diff: r.diff, seDiff: r.seDiff, z: r.z, p: r.p, kDirect: r.kDirect })).sort(byLabel),
       dbt: { Q: f.dbt.Q, df: f.dbt.df, p: finite(f.dbt.p) ? f.dbt.p : null },
+      ...(f.multiArm ? { multiArm: { studies: f.multiArm.studies, multiArm: f.multiArm.multiArm } } : {}),
     };
   }
 
@@ -73,13 +84,16 @@
     return out;
   }
   // Split into plan/drop so the page can run drops in chunks without blocking.
+  // A drop removes one whole study (all contrasts of a multi-arm study); with
+  // independent two-arm studies that is exactly one row, in row order.
   function looPlan(E, rows, model) {
-    const base = fitAll(E, rows, model);
-    return { model, rows, base, n: base.status === 'ok' ? rows.length : 0 };
+    const base = fitAll(E, rows, model), studies = studyIds(rows);
+    return { model, rows, base, studies, n: base.status === 'ok' ? studies.length : 0 };
   }
   function looDrop(E, plan, i) {
-    const rows = plan.rows.filter((_, j) => j !== i);
-    return summarizeDrop(plan.base, fitAll(E, rows, plan.model), plan.rows[i].study, i);
+    const study = plan.studies[i];
+    const rows = plan.rows.filter(r => r.study !== study);
+    return summarizeDrop(plan.base, fitAll(E, rows, plan.model), study, i);
   }
   function looFinish(plan, drops) {
     if (plan.base.status !== 'ok') return { status: 'refused', reason: plan.base.reason, model: plan.model };
@@ -181,7 +195,9 @@
     if (b.model === 'FE') out.push('Fixed-effect weights ignore between-study heterogeneity; when heterogeneity is present this inflates Q and makes node-split p-values too small. Compare with the random-effects results.');
     else out.push(`Random-effects weights fix τ² at the consistency-model ${b.model} estimate (${fmt(b.tau2, 4)}) for every test, including the global Q. That estimate can absorb inconsistency and its uncertainty is ignored, which tends to make the random-effects tests conservative.`);
     out.push('The comparison of fixed-effect and random-effects results below is a sensitivity analysis: prespecify the primary model rather than choosing it from these results.');
-    out.push('Inconsistency tests do not check transitivity (whether effect modifiers are balanced across comparisons). Only independent two-arm studies are supported; multi-arm studies would need their within-study correlation, and excluding them changes the network.');
+    out.push(b.multiArm
+      ? `Inconsistency tests do not check transitivity (whether effect modifiers are balanced across comparisons). ${b.multiArm.multiArm} multi-arm ${b.multiArm.multiArm === 1 ? 'study was' : 'studies were'} analysed with the within-study covariance implied by their contrasts, as netmeta does. With multi-arm studies a back-calculated "indirect" estimate can draw on the same multi-arm study as the direct estimate, so direct and indirect evidence are not fully separated.`
+      : 'Inconsistency tests do not check transitivity (whether effect modifiers are balanced across comparisons). Only independent two-arm studies are supported; multi-arm studies would need their within-study correlation, and excluding them changes the network.');
     return out;
   }
 
@@ -190,8 +206,11 @@
     const b = L && L.status === 'ok' ? L.base : state && state.base;
     if (!b || b.status !== 'ok') return '';
     const m = b.model, M = [], R = [];
-    M.push(`Inconsistency in the network of ${b.k} independent two-arm studies and ${b.trts.length} treatments was assessed with node-splitting (Dias et al. 2010), computed by back-calculation (König et al. 2013), for every comparison with both direct evidence and an indirect path, and with the global design-by-treatment interaction test (Higgins et al. 2012), using a ${MODEL_NAME[m]} model${m === 'FE' ? '' : '; τ² was estimated from the consistency model and fixed at that value for all tests, which ignores its uncertainty'}. Node-split p-values were not adjusted for multiplicity.`);
-    if (L && L.status === 'ok') M.push(`Sensitivity of the inconsistency conclusions was assessed by removing each study in turn${m === 'FE' ? '' : ' and re-estimating τ²'}, and all analyses were repeated under fixed-effect, DerSimonian-Laird and Paule-Mandel models. Analyses used the allmeta nma-inconsistency browser tool, whose node-split, design-by-treatment and leave-one-out results are validated against R netmeta 3.7-0 netsplit() and decomp.design() (relative tolerance 1e-9, 1e-6 for Paule-Mandel; p-values 1e-9 absolute).`);
+    const network = b.multiArm
+      ? `${b.multiArm.studies} studies (${b.multiArm.multiArm} multi-arm, entered as all their pairwise contrasts and analysed with the within-study covariance netmeta derives from them; ${b.k} contrasts)`
+      : `${b.k} independent two-arm studies`;
+    M.push(`Inconsistency in the network of ${network} and ${b.trts.length} treatments was assessed with node-splitting (Dias et al. 2010), computed by back-calculation (König et al. 2013), for every comparison with both direct evidence and an indirect path, and with the global design-by-treatment interaction test (Higgins et al. 2012), using a ${MODEL_NAME[m]} model${m === 'FE' ? '' : '; τ² was estimated from the consistency model and fixed at that value for all tests, which ignores its uncertainty'}. Node-split p-values were not adjusted for multiplicity.`);
+    if (L && L.status === 'ok') M.push(`Sensitivity of the inconsistency conclusions was assessed by removing each study in turn${m === 'FE' ? '' : ' and re-estimating τ²'}, and all analyses were repeated under fixed-effect, DerSimonian-Laird and Paule-Mandel models. Analyses used the allmeta nma-inconsistency browser tool, whose node-split, design-by-treatment and leave-one-out results are validated against R netmeta 3.7-0 netsplit() and decomp.design() (relative tolerance 1e-9, 1e-6 for Paule-Mandel; p-values 1e-9 absolute)${b.multiArm ? '; its multi-arm analysis is validated against netmeta 3.6-1 to 1e-6 absolute' : ''}.`);
     R.push(`The global design-by-treatment test gave Q = ${fmt(b.dbt.Q, 2)} on ${b.dbt.df} df (p = ${fmtP(b.dbt.p)})${m === 'FE' ? '' : ` with τ² = ${fmt(b.tau2, 4)}`}; ${b.nodeSplit.filter(s => sig(s.p)).length} of ${b.nodeSplit.length} node-split comparisons had p < 0.05${b.nodeSplit.filter(s => sig(s.p)).length ? ' (' + b.nodeSplit.filter(s => sig(s.p)).map(s => `${s.comparison}, p = ${fmtP(s.p)}`).join('; ') + ')' : ''}.`);
     if (L && L.status === 'ok') R.push(looSummary(L));
     if (C && C.status === 'ok') R.push(compareSummary(C));
