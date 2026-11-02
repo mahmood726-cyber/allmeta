@@ -53,7 +53,7 @@ test('each adapter emits its specified row layout through attachHero', () => {
     forest: ['bcg', 'Aronson 1948, -0.8893, 0.5706'],
     bma: ['bcg', 'Aronson 1948, -0.8893, 0.5706'],
     'effect-se-label': ['bcg', '-0.8893, 0.5706, Aronson 1948'],
-    glmm: ['eltrombopag', 'TRA-100773A, 0, 38, 4, 35'],
+    glmm: ['nissen2007', '49653/011, 2, 357, 0, 176'],
     'cross-design': ['bcg', 'Aronson 1948, -0.8893, 0.5706, rct'],
     'cross-network': ['bcg', 'BCG_vs_placebo, -0.8893, 0.3256, rct'],
     sequential: ['sequential_demo', '-0.4, 0.2, 200'],
