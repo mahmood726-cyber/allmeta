@@ -100,4 +100,24 @@ test('T13 D4 ELIR resolves narrow components next to wide ones (corpus mixtures;
  close(E.ess(B([0.826021711113513,321.777763886293,321.957211956551],[0.17397828888649,58.0791386117595,58.1312091074745]),'elir'),458.4742573127825,1e-9);
  close(E.ess(N(1,[0.200314490546545,5.02880775353515,0.053347053455209],[0.184733432260364,4.9861778058814,0.0426701298050324],[0.064303224925225,5.00275335899124,0.143020768365798],[0.050648852267866,4.92839072756179,0.0532488633832323],[0.5,4.99953462302813,1]),'elir'),92.32844675901578,1e-9);
 });
+test('T14 B2 MAP mixture = RBesT 1.12-0 automixfit (default 4000 draws, AIC k = 6, beta a,b > 1, R parity)',()=>{
+ // Requirement = RBesT 1.12-0 automixfit() on gMAP draws (source: automixfit, EM_bmm_ab, gMAP formals): Nc = 1..4
+ // chosen by AIC(k = 6); EM_bmm_ab constrain_gt1 = TRUE (every a, b > 1); gMAP default draws 4 chains x (6000 - 2000)
+ // / thin 4 = 4000. Parity: bin_k1_p0.05_s0.0 (r = 5, n = 100), RBesT automixfit on the oracle's 80,000 draws ->
+ // robustify(w = 0.2, mean = 0.5) Morita ESS 9.03176304229849 (validation/reference, RBesT 1.12-0); PREREG B2 10 %.
+ const model=E.gMAP({family:'binomial',data:[{r:5,n:100}],tauScale:1,betaMean:0,betaSD:2});
+ const mix=E.fitMixture(model);assert.equal(mix.fit.draws,4000,'default draws');
+ for(const c of mix.comps)assert.ok(c.a>1&&c.b>1,'constrain_gt1 violated: a='+c.a+' b='+c.b);
+ for(const c of mix.fit.candidates)close(c.aic,-2*c.logLikelihood+6*(3*c.K-1),1e-12);
+ const big=E.fitMixture(model,{draws:80000});for(const c of big.comps)assert.ok(c.a>1&&c.b>1,'constrain_gt1 violated (80000)');
+ const ess=E.ess(E.robustify(big,.2,.5),'morita');assert.ok(Math.abs(ess/9.03176304229849-1)<=.10,'Morita '+ess+' vs R 9.0318');
+});
+test('T15 B2 normal MAP mixture = RBesT automixfit (EM_msmm start, EM_mnmm), R parity on cont_k10_m0_s0.2',()=>{
+ // cont_k10_m0_s0.2: y_i = 0.2 qnorm((i - 0.5)/10), se = 1/sqrt(50), tau ~ HN(0.5), beta ~ N(0, 10), sigma = 1.
+ // RBesT automixfit on the oracle's 80,000 draws -> robustify(0.2, MAP mean, sigma 1) Morita 68.8807253024347.
+ const data=Array.from({length:10},(_,i)=>({y:.2*E.normalQuantile((i+.5)/10),se:1/Math.sqrt(50)}));
+ const model=E.gMAP({family:'normal',data,tauScale:.5,betaMean:0,betaSD:10,sigma:1}),mix=E.fitMixture(model,{draws:80000});
+ for(const c of mix.fit.candidates)close(c.aic,-2*c.logLikelihood+6*(3*c.K-1),1e-12);
+ const sm=E.summary(mix),ess=E.ess(E.robustify(mix,.2,sm.mean,1,1),'morita');assert.ok(Math.abs(ess/68.8807253024347-1)<=.10,'Morita '+ess+' vs R 68.88');
+});
 console.log(`${passed}/${total} PASS; page=${page}`);process.exitCode=passed===total?0:1;
