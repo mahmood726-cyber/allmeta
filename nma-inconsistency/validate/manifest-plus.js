@@ -22,15 +22,15 @@ window.AlmIncoPlusManifest = {
     },
     {
       "path": "validate/corpus/reference.json",
-      "sha256": "aa0e07ae7f6885dcd0f6c5eeff93b4d01658ad82858ed7dcf4184723c16f8787",
-      "bytes": 852554
+      "sha256": "e30029d6d883d19f2c70cef6c33aaf855c1f06c9454d4532c43d3ffb4eb80b2c",
+      "bytes": 1038732
     }
   ],
   "configurations": 153,
   "loop_configurations": 144,
   "drop_fits": 5016,
   "estimator_triples": 97,
-  "checks": 643413,
+  "checks": 643443,
   "referenceVersions": {
     "R": "4.6.0",
     "netmeta": "3.7.0",
