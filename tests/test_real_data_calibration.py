@@ -40,49 +40,117 @@ def _run_node(script: str) -> object:
     return json.loads(lines[-1])
 
 
-# --- Stijnen 2010 eltrombopag (rare-events GLMM) ---------------------------
+# --- Nissen & Wolski 2007 rosiglitazone MI (rare-events GLMM) --------------
+#
+# Replaced 2026-11-02. The former example "Eltrombopag (Stijnen 2010)" was
+# unsourced: Stijnen, Hamza & Ozdemir 2010 (Stat Med 29:3046-3067) analyse the
+# Niel-Weise catheter data (metadat dat.nielweise2007 / dat.nielweise2008), not
+# eltrombopag, and the rows named trials published after 2010 (one of them a
+# single-arm extension with no placebo arm). Its anchors were "locked from this
+# JS implementation", i.e. self-referential. The example is now metadat
+# dat.nissen2007 (myocardial infarction counts) and every number below comes
+# from R: hub/shared/tests/fixtures/hero-nissen2007-reference.R -> .out / -rows.json
+# (R 4.6.0, metafor 5.2.1, metadat 1.6.0).
+
+FIXTURES = ROOT / "hub" / "shared" / "tests" / "fixtures"
+# The app's existing GLMM parity tolerance: Playwright toBeCloseTo(x, 4) in
+# hub/shared/tests/rare-events-glmm-parity.spec.mjs, i.e. |diff| < 5e-5.
+GLMM_TOL = 5e-5
 
 
-def test_eltrombopag_glmm_conditional_anchor():
-    """Rare-events GLMM (conditional CM.AL) on Stijnen 2010 Table 1.
-    Anchor: log-OR θ̂ should be near -1.5 (eltrombopag protective).
-    Oracle values locked 2026-05-25 from this JS implementation."""
+def _r_glmm_reference() -> dict:
+    """Parse hero-nissen2007-reference.out into {(model, drop00): {field: value}}."""
+    ref = {}
+    text = (FIXTURES / "hero-nissen2007-reference.out").read_text(encoding="utf-8")
+    for line in text.splitlines():
+        parts = line.split()
+        if not parts or parts[0] not in ("UM.FS", "CM.AL"):
+            continue
+        fields = dict(p.split("=", 1) for p in parts[1:])
+        key = (parts[0], fields.pop("drop00"))
+        ref[key] = {k: float(v) for k, v in fields.items()}
+    assert ("UM.FS", "TRUE") in ref and ("UM.FS", "FALSE") in ref, ref
+    return ref
+
+
+def _metadat_rows() -> list:
+    return json.loads((FIXTURES / "hero-nissen2007-rows.json").read_text(encoding="utf-8"))
+
+
+def _assert_matches_r(app: dict, r: dict) -> None:
+    for app_key, r_key in (("theta", "theta"), ("se_theta", "se"), ("OR", "OR"),
+                           ("OR_lo", "OR_lo"), ("OR_hi", "OR_hi")):
+        assert abs(app[app_key] - r[r_key]) < GLMM_TOL, (
+            f"{app_key}: app {app[app_key]!r} vs metafor {r[r_key]!r} "
+            f"(diff {app[app_key] - r[r_key]:.3e}, tolerance {GLMM_TOL})")
+    assert r["tau2"] == 0.0 and app["tau2"] < 1e-4   # metafor: tau^2 = 0 at the optimum
+
+
+def test_rare_events_example_is_metadat_nissen2007_row_for_row():
+    """The glmm one-click example is metadat::dat.nissen2007 (MI), every row in order."""
+    out = _run_node(f"""
+        const D = require({json.dumps(str(ROOT / "shared" / "canonical-datasets.js"))});
+        const H = require({json.dumps(str(ROOT / "shared" / "hero-examples.js"))});
+        const key = H.MANIFESTS.glmm[0].key;
+        const ds = D.get(key);
+        console.log(JSON.stringify({{ key: key, name: ds && ds.name, citation: ds && ds.citation,
+          measure: ds && ds.measure, rows: ds && ds.binary_2x2 }}));
+    """)
+    assert out["key"] == "nissen2007"
+    assert out["measure"] == "OR"
+    assert "Nissen" in out["name"] and "Nissen" in out["citation"]
+    assert "dat.nissen2007" in out["citation"]
+    rows = [{k: r[k] for k in ("label", "events_T", "n_T", "events_C", "n_C")} for r in out["rows"]]
+    assert rows == _metadat_rows()
+    assert len(rows) == 42
+
+
+def test_nissen2007_glmm_umfs_matches_metafor_on_its_analysis_set():
+    """Rewritten 2026-11-02 (was a self-referential CM.AL anchor on the unsourced
+    eltrombopag rows). The app's documented default estimator, UM.FS (ML), must equal
+    metafor::rma.glmm(measure="OR", model="UM.FS") on the 38 studies metafor fits
+    (its default drop00=TRUE removes the 4 studies with no events in either arm)."""
+    ref = _r_glmm_reference()[("UM.FS", "TRUE")]
     out = _run_node(f"""
         const D = require({json.dumps(str(ROOT / "shared" / "canonical-datasets.js"))});
         const G = require({json.dumps(str(ROOT / "shared" / "rare-events-glmm.js"))});
-        const ds = D.get("eltrombopag");
-        const r = G.fit(ds.binary_2x2);
-        console.log(JSON.stringify({{
-          ok: r.ok, theta: r.theta, OR: r.OR,
-          tau2: r.tau2, k: r.k, zeros: r.n_zero_cell_studies,
-        }}));
+        const rows = D.get("nissen2007").binary_2x2.filter(r => !(r.events_T === 0 && r.events_C === 0));
+        const r = G.fitUnconditional(rows);
+        console.log(JSON.stringify(r));
     """)
     assert out["ok"] is True
-    assert out["k"] == 7
-    assert out["zeros"] == 3   # three trials with zero events in T arm
-    # Direction: eltrombopag protective vs placebo → θ < 0, OR < 1.
-    assert out["theta"] < 0
-    assert 0.05 < out["OR"] < 0.5
-    # Heterogeneity moderate, not huge.
-    assert 0 <= out["tau2"] < 5
+    assert out["model"] == "UM.FS"
+    assert out["k"] == int(ref["k"]) == 38
+    _assert_matches_r(out, ref)
 
 
-def test_eltrombopag_glmm_unconditional_consistent_with_conditional():
-    """UM.FS (unconditional) should give a θ̂ in the same direction
-    and within ~0.5 of the conditional fit on this rare-events data."""
+@pytest.mark.xfail(strict=True, reason=(
+    "Known engine defect, reported 2026-11-02, fix needs Mahmood's decision because it changes "
+    "served numbers: fitUnconditional keeps studies with no events in either arm and profiles "
+    "their baseline only within seed+/-4, so they still pull theta (app 0.35279 vs metafor "
+    "0.35535 with or without drop00). The one-click example serves all 42 rows."))
+def test_nissen2007_glmm_served_rows_match_metafor():
+    """Rewritten 2026-11-02 (was a self-referential UM.FS-vs-CM.AL consistency check).
+    What the page serves after the one-click load (all 42 rows, including the 4
+    double-zero studies) must equal metafor UM.FS, which gives the same estimate
+    whether those studies are dropped or kept (drop00=FALSE, k=42)."""
+    ref = _r_glmm_reference()[("UM.FS", "FALSE")]
     out = _run_node(f"""
         const D = require({json.dumps(str(ROOT / "shared" / "canonical-datasets.js"))});
         const G = require({json.dumps(str(ROOT / "shared" / "rare-events-glmm.js"))});
-        const ds = D.get("eltrombopag");
-        const cond = G.fit(ds.binary_2x2);
-        const uncond = G.fitUnconditional(ds.binary_2x2);
-        console.log(JSON.stringify({{
-          cond_theta: cond.theta, uncond_theta: uncond.theta,
-          cond_OR: cond.OR, uncond_OR: uncond.OR,
-        }}));
+        const r = G.fitUnconditional(D.get("nissen2007").binary_2x2);
+        console.log(JSON.stringify(r));
     """)
-    assert (out["cond_theta"] < 0) == (out["uncond_theta"] < 0)
-    assert abs(out["cond_theta"] - out["uncond_theta"]) < 0.5
+    assert out["ok"] is True
+    _assert_matches_r(out, ref)
+
+
+def test_no_unsourced_eltrombopag_example_remains():
+    """The unsourced example must not come back as data."""
+    for rel in ("shared/canonical-datasets.js", "shared/hero-examples.js"):
+        text = (ROOT / rel).read_text(encoding="utf-8").lower()
+        assert "eltrombopag" not in text, rel
+        assert "tra-100773" not in text, rel
 
 
 # --- Berkey BCG vaccine (cross-design + forest) ----------------------------
@@ -250,7 +318,8 @@ def test_canonical_datasets_index_complete():
     """)
     assert out["ok"] is True
     assert len(out["keys"]) >= 6
-    assert "eltrombopag" in out["keys"]
+    assert "nissen2007" in out["keys"]
+    assert "eltrombopag" not in out["keys"]
     assert "bcg" in out["keys"]
     assert "smoking" in out["keys"]
 
@@ -261,12 +330,12 @@ def test_dataset_adapters_emit_parseable_textareas():
     out = _run_node(f"""
         const D = require({json.dumps(str(ROOT / "shared" / "canonical-datasets.js"))});
         const bcg = D.get("bcg");
-        const elt = D.get("eltrombopag");
+        const mi = D.get("nissen2007");
         const seq = D.get("sequential_demo");
         const sg = D.get("subgroup_demo");
         console.log(JSON.stringify({{
           forest: D.toForestPlotText(bcg).split("\\n").length,
-          glmm: D.toGlmmTextarea(elt).split("\\n").length,
+          glmm: D.toGlmmTextarea(mi).split("\\n").length,
           xdesign: D.toCrossDesignText(bcg).split("\\n").length,
           xnet: D.toCrossNetworkText(bcg).split("\\n").length,
           seq: D.toSequentialMaText(seq).split("\\n").length,
@@ -274,7 +343,7 @@ def test_dataset_adapters_emit_parseable_textareas():
         }}));
     """)
     assert out["forest"] == 13   # BCG: 13 trials
-    assert out["glmm"] == 7      # eltrombopag: 7 trials
+    assert out["glmm"] == 42     # Nissen & Wolski 2007: 42 trials
     assert out["xdesign"] == 13
     assert out["xnet"] == 13
     assert out["seq"] == 5
