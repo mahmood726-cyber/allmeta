@@ -572,22 +572,24 @@ class MarkovEngine {
                 }
             }
 
-            // Apply half-cycle correction
+            // Within-cycle correction. Rewards are evaluated at time points t = 0..N (N = totalCycles); each method
+            // must cover exactly N cycles of person-time:
+            //   'trapezoidal'   weight 0.5 at t = 0 and t = N, 1 in between (heemod "life-table");
+            //   'start'/'none'  start-of-cycle membership, t = 0..N-1 (heemod "beginning");
+            //   'end'           end-of-cycle membership, t = 1..N (heemod "end").
             let hccFactor = 1.0;
             if (hccMethod === 'trapezoidal') {
                 if (cycle === 0 || cycle === totalCycles) {
                     hccFactor = 0.5;
                 }
-            } else if (hccMethod === 'start') {
-                if (cycle === 0) {
-                    hccFactor = 0.5;
-                }
             } else if (hccMethod === 'end') {
-                if (cycle === totalCycles) {
-                    hccFactor = 0.5;
+                if (cycle === 0) {
+                    hccFactor = 0;
                 }
+            } else if (cycle === totalCycles) {
+                // 'start' and 'none' (and any unrecognised value): the state at t = N starts no further cycle
+                hccFactor = 0;
             }
-            // 'none' = no adjustment
 
             // Life-years should represent time alive. By default, absorbing
             // dead states contribute zero LY unless explicitly overridden.
