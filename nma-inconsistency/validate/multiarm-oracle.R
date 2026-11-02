@@ -194,6 +194,22 @@ p <- pairwise(list(treat1, treat2, treat3), event = list(event1, event2, event3)
               data = smokingcessation, sm = "OR")
 datasets[[length(datasets) + 1]] <- fit_all("smokingcessation-OR", "netmeta::smokingcessation via pairwise(sm='OR')", from_pairwise(p))
 
+## (1b-1d) rounded and planted variants: netmeta's tol.multiarm = 0.001 is an
+## ABSOLUTE bound on the projection residual TE - B ginv(B) TE of each
+## multi-arm study (chkmultiarm); contrast variances are checked only if
+## tol.multiarm.se is set (default NULL), but a negative implied arm variance
+## always stops. Rounding to 3 decimals stays inside the tolerance (and makes
+## the 4-arm study's SEs inconsistent); rounding to 2 decimals and a planted
+## +0.01 are the cases netmeta must decide.
+syn <- from_pairwise(pairwise(treat = treat, n = n, mean = mean, sd = sd, studlab = studlab, data = long, sm = "MD"))
+rnd <- function(d, digits) { d$te <- round(d$te, digits); d$se <- round(d$se, digits); d }
+datasets[[length(datasets) + 1]] <- fit_all("synthetic-rounded-3dp", "synthetic network, te and se rounded to 3 decimals", rnd(syn, 3))
+datasets[[length(datasets) + 1]] <- fit_all("synthetic-rounded-2dp", "synthetic network, te and se rounded to 2 decimals", rnd(syn, 2))
+smk <- from_pairwise(p)
+datasets[[length(datasets) + 1]] <- fit_all("smokingcessation-rounded-2dp", "smokingcessation OR contrasts rounded to 2 decimals", rnd(smk, 2))
+pl <- syn; i <- which(pl$study == "S01")[1]; pl$te[i] <- pl$te[i] + 0.01
+datasets[[length(datasets) + 1]] <- fit_all("synthetic-planted-0.01", "synthetic network, one S01 contrast + 0.01", pl)
+
 ## (3) Woods2010 (OR, events/n, a 4-arm study)
 data(Woods2010)
 p <- pairwise(treatment, event = r, n = N, studlab = author, data = Woods2010, sm = "OR")
