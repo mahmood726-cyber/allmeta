@@ -73,6 +73,41 @@ def test_non_ph_intervals_are_independent_and_pooled():
     assert min(b1, b2) < bp < max(b1, b2)
 
 
+def _lh(e, pt, cc=0.5):
+    return math.log((e + cc) / pt)
+
+
+def test_multi_arm_interval_is_fitted():
+    # A 3-arm trial must be fitted, not refused: AlmNmaMultiarm (like netmeta) requires all
+    # m(m-1)/2 comparisons of a multi-arm study. With one 3-arm trial the network estimates are
+    # the direct log rate ratios, SE sqrt(1/(e_t+cc) + 1/(e_A+cc)).
+    arms = {"A": (40, 1000), "B": (30, 1000), "C": (20, 900)}
+    rows = [{"study": "m1", "treatment": t, "interval": "1", "events": e, "ptime": pt} for t, (e, pt) in arms.items()]
+    r = _run(f"S.fit({json.dumps(rows)}, {{model:'fe'}})")
+    assert r["warnings"] == [], r["warnings"]
+    eff = r["intervals"]["1"]["effects"]
+    for t in ("B", "C"):
+        te = _lh(*arms[t]) - _lh(*arms["A"])
+        se = math.sqrt(1 / (arms[t][0] + 0.5) + 1 / (arms["A"][0] + 0.5))
+        assert math.isclose(eff[t]["logHR"], te, rel_tol=1e-12, abs_tol=1e-12), (t, eff[t], te)
+        assert math.isclose(eff[t]["se"], se, rel_tol=1e-12), (t, eff[t], se)
+
+
+def test_pooled_only_over_intervals_with_the_network_reference():
+    # Interval 2 has no A arm, so its effects are against B. They must not be pooled with
+    # interval 1's effects against A: pooled C (vs A) = interval-1 C only.
+    rows = IV1_ROWS + [
+        {"study": "s3", "treatment": "B", "interval": "2", "events": 33, "ptime": 650},
+        {"study": "s3", "treatment": "C", "interval": "2", "events": 24, "ptime": 600},
+    ]
+    r = _run(f"S.fit({json.dumps(rows)}, {{model:'fe'}})")
+    assert r["intervals"]["2"]["refTreat"] == "B"
+    c1 = r["intervals"]["1"]["effects"]["C"]
+    assert math.isclose(r["pooled"]["C"]["logHR"], c1["logHR"], rel_tol=1e-12), (r["pooled"], c1)
+    assert math.isclose(r["pooled"]["C"]["se"], c1["se"], rel_tol=1e-12)
+    assert any(w.startswith("interval 2:") and "not pooled" in w for w in r["warnings"]), r["warnings"]
+
+
 def test_interval_with_single_arm_is_skipped():
     rows = [
         {"study": "s1", "treatment": "A", "interval": "1", "events": 10, "ptime": 500},
