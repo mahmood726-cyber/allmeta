@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { createHash, webcrypto } from 'node:crypto';
 import vm from 'node:vm';
 import { harness } from './numerics-harness.mjs';
+import { compareFit } from './multiarm-parity.mjs';
 
 const root = new URL('../', import.meta.url);
 const read = p => readFileSync(new URL(p, root));
@@ -16,7 +17,16 @@ const reference = json('validate/corpus/reference.json');
 const originalSource = json('tests/fixtures/p16-original-source.json');
 const original = harness(originalSource), current = harness();
 const clean = x => JSON.parse(JSON.stringify(x));
-let accepted = 0, refused = 0, busExcluded = 0, quantities = 0;
+let accepted = 0, refused = 0, busExcluded = 0, quantities = 0, superseded = 0;
+// Multi-arm support (2026-11-02) superseded one pinned refusal: complete,
+// consistent multi-arm studies are now analysed. reference.json was re-pinned
+// for those 15 inputs (validate/repin-multiarm.mjs) with netmeta values from
+// validate/multiarm-oracle.json. They are checked against that reference at
+// the usual tolerances and against the oracle (1e-6 abs); the pre-change
+// source must still reproduce the old refusal. Every other configuration
+// keeps the exact pre/post state comparison below.
+const MULTIARM_REFUSAL = 'Multi-arm studies are unsupported: correlated contrasts require study covariance.';
+const multiarmOracle = json('validate/multiarm-oracle.json');
 function compare(actual, expected, model, path = '') {
   if (expected && typeof expected === 'object') {
     assert.deepEqual(Object.keys(actual).sort(), Object.keys(expected).sort(), path + ' membership');
@@ -42,6 +52,22 @@ for (let i = 0; i < corpus.length; i++) {
     h.c.__almIncoLoad(item.text);
   }
   const before = clean(original.c._almLastInco()), after = clean(current.c._almLastInco());
+  if (before.status === 'refused' && before.reason === MULTIARM_REFUSAL) {
+    assert.ok(!ref.reason && ref.numeric && ref.numeric.status === 'ok', item.key + ' is re-pinned as an accepted result');
+    assert.deepEqual(clean(current.c.parse(item.text)), ref.parsed, item.key + ' parsed rows');
+    const ds = multiarmOracle.datasets.find(d => d.name === item.key.replace(/::(FE|DL|PM)$/, ''));
+    assert.ok(ds, item.key + ' has a multi-arm oracle dataset');
+    assert.notEqual(after.status, 'refused', item.key + ' is now analysed: ' + after.reason);
+    const bad = compareFit(after, ds.models[item.model], {}, item.key);
+    assert.deepEqual(bad, [], item.key + ' matches netmeta');
+    const expected = {};
+    for (const k of ['model', 'trts', 'Q', 'df', 'tau2', 'Qrandom', 'estimates', 'estimatesRandom', 'dbt']) expected[k] = ref.numeric[k];
+    expected.nodeSplit = ref.numeric.nodeSplit.map(({ kDirect, ...s }) => s).sort((a, b) => a.comparison.localeCompare(b.comparison));
+    after.nodeSplit.sort((a, b) => a.comparison.localeCompare(b.comparison));
+    compare(after, expected, item.model, '');
+    superseded++;
+    continue;
+  }
   assert.deepEqual(after, before, item.key + ' exact pre/post state');
   for (const id of ['ns-body', 'ns-plot', 'dbt']) assert.equal(current.elements.get(id).innerHTML,
     original.elements.get(id).innerHTML, item.key + ' exact pre/post ' + id);
@@ -58,7 +84,7 @@ for (let i = 0; i < corpus.length; i++) {
     compare(after, expected, item.model, '');
   }
 }
-console.log(`Base arithmetic replay: ${accepted} accepted, ${refused} refused, ${quantities} reference leaves; exact pre/post states and render strings match. ${busExcluded} bus cases excluded (requires DOM importer).`);
+console.log(`Base arithmetic replay: ${accepted} accepted, ${refused} refused, ${quantities} reference leaves; exact pre/post states and render strings match. ${superseded} former multi-arm refusals re-pinned (pre-change source still refuses; page matches the re-pinned netmeta reference and the multi-arm oracle). ${busExcluded} bus cases excluded (requires DOM importer).`);
 
 const { c } = current;
 Object.assign(c, { crypto: webcrypto, TextDecoder, setTimeout });

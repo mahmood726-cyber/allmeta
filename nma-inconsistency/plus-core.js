@@ -29,6 +29,14 @@
   function fmtSigned(x, d = 2) { const s = fmt(x, d); return !finite(x) || Number(s) === 0 ? fmt(finite(x) ? 0 : x, d) : (x > 0 ? '+' : '') + s; }
   function fmtP(p) { return p === null || !finite(p) ? 'not testable' : p < 0.001 ? '< 0.001' : fmt(p, 3); }
 
+  // Studies in first-appearance order, and the multi-arm ones among them (a study
+  // ID whose rows span more than two treatments). Two-arm networks: one row each.
+  function studyIds(rows) { return [...new Set(rows.map(r => r.study))]; }
+  function multiArmCount(rows) {
+    const t = new Map();
+    for (const r of rows) { if (!t.has(r.study)) t.set(r.study, new Set()); t.get(r.study).add(r.A).add(r.B); }
+    return [...t.values()].filter(x => x.size > 2).length;
+  }
   // Identical sequence to the page's run(): gate, tau2, singular check, splits, global.
   function fitAll(E, rows, model) {
     const issue = E.inputIssue(rows);
@@ -36,8 +44,10 @@
     try {
       const tau2 = E.estimateTau2(rows, model); E.fitNMA(rows, undefined, tau2);
       const ns = E.nodeSplit(rows, undefined, tau2), g = E.dbt(rows, tau2);
-      return normalizeFit({ status: 'ok', model, tau2, k: rows.length,
-        trts: [...new Set(rows.flatMap(r => [r.A, r.B]))].sort(), nodeSplit: ns, dbt: g });
+      const nMulti = multiArmCount(rows);
+      return normalizeFit(Object.assign({ status: 'ok', model, tau2, k: rows.length,
+        trts: [...new Set(rows.flatMap(r => [r.A, r.B]))].sort(), nodeSplit: ns, dbt: g },
+        nMulti ? { multiArm: { studies: studyIds(rows).length, multiArm: nMulti } } : {}));
     }
     catch (_) { return { status: 'refused', reason: SINGULAR }; }
   }
@@ -51,6 +61,7 @@
       nodeSplit: f.nodeSplit.map(r => ({ comparison: r.comparison, direct: { mean: r.direct.mean, se: r.direct.se },
         indirect: { mean: r.indirect.mean, se: r.indirect.se }, diff: r.diff, seDiff: r.seDiff, z: r.z, p: r.p, kDirect: r.kDirect })).sort(byLabel),
       dbt: { Q: f.dbt.Q, df: f.dbt.df, p: finite(f.dbt.p) ? f.dbt.p : null },
+      ...(f.multiArm ? { multiArm: { studies: f.multiArm.studies, multiArm: f.multiArm.multiArm } } : {}),
     };
   }
 
@@ -73,13 +84,16 @@
     return out;
   }
   // Split into plan/drop so the page can run drops in chunks without blocking.
+  // A drop removes one whole study (all contrasts of a multi-arm study); with
+  // independent two-arm studies that is exactly one row, in row order.
   function looPlan(E, rows, model) {
-    const base = fitAll(E, rows, model);
-    return { model, rows, base, n: base.status === 'ok' ? rows.length : 0 };
+    const base = fitAll(E, rows, model), studies = studyIds(rows);
+    return { model, rows, base, studies, n: base.status === 'ok' ? studies.length : 0 };
   }
   function looDrop(E, plan, i) {
-    const rows = plan.rows.filter((_, j) => j !== i);
-    return summarizeDrop(plan.base, fitAll(E, rows, plan.model), plan.rows[i].study, i);
+    const study = plan.studies[i];
+    const rows = plan.rows.filter(r => r.study !== study);
+    return summarizeDrop(plan.base, fitAll(E, rows, plan.model), study, i);
   }
   function looFinish(plan, drops) {
     if (plan.base.status !== 'ok') return { status: 'refused', reason: plan.base.reason, model: plan.model };
@@ -181,7 +195,9 @@
     if (b.model === 'FE') out.push('Fixed-effect weights ignore between-study heterogeneity; when heterogeneity is present this inflates Q and makes node-split p-values too small. Compare with the random-effects results.');
     else out.push(`Random-effects weights fix τ² at the consistency-model ${b.model} estimate (${fmt(b.tau2, 4)}) for every test, including the global Q. That estimate can absorb inconsistency and its uncertainty is ignored, which tends to make the random-effects tests conservative.`);
     out.push('The comparison of fixed-effect and random-effects results below is a sensitivity analysis: prespecify the primary model rather than choosing it from these results.');
-    out.push('Inconsistency tests do not check transitivity (whether effect modifiers are balanced across comparisons). Only independent two-arm studies are supported; multi-arm studies would need their within-study correlation, and excluding them changes the network.');
+    out.push(b.multiArm
+      ? `Inconsistency tests do not check transitivity (whether effect modifiers are balanced across comparisons). ${b.multiArm.multiArm} multi-arm ${b.multiArm.multiArm === 1 ? 'study was' : 'studies were'} analysed with the within-study covariance implied by their contrasts, as netmeta does. With multi-arm studies a back-calculated "indirect" estimate can draw on the same multi-arm study as the direct estimate, so direct and indirect evidence are not fully separated.`
+      : 'Inconsistency tests do not check transitivity (whether effect modifiers are balanced across comparisons). Only independent two-arm studies are supported; multi-arm studies would need their within-study correlation, and excluding them changes the network.');
     return out;
   }
 
@@ -190,8 +206,11 @@
     const b = L && L.status === 'ok' ? L.base : state && state.base;
     if (!b || b.status !== 'ok') return '';
     const m = b.model, M = [], R = [];
-    M.push(`Inconsistency in the network of ${b.k} independent two-arm studies and ${b.trts.length} treatments was assessed with node-splitting (Dias et al. 2010), computed by back-calculation (König et al. 2013), for every comparison with both direct evidence and an indirect path, and with the global design-by-treatment interaction test (Higgins et al. 2012), using a ${MODEL_NAME[m]} model${m === 'FE' ? '' : '; τ² was estimated from the consistency model and fixed at that value for all tests, which ignores its uncertainty'}. Node-split p-values were not adjusted for multiplicity.`);
-    if (L && L.status === 'ok') M.push(`Sensitivity of the inconsistency conclusions was assessed by removing each study in turn${m === 'FE' ? '' : ' and re-estimating τ²'}, and all analyses were repeated under fixed-effect, DerSimonian-Laird and Paule-Mandel models. Analyses used the allmeta nma-inconsistency browser tool, whose node-split, design-by-treatment and leave-one-out results are validated against R netmeta 3.7-0 netsplit() and decomp.design() (relative tolerance 1e-9, 1e-6 for Paule-Mandel; p-values 1e-9 absolute).`);
+    const network = b.multiArm
+      ? `${b.multiArm.studies} studies (${b.multiArm.multiArm} multi-arm, entered as all their pairwise contrasts and analysed with the within-study covariance netmeta derives from them; ${b.k} contrasts)`
+      : `${b.k} independent two-arm studies`;
+    M.push(`Inconsistency in the network of ${network} and ${b.trts.length} treatments was assessed with node-splitting (Dias et al. 2010), computed by back-calculation (König et al. 2013), for every comparison with both direct evidence and an indirect path, and with the global design-by-treatment interaction test (Higgins et al. 2012), using a ${MODEL_NAME[m]} model${m === 'FE' ? '' : '; τ² was estimated from the consistency model and fixed at that value for all tests, which ignores its uncertainty'}. Node-split p-values were not adjusted for multiplicity.`);
+    if (L && L.status === 'ok') M.push(`Sensitivity of the inconsistency conclusions was assessed by removing each study in turn${m === 'FE' ? '' : ' and re-estimating τ²'}, and all analyses were repeated under fixed-effect, DerSimonian-Laird and Paule-Mandel models. Analyses used the allmeta nma-inconsistency browser tool, whose node-split, design-by-treatment and leave-one-out results are validated against R netmeta 3.7-0 netsplit() and decomp.design() (relative tolerance 1e-9, 1e-6 for Paule-Mandel; p-values 1e-9 absolute)${b.multiArm ? '; its multi-arm analysis is validated against netmeta 3.6-1 to 1e-6 absolute' : ''}.`);
     R.push(`The global design-by-treatment test gave Q = ${fmt(b.dbt.Q, 2)} on ${b.dbt.df} df (p = ${fmtP(b.dbt.p)})${m === 'FE' ? '' : ` with τ² = ${fmt(b.tau2, 4)}`}; ${b.nodeSplit.filter(s => sig(s.p)).length} of ${b.nodeSplit.length} node-split comparisons had p < 0.05${b.nodeSplit.filter(s => sig(s.p)).length ? ' (' + b.nodeSplit.filter(s => sig(s.p)).map(s => `${s.comparison}, p = ${fmtP(s.p)}`).join('; ') + ')' : ''}.`);
     if (L && L.status === 'ok') R.push(looSummary(L));
     if (C && C.status === 'ok') R.push(compareSummary(C));
@@ -199,6 +218,62 @@
   }
 
   // ---- B: self-verifying native-R script ----------------------------------
+  // Multi-arm networks: a study ID spanning more than two treatments must supply
+  // every pairwise contrast; netmeta derives the within-study covariance and
+  // checks the study's consistency itself. Splits need finite direct AND
+  // indirect estimates (netmeta leaves indirect NA when the direct proportion
+  // is 1). PM tau2 is the root of netmeta's own random-effects quadratic form
+  // Q(tau2) = df, computed with its internal prepare()/nma_ruecker() (rows
+  // oriented treat1 < treat2 first, as netmeta() does).
+  const R_FIT_MA = `fit <- function(d, model) {
+  A <- d$A; B <- d$B; te <- d$te; se <- d$se; study <- d$study
+  tr <- sort(unique(c(A, B)), method = "radix")
+  reached <- tr[1]
+  repeat { nxt <- unique(c(reached, B[A %in% reached], A[B %in% reached])); if (length(nxt) == length(reached)) break; reached <- nxt }
+  if (nrow(d) < 3) return(list(status = "refused", reason = "At least 3 valid contrasts are required."))
+  ids <- unique(study)
+  ntr <- sapply(ids, function(s) length(unique(c(A[study == s], B[study == s]))))
+  nrw <- sapply(ids, function(s) sum(study == s))
+  bad <- which(ntr > 2 & nrw != ntr * (ntr - 1) / 2)
+  if (length(bad)) return(list(status = "refused", reason = sprintf("Multi-arm study \\u201c%s\\u201d has %d treatments but %d contrasts: all %d pairwise contrasts (k(k\\u22121)/2) are required.", ids[bad[1]], ntr[bad[1]], nrw[bad[1]], ntr[bad[1]] * (ntr[bad[1]] - 1) / 2)))
+  if (any(ntr == 2 & nrw > 1)) return(list(status = "refused", reason = "Repeated study IDs are unsupported: enter one independent contrast per study."))
+  if (length(reached) < length(tr)) return(list(status = "refused", reason = "The treatment network is disconnected."))
+  tau <- 0
+  if (model == "PM") {
+    lv <- sort(unique(c(A, B))); sw <- match(A, lv) > match(B, lv)
+    A2 <- ifelse(sw, B, A); B2 <- ifelse(sw, A, B); te2 <- ifelse(sw, -te, te)
+    qre <- function(t2) {
+      p1 <- netmeta:::prepare(te2, se, A2, B2, study, tau = sqrt(t2), func.inverse = netmeta:::invmat); x <- p1$data
+      netmeta:::nma_ruecker(x$TE, as.matrix(p1$W), sqrt(1 / x$weights), x$treat1, x$treat2, x$treat1.pos, x$treat2.pos,
+        x$narms, x$studlab, "MD", 0.95, 0.95, x$seTE, 0, ":", "DL", netmeta:::invmat, Cov0 = p1$Cov)$Q
+    }
+    dfq <- sum(ntr - 1) - (length(tr) - 1)
+    if (dfq > 0 && qre(0) > dfq) {
+      upper <- max(1, var(te)); while (qre(upper) > dfq) upper <- upper * 2
+      tau <- sqrt(uniroot(function(t2) qre(t2) - dfq, c(0, upper), tol = .Machine$double.eps^0.75, maxiter = 1000)$root)
+    }
+  }
+  m <- netmeta(TE = te, seTE = se, treat1 = A, treat2 = B, studlab = study, sm = "MD", reference.group = tr[1],
+               common = TRUE, random = TRUE, method.tau = "DL", tau.preset = if (model == "DL") NULL else tau,
+               sep.trts = " ~~ ", warn = FALSE)
+  tau <- if (model == "FE") 0 else if (is.na(m$tau)) 0 else m$tau
+  s <- netsplit(m, method = "Back-calculation", tol.direct = 0)
+  suffix <- if (model == "FE") "common" else "random"
+  direct <- s[[paste0("direct.", suffix)]]; indirect <- s[[paste0("indirect.", suffix)]]; cmp <- s[[paste0("compare.", suffix)]]
+  splits <- list()
+  for (j in seq_len(nrow(cmp))) {
+    pair <- strsplit(cmp$comparison[j], " ~~ ", fixed = TRUE)[[1]]; ord <- sort(pair, method = "radix"); sgn <- if (pair[1] == ord[1]) 1 else -1
+    if (!is.finite(direct$TE[j]) || !is.finite(indirect$TE[j])) next
+    name <- paste(ord, collapse = " vs ")
+    splits[[name]] <- list(direct = sgn * direct$TE[j], direct.se = direct$seTE[j], indirect = sgn * indirect$TE[j], indirect.se = indirect$seTE[j],
+                           diff = sgn * cmp$TE[j], diff.se = cmp$seTE[j], z = sgn * cmp$statistic[j], p = cmp$p[j])
+  }
+  dec <- decomp.design(m, tau.preset = tau, warn = FALSE)
+  q <- if (model == "FE") dec$Q.decomp else dec$Q.inc.random.preset
+  g <- list(Q = 0, df = 0, p = NA_real_)
+  if (!is.null(q)) { r <- match("Between designs", rownames(q)); g <- list(Q = q$Q[r], df = q$df[r], p = q$pval[r]); if (g$df == 0) { g$Q <- 0; g$p <- NA_real_ } }
+  list(status = "ok", tau2 = tau^2, splits = splits, global = g, netmeta = m, netsplit = s, decomp = dec)
+}`;
   const num = x => finite(x) ? x.toPrecision(17) : 'NA_real_';
   const str = s => JSON.stringify(String(s));
   function rVector(xs, f) { return 'c(' + xs.map(f).join(', ') + ')'; }
@@ -254,7 +329,8 @@
     const L = state.loo, b = L && L.status === 'ok' ? L.base : state.base;
     if (!b || b.status !== 'ok') throw Error('Run an accepted analysis first.');
     const rows = state.rows, model = b.model, withLoo = !!(opts.loo && L && L.status === 'ok');
-    const relTol = model === 'PM' ? '1e-6' : '1e-9';
+    const multi = multiArmCount(rows) > 0;
+    const relTol = model === 'PM' || multi ? '1e-6' : '1e-9';
     const lines = [];
     const add = (label, kind, app, rexpr) => lines.push(`check(${str(label)}, ${str(kind)}, ${app === null ? 'NA_real_' : typeof app === 'string' ? str(app) : typeof app === 'boolean' ? (app ? 'TRUE' : 'FALSE') : num(app)}, ${rexpr})`);
     function fitChecks(prefix, f, rx) {
@@ -289,7 +365,10 @@
 # Generated ${date} from the browser analysis. Run with:  Rscript this-file.R
 # It refits the analysis with netmeta / metafor, then compares every number the
 # app reported (embedded below) with R and exits with status 1 on any mismatch.
-# Model: ${MODEL_NAME[model]}. Data: ${rows.length} contrasts.${withLoo ? ' Includes leave-one-study-out refits.' : ''}
+# Model: ${MODEL_NAME[model]}. Data: ${rows.length} contrasts.${withLoo ? ' Includes leave-one-study-out refits.' : ''}${multi ? `
+# Multi-arm network (${multiArmCount(rows)} multi-arm studies, all pairwise contrasts
+# supplied): netmeta derives the within-study covariance; PM tau2 is the root of
+# netmeta's own random-effects Q(tau2) = df. Multi-arm tolerance: 1e-6 relative.` : ''}
 # Checked against R 4.6.0, netmeta 3.7-0, metafor 5.2-1. Tolerances: estimates,
 # SEs, Q, z and tau2 ${relTol} relative to max(1, |R|); p-values 1e-9 absolute;
 # df, comparison sets and refusal reasons exact.
@@ -305,12 +384,12 @@ d <- data.frame(
   study = ${rVector(rows, r => str(r.study))},
   stringsAsFactors = FALSE)
 model <- ${str(model)}
-${R_FIT}
+${multi ? R_FIT_MA : R_FIT}
 full <- fit(d, model)
 stopifnot(full$status == "ok")
 print(full$netsplit)
 print(full$decomp)
-${withLoo ? 'loo <- lapply(seq_len(nrow(d)), function(i) fit(d[-i, , drop = FALSE], model))\n' : ''}n_checks <- 0; n_ok <- 0; bad <- character()
+${withLoo ? (multi ? 'loo <- lapply(unique(d$study), function(s) fit(d[d$study != s, , drop = FALSE], model))\n' : 'loo <- lapply(seq_len(nrow(d)), function(i) fit(d[-i, , drop = FALSE], model))\n') : ''}n_checks <- 0; n_ok <- 0; bad <- character()
 check <- function(label, kind, app, r) {
   n_checks <<- n_checks + 1
   ok <- if (kind == "exact") identical(as.character(app), as.character(r))
