@@ -53,6 +53,14 @@ test('bma-tau k = 2: posterior SD does not exist for heavy-tailed priors; quanti
   near(r.ci_lo, -1.19639788889891, 'BMA 2.5%'); near(r.ci_hi, 1.89419110435536, 'BMA 97.5%');
 });
 
+test('bma-tau k = 3, inverse-gamma(0.1, 0.1): slowly decaying tail (tau^-1.2) of the second moment is integrated', () => {
+  // E[tau^2] converges only slowly; nodes with negligible posterior weight but huge tau^2 still carry the variance.
+  const r = BMA.fit([0.05, 0.40, 0.25], [0.0144, 0.0324, 0.01], BMA.defaultModels());
+  const ig = r.perModel.find((m) => m.name === 'invGamma(0.1, 0.1)');
+  near(ig.sePost, 0.686834685371311, 'invGamma sd (k = 3)');
+  near(r.sePost, 0.283572619836554, 'BMA sd (k = 3)');
+});
+
 test('bma-tau: uniform prior keeps the tau^2 = 0 guard (2026-05-29 regression)', () => {
   assert.equal(BMA.uniform(5)(0), 0);
 });
