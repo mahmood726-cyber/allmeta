@@ -98,3 +98,40 @@ def test_fail_closed_guards():
         "noCrit:BR.analyze({criteria:[],treatments:[{id:'A',perf:{}},{id:'B',perf:{}}]}).ok}));"
     )
     assert o["few"] is False and o["noCrit"] is False
+
+
+def test_tied_alternatives_share_rank_regardless_of_input_order():
+    # Two identical alternatives with no SE: results must not depend on which was typed first.
+    # Convention of the smaa R package (smaa.ranks): tied alternatives share the best rank they occupy.
+    o = _run(
+        "const crit=[{id:'b',type:'benefit',weight:0.6},{id:'h',type:'harm',weight:0.4}];"
+        "const A={id:'A',perf:{b:{mean:5},h:{mean:3}}},B={id:'B',perf:{b:{mean:5},h:{mean:3}}},C={id:'C',perf:{b:{mean:2},h:{mean:9}}};"
+        "const f=tx=>{const r=BR.analyze({criteria:crit,treatments:tx,iterations:500,seed:1});const o={};"
+        "r.smaa.forEach(s=>o[s.id]={p:s.pBest,ra:s.rankAcceptability});r.deterministic.forEach(d=>o[d.id].rank=d.rank);return o;};"
+        "console.log(JSON.stringify({ab:f([A,B,C]),ba:f([C,B,A])}));"
+    )
+    for t in ("A", "B", "C"):
+        assert o["ab"][t] == o["ba"][t]
+    assert o["ab"]["A"]["rank"] == 1 and o["ab"]["B"]["rank"] == 1 and o["ab"]["C"]["rank"] == 3
+    assert o["ab"]["A"]["p"] == 1 and o["ab"]["B"]["p"] == 1 and o["ab"]["C"]["p"] == 0
+
+
+def test_clamped_tie_is_shared():
+    # Both alternatives beyond `best` clamp to value 1: a tie, so both are best in every draw.
+    o = _run(
+        "const crit=[{id:'b',type:'benefit',weight:1,worst:0,best:10}];"
+        "const r=BR.analyze({criteria:crit,treatments:[{id:'A',perf:{b:{mean:12}}},{id:'B',perf:{b:{mean:15}}}],iterations:300,seed:2});"
+        "console.log(JSON.stringify(r.smaa.map(s=>s.pBest)));"
+    )
+    assert o == [1, 1]
+
+
+def test_value_sd_is_exactly_zero_without_uncertainty():
+    # No SE anywhere: every simulated value equals the deterministic value, so its SD is 0
+    # (the one-pass E[x^2]-E[x]^2 formula returned ~4e-7 here through cancellation).
+    o = _run(
+        "const crit=[{id:'b',type:'benefit',weight:0.5,worst:3,best:3},{id:'h',type:'harm',weight:0.5,worst:10,best:0}];"
+        "const r=BR.analyze({criteria:crit,treatments:[{id:'A',perf:{b:{mean:1},h:{mean:2}}},{id:'B',perf:{b:{mean:5},h:{mean:4}}}],iterations:10000,seed:29});"
+        "console.log(JSON.stringify(r.smaa.map(s=>s.valueSE)));"
+    )
+    assert all(abs(x) < 1e-12 for x in o)
