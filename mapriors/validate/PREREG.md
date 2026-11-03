@@ -124,3 +124,116 @@ the RBesT paper, Weber et al. 2021 J Stat Softw): MAP prior, robust MAP (w_vague
   integration; made after the first gate runs and the arbiter). Each implements RBesT 1.12-0's ess()/robustify()
   definitions as planned in section 0, with failing tests first. Test T3 was rewritten because it asserted the page's
   Beta(0.5,0.5) robust component rather than RBesT's Beta(1,1).
+- A4 (2026-11-02, POST-RESULT; this design paragraph was committed BEFORE the sample below was drawn and before any
+  third-computation value existed). Third, independent high-precision computation for the 962 failing A2 quantile /
+  Morita / ELIR checks that A3(ii) attributed to RBesT ("R less accurate"). Population: the 962 rows of
+  evidence/P36_arbiter.json (sha256 d428922e0cfcc76db7a0005c7a2480b53cbde8edaf4daf2c58c0bb1c2db3e019; derived from
+  gate/fixed_ledger.csv sha256 214218baf100d50c5e8bfe14a57375f0da091ed4da96508b5a5558f83fd061e8, archive 1c31e27).
+  Third computation: analysis/post_result/third.R (R 4.6.0 + Rmpfr 1.1-3 / gmp 0.7-5.1 / GNU MPFR, 128-bit), on the
+  identical RBesT mixture, with RBesT 1.12-0's definitions of the quantities but its own algorithms: beta CDF by the
+  continued fraction (modified Lentz) in MPFR, quantiles by safeguarded Newton in MPFR, Morita mode by a double grid
+  plus MPFR Newton, ELIR by adaptive Gauss-Legendre (30 vs 61 nodes, bisection) with MPFR integrand evaluation on the
+  logit scale (beta; tails |logit| > 50 via e = +/-exp(v)) or the response scale (normal). It shares no code with the
+  page, RBesT or the mpmath arbiter.
+  Sample design: (S) a simple random sample of n = 60 rows without replacement, drawn by
+  analysis/post_result/third_sample.py as `random.Random(36004).sample(rows, 60)` with rows sorted by (config, quantity);
+  seed 36004 is declared here before the draw. (X) every extreme case, added to S: per quantity class (q2.5, q50,
+  q97.5, ELIR, Morita) the 5 rows with the largest |app - R| / tolerance and the 5 with the largest |app - R|; every row
+  of the boundary-data probes P1 (all r = 0) and P2 (all r = n); every row whose RBesT mixture has a beta component
+  with a or b < 1.001 (boundary parameters, mostly RBesT's constrain_gt1 floor a = 1 + 1e-8). (C) all remaining rows
+  are then computed as well (census), reported separately from S and X.
+  Rule (fixed now): a row keeps "R less accurate" only if |app - third| <= tolerance and |R - third| > tolerance.
+  Otherwise: |app - third| > tol and |R - third| <= tol -> app defect; both > tol -> neither within tolerance
+  (spec ambiguity / unresolved, examined case by case); both <= tol -> tolerance-limited (neither side wrong). No
+  tolerance changes. Gate counts are not changed by this analysis.
+- A5 (2026-11-02, POST-RESULT; app engine changed after results, disclosed). The 37 failing B2 robust-Morita checks
+  of the 31 Oct pin (allmeta 84e5c56) were traced to the page's mixture-fitting step. Root cause, from the RBesT
+  1.12-0 source (automixfit, EM_bmm_ab, EM_mnmm, EM_msmm, knn, gMAP formals; evidence/P36_rbest_source.txt): the
+  page's fitMixture was not RBesT's automixfit. automixfit chooses Nc = 1..4 by AIC with penalty k = 6 (page: 2);
+  EM_bmm_ab uses constrain_gt1 = TRUE, so every beta a, b > 1 (page allowed e.g. b = 0.956); RBesT starts EM from
+  knn (beta) or a Student-t EM (normal) and stops when the parameters of the last 5 iterations move < 0.005; and
+  gMAP's default draw count is 4 chains x (6000 - 2000) / thin 4 = 4000 (page assumed 16,000). Check before the fix:
+  RBesT automixfit applied to 80,000 stratified pseudo-draws of the PAGE's own predictive gave 9.026 / 9.022 (two
+  draw orders) for bin_k1_p0.05_s0.0 against the oracle's 9.032 and the page's 12.956, and RBesT's own
+  ess(method = "morita") on the page's fitted mixture equalled the page's value (12.95659 vs 12.95608), so neither
+  the predictive nor the ESS arithmetic was at fault. Fix, failing tests first, on allmeta branch f1000/p36-mapriors:
+  aa3db97 adds T14 (beta: default 4000 draws, every a, b > 1, AIC = -2 logLik + 6 df, Morita within 10 % of R on
+  bin_k1_p0.05_s0.0) and T15 (normal: same AIC rule, Morita within 10 % of R on cont_k10_m0_s0.2): 13/15 on the
+  84e5c56 page; ebd8d10 ports automixfit (EM_bmm_ab, EM_msmm + EM_mnmm, knn, k = 6) and applies it to N
+  deterministic stratified draws of the page's predictive (exact CDF/density table, cubic Hermite inversion, fixed
+  xoshiro128** order, seed 36): 15/15 (evidence/P36_tests_before_fix5_20261102.txt, _after_fix5_). The M-step is
+  solved exactly (Newton) instead of RBesT's Nelder-Mead; boundary solutions take RBesT's floor 1 + 1e-8. New app
+  pin: allmeta ebd8d10, page sha256 d57e8ad039137b1ab05655c26dde4523c414c1f764a03cb8619c0d53ffd6f590.
+  Harness change (disclosed): harness/run_engine.js passes N = chains x retained_per_chain from
+  reference/session.json (4 x 20,000 = 80,000) so the page fits the same number of draws as the oracle's automixfit
+  (fail-closed when the session is absent). No tolerance, quantity, corpus, seed or MCMC setting changed. The 31 Oct
+  pin is kept and re-gated: app/fixed_20261031/index.html, app/fix_20261031.patch, app_out/fixed_20261031/,
+  gate/fixed_20261031_*; validate.R gates original, fixed_20261031 and fixed against the fresh reference.
+- A6 (2026-11-02, POST-RESULT; analysis design written before E3 was run and before the E2 runs for the 5 configurations
+  named below). (i) E2 (analysis/post_result/e2.R + tables.js): RBesT 1.12-0 automixfit on 80,000 stratified draws
+  of the page's own predictive, in two draw orders (set.seed 1 and 2), for the 37 configurations, 8 passing controls
+  (AS, bin_k10_p0.20_s0.3, bin_k5_p0.50_s0.0, bin_k1_p0.20_s0.0, cont_k5_m0_s0.0, cont_k3_m5_s0.2, P3, P6) and the 5
+  configurations whose B2 check passed on 84e5c56 but fails on ebd8d10 (bin_k10_p0.50_s0.0, cont_k10_m5_s0.0,
+  cont_k10_m5_s1.0, cont_k1_m5_s0.0, cont_k5_m0_s0.2). (ii) E3 (analysis/post_result/e3.R): RBesT's own seed-to-seed
+  spread of the B2 quantity with the preregistered MCMC settings, replicate 0 = the preregistered seed (must
+  reproduce reference/ exactly) and replicates 1-5 = seed + 1000 j, for every configuration whose B2 check fails on
+  ebd8d10 (11). (iii) Classes for the 37 (analysis/post_result/classify37.py, rule fixed here): APP_DEFECT_FIXED =
+  fails on 84e5c56, passes on ebd8d10 and E2 (first order) is within the B2 tolerance of R; APP_DEFECT_OPEN = E2
+  within tolerance of R but ebd8d10 still fails; SPEC_AMBIGUITY = E2 outside the tolerance of R or the two E2 orders
+  differ by more than the tolerance (RBesT's own algorithm on the same predictive does not determine the quantity to
+  10 %); R_LIMITATION = R shown wrong by an independent computation of the same quantity (none expected for B2,
+  because B2 compares two fits rather than one computation). E3 is reported beside each row: whether the page value
+  lies inside R's own replicate range widened by the B2 tolerance. Planted defects on ebd8d10: plant.js +
+  plant_delta.py (the A3 target-flip rule) and PD3b, reported with and without PD3b. Gate counts are not changed
+  by any of these analyses.
+- A7 (2026-11-02, results of A4 and fresh-copy validation; post-result, disclosed). (i) A4 third computation
+  (evidence/P36_third.json, P36_third_summary.json): all 962 rows computed; by the A4 rule 962/962 keep "R less
+  accurate" (|app - third| <= tolerance and |R - third| > tolerance): random sample S 60/60, extreme set X 597/597
+  (largest |app-R|/tol 24/24, largest |app-R| 24/24, probes P1/P2 30/30, boundary-parameter rows 589/589), census
+  remainder C 341/341; by quantity q2.5 301/301, q50 228/228, q97.5 280/280, ELIR 149/149, Morita 4/4. Largest
+  |app - third| / tolerance 1.1e-6; smallest |R - third| / tolerance 1.007; largest |mpmath - third| 2.3e-13. No row
+  became "app defect" or "spec ambiguity" under the rule. Flagged sub-group (not a reclassification): for 25 of the
+  149 ELIR rows R's value equals, within tolerance, the integral restricted to |logit p| <= 745, i.e. the whole
+  app-R difference is integrand mass at p or 1 - p below the smallest positive double, carried by components at
+  RBesT's constrain_gt1 floor (a or b = 1 + 1e-8); the page, mpmath and MPFR integrate the definition over (0, 1),
+  RBesT cannot represent that region. Whether ELIR "should" include it is a definitional question for the paper
+  (evidence/P36_third_elir_split.json). The other 124 ELIR rows (e.g. P1 MAP: page 108.729, MPFR 108.729, R
+  140.287) are RBesT integration error not explained by that tail. (ii) Fresh copy: `git archive` of 2be263b to
+  C:\Users\User\p36-validate-2be263b (outside the lane), `Rscript --no-environ validate.R --rerun-app` with
+  R_LIBS = lane Rlib: verify PASS (436 hashes), fresh reference 85/85 exact (82 OK, same 3 ORACLE_FAILURE), ORIGINAL
+  1770/28874, FIXED_20261031 27098/28874, FIXED 27124/28874 (expected counts match), fixed page replay 85/85 exact,
+  exit 0, 20:45:56-22:42:01 (evidence/P36_validate_fresh_2be263b.txt).
+- A8 (2026-11-03, POST-RESULT; second engine change after results, disclosed). The A6 classification of ebd8d10
+  returned APP_DEFECT_OPEN for 2 rows (cont_k10_m5_s0.2, cont_k1_m5_s0.2: RBesT automixfit on the page's predictive
+  agreed with R, the page did not). Root cause, by feeding the identical 4000 draws to RBesT 1.12-0 EM_msmm/mixfit and
+  to the port (analysis/post_result/port_vs_rbest.R + dbg_port.js; evidence/P36_port_vs_rbest_identical_draws.txt):
+  the port's knn start read x[floor(ind + k - 1) - 1] with a 0-based k, one draw position before RBesT's
+  x[ind + k - 1] (k = 1..Nc), and x[-1] (undefined, NaN) for the first component. Failing tests first: allmeta 67f1281
+  (T16 cont_k1_m5_s0.2, T17 cont_k10_m5_s0.2, R parity within the B2 10 %): 15/17 on ebd8d10; fix 9c76449: 17/17
+  (validation/evidence/P36_tests_*_fix6_20261103.txt). With identical draws the port now equals RBesT EM_msmm and
+  mixfit for Nc = 1..4 (log-likelihoods to 6 decimals, same components, same iteration counts). New app pin
+  9c76449, page sha256 d7a5c398f5d4a5e323af5333822f41c5eea8ea76ece91f477079a2f9c64dee72. Gate on 9c76449 against the
+  archived reference: 27126/28874 (A 26124/27854, B 1002/1020; B2 robust Morita 73/82 oracle-OK). The intermediate
+  pin ebd8d10 (27124/28874, fresh-validated at archive 2be263b) is superseded and kept only in git history
+  (commits d9b5277..cbf0c81). No tolerance changed. Planned before running (this paragraph is committed first): the
+  two configurations that passed on 84e5c56 and fail only on 9c76449 and have no E2/E3 record, cont_k3_m0_s0.0 and
+  cont_k3_m5_s0.0, get E2 (2 orders) and E3 (6 replicates) exactly as in A6; every B2 failure on 9c76449 is then
+  classified with the A6 rule (E2 outside R's tolerance or the two E2 orders apart by more than it -> SPEC_AMBIGUITY;
+  E2 within tolerance of R and the page not -> APP_DEFECT_OPEN).
+- A9 (2026-11-03, results of A6 and A8; post-result, disclosed). (i) The 37 B2 disagreements of the 31 Oct pin,
+  classified with the A6 rule against the current pin 9c76449 (evidence/P36_b2_classification.json): APP_DEFECT_FIXED
+  32 (31 Oct page off by up to +81 %; RBesT automixfit on the page's predictive within 10 % of R; 9c76449 passes),
+  SPEC_AMBIGUITY 5 (bin_k10_p0.50_s1.5, bin_k3_p0.50_s0.0, bin_k5_p0.50_s0.3, cont_k1_m0_s0.2, cont_k5_m5_s0.2:
+  RBesT's own automixfit on the same predictive is itself 16-27 % from the R reference), APP_DEFECT_OPEN 0,
+  R_LIMITATION 0. (ii) Every B2 failure of 9c76449 (9 of 82 oracle-OK; evidence/P36_b2_current.json): SPEC_AMBIGUITY 8,
+  APP_DEFECT_OPEN 1 (cont_k10_m5_s0.0: page 297.22, RBesT automixfit on the page's predictive 305.31 / 305.37, R
+  335.19, tolerance 33.52; the port equals RBesT on identical draws (A8), so the remaining page-vs-E2 gap of 0.24
+  tolerance comes from the draw sample / order; recorded as open, not tuned). (iii) E3 (evidence/P36_e3.json,
+  P36_e3_summary.json; 13 configurations x 6 replicates): replicate 0 reproduces reference/ to the 15 stored digits in
+  13/13; RBesT's own seed-to-seed spread of the B2 quantity exceeds the 10 % tolerance in 12/13 and at least one
+  replicate falls outside the tolerance of the R reference in 10/13; the 9c76449 page value lies within R's own
+  replicate range widened by the tolerance in 13/13. The preregistered B2 Morita tolerance is therefore below RBesT's
+  own reproducibility for these configurations; the tolerance is not changed. (iv) Planted defects on 9c76449
+  (evidence/P36_plant_delta_20261103.json): PD1 detected, PD2 detected, PD3 NOT detected (as preregistered; the
+  preregistered "gate turns to FAIL" cannot be met because the baseline is not all-pass); with the post-hoc PD3b:
+  PD3b detected. Without PD3b 2/3 preregistered plants detected; with PD3b 3/4 plants detected.
