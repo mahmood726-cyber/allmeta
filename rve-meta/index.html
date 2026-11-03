@@ -327,7 +327,7 @@
   </main>
   <footer>
     <p>Engine: <code>shared/rve.js</code>: Hedges-Tipton-Johnson 2010 correlated-effects (CORR) working model; τ² from the CORR method-of-moments estimator; <strong>CR2 bias-reduced</strong> cluster-robust standard errors (Tipton 2015; Pustejovsky and Tipton 2018) and per-coefficient <strong>Satterthwaite degrees of freedom</strong>; Student-t confidence intervals and p-values. Reference implementation: <code>robumeta::robu(modelweights = "CORR", small = TRUE)</code>, cross-checked with <code>clubSandwich::coef_test(vcov = "CR2", test = "Satterthwaite")</code>. Designs with no more clusters than coefficients, or with collinear predictors, are refused.</p>
-    <p>Conditioning: each fit reports κ₂(XᵀWX), the condition number of the weighted cross-product matrix at the fitted weights. When κ exceeds 9.0×10⁶ (κ·u &gt; 10⁻⁹, u = 2⁻⁵³), the first-order rounding-error bound κ·u exceeds 10⁻⁹, so agreement to the ninth significant digit is no longer guaranteed, and the app offers to centre the predictors. robumeta itself gives no such warning. The hierarchical (HIER) working model is not implemented; use <code>robumeta::robu(modelweights = "HIER")</code> in R.</p>
+    <p>Conditioning: each fit reports κ₂(XᵀWX), the condition number of the weighted cross-product matrix at the fitted weights. When κ exceeds 9.0×10⁶ (κ·u &gt; 10⁻⁹, u = 2⁻⁵³), κ·u, a heuristic indicator of rounding error rather than a certified bound, exceeds 10⁻⁹, so agreement with R to the ninth significant digit may be lost, and the app offers to centre the predictors. robumeta itself gives no such warning. The hierarchical (HIER) working model is not implemented; use <code>robumeta::robu(modelweights = "HIER")</code> in R.</p>
   </footer>
 
   <script>
