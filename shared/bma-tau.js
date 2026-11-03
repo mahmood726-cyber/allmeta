@@ -186,8 +186,10 @@
   })();
   var U_MIN = -30, U_MAX = 340, PANEL = 0.25;
 
-  // Posterior of τ under one prior, on the quadrature nodes. Nodes whose
-  // weight is negligible (< 1e-18 of the largest) are dropped.
+  // Posterior of τ under one prior, on the quadrature nodes. A node is dropped
+  // only if its weight times max(1, s²(τ) + μ̂(τ)²) is below 1e-18 of the
+  // largest weight, so nodes far in the tail that still carry the second
+  // moment of μ (s² grows like τ²) are kept.
   function _tauPosterior(yi, vi, prior) {
     var td = _tauDensity(prior);
     var upper = (prior.upper != null && isFinite(prior.upper)) ? prior.upper : Infinity;
@@ -211,7 +213,7 @@
     var wt = [], Z = 0, keep = { tau: [], mu: [], s2: [], wt: [] };
     for (var i = 0; i < lw.length; i++) {
       var e = Math.exp(lw[i] - maxLw);
-      if (e < 1e-18) continue;
+      if (e * Math.max(1, s2[i] + mu[i] * mu[i]) < 1e-18) continue;
       keep.tau.push(tau[i]); keep.mu.push(mu[i]); keep.s2.push(s2[i]); keep.wt.push(e); Z += e;
     }
     keep.Z = Z; keep.logZ = maxLw + Math.log(Z);
