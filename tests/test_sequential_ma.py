@@ -123,7 +123,9 @@ def test_computeBoundary_futility_path():
     """)
     # With small z and futility enabled, decision should be either futility or continue.
     assert out["decision"] in ("futility", "continue", "reject-H0")
-    assert all(b is not None for b in out["futility_boundaries"])
+    # null = no futility stop at that look (looks whose beta-spending boundary would be negative spend no beta)
+    assert all(b is None or isinstance(b, (int, float)) for b in out["futility_boundaries"])
+    assert out["futility_boundaries"][-1] is not None
 
 
 def test_futility_not_fired_on_first_look_for_positive_trend():
@@ -142,8 +144,8 @@ def test_futility_not_fired_on_first_look_for_positive_trend():
         }}));
     """)
     assert out["decision"] != "futility"
-    # boundary is below the observed |z|, and the design drift is reported
-    assert out["fb"] < 1.0
+    # no futility boundary at an early look (null) or one below the observed |z|; the design drift is reported
+    assert out["fb"] is None or out["fb"] < 1.0
     assert out["drift"] > 0
 
 
@@ -159,9 +161,11 @@ def test_futility_boundary_rises_with_information():
           {{ alpha: 0.05, beta: 0.20, family: "OBF", futility: true }});
         console.log(JSON.stringify(r.looks.map(l => l.futility_boundary)));
     """)
-    assert out[0] < -1.0, f"first-look boundary should be very negative: {out}"
-    for a, b in zip(out, out[1:]):
-        assert b >= a - 1e-9, f"non-monotonic interior futility boundary: {out}"
+    # requirement: no futility stop at the first look (null = none) and a non-decreasing boundary afterwards
+    assert out[0] is None or out[0] < 0, f"first-look futility boundary should be absent: {out}"
+    vals = [-1e9 if b is None else b for b in out]
+    for a, b in zip(vals, vals[1:]):
+        assert b >= a - 1e-9, f"non-monotonic futility boundary: {out}"
 
 
 def test_looksFromRows_n_cum_mode():

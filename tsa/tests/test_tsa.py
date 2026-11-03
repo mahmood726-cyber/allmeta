@@ -48,9 +48,13 @@ def test_no_cdn():
 def test_localstorage_key():
     assert '"tsa-v1"' in INDEX.read_text(encoding="utf-8")
 def test_obrien_fleming_formula():
-    """advanced-stats.md TSA: z_k = z_α/√t_k."""
+    """The monitoring boundary must be the Lan-DeMets alpha-spending boundary solved at each look by the shared
+    engine (numerical values are checked in test_tsa_engine.py). The earlier assertion pinned the continuous
+    approximation z_{alpha/2}/sqrt(t), which does not control the type-I error over repeated looks."""
     text = INDEX.read_text(encoding="utf-8")
-    assert "za / Math.sqrt" in text, "O'Brien-Fleming boundary formula missing"
+    assert '<script src="../shared/sequential-ma.js"></script>' in text
+    assert "AlmSequentialMA.computeBoundary" in text
+    assert "za / Math.sqrt" not in text, "continuous z/sqrt(t) approximation must not be used as the boundary"
 def test_diversity_adjustment_present():
     text = INDEX.read_text(encoding="utf-8")
     assert "f-diversity" in text

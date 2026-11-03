@@ -3,8 +3,8 @@
  *
  * Oracle = the advanced-stats.md TSA formulas evaluated with R's EXACT
  * qnorm (tsa/tests/fixtures/tsa-oracle.R): RIS = (z_{1-a/2}+z_{1-b})^2 /
- * delta^2 * D; cumulative fixed-effect inverse-variance Z; O'Brien-Fleming
- * boundary z_k = z_{1-a/2}/sqrt(t_k). Deterministic -> tight (1e-6).
+ * delta^2 * D; cumulative fixed-effect inverse-variance Z; Lan-DeMets
+ * O'Brien-Fleming-type alpha-spending boundary solved exactly (mvtnorm). Tolerance 1e-6.
  */
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
