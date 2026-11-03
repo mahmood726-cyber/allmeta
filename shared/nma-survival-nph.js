@@ -45,16 +45,21 @@
           return String(a.treatment) < String(b.treatment) ? -1 : 1;
         });
         if (arms.length < 2) return;               // need >=2 arms in the interval
-        var base = arms[0];
-        var lhBase = _logHazard(base.events, base.ptime, cc);
-        for (var i = 1; i < arms.length; i++) {
-          var a = arms[i];
-          var est = _logHazard(a.events, a.ptime, cc) - lhBase;
-          var se = Math.sqrt(1 / (a.events + cc) + 1 / (base.events + cc));
-          (perInterval[iv] = perInterval[iv] || []).push({
-            study: s + "|" + iv, t1: String(base.treatment), t2: String(a.treatment),
-            est: est, se: se
-          });
+        // Every pairwise comparison (i < j): a multi-arm study must supply all m(m-1)/2 of them
+        // (AlmNmaMultiarm, like netmeta's chkmultiarm, refuses an incomplete set). The pairwise
+        // variances are sums of independent arm variances, so the GLS recovers the shared-arm
+        // covariance Var(base) exactly. For 2 arms this is the single base contrast, as before.
+        for (var i = 0; i < arms.length; i++) {
+          var b = arms[i], lhB = _logHazard(b.events, b.ptime, cc);
+          for (var j = i + 1; j < arms.length; j++) {
+            var a = arms[j];
+            var est = _logHazard(a.events, a.ptime, cc) - lhB;
+            var se = Math.sqrt(1 / (a.events + cc) + 1 / (b.events + cc));
+            (perInterval[iv] = perInterval[iv] || []).push({
+              study: s + "|" + iv, t1: String(b.treatment), t2: String(a.treatment),
+              est: est, se: se
+            });
+          }
         }
       });
     });
@@ -75,14 +80,19 @@
     var intervalIds = Object.keys(perInterval).sort();
     var intervals = {}, warnings = [];
     var pool = {}; // treatment -> {sw, swy}
+    // Network-wide reference: the pooled table averages log-HRs across intervals, which is only
+    // meaningful against ONE comparator. An interval without it is reported but not pooled.
+    var globalRef = rows.map(function (r) { return String(r.treatment); }).sort()[0];
     intervalIds.forEach(function (iv) {
-      var res = global.AlmNmaMultiarm.fit(perInterval[iv], { model: model });
+      var res = global.AlmNmaMultiarm.fit(perInterval[iv], { model: model, ref: globalRef });
       if (!res.ok) { warnings.push("interval " + iv + ": " + res.error); return; }
+      var poolThis = res.refTreat === globalRef;
+      if (!poolThis) warnings.push("interval " + iv + ": reference " + globalRef + " absent (effects vs " + res.refTreat + "); not pooled");
       var eff = {};
       for (var k = 0; k < res.nonref.length; k++) {
         var t = res.nonref[k], lhr = res.d[k], se = Math.sqrt(res.cov[k][k]);
         eff[t] = { logHR: lhr, se: se };
-        if (isFinite(lhr) && isFinite(se) && se > 0) {
+        if (poolThis && isFinite(lhr) && isFinite(se) && se > 0) {
           var w = 1 / (se * se);
           pool[t] = pool[t] || { sw: 0, swy: 0 };
           pool[t].sw += w; pool[t].swy += w * lhr;
