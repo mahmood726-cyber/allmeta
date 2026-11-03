@@ -237,3 +237,9 @@ the RBesT paper, Weber et al. 2021 J Stat Softw): MAP prior, robust MAP (w_vague
   (evidence/P36_plant_delta_20261103.json): PD1 detected, PD2 detected, PD3 NOT detected (as preregistered; the
   preregistered "gate turns to FAIL" cannot be met because the baseline is not all-pass); with the post-hoc PD3b:
   PD3b detected. Without PD3b 2/3 preregistered plants detected; with PD3b 3/4 plants detected.
+- A10 (2026-11-03, record only). Fresh copy of the final evidence commit b7819f0: `git archive` to
+  C:\Users\User\p36-validate-b7819f0 (outside the lane), `Rscript --no-environ validate.R --rerun-app` with R_LIBS = lane
+  Rlib, under the shared heavy-job lock: verify PASS (460 hashes), fresh reference 85/85 exact (82 OK, the same 3
+  ORACLE_FAILURE), ORIGINAL 1770/28874, FIXED_20261031 27098/28874, FIXED 27126/28874 (expected counts match), fixed
+  page (9c76449) replay 85/85 exact, exit 0, 02:02:59-03:30:03 (evidence/P36_validate_fresh_b7819f0.txt). This commit
+  adds only that record; app, reference, gate and expected counts are as validated.
