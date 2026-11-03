@@ -101,7 +101,7 @@ Trial 5, -0.38, 0.022</textarea>
 </main>
 
   <footer>
-    Engine: <code>shared/bma-tau.js</code> — Simpson-rule marginalisation over a τ² grid + Laplace approximation for μ given τ². Default model panel: half-normal SD ∈ {0.5, 1.0}, half-Cauchy scale ∈ {0.5, 1.0}, inverse-gamma(0.1, 0.1), uniform(0, 5). 95 % CrI uses the law of total variance across the mixture.
+    Engine: <code>shared/bma-tau.js</code> — the likelihood of τ with μ integrated out exactly (flat prior on μ), integrated over τ by composite Gauss–Legendre on log τ. Default model panel: half-normal SD ∈ {0.5, 1.0}, half-Cauchy scale ∈ {0.5, 1.0}, inverse-gamma(0.1, 0.1) on τ², uniform(0, 5) on τ. 95 % CrI = 2.5 % and 97.5 % quantiles of the averaged posterior; an SE shown as “—” does not exist (posterior variance infinite, e.g. k = 2 with a half-Cauchy or inverse-gamma prior).
   </footer>
 
   <script>
