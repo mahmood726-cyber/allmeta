@@ -116,6 +116,7 @@
         var out = $("out"); out.textContent = "";
         res.intervalIds.forEach(function (iv) {
           var block = res.intervals[iv];
+          if (!block) return;               // refused interval: reported in the note (res.warnings), not rendered
           var h = document.createElement("h3"); h.textContent = "Interval " + iv + " — vs " + block.refTreat +
             (block.tau2 ? " (τ²=" + block.tau2.toFixed(4) + ")" : ""); out.appendChild(h);
           out.appendChild(effTable(block.effects));
