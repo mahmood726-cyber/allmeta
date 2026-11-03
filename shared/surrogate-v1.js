@@ -22,10 +22,14 @@
   function mean(a) { return a.reduce(function (x, y) { return x + y; }, 0) / a.length; }
   function varS(a) { var m = mean(a), n = a.length; return a.reduce(function (s, x) { return s + (x - m) * (x - m); }, 0) / (n - 1); }
   function cov(a, b) { var ma = mean(a), mb = mean(b), n = a.length, s = 0; for (var i = 0; i < n; i++) s += (a[i] - ma) * (b[i] - mb); return s / (n - 1); }
-  function _pearson(s, f) { var vs = varS(s), vf = varS(f); return (vs > 0 && vf > 0) ? cov(s, f) / Math.sqrt(vs * vf) : null; }
+  // Exact test for a constant vector. Variances, determinants and total sums of squares computed from a constant
+  // vector are rounding residue (e.g. 1e-33), not zero, so testing them against 0 does not detect degeneracy.
+  function allEqual(a) { for (var i = 1; i < a.length; i++) if (a[i] !== a[0]) return false; return true; }
+  function _pearson(s, f) { if (allEqual(s) || allEqual(f)) return null; var vs = varS(s), vf = varS(f); return (vs > 0 && vf > 0) ? cov(s, f) / Math.sqrt(vs * vf) : null; }
 
   // weighted OLS of f ~ 1 + s  (weights w); returns {a,b,cov,sigma2,wrss}
   function _wls(s, f, w) {
+    if (allEqual(s)) return null;   // regression on a constant surrogate is undefined
     var n = s.length, s00 = 0, s01 = 0, s11 = 0, t0 = 0, t1 = 0, i;
     for (i = 0; i < n; i++) { s00 += w[i]; s01 += w[i] * s[i]; s11 += w[i] * s[i] * s[i]; t0 += w[i] * f[i]; t1 += w[i] * s[i] * f[i]; }
     var det = s00 * s11 - s01 * s01;
@@ -42,7 +46,7 @@
     var sw = w.reduce(function (x, y) { return x + y; }, 0), fbar = 0, i;
     for (i = 0; i < f.length; i++) fbar += w[i] * f[i]; fbar /= sw;
     var tot = 0; for (i = 0; i < f.length; i++) tot += w[i] * (f[i] - fbar) * (f[i] - fbar);
-    return { r2: tot > 0 ? 1 - fit.wrss / tot : null, fit: fit, fbar: fbar };
+    return { r2: (tot > 0 && !allEqual(f)) ? 1 - fit.wrss / tot : null, fit: fit, fbar: fbar };
   }
 
   function analyze(input) {
@@ -67,7 +71,7 @@
     // estimation-error-adjusted trial-level R² (strip within-trial variance)
     var varFobs = varS(f), withinF = mean(seF.map(function (e) { return e * e; }));
     var varFadj = varFobs - withinF;
-    var degenerate = (Q <= dfQ) || (varFadj <= 0.25 * varFobs) || (varS(s) <= 0);
+    var degenerate = (Q <= dfQ) || (varFadj <= 0.25 * varFobs) || allEqual(s) || (varS(s) <= 0);
     var r2adj = null, adjReason = null;
     if (degenerate) {
       adjReason = "after removing within-trial sampling variance, the between-trial variance of the TRUE final effect is ~0 — too little signal (or k too small) to estimate a stable adjusted R²; it would explode/clip at 1.0 and is not interpretable.";
