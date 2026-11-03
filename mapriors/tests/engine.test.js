@@ -120,4 +120,16 @@ test('T15 B2 normal MAP mixture = RBesT automixfit (EM_msmm start, EM_mnmm), R p
  for(const c of mix.fit.candidates)close(c.aic,-2*c.logLikelihood+6*(3*c.K-1),1e-12);
  const sm=E.summary(mix),ess=E.ess(E.robustify(mix,.2,sm.mean,1,1),'morita');assert.ok(Math.abs(ess/68.8807253024347-1)<=.10,'Morita '+ess+' vs R 68.88');
 });
+test('T16 B2 automixfit start uses RBesT draw indices x[ind + k - 1], k = 1..Nc (normal parity cont_k1_m5_s0.2)',()=>{
+ // RBesT EM_bmm_ab / EM_msmm: knnInit mu[k] = mean(x[ind + k - 1]) for k in seq(Nc), ind = seq(1, N - Nc, length = 50).
+ // cont_k1_m5_s0.2: y = 5, se = 1/sqrt(50), tau ~ HN(0.5), beta ~ N(0, 10), sigma 1; RBesT automixfit on the oracle's
+ // 80,000 draws -> robustify(0.2, MAP mean, sigma 1) Morita 14.554318424481 (validation/reference); PREREG B2 10 %.
+ const model=E.gMAP({family:'normal',data:[{y:5,se:1/Math.sqrt(50)}],tauScale:.5,betaMean:0,betaSD:10,sigma:1}),mix=E.fitMixture(model,{draws:80000});
+ const ess=E.ess(E.robustify(mix,.2,E.summary(mix).mean,1,1),'morita');assert.ok(Math.abs(ess/14.554318424481-1)<=.10,'Morita '+ess+' vs R 14.554');
+});
+test('T17 B2 normal parity cont_k10_m5_s0.2 (R automixfit Morita 71.8077405764314)',()=>{
+ const data=Array.from({length:10},(_,i)=>({y:5+.2*E.normalQuantile((i+.5)/10),se:1/Math.sqrt(50)}));
+ const model=E.gMAP({family:'normal',data,tauScale:.5,betaMean:0,betaSD:10,sigma:1}),mix=E.fitMixture(model,{draws:80000});
+ const ess=E.ess(E.robustify(mix,.2,E.summary(mix).mean,1,1),'morita');assert.ok(Math.abs(ess/71.8077405764314-1)<=.10,'Morita '+ess+' vs R 71.81');
+});
 console.log(`${passed}/${total} PASS; page=${page}`);process.exitCode=passed===total?0:1;
