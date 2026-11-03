@@ -59,3 +59,40 @@ def test_quantiles_match_r_qnorm():
     out = _compute({"alpha": 0.05, "power": 0.9, "delta": 0.2, "D": 1, "studies": [], "tGrid": []})
     assert abs(out["za"] - 1.959963984540054) < 1e-12
     assert abs(out["zb"] - 1.2815515655446004) < 1e-12
+
+
+PAGE = r"""
+const fs = require('fs'), path = require('path'), vm = require('vm');
+const page = process.argv[1], html = fs.readFileSync(page, 'utf8'), state = JSON.parse(process.argv[2]);
+const els = {};
+const el = (id) => els[id] || (els[id] = { id, value: '', innerHTML: '', style: {}, classList: { add() {}, remove() {} },
+  addEventListener() {}, appendChild() {}, removeChild() {}, setAttribute() {}, querySelector() { return null; } });
+const doc = { readyState: 'complete', getElementById: el, querySelector: () => el('_q'), querySelectorAll: () => [],
+  addEventListener() {}, createElement: () => el('_c'), body: el('_b') };
+const ctx = { document: doc, console, Math, JSON, setTimeout() {},
+  localStorage: { getItem() { return JSON.stringify(state); }, setItem() {} } };
+ctx.window = ctx; vm.createContext(ctx);
+for (const m of html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)) {
+  const src = (m[1].match(/src="([^"]+)"/) || [])[1];
+  if (src) { if (src.endsWith('sequential-ma.js')) vm.runInContext(fs.readFileSync(path.resolve(path.dirname(page), src), 'utf8'), ctx); }
+  else if (m[2].includes('__almTsaCompute')) vm.runInContext(m[2], ctx);
+}
+const cards = {};
+for (const c of els['stats-wrap'].innerHTML.matchAll(/<span class="k">([^<]*)<\/span><span class="v">([^<]*)<\/span>/g)) cards[c[1]] = c[2];
+const M = ctx.AlmSequentialMA;
+console.log(JSON.stringify({ cards, M_ok: !!M }));
+"""
+
+
+def test_boundary_card_after_information_exceeds_ris():
+    # RIS = (1.96 + 0.8416)^2 / 0.5^2 = 31.4 information units; looks at information 16, 36, 64 (t = .51, 1.15, 2.04).
+    data = "A, -0.5, 0.25\nB, -0.5, 0.22360679774997896\nC, -0.5, 0.1889822365046136"
+    state = {"data": data, "risMode": "auto", "delta": "0.5", "alpha": "0.05", "power": "0.8", "risManual": "200",
+             "diversity": "1", "title": ""}
+    r = subprocess.run([NODE, "-e", PAGE, str(APP / "index.html"), json.dumps(state)], capture_output=True, text=True, encoding="utf-8", timeout=120)
+    assert r.returncode == 0, r.stderr
+    cards = json.loads(r.stdout.strip().splitlines()[-1])["cards"]
+    # alpha is exhausted at look 2 (t >= 1); look 3 must show the look-2 (final) boundary, not '--' or Infinity
+    b = cards["OF boundary (now)"]
+    assert "--" not in b and "Infinity" not in b, cards
+    assert float(re.search(r"[0-9]+\.[0-9]+", b).group()) < 2.2, cards
