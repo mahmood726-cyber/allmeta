@@ -78,6 +78,7 @@
   <script src="../shared/hero-examples.js"></script>
   <script src="../shared/citation.js"></script>
   <script src="../shared/autosave.js"></script>
+  <script src="../shared/sequential-ma.js"></script>
 </head>
 <body>
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
@@ -169,7 +170,7 @@
 </section>
   </main>
 
-  <p class="footer-note">O'Brien-Fleming boundary z<sub>k</sub> = z<sub>α/2</sub>/√t<sub>k</sub> where t<sub>k</sub> is the information fraction (per advanced-stats.md). Non-binding futility is shown if enabled. <strong>R-parity:</strong> RIS, cumulative-Z and the O'Brien-Fleming boundary match the documented formulas evaluated with R's exact <code>qnorm</code> to 1e-6 (<code>hub/shared/tests/tsa-parity.spec.mjs</code>).</p>
+  <p class="footer-note">Monitoring boundary: Lan-DeMets O'Brien-Fleming-type α-spending, a(t) = 2 − 2Φ(z<sub>α/2</sub>/√t) spent over both sides, solved exactly at every look (each trial) with t<sub>k</sub> = cumulative information / RIS (<code>shared/sequential-ma.js</code>). No futility boundary is computed on this page. <strong>R-parity:</strong> RIS and cumulative Z match R to 1e-9; boundaries match an exact multivariate-normal (mvtnorm) solution to 1e-6 and, with RTSA's per-side spending convention, RTSA 0.2.2 (<code>tsa/tests/test_tsa_engine.py</code>).</p>
 
   <script>
     // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
@@ -213,28 +214,17 @@
       return { studies, warnings };
     }
 
-    // Standard normal quantile (Beasley-Springer-Moro)
+    // Standard normal quantile: Wichura AS241 (R's qnorm), from shared/sequential-ma.js
     function normQuantile(p) {
       if (p <= 0 || p >= 1) return NaN;
-      const a=[-39.69683028665376,220.9460984245205,-275.9285104469687,138.357751867269,-30.66479806614716,2.506628277459239];
-      const b=[-54.47609879822406,161.5858368580409,-155.6989798598866,66.80131188771972,-13.28068155288572];
-      const c=[-0.007784894002430293,-0.3223964580411365,-2.400758277161838,-2.549732539343734,4.374664141464968,2.938163982698783];
-      const d=[0.007784695709041462,0.3224671290700398,2.445134137142996,3.754408661907416];
-      const pLow=0.02425, pHigh=1-pLow;
-      let q, r;
-      if (p < pLow) { q = Math.sqrt(-2*Math.log(p)); return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
-      if (p <= pHigh) { q = p-0.5; r = q*q; return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1); }
-      q = Math.sqrt(-2*Math.log(1-p));
-      return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+      return window.AlmSequentialMA._qnorm(p);
     }
-    function normCDF(z) {
-      // Abramowitz & Stegun 7.1.26
-      const b1=0.319381530, b2=-0.356563782, b3=1.781477937, b4=-1.821255978, b5=1.330274429, p=0.2316419, c2=0.3989422804014327;
-      const az = Math.abs(z);
-      const t = 1/(1+p*az);
-      const b = c2*Math.exp(-az*az/2);
-      const n = 1 - b*(b1*t + b2*t*t + b3*t*t*t + b4*Math.pow(t,4) + b5*Math.pow(t,5));
-      return z >= 0 ? n : 1 - n;
+    // Lan-DeMets O'Brien-Fleming-type alpha-spending boundaries at the looks t (information fractions, ascending),
+    // exact group-sequential solution from shared/sequential-ma.js. conv: "total" (Lan-DeMets 1983) or "per-side" (RTSA).
+    function ldBoundaries(tArr, alpha, conv) {
+      if (!tArr.length) return [];
+      return window.AlmSequentialMA.computeBoundary(tArr.map(t => ({ t: t, z: 0 })),
+        { alpha: alpha, family: "OBF", sided: 2, spendingConvention: conv || "total" }).looks.map(l => l.alpha_boundary);
     }
 
     function computeRIS(state) {
@@ -289,8 +279,7 @@
       function x(info) { return L + (info/maxInfo) * plotW; }
       function y(z) { return T + plotH/2 - (z/zMax) * (plotH/2 - 10); }
 
-      const za = normQuantile(1 - alpha/2);
-      function ofZ(t) { return za / Math.sqrt(Math.max(t, 1e-6)); }
+      const bLooks = ldBoundaries(series.map(s => s.cumInfo / ris), alpha);
 
       const parts = [];
       parts.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -308,13 +297,9 @@
       parts.push("<line x1=\""+L+"\" y1=\""+y(Z975)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(Z975)+"\" stroke=\"#d9d5cc\" stroke-dasharray=\"3 3\" stroke-width=\"0.8\"/>");
       parts.push("<line x1=\""+L+"\" y1=\""+y(-Z975)+"\" x2=\""+(L+plotW)+"\" y2=\""+y(-Z975)+"\" stroke=\"#d9d5cc\" stroke-dasharray=\"3 3\" stroke-width=\"0.8\"/>");
 
-      // O'Brien-Fleming boundaries (sampled over t in [0.05, 1])
+      // Lan-DeMets O'Brien-Fleming-type boundaries, defined at each look (trial); capped for display
       const boundPts = [];
-      for (let ti = 0.05; ti <= 1.0001; ti += 0.02) {
-        const info = ti * ris;
-        const zb = ofZ(ti);
-        boundPts.push({info: info, zUp: zb, zLo: -zb});
-      }
+      series.forEach((s, i) => { const zb = Math.min(bLooks[i], zMax + 1); boundPts.push({info: s.cumInfo, zUp: zb, zLo: -zb}); });
       if (boundPts.length) {
         const pUp = boundPts.map(p => x(p.info)+","+y(p.zUp)).join(" ");
         const pLo = boundPts.map(p => x(p.info)+","+y(p.zLo)).join(" ");
@@ -363,7 +348,6 @@
       const ris = computeRIS(state);
       const series = cumulative(parsed.studies);
       const alpha = parseFloat(state.alpha) || 0.05;
-      const za = normQuantile(1 - alpha/2);
 
       // Stats
       const parts = [];
@@ -375,8 +359,7 @@
           parts.push(statCard("Current info", fmt(cur.cumInfo, 1) + " (" + fmt(100*cur.cumInfo/ris, 1) + "%)"));
           parts.push(statCard("Cumulative Z", fmt(cur.z, 2)));
           parts.push(statCard("Pooled μ", fmt(cur.cumMu, 3) + " [" + fmt(cur.cumMu-Z975 *cur.cumSE,3) + ", " + fmt(cur.cumMu+Z975 *cur.cumSE,3) + "]"));
-          const t = cur.cumInfo / ris;
-          const bnd = za / Math.sqrt(Math.max(t, 1e-6));
+          const bnd = ldBoundaries(series.map(s => s.cumInfo / ris), alpha)[series.length - 1];
           parts.push(statCard("OF boundary (now)", "±" + fmt(bnd, 2)));
           const crossed = Math.abs(cur.z) > bnd ? "Yes" : "No";
           parts.push(statCard("Crossed?", crossed));
@@ -524,15 +507,15 @@
     }
 
     // Pure-compute hook for R-parity tests (deterministic). Independent of
-    // UI state. RIS / cumulative-Z / O'Brien-Fleming boundary per
-    // advanced-stats.md (z_k = z_{alpha/2}/sqrt(t_k); RIS x D).
+    // UI state. RIS x D; cumulative fixed-effect Z; Lan-DeMets O'Brien-Fleming-type alpha-spending boundary for
+    // the look schedule tGrid (o.spendingConvention: "total" default, or "per-side" as in RTSA).
     window.__almTsaCompute = function (o) {
       const za = normQuantile(1 - o.alpha / 2);
       const zb = normQuantile(o.power);
       const ris = Math.pow(za + zb, 2) / (o.delta * o.delta) * (o.D || 1);
       const cum = cumulative((o.studies || []).map(s => ({
         label: s.label, est: s.est, se: s.se, v: s.se * s.se })));
-      const ob = (o.tGrid || []).map(t => za / Math.sqrt(t));
+      const ob = ldBoundaries(o.tGrid || [], o.alpha, o.spendingConvention);
       return {
         za, zb, ris,
         cumulative: cum.map(c => ({

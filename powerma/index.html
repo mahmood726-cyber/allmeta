@@ -208,8 +208,10 @@
       // Heterogeneity adjustment: inflate by 1/(1 - D²) (for diversity) and / (1 - I²) for I²
       const d2Adj = d2 < 1 ? 1 / (1 - d2) : NaN;
       const i2Adj = i2 < 1 ? 1 / (1 - i2) : NaN;
-      __bodyParts.push(`<tr><td><code>MA adjusted for I² (${(i2 * 100).toFixed(0)}%)</code></td><td>${fmt(base.nPerArm * i2Adj)}</td><td>${fmt(base.totalN * i2Adj)}</td><td>${base.eventsTarget ? fmt(base.eventsTarget * i2Adj) : "—"}</td></tr>`);
-      __bodyParts.push(`<tr style="background:var(--accent-soft); font-weight:600"><td><code>RIS (D² = ${(d2 * 100).toFixed(0)}%)</code></td><td>${fmt(base.nPerArm * d2Adj)}</td><td>${fmt(base.totalN * d2Adj)}</td><td>${base.eventsTarget ? fmt(base.eventsTarget * d2Adj) : "—"}</td></tr>`);
+      // Required sizes are rounded UP (never down), as in RTSA ris(): ceiling(1/(1 - D2) * N).
+      const fmtN = (x) => Number.isFinite(x) ? String(Math.ceil(x)) : "—";
+      __bodyParts.push(`<tr><td><code>MA adjusted for I² (${(i2 * 100).toFixed(0)}%)</code></td><td>${fmtN(base.nPerArm * i2Adj)}</td><td>${fmtN(base.totalN * i2Adj)}</td><td>${base.eventsTarget ? fmtN(base.eventsTarget * i2Adj) : "—"}</td></tr>`);
+      __bodyParts.push(`<tr style="background:var(--accent-soft); font-weight:600"><td><code>RIS (D² = ${(d2 * 100).toFixed(0)}%)</code></td><td>${fmtN(base.nPerArm * d2Adj)}</td><td>${fmtN(base.totalN * d2Adj)}</td><td>${base.eventsTarget ? fmtN(base.eventsTarget * d2Adj) : "—"}</td></tr>`);
 
       drawCurve(outcome, inputs);
       body.innerHTML = __bodyParts.join("");
@@ -217,7 +219,7 @@
         i2_pct: i2 * 100, d2_pct: d2 * 100,
         single_study_n_per_arm: base.nPerArm, single_study_total_n: base.totalN,
         events_target: base.eventsTarget || null,
-        ris_total_n: isFinite(d2Adj) ? Math.round(base.totalN * d2Adj) : null };
+        ris_total_n: isFinite(d2Adj) ? Math.ceil(base.totalN * d2Adj) : null };
     }
     var _lastPowerMA = null;
     window.__almLastPowerMA = function () { return _lastPowerMA; };
