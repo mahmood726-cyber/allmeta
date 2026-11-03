@@ -4094,7 +4094,7 @@ function betaMStep(c1,c2){// RBesT EM_bmm_ab M-step: digamma(a)-digamma(a+b)=c1,
  const line=(fix,which)=>{let lo=-40,hi=40,g=v=>{const z=1+Math.exp(v);return which==='a'?S(fix,z):S(z,fix);};for(let i=0;i<200;i++){const m1_=lo+(hi-lo)/3,m2_=hi-(hi-lo)/3;if(g(m1_)<g(m2_))hi=m2_;else lo=m1_;}const z=Math.max(1+Math.exp((lo+hi)/2),fl);return which==='a'?{a:fix,b:z}:{a:z,b:fix};};
  const cands=[line(fl,'a'),line(fl,'b'),{a:fl,b:fl}];return cands.reduce((m,c)=>S(c.a,c.b)<S(m.a,m.b)?c:m);}
 function emBeta(xin,Nc){const N=xin.length,x=Float64Array.from(xin,v=>v===0?RB_EPS:v===1?1-RB_EPS:v),Lx=Float64Array.from(x,Math.log),LxC=Float64Array.from(x,v=>Math.log1p(-v));
- const ind=rSeqIdx(N,Nc,50),mu0=[];for(let k=0;k<Nc;k++){let s=0;for(const v of ind)s+=x[Math.floor(v+k-1)-1];mu0.push(s/ind.length);}
+ const ind=rSeqIdx(N,Nc,50),mu0=[];for(let k=0;k<Nc;k++){let s=0;for(const v of ind)s+=x[Math.floor(v+k)-1];mu0.push(s/ind.length);}
  const KNN=rbKnn(x,Nc,mu0),mx=rmean(x),vx=rvar(x),muI=Array(Nc).fill(mx),vI=Array(Nc).fill(1.5*vx);
  for(let k=0;k<Nc;k++){const sel=[];for(let i=0;i<N;i++)if(KNN.cluster[i]===k)sel.push(x[i]);if(sel.length>10){muI[k]=KNN.center[k];vI[k]=rvar(sel);}}
  const nI=muI.map((m,k)=>{const v=m*(1-m)/vI[k]-1;return Number.isNaN(v)?1:Math.max(v,1);});let cmin=0;for(let k=1;k<Nc;k++)if(KNN.p[k]<KNN.p[cmin])cmin=k;
@@ -4120,7 +4120,7 @@ function brentFmin(f,ax,bx,tol){// R's optimize() (Brent_fmin, src/library/stats
   const u=Math.abs(d)>=tol1?x+d:d>0?x+tol1:x-tol1,fu=f(u);
   if(fu<=fx){if(u<x)b=x;else a=x;v=w;w=x;x=u;fv=fw;fw=fx;fx=fu;}else{if(u<x)a=u;else b=u;if(fu<=fw||w===x){v=w;fv=fw;w=u;fw=fu;}else if(fu<=fv||v===x||v===w){v=u;fv=fu;}}}
  return x;}
-function emNormal(x,Nc){const N=x.length,logN=Math.log(N),ind=rSeqIdx(N,Nc,50),mu0=[];for(let k=0;k<Nc;k++){let s=0;for(const v of ind)s+=x[Math.floor(v+k-1)-1];mu0.push(s/ind.length);}
+function emNormal(x,Nc){const N=x.length,logN=Math.log(N),ind=rSeqIdx(N,Nc,50),mu0=[];for(let k=0;k<Nc;k++){let s=0;for(const v of ind)s+=x[Math.floor(v+k)-1];mu0.push(s/ind.length);}
  // EM_msmm (Student-t mixture EM, Niter.max 250, tol 0.1) provides RBesT's starting values
  const KNN=rbKnn(x,Nc,mu0);let p=KNN.p.slice(),mu=KNN.center.slice(),nu=Array(Nc).fill(12),cv=Array(Nc).fill(0);const Xtau=Math.sqrt(rvar(x));let cmin=0;for(let k=1;k<Nc;k++)if(p[k]<p[cmin])cmin=k;
  for(let k=0;k<Nc;k++){if(k===cmin)continue;const sel=[];for(let i=0;i<N;i++)if(KNN.cluster[i]===k)sel.push(x[i]);let tau=Xtau;if(sel.length>10){tau=Math.sqrt(rvar(sel));if(tau<=0)tau=Xtau;}tau=Math.max(tau,Xtau/100);cv[k]=tau*tau;}
