@@ -89,7 +89,9 @@ cat('ALMJSON:{',paste(sprintf('"%s":%.17g',names(ans),ans),collapse=','),'}\\n',
     }
     let exported;try{exported=JSON.parse(api.exportText());}catch{}
     const keys=(obj,expected)=>obj&&typeof obj==='object'&&JSON.stringify(Object.keys(obj).sort())===JSON.stringify(expected.slice().sort());
-    out.push({quantity:'export.schema',pass:!!exported&&keys(exported,['model','inference','status','rows','clusters','robust','logLik','profiles'])&&exported.model==='Three-level REML; diagonal sampling V'&&exported.inference==='CR2; Satterthwaite; 95% confidence'&&exported.status==='ok'&&keys(exported.robust,['estimate','se','df','t','p','lower','upper'])&&Array.isArray(exported.profiles)&&exported.profiles.length===2&&exported.profiles.every(p=>keys(p,['estimate','lower','upper','x','ll'])&&Array.isArray(p.x)&&p.x.length===9&&Array.isArray(p.ll)&&p.ll.length===9)});
+    const build=window.AlmBuildInfo||null;
+    const provenance=build===null?exported?.producedBy===null:!!keys(exported?.producedBy,Object.keys(build))&&Object.keys(build).every(key=>exported.producedBy[key]===build[key]);
+    out.push({quantity:'export.schema',pass:!!exported&&keys(exported,['model','inference','status','rows','clusters','robust','logLik','profiles','producedBy'])&&provenance&&exported.model==='Three-level REML; diagonal sampling V'&&exported.inference==='CR2; Satterthwaite; 95% confidence'&&exported.status==='ok'&&keys(exported.robust,['estimate','se','df','t','p','lower','upper'])&&Array.isArray(exported.profiles)&&exported.profiles.length===2&&exported.profiles.every(p=>keys(p,['estimate','lower','upper','x','ll'])&&Array.isArray(p.x)&&p.x.length===9&&Array.isArray(p.ll)&&p.ll.length===9)});
     let ev={};try{ev=api.quantities(exported);}catch{}
     for(const [key,value] of Object.entries(rv))out.push({quantity:'export.'+key,pass:numerical(ev[key],value,key).pass});
     // Every scale mark above must match R. Use those checked app marks for the

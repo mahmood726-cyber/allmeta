@@ -70,7 +70,7 @@
   run.onclick=()=>{status.textContent='Calculating extras… large inputs can take a minute or more.';run.disabled=true;setTimeout(()=>{try{calculate();}catch{}finally{run.disabled=false;}},0);};
   // One click: restore the page's built-in example rows, refit the original analysis, then the extras.
   example.onclick=()=>{const src=document.getElementById('src');src.value=src.defaultValue;src.dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('btn-run')?.click();run.onclick();};
-  function exportText(){if(!result||source!==document.getElementById('src').value)throw Error('Extras out of date — calculate again');return JSON.stringify({model:'Three-level REML; diagonal sampling V',inference:'CR2; Satterthwaite; 95% confidence',...result},null,2)+'\n';}
+  function exportText(){if(!result||source!==document.getElementById('src').value)throw Error('Extras out of date — calculate again');return JSON.stringify({model:'Three-level REML; diagonal sampling V',inference:'CR2; Satterthwaite; 95% confidence',...result,producedBy:window.AlmBuildInfo||null},null,2)+'\n';}
   download.onclick=()=>{try{const url=URL.createObjectURL(new Blob([exportText()],{type:'application/json'}));const a=node('a');a.href=url;a.download='multilevel-extras.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),0);}catch(e){status.textContent=e.message;}};
   function stale(){if(source!==null&&source!==document.getElementById('src').value){result=null;source=null;download.disabled=true;document.getElementById('alm-plus-output').replaceChildren();status.textContent='Extras out of date — calculate again';}}
   document.getElementById('src').addEventListener('input',stale);setInterval(stale,150);
