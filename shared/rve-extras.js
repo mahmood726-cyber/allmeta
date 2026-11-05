@@ -223,6 +223,14 @@
     if (!rows.length) return NaN;
     var M = xtwx(rows, weights);
     if (M.length === 1) return 1;
+    // Jacobi stops on an absolute off-diagonal norm. Normalize this diagnostic
+    // matrix so a common fitted-weight scale cannot suppress its rotations.
+    // The common scale cancels in the ratio of extreme eigenvalues.
+    var scale = 0;
+    for (var r = 0; r < M.length; r++) for (var c = 0; c < M.length; c++) scale = Math.max(scale, Math.abs(M[r][c]));
+    if (scale > 0 && isFinite(scale)) {
+      for (var a = 0; a < M.length; a++) for (var b = 0; b < M.length; b++) M[a][b] /= scale;
+    }
     var eig = global.AlmRVE._symEig(M).values.map(Math.abs);
     var mx = Math.max.apply(null, eig), mn = Math.min.apply(null, eig);
     return mn > 0 ? mx / mn : Infinity;

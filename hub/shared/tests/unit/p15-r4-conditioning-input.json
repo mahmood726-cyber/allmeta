@@ -1,0 +1,19 @@
+{
+  "rho": 0.8,
+  "rows": [
+    {"cluster":"a","yi":0.2,"X":[1,1990]},
+    {"cluster":"a","yi":0.25,"X":[1,1991]},
+    {"cluster":"b","yi":0.4,"X":[1,1995]},
+    {"cluster":"b","yi":0.35,"X":[1,1995]},
+    {"cluster":"c","yi":0.1,"X":[1,2004]},
+    {"cluster":"d","yi":0.6,"X":[1,2003]},
+    {"cluster":"e","yi":0.3,"X":[1,1999]},
+    {"cluster":"f","yi":0.18,"X":[1,2010]}
+  ],
+  "cases": [
+    {"name":"ordinary","vi":0.04,"centred":false,"warn":true},
+    {"name":"tiny","vi":1e20,"centred":false,"warn":true},
+    {"name":"centred ordinary","vi":0.04,"centred":true,"warn":false},
+    {"name":"centred tiny","vi":1e20,"centred":true,"warn":false}
+  ]
+}
