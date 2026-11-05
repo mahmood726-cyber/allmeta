@@ -1,0 +1,2 @@
+# Provenance records the R input's LF bytes, independent of checkout platform.
+p07-translation-input.json text eol=lf
