@@ -60,6 +60,24 @@
       { label: "Comstock + Webster",yi:  0.4459, vi: 0.5325, year: 1969, latitude: 33, design: "obs" },
       { label: "Comstock 1976",     yi: -0.0173, vi: 0.0714, year: 1976, latitude: 33, design: "obs" },
     ],
+    // Full-precision regression rows from metadat::dat.bcg and metafor::escalc("RR").
+    // Native R provenance and all row values: hub/shared/tests/unit/p08-bcg-reference.{R,json}.
+    // Keep the rounded effect_se records above unchanged for existing pairwise adapters.
+    meta_regression: [
+      { label: "Aronson 1948", yi: -0.88931133392020545, vi: 0.32558476500396133, ablat: 44 },
+      { label: "Ferguson & Simes 1949", yi: -1.5853886572014306, vi: 0.19458112139814385, ablat: 55 },
+      { label: "Rosenthal et al 1960", yi: -1.3480731482996933, vi: 0.41536796536796539, ablat: 42 },
+      { label: "Hart & Sutherland 1977", yi: -1.4415511900213054, vi: 0.020010031902247573, ablat: 52 },
+      { label: "Frimodt-Moller et al 1973", yi: -0.21754732221129558, vi: 0.051210172169630863, ablat: 13 },
+      { label: "Stein & Aronson 1953", yi: -0.78611558581886398, vi: 0.0069056184559087574, ablat: 44 },
+      { label: "Vandiviere et al 1973", yi: -1.6208982235983918, vi: 0.22301724757231517, ablat: 19 },
+      { label: "TPT Madras 1980", yi: 0.011952333523840508, vi: 0.0039615792978177295, ablat: 13 },
+      { label: "Coetzee & Berjak 1968", yi: -0.4694176487381494, vi: 0.056434210463248966, ablat: 27 },
+      { label: "Rosenthal et al 1961", yi: -1.3713448034727844, vi: 0.07302479361302891, ablat: 42 },
+      { label: "Comstock et al 1974", yi: -0.33935882833839059, vi: 0.01241221397155972, ablat: 18 },
+      { label: "Comstock & Webster 1969", yi: 0.44591340057137874, vi: 0.53250584520015276, ablat: 33 },
+      { label: "Comstock et al 1976", yi: -0.017313948216879815, vi: 0.071404659683986293, ablat: 33 },
+    ],
   };
 
   // ----- NMA datasets (multi-arm + multi-comparison) ---------------------
@@ -198,6 +216,17 @@
     }).join("\n");
   }
 
+  function toMetaRegressionText(dataset) {
+    if (!dataset || !Array.isArray(dataset.meta_regression)) return "";
+    var rows = dataset.meta_regression;
+    if (!rows.every(function (s) {
+      return s && Number.isFinite(s.yi) && Number.isFinite(s.vi) && s.vi > 0 && Number.isFinite(s.ablat);
+    })) return "";
+    return rows.map(function (s) {
+      return s.label + ", " + s.yi + ", " + Math.sqrt(s.vi) + ", " + s.ablat;
+    }).join("\n");
+  }
+
   function toGlmmTextarea(dataset) {
     if (!dataset || !dataset.binary_2x2) return "";
     return dataset.binary_2x2.map(function (r) {
@@ -240,6 +269,7 @@
     list: function () { return Object.keys(DATASETS); },
     get: function (key) { return DATASETS[key] || null; },
     toForestPlotText: toForestPlotText,
+    toMetaRegressionText: toMetaRegressionText,
     toEffectSeLabelText: toEffectSeLabelText,
     toGlmmTextarea: toGlmmTextarea,
     toCrossDesignText: toCrossDesignText,
