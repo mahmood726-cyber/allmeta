@@ -23,7 +23,7 @@ function setup(pins) {
   window.requestAnimationFrame=()=>0;window.setTimeout=()=>0;
   function run(p){vm.runInContext(read(p),ctx,{filename:p});}
   Object.defineProperty(ctx,'_almLastCorrMA',{get:()=>window._almLastCorrMA});
-  run('shared/ma-core.js');run('hub/shared/results-export.js');
+  run('shared/ma-core.js');run('shared/build-info.js');run('hub/shared/results-export.js');
   vm.runInContext([...document.querySelectorAll('script')].find(s=>s.textContent.includes('var EXAMPLE')).textContent,ctx);
   run('hub/shared/a11y-landmarks.js');run('hub/shared/chart-export-auto.js');
   run('shared/alm-validate.js');ctx.AlmValidate=window.AlmValidate;
