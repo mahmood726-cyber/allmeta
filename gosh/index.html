@@ -376,8 +376,13 @@
       document.getElementById('m-i2').textContent = medI2.toFixed(1) + '%';
 
       // Store for export
+      var buildInfo = window.AlmBuildInfo || {};
       _lastResults = {
         _schema: 'gosh-results-v1',
+        software: {
+          version: buildInfo.version || 'unknown',
+          sha: buildInfo.sha || 'unknown',
+        },
         k: rows.length,
         model: model,
         sampled: isSampled,
