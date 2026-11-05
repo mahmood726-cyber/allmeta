@@ -132,6 +132,7 @@
       <h2 style="margin-top:0.5rem">Heterogeneity</h2>
       <div id="het"></div>
       <h2 style="margin-top:0.8rem">Forest plot</h2>
+      <div id="forest-axis-error" role="status" aria-live="polite" hidden></div>
       <svg id="forest" viewBox="0 0 600 280" role="img" aria-label="Forest plot of proportions"></svg>
 
       <!-- plot-export mount -->
@@ -516,6 +517,15 @@
 
     function drawForest(rows, pooled) {
       var svg = document.getElementById('forest');
+      var axisError = document.getElementById('forest-axis-error');
+      axisError.hidden = true;
+      axisError.textContent = '';
+      function refuseLog(message) {
+        svg.innerHTML = '';
+        axisError.textContent = message;
+        axisError.hidden = false;
+      }
+      var logAxis = !!(_axisState && _axisState.xLog);
       var W = 600, H = Math.max(200, 50 + (rows.length + 1) * 26 + 30);
       var padL = 160, padR = 30, padT = 20, padB = 40;
       var plotW = W - padL - padR;
@@ -528,22 +538,44 @@
       }
 
       var autoLo = 0, autoHi = 1;
-      if (rows.length) {
-        autoLo = Math.min.apply(null, rows.map(function (r) { return r.lo; }));
-        autoHi = Math.max.apply(null, rows.map(function (r) { return r.hi; }));
-        var pad2 = (autoHi - autoLo) * 0.08 || 0.05;
-        autoLo = Math.max(0, autoLo - pad2);
-        autoHi = Math.min(1, autoHi + pad2);
+      if (logAxis) {
+        var plotted = [pooled.poolP, pooled.poolLo, pooled.poolHi];
+        rows.forEach(function (r) { plotted.push(r.p, r.lo, r.hi); });
+        if (!plotted.every(function (p) { return Number.isFinite(p) && p > 0; })) {
+          refuseLog('Log axis requires positive, finite estimates and confidence limits. Uncheck log to plot these results.');
+          return;
+        }
+        // Pad in log space so a positive confidence limit never crosses zero.
+        var logLo = Math.log10(Math.min.apply(null, plotted));
+        var logHi = Math.log10(Math.max.apply(null, plotted));
+        var logPad = (logHi - logLo) * 0.08 || 0.05;
+        autoLo = Math.max(Number.MIN_VALUE, Math.pow(10, logLo - logPad));
+        autoHi = Math.pow(10, Math.min(0, logHi + logPad));
+      } else {
+        if (rows.length) {
+          autoLo = Math.min.apply(null, rows.map(function (r) { return r.lo; }));
+          autoHi = Math.max.apply(null, rows.map(function (r) { return r.hi; }));
+          var pad2 = (autoHi - autoLo) * 0.08 || 0.05;
+          autoLo = Math.max(0, autoLo - pad2);
+          autoHi = Math.min(1, autoHi + pad2);
+        }
+        autoLo = Math.min(autoLo, pooled.poolLo - 0.02);
+        autoHi = Math.max(autoHi, pooled.poolHi + 0.02);
       }
-      autoLo = Math.min(autoLo, pooled.poolLo - 0.02);
-      autoHi = Math.max(autoHi, pooled.poolHi + 0.02);
       var loP = xMin !== null ? xMin : autoLo;
       var hiP = xMax !== null ? xMax : autoHi;
-      if (hiP <= loP) hiP = loP + 0.01;
+      if (logAxis) {
+        if (!Number.isFinite(loP) || !Number.isFinite(hiP) || loP <= 0 || hiP <= loP) {
+          refuseLog('Log axis requires positive, finite bounds with minimum < maximum. Correct the bounds or uncheck log.');
+          return;
+        }
+      } else if (hiP <= loP) hiP = loP + 0.01;
 
       svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
       var svgParts = [''];
-      var X = function (p) { return padL + (p - loP) / (hiP - loP) * plotW; };
+      var X = logAxis
+        ? function (p) { return padL + (Math.log10(p) - Math.log10(loP)) / (Math.log10(hiP) - Math.log10(loP)) * plotW; }
+        : function (p) { return padL + (p - loP) / (hiP - loP) * plotW; };
 
       // x-axis
       svgParts.push('<line x1="' + padL + '" y1="' + (padT + H - padT - padB - 22) + '" x2="' + (padL + plotW) + '" y2="' + (padT + H - padT - padB - 22) + '" stroke="currentColor" opacity="0.5"/>');
@@ -552,12 +584,26 @@
       var plotH = H - padT - padB;
 
       // ticks
-      for (var t = 0; t <= 1.0001; t += 0.2) {
-        var xp = X(t);
-        if (xp < padL || xp > padL + plotW) continue;
-        svgParts.push('<line x1="' + xp + '" y1="' + (padT + plotH - 18) + '" x2="' + xp + '" y2="' + (padT + plotH - 26) + '" stroke="currentColor" opacity="0.5"/>');
-        svgParts.push('<text x="' + xp + '" y="' + (padT + plotH - 5) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">' + (t * 100).toFixed(0) + '%</text>');
+      var tickValues = [];
+      if (logAxis) {
+        var firstDecade = Math.ceil(Math.log10(loP));
+        var lastDecade = Math.floor(Math.log10(hiP));
+        var step = Math.max(1, Math.ceil((lastDecade - firstDecade) / 4));
+        for (var decade = firstDecade; decade <= lastDecade; decade += step) {
+          tickValues.push(Math.pow(10, decade));
+        }
+        // A range within one decade still needs distinct, correctly placed labels.
+        if (tickValues.length < 2) tickValues = [loP, hiP];
+      } else {
+        for (var t = 0; t <= 1.0001; t += 0.2) tickValues.push(t);
       }
+      tickValues.forEach(function (t) {
+        var xp = X(t);
+        if (xp < padL || xp > padL + plotW) return;
+        svgParts.push('<line x1="' + xp + '" y1="' + (padT + plotH - 18) + '" x2="' + xp + '" y2="' + (padT + plotH - 26) + '" stroke="currentColor" opacity="0.5"/>');
+        var label = logAxis ? String(Number((t * 100).toPrecision(12))) : (t * 100).toFixed(0);
+        svgParts.push('<text x="' + xp + '" y="' + (padT + plotH - 5) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">' + label + '%</text>');
+      });
 
       rows.forEach(function (r, i) {
         var y = padT + i * 26 + 10;
@@ -614,7 +660,14 @@
 
     // Expose last results for export
     window.__almPropValidation = {
-      run: function () { run({suppressURL:true}); }, parse: parseTable,
+      run: function (options) {
+        var savedAxis = _axisState;
+        try {
+          // Published-corpus DOM checks use the default automatic linear plot.
+          if (options && options.corpus) _axisState = {};
+          run({suppressURL:true});
+        } finally { _axisState = savedAxis; }
+      }, parse: parseTable,
       save: function () { return {results:_lastResults, details:_validationDetails}; },
       restore: function (s) { _lastResults=s.results; _validationDetails=s.details; },
       snapshot: function () { return _validationDetails ? JSON.parse(JSON.stringify(_validationDetails)) : null; }
