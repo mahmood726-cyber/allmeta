@@ -1,0 +1,309 @@
+{
+  "provenance": {
+    "R": "R version 4.6.0 (2026-04-24 ucrt)",
+    "packages": {
+      "EValue": "4.1.4",
+      "jsonlite": "2.0.0"
+    },
+    "EValue_source": {
+      "mode": "unmodified pinned package source; not an installed namespace",
+      "revision": "44c2dc41ce49444619bc2d97c16d87c7caef6f07",
+      "origin": "https://raw.githubusercontent.com/cran/EValue/44c2dc41ce49444619bc2d97c16d87c7caef6f07/",
+      "md5": {
+        "DESCRIPTION": "e9af5b5c57fdea0e53b255031d03d0df",
+        "R/EValue.R": "58ec02a9c41b0d782d277d67cc9e9403",
+        "R/effect_measures.R": "d2dfd1094cd011166da5f28c4c7db8be",
+        "R/utils.R": "24f48cc438319fed72fb796b8f45e887"
+      }
+    },
+    "script": "p20-evalue-reference.R",
+    "script_md5": "14b220211527f89034ca0bdd1cfe5d59",
+    "input": "p20-input.json",
+    "input_md5": "5c6739dc9f47d441bc202a12372a4ab7",
+    "tolerance": 1e-06,
+    "method": "Canonical EValue functions: evalues.RR/OR/HR; SMD endpoints via toRR(MD(...)) then evalues.RR",
+    "disclosure": "Synthetic software tests"
+  },
+  "cases": [
+    {
+      "id": "rr-harmful-control",
+      "input": {
+        "id": "rr-harmful-control",
+        "type": "RR",
+        "est": 2,
+        "lo": 1.5,
+        "hi": 2.7,
+        "rare": false
+      },
+      "expected": {
+        "point": 3.41421356237309,
+        "ci": 2.36602540378444,
+        "rr": {
+          "point": 2,
+          "lo": 1.5,
+          "hi": 2.7
+        }
+      }
+    },
+    {
+      "id": "rr-protective",
+      "input": {
+        "id": "rr-protective",
+        "type": "RR",
+        "est": 0.6,
+        "lo": 0.4,
+        "hi": 0.9,
+        "rare": false
+      },
+      "expected": {
+        "point": 2.72075922005613,
+        "ci": 1.46247529557426,
+        "rr": {
+          "point": 0.6,
+          "lo": 0.4,
+          "hi": 0.9
+        }
+      }
+    },
+    {
+      "id": "rr-null-control",
+      "input": {
+        "id": "rr-null-control",
+        "type": "RR",
+        "est": 1,
+        "lo": 1,
+        "hi": 1,
+        "rare": false
+      },
+      "expected": {
+        "point": 1,
+        "ci": 1,
+        "rr": {
+          "point": 1,
+          "lo": 1,
+          "hi": 1
+        }
+      }
+    },
+    {
+      "id": "rr-crossing",
+      "input": {
+        "id": "rr-crossing",
+        "type": "RR",
+        "est": 2,
+        "lo": 0.9,
+        "hi": 3,
+        "rare": false
+      },
+      "expected": {
+        "point": 3.41421356237309,
+        "ci": 1,
+        "rr": {
+          "point": 2,
+          "lo": 0.9,
+          "hi": 3
+        }
+      }
+    },
+    {
+      "id": "rr-missing-ci",
+      "input": {
+        "id": "rr-missing-ci",
+        "type": "RR",
+        "est": 2,
+        "lo": null,
+        "hi": null,
+        "rare": false
+      },
+      "expected": {
+        "point": 3.41421356237309,
+        "ci": null,
+        "rr": {
+          "point": 2,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "id": "or-common",
+      "input": {
+        "id": "or-common",
+        "type": "OR",
+        "est": 2,
+        "lo": 1.5,
+        "hi": 2.7,
+        "rare": false
+      },
+      "expected": {
+        "point": 2.17958042710328,
+        "ci": 1.74939249466688,
+        "rr": {
+          "point": 1.4142135623731,
+          "lo": 1.22474487139159,
+          "hi": 1.6431676725155
+        }
+      }
+    },
+    {
+      "id": "or-rare",
+      "input": {
+        "id": "or-rare",
+        "type": "OR",
+        "est": 2,
+        "lo": 1.5,
+        "hi": 2.7,
+        "rare": true
+      },
+      "expected": {
+        "point": 3.41421356237309,
+        "ci": 2.36602540378444,
+        "rr": {
+          "point": 2,
+          "lo": 1.5,
+          "hi": 2.7
+        }
+      }
+    },
+    {
+      "id": "or-protective",
+      "input": {
+        "id": "or-protective",
+        "type": "OR",
+        "est": 0.6,
+        "lo": 0.4,
+        "hi": 0.9,
+        "rare": false
+      },
+      "expected": {
+        "point": 1.90391550232335,
+        "ci": 1.29287814282411,
+        "rr": {
+          "point": 0.774596669241483,
+          "lo": 0.632455532033676,
+          "hi": 0.948683298050514
+        }
+      }
+    },
+    {
+      "id": "hr-common",
+      "input": {
+        "id": "hr-common",
+        "type": "HR",
+        "est": 1.6,
+        "lo": 1.2,
+        "hi": 2.1,
+        "rare": false
+      },
+      "expected": {
+        "point": 2.11294392788807,
+        "ci": 1.52553091757873,
+        "rr": {
+          "point": 1.38397000825837,
+          "lo": 1.13465354412874,
+          "hi": 1.66702405871236
+        }
+      }
+    },
+    {
+      "id": "hr-rare",
+      "input": {
+        "id": "hr-rare",
+        "type": "HR",
+        "est": 1.6,
+        "lo": 1.2,
+        "hi": 2.1,
+        "rare": true
+      },
+      "expected": {
+        "point": 2.57979589711327,
+        "ci": 1.68989794855664,
+        "rr": {
+          "point": 1.6,
+          "lo": 1.2,
+          "hi": 2.1
+        }
+      }
+    },
+    {
+      "id": "hr-protective",
+      "input": {
+        "id": "hr-protective",
+        "type": "HR",
+        "est": 0.6,
+        "lo": 0.4,
+        "hi": 0.9,
+        "rare": false
+      },
+      "expected": {
+        "point": 2.19962239565988,
+        "ci": 1.36122063133893,
+        "rr": {
+          "point": 0.702564457283685,
+          "lo": 0.533091086345336,
+          "hi": 0.929581292592684
+        }
+      }
+    },
+    {
+      "id": "smd-positive",
+      "input": {
+        "id": "smd-positive",
+        "type": "SMD",
+        "est": 0.5,
+        "lo": 0.2,
+        "hi": 0.8,
+        "rare": false
+      },
+      "expected": {
+        "point": 2.52914198186127,
+        "ci": 1.68896071760123,
+        "rr": {
+          "point": 1.57617338303399,
+          "lo": 1.19961419387987,
+          "hi": 2.0709345938546
+        }
+      }
+    },
+    {
+      "id": "smd-negative",
+      "input": {
+        "id": "smd-negative",
+        "type": "SMD",
+        "est": -0.5,
+        "lo": -0.8,
+        "hi": -0.2,
+        "rare": false
+      },
+      "expected": {
+        "point": 2.52914198186127,
+        "ci": 1.68896071760123,
+        "rr": {
+          "point": 0.634447967948228,
+          "lo": 0.48287377253123,
+          "hi": 0.833601340415735
+        }
+      }
+    },
+    {
+      "id": "smd-crossing",
+      "input": {
+        "id": "smd-crossing",
+        "type": "SMD",
+        "est": 0.1,
+        "lo": -0.2,
+        "hi": 0.4,
+        "rare": false
+      },
+      "expected": {
+        "point": 1.41829406407187,
+        "ci": 1,
+        "rr": {
+          "point": 1.09526900525847,
+          "lo": 0.833601340415735,
+          "hi": 1.43907421415805
+        }
+      }
+    }
+  ]
+}
