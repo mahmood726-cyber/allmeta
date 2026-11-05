@@ -14,7 +14,7 @@ const manifest = JSON.parse(read('validate/MANIFEST.json'));
 const files = {};
 for (const f of manifest.files) {
   const bytes = readFileSync(new URL(f.path, root));
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), f.sha256);
+  assert.equal(createHash('sha256').update(bytes.toString('utf8').replace(/\r\n/g, '\n'), 'utf8').digest('hex'), f.sha256);
   files[f.path] = JSON.parse(bytes);
 }
 const ctx = vm.createContext({ window: {}, document: { getElementById: () => ({}) }, AlmNmaMultiarm: NM });
