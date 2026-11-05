@@ -86,7 +86,8 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-core.js"></script>
 <script src="../shared/heterogeneity-ci.js"></script>
-<script src="../shared/build-info.js"></script>
+<script src="../shared/variance-ratio.js"></script>
+  <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
   <script src="../shared/truthcert-ui.js"></script>
@@ -642,6 +643,7 @@
         statsWrap.innerHTML="";looTable.innerHTML="";
         extras.push("Analysis blocked: "+(error.message||String(error)));
       }
+      if (info && window.AlmVarianceRatio) { const vr = window.AlmVarianceRatio.check(parsed.studies.map(s => s.v)); if (vr) extras.push(vr.message); }
       _lastInfo=info;_lastStudies=parsed.studies;
       _lastState=JSON.stringify(state);
       if (!info) { statsWrap.innerHTML=""; looTable.innerHTML=""; }

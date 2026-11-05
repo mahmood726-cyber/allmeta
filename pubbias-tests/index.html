@@ -67,6 +67,7 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/selmodel.js"></script>
+  <script src="../shared/variance-ratio.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
@@ -725,6 +726,8 @@
         return;
       }
 
+      var varRatio = window.AlmVarianceRatio ? window.AlmVarianceRatio.checkSE(rows.map(function (r) { return r.se; })) : null;
+      if (varRatio) body.innerHTML += '<tr><td colspan="5" id="varratio-note" role="status" style="color:var(--warn);font-size:0.82rem;border-top:1px dashed var(--border)"><strong>&#9888; Extreme variance ratio:</strong> ' + varRatio.message + '</td></tr>';
       var egger = eggerGeneric(rows);
       var begg  = beggMazumdar(rows);
       var tf    = trimFill(rows);

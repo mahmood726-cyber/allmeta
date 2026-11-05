@@ -62,6 +62,7 @@
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-core.js"></script>
+  <script src="../shared/variance-ratio.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
@@ -355,6 +356,7 @@
           kw.style.display = 'block';
         } else {
           kw.style.display = 'none';
+          kw.textContent = '';
         }
       }
       if (rows.length < 2) {
@@ -384,6 +386,12 @@
         }
         return Object.assign({}, r, t);
       });
+      // Extreme sampling-variance ratio (metafor's own warning condition): warn, never block or change numbers.
+      var varRatio = window.AlmVarianceRatio ? window.AlmVarianceRatio.check(transformed.map(function (r) { return r.v; })) : null;
+      if (kw && varRatio) {
+        kw.textContent = (kw.style.display === 'block' ? kw.textContent + ' ' : '') + varRatio.message;
+        kw.style.display = 'block';
+      }
 
       // Pass the estimator through verbatim. pool() leaves tau2=0 for any value
       // other than 'DL'/'PM', so 'FE' correctly yields the fixed-effect inverse-
@@ -444,6 +452,7 @@
         poolPiLo: poolPiLo,
         poolPiHi: poolPiHi,
       };
+      if (varRatio) _lastResults.varianceRatioWarning = varRatio.message;
 
       render(perStudy, { poolP: poolP, poolLo: poolLo, poolHi: poolHi, poolPiLo: poolPiLo, poolPiHi: poolPiHi, het: pooled });
 

@@ -63,6 +63,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/variance-ratio.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
@@ -148,6 +149,7 @@
         <div class="card"><span class="k">Median estimate</span><span class="v" id="m-est">&#8212;</span></div>
         <div class="card"><span class="k">Median <span data-gloss="i2">I&#178;</span></span><span class="v" id="m-i2">&#8212;</span></div>
       </div>
+      <p id="varratio-note" class="note" role="status" hidden></p>
       <h2 style="margin-top:0.6rem">GOSH scatter</h2>
       <p id="plot-error" role="alert"></p>
       <p id="plot-note" role="status"></p>
@@ -288,6 +290,7 @@
 
     function run() {
       document.getElementById('plot-note').textContent = '';
+      var vrNote = document.getElementById('varratio-note'); if (vrNote) { vrNote.textContent = ''; vrNote.hidden = true; }
       document.getElementById('plot-error').textContent = '';
       document.getElementById('input-error').textContent = '';
       var text = document.getElementById('src').value;
@@ -391,6 +394,8 @@
         studies: rows.map(function (r) { return { label: r.label, te: r.te, se: r.se }; }),
       };
 
+      var varRatio = window.AlmVarianceRatio ? window.AlmVarianceRatio.checkSE(rows.map(function (r) { return r.se; })) : null;
+      if (varRatio && vrNote) { vrNote.textContent = varRatio.message; vrNote.hidden = false; }
       draw(results);
       if (!_exactSuppressed && window.AlmGoshExact) window.AlmGoshExact.labelResult(_lastResults);
       if (isSampled) exactRequest({ rows: rows, model: model, apply: applyExact, axes: function () { return _axisState; } });

@@ -51,6 +51,7 @@
     footer code { background: var(--accent-soft); padding: 0.1rem 0.35rem; border-radius: 3px; }
   </style>
   <link rel="stylesheet" href="../hub/app-style.css">
+  <script src="../shared/variance-ratio.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/ma-comparisons-v1.js"></script>
@@ -94,6 +95,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       </table>
       <h2 style="margin-top:0.6rem">Forest</h2>
       <svg id="forest" viewBox="0 0 600 360" role="img" aria-label="Forest plot of component and intervention effects"></svg>
+      <p id="varratio-note" class="note" role="status" hidden></p>
       <div class="note"><strong>Assumption:</strong> component effects are additive on the outcome scale you used. If interactions between components matter (synergy / antagonism), add interaction terms (e.g., include <code>drug&amp;exercise</code> as a separate component) or use a full interaction model.</div>
     </section>
   
@@ -227,6 +229,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
     }
     function run() {
       clearResults();
+      const vrNote = document.getElementById("varratio-note"); if (vrNote) { vrNote.textContent = ""; vrNote.hidden = true; }
       let rows, f;
       try {
         rows = parse(document.getElementById("src").value);
@@ -276,6 +279,7 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
 
       drawForest([...compRows.map(r => ({ ...r, kind: "component" })), ...intRows.map(r => ({ ...r, kind: "intervention" }))]);
 
+      { const vr = window.AlmVarianceRatio ? window.AlmVarianceRatio.checkSE(rows.map(r => r.se)) : null; if (vr && vrNote) { vrNote.textContent = vr.message; vrNote.hidden = false; } }
       // Engine-state exposure for R-parity tests (do-no-harm).
       _lastCnma = {
         comps: f.comps, tau2: f.tau2, Q: f.Q, df: f.df,

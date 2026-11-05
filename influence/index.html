@@ -90,6 +90,7 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/diagnostic-plots.js"></script>
+  <script src="../shared/variance-ratio.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
@@ -167,6 +168,7 @@
           <tbody id="model-body"></tbody>
         </table>
       </div>
+      <p id="varratio-note" role="status" style="background:var(--warn-soft);border-left:3px solid var(--warn);padding:0.55rem 0.8rem;border-radius:4px;font-size:0.85rem;margin:0.5rem 0" hidden></p>
       <p id="excl-sentence" aria-live="polite"></p>
       <div class="row-actions" role="group" aria-label="Exclude and re-pool">
         <button type="button" id="btn-excl-flagged">Exclude all flagged</button>
@@ -330,6 +332,7 @@
         for (const id of ["body", "model-body", "loo-plot", "influence-plot", "baujat-plot", "radial-plot"]) document.getElementById(id).innerHTML = "";
         document.getElementById("excl-sentence").textContent = "";
         document.getElementById("excl-msg").textContent = "";
+        const vrNote = document.getElementById("varratio-note"); if (vrNote) { vrNote.textContent = ""; vrNote.hidden = true; }
         document.querySelectorAll("#model-summary .excl-col").forEach(el => { el.hidden = true; });
       }
 
@@ -356,6 +359,8 @@
         Object.assign(full, X.summarize(full, rows.map(r => r.se * r.se)));
         _lastFull = full;
         const k = rows.length;
+        { const vr = window.AlmVarianceRatio ? window.AlmVarianceRatio.checkSE(rows.map(r => r.se)) : null, vrNote = document.getElementById("varratio-note");
+          if (vrNote) { vrNote.textContent = vr ? vr.message : ""; vrNote.hidden = !vr; } }
 
         // Per-study diagnostics
         const diag = rows.map((r, i) => {

@@ -157,6 +157,9 @@
     var c = currentCell();
     if (!c || !c.applicable) { host.innerHTML = c ? "<p>" + esc(c.reason) + ". Choose Wald z for the fixed-effect model.</p>" : ""; return; }
     var pl = P.plainLanguage(c, { benchmark: state.benchmark });
+    var st = currentStudies();
+    var vr = window.AlmVarianceRatio && st ? window.AlmVarianceRatio.check(st.map(function (s) { return 1 / (s.n - 3); })) : null;
+    if (vr) pl.caveats = [vr.message].concat(pl.caveats);
     var mt = P.methodsText(c, { text: (window.AlmCorrPlusScope && window.AlmCorrPlusScope.text) || "" });
     host.innerHTML = "<h3>In plain language</h3><p id='alm-plus-summary'>" + esc(pl.summary) + "</p><ul>" + pl.caveats.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" +
       "<h3>Methods and Results text</h3><p id='alm-plus-methods'>" + esc(mt.methods) + "</p><p id='alm-plus-results'>" + esc(mt.results) + "</p>";

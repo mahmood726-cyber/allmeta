@@ -59,6 +59,7 @@
   <script src="../hub/shared/tooltips.js"></script>
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/multilevel-reml.js"></script>
+  <script src="../shared/variance-ratio.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
@@ -337,6 +338,8 @@
           '</tbody></table>';
       }
 
+      var varRatio = window.AlmVarianceRatio ? window.AlmVarianceRatio.checkSE(rows.map(function (r) { return r.se; })) : null;
+      if (varRatio) document.getElementById('summary').innerHTML += '<p id="varratio-note" role="status" style="background:var(--warn-soft);border-left:3px solid var(--warn);padding:0.55rem 0.8rem;border-radius:4px;font-size:0.85rem;margin:0.5rem 0">' + esc(varRatio.message) + '</p>';
       // per-row table
       var totalW = f.weights.reduce(function (a, b) { return a + b; }, 0);
       var body = document.getElementById('body');

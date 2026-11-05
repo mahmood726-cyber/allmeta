@@ -131,7 +131,9 @@
 
   function renderInterpret() {
     const ul = $('plus-interpret-list'); if (!ul) return;
-    ul.innerHTML = P.interpret({ base: state.base, loo: state.loo }).map(t => `<li>${esc(t)}</li>`).join('');
+    const vr = window.AlmVarianceRatio && state.base && state.base.status === 'ok' && state.rows
+      ? window.AlmVarianceRatio.checkSE(state.rows.map(r => r.se)) : null;
+    ul.innerHTML = (vr ? [vr.message] : []).concat(P.interpret({ base: state.base, loo: state.loo })).map(t => `<li>${esc(t)}</li>`).join('');
   }
   function renderGraph() {
     const svg = $('plus-graph'), status = $('plus-graph-status'); if (!svg) return;
