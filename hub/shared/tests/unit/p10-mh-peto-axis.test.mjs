@@ -52,6 +52,9 @@ class Element {
   }
   dispatchEvent(event) { this.dispatch(event.type); return true; }
   querySelectorAll(selector) {
+    if (selector === 'input[type="number"]') {
+      return this.querySelectorAll('input').filter(input => input.getAttribute('type') === 'number');
+    }
     assert.equal(selector, 'input');
     return this.children.flatMap(child => [
       ...(child.dataset.edge ? [child] : []), ...child.querySelectorAll(selector),
