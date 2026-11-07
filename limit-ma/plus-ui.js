@@ -24,7 +24,9 @@ function render(results,c,limit){
    if(r.branch){const span=document.createElement('span');span.dataset.plusCategory=key+'.branch';span.textContent=r.branch;item.append(span,document.createTextNode('; '));}
    for(const [q,v] of Object.entries(r.values)){
     if(methods.includes(key)&&['mu','se','ciLo','ciHi'].includes(q))continue;
-    item.append(document.createTextNode(q+' = '));
+    // PET/PEESE t and p test the intercept (effect), including the conditional fit.
+    const label=['PET','PEESE','conditional'].includes(key)&&['t','p'].includes(q)?'intercept '+q:q;
+    item.append(document.createTextNode(label+' = '));
     if(typeof v==='number')number(item,key+'.'+q,v);
     else if(Array.isArray(v)){v.forEach((x,i)=>{if(i)item.append(document.createTextNode(', '));number(item,key+'.'+q+'.'+i,x);});if(!v.length)item.append(document.createTextNode('none'));}
     else {const s=document.createElement('span');s.dataset.plusCategory=key+'.'+q;s.textContent=v;item.append(s);}

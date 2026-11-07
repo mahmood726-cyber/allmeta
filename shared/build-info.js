@@ -2,7 +2,9 @@
  * Build identity for allmeta — used to stamp TruthCert receipts and JSON
  * exports with the exact code that produced them.
  *
- * Regenerate with: python scripts/regen_build_info.py
+ * Written by scripts/regen_build_info.py. pages.yml stamps the deployed copy
+ * with the commit it serves. The copy in git holds the null SHA and the epoch
+ * because a commit cannot contain its own SHA.
  *
  * Why this is signed: when receipts get audited months later, the reviewer
  * needs to know which code path produced the numbers. Without a SHA, you
@@ -13,18 +15,18 @@
  * Field meanings:
  *   - app:     always "allmeta" (constant)
  *   - version: semver-ish tag (matches CITATION.cff)
- *   - sha:     full git commit SHA at build time
+ *   - sha:     full git commit SHA deployed; all zeros when not deployed
  *   - shortSha: 7-char prefix for display
- *   - builtAt: ISO-8601 UTC timestamp when this file was regenerated
+ *   - builtAt: ISO-8601 UTC deploy time; the epoch when not deployed
  */
 (function (global) {
   'use strict';
   var info = {
     app: "allmeta",
     version: "v1.8.0",
-    sha: "42a94da2110a02200d0b5bff4c56f636b9cbffa9",
-    shortSha: "42a94da",
-    builtAt: "2026-10-20T20:32:27Z",
+    sha: "0000000000000000000000000000000000000000",
+    shortSha: "0000000",
+    builtAt: "1970-01-01T00:00:00Z",
     url: "https://mahmood726-cyber.github.io/allmeta/"
   };
   global.AlmBuildInfo = info;

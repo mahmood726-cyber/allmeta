@@ -20,10 +20,24 @@ const formats = [
 
 // Deliberate adapter sentinels, not statistical reference values or R oracles.
 const studies = [{ label: 'A', est: 0.2, se: 0.1 }, { label: 'B', est: 0.3, se: 0.2 }];
+// Diagnostic adapter values captured by executing loadEngine() from
+// p05-heterogeneity-engine.mjs on these studies with PM (labels restored to A/B).
+// These pin export fidelity, not an independent statistical reference.
+const loo = [
+  { label: 'A', k: 1, mu: 0.3, se: 0.2, ciLo: -0.09199279690801082,
+    ciHi: 0.6919927969080109, I2: 0, tau2: 0, estimator: 'pm' },
+  { label: 'B', k: 1, mu: 0.20000000000000004, se: 0.1, ciLo: 0.004003601545994634,
+    ciHi: 0.39599639845400547, I2: 0, tau2: 0, estimator: 'pm' },
+];
+const baujat = [
+  { label: 'A', x: 0.04000000000000006, y: 0.1599999999999998 },
+  { label: 'B', x: 0.1599999999999998, y: 0.03999999999999995 },
+];
 const info = {
   sum: { mu: 0.25, se: 0.125, ciLo: 0, ciHi: 0.5, ciLoHKSJ: -0.25, ciHiHKSJ: 0.75,
     Q: 2, df: 1, pQ: 0.15, I2: 50, I2Model: 40, seHKSJ: 0.25, tau2: 0.02 },
   estimator: 'pm', tauEstimates: { pm: 0.02, reml: 0.03, dl: 0.01 }, pi: { lo: -0.5, hi: 1 },
+  loo, baujat: baujat.map(point => ({ ...point, _left: true })),
 };
 const expectedData = {
   _schema: 'heterogeneity-results-v1', k: 2,
@@ -36,6 +50,7 @@ const expectedData = {
   Q: 2, Q_df: 1, Q_p: 0.15, I2: 50, I2_Q: 50, I2_model: 40, se_modified_hk: 0.25,
   tau2: 0.02, tau2_estimator: 'pm', tau2_pm: 0.02, tau2_reml: 0.03, tau2_dl: 0.01,
   pi_lb: -0.5, pi_ub: 1, tau2_ci_lb: 0.005, tau2_ci_ub: 0.08, I2_ci_lb: 10, I2_ci_ub: 80,
+  loo, baujat,
 };
 
 function harness({ loadBuild = true } = {}) {

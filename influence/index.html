@@ -290,6 +290,7 @@
       window.__almInfluenceValidationSnapshot = function () {
         return structuredClone({input: document.getElementById('src').value,
           autosave: localStorage.getItem('alm-autosave:influence'),
+          lifecycle: run.snapshot(),
           diag: _lastDiag, full: _lastFull, studies: _lastStudies,
           baujat: window.__almBaujat, radial: window.__almRadial,
           excluded: [..._excluded], exclusion: _lastExclusion,
@@ -309,6 +310,7 @@
         for (const [id, h] of Object.entries(state.hidden)) document.getElementById(id).hidden = h;
         document.querySelectorAll('#body input.excl').forEach((cb, i) => { cb.checked = state.checked[i]; });
         EXCL_BUTTONS.forEach((id, i) => { document.getElementById(id).disabled = state.disabled[i]; });
+        run.restore(state.lifecycle);
       };
 
     run = window.alm.analysisLifecycle(run, function (result) { return _lastStudies.length >= 3 && !!_lastFull; }, "#src");
@@ -712,7 +714,17 @@
         ["loo_H2", "loo_H2"], ["loo_Q", "loo_Q"], ["loo_Qp", "loo_Qp"], ["influential", "influential"]];
       window.__almInfluenceStudyRows = function () {
         if (!_lastDiag) return [];
-        return _lastDiag.map((d, i) => Object.assign(Object.fromEntries(STUDY_COLS.map(([k, f]) => [k, d[f]])), { excluded: _excluded.has(i) }));
+        const refused = !!(_lastExclusion && _lastExclusion.refused);
+        const applied = !!(_lastExclusion && _lastExclusion.kept);
+        return _lastDiag.map((d, i) => {
+          const requested = _excluded.has(i);
+          return Object.assign(Object.fromEntries(STUDY_COLS.map(([k, f]) => [k, d[f]])), {
+            excluded: requested, // Legacy checkbox membership, including refused requests.
+            exclusion_requested: requested,
+            exclusion_applied: requested && applied,
+            exclusion_refused: refused // Request-wide outcome repeated in every study row.
+          });
+        });
       };
       function csvCell(v) {
         let s = v === null || v === undefined ? "" : String(v);
