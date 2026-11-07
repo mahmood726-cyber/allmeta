@@ -9567,7 +9567,7 @@ function runAnalysis() {
           error: e.message
         }
       }
-      renderResults(), document.querySelector('[data-tab="analysis"]').click(), e.classList.remove("btn--loading"), e.innerHTML = t
+      "function"==typeof updateMetaoverfitResults&&updateMetaoverfitResults(),renderResults(), document.querySelector('[data-tab="analysis"]').click(), e.classList.remove("btn--loading"), e.innerHTML = t
     } catch (n) {
       log.error("Analysis failed:", n), alert("Analysis failed: " + n.message + "\n\nCheck console for details."), e.classList.remove("btn--loading"), e.innerHTML = t
     }

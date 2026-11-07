@@ -11749,7 +11749,7 @@ function runAnalysis() {
           error: e.message
         }
       }
-      renderResults(), document.querySelector('[data-tab="analysis"]').click(), e.classList.remove("btn--loading"), e.innerHTML = t
+      "function"==typeof updateMetaoverfitResults&&updateMetaoverfitResults(),renderResults(), document.querySelector('[data-tab="analysis"]').click(), e.classList.remove("btn--loading"), e.innerHTML = t
     } catch (n) {
       log.error("Analysis failed:", n), alert("Analysis failed: " + n.message + "\n\nCheck console for details."), e.classList.remove("btn--loading"), e.innerHTML = t
     }
@@ -26344,6 +26344,8 @@ if (originalRunAnalysis) {
   };
 }
 // Metaoverfit Assessment - Fix to properly compute and update AppState.results
+// Called by runAnalysis before renderResults, so a published result is already complete.
+// A save must never depend on how long after Run it happens.
 function updateMetaoverfitResults() {
   const r = AppState.results;
   if (!r || !r.yi) return;
@@ -26388,13 +26390,6 @@ function updateMetaoverfitResults() {
       ESS_per_param: ESS / p
     };
     console.log('[Metaoverfit] Updated:', r.metaoverfit);
-    // Re-render bias panel if visible
-    if (typeof renderBiasPanel === 'function') {
-      const biasPanel = document.getElementById('panel-bias');
-      if (biasPanel && biasPanel.innerHTML.length > 100) {
-        setTimeout(() => renderBiasPanel(r), 100);
-      }
-    }
   } catch (e) {
     console.error('updateMetaoverfitResults error:', e);
   }
@@ -26404,7 +26399,6 @@ const originalRunAnalysis2 = window.runAnalysis;
 if (originalRunAnalysis2) {
   window.runAnalysis = function() {
     const result = originalRunAnalysis2.apply(this, arguments);
-    setTimeout(updateMetaoverfitResults, 500);
     // Trigger TruthCert analysis for Verdict and HTA tabs
     setTimeout(() => {
       if (typeof runTruthCertAnalysis === 'function') {
