@@ -57,7 +57,7 @@ test('P19-R1 control: native R fixture records exact inputs, method and versions
   const ref = reference();
   assert.deepEqual(ref.input, { scales, se: [2, 4], heterogeneous: [0, 8], homogeneous: [1, 1] });
   assert.equal(ref.provenance.script, 'p19-scale-reference.R');
-  assert.equal(ref.provenance.script_md5, createHash('md5').update(readFileSync(new URL('./p19-scale-reference.R', import.meta.url))).digest('hex'));
+  assert.equal(ref.provenance.script_md5, createHash('md5').update(readFileSync(new URL('./p19-scale-reference.R', import.meta.url), 'utf8').replace(/\r\n/g, '\n')).digest('hex'));
   assert.match(ref.provenance.R, /^R version /);
   assert.equal(ref.provenance.method, 'metafor::rma.uni(yi = effects, sei = se, method = "DL", test = "z")');
   assert.equal(ref.provenance.serialization, 'base R; 17 significant digits');

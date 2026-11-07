@@ -1,0 +1,270 @@
+
+    // Cycle 7.1: exact qnorm(0.975) for 95% CIs (was 1.96; ~1.3e-5 drift vs metafor).
+    var Z975 = 1.959963984540054;
+
+    // Parse: arm A components, arm B components, effect, SE
+    function parse(text, inactive = "control") {
+      return text.trim().split(/\n/).filter(l => l.trim()).map(l => {
+        const parts = l.split(/\|/).map(s => s.trim());
+        if (parts.length !== 4 || parts.some(s => !s)) throw new Error("Invalid contrast input.");
+        const te = Number(parts[2]), se = Number(parts[3]);
+        if (!Number.isFinite(te) || !Number.isFinite(se) || se <= 0) throw new Error("Invalid contrast input.");
+        const splitArm = s => {
+          const a = s.split(/\s*\+\s*/).map(c => c.toLowerCase());
+          if (a.some(c => !c) || new Set(a).size !== a.length) throw new Error("Invalid contrast input.");
+          return a.filter(c => c !== inactive.toLowerCase());
+        };
+        const A = splitArm(parts[0]), B = splitArm(parts[1]);
+        if (A.slice().sort().join("+") === B.slice().sort().join("+")) throw new Error("Invalid contrast input.");
+        return { A, B, te, se };
+      });
+    }
+
+    let inactiveLabelsKey = null;
+    function syncInactive() {
+      const text = document.getElementById("src").value;
+      const labels = [...new Set(text.split(/\n/).flatMap(line =>
+        line.split("|").slice(0, 2).flatMap(arm => arm.split("+")
+          .map(c => c.trim().toLowerCase()).filter(Boolean))))].sort();
+      const key = JSON.stringify(labels);
+      const select = document.getElementById("inactive");
+      if (key !== inactiveLabelsKey) {
+        inactiveLabelsKey = key;
+        const automatic = labels.includes("control") ? "control" :
+          labels.find(c => /^(placebo|pbo)$/.test(c)) || "control";
+        select.replaceChildren();
+        for (const label of ["", ...new Set(["control", ...labels])]) {
+          const option = document.createElement("option");
+          option.value = label;
+          option.textContent = label || "None (all components active)";
+          select.appendChild(option);
+        }
+        select.value = automatic;
+        const note = document.getElementById("inactive-note");
+        note.hidden = automatic === "control";
+        note.textContent = note.hidden ? "" :
+          'Detected placebo-like label "' + automatic + '" without control; pre-selected it as inactive. Review or change Inactive treatment before fitting.';
+      }
+      return select.value;
+    }
+
+    // --- matrix math (copy from NMA tool) ---
+    // Finite input scalars can still underflow or overflow in derived arithmetic.
+    function checkedNumber(value, positive = false) {
+      if (!Number.isFinite(value) || (positive && value <= 0)) {
+        throw new Error("Effects or SEs exceed the supported numerical range. Check their values and measurement scale.");
+      }
+      return value;
+    }
+    function zeros(n, m) { return Array.from({ length: n }, () => Array(m).fill(0)); }
+    function transpose(A) { return A[0].map((_, j) => A.map(r => r[j])); }
+    function matMul(A, B) {
+      const n = A.length, m = B[0].length, k = B.length;
+      const C = zeros(n, m);
+      for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) for (let p = 0; p < k; p++) C[i][j] = checkedNumber(C[i][j] + A[i][p] * B[p][j]);
+      return C;
+    }
+    function matVec(A, v) { return A.map(r => r.reduce((s, x, j) => checkedNumber(s + x * v[j]), 0)); }
+    function invert(M) {
+      const n = M.length;
+      const A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
+      for (let i = 0; i < n; i++) {
+        let piv = A[i][i];
+        if (Math.abs(piv) < 1e-14) {
+          for (let k = i + 1; k < n; k++) if (Math.abs(A[k][i]) > 1e-14) { [A[i], A[k]] = [A[k], A[i]]; piv = A[i][i]; break; }
+        }
+        if (Math.abs(piv) < 1e-14) throw new Error("singular — check that components are identifiable from the contrasts");
+        for (let j = 0; j < 2 * n; j++) A[i][j] = checkedNumber(A[i][j] / piv);
+        for (let k = 0; k < n; k++) if (k !== i) {
+          const f = A[k][i];
+          for (let j = 0; j < 2 * n; j++) A[k][j] = checkedNumber(A[k][j] - f * A[i][j]);
+        }
+      }
+      return A.map(r => r.slice(n));
+    }
+
+    function fit(rows) {
+      // Collect components
+      const compsSet = new Set();
+      for (const r of rows) { for (const c of r.A) compsSet.add(c); for (const c of r.B) compsSet.add(c); }
+      const comps = [...compsSet].sort();
+      const p = comps.length;
+      // Design: each row has +1 per component in A, -1 per component in B
+      const X = zeros(rows.length, p);
+      rows.forEach((r, i) => {
+        for (const c of r.A) X[i][comps.indexOf(c)] += 1;
+        for (const c of r.B) X[i][comps.indexOf(c)] -= 1;
+      });
+      const rankWork = X.map(r => r.slice());
+      let rank = 0;
+      for (let j = 0; j < p && rank < rows.length; j++) {
+        let pivot = rank;
+        for (let i = rank + 1; i < rows.length; i++) if (Math.abs(rankWork[i][j]) > Math.abs(rankWork[pivot][j])) pivot = i;
+        if (Math.abs(rankWork[pivot][j]) < 1e-12) continue;
+        [rankWork[rank], rankWork[pivot]] = [rankWork[pivot], rankWork[rank]];
+        for (let i = rank + 1; i < rows.length; i++) {
+          const v = rankWork[i][j] / rankWork[rank][j];
+          for (let k = j; k < p; k++) rankWork[i][k] -= v * rankWork[rank][k];
+        }
+        rank++;
+      }
+      if (!p || rank < p) throw new Error("Components are not identifiable from the contrasts.");
+      const y = rows.map(r => r.te);
+      const variances = rows.map(r => checkedNumber(r.se * r.se, true));
+      const w = variances.map(v => checkedNumber(1 / v, true));
+      const Xt = transpose(X);
+      function wls(weights) {
+        const W = weights;
+        const XtW = Xt.map(r => r.map((x, j) => x * W[j]));
+        const XtWX = matMul(XtW, X);
+        const XtWy = matVec(XtW, y);
+        const cov = invert(XtWX);
+        cov.forEach((r, i) => checkedNumber(r[i], true));
+        const beta = matVec(cov, XtWy);
+        return { beta, cov };
+      }
+      let { beta, cov: covFE } = wls(w);
+      const res = y.map((yi, i) => checkedNumber(yi - X[i].reduce((s, x, j) => checkedNumber(s + x * beta[j]), 0)));
+      const Q = res.reduce((s, r, i) => checkedNumber(s + w[i] * r * r), 0);
+      const df = rows.length - p;
+      const sumW = w.reduce((a, b) => checkedNumber(a + b), 0);
+      // Generalized DerSimonian–Laird moment denominator for multi-component WLS:
+      // denom = sumW − trace(cov · X'W²X); reduces to sumW − sumW²/sumW when p=1.
+      const XtW2 = Xt.map(r => r.map((x, j) => checkedNumber(x * w[j] * w[j])));
+      const XtW2X = matMul(XtW2, X);
+      let tr = 0;
+      for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) tr = checkedNumber(tr + covFE[i][j] * XtW2X[j][i]);
+      const denom = checkedNumber(sumW - tr);
+      // DL denominator has inverse-variance units; an absolute cutoff incorrectly depends on effect units.
+      const tau2 = df === 0 ? null : checkedNumber(denom <= 0 ? 0 : Math.max(0, (Q - df) / denom));
+      const wRE = variances.map(v => checkedNumber(1 / checkedNumber(v + tau2, true), true));
+      const res2 = wls(wRE);
+      return { comps, beta: res2.beta, cov: res2.cov, tau2, Q, df };
+    }
+
+    // Floating-point roundoff of an exact zero (|x| < 1e-12) has an arbitrary sign:
+    // display it as 0.000, not -0.000. Genuine small negatives keep their sign.
+    function fmt(x, d = 3) {
+      if (!Number.isFinite(x)) return "—";
+      return (Math.abs(x) < 1e-12 ? 0 : x).toFixed(d);
+    }
+
+    let _lastCnma = null;
+
+    function clearResults() {
+      _lastCnma = null;
+      for (const id of ["comp-body", "int-body", "forest"]) document.getElementById(id).innerHTML = "";
+    }
+    function escapeLabel(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+    function run() {
+      clearResults();
+      let rows, f;
+      try {
+        const inactive = syncInactive();
+        rows = parse(document.getElementById("src").value, inactive);
+        document.getElementById("intervention-heading").textContent =
+          "Implied intervention effects vs " + (inactive || "no components");
+        if (rows.length < 2) throw new Error("At least 2 valid contrasts are required.");
+        f = fit(rows);
+      } catch (e) {
+        if (window.Toast) window.Toast.show(e.message, "warn");
+        return;
+      }
+
+      // Component table
+      const cBody = document.getElementById("comp-body");
+      cBody.innerHTML = "";
+      const compRows = f.comps.map((c, i) => {
+        const e = f.beta[i], se = Math.sqrt(f.cov[i][i]);
+        return { name: c, e, se, lo: e - Z975 * se, hi: e + Z975 * se };
+      });
+      for (const r of compRows) {
+        cBody.innerHTML += `<tr><td><code>${escapeLabel(r.name)}</code></td><td>${fmt(r.e)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
+      }
+
+      // Implied intervention effects: all unique combinations present in input
+      const intSet = new Set();
+      for (const r of rows) {
+        if (r.A.length) intSet.add(r.A.slice().sort().join("+"));
+        if (r.B.length) intSet.add(r.B.slice().sort().join("+"));
+      }
+      const iBody = document.getElementById("int-body");
+      iBody.innerHTML = "";
+      const intRows = [...intSet].sort().map(name => {
+        const parts = name.split("+");
+        // sum of components; var = sum + 2·cov
+        let mean = 0, varSum = 0;
+        for (const p1 of parts) {
+          const i = f.comps.indexOf(p1); mean += f.beta[i]; varSum += f.cov[i][i];
+        }
+        for (let a = 0; a < parts.length; a++) for (let b = a + 1; b < parts.length; b++) {
+          const ia = f.comps.indexOf(parts[a]), ib = f.comps.indexOf(parts[b]);
+          varSum += 2 * f.cov[ia][ib];
+        }
+        const se = Math.sqrt(Math.max(varSum, 0));
+        return { name, e: mean, se, lo: mean - Z975 * se, hi: mean + Z975 * se };
+      });
+      for (const r of intRows) {
+        iBody.innerHTML += `<tr><td><code>${escapeLabel(r.name)}</code></td><td>${fmt(r.e)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
+      }
+
+      drawForest([...compRows.map(r => ({ ...r, kind: "component" })), ...intRows.map(r => ({ ...r, kind: "intervention" }))]);
+
+      // Engine-state exposure for R-parity tests (do-no-harm).
+      _lastCnma = {
+        inactive: document.getElementById("inactive").value,
+        comps: f.comps, tau2: f.tau2, Q: f.Q, df: f.df,
+        components: Object.fromEntries(compRows.map(r => [r.name, { est: r.e, se: r.se }])),
+        combinations: Object.fromEntries(intRows.map(r => [r.name, { est: r.e, se: r.se }])),
+      };
+    }
+
+    window.__almCnmaLoad = function (text) {
+      document.getElementById("src").value = text;
+      run();
+    };
+    window._almLastCnma = function () { return _lastCnma; };
+
+    function drawForest(items) {
+      const svg = document.getElementById("forest");
+      const W = 600, H = Math.max(220, 40 + items.length * 26 + 30);
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      const __svgParts = [""];
+      const padL = 220, padR = 30;
+      const plotW = W - padL - padR;
+      const allLo = items.map(r => r.lo), allHi = items.map(r => r.hi);
+      const lo = Math.min(0, ...allLo), hi = Math.max(0, ...allHi);
+      const pad = (hi - lo) * 0.1 || 0.5;
+      const X = x => padL + (x - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
+      const y0 = 30;
+      // zero line
+      __svgParts.push(`<line x1="${X(0)}" y1="${y0 - 10}" x2="${X(0)}" y2="${y0 + items.length * 26}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
+      items.forEach((r, i) => {
+        const y = y0 + i * 26;
+        __svgParts.push(`<text x="${padL - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="currentColor" ${r.kind === "component" ? 'font-weight="600"' : ""}>${r.kind === "component" ? "[C] " : ""}${escapeLabel(r.name)}</text>`);
+        __svgParts.push(`<line x1="${X(r.lo)}" y1="${y}" x2="${X(r.hi)}" y2="${y}" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>`);
+        const c = r.kind === "component" ? "var(--accent)" : "var(--warn)";
+        __svgParts.push(`<rect x="${X(r.e) - 4}" y="${y - 4}" width="8" height="8" fill="${c}"/>`);
+      });
+      // axis
+      __svgParts.push(`<line x1="${padL}" y1="${y0 + items.length * 26}" x2="${padL + plotW}" y2="${y0 + items.length * 26}" stroke="currentColor" opacity="0.5"/>`);
+      for (const t of [lo, 0, hi]) {
+        __svgParts.push(`<text x="${X(t)}" y="${y0 + items.length * 26 + 16}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">${fmt(t, 2)}</text>`);
+      }
+      svg.innerHTML = __svgParts.join("");
+
+    }
+
+    document.getElementById("src").addEventListener("input", function () {
+      syncInactive();
+      clearResults();
+    });
+    document.getElementById("inactive").addEventListener("change", function () {
+      document.getElementById("inactive-note").hidden = true;
+      run();
+    });
+    document.getElementById("btn-run").addEventListener("click", run);
+    run();
+  

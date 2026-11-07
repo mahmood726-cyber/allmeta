@@ -157,15 +157,22 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
     }
 
     // --- matrix math (copy from NMA tool) ---
+    // Finite input scalars can still underflow or overflow in derived arithmetic.
+    function checkedNumber(value, positive = false) {
+      if (!Number.isFinite(value) || (positive && value <= 0)) {
+        throw new Error("Effects or SEs exceed the supported numerical range. Check their values and measurement scale.");
+      }
+      return value;
+    }
     function zeros(n, m) { return Array.from({ length: n }, () => Array(m).fill(0)); }
     function transpose(A) { return A[0].map((_, j) => A.map(r => r[j])); }
     function matMul(A, B) {
       const n = A.length, m = B[0].length, k = B.length;
       const C = zeros(n, m);
-      for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) for (let p = 0; p < k; p++) C[i][j] += A[i][p] * B[p][j];
+      for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) for (let p = 0; p < k; p++) C[i][j] = checkedNumber(C[i][j] + A[i][p] * B[p][j]);
       return C;
     }
-    function matVec(A, v) { return A.map(r => r.reduce((s, x, j) => s + x * v[j], 0)); }
+    function matVec(A, v) { return A.map(r => r.reduce((s, x, j) => checkedNumber(s + x * v[j]), 0)); }
     function invert(M) {
       const n = M.length;
       const A = M.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => i === j ? 1 : 0)]);
@@ -175,10 +182,10 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
           for (let k = i + 1; k < n; k++) if (Math.abs(A[k][i]) > 1e-14) { [A[i], A[k]] = [A[k], A[i]]; piv = A[i][i]; break; }
         }
         if (Math.abs(piv) < 1e-14) throw new Error("singular — check that components are identifiable from the contrasts");
-        for (let j = 0; j < 2 * n; j++) A[i][j] /= piv;
+        for (let j = 0; j < 2 * n; j++) A[i][j] = checkedNumber(A[i][j] / piv);
         for (let k = 0; k < n; k++) if (k !== i) {
           const f = A[k][i];
-          for (let j = 0; j < 2 * n; j++) A[k][j] -= f * A[i][j];
+          for (let j = 0; j < 2 * n; j++) A[k][j] = checkedNumber(A[k][j] - f * A[i][j]);
         }
       }
       return A.map(r => r.slice(n));
@@ -211,7 +218,8 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       }
       if (!p || rank < p) throw new Error("Components are not identifiable from the contrasts.");
       const y = rows.map(r => r.te);
-      const w = rows.map(r => 1 / (r.se * r.se));
+      const variances = rows.map(r => checkedNumber(r.se * r.se, true));
+      const w = variances.map(v => checkedNumber(1 / v, true));
       const Xt = transpose(X);
       function wls(weights) {
         const W = weights;
@@ -219,24 +227,34 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
         const XtWX = matMul(XtW, X);
         const XtWy = matVec(XtW, y);
         const cov = invert(XtWX);
+        cov.forEach((r, i) => checkedNumber(r[i], true));
         const beta = matVec(cov, XtWy);
         return { beta, cov };
       }
       let { beta, cov: covFE } = wls(w);
-      const res = y.map((yi, i) => yi - X[i].reduce((s, x, j) => s + x * beta[j], 0));
-      const Q = res.reduce((s, r, i) => s + w[i] * r * r, 0);
+      const res = y.map((yi, i) => checkedNumber(yi - X[i].reduce((s, x, j) => checkedNumber(s + x * beta[j]), 0)));
+      const residualQ = res.reduce((s, r, i) => checkedNumber(s + w[i] * r * r), 0);
       const df = rows.length - p;
-      const sumW = w.reduce((a, b) => a + b, 0);
-      // Generalized DerSimonian–Laird moment denominator for multi-component WLS:
-      // denom = sumW − trace(cov · X'W²X); reduces to sumW − sumW²/sumW when p=1.
-      const XtW2 = Xt.map(r => r.map((x, j) => x * w[j] * w[j]));
-      const XtW2X = matMul(XtW2, X);
-      let tr = 0;
-      for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) tr += covFE[i][j] * XtW2X[j][i];
-      const denom = sumW - tr;
-      // DL denominator has inverse-variance units; an absolute cutoff incorrectly depends on effect units.
-      const tau2 = df === 0 ? null : (denom <= 0 ? 0 : Math.max(0, (Q - df) / denom));
-      const wRE = rows.map(r => 1 / (r.se * r.se + tau2));
+      // Full-rank square designs have a zero residual projection. Subtracting
+      // rounded fitted values can leave spurious Q; retain the arithmetic
+      // checks above, then use the exact identity only for saturated designs.
+      const Q = df === 0 ? 0 : residualQ;
+      let tau2 = null;
+      // Saturated fits use sampling variances; their unused DL intermediates
+      // can overflow even when every quantity needed for the fit is finite.
+      if (df > 0) {
+        const sumW = w.reduce((a, b) => checkedNumber(a + b), 0);
+        // Generalized DerSimonian–Laird moment denominator for multi-component WLS:
+        // denom = sumW − trace(cov · X'W²X); reduces to sumW − sumW²/sumW when p=1.
+        const XtW2 = Xt.map(r => r.map((x, j) => checkedNumber(x * w[j] * w[j])));
+        const XtW2X = matMul(XtW2, X);
+        let tr = 0;
+        for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) tr = checkedNumber(tr + covFE[i][j] * XtW2X[j][i]);
+        const denom = checkedNumber(sumW - tr);
+        // DL denominator has inverse-variance units; an absolute cutoff incorrectly depends on effect units.
+        tau2 = checkedNumber(denom <= 0 ? 0 : Math.max(0, (Q - df) / denom));
+      }
+      const wRE = variances.map(v => checkedNumber(1 / checkedNumber(v + tau2, true), true));
       const res2 = wls(wRE);
       return { comps, beta: res2.beta, cov: res2.cov, tau2, Q, df };
     }
@@ -257,6 +275,12 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
     function escapeLabel(s) {
       return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
+    function effectRow(name, e, variance) {
+      checkedNumber(e);
+      const se = checkedNumber(Math.sqrt(checkedNumber(variance)));
+      const margin = checkedNumber(Z975 * se);
+      return { name, e, se, lo: checkedNumber(e - margin), hi: checkedNumber(e + margin) };
+    }
     function run() {
       clearResults();
       let rows, f;
@@ -267,57 +291,56 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
           "Implied intervention effects vs " + (inactive || "no components");
         if (rows.length < 2) throw new Error("At least 2 valid contrasts are required.");
         f = fit(rows);
+
+        // Component table
+        const cBody = document.getElementById("comp-body");
+        cBody.innerHTML = "";
+        const compRows = f.comps.map((c, i) => effectRow(c, f.beta[i], f.cov[i][i]));
+
+        // Implied intervention effects: all unique combinations present in input
+        const intSet = new Set();
+        for (const r of rows) {
+          if (r.A.length) intSet.add(r.A.slice().sort().join("+"));
+          if (r.B.length) intSet.add(r.B.slice().sort().join("+"));
+        }
+        const iBody = document.getElementById("int-body");
+        iBody.innerHTML = "";
+        const intRows = [...intSet].sort().map(name => {
+          const parts = name.split("+");
+          // sum of components; var = sum + 2·cov
+          let mean = 0, varSum = 0;
+          for (const p1 of parts) {
+            const i = f.comps.indexOf(p1);
+            mean = checkedNumber(mean + f.beta[i]);
+            varSum = checkedNumber(varSum + f.cov[i][i]);
+          }
+          for (let a = 0; a < parts.length; a++) for (let b = a + 1; b < parts.length; b++) {
+            const ia = f.comps.indexOf(parts[a]), ib = f.comps.indexOf(parts[b]);
+            varSum = checkedNumber(varSum + checkedNumber(2 * f.cov[ia][ib]));
+          }
+          return effectRow(name, mean, Math.max(varSum, 0));
+        });
+
+        // Validate all derived values and plot arithmetic before publishing.
+        drawForest([...compRows.map(r => ({ ...r, kind: "component" })), ...intRows.map(r => ({ ...r, kind: "intervention" }))]);
+        for (const r of compRows) {
+          cBody.innerHTML += `<tr><td><code>${escapeLabel(r.name)}</code></td><td>${fmt(r.e)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
+        }
+        for (const r of intRows) {
+          iBody.innerHTML += `<tr><td><code>${escapeLabel(r.name)}</code></td><td>${fmt(r.e)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
+        }
+
+        // Engine-state exposure for R-parity tests (do-no-harm).
+        _lastCnma = {
+          inactive: document.getElementById("inactive").value,
+          comps: f.comps, tau2: f.tau2, Q: f.Q, df: f.df,
+          components: Object.fromEntries(compRows.map(r => [r.name, { est: r.e, se: r.se }])),
+          combinations: Object.fromEntries(intRows.map(r => [r.name, { est: r.e, se: r.se }])),
+        };
       } catch (e) {
+        clearResults();
         if (window.Toast) window.Toast.show(e.message, "warn");
-        return;
       }
-
-      // Component table
-      const cBody = document.getElementById("comp-body");
-      cBody.innerHTML = "";
-      const compRows = f.comps.map((c, i) => {
-        const e = f.beta[i], se = Math.sqrt(f.cov[i][i]);
-        return { name: c, e, se, lo: e - Z975 * se, hi: e + Z975 * se };
-      });
-      for (const r of compRows) {
-        cBody.innerHTML += `<tr><td><code>${escapeLabel(r.name)}</code></td><td>${fmt(r.e)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
-      }
-
-      // Implied intervention effects: all unique combinations present in input
-      const intSet = new Set();
-      for (const r of rows) {
-        if (r.A.length) intSet.add(r.A.slice().sort().join("+"));
-        if (r.B.length) intSet.add(r.B.slice().sort().join("+"));
-      }
-      const iBody = document.getElementById("int-body");
-      iBody.innerHTML = "";
-      const intRows = [...intSet].sort().map(name => {
-        const parts = name.split("+");
-        // sum of components; var = sum + 2·cov
-        let mean = 0, varSum = 0;
-        for (const p1 of parts) {
-          const i = f.comps.indexOf(p1); mean += f.beta[i]; varSum += f.cov[i][i];
-        }
-        for (let a = 0; a < parts.length; a++) for (let b = a + 1; b < parts.length; b++) {
-          const ia = f.comps.indexOf(parts[a]), ib = f.comps.indexOf(parts[b]);
-          varSum += 2 * f.cov[ia][ib];
-        }
-        const se = Math.sqrt(Math.max(varSum, 0));
-        return { name, e: mean, se, lo: mean - Z975 * se, hi: mean + Z975 * se };
-      });
-      for (const r of intRows) {
-        iBody.innerHTML += `<tr><td><code>${escapeLabel(r.name)}</code></td><td>${fmt(r.e)}</td><td>[${fmt(r.lo)}, ${fmt(r.hi)}]</td></tr>`;
-      }
-
-      drawForest([...compRows.map(r => ({ ...r, kind: "component" })), ...intRows.map(r => ({ ...r, kind: "intervention" }))]);
-
-      // Engine-state exposure for R-parity tests (do-no-harm).
-      _lastCnma = {
-        inactive: document.getElementById("inactive").value,
-        comps: f.comps, tau2: f.tau2, Q: f.Q, df: f.df,
-        components: Object.fromEntries(compRows.map(r => [r.name, { est: r.e, se: r.se }])),
-        combinations: Object.fromEntries(intRows.map(r => [r.name, { est: r.e, se: r.se }])),
-      };
     }
 
     window.__almCnmaLoad = function (text) {
@@ -335,8 +358,10 @@ drug+exercise | drug | -0.18 | 0.11</textarea>
       const plotW = W - padL - padR;
       const allLo = items.map(r => r.lo), allHi = items.map(r => r.hi);
       const lo = Math.min(0, ...allLo), hi = Math.max(0, ...allHi);
-      const pad = (hi - lo) * 0.1 || 0.5;
-      const X = x => padL + (x - (lo - pad)) / ((hi + pad) - (lo - pad)) * plotW;
+      const pad = checkedNumber(hi - lo) * 0.1 || 0.5;
+      const axisLo = checkedNumber(lo - pad), axisHi = checkedNumber(hi + pad);
+      const span = checkedNumber(axisHi - axisLo, true);
+      const X = x => checkedNumber(padL + checkedNumber(x - axisLo) / span * plotW);
       const y0 = 30;
       // zero line
       __svgParts.push(`<line x1="${X(0)}" y1="${y0 - 10}" x2="${X(0)}" y2="${y0 + items.length * 26}" stroke="currentColor" stroke-dasharray="3 3" opacity="0.4"/>`);
