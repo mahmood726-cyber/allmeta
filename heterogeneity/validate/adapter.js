@@ -79,7 +79,16 @@
     try {
       for (const [index,c] of corpus.entries()) {
         const r=byID.get(c.id);if(!r)throw new Error('Missing reference: '+c.id);
-        const a=window.__almHetCompute(c.text,'pm'),s=a.sum,q=a.qpci,rc=r.common;
+        // The hash-verified publication corpus predates strict CSV: its final two
+        // fields are estimate/SE and its labels contain unquoted commas. Quote
+        // those known labels at this replay boundary only; user input must still
+        // reject surplus fields. Keep the pinned corpus and numeric tokens intact.
+        const text=c.text.split('\n').map(line=>{
+          const fields=line.split(','),se=fields.pop(),est=fields.pop();
+          const label=fields.join(',').trim();
+          return '"'+label.replace(/"/g,'""')+'",'+est+','+se;
+        }).join('\n');
+        const a=window.__almHetCompute(text,'pm'),s=a.sum,q=a.qpci,rc=r.common;
         if(a.k!==c.k)throw new Error('Corpus parser study count mismatch: '+c.id);
         for(const [name,av,rv,kind] of [
           ['k',a.k,rc.k,'EXACT'],['Q',s.Q,rc.Q,'REL'],['df',s.df,rc.df,'EXACT'],['p(Q)',s.pQ,rc.pQ,'ABS'],['I2',s.I2,rc.I2,'ABS'],
@@ -87,12 +96,12 @@
         ]) check(c.id,name,av,rv,kind);
         for(const key of KEYS) {
           configurations++;
-          const A=key==='pm'?a:window.__almHetCompute(c.text,key),R=r.configs[key],S=A.sum;
+          const A=key==='pm'?a:window.__almHetCompute(text,key),R=r.configs[key],S=A.sum;
           if(!R || R.error)throw new Error('Reference fit unavailable: '+c.id+'/'+key);
           const refRefused=R.refused===true || R.refused==='true';
           check(c.id+'/'+key,'refusal',!!A.dlRefused,refRefused,'EXACT');
           // The original display audit includes the PM fallback when DL is refused.
-          data.value=c.text;select.value=key;data.dispatchEvent(new Event('input',{bubbles:true}));
+          data.value=text;select.value=key;data.dispatchEvent(new Event('input',{bubbles:true}));
           const audit=displayAudit(A);displayed+=audit.numbers;displayFails.push(...audit.fails.map(f=>c.id+'/'+key+': '+f));
           if(refRefused || A.dlRefused){refused++;continue;}compared++;
           const id=c.id+'/'+key;
