@@ -1,9 +1,0 @@
-# PR #313 pass 4: no additional runs requested.
-# The latest supplied automatic unit gate executes both changed suites:
-# 17 provenance tests and 25 refusal-export tests pass (42 total).
-# The focused and adjacent runs requested in pass 3 also passed (65 total).
-# No production code or tests changed in pass 4.
-# The whole gate remains failed: 1763 pass, 12 fail, 70 existing todo.
-# All 12 counted failures are unchanged R-fixture byte-hash mismatches.
-# See ../REPORT.md for affected files and the scope constraint preventing repair.
-# This file does not change the automatic gate, test discovery, or any assertion.
