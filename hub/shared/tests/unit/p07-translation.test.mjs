@@ -37,6 +37,7 @@ function compare(actual, expected, actualOffset = 0, expectedOffset = 0) {
 
 test('P07-R1 control: R fixture records the exact input and native package versions', () => {
   const reference = nativeReference();
+  // Pin the exact fixture bytes; .gitattributes prevents checkout conversion.
   assert.equal(reference.provenance.input_md5, createHash('md5').update(inputBytes).digest('hex'));
   for (const key of ['R', 'metafor', 'jsonlite']) assert.ok(reference.provenance[key]);
   assert.deepEqual(reference.fits.map(f => f.offset), input.offsets);
