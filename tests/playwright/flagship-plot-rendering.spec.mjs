@@ -59,6 +59,10 @@ for (const width of [1280, 390]) {
         await page.evaluate(() => loadDemoDataset('SGLT2_ACM'));
         await page.locator('#runAnalysisBtn').click();
         await page.waitForFunction(() => !!AppState.results?.pooled);
+        // Complete at the moment it is published: no timer may rewrite it before or after a save.
+        const metaoverfit = await page.evaluate(() => AppState.results.metaoverfit);
+        expect(metaoverfit.skipped).toBeUndefined();
+        expect(metaoverfit.risk_level).toBeTruthy();
         await pairwisePlots(page);
         const before = await page.evaluate(() => JSON.parse(JSON.stringify(AppState.results)));
         const input = await page.evaluate(() => JSON.parse(JSON.stringify(getStudyData())));

@@ -5476,8 +5476,7 @@ if (originalRunAnalysis) {
   };
 }
 
-// Metaoverfit Assessment - Fix to properly compute and update AppState.results
-function updateMetaoverfitResults() {
+// Called by runAnalysis before renderResults, so a published result is already complete.// A save must never depend on how long after Run it happens.function updateMetaoverfitResults() {
   const r = AppState.results;
   if (!r || !r.yi) return;
 
@@ -5527,13 +5526,6 @@ function updateMetaoverfitResults() {
 
     console.log('[Metaoverfit] Updated:', r.metaoverfit);
 
-    // Re-render bias panel if visible
-    if (typeof renderBiasPanel === 'function') {
-      const biasPanel = document.getElementById('panel-bias');
-      if (biasPanel && biasPanel.innerHTML.length > 100) {
-        setTimeout(() => renderBiasPanel(r), 100);
-      }
-    }
   } catch (e) {
     console.error('updateMetaoverfitResults error:', e);
   }
@@ -5544,7 +5536,6 @@ const originalRunAnalysis2 = window.runAnalysis;
 if (originalRunAnalysis2) {
   window.runAnalysis = function() {
     const result = originalRunAnalysis2.apply(this, arguments);
-    setTimeout(updateMetaoverfitResults, 500);
     // Trigger TruthCert analysis for Verdict and HTA tabs
     setTimeout(() => {
       if (typeof runTruthCertAnalysis === 'function') {
