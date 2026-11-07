@@ -19,6 +19,7 @@ export function pageHarness() {
     return elements.get(id);
   };
   el('src').value=html.match(/<textarea id="src"[^>]*>([\s\S]*?)<\/textarea>/)[1];
+  el('analysis-stale').textContent=html.match(/<div id="analysis-stale"[^>]*>([^<]*)<\/div>/)[1];
   el('trans').value='logit';el('tau-est').value='PM';
   const buttons=['json','csv','plot','btn-bus-save','btn-verify-in-r','btn-truthcert'].map(el);
   const document={getElementById:el,addEventListener(){},

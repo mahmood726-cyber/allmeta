@@ -6,6 +6,63 @@ import {createHash} from 'node:crypto';
 import {pageHarness} from '../fixtures/p0prop/page-harness.mjs';
 import {badRows,withBadRow,valid} from '../fixtures/p0prop/cases.mjs';
 
+test('plant: empty runs clear earlier output and lifecycle notices while retaining refusal and export guards',()=>{
+  const page=pageHarness();
+  for(const empty of ['', ' \n\t']) {
+    const before=page.run(valid);
+    assert.notEqual(page.el('forest').innerHTML,'');
+    assert.equal(page.el('analysis-status').hidden,false);
+    page.run(empty);
+    assert.equal(page.context._almLastPropMA(),null);
+    assert.equal(page.context.__almPropValidation.snapshot(),null);
+    assert.equal(page.el('analysis-status').hidden,true);
+    assert.equal(page.el('analysis-stale').hidden,true);
+    assert.equal(page.el('parse-warn').hidden,false);
+    assert.match(page.el('parse-warn').textContent,/empty row/);
+    for(const id of ['res-body','het','forest']) assert.equal(page.el(id).innerHTML,'',id);
+    assert.ok(page.buttons.every(b=>b.disabled));
+    const saved=page.context.__almPropValidation.save();
+    page.context.__almPropValidation.restore(saved);
+    assert.equal(page.el('analysis-stale').hidden,true);
+    assert.equal(page.el('forest').innerHTML,'');
+    assert.ok(page.buttons.every(b=>b.disabled));
+    assert.deepEqual(page.run(valid),before);
+    assert.equal(page.el('analysis-status').hidden,false);
+    assert.equal(page.el('analysis-stale').hidden,true);
+    assert.equal(page.el('parse-warn').hidden,true);
+    assert.ok(page.buttons.every(b=>!b.disabled));
+  }
+});
+
+test('control: nonempty malformed rows retain the refused output warning',()=>{
+  const page=pageHarness();page.run(valid);
+  const forest=page.el('forest').innerHTML;
+  page.run(withBadRow('12.5,150,Bad study'));
+  assert.equal(page.el('analysis-status').hidden,true);
+  assert.equal(page.el('analysis-stale').hidden,false);
+  assert.equal(page.el('forest').innerHTML,forest);
+  assert.equal(page.context._almLastPropMA(),null);
+  assert.ok(page.buttons.every(b=>b.disabled));
+});
+
+test('plant: successful runs restore the ordinary edit message; refusal control keeps its warning',()=>{
+  const page=pageHarness();
+  const editMessage='Results out of date — press Run analysis';
+  const refusalMessage='Results do not match the current input';
+  page.run(valid);
+  assert.equal(page.el('analysis-stale').textContent,editMessage);
+  page.run(withBadRow('12.5,150,Bad study'));
+  assert.equal(page.el('analysis-stale').textContent,refusalMessage);
+  assert.equal(page.el('analysis-stale').hidden,false);
+  const refused=page.context.__almPropValidation.save();
+  page.run(valid);
+  assert.equal(page.el('analysis-stale').textContent,editMessage);
+  assert.equal(page.el('analysis-stale').hidden,true);
+  page.context.__almPropValidation.restore(refused);
+  assert.equal(page.el('analysis-stale').textContent,refusalMessage);
+  assert.equal(page.el('analysis-stale').hidden,false);
+});
+
 test('control: actual page outputs across every archived corpus configuration',()=>{
   const page=pageHarness();
   const corpus=JSON.parse(fs.readFileSync(new URL('../../../../proportion-ma/validate/corpus/corpus.json',import.meta.url),'utf8'));
