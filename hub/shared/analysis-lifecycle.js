@@ -29,6 +29,15 @@
         updated.hidden = true; if (stale) stale.hidden = false;
       }
     };
+    // Restore notices and their input history together after a temporary replay.
+    wrapped.snapshot = function () {
+      return { completed, attempted, updatedHidden: updated.hidden, staleHidden: stale ? stale.hidden : null };
+    };
+    wrapped.restore = function (saved) {
+      completed = saved.completed; attempted = saved.attempted;
+      updated.hidden = saved.updatedHidden;
+      if (stale) stale.hidden = saved.staleHidden;
+    };
     return wrapped;
   };
 })();
