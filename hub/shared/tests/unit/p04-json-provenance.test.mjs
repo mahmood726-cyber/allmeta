@@ -10,16 +10,23 @@ assert.ok(buildTag, 'NMA must load the producing build identity');
 assert.ok(buildTag.index < html.indexOf('    function onDownloadJson()'));
 const buildSource = readFileSync(new URL(buildTag[1], pageUrl), 'utf8');
 
-// Run the actual form and download handlers, with browser I/O replaced in memory.
-// The analysis gate is a boundary stub; these tests cover JSON serialization.
+// Run the actual form, reference preparation and download handlers, with browser
+// I/O replaced in memory. Numerical analysis and its gate are boundary stubs;
+// p04-round2.test.mjs covers the full renderer, lifecycle and autosave.
 function section(start, end) {
   const first = html.indexOf(start), last = html.indexOf(end, first);
   assert.ok(first >= 0 && last > first, `Missing source section: ${start}`);
   return html.slice(first, last);
 }
 const source = [
-  section('    const fields =', '    let _pendingRef'),
-  section('    function readState()', '    // CSV labels'),
+  '"use strict";',
+  section('    const fields =', '    const EXAMPLE ='),
+  section('    function readState()', '    function clearResults()'),
+  section('    function uniqueTreatments(', '    // BFS connectivity'),
+  section('    function populateRef(', '    render = window.alm.analysisLifecycle'),
+  // Keep the production render phase that builds the incoming network's options
+  // and consumes _pendingRef. Stop at the numerical-analysis boundary.
+  section('    function renderResults() {', '      const extras =') + '\n    }',
   section('    function downloadBlob(', '    function slugify('),
   section('    function onDownloadJson()', '    function onReset()'),
 ].join('\n');
@@ -32,6 +39,20 @@ const plain = value => JSON.parse(JSON.stringify(value));
 
 function harness({ loadBuild = true, allowed = true } = {}) {
   const elements = new Map(), downloads = [];
+  // Like a browser SELECT, reject values absent from the current options.
+  // writeState must defer the incoming reference until render builds them.
+  const options = [];
+  let selected;
+  elements.set('f-ref', {
+    get value() { return selected?.value ?? ''; },
+    set value(value) { selected = options.find(option => option.value === String(value)); },
+    set innerHTML(value) {
+      assert.equal(value, '');
+      options.length = 0;
+      selected = undefined;
+    },
+    appendChild(option) { options.push(option); selected ??= option; },
+  });
   let blob, gateCalls = 0;
   const context = vm.createContext({
     window: {}, Blob,
@@ -41,6 +62,7 @@ function harness({ loadBuild = true, allowed = true } = {}) {
         return elements.get(id);
       },
       createElement(tag) {
+        if (tag === 'option') return { value: '', textContent: '' };
         assert.equal(tag, 'a');
         return { click() { downloads.push({ blob, filename: this.download }); } };
       },
@@ -49,7 +71,9 @@ function harness({ loadBuild = true, allowed = true } = {}) {
     URL: { createObjectURL(value) { blob = value; return 'blob:nma-test'; }, revokeObjectURL() {} },
     setTimeout(fn) { fn(); },
     canExport() { gateCalls++; return allowed; },
-    render() {},
+    render() { context.renderResults(); },
+    clearResults() { assert.fail('Serialization fixtures must contain valid contrasts'); },
+    showWarnings(messages) { assert.fail(messages.join('\n')); },
     alert(message) { assert.fail(message); },
     FileReader: class {
       readAsText(file) { this.result = file; this.onload(); }
@@ -58,6 +82,7 @@ function harness({ loadBuild = true, allowed = true } = {}) {
   if (loadBuild) vm.runInContext(buildSource, context);
   vm.runInContext(source, context);
   context.writeState(settings);
+  context.render();
   return {
     context, downloads,
     get gateCalls() { return gateCalls; },
