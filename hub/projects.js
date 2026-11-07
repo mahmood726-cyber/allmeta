@@ -1251,7 +1251,7 @@ window.HTML_APPS_PROJECTS = [
     collection: "existing",
     mode: "file",
     category: "Network Meta-Analysis",
-    summary: "Network meta-analysis for dose-response data, with 40+ novel methods and RSM editorial revisions.",
+    summary: "Network meta-analysis for dose-response data, with 40+ novel methods.",
     note: "Full-featured single-file app; test files live at the app root rather than in a tests/ folder.",
     tags: ["nma", "dose-response", "novel-methods"]
   },
