@@ -22,7 +22,7 @@ const formats = {
 
 // Browser-free DOM/download boundary only. Run the production parser, fitting
 // core, lifecycle, app initialization and result-export click handlers unchanged.
-function harness(initialInput = validInput) {
+function harness(initialInput = validInput, loadBuildInfo = false) {
   const downloads = [];
   const blobs = new Map();
   let nextBlob = 0;
@@ -87,6 +87,7 @@ function harness(initialInput = validInput) {
   for (const path of ['shared/ma-core.js', 'hub/shared/analysis-lifecycle.js', 'hub/shared/results-export.js']) {
     vm.runInContext(read(path), context, { filename: path });
   }
+  if (loadBuildInfo) vm.runInContext(read('shared/build-info.js'), context, { filename: 'shared/build-info.js' });
   vm.runInContext(appSource, context, { filename: 'proportion-ma/index.html' });
   return {
     results: () => context.window._almLastPropMA(),
@@ -125,6 +126,16 @@ function assertNoFit(text, action) {
   }
 }
 
+function flatFitFields(obj, prefix = '') {
+  return Object.entries(obj).flatMap(([key, value]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      return flatFitFields(value, path);
+    }
+    return [[path, value == null ? '' : Array.isArray(value) ? JSON.stringify(value) : String(value)]];
+  });
+}
+
 function assertFit(text, action, results) {
   assert.doesNotMatch(text, /no (?:fitted )?results/i);
   const expected = JSON.parse(JSON.stringify(results));
@@ -152,8 +163,7 @@ function assertFit(text, action, results) {
       .map(([, key, value]) => [key.trim(), value.trim()])
       .filter(([key]) => key !== 'key' && !/^-+$/.test(key));
   }
-  assert.deepEqual(Object.fromEntries(pairs), Object.fromEntries(Object.entries(expected)
-    .map(([key, value]) => [key, value == null ? '' : String(value)])),
+  assert.deepEqual(Object.fromEntries(pairs), Object.fromEntries(flatFitFields(expected)),
   'all exported fit fields are preserved');
 }
 
@@ -186,6 +196,20 @@ for (const action of Object.keys(formats)) {
     h.assertRefused();
     await h.run('6,10,Study C\n15,20,Study D');
     assert.notEqual(h.results().poolP, earlierPooled, 'the recovered fit is new');
+    assertFit(await h.download(action), action, h.results());
+  });
+
+  test(`control P09-R1: ${action} preserves loaded provenance through refusal and recovery`, async () => {
+    const h = harness(validInput, true);
+    const producedBy = JSON.parse(JSON.stringify(h.results().producedBy));
+    assert.ok(producedBy.version);
+    assert.ok(producedBy.sha);
+    assertFit(await h.download(action), action, h.results());
+    await h.run(refusedInput);
+    h.assertRefused();
+    assertNoFit(await h.download(action), action);
+    await h.run(validInput);
+    assert.deepEqual(JSON.parse(JSON.stringify(h.results().producedBy)), producedBy);
     assertFit(await h.download(action), action, h.results());
   });
 }
