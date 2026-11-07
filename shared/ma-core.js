@@ -414,8 +414,10 @@
       rangeError.code = "ERR_MA_WEIGHT_RANGE";
       throw rangeError;
     }
-    var t2 = (typeof opts.tau2 === "number" && opts.tau2 >= 0) ? opts.tau2
-           : (method === "FE" ? 0 : (_T[method] || tau2PM)(yi, vi));
+    // 2026-11-05: FE fixes heterogeneity at zero even if the caller supplies a tau2 override.
+    var t2 = method === "FE" ? 0
+           : (typeof opts.tau2 === "number" && opts.tau2 >= 0) ? opts.tau2
+           : (_T[method] || tau2PM)(yi, vi);
     var ws = _wsums(yi, vi, t2), mu = ws.mu, sw = ws.sw;
     var se = Math.sqrt(1 / sw);
     var fe = _wsums(yi, vi, 0), Q = fe.Q;
