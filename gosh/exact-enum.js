@@ -12,12 +12,14 @@
  * once (2^m + 2^(k-m) entries), each entry built from a smaller entry plus one study. A subset (H, L) then costs ONE
  * addition per sum. Unlike a Gray-code walk, no running sum is carried across subsets, so there is no rounding drift
  * after millions of add/remove steps, and the result for a subset does not depend on enumeration order.
- * FE is O(1) per subset. DL is not: the DL estimate needs sum 1/(v_i + tau2) and sum y_i/(v_i + tau2) with a
+ * FE is O(1) per well-conditioned subset (O(|subset|) for the numerical fallback below). DL is not: the DL estimate needs sum 1/(v_i + tau2) and sum y_i/(v_i + tau2) with a
  * subset-specific tau2, so each DL subset with tau2 > 0 costs O(|subset|) (a loop over its members); subsets with
  * tau2 = 0 reuse the FE estimate (identical weights).
  *
  * Numerics. y is centred at the plain mean of the inputs before tabulating, so Q = sum w*yc^2 - (sum w*yc)^2/sum w
- * suffers far less cancellation; Q is clamped at 0 and is exactly 0 for singletons. I2 = 100*(Q-df)/Q when Q > df,
+ * usually suffers less cancellation. If the moment subtraction or mean reconstruction is ill-conditioned, use
+ * original selected effects, centred on one selected study, and sum weighted squared residuals in a second pass.
+ * Singletons use their original effect and Q = 0. I2 = 100*(Q-df)/Q when Q > df,
  * else 0 (for DL this equals metafor's I2). DL tau2 = max(0, (Q - df)/(sum w - sum w^2/sum w)).
  *
  * Grid. Every subset estimate is a convex combination of the inputs, so it lies in [min y, max y]: the x range is
@@ -70,7 +72,7 @@
     var c = 0;
     for (var i = 0; i < k; i++) c += te[i];
     c /= k;
-    var v = new Float64Array(k), yc = new Float64Array(k), elems = [];
+    var v = new Float64Array(k), y = new Float64Array(te), yc = new Float64Array(k), elems = [];
     for (i = 0; i < k; i++) {
       v[i] = se[i] * se[i]; yc[i] = te[i] - c;
       var w = 1 / v[i];
@@ -111,21 +113,48 @@
     function fitOne(H, L) {
       var sw = Hsw[H] + Lsw[L], swy = Hswy[H] + Lswy[L], swy2 = Hswy2[H] + Lswy2[L];
       var n = Hcnt[H] + Lcnt[L];
+      if (n === 1) {
+        out[0] = y[L ? 31 - Math.clz32(L) : m + 31 - Math.clz32(H)];
+        out[1] = out[2] = out[3] = 0;
+        return;
+      }
       var muc = swy / sw;
-      var Q = n === 1 ? 0 : swy2 - swy * muc;
+      var Q = swy2 - swy * muc;
+      var est = c + muc, centre = c, bits, t, j, u;
+      // Recompute before clamping: an excluded remote study can erase Q, or the
+      // estimate when c is added back. Avoid losing four or more decimal digits
+      // in either subtraction, leaving headroom for the at-most-30-study sums.
+      var local = (swy2 > 0 && Q <= 1e-4 * swy2) ||
+        Math.abs(est) < 1e-4 * (Math.abs(c) + Math.abs(muc));
+      if (local) {
+        centre = y[L ? 31 - Math.clz32(L & -L) : m + 31 - Math.clz32(H & -H)];
+        var aFE = 0;
+        bits = L;
+        while (bits) { t = bits & -bits; j = 31 - Math.clz32(t); aFE += elems[j].w * (y[j] - centre); bits ^= t; }
+        bits = H;
+        while (bits) { t = bits & -bits; j = m + 31 - Math.clz32(t); aFE += elems[j].w * (y[j] - centre); bits ^= t; }
+        muc = aFE / sw;
+        est = centre + muc;
+        Q = 0;
+        bits = L;
+        while (bits) { t = bits & -bits; j = 31 - Math.clz32(t); u = (y[j] - centre) - muc; Q += elems[j].w * u * u; bits ^= t; }
+        bits = H;
+        while (bits) { t = bits & -bits; j = m + 31 - Math.clz32(t); u = (y[j] - centre) - muc; Q += elems[j].w * u * u; bits ^= t; }
+      }
       if (Q < 0) Q = 0;
       var df = n - 1;
       var I2 = (df > 0 && Q > df) ? 100 * (Q - df) / Q : 0;
-      var est = c + muc, tau2 = 0;
+      var tau2 = 0;
       if (isDL && df > 0) {
         var sw2 = Hsw2[H] + Lsw2[L];
         tau2 = (Q - df) / (sw - sw2 / sw);
         if (tau2 > 0) {
-          var a = 0, b = 0, bits = L, t, j, u;
-          while (bits) { t = bits & -bits; j = 31 - Math.clz32(t); u = 1 / (v[j] + tau2); a += u * yc[j]; b += u; bits ^= t; }
+          var a = 0, b = 0;
+          bits = L;
+          while (bits) { t = bits & -bits; j = 31 - Math.clz32(t); u = 1 / (v[j] + tau2); a += u * (local ? y[j] - centre : yc[j]); b += u; bits ^= t; }
           bits = H;
-          while (bits) { t = bits & -bits; j = m + 31 - Math.clz32(t); u = 1 / (v[j] + tau2); a += u * yc[j]; b += u; bits ^= t; }
-          est = c + a / b;
+          while (bits) { t = bits & -bits; j = m + 31 - Math.clz32(t); u = 1 / (v[j] + tau2); a += u * (local ? y[j] - centre : yc[j]); b += u; bits ^= t; }
+          est = centre + a / b;
         } else tau2 = 0;
       }
       out[0] = est; out[1] = I2; out[2] = Q; out[3] = tau2;
