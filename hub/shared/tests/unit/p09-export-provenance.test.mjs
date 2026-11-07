@@ -80,6 +80,7 @@ function harness({ transform = 'logit', tauEstimator = 'PM', source = sample, bu
   return {
     window,
     result: () => JSON.parse(JSON.stringify(window._almLastPropMA())),
+    rendered: () => Object.fromEntries(['res-body', 'het', 'forest'].map(id => [id, elements.get(id).innerHTML])),
     run: () => window.__almPropValidation.run(),
     async export(action) {
       const before = downloads.length;
@@ -113,12 +114,27 @@ function fields(action, text) {
   return Object.fromEntries(text.split('\n').filter(line => line.startsWith('| ')).map(line => line.split('|').slice(1, 3).map(s => s.trim())));
 }
 
+function assertReportProvenance(action, text, by) {
+  if (action !== 'report-md' && action !== 'report-txt') return;
+  const header = text.split(action === 'report-md' ? '\n## Methods\n' : '\nMETHODS\n')[0];
+  if (by.version || by.sha) {
+    const expected = [by.version && 'Release: ' + by.version, by.sha && 'Source commit: ' + by.sha]
+      .filter(Boolean).join('; ') + '.';
+    assert.ok(header.split('\n').includes(expected), `${action} header identifies the producing analysis`);
+  } else {
+    assert.doesNotMatch(header, /Release:|Source commit:/, 'do not invent unavailable provenance');
+  }
+}
+
 for (const action of actions) {
   test(`P09-R6 plant: ${action} includes the loaded build version and full SHA`, async () => {
     const h = harness();
-    const exported = fields(action, await h.export(action));
-    assert.equal(exported['build.version'], h.window.AlmBuildInfo.version, `${action} producing version`);
-    assert.equal(exported['build.sha'], h.window.AlmBuildInfo.sha, `${action} producing full SHA`);
+    const text = await h.export(action);
+    const exported = fields(action, text);
+    assert.equal(exported['producedBy.version'], h.window.AlmBuildInfo.version, `${action} producing version`);
+    assert.equal(exported['producedBy.sha'], h.window.AlmBuildInfo.sha, `${action} producing full SHA`);
+    assert.equal(Object.hasOwn(h.result(), 'build'), false, 'use the shared provenance convention');
+    assertReportProvenance(action, text, h.window.AlmBuildInfo);
   });
 }
 
@@ -129,15 +145,19 @@ test('P09-R6 plant: provenance is captured for the producing analysis, then refr
   const analysis = h.result();
   Object.assign(h.window.AlmBuildInfo, next);
   for (const action of actions) {
-    const exported = fields(action, await h.export(action));
-    assert.equal(exported['build.version'], original.version);
-    assert.equal(exported['build.sha'], original.sha);
+    const text = await h.export(action);
+    const exported = fields(action, text);
+    assert.equal(exported['producedBy.version'], original.version);
+    assert.equal(exported['producedBy.sha'], original.sha);
+    assertReportProvenance(action, text, original);
   }
   h.run();
   for (const action of actions) {
-    const exported = fields(action, await h.export(action));
-    assert.equal(exported['build.version'], next.version);
-    assert.equal(exported['build.sha'], next.sha);
+    const text = await h.export(action);
+    const exported = fields(action, text);
+    assert.equal(exported['producedBy.version'], next.version);
+    assert.equal(exported['producedBy.sha'], next.sha);
+    assertReportProvenance(action, text, next);
   }
   for (const key of numericKeys) assert.equal(h.result()[key], analysis[key], key);
 });
@@ -145,12 +165,14 @@ test('P09-R6 plant: provenance is captured for the producing analysis, then refr
 test('P09-R6 plant: unavailable build identity is explicit without inventing a version or SHA', async () => {
   const h = harness({ build: null });
   const json = JSON.parse(await h.export('json'));
-  assert.deepEqual(json.build, { version: null, sha: null });
+  assert.deepEqual(json.producedBy, { version: null, sha: null });
   for (const action of actions.slice(1)) {
-    const exported = fields(action, await h.export(action));
-    assert.equal(exported['build.version'], '');
-    assert.equal(exported['build.sha'], '');
+    const text = await h.export(action);
+    const exported = fields(action, text);
+    assert.equal(exported['producedBy.version'], '');
+    assert.equal(exported['producedBy.sha'], '');
     assert.equal(exported.poolP, String(json.poolP));
+    assertReportProvenance(action, text, json.producedBy);
   }
 });
 
@@ -159,6 +181,9 @@ for (const transform of ['ft', 'logit', 'raw']) {
     test(`P09-R6 control: ${transform}/${tauEstimator} exports preserve all analysis values and method settings`, async () => {
       const h = harness({ transform, tauEstimator });
       const result = h.result();
+      const unstamped = harness({ transform, tauEstimator, build: null });
+      for (const key of numericKeys) assert.equal(result[key], unstamped.result()[key], key);
+      assert.deepEqual(h.rendered(), unstamped.rendered(), 'build metadata does not change displayed results');
       assert.equal(result._schema, 'propma-results-v1');
       assert.equal(result.transform, transform);
       assert.equal(result.tauEstimator, tauEstimator);
