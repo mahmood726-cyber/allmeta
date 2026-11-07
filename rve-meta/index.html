@@ -367,7 +367,8 @@
 
     function friendlyEngineError(e, m, p) {
       var s = String(e && e.message || e);
-      if (/m<=p/.test(s)) return m + " cluster" + (m === 1 ? "" : "s") + " cannot support " + p + " coefficient" + (p === 1 ? "" : "s") + " (intercept + " + (p - 1) + " predictor" + (p === 2 ? "" : "s") + "): robust variance estimation needs more clusters than coefficients. Add clusters or remove predictors.";
+      if (/m<=p/.test(s)) return m + " cluster" + (m === 1 ? "" : "s") + " cannot support " + p + " coefficient" + (p === 1 ? "" : "s") + " (intercept + " + (p - 1) + " predictor" + (p === 2 ? "" : "s") + "): robust variance estimation needs more clusters than coefficients. " + (p === 1 ? "Add independent clusters." : "Add clusters or remove predictors.");
+      if (/(non-finite|non-positive) weights/i.test(s)) return "The fit cannot be computed because its weights are non-finite or non-positive. Check the sampling variances and the scale of the effect sizes.";
       if (/singular/i.test(s)) return "The coefficients cannot be estimated because the predictors are collinear (for example a constant column, or one predictor equal to a combination of others). Remove or recode a predictor.";
       if (/rho/.test(s)) return "ρ must be a number between 0 and 1.";
       if (/invalid comparison with complex values/.test(s)) return "A CR2 adjustment matrix has complex eigenvalues, so robumeta refuses this design (R reports 'invalid comparison with complex values'). The same data fail in R. Check for duplicated or near-collinear rows within a cluster, or remove a predictor.";
