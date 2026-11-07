@@ -11,7 +11,7 @@ assert.ok(script, 'Exercise the real influence page script');
 const mixed = '4, 1, A\n4, 1, B\n0, 1, C\n-4, 1, D\n-4, 1, E';
 const balanced = '0, 1, F\n0, 1, G\n0, 1, H';
 
-// Small DOM surface for the actual inline application and its numerical engines.
+// Small DOM surface for the actual inline application, lifecycle and numerical engines.
 // This checks generated markup and state transitions, not a browser accessibility tree.
 function harness(input = mixed) {
   const nodes = new Map();
@@ -19,7 +19,8 @@ function harness(input = mixed) {
     const attrs = Object.fromEntries([...m[0].matchAll(/([\w-]+)="([^"]*)"/g)].map(a => [a[1], a[2]]));
     nodes.set(m[1], {
       innerHTML: '', textContent: '', value: '', hidden: /\bhidden\b/.test(m[0]), disabled: false,
-      attrs, listeners: {},
+      id: m[1], attrs, listeners: {},
+      matches(selector) { return selector === '#' + this.id; },
       setAttribute(k, v) { this.attrs[k] = String(v); },
       getAttribute(k) { return this.attrs[k] ?? null; },
       addEventListener(k, f) { this.listeners[k] = f; },
@@ -28,26 +29,31 @@ function harness(input = mixed) {
   }
   nodes.get('src').value = input;
   const saved = new Map();
+  const events = new Map();
   const context = vm.createContext({
     document: {
       getElementById: id => nodes.get(id) ?? null,
-      querySelectorAll: () => [], querySelector: () => null,
+      querySelectorAll: selector => selector === '#src' ? [nodes.get('src')] : [],
+      querySelector: () => null,
+      addEventListener(type, fn, capture) { assert.equal(capture, true); events.set(type, fn); },
     },
     localStorage: {
       getItem: k => saved.get(k) ?? null,
       setItem: (k, v) => saved.set(k, String(v)), removeItem: k => saved.delete(k),
     },
     structuredClone,
-    alm: { analysisLifecycle: fn => fn },
   });
   context.window = context;
-  for (const file of ['shared/ma-core.js', 'shared/diagnostic-plots.js', 'influence/influence-extra.js']) {
+  for (const file of ['shared/ma-core.js', 'shared/diagnostic-plots.js',
+    'influence/influence-extra.js', 'hub/shared/analysis-lifecycle.js']) {
     vm.runInContext(readFileSync(new URL(file, root), 'utf8'), context, { filename: file });
   }
   vm.runInContext(script, context, { filename: 'influence/index.html' });
   return {
     context, nodes,
     markup: id => nodes.get(id)?.innerHTML ?? '',
+    event(type) { events.get(type)({ target: nodes.get('src') }); },
+    edit(value) { nodes.get('src').value = value; this.event('input'); },
     run(value) { nodes.get('src').value = value; nodes.get('btn-run').listeners.click(); },
   };
 }
@@ -127,14 +133,26 @@ test('P11-R6 plant: reruns replace the radial text and refused input clears it w
 test('P11-R6 plant: validation snapshot restores radial text and plot together', () => {
   const h = harness(), summary = h.markup('radial-summary'), svg = h.markup('radial-plot');
   assert.equal(rows(summary).length, 5);
-  h.nodes.get('src').value = balanced; // Unsubmitted edit must survive validation too.
+  assert.equal(h.nodes.get('analysis-status').hidden, false);
+  assert.equal(h.nodes.get('analysis-stale').hidden, true);
+  h.edit(balanced); // Unsubmitted edit must survive validation too.
+  assert.equal(h.nodes.get('analysis-status').hidden, true);
+  assert.equal(h.nodes.get('analysis-stale').hidden, false);
   const snapshot = h.context.__almInfluenceValidationSnapshot();
   h.run(balanced);
   assert.notEqual(h.markup('radial-summary'), summary);
+  assert.equal(h.nodes.get('analysis-status').hidden, false);
+  assert.equal(h.nodes.get('analysis-stale').hidden, true);
   h.context.__almInfluenceValidationRestore(snapshot);
   assert.equal(h.markup('radial-summary'), summary);
   assert.equal(h.markup('radial-plot'), svg);
   assert.equal(h.nodes.get('src').value, balanced);
+  assert.equal(h.nodes.get('analysis-status').hidden, true);
+  assert.equal(h.nodes.get('analysis-stale').hidden, false);
+  assert.deepEqual(h.context.__almInfluenceValidationSnapshot().lifecycle, snapshot.lifecycle);
+  h.event('change');
+  assert.equal(h.nodes.get('analysis-status').hidden, true);
+  assert.equal(h.nodes.get('analysis-stale').hidden, false);
 });
 
 test('P11-R6 control: existing FE radial coordinates and visual threshold remain unchanged', () => {
