@@ -37,17 +37,18 @@ Per `CLAUDE.md` rule: **only tag and release when explicitly requested.**
    python -m pytest nma-pro-v2/tests/                            # ~1 min
    ```
 2. **Bump version in `CITATION.cff`** (`version:` and `date-released:`).
-3. **Regenerate `shared/build-info.js`** so TruthCert receipts and JSON
-   exports embed the new SHA + timestamp. This is the one mechanical
-   step that's easy to forget:
+3. **Sync `shared/build-info.js`** so the committed copy carries the new
+   version. It stays unstamped; `pages.yml` stamps the deployed copy with the
+   commit it serves, on every deploy:
    ```sh
    python scripts/regen_build_info.py
    git add shared/build-info.js CITATION.cff
    git commit -m "release: bump to vX.Y.Z"
    git push origin main
    ```
-   *Why:* Receipts signed without the new SHA point at the previous
-   commit, so reviewers months later can't replay the exact code.
+   *Why:* A commit cannot contain its own SHA, so a stamped copy in git always
+   names another commit. Reviewers replay from the SHA in the receipt, so that
+   SHA must be the one that was served.
 4. **Tag and push:**
    ```sh
    git tag -a v1.0.0 -m "v1.0.0 — first archived release"
