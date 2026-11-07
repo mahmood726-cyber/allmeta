@@ -1,0 +1,3 @@
+study,TP,FN,FP,TN
+Bad,10,2,,20
+Good,10,2,3,20

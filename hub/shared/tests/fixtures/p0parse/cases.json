@@ -1,0 +1,1476 @@
+[
+  {
+    "id": "control",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": 0.12
+      },
+      {
+        "study": "B",
+        "yi": -0.2,
+        "se": 0.3
+      }
+    ],
+    "refused": []
+  },
+  {
+    "id": "semicolon",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": 0.12
+      }
+    ],
+    "refused": [],
+    "sep": ";"
+  },
+  {
+    "id": "tab",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": 0.12
+      }
+    ],
+    "refused": [],
+    "sep": "\t"
+  },
+  {
+    "id": "ambiguous",
+    "rows": [
+      {
+        "study": "A",
+        "yi": null,
+        "se": null
+      },
+      {
+        "study": "B",
+        "yi": 0.2,
+        "se": 0.1
+      }
+    ],
+    "refused": [
+      1
+    ]
+  },
+  {
+    "id": "quoted-comma",
+    "rows": [
+      {
+        "study": "A",
+        "yi": null,
+        "se": 0.12
+      },
+      {
+        "study": "B",
+        "yi": 0.2,
+        "se": 0.1
+      }
+    ],
+    "refused": [
+      1
+    ]
+  },
+  {
+    "id": "ratio-or",
+    "rows": [
+      {
+        "study": "A",
+        "or": null,
+        "lower": null,
+        "upper": null,
+        "yi": null,
+        "se": null
+      }
+    ],
+    "refused": [
+      1
+    ]
+  },
+  {
+    "id": "ratio-rr",
+    "rows": [
+      {
+        "study": "A",
+        "rr": null,
+        "lower": null,
+        "upper": null,
+        "yi": null,
+        "se": null
+      }
+    ],
+    "refused": [
+      1
+    ]
+  },
+  {
+    "id": "ratio-hr",
+    "rows": [
+      {
+        "study": "A",
+        "hr": null,
+        "lower": null,
+        "upper": null,
+        "yi": null,
+        "se": null
+      }
+    ],
+    "refused": [
+      1
+    ]
+  },
+  {
+    "id": "ci",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": null
+      },
+      {
+        "study": "B",
+        "yi": 0.2,
+        "se": null
+      },
+      {
+        "study": "C",
+        "yi": 0.2,
+        "se": 0.1
+      }
+    ],
+    "refused": [
+      1,
+      2
+    ]
+  },
+  {
+    "id": "labels",
+    "rows": [
+      {
+        "study": "0",
+        "yi": 0.45,
+        "se": 0.12
+      },
+      {
+        "study": "123",
+        "yi": 0.2,
+        "se": 0.1
+      }
+    ],
+    "refused": []
+  },
+  {
+    "id": "guard-n",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "n": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "vi",
+        "type": "float"
+      }
+    ],
+    "guard": "n"
+  },
+  {
+    "id": "guard-sd",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "sd": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "vi",
+        "type": "float"
+      }
+    ],
+    "guard": "sd"
+  },
+  {
+    "id": "guard-capital-n",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "N": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "vi",
+        "type": "float"
+      }
+    ],
+    "guard": "N"
+  },
+  {
+    "id": "guard-sample-size",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "sample size": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "vi",
+        "type": "float"
+      }
+    ],
+    "guard": "sample size"
+  },
+  {
+    "id": "guard-sei",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "sei": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "vi",
+        "type": "float"
+      }
+    ],
+    "guard": "sei"
+  },
+  {
+    "id": "guard-se",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "vi",
+        "type": "float"
+      }
+    ],
+    "guard": "se"
+  },
+  {
+    "id": "se-control",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": 0.12,
+        "sd": "2",
+        "n": "100"
+      }
+    ],
+    "refused": []
+  },
+  {
+    "id": "variance-control",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "vi": 0.0144
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "vi",
+        "type": "float"
+      }
+    ]
+  },
+  {
+    "id": "guard-n-to-se",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "n": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "se",
+        "type": "float"
+      }
+    ],
+    "guard": "n"
+  },
+  {
+    "id": "guard-sd-to-se",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "sd": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "se",
+        "type": "float"
+      }
+    ],
+    "guard": "sd"
+  },
+  {
+    "id": "guard-capital-n-to-se",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "N": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "se",
+        "type": "float"
+      }
+    ],
+    "guard": "N"
+  },
+  {
+    "id": "guard-sample-size-to-se",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "sample size": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "se",
+        "type": "float"
+      }
+    ],
+    "guard": "sample size"
+  },
+  {
+    "id": "guard-n-to-sei",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "n": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "sei",
+        "type": "float"
+      }
+    ],
+    "guard": "n"
+  },
+  {
+    "id": "guard-sd-to-sei",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "sd": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "sei",
+        "type": "float"
+      }
+    ],
+    "guard": "sd"
+  },
+  {
+    "id": "guard-capital-n-to-sei",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "N": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "sei",
+        "type": "float"
+      }
+    ],
+    "guard": "N"
+  },
+  {
+    "id": "guard-sample-size-to-sei",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "sample size": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "sei",
+        "type": "float"
+      }
+    ],
+    "guard": "sample size"
+  },
+  {
+    "id": "guard-n-to-variance",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "n": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "variance",
+        "type": "float"
+      }
+    ],
+    "guard": "n"
+  },
+  {
+    "id": "guard-sd-to-variance",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "sd": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "variance",
+        "type": "float"
+      }
+    ],
+    "guard": "sd"
+  },
+  {
+    "id": "guard-capital-n-to-variance",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "N": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "variance",
+        "type": "float"
+      }
+    ],
+    "guard": "N"
+  },
+  {
+    "id": "guard-sample-size-to-variance",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "sample size": "12"
+      }
+    ],
+    "refused": [],
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "variance",
+        "type": "float"
+      }
+    ],
+    "guard": "sample size"
+  },
+  {
+    "id": "scientific-control",
+    "rows": [
+      {
+        "study": "A",
+        "yi": -0.2,
+        "se": 0.001
+      }
+    ],
+    "refused": []
+  },
+  {
+    "id": "optional-short",
+    "columns": [
+      {
+        "name": "study",
+        "required": true
+      },
+      {
+        "name": "yi",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "se",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "year",
+        "type": "int",
+        "required": false
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": 0.12,
+        "year": null
+      }
+    ],
+    "refused": []
+  },
+  {
+    "id": "optional-control",
+    "columns": [
+      {
+        "name": "study",
+        "required": true
+      },
+      {
+        "name": "yi",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "se",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "year",
+        "type": "int",
+        "required": false
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": 0.12,
+        "year": 2020
+      }
+    ],
+    "refused": []
+  },
+  {
+    "id": "optional-overflow",
+    "columns": [
+      {
+        "name": "study",
+        "required": true
+      },
+      {
+        "name": "yi",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "se",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "year",
+        "type": "int",
+        "required": false
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "yi": null,
+        "se": null,
+        "year": null
+      }
+    ],
+    "refused": [
+      1
+    ]
+  },
+  {
+    "id": "required-short",
+    "columns": [
+      {
+        "name": "study",
+        "required": true
+      },
+      {
+        "name": "yi",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "se",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "year",
+        "type": "int",
+        "required": false
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "se": null,
+        "year": null
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing float",
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "required-header",
+    "columns": [
+      {
+        "name": "study",
+        "required": true
+      },
+      {
+        "name": "yi",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "se",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "year",
+        "type": "int",
+        "required": false
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.45,
+        "year": 2020,
+        "se": null
+      }
+    ],
+    "refused": [
+      1
+    ]
+  },
+  {
+    "id": "ratio-declared",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "or",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "lower",
+        "type": "float",
+        "required": true
+      },
+      {
+        "name": "upper",
+        "type": "float",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "or": 2,
+        "lower": 1,
+        "upper": 4
+      }
+    ],
+    "refused": []
+  },
+  {
+    "id": "ratio-partial",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "or",
+        "type": "float",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "or": null,
+        "lower": null,
+        "upper": null
+      }
+    ],
+    "refused": [
+      1
+    ]
+  },
+  {
+    "id": "int-comma",
+    "sep": ";",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "e1",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "n1",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "e2",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "n2",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "e1": 1,
+        "n1": null,
+        "e2": 2,
+        "n2": 345
+      },
+      {
+        "study": "B",
+        "e1": 1,
+        "n1": 234,
+        "e2": 2,
+        "n2": 345
+      }
+    ],
+    "refused": [
+      1
+    ],
+    "warning": "comma in an integer column (thousands separator or decimal comma?)"
+  },
+  {
+    "id": "int-control",
+    "sep": ";",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "e1",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "n1",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "e2",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "n2",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "e1": 1,
+        "n1": 1234,
+        "e2": 2,
+        "n2": 345
+      }
+    ],
+    "refused": []
+  },
+  {
+    "id": "missing-tp",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": null,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-tp-space",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": null,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-fn",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": null,
+        "FP": 3,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-fn-space",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": null,
+        "FP": 3,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-fp",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": 2,
+        "FP": null,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-fp-space",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": 2,
+        "FP": null,
+        "TN": 20
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-tn",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": null
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "missing-tn-space",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Bad",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": null
+      },
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "row 1: missing int"
+    ]
+  },
+  {
+    "id": "dta-control",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "TP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FN",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "FP",
+        "type": "int",
+        "required": true
+      },
+      {
+        "name": "TN",
+        "type": "int",
+        "required": true
+      }
+    ],
+    "rows": [
+      {
+        "study": "Good",
+        "TP": 10,
+        "FN": 2,
+        "FP": 3,
+        "TN": 20
+      }
+    ],
+    "refused": [],
+    "warningsExact": []
+  },
+  {
+    "id": "se-to-sei",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "sei",
+        "type": "float"
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.1,
+        "sei": 0.05
+      },
+      {
+        "study": "B",
+        "yi": null,
+        "sei": 0.1
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "Header \"se\" mapped to \"sei\" (Levenshtein 1)",
+      "row 2: not float: x"
+    ]
+  },
+  {
+    "id": "sei-to-se",
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.1,
+        "se": 0.05
+      }
+    ],
+    "refused": [],
+    "warningsExact": [
+      "Header \"sei\" mapped to \"se\" (Levenshtein 1)"
+    ]
+  },
+  {
+    "id": "sei-exact-control",
+    "columns": [
+      {
+        "name": "study"
+      },
+      {
+        "name": "yi",
+        "type": "float"
+      },
+      {
+        "name": "sei",
+        "type": "float"
+      }
+    ],
+    "rows": [
+      {
+        "study": "A",
+        "yi": 0.1,
+        "sei": 0.05
+      }
+    ],
+    "refused": [],
+    "warningsExact": []
+  }
+]
