@@ -197,7 +197,7 @@
     function getMode() { return currentMode; }
     function setMode(v) { if (["cov", "r", "rhoW"].indexOf(v) < 0) throw new Error("unknown input mode " + v); currentMode = v; Array.prototype.forEach.call(el("f-mode").querySelectorAll("option"), function (o) { if (o.value === v) { o.setAttribute("selected", ""); o.selected = true; } else { o.removeAttribute("selected"); o.selected = false; } }); }
     function currentParsed() {
-      var mode = getMode(), rw = Number(el("f-rhow").value);
+      var mode = getMode(), rw = number(el("f-rhow").value);
       var parsed = parse(el("f-data").value, mode, rw);
       parsed.outcomes = [el("f-o1").value || "Outcome 1", el("f-o2").value || "Outcome 2"];
       if (mode === "rhoW" && !(Math.abs(rw) < 1)) { parsed.invalid = "Assumed within-study correlation must satisfy |ρw| < 1."; }
