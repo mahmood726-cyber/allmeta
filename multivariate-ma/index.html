@@ -183,7 +183,7 @@
         firstData = false;
         var y1 = nums[0], v1 = nums[1], y2 = nums[2], v2 = nums[3], cov, r;
         if (!(v1 > 0) || !(v2 > 0)) { omitted.push({ line: lineNo, label: label, reason: "variance must be > 0" }); return; }
-        if (mode === "cov") { cov = nums[4]; r = cov / Math.sqrt(v1 * v2); }
+        if (mode === "cov") { cov = nums[4]; r = window.AlmMultivariate.rFromCov(v1, v2, cov); }
         else if (mode === "r") { r = nums[4]; if (!(Math.abs(r) < 1)) { omitted.push({ line: lineNo, label: label, reason: "within-study r must satisfy |r| < 1" }); return; } cov = window.AlmMultivariate.covFromR(v1, v2, r); }
         else if (mode === "rhoW") { r = rhoW; cov = window.AlmMultivariate.covFromR(v1, v2, rhoW); }
         else throw new Error("unknown input mode " + mode);
