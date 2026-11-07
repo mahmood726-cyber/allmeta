@@ -9,6 +9,8 @@ const html = read('mh-peto/index.html');
 const app = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
   .map(match => match[1]).find(source => source.includes('var Z975 ='));
 assert.ok(app?.includes('window.alm.resultsExport('), 'Load the actual app analysis and export wiring');
+const orIntro = textContent(html.match(/<header>[\s\S]*?<p>([\s\S]*?)<\/p>/)[1]);
+const orMethods = textContent(html.match(/<footer>([\s\S]*?)<\/footer>/)[1]);
 
 function textContent(markup) {
   const entities = { lt: '<', gt: '>', amp: '&', Sigma: 'Σ', middot: '·', minus: '−' };
@@ -120,6 +122,7 @@ for (const action of ['report-txt', 'report-md']) {
     const prose = methods(report.text, action);
     assert.match(prose, /risk ratio/i);
     assert.match(prose, /Mantel-Haenszel/i);
+    assert.match(prose, /log-scale MH variance/);
     assert.match(prose, /no continuity correction/i);
     assert.doesNotMatch(prose, /log[- ]OR|odds ratio|Peto|Robins[-–]Breslow[-–]Greenland/i);
   });
@@ -133,6 +136,8 @@ for (const action of ['report-txt', 'report-md']) {
     assert.match(prose, /Robins[-–]Breslow[-–]Greenland variance/);
     assert.match(prose, /Peto/);
     assert.match(prose, /(?:avoid|no) continuity correction/i);
+    assert.equal(prose.replace(/\s+/g, ' ').trim(), orIntro + ' ' + orMethods,
+      'OR retains the complete page intro and footer, including rare-event context and the Cochrane reference');
     assert.ok(Number.isFinite(h.results().peto_est));
   });
 }
@@ -148,13 +153,19 @@ for (const measure of ['OR', 'RD', 'RR']) {
     const json = await h.download('json');
     assert.equal(json.name, 'mhpeto-results.json');
     assert.deepEqual(JSON.parse(json.text), expected);
+    // The integration payload includes nested metadata. Table exports retain
+    // each metadata field under its dotted key, alongside every result value.
+    const expectedRows = Object.entries(expected).flatMap(([key, value]) =>
+      value !== null && typeof value === 'object'
+        ? Object.entries(value).map(([field, entry]) => [key + '.' + field, entry])
+        : [[key, value]]);
     const csv = await h.download('csv');
     assert.equal(csv.name, 'mhpeto-results.csv');
-    assert.equal(csv.text, ['key,value', ...Object.entries(expected).map(([key, value]) => `${key},${value ?? ''}`)].join('\r\n'));
+    assert.equal(csv.text, ['key,value', ...expectedRows.map(([key, value]) => `${key},${value ?? ''}`)].join('\r\n'));
     const md = await h.download('md');
     assert.equal(md.name, 'mhpeto-results.md');
     const rows = md.text.split('\n').slice(2).map(line => line.split('|').slice(1, -1).map(cell => cell.trim()));
-    assert.deepEqual(rows, Object.entries(expected).map(([key, value]) => [key, String(value ?? '')]));
+    assert.deepEqual(rows, expectedRows.map(([key, value]) => [key, String(value ?? '')]));
     assert.deepEqual(h.results(), expected, 'Export does not mutate the analysis');
   });
 }
