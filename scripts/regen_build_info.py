@@ -1,23 +1,36 @@
-"""Regenerate shared/build-info.js with the current git SHA + ISO timestamp.
+"""Write shared/build-info.js, the identity stamped into receipts and JSON exports.
 
-Run this before a release / DOI mint:
+The copy in git is deliberately unstamped. A commit cannot contain its own SHA,
+so a stamped copy in git always names some other commit: it names the parent at
+best, and goes on naming that commit for every commit after it. Exports must
+never claim a commit that is not the one served, so:
+
     python scripts/regen_build_info.py
+        Rewrites the committed file, unstamped: the null SHA and the epoch. Run
+        at a release so its version follows CITATION.cff.
+
+    python scripts/regen_build_info.py --sha <40 hex> --out _site/shared/build-info.js
+        Stamps a build output. pages.yml does this with the commit it deployed.
+        Refuses to stamp the committed file.
 
 Reads version from CITATION.cff (the `version:` field) so version remains
-single-sourced. Writes shared/build-info.js with the captured SHA, timestamp,
-URL, and version.
+single-sourced.
 """
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "shared" / "build-info.js"
 CFF = ROOT / "CITATION.cff"
+# Unstamped: git's null SHA and the epoch, so nothing downstream can mistake a
+# source checkout for a deployed commit.
+NULL_SHA = "0" * 40
+EPOCH = "1970-01-01T00:00:00Z"
 
 
 def _read_version() -> str:
@@ -28,29 +41,35 @@ def _read_version() -> str:
     return m.group(1)
 
 
-def _git_sha() -> str:
-    sha = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=str(ROOT), text=True
-    ).strip()
-    if not re.fullmatch(r"[0-9a-f]{40}", sha):
-        raise SystemExit(f"unexpected SHA: {sha!r}")
-    return sha
-
-
 def _now_iso() -> str:
     return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Write the allmeta build identity.")
+    parser.add_argument("--sha", help="commit being deployed (40 hex); requires --out")
+    parser.add_argument("--out", type=Path, help="build output to stamp")
+    args = parser.parse_args(argv)
+    if bool(args.sha) != bool(args.out):
+        raise SystemExit("--sha and --out go together: only a build output is stamped")
+    if args.sha and not re.fullmatch(r"[0-9a-f]{40}", args.sha):
+        raise SystemExit(f"unexpected SHA: {args.sha!r}")
+    if args.sha == NULL_SHA:
+        raise SystemExit("refusing to stamp the null SHA")
+    if args.out and args.out.resolve() == OUT:
+        raise SystemExit("refusing to stamp the committed file: a commit cannot contain its own SHA")
     version = _read_version()
-    sha = _git_sha()
-    builtAt = _now_iso()
+    sha = args.sha or NULL_SHA
+    builtAt = _now_iso() if args.sha else EPOCH
+    out = args.out or OUT
     short = sha[:7]
     body = f'''/**
  * Build identity for allmeta — used to stamp TruthCert receipts and JSON
  * exports with the exact code that produced them.
  *
- * Regenerate with: python scripts/regen_build_info.py
+ * Written by scripts/regen_build_info.py. pages.yml stamps the deployed copy
+ * with the commit it serves. The copy in git holds the null SHA and the epoch
+ * because a commit cannot contain its own SHA.
  *
  * Why this is signed: when receipts get audited months later, the reviewer
  * needs to know which code path produced the numbers. Without a SHA, you
@@ -61,9 +80,9 @@ def main() -> int:
  * Field meanings:
  *   - app:     always "allmeta" (constant)
  *   - version: semver-ish tag (matches CITATION.cff)
- *   - sha:     full git commit SHA at build time
+ *   - sha:     full git commit SHA deployed; all zeros when not deployed
  *   - shortSha: 7-char prefix for display
- *   - builtAt: ISO-8601 UTC timestamp when this file was regenerated
+ *   - builtAt: ISO-8601 UTC deploy time; the epoch when not deployed
  */
 (function (global) {{
   'use strict';
@@ -79,8 +98,8 @@ def main() -> int:
   if (typeof module !== 'undefined' && module.exports) module.exports = info;
 }})(typeof window !== 'undefined' ? window : globalThis);
 '''
-    OUT.write_text(body, encoding="utf-8")
-    print(f"wrote {OUT}")
+    out.write_text(body, encoding="utf-8", newline="\n")
+    print(f"wrote {out}")
     print(f"  version  = {version}")
     print(f"  sha      = {sha}")
     print(f"  builtAt  = {builtAt}")
