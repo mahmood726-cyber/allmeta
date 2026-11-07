@@ -1,0 +1,120 @@
+name: features
+
+# Shared-feature gates (smart data entry, in-app text, verify-in-R, share link) for the
+# paper 2-19 apps. Every gate prints an n/N count; each has a planted defect that must FAIL.
+#   unit     : node:test suites in hub/shared/tests/unit (parsers, converters, text audit)
+#   entry-r  : F1 conversion grid vs metafor conv.wald / conv.fivenum (rel 1e-10) + planted defect
+#   browser  : Playwright features-*.spec.mjs (per-app entry round-trip, text audit + snapshot, verify-in-R panel via webR)
+
+on:
+  pull_request:
+    paths:
+      - 'shared/alm-*'
+      - '*/alm-features.js'
+      - 'hub/shared/tests/unit/**'
+      - 'hub/shared/tests/features-*.spec.mjs'
+      - 'hub/shared/tests/__snapshots__/text-*.json'
+      - 'validation/entry/**'
+      - '.github/workflows/features.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'shared/alm-*'
+      - '*/alm-features.js'
+      - 'validation/entry/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: node unit tests
+        run: |
+          set -o pipefail
+          node --test --test-reporter=tap "hub/shared/tests/unit/**/*.test.mjs" 2>&1 | tee unit.log
+          grep -E '^# (pass|fail) ' unit.log
+          test "$(grep -E '^# fail ' unit.log | awk '{print $3}')" = "0"
+
+  entry-r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5.1"
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::jsonlite
+            metafor@5.2-1
+          dependencies: '"hard"'
+      - name: generate case grid (JS outputs)
+        run: node validation/entry/gen_cases.mjs
+      - name: R cross-check (must print ENTRY n/n)
+        run: |
+          set -o pipefail
+          Rscript validation/entry/check_entry.R validation/entry/cases.json 2>&1 | tee entry.log
+          line=$(grep -E '^ENTRY [0-9]+/[0-9]+$' entry.log | tail -1)
+          echo "$line"
+          n=${line#ENTRY }; passed=${n%/*}; total=${n#*/}
+          test "$total" -ge 2000 && test "$passed" = "$total"
+      - name: planted defect (must FAIL)
+        run: |
+          if Rscript validation/entry/check_entry.R validation/entry/cases.planted.json > planted.log 2>&1; then
+            echo "planted defect was NOT detected"; cat planted.log; exit 1
+          fi
+          grep -E '^ENTRY [0-9]+/[0-9]+$' planted.log
+          grep -E '^FAIL ' planted.log | head -5
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: entry-r-logs
+          path: |
+            entry.log
+            planted.log
+          if-no-files-found: ignore
+
+  browser:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: feature specs
+        run: |
+          ls features-*.spec.mjs 2>/dev/null || { echo "no feature specs yet"; exit 0; }
+          npx playwright test -c playwright.features.config.mjs --reporter=line,json
+        env:
+          CI: "true"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/features-results.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: features-browser-artifacts
+          path: |
+            hub/shared/tests/artifacts/
+            hub/shared/tests/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
