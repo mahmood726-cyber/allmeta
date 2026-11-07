@@ -37,6 +37,13 @@ jobs:
                    --include='README.md' \
                    ./ _site/
           touch _site/.nojekyll
+      # The copy in git is unstamped because a commit cannot contain its own SHA.
+      # Stamp only the deployed copy, so exports name the commit actually served
+      # and no commit is needed. Fails the deploy if the stamp is not in the site.
+      - name: Stamp the deployed build identity
+        run: |
+          python3 scripts/regen_build_info.py --sha "$GITHUB_SHA" --out _site/shared/build-info.js
+          grep -qF "sha: \"$GITHUB_SHA\"" _site/shared/build-info.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

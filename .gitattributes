@@ -38,5 +38,12 @@ nma-inconsistency/validate/plus/*.json text eol=lf
 correlation-ma/validate/corpus/*.json text eol=lf
 correlation-ma/validate/corpus/reference.json text eol=lf
 
+# Provenance tests hash these fixture and R-script bytes, so a CRLF checkout fails them.
+hub/shared/tests/r/*.R text eol=lf
+hub/shared/tests/r/*.json text eol=lf
+hub/shared/tests/fixtures/**/*.R text eol=lf
+hub/shared/tests/fixtures/**/*.json text eol=lf
+hub/shared/tests/unit/*.R text eol=lf
+hub/shared/tests/unit/*.json text eol=lf
 # Byte-pinned fixture: its MD5 is recorded by p07-translation-reference.R, so never convert line endings (Windows checkouts broke it).
 hub/shared/tests/unit/p07-translation-input.json -text

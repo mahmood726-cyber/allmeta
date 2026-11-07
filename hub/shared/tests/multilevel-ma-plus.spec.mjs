@@ -177,7 +177,17 @@ nodeTest('multilevel-ma-plus pins: seven LF corpus files verify and every change
   }
 });
 
+// hub/app-style.css fades every .panel in (appFadeIn, 300 ms, opacity 0 to 1), and #alm-plus is a
+// .panel. AlmMultilevelPlusAudit.snapshot() multiplies ancestor opacity into the paint check and
+// calls checkVisibility({checkOpacity: true}), so it rightly reports a plot that is not yet opaque.
+// Everything before an audit runs in one long main-thread task, so nothing guarantees the fade
+// has ended by then. Measure the settled page, as the usability and axe specs do.
+async function settled(page) {
+  await page.evaluate(async () => { await Promise.all(document.getAnimations().map(a => a.finished)); });
+}
+
 async function loadExample(page) {
+  await settled(page);
   await page.evaluate(async () => {
     const c = await (await fetch('validate/corpus/corpus.json')).json(), refs = await (await fetch('validate/plus-corpus/reference-plus.json')).json();
     const rows = c['dat.konstantopoulos2011'];
@@ -278,6 +288,26 @@ test('multilevel-ma-plus each plot fails on geometry, paint and axis-label chang
     return out;
   });
   expect(checks).toEqual([false, false, false, false, false, false, true]);
+});
+
+// The exact two shapes the plot checks took when an audit raced the entrance fade: at opacity 0
+// checkVisibility is false, the snapshot is null and all six checks fail; part-way through only
+// the paint check sees it. The fade is held here so the result does not depend on timing.
+test('multilevel-ma-plus a plot in a panel that is still fading in fails, and passes once settled', async ({page}) => {
+  await page.goto(url); await loadExample(page);
+  const outcome = await page.evaluate(async () => {
+    const section = document.getElementById('alm-plus');
+    const failing = async () => (await AlmMultilevelPlusAudit.plotChecks(plusTestApp)).filter(c => !c.pass).map(c => c.quantity);
+    const held = async opacity => {
+      const fade = section.animate([{opacity}, {opacity}], {duration: 1e7}); fade.pause();
+      const result = await failing(); fade.cancel();
+      return result;
+    };
+    return {transparent: await held(0), partway: await held(0.5), settled: await failing()};
+  });
+  expect(outcome.transparent).toEqual(['plot.0.geometry', 'plot.0.paint', 'plot.0.labels', 'plot.1.geometry', 'plot.1.paint', 'plot.1.labels']);
+  expect(outcome.partway).toEqual(['plot.0.paint', 'plot.1.paint']);
+  expect(outcome.settled).toEqual([]);
 });
 
 test('multilevel-ma-plus all eight refusals pass and each reason/display/export check can fail', async ({page}) => {
