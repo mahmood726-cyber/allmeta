@@ -29,15 +29,28 @@
   // ----- Parsing -------------------------------------------------------------
 
   function sniffDelimiter(line) {
-    if (line.indexOf("\t") >= 0) return "\t";
-    // Count delimiters outside double quotes.
-    var inQ = false, semi = 0, comma = 0;
-    for (var i = 0; i < line.length; i++) {
-      var ch = line.charAt(i);
-      if (ch === '"') inQ = !inQ;
-      else if (!inQ && ch === ";") semi++;
-      else if (!inQ && ch === ",") comma++;
+    // Field starts depend on the candidate delimiter: punctuation in a TSV
+    // label must not make an embedded literal quote open a quoted field.
+    function count(delim) {
+      var n = 0, inQ = false, quoted = false, atStart = true;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line.charAt(i);
+        if (inQ) {
+          if (ch === '"') {
+            if (line.charAt(i + 1) === '"') { i++; continue; }
+            inQ = false;
+          }
+          continue;
+        }
+        // Match splitLine's field-start, escaped-quote and no-reopen rules.
+        if (ch === '"' && !quoted && atStart) { inQ = true; quoted = true; continue; }
+        if (ch === delim) { n++; quoted = false; atStart = true; continue; }
+        if (ch.trim() !== "") atStart = false;
+      }
+      return n;
     }
+    var tab = count("\t"), semi = count(";"), comma = count(",");
+    if (tab > 0) return "\t";
     if (semi > 0 && semi >= comma) return ";";
     return ",";
   }
