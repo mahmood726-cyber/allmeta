@@ -1,0 +1,55 @@
+.alm-entry {
+  color: var(--text, CanvasText);
+  background: var(--surface, Canvas);
+  color-scheme: light dark;
+  border: 1px solid var(--border, GrayText);
+  border-radius: .5rem;
+  padding: 1rem;
+  display: grid;
+  gap: .75rem;
+  font: inherit;
+}
+.alm-entry textarea, .alm-entry select, .alm-entry button, .alm-entry input {
+  font: inherit;
+  color: var(--text, CanvasText);
+  background: var(--surface, Canvas);
+}
+.alm-entry textarea { width: 100%; box-sizing: border-box; }
+.alm-entry button { padding: .6rem 1rem; border: 1px solid var(--border, GrayText); border-radius: .25rem; cursor: pointer; }
+.alm-entry button:disabled { opacity: .6; cursor: not-allowed; }
+.alm-entry :focus-visible { outline: 3px solid var(--accent, Highlight); outline-offset: 3px; }
+.alm-entry-preview { max-height: 24rem; overflow: auto; }
+.alm-entry table { border-collapse: collapse; width: 100%; }
+.alm-entry caption { text-align: start; padding: .5rem 0; font-weight: bold; }
+.alm-entry th, .alm-entry td { border: 1px solid var(--border, GrayText); padding: .5rem; text-align: start; white-space: pre-wrap; }
+.alm-entry th label { display: block; margin-bottom: .4rem; }
+.alm-entry fieldset { border: 1px solid var(--border, GrayText); margin: .5rem 0; }
+.alm-entry fieldset label { display: inline-flex; align-items: center; gap: .35rem; margin: .4rem .8rem .4rem 0; cursor: pointer; }
+.alm-entry li { margin-bottom: .45rem; overflow-wrap: anywhere; }
+.alm-entry-block { font-weight: bold; }
+.alm-entry-warning { border-inline-start: 3px solid var(--border, GrayText); padding-inline-start: .5rem; }
+.alm-entry-provenance fieldset > label { display: flex; flex-wrap: wrap; }
+.alm-entry-provenance label input:not([type="checkbox"]) { min-width: 14rem; flex: 1; }
+.alm-entry-source { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+.alm-entry-source mark { background: Mark; color: MarkText; padding: .1em; }
+.alm-entry-source small { font-weight: bold; }
+.alm-entry-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.alm-entry button.alm-entry-primary { font-weight: bold; border-width: 2px; border-color: var(--accent, Highlight); }
+.alm-entry-note { margin: 0; font-weight: bold; }
+.alm-entry-edited { margin-inline-start: .5rem; }
+.alm-entry-decimals:empty, .alm-entry-todo:empty { display: none; }
+.alm-entry-line { font-weight: bold; margin: .25rem 0; }
+.alm-entry-clause { margin: .25rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.alm-entry-clause mark { background: Mark; color: MarkText; padding: .1em; }
+.alm-entry-clause small { font-weight: bold; }
+.alm-entry-confirm { padding: .25rem 0; }
+.alm-entry-todo { border-inline-start: 3px solid var(--border, GrayText); padding-inline-start: 1.5rem; }
+.alm-entry-arm-check, .alm-entry-same-source { border: 2px solid currentColor; border-radius: .25rem; padding: .5rem .75rem; }
+.alm-entry-same-source { font-weight: bold; }
+.alm-entry-source-changed { border: 2px solid currentColor; border-radius: .25rem; padding: .5rem .75rem; font-weight: bold; }
+.alm-entry-cluster, .alm-entry-abstract { border-inline-start: 3px solid var(--border, GrayText); padding-inline-start: .75rem; display: grid; gap: .25rem; }
+.alm-entry-cluster-preview { font-weight: bold; margin: .25rem 0; }
+.alm-entry-abstract-note { margin: .25rem 0; font-weight: bold; }
+.alm-entry-compare { border: 1px solid var(--border, GrayText); border-radius: .25rem; padding: .5rem .75rem; }
+.alm-entry details summary { cursor: pointer; }
+.alm-entry [hidden] { display: none !important; }
