@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { readZip } from './zip-reader.mjs';
 
-const rcheckRoot = new URL('./rchecks-out/', import.meta.url);
-const rcheckOutput = new URL('sof/page.csv', rcheckRoot);
+// Honour --output so CI and local runs can keep all evidence in OS temp.
+const rcheckOutput = testInfo => join(testInfo.project.outputDir, 'rchecks', 'sof', 'page.csv');
 
 for (const app of ['mh-peto', 'meta-regression', 'pubbias-tests']) {
   test(`${app}: SoF keeps legacy draft keys and positions intact`, async ({ page }) => {
@@ -71,11 +72,10 @@ test('SoF refresh preserves live-validation form values and corpus control locks
   expect(await page.locator('#sof-outcome').isEnabled()).toBe(true);
 });
 
-test.beforeAll(() => {
-  mkdirSync(new URL('sof/', rcheckRoot), { recursive: true });
-  writeFileSync(new URL('.gitignore', rcheckRoot), '*\n', 'utf8');
+test.beforeAll(({}, testInfo) => {
+  mkdirSync(dirname(rcheckOutput(testInfo)), { recursive: true });
   // A failed browser run must not leave a previous run's evidence for R.
-  rmSync(rcheckOutput, { force: true });
+  rmSync(rcheckOutput(testInfo), { force: true });
 });
 
 for (const app of ['heterogeneity', 'mh-peto', 'proportion-ma']) {
@@ -193,7 +193,7 @@ test('SoF mounts beside shared features, outside archived results, without movin
   }
 });
 
-test('R witness: page absolute effects, CI bounds, rounding and refusals across the ACR grid', async ({ page }) => {
+test('R witness: page absolute effects, CI bounds, rounding and refusals across the ACR grid', async ({ page }, testInfo) => {
   await page.goto('/mh-peto/index.html');
   const panel = page.locator('#alm-sof');
   await expect(panel.locator('[data-sof="effect"]')).not.toHaveText('Unavailable');
@@ -265,7 +265,7 @@ test('R witness: page absolute effects, CI bounds, rounding and refusals across 
   const cell = value => '"' + String(value).replaceAll('"', '""') + '"';
   // Written only after the complete live-page capture succeeds. R owns all
   // independent expected calculations and the OR-as-RR planted defect.
-  writeFileSync(rcheckOutput, [fields.join(','), ...rows.map(row => fields.map(k => cell(row[k])).join(','))].join('\n') + '\n', 'utf8');
+  writeFileSync(rcheckOutput(testInfo), [fields.join(','), ...rows.map(row => fields.map(k => cell(row[k])).join(','))].join('\n') + '\n', 'utf8');
 });
 test('changed or invalid input cannot export stale findings', async ({ page }) => {
   await page.goto('/mh-peto/index.html');

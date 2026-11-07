@@ -1,6 +1,7 @@
 # Independent base-R check of browser-captured SoF calculations. No fitting,
 # package downloads, jsonlite, JS evaluation, or hardcoded research results.
-# Default input is relative to this script, not the caller's working directory.
+# Accept a page.csv path from Playwright's output directory (normally OS temp).
+# The legacy default remains relative to this script, not the working directory.
 # --self-test checks the checker only; it never emits the release gate marker.
 
 tolerance <- 1e-9 # absolute error, in events per 1,000 (including CI/difference)
@@ -183,10 +184,11 @@ self_test <- function() {
 main <- function() {
   args <- commandArgs(trailingOnly = TRUE)
   if (identical(args, "--self-test")) return(self_test())
-  require_true(length(args) == 0L, "Usage: Rscript sof.R [--self-test]")
+  require_true(length(args) <= 1L, "Usage: Rscript sof.R [page.csv | --self-test]")
   script <- sub("^--file=", "", grep("^--file=", commandArgs(), value = TRUE))
   require_true(length(script) == 1L, "Cannot resolve checker location")
-  input <- file.path(dirname(normalizePath(script, mustWork = TRUE)), "..", "rchecks-out", "sof", "page.csv")
+  input <- if (length(args) == 1L) args[1] else
+    file.path(dirname(normalizePath(script, mustWork = TRUE)), "..", "rchecks-out", "sof", "page.csv")
   require_true(file.exists(input), "Missing page.csv: run features-sof.spec.mjs first")
   data <- read.csv(input, colClasses = "character", check.names = FALSE, na.strings = NULL)
   require_true(identical(names(data), fields), "Unexpected SoF CSV schema")
