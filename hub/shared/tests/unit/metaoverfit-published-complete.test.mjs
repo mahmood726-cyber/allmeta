@@ -25,6 +25,25 @@ const engines = [
   'Pairwiseai/TruthCert-PairwisePro-v1.0-min.html',
 ];
 
+// Compiles the whole file, not a slice of it: one bad byte in an inline script kills every
+// feature in that block, and a test that lifts out a single function cannot see it.
+const CONTROL = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/;
+const inlineScripts = source => [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+  .filter(([, attrs]) => !/\bsrc\s*=/i.test(attrs) && !/\btype\s*=\s*["']?(?!text\/javascript)/i.test(attrs))
+  .map(([, , body]) => body);
+
+for (const path of [...new Set([...wrappers, ...engines])]) {
+  test(`${path}: holds no control byte and every script compiles`, () => {
+    const bytes = readFileSync(new URL(path, root)).toString('latin1');
+    const hit = bytes.match(CONTROL);
+    assert.equal(hit, null, hit && `control byte 0x${hit[0].charCodeAt(0).toString(16)} at offset ${hit.index}`);
+    const source = read(path);
+    const scripts = path.endsWith('.html') ? inlineScripts(source) : [source];
+    assert.ok(scripts.length > 0, 'at least one script must be compiled');
+    scripts.forEach((body, i) => assert.doesNotThrow(() => new vm.Script(body, { filename: `${path}#${i}` })));
+  });
+}
+
 for (const path of wrappers) {
   test(`${path}: no timer rewrites a published result`, () => {
     assert.doesNotMatch(read(path), /setTimeout\(\s*updateMetaoverfitResults/);

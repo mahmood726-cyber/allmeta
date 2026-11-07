@@ -26343,7 +26343,10 @@ if (originalRunAnalysis) {
     return result;
   };
 }
-// Called by runAnalysis before renderResults, so a published result is already complete.// A save must never depend on how long after Run it happens.function updateMetaoverfitResults() {
+// Metaoverfit Assessment - Fix to properly compute and update AppState.results
+// Called by runAnalysis before renderResults, so a published result is already complete.
+// A save must never depend on how long after Run it happens.
+function updateMetaoverfitResults() {
   const r = AppState.results;
   if (!r || !r.yi) return;
   try {
