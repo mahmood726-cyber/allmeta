@@ -2,6 +2,10 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: ".",
+  // The deployed-site crawl fetches the live Pages site, so here it would judge the
+  // last deploy instead of this checkout. nightly-pages-crawl.yml runs it with
+  // playwright.pages.config.ts; hub-crawl.spec.ts covers this checkout.
+  testIgnore: "pages-crawl.spec.ts",
   timeout: 45_000,
   expect: { timeout: 5_000 },
   fullyParallel: false,
