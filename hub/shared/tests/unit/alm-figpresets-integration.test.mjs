@@ -20,8 +20,8 @@ test('SVG apps with bespoke export buttons load the shared preset-only hook once
 
 // The registry owns discovery now; exercise the real shared module instead of
 // mocking per-chart mounts. Source hosts, stale handles and cleanup stay pinned.
-function fixture(auto = true, transform = source => source) {
-  const timers = [], pageEvents = {}, downloads = [], urls = new Map();
+function fixture(auto = true, transform = source => source, readyState = 'loading') {
+  const timers = [], pageEvents = {}, documentEvents = {}, frames = [], downloads = [], urls = new Map();
   class DownloadURL extends URL {
     static createObjectURL(blob) { const url = 'blob:fixture-' + urls.size; urls.set(url, blob); return url; }
     static revokeObjectURL(url) { urls.delete(url); }
@@ -62,18 +62,18 @@ function fixture(auto = true, transform = source => source) {
   const body = new Element('body'), head = new Element('head'), host = new Element('main'), first = new Element('svg');
   body.appendChild(host); host.appendChild(first);
   const document = {
-    body, head, readyState: 'loading', addEventListener() {},
+    body, head, readyState, addEventListener(type, fn) { documentEvents[type] = fn; },
     currentScript: { src: 'https://example.org/hub/shared/chart-export-auto.js', hasAttribute: key => key === 'data-presets-only' },
     createElement: tag => new Element(tag), getElementById: id => body.querySelectorAll('#' + id)[0],
     querySelectorAll: selector => body.querySelectorAll(selector)
   };
-  const window = { document, requestAnimationFrame() {}, addEventListener(type, fn) { pageEvents[type] = fn; },
+  const window = { document, requestAnimationFrame(fn) { frames.push(fn); }, addEventListener(type, fn) { pageEvents[type] = fn; },
     Event: class { constructor(type) { this.type = type; } } };
   const context = vm.createContext({ window, document, location: { pathname: '/fixture/index.html' }, URL: DownloadURL,
     setTimeout: fn => timers.push(fn) });
   vm.runInContext(transform(readFileSync(new URL('../../../../shared/alm-figpresets.js', import.meta.url), 'utf8')), context);
   if (auto) vm.runInContext(readFileSync(new URL('../../chart-export-auto.js', import.meta.url), 'utf8'), context);
-  return { window, document, body, host, first, Element, timers, pageEvents, downloads, urls, scan: window.AlmFigPresets.scan };
+  return { window, document, body, host, first, Element, timers, pageEvents, documentEvents, frames, downloads, urls, scan: window.AlmFigPresets.scan };
 }
 
 // Explicit composed-tree lookup for the form's own controls. document selectors
@@ -83,6 +83,33 @@ function composed(root, selector) {
     ...(el.matches(selector) ? [el] : []), ...composed(el, selector),
     ...(el.shadowRoot ? composed(el.shadowRoot, selector) : [])
   ]);
+}
+
+for (const readyState of ['loading', 'complete']) {
+  test(`initial preset mount precedes page locking when document is ${readyState}`, () => {
+    const { window, document, body, host, first, documentEvents, frames } = fixture(false, source => source, readyState);
+    const input = document.createElement('textarea'); input.disabled = false; host.appendChild(input);
+    const unavailable = document.createElement('button'); unavailable.disabled = true; host.appendChild(unavailable);
+    window.AlmFigPresets.register({ target: host, plots: [{ id: 'chart', getSvg: () => first }] });
+    if (readyState === 'loading') {
+      assert.equal(body.querySelectorAll('.alm-figpresets').length, 0, 'wait for the DOM before mounting');
+      document.readyState = 'interactive'; documentEvents.DOMContentLoaded();
+    }
+    // Like corpus replay, capture and lock immediately after page readiness,
+    // before the browser has delivered its first animation frame.
+    const controls = () => body.querySelectorAll('textarea,input,select,button');
+    const locked = controls().map(el => [el, !!el.disabled]);
+    locked.forEach(([el]) => { el.disabled = true; });
+    frames.splice(0).forEach(fn => fn());
+    assert.equal(controls().every(el => el.disabled), true, 'no enabled buttons may appear after the lock');
+    assert.equal(body.querySelectorAll('.alm-figpresets').length, 1);
+    assert.equal(locked.length, 3, 'the lock must include the initial preset export button');
+    locked.forEach(([el, was]) => { el.disabled = was; });
+    assert.deepEqual(controls().map(el => !!el.disabled), locked.map(([, was]) => was));
+    assert.equal(input.disabled, false, 'editable input is restored');
+    assert.equal(unavailable.disabled, true, 'previously disabled control stays disabled');
+    assert.equal(body.querySelectorAll('.alm-figpresets')[0].querySelectorAll('button')[0].disabled, false);
+  });
 }
 
 test('preset controls cannot enter document-wide autosave or validation snapshots', () => {
