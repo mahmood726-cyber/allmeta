@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 
-// Verify the exact input bytes recorded by R.
 const inputBytes = readFileSync(new URL('./p07-translation-input.json', import.meta.url));
 const input = JSON.parse(inputBytes);
 // Read the oracle inside its tests so a missing R fixture cannot mask the
