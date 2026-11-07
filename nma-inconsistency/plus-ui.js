@@ -14,8 +14,8 @@
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const later = (fn, ms) => (typeof window.setTimeout === 'function' ? window.setTimeout(fn, ms) : null);
 
-  // ---- U-A 4: explain ignored lines without changing parse() ---------------
-  // Same tokenizer and row rules as parse(); returns why each non-blank record is dropped.
+  // ---- U-A 4: explain ignored lines and fatal column-width errors ----------
+  // Same tokenizer and row rules as parse(); extra columns refuse the whole input.
   function parseIssues(text) {
     const records = []; let row = [], field = '', quoted = false, line = 1, start = 1, quoteLine = 0;
     for (let i = 0; i <= text.length; i++) {
@@ -33,6 +33,7 @@
     const ignored = [], extra = [];
     records.forEach((r, i) => {
       const p = r.parts;
+      if (p.length > 5) extra.push(r.line);
       if (p.every(x => x === '')) return;
       const te = Number(p[2]), se = Number(p[3]);
       let why = null;
@@ -43,7 +44,6 @@
       else if (!Number.isFinite(se)) why = `SE “${p[3] === undefined ? '' : p[3]}” is not a number`;
       else if (se <= 0) why = 'SE must be > 0';
       if (why) ignored.push({ line: r.line, record: i + 1, why });
-      else if (p.length > 5 && p.slice(5).some(x => x !== '')) extra.push(r.line);
     });
     return { unterminated: 0, ignored, extra };
   }
@@ -52,7 +52,7 @@
     if (r.unterminated) return `A quotation mark opened on line ${r.unterminated} is never closed, so no rows can be read. Close the quote (or remove it) and run again.`;
     const parts = [];
     if (r.ignored.length) parts.push(`${r.ignored.length} line${r.ignored.length > 1 ? 's' : ''} ignored: ` + r.ignored.slice(0, 6).map(x => `line ${x.line} ${x.why}`).join('; ') + (r.ignored.length > 6 ? `; and ${r.ignored.length - 6} more` : '') + '.');
-    if (r.extra.length) parts.push(`Columns after the fifth are ignored (line${r.extra.length > 1 ? 's' : ''} ${r.extra.slice(0, 6).join(', ')}).`);
+    if (r.extra.length) parts.push(`Analysis refused: too many columns (line${r.extra.length > 1 ? 's' : ''} ${r.extra.slice(0, 6).join(', ')}). Use four columns, optionally a fifth study ID; use decimal points for numbers and quote labels containing commas.`);
     return parts.join(' ');
   }
 
