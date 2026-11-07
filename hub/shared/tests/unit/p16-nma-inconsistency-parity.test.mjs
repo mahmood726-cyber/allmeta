@@ -91,7 +91,8 @@ for (const model of models) {
 }
 
 test('P16 planted defect: intercept-only DL denominator fails R; FE control passes', () => {
-  const h = load({ engine: replaceOnce('const denom = sumW - trCW2;', 'const denom = sumW - w.reduce((s, x) => s + x*x, 0) / sumW;') });
+  const h = load({ engine: replaceOnce('const denom = finiteNumber(sumW - trCW2);',
+    'const denom = finiteNumber(sumW - w.reduce((s, x) => s + x*x, 0) / sumW);') });
   const rows = rowsFor('heterogeneous', h), ref = oracle.cases.heterogeneous.fits;
   compareFit(h.run(rows, 'FE'), ref.FE);
   assert.throws(() => compareFit(h.run(rows, 'DL'), ref.DL), /tau2: app=/);
@@ -114,7 +115,16 @@ test('P16 planted defect: rounded 1.96 whiskers fail R CI; numeric-fit control p
   assert.throws(() => comparePlot(h, actual, ref), /CI\.(lower|upper): app=/);
 });
 test('P16 planted defect: positive tau floor fails zero-tau R; FE control passes', () => {
-  const h = load({ engine: replaceOnce('return Math.max(0, (fit0.Q - fit0.df) / denom);', 'return Math.max(0.001, (fit0.Q - fit0.df) / denom);') });
+  const h = load({ engine: source => {
+    // Both DL paths now have this return. Plant only in the two-arm function
+    // exercised by tau_zero, retaining the exact-once checks at both levels.
+    const functions = [...source.matchAll(/function tau2_DL\(rows\) \{[\s\S]*?^    \}/gm)];
+    assert.equal(functions.length, 1, 'plant must find one two-arm DL function');
+    const original = functions[0][0];
+    const planted = replaceOnce('return finiteNumber(Math.max(0, (fit0.Q - fit0.df) / denom));',
+      'return finiteNumber(Math.max(0.001, (fit0.Q - fit0.df) / denom));')(original);
+    return replaceOnce(original, planted)(source);
+  } });
   const rows = rowsFor('tau_zero', h), ref = oracle.cases.tau_zero.fits;
   compareFit(h.run(rows, 'FE'), ref.FE);
   assert.throws(() => compareFit(h.run(rows, 'DL'), ref.DL), /tau2: app=/);
