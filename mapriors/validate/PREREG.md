@@ -243,3 +243,33 @@ the RBesT paper, Weber et al. 2021 J Stat Softw): MAP prior, robust MAP (w_vague
   ORACLE_FAILURE), ORIGINAL 1770/28874, FIXED_20261031 27098/28874, FIXED 27126/28874 (expected counts match), fixed
   page (9c76449) replay 85/85 exact, exit 0, 02:02:59-03:30:03 (evidence/P36_validate_fresh_b7819f0.txt). This commit
   adds only that record; app, reference, gate and expected counts are as validated.
+- A11 (2026-11-07, POST-RESULT; analysis only: no engine, harness, seed, tolerance, rule, quantity, corpus or gate change,
+  and the page pin stays 9c76449). Root cause of the one APP_DEFECT_OPEN row, cont_k10_m5_s0.0 (page 297.22, R 335.19,
+  tolerance 33.52, so the passing band is 301.68 to 368.71; E2 305.31 / 305.37). Instruments:
+  analysis/post_result/rootcause_order.js + rootcause_order.R; evidence/P36_k10m5_rootcause.json, _log.txt.
+  (i) Identical draws, N = 80,000 (A8 tested N = 4,000 on another configuration): RBesT 1.12-0 mixfit (Nc = 1..4) and
+  automixfit on the page's exact draws in the page's order give K = 4 and 297.2230 (page 297.2230), the same EM iteration
+  counts for every Nc and log-likelihoods within 1.5e-5. The port on the two E2 draw orders gives 305.3095 / 305.3724
+  (RBesT 305.3095 / 305.3724), same iterations, log-likelihoods within 1.3e-5. (ii) The page's and E2's sorted draws
+  differ by at most 1.7e-6, so the two sets hold the same values and differ in order. (iii) The page's own draws
+  re-ordered by 17 shuffle seeds (36 and 1 to 16): 11 orders stop at 296.77-297.27 (88-96 EM iterations for Nc = 4,
+  log-likelihood about 98017), 6 stop at 305.25-305.40 (136-141 iterations, about 98036); 6 of 17 lie inside the
+  passing band. Conclusion: the gap to E2 is the draw order, which selects one of two EM stopping paths; no computation
+  defect was found in the page and none was fixed. Seed 36 (fixed in A5) is kept, because choosing an order that passes
+  would be tuning. The row stays recorded as APP_DEFECT_OPEN under the A6 rule, whose label is mechanical here, and the
+  check stays failed. The rule and the B2 tolerance are unchanged.
+  (iv) Review of the other failure groups. The 9 B2 failures: 5 of the 8 SPEC_AMBIGUITY rows (bin_k10_p0.50_s1.5,
+  bin_k3_p0.50_s0.0, bin_k5_p0.50_s0.3, cont_k1_m0_s0.2, cont_k5_m5_s0.2) were also run on identical draws
+  (analysis/post_result/identical_draws.js + .R; evidence/P36_identical_draws_20261107.json): same K and EM iteration
+  counts, Morita ESS within 3.2e-5 relative (the beta M-step is exact Newton in the port and Nelder-Mead in RBesT; the
+  largest log-likelihood difference is 0.21, on a binary row). The beta path had not been checked on identical draws
+  before. The other 3 rows were not run; their page-minus-E2 gap is at most 0.09 tolerance. The 777 failures in the 3
+  ORACLE_FAILURE configurations (259 each): 705 have no R value to compare and 72 are gate rows that require one; the
+  43 other rows of those configurations (B1 27, A1 4, gate 12) pass. No page defect can be read from them and nothing
+  was changed. Not a failure group, left as is: the literal "?" in the page's displayed text "beta ~ N(0, 2?)".
+  (v) Figure 1 re-captured from the final pin in Edge 155 (figures/; 2026-11-07), with the page's default fit of 4,000
+  draws, not the gate's 80,000 (AS: K = 2 in the figure). check_figures.py was therefore run against an AS engine output
+  at 4,000 draws (made outside the archive; evidence/P36_figure_check_20261107.txt): 28 of 40 displayed numbers match
+  exactly; the other 12 are mixture component parameters differing by at most 6.5e-11 between Edge and Node. The 31 Oct
+  record stays in evidence/P36_capture_record.json and the 31 Oct TIFFs in git history (566fe9f). Whether the AS trial
+  data may be shown remains unconfirmed.
