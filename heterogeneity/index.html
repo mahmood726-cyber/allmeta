@@ -947,6 +947,9 @@
         out.tau2_dl = info.tauEstimates.dl;
         out.pi_lb = info.pi.lo;
         out.pi_ub = info.pi.hi;
+        // Preserve fitted diagnostics without the plot's presentation-only annotations.
+        out.loo = info.loo.map(function(row){return Object.assign({},row);});
+        out.baujat = info.baujat.map(function(point){return {label:point.label,x:point.x,y:point.y};});
       }
       if (studies.length >= 2 && window.__almQProfileCI) {
         var qp = window.__almQProfileCI(studies);
