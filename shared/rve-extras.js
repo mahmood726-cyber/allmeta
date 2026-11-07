@@ -393,7 +393,8 @@
   function csvCell(v) {
     var s = (v == null) ? "" : String(v);
     if (CSV_DANGEROUS.test(s)) s = "'" + s;
-    if (/[",\n\r;]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    // Preserve boundary whitespace that splitLine trims from unquoted cells.
+    if (/[",\n\r;]|^\s|\s$/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
     return s;
   }
 
