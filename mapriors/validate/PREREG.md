@@ -273,3 +273,9 @@ the RBesT paper, Weber et al. 2021 J Stat Softw): MAP prior, robust MAP (w_vague
   exactly; the other 12 are mixture component parameters differing by at most 6.5e-11 between Edge and Node. The 31 Oct
   record stays in evidence/P36_capture_record.json and the 31 Oct TIFFs in git history (566fe9f). Whether the AS trial
   data may be shown remains unconfirmed.
+- A12 (2026-11-07, record only). Fresh copy of evidence commit acb8d36: `git archive` to C:\Users\User\p36-validate-acb8d36
+  (outside the lane; the tar's own commit id is printed in the log), `Rscript --no-environ validate.R` with R_LIBS = lane
+  Rlib, under the shared heavy-job lock (evidence/P36_validate_fresh_acb8d36.txt): verify PASS (471 hashes), fresh reference 85/85
+  exact (82 OK, the same 3 ORACLE_FAILURE), ORIGINAL 1770/28874, FIXED_20261031 27098/28874, FIXED 27126/28874 (expected
+  counts match), exit 0, 10:53:07.68-11:52:48.79. Run without --rerun-app: the page file is byte-identical to the one replayed in A10.
+  This commit adds only that record; app, reference, gate and expected counts are as validated.
