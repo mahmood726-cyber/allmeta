@@ -1,0 +1,33 @@
+name: all-node-unit-tests
+
+# Playwright's testMatch excludes Node *.test.mjs, and shared-tests.yml runs only
+# the files it names one by one, so a new unit test added by a PR ran in no
+# workflow while the PR stayed green. This job runs every one of them.
+
+on:
+  push:
+    branches: [main, "integration/**"]
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: hub/shared/tests
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Baseline replay tests read pinned historical files with git show.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: hub/shared/tests/package-lock.json
+      - run: npm ci
+      - name: Every Node unit test, by glob
+        run: |
+          ls unit/*.test.mjs | wc -l
+          node --test --test-timeout=300000 --test-reporter=spec unit/*.test.mjs
