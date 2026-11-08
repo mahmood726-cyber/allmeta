@@ -207,7 +207,7 @@
         if ((se === null || se === 0) && logrr !== 0) inputError(where + ", SE", "a positive SE is required for a non-reference dose; a reference row has logRR 0.");
         if (["cc", "ir", "ci"].indexOf(type) < 0) inputError(where + ", type", "use cc, ir or ci.");
         if ($("f-cov").value !== "indep") {
-          if (!(cases > 0)) inputError(where + ", cases", "must be greater than 0 for covariance reconstruction.");
+          if (cases < 0) inputError(where + ", cases", "must be non-negative for covariance reconstruction.");
           if (!(n > 0)) inputError(where + ", n", "must be greater than 0 for covariance reconstruction.");
           if ((type === "cc" || type === "ci") && cases > n) inputError(where + ", cases", "must not exceed n for " + type + " covariance reconstruction.");
         }
