@@ -16,21 +16,60 @@
 
   // ----- Pairwise effect-size datasets (forest / BMA / RVE / GLMM) -------
 
-  // Stijnen-Hamza-Ozdemir 2010 Table 1: 7 trials of eltrombopag vs placebo
-  // for thrombocytopenia. Used as the rare-events GLMM benchmark.
-  var STIJNEN_ELTROMBOPAG = {
-    name: "Eltrombopag (Stijnen 2010)",
-    description: "7 trials, thrombocytopenia bleeding events, rare-event OR",
-    citation: "Stijnen, Hamza, Ozdemir 2010 (Stat Med 29:3046-3067) Table 1",
+  // Nissen & Wolski 2007: 42 trials of rosiglitazone vs control (placebo or another
+  // diabetes drug), myocardial infarction counts. Used as the rare-events GLMM benchmark
+  // (30 of 42 trials have a zero cell, 4 have no events in either arm). Rows are
+  // metadat::dat.nissen2007 (metadat 1.6-0) row for row: label = study,
+  // T = treat.infarction / treat.total, C = cont.infarction / cont.total.
+  // R provenance: hub/shared/tests/fixtures/hero-nissen2007-reference.R.
+  var NISSEN_ROSIGLITAZONE_MI = {
+    name: "Rosiglitazone and myocardial infarction (Nissen & Wolski 2007)",
+    description: "42 trials, rosiglitazone vs control, myocardial infarction, rare-event OR",
+    citation: "Nissen SE, Wolski K. N Engl J Med 2007;356:2457-2471; data as metadat::dat.nissen2007 (metadat 1.6-0)",
     measure: "OR",
     binary_2x2: [
-      { label: "TRA-100773A", events_T: 0, n_T: 38,  events_C: 4, n_C: 35 },
-      { label: "TRA-100773B", events_T: 0, n_T: 35,  events_C: 4, n_C: 31 },
-      { label: "TRA-102537",  events_T: 2, n_T: 73,  events_C: 8, n_C: 36 },
-      { label: "RAISE",       events_T: 4, n_T: 135, events_C: 19, n_C: 62 },
-      { label: "EXTEND",      events_T: 2, n_T: 100, events_C: 9, n_C: 50 },
-      { label: "REPEAT",      events_T: 0, n_T: 65,  events_C: 4, n_C: 32 },
-      { label: "TRA-105325",  events_T: 1, n_T: 84,  events_C: 3, n_C: 42 },
+      { label: "49653/011",      events_T:  2, n_T:  357, events_C:  0, n_C:  176 },
+      { label: "49653/020",      events_T:  2, n_T:  391, events_C:  1, n_C:  207 },
+      { label: "49653/024",      events_T:  1, n_T:  774, events_C:  1, n_C:  185 },
+      { label: "49653/093",      events_T:  0, n_T:  213, events_C:  1, n_C:  109 },
+      { label: "49653/094",      events_T:  1, n_T:  232, events_C:  0, n_C:  116 },
+      { label: "100684",         events_T:  0, n_T:   43, events_C:  1, n_C:   47 },
+      { label: "49653/143",      events_T:  1, n_T:  121, events_C:  0, n_C:  124 },
+      { label: "49653/211",      events_T:  5, n_T:  110, events_C:  2, n_C:  114 },
+      { label: "49653/284",      events_T:  1, n_T:  382, events_C:  0, n_C:  384 },
+      { label: "712753/008",     events_T:  1, n_T:  284, events_C:  0, n_C:  135 },
+      { label: "AVM100264",      events_T:  0, n_T:  294, events_C:  1, n_C:  302 },
+      { label: "BRL 49653C/185", events_T:  2, n_T:  563, events_C:  0, n_C:  142 },
+      { label: "BRL 49653/334",  events_T:  2, n_T:  278, events_C:  1, n_C:  279 },
+      { label: "BRL 49653/347",  events_T:  2, n_T:  418, events_C:  0, n_C:  212 },
+      { label: "49653/015",      events_T:  2, n_T:  395, events_C:  1, n_C:  198 },
+      { label: "49653/079",      events_T:  1, n_T:  203, events_C:  1, n_C:  106 },
+      { label: "49653/080",      events_T:  1, n_T:  104, events_C:  2, n_C:   99 },
+      { label: "49653/082",      events_T:  2, n_T:  212, events_C:  0, n_C:  107 },
+      { label: "49653/085",      events_T:  3, n_T:  138, events_C:  1, n_C:  139 },
+      { label: "49653/095",      events_T:  0, n_T:  196, events_C:  0, n_C:   96 },
+      { label: "49653/097",      events_T:  0, n_T:  122, events_C:  1, n_C:  120 },
+      { label: "49653/125",      events_T:  0, n_T:  175, events_C:  1, n_C:  173 },
+      { label: "49653/127",      events_T:  1, n_T:   56, events_C:  0, n_C:   58 },
+      { label: "49653/128",      events_T:  1, n_T:   39, events_C:  0, n_C:   38 },
+      { label: "49653/134",      events_T:  0, n_T:  561, events_C:  2, n_C:  276 },
+      { label: "49653/135",      events_T:  2, n_T:  116, events_C:  3, n_C:  111 },
+      { label: "49653/136",      events_T:  1, n_T:  148, events_C:  0, n_C:  143 },
+      { label: "49653/145",      events_T:  1, n_T:  231, events_C:  0, n_C:  242 },
+      { label: "49653/147",      events_T:  1, n_T:   89, events_C:  0, n_C:   88 },
+      { label: "49653/162",      events_T:  1, n_T:  168, events_C:  0, n_C:  172 },
+      { label: "49653/234",      events_T:  0, n_T:  116, events_C:  0, n_C:   61 },
+      { label: "49653/330",      events_T:  1, n_T: 1172, events_C:  0, n_C:  377 },
+      { label: "49653/331",      events_T:  0, n_T:  706, events_C:  0, n_C:  325 },
+      { label: "49653/137",      events_T:  1, n_T:  204, events_C:  2, n_C:  185 },
+      { label: "SB-712753/002",  events_T:  1, n_T:  288, events_C:  0, n_C:  280 },
+      { label: "SB-712753/003",  events_T:  1, n_T:  254, events_C:  0, n_C:  272 },
+      { label: "SB-712753/007",  events_T:  1, n_T:  314, events_C:  0, n_C:  154 },
+      { label: "SB-712753/009",  events_T:  0, n_T:  162, events_C:  0, n_C:  160 },
+      { label: "49653/132",      events_T:  1, n_T:  442, events_C:  0, n_C:  112 },
+      { label: "AVA100193",      events_T:  1, n_T:  394, events_C:  0, n_C:  124 },
+      { label: "DREAM",          events_T: 15, n_T: 2635, events_C:  9, n_C: 2634 },
+      { label: "ADOPT",          events_T: 27, n_T: 1456, events_C: 41, n_C: 2895 },
     ],
   };
 
@@ -173,7 +212,7 @@
   // ----- Index --------------------------------------------------------------
 
   var DATASETS = {
-    eltrombopag:        STIJNEN_ELTROMBOPAG,
+    nissen2007:         NISSEN_ROSIGLITAZONE_MI,
     bcg:                BCG_VACCINE,
     smoking:            HASSELBLAD_SMOKING,
     thrombolytics:      THROMBOLYTICS,
