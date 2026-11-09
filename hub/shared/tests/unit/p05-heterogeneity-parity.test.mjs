@@ -46,11 +46,7 @@ for (const data of reference.cases.filter(data => data.k >= 2)) {
     compare(['Q', 'pQ', 'I2', 'tCrit'].map(key => [key, actual.sum[key], data.common[key]]));
   });
 
-  // P05-R2: observed upper-limit failures at both large scales; the Q-profile
-  // solver also stops at 2^30 without bracketing. Keep all assertions active.
-  const qProfileOptions = ['scale_6000', 'scale_60000'].includes(data.id)
-    ? { todo: 'P05-R2: Q-profile upper bracket is capped at 2^30 (shared/heterogeneity-ci.js:80)' }
-    : {};
+  const qProfileOptions = {}; // P05-R2 is an active regression.
   test(`P05 ${data.id}: Q-profile tau2 and I2 limits match R`, qProfileOptions, () => {
     const actual = compute(data, data.methods[0]);
     compare(['tau2Lo', 'tau2Hi', 'I2Lo', 'I2Hi']
@@ -59,11 +55,7 @@ for (const data of reference.cases.filter(data => data.k >= 2)) {
 
   for (const method of data.methods) {
     const expected = data.fits[method];
-    // P05-R1: observed PM/EB scale failure; ma-core.js stops expanding at 2^30
-    // before bracketing the R root. Keep executing the original assertions.
-    const options = data.id === 'scale_60000' && ['pm', 'eb'].includes(method)
-      ? { todo: 'P05-R1: PM/EB upper bracket is capped at 2^30 (shared/ma-core.js:51)' }
-      : {};
+    const options = {}; // P05-R1 is an active regression.
     test(`P05 ${data.id}/${method}: estimator, pooling, model I2, modified-HK and t PI match R`, options, () => {
       const actual = compute(data, method);
       assert.equal(actual.estimator, expected.estimator);

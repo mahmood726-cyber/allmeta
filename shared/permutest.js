@@ -32,11 +32,24 @@
   function _tau2PM(yi, vi, xi) {
     var k = yi.length, target = k - 2;
     if (k < 3) return 0;
-    var f0 = _fit(yi, vi, xi, 0); if (!f0 || f0.rss <= target) return 0;
-    var lo = 0, hi = 1, g = 0;
-    while (g++ < 80) { var fh = _fit(yi, vi, xi, hi); if (!fh || fh.rss <= target) break; hi *= 2; if (hi > 1e9) break; }
-    for (var i = 0; i < 100; i++) { var m = (lo + hi) / 2; var fm = _fit(yi, vi, xi, m); if (!fm) break; if (fm.rss > target) lo = m; else hi = m; if (hi - lo < 1e-15 * Math.max(Number.MIN_VALUE, hi)) break; }
-    return (lo + hi) / 2;
+    function Qat(t) {
+      var f = _fit(yi, vi, xi, t);
+      if (!f || !Number.isFinite(f.rss)) throw new RangeError("Permutation PM search could not bracket a root: non-finite or singular fit");
+      return f.rss;
+    }
+    if (Qat(0) <= target) return 0;
+    var lo = 0, hi = 1;
+    while (Qat(hi) > target) {
+      hi *= 2;
+      if (!Number.isFinite(hi)) throw new RangeError("Permutation PM search could not bracket a root within floating-point range");
+    }
+    for (var i = 0; i < 100; i++) {
+      var m = lo / 2 + hi / 2;
+      if (m === lo || m === hi) break;
+      if (Qat(m) > target) lo = m; else hi = m;
+      if (hi - lo < 1e-15 * Math.max(Number.MIN_VALUE, hi)) break;
+    }
+    return lo / 2 + hi / 2;
   }
   // HKSJ slope t-statistic for the meta-regression (PM τ², q floored at 1).
   function _slopeT(yi, vi, xi) {

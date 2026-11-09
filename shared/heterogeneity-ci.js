@@ -45,8 +45,14 @@
   }
   function chiSqCDF(x, df) { return x <= 0 ? 0 : _lowerIncGamma(df / 2, x / 2); }
   function chiSqQuantile(p, df) {
-    var lo = 0, hi = df + 10 * Math.sqrt(2 * df) + 10, guard = 0;
-    while (chiSqCDF(hi, df) < p && guard++ < 100) hi *= 2;
+    if (!(p > 0 && p < 1 && df > 0 && Number.isFinite(df))) throw new RangeError("Chi-square quantile needs 0 < p < 1 and finite positive df");
+    var lo = 0, hi = df + 10 * Math.sqrt(2 * df) + 10;
+    while (true) {
+      var value = chiSqCDF(hi, df);
+      if (!Number.isFinite(hi) || !Number.isFinite(value)) throw new RangeError("Chi-square search could not bracket a quantile");
+      if (value >= p) break;
+      hi *= 2;
+    }
     for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (chiSqCDF(m, df) < p) lo = m; else hi = m; }
     return (lo + hi) / 2;
   }
@@ -71,17 +77,27 @@
     var sw0 = w0.reduce(function (a, b) { return a + b; }, 0);
     var sw0sq = w0.reduce(function (a, b) { return a + b * b; }, 0);
     var s2 = (k - 1) * sw0 / (sw0 * sw0 - sw0sq); // Higgins-Thompson typical within-study variance
-    var Q0 = _genQ(studies, 0);
+    function Qat(t) {
+      var q = _genQ(studies, t);
+      if (!Number.isFinite(q)) throw new RangeError("Q-profile search could not bracket the confidence bound: non-finite Q");
+      return q;
+    }
+    var Q0 = Qat(0);
     var qLo = chiSqQuantile(alpha / 2, df);       // small target → large τ² (upper bound)
     var qHi = chiSqQuantile(1 - alpha / 2, df);   // large target → small τ² (lower bound)
     function solve(target) {
       if (Q0 <= target) return 0;
-      var lo = 0, hi = 1, guard = 0;
-      while (_genQ(studies, hi) > target && guard++ < 200) hi *= 2;
-      // A search endpoint is a confidence bound only after the target is bracketed.
-      if (!(_genQ(studies, hi) <= target)) throw new RangeError("Q-profile search could not bracket the confidence bound");
-      for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_genQ(studies, m) > target) lo = m; else hi = m; }
-      return (lo + hi) / 2;
+      var lo = 0, hi = 1;
+      while (Qat(hi) > target) {
+        hi *= 2;
+        if (!Number.isFinite(hi)) throw new RangeError("Q-profile search could not bracket the confidence bound within floating-point range");
+      }
+      for (var i = 0; i < 200; i++) {
+        var m = lo / 2 + hi / 2;
+        if (m === lo || m === hi) break;
+        if (Qat(m) > target) lo = m; else hi = m;
+      }
+      return lo / 2 + hi / 2;
     }
     var tau2Hi = solve(qLo), tau2Lo = solve(qHi);
     var i2 = function (t) { return (t + s2) > 0 ? 100 * t / (t + s2) : 0; };

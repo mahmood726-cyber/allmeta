@@ -57,19 +57,24 @@
     if (dfree < 1) return 0;
     function rssAt(t2) {
       var w = se2.map(function (v) { return 1 / (v + t2); });
-      var f = _fit(y, x, w); if (!f) return null;
-      return _rss(y, x, w, f.beta);
+      var f = _fit(y, x, w);
+      var q = f ? _rss(y, x, w, f.beta) : NaN;
+      if (!Number.isFinite(q)) throw new RangeError("Transport PM search could not bracket a root: non-finite or singular fit");
+      return q;
     }
-    var r0 = rssAt(0); if (r0 == null) return 0;
+    var r0 = rssAt(0);
     if (r0 <= dfree) return 0;                              // no excess residual heterogeneity
     var lo = 0, hi = 1;
-    for (var g = 0; g < 60 && rssAt(hi) > dfree; g++) hi *= 2; // bracket
-    for (var it = 0; it < 200; it++) {
-      var m = (lo + hi) / 2, rm = rssAt(m);
-      if (rm == null) break;
-      if (rm > dfree) lo = m; else hi = m;
+    while (rssAt(hi) > dfree) {
+      hi *= 2;
+      if (!Number.isFinite(hi)) throw new RangeError("Transport PM search could not bracket a root within floating-point range");
     }
-    return (lo + hi) / 2;
+    for (var it = 0; it < 200; it++) {
+      var m = lo / 2 + hi / 2;
+      if (m === lo || m === hi) break;
+      if (rssAt(m) > dfree) lo = m; else hi = m;
+    }
+    return lo / 2 + hi / 2;
   }
 
   function transport(input) {

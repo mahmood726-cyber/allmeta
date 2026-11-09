@@ -70,3 +70,6 @@ integration-evidence/
 
 /integration-evidence/
 /limit-ma/inspect-plus.R
+
+# Local task recovery checkpoint
+/PROGRESS.md

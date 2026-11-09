@@ -134,7 +134,14 @@
       var host = $("result");
       if (rows.length < 3) { host.innerHTML = '<p class="badge flag">Need ≥3 trials with a modifier value.</p>'; $("plot").innerHTML = ""; return; }
       if (!isFinite(target)) { host.innerHTML = '<p class="badge flag">Enter the target modifier value (x*).</p>'; return; }
-      var r = window.AlmTransport.transport({ studies: rows, target: target });
+      var r;
+      try {
+        r = window.AlmTransport.transport({ studies: rows, target: target });
+      } catch (error) {
+        host.innerHTML = '<p class="badge flag">Analysis blocked: ' + esc(error.message || String(error)) + '</p>';
+        $("plot").innerHTML = "";
+        return;
+      }
       if (!r.ok) { host.innerHTML = '<p class="badge flag">' + r.error + "</p>"; $("plot").innerHTML = ""; return; }
       window.__lastTransport = r;
 

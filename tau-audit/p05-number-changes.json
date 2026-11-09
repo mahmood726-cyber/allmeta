@@ -1,0 +1,277 @@
+[
+  {
+    "field": "P05.scale_60000.pm.tau2",
+    "before": 1073741824,
+    "after": 3563999999.999999
+  },
+  {
+    "field": "P05.scale_60000.pm.sum.se",
+    "before": 19233.146943059874,
+    "after": 34641.016151377546
+  },
+  {
+    "field": "P05.scale_60000.pm.sum.ciLo",
+    "before": -37696.27531776399,
+    "after": -67895.1440445703
+  },
+  {
+    "field": "P05.scale_60000.pm.sum.ciHi",
+    "before": 37696.27531776399,
+    "after": 67895.1440445703
+  },
+  {
+    "field": "P05.scale_60000.pm.sum.I2Model",
+    "before": 96.75600223210115,
+    "after": 98.99999999999999
+  },
+  {
+    "field": "P05.scale_60000.pm.sum.tau2",
+    "before": 1073741824,
+    "after": 3563999999.999999
+  },
+  {
+    "field": "P05.scale_60000.pm.tauEstimates.pm",
+    "before": 1073741824,
+    "after": 3563999999.999999
+  },
+  {
+    "field": "P05.scale_60000.pm.pi.lo",
+    "before": -163481.31411850435,
+    "after": -296976.5595515446
+  },
+  {
+    "field": "P05.scale_60000.pm.pi.hi",
+    "before": 163481.31411850435,
+    "after": 296976.5595515446
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.0.mu",
+    "before": 30000,
+    "after": 30000.000000000004
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.0.se",
+    "before": 23555.6980792334,
+    "after": 30000
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.0.ciLo",
+    "before": -16168.31986599679,
+    "after": -28798.919536201614
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.0.ciHi",
+    "before": 76168.31986599679,
+    "after": 88798.91953620162
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.0.tau2",
+    "before": 1073741824,
+    "after": 1764000000
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.1.se",
+    "before": 23555.6980792334,
+    "after": 59999.99999999999
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.1.ciLo",
+    "before": -46168.31986599679,
+    "after": -117597.83907240322
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.1.ciHi",
+    "before": 46168.31986599679,
+    "after": 117597.83907240322
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.1.tau2",
+    "before": 1073741824,
+    "after": 7163999999.999998
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.2.mu",
+    "before": -30000,
+    "after": -30000.000000000004
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.2.se",
+    "before": 23555.6980792334,
+    "after": 30000
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.2.ciLo",
+    "before": -76168.31986599679,
+    "after": -88798.91953620162
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.2.ciHi",
+    "before": 16168.31986599679,
+    "after": 28798.919536201614
+  },
+  {
+    "field": "P05.scale_60000.pm.loo.2.tau2",
+    "before": 1073741824,
+    "after": 1764000000
+  },
+  {
+    "field": "P05.scale_60000.pm.baujat.0.x",
+    "before": 3.2439977678988514,
+    "after": 1.0000000000000002
+  },
+  {
+    "field": "P05.scale_60000.pm.baujat.0.y",
+    "before": 1.6219988839494253,
+    "after": 1.0000000000000002
+  },
+  {
+    "field": "P05.scale_60000.pm.baujat.2.x",
+    "before": 3.2439977678988514,
+    "after": 1.0000000000000002
+  },
+  {
+    "field": "P05.scale_60000.pm.baujat.2.y",
+    "before": 1.6219988839494253,
+    "after": 1.0000000000000002
+  },
+  {
+    "field": "P05.scale_60000.eb.tau2",
+    "before": 1073741824,
+    "after": 3563999999.999999
+  },
+  {
+    "field": "P05.scale_60000.eb.sum.se",
+    "before": 19233.146943059874,
+    "after": 34641.016151377546
+  },
+  {
+    "field": "P05.scale_60000.eb.sum.ciLo",
+    "before": -37696.27531776399,
+    "after": -67895.1440445703
+  },
+  {
+    "field": "P05.scale_60000.eb.sum.ciHi",
+    "before": 37696.27531776399,
+    "after": 67895.1440445703
+  },
+  {
+    "field": "P05.scale_60000.eb.sum.I2Model",
+    "before": 96.75600223210115,
+    "after": 98.99999999999999
+  },
+  {
+    "field": "P05.scale_60000.eb.sum.tau2",
+    "before": 1073741824,
+    "after": 3563999999.999999
+  },
+  {
+    "field": "P05.scale_60000.eb.tauEstimates.pm",
+    "before": 1073741824,
+    "after": 3563999999.999999
+  },
+  {
+    "field": "P05.scale_60000.eb.pi.lo",
+    "before": -163481.31411850435,
+    "after": -296976.5595515446
+  },
+  {
+    "field": "P05.scale_60000.eb.pi.hi",
+    "before": 163481.31411850435,
+    "after": 296976.5595515446
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.0.mu",
+    "before": 30000,
+    "after": 30000.000000000004
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.0.se",
+    "before": 23555.6980792334,
+    "after": 30000
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.0.ciLo",
+    "before": -16168.31986599679,
+    "after": -28798.919536201614
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.0.ciHi",
+    "before": 76168.31986599679,
+    "after": 88798.91953620162
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.0.tau2",
+    "before": 1073741824,
+    "after": 1764000000
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.1.se",
+    "before": 23555.6980792334,
+    "after": 59999.99999999999
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.1.ciLo",
+    "before": -46168.31986599679,
+    "after": -117597.83907240322
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.1.ciHi",
+    "before": 46168.31986599679,
+    "after": 117597.83907240322
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.1.tau2",
+    "before": 1073741824,
+    "after": 7163999999.999998
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.2.mu",
+    "before": -30000,
+    "after": -30000.000000000004
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.2.se",
+    "before": 23555.6980792334,
+    "after": 30000
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.2.ciLo",
+    "before": -76168.31986599679,
+    "after": -88798.91953620162
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.2.ciHi",
+    "before": 16168.31986599679,
+    "after": 28798.919536201614
+  },
+  {
+    "field": "P05.scale_60000.eb.loo.2.tau2",
+    "before": 1073741824,
+    "after": 1764000000
+  },
+  {
+    "field": "P05.scale_60000.eb.baujat.0.x",
+    "before": 3.2439977678988514,
+    "after": 1.0000000000000002
+  },
+  {
+    "field": "P05.scale_60000.eb.baujat.0.y",
+    "before": 1.6219988839494253,
+    "after": 1.0000000000000002
+  },
+  {
+    "field": "P05.scale_60000.eb.baujat.2.x",
+    "before": 3.2439977678988514,
+    "after": 1.0000000000000002
+  },
+  {
+    "field": "P05.scale_60000.eb.baujat.2.y",
+    "before": 1.6219988839494253,
+    "after": 1.0000000000000002
+  },
+  {
+    "field": "P05.scale_60000.reml.tauEstimates.pm",
+    "before": 1073741824,
+    "after": 3563999999.999999
+  }
+]

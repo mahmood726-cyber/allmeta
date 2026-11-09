@@ -90,16 +90,21 @@
     var n = y.length, p = X[0].length;
     var sqrtWt = v.map(function (vi) { return 1 / (vi + tau2); });
     // X'WX, X'Wy
+    // A change of effect units must not make a full-rank design singular.
+    var weightScale = Math.max.apply(null, sqrtWt);
+    if (!(weightScale > 0) || !Number.isFinite(weightScale)) throw new RangeError("NMA PM weights exceed floating-point range");
+    if (weightScale >= 1e-8 && weightScale <= 1e8) weightScale = 1;
     var XtWX = zeros(p, p);
     var XtWy = new Array(p).fill(0);
     for (var i = 0; i < n; i++) {
       for (var j = 0; j < p; j++) {
-        XtWy[j] += X[i][j] * sqrtWt[i] * y[i];
-        for (var k = 0; k < p; k++) XtWX[j][k] += X[i][j] * sqrtWt[i] * X[i][k];
+        XtWy[j] += X[i][j] * (sqrtWt[i] / weightScale) * y[i];
+        for (var k = 0; k < p; k++) XtWX[j][k] += X[i][j] * (sqrtWt[i] / weightScale) * X[i][k];
       }
     }
     var cov = inverse(XtWX);
     var beta = matVec(cov, XtWy);
+    for (var r = 0; r < p; r++) for (var c = 0; c < p; c++) cov[r][c] /= weightScale;
     // Residual Q
     var Q = 0;
     for (var i2 = 0; i2 < n; i2++) {
@@ -112,19 +117,26 @@
 
   // Paule-Mandel τ² via bisection on Q(τ²) = df.
   function _tau2_PM(X, y, v) {
-    var n = y.length, p = X[0].length;
-    var df = Math.max(1, n - p);
-    var fit0 = _fitGLS(X, y, v, 0);
-    if (fit0.Q <= df) return 0;
-    var lo = 0, hi = Math.max(0.01, fit0.Q / df);
-    var Qat = function (t2) { return _fitGLS(X, y, v, t2).Q; };
-    for (var g = 0; g < 50 && Qat(hi) > df; g++) hi *= 2;
-    for (var iter = 0; iter < 60; iter++) {
-      var mid = 0.5 * (lo + hi);
+    var n = y.length, p = X[0].length, df = Math.max(1, n - p);
+    function Qat(t) {
+      var q = _fitGLS(X, y, v, t).Q;
+      if (!Number.isFinite(q)) throw new RangeError("NMA PM search could not bracket a root: non-finite Q");
+      return q;
+    }
+    var q0 = Qat(0);
+    if (q0 <= df) return 0;
+    var lo = 0, hi = Math.max(0.01, q0 / df);
+    while (Qat(hi) > df) {
+      hi *= 2;
+      if (!Number.isFinite(hi)) throw new RangeError("NMA PM search could not bracket a root within floating-point range");
+    }
+    for (var it = 0; it < 60; it++) {
+      var mid = lo / 2 + hi / 2;
+      if (mid === lo || mid === hi) break;
       if (Qat(mid) > df) lo = mid; else hi = mid;
       if (hi - lo < 1e-10) break;
     }
-    return 0.5 * (lo + hi);
+    return lo / 2 + hi / 2;
   }
 
   // ---- Main fit ---------------------------------------------------------

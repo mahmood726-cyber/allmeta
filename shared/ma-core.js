@@ -46,11 +46,23 @@
   // Paule-Mandel: root of generalised Q(τ²) = k-1 (monotone decreasing).
   function tau2PM(yi, vi) {
     var k = yi.length, df = k - 1; if (df < 1) return 0;
-    if (_wsums(yi, vi, 0).Q <= df) return 0;
-    var lo = 0, hi = 1, guard = 0;
-    while (_wsums(yi, vi, hi).Q > df && guard++ < 200) { hi *= 2; if (hi > 1e9) break; }
-    for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_wsums(yi, vi, m).Q > df) lo = m; else hi = m; }
-    return (lo + hi) / 2;
+    function Qat(t) {
+      var q = _wsums(yi, vi, t).Q;
+      if (!Number.isFinite(q)) throw new RangeError("PM search could not bracket a root: non-finite Q");
+      return q;
+    }
+    if (Qat(0) <= df) return 0;
+    var lo = 0, hi = 1;
+    while (Qat(hi) > df) {
+      hi *= 2;
+      if (!Number.isFinite(hi)) throw new RangeError("PM search could not bracket a root within floating-point range");
+    }
+    for (var i = 0; i < 200; i++) {
+      var m = lo / 2 + hi / 2;
+      if (m === lo || m === hi) break;
+      if (Qat(m) > df) lo = m; else hi = m;
+    }
+    return lo / 2 + hi / 2;
   }
 
   // (Restricted) profile log-likelihood of τ² for the normal-normal RE model,
@@ -526,8 +538,16 @@
     // t is symmetric about 0: mirror the lower tail so the bracket expands
     // correctly (the old fixed [-4,0] bracket clamped any quantile below -4).
     if (p < 0.5) return -_qt(1 - p, df);
-    var lo = 0, hi = 4, guard = 0;
-    while (_tcdf(hi, df) < p && guard++ < 200) hi *= 2;
+    function cdf(t) {
+      var value = _tcdf(t, df);
+      if (!Number.isFinite(value)) throw new RangeError("Student t search could not bracket a quantile: non-finite CDF");
+      return value;
+    }
+    var lo = 0, hi = 4;
+    while (cdf(hi) < p) {
+      hi *= 2;
+      if (!Number.isFinite(hi)) throw new RangeError("Student t quantile exceeds floating-point range");
+    }
     for (var i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_tcdf(m, df) < p) lo = m; else hi = m; }
     return (lo + hi) / 2;
   }
