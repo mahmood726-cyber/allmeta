@@ -14,6 +14,18 @@ the section is renamed to that version and dated, and a fresh
 ### Added
 - _(items added since the most recent tag will be listed here)_
 
+### Fixed
+- The rare-events GLMM one-click example "Eltrombopag (Stijnen 2010)" was
+  unsourced and has been replaced. Stijnen, Hamza & Ozdemir 2010 (Stat Med
+  29:3046-3067) analyse the Niel-Weise catheter data, not eltrombopag; the seven
+  rows named trials published after 2010, one of them a single-arm extension with
+  no placebo arm. The example is now metadat `dat.nissen2007` (Nissen & Wolski
+  2007, rosiglitazone and myocardial infarction, 42 trials), row for row, under
+  the key `nissen2007`. Its tests now check against `metafor::rma.glmm` (R 4.6.0,
+  metafor 5.2.1; `hub/shared/tests/fixtures/hero-nissen2007-reference.R`) and no
+  longer against values taken from the app itself. Any number that v1.8.0 or an
+  earlier release showed for the old example was computed from these unsourced rows.
+
 ---
 
 ## [1.8.0] — 2026-10-20
