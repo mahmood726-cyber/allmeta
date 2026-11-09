@@ -76,7 +76,7 @@ const plants = [
   {name:'FE routed to DL',id:'heterogeneous',method:'FE',group:'pooled',
    page: c=>replaceOnce(c,'var pooled = pool(transformed, tauEst);',"var pooled = pool(transformed, tauEst === 'FE' ? 'DL' : tauEst);")},
   {name:'positive tau2 floor at the homogeneous boundary',id:'identical',group:'pooled',
-   core:c=>replaceOnce(c,'if (_wsums(yi, vi, 0).Q <= df) return 0;', 'if (_wsums(yi, vi, 0).Q <= df) return 0.01;')},
+   core:c=>replaceOnce(c,'if (Qat(0) <= df) return 0;', 'if (Qat(0) <= df) return 0.01;')},
   {name:'z substituted for t in k=3 PI',id:'three',group:'prediction',
    core:c=>replaceOnce(c,'var t = _qt(1 - alpha / 2, df);','var t = _qnorm(1 - alpha / 2);')},
   {name:'PI exposed for k=2',id:'two',group:'prediction',

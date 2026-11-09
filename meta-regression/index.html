@@ -511,6 +511,16 @@
     render = window.alm.analysisLifecycle(render, function (result) { return !!_lastFitted; }, "[id^=\"f-\"]");
 
     function render() {
+      try { return renderAnalysis(); }
+      catch (error) {
+        _lastFitted = null; _lastStudies = []; _lastHK = null; _lastSlopeTest = null;
+        _lastR2 = 0; _lastQE = null; _lastPI = null; _lastPerm = null; _lastLocScale = null;
+        statsWrap.innerHTML = ""; svgHost.innerHTML = "";
+        warnEl.innerHTML = "<strong>Analysis blocked:</strong> " + escapeXml(error.message || String(error));
+        warnEl.classList.add("is-visible");
+      }
+    }
+    function renderAnalysis() {
       const state = readState();
       const parsed = parseStudies(state.data);
       const fitted = fitPM(parsed.studies);

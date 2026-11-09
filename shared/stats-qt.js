@@ -137,7 +137,15 @@
     // fall back to bisection whenever a Newton step would leave it. Always
     // converges; standard cases still hit ~1e-13 in a few iterations.
     var lo = 0, hi = t0 > 1 ? t0 : 1;
-    while (pt(hi, df) < target && hi < 1e15) hi *= 2;
+    function cdf(t) {
+      var value = pt(t, df);
+      if (!Number.isFinite(value)) throw new RangeError("Student t search could not bracket a quantile: non-finite CDF");
+      return value;
+    }
+    while (cdf(hi) < target) {
+      hi *= 2;
+      if (!Number.isFinite(hi)) throw new RangeError("Student t quantile exceeds floating-point range");
+    }
     var t = (t0 > lo && t0 < hi) ? t0 : 0.5 * (lo + hi);
     for (var _i = 0; _i < 80; _i++) {
       var f = pt(t, df) - target;

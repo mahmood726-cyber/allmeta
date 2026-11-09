@@ -85,13 +85,18 @@
     var n = y.length, p = X[0].length, i, j, k;
     var w = new Array(n);
     for (i = 0; i < n; i++) w[i] = 1 / (v[i] + tau2);
+    // A change of effect units must not make a full-rank design singular.
+    var weightScale = Math.max.apply(null, w);
+    if (!(weightScale > 0) || !Number.isFinite(weightScale)) throw new RangeError("NMA PM weights exceed floating-point range");
+    if (weightScale >= 1e-8 && weightScale <= 1e8) weightScale = 1;
     var XtWX = zeros(p, p), XtWy = new Array(p).fill(0);
     for (i = 0; i < n; i++) for (j = 0; j < p; j++) {
-      XtWy[j] += X[i][j] * w[i] * y[i];
-      for (k = 0; k < p; k++) XtWX[j][k] += X[i][j] * w[i] * X[i][k];
+      XtWy[j] += X[i][j] * (w[i] / weightScale) * y[i];
+      for (k = 0; k < p; k++) XtWX[j][k] += X[i][j] * (w[i] / weightScale) * X[i][k];
     }
     var cov = inverse(XtWX);
     var beta = matVec(cov, XtWy);
+    for (var r = 0; r < p; r++) for (var c = 0; c < p; c++) cov[r][c] /= weightScale;
     var Q = 0;
     for (i = 0; i < n; i++) {
       var fit = 0; for (j = 0; j < p; j++) fit += X[i][j] * beta[j];
@@ -103,16 +108,25 @@
   // Paule–Mandel τ² for the additive RE comparison: solve Q(τ²) = df.
   function _tau2_PM(X, y, v) {
     var n = y.length, p = X[0].length, df = Math.max(1, n - p);
-    var Qat = function (t2) { return _fitWLS(X, y, v, t2).Q; };
-    if (Qat(0) <= df) return 0;
-    var lo = 0, hi = Math.max(0.01, Qat(0) / df);
-    for (var g = 0; g < 60 && Qat(hi) > df; g++) hi *= 2;
+    function Qat(t) {
+      var q = _fitWLS(X, y, v, t).Q;
+      if (!Number.isFinite(q)) throw new RangeError("NMA PM search could not bracket a root: non-finite Q");
+      return q;
+    }
+    var q0 = Qat(0);
+    if (q0 <= df) return 0;
+    var lo = 0, hi = Math.max(0.01, q0 / df);
+    while (Qat(hi) > df) {
+      hi *= 2;
+      if (!Number.isFinite(hi)) throw new RangeError("NMA PM search could not bracket a root within floating-point range");
+    }
     for (var it = 0; it < 80; it++) {
-      var mid = 0.5 * (lo + hi);
+      var mid = lo / 2 + hi / 2;
+      if (mid === lo || mid === hi) break;
       if (Qat(mid) > df) lo = mid; else hi = mid;
       if (hi - lo < 1e-12) break;
     }
-    return 0.5 * (lo + hi);
+    return lo / 2 + hi / 2;
   }
 
   // Profile Gaussian log-likelihood at (beta, dispersion) for AIC. For the

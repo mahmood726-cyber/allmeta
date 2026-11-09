@@ -47,8 +47,8 @@ test('plant P05-R1: Q-profile upper bound beyond 2^30 matches fresh metafor', ()
 });
 
 test('plant P05-R1: exhausted Q-profile search explicitly refuses an unbracketed bound', () => {
-  // Finite input/Q, but the root is beyond the retained 200-doubling safety guard.
-  assert.throws(() => HetCI.qProfileCI([{ est: -1e40, v: 1 }, { est: 1e40, v: 1 }]),
+  // The root is outside floating-point range; finite large roots now succeed.
+  assert.throws(() => HetCI.qProfileCI([{ est: -1e308, v: 1 }, { est: 1e308, v: 1 }]),
     { name: 'RangeError', message: /Q-profile.*bracket/i });
 });
 
