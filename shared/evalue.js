@@ -27,9 +27,13 @@
     return r + Math.sqrt(r * (r - 1));
   }
   // Map any supported measure to an approximate risk ratio.
-  function approxRR(measure, est, rare) {
+  function approxRR(measure, est, rare, sd) {
     measure = (measure || "RR").toUpperCase();
     if (!isFinite(est)) return NaN;
+    if (measure === "MD") {
+      if (!(Number.isFinite(sd) && sd > 0)) throw new RangeError("MD requires a finite positive standard deviation.");
+      return Math.exp(0.91 * est / sd);
+    }
     // SMD/d are on the DIFFERENCE scale — any sign is valid (negative = protective).
     // Chinn 2000: d → exp(0.91·d). (Only valid for a STANDARDISED difference.)
     if (measure === "SMD" || measure === "D") return Math.exp(0.91 * est);
@@ -40,8 +44,10 @@
     return est;
   }
 
-  // eValues(measure, point, lo, hi, {rare}) → { rr:{point,lo,hi}, point, ci }.
-  // `ci` is the E-value for the CI bound nearest the null (1 if the CI crosses the null).
+  // eValues(measure, point, lo, hi, {rare, sd}) returns point, ci, lower,
+  // upper, rr and reasons. MD requires sd; SMD/D are already standardized.
+  // `ci` is the near-null E-value (1 for crossing; null/R NA if missing).
+  // Only the near limit gets a lower/upper E-value; the far limit is null/R NA.
   // Impossible complete intervals throw RangeError before any scale conversion.
   function eValues(measure, point, lo, hi, opts) {
     opts = opts || {};
@@ -49,7 +55,7 @@
       var scale = (measure || "RR").toUpperCase();
       if (!Number.isFinite(point) || !Number.isFinite(lo) || !Number.isFinite(hi))
         throw new RangeError("Invalid confidence interval: estimate and bounds must be finite numbers.");
-      if (scale !== "SMD" && scale !== "D" && !(point > 0 && lo > 0 && hi > 0))
+      if (scale !== "SMD" && scale !== "D" && scale !== "MD" && !(point > 0 && lo > 0 && hi > 0))
         throw new RangeError("Invalid confidence interval: ratio estimates and bounds must be positive.");
       if (lo > hi)
         throw new RangeError("Invalid confidence interval: lower bound must not exceed upper bound.");
@@ -57,17 +63,24 @@
         throw new RangeError("Invalid confidence interval: bounds must contain the point estimate.");
     }
     var rare = !!opts.rare;
-    var rr = approxRR(measure, point, rare);
-    var rrLo = (lo != null && isFinite(lo)) ? approxRR(measure, lo, rare) : null;
-    var rrHi = (hi != null && isFinite(hi)) ? approxRR(measure, hi, rare) : null;
+    var rr = approxRR(measure, point, rare, opts.sd);
+    var rrLo = (lo != null && isFinite(lo)) ? approxRR(measure, lo, rare, opts.sd) : null;
+    var rrHi = (hi != null && isFinite(hi)) ? approxRR(measure, hi, rare, opts.sd) : null;
     var ePoint = _e(rr);
-    var eCI = 1;
+    var eCI = null; // R NA: no usable near-null limit, not evidence of crossing.
     if (rr >= 1) { // effect above null → the lower CI bound is nearest the null
       if (rrLo != null) eCI = (rrLo <= 1) ? 1 : _e(rrLo);
     } else {       // effect below null → the upper CI bound is nearest the null
       if (rrHi != null) eCI = (rrHi >= 1) ? 1 : _e(rrHi);
     }
-    return { rr: { point: rr, lo: rrLo, hi: rrHi }, point: ePoint, ci: eCI };
+    var lower = rr >= 1 ? eCI : null, upper = rr < 1 ? eCI : null;
+    var missing = "the CI bound nearest the null is missing";
+    var far = "this confidence limit is farther from the null";
+    return { rr: { point: rr, lo: rrLo, hi: rrHi }, point: ePoint, ci: eCI,
+      lower: lower, upper: upper,
+      reasons: { ci: eCI === null ? missing : null,
+        lower: lower === null ? (rrLo === null ? "lower confidence limit is missing" : far) : null,
+        upper: upper === null ? (rrHi === null ? "upper confidence limit is missing" : far) : null } };
   }
 
   var api = { eValues: eValues, approxRR: approxRR, eValue: _e };
