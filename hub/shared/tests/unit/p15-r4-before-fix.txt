@@ -1,0 +1,8 @@
+  function kappaXtWX(rows, weights) {
+    if (!rows.length) return NaN;
+    var M = xtwx(rows, weights);
+    if (M.length === 1) return 1;
+    var eig = global.AlmRVE._symEig(M).values.map(Math.abs);
+    var mx = Math.max.apply(null, eig), mn = Math.min.apply(null, eig);
+    return mn > 0 ? mx / mn : Infinity;
+  }
