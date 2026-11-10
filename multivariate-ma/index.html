@@ -234,22 +234,30 @@
         done(res); return;
       }
       if (res) f = res.fit; else { try { f = window.AlmMultivariate.fit(parsed.rows.map(function (r) { return { y: r.y, S: [[r.v[0], r.cov], [r.cov, r.v[1]]] }; })); } catch (error) { head.textContent = error.message; return; } }
-      _fit = f;
-      var diagnosticNote = el("likelihood-diagnostic"), verdict = f.diagnostic.verdict;
-      diagnosticNote.textContent = verdict === "boundary maximum" ?
-        "The fit is at a covariance boundary: a between-study variance is near zero or a correlation is near ±1. Treat these covariance estimates with care." :
-        verdict === "multiple near-equal optima" ?
-        "Different between-study covariance estimates reach likelihoods within 10⁻⁸ of each other, so these covariance estimates are not well determined by these data. The pooled estimates may still be reliable." : "";
-      diagnosticNote.hidden = diagnosticNote.textContent === "";
-      head.innerHTML = "k = " + f.k + " studies · 2 outcomes · unstructured between-study covariance (REML) · logLik = " + fmt(f.logLik, 3);
-      function card(k, v) { return "<div class='stat'><span class='k'>" + esc(k) + "</span><span class='v'>" + v + "</span></div>"; }
-      stats.innerHTML =
-        card(o1 + " pooled", fmt(f.mu[0]) + " [" + fmt(f.mu[0] - Z * f.muSE[0]) + ", " + fmt(f.mu[0] + Z * f.muSE[0]) + "]") +
-        card(o2 + " pooled", fmt(f.mu[1]) + " [" + fmt(f.mu[1] - Z * f.muSE[1]) + ", " + fmt(f.mu[1] + Z * f.muSE[1]) + "]") +
-        card("Between-study SD " + o1, fmt(Math.sqrt(f.G[0][0]), 4)) +
-        card("Between-study SD " + o2, fmt(Math.sqrt(f.G[1][1]), 4)) +
-        card("Between-study ρ", fmt(f.rho, 3));
-      el("plot-host").innerHTML = plot(parsed.rows, f, o1, o2);
+      try {
+        _fit = f;
+        var diagnosticNote = el("likelihood-diagnostic"), verdict = f.diagnostic.verdict;
+        diagnosticNote.textContent = verdict === "boundary maximum" ?
+          "The fit is at a covariance boundary: a between-study variance is near zero or a correlation is near ±1. Treat these covariance estimates with care." :
+          verdict === "multiple near-equal optima" ?
+          "Different between-study covariance estimates reach likelihoods within 10⁻⁸ of each other, so these covariance estimates are not well determined by these data. The pooled estimates may still be reliable." : "";
+        diagnosticNote.hidden = diagnosticNote.textContent === "";
+        head.innerHTML = "k = " + f.k + " studies · 2 outcomes · unstructured between-study covariance (REML) · logLik = " + fmt(f.logLik, 3);
+        function card(k, v) { return "<div class='stat'><span class='k'>" + esc(k) + "</span><span class='v'>" + v + "</span></div>"; }
+        stats.innerHTML =
+          card(o1 + " pooled", fmt(f.mu[0]) + " [" + fmt(f.mu[0] - Z * f.muSE[0]) + ", " + fmt(f.mu[0] + Z * f.muSE[0]) + "]") +
+          card(o2 + " pooled", fmt(f.mu[1]) + " [" + fmt(f.mu[1] - Z * f.muSE[1]) + ", " + fmt(f.mu[1] + Z * f.muSE[1]) + "]") +
+          card("Between-study SD " + o1, fmt(Math.sqrt(f.G[0][0]), 4)) +
+          card("Between-study SD " + o2, fmt(Math.sqrt(f.G[1][1]), 4)) +
+          card("Between-study ρ", fmt(f.rho, 3));
+        el("plot-host").innerHTML = plot(parsed.rows, f, o1, o2);
+      } catch (error) {
+        // A failed render must also replace the panel's separate report/export state.
+        clearOutputs();
+        var reason = "Unable to render analysis: " + error.message;
+        head.textContent = reason;
+        done({ status: "refused", reason: reason, k: parsed.rows.length }); return;
+      }
       var tests = res ? res.tests : [null, null];
       _last = { _schema: "multivariate-ma-results-v2", k: f.k, mu: f.mu, muSE: f.muSE, G: f.G, rho: f.rho, logLik: f.logLik,
         muVcov: f.muVcov, z: tests.map(function (t) { return t ? t.z : null; }), p: tests.map(function (t) { return t ? t.p : null; }),
@@ -260,7 +268,9 @@
     function ticks(lo, hi, n) {
       var span = hi - lo, raw = span / (n || 5), mag = Math.pow(10, Math.floor(Math.log10(raw))), st = [1, 2, 2.5, 5, 10].map(function (m) { return m * mag; }).find(function (s) { return s >= raw; }) || 10 * mag;
       var out = [], v = Math.ceil(lo / st) * st; for (; v <= hi + st * 1e-9; v += st) out.push(Math.abs(v) < st * 1e-9 ? 0 : v);
-      var d = Math.max(0, -Math.floor(Math.log10(st) + 1e-9)); return out.map(function (x) { return { v: x, label: x.toFixed(d + (st / mag === 2.5 ? 1 : 0)) }; });
+      // toFixed accepts at most 100 decimal places; preserve tiny nonzero ticks.
+      var d = Math.max(0, -Math.floor(Math.log10(st) + 1e-9)) + (st / mag === 2.5 ? 1 : 0);
+      return out.map(function (x) { return { v: x, label: d > 100 ? (x === 0 ? "0" : x.toExponential(2)) : x.toFixed(d) }; });
     }
     function plot(rows, f, o1, o2) {
       var W = 560, H = 380, L = 64, R = 20, T = 40, B = 50, pw = W - L - R, ph = H - T - B;
