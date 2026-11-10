@@ -1,0 +1,1991 @@
+[
+  {
+    "text": "0",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 0
+    }
+  },
+  {
+    "text": " 0 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 0
+    }
+  },
+  {
+    "text": " 0 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 0
+    }
+  },
+  {
+    "text": " 0 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 0
+    }
+  },
+  {
+    "text": "12",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 12
+    }
+  },
+  {
+    "text": " 12 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 12
+    }
+  },
+  {
+    "text": " 12 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 12
+    }
+  },
+  {
+    "text": " 12 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 12
+    }
+  },
+  {
+    "text": "-0.50",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " -0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " -0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " -0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": "−0.50",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " −0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " −0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " −0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": "–0.50",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " –0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " –0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " –0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": "—0.50",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " —0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " —0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " —0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": "‐0.50",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " ‐0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " ‐0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": " ‐0.50 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": -0.5
+    }
+  },
+  {
+    "text": "1·23",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1.23
+    }
+  },
+  {
+    "text": " 1·23 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1.23
+    }
+  },
+  {
+    "text": " 1·23 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1.23
+    }
+  },
+  {
+    "text": " 1·23 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1.23
+    }
+  },
+  {
+    "text": "1⋅23",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1.23
+    }
+  },
+  {
+    "text": " 1⋅23 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1.23
+    }
+  },
+  {
+    "text": " 1⋅23 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1.23
+    }
+  },
+  {
+    "text": " 1⋅23 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1.23
+    }
+  },
+  {
+    "text": ".001",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 0.001
+    }
+  },
+  {
+    "text": " .001 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 0.001
+    }
+  },
+  {
+    "text": " .001 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 0.001
+    }
+  },
+  {
+    "text": " .001 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "+4",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 4
+    }
+  },
+  {
+    "text": " +4 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 4
+    }
+  },
+  {
+    "text": " +4 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 4
+    }
+  },
+  {
+    "text": " +4 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 4
+    }
+  },
+  {
+    "text": "1e-9",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1e-9
+    }
+  },
+  {
+    "text": " 1e-9 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1e-9
+    }
+  },
+  {
+    "text": " 1e-9 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1e-9
+    }
+  },
+  {
+    "text": " 1e-9 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 1e-9
+    }
+  },
+  {
+    "text": "2E6",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 2000000
+    }
+  },
+  {
+    "text": " 2E6 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 2000000
+    }
+  },
+  {
+    "text": " 2E6 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 2000000
+    }
+  },
+  {
+    "text": " 2E6 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 2000000
+    }
+  },
+  {
+    "text": "123456789",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 123456789
+    }
+  },
+  {
+    "text": " 123456789 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 123456789
+    }
+  },
+  {
+    "text": " 123456789 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 123456789
+    }
+  },
+  {
+    "text": " 123456789 ",
+    "ctx": {},
+    "expected": {
+      "kind": "number",
+      "value": 123456789
+    }
+  },
+  {
+    "text": "0%",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 0
+    }
+  },
+  {
+    "text": "0 %",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 0
+    }
+  },
+  {
+    "text": "0 %",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 0
+    }
+  },
+  {
+    "text": "1%",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 1
+    }
+  },
+  {
+    "text": "1 %",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 1
+    }
+  },
+  {
+    "text": "1 %",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 1
+    }
+  },
+  {
+    "text": "8.2%",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 8.2
+    }
+  },
+  {
+    "text": "8.2 %",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 8.2
+    }
+  },
+  {
+    "text": "8.2 %",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 8.2
+    }
+  },
+  {
+    "text": "50%",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 50
+    }
+  },
+  {
+    "text": "50 %",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 50
+    }
+  },
+  {
+    "text": "50 %",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 50
+    }
+  },
+  {
+    "text": "100%",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 100
+    }
+  },
+  {
+    "text": "100 %",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 100
+    }
+  },
+  {
+    "text": "100 %",
+    "ctx": {},
+    "expected": {
+      "kind": "percent",
+      "value": 100
+    }
+  },
+  {
+    "text": "p= 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "=",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "P = 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "=",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "= 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "=",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "p< 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "<",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "P < 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "<",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "< 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "<",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "p> 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": ">",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "P > 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": ">",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "> 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": ">",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "p≤ 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "≤",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "P ≤ 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "≤",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "≤ 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "≤",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "p≥ 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "≥",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "P ≥ 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "≥",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "≥ 0.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "≥",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "<.001",
+    "ctx": {},
+    "expected": {
+      "kind": "p",
+      "op": "<",
+      "value": 0.001
+    }
+  },
+  {
+    "text": "0.03",
+    "ctx": {
+      "header": "p"
+    },
+    "expected": {
+      "kind": "p",
+      "op": "=",
+      "value": 0.03
+    }
+  },
+  {
+    "text": "12 (8.0%)",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12/150 (8.0%)",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "den": 150,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12 ( 8.0% )",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12/150 ( 8.0% )",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "den": 150,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12 [8.0%]",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12/150 [8.0%]",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "den": 150,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12 [ 8.0% ]",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12/150 [ 8.0% ]",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "den": 150,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12 {8.0%}",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12/150 {8.0%}",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "den": 150,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12 { 8.0% }",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12/150 { 8.0% }",
+    "ctx": {},
+    "expected": {
+      "kind": "n_pct",
+      "num": 12,
+      "den": 150,
+      "pct": 8
+    }
+  },
+  {
+    "text": "12/150",
+    "ctx": {},
+    "expected": {
+      "kind": "fraction",
+      "num": 12,
+      "den": 150
+    }
+  },
+  {
+    "text": "12 / 150",
+    "ctx": {},
+    "expected": {
+      "kind": "fraction",
+      "num": 12,
+      "den": 150
+    }
+  },
+  {
+    "text": "0/100",
+    "ctx": {},
+    "expected": {
+      "kind": "fraction",
+      "num": 0,
+      "den": 100
+    }
+  },
+  {
+    "text": "0 / 100",
+    "ctx": {},
+    "expected": {
+      "kind": "fraction",
+      "num": 0,
+      "den": 100
+    }
+  },
+  {
+    "text": "5/10",
+    "ctx": {},
+    "expected": {
+      "kind": "fraction",
+      "num": 5,
+      "den": 10
+    }
+  },
+  {
+    "text": "5 / 10",
+    "ctx": {},
+    "expected": {
+      "kind": "fraction",
+      "num": 5,
+      "den": 10
+    }
+  },
+  {
+    "text": "99/100",
+    "ctx": {},
+    "expected": {
+      "kind": "fraction",
+      "num": 99,
+      "den": 100
+    }
+  },
+  {
+    "text": "99 / 100",
+    "ctx": {},
+    "expected": {
+      "kind": "fraction",
+      "num": 99,
+      "den": 100
+    }
+  },
+  {
+    "text": "1.23 (0.98-1.54)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 (-0.91--0.09)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 (0.98–1.54)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 (-0.91–-0.09)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 (0.98—1.54)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 (-0.91—-0.09)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 (0.98−1.54)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 (-0.91−-0.09)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 (0.98 to 1.54)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 (-0.91 to -0.09)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 (0.98, 1.54)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 (-0.91, -0.09)",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 [0.98-1.54]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 [-0.91--0.09]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 [0.98–1.54]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 [-0.91–-0.09]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 [0.98—1.54]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 [-0.91—-0.09]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 [0.98−1.54]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 [-0.91−-0.09]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 [0.98 to 1.54]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 [-0.91 to -0.09]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 [0.98, 1.54]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 [-0.91, -0.09]",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 {0.98-1.54}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 {-0.91--0.09}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 {0.98–1.54}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 {-0.91–-0.09}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 {0.98—1.54}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 {-0.91—-0.09}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 {0.98−1.54}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 {-0.91−-0.09}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 {0.98 to 1.54}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 {-0.91 to -0.09}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23 {0.98, 1.54}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "-0.50 {-0.91, -0.09}",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": -0.5,
+      "lo": -0.91,
+      "hi": -0.09
+    }
+  },
+  {
+    "text": "1.23; 90% CI 0.98 to 1.54",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54,
+      "level": 0.9
+    }
+  },
+  {
+    "text": "90% CI -2 to -1",
+    "ctx": {},
+    "expected": {
+      "kind": "ci",
+      "lo": -2,
+      "hi": -1,
+      "level": 0.9
+    }
+  },
+  {
+    "text": "1.23; 95% CI 0.98 to 1.54",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54,
+      "level": 0.95
+    }
+  },
+  {
+    "text": "95% CI -2 to -1",
+    "ctx": {},
+    "expected": {
+      "kind": "ci",
+      "lo": -2,
+      "hi": -1,
+      "level": 0.95
+    }
+  },
+  {
+    "text": "1.23; 99% CI 0.98 to 1.54",
+    "ctx": {},
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54,
+      "level": 0.99
+    }
+  },
+  {
+    "text": "99% CI -2 to -1",
+    "ctx": {},
+    "expected": {
+      "kind": "ci",
+      "lo": -2,
+      "hi": -1,
+      "level": 0.99
+    }
+  },
+  {
+    "text": "4.5 (1.2)",
+    "ctx": {},
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": null,
+      "ambiguousDispersion": true
+    }
+  },
+  {
+    "text": "4.5 (1.2)",
+    "ctx": {
+      "header": "Mean (SD)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SD",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 (1.2)",
+    "ctx": {
+      "header": "Mean (SE)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SE",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 [1.2]",
+    "ctx": {},
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": null,
+      "ambiguousDispersion": true
+    }
+  },
+  {
+    "text": "4.5 [1.2]",
+    "ctx": {
+      "header": "Mean (SD)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SD",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 [1.2]",
+    "ctx": {
+      "header": "Mean (SE)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SE",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 {1.2}",
+    "ctx": {},
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": null,
+      "ambiguousDispersion": true
+    }
+  },
+  {
+    "text": "4.5 {1.2}",
+    "ctx": {
+      "header": "Mean (SD)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SD",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 {1.2}",
+    "ctx": {
+      "header": "Mean (SE)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SE",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 ± 1.2",
+    "ctx": {},
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": null,
+      "ambiguousDispersion": true
+    }
+  },
+  {
+    "text": "4.5 ± 1.2",
+    "ctx": {
+      "header": "Mean (SD)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SD",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 ± 1.2",
+    "ctx": {
+      "header": "Mean (SE)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SE",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 +/- 1.2",
+    "ctx": {},
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": null,
+      "ambiguousDispersion": true
+    }
+  },
+  {
+    "text": "4.5 +/- 1.2",
+    "ctx": {
+      "header": "Mean (SD)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SD",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 +/- 1.2",
+    "ctx": {
+      "header": "Mean (SE)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SE",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "mean 4.5 (1.2)",
+    "ctx": {},
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": null,
+      "ambiguousDispersion": true
+    }
+  },
+  {
+    "text": "mean 4.5 (1.2)",
+    "ctx": {
+      "header": "Mean (SD)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SD",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "mean 4.5 (1.2)",
+    "ctx": {
+      "header": "Mean (SE)"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SE",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 (1.2) SD",
+    "ctx": {},
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SD",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "4.5 ± 1.2 SE",
+    "ctx": {},
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SE",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "median 4 (IQR 2-7)",
+    "ctx": {},
+    "expected": {
+      "kind": "median_iqr",
+      "median": 4,
+      "q1": 2,
+      "q3": 7
+    }
+  },
+  {
+    "text": "4 [2-7]",
+    "ctx": {
+      "header": "median (IQR)"
+    },
+    "expected": {
+      "kind": "median_iqr",
+      "median": 4,
+      "q1": 2,
+      "q3": 7
+    }
+  },
+  {
+    "text": "4 (1-12)",
+    "ctx": {
+      "header": "median (range)"
+    },
+    "expected": {
+      "kind": "median_range",
+      "median": 4,
+      "min": 1,
+      "max": 12
+    }
+  },
+  {
+    "text": "median 4, range 1-12",
+    "ctx": {},
+    "expected": {
+      "kind": "median_range",
+      "median": 4,
+      "min": 1,
+      "max": 12
+    }
+  },
+  {
+    "text": "median 4 (IQR 2–7)",
+    "ctx": {},
+    "expected": {
+      "kind": "median_iqr",
+      "median": 4,
+      "q1": 2,
+      "q3": 7
+    }
+  },
+  {
+    "text": "4 [2–7]",
+    "ctx": {
+      "header": "median (IQR)"
+    },
+    "expected": {
+      "kind": "median_iqr",
+      "median": 4,
+      "q1": 2,
+      "q3": 7
+    }
+  },
+  {
+    "text": "4 (1–12)",
+    "ctx": {
+      "header": "median (range)"
+    },
+    "expected": {
+      "kind": "median_range",
+      "median": 4,
+      "min": 1,
+      "max": 12
+    }
+  },
+  {
+    "text": "median 4, range 1–12",
+    "ctx": {},
+    "expected": {
+      "kind": "median_range",
+      "median": 4,
+      "min": 1,
+      "max": 12
+    }
+  },
+  {
+    "text": "median 4 (IQR 2—7)",
+    "ctx": {},
+    "expected": {
+      "kind": "median_iqr",
+      "median": 4,
+      "q1": 2,
+      "q3": 7
+    }
+  },
+  {
+    "text": "4 [2—7]",
+    "ctx": {
+      "header": "median (IQR)"
+    },
+    "expected": {
+      "kind": "median_iqr",
+      "median": 4,
+      "q1": 2,
+      "q3": 7
+    }
+  },
+  {
+    "text": "4 (1—12)",
+    "ctx": {
+      "header": "median (range)"
+    },
+    "expected": {
+      "kind": "median_range",
+      "median": 4,
+      "min": 1,
+      "max": 12
+    }
+  },
+  {
+    "text": "median 4, range 1—12",
+    "ctx": {},
+    "expected": {
+      "kind": "median_range",
+      "median": 4,
+      "min": 1,
+      "max": 12
+    }
+  },
+  {
+    "text": "median 4 (IQR 2 to 7)",
+    "ctx": {},
+    "expected": {
+      "kind": "median_iqr",
+      "median": 4,
+      "q1": 2,
+      "q3": 7
+    }
+  },
+  {
+    "text": "4 [2 to 7]",
+    "ctx": {
+      "header": "median (IQR)"
+    },
+    "expected": {
+      "kind": "median_iqr",
+      "median": 4,
+      "q1": 2,
+      "q3": 7
+    }
+  },
+  {
+    "text": "4 (1 to 12)",
+    "ctx": {
+      "header": "median (range)"
+    },
+    "expected": {
+      "kind": "median_range",
+      "median": 4,
+      "min": 1,
+      "max": 12
+    }
+  },
+  {
+    "text": "median 4, range 1 to 12",
+    "ctx": {},
+    "expected": {
+      "kind": "median_range",
+      "median": 4,
+      "min": 1,
+      "max": 12
+    }
+  },
+  {
+    "text": "1,23",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "1,23",
+      "ambiguousDecimal": true
+    }
+  },
+  {
+    "text": "-0,50",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "-0,50",
+      "ambiguousDecimal": true
+    }
+  },
+  {
+    "text": "4,5 (1,2)",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "4,5 (1,2)",
+      "ambiguousDecimal": true
+    }
+  },
+  {
+    "text": "1.23 [0.98,1.54]",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "1.23 [0.98,1.54]",
+      "ambiguousDecimal": true
+    }
+  },
+  {
+    "text": "12,150",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "12,150",
+      "ambiguousDecimal": true
+    }
+  },
+  {
+    "text": "1,23",
+    "ctx": {
+      "decimal": "comma"
+    },
+    "expected": {
+      "kind": "number",
+      "value": 1.23
+    }
+  },
+  {
+    "text": "4,5 (1,2)",
+    "ctx": {
+      "decimal": "comma",
+      "header": "SD"
+    },
+    "expected": {
+      "kind": "mean_sd",
+      "mean": 4.5,
+      "spread": 1.2,
+      "dispersion": "SD",
+      "ambiguousDispersion": false
+    }
+  },
+  {
+    "text": "1.23 [0.98,1.54]",
+    "ctx": {
+      "decimal": "separator"
+    },
+    "expected": {
+      "kind": "est_ci",
+      "est": 1.23,
+      "lo": 0.98,
+      "hi": 1.54
+    }
+  },
+  {
+    "text": "",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "",
+      "missing": true
+    }
+  },
+  {
+    "text": "NA",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "NA",
+      "missing": true
+    }
+  },
+  {
+    "text": "N/A",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "N/A",
+      "missing": true
+    }
+  },
+  {
+    "text": "NR",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "NR",
+      "missing": true
+    }
+  },
+  {
+    "text": "not reported",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "not reported",
+      "missing": true
+    }
+  },
+  {
+    "text": "-",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "-",
+      "missing": true
+    }
+  },
+  {
+    "text": "unreported value",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "unreported value"
+    }
+  },
+  {
+    "text": "study alpha",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "study alpha"
+    }
+  },
+  {
+    "text": "not a number",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "not a number"
+    }
+  },
+  {
+    "text": "12 apples",
+    "ctx": {},
+    "expected": {
+      "kind": "unknown",
+      "raw": "12 apples"
+    }
+  },
+  {
+    "text": "150",
+    "ctx": {
+      "header": "Experimental Total"
+    },
+    "expected": {
+      "kind": "number",
+      "value": 150
+    }
+  },
+  {
+    "text": "150",
+    "ctx": {
+      "header": "Control Total"
+    },
+    "expected": {
+      "kind": "number",
+      "value": 150
+    }
+  },
+  {
+    "text": "150",
+    "ctx": {
+      "header": "Total"
+    },
+    "expected": {
+      "kind": "number",
+      "value": 150
+    }
+  },
+  {
+    "text": "150",
+    "ctx": {
+      "header": "Sample size"
+    },
+    "expected": {
+      "kind": "number",
+      "value": 150
+    }
+  },
+  {
+    "text": "150",
+    "ctx": {
+      "header": "Number of participants"
+    },
+    "expected": {
+      "kind": "number",
+      "value": 150
+    }
+  },
+  {
+    "text": "150",
+    "ctx": {
+      "header": "Covidence N"
+    },
+    "expected": {
+      "kind": "number",
+      "value": 150
+    }
+  },
+  {
+    "text": "150",
+    "ctx": {
+      "header": "n"
+    },
+    "expected": {
+      "kind": "number",
+      "value": 150
+    }
+  }
+]
