@@ -1,3 +1,5 @@
+import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -8,9 +10,31 @@ FIX = Path(__file__).parent / "fixtures"
 
 
 def test_meta_regression_matches_metafor_rma_with_mods():
-    # Cycle 7.11: R script switched to method='PM' + test='knha' to match the
-    # JS engine (Paule-Mandel + HKSJ).  Previous REML expected dict was
-    # numerically inapplicable to the engine.
+    _assert_page_parity("mr-tiny.csv")
+
+
+def test_meta_regression_positive_heterogeneity_matches_metafor():
+    _assert_page_parity("mr-heterogeneous.csv")
+
+
+def _assert_page_parity(fixture_name):
+    # Execute the page engine and results adapter for this input on every run.
+    proc = subprocess.run(
+        ["node", str(Path(__file__).with_name("page-result.mjs")), str(FIX / fixture_name)],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert_r_parity(
+        json.loads(proc.stdout),
+        r_script=FIX / "mr-tiny.R",
+        fixture_csv=FIX / fixture_name,
+        tol=1e-6,
+    )
+
+
+def test_historical_pm_knha_constants_match_metafor():
+    # Preserve the original 15 constants and tolerance as a historical R check.
+    # PM/knha does not describe the page's floored KH uncertainty.
     expected = {
         "intercept":       -95.650381993419,
         "intercept_se":      5.683654437232,
@@ -30,7 +54,7 @@ def test_meta_regression_matches_metafor_rma_with_mods():
     }
     assert_r_parity(
         expected,
-        r_script=FIX / "mr-tiny.R",
+        r_script=FIX / "mr-tiny-knha.R",
         fixture_csv=FIX / "mr-tiny.csv",
         tol=1e-6,
     )
