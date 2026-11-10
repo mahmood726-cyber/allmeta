@@ -51,9 +51,16 @@
 
   // p: pooled object {mu, seMu, tau2, Q, df}; vi: sampling variances of the same studies.
   function summarize(p, vi) {
-    var k = vi.length, sw = 0, sw2 = 0;
-    for (var i = 0; i < k; i++) { var w = 1 / vi[i]; sw += w; sw2 += w * w; }
-    var s2 = k > 1 ? (k - 1) * sw / (sw * sw - sw2) : null;
+    var k = vi.length, scale = Infinity, sw = 0, cross = 0;
+    for (var i = 0; i < k; i++) scale = Math.min(scale, vi[i]);
+    // Scale weights to at most one; sum pairwise products without subtracting
+    // nearly equal squared sums. The denominator is 2 * sum_{i<j}(w_i*w_j).
+    for (var i = 0; i < k; i++) {
+      var w = scale / vi[i];
+      cross += w * sw;
+      sw += w;
+    }
+    var s2 = k > 1 ? scale * ((k - 1) * sw / (2 * cross)) : null;
     var z = p.mu / p.seMu;
     return {
       k: k, z: z, p: 2 * pnormUpper(Math.abs(z)),
