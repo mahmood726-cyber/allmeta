@@ -13,7 +13,7 @@ const read = p => readFileSync(new URL(p, root), 'utf8');
 const manifest = JSON.parse(read('validate/MANIFEST.json'));
 const files = {};
 for (const f of manifest.files) {
-  const bytes = readFileSync(new URL(f.path, root));
+  const bytes = Buffer.from(readFileSync(new URL(f.path, root), 'utf8').replace(/\r\n/g, '\n'));
   assert.equal(createHash('sha256').update(bytes).digest('hex'), f.sha256);
   files[f.path] = JSON.parse(bytes);
 }

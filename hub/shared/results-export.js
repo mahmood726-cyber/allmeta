@@ -144,22 +144,35 @@
         <button type="button" data-action="json">JSON</button>
         <button type="button" data-action="csv">CSV</button>
         <button type="button" data-action="md">Data (.md)</button>
+        <span role="status"></span>
       </div>`;
-    target.querySelector('[data-action="report-md"]').addEventListener('click', () => {
-      _download(new Blob([_toReport(getResults(), opts, false)], { type: 'text/markdown' }), basename + '-report.md');
+    const status = target.querySelector('[role="status"]');
+    function onExport(action, exportResult) {
+      target.querySelector('[data-action="' + action + '"]').addEventListener('click', () => {
+        const result = getResults();
+        if (result == null) {
+          status.textContent = 'No results available. Run the analysis successfully, then export.';
+          return;
+        }
+        status.textContent = '';
+        return exportResult(result);
+      });
+    }
+    onExport('report-md', result => {
+      _download(new Blob([_toReport(result, opts, false)], { type: 'text/markdown' }), basename + '-report.md');
     });
-    target.querySelector('[data-action="report-txt"]').addEventListener('click', () => {
-      _download(new Blob([_toReport(getResults(), opts, true)], { type: 'text/plain' }), basename + '-report.txt');
+    onExport('report-txt', result => {
+      _download(new Blob([_toReport(result, opts, true)], { type: 'text/plain' }), basename + '-report.txt');
     });
-    target.querySelector('[data-action="json"]').addEventListener('click', async () => {
-      const out = await _maybeSign(getResults());
+    onExport('json', async result => {
+      const out = await _maybeSign(result);
       _download(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }), basename + '.json');
     });
-    target.querySelector('[data-action="csv"]').addEventListener('click', () => {
-      _download(new Blob([_toCSV(getResults())], { type: 'text/csv' }), basename + '.csv');
+    onExport('csv', result => {
+      _download(new Blob([_toCSV(result)], { type: 'text/csv' }), basename + '.csv');
     });
-    target.querySelector('[data-action="md"]').addEventListener('click', () => {
-      _download(new Blob([_toMD(getResults())], { type: 'text/markdown' }), basename + '.md');
+    onExport('md', result => {
+      _download(new Blob([_toMD(result)], { type: 'text/markdown' }), basename + '.md');
     });
   }
 
