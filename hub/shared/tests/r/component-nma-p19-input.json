@@ -1,0 +1,15 @@
+{
+  "cases": [
+    {"id":"tiny_zero", "inactive":"control", "rows":[["a","control",-0.4,0.12],["b","control",-0.3,0.15],["a+b","control",-0.65,0.13],["a+c","control",-0.55,0.16],["c","control",-0.2,0.18],["b+c","control",-0.45,0.14],["a+b+c","control",-0.8,0.2]]},
+    {"id":"heterogeneous", "inactive":"control", "rows":[["a","control",-1.7,0.11],["b","control",0.8,0.23],["a+b","control",2.5,0.31],["a","b",1.9,0.16],["b","control",-0.6,0.27]]},
+    {"id":"two_positive", "inactive":"control", "rows":[["a","control",-0.8,0.1],["a","control",0.7,0.2]]},
+    {"id":"two_zero", "inactive":"control", "rows":[["a","control",0.2,0.1],["a","control",0.21,0.2]]},
+    {"id":"saturated", "inactive":"control", "rows":[["a","control",-0.3,0.1],["b","control",0.2,0.2]]},
+    {"id":"disconnected", "inactive":"control", "rows":[["a+b","control",0.4,0.12],["a","b",-0.3,0.21],["a+b","control",0.9,0.15],["a","b",-0.6,0.32]]},
+    {"id":"inactive_sham", "inactive":"sham", "rows":[["a+sham","sham",-0.4,0.12],["b","sham",-0.3,0.15],["a+b+sham","sham",-0.65,0.13],["a+c","sham",-0.55,0.16],["c","sham",-0.2,0.18],["b+c","sham",-0.45,0.14],["a+b+c","sham",-0.8,0.2]]},
+    {"id":"all_active", "inactive":"", "rows":[["a","b",0.2,0.12],["a+b","a",-0.3,0.15],["a+b","b",-0.1,0.2],["a","b",0.7,0.18]]},
+    {"id":"shared_component", "inactive":"control", "rows":[["a+c","b+c",0.4,0.1],["c","control",0.2,0.2],["a+b","control",-0.1,0.15],["a","control",0.1,0.12],["b+c","control",-0.2,0.18]]},
+    {"id":"null_effects", "inactive":"control", "rows":[["a","control",0,0.1],["b","control",0,0.2],["a+b","control",0,0.15],["a","b",0,0.3]]}
+  ],
+  "single": {"id":"one_contrast", "inactive":"control", "rows":[["a","control",-0.3,0.1]]}
+}
