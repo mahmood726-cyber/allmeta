@@ -233,15 +233,23 @@
       return Number.isFinite(x) ? x.toFixed(d) : '&#8212;';
     }
 
-    // metagen()'s random-effects pool, used only as the optimiser start, exactly
-    // as metasens does (start = c(TE.random, rho0, tau)).
+    // metagen()'s random-effects pool, used as the optimiser start exactly as
+    // metasens does (start = c(TE.random, rho0, tau)). REML is metafor's own
+    // Fisher scoring with its own stopping rule (CC.metaforREML), not an exact
+    // REML solve: metasens starts from metafor's stopping point, and so must
+    // this page if its surface is to be metasens's surface.
     function startValues(te, se, methodTau) {
-      var vi = se.map(function (s) { return s * s; });
-      var fit = MaCore.pool(te, vi, { method: methodTau === 'DL' ? 'DL' : 'REML' });
       var eg = CC.eggerEstimate(te, se);
-      return { TE_random: fit.mu, seTE_random: fit.se, tau: Math.sqrt(fit.tau2),
-               tau2: fit.tau2, egger: eg,
-               rho0: Math.sign(eg) === 1 ? 0.9999 / 2 : -0.9999 / 2 };
+      var rho0 = Math.sign(eg) === 1 ? 0.9999 / 2 : -0.9999 / 2;
+      if (methodTau === 'DL') {
+        var vi = se.map(function (s) { return s * s; });
+        var fit = MaCore.pool(te, vi, { method: 'DL' });
+        return { TE_random: fit.mu, seTE_random: fit.se, tau: Math.sqrt(fit.tau2),
+                 tau2: fit.tau2, egger: eg, rho0: rho0, converged: true };
+      }
+      var r = CC.metaforREML(te, se);
+      return { TE_random: r.TE_random, seTE_random: r.seTE_random, tau: r.tau,
+               tau2: r.tau2, egger: eg, rho0: rho0, converged: r.converged };
     }
 
     function readOpts() {
@@ -274,7 +282,11 @@
       var te = rows.map(function (r) { return r.te; });
       var se = rows.map(function (r) { return r.se; });
       var sv = startValues(te, se, readOpts().method_tau);
-      var fit = CC.profileMLE(te, se, [g0, g1], [sv.TE_random, sv.rho0, sv.tau], 0.9999);
+      var fit;
+      // optim() can stop with an error (e.g. a non-finite objective); R's
+      // copas() swallows it in try(). Reported here as not available.
+      try { fit = CC.profileMLE(te, se, [g0, g1], [sv.TE_random, sv.rho0, sv.tau], 0.9999); }
+      catch (e) { return { TE: NaN, rho: NaN, tau: NaN, seTE: NaN, seTEdiag: NaN, nll: NaN }; }
       var H = CC.optimHess(function (p) {
         return CC.gradientWithoutBeta(p, [g0, g1], te, se);
       }, fit.par);
@@ -333,6 +345,10 @@
       var se = rows.map(function (r) { return r.se; });
       if (te.length < 3) return { refused: 'k<3', k: te.length };
       var sv = startValues(te, se, o.method_tau);
+      // metafor stops with an error when Fisher scoring does not converge in
+      // 100 iterations, so metagen() -- and therefore copas() -- returns
+      // nothing in R. Refused here for the same reason.
+      if (!sv.converged) return { refused: 'reml-not-converged', k: te.length };
       return CC.copas({
         TE: te, seTE: se,
         TE_random: sv.TE_random, seTE_random: sv.seTE_random, tau: sv.tau,
@@ -464,13 +480,14 @@
                   'that corner). The Copas model needs studies of genuinely ' +
                   'different precision';
             break;
-          case 'orthogonal-line.empty':
-            why = 'no contour line of the likelihood surface admits a usable ' +
-                  'regression (' + fit.n_contour_lines + ' contour line(s), none ' +
-                  'with a positive adjusted R²), so the approximate orthogonal ' +
-                  'line collapses to the no-selection point alone. There is no ' +
-                  'sensitivity path to report — the unadjusted estimate is NOT ' +
-                  'a Copas-adjusted one and is not shown as such';
+          case 'reml-not-converged':
+            why = 'the REML estimate of τ² did not converge in 100 Fisher-scoring ' +
+                  'iterations (metafor stops with an error here too, so metasens ' +
+                  'returns no fit). Try the DerSimonian-Laird start';
+            break;
+          case 'optim-error':
+            why = 'the first likelihood maximisation of the ' + (fit.stage || 'fit') +
+                  ' stage stopped with an error, which also stops metasens::copas()';
             break;
           default:
             why = 'at least 3 studies with an effect and a positive standard ' +
@@ -520,6 +537,10 @@
         statistic_adjust: fit.statistic_adjust, pval_adjust: fit.pval_adjust,
         tau_adjust: fit.tau_adjust, pval_rsb_adj: fit.pval_rsb_adj,
         n_unpubl_adj: fit.N_unpubl_adj,
+        // Additive: the collapsed-line flag and how many optim() calls R's
+        // try() would have swallowed (their points carry the previous fit).
+        warning: fit.warning || null,
+        optim_try_failures: fit.optim_try_failures,
         sensitivity_grid: v2Grid(fit.seTE, feSE, fit.level_ma),
         // The metasens orthogonal line: what the table and plot show, and the
         // row TE.adjust is taken from (selected).
@@ -539,7 +560,23 @@
         };
         row('Unadjusted random-effects pooled effect',
             fmt(fit.TE_random) + ' (SE ' + fmt(fit.seTE_random) + ', τ ' + fmt(fit.tau) + ')');
-        if (Number.isFinite(fit.TE_adjust)) {
+        if (fit.warning === 'orthogonal-line.empty') {
+          // The approximate orthogonal line is the (10, 0) no-selection anchor
+          // alone. metasens reports the profile MLE there as TE.adjust (when its
+          // pval.rsb rule selects it). It is shown, with metasens's numbers,
+          // under a label that says what it is -- never as an adjustment.
+          row('Copas-adjusted effect',
+              'no selection-adjusted estimate: no contour line of the likelihood ' +
+              'surface admits a usable regression (' + fit.n_contour_lines +
+              ' contour line(s), none with a positive adjusted R²), so the ' +
+              'approximate orthogonal line is the no-selection point alone');
+          if (Number.isFinite(fit.TE_adjust)) {
+            row('Estimate at no selection (metasens’s TE.adjust)',
+                fmt(fit.TE_adjust) + ' (SE ' + fmt(fit.seTE_adjust) + ')');
+            row(pctLabel + ' CI', '[' + fmt(fit.lower_adjust) + ', ' + fmt(fit.upper_adjust) + ']');
+            row('p-value, residual selection bias', fmtP(fit.pval_rsb_adj));
+          }
+        } else if (Number.isFinite(fit.TE_adjust)) {
           row('Copas-adjusted effect', '<strong>' + fmt(fit.TE_adjust) + '</strong> (SE ' +
               fmt(fit.seTE_adjust) + ')');
           row(pctLabel + ' CI', '[' + fmt(fit.lower_adjust) + ', ' + fmt(fit.upper_adjust) + ']');

@@ -84,7 +84,13 @@ const SLACK = 1e-12;   // relative slack on every "never worse" assertion
  * R-surface test below exists and covers all three. If one of these counts
  * changes, read the change before editing the number: it means stage 2's
  * optimiser moved. */
-const STALLED = { REML_10: 1, REML_20: 6, DL_10: 0 };
+// Was { REML_10: 1, REML_20: 6, DL_10: 0 } while the port used its own
+// minimiser, which converged past R's L-BFGS-B stopping point at those grid
+// points. The port now runs R's L-BFGS-B from metasens's own start, so it
+// stops where metasens stops: no grid point is "better", every one agrees,
+// and the downstream orthogonal-line comparison below is asserted for every
+// configuration instead of being skipped for two of the three.
+const STALLED = { REML_10: 0, REML_20: 0, DL_10: 0 };
 
 /* Configurations whose own surface reached the end-to-end orthogonal-line
  * comparison. Asserted non-empty after the per-configuration loop, so "every

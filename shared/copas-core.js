@@ -18,31 +18,23 @@
  * Two deliberate quirks of the R code are reproduced because they change the
  * output; each is marked R-QUIRK below.
  *
- * NOT reproduced: copas() wraps each grid optim() in try() and, when a fit
- * throws, leaves the PREVIOUS fit's object in place, so TE.contour[i, j] silently
- * takes the previous grid point's value. This routine always returns a value for
- * every grid point, so there is nothing to carry forward. The validation
- * archive's R reference does reproduce the carry-forward, so if it ever fires the
- * difference shows up as a contour disagreement rather than being hidden.
+ * The optimiser IS R's. Every fit copas() makes goes through
+ * optim(method = "L-BFGS-B") with its default control, so this module carries
+ * a transliteration of R's L-BFGS-B (lbfgsb.c and its driver, LINPACK and
+ * BLAS pieces, and optim()'s own finite-difference gradient for the
+ * four-parameter fit, which metasens gives no analytic gradient). The
+ * likelihoods are evaluated in R's operation order with R's own pnorm/dnorm
+ * and a long-double-equivalent sum, and the REML start value is metafor's
+ * Fisher-scoring stopping point rather than the exact REML optimum. Given the
+ * same bits the optimiser takes the same steps, so the page stops where
+ * metasens stops instead of somewhere "better" -- which is what makes contour
+ * lines, the orthogonal line and the adjusted estimate agree with metasens.
  *
- * ALSO NOT identical, and worth knowing the direction of. The box-constrained
- * minimiser here is not L-BFGS-B (see minimiseBox) and converges past R's
- * factr = 1e7 stopping point, so this port's attained objective is usually
- * lower than metasens's. For stage 4's three-parameter loglik1 that is benign.
- * For stage 5's four-parameter loglikWithBeta it is not neutral:
- *   - metasens ports no analytic gradient for the four-parameter likelihood, so
- *     R's optim falls back to its OWN finite differences at ndeps = 1e-3, while
- *     numGrad below uses h = 1e-7 * max(1, |x|). Different gradient, different
- *     path, different stopping point.
- *   - pval.rsb = 1 - pchisq(2*(loglik1 - loglik2), 1). A loglik2 that converges
- *     FURTHER makes 2*(l1 - l2) LARGER and pval.rsb SMALLER. That pushes points
- *     below sign.rsb, and adjustSelection() responds by selecting a later
- *     orthogonal-line point or -- if every point goes significant -- by
- *     withholding the adjusted estimate altogether. So a better optimiser can
- *     make this port refuse to report an estimate metasens reports.
- * Both loglik1 and loglik2 therefore carry a "never worse than metasens"
- * assertion in copas/tests/copas-core-metasens.test.mjs, and the page's footer
- * states the pval.rsb direction, so the effect is measured rather than assumed.
+ * Also reproduced: copas() wraps each optim() in try() and, when a fit throws,
+ * leaves the PREVIOUS fit's object in place, so TE.contour[i, j] (and the
+ * orthogonal-line estimates) silently take the previous point's values. The
+ * port does the same and counts every such point (optim_try_failures), which
+ * metasens does not report.
  *
  * References: Copas JB. J R Stat Soc Ser A 1999;162:95-109. Copas JB, Shi JQ.
  * Biostatistics 2000;1:247-262. Carpenter JR, Rucker G, Schwarzer G. Biom J
@@ -68,62 +60,117 @@
 
   /* ---------------------------------------------------------------- numerics */
 
-  // Hart/West rational approximation of the standard normal CDF below
-  // z = sqrt(50), a 24-term Mills continued fraction above it.
-  //
-  // Measured relative accuracy against R 4.6.0 (the sweep behind these
-  // figures is pinned by copas/tests/copas-core-rbase.test.mjs):
-  //   continued-fraction branch, z >= sqrt(50) ... machine precision (<1e-15)
-  //   rational branch, |z| <= 3 ................. machine precision
-  //   rational branch, z = 5 .................... 4.6e-11
-  //   rational branch, z = 7 .................... 2.6e-9
-  // The boundary is therefore an accuracy STEP, not a smooth join: the
-  // continued fraction is already at machine precision from about z = 4.5,
-  // roughly 2.5 units below where it is switched on, so pnorm is about four
-  // orders of magnitude less accurate just under sqrt(50) than just over it.
-  // Lowering the boundary would make this agree with R to ~1e-15 throughout,
-  // but it perturbs every likelihood evaluation and hence every count the
-  // validation archive reports, so it is pinned by a test rather than changed
-  // here. loglikWithoutBeta clamps v at -37 and the converged v values are
-  // small, which is why the 1e-9 deterministic tier holds as things stand.
-  //
-  // The usual "if (z > 37) return 0" shortcut is deliberately NOT used. R's
-  // pnorm still returns a (subnormal) positive value out to about -37.52, and
-  // lambda(u) = dnorm(u)/pnorm(u) is the Copas model's inverse Mills ratio: a
-  // zero there turns lambda into Inf instead of about |u|. The cutoff is set at
-  // z > 40, beyond which exp(-z*z/2) underflows to zero anyway and R returns 0
-  // too. Found by probe E18.
+  // R's own standard normal CDF: pnorm_both() from src/nmath/pnorm.c (Cody's
+  // rational Chebyshev approximations, W. J. Cody, Math. Comp. 1969), lower
+  // tail, log_p = FALSE, transliterated operation for operation. Earlier
+  // versions of this module used a Hart/West approximation that was up to
+  // 2.6e-9 relative off R near z = 7; this is R's algorithm, so it agrees with
+  // R to the last bit or two everywhere, tails and subnormal range included
+  // (R returns a positive subnormal out to about -37.5 and exactly 0 below
+  // -38.4674, and so does this).
+  var PN_A = [2.2352520354606839287, 161.02823106855587881, 1067.6894854603709582,
+              18154.981253343561249, 0.065682337918207449113];
+  var PN_B = [47.20258190468824187, 976.09855173777669322, 10260.932208618978205,
+              45507.789335026729956];
+  var PN_C = [0.39894151208813466764, 8.8831497943883759412, 93.506656132177855979,
+              597.27027639480026226, 2494.5375852903726711, 6848.1904505362823326,
+              11602.651437647350124, 9842.7148383839780218, 1.0765576773720192317e-8];
+  var PN_D = [22.266688044328115691, 235.38790178262499861, 1519.377599407554805,
+              6485.558298266760755, 18615.571640885098091, 34900.952721145977266,
+              38912.003286093271411, 19685.429676859990727];
+  var PN_P = [0.21589853405795699, 0.1274011611602473639, 0.022235277870649807,
+              0.001421619193227893466, 2.9112874951168792e-5, 0.02307344176494017303];
+  var PN_Q = [1.28426009614491121, 0.468238212480865118, 0.0659881378689285515,
+              0.00378239633202758244, 7.29751555083966205e-5];
+  var M_SQRT_32 = 5.656854249492380195206754896838;
+  var M_1_SQRT_2PI = 0.398942280401432677939946059934;
+
   function pnorm(x) {
-    var z = mAbs(x), p;
-    if (z > 40) p = 0;
-    else {
-      var e = mExp(-z * z / 2);
-      if (z < 7.07106781186547) {
-        var b = 3.52624965998911e-2 * z + 0.700383064443688;
-        b = b * z + 6.37396220353165; b = b * z + 33.912866078383;
-        b = b * z + 112.079291497871; b = b * z + 221.213596169931;
-        b = b * z + 220.206867912376;
-        var d = 8.83883476483184e-2 * z + 1.75566716318264;
-        d = d * z + 16.064177579207; d = d * z + 86.7807322029461;
-        d = d * z + 296.564248779674; d = d * z + 637.333633378831;
-        d = d * z + 793.826512519948; d = d * z + 440.413735824752;
-        p = e * b / d;
-      } else {
-        // Mills-ratio continued fraction, evaluated bottom-up:
-        //   P(Z < -z) = dnorm(z) / (z + 1/(z + 2/(z + 3/(z + ...))))
-        // West's four-term truncation is only about 3e-9 relative at z = 10;
-        // 24 terms reproduces R's pnorm to the last digit from z = 7.07 out to
-        // the subnormal limit. Checked against R at z = 7.07, 7.5, 8, 10, 15,
-        // 20, 30 and 37.5. Found by probe E18.
-        var f = 0;
-        for (var kk = 24; kk >= 1; kk--) f = kk / (z + f);
-        p = e / (SQRT_2PI * (z + f));
-      }
+    if (isNan(x)) return x;
+    if (!isFin(x)) return x < 0 ? 0 : 1;
+    var xden, xnum, temp, del, xsq, y = mAbs(x), i, cum, ccum;
+    var eps = DBL_EPSILON * 0.5;
+    if (y <= 0.67448975) {
+      if (y > eps) {
+        xsq = x * x;
+        xnum = PN_A[4] * xsq;
+        xden = xsq;
+        for (i = 0; i < 3; ++i) {
+          xnum = (xnum + PN_A[i]) * xsq;
+          xden = (xden + PN_B[i]) * xsq;
+        }
+      } else { xnum = xden = 0.0; }
+      temp = x * (xnum + PN_A[3]) / (xden + PN_B[3]);
+      return 0.5 + temp;
     }
-    return x > 0 ? 1 - p : p;
+    if (y <= M_SQRT_32) {
+      xnum = PN_C[8] * y;
+      xden = y;
+      for (i = 0; i < 7; ++i) {
+        xnum = (xnum + PN_C[i]) * y;
+        xden = (xden + PN_D[i]) * y;
+      }
+      temp = (xnum + PN_C[7]) / (xden + PN_D[7]);
+      xsq = mTrunc(y * 16) / 16;
+      del = (y - xsq) * (y + xsq);
+      cum = mExp(-xsq * (xsq / 2)) * mExp(-(del / 2)) * temp;
+      ccum = 1.0 - cum;
+      return x > 0 ? ccum : cum;
+    }
+    if (-38.4674 < x && x < 8.2924) {
+      xsq = 1.0 / (x * x);
+      xnum = PN_P[5] * xsq;
+      xden = xsq;
+      for (i = 0; i < 4; ++i) {
+        xnum = (xnum + PN_P[i]) * xsq;
+        xden = (xden + PN_Q[i]) * xsq;
+      }
+      temp = xsq * (xnum + PN_P[4]) / (xden + PN_Q[4]);
+      temp = (M_1_SQRT_2PI - temp) / y;
+      xsq = mTrunc(x * 16) / 16;
+      del = (x - xsq) * (x + xsq);
+      cum = mExp(-xsq * (xsq / 2)) * mExp(-(del / 2)) * temp;
+      ccum = 1.0 - cum;
+      return x > 0 ? ccum : cum;
+    }
+    return x > 0 ? 1 : 0;
   }
 
-  function dnorm(x) { return mExp(-0.5 * x * x) / SQRT_2PI; }
+  // R_forceint() is nearbyint(): round half to even.
+  function roundHalfEven(v) {
+    var f = mFloor(v), d = v - f;
+    if (d > 0.5) return f + 1;
+    if (d < 0.5) return f;
+    return (f % 2 === 0) ? f : f + 1;
+  }
+
+  // R's dnorm4() (src/nmath/dnorm.c), mu = 0, sigma = 1, give_log = FALSE,
+  // including its more accurate split evaluation for |x| >= 5.
+  var DNORM_ZERO_BEYOND = mSqrt(-2 * Math.LN2 * (-1021 + 1 - 53));
+  function dnorm(x) {
+    if (isNan(x)) return x;
+    if (!isFin(x)) return 0;
+    x = mAbs(x);
+    if (x < 5) return M_1_SQRT_2PI * mExp(-0.5 * x * x);
+    if (x > DNORM_ZERO_BEYOND) return 0;
+    var x1 = roundHalfEven(x * 65536) / 65536;
+    var x2 = x - x1;
+    return M_1_SQRT_2PI * (mExp(-0.5 * x1 * x1) * mExp((-0.5 * x2 - x1) * x2));
+  }
+
+  // R's sum() of a double vector accumulates in long double (80-bit on the
+  // x86-64 builds R ships). A compensated two-sum carries the rounding error
+  // of every addition, which reproduces that accumulation (and its single
+  // final rounding to double) for any vector length met here.
+  function rsum(a) {
+    var hi = 0, lo = 0;
+    for (var i = 0; i < a.length; i++) {
+      var x = a[i], s = hi + x, bp = s - hi;
+      lo += (hi - (s - bp)) + (x - bp);
+      hi = s;
+    }
+    return hi + lo;
+  }
 
   // Wichura AS 241 — the algorithm R's qnorm uses; ~1e-16 relative.
   function qnorm(p) {
@@ -568,217 +615,1216 @@
   }
 
   /* -------------------------------------- Copas likelihood and its gradient */
+  // Each is metasens's R function evaluated in R's own operation order (R
+  // computes x^2 as x*x, evaluates left to right, and sum() accumulates in
+  // long double -- see rsum). The order matters here, not for accuracy but
+  // because L-BFGS-B below is R's own algorithm: fed the same f and g bits it
+  // takes the same steps, so the page lands where metasens lands.
 
   // metasens:::copas.loglik.without.beta — the NEGATIVE log-likelihood.
   function loglikWithoutBeta(par, gamma, TE, seTE) {
-    var mu = par[0], rho = par[1], tau = par[2], sum = 0;
-    for (var i = 0; i < TE.length; i++) {
+    var mu = par[0], rho = par[1], tau = par[2], k = TE.length;
+    var ell = new Array(k);
+    for (var i = 0; i < k; i++) {
       var u = gamma[0] + gamma[1] / seTE[i], lam = lambda(u);
-      var sigma2 = seTE[i] * seTE[i] / (1 - rho * rho * lam * (u + lam));
-      var s2t2 = sigma2 + tau * tau;
-      var rhoT = rho * mSqrt(sigma2) / mSqrt(s2t2);
-      var v = (u + rhoT * (TE[i] - mu) / mSqrt(s2t2)) / mSqrt(1 - rhoT * rhoT);
+      var sigma = mSqrt(seTE[i] * seTE[i] / (1 - rho * rho * lam * (u + lam)));
+      var s2t2 = sigma * sigma + tau * tau;
+      var rhoT = rho * sigma / mSqrt(s2t2);
+      var v = (u + rhoT * (TE[i] - mu) / (mSqrt(s2t2))) / mSqrt(1 - rhoT * rhoT);
       if (v < -37) v = -37;
       var d = TE[i] - mu;
-      sum += -(-0.5 * mLog(s2t2) - d * d / (2 * s2t2) + mLog(pnorm(v)));
+      ell[i] = -(-0.5 * mLog(s2t2) - d * d / (2 * s2t2) + mLog(pnorm(v)));
     }
-    return sum;
+    return rsum(ell);
   }
 
   // metasens:::copas.loglik.with.beta — four parameters (mu, rho, tau, beta).
   function loglikWithBeta(par, gamma, TE, seTE) {
-    var mu = par[0], rho = par[1], tau = par[2], beta = par[3], sum = 0;
-    for (var i = 0; i < TE.length; i++) {
+    var mu = par[0], rho = par[1], tau = par[2], beta = par[3], k = TE.length;
+    var ell = new Array(k);
+    for (var i = 0; i < k; i++) {
       var u = gamma[0] + gamma[1] / seTE[i], lam = lambda(u);
-      var sigma2 = seTE[i] * seTE[i] / (1 - rho * rho * lam * (u + lam));
-      var s2t2 = sigma2 + tau * tau;
-      var rhoT = rho * mSqrt(sigma2) / mSqrt(s2t2);
+      var sigma = mSqrt(seTE[i] * seTE[i] / (1 - rho * rho * lam * (u + lam)));
+      var s2t2 = sigma * sigma + tau * tau;
+      var rhoT = rho * sigma / mSqrt(s2t2);
       var d = TE[i] - mu - beta * seTE[i];
-      var v = (u + rhoT * d / mSqrt(s2t2)) / mSqrt(1 - rhoT * rhoT);
+      var v = (u + rhoT * d / (mSqrt(s2t2))) / mSqrt(1 - rhoT * rhoT);
       if (v < -37) v = -37;
-      sum += -(-0.5 * mLog(s2t2) - d * d / (2 * s2t2) + mLog(pnorm(v)));
+      ell[i] = -(-0.5 * mLog(s2t2) - d * d / (2 * s2t2) + mLog(pnorm(v)));
     }
-    return sum;
+    return rsum(ell);
   }
 
   // metasens:::copas.gradient.without.beta — gradient of the NEGATIVE loglik.
   function gradientWithoutBeta(par, gamma, TE, seTE) {
-    var mu = par[0], rho = par[1], tau = par[2];
+    var mu = par[0], rho = par[1], tau = par[2], k = TE.length;
     var rho2 = rho * rho, tau2 = tau * tau;
-    var gm = 0, gr = 0, gt = 0;
-    for (var i = 0; i < TE.length; i++) {
+    var gm = new Array(k), gr = new Array(k), gt = new Array(k);
+    for (var i = 0; i < k; i++) {
       var TEmu = TE[i] - mu, varTE = seTE[i] * seTE[i];
       var u = gamma[0] + gamma[1] / seTE[i], lam = lambda(u);
-      var ci2 = lam * (u + lam);
-      var sigma2 = varTE / (1 - rho2 * ci2);
-      var sigma = mSqrt(sigma2);
+      var sigma = mSqrt(varTE / (1 - rho2 * lam * (u + lam)));
+      var sigma2 = sigma * sigma;
       var s2t2 = sigma2 + tau2;
       var rhoT = rho * sigma / mSqrt(s2t2);
       var rho2T = rhoT * rhoT;
-      var bottom = mSqrt(1 - rho2T);
+      var v = (u + rhoT * TEmu / (mSqrt(s2t2))) / mSqrt(1 - rho2T);
+      if (v < -37) v = -37;
+      var ci2 = lam * (u + lam);
+      var lamv = lambda(v);
+      var gMu = TEmu / s2t2;
+      gMu = gMu - (rhoT / (mSqrt((s2t2) * (1 - rho2T)))) * lamv;
+      var gRho = -ci2 * rho * sigma2 * sigma2 / (varTE * s2t2);
+      gRho = gRho + TEmu * TEmu * ci2 * rho * sigma2 * sigma2 / (varTE * (s2t2 * s2t2));
       var top = u + rhoT * TEmu / mSqrt(s2t2);
-      var vv = top / bottom; if (vv < -37) vv = -37;
-      var lamv = lambda(vv);
-      var gMu = TEmu / s2t2 - (rhoT / mSqrt(s2t2 * (1 - rho2T))) * lamv;
-      var gRho = -ci2 * rho * sigma2 * sigma2 / (varTE * s2t2)
-        + TEmu * TEmu * ci2 * rho * sigma2 * sigma2 / (varTE * s2t2 * s2t2);
-      var diffTop = (top - u) / rho
-        - (top - u) * rho * ci2 / (1 - ci2 * rho2)
-        + 2 * (top - u) * rho * tau2 * ci2 / (varTE + tau2 * (1 - ci2 * rho2));
+      var bottom = mSqrt((1 - rho2T));
+      var diffTop = (top - u) / rho - (top - u) * rho * ci2 / (1 - ci2 * rho2) +
+        2 * (top - u) * rho * tau2 * ci2 / (varTE + tau2 * (1 - ci2 * rho2));
       var eta = varTE / (varTE + tau2 * (1 - ci2 * rho2));
-      var diffBot = mPow(1 - rho2T, -1.5) * rho * eta
-        * (1 + rho2 * tau2 * ci2 * eta / varTE);
-      gRho += (top * diffBot + diffTop / bottom) * lamv;
-      var gTau = -0.5 / s2t2 + 0.5 * TEmu * TEmu / (s2t2 * s2t2)
-        + (-sigma * TEmu * rho / (bottom * s2t2 * s2t2)
-           - 0.5 * top * mPow(1 - rho2T, -1.5) * sigma2 * rho2 / (s2t2 * s2t2)) * lamv;
+      var diffBot = (mPow((1 - rho2T), -1.5)) * rho * eta *
+        (1 + (rho2 * tau2 * ci2 * eta) / varTE);
+      gRho = gRho + (top * diffBot + diffTop / bottom) * lamv;
+      var gTau = -0.5 / s2t2;
+      gTau = gTau + 0.5 * (TEmu * TEmu) / (s2t2 * s2t2);
+      gTau = gTau + (-sigma * TEmu * rho / (bottom * (s2t2 * s2t2)) -
+        0.5 * top * (mPow((1 - rho2T), -1.5)) * sigma2 * rho2 / (s2t2 * s2t2)) * lamv;
       gTau = 2 * tau * gTau;
-      gm += -gMu; gr += -gRho; gt += -gTau;
+      gm[i] = -gMu; gr[i] = -gRho; gt[i] = -gTau;
     }
-    return [gm, gr, gt];
+    return [rsum(gm), rsum(gr), rsum(gt)];
   }
 
-  /* ------------------------------------------ box-constrained minimisation */
-  // Projected Barzilai-Borwein descent with Armijo backtracking, then a bounded
-  // Nelder-Mead polish. Note: this is NOT R's L-BFGS-B. R's optim stops on its
-  // relative-reduction test (factr = 1e7, about 2.2e-9 in the objective) with
-  // pgtol = 0, so metasens's reported parameters are not the exact constrained
-  // optimum; this routine converges further. See PREREG.md Tier O: the page's
-  // attained objective must be <= metasens's at every point.
-  function clampTo(p, lower, upper) {
-    var out = new Array(p.length);
-    for (var i = 0; i < p.length; i++)
-      out[i] = mMax(lower[i], mMin(upper[i], p[i]));
-    return out;
+  /* ------------------------------------- R's optim(method = "L-BFGS-B") */
+  // This is the optimiser metasens::copas() calls for every fit, transliterated
+  // from R's sources so the page follows the same path and stops where R stops:
+  //   src/appl/lbfgsb.c              setulb/mainlb and its subroutines
+  //   src/appl/optim.c               lbfgsb(), the reverse-communication driver
+  //   src/library/stats/src/optim.c  fminfn/fmingr (objective, and optim()'s own
+  //                                  finite-difference gradient, used when no
+  //                                  gradient is given: ndeps = 1e-3, clipped to
+  //                                  the bounds because usebounds = 1)
+  //   src/appl/dpofa.f, dtrsl.f      LINPACK (R's dpofa tolerance 1e-14)
+  //   src/extra/blas/blas.f          reference DDOT/DAXPY/DSCAL/DCOPY
+  // Arithmetic is kept in the source's order. Indexing keeps f2c's 1-based
+  // convention: a C pointer starting at buffer index s has element i at
+  // BUF[s - 1 + i]; an f2c matrix a(i,j) with leading dimension D starting at s
+  // is BUF[s + (i-1) + (j-1)*D]. Errors R raises inside optim() -- which
+  // copas()'s try() then swallows -- are thrown with R's own message.
+  // Checked against R's optim() on bounded and unbounded problems, with and
+  // without an analytic gradient: same iterates, same function counts, same
+  // convergence message (copas/tests/copas-core-lbfgsb.test.mjs).
+  /* ---------------------------------------------------------------- BLAS */
+  // DDOT's unrolled loop adds left to right, so it is this plain loop.
+  function ddot(n, X, xs, Y, ys) {
+    var s = 0;
+    if (n <= 0) return 0;
+    for (var i = 0; i < n; i++) s = s + X[xs + i] * Y[ys + i];
+    return s;
+  }
+  function daxpy(n, da, X, xs, Y, ys) {
+    if (n <= 0) return;
+    if (da === 0) return;
+    for (var i = 0; i < n; i++) Y[ys + i] = Y[ys + i] + da * X[xs + i];
+  }
+  function dscal(n, da, X, xs) {
+    if (n <= 0 || da === 1) return;
+    for (var i = 0; i < n; i++) X[xs + i] = da * X[xs + i];
+  }
+  function dcopy(n, X, xs, Y, ys) {
+    for (var i = 0; i < n; i++) Y[ys + i] = X[xs + i];
   }
 
-  function nelderMead(fn, x0, maxit) {
-    var n = x0.length, a = 1, gc = 2, r = 0.5, sg = 0.5, i, j;
-    var sx = [x0.slice()];
-    for (i = 0; i < n; i++) {
-      var p = x0.slice();
-      p[i] += (p[i] !== 0 ? 0.05 * mAbs(p[i]) : 0.01);
-      sx.push(p);
+  /* ------------------------------------------------------------- LINPACK */
+  // a(k,j) = A[as + (k-1) + (j-1)*lda]; returns info.
+  function dpofa(A, as, lda, n) {
+    for (var j = 1; j <= n; j++) {
+      var s = 0;
+      for (var k = 1; k <= j - 1; k++) {
+        var t = A[as + (k - 1) + (j - 1) * lda] -
+          ddot(k - 1, A, as + (k - 1) * lda, A, as + (j - 1) * lda);
+        t = t / A[as + (k - 1) + (k - 1) * lda];
+        A[as + (k - 1) + (j - 1) * lda] = t;
+        s = s + t * t;
+      }
+      s = A[as + (j - 1) + (j - 1) * lda] - s;
+      if (s <= 1e-14 * mAbs(A[as + (j - 1) + (j - 1) * lda])) return j;
+      A[as + (j - 1) + (j - 1) * lda] = mSqrt(s);
     }
-    var fv = sx.map(fn);
-    for (var iter = 0; iter < (maxit || 600); iter++) {
-      var ord = fv.map(function (v, ix) { return ix; })
-        .sort(function (ia, ib) { return fv[ia] - fv[ib]; });
-      sx = ord.map(function (ix) { return sx[ix]; });
-      fv = ord.map(function (ix) { return fv[ix]; });
-      if (mAbs(fv[n] - fv[0]) < 1e-14 * (1 + mAbs(fv[0]))) break;
-      var c = new Array(n).fill(0);
-      for (i = 0; i < n; i++) for (j = 0; j < n; j++) c[j] += sx[i][j] / n;
-      var xr = c.map(function (cj, jj) { return cj + a * (cj - sx[n][jj]); });
-      var fr = fn(xr);
-      if (fr < fv[0]) {
-        var xe = c.map(function (cj, jj) { return cj + gc * (cj - sx[n][jj]); });
-        var fe = fn(xe);
-        if (fe < fr) { sx[n] = xe; fv[n] = fe; } else { sx[n] = xr; fv[n] = fr; }
-      } else if (fr < fv[n - 1]) { sx[n] = xr; fv[n] = fr; }
+    return 0;
+  }
+  // Only the two jobs L-BFGS-B uses: 01 (T x = b) and 11 (T' x = b), T upper.
+  function dtrsl(T, ts, ldt, n, B, bs, job) {
+    var info, j, jj, temp;
+    for (info = 1; info <= n; info++)
+      if (T[ts + (info - 1) + (info - 1) * ldt] === 0) return info;
+    if (job === 1) {
+      B[bs + n - 1] = B[bs + n - 1] / T[ts + (n - 1) + (n - 1) * ldt];
+      for (jj = 2; jj <= n; jj++) {
+        j = n - jj + 1;
+        temp = -B[bs + j];                                  // -b(j+1)
+        daxpy(j, temp, T, ts + j * ldt, B, bs);             // t(1,j+1)
+        B[bs + j - 1] = B[bs + j - 1] / T[ts + (j - 1) + (j - 1) * ldt];
+      }
+    } else if (job === 11) {
+      B[bs] = B[bs] / T[ts];
+      for (j = 2; j <= n; j++) {
+        B[bs + j - 1] = B[bs + j - 1] - ddot(j - 1, T, ts + (j - 1) * ldt, B, bs);
+        B[bs + j - 1] = B[bs + j - 1] / T[ts + (j - 1) + (j - 1) * ldt];
+      }
+    } else throw new Error("dtrsl: job " + job + " not ported");
+    return 0;
+  }
+
+  /* ---------------------------------------------------------- the solver */
+  function makeState(n, m) {
+    return {
+      n: n, m: m,
+      ws: new Float64Array(n * m), wy: new Float64Array(n * m),
+      sy: new Float64Array(m * m), ss: new Float64Array(m * m),
+      wt: new Float64Array(m * m),
+      wn: new Float64Array(4 * m * m), snd: new Float64Array(4 * m * m),
+      z: new Float64Array(n), r: new Float64Array(n), d: new Float64Array(n),
+      t: new Float64Array(n), wa: new Float64Array(8 * m),
+      indx: new Int32Array(n), iwhere: new Int32Array(n), indx2: new Int32Array(n),
+      // mainlb's statics
+      prjctd: 0, cnstnd: 0, boxed: 0, updatd: 0,
+      nintol: 0, iback: 0, nskip: 0, head: 0, col: 0, itail: 0, iter: 0,
+      iupdat: 0, nint: 0, nfgv: 0, info: 0, ifun: 0, iword: 0, nfree: 0,
+      nact: 0, ileave: 0, nenter: 0,
+      theta: 0, fold: 0, tol: 0, dnorm: 0, epsmch: 0, gd: 0, stpmx: 0,
+      sbgnrm: 0, stp: 0, gdold: 0, dtd: 0,
+      // dcsrch's statics
+      ls: { stage: 0, brackt: 0, ginit: 0, gtest: 0, gx: 0, gy: 0, finit: 0,
+            fx: 0, fy: 0, stx: 0, sty: 0, stmin: 0, stmax: 0, width: 0, width1: 0 }
+    };
+  }
+
+  // x, l, u, nbd, g are 0-based buffers of length n (C's &x[1] in mainlb).
+  function active(S, l, u, nbd, x) {
+    var n = S.n, i;
+    S.prjctd = 0; S.cnstnd = 0; S.boxed = 1;
+    for (i = 1; i <= n; i++) {
+      if (nbd[i - 1] > 0) {
+        if (nbd[i - 1] <= 2 && x[i - 1] <= l[i - 1]) {
+          if (x[i - 1] < l[i - 1]) { S.prjctd = 1; x[i - 1] = l[i - 1]; }
+        } else if (nbd[i - 1] >= 2 && x[i - 1] >= u[i - 1]) {
+          if (x[i - 1] > u[i - 1]) { S.prjctd = 1; x[i - 1] = u[i - 1]; }
+        }
+      }
+    }
+    for (i = 1; i <= n; i++) {
+      if (nbd[i - 1] !== 2) S.boxed = 0;
+      if (nbd[i - 1] === 0) S.iwhere[i - 1] = -1;
       else {
-        var xc = c.map(function (cj, jj) { return cj + r * (sx[n][jj] - cj); });
-        var fc2 = fn(xc);
-        if (fc2 < fv[n]) { sx[n] = xc; fv[n] = fc2; }
-        else {
+        S.cnstnd = 1;
+        if (nbd[i - 1] === 2 && u[i - 1] - l[i - 1] <= 0) S.iwhere[i - 1] = 3;
+        else S.iwhere[i - 1] = 0;
+      }
+    }
+  }
+
+  // bmv: v = V[vs - 1 + i], p = P[ps - 1 + i]; sy, wt are S.sy / S.wt (m x m).
+  function bmv(S, col, V, vs, P, ps) {
+    var m = S.m, sy = S.sy, wt = S.wt, i, k, i2, sum, info;
+    var SY = function (a, b) { return sy[(a - 1) + (b - 1) * m]; };
+    if (col === 0) return 0;
+    P[ps - 1 + col + 1] = V[vs - 1 + col + 1];
+    for (i = 2; i <= col; i++) {
+      i2 = col + i;
+      sum = 0;
+      for (k = 1; k <= i - 1; k++) sum += SY(i, k) * V[vs - 1 + k] / SY(k, k);
+      P[ps - 1 + i2] = V[vs - 1 + i2] + sum;
+    }
+    info = dtrsl(wt, 0, m, col, P, ps - 1 + col + 1, 11);
+    if (info !== 0) return info;
+    for (i = 1; i <= col; i++) P[ps - 1 + i] = V[vs - 1 + i] / mSqrt(SY(i, i));
+    info = dtrsl(wt, 0, m, col, P, ps - 1 + col + 1, 1);
+    if (info !== 0) return info;
+    for (i = 1; i <= col; i++) P[ps - 1 + i] = -P[ps - 1 + i] / mSqrt(SY(i, i));
+    for (i = 1; i <= col; i++) {
+      sum = 0;
+      for (k = i + 1; k <= col; k++)
+        sum += SY(k, i) * P[ps - 1 + col + k] / SY(i, i);
+      P[ps - 1 + i] += sum;
+    }
+    return 0;
+  }
+
+  function hpsolb(nn, T, ts, IO, ios, iheap) {
+    // t(i) = T[ts - 1 + i], iorder(i) = IO[ios - 1 + i]
+    var i, j, k, ddum, indxin, indxou, out;
+    var tb = ts - 1, ib = ios - 1;
+    if (iheap === 0) {
+      for (k = 2; k <= nn; k++) {
+        ddum = T[tb + k];
+        indxin = IO[ib + k];
+        i = k;
+        while (i > 1) {
+          j = (i / 2) | 0;
+          if (ddum < T[tb + j]) {
+            T[tb + i] = T[tb + j]; IO[ib + i] = IO[ib + j]; i = j;
+          } else break;
+        }
+        T[tb + i] = ddum;
+        IO[ib + i] = indxin;
+      }
+    }
+    if (nn > 1) {
+      i = 1;
+      out = T[tb + 1];
+      indxou = IO[ib + 1];
+      ddum = T[tb + nn];
+      indxin = IO[ib + nn];
+      for (;;) {
+        j = i + i;
+        if (j <= nn - 1) {
+          if (T[tb + j + 1] < T[tb + j]) ++j;
+          if (T[tb + j] < ddum) {
+            T[tb + i] = T[tb + j]; IO[ib + i] = IO[ib + j]; i = j;
+            continue;
+          }
+        }
+        break;
+      }
+      T[tb + i] = ddum;
+      IO[ib + i] = indxin;
+      T[tb + nn] = out;
+      IO[ib + nn] = indxou;
+    }
+  }
+
+  // Generalised Cauchy point. Writes S.nint; returns info.
+  function cauchy(S, x, l, u, nbd, g) {
+    var n = S.n, m = S.m, col = S.col, head = S.head, theta = S.theta;
+    var iorder = S.indx2, iwhere = S.iwhere, t = S.t, d = S.d, xcp = S.z;
+    var wy = S.wy, ws = S.ws, WA = S.wa;
+    // p = wa[0..), c = wa[2m..), wbp = wa[4m..), v = wa[6m..)  (0-based starts)
+    var P0 = 0, C0 = 2 * m, WBP0 = 4 * m, V0 = 6 * m;
+    var i, j, info;
+    var bkmin, dibp, dibp2, zibp, neggi, tsum, f1, f2, f2_org, dt, tj, tj0;
+    var tl = 0, tu = 0, dtm, wmc, wmp, wmw, d1;
+    var ibp, iter, bnded, nfree, nleft, nbreak, ibkmin, pointr, xlower, xupper, col2;
+
+    if (S.sbgnrm <= 0) { dcopy(n, x, 0, xcp, 0); return 0; }
+    bnded = 1;
+    nfree = n + 1;
+    nbreak = 0;
+    ibkmin = 0;
+    bkmin = 0;
+    col2 = col << 1;
+    f1 = 0;
+    for (i = 1; i <= col2; i++) WA[P0 + i - 1] = 0;
+    for (i = 1; i <= n; i++) {
+      neggi = -g[i - 1];
+      if (iwhere[i - 1] !== 3 && iwhere[i - 1] !== -1) {
+        if (nbd[i - 1] <= 2) tl = x[i - 1] - l[i - 1];
+        if (nbd[i - 1] >= 2) tu = u[i - 1] - x[i - 1];
+        xlower = nbd[i - 1] <= 2 && tl <= 0;
+        xupper = nbd[i - 1] >= 2 && tu <= 0;
+        iwhere[i - 1] = 0;
+        if (xlower) {
+          if (neggi <= 0) iwhere[i - 1] = 1;
+        } else if (xupper) {
+          if (neggi >= 0) iwhere[i - 1] = 2;
+        } else {
+          if (mAbs(neggi) <= 0) iwhere[i - 1] = -3;
+        }
+      }
+      pointr = head;
+      if (iwhere[i - 1] !== 0 && iwhere[i - 1] !== -1) {
+        d[i - 1] = 0;
+      } else {
+        d[i - 1] = neggi;
+        f1 -= neggi * neggi;
+        for (j = 1; j <= col; j++) {
+          WA[P0 + j - 1] += wy[(i - 1) + (pointr - 1) * n] * neggi;
+          WA[P0 + col + j - 1] += ws[(i - 1) + (pointr - 1) * n] * neggi;
+          pointr = pointr % m + 1;
+        }
+        if (nbd[i - 1] <= 2 && nbd[i - 1] !== 0 && neggi < 0) {
+          ++nbreak;
+          iorder[nbreak - 1] = i;
+          t[nbreak - 1] = tl / (-neggi);
+          if (nbreak === 1 || t[nbreak - 1] < bkmin) { bkmin = t[nbreak - 1]; ibkmin = nbreak; }
+        } else if (nbd[i - 1] >= 2 && neggi > 0) {
+          ++nbreak;
+          iorder[nbreak - 1] = i;
+          t[nbreak - 1] = tu / neggi;
+          if (nbreak === 1 || t[nbreak - 1] < bkmin) { bkmin = t[nbreak - 1]; ibkmin = nbreak; }
+        } else {
+          --nfree;
+          iorder[nfree - 1] = i;
+          if (mAbs(neggi) > 0) bnded = 0;
+        }
+      }
+    }
+    if (theta !== 1) dscal(col, theta, WA, P0 + col);
+    dcopy(n, x, 0, xcp, 0);
+    if (nbreak === 0 && nfree === n + 1) return 0;
+    for (j = 1; j <= col2; j++) WA[C0 + j - 1] = 0;
+    f2 = -theta * f1;
+    f2_org = f2;
+    if (col > 0) {
+      info = bmv(S, col, WA, P0, WA, V0);
+      if (info !== 0) return info;
+      f2 -= ddot(col2, WA, V0, WA, P0);
+    }
+    dtm = -f1 / f2;
+    tsum = 0;
+    S.nint = 1;
+    var lab = (nbreak === 0) ? 888 : 0;
+    if (lab === 0) {
+      nleft = nbreak;
+      iter = 1;
+      tj = 0;
+      for (;;) {                                           // L777
+        tj0 = tj;
+        if (iter === 1) {
+          tj = bkmin;
+          ibp = iorder[ibkmin - 1];
+        } else {
+          if (iter === 2) {
+            if (ibkmin !== nbreak) {
+              t[ibkmin - 1] = t[nbreak - 1];
+              iorder[ibkmin - 1] = iorder[nbreak - 1];
+            }
+          }
+          hpsolb(nleft, t, 0, iorder, 0, iter - 2);
+          tj = t[nleft - 1];
+          ibp = iorder[nleft - 1];
+        }
+        dt = tj - tj0;
+        if (dtm < dt) { lab = 888; break; }
+        tsum += dt;
+        --nleft;
+        ++iter;
+        dibp = d[ibp - 1];
+        d[ibp - 1] = 0;
+        if (dibp > 0) {
+          zibp = u[ibp - 1] - x[ibp - 1];
+          xcp[ibp - 1] = u[ibp - 1];
+          iwhere[ibp - 1] = 2;
+        } else {
+          zibp = l[ibp - 1] - x[ibp - 1];
+          xcp[ibp - 1] = l[ibp - 1];
+          iwhere[ibp - 1] = 1;
+        }
+        if (nleft === 0 && nbreak === n) { dtm = dt; lab = 999; break; }
+        ++S.nint;
+        dibp2 = dibp * dibp;
+        f1 += dt * f2 + dibp2 - theta * dibp * zibp;
+        f2 -= theta * dibp2;
+        if (col > 0) {
+          daxpy(col2, dt, WA, P0, WA, C0);
+          pointr = head;
+          for (j = 1; j <= col; j++) {
+            WA[WBP0 + j - 1] = wy[(ibp - 1) + (pointr - 1) * n];
+            WA[WBP0 + col + j - 1] = theta * ws[(ibp - 1) + (pointr - 1) * n];
+            pointr = pointr % m + 1;
+          }
+          info = bmv(S, col, WA, WBP0, WA, V0);
+          if (info !== 0) return info;
+          wmc = ddot(col2, WA, C0, WA, V0);
+          wmp = ddot(col2, WA, P0, WA, V0);
+          wmw = ddot(col2, WA, WBP0, WA, V0);
+          d1 = -dibp;
+          daxpy(col2, d1, WA, WBP0, WA, P0);
+          f1 += dibp * wmc;
+          f2 += (2 * dibp * wmp - dibp2 * wmw);
+        }
+        if (f2 < (d1 = S.epsmch * f2_org)) f2 = d1;
+        if (nleft > 0) {
+          dtm = -f1 / f2;
+          continue;
+        } else if (bnded) {
+          f1 = 0; f2 = 0; dtm = 0;
+        } else {
+          dtm = -f1 / f2;
+        }
+        lab = 888;
+        break;
+      }
+    }
+    if (lab === 888) {
+      if (dtm <= 0) dtm = 0;
+      tsum += dtm;
+      daxpy(n, tsum, d, 0, xcp, 0);
+    }
+    // L999
+    if (col > 0) daxpy(col2, dtm, WA, P0, WA, C0);
+    return 0;
+  }
+
+  function cmprlb(S, x, g) {
+    var n = S.n, m = S.m, col = S.col, theta = S.theta, WA = S.wa;
+    var r = S.r, z = S.z, indx = S.indx, wy = S.wy, ws = S.ws;
+    var i, j, k, a1, a2, pointr, info, nf;
+    if (!S.cnstnd && col > 0) {
+      for (i = 1; i <= n; i++) r[i - 1] = -g[i - 1];
+    } else {
+      nf = S.nfree;
+      for (i = 1; i <= nf; i++) {
+        k = indx[i - 1];
+        r[i - 1] = -theta * (z[k - 1] - x[k - 1]) - g[k - 1];
+      }
+      // bmv(..., v = &wa[2m+1], p = &wa[1])
+      info = bmv(S, col, WA, 2 * m, WA, 0);
+      if (info !== 0) return -8;
+      pointr = S.head;
+      for (j = 1; j <= col; j++) {
+        a1 = WA[j - 1];
+        a2 = theta * WA[col + j - 1];
+        for (i = 1; i <= nf; i++) {
+          k = indx[i - 1];
+          r[i - 1] += wy[(k - 1) + (pointr - 1) * n] * a1 +
+                      ws[(k - 1) + (pointr - 1) * n] * a2;
+        }
+        pointr = pointr % m + 1;
+      }
+    }
+    return 0;
+  }
+
+  function errclb(n, m, factr, l, u, nbd) {
+    var task = null, info = 0, k = 0;
+    if (n <= 0) task = "ERROR: N .LE. 0";
+    if (m <= 0) task = "ERROR: M .LE. 0";
+    if (factr < 0) task = "ERROR: FACTR .LT. 0";
+    for (var i = 1; i <= n; i++) {
+      if (nbd[i - 1] < 0 || nbd[i - 1] > 3) { task = "ERROR: INVALID NBD"; info = -6; k = i; }
+      if (nbd[i - 1] === 2 && l[i - 1] > u[i - 1]) {
+        task = "ERROR: NO FEASIBLE SOLUTION"; info = -7; k = i;
+      }
+    }
+    return { task: task, info: info, k: k };
+  }
+
+  function formk(S, wrkUpdatd) {
+    var n = S.n, m = S.m, col = S.col, head = S.head, theta = S.theta;
+    var nsub = S.nfree, ind = S.indx, indx2 = S.indx2, nenter = S.nenter, ileave = S.ileave;
+    var wn = S.wn, wn1 = S.snd, ws = S.ws, wy = S.wy, sy = S.sy;
+    var D = 2 * m;
+    var i, k, iy, jy, is, js, is1, js1, k1, ipntr, jpntr, upcl, info, i2;
+    var temp1, temp2, temp3, temp4, pbegin, pend, dbegin, dend, m2, col2;
+    function W1(a, b) { return (a - 1) + (b - 1) * D; }      // wn1 / wn index
+    function WY(a, b) { return wy[(a - 1) + (b - 1) * n]; }
+    function WS(a, b) { return ws[(a - 1) + (b - 1) * n]; }
+
+    if (wrkUpdatd) {
+      if (S.iupdat > m) {
+        for (jy = 1; jy <= m - 1; jy++) {
+          js = m + jy;
+          i2 = m - jy;
+          dcopy(i2, wn1, W1(jy + 1, jy + 1), wn1, W1(jy, jy));
+          dcopy(i2, wn1, W1(js + 1, js + 1), wn1, W1(js, js));
+          i2 = m - 1;
+          dcopy(i2, wn1, W1(m + 2, jy + 1), wn1, W1(m + 1, jy));
+        }
+      }
+      pbegin = 1; pend = nsub; dbegin = nsub + 1; dend = n;
+      iy = col;
+      is = m + col;
+      ipntr = head + col - 1;
+      if (ipntr > m) ipntr -= m;
+      jpntr = head;
+      for (jy = 1; jy <= col; jy++) {
+        js = m + jy;
+        temp1 = 0; temp2 = 0; temp3 = 0;
+        for (k = pbegin; k <= pend; k++) {
+          k1 = ind[k - 1];
+          temp1 += WY(k1, ipntr) * WY(k1, jpntr);
+        }
+        for (k = dbegin; k <= dend; k++) {
+          k1 = ind[k - 1];
+          temp2 += WS(k1, ipntr) * WS(k1, jpntr);
+          temp3 += WS(k1, ipntr) * WY(k1, jpntr);
+        }
+        wn1[W1(iy, jy)] = temp1;
+        wn1[W1(is, js)] = temp2;
+        wn1[W1(is, jy)] = temp3;
+        jpntr = jpntr % m + 1;
+      }
+      jy = col;
+      jpntr = head + col - 1;
+      if (jpntr > m) jpntr -= m;
+      ipntr = head;
+      for (i = 1; i <= col; i++) {
+        is = m + i;
+        temp3 = 0;
+        for (k = pbegin; k <= pend; k++) {
+          k1 = ind[k - 1];
+          temp3 += WS(k1, ipntr) * WY(k1, jpntr);
+        }
+        ipntr = ipntr % m + 1;
+        wn1[W1(is, jy)] = temp3;
+      }
+      upcl = col - 1;
+    } else {
+      upcl = col;
+    }
+    ipntr = head;
+    for (iy = 1; iy <= upcl; iy++) {
+      is = m + iy;
+      jpntr = head;
+      for (jy = 1; jy <= iy; jy++) {
+        js = m + jy;
+        temp1 = 0; temp2 = 0; temp3 = 0; temp4 = 0;
+        for (k = 1; k <= nenter; k++) {
+          k1 = indx2[k - 1];
+          temp1 += WY(k1, ipntr) * WY(k1, jpntr);
+          temp2 += WS(k1, ipntr) * WS(k1, jpntr);
+        }
+        for (k = ileave; k <= n; k++) {
+          k1 = indx2[k - 1];
+          temp3 += WY(k1, ipntr) * WY(k1, jpntr);
+          temp4 += WS(k1, ipntr) * WS(k1, jpntr);
+        }
+        wn1[W1(iy, jy)] = wn1[W1(iy, jy)] + temp1 - temp3;
+        wn1[W1(is, js)] = wn1[W1(is, js)] - temp2 + temp4;
+        jpntr = jpntr % m + 1;
+      }
+      ipntr = ipntr % m + 1;
+    }
+    ipntr = head;
+    for (is = m + 1; is <= m + upcl; is++) {
+      jpntr = head;
+      for (jy = 1; jy <= upcl; jy++) {
+        temp1 = 0; temp3 = 0;
+        for (k = 1; k <= nenter; k++) {
+          k1 = indx2[k - 1];
+          temp1 += WS(k1, ipntr) * WY(k1, jpntr);
+        }
+        for (k = ileave; k <= n; k++) {
+          k1 = indx2[k - 1];
+          temp3 += WS(k1, ipntr) * WY(k1, jpntr);
+        }
+        if (is <= jy + m) wn1[W1(is, jy)] += temp1 - temp3;
+        else wn1[W1(is, jy)] += -temp1 + temp3;
+        jpntr = jpntr % m + 1;
+      }
+      ipntr = ipntr % m + 1;
+    }
+    m2 = m << 1;
+    for (iy = 1; iy <= col; iy++) {
+      is = col + iy;
+      is1 = m + iy;
+      for (jy = 1; jy <= iy; jy++) {
+        js = col + jy;
+        js1 = m + jy;
+        wn[W1(jy, iy)] = wn1[W1(iy, jy)] / theta;
+        wn[W1(js, is)] = wn1[W1(is1, js1)] * theta;
+      }
+      for (jy = 1; jy <= iy - 1; jy++) wn[W1(jy, is)] = -wn1[W1(is1, jy)];
+      for (jy = iy; jy <= col; jy++) wn[W1(jy, is)] = wn1[W1(is1, jy)];
+      wn[W1(iy, iy)] += sy[(iy - 1) + (iy - 1) * m];
+    }
+    info = dpofa(wn, 0, m2, col);
+    if (info !== 0) return -1;
+    col2 = col << 1;
+    for (js = col + 1; js <= col2; js++) dtrsl(wn, 0, m2, col, wn, W1(1, js), 11);
+    for (is = col + 1; is <= col2; is++)
+      for (js = is; js <= col2; js++)
+        wn[W1(is, js)] += ddot(col, wn, W1(1, is), wn, W1(1, js));
+    info = dpofa(wn, W1(col + 1, col + 1), m2, col);
+    if (info !== 0) return -2;
+    return 0;
+  }
+
+  function formt(S) {
+    var m = S.m, col = S.col, theta = S.theta, wt = S.wt, sy = S.sy, ss = S.ss;
+    var i, j, k, k1, ddum;
+    for (j = 1; j <= col; j++) wt[(j - 1) * m] = theta * ss[(j - 1) * m];
+    for (i = 2; i <= col; i++) {
+      for (j = i; j <= col; j++) {
+        k1 = mMin(i, j) - 1;
+        ddum = 0;
+        for (k = 1; k <= k1; k++)
+          ddum += sy[(i - 1) + (k - 1) * m] * sy[(j - 1) + (k - 1) * m] /
+                  sy[(k - 1) + (k - 1) * m];
+        wt[(i - 1) + (j - 1) * m] = ddum + theta * ss[(i - 1) + (j - 1) * m];
+      }
+    }
+    var info = dpofa(wt, 0, m, col);
+    return info !== 0 ? -3 : 0;
+  }
+
+  // returns wrk
+  function freev(S) {
+    var n = S.n, indx = S.indx, indx2 = S.indx2, iwhere = S.iwhere, i, k, iact;
+    S.nenter = 0;
+    S.ileave = n + 1;
+    if (S.iter > 0 && S.cnstnd) {
+      for (i = 1; i <= S.nfree; i++) {
+        k = indx[i - 1];
+        if (iwhere[k - 1] > 0) { --S.ileave; indx2[S.ileave - 1] = k; }
+      }
+      for (i = S.nfree + 1; i <= n; i++) {
+        k = indx[i - 1];
+        if (iwhere[k - 1] <= 0) { ++S.nenter; indx2[S.nenter - 1] = k; }
+      }
+    }
+    var wrk = (S.ileave < n + 1 || S.nenter > 0 || S.updatd) ? 1 : 0;
+    S.nfree = 0;
+    iact = n + 1;
+    for (i = 1; i <= n; i++) {
+      if (iwhere[i - 1] <= 0) { ++S.nfree; indx[S.nfree - 1] = i; }
+      else { --iact; indx[iact - 1] = i; }
+    }
+    return wrk;
+  }
+
+  function dcstep(st, stp, fp, dp, brackt, stpmin, stpmax) {
+    // st: {stx, fx, dx, sty, fy, dy}; returns {stp, brackt}
+    var stx = st.stx, fx = st.fx, dx = st.dx, sty = st.sty, fy = st.fy, dy = st.dy;
+    var d1, d2, sgnd, stpc, stpf, stpq, p, q, gamm, r, s, theta;
+    sgnd = dp * (dx / mAbs(dx));
+    if (fp > fx) {
+      theta = (fx - fp) * 3 / (stp - stx) + dx + dp;
+      d1 = mAbs(theta); d2 = mAbs(dx); d1 = mMax(d1, d2); d2 = mAbs(dp);
+      s = mMax(d1, d2);
+      d1 = theta / s;
+      gamm = s * mSqrt(d1 * d1 - dx / s * (dp / s));
+      if (stp < stx) gamm = -gamm;
+      p = gamm - dx + theta;
+      q = gamm - dx + gamm + dp;
+      r = p / q;
+      stpc = stx + r * (stp - stx);
+      stpq = stx + dx / ((fx - fp) / (stp - stx) + dx) / 2 * (stp - stx);
+      if (mAbs(stpc - stx) < mAbs(stpq - stx)) stpf = stpc;
+      else stpf = stpc + (stpq - stpc) / 2;
+      brackt = 1;
+    } else if (sgnd < 0) {
+      theta = (fx - fp) * 3 / (stp - stx) + dx + dp;
+      d1 = mAbs(theta); d2 = mAbs(dx); d1 = mMax(d1, d2); d2 = mAbs(dp);
+      s = mMax(d1, d2);
+      d1 = theta / s;
+      gamm = s * mSqrt(d1 * d1 - dx / s * (dp / s));
+      if (stp > stx) gamm = -gamm;
+      p = gamm - dp + theta;
+      q = gamm - dp + gamm + dx;
+      r = p / q;
+      stpc = stp + r * (stx - stp);
+      stpq = stp + dp / (dp - dx) * (stx - stp);
+      if (mAbs(stpc - stp) > mAbs(stpq - stp)) stpf = stpc;
+      else stpf = stpq;
+      brackt = 1;
+    } else if (mAbs(dp) < mAbs(dx)) {
+      theta = (fx - fp) * 3 / (stp - stx) + dx + dp;
+      d1 = mAbs(theta); d2 = mAbs(dx); d1 = mMax(d1, d2); d2 = mAbs(dp);
+      s = mMax(d1, d2);
+      d1 = theta / s;
+      d1 = d1 * d1 - dx / s * (dp / s);
+      gamm = d1 < 0 ? 0 : s * mSqrt(d1);
+      if (stp > stx) gamm = -gamm;
+      p = gamm - dp + theta;
+      q = gamm + (dx - dp) + gamm;
+      r = p / q;
+      if (r < 0 && gamm !== 0) stpc = stp + r * (stx - stp);
+      else if (stp > stx) stpc = stpmax;
+      else stpc = stpmin;
+      stpq = stp + dp / (dp - dx) * (stx - stp);
+      if (brackt) {
+        if (mAbs(stpc - stp) < mAbs(stpq - stp)) stpf = stpc;
+        else stpf = stpq;
+        d1 = stp + (sty - stp) * 0.66;
+        if (stp > stx) stpf = mMin(d1, stpf);
+        else stpf = mMax(d1, stpf);
+      } else {
+        if (mAbs(stpc - stp) > mAbs(stpq - stp)) stpf = stpc;
+        else stpf = stpq;
+        stpf = mMin(stpmax, stpf);
+        stpf = mMax(stpmin, stpf);
+      }
+    } else {
+      if (brackt) {
+        theta = (fp - fy) * 3 / (sty - stp) + dy + dp;
+        d1 = mAbs(theta); d2 = mAbs(dy); d1 = mMax(d1, d2); d2 = mAbs(dp);
+        s = mMax(d1, d2);
+        d1 = theta / s;
+        gamm = s * mSqrt(d1 * d1 - dy / s * (dp / s));
+        if (stp > sty) gamm = -gamm;
+        p = gamm - dp + theta;
+        q = gamm - dp + gamm + dy;
+        r = p / q;
+        stpc = stp + r * (sty - stp);
+        stpf = stpc;
+      } else if (stp > stx) stpf = stpmax;
+      else stpf = stpmin;
+    }
+    if (fp > fx) {
+      st.sty = stp; st.fy = fp; st.dy = dp;
+    } else {
+      if (sgnd < 0) { st.sty = stx; st.fy = fx; st.dy = dx; }
+      st.stx = stp; st.fx = fp; st.dx = dp;
+    }
+    return { stp: stpf, brackt: brackt };
+  }
+
+  // C's fmax/fmin macros as written in R: max(a,b) = ((a) > (b) ? (a) : (b)).
+  function cmax(a, b) { return a > b ? a : b; }
+  function cmin(a, b) { return a < b ? a : b; }
+
+  // dcsrch: returns the new task; reads/writes S.stp through `io`.
+  function dcsrch(L, f, g, io, ftol, gtol, xtol, stpmin, stpmax, task) {
+    var ftest, fm, gm, fxm, fym, gxm, gym, stp = io.stp, r;
+    if (task.substr(0, 5) === "START") {
+      if (stp < stpmin) task = "ERROR: STP .LT. STPMIN";
+      if (stp > stpmax) task = "ERROR: STP .GT. STPMAX";
+      if (g >= 0) task = "ERROR: INITIAL G .GE. ZERO";
+      if (ftol < 0) task = "ERROR: FTOL .LT. ZERO";
+      if (gtol < 0) task = "ERROR: GTOL .LT. ZERO";
+      if (xtol < 0) task = "ERROR: XTOL .LT. ZERO";
+      if (stpmin < 0) task = "ERROR: STPMIN .LT. ZERO";
+      if (stpmax < stpmin) task = "ERROR: STPMAX .LT. STPMIN";
+      if (task.substr(0, 5) === "ERROR") return task;
+      L.brackt = 0;
+      L.stage = 1;
+      L.finit = f;
+      L.ginit = g;
+      L.gtest = ftol * L.ginit;
+      L.width = stpmax - stpmin;
+      L.width1 = L.width / 0.5;
+      L.stx = 0; L.fx = L.finit; L.gx = L.ginit;
+      L.sty = 0; L.fy = L.finit; L.gy = L.ginit;
+      L.stmin = 0;
+      L.stmax = stp + stp * 4;
+      return "FG";
+    }
+    ftest = L.finit + stp * L.gtest;
+    if (L.stage === 1 && f <= ftest && g >= 0) L.stage = 2;
+    if (L.brackt && (stp <= L.stmin || stp >= L.stmax))
+      task = "WARNING: ROUNDING ERRORS PREVENT PROGRESS";
+    if (L.brackt && L.stmax - L.stmin <= xtol * L.stmax)
+      task = "WARNING: XTOL TEST SATISFIED";
+    if (stp === stpmax && f <= ftest && g <= L.gtest) task = "WARNING: STP = STPMAX";
+    if (stp === stpmin && (f > ftest || g >= L.gtest)) task = "WARNING: STP = STPMIN";
+    if (f <= ftest && mAbs(g) <= gtol * (-L.ginit)) task = "CONVERGENCE";
+    if (task.substr(0, 4) === "WARN" || task.substr(0, 4) === "CONV") return task;
+    var st;
+    if (L.stage === 1 && f <= L.fx && f > ftest) {
+      fm = f - stp * L.gtest;
+      fxm = L.fx - L.stx * L.gtest;
+      fym = L.fy - L.sty * L.gtest;
+      gm = g - L.gtest;
+      gxm = L.gx - L.gtest;
+      gym = L.gy - L.gtest;
+      st = { stx: L.stx, fx: fxm, dx: gxm, sty: L.sty, fy: fym, dy: gym };
+      r = dcstep(st, stp, fm, gm, L.brackt, L.stmin, L.stmax);
+      L.stx = st.stx; L.sty = st.sty;
+      fxm = st.fx; fym = st.fy; gxm = st.dx; gym = st.dy;
+      stp = r.stp; L.brackt = r.brackt;
+      L.fx = fxm + L.stx * L.gtest;
+      L.fy = fym + L.sty * L.gtest;
+      L.gx = gxm + L.gtest;
+      L.gy = gym + L.gtest;
+    } else {
+      st = { stx: L.stx, fx: L.fx, dx: L.gx, sty: L.sty, fy: L.fy, dy: L.gy };
+      r = dcstep(st, stp, f, g, L.brackt, L.stmin, L.stmax);
+      L.stx = st.stx; L.fx = st.fx; L.gx = st.dx;
+      L.sty = st.sty; L.fy = st.fy; L.gy = st.dy;
+      stp = r.stp; L.brackt = r.brackt;
+    }
+    if (L.brackt) {
+      if (mAbs(L.sty - L.stx) >= L.width1 * 0.66) stp = L.stx + (L.sty - L.stx) * 0.5;
+      L.width1 = L.width;
+      L.width = mAbs(L.sty - L.stx);
+    }
+    if (L.brackt) {
+      L.stmin = cmin(L.stx, L.sty);
+      L.stmax = cmax(L.stx, L.sty);
+    } else {
+      L.stmin = stp + (stp - L.stx) * 1.1;
+      L.stmax = stp + (stp - L.stx) * 4;
+    }
+    if (stp < stpmin) stp = stpmin;
+    if (stp > stpmax) stp = stpmax;
+    if ((L.brackt && (stp <= L.stmin || stp >= L.stmax)) ||
+        (L.brackt && (L.stmax - L.stmin <= xtol * L.stmax))) {
+      stp = L.stx;
+    }
+    io.stp = stp;
+    return "FG";
+  }
+
+  // lnsrlb: f is passed in, the rest lives in S. Returns the new task.
+  function lnsrlb(S, l, u, nbd, x, f, g, task) {
+    var n = S.n, d = S.d, r = S.r, t = S.t, z = S.z, i, a1, a2, d1;
+    var csave = "";
+    var ftol = 0.001, gtol = 0.9, xtol = 0.1, stpmin = 0;
+    if (task.substr(0, 5) !== "FG_LN") {
+      S.dtd = ddot(n, d, 0, d, 0);
+      S.dnorm = mSqrt(S.dtd);
+      S.stpmx = 1e10;
+      if (S.cnstnd) {
+        if (S.iter === 0) {
+          S.stpmx = 1;
+        } else {
           for (i = 1; i <= n; i++) {
-            sx[i] = sx[i].map(function (v, jj) { return sx[0][jj] + sg * (v - sx[0][jj]); });
-            fv[i] = fn(sx[i]);
+            a1 = d[i - 1];
+            if (nbd[i - 1] !== 0) {
+              if (a1 < 0 && nbd[i - 1] <= 2) {
+                a2 = l[i - 1] - x[i - 1];
+                if (a2 >= 0) S.stpmx = 0;
+                else if (a1 * S.stpmx < a2) S.stpmx = a2 / a1;
+              } else if (a1 > 0 && nbd[i - 1] >= 2) {
+                a2 = u[i - 1] - x[i - 1];
+                if (a2 <= 0) S.stpmx = 0;
+                else if (a1 * S.stpmx > a2) S.stpmx = a2 / a1;
+              }
+            }
           }
         }
       }
+      if (S.iter === 0 && !S.boxed) {
+        d1 = 1 / S.dnorm;
+        S.stp = cmin(d1, S.stpmx);
+      } else {
+        S.stp = 1;
+      }
+      dcopy(n, x, 0, t, 0);
+      dcopy(n, g, 0, r, 0);
+      S.fold = f;
+      S.ifun = 0;
+      S.iback = 0;
+      csave = "START";
     }
-    var best = 0;
-    for (i = 1; i <= n; i++) if (fv[i] < fv[best]) best = i;
-    return sx[best];
+    // L556
+    S.gd = ddot(n, g, 0, d, 0);
+    if (S.ifun === 0) {
+      S.gdold = S.gd;
+      if (S.gd >= 0) { S.info = -4; return task; }
+    }
+    var io = { stp: S.stp };
+    csave = dcsrch(S.ls, f, S.gd, io, ftol, gtol, xtol, stpmin, S.stpmx, csave);
+    S.stp = io.stp;
+    if (csave.substr(0, 4) !== "CONV" && csave.substr(0, 4) !== "WARN") {
+      task = "FG_LNSRCH";
+      ++S.ifun;
+      ++S.nfgv;
+      S.iback = S.ifun - 1;
+      if (S.stp === 1) {
+        dcopy(n, z, 0, x, 0);
+      } else {
+        for (i = 1; i <= n; i++) x[i - 1] = S.stp * d[i - 1] + t[i - 1];
+      }
+    } else {
+      task = "NEW_X";
+    }
+    return task;
   }
 
-  // Projected Barzilai-Borwein descent with Armijo backtracking.
-  function bbDescent(fn, gr, x0, f0, lower, upper) {
-    var x = x0.slice(), f = f0, gprev = null, xprev = null, step = 1e-2, k, it, ls;
-    for (it = 0; it < 2000; it++) {
-      var g = gr(x);
-      if (!g.every(isFin)) break;
-      if (gprev) {
-        var sy = 0, ss = 0;
-        for (k = 0; k < x.length; k++) {
-          var ds = x[k] - xprev[k], dg = g[k] - gprev[k];
-          ss += ds * ds; sy += ds * dg;
+  function matupd(S, rr, dr) {
+    var n = S.n, m = S.m, ws = S.ws, wy = S.wy, sy = S.sy, ss = S.ss, d = S.d, r = S.r;
+    var j, pointr, i2;
+    if (S.iupdat <= m) {
+      S.col = S.iupdat;
+      S.itail = (S.head + S.iupdat - 2) % m + 1;
+    } else {
+      S.itail = S.itail % m + 1;
+      S.head = S.head % m + 1;
+    }
+    dcopy(n, d, 0, ws, (S.itail - 1) * n);
+    dcopy(n, r, 0, wy, (S.itail - 1) * n);
+    S.theta = rr / dr;
+    var col = S.col;
+    if (S.iupdat > m) {
+      for (j = 1; j <= col - 1; j++) {
+        dcopy(j, ss, 1 + j * m, ss, (j - 1) * m);                 // ss(2,j+1) -> ss(1,j)
+        i2 = col - j;
+        dcopy(i2, sy, j + j * m, sy, (j - 1) + (j - 1) * m);      // sy(j+1,j+1) -> sy(j,j)
+      }
+    }
+    pointr = S.head;
+    for (j = 1; j <= col - 1; j++) {
+      sy[(col - 1) + (j - 1) * m] = ddot(n, d, 0, wy, (pointr - 1) * n);
+      ss[(j - 1) + (col - 1) * m] = ddot(n, ws, (pointr - 1) * n, d, 0);
+      pointr = pointr % m + 1;
+    }
+    if (S.stp === 1) ss[(col - 1) + (col - 1) * m] = S.dtd;
+    else ss[(col - 1) + (col - 1) * m] = S.stp * S.stp * S.dtd;
+    sy[(col - 1) + (col - 1) * m] = dr;
+  }
+
+  function projgr(n, l, u, nbd, x, g) {
+    var sbgnrm = 0, gi, d1;
+    for (var i = 0; i < n; i++) {
+      gi = g[i];
+      if (nbd[i] !== 0) {
+        if (gi < 0) {
+          if (nbd[i] >= 2) { if (gi < (d1 = x[i] - u[i])) gi = d1; }
+        } else {
+          if (nbd[i] <= 2) { if (gi > (d1 = x[i] - l[i])) gi = d1; }
         }
-        if (sy > 1e-16) step = mMin(1e4, mMax(1e-12, ss / sy));
       }
-      xprev = x.slice(); gprev = g.slice();
-      var tt = step, improved = false;
-      for (ls = 0; ls < 60; ls++) {
-        var cand = clampTo(x.map(function (v, ix) { return v - tt * g[ix]; }), lower, upper);
-        var fc = fn(cand);
-        if (fc < f - 1e-17 * (1 + mAbs(f))) { x = cand; f = fc; improved = true; break; }
-        tt *= 0.5;
-      }
-      if (!improved) break;
+      if (sbgnrm < (d1 = mAbs(gi))) sbgnrm = d1;
     }
-    return { par: x, value: f };
+    return sbgnrm;
   }
 
-  // Coordinate pattern search on a shrinking step. Cheap, and it is what finally
-  // pins down a solution sitting on an active bound, where the projected
-  // gradient does not vanish and a gradient method can stall just short.
-  function patternSearch(fn, x0, f0, lower, upper) {
-    var x = x0.slice(), f = f0, n = x.length, i, s, improved;
-    var h = new Array(n);
-    for (i = 0; i < n; i++) h[i] = mMax(1e-4, mAbs(x[i]) * 1e-2);
-    for (var round = 0; round < 80; round++) {
-      improved = false;
-      for (i = 0; i < n; i++) for (s = 0; s < 2; s++) {
-        var cand = x.slice();
-        cand[i] += (s === 0 ? h[i] : -h[i]);
-        cand = clampTo(cand, lower, upper);
-        if (cand[i] === x[i]) continue;
-        var fc = fn(cand);
-        if (fc < f) { x = cand; f = fc; improved = true; }
+  function subsm(S, l, u, nbd) {
+    var n = S.n, m = S.m, col = S.col, theta = S.theta, ind = S.indx;
+    var x = S.z, d = S.r, ws = S.ws, wy = S.wy, wv = S.wa, wn = S.wn;
+    var ns = S.nfree, i, j, k, jy, js, pointr, ibd = 0, m2, col2, info;
+    var alpha, dk, temp1, temp2;
+    if (ns <= 0) return 0;
+    pointr = S.head;
+    for (i = 1; i <= col; i++) {
+      temp1 = 0; temp2 = 0;
+      for (j = 1; j <= ns; j++) {
+        k = ind[j - 1];
+        temp1 += wy[(k - 1) + (pointr - 1) * n] * d[j - 1];
+        temp2 += ws[(k - 1) + (pointr - 1) * n] * d[j - 1];
       }
-      if (!improved) {
-        var tiny = true;
-        for (i = 0; i < n; i++) {
-          h[i] *= 0.25;
-          if (h[i] > 1e-15 * mMax(1, mAbs(x[i]))) tiny = false;
+      wv[i - 1] = temp1;
+      wv[col + i - 1] = theta * temp2;
+      pointr = pointr % m + 1;
+    }
+    m2 = m << 1;
+    col2 = col << 1;
+    info = dtrsl(wn, 0, m2, col2, wv, 0, 11);
+    if (info !== 0) return info;
+    for (i = 1; i <= col; i++) wv[i - 1] = -wv[i - 1];
+    info = dtrsl(wn, 0, m2, col2, wv, 0, 1);
+    if (info !== 0) return info;
+    pointr = S.head;
+    for (jy = 1; jy <= col; jy++) {
+      js = col + jy;
+      for (i = 1; i <= ns; i++) {
+        k = ind[i - 1];
+        d[i - 1] += (wy[(k - 1) + (pointr - 1) * n] * wv[jy - 1] / theta +
+                     ws[(k - 1) + (pointr - 1) * n] * wv[js - 1]);
+      }
+      pointr = pointr % m + 1;
+    }
+    for (i = 1; i <= ns; i++) d[i - 1] /= theta;
+    alpha = 1;
+    temp1 = alpha;
+    for (i = 1; i <= ns; i++) {
+      k = ind[i - 1];
+      dk = d[i - 1];
+      if (nbd[k - 1] !== 0) {
+        if (dk < 0 && nbd[k - 1] <= 2) {
+          temp2 = l[k - 1] - x[k - 1];
+          if (temp2 >= 0) temp1 = 0;
+          else if (dk * alpha < temp2) temp1 = temp2 / dk;
+        } else if (dk > 0 && nbd[k - 1] >= 2) {
+          temp2 = u[k - 1] - x[k - 1];
+          if (temp2 <= 0) temp1 = 0;
+          else if (dk * alpha > temp2) temp1 = temp2 / dk;
         }
-        if (tiny) break;
+        if (temp1 < alpha) { alpha = temp1; ibd = i; }
       }
     }
-    return { par: x, value: f };
+    if (alpha < 1) {
+      dk = d[ibd - 1];
+      k = ind[ibd - 1];
+      if (dk > 0) { x[k - 1] = u[k - 1]; d[ibd - 1] = 0; }
+      else if (dk < 0) { x[k - 1] = l[k - 1]; d[ibd - 1] = 0; }
+    }
+    for (i = 1; i <= ns; i++) x[ind[i - 1] - 1] += alpha * d[i - 1];
+    S.iword = (alpha < 1) ? 1 : 0;
+    return 0;
   }
 
-  function minimiseBox(fn, gr, start, lower, upper) {
-    var x = clampTo(start.slice(), lower, upper);
-    var f = fn(x);
-    if (!isFin(f)) {
-      // Nudge off an infeasible start the way a line search would.
-      for (var t = 1; t <= 20 && !isFin(f); t++) {
-        var y = x.slice();
-        y[1] = y[1] / 2;
-        x = clampTo(y, lower, upper); f = fn(x);
+  function resetMemory(S) {
+    S.info = 0; S.col = 0; S.head = 1; S.theta = 1; S.iupdat = 0; S.updatd = 0;
+  }
+
+  /* mainlb: one reverse-communication step. `io` = {f}; x, g are the caller's
+   * buffers (0-based, length n). Returns the new task string. */
+  function mainlb(S, x, l, u, nbd, io, g, factr, pgtol, task) {
+    var n = S.n, i, lab, wrk = 0, rr, dr, ddum, d1, d2;
+    if (task.substr(0, 5) === "START") {
+      S.epsmch = DBL_EPSILON;
+      S.fold = 0; S.dnorm = 0; S.gd = 0; S.sbgnrm = 0; S.stp = 0;
+      S.stpmx = 0; S.gdold = 0; S.dtd = 0;
+      S.col = 0; S.head = 1; S.theta = 1; S.iupdat = 0; S.updatd = 0;
+      S.iback = 0; S.itail = 0; S.ifun = 0; S.iword = 0; S.nact = 0;
+      S.ileave = 0; S.nenter = 0; S.iter = 0; S.nfgv = 0; S.nint = 0;
+      S.nintol = 0; S.nskip = 0; S.nfree = n;
+      S.tol = factr * S.epsmch;
+      S.info = 0;
+      var e = errclb(n, S.m, factr, l, u, nbd);
+      if (e.task) { S.info = e.info; return e.task; }
+      active(S, l, u, nbd, x);
+      return "FG_START";
+    }
+    if (task.substr(0, 5) === "FG_LN") lab = 666;
+    else if (task.substr(0, 5) === "NEW_X") lab = 777;
+    else if (task.substr(0, 5) === "FG_ST") lab = 111;
+    else if (task.substr(0, 4) === "STOP") return task;      // CPU branch unused by R
+    else return task;
+
+    for (;;) {
+      switch (lab) {
+        case 111:
+          S.nfgv = 1;
+          S.sbgnrm = projgr(n, l, u, nbd, x, g);
+          if (S.sbgnrm <= pgtol) return "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL";
+          lab = 222; break;
+        case 222:
+          S.iword = -1;
+          if (!S.cnstnd && S.col > 0) {
+            dcopy(n, x, 0, S.z, 0);
+            wrk = S.updatd;
+            S.nint = 0;
+            lab = 333; break;
+          }
+          S.info = cauchy(S, x, l, u, nbd, g);
+          if (S.info !== 0) { resetMemory(S); lab = 222; break; }
+          S.nintol += S.nint;
+          wrk = freev(S);
+          S.nact = n - S.nfree;
+          lab = 333; break;
+        case 333:
+          if (S.nfree === 0 || S.col === 0) { lab = 555; break; }
+          if (wrk) S.info = formk(S, S.updatd);
+          if (S.info !== 0) { resetMemory(S); lab = 222; break; }
+          S.info = cmprlb(S, x, g);
+          if (S.info === 0) S.info = subsm(S, l, u, nbd);
+          if (S.info !== 0) { resetMemory(S); lab = 222; break; }
+          lab = 555; break;
+        case 555:
+          for (i = 0; i < n; i++) S.d[i] = S.z[i] - x[i];
+          task = "";                                     // not FG_LN: start a new search
+          lab = 666; break;
+        case 666:
+          task = lnsrlb(S, l, u, nbd, x, io.f, g, task);
+          if (S.info !== 0 || S.iback >= 20) {
+            dcopy(n, S.t, 0, x, 0);
+            dcopy(n, S.r, 0, g, 0);
+            io.f = S.fold;
+            if (S.col === 0) {
+              if (S.info === 0) { S.info = -9; --S.nfgv; --S.ifun; --S.iback; }
+              ++S.iter;
+              return "ERROR: ABNORMAL_TERMINATION_IN_LNSRCH";
+            } else {
+              if (S.info === 0) --S.nfgv;
+              resetMemory(S);
+              task = "RESTART_FROM_LNSRCH";
+              lab = 222; break;
+            }
+          } else if (task.substr(0, 5) === "FG_LN") {
+            return task;
+          } else {
+            ++S.iter;
+            S.sbgnrm = projgr(n, l, u, nbd, x, g);
+            return task;                                  // NEW_X
+          }
+        case 777:
+          if (S.sbgnrm <= pgtol) return "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL";
+          d1 = mAbs(S.fold); d2 = mAbs(io.f); d1 = cmax(d1, d2);
+          ddum = cmax(d1, 1);
+          if (S.fold - io.f <= S.tol * ddum) {
+            if (S.iback >= 10) S.info = -5;
+            return "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH";
+          }
+          for (i = 0; i < n; i++) S.r[i] = g[i] - S.r[i];
+          rr = ddot(n, S.r, 0, S.r, 0);
+          if (S.stp === 1) {
+            dr = S.gd - S.gdold;
+            ddum = -S.gdold;
+          } else {
+            dr = (S.gd - S.gdold) * S.stp;
+            dscal(n, S.stp, S.d, 0);
+            ddum = -S.gdold * S.stp;
+          }
+          if (dr <= S.epsmch * ddum) {
+            ++S.nskip;
+            S.updatd = 0;
+            lab = 222; break;
+          }
+          S.updatd = 1;
+          ++S.iupdat;
+          matupd(S, rr, dr);
+          S.info = formt(S);
+          if (S.info !== 0) { resetMemory(S); lab = 222; break; }
+          lab = 222; break;
+        default:
+          throw new Error("mainlb: bad label " + lab);
       }
     }
-    var clamped = function (p) { return fn(clampTo(p, lower, upper)); };
-    // Alternate gradient descent, a bounded Nelder-Mead polish and a coordinate
-    // pattern search until a round stops paying. PREREG.md Tier O requires the
-    // objective attained here never to be worse than the one metasens reports;
-    // a single descent-then-polish pass stalls about 1e-9 short at some
-    // bound-active points, which that check catches.
-    for (var round = 0; round < 6; round++) {
-      var f0 = f;
-      var bb = bbDescent(fn, gr, x, f, lower, upper);
-      if (bb.value < f) { x = bb.par; f = bb.value; }
-      var nm = clampTo(nelderMead(clamped, x), lower, upper);
-      var fnm = fn(nm);
-      if (fnm < f) { x = nm; f = fnm; }
-      var ps = patternSearch(fn, x, f, lower, upper);
-      if (ps.value < f) { x = ps.par; f = ps.value; }
-      if (!(f < f0 - 1e-16 * (1 + mAbs(f0)))) break;
-    }
-    return { par: x, value: fn(x) };
   }
+
+  /* R's optim(par, fn, gr, method = "L-BFGS-B", lower, upper) with the default
+   * control: fnscale = 1, parscale = 1, lmm = 5, factr = 1e7, pgtol = 0,
+   * maxit = 100, ndeps = 1e-3. Errors R raises (and copas()'s try() swallows)
+   * are thrown as JS Errors with R's message. gr === null selects optim's own
+   * finite differences (fmingr with usebounds = 1). */
+  function optimLBFGSB(fn, gr, par, lower, upper, control) {
+    control = control || {};
+    var n = par.length, m = control.lmm || 5;
+    var factr = control.factr === undefined ? 1e7 : control.factr;
+    var pgtol = control.pgtol === undefined ? 0 : control.pgtol;
+    var maxit = control.maxit === undefined ? 100 : control.maxit;
+    var ndeps = control.ndeps || (function () { var a = []; for (var i = 0; i < n; i++) a.push(1e-3); return a; })();
+    var x = new Float64Array(n), g = new Float64Array(n);
+    var l = new Float64Array(n), u = new Float64Array(n), nbd = new Int32Array(n);
+    var i;
+    for (i = 0; i < n; i++) {
+      x[i] = par[i];
+      l[i] = lower[i]; u[i] = upper[i];
+      if (!isFin(l[i])) nbd[i] = isFin(u[i]) ? 3 : 0;
+      else nbd[i] = isFin(u[i]) ? 2 : 1;
+    }
+    var fcount = 0, gcount = 0;
+    function fminfn(p) {
+      for (var j = 0; j < n; j++)
+        if (!isFin(p[j])) throw new Error("non-finite value supplied by optim");
+      fcount++;
+      return fn(Array.prototype.slice.call(p));
+    }
+    function fmingr(p, df) {
+      var j;
+      if (gr) {
+        for (j = 0; j < n; j++)
+          if (!isFin(p[j])) throw new Error("non-finite value supplied by optim");
+        var s = gr(Array.prototype.slice.call(p));
+        for (j = 0; j < n; j++) df[j] = s[j];
+        return;
+      }
+      var xx = Array.prototype.slice.call(p), eps, epsused, tmp, v1, v2;
+      for (j = 0; j < n; j++) {
+        epsused = eps = ndeps[j];
+        tmp = p[j] + eps;
+        if (tmp > u[j]) { tmp = u[j]; epsused = tmp - p[j]; }
+        xx[j] = tmp;
+        v1 = fn(xx.slice());
+        tmp = p[j] - eps;
+        if (tmp < l[j]) { tmp = l[j]; eps = p[j] - tmp; }
+        xx[j] = tmp;
+        v2 = fn(xx.slice());
+        df[j] = (v1 - v2) / (epsused + eps);
+        if (!isFin(df[j]))
+          throw new Error("non-finite finite-difference value [" + (j + 1) + "]");
+        xx[j] = p[j];
+      }
+    }
+
+    var S = makeState(n, m);
+    var io = { f: 0 };
+    var task = "START", fail = 0, iter = 0;
+    for (;;) {
+      task = mainlb(S, x, l, u, nbd, io, g, factr, pgtol, task);
+      if (task.substr(0, 2) === "FG") {
+        io.f = fminfn(x);
+        if (!isFin(io.f)) throw new Error("L-BFGS-B needs finite values of 'fn'");
+        fmingr(x, g);
+      } else if (task.substr(0, 5) === "NEW_X") {
+        iter++;
+        if (iter > maxit) { fail = 1; break; }
+      } else if (task.substr(0, 4) === "WARN") { fail = 51; break; }
+      else if (task.substr(0, 4) === "CONV") { break; }
+      else if (task.substr(0, 5) === "ERROR") { fail = 52; break; }
+      else { fail = 52; break; }
+    }
+    return {
+      par: Array.prototype.slice.call(x), value: io.f,
+      counts: [S.nfgv, S.nfgv], convergence: fail, message: task,
+      fncount: fcount
+    };
+  }
+
 
   // R's optimhess (src/library/stats/src/optim.c): when optim() is given an
   // analytic gradient, hessian = TRUE differentiates THAT gradient by central
@@ -832,12 +1878,83 @@
 
   /* --------------------------------------------------- the copas() pipeline */
 
-  // Profile MLE over (mu, rho, tau) at a fixed (gamma0, gamma1).
+  // Profile MLE over (mu, rho, tau) at a fixed (gamma0, gamma1): exactly the
+  // optim() call copas() makes (analytic gradient, box [-Inf,-rho.bound,0] to
+  // [Inf,rho.bound,Inf], default control). Throws where R's optim() throws.
   function profileMLE(TE, seTE, gamma, start, rhoBound) {
     var lower = [-Infinity, -rhoBound, 0], upper = [Infinity, rhoBound, Infinity];
     var fn = function (p) { return loglikWithoutBeta(p, gamma, TE, seTE); };
     var gr = function (p) { return gradientWithoutBeta(p, gamma, TE, seTE); };
-    return minimiseBox(fn, gr, start, lower, upper);
+    return optimLBFGSB(fn, gr, start, lower, upper);
+  }
+
+  /* --------------------------------------- metagen()'s REML start values */
+  // metasens starts every optimisation at c(TE.random, rho0, tau), and
+  // meta::metagen() takes tau^2 from metafor::rma.uni(method = "REML") with
+  // its default control. That estimator is ITERATIVE: Fisher scoring from the
+  // Hedges (HE) estimate, stopping as soon as |tau2_new - tau2_old| <= 1e-5
+  // (absolute), with step-halving at the zero boundary and metafor's ll0check.
+  // On flat likelihoods that stopping rule leaves tau^2 short of the REML
+  // optimum by up to ~1e-3, and the whole Copas surface is computed from that
+  // start, so reproducing metasens means reproducing metafor's stopping point,
+  // not the exact REML solution. Ported from metafor 5.0.1 rma.uni (the same
+  // code in 5.2.1), specialised to the intercept-only model, where
+  //   P y = w (y - mu_w),  tr(P) = S1 - S2/S1,
+  //   tr(PP) = S2 - 2 S3/S1 + S2^2/S1^2    (Sr = sum of w_i^r).
+  // TE.random / seTE.random are then metagen's own weighted.mean pool.
+  function metaforREML(TE, seTE) {
+    var k = TE.length, i, vi = new Array(k), ymc = new Array(k), tmp = new Array(k);
+    for (i = 0; i < k; i++) vi[i] = seTE[i] * seTE[i];
+    var ybar = rsum(TE) / k;
+    for (i = 0; i < k; i++) ymc[i] = TE[i] - ybar;          // scale(yi, scale = FALSE)
+    // Hedges estimator (metafor's REML starting value): (RSS - tr(PV)) / (k - 1)
+    var ymcbar = rsum(ymc) / k;
+    for (i = 0; i < k; i++) tmp[i] = (ymc[i] - ymcbar) * (ymc[i] - ymcbar);
+    var RSS = rsum(tmp), sv = rsum(vi);
+    var tau2 = (RSS - (sv - sv / k)) / (k - 1);
+    tau2 = mMax(0, tau2);
+    var threshold = 1e-5, maxiter = 100, iter = 0, change = threshold + 1, conv = true;
+    var w = new Array(k), w2 = new Array(k), w3 = new Array(k), r2 = new Array(k);
+    function sums(t2) {
+      for (var j = 0; j < k; j++) { w[j] = 1 / (vi[j] + t2); tmp[j] = w[j] * ymc[j]; }
+      var S1 = rsum(w), mu = rsum(tmp) / S1;
+      for (var jj = 0; jj < k; jj++) {
+        w2[jj] = w[jj] * w[jj]; w3[jj] = w2[jj] * w[jj];
+        var e = w[jj] * (ymc[jj] - mu); r2[jj] = e * e;
+      }
+      return { S1: S1, S2: rsum(w2), S3: rsum(w3), yPPy: rsum(r2), mu: mu };
+    }
+    while (change > threshold) {
+      iter++;
+      var old2 = tau2, s = sums(tau2);
+      var trP = s.S1 - s.S2 / s.S1;
+      var trPP = s.S2 - 2 * s.S3 / s.S1 + (s.S2 * s.S2) / (s.S1 * s.S1);
+      var adj = (s.yPPy - trP) / trPP;
+      if (isNan(adj)) adj = 0;
+      while (tau2 + adj < 0) adj = adj / 2;
+      tau2 = tau2 + adj;
+      change = mAbs(old2 - tau2);
+      if (iter > maxiter) { conv = false; break; }
+    }
+    // ll0check: if tau^2 = 0 has the higher restricted likelihood (by more
+    // than tol = eps^0.25), metafor resets tau^2 to 0.
+    if (conv && tau2 > threshold) {
+      var ll = function (t2) {
+        var q = sums(t2), lsum = new Array(k);
+        for (var j = 0; j < k; j++) {
+          lsum[j] = mLog(vi[j] + t2);
+          var e = ymc[j] - q.mu; tmp[j] = w[j] * e * e;
+        }
+        return -1 / 2 * (k - 1) * mLog(2 * Math.PI) - 1 / 2 * rsum(lsum) -
+          1 / 2 * mLog(q.S1) - 1 / 2 * rsum(tmp);
+      };
+      if (ll(0) - ll(tau2) > mPow(DBL_EPSILON, 0.25)) tau2 = 0;
+    }
+    var wr = new Array(k), xw = new Array(k);
+    for (i = 0; i < k; i++) { wr[i] = 1 / (vi[i] + tau2); xw[i] = TE[i] * wr[i]; }
+    var sw = rsum(wr);
+    return { tau2: tau2, tau: mSqrt(tau2), TE_random: rsum(xw) / sw,
+             seTE_random: mSqrt(1 / sw), iterations: iter, converged: conv };
   }
 
   // Egger's bias coefficient as meta::metabias(method = "Egger") reports it:
@@ -1011,14 +2128,11 @@
     // gamma1Range[1] ~ 129,000 and gamma0Range[0] ~ -1.29e6. At that corner of
     // the grid u = gamma0 + gamma1/seTE is about -1.29e6, both pnorm(u) and
     // dnorm(u) underflow, and lambda(u) = 0/0 = NaN -- deliberately, to match
-    // R. The objective is then NaN at every such point, and minimiseBox has no
-    // way to improve on a NaN: bbDescent breaks on the first non-finite
-    // gradient and the two direct-search polishes run to their limits with
-    // every comparison false (NaN < x is false). It returns the START VECTOR
-    // with value NaN, so TE.contour would store the DerSimonian-Laird / REML
-    // start value for mu -- a plausible-looking treatment effect -- at every
-    // failed point, and pretty()/contourLines() would run on a surface that is
-    // partly a constant.
+    // R. The objective is then NaN at every such point, so optim() stops with
+    // "L-BFGS-B needs finite values of 'fn'", copas()'s try() swallows it and
+    // TE.contour silently takes the PREVIOUS grid point's value (or copas()
+    // stops outright if the first point fails) -- a surface that is partly a
+    // copy of itself, presented as a likelihood surface.
     //
     // The test is exact rather than a tuned threshold: refuse when the model's
     // own inverse Mills ratio is already not computable at the most extreme
@@ -1050,6 +2164,7 @@
     var TEcontour = new Float64Array(ngrid * ngrid);
     var contourPar = [];
     var nonFinite = 0;
+    var tryFailures = { contour: 0, slope: 0, rsb: 0 };
     var supplied = !!opts.TE_contour;
     if (supplied) {
       if (opts.TE_contour.length !== ngrid * ngrid)
@@ -1057,17 +2172,22 @@
       for (i = 0; i < ngrid * ngrid; i++) TEcontour[i] = opts.TE_contour[i];
       contourPar = null;
     } else {
+      // copas(): try(junk0 <- optim(...), silent = TRUE); TE.contour[i, j] <-
+      // junk0$par[1]. When optim() throws, junk0 keeps the PREVIOUS grid
+      // point's fit and its value is stored again; when the very first fit
+      // throws, junk0 does not exist and copas() stops. Both reproduced, and
+      // every carried-forward point is counted (metasens reports none).
+      var junk0 = null;
       for (i = 0; i < ngrid; i++) for (j = 0; j < ngrid; j++) {
-        var fit0 = profileMLE(TE, seTE, [gamma0[i], gamma1[j]], start, rhoBound);
-        TEcontour[i + j * ngrid] = fit0.par[0];
-        contourPar.push({ i: i, j: j, par: fit0.par, value: fit0.value });
-        // A grid point whose attained objective is not finite did not converge
-        // to anything: minimiseBox returns the start vector with value NaN, so
-        // TEcontour just took the start value for mu. Counted and surfaced
-        // rather than left to look like a treatment effect. The identification
-        // guard above should make this unreachable, which is exactly why it is
-        // worth counting -- if it ever fires, the guard has a gap.
-        if (!isFin(fit0.value)) nonFinite++;
+        var carried0 = false;
+        try { junk0 = profileMLE(TE, seTE, [gamma0[i], gamma1[j]], start, rhoBound); }
+        catch (e0) { carried0 = true; tryFailures.contour++; }
+        if (!junk0)
+          return { refused: "optim-error", stage: "contour", k: k, dropped: dropped };
+        TEcontour[i + j * ngrid] = junk0.par[0];
+        contourPar.push({ i: i, j: j, par: junk0.par, value: junk0.value,
+                          convergence: junk0.convergence, carried_forward: carried0 });
+        if (!isFin(junk0.value)) nonFinite++;
       }
     }
 
@@ -1106,63 +2226,72 @@
     //   - the slope is finite but every x/y intersection rescales to a point
     //     OUTSIDE the gamma ranges, so the in-range filter drops them all.
     // Either way ng is 1, publprob is [pnorm(10)] = [1], and the single
-    // "sensitivity" point is the profile MLE under NO SELECTION AT ALL -- the
-    // unadjusted estimate. Presenting that as the "Copas-adjusted effect", in
-    // bold, with a CI and an implied number of unpublished studies, while
-    // drawSens() blanks the curve for having fewer than two points, is the
-    // worst available outcome: the unadjusted answer wearing the adjusted
-    // answer's label. So this is flagged as a refusal, below, after everything
-    // has been computed.
-    //
-    // Why AFTER and not here. metasens does NOT refuse in this state -- it
-    // reports TE.adjust at the anchor -- and it is not a rare corner: 5 of the
-    // 138 configurations in the validation archive land here
-    // (dat.laopaiboon2015, both measures), all with N.unpubl.adj = 0 and
-    // TE.adjust within ~3e-3 of TE.random, which is the signature of exactly
-    // this failure. Returning early would therefore make the port disagree
-    // with metasens on those 5 and silently move the archive's comparison
-    // counts. Instead the full result is returned WITH `refused` set, so the
-    // page refuses to present it (which is the fix) while a parity harness can
-    // still read the same numbers it read before (so no archive count moves).
-    // Callers that render must test `refused`; callers that compare may ignore
-    // it. See n_orthogonal_points.
+    // "sensitivity" point is the profile MLE under NO SELECTION AT ALL.
+    // metasens reports that point as TE.adjust without comment. This port
+    // reports the same numbers (so it agrees with metasens) and sets
+    // `warning` so a renderer can say what they are: the no-selection
+    // estimate, not a selection-adjusted one. Earlier versions refused here;
+    // that withheld a result metasens returns, so it was a disagreement with
+    // the reference rather than a safety margin. See n_orthogonal_points.
     var collapsed = ng < 2;
 
-    // stage 4 — estimates down the line
+    // stage 4 -- estimates down the line. copas() makes two identical optim()
+    // calls per point, junk1 (the estimates) and junk2 (hessian = TRUE, for
+    // seTE.slope), each in try(). They are deterministic and identical, so a
+    // point where one throws is a point where both throw, and both then keep
+    // the previous point's object. Reproduced, with the throw counted.
     var TEslope = [], seTEslope = [], rhoSlope = [], tauSlope = [], loglik1 = [];
-    var seTEhessian = [], par1 = [];
+    var seTEhessian = [], par1 = [], conv1 = [];
+    var junk1 = null, junk2H = null;
     for (i = 0; i < ng; i++) {
-      var g = [g0s[i], g1s[i]];
-      var f1 = profileMLE(TE, seTE, g, start, rhoBound);
-      TEslope.push(f1.par[0]); rhoSlope.push(f1.par[1]); tauSlope.push(f1.par[2]);
-      loglik1.push(f1.value); par1.push(f1.par.slice());
-      var H = optimHess(function (p) { return gradientWithoutBeta(p, g, TE, seTE); }, f1.par);
-      // +1e-8 on EVERY element, not just the diagonal. This is metasens's own
-      // regularisation: `solve(junk2$hessian + 1e-08)` in the copas() source,
-      // where R's recycling adds the scalar to all n^2 entries. It looks like a
-      // fudge and is numerically meaningful, so the provenance stays in the
-      // code: it is faithful, not invented here.
-      var Hreg = H.map(function (row) { return row.map(function (v) { return v + 1e-8; }); });
-      var inv00 = solveFirstDiag(Hreg);
-      var se = inv00 > 0 ? mSqrt(inv00) : NaN;
+      var g = [g0s[i], g1s[i]], f1 = null;
+      try { f1 = profileMLE(TE, seTE, g, start, rhoBound); }
+      catch (e1) { tryFailures.slope++; }
+      if (f1) junk1 = f1;
+      if (!junk1)
+        return { refused: "optim-error", stage: "orthogonal-line", k: k, dropped: dropped };
+      TEslope.push(junk1.par[0]); rhoSlope.push(junk1.par[1]); tauSlope.push(junk1.par[2]);
+      loglik1.push(junk1.value); par1.push(junk1.par.slice()); conv1.push(junk1.convergence);
+      // optim(hessian = TRUE): optimhess of the analytic gradient at junk2$par.
+      if (f1) junk2H = optimHess((function (gq) {
+        return function (p) { return gradientWithoutBeta(p, gq, TE, seTE); };
+      })(g), f1.par);
+      var se = NaN;
+      if (junk2H) {
+        // +1e-8 on EVERY element, not just the diagonal: metasens's own
+        // `solve(junk2$hessian + 1e-08)`, where R recycles the scalar over all
+        // n^2 entries. Faithful, not invented here.
+        var Hreg = junk2H.map(function (row) { return row.map(function (v) { return v + 1e-8; }); });
+        var inv00 = solveFirstDiag(Hreg);
+        se = mSqrt(inv00);                    // sqrt of a negative is NaN, as in R
+      }
       seTEhessian.push(se);
       // metasens's carry-forward chain (copas source lines 240-247).
       if (i > 0 && (isNan(se) || se === 0)) se = seTEslope[i - 1];
-      if (isNan(se) || se === 0) se = H[0][0] > 0 ? mSqrt(1 / H[0][0]) : NaN;
+      if ((isNan(se) || se === 0) && junk2H) se = mSqrt(1 / junk2H[0][0]);
       seTEslope.push(se);
     }
 
-    // stage 5 — residual selection bias and the adjusted estimate
+    // stage 5 -- residual selection bias and the adjusted estimate. copas()
+    // gives this optim() call NO gradient, so R differentiates by its own
+    // central differences (ndeps = 1e-3, clipped at the bounds); optimLBFGSB
+    // with gr = null is that code.
     var rhoLim = left ? [0, rhoBound] : [-rhoBound, 0];
-    var loglik2 = [], par2 = [];
+    var loglik2 = [], par2 = [], conv2 = [], junk3 = null;
     for (i = 0; i < ng; i++) {
-      var gg = [g0s[i], g1s[i]];
-      var fnb = function (p) { return loglikWithBeta(p, gg, TE, seTE); };
-      var grb = function (p) { return numGrad(fnb, p); };
-      var f3 = minimiseBox(fnb, grb, [TErandom, rho0, tau, 0],
-                           [-Infinity, rhoLim[0], 0, -Infinity],
-                           [Infinity, rhoLim[1], Infinity, Infinity]);
-      loglik2.push(f3.value); par2.push(f3.par.slice());
+      var gg = [g0s[i], g1s[i]], f3 = null;
+      var fnb = (function (gq) {
+        return function (p) { return loglikWithBeta(p, gq, TE, seTE); };
+      })(gg);
+      try {
+        f3 = optimLBFGSB(fnb, null, [TErandom, rho0, tau, 0],
+                         [-Infinity, rhoLim[0], 0, -Infinity],
+                         [Infinity, rhoLim[1], Infinity, Infinity]);
+      } catch (e3) { tryFailures.rsb++; }
+      if (f3) junk3 = f3;
+      if (!junk3)
+        return { refused: "optim-error", stage: "residual-selection-bias", k: k, dropped: dropped };
+      loglik2.push(junk3.value); par2.push(junk3.par.slice()); conv2.push(junk3.convergence);
     }
     var pvalRsb = loglik1.map(function (l1, ix) {
       return pchisq1Upper(2 * (l1 - loglik2[ix]));
@@ -1196,10 +2325,13 @@
 
     return {
       _schema: "copas-core-v1",
-      // Set only in the collapsed-orthogonal-line case; every estimate below
-      // is still present and still equal to what metasens reports, so a parity
-      // harness is unaffected while a renderer must refuse. See `collapsed`.
-      refused: collapsed ? "orthogonal-line.empty" : null,
+      refused: null,
+      // Set in the collapsed-orthogonal-line case: every estimate below is
+      // what metasens reports, but TE_adjust is the NO-SELECTION estimate and
+      // a renderer must label it so. See `collapsed`.
+      warning: collapsed ? "orthogonal-line.empty" : null,
+      optim_try_failures: tryFailures,
+      convergence_slope: conv1, convergence_rsb: conv2,
       n_contour_lines: cl.length,
       k: k, dropped: dropped, TE: TE, seTE: seTE,
       TE_random: TErandom, seTE_random: seTErandom, tau: tau,
@@ -1243,17 +2375,6 @@
     };
   }
 
-  function numGrad(fn, x) {
-    var n = x.length, g = new Array(n), h, i;
-    for (i = 0; i < n; i++) {
-      h = 1e-7 * mMax(1, mAbs(x[i]));
-      var a = x.slice(), b = x.slice();
-      a[i] += h; b[i] -= h;
-      g[i] = (fn(a) - fn(b)) / (2 * h);
-    }
-    return g;
-  }
-
   // R's order() is ascending and stable; rev() then reverses, so equal keys come
   // out in reverse input order. NaN keys are placed last by order() and so come
   // FIRST after rev().
@@ -1275,8 +2396,8 @@
     lmYX: lmYX, commonEffect: commonEffect, ci: ci,
     loglikWithoutBeta: loglikWithoutBeta, loglikWithBeta: loglikWithBeta,
     gradientWithoutBeta: gradientWithoutBeta,
-    profileMLE: profileMLE, minimiseBox: minimiseBox, optimHess: optimHess,
-    solveFirstDiag: solveFirstDiag, numGrad: numGrad,
+    profileMLE: profileMLE, optimLBFGSB: optimLBFGSB, optimHess: optimHess,
+    solveFirstDiag: solveFirstDiag, metaforREML: metaforREML, rsum: rsum,
     eggerEstimate: eggerEstimate, revOrder: revOrder,
     orthogonalLine: orthogonalLine, adjustSelection: adjustSelection,
     copas: copas
