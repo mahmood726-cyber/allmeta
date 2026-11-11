@@ -159,9 +159,12 @@
   }
 
   // R's sum() of a double vector accumulates in long double (80-bit on the
-  // x86-64 builds R ships). A compensated two-sum carries the rounding error
-  // of every addition, which reproduces that accumulation (and its single
-  // final rounding to double) for any vector length met here.
+  // x86-64 builds R ships), then rounds once to double. A compensated two-sum
+  // approximates that: like the 80-bit accumulator it keeps far more than 53
+  // bits of the running sum, so for sums of likelihood terms of comparable size
+  // it returns the same double as R. It is NOT bit-exact 80-bit arithmetic in
+  // adversarial cases -- e.g. sum(c(1, 2^-64, -1)) is 0 in R and 2^-64 here,
+  // and it has no extended exponent range (1e308 + 1e308 - 1e308 overflows).
   function rsum(a) {
     var hi = 0, lo = 0;
     for (var i = 0; i < a.length; i++) {
@@ -1914,23 +1917,43 @@
     var tau2 = (RSS - (sv - sv / k)) / (k - 1);
     tau2 = mMax(0, tau2);
     var threshold = 1e-5, maxiter = 100, iter = 0, change = threshold + 1, conv = true;
-    var w = new Array(k), w2 = new Array(k), w3 = new Array(k), r2 = new Array(k);
+    var w = new Array(k);
+    // tr(P) and tr(PP) as sums of POSITIVE terms. With o_i = sum_{j!=i} w_j and
+    // q_i = sum_{j!=i} w_j^2:  P_ii = w_i o_i / S1,  P_ij = -w_i w_j / S1, so
+    //   tr(P)  = sum_i w_i o_i / S1,
+    //   tr(PP) = sum_i (w_i o_i / S1)^2 + sum_i w_i^2 q_i / S1^2.
+    // The expanded forms S1 - S2/S1 and S2 - 2 S3/S1 + S2^2/S1^2 cancel
+    // catastrophically when one weight dominates (an SE of 2^-17 beside SEs near
+    // 1 gave tr(PP) = 0, tau^2 = Inf and an endless step-halving loop), whereas
+    // metafor forms P explicitly and does not cancel. o_i and q_i come from
+    // prefix + suffix sums of positive numbers, so they never cancel either.
+    var w2 = new Array(k), r2 = new Array(k), a1 = new Array(k), a2 = new Array(k);
+    var pre1 = new Float64Array(k + 1), pre2 = new Float64Array(k + 1);
+    var suf1 = new Float64Array(k + 1), suf2 = new Float64Array(k + 1);
     function sums(t2) {
-      for (var j = 0; j < k; j++) { w[j] = 1 / (vi[j] + t2); tmp[j] = w[j] * ymc[j]; }
+      var j;
+      for (j = 0; j < k; j++) { w[j] = 1 / (vi[j] + t2); tmp[j] = w[j] * ymc[j]; w2[j] = w[j] * w[j]; }
       var S1 = rsum(w), mu = rsum(tmp) / S1;
-      for (var jj = 0; jj < k; jj++) {
-        w2[jj] = w[jj] * w[jj]; w3[jj] = w2[jj] * w[jj];
-        var e = w[jj] * (ymc[jj] - mu); r2[jj] = e * e;
+      for (j = 0; j < k; j++) { pre1[j + 1] = pre1[j] + w[j]; pre2[j + 1] = pre2[j] + w2[j]; }
+      suf1[k] = 0; suf2[k] = 0;
+      for (j = k - 1; j >= 0; j--) { suf1[j] = suf1[j + 1] + w[j]; suf2[j] = suf2[j + 1] + w2[j]; }
+      for (j = 0; j < k; j++) {
+        var o = pre1[j] + suf1[j + 1], q = pre2[j] + suf2[j + 1];
+        var pii = w[j] * o / S1;
+        a1[j] = pii; a2[j] = pii * pii + w2[j] * q / (S1 * S1);
+        var e = w[j] * (ymc[j] - mu); r2[j] = e * e;
       }
-      return { S1: S1, S2: rsum(w2), S3: rsum(w3), yPPy: rsum(r2), mu: mu };
+      return { S1: S1, trP: rsum(a1), trPP: rsum(a2), yPPy: rsum(r2), mu: mu };
     }
     while (change > threshold) {
       iter++;
       var old2 = tau2, s = sums(tau2);
-      var trP = s.S1 - s.S2 / s.S1;
-      var trPP = s.S2 - 2 * s.S3 / s.S1 + (s.S2 * s.S2) / (s.S1 * s.S1);
-      var adj = (s.yPPy - trP) / trPP;
+      var adj = (s.yPPy - s.trP) / s.trPP;
       if (isNan(adj)) adj = 0;
+      // Defence in depth: a non-finite step cannot be halved into range (it
+      // would loop forever); metafor would not produce one, so stop and report
+      // non-convergence, which the page refuses.
+      if (!isFin(adj)) { conv = false; break; }
       while (tau2 + adj < 0) adj = adj / 2;
       tau2 = tau2 + adj;
       change = mAbs(old2 - tau2);
