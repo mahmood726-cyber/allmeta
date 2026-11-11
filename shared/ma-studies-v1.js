@@ -622,9 +622,28 @@
       return false;
     }
     var path = opts.webrPath || "../webr-validator/?fromBus=1";
+    // Tell the validator which app sent the studies (so it can say whether its
+    // inverse-variance re-fit is that app's model) and, when the app passes them,
+    // which estimator and test its headline used (so R fits the same model).
+    path += validatorQuery(path, opts);
     if (typeof global.open !== "function") return false;
     var w = global.open(path, "_blank", "noopener,noreferrer");
     return !!w;
+  }
+
+  function validatorQuery(path, opts) {
+    var q = [], from = opts && opts.from;
+    if (!from) {
+      try {
+        var segs = String((global.location && global.location.pathname) || "").split("/").filter(Boolean);
+        if (segs.length && /\.html?$/i.test(segs[segs.length - 1])) segs.pop();
+        from = segs.length ? segs[segs.length - 1] : "";
+      } catch (_) { from = ""; }
+    }
+    if (from && !/[?&]from=/.test(path)) q.push("from=" + encodeURIComponent(from));
+    if (opts && opts.method && !/[?&]method=/.test(path)) q.push("method=" + encodeURIComponent(opts.method));
+    if (opts && opts.test && !/[?&]test=/.test(path)) q.push("test=" + encodeURIComponent(opts.test));
+    return q.length ? (path.indexOf("?") >= 0 ? "&" : "?") + q.join("&") : "";
   }
 
   /**

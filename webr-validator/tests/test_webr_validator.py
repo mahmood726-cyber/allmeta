@@ -51,9 +51,18 @@ def test_webr_url_configurable_not_hardcoded_cdn_script():
     This is implemented by loading via dynamic import() after a user
     button press, not via a static <script src=...> tag."""
     text = INDEX.read_text(encoding="utf-8")
-    # No static <script src=... webr ...> at top of the file
-    assert not re.search(r'<script[^>]*src=["\'][^"\']*webr', text, re.IGNORECASE), \
-        "WebR must not be loaded via static <script src>; use dynamic import on click"
+    # No static <script src=...> that loads the WebR runtime itself (webr.mjs or a
+    # webR CDN). ../shared/webr-runner.js is allowed: it is a small same-origin
+    # helper that boots WebR only on demand, by dynamic import(), so it does not
+    # load WebR at parse time (it is how the page now runs the pinned bundle).
+    for m in re.finditer(r'<script[^>]*src=["\']([^"\']*)["\']', text, re.IGNORECASE):
+        src = m.group(1)
+        if src == "../shared/webr-runner.js":
+            continue
+        assert "webr" not in src.lower(), \
+            f"WebR must not be loaded via static <script src> ({src}); use dynamic import on click"
+    runner = (INDEX.parent.parent / "shared" / "webr-runner.js").read_text(encoding="utf-8")
+    assert "await import(" in runner, "webr-runner.js must boot WebR by dynamic import()"
     # Dynamic import on demand is fine
     assert "await import(" in text or "import(url)" in text, \
         "Must use dynamic import() for the WebR loader"

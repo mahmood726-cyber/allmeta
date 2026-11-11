@@ -514,7 +514,7 @@
       document.getElementById("btn-bus-save").addEventListener("click", onBusSave);
       document.getElementById("btn-validate-webr").addEventListener("click", function () {
         onBusSave();
-        window.open("../webr-validator/index.html?fromBus=1", "_blank");
+        window.open("../webr-validator/index.html?fromBus=1&from=tsa", "_blank");
       });
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){
