@@ -1,0 +1,579 @@
+{
+  "R": "4.6.0",
+  "EValue": "4.1.4",
+  "disclosure": "Synthetic software test inputs, not clinical data.",
+  "cases": [
+    {
+      "id": "rr-true-below-est",
+      "fun": "evalues.RR",
+      "measure": "RR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "true": 1.5,
+      "expected": {
+        "point": 2,
+        "lower": 1,
+        "upper": null,
+        "rr": {
+          "point": 2,
+          "lo": 1.5,
+          "hi": 2.7000000000000002
+        }
+      }
+    },
+    {
+      "id": "rr-true-above-est",
+      "fun": "evalues.RR",
+      "measure": "RR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "true": 2.5,
+      "expected": {
+        "point": 1.8090169943749475,
+        "lower": null,
+        "upper": 1,
+        "rr": {
+          "point": 2,
+          "lo": 1.5,
+          "hi": 2.7000000000000002
+        }
+      }
+    },
+    {
+      "id": "rr-true-crossed",
+      "fun": "evalues.RR",
+      "measure": "RR",
+      "point": 1.2,
+      "lo": 0.90000000000000002,
+      "hi": 1.6000000000000001,
+      "rare": false,
+      "true": 1.1000000000000001,
+      "expected": {
+        "point": 1.4058274195579772,
+        "lower": 1,
+        "upper": null,
+        "rr": {
+          "point": 1.2,
+          "lo": 0.90000000000000002,
+          "hi": 1.6000000000000001
+        }
+      }
+    },
+    {
+      "id": "rr-protective-true",
+      "fun": "evalues.RR",
+      "measure": "RR",
+      "point": 0.59999999999999998,
+      "lo": 0.40000000000000002,
+      "hi": 0.90000000000000002,
+      "rare": false,
+      "true": 0.80000000000000004,
+      "expected": {
+        "point": 2,
+        "lower": null,
+        "upper": 1,
+        "rr": {
+          "point": 0.59999999999999998,
+          "lo": 0.40000000000000002,
+          "hi": 0.90000000000000002
+        }
+      }
+    },
+    {
+      "id": "rr-protective-true-below",
+      "fun": "evalues.RR",
+      "measure": "RR",
+      "point": 0.59999999999999998,
+      "lo": 0.40000000000000002,
+      "hi": 0.90000000000000002,
+      "rare": false,
+      "true": 0.5,
+      "expected": {
+        "point": 1.6898979485566354,
+        "lower": 1,
+        "upper": null,
+        "rr": {
+          "point": 0.59999999999999998,
+          "lo": 0.40000000000000002,
+          "hi": 0.90000000000000002
+        }
+      }
+    },
+    {
+      "id": "rr-est-equals-true",
+      "fun": "evalues.RR",
+      "measure": "RR",
+      "point": 1.5,
+      "lo": 1.2,
+      "hi": 1.8999999999999999,
+      "rare": false,
+      "true": 1.5,
+      "expected": {
+        "point": 1,
+        "lower": 1,
+        "upper": null,
+        "rr": {
+          "point": 1.5,
+          "lo": 1.2,
+          "hi": 1.8999999999999999
+        }
+      }
+    },
+    {
+      "id": "rr-true-noci",
+      "fun": "evalues.RR",
+      "measure": "RR",
+      "point": 2,
+      "lo": null,
+      "hi": null,
+      "rare": false,
+      "true": 1.3,
+      "expected": {
+        "point": 2.4486276589384026,
+        "lower": null,
+        "upper": null,
+        "rr": {
+          "point": 2,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "id": "rr-true-one",
+      "fun": "evalues.RR",
+      "measure": "RR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "true": 1,
+      "expected": {
+        "point": 3.4142135623730949,
+        "lower": 2.3660254037844384,
+        "upper": null,
+        "rr": {
+          "point": 2,
+          "lo": 1.5,
+          "hi": 2.7000000000000002
+        }
+      }
+    },
+    {
+      "id": "or-common-true",
+      "fun": "evalues.OR",
+      "measure": "OR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": false,
+      "true": 1.2,
+      "expected": {
+        "point": 1.9039155023233469,
+        "lower": 1.4813052527525752,
+        "upper": null,
+        "rr": {
+          "point": 1.4142135623730951,
+          "lo": 1.2247448713915889,
+          "hi": 1.6431676725154984
+        }
+      }
+    },
+    {
+      "id": "or-rare-true",
+      "fun": "evalues.OR",
+      "measure": "OR",
+      "point": 2,
+      "lo": 1.5,
+      "hi": 2.7000000000000002,
+      "rare": true,
+      "true": 1.2,
+      "expected": {
+        "point": 2.7207592200561268,
+        "lower": 1.8090169943749477,
+        "upper": null,
+        "rr": {
+          "point": 2,
+          "lo": 1.5,
+          "hi": 2.7000000000000002
+        }
+      }
+    },
+    {
+      "id": "hr-common-true",
+      "fun": "evalues.HR",
+      "measure": "HR",
+      "point": 1.6000000000000001,
+      "lo": 1.2,
+      "hi": 2.1000000000000001,
+      "rare": false,
+      "true": 1.1000000000000001,
+      "expected": {
+        "point": 1.9142317673491807,
+        "lower": 1.3189949783783113,
+        "upper": null,
+        "rr": {
+          "point": 1.3839700082583661,
+          "lo": 1.134653544128738,
+          "hi": 1.6670240587123641
+        }
+      }
+    },
+    {
+      "id": "hr-rare-protective-true",
+      "fun": "evalues.HR",
+      "measure": "HR",
+      "point": 0.69999999999999996,
+      "lo": 0.5,
+      "hi": 0.94999999999999996,
+      "rare": true,
+      "true": 0.90000000000000002,
+      "expected": {
+        "point": 1.8918058124456123,
+        "lower": null,
+        "upper": 1,
+        "rr": {
+          "point": 0.69999999999999996,
+          "lo": 0.5,
+          "hi": 0.94999999999999996
+        }
+      }
+    },
+    {
+      "id": "md-se",
+      "fun": "evalues.MD",
+      "measure": "SMD",
+      "point": 0.5,
+      "se": 0.10000000000000001,
+      "true": 0,
+      "expected": {
+        "point": 2.5291419818612693,
+        "lower": 1.9680373469882557,
+        "upper": null,
+        "rr": {
+          "point": 1.5761733830339912,
+          "lo": 1.3191663710349588,
+          "hi": 1.8832518687053312
+        }
+      }
+    },
+    {
+      "id": "md-se-protective",
+      "fun": "evalues.MD",
+      "measure": "SMD",
+      "point": -0.35999999999999999,
+      "se": 0.115,
+      "true": 0,
+      "expected": {
+        "point": 2.121046226946024,
+        "lower": null,
+        "upper": 1.5153132488061631,
+        "rr": {
+          "point": 0.72065122254990965,
+          "lo": 0.58725273391533306,
+          "hi": 0.8843520933485427
+        }
+      }
+    },
+    {
+      "id": "md-se-true",
+      "fun": "evalues.MD",
+      "measure": "SMD",
+      "point": 0.5,
+      "se": 0.10000000000000001,
+      "true": 0.20000000000000001,
+      "expected": {
+        "point": 1.956110185985549,
+        "lower": 1.430703780372131,
+        "upper": null,
+        "rr": {
+          "point": 1.5761733830339912,
+          "lo": 1.3191663710349588,
+          "hi": 1.8832518687053312
+        }
+      }
+    },
+    {
+      "id": "md-se-crossing",
+      "fun": "evalues.MD",
+      "measure": "SMD",
+      "point": 0.10000000000000001,
+      "se": 0.20000000000000001,
+      "true": 0,
+      "expected": {
+        "point": 1.4182940640718693,
+        "lower": 1,
+        "upper": null,
+        "rr": {
+          "point": 1.0952690052584655,
+          "lo": 0.76720594997585567,
+          "hi": 1.5636142992864182
+        }
+      }
+    },
+    {
+      "id": "md-noci-true",
+      "fun": "evalues.MD",
+      "measure": "SMD",
+      "point": 0.5,
+      "se": null,
+      "true": 0.29999999999999999,
+      "expected": {
+        "point": 1.6889607176012271,
+        "lower": null,
+        "upper": null,
+        "rr": {
+          "point": 1.5761733830339912,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "id": "md-se-zero",
+      "fun": "evalues.MD",
+      "measure": "SMD",
+      "point": 0.40000000000000002,
+      "se": 0,
+      "true": 0,
+      "expected": {
+        "point": 2.2339706726333324,
+        "lower": 2.2339706726333324,
+        "upper": null,
+        "rr": {
+          "point": 1.4390742141580464,
+          "lo": 1.4390742141580464,
+          "hi": 1.4390742141580464
+        }
+      }
+    },
+    {
+      "id": "ols-basic",
+      "fun": "evalues.OLS",
+      "measure": "OLS",
+      "point": 2.5,
+      "se": 0.80000000000000004,
+      "sd": 10,
+      "delta": 1,
+      "true": 0,
+      "expected": {
+        "point": 1.8217753215836383,
+        "lower": 1.3998178925379801,
+        "upper": null,
+        "rr": {
+          "point": 1.2554574397541285,
+          "lo": 1.0888259438488352,
+          "hi": 1.44758984844029
+        }
+      }
+    },
+    {
+      "id": "ols-delta2",
+      "fun": "evalues.OLS",
+      "measure": "OLS",
+      "point": 2.5,
+      "se": 0.80000000000000004,
+      "sd": 10,
+      "delta": 2,
+      "true": 0,
+      "expected": {
+        "point": 2.5291419818612693,
+        "lower": 1.6545491278539404,
+        "upper": null,
+        "rr": {
+          "point": 1.5761733830339912,
+          "lo": 1.185541935998307,
+          "hi": 2.0955163693073815
+        }
+      }
+    },
+    {
+      "id": "ols-delta-negative",
+      "fun": "evalues.OLS",
+      "measure": "OLS",
+      "point": 2.5,
+      "se": 0.80000000000000004,
+      "sd": 10,
+      "delta": -2,
+      "true": 0,
+      "expected": {
+        "point": 2.5291419818612693,
+        "lower": 1.6545491278539404,
+        "upper": null,
+        "rr": {
+          "point": 1.5761733830339912,
+          "lo": 1.185541935998307,
+          "hi": 2.0955163693073815
+        }
+      }
+    },
+    {
+      "id": "ols-true",
+      "fun": "evalues.OLS",
+      "measure": "OLS",
+      "point": 2.5,
+      "se": 0.80000000000000004,
+      "sd": 10,
+      "delta": 1,
+      "true": 0.050000000000000003,
+      "expected": {
+        "point": 1.6889607176012265,
+        "lower": 1.2453975854156658,
+        "upper": null,
+        "rr": {
+          "point": 1.2554574397541285,
+          "lo": 1.0888259438488352,
+          "hi": 1.44758984844029
+        }
+      }
+    },
+    {
+      "id": "ols-nose",
+      "fun": "evalues.OLS",
+      "measure": "OLS",
+      "point": -1.2,
+      "se": null,
+      "sd": 4,
+      "delta": 1,
+      "true": 0,
+      "expected": {
+        "point": 1.9561101859855488,
+        "lower": null,
+        "upper": null,
+        "rr": {
+          "point": 0.76109278762893429,
+          "lo": null,
+          "hi": null
+        }
+      }
+    },
+    {
+      "id": "ols-crossing",
+      "fun": "evalues.OLS",
+      "measure": "OLS",
+      "point": 0.5,
+      "se": 0.59999999999999998,
+      "sd": 3,
+      "delta": 1,
+      "true": 0,
+      "expected": {
+        "point": 1.6003425132828444,
+        "lower": 1,
+        "upper": null,
+        "rr": {
+          "point": 1.1637722476883514,
+          "lo": 0.8151905956953287,
+          "hi": 1.6614100452598715
+        }
+      }
+    },
+    {
+      "id": "ols-delta-zero",
+      "fun": "evalues.OLS",
+      "measure": "OLS",
+      "point": 2.5,
+      "se": 0.80000000000000004,
+      "sd": 10,
+      "delta": 0,
+      "true": 0,
+      "expected": {
+        "point": 1,
+        "lower": 1,
+        "upper": null,
+        "rr": {
+          "point": 1,
+          "lo": 1,
+          "hi": 1
+        }
+      }
+    },
+    {
+      "id": "rd-basic",
+      "fun": "evalues.RD",
+      "measure": "RD",
+      "n11": 40,
+      "n10": 60,
+      "n01": 20,
+      "n00": 80,
+      "true": 0,
+      "expected": {
+        "point": 3.4142135623730949,
+        "lower": 1.9242716921834302
+      }
+    },
+    {
+      "id": "rd-true",
+      "fun": "evalues.RD",
+      "measure": "RD",
+      "n11": 40,
+      "n10": 60,
+      "n01": 20,
+      "n00": 80,
+      "true": 0.050000000000000003,
+      "expected": {
+        "point": 2.7617473133351864,
+        "lower": 1.4169599602681873
+      }
+    },
+    {
+      "id": "rd-crossing",
+      "fun": "evalues.RD",
+      "measure": "RD",
+      "n11": 12,
+      "n10": 88,
+      "n01": 10,
+      "n00": 90,
+      "true": 0,
+      "expected": {
+        "point": 1.6898979485566354,
+        "lower": 1
+      }
+    },
+    {
+      "id": "rd-large",
+      "fun": "evalues.RD",
+      "measure": "RD",
+      "n11": 300,
+      "n10": 700,
+      "n01": 150,
+      "n00": 850,
+      "true": 0,
+      "expected": {
+        "point": 3.4142135623730949,
+        "lower": 2.7641849938596046
+      }
+    },
+    {
+      "id": "rd-unbalanced",
+      "fun": "evalues.RD",
+      "measure": "RD",
+      "n11": 30,
+      "n10": 20,
+      "n01": 100,
+      "n00": 400,
+      "true": 0,
+      "expected": {
+        "point": 5.4494897427831761,
+        "lower": 3.8604041874566235
+      }
+    },
+    {
+      "id": "rd-small-effect",
+      "fun": "evalues.RD",
+      "measure": "RD",
+      "n11": 55,
+      "n10": 45,
+      "n01": 45,
+      "n00": 55,
+      "true": 0,
+      "expected": {
+        "point": 1.7433795288692702,
+        "lower": 1
+      }
+    }
+  ]
+} 

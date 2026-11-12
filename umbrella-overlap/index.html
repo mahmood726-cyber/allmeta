@@ -64,7 +64,7 @@
     <aside aria-label="Inputs">
       <section class="panel">
         <h2>Reviews × primary studies</h2>
-        <label class="hint" style="display:block;margin:0 0 .3rem">One review per line: <code>Review label: studyId, studyId, …</code> (study ids: PMIDs, NCTs, or any stable token shared across reviews).</label>
+        <label class="hint" style="display:block;margin:0 0 .3rem">One review per line: <code>Review label: studyId, studyId, …</code> (study ids: PMIDs, NCTs, DOIs or labels such as <code>Smith 2010</code>, shared across reviews; separate them with commas or semicolons; only if no line uses a comma or semicolon are ids split on spaces).</label>
         <textarea id="f-data" aria-label="Reviews and their cited studies"></textarea>
       </section>
     </aside>
@@ -95,18 +95,8 @@
     var toast = function (m) { try { if (window.Toast && Toast.show) Toast.show(m); } catch (e) {} };
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-    function parse(text) {
-      var out = [];
-      String(text || "").split(/\r?\n/).forEach(function (ln) {
-        ln = ln.trim(); if (!ln || ln[0] === "#") return;
-        var idx = ln.indexOf(":");
-        var label = idx >= 0 ? ln.slice(0, idx).trim() : "";
-        var rest = idx >= 0 ? ln.slice(idx + 1) : ln;
-        var ids = rest.split(/[,;\s]+/).map(function (s) { return s.trim(); }).filter(Boolean);
-        if (ids.length) out.push({ label: label, study_ids: ids });
-      });
-      return out;
-    }
+    // Comma/semicolon-separated ids keep their inner spaces ("Smith 2010" is one study).
+    function parse(text) { return window.AlmUmbrellaOverlap.parseReviews(text); }
     function grooveClass(g) { return "g-" + (g === "Very High" ? "Very" : g); }
 
     function run() {

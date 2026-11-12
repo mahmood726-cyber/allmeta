@@ -36,6 +36,8 @@
     input, select { width: 100%; padding: 0.35rem 0.55rem; border: 1px solid var(--border);
       background: var(--input-bg); color: var(--ink); border-radius: 6px; font: inherit; }
     .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; }
+    .row4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.6rem; }
+    [hidden] { display: none !important; }
     .check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
     .check input { width: auto; }
     button.primary { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem;
@@ -72,13 +74,27 @@
           <option value="OR">Odds ratio (OR)</option>
           <option value="HR">Hazard ratio (HR)</option>
           <option value="SMD">Standardised mean difference (d)</option>
+          <option value="OLS">Linear regression coefficient (continuous outcome)</option>
+          <option value="RD">Risk difference (2&times;2 counts)</option>
         </select>
       </label>
-      <div class="row3">
+      <div class="row3" id="grp-point">
         <label><span class="lbl">Point</span><input id="point" type="number" step="any" value="2.0"></label>
-        <label><span class="lbl">CI lower</span><input id="lo" type="number" step="any" value="1.5"></label>
-        <label><span class="lbl">CI upper</span><input id="hi" type="number" step="any" value="2.7"></label>
+        <label id="grp-lo"><span class="lbl">CI lower</span><input id="lo" type="number" step="any" value="1.5"></label>
+        <label id="grp-hi"><span class="lbl">CI upper</span><input id="hi" type="number" step="any" value="2.7"></label>
       </div>
+      <div class="row3" id="grp-reg" hidden>
+        <label id="grp-se"><span class="lbl">Standard error</span><input id="se" type="number" step="any" min="0" aria-describedby="se-hint"><span class="hint" id="se-hint">optional; instead of a CI (EValue's convention)</span></label>
+        <label id="grp-sd"><span class="lbl">Outcome SD</span><input id="sd" type="number" step="any" min="0"></label>
+        <label id="grp-delta"><span class="lbl">Contrast &delta;</span><input id="delta" type="number" step="any" value="1"><span class="hint">exposure units compared</span></label>
+      </div>
+      <div class="row4" id="grp-rd" hidden>
+        <label><span class="lbl">Exposed, event</span><input id="n11" type="number" step="any" min="0"></label>
+        <label><span class="lbl">Exposed, no event</span><input id="n10" type="number" step="any" min="0"></label>
+        <label><span class="lbl">Unexposed, event</span><input id="n01" type="number" step="any" min="0"></label>
+        <label><span class="lbl">Unexposed, no event</span><input id="n00" type="number" step="any" min="0"></label>
+      </div>
+      <label id="grp-true"><span class="lbl">True value (optional)</span><input id="truev" type="number" step="any" aria-describedby="true-hint"><span class="hint" id="true-hint">Blank = the null (1 for ratios, 0 for d or a risk difference). A non-null value gives the E-value to move the estimate and CI to it, as EValue's <code>true</code> argument; for a regression coefficient it is on the standardised-difference (d) scale, as in <code>evalues.OLS</code>.</span></label>
       <label class="check"><input id="rare" type="checkbox"> Rare outcome (&lt;~15%) — affects OR/HR → RR mapping</label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.6rem">Compute E-value</button>
       <div class="note"><strong>Scope:</strong> the E-value is for <em>observational</em> estimates where residual confounding is plausible. A confidence interval is optional, but must contain the point estimate when supplied; incomplete or inconsistent intervals are refused. A missing CI never implies that the null is included. This sensitivity measure does not address selection bias, measurement error, or model misspecification.</div>
@@ -98,10 +114,14 @@
     E-value(RR) = RR + √(RR·(RR−1)) for RR ≥ 1 (use 1/RR for RR &lt; 1); the CI E-value uses the
     confidence limit nearest the null (= 1 if that limit crosses the null). Non-RR measures are mapped
     to an approximate RR: OR → √OR (common) or OR (rare); HR via VanderWeele-Ding; d → exp(0.91·d) (Chinn 2000).
+    With a standard error instead of a CI, d's limits are exp(0.91·d ∓ 1.78·SE), as in EValue's <code>evalues.MD</code>;
+    a regression coefficient b is first converted to d = b·δ/SD (<code>evalues.OLS</code>); a risk difference uses the
+    bias-factor method of Ding &amp; VanderWeele (2016) with EValue's grid search (<code>evalues.RD</code>).
     Reference: VanderWeele TJ, Ding P. Sensitivity Analysis in Observational Research: Introducing the
     E-Value. Ann Intern Med. 2017;167(4):268-274. doi:10.7326/M16-2607. Computed client-side by the audited
     <code>shared/evalue.js</code>, verified vs the <code>EValue</code> R package to ~1e-6 in
-    <code>hub/shared/tests/evalue-parity.spec.mjs</code>.
+    <code>hub/shared/tests/evalue-parity.spec.mjs</code> and, for the true value, SE, regression and risk-difference
+    options, to 1e-9 in <code>evalue/tests/test_evalue_r_parity_extended.py</code>.
   </footer>
   <script>
     function num(id) {
@@ -113,6 +133,73 @@
       return raw === "" ? null : Number(raw);
     }
     function fmt(x) { return (x == null || !isFinite(x)) ? "—" : x.toFixed(4).replace(/\.?0+$/, ""); }
+
+    function show(id, on) { document.getElementById(id).hidden = !on; }
+    function layout(measure) {
+      var rd = measure === "RD", ols = measure === "OLS", smd = measure === "SMD";
+      show("grp-point", !rd); show("grp-lo", !rd && !ols); show("grp-hi", !rd && !ols);
+      show("grp-reg", smd || ols); show("grp-se", smd || ols); show("grp-sd", ols); show("grp-delta", ols);
+      show("grp-rd", rd);
+    }
+
+    // Non-null true value, SMD with a standard error, regression coefficient and
+    // risk difference: EValue's evalues.RR/OR/HR/MD (true, se), evalues.OLS and
+    // evalues.RD, through shared/evalue.js. Hidden fields are ignored.
+    function runExtended(measure, tv, refuse) {
+      var tbody = document.getElementById("tbody"), E = window.AlmEValue, r, rows = "", what, tvTxt;
+      try {
+        if (tv !== null && !Number.isFinite(tv)) throw new RangeError("the true value must be a finite number.");
+        if (measure === "RD") {
+          var c = ["n11", "n10", "n01", "n00"].map(num);
+          if (c.some(function (v) { return v === null; })) throw new RangeError("all four cell counts are required.");
+          r = E.eValuesRD(c[0], c[1], c[2], c[3], { "true": tv });
+          rows = "<tr><td>Risk difference (95% CI)</td><td><code>" + fmt(r.rd) + "</code> (CI <code>" + fmt(r.rdLo) + "</code>&ndash;<code>" + fmt(r.rdHi) + "</code>)</td></tr>"
+            + "<tr><td>Bias factor to reach the true value</td><td><code>" + fmt(r.biasFactor) + "</code></td></tr>";
+          what = "risk difference";
+        } else {
+          var point = num("point"), se = (measure === "SMD" || measure === "OLS") ? num("se") : null;
+          if (point === null) throw new RangeError("an estimate is required.");
+          if (se !== null && !Number.isFinite(se)) throw new RangeError("the standard error must be a finite number.");
+          if (measure === "OLS") {
+            var sd = num("sd"), delta = num("delta");
+            if (sd === null) throw new RangeError("the outcome standard deviation is required for a regression coefficient.");
+            r = E.eValuesOLS(point, se, sd, delta === null ? 1 : delta, { "true": tv });
+            rows = "<tr><td>Standardised difference d (SE)</td><td><code>" + fmt(r.d) + "</code>" + (r.seD != null ? " (<code>" + fmt(r.seD) + "</code>)" : "") + "</td></tr>";
+            what = "coefficient";
+          } else {
+            var lo = num("lo"), hi = num("hi");
+            if (lo !== null && !Number.isFinite(lo) || hi !== null && !Number.isFinite(hi)) throw new RangeError("confidence limits must be finite numbers.");
+            r = E.eValues(measure, point, lo, hi, { rare: document.getElementById("rare").checked, "true": tv, se: measure === "SMD" ? se : null });
+            what = "estimate";
+          }
+          rows += "<tr><td>Approx. risk ratio used</td><td><code>" + fmt(r.rr.point) + "</code>"
+            + (r.rr.lo != null ? " (CI <code>" + fmt(r.rr.lo) + "</code>&ndash;<code>" + fmt(r.rr.hi) + "</code>)" : "") + "</td></tr>";
+          if (tv !== null) rows += "<tr><td>True value on the risk-ratio scale</td><td><code>" + fmt(r.rr["true"]) + "</code></td></tr>";
+        }
+      } catch (e) {
+        refuse(String(e && e.message || e).replace(/^\w/, function (ch) { return ch.toLowerCase(); }));
+        return;
+      }
+      if (!Number.isFinite(r.point) || (r.ci != null && !Number.isFinite(r.ci))) {
+        refuse("derived risk ratio or E-value was non-finite.");
+        return;
+      }
+      window.__almLastEValue = function () { return r; };
+      tbody.innerHTML =
+        "<tr><td>E-value (point estimate)</td><td class='big'>" + fmt(r.point) + "</td></tr>"
+        + "<tr><td>E-value (CI limit nearest " + (tv === null ? "null" : "true value") + ")</td><td class='big'>" + fmt(r.ci) + "</td></tr>" + rows;
+      tvTxt = tv === null ? "fully explain away the " + what
+        : "move the " + what + " to the true value " + (measure === "OLS" ? "d = " : "") + fmt(tv);
+      var ciTxt = r.ci == null
+        ? "no confidence interval or standard error was supplied; a CI E-value cannot be assessed."
+        : (r.ci <= 1)
+          ? "the confidence interval already includes " + (tv === null ? "the null" : "the true value") + ", so the CI E-value is 1."
+          : "a confounder associated with both exposure and outcome by a risk ratio of <strong>" + fmt(r.ci) + "</strong>-fold each (above measured covariates) could shift the CI limit nearest " + (tv === null ? "the null to it" : "the true value to it") + ".";
+      document.getElementById("interp").innerHTML =
+        "To " + tvTxt + ", an unmeasured confounder would need to be associated with both the exposure and the outcome by a risk ratio of <strong>" + fmt(r.point)
+        + "</strong>-fold each, above and beyond the measured covariates. For the interval: " + ciTxt;
+      drawPlot(r);
+    }
 
     function run() {
       var measure = document.getElementById("measure").value;
@@ -127,6 +214,12 @@
         tbody.textContent = "Analysis refused: " + reason;
         document.getElementById("interp").textContent = "";
         document.getElementById("plot").replaceChildren();
+      }
+      layout(measure);
+      var tv = num("truev"), se = measure === "SMD" ? num("se") : null;
+      if (measure === "OLS" || measure === "RD" || tv !== null || se !== null) {
+        runExtended(measure, tv, refuse);
+        return;
       }
       if (!["RR", "OR", "HR", "SMD"].includes(measure) ||
           point === null || !Number.isFinite(point) || (ratio && point <= 0) ||
@@ -187,7 +280,7 @@
     }
 
     document.getElementById("btn-run").addEventListener("click", run);
-    ["measure", "point", "lo", "hi", "rare"].forEach(function (id) {
+    ["measure", "point", "lo", "hi", "rare", "se", "sd", "delta", "truev", "n11", "n10", "n01", "n00"].forEach(function (id) {
       document.getElementById(id).addEventListener("input", run);
       document.getElementById(id).addEventListener("change", run);
     });

@@ -1,0 +1,181 @@
+{
+ "source": "shared/evalue.js at allmeta origin/main 781417ef (before the extension); eValues(measure,point,lo,hi,{rare}); ci null when no CI (page rule)",
+ "cases": [
+  {
+   "measure": "RR",
+   "point": 2,
+   "lo": 1.5,
+   "hi": 2.7,
+   "rare": false,
+   "expected": {
+    "point": 3.414213562373095,
+    "ci": 2.3660254037844384,
+    "rr": {
+     "point": 2,
+     "lo": 1.5,
+     "hi": 2.7
+    }
+   }
+  },
+  {
+   "measure": "RR",
+   "point": 0.41094,
+   "lo": 0.1343,
+   "hi": 1.2574,
+   "rare": false,
+   "expected": {
+    "point": 4.301120462823903,
+    "ci": 1,
+    "rr": {
+     "point": 0.41094,
+     "lo": 0.1343,
+     "hi": 1.2574
+    }
+   }
+  },
+  {
+   "measure": "RR",
+   "point": 0.6,
+   "lo": 0.4,
+   "hi": 0.9,
+   "rare": false,
+   "expected": {
+    "point": 2.7207592200561264,
+    "ci": 1.4624752955742646,
+    "rr": {
+     "point": 0.6,
+     "lo": 0.4,
+     "hi": 0.9
+    }
+   }
+  },
+  {
+   "measure": "OR",
+   "point": 2,
+   "lo": 1.5,
+   "hi": 2.7,
+   "rare": false,
+   "expected": {
+    "point": 2.179580427103275,
+    "ci": 1.749392494666879,
+    "rr": {
+     "point": 1.4142135623730951,
+     "lo": 1.224744871391589,
+     "hi": 1.6431676725154984
+    }
+   }
+  },
+  {
+   "measure": "OR",
+   "point": 0.7,
+   "lo": 0.5,
+   "hi": 0.95,
+   "rare": true,
+   "expected": {
+    "point": 2.21103222500738,
+    "ci": 1.2880071555262935,
+    "rr": {
+     "point": 0.7,
+     "lo": 0.5,
+     "hi": 0.95
+    }
+   }
+  },
+  {
+   "measure": "HR",
+   "point": 1.6,
+   "lo": 1.2,
+   "hi": 2.1,
+   "rare": false,
+   "expected": {
+    "point": 2.1129439278880713,
+    "ci": 1.5255309175787344,
+    "rr": {
+     "point": 1.3839700082583661,
+     "lo": 1.134653544128738,
+     "hi": 1.6670240587123641
+    }
+   }
+  },
+  {
+   "measure": "HR",
+   "point": 0.5,
+   "lo": 0.3,
+   "hi": 0.8,
+   "rare": true,
+   "expected": {
+    "point": 3.414213562373095,
+    "ci": 1.8090169943749475,
+    "rr": {
+     "point": 0.5,
+     "lo": 0.3,
+     "hi": 0.8
+    }
+   }
+  },
+  {
+   "measure": "SMD",
+   "point": -0.35517,
+   "lo": -0.5792,
+   "hi": -0.13114,
+   "rare": false,
+   "expected": {
+    "point": 2.107583314404337,
+    "ci": 1.5046595155184206,
+    "rr": {
+     "point": 0.7238256720869001,
+     "lo": 0.5903309306032859,
+     "hi": 0.8875083049377597
+    }
+   }
+  },
+  {
+   "measure": "SMD",
+   "point": 0.2,
+   "lo": -0.1,
+   "hi": 0.5,
+   "rare": false,
+   "expected": {
+    "point": 1.6889607176012267,
+    "ci": 1,
+    "rr": {
+     "point": 1.1996141938798683,
+     "lo": 0.9130177108992658,
+     "hi": 1.5761733830339912
+    }
+   }
+  },
+  {
+   "measure": "RR",
+   "point": 3,
+   "lo": null,
+   "hi": null,
+   "rare": false,
+   "expected": {
+    "point": 5.449489742783178,
+    "ci": null,
+    "rr": {
+     "point": 3,
+     "lo": null,
+     "hi": null
+    }
+   }
+  },
+  {
+   "measure": "RR",
+   "point": 1,
+   "lo": 0.8,
+   "hi": 1.25,
+   "rare": false,
+   "expected": {
+    "point": 1,
+    "ci": 1,
+    "rr": {
+     "point": 1,
+     "lo": 0.8,
+     "hi": 1.25
+    }
+   }
+  }
+ ]
+}
