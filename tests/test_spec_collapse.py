@@ -93,3 +93,13 @@ def test_trimfill_side_matches_metafor_regression(method):
     assert o["side"] == "right"
     assert o["k0"] == 1
     assert math.isclose(o["imputed"][0]["yi"], TF_REF[method], abs_tol=1e-6)
+
+
+def test_trimfill_fe_side_keeps_fixed_effect_slope_when_sqrt_vi_barely_varies():
+    # FE (and any method without a tau2 regression) must keep the fixed-effect slope of yi on sqrt(vi),
+    # even when sqrt(vi) has almost no spread: the regression-fit rank guard must not pre-empt it
+    # (independent review of the P64 port; the slope here is about -2e6, so metafor's side is "right").
+    o = _run("const T=require('./shared/trimfill.js');"
+             "const r=T.trimAndFill([3,2,1],[1,1.000001,1.000002],{method:'FE'});"
+             "console.log(JSON.stringify({side:r.side,s:T._regSlope([3,2,1],[1,1.000001,1.000002],'FE')}));")
+    assert o["side"] == "right" and o["s"] < 0

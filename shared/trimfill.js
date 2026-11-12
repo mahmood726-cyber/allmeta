@@ -74,6 +74,7 @@
     return s;
   }
   function _regSlope(yi, vi, method) {
+    if (method !== "DL" && method !== "PM" && method !== "REML") return _eggerSlope(yi, vi);  // FE etc.: unchanged rule
     var k = yi.length, df = k - 2, x = vi.map(Math.sqrt), f = _regFit(yi, x, vi, 0), t2 = 0, i;
     if (!f) return 0;
     if (method === "DL") {
