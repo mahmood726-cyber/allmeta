@@ -91,10 +91,15 @@
     // log Πφ(yᵢ; 0, vᵢ+τ²)
     function logLik0(tau2) { var s = 0; for (var i = 0; i < k; i++) s += _logNormPdf(yi[i], 0, Math.sqrt(vi[i] + tau2)); return s; }
     // log ∫ Πφ(yᵢ; μ, vᵢ+τ²) N(μ; 0, muSD²) dμ (closed form) and E[μ | τ]
+    // Completed square: sum w*y^2 - B^2/A = sum w*(y - m)^2 + m^2/muSD^2 with m = B/A, a sum of
+    // non-negative terms. Writing it as logLik0 + B^2/(2A) subtracts two numbers of size
+    // sum w*y^2 (2^60 for y = 1, se = 2^-30), which cancel catastrophically in double precision.
     function logLikMu(tau2) {
-      var A = 1 / (muSD * muSD), B = 0;
-      for (var i = 0; i < k; i++) { var w = 1 / (vi[i] + tau2); A += w; B += w * yi[i]; }
-      return { l: logLik0(tau2) - 0.5 * Math.log(muSD * muSD * A) + B * B / (2 * A), m: B / A };
+      var A0 = 1 / (muSD * muSD), A = A0, B = 0, i, w;
+      for (i = 0; i < k; i++) { w = 1 / (vi[i] + tau2); A += w; B += w * yi[i]; }
+      var m = B / A, q = A0 * m * m, c = 0;
+      for (i = 0; i < k; i++) { var v = vi[i] + tau2, d = yi[i] - m; q += d * d / v; c += Math.log(2 * Math.PI * v); }
+      return { l: -0.5 * c - 0.5 * Math.log(muSD * muSD * A) - 0.5 * q, m: m };
     }
     function logPriorTau(t) { return Math.LN2 + _logNormPdf(t, 0, tauSD); }
     var TAU = 10 * tauSD;
