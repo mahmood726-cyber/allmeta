@@ -180,3 +180,17 @@ test('fresh pinned R verifies both CI conventions, model I2 and the distinct pre
   }
   console.log('HETEROGENEITY_FRESH_R_EVIDENCE '+JSON.stringify(records));
 });
+
+// Upper-tail Q p-value must not cancel to an exact 0. Reference: R 4.6.0 / metafor 5.2-1,
+// rma(yi, sei=sei, method="REML") on metadat dat.bcg (log RR, escalc): QE=152.23300808237346,
+// QEp = pchisq(QE, 12, lower.tail=FALSE) = 1.9967645908458142e-26 (1 - pchisq(QE, 12) is 0 in R too).
+const BCG='trial_1_1948,-0.889311333920205,0.570600354892951\ntrial_2_1949,-1.58538865720143,0.441113501718258\ntrial_3_1960,-1.34807314829969,0.644490469571091\ntrial_4_1977,-1.44155119002131,0.141456819921302\ntrial_5_1973,-0.217547322211296,0.226296646395016\ntrial_6_1953,-0.786115585818864,0.0831000508778951\ntrial_7_1973,-1.62089822359839,0.472247019654243\ntrial_8_1980,0.0119523335238405,0.0629410779842364\ntrial_9_1968,-0.469417648738149,0.237558856840255\ntrial_10_1961,-1.37134480347278,0.270231000466321\ntrial_11_1974,-0.339358828338391,0.111410116109623\ntrial_12_1969,0.445913400571379,0.729729981020482\ntrial_13_1976,-0.0173139482168798,0.267216503390016';
+test('Q-test p-value keeps full relative precision in the far upper tail (never an exact 0)',async({page})=>{
+  await open(page);await input(page,BCG);
+  const out=await result(page);
+  expect(out.k).toBe(13);
+  expect(Math.abs(out.Q-152.23300808237346)/152.23300808237346).toBeLessThan(1e-12);
+  expect(out.Q_p).toBeGreaterThan(0);
+  expect(Math.abs(out.Q_p-1.9967645908458142e-26)/1.9967645908458142e-26).toBeLessThan(1e-8);
+  await expect(page.locator('#stats-wrap')).toContainText('p<0.001');
+});
