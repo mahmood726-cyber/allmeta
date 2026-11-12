@@ -35,6 +35,9 @@ assert.ok(Number.isNaN(T.pchisqUpper(1, 0)));
 assert.ok(Number.isNaN(T.ptUpper(NaN, 3)));
 assert.ok(Math.abs(T.p2norm(-1.959963984540054) - 0.05) < 1e-15);
 assert.ok(Math.abs(T.p2t(-2.5, 10) - 2 * T.ptUpper(2.5, 10)) < 1e-15);
+assert.ok(Math.abs(T.ptUpper(1, Infinity) - 0.15865525393145705) < 1e-14, 'df = Infinity is the normal');
+// large df: R pchisq(1e5, 1e5, lower = FALSE) = 0.49940529189520672
+assert.ok(Math.abs(T.pchisqUpper(1e5, 1e5) - 0.49940529189520672) / 0.4994 < 1e-9);
 // the motivating case: dat.bcg Q = 152.2330 on 12 df (R: 1.9967645908458142e-26 at the exact Q)
 assert.ok(T.pchisqUpper(152.233, 12) > 1e-27 && T.pchisqUpper(152.233, 12) < 1e-25);
 

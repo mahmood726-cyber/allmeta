@@ -1389,7 +1389,9 @@ window.LMA = window.LMA || {};
   // Upper tails computed directly (R lower.tail = FALSE), never as 1 - CDF, so p-values keep
   // their relative precision instead of cancelling to 0 once the CDF rounds to 1.
   LMA.pchisqUpper = function(x, df) {
-    if (!(x > 0)) return x <= 0 ? 1 : NaN;
+    if (!(df > 0) || x !== x) return NaN;
+    if (x <= 0) return 1;
+    if (x === Infinity) return 0;
     const a = df / 2, y = x / 2;
     return y < a + 1 ? 1 - LMA.gammainc(a, y) : LMA.gammainc_upper(a, y);
   };

@@ -114,6 +114,7 @@
   // P(T > t) for Student t with df degrees of freedom.
   function ptUpper(t, df) {
     if (!(df > 0) || isNaN(t)) return NaN;
+    if (df === Infinity) return pnormUpper(t);
     if (t === Infinity) return 0;
     if (t === -Infinity) return 1;
     var at = Math.abs(t);

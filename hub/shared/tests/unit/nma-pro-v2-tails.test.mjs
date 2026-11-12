@@ -29,7 +29,7 @@ test('nma-pro-v2: Stats.pchisq is a correct CDF where x/2 >= df/2 + 1 (continued
   }
 });
 
-test('nma-pro-v2: upper-tail helpers match R lower.tail = FALSE down to 1e-300', () => {
+test('nma-pro-v2: upper-tail helpers match R lower.tail = FALSE down to 1e-300 (t only for |t| <= 1e150)', () => {
   const S = stats();
   for (const g of grid) {
     let v;
@@ -58,4 +58,16 @@ test('nma-pro-v2: the inlined Web Worker Stats provides the pnormU its NMA code 
   for (const g of grid.filter(g => g.d === 'normal')) assert.ok(rel(c.Stats.pnormU(g.x), g.p) < 1e-9, `worker pnormU(${g.x}) = ${c.Stats.pnormU(g.x)} vs ${g.p}`);
   assert.ok(Math.abs(c.Stats.pnormU(-1.9599639845400536) - 0.975) < 1e-12);
   assert.equal(c.Stats.pnormU(0), 0.5);
+});
+
+test('nma-pro-v2: pchisqU stays exact at large df (the old CDF switched to Wilson-Hilferty above df = 100)', () => {
+  const S = stats();
+  // R 4.6.0 pchisq(x, df, lower.tail = FALSE), %.17g
+  for (const [x, df, ref] of [[1e5, 1e5, 0.49940529189520672], [1000, 1000, 0.49405285382923969], [1200, 1000, 1.2255942330622908e-05], [1.1e5, 1e5, 2.5841772471796476e-104]]) {
+    assert.ok(rel(S.pchisqU(x, df), ref) < 1e-9, `pchisqU(${x}, ${df}) = ${S.pchisqU(x, df)}, R ${ref}`);
+  }
+  assert.equal(S.pchisqU(Infinity, 3), 0);
+  assert.ok(Number.isNaN(S.pchisqU(1, 0)) && Number.isNaN(S.pchisqU(1, -1)));
+  assert.equal(S.pnormU(1e200), 0);
+  assert.ok(Math.abs(S.ptU(1, Infinity) - 0.15865525393145705) < 1e-12);
 });

@@ -43,6 +43,9 @@ test('living-meta: normal and t upper-tail helpers keep relative precision (no c
   assert.ok(Math.abs(2 * L.pnormUpper(1.9599639845400536) - 0.05) < 1e-12, 'pnormUpper(1.96)');
   assert.ok(rel(L.pnormUpper(9), 1.1285884059538408e-19) < 1e-8, `pnormUpper(9) = ${L.pnormUpper(9)}`);
   assert.ok(Math.abs(L.pnormUpper(-1.9599639845400536) - 0.975) < 1e-12, 'pnormUpper(-1.96)');
+  assert.equal(L.pchisqUpper(Infinity, 3), 0);
+  assert.ok(Number.isNaN(L.pchisqUpper(1, -1)));
+  assert.equal(L.pnormUpper(1e200), 0);
   // R 4.6.0: 2 * pt(-t, df), %.17g
   for (const [t, df, ref] of [[50, 3, 1.7617152041271951e-05], [1e4, 3, 2.2053155022958127e-12], [3, 10, 0.013343655022569588]]) {
     assert.ok(rel(L.pt2(t, df), ref) < 1e-8, `pt2(${t}, ${df}) = ${L.pt2(t, df)}, R ${ref}`);
