@@ -72877,12 +72877,21 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
                     if (!(gain > 1e-12)) { settled = nxt.converged; break; }
                 }
                 cur = { x: cur.x, f: cur.f, evals: cur.evals, converged: settled };
-                if (settled) settledFits.push(cur.f);
+                if (settled) settledFits.push(cur);
                 if (!bestFit || cur.f < bestFit.f) bestFit = cur;
             });
             if (!bestFit || !Number.isFinite(bestFit.f)) return null;
-            // a start that ended at the cap still counts as converged if a settled start reached the same deviance
-            var fitConverged = settledFits.some(function(f) { return f - bestFit.f <= 1e-10 * Math.max(1, Math.abs(bestFit.f)); });
+            // Convergence belongs to the reported fit (IPD-Follow fix, Codex review of #530): it was granted when any
+            // settled start reached the best deviance within 1e-10 relative while the estimates came from bestFit,
+            // whose own run could have ended at the cap on a simplex that never collapsed. Now, when bestFit did not
+            // settle but a settled start is within that tolerance, the settled start is the reported fit; the flag is
+            // the reported fit's own.
+            if (!bestFit.converged) {
+                var tolF = 1e-10 * Math.max(1, Math.abs(bestFit.f)), alt = null;
+                settledFits.forEach(function(sf) { if (sf.f - bestFit.f <= tolF && (!alt || sf.f < alt.f)) alt = sf; });
+                if (alt) bestFit = alt;
+            }
+            var fitConverged = bestFit.converged === true;
             var fit = evalTheta(bestFit.x);
             if (!fit) return null;
             var sig = fit.rss / n, Lf = fit.L;
