@@ -2583,8 +2583,19 @@
     for (i = 0; i < k; i++) Q += (TE[i] - mu0) * (TE[i] - mu0) / (seTE[i] * seTE[i]);
     var tau2 = mMax(0, (Q - (k - 1)) / (sw - sw2 / sw));
     var m = metagenPool(TE, seTE, tau2);
+    // Not a start metagen() can be said to give, so NOT converged (the page then
+    // refuses instead of fitting from it):
+    //  - any non-finite piece: a weight of Inf (seTE^2 underflows, seTE ~ 1e-160)
+    //    leaves NaN, and R stops with "NA/NaN/Inf in foreign function call";
+    //  - sum(w^2) overflowed (seTE ~ 1e-150). The formula above then returns 0.
+    //    R does return a fit there, but warns its variances are too disparate
+    //    for stable results, and its tau^2 is not the DL value either: for
+    //    TE = c(.1,.2,.15,.3), seTE = c(1e-150,1e-3,1e-2,.1) R gives 0.00765625
+    //    while the exact DL estimate (rational arithmetic) is 0.0049629, so no
+    //    double-precision formula reproduces metagen() there (review MINOR-2).
+    var ok = isFin(sw2) && isFin(tau2) && isFin(m.TE_random) && isFin(m.seTE_random);
     return { tau2: tau2, tau: m.tau, TE_random: m.TE_random, seTE_random: m.seTE_random,
-             iterations: 0, converged: true, exact: false };
+             iterations: 0, converged: ok, exact: false };
   }
 
   /* --------------------------------------- metagen()'s REML start values */

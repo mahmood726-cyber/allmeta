@@ -104,3 +104,23 @@ for (const p of FX.points) {
       `page ${fit.value} vs metasens ${R} (worse by ${fit.value - R})`);
   });
 }
+
+// Review (lane copasrev) MINOR-2: outside the emulated range metaforDL falls back
+// to the textbook DL estimator. At seTE = 1e-150 its sum(w^2) overflows and it
+// returned tau2 = 0 marked converged; at seTE = 1e-160 a weight is Inf and it
+// returned NaN marked converged. R 4.6.0 / meta 8.5.0 / metafor 5.0.1:
+//   metagen(c(.1,.2,.15,.3), c(1e-150,1e-3,1e-2,.1), method.tau = "DL")
+//   warns "Ratio of largest to smallest sampling variance extremely large" and
+//   gives tau2 0x1.f5c28f5c28f5bp-8 (0.00765625), which is not the DL value
+//   either (exact rational arithmetic: 0.0049629); with 1e-160 R stops with
+//   "NA/NaN/Inf in foreign function call". Neither start is metagen()'s, so
+//   both must be reported as not converged (the page then refuses).
+test("metaforDL fallback: overflowed or non-finite starts are not reported as converged (review)", () => {
+  const TE = [0.1, 0.2, 0.15, 0.3];
+  const a = CC.metaforDL(TE, [1e-150, 1e-3, 1e-2, 0.1]);
+  assert.equal(a.converged, false, `sum(w^2) overflowed; got tau2 ${a.tau2} as converged`);
+  const b = CC.metaforDL(TE, [1e-160, 1e-3, 1e-2, 0.1]);
+  assert.equal(b.converged, false, "a NaN start must not be reported as converged");
+  // ...and the fallback's ordinary cases are untouched: k = 1 is tau2 = 0.
+  assert.equal(CC.metaforDL([0.3], [0.1]).converged, true);
+});
