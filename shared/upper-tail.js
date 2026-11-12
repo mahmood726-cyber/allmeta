@@ -35,34 +35,66 @@
 
   var EPS = 1e-15, TINY = 1e-300, MAXIT = 2000;
 
+  // log(sqrt(2 pi) Gamma(n + 1) / (n^(n + 1/2) e^-n)) (Stirling error) and the deviance term
+  // bd0(x, np) = x log(x / np) + np - x, both as Loader (2000) / R's stirlerr.c and bd0.c, so that the
+  // prefactor x^a e^-x / Gamma(a) keeps relative precision when a and x are large.
+  function stirlerr(n) {
+    if (n <= 15) return lgamma(n + 1) - (n + 0.5) * Math.log(n) + n - 0.9189385332046728;
+    var nn = n * n, S0 = 1 / 12, S1 = 1 / 360, S2 = 1 / 1260, S3 = 1 / 1680, S4 = 1 / 1188;
+    if (n > 500) return (S0 - S1 / nn) / n;
+    if (n > 80) return (S0 - (S1 - S2 / nn) / nn) / n;
+    if (n > 35) return (S0 - (S1 - (S2 - S3 / nn) / nn) / nn) / n;
+    return (S0 - (S1 - (S2 - (S3 - S4 / nn) / nn) / nn) / nn) / n;
+  }
+  function bd0(x, np) {
+    if (Math.abs(x - np) < 0.1 * (x + np)) {
+      var v = (x - np) / (x + np), s = (x - np) * v;
+      var ej = 2 * x * v; v = v * v;
+      for (var j = 1; j < 1000; j++) {
+        ej *= v; var s1 = s + ej / (2 * j + 1);
+        if (s1 === s) return s1;
+        s = s1;
+      }
+    }
+    return x * Math.log(x / np) + np - x;
+  }
+
   // Regularized gamma: returns [P(a,x), Q(a,x)], each computed in the form that
   // keeps relative precision (series for P when x < a + 1, continued fraction for Q otherwise).
+  // Both need O(sqrt(a)) terms when x is near a, so the iteration limit grows with sqrt(a); a series or
+  // fraction that has not converged within it (capped at 2e6 terms) returns NaN, never its partial sum (pchisq(1e8, 1e8)
+  // was 0.8886 that way, R 0.49998). For a >= 100 the prefactor is sqrt(a / (2 pi)) exp(-stirlerr(a) -
+  // bd0(a, x)) instead of exp(-x + a log x - lgamma(a)), whose terms cancel to ~1e-16 * a log a.
   function gammaPQ(a, x) {
     if (!(a > 0) || isNaN(x)) return [NaN, NaN];
     if (x <= 0) return [0, 1];
     if (x === Infinity) return [1, 0];
-    var lpre = -x + a * Math.log(x) - lgamma(a);
+    var pre = a >= 100 ? Math.sqrt(a / (2 * Math.PI)) * Math.exp(-stirlerr(a) - bd0(a, x))
+                       : Math.exp(-x + a * Math.log(x) - lgamma(a));
+    var maxit = Math.min(MAXIT + Math.ceil(20 * Math.sqrt(a)), 2e6), conv = false;   // a > ~1e10: NaN
     if (x < a + 1) {
       var ap = a, sum = 1 / a, del = sum;
-      for (var n = 0; n < MAXIT; n++) {
+      for (var n = 0; n < maxit; n++) {
         ap += 1; del *= x / ap; sum += del;
-        if (Math.abs(del) < Math.abs(sum) * EPS) break;
+        if (Math.abs(del) < Math.abs(sum) * EPS) { conv = true; break; }
       }
-      var P = sum * Math.exp(lpre);
+      if (!conv) return [NaN, NaN];
+      var P = sum * pre;
       return [P, 1 - P];
     }
     // Lentz continued fraction for Q(a,x)
     var b = x + 1 - a, c = 1 / TINY, d = 1 / b, h = d;
-    for (var i = 1; i < MAXIT; i++) {
+    for (var i = 1; i < maxit; i++) {
       var an = -i * (i - a);
       b += 2;
       d = an * d + b; if (Math.abs(d) < TINY) d = TINY;
       c = b + an / c; if (Math.abs(c) < TINY) c = TINY;
       d = 1 / d;
       var dl = d * c; h *= dl;
-      if (Math.abs(dl - 1) < EPS) break;
+      if (Math.abs(dl - 1) < EPS) { conv = true; break; }
     }
-    var Q = Math.exp(lpre) * h;
+    if (!conv) return [NaN, NaN];
+    var Q = pre * h;
     return [1 - Q, Q];
   }
 
@@ -100,8 +132,10 @@
 
   function pgammaUpper(x, shape) { return gammaPQ(shape, x)[1]; }
   function pchisqUpper(x, df) {
-    if (!(df > 0) || isNaN(x)) return NaN;
+    // df = 0 is the point mass at 0, as R: pchisq(x, 0, lower.tail = FALSE) = 0 for x > 0, 1 for x <= 0
+    if (!(df >= 0) || isNaN(x)) return NaN;
     if (x <= 0) return 1;
+    if (df === 0) return 0;
     return gammaPQ(df / 2, x / 2)[1];
   }
   function pnormUpper(z) {

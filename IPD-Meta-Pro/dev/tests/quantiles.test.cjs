@@ -90,6 +90,11 @@ const edges = [
     //  Q = 69.64, metafor confint tau2 0.2200 .. 6.119 -- values checked in heterogeneity_sw_normal.test.cjs)
     const r = val('I2ConfidenceIntervals.qProfile(69.63723, 4, 0.7068, [0.04, 0.05, 0.1, 0.02, 0.08], 0.05, [0.9, -0.5, 0.3, 1.2, -0.8])');
     return r && r.tau2_lower > 0 && r.tau2_lower < r.tau2_upper && r.lower < r.upper; })()],
+  // IPD-More: quantiles beyond 1e300 (the bracket used to stop there and return -Infinity). R 4.6.0:
+  // qt(1e-152, 0.5) = -1.028491156316316e+303, qt(1e-300, 0.98) = -4.1067830859536924e+305, qt(1e-300, 0.5) = -Inf
+  ['MathUtils.tQuantile(1e-152, 0.5) = R qt -1.0285e303', Math.abs(val('MathUtils.tQuantile(1e-152, 0.5)') / -1.028491156316316e+303 - 1) < 1e-10],
+  ['MathUtils.tQuantile(1e-300, 0.98) = R qt -4.1068e305', Math.abs(val('MathUtils.tQuantile(1e-300, 0.98)') / -4.1067830859536924e+305 - 1) < 1e-10],
+  ['MathUtils.tQuantile(1e-300, 0.5) = -Infinity (beyond the double range, as R)', val('MathUtils.tQuantile(1e-300, 0.5)') === -Infinity],
   ["page self-test 'normQuantile(0.975) ~ 1.96' holds", Math.abs(val('MathUtils.normQuantile(0.975)') - 1.96) < 0.001],
   ["page self-test 'normQuantile(0.5) = 0' holds", Math.abs(val('MathUtils.normQuantile(0.5)')) < 1e-10]
 ];
