@@ -183,13 +183,18 @@
       var re = _fitWLS(d.X, d.y, d.v, tau2);
 
       // --- AIC: additive vs multiplicative (both ML, +1 dispersion param) ---
-      var llAdd = _logLik(d.X, d.y, d.v, re.beta, function (i) { return d.v[i] + tau2; });
+      // With df = 0 (n = p: one contrast or a spanning tree) the fit is exact, Q is rounding noise, phiML = Q/n -> 0
+      // and the multiplicative log-likelihood diverges: neither dispersion parameter is estimable, so no verdict.
+      var llAdd = null, llMult = null, aicAdd = null, aicMult = null, dAIC = null, prefer = "not-estimable";
       var phiML = n > 0 ? fe.Q / n : 1;          // ML overdispersion for the likelihood
-      var llMult = _logLik(d.X, d.y, d.v, fe.beta, function (i) { return phiML * d.v[i]; });
-      var aicAdd = -2 * llAdd + 2 * (p + 1);
-      var aicMult = -2 * llMult + 2 * (p + 1);
-      var dAIC = aicAdd - aicMult;               // >0 => multiplicative preferred
-      var prefer = dAIC >= 2 ? "multiplicative" : (dAIC <= -2 ? "additive" : "comparable");
+      if (df > 0) {
+        llAdd = _logLik(d.X, d.y, d.v, re.beta, function (i) { return d.v[i] + tau2; });
+        llMult = _logLik(d.X, d.y, d.v, fe.beta, function (i) { return phiML * d.v[i]; });
+        aicAdd = -2 * llAdd + 2 * (p + 1);
+        aicMult = -2 * llMult + 2 * (p + 1);
+        dAIC = aicAdd - aicMult;                 // >0 => multiplicative preferred
+        prefer = dAIC >= 2 ? "multiplicative" : (dAIC <= -2 ? "additive" : "comparable");
+      }
 
       return {
         ok: true,
