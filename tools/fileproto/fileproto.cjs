@@ -65,6 +65,15 @@ const CHECKS = {
     if (!/file:\/\//.test(pdfRows)) fails.push("choosing a PDF on file:// does not explain why it cannot be read; results read: " + pdfRows.slice(0, 160));
     return fails;
   },
+  async "webr-validator"(p) {
+    // WebR cannot start from file://; the page must say so and point to the paste-back path.
+    await p.getByRole("button", { name: /^Load example$/ }).first().click().catch(() => {});
+    await p.check("#f-acknowledge");
+    await p.click("#btn-run-webr");
+    let text = "";
+    for (let i = 0; i < 20; i++) { await p.waitForTimeout(1000); text = (await p.locator("#status").innerText()) + " | " + (await p.locator("#webr-log").innerText()); if (/error|failed|file:\/\//i.test(text)) break; }
+    return /file:\/\//.test(text) && /paste-back/i.test(text) ? [] : ["Run in WebR on file:// does not explain why or point to the paste-back path; reads: " + text.slice(-240)];
+  },
   async evidenceos(p) {
     await p.waitForTimeout(1500);
     const verdict = (await p.locator("#verdict").innerText()).trim();
