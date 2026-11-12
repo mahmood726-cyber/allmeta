@@ -974,7 +974,8 @@ class NetworkMetaAnalysis {
         }
 
         const df = nContrasts - nParams;
-        const pValue = AlmTail.pchisqUpper(Q, df);
+        // df = 0 (no residual df, saturated network, Q identically 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1, metafor QEp = 1. AlmTail returns NaN for df <= 0.
+        const pValue = df > 0 ? AlmTail.pchisqUpper(Q, df) : 1;
 
         // Estimate tau² using DerSimonian-Laird
         const tauSq = Math.max(0, (Q - df) / this.calculateC(V, X));
