@@ -3,6 +3,16 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const {harness,root}=require('./nma-inconsistency-dom.cjs');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'nma-inconsistency/validate/MANIFEST.json'),'utf8'));
 const files=()=>Object.fromEntries(manifest.files.map(f=>[f.path,fs.readFileSync(path.join(root,'nma-inconsistency',f.path))]));
+// The pinned contract was derived in a real browser (0110cb53). Two linkedom
+// parse differences from a browser failed 205 of its checks here; the harness
+// must reproduce browser DOM shape before the corpus result means anything.
+test('harness DOM matches browser parsing: one text node for |z| &gt; 1.96, self-closed SVG <line/> has no children',()=>{
+ const {c,document}=harness();c.run();
+ const hint=[...document.querySelectorAll('div.note')].find(d=>/Reading the plot/.test(d.textContent));
+ assert.ok(hint);assert.ok([...hint.childNodes].some(n=>n.nodeType===3&&/\|z\| > 1\.96 indicate/.test(n.textContent)));
+ const lines=[...document.querySelectorAll('#ns-plot line')];
+ assert.ok(lines.length>0);assert.deepEqual(lines.filter(l=>l.childNodes.length).length,0);
+});
 test('pinned corpus executes page code, exact totals and state restoration',async()=>{
  const {c,document,storage}=harness();
  document.getElementById('src').value='pending input';storage.set('ma-comparisons-v1','pending bus');storage.set('alm-autosave:nma-inconsistency','draft');
