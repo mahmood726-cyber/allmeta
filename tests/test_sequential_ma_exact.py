@@ -98,6 +98,15 @@ def test_post_ris_look_keeps_earlier_futility():
     assert abs(out["a"][0][1] - 0.559391504859) < 2e-5, out
 
 
+def test_close_looks_after_alpha_is_spent_are_not_refused():
+    # Independent review (tsa example + "Pilot F, 0.40, 25"): looks 8e-6 apart at t = 2.83, where no alpha is spent,
+    # were refused by the mesh check. Their boundaries are Infinity regardless; earlier boundaries are unchanged.
+    t = [0.10529480753475619, 0.262587050889145, 0.61649459843652, 1.4127865804181137, 2.828416770607614, 2.8284249246375097]
+    out = _node("const t = %s; const f = n => M.computeBoundary(t.slice(0, n).map(x => ({t: x, z: 0})), {alpha: 0.05, family: 'OBF', sided: 2})"
+                ".looks.map(l => l.alpha_boundary === Infinity ? 'Inf' : l.alpha_boundary); console.log(JSON.stringify([f(6), f(4)]));" % json.dumps(t))
+    assert out[0][:4] == out[1] and out[0][4:] == ["Inf", "Inf"], out
+
+
 def test_closely_spaced_looks():
     # Review finding: a fixed J&T mesh cannot resolve the transition density between looks 1e-5 apart.
     # Reference: tests/fixtures/sequential-ma-close-looks.R: look 2 by one-dimensional quadrature (R integrate,

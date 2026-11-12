@@ -196,6 +196,11 @@
       else if (!(inc > 0)) b[k] = Infinity;
       else b[k] = _solve(function (c) { return _cross(s, info[k], c, 0, true) - inc; }, -10, 40);
       if (k < K - 1) {
+        // Once no later look spends alpha (all information past t = 1), every later boundary is Infinity and the
+        // density need not be carried further -- so looks there are never refused as "too close" by the mesh check.
+        var more = false;
+        for (var j = k + 1; j < K; j++) if (incr[j] > 0) { more = true; break; }
+        if (!more) { for (j = k + 1; j < K; j++) b[j] = Infinity; break; }
         var lo = sided === 2 ? -b[k] : -Infinity;
         var rk = _mesh(k > 0 ? info[k - 1] : null, info[k], info[k + 1]);
         s = k === 0 ? _start(info[0], 0, lo, b[0], rk) : _advance(s, info[k], 0, lo, b[k], rk);
