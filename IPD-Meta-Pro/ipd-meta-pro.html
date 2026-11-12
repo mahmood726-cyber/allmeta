@@ -77331,7 +77331,9 @@ function displayValidationResults(results) {
       lines.push('# HKSJ correction');
       lines.push('ref_hksj <- rma(yi=bcg_yi, vi=bcg_vi, method="DL", test="adhoc", level=' + confLevel + ')');
       lines.push('# Prediction interval');
-      lines.push('ref_pi   <- predict(ref_reml, level=' + confLevel + ')');
+      lines.push('# t with k-1 df, as the page (predict() would use z: rma defaults to test="z")');
+      lines.push('ref_pi_h <- qt((1 + ' + confLevel + ') / 2, ref_reml$k - 1) * sqrt(ref_reml$tau2 + ref_reml$se^2)');
+      lines.push('ref_pi   <- list(pi.lb = as.numeric(ref_reml$b) - ref_pi_h, pi.ub = as.numeric(ref_reml$b) + ref_pi_h)');
       lines.push('# Egger test (weighted linear regression, t-statistic)');
       lines.push('ref_eg   <- regtest(ref_reml, model="lm", predictor="sei")');
       lines.push('# Sidik-Jonkman');
@@ -77437,7 +77439,13 @@ function displayValidationResults(results) {
       lines.push('');
 
       lines.push('# ── Prediction interval ─────────────────────────────────────────');
-      lines.push('pi_res <- predict(res_primary, level=' + confLevel + ')');
+      if (method === 'FE') {
+        lines.push('pi_res <- list(pi.lb = "not defined for a common-effect (FE) model", pi.ub = "")');
+      } else {
+        lines.push('# t with k-1 df on the fitted SE, as the page (predict() would use z)');
+        lines.push('pi_h <- qt((1 + ' + confLevel + ') / 2, res_primary$k - 1) * sqrt(res_primary$tau2 + res_primary$se^2)');
+        lines.push('pi_res <- list(pi.lb = as.numeric(res_primary$b) - pi_h, pi.ub = as.numeric(res_primary$b) + pi_h)');
+      }
       lines.push('cat("PI: [", pi_res$pi.lb, ",", pi_res$pi.ub, "]\\n")');
       lines.push('');
 

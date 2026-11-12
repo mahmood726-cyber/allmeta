@@ -83,6 +83,21 @@ for (const [spread, tag0] of [[1.4, 'het'], [0.5, 'homog']]) {
     const tag = tag0 + ' ' + method + (hksj ? '+HKSJ' : '');
     check('analysis ran (' + tag + ', Q ' + run('APP.results.pooled.Q').toFixed(2) + ' on 7 df)', !!run('APP.results && APP.results.pooled'));
     runScenarios(cur, '[' + tag + '] ');
+    // The panel's "R Script Preview" / Download Report script: its prediction intervals must be the page's.
+    const script = run('generateRScript()').replace(/^if \(!require\([^\n]*install\.packages[^\n]*$/gm, '');
+    const sf = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'p60rs-')), 'script.R');
+    fs.writeFileSync(sf, script);
+    let txt = '';
+    try { txt = execFileSync(RSCRIPT, ['--vanilla', sf], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { check('[' + tag + '] R script runs', false, String(e.message).slice(0, 200)); continue; }
+    const pis = [...txt.matchAll(/^PI: \[\s*(\S+)\s*,\s*(\S*)\s*\]/gm)].map((m) => [Number(m[1]), Number(m[2])]);
+    const refPI = ref.find((s) => s.id === 'ref_pi').getJSValues();
+    check('[' + tag + '] R script BCG PI = page PI (1e-4)', pis.length >= 1 && Math.abs(pis[0][0] - refPI.pi_lower) < 1e-4 && Math.abs(pis[0][1] - refPI.pi_upper) < 1e-4, JSON.stringify(pis[0]) + ' page ' + JSON.stringify(refPI));
+    if (method !== 'FE') {
+      const curPI = cur.find((s) => s.id === 'cur_pi').getJSValues();
+      check('[' + tag + '] R script current PI = page PI (1e-4)', pis.length >= 2 && Math.abs(pis[1][0] - curPI.pi_lower) < 1e-4 && Math.abs(pis[1][1] - curPI.pi_upper) < 1e-4, JSON.stringify(pis[1]) + ' page ' + JSON.stringify(curPI));
+    } else {
+      check('[' + tag + '] R script states no PI for FE', /PI: \[ not defined for a common-effect/.test(txt), (txt.match(/^PI:.*$/gm) || []).join(' | '));
+    }
   }
 }
 // The page's other built-in benchmark (validateDataset, "Validation Study") computes REML with
