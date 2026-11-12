@@ -210,6 +210,11 @@ C, D, -0.35, 0.14, CD</textarea>
         }
         return sum * Math.exp(-x + s * Math.log(x) - _lngamma(s));
       }
+      return 1 - _gammqCF(s, x);
+    }
+    // Q(s,x) = 1 - P(s,x) by continued fraction, returned directly (x >= s + 1) so a
+    // far upper tail keeps its relative precision instead of cancelling in 1 - P.
+    function _gammqCF(s, x) {
       let b = x + 1 - s, c = 1e300, d = 1 / b, h = d;
       for (let i = 1; i < 300; i++) {
         const an = -i * (i - s);
@@ -218,12 +223,19 @@ C, D, -0.35, 0.14, CD</textarea>
         d = 1 / d; const del = d * c; h *= del;
         if (Math.abs(del - 1) < 1e-15) break;
       }
-      return 1 - Math.exp(-x + s * Math.log(x) - _lngamma(s)) * h;
+      return Math.exp(-x + s * Math.log(x) - _lngamma(s)) * h;
     }
     function pchi(x, k) {
       if (k <= 0 || x < 0) return NaN;
       if (x === 0) return 0;
       return _gammp(k / 2, x / 2);  // CDF
+    }
+    // Upper tail P(X > x) = R pchisq(x, k, lower.tail = FALSE), never formed as 1 - pchi.
+    function pchiSF(x, k) {
+      if (k <= 0 || x < 0) return NaN;
+      if (x === 0) return 1;
+      const s = k / 2, y = x / 2;
+      return y < s + 1 ? 1 - pchi(x, k) : _gammqCF(s, y);   // series branch: P is not near 1 there
     }
 
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
@@ -241,7 +253,7 @@ C, D, -0.35, 0.14, CD</textarea>
       }
       const dQ = Math.max(0, cons.Q - full.Q);
       const dDf = cons.df - full.df;
-      const p = dDf > 0 ? 1 - pchi(dQ, dDf) : NaN;
+      const p = dDf > 0 ? pchiSF(dQ, dDf) : NaN;
 
       const body = document.getElementById("cmp-body");
       const __bodyParts = [""];
