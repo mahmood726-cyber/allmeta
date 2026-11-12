@@ -50,14 +50,29 @@ export const APPS = {
     model: { method: 'PM', test: 'z', headline: 'const r = typeof window._almLastCumSub === "function" ? window._almLastCumSub() : window._almLastCumSub; ({ mu: r.mu_final, tau2: r.tau2_final, lo: r.lo_final, hi: r.hi_final })' } },
   'influence': { input: '#src', text: fmtEstFirst, run: '#btn-run',
     model: { method: 'REML', test: 'z', headline: 'const p = window._almLastInfluence(); ({ mu: p.mu, tau2: p.tau2, lo: p.ciLo, hi: p.ciHi })' } },
-  'bayesian-ma': { input: '#f-data', text: fmtLabelFirst, banner: true },
+  // Lane estho: pages whose own model the validator cannot fit, but which also show ONE
+  // inverse-variance row, send that row's model; `fields` are the numbers that row shows,
+  // and the banner must still say the page's own model is not what R fits.
+  'bayesian-ma': { input: '#f-data', text: fmtLabelFirst, banner: true,
+    model: { method: 'PM', test: 'z', fields: ['tau2'], headline: 'const s = window.__almValidatorStudies(); ({ tau2: window.__almBayesMA(s, { mu0: 0, tau0: 1 }).tau2PM })' } },
   'bayesian-mcmc': { input: '#src', text: fmtEstFirst, run: '#btn-run', wait: 4000, banner: true },
-  'copas': { input: '#src', text: fmtEstFirst, run: '#btn-run', wait: 3000, banner: true },
+  'copas': { input: '#src', text: fmtEstFirst, run: '#btn-run', wait: 3000, banner: true,
+    // DECLARED tol (lane estho): the page's REML stops where metafor's default does
+    // (CC.metaforREML, threshold 1e-5, as metasens needs) and the validator iterates to
+    // 1e-12, so they differ by ~7e-8 in tau^2 on BCG (measured; on copas's own default
+    // example, tau^2 ~6e-4, the estimate differs by 6.2e-6, which this tol would FAIL).
+    // 1e-6 is the tolerance the WebR comparison below already uses; other apps keep 1e-9.
+    model: { method: 'REML', test: 'z', tol: 1e-6, fields: ['mu', 'se', 'tau2'], headline: 'const r = window._almLastCopas(); ({ mu: r.te_random, se: r.se_random, tau2: r.tau * r.tau })' } },
   'gosh': { input: '#src', text: fmtEstFirst, run: '#btn-run', wait: 3000, banner: true },
   'gosh-metareg': { input: '#src', text: () => BCG.map(([l, y, s], i) => `${y}, ${s}, ${ABLAT[i]}, ${l}`).join('\n'), run: '#btn-run', wait: 3000, banner: true },
-  'pet-peese': { input: '#src', text: fmtEstFirst, run: '#btn-run', banner: true },
-  'tsa': { input: '#f-data', text: fmtLabelFirst, banner: true },
+  'pet-peese': { input: '#src', text: fmtEstFirst, run: '#btn-run', banner: true,
+    model: { method: 'FE', test: 'z', headline: 'const f = window._almLastFE(); ({ mu: f.mean, se: f.se, tau2: 0, lo: f.ci[0], hi: f.ci[1] })' } },
+  'tsa': { input: '#f-data', text: fmtLabelFirst, banner: true,
+    model: { method: 'FE', test: 'z', headline: 'const s = window.__almValidatorStudies(); const c = window.__almTsaCompute({ studies: s, alpha: 0.05, power: 0.8, delta: 1, tGrid: [] }).cumulative.pop(); ({ mu: c.cumMu, se: c.cumSE, tau2: 0, lo: c.cumMu - 1.959963984540054 * c.cumSE, hi: c.cumMu + 1.959963984540054 * c.cumSE })' } },
 };
+const DEFAULT_FIELDS = ['mu', 'tau2', 'lo', 'hi'];
+// Field -> key in the validator's browser fit and in the parsed R output.
+const FIT_KEY = { mu: 'estimate', se: 'se', tau2: 'tau2', lo: 'ci_lb', hi: 'ci_ub' };
 
 // Input each page REFUSES to analyse (fewer studies than it needs; empty where any k is
 // analysed). Every control must then refuse too, not open the validator on other studies.
@@ -101,7 +116,9 @@ async function runWebR(popup) {
   return popup.evaluate(() => {
     const log = document.getElementById('webr-log').textContent;
     const g = (k) => { const m = log.match(new RegExp(k.replace(/[\^]/g, '\\^') + '=(-?[0-9.eE+-]+)')); return m ? Number(m[1]) : null; };
-    return { status: document.getElementById('status').textContent, estimate: g('estimate'), tau2: g('tau^2'),
+    // `se` anchored at a line start, so it is not read out of another key.
+    const se = (log.match(/(?:^|\n)se=(-?[0-9.eE+-]+)/) || [])[1];
+    return { status: document.getElementById('status').textContent, estimate: g('estimate'), se: se == null ? null : Number(se), tau2: g('tau^2'),
       ci_lb: g('ci.lb'), ci_ub: g('ci.ub'), version: (log.match(/R: [^\n]*metafor [0-9.-]+/) || [null])[0] };
   });
 }
@@ -127,6 +144,7 @@ export async function checkAppHandoff(context, baseURL, app, { stale = true, web
   await page.waitForTimeout(cfg.wait || 800);
   const expect = BCG.map(([, y, s]) => [y, s]);
   const headline = cfg.model && !refuse ? await page.evaluate(cfg.model.headline) : null;
+  const pageHasLiveCheck = await page.evaluate(() => [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Validate this analysis in R'));
   const out = [];
   let webrDone = false;
   for (const c of CONTROLS) {
@@ -150,27 +168,34 @@ export async function checkAppHandoff(context, baseURL, app, { stale = true, web
     const v = await readValidator(popup);
     Object.assign(rec, { url: v.url, method: v.method, test: v.test, nRows: v.rows.length, banner: v.banner });
     rec.sameStudies = v.rows.length === expect.length && v.rows.every(([e, s], i) => Math.abs(e - expect[i][0]) < 1e-12 && Math.abs(s - expect[i][1]) < 1e-12);
+    // Lane estho: a banner may name "Validate this analysis in R" only if the page has it.
+    rec.pageHasLiveCheck = pageHasLiveCheck;
+    rec.noMissingControl = !(v.banner && v.banner.includes('Validate this analysis in R')) || pageHasLiveCheck;
+    const fields = (cfg.model && cfg.model.fields) || DEFAULT_FIELDS;
     if (cfg.model) {
-      rec.expected = cfg.model.method + '/' + cfg.model.test;
+      rec.expected = cfg.model.method + '/' + cfg.model.test + (cfg.banner ? ' + banner' : '');
       rec.sameModel = v.method === cfg.model.method && v.test === cfg.model.test;
       const f = v.fit || {};
-      rec.validatorFit = { mu: f.estimate, tau2: f.tau2, lo: f.ci_lb, hi: f.ci_ub };
+      rec.validatorFit = Object.fromEntries(fields.map((k) => [k, f[FIT_KEY[k]]]));
       rec.page = headline;
-      const near = (a, b) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(b));
-      rec.sameFit = near(f.estimate, headline.mu) && near(f.tau2, headline.tau2) && near(f.ci_lb, headline.lo) && near(f.ci_ub, headline.hi);
+      const tol = cfg.model.tol || 1e-9;
+      const near = (a, b) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= tol * Math.max(1, Math.abs(b));
+      rec.sameFit = fields.every((k) => near(f[FIT_KEY[k]], headline[k]));
       rec.ok = !rec.dialogs.length && rec.sameStudies && rec.sameModel && rec.sameFit;
-    } else {
-      rec.expected = 'banner';
-      rec.sameModel = !!(v.banner && v.banner.includes("NOT " + app + "'s own model"));
-      rec.ok = !rec.dialogs.length && rec.sameStudies && rec.sameModel;
     }
+    if (cfg.banner) {
+      // The page's own model is still not what R fits: the banner must say so.
+      rec.bannerOk = !!(v.banner && v.banner.includes("NOT " + app + "'s own model"));
+      if (!cfg.model) { rec.expected = 'banner'; rec.sameModel = rec.bannerOk; rec.ok = !rec.dialogs.length && rec.sameStudies; }
+      rec.ok = rec.ok && rec.bannerOk;
+    }
+    rec.ok = rec.ok && rec.noMissingControl;
     if (webr && !webrDone && rec.ok) {
       webrDone = true;
       rec.webr = await runWebR(popup);
       if (cfg.model) {
         const near6 = (a, b) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(b));
-        rec.webr.matchesPage = near6(rec.webr.estimate, headline.mu) && near6(rec.webr.tau2, headline.tau2) &&
-          near6(rec.webr.ci_lb, headline.lo) && near6(rec.webr.ci_ub, headline.hi);
+        rec.webr.matchesPage = fields.every((k) => near6(rec.webr[FIT_KEY[k]], headline[k]));
       } else {
         rec.webr.matchesPage = null; // not the app's model: R equals the validator's own browser fit, not the page
       }

@@ -367,6 +367,13 @@
       if (rows.length < 3 || !_lastResults) return [];
       return rows.map(function (r, i) { return { label: 'Study ' + (i + 1), est: r.te, se: r.se }; });
     };
+    // The model of the "Unadjusted random-effects pooled effect" row (startValues: the
+    // tau^2 estimator selected in #opt-tau, REML or DL, z), which the validator can re-fit.
+    // Lane estho: before, none was sent and the validator fitted PM/z.
+    window.__almValidatorModel = function () {
+      var t = document.getElementById('opt-tau');
+      return { method: t && t.value === 'DL' ? "DL" : "REML", test: "z" };
+    };
 
     // ---- axis state (overrideable by axis-controls) ----
     var _axisState = {};
@@ -884,7 +891,9 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
-      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
+      method: function () { return window.__almValidatorModel && window.__almValidatorModel().method; },
+      test: function () { return window.__almValidatorModel && window.__almValidatorModel().test; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "copas", textarea: "#src", format: "est-se-label" });

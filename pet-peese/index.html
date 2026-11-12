@@ -415,6 +415,9 @@
       const rows = parseTable(document.getElementById("src").value);
       return (rows.length < 3 || !_lastFE) ? [] : rows.map((r, i) => ({ label: "Study " + (i + 1), est: r.te, se: r.se }));
     };
+    // The model of the "FE meta-analysis" row (fePool: inverse-variance fixed effect, z CI),
+    // which the validator can re-fit. Lane estho: before, none was sent (validator PM/z).
+    window.__almValidatorModel = function () { return { method: "FE", test: "z" }; };
     document.getElementById("btn-run").addEventListener("click", run);
     if (window.MaStudies && MaStudies.attachButtons) {
       MaStudies.attachButtons({
@@ -581,7 +584,9 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
-      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
+      method: function () { return window.__almValidatorModel && window.__almValidatorModel().method; },
+      test: function () { return window.__almValidatorModel && window.__almValidatorModel().test; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "pet-peese", textarea: "#src", format: "est-se-label" });
