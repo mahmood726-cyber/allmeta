@@ -33400,41 +33400,9 @@ const Statistics = {
 
 
  function parseCSV(text) {
-
- const lines = text.split(/\r?\n/).filter(line => line.trim());
-
- const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
-
- const data = [];
-
-
-
- for (let i = 1; i < lines.length; i++) {
-
- const values = lines[i].match(/("([^"]|"")*"|[^,]*)/g) || [];
-
- const row = {};
-
- headers.forEach((h, j) => {
-
- let val = (values[j] || '').trim().replace(/^["']|["']$/g, '');
-
-
-
- const num = parseFloat(val);
-
- row[h] = isNaN(num) ? val : num;
-
- });
-
- data.push(row);
-
- }
-
-
-
- return { headers, data };
-
+ // IPD-CSV fix: this second copy split rows with the same /("([^"]|"")*"|[^,]*)/g regex as parseDelimited (an empty
+ // match after every field); it now uses the one reader.
+ return parseDelimited(text, ',');
  }
 
 
@@ -35243,7 +35211,8 @@ function detectVariableTypes(data, headers) {
 
  const text = e.target.result;
 
- const delimiter = file.name.endsWith('.tsv') ? '\t' : ',';
+ // .tsv is tab-delimited; for other text files the delimiter (comma, semicolon or tab) is read from the header
+ const delimiter = file.name.endsWith('.tsv') ? '\t' : undefined;
 
  parsed = parseDelimited(text, delimiter);
 
@@ -35254,6 +35223,7 @@ function detectVariableTypes(data, headers) {
  if (parsed && parsed.data.length > 0) {
 
  APP.data = parsed.data;
+ (parsed.warnings || []).forEach(w => showNotification(w, 'warning'));
 
  APP.variables = detectVariableTypes(parsed.data, parsed.headers);
 
@@ -35290,40 +35260,71 @@ function detectVariableTypes(data, headers) {
 
 
 
-function parseDelimited(text, delimiter = ',') {
-
- const lines = text.split(/\r?\n/).filter(line => line.trim());
-
- const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^["']|["']$/g, ''));
-
- const data = [];
-
- for (let i = 1; i < lines.length; i++) {
-
- const regex = delimiter === ',' ? /("([^"]|"")*"|[^,]*)/g : /[^\t]+/g;
-
- const values = lines[i].match(regex) || [];
-
- const row = {};
-
- headers.forEach((h, j) => {
-
- let val = (values[j] || '').trim().replace(/^["']|["']$/g, '');
-
- const num = parseFloat(val);
-
- row[h] = isNaN(num) ? val : num;
-
- });
-
- data.push(row);
-
+function parseDelimited(text, delimiter) {
+ // IPD-CSV fix: rows were split with line.match(/("([^"]|"")*"|[^,]*)/g), whose [^,]* also matches the empty string,
+ // so every field was followed by an empty match: "S1,1,11.148881" loaded as {study:"S1", treat:"", y:1}. The TSV
+ // branch (/[^\t]+/g) dropped empty fields and shifted the next value left; headers were split on the bare delimiter;
+ // "" was not unescaped; a quoted field spanning lines became two rows; parseFloat read "1.5abc" as 1.5 and a quoted
+ // "11,148881" as 11. This is an RFC 4180 reader: quoted fields may hold the delimiter, "" and line breaks.
+ text = String(text == null ? '' : text);
+ if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+ const records = [];
+ const readAll = (delim) => {
+  const out = [];
+  let row = [], field = '', quoted = false, wasQuoted = false, i = 0;
+  const endField = () => { row.push({ v: field, q: wasQuoted }); field = ''; wasQuoted = false; };
+  const endRow = () => { endField(); out.push(row); row = []; };
+  while (i < text.length) {
+   const ch = text[i];
+   if (quoted) {
+    if (ch === '"') {
+     if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+     quoted = false; i++; continue;
+    }
+    field += ch; i++; continue;
+   }
+   if (ch === '"' && field.trim() === '') { field = ''; quoted = true; wasQuoted = true; i++; continue; }
+   if (ch === delim) { endField(); i++; continue; }
+   if (ch === '\r' || ch === '\n') { endRow(); i += (ch === '\r' && text[i + 1] === '\n') ? 2 : 1; continue; }
+   field += ch; i++;
+  }
+  if (field !== '' || wasQuoted || row.length) endRow();
+  // blank lines (and the empty record after a trailing newline) are not data
+  return out.filter(r => r.some(f => f.q || f.v.trim() !== ''));
+ };
+ if (delimiter === undefined || delimiter === null || delimiter === '') {
+  // Detect the delimiter from the header line (outside quotes): comma, semicolon or tab, whichever occurs most.
+  const head = (text.match(/^[^\r\n]*/) || [''])[0].replace(/"([^"]|"")*"/g, '');
+  const count = (d) => head.split(d).length - 1;
+  delimiter = ',';
+  [';', '\t'].forEach(d => { if (count(d) > count(delimiter)) delimiter = d; });
  }
-
- return { headers, data };
-
+ records.push(...readAll(delimiter));
+ const warnings = [];
+ if (!records.length) return { headers: [], data: [], delimiter, warnings };
+ const headers = records[0].map(f => f.v.trim());
+ const numRe = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+ const decComma = /^[+-]?(\d+,\d*|,\d+)([eE][+-]?\d+)?$/;
+ const commaCols = new Set();
+ const data = [];
+ for (let r = 1; r < records.length; r++) {
+  const rec = records[r];
+  const row = {};
+  headers.forEach((h, j) => {
+   const val = rec[j] ? rec[j].v.trim() : '';
+   if (numRe.test(val)) row[h] = Number(val);
+   else if (decComma.test(val)) {
+    // Decimal comma: unambiguous when the comma is not the delimiter (semicolon/tab files); in a comma file
+    // "11,148881" could be a thousands separator, so it stays text and the user is told.
+    if (delimiter !== ',') row[h] = Number(val.replace(',', '.'));
+    else { row[h] = val; commaCols.add(h); }
+   } else row[h] = val;
+  });
+  data.push(row);
+ }
+ if (commaCols.size) warnings.push('Column(s) ' + [...commaCols].join(', ') + ' hold values with a decimal comma in a comma-delimited file; they were kept as text, not read as numbers. Save the file with a semicolon delimiter, or with decimal points.');
+ return { headers, data, delimiter, warnings };
 }
-
 
 
 function escapeHTML(value) {
