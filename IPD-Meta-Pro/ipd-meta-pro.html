@@ -9215,7 +9215,11 @@ function fitModelToStudies(studies, method) {
 
  var reTotalWeight = reWeights.reduce(function(a, b) { return a + b; }, 0);
 
- if (reTotalWeight < 1e-10) return { effect: NaN, se: NaN, lower: NaN, upper: NaN, tau2: tau2, I2: 0, pValue: NaN };
+ // IPD-Left (review of PR #535): this was an ABSOLUTE reTotalWeight < 1e-10, so data in large units (two studies 0 and
+ // 1e6, v = 1e-6: tau^2 ~5e11, total weight 4e-12) returned early with a NaN effect and no aic/bic, and the
+ // model-selection table crashed on r.aic.toFixed. Only a weight sum that is not positive and finite is degenerate,
+ // and that return now carries every field the table reads.
+ if (!(reTotalWeight > 0 && isFinite(reTotalWeight))) return { effect: NaN, se: NaN, lower: NaN, upper: NaN, tau2: tau2, I2: NaN, Q: Q, logLik: NaN, aic: NaN, bic: NaN, pValue: NaN };
 
 
 
@@ -31815,8 +31819,10 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  const C = sumW > 0 ? (sumW - sumW2 / sumW) : 0;
  const df = Math.max(0, effects.length - 1);
  const pQ = df > 0 ? AlmTail.pchisqUpper(Q, df) : 1;
- const I2Q = (df > 0 && Q > df && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
- const H2Q = df > 0 ? (Q / df) : 1;
+ // IPD-Left (review of PR #535): with one study (df = 0) I^2 and H^2 are not defined (metafor/meta: NA); they were
+ // reported as 0% and 1. NaN = not estimable (ipdDisplayNumber shows "Not estimable").
+ const I2Q = df > 0 ? ((Q > df && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0) : NaN;
+ const H2Q = df > 0 ? (Q / df) : NaN;
 
  return { weights, sumW, sumW2, pooled, Q, C, df, pQ, I2Q, H2Q };
 
@@ -31884,6 +31890,7 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
  if (!isFinite(I2) || I2 < 0) I2 = 0;
  if (!isFinite(H2) || H2 < 1) H2 = 1;
+ if (!(fe.df > 0)) { I2 = NaN; H2 = NaN; }   // IPD-Left: k = 1, not estimable (was 0% / 1)
 
  return MetaAnalysis._withSummaryFields({
  pooled, variance, se, z, p,
