@@ -601,7 +601,8 @@ body.dark .truthcert-badge.fail { background:#7f1d1d; color:#fca5a5; }
     <div class="card fade-in" id="webrCard" style="display:none" role="region" aria-label="R Cross-Validation">
       <h2>R Cross-Validation (WebR) <span class="badge" id="webrBadge">Ready</span></h2>
       <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px">
-        Validate JavaScript MAP prior derivation against R metafor REML estimates.
+        Re-fits this page's frequentist random-effects pool (REML and DL, same studies) in R metafor via WebR.
+        The RBesT-model posterior is not re-fitted here: RBesT needs Stan, which WebR does not provide.
       </p>
       <button class="primary" id="webrRunBtn" onclick="runWebRValidation()" aria-label="Run WebR validation">Validate with R</button>
       <div id="webrResults"></div>
@@ -2901,6 +2902,27 @@ async function runWebRValidation() {
     alert('Derive MAP prior first before validating with R.');
     return;
   }
+  // Like with like. R (metafor) re-fits a frequentist random-effects pool. In the default "model" mode
+  // mapResult.mu/se_mu/tau2 are the RBesT-model POSTERIOR moments (applyEngineResult), which metafor does
+  // not estimate and WebR cannot re-fit (RBesT is not in the WebR package repository). So R is compared
+  // with this page's own REML pool of the same studies (deriveMAP*: the quick mode and the supplementary
+  // normal-approximation tools; validation archive check A1), and the screen says the posterior is not re-fitted.
+  const isBinary = mapResult.type === 'binary';
+  const posteriorMode = !!mapResult.engine;
+  const posteriorNote = posteriorMode ? '<div class="webr-summary" style="background:var(--accent-light);color:inherit;margin:0 0 12px">'
+    + 'Not this page\'s model: the RBesT-model posterior shown above (beta and tau posterior, MAP and robust mixtures) is '
+    + '<strong>not re-fitted</strong> by R here, because RBesT needs Stan, which WebR does not provide. This check re-fits '
+    + 'the page\'s frequentist REML/DL pool of the same studies (used by the quick mode and the supplementary '
+    + 'normal-approximation tools). The posterior is checked against RBesT 1.12-0 in the page\'s validation archive, not here.</div>' : '';
+  if (!(mapResult.k >= 2)) {
+    const card0 = document.getElementById('webrCard'), badge0 = document.getElementById('webrBadge');
+    card0.style.display = '';
+    badge0.textContent = 'Not applicable';
+    badge0.style.background = 'var(--warning)';
+    document.getElementById('webrResults').innerHTML = posteriorNote + '<p>The frequentist REML pool that R re-fits needs at least two studies; with one study there is nothing to compare, so R was not run.</p>';
+    return;
+  }
+  const pool = posteriorMode ? (isBinary ? deriveMAPBinary(mapResult.w, mapResult.confLevel) : deriveMAPContinuous(mapResult.w, mapResult.confLevel)) : mapResult;
 
   const card = document.getElementById('webrCard');
   const badge = document.getElementById('webrBadge');
@@ -2925,20 +2947,11 @@ async function runWebRValidation() {
     badge.textContent = 'Running R...';
     results.innerHTML = '<p style="color:var(--text-muted)">Running R validation...</p>';
 
-    const isBinary = mapResult.type === 'binary';
-    let yiStr, viStr;
+    // The data the page's REML pool used (binary: logit rates; continuous: means, vi = sd^2/n).
+    const yiStr = pool.yi.join(',');
+    const viStr = pool.vi.join(',');
 
-    if (isBinary) {
-      // Use the logit-transformed values from mapResult
-      yiStr = mapResult.yi.join(',');
-      viStr = mapResult.vi.join(',');
-    } else {
-      // Continuous: yi = means, vi = sd^2/n
-      yiStr = mapResult.yi.join(',');
-      viStr = mapResult.vi.join(',');
-    }
-
-    const confLevel = mapResult.confLevel;
+    const confLevel = pool.confLevel;
 
     const rCode = `
 library(metafor)
@@ -2946,19 +2959,23 @@ yi <- c(${yiStr})
 vi <- c(${viStr})
 res_reml <- rma(yi, vi, method="REML")
 res_dl <- rma(yi, vi, method="DL")
-pred <- predict(res_reml)
+pred <- predict(res_reml, level=${100 * confLevel})
+pi_lb <- if (!is.null(pred$pi.lb)) pred$pi.lb else pred$cr.lb
+pi_ub <- if (!is.null(pred$pi.ub)) pred$pi.ub else pred$cr.ub
 cat(paste(
   res_reml$beta[1], res_reml$tau2, res_reml$se, res_reml$I2,
   res_dl$beta[1], res_dl$tau2, res_dl$se, res_dl$I2,
-  pred$cr.lb, pred$cr.ub,
+  pi_lb, pi_ub,
   sep="|"))
 `;
 
-    const shelter = await webrInstance.shelter();
+    // webR API: a shelter is constructed (await new webR.Shelter()); there is no webR.shelter() method.
+    const shelter = await new webrInstance.Shelter();
     try {
       await shelter.captureR('options(warn=-1)');
       const rResult = await shelter.captureR(rCode);
-      const output = rResult.output.map(o => o.data).join('').trim();
+      // captureR output also carries stderr lines (e.g. metafor start-up messages); parse stdout only.
+      const output = rResult.output.filter(o => o.type === 'stdout').map(o => o.data).join('').trim();
 
       const vals = output.split('|').map(Number);
       if (vals.length < 10 || vals.some(v => !isFinite(v))) {
@@ -2969,29 +2986,31 @@ cat(paste(
       const rDL = { mu: vals[4], tau2: vals[5], se_mu: vals[6], I2: vals[7] };
       const rPred = { lower: vals[8], upper: vals[9] };
 
-      // JS MAP predictive interval (on logit/raw scale)
+      // Frequentist predictive interval of the REML pool: mu +/- z*sqrt(tau2 + se^2), the same z-based
+      // interval metafor predict() returns for a default (test="z") fit, at the same level.
       const z = normalQuantile(1 - (1 - confLevel) / 2);
-      const jsPredLower = mapResult.mu - z * mapResult.map_se;
-      const jsPredUpper = mapResult.mu + z * mapResult.map_se;
+      const jsPredLower = pool.mu - z * pool.map_se;
+      const jsPredUpper = pool.mu + z * pool.map_se;
 
       // Build comparisons
       const comparisons = [];
       const scaleLabel = isBinary ? ' (logit)' : '';
 
-      // REML comparisons (MAP uses REML internally)
-      comparisons.push({ label: 'REML mu' + scaleLabel, js: mapResult.mu, r: rREML.mu, tol: 1e-4 });
-      comparisons.push({ label: 'REML SE(mu)', js: mapResult.se_mu, r: rREML.se_mu, tol: 1e-4 });
-      comparisons.push({ label: 'REML tau2', js: mapResult.tau2, r: rREML.tau2, tol: 1e-3 });
-      comparisons.push({ label: 'REML I2', js: mapResult.I2, r: rREML.I2, tol: 0.1 });
+      // The page's frequentist REML pool vs metafor REML (same model, same data)
+      comparisons.push({ label: 'REML mu' + scaleLabel, js: pool.mu, r: rREML.mu, tol: 1e-4 });
+      comparisons.push({ label: 'REML SE(mu)', js: pool.se_mu, r: rREML.se_mu, tol: 1e-4 });
+      comparisons.push({ label: 'REML tau2', js: pool.tau2, r: rREML.tau2, tol: 1e-3 });
+      // The page's I2 is Q-based, 100*max(0,(Q-(k-1))/Q) (0 when Q <= k-1), which is metafor's DL I2 (not its REML I2).
+      comparisons.push({ label: 'I2 (Q-based, = DL)', js: pool.I2, r: rDL.I2, tol: 0.1 });
 
-      // MAP predictive interval vs R predict() credible region
-      comparisons.push({ label: 'Pred lower' + scaleLabel, js: jsPredLower, r: rPred.lower, tol: 0.05 });
-      comparisons.push({ label: 'Pred upper' + scaleLabel, js: jsPredUpper, r: rPred.upper, tol: 0.05 });
+      // REML-pool predictive interval vs R predict() prediction interval, same level
+      comparisons.push({ label: 'REML pred lower' + scaleLabel, js: jsPredLower, r: rPred.lower, tol: 0.05 });
+      comparisons.push({ label: 'REML pred upper' + scaleLabel, js: jsPredUpper, r: rPred.upper, tol: 0.05 });
 
       // DL cross-check (informational)
       // Compute JS DL for comparison
-      const yiArr = mapResult.yi;
-      const viArr = mapResult.vi;
+      const yiArr = pool.yi;
+      const viArr = pool.vi;
       const k = yiArr.length;
       const wiDL = viArr.map(v => 1/v);
       const sumWDL = wiDL.reduce((a,b)=>a+b,0);
@@ -3011,7 +3030,7 @@ cat(paste(
       // Render
       let matchCount = 0;
       let totalCount = comparisons.length;
-      let html = '<table class="webr-table"><thead><tr><th>Metric</th><th>JS (MAPriors)</th><th>R (metafor)</th><th>Diff</th><th>Match?</th></tr></thead><tbody>';
+      let html = posteriorNote + '<table class="webr-table"><thead><tr><th>Metric</th><th>JS (MAPriors frequentist pool)</th><th>R (metafor)</th><th>Diff</th><th>Match?</th></tr></thead><tbody>';
       for (const c of comparisons) {
         const diff = Math.abs(c.js - c.r);
         const match = diff < c.tol;
@@ -3032,7 +3051,7 @@ cat(paste(
 
       const allMatch = matchCount === totalCount;
       html += `<div class="webr-summary ${allMatch ? 'pass' : 'fail'}">
-        ${allMatch ? 'PASS' : 'DISCREPANCIES'}: ${matchCount}/${totalCount} metrics match R metafor
+        ${allMatch ? 'PASS' : 'DISCREPANCIES'}: ${matchCount}/${totalCount} frequentist-pool metrics match R metafor${posteriorMode ? ' (the RBesT-model posterior is not part of this check)' : ''}
         (tolerance: 1e-4 for mu/SE, 1e-3 for tau2, 0.1 for I2, 0.05 for predictive CI)
       </div>`;
 
