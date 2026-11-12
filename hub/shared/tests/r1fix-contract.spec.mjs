@@ -12,7 +12,9 @@ for(const [app,adapter] of cases) test(`baseline/current replay ${app}`,async({b
  const outcomes=[];
  for(const baseline of [true,false]) {
   const context=await browser.newContext();const page=await context.newPage();
-  if(baseline) for(const file of [app+'/index.html','hub/shared/plot-export.js',...(app==='gosh'?['gosh/validate/adapter.js']:[])]) {
+  // mh-peto's baseline page predates the fragility 'convention' option (PR #516): pair it with the
+  // fragility engine of the same commit, so the baseline replays the code that was actually validated.
+  if(baseline) for(const file of [app+'/index.html','hub/shared/plot-export.js',...(app==='gosh'?['gosh/validate/adapter.js']:[]),...(app==='mh-peto'?['shared/fragility.js']:[])]) {
    const body=execFileSync('git',['show','14e042c:'+file],{cwd:root,encoding:'utf8',maxBuffer:10000000});
    await page.route('**/'+file,route=>route.fulfill({body,contentType:file.endsWith('.html')?'text/html':'application/javascript'}));
   }
