@@ -66,11 +66,11 @@
           <select id="model" aria-label="Model"><option value="fe" selected>Fixed effect</option><option value="re">Random effects (per interval)</option></select>
         </label>
         <label><span class="lbl">τ² estimator (random effects)</span>
-          <select id="tau-method" aria-label="Heterogeneity estimator"><option value="DL" selected>DerSimonian-Laird (netmeta default)</option><option value="REML">REML</option><option value="ML">ML</option></select>
+          <select id="tau-method" aria-label="τ² estimator (random effects)"><option value="DL" selected>DerSimonian-Laird (netmeta default)</option><option value="REML">REML</option><option value="ML">ML</option></select>
         </label>
         <label><span class="lbl">Continuity correction</span><input id="cc" type="number" step="any" min="0" value="0.5" aria-label="Continuity correction"></label>
         <label><span class="lbl">Correction added to</span>
-          <select id="cc-to" aria-label="Continuity correction added to"><option value="all" selected>Every arm</option><option value="only0">Only studies with a zero count (meta/netmeta default)</option></select>
+          <select id="cc-to" aria-label="Correction added to"><option value="all" selected>Every arm</option><option value="only0">Only studies with a zero count (meta/netmeta default)</option></select>
         </label>
       </div>
       <button class="primary" id="run" type="button">Fit</button>
