@@ -241,12 +241,12 @@
         var djOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.dj[dm.d] === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
         return "<fieldset><legend>Domain " + dm.d + " — " + esc(dm.title) + "</legend>" + rows
           + "<div class='dj'><label>Domain judgement <select data-dj='" + dm.d + "'><option value=''>(use suggested)</option>" + djOpts + "</select></label>"
-          + "<span class='suggest'>suggested: " + JUDGE_LBL[sug] + "</span></div></fieldset>";
+          + "<span class='suggest' id='sug-d" + dm.d + "'>suggested: " + JUDGE_LBL[sug] + "</span></div></fieldset>";
       }).join("");
       // overall
       var sugO = suggestOverall(t);
       var oOpts = JUDGE.map(function (j) { return "<option value='" + j + "'" + (t.overall === j ? " selected" : "") + ">" + JUDGE_LBL[j] + "</option>"; }).join("");
-      html += "<fieldset><legend>Overall judgement</legend><div class='dj'><label>Overall <select id='overall-sel'><option value=''>(use suggested)</option>" + oOpts + "</select></label><span class='suggest'>suggested: " + JUDGE_LBL[sugO] + "</span></div></fieldset>";
+      html += "<fieldset><legend>Overall judgement</legend><div class='dj'><label>Overall <select id='overall-sel'><option value=''>(use suggested)</option>" + oOpts + "</select></label><span class='suggest' id='sug-overall'>suggested: " + JUDGE_LBL[sugO] + "</span></div></fieldset>";
       document.getElementById("checks").innerHTML = html;
 
       // wire radios
@@ -305,7 +305,14 @@
     }
 
     function renderAll() { renderTrialSelect(); renderChecks(); renderSummary(); renderPooled(); }
-    function commit() { save(); renderSummary(); renderPooled(); }
+    // The "suggested:" labels in the form follow every answer (they used to keep the value
+    // from the last full render until a reload or a trial switch).
+    function renderSuggestions() {
+      var t = cur(), el;
+      DOMAINS.forEach(function (dm) { el = document.getElementById("sug-d" + dm.d); if (el) el.textContent = "suggested: " + JUDGE_LBL[suggestDomain(t, dm.d)]; });
+      el = document.getElementById("sug-overall"); if (el) el.textContent = "suggested: " + JUDGE_LBL[suggestOverall(t)];
+    }
+    function commit() { save(); renderSuggestions(); renderSummary(); renderPooled(); }
 
     document.getElementById("trial-sel").addEventListener("change", function (e) { state.cur = +e.target.value; save(); renderChecks(); document.getElementById("trial-name").value = cur().label; });
     document.getElementById("trial-name").addEventListener("input", function (e) { cur().label = e.target.value; save(); renderTrialSelect(); renderSummary(); });
