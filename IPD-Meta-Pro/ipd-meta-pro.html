@@ -32516,11 +32516,14 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  let delta = solve(cur.I, cur.U);
  let next = evalAt(beta.map((b, j) => b + delta[j]));
  let halvings = 0;
- while (!(next.loglik >= cur.loglik - 1e-12) && halvings < 30) {
+ // A decrease within rounding of the log likelihood (summed over n terms) is not a decrease: an absolute 1e-12
+ // made the final Newton step of a converged fit halve to nothing and stop ~1e-7 short of the optimum.
+ const slack = 1e-10 * Math.max(1, Math.abs(cur.loglik));
+ while (!(next.loglik >= cur.loglik - slack) && halvings < 30) {
  delta = delta.map(v => v / 2); halvings++;
  next = evalAt(beta.map((b, j) => b + delta[j]));
  }
- if (!(next.loglik >= cur.loglik - 1e-12)) break; // no acceptable step after 30 halvings: keep the last valid iterate
+ if (!Number.isFinite(next.loglik)) break; // never accept a non-finite iterate (a finite non-increase is rounding near the optimum)
  beta = beta.map((b, j) => b + delta[j]);
  cur = next;
  if (Math.max(...delta.map(Math.abs)) < 1e-12) break;
