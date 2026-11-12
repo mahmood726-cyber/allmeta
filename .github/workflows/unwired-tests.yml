@@ -62,11 +62,9 @@ jobs:
           #   hero-sweep.test.cjs                 PRE-EXISTING FAILURE on main: copas, influence and
           #       pubbias-tests parsers now call page helpers (num/NUM/parseLines) that the
           #       contract's isolated vm context (hero-sweep-contract.cjs:39-40) does not provide.
-          #   validate-nma-inconsistency.node.cjs PRE-EXISTING FAILURE on main: pinned corpus runs
-          #       6267 checks, test expects 6472; FE/DL/PM display.* snapshot values are empty.
           #   nma-inconsistency-plus.node.cjs,
           #   validate-correlation-ma-plus.node.cjs  LONG: each exceeded 600 s locally.
-          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/validate-nma-inconsistency.node.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs "
+          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs "
           files=()
           for f in hub/shared/tests/*.test.cjs hub/shared/tests/*.test.mjs hub/shared/tests/*.node.cjs \
                    gosh/tests/*.test.cjs limit-ma/tests/*.test.cjs p-curve/tests/*.test.cjs \
