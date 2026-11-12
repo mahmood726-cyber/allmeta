@@ -44,10 +44,21 @@ def _run(engine):
 
 
 def _reml_score(yi, vi, tau2):
+    return _reml_score_info(yi, vi, tau2)[0]
+
+
+def _reml_score_info(yi, vi, tau2):
+    """REML score g and expected information f = tr(P^2)/2, both formed from sums of nonnegative terms
+    (sum_{j!=i} w_j is summed directly, never S - w_i), so neither cancels for disparate variances."""
     w = [1.0 / (v + tau2) for v in vi]
     sw = sum(w)
     mu = sum(wi * y for wi, y in zip(w, yi)) / sw
-    return sum(wi * wi * (y - mu) ** 2 for wi, y in zip(w, yi)) - sw + sum(wi * wi for wi in w) / sw
+    so = [sum(w[:i]) + sum(w[i + 1:]) for i in range(len(w))]
+    qo = [sum(x * x for x in w[:i]) + sum(x * x for x in w[i + 1:]) for i in range(len(w))]
+    a = sum(wi * wi * (y - mu) ** 2 for wi, y in zip(w, yi))
+    b = sum(wi * s for wi, s in zip(w, so)) / sw
+    f = 0.5 * sum(wi * wi * (s * s + q) for wi, s, q in zip(w, so, qo)) / (sw * sw)
+    return 0.5 * (a - b), f
 
 
 def test_reference_covers_required_cases():
@@ -88,9 +99,10 @@ def test_converged_means_reml_score_is_zero(engine):
         a = got[nm]
         if not a['converged']:
             continue
-        g = _reml_score(s['yi'], s['vi'], a['tau2'])
-        sw = sum(1 / (v + a['tau2']) for v in s['vi'])
-        ok = abs(g) < 1e-6 * sw if a['tau2'] > 1e-8 else g <= 1e-9
+        g, f = _reml_score_info(s['yi'], s['vi'], a['tau2'])
+        scale = max(a['tau2'], sum(s['vi']) / len(s['vi']))
+        # scale-free: a boundary answer must be exactly 0 with score(0) <= 0; an interior one a score root
+        ok = g <= 0 if a['tau2'] == 0 else abs(g / f) < 1e-6 * scale
         if not ok:
             bad.append('%s: tau2=%r converged=true but REML score=%r' % (nm, a['tau2'], g))
     assert bad == []
@@ -133,4 +145,42 @@ def test_global_mode_cases_app_js(tmp_path):
     got = _run_cases(ROOT / 'app.js', cases, tmp_path)
     bad = ['%s: app %r, global %r' % (k, got[k]['tau2'], c['expected_tau2'])
            for k, c in cases.items() if not abs(got[k]['tau2'] - c['expected_tau2']) <= TOL]
+    assert bad == []
+
+
+# Extreme-scale inputs (independent Codex review of PR #536). metafor 5.2.1, rma(method="REML",
+# threshold=1e-14): case A tau2 = 9.0949470177292884e-13 (= 2^-40), mu = 0, se = 9.5367431640625e-07;
+# case B tau2 = 0, mu = 0, se = 9.3132257461547852e-10 (metafor warns that the variance ratio is extreme).
+EXTREME = {
+    'A_tiny_scale': dict(yi=[-2.0 ** -20, 2.0 ** -20], vi=[2.0 ** -40, 2.0 ** -40], tau2=2.0 ** -40, se=9.5367431640625e-07),
+    'B_disparate_vi': dict(yi=[0.0, 0.0], vi=[2.0 ** -60, 1.0], tau2=0.0, se=9.3132257461547852e-10),
+}
+
+
+@pytest.mark.parametrize('engine', ENGINES, ids=lambda p: p.relative_to(REPO).as_posix())
+def test_extreme_scale_matches_metafor(engine, tmp_path):
+    got = _run_cases(engine, EXTREME, tmp_path)
+    bad = []
+    for k, c in EXTREME.items():
+        a = got[k]
+        if not (a['converged'] and abs(a['tau2'] - c['tau2']) <= 1e-6 * c['tau2']
+                and abs(a['se'] - c['se']) <= 1e-6 * c['se']):
+            bad.append('%s: tau2 %r (metafor %r), se %r (metafor %r), converged %r, %s'
+                       % (k, a['tau2'], c['tau2'], a['se'], c['se'], a['converged'], a['note']))
+    assert bad == []
+
+
+@pytest.mark.parametrize('engine', ENGINES, ids=lambda p: p.relative_to(REPO).as_posix())
+@pytest.mark.parametrize('factor', [1e-12, 1e8])
+def test_reml_is_scale_equivariant(engine, factor, tmp_path):
+    """yi -> c*yi, vi -> c^2*vi must give tau2 -> c^2*tau2 (absolute constants in the solver break this)."""
+    sets = {k: {'yi': [y * factor for y in s['yi']], 'vi': [v * factor * factor for v in s['vi']]}
+            for k, s in REF['sets'].items()}
+    got = _run_cases(engine, sets, tmp_path)
+    bad = []
+    for k, s in REF['sets'].items():
+        want = s['tau2_reml'] * factor * factor
+        tol = 1e-6 * max(want, factor * factor * sum(s['vi']) / len(s['vi']) * 1e-6)
+        if not abs(got[k]['tau2'] - want) <= tol:
+            bad.append('%s: %r vs %r' % (k, got[k]['tau2'], want))
     assert bad == []
