@@ -372,8 +372,13 @@
       if (x < 0 || s <= 0) return NaN;
       if (x === 0) return 0;
       if (x < s+1) {
+        // Run the series to convergence: the term ratio x/(s+n) is close to 1 when x is
+        // close to s, so a fixed 200-term cap truncated it for large df (df=10000 near the
+        // branch switch: 0.49511 vs R's 0.49248). It needs O(sqrt(s)) terms; the cap is a
+        // safety net far above that, never the stopping rule for any x < s+1.
         let sum=1/s, term=sum;
-        for (let n=1;n<200;n++) { term *= x/(s+n); sum += term; if (Math.abs(term) < Math.abs(sum)*1e-12) break; }
+        const maxTerms = 1000 + Math.ceil(50*Math.sqrt(s));
+        for (let n=1;n<maxTerms;n++) { term *= x/(s+n); sum += term; if (term < sum*1e-16) break; }
         return sum * Math.exp(-x + s*Math.log(x) - lnGamma(s));
       } else {
         return 1 - upperIncGammaCF(s,x);
@@ -382,7 +387,9 @@
     function upperIncGammaCF(s,x) {
       // Q(s,x) = 1 - P(s,x) by continued fraction (accurate in relative terms for x >= s+1)
       {
-        const MAXIT=200, FPMIN=1e-30, EPS=1e-12;
+        // Iterate to convergence (needs O(sqrt(s)) steps near x = s+1, so a fixed 200 cap
+        // also truncated large df); the cap is only a safety net.
+        const MAXIT=1000 + Math.ceil(50*Math.sqrt(s)), FPMIN=1e-300, EPS=1e-15;
         let b = x+1-s, c=1/FPMIN, d=1/b, h=d;
         for (let i=1;i<=MAXIT;i++) {
           const an = -i*(i-s);

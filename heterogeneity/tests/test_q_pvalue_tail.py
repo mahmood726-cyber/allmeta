@@ -67,3 +67,39 @@ def test_q_pvalue_matches_r_upper_tail_including_df1_and_branch_boundary():
         if not (isinstance(p, (int, float)) and p > 0 and abs(p - want) / want < 1e-8):
             bad.append((df, x, want, p))
     assert not bad, "pQ differs from R pchisq(lower.tail=FALSE) [df, x, R, page]: %s" % bad
+
+
+# Codex review of PR #509 (lane fix509): the series branch stopped after 199 terms, which
+# truncates it when df is large and x is near df (term ratio x/(s+n) ~ 1): df=10000,
+# x=10001.9999999 gave 0.4951055 vs R 0.4924783, with a jump at the branch switch x = df+2.
+# Grid: fixtures/chisq_sf_grid_R460.R (R 4.6.0 pchisq(lower.tail=FALSE), %.17g), df 1..1e5,
+# x from 0.01*df to 3*df incl. df+2 +/- 1e-7 / 1e-3 and df+2 +/- sqrt(df).
+GRID = Path(__file__).resolve().parent / "fixtures" / "chisq_sf_grid_R460.json"
+
+
+def _page_sf(points):
+    src = PAGE.read_text(encoding="utf-8")
+    helpers = "\n".join(_function(src, n) for n in
+                        ("lnGamma", "lowerIncGamma", "upperIncGammaCF", "chiSqCDF", "chiSqSF"))
+    js = helpers + r"""
+    const ref = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+    console.log(JSON.stringify(ref.map(([df, x]) => chiSqSF(x, df))));
+    """
+    out = subprocess.run(["node", "-e", js], input=json.dumps(points), capture_output=True, text=True, timeout=120)
+    assert out.returncode == 0, out.stderr
+    return json.loads(out.stdout.strip().splitlines()[-1])
+
+
+def test_chisq_sf_matches_r_on_a_grid_including_large_df_near_the_branch_switch():
+    grid = json.loads(GRID.read_text(encoding="utf-8"))
+    assert len(grid) == 356 and max(df for df, _, _ in grid) == 100000
+    got = _page_sf([[df, x] for df, x, _ in grid])
+    bad = [(df, x, want, p) for (df, x, want), p in zip(grid, got)
+           if not (isinstance(p, (int, float)) and p > 0 and abs(p - want) / want < 1e-8)]
+    assert not bad, "chiSqSF differs from R pchisq(lower.tail=FALSE) [df, x, R, page]: %s" % bad[:10]
+
+
+def test_chisq_sf_reviewer_case_df_10000():
+    # R 4.6.0: pchisq(10001.9999999, 10000, lower.tail=FALSE)
+    (p,) = _page_sf([[10000, 10001.9999999]])
+    assert abs(p - 0.4924783165559094) / 0.4924783165559094 < 1e-8, p
