@@ -1516,6 +1516,20 @@ function estimateTau2_REML(e, t, n = 100, a = 1e-8) {
       r = sum(e.map((e, t) => a[t] * Math.pow(e - i, 2)));
     return -.5 * (sum(t.map(e => Math.log(e + n))) + Math.log(s) + r)
   }
+  // REML score g = dl_R/dtau2 = .5*(sum w^2 (y-mu)^2 - sum w + sum w^2 / sum w) and expected information
+  // f = .5*tr(P^2) (Viechtbauer 2005; metafor rma.uni). The loop below used the ML score (no sum w^2 / sum w
+  // term) and a step-size-only stop, so it returned the ML root or a stalled point flagged converged.
+  function q(n) {
+    const a = t.map(e => 1 / (e + n)),
+      s = sum(a),
+      i = sum(e.map((e, t) => a[t] * e)) / s,
+      r = a.map(e => e * e),
+      o = sum(r);
+    return {
+      g: .5 * (sum(e.map((e, t) => r[t] * Math.pow(e - i, 2))) - s + o / s),
+      f: .5 * (o - 2 * sum(r.map((e, t) => e * a[t])) / s + Math.pow(o / s, 2))
+    }
+  }
   i < 1e-10 && (i = .01);
   let o = 1 / 0,
     l = 1 / 0,
@@ -1528,8 +1542,8 @@ function estimateTau2_REML(e, t, n = 100, a = 1e-8) {
       m = sum(e.map((e, t) => n[t] * e)) / p,
       h = n.map(e => e * e),
       v = e.map(e => Math.pow(e - m, 2)),
-      g = -.5 * p + .5 * sum(h.map((e, t) => e * v[t])),
-      f = .5 * sum(h);
+      g = .5 * (sum(h.map((e, t) => e * v[t])) - p + sum(h) / p),
+      f = .5 * (sum(h) - 2 * sum(h.map((e, t) => e * n[t])) / p + Math.pow(sum(h) / p, 2));
     if (f < 1e-12) return {
       tau2: Math.max(0, i),
       converged: !1,
@@ -1559,8 +1573,8 @@ function estimateTau2_REML(e, t, n = 100, a = 1e-8) {
         }
       }
     }
-    if (Math.abs(b - i) < a * Math.max(1, i)) return {
-      tau2: Math.max(0, b),
+    if (Math.abs(b - i) < a * Math.max(1, i) && (b <= 1e-10 ? q(b).g <= 0 : Math.abs(q(b).g) < a * q(b).f)) return {
+      tau2: b <= 1e-10 ? 0 : b,
       converged: !0,
       iterations: s + 1,
       method: "REML",
