@@ -368,6 +368,9 @@
           parts.push(statCard("OF boundary (now)", "±" + fmt(bnd, 2)));
           const crossed = Math.abs(cur.z) > bnd ? "Yes" : "No";
           parts.push(statCard("Crossed?", crossed));
+          // TSA-adjusted confidence interval (TSA program; RTSA inference()): estimate +/- the monitoring
+          // boundary at the current look times the SE, on the analysis scale like the naive interval above.
+          if (isFinite(bnd)) parts.push(statCard("TSA-adjusted CI", "[" + fmt(cur.cumMu - bnd * cur.cumSE, 3) + ", " + fmt(cur.cumMu + bnd * cur.cumSE, 3) + "]"));
         }
       }
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";

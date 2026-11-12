@@ -96,3 +96,33 @@ def test_boundary_card_after_information_exceeds_ris():
     b = cards["OF boundary (now)"]
     assert "--" not in b and "Infinity" not in b, cards
     assert float(re.search(r"[0-9]+\.[0-9]+", b).group()) < 2.2, cards
+
+
+def _cards(data, delta="0.5"):
+    state = {"data": data, "risMode": "auto", "delta": delta, "alpha": "0.05", "power": "0.8", "risManual": "200",
+             "diversity": "1", "title": ""}
+    r = subprocess.run([NODE, "-e", PAGE, str(APP / "index.html"), json.dumps(state)], capture_output=True, text=True, encoding="utf-8", timeout=120)
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout.strip().splitlines()[-1])["cards"]
+
+
+def _nums(s):
+    return [float(x) for x in re.findall(r"-?[0-9]+\.[0-9]+", s)]
+
+
+@pytest.mark.parametrize("data", [
+    "A, -0.5, 0.5\nB, -0.4, 0.45",                                                      # t < 1 at the last look
+    "A, -0.5, 0.25\nB, -0.5, 0.22360679774997896\nC, -0.5, 0.1889822365046136",          # last look after the RIS
+])
+def test_tsa_adjusted_ci_card(data):
+    # TSA-adjusted CI (TSA program; RTSA inference(): estimate +/- alpha boundary at the look x SE): the pooled
+    # estimate +/- the current monitoring boundary (the final boundary once t >= 1) times its SE.
+    cards = _cards(data)
+    assert "TSA-adjusted CI" in cards, sorted(cards)
+    mu, lo, hi = _nums(cards["Pooled μ"])
+    alo, ahi = _nums(cards["TSA-adjusted CI"])
+    b = _nums(cards["OF boundary (now)"])[0]
+    se = (hi - lo) / (2 * 1.959963984540054)
+    assert abs((alo + ahi) / 2 - mu) <= 1.5e-3, (mu, alo, ahi)
+    assert abs((ahi - alo) / 2 - b * se) <= 6e-3, (b, se, alo, ahi)   # inputs printed to 2-3 decimals
+    assert ahi - alo > hi - lo                                        # wider than the naive 95% CI
