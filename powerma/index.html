@@ -75,6 +75,7 @@
         <div class="grid-2" id="binary-fields">
           <label><span class="lbl">Control event rate</span><input id="p0" type="number" step="any" min="0" max="1" value="0.15" aria-label="Control event rate"></label>
           <label><span class="lbl">Relative risk reduction</span><input id="rrr" type="number" step="any" value="0.20" aria-label="Relative risk reduction"><span class="hint">e.g., 0.20 = 20% RRR.</span></label>
+          <label><span class="lbl">Binary formula</span><select id="binary-method" aria-label="Binary sample-size formula"><option value="arcsine" selected>Arcsine (Cohen h)</option><option value="pooled">Pooled variance (RTSA ris / TSA program)</option></select></label>
         </div>
         <div class="grid-2" id="continuous-fields" style="display:none">
           <label><span class="lbl">Mean difference</span><input id="md" type="number" step="any" value="0.4" aria-label="Mean difference"></label>
@@ -109,7 +110,7 @@
     </section>
   </main>
   <footer>
-    Formula (continuous): N_per_arm = 2·(z_{1-α/2} + z_{1-β})² / (MD/SD)². For binary with RRR: effect size d = arcsin√p1 − arcsin√p0 and N_per_arm = (z_{1-α/2} + z_{1-β})² / (d²·fractional allocation). RIS = N_per_arm × 2 × (1/(1 − D²)) when D² is the diversity inflation (Wetterslev 2008). <strong>R-parity:</strong> z-quantiles use Wichura AS241; sample sizes match the formulas evaluated with R's exact <code>qnorm</code> to 1e-6 (continuous &amp; binary arcsine; <code>hub/shared/tests/powerma-parity.spec.mjs</code>).
+    Formula (continuous): N_per_arm = 2·(z_{1-α/2} + z_{1-β})² / (MD/SD)². For binary with RRR: effect size d = arcsin√p1 − arcsin√p0 and N_per_arm = (z_{1-α/2} + z_{1-β})² / (d²·fractional allocation). RIS = N_per_arm × 2 × (1/(1 − D²)) when D² is the diversity inflation (Wetterslev 2008); adjusted sizes are rounded up to whole participants, as in RTSA <code>ris()</code>. Note: for binary outcomes RTSA and the TSA software use the pooled-variance normal approximation, not the arcsine formula; choose <em>Pooled variance</em> under Binary formula to get their sizes (N_per_arm = (z_{1-α/2} + z_{1-β})² p̄(1 − p̄)(1 + 1/ratio)/(p0 − p1)², p̄ the allocation-weighted mean risk; equal to RTSA <code>ris()</code> on six RTSA configurations, <code>powerma/tests/test_binary_pooled_variance.py</code>). <strong>R-parity:</strong> z-quantiles use Wichura AS241; sample sizes match the formulas evaluated with R's exact <code>qnorm</code> to 1e-6 (continuous &amp; binary arcsine; <code>hub/shared/tests/powerma-parity.spec.mjs</code>).
   </footer>
   <script>
     // Wichura (1988) AS241 — the algorithm R's qnorm() uses (~1e-15).
@@ -158,6 +159,15 @@
         const p0 = inputs.p0, rrr = inputs.rrr;
         const p1 = p0 * (1 - rrr);
         if (p1 <= 0 || p1 >= 1) return null;
+        if (inputs.binaryMethod === "pooled") {
+          // Pooled-variance normal approximation (RTSA ris(), the TSA program): with pbar the allocation-
+          // weighted mean of p0 and p1, n_control = (z_a + z_b)^2 pbar (1 - pbar) (1 + 1/ratio) / (p0 - p1)^2.
+          // For ratio 1 the total is RTSA's NF = 4 (z_a + z_b)^2 pbar (1 - pbar) / (p0 - p1)^2.
+          const delta = Math.abs(p0 - p1);
+          if (delta === 0) return null;
+          const pbar = (p0 + ratio * p1) / (1 + ratio);
+          nPerArm = Math.pow(za + zb, 2) * pbar * (1 - pbar) * (1 + 1 / ratio) / (delta * delta);
+        } else {
         // arcsine variance-stabilising effect size
         const phi0 = 2 * Math.asin(Math.sqrt(p0));
         const phi1 = 2 * Math.asin(Math.sqrt(p1));
@@ -165,6 +175,7 @@
         if (d === 0) return null;
         // unequal allocation factor (1/kappa + 1)/2 where kappa = n2/n1
         nPerArm = Math.pow(za + zb, 2) / (d * d) * (1 + 1 / ratio);
+        }
         totalN = nPerArm * (1 + ratio);
         eventsTarget = Math.round(nPerArm * p0 + nPerArm * ratio * p1);
       } else {
@@ -200,6 +211,8 @@
         md: parseFloat(document.getElementById("md").value),
         sdC: parseFloat(document.getElementById("sd-c").value),
       };
+      const bm = document.getElementById("binary-method");
+      if (outcome === "binary" && bm && bm.value === "pooled") inputs.binaryMethod = "pooled";
       const base = sampleSize(outcome, inputs);
       if (!base) return;
       const body = document.getElementById("tbl-body");
@@ -208,8 +221,10 @@
       // Heterogeneity adjustment: inflate by 1/(1 - D²) (for diversity) and / (1 - I²) for I²
       const d2Adj = d2 < 1 ? 1 / (1 - d2) : NaN;
       const i2Adj = i2 < 1 ? 1 / (1 - i2) : NaN;
-      __bodyParts.push(`<tr><td><code>MA adjusted for I² (${(i2 * 100).toFixed(0)}%)</code></td><td>${fmt(base.nPerArm * i2Adj)}</td><td>${fmt(base.totalN * i2Adj)}</td><td>${base.eventsTarget ? fmt(base.eventsTarget * i2Adj) : "—"}</td></tr>`);
-      __bodyParts.push(`<tr style="background:var(--accent-soft); font-weight:600"><td><code>RIS (D² = ${(d2 * 100).toFixed(0)}%)</code></td><td>${fmt(base.nPerArm * d2Adj)}</td><td>${fmt(base.totalN * d2Adj)}</td><td>${base.eventsTarget ? fmt(base.eventsTarget * d2Adj) : "—"}</td></tr>`);
+      // Required sizes are rounded UP (never down), as in RTSA ris(): ceiling(1/(1 - D2) * N).
+      const fmtN = (x) => Number.isFinite(x) ? String(Math.ceil(x)) : "—";
+      __bodyParts.push(`<tr><td><code>MA adjusted for I² (${(i2 * 100).toFixed(0)}%)</code></td><td>${fmtN(base.nPerArm * i2Adj)}</td><td>${fmtN(base.totalN * i2Adj)}</td><td>${base.eventsTarget ? fmtN(base.eventsTarget * i2Adj) : "—"}</td></tr>`);
+      __bodyParts.push(`<tr style="background:var(--accent-soft); font-weight:600"><td><code>RIS (D² = ${(d2 * 100).toFixed(0)}%)</code></td><td>${fmtN(base.nPerArm * d2Adj)}</td><td>${fmtN(base.totalN * d2Adj)}</td><td>${base.eventsTarget ? fmtN(base.eventsTarget * d2Adj) : "—"}</td></tr>`);
 
       drawCurve(outcome, inputs);
       body.innerHTML = __bodyParts.join("");
@@ -217,7 +232,8 @@
         i2_pct: i2 * 100, d2_pct: d2 * 100,
         single_study_n_per_arm: base.nPerArm, single_study_total_n: base.totalN,
         events_target: base.eventsTarget || null,
-        ris_total_n: isFinite(d2Adj) ? Math.round(base.totalN * d2Adj) : null };
+        ris_total_n: isFinite(d2Adj) ? Math.ceil(base.totalN * d2Adj) : null };
+      if (inputs.binaryMethod === "pooled") _lastPowerMA.binary_method = "pooled";
     }
     var _lastPowerMA = null;
     window.__almLastPowerMA = function () { return _lastPowerMA; };

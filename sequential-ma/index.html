@@ -170,7 +170,9 @@
       var alpha = parseFloat(document.getElementById("f-alpha").value);
       var family = document.getElementById("f-family").value;
       var futility = document.getElementById("f-futility").value === "1";
-      var r = AlmSequentialMA.computeBoundary(looks, { alpha: alpha, family: family, futility: futility, beta: 0.20 });
+      var r;
+      try { r = AlmSequentialMA.computeBoundary(looks, { alpha: alpha, family: family, futility: futility, beta: 0.20 }); }
+      catch (e) { document.getElementById("overall").textContent = "Cannot compute boundaries: " + e.message; return; }
       var color = r.decision === "reject-H0" ? "var(--accent)" : r.decision === "futility" ? "var(--warn)" : "var(--ink)";
       document.getElementById("overall").innerHTML = 'Overall decision: <span style="color:' + color + '">' + r.decision + '</span> (' + family + ' family, α=' + alpha + ')';
       var html = "";

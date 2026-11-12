@@ -73,6 +73,41 @@ def test_non_ph_intervals_are_independent_and_pooled():
     assert min(b1, b2) < bp < max(b1, b2)
 
 
+def _lh(e, pt, cc=0.5):
+    return math.log((e + cc) / pt)
+
+
+def test_multi_arm_interval_is_fitted():
+    # A 3-arm trial must be fitted, not refused: AlmNmaMultiarm (like netmeta) requires all
+    # m(m-1)/2 comparisons of a multi-arm study. With one 3-arm trial the network estimates are
+    # the direct log rate ratios, SE sqrt(1/(e_t+cc) + 1/(e_A+cc)).
+    arms = {"A": (40, 1000), "B": (30, 1000), "C": (20, 900)}
+    rows = [{"study": "m1", "treatment": t, "interval": "1", "events": e, "ptime": pt} for t, (e, pt) in arms.items()]
+    r = _run(f"S.fit({json.dumps(rows)}, {{model:'fe'}})")
+    assert r["warnings"] == [], r["warnings"]
+    eff = r["intervals"]["1"]["effects"]
+    for t in ("B", "C"):
+        te = _lh(*arms[t]) - _lh(*arms["A"])
+        se = math.sqrt(1 / (arms[t][0] + 0.5) + 1 / (arms["A"][0] + 0.5))
+        assert math.isclose(eff[t]["logHR"], te, rel_tol=1e-12, abs_tol=1e-12), (t, eff[t], te)
+        assert math.isclose(eff[t]["se"], se, rel_tol=1e-12), (t, eff[t], se)
+
+
+def test_pooled_only_over_intervals_with_the_network_reference():
+    # Interval 2 has no A arm, so its effects are against B. They must not be pooled with
+    # interval 1's effects against A: pooled C (vs A) = interval-1 C only.
+    rows = IV1_ROWS + [
+        {"study": "s3", "treatment": "B", "interval": "2", "events": 33, "ptime": 650},
+        {"study": "s3", "treatment": "C", "interval": "2", "events": 24, "ptime": 600},
+    ]
+    r = _run(f"S.fit({json.dumps(rows)}, {{model:'fe'}})")
+    assert r["intervals"]["2"]["refTreat"] == "B"
+    c1 = r["intervals"]["1"]["effects"]["C"]
+    assert math.isclose(r["pooled"]["C"]["logHR"], c1["logHR"], rel_tol=1e-12), (r["pooled"], c1)
+    assert math.isclose(r["pooled"]["C"]["se"], c1["se"], rel_tol=1e-12)
+    assert any(w.startswith("interval 2:") and "not pooled" in w for w in r["warnings"]), r["warnings"]
+
+
 def test_interval_with_single_arm_is_skipped():
     rows = [
         {"study": "s1", "treatment": "A", "interval": "1", "events": 10, "ptime": 500},
@@ -81,3 +116,111 @@ def test_interval_with_single_arm_is_skipped():
     ]
     r = _run(f"S.fit({json.dumps(rows)}, {{model:'fe'}})")
     assert r["intervalIds"] == ["1"]  # interval 2 (single arm) dropped
+
+
+def test_numeric_interval_labels_sort_numerically():
+    # Interval labels 1..10 must come out in time order, not string order ("10" before "2").
+    rows = []
+    for iv in range(1, 11):
+        for s, (a, b) in {"s1": ("A", "B"), "s2": ("A", "C"), "s3": ("B", "C")}.items():
+            rows.append({"study": s, "treatment": a, "interval": str(iv), "events": 20 + iv, "ptime": 1000})
+            rows.append({"study": s, "treatment": b, "interval": str(iv), "events": 15 + iv, "ptime": 1000})
+    out = _run(f"S.fit({json.dumps(rows)}, {{model:'fe'}}).intervalIds")
+    assert out == [str(i) for i in range(1, 11)], out
+    # Non-numeric labels keep the deterministic string order.
+    rows2 = [dict(r, interval={"1": "b", "2": "a"}[r["interval"]]) for r in rows if r["interval"] in ("1", "2")]
+    assert _run(f"S.fit({json.dumps(rows2)}, {{model:'fe'}}).intervalIds") == ["a", "b"]
+
+
+REML_FIXTURE = json.loads((ROOT / "tests" / "fixtures" / "nma-survival-nph-reml.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("method", ["DL", "REML", "ML"])
+def test_reml_ml_tau2_match_netmeta(method):
+    # Random-effects tau^2 estimator choice: netmeta method.tau = "DL" (default), "REML", "ML".
+    # Reference: tests/fixtures/nma-survival-nph-reml.R. Interval 1: two-arm trials only; interval 2: includes
+    # a three-arm trial; interval 3: tau^2 at the boundary 0. Tolerance fixed before comparing: 1e-6 absolute
+    # on tau^2, log HR and SE.
+    #  - DL: netmeta 3.7.0 in every interval.
+    #  - REML/ML: metafor 5.2.1 rma.mv with the full multi-arm sampling covariance ("exact_*") in every
+    #    interval, and netmeta 3.7.0 in interval 1. netmeta given only TE/seTE uses a diagonal sampling
+    #    covariance for its REML/ML step, so it is not the reference for the three-arm interval.
+    rows = REML_FIXTURE["rows"]
+    out = _run(f"S.fit({json.dumps(rows)}, {{model:'re', method:'{method}'}})")
+    assert out["warnings"] == [], out["warnings"]
+    for iv, refs in REML_FIXTURE["intervals"].items():
+        targets = [refs[method]] if method == "DL" else [refs["exact_" + method]] + ([refs[method]] if iv == "1" else [])
+        got = out["intervals"][iv]
+        for ref in targets:
+            assert math.isclose(got["tau2"], ref["tau2"], abs_tol=1e-6), (iv, method, got["tau2"], ref["tau2"])
+            for t, e in ref["effects"].items():
+                assert math.isclose(got["effects"][t]["logHR"], e["logHR"], abs_tol=1e-6), (iv, method, t)
+                assert math.isclose(got["effects"][t]["se"], e["se"], abs_tol=1e-6), (iv, method, t)
+    assert out.get("method") == method
+
+
+def test_default_output_has_no_method_key():
+    # The default call (no method) must be unchanged: DL, and no new key in the result.
+    out = _run(f"S.fit({json.dumps(REML_FIXTURE['rows'])}, {{model:'re'}})")
+    assert "method" not in out
+    for iv, refs in REML_FIXTURE["intervals"].items():
+        assert math.isclose(out["intervals"][iv]["tau2"], refs["DL"]["tau2"], abs_tol=1e-9)
+
+
+CC0_FIXTURE = json.loads((ROOT / "tests" / "fixtures" / "nma-survival-nph-cc-only0.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("model", ["fe", "re"])
+def test_cc_only_zero_matches_meta_pairwise_netmeta(model):
+    # ccTo: 'only0' adds the continuity correction only in a study-interval with a zero event count, as
+    # meta::pairwise(sm = "IRR", incr = 0.5) does by default. Reference: tests/fixtures/nma-survival-nph-cc-only0.R
+    # (meta 8.5-0, netmeta 3.7.0). Tolerance fixed before comparing: 1e-6 absolute.
+    ref = CC0_FIXTURE["common" if model == "fe" else "random"]
+    out = _run(f"S.fit({json.dumps(CC0_FIXTURE['rows'])}, {{model:'{model}', cc:0.5, ccTo:'only0'}})")
+    got = out["intervals"]["1"]
+    if model == "re":
+        assert math.isclose(got["tau2"], ref["tau2"], abs_tol=1e-6), (got["tau2"], ref["tau2"])
+    for t, e in ref["effects"].items():
+        assert math.isclose(got["effects"][t]["logHR"], e["logHR"], abs_tol=1e-6), (model, t, got["effects"][t], e)
+        assert math.isclose(got["effects"][t]["se"], e["se"], abs_tol=1e-6), (model, t, got["effects"][t], e)
+
+
+def test_cc_default_still_added_to_every_arm():
+    # Default (ccTo unset): 0.5 added to every arm, as before.
+    out = _run(f"S.buildContrasts({json.dumps(CC0_FIXTURE['rows'])}, 0.5)")
+    s2 = [c for c in out["1"] if c["study"] == "s2|1"][0]
+    assert math.isclose(s2["est"], math.log(21.5 / 880) - math.log(30.5 / 900), rel_tol=1e-12)
+
+
+def _run_ma(expr: str):
+    r = subprocess.run([NODE, "-e", "const M = require('./shared/nma-multiarm-v1.js');\nconsole.log(JSON.stringify(" + expr + "));"],
+                       capture_output=True, text=True, timeout=30, cwd=str(ROOT))
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+@pytest.mark.parametrize("method,ref", [("REML", 333332.333333), ("ML", 222221.222221)])
+def test_likelihood_tau2_not_truncated_at_search_ceiling(method, ref):
+    # Review finding: the scan ceiling (max(100*DL, 100*max v, 1)) silently capped tau2. Reference metafor 5.2.1
+    # rma(yi = c(0, 0, 1000), sei = c(.001, .001, 1), method = m, control = list(tau2.max = 1e9)).
+    rows = [{"study": "s1", "t1": "A", "t2": "B", "est": 0, "se": 0.001},
+            {"study": "s2", "t1": "A", "t2": "B", "est": 0, "se": 0.001},
+            {"study": "s3", "t1": "A", "t2": "B", "est": 1000, "se": 1}]
+    out = _run_ma(f"M.fit({json.dumps(rows)}, {{model:'re', method:'{method}'}})")
+    assert math.isclose(out["tau2"], ref, rel_tol=1e-6), out["tau2"]
+
+
+def test_multiarm_default_output_has_no_method_key():
+    rows = [{"study": "s1", "t1": "A", "t2": "B", "est": 0.1, "se": 0.2}, {"study": "s2", "t1": "A", "t2": "B", "est": 0.3, "se": 0.25}]
+    for opts in ("{model:'fe'}", "{model:'re'}"):
+        assert "method" not in _run_ma(f"M.fit({json.dumps(rows)}, {opts})")
+
+
+def test_interval_order_is_independent_of_input_order():
+    # Review finding: the mixed numeric/string comparator was not transitive. Numeric labels come first in
+    # numeric order, then other labels in string order, whatever the input order.
+    def rows(order):
+        return [{"study": "s", "treatment": t, "interval": iv, "events": 20, "ptime": 100} for iv in order for t in ("A", "B")]
+    want = ["2.5", "10.5", "1a"]
+    for order in (["10.5", "1a", "2.5"], ["2.5", "10.5", "1a"], ["1a", "2.5", "10.5"]):
+        assert _run(f"S.fit({json.dumps(rows(order))}, {{model:'fe'}}).intervalIds") == want, order

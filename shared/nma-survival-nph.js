@@ -29,8 +29,11 @@
 
   // Build per-interval within-study log-HR contrasts (vs each study's base arm).
   // rows: [{study, treatment, interval, events, ptime}]
-  function buildContrasts(rows, cc) {
+  // ccTo: "all" (default) adds cc to every arm; "only0" adds it only to the arms of a study-interval
+  // that has a zero event count (meta::pairwise(sm = "IRR") default), so a study without zeros is uncorrected.
+  function buildContrasts(rows, cc, ccTo) {
     cc = cc == null ? 0.5 : cc;
+    var only0 = ccTo === "only0";
     // group by study -> interval -> [{treatment, events, ptime}]
     var byStudy = {};
     rows.forEach(function (r) {
@@ -45,16 +48,22 @@
           return String(a.treatment) < String(b.treatment) ? -1 : 1;
         });
         if (arms.length < 2) return;               // need >=2 arms in the interval
-        var base = arms[0];
-        var lhBase = _logHazard(base.events, base.ptime, cc);
-        for (var i = 1; i < arms.length; i++) {
-          var a = arms[i];
-          var est = _logHazard(a.events, a.ptime, cc) - lhBase;
-          var se = Math.sqrt(1 / (a.events + cc) + 1 / (base.events + cc));
-          (perInterval[iv] = perInterval[iv] || []).push({
-            study: s + "|" + iv, t1: String(base.treatment), t2: String(a.treatment),
-            est: est, se: se
-          });
+        var ccS = only0 && !arms.some(function (x) { return +x.events === 0; }) ? 0 : cc;
+        // Every pairwise comparison (i < j): a multi-arm study must supply all m(m-1)/2 of them
+        // (AlmNmaMultiarm, like netmeta's chkmultiarm, refuses an incomplete set). The pairwise
+        // variances are sums of independent arm variances, so the GLS recovers the shared-arm
+        // covariance Var(base) exactly. For 2 arms this is the single base contrast, as before.
+        for (var i = 0; i < arms.length; i++) {
+          var b = arms[i], lhB = _logHazard(b.events, b.ptime, ccS);
+          for (var j = i + 1; j < arms.length; j++) {
+            var a = arms[j];
+            var est = _logHazard(a.events, a.ptime, ccS) - lhB;
+            var se = Math.sqrt(1 / (a.events + ccS) + 1 / (b.events + ccS));
+            (perInterval[iv] = perInterval[iv] || []).push({
+              study: s + "|" + iv, t1: String(b.treatment), t2: String(a.treatment),
+              est: est, se: se
+            });
+          }
         }
       });
     });
@@ -62,27 +71,42 @@
   }
 
   /**
-   * fit(rows, {cc=0.5, model='fe'|'re'})
+   * fit(rows, {cc=0.5, ccTo='all'|'only0', model='fe'|'re', method='DL'|'REML'|'ML'})  (method: random-effects tau^2 estimator
+   *   in every interval, netmeta method.tau; default DL)
    * rows: [{study, treatment, interval, events, ptime}] (arm-level, per interval).
    * Returns { intervalIds, intervals:{ id:{ refTreat, treatments, effects:{t:{logHR,se}} } },
    *           pooled:{ t:{logHR,se} } (IV across intervals), warnings }.
    */
   function fit(rows, opts) {
     opts = opts || {};
-    var cc = opts.cc == null ? 0.5 : opts.cc, model = opts.model || "fe";
+    var cc = opts.cc == null ? 0.5 : opts.cc, model = opts.model || "fe", method = opts.method || "DL";
     if (typeof global.AlmNmaMultiarm === "undefined") throw new Error("nma-survival-nph: AlmNmaMultiarm not loaded");
-    var perInterval = buildContrasts(rows, cc);
-    var intervalIds = Object.keys(perInterval).sort();
+    if (opts.ccTo != null && opts.ccTo !== "all" && opts.ccTo !== "only0") throw new Error("nma-survival-nph: ccTo must be 'all' or 'only0'");
+    var perInterval = buildContrasts(rows, cc, opts.ccTo);
+    // Time order: numeric labels sort numerically ("2" before "10"); otherwise the string order as before.
+    var NUM = /^\s*-?\d+(\.\d+)?\s*$/;
+    // Numeric labels first, in numeric order; then the others in string order (a total order).
+    var intervalIds = Object.keys(perInterval).sort(function (a, b) {
+      var na = NUM.test(a), nb = NUM.test(b);
+      if (na !== nb) return na ? -1 : 1;
+      if (na && +a !== +b) return +a - +b;
+      return a < b ? -1 : a > b ? 1 : 0;
+    });
     var intervals = {}, warnings = [];
     var pool = {}; // treatment -> {sw, swy}
+    // Network-wide reference: the pooled table averages log-HRs across intervals, which is only
+    // meaningful against ONE comparator. An interval without it is reported but not pooled.
+    var globalRef = rows.map(function (r) { return String(r.treatment); }).sort()[0];
     intervalIds.forEach(function (iv) {
-      var res = global.AlmNmaMultiarm.fit(perInterval[iv], { model: model });
+      var res = global.AlmNmaMultiarm.fit(perInterval[iv], { model: model, ref: globalRef, method: method });
       if (!res.ok) { warnings.push("interval " + iv + ": " + res.error); return; }
+      var poolThis = res.refTreat === globalRef;
+      if (!poolThis) warnings.push("interval " + iv + ": reference " + globalRef + " absent (effects vs " + res.refTreat + "); not pooled");
       var eff = {};
       for (var k = 0; k < res.nonref.length; k++) {
         var t = res.nonref[k], lhr = res.d[k], se = Math.sqrt(res.cov[k][k]);
         eff[t] = { logHR: lhr, se: se };
-        if (isFinite(lhr) && isFinite(se) && se > 0) {
+        if (poolThis && isFinite(lhr) && isFinite(se) && se > 0) {
           var w = 1 / (se * se);
           pool[t] = pool[t] || { sw: 0, swy: 0 };
           pool[t].sw += w; pool[t].swy += w * lhr;
@@ -94,7 +118,9 @@
     Object.keys(pool).forEach(function (t) {
       if (pool[t].sw > 0) pooled[t] = { logHR: pool[t].swy / pool[t].sw, se: Math.sqrt(1 / pool[t].sw) };
     });
-    return { intervalIds: intervalIds, intervals: intervals, pooled: pooled, warnings: warnings };
+    var out = { intervalIds: intervalIds, intervals: intervals, pooled: pooled, warnings: warnings };
+    if (opts.method != null) out.method = String(method).toUpperCase();   // only when requested: default output unchanged
+    return out;
   }
 
   var api = { fit: fit, buildContrasts: buildContrasts, _logHazard: _logHazard };
