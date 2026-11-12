@@ -99,4 +99,4 @@ def test_no_unsupported_superiority_claim():
     import re
     h = _h()
     assert not re.search(r"\bbeats?\b|\boutperform", h, re.I), "unsupported superiority claim in rob/index.html"
-    assert "not distinguishable" in h
+    assert "no superiority is claimed" in h
