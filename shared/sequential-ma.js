@@ -110,9 +110,21 @@
   // ---- Recursive numerical integration (Jennison & Turnbull 2000, ch. 19) ----
   // Grid in the z-scale of Z_k ~ N(theta * sqrt(I_k), 1); I_k is the information (only ratios matter under H0).
   // R_MESH is the J&T mesh parameter r (they recommend r >= 16); 64 is used here.
-  var R_MESH = 64;
-  function _grid(mu, lo, hi) {
-    var r = R_MESH, pts = [], j, n = 6 * r - 1, x;
+  // When looks are close, the transition density between look k and its neighbours has SD
+  // sqrt(|I_neighbour - I_k| / I_k) in the z-scale of Z_k: both the kernel to the next look and the edge of the
+  // density carried from the previous look are that narrow. The mesh at look k is refined to
+  // r >= 4 * sqrt(I_k / gap) for the smaller neighbouring gap (mid-grid spacing about 0.75 / r), capped at R_MESH_MAX.
+  // Ordinary designs (neighbouring looks more than I_k / 256 apart) keep r = 64.
+  var R_MESH = 64, R_MESH_MAX = 2048;
+  function _mesh(Iprev, Ik, Inext) {
+    var gap = Infinity;
+    if (Inext > Ik) gap = Inext - Ik;
+    if (Iprev != null && Ik > Iprev) gap = Math.min(gap, Ik - Iprev);
+    if (!isFinite(gap)) return R_MESH;
+    return Math.min(R_MESH_MAX, Math.max(R_MESH, Math.ceil(4 * Math.sqrt(Ik / gap))));
+  }
+  function _grid(mu, lo, hi, rIn) {
+    var r = rIn || R_MESH, pts = [], j, n = 6 * r - 1, x;
     if (!(hi > lo)) return { z: [], w: [] };
     if (isFinite(lo)) pts.push(lo);
     for (j = 1; j <= n; j++) {
@@ -133,8 +145,8 @@
     }
     return { z: z, w: w };
   }
-  function _start(I1, theta, lo, hi) {        // density of Z_1 on the continuation region (lo, hi)
-    var mu = theta * Math.sqrt(I1), g = _grid(mu, lo, hi);
+  function _start(I1, theta, lo, hi, r) {     // density of Z_1 on the continuation region (lo, hi)
+    var mu = theta * Math.sqrt(I1), g = _grid(mu, lo, hi, r);
     return { z: g.z, w: g.w, h: g.z.map(function (x) { return dnorm(x - mu); }), I: I1 };
   }
   function _mass(s) { var p = 0; for (var j = 0; j < s.z.length; j++) p += s.w[j] * s.h[j]; return p; }
@@ -149,9 +161,9 @@
     }
     return p;
   }
-  function _advance(s, Ik, theta, lo, hi) {   // density of Z_k on (lo, hi) for paths that continued so far
+  function _advance(s, Ik, theta, lo, hi, r) { // density of Z_k on (lo, hi) for paths that continued so far
     var d = Ik - s.I, sd = Math.sqrt(d), sq = Math.sqrt(Ik), sp = Math.sqrt(s.I);
-    var g = _grid(theta * Math.sqrt(Ik), lo, hi), h = new Array(g.z.length);
+    var g = _grid(theta * Math.sqrt(Ik), lo, hi, r), h = new Array(g.z.length);
     for (var i = 0; i < g.z.length; i++) {
       var acc = 0, xs = g.z[i] * sq - theta * d;
       for (var j = 0; j < s.z.length; j++) acc += s.w[j] * s.h[j] * dnorm((xs - s.z[j] * sp) / sd);
@@ -182,7 +194,8 @@
       else b[k] = _solve(function (c) { return _cross(s, info[k], c, 0, true) - inc; }, -10, 40);
       if (k < K - 1) {
         var lo = sided === 2 ? -b[k] : -Infinity;
-        s = k === 0 ? _start(info[0], 0, lo, b[0]) : _advance(s, info[k], 0, lo, b[k]);
+        var rk = _mesh(k > 0 ? info[k - 1] : null, info[k], info[k + 1]);
+        s = k === 0 ? _start(info[0], 0, lo, b[0], rk) : _advance(s, info[k], 0, lo, b[k], rk);
       }
     }
     return b;
@@ -198,7 +211,7 @@
       if (!(inc > 0)) za[k] = -Infinity;
       else if (k === 0) za[0] = theta * Math.sqrt(Ik) + qnorm(inc);
       else za[k] = _solve(function (c) { return _cross(s, Ik, c, theta, false) - inc; }, -40, 40);
-      if (k < K - 1) s = k === 0 ? _start(Ik, theta, za[0], eff[0]) : _advance(s, Ik, theta, za[k], eff[k]);
+      if (k < K - 1) { var rk = _mesh(k > 0 ? t[k - 1] * R : null, Ik, t[k + 1] * R); s = k === 0 ? _start(Ik, theta, za[0], eff[0], rk) : _advance(s, Ik, theta, za[k], eff[k], rk); }
     }
     return za;
   }
@@ -241,6 +254,7 @@
     var sorted = looks.slice().sort(function (a, b) { return a.t - b.t; });
     var t = sorted.map(function (l) { return l.t; });
     if (t.some(function (x) { return !(x > 0); })) throw new Error("information fractions must be > 0");
+    if (t.some(function (x, i) { return i > 0 && !(x > t[i - 1]); })) throw new Error("information fractions must be strictly increasing (two looks share the same information)");
     var cumSide = t.map(function (x) { return _spendPerSide(family, alpha, x, sided, convention); });
     var incSide = cumSide.map(function (c, i) { return Math.max(0, i ? c - cumSide[i - 1] : c); });
     var eff = _efficacy(t, incSide, sided);

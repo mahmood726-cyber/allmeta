@@ -78,3 +78,23 @@ def test_one_sided_futility_stops_on_negative_trend():
     opts = {"alpha": 0.025, "beta": 0.1, "family": "OBF", "sided": 1, "futility": True}
     out = _node(f"console.log(JSON.stringify(M.computeBoundary({json.dumps(looks)}, {json.dumps(opts)}).looks.map(l => l.decision)));")
     assert out[0] == "futility", out
+
+
+def test_closely_spaced_looks():
+    # Review finding: a fixed J&T mesh cannot resolve the transition density between looks 1e-5 apart.
+    # Reference: tests/fixtures/sequential-ma-close-looks.R: look 2 by one-dimensional quadrature (R integrate,
+    # rel.tol 1e-13) = 2.7812468513 -- mvtnorm's Miwa algorithm gives 2.7812326355 there, 1.4e-5 off, because
+    # corr(Z1, Z2) = 0.999990; look 3 by mvtnorm Miwa = 1.9793135962.
+    looks = [{"t": 0.5, "z": 0}, {"t": 0.50001, "z": 0}, {"t": 1, "z": 2.02}]
+    out = _node(f"console.log(JSON.stringify(M.computeBoundary({json.dumps(looks)}, {{alpha: 0.05, family: 'OBF', sided: 2}}).looks.map(l => [l.alpha_boundary, l.decision])))")
+    ref = [2.7718076487, 2.7812468513, 1.9793135962]
+    for (b, _), r in zip(out, ref):
+        assert abs(b - r) < 1e-6, (out, ref)
+    assert out[2][1] == "reject-H0"
+
+
+def test_duplicate_information_fractions_are_refused():
+    looks = [{"t": 0.5, "z": 0}, {"t": 0.5, "z": 0}, {"t": 1, "z": 2.02}]
+    script = f"const M = require({json.dumps(str(MODULE))});\ntry {{ M.computeBoundary({json.dumps(looks)}, {{}}); console.log('NO_ERROR'); }} catch (e) {{ console.log('ERR ' + e.message); }}"
+    r = subprocess.run([NODE, "-e", script], capture_output=True, text=True, timeout=60, cwd=str(ROOT))
+    assert r.stdout.strip().startswith("ERR"), r.stdout
