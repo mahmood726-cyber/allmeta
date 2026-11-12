@@ -8209,6 +8209,101 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     }
   }
 
+  // Residual heterogeneity of a weighted linear dose-response fit (yi = effect - study offset, vi = 1/weight,
+  // X = the model's design). Estimators as in metafor::rma(mods = X, intercept = FALSE): DL, REML, PM, SJ, EB.
+  function linearDesign(fit, dose, freeBaseline) {
+    if (!fit) return null;
+    if (fit.model === "log_linear") return freeBaseline ? [1, Math.log(dose + fit.shift)] : [Math.log(dose + fit.shift)];
+    if (fit.model === "rcs") return buildRcsBasis(dose, fit.knots, fit.includeIntercept);
+    if (fit.model === "fp") {
+      const x = dose + fit.shift;
+      const row = [];
+      if (fit.includeIntercept) row.push(1);
+      const t1 = buildFpTerm(x, fit.powers[0]);
+      row.push(t1);
+      if (fit.powers.length > 1) row.push(fit.powers[1] === fit.powers[0] ? t1 * Math.log(x) : buildFpTerm(x, fit.powers[1]));
+      return row;
+    }
+    return null;
+  }
+
+  function residualTau2(y, v, Xin, method) {
+    const k = y.length;
+    // independent columns (modified Gram-Schmidt on the unweighted columns, relative tolerance)
+    const cols = [];
+    const basis = [];
+    const p0 = Xin.length ? Xin[0].length : 0;
+    for (let j = 0; j < p0; j += 1) {
+      const c = Xin.map(r => r[j]);
+      const norm0 = Math.sqrt(c.reduce((a, b) => a + b * b, 0));
+      if (!(norm0 > 0)) continue;
+      const r = c.slice();
+      basis.forEach(q => { const d = r.reduce((a, b, i) => a + b * q[i], 0); for (let i = 0; i < k; i += 1) r[i] -= d * q[i]; });
+      const nr = Math.sqrt(r.reduce((a, b) => a + b * b, 0));
+      if (nr > 1e-7 * norm0) { basis.push(r.map(x => x / nr)); cols.push(j); }
+    }
+    const p = cols.length;
+    if (k <= p) return 0;
+    const X = Xin.map(r => cols.map(j => r[j]));
+    const projQ = t2 => {          // returns { P, Py } for weights 1/(v + t2)
+      const w = v.map(vi => 1 / (vi + t2));
+      const P = [];
+      for (let i = 0; i < k; i += 1) { P.push(new Array(k).fill(0)); P[i][i] = w[i]; }
+      if (p > 0) {
+        const A = Array.from({ length: p }, () => new Array(p).fill(0));
+        for (let a = 0; a < p; a += 1) for (let b = 0; b < p; b += 1) { let s = 0; for (let i = 0; i < k; i += 1) s += X[i][a] * w[i] * X[i][b]; A[a][b] = s; }
+        const Ainv = invertSym(A);
+        // P = W - W X Ainv X' W
+        const WX = X.map((r, i) => r.map(x => x * w[i]));
+        const M = WX.map(r => { const o = new Array(p).fill(0); for (let a = 0; a < p; a += 1) for (let b = 0; b < p; b += 1) o[a] += r[b] * Ainv[b][a]; return o; });
+        for (let i = 0; i < k; i += 1) for (let j = 0; j < k; j += 1) { let s = 0; for (let a = 0; a < p; a += 1) s += M[i][a] * WX[j][a]; P[i][j] -= s; }
+      }
+      const Py = P.map(r => r.reduce((a, b, j) => a + b * y[j], 0));
+      return { P, Py };
+    };
+    const rss = t2 => { const { Py } = projQ(t2); return Py.reduce((a, b, i) => a + b * y[i], 0); };
+    const trace = P => P.reduce((a, r, i) => a + r[i], 0);
+    const dl = () => { const { P, Py } = projQ(0); const q = Py.reduce((a, b, i) => a + b * y[i], 0); return Math.max(0, (q - (k - p)) / trace(P)); };
+    const rootQ = () => {            // PM / EB: y'P(t2)y = k - p
+      if (rss(0) <= k - p) return 0;
+      let lo = 0; let hi = 1;
+      while (rss(hi) > k - p && hi < 1e12) hi *= 2;
+      for (let it = 0; it < 400 && hi - lo > 1e-16 * Math.max(1, hi); it += 1) { const mid = (lo + hi) / 2; if (rss(mid) > k - p) lo = mid; else hi = mid; }
+      return (lo + hi) / 2;
+    };
+    if (method === "dl") return dl();
+    if (method === "pm" || method === "eb") return rootQ();
+    if (method === "sj") {
+      const mean = y.reduce((a, b) => a + b, 0) / k;
+      const t0 = y.reduce((a, b) => a + (b - mean) * (b - mean), 0) / k;
+      if (!(t0 > 0)) return 0;
+      return Math.max(0, t0 * rss(t0) / (k - p));
+    }
+    if (method === "reml") {      // root of the restricted-likelihood score y'PPy - tr(P); 0 if the score is negative at 0
+      const score = t2 => { const { P, Py } = projQ(t2); return Py.reduce((a, b) => a + b * b, 0) - trace(P); };
+      if (score(0) <= 0) return 0;
+      let lo = 0; let hi = 1;
+      while (score(hi) > 0 && hi < 1e12) hi *= 2;
+      for (let it = 0; it < 400 && hi - lo > 1e-16 * Math.max(1, hi); it += 1) { const mid = (lo + hi) / 2; if (score(mid) > 0) lo = mid; else hi = mid; }
+      return (lo + hi) / 2;
+    }
+    return dl();
+  }
+
+  function invertSym(A) {
+    const n = A.length;
+    const M = A.map((r, i) => [...r, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+    for (let i = 0; i < n; i += 1) {
+      let piv = i;
+      for (let r = i + 1; r < n; r += 1) if (Math.abs(M[r][i]) > Math.abs(M[piv][i])) piv = r;
+      [M[i], M[piv]] = [M[piv], M[i]];
+      const d = M[i][i];
+      for (let c = 0; c < 2 * n; c += 1) M[i][c] /= d;
+      for (let r = 0; r < n; r += 1) if (r !== i) { const f = M[r][i]; for (let c = 0; c < 2 * n; c += 1) M[r][c] -= f * M[i][c]; }
+    }
+    return M.map(r => r.slice(n));
+  }
+
   function computeTau2ByTreatment(baseData, fits, offsets, options = {}) {
     const {
       useCovariate = false,
@@ -8229,9 +8324,11 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       if (!Number.isFinite(weight) || weight <= 0) return;
       const variance = weight > 0 ? 1 / weight : 1;
       if (!agg.has(row.treatment)) {
-        agg.set(row.treatment, { resids: [], vars: [], weights: [], n: 0 });
+        agg.set(row.treatment, { resids: [], vars: [], weights: [], n: 0, ys: [], xs: [] });
       }
       const entry = agg.get(row.treatment);
+      entry.ys.push(row.effect - offset - covAdj);
+      entry.xs.push(linearDesign(fit, row.dose, state.freeBaseline));
       entry.resids.push(resid);
       entry.vars.push(variance);
       entry.weights.push(weight);
@@ -8287,7 +8384,10 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       totalQ += q;
       totalDf += df;
       let tau2 = 0;
-      if (tau2Method === "pm") {
+      if (entry.xs.every(x => Array.isArray(x))) {
+        // linear dose-response models: residual heterogeneity with the method the user selected
+        tau2 = residualTau2(entry.ys, entry.vars, entry.xs, tau2Method);
+      } else if (tau2Method === "pm") {
         tau2 = computePauleMandel(entry.vars, entry.resids, df);
       } else {
         const c = wsum - (wsum2 / (wsum || 1));
@@ -8301,6 +8401,61 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     const i2 = totalQ > totalDf ? (totalQ - totalDf) / totalQ : 0;
     const h2 = totalDf ? totalQ / totalDf : NaN;
     return { tau2ByTreatment, globalTau2, i2, h2, totalQ, totalDf };
+  }
+
+  // Fixed-effect linear dose-response models: the alternating sweeps converge (slowly) to the joint weighted
+  // least-squares solution of effect = study offset + curve(dose); solve it directly with a QR decomposition
+  // (modified Gram-Schmidt with re-orthogonalisation; dependent columns get coefficient 0).
+  function jointLinearSolve(baseData, fits, freeBaseline) {
+    const rows = baseData.filter(r => fits[r.treatment] && linearDesign(fits[r.treatment], r.dose, freeBaseline));
+    if (!rows.length) return null;
+    const studies = Array.from(new Set(rows.map(r => r.study)));
+    const trts = Array.from(new Set(rows.map(r => r.treatment)));
+    const width = {}; let p = studies.length; const start = {};
+    trts.forEach(t => { start[t] = p; width[t] = linearDesign(fits[t], 1, freeBaseline).length; p += width[t]; });
+    const n = rows.length;
+    const sw = rows.map(r => Math.sqrt(Number.isFinite(r.baseWeight) ? r.baseWeight : r.weight));
+    const cols = [];
+    for (let j = 0; j < p; j += 1) cols.push(new Float64Array(n));
+    rows.forEach((r, i) => {
+      cols[studies.indexOf(r.study)][i] = sw[i];
+      linearDesign(fits[r.treatment], r.dose, freeBaseline).forEach((x, k) => { cols[start[r.treatment] + k][i] = x * sw[i]; });
+    });
+    const yw = rows.map((r, i) => r.effect * sw[i]);
+    const Q = []; const keep = []; const Rm = [];
+    for (let j = 0; j < p; j += 1) {
+      const c = Float64Array.from(cols[j]);
+      const n0 = Math.sqrt(c.reduce((a, b) => a + b * b, 0));
+      if (!(n0 > 0)) continue;
+      const rcol = new Array(Q.length).fill(0);
+      for (let pass = 0; pass < 2; pass += 1) {
+        Q.forEach((q, qi) => { let d = 0; for (let i = 0; i < n; i += 1) d += q[i] * c[i]; rcol[qi] += d; for (let i = 0; i < n; i += 1) c[i] -= d * q[i]; });
+      }
+      const nr = Math.sqrt(c.reduce((a, b) => a + b * b, 0));
+      if (nr <= 1e-10 * n0) continue;
+      for (let i = 0; i < n; i += 1) c[i] /= nr;
+      Q.push(c); keep.push(j); Rm.push(rcol.concat([nr]));
+    }
+    const qty = Q.map(q => q.reduce((a, b, i) => a + b * yw[i], 0));
+    const m = Q.length; const coef = new Array(m).fill(0);
+    for (let a = m - 1; a >= 0; a -= 1) {
+      let s = qty[a];
+      for (let b = a + 1; b < m; b += 1) s -= Rm[b][a] * coef[b];
+      coef[a] = s / Rm[a][a];
+    }
+    const beta = new Array(p).fill(0);
+    keep.forEach((j, a) => { beta[j] = coef[a]; });
+    const offsets = new Map();
+    studies.forEach((s, i) => offsets.set(s, beta[i]));
+    const out = {};
+    trts.forEach(t => {
+      const c = beta.slice(start[t], start[t] + width[t]);
+      const f = { ...fits[t] };
+      if (f.model === "log_linear") { if (freeBaseline) { f.e0 = c[0]; f.slope = c[1]; } else { f.slope = c[0]; } }
+      else f.betas = c;
+      out[t] = f;
+    });
+    return { offsets, fits: out };
   }
 
   function fitNetwork(baseData, modelChoice, options = {}, iterations = 3) {
@@ -8357,6 +8512,24 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       });
     }
 
+    // ... and replace it by the exact joint solution for fixed-effect linear models (structure from the sweeps)
+    let jointSolved = false;
+    if (!randomEffects && !useCovariate && ["log_linear", "rcs", "fp"].includes(modelChoice)) {
+      const joint = jointLinearSolve(baseData, fits, state.freeBaseline);
+      if (joint) {
+        jointSolved = true;
+        const studySet = new Set(baseData.map(r => r.study));
+        offsets = new Map(); studySet.forEach(s => { if (joint.offsets.has(s)) offsets.set(s, joint.offsets.get(s)); });
+        missingStudies = studySet.size - offsets.size;
+        Object.assign(fits, joint.fits);
+        adjusted = applyStudyOffsets(baseData, offsets, { randomEffects: false, tau2ByTreatment, useCovariate, covariateBeta, covariateMean });
+        Object.keys(joint.fits).forEach(t => {
+          const pts = adjusted.filter(r => r.treatment === t);
+          fits[t] = { ...fits[t], ...computeWeightedStats(pts, d => predictModel(fits[t], d), fits[t].k) };
+        });
+      }
+    }
+
     return {
       fits,
       treatments,
@@ -8369,7 +8542,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       tau2ByTreatment,
       globalTau2,
       globalI2,
-      globalH2
+      globalH2,
+      jointSolved
     };
   }
 
@@ -8405,8 +8579,9 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
   function solveLinearSystem(matrix, vector) {
     const n = matrix.length;
-    const a = matrix.map(row => row.slice());
-    const b = vector.slice();
+    const dg = matrix.map((row, i) => (row[i] > 0 ? 1 / Math.sqrt(row[i]) : 1));
+    const a = matrix.map((row, i) => row.map((v, j) => v * dg[i] * dg[j]));
+    const b = vector.map((v, i) => v * dg[i]);
     for (let i = 0; i < n; i += 1) {
       let maxRow = i;
       let max = Math.abs(a[i][i]);
@@ -8440,7 +8615,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         b[r] -= factor * b[i];
       }
     }
-    return b;
+    return b.map((v, i) => v * dg[i]);
   }
 
   function weightedLeastSquares(design, y, weights) {
@@ -8494,7 +8669,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     const terms = [];
     if (includeIntercept) terms.push(1);
     terms.push(dose);
-    for (let j = 1; j < k - 1; j += 1) {
+    for (let j = 0; j < k - 2; j += 1) {
       const knot = knots[j];
       const term = Math.pow(Math.max(dose - knot, 0), 3);
       const termLastMinus = Math.pow(Math.max(dose - lastMinus, 0), 3);
@@ -8845,6 +9020,54 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         converged: result.converged || false
       };
 
+      // Emax is linear in (e0, emax) for fixed ed50: profile them out by weighted least squares (within the same
+      // bounds) and minimise over log(ed50) in its bounds (dense grid + golden-section refinement).
+      const fb = !!options.freeBaseline;
+      const lo50 = bounds[2].min; const hi50 = bounds[2].max;
+      const profile = ed50 => {
+        const g = doses.map(d => d / (ed50 + d));
+        let e0 = 0; let em;
+        const sw = weights.reduce((a, b) => a + b, 0);
+        if (fb) {
+          const mg = g.reduce((a, x, i) => a + weights[i] * x, 0) / sw; const my = effects.reduce((a, x, i) => a + weights[i] * x, 0) / sw;
+          let sxy = 0; let sxx = 0; g.forEach((x, i) => { sxy += weights[i] * (x - mg) * (effects[i] - my); sxx += weights[i] * (x - mg) * (x - mg); });
+          const sgg = g.reduce((a, x, i) => a + weights[i] * x * x, 0);
+          const cl = (v, b) => Math.min(b.max, Math.max(b.min, v));
+          const ssOf = (a0, a1) => g.reduce((a, x, i) => a + weights[i] * (effects[i] - a0 - a1 * x) ** 2, 0);
+          const emGiven = a0 => cl(sgg > 0 ? g.reduce((a, x, i) => a + weights[i] * x * (effects[i] - a0), 0) / sgg : 0, bounds[1]);
+          const e0Given = a1 => cl(my - a1 * mg, bounds[0]);
+          const cands = [];
+          const emU = sxx > 0 ? sxy / sxx : 0; const e0U = my - emU * mg;
+          if (emU >= bounds[1].min && emU <= bounds[1].max && e0U >= bounds[0].min && e0U <= bounds[0].max) cands.push([e0U, emU]);
+          [bounds[0].min, bounds[0].max].forEach(a0 => cands.push([a0, emGiven(a0)]));
+          [bounds[1].min, bounds[1].max].forEach(a1 => cands.push([e0Given(a1), a1]));
+          let bestC = null; let bestS = Infinity;
+          cands.forEach(([a0, a1]) => { const v = ssOf(a0, a1); if (v < bestS) { bestS = v; bestC = [a0, a1]; } });
+          e0 = bestC[0]; em = bestC[1];
+        } else {
+          let sxy = 0; let sxx = 0; g.forEach((x, i) => { sxy += weights[i] * x * effects[i]; sxx += weights[i] * x * x; });
+          em = sxx > 0 ? sxy / sxx : 0;
+          em = Math.min(bounds[1].max, Math.max(bounds[1].min, em));
+        }
+        let sse = 0; g.forEach((x, i) => { const r = effects[i] - e0 - em * x; sse += weights[i] * r * r; });
+        return { e0, emax: em, ed50, sse };
+      };
+      if (hi50 > lo50 && lo50 > 0) {
+        const a = Math.log(lo50); const b = Math.log(hi50); const G = 400;
+        let bi = 0; let bv = Infinity; const vals = [];
+        for (let i = 0; i <= G; i += 1) { const v = profile(Math.exp(a + (b - a) * i / G)).sse; vals.push(v); if (v < bv) { bv = v; bi = i; } }
+        let l = a + (b - a) * Math.max(0, bi - 1) / G; let u = a + (b - a) * Math.min(G, bi + 1) / G;
+        const phi = (Math.sqrt(5) - 1) / 2;
+        for (let it = 0; it < 200 && u - l > 1e-14 * Math.max(1, Math.abs(u)); it += 1) {
+          const c = u - phi * (u - l); const d = l + phi * (u - l);
+          if (profile(Math.exp(c)).sse < profile(Math.exp(d)).sse) u = d; else l = c;
+        }
+        const cand = profile(Math.exp((l + u) / 2));
+        const edge = profile(Math.exp(a + (b - a) * bi / G));
+        const pick = cand.sse <= edge.sse ? cand : edge;
+        if (pick.sse < best.sse) Object.assign(best, pick);
+      }
+
       const rmse = Math.sqrt(best.sse / Math.max(n, 1));
       return { ...best, rmse, n };
     } catch (error) {
@@ -8936,6 +9159,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     };
 
     const trials = 220 + Math.min(320, n * 60);
+    const topStarts = [];
     const e0Range = effRange;
     const emaxRange = effRange * 1.6;
 
@@ -8948,6 +9172,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       if (sse < best.sse) {
         best = { e0, emax, ed50, hill, sse };
       }
+      if (Number.isFinite(sse)) { topStarts.push({ e0, emax, ed50, hill, sse }); topStarts.sort((a, b) => a.sse - b.sse); if (topStarts.length > 5) topStarts.pop(); }
     }
 
     let stepE0 = e0Range * 0.25;
@@ -8971,6 +9196,45 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         stepHill *= 0.75;
       }
     }
+
+    // polish the best random-search point with Nelder-Mead (log scale for ed50 and hill keeps them positive)
+    const fb = !!options.freeBaseline;
+    const toX = b => (fb ? [b.e0] : []).concat([b.emax, Math.log(b.ed50), Math.log(b.hill)]);
+    const fromX = x => { const o = fb ? 1 : 0; return { e0: fb ? x[0] : 0, emax: x[o], ed50: Math.exp(x[o + 1]), hill: Math.exp(x[o + 2]) }; };
+    const obj = x => { const b = fromX(x); const v = evaluate(b.e0, b.emax, b.ed50, b.hill); return Number.isFinite(v) ? v : Number.MAX_VALUE; };
+    const polish = start => {
+      let cur = start;
+      for (let round = 0; round < 5; round += 1) {
+        const res = nelderMead(obj, toX(cur), { maxIterations: 2000, tolerance: 1e-16, initialStep: 0.1 });
+        const cand = fromX(res.x);
+        const sse = evaluate(cand.e0, cand.emax, cand.ed50, cand.hill);
+        if (!(sse < cur.sse * (1 - 1e-13))) { if (sse < cur.sse) cur = { ...cand, sse }; break; }
+        cur = { ...cand, sse };
+      }
+      return cur;
+    };
+    const sw0 = weights.reduce((a, b) => a + b, 0);
+    const gridBest = { sse: Number.POSITIVE_INFINITY };
+    for (let i = 0; i <= 40; i += 1) {
+      const ed50 = Math.pow(10, logMin + (logMax - logMin) * i / 40);
+      for (let j = 0; j <= 40; j += 1) {
+        const hill = hillMin + (hillMax - hillMin) * j / 40;
+        const g = doses.map(d => { const pw = Math.pow(d, hill); const dn = Math.pow(ed50, hill) + pw; return dn ? pw / dn : 0; });
+        let e0 = 0; let emax = 0;
+        if (fb) {
+          const mg = g.reduce((a, x, q) => a + weights[q] * x, 0) / sw0; const my = values.reduce((a, x, q) => a + weights[q] * x, 0) / sw0;
+          let sxy = 0; let sxx = 0; g.forEach((x, q) => { sxy += weights[q] * (x - mg) * (values[q] - my); sxx += weights[q] * (x - mg) * (x - mg); });
+          emax = sxx > 0 ? sxy / sxx : 0; e0 = my - emax * mg;
+        } else {
+          let sxy = 0; let sxx = 0; g.forEach((x, q) => { sxy += weights[q] * x * values[q]; sxx += weights[q] * x * x; });
+          emax = sxx > 0 ? sxy / sxx : 0;
+        }
+        const sse = evaluate(e0, emax, ed50, hill);
+        if (sse < gridBest.sse) Object.assign(gridBest, { e0, emax, ed50, hill, sse });
+      }
+    }
+    if (gridBest.sse < best.sse) best = { ...gridBest };
+    [best, gridBest, ...topStarts].filter(st => Number.isFinite(st.sse)).forEach(st => { const r = polish(st); if (r.sse < best.sse) best = r; });
 
     return { ...best, n };
   }
@@ -10639,6 +10903,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
   function updateAnalysis() {
     if (!state.rawData.length || !state.wasm) return;
+    if (typeof seedNmaRng === "function") seedNmaRng(42);
     state.freeBaseline = dom.baselineToggle.checked;
     state.logDose = dom.logDoseToggle.checked;
     state.modelChoice = dom.modelSelect.value;

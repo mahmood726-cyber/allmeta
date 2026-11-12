@@ -6,13 +6,11 @@ Document any package-version mismatch encountered during first run.
 
 **Version 2.0.1** | Browser-based Network Meta-Analysis with Dose-Response Modeling
 
-[![Tests](https://img.shields.io/badge/tests-79%2F79%20passing-brightgreen)](./comprehensive_test_results_v2.json)
-[![Validated](https://img.shields.io/badge/validated-R%20metafor-blue)](./bench/)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 ## Overview
 
-NMA Dose-Response Studio is a comprehensive, browser-based statistical analysis tool for conducting network meta-analyses with dose-response modeling. It provides validated statistical methods that match or exceed R packages like `metafor`, `netmeta`, and `dosresmeta`.
+NMA Dose-Response Studio is a comprehensive, browser-based statistical analysis tool for conducting network meta-analyses with dose-response modeling. Validation status: see the section **Validation status** below; only the estimators listed there have been checked against R.
 
 ## Features
 
@@ -116,19 +114,24 @@ For publication-quality analyses, we recommend:
 | Bootstrap Seed | Set explicitly | Reproducibility for publication |
 | I² CI | Q-profile method | Standard practice (Higgins & Thompson 2002) |
 
-## Validation
+## Validation status (P61 validation archive `dosenma-reproducible`)
 
-All core statistical functions have been validated against R packages:
-
-| Function | R Package | Max Deviation |
-|----------|-----------|---------------|
-| DL estimator | metafor | < 0.001 |
-| REML | metafor | < 0.001 |
-| Egger's test | metafor | < 0.001 |
-| Trim-and-fill | metafor | < 0.001 |
-| I² | metafor | < 0.001 |
-
-See `bench/` directory for detailed validation results.
+- The former badges "tests 79/79 passing" and "validated R metafor" are withdrawn. The 79 tests in
+  `comprehensive_test_results_v2.json` check that functions and page elements exist or run without error; none of them
+  compares a page result with an R result.
+- The former table "All core statistical functions have been validated against R packages (max deviation < 0.001)" is
+  withdrawn: it was not reproduced by a script in this repository.
+- A pre-registered validation of the dose-response network engine (fixed-effect log-linear, restricted cubic spline and
+  fractional polynomial network fits against the joint weighted least-squares solution in R; dose-split networks against
+  netmeta; per-treatment residual tau^2 against metafor; the Emax and sigmoid Emax optimisers against R `optim`) is in
+  the validation archive `dosenma-reproducible` (to be released). The corrections it led to are in `app.js`, with
+  regression tests in `tests/p61_engine.test.cjs` (`node --test tests/p61_engine.test.cjs`).
+- Not checked against R: every Bayesian/MCMC component, bootstrap ranks (SUCRA, P(best)) and intervals, random-effects
+  target values, inconsistency tests, publication-bias, DTA, IPD, survival and the other "advanced" modules. Treat them
+  as unvalidated.
+- The "Heterogeneity Estimation" list above applies to the linear dose-response models only (log-linear, restricted
+  cubic spline, fractional polynomial); for Emax and sigmoid Emax the page reports a method-of-moments value whatever
+  option is selected.
 
 ## Method References
 
