@@ -130,7 +130,16 @@ INLINE_META_MATH_EXEMPT = {
 # parity-verified) moved to INLINE_META_MATH_EXEMPT, and proportion-ma migrated its
 # tau2 to ma-core (only its intentional Q-based I2 remains, a non-gating info note).
 # Empty now; re-populate only if a NEW genuine migrate-someday candidate appears.
-INLINE_META_MATH_KNOWN = {}
+INLINE_META_MATH_KNOWN = {
+    "mapriors": "P36 import (2026-11-12). Its RBesT-model results come from MAPEngine, "
+                "not from this code; deriveMAPBinary/deriveMAPContinuous still compute an "
+                "inline logit/normal DL->REML tau2 and the Q-based I2 that the page shows "
+                "beside them and that its 'Validate with R' card compares with metafor's DL "
+                "I2 (mapriors/index.html ~l.3003), and the P36 validation archive replays "
+                "deriveMAP*. Migrating to ma-core would change replayed page values, so it "
+                "waits for a re-validated release; until then it is a listed migrate-someday "
+                "candidate, not an exemption.",
+}
 
 
 def inline_math_inventory(paths):
