@@ -3604,7 +3604,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  normCDF: function(x) {
 
- const key = x.toFixed(6);
+ // IPD-Follow fix: keyed on x.toFixed(6), so a value depended on the call before it; the cache is now keyed
+ // on the exact argument (Map keys compare by value)
+ const key = x;
 
  if (normCache.has(key)) return normCache.get(key);
 
@@ -3678,7 +3680,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  logGamma: function(z) {
 
- const key = z.toFixed(6);
+ // IPD-Follow fix: keyed on z.toFixed(6) (logGamma(2e-7) after logGamma(4e-7) returned 14.73, R lgamma 15.42);
+ // now keyed on the exact argument
+ const key = z;
 
  if (gammaCache.has(key)) return gammaCache.get(key);
 
@@ -3724,7 +3728,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  if (x <= 0) return 0;
 
- const key = `${x.toFixed(4)}_${df}`;
+ // IPD-Follow fix: keyed on x.toFixed(4) (chi2CDF(4e-5, 1) after chi2CDF(4.4e-5, 1) returned 0.005293, R pchisq
+ // 0.005046); String(x) is the exact (round-trip) decimal of x
+ const key = String(x) + '_' + String(df);
 
  if (chi2Cache.has(key)) return chi2Cache.get(key);
 
@@ -31587,11 +31593,9 @@ function showMethodGuide() {
 
 
  tCDF: (t, df) => {
-
- const x = df / (df + t * t);
-
- return 1 - 0.5 * Stats.betaCDF(x, df / 2, 0.5);
-
+ // IPD-Follow fix: was 1 - I_{df/(df+t^2)}(df/2, 1/2) / 2 for every t, i.e. P(T <= |t|) (tCDF(-2, 5) = 0.949,
+ // R pt 0.0510). Now MathUtils.tCDF (P(T <= t) from the AlmTail upper tail, both signs).
+ return MathUtils.tCDF(t, df);
  },
 
 
