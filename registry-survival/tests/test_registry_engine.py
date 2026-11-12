@@ -81,3 +81,41 @@ def test_reconstructed_km_tracks_the_registry_anchors():
         "console.log(JSON.stringify({w:r.wasserstein_to_anchors}));"
     )
     assert o["w"] is not None and o["w"] < 0.15 * 24    # within ~15% of the follow-up horizon
+
+
+# P63 (registry-ipd validation archive, defects D1/D2): both vendored copies of the engine must carry the
+# upstream corrections validated there (registry-ipd e032ddd = archive app/fixed, 8093/8093 against R).
+VENDORED = ["./shared/vendor/registry-ipd/engine.js", "./shared/survival-reconstruction.js"]
+
+
+def _run_mod(mod: str, body: str):
+    r = subprocess.run([NODE, "-e", f"const RIPD=require('{mod}');" + body],
+                       capture_output=True, text=True, timeout=40, cwd=str(ROOT))
+    if r.returncode != 0:
+        raise AssertionError(r.stdout + r.stderr)
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+ROWS = ("const rows=(s)=>s.flatMap(([t,d,c])=>[...Array(d).fill({time:t,status:1}),"
+        "...Array(c).fill({time:t,status:0})]);")
+
+
+@pytest.mark.parametrize("mod", VENDORED)
+def test_step_median_on_exact_half_plateau_follows_survfit(mod):
+    # survival::survfit: on an exact S = 0.5 plateau the median is the midpoint to the next drop.
+    # 13 events at t=1 of n=26 -> S = 0.5 on [1, 12); next drop at 12 -> median 6.5 (R), not 1.
+    o = _run_mod(mod, ROWS + "const _=RIPD._;console.log(JSON.stringify({"
+                 "a:_.medianFromKM(_.kmFromIPD(rows([[1,13,0],[12,8,5]]))),"
+                 "b:_.medianFromKM(_.kmFromIPD(rows([[1,1,0],[2,1,0],[3,0,1],[4,0,1]]))),"
+                 "c:_.medianFromKM(_.kmFromIPD(rows([[1,1,0],[2,1,0],[3,1,0]]))),"
+                 "i:_.medianFromKM(_.kmFromIPD(rows([[1,13,0],[12,8,5]])),{interpolate:true})}));")
+    assert o == {"a": 6.5, "b": 2, "c": 2, "i": 1}
+
+
+@pytest.mark.parametrize("mod", VENDORED)
+def test_cox_quasi_separation_does_not_diverge(mod):
+    # Both arms have events but are perfectly ordered: the unpenalised Newton fit never converges
+    # (beta ~ 30, HR ~ 1e13). The upstream guard retries once with ridge 1 and returns a bounded fit.
+    o = _run_mod(mod, "const rows=[1,2,3].map(t=>({time:t,status:1,x:1})).concat([4,5,6].map(t=>({time:t,status:1,x:0})));"
+                 "const c=RIPD._.coxLogHR(rows);console.log(JSON.stringify({b:c.beta,p:!!c.penalized,cv:c.converged}));")
+    assert abs(o["b"]) < 5 and o["p"] is True and o["cv"] is True
