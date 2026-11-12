@@ -2909,7 +2909,11 @@ cat("========================================================================\n"
  *   AlmTail.p2norm(z)  two-sided 2 * P(Z > |z|);  AlmTail.p2t(t, df)  two-sided 2 * P(T > |t|)
  *
  * Accuracy (tests/upper-tail.spec.mjs, grid of tails 0.3 .. 1e-300 against R 4.6.0):
- * relative error < 1e-12 on every grid point (measured max 1.5e-13). No dependencies; works as a classic
+ * relative error < 1e-12 on every grid point (measured max 1.5e-13). Large degrees of freedom (df 150 .. 1e10,
+ * chi-square shapes to 5e7, F df2 to 1e7; fixrev2 check against R): relative error < 1e-10 for t with df <= 1e6
+ * (measured max 7.3e-11, F with df2 = 1e7). KNOWN LIMIT: Student t with df >= 1e8 -- the beta argument
+ * x = df / (df + t^2) rounds within 1e-16 of 1 and the continued fraction sees only x -- relative error up to
+ * 3e-9 at df = 1e8 and 7e-7 at df = 1e10 (R's TOMS 708 bgrat avoids this). No dependencies; works as a classic
  * <script> (window.AlmTail) and under Node (module.exports).
  */
 (function (global) {
@@ -3013,13 +3017,14 @@ cat("========================================================================\n"
     return -Math.expm1(u) - Math.exp(u) * a * T;
   }
 
-  // Continued fraction for the incomplete beta (Numerical Recipes betacf, modified Lentz).
+  // Continued fraction for the incomplete beta (Numerical Recipes betacf, modified Lentz). Like the gamma
+  // routines it needs O(sqrt(a + b)) terms near the mean, and returns NaN rather than an unconverged value.
   function betacf(a, b, x) {
-    var qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap;
+    var qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap, lim = maxIter(a + b);
     if (Math.abs(d) < TINY) d = TINY;
     d = 1 / d;
     var h = d;
-    for (var m = 1; m <= MAXIT; m++) {
+    for (var m = 1; m <= lim; m++) {
       var m2 = 2 * m, aa = m * (b - m) * x / ((qam + m2) * (a + m2));
       d = 1 + aa * d; if (Math.abs(d) < TINY) d = TINY;
       c = 1 + aa / c; if (Math.abs(c) < TINY) c = TINY;
@@ -3029,9 +3034,40 @@ cat("========================================================================\n"
       c = 1 + aa / c; if (Math.abs(c) < TINY) c = TINY;
       d = 1 / d;
       var dl = d * c; h *= dl;
-      if (Math.abs(dl - 1) < EPS) break;
+      if (Math.abs(dl - 1) < EPS) return h;
     }
-    return h;
+    return NaN;
+  }
+
+  // bd0(x, np) = x log(x / np) + np - x without cancellation (Loader 2000, as R's bd0).
+  function bd0(x, np) {
+    if (Math.abs(x - np) < 0.1 * (x + np)) {
+      var v = (x - np) / (x + np), s = (x - np) * v, ej = 2 * x * v, v2 = v * v;
+      for (var j = 1; j < 1000; j++) {
+        ej *= v2;
+        var s1 = s + ej / (2 * j + 1);
+        if (s1 === s) return s1;
+        s = s1;
+      }
+    }
+    return x * Math.log(x / np) + np - x;
+  }
+  // lgamma(A + s) - lgamma(A) for A >= 100 by Stirling, so the two ~A log A terms never cancel.
+  function lgammaRatio(A, s) {
+    return (A - 0.5) * Math.log1p(s / A) + s * Math.log(A + s) - s + stirlerr(A + s) - stirlerr(A);
+  }
+  // log of x^a y^b / B(a, b). Below 100 for both shapes this is the plain Lanczos form; above, the
+  // lgamma terms (absolute error ~1e-16 * a log a) are replaced by Stirling forms, and when both shapes are
+  // large the whole expression is -bd0(a, n x) - bd0(b, n y) + log sqrt(a b / (2 pi n)) - stirlerr terms
+  // (x + y = 1), which keeps relative precision for df in the millions.
+  function logBetaPrefactor(a, b, x, y, lx, ly) {
+    var big = Math.max(a, b), small = Math.min(a, b);
+    if (big < 100) return lgamma(a + b) - lgamma(a) - lgamma(b) + a * lx + b * ly;
+    if (small < 100) return lgammaRatio(big, small) - lgamma(small) + a * lx + b * ly;
+    var n = a + b;
+    if (!(x > 0 && y > 0)) return a * lx + b * ly + 0.5 * Math.log(a * b / (2 * Math.PI * n)) +
+      a * Math.log(n / a) + b * Math.log(n / b) - stirlerr(a) - stirlerr(b) + stirlerr(n);
+    return -bd0(a, n * x) - bd0(b, n * y) + 0.5 * Math.log(a * b / (2 * Math.PI * n)) - stirlerr(a) - stirlerr(b) + stirlerr(n);
   }
 
   // I_x(a,b) where the caller supplies x, y = 1 - x and their logs separately, so
@@ -3040,7 +3076,7 @@ cat("========================================================================\n"
   function ibetaXY(a, b, x, y, lx, ly) {
     if (x <= 0 && !(lx > -Infinity)) return 0;
     if (y <= 0 && !(ly > -Infinity)) return 1;
-    var lbt = lgamma(a + b) - lgamma(a) - lgamma(b) + a * lx + b * ly;
+    var lbt = logBetaPrefactor(a, b, x, y, lx, ly);
     if (x < (a + 1) / (a + b + 2)) return Math.exp(lbt) * betacf(a, b, x) / a;
     return 1 - Math.exp(lbt) * betacf(b, a, y) / b;
   }
@@ -3076,7 +3112,9 @@ cat("========================================================================\n"
       lx = 2 * Math.log(r); ly = 0; x = Math.exp(lx); y = 1;
     } else {
       x = r2 / (1 + r2); y = 1 / (1 + r2);
-      lx = Math.log(r2) - Math.log1p(r2); ly = -Math.log1p(r2);
+      // log x = -log1p(1 / r2): log(r2) - log1p(r2) cancels when r2 is large (df >> t^2), and a * log x then
+      // carries an absolute error ~1e-16 * a * log r2 (rel 1.5e-7 at pt(3, 1e8)).
+      lx = r2 > 1 ? -Math.log1p(1 / r2) : Math.log(r2) - Math.log1p(r2); ly = -Math.log1p(r2);
     }
     var half = 0.5 * ibetaXY(df / 2, 0.5, x, y, lx, ly);   // P(T > |t|)
     return t > 0 ? half : 1 - half;
@@ -3096,14 +3134,14 @@ cat("========================================================================\n"
     var u = df1 * f / df2;           // y / x
     var x, y, lx, ly;
     if (u > 1e300) { lx = -Math.log(u); ly = 0; x = Math.exp(lx); y = 1; }
-    else { x = 1 / (1 + u); y = u / (1 + u); lx = -Math.log1p(u); ly = Math.log(u) - Math.log1p(u); }
+    else { x = 1 / (1 + u); y = u / (1 + u); lx = -Math.log1p(u); ly = u > 1 ? -Math.log1p(1 / u) : Math.log(u) - Math.log1p(u); }
     return ibetaXY(df2 / 2, df1 / 2, x, y, lx, ly);
   }
   function p2norm(z) { return isNaN(z) ? NaN : Math.min(1, 2 * pnormUpper(Math.abs(z))); }
   function p2t(t, df) { return isNaN(t) ? NaN : Math.min(1, 2 * ptUpper(Math.abs(t), df)); }
 
   var api = { pnormUpper: pnormUpper, pchisqUpper: pchisqUpper, ptUpper: ptUpper, pfUpper: pfUpper,
-    pgammaUpper: pgammaUpper, p2norm: p2norm, p2t: p2t, _lgamma: lgamma, _gammaPQ: gammaPQ, _ibetaXY: ibetaXY };
+    pgammaUpper: pgammaUpper, p2norm: p2norm, p2t: p2t, _lgamma: lgamma, _gammaPQ: gammaPQ, _ibetaXY: ibetaXY, _logBetaPrefactor: logBetaPrefactor, _betacf: betacf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmTail = api;
 })(typeof window !== "undefined" ? window : globalThis);
