@@ -37325,7 +37325,32 @@ function ipdSplitBinaryArms(rows, treatmentVar, armMapping) {
  });
 
  return { treat1, treat0 };
-
+}
+// IPD-Left: per-study arm outcomes from the MAPPED columns (config.studyVar / treatmentVar / eventVar, with the old
+// hard-coded names as fallbacks) and the same arm mapping as runAnalysis. Power Monitor and Federated Analysis read
+// d.study / d.outcome / d.treatment directly, so on the page's own examples (study_id, treatment, event) every row
+// fell into one "undefined" study with no arms and they printed NaN.
+function ipdArmOutcomes(rows, config) {
+ config = config || {};
+ rows = Array.isArray(rows) ? rows : [];
+ const r0 = rows[0] || {};
+ const sv = config.studyVar || ('study' in r0 ? 'study' : 'study_id');
+ const tv = config.treatmentVar || ('treatment' in r0 ? 'treatment' : ('trt' in r0 ? 'trt' : 'arm'));
+ const ov = config.eventVar || ('outcome' in r0 ? 'outcome' : ('y' in r0 ? 'y' : 'effect'));
+ const map = ipdResolveBinaryArmMapping(rows, tv);
+ if (map.error) return { error: map.error, studies: [] };
+ const ids = [...new Set(rows.map(d => d[sv]))];
+ const num = a => a.map(d => Number(d[ov])).filter(Number.isFinite);
+ const studies = ids.map(id => {
+  const sd = rows.filter(d => d[sv] === id);
+  const g = ipdSplitBinaryArms(sd, tv, map);
+  return { study: id, n: sd.length, y1: num(g.treat1), y0: num(g.treat0) };
+ });
+ return { studies, studyVar: sv, treatmentVar: tv, outcomeVar: ov };
+}
+// A heterogeneity number for display: the value, or "not estimable (k = 1)" when it is not finite (fewer than 2 studies).
+function ipdHetText(x, digits, k, suffix) {
+ return Number.isFinite(x) ? x.toFixed(digits) + (suffix || '') : 'not estimable (k = ' + k + ')';
 }
 
 
@@ -65413,31 +65438,21 @@ const FederatedMetaAnalysis = {
 
         // Group data by study (simulating distributed sites)
 
-        const studies = [...new Set(data.map(d => d.study))];
-
+        // IPD-Left: sites, arms and outcomes from the mapped columns (ipdArmOutcomes); a site without both arms has no
+        // treatment effect and is not pooled (it had nTreated or nControl = 0 and an infinite SE).
+        const arms = ipdArmOutcomes(data, config);
         const siteResults = [];
-
-
-
-        studies.forEach(study => {
-
-            const siteData = data.filter(d => d.study === study);
-
+        arms.studies.forEach(st => {
+            if (!(st.y1.length > 0 && st.y0.length > 0)) return;
             // Each "site" computes local sufficient statistics only
-
-            const localStats = this.computeLocalStatistics(siteData, config);
-
+            const localStats = this.computeLocalStatistics(st, config);
             siteResults.push({
-
-                siteId: study,
-
-                n: siteData.length,
-
+                siteId: st.study,
+                n: st.n,
                 ...localStats
-
             });
-
         });
+        if (!siteResults.length) throw new Error(arms.error || 'No site has both a treatment and a control arm in the mapped columns.');
 
 
 
@@ -65463,15 +65478,10 @@ const FederatedMetaAnalysis = {
 
 
 
-    computeLocalStatistics: function(siteData, config) {
-
-        // Compute only summary statistics - no raw data leaves
-
-        const n = siteData.length;
-
-        const outcomes = siteData.map(d => d.outcome || d.y || d.effect);
-
-        const treatments = siteData.map(d => d.treatment || d.trt || d.arm);
+    computeLocalStatistics: function(site, config) {
+        // Compute only summary statistics - no raw data leaves. site = { y1: treated outcomes, y0: control outcomes }
+        const outcomes = site.y1.concat(site.y0);
+        const treatments = site.y1.map(() => 1).concat(site.y0.map(() => 0));
 
 
 
@@ -66721,40 +66731,14 @@ const PowerMonitor = {
 
     calculateCurrentPower: function(data, config) {
 
-        const studies = [...new Set(data.map(d => d.study))];
-
-        const k = studies.length;
-
+        // IPD-Left: arms and outcomes from the mapped columns (ipdArmOutcomes); k = studies with both arms.
+        const arms = ipdArmOutcomes(data, config);
         const totalN = data.length;
-
-        const avgN = totalN / k;
-
-
-
         // Estimate effect size and heterogeneity from current data
-
         const effects = [];
-
         const ses = [];
-
-
-
-        studies.forEach(study => {
-
-            const studyData = data.filter(d => d.study === study);
-
-            const outcomes = studyData.map(d => d.outcome ?? (d.y ?? 0));
-
-            const treatments = studyData.map(d => d.treatment ?? (d.trt ?? 0));
-
-
-
-            const treated = outcomes.filter((o, i) => treatments[i] === 1);
-
-            const control = outcomes.filter((o, i) => treatments[i] === 0);
-
-
-
+        arms.studies.forEach(st => {
+            const treated = st.y1, control = st.y0;
             if (treated.length > 0 && control.length > 0) {
 
                 const meanT = treated.reduce((a, b) => a + b, 0) / treated.length;
@@ -66783,7 +66767,8 @@ const PowerMonitor = {
 
 
 
-        if (effects.length === 0) return { power: 0, message: 'Insufficient data' };
+        if (effects.length === 0) return { power: 0, message: arms.error || 'Insufficient data' };
+        const k = effects.length;
 
 
 
@@ -66803,15 +66788,15 @@ const PowerMonitor = {
 
         const Q = effects.reduce((sum, e, i) => sum + weights[i] * Math.pow(e - pooledEffect, 2), 0);
 
-        const I2 = Math.max(0, (Q - (k-1)) / Q * 100);
-
-        const tau2 = Math.max(0, (Q - (k-1)) / (totalWeight - weights.reduce((a,w) => a + w*w, 0)/totalWeight));
+        // with one study I2 and tau2 are not defined (they were 0/0 = NaN, printed as "NaN%")
+        const I2 = k > 1 ? (Q > 0 ? Math.max(0, (Q - (k-1)) / Q * 100) : 0) : NaN;
+        const tau2 = k > 1 ? Math.max(0, (Q - (k-1)) / (totalWeight - weights.reduce((a,w) => a + w*w, 0)/totalWeight)) : NaN;
 
 
 
         // Power calculation using non-central t-distribution approximation
 
-        const effectSize = Math.abs(pooledEffect) / Math.sqrt(pooledSE * pooledSE + tau2);
+        const effectSize = Math.abs(pooledEffect) / Math.sqrt(pooledSE * pooledSE + (Number.isFinite(tau2) ? tau2 : 0));
 
         const df = k - 1;
 
@@ -67061,7 +67046,7 @@ function showPowerMonitor() {
 
                         <div class="stat-card" style="background:var(--bg-tertiary);">
 
-                            <div class="stat-value">${stats.I2.toFixed(1)}%</div>
+                            <div class="stat-value">${ipdHetText(stats.I2, 1, stats.currentStudies, '%')}</div>
 
                             <div class="stat-label">I² Heterogeneity</div>
 
@@ -67203,7 +67188,7 @@ function showPowerMonitor() {
 
                             <div style="font-size:0.9rem;">SE: ${stats.pooledSE.toFixed(3)}</div>
 
-                            <div style="font-size:0.9rem;">τ²: ${stats.tau2.toFixed(4)}</div>
+                            <div style="font-size:0.9rem;">τ²: ${ipdHetText(stats.tau2, 4, stats.currentStudies)}</div>
 
                         </div>
 
@@ -67225,10 +67210,8 @@ function showPowerMonitor() {
 
                             }
 
-                            ${stats.I2 > 50 ?
-
+                            ${!Number.isFinite(stats.I2) ? '<li style="color:var(--accent-warning);">Heterogeneity is not estimable from one study</li>' : stats.I2 > 50 ?
                                 '<li>High heterogeneity detected - consider subgroup analyses or meta-regression</li>' :
-
                                 '<li style="color:var(--accent-success);">Heterogeneity is acceptable</li>'
 
                             }
