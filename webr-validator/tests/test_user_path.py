@@ -176,3 +176,68 @@ def test_continue_with_validator_sends_the_current_studies():
         for c in re.findall(r"attachContinueBar\(\{(.*?)\}\);", html, re.S):
             if '"webr-validator"' in c:
                 assert "getStudies" in c, f"{app}: Continue-with to the validator must pass getStudies"
+
+
+# ---- "Verify in R" must send the studies on screen (2026-11-12) -------------
+# limit-ma, heterogeneity and copas, run in real Chrome with the default example,
+# answered "Verify in R" with the alert "No studies on the shared bus yet" and
+# opened nothing: attachVerifyInRButton was called without getStudies, so the
+# button only worked after a separate "Save to bus" the page never asks for.
+# Apps below are KNOWN to still have that defect (open, reported to the
+# coordinator). The list may only shrink: a new app without a provider fails,
+# and an app on the list that gains one fails until it is removed from the list.
+KNOWN_NO_PROVIDER = {
+    "bayesian-ma", "bayesian-mcmc", "copas", "cumulative-subgroup", "forest-plot",
+    "funnel-plot", "gosh-metareg", "gosh", "heterogeneity", "influence",
+    "meta-regression", "pet-peese", "pubbias-tests", "tsa",
+}
+REPO = HERE.parent.parent
+
+
+def _verify_calls():
+    for page in sorted(REPO.glob("*/index.html")):
+        src = page.read_text(encoding="utf-8", errors="replace")
+        for m in re.finditer(r"attachVerifyInRButton\(\s*\{", src):
+            depth, i = 0, m.end() - 1
+            while i < len(src):
+                depth += {"{": 1, "}": -1}.get(src[i], 0)
+                if depth == 0:
+                    break
+                i += 1
+            yield page.parent.name, src[m.end() - 1:i + 1]
+
+
+def test_verify_in_r_buttons_send_the_current_studies():
+    calls = list(_verify_calls())
+    missing = sorted({app for app, args in calls if "getStudies" not in args})
+    new = [a for a in missing if a not in KNOWN_NO_PROVIDER]
+    assert not new, "Verify in R wired without getStudies (opens nothing on a fresh profile): %s" % new
+    present = {app for app, _ in calls}
+    fixed = sorted((KNOWN_NO_PROVIDER & present) - set(missing))
+    assert not fixed, "now has a studies provider; remove from KNOWN_NO_PROVIDER: %s" % fixed
+
+
+def test_limit_ma_asks_the_validator_for_its_own_dl_model():
+    calls = [args for app, args in _verify_calls() if app == "limit-ma"]
+    if not calls:
+        import pytest
+        pytest.skip("limit-ma not in this checkout")
+    assert 'method: "DL"' in calls[0] and 'test: "z"' in calls[0] and "getStudies" in calls[0]
+
+
+def test_attach_forwards_method_and_test_to_the_validator():
+    js = r"""
+    global.localStorage = { _s: {}, getItem(k){return this._s[k]||null}, setItem(k,v){this._s[k]=String(v)}, removeItem(k){delete this._s[k]} };
+    global.location = { pathname: "/allmeta/limit-ma/" };
+    let opened = null; global.open = (p) => { opened = p; return {}; }; global.alert = (m) => { opened = "ALERT " + m; };
+    const btn = { addEventListener(t, f) { this.f = f; } };
+    global.document = { querySelector: () => btn };
+    const M = require(process.argv[1]);
+    M.attachVerifyInRButton({ btn: "#b", method: "DL", test: "z", getStudies: () => [{label:"A", est: 0.1, se: 0.2}, {label:"B", est: 0.3, se: 0.1}] });
+    btn.f();
+    console.log(JSON.stringify(opened));
+    """
+    out = subprocess.run(["node", "-e", js, str(BUS)], capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr
+    url = json.loads(out.stdout.strip().splitlines()[-1])
+    assert "from=limit-ma" in url and "method=DL" in url and "test=z" in url, url

@@ -836,7 +836,18 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    // Send the studies on screen (parsed by the app's own strict parser), not
+    // whatever a separate "Save to bus" left behind; with nothing saved the
+    // button used to open nothing. The validator re-fits an inverse-variance
+    // pool, so ask for this app's DerSimonian-Laird tau2 and Wald z test: then
+    // its estimate is the app's random-effects line (not the limit estimate).
+    MaStudies.attachVerifyInRButton({
+      btn: "#btn-verify-in-r", method: "DL", test: "z",
+      getStudies: function () {
+        return window.__almLimitParse(document.getElementById("src").value)
+          .map(function (r) { return { label: r.label, est: r.te, se: r.se }; });
+      }
+    });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "limit-ma", textarea: "#src", format: "est-se-label" });
