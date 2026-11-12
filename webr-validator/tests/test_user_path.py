@@ -59,3 +59,11 @@ def test_open_in_webr_names_the_source_app():
     url = json.loads(out.stdout.strip().splitlines()[-1])
     assert url.startswith("../webr-validator/?fromBus=1&"), url
     assert "from=mh-peto" in url and "method=REML" in url and "test=knha" in url, url
+
+
+def test_continue_with_link_names_the_source_app():
+    # The "Continue with -> Verify in R (WebR)" suggestion opens the validator
+    # through shared/app-flow.js, not through openInWebR; it must pass from= too
+    # (found on the live re-run 2026-11-12: those tabs showed no banner).
+    flow = (HERE.parent.parent / "shared" / "app-flow.js").read_text(encoding="utf-8")
+    assert "webr-validator\/" in flow and '"from=" + encodeURIComponent' in flow

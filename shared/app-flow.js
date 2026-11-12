@@ -241,7 +241,17 @@
       }
       // Open the target. window.open returns null if popup blocker engaged;
       // surface a toast in that case.
-      var w = global.open(info.path, "_blank", "noopener,noreferrer");
+      var target = info.path;
+      // The WebR validator says which model it re-fits and whether that is the
+      // sending app's own model; it needs the sender's name to do so.
+      if (/webr-validator\//.test(target) && !/[?&]from=/.test(target)) {
+        try {
+          var segs = String((global.location && global.location.pathname) || "").split("/").filter(Boolean);
+          if (segs.length && /\.html?$/i.test(segs[segs.length - 1])) segs.pop();
+          if (segs.length) target += (target.indexOf("?") >= 0 ? "&" : "?") + "from=" + encodeURIComponent(segs[segs.length - 1]);
+        } catch (_) { /* open without the hint */ }
+      }
+      var w = global.open(target, "_blank", "noopener,noreferrer");
       if (!w && global.Toast && typeof global.Toast.show === "function") {
         global.Toast.show("Pop-up blocked — allow pop-ups for allmeta to use Continue-with.", "error");
       }
