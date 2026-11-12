@@ -9305,6 +9305,12 @@ function estimateSJ(effects, variances) {
 
 
 
+// IPD-Left: the page's I2 is (Q - df) / Q from Cochran's Q for every tau^2 method; metafor's REML/PM I2 is tau^2-based
+// (tau^2 / (tau^2 + s^2)) and differs. Shown wherever I2 is labelled next to a tau^2 method. The statistic is unchanged.
+function ipdI2Note() {
+ return "I² is the Higgins-Thompson statistic from Cochran's Q, whatever the τ² estimator.";
+}
+
 function modelSelectionAICNote(models) {
  // What AIC can decide in this table. Fixed vs random effects are two models, and AIC (ML log-likelihood) compares
  // them. DL, REML, PM and SJ are four estimators of one random-effects model with the same two parameters: their AIC
@@ -9419,6 +9425,8 @@ function displayModelSelectionResults(results) {
  '</tbody>' +
 
  '</table>' +
+
+ '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;">' + ipdI2Note() + ' The I2 column is therefore the same for every method.</div>' +
 
 
 
@@ -38195,7 +38203,7 @@ function ipdDisplayP(x) {
 function renderIPDFittedNarratives(r, view, egger, begg) {
  const set = (id, value) => { const e = document.getElementById(id); if (e) e.textContent = value; };
  const p = r.pooled, k = r.studies.length, pct = (view.level * 100).toFixed(0);
- set('ipdHetInterpretation', `Saved ${view.cfg.reMethod || 'REML'} fit: I² = ${ipdDisplayNumber(p.I2, 1)}%; τ² = ${ipdDisplayNumber(p.tau2, 4)}; Q = ${ipdDisplayNumber(p.Q, 2)} (p ${ipdDisplayP(p.pQ)}). Assess these statistics alongside study differences; they do not identify the cause of heterogeneity.`);
+ set('ipdHetInterpretation', `Saved ${view.cfg.reMethod || 'REML'} fit: I² = ${ipdDisplayNumber(p.I2, 1)}%; τ² = ${ipdDisplayNumber(p.tau2, 4)}; Q = ${ipdDisplayNumber(p.Q, 2)} (p ${ipdDisplayP(p.pQ)}). ${ipdI2Note()} Assess these statistics alongside study differences; they do not identify the cause of heterogeneity.`);
  if (view.cfg.reMethod === 'FE') {
   set('ipdPredictionInterval', 'Not estimated for the fixed-effect model. Select a random-effects model and rerun to estimate a prediction interval.');
   set('ipdTauSummary', 'τ² is fixed at 0 in this fixed-effect model; between-study SD is not estimated.');
@@ -38291,6 +38299,7 @@ function renderAnalysisSummaryCard(r) {
     '<span title="Between-study variance"><strong>&tau;&sup2;</strong> = ' + (tau2 != null ? tau2.toFixed(4) : 'N/A') + '</span>' +
     '<span title="Estimation method"><strong>Method:</strong> ' + (typeof escapeHTML === 'function' ? escapeHTML(methodLabel) : methodLabel) + hksjLabel + '</span>' +
    '</div>' +
+   '<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.5rem;">' + ipdI2Note() + '</div>' +
   '</div>';
 }
 
@@ -73743,6 +73752,7 @@ function formatClusteredIPDResults(result, iccResult) {
                 <table style="width:100%;font-size:14px;">
 
                     <tr><td>I&sup2;:</td><td><strong>${result.I2.toFixed(1)}%</strong></td></tr>
+                    <tr><td colspan="2" style="font-size:12px;color:var(--text-secondary);">${ipdI2Note()}</td></tr>
 
                     <tr><td>&tau;&sup2;:</td><td>${result.tau2.toFixed(4)}</td></tr>
 
