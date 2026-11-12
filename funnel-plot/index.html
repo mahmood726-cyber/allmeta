@@ -666,6 +666,16 @@
       else Toast.show("Could not save to shared bus.", "warn");
     }
 
+    // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
+    // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
+    // returning user an earlier session's studies).
+    window.__almValidatorStudies = function () {
+      // Only what the page analysed: render() pools the current input; no pool -> nothing.
+      render();
+      return _lastFE ? _lastStudies.slice() : [];
+    };
+    // The model of this page's headline, which the validator can re-fit.
+    window.__almValidatorModel = function () { return { method: "FE", test: "z" }; };
     function attach() {
       for (const id of Object.values(fields)) {
         const el = document.getElementById(id);
@@ -684,8 +694,12 @@
           getStudies: function () { return parseStudies(document.getElementById("f-data").value).studies; } });
       }
       document.getElementById("btn-validate-webr").addEventListener("click", function () {
-        onBusSave();
-        window.open("../webr-validator/index.html?fromBus=1&from=funnel-plot", "_blank");
+        // The studies on screen and (for an inverse-variance headline) its model. openInWebR
+        // refuses to open on no valid studies instead of on an earlier session's bus.
+        if (!window.MaStudies || typeof MaStudies.openInWebR !== "function") { Toast.show("Bus helper not loaded.", "error"); return; }
+        const vm = (window.__almValidatorModel && window.__almValidatorModel()) || {};
+        MaStudies.openInWebR({ studies: window.__almValidatorStudies(), method: vm.method, test: vm.test, from: "funnel-plot",
+          webrPath: "../webr-validator/index.html?fromBus=1" });
       });
       document.getElementById("btn-import").addEventListener("click", function () {
         document.getElementById("file-import").click();
@@ -861,7 +875,10 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
+      method: function () { return window.__almValidatorModel && window.__almValidatorModel().method; },
+      test: function () { return window.__almValidatorModel && window.__almValidatorModel().test; } });
   });
 })();
 </script>
@@ -877,6 +894,10 @@
       AlmFlow.attachContinueBar({
         container: "#alm-flow-mount",
         suggestions: ["forest-plot", "pubbias-tests", "copas", "limit-ma", "pet-peese", "influence", "webr-validator"],
+        // Push the studies on screen (not an earlier session's bus) and, for the validator,
+        // this page's model where it is an inverse-variance pool.
+        getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
+        getValidatorModel: function () { return window.__almValidatorModel && window.__almValidatorModel(); },
       });
     }
   });

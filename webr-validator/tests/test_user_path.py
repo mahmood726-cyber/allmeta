@@ -108,7 +108,7 @@ def test_validator_fits_every_estimator_apps_send():
     for m in ESTIMATORS:
         assert f'value="{m}"' in sel, m
     allow = re.search(r'if \(m && \[([^\]]+)\]\.includes\(m\)\)', PAGE).group(1)
-    # ... plus FE, which proportion-ma sends (test_validator_fits_proportion_ma_fixed_effect).
+    # ... plus FE: proportion-ma's "Fixed-effect only" and funnel-plot's fixed-effect headline (lane rc5).
     assert set(re.findall(r'"([A-Z]+)"', allow)) == set(ESTIMATORS) | {"FE"}, allow
 
 
@@ -164,14 +164,14 @@ def test_continue_with_forwards_validator_model_and_refuses_empty():
 REPO = HERE.parent.parent
 VERIFY, CONTINUE = "verify-in-r", "continue-with-validator"
 KNOWN_UNFIXED = {
-    "bayesian-ma": {VERIFY, CONTINUE}, "bayesian-mcmc": {VERIFY, CONTINUE},
-    "bma-tau-priors": {CONTINUE}, "copas": {VERIFY}, "cross-design": {CONTINUE},
-    "cumulative-subgroup": {VERIFY, CONTINUE}, "forest-plot": {VERIFY, CONTINUE},
-    "funnel-plot": {VERIFY, CONTINUE}, "gosh-metareg": {VERIFY}, "gosh": {VERIFY},
-    "influence": {VERIFY}, "pet-peese": {VERIFY}, "tsa": {VERIFY},
+    # lane rc5 fixed bayesian-ma, bayesian-mcmc, copas, cumulative-subgroup,
+    # forest-plot, funnel-plot, gosh, gosh-metareg, influence, pet-peese, tsa.
+    "bma-tau-priors": {CONTINUE}, "cross-design": {CONTINUE},
 }
-# Fixed on this branch; each must still be wired (a deleted button is not a fix).
-FIXED = ("heterogeneity", "pubbias-tests", "meta-regression", "limit-ma", "proportion-ma")
+# Fixed (lanes up1, up2, up3, integ, rc5); each must still be wired (a deleted button is not a fix).
+FIXED = ("heterogeneity", "pubbias-tests", "meta-regression", "limit-ma", "proportion-ma",
+         "bayesian-ma", "bayesian-mcmc", "copas", "cumulative-subgroup", "forest-plot", "funnel-plot",
+         "gosh", "gosh-metareg", "influence", "pet-peese", "tsa")
 
 
 def _app_pages():
