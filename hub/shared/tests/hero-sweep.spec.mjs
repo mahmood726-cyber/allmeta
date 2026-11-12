@@ -1,4 +1,4 @@
-// Report-only audit; do not repair other apps here. Five expected failures (cases with `broken`) have
+// Report-only audit; do not repair other apps here. Four expected failures (cases with `broken`) have
 // source-level proofs in SWEEP.md and executable proofs in hero-sweep.test.cjs.
 import {test, expect} from '@playwright/test';
 import sweep from './hero-sweep-contract.cjs';

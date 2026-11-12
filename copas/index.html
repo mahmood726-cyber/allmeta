@@ -911,7 +911,10 @@
       AlmHero.attachHero({
         container: "#alm-hero-mount",
         textarea: "#src",
-        adapter: "forest",
+        // This page reads "effect, SE" (shared/copas-core.js parseNumToken, strict since
+        // dc2d373b). The forest adapter writes "label, effect, SE", so every BCG row was
+        // refused and the example fitted nothing; effect-se-label puts the label last.
+        adapter: "effect-se-label",
       });
     }
   });

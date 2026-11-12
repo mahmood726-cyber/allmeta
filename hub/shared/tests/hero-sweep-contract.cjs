@@ -8,7 +8,7 @@ const H = require('../../../shared/hero-examples.js');
 const cases = [
   {app:'bayesian-ma', result:'#svg-host svg', kind:'effect'},
   {app:'bma-tau-priors', result:'#per-model tr', run:true, kind:'variance', broken:'Parser reads variance; BMA adapter emits SE.'},
-  {app:'copas', result:'#body tr', run:true, kind:'effect', deps:['CC', 'num'], broken:'Forest text is label-first; the strict effect-first parser (dc2d373b) refuses all 13 BCG rows, so the example fits nothing.'},
+  {app:'copas', result:'#body tr', run:true, kind:'effect', deps:['CC', 'num']},
   {app:'cross-design', result:'#results tbody tr', run:true, kind:'variance', broken:'Parser reads variance; cross-design adapter emits SE.'},
   {app:'cross-network', result:'#results tbody tr', run:true, kind:'network'},
   {app:'cumulative-subgroup', result:'#svg-host svg', kind:'effect'},
