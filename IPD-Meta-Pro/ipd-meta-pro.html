@@ -32035,16 +32035,20 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
  if (qAt(0) <= df) return 0;
 
+ // IPD-Small fix: the upper bracket stopped doubling at 1e6 and the bisection stopped at an absolute width of
+ // 1e-10, so a PM tau^2 above max(DL, ~1e6) came back as the bracket end (ovarian_survival x 1e4: 8628621.4 =
+ // DL, metafor 16824501.7) and a tau^2 near 1e-10 kept only a few bits (statin_cvd x 1e-4: p 0.092 vs 0.088).
+ // Q(tau^2) decreases to 0, so doubling always brackets the root; the width is now relative (4 ulp of high).
  let low = 0;
  let high = Math.max(1e-6, MetaAnalysis.randomEffectsDL(effects, variances).tau2 ?? 1e-6);
- while (qAt(high) > df && high < 1e6) high *= 2;
+ for (let j = 0; j < 2100 && qAt(high) > df && Number.isFinite(high * 2); j++) high *= 2;
 
- for (let i = 0; i < 120; i++) {
+ for (let i = 0; i < 2100; i++) {
  const mid = (low + high) / 2;
  const qMid = qAt(mid);
  if (qMid > df) low = mid;
  else high = mid;
- if (Math.abs(high - low) < 1e-10) break;
+ if (high - low <= 4 * Number.EPSILON * high) break;
  }
 
  return Math.max(0, (low + high) / 2);
@@ -32084,6 +32088,13 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
  const threshold = options.threshold ?? 1e-10; // P60 fix (was 1e-5)
  const maxIter = options.maxIter ?? 1000;
+ // IPD-Small fix: the threshold was an absolute change in tau^2, so with variances of order 1e-8 (data in
+ // small units) the loop stopped after a few steps (ovarian_survival x 1e-4, ML: tau^2 0 vs 2.49e-10, p 0.053
+ // vs 0.126). tau^2 enters every result only through vi + tau^2, so the change is now measured on the scale of
+ // the within-study variances: threshold x min(1, mean vi) -- never looser than before -- with an ulp-level
+ // floor (1e-15 |tau^2|) so data in large units cannot spin to maxIter on rounding noise.
+ const vScale = Math.min(1, variances.reduce((a, b) => a + b, 0) / k);
+ const thr = threshold * (vScale > 0 ? vScale : 1);
  const tau2Min = options.tau2Min ?? 0;
  const tol = options.tol ?? 1e-4;
  const ll0check = options.ll0check ?? true;
@@ -32094,7 +32105,7 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  let change = threshold + 1;
  let iter = 0;
 
- while (change > threshold) {
+ while (change > thr && change > 1e-15 * Math.abs(tau2)) {
  iter += 1;
  const oldTau2 = tau2;
  const stats = MetaAnalysis._weightedProjectionStats(effects, variances, tau2);
@@ -32119,7 +32130,7 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
  tau2 = Math.max(tau2Min, tau2);
 
- if (ll0check && tau2 > threshold && variances.every(v => v > 0)) {
+ if (ll0check && tau2 > thr && variances.every(v => v > 0)) {
  const llStats0 = MetaAnalysis._weightedProjectionStats(effects, variances, 0);
  const llStats = MetaAnalysis._weightedProjectionStats(effects, variances, tau2);
  const kEff = k - p;
