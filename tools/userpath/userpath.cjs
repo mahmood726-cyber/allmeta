@@ -124,7 +124,7 @@ async function main() {
       const b = p.getByRole("button", { name: re }).first();
       if (await b.count()) { try { await b.click({ timeout: 5000 }); note("clicked example"); await p.waitForTimeout(1500); } catch (e) {} break; }
     }
-    for (const re of [/^run( analysis)?$/i, /^analy[sz]e$/i, /^fit( model)?$/i, /^fit/i, /^run$/i, /^calculate$/i, /^compute$/i]) {
+    for (const re of [/^run( analysis)?$/i, /^analy[sz]e$/i, /^fit( model)?$/i, /^fit\b/i, /^run$/i, /^calculate$/i, /^compute$/i]) {
       const b = p.getByRole("button", { name: re }).first();
       if (await b.count()) { try { await b.click({ timeout: 5000 }); note("clicked run " + re); } catch (e) {} break; }
     }
