@@ -301,7 +301,7 @@ A, D, -0.48, 0.14</textarea>
       const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
       return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
     }
-    function pz(z) { return 1 - chiSqCDF(z * z, 1); }
+    function pz(z) { return chiSqSF(z * z, 1); }
 
     // Inverse-variance pool of a set of rows. tau2 ≥ 0 enables RE weights;
     // default (omitted) is FE (τ²=0).
@@ -684,7 +684,7 @@ A, D, -0.48, 0.14</textarea>
         const d = b.fit.map((v, a) => v - c.fit[a]);
         dQ = finiteNumber(dQ + d.reduce((acc, da, a) => acc + da * b.Vi[a].reduce((u, w, e) => u + w * d[e], 0), 0));
       });
-      const result = Object.assign({ Q: dQ, df: dDf, p: 1 - chiSqCDF(dQ, dDf) }, base);
+      const result = Object.assign({ Q: dQ, df: dDf, p: chiSqSF(dQ, dDf) }, base);
       validateGlobal(result);
       return result;
     }
@@ -786,7 +786,7 @@ A, D, -0.48, 0.14</textarea>
       // Nested weighted projections: avoid cancellation of large residual sums.
       const dQ = finiteNumber(y.reduce((sum, _, i) => sum + w[i] * (fit_[i] - cons.X[i].reduce((v, x, j) => v + x * cons.beta[j], 0)) ** 2, 0));
       const dDf = Math.max(0, cons.df - dfFull);
-      const p = dDf > 0 ? 1 - chiSqCDF(dQ, dDf) : NaN;
+      const p = dDf > 0 ? chiSqSF(dQ, dDf) : NaN;
       const result = { Q: dQ, df: dDf, p };
       validateGlobal(result);
       return result;
@@ -819,6 +819,11 @@ A, D, -0.48, 0.14</textarea>
         }
         return sum * Math.exp(-x + s * Math.log(x) - _lngamma(s));
       }
+      return 1 - _gammqCF(s, x);
+    }
+    // Q(s,x) = 1 - P(s,x) by continued fraction, returned directly (x >= s + 1) so a
+    // far upper tail keeps its relative precision instead of cancelling in 1 - P.
+    function _gammqCF(s, x) {
       let b = x + 1 - s, c = 1e300, d = 1 / b, h = d;
       for (let i = 1; i < 300; i++) {
         const an = -i * (i - s);
@@ -827,11 +832,18 @@ A, D, -0.48, 0.14</textarea>
         d = 1 / d; const del = d * c; h *= del;
         if (Math.abs(del - 1) < 1e-15) break;
       }
-      return 1 - Math.exp(-x + s * Math.log(x) - _lngamma(s)) * h;
+      return Math.exp(-x + s * Math.log(x) - _lngamma(s)) * h;
     }
     function chiSqCDF(x, k) {
       if (k <= 0 || x <= 0) return 0;
       return _gammp(k / 2, x / 2);
+    }
+    // Upper tail P(X > x), = R pchisq(x, k, lower.tail = FALSE); never formed as 1 - chiSqCDF.
+    function chiSqSF(x, k) {
+      if (k <= 0) return NaN;
+      if (x <= 0) return 1;
+      const s = k / 2, y = x / 2;
+      return y < s + 1 ? 1 - chiSqCDF(x, k) : _gammqCF(s, y);   // series branch: P is not near 1 there
     }
 
     let _lastInco = null;
