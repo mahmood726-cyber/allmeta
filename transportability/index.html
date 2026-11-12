@@ -112,15 +112,20 @@
     var $ = function (id) { return document.getElementById(id); };
     var toast = function (m) { try { if (window.Toast && Toast.show) return Toast.show(m); } catch (e) {} };
 
+    // Whole-field decimal numbers only: parseFloat prefix-parsed "-0.889oops" as -0.889 and "31abc" as 31.
+    var NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+    function num(s) { s = (s == null ? "" : String(s)).trim(); return NUM.test(s) ? Number(s) : NaN; }
     function parseData(text) {
-      var rows = [];
-      String(text || "").split(/\r?\n/).forEach(function (ln) {
+      var rows = [], bad = [];
+      String(text || "").split(/\r?\n/).forEach(function (ln, i) {
         ln = ln.trim(); if (!ln || ln[0] === "#") return;
         var c = ln.split(",").map(function (s) { return s.trim(); });
         if (c.length < 4) return;
-        var est = parseFloat(c[1]), se = parseFloat(c[2]), x = parseFloat(c[3]);
-        if (isFinite(est) && isFinite(se) && se > 0 && isFinite(x)) rows.push({ label: c[0], est: est, se: se, x: x });
+        var est = num(c[1]), se = num(c[2]), x = num(c[3]);
+        if (!isFinite(est) || !isFinite(se) || !isFinite(x)) { bad.push(i + 1); return; }
+        if (se > 0) rows.push({ label: c[0], est: est, se: se, x: x });
       });
+      rows.bad = bad;
       return rows;
     }
     function fmt(v, log) { return log ? Math.exp(v).toFixed(3) : v.toFixed(3); }
@@ -128,10 +133,11 @@
     function run() {
       window.__lastTransport = null;   // cleared unless this run succeeds (test hook reads it)
       var rows = parseData($("f-data").value);
-      var target = parseFloat($("f-target").value);
+      var target = num($("f-target").value);
       var log = $("f-log").checked;
       var modname = ($("f-modname").value || "modifier").trim();
       var host = $("result");
+      if (rows.bad.length) { host.innerHTML = '<p class="badge flag">Not a number on line ' + rows.bad.join(", ") + ' (effect, SE and modifier must each be a plain number).</p>'; $("plot").innerHTML = ""; return; }
       if (rows.length < 3) { host.innerHTML = '<p class="badge flag">Need ≥3 trials with a modifier value.</p>'; $("plot").innerHTML = ""; return; }
       if (!isFinite(target)) { host.innerHTML = '<p class="badge flag">Enter the target modifier value (x*).</p>'; return; }
       var r = window.AlmTransport.transport({ studies: rows, target: target });
