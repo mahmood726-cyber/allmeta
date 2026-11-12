@@ -2954,20 +2954,32 @@ cat("========================================================================\n"
     }
     return s;
   }
-  // stirlerr(a) = lgamma(a) - [(a - 1/2) log a - a + log(2 pi)/2], asymptotic series (a >= 100).
-  function stirlerr(a) {
-    var r = 1 / a, r2 = r * r;
-    return r * (1 / 12 - r2 * (1 / 360 - r2 * (1 / 1260 - r2 * (1 / 1680 - r2 / 1188))));
+  // log(sqrt(2 pi) Gamma(n + 1) / (n^(n + 1/2) e^-n)) (Stirling error) and the deviance term
+  // bd0(x, np) = x log(x / np) + np - x, both as Loader (2000) / R's stirlerr.c and bd0.c, so that the
+  // prefactors x^a e^-x / Gamma(a) and x^a y^b / B(a, b) keep relative precision when a and x are large.
+  // (Reconciled with lane ipdmore 2a30d893: same stirlerr, bd0, prefactor and iteration cap.)
+  function stirlerr(n) {
+    if (n <= 15) return lgamma(n + 1) - (n + 0.5) * Math.log(n) + n - 0.9189385332046728;
+    var nn = n * n, S0 = 1 / 12, S1 = 1 / 360, S2 = 1 / 1260, S3 = 1 / 1680, S4 = 1 / 1188;
+    if (n > 500) return (S0 - S1 / nn) / n;
+    if (n > 80) return (S0 - (S1 - S2 / nn) / nn) / n;
+    if (n > 35) return (S0 - (S1 - (S2 - S3 / nn) / nn) / nn) / n;
+    return (S0 - (S1 - (S2 - (S3 - S4 / nn) / nn) / nn) / nn) / n;
   }
-  // log of x^a e^-x / Gamma(a). For large a the naive form cancels terms of size ~a log a
-  // (absolute error ~a * 1e-16); the a (log1p(d) - d) form keeps it at ~|x - a| * 1e-16.
-  function logPrefactor(a, x) {
-    if (a < 100) return -x + a * Math.log(x) - lgamma(a);
-    var d = (x - a) / a;
-    return a * (Math.log1p(d) - d) + 0.5 * Math.log(a / (2 * Math.PI)) - stirlerr(a);
+  function bd0(x, np) {
+    if (Math.abs(x - np) < 0.1 * (x + np)) {
+      var v = (x - np) / (x + np), s = (x - np) * v;
+      var ej = 2 * x * v; v = v * v;
+      for (var j = 1; j < 1000; j++) {
+        ej *= v; var s1 = s + ej / (2 * j + 1);
+        if (s1 === s) return s1;
+        s = s1;
+      }
+    }
+    return x * Math.log(x / np) + np - x;
   }
-  // Both the series and the continued fraction need O(sqrt(a)) terms when x is near a.
-  function maxIter(a) { return MAXIT + 20 * Math.ceil(Math.sqrt(a)); }
+  // Series and continued fractions need O(sqrt(shape)) terms near the mean; capped at 2e6 (beyond: NaN).
+  function maxIter(a) { return Math.min(MAXIT + Math.ceil(20 * Math.sqrt(a)), 2e6); }
 
   // Regularized gamma: returns [P(a,x), Q(a,x)], each computed in the form that
   // keeps relative precision (series for P when x < a + 1, continued fraction for Q otherwise;
@@ -2977,7 +2989,11 @@ cat("========================================================================\n"
     if (!(a > 0) || isNaN(x)) return [NaN, NaN];
     if (x <= 0) return [0, 1];
     if (x === Infinity) return [1, 0];
-    var lpre = logPrefactor(a, x), lim = maxIter(a), ok = false;
+    // For a >= 100 the prefactor is sqrt(a / (2 pi)) exp(-stirlerr(a) - bd0(a, x)) instead of
+    // exp(-x + a log x - lgamma(a)), whose terms cancel to ~1e-16 * a log a.
+    var pre = a >= 100 ? Math.sqrt(a / (2 * Math.PI)) * Math.exp(-stirlerr(a) - bd0(a, x))
+                       : Math.exp(-x + a * Math.log(x) - lgamma(a));
+    var lim = maxIter(a), ok = false;
     if (x < a + 1) {
       var ap = a, sum = 1 / a, del = sum;
       for (var n = 0; n < lim; n++) {
@@ -2985,7 +3001,7 @@ cat("========================================================================\n"
         if (Math.abs(del) < Math.abs(sum) * EPS) { ok = true; break; }
       }
       if (!ok) return [NaN, NaN];
-      var P = sum * Math.exp(lpre);
+      var P = sum * pre;
       if (a < 0.5) return [P, smallShapeQ(a, x)];
       return [P, 1 - P];
     }
@@ -3001,7 +3017,7 @@ cat("========================================================================\n"
       if (Math.abs(dl - 1) < EPS) { ok = true; break; }
     }
     if (!ok) return [NaN, NaN];
-    var Q = Math.exp(lpre) * h;
+    var Q = pre * h;
     return [1 - Q, Q];
   }
   // Q(a,x) for 0 < a < 0.5, 0 < x < a + 1, without forming 1 - P:
@@ -3039,19 +3055,6 @@ cat("========================================================================\n"
     return NaN;
   }
 
-  // bd0(x, np) = x log(x / np) + np - x without cancellation (Loader 2000, as R's bd0).
-  function bd0(x, np) {
-    if (Math.abs(x - np) < 0.1 * (x + np)) {
-      var v = (x - np) / (x + np), s = (x - np) * v, ej = 2 * x * v, v2 = v * v;
-      for (var j = 1; j < 1000; j++) {
-        ej *= v2;
-        var s1 = s + ej / (2 * j + 1);
-        if (s1 === s) return s1;
-        s = s1;
-      }
-    }
-    return x * Math.log(x / np) + np - x;
-  }
   // lgamma(A + s) - lgamma(A) for A >= 100 by Stirling, so the two ~A log A terms never cancel.
   function lgammaRatio(A, s) {
     return (A - 0.5) * Math.log1p(s / A) + s * Math.log(A + s) - s + stirlerr(A + s) - stirlerr(A);
@@ -3083,11 +3086,10 @@ cat("========================================================================\n"
 
   function pgammaUpper(x, shape) { return gammaPQ(shape, x)[1]; }
   function pchisqUpper(x, df) {
-    // DECLARED DEVIATION from R: df = 0 returns NaN, where R's pchisq(x, 0, lower.tail = FALSE) is the point
-    // mass at 0 (0 for x > 0, 1 for x = 0). Consumers rely on it: a test with no degrees of freedom has no
-    // p-value (IPD-Meta-Pro's inlined copy, dev/tests/upper_tails.test.cjs), and R's 0 would print "p = 0".
-    if (!(df > 0) || isNaN(x)) return NaN;
+    // df = 0 is the point mass at 0, as R: pchisq(x, 0, lower.tail = FALSE) = 0 for x > 0, 1 for x <= 0
+    if (!(df >= 0) || isNaN(x)) return NaN;
     if (x <= 0) return 1;
+    if (df === 0) return 0;
     return gammaPQ(df / 2, x / 2)[1];
   }
   function pnormUpper(z) {

@@ -31,10 +31,14 @@ assert.ok(Math.abs(T.ptUpper(-2.5, 10) - (1 - T.ptUpper(2.5, 10))) < 1e-15);
 assert.equal(T.pchisqUpper(0, 3), 1);
 assert.equal(T.pchisqUpper(Infinity, 3), 0);
 assert.equal(T.pfUpper(0, 2, 5), 1);
-// df = 0: DECLARED DEVIATION from R (whose pchisq(1, 0, lower = FALSE) = 0, the point mass at 0). NaN is kept
-// on purpose -- "no degrees of freedom, no p-value" -- see the comment in pchisqUpper (Codex review of #512).
-assert.ok(Number.isNaN(T.pchisqUpper(1, 0)));
+// df = 0 is valid in R (point mass at 0): pchisq(1, 0, lower = FALSE) = 0, pchisq(0, 0, lower = FALSE) = 1; df < 0 NaN
+assert.equal(T.pchisqUpper(1, 0), 0);
+assert.equal(T.pchisqUpper(0, 0), 1);
 assert.ok(Number.isNaN(T.pchisqUpper(1, -1)));
+// large df near the mean: R pchisq(1e8, 1e8, lower = FALSE) = 0.49998119368054633 (was 0.8886: 2000-term partial sum)
+assert.ok(Math.abs(T.pchisqUpper(1e8, 1e8) - 0.49998119368054633) / 0.5 < 1e-11);
+// beyond the 2e6-term cap the result is NaN (fail closed), never a partial sum
+assert.ok(Number.isNaN(T.pchisqUpper(1e16, 1e16)));
 assert.ok(Number.isNaN(T.ptUpper(NaN, 3)));
 assert.ok(Math.abs(T.p2norm(-1.959963984540054) - 0.05) < 1e-15);
 assert.ok(Math.abs(T.p2t(-2.5, 10) - 2 * T.ptUpper(2.5, 10)) < 1e-15);

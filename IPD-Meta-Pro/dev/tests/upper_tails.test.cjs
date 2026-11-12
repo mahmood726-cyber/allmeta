@@ -79,10 +79,11 @@ if (run('typeof AlmTail') === 'object') {
   for (const g of REF.grid.pchisq) { const a = run('AlmTail.pchisqUpper(' + g.x + ',' + g.df + ')'); check('pchisqUpper(' + g.x + ',' + g.df + ')', rel(a, g.p, 1e-11), show(a, g.p)); }
   for (const g of REF.grid.pt) { const a = run('AlmTail.ptUpper(' + g.t + ',' + g.df + ')'); check('ptUpper(' + g.t + ',' + g.df + ')', rel(a, g.p, 1e-11), show(a, g.p)); }
   // boundary contract (R: pnorm(Inf, lower = FALSE) = 0, pchisq(Inf, 3, lower = FALSE) = 0, pchisq(0, 3, lower = FALSE) = 1,
-  // pt(Inf, 4, lower = FALSE) = 0, pt(1, 0) = NaN). With df <= 0 the page now gets NaN where the legacy
-  // t / jStat chi-square CDFs returned 1 (p = 0); a test with no degrees of freedom has no p-value.
+  // pt(Inf, 4, lower = FALSE) = 0, pt(1, 0) = NaN). With df < 0 (t: df <= 0) the page gets NaN where the legacy
+  // t / jStat chi-square CDFs returned 1 (p = 0). IPD-More: chi-square df = 0 is valid in R (the point mass
+  // at 0): pchisq(5, 0, lower = FALSE) = 0 and pchisq(0, 0, lower = FALSE) = 1; this check had pinned NaN.
   const bnd = [['AlmTail.pnormUpper(Infinity)', 0], ['AlmTail.pnormUpper(-Infinity)', 1], ['AlmTail.pnormUpper(NaN)', NaN],
-    ['AlmTail.pchisqUpper(Infinity, 3)', 0], ['AlmTail.pchisqUpper(0, 3)', 1], ['AlmTail.pchisqUpper(5, 0)', NaN], ['AlmTail.pchisqUpper(NaN, 3)', NaN],
+    ['AlmTail.pchisqUpper(Infinity, 3)', 0], ['AlmTail.pchisqUpper(0, 3)', 1], ['AlmTail.pchisqUpper(5, 0)', 0], ['AlmTail.pchisqUpper(0, 0)', 1], ['AlmTail.pchisqUpper(5, -1)', NaN], ['AlmTail.pchisqUpper(NaN, 3)', NaN],
     ['AlmTail.ptUpper(Infinity, 4)', 0], ['AlmTail.ptUpper(1, 0)', NaN], ['AlmTail.ptUpper(2, Infinity)', run('AlmTail.pnormUpper(2)')]];
   for (const [e, want] of bnd) { const a = run(e); check('boundary ' + e + ' = ' + want, Number.isNaN(want) ? Number.isNaN(a) : a === want, 'page ' + a); }
 }
