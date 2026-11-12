@@ -202,6 +202,8 @@
   // --- negation guard -------------------------------------------------------
   var NEG_RE = /\b(?:no|not|without|lack(?:ing|s)?(?:\s+of)?|fail(?:ed|s|ure)?|never|absence\s+of|did\s+not|was\s+not|were\s+not|n['e]?o)\b[^.;:]{0,18}$/i;
 
+  var NEG_IN_SPAN_RE = /\b(?:no|not|without|never|nor|neither)\b|n't\b/i;
+
   function isNegated(text, idx) {
     var pre = text.slice(Math.max(0, idx - 28), idx);
     return NEG_RE.test(pre);
@@ -239,6 +241,9 @@
         var m = cue.re.exec(t);
         if (!m) continue;
         if (cue.neg && isNegated(t, m.index)) continue; // negated low cue -> skip
+        // A cue whose pattern spans a gap (e.g. "participants ... blinded") can contain the
+        // negation itself ("participants were not blinded"); read the matched span too.
+        if (cue.neg && NEG_IN_SPAN_RE.test(m[0])) continue;
         var rec = { side: side, w: cue.w, note: cue.note, idx: m.index, match: m[0] };
         votes.push(rec);
         if (!best[side] || cue.w > best[side].w) best[side] = rec;

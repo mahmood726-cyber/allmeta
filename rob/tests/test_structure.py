@@ -90,3 +90,13 @@ def test_core_module_structure():
     assert "isNegated" in c and "NEG_RE" in c
     # works in both node and browser
     assert "module.exports" in c and "window.RobCore" in c
+
+
+def test_no_unsupported_superiority_claim():
+    """P39 pre-registered comparison rule: the page's average Macro-F1 (62.6, 95% CI 51.0 to 71.7)
+    and RobotReviewer's (56.7, 48.3 to 65.1) each lie inside the other's interval, so the page may
+    not say it beats RobotReviewer. The measured numbers stay; the superiority wording goes."""
+    import re
+    h = _h()
+    assert not re.search(r"\bbeats?\b|\boutperform", h, re.I), "unsupported superiority claim in rob/index.html"
+    assert "no superiority is claimed" in h

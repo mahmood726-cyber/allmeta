@@ -37,6 +37,16 @@ eq(RC.scoreDomain(highText, RC.DOMAINS.performance).judgment, "high", "open-labe
 const negText = "Outcome assessors were not blinded to the allocated intervention.";
 ok(RC.scoreDomain(negText, RC.DOMAINS.detection).judgment !== "low", "negated blinding not read as low");
 
+// --- negation INSIDE the matched span (f1000/p39): the guard used to read only the text
+// before the match, so "participants were not blinded" matched the "participants blinded"
+// LOW cue (RoBBR full test: 10.1186/1475-2875-13-208, 10.1371/journal.pntd.0007323).
+const negInside = "Field workers and participants were not blinded to treatment allocation.";
+ok(RC.scoreDomain(negInside, RC.DOMAINS.performance).judgment !== "low", "participants were not blinded -> performance not low");
+eq(RC.scoreDomain(negInside, RC.DOMAINS.performance).judgment, "high", "participants were not blinded -> performance high");
+const negInside2 = "Participants and field staff were not blinded; laboratory staff were.";
+eq(RC.scoreDomain(negInside2, RC.DOMAINS.performance).judgment, "high", "participants and staff not blinded -> performance high");
+eq(RC.scoreDomain("Participants were blinded to group.", RC.DOMAINS.performance).judgment, "low", "participants blinded (no negation) stays low");
+
 // --- no-signal text: unclear, low confidence -------------------------------
 const vague = "We compared two treatments in patients with the condition over twelve weeks.";
 eq(RC.scoreDomain(vague, RC.DOMAINS.sequence).judgment, "unclear", "no method described -> unclear");

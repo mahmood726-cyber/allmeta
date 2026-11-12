@@ -8,7 +8,7 @@
   <meta name="description" content="Automated Risk of Bias (RoB 2 + ROBINS-I): keyword-cued per-domain suggestions with the supporting sentence, reviewer confirm/override, traffic-light figure. Free, in-browser, benchmarked vs RobotReviewer.">
   <meta name="color-scheme" content="light dark">
   <meta property="og:title" content="allmeta — Automated Risk of Bias (RoB)">
-  <meta property="og:description" content="Free in-browser RoB 2 / ROBINS-I auto-suggestions with supporting sentences. Beats RobotReviewer on the RoBBR benchmark (62.6 vs 56.7 Macro-F1).">
+  <meta property="og:description" content="Free in-browser RoB 2 / ROBINS-I auto-suggestions with supporting sentences. Benchmarked on RoBBR: 62.6 vs RobotReviewer 56.7 Macro-F1 (n=99); each lies inside the other’s 95% interval, so no superiority is claimed.">
   <title>RoB — Automated Risk of Bias</title>
   <style>
     :root { --bg:#f6f4ef; --panel:#fff; --ink:#15181d; --muted:#5c6470;
@@ -173,7 +173,7 @@
   </main>
   <footer>
     <p><strong>How it works.</strong> A transparent phrase model scores each domain from Cochrane-Handbook signalling cues (e.g. <em>"computer-generated"</em> &rarr; low sequence-generation risk; <em>"date of birth"</em> &rarr; high; <em>"opaque sealed envelopes"</em> &rarr; low allocation-concealment risk). It returns a suggested low / some-concerns / high judgment with the sentence it matched. <strong>It never finalises a judgment</strong> &mdash; you confirm or override every domain, exactly as in the Screen app. RoB 2 verdicts use the deterministic Sterne&nbsp;2019 (<em>BMJ</em> 366:l4898) algorithm over the signalling answers; ROBINS-I uses the Sterne&nbsp;2016 domain scaffold.</p>
-    <p id="bench-footer"><strong>Honest benchmark.</strong> Engine measured against the <a href="https://aclanthology.org/2025.emnlp-main.160/">RoBBR</a> gold corpus (Cochrane review authors' judgments, CC-BY-NC). On the RoBBR RobotReviewer subset (n=99, binary low vs high/unclear, Macro-F1): <strong>allmeta 62.6</strong> vs <strong>RobotReviewer 56.7</strong> &mdash; beats it overall and on 3 of 4 domains (loses allocation concealment 60 vs 75); still below frontier LLMs (GPT-4o 65.6, Claude Sonnet-3.5 67.5). Reproduce: <code>node benchmark/run_rob_benchmark.mjs</code>. All numbers [m] = measured.</p>
+    <p id="bench-footer"><strong>Honest benchmark.</strong> Engine measured against the <a href="https://aclanthology.org/2025.emnlp-main.160/">RoBBR</a> gold corpus (Cochrane review authors' judgments, CC-BY-NC). On the RoBBR RobotReviewer subset (n=99, binary low vs high/unclear, Macro-F1): <strong>allmeta 62.6</strong> vs <strong>RobotReviewer 56.7</strong> (allmeta 95% CI 51.0 to 71.7; RobotReviewer 48.3 to 65.1): each average lies inside the other&rsquo;s interval, so under the pre-registered comparison rule no superiority is claimed; higher on 3 of 4 domains, lower on allocation concealment (60 vs 75); still below frontier LLMs (GPT-4o 65.6, Claude Sonnet-3.5 67.5). Reproduce: <code>node benchmark/run_rob_benchmark.mjs</code>. All numbers [m] = measured.</p>
   </footer>
 
   <script src="../shared/rob-core.js"></script>
