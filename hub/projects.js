@@ -783,6 +783,18 @@ window.HTML_APPS_PROJECTS = [
     tags: ["group-sequential", "gsdesign", "rpact", "alpha-spending", "obrien-fleming", "pocock", "boundaries", "futility", "sample-size-re-estimation", "adaptive-design"]
   },
   {
+    name: "MAP priors & dynamic borrowing",
+    folder: "allmeta/mapriors",
+    path: "./mapriors/index.html",
+    added: "2026-11-12",
+    collection: "existing",
+    mode: "file",
+    category: "Trial Design",
+    summary: "Meta-analytic-predictive (MAP) prior for a new trial's control arm from historical control studies (binomial or normal outcome), following the RBesT gMAP model with a half-normal prior on τ: deterministic quadrature posterior, mixture approximation (a port of RBesT automixfit), robustification with a vague component, and effective sample size (ELIR, Morita, moment). Supplementary design tools (power and commensurate priors, prior-data conflict, simulated operating characteristics) use normal approximations.",
+    note: "Imported from MAPriors (map-priors.html) for paper 36 and compared against RBesT 1.12-0 under the pre-registration in mapriors/validate/PREREG.md. The page exports the matching RBesT code; refit there for a submitted design.",
+    tags: ["map-prior", "rbest", "historical-controls", "dynamic-borrowing", "robust-mixture", "effective-sample-size", "bayesian", "trial-design"]
+  },
+  {
     name: "ROBINS-I",
     course: "https://mahmood726-cyber.github.io/synthesis-courses/risk-of-bias-mastery-course.html",
     folder: "allmeta/robins-i",
