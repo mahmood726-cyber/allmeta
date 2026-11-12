@@ -36,5 +36,10 @@ test('robma app renders + R-deep-link script is well-formed', async ({ page }) =
   expect(o.k).toBe(8);
   const code = await page.evaluate(() => window.AlmRoBMA.buildRCode([0.1, 0.3], [0.2, 0.25]));
   expect(code).toContain('library(RoBMA)');
-  expect(code).toContain('RoBMA(y = y, se = se');
+  // RoBMA 4.0.0 (the version the P56 paper validates against) has no y/se arguments:
+  // formals(RoBMA) begins yi, vi, sei, weights, ni, mods, scale, cluster, data, slab,
+  // subset, measure. The old call RoBMA(y = y, se = se ...) errors in R.
+  expect(code).toContain('RoBMA(yi = y, sei = se');
+  expect(code).toContain('measure = ');
+  expect(code).not.toContain('RoBMA(y = y, se = se');
 });
