@@ -80,5 +80,41 @@ run('handleFile(__file)');
 const notes = JSON.parse(JSON.stringify(run('__notes')));
 check('handleFile on a .csv with quoted decimal commas: the user is told', notes.some(n => /^warning/.test(n) && /decimal comma/i.test(n)), JSON.stringify(notes));
 
+// An unterminated quote: the reader stayed inside the quoted field to the end of the text, so every later line became
+// part of one field and the rows after the stray quote silently vanished (4 data rows loaded as 2, no message). The
+// file must be refused, naming the line where the quote opened, and nothing must be loaded.
+{
+  const text = 'study,treat,y\nS1,1,11.5\nS2,"0,9.5\nS3,1,10.25\nS4,0,8.75\n';
+  let threw = null, r = null;
+  try { r = parse(text); } catch (e) { threw = String(e && e.message || e); }
+  check('parseDelimited: unterminated quote is refused with the line where it opened (line 3), not swallowed',
+    threw !== null && /unterminated|never closed/i.test(threw) && /\bline 3\b/.test(threw), threw === null ? 'no error; data ' + JSON.stringify(r && r.data) : threw);
+  let threw2 = null;
+  try { parse('study\ttreat\ty\nS1\t1\t2\nS2\t0\t"3\n', '\t'); } catch (e) { threw2 = String(e && e.message || e); }
+  check('parseDelimited: unterminated quote in the last field of a .tsv is refused (line 3)', threw2 !== null && /\bline 3\b/.test(threw2), String(threw2));
+  run('APP.data = null; __notes.length = 0;');
+  sandbox.__file = { name: 'stray.csv', __text: text };
+  run('handleFile(__file)');
+  const n2 = JSON.parse(JSON.stringify(run('__notes')));
+  check('handleFile on a .csv with an unterminated quote: error shown with the line number, nothing loaded',
+    run('APP.data') === null && n2.some(n => /^error/.test(n) && /\bline 3\b/.test(n)) && !n2.some(n => /^success/.test(n)), JSON.stringify(n2) + ' data ' + JSON.stringify(run('APP.data')));
+}
+
+// Delimiter detection read only the first PHYSICAL line. A quoted header field holding a line break was cut before its
+// closing quote, the quote-stripping regex then left the comma inside it, and comma was chosen for a semicolon file:
+// every row loaded as one string. Detection must read the first logical record with the same quote-state scan.
+{
+  const r = parse('"study,\nlabel";treatment;outcome\nS1;1;2\nS2;0;3\n');
+  check('delimiter detection: quoted header field with a comma and a line break, semicolon file -> 3 columns, 2 rows',
+    r.delimiter === ';' && same(r.headers, ['study,\nlabel', 'treatment', 'outcome']) &&
+    same(r.data, [{ 'study,\nlabel': 'S1', treatment: 1, outcome: 2 }, { 'study,\nlabel': 'S2', treatment: 0, outcome: 3 }]), JSON.stringify(r));
+  const r2 = parse('"a;\nb",c,d\n1,2,3\n');
+  check('delimiter detection: quoted header field with a semicolon and a line break, comma file -> comma',
+    r2.delimiter === ',' && same(r2.headers, ['a;\nb', 'c', 'd']) && same(r2.data, [{ 'a;\nb': 1, c: 2, d: 3 }]), JSON.stringify(r2));
+  let threw3 = null;
+  try { parse('"study;treat;y\nS1;1;2\n'); } catch (e) { threw3 = String(e && e.message || e); }
+  check('delimiter detection: unterminated quote in the header is refused (line 1)', threw3 !== null && /\bline 1\b/.test(threw3), String(threw3));
+}
+
 console.log(passed + '/' + (passed + failed) + ' PASS');
 process.exitCode = failed ? 1 : 0;

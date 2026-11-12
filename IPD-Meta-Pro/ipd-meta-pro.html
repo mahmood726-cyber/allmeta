@@ -35295,9 +35295,12 @@ function parseDelimited(text, delimiter) {
  text = String(text == null ? '' : text);
  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
  const records = [];
- const readAll = (delim) => {
+ // firstOnly: stop after the first non-blank record (used to detect the delimiter with the same quote-state scan)
+ const readAll = (delim, firstOnly) => {
   const out = [];
   let row = [], field = '', quoted = false, wasQuoted = false, i = 0;
+  // line = physical line of text[i] (1-based); quoteLine = line on which the open quoted field started
+  let line = 1, quoteLine = 0;
   const endField = () => { row.push({ v: field, q: wasQuoted }); field = ''; wasQuoted = false; };
   const endRow = () => { endField(); out.push(row); row = []; };
   while (i < text.length) {
@@ -35307,21 +35310,32 @@ function parseDelimited(text, delimiter) {
      if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
      quoted = false; i++; continue;
     }
+    if (ch === '\n' || (ch === '\r' && text[i + 1] !== '\n')) line++;
     field += ch; i++; continue;
    }
-   if (ch === '"' && field.trim() === '') { field = ''; quoted = true; wasQuoted = true; i++; continue; }
+   if (ch === '"' && field.trim() === '') { field = ''; quoted = true; wasQuoted = true; quoteLine = line; i++; continue; }
    if (ch === delim) { endField(); i++; continue; }
-   if (ch === '\r' || ch === '\n') { endRow(); i += (ch === '\r' && text[i + 1] === '\n') ? 2 : 1; continue; }
+   if (ch === '\r' || ch === '\n') {
+    endRow(); line++; i += (ch === '\r' && text[i + 1] === '\n') ? 2 : 1;
+    if (firstOnly && out[out.length - 1].some(f => f.q || f.v.trim() !== '')) return [out[out.length - 1]];
+    continue;
+   }
    field += ch; i++;
   }
+  // IPD-CSV fix: a quote that is never closed kept the reader inside one field to the end of the text, so every later
+  // row was swallowed into that field without any message. Refuse the file instead, naming the line.
+  if (quoted) throw new Error('unterminated quoted field: the double quote opened on line ' + quoteLine + ' is never closed, so the file cannot be read from line ' + quoteLine + ' on. Close or remove that quote and load the file again.');
   if (field !== '' || wasQuoted || row.length) endRow();
   // blank lines (and the empty record after a trailing newline) are not data
   return out.filter(r => r.some(f => f.q || f.v.trim() !== ''));
  };
  if (delimiter === undefined || delimiter === null || delimiter === '') {
-  // Detect the delimiter from the header line (outside quotes): comma, semicolon or tab, whichever occurs most.
-  const head = (text.match(/^[^\r\n]*/) || [''])[0].replace(/"([^"]|"")*"/g, '');
-  const count = (d) => head.split(d).length - 1;
+  // Detect the delimiter from the header record (outside quotes): comma, semicolon or tab, whichever separates most
+  // fields. IPD-Left fix: this read only the first PHYSICAL line, so a quoted header field holding a line break was cut
+  // before its closing quote, the comma inside it was counted, and a semicolon file was read as one column. Each
+  // candidate now reads the first logical record with the same quote-state scan as the data (an unterminated quote
+  // scores -1 here and is refused, with its line, by the full read below).
+  const count = (d) => { try { const rec = readAll(d, true)[0]; return rec ? rec.length - 1 : 0; } catch (e) { return -1; } };
   delimiter = ',';
   [';', '\t'].forEach(d => { if (count(d) > count(delimiter)) delimiter = d; });
  }
