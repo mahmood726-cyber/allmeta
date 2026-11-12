@@ -165,10 +165,12 @@ REPO = HERE.parent.parent
 VERIFY, CONTINUE = "verify-in-r", "continue-with-validator"
 KNOWN_UNFIXED = {
     # lane rc5 fixed bayesian-ma, bayesian-mcmc, copas, cumulative-subgroup,
-    # forest-plot, funnel-plot, gosh, gosh-metareg, influence, pet-peese, tsa.
-    "bma-tau-priors": {CONTINUE}, "cross-design": {CONTINUE},
+    # forest-plot, funnel-plot, gosh, gosh-metareg, influence, pet-peese, tsa;
+    # lane fix509 fixed bma-tau-priors and cross-design (Continue-with). Empty: keep it so.
 }
 # Fixed (lanes up1, up2, up3, integ, rc5); each must still be wired (a deleted button is not a fix).
+# Continue-with only (these pages have no Verify in R button): lane fix509.
+FIXED_CONTINUE = ("bma-tau-priors", "cross-design")
 FIXED = ("heterogeneity", "pubbias-tests", "meta-regression", "limit-ma", "proportion-ma",
          "bayesian-ma", "bayesian-mcmc", "copas", "cumulative-subgroup", "forest-plot", "funnel-plot",
          "gosh", "gosh-metareg", "influence", "pet-peese", "tsa")
@@ -248,6 +250,28 @@ def test_validator_controls_send_the_current_studies():
     assert not fixed, "now sends the current studies (or is gone); remove from KNOWN_UNFIXED: %s" % fixed
     for app in FIXED:
         assert any(a == app and c == VERIFY for a, c, _ in controls), "%s: no Verify in R wiring found" % app
+    for app in FIXED_CONTINUE:
+        assert any(a == app and c == CONTINUE for a, c, _ in controls), "%s: no Continue-with validator wiring found" % app
+
+
+# Lane fix509 (Codex review of PR #509): these providers used to parse the input and send it
+# even when the page refused it. Static half of the check; the behaviour (real Chrome) is
+# test_refused_input_handoff.py. Each validator control must use the refusal-aware provider.
+REFUSAL_AWARE = ("limit-ma", "pubbias-tests", "meta-regression", "bma-tau-priors", "cross-design")
+
+
+def test_refusal_aware_providers_on_every_validator_control():
+    pages = dict(_app_pages())
+    for app in REFUSAL_AWARE:
+        src = pages[app]
+        assert "window.__almValidatorStudies = function" in src, app
+        ctrls = [args for a, _, args in _validator_controls() if a == app]
+        assert ctrls, app
+        for args in ctrls:
+            assert "__almValidatorStudies" in args, (app, args)
+    mr = pages["meta-regression"]
+    h = re.search(r'getElementById\("btn-validate-webr"\)\.addEventListener\("click", function \(\) \{(.*?)\n      \}\);', mr, re.S).group(1)
+    assert "openInWebR" in h and "__almValidatorStudies" in h and "window.open" not in h, h
 
 
 def test_limit_ma_asks_the_validator_for_its_own_dl_model():

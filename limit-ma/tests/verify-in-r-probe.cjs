@@ -22,6 +22,8 @@ for (const m of html.matchAll(/<([a-z][\w-]*)\b[^>]*\bid="([^"]+)"[^>]*>([^<]*)/
   nodes[m[2]] = node(); nodes[m[2]].textContent = m[3];
 }
 nodes.src.value = html.match(/<textarea[^>]*>([\s\S]*?)<\/textarea>/)[1];
+// Optional: argv[3] is a file whose text replaces the default example (refusal cases).
+if (process.argv[3]) nodes.src.value = fs.readFileSync(process.argv[3], 'utf8');
 const logs = [node(), node()];
 const store = {};
 const alerts = [], opened = [];

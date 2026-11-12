@@ -42,3 +42,24 @@ def test_validator_refits_the_apps_dl_random_effects_model(probe):
     url = probe["opened"][0]
     assert "from=limit-ma" in url
     assert "method=DL" in url and "test=z" in url, url
+
+
+# Codex review of PR #509: the provider parsed the input but ignored the page's own
+# refusals, so studies the page will not analyse were still sent to the validator.
+REFUSED = {
+    "identical_ses": "0.1, 0.2, A\n0.3, 0.2, B\n0.5, 0.2, C\n",
+    "two_studies": "0.1, 0.2, A\n0.3, 0.25, B\n",
+}
+
+
+@pytest.mark.parametrize("case", sorted(REFUSED))
+def test_input_the_page_refuses_is_not_sent_to_the_validator(case, tmp_path):
+    src = tmp_path / "src.txt"
+    src.write_text(REFUSED[case], encoding="utf-8")
+    page = Path(os.environ.get("LIMIT_MA_PAGE", HERE.parent / "index.html")).resolve()
+    proc = subprocess.run(["node", str(HERE / "verify-in-r-probe.cjs"), str(page), str(src)],
+                          capture_output=True, text=True, encoding="utf-8", check=True, timeout=120)
+    out = json.loads(proc.stdout.strip().splitlines()[-1])
+    assert out["k"] is None, out  # the page refused
+    assert out["opened"] == [], out["opened"]
+    assert out["busStudies"] is None, out["busStudies"]

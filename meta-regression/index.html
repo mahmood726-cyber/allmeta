@@ -765,6 +765,15 @@
       }));
     }
     window.__almMetaregBusStudies = busStudies;
+    // What the WebR validator is handed: the studies on screen, and only when render()
+    // fits the regression (fitPM null: k < 3, no moderator variation / singular design,
+    // no tau2). Pure: no page state changes. [] -> the validator is not opened.
+    window.__almValidatorStudies = function () {
+      try {
+        const parsed = parseStudies(document.getElementById("f-data").value);
+        return fitPM(parsed.studies) ? busStudies() : [];
+      } catch (_) { return []; }
+    };
     function onBusSave() {
       const parsed = parseStudies(document.getElementById("f-data").value);
       if (!parsed.studies.length) { Toast.show("Nothing to save.", "warn"); return; }
@@ -792,8 +801,11 @@
       document.getElementById("btn-bus-load").addEventListener("click", onBusLoad);
       document.getElementById("btn-bus-save").addEventListener("click", onBusSave);
       document.getElementById("btn-validate-webr").addEventListener("click", function () {
-        onBusSave();
-        window.open("../webr-validator/index.html?fromBus=1&from=meta-regression", "_blank");
+        // Hand over the studies on screen only when the regression was fitted; openInWebR
+        // refuses (and says why) on [] instead of opening an earlier session's bus.
+        if (!window.MaStudies || typeof MaStudies.openInWebR !== "function") { Toast.show("Bus helper not loaded.", "error"); return; }
+        MaStudies.openInWebR({ studies: window.__almValidatorStudies(), from: "meta-regression",
+          webrPath: "../webr-validator/index.html?fromBus=1" });
       });
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){
@@ -1011,7 +1023,7 @@
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r", getStudies: function () {
       // An empty list makes openInWebR say "No valid current studies"; it never
       // falls back to whatever another app left on the bus.
-      try { return window.__almMetaregBusStudies ? window.__almMetaregBusStudies() : []; } catch (e) { return []; }
+      try { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } catch (e) { return []; }
     } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
@@ -1033,7 +1045,7 @@
         container: "#alm-flow-mount",
         suggestions: ["forest-plot", "heterogeneity", "gosh-metareg", "bma-tau-priors", "webr-validator"],
         // Push the studies on screen, never an earlier dataset left on the bus.
-        getStudies: function () { try { return window.__almMetaregBusStudies ? window.__almMetaregBusStudies() : []; } catch (e) { return []; } },
+        getStudies: function () { try { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } catch (e) { return []; } },
       });
     }
   });

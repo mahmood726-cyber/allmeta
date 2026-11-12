@@ -223,6 +223,17 @@ Obs cohort D, -0.52, 0.011, obs</textarea>
 
     document.getElementById("btn-run").addEventListener("click", run);
 
+    // What Continue-with hands the next app (incl. the WebR validator): the studies on
+    // screen (design kept as the bus group), and only when run() would analyse them
+    // (k < 2 is refused there). Pure. [] -> the validator is not opened on a stale bus.
+    window.__almValidatorStudies = function () {
+      try {
+        var rows = parse(document.getElementById("src").value);
+        if (rows.length < 2) return [];
+        return rows.map(function (r) { return { label: r.label, est: r.yi, se: Math.sqrt(r.vi), group: r.design }; });
+      } catch (_) { return []; }
+    };
+
     // ----- ma-studies-v1 bus interop -----
     // This app works in (yi, vi) = (effect, VARIANCE) with a design tag; the bus
     // stores (est, se) plus a free-form `group`. Map design ↔ group and convert
@@ -274,6 +285,8 @@ Obs cohort D, -0.52, 0.011, obs</textarea>
       AlmFlow.attachContinueBar({
         container: "#alm-flow-mount",
         suggestions: ["forest-plot", "cross-network", "bma-tau-priors", "webr-validator"],
+        // The studies on screen, never an earlier session's bus ([] when the page refuses).
+        getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
       });
     }
   });

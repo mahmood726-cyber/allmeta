@@ -873,6 +873,21 @@
       });
     };
 
+    // What "Verify in R" hands the WebR validator: the studies on screen, and only when
+    // runAnalysis() would analyse them (parse errors, k < 5 and a failing Egger/Begg/
+    // trim-and-fill/Peters/Harbord are refused there; Thompson-Sharp refuses per row).
+    // Pure: no page state changes. [] -> the validator is not opened.
+    window.__almValidatorStudies = function () {
+      try {
+        var binary = document.getElementById('format').value === 'binary';
+        var rows = binary ? parseBinary(document.getElementById('src').value) : parseTESE(document.getElementById('src').value);
+        if (rows.length < 5) return [];
+        eggerGeneric(rows); beggMazumdar(rows); trimFill(rows);
+        if (binary) { petersTest(rows); harbordTest(rows); }
+        return window.__almPubbiasBusStudies();
+      } catch (_) { return []; }
+    };
+
     // Expose for export
     window._almLastPubbias = function () { return _lastResults; };
     // Expose the test engine for R-parity tests (parseBinary + each test).
@@ -995,7 +1010,7 @@
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r", getStudies: function () {
       // An empty list makes openInWebR say "No valid current studies"; it never
       // falls back to whatever another app left on the bus.
-      try { return window.__almPubbiasBusStudies ? window.__almPubbiasBusStudies() : []; } catch (e) { return []; }
+      try { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } catch (e) { return []; }
     } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });

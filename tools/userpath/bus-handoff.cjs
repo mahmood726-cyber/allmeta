@@ -3,6 +3,8 @@
 // validator's tau^2 estimator / test selects to read M / T when it opens, so a
 // control that hands over the right studies but no estimator (validator falls back
 // to PM) is a FAIL. Without them only the studies are checked.
+// expect-refuse (lane fix509): the data is input the page REFUSES to analyse; every
+// control must then open NOTHING (an alert/toast saying why is fine). <n-rows> is ignored.
 // Real system Chrome. For every control that opens the WebR validator ("Verify in R",
 // "Validate (R)", "Continue with -> Verify in R (WebR)"), in its own fresh browser
 // context, twice: (1) empty localStorage, (2) the shared bus pre-seeded with 3 stale
@@ -19,6 +21,8 @@ const [app, base, dataFile, taSel, nRowsS, ...rest] = process.argv.slice(2);
 const nRows = +nRowsS;
 const expect = {};
 const sels = rest.filter((a) => { const m = /^expect-(method|test)=(.+)$/.exec(a); if (m) expect[m[1]] = m[2]; return !m; });
+const refuse = sels.includes("expect-refuse");
+if (refuse) sels.splice(sels.indexOf("expect-refuse"), 1);
 const STALE = [{ label: "stale A", est: 9.1, se: 0.5 }, { label: "stale B", est: 9.2, se: 0.5 }, { label: "stale C", est: 9.3, se: 0.5 }];
 const CONTROLS = [["Verify in R", "#btn-verify-in-r"], ["Validate (R)", "#btn-validate-webr"], ["Continue with -> Verify in R (WebR)", "text=Verify in R (WebR)"]];
 (async () => {
@@ -52,15 +56,16 @@ const CONTROLS = [["Verify in R", "#btn-verify-in-r"], ["Validate (R)", "#btn-va
           test: (document.getElementById("f-test") || {}).value || null, url: location.search })).catch(() => ({}));
       }
       const sameModel = Object.keys(expect).every((k) => model[k] === expect[k]);
-      const ok = !!pop && !dialogs.length && rows === nRows && staleRows === 0 && sameModel;
+      const ok = refuse ? !pop : (!!pop && !dialogs.length && rows === nRows && staleRows === 0 && sameModel);
       ran++; if (!ok) bad++;
-      console.log(JSON.stringify({ app, stale, control: name, ok, opened: !!pop, dialogs, validatorRows: rows, pageRows: nRows, firstRow: first, staleRows,
+      console.log(JSON.stringify({ app, stale, refuse, control: name, ok, opened: !!pop, dialogs, validatorRows: rows, pageRows: nRows, firstRow: first, staleRows,
         validatorMethod: model.method || null, validatorTest: model.test || null, expect, query: model.url || null }));
       await ctx.close();
     }
   }
   await browser.close();
   if (!ran) { console.log("FAIL: no validator control found on the page (0 runs)"); process.exit(1); }
+  if (refuse) { console.log(bad ? `FAIL: ${bad}/${ran} control runs open the validator on input the page refuses` : `PASS: ${ran}/${ran} control runs open nothing on input the page refuses`); process.exit(bad ? 1 : 0); }
   console.log(bad ? `FAIL: ${bad}/${ran} control runs hand the validator something other than the page's studies (and, if expected, its estimator/test)` : `PASS: ${ran}/${ran} control runs hand the validator the page's studies${Object.keys(expect).length ? " and " + JSON.stringify(expect) : ""}`);
   process.exit(bad ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(2); });
