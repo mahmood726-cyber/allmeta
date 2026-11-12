@@ -875,7 +875,7 @@
 
     // What "Verify in R" hands the WebR validator: the studies on screen, and only when
     // runAnalysis() would analyse them (parse errors, k < 5 and a failing Egger/Begg/
-    // trim-and-fill/Peters/Harbord are refused there; Thompson-Sharp refuses per row).
+    // trim-and-fill/Peters/Harbord/selection model are refused there; Thompson-Sharp refuses per row).
     // Pure: no page state changes. [] -> the validator is not opened.
     window.__almValidatorStudies = function () {
       try {
@@ -884,6 +884,11 @@
         if (rows.length < 5) return [];
         eggerGeneric(rows); beggMazumdar(rows); trimFill(rows);
         if (binary) { petersTest(rows); harbordTest(rows); }
+        // The selection model is fitted unguarded in runAnalysis(), so its errors refuse
+        // the whole analysis there (Codex review of fix509: an SE of 1e200 passes the parser
+        // and the tests above, then REML refuses). Same call, same arguments.
+        if (window.AlmSelModel && rows.length >= 4)
+          window.AlmSelModel.fit(rows.map(function (r) { return r.te; }), rows.map(function (r) { return r.se * r.se; }), { steps: [0.025], method: 'REML' });
         return window.__almPubbiasBusStudies();
       } catch (_) { return []; }
     };

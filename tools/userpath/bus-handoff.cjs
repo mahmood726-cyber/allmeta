@@ -34,6 +34,8 @@ const CONTROLS = [["Verify in R", "#btn-verify-in-r"], ["Validate (R)", "#btn-va
       const page = await ctx.newPage();
       const dialogs = [];
       page.on("dialog", (d) => { dialogs.push(d.message()); d.dismiss().catch(() => {}); });
+      const pageErrors = []; let clicked = false;
+      page.on("pageerror", (e) => { if (clicked) pageErrors.push(String(e && e.message || e).slice(0, 200)); });
       await page.goto(base + app + "/", { waitUntil: "load", timeout: 120000 });
       await page.waitForTimeout(2500);
       if (!(await page.$(sel))) { console.log(JSON.stringify({ app, stale, control: name, absent: true })); await ctx.close(); continue; }
@@ -42,6 +44,7 @@ const CONTROLS = [["Verify in R", "#btn-verify-in-r"], ["Validate (R)", "#btn-va
       await page.evaluate(([s, d]) => { const t = document.querySelector(s); t.value = d; t.dispatchEvent(new Event("input", { bubbles: true })); t.dispatchEvent(new Event("change", { bubbles: true })); }, [taSel, fs.readFileSync(dataFile, "utf8")]);
       await page.click("#btn-run"); await page.waitForTimeout(1500);
       const popP = ctx.waitForEvent("page", { timeout: 10000 }).catch(() => null);
+      clicked = true;
       await page.click(sel, { timeout: 10000 });
       const pop = await popP;
       let rows = null, first = null, model = {}, staleRows = null;
@@ -56,9 +59,10 @@ const CONTROLS = [["Verify in R", "#btn-verify-in-r"], ["Validate (R)", "#btn-va
           test: (document.getElementById("f-test") || {}).value || null, url: location.search })).catch(() => ({}));
       }
       const sameModel = Object.keys(expect).every((k) => model[k] === expect[k]);
-      const ok = refuse ? !pop : (!!pop && !dialogs.length && rows === nRows && staleRows === 0 && sameModel);
+      // refused input: nothing opened AND the control did not just crash (a throwing handler also opens nothing)
+      const ok = refuse ? (!pop && !pageErrors.length) : (!!pop && !dialogs.length && rows === nRows && staleRows === 0 && sameModel);
       ran++; if (!ok) bad++;
-      console.log(JSON.stringify({ app, stale, refuse, control: name, ok, opened: !!pop, dialogs, validatorRows: rows, pageRows: nRows, firstRow: first, staleRows,
+      console.log(JSON.stringify({ app, stale, refuse, control: name, ok, opened: !!pop, dialogs, pageErrors, validatorRows: rows, pageRows: nRows, firstRow: first, staleRows,
         validatorMethod: model.method || null, validatorTest: model.test || null, expect, query: model.url || null }));
       await ctx.close();
     }
