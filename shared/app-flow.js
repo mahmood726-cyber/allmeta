@@ -231,7 +231,14 @@
         var studies = (typeof opts.getStudies === "function")
           ? opts.getStudies()
           : (global.MaStudies && global.MaStudies.read());
-        _pushStudies(studies);
+        var pushed = _pushStudies(studies);
+        // A validator opened on whatever an earlier session left on the bus shows R
+        // numbers for other studies. When the app supplies its current studies and
+        // they cannot be saved, do not open it.
+        if (!pushed && typeof opts.getStudies === "function" && /webr-validator\//.test(info.path)) {
+          if (global.Toast && typeof global.Toast.show === "function") global.Toast.show("No valid current studies to open in the R validator. Check your input first.", "error");
+          return;
+        }
       }
       if (info.kind === "comparisons" || info.kind === "either") {
         var env = (typeof opts.getComparisons === "function")
@@ -250,6 +257,16 @@
           if (segs.length && /\.html?$/i.test(segs[segs.length - 1])) segs.pop();
           if (segs.length) target += (target.indexOf("?") >= 0 ? "&" : "?") + "from=" + encodeURIComponent(segs[segs.length - 1]);
         } catch (_) { /* open without the hint */ }
+        // Optional: the estimator/test the sending app's headline uses, so the
+        // validator re-fits that model rather than its PM/z default.
+        if (typeof opts.getValidatorModel === "function") {
+          try {
+            var vm = opts.getValidatorModel() || {};
+            ["method", "test"].forEach(function (k) {
+              if (vm[k] && !new RegExp("[?&]" + k + "=").test(target)) target += "&" + k + "=" + encodeURIComponent(String(vm[k]));
+            });
+          } catch (_) { /* open without the model hint */ }
+        }
       }
       var w = global.open(target, "_blank", "noopener,noreferrer");
       if (!w && global.Toast && typeof global.Toast.show === "function") {
