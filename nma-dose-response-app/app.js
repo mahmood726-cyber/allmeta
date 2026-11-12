@@ -11069,7 +11069,11 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         rankCounts[treatment] = Array(treatments.length).fill(0);
       });
 
-      const rng = makeRng(Math.floor(Date.now() % 2147483647));
+      // The seed input must govern the study resampling (and the random starts of the nonlinear
+      // fits inside each replicate); a clock seed is used only when no seed is given.
+      const hasSeed = Boolean(seedVal && !isNaN(seedVal));
+      const rng = makeRng(hasSeed ? seedVal : Math.floor(Date.now() % 2147483647));
+      if (hasSeed && typeof seedNmaRng === "function") seedNmaRng(seedVal);
       let validIterations = 0;
       let validRankIterations = 0;
 
