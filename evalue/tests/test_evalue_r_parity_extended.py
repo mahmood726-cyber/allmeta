@@ -168,13 +168,33 @@ def test_page_refuses_invalid_new_inputs(inp, why):
     ("E.eValuesRD(40,60,20,80,{grid:-1})", "grid"),
     ("E.eValuesRD(40,60,20,80,{grid:NaN})", "grid"),
     ("E.eValuesRD(40,60,20,80,{grid:0})", "grid"),
-    ("E.eValuesRD(40,60,20,80,{grid:Infinity})", "grid"),
 ])
 def test_engine_refuses_before_conversion(call, msg):
     r = subprocess.run([NODE, "-e", "const E=require('./shared/evalue.js');try{const o=" + call + ";console.log('accepted '+JSON.stringify(o))}catch(e){console.log(e.name+': '+e.message)}"],
                        capture_output=True, text=True, timeout=60, cwd=str(ROOT))
     out = r.stdout.strip()
     assert out.startswith("RangeError: ") and msg in out, out + r.stderr
+
+
+# EValue 4.1.4 / R 4.6.0 (Codex review of #513): evalues.RD returns lower.Evalue = 1 before it
+# ever consults grid when the CI includes the true value, and seq(1, est.BF, grid) with an
+# infinite (or oversized) step is not an error -- it yields no usable grid point, so lower.Evalue
+# is NA. R: evalues.RD(4,6,2,8,grid=g) -> 3.4142135623730949, 1 for g in -1, NaN, 0, Inf;
+# evalues.RD(40,60,20,80,grid=g) -> 3.4142135623730949, NA for g in Inf, -Inf, 10, 1e300.
+@pytest.mark.parametrize("call,ci", [
+    ("E.eValuesRD(4,6,2,8,{grid:-1})", 1), ("E.eValuesRD(4,6,2,8,{grid:NaN})", 1),
+    ("E.eValuesRD(4,6,2,8,{grid:0})", 1), ("E.eValuesRD(4,6,2,8,{grid:Infinity})", 1),
+    ("E.eValuesRD(40,60,20,80,{grid:Infinity})", None), ("E.eValuesRD(40,60,20,80,{grid:-Infinity})", None),
+    ("E.eValuesRD(40,60,20,80,{grid:10})", None), ("E.eValuesRD(40,60,20,80,{grid:1e300})", None),
+])
+def test_rd_grid_follows_r_order(call, ci):
+    r = subprocess.run([NODE, "-e", "const E=require('./shared/evalue.js');try{const o=" + call + ";console.log(JSON.stringify([o.point,o.ci]))}catch(e){console.log(e.name+': '+e.message)}"],
+                       capture_output=True, text=True, timeout=60, cwd=str(ROOT))
+    out = r.stdout.strip()
+    assert out.startswith("["), out + r.stderr
+    point, got = json.loads(out)
+    assert abs(point - 3.4142135623730949) < 1e-12, out
+    assert got == ci, out
 
 
 def test_se_is_for_differences_only():
