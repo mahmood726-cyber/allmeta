@@ -103,6 +103,10 @@ ROWS = ("const rows=(s)=>s.flatMap(([t,d,c])=>[...Array(d).fill({time:t,status:1
 @pytest.mark.parametrize("mod", VENDORED)
 def test_step_median_on_exact_half_plateau_follows_survfit(mod):
     # survival::survfit: on an exact S = 0.5 plateau the median is the midpoint to the next drop.
+    # b: a TERMINAL 0.5 plateau (events at 1, 2; censored at 3, 4) gives 2, the plateau start: this is
+    # summary(survfit)$table["median"] (survmean's minmin), the P63 target, checked in R 4.6.0 /
+    # survival 3.8-6. quantile.survfit(fit, 0.5) gives 3 there (findq's last-point rule): a different R
+    # function, not the one the page is validated against.
     # 13 events at t=1 of n=26 -> S = 0.5 on [1, 12); next drop at 12 -> median 6.5 (R), not 1.
     o = _run_mod(mod, ROWS + "const _=RIPD._;console.log(JSON.stringify({"
                  "a:_.medianFromKM(_.kmFromIPD(rows([[1,13,0],[12,8,5]]))),"
@@ -110,6 +114,27 @@ def test_step_median_on_exact_half_plateau_follows_survfit(mod):
                  "c:_.medianFromKM(_.kmFromIPD(rows([[1,1,0],[2,1,0],[3,1,0]]))),"
                  "i:_.medianFromKM(_.kmFromIPD(rows([[1,13,0],[12,8,5]])),{interpolate:true})}));")
     assert o == {"a": 6.5, "b": 2, "c": 2, "i": 1}
+
+
+@pytest.mark.parametrize("mod", VENDORED)
+def test_step_median_uses_survfit_tolerance_on_both_sides(mod):
+    # The parity target is unname(summary(survfit(...))$table["median"]) (P63 R/oracle.R), i.e.
+    # survival 3.8-6 survmean()'s minmin(): keep S < 0.5 + sqrt(eps); at the first kept time, if
+    # |S - 0.5| < sqrt(eps) and the curve later drops (strictly) below it, take the midpoint to the
+    # first such time. Values below are from R 4.6.0 / survival 3.8-6 on the same data.
+    # a) 5937 at risk; t=1 one event + one censoring; t=2 2967 events (S = 0.5 + 1.419e-8);
+    #    t=12 100 events; 2868 censored at 20 -> survfit median 7 (old engine: 12).
+    # b) case-weighted survfit: S = 0.5 on [1,3), 0.5 - 1e-9 from 3, 0.3 from 5 -> median 2
+    #    (the drop at 3 is smaller than sqrt(eps) but minmin's test is strict y < y[1]; old engine: 3).
+    # r) the review's example, case-weighted survfit S = 0.500000001 then 0.4 at 12 -> 6.5 (old: 12).
+    # n) S never below 0.5 but within sqrt(eps) above it at 4 -> survfit reports 4 (old engine: null).
+    o = _run_mod(mod, ROWS + "const _=RIPD._;console.log(JSON.stringify({"
+                 "a:_.medianFromKM(_.kmFromIPD(rows([[1,1,1],[2,2967,0],[12,100,0],[20,0,2868]]))),"
+                 "b:_.medianFromKM([{t:1,S:0.5},{t:2,S:0.5},{t:3,S:0.49999999899999997},"
+                 "{t:5,S:0.29999999899999996},{t:6,S:0.29999999899999996}]),"
+                 "r:_.medianFromKM([{t:1,S:0.500000001},{t:12,S:0.4}]),"
+                 "n:_.medianFromKM([{t:1,S:0.7},{t:4,S:0.500000001}])}));")
+    assert o == {"a": 7, "b": 2, "r": 6.5, "n": 4}
 
 
 @pytest.mark.parametrize("mod", VENDORED)
