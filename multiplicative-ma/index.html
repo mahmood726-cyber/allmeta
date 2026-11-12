@@ -87,11 +87,14 @@
   </footer>
   <script>
     var EXAMPLE = "0.10, 0.20\n0.30, 0.25\n0.50, 0.18\n0.20, 0.30\n0.90, 0.22\n0.40, 0.28\n1.10, 0.35\n0.05, 0.15";
+    // Whole-field decimal numbers only: parseFloat prefix-parsed "0.4oops" as 0.4.
+    var NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+    function num(s) { s = (s == null ? "" : String(s)).trim(); return NUM.test(s) ? Number(s) : NaN; }
     function parse(text) {
       var yi = [], vi = [], errs = [];
       text.split(/\r?\n/).forEach(function (l, i) {
         var t = l.trim(); if (!t || t[0] === "#") return;
-        var f = t.split(/[,\t]/); var y = parseFloat(f[0]), se = parseFloat(f[1]);
+        var f = t.split(/[,\t]/); var y = num(f[0]), se = num(f[1]);
         if (!isFinite(y) || !isFinite(se) || se <= 0) { errs.push("line " + (i + 1)); return; }
         yi.push(y); vi.push(se * se);
       });
