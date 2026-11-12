@@ -55,3 +55,24 @@ def test_wald_ci_uses_exact_z_for_large_se():
     """)
     half = (out["ciHi"] - out["ciLo"]) / 2
     assert abs(half - R_QNORM["0.975"] * out["se"]) <= 1e-12 * half
+
+
+# R 4.6.0 qnorm() at central p (|p - 0.5| <= 0.425, the AS 241 rational branch), %.17g. These are
+# reproduced bit-for-bit only with Wichura's published denominator coefficient 5226.4952788528544610
+# (R nmath/qnorm.c); a transposed 5226.495278852545925 is off by one ulp on these inputs.
+R_QNORM_CENTRAL = {
+    "0.40319697866216309": -0.24508068597450103,
+    "0.46520586732076485": -0.087326821926634185,
+    "0.4798985583125614": -0.050408181697496682,
+    "0.44175263696815825": -0.14652713059182321,
+}
+
+
+def test_qnorm_central_branch_bit_exact_vs_r():
+    got = _node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const ps = {json.dumps(list(R_QNORM_CENTRAL))};
+        console.log(JSON.stringify(Object.fromEntries(ps.map(p => [p, M._qnorm(Number(p))]))));
+    """)
+    for p, want in R_QNORM_CENTRAL.items():
+        assert got[p] == want, (p, got[p], want)
