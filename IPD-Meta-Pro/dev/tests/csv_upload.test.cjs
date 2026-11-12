@@ -44,8 +44,12 @@ const cases = [
     headers: ['study', 'treat', 'y'], data: [{ study: 'S1', treat: 1, y: '1.5abc' }, { study: 'S1', treat: 0, y: 'NA' }] },
   { name: 'number forms: padded, signed, leading dot, exponent, quoted number', text: 'a,b,c,d,e,f\n 2 ,+3,.5,1E3,"42",-\n',
     headers: ['a', 'b', 'c', 'd', 'e', 'f'], data: [{ a: 2, b: 3, c: 0.5, d: 1000, e: 42, f: '-' }] },
-  { name: 'short row: missing trailing fields load as empty', text: 'study,treat,y\nS1,1\n',
-    headers: ['study', 'treat', 'y'], data: [{ study: 'S1', treat: 1, y: '' }] }
+  // (a short row "S1,1" under 3 headers used to load with y = ''; a row with the wrong number of fields is now refused
+  // with its line -- see "ragged rows" below -- because the same mechanism silently dropped extra fields)
+  { name: 'U+2212 minus sign is a minus (comma file and semicolon decimal-comma file)', text: 'study,y,z\nS1,−1.5,−2e-3\n',
+    headers: ['study', 'y', 'z'], data: [{ study: 'S1', y: -1.5, z: -0.002 }] },
+  { name: 'U+2212 minus with a decimal comma (semicolon file)', text: 'study;y\nS1;−1,5\n',
+    headers: ['study', 'y'], data: [{ study: 'S1', y: -1.5 }] }
 ];
 for (const c of cases) {
   const r = parse(c.text, c.delim);
@@ -114,6 +118,55 @@ check('handleFile on a .csv with quoted decimal commas: the user is told', notes
   let threw3 = null;
   try { parse('"study;treat;y\nS1;1;2\n'); } catch (e) { threw3 = String(e && e.message || e); }
   check('delimiter detection: unterminated quote in the header is refused (line 1)', threw3 !== null && /\bline 1\b/.test(threw3), String(threw3));
+}
+
+// Review of PR #535 (rev535). Each of these was silent, or failed, before.
+const refusal = (text, delim) => { try { const r = parse(text, delim); return { ok: r }; } catch (e) { return { err: String(e && e.message || e) }; } };
+{
+  // MAJOR-1: records.push(...readAll()) spread every row as call arguments: "Maximum call stack size exceeded" above
+  // ~120-150k rows. 250,000 rows must load.
+  const N = 250000; const parts = ['study,treat,y'];
+  for (let i = 0; i < N; i++) parts.push('S' + (i % 50) + ',' + (i % 2) + ',' + (i / 1000));
+  const t0 = Date.now(); const r = refusal(parts.join('\n') + '\n'); const ms = Date.now() - t0;
+  check('250,000-row CSV loads (no call-stack overflow)', r.ok && r.ok.data.length === N && r.ok.data[N - 1].y === (N - 1) / 1000, (r.err || ('n ' + (r.ok && r.ok.data.length))) + ' ' + ms + ' ms');
+}
+{
+  // MINOR-1: comma and semicolon tie on the header (1 separator each); comma was kept, headers garbled, y = 5, silent.
+  const r = refusal('"Study, year";"log OR, adj"\nA;1,5\nB;-0,25\n');
+  check('delimiter tie broken by well-formed quoting across the first records -> semicolon',
+    r.ok && r.ok.delimiter === ';' && same(r.ok.headers, ['Study, year', 'log OR, adj']) && same(r.ok.data, [{ 'Study, year': 'A', 'log OR, adj': 1.5 }, { 'Study, year': 'B', 'log OR, adj': -0.25 }]),
+    JSON.stringify(r));
+  const r2 = refusal('a,b;c\n1,2;3\n4,5;6\n');
+  check('delimiter that cannot be decided (comma and semicolon fit equally) is refused, naming both', !!r2.err && /delimiter/i.test(r2.err) && /comma/i.test(r2.err) && /semicolon/i.test(r2.err), JSON.stringify(r2));
+}
+{
+  // MINOR-2: rows with the wrong number of fields were accepted; an unquoted decimal comma "S2,1,5" gave y = 1.
+  const r = refusal('study,y\nS1,2\nS2,1,5\n');
+  check('row with too many fields refused with its line (3) and the decimal-comma hint', !!r.err && /\bline 3\b/.test(r.err) && /decimal comma/i.test(r.err), JSON.stringify(r));
+  const r2 = refusal('study,treat,y\nS1,1,2\nS1,1\n');
+  check('row with too few fields refused with its line (3)', !!r2.err && /\bline 3\b/.test(r2.err) && /3 fields|has 2/i.test(r2.err), JSON.stringify(r2));
+  const r3 = refusal('study,note,y\nS1,"two\nlines",2\nS2,x\n');
+  check('line number counts physical lines inside a quoted multi-line field (bad row on line 4)', !!r3.err && /\bline 4\b/.test(r3.err), JSON.stringify(r3));
+}
+{
+  // MINOR-3: duplicate header names: the later column overwrote the earlier one (y,y,v / 1,2,3 -> y = 2).
+  const r = refusal('y,y,v\n1,2,3\n');
+  check('duplicate column names refused, naming the column', !!r.err && /duplicate/i.test(r.err) && /"y"|\by\b/.test(r.err), JSON.stringify(r));
+}
+{
+  // Excel "sep=;" first line was read as the header.
+  const r = refusal('sep=;\nstudy;y\nS1;1,5\n');
+  check('Excel "sep=;" line honoured and stripped, with a note', r.ok && r.ok.delimiter === ';' && same(r.ok.headers, ['study', 'y']) && same(r.ok.data, [{ study: 'S1', y: 1.5 }]) &&
+    r.ok.warnings.some(w => /sep=/.test(w)), JSON.stringify(r));
+  const r2 = refusal('sep=,\nstudy,y\nS1,"2\n');
+  check('after a "sep=" line, line numbers are still file lines (unterminated quote on line 3)', !!r2.err && /\bline 3\b/.test(r2.err), JSON.stringify(r2));
+}
+{
+  run('APP.data = null; __notes.length = 0;');
+  sandbox.__file = { name: 'ragged.csv', __text: 'study,y\nS1,2\nS2,1,5\n' };
+  run('handleFile(__file)');
+  const n3 = JSON.parse(JSON.stringify(run('__notes')));
+  check('handleFile on a ragged CSV: error with the line, nothing loaded', run('APP.data') === null && n3.some(n => /^error/.test(n) && /\bline 3\b/.test(n)), JSON.stringify(n3));
 }
 
 console.log(passed + '/' + (passed + failed) + ' PASS');

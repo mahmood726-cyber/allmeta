@@ -35300,74 +35300,126 @@ function parseDelimited(text, delimiter) {
  // branch (/[^\t]+/g) dropped empty fields and shifted the next value left; headers were split on the bare delimiter;
  // "" was not unescaped; a quoted field spanning lines became two rows; parseFloat read "1.5abc" as 1.5 and a quoted
  // "11,148881" as 11. This is an RFC 4180 reader: quoted fields may hold the delimiter, "" and line breaks.
+ // IPD-Left (review of PR #535): a file the reader cannot read unambiguously is REFUSED with the line, never loaded
+ // silently -- an unterminated quote, a row whose field count differs from the header, duplicate column names, and a
+ // delimiter that comma and semicolon fit equally well. Every message names a physical line of the file.
  text = String(text == null ? '' : text);
  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
- const records = [];
- // firstOnly: stop after the first non-blank record (used to detect the delimiter with the same quote-state scan)
- const readAll = (delim, firstOnly) => {
+ const warnings = [];
+ let lineBase = 0;
+ // Excel writes "sep=;" (or "sep=,") as a first line to name the delimiter; it was read as the header. Honour it.
+ const sepHint = text.match(/^sep=(.)[ \t]*(\r\n|\n|\r|$)/i);
+ if (sepHint) {
+  text = text.slice(sepHint[0].length); lineBase = 1;
+  delimiter = sepHint[1];
+  warnings.push('The first line "sep=' + sepHint[1] + '" is an Excel delimiter hint: it was used as the delimiter and not read as data.');
+ }
+ const delimName = (d) => d === ',' ? 'comma' : d === ';' ? 'semicolon' : d === '\t' ? 'tab' : JSON.stringify(d);
+ // readAll(delim, maxRecords): records (arrays of {v, q}), each with .line = the file line it starts on; out.malformed
+ // counts text after a closing quote or a quote inside an unquoted field (used only to choose the delimiter).
+ const readAll = (delim, maxRecords) => {
   const out = [];
-  let row = [], field = '', quoted = false, wasQuoted = false, i = 0;
-  // line = physical line of text[i] (1-based); quoteLine = line on which the open quoted field started
-  let line = 1, quoteLine = 0;
-  const endField = () => { row.push({ v: field, q: wasQuoted }); field = ''; wasQuoted = false; };
-  const endRow = () => { endField(); out.push(row); row = []; };
+  out.malformed = 0;
+  let row = [], field = '', quoted = false, wasQuoted = false, closed = false, i = 0, kept = 0;
+  // line = physical file line of text[i]; quoteLine = line on which the open quoted field started
+  let line = 1 + lineBase, quoteLine = 0, rowLine = line;
+  const endField = () => { row.push({ v: field, q: wasQuoted }); field = ''; wasQuoted = false; closed = false; };
+  const endRow = () => {
+   endField(); row.line = rowLine;
+   // blank lines (and the empty record after a trailing newline) are not data
+   if (row.some(f => f.q || f.v.trim() !== '')) { out.push(row); kept++; }
+   row = [];
+  };
   while (i < text.length) {
    const ch = text[i];
    if (quoted) {
     if (ch === '"') {
      if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
-     quoted = false; i++; continue;
+     quoted = false; closed = true; i++; continue;
     }
     if (ch === '\n' || (ch === '\r' && text[i + 1] !== '\n')) line++;
     field += ch; i++; continue;
    }
-   if (ch === '"' && field.trim() === '') { field = ''; quoted = true; wasQuoted = true; quoteLine = line; i++; continue; }
+   if (ch === '"' && field.trim() === '' && !closed) { field = ''; quoted = true; wasQuoted = true; quoteLine = line; i++; continue; }
    if (ch === delim) { endField(); i++; continue; }
    if (ch === '\r' || ch === '\n') {
-    endRow(); line++; i += (ch === '\r' && text[i + 1] === '\n') ? 2 : 1;
-    if (firstOnly && out[out.length - 1].some(f => f.q || f.v.trim() !== '')) return [out[out.length - 1]];
+    endRow(); line++; rowLine = line; i += (ch === '\r' && text[i + 1] === '\n') ? 2 : 1;
+    if (maxRecords && kept >= maxRecords) return out;
     continue;
    }
+   if (ch === '"' || (closed && ch.trim() !== '')) out.malformed++;
    field += ch; i++;
   }
   // IPD-CSV fix: a quote that is never closed kept the reader inside one field to the end of the text, so every later
   // row was swallowed into that field without any message. Refuse the file instead, naming the line.
   if (quoted) throw new Error('unterminated quoted field: the double quote opened on line ' + quoteLine + ' is never closed, so the file cannot be read from line ' + quoteLine + ' on. Close or remove that quote and load the file again.');
   if (field !== '' || wasQuoted || row.length) endRow();
-  // blank lines (and the empty record after a trailing newline) are not data
-  return out.filter(r => r.some(f => f.q || f.v.trim() !== ''));
+  return out;
  };
  if (delimiter === undefined || delimiter === null || delimiter === '') {
-  // Detect the delimiter from the header record (outside quotes): comma, semicolon or tab, whichever separates most
-  // fields. IPD-Left fix: this read only the first PHYSICAL line, so a quoted header field holding a line break was cut
-  // before its closing quote, the comma inside it was counted, and a semicolon file was read as one column. Each
-  // candidate now reads the first logical record with the same quote-state scan as the data (an unterminated quote
-  // scores -1 here and is refused, with its line, by the full read below).
-  const count = (d) => { try { const rec = readAll(d, true)[0]; return rec ? rec.length - 1 : 0; } catch (e) { return -1; } };
+  // Detect the delimiter: comma, semicolon or tab. IPD-Left fix: this read only the first PHYSICAL line, so a quoted
+  // header field holding a line break was cut before its closing quote and the comma inside it was counted; and a tie
+  // (comma and semicolon one each: "Study, year";"log OR, adj") kept comma, garbling the headers silently. Each
+  // candidate now reads the first records with the same quote-state scan as the data and is scored on, in order:
+  // well-formed quoting, rows with the header's field count, then fields in the header. A tie on all three is refused.
+  const scores = [',', ';', '\t'].map(d => {
+   try {
+    const recs = readAll(d, 6);
+    if (!recs.length) return null;
+    const n = recs[0].length;
+    return { d, n, bad: recs.malformed, cons: recs.slice(1).filter(r => r.length === n).length };
+   } catch (e) { return null; }   // an unterminated quote: refused, with its line, by the full read below
+  }).filter(s => s && s.n > 1);
   delimiter = ',';
-  [';', '\t'].forEach(d => { if (count(d) > count(delimiter)) delimiter = d; });
+  if (scores.length) {
+   scores.sort((a, b) => (a.bad - b.bad) || (b.cons - a.cons) || (b.n - a.n));
+   const best = scores[0], next = scores[1];
+   if (next && next.bad === best.bad && next.cons === best.cons && next.n === best.n)
+    throw new Error('cannot tell the delimiter: ' + delimName(best.d) + ' and ' + delimName(next.d) + ' both split the first rows into ' + best.n + ' fields. Save the file with a single delimiter, or add a first line "sep=;" (or "sep=,") naming it.');
+   delimiter = best.d;
+  }
  }
- records.push(...readAll(delimiter));
- const warnings = [];
+ // IPD-Left fix: records.push(...readAll()) passed every row as a call argument and overflowed the call stack above
+ // ~120-150k rows ("Maximum call stack size exceeded"); the array is now used as returned.
+ const records = readAll(delimiter);
  if (!records.length) return { headers: [], data: [], delimiter, warnings };
  const headers = records[0].map(f => f.v.trim());
+ const hLine = records[0].line;
+ const seen = new Set(), dup = [];
+ headers.forEach(h => { if (seen.has(h) && !dup.includes(h)) dup.push(h); seen.add(h); });
+ if (dup.length) throw new Error('duplicate column name' + (dup.length > 1 ? 's ' : ' ') + dup.map(h => JSON.stringify(h)).join(', ') + ' in the header (line ' + hLine + '): a later column would overwrite the earlier one. Give each column its own name and load the file again.');
  const numRe = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
  const decComma = /^[+-]?(\d+,\d*|,\d+)([eE][+-]?\d+)?$/;
  const commaCols = new Set();
  const data = [];
+ const K = headers.length;
  for (let r = 1; r < records.length; r++) {
   const rec = records[r];
+  if (rec.length !== K) {
+   let hint = '';
+   if (delimiter === ',' && rec.length > K) {
+    for (let j = 0; j + 1 < rec.length; j++) {
+     if (!rec[j].q && !rec[j + 1].q && /^[+\-−]?\d+$/.test(rec[j].v.trim()) && /^\d+([eE][+\-−]?\d+)?$/.test(rec[j + 1].v.trim())) {
+      hint = ' "' + rec[j].v.trim() + ',' + rec[j + 1].v.trim() + '" looks like a number with a decimal comma in a comma-delimited file; save the file with a semicolon delimiter, or with decimal points.';
+      break;
+     }
+    }
+   }
+   throw new Error('line ' + rec.line + ' has ' + rec.length + ' field' + (rec.length === 1 ? '' : 's') + ' but the header (line ' + hLine + ') has ' + K + ' (' + delimName(delimiter) + '-delimited), so its values cannot be matched to columns.' + hint + ' Correct that row and load the file again.');
+  }
   const row = {};
-  headers.forEach((h, j) => {
-   const val = rec[j] ? rec[j].v.trim() : '';
-   if (numRe.test(val)) row[h] = Number(val);
-   else if (decComma.test(val)) {
+  for (let j = 0; j < K; j++) {
+   const h = headers[j];
+   const val = rec[j].v.trim();
+   const num = val.indexOf('−') >= 0 ? val.replace(/−/g, '-') : val;   // U+2212 MINUS SIGN is a minus
+   if (numRe.test(num)) row[h] = Number(num);
+   else if (decComma.test(num)) {
     // Decimal comma: unambiguous when the comma is not the delimiter (semicolon/tab files); in a comma file
     // "11,148881" could be a thousands separator, so it stays text and the user is told.
-    if (delimiter !== ',') row[h] = Number(val.replace(',', '.'));
+    if (delimiter !== ',') row[h] = Number(num.replace(',', '.'));
     else { row[h] = val; commaCols.add(h); }
    } else row[h] = val;
-  });
+  }
   data.push(row);
  }
  if (commaCols.size) warnings.push('Column(s) ' + [...commaCols].join(', ') + ' hold values with a decimal comma in a comma-delimited file; they were kept as text, not read as numbers. Save the file with a semicolon delimiter, or with decimal points.');
