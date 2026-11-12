@@ -7228,6 +7228,7 @@ S4,DrugC,35,1.02,0.16`;
     covariateMean: NaN,
     covariateBeta: NaN,
     tau2ByTreatment: {},
+    tau2NotEstimable: [],
     globalTau2: NaN,
     globalI2: NaN,
     globalH2: NaN,
@@ -8227,7 +8228,10 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     return null;
   }
 
-  function residualTau2(y, v, Xin, method) {
+  // info (optional): info.notEstimable is set when the value returned is not an estimate --
+  // 'k <= p' (no residual degrees of freedom: 0 is returned, i.e. fixed-effect weights, as metafor would refuse the fit)
+  // or 'no root bracketed' (NaN is returned).
+  function residualTau2(y, v, Xin, method, info) {
     const k = y.length;
     // independent columns (modified Gram-Schmidt on the unweighted columns, relative tolerance)
     const cols = [];
@@ -8243,7 +8247,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       if (nr > 1e-7 * norm0) { basis.push(r.map(x => x / nr)); cols.push(j); }
     }
     const p = cols.length;
-    if (k <= p) return 0;
+    if (k <= p) { if (info) info.notEstimable = 'k <= p'; return 0; }
     const X = Xin.map(r => cols.map(j => r[j]));
     const projQ = t2 => {          // returns { P, Py } for weights 1/(v + t2)
       const w = v.map(vi => 1 / (vi + t2));
@@ -8264,10 +8268,14 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     const rss = t2 => { const { Py } = projQ(t2); return Py.reduce((a, b, i) => a + b * y[i], 0); };
     const trace = P => P.reduce((a, r, i) => a + r[i], 0);
     const dl = () => { const { P, Py } = projQ(0); const q = Py.reduce((a, b, i) => a + b * y[i], 0); return Math.max(0, (q - (k - p)) / trace(P)); };
+    // root searches double the upper bound until the sign changes (y'P(t)y and the REML score fall to 0 and
+    // below as t grows, so a bracket exists for finite data); without a sign change there is no estimate
+    const noRoot = () => { if (info) info.notEstimable = 'no root bracketed'; return NaN; };
     const rootQ = () => {            // PM / EB: y'P(t2)y = k - p
       if (rss(0) <= k - p) return 0;
       let lo = 0; let hi = 1;
-      while (rss(hi) > k - p && hi < 1e12) hi *= 2;
+      while (rss(hi) > k - p && hi < 1e300) hi *= 2;
+      if (!(rss(hi) <= k - p)) return noRoot();
       for (let it = 0; it < 400 && hi - lo > 1e-16 * Math.max(1, hi); it += 1) { const mid = (lo + hi) / 2; if (rss(mid) > k - p) lo = mid; else hi = mid; }
       return (lo + hi) / 2;
     };
@@ -8283,7 +8291,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const score = t2 => { const { P, Py } = projQ(t2); return Py.reduce((a, b) => a + b * b, 0) - trace(P); };
       if (score(0) <= 0) return 0;
       let lo = 0; let hi = 1;
-      while (score(hi) > 0 && hi < 1e12) hi *= 2;
+      while (score(hi) > 0 && hi < 1e300) hi *= 2;
+      if (!(score(hi) <= 0)) return noRoot();
       for (let it = 0; it < 400 && hi - lo > 1e-16 * Math.max(1, hi); it += 1) { const mid = (lo + hi) / 2; if (score(mid) > 0) lo = mid; else hi = mid; }
       return (lo + hi) / 2;
     }
@@ -8366,6 +8375,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     };
 
     const tau2ByTreatment = {};
+    const tau2NotEstimable = [];
     let totalTau2 = 0;
     let totalN = 0;
     let totalQ = 0;
@@ -8386,7 +8396,9 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       let tau2 = 0;
       if (entry.xs.every(x => Array.isArray(x))) {
         // linear dose-response models: residual heterogeneity with the method the user selected
-        tau2 = residualTau2(entry.ys, entry.vars, entry.xs, tau2Method);
+        const info = {};
+        tau2 = residualTau2(entry.ys, entry.vars, entry.xs, tau2Method, info);
+        if (info.notEstimable) { tau2NotEstimable.push(treatment); if (!Number.isFinite(tau2)) tau2 = 0; }   // fixed-effect weights
       } else if (tau2Method === "pm") {
         tau2 = computePauleMandel(entry.vars, entry.resids, df);
       } else {
@@ -8400,7 +8412,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     const globalTau2 = totalN ? totalTau2 / totalN : NaN;
     const i2 = totalQ > totalDf ? (totalQ - totalDf) / totalQ : 0;
     const h2 = totalDf ? totalQ / totalDf : NaN;
-    return { tau2ByTreatment, globalTau2, i2, h2, totalQ, totalDf };
+    return { tau2ByTreatment, tau2NotEstimable, globalTau2, i2, h2, totalQ, totalDf };
   }
 
   // Fixed-effect linear dose-response models: the alternating sweeps converge (slowly) to the joint weighted
@@ -8469,6 +8481,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     let covariateBeta = NaN;
     let covariateMean = NaN;
     let tau2ByTreatment = {};
+    let tau2NotEstimable = [];
     let globalTau2 = NaN;
     let globalI2 = NaN;
     let globalH2 = NaN;
@@ -8499,6 +8512,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         tau2Method
       });
       tau2ByTreatment = tau2Result.tau2ByTreatment;
+      tau2NotEstimable = tau2Result.tau2NotEstimable || [];
       globalTau2 = tau2Result.globalTau2;
       globalI2 = tau2Result.i2;
       globalH2 = tau2Result.h2;
@@ -8540,6 +8554,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       covariateBeta,
       covariateMean,
       tau2ByTreatment,
+      tau2NotEstimable,
       globalTau2,
       globalI2,
       globalH2,
@@ -10248,7 +10263,9 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     dom.diagDf.textContent = formatNumber(totalDf);
     dom.diagI2.textContent = formatProbability(i2);
     dom.diagDispersion.textContent = formatNumber(dispersion);
-    dom.diagTau2.textContent = formatNumber(state.globalTau2);
+    const notEst = state.randomEffects && Array.isArray(state.tau2NotEstimable) ? state.tau2NotEstimable : [];
+    dom.diagTau2.textContent = formatNumber(state.globalTau2) +
+      (notEst.length ? ` (not estimable for ${notEst.join(', ')}: no residual df or no root; fixed-effect weights)` : '');
     dom.diagH2.textContent = formatNumber(state.globalH2);
     dom.diagRmse.textContent = formatNumber(meanRmse);
     dom.diagR2.textContent = formatNumber(meanR2);
@@ -10955,6 +10972,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     state.covariateBeta = networkResult.covariateBeta;
     state.covariateMean = networkResult.covariateMean;
     state.tau2ByTreatment = networkResult.tau2ByTreatment || {};
+    state.tau2NotEstimable = networkResult.tau2NotEstimable || [];
     state.globalTau2 = networkResult.globalTau2;
     state.globalI2 = networkResult.globalI2;
     state.globalH2 = networkResult.globalH2;

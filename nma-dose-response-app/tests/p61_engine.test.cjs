@@ -170,3 +170,35 @@ test('sigmoid Emax: the profile grid start reaches the bounded minimum for a tre
   const f = api.fitModel(pts, 'hill');
   assert.ok(f.sse <= 1.96409943 * (1 + 1e-6), `SSE ${f.sse} above the R minimum 1.96409943`);
 });
+
+test('residual heterogeneity: PM/EB and REML roots beyond 1e12 are bracketed, not cut at the search cap', async () => {
+  const { api } = await run({ model: 'log_linear' });
+  // intercept only, y = (-1e7, 1e7), v = (1, 1): y'P(t)y = 2e14 / (1 + t) = k - p = 1 and the REML score
+  // 2e14 / (1 + t)^2 - 1 / (1 + t) = 0 both have the root t = 2e14 - 1 (metafor uses an unbounded search)
+  for (const m of ['pm', 'eb', 'reml']) {
+    const t2 = api.residualTau2([-1e7, 1e7], [1, 1], [[1], [1]], m);
+    assert.ok(Math.abs(t2 - (2e14 - 1)) <= 1e-9 * 2e14, `${m}: ${t2}`);
+  }
+});
+
+test('residual heterogeneity: with k <= p the value 0 is flagged as not estimable', async () => {
+  const { api } = await run({ model: 'log_linear' });
+  // two observations, intercept + slope: no residual degrees of freedom (metafor refuses the fit)
+  const info = {};
+  const t2 = api.residualTau2([0.1, 0.5], [0.01, 0.02], [[1, 1], [1, 2]], 'reml', info);
+  assert.strictEqual(t2, 0, 'value kept at 0 (fixed-effect weights), as the pre-registered P61 oracle');
+  assert.strictEqual(info.notEstimable, 'k <= p', `info ${JSON.stringify(info)}`);
+  const info2 = {};
+  api.residualTau2([0.1, 0.5, 0.2], [0.01, 0.02, 0.03], [[1, 1], [1, 2], [1, 3]], 'reml', info2);
+  assert.ok(!info2.notEstimable, 'k > p is estimable');
+});
+
+test('network fit: a treatment whose residual heterogeneity is not estimable is named', async () => {
+  // E has two doses, so log-linear with a free baseline (intercept + slope) leaves no residual df for E
+  // (the diagnostics panel names it; the Node page stub has no #diagTau2 element, so that is checked in a browser)
+  const csv = CSV + '\nS6,Placebo,0,0.00,0.10\nS6,E,10,0.30,0.12\nS7,Placebo,0,0.03,0.10\nS7,E,20,0.45,0.12';
+  const { api } = await run({ model: 'log_linear', fb: true, tau2: 'reml' }, csv);
+  assert.ok(api.state.fits.E, 'E must be fitted');
+  assert.deepStrictEqual(Array.from(api.state.tau2NotEstimable || []), ['E'], `tau2NotEstimable ${JSON.stringify(api.state.tau2NotEstimable)}`);
+  assert.strictEqual(api.state.tau2ByTreatment.E, 0, 'E keeps fixed-effect weights (tau2 0)');
+});
