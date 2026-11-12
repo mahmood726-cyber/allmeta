@@ -121,9 +121,10 @@ describe('upper-tail p-values agree with R lower.tail = FALSE', () => {
 });
 
 describe('zero residual df: heterogeneity p stays 1, as before the AlmTail change (metafor QEp = 1)', () => {
-    // AlmTail.pchisqUpper returns NaN for df <= 0. Where a statistic has no residual df the statistic is
-    // identically 0 and R gives pchisq(0, 0, lower.tail = FALSE) = 1 (metafor: QEp = 1 for a saturated
-    // model; netmeta: pval.Q = NA). Each page showed 1 here before the AlmTail change (Codex review of #515).
+    // Where a statistic has no residual df it is identically 0 up to rounding (QBetween for one study is
+    // 1.9e-32). AlmTail.pchisqUpper now follows R at df = 0 (1 for x = 0, but 0 for x > 0), so rounding
+    // noise would read p = 0; each site therefore keeps p = 1, as metafor reports QEp = 1 for a saturated
+    // model (netmeta: pval.Q = NA). Each page showed 1 here before the AlmTail change (Codex review of #515).
     test('NetworkMetaAnalysis: saturated tree network (A-B, B-C), Q = 0 on 0 df -> p = 1, not NaN', () => {
         const { NetworkMetaAnalysis } = loadEngine('nma.js');
         const nma = new NetworkMetaAnalysis({ model: 'fixed', seed: 1 });
@@ -162,6 +163,25 @@ describe('zero residual df: heterogeneity p stays 1, as before the AlmTail chang
             { betaExposure: 1, seBetaExposure: 0.01, betaOutcome: -0.5, seBetaOutcome: 0.02 }];
         const r = new MendelianRandomizationMA().mrPresso(d, { nDistributions: 200 });
         expect(r.outlierTest.outlierIndices).toEqual([0]);   // main (before AlmTail): [0]
+    });
+
+    test('MetaAnalysisMethods.metaRegression: saturated categorical moderator (k = 3, 3 levels) -> residual p = 1, not 0', () => {
+        const { MetaAnalysisMethods } = loadEngine('metaMethods.js');
+        const st = [{ effect: 0.1, se: 0.11, n: 50, g: 'a' }, { effect: 0.35, se: 0.13, n: 50, g: 'b' }, { effect: -0.2, se: 0.17, n: 50, g: 'c' }];
+        const f = new MetaAnalysisMethods().metaRegression(st, [{ name: 'g', type: 'categorical' }]).modelFit;
+        expect(f.dfResidual).toBe(0);
+        expect(f.QResidual).toBeLessThan(1e-20);   // 6.1e-32: rounding noise, not evidence
+        expect(f.pValueResidual).toBe(1);          // metafor QEp = 1 (was NaN; R pchisq(6.1e-32, 0) would say 0)
+    });
+
+    test('MetaAnalysisMethods.metaRegression: a categorical moderator with one level -> model p = 1, not 0', () => {
+        const { MetaAnalysisMethods } = loadEngine('metaMethods.js');
+        const st = [{ effect: 0.1, se: 0.11, n: 50, g: 'a' }, { effect: 0.35, se: 0.13, n: 50, g: 'a' }, { effect: -0.2, se: 0.17, n: 50, g: 'a' }];
+        const f = new MetaAnalysisMethods().metaRegression(st, [{ name: 'g', type: 'categorical' }]).modelFit;
+        expect(f.dfModel).toBe(0);
+        expect(f.QModel).toBeLessThan(1e-20);      // 8.6e-33
+        expect(f.pValueModel).toBe(1);
+        expect(f.pValueResidual).toBeCloseTo(0.3466962326620566, 12);   // df > 0 path unchanged
     });
 });
 

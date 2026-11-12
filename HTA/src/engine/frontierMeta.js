@@ -2764,7 +2764,7 @@ class MendelianRandomizationMA {
                 heterogeneity: {
                     Q,
                     df,
-                    // df = 0 (no residual df, one instrument, Q identically 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1, metafor QEp = 1. AlmTail returns NaN for df <= 0.
+                    // df = 0 (no residual df, one instrument, Q identically 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1, metafor QEp = 1. AlmTail (as R) gives 0 for rounding noise > 0 at df = 0, hence the guard.
                     pValue: df > 0 ? AlmTail.pchisqUpper(Q, df) : 1,
                     I2: Math.max(0, (Q - df) / Q * 100)
                 }
@@ -2943,7 +2943,7 @@ class MendelianRandomizationMA {
                 // Test if removing this SNP significantly reduces Q
                 const testData = data.filter((_, i) => i !== contrib.index);
                 const testIVW = this.ivw(testData, { fixedEffects: false });
-                // One instrument left (df = 0): p = 1 as before, so the outlier is still flagged (NaN > threshold is false).
+                // One instrument left (df = 0): p = 1 as before, so the outlier is still flagged (a NaN or noise-driven p would drop the flag).
                 const testPValue = testData.length > 1 ? AlmTail.pchisqUpper(testIVW.heterogeneity.Q, testData.length - 1) : 1;
 
                 if (testPValue > significanceThreshold) {

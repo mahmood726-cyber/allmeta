@@ -21620,7 +21620,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         df += 1;
       }
 
-      // No closed loop (df = 0, Q = 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1. AlmTail returns NaN for df <= 0.
+      // No closed loop (df = 0, Q = 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1. AlmTail (as R) gives 0 for rounding noise > 0 at df = 0, hence the guard.
       const pValue = df > 0 ? AlmTail.pchisqUpper(Q, df) : 1;
 
       return { Q, df, pValue };
@@ -21639,7 +21639,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     _combineIncoherence(loop, splitNode, sideSplit) {
       const totalQ = loop.Q + splitNode.Q + sideSplit.Q;
       const totalDf = loop.df + splitNode.df + sideSplit.df;
-      // No closed loop (df = 0, Q = 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1. AlmTail returns NaN for df <= 0.
+      // No closed loop (df = 0, Q = 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1. AlmTail (as R) gives 0 for rounding noise > 0 at df = 0, hence the guard.
       const pValue = totalDf > 0 ? AlmTail.pchisqUpper(totalQ, totalDf) : 1;
 
       return { Q: totalQ, df: totalDf, pValue };

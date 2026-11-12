@@ -34,7 +34,7 @@ def test_design_by_treatment_p_for_large_q_is_not_one():
 def test_incoherence_with_no_loop_keeps_p_one():
     # Tree network: no closed loop, Q = 0 on 0 df. The page showed p = 1 before the AlmTail change
     # (StatUtils.chiSquareCDF returned 0 for df <= 0); R pchisq(0, 0, lower.tail = FALSE) = 1.
-    # AlmTail.pchisqUpper returns NaN for df <= 0, so the call sites must keep the df = 0 guard.
+    # AlmTail.pchisqUpper follows R at df = 0 (0 for any x > 0, incl. rounding noise), so the call sites keep the df = 0 guard.
     v = _run_harness()['incoherence_tree']
     for part in ('loop', 'overall'):
         assert v[part]['Q'] == 0 and v[part]['df'] == 0, v

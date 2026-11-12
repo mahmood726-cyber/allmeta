@@ -1629,7 +1629,7 @@ class AdvancedMetaAnalysis {
             }
             df += studyData.length - 1;
         }
-        // df = 0 (no residual df, statistic identically 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1, metafor QEp = 1. AlmTail returns NaN for df <= 0.
+        // df = 0 (no residual df, statistic identically 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1, metafor QEp = 1. AlmTail (as R) gives 0 for rounding noise > 0 at df = 0, hence the guard.
         return { Q, df, pValue: df > 0 ? AlmTail.pchisqUpper(Q, df) : 1 };
     }
 
@@ -1642,7 +1642,7 @@ class AdvancedMetaAnalysis {
             const studyVar = studyData.reduce((s, d) => s + d[opts.viVar], 0) / studyData.length;
             Q += Math.pow(studyMean - mu, 2) / studyVar;
         }
-        // df = 0 (no residual df, statistic identically 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1, metafor QEp = 1. AlmTail returns NaN for df <= 0.
+        // df = 0 (no residual df, statistic identically 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1, metafor QEp = 1. AlmTail (as R) gives 0 for rounding noise > 0 at df = 0, hence the guard.
         return { Q, df, pValue: df > 0 ? AlmTail.pchisqUpper(Q, df) : 1 };
     }
 

@@ -37,5 +37,9 @@ const re = get('calculatePooledEstimate')(yi, vi, 0.002);
 const hk = get('calculateHKSJ')(yi, vi, re.theta, 0.002);
 const het = get('calculateHeterogeneity')(yi, vi, 0.002);
 const small = get('calculatePooledEstimate')([0.1, 0.25, 0.05], [0.02, 0.03, 0.025], 0);
+// zero df: one study (Q = 1.75e-32, rounding noise) and a saturated meta-regression (k = 2, one covariate)
+const het1 = get('calculateHeterogeneity')([0.1], [0.011], 0);
+const mr = get('multipleMetaRegression')([0.1, 0.35], [0.011, 0.021], [{ name: 'x', values: [-0.7, 0.33] }], 0);
 process.stdout.write(JSON.stringify({ fe: { z: fe.z, p: fe.p_value }, small: { z: small.z, p: small.p_value },
-  hksj: { t: hk.t_stat, df: hk.df, p: hk.p_value }, het: { Q: het.Q, df: yi.length - 1, p: het.p_Q } }));
+  hksj: { t: hk.t_stat, df: hk.df, p: hk.p_value }, het: { Q: het.Q, df: yi.length - 1, p: het.p_Q },
+  het_k1: { Q: het1.Q, df: het1.df, p: het1.p_Q }, mr_sat: { Q: mr.Q_residual, df: mr.df_residual, p: mr.p_residual } }));
