@@ -241,13 +241,10 @@
     function startValues(te, se, methodTau) {
       var eg = CC.eggerEstimate(te, se);
       var rho0 = Math.sign(eg) === 1 ? 0.9999 / 2 : -0.9999 / 2;
-      if (methodTau === 'DL') {
-        var vi = se.map(function (s) { return s * s; });
-        var fit = MaCore.pool(te, vi, { method: 'DL' });
-        return { TE_random: fit.mu, seTE_random: fit.se, tau: Math.sqrt(fit.tau2),
-                 tau2: fit.tau2, egger: eg, rho0: rho0, converged: true };
-      }
-      var r = CC.metaforREML(te, se);
+      // Both are metafor's own arithmetic (CC.metaforDL / CC.metaforREML), so
+      // the start is metagen()'s to the last bit and R's L-BFGS-B starts where
+      // metasens starts (copas/tests/copas-core-start.test.mjs).
+      var r = methodTau === 'DL' ? CC.metaforDL(te, se) : CC.metaforREML(te, se);
       return { TE_random: r.TE_random, seTE_random: r.seTE_random, tau: r.tau,
                tau2: r.tau2, egger: eg, rho0: rho0, converged: r.converged };
     }

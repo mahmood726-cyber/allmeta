@@ -175,6 +175,82 @@
     return hi + lo;
   }
 
+  // R's sum() EXACTLY, for the places where its last bit decides what follows
+  // (the optimiser's start values -- see metaforTau2Exact). R accumulates in
+  // the x87 80-bit long double: each partial sum is rounded to a 64-bit
+  // significand (round half to even), the total once more to double. Emulated
+  // exactly with BigInt: every double is an integer multiple of 2^-1074, so the
+  // running sum is held as that integer and rounded to 64 significant bits after
+  // each addition. Checked against R 4.6.0 sum() and colMeans() on 3,000
+  // adversarial vectors (cancellation, 1e-8..1e8 magnitudes): 3,000 / 3,000
+  // identical, where rsum() above agreed on 2,267. It costs a BigInt operation
+  // per element, so it is used for the O(k) start-value sums, not inside the
+  // likelihood. Non-finite input falls back to an ordinary sum (R's Inf/NaN).
+  var LD_DV = (typeof DataView === "function") ? new DataView(new ArrayBuffer(8)) : null;
+  var HAS_BIGINT = typeof BigInt === "function" && LD_DV !== null;
+  function ldToFix(x) {
+    LD_DV.setFloat64(0, x);
+    var hi = LD_DV.getUint32(0), lo = LD_DV.getUint32(4);
+    var e = (hi >>> 20) & 0x7ff;
+    var m = BigInt(hi & 0xfffff) * BigInt(4294967296) + BigInt(lo);
+    var v = e === 0 ? m : (m + BigInt(4503599627370496)) * (BigInt(1) << BigInt(e - 1));
+    return (hi >>> 31) ? -v : v;
+  }
+  function ldBitlen(a) {            // a > 0
+    var h = a.toString(16);
+    return 4 * (h.length - 1) + (parseInt(h[0], 16).toString(2).length);
+  }
+  function ldRound(v, bits) {      // round to `bits` significant bits, half to even
+    var Z = BigInt(0), one = BigInt(1);
+    if (v === Z) return v;
+    var neg = v < Z, a = neg ? -v : v, L = ldBitlen(a);
+    if (L <= bits) return v;
+    var sh = BigInt(L - bits), q = a >> sh, r = a - (q << sh), half = one << (sh - one);
+    if (r > half || (r === half && (q & one) === one)) q = q + one;
+    a = q << sh;
+    return neg ? -a : a;
+  }
+  function ldFixToDouble(v) {
+    var Z = BigInt(0);
+    v = ldRound(v, 53);
+    if (v === Z) return 0;
+    var neg = v < Z, a = neg ? -v : v, L = ldBitlen(a), sh = L > 53 ? L - 53 : 0;
+    var d = Number(a >> BigInt(sh)) * mPow(2, sh - 1074);
+    return neg ? -d : d;
+  }
+  function ldAccumulate(a) {       // the rounded 64-bit-significand running sum, or null
+    var s = BigInt(0);
+    for (var i = 0; i < a.length; i++) {
+      if (!isFin(a[i])) return null;
+      s = ldRound(s + ldToFix(a[i]), 64);
+    }
+    return s;
+  }
+  function plainSum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
+  // base::sum(x) for a double vector.
+  function ldsum(a) {
+    if (!HAS_BIGINT) return rsum(a);
+    var s = ldAccumulate(a);
+    return s === null ? plainSum(a) : ldFixToDouble(s);
+  }
+  // base::colMeans() of one column: long-double sum, divided by n IN long
+  // double (rounded to 64 bits), then rounded to double -- a double rounding
+  // that a double division does not reproduce.
+  function ldmean(a) {
+    if (!HAS_BIGINT) return rsum(a) / a.length;
+    var s = ldAccumulate(a);
+    if (s === null) return plainSum(a) / a.length;
+    var Z = BigInt(0), one = BigInt(1);
+    if (s === Z) return 0;
+    var neg = s < Z, x = neg ? -s : s, n = BigInt(a.length), SC = BigInt(200);
+    var num = x << SC, q = num / n, r = num - q * n;          // q in units of 2^-(1074+200)
+    var sh = BigInt(ldBitlen(q) - 64), qq = q >> sh, rem = q - (qq << sh), half = one << (sh - one);
+    if (rem > half || (rem === half && (r > Z || (qq & one) === one))) qq = qq + one;
+    var v = ldRound(qq << sh, 53) >> SC;
+    var d = ldFixToDouble(v);
+    return neg ? -d : d;
+  }
+
   // Wichura AS 241 — the algorithm R's qnorm uses; ~1e-16 relative.
   function qnorm(p) {
     if (!(p > 0) || !(p < 1)) return p <= 0 ? -Infinity : Infinity;
@@ -1891,6 +1967,199 @@
     return optimLBFGSB(fn, gr, start, lower, upper);
   }
 
+  /* ------------------- metagen()'s start values, bit for bit (k <= 250) */
+  // metasens starts every profile fit at c(TE.random, rho0, tau), and R's
+  // L-BFGS-B, given a start a few ulps away, takes a different path and stops
+  // (factr = 1e7) somewhere else. That -- not the likelihood, not the optimiser
+  // -- was the cause of every Tier-O failure in the validation archive (12 grid
+  // points in 4 configurations, page objective above metasens's by up to 1.5e-6
+  // at dat.raudenbush1985 C1 [370]); from R's own start all 12 are no worse.
+  // So the start is reproduced as R computes it, not as the algebra says:
+  //
+  //   metafor 5.0.1 rma.uni (intercept-only X): ymci = scale(yi) (colMeans: a
+  //   long-double mean); stXWX = .invcalc(X, W) = tcrossprod(qr.solve(sqrt(W)
+  //   %*% X, diag(k))) -- LINPACK dqrdc2 / dqrsl on one column, with LAPACK
+  //   3.12's dnrm2 (Blue's algorithm, mid-range accumulator) and BLAS dsyrk;
+  //   P = W - W X stXWX X'W formed densely; crossprod(Ymc, M) %*% Ymc and
+  //   P %*% P in reference-BLAS dgemv/dgemm loop order; .tr() = sum(diag()).
+  //   DL: tau2 = (RSS - (k - p)) / tr(P). REML: Fisher scoring from the HE
+  //   estimate exactly as rma.uni iterates it, then metafor's ll0check.
+  //   meta 8.5.0 metagen: w = 1/(seTE^2 + tau2); TE.random = weighted.mean(TE, w)
+  //   = sum((TE*w)[w != 0]) / sum(w); seTE.random = sqrt(1/sum(w)); tau = sqrt(tau2).
+  //
+  // Checked against R 4.6.0 on all 92 (input, method) cases of the archive's
+  // corpus, k = 6..1653: tau2, tau, TE.random and seTE.random identical to the
+  // last bit in 92 of 92 (copas/tests/copas-core-start.test.mjs holds the 90
+  // with k <= 120). The REML step needs tr(P P) and Ymc' P P Ymc with P P formed
+  // in dgemm's summation order -- O(k^3) -- so it is used for k <= 250 (well
+  // under a second); above that metaforREML's O(k) closed form (the same
+  // quantities, equal to ~1e-15 relative but not bit-identical) is used.
+  var EXACT_REML_KMAX = 250;
+
+  // LAPACK 3.12 dnrm2.f90 (incx = 1). Only the mid-range accumulator is
+  // reproduced; for |x| outside [2^-511, 2^486] it returns null and the caller
+  // falls back.
+  function dnrm2Mid(x) {
+    var amed = 0, lo = mPow(2, -511), hi = mPow(2, 486);
+    for (var i = 0; i < x.length; i++) {
+      var ax = mAbs(x[i]);
+      if (ax > hi || ax < lo) return null;
+      amed = amed + ax * ax;
+    }
+    return mSqrt(amed);
+  }
+  // metafor:::.invcalc(X = 1, W = diag(w)) -> the 1x1 (X'WX)^-1, as R computes it.
+  function invcalcIntercept(w) {
+    var k = w.length, x = new Array(k), i;
+    for (i = 0; i < k; i++) x[i] = mSqrt(w[i]);           // sqrt(W) %*% X
+    var nrmxl = dnrm2Mid(x);                              // dqrdc2, l = 1
+    if (nrmxl === null || !(nrmxl > 0) || k < 2) return null;
+    if (x[0] !== 0) nrmxl = x[0] < 0 ? -mAbs(nrmxl) : mAbs(nrmxl);
+    var sc = 1.0 / nrmxl;
+    for (i = 0; i < k; i++) x[i] = sc * x[i];             // dscal
+    x[0] = 1.0 + x[0];
+    var qraux = x[0], r11 = -nrmxl, s = 0;
+    for (var j = 0; j < k; j++) {                         // dqrcf: dqrsl(job 100) on e_j
+      var vj = j === 0 ? qraux : x[j];                    // ddot(v, e_j)
+      var t = -vj / qraux;
+      var b = ((j === 0 ? 1 : 0) + t * qraux) / r11;      // daxpy, then b(1)/x(1,1)
+      if (b !== 0) s = s + b * b;                         // dsyrk(U, N): tcrossprod
+    }
+    return s;
+  }
+  // P[i,j] = (i == j ? w_i : 0) - w_j * (s * w_i): metafor's
+  // W - W %*% X %*% stXWX %*% crossprod(X, W), element for element.
+  function pElem(w, s, i, j) { var m = w[j] * (s * w[i]); return (i === j ? w[i] : 0) - m; }
+  // c(crossprod(y, P) %*% y) with P generated on the fly (dgemv T, then dgemv N).
+  function quadP(w, s, y) {
+    var k = y.length, out = 0;
+    for (var j = 0; j < k; j++) {
+      var r = 0;
+      for (var i = 0; i < k; i++) r = r + pElem(w, s, i, j) * y[i];
+      out = out + y[j] * r;
+    }
+    return out;
+  }
+  function diagP(w, s) {
+    var d = new Array(w.length);
+    for (var i = 0; i < w.length; i++) d[i] = pElem(w, s, i, i);
+    return d;
+  }
+
+  // tau^2 as metafor::rma.uni(yi, vi, method) returns it, or null when an input
+  // is outside what is emulated (the caller then falls back).
+  function metaforTau2Exact(TE, vi, method) {
+    var k = TE.length, p = 1, i, j, l;
+    if (!HAS_BIGINT || k < 2) return null;
+    for (i = 0; i < k; i++) if (!(vi[i] > 0) || !isFin(vi[i]) || !isFin(TE[i])) return null;
+    var ybar = ldmean(TE), ymc = new Array(k), w = new Array(k), s;
+    for (i = 0; i < k; i++) ymc[i] = TE[i] - ybar;
+    if (method === "DL") {
+      for (i = 0; i < k; i++) w[i] = 1 / vi[i];
+      s = invcalcIntercept(w);
+      if (s === null) return null;
+      var tauDL = (quadP(w, s, ymc) - (k - p)) / ldsum(diagP(w, s));
+      return { tau2: mMax(0, tauDL), iterations: 0, converged: true };
+    }
+    // REML. HE start: P = I - X tcrossprod(stXX, X), tr(P %*% diag(vi)).
+    for (i = 0; i < k; i++) w[i] = 1;
+    var sI = invcalcIntercept(w);
+    if (sI === null) return null;
+    var rss0 = 0;
+    for (j = 0; j < k; j++) {
+      var r0 = 0;
+      for (i = 0; i < k; i++) r0 = r0 + ((i === j ? 1 : 0) - sI) * ymc[i];
+      rss0 = rss0 + ymc[j] * r0;
+    }
+    var dpv = new Array(k);
+    for (i = 0; i < k; i++) dpv[i] = vi[i] * (1 - sI);
+    var tau2 = (rss0 - ldsum(dpv)) / (k - p);
+    tau2 = mMax(0, tau2, 0);                              // max(0, tau2, tau2.min)
+    var threshold = 1e-5, maxiter = 100, iter = 0, change = threshold + 1, conv = true;
+    var P = new Float64Array(k * k), col = new Float64Array(k), dPP = new Array(k);
+    while (change > threshold) {
+      iter++;
+      var old2 = tau2;
+      for (i = 0; i < k; i++) w[i] = 1 / (vi[i] + tau2);
+      s = invcalcIntercept(w);
+      if (s === null) return null;
+      for (j = 0; j < k; j++) for (i = 0; i < k; i++) P[i + j * k] = pElem(w, s, i, j);
+      // PP = P %*% P column by column in dgemm's order (for j, for l, for i),
+      // folded straight into crossprod(Ymc, PP) %*% Ymc and diag(PP).
+      var yPPy = 0;
+      for (j = 0; j < k; j++) {
+        for (i = 0; i < k; i++) col[i] = 0;
+        for (l = 0; l < k; l++) {
+          var temp = P[l + j * k], ao = l * k;
+          for (i = 0; i < k; i++) col[i] = col[i] + temp * P[ao + i];
+        }
+        var rj = 0;
+        for (i = 0; i < k; i++) rj = rj + col[i] * ymc[i];
+        yPPy = yPPy + ymc[j] * rj;
+        dPP[j] = col[j];
+      }
+      var adj = (yPPy - ldsum(diagP(w, s))) / ldsum(dPP);
+      if (isNan(adj)) adj = 0;
+      if (!isFin(adj)) { conv = false; break; }
+      while (tau2 + adj < 0) adj = adj / 2;
+      tau2 = tau2 + adj;
+      change = mAbs(old2 - tau2);
+      if (iter > maxiter) { conv = false; break; }
+    }
+    if (conv && tau2 > threshold) {
+      // ll0check (con$tol = eps^0.25): a decision, not a reported number.
+      var llAt = function (t2) {
+        var ww = new Array(k), lv = new Array(k), rr = new Array(k), q;
+        for (q = 0; q < k; q++) { ww[q] = 1 / (vi[q] + t2); lv[q] = mLog(vi[q] + t2); }
+        var sw = invcalcIntercept(ww);
+        if (sw === null) return NaN;
+        var beta = 0, swsum = 0;
+        for (q = 0; q < k; q++) { beta = beta + ymc[q] * (sw * ww[q]); swsum = swsum + ww[q]; }
+        for (q = 0; q < k; q++) { var e = ymc[q] - beta; rr[q] = ww[q] * (e * e); }
+        return -1 / 2 * (k - p) * mLog(2 * Math.PI) - 1 / 2 * ldsum(lv) -
+          1 / 2 * mLog(mAbs(swsum)) - 1 / 2 * ldsum(rr);
+      };
+      if (llAt(0) - llAt(tau2) > mPow(DBL_EPSILON, 0.25)) tau2 = 0;
+    }
+    if (!conv) return { tau2: tau2, iterations: iter, converged: false };
+    return { tau2: mMax(0, tau2), iterations: iter, converged: true };
+  }
+  // meta::metagen()'s random-effects pool given tau^2.
+  function metagenPool(TE, seTE, tau2) {
+    var k = TE.length, w = new Array(k), xw = [], i;
+    for (i = 0; i < k; i++) {
+      w[i] = 1 / (seTE[i] * seTE[i] + tau2);
+      if (w[i] !== 0) xw.push(TE[i] * w[i]);
+    }
+    var sw = ldsum(w);
+    return { TE_random: ldsum(xw) / sw, seTE_random: mSqrt(1 / sw), tau: mSqrt(tau2) };
+  }
+  function metaforStart(TE, seTE, method) {
+    var vi = new Array(TE.length);
+    for (var i = 0; i < TE.length; i++) vi[i] = seTE[i] * seTE[i];
+    var t = metaforTau2Exact(TE, vi, method);
+    if (t === null) return null;
+    var m = metagenPool(TE, seTE, t.tau2);
+    return { tau2: t.tau2, tau: m.tau, TE_random: m.TE_random, seTE_random: m.seTE_random,
+             iterations: t.iterations, converged: t.converged, exact: true };
+  }
+  // metagen(..., method.tau = "DL"): metafor's closed-form DerSimonian-Laird
+  // tau^2 in its P-matrix form -- O(k^2), so exact at every k.
+  function metaforDL(TE, seTE) {
+    var r = metaforStart(TE, seTE, "DL");
+    if (r !== null) return r;
+    // Outside the emulated range (BigInt unavailable, an extreme seTE): the
+    // textbook DL estimator, the same quantity to rounding.
+    var k = TE.length, i, sw = 0, swy = 0, sw2 = 0;
+    for (i = 0; i < k; i++) { var wi = 1 / (seTE[i] * seTE[i]); sw += wi; swy += wi * TE[i]; sw2 += wi * wi; }
+    var mu0 = swy / sw, Q = 0;
+    for (i = 0; i < k; i++) Q += (TE[i] - mu0) * (TE[i] - mu0) / (seTE[i] * seTE[i]);
+    var tau2 = mMax(0, (Q - (k - 1)) / (sw - sw2 / sw));
+    var m = metagenPool(TE, seTE, tau2);
+    return { tau2: tau2, tau: m.tau, TE_random: m.TE_random, seTE_random: m.seTE_random,
+             iterations: 0, converged: true, exact: false };
+  }
+
   /* --------------------------------------- metagen()'s REML start values */
   // metasens starts every optimisation at c(TE.random, rho0, tau), and
   // meta::metagen() takes tau^2 from metafor::rma.uni(method = "REML") with
@@ -1906,6 +2175,10 @@
   //   tr(PP) = S2 - 2 S3/S1 + S2^2/S1^2    (Sr = sum of w_i^r).
   // TE.random / seTE.random are then metagen's own weighted.mean pool.
   function metaforREML(TE, seTE) {
+    if (TE.length <= EXACT_REML_KMAX) {
+      var ex = metaforStart(TE, seTE, "REML");
+      if (ex !== null) return ex;
+    }
     var k = TE.length, i, vi = new Array(k), ymc = new Array(k), tmp = new Array(k);
     for (i = 0; i < k; i++) vi[i] = seTE[i] * seTE[i];
     var ybar = rsum(TE) / k;
@@ -2421,6 +2694,7 @@
     gradientWithoutBeta: gradientWithoutBeta,
     profileMLE: profileMLE, optimLBFGSB: optimLBFGSB, optimHess: optimHess,
     solveFirstDiag: solveFirstDiag, metaforREML: metaforREML, rsum: rsum,
+    metaforDL: metaforDL, ldsum: ldsum, ldmean: ldmean,
     eggerEstimate: eggerEstimate, revOrder: revOrder,
     orthogonalLine: orthogonalLine, adjustSelection: adjustSelection,
     copas: copas
