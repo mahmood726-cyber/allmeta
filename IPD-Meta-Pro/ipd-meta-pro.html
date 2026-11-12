@@ -72849,7 +72849,16 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
                 }
                 var best = 0;
                 for (var q4 = 1; q4 <= dim; q4++) if (fv[q4] < fv[best]) best = q4;
-                // converged only when the stopping rule was met, not when the evaluation cap ended the loop
+                // Converged when the stopping rule was met, or when the cap ended the loop on a collapsed simplex
+                // whose values agree to the deviance's own precision (the absolute 1e-13 is below one ulp of a
+                // deviance in the thousands, so a converged simplex can sit a few ulps apart until the cap).
+                // A simplex still moving when the cap is reached is not converged.
+                if (!met) {
+                    var sizeEnd = 0;
+                    for (var q5 = 1; q5 <= dim; q5++) for (var e7 = 0; e7 < dim; e7++) sizeEnd = Math.max(sizeEnd, Math.abs(pts[q5][e7] - pts[0][e7]));
+                    var lo = Math.min.apply(null, fv), hi = Math.max.apply(null, fv);
+                    met = sizeEnd < 1e-10 && hi - lo <= 1e-13 * Math.max(1, Math.abs(lo));
+                }
                 return { x: pts[best], f: fv[best], evals: evals, converged: met };
             }
             // start from the EM solution: L = chol(D / sigma^2) (diagonal if D is not positive definite)

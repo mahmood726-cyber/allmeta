@@ -32,11 +32,11 @@ function check(name, ok, detail) { console.log((ok ? 'PASS ' : 'FAIL ') + name +
 // fixed number of evaluations. Stopping there is not convergence and must not be reported as such.
 // Fault injection: a deterministic 1e-9 relative perturbation of Math.log (used by the deviance)
 // keeps the simplex values from ever agreeing to 1e-13, so every Nelder-Mead run reaches its cap.
-function lmmRows() {
-  let sd = 777; const r2 = () => (sd = (sd * 1103515245 + 12345) % 2147483648) / 2147483648;
+function lmmRows(K = 5, m = 60, seed0 = 777, het = 0) {
+  let sd = seed0; const r2 = () => (sd = (sd * 1103515245 + 12345) % 2147483648) / 2147483648;
   const g2 = () => { let u = 0; for (let i = 0; i < 12; i++) u += r2(); return u - 6; };
   const rows = [];
-  for (let s = 0; s < 5; s++) { const b0 = 2 * g2(); for (let i = 0; i < 60; i++) { const t = i % 2; rows.push({ study: 'S' + s, treatment: t, outcome: Math.round((20 + b0 - 1.5 * t + 3 * g2()) * 1e4) / 1e4 }); } }
+  for (let s = 0; s < K; s++) { const b0 = 2 * g2(), b1 = het ? het * g2() : 0; for (let i = 0; i < m; i++) { const t = i % 2; rows.push({ study: 'S' + s, treatment: t, outcome: Math.round((20 + b0 - (1.5 + b1) * t + 3 * g2()) * 1e4) / 1e4 }); } }
   return rows;
 }
 {
@@ -51,6 +51,14 @@ function lmmRows() {
   check('one-stage continuous fit whose minimiser hit its evaluation cap is not reported as converged',
     r && !r.error && r.convergence && r.convergence.converged === false,
     'converged ' + (r && r.convergence && r.convergence.converged) + (r && r.error ? ' error ' + r.error : ''));
+}
+// A large deviance (thousands): the absolute 1e-13 simplex spread is below one ulp, so a fit at its optimum
+// can reach the cap with a collapsed simplex. That is convergence, and lme4 agrees on these fits.
+{
+  sandbox.__rows = lmmRows(10, 100, 2, 0.5);
+  const r = run('runOneStageIPD(__rows, "outcome", "treatment", "study", [])');
+  check('one-stage continuous fit with a deviance in the thousands is converged', r && r.convergence && r.convergence.converged === true && -2 * r.convergence.logLik > 5000,
+    'converged ' + (r && r.convergence && r.convergence.converged) + ' deviance ' + (r && r.convergence && -2 * r.convergence.logLik));
 }
 console.log(failed ? 'FAILED ' + failed : 'ALL PASS');
 process.exit(failed ? 1 : 0);
