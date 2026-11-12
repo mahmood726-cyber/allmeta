@@ -48,6 +48,24 @@ const SRI_PAGES = ["HTA/index.html", "nma-dose-response-app/index.html", "nma-pr
 
 const CHECKS = {
   ...Object.fromEntries(SRI_PAGES.map((page) => [page, vendorLibraries])),
+  async evidenceos(p) {
+    await p.waitForTimeout(1500);
+    const verdict = (await p.locator("#verdict").innerText()).trim();
+    const detail = (await p.locator("#verdict-detail").innerText()).trim();
+    return /load failed/i.test(verdict) || !verdict ? ["evidenceos verdict reads: " + verdict + " / " + detail.slice(0, 120)] : [];
+  },
+  async finder(p) {
+    const fails = [];
+    await p.waitForTimeout(1000);
+    const text = await p.locator("#root").innerText();
+    if (/Could not load/.test(text)) fails.push("finder shows: " + text.slice(0, 160));
+    const options = p.locator("#root button");
+    if (!(await options.count())) { fails.push("finder offers no first question options"); return fails; }
+    // Walk one path to a recommendation.
+    for (let i = 0; i < 6 && await options.count(); i++) { await options.first().click(); await p.waitForTimeout(300); if (await p.locator("#root a[href]").count()) break; }
+    if (!(await p.locator("#root a[href]").count())) fails.push("finder did not reach a recommendation with an app link");
+    return fails;
+  },
   async influence(p) {
     const en = await glossaryTips(p);
     const fails = en.fails.slice();

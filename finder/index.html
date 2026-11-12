@@ -95,6 +95,19 @@
       var path = ['start'];
 
       function fetchTree() {
+        // A page opened from a local copy (file://) cannot fetch() decision-tree.json, so
+        // the finder showed only "Failed to fetch". decision-tree-data.js is a classic-script
+        // copy (tools/fileproto/build-file-data.cjs; pinned by unit/file-data-copies.test.mjs).
+        if (location.protocol === 'file:') {
+          return new Promise(function (resolve, reject) {
+            if (window.ALM_FINDER_TREE) { resolve(window.ALM_FINDER_TREE); return; }
+            var s = document.createElement('script');
+            s.src = './decision-tree-data.js';
+            s.onload = function () { window.ALM_FINDER_TREE ? resolve(window.ALM_FINDER_TREE) : reject(new Error('decision-tree-data.js defined no tree')); };
+            s.onerror = function () { reject(new Error('cannot load decision-tree-data.js')); };
+            document.head.appendChild(s);
+          });
+        }
         return fetch('./decision-tree.json').then(function (r) {
           if (!r.ok) throw new Error('failed to load decision-tree.json: ' + r.status);
           return r.json();
