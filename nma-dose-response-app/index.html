@@ -4126,7 +4126,7 @@
       });
 
       // Check if first visit - show wizard
-      if (!localStorage.getItem('nma_wizard_completed')) {
+      if (!localStorage.getItem('nma_wizard_completed') && !localStorage.getItem('nma_wizard_dismissed')) {
         setTimeout(openWizard, 1000);
       }
 
@@ -4147,7 +4147,11 @@
     }
 
     function closeWizard() {
-      document.getElementById('wizardOverlay').classList.remove('active');
+      const overlay = document.getElementById('wizardOverlay');
+      // Closing an open wizard (x, Escape) is the user declining it: remember that, or
+      // the first-visit check below reopens it over the Run button on every load.
+      if (overlay.classList.contains('active')) localStorage.setItem('nma_wizard_dismissed', 'true');
+      overlay.classList.remove('active');
     }
 
     function selectWizardOption(el) {
