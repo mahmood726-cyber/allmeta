@@ -58,3 +58,11 @@ def test_covariate_with_trailing_junk_is_refused():
 def test_target_with_trailing_junk_is_refused():
     o = _run("console.log(JSON.stringify(go(C,V,'age=72abc')));")
     assert not o["ok"]
+
+
+def test_bad_target_is_not_hidden_by_a_key_named_like_the_error_list():
+    # Independent review (Codex, read-only) of the first version: bad keys were collected in t.__bad, a key a user
+    # can also type, so 'age=oops;__bad=0;age=72' overwrote the error list and the junk value passed.
+    o = _run("console.log(JSON.stringify([go(C,V,'age=oops;__bad=0;age=72'),go(C,V,'__bad=1;age=oops')]));")
+    assert not o[0]["ok"] and not o[1]["ok"]
+    assert "age" in o[0]["msg"] and "age" in o[1]["msg"]

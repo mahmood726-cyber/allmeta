@@ -170,10 +170,10 @@
       return { studies: studies, errors: errs, names: names };
     }
 
-    function parseTarget(text) {
+    function parseTarget(text, bad) {
       var t = {};
       String(text || "").split(/[,;]/).forEach(function (p) {
-        var m = p.split(/[=:]/); if (m.length === 2) { var k = m[0].trim(), v = num(m[1]); if (k && Number.isFinite(v)) t[k] = v; else if (k) t.__bad = (t.__bad || []).concat(k); }
+        var m = p.split(/[=:]/); if (m.length === 2) { var k = m[0].trim(), v = num(m[1]); if (k && Number.isFinite(v)) t[k] = v; else if (k) bad.push(k); }
       });
       return t;
     }
@@ -196,8 +196,8 @@
 
       var pcov = parseCov($("f-cov").value, pc.idx);
       if (!pcov.studies || pcov.errors.length) { host.innerHTML = '<p class="hint">' + (pcov.errors || ["covariate error"]).map(esc).join("<br>") + "</p>"; return; }
-      var target = parseTarget($("f-target").value);
-      if (target.__bad) { host.innerHTML = '<p class="hint">Target: ' + target.__bad.map(esc).join(", ") + ' is not a plain number.</p>'; return; }
+      var badTarget = [], target = parseTarget($("f-target").value, badTarget);
+      if (badTarget.length) { host.innerHTML = '<p class="hint">Target: ' + badTarget.map(esc).join(", ") + ' is not a plain number.</p>'; return; }
       if (!Object.keys(target).length) { host.innerHTML = '<p class="hint">Enter a target profile, e.g. <code>age=72</code>.</p>'; return; }
 
       // order treatments with the chosen reference first
