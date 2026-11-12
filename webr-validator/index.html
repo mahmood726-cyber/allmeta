@@ -248,6 +248,9 @@
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
 
     function parseStudies(text) {
+      // Complete decimal token only (lane csvaudit 2026-11-12): parseFloat read a numeric prefix, so a
+      // decimal-comma row "Trial A;-0,22;0,11" was pooled as est=22, se=11 with no warning.
+      const csvNumber = s => { const t = String(s == null ? "" : s).trim(); return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(t) ? Number(t) : NaN; };
       const studies=[], warnings=[];
       const lines = String(text||"").split(/\r?\n/);
       for (let i=0;i<lines.length;i++) {
@@ -255,8 +258,8 @@
         if (!raw || raw.startsWith("#")) continue;
         const parts = raw.split(/\s*[,\t]\s*/);
         if (parts.length < 3) { warnings.push("Line "+(i+1)+": <3 cols"); continue; }
-        const est = parseFloat(parts[parts.length-2]);
-        const se = parseFloat(parts[parts.length-1]);
+        const est = csvNumber(parts[parts.length-2]);
+        const se = csvNumber(parts[parts.length-1]);
         if (!isFinite(est) || !isFinite(se)) {
           if (studies.length === 0 && i < 3) continue;
           warnings.push("Line "+(i+1)+": non-numeric"); continue;

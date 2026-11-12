@@ -145,14 +145,33 @@
 
     // ---- engine (unchanged from pre-retrofit) ----
 
+    // Rows the original parser skipped (header, blank or non-numeric lines) are still skipped.
+    // A row it would have ACCEPTED is now refused, and listed in rows.rejected, when its effect/SE is
+    // not a complete decimal token (parseFloat read "35;0" from a decimal-comma row as 35) or it has
+    // more than 4 fields (a comma inside the study id shifted "Smith, 2001, 0.35" to effect=2001).
+    // Lane csvaudit 2026-11-12.
     function parse(text) {
-      return text.trim().split(/\n/).map(function (l) {
+      var MLMA_DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+      var rejected = [];
+      var rows = text.trim().split(/\n/).map(function (l, i) {
         var parts = l.split(/,/).map(function (s) { return s.trim(); });
         var study = parts[0];
         var te = parseFloat(parts[1]), se = parseFloat(parts[2]);
         if (!study || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
+        if (!MLMA_DECIMAL.test(parts[1]) || !MLMA_DECIMAL.test(parts[2])) {
+          rejected.push('Line ' + (i + 1) + ': effect and SE must be complete numbers with a decimal point (found "' +
+            parts[1].slice(0, 20) + '", "' + parts[2].slice(0, 20) + '")');
+          return null;
+        }
+        if (parts.length > 4) {
+          rejected.push('Line ' + (i + 1) + ': expected study, effect, SE[, label] but found ' + parts.length +
+            ' comma-separated fields; a study id or label cannot contain a comma');
+          return null;
+        }
         return { study: study, te: te, se: se, label: parts[3] || '' };
       }).filter(Boolean);
+      rows.rejected = rejected;
+      return rows;
     }
 
     function fmt(x, d) { d = d === undefined ? 3 : d; return Number.isFinite(x) ? x.toFixed(d) : '—'; }
@@ -313,6 +332,15 @@
 
     function run() {
       var rows = parse(document.getElementById('src').value);
+      if (rows.rejected && rows.rejected.length) {
+        // Refuse the whole input: a partial or shifted study set must never be pooled.
+        _lastResults = null; _lastReml = null;
+        var escR = function (t) { return String(t).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); };
+        document.getElementById('summary').innerHTML = '<p role="alert"><strong>Analysis refused: correct these rows and run again.</strong><br>' +
+          rows.rejected.slice(0, 10).map(escR).join('<br>') + '</p>';
+        var fsvg = document.getElementById('forest'); if (fsvg) fsvg.innerHTML = '';
+        return;
+      }
       if (rows.length < 3) { _lastResults = null; _lastReml = null; return; }
       var f = fit(rows);
 
