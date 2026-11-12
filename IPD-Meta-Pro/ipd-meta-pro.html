@@ -9274,183 +9274,22 @@ function fitModelToStudies(studies, method) {
 
 
 function estimateREML(effects, variances) {
-
- var n = effects.length;
-
- var tau2 = 0.1;
-
-
-
- for (var iter = 0; iter < 50; iter++) {
-
- var weights = variances.map(function(v) { return 1 / (v + tau2); });
-
- var totalWeight = weights.reduce(function(a, b) { return a + b; }, 0);
-
-
-
- var mu = 0;
-
- for (var i = 0; i < n; i++) {
-
- mu += weights[i] * effects[i];
-
+ // IPD-Tau fix: this was its own iteration from a fixed start of 0.1, tau2 <- tau2 + sum w^2 (r^2 - v) / sum w^2,
+ // whose fixed point omits tau^2 from the marginal variance (and the REML term): survival 0.593, metafor REML
+ // 0.0312; in small units its absolute 1e-6 step returned the start, 0.1. It now uses the validated REML solver.
+ return MetaAnalysis._estimateTau2Fisher(effects, variances, true);
  }
-
- mu /= totalWeight;
-
-
-
- var num = 0, den = 0;
-
- for (var i = 0; i < n; i++) {
-
- var w = weights[i];
-
- num += w * w * (Math.pow(effects[i] - mu, 2) - variances[i]);
-
- den += w * w;
-
- }
-
-
-
- var newTau2 = tau2 + num / den;
-
- newTau2 = Math.max(0, newTau2);
-
-
-
- if (Math.abs(newTau2 - tau2) < 1e-6) break;
-
- tau2 = newTau2;
-
- }
-
-
-
- return tau2;
-
- }
-
-
 
 function estimatePM(effects, variances) {
-
- // Paule-Mandel estimator: iteratively solves Q(tau2) = k - 1
-
- var n = effects.length;
-
- if (n < 2) return 0;
-
-
-
- // Use DL estimate as starting value to avoid stuck-at-zero
-
- var weights0 = variances.map(function(v) { return 1 / v; });
-
- var totalW0 = weights0.reduce(function(a, b) { return a + b; }, 0);
-
- var mu0 = 0;
-
- for (var i = 0; i < n; i++) mu0 += weights0[i] * effects[i];
-
- mu0 /= totalW0;
-
- var Q0 = 0;
-
- for (var i = 0; i < n; i++) Q0 += weights0[i] * Math.pow(effects[i] - mu0, 2);
-
- var sumW2_0 = weights0.reduce(function(a, w) { return a + w * w; }, 0);
-
- var C0 = totalW0 - sumW2_0 / totalW0;
-
- var tau2 = Math.max(0, (Q0 - (n - 1)) / C0);
-
-
-
- for (var iter = 0; iter < 100; iter++) {
-
- var weights = variances.map(function(v) { return 1 / (v + tau2); });
-
- var totalWeight = weights.reduce(function(a, b) { return a + b; }, 0);
-
-
-
- var mu = 0;
-
- for (var i = 0; i < n; i++) mu += weights[i] * effects[i];
-
- mu /= totalWeight;
-
-
-
- var Q = 0;
-
- for (var i = 0; i < n; i++) Q += weights[i] * Math.pow(effects[i] - mu, 2);
-
-
-
- if (Q <= n - 1) { tau2 = 0; break; }
-
-
-
- // Correct PM update: tau2 += (Q - (k-1)) / C
-
- var sumW2 = weights.reduce(function(a, w) { return a + w * w; }, 0);
-
- var C = totalWeight - sumW2 / totalWeight;
-
- if (C <= 0) break;
-
- var newTau2 = Math.max(0, tau2 + (Q - (n - 1)) / C);
-
- if (Math.abs(newTau2 - tau2) < 1e-8) break;
-
- tau2 = newTau2;
-
+ // IPD-Tau fix: this started at DL and set tau^2 = 0 as soon as Q(tau^2) <= k - 1, so whenever PM < DL (the first
+ // step already overshoots) it returned 0: survival 0, metafor PM 0.0244. It now uses the validated PM solver.
+ return MetaAnalysis._estimateTau2PM(effects, variances);
  }
-
-
-
- return tau2;
-
- }
-
-
 
 function estimateSJ(effects, variances) {
-
- // Sidik-Jonkman (2005) initial estimator for tau2
-
- // tau2_0 = (1/(k-1)) * sum[(yi - y_bar)^2] - (1/k)*sum[vi]
-
- var n = effects.length;
-
- if (n < 2) return 0;
-
-
-
- var mean = jStat.mean(effects);
-
- var Q0 = 0;
-
- var sumVar = 0;
-
-
-
- for (var i = 0; i < n; i++) {
-
- Q0 += Math.pow(effects[i] - mean, 2);
-
- sumVar += variances[i];
-
- }
-
-
-
- return Math.max(0, Q0 / (n - 1) - sumVar / n);
-
+ // IPD-Tau fix: this returned var(y) - mean(v), which is the Hedges (HE) estimator, not Sidik-Jonkman
+ // (survival 0.00386 = metafor HE; metafor SJ 0.0992). It now uses the validated SJ estimator.
+ return MetaAnalysis._estimateTau2SJ(effects, variances);
  }
 
 
