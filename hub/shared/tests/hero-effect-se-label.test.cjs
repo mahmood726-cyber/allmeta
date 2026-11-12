@@ -51,10 +51,13 @@ test('each adapter emits its specified row layout through attachHero', () => {
   const h = harness();
   const examples = {
     forest: ['bcg', 'Aronson 1948, -0.8893, 0.5706'],
-    bma: ['bcg', 'Aronson 1948, -0.8893, 0.5706'],
+    // bma-tau-priors and cross-design parse a VARIANCE column (label, yi, vi); writing SE there
+    // was read as vi = 0.5706 for 0.3256 (13/13 rows accepted, every variance wrong).
+    bma: ['bcg', 'Aronson 1948, -0.8893, 0.3256'],
     'effect-se-label': ['bcg', '-0.8893, 0.5706, Aronson 1948'],
     glmm: ['eltrombopag', 'TRA-100773A, 0, 38, 4, 35'],
-    'cross-design': ['bcg', 'Aronson 1948, -0.8893, 0.5706, rct'],
+    'cross-design': ['bcg', 'Aronson 1948, -0.8893, 0.3256, rct'],
+    'meta-regression': ['bcg', 'Aronson 1948, -0.8893, 0.5706, 44'],
     'cross-network': ['bcg', 'BCG_vs_placebo, -0.8893, 0.3256, rct'],
     sequential: ['sequential_demo', '-0.4, 0.2, 200'],
     personalised: ['subgroup_demo', 'S1, young/bm-, -0.3, 0.02'],
