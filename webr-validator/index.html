@@ -96,6 +96,7 @@
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/stats-qt.js"></script>
   <script src="../shared/ma-core.js"></script>
+  <script src="../shared/webr-runner.js"></script>
   <!-- V9-E12: load Toast eagerly in <head> (synchronous, no defer) so window.Toast
        is defined before the main app script that references Toast.show(...). toast.js
        creates its DOM container lazily on first show(), so it has no body-at-load
@@ -110,6 +111,7 @@
     <p>Validate the pooled estimate, τ², I², and Q from the browser against R's <code>metafor::rma</code>. Two paths: (1) run <strong>WebR</strong> directly in this tab (~30 MB one-time download) or (2) export an R script, run in your local R, paste the output back. Either path produces a signed TruthCert-style receipt.</p>
   </header>
 
+  <div id="source-banner" role="note" hidden style="margin:0 1rem 0.75rem;padding:0.7rem 0.9rem;border:1px solid #2a6cae;border-radius:6px;font-size:0.92rem"></div>
   <main id="main" class="layout">
     <section class="panel" aria-label="Input form">
       <h2>Studies</h2>
@@ -233,6 +235,7 @@
     let webR = null;  // Lazy-loaded WebR instance
     let lastBrowser = null;
     let lastR = null;
+    let lastVersions = null;  // R / webR / metafor versions of the last WebR run
 
     function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
@@ -302,11 +305,18 @@
         "sei <- c(" + sei + ")",
         "slab <- c(" + labs + ")",
         "",
-        'res <- rma(yi, sei = sei, method = "' + method + '", test = "' + test + '", slab = slab)',
+        "# Tight convergence: metafor's defaults (PM: tol = .Machine$double.eps^0.25; REML:",
+        "# threshold = 1e-5) stop up to ~5e-4 short of the optimum, which the 1e-4 comparison",
+        "# then flags as a mismatch. These controls take R to the optimum the browser computes.",
+        'res <- rma(yi, sei = sei, method = "' + method + '", test = "' + test + '", slab = slab' +
+          (method === "DL" ? "" : method === "PM"
+            ? ",\n           control = list(tol = 1e-12, maxiter = 10000)"
+            : ",\n           control = list(threshold = 1e-12, maxiter = 10000, stepadj = 0.5)") + ")",
         "cat(sprintf(\"estimate=%.10f\\nse=%.10f\\nci.lb=%.10f\\nci.ub=%.10f\\ntau^2=%.10f\\nI^2=%.10f\\nQE=%.10f\\n\",",
         "            as.numeric(res$b), as.numeric(res$se), as.numeric(res$ci.lb),",
         "            as.numeric(res$ci.ub), as.numeric(res$tau2), as.numeric(res$I2),",
-        "            as.numeric(res$QE)))"
+        "            as.numeric(res$QE)))",
+        'cat("R:", R.version.string, "| metafor", as.character(packageVersion("metafor")), "\\n")'
       ].join("\n");
     }
 
@@ -434,16 +444,36 @@
       btn.disabled = true;
       clearLog();
       try {
-        const wr = await ensureWebR(state.webrUrl);
         const script = rScript(parsed.studies, state.method, state.test);
         log("---- running ----");
         log(script);
         log("-----------------");
-        const capture = await wr.captureR(script, { captureStreams: true });
-        for (const s of (capture.output || [])) {
-          log((s.type ? "["+s.type+"] " : "") + (s.data || ""));
+        let allOutput;
+        const pinned = /(^|\/)r-shiny\/shinylive\/webr\/webr\.mjs$/.test(state.webrUrl || "");
+        if (pinned && window.AlmWebR && typeof AlmWebR.runR === "function") {
+          // The same pinned, SHA-256-verified bundle every in-page "Validate this
+          // analysis in R" panel uses, so both WebR paths run the same R. This page
+          // used to call webR.captureR, which webR 0.5.x does not have (it lives on
+          // a Shelter), so every run here ended "wr.captureR is not a function";
+          // and installPackages() fetched whatever metafor the CDN served instead
+          // of the pinned bundle.
+          setStatus("loading", "Running R in WebR…");
+          const res = await AlmWebR.runR({ script: script, packages: ["metafor"], onStatus: log });
+          if (!res.ok) throw new Error(res.error);
+          allOutput = res.stdout;
+          log(allOutput);
+          lastVersions = res.versions;
+          log("Versions used: R " + res.versions.R + "; webR " + res.versions.webR +
+              "; metafor " + res.versions.metafor);
+        } else {
+          const wr = await ensureWebR(state.webrUrl);
+          const shelter = await new wr.Shelter();
+          try {
+            const capture = await shelter.captureR(script, { captureStreams: true, withAutoprint: false });
+            for (const s of (capture.output || [])) log((s.type ? "["+s.type+"] " : "") + (s.data || ""));
+            allOutput = (capture.output || []).map(s => s.data || "").join("\n");
+          } finally { await shelter.purge(); }
         }
-        const allOutput = (capture.output || []).map(s => s.data || "").join("\n");
         const r = parseROutput(allOutput);
         lastR = r;
         renderCompare(lastBrowser, r);
@@ -662,6 +692,44 @@
     attach();
     render();
 
+    // What this page checks, said where a user arriving from another app will
+    // read it. It re-fits ONE model -- an inverse-variance random-effects pool
+    // (metafor::rma) of the per-study effects the app put on the shared bus. For
+    // apps whose own model is that pool, a match here checks the app. For apps
+    // whose model is something else it cannot match the app's headline, and a
+    // user comparing the two would see "R gives different results" -- so it says
+    // so, and points to the app's own check.
+    const NOT_IV_POOL = {
+      "mh-peto": "Mantel–Haenszel and Peto pooled odds ratios (metafor rma.mh / rma.peto)",
+      "multilevel-ma": "a three-level model (metafor rma.mv)",
+      "meta-regression": "a meta-regression with a moderator (metafor rma with mods)",
+      "dose-response-ma": "a dose-response model (dosresmeta)",
+      "dta-sroc": "a bivariate diagnostic-accuracy model",
+      "nma": "a network meta-analysis (netmeta)",
+      "copas": "the Copas selection model (metasens)",
+      "proportion-ma": "a pooled proportion on the transformed scale the app selects",
+      "pubbias-tests": "small-study / publication-bias tests (regression and rank tests)",
+      "pet-peese": "PET-PEESE regressions", "limit-ma": "the limit meta-analysis",
+      "bayesian-ma": "a Bayesian model", "bayesian-mcmc": "a Bayesian model",
+      "bma-tau-priors": "Bayesian model averaging over τ² priors", "tsa": "trial sequential analysis",
+      "gosh": "GOSH subset analysis", "gosh-metareg": "GOSH meta-regression subsets",
+      "cross-design": "a cross-design synthesis"
+    };
+    function showSourceBanner(from) {
+      const el = document.getElementById("source-banner");
+      if (!el || !from || !/^[a-z0-9-]{1,40}$/.test(from)) return;
+      const model = "an inverse-variance random-effects pool (metafor rma, τ² " +
+        document.getElementById("f-method").value + ", test " + document.getElementById("f-test").value + ")";
+      const own = NOT_IV_POOL[from];
+      el.textContent = own
+        ? "Opened from " + from + ". This page re-fits " + model + " to the per-study effects " + from +
+          " shared. That is NOT " + from + "'s own model (" + own + "), so its numbers are not expected to " +
+          "equal the app's headline. To check " + from + " itself, use \"Validate this analysis in R\" on that page."
+        : "Opened from " + from + ". This page re-fits " + model + " to the per-study effects " + from +
+          " shared, and compares it with the same fit computed in the browser.";
+      el.hidden = false;
+    }
+
     // ---- ?fromBus=1 auto-pull on deep-link from another app ----
     (function maybeAutoLoadBus() {
       try {
@@ -669,9 +737,15 @@
         if (params.get("fromBus") !== "1") return;
         const studies = (window.MaStudies && MaStudies.read()) || [];
         if (!studies.length) return;
+        // The calling app may say which estimator and test its own headline used,
+        // so the R fit here is the same model rather than this page's PM/z default.
+        const m = params.get("method"), t = params.get("test");
+        if (m && ["PM", "REML", "DL"].includes(m)) document.getElementById("f-method").value = m;
+        if (t && ["z", "knha"].includes(t)) document.getElementById("f-test").value = t;
         const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
+        showSourceBanner(params.get("from"));
       } catch (e) { /* silent — noisy alert on deep-link is worse than no-op */ }
     })();
   })();
