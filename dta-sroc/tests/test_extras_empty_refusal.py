@@ -54,9 +54,13 @@ def test_malformed_row_keeps_its_message():
 
 
 def test_a_real_live_failure_is_still_fail():
-    # valid rows from the pinned corpus; live R is not available here, so the check genuinely cannot complete
+    # valid rows from the pinned corpus and all required controls filled; live R is stubbed to fail, so the check
+    # reaches the live call and genuinely cannot complete (codex review: without at/prevalence the earlier
+    # version stopped at "Prediction value and prevalence are required" and never reached live R)
     r = run("await tick(); const c=JSON.parse(fs.readFileSync('dta-sroc/validate/corpus/plus-reference.json','utf8'));"
             "const k=c.cases.find(x=>x.ok); $('data').value=k.rows.map(x=>[x.TP,x.FN,x.FP,x.TN,x.x].join(',')).join(String.fromCharCode(10));"
-            "$('live').onclick(); await tick(); process.stdout.write(JSON.stringify({v:$('validation').textContent}));")
-    assert r["v"].startswith("FAIL: ")
-    assert "Each row" not in r["v"] and "Refused" not in r["v"]
+            "$('method').value=k.method; $('correction').value=k.correction; $('at').value='0'; $('prevalence').value='0.1';"
+            "let calls=0; sb.AlmWebR={runR:async()=>{calls++;return {ok:false,error:'stub offline'};}};"
+            "$('live').onclick(); await tick(); process.stdout.write(JSON.stringify({v:$('validation').textContent,calls}));")
+    assert r["calls"] == 1
+    assert r["v"] == "FAIL: Live R unavailable: stub offline"
