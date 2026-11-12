@@ -76,3 +76,26 @@ def test_qnorm_central_branch_bit_exact_vs_r():
     """)
     for p, want in R_QNORM_CENTRAL.items():
         assert got[p] == want, (p, got[p], want)
+
+
+# R 4.6.0 qnorm() for p below exp(-27^2) ~= 2.507972e-317 (subnormal doubles), %.17g. R's nmath/qnorm.c
+# does not use the AS 241 r in (5, 27] rational approximation there: for r > 27 it iterates the asymptotic
+# expansion x2 = s2 - log(2 pi x2) + ... (s2 = -2 log p). Using the r <= 27 approximation outside its range is
+# off by up to 4 ulp on these inputs.
+R_QNORM_SUBNORMAL = {
+    "4.9406564584124654e-324": -38.467405617144344,
+    "9.8813129168249309e-323": -38.389502202565737,
+    "4.9011312067451657e-321": -38.287742150529105,
+    "3.3000126682674380e-319": -38.177711901619354,
+    "1.9999999673194289e-317": -38.070126611290505,
+}
+
+
+def test_qnorm_subnormal_tail_uses_r_asymptotic_branch():
+    got = _node(f"""
+        const M = require({json.dumps(str(MODULE))});
+        const ps = {json.dumps(list(R_QNORM_SUBNORMAL))};
+        console.log(JSON.stringify(Object.fromEntries(ps.map(p => [p, M._qnorm(Number(p))]))));
+    """)
+    for p, want in R_QNORM_SUBNORMAL.items():
+        assert got[p] == want, (p, got[p], want)
