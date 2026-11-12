@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Advanced Meta-Analysis Methods - Beyond R Packages
  * HTA Artifact Standard v0.4
@@ -106,7 +112,7 @@ class AdvancedMetaAnalysis {
             se: seMu,
             ci: [mu - z * seMu, mu + z * seMu],
             zValue: mu / seMu,
-            pValue: 2 * (1 - this.normalCDF(Math.abs(mu / seMu))),
+            pValue: 2 * AlmTail.pnormUpper(Math.abs(mu / seMu)),
             tau2Between: tau2Between,
             tau2BetweenCI: tau2BetweenCI,
             tau2Within: tau2Within,
@@ -265,7 +271,7 @@ class AdvancedMetaAnalysis {
                 se: se[i],
                 ci: [beta[i] - z * se[i], beta[i] + z * se[i]],
                 zValue: beta[i] / se[i],
-                pValue: 2 * (1 - this.normalCDF(Math.abs(beta[i] / se[i])))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(beta[i] / se[i]))
             })),
             betweenStudyCovariance: Sigma,
             betweenStudyCorrelation: this.covToCorr(Sigma),
@@ -361,7 +367,7 @@ class AdvancedMetaAnalysis {
             coefficients: moderatorNames.map((name, i) => {
                 const tValue = beta[i] / se[i];
                 const df = dfs[i];
-                const pValue = 2 * (1 - this.tCDF(Math.abs(tValue), df));
+                const pValue = 2 * AlmTail.ptUpper(Math.abs(tValue), df);
                 const tCrit = this.tQuantile(1 - this.options.alpha / 2, df);
 
                 return {
@@ -529,7 +535,7 @@ class AdvancedMetaAnalysis {
                 vsReference: reference,
                 estimate: beta[t],
                 se: se[t],
-                pValue: 2 * (1 - this.normalCDF(Math.abs(beta[t] / se[t])))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(beta[t] / se[t]))
             });
         }
 
@@ -543,7 +549,7 @@ class AdvancedMetaAnalysis {
                     treatment: treatName,
                     estimate: beta[offset + t],
                     se: se[offset + t],
-                    pValue: 2 * (1 - this.normalCDF(Math.abs(beta[offset + t] / se[offset + t])))
+                    pValue: 2 * AlmTail.pnormUpper(Math.abs(beta[offset + t] / se[offset + t]))
                 });
             }
 
@@ -679,7 +685,7 @@ class AdvancedMetaAnalysis {
                 return s2 + b * b2 * invCov[i][j];
             }, 0), 0
         );
-        const pValueOverall = 1 - this.chiSquareCDF(waldStat, nSplines);
+        const pValueOverall = AlmTail.pchisqUpper(waldStat, nSplines);
 
         return {
             coefficients: beta.map((b, i) => ({
@@ -850,7 +856,7 @@ class AdvancedMetaAnalysis {
                 estimate: beta[i],
                 se: se[i],
                 ci: [beta[i] - z * se[i], beta[i] + z * se[i]],
-                pValue: 2 * (1 - this.normalCDF(Math.abs(beta[i] / se[i])))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(beta[i] / se[i]))
             });
         }
 
@@ -866,7 +872,7 @@ class AdvancedMetaAnalysis {
                         estimate: beta[idx],
                         se: se[idx],
                         ci: [beta[idx] - z * se[idx], beta[idx] + z * se[idx]],
-                        pValue: 2 * (1 - this.normalCDF(Math.abs(beta[idx] / se[idx])))
+                        pValue: 2 * AlmTail.pnormUpper(Math.abs(beta[idx] / se[idx]))
                     });
                     idx++;
                 }
@@ -1623,7 +1629,7 @@ class AdvancedMetaAnalysis {
             }
             df += studyData.length - 1;
         }
-        return { Q, df, pValue: 1 - this.chiSquareCDF(Q, df) };
+        return { Q, df, pValue: AlmTail.pchisqUpper(Q, df) };
     }
 
     calculateQBetween(data, studies, mu, opts) {
@@ -1635,7 +1641,7 @@ class AdvancedMetaAnalysis {
             const studyVar = studyData.reduce((s, d) => s + d[opts.viVar], 0) / studyData.length;
             Q += Math.pow(studyMean - mu, 2) / studyVar;
         }
-        return { Q, df, pValue: 1 - this.chiSquareCDF(Q, df) };
+        return { Q, df, pValue: AlmTail.pchisqUpper(Q, df) };
     }
 
     buildMultivariateSystem(data, opts) {
@@ -1884,7 +1890,7 @@ class AdvancedMetaAnalysis {
         );
 
         const df = nSplines - 1;
-        const pValue = 1 - this.chiSquareCDF(waldStat, df);
+        const pValue = AlmTail.pchisqUpper(waldStat, df);
 
         return { statistic: waldStat, df, pValue };
     }
@@ -2078,7 +2084,7 @@ class LivingReviewEngine {
         if (boundary === 'OBrien-Fleming') {
             // O'Brien-Fleming spending function
             const zAlpha = this.normalQuantile(1 - alpha / 2);
-            return 2 * (1 - this.normalCDF(zAlpha / Math.sqrt(Math.max(t, 1e-10))));
+            return 2 * AlmTail.pnormUpper(zAlpha / Math.sqrt(Math.max(t, 1e-10)));
         } else if (boundary === 'Pocock') {
             // Pocock spending function
             return alpha * Math.log(1 + (Math.E - 1) * t);
@@ -2170,7 +2176,7 @@ class LivingReviewEngine {
         const futureSE = Math.sqrt(seTheta * seTheta + futureVar);
         const zAlpha = this.normalQuantile(1 - this.options.alpha / 2);
 
-        const power = 1 - this.normalCDF(zAlpha - thetaHat / futureSE) +
+        const power = AlmTail.pnormUpper(zAlpha - thetaHat / futureSE) +
                       this.normalCDF(-zAlpha - thetaHat / futureSE);
 
         return power;

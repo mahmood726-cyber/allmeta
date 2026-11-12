@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * HTA Artifact Standard v0.5 - Advanced Enhancements
  * Achieving 5/5 in all methodological categories
@@ -84,7 +90,7 @@ class HKSJAdjustment {
             qHKSJ: qHKSJ,
             adjustmentFactor: Math.sqrt(adjustmentFactor),
             adhocApplied: adhoc && qHKSJ < 1,
-            pValue: 2 * (1 - this.tCDF(Math.abs(pooledEffect / seHKSJ), df)),
+            pValue: 2 * AlmTail.ptUpper(Math.abs(pooledEffect / seHKSJ), df),
             method: adhoc ? 'HKSJ with ad-hoc adjustment' : 'HKSJ without ad-hoc'
         };
     }
@@ -250,7 +256,7 @@ class CopasSelectionModel {
         // P-value for selection (likelihood ratio test)
         const nullLogLik = this.calculateNullLogLik(studies);
         const lrt = 2 * (bestLogLik - nullLogLik);
-        const pValueSelection = 1 - this.chiSquaredCDF(lrt, 2);
+        const pValueSelection = AlmTail.pchisqUpper(lrt, 2);
 
         // Unadjusted baseline uses inverse-variance weighting (standard meta-analysis)
         const ivWeights = se.map(s => 1 / (s ** 2));
@@ -1566,7 +1572,7 @@ class MCMCDiagnostics {
         const varLast = this.spectralDensity0(last);
 
         const z = (meanFirst - meanLast) / Math.sqrt(varFirst / nFirst + varLast / nLast);
-        const pValue = 2 * (1 - this.normalCDF(Math.abs(z)));
+        const pValue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
         return {
             z: z,
@@ -2717,7 +2723,7 @@ class MixtureCureModel {
             return Math.exp(-Math.pow(t / params.scale, params.shape));
         } else if (this.options.distribution === 'lognormal') {
             const z = (Math.log(t) - Math.log(params.scale)) / params.shape;
-            return 1 - this.normalCDF(z);
+            return AlmTail.pnormUpper(z);
         } else if (this.options.distribution === 'loglogistic') {
             return 1 / (1 + Math.pow(t / params.scale, params.shape));
         }

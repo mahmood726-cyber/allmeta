@@ -2363,7 +2363,7 @@ function computePairwiseEstimatorConsensus(e, t, n = "REML") {
       r = l.reduce((e, t) => e + t.weight * Math.pow(t.theta - n, 2), 0),
       o = Math.sqrt(Math.max(0, i + r)),
       d = o > 0 ? n / o : NaN,
-      u = isFinite(d) ? 2 * (1 - pnorm(Math.abs(d))) : NaN;
+      u = isFinite(d) ? 2 * AlmTail.pnormUpper(Math.abs(d)) : NaN;
     c = {
       method: "AICc-weighted estimator ensemble",
       theta: n,
@@ -2592,7 +2592,7 @@ function calculatePooledEstimate(e, t, n = 0, a = null, s = null) {
     ci_lower: d - m * p,
     ci_upper: d + m * p,
     z: h,
-    p_value: isFinite(h) ? 2 * (1 - pnorm(Math.abs(h))) : NaN,
+    p_value: isFinite(h) ? 2 * AlmTail.pnormUpper(Math.abs(h)) : NaN,
     weights: c,
     weights_pct: c.map(e => e / u * 100)
   }
@@ -2620,7 +2620,7 @@ function calculateHKSJ(e, t, n, a, s = .05) {
     ci_lower: n - m * u,
     ci_upper: n + m * u,
     t_stat: h,
-    p_value: 2 * (1 - pt(Math.abs(h), p)),
+    p_value: 2 * AlmTail.ptUpper(Math.abs(h), p),
     df: p,
     q_hksj: c,
     q_raw: l,
@@ -4248,7 +4248,7 @@ function calculateHeterogeneity(e, t, n) {
     r = sum(e.map((e, t) => s[t] * e)) / i,
     o = sum(e.map((e, t) => s[t] * Math.pow(e - r, 2))),
     l = a - 1,
-    d = 1 - pchisq(o, l),
+    d = AlmTail.pchisqUpper(o, l),
     c = o > l ? (o - l) / o * 100 : 0,
     u = calculateI2Metafor(n, t, a),
     p = o / Math.max(l, 1),
@@ -4462,7 +4462,7 @@ function calculateDDMA(e, t, n, a, s = {}) {
     alpha: o = .05
   } = s, l = t, d = Math.sqrt(t * t + n), c = .05, u = .25;
   let p, m, h, v, g, f, _, y;
-  return "lower" === r ? (p = pnorm((0 - e) / l), m = pnorm((0 - e) / d), h = pnorm((-i - e) / l), v = pnorm((-i - e) / d), g = pnorm((-.25 - e) / l), f = pnorm((-.25 - e) / d), _ = pnorm((c - e) / l) - pnorm((-.05 - e) / l), y = pnorm((c - e) / d) - pnorm((-.05 - e) / d)) : (p = 1 - pnorm((0 - e) / l), m = 1 - pnorm((0 - e) / d), h = 1 - pnorm((i - e) / l), v = 1 - pnorm((i - e) / d), g = 1 - pnorm((u - e) / l), f = 1 - pnorm((u - e) / d), _ = pnorm((c - e) / l) - pnorm((-.05 - e) / l), y = pnorm((c - e) / d) - pnorm((-.05 - e) / d)), {
+  return "lower" === r ? (p = pnorm((0 - e) / l), m = pnorm((0 - e) / d), h = pnorm((-i - e) / l), v = pnorm((-i - e) / d), g = pnorm((-.25 - e) / l), f = pnorm((-.25 - e) / d), _ = pnorm((c - e) / l) - pnorm((-.05 - e) / l), y = pnorm((c - e) / d) - pnorm((-.05 - e) / d)) : (p = AlmTail.pnormUpper((0 - e) / l), m = AlmTail.pnormUpper((0 - e) / d), h = AlmTail.pnormUpper((i - e) / l), v = AlmTail.pnormUpper((i - e) / d), g = AlmTail.pnormUpper((u - e) / l), f = AlmTail.pnormUpper((u - e) / d), _ = pnorm((c - e) / l) - pnorm((-.05 - e) / l), y = pnorm((c - e) / d) - pnorm((-.05 - e) / d)), {
     confidence: {
       P_benefit: p,
       P_harm: 1 - p,
@@ -4499,7 +4499,7 @@ function mcidSensitivityAnalysis(e, t, n, a = {}) {
   } = a, r = Math.sqrt(t * t + n), o = [];
   for (const t of s) {
     let n;
-    n = "lower" === i ? pnorm((-t - e) / r) : 1 - pnorm((t - e) / r);
+    n = "lower" === i ? pnorm((-t - e) / r) : AlmTail.pnormUpper((t - e) / r);
     const a = 100 * (1 - Math.exp(-t));
     let s;
     s = n >= .8 ? "Likely meaningful" : n >= .5 ? "Possibly meaningful" : n >= .2 ? "Uncertain" : "Unlikely meaningful", o.push({
@@ -4619,8 +4619,8 @@ function eggersTest(e, t, n = null, a = "binary") {
     f = sum(o.map((e, t) => e - (g + v * r[t])).map((e, t) => l[t] * e * e)) / (s - 2),
     _ = Math.sqrt(f * (1 / d + m * m / (p - d * m * m))),
     y = g / _,
-    b = 2 * (1 - pt(Math.abs(y), s - 2)),
-    x = g < 0 ? 1 - pt(Math.abs(y), s - 2) : 1 - (1 - pt(Math.abs(y), s - 2));
+    b = 2 * AlmTail.ptUpper(Math.abs(y), s - 2),
+    x = g < 0 ? AlmTail.ptUpper(Math.abs(y), s - 2) : 1 - AlmTail.ptUpper(Math.abs(y), s - 2);
   let w;
   return null !== n && n > 50 && i.push("High heterogeneity (IÂ²=" + n.toFixed(0) + "%) may cause asymmetry unrelated to publication bias"), w = b < .05 ? "Significant asymmetry detected (p=" + b.toFixed(4) + "). May indicate: (1) publication bias, (2) true small-study effects (different populations), (3) heterogeneity, or (4) artifact of effect measure. Further investigation recommended." : b < .1 ? "Marginal asymmetry detected (p=" + b.toFixed(4) + "). May reflect publication bias but also consistent with chance or heterogeneity." : "No significant asymmetry detected. Note: Egger's test has low power for small k; absence of evidence is not evidence of absence.", {
     intercept: g,
@@ -4747,7 +4747,7 @@ function subgroupAnalysis(e, t, n, a = "REML") {
     d = calculateHeterogeneity(t, n, l).Q,
     c = d - r,
     u = s.length - 1,
-    p = 1 - pchisq(c, u);
+    p = AlmTail.pchisqUpper(c, u);
   return {
     available: !0,
     subgroups: i,
@@ -4790,7 +4790,7 @@ function metaRegression(e, t, n, a = "Covariate", s = "REML") {
     _ = l.map(e => f + g * e),
     y = sum(r.map((e, t) => e - _[t]).map((e, t) => u[t] * e * e)),
     b = d - 2,
-    x = 1 - pchisq(y, b),
+    x = AlmTail.pchisqUpper(y, b),
     w = p - sum(u.map(e => e * e)) / p,
     M = Math.max(0, (y - b) / w),
     S = o.map(e => 1 / (e + M)),
@@ -4801,7 +4801,7 @@ function metaRegression(e, t, n, a = "Covariate", s = "REML") {
     T = Math.max(1, I / b),
     C = A * Math.sqrt(T),
     P = g / C,
-    k = 2 * (1 - pt(Math.abs(P), b)),
+    k = 2 * AlmTail.ptUpper(Math.abs(P), b),
     D = qt(.975, b),
     $ = g - D * C,
     N = g + D * C,
@@ -5124,7 +5124,7 @@ function harbordTest(e) {
     m = sum(a.map((e, t) => e - (p + u * s[t])).map(e => e * e)) / (i - 2),
     h = Math.sqrt(m * (1 / i + d * d / (l - i * d * d))),
     v = p / h,
-    g = 2 * (1 - pt(Math.abs(v), i - 2));
+    g = 2 * AlmTail.ptUpper(Math.abs(v), i - 2);
   return {
     available: !0,
     intercept: p,
@@ -5158,7 +5158,7 @@ function petPeese(e, t) {
     m = sum(e.map((e, t) => e - (p + u * a[t])).map((e, t) => s[t] * e * e)) / (n - 2),
     h = Math.sqrt(m * (1 / i + d * d / (l - i * d * d))),
     v = p / h,
-    g = 2 * (1 - pt(Math.abs(v), n - 2)),
+    g = 2 * AlmTail.ptUpper(Math.abs(v), n - 2),
     f = sum(t.map((e, t) => s[t] * e)),
     _ = sum(t.map((e, t) => s[t] * e * e)),
     y = f / i,
@@ -5167,7 +5167,7 @@ function petPeese(e, t) {
     w = sum(e.map((e, n) => e - (x + b * t[n])).map((e, t) => s[t] * e * e)) / (n - 2),
     M = Math.sqrt(w * (1 / i + y * y / (_ - i * y * y))),
     S = x / M,
-    E = 2 * (1 - pt(Math.abs(S), n - 2)),
+    E = 2 * AlmTail.ptUpper(Math.abs(S), n - 2),
     A = g < .1,
     R = A ? x : p,
     I = A ? M : h,
@@ -5283,7 +5283,7 @@ function linHybridTest(e, t, n = null, a = 5e3) {
   const g = (h - v) / (s * (s - 1) / 2),
     f = 2 * (2 * s + 5) / (9 * s * (s - 1)),
     _ = g / Math.sqrt(f),
-    y = 2 * (1 - pnorm(Math.abs(_))),
+    y = 2 * AlmTail.pnormUpper(Math.abs(_)),
     b = -2 * sum([r, y].filter(e => e > 0 && e <= 1).map(e => Math.log(e)));
   let x = 0;
   for (let n = 0; n < a; n++) {
@@ -5302,7 +5302,7 @@ function linHybridTest(e, t, n = null, a = 5e3) {
       w = sum(a.map((e, t) => e - (y + _ * r[t])).map((e, t) => o[t] * e * e)) / (s - 2),
       M = Math.sqrt(w * (1 / c + v * v / (h - c * v * v))),
       S = y / M,
-      E = 2 * (1 - pt(Math.abs(S), s - 2)),
+      E = 2 * AlmTail.ptUpper(Math.abs(S), s - 2),
       A = sum(n.map((e, t) => l[t] * e)) / d,
       R = n.map(e => e - A).map((e, t) => e / Math.sqrt(Math.max(p[t], 1e-10)));
     let I = 0,
@@ -5313,7 +5313,7 @@ function linHybridTest(e, t, n = null, a = 5e3) {
           s = Math.sign(t[e] - t[n]);
         a * s > 0 ? I++ : a * s < 0 && T++
       }
-    const C = (I - T) / (s * (s - 1) / 2) / Math.sqrt(f); - 2 * sum([E, 2 * (1 - pnorm(Math.abs(C)))].filter(e => e > 0 && e <= 1).map(e => Math.log(e))) >= b && x++
+    const C = (I - T) / (s * (s - 1) / 2) / Math.sqrt(f); - 2 * sum([E, 2 * AlmTail.pnormUpper(Math.abs(C))].filter(e => e > 0 && e <= 1).map(e => Math.log(e))) >= b && x++
   }
   const w = (x + 1) / (a + 1);
   return {
@@ -5380,7 +5380,7 @@ function tianExactRD(e) {
     g = h[Math.floor(50)],
     f = h[Math.floor(1950)],
     _ = p / v,
-    y = 2 * (1 - pnorm(Math.abs(_))),
+    y = 2 * AlmTail.pnormUpper(Math.abs(_)),
     b = sum(s.map((e, t) => o[t] <= 0 ? 0 : (e.rd - c) * (e.rd - c) / o[t])),
     x = n - 1;
   return {
@@ -5394,7 +5394,7 @@ function tianExactRD(e) {
     heterogeneity: {
       Q: b,
       df: x,
-      p_value: 1 - pchisq(b, x),
+      p_value: AlmTail.pchisqUpper(b, x),
       I2: Math.max(0, (b - x) / b * 100)
     },
     k: n,
@@ -5441,7 +5441,7 @@ function permutationTest(e, t, n = 1e4) {
     theta_exp: Math.exp(o),
     t_statistic: l,
     p_value_permutation: c,
-    p_value_parametric: 2 * (1 - pt(Math.abs(l), a - 1)),
+    p_value_parametric: 2 * AlmTail.ptUpper(Math.abs(l), a - 1),
     n_permutations: n,
     n_extreme: d,
     interpretation: c < .05 ? `Significant effect (permutation p=${c.toFixed(4)})` : `Not significant (permutation p=${c.toFixed(4)})`,
@@ -5555,7 +5555,7 @@ function fragilityIndex(e, t) {
       c = l.map(e => e.vi),
       u = calculatePooledEstimate(d, c, estimateTau2_REML(d, c).tau2),
       p = u.theta / u.se;
-    if (2 * (1 - pnorm(Math.abs(p))) >= .05) return {
+    if (2 * AlmTail.pnormUpper(Math.abs(p)) >= .05) return {
       available: !0,
       fragility_index: o,
       fragility_quotient: (o / (a + s) * 100).toFixed(2),
@@ -5821,7 +5821,7 @@ function veveaHedgesSelection(e, t, n = "moderate") {
         p_gt_05: .5
       }
   }
-  const r = e.map((e, t) => 2 * (1 - pnorm(Math.abs(e) / s[t]))).map(e => "one_tailed" === n ? e < .025 ? i.p_lt_025_right : e < .05 ? i.p_025_05 : i.p_gt_05 : e < .05 ? i.p_lt_05 : e < .1 ? i.p_05_10 : i.p_gt_10),
+  const r = e.map((e, t) => 2 * AlmTail.pnormUpper(Math.abs(e) / s[t])).map(e => "one_tailed" === n ? e < .025 ? i.p_lt_025_right : e < .05 ? i.p_025_05 : i.p_gt_05 : e < .05 ? i.p_lt_05 : e < .1 ? i.p_05_10 : i.p_gt_10),
     o = estimateTau2_REML(e, t).tau2,
     l = t.map((e, t) => r[t] / (e + o)),
     d = sum(l),
@@ -5949,7 +5949,7 @@ function combineDirectIndirect(e, t) {
     d = e.theta - t.theta,
     c = Math.sqrt(n + a),
     u = Math.abs(d) / c,
-    p = 2 * (1 - pnorm(u)),
+    p = 2 * AlmTail.pnormUpper(u),
     m = qnorm(.975);
   return {
     direct: {
@@ -6320,7 +6320,7 @@ function lowI2Diagnostic(e, t, n) {
     r = qchisq(.9, i);
   let o = 0;
   if (s > 0) {
-    o = 1 - pchisq(r / ((i + s) / (i + 2 * s)), Math.pow(i + s, 2) / (i + 2 * s)), o = Math.max(0, Math.min(1, o))
+    o = AlmTail.pchisqUpper(r / ((i + s) / (i + 2 * s)), Math.pow(i + s, 2) / (i + 2 * s)), o = Math.max(0, Math.min(1, o))
   }
   let l = 0,
     d = 0;
@@ -6364,7 +6364,7 @@ function pdgScaleFactor(e, t) {
     r = Math.sqrt(1 / s),
     o = sum(e.map((e, t) => a[t] * Math.pow(e - i, 2))),
     l = n - 1,
-    d = 1 - pchisq(o, l),
+    d = AlmTail.pchisqUpper(o, l),
     c = Math.sqrt(o / l),
     u = Math.max(1, c),
     p = r * u,
@@ -6421,7 +6421,7 @@ function winnersCurseCorrection(e, t, n, a) {
     u = 0;
   if (d) {
     const e = 1.96;
-    u = 2 * a * (Math.exp(-.5 * e * e) / Math.sqrt(2 * Math.PI)) / (2 * (1 - pnorm(e))) * Math.sign(n), c = n - u
+    u = 2 * a * (Math.exp(-.5 * e * e) / Math.sqrt(2 * Math.PI)) / (2 * AlmTail.pnormUpper(e)) * Math.sign(n), c = n - u
   }
   const p = estimateTau2_REML(e, t).tau2,
     m = a * a,
@@ -6476,8 +6476,8 @@ function treatmentResponseDistribution(e, t, n = .15, a = "lower") {
   const s = Math.max(t, .01),
     i = Math.sqrt(s);
   let r, o, l, d;
-  "lower" === a ? (r = pnorm((0 - e) / i), o = 1 - r, l = pnorm((-n - e) / i), d = pnorm((-.288 - e) / i)) : (r = 1 - pnorm((0 - e) / i), o = 1 - r, l = 1 - pnorm((n - e) / i), d = 1 - pnorm((.223 - e) / i));
-  const c = "lower" === a ? 1 - pnorm((.223 - e) / i) : pnorm((-.288 - e) / i),
+  "lower" === a ? (r = pnorm((0 - e) / i), o = 1 - r, l = pnorm((-n - e) / i), d = pnorm((-.288 - e) / i)) : (r = AlmTail.pnormUpper((0 - e) / i), o = 1 - r, l = AlmTail.pnormUpper((n - e) / i), d = AlmTail.pnormUpper((.223 - e) / i));
+  const c = "lower" === a ? AlmTail.pnormUpper((.223 - e) / i) : pnorm((-.288 - e) / i),
     u = {};
   [5, 10, 25, 50, 75, 90, 95].forEach(t => {
     const n = qnorm(t / 100),
@@ -6570,13 +6570,13 @@ function heteroscedasticityTest(e, t, n) {
     c = e.length - 1,
     u = d - i,
     p = a.length - 1,
-    m = 1 - pchisq(u, p),
+    m = AlmTail.pchisqUpper(u, p),
     h = Object.values(s).map(e => e.tau2).filter(e => null !== e && e > 0);
   let v, g, f = 1,
     _ = 0,
     y = 0;
   h.length >= 2 && (_ = Math.max(...h), y = Math.max(1e-4, Math.min(...h)), f = _ / y);
-  const b = 1 - pchisq(i, r);
+  const b = AlmTail.pchisqUpper(i, r);
   return f > 3 && b < .1 ? (v = !0, g = "Strong evidence of heteroscedasticity - Ã”žÂ² varies substantially across subgroups") : f > 2 || f > 1.5 && b < .1 ? (v = "possible", g = "Moderate variation in Ã”žÂ² across subgroups - interpret pooled Ã”žÂ² cautiously") : (v = !1, g = "Ã”žÂ² appears relatively constant across subgroups"), {
     available: !0,
     n_groups: a.length,
@@ -6792,7 +6792,7 @@ function cumulativeMetaAnalysis(e, t, n, a, s = "DL") {
       d = "REML" === s ? estimateTau2_REML(i, l) : estimateTau2_DL(i, l),
       c = pooledEstimate_RE(i, l, d.tau2),
       u = c.theta / c.se,
-      p = 2 * (1 - normalCDF(Math.abs(u)));
+      p = 2 * AlmTail.pnormUpper(Math.abs(u));
     o.cumulative.push({
       k: n,
       year: r[n - 1].year,
@@ -6839,7 +6839,7 @@ function selectionModel(e, t, n = "step") {
   e.length;
   const a = e.map((e, n) => {
       const a = e / Math.sqrt(t[n]);
-      return 2 * (1 - normalCDF(Math.abs(a)))
+      return 2 * AlmTail.pnormUpper(Math.abs(a))
     }),
     s = estimateTau2_REML(e, t),
     i = pooledEstimate_RE(e, t, s.tau2);
@@ -7229,7 +7229,7 @@ function rma_mv_multilevel(e, t, n, a = {}) {
   let I = Math.sqrt(1 / A),
     T = c - 1,
     C = R / I,
-    P = 2 * (1 - normalCDF(Math.abs(C))),
+    P = 2 * AlmTail.pnormUpper(Math.abs(C)),
     k = 1.96;
   if ("knha" === l || "t" === l) {
     const t = e.map(e => e - R),
@@ -7240,7 +7240,7 @@ function rma_mv_multilevel(e, t, n, a = {}) {
       const e = Math.sqrt(a / ((c - 1) * s) * A);
       I *= Math.max(1, e)
     }
-    T = p - 1, C = R / I, k = tQuantile(1 - (1 - d) / 2, T), P = 2 * (1 - tCDF(Math.abs(C), T))
+    T = p - 1, C = R / I, k = tQuantile(1 - (1 - d) / 2, T), P = 2 * AlmTail.ptUpper(Math.abs(C), T)
   }
   const D = R - k * I,
     $ = R + k * I,
@@ -7285,7 +7285,7 @@ function rma_mv_multilevel(e, t, n, a = {}) {
       I2_total: B,
       Q_total: U,
       Q_df: c - 1,
-      Q_pval: 1 - chiSquareCDF(U, c - 1)
+      Q_pval: AlmTail.pchisqUpper(U, c - 1)
     },
     structure: {
       k: c,
@@ -7451,7 +7451,7 @@ function rma_mv_multivariate(e, t, n, a, s = {}) {
   const R = M(w(b, .5)),
     I = v.map((e, t) => {
       const n = R.beta[t] / R.se[t],
-        a = 2 * (1 - normalCDF(Math.abs(n))),
+        a = 2 * AlmTail.pnormUpper(Math.abs(n)),
         s = "knha" === l ? tQuantile(1 - (1 - u) / 2, g - 1) : 1.96;
       return {
         outcome: e,
@@ -7473,7 +7473,7 @@ function rma_mv_multivariate(e, t, n, a, s = {}) {
     try {
       const e = Matrix.invert(n),
         a = Matrix.quadForm(t, e),
-        s = 1 - chiSquareCDF(a, f - 1);
+        s = AlmTail.pchisqUpper(a, f - 1);
       return {
         model: "Multivariate Random Effects (rma.mv)",
         method: o,
@@ -7618,7 +7618,7 @@ function threeLevelMA_simple(e, t, n) {
       se: c.se,
       ci_lower: c.ci_lower,
       ci_upper: c.ci_upper,
-      pval: 2 * (1 - normalCDF(Math.abs(c.theta / c.se)))
+      pval: 2 * AlmTail.pnormUpper(Math.abs(c.theta / c.se))
     },
     varianceComponents: {
       sigma2_within: 0,
@@ -7691,7 +7691,7 @@ function survivalMetaAnalysis(e, t, n, a = {}) {
       HR_lower: p,
       HR_upper: m,
       z: o.theta / o.se,
-      pval: 2 * (1 - normalCDF(Math.abs(o.theta / o.se)))
+      pval: 2 * AlmTail.pnormUpper(Math.abs(o.theta / o.se))
     },
     hksj: {
       logHR: o.theta,
@@ -7770,7 +7770,7 @@ function robustVarianceEstimation(e, t, n) {
       ci_upper: d + g * h,
       t: d / h,
       df: v,
-      pval: 2 * (1 - tCDF(Math.abs(d / h), v))
+      pval: 2 * AlmTail.ptUpper(Math.abs(d / h), v)
     },
     clusterInfo: {
       nClusters: i,
@@ -7893,7 +7893,7 @@ function mantelHaenszel(studies, measure = 'OR') {
     const seLogOR = Math.sqrt(varLogOR);
 
     const z = logOR / seLogOR;
-    const pvalue = 2 * (1 - pnorm(Math.abs(z)));
+    const pvalue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
     return {
       method: 'Mantel-Haenszel',
@@ -7931,7 +7931,7 @@ function mantelHaenszel(studies, measure = 'OR') {
     const seLogRR = Math.sqrt(sumVar / (sumR * sumS));
 
     const z = logRR / seLogRR;
-    const pvalue = 2 * (1 - pnorm(Math.abs(z)));
+    const pvalue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
     return {
       method: 'Mantel-Haenszel',
@@ -7971,7 +7971,7 @@ function mantelHaenszel(studies, measure = 'OR') {
     const seRD = Math.sqrt(sumVar) / sumDen * Math.sqrt(sumDen);
 
     const z = RD_MH / seRD;
-    const pvalue = 2 * (1 - pnorm(Math.abs(z)));
+    const pvalue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
     return {
       method: 'Mantel-Haenszel',
@@ -8043,7 +8043,7 @@ function petoMethod(studies) {
   const OR = Math.exp(logOR);
 
   const z = logOR / seLogOR;
-  const pvalue = 2 * (1 - pnorm(Math.abs(z)));
+  const pvalue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
   // Heterogeneity test
   let Q = 0;
@@ -8055,7 +8055,7 @@ function petoMethod(studies) {
     }
   }
   const df = studyResults.filter(s => !s.excluded).length - 1;
-  const pQ = df > 0 ? 1 - pchisq(Q, df) : 1;
+  const pQ = df > 0 ? AlmTail.pchisqUpper(Q, df) : 1;
   const I2 = df > 0 ? Math.max(0, (Q - df) / Q * 100) : 0;
 
   return {
@@ -8225,13 +8225,13 @@ function testExcessSignificance(yi, vi, theta0 = null) {
   let E = 0;
   for (let i = 0; i < k; i++) {
     const ncp = Math.abs(theta0) / sei[i];
-    const power = 1 - pnorm(1.96 - ncp) + pnorm(-1.96 - ncp);
+    const power = AlmTail.pnormUpper(1.96 - ncp) + pnorm(-1.96 - ncp);
     E += power;
   }
   if (E < 0.001) E = 0.001;
   const A = O - E;
   const chi2 = (A * A) / E;
-  const pval = 1 - pchisq(chi2, 1);
+  const pval = AlmTail.pchisqUpper(chi2, 1);
   const avgPower = E / k;
   return {
     observed: O,
@@ -12246,7 +12246,7 @@ function petersTest(e) {
     u = Math.sqrt(c * (1 / n + (a / n) ** 2 / (r - a * a / n))),
     p = l / u,
     m = n - 2,
-    h = 2 * (1 - pt(Math.abs(p), m));
+    h = 2 * AlmTail.ptUpper(Math.abs(p), m);
   return {
     ok: !0,
     method: "Peters",
@@ -12677,8 +12677,8 @@ function checkThreatsV6(e, t) {
 function testEquivalence(e, t, n) {
   if (!e || !t || !n) return !1;
   const a = (n - e) / t,
-    s = 1 - pnorm((e - -n) / t),
-    i = 1 - pnorm(a);
+    s = AlmTail.pnormUpper((e - -n) / t),
+    i = AlmTail.pnormUpper(a);
   return Math.max(s, i) < .05
 }
 
@@ -13581,7 +13581,7 @@ function metaAnalysisPower(e, t, n, a = 0, s = .05) {
     o = qnorm(1 - s / 2),
     l = Math.abs(t) / r;
   return {
-    power: 1 - pnorm(o - l) + pnorm(-o - l),
+    power: AlmTail.pnormUpper(o - l) + pnorm(-o - l),
     se: r,
     ncp: l,
     k: e,
@@ -13903,7 +13903,7 @@ function pCurveAnalysis(e) {
     const t = e.yi / e.sei;
     return {
       z: t,
-      p: 2 * (1 - pnorm(Math.abs(t))),
+      p: 2 * AlmTail.pnormUpper(Math.abs(t)),
       study: e.name
     }
   }).filter(e => e.p < .05 && e.p > 0);
@@ -13945,7 +13945,7 @@ function pCurveAnalysis(e) {
     i = 1 - binomialCDF(a - 1, s, .4),
     r = binomialCDF(a, s, .4),
     o = t.map(e => e.p / .05).reduce((e, t) => e + qnorm(1 - t), 0) / Math.sqrt(s),
-    l = 1 - pnorm(o);
+    l = AlmTail.pnormUpper(o);
   let d = "",
     c = "";
   return i < .05 ? (d = "Right-skewed: Contains evidential value", c = "PRESENT") : r < .05 ? (d = "Flat/Left-skewed: Suggests p-hacking or selective reporting", c = "ABSENT (possible p-hacking)") : (d = "Inconclusive: Cannot determine evidential value", c = "INCONCLUSIVE"), {
@@ -14041,7 +14041,7 @@ function zCurveAnalysis(e) {
     n: t.length
   };
   const n = t.map(e => e.z),
-    a = n.map(e => 1 - pnorm(1.96 - e) + pnorm(-1.96 - e)),
+    a = n.map(e => AlmTail.pnormUpper(1.96 - e) + pnorm(-1.96 - e)),
     s = a.reduce((e, t) => e + t, 0) / a.length,
     i = e.length,
     r = t.length,
@@ -14188,7 +14188,7 @@ function renderSunsetPlot(e, t = "sunsetPlot") {
     },
     name: "Pooled Effect"
   });
-  const o = n.map(e => 1 - pnorm(1.96 - Math.abs(e.yi) / e.sei));
+  const o = n.map(e => AlmTail.pnormUpper(1.96 - Math.abs(e.yi) / e.sei));
   i.push({
     type: "scatter",
     mode: "markers",
@@ -14265,7 +14265,7 @@ function clubSandwichCR2(e, t, n, a) {
     _ = f.reduce((e, t) => e + t * t, 0),
     y = _ * _ / f.reduce((e, t, n) => e + Math.pow(t, 4) / Math.pow(1 - h[n], 2), 0),
     b = a / g,
-    x = 2 * (1 - pt(Math.abs(b), y)),
+    x = 2 * AlmTail.ptUpper(Math.abs(b), y),
     w = qt(.975, y),
     M = a - w * g,
     S = a + w * g;
@@ -15390,7 +15390,7 @@ function sampleSizeInstrument(e) {
     f = v.reduce((e, t, a) => e + t * n[a].yi, 0) / g,
     _ = Math.sqrt(1 / g),
     y = Math.pow(m - f, 2) / (Math.pow(h, 2) - Math.pow(_, 2)),
-    b = 1 - pchisq(Math.abs(y), 1);
+    b = AlmTail.pchisqUpper(Math.abs(y), 1);
   return {
     ok: !0,
     thetaIV: m,
@@ -15411,7 +15411,7 @@ function stepSelectionCRVE(e, t, n = null, a = [.025, .05, .5, 1]) {
   const s = e.length,
     i = t.map(e => Math.sqrt(e));
   n || (n = e.map((e, t) => t));
-  const r = e.map((e, t) => e / i[t]).map(e => 1 - pnorm(e)),
+  const r = e.map((e, t) => e / i[t]).map(e => AlmTail.pnormUpper(e)),
     o = a.map((e, t) => ({
       lower: 0 === t ? 0 : a[t - 1],
       upper: e,
@@ -17401,10 +17401,10 @@ function multipleMetaRegression(e, t, n, a = null) {
     h = e.map((e, t) => e - m[t]),
     v = h.reduce((e, t, n) => e + o[n] * t * t, 0),
     g = s - i - 1,
-    f = 1 - pchisq(v, g),
+    f = AlmTail.pchisqUpper(v, g),
     _ = e.reduce((t, n, a) => t + o[a] * Math.pow(m[a] - e.reduce((e, t, n) => e + o[n] * t, 0) / o.reduce((e, t) => e + t, 0), 2), 0),
     y = i,
-    b = 1 - pchisq(_, y),
+    b = AlmTail.pchisqUpper(_, y),
     x = e.reduce((t, n, a) => {
       const s = e.reduce((e, t, n) => e + o[n] * t, 0) / o.reduce((e, t) => e + t, 0);
       return t + o[a] * Math.pow(n - s, 2)
@@ -17415,7 +17415,7 @@ function multipleMetaRegression(e, t, n, a = null) {
       estimate: u[0],
       se: p[0],
       z: u[0] / p[0],
-      p: 2 * (1 - pnorm(Math.abs(u[0] / p[0]))),
+      p: 2 * AlmTail.pnormUpper(Math.abs(u[0] / p[0])),
       ci_lower: u[0] - 1.96 * p[0],
       ci_upper: u[0] + 1.96 * p[0]
     }];
@@ -17424,7 +17424,7 @@ function multipleMetaRegression(e, t, n, a = null) {
     estimate: u[e + 1],
     se: p[e + 1],
     z: u[e + 1] / p[e + 1],
-    p: 2 * (1 - pnorm(Math.abs(u[e + 1] / p[e + 1]))),
+    p: 2 * AlmTail.pnormUpper(Math.abs(u[e + 1] / p[e + 1])),
     ci_lower: u[e + 1] - 1.96 * p[e + 1],
     ci_upper: u[e + 1] + 1.96 * p[e + 1]
   });
@@ -18955,7 +18955,7 @@ if (typeof beggTest === 'undefined') {
       // Approximate p-value using normal approximation
       const se_tau = Math.sqrt(2 * (2 * n + 5) / (9 * n * (n - 1)));
       const z = tau / se_tau;
-      const p = 2 * (1 - pnorm(Math.abs(z)));
+      const p = 2 * AlmTail.pnormUpper(Math.abs(z));
 
       return {
         tau: tau,
@@ -19539,7 +19539,7 @@ function robmaModelAveraging(yi, vi, options = {}) {
       // Selection model adjustment for bias
       if (model.hasBias) {
         const z = yi[i] / sei[i];
-        const pval = 2 * (1 - pnorm(Math.abs(z)));
+        const pval = 2 * AlmTail.pnormUpper(Math.abs(z));
         const selectionProb = pval < 0.05 ? 1 : 0.3; // Step function
         logLik += Math.log(selectionProb);
       }
@@ -19632,7 +19632,7 @@ function metaAnalyticZCurve(yi, vi) {
   const k = yi.length;
   const sei = vi.map(v => Math.sqrt(v));
   const z = yi.map((y, i) => y / sei[i]);
-  const pvals = z.map(zz => 2 * (1 - pnorm(Math.abs(zz))));
+  const pvals = z.map(zz => 2 * AlmTail.pnormUpper(Math.abs(zz)));
 
   // Count significant results
   const nSig = pvals.filter(p => p < 0.05).length;
@@ -19647,12 +19647,12 @@ function metaAnalyticZCurve(yi, vi) {
   if (significantZ.length > 0) {
     const meanSigZ = significantZ.reduce((a, b) => a + b, 0) / significantZ.length;
     const estimatedNCP = meanSigZ; // Non-centrality parameter
-    expectedDiscoveryRate = 1 - pnorm(zCritical - estimatedNCP);
+    expectedDiscoveryRate = AlmTail.pnormUpper(zCritical - estimatedNCP);
   }
 
   // Expected replicability
   const expectedReplicability = significantZ.length > 0
-    ? significantZ.reduce((s, zz) => s + (1 - pnorm(zCritical - zz)), 0) / significantZ.length
+    ? significantZ.reduce((s, zz) => s + AlmTail.pnormUpper(zCritical - zz), 0) / significantZ.length
     : 0;
 
   // File drawer ratio
@@ -19748,7 +19748,7 @@ function multiverseMetaAnalysis(yi, vi, names = null, maxSubsets = 1000) {
     const theta = subYi.reduce((s, y, i) => s + w_re[i] * y, 0) / sumW_re;
     const se = Math.sqrt(1 / sumW_re);
     const z = theta / se;
-    const pval = 2 * (1 - pnorm(Math.abs(z)));
+    const pval = 2 * AlmTail.pnormUpper(Math.abs(z));
 
     const I2 = indices.length > 1 ? Math.max(0, (Q - (indices.length - 1)) / Q * 100) : 0;
 
@@ -20078,7 +20078,7 @@ function sequentialMetaAnalysis(yi, vi, names = null, options = {}) {
     const theta = currentYi.reduce((s, y, j) => s + w[j] * y, 0) / sumW;
     const se = Math.sqrt(1 / sumW);
     const z = theta / se;
-    const pval = 2 * (1 - pnorm(Math.abs(z)));
+    const pval = 2 * AlmTail.pnormUpper(Math.abs(z));
 
     // Information fraction
     const currentInfo = sumW;
@@ -20175,7 +20175,7 @@ function livingReviewStatus(yi, vi, previousAnalysis = null) {
   current.sumW = current.w.reduce((a, b) => a + b, 0);
   current.theta = yi.reduce((s, y, i) => s + current.w[i] * y, 0) / current.sumW;
   current.se = Math.sqrt(1 / current.sumW);
-  current.pval = 2 * (1 - pnorm(Math.abs(current.theta / current.se)));
+  current.pval = 2 * AlmTail.pnormUpper(Math.abs(current.theta / current.se));
 
   let changeDetected = false;
   let changeType = null;
@@ -20403,7 +20403,7 @@ function threeParameterSelectionModel(yi, vi, severity = 'moderate') {
   const k = yi.length;
   const sei = vi.map(v => Math.sqrt(v));
   const z = yi.map((y, i) => y / sei[i]);
-  const pvals = z.map(zz => 2 * (1 - pnorm(Math.abs(zz))));
+  const pvals = z.map(zz => 2 * AlmTail.pnormUpper(Math.abs(zz)));
 
   // Selection weights by severity
   const weights = {
@@ -20459,7 +20459,7 @@ function pUniformStar(yi, vi) {
   const k = yi.length;
   const sei = vi.map(v => Math.sqrt(v));
   const z = yi.map((y, i) => y / sei[i]);
-  const pvals = z.map(zz => 1 - pnorm(zz)); // One-tailed p-values
+  const pvals = z.map(zz => AlmTail.pnormUpper(zz)); // One-tailed p-values
 
   // Select significant studies (one-tailed p < 0.025)
   const sigIndices = pvals.map((p, i) => p < 0.025 ? i : -1).filter(i => i >= 0);
@@ -20489,7 +20489,7 @@ function pUniformStar(yi, vi) {
       const ncp = theta / sei[i];
       const zObs = yi[i] / sei[i];
       // P(Z > z_obs | Z > z_crit, μ)
-      const pCond = (1 - pnorm(zObs - ncp)) / (1 - pnorm(1.96 - ncp));
+      const pCond = AlmTail.pnormUpper(zObs - ncp) / AlmTail.pnormUpper(1.96 - ncp);
       return Math.min(Math.max(pCond, 0.001), 0.999);
     });
   }
@@ -20597,7 +20597,7 @@ function waapWLS(yi, vi, power = 0.8) {
 
   const studyPower = sei.map(se => {
     const ncp = Math.abs(thetaFE) / se;
-    return 1 - pnorm(zAlpha - ncp);
+    return AlmTail.pnormUpper(zAlpha - ncp);
   });
 
   // Identify adequately powered studies
@@ -20885,7 +20885,7 @@ function albatrossPlotData(yi, vi, names = null) {
   const k = yi.length;
   const sei = vi.map(v => Math.sqrt(v));
   const z = yi.map((y, i) => y / sei[i]);
-  const pvals = z.map(zz => 2 * (1 - pnorm(Math.abs(zz))));
+  const pvals = z.map(zz => 2 * AlmTail.pnormUpper(Math.abs(zz)));
 
   // Estimate sample sizes from SE (assuming binary outcome OR)
   // SE(logOR) â”°Ë† sqrt(1/a + 1/b + 1/c + 1/d) â”°Ë† sqrt(4/n) for balanced
@@ -20897,7 +20897,7 @@ function albatrossPlotData(yi, vi, names = null) {
     for (let effect = -2; effect <= 2; effect += 0.1) {
       const se = 2 / Math.sqrt(n);
       const z = effect / se;
-      const p = 2 * (1 - pnorm(Math.abs(z)));
+      const p = 2 * AlmTail.pnormUpper(Math.abs(z));
       points.push({ effect, p: -Math.log10(p), n });
     }
     return { n, points };
@@ -20936,7 +20936,7 @@ function sunsetPlotData(yi, vi, expectedEffect = null) {
   // Calculate power for each study
   const power = sei.map(se => {
     const ncp = Math.abs(expectedEffect) / se;
-    return 1 - pnorm(1.96 - ncp) + pnorm(-1.96 - ncp);
+    return AlmTail.pnormUpper(1.96 - ncp) + pnorm(-1.96 - ncp);
   });
 
   // Power contours
@@ -20993,7 +20993,7 @@ function draperyPlotData(yi, vi) {
     study: `Study ${i + 1}`,
     curve: effectRange.map(e => {
       const z = (y - e) / sei[i];
-      const p = 2 * (1 - pnorm(Math.abs(z)));
+      const p = 2 * AlmTail.pnormUpper(Math.abs(z));
       return { effect: e, pvalue: p };
     })
   }));
@@ -21001,7 +21001,7 @@ function draperyPlotData(yi, vi) {
   // Combined p-value function
   const combinedCurve = effectRange.map(e => {
     const z = (pooled - e) / pooledSE;
-    const p = 2 * (1 - pnorm(Math.abs(z)));
+    const p = 2 * AlmTail.pnormUpper(Math.abs(z));
     return { effect: e, pvalue: p };
   });
 
@@ -21465,7 +21465,7 @@ function networkMAConsistency(treatments, comparisons) {
       const difference = directEffect - indirectEffect;
       const seDiff = Math.sqrt(directSE * directSE + indirectSE * indirectSE);
       const z = difference / seDiff;
-      const pValue = 2 * (1 - pnorm(Math.abs(z)));
+      const pValue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
       nodeSplitResults.push({
         comparison,
@@ -21489,7 +21489,7 @@ function networkMAConsistency(treatments, comparisons) {
     df_inconsistency += 1;
   });
 
-  const pValue_global = df_inconsistency > 0 ? 1 - pchisq(Q_inconsistency, df_inconsistency) : 1;
+  const pValue_global = df_inconsistency > 0 ? AlmTail.pchisqUpper(Q_inconsistency, df_inconsistency) : 1;
 
   // IÂ² for inconsistency
   const I2_inconsistency = df_inconsistency > 0 ?
@@ -21719,7 +21719,7 @@ function likelihoodRatioTest(yi, vi) {
   const LR = 2 * (ll1 - ll0);
 
   // Mixture null at boundary: 0.5 * delta(0) + 0.5 * chi-square(1)
-  const pValue = LR <= 0 ? 1 : .5 * (1 - pchisq(LR, 1));
+  const pValue = LR <= 0 ? 1 : .5 * AlmTail.pchisqUpper(LR, 1);
 
   return {
     method: 'Likelihood Ratio Test for Heterogeneity',

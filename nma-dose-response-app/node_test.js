@@ -109,6 +109,8 @@ try {
   // Execute app code in sandbox
   console.log('\nLoading app.js...');
   vm.createContext(sandbox);
+  // index.html loads ../shared/upper-tail.js (window.AlmTail) before app.js; do the same here.
+  vm.runInContext(fs.readFileSync('../shared/upper-tail.js', 'utf8'), sandbox, { filename: 'upper-tail.js' });
   vm.runInContext(appCode, sandbox, {
     timeout: 10000,
     importModuleDynamically: async (specifier) => import(specifier)

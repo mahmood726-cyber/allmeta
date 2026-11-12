@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * HTA Artifact Standard v0.5 - Frontier Edition
  * Cutting-edge methods that exceed ALL existing software
@@ -78,7 +84,7 @@ class IPDMetaAnalysis {
                     treatmentEffect.estimate - this._normalQuantile(0.975) * treatmentEffect.se,
                     treatmentEffect.estimate + this._normalQuantile(0.975) * treatmentEffect.se
                 ],
-                pValue: 2 * (1 - this._normalCDF(Math.abs(treatmentEffect.estimate / treatmentEffect.se)))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(treatmentEffect.estimate / treatmentEffect.se))
             },
             fixedEffects: result.fixedEffects,
             randomEffects: {
@@ -159,7 +165,7 @@ class IPDMetaAnalysis {
                 I2: I2,
                 Q: Q,
                 Qdf: df,
-                QpValue: 1 - this._chiSquareCDF(Q, df)
+                QpValue: AlmTail.pchisqUpper(Q, df)
             },
             nPatients: ipdData.length,
             nStudies: studies.length
@@ -847,7 +853,7 @@ class IPDMetaAnalysis {
             se,
             tau2,
             ci95: [mu - this._normalQuantile(0.975) * se, mu + this._normalQuantile(0.975) * se],
-            pValue: 2 * (1 - this._normalCDF(Math.abs(mu / se)))
+            pValue: 2 * AlmTail.pnormUpper(Math.abs(mu / se))
         };
     }
 
@@ -1070,8 +1076,10 @@ class IPDMetaAnalysis {
     }
 
     _gammaCDF(x, a) {
+        // Regularized lower incomplete gamma P(a, x). The old 100-term series (_lowerGamma) never reached
+        // large x: for Q >= ~454 on 1 df the CDF came out ~0, so p = 1 - CDF = 1.
         if (x <= 0) return 0;
-        return this._lowerGamma(a, x) / this._gamma(a);
+        return AlmTail._gammaPQ(a, x)[0];
     }
 
     _lowerGamma(a, x) {
@@ -1341,12 +1349,12 @@ class DTAMetaAnalysis {
                     diffSensitivity: {
                         estimate: diffSe,
                         ci95: [diffSe - zCrit * seDiffSe, diffSe + zCrit * seDiffSe],
-                        pValue: 2 * (1 - this._normalCDF(Math.abs(diffSe / seDiffSe)))
+                        pValue: 2 * AlmTail.pnormUpper(Math.abs(diffSe / seDiffSe))
                     },
                     diffSpecificity: {
                         estimate: diffSp,
                         ci95: [diffSp - zCrit * seDiffSp, diffSp + zCrit * seDiffSp],
-                        pValue: 2 * (1 - this._normalCDF(Math.abs(diffSp / seDiffSp)))
+                        pValue: 2 * AlmTail.pnormUpper(Math.abs(diffSp / seDiffSp))
                     }
                 });
             }
@@ -1661,7 +1669,7 @@ class AdvancedPublicationBias {
         const n = effects.length;
 
         // Compute p-values
-        const pValues = effects.map((y, i) => 2 * (1 - this._normalCDF(Math.abs(y / ses[i]))));
+        const pValues = effects.map((y, i) => 2 * AlmTail.pnormUpper(Math.abs(y / ses[i])));
 
         // Categorize by significance
         const categories = pValues.map(p => {
@@ -1843,7 +1851,7 @@ class AdvancedPublicationBias {
 
         // Adjust for selection model (simplified)
         if (model.selectionModel !== 'none') {
-            const pValues = effects.map((y, i) => 2 * (1 - this._normalCDF(Math.abs(y / ses[i]))));
+            const pValues = effects.map((y, i) => 2 * AlmTail.pnormUpper(Math.abs(y / ses[i])));
             const sigCount = pValues.filter(p => p < 0.05).length;
             const expectedSig = n * 0.05;
             const selectionPenalty = Math.abs(sigCount - expectedSig) * 0.5;
@@ -2733,7 +2741,7 @@ class MendelianRandomizationMA {
                 estimate,
                 se,
                 ci95: [estimate - this._normalQuantile(0.975) * se, estimate + this._normalQuantile(0.975) * se],
-                pValue: 2 * (1 - this._normalCDF(Math.abs(estimate / se)))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(estimate / se))
             };
         } else {
             // Random-effects IVW (multiplicative random effects)
@@ -2752,11 +2760,11 @@ class MendelianRandomizationMA {
                 estimate: estimateFE,
                 se: seRE,
                 ci95: [estimateFE - this._normalQuantile(0.975) * seRE, estimateFE + this._normalQuantile(0.975) * seRE],
-                pValue: 2 * (1 - this._normalCDF(Math.abs(estimateFE / seRE))),
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(estimateFE / seRE)),
                 heterogeneity: {
                     Q,
                     df,
-                    pValue: 1 - this._chiSquareCDF(Q, df),
+                    pValue: AlmTail.pchisqUpper(Q, df),
                     I2: Math.max(0, (Q - df) / Q * 100)
                 }
             };
@@ -2803,12 +2811,12 @@ class MendelianRandomizationMA {
                 estimate: slope,
                 se: seSlope,
                 ci95: [slope - this._normalQuantile(0.975) * seSlope, slope + this._normalQuantile(0.975) * seSlope],
-                pValue: 2 * (1 - this._normalCDF(Math.abs(slope / seSlope)))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(slope / seSlope))
             },
             pleiotropyTest: {
                 intercept,
                 se: seIntercept,
-                pValue: 2 * (1 - this._normalCDF(Math.abs(intercept / seIntercept))),
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(intercept / seIntercept)),
                 interpretation: Math.abs(intercept) > this._normalQuantile(0.975) * seIntercept ?
                     'Evidence of directional pleiotropy' : 'No evidence of directional pleiotropy'
             },
@@ -2878,7 +2886,7 @@ class MendelianRandomizationMA {
             estimate,
             se,
             ci95: [estimate - this._normalQuantile(0.975) * se, estimate + this._normalQuantile(0.975) * se],
-            pValue: 2 * (1 - this._normalCDF(Math.abs(estimate / se))),
+            pValue: 2 * AlmTail.pnormUpper(Math.abs(estimate / se)),
             robustness: 'Valid if ≥50% of weight from valid instruments'
         };
     }
@@ -2934,7 +2942,7 @@ class MendelianRandomizationMA {
                 // Test if removing this SNP significantly reduces Q
                 const testData = data.filter((_, i) => i !== contrib.index);
                 const testIVW = this.ivw(testData, { fixedEffects: false });
-                const testPValue = 1 - this._chiSquareCDF(testIVW.heterogeneity.Q, testData.length - 1);
+                const testPValue = AlmTail.pchisqUpper(testIVW.heterogeneity.Q, testData.length - 1);
 
                 if (testPValue > significanceThreshold) {
                     outliers.push(contrib.index);
@@ -2993,8 +3001,10 @@ class MendelianRandomizationMA {
     }
 
     _gammaCDF(x, a) {
+        // Regularized lower incomplete gamma P(a, x). The old 100-term series (_lowerGamma) never reached
+        // large x: for Q >= ~454 on 1 df the CDF came out ~0, so p = 1 - CDF = 1.
         if (x <= 0) return 0;
-        return this._lowerGamma(a, x) / this._gamma(a);
+        return AlmTail._gammaPQ(a, x)[0];
     }
 
     _lowerGamma(a, x) {
@@ -3254,7 +3264,7 @@ class HistoricalBorrowing {
             commensurateParameter: tau2,
             conflict: {
                 zScore: Math.abs(y0 - y1) / Math.sqrt(var0 + var1),
-                pValue: 2 * (1 - this._normalCDF(Math.abs(y0 - y1) / Math.sqrt(var0 + var1)))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(y0 - y1) / Math.sqrt(var0 + var1))
             },
             posteriorEstimate: {
                 mean: posteriorMean,
@@ -4418,7 +4428,7 @@ class EditorialStandards {
         const seIntercept = Math.sqrt(mse / k);
 
         const tStat = intercept / seIntercept;
-        const pValue = 2 * (1 - this._tCDF(Math.abs(tStat), k - 2));
+        const pValue = 2 * AlmTail.ptUpper(Math.abs(tStat), k - 2);
 
         return {
             intercept,
@@ -4447,7 +4457,7 @@ class EditorialStandards {
         const tau = (concordant - discordant) / (k * (k - 1) / 2);
         const se = Math.sqrt((2 * (2 * k + 5)) / (9 * k * (k - 1)));
         const z = tau / se;
-        const pValue = 2 * (1 - this._normalCDF(Math.abs(z)));
+        const pValue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
         return {
             tau,
@@ -4487,7 +4497,7 @@ class EditorialStandards {
         const seSlope = Math.sqrt(mse * sumW / denom);
 
         const tStat = slope / seSlope;
-        const pValue = 2 * (1 - this._tCDF(Math.abs(tStat), k - 2));
+        const pValue = 2 * AlmTail.ptUpper(Math.abs(tStat), k - 2);
 
         return {
             test: 'Thompson-Sharp',
@@ -4525,7 +4535,7 @@ class EditorialStandards {
         const seSlope = Math.sqrt(mse * sumW / denom);
 
         const tStat = slope / seSlope;
-        const pValue = 2 * (1 - this._tCDF(Math.abs(tStat), k - 2));
+        const pValue = 2 * AlmTail.ptUpper(Math.abs(tStat), k - 2);
 
         return {
             test: 'Macaskill',
@@ -4565,7 +4575,7 @@ class EditorialStandards {
         const seSlope = Math.sqrt(mse * sumW / denom);
 
         const tStat = slope / seSlope;
-        const pValue = 2 * (1 - this._tCDF(Math.abs(tStat), k - 2));
+        const pValue = 2 * AlmTail.ptUpper(Math.abs(tStat), k - 2);
 
         return {
             test: 'Peters',
@@ -4608,7 +4618,7 @@ class EditorialStandards {
         const seIntercept = Math.sqrt(mse * sumX2 / (k * ssXX));
 
         const tStat = intercept / seIntercept;
-        const pValue = 2 * (1 - this._tCDF(Math.abs(tStat), k - 2));
+        const pValue = 2 * AlmTail.ptUpper(Math.abs(tStat), k - 2);
 
         return {
             test: 'Harbord',
@@ -5047,7 +5057,7 @@ class PopulationAdjustment {
             estimate: diff,
             se: se,
             ci95: [diff - this._normalQuantile(0.975) * se, diff + this._normalQuantile(0.975) * se],
-            pValue: 2 * (1 - this._normalCDF(Math.abs(diff / se)))
+            pValue: 2 * AlmTail.pnormUpper(Math.abs(diff / se))
         };
     }
 
@@ -5449,7 +5459,7 @@ class CureFractionModels {
             return Math.exp(-Math.pow(t / params.scale, params.shape));
         } else if (distribution === 'lognormal') {
             const z = (Math.log(t) - params.mu) / params.sigma;
-            return 1 - this._normalCDF(z);
+            return AlmTail.pnormUpper(z);
         }
         return Math.exp(-t / params.scale);
     }
@@ -7306,7 +7316,7 @@ class RelativeEffectivenessAssessment {
     _calculatePValue(effect, se) {
         const z = Math.abs(effect) / se;
         // Approximate p-value from z-score
-        const p = 2 * (1 - this._normalCDF(z));
+        const p = 2 * AlmTail.pnormUpper(z);
         return p;
     }
 
@@ -17046,7 +17056,7 @@ class CausalInferenceMethods {
                 estimate: ate,
                 se: se,
                 ci95: [ate - this._normalQuantile(0.975) * se, ate + this._normalQuantile(0.975) * se],
-                pValue: 2 * (1 - this._normalCDF(Math.abs(ate / se)))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(ate / se))
             },
             models: {
                 outcome: Q.performance,
@@ -18192,7 +18202,7 @@ class AdvancedSurvivalMethods {
                 estimate: rmstDiff,
                 se: seDiff,
                 ci95: [rmstDiff - this._normalQuantile(0.975) * seDiff, rmstDiff + this._normalQuantile(0.975) * seDiff],
-                pValue: 2 * (1 - this._normalCDF(Math.abs(rmstDiff / seDiff)))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(rmstDiff / seDiff))
             },
             ratio: {
                 estimate: rmstRatio,
@@ -18447,7 +18457,8 @@ class AdvancedSurvivalMethods {
     }
 
     _normalCDF(x) {
-        return 0.5 * (1 + this._erf(x / Math.sqrt(2)));
+        // Standard normal CDF (was 0.5 * (1 + erf) with a 3-term erf: Phi(0) = 0.557, abs. error up to 0.05).
+        return AlmTail.pnormUpper(-x);
     }
 
     _erf(x) {
@@ -19640,7 +19651,7 @@ class AdvancedNMAMethods {
         const df = estimates.length - 1;
 
         // Chi-squared p-value via regularized lower incomplete gamma
-        const pValue = 1 - this._chiSquareCDF(chiSq, df);
+        const pValue = AlmTail.pchisqUpper(chiSq, df);
         const holds = pValue >= 0.05;
 
         return { holds, chiSquared: chiSq, df, pValue };
@@ -19651,8 +19662,10 @@ class AdvancedNMAMethods {
     }
 
     _gammaCDF(x, a) {
+        // Regularized lower incomplete gamma P(a, x). The old 100-term series (_lowerGamma) never reached
+        // large x: for Q >= ~454 on 1 df the CDF came out ~0, so p = 1 - CDF = 1.
         if (x <= 0) return 0;
-        return this._lowerGamma(a, x) / this._gamma(a);
+        return AlmTail._gammaPQ(a, x)[0];
     }
 
     _lowerGamma(a, x) {

@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * MAIC & STC Engine for HTA Artifact Standard
  *
@@ -51,7 +57,7 @@ function normalCDF(x) {
  * Two-sided p-value from z-score
  */
 function zToPValue(z) {
-    return 2 * (1 - normalCDF(Math.abs(z)));
+    return 2 * AlmTail.pnormUpper(Math.abs(z));
 }
 
 /**

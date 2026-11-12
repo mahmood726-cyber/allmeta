@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Survival Analysis Engine for HTA Artifact Standard v0.2
  *
@@ -674,7 +680,7 @@ class LogNormalDistribution {
     survival(t) {
         if (t <= 0) return 1;
         const z = (Math.log(t) - this.mu) / this.sigma;
-        return 1 - this.normCDF(z);
+        return AlmTail.pnormUpper(z);
     }
 
     hazard(t) {
@@ -740,7 +746,7 @@ class LogNormalDistribution {
             if (e.events > 0) {
                 ll += e.events * (Math.log(this.normPDF(z)) - Math.log(sigma) - Math.log(e.time));
             }
-            const s = 1 - this.normCDF(z);
+            const s = AlmTail.pnormUpper(z);
             if (s > 0) {
                 ll += e.censored * Math.log(s);
             }
@@ -1055,7 +1061,7 @@ class GeneralizedGammaDistribution {
         const u = Q2 * Math.exp(this.Q * w);
 
         if (this.Q > 0) {
-            return 1 - this.gammainc(1 / Q2, u);
+            return AlmTail.pgammaUpper(u, 1 / Q2);
         } else {
             return this.gammainc(1 / Q2, u);
         }
@@ -1213,7 +1219,7 @@ class RoystonParmarSpline {
         } else {
             // Normal scale
             const lognorm = new LogNormalDistribution();
-            return 1 - lognorm.normCDF(eta);
+            return AlmTail.pnormUpper(eta);
         }
     }
 

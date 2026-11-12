@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Network Meta-Analysis (NMA) Engine for HTA Artifact Standard v0.5
  *
@@ -968,7 +974,7 @@ class NetworkMetaAnalysis {
         }
 
         const df = nContrasts - nParams;
-        const pValue = 1 - this.chiSquaredCDF(Q, df);
+        const pValue = AlmTail.pchisqUpper(Q, df);
 
         // Estimate tau² using DerSimonian-Laird
         const tauSq = Math.max(0, (Q - df) / this.calculateC(V, X));
@@ -988,7 +994,7 @@ class NetworkMetaAnalysis {
                 ci_lower: d[j] - this.normalQuantile(0.975) * se,
                 ci_upper: d[j] + this.normalQuantile(0.975) * se,
                 z: d[j] / se,
-                pValue: 2 * (1 - this.normalCDF(Math.abs(d[j] / se)))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(d[j] / se))
             });
         }
 
@@ -1379,7 +1385,7 @@ class NetworkMetaAnalysis {
             const varDiff = Math.max(0.001, directVar + indirectVar - 2 * nmaVar);
             const seDiff = Math.sqrt(varDiff);
             const z = diff / seDiff;
-            const pValue = 2 * (1 - this.normalCDF(Math.abs(z)));
+            const pValue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
             results.push({
                 comparison: `${t1} vs ${t2}`,
@@ -1465,7 +1471,7 @@ class NetworkMetaAnalysis {
             effectiveDF = Math.max(1, nComparisons * (1 - avgCorr));
         }
 
-        const globalP = 1 - this.chiSquaredCDF(globalQ, Math.round(effectiveDF));
+        const globalP = AlmTail.pchisqUpper(globalQ, Math.round(effectiveDF));
 
         return {
             nodeSplitting: results,

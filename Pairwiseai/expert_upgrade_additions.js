@@ -2031,7 +2031,7 @@
   function tcPValueTwoSided(yi, vi) {
     const se = Math.sqrt(Math.max(1e-12, vi));
     const z = yi / se;
-    const p = 2 * (1 - tcNormalCdf(Math.abs(z)));
+    const p = typeof AlmTail !== 'undefined' ? 2 * AlmTail.pnormUpper(Math.abs(z)) : 2 * (1 - tcNormalCdf(Math.abs(z)));
     return tcClamp(Number.isFinite(p) ? p : 1, 1e-10, 1);
   }
 

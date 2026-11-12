@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Generalized Pairwise Comparisons / Win Ratio Engine
  *
@@ -293,7 +299,7 @@ class WinRatioEngine {
 
             // Two-sided z-test on log(WR)
             const zStat = logWR / seLogWR;
-            pValue = 2 * (1 - normalCDF(Math.abs(zStat)));
+            pValue = 2 * AlmTail.pnormUpper(Math.abs(zStat));
         } else {
             ci = [winRatio, winRatio];
             pValue = totalWins === totalLosses ? 1 : 0;
@@ -390,7 +396,7 @@ class WinRatioEngine {
                 Math.exp(logWR + zAlpha * seLogWR)
             ];
             const zStat = logWR / seLogWR;
-            pValue = 2 * (1 - normalCDF(Math.abs(zStat)));
+            pValue = 2 * AlmTail.pnormUpper(Math.abs(zStat));
         } else {
             ci = [winRatio, winRatio];
             pValue = wins === losses ? 1 : 0;
@@ -474,7 +480,7 @@ class WinRatioEngine {
             ];
 
             const zStat = weightedLogWR / combinedSE;
-            combinedPValue = 2 * (1 - normalCDF(Math.abs(zStat)));
+            combinedPValue = 2 * AlmTail.pnormUpper(Math.abs(zStat));
         } else {
             combinedWR = 1;
             combinedCI = [1, 1];
@@ -525,7 +531,7 @@ class WinRatioEngine {
             ci = [Math.exp(logWO - zAlpha * seLogWO), Math.exp(logWO + zAlpha * seLogWO)];
 
             const zStat = logWO / seLogWO;
-            pValue = 2 * (1 - normalCDF(Math.abs(zStat)));
+            pValue = 2 * AlmTail.pnormUpper(Math.abs(zStat));
         } else {
             ci = [wo, wo];
             pValue = 1;
