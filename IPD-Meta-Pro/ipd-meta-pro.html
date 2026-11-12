@@ -74311,75 +74311,18 @@ function estimateTau2DL(studies) {
 
 
 function estimateTau2REML(studies) {
-
-    var tau2 = estimateTau2DL(studies);
-
-    for (var iter = 0; iter < 100; iter++) {
-
-        var weights = studies.map(function(s) { return 1 / (s.vi + tau2); });
-
-        var sumW = weights.reduce(function(a, b) { return a + b; }, 0);
-
-        var estimate = studies.reduce(function(s, st, i) { return s + weights[i] * st.yi; }, 0) / sumW;
-
-        var num = 0, denom = 0;
-
-        studies.forEach(function(s, i) {
-
-            var w = weights[i];
-
-            var resid = s.yi - estimate;
-
-            num += w * w * (resid * resid - s.vi);
-
-            denom += w * w;
-
-        });
-
-        var tau2New = Math.max(0, tau2 + num / denom);
-
-        if (Math.abs(tau2New - tau2) < 1e-8) break;
-
-        tau2 = tau2New;
-
-    }
-
-    return tau2;
-
+    // IPD-Tau fix: this was its own iteration, tau2 <- tau2 + sum w^2 (r^2 - v) / sum w^2. Its fixed point
+    // sum w^2 (r^2 - v) = 0 omits tau^2 from the marginal variance v + tau^2 (and the REML term), so tau^2 ran
+    // upwards to the 100-step cap (survival 0.808, metafor REML 0.0312), and its absolute 1e-8 step stopped at the
+    // DL start for data in small units. It now uses the REML solver the P60 archive validates.
+    return MetaAnalysis._estimateTau2Fisher(studies.map(function(s) { return s.yi; }), studies.map(function(s) { return s.vi; }), true);
 }
-
-
 
 function estimateTau2PM(studies) {
-
-    var k = studies.length;
-
-    var tau2 = 0;
-
-    for (var iter = 0; iter < 100; iter++) {
-
-        var weights = studies.map(function(s) { return 1 / (s.vi + tau2); });
-
-        var sumW = weights.reduce(function(a, b) { return a + b; }, 0);
-
-        var estimate = studies.reduce(function(s, st, i) { return s + weights[i] * st.yi; }, 0) / sumW;
-
-        var Qstar = studies.reduce(function(s, st, i) { return s + weights[i] * Math.pow(st.yi - estimate, 2); }, 0);
-
-        if (Math.abs(Qstar - (k - 1)) < 1e-6) break;
-
-        if (Qstar > k - 1) tau2 += 0.01;
-
-        else tau2 = Math.max(0, tau2 - 0.005);
-
-    }
-
-    return tau2;
-
+    // IPD-Tau fix: this stepped tau^2 by a fixed +0.01 / -0.005 from 0, so it returned a point of that grid
+    // (survival 0.025, metafor PM 0.0244; in units x 1e4, 1.0 vs 2443912). It now uses the validated PM solver.
+    return MetaAnalysis._estimateTau2PM(studies.map(function(s) { return s.yi; }), studies.map(function(s) { return s.vi; }));
 }
-
-
-
 
 
 /**
