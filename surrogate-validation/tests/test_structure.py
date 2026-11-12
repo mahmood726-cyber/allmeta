@@ -36,3 +36,14 @@ def test_surfaces_adjusted_r2_and_degeneracy_caveats():
 
 def test_test_hook_present():
     assert "__almSurrogate" in _h()
+
+
+def test_validation_claim_names_what_was_validated():
+    # The footer said only "Cross-language validated against numpy". The page's own unit test does compare with a
+    # numpy oracle, but the external validation (P52 archive) was against R: slope/intercept, Q, df, I^2 with
+    # metafor; naive and leave-one-out R^2 with Surrogate::TrialLevelMA; Pearson r with base R. The adjusted R^2
+    # and STE have no package implementation and were checked only against their printed definitions.
+    foot = _h().split('class="footer-note"', 1)[1].split("</p>", 1)[0]
+    assert "Cross-language validated against numpy" not in foot
+    for word in ("metafor", "TrialLevelMA", "printed definition"):
+        assert word in foot, word
