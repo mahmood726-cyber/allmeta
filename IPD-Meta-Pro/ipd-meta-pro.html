@@ -3736,110 +3736,97 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
 
  tCDF: function(t, df) {
-
- const x = df / (df + t * t);
-
- const prob = 0.5 * this.betaInc(x, df / 2, 0.5);
-
- return t < 0 ? prob : 1 - prob;
-
+ // P(T <= t). IPD-Beta fix: the old betaCF started its continued fraction at bz = 0 instead of
+ // 1 - (a + b) x / (a + 1), so betaInc (and with it tCDF) returned values outside [0, 1]
+ // (tCDF(2, 5) = 1.954, R pt = 0.94903). The tail mass is now taken directly from I_x(df/2, 1/2).
+ if (isNaN(t) || !(df > 0)) return NaN;
+ if (t === Infinity) return 1;
+ if (t === -Infinity) return 0;
+ if (t === 0) return 0.5;
+ const half = 0.5 * this.betaInc(df / (df + t * t), df / 2, 0.5);   // P(T > |t|)
+ return t < 0 ? half : 1 - half;
  },
-
-
 
  tQuantile: function(p, df) {
-
- if (df <= 0) return 0;
-
- if (df === 1) return Math.tan(Math.PI * (p - 0.5));
-
-
-
- let x = this.normQuantile(p);
-
- for (let i = 0; i < 10; i++) {
-
- const fx = this.tCDF(x, df) - p;
-
- const fpx = Math.exp(this.logGamma((df+1)/2) - this.logGamma(df/2) -
-
- 0.5*Math.log(df*Math.PI) - (df+1)/2 * Math.log(1 + x*x/df));
-
- if (Math.abs(fpx) < 1e-15) break;
-
- x -= fx / fpx;
-
- if (Math.abs(fx) < 1e-10) break;
-
+ // Inverse of tCDF. IPD-Beta fix: the old Newton iteration started from normQuantile(p) (which
+ // returns -1.0022 for p = 0.975) on top of the broken tCDF and ran away (tQuantile(0.975, 5) =
+ // -12282, R qt = 2.5705818). Now: solve the upper tail P(T > x) = min(p, 1 - p) for x >= 0 by
+ // Newton steps kept inside a bracket [lo, hi] (bisection when a step leaves it), then apply the sign.
+ if (isNaN(p) || !(df > 0)) return NaN;
+ if (p <= 0) return p === 0 ? -Infinity : NaN;
+ if (p >= 1) return p === 1 ? Infinity : NaN;
+ if (p === 0.5) return 0;
+ const sign = p < 0.5 ? -1 : 1;
+ const q = p < 0.5 ? p : 1 - p;                     // target upper-tail probability, in (0, 0.5)
+ if (df === 1) return sign / Math.tan(Math.PI * q);   // Cauchy; cot(pi q) avoids tan near pi/2
+ const self = this;
+ const upper = function(x) { return 0.5 * self.betaInc(df / (df + x * x), df / 2, 0.5); };
+ const lc = this._lnBeta(df / 2, 0.5) + 0.5 * Math.log(df);
+ const dens = function(x) { return Math.exp(-lc - (df + 1) / 2 * Math.log1p(x * x / df)); };
+ let lo = 0, hi = 1;
+ while (upper(hi) > q && hi < 1e300) { lo = hi; hi *= 2; }
+ let x = 0.5 * (lo + hi);
+ for (let it = 0; it < 200; it++) {
+ const f = upper(x) - q;                          // decreasing in x
+ if (f === 0) break;
+ if (f > 0) lo = x; else hi = x;
+ let nx = x + f / dens(x);                        // Newton step on upper(x) - q
+ if (!(nx > lo && nx < hi)) nx = 0.5 * (lo + hi);
+ if (Math.abs(nx - x) <= 1e-15 * Math.max(1, Math.abs(nx)) || hi - lo <= 1e-15 * hi) { x = nx; break; }
+ x = nx;
  }
-
- return x;
-
+ return sign * x;
  },
 
-
+ // log B(a, b) without the toFixed(6)-keyed cache of logGamma (that cache returns the value for a
+ // rounded argument, an error of order 1e-7 relative whenever a or b is not exact to 6 decimals).
+ _lnBeta: function(a, b) {
+ const lg = function(z) {
+ if (z < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - lg(1 - z);
+ z -= 1;
+ let x = GAMMA_C[0];
+ for (let i = 1; i < 9; i++) x += GAMMA_C[i] / (z + i);
+ const t = z + 7.5;
+ return LOG2PI_HALF + (z + 0.5) * Math.log(t) - t + Math.log(x);
+ };
+ return lg(a) + lg(b) - lg(a + b);
+ },
 
  betaInc: function(x, a, b) {
-
+ // Regularized incomplete beta I_x(a, b) (R pbeta(x, a, b)).
+ if (isNaN(x) || !(a > 0) || !(b > 0)) return NaN;
  if (x <= 0) return 0;
-
  if (x >= 1) return 1;
-
-
-
- const bt = Math.exp(this.logGamma(a + b) - this.logGamma(a) - this.logGamma(b) +
-
- a * Math.log(x) + b * Math.log(1 - x));
-
-
-
- if (x < (a + 1) / (a + b + 2)) {
-
- return bt * this.betaCF(x, a, b) / a;
-
- }
-
- return 1 - bt * this.betaCF(1 - x, b, a) / b;
-
+ const lbt = a * Math.log(x) + b * Math.log1p(-x) - this._lnBeta(a, b);
+ // the continued fraction converges fast for x < (a + 1) / (a + b + 2); otherwise use symmetry
+ if (x < (a + 1) / (a + b + 2)) return Math.exp(lbt) * this.betaCF(x, a, b) / a;
+ return 1 - Math.exp(lbt) * this.betaCF(1 - x, b, a) / b;
  },
-
-
 
  betaCF: function(x, a, b) {
-
- let am = 1, bm = 1, az = 1, bz = 0;
-
- for (let m = 1; m <= 100; m++) {
-
- const em = m;
-
- const d = em * (b - em) * x / ((a + 2*em - 1) * (a + 2*em));
-
- const ap = az + d * am;
-
- const bp = bz + d * bm;
-
- const d2 = -(a + em) * (a + b + em) * x / ((a + 2*em) * (a + 2*em + 1));
-
- const app = ap + d2 * az;
-
- const bpp = bp + d2 * bz;
-
- const aold = az;
-
- am = ap / bpp; bm = bp / bpp;
-
- az = app / bpp; bz = 1;
-
- if (Math.abs(az - aold) < 1e-10 * Math.abs(az)) return az;
-
+ // Continued fraction for I_x(a, b) (Numerical Recipes betacf), modified Lentz evaluation.
+ const TINY = 1e-300, EPS = 1e-15;
+ const qab = a + b, qap = a + 1, qam = a - 1;
+ let c = 1, d = 1 - qab * x / qap;
+ if (Math.abs(d) < TINY) d = TINY;
+ d = 1 / d;
+ let h = d;
+ for (let m = 1; m <= 1000; m++) {
+ const m2 = 2 * m;
+ let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+ d = 1 + aa * d; if (Math.abs(d) < TINY) d = TINY;
+ c = 1 + aa / c; if (Math.abs(c) < TINY) c = TINY;
+ d = 1 / d; h *= d * c;
+ aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+ d = 1 + aa * d; if (Math.abs(d) < TINY) d = TINY;
+ c = 1 + aa / c; if (Math.abs(c) < TINY) c = TINY;
+ d = 1 / d;
+ const del = d * c;
+ h *= del;
+ if (Math.abs(del - 1) < EPS) break;
  }
-
- return az;
-
+ return h;
  },
-
-
 
  clearCaches: function() {
 
@@ -53758,155 +53745,20 @@ window.showTutorialMenu = showTutorialMenu;
 
 
  tQuantile: function(p, df) {
-
- if (df <= 0) return 0;
-
- if (df === 1) return Math.tan(Math.PI * (p - 0.5));
-
- if (df === 2) return (2 * p - 1) / Math.sqrt(2 * p * (1 - p));
-
-
-
- const z = this.normQuantile(p);
-
- let x = z;
-
-
-
- for (let i = 0; i < 10; i++) {
-
- const fx = this.tCDF(x, df) - p;
-
- const fpx = this.tPDF(x, df);
-
- if (Math.abs(fpx) < 1e-15) break;
-
- x = x - fx / fpx;
-
- if (Math.abs(fx) < 1e-10) break;
-
- }
-
-
-
- return x;
-
+ // IPD-Beta fix: this object carried its own copy of the broken MathUtils betaCF / tCDF /
+ // tQuantile (tQuantile(0.975, 5) = -12282). It now uses the single corrected implementation.
+ return MathUtils.tQuantile(p, df);
  },
-
-
-
  tCDF: function(x, df) {
-
- const t = df / (df + x * x);
-
- return x < 0 ? 0.5 * this.betaInc(t, df/2, 0.5) : 1 - 0.5 * this.betaInc(t, df/2, 0.5);
-
+ return MathUtils.tCDF(x, df);
  },
-
-
-
  tPDF: function(x, df) {
-
  return Math.exp(this.logGamma((df+1)/2) - this.logGamma(df/2) - 0.5*Math.log(df*Math.PI) -
-
  (df+1)/2 * Math.log(1 + x*x/df));
-
  },
-
-
-
  betaInc: function(x, a, b) {
-
- if (x <= 0) return 0;
-
- if (x >= 1) return 1;
-
-
-
- const bt = Math.exp(this.logGamma(a+b) - this.logGamma(a) - this.logGamma(b) +
-
- a * Math.log(x) + b * Math.log(1-x));
-
-
-
- if (x < (a+1)/(a+b+2)) {
-
- return bt * this.betaCF(x, a, b) / a;
-
- } else {
-
- return 1 - bt * this.betaCF(1-x, b, a) / b;
-
- }
-
+ return MathUtils.betaInc(x, a, b);
  },
-
-
-
- betaCF: function(x, a, b) {
-
- const maxIter = 100;
-
- const eps = 1e-10;
-
-
-
- let am = 1, bm = 1, az = 1, bz = 0;
-
-
-
- for (let m = 1; m <= maxIter; m++) {
-
- const em = m;
-
- const d = em * (b - em) * x / ((a + 2*em - 1) * (a + 2*em));
-
-
-
- let ap = az + d * am;
-
- let bp = bz + d * bm;
-
-
-
- const d2 = -(a + em) * (a + b + em) * x / ((a + 2*em) * (a + 2*em + 1));
-
-
-
- const app = ap + d2 * az;
-
- const bpp = bp + d2 * bz;
-
-
-
- const aold = az;
-
- am = ap / bpp;
-
- bm = bp / bpp;
-
- az = app / bpp;
-
- bz = 1;
-
-
-
- if (Math.abs(az - aold) < eps * Math.abs(az)) {
-
- return az;
-
- }
-
- }
-
-
-
- return az;
-
- },
-
-
-
  normCDF: function(x, mu = 0, sigma = 1) {
 
  const z = (x - mu) / sigma;
