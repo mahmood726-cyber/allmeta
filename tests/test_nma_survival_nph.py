@@ -165,3 +165,28 @@ def test_default_output_has_no_method_key():
     assert "method" not in out
     for iv, refs in REML_FIXTURE["intervals"].items():
         assert math.isclose(out["intervals"][iv]["tau2"], refs["DL"]["tau2"], abs_tol=1e-9)
+
+
+CC0_FIXTURE = json.loads((ROOT / "tests" / "fixtures" / "nma-survival-nph-cc-only0.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("model", ["fe", "re"])
+def test_cc_only_zero_matches_meta_pairwise_netmeta(model):
+    # ccTo: 'only0' adds the continuity correction only in a study-interval with a zero event count, as
+    # meta::pairwise(sm = "IRR", incr = 0.5) does by default. Reference: tests/fixtures/nma-survival-nph-cc-only0.R
+    # (meta 8.5-0, netmeta 3.7.0). Tolerance fixed before comparing: 1e-6 absolute.
+    ref = CC0_FIXTURE["common" if model == "fe" else "random"]
+    out = _run(f"S.fit({json.dumps(CC0_FIXTURE['rows'])}, {{model:'{model}', cc:0.5, ccTo:'only0'}})")
+    got = out["intervals"]["1"]
+    if model == "re":
+        assert math.isclose(got["tau2"], ref["tau2"], abs_tol=1e-6), (got["tau2"], ref["tau2"])
+    for t, e in ref["effects"].items():
+        assert math.isclose(got["effects"][t]["logHR"], e["logHR"], abs_tol=1e-6), (model, t, got["effects"][t], e)
+        assert math.isclose(got["effects"][t]["se"], e["se"], abs_tol=1e-6), (model, t, got["effects"][t], e)
+
+
+def test_cc_default_still_added_to_every_arm():
+    # Default (ccTo unset): 0.5 added to every arm, as before.
+    out = _run(f"S.buildContrasts({json.dumps(CC0_FIXTURE['rows'])}, 0.5)")
+    s2 = [c for c in out["1"] if c["study"] == "s2|1"][0]
+    assert math.isclose(s2["est"], math.log(21.5 / 880) - math.log(30.5 / 900), rel_tol=1e-12)

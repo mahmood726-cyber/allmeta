@@ -29,8 +29,11 @@
 
   // Build per-interval within-study log-HR contrasts (vs each study's base arm).
   // rows: [{study, treatment, interval, events, ptime}]
-  function buildContrasts(rows, cc) {
+  // ccTo: "all" (default) adds cc to every arm; "only0" adds it only to the arms of a study-interval
+  // that has a zero event count (meta::pairwise(sm = "IRR") default), so a study without zeros is uncorrected.
+  function buildContrasts(rows, cc, ccTo) {
     cc = cc == null ? 0.5 : cc;
+    var only0 = ccTo === "only0";
     // group by study -> interval -> [{treatment, events, ptime}]
     var byStudy = {};
     rows.forEach(function (r) {
@@ -45,16 +48,17 @@
           return String(a.treatment) < String(b.treatment) ? -1 : 1;
         });
         if (arms.length < 2) return;               // need >=2 arms in the interval
+        var ccS = only0 && !arms.some(function (x) { return +x.events === 0; }) ? 0 : cc;
         // Every pairwise comparison (i < j): a multi-arm study must supply all m(m-1)/2 of them
         // (AlmNmaMultiarm, like netmeta's chkmultiarm, refuses an incomplete set). The pairwise
         // variances are sums of independent arm variances, so the GLS recovers the shared-arm
         // covariance Var(base) exactly. For 2 arms this is the single base contrast, as before.
         for (var i = 0; i < arms.length; i++) {
-          var b = arms[i], lhB = _logHazard(b.events, b.ptime, cc);
+          var b = arms[i], lhB = _logHazard(b.events, b.ptime, ccS);
           for (var j = i + 1; j < arms.length; j++) {
             var a = arms[j];
-            var est = _logHazard(a.events, a.ptime, cc) - lhB;
-            var se = Math.sqrt(1 / (a.events + cc) + 1 / (b.events + cc));
+            var est = _logHazard(a.events, a.ptime, ccS) - lhB;
+            var se = Math.sqrt(1 / (a.events + ccS) + 1 / (b.events + ccS));
             (perInterval[iv] = perInterval[iv] || []).push({
               study: s + "|" + iv, t1: String(b.treatment), t2: String(a.treatment),
               est: est, se: se
@@ -67,7 +71,7 @@
   }
 
   /**
-   * fit(rows, {cc=0.5, model='fe'|'re', method='DL'|'REML'|'ML'})  (method: random-effects tau^2 estimator
+   * fit(rows, {cc=0.5, ccTo='all'|'only0', model='fe'|'re', method='DL'|'REML'|'ML'})  (method: random-effects tau^2 estimator
    *   in every interval, netmeta method.tau; default DL)
    * rows: [{study, treatment, interval, events, ptime}] (arm-level, per interval).
    * Returns { intervalIds, intervals:{ id:{ refTreat, treatments, effects:{t:{logHR,se}} } },
@@ -77,7 +81,8 @@
     opts = opts || {};
     var cc = opts.cc == null ? 0.5 : opts.cc, model = opts.model || "fe", method = opts.method || "DL";
     if (typeof global.AlmNmaMultiarm === "undefined") throw new Error("nma-survival-nph: AlmNmaMultiarm not loaded");
-    var perInterval = buildContrasts(rows, cc);
+    if (opts.ccTo != null && opts.ccTo !== "all" && opts.ccTo !== "only0") throw new Error("nma-survival-nph: ccTo must be 'all' or 'only0'");
+    var perInterval = buildContrasts(rows, cc, opts.ccTo);
     // Time order: numeric labels sort numerically ("2" before "10"); otherwise the string order as before.
     var NUM = /^\s*-?\d+(\.\d+)?\s*$/;
     var intervalIds = Object.keys(perInterval).sort(function (a, b) {

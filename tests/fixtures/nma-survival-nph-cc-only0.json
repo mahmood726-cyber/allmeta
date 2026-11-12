@@ -1,0 +1,100 @@
+{
+  "rows": [
+    {
+      "study": "s1",
+      "treatment": "A",
+      "interval": "1",
+      "events": 12,
+      "ptime": 400
+    },
+    {
+      "study": "s1",
+      "treatment": "B",
+      "interval": "1",
+      "events": 0,
+      "ptime": 410
+    },
+    {
+      "study": "s2",
+      "treatment": "A",
+      "interval": "1",
+      "events": 30,
+      "ptime": 900
+    },
+    {
+      "study": "s2",
+      "treatment": "B",
+      "interval": "1",
+      "events": 21,
+      "ptime": 880
+    },
+    {
+      "study": "s3",
+      "treatment": "A",
+      "interval": "1",
+      "events": 25,
+      "ptime": 700
+    },
+    {
+      "study": "s3",
+      "treatment": "C",
+      "interval": "1",
+      "events": 14,
+      "ptime": 720
+    },
+    {
+      "study": "s4",
+      "treatment": "B",
+      "interval": "1",
+      "events": 9,
+      "ptime": 300
+    },
+    {
+      "study": "s4",
+      "treatment": "C",
+      "interval": "1",
+      "events": 11,
+      "ptime": 310
+    },
+    {
+      "study": "s5",
+      "treatment": "A",
+      "interval": "1",
+      "events": 40,
+      "ptime": 1200
+    },
+    {
+      "study": "s5",
+      "treatment": "C",
+      "interval": "1",
+      "events": 22,
+      "ptime": 1150
+    }
+  ],
+  "common": {
+    "tau2": 0.0620836402785934,
+    "effects": {
+      "B": {
+        "logHR": -0.515632371344086,
+        "se": 0.24316372246603
+      },
+      "C": {
+        "logHR": -0.535567638627296,
+        "se": 0.193383080515268
+      }
+    }
+  },
+  "random": {
+    "tau2": 0.0620836402785934,
+    "effects": {
+      "B": {
+        "logHR": -0.58137360847016,
+        "se": 0.31000036303367
+      },
+      "C": {
+        "logHR": -0.541644023803411,
+        "se": 0.25142089805182
+      }
+    }
+  }
+}

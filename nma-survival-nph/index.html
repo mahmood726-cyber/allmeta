@@ -69,6 +69,9 @@
           <select id="tau-method" aria-label="Heterogeneity estimator"><option value="DL" selected>DerSimonian-Laird (netmeta default)</option><option value="REML">REML</option><option value="ML">ML</option></select>
         </label>
         <label><span class="lbl">Continuity correction</span><input id="cc" type="number" step="any" min="0" value="0.5" aria-label="Continuity correction"></label>
+        <label><span class="lbl">Correction added to</span>
+          <select id="cc-to" aria-label="Continuity correction added to"><option value="all" selected>Every arm</option><option value="only0">Only studies with a zero count (meta/netmeta default)</option></select>
+        </label>
       </div>
       <button class="primary" id="run" type="button">Fit</button>
     </section>
@@ -80,7 +83,7 @@
     </section>
   </main>
   <footer>
-    <p><strong>Method.</strong> Piecewise-exponential (Poisson) approximation: arm log-hazard = log((events+cc)/person-time), per-interval log-HR = difference (Var ≈ 1/(events+cc) summed over the two arms). Each interval is an independent contrast-based NMA solved by <code>shared/nma-multiarm-v1.js</code> (verified vs <code>netmeta</code> ≤1e-6); random-effects τ² by DerSimonian-Laird (default), REML or ML, the last two maximising the likelihood with the full multi-arm sampling covariance (checked against <code>metafor::rma.mv</code>, and against <code>netmeta(method.tau=)</code> for two-arm trials, ≤1e-6; netmeta's REML/ML step uses a diagonal sampling covariance for multi-arm trials when given only TE/seTE); interval effects are pooled by inverse variance. Interval rows use an independent-interval approximation (within-arm temporal correlation not modeled). Engine <code>shared/nma-survival-nph.js</code>, verified vs <code>netmeta::netmeta()</code> per interval. Offline. Ported from advanced-nma-pooling.</p>
+    <p><strong>Method.</strong> Piecewise-exponential (Poisson) approximation: arm log-hazard = log((events+cc)/person-time), per-interval log-HR = difference (Var ≈ 1/(events+cc) summed over the two arms); cc is added to every arm by default, or only in a study-interval with a zero count (as <code>meta::pairwise(sm="IRR")</code>; checked against meta + netmeta ≤1e-6; in a multi-arm study it is then added to all of that study's arms). Each interval is an independent contrast-based NMA solved by <code>shared/nma-multiarm-v1.js</code> (verified vs <code>netmeta</code> ≤1e-6); random-effects τ² by DerSimonian-Laird (default), REML or ML, the last two maximising the likelihood with the full multi-arm sampling covariance (checked against <code>metafor::rma.mv</code>, and against <code>netmeta(method.tau=)</code> for two-arm trials, ≤1e-6; netmeta's REML/ML step uses a diagonal sampling covariance for multi-arm trials when given only TE/seTE); interval effects are pooled by inverse variance. Interval rows use an independent-interval approximation (within-arm temporal correlation not modeled). Engine <code>shared/nma-survival-nph.js</code>, verified vs <code>netmeta::netmeta()</code> per interval. Offline. Ported from advanced-nma-pooling.</p>
   </footer>
 
   <script>
@@ -117,6 +120,7 @@
         var tauMethod = $("tau-method") ? $("tau-method").value : "DL";
         var fitOpts = { model: $("model").value, cc: parseFloat($("cc").value) };
         if (tauMethod && tauMethod !== "DL") fitOpts.method = tauMethod;   // DL: the default call, output unchanged
+        if ($("cc-to") && $("cc-to").value === "only0") fitOpts.ccTo = "only0";
         try { res = window.AlmNmaSurvivalNPH.fit(rows, fitOpts); }
         catch (e) { note.hidden = false; note.textContent = "Error: " + e.message; $("out").textContent = ""; return; }
         var out = $("out"); out.textContent = "";
