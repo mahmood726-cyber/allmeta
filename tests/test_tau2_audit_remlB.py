@@ -102,19 +102,19 @@ def test_living_meta_estimators_match_metafor(page):
     got = pg.evaluate("""d => { const o = {}; for (const nm in d) { o[nm] = {};
         for (const m of ['DL','REML','ML','PM','HE','SJ']) o[nm][m] = LMA.metaAnalysis(d[nm].yi, d[nm].vi, { method: m }).tau2; }
         return o; }""", data)
-    rows = [("living-meta", m, nm, got[nm][m], expected(nm, "tau2", m)) for nm in got for m in got[nm]
-            if (m, nm) != ("PM", "normand_x1e4")]  # see the strict xfail below
+    rows = [("living-meta", m, nm, got[nm][m], expected(nm, "tau2", m)) for nm in got for m in got[nm]]
     report(rows)
 
 
-@pytest.mark.xfail(strict=True, reason="shared/ma-core.js tau2PM stops doubling its bracket at hi > 1e9 "
-                   "(returns 2^30 = 1073741824 for normand x1e4, true 7.28e10); ma-core is lane remlA's. "
-                   "When that is fixed this xfail turns into a failure: delete the marker and the exclusion above.")
 def test_living_meta_pm_on_large_scale_via_ma_core(page):
+    """normand x1e4 PM through shared/ma-core.js. Was a strict xfail while tau2PM capped its bracket at
+    hi > 1e9 (returned 2^30 = 1073741824); PR #538 removed the cap. metafor: 728.251128594497 * 1e8."""
     pg = page("living-meta/living-meta-complete.html")
+    exp = expected("normand_x1e4", "tau2", "PM")
+    assert abs(exp - 7.28251128594497e10) / 7.28251128594497e10 < 1e-12, exp  # oracle file, not a new pin
     y, v, _ = datasets()["normand_x1e4"]
     got = pg.evaluate("d => LMA.metaAnalysis(d.yi, d.vi, { method: 'PM' }).tau2", {"yi": y, "vi": v})
-    report([("living-meta", "PM", "normand_x1e4", got, expected("normand_x1e4", "tau2", "PM"))])
+    report([("living-meta", "PM", "normand_x1e4", got, exp)])
 
 
 def test_bayesian_nma_dl_is_the_network_dl(page):
