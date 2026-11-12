@@ -11,8 +11,14 @@ Pages hand the validator their studies plus (optionally) a method and a test. Be
   this analysis in R\" on that page" -- a control that tsa, pet-peese, copas, bayesian-ma,
   bayesian-mcmc, bma-tau-priors, cross-design and gosh-metareg do not have.
 
+Review of PR #537: pet-peese and copas re-read the input box when "Verify in R" was pressed,
+so an input edited after Run reached R while the page showed the earlier row, and copas sent
+the estimator the (debounced) selector named rather than the one the displayed row used.
+
 Behaviour in real Chrome is checked by hub/shared/tests/_validator_handoff.mjs
-(tools/userpath/validator-handoff.cjs); these are the static guards that run in CI.
+(tools/userpath/validator-handoff.cjs, tools/userpath/estimator-handoff.cjs, and the
+estimator-handoff / validator-handoff specs); these are the static guards that run in CI,
+and they check that every row a banner names is covered by those browser checks.
 """
 import re
 from pathlib import Path
@@ -55,42 +61,61 @@ def test_banner_names_the_live_control_only_for_apps_that_have_it():
     assert "HAS_LIVE_R_CHECK.has(from)" in PAGE[max(0, i - 400):i]
 
 
-def test_tsa_sends_its_fixed_effect_pool_model_on_every_path():
-    html = _app("tsa")
-    assert 'window.__almValidatorModel = function () { return { method: "FE", test: "z" }; };' in html
-    call = re.search(r"MaStudies\.attachVerifyInRButton\(\{ btn: \"#btn-verify-in-r\",.*?\}\);", html, re.S).group(0)
-    assert "__almValidatorModel().method" in call and "__almValidatorModel().test" in call
+HARNESS = (ROOT / "hub" / "shared" / "tests" / "_validator_handoff.mjs").read_text(encoding="utf-8")
+SPEC = (ROOT / "hub" / "shared" / "tests" / "estimator-handoff.spec.mjs").read_text(encoding="utf-8")
 
 
-def test_pet_peese_sends_its_fixed_effect_pool_model():
-    html = _app("pet-peese")
-    assert 'window.__almValidatorModel = function () { return { method: "FE", test: "z" }; };' in html
-    call = re.search(r"MaStudies\.attachVerifyInRButton\(\{ btn: \"#btn-verify-in-r\",.*?\}\);", html, re.S).group(0)
-    assert "__almValidatorModel().method" in call and "__almValidatorModel().test" in call
+def _same_row():
+    """{app: {estimator, ...}} from the validator's SAME_ROW table."""
+    block = PAGE[PAGE.index("const SAME_ROW = {"):]
+    block = block[:block.index("\n    };")]
+    out = {}
+    for m in re.finditer(r'^\s*"([a-z0-9-]+)":\s*\{(.*?)\]\s*\}', block, re.M | re.S):
+        out[m.group(1)] = set(re.findall(r'\b([A-Z]{2,4}):\s*\["', m.group(2)))
+    assert out, "SAME_ROW is empty"
+    return out
 
 
-def test_copas_sends_the_tau2_estimator_it_selects():
-    html = _app("copas")
-    assert "window.__almValidatorModel = function () {" in html
-    model = re.search(r"window\.__almValidatorModel = function \(\) \{(.*?)\n    \};", html, re.S).group(1)
-    assert "opt-tau" in model and '"z"' in model
-    call = re.search(r"MaStudies\.attachVerifyInRButton\(\{ btn: \"#btn-verify-in-r\",.*?\}\);", html, re.S).group(0)
-    assert "__almValidatorModel().method" in call and "__almValidatorModel().test" in call
+def test_same_row_claims_name_estimators_the_validator_fits():
+    # A banner may say R "should equal" a row only for an app whose own model it is not
+    # (NOT_IV_POOL) and only under an estimator the validator accepts from the URL.
+    allow = set(re.findall(r'"([A-Z]{2,4})"', re.search(r"if \(m && \[([^\]]+)\]\.includes\(m\)\)", PAGE).group(1)))
+    for app, ests in _same_row().items():
+        assert app in _not_iv_pool_keys(), app
+        assert ests and ests <= allow, (app, ests, allow)
 
 
-def test_bayesian_ma_sends_pm_only_when_its_tau2_is_pm():
-    html = _app("bayesian-ma")
-    model = re.search(r"window\.__almValidatorModel = function \(\) \{(.*?)\n    \};", html, re.S).group(1)
-    assert '"PM"' in model and "f-tau-method" in model
-    call = re.search(r"MaStudies\.attachVerifyInRButton\(\{ btn: \"#btn-verify-in-r\",.*?\}\);", html, re.S).group(0)
-    assert "__almValidatorModel().method" in call
-    bar = re.search(r"AlmFlow\.attachContinueBar\(\{.*?\}\);", html, re.S).group(0)
-    assert "getValidatorModel" in bar
+def test_every_same_row_claim_is_checked_against_the_displayed_row_in_chrome():
+    # The requirement is behavioural, so it is tested in a browser: for every app whose
+    # banner names a row, (1) the validator's fit equals the row the page SHOWS after the
+    # input is edited without re-running (checkEditedInput), (2) the model the hand-off
+    # sends is one the banner names (APPS[app].model.method), and (3) for copas the
+    # estimator follows the displayed fit: DL -> DL and REML -> REML, also while the
+    # debounced refit is pending (checkCopasModelFollowsDisplay).
+    rows = _same_row()
+    shown = set(re.findall(r"^\s*'?([a-z0-9-]+)'?:\s*\{\s*d:\s*\d", HARNESS[HARNESS.index("export const SHOWN"):], re.M))
+    assert set(rows) == shown, (set(rows), shown)
+    for app, ests in rows.items():
+        cfg = re.search(r"^\s*'" + re.escape(app) + r"':\s*\{[^\n]*\n(?:\s*//[^\n]*\n)*\s*model:\s*\{\s*method:\s*'([A-Z]+)'", HARNESS, re.M)
+        assert cfg and cfg.group(1) in ests, (app, cfg and cfg.group(1), ests)
+    assert "checkEditedInput" in SPEC and "Object.keys(SHOWN)" in SPEC
+    assert "checkCopasModelFollowsDisplay" in SPEC and "toEqual(['DL', 'REML'])" in SPEC
+    for k in ("DL", "REML"):
+        assert k in rows["copas"], rows["copas"]
 
 
-def test_banner_names_the_matching_row_only_when_the_model_was_sent():
-    assert "const SAME_ROW = {" in PAGE
-    for app in ("tsa", "pet-peese", "copas", "bayesian-ma"):
-        assert re.search(r'^\s*"' + re.escape(app) + r'":\s*\{', PAGE[PAGE.index("const SAME_ROW = {"):], re.M), app
-    # Only when the URL carried a method (the app sent its model), never on the PM default.
-    assert 'params.get("method")' in PAGE and "showSourceBanner(params.get(\"from\"), sent)" in PAGE
+def test_run_button_pages_hand_off_the_analysed_studies_not_the_input_box():
+    # pet-peese and copas analyse on Run (copas also on a debounced option change), so the
+    # input box can differ from what the page shows. Their hand-off must come from the
+    # analysed result, never from re-reading the input box when the control is pressed.
+    for app in ("pet-peese", "copas"):
+        html = _app(app)
+        if html is None:
+            continue
+        body = re.search(r"window\.__almValidatorStudies = function \(\) \{(.*?)\n    \};", html, re.S).group(1)
+        assert "getElementById" not in body and ".value" not in body, (app, body)
+        # one-line form (pet-peese: a constant) or a block (copas: the recorded estimator)
+        model = (re.search(r"window\.__almValidatorModel = function \(\) \{([^\n]*)\};\n", html)
+                 or re.search(r"window\.__almValidatorModel = function \(\) \{\n(.*?)\n    \};", html, re.S))
+        assert model, app
+        assert "getElementById" not in model.group(1), (app, model.group(1))

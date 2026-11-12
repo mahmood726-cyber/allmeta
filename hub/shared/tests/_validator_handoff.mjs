@@ -207,3 +207,98 @@ export async function checkAppHandoff(context, baseURL, app, { stale = true, web
   await page.close();
   return out;
 }
+
+// ---- Review of PR #537 (lane estho2): the validator must re-fit the DISPLAYED result ----
+// MAJOR-1: pet-peese/copas read the textarea when the control was pressed, so studies
+// edited after the last run reached R while the page still showed the earlier row.
+// MINOR-1: copas's tau^2 selector is debounced, so the selector could name a model the
+// displayed row was not fitted with. The requirement for every app whose banner names a
+// row (SAME_ROW in webr-validator): what the validator fits, rounded as the page rounds,
+// is what that row SHOWS when the control is pressed, read from the page's text and not
+// from any hook that could share the bug.
+const r3 = (x, d) => (Number.isFinite(x) ? x.toFixed(d) : String(x));
+export const SHOWN = {
+  // "Pooled μ" card: "-0.430 [-0.510, -0.351]"
+  tsa: { d: 3, fields: ['mu', 'lo', 'hi'], read: '[...document.querySelectorAll(".stat")].map((e) => e.textContent).find((t) => /Pooled/.test(t)) || ""' },
+  // "FE meta-analysis" row cells: est, se, [lo, hi], p
+  'pet-peese': { d: 3, fields: ['mu', 'se', 'lo', 'hi'], read: '[...((document.getElementById("res-body").rows[0] || {}).cells || [])].map((c) => c.textContent).join(" ")' },
+  // "Unadjusted random-effects pooled effect  -0.715 (SE 0.180, τ 0.560)"
+  copas: { d: 3, fields: ['mu', 'se', 'tau'], read: 'document.body.innerText.split(String.fromCharCode(10)).find((t) => t.indexOf("Unadjusted random-effects pooled effect") >= 0) || ""' },
+  // "τ² strategy  PM (empirical Bayes) = 0.3181"
+  'bayesian-ma': { d: 4, fields: ['tau2'], read: '[...document.querySelectorAll(".stat")].map((e) => e.textContent).find((t) => /strategy/.test(t)) || ""' },
+};
+const FIT_OF = { mu: (f) => f.estimate, se: (f) => f.se, lo: (f) => f.ci_lb, hi: (f) => f.ci_ub, tau2: (f) => f.tau2, tau: (f) => Math.sqrt(f.tau2) };
+
+async function pressVerify(context, page) {
+  const popupP = context.waitForEvent('page', { timeout: 10000 }).catch(() => null);
+  await page.locator('#btn-verify-in-r').first().click();
+  const popup = await popupP;
+  if (!popup) return null;
+  const v = await readValidator(popup);
+  await popup.close();
+  return v;
+}
+function compareShown(app, shownText, v) {
+  const cfg = SHOWN[app];
+  const want = cfg.fields.map((k) => r3(FIT_OF[k](v.fit || {}), cfg.d));
+  // every number the validator's fit rounds to must appear in the displayed row text
+  const nums = (shownText.match(/-?\d+\.\d+/g) || []);
+  return { shown: shownText.replace(/\s+/g, ' ').trim(), validatorRounded: want, ok: want.every((w) => nums.includes(w)) };
+}
+
+// Paste BCG, run, then cut the input to the first 10 studies WITHOUT pressing Run, and
+// press "Verify in R". Pages that re-analyse on every edit (tsa, bayesian-ma) then show
+// the 10-study result and must hand over 10; pages that analyse on Run (pet-peese, copas)
+// still show the 13-study result and must hand over those 13.
+export async function checkEditedInput(context, baseURL, app) {
+  const cfg = APPS[app];
+  const page = await context.newPage();
+  await page.goto(new URL(app + '/', baseURL).href, { waitUntil: 'load' });
+  await page.waitForFunction(() => window.MaStudies && document.querySelector('#btn-verify-in-r'), null, { timeout: 30000 });
+  await page.waitForTimeout(800);
+  await page.fill(cfg.input, cfg.text());
+  if (cfg.run) await page.click(cfg.run);
+  await page.waitForTimeout(cfg.wait || 800);
+  const lines = cfg.text().split('\n');
+  await page.fill(cfg.input, lines.slice(0, 10).join('\n'));
+  await page.waitForTimeout(300);
+  const shown = await page.evaluate(SHOWN[app].read);
+  const v = await pressVerify(context, page);
+  await page.close();
+  if (!v) return { app, check: 'edited-input', ok: false, opened: false };
+  const c = compareShown(app, shown, v);
+  return { app, check: 'edited-input', method: v.method, test: v.test, nRows: v.rows.length, ...c };
+}
+
+// copas: choose an estimator and press "Verify in R" at once (the refit is debounced, so
+// the row still shows the earlier fit), then again after the refit has finished.
+export async function checkCopasModelFollowsDisplay(context, baseURL) {
+  const cfg = APPS.copas;
+  const page = await context.newPage();
+  await page.goto(new URL('copas/', baseURL).href, { waitUntil: 'load' });
+  await page.waitForFunction(() => window.MaStudies && document.querySelector('#btn-verify-in-r'), null, { timeout: 30000 });
+  await page.waitForTimeout(800);
+  await page.fill(cfg.input, cfg.text());
+  await page.click(cfg.run);
+  await page.waitForTimeout(cfg.wait || 3000);
+  const out = [];
+  for (const [tau, settled] of [['DL', false], ['DL', true], ['REML', false], ['REML', true]]) {
+    if (!settled) {
+      await page.evaluate(() => { window.__estPrevFit = window._almLastCopas(); });
+      await page.selectOption('#opt-tau', tau);
+    } else {
+      // until run() has replaced the displayed fit (debounce 300 ms, then a multi-second fit)
+      await page.waitForFunction(() => window._almLastCopas() && window._almLastCopas() !== window.__estPrevFit, null, { timeout: 120000 });
+      await page.waitForTimeout(500);
+    }
+    const shown = await page.evaluate(SHOWN.copas.read);
+    const v = await pressVerify(context, page);
+    if (!v) { out.push({ app: 'copas', check: 'model-follows-display', selected: tau, settled, ok: false, opened: false }); continue; }
+    const c = compareShown('copas', shown, v);
+    // once the refit has finished, the selected estimator is the one sent
+    const sentSelected = !settled || v.method === tau;
+    out.push({ app: 'copas', check: 'model-follows-display', selected: tau, settled, method: v.method, ...c, sentSelected, ok: c.ok && sentSelected });
+  }
+  await page.close();
+  return out;
+}

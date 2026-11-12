@@ -305,6 +305,11 @@
     var _lastPEESE = null;
     var _lastFE = null;
     var _lastRows = [];
+    // What the WebR validator re-fits: the studies of the LAST ANALYSED run, set by run()
+    // together with the "FE meta-analysis" row it fitted (review of PR #537). The input box
+    // can be edited after Run without re-running, and the validator must check the row the
+    // page shows, not the edited input.
+    var _validatorStudies = null;
     // Expose via window accessors so the deferred alm block can cross scope.
     window._almLastPET     = function () { return _lastPET; };
     window._almLastPEESE   = function () { return _lastPEESE; };
@@ -324,11 +329,12 @@
       }
       if (rows.length < 3) {
         document.getElementById("res-body").innerHTML = `<tr><td colspan="5">Need at least 3 studies.</td></tr>`;
-        _lastPET = null; _lastPEESE = null; _lastFE = null;
+        _lastPET = null; _lastPEESE = null; _lastFE = null; _validatorStudies = null;
         return;
       }
       const fe = fePool(rows);
       _lastFE = fe;
+      _validatorStudies = rows.map((r, i) => ({ label: "Study " + (i + 1), est: r.te, se: r.se }));
       const { pet, peese } = petPeese(rows);
       _lastPET = pet;
       _lastPEESE = peese;
@@ -411,9 +417,9 @@
     // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
     // returning user an earlier session's studies).
     window.__almValidatorStudies = function () {
-      // Only when the page shows a result (run() refuses k < 3).
-      const rows = parseTable(document.getElementById("src").value);
-      return (rows.length < 3 || !_lastFE) ? [] : rows.map((r, i) => ({ label: "Study " + (i + 1), est: r.te, se: r.se }));
+      // Only when the page shows a result (run() refuses k < 3): the studies that result
+      // was fitted on, never a re-read of the input box.
+      return (!_lastFE || !_validatorStudies) ? [] : _validatorStudies.map((s) => Object.assign({}, s));
     };
     // The model of the "FE meta-analysis" row (fePool: inverse-variance fixed effect, z CI),
     // which the validator can re-fit. Lane estho: before, none was sent (validator PM/z).
