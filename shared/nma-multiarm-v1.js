@@ -376,11 +376,18 @@
     for (var i = 0; i < asm.N; i++) maxV = Math.max(maxV, asm.V[i][i]);
     var hi = Math.max(100 * dlTau2, 100 * maxV, 1), lo = 1e-10 * Math.max(maxV, 1e-8);
     var f = function (u) { return profileLogLik(asm, Math.exp(u), restricted); };
-    var G = 80, ulo = Math.log(lo), uhi = Math.log(hi), best = -1, bestV = -Infinity, us = [];
-    for (var g = 0; g <= G; g++) {
-      var u = ulo + (uhi - ulo) * g / G, v = f(u); us.push(u);
-      if (v > bestV) { bestV = v; best = g; }
+    var G = 80, ulo = Math.log(lo), uhi, best, bestV, us;
+    // Scan; if the maximum sits at the upper end, raise the ceiling (x1e4) and rescan, so it never caps tau2.
+    for (var expand = 0; expand < 20; expand++) {
+      uhi = Math.log(hi); best = -1; bestV = -Infinity; us = [];
+      for (var g = 0; g <= G; g++) {
+        var u = ulo + (uhi - ulo) * g / G, v = f(u); us.push(u);
+        if (v > bestV) { bestV = v; best = g; }
+      }
+      if (best < G) break;
+      hi *= 1e4;
     }
+    if (best === G) throw numericalRange((restricted ? "REML" : "ML") + " tau2 has no finite maximum");
     var f0 = profileLogLik(asm, 0, restricted);
     if (best <= 0 && f0 >= bestV) return 0;
     var a = us[Math.max(0, best - 1)], b = us[Math.min(G, best + 1)];
@@ -453,7 +460,7 @@
     }
 
     var multiArmStudies = built.studies.filter(function (s) { return s.multiArm; }).map(function (s) { return s.id; });
-    return {
+    var result = {
       ok: true,
       nonref: asm.nonref,
       refTreat: ref,
@@ -461,13 +468,14 @@
       d: fitUse.d,
       cov: fitUse.cov,
       tau2: tau2,
-      method: model === "re" || model === "random" ? method : null,
       Q: Qinfo ? Qinfo.Q : null,
       df: Qinfo ? Qinfo.df : null,
       multiArmStudies: multiArmStudies,
       warnings: built.errors,
       varianceDisclosures: audit.disclosures,
     };
+    if (opts.method != null && (model === "re" || model === "random")) result.method = method;  // only when requested
+    return result;
   }
 
   // ---- precision of a supplied SE ----------------------------------------

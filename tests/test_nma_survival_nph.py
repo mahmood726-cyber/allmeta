@@ -190,3 +190,37 @@ def test_cc_default_still_added_to_every_arm():
     out = _run(f"S.buildContrasts({json.dumps(CC0_FIXTURE['rows'])}, 0.5)")
     s2 = [c for c in out["1"] if c["study"] == "s2|1"][0]
     assert math.isclose(s2["est"], math.log(21.5 / 880) - math.log(30.5 / 900), rel_tol=1e-12)
+
+
+def _run_ma(expr: str):
+    r = subprocess.run([NODE, "-e", "const M = require('./shared/nma-multiarm-v1.js');\nconsole.log(JSON.stringify(" + expr + "));"],
+                       capture_output=True, text=True, timeout=30, cwd=str(ROOT))
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+@pytest.mark.parametrize("method,ref", [("REML", 333332.333333), ("ML", 222221.222221)])
+def test_likelihood_tau2_not_truncated_at_search_ceiling(method, ref):
+    # Review finding: the scan ceiling (max(100*DL, 100*max v, 1)) silently capped tau2. Reference metafor 5.2.1
+    # rma(yi = c(0, 0, 1000), sei = c(.001, .001, 1), method = m, control = list(tau2.max = 1e9)).
+    rows = [{"study": "s1", "t1": "A", "t2": "B", "est": 0, "se": 0.001},
+            {"study": "s2", "t1": "A", "t2": "B", "est": 0, "se": 0.001},
+            {"study": "s3", "t1": "A", "t2": "B", "est": 1000, "se": 1}]
+    out = _run_ma(f"M.fit({json.dumps(rows)}, {{model:'re', method:'{method}'}})")
+    assert math.isclose(out["tau2"], ref, rel_tol=1e-6), out["tau2"]
+
+
+def test_multiarm_default_output_has_no_method_key():
+    rows = [{"study": "s1", "t1": "A", "t2": "B", "est": 0.1, "se": 0.2}, {"study": "s2", "t1": "A", "t2": "B", "est": 0.3, "se": 0.25}]
+    for opts in ("{model:'fe'}", "{model:'re'}"):
+        assert "method" not in _run_ma(f"M.fit({json.dumps(rows)}, {opts})")
+
+
+def test_interval_order_is_independent_of_input_order():
+    # Review finding: the mixed numeric/string comparator was not transitive. Numeric labels come first in
+    # numeric order, then other labels in string order, whatever the input order.
+    def rows(order):
+        return [{"study": "s", "treatment": t, "interval": iv, "events": 20, "ptime": 100} for iv in order for t in ("A", "B")]
+    want = ["2.5", "10.5", "1a"]
+    for order in (["10.5", "1a", "2.5"], ["2.5", "10.5", "1a"], ["1a", "2.5", "10.5"]):
+        assert _run(f"S.fit({json.dumps(rows(order))}, {{model:'fe'}}).intervalIds") == want, order

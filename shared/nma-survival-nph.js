@@ -85,8 +85,11 @@
     var perInterval = buildContrasts(rows, cc, opts.ccTo);
     // Time order: numeric labels sort numerically ("2" before "10"); otherwise the string order as before.
     var NUM = /^\s*-?\d+(\.\d+)?\s*$/;
+    // Numeric labels first, in numeric order; then the others in string order (a total order).
     var intervalIds = Object.keys(perInterval).sort(function (a, b) {
-      if (NUM.test(a) && NUM.test(b) && +a !== +b) return +a - +b;
+      var na = NUM.test(a), nb = NUM.test(b);
+      if (na !== nb) return na ? -1 : 1;
+      if (na && +a !== +b) return +a - +b;
       return a < b ? -1 : a > b ? 1 : 0;
     });
     var intervals = {}, warnings = [];
