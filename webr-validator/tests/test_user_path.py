@@ -146,75 +146,107 @@ def test_continue_with_forwards_validator_model_and_refuses_empty():
     assert "method=SJ" in opened[0] and "test=z" in opened[0] and "from=heterogeneity" in opened[0], opened
 
 
-# Apps whose papers are with co-authors and whose "Verify in R" button opens this
-# validator. Found on the live user path 2026-11-12 (lane up2): pubbias-tests and
-# meta-regression attached the button WITHOUT getStudies, so it read whatever was
-# already on the shared bus. In a fresh browser the bus is empty and the user got
-# only the alert "No studies on the shared bus yet -- save your data to the bus
-# first."; after another app or an earlier dataset had written the bus, the
-# validator opened with THOSE studies, not the analysis on screen.
-VERIFY_APPS = ("pubbias-tests", "meta-regression", "proportion-ma")
-
-
-def test_verify_in_r_sends_the_current_studies():
-    root = HERE.parent.parent
-    for app in VERIFY_APPS:
-        html = (root / app / "index.html").read_text(encoding="utf-8")
-        calls = re.findall(r"attachVerifyInRButton\(\{(.*?)\}\)", html, re.S)
-        assert calls, f"{app}: no Verify in R wiring found"
-        for c in calls:
-            assert "getStudies" in c, f"{app}: Verify in R must pass getStudies (current input), not rely on the bus: {c}"
-
-
-def test_continue_with_validator_sends_the_current_studies():
-    # app-flow's "Continue with -> Verify in R (WebR)" defaults to MaStudies.read()
-    # (the saved bus) when the app passes no getStudies: same stale-data path as
-    # above (lane up1 RC5; meta-regression found 2026-11-12).
-    root = HERE.parent.parent
-    for app in VERIFY_APPS + ("multilevel-ma",):
-        html = (root / app / "index.html").read_text(encoding="utf-8")
-        for c in re.findall(r"attachContinueBar\(\{(.*?)\}\);", html, re.S):
-            if '"webr-validator"' in c:
-                assert "getStudies" in c, f"{app}: Continue-with to the validator must pass getStudies"
-
-
-# ---- "Verify in R" must send the studies on screen (2026-11-12) -------------
-# limit-ma, heterogeneity and copas, run in real Chrome with the default example,
-# answered "Verify in R" with the alert "No studies on the shared bus yet" and
-# opened nothing: attachVerifyInRButton was called without getStudies, so the
-# button only worked after a separate "Save to bus" the page never asks for.
-# Apps below are KNOWN to still have that defect (open, reported to the
-# coordinator). The list may only shrink: a new app without a provider fails,
-# and an app on the list that gains one fails until it is removed from the list.
-KNOWN_NO_PROVIDER = {
-    "bayesian-ma", "bayesian-mcmc", "copas", "cumulative-subgroup", "forest-plot",
-    "funnel-plot", "gosh-metareg", "gosh", "heterogeneity", "influence",
-    "meta-regression", "pet-peese", "pubbias-tests", "tsa",
-}
+# ---- Every control that opens this validator must send the studies on screen ----
+# Found on the live user path 2026-11-12 in real Chrome (lanes up1, up2, up3):
+# heterogeneity, pubbias-tests, meta-regression, limit-ma and copas attached
+# "Verify in R" WITHOUT getStudies, so it read whatever was already on the shared
+# bus. In a fresh browser that is nothing, and the user got only the alert "No
+# studies on the shared bus yet -- save your data to the bus first."; after another
+# app or an earlier dataset had written the bus, the validator opened with THOSE
+# studies, not the analysis on screen. app-flow's "Continue with -> Verify in R
+# (WebR)" has the same fallback to MaStudies.read() when no getStudies is passed.
+#
+# One guard over EVERY top-level app page (both controls). KNOWN_UNFIXED lists the
+# app/control pairs that still have the defect (open, reported to the coordinator).
+# It may only shrink: a new pair without a provider fails, and a listed pair that
+# gains one fails until it is removed from the list.
 REPO = HERE.parent.parent
+VERIFY, CONTINUE = "verify-in-r", "continue-with-validator"
+KNOWN_UNFIXED = {
+    "bayesian-ma": {VERIFY, CONTINUE}, "bayesian-mcmc": {VERIFY, CONTINUE},
+    "bma-tau-priors": {CONTINUE}, "copas": {VERIFY}, "cross-design": {CONTINUE},
+    "cumulative-subgroup": {VERIFY, CONTINUE}, "forest-plot": {VERIFY, CONTINUE},
+    "funnel-plot": {VERIFY, CONTINUE}, "gosh-metareg": {VERIFY}, "gosh": {VERIFY},
+    "influence": {VERIFY}, "pet-peese": {VERIFY}, "tsa": {VERIFY},
+}
+# Fixed on this branch; each must still be wired (a deleted button is not a fix).
+FIXED = ("heterogeneity", "pubbias-tests", "meta-regression", "limit-ma", "proportion-ma")
+
+
+def _app_pages():
+    """(app, source) for every tracked top-level */index.html.
+
+    A sparse worktree has only some apps on disk, and a glob of the disk would
+    silently shrink the population (and pass); so the tracked list comes from
+    git and a page missing from disk is read from the index (same bytes)."""
+    try:
+        out = subprocess.run(["git", "-C", str(REPO), "ls-files", "-z", "--", "*/index.html"],
+                             capture_output=True, timeout=60)
+        tracked = [t for t in out.stdout.decode("utf-8").split("\0") if t.count("/") == 1] if out.returncode == 0 else []
+    except (OSError, subprocess.SubprocessError):
+        tracked = []
+    if not tracked:
+        tracked = sorted(p.relative_to(REPO).as_posix() for p in REPO.glob("*/index.html"))
+    absent = [rel for rel in tracked if not (REPO / rel).is_file()]
+    blobs = {}
+    if absent:  # one git process for all of them, not one per page
+        got = subprocess.run(["git", "-C", str(REPO), "cat-file", "--batch"],
+                             input="".join(":%s\n" % rel for rel in absent).encode("utf-8"),
+                             capture_output=True, timeout=120)
+        assert got.returncode == 0, got.stderr
+        buf, pos = got.stdout, 0
+        for rel in absent:
+            nl = buf.index(b"\n", pos)
+            head = buf[pos:nl].split()
+            assert len(head) == 3 and head[1] == b"blob", "cannot read tracked page %s: %r" % (rel, buf[pos:nl])
+            size = int(head[2])
+            blobs[rel] = buf[nl + 1:nl + 1 + size].decode("utf-8", errors="replace")
+            pos = nl + 1 + size + 1
+    for rel in sorted(tracked):
+        f = REPO / rel
+        src = f.read_text(encoding="utf-8", errors="replace") if f.is_file() else blobs[rel]
+        yield rel.split("/")[0], src
+
+
+def _call_args(src, fn):
+    for m in re.finditer(fn + r"\(\s*\{", src):
+        depth, i = 0, m.end() - 1
+        while i < len(src):
+            depth += {"{": 1, "}": -1}.get(src[i], 0)
+            if depth == 0:
+                break
+            i += 1
+        yield src[m.end() - 1:i + 1]
+
+
+def _validator_controls():
+    """(app, control, args) for every Verify-in-R button and every Continue-with
+    bar that offers the validator."""
+    for app, src in _app_pages():
+        for args in _call_args(src, "attachVerifyInRButton"):
+            yield app, VERIFY, args
+        for args in _call_args(src, "attachContinueBar"):
+            if '"webr-validator"' in args or "'webr-validator'" in args:
+                yield app, CONTINUE, args
 
 
 def _verify_calls():
-    for page in sorted(REPO.glob("*/index.html")):
-        src = page.read_text(encoding="utf-8", errors="replace")
-        for m in re.finditer(r"attachVerifyInRButton\(\s*\{", src):
-            depth, i = 0, m.end() - 1
-            while i < len(src):
-                depth += {"{": 1, "}": -1}.get(src[i], 0)
-                if depth == 0:
-                    break
-                i += 1
-            yield page.parent.name, src[m.end() - 1:i + 1]
+    for app, control, args in _validator_controls():
+        if control == VERIFY:
+            yield app, args
 
 
-def test_verify_in_r_buttons_send_the_current_studies():
-    calls = list(_verify_calls())
-    missing = sorted({app for app, args in calls if "getStudies" not in args})
-    new = [a for a in missing if a not in KNOWN_NO_PROVIDER]
-    assert not new, "Verify in R wired without getStudies (opens nothing on a fresh profile): %s" % new
-    present = {app for app, _ in calls}
-    fixed = sorted((KNOWN_NO_PROVIDER & present) - set(missing))
-    assert not fixed, "now has a studies provider; remove from KNOWN_NO_PROVIDER: %s" % fixed
+def test_validator_controls_send_the_current_studies():
+    controls = list(_validator_controls())
+    assert len({a for a, _, _ in controls}) >= 15, "population too small -- page discovery is broken"
+    missing = {(a, c) for a, c, args in controls if "getStudies" not in args}
+    known = {(a, c) for a, cs in KNOWN_UNFIXED.items() for c in cs}
+    new = sorted(missing - known)
+    assert not new, "control opens the validator without getStudies (stale or empty bus): %s" % new
+    fixed = sorted(known - missing)
+    assert not fixed, "now sends the current studies (or is gone); remove from KNOWN_UNFIXED: %s" % fixed
+    for app in FIXED:
+        assert any(a == app and c == VERIFY for a, c, _ in controls), "%s: no Verify in R wiring found" % app
 
 
 def test_limit_ma_asks_the_validator_for_its_own_dl_model():
@@ -241,3 +273,31 @@ def test_attach_forwards_method_and_test_to_the_validator():
     assert out.returncode == 0, out.stderr
     url = json.loads(out.stdout.strip().splitlines()[-1])
     assert "from=limit-ma" in url and "method=DL" in url and "test=z" in url, url
+
+
+# ---- proportion-ma: the validator must fit the page's tau^2 estimator (2026-11-12) ----
+# Lane up2, real Chrome: proportion-ma's "Verify in R" sent the studies but no
+# estimator, so with "DerSimonian-Laird" selected the validator (and its exported
+# validate.R) fitted its PM default. The bus rows are always logit proportions, so
+# the validator's fit is the page's logit pool with the same estimator and z test.
+def test_proportion_ma_asks_the_validator_for_its_selected_estimator():
+    calls = [args for app, args in _verify_calls() if app == "proportion-ma"]
+    assert calls, "proportion-ma: no Verify in R wiring found"
+    js = r"""
+    const args = process.argv[1];
+    const out = {};
+    for (const sel of ["DL", "PM"]) {
+      const document = { getElementById: (id) => (id === "tau-est" ? { value: sel } : null) };
+      const current = () => [];
+      const opts = new Function("document", "current", "return (" + args + ");")(document, current);
+      let m = opts.method, t = opts.test;
+      if (typeof m === "function") m = m(); if (typeof t === "function") t = t();
+      out[sel] = { method: m, test: t };
+    }
+    console.log(JSON.stringify(out));
+    """
+    out = subprocess.run(["node", "-e", js, calls[0]], capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr
+    r = json.loads(out.stdout.strip().splitlines()[-1])
+    assert r == {"DL": {"method": "DL", "test": "z"}, "PM": {"method": "PM", "test": "z"}}, r
+

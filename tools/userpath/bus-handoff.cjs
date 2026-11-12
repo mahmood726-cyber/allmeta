@@ -1,4 +1,8 @@
-// node tools/userpath/bus-handoff.cjs <app> <base-url> <data-file> <textarea-sel> <n-rows> [select=value ...]
+// node tools/userpath/bus-handoff.cjs <app> <base-url> <data-file> <textarea-sel> <n-rows> [select=value ...] [expect-method=M] [expect-test=T]
+// expect-method / expect-test (added 2026-11-12, lane integ): also require the
+// validator's tau^2 estimator / test selects to read M / T when it opens, so a
+// control that hands over the right studies but no estimator (validator falls back
+// to PM) is a FAIL. Without them only the studies are checked.
 // Real system Chrome. For every control that opens the WebR validator ("Verify in R",
 // "Validate (R)", "Continue with -> Verify in R (WebR)"), in its own fresh browser
 // context, twice: (1) empty localStorage, (2) the shared bus pre-seeded with 3 stale
@@ -11,8 +15,10 @@
 "use strict";
 const fs = require("fs");
 const { chromium } = require(process.env.PLAYWRIGHT_CORE || "playwright-core");
-const [app, base, dataFile, taSel, nRowsS, ...sels] = process.argv.slice(2);
+const [app, base, dataFile, taSel, nRowsS, ...rest] = process.argv.slice(2);
 const nRows = +nRowsS;
+const expect = {};
+const sels = rest.filter((a) => { const m = /^expect-(method|test)=(.+)$/.exec(a); if (m) expect[m[1]] = m[2]; return !m; });
 const STALE = [{ label: "stale A", est: 9.1, se: 0.5 }, { label: "stale B", est: 9.2, se: 0.5 }, { label: "stale C", est: 9.3, se: 0.5 }];
 const CONTROLS = [["Verify in R", "#btn-verify-in-r"], ["Validate (R)", "#btn-validate-webr"], ["Continue with -> Verify in R (WebR)", "text=Verify in R (WebR)"]];
 (async () => {
@@ -26,7 +32,7 @@ const CONTROLS = [["Verify in R", "#btn-verify-in-r"], ["Validate (R)", "#btn-va
       page.on("dialog", (d) => { dialogs.push(d.message()); d.dismiss().catch(() => {}); });
       await page.goto(base + app + "/", { waitUntil: "load", timeout: 120000 });
       await page.waitForTimeout(2500);
-      if (!(await page.$(sel))) { await ctx.close(); continue; }
+      if (!(await page.$(sel))) { console.log(JSON.stringify({ app, stale, control: name, absent: true })); await ctx.close(); continue; }
       if (stale) await page.evaluate((s) => window.MaStudies.write(s), STALE);
       for (const sv of sels) { const [s, v] = sv.split("="); await page.selectOption(s, v); }
       await page.evaluate(([s, d]) => { const t = document.querySelector(s); t.value = d; t.dispatchEvent(new Event("input", { bubbles: true })); t.dispatchEvent(new Event("change", { bubbles: true })); }, [taSel, fs.readFileSync(dataFile, "utf8")]);
@@ -34,20 +40,25 @@ const CONTROLS = [["Verify in R", "#btn-verify-in-r"], ["Validate (R)", "#btn-va
       const popP = ctx.waitForEvent("page", { timeout: 10000 }).catch(() => null);
       await page.click(sel, { timeout: 10000 });
       const pop = await popP;
-      let rows = null, first = null;
+      let rows = null, first = null, model = {};
       if (pop) {
         await pop.waitForLoadState("load").catch(() => {}); await pop.waitForTimeout(2500);
         const v = await pop.evaluate(() => (document.getElementById("f-data") || {}).value || "");
         const lines = v.split(/\r?\n/).filter((l) => l.trim() && !/^#/.test(l.trim()));
         rows = lines.length; first = lines[0] || null;
+        model = await pop.evaluate(() => ({ method: (document.getElementById("f-method") || {}).value || null,
+          test: (document.getElementById("f-test") || {}).value || null, url: location.search })).catch(() => ({}));
       }
-      const ok = !!pop && !dialogs.length && rows === nRows && !/stale/.test(first || "");
+      const sameModel = Object.keys(expect).every((k) => model[k] === expect[k]);
+      const ok = !!pop && !dialogs.length && rows === nRows && !/stale/.test(first || "") && sameModel;
       ran++; if (!ok) bad++;
-      console.log(JSON.stringify({ app, stale, control: name, ok, opened: !!pop, dialogs, validatorRows: rows, pageRows: nRows, firstRow: first }));
+      console.log(JSON.stringify({ app, stale, control: name, ok, opened: !!pop, dialogs, validatorRows: rows, pageRows: nRows, firstRow: first,
+        validatorMethod: model.method || null, validatorTest: model.test || null, expect, query: model.url || null }));
       await ctx.close();
     }
   }
   await browser.close();
-  console.log(bad ? `FAIL: ${bad}/${ran} control runs hand the validator something other than the page's studies` : `PASS: ${ran}/${ran} control runs hand the validator the page's studies`);
+  if (!ran) { console.log("FAIL: no validator control found on the page (0 runs)"); process.exit(1); }
+  console.log(bad ? `FAIL: ${bad}/${ran} control runs hand the validator something other than the page's studies (and, if expected, its estimator/test)` : `PASS: ${ran}/${ran} control runs hand the validator the page's studies${Object.keys(expect).length ? " and " + JSON.stringify(expect) : ""}`);
   process.exit(bad ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(2); });

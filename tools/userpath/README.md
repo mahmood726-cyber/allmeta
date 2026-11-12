@@ -25,3 +25,7 @@ then presses every R control again. Each run is `{"tag", "expectRows", "steps": 
 number (stale shared-bus data) is a FAIL even when it reports MATCH. Every run writes
 `verdict.json`; the exit code is 2 if any R control FAILs (alert instead of a tab, validator
 without MATCH, failed or refused in-page quantity). UNKNOWN verdicts must be read by hand.
+
+`--textarea <css>` (2026-11-12, lane up3) names the data box for `--pasted` when it is not
+`#src`/`#f-data`/`#data`/`#f-input`. `bus-handoff.cjs ... expect-method=DL expect-test=z`
+(lane integ) also fails a control whose validator opens with a different estimator/test.
