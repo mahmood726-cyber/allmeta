@@ -126,6 +126,9 @@
     var p = 0.5 * _betai(df / 2, 0.5, df / (df + t * t));
     return t > 0 ? 1 - p : p;
   }
+  // Two-sided P(|T| > |t|) = I_x(df/2, 1/2), x = df/(df + t^2): the tail itself, so it keeps
+  // relative precision where 2 * (1 - tcdf(|t|)) would cancel to 0 (R: 2 * pt(-|t|, df)).
+  function _tsf2(t, df) { return _betai(df / 2, 0.5, df / (df + t * t)); }
 
   // ---- Spec-collapse: honestly combine S analysis specifications of ONE dataset.
   // Mixture-of-scaled-t (df=k-1); CI from the mixture quantiles (law of total
@@ -425,7 +428,7 @@
     var b1 = (k * sxy - sx * sy) / denom, b0 = (sy - b1 * sx) / k;
     var sse = 0; for (i = 0; i < k; i++) { var r = y[i] - (b0 + b1 * x[i]); sse += r * r; }
     var df = k - 2, mse = sse / df, se0 = Math.sqrt(mse * sxx / denom);
-    var t = b0 / se0, p = 2 * (1 - tcdf(Math.abs(t), df));
+    var t = b0 / se0, p = _tsf2(t, df);
     return { intercept: b0, se: se0, t: t, df: df, p: p };
   }
   // Precision–effect correlation: corr(yi, 1/sei).
@@ -438,7 +441,7 @@
     return sxy / Math.sqrt(sxx * syy);
   }
 
-  var api = { grma: grma, conformalPI: conformalPI, specCollapse: specCollapse, egger: egger, precisionEffectCor: precisionEffectCor,
+  var api = { _tsf2: _tsf2, grma: grma, conformalPI: conformalPI, specCollapse: specCollapse, egger: egger, precisionEffectCor: precisionEffectCor,
     knappHartungMod: knappHartungMod, satterthwaiteDF: satterthwaiteDF, ivPlus: ivPlus, ridge: ridge, tikhonov: tikhonov,
     qualityEffects: qualityEffects, sampleSizeWeighted: sampleSizeWeighted,
     softmaxWeighted: softmaxWeighted, lassoReg: lassoReg, groupLasso: groupLasso, elasticNet: elasticNet,

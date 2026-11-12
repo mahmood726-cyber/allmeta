@@ -46,6 +46,9 @@
     var x = df / (df + t * t), ib = 0.5 * _betai(df / 2, 0.5, x);
     return t >= 0 ? 1 - ib : ib;
   }
+  // Two-sided P(|T| > |t|) = I_x(df/2, 1/2), x = df/(df + t^2): the tail itself, so it keeps
+  // relative precision where 2 * (1 - tcdf(|t|)) would cancel to 0 (R: 2 * pt(-|t|, df)).
+  function _tsf2(t, df) { return _betai(df / 2, 0.5, df / (df + t * t)); }
 
   // rows: [{y, se}, ...]. Returns {intercept, se, t, df, p, k} or null (k<3).
   function eggerTest(rows) {
@@ -73,11 +76,11 @@
     // Return the documented null sentinel rather than a NaN-filled object.
     if (!(seB0 > 0)) return null;
     var t = b0 / seB0;
-    var p = 2 * (1 - _tcdf(Math.abs(t), df));
+    var p = _tsf2(t, df);
     return { intercept: b0, se: seB0, t: t, df: df, p: p, k: n };
   }
 
-  var api = { eggerTest: eggerTest, _tcdf: _tcdf };
+  var api = { eggerTest: eggerTest, _tcdf: _tcdf, _tsf2: _tsf2 };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmEgger = api;
 })(typeof window !== "undefined" ? window : globalThis);
