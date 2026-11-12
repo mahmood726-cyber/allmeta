@@ -64,3 +64,10 @@ test('bma-tau k = 3, inverse-gamma(0.1, 0.1): slowly decaying tail (tau^-1.2) of
 test('bma-tau: uniform prior keeps the tau^2 = 0 guard (2026-05-29 regression)', () => {
   assert.equal(BMA.uniform(5)(0), 0);
 });
+
+test('bma-tau: posterior mode of tau^2 is not capped at the search ceiling (review finding)', () => {
+  // y = -100, 100, v = 1, 1, invGamma(0.1, 0.1) on tau^2: the tau^2-scale posterior mode is 6248.375 (R optimize of
+  // the same flat-mu marginal posterior, tol 1e-12: 6248.37522135). The scan used to stop at tau^2 = 100.
+  const f = BMA.fitModel([-100, 100], [1, 1], BMA.invGamma(0.1, 0.1));
+  assert.ok(Math.abs(f.tau2_post_mode - 6248.37522135) < 1e-4 * 6248.37522135, 'mode ' + f.tau2_post_mode);
+});

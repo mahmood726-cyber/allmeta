@@ -237,10 +237,17 @@
       if (!(pr > 0)) return -Infinity;
       return _logMarginal(yi, vi, x) + Math.log(pr) - Math.log(2 * t);
     };
-    var best = -Infinity, bi = 0, grid = [];
-    for (var i = 0; i <= 4000; i++) {
-      var lx = Math.log(1e-8) + i * (Math.log(100) - Math.log(1e-8)) / 4000;
-      grid.push(lx); var v = lg(lx); if (v > best) { best = v; bi = i; }
+    // Scan log(tau^2) on [1e-8, 100]; if the maximum is at the upper end, raise it (x1e4) and rescan, so the
+    // reported mode is never the cap of the search range.
+    var lo = Math.log(1e-8), hi = Math.log(100), best, bi, grid;
+    for (var pass = 0; pass < 12; pass++) {
+      best = -Infinity; bi = 0; grid = [];
+      for (var i = 0; i <= 4000; i++) {
+        var lx = lo + i * (hi - lo) / 4000;
+        grid.push(lx); var v = lg(lx); if (v > best) { best = v; bi = i; }
+      }
+      if (bi === 4000) hi += Math.log(1e4);
+      else break;
     }
     var a = grid[Math.max(0, bi - 1)], b = grid[Math.min(4000, bi + 1)];
     var gr = (Math.sqrt(5) - 1) / 2, c = b - gr * (b - a), d = a + gr * (b - a), fc = lg(c), fd = lg(d);
