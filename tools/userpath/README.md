@@ -29,3 +29,7 @@ without MATCH, failed or refused in-page quantity). UNKNOWN verdicts must be rea
 `--textarea <css>` (2026-11-12, lane up3) names the data box for `--pasted` when it is not
 `#src`/`#f-data`/`#data`/`#f-input`. `bus-handoff.cjs ... expect-method=DL expect-test=z`
 (lane integ) also fails a control whose validator opens with a different estimator/test.
+An in-page pass count counts only if it appeared after that control was pressed and covers more
+than 0 quantities; a panel still busy when the wait runs out is a FAIL; a control that could not
+be pressed is a FAIL; exit 3 means no R control was exercised. bus-handoff.cjs fails a hand-over
+with a stale study in any row, and fails with 0 runs.

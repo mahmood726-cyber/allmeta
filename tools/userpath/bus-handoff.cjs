@@ -40,19 +40,21 @@ const CONTROLS = [["Verify in R", "#btn-verify-in-r"], ["Validate (R)", "#btn-va
       const popP = ctx.waitForEvent("page", { timeout: 10000 }).catch(() => null);
       await page.click(sel, { timeout: 10000 });
       const pop = await popP;
-      let rows = null, first = null, model = {};
+      let rows = null, first = null, model = {}, staleRows = null;
       if (pop) {
         await pop.waitForLoadState("load").catch(() => {}); await pop.waitForTimeout(2500);
         const v = await pop.evaluate(() => (document.getElementById("f-data") || {}).value || "");
         const lines = v.split(/\r?\n/).filter((l) => l.trim() && !/^#/.test(l.trim()));
         rows = lines.length; first = lines[0] || null;
+        // every row, not just the first: a stale study anywhere in the hand-over is a FAIL
+        staleRows = lines.filter((l) => /stale [ABC]/.test(l)).length;
         model = await pop.evaluate(() => ({ method: (document.getElementById("f-method") || {}).value || null,
           test: (document.getElementById("f-test") || {}).value || null, url: location.search })).catch(() => ({}));
       }
       const sameModel = Object.keys(expect).every((k) => model[k] === expect[k]);
-      const ok = !!pop && !dialogs.length && rows === nRows && !/stale/.test(first || "") && sameModel;
+      const ok = !!pop && !dialogs.length && rows === nRows && staleRows === 0 && sameModel;
       ran++; if (!ok) bad++;
-      console.log(JSON.stringify({ app, stale, control: name, ok, opened: !!pop, dialogs, validatorRows: rows, pageRows: nRows, firstRow: first,
+      console.log(JSON.stringify({ app, stale, control: name, ok, opened: !!pop, dialogs, validatorRows: rows, pageRows: nRows, firstRow: first, staleRows,
         validatorMethod: model.method || null, validatorTest: model.test || null, expect, query: model.url || null }));
       await ctx.close();
     }

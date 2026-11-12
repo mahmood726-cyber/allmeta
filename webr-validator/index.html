@@ -138,6 +138,7 @@
             <option value="SJ">Sidik-Jonkman (SJ)</option>
             <option value="HE">Hedges (HE)</option>
             <option value="HS">Hunter-Schmidt (HS)</option>
+            <option value="FE">Fixed effect (FE, τ² = 0)</option>
           </select>
         </label>
         <label>
@@ -314,7 +315,7 @@
         "# threshold = 1e-5) stop up to ~5e-4 short of the optimum, which the 1e-4 comparison",
         "# then flags as a mismatch. These controls take R to the optimum the browser computes.",
         'res <- rma(yi, sei = sei, method = "' + method + '", test = "' + test + '", slab = slab' +
-          (method === "DL" ? "" : method === "PM"
+          (method === "DL" || method === "FE" ? "" : method === "PM"
             ? ",\n           control = list(tol = 1e-12, maxiter = 10000)"
             : ",\n           control = list(threshold = 1e-12, maxiter = 10000, stepadj = 0.5)") + ")",
         "cat(sprintf(\"estimate=%.10f\\nse=%.10f\\nci.lb=%.10f\\nci.ub=%.10f\\ntau^2=%.10f\\nI^2=%.10f\\nQE=%.10f\\n\",",
@@ -723,8 +724,10 @@
     function showSourceBanner(from) {
       const el = document.getElementById("source-banner");
       if (!el || !from || !/^[a-z0-9-]{1,40}$/.test(from)) return;
-      const model = "an inverse-variance random-effects pool (metafor rma, τ² " +
-        document.getElementById("f-method").value + ", test " + document.getElementById("f-test").value + ")";
+      const meth = document.getElementById("f-method").value, tst = document.getElementById("f-test").value;
+      const model = meth === "FE"
+        ? "an inverse-variance fixed-effect pool (metafor rma, method FE, test " + tst + ")"
+        : "an inverse-variance random-effects pool (metafor rma, τ² " + meth + ", test " + tst + ")";
       const own = NOT_IV_POOL[from];
       el.textContent = own
         ? "Opened from " + from + ". This page re-fits " + model + " to the per-study effects " + from +
@@ -745,7 +748,7 @@
         // The calling app may say which estimator and test its own headline used,
         // so the R fit here is the same model rather than this page's PM/z default.
         const m = params.get("method"), t = params.get("test");
-        if (m && ["PM", "REML", "DL", "ML", "EB", "SJ", "HE", "HS"].includes(m)) document.getElementById("f-method").value = m;
+        if (m && ["PM", "REML", "DL", "ML", "EB", "SJ", "HE", "HS", "FE"].includes(m)) document.getElementById("f-method").value = m;
         if (t && ["z", "knha"].includes(t)) document.getElementById("f-test").value = t;
         const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");

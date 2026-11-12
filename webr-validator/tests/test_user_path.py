@@ -108,7 +108,8 @@ def test_validator_fits_every_estimator_apps_send():
     for m in ESTIMATORS:
         assert f'value="{m}"' in sel, m
     allow = re.search(r'if \(m && \[([^\]]+)\]\.includes\(m\)\)', PAGE).group(1)
-    assert set(re.findall(r'"([A-Z]+)"', allow)) == set(ESTIMATORS), allow
+    # ... plus FE, which proportion-ma sends (test_validator_fits_proportion_ma_fixed_effect).
+    assert set(re.findall(r'"([A-Z]+)"', allow)) == set(ESTIMATORS) | {"FE"}, allow
 
 
 def test_heterogeneity_controls_hand_over_the_page_analysis():
@@ -286,7 +287,7 @@ def test_proportion_ma_asks_the_validator_for_its_selected_estimator():
     js = r"""
     const args = process.argv[1];
     const out = {};
-    for (const sel of ["DL", "PM"]) {
+    for (const sel of ["DL", "PM", "FE"]) {
       const document = { getElementById: (id) => (id === "tau-est" ? { value: sel } : null) };
       const current = () => [];
       const opts = new Function("document", "current", "return (" + args + ");")(document, current);
@@ -299,5 +300,54 @@ def test_proportion_ma_asks_the_validator_for_its_selected_estimator():
     out = subprocess.run(["node", "-e", js, calls[0]], capture_output=True, text=True, timeout=60)
     assert out.returncode == 0, out.stderr
     r = json.loads(out.stdout.strip().splitlines()[-1])
-    assert r == {"DL": {"method": "DL", "test": "z"}, "PM": {"method": "PM", "test": "z"}}, r
+    assert r == {m: {"method": m, "test": "z"} for m in ("DL", "PM", "FE")}, r
 
+
+
+def test_validator_fits_proportion_ma_fixed_effect():
+    # proportion-ma also offers "Fixed-effect only" (#tau-est = FE). The validator
+    # accepted no FE, so a page fitting FE was re-fitted as PM and could "Match"
+    # a different model (Codex review of the integration branch, 2026-11-12).
+    sel = re.search(r'<select id="f-method".*?</select>', PAGE, re.S).group(0)
+    assert 'value="FE"' in sel
+    allow = re.search(r'if \(m && \[([^\]]+)\]\.includes\(m\)\)', PAGE).group(1)
+    assert "FE" in set(re.findall(r'"([A-Z]+)"', allow)), allow
+    # metafor rma(method = "FE") takes no tau^2 iteration controls.
+    assert re.search(r'method === "DL" \|\| method === "FE"', PAGE), "FE must not get tau^2 controls"
+
+
+# ---- tools/userpath/userpath.cjs must not report PASS for an unfinished or empty check ----
+# Codex review of the integration branch (2026-11-12) probed judge() directly:
+# "5/5 live R quantities passed" from an EARLIER panel next to a panel still
+# "Running R in WebR..." returned PASS, and "0/0 live R quantities passed" returned
+# PASS. A check that did not finish, or checked nothing, is not a pass.
+USERPATH = REPO / "tools" / "userpath" / "userpath.cjs"
+
+
+def _judge(cases):
+    js = r"""
+    const { judge } = require(process.argv[1]);
+    console.log(JSON.stringify(JSON.parse(process.argv[2]).map(([c, r]) => judge(c, r).verdict)));
+    """
+    out = subprocess.run(["node", "-e", js, str(USERPATH), json.dumps(cases)],
+                         capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr
+    return json.loads(out.stdout.strip().splitlines()[-1])
+
+
+def test_userpath_judge_needs_a_new_finished_nonempty_result():
+    c = {"id": "btn-extras", "text": "Validate the extras in R"}
+    before = "Main panel: 5/5 live R quantities passed"
+    cases = [
+        # earlier panel's pass, this control's panel still running at timeout
+        [c, {"kind": "inpage", "text": before + "\nExtras: Running R in WebR...", "before": before, "stillBusy": True}],
+        # nothing new appeared after pressing this control
+        [c, {"kind": "inpage", "text": before, "before": before, "stillBusy": False}],
+        # empty check
+        [c, {"kind": "inpage", "text": "0/0 live R quantities passed", "before": "", "stillBusy": False}],
+        # control could not be pressed
+        [c, {"kind": None, "error": "not visible"}],
+        # genuine new pass
+        [c, {"kind": "inpage", "text": before + "\nExtras: 3/3 live R quantities passed", "before": before, "stillBusy": False}],
+    ]
+    assert _judge(cases) == ["FAIL", "UNKNOWN", "UNKNOWN", "FAIL", "PASS"]

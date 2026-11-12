@@ -3,11 +3,12 @@
 // Exit 2 (verdict.json) when any R control fails on the user path: an alert instead
 // of a validator tab, a validator without "BROWSER VS R (MATCH)", an in-page panel
 // with a failed quantity or refusal, or an error. UNKNOWN verdicts need inspection.
+// An in-page result counts only if it is new after that control and checks >0 quantities;
+// a panel still busy when the wait runs out is a FAIL (blocked). Exit 3 = no R control exercised.
 // Captures: displayed text after default run, every R-related control's result
 // (WebR output in page or new tab, downloaded .R scripts), console, failed requests.
 "use strict";
 const fs = require("fs"), path = require("path");
-const { chromium } = require(process.env.PLAYWRIGHT_CORE || "playwright-core");
 const app = process.argv[2], out = process.argv[3];
 const argv = process.argv.slice(4);
 const opt = (n, d) => { const i = argv.indexOf("--" + n); return i >= 0 ? argv[i + 1] : d; };
@@ -18,12 +19,11 @@ const PASTED = opt("pasted", null);
 // data never reached the analysis and every later control ran on an empty page.)
 const TEXTAREA = opt("textarea", null);
 const CHROME = process.env.CHROME || "C:/Program Files/Google/Chrome/Application/chrome.exe";
-fs.mkdirSync(out, { recursive: true });
 const log = [];
 const verdicts = [];
 const dialogs = [];
 let expectRows = null; // studies the page holds in this run (from --steps "expectRows")
-const note = (s) => { log.push(new Date().toISOString() + " " + s); fs.writeFileSync(path.join(out, "log.txt"), log.join("\n") + "\n"); };
+const note = (s) => { if (!out) return; log.push(new Date().toISOString() + " " + s); fs.writeFileSync(path.join(out, "log.txt"), log.join("\n") + "\n"); };
 const R_RE = /verify in r|validate \(r\)|validate this analysis in r|webr|run in r|\bR code\b|download.*\.r\b|\.R script|copy r|r script|check in r| in r(?![a-z0-9])|validate the extras/i;
 
 // What counts as a user-path failure for one R control (see header).
@@ -43,9 +43,18 @@ function judge(c, r) {
   if (r.kind === "inpage") {
     if (/is not a function|Validation refused|live R comparison unavailable/i.test(t)) return { verdict: "FAIL", why: "in-page refusal or error" };
     if (/\tFAIL\b/.test(t)) return { verdict: "FAIL", why: "a quantity FAILed" };
-    const m = [...t.matchAll(/(\d+)\/(\d+) live R quantities passed/g)].pop();
-    if (m && m[1] === m[2]) return { verdict: "PASS", why: m[0] };
-    return { verdict: "UNKNOWN", why: "no pass count found (inspect text)" };
+    // A run still busy when the wait ran out is BLOCKED, never a pass -- even if an
+    // earlier panel on the same page already shows a pass count.
+    if (r.stillBusy) return { verdict: "FAIL", why: "still running when the wait ran out (blocked)" };
+    // Only a pass count that this control produced counts: one already on the page
+    // before the click belongs to another panel.
+    const counts = (s) => [...String(s || "").matchAll(/(\d+)\/(\d+) live R quantities passed/g)].map((x) => x[0]);
+    const old = counts(r.before);
+    const fresh = counts(t).filter((x) => { const i = old.indexOf(x); if (i >= 0) { old.splice(i, 1); return false; } return true; });
+    const m = fresh.length ? /(\d+)\/(\d+)/.exec(fresh[fresh.length - 1]) : null;
+    if (m && m[1] === m[2] && +m[2] > 0) return { verdict: "PASS", why: fresh[fresh.length - 1] };
+    if (m && +m[2] === 0) return { verdict: "UNKNOWN", why: "0 quantities checked" };
+    return { verdict: "UNKNOWN", why: "no new pass count from this control (inspect text)" };
   }
   return { verdict: "UNKNOWN", why: "kind " + r.kind };
 }
@@ -56,9 +65,11 @@ const BUSY_RE = /booting|installing|loading|verifying sha|running|fitting|please
 async function statusText(p) {
   try { return await p.evaluate(() => [...document.querySelectorAll("[role=status],[aria-live],[aria-busy=true]")].map((e) => e.innerText || "").join(" | ")); } catch (e) { return ""; }
 }
+let lastSettleBusy = false; // true when settle() gave up while the page still looked busy
 async function settle(p, maxMs, re) {
+  lastSettleBusy = false;
   // wait until text stops changing for 8 s or matches a terminal pattern
-  const t0 = Date.now(); let last = "", stableSince = Date.now();
+  const t0 = Date.now(); let last = "", stableSince = Date.now(), lastBusy = false;
   while (Date.now() - t0 < maxMs) {
     await p.waitForTimeout(2000);
     const t = await bodyText(p);
@@ -74,16 +85,21 @@ async function settle(p, maxMs, re) {
     // while busy and Match / Mismatch / WebR failed when done.
     const done = /Browser vs R \((Match|Mismatch|WebR failed)\)|live R quantities (passed|failed)|Validation refused/i.test(t);
     const busy = !done && (BUSY_RE.test(t.slice(-4000)) || BUSY_RE.test(st));
+    lastBusy = busy || BUSY_RE.test(st);
     // With a target pattern, any finished marker (validator or in-page panel) ends the wait.
     const terminal = done || /R finished\.|\d+\/\d+ live R|FAIL:/i.test(t);
     if (re && terminal && Date.now() - stableSince > 8000) return t;
     if (re && re.test(t) && Date.now() - stableSince > 8000 && !busy) return t;
     if (!busy && Date.now() - stableSince > 20000) return t;
   }
+  lastSettleBusy = lastBusy;
   return last;
 }
 
-(async () => {
+async function main() {
+  // loaded here so judge() can be required by tests without playwright installed
+  const { chromium } = require(process.env.PLAYWRIGHT_CORE || "playwright-core");
+  fs.mkdirSync(out, { recursive: true });
   const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ["--headless=new"] });
   const ctx = await browser.newContext({ acceptDownloads: true, viewport: { width: 1400, height: 1000 } });
   const consoleLog = [], failed = [];
@@ -131,7 +147,11 @@ async function settle(p, maxMs, re) {
         // Prefer the id: the page re-renders between enumeration and click, so a
         // positional index can land on a different control.
         const handle = (c.id && await page.$("#" + c.id)) || (await page.$$("button, a, [role=button]"))[c.i];
-        if (!handle || !(await handle.isVisible().catch(() => false))) { r.error = "not visible"; results.push(r); continue; }
+        if (!handle || !(await handle.isVisible().catch(() => false))) {
+          // Recorded as a verdict: a control the run could not press was not checked.
+          r.error = "not visible"; results.push(r);
+          verdicts.push(Object.assign({ tag, control: c.id || c.text }, judge(c, r))); continue;
+        }
         const popupP = ctx.waitForEvent("page", { timeout: 8000 }).catch(() => null);
         const dlP = page.waitForEvent("download", { timeout: 8000 }).catch(() => null);
         const before = await bodyText(page);
@@ -174,7 +194,7 @@ async function settle(p, maxMs, re) {
         } else if (!dl) {
           r.kind = "inpage";
           const after = await settle(page, 420000, /(estimate|tau|rma|metafor|error|failed|match|pass|fail)/i);
-          r.text = after.length > before.length ? after : after; // full text kept
+          r.text = after; r.before = before; r.stillBusy = lastSettleBusy; // full text kept
           await page.screenshot({ path: path.join(out, `${tag}-${c.id || "inpage"}.png`), fullPage: true }).catch(() => {});
         }
       } catch (e) { r.error = String(e.message || e).slice(0, 500); }
@@ -235,9 +255,13 @@ async function settle(p, maxMs, re) {
   const failedV = verdicts.filter((v) => v.verdict === "FAIL");
   note(`verdict: ${verdicts.filter((v) => v.verdict === "PASS").length}/${verdicts.length} R controls PASS` +
     (failedV.length ? "; FAIL: " + failedV.map((v) => v.tag + "/" + v.control + " (" + v.why + ")").join("; ") : ""));
-  process.exitCode = failedV.length ? 2 : 0;
+  // Exit 3: no R control was exercised at all, so nothing was verified.
+  process.exitCode = failedV.length ? 2 : verdicts.length ? 0 : 3;
+  if (!verdicts.length) note("no R control exercised: nothing verified (exit 3)");
   fs.writeFileSync(path.join(out, "console.txt"), consoleLog.join("\n"));
   fs.writeFileSync(path.join(out, "failed-requests.txt"), failed.join("\n"));
   await browser.close();
   note("done");
-})().catch((e) => { note("FATAL " + (e.stack || e)); process.exit(1); });
+}
+module.exports = { judge };
+if (require.main === module) main().catch((e) => { note("FATAL " + (e.stack || e)); process.exit(1); });
