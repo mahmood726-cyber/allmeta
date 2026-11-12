@@ -237,6 +237,7 @@
   // double (rounded to 64 bits), then rounded to double -- a double rounding
   // that a double division does not reproduce.
   function ldmean(a) {
+    if (a.length === 0) return NaN;                 // colMeans of no rows
     if (!HAS_BIGINT) return rsum(a) / a.length;
     var s = ldAccumulate(a);
     if (s === null) return plainSum(a) / a.length;
@@ -246,8 +247,12 @@
     var num = x << SC, q = num / n, r = num - q * n;          // q in units of 2^-(1074+200)
     var sh = BigInt(ldBitlen(q) - 64), qq = q >> sh, rem = q - (qq << sh), half = one << (sh - one);
     if (rem > half || (rem === half && (r > Z || (qq & one) === one))) qq = qq + one;
-    var v = ldRound(qq << sh, 53) >> SC;
-    var d = ldFixToDouble(v);
+    // Round to double while still scaled by 2^-SC (shifting first would
+    // truncate the significand of a mean below ~2^-820), then unscale by an
+    // exact power of two (two steps only if that power is below 2^-1074).
+    var v = ldRound(qq << sh, 53), L2 = ldBitlen(v), s2 = L2 > 53 ? L2 - 53 : 0;
+    var top = Number(v >> BigInt(s2)), e = s2 - 1274;
+    var d = e >= -1074 ? top * mPow(2, e) : top * mPow(2, e + 200) * mPow(2, -200);
     return neg ? -d : d;
   }
 

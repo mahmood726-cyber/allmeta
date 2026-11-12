@@ -51,6 +51,14 @@ test("the 80-bit long-double sum is R's sum(), not an approximation of it", () =
   assert.equal(CC.ldsum([1, 2 ** -63 + 2 ** -70, -1]), 2 ** -63);
   assert.equal(CC.ldsum([]), 0);
   assert.ok(Number.isNaN(CC.ldsum([1, NaN])));
+  // colMeans' long-double mean keeps its significand at any magnitude
+  // (a shift-then-round version truncated means below ~2^-820).
+  for (const sc of [1, 2 ** -900, 2 ** -1000, 2 ** 900]) {
+    assert.equal(CC.ldmean([3 * sc, 4 * sc]), 3.5 * sc);
+    assert.equal(CC.ldmean([sc, sc, sc]), sc);
+  }
+  assert.equal(CC.ldmean([1, 2, 4]), 7 / 3);
+  assert.ok(Number.isNaN(CC.ldmean([])));
   assert.equal(CC.ldsum([1, Infinity]), Infinity);
 });
 
