@@ -445,6 +445,9 @@
               ? ' Also: k = ' + rows.length + ', below the k ≥ 15 at which this ' +
                 'app treats Copas estimates as stable enough to interpret.'
               : '');
+          // A refusal is a problem with the input, announced as status; only the plain
+          // k < 15 caution below is ancillary (role="note"), which tests rely on.
+          warnEl.setAttribute('role', 'status');
           warnEl.style.display = 'block';
         } else if (rows.length < 15 && rows.length >= 3) {
           // No source is cited here on purpose: k >= 15 is this project's own
@@ -452,8 +455,10 @@
           // cut-off, and the file it used to name is a private local notes file
           // that no reader of this page can consult.
           warnEl.textContent = 'k = ' + rows.length + ' — this app treats k ≥ 15 as the point at which Copas selection-model estimates become stable enough to interpret. Output below is illustrative; do not use for inference.';
+          warnEl.setAttribute('role', 'note');
           warnEl.style.display = 'block';
         } else {
+          warnEl.setAttribute('role', 'status');
           warnEl.style.display = 'none';
         }
       }

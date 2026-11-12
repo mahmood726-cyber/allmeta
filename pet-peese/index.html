@@ -320,7 +320,7 @@
       const warnSlot = document.getElementById("warn-slot");
       warnSlot.innerHTML = "";
       if (rows.length < 5) {
-        warnSlot.innerHTML = `<div class="note"><strong>Note:</strong> publication-bias diagnostics have very low power with k &lt; 10.</div>`;
+        warnSlot.innerHTML = `<div class="note" role="note"><strong>Note:</strong> publication-bias diagnostics have very low power with k &lt; 10.</div>`;
       }
       if (rows.length < 3) {
         document.getElementById("res-body").innerHTML = `<tr><td colspan="5">Need at least 3 studies.</td></tr>`;
@@ -355,7 +355,7 @@
       for (const r of resRows) {
         __bodyParts.push(`<tr><td><code>${r.name}</code></td><td>${fmt(r.est)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.ci[0])}, ${fmt(r.ci[1])}]</td><td>${fmt(r.p)}</td></tr>`);
       }
-      warnSlot.innerHTML += `<div class="note"><strong>Conditional estimator:</strong> ${conditional}.</div>`;
+      warnSlot.innerHTML += `<div class="note" role="note"><strong>Conditional estimator:</strong> ${conditional}.</div>`;
       drawFunnel(rows, pet, peese, tf);
       body.innerHTML = __bodyParts.join("");
 
