@@ -541,6 +541,14 @@
       else Toast.show("Could not save to shared bus.", "warn");
     }
 
+    // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
+    // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
+    // returning user an earlier session's studies).
+    window.__almValidatorStudies = function () {
+      // Only when the page shows a posterior for the current input (valid prior, k >= 1).
+      render();
+      return _lastPost ? parseStudies(document.getElementById("f-data").value).studies : [];
+    };
     function attach() {
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
       document.getElementById("f-slider").addEventListener("input", onSlider);
@@ -590,7 +598,8 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "bayesian-ma", textarea: "#f-data", format: "label-est-se" });
@@ -610,6 +619,9 @@
       AlmFlow.attachContinueBar({
         container: "#alm-flow-mount",
         suggestions: ["forest-plot", "heterogeneity", "bma-tau-priors", "bayesian-mcmc", "webr-validator"],
+        // Push the studies on screen (not an earlier session's bus) and, for the validator,
+        // this page's model where it is an inverse-variance pool.
+        getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
       });
     }
   });
