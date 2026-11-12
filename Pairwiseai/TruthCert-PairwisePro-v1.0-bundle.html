@@ -15,6 +15,7 @@
   <script src="../shared/vendor/jspdf-2.5.1.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
   <script src="../shared/vendor/html2canvas-1.4.1.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
   <script src="../shared/vendor/xlsx-0.18.5.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
+  <script src="../shared/upper-tail.js"></script>
   <style>:root{--color-primary-900:#0d1b2a;--color-primary-800:#1b263b;--color-primary-700:#2a3f5f;--color-primary-600:#3a5a8c;--color-primary-500:#4a7ab8;--color-primary-400:#6b9ad4;--color-primary-300:#8db8e8;--color-primary-200:#b8d4f5;--color-primary-100:#e3eefb;--color-accent-500:#e6a919;--color-accent-400:#f5c042;--color-accent-300:#ffd666;--color-accent-glow:rgba(230,169,25,0.3);--color-success-500:#10b981;--color-success-400:#34d399;--color-success-bg:rgba(16,185,129,0.12);--color-warning-500:#f59e0b;--color-warning-400:#fbbf24;--color-warning-bg:rgba(245,158,11,0.12);--color-danger-500:#ef4444;--color-danger-400:#f87171;--color-danger-bg:rgba(239,68,68,0.12);--color-info-500:#3b82f6;--color-info-400:#60a5fa;--color-info-bg:rgba(59,130,246,0.12);--color-neutral-950:#0a0c10;--color-neutral-900:#12151c;--color-neutral-800:#1a1f2a;--color-neutral-700:#262d3d;--color-neutral-600:#3d4657;--color-neutral-500:#5a6478;--color-neutral-400:#7d8799;--color-neutral-300:#a3aab8;--color-neutral-200:#c9cdd6;--color-neutral-100:#e8eaee;--color-neutral-50:#f5f6f8;--surface-base:var(--color-neutral-900);--surface-raised:var(--color-neutral-800);--surface-overlay:var(--color-neutral-700);--surface-highlight:var(--color-primary-800);--text-primary:var(--color-neutral-100);--text-secondary:var(--color-neutral-400);--text-tertiary:var(--color-neutral-500);--text-inverse:var(--color-neutral-900);--text-accent:var(--color-accent-400);--border-subtle:var(--color-neutral-700);--border-default:var(--color-neutral-600);--border-strong:var(--color-neutral-500);--border-focus:var(--color-primary-500);--font-sans:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;--font-mono:'JetBrains Mono','SF Mono','Consolas',monospace;--text-xs:0.75rem;--text-sm:0.8125rem;--text-base:0.9375rem;--text-lg:1.0625rem;--text-xl:1.25rem;--text-2xl:1.5rem;--text-3xl:1.875rem;--text-4xl:2.25rem;--leading-tight:1.25;--leading-snug:1.375;--leading-normal:1.5;--leading-relaxed:1.625;--space-0:0;--space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;--space-16:4rem;--radius-sm:4px;--radius-md:6px;--radius-lg:8px;--radius-xl:12px;--radius-2xl:16px;--radius-full:9999px;--shadow-sm:0 1px 2px rgba(0,0,0,0.3);--shadow-md:0 4px 6px -1px rgba(0,0,0,0.3),0 2px 4px -1px rgba(0,0,0,0.2);--shadow-lg:0 10px 15px -3px rgba(0,0,0,0.3),0 4px 6px -2px rgba(0,0,0,0.2);--shadow-xl:0 20px 25px -5px rgba(0,0,0,0.3),0 10px 10px -5px rgba(0,0,0,0.2);--shadow-glow:0 0 20px var(--color-accent-glow);--transition-fast:150ms cubic-bezier(0.4,0,0.2,1);--transition-base:200ms cubic-bezier(0.4,0,0.2,1);--transition-slow:300ms cubic-bezier(0.4,0,0.2,1);--z-base:0;--z-dropdown:100;--z-sticky:200;--z-modal:300;--z-tooltip:400;--z-toast:500;--color-verdict-stable:#10b981;--color-verdict-stable-nid:#06b6d4;--color-verdict-moderate:#f59e0b;--color-verdict-exposed:#f97316;--color-verdict-uncertain:#ef4444;--color-tier-a:#10b981;--color-tier-b:#f59e0b;--color-tier-c:#f97316;--color-tier-d:#ef4444;--color-purple:#a855f7;--color-pink:#ec4899;--color-cyan:#06b6d4}[data-theme="light"]{--surface-base:#f8fafc;--surface-raised:#ffffff;--surface-overlay:#f1f5f9;--surface-highlight:#e0f2fe;--surface-card:#ffffff;--text-primary:#1e293b;--text-secondary:#64748b;--text-tertiary:#94a3b8;--text-inverse:#f8fafc;--text-accent:#d97706;--border-subtle:#e2e8f0;--border-default:#cbd5e1;--border-strong:#94a3b8;--border-focus:var(--color-primary-500);--color-neutral-950:#f8fafc;--color-neutral-900:#f1f5f9;--color-neutral-800:#e2e8f0;--color-neutral-700:#cbd5e1;--color-neutral-600:#94a3b8;--color-neutral-500:#64748b;--color-neutral-400:#475569;--color-neutral-300:#334155;--color-neutral-200:#1e293b;--color-neutral-100:#0f172a;--color-neutral-50:#020617;--shadow-sm:0 1px 2px rgba(0,0,0,0.05);--shadow-md:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06);--shadow-lg:0 10px 15px -3px rgba(0,0,0,0.1),0 4px 6px -2px rgba(0,0,0,0.05);--shadow-xl:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);--color-success-bg:rgba(16,185,129,0.15);--color-warning-bg:rgba(245,158,11,0.15);--color-danger-bg:rgba(239,68,68,0.15);--color-info-bg:rgba(59,130,246,0.15)}[data-theme="light"] .app-header{background:linear-gradient(135deg,#1e3a5f 0%,#2d4a6f 100%);border-bottom:1px solid rgba(255,255,255,0.1)}[data-theme="light"] .card{box-shadow:var(--shadow-md);border:1px solid var(--border-subtle)}[data-theme="light"] .tabs-nav{background:var(--surface-raised);border:1px solid var(--border-subtle)}[data-theme="light"] .tab-btn{color:var(--text-secondary)}[data-theme="light"] .tab-btn:hover{background:var(--surface-overlay);color:var(--text-primary)}[data-theme="light"] .tab-btn--active{background:var(--color-primary-500);color:white}[data-theme="light"] .input,[data-theme="light"] .select{background:var(--surface-raised);border-color:var(--border-default);color:var(--text-primary)}[data-theme="light"] .input:focus,[data-theme="light"] .select:focus{border-color:var(--color-primary-500);box-shadow:0 0 0 3px rgba(74,122,184,0.2)}[data-theme="light"] .table th{background:var(--surface-overlay);color:var(--text-primary);border-bottom:2px solid var(--border-default)}[data-theme="light"] .table td{border-bottom:1px solid var(--border-subtle)}[data-theme="light"] .table tr:hover{background:var(--surface-overlay)}[data-theme="light"] .btn--ghost{color:var(--text-secondary)}[data-theme="light"] .btn--ghost:hover{background:var(--surface-overlay);color:var(--text-primary)}[data-theme="light"] .stat-card{background:var(--surface-raised);border:1px solid var(--border-subtle)}.theme-toggle{padding:var(--space-2);font-size:1.25rem;line-height:1}.theme-toggle:hover{transform:scale(1.1)}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{font-size:16px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}body{font-family:var(--font-sans);font-size:var(--text-base);line-height:var(--leading-normal);color:var(--text-primary);background:var(--surface-base);min-height:100vh;overflow-x:hidden}::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:var(--color-neutral-800);border-radius:var(--radius-full)}::-webkit-scrollbar-thumb{background:var(--color-neutral-600);border-radius:var(--radius-full);border:2px solid var(--color-neutral-800)}::-webkit-scrollbar-thumb:hover{background:var(--color-neutral-500)}::selection{background:var(--color-primary-600);color:var(--text-primary)}:focus-visible{outline:2px solid var(--border-focus);outline-offset:2px}.font-mono{font-family:var(--font-mono)}.font-sans{font-family:var(--font-sans)}.text-xs{font-size:var(--text-xs)}.text-sm{font-size:var(--text-sm)}.text-base{font-size:var(--text-base)}.text-lg{font-size:var(--text-lg)}.text-xl{font-size:var(--text-xl)}.text-2xl{font-size:var(--text-2xl)}.text-3xl{font-size:var(--text-3xl)}.font-normal{font-weight:400}.font-medium{font-weight:500}.font-semibold{font-weight:600}.font-bold{font-weight:700}.text-primary{color:var(--text-primary)}.text-secondary{color:var(--text-secondary)}.text-tertiary{color:var(--text-tertiary)}.text-accent{color:var(--text-accent)}.text-success{color:var(--color-success-400)}.text-warning{color:var(--color-warning-400)}.text-danger{color:var(--color-danger-400)}.hidden{display:none !important}.settings-group{background:var(--surface-card);padding:var(--space-3);border-radius:var(--radius-md)}.settings-group label{cursor:pointer}.settings-group input[type="color"]{border-radius:var(--radius-sm);cursor:pointer}.container{width:100%;max-width:1440px;margin:0 auto;padding:0 var(--space-6)}.flex{display:flex}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.justify-end{justify-content:flex-end}.gap-1{gap:var(--space-1)}.gap-2{gap:var(--space-2)}.gap-3{gap:var(--space-3)}.gap-4{gap:var(--space-4)}.gap-6{gap:var(--space-6)}.gap-8{gap:var(--space-8)}.grid{display:grid}.grid-cols-2{grid-template-columns:repeat(2,1fr)}.grid-cols-3{grid-template-columns:repeat(3,1fr)}.grid-cols-4{grid-template-columns:repeat(4,1fr)}.app-header{position:sticky;top:0;z-index:var(--z-sticky);background:linear-gradient(180deg,var(--color-neutral-900) 0%,rgba(18,21,28,0.95) 100%);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-subtle);padding:var(--space-3) 0}.app-header__inner{display:flex;align-items:center;justify-content:space-between;gap:var(--space-6)}.app-logo{display:flex;align-items:center;gap:var(--space-3)}.app-logo__badge{display:flex;align-items:center;justify-content:center;width:42px;height:42px;background:linear-gradient(135deg,var(--color-primary-600) 0%,var(--color-primary-700) 100%);border-radius:var(--radius-lg);font-family:var(--font-mono);font-weight:600;font-size:var(--text-sm);color:var(--text-primary);box-shadow:var(--shadow-md)}.app-logo__text{display:flex;flex-direction:column}.app-logo__title{font-size:var(--text-lg);font-weight:700;letter-spacing:-0.02em;background:linear-gradient(135deg,var(--color-neutral-100) 0%,var(--color-neutral-300) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.app-logo__version{font-size:var(--text-xs);font-family:var(--font-mono);color:var(--text-tertiary);letter-spacing:0.05em}.app-controls{display:flex;align-items:center;gap:var(--space-3)}.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);font-family:var(--font-sans);font-size:var(--text-sm);font-weight:500;line-height:1;border:1px solid transparent;border-radius:var(--radius-md);cursor:pointer;transition:all var(--transition-fast);white-space:nowrap}.btn:disabled{opacity:0.5;cursor:not-allowed}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.skip-link{position:absolute;top:-40px;left:0;background:var(--color-primary-500);color:white;padding:8px 16px;z-index:100;transition:top 0.2s}.skip-link:focus{top:0}.focus-visible:focus{outline:2px solid var(--color-primary-500);outline-offset:2px}.aria-live-region{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);border:0}.input--error{border-color:var(--color-danger-500) !important;box-shadow:0 0 0 3px rgba(239,68,68,0.2)}.input--error:focus{border-color:var(--color-danger-500);box-shadow:0 0 0 3px rgba(239,68,68,0.3)}.plot-error{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;background:var(--surface-overlay);border-radius:var(--radius-lg);padding:var(--space-6);text-align:center}.plot-error__icon{font-size:3rem;margin-bottom:var(--space-4);opacity:0.5}.plot-error__message{color:var(--text-secondary);margin-bottom:var(--space-4)}.btn--primary{background:linear-gradient(135deg,var(--color-primary-500) 0%,var(--color-primary-600) 100%);color:var(--text-primary);box-shadow:var(--shadow-sm)}.btn--primary:hover:not(:disabled){background:linear-gradient(135deg,var(--color-primary-400) 0%,var(--color-primary-500) 100%);box-shadow:var(--shadow-md);transform:translateY(-1px)}.btn--accent{background:linear-gradient(135deg,var(--color-accent-500) 0%,var(--color-accent-400) 100%);color:var(--text-inverse);box-shadow:var(--shadow-sm),0 0 0 0 var(--color-accent-glow)}.btn--accent:hover:not(:disabled){box-shadow:var(--shadow-md),var(--shadow-glow);transform:translateY(-1px)}.btn--ghost{background:transparent;color:var(--text-secondary);border-color:var(--border-subtle)}.btn--ghost:hover:not(:disabled){background:var(--surface-raised);color:var(--text-primary);border-color:var(--border-default)}.btn--sm{padding:var(--space-1) var(--space-3);font-size:var(--text-xs)}.btn--lg{padding:var(--space-3) var(--space-6);font-size:var(--text-base)}.btn--icon{width:36px;height:36px;padding:0}.select-wrapper{position:relative;display:inline-block}.select{appearance:none;background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:var(--space-2) var(--space-8) var(--space-2) var(--space-3);font-family:var(--font-sans);font-size:var(--text-sm);color:var(--text-primary);cursor:pointer;transition:all var(--transition-fast);min-width:120px}.select:hover{border-color:var(--border-default)}.select:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(74,122,184,0.2)}.select-wrapper::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid var(--text-secondary);pointer-events:none}.tabs-nav{display:flex;align-items:center;gap:var(--space-1);padding:var(--space-2);background:var(--surface-raised);border-radius:var(--radius-lg);border:1px solid var(--border-subtle)}.tab-btn{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);background:transparent;border:none;border-radius:var(--radius-md);font-family:var(--font-sans);font-size:var(--text-sm);font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all var(--transition-fast);position:relative}.tab-btn:hover{color:var(--text-primary);background:var(--surface-overlay)}.tab-btn--active{color:var(--text-primary);background:var(--color-primary-700);position:relative}.tab-btn--active::after{content:'';position:absolute;bottom:0;left:50%;width:60%;height:3px;background:var(--color-accent-400);border-radius:2px;transform:translateX(-50%);box-shadow:0 0 8px var(--color-accent-400)}.tab-btn__icon{font-size:var(--text-base)}.tab-btn__badge{position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--color-accent-500);border-radius:var(--radius-full);animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.2)}}@keyframes spin{to{transform:rotate(360deg)}}.btn--loading{opacity:0.8;pointer-events:none}.btn--loading .btn-spinner{display:inline-block;animation:spin 1s linear infinite}.card{background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;transition:transform 0.2s ease,box-shadow 0.2s ease}.card:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,0.3)}.card__header{display:flex;align-items:center;justify-content:space-between;padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--border-subtle);background:linear-gradient(180deg,var(--surface-overlay) 0%,var(--surface-raised) 100%)}.card__title{font-size:var(--text-base);font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:var(--space-2)}.card__body{padding:var(--space-5)}.card__footer{padding:var(--space-4) var(--space-5);border-top:1px solid var(--border-subtle);background:var(--surface-overlay)}.data-table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}.data-table th,.data-table td{padding:var(--space-3) var(--space-4);text-align:left;border-bottom:1px solid var(--border-subtle)}.data-table th{font-weight:600;color:var(--text-secondary);font-size:var(--text-xs);text-transform:uppercase;letter-spacing:0.05em;background:var(--surface-overlay)}.data-table tbody tr:hover{background:var(--surface-highlight)}.data-table td:first-child{font-weight:500}.data-table--mono td{font-family:var(--font-mono)}.input{width:100%;padding:var(--space-2) var(--space-3);background:var(--surface-base);border:1px solid var(--border-subtle);border-radius:var(--radius-md);font-family:var(--font-sans);font-size:var(--text-sm);color:var(--text-primary);transition:all var(--transition-fast)}.input:hover{border-color:var(--border-default)}.input:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(74,122,184,0.2)}.input::placeholder{color:var(--text-tertiary)}.input--mono{font-family:var(--font-mono)}.input--sm{padding:var(--space-1) var(--space-2);font-size:var(--text-xs)}.input-group{display:flex;flex-direction:column;gap:var(--space-1)}.input-label{font-size:var(--text-xs);font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em}.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-4)}.stat-card{background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);text-align:center;transition:all var(--transition-fast)}.stat-card:hover{border-color:var(--border-default);transform:translateY(-2px);box-shadow:var(--shadow-md)}.stat-card__value{font-family:var(--font-mono);font-size:var(--text-2xl);font-weight:600;color:var(--text-primary);line-height:1;margin-bottom:var(--space-2)}.stat-card__value--accent{color:var(--text-accent)}.stat-card__value--success{color:var(--color-success-400)}.stat-card__label{font-size:var(--text-xs);font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em}.prob-bar{margin-bottom:var(--space-4)}.prob-bar__header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:var(--space-2)}.prob-bar__label{font-size:var(--text-sm);font-weight:500;color:var(--text-primary)}.prob-bar__value{font-family:var(--font-mono);font-size:var(--text-lg);font-weight:600}.prob-bar__track{height:12px;background:var(--surface-overlay);border-radius:var(--radius-full);overflow:hidden}.prob-bar__fill{height:100%;border-radius:var(--radius-full);transition:width var(--transition-slow)}.prob-bar--success .prob-bar__value{color:var(--color-success-400)}.prob-bar--success .prob-bar__fill{background:linear-gradient(90deg,var(--color-success-500) 0%,var(--color-success-400) 100%)}.prob-bar--warning .prob-bar__value{color:var(--color-warning-400)}.prob-bar--warning .prob-bar__fill{background:linear-gradient(90deg,var(--color-warning-500) 0%,var(--color-warning-400) 100%)}.prob-bar--danger .prob-bar__value{color:var(--color-danger-400)}.prob-bar--danger .prob-bar__fill{background:linear-gradient(90deg,var(--color-danger-500) 0%,var(--color-danger-400) 100%)}.prob-bar--accent .prob-bar__value{color:var(--color-accent-400)}.prob-bar--accent .prob-bar__fill{background:linear-gradient(90deg,var(--color-accent-500) 0%,var(--color-accent-400) 100%)}.prob-bar__desc{font-size:var(--text-xs);color:var(--text-tertiary);margin-top:var(--space-1)}.decision-badge{display:inline-flex;align-items:center;gap:var(--space-3);padding:var(--space-4) var(--space-6);border-radius:var(--radius-xl);font-weight:600;text-transform:uppercase;letter-spacing:0.1em}.decision-badge--adopt{background:var(--color-success-bg);border:2px solid var(--color-success-500);color:var(--color-success-400)}.decision-badge--reject{background:var(--color-danger-bg);border:2px solid var(--color-danger-500);color:var(--color-danger-400)}.decision-badge--uncertain{background:var(--color-warning-bg);border:2px solid var(--color-warning-500);color:var(--color-warning-400)}.decision-badge__icon{font-size:var(--text-xl)}.tooltip{position:relative;cursor:help}.tooltip::after{content:attr(data-tooltip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);padding:var(--space-2) var(--space-3);background:var(--color-neutral-700);border:1px solid var(--border-default);border-radius:var(--radius-md);font-size:var(--text-xs);color:var(--text-primary);white-space:nowrap;opacity:0;visibility:hidden;transition:all var(--transition-fast);z-index:var(--z-tooltip);box-shadow:var(--shadow-lg);margin-bottom:var(--space-2)}.tooltip:hover::after{opacity:1;visibility:visible}.app-main{padding:var(--space-6) 0 var(--space-16)}.tab-panel{display:none;animation:fadeIn 0.2s ease-out}.tab-panel--active{display:block}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}.plot-container{background:var(--surface-base);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-4);min-height:400px}.alert{padding:var(--space-4);border-radius:var(--radius-lg);border:1px solid;display:flex;gap:var(--space-3)}.alert--info{background:var(--color-info-bg);border-color:var(--color-info-500);color:var(--color-info-400)}.alert--success{background:var(--color-success-bg);border-color:var(--color-success-500);color:var(--color-success-400)}.alert--warning{background:var(--color-warning-bg);border-color:var(--color-warning-500);color:var(--color-warning-400)}.alert--danger{background:var(--color-danger-bg);border-color:var(--color-danger-500);color:var(--color-danger-400)}.alert__icon{font-size:var(--text-xl);flex-shrink:0}.alert__content{flex:1}.alert__title{font-weight:600;margin-bottom:var(--space-1)}.alert__text{font-size:var(--text-sm);opacity:0.9}@media (max-width:1024px){.container{padding:0 var(--space-4)}.tabs-nav{overflow-x:auto;-webkit-overflow-scrolling:touch}.grid-cols-4{grid-template-columns:repeat(2,1fr)}}@media (max-width:640px){.app-header__inner{flex-wrap:wrap}.grid-cols-2,.grid-cols-3,.grid-cols-4{grid-template-columns:1fr}.tab-btn__text{display:none}}@media print{body{background:white;color:black;font-size:11pt}.app-header,.tab-navigation,.btn,.select-wrapper{display:none !important}.card{break-inside:avoid;box-shadow:none;border:1px solid #ddd;background:white;margin-bottom:1em}.tab-panel{display:block !important}.tab-panel:not([data-panel="analysis"]):not([data-panel="report"]){display:none !important}.stat-metric,.decision-box{background:#f5f5f5 !important;color:black !important}h1,h2,h3{color:black !important}table{font-size:10pt}[id$="Plot"]{max-height:400px !important}}.floating-report-btn{position:fixed;bottom:24px;right:24px;z-index:1000;background:var(--accent);color:white;border:none;border-radius:50px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:none;align-items:center;gap:8px;transition:transform 0.2s,box-shadow 0.2s}.floating-report-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.4)}.floating-report-btn.visible{display:flex}.quick-nav{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface-elevated);border:1px solid var(--border);border-radius:50px;padding:8px 16px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:999;gap:8px;align-items:center}.quick-nav.visible{display:flex}.quick-nav button{background:transparent;border:none;padding:8px 12px;border-radius:20px;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:all 0.2s}.quick-nav button:hover{background:var(--surface-hover);color:var(--text)}.quick-nav button.active{background:var(--accent);color:white}.verdict-card{background:linear-gradient(135deg,rgba(0,212,170,0.1) 0%,rgba(168,85,247,0.1) 100%);border:2px solid var(--color-verdict-stable);border-radius:var(--radius-xl);text-align:center;padding:var(--space-8);margin-bottom:var(--space-6)}.verdict-card.stable{border-color:var(--color-verdict-stable);background:linear-gradient(135deg,rgba(16,185,129,0.15) 0%,rgba(16,185,129,0.05) 100%)}.verdict-card.stable-nid{border-color:var(--color-verdict-stable-nid);background:linear-gradient(135deg,rgba(6,182,212,0.15) 0%,rgba(6,182,212,0.05) 100%)}.verdict-card.moderate{border-color:var(--color-verdict-moderate);background:linear-gradient(135deg,rgba(245,158,11,0.15) 0%,rgba(245,158,11,0.05) 100%)}.verdict-card.exposed{border-color:var(--color-verdict-exposed);background:linear-gradient(135deg,rgba(249,115,22,0.15) 0%,rgba(249,115,22,0.05) 100%)}.verdict-card.uncertain{border-color:var(--color-verdict-uncertain);background:linear-gradient(135deg,rgba(239,68,68,0.15) 0%,rgba(239,68,68,0.05) 100%)}.verdict-label{font-size:var(--text-xs);text-transform:uppercase;color:var(--text-secondary);letter-spacing:1px}.verdict-value{font-size:var(--text-4xl);font-weight:700;margin:var(--space-3) 0}.verdict-card.stable .verdict-value{color:var(--color-verdict-stable)}.verdict-card.stable-nid .verdict-value{color:var(--color-verdict-stable-nid)}.verdict-card.moderate .verdict-value{color:var(--color-verdict-moderate)}.verdict-card.exposed .verdict-value{color:var(--color-verdict-exposed)}.verdict-card.uncertain .verdict-value{color:var(--color-verdict-uncertain)}.severity-panel{background:linear-gradient(135deg,rgba(249,115,22,0.1) 0%,rgba(249,115,22,0.02) 100%);border:1px solid rgba(249,115,22,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.severity-score{font-size:3rem;font-weight:700;text-align:center;margin:var(--space-5) 0}.severity-score.low{color:var(--color-success-500)}.severity-score.med{color:var(--color-warning-500)}.severity-score.high{color:var(--color-verdict-exposed)}.severity-score.crit{color:var(--color-danger-500)}.threat-panel{background:linear-gradient(135deg,rgba(239,68,68,0.1) 0%,rgba(249,115,22,0.05) 100%);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.threat-item{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:var(--surface-raised);border-radius:var(--radius-md);margin-bottom:var(--space-2);border-left:4px solid var(--border-default)}.threat-item.green{border-left-color:var(--color-success-500)}.threat-item.amber{border-left-color:var(--color-warning-500)}.threat-item.red{border-left-color:var(--color-danger-500)}.threat-status{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);font-weight:700}.threat-status.green{background:rgba(16,185,129,0.2);color:var(--color-success-500)}.threat-status.amber{background:rgba(245,158,11,0.2);color:var(--color-warning-500)}.threat-status.red{background:rgba(239,68,68,0.2);color:var(--color-danger-500)}.gates-panel{background:linear-gradient(135deg,rgba(168,85,247,0.1) 0%,rgba(168,85,247,0.02) 100%);border:1px solid rgba(168,85,247,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.gates-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-3)}.gate-item{background:var(--surface-raised);padding:var(--space-4);border-radius:var(--radius-md);border:1px solid var(--border-subtle);display:flex;align-items:center;gap:var(--space-3)}.gate-status{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:var(--text-sm);font-weight:700}.gate-status.pass{background:rgba(16,185,129,0.2);color:var(--color-success-500)}.gate-status.fail{background:rgba(239,68,68,0.2);color:var(--color-danger-500)}.tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--space-4)}.tier-card{border-radius:var(--radius-xl);padding:var(--space-5);text-align:center}.tier-card.tier-a{background:linear-gradient(135deg,rgba(16,185,129,0.15) 0%,rgba(16,185,129,0.05) 100%);border:2px solid var(--color-tier-a)}.tier-card.tier-b{background:linear-gradient(135deg,rgba(245,158,11,0.15) 0%,rgba(245,158,11,0.05) 100%);border:2px solid var(--color-tier-b)}.tier-card.tier-c{background:linear-gradient(135deg,rgba(249,115,22,0.15) 0%,rgba(249,115,22,0.05) 100%);border:2px solid var(--color-tier-c)}.tier-card.tier-d{background:linear-gradient(135deg,rgba(239,68,68,0.15) 0%,rgba(239,68,68,0.05) 100%);border:2px solid var(--color-tier-d)}.tier-header{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary)}.tier-verdict{font-size:var(--text-xl);font-weight:700;margin:var(--space-2) 0}.tier-card.tier-a .tier-verdict{color:var(--color-tier-a)}.tier-card.tier-b .tier-verdict{color:var(--color-tier-b)}.tier-card.tier-c .tier-verdict{color:var(--color-tier-c)}.tier-card.tier-d .tier-verdict{color:var(--color-tier-d)}.decision-path-box{background:linear-gradient(135deg,rgba(0,212,170,0.12) 0%,rgba(16,185,129,0.08) 100%);border:2px solid var(--color-success-500);border-radius:var(--radius-xl);padding:var(--space-6);margin-bottom:var(--space-6)}.decision-path-header{text-align:center;margin-bottom:var(--space-5)}.decision-path-header h4{font-size:var(--text-lg);color:var(--color-success-500);margin-bottom:var(--space-1)}.decision-path-lines{display:flex;flex-direction:column;gap:var(--space-3)}.path-line{display:grid;grid-template-columns:24px 180px 1fr;gap:var(--space-3);align-items:center;padding:var(--space-3) var(--space-4);background:var(--surface-raised);border-radius:var(--radius-md);border-left:4px solid var(--color-accent-500)}.path-line-num{width:24px;height:24px;background:var(--color-accent-500);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);font-weight:700;color:var(--text-inverse)}.grade-panel{background:linear-gradient(135deg,rgba(59,130,246,0.1) 0%,rgba(59,130,246,0.02) 100%);border:1px solid rgba(59,130,246,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.grade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-4)}.grade-domain{background:var(--surface-raised);padding:var(--space-4);border-radius:var(--radius-md)}.grade-domain-title{font-size:var(--text-xs);text-transform:uppercase;color:var(--text-secondary);margin-bottom:var(--space-2)}.grade-domain-value{font-weight:600}.grade-domain-value.serious{color:var(--color-danger-500)}.grade-domain-value.moderate{color:var(--color-warning-500)}.grade-domain-value.none{color:var(--color-success-500)}.hta-content{font-size:var(--text-sm);line-height:1.7}.hta-content p{margin-bottom:var(--space-3)}.hta-list{list-style:none;padding-left:0}.hta-list li{padding:var(--space-2) 0 var(--space-2) var(--space-5);position:relative}.hta-list li::before{content:"→";position:absolute;left:0;color:var(--color-accent-500)}.hta-input-box{background:var(--surface-raised);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-4)}.rec-classes{display:flex;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4)}.rec-class{padding:var(--space-3) var(--space-5);border-radius:var(--radius-md);font-family:var(--font-mono);font-size:var(--text-sm);font-weight:600}.rec-class.adopt{background:rgba(16,185,129,0.2);color:var(--color-success-500);border:1px solid var(--color-success-500)}.rec-class.adopt-guard{background:rgba(245,158,11,0.2);color:var(--color-warning-500);border:1px solid var(--color-warning-500)}.rec-class.pilot{background:rgba(59,130,246,0.2);color:var(--color-info-500);border:1px solid var(--color-info-500)}.rec-class.delay{background:rgba(168,85,247,0.2);color:var(--color-purple);border:1px solid var(--color-purple)}.rec-class.reject{background:rgba(239,68,68,0.2);color:var(--color-danger-500);border:1px solid var(--color-danger-500)}.pack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-3)}.pack-card{background:var(--surface-raised);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:var(--space-4);text-align:center;cursor:pointer;transition:all var(--transition-base)}.pack-card:hover{transform:translateY(-2px);border-color:var(--color-accent-500)}.pack-card.selected{border-color:var(--color-accent-500);background:rgba(230,169,25,0.1)}.pack-icon{font-size:2rem;margin-bottom:var(--space-2)}.pack-name{font-weight:600;margin-bottom:var(--space-1)}.pack-desc{font-size:var(--text-xs);color:var(--text-secondary)}.decision-log{max-height:300px;overflow-y:auto;font-family:var(--font-mono);font-size:var(--text-xs);background:var(--surface-base);border-radius:var(--radius-md);padding:var(--space-4)}.decision-log-item{padding:var(--space-2) 0;border-bottom:1px solid var(--border-subtle)}.decision-log-item:last-child{border-bottom:none}.decision-log-item.check{color:var(--color-success-500)}.decision-log-item.trigger{color:var(--color-verdict-exposed)}.decision-log-item.skip{color:var(--text-secondary)}.decision-log-item.error{color:var(--color-danger-500)}.influence-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-4)}.influence-stat{background:var(--surface-raised);padding:var(--space-4);border-radius:var(--radius-md);border:1px solid var(--border-subtle)}.influence-stat-label{font-size:var(--text-xs);text-transform:uppercase;color:var(--text-secondary);margin-bottom:var(--space-2)}.influence-stat-value{font-family:var(--font-mono);font-size:var(--text-lg);font-weight:600}.ois-panel{background:linear-gradient(135deg,rgba(6,182,212,0.1) 0%,rgba(6,182,212,0.02) 100%);border:1px solid rgba(6,182,212,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.stability-panel{background:linear-gradient(135deg,rgba(168,85,247,0.1) 0%,rgba(6,182,212,0.05) 100%);border:1px solid rgba(168,85,247,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.rho-panel{background:linear-gradient(135deg,rgba(6,182,212,0.1) 0%,rgba(6,182,212,0.02) 100%);border:1px solid rgba(6,182,212,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.rho-table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}.rho-table th,.rho-table td{padding:var(--space-3);text-align:center;border:1px solid rgba(6,182,212,0.2)}.rho-table th{background:rgba(6,182,212,0.1);color:var(--color-cyan)}.rho-table td{font-family:var(--font-mono)}.rho-current{background:rgba(6,182,212,0.2) !important;font-weight:600}.fragility-panel{background:linear-gradient(135deg,rgba(236,72,153,0.1) 0%,rgba(236,72,153,0.02) 100%);border:1px solid rgba(236,72,153,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.breakdown-panel{background:linear-gradient(135deg,rgba(239,68,68,0.1) 0%,rgba(239,68,68,0.02) 100%);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.estimator-panel{background:linear-gradient(135deg,rgba(59,130,246,0.1) 0%,rgba(59,130,246,0.02) 100%);border:1px solid rgba(59,130,246,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.estimator-table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}.estimator-table th,.estimator-table td{padding:var(--space-3);text-align:center;border:1px solid rgba(59,130,246,0.2)}.estimator-table th{background:rgba(59,130,246,0.1);color:var(--color-info-500)}.estimator-table td{font-family:var(--font-mono)}.estimator-table tr.headline{background:rgba(0,212,170,0.1)}.profile-panel{background:linear-gradient(135deg,rgba(168,85,247,0.1) 0%,rgba(168,85,247,0.02) 100%);border:1px solid rgba(168,85,247,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.trimfill-panel{background:linear-gradient(135deg,rgba(236,72,153,0.1) 0%,rgba(236,72,153,0.02) 100%);border:1px solid rgba(236,72,153,0.3);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.hta-result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--space-5);margin-bottom:var(--space-6)}.hta-result-card{background:var(--surface-raised);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:var(--space-6)}.hta-result-label{font-size:var(--text-xs);text-transform:uppercase;color:var(--text-secondary);margin-bottom:var(--space-3);letter-spacing:0.5px}.hta-result-value{font-family:var(--font-mono);font-size:var(--text-3xl);font-weight:700;color:var(--color-accent-400)}.hta-result-detail{font-size:var(--text-sm);color:var(--text-secondary);margin-top:var(--space-2)}.tornado-container{background:var(--surface-raised);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.ceac-container,.evpi-container{background:var(--surface-raised);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.ce-plane-container{background:var(--surface-raised);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-5)}.hta-certificate{background:linear-gradient(135deg,rgba(0,212,170,0.08) 0%,rgba(168,85,247,0.08) 100%);border:2px solid var(--color-accent-500);border-radius:var(--radius-xl);padding:var(--space-8)}.certificate-header{text-align:center;margin-bottom:var(--space-6)}.certificate-seal{font-size:3rem;margin-bottom:var(--space-3)}.certificate-title{font-size:var(--text-2xl);font-weight:700}.audit-trail{background:var(--surface-base);border-radius:var(--radius-md);padding:var(--space-4);font-family:var(--font-mono);font-size:var(--text-xs);max-height:400px;overflow-y:auto}.audit-entry{padding:var(--space-2) 0;border-bottom:1px solid var(--border-subtle);display:flex;gap:var(--space-3)}.audit-time{color:var(--text-secondary);min-width:80px}.audit-type{font-weight:600;min-width:60px}.audit-type.check{color:var(--color-success-500)}.audit-type.trigger{color:var(--color-warning-500)}.audit-type.error{color:var(--color-danger-500)}.country-select,.disease-select{width:100%;padding:var(--space-3);background:var(--surface-overlay);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:var(--text-sm)}.panel-title-icon{display:flex;align-items:center;gap:var(--space-2);font-weight:600;margin-bottom:var(--space-4)}.panel-title-icon .icon{font-size:1.25rem}.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:var(--space-4);margin-bottom:var(--space-6)}.summary-card-tc{background:var(--surface-raised);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-5);text-align:center}.summary-value-tc{display:block;font-family:var(--font-mono);font-size:var(--text-2xl);font-weight:700;color:var(--color-accent-500)}.summary-label-tc{font-size:var(--text-xs);color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px}.quick-start-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center}.quick-start-modal.active{display:flex}.quick-start-content{background:var(--surface-raised);border-radius:var(--radius-xl);max-width:600px;width:90%;max-height:80vh;overflow-y:auto;padding:var(--space-6)}.quick-start-step{display:none}.quick-start-step.active{display:block}.quick-start-nav{display:flex;justify-content:space-between;margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--border-subtle)}.quick-start-progress{display:flex;justify-content:center;gap:var(--space-2);margin-bottom:var(--space-4)}.quick-start-dot{width:10px;height:10px;border-radius:50%;background:var(--border-default)}.quick-start-dot.active{background:var(--color-accent-500)}.quick-start-dot.completed{background:var(--color-success-500)}#toast-container{position:fixed;top:80px;right:20px;z-index:9999}.toast{background:var(--surface-overlay);color:var(--text-primary);padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);margin-bottom:var(--space-2);box-shadow:var(--shadow-lg);animation:slideIn 0.3s ease;min-width:200px}.toast.success{border-left:4px solid var(--color-success-500)}.toast.error{border-left:4px solid var(--color-danger-500)}.toast.info{border-left:4px solid var(--color-info-500)}@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@media (max-width:768px){.app-header__inner{flex-wrap:wrap;gap:var(--space-2)}.app-controls{flex-wrap:wrap;justify-content:center;width:100%}.select-wrapper{min-width:120px}.btn--lg{padding:var(--space-2) var(--space-3);font-size:var(--text-sm)}.tab-btn{padding:var(--space-2) var(--space-2);font-size:var(--text-xs)}.tab-btn span:first-child{display:none}.card{padding:var(--space-3)}.grid{grid-template-columns:1fr !important}#undoBtn,#redoBtn,#saveBtn{display:none}.data-table{font-size:var(--text-xs)}.data-table th,.data-table td{padding:var(--space-1) var(--space-2)}.js-plot{min-height:250px}}@media (max-width:480px){.app-logo__text{display:none}.app-logo__badge{font-size:var(--text-sm);padding:var(--space-1) var(--space-2)}.container{padding:0 var(--space-2)}.tab-navigation{overflow-x:auto;-webkit-overflow-scrolling:touch}.tab-navigation__list{flex-wrap:nowrap}}</style>
 <style id="tab-scroll-fix">
 /* Make tabs scrollable with visible scroll */
@@ -4544,7 +4545,7 @@ function computePairwiseEstimatorConsensus(e, t, n = "REML") {
       r = l.reduce((e, t) => e + t.weight * Math.pow(t.theta - n, 2), 0),
       o = Math.sqrt(Math.max(0, i + r)),
       d = o > 0 ? n / o : NaN,
-      u = isFinite(d) ? 2 * (1 - pnorm(Math.abs(d))) : NaN;
+      u = isFinite(d) ? 2 * AlmTail.pnormUpper(Math.abs(d)) : NaN;
     c = {
       method: "AICc-weighted estimator ensemble",
       theta: n,
@@ -4773,7 +4774,7 @@ function calculatePooledEstimate(e, t, n = 0, a = null, s = null) {
     ci_lower: d - m * p,
     ci_upper: d + m * p,
     z: h,
-    p_value: isFinite(h) ? 2 * (1 - pnorm(Math.abs(h))) : NaN,
+    p_value: isFinite(h) ? 2 * AlmTail.pnormUpper(Math.abs(h)) : NaN,
     weights: c,
     weights_pct: c.map(e => e / u * 100)
   }
@@ -4801,7 +4802,7 @@ function calculateHKSJ(e, t, n, a, s = .05) {
     ci_lower: n - m * u,
     ci_upper: n + m * u,
     t_stat: h,
-    p_value: 2 * (1 - pt(Math.abs(h), p)),
+    p_value: 2 * AlmTail.ptUpper(Math.abs(h), p),
     df: p,
     q_hksj: c,
     q_raw: l,
@@ -6429,7 +6430,7 @@ function calculateHeterogeneity(e, t, n) {
     r = sum(e.map((e, t) => s[t] * e)) / i,
     o = sum(e.map((e, t) => s[t] * Math.pow(e - r, 2))),
     l = a - 1,
-    d = 1 - pchisq(o, l),
+    d = AlmTail.pchisqUpper(o, l),
     c = o > l ? (o - l) / o * 100 : 0,
     u = calculateI2Metafor(n, t, a),
     p = o / Math.max(l, 1),
@@ -6643,7 +6644,7 @@ function calculateDDMA(e, t, n, a, s = {}) {
     alpha: o = .05
   } = s, l = t, d = Math.sqrt(t * t + n), c = .05, u = .25;
   let p, m, h, v, g, f, _, y;
-  return "lower" === r ? (p = pnorm((0 - e) / l), m = pnorm((0 - e) / d), h = pnorm((-i - e) / l), v = pnorm((-i - e) / d), g = pnorm((-.25 - e) / l), f = pnorm((-.25 - e) / d), _ = pnorm((c - e) / l) - pnorm((-.05 - e) / l), y = pnorm((c - e) / d) - pnorm((-.05 - e) / d)) : (p = 1 - pnorm((0 - e) / l), m = 1 - pnorm((0 - e) / d), h = 1 - pnorm((i - e) / l), v = 1 - pnorm((i - e) / d), g = 1 - pnorm((u - e) / l), f = 1 - pnorm((u - e) / d), _ = pnorm((c - e) / l) - pnorm((-.05 - e) / l), y = pnorm((c - e) / d) - pnorm((-.05 - e) / d)), {
+  return "lower" === r ? (p = pnorm((0 - e) / l), m = pnorm((0 - e) / d), h = pnorm((-i - e) / l), v = pnorm((-i - e) / d), g = pnorm((-.25 - e) / l), f = pnorm((-.25 - e) / d), _ = pnorm((c - e) / l) - pnorm((-.05 - e) / l), y = pnorm((c - e) / d) - pnorm((-.05 - e) / d)) : (p = AlmTail.pnormUpper((0 - e) / l), m = AlmTail.pnormUpper((0 - e) / d), h = AlmTail.pnormUpper((i - e) / l), v = AlmTail.pnormUpper((i - e) / d), g = AlmTail.pnormUpper((u - e) / l), f = AlmTail.pnormUpper((u - e) / d), _ = pnorm((c - e) / l) - pnorm((-.05 - e) / l), y = pnorm((c - e) / d) - pnorm((-.05 - e) / d)), {
     confidence: {
       P_benefit: p,
       P_harm: 1 - p,
@@ -6680,7 +6681,7 @@ function mcidSensitivityAnalysis(e, t, n, a = {}) {
   } = a, r = Math.sqrt(t * t + n), o = [];
   for (const t of s) {
     let n;
-    n = "lower" === i ? pnorm((-t - e) / r) : 1 - pnorm((t - e) / r);
+    n = "lower" === i ? pnorm((-t - e) / r) : AlmTail.pnormUpper((t - e) / r);
     const a = 100 * (1 - Math.exp(-t));
     let s;
     s = n >= .8 ? "Likely meaningful" : n >= .5 ? "Possibly meaningful" : n >= .2 ? "Uncertain" : "Unlikely meaningful", o.push({
@@ -6800,8 +6801,8 @@ function eggersTest(e, t, n = null, a = "binary") {
     f = sum(o.map((e, t) => e - (g + v * r[t])).map((e, t) => l[t] * e * e)) / (s - 2),
     _ = Math.sqrt(f * (1 / d + m * m / (p - d * m * m))),
     y = g / _,
-    b = 2 * (1 - pt(Math.abs(y), s - 2)),
-    x = g < 0 ? 1 - pt(Math.abs(y), s - 2) : 1 - (1 - pt(Math.abs(y), s - 2));
+    b = 2 * AlmTail.ptUpper(Math.abs(y), s - 2),
+    x = g < 0 ? AlmTail.ptUpper(Math.abs(y), s - 2) : 1 - AlmTail.ptUpper(Math.abs(y), s - 2);
   let w;
   return null !== n && n > 50 && i.push("High heterogeneity (IÂ²=" + n.toFixed(0) + "%) may cause asymmetry unrelated to publication bias"), w = b < .05 ? "Significant asymmetry detected (p=" + b.toFixed(4) + "). May indicate: (1) publication bias, (2) true small-study effects (different populations), (3) heterogeneity, or (4) artifact of effect measure. Further investigation recommended." : b < .1 ? "Marginal asymmetry detected (p=" + b.toFixed(4) + "). May reflect publication bias but also consistent with chance or heterogeneity." : "No significant asymmetry detected. Note: Egger's test has low power for small k; absence of evidence is not evidence of absence.", {
     intercept: g,
@@ -6928,7 +6929,7 @@ function subgroupAnalysis(e, t, n, a = "REML") {
     d = calculateHeterogeneity(t, n, l).Q,
     c = d - r,
     u = s.length - 1,
-    p = 1 - pchisq(c, u);
+    p = AlmTail.pchisqUpper(c, u);
   return {
     available: !0,
     subgroups: i,
@@ -6971,7 +6972,7 @@ function metaRegression(e, t, n, a = "Covariate", s = "REML") {
     _ = l.map(e => f + g * e),
     y = sum(r.map((e, t) => e - _[t]).map((e, t) => u[t] * e * e)),
     b = d - 2,
-    x = 1 - pchisq(y, b),
+    x = AlmTail.pchisqUpper(y, b),
     w = p - sum(u.map(e => e * e)) / p,
     M = Math.max(0, (y - b) / w),
     S = o.map(e => 1 / (e + M)),
@@ -6982,7 +6983,7 @@ function metaRegression(e, t, n, a = "Covariate", s = "REML") {
     T = Math.max(1, I / b),
     C = A * Math.sqrt(T),
     P = g / C,
-    k = 2 * (1 - pt(Math.abs(P), b)),
+    k = 2 * AlmTail.ptUpper(Math.abs(P), b),
     D = qt(.975, b),
     $ = g - D * C,
     N = g + D * C,
@@ -7305,7 +7306,7 @@ function harbordTest(e) {
     m = sum(a.map((e, t) => e - (p + u * s[t])).map(e => e * e)) / (i - 2),
     h = Math.sqrt(m * (1 / i + d * d / (l - i * d * d))),
     v = p / h,
-    g = 2 * (1 - pt(Math.abs(v), i - 2));
+    g = 2 * AlmTail.ptUpper(Math.abs(v), i - 2);
   return {
     available: !0,
     intercept: p,
@@ -7339,7 +7340,7 @@ function petPeese(e, t) {
     m = sum(e.map((e, t) => e - (p + u * a[t])).map((e, t) => s[t] * e * e)) / (n - 2),
     h = Math.sqrt(m * (1 / i + d * d / (l - i * d * d))),
     v = p / h,
-    g = 2 * (1 - pt(Math.abs(v), n - 2)),
+    g = 2 * AlmTail.ptUpper(Math.abs(v), n - 2),
     f = sum(t.map((e, t) => s[t] * e)),
     _ = sum(t.map((e, t) => s[t] * e * e)),
     y = f / i,
@@ -7348,7 +7349,7 @@ function petPeese(e, t) {
     w = sum(e.map((e, n) => e - (x + b * t[n])).map((e, t) => s[t] * e * e)) / (n - 2),
     M = Math.sqrt(w * (1 / i + y * y / (_ - i * y * y))),
     S = x / M,
-    E = 2 * (1 - pt(Math.abs(S), n - 2)),
+    E = 2 * AlmTail.ptUpper(Math.abs(S), n - 2),
     A = g < .1,
     R = A ? x : p,
     I = A ? M : h,
@@ -7464,7 +7465,7 @@ function linHybridTest(e, t, n = null, a = 5e3) {
   const g = (h - v) / (s * (s - 1) / 2),
     f = 2 * (2 * s + 5) / (9 * s * (s - 1)),
     _ = g / Math.sqrt(f),
-    y = 2 * (1 - pnorm(Math.abs(_))),
+    y = 2 * AlmTail.pnormUpper(Math.abs(_)),
     b = -2 * sum([r, y].filter(e => e > 0 && e <= 1).map(e => Math.log(e)));
   let x = 0;
   for (let n = 0; n < a; n++) {
@@ -7483,7 +7484,7 @@ function linHybridTest(e, t, n = null, a = 5e3) {
       w = sum(a.map((e, t) => e - (y + _ * r[t])).map((e, t) => o[t] * e * e)) / (s - 2),
       M = Math.sqrt(w * (1 / c + v * v / (h - c * v * v))),
       S = y / M,
-      E = 2 * (1 - pt(Math.abs(S), s - 2)),
+      E = 2 * AlmTail.ptUpper(Math.abs(S), s - 2),
       A = sum(n.map((e, t) => l[t] * e)) / d,
       R = n.map(e => e - A).map((e, t) => e / Math.sqrt(Math.max(p[t], 1e-10)));
     let I = 0,
@@ -7494,7 +7495,7 @@ function linHybridTest(e, t, n = null, a = 5e3) {
           s = Math.sign(t[e] - t[n]);
         a * s > 0 ? I++ : a * s < 0 && T++
       }
-    const C = (I - T) / (s * (s - 1) / 2) / Math.sqrt(f); - 2 * sum([E, 2 * (1 - pnorm(Math.abs(C)))].filter(e => e > 0 && e <= 1).map(e => Math.log(e))) >= b && x++
+    const C = (I - T) / (s * (s - 1) / 2) / Math.sqrt(f); - 2 * sum([E, 2 * AlmTail.pnormUpper(Math.abs(C))].filter(e => e > 0 && e <= 1).map(e => Math.log(e))) >= b && x++
   }
   const w = (x + 1) / (a + 1);
   return {
@@ -7561,7 +7562,7 @@ function tianExactRD(e) {
     g = h[Math.floor(50)],
     f = h[Math.floor(1950)],
     _ = p / v,
-    y = 2 * (1 - pnorm(Math.abs(_))),
+    y = 2 * AlmTail.pnormUpper(Math.abs(_)),
     b = sum(s.map((e, t) => o[t] <= 0 ? 0 : (e.rd - c) * (e.rd - c) / o[t])),
     x = n - 1;
   return {
@@ -7575,7 +7576,7 @@ function tianExactRD(e) {
     heterogeneity: {
       Q: b,
       df: x,
-      p_value: 1 - pchisq(b, x),
+      p_value: AlmTail.pchisqUpper(b, x),
       I2: Math.max(0, (b - x) / b * 100)
     },
     k: n,
@@ -7622,7 +7623,7 @@ function permutationTest(e, t, n = 1e4) {
     theta_exp: Math.exp(o),
     t_statistic: l,
     p_value_permutation: c,
-    p_value_parametric: 2 * (1 - pt(Math.abs(l), a - 1)),
+    p_value_parametric: 2 * AlmTail.ptUpper(Math.abs(l), a - 1),
     n_permutations: n,
     n_extreme: d,
     interpretation: c < .05 ? `Significant effect (permutation p=${c.toFixed(4)})` : `Not significant (permutation p=${c.toFixed(4)})`,
@@ -7736,7 +7737,7 @@ function fragilityIndex(e, t) {
       c = l.map(e => e.vi),
       u = calculatePooledEstimate(d, c, estimateTau2_REML(d, c).tau2),
       p = u.theta / u.se;
-    if (2 * (1 - pnorm(Math.abs(p))) >= .05) return {
+    if (2 * AlmTail.pnormUpper(Math.abs(p)) >= .05) return {
       available: !0,
       fragility_index: o,
       fragility_quotient: (o / (a + s) * 100).toFixed(2),
@@ -8002,7 +8003,7 @@ function veveaHedgesSelection(e, t, n = "moderate") {
         p_gt_05: .5
       }
   }
-  const r = e.map((e, t) => 2 * (1 - pnorm(Math.abs(e) / s[t]))).map(e => "one_tailed" === n ? e < .025 ? i.p_lt_025_right : e < .05 ? i.p_025_05 : i.p_gt_05 : e < .05 ? i.p_lt_05 : e < .1 ? i.p_05_10 : i.p_gt_10),
+  const r = e.map((e, t) => 2 * AlmTail.pnormUpper(Math.abs(e) / s[t])).map(e => "one_tailed" === n ? e < .025 ? i.p_lt_025_right : e < .05 ? i.p_025_05 : i.p_gt_05 : e < .05 ? i.p_lt_05 : e < .1 ? i.p_05_10 : i.p_gt_10),
     o = estimateTau2_REML(e, t).tau2,
     l = t.map((e, t) => r[t] / (e + o)),
     d = sum(l),
@@ -8130,7 +8131,7 @@ function combineDirectIndirect(e, t) {
     d = e.theta - t.theta,
     c = Math.sqrt(n + a),
     u = Math.abs(d) / c,
-    p = 2 * (1 - pnorm(u)),
+    p = 2 * AlmTail.pnormUpper(u),
     m = qnorm(.975);
   return {
     direct: {
@@ -8501,7 +8502,7 @@ function lowI2Diagnostic(e, t, n) {
     r = qchisq(.9, i);
   let o = 0;
   if (s > 0) {
-    o = 1 - pchisq(r / ((i + s) / (i + 2 * s)), Math.pow(i + s, 2) / (i + 2 * s)), o = Math.max(0, Math.min(1, o))
+    o = AlmTail.pchisqUpper(r / ((i + s) / (i + 2 * s)), Math.pow(i + s, 2) / (i + 2 * s)), o = Math.max(0, Math.min(1, o))
   }
   let l = 0,
     d = 0;
@@ -8545,7 +8546,7 @@ function pdgScaleFactor(e, t) {
     r = Math.sqrt(1 / s),
     o = sum(e.map((e, t) => a[t] * Math.pow(e - i, 2))),
     l = n - 1,
-    d = 1 - pchisq(o, l),
+    d = AlmTail.pchisqUpper(o, l),
     c = Math.sqrt(o / l),
     u = Math.max(1, c),
     p = r * u,
@@ -8602,7 +8603,7 @@ function winnersCurseCorrection(e, t, n, a) {
     u = 0;
   if (d) {
     const e = 1.96;
-    u = 2 * a * (Math.exp(-.5 * e * e) / Math.sqrt(2 * Math.PI)) / (2 * (1 - pnorm(e))) * Math.sign(n), c = n - u
+    u = 2 * a * (Math.exp(-.5 * e * e) / Math.sqrt(2 * Math.PI)) / (2 * AlmTail.pnormUpper(e)) * Math.sign(n), c = n - u
   }
   const p = estimateTau2_REML(e, t).tau2,
     m = a * a,
@@ -8657,8 +8658,8 @@ function treatmentResponseDistribution(e, t, n = .15, a = "lower") {
   const s = Math.max(t, .01),
     i = Math.sqrt(s);
   let r, o, l, d;
-  "lower" === a ? (r = pnorm((0 - e) / i), o = 1 - r, l = pnorm((-n - e) / i), d = pnorm((-.288 - e) / i)) : (r = 1 - pnorm((0 - e) / i), o = 1 - r, l = 1 - pnorm((n - e) / i), d = 1 - pnorm((.223 - e) / i));
-  const c = "lower" === a ? 1 - pnorm((.223 - e) / i) : pnorm((-.288 - e) / i),
+  "lower" === a ? (r = pnorm((0 - e) / i), o = 1 - r, l = pnorm((-n - e) / i), d = pnorm((-.288 - e) / i)) : (r = AlmTail.pnormUpper((0 - e) / i), o = 1 - r, l = AlmTail.pnormUpper((n - e) / i), d = AlmTail.pnormUpper((.223 - e) / i));
+  const c = "lower" === a ? AlmTail.pnormUpper((.223 - e) / i) : pnorm((-.288 - e) / i),
     u = {};
   [5, 10, 25, 50, 75, 90, 95].forEach(t => {
     const n = qnorm(t / 100),
@@ -8751,13 +8752,13 @@ function heteroscedasticityTest(e, t, n) {
     c = e.length - 1,
     u = d - i,
     p = a.length - 1,
-    m = 1 - pchisq(u, p),
+    m = AlmTail.pchisqUpper(u, p),
     h = Object.values(s).map(e => e.tau2).filter(e => null !== e && e > 0);
   let v, g, f = 1,
     _ = 0,
     y = 0;
   h.length >= 2 && (_ = Math.max(...h), y = Math.max(1e-4, Math.min(...h)), f = _ / y);
-  const b = 1 - pchisq(i, r);
+  const b = AlmTail.pchisqUpper(i, r);
   return f > 3 && b < .1 ? (v = !0, g = "Strong evidence of heteroscedasticity - Ã”žÂ² varies substantially across subgroups") : f > 2 || f > 1.5 && b < .1 ? (v = "possible", g = "Moderate variation in Ã”žÂ² across subgroups - interpret pooled Ã”žÂ² cautiously") : (v = !1, g = "Ã”žÂ² appears relatively constant across subgroups"), {
     available: !0,
     n_groups: a.length,
@@ -8973,7 +8974,7 @@ function cumulativeMetaAnalysis(e, t, n, a, s = "DL") {
       d = "REML" === s ? estimateTau2_REML(i, l) : estimateTau2_DL(i, l),
       c = pooledEstimate_RE(i, l, d.tau2),
       u = c.theta / c.se,
-      p = 2 * (1 - normalCDF(Math.abs(u)));
+      p = 2 * AlmTail.pnormUpper(Math.abs(u));
     o.cumulative.push({
       k: n,
       year: r[n - 1].year,
@@ -9020,7 +9021,7 @@ function selectionModel(e, t, n = "step") {
   e.length;
   const a = e.map((e, n) => {
       const a = e / Math.sqrt(t[n]);
-      return 2 * (1 - normalCDF(Math.abs(a)))
+      return 2 * AlmTail.pnormUpper(Math.abs(a))
     }),
     s = estimateTau2_REML(e, t),
     i = pooledEstimate_RE(e, t, s.tau2);
@@ -9410,7 +9411,7 @@ function rma_mv_multilevel(e, t, n, a = {}) {
   let I = Math.sqrt(1 / A),
     T = c - 1,
     C = R / I,
-    P = 2 * (1 - normalCDF(Math.abs(C))),
+    P = 2 * AlmTail.pnormUpper(Math.abs(C)),
     k = 1.96;
   if ("knha" === l || "t" === l) {
     const t = e.map(e => e - R),
@@ -9421,7 +9422,7 @@ function rma_mv_multilevel(e, t, n, a = {}) {
       const e = Math.sqrt(a / ((c - 1) * s) * A);
       I *= Math.max(1, e)
     }
-    T = p - 1, C = R / I, k = tQuantile(1 - (1 - d) / 2, T), P = 2 * (1 - tCDF(Math.abs(C), T))
+    T = p - 1, C = R / I, k = tQuantile(1 - (1 - d) / 2, T), P = 2 * AlmTail.ptUpper(Math.abs(C), T)
   }
   const D = R - k * I,
     $ = R + k * I,
@@ -9466,7 +9467,7 @@ function rma_mv_multilevel(e, t, n, a = {}) {
       I2_total: B,
       Q_total: U,
       Q_df: c - 1,
-      Q_pval: 1 - chiSquareCDF(U, c - 1)
+      Q_pval: AlmTail.pchisqUpper(U, c - 1)
     },
     structure: {
       k: c,
@@ -9632,7 +9633,7 @@ function rma_mv_multivariate(e, t, n, a, s = {}) {
   const R = M(w(b, .5)),
     I = v.map((e, t) => {
       const n = R.beta[t] / R.se[t],
-        a = 2 * (1 - normalCDF(Math.abs(n))),
+        a = 2 * AlmTail.pnormUpper(Math.abs(n)),
         s = "knha" === l ? tQuantile(1 - (1 - u) / 2, g - 1) : 1.96;
       return {
         outcome: e,
@@ -9654,7 +9655,7 @@ function rma_mv_multivariate(e, t, n, a, s = {}) {
     try {
       const e = Matrix.invert(n),
         a = Matrix.quadForm(t, e),
-        s = 1 - chiSquareCDF(a, f - 1);
+        s = AlmTail.pchisqUpper(a, f - 1);
       return {
         model: "Multivariate Random Effects (rma.mv)",
         method: o,
@@ -9799,7 +9800,7 @@ function threeLevelMA_simple(e, t, n) {
       se: c.se,
       ci_lower: c.ci_lower,
       ci_upper: c.ci_upper,
-      pval: 2 * (1 - normalCDF(Math.abs(c.theta / c.se)))
+      pval: 2 * AlmTail.pnormUpper(Math.abs(c.theta / c.se))
     },
     varianceComponents: {
       sigma2_within: 0,
@@ -9872,7 +9873,7 @@ function survivalMetaAnalysis(e, t, n, a = {}) {
       HR_lower: p,
       HR_upper: m,
       z: o.theta / o.se,
-      pval: 2 * (1 - normalCDF(Math.abs(o.theta / o.se)))
+      pval: 2 * AlmTail.pnormUpper(Math.abs(o.theta / o.se))
     },
     hksj: {
       logHR: o.theta,
@@ -9951,7 +9952,7 @@ function robustVarianceEstimation(e, t, n) {
       ci_upper: d + g * h,
       t: d / h,
       df: v,
-      pval: 2 * (1 - tCDF(Math.abs(d / h), v))
+      pval: 2 * AlmTail.ptUpper(Math.abs(d / h), v)
     },
     clusterInfo: {
       nClusters: i,
@@ -10075,7 +10076,7 @@ function mantelHaenszel(studies, measure = 'OR') {
     const seLogOR = Math.sqrt(varLogOR);
 
     const z = logOR / seLogOR;
-    const pvalue = 2 * (1 - pnorm(Math.abs(z)));
+    const pvalue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
     return {
       method: 'Mantel-Haenszel',
@@ -10113,7 +10114,7 @@ function mantelHaenszel(studies, measure = 'OR') {
     const seLogRR = Math.sqrt(sumVar / (sumR * sumS));
 
     const z = logRR / seLogRR;
-    const pvalue = 2 * (1 - pnorm(Math.abs(z)));
+    const pvalue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
     return {
       method: 'Mantel-Haenszel',
@@ -10153,7 +10154,7 @@ function mantelHaenszel(studies, measure = 'OR') {
     const seRD = Math.sqrt(sumVar) / sumDen * Math.sqrt(sumDen);
 
     const z = RD_MH / seRD;
-    const pvalue = 2 * (1 - pnorm(Math.abs(z)));
+    const pvalue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
     return {
       method: 'Mantel-Haenszel',
@@ -10225,7 +10226,7 @@ function petoMethod(studies) {
   const OR = Math.exp(logOR);
 
   const z = logOR / seLogOR;
-  const pvalue = 2 * (1 - pnorm(Math.abs(z)));
+  const pvalue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
   // Heterogeneity test
   let Q = 0;
@@ -10237,7 +10238,7 @@ function petoMethod(studies) {
     }
   }
   const df = studyResults.filter(s => !s.excluded).length - 1;
-  const pQ = df > 0 ? 1 - pchisq(Q, df) : 1;
+  const pQ = df > 0 ? AlmTail.pchisqUpper(Q, df) : 1;
   const I2 = df > 0 ? Math.max(0, (Q - df) / Q * 100) : 0;
 
   return {
@@ -10407,13 +10408,13 @@ function testExcessSignificance(yi, vi, theta0 = null) {
   let E = 0;
   for (let i = 0; i < k; i++) {
     const ncp = Math.abs(theta0) / sei[i];
-    const power = 1 - pnorm(1.96 - ncp) + pnorm(-1.96 - ncp);
+    const power = AlmTail.pnormUpper(1.96 - ncp) + pnorm(-1.96 - ncp);
     E += power;
   }
   if (E < 0.001) E = 0.001;
   const A = O - E;
   const chi2 = (A * A) / E;
-  const pval = 1 - pchisq(chi2, 1);
+  const pval = AlmTail.pchisqUpper(chi2, 1);
   const avgPower = E / k;
   return {
     observed: O,
@@ -14428,7 +14429,7 @@ function petersTest(e) {
     u = Math.sqrt(c * (1 / n + (a / n) ** 2 / (r - a * a / n))),
     p = l / u,
     m = n - 2,
-    h = 2 * (1 - pt(Math.abs(p), m));
+    h = 2 * AlmTail.ptUpper(Math.abs(p), m);
   return {
     ok: !0,
     method: "Peters",
@@ -14859,8 +14860,8 @@ function checkThreatsV6(e, t) {
 function testEquivalence(e, t, n) {
   if (!e || !t || !n) return !1;
   const a = (n - e) / t,
-    s = 1 - pnorm((e - -n) / t),
-    i = 1 - pnorm(a);
+    s = AlmTail.pnormUpper((e - -n) / t),
+    i = AlmTail.pnormUpper(a);
   return Math.max(s, i) < .05
 }
 
@@ -15763,7 +15764,7 @@ function metaAnalysisPower(e, t, n, a = 0, s = .05) {
     o = qnorm(1 - s / 2),
     l = Math.abs(t) / r;
   return {
-    power: 1 - pnorm(o - l) + pnorm(-o - l),
+    power: AlmTail.pnormUpper(o - l) + pnorm(-o - l),
     se: r,
     ncp: l,
     k: e,
@@ -16085,7 +16086,7 @@ function pCurveAnalysis(e) {
     const t = e.yi / e.sei;
     return {
       z: t,
-      p: 2 * (1 - pnorm(Math.abs(t))),
+      p: 2 * AlmTail.pnormUpper(Math.abs(t)),
       study: e.name
     }
   }).filter(e => e.p < .05 && e.p > 0);
@@ -16127,7 +16128,7 @@ function pCurveAnalysis(e) {
     i = 1 - binomialCDF(a - 1, s, .4),
     r = binomialCDF(a, s, .4),
     o = t.map(e => e.p / .05).reduce((e, t) => e + qnorm(1 - t), 0) / Math.sqrt(s),
-    l = 1 - pnorm(o);
+    l = AlmTail.pnormUpper(o);
   let d = "",
     c = "";
   return i < .05 ? (d = "Right-skewed: Contains evidential value", c = "PRESENT") : r < .05 ? (d = "Flat/Left-skewed: Suggests p-hacking or selective reporting", c = "ABSENT (possible p-hacking)") : (d = "Inconclusive: Cannot determine evidential value", c = "INCONCLUSIVE"), {
@@ -16223,7 +16224,7 @@ function zCurveAnalysis(e) {
     n: t.length
   };
   const n = t.map(e => e.z),
-    a = n.map(e => 1 - pnorm(1.96 - e) + pnorm(-1.96 - e)),
+    a = n.map(e => AlmTail.pnormUpper(1.96 - e) + pnorm(-1.96 - e)),
     s = a.reduce((e, t) => e + t, 0) / a.length,
     i = e.length,
     r = t.length,
@@ -16370,7 +16371,7 @@ function renderSunsetPlot(e, t = "sunsetPlot") {
     },
     name: "Pooled Effect"
   });
-  const o = n.map(e => 1 - pnorm(1.96 - Math.abs(e.yi) / e.sei));
+  const o = n.map(e => AlmTail.pnormUpper(1.96 - Math.abs(e.yi) / e.sei));
   i.push({
     type: "scatter",
     mode: "markers",
@@ -16447,7 +16448,7 @@ function clubSandwichCR2(e, t, n, a) {
     _ = f.reduce((e, t) => e + t * t, 0),
     y = _ * _ / f.reduce((e, t, n) => e + Math.pow(t, 4) / Math.pow(1 - h[n], 2), 0),
     b = a / g,
-    x = 2 * (1 - pt(Math.abs(b), y)),
+    x = 2 * AlmTail.ptUpper(Math.abs(b), y),
     w = qt(.975, y),
     M = a - w * g,
     S = a + w * g;
@@ -17572,7 +17573,7 @@ function sampleSizeInstrument(e) {
     f = v.reduce((e, t, a) => e + t * n[a].yi, 0) / g,
     _ = Math.sqrt(1 / g),
     y = Math.pow(m - f, 2) / (Math.pow(h, 2) - Math.pow(_, 2)),
-    b = 1 - pchisq(Math.abs(y), 1);
+    b = AlmTail.pchisqUpper(Math.abs(y), 1);
   return {
     ok: !0,
     thetaIV: m,
@@ -17593,7 +17594,7 @@ function stepSelectionCRVE(e, t, n = null, a = [.025, .05, .5, 1]) {
   const s = e.length,
     i = t.map(e => Math.sqrt(e));
   n || (n = e.map((e, t) => t));
-  const r = e.map((e, t) => e / i[t]).map(e => 1 - pnorm(e)),
+  const r = e.map((e, t) => e / i[t]).map(e => AlmTail.pnormUpper(e)),
     o = a.map((e, t) => ({
       lower: 0 === t ? 0 : a[t - 1],
       upper: e,
@@ -19581,10 +19582,10 @@ function multipleMetaRegression(e, t, n, a = null) {
     h = e.map((e, t) => e - m[t]),
     v = h.reduce((e, t, n) => e + o[n] * t * t, 0),
     g = s - i - 1,
-    f = 1 - pchisq(v, g),
+    f = AlmTail.pchisqUpper(v, g),
     _ = e.reduce((t, n, a) => t + o[a] * Math.pow(m[a] - e.reduce((e, t, n) => e + o[n] * t, 0) / o.reduce((e, t) => e + t, 0), 2), 0),
     y = i,
-    b = 1 - pchisq(_, y),
+    b = AlmTail.pchisqUpper(_, y),
     x = e.reduce((t, n, a) => {
       const s = e.reduce((e, t, n) => e + o[n] * t, 0) / o.reduce((e, t) => e + t, 0);
       return t + o[a] * Math.pow(n - s, 2)
@@ -19595,7 +19596,7 @@ function multipleMetaRegression(e, t, n, a = null) {
       estimate: u[0],
       se: p[0],
       z: u[0] / p[0],
-      p: 2 * (1 - pnorm(Math.abs(u[0] / p[0]))),
+      p: 2 * AlmTail.pnormUpper(Math.abs(u[0] / p[0])),
       ci_lower: u[0] - 1.96 * p[0],
       ci_upper: u[0] + 1.96 * p[0]
     }];
@@ -19604,7 +19605,7 @@ function multipleMetaRegression(e, t, n, a = null) {
     estimate: u[e + 1],
     se: p[e + 1],
     z: u[e + 1] / p[e + 1],
-    p: 2 * (1 - pnorm(Math.abs(u[e + 1] / p[e + 1]))),
+    p: 2 * AlmTail.pnormUpper(Math.abs(u[e + 1] / p[e + 1])),
     ci_lower: u[e + 1] - 1.96 * p[e + 1],
     ci_upper: u[e + 1] + 1.96 * p[e + 1]
   });
@@ -21135,7 +21136,7 @@ if (typeof beggTest === 'undefined') {
       // Approximate p-value using normal approximation
       const se_tau = Math.sqrt(2 * (2 * n + 5) / (9 * n * (n - 1)));
       const z = tau / se_tau;
-      const p = 2 * (1 - pnorm(Math.abs(z)));
+      const p = 2 * AlmTail.pnormUpper(Math.abs(z));
 
       return {
         tau: tau,
@@ -21719,7 +21720,7 @@ function robmaModelAveraging(yi, vi, options = {}) {
       // Selection model adjustment for bias
       if (model.hasBias) {
         const z = yi[i] / sei[i];
-        const pval = 2 * (1 - pnorm(Math.abs(z)));
+        const pval = 2 * AlmTail.pnormUpper(Math.abs(z));
         const selectionProb = pval < 0.05 ? 1 : 0.3; // Step function
         logLik += Math.log(selectionProb);
       }
@@ -21812,7 +21813,7 @@ function metaAnalyticZCurve(yi, vi) {
   const k = yi.length;
   const sei = vi.map(v => Math.sqrt(v));
   const z = yi.map((y, i) => y / sei[i]);
-  const pvals = z.map(zz => 2 * (1 - pnorm(Math.abs(zz))));
+  const pvals = z.map(zz => 2 * AlmTail.pnormUpper(Math.abs(zz)));
 
   // Count significant results
   const nSig = pvals.filter(p => p < 0.05).length;
@@ -21827,12 +21828,12 @@ function metaAnalyticZCurve(yi, vi) {
   if (significantZ.length > 0) {
     const meanSigZ = significantZ.reduce((a, b) => a + b, 0) / significantZ.length;
     const estimatedNCP = meanSigZ; // Non-centrality parameter
-    expectedDiscoveryRate = 1 - pnorm(zCritical - estimatedNCP);
+    expectedDiscoveryRate = AlmTail.pnormUpper(zCritical - estimatedNCP);
   }
 
   // Expected replicability
   const expectedReplicability = significantZ.length > 0
-    ? significantZ.reduce((s, zz) => s + (1 - pnorm(zCritical - zz)), 0) / significantZ.length
+    ? significantZ.reduce((s, zz) => s + AlmTail.pnormUpper(zCritical - zz), 0) / significantZ.length
     : 0;
 
   // File drawer ratio
@@ -21928,7 +21929,7 @@ function multiverseMetaAnalysis(yi, vi, names = null, maxSubsets = 1000) {
     const theta = subYi.reduce((s, y, i) => s + w_re[i] * y, 0) / sumW_re;
     const se = Math.sqrt(1 / sumW_re);
     const z = theta / se;
-    const pval = 2 * (1 - pnorm(Math.abs(z)));
+    const pval = 2 * AlmTail.pnormUpper(Math.abs(z));
 
     const I2 = indices.length > 1 ? Math.max(0, (Q - (indices.length - 1)) / Q * 100) : 0;
 
@@ -22258,7 +22259,7 @@ function sequentialMetaAnalysis(yi, vi, names = null, options = {}) {
     const theta = currentYi.reduce((s, y, j) => s + w[j] * y, 0) / sumW;
     const se = Math.sqrt(1 / sumW);
     const z = theta / se;
-    const pval = 2 * (1 - pnorm(Math.abs(z)));
+    const pval = 2 * AlmTail.pnormUpper(Math.abs(z));
 
     // Information fraction
     const currentInfo = sumW;
@@ -22355,7 +22356,7 @@ function livingReviewStatus(yi, vi, previousAnalysis = null) {
   current.sumW = current.w.reduce((a, b) => a + b, 0);
   current.theta = yi.reduce((s, y, i) => s + current.w[i] * y, 0) / current.sumW;
   current.se = Math.sqrt(1 / current.sumW);
-  current.pval = 2 * (1 - pnorm(Math.abs(current.theta / current.se)));
+  current.pval = 2 * AlmTail.pnormUpper(Math.abs(current.theta / current.se));
 
   let changeDetected = false;
   let changeType = null;
@@ -22583,7 +22584,7 @@ function threeParameterSelectionModel(yi, vi, severity = 'moderate') {
   const k = yi.length;
   const sei = vi.map(v => Math.sqrt(v));
   const z = yi.map((y, i) => y / sei[i]);
-  const pvals = z.map(zz => 2 * (1 - pnorm(Math.abs(zz))));
+  const pvals = z.map(zz => 2 * AlmTail.pnormUpper(Math.abs(zz)));
 
   // Selection weights by severity
   const weights = {
@@ -22639,7 +22640,7 @@ function pUniformStar(yi, vi) {
   const k = yi.length;
   const sei = vi.map(v => Math.sqrt(v));
   const z = yi.map((y, i) => y / sei[i]);
-  const pvals = z.map(zz => 1 - pnorm(zz)); // One-tailed p-values
+  const pvals = z.map(zz => AlmTail.pnormUpper(zz)); // One-tailed p-values
 
   // Select significant studies (one-tailed p < 0.025)
   const sigIndices = pvals.map((p, i) => p < 0.025 ? i : -1).filter(i => i >= 0);
@@ -22669,7 +22670,7 @@ function pUniformStar(yi, vi) {
       const ncp = theta / sei[i];
       const zObs = yi[i] / sei[i];
       // P(Z > z_obs | Z > z_crit, Î¼)
-      const pCond = (1 - pnorm(zObs - ncp)) / (1 - pnorm(1.96 - ncp));
+      const pCond = AlmTail.pnormUpper(zObs - ncp) / AlmTail.pnormUpper(1.96 - ncp);
       return Math.min(Math.max(pCond, 0.001), 0.999);
     });
   }
@@ -22777,7 +22778,7 @@ function waapWLS(yi, vi, power = 0.8) {
 
   const studyPower = sei.map(se => {
     const ncp = Math.abs(thetaFE) / se;
-    return 1 - pnorm(zAlpha - ncp);
+    return AlmTail.pnormUpper(zAlpha - ncp);
   });
 
   // Identify adequately powered studies
@@ -23065,7 +23066,7 @@ function albatrossPlotData(yi, vi, names = null) {
   const k = yi.length;
   const sei = vi.map(v => Math.sqrt(v));
   const z = yi.map((y, i) => y / sei[i]);
-  const pvals = z.map(zz => 2 * (1 - pnorm(Math.abs(zz))));
+  const pvals = z.map(zz => 2 * AlmTail.pnormUpper(Math.abs(zz)));
 
   // Estimate sample sizes from SE (assuming binary outcome OR)
   // SE(logOR) â”°Ë† sqrt(1/a + 1/b + 1/c + 1/d) â”°Ë† sqrt(4/n) for balanced
@@ -23077,7 +23078,7 @@ function albatrossPlotData(yi, vi, names = null) {
     for (let effect = -2; effect <= 2; effect += 0.1) {
       const se = 2 / Math.sqrt(n);
       const z = effect / se;
-      const p = 2 * (1 - pnorm(Math.abs(z)));
+      const p = 2 * AlmTail.pnormUpper(Math.abs(z));
       points.push({ effect, p: -Math.log10(p), n });
     }
     return { n, points };
@@ -23116,7 +23117,7 @@ function sunsetPlotData(yi, vi, expectedEffect = null) {
   // Calculate power for each study
   const power = sei.map(se => {
     const ncp = Math.abs(expectedEffect) / se;
-    return 1 - pnorm(1.96 - ncp) + pnorm(-1.96 - ncp);
+    return AlmTail.pnormUpper(1.96 - ncp) + pnorm(-1.96 - ncp);
   });
 
   // Power contours
@@ -23173,7 +23174,7 @@ function draperyPlotData(yi, vi) {
     study: `Study ${i + 1}`,
     curve: effectRange.map(e => {
       const z = (y - e) / sei[i];
-      const p = 2 * (1 - pnorm(Math.abs(z)));
+      const p = 2 * AlmTail.pnormUpper(Math.abs(z));
       return { effect: e, pvalue: p };
     })
   }));
@@ -23181,7 +23182,7 @@ function draperyPlotData(yi, vi) {
   // Combined p-value function
   const combinedCurve = effectRange.map(e => {
     const z = (pooled - e) / pooledSE;
-    const p = 2 * (1 - pnorm(Math.abs(z)));
+    const p = 2 * AlmTail.pnormUpper(Math.abs(z));
     return { effect: e, pvalue: p };
   });
 
@@ -23645,7 +23646,7 @@ function networkMAConsistency(treatments, comparisons) {
       const difference = directEffect - indirectEffect;
       const seDiff = Math.sqrt(directSE * directSE + indirectSE * indirectSE);
       const z = difference / seDiff;
-      const pValue = 2 * (1 - pnorm(Math.abs(z)));
+      const pValue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
       nodeSplitResults.push({
         comparison,
@@ -23669,7 +23670,7 @@ function networkMAConsistency(treatments, comparisons) {
     df_inconsistency += 1;
   });
 
-  const pValue_global = df_inconsistency > 0 ? 1 - pchisq(Q_inconsistency, df_inconsistency) : 1;
+  const pValue_global = df_inconsistency > 0 ? AlmTail.pchisqUpper(Q_inconsistency, df_inconsistency) : 1;
 
   // IÂ² for inconsistency
   const I2_inconsistency = df_inconsistency > 0 ?
@@ -23899,7 +23900,7 @@ function likelihoodRatioTest(yi, vi) {
   const LR = 2 * (ll1 - ll0);
 
   // Mixture null at boundary: 0.5 * delta(0) + 0.5 * chi-square(1)
-  const pValue = LR <= 0 ? 1 : .5 * (1 - pchisq(LR, 1));
+  const pValue = LR <= 0 ? 1 : .5 * AlmTail.pchisqUpper(LR, 1);
 
   return {
     method: 'Likelihood Ratio Test for Heterogeneity',
@@ -25927,7 +25928,7 @@ function computeClinical() {
     const laevInterpret = laev > 2.8 ? 'Strong' : laev > 2 ? 'Moderate' : laev > 1 ? 'Weak' : 'Very weak';
     // Decision threshold
     const mcid = 0.15;
-    const probBenefit = 1 - pnorm(mcid, effect, se);
+    const probBenefit = AlmTail.pnormUpper((mcid - effect) / se);
     const container = document.getElementById('clinical-results');
     if (container) {
       container.innerHTML = `
@@ -26172,7 +26173,7 @@ function runPowerAnalysis() {
   // Power calculation
   const alpha = 0.05;
   const zAlpha = 1.96;
-  const power = 1 - pnorm(zAlpha - effect / se) + pnorm(-zAlpha - effect / se);
+  const power = AlmTail.pnormUpper(zAlpha - effect / se) + pnorm(-zAlpha - effect / se);
   // Required sample size for 80% power
   const zBeta = 0.84;
   const requiredN = Math.ceil(Math.pow((zAlpha + zBeta) * se / effect, 2));
@@ -26208,7 +26209,7 @@ function renderPowerCurve(containerId, effect, se, currentK) {
   const kValues = Array.from({ length: 30 }, (_, i) => i + 1);
   const powers = kValues.map(k => {
     const adjSE = se * Math.sqrt(currentK / k);
-    return 1 - pnorm(1.96 - effect / adjSE) + pnorm(-1.96 - effect / adjSE);
+    return AlmTail.pnormUpper(1.96 - effect / adjSE) + pnorm(-1.96 - effect / adjSE);
   });
   const trace = {
     x: kValues,
@@ -26470,9 +26471,9 @@ window.runMetaRegression = function() {
     const interceptSE = Math.sqrt(1 / sumW + xBar * xBar * slopeVar);
     // Z and p values
     const zSlope = slopeSE > 0 ? slope / slopeSE : 0;
-    const pSlope = 2 * (1 - pnorm(Math.abs(zSlope)));
+    const pSlope = 2 * AlmTail.pnormUpper(Math.abs(zSlope));
     const zIntercept = interceptSE > 0 ? intercept / interceptSE : 0;
-    const pIntercept = 2 * (1 - pnorm(Math.abs(zIntercept)));
+    const pIntercept = 2 * AlmTail.pnormUpper(Math.abs(zIntercept));
     // R-squared
     const yPred = covCentered.map(x => intercept + slope * x);
     const ssRes = yi.reduce((a, y, i) => a + wi[i] * Math.pow(y - yPred[i], 2), 0);
@@ -26669,7 +26670,7 @@ function fragilityIndexMA(yi, vi, pooledTheta) {
   const k = yi.length;
   const se = Math.sqrt(vi.reduce((a, b) => a + b, 0) / k);
   const z = pooledTheta / se;
-  const pval = 2 * (1 - pnorm(Math.abs(z)));
+  const pval = 2 * AlmTail.pnormUpper(Math.abs(z));
   if (pval >= 0.05) {
     return {
       fragilityIndex: 0,
@@ -26692,7 +26693,7 @@ function fragilityIndexMA(yi, vi, pooledTheta) {
     const newTheta = modYi.reduce((sum, y, i) => sum + w[i] * y, 0) / sumW;
     const newSE = 1 / Math.sqrt(sumW);
     const newZ = newTheta / newSE;
-    const newP = 2 * (1 - pnorm(Math.abs(newZ)));
+    const newP = 2 * AlmTail.pnormUpper(Math.abs(newZ));
     if (newP >= 0.05) {
       fi = flip;
       break;
@@ -26923,7 +26924,7 @@ function runSimplifiedMA() {
   const dlWeight = 0.7;
   const feWeight = 0.3;
   const avgTheta = dlWeight * dlPooled.theta + feWeight * fePooled.theta;
-  const pEffect = 1 - pnorm(-Math.abs(avgTheta) / dlPooled.se);
+  const pEffect = AlmTail.pnormUpper(-Math.abs(avgTheta) / dlPooled.se);
   const results = {
     averaged: { theta: avgTheta, se: dlPooled.se },
     models: [
