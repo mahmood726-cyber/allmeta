@@ -33,7 +33,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install pytest numpy scipy jsonschema
+      - run: python -m pip install pytest numpy scipy jsonschema pyyaml
       # tests/test_revman_reader.py skips unless linkedom sits here.
       - run: npm install --no-save --no-package-lock --prefix tests/playwright linkedom@0.18.5
       # One process: the root pytest.ini uses --import-mode=importlib.
