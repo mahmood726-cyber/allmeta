@@ -1103,10 +1103,12 @@
   // VALUES of gamma and seTE, not on array identity, so what it returns is
   // exactly what lambda(u) returns -- the same bits, computed once per gamma.
   var lamMemo = { g0: NaN, g1: NaN, se: [], u: [], lam: [] };
+  function lamSame(a, b) { return a === b && (a !== 0 || 1 / a === 1 / b); }
   function lambdaU(gamma, seTE) {
     var M = lamMemo, k = seTE.length, g0 = gamma[0], g1 = gamma[1], i;
-    var hit = g0 === M.g0 && g1 === M.g1 && k === M.se.length;
-    for (i = 0; hit && i < k; i++) if (seTE[i] !== M.se[i]) hit = false;
+    // Identical values, -0 told apart from 0 (1/+-0 differ); NaN never hits.
+    var hit = lamSame(g0, M.g0) && lamSame(g1, M.g1) && k === M.se.length;
+    for (i = 0; hit && i < k; i++) if (!lamSame(seTE[i], M.se[i])) hit = false;
     if (hit) return M;
     var se = new Array(k), u = new Array(k), lam = new Array(k);
     for (i = 0; i < k; i++) { se[i] = seTE[i]; u[i] = g0 + g1 / seTE[i]; lam[i] = lambda(u[i]); }
