@@ -14,7 +14,12 @@
  * networks. advanced-stats rule: a low POTH means the hierarchy is
  * non-informative — do NOT write "X ranked best".
  *
- * Verified vs the CRAN `poth` package (poth::poth) — see tests/test_poth.py.
+ * Checked against the CRAN `poth` package 0.3-0 (poth::poth) on every netmeta 3.7-0 dataset netmeta can rank
+ * (P-scores, NMA-engine P-scores and rankogram rank matrices) and edge probes, within 1e-9 — validation archive
+ * poth-reproducible (paper 23). tests/test_poth.py holds closed-form unit tests.
+ * poth::poth() uses the uncentred form 3[(1−n)/(n+1) + 4(n−1)/(n(n+1)) Σ SUCRAᵢ²]; it equals the centred form
+ * below whenever Σ SUCRAᵢ = n/2 (exact SUCRAs / P-scores). For rounded inputs that do not sum to n/2 the two differ
+ * by 12(n−1)/(n(n+1))·(Σ SUCRAᵢ − n/2); the page warns when the mean is off 0.5.
  * Reference: Wigle A, Béliveau A, Salanti G, et al. Precision of Treatment
  * Hierarchy. Stat Med. 2025;44:e70176. doi:10.1002/sim.70176.
  */
