@@ -20,7 +20,7 @@ const verdicts = [];
 const dialogs = [];
 let expectRows = null; // studies the page holds in this run (from --steps "expectRows")
 const note = (s) => { log.push(new Date().toISOString() + " " + s); fs.writeFileSync(path.join(out, "log.txt"), log.join("\n") + "\n"); };
-const R_RE = /verify in r|validate \(r\)|validate this analysis in r|webr|run in r|\bR code\b|download.*\.r\b|\.R script|copy r|r script|check in r| in r$| in r \(|validate the extras/i;
+const R_RE = /verify in r|validate \(r\)|validate this analysis in r|webr|run in r|\bR code\b|download.*\.r\b|\.R script|copy r|r script|check in r| in r(?![a-z0-9])|validate the extras/i;
 
 // What counts as a user-path failure for one R control (see header).
 function judge(c, r) {

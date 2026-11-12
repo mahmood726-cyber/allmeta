@@ -17,3 +17,11 @@ these paths.
 Run downloaded scripts with `Rscript --vanilla` and compare with `<outdir>/default-displayed.txt`.
 Release rule: every app whose paper is with co-authors or a journal is re-run before release.
 Static guards that run in CI: webr-validator/tests/test_user_path.py.
+
+Pasted data (added 2026-11-12, lane up2): `--steps runs.json` replays each run on a fresh load,
+then presses every R control again. Each run is `{"tag", "expectRows", "steps": [...]}` with steps
+`{"select": "#id", "value": v}`, `{"fill": "#id", "file": path}`, `{"click": "#id"}`, `{"wait": ms}`.
+`expectRows` is the number of studies the page holds; a validator tab that opens with a different
+number (stale shared-bus data) is a FAIL even when it reports MATCH. Every run writes
+`verdict.json`; the exit code is 2 if any R control FAILs (alert instead of a tab, validator
+without MATCH, failed or refused in-page quantity). UNKNOWN verdicts must be read by hand.
