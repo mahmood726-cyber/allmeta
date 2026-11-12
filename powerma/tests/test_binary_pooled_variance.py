@@ -16,9 +16,14 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import sys
+
 import pytest
 
-from test_required_n_rounding import APP, NODE, RUN
+# The shared helpers live beside this file; make them importable when pytest is
+# run from the repository root as well as from this folder.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from test_required_n_rounding import APP, NODE, RUN  # noqa: E402
 
 pytestmark = pytest.mark.skipif(NODE is None, reason="node not installed")
 
