@@ -125,13 +125,16 @@
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
     function fmt(x, d) { return Number.isFinite(x) ? x.toFixed(d == null ? 3 : d) : "—"; }
 
+    // Whole-field decimal numbers only: parseFloat prefix-parsed "-0.889oops" as -0.889 and "31abc" as 31.
+    var NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+    function num(s) { s = (s == null ? "" : String(s)).trim(); return NUM.test(s) ? Number(s) : NaN; }
     function parseContrasts(text) {
       var rows = [], labels = [], idx = Object.create(null), trtSet = Object.create(null), errs = [];
       String(text || "").split(/\r?\n/).forEach(function (l, i) {
         var t = l.trim(); if (!t || t[0] === "#") return;
         var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
         if (f.length < 5) { errs.push("line " + (i + 1) + ": need study, trtA, trtB, effect, SE"); return; }
-        var study = f[0], a = f[1], b = f[2], yi = parseFloat(f[3]), sei = parseFloat(f[4]);
+        var study = f[0], a = f[1], b = f[2], yi = num(f[3]), sei = num(f[4]);
         if (!study || !a || !b) { errs.push("line " + (i + 1) + ": missing label"); return; }
         if (!Number.isFinite(yi) || !Number.isFinite(sei) || sei <= 0) { errs.push("line " + (i + 1) + ": bad effect/SE"); return; }
         if (idx[study] == null) { idx[study] = labels.length; labels.push(study); }
@@ -151,7 +154,11 @@
       for (var i = 1; i < lines.length; i++) {
         var f = lines[i].split(/[,\t]/).map(function (s) { return s.trim(); });
         var lab = f[0], cov = {};
-        for (var j = 0; j < names.length; j++) { var v = parseFloat(f[j + 1]); if (Number.isFinite(v)) cov[names[j]] = v; }
+        for (var j = 0; j < names.length; j++) {
+          var raw = f[j + 1] == null ? "" : f[j + 1], v = num(raw);
+          if (Number.isFinite(v)) cov[names[j]] = v;
+          else if (raw !== "") errs.push("study '" + lab + "': " + names[j] + " '" + raw + "' is not a number");
+        }
         byLabel[lab] = cov;
       }
       // align to the contrast study order
@@ -163,10 +170,10 @@
       return { studies: studies, errors: errs, names: names };
     }
 
-    function parseTarget(text) {
+    function parseTarget(text, bad) {
       var t = {};
       String(text || "").split(/[,;]/).forEach(function (p) {
-        var m = p.split(/[=:]/); if (m.length === 2) { var k = m[0].trim(), v = parseFloat(m[1]); if (k && Number.isFinite(v)) t[k] = v; }
+        var m = p.split(/[=:]/); if (m.length === 2) { var k = m[0].trim(), v = num(m[1]); if (k && Number.isFinite(v)) t[k] = v; else if (k) bad.push(k); }
       });
       return t;
     }
@@ -189,7 +196,8 @@
 
       var pcov = parseCov($("f-cov").value, pc.idx);
       if (!pcov.studies || pcov.errors.length) { host.innerHTML = '<p class="hint">' + (pcov.errors || ["covariate error"]).map(esc).join("<br>") + "</p>"; return; }
-      var target = parseTarget($("f-target").value);
+      var badTarget = [], target = parseTarget($("f-target").value, badTarget);
+      if (badTarget.length) { host.innerHTML = '<p class="hint">Target: ' + badTarget.map(esc).join(", ") + ' is not a plain number.</p>'; return; }
       if (!Object.keys(target).length) { host.innerHTML = '<p class="hint">Enter a target profile, e.g. <code>age=72</code>.</p>'; return; }
 
       // order treatments with the chosen reference first

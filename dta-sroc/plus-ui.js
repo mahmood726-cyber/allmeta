@@ -18,7 +18,8 @@ const el=id=>document.getElementById('plus-'+id);
 let current=null;
 // Decimal and exponent numbers only: Number() would also accept 0x1F, 0b101, 0o17 and Infinity.
 const DECIMAL=/^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
-function input(){const rows=el('data').value.trim().split(/\r?\n/).map(line=>{const a=line.split(',');if(a.length!==5||a.some(v=>!DECIMAL.test(v.trim())))throw Error('Each row must contain TP,FN,FP,TN,x');return Object.fromEntries(['TP','FN','FP','TN','x'].map((k,i)=>[k,Number(a[i])]));});
+// No data is a refusal, not a malformed row: callers show e.refusal messages as they are (no FAIL prefix).
+function input(){if(!el('data').value.trim())throw Object.assign(Error('Refused: load or enter data first'),{refusal:true});const rows=el('data').value.trim().split(/\r?\n/).map(line=>{const a=line.split(',');if(a.length!==5||a.some(v=>!DECIMAL.test(v.trim())))throw Error('Each row must contain TP,FN,FP,TN,x');return Object.fromEntries(['TP','FN','FP','TN','x'].map((k,i)=>[k,Number(a[i])]));});
  if(!el('at').value.trim()||!el('prevalence').value.trim())throw Error('Prediction value and prevalence are required');
  return {rows,method:el('method').value,correction:el('correction').value,at:Number(el('at').value),prevalence:Number(el('prevalence').value)};}
 function model(s){const f=AlmDTAPlus.fit(s.rows,s.method,s.correction),q=AlmDTAPlus.predict(f,s.at,s.prevalence);return {input:s,coefficients:f.coefTable.map(v=>({outcome:v.outcome,term:v.term,estimate:v.estimate,se:v.se,z:v.z,p:v.p,lo:v.ci[0],hi:v.ci[1]})),prediction:q,studies:s.rows.length};}
