@@ -1,0 +1,438 @@
+{
+  "rows": [
+    {
+      "interval": "1",
+      "study": "a1",
+      "treatment": "A",
+      "events": 40,
+      "ptime": 1000
+    },
+    {
+      "interval": "1",
+      "study": "a1",
+      "treatment": "B",
+      "events": 30,
+      "ptime": 1000
+    },
+    {
+      "interval": "1",
+      "study": "a2",
+      "treatment": "A",
+      "events": 50,
+      "ptime": 900
+    },
+    {
+      "interval": "1",
+      "study": "a2",
+      "treatment": "B",
+      "events": 20,
+      "ptime": 950
+    },
+    {
+      "interval": "1",
+      "study": "a3",
+      "treatment": "A",
+      "events": 45,
+      "ptime": 900
+    },
+    {
+      "interval": "1",
+      "study": "a3",
+      "treatment": "C",
+      "events": 20,
+      "ptime": 900
+    },
+    {
+      "interval": "1",
+      "study": "a4",
+      "treatment": "A",
+      "events": 30,
+      "ptime": 800
+    },
+    {
+      "interval": "1",
+      "study": "a4",
+      "treatment": "C",
+      "events": 28,
+      "ptime": 820
+    },
+    {
+      "interval": "1",
+      "study": "a5",
+      "treatment": "B",
+      "events": 28,
+      "ptime": 850
+    },
+    {
+      "interval": "1",
+      "study": "a5",
+      "treatment": "C",
+      "events": 22,
+      "ptime": 800
+    },
+    {
+      "interval": "1",
+      "study": "a6",
+      "treatment": "A",
+      "events": 60,
+      "ptime": 1500
+    },
+    {
+      "interval": "1",
+      "study": "a6",
+      "treatment": "B",
+      "events": 59,
+      "ptime": 1400
+    },
+    {
+      "interval": "2",
+      "study": "b1",
+      "treatment": "A",
+      "events": 40,
+      "ptime": 1000
+    },
+    {
+      "interval": "2",
+      "study": "b1",
+      "treatment": "B",
+      "events": 30,
+      "ptime": 1000
+    },
+    {
+      "interval": "2",
+      "study": "b2",
+      "treatment": "A",
+      "events": 45,
+      "ptime": 900
+    },
+    {
+      "interval": "2",
+      "study": "b2",
+      "treatment": "C",
+      "events": 8,
+      "ptime": 900
+    },
+    {
+      "interval": "2",
+      "study": "b3",
+      "treatment": "B",
+      "events": 28,
+      "ptime": 850
+    },
+    {
+      "interval": "2",
+      "study": "b3",
+      "treatment": "C",
+      "events": 22,
+      "ptime": 800
+    },
+    {
+      "interval": "2",
+      "study": "b4",
+      "treatment": "A",
+      "events": 50,
+      "ptime": 1200
+    },
+    {
+      "interval": "2",
+      "study": "b4",
+      "treatment": "B",
+      "events": 33,
+      "ptime": 1100
+    },
+    {
+      "interval": "2",
+      "study": "b4",
+      "treatment": "C",
+      "events": 25,
+      "ptime": 1150
+    },
+    {
+      "interval": "2",
+      "study": "b5",
+      "treatment": "A",
+      "events": 12,
+      "ptime": 400
+    },
+    {
+      "interval": "2",
+      "study": "b5",
+      "treatment": "B",
+      "events": 30,
+      "ptime": 420
+    },
+    {
+      "interval": "2",
+      "study": "b6",
+      "treatment": "A",
+      "events": 60,
+      "ptime": 1500
+    },
+    {
+      "interval": "2",
+      "study": "b6",
+      "treatment": "C",
+      "events": 55,
+      "ptime": 1400
+    },
+    {
+      "interval": "3",
+      "study": "c1",
+      "treatment": "A",
+      "events": 40,
+      "ptime": 1000
+    },
+    {
+      "interval": "3",
+      "study": "c1",
+      "treatment": "B",
+      "events": 36,
+      "ptime": 1000
+    },
+    {
+      "interval": "3",
+      "study": "c2",
+      "treatment": "A",
+      "events": 44,
+      "ptime": 1100
+    },
+    {
+      "interval": "3",
+      "study": "c2",
+      "treatment": "B",
+      "events": 40,
+      "ptime": 1100
+    },
+    {
+      "interval": "3",
+      "study": "c3",
+      "treatment": "A",
+      "events": 38,
+      "ptime": 950
+    },
+    {
+      "interval": "3",
+      "study": "c3",
+      "treatment": "C",
+      "events": 30,
+      "ptime": 960
+    },
+    {
+      "interval": "3",
+      "study": "c4",
+      "treatment": "B",
+      "events": 35,
+      "ptime": 900
+    },
+    {
+      "interval": "3",
+      "study": "c4",
+      "treatment": "C",
+      "events": 29,
+      "ptime": 910
+    }
+  ],
+  "intervals": {
+    "1": {
+      "DL": {
+        "tau2": 0.140685906700746,
+        "effects": {
+          "B": {
+            "logHR": -0.349503939879832,
+            "se": 0.23158211584796
+          },
+          "C": {
+            "logHR": -0.469209508414639,
+            "se": 0.276926073849898
+          }
+        }
+      },
+      "REML": {
+        "tau2": 0.138122340742347,
+        "effects": {
+          "B": {
+            "logHR": -0.349180920424455,
+            "se": 0.230056565951518
+          },
+          "C": {
+            "logHR": -0.469074616761643,
+            "se": 0.275236946291317
+          }
+        }
+      },
+      "ML": {
+        "tau2": 0.0739719945924913,
+        "effects": {
+          "B": {
+            "logHR": -0.336569349314954,
+            "se": 0.187702967183849
+          },
+          "C": {
+            "logHR": -0.463939557687627,
+            "se": 0.228932478387689
+          }
+        }
+      },
+      "exact_REML": {
+        "tau2": 0.138122421630167,
+        "effects": {
+          "B": {
+            "logHR": -0.349180930759157,
+            "se": 0.230056614251402
+          },
+          "C": {
+            "logHR": -0.469074621074503,
+            "se": 0.275236999752007
+          }
+        }
+      },
+      "exact_ML": {
+        "tau2": 0.0739719945595735,
+        "effects": {
+          "B": {
+            "logHR": -0.336569349304993,
+            "se": 0.18770296715952
+          },
+          "C": {
+            "logHR": -0.463939557683665,
+            "se": 0.228932478361515
+          }
+        }
+      }
+    },
+    "2": {
+      "DL": {
+        "tau2": 0.286025719202108,
+        "effects": {
+          "B": {
+            "logHR": -0.0691078095701945,
+            "se": 0.311886274739396
+          },
+          "C": {
+            "logHR": -0.552520459021024,
+            "se": 0.312598645835188
+          }
+        }
+      },
+      "REML": {
+        "tau2": 0.377057112360822,
+        "effects": {
+          "B": {
+            "logHR": -0.0678898522821735,
+            "se": 0.349354587276586
+          },
+          "C": {
+            "logHR": -0.562099826073614,
+            "se": 0.350149091403634
+          }
+        }
+      },
+      "ML": {
+        "tau2": 0.229504132245505,
+        "effects": {
+          "B": {
+            "logHR": -0.0702455136394754,
+            "se": 0.286103691785136
+          },
+          "C": {
+            "logHR": -0.543928228503109,
+            "se": 0.28670524286697
+          }
+        }
+      },
+      "exact_REML": {
+        "tau2": 0.374055334650426,
+        "effects": {
+          "B": {
+            "logHR": -0.0679218856345706,
+            "se": 0.348184437700855
+          },
+          "C": {
+            "logHR": -0.561842126151766,
+            "se": 0.348977349168768
+          }
+        }
+      },
+      "exact_ML": {
+        "tau2": 0.225771368252363,
+        "effects": {
+          "B": {
+            "logHR": -0.0703362139092947,
+            "se": 0.284316268417213
+          },
+          "C": {
+            "logHR": -0.543256067615533,
+            "se": 0.284907764873466
+          }
+        }
+      }
+    },
+    "3": {
+      "DL": {
+        "tau2": 0,
+        "effects": {
+          "B": {
+            "logHR": -0.0900661972313967,
+            "se": 0.143330027619057
+          },
+          "C": {
+            "logHR": -0.264244300213518,
+            "se": 0.187197960652857
+          }
+        }
+      },
+      "REML": {
+        "tau2": 5.99677439663301e-12,
+        "effects": {
+          "B": {
+            "logHR": -0.0900661972312602,
+            "se": 0.143330027627489
+          },
+          "C": {
+            "logHR": -0.264244300213509,
+            "se": 0.187197960662472
+          }
+        }
+      },
+      "ML": {
+        "tau2": 4.54551572188777e-12,
+        "effects": {
+          "B": {
+            "logHR": -0.0900661972312932,
+            "se": 0.143330027625449
+          },
+          "C": {
+            "logHR": -0.264244300213511,
+            "se": 0.187197960660145
+          }
+        }
+      },
+      "exact_REML": {
+        "tau2": 5.99672271904415e-12,
+        "effects": {
+          "B": {
+            "logHR": -0.0900661972312597,
+            "se": 0.143330027627489
+          },
+          "C": {
+            "logHR": -0.264244300213509,
+            "se": 0.187197960662472
+          }
+        }
+      },
+      "exact_ML": {
+        "tau2": 4.54551572188777e-12,
+        "effects": {
+          "B": {
+            "logHR": -0.0900661972312929,
+            "se": 0.143330027625448
+          },
+          "C": {
+            "logHR": -0.264244300213511,
+            "se": 0.187197960660145
+          }
+        }
+      }
+    }
+  }
+}

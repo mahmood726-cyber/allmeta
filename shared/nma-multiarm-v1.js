@@ -334,10 +334,71 @@
     return Vr;
   }
 
+  // log|A| for a symmetric positive-definite A by Cholesky; null if A is not positive definite.
+  function logDetSPD(A) {
+    var n = A.length, L = zeros(n, n), ld = 0;
+    for (var i = 0; i < n; i++) {
+      for (var j = 0; j <= i; j++) {
+        var s = A[i][j];
+        for (var k = 0; k < j; k++) s -= L[i][k] * L[j][k];
+        if (i === j) { if (!(s > 0)) return null; L[i][i] = Math.sqrt(s); ld += Math.log(s); }
+        else L[i][j] = s / L[j][j];
+      }
+    }
+    return ld;
+  }
+
+  // (Restricted) log-likelihood of the consistency model with covariance V + tau2*R (R as in
+  // reCovariance), the model netmeta fits for method.tau = "REML"/"ML" (metafor rma.mv, rho = 0.5).
+  function profileLogLik(asm, tau2, restricted) {
+    var Vr = reCovariance(asm, tau2);
+    var proj = projectObservations(asm, Vr);
+    var f = gls(asm.X, proj.y, Vr);
+    if (!f) return -Infinity;
+    var ldV = logDetSPD(Vr);
+    if (ldV === null) return -Infinity;
+    var N = asm.N, K = asm.K, rss = proj.extraQ || 0, r = new Array(N);
+    for (var a = 0; a < N; a++) { r[a] = proj.y[a]; for (var k = 0; k < K; k++) r[a] -= asm.X[a][k] * f.d[k]; }
+    for (a = 0; a < N; a++) for (var b = 0; b < N; b++) rss += r[a] * f.Vinv[a][b] * r[b];
+    var ll = -0.5 * (ldV + rss);
+    if (restricted) {
+      var ldX = logDetSPD(f.XtViX);
+      if (ldX === null) return -Infinity;
+      ll -= 0.5 * ldX;
+    }
+    return ll;
+  }
+
+  // REML/ML tau2: maximise the (restricted) likelihood over tau2 >= 0. A log-spaced scan brackets the
+  // maximum, golden-section search refines it; tau2 = 0 is returned when the boundary is the maximum.
+  function likelihoodTau2(asm, restricted, dlTau2) {
+    var maxV = 0;
+    for (var i = 0; i < asm.N; i++) maxV = Math.max(maxV, asm.V[i][i]);
+    var hi = Math.max(100 * dlTau2, 100 * maxV, 1), lo = 1e-10 * Math.max(maxV, 1e-8);
+    var f = function (u) { return profileLogLik(asm, Math.exp(u), restricted); };
+    var G = 80, ulo = Math.log(lo), uhi = Math.log(hi), best = -1, bestV = -Infinity, us = [];
+    for (var g = 0; g <= G; g++) {
+      var u = ulo + (uhi - ulo) * g / G, v = f(u); us.push(u);
+      if (v > bestV) { bestV = v; best = g; }
+    }
+    var f0 = profileLogLik(asm, 0, restricted);
+    if (best <= 0 && f0 >= bestV) return 0;
+    var a = us[Math.max(0, best - 1)], b = us[Math.min(G, best + 1)];
+    var gr = (Math.sqrt(5) - 1) / 2, c = b - gr * (b - a), d = a + gr * (b - a), fc = f(c), fd = f(d);
+    for (var it = 0; it < 200 && b - a > 1e-12; it++) {
+      if (fc > fd) { b = d; d = c; fd = fc; c = b - gr * (b - a); fc = f(c); }
+      else { a = c; c = d; fc = fd; d = a + gr * (b - a); fd = f(d); }
+    }
+    var uOpt = (a + b) / 2;
+    if (f0 >= f(uOpt)) return 0;
+    return finite(Math.exp(uOpt), (restricted ? "REML" : "ML") + " tau2");
+  }
+
   /**
    * fit(rows, opts) — contrast-level NMA with multi-arm correction.
    *   rows: [{study, t1, t2, est, se}]   (est = t2 - t1, analysis scale)
-   *   opts: { ref, model: "fe"|"re", seDecimals }  (seDecimals: decimal places the SEs were reported
+   *   opts: { ref, model: "fe"|"re", method: "DL"|"REML"|"ML" (tau2 estimator, default "DL" as netmeta), seDecimals }
+   *   (seDecimals: decimal places the SEs were reported
    *   to; per-row r.seDecimals overrides; default inferred per study, see auditStudies)
    * Returns { ok, nonref, refTreat, d, cov, tau2, Q, df, multiArmStudies, varianceDisclosures, error }.
    * d[k]/cov are relative to refTreat (ref implicit zero), in nonref order.
@@ -372,11 +433,13 @@
     if (!feFit) return { ok: false, error: "singular design (disconnected network?)", warnings: built.errors };
 
     var model = (opts.model || "fe").toLowerCase();
+    var method = String(opts.method || "DL").toUpperCase();
+    if (method !== "DL" && method !== "REML" && method !== "ML") return { ok: false, error: "unknown tau2 method " + opts.method + " (DL, REML or ML)" };
     var tau2 = 0, Qinfo = null;
     var fitUse = feFit;
     if (model === "re" || model === "random") {
       Qinfo = generalisedDL(asm.X, obs.y, asm.V, feFit, asm.blocks, obs.extraQ);
-      tau2 = Qinfo.tau2;
+      tau2 = method === "DL" ? Qinfo.tau2 : likelihoodTau2(asm, method === "REML", Qinfo.tau2);
       if (tau2 > 0) {
         var Vr = reCovariance(asm, tau2);
         var reObs = projectObservations(asm, Vr);
@@ -398,6 +461,7 @@
       d: fitUse.d,
       cov: fitUse.cov,
       tau2: tau2,
+      method: model === "re" || model === "random" ? method : null,
       Q: Qinfo ? Qinfo.Q : null,
       df: Qinfo ? Qinfo.df : null,
       multiArmStudies: multiArmStudies,

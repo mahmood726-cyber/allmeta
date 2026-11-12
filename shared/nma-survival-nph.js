@@ -67,14 +67,15 @@
   }
 
   /**
-   * fit(rows, {cc=0.5, model='fe'|'re'})
+   * fit(rows, {cc=0.5, model='fe'|'re', method='DL'|'REML'|'ML'})  (method: random-effects tau^2 estimator
+   *   in every interval, netmeta method.tau; default DL)
    * rows: [{study, treatment, interval, events, ptime}] (arm-level, per interval).
    * Returns { intervalIds, intervals:{ id:{ refTreat, treatments, effects:{t:{logHR,se}} } },
    *           pooled:{ t:{logHR,se} } (IV across intervals), warnings }.
    */
   function fit(rows, opts) {
     opts = opts || {};
-    var cc = opts.cc == null ? 0.5 : opts.cc, model = opts.model || "fe";
+    var cc = opts.cc == null ? 0.5 : opts.cc, model = opts.model || "fe", method = opts.method || "DL";
     if (typeof global.AlmNmaMultiarm === "undefined") throw new Error("nma-survival-nph: AlmNmaMultiarm not loaded");
     var perInterval = buildContrasts(rows, cc);
     // Time order: numeric labels sort numerically ("2" before "10"); otherwise the string order as before.
@@ -89,7 +90,7 @@
     // meaningful against ONE comparator. An interval without it is reported but not pooled.
     var globalRef = rows.map(function (r) { return String(r.treatment); }).sort()[0];
     intervalIds.forEach(function (iv) {
-      var res = global.AlmNmaMultiarm.fit(perInterval[iv], { model: model, ref: globalRef });
+      var res = global.AlmNmaMultiarm.fit(perInterval[iv], { model: model, ref: globalRef, method: method });
       if (!res.ok) { warnings.push("interval " + iv + ": " + res.error); return; }
       var poolThis = res.refTreat === globalRef;
       if (!poolThis) warnings.push("interval " + iv + ": reference " + globalRef + " absent (effects vs " + res.refTreat + "); not pooled");
@@ -109,7 +110,9 @@
     Object.keys(pool).forEach(function (t) {
       if (pool[t].sw > 0) pooled[t] = { logHR: pool[t].swy / pool[t].sw, se: Math.sqrt(1 / pool[t].sw) };
     });
-    return { intervalIds: intervalIds, intervals: intervals, pooled: pooled, warnings: warnings };
+    var out = { intervalIds: intervalIds, intervals: intervals, pooled: pooled, warnings: warnings };
+    if (opts.method != null) out.method = String(method).toUpperCase();   // only when requested: default output unchanged
+    return out;
   }
 
   var api = { fit: fit, buildContrasts: buildContrasts, _logHazard: _logHazard };

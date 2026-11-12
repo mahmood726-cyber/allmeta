@@ -130,3 +130,38 @@ def test_numeric_interval_labels_sort_numerically():
     # Non-numeric labels keep the deterministic string order.
     rows2 = [dict(r, interval={"1": "b", "2": "a"}[r["interval"]]) for r in rows if r["interval"] in ("1", "2")]
     assert _run(f"S.fit({json.dumps(rows2)}, {{model:'fe'}}).intervalIds") == ["a", "b"]
+
+
+REML_FIXTURE = json.loads((ROOT / "tests" / "fixtures" / "nma-survival-nph-reml.json").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("method", ["DL", "REML", "ML"])
+def test_reml_ml_tau2_match_netmeta(method):
+    # Random-effects tau^2 estimator choice: netmeta method.tau = "DL" (default), "REML", "ML".
+    # Reference: tests/fixtures/nma-survival-nph-reml.R. Interval 1: two-arm trials only; interval 2: includes
+    # a three-arm trial; interval 3: tau^2 at the boundary 0. Tolerance fixed before comparing: 1e-6 absolute
+    # on tau^2, log HR and SE.
+    #  - DL: netmeta 3.7.0 in every interval.
+    #  - REML/ML: metafor 5.2.1 rma.mv with the full multi-arm sampling covariance ("exact_*") in every
+    #    interval, and netmeta 3.7.0 in interval 1. netmeta given only TE/seTE uses a diagonal sampling
+    #    covariance for its REML/ML step, so it is not the reference for the three-arm interval.
+    rows = REML_FIXTURE["rows"]
+    out = _run(f"S.fit({json.dumps(rows)}, {{model:'re', method:'{method}'}})")
+    assert out["warnings"] == [], out["warnings"]
+    for iv, refs in REML_FIXTURE["intervals"].items():
+        targets = [refs[method]] if method == "DL" else [refs["exact_" + method]] + ([refs[method]] if iv == "1" else [])
+        got = out["intervals"][iv]
+        for ref in targets:
+            assert math.isclose(got["tau2"], ref["tau2"], abs_tol=1e-6), (iv, method, got["tau2"], ref["tau2"])
+            for t, e in ref["effects"].items():
+                assert math.isclose(got["effects"][t]["logHR"], e["logHR"], abs_tol=1e-6), (iv, method, t)
+                assert math.isclose(got["effects"][t]["se"], e["se"], abs_tol=1e-6), (iv, method, t)
+    assert out.get("method") == method
+
+
+def test_default_output_has_no_method_key():
+    # The default call (no method) must be unchanged: DL, and no new key in the result.
+    out = _run(f"S.fit({json.dumps(REML_FIXTURE['rows'])}, {{model:'re'}})")
+    assert "method" not in out
+    for iv, refs in REML_FIXTURE["intervals"].items():
+        assert math.isclose(out["intervals"][iv]["tau2"], refs["DL"]["tau2"], abs_tol=1e-9)
