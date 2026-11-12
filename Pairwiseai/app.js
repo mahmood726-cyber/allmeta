@@ -1505,9 +1505,40 @@ function estimateTau2_DL(e, t) {
 }
 
 function estimateTau2_REML(e, t, n = 100, a = 1e-8) {
-  e.length;
-  const s = estimateTau2_DL(e, t);
-  let i = s.tau2;
+  // Global-mode step. estimateTau2_REML_local (Fisher scoring) starts at the DL estimate and stops at the first
+  // root of the REML score it reaches. When the restricted likelihood has more than one peak that root can be a
+  // LOCAL maximum (tests/fixtures/reml_global_modes.json: 7.2e-6 where the global maximum is 0.0604). The global
+  // search is AlmMaCore.tau2REML (shared/ma-core.js, loaded by every page before this engine): it bounds the REML
+  // score on intervals of [0, upper] and refines until no interval can beat the best point found. The local
+  // result is returned unchanged when it lies on the global mode; otherwise the global mode is returned.
+  const loc = estimateTau2_REML_local(e, t, n, a),
+    flag = (why) => ({ ...loc, note: (loc.note ? loc.note + "; " : "") + "global REML mode not checked (" + why + ")" }),
+    core = typeof AlmMaCore !== "undefined" && AlmMaCore && "function" == typeof AlmMaCore.tau2REML ? AlmMaCore : null;
+  if (!core) return flag("shared/ma-core.js not loaded");
+  let g;
+  try { g = core.tau2REML(e, t) } catch (err) { return flag("shared/ma-core.js: " + (err && err.message)) }
+  if (!(g >= 0) || !isFinite(g)) return flag("shared/ma-core.js returned " + g);
+  const lt = loc.tau2;
+  if (loc.converged && (lt === g || (lt > 0 && g > 0 && Math.abs(lt - g) <= 1e-8 * Math.max(lt, g)))) return loc;
+  const w = t.map(v => 1 / (v + g)), S = sum(w), mu = sum(e.map((y, i) => w[i] * y)) / S,
+    ll = -.5 * (sum(t.map(v => Math.log(v + g))) + Math.log(S) + sum(e.map((y, i) => w[i] * (y - mu) * (y - mu))));
+  return {
+    tau2: g,
+    converged: !0,
+    iterations: loc.iterations,
+    method: "REML",
+    loglik: ll,
+    note: "global REML maximum (shared/ma-core.js); the local solver (" + loc.method + ") returned tau2 = " + lt +
+      (!loc.converged ? " without converging" : Math.abs(lt - g) <= 1e-4 * Math.max(lt, g) ? " on the same peak, off its score root"
+        : " on a lower likelihood peak")
+  }
+}
+function estimateTau2_REML_local(e, t, n = 100, a = 1e-8) {
+  // Fisher scoring on the REML log-likelihood of the normal-normal model (Viechtbauer 2005; metafor
+  // rma.uni). e = yi, t = vi. No absolute constants: tolerances, step bound and the start are relative
+  // to the problem's own variance scale, so yi -> c*yi, vi -> c^2*vi gives tau2 -> c^2*tau2.
+  const k = e.length,
+    sc = sum(t) / k;
 
   function r(n) {
     const a = t.map(e => 1 / (e + n)),
@@ -1516,21 +1547,45 @@ function estimateTau2_REML(e, t, n = 100, a = 1e-8) {
       r = sum(e.map((e, t) => a[t] * Math.pow(e - i, 2)));
     return -.5 * (sum(t.map(e => Math.log(e + n))) + Math.log(s) + r)
   }
-  i < 1e-10 && (i = .01);
+
+  // REML score g = .5*(sum w^2 (y-mu)^2 - sum w + sum w^2 / sum w) and expected information
+  // f = .5*tr(P^2), P = W - w w'/S. Both are formed from nonnegative terms only: with S_i = sum_{j!=i} w_j
+  // and Q_i = sum_{j!=i} w_j^2 (prefix + suffix sums, never S - w_i),
+  //   sum w - sum w^2/S = sum_i w_i S_i / S,   tr(P^2) = sum_i w_i^2 (S_i^2 + Q_i) / S^2,
+  // so neither cancels when the variances are very different.
+  function q(n) {
+    const w = t.map(e => 1 / (e + n)),
+      p1 = [0], p2 = [0], s1 = new Array(k + 1).fill(0), s2 = new Array(k + 1).fill(0);
+    for (let i = 0; i < k; i++) p1.push(p1[i] + w[i]), p2.push(p2[i] + w[i] * w[i]);
+    for (let i = k - 1; i >= 0; i--) s1[i] = s1[i + 1] + w[i], s2[i] = s2[i + 1] + w[i] * w[i];
+    const S = p1[k],
+      mu = sum(e.map((e, t) => w[t] * e)) / S;
+    let A = 0, B = 0, T = 0;
+    for (let i = 0; i < k; i++) {
+      const So = p1[i] + s1[i + 1], Qo = p2[i] + s2[i + 1], w2 = w[i] * w[i];
+      A += w2 * Math.pow(e[i] - mu, 2), B += w[i] * So, T += w2 * (So * So + Qo)
+    }
+    return { g: .5 * (A - B / S), f: .5 * T / (S * S) }
+  }
+  // converged = the score itself vanishes (Newton step below a*1e-2 of the scale), or tau2 = 0 with g(0) <= 0
+  const atRoot = (b) => { const z = q(b); return Math.abs(z.g) < 1e-2 * a * z.f * Math.max(b, sc) };
+  const s = estimateTau2_DL(e, t);
+  let i = s.tau2;
+  if (!(i > 0)) {
+    const z = q(0);
+    if (z.g <= 0) return { tau2: 0, converged: !0, iterations: 0, method: "REML", loglik: r(0) };
+    i = z.f > 0 ? z.g / z.f : sc
+  }
   let o = 1 / 0,
     l = 1 / 0,
     d = 0,
     c = CONFIG.REML_DAMPING,
     u = r(i);
   for (let s = 0; s < n; s++) {
-    const n = t.map(e => 1 / (e + i)),
-      p = sum(n),
-      m = sum(e.map((e, t) => n[t] * e)) / p,
-      h = n.map(e => e * e),
-      v = e.map(e => Math.pow(e - m, 2)),
-      g = -.5 * p + .5 * sum(h.map((e, t) => e * v[t])),
-      f = .5 * sum(h);
-    if (f < 1e-12) return {
+    const z = q(i),
+      g = z.g,
+      f = z.f;
+    if (!(f > 0) || !isFinite(g)) return {
       tau2: Math.max(0, i),
       converged: !1,
       iterations: s,
@@ -1538,29 +1593,21 @@ function estimateTau2_REML(e, t, n = 100, a = 1e-8) {
       warning: "Fisher information near zero - model may be misspecified"
     };
     let _ = g / f;
-    const y = Math.max(2 * i, 1);
+    const y = Math.max(2 * i, sc);
     _ = Math.sign(_) * Math.min(Math.abs(_), y);
-    let b = i + c * _;
-    b = Math.max(1e-10, b);
+    let b = Math.max(0, i + c * _);
     let x = r(b),
       w = 0;
-    for (; x < u - 1e-8 && w < 5;) c *= .5, b = i + c * _, b = Math.max(1e-10, b), x = r(b), w++;
+    for (; x < u - 1e-8 && w < 5;) c *= .5, b = Math.max(0, i + c * _), x = r(b), w++;
     if (s > 2) {
       const e = Math.sign(i - o),
         t = Math.sign(o - l);
       if (0 !== e && 0 !== t && e !== t && (d++, c *= .8, d > 5)) {
-        const e = (i + o + l) / 3;
-        return {
-          tau2: Math.max(0, e),
-          converged: !1,
-          iterations: s,
-          method: "REML",
-          warning: "Averaged due to oscillation - consider PM or DL estimator"
-        }
+        break
       }
     }
-    if (Math.abs(b - i) < a * Math.max(1, i)) return {
-      tau2: Math.max(0, b),
+    if (0 === b ? q(0).g <= 0 : Math.abs(b - i) < a * Math.max(b, sc) && atRoot(b)) return {
+      tau2: b,
       converged: !0,
       iterations: s + 1,
       method: "REML",
@@ -1568,6 +1615,7 @@ function estimateTau2_REML(e, t, n = 100, a = 1e-8) {
     };
     l = o, o = i, i = b, u = x, c = Math.min(CONFIG.REML_DAMPING, 1.1 * c)
   }
+
   const p = estimateTau2_ProfileLikelihood(e, t, i);
   return p.converged ? {
     ...p,
