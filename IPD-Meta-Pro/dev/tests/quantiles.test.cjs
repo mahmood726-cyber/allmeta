@@ -30,7 +30,8 @@ const groups = [
   ['jStat.normal.inv (mean, sd)', REF.qnorm_ms, g => 'jStat.normal.inv(' + lit(g.p) + ',' + g.mean + ',' + g.sd + ')', closeRel(1e-14)],
   // R qgamma iterates to ~1e-15 relative; the page solves on the AlmTail regularized gamma (max measured 5.9e-14)
   ['MathUtils.chi2Quantile', REF.qchisq, g => 'MathUtils.chi2Quantile(' + lit(g.p) + ',' + lit(g.df) + ')', closeRel(1e-12)],
-  ['jStat.chisquare.inv', REF.qchisq, g => 'jStat.chisquare.inv(' + lit(g.p) + ',' + lit(g.df) + ')', closeRel(1e-12)]
+  ['jStat.chisquare.inv', REF.qchisq, g => 'jStat.chisquare.inv(' + lit(g.p) + ',' + lit(g.df) + ')', closeRel(1e-12)],
+  ['MathUtils.chi2Quantile, df 1e4 .. 1e5', REF.qchisq_large, g => 'MathUtils.chi2Quantile(' + lit(g.p) + ',' + lit(g.df) + ')', closeRel(1e-12)]
 ];
 for (const [label, grid, expr, ok] of groups) {
   const f0 = failed;
@@ -51,7 +52,7 @@ for (const [label, grid, expr, ok] of groups) {
   }
   console.log((failed === f0 ? 'PASS ' : 'FAIL ') + 'Stats.tQuantile: ' + (QT.length - (failed - f0)) + '/' + QT.length + ' grid points');
 }
-// round trip through the page's own upper tail: P(X > chi2Quantile(p)) = 1 - p where 0 < q < Infinity
+// round trip through the page's own upper tail (consistency only: the same regularized gamma is used to solve): P(X > chi2Quantile(p)) = 1 - p where 0 < q < Infinity
 {
   const f0 = failed; let n = 0;
   for (const g of REF.qchisq) {
@@ -66,6 +67,10 @@ const isNaNv = v => typeof v === 'number' && Number.isNaN(v);
 const edges = [
   ['MathUtils.chi2Quantile(0.5, 0) === 0 (R qchisq)', val('MathUtils.chi2Quantile(0.5, 0)') === 0],
   ['MathUtils.chi2Quantile(0.5, -1) is NaN (R qchisq)', isNaNv(val('MathUtils.chi2Quantile(0.5, -1)'))],
+  ['MathUtils.chi2Quantile(0, -1) === 0 and (1, -1) === Infinity (R qchisq: p boundaries first)', val('MathUtils.chi2Quantile(0, -1)') === 0 && val('MathUtils.chi2Quantile(1, -1)') === Infinity],
+  ['MathUtils.chi2Quantile fails closed (NaN) above df = 1e5, where the regularized gamma does not converge: df 1.5e5, 1e6, 1e308',
+    isNaNv(val('MathUtils.chi2Quantile(0.5, 1.5e5)')) && isNaNv(val('MathUtils.chi2Quantile(0.49, 1e6)')) && isNaNv(val('MathUtils.chi2Quantile(0.5, 1e308)'))],
+  ['MathUtils.chi2Quantile(0.5, Number.MIN_VALUE) is not a finite-looking wrong number', !(val('MathUtils.chi2Quantile(0.5, Number.MIN_VALUE)') > 0)],
   ['MathUtils.chi2Quantile(0.5, Infinity) === Infinity (R qchisq)', val('MathUtils.chi2Quantile(0.5, Infinity)') === Infinity],
   ['MathUtils.chi2Quantile(1.5, 3) and (NaN, 3) are NaN', isNaNv(val('MathUtils.chi2Quantile(1.5, 3)')) && isNaNv(val('MathUtils.chi2Quantile(NaN, 3)'))],
   ['MathUtils.normQuantile(NaN), (-0.1), (1.1) are NaN', isNaNv(val('MathUtils.normQuantile(NaN)')) && isNaNv(val('MathUtils.normQuantile(-0.1)')) && isNaNv(val('MathUtils.normQuantile(1.1)'))],

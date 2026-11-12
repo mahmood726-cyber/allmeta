@@ -19,6 +19,9 @@ pc <- c(1e-300, 1e-100, 1e-20, 1e-10, 1e-6, 0.001, 0.005, 0.025, 0.05, 0.1, 0.25
         0.975, 0.995, 0.999, 1 - 1e-6, 1 - 1e-10, 0, 1)
 gc <- expand.grid(p = pc, df = c(0.1, 0.5, 1, 1.5, 2, 3, 4, 4.5, 5, 7, 9, 10, 19, 30, 50, 100, 1000, exp(1)))
 out$qchisq <- lapply(seq_len(nrow(gc)), function(i) with(gc[i, ], list(p = p, df = df, q = qchisq(p, df))))
+# large df (up to the page's fail-closed limit df = 1e5), p next to the median
+gl <- expand.grid(p = c(0.025, 0.49, 0.5, 0.51, 0.975), df = c(1e4, 5e4, 1e5))
+out$qchisq_large <- lapply(seq_len(nrow(gl)), function(i) with(gl[i, ], list(p = p, df = df, q = qchisq(p, df))))
 writeLines(toJSON(out, digits = I(17), auto_unbox = TRUE, pretty = TRUE), "quantiles_reference.json")
-cat("qnorm", length(out$qnorm), "qnorm_ms", length(out$qnorm_ms), "qchisq", length(out$qchisq),
+cat("qnorm", length(out$qnorm), "qnorm_ms", length(out$qnorm_ms), "qchisq", length(out$qchisq), "qchisq_large", length(out$qchisq_large),
     "| qnorm(0.975) =", format(qnorm(0.975), digits = 17), "qchisq(0.95, 1) =", format(qchisq(0.95, 1), digits = 17), "\n")

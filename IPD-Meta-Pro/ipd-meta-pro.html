@@ -3714,11 +3714,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  // the small-x series x = 2 (p Gamma(df/2 + 1))^(2/df)) as the start, then Newton on u = log(x/2) kept inside
  // a bracket (bisection when a step leaves it), solving log P(X <= x) = log p for p <= 0.5 and
  // log P(X > x) = log(1 - p) above, each from AlmTail's regularized gamma on the side it computes directly.
- if (isNaN(p) || isNaN(df) || p < 0 || p > 1 || df < 0) return NaN;
- if (p === 0) return 0;
+ if (isNaN(p) || isNaN(df) || p < 0 || p > 1) return NaN;
+ if (p === 0) return 0;                      // R qgamma: the p boundaries come before the df check
  if (p === 1) return Infinity;
+ if (df < 0) return NaN;
  if (df === 0) return 0;
  if (df === Infinity) return Infinity;
+ // AlmTail's regularized-gamma series stops after 2000 terms, which no longer converges near the median
+ // once df exceeds ~2e5 (pchisqUpper(999999.33, 1e6) = 0.5023, R 0.5; 1.4e-12 relative at df = 2e5): fail closed
+ // above df = 1e5 instead of solving an inaccurate CDF. (In this page df is k - 1 or k - p.)
+ if (df > 1e5) return NaN;
  const a = df / 2, lga = AlmTail._lgamma(a);
  const lower = p <= 0.5;
  const lt = Math.log(lower ? p : 1 - p);
@@ -3732,18 +3737,20 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  const wh = df * Math.pow(1 - c + z * Math.sqrt(c), 3);
  let u = wh > 0 && isFinite(wh) ? Math.log(wh / 2) : (Math.log(p) + AlmTail._lgamma(a + 1)) / a;
  if (!(u > lo && u < hi)) u = 0.5 * (lo + hi);
- for (let it = 0; it < 500; it++) {
+ let done = false;
+ for (let it = 0; it < 500 && !done; it++) {
  const ls = logS(u), f = h(ls);
- if (f === 0) break;
+ if (isNaN(f)) return NaN;                 // never turn a failed evaluation into a number
+ if (f === 0) { done = true; break; }
  if (f < 0) lo = u; else hi = u;
  // dh/du = x/2 * density / probability on the solved side
  const d = Math.exp(a * u - Math.exp(u) - lga - ls);
  let nu = u - f / d;
  if (!(nu > lo && nu < hi)) nu = 0.5 * (lo + hi);
- if (Math.abs(nu - u) <= 1e-15 * Math.max(1, Math.abs(nu)) || hi - lo <= 1e-15 * Math.max(1, Math.abs(hi))) { u = nu; break; }
+ if (Math.abs(nu - u) <= 1e-15 * Math.max(1, Math.abs(nu)) || hi - lo <= 1e-15 * Math.max(1, Math.abs(hi))) { u = nu; done = true; break; }
  u = nu;
  }
- return 2 * Math.exp(u);
+ return done ? 2 * Math.exp(u) : NaN;           // not converged: fail closed
  },
 
 
