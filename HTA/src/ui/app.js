@@ -7,6 +7,17 @@ function escapeHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Within-cycle convention as MarkovEngine applies it (getSettings: `half_cycle_correction || 'trapezoidal'`).
+// Only 'trapezoidal' is a half-cycle correction; 'start'/'none' count at the start of each cycle, 'end' at the end.
+function describeWithinCycle(setting) {
+    const method = setting || 'trapezoidal';
+    if (method === 'trapezoidal') return 'APPLIED (trapezoidal)';
+    if (method === 'end') return 'NOT APPLIED (end: counted at the end of each cycle)';
+    if (method === 'start') return 'NOT APPLIED (start: counted at the start of each cycle)';
+    if (method === 'none') return 'NOT APPLIED (none: counted at the start of each cycle)';
+    return `NOT APPLIED (unrecognised setting '${method}': counted at the start of each cycle)`;
+}
+
 class HTAApp {
     constructor() {
         this.project = null;
@@ -1280,7 +1291,7 @@ Cycle Length: ${p.settings?.cycle_length || '-'} years
 Starting Age: ${p.settings?.starting_age || '-'} years
 Discount Rate (Costs): ${((p.settings?.discount_rate_costs || 0) * 100).toFixed(1)}%
 Discount Rate (QALYs): ${((p.settings?.discount_rate_qalys || 0) * 100).toFixed(1)}%
-Half-Cycle Correction: ${p.settings?.half_cycle_correction || 'None'}
+Half-Cycle Correction: ${describeWithinCycle(p.settings?.half_cycle_correction)}
 Perspective: NHS & PSS (assumed)
 
 Health States: ${Object.keys(p.states || {}).length}
@@ -1401,7 +1412,7 @@ EVPI Analysis:
 
 Discount Rate Costs: ${p.settings?.discount_rate_costs === 0.035 ? 'COMPLIANT (3.5%)' : `NON-COMPLIANT (${(p.settings?.discount_rate_costs * 100).toFixed(1)}%)`}
 Discount Rate QALYs: ${p.settings?.discount_rate_qalys === 0.035 ? 'COMPLIANT (3.5%)' : `NON-COMPLIANT (${(p.settings?.discount_rate_qalys * 100).toFixed(1)}%)`}
-Half-Cycle Correction: ${p.settings?.half_cycle_correction ? 'APPLIED' : 'NOT APPLIED'}
+Half-Cycle Correction: ${describeWithinCycle(p.settings?.half_cycle_correction)}
 PSA Iterations: ${psa?.iterations >= 10000 ? `COMPLIANT (${psa.iterations})` : `${psa?.iterations || 'N/A'} (minimum 10,000 recommended)`}
 Time Horizon: ${p.settings?.time_horizon >= 20 ? 'ADEQUATE' : 'May be insufficient for lifetime analysis'}
 
