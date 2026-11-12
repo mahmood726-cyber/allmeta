@@ -215,11 +215,13 @@ def test_no_private_notes_file_is_cited_in_shipped_text():
 
 
 def test_page_does_not_claim_the_likelihood_is_never_worse_than_metasens():
-    """The validation archive reports the attained objective IS worse than
-    metasens's at 84 of 42,498 comparable points (16 of 138 configurations),
-    recorded as a pre-registered requirement NOT met. A blanket "never worse"
-    in the footer would contradict the project's own report, in the artefact
-    the paper describes."""
+    """The validation archive's run on the page as it now is (R's own L-BFGS-B
+    since PR #496; P21 archive results/comparison-fixed.txt, 12 Nov 2026,
+    tier O 42486/42498) reports the attained objective IS worse than
+    metasens's at 12 of 42,498 comparable points (4 of 138 configurations),
+    a pre-registered requirement still NOT met. A blanket "never worse" in the
+    footer would contradict that report, and the old projected-gradient
+    figures (84 of 42,498 in 16 of 138) no longer describe the page."""
     html = INDEX.read_text(encoding="utf-8")
     flat = re.sub(r"<[^>]+>", " ", html)
     flat = re.sub(r"\s+", " ", flat).lower()
@@ -227,8 +229,10 @@ def test_page_does_not_claim_the_likelihood_is_never_worse_than_metasens():
                   "is never worse", "never worse at any"):
         assert claim not in flat, f"page claims {claim!r}"
     # ...and it must still disclose the shortfall with both denominators.
-    assert "84 of 42,498" in flat, "the disclosed shortfall is missing"
-    assert "16 of 138" in flat, "the per-configuration denominator is missing"
+    assert "12 of 42,498" in flat, "the disclosed shortfall is missing"
+    assert "4 of 138" in flat, "the per-configuration denominator is missing"
+    for stale in ("84 of 42,498", "16 of 138", "projected-gradient routine"):
+        assert stale not in flat, f"stale text from before R's L-BFGS-B: {stale!r}"
     assert "deviations.md" in flat, "the file recording the shortfall is not named"
 
 
