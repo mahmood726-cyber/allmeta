@@ -133,6 +133,11 @@
             <option value="PM">Paule-Mandel (PM) — default</option>
             <option value="REML">REML</option>
             <option value="DL">DerSimonian-Laird (DL, k≥10)</option>
+            <option value="ML">Maximum likelihood (ML)</option>
+            <option value="EB">Empirical Bayes (EB)</option>
+            <option value="SJ">Sidik-Jonkman (SJ)</option>
+            <option value="HE">Hedges (HE)</option>
+            <option value="HS">Hunter-Schmidt (HS)</option>
           </select>
         </label>
         <label>
@@ -740,7 +745,7 @@
         // The calling app may say which estimator and test its own headline used,
         // so the R fit here is the same model rather than this page's PM/z default.
         const m = params.get("method"), t = params.get("test");
-        if (m && ["PM", "REML", "DL"].includes(m)) document.getElementById("f-method").value = m;
+        if (m && ["PM", "REML", "DL", "ML", "EB", "SJ", "HE", "HS"].includes(m)) document.getElementById("f-method").value = m;
         if (t && ["z", "knha"].includes(t)) document.getElementById("f-test").value = t;
         const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");

@@ -795,6 +795,16 @@
       addWarning("Could not save current studies to shared bus.");
       return false;
     }
+    // What the WebR validator needs to re-fit THIS page's analysis: the studies now on
+    // screen and the τ² estimator actually used (DL below k=10 falls back to PM), with
+    // test z (the "RE pooled (z)" row). Without these every hand-off fitted PM/z, and
+    // "Verify in R" used whatever an earlier session had left on the shared bus.
+    const VALIDATOR_METHOD = {pm:"PM",reml:"REML",ml:"ML",eb:"EB",sj:"SJ",he:"HE",hs:"HS",dl:"DL"};
+    window.__almHetValidatorModel = function () {
+      render();
+      return _lastInfo ? { method: VALIDATOR_METHOD[_lastInfo.estimator] || "PM", test: "z" } : null;
+    };
+    window.__almHetCurrentStudies = function () { render(); return _lastInfo ? _lastStudies.slice() : []; };
     // Push the HKSJ random-effects pooled estimate to GRADE SoF via ma-pooled-v1.
     // Carries the displayed point + HKSJ CI verbatim; the export-scale selector
     // back-transforms log effects (ratio) so the consumer never has to re-pool.
@@ -856,7 +866,10 @@
       }
       document.getElementById("btn-push-grade").addEventListener("click", onPushPooledToGrade);
       document.getElementById("btn-validate-webr").addEventListener("click", function () {
-        if (onBusSave()) window.open("../webr-validator/index.html?fromBus=1&from=heterogeneity", "_blank");
+        if (!onBusSave()) return;
+        const vm = window.__almHetValidatorModel();
+        window.open("../webr-validator/index.html?fromBus=1&from=heterogeneity" +
+          (vm ? "&method=" + encodeURIComponent(vm.method) + "&test=" + encodeURIComponent(vm.test) : ""), "_blank");
       });
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){
@@ -1056,7 +1069,11 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    // Hand the validator the studies and estimator on screen, never the saved bus.
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
+      getStudies: function () { return window.__almHetCurrentStudies ? window.__almHetCurrentStudies() : []; },
+      method: function () { const vm = window.__almHetValidatorModel && window.__almHetValidatorModel(); return vm && vm.method; },
+      test: "z" });
   });
 })();
 </script>
@@ -1072,6 +1089,10 @@
       AlmFlow.attachContinueBar({
         container: "#alm-flow-mount",
         suggestions: ["forest-plot", "cumulative-subgroup", "gosh", "meta-regression", "bma-tau-priors", "webr-validator"],
+        // Push the studies on screen (not an earlier session's bus) and, for the
+        // validator, the estimator this page used.
+        getStudies: function () { return window.__almHetCurrentStudies ? window.__almHetCurrentStudies() : []; },
+        getValidatorModel: function () { return window.__almHetValidatorModel && window.__almHetValidatorModel(); },
       });
     }
   });

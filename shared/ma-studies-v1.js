@@ -660,6 +660,14 @@
       if (typeof opts.getStudies === "function") {
         try { request.studies = opts.getStudies(); } catch (_) { request.studies = null; }
       }
+      // The estimator/test the app's headline uses (value or function), so the
+      // validator fits the same model instead of its own PM/z default. These used
+      // to be dropped here, so callers could not pass them at all.
+      ["method", "test", "from"].forEach(function (k) {
+        var v = opts[k];
+        if (typeof v === "function") { try { v = v(); } catch (_) { v = null; } }
+        if (v) request[k] = String(v);
+      });
       openInWebR(request);
     });
     return true;
