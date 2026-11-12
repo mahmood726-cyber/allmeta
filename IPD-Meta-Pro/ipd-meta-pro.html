@@ -74568,58 +74568,11 @@ function runRandomEffectsREML(studies) {
 
     const C = sumWF - sumW2F / sumWF;
 
-    let tau2 = Math.max(0, (Q - (k - 1)) / C);
-
-
-
-    // Fisher scoring iterations
-
-    for (let iter = 0; iter < 50; iter++) {
-
-        const weights = studies.map(s => 1 / (s.vi + tau2));
-
-        const sumW = weights.reduce((a, b) => a + b, 0);
-
-        const estimate = studies.reduce((s, st, i) => s + weights[i] * st.yi, 0) / sumW;
-
-
-
-        // First derivative of REML log-likelihood
-
-        // the +1/2 sum(w^2)/sum(w) term makes this the REML score (without it, it converged to ML)
-        const sumW2 = weights.reduce((s, w) => s + w * w, 0);
-        let deriv1 = -0.5 * sumW + 0.5 * sumW2 / sumW;
-
-        deriv1 += 0.5 * studies.reduce((s, st, i) => {
-
-            const resid = st.yi - estimate;
-
-            return s + weights[i] * weights[i] * resid * resid;
-
-        }, 0);
-
-
-
-        // Fisher information (expected second derivative)
-
-        const deriv2 = 0.5 * sumW2;
-
-
-
-        // Newton-Raphson update
-
-        const delta = deriv1 / deriv2;
-
-        const tau2New = Math.max(0, tau2 + delta);
-
-
-
-        if (Math.abs(tau2New - tau2) < 1e-8) break;
-
-        tau2 = tau2New;
-
-    }
-
+    // IPD-Left fix: this was its own Fisher scoring from the DL start, stopped on an absolute |step| < 1e-8, so with
+    // variances of order 1e-8 (data in small units) it returned the DL start (survival x 1e-4: 2.568e-10, metafor
+    // REML 3.117e-10). The benchmark checks the page against R, so it now uses the REML solver the page runs and the
+    // P60 archive validates.
+    const tau2 = MetaAnalysis._estimateTau2Fisher(studies.map(s => s.yi), studies.map(s => s.vi), true);
 
 
     // Final calculations with converged tau2
@@ -74669,52 +74622,10 @@ function runRandomEffectsPM(studies) {
 
     const C = sumWF - sumW2F / sumWF;
 
-    let tau2 = Math.max(0, (Q - (k - 1)) / C);
-
-
-
-    // Iteratively solve Q*(tau2) = k - 1 using bisection
-
-    let lo = 0, hi = tau2 * 3 + 1;
-
-    
-
-    for (let iter = 0; iter < 100; iter++) {
-
-        const mid = (lo + hi) / 2;
-
-        const weights = studies.map(s => 1 / (s.vi + mid));
-
-        const sumW = weights.reduce((a, b) => a + b, 0);
-
-        const estimate = studies.reduce((s, st, i) => s + weights[i] * st.yi, 0) / sumW;
-
-        const Qstar = studies.reduce((s, st, i) => s + weights[i] * Math.pow(st.yi - estimate, 2), 0);
-
-
-
-        if (Math.abs(Qstar - (k - 1)) < 1e-8 || (hi - lo) < 1e-10) {
-
-            tau2 = mid;
-
-            break;
-
-        }
-
-
-
-        if (Qstar > k - 1) {
-
-            lo = mid;
-
-        } else {
-
-            hi = mid;
-
-        }
-
-    }
-
+    // IPD-Left fix: this was its own bisection on [0, 3 DL + 1], stopped on |Q* - (k-1)| < 1e-8 or a bracket width
+    // < 1e-10 (both absolute), so in small units it returned a point of a 1e-10 grid (survival x 1e-4: 2.619e-10,
+    // metafor PM 2.444e-10). It now uses the PM solver the page runs and the P60 archive validates.
+    const tau2 = MetaAnalysis._estimateTau2PM(studies.map(s => s.yi), studies.map(s => s.vi));
 
 
     const weights = studies.map(s => 1 / (s.vi + tau2));

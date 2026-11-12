@@ -46,6 +46,26 @@ for (const r of REF.sets) {
   }
 }
 
+// In-page "Reference Benchmark Checks" (validateDataset -> runRandomEffectsREML / runRandomEffectsPM). Each had its
+// own solver that stopped on ABSOLUTE tolerances: REML Fisher scoring on |step| < 1e-8, PM bisection on
+// |Q* - (k-1)| < 1e-8 or a bracket width < 1e-10. With variances of order 1e-8 (data in small units) REML stopped at
+// its DL start (2.568e-10, R 3.117e-10) and PM at a 1e-10-wide bracket (2.619e-10, R 2.444e-10). They must give
+// metafor's tau^2, estimate and SE at every scale.
+for (const r of REF.sets) {
+  sandbox.__y = r.yi; sandbox.__v = r.vi;
+  const vbar = r.vi.reduce((s, v) => s + v, 0) / r.vi.length;
+  const a = run(`(function(){
+    var st = __y.map(function(y, i){ return { yi: y, vi: __v[i], sei: Math.sqrt(__v[i]) }; });
+    var A = runRandomEffectsREML(st), B = runRandomEffectsPM(st);
+    return { REML: { tau2: A.tau2, mu: A.estimate, se: A.se }, PM: { tau2: B.tau2, mu: B.estimate, se: B.se } };
+  })()`);
+  for (const m of ['REML', 'PM']) {
+    const x = a[m], R = r[m];
+    check(r.name + ' (k=' + r.k + ') benchmark runRandomEffects' + m, okTau(x.tau2, R.tau2, vbar) && okMu(x.mu, R.mu, R.se) && Math.abs(x.se - R.se) <= 1e-6 * R.se,
+      'page tau2 ' + x.tau2 + ' mu ' + x.mu + ' se ' + x.se + ' | R tau2 ' + R.tau2 + ' mu ' + R.mu + ' se ' + R.se);
+  }
+}
+
 // End to end through the clustered-IPD panel's own two-stage function on individual rows.
 sandbox.__rows = REF.ipd.rows;
 const vbarI = REF.ipd.vi.reduce((s, v) => s + v, 0) / REF.ipd.vi.length;
