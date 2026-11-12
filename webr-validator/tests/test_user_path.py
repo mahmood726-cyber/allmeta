@@ -108,7 +108,8 @@ def test_validator_fits_every_estimator_apps_send():
     for m in ESTIMATORS:
         assert f'value="{m}"' in sel, m
     allow = re.search(r'if \(m && \[([^\]]+)\]\.includes\(m\)\)', PAGE).group(1)
-    assert set(re.findall(r'"([A-Z]+)"', allow)) == set(ESTIMATORS), allow
+    # + FE (lane rc5): funnel-plot's headline is a fixed-effect inverse-variance pool.
+    assert set(re.findall(r'"([A-Z]+)"', allow)) == set(ESTIMATORS) | {"FE"}, allow
 
 
 def test_heterogeneity_controls_hand_over_the_page_analysis():

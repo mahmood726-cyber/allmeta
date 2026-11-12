@@ -138,6 +138,7 @@
             <option value="SJ">Sidik-Jonkman (SJ)</option>
             <option value="HE">Hedges (HE)</option>
             <option value="HS">Hunter-Schmidt (HS)</option>
+            <option value="FE">Fixed effect (FE, τ² = 0)</option>
           </select>
         </label>
         <label>
@@ -145,6 +146,7 @@
           <select id="f-test" aria-label="Test method">
             <option value="z">z (standard)</option>
             <option value="knha">Knapp-Hartung (t, HKSJ)</option>
+            <option value="adhoc">Knapp-Hartung, factor floored at 1 (t, metafor "adhoc")</option>
           </select>
         </label>
       </fieldset>
@@ -242,7 +244,7 @@
     let lastR = null;
     let lastVersions = null;  // R / webR / metafor versions of the last WebR run
 
-    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } return o; }
+    function readState() { const o={}; for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el) o[k]=el.value||""; } if (o.method === "FE") o.test = "z"; return o; }
     function writeState(s) { for (const [k,id] of Object.entries(fields)) { const el=document.getElementById(id); if (el && k in s) el.value = s[k]; } }
 
     function parseStudies(text) {
@@ -291,8 +293,11 @@
       // break reml-validator-parity.spec.mjs (golden se 0.1815234631). The
       // advanced-stats.md HKSJ floor is for CONDUCTING a conservative MA, not for
       // a metafor validator. The z/1.96 path is preserved for the non-knha case.
-      const knha = test === "knha";
-      const f = AlmMaCore.pool(yi, vi, { method, knha, knhaFloor: false });
+      // test="adhoc" is metafor's Knapp-Hartung with the variance factor floored at 1
+      // (the q* >= 1 rule forest-plot's headline uses); offered so an app that uses it
+      // is re-fitted with its own model. "knha" stays the raw, unfloored statistic.
+      const knha = test === "knha" || test === "adhoc";
+      const f = AlmMaCore.pool(yi, vi, { method, knha, knhaFloor: test === "adhoc" });
       return { estimate: f.mu, se: f.se, ci_lb: f.ciLo, ci_ub: f.ciHi, tau2: f.tau2, I2: f.I2, QE: f.Q, k: f.k };
     }
     window.__almValidatorFit = browserFit; // test hook (reml-validator-parity.spec.mjs)
@@ -314,7 +319,7 @@
         "# threshold = 1e-5) stop up to ~5e-4 short of the optimum, which the 1e-4 comparison",
         "# then flags as a mismatch. These controls take R to the optimum the browser computes.",
         'res <- rma(yi, sei = sei, method = "' + method + '", test = "' + test + '", slab = slab' +
-          (method === "DL" ? "" : method === "PM"
+          (method === "DL" || method === "FE" ? "" : method === "PM"
             ? ",\n           control = list(tol = 1e-12, maxiter = 10000)"
             : ",\n           control = list(threshold = 1e-12, maxiter = 10000, stepadj = 0.5)") + ")",
         "cat(sprintf(\"estimate=%.10f\\nse=%.10f\\nci.lb=%.10f\\nci.ub=%.10f\\ntau^2=%.10f\\nI^2=%.10f\\nQE=%.10f\\n\",",
@@ -653,6 +658,12 @@
     }
 
     function render() {
+      // A fixed-effect fit has no tau^2 for a Knapp-Hartung factor to rescale here: ma-core's
+      // FE pool is z-only, while metafor would apply test="knha"/"adhoc" to FE. Keep the
+      // browser fit and the R script on the same model by holding FE to test z.
+      if (document.getElementById("f-method").value === "FE" && document.getElementById("f-test").value !== "z") {
+        document.getElementById("f-test").value = "z";
+      }
       const state = readState();
       const parsed = parseStudies(state.data);
       if (parsed.studies.length) {
@@ -723,8 +734,10 @@
     function showSourceBanner(from) {
       const el = document.getElementById("source-banner");
       if (!el || !from || !/^[a-z0-9-]{1,40}$/.test(from)) return;
-      const model = "an inverse-variance random-effects pool (metafor rma, τ² " +
-        document.getElementById("f-method").value + ", test " + document.getElementById("f-test").value + ")";
+      const meth = document.getElementById("f-method").value;
+      const model = (meth === "FE" ? "a fixed-effect inverse-variance pool (metafor rma, method FE" :
+        "an inverse-variance random-effects pool (metafor rma, τ² " + meth) +
+        ", test " + document.getElementById("f-test").value + ")";
       const own = NOT_IV_POOL[from];
       el.textContent = own
         ? "Opened from " + from + ". This page re-fits " + model + " to the per-study effects " + from +
@@ -745,8 +758,8 @@
         // The calling app may say which estimator and test its own headline used,
         // so the R fit here is the same model rather than this page's PM/z default.
         const m = params.get("method"), t = params.get("test");
-        if (m && ["PM", "REML", "DL", "ML", "EB", "SJ", "HE", "HS"].includes(m)) document.getElementById("f-method").value = m;
-        if (t && ["z", "knha"].includes(t)) document.getElementById("f-test").value = t;
+        if (m && ["PM", "REML", "DL", "ML", "EB", "SJ", "HE", "HS", "FE"].includes(m)) document.getElementById("f-method").value = m;
+        if (t && ["z", "knha", "adhoc"].includes(t)) document.getElementById("f-test").value = t;
         const lines = studies.map(s => [s.label, s.est, s.se].join(", "));
         document.getElementById("f-data").value = lines.join("\n");
         render();
