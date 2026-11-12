@@ -28,13 +28,16 @@
       for (var n = 0; n < 200; n++) { ap++; del *= x / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 1e-12) break; }
       return sum * Math.exp(-x + a * Math.log(x) - _gln(a));
     }
-    var b = x + 1 - a, c = 1e300, d = 1 / b, h = d;             // continued fraction
+    return 1 - _gammqCF(a, x);
+  }
+  function _gammqCF(a, x) {                     // Q(a,x) = 1 - P(a,x) by continued fraction (x >= a + 1), returned directly
+    var b = x + 1 - a, c = 1e300, d = 1 / b, h = d;
     for (var i = 1; i < 200; i++) {
       var an = -i * (i - a); b += 2; d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
       c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300; d = 1 / d; var dl = d * c; h *= dl;
       if (Math.abs(dl - 1) < 1e-12) break;
     }
-    return 1 - Math.exp(-x + a * Math.log(x) - _gln(a)) * h;
+    return Math.exp(-x + a * Math.log(x) - _gln(a)) * h;
   }
   function _gln(z) {
     var g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
@@ -42,7 +45,8 @@
     for (j = 0; j < 6; j++) { x += 1; ser += g[j] / x; }
     return -tmp + Math.log(2.5066282746310005 * ser / z);
   }
-  function chi2sf(x, k) { return x <= 0 ? 1 : 1 - _gammp(k / 2, x / 2); }
+  // upper tail = R pchisq(x, k, lower.tail = FALSE); the CF tail is used directly so it never cancels in 1 - P
+  function chi2sf(x, k) { return x <= 0 ? 1 : (x / 2 < k / 2 + 1 ? 1 - _gammp(k / 2, x / 2) : _gammqCF(k / 2, x / 2)); }
 
   // invert a small symmetric positive-definite matrix (Gauss-Jordan).
   function _inv(M) {
