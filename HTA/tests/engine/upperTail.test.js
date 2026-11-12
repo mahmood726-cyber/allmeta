@@ -51,6 +51,7 @@ describe('upper-tail p-values agree with R lower.tail = FALSE', () => {
         const r = new MetaRegression().fit(eff, x.map(() => 0.004), x.map(v => [v]));
         expect(relErr(r.QM, R.metareg_qm.stat)).toBeLessThan(1e-9);
         expect(R.metareg_qm.p).toBe(0);           // underflows in R as well
+        expect(r.pQM).toBeGreaterThanOrEqual(0);
         expect(r.pQM).toBeLessThan(1e-300);
     });
 
@@ -63,6 +64,7 @@ describe('upper-tail p-values agree with R lower.tail = FALSE', () => {
         const h = new MendelianRandomizationMA().ivw(d).heterogeneity;
         expect(relErr(h.Q, R.mr_ivw_q.stat)).toBeLessThan(1e-9);
         expect(h.df).toBe(R.mr_ivw_q.df);
+        expect(h.pValue).toBeGreaterThanOrEqual(0);
         expect(h.pValue).toBeLessThan(1e-300);
     });
 
@@ -94,6 +96,12 @@ describe('upper-tail p-values agree with R lower.tail = FALSE', () => {
             [{ effect: 2.0, se: 0.1 }, { effect: 2.1, se: 0.12 }, { effect: 1.9, se: 0.11 }], { method: 'FE' });
         expect(relErr(m.fixed.z, R.fe_z.stat)).toBeLessThan(1e-9);
         expect(relErr(m.fixed.pValue, R.fe_z.p)).toBeLessThan(1e-9);
+    });
+
+    test('MetaAnalysisMethods: k = 1 keeps heterogeneity p = 1 (df = 0)', () => {
+        const { MetaAnalysisMethods } = loadEngine('metaMethods.js');
+        const m = new MetaAnalysisMethods().calculatePooledEffect([{ effect: 0.3, se: 0.1 }], { method: 'FE' });
+        expect(m.heterogeneity.pValueQ).toBe(1);
     });
 
     test('PublicationBiasTests.eggerTest: p at 1 df equals 2 * pt(|t|, 1, lower.tail = FALSE)', () => {

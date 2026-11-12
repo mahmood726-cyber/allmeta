@@ -121,7 +121,8 @@ class MetaAnalysisMethods {
         // Q statistic
         const Q = w.reduce((sum, wi, i) => sum + wi * (studies[i].effect - thetaFE) ** 2, 0);
         const df = n - 1;
-        const pQ = AlmTail.pchisqUpper(Q, df);
+        // k = 1 (df = 0): Q = 0, p = 1 as before (metafor reports QEp = 1); AlmTail returns NaN for df <= 0.
+        const pQ = df > 0 ? AlmTail.pchisqUpper(Q, df) : 1;
 
         // Between-study variance (τ²)
         let tauSq;

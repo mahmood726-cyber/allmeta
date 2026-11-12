@@ -30,7 +30,7 @@ def test_heterogeneity_p_equals_r_upper_tail():
     for k in keys:
         assert abs(v[k]['Q'] - R[k]['Q']) <= 1e-9 * R[k]['Q'] and v[k]['df'] == R[k]['df'], k
         p, ref = v[k]['Qp'], R[k]['p']
-        ok = (p < 1e-300) if ref == 0 else abs(p - ref) <= 1e-9 * ref
+        ok = (0 <= p < 1e-300) if ref == 0 else abs(p - ref) <= 1e-9 * ref
         if not ok:
             bad.append('%s: page %r, R %r' % (k, p, ref))
     assert bad == []
