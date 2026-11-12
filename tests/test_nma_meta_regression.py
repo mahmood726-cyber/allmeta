@@ -129,17 +129,24 @@ def test_fit_requires_at_least_2p_rows():
           console.log(JSON.stringify({{ caught: true, msg: e.message }}));
         }}
     """)
+    # Requirement: an under-identified design is refused, never fitted. Since the P28
+    # correction (PR #505) the engine says WHICH parameter is not identifiable rather
+    # than counting rows, so assert the refusal and its meaning, not old wording.
     assert out["caught"] is True
-    assert "rows" in out["msg"].lower()
+    assert "not identifiable" in out["msg"].lower()
 
 
-def test_tau2_PM_returns_zero_when_no_heterogeneity():
+def test_tau2_is_zero_when_no_heterogeneity():
+    # Requirement: identical contrasts at every covariate value -> tau^2 = 0.
+    # The P28 correction replaced Paule-Mandel by REML (netmetareg) and removed the
+    # private _tau2_PM helper, so test the public fit() instead of an internal.
     out = _run_node(f"""
         const M = require({json.dumps(str(MODULE))});
-        // All rows agree on the same contrast (no τ²) within sampling noise.
-        const X = [[1, 5], [1, -5], [1, 0], [1, 2], [1, -2]];  // (intercept + covariate)
-        const y = [-0.30, -0.30, -0.30, -0.30, -0.30];
-        const v = [0.01, 0.01, 0.01, 0.01, 0.01];
-        console.log(JSON.stringify(M._tau2_PM(X, y, v)));
+        const rows = [];
+        for (const c of [40, 45, 50, 55, 60, 65]) {{
+          rows.push({{ trtA: "A", trtB: "B", yi: -0.30, sei: 0.10, covariate: c }});
+          rows.push({{ trtA: "A", trtB: "C", yi: -0.40, sei: 0.12, covariate: c }});
+        }}
+        console.log(JSON.stringify(M.fit(rows, ["A", "B", "C"]).tau2));
     """)
     assert out == 0
