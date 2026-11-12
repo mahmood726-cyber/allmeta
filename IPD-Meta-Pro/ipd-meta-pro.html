@@ -11888,11 +11888,6 @@ function runCompetingRisksStableCore(times, eventTypes, treatment, studyIds, eve
 
  var z = beta / se;
 
- var normalCdf = typeof normalCDF === 'function'
-
- ? normalCDF(Math.abs(z))
-
- : ((typeof Stats === 'object' && Stats && typeof Stats.normalCDF === 'function') ? Stats.normalCDF(Math.abs(z)) : 0.5);
 
  var grayChiSq = (score0.score * score0.score) / Math.max(score0.information, 1e-10);
 
@@ -11942,7 +11937,7 @@ function runCompetingRisksStableCore(times, eventTypes, treatment, studyIds, eve
 
  CI: [Math.exp(beta - getConfZ() * se), Math.exp(beta + getConfZ() * se)],
 
- pValue: 2 * (1 - normalCdf)
+ pValue: 2 * AlmTail.pnormUpper(Math.abs(z))
 
  },
 
@@ -20412,7 +20407,7 @@ function communicateUncertainty(results, config) {
 
  uncertainty.probabilityBenefit = jStat.normal.cdf(0, effect, se);
 
- uncertainty.probabilityHarm = 1 - uncertainty.probabilityBenefit;
+ uncertainty.probabilityHarm = AlmTail.pnormUpper((0 - effect) / se);
 
  } else {
 
@@ -64389,7 +64384,7 @@ const IndividualRiskPredictor = {
 
             predictionInterval: { lower, upper },
 
-            probabilityOfBenefit: isLogScale ? probBenefit : (1 - probBenefit),
+            probabilityOfBenefit: isLogScale ? probBenefit : AlmTail.pnormUpper(-predictedEffect / predictionSE),
 
             nnt: nnt,
 
@@ -72368,7 +72363,7 @@ function populateNormalityTests() {
 
     const skewZ = skewness / skewSE;
 
-    const skewP = 2 * (1 - (MathUtils.normCDF ? MathUtils.normCDF(Math.abs(skewZ)) : normCDF(Math.abs(skewZ))));
+    const skewP = 2 * AlmTail.pnormUpper(Math.abs(skewZ));
 
     html += '<tr><td>Skewness</td>';
 
@@ -72386,7 +72381,7 @@ function populateNormalityTests() {
 
     const kurtZ = kurtosis / kurtSE;
 
-    const kurtP = 2 * (1 - (MathUtils.normCDF ? MathUtils.normCDF(Math.abs(kurtZ)) : normCDF(Math.abs(kurtZ))));
+    const kurtP = 2 * AlmTail.pnormUpper(Math.abs(kurtZ));
 
     html += '<tr><td>Excess Kurtosis</td>';
 
@@ -95946,7 +95941,7 @@ var OneStageGLMM = (function() {
             var OR_lower = Math.exp(treatEffect - z * treatSE);
             var OR_upper = Math.exp(treatEffect + z * treatSE);
             var zStat = treatEffect / treatSE;
-            var pValue = 2 * (1 - (typeof Stats !== 'undefined' ? Stats.normalCDF(Math.abs(zStat)) : 0.5));
+            var pValue = 2 * AlmTail.pnormUpper(Math.abs(zStat));
 
             // I² for treatment effect heterogeneity
             // P60 fix: the model has a common treatment effect; tau2 is the random-intercept (baseline-risk)
@@ -96025,7 +96020,7 @@ var OneStageGLMM = (function() {
                         var intBeta = fit.beta[intIdx];
                         var intSE = fit.se[intIdx];
                         var intZ = intBeta / intSE;
-                        var intP = 2 * (1 - (typeof Stats !== 'undefined' ? Stats.normalCDF(Math.abs(intZ)) : 0.5));
+                        var intP = 2 * AlmTail.pnormUpper(Math.abs(intZ));
                         interactionResults.push({
                             covariate: covariates[ci],
                             beta: intBeta,
@@ -96131,7 +96126,7 @@ var OneStageGLMM = (function() {
                         treatEffect + z * Math.sqrt(treatSE * treatSE + fit.tau2)
                     ],
                     zStat: treatEffect / treatSE,
-                    pValue: 2 * (1 - (typeof Stats !== 'undefined' ? Stats.normalCDF(Math.abs(treatEffect / treatSE)) : 0.5))
+                    pValue: 2 * AlmTail.pnormUpper(Math.abs(treatEffect / treatSE))
                 },
                 randomEffects: {
                     tau2: fit.tau2,
@@ -96150,7 +96145,7 @@ var OneStageGLMM = (function() {
                 SE: treatSE,
                 CI_lower: treatEffect - z * treatSE,
                 CI_upper: treatEffect + z * treatSE,
-                p_value: 2 * (1 - (typeof Stats !== 'undefined' ? Stats.normalCDF(Math.abs(treatEffect / treatSE)) : 0.5)),
+                p_value: 2 * AlmTail.pnormUpper(Math.abs(treatEffect / treatSE)),
                 tau2: fit.tau2,
                 I2: fit.tau2 > 0 ? Math.max(0, Math.min(100, 100 * fit.tau2 / (fit.tau2 + treatSE * treatSE))) : 0
             };
@@ -96200,7 +96195,7 @@ var TreatmentInteraction = (function() {
     }
 
     function pFromZ(z) {
-        return 2 * (1 - ((typeof Stats !== 'undefined') ? Stats.normalCDF(Math.abs(z)) : 0.5));
+        return 2 * AlmTail.pnormUpper(Math.abs(z));
     }
 
     // DerSimonian-Laird random effects for array of {yi, vi}
@@ -96361,7 +96356,7 @@ var TreatmentInteraction = (function() {
             Q_interaction = wSub.reduce(function(a, w, i) { return a + w * Math.pow(validSGs[i].estimate - pooledAll, 2); }, 0);
         }
         var df_interaction = Math.max(1, validSGs.length - 1);
-        var p_interaction = 1 - ((typeof Stats !== 'undefined') ? Stats.chiSquareCDF(Q_interaction, df_interaction) : 0);
+        var p_interaction = AlmTail.pchisqUpper(Q_interaction, df_interaction);
 
         return {
             method: 'Subgroup Treatment Effect Analysis',
@@ -97976,7 +97971,7 @@ var DoseResponseIPD = (function() {
                     (nonlinearBest.fit.rss / Math.max(1, N - nonlinearBest.fit.p));
                 // Approximate p-value from F distribution via chi-squared
                 var chiSq = fStat * dfDiff;
-                nonlinearityP = 1 - ((typeof Stats !== 'undefined') ? Stats.chiSquareCDF(chiSq, dfDiff) : 0);
+                nonlinearityP = AlmTail.pchisqUpper(chiSq, dfDiff);
             }
         }
 

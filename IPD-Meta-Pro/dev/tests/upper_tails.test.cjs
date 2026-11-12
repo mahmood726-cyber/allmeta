@@ -43,6 +43,34 @@ const show = (a, b) => 'page ' + a + ' R ' + b;
   const hits = [];
   html.split('\n').forEach((l, i) => { for (const m of l.matchAll(site)) hits.push((i + 1) + ': ' + m[1]); });
   check('no 1 - CDF(...) upper-tail sites remain', hits.length === 0, hits.length + ' sites' + (hits.length ? ', first ' + hits.slice(0, 3).join('; ') : ''));
+
+  // forms the pattern above cannot see (found by the Codex review of the first version of this test):
+  //  (a) 1 - (cond ? CDF(x) : fallback)          the CDF call sits inside a parenthesised group
+  //  (b) 1 - name, where name = CDF(...) was assigned within the preceding 80 lines
+  const lines = html.split('\n');
+  const cdfCall = new RegExp('(?:^|[^\\w$])((?:[A-Za-z_$][\\w$]*\\.)*' + CDF + ')\\s*\\(');
+  const group = (s, i) => { let d = 0; for (let k = i; k < s.length; k++) { if (s[k] === '(') d++; else if (s[k] === ')' && --d === 0) return s.slice(i, k + 1); } return s.slice(i); };
+  const hidden = [];
+  lines.forEach((l, i) => {
+    if (l.length > 3000) return;   // vendored minified code
+    for (const m of l.matchAll(/(?<![\w.])1(?:\.0)?\s*-\s*\(/g)) {
+      if (cdfCall.test(group(l, m.index + m[0].length - 1))) hidden.push((i + 1) + ': 1 - (... CDF ...)');
+    }
+    for (const m of l.matchAll(/(?<![\w.])1(?:\.0)?\s*-\s*((?:[A-Za-z_$][\w$]*\.)*([A-Za-z_$][\w$]*))(?![\w$.]|\s*\()/g)) {
+      const name = m[2].replace(/\$/g, '\\$');
+      const assign = new RegExp('(?:^|[^\\w$])' + name + '\\s*=\\s*(?!=)');
+      for (let j = i; j >= Math.max(0, i - 80); j--) {
+        const a = lines[j].match(assign);
+        if (a && (j < i || a.index < m.index)) {
+          // right-hand side up to the end of the statement (it may continue over a few lines)
+          const rhs = [lines[j].slice(a.index + a[0].length)].concat(lines.slice(j + 1, j + 4)).join(' ').split(';')[0];
+          if (cdfCall.test(rhs)) hidden.push((i + 1) + ': 1 - ' + m[1] + ' (assigned from a CDF at line ' + (j + 1) + ')');
+          break;
+        }
+      }
+    }
+  });
+  check('no 1 - (conditional CDF) or 1 - (variable holding a CDF) upper tails remain', hidden.length === 0, hidden.length + ' sites' + (hidden.length ? ': ' + hidden.join('; ') : ''));
 }
 
 // 3. the inlined functions in the page context, deep in the tails
@@ -50,6 +78,13 @@ if (run('typeof AlmTail') === 'object') {
   for (const g of REF.grid.pnorm) { const a = run('AlmTail.pnormUpper(' + g.z + ')'); check('pnormUpper(' + g.z + ')', rel(a, g.p, 1e-11), show(a, g.p)); }
   for (const g of REF.grid.pchisq) { const a = run('AlmTail.pchisqUpper(' + g.x + ',' + g.df + ')'); check('pchisqUpper(' + g.x + ',' + g.df + ')', rel(a, g.p, 1e-11), show(a, g.p)); }
   for (const g of REF.grid.pt) { const a = run('AlmTail.ptUpper(' + g.t + ',' + g.df + ')'); check('ptUpper(' + g.t + ',' + g.df + ')', rel(a, g.p, 1e-11), show(a, g.p)); }
+  // boundary contract (R: pnorm(Inf, lower = FALSE) = 0, pchisq(Inf, 3, lower = FALSE) = 0, pchisq(0, 3, lower = FALSE) = 1,
+  // pt(Inf, 4, lower = FALSE) = 0, pt(1, 0) = NaN). With df <= 0 the page now gets NaN where the legacy
+  // t / jStat chi-square CDFs returned 1 (p = 0); a test with no degrees of freedom has no p-value.
+  const bnd = [['AlmTail.pnormUpper(Infinity)', 0], ['AlmTail.pnormUpper(-Infinity)', 1], ['AlmTail.pnormUpper(NaN)', NaN],
+    ['AlmTail.pchisqUpper(Infinity, 3)', 0], ['AlmTail.pchisqUpper(0, 3)', 1], ['AlmTail.pchisqUpper(5, 0)', NaN], ['AlmTail.pchisqUpper(NaN, 3)', NaN],
+    ['AlmTail.ptUpper(Infinity, 4)', 0], ['AlmTail.ptUpper(1, 0)', NaN], ['AlmTail.ptUpper(2, Infinity)', run('AlmTail.pnormUpper(2)')]];
+  for (const [e, want] of bnd) { const a = run(e); check('boundary ' + e + ' = ' + want, Number.isNaN(want) ? Number.isNaN(a) : a === want, 'page ' + a); }
 }
 
 // 4. exported engine p-values (P60-validated paths and a module with its own chi-square series)
