@@ -98,3 +98,11 @@ def test_duplicate_information_fractions_are_refused():
     script = f"const M = require({json.dumps(str(MODULE))});\ntry {{ M.computeBoundary({json.dumps(looks)}, {{}}); console.log('NO_ERROR'); }} catch (e) {{ console.log('ERR ' + e.message); }}"
     r = subprocess.run([NODE, "-e", script], capture_output=True, text=True, timeout=60, cwd=str(ROOT))
     assert r.stdout.strip().startswith("ERR"), r.stdout
+
+
+def test_looks_too_close_for_the_mesh_are_refused():
+    # Review finding: beyond the mesh cap the boundary was silently wrong (t = 0.5, 0.500000001, 1: 2.452 instead of 1.979).
+    looks = [{"t": 0.5, "z": 0}, {"t": 0.500000001, "z": 0}, {"t": 1, "z": 2.02}]
+    script = f"const M = require({json.dumps(str(MODULE))});\ntry {{ M.computeBoundary({json.dumps(looks)}, {{}}); console.log('NO_ERROR'); }} catch (e) {{ console.log('ERR ' + e.message); }}"
+    r = subprocess.run([NODE, "-e", script], capture_output=True, text=True, timeout=120, cwd=str(ROOT))
+    assert r.stdout.strip().startswith("ERR"), r.stdout

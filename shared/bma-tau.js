@@ -249,6 +249,7 @@
       if (bi === 4000) hi += Math.log(1e4);
       else break;
     }
+    if (bi === 4000) return NaN;              // no interior maximum found: report non-finite, never the cap
     var a = grid[Math.max(0, bi - 1)], b = grid[Math.min(4000, bi + 1)];
     var gr = (Math.sqrt(5) - 1) / 2, c = b - gr * (b - a), d = a + gr * (b - a), fc = lg(c), fd = lg(d);
     for (var it = 0; it < 200 && (b - a) > 1e-15; it++) {

@@ -121,7 +121,10 @@
     if (Inext > Ik) gap = Inext - Ik;
     if (Iprev != null && Ik > Iprev) gap = Math.min(gap, Ik - Iprev);
     if (!isFinite(gap)) return R_MESH;
-    return Math.min(R_MESH_MAX, Math.max(R_MESH, Math.ceil(4 * Math.sqrt(Ik / gap))));
+    var need = Math.ceil(4 * Math.sqrt(Ik / gap));
+    // Fail closed rather than return a boundary from an unresolved mesh.
+    if (need > R_MESH_MAX) throw new Error("two looks are too close in information (gap " + gap.toExponential(2) + " of " + Ik.toExponential(2) + ") for an accurate boundary; merge them");
+    return Math.max(R_MESH, need);
   }
   function _grid(mu, lo, hi, rIn) {
     var r = rIn || R_MESH, pts = [], j, n = 6 * r - 1, x;

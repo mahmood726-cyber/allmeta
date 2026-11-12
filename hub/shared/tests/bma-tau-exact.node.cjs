@@ -71,3 +71,8 @@ test('bma-tau: posterior mode of tau^2 is not capped at the search ceiling (revi
   const f = BMA.fitModel([-100, 100], [1, 1], BMA.invGamma(0.1, 0.1));
   assert.ok(Math.abs(f.tau2_post_mode - 6248.37522135) < 1e-4 * 6248.37522135, 'mode ' + f.tau2_post_mode);
 });
+
+test('bma-tau: a mode beyond every widened range is reported non-finite, not as the cap (review finding)', () => {
+  const f = BMA.fitModel([-1e25, 1e25], [1, 1], BMA.invGamma(0.1, 0.1));
+  assert.ok(!Number.isFinite(f.tau2_post_mode), 'mode ' + f.tau2_post_mode);
+});
