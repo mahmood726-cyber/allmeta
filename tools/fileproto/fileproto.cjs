@@ -95,6 +95,13 @@ const CHECKS = {
       fails.push(...es.fails.map((f) => "es: " + f));
       if (!es.fails.length && es.tips.every((t, i) => t.tip === en.tips[i].tip)) fails.push("es: tips did not change after switching to Spanish");
     }
+    // Live R (webR) cannot start from file://: the panel must say why, not "Failed to fetch".
+    await p.getByRole("button", { name: /^Run analysis$/ }).first().click();
+    await p.waitForTimeout(1500);
+    await p.getByRole("button", { name: "Validate this analysis in R" }).first().click();
+    let st = "";
+    for (let i = 0; i < 20 && !/Validation refused/.test(st); i++) { await p.waitForTimeout(1000); st = await p.locator("[role=status]").allInnerTexts().then((a) => a.join(" | ")); }
+    if (!/Validation refused: .*file:\/\//.test(st)) fails.push("live R on file:// does not say why it cannot run; status reads: " + (st.match(/Validation refused[^|]*/) || [st.slice(-160)])[0]);
     return fails;
   },
   async gosh(p, errors) {

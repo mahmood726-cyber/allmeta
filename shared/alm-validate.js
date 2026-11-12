@@ -223,6 +223,9 @@
       return busy(async () => {
         const a = adapter.live;
         if (!a) throw new Error('Live R validation unavailable for this adapter');
+        // webR must fetch its R packages and start a Web Worker; neither is allowed for a
+        // page opened from a local file, which otherwise showed only "Failed to fetch".
+        if (location.protocol === 'file:') throw new Error('live R cannot start from a page opened from a local file (file://): webR must download its R packages and start a Web Worker, which browsers block there. Open the hosted page, or serve this folder over http (for example python -m http.server) and open it from localhost.');
         const state = structuredClone(a.currentState());
         const app = a.appValues(state), comparison = structuredClone(a.compare);
         changed();
