@@ -37879,6 +37879,17 @@ function runAnalysis() {
 
 // =============================================================================
 
+// Numeric core of the Q-profile panel (computeQProfile): metafor confint(rma(yi, vi))$random for tau^2 and I^2,
+// with I^2 at the point estimate 100 tau2 / (tau2 + s^2), s^2 metafor's typical within-study variance. null when
+// the Q-profile is not defined (fewer than 2 studies, a non-finite effect, a variance <= 0).
+function qProfilePanelValues(effects, variances, tau2Point, alpha) {
+ const r = I2ConfidenceIntervals.qProfile(NaN, effects.length - 1, tau2Point, variances, alpha, effects);
+ if (!r || r.method !== 'Q-profile (Viechtbauer 2007)' || !Number.isFinite(r.vt)) return null;
+ const vt = r.vt;
+ return { tau2Lower: r.tau2_lower, tau2Upper: r.tau2_upper, typicalVar: vt,
+   i2Point: 100 * tau2Point / (tau2Point + vt), i2Lower: r.lower, i2Upper: r.upper };
+}
+
 function computeQProfile() {
 
  if (!APP.results || !APP.results.studies) {
@@ -37929,51 +37940,17 @@ function computeQProfile() {
 
 
 
- // Find tau^2 bounds using bisection
-
- function findTau2(targetQ, lower = 0, upper = 10, tol = 1e-8, maxIter = 100) {
-
- for (let i = 0; i < maxIter; i++) {
-
- const mid = (lower + upper) / 2;
-
- const qMid = computeQ(mid);
-
- if (Math.abs(qMid - targetQ) < tol) return mid;
-
- if (qMid > targetQ) lower = mid;
-
- else upper = mid;
-
- }
-
- return (lower + upper) / 2;
-
- }
-
-
-
- // Compute CI for tau^2
-
- const tau2Lower = computeQ(0) > chiLower ? findTau2(chiLower) : 0;
-
- const tau2Upper = findTau2(chiUpper, 0, 100);
-
+ // Q-profile bounds and I^2 (IPD-Follow fix): the bisection here searched the lower bound on [0, 10] and the
+ // upper on [0, 100] (dat.normand1999: [10, 100], metafor [292.9, 2889.5]) and converted to I^2 with
+ // s^2 = (k - 1) / (sum w - (sum w)^2 / sum w^2), which is not metafor's s^2 and is negative (I^2 bounds of
+ // 294.6%). Now the generalized-Q roots and metafor's s^2 of I2ConfidenceIntervals.qProfile (qProfilePanelValues).
  const tau2Point = APP.results.pooled.tau2 ?? 0;
-
-
-
- // Compute I^2 from tau^2 (I^2 = tau^2 / (tau^2 + typical variance))
-
- const typicalVar = (k - 1) / (variances.reduce((a, b) => a + 1/b, 0) -
-
-   Math.pow(variances.reduce((a, b) => a + 1/b, 0), 2) / variances.reduce((a, b) => a + 1/(b*b), 0));
-
- const i2Point = 100 * tau2Point / (tau2Point + typicalVar);
-
- const i2Lower = 100 * tau2Lower / (tau2Lower + typicalVar);
-
- const i2Upper = 100 * tau2Upper / (tau2Upper + typicalVar);
+ const qp = qProfilePanelValues(effects, variances, tau2Point, alpha);
+ if (!qp) {
+ showNotification('Q-profile CI needs at least 2 studies with finite effects and positive variances', 'warning');
+ return;
+ }
+ const { tau2Lower, tau2Upper, typicalVar, i2Point, i2Lower, i2Upper } = qp;
 
 
 
@@ -50292,6 +50269,8 @@ function runPatientClustering() {
  tau2_lower: tau2_lower,
 
  tau2_upper: tau2_upper,
+
+ vt: vt,
 
  method: "Q-profile (Viechtbauer 2007)"
 
@@ -86901,59 +86880,14 @@ function displayValidationResults(results) {
 
 
     _qProfileTau2CI: function(studies, tau2, alpha) {
-
-        const k = studies.length;
-
-        const chiLower = jStat.chisquare.inv(1 - alpha / 2, k - 1);
-
-        const chiUpper = jStat.chisquare.inv(alpha / 2, k - 1);
-
-
-
-        // Search for tau2 bounds using Q-profile
-
-        const findTau2 = (targetQ) => {
-
-            let low = 0, high = tau2 * 10 + 1;
-
-            for (let iter = 0; iter < 50; iter++) {
-
-                const mid = (low + high) / 2;
-
-                const w = studies.map(s => 1 / (s.vi + mid));
-
-                const sumW = w.reduce((a, b) => a + b, 0);
-
-                const est = studies.reduce((s, st, i) => s + w[i] * st.yi, 0) / sumW;
-
-                const Q = studies.reduce((s, st, i) => s + w[i] * Math.pow(st.yi - est, 2), 0);
-
-
-
-                if (Q > targetQ) low = mid;
-
-                else high = mid;
-
-
-
-                if (Math.abs(Q - targetQ) < 0.001) break;
-
-            }
-
-            return (low + high) / 2;
-
-        };
-
-
-
-        return {
-
-            lower: Math.max(0, findTau2(chiLower)),
-
-            upper: findTau2(chiUpper)
-
-        };
-
+        // IPD-Follow fix: was its own bisection on [0, 10 tau2 + 1] that stopped at |Q - target| < 0.001
+        // (dat.normand1999 upper 2942.3, metafor 2889.5; a homogeneous set gave 4.4e-16, metafor 0). Now the
+        // generalized-Q roots on metafor's search range (I2ConfidenceIntervals.qProfile, as confint.rma.uni);
+        // NaN bounds where the Q-profile is not defined.
+        const yi = studies.map(s => Number(s.yi)), vi = studies.map(s => Number(s.vi));
+        const r = I2ConfidenceIntervals.qProfile(NaN, studies.length - 1, tau2, vi, alpha, yi);
+        if (!r || r.method !== 'Q-profile (Viechtbauer 2007)') return { lower: NaN, upper: NaN };
+        return { lower: r.tau2_lower, upper: r.tau2_upper };
     },
 
 
