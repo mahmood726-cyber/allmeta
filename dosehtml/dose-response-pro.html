@@ -2948,73 +2948,131 @@ function solveGLSWithTau2(X, y, V_blocks, tau2) {
   return { beta, se, WRSS, detV, varMatrix };
 }
 
-/**
- * Estimate between-study variance (tau²) using TRUE REML
- * Iterative optimization using Fisher scoring algorithm
- *
- * Reference: van Houwelingen, H. C., Arends, L. R., & Stijnen, T. (2002).
- * Advanced methods in meta-analysis: multivariate approach and meta-regression.
- * Statistics in Medicine, 21(4), 589-624.
- *
- * Also: Viechtbauer, W. (2005). Estimating the mean of a normal distribution
- * with known precision. In R Newsletter, 5(1), 11-13.
- *
- * @param {Array} X - Design matrix
- * @param {Array} y - Outcome vector
- * @param {Array} V_blocks - Array of covariance blocks {V, n, studyId}
- * @param {number} maxIter - Maximum iterations (default: 100)
- * @param {number} tol - Convergence tolerance (default: 1e-8)
- * @returns {Object} - {tau2, converged, iterations, logLik}
- */
-function estimateTau2REML(X, y, V_blocks, maxIter = 100, tol = 1e-8) {
-  const n = y.length;
+// Exact restricted-likelihood pieces for y ~ N(X beta, V + tau2 I), V block diagonal (one block per
+// study). With W = (V + tau2 I)^-1, A = X'WX, B2 = X'W^2X, B3 = X'W^3X, r = y - X beta_GLS:
+//   P y = W r,  tr(P) = tr(W) - tr(A^-1 B2),  tr(P^2) = tr(W^2) - 2 tr(A^-1 B3) + tr((A^-1 B2)^2),
+//   REML score = (|W r|^2 - tr(P)) / 2,  restricted log-likelihood = -(log|V+tau2 I| + log|A| + r'Wr) / 2.
+// Returns null when a block is not positive definite or A is singular.
+function tau2BlockPieces(X, y, V_blocks, tau2) {
   const p = X[0].length;
-  const K = V_blocks.length;  // Number of studies
-
-  // Start with DL estimator as initial value
-  let tau2 = estimateTau2DL(X, y, V_blocks);
-
-  let prevLogLik = -Infinity;
-  let converged = false;
-  let iter;
-
-  // REML iteration using Fisher scoring
-  for (iter = 0; iter < maxIter; iter++) {
-    // Get current estimates with this tau2
-    const result = solveGLSWithTau2(X, y, V_blocks, tau2);
-
-    // Calculate log-likelihood (REML)
-    const logLik = computeREMLLogLik(y, X, result.beta, V_blocks, tau2, p);
-
-    // Check convergence
-    if (Math.abs(logLik - prevLogLik) < tol) {
-      converged = true;
-      break;
+  const A = Array.from({ length: p }, () => new Array(p).fill(0));
+  const B2 = Array.from({ length: p }, () => new Array(p).fill(0));
+  const B3 = Array.from({ length: p }, () => new Array(p).fill(0));
+  const b = new Array(p).fill(0);
+  const parts = [];
+  let logdet = 0, trW = 0, trW2 = 0, row = 0;
+  for (const block of V_blocks) {
+    const n = block.n;
+    // Cholesky of S = V + tau2 I, then W = S^-1 by solving against the identity.
+    const L = new Array(n * n).fill(0);
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j <= i; j++) {
+        let s = block.V[i * n + j] + (i === j ? tau2 : 0);
+        for (let k = 0; k < j; k++) s -= L[i * n + k] * L[j * n + k];
+        if (i === j) { if (!(s > 0)) return null; L[i * n + i] = Math.sqrt(s); }
+        else L[i * n + j] = s / L[j * n + j];
+      }
+      logdet += 2 * Math.log(L[i * n + i]);
     }
-
-    prevLogLik = logLik;
-
-    // Fisher scoring update
-    // Calculate score (derivative of log-likelihood w.r.t. tau2)
-    const score = computeREMLScore(y, X, result.beta, V_blocks, tau2);
-
-    // Calculate Fisher information
-    const fisherInfo = computeREMLFisherInfo(X, V_blocks, tau2);
-
-    // Update tau2
-    const step = score / Math.max(fisherInfo, NUMERICAL_TOLERANCE);
-    tau2 += step;
-
-    // Ensure tau2 stays non-negative
-    if (tau2 < 0) tau2 = 0;
+    const W = new Array(n * n).fill(0);
+    for (let c = 0; c < n; c++) {
+      const z = new Array(n).fill(0);
+      for (let i = 0; i < n; i++) { let s = i === c ? 1 : 0; for (let k = 0; k < i; k++) s -= L[i * n + k] * z[k]; z[i] = s / L[i * n + i]; }
+      for (let i = n - 1; i >= 0; i--) { let s = z[i]; for (let k = i + 1; k < n; k++) s -= L[k * n + i] * W[k * n + c]; W[i * n + c] = s / L[i * n + i]; }
+    }
+    const Xi = X.slice(row, row + n), yi = y.slice(row, row + n);
+    const W2 = new Array(n * n).fill(0);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { let s = 0; for (let k = 0; k < n; k++) s += W[i * n + k] * W[k * n + j]; W2[i * n + j] = s; }
+    const W3 = new Array(n * n).fill(0);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { let s = 0; for (let k = 0; k < n; k++) s += W2[i * n + k] * W[k * n + j]; W3[i * n + j] = s; }
+    for (let i = 0; i < n; i++) { trW += W[i * n + i]; trW2 += W2[i * n + i]; }
+    for (let a = 0; a < p; a++) {
+      for (let c = 0; c < p; c++) {
+        let s1 = 0, s2 = 0, s3 = 0;
+        for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+          const xx = Xi[i][a] * Xi[j][c];
+          s1 += xx * W[i * n + j]; s2 += xx * W2[i * n + j]; s3 += xx * W3[i * n + j];
+        }
+        A[a][c] += s1; B2[a][c] += s2; B3[a][c] += s3;
+      }
+      let sb = 0;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) sb += Xi[i][a] * W[i * n + j] * yi[j];
+      b[a] += sb;
+    }
+    parts.push({ n, W, Xi, yi });
+    row += n;
   }
+  // A^-1 by Gauss-Jordan with partial pivoting; log|A| from the pivots.
+  const M = A.map((r, i) => r.concat(Array.from({ length: p }, (_, j) => (i === j ? 1 : 0))));
+  let logdetA = 0;
+  for (let c = 0; c < p; c++) {
+    let piv = c;
+    for (let r = c + 1; r < p; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+    if (!(Math.abs(M[piv][c]) > 0)) return null;
+    if (piv !== c) { const t = M[piv]; M[piv] = M[c]; M[c] = t; }
+    const d = M[c][c]; logdetA += Math.log(Math.abs(d));
+    for (let j = 0; j < 2 * p; j++) M[c][j] /= d;
+    for (let r = 0; r < p; r++) if (r !== c) { const f = M[r][c]; if (f !== 0) for (let j = 0; j < 2 * p; j++) M[r][j] -= f * M[c][j]; }
+  }
+  const Ai = M.map(r => r.slice(p));
+  const beta = Ai.map(r => r.reduce((s, v, j) => s + v * b[j], 0));
+  let rWr = 0, uu = 0;
+  for (const pt of parts) {
+    const n = pt.n, r = pt.yi.map((v, i) => v - pt.Xi[i].reduce((s, x, j) => s + x * beta[j], 0));
+    for (let i = 0; i < n; i++) { let u = 0; for (let j = 0; j < n; j++) u += pt.W[i * n + j] * r[j]; uu += u * u; rWr += r[i] * u; }
+  }
+  const AiB2 = Ai.map(r => B2[0].map((_, j) => r.reduce((s, v, k) => s + v * B2[k][j], 0)));
+  let trAiB2 = 0, trAiB3 = 0, trSq = 0;
+  for (let a = 0; a < p; a++) {
+    trAiB2 += AiB2[a][a];
+    for (let k = 0; k < p; k++) { trAiB3 += Ai[a][k] * B3[k][a]; trSq += AiB2[a][k] * AiB2[k][a]; }
+  }
+  const trP = trW - trAiB2;
+  return { beta, Q: rWr, trP, trPP: trW2 - 2 * trAiB3 + trSq, score: 0.5 * (uu - trP), rll: -0.5 * (logdet + logdetA + rWr) };
+}
 
-  return {
-    tau2: tau2,
-    converged: converged,
-    iterations: iter + 1,
-    logLik: prevLogLik
-  };
+/**
+ * REML tau² for y ~ N(X beta, V + tau² I) with block-diagonal V (Harville 1977; the metafor
+ * rma.uni REML criterion when every block is 1x1). The estimate is the maximiser of the exact
+ * restricted log-likelihood over tau² >= 0: roots of the exact score are located by a sign scan
+ * on a log grid scaled to the data, bisected to floating-point resolution (a relative rule that is
+ * invariant to rescaling y and V), and compared with the boundary tau² = 0 by restricted
+ * log-likelihood. Replaces a Fisher-scoring loop whose score omitted the REML correction term (it
+ * converged to the ML estimate) and which stopped on an absolute change in the log-likelihood.
+ */
+function estimateTau2REML(X, y, V_blocks) {
+  const p = X[0].length, nObs = y.length;
+  if (V_blocks.length <= 1 || nObs <= p) return { tau2: 0, converged: true, iterations: 0, logLik: null };
+  const at = t => tau2BlockPieces(X, y, V_blocks, t);
+  let scale = 0, cnt = 0;
+  for (const block of V_blocks) for (let i = 0; i < block.n; i++) { const v = block.V[i * block.n + i]; if (v > 0 && Number.isFinite(v)) { scale += v; cnt++; } }
+  scale = cnt ? scale / cnt : 1;
+  const base = at(0);
+  if (!base) return { tau2: 0, converged: false, iterations: 0, logLik: null };
+  let best = { t: 0, rll: base.rll }, evals = 1;
+  // Grid 1e-10 .. 1e10 times the mean sampling variance, 8 points per decade; extended upward
+  // while the score is still positive at the top.
+  let prevT = 0, prev = base, hiEnd = scale * 1e10;
+  for (let e = -80; ; e++) {
+    const t = scale * Math.pow(10, e / 8);
+    if (t > hiEnd) { if (prev.score > 0 && hiEnd < scale * 1e100) hiEnd *= 1e10; else break; }
+    const cur = at(t); evals++;
+    if (!cur) break;
+    if (prev.score > 0 && cur.score <= 0) {
+      let lo = prevT, hi = t;
+      for (let i = 0; i < 2300; i++) {
+        const m = 0.5 * (lo + hi);
+        if (m <= lo || m >= hi) break;
+        const pm = at(m); evals++;
+        if (!pm) break;
+        if (pm.score > 0) lo = m; else hi = m;
+      }
+      const r = 0.5 * (lo + hi), pr = at(r);
+      if (pr && pr.rll > best.rll) best = { t: r, rll: pr.rll };
+    }
+    prevT = t; prev = cur;
+  }
+  return { tau2: best.t, converged: true, iterations: evals, logLik: best.rll - 0.5 * (nObs - p) * Math.log(2 * Math.PI) };
 }
 
 /**
@@ -3259,70 +3317,15 @@ let useREML = false;  // Use DL for tau2 estimation (simpler, more stable)
  * @returns {number} - Estimated tau²
  */
 function estimateTau2DL(X, y, V_blocks) {
-  const p = X[0].length;
-  const K = V_blocks.length;
-
-  if (K <= 1) return 0;
-
-  // Fixed-effect estimate (tau2 = 0)
-  const feResult = solveGLSWithTau2(X, y, V_blocks, 0);
-  const Q = computeQStat(y, X, feResult.beta, V_blocks, 0);
-
-  // V12-02: Multivariate DL τ² (Jackson-Riley-White, Stat Med 2010;29:1282-1297):
-  //   τ² = max(0, (Q − df) / trace(P))
-  // where P = V⁻¹ − V⁻¹ X (X'V⁻¹X)⁻¹ X' V⁻¹, computed in inverse-variance metric.
-  // Previous implementation mixed scales: used Σ v_ii (variance-scale sum) as
-  // the denominator instead of trace(P) (weight-scale sum), so τ² was
-  // systematically wrong when REML didn't converge.
-  // For univariate effects (p=1, n_block=1), fall back to the standard
-  // Cochran/DL form `denom = ΣW − ΣW²/ΣW` with W_i = 1/v_i.
-  // Residual df of the one-stage FE-GLS fit is nPoints − p (coincides with
-  // (K−1)·p only when every study has exactly p points).
-  const nPoints = y.length;
-  const df = Math.max(nPoints - p, 0);
-
-  let denominator = 0;
-  // Univariate fast path (each block is 1×1).
-  const allUni = V_blocks.every(b => b.n === 1) && p === 1;
-  if (allUni) {
-    let sumW = 0, sumW2 = 0;
-    for (const block of V_blocks) {
-      const v = block.V[0];
-      if (v > 0) {
-        const w = 1 / v;
-        sumW += w;
-        sumW2 += w * w;
-      }
-    }
-    denominator = sumW > 0 ? (sumW - sumW2 / sumW) : 0;
-  } else {
-    // Multivariate: compute trace(V⁻¹) − trace(V⁻¹ X (X'V⁻¹X)⁻¹ X' V⁻¹).
-    // V_blocks are independent, so V⁻¹ is block-diagonal. trace(V⁻¹) = Σ trace(V_i⁻¹).
-    // For the second term we need the full GLS inverse already computed inside
-    // solveGLSWithTau2 — read it back via feResult.XtViX_inv if exposed,
-    // otherwise approximate as df-scaled (a conservative lower bound).
-    let traceVinv = 0;
-    for (const block of V_blocks) {
-      const n = block.n;
-      // For n=1: V⁻¹ = 1/v.
-      if (n === 1) { if (block.V[0] > 0) traceVinv += 1 / block.V[0]; continue; }
-      // For larger n, compute matrix inverse trace via diagonal of inverse.
-      // Simplification: use 1/diagonal as an upper bound on trace(V⁻¹).
-      for (let i = 0; i < n; i++) {
-        const vii = block.V[i * n + i];
-        if (vii > 0) traceVinv += 1 / vii;
-      }
-    }
-    // Approximate denominator: trace(V⁻¹) − df. Documented as approximation
-    // pending exposure of XtViX_inv from solveGLSWithTau2.
-    denominator = traceVinv - df;
-  }
-
-  if (!Number.isFinite(Q) || !Number.isFinite(denominator) || denominator <= 0) {
-    return 0;
-  }
-
-  return Math.max(0, (Q - df) / denominator);
+  // Method-of-moments (DerSimonian-Laird) tau² for y ~ N(X beta, V + tau² I): (Q_E - (n - p)) / tr(P),
+  // with Q_E and P = W - WX(X'WX)^-1 X'W evaluated at tau² = 0 (metafor rma.uni method="DL" for 1x1
+  // blocks; the same moment equation with correlated within-study blocks). Replaces an approximate denominator
+  // tr(V^-1) - df, which was used whenever the design had more than one column (every dose model).
+  const p = X[0].length, nObs = y.length;
+  if (V_blocks.length <= 1 || nObs <= p) return 0;
+  const f = tau2BlockPieces(X, y, V_blocks, 0);
+  if (!f || !Number.isFinite(f.Q) || !(f.trP > 0)) return 0;
+  return Math.max(0, (f.Q - (nObs - p)) / f.trP);
 }
 
 /**

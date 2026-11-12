@@ -1,5 +1,5 @@
-// Report-only audit; do not repair other apps here. Four expected failures (cases with `broken`) have
-// source-level proofs in SWEEP.md and executable proofs in hero-sweep.test.cjs.
+// Every attached hero example must survive its page's real parser. A case may carry `broken`
+// (an expected failure) only with a source-level proof; the list is empty since lane tryex.
 import {test, expect} from '@playwright/test';
 import sweep from './hero-sweep-contract.cjs';
 const {cases, contract} = sweep;
