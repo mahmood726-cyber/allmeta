@@ -816,32 +816,20 @@ class IPDMetaAnalysis {
     }
 
     _remlPooling(effects, variances) {
-        const k = effects.length;
-
-        // DerSimonian-Laird for initial tau2
-        const weights = variances.map(v => 1 / v);
-        const sumW = weights.reduce((a, b) => a + b, 0);
-        const muFE = effects.reduce((sum, yi, i) => sum + weights[i] * yi, 0) / sumW;
-
-        const Q = effects.reduce((sum, yi, i) => sum + weights[i] * (yi - muFE) ** 2, 0);
-        const c = sumW - weights.reduce((sum, w) => sum + w * w, 0) / sumW;
-        let tau2 = Math.max(0, (Q - (k - 1)) / c);
-
-        // REML refinement
-        for (let iter = 0; iter < 20; iter++) {
-            const wStar = variances.map(v => 1 / (v + tau2));
-            const sumWStar = wStar.reduce((a, b) => a + b, 0);
-            const muRE = effects.reduce((sum, yi, i) => sum + wStar[i] * yi, 0) / sumWStar;
-
-            // REML update
-            const QStar = effects.reduce((sum, yi, i) => sum + wStar[i] * (yi - muRE) ** 2, 0);
-            const sumW2 = wStar.reduce((sum, w) => sum + w * w, 0);
-            const newTau2 = (QStar - (k - 1) + sumW2 * tau2 / sumWStar) /
-                           (sumWStar - sumW2 / sumWStar);
-
-            if (Math.abs(newTau2 - tau2) < 1e-8) break;
-            tau2 = Math.max(0, newTau2);
+        // REML tau^2 from AllMeta's audited shared core (shared/ma-core.js, loaded by index.html
+        // before this file). The former local update, (Q* - (k-1) + tau2*sum(w^2)/sum(w)) /
+        // (sum(w) - sum(w^2)/sum(w)), is not a REML estimating equation: on dat.bcg it returned
+        // 0.179 against metafor's REML 0.313 while reporting a REML pooled estimate.
+        const core = typeof globalThis !== 'undefined' && globalThis.AlmMaCore
+            ? globalThis.AlmMaCore
+            : (typeof module !== 'undefined' && module.exports ? require('../../../shared/ma-core.js') : null);
+        if (!core || typeof core.tau2REML !== 'function') {
+            throw new Error('The shared REML engine is unavailable. Reload the application.');
         }
+        // Non-finite study estimates (e.g. a zero cell in the binary branch) keep the previous
+        // behaviour of propagating NaN instead of throwing from inside the panel.
+        const finite = effects.every(Number.isFinite) && variances.every(v => Number.isFinite(v) && v > 0);
+        const tau2 = finite ? core.tau2REML(effects, variances) : NaN;
 
         const wFinal = variances.map(v => 1 / (v + tau2));
         const sumWFinal = wFinal.reduce((a, b) => a + b, 0);

@@ -1063,7 +1063,9 @@
       AlmHero.attachHero({
         container: "#alm-hero-mount",
         textarea: "#f-data",
-        adapter: "forest",
+        // parseStudies needs "label, estimate, SE, moderator"; the 3-column forest layout
+        // was refused line by line ("need 4 columns", k = 0). Adapter only: no engine change.
+        adapter: "meta-regression",
       });
     }
   });

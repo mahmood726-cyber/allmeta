@@ -7,9 +7,9 @@ const H = require('../../../shared/hero-examples.js');
 // Parser citations and precise static proofs are in the lane's SWEEP.md.
 const cases = [
   {app:'bayesian-ma', result:'#svg-host svg', kind:'effect'},
-  {app:'bma-tau-priors', result:'#per-model tr', run:true, kind:'variance', broken:'Parser reads variance; BMA adapter emits SE.'},
+  {app:'bma-tau-priors', result:'#per-model tr', run:true, kind:'variance'},
   {app:'copas', result:'#body tr', run:true, kind:'effect', deps:['CC', 'num']},
-  {app:'cross-design', result:'#results tbody tr', run:true, kind:'variance', broken:'Parser reads variance; cross-design adapter emits SE.'},
+  {app:'cross-design', result:'#results tbody tr', run:true, kind:'variance'},
   {app:'cross-network', result:'#results tbody tr', run:true, kind:'network'},
   {app:'cumulative-subgroup', result:'#svg-host svg', kind:'effect'},
   {app:'forest-plot', result:'#svg-host svg', kind:'effect'},
@@ -18,16 +18,16 @@ const cases = [
   {app:'heterogeneity', result:'#svg-host svg', kind:'effect'},
   {app:'influence', result:'#body tr', run:true, kind:'effect', deps:['NUM'], se:'full'},
   {app:'limit-ma', result:'#body tr', kind:'effect'},
-  {app:'meta-regression', result:'#svg-host svg', run:true, kind:'effect', broken:'Parser requires four columns including moderator; forest emits three.'},
+  {app:'meta-regression', result:'#svg-host svg', run:true, kind:'moderator'},
   {app:'personalised-te', result:'#subgroups tbody tr', run:true, kind:'personalised'},
-  {app:'pet-peese', result:'#res-body tr', run:true, kind:'effect', broken:'Parser reads effect first; forest emits label first.'},
+  {app:'pet-peese', result:'#res-body tr', run:true, kind:'effect'},
   {app:'pubbias-tests', result:'#body tr', run:true, kind:'effect', deps:['parseLines'], se:'full'},
   {app:'rare-events-glmm', result:'#compare tbody tr', run:true, kind:'glmm'},
   {app:'sequential-ma', result:'#plot-host circle', run:true, kind:'sequential'},
   {app:'tsa', result:'#svg-host svg', kind:'effect'},
 ];
-const writers = { forest:'toForestPlotText', bma:'toForestPlotText', 'effect-se-label':'toEffectSeLabelText',
-  'cross-design':'toCrossDesignText', 'cross-network':'toCrossNetworkText', personalised:'toPersonalisedTeText',
+const writers = { forest:'toForestPlotText', bma:'toLabelEffectVarianceText', 'effect-se-label':'toEffectSeLabelText',
+  'cross-design':'toCrossDesignText', 'meta-regression':'toMetaRegressionText', 'cross-network':'toCrossNetworkText', personalised:'toPersonalisedTeText',
   glmm:'toGlmmTextarea', sequential:'toSequentialMaText' };
 // Page-scope declarations a parser calls, extracted verbatim by name: a function by its
 // declaration indentation, or a one-line var/const/let. Parsers that acquired such helpers
@@ -83,6 +83,10 @@ function contract(c, suppliedText) {
     // SE exactly as the page writes it: the shared adapters round to 4 dp; influence and
     // pubbias-tests rewrite it at full precision in onAfterLoad.
     expected = dataset.effect_se.map(r => [r.yi, c.se === 'full' ? Math.sqrt(r.vi) : Number(Math.sqrt(r.vi).toFixed(4))]);
+  } else if (c.kind === 'moderator') {
+    // meta-regression reads "label, estimate, SE, moderator"; BCG's moderator is latitude.
+    actual = rows.map(r => [r.est, r.se, r.x]);
+    expected = dataset.effect_se.map(r => [r.yi, Number(Math.sqrt(r.vi).toFixed(4)), r.latitude]);
   } else if (c.kind === 'variance') {
     actual = rows.map(r => [r.yi, r.vi]); expected = dataset.effect_se.map(r => [r.yi, r.vi]);
   } else if (c.kind === 'network') {

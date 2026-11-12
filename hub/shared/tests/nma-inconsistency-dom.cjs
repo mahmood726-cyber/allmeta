@@ -2,9 +2,30 @@
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
 const {parseHTML} = require('linkedom');
 const root = path.resolve(__dirname, '../../..');
+// linkedom 0.18.12 differs from a browser's HTML parser in two ways that the
+// browser-pinned contract (0110cb53) sees: it ignores "/>" on SVG elements set via
+// innerHTML (so following siblings nest inside <line/>), and it splits text around
+// entities ("|z| &gt; 1.96" -> three text nodes). Browsers honour self-closing tags
+// in SVG (foreign content) and produce one text node. Reproduce that here; page
+// code and computed values are untouched.
+let svgPatched = false;
+function patchSvgInnerHTML(window) {
+  if (svgPatched) return;
+  let proto = Object.getPrototypeOf(window.document.createElementNS('http://www.w3.org/2000/svg', 'svg'));
+  while (proto && !Object.getOwnPropertyDescriptor(proto, 'innerHTML')) proto = Object.getPrototypeOf(proto);
+  const d = Object.getOwnPropertyDescriptor(proto, 'innerHTML');
+  Object.defineProperty(proto, 'innerHTML', {configurable: true, enumerable: d.enumerable, get: d.get,
+    set(v) {
+      const inSvg = this.localName === 'svg' || !!this.closest?.('svg');
+      d.set.call(this, inSvg ? String(v).replace(/<([A-Za-z][\w:-]*)((?:[^<>"']|"[^"]*"|'[^']*')*?)\s*\/>/g, '<$1$2></$1>') : v);
+    }});
+  svgPatched = true;
+}
 function harness({adapter = true, live = false, transformPlus = code => code} = {}) {
   const html = fs.readFileSync(path.join(root, 'nma-inconsistency/index.html'), 'utf8');
   const {document, window} = parseHTML(html);
+  document.documentElement.normalize();
+  patchSvgInnerHTML(window);
   const storage = new Map(), downloads = [];
   // linkedom does not implement the select value setter or browser disabled properties.
   for (const el of document.querySelectorAll('select')) Object.defineProperty(el, 'value', {
