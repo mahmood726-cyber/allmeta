@@ -93,7 +93,6 @@ S8, B, C, NA, NA, -0.16, 0.14</textarea>
       </table>
     </section>
   
-      <div id="alm-flow-mount" aria-live="polite"></div>
 <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 </main>
   <footer>
@@ -209,22 +208,9 @@ S8, B, C, NA, NA, -0.16, 0.14</textarea>
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["nma-pro-v2", "nma-inconsistency", "multi-outcome-ma", "cross-network"],
-      });
-    }
-  });
-})();
-</script>
+<!-- No "Continue with" bar: this page's contrast-level two-outcome network cannot be written to
+     ma-studies-v1 (pairwise rows) or ma-comparisons-v1 (arm-level data), so the links handed over nothing and
+     opened the targets on an earlier session's bus (as nma-meta-reg, PR #531). -->
 
 <script>
 (function () {

@@ -98,7 +98,6 @@ Trial 8, 1, 210, 3, 215</textarea>
       </table>
     </section>
   
-      <div id="alm-flow-mount" aria-live="polite"></div>
 </main>
   <footer>
     Engine: <code>shared/rare-events-glmm.js</code>. Experimental browser approximations; use <code>metafor::rma.glmm</code> in R for the named reference models.
@@ -252,22 +251,9 @@ Trial 8, 1, 210, 3, 215</textarea>
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["forest-plot", "heterogeneity", "bma-tau-priors"],
-      });
-    }
-  });
-})();
-</script>
+<!-- No "Continue with" bar: this page's 2x2 counts are fitted without continuity correction; writing
+     them to ma-studies-v1 (est, se) would need the 0.5 correction the page exists to avoid, so the links handed over nothing and
+     opened the targets on an earlier session's bus (as nma-meta-reg, PR #531). -->
 
 <script>
 (function () {

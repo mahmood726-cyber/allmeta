@@ -89,7 +89,6 @@
       <table id="looks"><thead><tr><th>t</th><th>z</th><th>α spent</th><th>α boundary</th><th>Futility</th><th>Decision</th></tr></thead><tbody></tbody></table>
       <div class="plot"><svg id="plot-host" viewBox="0 0 720 340" width="100%" role="img" aria-label="α-boundary plot"></svg></div>
     
-      <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
   <footer>
@@ -204,22 +203,9 @@
 <script src="../hub/shared/results-export.js"></script>
 <script src="../hub/shared/chart-export-auto.js"></script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["tsa", "cumulative-subgroup", "forest-plot"],
-      });
-    }
-  });
-})();
-</script>
+<!-- No "Continue with" bar: this page's input is cumulative looks (t, z or y_cum, se_cum, n_cum), not
+     study rows, so nothing can be written to ma-studies-v1, so the links handed over nothing and
+     opened the targets on an earlier session's bus (as nma-meta-reg, PR #531). -->
 
 <script>
 (function () {

@@ -83,7 +83,6 @@ S2, biomarker+, -0.70, 0.028</textarea>
       <h2 style="margin-top:1rem">Personalised prediction</h2>
       <div class="pred-box" id="pred"></div>
     
-      <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
   <footer>
@@ -147,22 +146,9 @@ S2, biomarker+, -0.70, 0.028</textarea>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/results-export.js"></script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["forest-plot", "rve-meta", "everything-model", "cross-design"],
-      });
-    }
-  });
-})();
-</script>
+<!-- No "Continue with" bar: this page's subgroup-specific effects (several per study) are dependent
+     rows that ma-studies-v1 (one independent row per study) cannot carry, so the links handed over nothing and
+     opened the targets on an earlier session's bus (as nma-meta-reg, PR #531). -->
 
 <script>
 (function () {
