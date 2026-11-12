@@ -15,6 +15,10 @@
  * Pure + dual-mode (node-testable). Browser global: window.AlmUmbrellaOverlap.
  *
  * Input: reviews [{label, study_ids:[...]}]  (study ids: any stable token).
+ * parseReviews(text) reads the page's text format, one review per line:
+ * "Review label: id, id, ...". When commas or semicolons separate the ids,
+ * spaces inside an id are kept ("Smith 2010" is one study); a list with no
+ * comma or semicolon is split on whitespace. Lines starting with # are skipped.
  */
 (function (global) {
   "use strict";
@@ -66,7 +70,21 @@
     };
   }
 
-  var api = { overlap: overlap, classifyGroove: classifyGroove };
+  function parseReviews(text) {
+    var out = [];
+    String(text || "").split(/\r?\n/).forEach(function (ln) {
+      ln = ln.trim(); if (!ln || ln[0] === "#") return;
+      var idx = ln.indexOf(":");
+      var label = idx >= 0 ? ln.slice(0, idx).trim() : "";
+      var rest = idx >= 0 ? ln.slice(idx + 1) : ln;
+      var ids = rest.split(/[,;]/.test(rest) ? /[,;]/ : /\s+/)
+        .map(function (s) { return s.replace(/\s+/g, " ").trim(); }).filter(Boolean);
+      if (ids.length) out.push({ label: label, study_ids: ids });
+    });
+    return out;
+  }
+
+  var api = { overlap: overlap, classifyGroove: classifyGroove, parseReviews: parseReviews };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmUmbrellaOverlap = api;
 })(typeof window !== "undefined" ? window : globalThis);

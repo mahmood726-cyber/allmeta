@@ -61,3 +61,29 @@ def test_pairwise_matrix_and_most_shared():
 def test_fails_closed_under_two_reviews():
     o = _run("console.log(JSON.stringify({ok:U.overlap([{study_ids:['a']}]).ok}));")
     assert o["ok"] is False
+
+
+# Paper 34 (F1000 pack) had to disclose that the page split every identifier
+# on spaces, so "Smith 2010" became two studies. The documented input is
+# "Review label: studyId, studyId, ..."; when commas or semicolons separate the
+# ids, spaces inside an id are kept (whitespace-only lists still split on spaces).
+def test_parse_keeps_spaces_inside_comma_separated_ids():
+    o = _run(
+        r"const p=U.parseReviews('R1: Smith 2010, Jones 2011;  Lee 2012 \nR2: Smith 2010; Wu 2013\n# note\nR3: 101 102 103');"
+        "console.log(JSON.stringify(p));"
+    )
+    assert o == [
+        {"label": "R1", "study_ids": ["Smith 2010", "Jones 2011", "Lee 2012"]},
+        {"label": "R2", "study_ids": ["Smith 2010", "Wu 2013"]},
+        {"label": "R3", "study_ids": ["101", "102", "103"]},
+    ]
+    r = _run(r"const r=U.overlap(U.parseReviews('R1: Smith 2010, Jones 2011\nR2: Smith 2010, Wu 2013'));"
+             "console.log(JSON.stringify({N:r.nTotal,r:r.nUnique,shared:r.mostShared}));")
+    # Smith 2010 is ONE study cited by both reviews: N=4, r=3, CCA=(4-3)/(3*2-3)
+    assert r == {"N": 4, "r": 3, "shared": ["Smith 2010"]}
+
+
+def test_page_uses_shared_parser():
+    html = (ROOT / "umbrella-overlap" / "index.html").read_text(encoding="utf-8")
+    assert "AlmUmbrellaOverlap.parseReviews" in html
+    assert r"split(/[,;\s]+/)" not in html
