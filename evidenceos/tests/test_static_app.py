@@ -33,3 +33,18 @@ def test_dashboard_has_update_gate_and_receipt_surface():
     assert "Static vs dynamic disclosure" in html
     assert "Trial view" in html
     assert "Publication view" in html
+
+
+def test_report_script_copy_matches_report_json():
+    """file:// cannot fetch() report.json; app.js reads data/report-data.js there instead.
+
+    The copy is written by scripts/build_report.py and must equal the JSON report.
+    """
+    import json
+
+    copy = APP_DIR / "data" / "report-data.js"
+    text = copy.read_text(encoding="utf-8")
+    prefix = "window.EVIDENCEOS_REPORT = "
+    body = text[text.index(prefix) + len(prefix):].rstrip().rstrip(";")
+    assert json.loads(body) == json.loads(REPORT.read_text(encoding="utf-8"))
+    assert 'location.protocol === "file:"' in APP_JS.read_text(encoding="utf-8")

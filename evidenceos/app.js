@@ -187,12 +187,30 @@ function attachControls() {
   });
 }
 
+// A page opened from a local copy (file://) cannot fetch() data/report.json, so the
+// dashboard read "Report load failed". data/report-data.js is the same report as a
+// classic script (written by scripts/build_report.py; tests/test_static_app.py pins it).
+function loadReportScript() {
+  return new Promise((resolve, reject) => {
+    if (window.EVIDENCEOS_REPORT) { resolve(window.EVIDENCEOS_REPORT); return; }
+    const s = document.createElement("script");
+    s.src = "./data/report-data.js";
+    s.onload = () => (window.EVIDENCEOS_REPORT ? resolve(window.EVIDENCEOS_REPORT) : reject(new Error("report-data.js defined no report")));
+    s.onerror = () => reject(new Error("Unable to load data/report-data.js"));
+    document.head.appendChild(s);
+  });
+}
+
 async function loadReport() {
-  const response = await fetch("./data/report.json", { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`Unable to load report: ${response.status}`);
+  if (location.protocol === "file:") {
+    state.report = JSON.parse(JSON.stringify(await loadReportScript()));
+  } else {
+    const response = await fetch("./data/report.json", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`Unable to load report: ${response.status}`);
+    }
+    state.report = await response.json();
   }
-  state.report = await response.json();
   if (state.report.schema !== "evidenceos.report.v0.1") {
     throw new Error(`Unsupported report schema: ${state.report.schema}`);
   }
