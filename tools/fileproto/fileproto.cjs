@@ -48,6 +48,23 @@ const SRI_PAGES = ["HTA/index.html", "nma-dose-response-app/index.html", "nma-pr
 
 const CHECKS = {
   ...Object.fromEntries(SRI_PAGES.map((page) => [page, vendorLibraries])),
+  async "rct-extractor"(p) {
+    // The page advertises a browser-native extractor that works offline on pasted text.
+    const fails = [];
+    await p.fill("#text", "Overall survival was improved (hazard ratio 0.72, 95% CI 0.61 to 0.85; P<0.001).");
+    await p.check("#use-native").catch(() => {});
+    await p.click("#btn-run");
+    await p.waitForTimeout(4000);
+    const rows = await p.locator("#res-body").innerText();
+    if (!/0\.72/.test(rows)) fails.push("native extraction of pasted text produced no HR 0.72; results read: " + rows.slice(0, 160));
+    // A PDF cannot be read from file:// (module scripts are blocked): say so, not fail silently.
+    await p.setInputFiles("#pdf", { name: "x.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n%%EOF\n") });
+    await p.click("#btn-run");
+    await p.waitForTimeout(3000);
+    const pdfRows = await p.locator("#res-body").innerText();
+    if (!/file:\/\//.test(pdfRows)) fails.push("choosing a PDF on file:// does not explain why it cannot be read; results read: " + pdfRows.slice(0, 160));
+    return fails;
+  },
   async evidenceos(p) {
     await p.waitForTimeout(1500);
     const verdict = (await p.locator("#verdict").innerText()).trim();
