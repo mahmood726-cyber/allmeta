@@ -75,8 +75,7 @@
   // for a < 0.5 on the series side Q is computed directly, since there it can be tiny).
   // A series or fraction that fails to converge returns NaN rather than an unconverged value.
   function gammaPQ(a, x) {
-    if (!(a >= 0) || isNaN(x)) return [NaN, NaN];
-    if (a === 0) return x <= 0 ? [0, 1] : [1, 0];   // R: shape 0 is a point mass at 0
+    if (!(a > 0) || isNaN(x)) return [NaN, NaN];
     if (x <= 0) return [0, 1];
     if (x === Infinity) return [1, 0];
     var lpre = logPrefactor(a, x), lim = maxIter(a), ok = false;
@@ -153,7 +152,10 @@
 
   function pgammaUpper(x, shape) { return gammaPQ(shape, x)[1]; }
   function pchisqUpper(x, df) {
-    if (!(df >= 0) || isNaN(x)) return NaN;   // df = 0 is valid in R (point mass at 0)
+    // DECLARED DEVIATION from R: df = 0 returns NaN, where R's pchisq(x, 0, lower.tail = FALSE) is the point
+    // mass at 0 (0 for x > 0, 1 for x = 0). Consumers rely on it: a test with no degrees of freedom has no
+    // p-value (IPD-Meta-Pro's inlined copy, dev/tests/upper_tails.test.cjs), and R's 0 would print "p = 0".
+    if (!(df > 0) || isNaN(x)) return NaN;
     if (x <= 0) return 1;
     return gammaPQ(df / 2, x / 2)[1];
   }
