@@ -4480,7 +4480,7 @@ function recalculatePooledEffect(studies, tauPrior, weightCap) {
 
  var z = (reSE > 0) ? Math.abs(reEffect) / reSE : 0;
 
- var pValue = 2 * (1 - jStat.normal.cdf(z, 0, 1));
+ var pValue = 2 * AlmTail.pnormUpper(z);
 
 
 
@@ -8513,7 +8513,7 @@ function runSequentialAnalysis() {
 
  var infoFraction = k / studies.length;
 
- var spentAlpha = 2 * (1 - jStat.normal.cdf(jStat.normal.inv(1 - 0.025, 0, 1) / Math.sqrt(infoFraction), 0, 1));
+ var spentAlpha = 2 * AlmTail.pnormUpper(jStat.normal.inv(1 - 0.025, 0, 1) / Math.sqrt(infoFraction));
 
  var boundaryZ = jStat.normal.inv(1 - spentAlpha / 2, 0, 1);
 
@@ -10551,7 +10551,7 @@ function compareRMST(group1Data, group2Data, tau, options) {
 
  var z = seDiff > 0 ? (diff / seDiff) : 0;
 
- var p = seDiff > 0 ? (2 * (1 - jStat.normal.cdf(Math.abs(z), 0, 1))) : 1;
+ var p = seDiff > 0 ? (2 * AlmTail.pnormUpper(Math.abs(z))) : 1;
 
  var ciLower = diff - getConfZ() *seDiff;
 
@@ -10946,7 +10946,7 @@ function fitAFTModel(survivalData, distribution) {
 
  } else {
 
- ll += Math.log(Math.max(1 - jStat.normal.cdf(z, 0, 1), 1e-12));
+ ll += Math.log(Math.max(AlmTail.pnormUpper(z), 1e-12));
 
  }
 
@@ -11538,7 +11538,7 @@ function calculateWeightedWilcoxonP(group1Rows, group2Rows, timeVar, eventVar) {
 
  if (typeof Stats === 'object' && Stats && typeof Stats.chiSquareCDF === 'function') {
 
- p = 1 - Stats.chiSquareCDF(chiSq, 1);
+ p = AlmTail.pchisqUpper(chiSq, 1);
 
  } else if (typeof jStat !== 'undefined' && jStat && jStat.chisquare && typeof jStat.chisquare.cdf === 'function') {
 
@@ -11900,11 +11900,11 @@ function runCompetingRisksStableCore(times, eventTypes, treatment, studyIds, eve
 
  if (typeof Stats === 'object' && Stats && typeof Stats.chiSquareCDF === 'function') {
 
- grayP = 1 - Stats.chiSquareCDF(grayChiSq, 1);
+ grayP = AlmTail.pchisqUpper(grayChiSq, 1);
 
  } else if (typeof jStat !== 'undefined' && jStat && jStat.chisquare && typeof jStat.chisquare.cdf === 'function') {
 
- grayP = 1 - jStat.chisquare.cdf(grayChiSq, 1);
+ grayP = AlmTail.pchisqUpper(grayChiSq, 1);
 
  }
 
@@ -12860,7 +12860,7 @@ function runAIPW(data, outcomeVar, treatmentVar, covariates) {
 
  var z = seATE > 0 ? (ate / seATE) : 0;
 
- var pValue = seATE > 0 ? (2 * (1 - jStat.normal.cdf(Math.abs(z), 0, 1))) : 1;
+ var pValue = seATE > 0 ? (2 * AlmTail.pnormUpper(Math.abs(z))) : 1;
 
  return {
 
@@ -13996,7 +13996,7 @@ function runDesignByTreatmentInteraction(data) {
 
  var z = diff / seDiff;
 
- var p = 2 * (1 - jStat.normal.cdf(Math.abs(z), 0, 1));
+ var p = 2 * AlmTail.pnormUpper(Math.abs(z));
 
 
 
@@ -14034,7 +14034,7 @@ function runDesignByTreatmentInteraction(data) {
 
  var df = inconsistencies.length;
 
- var pGlobal = df > 0 ? (1 - jStat.chisquare.cdf(Q_inconsistency, df)) : 1;
+ var pGlobal = df > 0 ? AlmTail.pchisqUpper(Q_inconsistency, df) : 1;
 
 
 
@@ -15920,7 +15920,7 @@ function calculateOptimalInformationSize(alpha, beta, delta, sigma2, k) {
 
  boundaryZ: boundaryZ,
 
- boundaryP: 2 * (1 - jStat.normal.cdf(boundaryZ, 0, 1))
+ boundaryP: 2 * AlmTail.pnormUpper(boundaryZ)
 
  });
 
@@ -16953,7 +16953,7 @@ function weightedRegression(x, y, weights) {
 
  var tInt = intercept / seIntercept;
 
- var pIntercept = 2 * (1 - jStat.studentt.cdf(Math.abs(tInt), n - 2));
+ var pIntercept = 2 * AlmTail.ptUpper(Math.abs(tInt), n - 2);
 
 
 
@@ -18814,7 +18814,7 @@ function recalculatePooled(results, method) {
 
  results.pooled.z = results.pooled.effect / results.pooled.se;
 
- results.pooled.p = 2 * (1 - jStat.normal.cdf(Math.abs(results.pooled.z), 0, 1));
+ results.pooled.p = 2 * AlmTail.pnormUpper(Math.abs(results.pooled.z));
 
 
 
@@ -22988,7 +22988,7 @@ function applyQualityWeighting() {
 
  const petZ = petReg.intercept / petReg.seIntercept;
 
- const petP = 2 * (1 - this.normalCDF(Math.abs(petZ)));
+ const petP = 2 * AlmTail.pnormUpper(Math.abs(petZ));
 
  const usePeese = petP < 0.10;
 
@@ -23046,7 +23046,7 @@ function applyQualityWeighting() {
 
  const zScores = effects.map((e, i) => e / ses[i]);
 
- const pValues = zScores.map(z => 1 - this.normalCDF(z));
+ const pValues = zScores.map(z => AlmTail.pnormUpper(z));
 
 
 
@@ -24340,7 +24340,7 @@ function applyQualityWeighting() {
 
  var z = adjusted / se;
 
- var p = 2 * (1 - this.normalCDF(Math.abs(z)));
+ var p = 2 * AlmTail.pnormUpper(Math.abs(z));
 
  return {
 
@@ -24382,7 +24382,7 @@ function applyQualityWeighting() {
 
  var z = adj / se;
 
- var p = 2 * (1 - this.normalCDF(Math.abs(z)));
+ var p = 2 * AlmTail.pnormUpper(Math.abs(z));
 
  if (p >= 0.05) {
 
@@ -32383,7 +32383,7 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
  const chiSq = Math.pow(O1 - E1, 2) / V;
 
- const p = 1 - Stats.chiSquareCDF(chiSq, 1);
+ const p = AlmTail.pchisqUpper(chiSq, 1);
 
 
 
@@ -32459,7 +32459,7 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  const se = vcov.map((row, i) => Math.sqrt(row[i]));
  const hr = beta.map(b => Math.exp(b));
  const z = beta.map((b, i) => b / se[i]);
- const pvals = z.map(zv => 2 * (1 - Stats.normalCDF(Math.abs(zv))));
+ const pvals = z.map(zv => 2 * AlmTail.pnormUpper(Math.abs(zv)));
  return { beta, se, hr, z, pvals, vcov };
  }
 
@@ -32513,7 +32513,7 @@ const Statistics = {
  const hr = Math.exp(beta);
  const lower = Math.exp(beta - getConfZ() * se);
  const upper = Math.exp(beta + getConfZ() * se);
- const p = 2 * (1 - Stats.normalCDF(Math.abs(beta / se)));
+ const p = 2 * AlmTail.pnormUpper(Math.abs(beta / se));
  return {
  effect: beta,
  beta: beta,
@@ -32537,7 +32537,7 @@ const Statistics = {
  const beta = Math.log(hr);
  const lower = Math.exp(beta - getConfZ() * se);
  const upper = Math.exp(beta + getConfZ() * se);
- const p = 2 * (1 - Stats.normalCDF(Math.abs(beta / se)));
+ const p = 2 * AlmTail.pnormUpper(Math.abs(beta / se));
  return {
  effect: beta,
  beta: beta,
@@ -33249,7 +33249,7 @@ const Statistics = {
 
  const t = reg.intercept / reg.seIntercept;
 
- const p = 2 * (1 - Stats.tCDF(Math.abs(t), n - 2));
+ const p = 2 * AlmTail.ptUpper(Math.abs(t), n - 2);
 
 
 
@@ -33301,7 +33301,7 @@ const Statistics = {
 
  const z = tau * Math.sqrt(9 * n * (n - 1) / (2 * (2 * n + 5)));
 
- const p = 2 * (1 - Stats.normalCDF(Math.abs(z)));
+ const p = 2 * AlmTail.pnormUpper(Math.abs(z));
 
 
 
@@ -42405,7 +42405,7 @@ function fitFrailtyModel(data, timeVar, eventVar, treatmentVar, clusterVar) {
  var HR_lower = Math.exp(logHR - getConfZ() * se);
  var HR_upper = Math.exp(logHR + getConfZ() * se);
  var zStat = se > 0 ? (logHR / se) : 0;
- var pValue = 2 * (1 - Stats.normalCDF(Math.abs(zStat)));
+ var pValue = 2 * AlmTail.pnormUpper(Math.abs(zStat));
 
  return {
  method: 'Shared Frailty Cox Model',
@@ -45695,7 +45695,7 @@ function runMetaRegressionWithCovariate(covariate) {
 
  const tStat = slope / slopeSE;
 
- const pValue = 2 * (1 - jStat.studentt.cdf(Math.abs(tStat), studyData.length - 2));
+ const pValue = 2 * AlmTail.ptUpper(Math.abs(tStat), studyData.length - 2);
 
 
 
@@ -46453,7 +46453,7 @@ function fitCureRateModel() {
 
  const zStat = cureDiff / seDiff;
 
- const pValue = 2 * (1 - jStat.normal.cdf(Math.abs(zStat), 0, 1));
+ const pValue = 2 * AlmTail.pnormUpper(Math.abs(zStat));
 
 
 
@@ -48151,7 +48151,7 @@ function calculateRMST() {
 
  const zStat = rmstDiff / seDiff;
 
- const pValue = 2 * (1 - jStat.normal.cdf(Math.abs(zStat), 0, 1));
+ const pValue = 2 * AlmTail.pnormUpper(Math.abs(zStat));
 
 
 
@@ -51568,7 +51568,7 @@ const AdvancedSurvival = {
 
         const tStat = correlation * Math.sqrt((eventTimes.length - 2) / (1 - correlation*correlation));
 
-        const pValue = 2 * (1 - Stats.normalCDF(Math.abs(tStat)));
+        const pValue = 2 * AlmTail.pnormUpper(Math.abs(tStat));
 
 
 
@@ -51876,7 +51876,7 @@ const AdvancedNMA = {
 
 
 
-        const pValue = dfInconsistency > 0 ? 1 - Stats.chiSquareCDF(qInconsistency, dfInconsistency) : 1;
+        const pValue = dfInconsistency > 0 ? AlmTail.pchisqUpper(qInconsistency, dfInconsistency) : 1;
 
 
 
@@ -53604,7 +53604,7 @@ window.showTutorialMenu = showTutorialMenu;
 
 
 
- const pBeneficial = 1 - this.normCDF(0, pooledEffect, piSE);
+ const pBeneficial = AlmTail.pnormUpper((0 - (pooledEffect)) / (piSE));
 
 
 
@@ -55150,7 +55150,7 @@ window.showTutorialMenu = showTutorialMenu;
 
  const z = effect / se;
 
- const pValue = 2 * (1 - this.normCDF(Math.abs(z)));
+ const pValue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
 
 
@@ -56432,7 +56432,7 @@ window.showTutorialMenu = showTutorialMenu;
 
  const z = Math.abs(e - effect) / se;
 
- const p = 2 * (1 - this.normCDF(z));
+ const p = 2 * AlmTail.pnormUpper(z);
 
 
 
@@ -61925,7 +61925,7 @@ const MetaAnalyticSEM = {
 
         const z_indirect = indirect / se_indirect;
 
-        const p_indirect = 2 * (1 - this.pnorm(Math.abs(z_indirect)));
+        const p_indirect = 2 * AlmTail.pnormUpper(Math.abs(z_indirect));
 
 
 
@@ -63985,7 +63985,7 @@ const MLSubgroupDiscovery = {
 
                 const interactionSE = Math.sqrt(lowLeaf.se * lowLeaf.se + highLeaf.se * highLeaf.se);
 
-                const interactionP = 2 * (1 - this.pnorm(Math.abs(interactionEffect / interactionSE)));
+                const interactionP = 2 * AlmTail.pnormUpper(Math.abs(interactionEffect / interactionSE));
 
 
 
@@ -67183,7 +67183,7 @@ const PowerMonitor = {
 
         // Power = P(|T| > critical | H1)
 
-        const power = 1 - jStat.studentt.cdf(criticalValue - ncp, df) + jStat.studentt.cdf(-criticalValue - ncp, df);
+        const power = AlmTail.ptUpper(criticalValue - ncp, df) + jStat.studentt.cdf(-criticalValue - ncp, df);
 
 
 
@@ -67237,7 +67237,7 @@ const PowerMonitor = {
 
             const ncp = effectSize * Math.sqrt(newK);
 
-            const power = 1 - jStat.studentt.cdf(criticalValue - ncp, Math.max(1, df)) +
+            const power = AlmTail.ptUpper(criticalValue - ncp, Math.max(1, df)) +
 
                          jStat.studentt.cdf(-criticalValue - ncp, Math.max(1, df));
 
@@ -67289,7 +67289,7 @@ const PowerMonitor = {
 
             const ncp = effectSize * Math.sqrt(k);
 
-            power = 1 - jStat.studentt.cdf(criticalValue - ncp, df) + jStat.studentt.cdf(-criticalValue - ncp, df);
+            power = AlmTail.ptUpper(criticalValue - ncp, df) + jStat.studentt.cdf(-criticalValue - ncp, df);
 
         }
 
@@ -69178,7 +69178,7 @@ function runExcessSignificanceTest() {
 
         const ncp = Math.abs(pooledEffect) / s.se;  // Non-centrality parameter
 
-        const power = 1 - MathUtils.normCDF(getConfZ() - ncp);
+        const power = AlmTail.pnormUpper(getConfZ() - ncp);
 
         expectedSig += power;
 
@@ -69190,7 +69190,7 @@ function runExcessSignificanceTest() {
 
     const chiSq = Math.pow(observedSig - expectedSig, 2) / expectedSig;
 
-    const pValue = 1 - MathUtils.chi2CDF(chiSq, 1);
+    const pValue = AlmTail.pchisqUpper(chiSq, 1);
 
 
 
@@ -73252,7 +73252,7 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
         var CI_lower = treatmentEffect - getConfZ() * treatmentSE;
         var CI_upper = treatmentEffect + getConfZ() * treatmentSE;
         var zStat = treatmentEffect / treatmentSE;
-        var pValue = 2 * (1 - Stats.normalCDF(Math.abs(zStat)));
+        var pValue = 2 * AlmTail.pnormUpper(Math.abs(zStat));
 
         var tau0Final = Math.max(0, D[0][0]);
         var tau1Final = Math.max(0, D[1][1]);
@@ -73541,7 +73541,7 @@ function runTwoStageIPD(data, outcomeVar, treatmentVar, clusterVar, method = 'RE
 
         Q_df: df,
 
-        Q_pvalue: 1 - Stats.chiSquareCDF(Q, df),
+        Q_pvalue: AlmTail.pchisqUpper(Q, df),
 
         n_studies: studyEffects.length,
 
@@ -73787,9 +73787,9 @@ function calculateSandwichSE(data, outcomeVar, treatmentVar, clusterVar) {
 
         t_regular: beta[1] / SE_regular,
 
-        p_robust: 2 * (1 - Stats.tCDF(Math.abs(beta[1] / SE_robust), k - 1)),
+        p_robust: 2 * AlmTail.ptUpper(Math.abs(beta[1] / SE_robust), k - 1),
 
-        p_regular: 2 * (1 - Stats.tCDF(Math.abs(beta[1] / SE_regular), N - p)),
+        p_regular: 2 * AlmTail.ptUpper(Math.abs(beta[1] / SE_regular), N - p),
 
         n_clusters: k,
 
@@ -79789,7 +79789,7 @@ function displayValidationResults(results) {
 
         // Power using non-central normal approximation
 
-        const power = 1 - jStat.normal.cdf(zCrit - z, 0, 1) + jStat.normal.cdf(-zCrit - z, 0, 1);
+        const power = AlmTail.pnormUpper(zCrit - z) + jStat.normal.cdf(-zCrit - z, 0, 1);
 
 
 
@@ -81154,7 +81154,7 @@ function displayValidationResults(results) {
         const meanAICLinear = diagnostics.reduce((s, d) => s + d.aicLinear, 0) / diagnostics.length;
         const aicGain = meanAICLinear - meanAICSpline;
         const zCurv = pooledSplineCurv.estimate / Math.max(1e-12, pooledSplineCurv.se);
-        const pCurv = 2 * (1 - jStat.normal.cdf(Math.abs(zCurv), 0, 1));
+        const pCurv = 2 * AlmTail.pnormUpper(Math.abs(zCurv));
 
         return {
             method: "Penalized Spline One-Stage Interaction IPD-MA",
@@ -81998,7 +81998,7 @@ function displayValidationResults(results) {
 
         const zT = tate / Math.max(seT, 1e-8);
 
-        const pT = 2 * (1 - jStat.normal.cdf(Math.abs(zT), 0, 1));
+        const pT = 2 * AlmTail.pnormUpper(Math.abs(zT));
 
 
 
@@ -82941,7 +82941,7 @@ function displayValidationResults(results) {
 
             const z = s.yi / Math.sqrt(s.vi);
 
-            return 2 * (1 - jStat.normal.cdf(Math.abs(z), 0, 1));
+            return 2 * AlmTail.pnormUpper(Math.abs(z));
 
         });
 
@@ -83569,7 +83569,7 @@ function displayValidationResults(results) {
 
         const chiSq = observed.reduce((s, o) => s + Math.pow(o - expected, 2) / expected, 0);
 
-        const flatTestP = 1 - jStat.chisquare.cdf(chiSq, bins.length - 2);
+        const flatTestP = AlmTail.pchisqUpper(chiSq, bins.length - 2);
 
 
 
@@ -83587,7 +83587,7 @@ function displayValidationResults(results) {
 
         const stoufferZ33 = pp33.reduce((s, p) => s + jStat.normal.inv(1 - p, 0, 1), 0) / Math.sqrt(nSig);
 
-        const power33P = 1 - jStat.normal.cdf(stoufferZ33, 0, 1);
+        const power33P = AlmTail.pnormUpper(stoufferZ33);
 
 
 
@@ -85319,11 +85319,11 @@ function displayValidationResults(results) {
 
                     if (typeof Stats === 'object' && Stats && typeof Stats.chiSquareCDF === 'function') {
 
-                        fisherP = 1 - Stats.chiSquareCDF(fisherChiSq, fisherDf);
+                        fisherP = AlmTail.pchisqUpper(fisherChiSq, fisherDf);
 
                     } else if (typeof jStat !== 'undefined' && jStat && jStat.chisquare && typeof jStat.chisquare.cdf === 'function') {
 
-                        fisherP = 1 - jStat.chisquare.cdf(fisherChiSq, fisherDf);
+                        fisherP = AlmTail.pchisqUpper(fisherChiSq, fisherDf);
 
                     }
 
@@ -85738,7 +85738,7 @@ function displayValidationResults(results) {
 
             const testZ = testEffect / effect.se;
 
-            testP = 2 * (1 - jStat.normal.cdf(Math.abs(testZ), 0, 1));
+            testP = 2 * AlmTail.pnormUpper(Math.abs(testZ));
 
         }
 
@@ -85806,7 +85806,7 @@ function displayValidationResults(results) {
 
                     const z = diff / seDiff;
 
-                    const p = 2 * (1 - jStat.normal.cdf(Math.abs(z), 0, 1));
+                    const p = 2 * AlmTail.pnormUpper(Math.abs(z));
 
 
 
@@ -85874,7 +85874,7 @@ function displayValidationResults(results) {
 
         const qInconsistency = comparisons.reduce((s, c) => s + c.zStatistic * c.zStatistic, 0);
 
-        const globalP = 1 - jStat.chisquare.cdf(qInconsistency, comparisons.length);
+        const globalP = AlmTail.pchisqUpper(qInconsistency, comparisons.length);
 
 
 
@@ -86099,7 +86099,7 @@ function displayValidationResults(results) {
 
         // Current detectable effect
 
-        const currentPower = 1 - jStat.normal.cdf(zAlpha - Math.abs(effect.estimate) / effect.se, 0, 1);
+        const currentPower = AlmTail.pnormUpper(zAlpha - Math.abs(effect.estimate) / effect.se);
 
 
 
@@ -86599,7 +86599,7 @@ function displayValidationResults(results) {
 
                 const testZ = testResult.estimate / testResult.se;
 
-                const testP = 2 * (1 - jStat.normal.cdf(Math.abs(testZ), 0, 1));
+                const testP = 2 * AlmTail.pnormUpper(Math.abs(testZ));
 
 
 
@@ -86707,7 +86707,7 @@ function displayValidationResults(results) {
 
                 const testZ = testResult.estimate / testResult.se;
 
-                const testP = 2 * (1 - jStat.normal.cdf(Math.abs(testZ), 0, 1));
+                const testP = 2 * AlmTail.pnormUpper(Math.abs(testZ));
 
 
 
@@ -86801,7 +86801,7 @@ function displayValidationResults(results) {
 
             const z = cumResult.estimate / cumResult.se;
 
-            const p = 2 * (1 - jStat.normal.cdf(Math.abs(z), 0, 1));
+            const p = 2 * AlmTail.pnormUpper(Math.abs(z));
 
 
 
@@ -86899,7 +86899,7 @@ function displayValidationResults(results) {
 
             // Conditional power < 20% futility
 
-            const conditionalPower = 1 - jStat.normal.cdf(zAlpha - c.z * Math.sqrt(RIS / c.information - 1), 0, 1);
+            const conditionalPower = AlmTail.pnormUpper(zAlpha - c.z * Math.sqrt(RIS / c.information - 1));
 
             return {
 
@@ -87396,9 +87396,9 @@ function displayValidationResults(results) {
 
             slopeSE,
 
-            interceptPValue: 2 * (1 - jStat.studentt.cdf(Math.abs(interceptT), n - 2)),
+            interceptPValue: 2 * AlmTail.ptUpper(Math.abs(interceptT), n - 2),
 
-            slopePValue: 2 * (1 - jStat.studentt.cdf(Math.abs(slopeT), n - 2))
+            slopePValue: 2 * AlmTail.ptUpper(Math.abs(slopeT), n - 2)
 
         };
 
@@ -87458,7 +87458,7 @@ function displayValidationResults(results) {
 
             slopeSE,
 
-            slopePValue: 2 * (1 - jStat.studentt.cdf(Math.abs(slopeT), n - 2))
+            slopePValue: 2 * AlmTail.ptUpper(Math.abs(slopeT), n - 2)
 
         };
 
@@ -87526,7 +87526,7 @@ function displayValidationResults(results) {
 
             const totalVar = se * se + tau2 / k;
 
-            const power = 1 - jStat.normal.cdf(zAlpha - effect / Math.sqrt(totalVar), 0, 1);
+            const power = AlmTail.pnormUpper(zAlpha - effect / Math.sqrt(totalVar));
 
             if (power >= targetPower) return k;
 
@@ -96719,7 +96719,7 @@ var FrailtySurvival = (function() {
 
     function getZ() { return (typeof getConfZ === 'function') ? getConfZ() : 1.96; }
     function normCDF(x) { return (typeof Stats !== 'undefined') ? Stats.normalCDF(x) : 0.5; }
-    function pFromZ(z) { return 2 * (1 - normCDF(Math.abs(z))); }
+    function pFromZ(z) { return 2 * AlmTail.pnormUpper(Math.abs(z)); }
 
     // ── Shared Frailty Cox Model ────────────────────────────────
     // Model: h_ij(t) = h_0(t) * exp(X_ij'β + b_i)
@@ -97313,7 +97313,7 @@ var JointModels = (function() {
     }
     function getZ() { return (typeof getConfZ === 'function') ? getConfZ() : 1.96; }
     function normCDF(x) { return (typeof Stats !== 'undefined') ? Stats.normalCDF(x) : 0.5; }
-    function pFromZ(z) { return 2 * (1 - normCDF(Math.abs(z))); }
+    function pFromZ(z) { return 2 * AlmTail.pnormUpper(Math.abs(z)); }
 
     // ── LMM with random intercept + slope ───────────────────────
     // Y_ij = (β₀ + b₀_i) + (β₁ + b₁_i)*t_ij + β₂*trt_i + ε_ij
@@ -97794,7 +97794,7 @@ var DoseResponseIPD = (function() {
     }
     function getZ() { return (typeof getConfZ === 'function') ? getConfZ() : 1.96; }
     function normCDF(x) { return (typeof Stats !== 'undefined') ? Stats.normalCDF(x) : 0.5; }
-    function pFromZ(z) { return 2 * (1 - normCDF(Math.abs(z))); }
+    function pFromZ(z) { return 2 * AlmTail.pnormUpper(Math.abs(z)); }
 
     // ── Weighted Least Squares ──────────────────────────────────
     function fitWLS(y, X, weights) {
