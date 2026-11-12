@@ -33,11 +33,30 @@
 
   function _nma() { return global.AlmMultiplicativeNMA; }
 
-  // standard normal CDF (Abramowitz-Stegun 7.1.26 erf), for P-scores.
+  // standard normal CDF for P-scores. P58: was Abramowitz-Stegun 7.1.26 (error up to ~1.5e-7); now
+  // Phi(x) = 0.5 erfc(-x / sqrt 2) with erfc(z) = Q(1/2, z^2), the regularised upper incomplete gamma function,
+  // by series (z^2 < 1.5) or Lentz continued fraction, to double precision.
+  var _LNGAMMA_HALF = 0.5 * Math.log(Math.PI);
+  function _erfc(z) {                                    // z >= 0
+    var x = z * z, a = 0.5, n;
+    if (x === 0) return 1;
+    if (x < 1.5) {                                       // P(a, x) by series; erfc = 1 - P
+      var ap = a, sum = 1 / a, del = sum;
+      for (n = 0; n < 500; n++) { ap += 1; del *= x / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 1e-17) break; }
+      return 1 - sum * Math.exp(-x + a * Math.log(x) - _LNGAMMA_HALF);
+    }
+    var b = x + 1 - a, c = 1 / 1e-300, d = 1 / b, h = d;  // Q(a, x) by continued fraction
+    for (n = 1; n < 500; n++) {
+      var an = -n * (n - a); b += 2;
+      d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+      c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300;
+      d = 1 / d; var dl = d * c; h *= dl; if (Math.abs(dl - 1) < 1e-16) break;
+    }
+    return Math.exp(-x + a * Math.log(x) - _LNGAMMA_HALF) * h;
+  }
   function _phi(x) {
-    var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-    var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
-    return x >= 0 ? 0.5 + 0.5 * y : 0.5 - 0.5 * y;
+    var e = _erfc(Math.abs(x) / Math.SQRT2);
+    return x >= 0 ? 1 - 0.5 * e : 0.5 * e;
   }
 
   /* Entropy-balancing transport weights.
@@ -122,6 +141,15 @@
     if (!NMA) return { ok: false, error: "AlmMultiplicativeNMA (network solver) not loaded" };
     if (!global.AlmMaCore) return { ok: false, error: "AlmMaCore not loaded" };
     if (!Array.isArray(rows) || !rows.length) return { ok: false, error: "no contrast rows" };
+    // P58: the contrast-based solver treats contrasts as independent, so a study with more than one contrast
+    // (a multi-arm trial, whose contrasts share an arm) cannot be fitted correctly here; refuse it.
+    var seen = Object.create(null);
+    for (var ri = 0; ri < rows.length; ri++) {
+      var sk = rows[ri].study;
+      if (sk == null) continue;
+      if (seen[sk]) return { ok: false, error: "study " + (rows[ri]._label || (Number(sk) + 1)) + " has more than one contrast (a multi-arm trial); this contrast-based solver treats contrasts as independent, so enter one contrast per trial or use a multi-arm NMA engine" };
+      seen[sk] = true;
+    }
 
     // variance inflation: low-weight studies get a larger effective SE.
     var rows2 = rows;
@@ -130,7 +158,9 @@
       rows2 = rows.map(function (r) {
         var wi = (r.study != null && Number.isFinite(w[r.study])) ? w[r.study] : mean;
         var wn = wi / mean;
-        return { trtA: r.trtA, trtB: r.trtB, yi: r.yi, sei: r.sei / Math.sqrt(wn + 1e-12) };
+        // P58: exact documented inflation v_i / w_i (was sei / sqrt(w + 1e-12)). A weight of exactly 0 gives an
+        // infinite SE; _buildDesign drops that row, and a treatment left without data makes the design singular (refused).
+        return { trtA: r.trtA, trtB: r.trtB, yi: r.yi, sei: r.sei / Math.sqrt(wn) };
       });
     }
 
@@ -190,7 +220,10 @@
     var source = fit(input.rows, input.treatments, null, input);
     if (!source.ok) return { ok: false, error: "source NMA: " + source.error };
     var transported = fit(input.rows, input.treatments, wr.weights, input);
-    if (!transported.ok) return { ok: false, error: "transported NMA: " + transported.error };
+    if (!transported.ok) return { ok: false, error: !wr.converged
+      // P58: with the exact inflation, studies whose weight underflows to 0 carry no information; say why.
+      ? "Entropy balancing did not converge - the target may lie outside the studies' covariate hull, so the transported NMA is not estimable (" + transported.error + ")."
+      : "transported NMA: " + transported.error };
 
     // shift in P-score ranking induced by the transport.
     var shifts = input.treatments.map(function (t) {
