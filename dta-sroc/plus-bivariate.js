@@ -443,17 +443,20 @@
     var rs = 0; for (var j = 0; j < n; j++) { var e = y[j] - intercept - slope * x[j]; rs += w[j] * e * e; }
     var df = n - 2; if (df <= 0) return null;
     var sigma2 = rs / df, seSlope = Math.sqrt(sigma2 * sw / det);
-    var t = slope / seSlope, pv = 2 * (1 - _tcdf(Math.abs(t), df));
+    var t = slope / seSlope, pv = _tsf2(t, df);
     return { slope: slope, intercept: intercept, t: t, df: df, p: pv, x: x, y: y };
   }
   function _lnGamma(x) { var c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6]; var y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t); var s = 1.000000000190015; for (var j = 0; j < 6; j++) { y++; s += c[j] / y; } return -t + Math.log(2.5066282746310005 * s / x); }
   function _betacf(a, b, x) { var F = 1e-300, c = 1, d = 1 - (a + b) * x / (a + 1); if (Math.abs(d) < F) d = F; d = 1 / d; var h = d; for (var m = 1; m <= 300; m++) { var m2 = 2 * m, aa = m * (b - m) * x / ((a - 1 + m2) * (a + m2)); d = 1 + aa * d; if (Math.abs(d) < F) d = F; c = 1 + aa / c; if (Math.abs(c) < F) c = F; d = 1 / d; h *= d * c; aa = -(a + m) * (a + b + m) * x / ((a + m2) * (a + 1 + m2)); d = 1 + aa * d; if (Math.abs(d) < F) d = F; c = 1 + aa / c; if (Math.abs(c) < F) c = F; d = 1 / d; var del = d * c; h *= del; if (Math.abs(del - 1) < 1e-14) break; } return h; }
   function _betai(a, b, x) { if (x <= 0) return 0; if (x >= 1) return 1; var bt = Math.exp(_lnGamma(a + b) - _lnGamma(a) - _lnGamma(b) + a * Math.log(x) + b * Math.log(1 - x)); return x < (a + 1) / (a + b + 2) ? bt * _betacf(a, b, x) / a : 1 - bt * _betacf(b, a, 1 - x) / b; }
   function _tcdf(t, df) { var x = df / (df + t * t), ib = 0.5 * _betai(df / 2, 0.5, x); return t >= 0 ? 1 - ib : ib; }
+  // Two-sided P(|T| > |t|) = I_x(df/2, 1/2), x = df/(df + t^2): the tail itself, so it keeps
+  // relative precision where 2 * (1 - tcdf(|t|)) would cancel to 0 (R: 2 * pt(-|t|, df)).
+  function _tsf2(t, df) { return _betai(df / 2, 0.5, df / (df + t * t)); }
 
   var api = { fit: fit, srocCurve: srocCurve, srocAt: srocAt, regionEllipse: regionEllipse, mosesLittenberg: mosesLittenberg,
     thresholdSpearman: thresholdSpearman, fagan: fagan, deeksTest: deeksTest, DTAError: DTAError, _logit: _logit, _expit: _expit,
-    _internal: { vmmin: vmmin, eig2: eig2, invSqrt2: invSqrt2, pnormUpper: _pnormUpper } };
+    _internal: { vmmin: vmmin, eig2: eig2, invSqrt2: invSqrt2, pnormUpper: _pnormUpper, tsf2: _tsf2 } };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmDTAPlusBivariate = api;
 })(typeof window !== "undefined" ? window : globalThis);

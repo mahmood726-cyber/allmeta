@@ -106,7 +106,7 @@
 
     var slopeSE = Math.sqrt(q * fit.cov[1][1]);
     var tSlope = fit.beta[1] / slopeSE;
-    var pSlope = 2 * (1 - _tcdf(Math.abs(tSlope), df));
+    var pSlope = _tsf2(tSlope, df);
     var atTrial = predict(xbar);
     var trans = predict(target);
 
@@ -130,6 +130,9 @@
     var x = df / (df + t * t), a = df / 2, b = 0.5, ib = _betai(a, b, x);
     return t > 0 ? 1 - 0.5 * ib : 0.5 * ib;
   }
+  // Two-sided P(|T| > |t|) = I_x(df/2, 1/2), x = df/(df + t^2): the tail itself, so it keeps
+  // relative precision where 2 * (1 - tcdf(|t|)) would cancel to 0 (R: 2 * pt(-|t|, df)).
+  function _tsf2(t, df) { return _betai(df / 2, 0.5, df / (df + t * t)); }
   function _betai(a, b, x) {
     if (x <= 0) return 0; if (x >= 1) return 1;
     var bt = Math.exp(_gln(a + b) - _gln(a) - _gln(b) + a * Math.log(x) + b * Math.log(1 - x));
@@ -159,7 +162,7 @@
     return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
   }
 
-  var api = { transport: transport, _tau2PM: _tau2PM, _fit: _fit, _tcdf: _tcdf };
+  var api = { transport: transport, _tau2PM: _tau2PM, _fit: _fit, _tcdf: _tcdf, _tsf2: _tsf2 };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmTransport = api;
 })(typeof window !== "undefined" ? window : globalThis);
