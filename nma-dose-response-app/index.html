@@ -4150,8 +4150,10 @@
       const overlay = document.getElementById('wizardOverlay');
       // Closing an open wizard (x, Escape) is the user declining it: remember that, or
       // the first-visit check below reopens it over the Run button on every load.
-      if (overlay.classList.contains('active')) localStorage.setItem('nma_wizard_dismissed', 'true');
+      const wasOpen = overlay.classList.contains('active');
       overlay.classList.remove('active');
+      // Best effort: blocked or full storage must never keep the wizard on screen.
+      if (wasOpen) { try { localStorage.setItem('nma_wizard_dismissed', 'true'); } catch (_) {} }
     }
 
     function selectWizardOption(el) {

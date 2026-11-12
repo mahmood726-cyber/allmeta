@@ -69,3 +69,24 @@ def test_escape_while_wizard_closed_does_not_opt_out():
 
 def test_completed_wizard_stays_hidden():
     assert run_probe()['completedShown'] is False
+
+
+def test_close_still_closes_when_storage_throws():
+    # Codex review: persistence ran before the overlay was hidden, so a throwing
+    # localStorage (quota, blocked storage) left the wizard stuck over Run.
+    probe = r"""
+const fs = require('fs'), vm = require('vm');
+const html = fs.readFileSync(process.argv[1], 'utf8');
+const src = html.match(/^( *)function closeWizard\(\) \{[\s\S]*?^\1\}/m)[0];
+const cls = new Set(['active']);
+const overlay = { classList: { add: c => cls.add(c), remove: c => cls.delete(c), contains: c => cls.has(c) } };
+const ctx = vm.createContext({ localStorage: { setItem() { throw new Error('QuotaExceededError'); } },
+  document: { getElementById: () => overlay } });
+let threw = false;
+try { vm.runInContext(src + '\ncloseWizard();', ctx); } catch (e) { threw = true; }
+console.log(JSON.stringify({ threw, stillActive: cls.has('active') }));
+"""
+    proc = subprocess.run(['node', '-e', probe, str(PAGE)], capture_output=True, text=True, encoding='utf-8', timeout=60)
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    assert out == {'threw': False, 'stillActive': False}, out
