@@ -95585,7 +95585,7 @@ var OneStageGLMM = (function() {
         // Test the boundary directly: at the GLM fit (b = 0) the working-model ML score for tau2 is
         // 0.5 * sum_k [ (sum_i w_i r_i)^2 - sum_i w_i ] (r = working residual); if it is <= 0, tau2 = 0.
         {
-            var bBeta = beta.slice();
+            var bBeta = beta.slice(), bConv = false;
             for (var bIt = 0; bIt < 100; bIt++) {
                 var bA = matCreate(p, p), bR = new Array(p).fill(0);
                 for (var bi = 0; bi < N; bi++) {
@@ -95600,7 +95600,7 @@ var OneStageGLMM = (function() {
                 var bNew = cholSolve(bA, bR), bMax = 0;
                 for (var bd = 0; bd < p; bd++) bMax = Math.max(bMax, Math.abs(bNew[bd] - bBeta[bd]));
                 bBeta = bNew;
-                if (bMax < 1e-13) break;
+                if (bMax < 1e-13) { bConv = true; break; }
             }
             var bS = new Array(K).fill(0), bSW = new Array(K).fill(0);
             for (var bj = 0; bj < N; bj++) {
@@ -95614,7 +95614,8 @@ var OneStageGLMM = (function() {
             }
             var score0 = 0;
             for (var bk = 0; bk < K; bk++) score0 += 0.5 * (bS[bk] * bS[bk] - bSW[bk]);
-            if (score0 <= 0) {
+            // the boundary is only a solution if the GLM itself converged (it does not under separation)
+            if (bConv && score0 <= 0) {
                 beta = bBeta; b = new Array(K).fill(0); tau2 = 0; converged = true;
             }
         }
