@@ -1,5 +1,5 @@
 // userpath.cjs — drive one allmeta app the way a user does, in system Chrome.
-// node userpath.cjs <app> <outdir> [--pasted <file>] [--base <url>] [--steps <json>] [--skip-default 1]
+// node userpath.cjs <app> <outdir> [--pasted <file> [--textarea <css>]] [--base <url>] [--steps <json>] [--skip-default 1]
 // Exit 2 (verdict.json) when any R control fails on the user path: an alert instead
 // of a validator tab, a validator without "BROWSER VS R (MATCH)", an in-page panel
 // with a failed quantity or refusal, or an error. UNKNOWN verdicts need inspection.
@@ -13,6 +13,10 @@ const argv = process.argv.slice(4);
 const opt = (n, d) => { const i = argv.indexOf("--" + n); return i >= 0 ? argv[i + 1] : d; };
 const BASE = opt("base", "https://mahmood726-cyber.github.io/allmeta/");
 const PASTED = opt("pasted", null);
+// The data box: an explicit --textarea selector, else the usual ids, else the tallest
+// textarea. (2026-11-12: "tallest" picked a secondary box on mh-peto, so the pasted
+// data never reached the analysis and every later control ran on an empty page.)
+const TEXTAREA = opt("textarea", null);
 const CHROME = process.env.CHROME || "C:/Program Files/Google/Chrome/Application/chrome.exe";
 fs.mkdirSync(out, { recursive: true });
 const log = [];
@@ -48,6 +52,10 @@ function judge(c, r) {
 
 async function bodyText(p) { try { return await p.evaluate(() => document.body.innerText); } catch (e) { return "(unreadable: " + e.message + ")"; } }
 
+const BUSY_RE = /booting|installing|loading|verifying sha|running|fitting|please wait|starting webr|downloading|initialis|initializ|importing|using webr baseurl|---- running ----/i;
+async function statusText(p) {
+  try { return await p.evaluate(() => [...document.querySelectorAll("[role=status],[aria-live],[aria-busy=true]")].map((e) => e.innerText || "").join(" | ")); } catch (e) { return ""; }
+}
 async function settle(p, maxMs, re) {
   // wait until text stops changing for 8 s or matches a terminal pattern
   const t0 = Date.now(); let last = "", stableSince = Date.now();
@@ -55,8 +63,19 @@ async function settle(p, maxMs, re) {
     await p.waitForTimeout(2000);
     const t = await bodyText(p);
     if (t !== last) { last = t; stableSince = Date.now(); }
-    const busy = /booting|installing|loading|verifying sha|running|fitting|please wait|starting webr|downloading|initialis|initializ|importing|using webr baseurl|---- running ----/i.test(t.slice(-4000));
-    const terminal = /BROWSER VS R \((MATCH|MISMATCH)|R finished\.|live R quantities (passed|failed)|\d+\/\d+ live R|Validation refused|FAIL:/i.test(t);
+    // Busy text can sit anywhere on the page (an in-page validation widget is
+    // often above long result tables), so read live-region/status nodes too,
+    // not only the tail of the page (2026-11-12: correlation-ma's panel was
+    // abandoned at "Verifying SHA-256: Matrix_1.7-5.tgz").
+    const st = await statusText(p);
+    // The validator keeps "---- running ----" in its log after R finishes, so a
+    // completion marker ends the wait instead of riding out maxMs.
+    // Terminal states only: the validator status pill reads "Running R in WebR..."
+    // while busy and Match / Mismatch / WebR failed when done.
+    const done = /Browser vs R \((Match|Mismatch|WebR failed)\)|live R quantities (passed|failed)|Validation refused/i.test(t);
+    const busy = !done && (BUSY_RE.test(t.slice(-4000)) || BUSY_RE.test(st));
+    // With a target pattern, any finished marker (validator or in-page panel) ends the wait.
+    const terminal = done || /R finished\.|\d+\/\d+ live R|FAIL:/i.test(t);
     if (re && terminal && Date.now() - stableSince > 8000) return t;
     if (re && re.test(t) && Date.now() - stableSince > 8000 && !busy) return t;
     if (!busy && Date.now() - stableSince > 20000) return t;
@@ -89,7 +108,7 @@ async function settle(p, maxMs, re) {
       const b = p.getByRole("button", { name: re }).first();
       if (await b.count()) { try { await b.click({ timeout: 5000 }); note("clicked example"); await p.waitForTimeout(1500); } catch (e) {} break; }
     }
-    for (const re of [/^run( analysis)?$/i, /^analy[sz]e$/i, /^fit( model)?$/i, /^run$/i, /^calculate$/i, /^compute$/i]) {
+    for (const re of [/^run( analysis)?$/i, /^analy[sz]e$/i, /^fit( model)?$/i, /^fit/i, /^run$/i, /^calculate$/i, /^compute$/i]) {
       const b = p.getByRole("button", { name: re }).first();
       if (await b.count()) { try { await b.click({ timeout: 5000 }); note("clicked run " + re); } catch (e) {} break; }
     }
@@ -109,7 +128,9 @@ async function settle(p, maxMs, re) {
       const r = { control: c, kind: null, newTab: null, text: null, download: null, error: null };
       note(`${tag}: control ${c.id || c.text}`);
       try {
-        const handle = (await page.$$("button, a, [role=button]"))[c.i];
+        // Prefer the id: the page re-renders between enumeration and click, so a
+        // positional index can land on a different control.
+        const handle = (c.id && await page.$("#" + c.id)) || (await page.$$("button, a, [role=button]"))[c.i];
         if (!handle || !(await handle.isVisible().catch(() => false))) { r.error = "not visible"; results.push(r); continue; }
         const popupP = ctx.waitForEvent("page", { timeout: 8000 }).catch(() => null);
         const dlP = page.waitForEvent("download", { timeout: 8000 }).catch(() => null);
@@ -169,6 +190,23 @@ async function settle(p, maxMs, re) {
   fs.writeFileSync(path.join(out, "default-displayed.txt"), t1);
   await page.screenshot({ path: path.join(out, "default.png"), fullPage: true }).catch(() => {});
   if (!opt("skip-default", null)) await exerciseR("default");
+
+  if (PASTED) {
+    await page.goto(url, { waitUntil: "load" }); await page.waitForTimeout(3000);
+    const data = fs.readFileSync(PASTED, "utf8");
+    const ok = await page.evaluate(([d, sel]) => { const ta = (sel && document.querySelector(sel)) || document.querySelector("textarea#src, textarea#f-data, textarea#data, textarea#f-input") || [...document.querySelectorAll("textarea")].sort((a, b) => b.clientHeight - a.clientHeight)[0]; if (!ta) return false; ta.value = d; ta.dispatchEvent(new Event("input", { bubbles: true })); ta.dispatchEvent(new Event("change", { bubbles: true })); return ta.id || true; }, [data, TEXTAREA]);
+    note("pasted " + ok);
+    // Press the page's run control once. "Parse" is a last resort: on mh-peto a
+    // "Parse pasted text" helper reads a different box and emptied the data
+    // (2026-11-12), so every later control ran on "Enter at least two valid studies".
+    for (const re of [/^run( analysis)?$/i, /^analy[sz]e$/i, /^fit/i, /^run$/i, /^parse$/i]) {
+      const b = page.getByRole("button", { name: re }).first();
+      if (await b.count()) { try { await b.click({ timeout: 5000 }); note("pasted: clicked " + re); } catch (e) {} break; }
+    }
+    const t2 = await settle(page, 90000, null);
+    fs.writeFileSync(path.join(out, "pasted-displayed.txt"), t2);
+    await exerciseR("pasted");
+  }
 
   const STEPS = opt("steps", null);
   if (STEPS) {
