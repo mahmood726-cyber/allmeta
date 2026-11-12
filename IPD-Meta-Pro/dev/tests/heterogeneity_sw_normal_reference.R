@@ -45,6 +45,7 @@ add("n6", c(0.2, 0.25, 0.3, 2.9, 0.22, 0.21)); add("n11", round(rexp(11), 4)); a
 add("n20_ties", c(rep(1, 6), rep(2, 7), rep(3, 7))); add("n30_skew", round(rlnorm(30), 4))
 add("n60", round(rnorm(60, 10, 3), 4)); add("n8_sorted", sort(round(rnorm(8), 4)))
 add("survival_effects_unsorted", ex$survival$yi)
+add("tiny_range_rescaled", c(0, 1e-12, 2e-12, 4e-12))   # R rescales a range < 1e-10 (x / range); range 0 is refused
 out$shapiro <- sw
 nq <- list()
 for (p in c(0, 0.025, 0.5, 0.975, 1)) for (sd in c(0, -1)) nq[[length(nq) + 1]] <- list(p = p, mean = 1.5, sd = sd, q = suppressWarnings(qnorm(p, 1.5, sd)))

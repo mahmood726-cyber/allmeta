@@ -3839,14 +3839,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  // IPD-More fix: the bracket stopped at 1e300, so a quantile in (1e300, max double] came back infinite
  // (tQuantile(1e-152, 0.5) = -Infinity, R qt -1.0285e303); it now doubles up to the largest finite double.
  while (upper(hi) > target && hi <= Number.MAX_VALUE / 2) { lo = hi; hi *= 2; }
+ if (upper(hi) > target && hi < Number.MAX_VALUE) { lo = hi; hi = Number.MAX_VALUE; }
  if (upper(hi) > target) return sign * Infinity;      // quantile beyond the double range
- let x = 0.5 * (lo + hi);
+ let x = lo + 0.5 * (hi - lo);                         // midpoints without overflow near MAX_VALUE
  for (let it = 0; it < 400; it++) {
  const f = upper(x) - target;                     // decreasing in x
  if (f === 0) break;
  if (f > 0) lo = x; else hi = x;
  let nx = x + f / dens(x);                        // Newton step (-dF/dx = density)
- if (!(nx > lo && nx < hi)) nx = 0.5 * (lo + hi);
+ if (!(nx > lo && nx < hi)) nx = lo + 0.5 * (hi - lo);
  if (Math.abs(nx - x) <= 1e-15 * Math.abs(nx) || hi - lo <= 1e-15 * hi) { x = nx; break; }
  x = nx;
  }
@@ -3987,6 +3988,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  if (mean === undefined || mean === null) mean = 0;
  if (std === undefined || std === null) std = 1;
  if (Number.isNaN(x) || Number.isNaN(mean) || Number.isNaN(std) || std < 0) return NaN;
+ if (!Number.isFinite(x) && mean === x) return NaN;   // as R: checked before the sd = 0 step
  if (std === 0) return x < mean ? 0 : 1;
  return 0.5 * (1 + erf((x - mean) / (std * Math.sqrt(2))));
 
@@ -18023,14 +18025,22 @@ function calculateShapiroWilk(x) {
  // shapiro.test (src/library/stats/src/swilk.c): finite values sorted, coefficients from qnorm with
  // Royston's polynomial corrections, W as the squared correlation, the exact p for n = 3 and Royston's
  // normalising transformations for n = 4 .. 11 and n >= 12 (upper normal tail).
- x = (x || []).filter(function (v) { return typeof v === 'number' && Number.isFinite(v); }).slice().sort(function (p, q) { return p - q; });
+ // Input as R: missing values (null / NaN) dropped (complete.cases); an infinite value gives W = NaN.
+ x = (x || []).filter(function (v) { return typeof v === 'number' && !Number.isNaN(v); }).slice().sort(function (p, q) { return p - q; });
  var n = x.length;
  if (n < 3 || n > 5000) {
  return { W: null, pValue: null, note: "Sample size outside valid range (3-5000)" };
  }
+ if (!x.every(Number.isFinite)) {
+ return { W: NaN, pValue: NaN, note: "Non-finite values: W is not defined" };
+ }
  var range = x[n - 1] - x[0];
- if (range < 1e-10) {
+ if (range === 0) {
  return { W: null, pValue: null, note: "All values are identical" };
+ }
+ if (range < 1e-10) {   // as R: rescale tiny ranges
+ x = x.map(function (v) { return v / range; });
+ range = x[n - 1] - x[0];
  }
  var poly = function (cc, xv) {   // cc[0] + cc[1] x + ... (swilk.c poly)
  var r = cc[0];
@@ -50160,6 +50170,9 @@ function runPatientClustering() {
  for (let i = 0; i < k; i++) q += (effects[i] - mu) * (effects[i] - mu) / (variances[i] + t2);
  return q;
  };
+ if (!(alpha > 0 && alpha < 1)) {
+ return { lower: NaN, upper: NaN, tau2_lower: NaN, tau2_upper: NaN, method: "Q-profile (Viechtbauer 2007)", note: 'alpha must be in (0, 1)' };
+ }
  const critU = this.chi2Quantile(1 - alpha/2, k - 1);
  const critL = this.chi2Quantile(alpha/2, k - 1);
  const t2max = Math.max(100, 10 * (Number.isFinite(tau2) ? tau2 : 0));
@@ -50170,17 +50183,25 @@ function runPatientClustering() {
  for (let it = 0; it < 2000 && hi - lo > 0; it++) {
  const mid = lo + (hi - lo) / 2;
  if (mid <= lo || mid >= hi) break;
- if (genQ(mid) > target) lo = mid; else hi = mid;
+ const qm = genQ(mid);
+ if (!Number.isFinite(qm)) return NaN;   // never read a failed evaluation as a root-search decision
+ if (qm > target) lo = mid; else hi = mid;
  }
  return lo + (hi - lo) / 2;
  };
- const bound = crit => q0 < crit ? 0 : (qMax > crit ? t2max : root(crit));
+ const bound = crit => !(Number.isFinite(crit) && Number.isFinite(q0) && Number.isFinite(qMax)) ? NaN :
+ q0 < crit ? 0 : (qMax > crit ? t2max : root(crit));
  const tau2_lower = bound(critU);
  const tau2_upper = bound(critL);
 
- let sw = 0, sw2 = 0;
- for (const v of variances) { sw += 1 / v; sw2 += 1 / (v * v); }
- const vt = (k - 1) * sw / (sw * sw - sw2);
+ // (sum w)^2 - sum w^2 = sum_i w_i * (sum of the other w_j), formed without the subtraction, which cancels
+ // when one weight dominates (metafor's trace cancels there too: vi = 1e-16, 1 gives its vt = -1)
+ const w = variances.map(v => 1 / v);
+ const pre = [0];
+ for (let i = 0; i < k; i++) pre.push(pre[i] + w[i]);
+ let suf = 0, cross = 0;
+ for (let i = k - 1; i >= 0; i--) { cross += w[i] * (pre[i] + suf); suf += w[i]; }
+ const vt = (k - 1) * pre[k] / cross;
 
  return {
 
