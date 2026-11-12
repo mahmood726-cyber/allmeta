@@ -79,12 +79,26 @@ if (run('typeof AlmTail') === 'object') {
   for (const g of REF.grid.pchisq) { const a = run('AlmTail.pchisqUpper(' + g.x + ',' + g.df + ')'); check('pchisqUpper(' + g.x + ',' + g.df + ')', rel(a, g.p, 1e-11), show(a, g.p)); }
   for (const g of REF.grid.pt) { const a = run('AlmTail.ptUpper(' + g.t + ',' + g.df + ')'); check('ptUpper(' + g.t + ',' + g.df + ')', rel(a, g.p, 1e-11), show(a, g.p)); }
   // boundary contract (R: pnorm(Inf, lower = FALSE) = 0, pchisq(Inf, 3, lower = FALSE) = 0, pchisq(0, 3, lower = FALSE) = 1,
-  // pt(Inf, 4, lower = FALSE) = 0, pt(1, 0) = NaN). With df <= 0 the page now gets NaN where the legacy
-  // t / jStat chi-square CDFs returned 1 (p = 0); a test with no degrees of freedom has no p-value.
+  // pt(Inf, 4, lower = FALSE) = 0, pt(1, 0) = NaN). With df < 0 (t: df <= 0) the page gets NaN where the legacy
+  // t / jStat chi-square CDFs returned 1 (p = 0). IPD-More: chi-square df = 0 is valid in R (the point mass
+  // at 0): pchisq(5, 0, lower = FALSE) = 0 and pchisq(0, 0, lower = FALSE) = 1; this check had pinned NaN.
   const bnd = [['AlmTail.pnormUpper(Infinity)', 0], ['AlmTail.pnormUpper(-Infinity)', 1], ['AlmTail.pnormUpper(NaN)', NaN],
-    ['AlmTail.pchisqUpper(Infinity, 3)', 0], ['AlmTail.pchisqUpper(0, 3)', 1], ['AlmTail.pchisqUpper(5, 0)', NaN], ['AlmTail.pchisqUpper(NaN, 3)', NaN],
+    ['AlmTail.pchisqUpper(Infinity, 3)', 0], ['AlmTail.pchisqUpper(0, 3)', 1], ['AlmTail.pchisqUpper(5, 0)', 0], ['AlmTail.pchisqUpper(0, 0)', 1], ['AlmTail.pchisqUpper(5, -1)', NaN], ['AlmTail.pchisqUpper(NaN, 3)', NaN],
     ['AlmTail.ptUpper(Infinity, 4)', 0], ['AlmTail.ptUpper(1, 0)', NaN], ['AlmTail.ptUpper(2, Infinity)', run('AlmTail.pnormUpper(2)')]];
   for (const [e, want] of bnd) { const a = run(e); check('boundary ' + e + ' = ' + want, Number.isNaN(want) ? Number.isNaN(a) : a === want, 'page ' + a); }
+}
+
+// 3b. large df / shape (IPD-More): the series / continued fraction needs O(sqrt(shape)) terms near the mean;
+//     the old fixed 2000-term limit returned its partial sum (pchisq(1e8, 1e8) = 0.8886, R 0.49998).
+//     Reference: upper_tails_large_shape_reference.R. 1e-11 relative (measured max ~1e-12 at df 2e8).
+if (run('typeof AlmTail') === 'object') {
+  const LS = JSON.parse(fs.readFileSync(path.join(__dirname, 'upper_tails_large_shape_reference.json'), 'utf8'));
+  const relz = (a, b, tol) => b === 0 ? a === 0 : rel(a, b, tol);
+  for (const g of LS.pchisq) { const a = run('AlmTail.pchisqUpper(' + g.x + ',' + g.df + ')'); check('large df pchisqUpper(' + g.x + ',' + g.df + ')', relz(a, g.p, 1e-11), show(a, g.p)); }
+  for (const g of LS.pgamma) { const a = run('AlmTail.pgammaUpper(' + g.x + ',' + g.shape + ')'); check('large shape pgammaUpper(' + g.x + ',' + g.shape + ')', relz(a, g.p, 1e-11), show(a, g.p)); }
+  // beyond the 2e6-term limit (shape > ~1e10) the page fails closed rather than returning a partial sum
+  const big = run('AlmTail.pchisqUpper(1e16, 1e16)');
+  check('pchisqUpper(1e16, 1e16) is NaN (beyond the iteration limit), not a partial sum', Number.isNaN(big), 'page ' + big);
 }
 
 // 4. exported engine p-values (P60-validated paths and a module with its own chi-square series)

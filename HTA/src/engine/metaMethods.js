@@ -121,7 +121,7 @@ class MetaAnalysisMethods {
         // Q statistic
         const Q = w.reduce((sum, wi, i) => sum + wi * (studies[i].effect - thetaFE) ** 2, 0);
         const df = n - 1;
-        // k = 1 (df = 0): Q = 0, p = 1 as before (metafor reports QEp = 1); AlmTail returns NaN for df <= 0.
+        // k = 1 (df = 0): Q = 0, p = 1 as before (metafor reports QEp = 1); AlmTail (as R) gives 0 for rounding noise > 0 at df = 0, hence the guard.
         const pQ = df > 0 ? AlmTail.pchisqUpper(Q, df) : 1;
 
         // Between-study variance (τ²)
@@ -1167,10 +1167,12 @@ class MetaAnalysisMethods {
             modelFit: {
                 QModel: QM,
                 dfModel: dfM,
-                pValueModel: AlmTail.pchisqUpper(QM, dfM),
+                // df = 0 (one-level factor / saturated model): the statistic is rounding noise (~1e-32) and
+                // AlmTail, as R, would turn it into p = 0; p = 1 as metafor's QEp for a saturated model.
+                pValueModel: dfM > 0 ? AlmTail.pchisqUpper(QM, dfM) : 1,
                 QResidual: QE,
                 dfResidual: dfE,
-                pValueResidual: AlmTail.pchisqUpper(QE, dfE),
+                pValueResidual: dfE > 0 ? AlmTail.pchisqUpper(QE, dfE) : 1,
                 R2: R2,
                 tauSquaredResidual: tauSqResid
             },

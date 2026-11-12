@@ -37,6 +37,9 @@ const gauss = () => { let u = 0; for (let i = 0; i < 12; i++) u += rnd(); return
 }
 // 2-3. distribution functions
 check('Stats.normalCDF(1.96)', close(run('Stats.normalCDF(1.96)'), 0.97500210485177963, 1e-14), String(run('Stats.normalCDF(1.96)')));
+// Codex review of #511: z * z overflows for finite |z| > ~1.3e154; R pnorm(1e155) = 1, pnorm(-1e155) = 0
+check('Stats.normalCDF(1e155) = 1', run('Stats.normalCDF(1e155)') === 1, String(run('Stats.normalCDF(1e155)')));
+check('Stats.normalCDF(-1e155) = 0', run('Stats.normalCDF(-1e155)') === 0, String(run('Stats.normalCDF(-1e155)')));
 check('Stats.normalCDF(-3.3)', Math.abs(run('Stats.normalCDF(-3.3)') - 0.00048342414238377744) < 1e-15, String(run('Stats.normalCDF(-3.3)')));
 check('Stats.tQuantile(0.975, 4)', close(run('Stats.tQuantile(0.975, 4)'), 2.7764451051977934, 1e-12), String(run('Stats.tQuantile(0.975, 4)')));
 check('Stats.tQuantile(0.975, 1)', close(run('Stats.tQuantile(0.975, 1)'), 12.706204736174694, 1e-12), String(run('Stats.tQuantile(0.975, 1)')));
@@ -57,6 +60,15 @@ check('Stats.tQuantile(0.005, 7)', close(run('Stats.tQuantile(0.005, 7)'), -3.49
   const f = run('SurvivalAnalysis.coxPH(__t, __e, __x)');
   check('Cox Efron estimate with ties', close(f.beta[0], -0.0055266753716807305, 1e-9), String(f.beta[0]));
   check('Cox Efron variance with ties', close(f.se[0] * f.se[0], 0.46436365808859392, 1e-9), String(f.se[0] * f.se[0]));
+  // Codex review of #511: the partial likelihood is invariant to shifting a covariate, but the uncentred fit
+  // returned NaN for x + 1e6. R: coxph(Surv(t, e) ~ I(1e6 + x)) coef -0.0055266753716802118, var 0.46436365808859403.
+  sandbox.__xs = sandbox.__x.map(v => [1e6 + v[0]]);
+  const g = run('SurvivalAnalysis.coxPH(__t, __e, __xs)');
+  check('Cox estimate invariant to a covariate shift of 1e6', close(g.beta[0], -0.0055266753716802118, 1e-8), String(g.beta[0]));
+  // Codex review of the fix: a constant covariate has zero information; R coxph gives coef NA. Must not be beta = 0.
+  const sg = run('SurvivalAnalysis.coxPH([1, 2, 3, 4], [1, 1, 1, 1], [[1], [1], [1], [1]])');
+  check('Cox with a constant covariate reports no estimate (R: NA)', Number.isNaN(sg.beta[0]) && Number.isNaN(sg.se[0]) && Number.isNaN(sg.pvals[0]), JSON.stringify(sg));
+  check('Cox variance invariant to a covariate shift of 1e6', close(g.se[0] * g.se[0], 0.46436365808859403, 1e-8), String(g.se[0] * g.se[0]));
 }
 // 6-7. pooling
 {
@@ -98,6 +110,16 @@ check('Stats.tQuantile(0.005, 7)', close(run('Stats.tQuantile(0.005, 7)'), -3.49
   const b = analyse(rows, 'continuous', 'REML', false, 'one-stage');
   const same = !!(b && b.pooled && b.pooled.pooled === est2 && !/one-stage/i.test(String(b.pooled.method || b.approach || '')));
   check('one-stage selection does not silently return the two-stage result', !same);
+  // Codex review of #511: the check above also passes when runAnalysis() throws (analyse() swallows it and
+  // APP.results stays null). Assert the refusal itself: no exception, no results, and the warning shown.
+  run('var __notes = []; showNotification = function (m, t) { __notes.push([String(m), t]); };');
+  run('APP.results = null; APP.analysisRunning = false;');
+  let threw = null;
+  try { run('runAnalysis()'); } catch (e) { threw = e; }
+  const notes = run('__notes'), res = run('APP.results');
+  check('one-stage selection is refused with a visible warning (not an exception)',
+    threw === null && res === null && notes.some(n => n[1] === 'warning' && /fits the two-stage model/.test(n[0])),
+    'threw ' + (threw && threw.message) + ' results ' + (res === null ? 'null' : 'set') + ' notes ' + JSON.stringify(notes));
 }
 // 13. one-stage continuous: singular ML fit (no slope heterogeneity) reaches the lme4 ML estimate
 {

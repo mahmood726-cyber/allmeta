@@ -78,6 +78,13 @@ def _fe(yi, sei):
     # Oracle (mpmath, 80 digits): H1FE = log N2(y; 0, diag(v) + 11').
     ([0, 0], [1e154, 1e154], -711.0340857085754),
     ([1e155, -1e155], [1e153, 1e153], -10706.428915522587),
+    # Tiny SEs (Codex review of #513): m = B/A rounds (3 -> 3.0000000000000004) and the
+    # residual y - m, divided by se = 1e-17, became a spurious penalty (H1FE -1939.69).
+    # Oracle as above (mpmath, 80 digits); also R: dnorm(0,0,sqrt(2)*1e-17,log=TRUE) +
+    # dnorm(3,0,sqrt(1+1e-34/2),log=TRUE) = 32.459495924209456.
+    ([3, 3], [1e-17, 1e-17], 32.459495924209458),
+    ([3, 3, 3], [1e-17, 1e-12, 1e-17], 59.171578506908334),
+    ([0.1, 0.3, 0.7], [1e-9, 2e-9, 1e-9], -91111111111111047.0),
 ])
 def test_fixed_effect_no_overflow_for_huge_finite_inputs(yi, sei, h1fe):
     h0, h1 = _fe(yi, sei)

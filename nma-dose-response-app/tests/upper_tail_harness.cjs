@@ -33,4 +33,12 @@ const dbt = new W.DesignByTreatmentInteraction(studies, ['A', 'B', 'C']).test();
 out.dbt = { Q: dbt.Q_inconsistency, df: dbt.df, p: dbt.pValue };
 // chiSquareCDF / normalCDF of the shared StatUtils (lower tails, used elsewhere in the app)
 out.stat = { chisq_10_5: W.StatUtils.chiSquareCDF(10, 5), norm_196: W.StatUtils.normalCDF(1.959963984540054) };
+// Incoherence assessment on a tree network A-B-C (no closed loop): Q = 0 on 0 df. The class is exported to window
+// by the app's async IIFE after its first await, so wait for it (bounded) before using it.
+(async () => {
+for (let i = 0; i < 200 && typeof W.NetworkIncoherenceAssessment !== 'function'; i++) await new Promise(r => setImmediate(r));
+const inc = new W.NetworkIncoherenceAssessment().assess([[0, 1, 0], [1, 0, 1], [0, 1, 0]],
+  [[0, 0.2, 0], [-0.2, 0, 0.1], [0, -0.1, 0]], [[0, 0.04, 0], [0.04, 0, 0.05], [0, 0.05, 0]]);
+out.incoherence_tree = { loop: inc.loopIncoherence, overall: inc.overallIncoherence };
 process.stdout.write(JSON.stringify(out));
+})().catch(e => { console.error(e); process.exit(1); });

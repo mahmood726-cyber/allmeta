@@ -4248,7 +4248,8 @@ function calculateHeterogeneity(e, t, n) {
     r = sum(e.map((e, t) => s[t] * e)) / i,
     o = sum(e.map((e, t) => s[t] * Math.pow(e - r, 2))),
     l = a - 1,
-    d = AlmTail.pchisqUpper(o, l),
+    // df = 0 (one study): Q is rounding noise; AlmTail, as R, would give p = 0. p = 1 as metafor QEp.
+    d = l > 0 ? AlmTail.pchisqUpper(o, l) : 1,
     c = o > l ? (o - l) / o * 100 : 0,
     u = calculateI2Metafor(n, t, a),
     p = o / Math.max(l, 1),
@@ -17401,10 +17402,12 @@ function multipleMetaRegression(e, t, n, a = null) {
     h = e.map((e, t) => e - m[t]),
     v = h.reduce((e, t, n) => e + o[n] * t * t, 0),
     g = s - i - 1,
-    f = AlmTail.pchisqUpper(v, g),
+    // saturated model (k = covariates + 1): residual Q is rounding noise; p = 1 as metafor QEp, not 0.
+    f = g > 0 ? AlmTail.pchisqUpper(v, g) : 1,
     _ = e.reduce((t, n, a) => t + o[a] * Math.pow(m[a] - e.reduce((e, t, n) => e + o[n] * t, 0) / o.reduce((e, t) => e + t, 0), 2), 0),
     y = i,
-    b = AlmTail.pchisqUpper(_, y),
+    // no covariates (y = 0): the model Q is rounding noise; p = 1 as metafor QMp on 0 df, not 0.
+    b = y > 0 ? AlmTail.pchisqUpper(_, y) : 1,
     x = e.reduce((t, n, a) => {
       const s = e.reduce((e, t, n) => e + o[n] * t, 0) / o.reduce((e, t) => e + t, 0);
       return t + o[a] * Math.pow(n - s, 2)

@@ -2909,7 +2909,11 @@ cat("========================================================================\n"
  *   AlmTail.p2norm(z)  two-sided 2 * P(Z > |z|);  AlmTail.p2t(t, df)  two-sided 2 * P(T > |t|)
  *
  * Accuracy (tests/upper-tail.spec.mjs, grid of tails 0.3 .. 1e-300 against R 4.6.0):
- * relative error < 1e-12 on every grid point (measured max 1.5e-13). No dependencies; works as a classic
+ * relative error < 1e-12 on every grid point (measured max 1.5e-13). Large degrees of freedom (df 150 .. 1e10,
+ * chi-square shapes to 5e7, F df2 to 1e7; fixrev2 check against R): relative error < 1e-10 for t with df <= 1e6
+ * (measured max 7.3e-11, F with df2 = 1e7). KNOWN LIMIT: Student t with df >= 1e8 -- the beta argument
+ * x = df / (df + t^2) rounds within 1e-16 of 1 and the continued fraction sees only x -- relative error up to
+ * 3e-9 at df = 1e8 and 7e-7 at df = 1e10 (R's TOMS 708 bgrat avoids this). No dependencies; works as a classic
  * <script> (window.AlmTail) and under Node (module.exports).
  */
 (function (global) {
@@ -2930,44 +2934,113 @@ cat("========================================================================\n"
 
   var EPS = 1e-15, TINY = 1e-300, MAXIT = 2000;
 
+  // log Gamma(1 + a) for |a| <= 0.5 by its Taylor series -gamma*a + sum_k zeta(k) (-a)^k / k,
+  // so that a tiny shape keeps relative precision (Lanczos gives only ~1e-16 absolute here).
+  var ZETA = [0, 0, 1.6449340668482264, 1.2020569031595943, 1.0823232337111382, 1.0369277551433699,
+    1.0173430619844491, 1.0083492773819228, 1.0040773561979443, 1.0020083928260822];
+  function zeta(k) {
+    if (k < ZETA.length) return ZETA[k];
+    var s = 1;
+    for (var n = 2; n <= 60; n++) { var t = Math.pow(n, -k); s += t; if (t < 1e-18) break; }
+    return s;
+  }
+  function lgamma1p(a) {
+    var s = -0.5772156649015329 * a, p = -a;
+    for (var k = 2; k < 400; k++) {
+      p *= -a;
+      var t = zeta(k) * p / k;
+      s += t;
+      if (Math.abs(t) <= 1e-17 * Math.abs(s)) break;
+    }
+    return s;
+  }
+  // log(sqrt(2 pi) Gamma(n + 1) / (n^(n + 1/2) e^-n)) (Stirling error) and the deviance term
+  // bd0(x, np) = x log(x / np) + np - x, both as Loader (2000) / R's stirlerr.c and bd0.c, so that the
+  // prefactors x^a e^-x / Gamma(a) and x^a y^b / B(a, b) keep relative precision when a and x are large.
+  // (Reconciled with lane ipdmore 2a30d893: same stirlerr, bd0, prefactor and iteration cap.)
+  function stirlerr(n) {
+    if (n <= 15) return lgamma(n + 1) - (n + 0.5) * Math.log(n) + n - 0.9189385332046728;
+    var nn = n * n, S0 = 1 / 12, S1 = 1 / 360, S2 = 1 / 1260, S3 = 1 / 1680, S4 = 1 / 1188;
+    if (n > 500) return (S0 - S1 / nn) / n;
+    if (n > 80) return (S0 - (S1 - S2 / nn) / nn) / n;
+    if (n > 35) return (S0 - (S1 - (S2 - S3 / nn) / nn) / nn) / n;
+    return (S0 - (S1 - (S2 - (S3 - S4 / nn) / nn) / nn) / nn) / n;
+  }
+  function bd0(x, np) {
+    if (Math.abs(x - np) < 0.1 * (x + np)) {
+      var v = (x - np) / (x + np), s = (x - np) * v;
+      var ej = 2 * x * v; v = v * v;
+      for (var j = 1; j < 1000; j++) {
+        ej *= v; var s1 = s + ej / (2 * j + 1);
+        if (s1 === s) return s1;
+        s = s1;
+      }
+    }
+    return x * Math.log(x / np) + np - x;
+  }
+  // Series and continued fractions need O(sqrt(shape)) terms near the mean; capped at 2e6 (beyond: NaN).
+  function maxIter(a) { return Math.min(MAXIT + Math.ceil(20 * Math.sqrt(a)), 2e6); }
+
   // Regularized gamma: returns [P(a,x), Q(a,x)], each computed in the form that
-  // keeps relative precision (series for P when x < a + 1, continued fraction for Q otherwise).
+  // keeps relative precision (series for P when x < a + 1, continued fraction for Q otherwise;
+  // for a < 0.5 on the series side Q is computed directly, since there it can be tiny).
+  // A series or fraction that fails to converge returns NaN rather than an unconverged value.
   function gammaPQ(a, x) {
     if (!(a > 0) || isNaN(x)) return [NaN, NaN];
     if (x <= 0) return [0, 1];
     if (x === Infinity) return [1, 0];
-    var lpre = -x + a * Math.log(x) - lgamma(a);
+    // For a >= 100 the prefactor is sqrt(a / (2 pi)) exp(-stirlerr(a) - bd0(a, x)) instead of
+    // exp(-x + a log x - lgamma(a)), whose terms cancel to ~1e-16 * a log a.
+    var pre = a >= 100 ? Math.sqrt(a / (2 * Math.PI)) * Math.exp(-stirlerr(a) - bd0(a, x))
+                       : Math.exp(-x + a * Math.log(x) - lgamma(a));
+    var lim = maxIter(a), ok = false;
     if (x < a + 1) {
       var ap = a, sum = 1 / a, del = sum;
-      for (var n = 0; n < MAXIT; n++) {
+      for (var n = 0; n < lim; n++) {
         ap += 1; del *= x / ap; sum += del;
-        if (Math.abs(del) < Math.abs(sum) * EPS) break;
+        if (Math.abs(del) < Math.abs(sum) * EPS) { ok = true; break; }
       }
-      var P = sum * Math.exp(lpre);
+      if (!ok) return [NaN, NaN];
+      var P = sum * pre;
+      if (a < 0.5) return [P, smallShapeQ(a, x)];
       return [P, 1 - P];
     }
     // Lentz continued fraction for Q(a,x)
     var b = x + 1 - a, c = 1 / TINY, d = 1 / b, h = d;
-    for (var i = 1; i < MAXIT; i++) {
+    for (var i = 1; i < lim; i++) {
       var an = -i * (i - a);
       b += 2;
       d = an * d + b; if (Math.abs(d) < TINY) d = TINY;
       c = b + an / c; if (Math.abs(c) < TINY) c = TINY;
       d = 1 / d;
       var dl = d * c; h *= dl;
-      if (Math.abs(dl - 1) < EPS) break;
+      if (Math.abs(dl - 1) < EPS) { ok = true; break; }
     }
-    var Q = Math.exp(lpre) * h;
+    if (!ok) return [NaN, NaN];
+    var Q = pre * h;
     return [1 - Q, Q];
   }
+  // Q(a,x) for 0 < a < 0.5, 0 < x < a + 1, without forming 1 - P:
+  //   Q = -expm1(u) - e^u * a * T,  u = a log x - log Gamma(1 + a),  T = sum_{n>=1} (-x)^n / (n! (a + n)).
+  function smallShapeQ(a, x) {
+    var u = a * Math.log(x) - lgamma1p(a), T = 0, term = 1;
+    for (var n = 1; n < MAXIT; n++) {
+      term *= -x / n;
+      var t = term / (a + n);
+      T += t;
+      if (Math.abs(t) < Math.abs(T) * EPS) break;
+    }
+    return -Math.expm1(u) - Math.exp(u) * a * T;
+  }
 
-  // Continued fraction for the incomplete beta (Numerical Recipes betacf, modified Lentz).
+  // Continued fraction for the incomplete beta (Numerical Recipes betacf, modified Lentz). Like the gamma
+  // routines it needs O(sqrt(a + b)) terms near the mean, and returns NaN rather than an unconverged value.
   function betacf(a, b, x) {
-    var qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap;
+    var qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap, lim = maxIter(a + b);
     if (Math.abs(d) < TINY) d = TINY;
     d = 1 / d;
     var h = d;
-    for (var m = 1; m <= MAXIT; m++) {
+    for (var m = 1; m <= lim; m++) {
       var m2 = 2 * m, aa = m * (b - m) * x / ((qam + m2) * (a + m2));
       d = 1 + aa * d; if (Math.abs(d) < TINY) d = TINY;
       c = 1 + aa / c; if (Math.abs(c) < TINY) c = TINY;
@@ -2977,9 +3050,27 @@ cat("========================================================================\n"
       c = 1 + aa / c; if (Math.abs(c) < TINY) c = TINY;
       d = 1 / d;
       var dl = d * c; h *= dl;
-      if (Math.abs(dl - 1) < EPS) break;
+      if (Math.abs(dl - 1) < EPS) return h;
     }
-    return h;
+    return NaN;
+  }
+
+  // lgamma(A + s) - lgamma(A) for A >= 100 by Stirling, so the two ~A log A terms never cancel.
+  function lgammaRatio(A, s) {
+    return (A - 0.5) * Math.log1p(s / A) + s * Math.log(A + s) - s + stirlerr(A + s) - stirlerr(A);
+  }
+  // log of x^a y^b / B(a, b). Below 100 for both shapes this is the plain Lanczos form; above, the
+  // lgamma terms (absolute error ~1e-16 * a log a) are replaced by Stirling forms, and when both shapes are
+  // large the whole expression is -bd0(a, n x) - bd0(b, n y) + log sqrt(a b / (2 pi n)) - stirlerr terms
+  // (x + y = 1), which keeps relative precision for df in the millions.
+  function logBetaPrefactor(a, b, x, y, lx, ly) {
+    var big = Math.max(a, b), small = Math.min(a, b);
+    if (big < 100) return lgamma(a + b) - lgamma(a) - lgamma(b) + a * lx + b * ly;
+    if (small < 100) return lgammaRatio(big, small) - lgamma(small) + a * lx + b * ly;
+    var n = a + b;
+    if (!(x > 0 && y > 0)) return a * lx + b * ly + 0.5 * Math.log(a * b / (2 * Math.PI * n)) +
+      a * Math.log(n / a) + b * Math.log(n / b) - stirlerr(a) - stirlerr(b) + stirlerr(n);
+    return -bd0(a, n * x) - bd0(b, n * y) + 0.5 * Math.log(a * b / (2 * Math.PI * n)) - stirlerr(a) - stirlerr(b) + stirlerr(n);
   }
 
   // I_x(a,b) where the caller supplies x, y = 1 - x and their logs separately, so
@@ -2988,15 +3079,17 @@ cat("========================================================================\n"
   function ibetaXY(a, b, x, y, lx, ly) {
     if (x <= 0 && !(lx > -Infinity)) return 0;
     if (y <= 0 && !(ly > -Infinity)) return 1;
-    var lbt = lgamma(a + b) - lgamma(a) - lgamma(b) + a * lx + b * ly;
+    var lbt = logBetaPrefactor(a, b, x, y, lx, ly);
     if (x < (a + 1) / (a + b + 2)) return Math.exp(lbt) * betacf(a, b, x) / a;
     return 1 - Math.exp(lbt) * betacf(b, a, y) / b;
   }
 
   function pgammaUpper(x, shape) { return gammaPQ(shape, x)[1]; }
   function pchisqUpper(x, df) {
-    if (!(df > 0) || isNaN(x)) return NaN;
+    // df = 0 is the point mass at 0, as R: pchisq(x, 0, lower.tail = FALSE) = 0 for x > 0, 1 for x <= 0
+    if (!(df >= 0) || isNaN(x)) return NaN;
     if (x <= 0) return 1;
+    if (df === 0) return 0;
     return gammaPQ(df / 2, x / 2)[1];
   }
   function pnormUpper(z) {
@@ -3021,7 +3114,9 @@ cat("========================================================================\n"
       lx = 2 * Math.log(r); ly = 0; x = Math.exp(lx); y = 1;
     } else {
       x = r2 / (1 + r2); y = 1 / (1 + r2);
-      lx = Math.log(r2) - Math.log1p(r2); ly = -Math.log1p(r2);
+      // log x = -log1p(1 / r2): log(r2) - log1p(r2) cancels when r2 is large (df >> t^2), and a * log x then
+      // carries an absolute error ~1e-16 * a * log r2 (rel 1.5e-7 at pt(3, 1e8)).
+      lx = r2 > 1 ? -Math.log1p(1 / r2) : Math.log(r2) - Math.log1p(r2); ly = -Math.log1p(r2);
     }
     var half = 0.5 * ibetaXY(df / 2, 0.5, x, y, lx, ly);   // P(T > |t|)
     return t > 0 ? half : 1 - half;
@@ -3031,18 +3126,24 @@ cat("========================================================================\n"
     if (!(df1 > 0) || !(df2 > 0) || isNaN(f)) return NaN;
     if (f <= 0) return 1;
     if (f === Infinity) return 0;
+    // infinite degrees of freedom, in R's order (pf.c): df1 = Inf first, then df2 = Inf
+    if (df1 === Infinity) {
+      if (df2 === Infinity) return f < 1 ? 1 : f === 1 ? 0.5 : 0;
+      return gammaPQ(df2 / 2, df2 / (2 * f))[0];   // pchisq(df2 / f, df2, lower.tail = TRUE)
+    }
+    if (df2 === Infinity) return pchisqUpper(f * df1, df1);
     // P(F > f) = I_x(df2/2, df1/2), x = df2 / (df2 + df1 f), y = df1 f / (df2 + df1 f)
     var u = df1 * f / df2;           // y / x
     var x, y, lx, ly;
     if (u > 1e300) { lx = -Math.log(u); ly = 0; x = Math.exp(lx); y = 1; }
-    else { x = 1 / (1 + u); y = u / (1 + u); lx = -Math.log1p(u); ly = Math.log(u) - Math.log1p(u); }
+    else { x = 1 / (1 + u); y = u / (1 + u); lx = -Math.log1p(u); ly = u > 1 ? -Math.log1p(1 / u) : Math.log(u) - Math.log1p(u); }
     return ibetaXY(df2 / 2, df1 / 2, x, y, lx, ly);
   }
   function p2norm(z) { return isNaN(z) ? NaN : Math.min(1, 2 * pnormUpper(Math.abs(z))); }
   function p2t(t, df) { return isNaN(t) ? NaN : Math.min(1, 2 * ptUpper(Math.abs(t), df)); }
 
   var api = { pnormUpper: pnormUpper, pchisqUpper: pchisqUpper, ptUpper: ptUpper, pfUpper: pfUpper,
-    pgammaUpper: pgammaUpper, p2norm: p2norm, p2t: p2t, _lgamma: lgamma, _gammaPQ: gammaPQ, _ibetaXY: ibetaXY };
+    pgammaUpper: pgammaUpper, p2norm: p2norm, p2t: p2t, _lgamma: lgamma, _gammaPQ: gammaPQ, _ibetaXY: ibetaXY, _logBetaPrefactor: logBetaPrefactor, _betacf: betacf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmTail = api;
 })(typeof window !== "undefined" ? window : globalThis);
@@ -3489,22 +3590,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
 
 
- const NORM_A = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
-
- 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
-
- const NORM_B = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
-
- 6.680131188771972e+01, -1.328068155288572e+01];
-
- const NORM_C = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
-
- -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
-
- const NORM_D = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
-
- 3.754408661907416e+00];
-
  const GAMMA_C = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
 
  771.32342877765313, -176.61502916214059, 12.507343278686905,
@@ -3519,7 +3604,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  normCDF: function(x) {
 
- const key = x.toFixed(6);
+ // IPD-Follow fix: keyed on x.toFixed(6), so a value depended on the call before it; the cache is now keyed
+ // on the exact argument (Map keys compare by value)
+ const key = x;
 
  if (normCache.has(key)) return normCache.get(key);
 
@@ -3550,48 +3637,52 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
 
  normQuantile: function(p) {
-
- if (p <= 0) return -Infinity;
-
- if (p >= 1) return Infinity;
-
- if (p === 0.5) return 0;
-
-
-
+ // Standard-normal quantile: Wichura (1988) AS 241 (PPND16), the algorithm of R's qnorm (relative error
+ // ~1e-16; the port in shared/ma-core.js _qnorm). IPD-Quant fix: the old body evaluated Acklam's
+ // coefficients inside AS 241's branch structure (r = 0.180625 - q^2, tail r = sqrt(-log p)) and returned
+ // -1.0022 for p = 0.975 (R qnorm 1.959964) and +1.0022 for p = 0.025.
+ if (isNaN(p) || p < 0 || p > 1) return NaN;
+ if (p === 0) return -Infinity;
+ if (p === 1) return Infinity;
  const q = p - 0.5;
-
+ let r, val;
  if (Math.abs(q) <= 0.425) {
-
- const r = 0.180625 - q * q;
-
- return q * (((((((NORM_A[0]*r+NORM_A[1])*r+NORM_A[2])*r+NORM_A[3])*r+NORM_A[4])*r+NORM_A[5])*r+1) /
-
- (((((NORM_B[0]*r+NORM_B[1])*r+NORM_B[2])*r+NORM_B[3])*r+NORM_B[4])*r+1));
-
+ r = 0.180625 - q * q;
+ return q * (((((((r * 2509.0809287301226727 + 33430.575583588128105) * r + 67265.770927008700853) * r +
+ 45921.953931549871457) * r + 13731.693765509461125) * r + 1971.5909503065514427) * r +
+ 133.14166789178437745) * r + 3.387132872796366608) /
+ (((((((r * 5226.495278852854561 + 28729.085735721942674) * r + 39307.89580009271061) * r +
+ 21213.794301586595867) * r + 5394.1960214247511077) * r + 687.1870074920579083) * r +
+ 42.313330701600911252) * r + 1);
  }
-
-
-
- let r = q < 0 ? p : 1 - p;
-
- r = Math.max(1e-300, r); // Guard against floating point underflow
-
- r = Math.sqrt(-Math.log(r));
-
- const x = (((((NORM_C[0]*r+NORM_C[1])*r+NORM_C[2])*r+NORM_C[3])*r+NORM_C[4])*r+NORM_C[5]) /
-
- ((((NORM_D[0]*r+NORM_D[1])*r+NORM_D[2])*r+NORM_D[3])*r+1);
-
- return q < 0 ? -x : x;
-
+ r = Math.sqrt(-Math.log(q < 0 ? p : 1 - p));
+ if (r <= 5) {
+ r -= 1.6;
+ val = (((((((r * 7.7454501427834140764e-4 + 0.0227238449892691845833) * r + 0.24178072517745061177) * r +
+ 1.27045825245236838258) * r + 3.64784832476320460504) * r + 5.7694972214606914055) * r +
+ 4.6303378461565452959) * r + 1.42343711074968357734) /
+ (((((((r * 1.05075007164441684324e-9 + 5.475938084995344946e-4) * r + 0.0151986665636164571966) * r +
+ 0.14810397642748007459) * r + 0.68976733498510000455) * r + 1.6763848301838038494) * r +
+ 2.05319162663775882187) * r + 1);
+ } else {
+ r -= 5;
+ val = (((((((r * 2.01033439929228813265e-7 + 2.71155556874348757815e-5) * r + 0.0012426609473880784386) * r +
+ 0.026532189526576123093) * r + 0.29656057182850489123) * r + 1.7848265399172913358) * r +
+ 5.4637849111641143699) * r + 6.6579046435011037772) /
+ (((((((r * 2.04426310338993978564e-15 + 1.4215117583164458887e-7) * r + 1.8463183175100546818e-5) * r +
+ 7.868691311456132591e-4) * r + 0.0148753612908506148525) * r + 0.13692988092273580531) * r +
+ 0.59983220655588793769) * r + 1);
+ }
+ return q < 0 ? -val : val;
  },
 
 
 
  logGamma: function(z) {
 
- const key = z.toFixed(6);
+ // IPD-Follow fix: keyed on z.toFixed(6) (logGamma(2e-7) after logGamma(4e-7) returned 14.73, R lgamma 15.42);
+ // now keyed on the exact argument
+ const key = z;
 
  if (gammaCache.has(key)) return gammaCache.get(key);
 
@@ -3637,7 +3728,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  if (x <= 0) return 0;
 
- const key = `${x.toFixed(4)}_${df}`;
+ // IPD-Follow fix: keyed on x.toFixed(4) (chi2CDF(4e-5, 1) after chi2CDF(4.4e-5, 1) returned 0.005293, R pchisq
+ // 0.005046); String(x) is the exact (round-trip) decimal of x
+ const key = String(x) + '_' + String(df);
 
  if (chi2Cache.has(key)) return chi2Cache.get(key);
 
@@ -3722,15 +3815,49 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
 
  chi2Quantile: function(p, df) {
-
- if (df <= 0) return 0;
-
- const z = this.normQuantile(p);
-
- const h = 2 / (9 * df);
-
- return df * Math.pow(Math.max(0, 1 - h + z * Math.sqrt(h)), 3);
-
+ // Inverse chi-square CDF, as R qchisq(p, df). IPD-Quant fix: the old body was the Wilson-Hilferty
+ // approximation alone, fed by the broken normQuantile, so chi2Quantile(0.95, 1) = 0.0738 (R 3.841459) and
+ // chi2Quantile(0.975, df) < chi2Quantile(0.025, df). Now: Wilson-Hilferty (or, where it is not positive,
+ // the small-x series x = 2 (p Gamma(df/2 + 1))^(2/df)) as the start, then Newton on u = log(x/2) kept inside
+ // a bracket (bisection when a step leaves it), solving log P(X <= x) = log p for p <= 0.5 and
+ // log P(X > x) = log(1 - p) above, each from AlmTail's regularized gamma on the side it computes directly.
+ if (isNaN(p) || isNaN(df) || p < 0 || p > 1) return NaN;
+ if (p === 0) return 0;                      // R qgamma: the p boundaries come before the df check
+ if (p === 1) return Infinity;
+ if (df < 0) return NaN;
+ if (df === 0) return 0;
+ if (df === Infinity) return Infinity;
+ // AlmTail's regularized-gamma series stops after 2000 terms, which no longer converges near the median
+ // once df exceeds ~2e5 (pchisqUpper(999999.33, 1e6) = 0.5023, R 0.5; 1.4e-12 relative at df = 2e5): fail closed
+ // above df = 1e5 instead of solving an inaccurate CDF. (In this page df is k - 1 or k - p.)
+ if (df > 1e5) return NaN;
+ const a = df / 2, lga = AlmTail._lgamma(a);
+ const lower = p <= 0.5;
+ const lt = Math.log(lower ? p : 1 - p);
+ // h(u) is increasing in u and h(root) = 0; logS is the log of the probability on the solved side
+ const logS = function(u) { const pq = AlmTail._gammaPQ(a, Math.exp(u)); return Math.log(lower ? pq[0] : pq[1]); };
+ const h = function(ls) { return lower ? ls - lt : lt - ls; };
+ let lo = Math.log(Number.MIN_VALUE), hi = Math.log(Number.MAX_VALUE / 2);
+ if (h(logS(lo)) >= 0) return 0;              // quantile below the smallest positive double (R returns 0)
+ if (h(logS(hi)) <= 0) return Infinity;       // beyond the double range
+ const z = this.normQuantile(p), c = 2 / (9 * df);
+ const wh = df * Math.pow(1 - c + z * Math.sqrt(c), 3);
+ let u = wh > 0 && isFinite(wh) ? Math.log(wh / 2) : (Math.log(p) + AlmTail._lgamma(a + 1)) / a;
+ if (!(u > lo && u < hi)) u = 0.5 * (lo + hi);
+ let done = false;
+ for (let it = 0; it < 500 && !done; it++) {
+ const ls = logS(u), f = h(ls);
+ if (isNaN(f)) return NaN;                 // never turn a failed evaluation into a number
+ if (f === 0) { done = true; break; }
+ if (f < 0) lo = u; else hi = u;
+ // dh/du = x/2 * density / probability on the solved side
+ const d = Math.exp(a * u - Math.exp(u) - lga - ls);
+ let nu = u - f / d;
+ if (!(nu > lo && nu < hi)) nu = 0.5 * (lo + hi);
+ if (Math.abs(nu - u) <= 1e-15 * Math.max(1, Math.abs(nu)) || hi - lo <= 1e-15 * Math.max(1, Math.abs(hi))) { u = nu; done = true; break; }
+ u = nu;
+ }
+ return done ? 2 * Math.exp(u) : NaN;           // not converged: fail closed
  },
 
 
@@ -3782,15 +3909,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  return Math.exp(-lc - (df + 1) / 2 * l1);
  };
  let lo = 0, hi = 1;
- while (upper(hi) > target && hi < 1e300) { lo = hi; hi *= 2; }
+ // IPD-More fix: the bracket stopped at 1e300, so a quantile in (1e300, max double] came back infinite
+ // (tQuantile(1e-152, 0.5) = -Infinity, R qt -1.0285e303); it now doubles up to the largest finite double.
+ while (upper(hi) > target && hi <= Number.MAX_VALUE / 2) { lo = hi; hi *= 2; }
+ if (upper(hi) > target && hi < Number.MAX_VALUE) { lo = hi; hi = Number.MAX_VALUE; }
  if (upper(hi) > target) return sign * Infinity;      // quantile beyond the double range
- let x = 0.5 * (lo + hi);
+ let x = lo + 0.5 * (hi - lo);                         // midpoints without overflow near MAX_VALUE
  for (let it = 0; it < 400; it++) {
  const f = upper(x) - target;                     // decreasing in x
  if (f === 0) break;
  if (f > 0) lo = x; else hi = x;
  let nx = x + f / dens(x);                        // Newton step (-dF/dx = density)
- if (!(nx > lo && nx < hi)) nx = 0.5 * (lo + hi);
+ if (!(nx > lo && nx < hi)) nx = lo + 0.5 * (hi - lo);
  if (Math.abs(nx - x) <= 1e-15 * Math.abs(nx) || hi - lo <= 1e-15 * hi) { x = nx; break; }
  x = nx;
  }
@@ -3926,35 +4056,32 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  cdf: function(x, mean, std) {
 
- mean = mean || 0; std = std || 1;
-
+ // IPD-More fix: was mean || 0, std || 1, so sd = 0 became sd = 1 (and a NaN mean 0). As R pnorm:
+ // defaults only for an omitted argument, a step at the mean for sd = 0, NaN for sd < 0.
+ if (mean === undefined || mean === null) mean = 0;
+ if (std === undefined || std === null) std = 1;
+ if (Number.isNaN(x) || Number.isNaN(mean) || Number.isNaN(std) || std < 0) return NaN;
+ if (!Number.isFinite(x) && mean === x) return NaN;   // as R: checked before the sd = 0 step
+ if (std === 0) return x < mean ? 0 : 1;
  return 0.5 * (1 + erf((x - mean) / (std * Math.sqrt(2))));
 
  },
 
  inv: function(p, mean, std) {
 
- mean = mean || 0; std = std || 1;
+ // IPD-More fix: was mean || 0, std || 1, so sd = 0 became sd = 1. As R qnorm: defaults only for an
+ // omitted argument; p outside [0, 1] NaN; p = 0 / 1 give -Inf / Inf; then sd < 0 NaN and sd = 0 the mean.
+ if (mean === undefined || mean === null) mean = 0;
+ if (std === undefined || std === null) std = 1;
+ if (Number.isNaN(p) || Number.isNaN(mean) || Number.isNaN(std) || p < 0 || p > 1) return NaN;
+ if (p === 0) return -Infinity;
+ if (p === 1) return Infinity;
+ if (std < 0) return NaN;
+ if (std === 0) return mean;
 
-
-
- var a = [0, -0.322232431088, -1, -0.342242088547, -0.0204231210245, -0.0000453642210148];
-
- var b = [0, 0.0993484626060, 0.588581570495, 0.531103462366, 0.103537752850, 0.0038560700634];
-
- var y = p - 0.5;
-
- if (Math.abs(y) < 0.42) {
-
- var r = y * y;
-
- return mean + std * y * (a[1] + r * (a[2] + r * (a[3] + r * (a[4] + r * a[5])))) /
-
- (1 + r * (b[1] + r * (b[2] + r * (b[3] + r * (b[4] + r * b[5])))));
-
- }
-
-                 return mean + std * (p > 0.5 ? 1 : -1) * Math.sqrt(-2 * Math.log(Math.min(p, 1-p)));
+ // IPD-Quant fix: was a 5-term rational approximation in |p - 0.5| < 0.42 and sqrt(-2 log p) outside
+ // it (jStat.normal.inv(0.975) = 2.716, R qnorm 1.959964); now MathUtils.normQuantile (AS 241, as R).
+ return mean + std * MathUtils.normQuantile(p);
 
              }
 
@@ -16459,6 +16586,24 @@ function runAdaptiveMADesign(currentResults, candidateStudies) {
 
 
 
+function higginsThompsonI2CI(Q, k, confLevel) {
+ // IPD-More fix: test-based CI for H and I^2 of Higgins & Thompson (Stat Med 2002;21:1539), exactly as
+ // meta (meta:::calcH / isquared, the lower.I2 / upper.I2 of metagen): ln H = ln(max(sqrt(Q / (k - 1)), 1))
+ // with SE 0.5 (ln Q - ln(k - 1)) / (sqrt(2Q) - sqrt(2k - 3)) if Q > k, else
+ // sqrt(1 / (2 (k - 2)) (1 - 1 / (3 (k - 2)^2))); I^2 = (H^2 - 1) / H^2 with H bounds floored at 1.
+ // Not defined (null, NA in meta) for k = 2 with Q <= 2, or k < 2. Returns percentages.
+ confLevel = confLevel || 0.95;
+ var z = MathUtils.normQuantile(1 - (1 - confLevel) / 2);
+ var H = k > 1 ? Math.sqrt(Q / (k - 1)) : NaN;
+ var se = NaN;
+ if (Q > k) { if (k >= 2) se = 0.5 * (Math.log(Q) - Math.log(k - 1)) / (Math.sqrt(2 * Q) - Math.sqrt(2 * k - 3)); }
+ else if (k > 2) se = Math.sqrt(1 / (2 * (k - 2)) * (1 - 1 / (3 * Math.pow(k - 2, 2))));
+ if (!(Number.isFinite(H) && Number.isFinite(se))) return { lower: null, upper: null };
+ var lnH = Math.log(Math.max(H, 1));
+ var t = function (h) { return (h * h - 1) / (h * h) * 100; };
+ return { lower: t(Math.max(Math.exp(lnH - z * se), 1)), upper: t(Math.max(Math.exp(lnH + z * se), 1)) };
+ }
+
 function calculateI2WithCI(Q, k, confLevel) {
 
  confLevel = confLevel || 0.95;
@@ -16471,31 +16616,12 @@ function calculateI2WithCI(Q, k, confLevel) {
 
 
 
- var alpha = 1 - confLevel;
-
- var z = jStat.normal.inv(1 - alpha/2, 0, 1);
-
-
-
- if (Q > k) {
-
- var B = 0.5 * (Math.log(Q) - Math.log(df)) / (Math.sqrt(2*Q) - Math.sqrt(2*df - 1));
-
- var L = Math.exp(0.5 * (Math.log(Q - df) - z * B));
-
- var U = Math.exp(0.5 * (Math.log(Q - df) + z * B));
-
- var I2Lower = Math.max(0, ((L*L) / (L*L + df)) * 100);
-
- var I2Upper = Math.min(100, ((U*U) / (U*U + df)) * 100);
-
- } else {
-
- var I2Lower = 0;
-
- var I2Upper = Math.max(0, ((jStat.chisquare.inv(1 - alpha/2, df) - df) / jStat.chisquare.inv(1 - alpha/2, df)) * 100);
-
- }
+ // IPD-More fix: the interval was exp(0.5 ln(Q - df) -/+ z B) used as H (Q = 25, k = 8: 64.2-78.7%; meta
+ // 42.5-86.4%) and, for Q <= k, the 0.975 chi-square quantile in place of Q. It is now Higgins &
+ // Thompson's test-based interval as meta computes it (higginsThompsonI2CI).
+ var ht = higginsThompsonI2CI(Q, k, confLevel);
+ var I2Lower = ht.lower;
+ var I2Upper = ht.upper;
 
 
 
@@ -16511,7 +16637,8 @@ function calculateI2WithCI(Q, k, confLevel) {
 
  df: df,
 
- pValue: AlmTail.pchisqUpper(Q, df),
+ // IPD-Follow: 0 df (k = 1) keeps p = 1 as metafor QEp; Q there is rounding noise and pchisqUpper(Q > 0, 0) = 0
+ pValue: df > 0 ? AlmTail.pchisqUpper(Q, df) : 1,
 
  interpretation: interpretI2(I2),
 
@@ -17966,60 +18093,92 @@ function calculateResiduals(effects, variances, pooledEffect, tau2) {
 
 
 function calculateShapiroWilk(x) {
-
-
-
+ // IPD-More fix: W was the Shapiro-Francia-type correlation with Blom scores, computed on the input in the
+ // order given (unsorted input: survival example effects W = 0.0151, R shapiro.test 0.9512), and the
+ // p-value a four-step lookup (0.5 / 0.1 / 0.05 / 0.01). This is now Royston's algorithm AS R94 as R's
+ // shapiro.test (src/library/stats/src/swilk.c): finite values sorted, coefficients from qnorm with
+ // Royston's polynomial corrections, W as the squared correlation, the exact p for n = 3 and Royston's
+ // normalising transformations for n = 4 .. 11 and n >= 12 (upper normal tail).
+ // Input as R: missing values (null / NaN) dropped (complete.cases); an infinite value gives W = NaN.
+ x = (x || []).filter(function (v) { return typeof v === 'number' && !Number.isNaN(v); }).slice().sort(function (p, q) { return p - q; });
  var n = x.length;
-
  if (n < 3 || n > 5000) {
-
  return { W: null, pValue: null, note: "Sample size outside valid range (3-5000)" };
-
  }
-
-
-
- var mean = x.reduce(function(a, b) { return a + b; }, 0) / n;
-
- var ss = x.reduce(function(sum, xi) { return sum + Math.pow(xi - mean, 2); }, 0);
-
-
-
- var a = [];
-
- for (var i = 0; i < n; i++) {
-
- a.push(jStat.normal.inv((i + 1 - 0.375) / (n + 0.25), 0, 1));
-
+ if (!x.every(Number.isFinite)) {
+ return { W: NaN, pValue: NaN, note: "Non-finite values: W is not defined" };
  }
-
- var sumA2 = a.reduce(function(sum, ai) { return sum + ai * ai; }, 0);
-
-
-
- var b = 0;
-
- for (var i = 0; i < Math.floor(n/2); i++) {
-
- b += a[n - 1 - i] * (x[n - 1 - i] - x[i]);
-
+ var range = x[n - 1] - x[0];
+ if (range === 0) {
+ return { W: null, pValue: null, note: "All values are identical" };
  }
-
-
-
- var W = (b * b) / (sumA2 * ss);
-
-
-
- var pValue = W > 0.95 ? 0.5 : W > 0.9 ? 0.1 : W > 0.85 ? 0.05 : 0.01;
-
-
-
+ if (range < 1e-10) {   // as R: rescale tiny ranges
+ x = x.map(function (v) { return v / range; });
+ range = x[n - 1] - x[0];
+ }
+ var poly = function (cc, xv) {   // cc[0] + cc[1] x + ... (swilk.c poly)
+ var r = cc[0];
+ if (cc.length > 1) { var pp = xv * cc[cc.length - 1]; for (var j = cc.length - 2; j > 0; j--) pp = (pp + cc[j]) * xv; r += pp; }
+ return r;
+ };
+ var nn2 = Math.floor(n / 2), an = n, i;
+ var a = new Array(nn2 + 1);   // 1-based, as swilk.c
+ if (n === 3) {
+ a[1] = Math.SQRT1_2;
+ } else {
+ var an25 = an + 0.25, summ2 = 0;
+ for (i = 1; i <= nn2; i++) { a[i] = MathUtils.normQuantile((i - 0.375) / an25); summ2 += a[i] * a[i]; }
+ summ2 *= 2;
+ var ssumm2 = Math.sqrt(summ2), rsn = 1 / Math.sqrt(an);
+ var a1 = poly([0, 0.221157, -0.147981, -2.07119, 4.434685, -2.706056], rsn) - a[1] / ssumm2;
+ var i1, fac;
+ if (n > 5) {
+ i1 = 3;
+ var a2 = -a[2] / ssumm2 + poly([0, 0.042981, -0.293762, -1.752461, 5.682633, -3.582633], rsn);
+ fac = Math.sqrt((summ2 - 2 * (a[1] * a[1]) - 2 * (a[2] * a[2])) / (1 - 2 * (a1 * a1) - 2 * (a2 * a2)));
+ a[2] = a2;
+ } else {
+ i1 = 2;
+ fac = Math.sqrt((summ2 - 2 * (a[1] * a[1])) / (1 - 2 * (a1 * a1)));
+ }
+ a[1] = a1;
+ for (i = i1; i <= nn2; i++) a[i] /= -fac;
+ }
+ // W as the squared correlation between the scaled order statistics and the coefficients (swilk.c)
+ var sa = 0, sx = 0, j;
+ var coef = function (ii, jj) { return ii !== jj ? Math.sign(ii - jj) * a[1 + Math.min(ii, jj)] : 0; };
+ for (i = 0, j = n - 1; i < n; i++, j--) { sa += coef(i, j); sx += x[i] / range; }
+ sa /= n; sx /= n;
+ var ssa = 0, ssx = 0, sax = 0;
+ for (i = 0, j = n - 1; i < n; i++, j--) {
+ var asa = coef(i, j) - sa, xsx = x[i] / range - sx;
+ ssa += asa * asa; ssx += xsx * xsx; sax += asa * xsx;
+ }
+ var ssassx = Math.sqrt(ssa * ssx);
+ var w1 = (ssassx - sax) * (ssassx + sax) / (ssa * ssx);
+ var W = 1 - w1;
+ var pValue;
+ if (n === 3) {
+ pValue = Math.max(0, 1.90985931710274 * (Math.asin(Math.sqrt(W)) - 1.04719755119660));
+ } else {
+ var y = Math.log(w1), m, sd;
+ if (n <= 11) {
+ var gamma = poly([-2.273, 0.459], an);
+ if (y >= gamma) pValue = 1e-99;
+ else {
+ y = -Math.log(gamma - y);
+ m = poly([0.544, -0.39978, 0.025054, -6.714e-4], an);
+ sd = Math.exp(poly([1.3822, -0.77857, 0.062767, -0.0020322], an));
+ }
+ } else {
+ var lx = Math.log(an);
+ m = poly([-1.5861, -0.31082, -0.083751, 0.0038915], lx);
+ sd = Math.exp(poly([-0.4803, -0.082676, 0.0030302], lx));
+ }
+ if (pValue === undefined) pValue = AlmTail.pnormUpper((y - m) / sd);
+ }
  return { W: W, pValue: pValue, interpretation: pValue > 0.05 ? "Residuals appear normally distributed" : "Evidence of non-normality in residuals" };
-
  }
-
-
 
 function kFoldCrossValidation(data, modelFn, k, metric) {
  if (typeof SeededRNG !== 'undefined') SeededRNG.patchMathRandom(58);
@@ -31174,6 +31333,7 @@ function showMethodGuide() {
  if (Number.isNaN(z)) return NaN;
  if (!Number.isFinite(z)) return z > 0 ? 1 : 0;
  const h = 0.5 * z * z;
+ if (h === Infinity) return z > 0 ? 1 : 0; // z * z overflows for finite |z| > ~1.3e154 (R: pnorm(1e155) = 1)
  const a = 0.5, LG = 0.5723649429247001; // log Gamma(1/2) = log(sqrt(pi))
  let q;
  if (h === 0) {
@@ -31434,57 +31594,19 @@ function showMethodGuide() {
 
 
  tCDF: (t, df) => {
-
- const x = df / (df + t * t);
-
- return 1 - 0.5 * Stats.betaCDF(x, df / 2, 0.5);
-
+ // IPD-Follow fix: was 1 - I_{df/(df+t^2)}(df/2, 1/2) / 2 for every t, i.e. P(T <= |t|) (tCDF(-2, 5) = 0.949,
+ // R pt 0.0510). Now MathUtils.tCDF (P(T <= t) from the AlmTail upper tail, both signs).
+ return MathUtils.tCDF(t, df);
  },
 
 
 
  tQuantile: (p, df) => {
- // P60 fix: Hill (1970, ACM 396) start with the two-tailed probability P = 2 min(p, 1 - p),
- // then Newton steps on the upper tail P(T > x) = I_{df/(df+x^2)}(df/2, 1/2) / 2.
- if (!(p > 0) || !(p < 1) || !(df > 0)) return p === 0 ? -Infinity : (p === 1 ? Infinity : NaN);
- if (p === 0.5) return 0;
- const sign = p < 0.5 ? -1 : 1;
- const p2 = p < 0.5 ? p : 1 - p;
- const P = 2 * p2;
- let x;
- if (df === 1) {
- x = Math.tan(Math.PI * (0.5 - p2));
- } else if (df === 2) {
- x = Math.sqrt(2 / (P * (2 - P)) - 2);
- } else {
- const a = 1 / (df - 0.5);
- const b = 48 / (a * a);
- let c = ((20700 * a / b - 98) * a - 16) * a + 96.36;
- const d = ((94.5 / (b + c) - 3) / b + 1) * Math.sqrt(a * Math.PI / 2) * df;
- let xx = d * P;
- let y = Math.pow(xx, 2 / df);
- if (y > 0.05 + a) {
- xx = Stats.normalQuantile(p2);
- y = xx * xx;
- if (df < 5) c += 0.3 * (df - 4.5) * (xx + 0.6);
- c += (((0.05 * d * xx - 5) * xx - 7) * xx - 2) * xx + b;
- y = (((((0.4 * y + 6.3) * y + 36) * y + 94.5) / c - y - 3) / b + 1) * xx;
- y = a * y * y;
- y = y > 0.002 ? Math.exp(y) - 1 : 0.5 * y * y + y;
- } else {
- y = ((1 / (((df + 6) / (df * y) - 0.089 * d - 0.822) * (df + 2) * 3) + 0.5 / (df + 4)) * y - 1) * (df + 1) / (df + 2) + 1 / y;
- }
- x = Math.sqrt(df * y);
- }
- const logc = Stats.logGamma((df + 1) / 2) - Stats.logGamma(df / 2) - 0.5 * Math.log(df * Math.PI);
- for (let it = 0; it < 50; it++) {
- const upper = 0.5 * Stats.betaCDF(df / (df + x * x), df / 2, 0.5);
- const dens = Math.exp(logc - (df + 1) / 2 * Math.log(1 + x * x / df));
- const step = (upper - p2) / dens;
- x += step;
- if (Math.abs(step) <= 1e-15 * Math.max(1, Math.abs(x))) break;
- }
- return sign * x;
+ // IPD-Quant fix: was a separate Hill (1970) start + 50 unbracketed Newton steps, which returned the wrong
+ // sign next to the median at df = 1000 (Stats.tQuantile(0.5 + 1e-8, 1000) = -5.4e-8, R qt +2.5e-8), NaN for
+ // df = 0.5 and df = Infinity, and up to ~1e-9 relative off at df = 1e6. Now the single corrected
+ // implementation (MathUtils.tQuantile: bracketed Newton on AlmTail's upper tail), as EnhancedPredictionInterval.
+ return MathUtils.tQuantile(p, df);
  },
 
 
@@ -32402,6 +32524,11 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  const order = times.map((t, i) => i).sort((a, b) => times[a] - times[b]);
  const zeros = () => new Array(p).fill(0);
  const zeros2 = () => Array.from({ length: p }, () => new Array(p).fill(0));
+ // Covariates are centred at their means (as R's coxph does): the partial likelihood and beta are unchanged,
+ // but uncentred x (e.g. 1e6 + x) made exp(eta) overflow and S2/s0 - (s1/s0)^2 cancel, so the fit returned NaN.
+ const xbar = zeros();
+ for (let i = 0; i < n; i++) for (let a = 0; a < p; a++) xbar[a] += covariates[i][a] / n;
+ covariates = covariates.map(x => x.map((v, a) => v - xbar[a]));
  const evalAt = (beta) => {
  const eta = covariates.map(x => x.reduce((sum, xi, j) => sum + xi * beta[j], 0));
  const r = eta.map(e => Math.exp(e));
@@ -32447,17 +32574,24 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  let cur = evalAt(beta);
  for (let iter = 0; iter < 100; iter++) {
  let delta = solve(cur.I, cur.U);
+ // singular information (e.g. a constant covariate): no estimate exists (R coxph: NA); never report the start value
+ if (!delta.every(Number.isFinite)) { beta = beta.map(() => NaN); break; }
  let next = evalAt(beta.map((b, j) => b + delta[j]));
  let halvings = 0;
- while (!(next.loglik >= cur.loglik - 1e-12) && halvings < 30) {
+ // A decrease within rounding of the log likelihood (summed over n terms) is not a decrease: an absolute 1e-12
+ // made the final Newton step of a converged fit halve to nothing and stop ~1e-7 short of the optimum.
+ const slack = 1e-10 * Math.max(1, Math.abs(cur.loglik));
+ while (!(next.loglik >= cur.loglik - slack) && halvings < 30) {
  delta = delta.map(v => v / 2); halvings++;
  next = evalAt(beta.map((b, j) => b + delta[j]));
  }
+ if (!Number.isFinite(next.loglik)) break; // never accept a non-finite iterate (a finite non-increase is rounding near the optimum)
  beta = beta.map((b, j) => b + delta[j]);
  cur = next;
  if (Math.max(...delta.map(Math.abs)) < 1e-12) break;
  }
- const vcov = p === 1 ? [[1 / cur.I[0][0]]] : MatrixUtils.inverse(cur.I);
+ const vcov = !beta.every(Number.isFinite) ? zeros2().map(r => r.map(() => NaN))
+ : (p === 1 ? [[1 / cur.I[0][0]]] : MatrixUtils.inverse(cur.I));
  const se = vcov.map((row, i) => Math.sqrt(row[i]));
  const hr = beta.map(b => Math.exp(b));
  const z = beta.map((b, i) => b / se[i]);
@@ -37750,6 +37884,17 @@ function runAnalysis() {
 
 // =============================================================================
 
+// Numeric core of the Q-profile panel (computeQProfile): metafor confint(rma(yi, vi))$random for tau^2 and I^2,
+// with I^2 at the point estimate 100 tau2 / (tau2 + s^2), s^2 metafor's typical within-study variance. null when
+// the Q-profile is not defined (fewer than 2 studies, a non-finite effect, a variance <= 0).
+function qProfilePanelValues(effects, variances, tau2Point, alpha) {
+ const r = I2ConfidenceIntervals.qProfile(NaN, effects.length - 1, tau2Point, variances, alpha, effects);
+ if (!r || r.method !== 'Q-profile (Viechtbauer 2007)' || !Number.isFinite(r.vt)) return null;
+ const vt = r.vt;
+ return { tau2Lower: r.tau2_lower, tau2Upper: r.tau2_upper, typicalVar: vt,
+   i2Point: 100 * tau2Point / (tau2Point + vt), i2Lower: r.lower, i2Upper: r.upper };
+}
+
 function computeQProfile() {
 
  if (!APP.results || !APP.results.studies) {
@@ -37800,51 +37945,17 @@ function computeQProfile() {
 
 
 
- // Find tau^2 bounds using bisection
-
- function findTau2(targetQ, lower = 0, upper = 10, tol = 1e-8, maxIter = 100) {
-
- for (let i = 0; i < maxIter; i++) {
-
- const mid = (lower + upper) / 2;
-
- const qMid = computeQ(mid);
-
- if (Math.abs(qMid - targetQ) < tol) return mid;
-
- if (qMid > targetQ) lower = mid;
-
- else upper = mid;
-
- }
-
- return (lower + upper) / 2;
-
- }
-
-
-
- // Compute CI for tau^2
-
- const tau2Lower = computeQ(0) > chiLower ? findTau2(chiLower) : 0;
-
- const tau2Upper = findTau2(chiUpper, 0, 100);
-
+ // Q-profile bounds and I^2 (IPD-Follow fix): the bisection here searched the lower bound on [0, 10] and the
+ // upper on [0, 100] (dat.normand1999: [10, 100], metafor [292.9, 2889.5]) and converted to I^2 with
+ // s^2 = (k - 1) / (sum w - (sum w)^2 / sum w^2), which is not metafor's s^2 and is negative (I^2 bounds of
+ // 294.6%). Now the generalized-Q roots and metafor's s^2 of I2ConfidenceIntervals.qProfile (qProfilePanelValues).
  const tau2Point = APP.results.pooled.tau2 ?? 0;
-
-
-
- // Compute I^2 from tau^2 (I^2 = tau^2 / (tau^2 + typical variance))
-
- const typicalVar = (k - 1) / (variances.reduce((a, b) => a + 1/b, 0) -
-
-   Math.pow(variances.reduce((a, b) => a + 1/b, 0), 2) / variances.reduce((a, b) => a + 1/(b*b), 0));
-
- const i2Point = 100 * tau2Point / (tau2Point + typicalVar);
-
- const i2Lower = 100 * tau2Lower / (tau2Lower + typicalVar);
-
- const i2Upper = 100 * tau2Upper / (tau2Upper + typicalVar);
+ const qp = qProfilePanelValues(effects, variances, tau2Point, alpha);
+ if (!qp) {
+ showNotification('Q-profile CI needs at least 2 studies with finite effects and positive variances', 'warning');
+ return;
+ }
+ const { tau2Lower, tau2Upper, typicalVar, i2Point, i2Lower, i2Upper } = qp;
 
 
 
@@ -50088,86 +50199,83 @@ function runPatientClustering() {
 
 
  testBased: function(Q, df, alpha = 0.05) {
-
- if (df < 1) return { lower: 0, upper: 0 };
-
-
-
- const chi2_lower = this.chi2Quantile(1 - alpha/2, df);
-
- const chi2_upper = this.chi2Quantile(alpha/2, df);
-
-
-
- let I2_lower = Math.max(0, (Q - chi2_lower) / Q) * 100;
-
- let I2_upper = Math.max(0, (Q - chi2_upper) / Q) * 100;
-
-
-
- if (I2_lower > I2_upper) {
-
- [I2_lower, I2_upper] = [I2_upper, I2_lower];
-
- }
-
-
-
- return {
-
- lower: Math.max(0, I2_lower),
-
- upper: Math.min(100, I2_upper),
-
- method: "Test-based (Higgins & Thompson 2002)"
-
- };
-
+ // IPD-More fix: was (Q - chi2 quantile) / Q, which is not the Higgins & Thompson (2002) interval it is
+ // labelled as; now that interval as meta computes it (higginsThompsonI2CI; null where meta gives NA).
+ const ht = higginsThompsonI2CI(Q, df + 1, 1 - alpha);
+ return { lower: ht.lower, upper: ht.upper, method: "Test-based (Higgins & Thompson 2002)" };
  },
 
 
 
- qProfile: function(Q, df, tau2, variances, alpha = 0.05) {
+ qProfile: function(Q, df, tau2, variances, alpha = 0.05, effects) {
 
- if (df < 1 || !variances || variances.length === 0) {
-
- return this.testBased(Q, df, alpha);
-
+ // IPD-More fix: Q(tau2) was approximated as Q * sum 1/(v + tau2) / sum 1/v and I^2 used the harmonic
+ // mean variance (survival example: tau2 upper 0.269, metafor 0.3715). This is now the Q-profile method
+ // of Viechtbauer (2007) as metafor confint.rma.uni: the generalized Q(tau2) = sum w (y - mu_w)^2 with
+ // w = 1/(v + tau2) is solved for qchisq(1 - alpha/2, k - 1) (lower bound) and qchisq(alpha/2, k - 1)
+ // (upper bound) on [0, max(100, 10 tau2)]; a bound is 0 when Q(0) is already below its quantile and
+ // the search limit when Q there is still above it; I^2 = 100 tau2 / (tau2 + vt) with metafor's typical
+ // within-study variance vt = (k - 1) sum w / ((sum w)^2 - sum w^2). Needs the study effects.
+ const okArr = a => Array.isArray(a) && a.length >= 2 && a.every(Number.isFinite);
+ if (!okArr(variances) || !okArr(effects) || effects.length !== variances.length || !variances.every(v => v > 0)) {
+ const tb = this.testBased(Q, df, alpha);
+ tb.note = 'Q-profile needs the study effects and positive variances; test-based interval shown';
+ return tb;
  }
 
-
-
  const k = variances.length;
+ const genQ = t2 => {
+ let sw = 0, swy = 0;
+ for (let i = 0; i < k; i++) { const w = 1 / (variances[i] + t2); sw += w; swy += w * effects[i]; }
+ const mu = swy / sw;
+ let q = 0;
+ for (let i = 0; i < k; i++) q += (effects[i] - mu) * (effects[i] - mu) / (variances[i] + t2);
+ return q;
+ };
+ if (!(alpha > 0 && alpha < 1)) {
+ return { lower: NaN, upper: NaN, tau2_lower: NaN, tau2_upper: NaN, method: "Q-profile (Viechtbauer 2007)", note: 'alpha must be in (0, 1)' };
+ }
+ const critU = this.chi2Quantile(1 - alpha/2, k - 1);
+ const critL = this.chi2Quantile(alpha/2, k - 1);
+ const t2max = Math.max(100, 10 * (Number.isFinite(tau2) ? tau2 : 0));
+ const q0 = genQ(0), qMax = genQ(t2max);
+ // Q(tau2) is decreasing in tau2: bisection to the last representable bracket
+ const root = target => {
+ let lo = 0, hi = t2max;
+ for (let it = 0; it < 2000 && hi - lo > 0; it++) {
+ const mid = lo + (hi - lo) / 2;
+ if (mid <= lo || mid >= hi) break;
+ const qm = genQ(mid);
+ if (!Number.isFinite(qm)) return NaN;   // never read a failed evaluation as a root-search decision
+ if (qm > target) lo = mid; else hi = mid;
+ }
+ return lo + (hi - lo) / 2;
+ };
+ const bound = crit => !(Number.isFinite(crit) && Number.isFinite(q0) && Number.isFinite(qMax)) ? NaN :
+ q0 < crit ? 0 : (qMax > crit ? t2max : root(crit));
+ const tau2_lower = bound(critU);
+ const tau2_upper = bound(critL);
 
-
-
- const tau2_lower = this.findTau2Bound(Q, variances, alpha/2, 'lower');
-
- const tau2_upper = this.findTau2Bound(Q, variances, 1 - alpha/2, 'upper');
-
-
-
- const sumInvVar = variances.reduce((sum, v) => sum + 1/v, 0);
-
- const typicalVar = k / sumInvVar;
-
-
-
- const I2_lower = tau2_lower / (tau2_lower + typicalVar) * 100;
-
- const I2_upper = tau2_upper / (tau2_upper + typicalVar) * 100;
-
-
+ // (sum w)^2 - sum w^2 = sum_i w_i * (sum of the other w_j), formed without the subtraction, which cancels
+ // when one weight dominates (metafor's trace cancels there too: vi = 1e-16, 1 gives its vt = -1)
+ const w = variances.map(v => 1 / v);
+ const pre = [0];
+ for (let i = 0; i < k; i++) pre.push(pre[i] + w[i]);
+ let suf = 0, cross = 0;
+ for (let i = k - 1; i >= 0; i--) { cross += w[i] * (pre[i] + suf); suf += w[i]; }
+ const vt = (k - 1) * pre[k] / cross;
 
  return {
 
- lower: Math.max(0, I2_lower),
+ lower: 100 * tau2_lower / (vt + tau2_lower),
 
- upper: Math.min(100, I2_upper),
+ upper: 100 * tau2_upper / (vt + tau2_upper),
 
  tau2_lower: tau2_lower,
 
  tau2_upper: tau2_upper,
+
+ vt: vt,
 
  method: "Q-profile (Viechtbauer 2007)"
 
@@ -50251,139 +50359,18 @@ function runPatientClustering() {
 
 
  chi2Quantile: function(p, df) {
-
- if (df <= 0) return 0;
-
-
-
- const z = this.normQuantile(p);
-
- const h = 2 / (9 * df);
-
- return df * Math.pow(1 - h + z * Math.sqrt(h), 3);
-
+ // IPD-Quant fix: this copy was Wilson-Hilferty on the broken normQuantile (chi2Quantile(0.95, 1) = 0.0738,
+ // R qchisq 3.841459; the 0.975 quantile below the 0.025 one). It now uses MathUtils.chi2Quantile (as R qchisq).
+ return MathUtils.chi2Quantile(p, df);
  },
 
 
 
  normQuantile: function(p) {
-
- if (p <= 0) return -Infinity;
-
- if (p >= 1) return Infinity;
-
-
-
- const a = [
-
- -3.969683028665376e+01, 2.209460984245205e+02,
-
- -2.759285104469687e+02, 1.383577518672690e+02,
-
- -3.066479806614716e+01, 2.506628277459239e+00
-
- ];
-
- const b = [
-
- -5.447609879822406e+01, 1.615858368580409e+02,
-
- -1.556989798598866e+02, 6.680131188771972e+01,
-
- -1.328068155288572e+01
-
- ];
-
-
-
- const q = p - 0.5;
-
- if (Math.abs(q) <= 0.425) {
-
- const r = 0.180625 - q * q;
-
- return q * ((((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*r+1) / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
-
- }
-
-
-
- let r = q < 0 ? p : 1 - p;
-
- r = Math.sqrt(-Math.log(r));
-
- const c = [
-
- -7.784894002430293e-03, -3.223964580411365e-01,
-
- -2.400758277161838e+00, -2.549732539343734e+00,
-
- 4.374664141464968e+00, 2.938163982698783e+00
-
- ];
-
- const d = [
-
- 7.784695709041462e-03, 3.224671290700398e-01,
-
- 2.445134137142996e+00, 3.754408661907416e+00
-
- ];
-
-
-
- const x = (((((c[0]*r+c[1])*r+c[2])*r+c[3])*r+c[4])*r+c[5]) /
-
- ((((d[0]*r+d[1])*r+d[2])*r+d[3])*r+1);
-
- return q < 0 ? -x : x;
-
- },
-
-
-
- findTau2Bound: function(Q, variances, p, direction) {
-
- const k = variances.length;
-
- const df = k - 1;
-
- const targetQ = this.chi2Quantile(p, df);
-
-
-
- let lo = 0, hi = 100;
-
- for (let iter = 0; iter < 50; iter++) {
-
- const mid = (lo + hi) / 2;
-
- const weights = variances.map(v => 1/(v + mid));
-
- const sumW = weights.reduce((a,b) => a+b, 0);
-
- const qVal = Q * sumW / variances.reduce((sum, v) => sum + 1/v, 0);
-
-
-
- if (direction === 'lower') {
-
- if (qVal < targetQ) hi = mid;
-
- else lo = mid;
-
- } else {
-
- if (qVal > targetQ) lo = mid;
-
- else hi = mid;
-
- }
-
- }
-
- return (lo + hi) / 2;
-
+ // IPD-Quant fix: this copy evaluated Acklam's coefficients inside AS 241's branch structure (as
+ // MathUtils.normQuantile did): normQuantile(0.975) = -1.0022 (R qnorm 1.959964). It now uses the single
+ // corrected implementation (AS 241, as R).
+ return MathUtils.normQuantile(p);
  },
 
 
@@ -50392,7 +50379,7 @@ function runPatientClustering() {
 
  const testCI = this.testBased(Q, df);
 
- const qCI = this.qProfile(Q, df, tau2, variances);
+ const qCI = this.qProfile(Q, df, tau2, variances, 0.05, effects);
 
  const bootCI = effects ? this.bootstrap(effects, variances) : null;
 
@@ -50420,7 +50407,7 @@ function runPatientClustering() {
 
  html += '<tr><td>Test-based</td>';
 
- html += '<td>' + I2.toFixed(1) + '% (' + testCI.lower.toFixed(1) + '–' + testCI.upper.toFixed(1) + '%)</td>';
+ html += '<td>' + I2.toFixed(1) + '% (' + (testCI.lower === null ? 'not defined for this k and Q' : testCI.lower.toFixed(1) + '–' + testCI.upper.toFixed(1) + '%') + ')</td>';
 
  html += '<td>Higgins & Thompson 2002</td></tr>';
 
@@ -50428,7 +50415,7 @@ function runPatientClustering() {
 
  html += '<tr><td>Q-profile</td>';
 
- html += '<td>' + I2.toFixed(1) + '% (' + qCI.lower.toFixed(1) + '–' + qCI.upper.toFixed(1) + '%)</td>';
+ html += '<td>' + I2.toFixed(1) + '% (' + (qCI.method.indexOf('Q-profile') !== 0 ? 'not available: needs study effects' : qCI.lower.toFixed(1) + '–' + qCI.upper.toFixed(1) + '%') + ')</td>';
 
  html += '<td>Viechtbauer 2007</td></tr>';
 
@@ -50454,7 +50441,11 @@ function runPatientClustering() {
 
  html += '<strong>Interpretation:</strong> ';
 
- if (testCI.lower < 25 && testCI.upper > 75) {
+ if (testCI.lower === null) {
+
+ html += '<span>Test-based interval not defined for this number of studies and Q.</span>';
+
+ } else if (testCI.lower < 25 && testCI.upper > 75) {
 
  html += '<span style="color:var(--accent-warning)">Wide CI indicates substantial uncertainty about heterogeneity magnitude.</span>';
 
@@ -50759,77 +50750,10 @@ function runPatientClustering() {
 
 
  normQuantile: function(p) {
-
- if (p <= 0) return -Infinity;
-
- if (p >= 1) return Infinity;
-
-
-
- const a = [
-
- -3.969683028665376e+01, 2.209460984245205e+02,
-
- -2.759285104469687e+02, 1.383577518672690e+02,
-
- -3.066479806614716e+01, 2.506628277459239e+00
-
- ];
-
- const b = [
-
- -5.447609879822406e+01, 1.615858368580409e+02,
-
- -1.556989798598866e+02, 6.680131188771972e+01,
-
- -1.328068155288572e+01
-
- ];
-
-
-
- const q = p - 0.5;
-
- if (Math.abs(q) <= 0.425) {
-
- const r = 0.180625 - q * q;
-
- return q * ((((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*r+1) / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
-
- }
-
-
-
- let r = q < 0 ? p : 1 - p;
-
- r = Math.sqrt(-Math.log(r));
-
- const c = [
-
- -7.784894002430293e-03, -3.223964580411365e-01,
-
- -2.400758277161838e+00, -2.549732539343734e+00,
-
- 4.374664141464968e+00, 2.938163982698783e+00
-
- ];
-
- const d = [
-
- 7.784695709041462e-03, 3.224671290700398e-01,
-
- 2.445134137142996e+00, 3.754408661907416e+00
-
- ];
-
-
-
- const x = (((((c[0]*r+c[1])*r+c[2])*r+c[3])*r+c[4])*r+c[5]) /
-
- ((((d[0]*r+d[1])*r+d[2])*r+d[3])*r+1);
-
- return q < 0 ? -x : x;
-
+ // IPD-Quant fix: this copy evaluated Acklam's coefficients inside AS 241's branch structure (as
+ // MathUtils.normQuantile did): normQuantile(0.975) = -1.0022 (R qnorm 1.959964). It now uses the single
+ // corrected implementation (AS 241, as R).
+ return MathUtils.normQuantile(p);
  }
 
  };
@@ -53816,79 +53740,10 @@ window.showTutorialMenu = showTutorialMenu;
 
 
  normQuantile: function(p) {
-
- if (p <= 0) return -Infinity;
-
- if (p >= 1) return Infinity;
-
- if (p === 0.5) return 0;
-
-
-
- const a = [
-
- -3.969683028665376e+01, 2.209460984245205e+02,
-
- -2.759285104469687e+02, 1.383577518672690e+02,
-
- -3.066479806614716e+01, 2.506628277459239e+00
-
- ];
-
- const b = [
-
- -5.447609879822406e+01, 1.615858368580409e+02,
-
- -1.556989798598866e+02, 6.680131188771972e+01,
-
- -1.328068155288572e+01
-
- ];
-
-
-
- const q = p - 0.5;
-
- if (Math.abs(q) <= 0.425) {
-
- const r = 0.180625 - q * q;
-
- return q * ((((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*r+1) / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
-
- }
-
-
-
- let r = q < 0 ? p : 1 - p;
-
- r = Math.sqrt(-Math.log(r));
-
- const c = [
-
- -7.784894002430293e-03, -3.223964580411365e-01,
-
- -2.400758277161838e+00, -2.549732539343734e+00,
-
- 4.374664141464968e+00, 2.938163982698783e+00
-
- ];
-
- const d = [
-
- 7.784695709041462e-03, 3.224671290700398e-01,
-
- 2.445134137142996e+00, 3.754408661907416e+00
-
- ];
-
-
-
- const x = (((((c[0]*r+c[1])*r+c[2])*r+c[3])*r+c[4])*r+c[5]) /
-
- ((((d[0]*r+d[1])*r+d[2])*r+d[3])*r+1);
-
- return q < 0 ? -x : x;
-
+ // IPD-Quant fix: this copy evaluated Acklam's coefficients inside AS 241's branch structure (as
+ // MathUtils.normQuantile did): normQuantile(0.975) = -1.0022 (R qnorm 1.959964). It now uses the single
+ // corrected implementation (AS 241, as R).
+ return MathUtils.normQuantile(p);
  },
 
 
@@ -55466,61 +55321,10 @@ window.showTutorialMenu = showTutorialMenu;
 
 
  normQuantile: function(p) {
-
- if (p <= 0) return -Infinity;
-
- if (p >= 1) return Infinity;
-
-
-
- const a = [-3.969683028665376e+01, 2.209460984245205e+02,
-
- -2.759285104469687e+02, 1.383577518672690e+02,
-
- -3.066479806614716e+01, 2.506628277459239e+00];
-
- const b = [-5.447609879822406e+01, 1.615858368580409e+02,
-
- -1.556989798598866e+02, 6.680131188771972e+01,
-
- -1.328068155288572e+01];
-
-
-
- const q = p - 0.5;
-
- if (Math.abs(q) <= 0.425) {
-
- const r = 0.180625 - q * q;
-
- return q * ((((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*r+1) / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
-
- }
-
-
-
- let r = q < 0 ? p : 1 - p;
-
- r = Math.sqrt(-Math.log(r));
-
- const c = [-7.784894002430293e-03, -3.223964580411365e-01,
-
- -2.400758277161838e+00, -2.549732539343734e+00,
-
- 4.374664141464968e+00, 2.938163982698783e+00];
-
- const d = [7.784695709041462e-03, 3.224671290700398e-01,
-
- 2.445134137142996e+00, 3.754408661907416e+00];
-
-
-
- const x = (((((c[0]*r+c[1])*r+c[2])*r+c[3])*r+c[4])*r+c[5]) /
-
- ((((d[0]*r+d[1])*r+d[2])*r+d[3])*r+1);
-
- return q < 0 ? -x : x;
-
+ // IPD-Quant fix: this copy evaluated Acklam's coefficients inside AS 241's branch structure (as
+ // MathUtils.normQuantile did): normQuantile(0.975) = -1.0022 (R qnorm 1.959964). It now uses the single
+ // corrected implementation (AS 241, as R).
+ return MathUtils.normQuantile(p);
  },
 
 
@@ -73019,14 +72823,14 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
             }
             function devAt(th) { var e = evalTheta(th); return e ? e.dev : Infinity; }
             function nelderMead(x0) {
-                var dim = 3, pts = [x0.slice()], fv = [devAt(x0)], evals = 1;
+                var dim = 3, pts = [x0.slice()], fv = [devAt(x0)], evals = 1, met = false;
                 for (var d = 0; d < dim; d++) { var xp = x0.slice(); xp[d] += (Math.abs(xp[d]) > 1e-3 ? 0.1 * xp[d] : 0.05); pts.push(xp); fv.push(devAt(xp)); evals++; }
                 while (evals < 20000) {
                     var ord = [0, 1, 2, 3].sort(function(i, j) { return fv[i] - fv[j]; });
                     pts = ord.map(function(i) { return pts[i]; }); fv = ord.map(function(i) { return fv[i]; });
                     var size = 0;
                     for (var q = 1; q <= dim; q++) for (var e = 0; e < dim; e++) size = Math.max(size, Math.abs(pts[q][e] - pts[0][e]));
-                    if (fv[dim] - fv[0] < 1e-13 && size < 1e-10) break;
+                    if (fv[dim] - fv[0] < 1e-13 && size < 1e-10) { met = true; break; }
                     var cen = [0, 0, 0];
                     for (var q2 = 0; q2 < dim; q2++) for (var e2 = 0; e2 < dim; e2++) cen[e2] += pts[q2][e2] / dim;
                     var xr = cen.map(function(c, e3) { return c + (c - pts[dim][e3]); }), fr = devAt(xr); evals++;
@@ -73045,25 +72849,49 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
                 }
                 var best = 0;
                 for (var q4 = 1; q4 <= dim; q4++) if (fv[q4] < fv[best]) best = q4;
-                return { x: pts[best], f: fv[best], evals: evals };
+                // Converged when the stopping rule was met, or when the cap ended the loop on a collapsed simplex
+                // whose values agree to the deviance's own precision (the absolute 1e-13 is below one ulp of a
+                // deviance in the thousands, so a converged simplex can sit a few ulps apart until the cap).
+                // A simplex still moving when the cap is reached is not converged.
+                if (!met) {
+                    var sizeEnd = 0;
+                    for (var q5 = 1; q5 <= dim; q5++) for (var e7 = 0; e7 < dim; e7++) sizeEnd = Math.max(sizeEnd, Math.abs(pts[q5][e7] - pts[0][e7]));
+                    var lo = Math.min.apply(null, fv), hi = Math.max.apply(null, fv);
+                    met = sizeEnd < 1e-10 && hi - lo <= 1e-13 * Math.max(1, Math.abs(lo));
+                }
+                return { x: pts[best], f: fv[best], evals: evals, converged: met };
             }
             // start from the EM solution: L = chol(D / sigma^2) (diagonal if D is not positive definite)
             var s2 = Math.max(sigma_sq, 1e-12);
             var d00 = Math.max(D[0][0], 0) / s2, d01 = D[0][1] / s2, d11 = Math.max(D[1][1], 0) / s2;
             var l00 = Math.sqrt(d00), l10 = l00 > 0 ? d01 / l00 : 0, l11 = Math.sqrt(Math.max(d11 - l10 * l10, 0));
             var starts = [[l00, l10, l11], [l00, 0, Math.sqrt(d11)], [l00, 0, 0]];
-            var bestFit = null;
+            var bestFit = null, settledFits = [];
             starts.forEach(function(x0) {
-                var cur = nelderMead(x0);
+                var cur = nelderMead(x0), settled = false;
                 for (var rs = 0; rs < 10; rs++) {          // restart from the best point until no further gain
                     var nxt = nelderMead(cur.x);
                     var gain = cur.f - nxt.f;
                     if (nxt.f < cur.f) cur = nxt;
-                    if (!(gain > 1e-12)) break;
+                    // the start is settled when a restart from its best point met the stopping rule without further gain
+                    if (!(gain > 1e-12)) { settled = nxt.converged; break; }
                 }
+                cur = { x: cur.x, f: cur.f, evals: cur.evals, converged: settled };
+                if (settled) settledFits.push(cur);
                 if (!bestFit || cur.f < bestFit.f) bestFit = cur;
             });
             if (!bestFit || !Number.isFinite(bestFit.f)) return null;
+            // Convergence belongs to the reported fit (IPD-Follow fix, Codex review of #530): it was granted when any
+            // settled start reached the best deviance within 1e-10 relative while the estimates came from bestFit,
+            // whose own run could have ended at the cap on a simplex that never collapsed. Now, when bestFit did not
+            // settle but a settled start is within that tolerance, the settled start is the reported fit; the flag is
+            // the reported fit's own.
+            if (!bestFit.converged) {
+                var tolF = 1e-10 * Math.max(1, Math.abs(bestFit.f)), alt = null;
+                settledFits.forEach(function(sf) { if (sf.f - bestFit.f <= tolF && (!alt || sf.f < alt.f)) alt = sf; });
+                if (alt) bestFit = alt;
+            }
+            var fitConverged = bestFit.converged === true;
             var fit = evalTheta(bestFit.x);
             if (!fit) return null;
             var sig = fit.rss / n, Lf = fit.L;
@@ -73077,7 +72905,7 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
                 var v0 = pt.Ai[0][0] * rr[0] + pt.Ai[0][1] * rr[1], v1 = pt.Ai[1][0] * rr[0] + pt.Ai[1][1] * rr[1];
                 return [Lf[0][0] * v0, Lf[1][0] * v0 + Lf[1][1] * v1];
             });
-            return { beta: fit.beta, cov: cov, D: Dml, sigma2: sig, dev: fit.dev, studyEffects: effs };
+            return { beta: fit.beta, cov: cov, D: Dml, sigma2: sig, dev: fit.dev, studyEffects: effs, converged: fitConverged };
         })();
 
         if (mlFit) {
@@ -73086,7 +72914,7 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
             D = mlFit.D;
             studyEffects = mlFit.studyEffects;
             finalLogLik = -0.5 * mlFit.dev;
-            converged = true;
+            converged = mlFit.converged;
             var betaCov = mlFit.cov;
             var betaSE = betaCov.map(function(row, idx2) { return Math.sqrt(Math.max(0, row[idx2])); });
         } else {
@@ -74367,7 +74195,7 @@ function drawClusterSizePlot(data, clusterVar) {
 
             DL: { estimate: -0.4876, se: 0.1570, tau2: 0.2561, I2: 91.24, Q: 136.91 },
 
-            REML: { estimate: -0.4876, se: 0.1761, tau2: 0.3361, I2: 91.24 },
+            REML: { estimate: -0.4877, se: 0.1836, tau2: 0.3706, I2: 93.77 },
 
             PM: { estimate: -0.4877, se: 0.1841, tau2: 0.3727 }
 
@@ -74919,7 +74747,9 @@ function runRandomEffectsREML(studies) {
 
         // First derivative of REML log-likelihood
 
-        let deriv1 = -0.5 * weights.reduce((s, w) => s + w, 0);
+        // the +1/2 sum(w^2)/sum(w) term makes this the REML score (without it, it converged to ML)
+        const sumW2 = weights.reduce((s, w) => s + w * w, 0);
+        let deriv1 = -0.5 * sumW + 0.5 * sumW2 / sumW;
 
         deriv1 += 0.5 * studies.reduce((s, st, i) => {
 
@@ -74933,7 +74763,7 @@ function runRandomEffectsREML(studies) {
 
         // Fisher information (expected second derivative)
 
-        const deriv2 = 0.5 * weights.reduce((s, w) => s + w * w, 0);
+        const deriv2 = 0.5 * sumW2;
 
 
 
@@ -74963,7 +74793,8 @@ function runRandomEffectsREML(studies) {
 
     const seFinal = Math.sqrt(1 / sumWFinal);
 
-    const I2 = Math.max(0, (Q - (k - 1)) / Q * 100);
+    // I2 from tau2 and the typical within-study variance, as metafor reports it
+    const I2 = 100 * tau2 / (tau2 + (k - 1) * sumWF / (sumWF * sumWF - sumW2F));
 
 
 
@@ -77347,9 +77178,11 @@ function displayValidationResults(results) {
       lines.push('# Paule-Mandel');
       lines.push('ref_pm   <- rma(yi=bcg_yi, vi=bcg_vi, method="PM",   level=' + confLevel + ')');
       lines.push('# HKSJ correction');
-      lines.push('ref_hksj <- rma(yi=bcg_yi, vi=bcg_vi, method="DL", test="knha", level=' + confLevel + ')');
+      lines.push('ref_hksj <- rma(yi=bcg_yi, vi=bcg_vi, method="DL", test="adhoc", level=' + confLevel + ')');
       lines.push('# Prediction interval');
-      lines.push('ref_pi   <- predict(ref_reml, level=' + confLevel + ')');
+      lines.push('# t with k-1 df, as the page (predict() would use z: rma defaults to test="z")');
+      lines.push('ref_pi_h <- qt((1 + ' + confLevel + ') / 2, ref_reml$k - 1) * sqrt(ref_reml$tau2 + ref_reml$se^2)');
+      lines.push('ref_pi   <- list(pi.lb = as.numeric(ref_reml$b) - ref_pi_h, pi.ub = as.numeric(ref_reml$b) + ref_pi_h)');
       lines.push('# Egger test (weighted linear regression, t-statistic)');
       lines.push('ref_eg   <- regtest(ref_reml, model="lm", predictor="sei")');
       lines.push('# Sidik-Jonkman');
@@ -77441,7 +77274,7 @@ function displayValidationResults(results) {
       // vi
       var curVi = st.map(function(s) { return studyVi(s); });
 
-      var testStr = useHKSJ ? '"knha"' : '"z"';
+      var testStr = useHKSJ ? '"adhoc"' : '"z"';
 
       lines.push('# ── Current analysis data ───────────────────────────────────────');
       lines.push('study  <- c(' + curNames.join(', ') + ')');
@@ -77455,7 +77288,13 @@ function displayValidationResults(results) {
       lines.push('');
 
       lines.push('# ── Prediction interval ─────────────────────────────────────────');
-      lines.push('pi_res <- predict(res_primary, level=' + confLevel + ')');
+      if (method === 'FE') {
+        lines.push('pi_res <- list(pi.lb = "not defined for a common-effect (FE) model", pi.ub = "")');
+      } else {
+        lines.push('# t with k-1 df on the fitted SE, as the page (predict() would use z)');
+        lines.push('pi_h <- qt((1 + ' + confLevel + ') / 2, res_primary$k - 1) * sqrt(res_primary$tau2 + res_primary$se^2)');
+        lines.push('pi_res <- list(pi.lb = as.numeric(res_primary$b) - pi_h, pi.ub = as.numeric(res_primary$b) + pi_h)');
+      }
       lines.push('cat("PI: [", pi_res$pi.lb, ",", pi_res$pi.ub, "]\\n")');
       lines.push('');
 
@@ -77473,7 +77312,7 @@ function displayValidationResults(results) {
       }
 
       lines.push('# ── HKSJ adjustment (DL + Knapp-Hartung) ─────────────────────────');
-      lines.push('res_hksj <- rma(yi=yi, vi=vi, method="DL", test="knha", level=' + confLevel + ')');
+      lines.push('res_hksj <- rma(yi=yi, vi=vi, method="DL", test="adhoc", level=' + confLevel + ')');
       lines.push('cat("HKSJ CI: [", res_hksj$ci.lb, ",", res_hksj$ci.ub, "]\\n")');
       lines.push('');
 
@@ -78145,7 +77984,7 @@ function displayValidationResults(results) {
           'library(metafor)',
           'yi  <- ' + v.yi,
           'vi  <- ' + v.vi,
-          'res <- rma(yi=yi, vi=vi, method="DL", test="knha", level=0.95)',
+          'res <- rma(yi=yi, vi=vi, method="DL", test="adhoc", level=0.95)',
           'list(',
           '  pooled=as.numeric(res$b),',
           '  se=as.numeric(res$se),',
@@ -78180,10 +78019,11 @@ function displayValidationResults(results) {
           'yi  <- ' + v.yi,
           'vi  <- ' + v.vi,
           'res <- rma(yi=yi, vi=vi, method="REML", level=0.95)',
-          'pi  <- predict(res, level=0.95)',
+          '# t with k-1 df, as the page (predict() would use z: rma defaults to test="z")',
+          'h   <- qt(0.975, res$k - 1) * sqrt(res$tau2 + res$se^2)',
           'list(',
-          '  pi_lower=as.numeric(pi$pi.lb),',
-          '  pi_upper=as.numeric(pi$pi.ub)',
+          '  pi_lower=as.numeric(res$b) - h,',
+          '  pi_upper=as.numeric(res$b) + h',
           ')'
         ].join('\n');
       },
@@ -78393,7 +78233,7 @@ function displayValidationResults(results) {
         var useHKSJ = !!(APP.config && APP.config.useHKSJ);
         var yiVec   = 'c(' + studies.map(function(s){ return studyYi(s); }).join(', ') + ')';
         var viVec   = 'c(' + studies.map(function(s){ return studyVi(s); }).join(', ') + ')';
-        var testStr = useHKSJ ? '"knha"' : '"z"';
+        var testStr = useHKSJ ? '"adhoc"' : '"z"'; // the page's HKSJ floors the scale at 1 (metafor "adhoc")
         return [
           'library(metafor)',
           'yi   <- ' + yiVec,
@@ -78447,7 +78287,8 @@ function displayValidationResults(results) {
           'library(metafor)',
           'yi   <- ' + yiVec,
           'vi   <- ' + viVec,
-          'res  <- rma(yi=yi, vi=vi, method=' + JSON.stringify(method) + ', level=' + conf + ')',
+          '# leaveOneOutAnalysis() pools by DerSimonian-Laird whatever method is selected, so R uses DL',
+          'res  <- rma(yi=yi, vi=vi, method="DL", level=' + conf + ')',
           'loo  <- leave1out(res)',
           'list(loo_count=nrow(loo), loo_first_est=as.numeric(loo$estimate[1]))'
         ].join('\n');
@@ -78533,7 +78374,7 @@ function displayValidationResults(results) {
           'library(metafor)',
           'yi <- ' + yiVec,
           'vi <- ' + viVec,
-          'res <- rma(yi=yi, vi=vi, method="DL", test="knha", level=' + conf + ')',
+          'res <- rma(yi=yi, vi=vi, method="DL", test="adhoc", level=' + conf + ')',
           'list(pooled=as.numeric(res$b), se=as.numeric(res$se), ci_lower=as.numeric(res$ci.lb), ci_upper=as.numeric(res$ci.ub))'
         ].join('\n');
       },
@@ -78576,15 +78417,18 @@ function displayValidationResults(results) {
         if (studies.length < 3) return null;
         var conf = safeConfLevel();
         var method = (APP.config && APP.config.reMethod) ? APP.config.reMethod : 'REML';
+        if (method === 'FE') return null; // no prediction interval under a common-effect model
+        var useHKSJ = !!(APP.config && APP.config.useHKSJ);
         var yiVec = 'c(' + studies.map(function(s) { return studyYi(s); }).join(', ') + ')';
         var viVec = 'c(' + studies.map(function(s) { return studyVi(s); }).join(', ') + ')';
         return [
           'library(metafor)',
           'yi <- ' + yiVec,
           'vi <- ' + viVec,
-          'res <- rma(yi=yi, vi=vi, method=' + JSON.stringify(method) + ', level=' + conf + ')',
-          'pi <- predict(res, level=' + conf + ')',
-          'list(pi_lower=as.numeric(pi$pi.lb), pi_upper=as.numeric(pi$pi.ub))'
+          'res <- rma(yi=yi, vi=vi, method=' + JSON.stringify(method) + ', test=' + (useHKSJ ? '"adhoc"' : '"z"') + ', level=' + conf + ')',
+          '# t with k-1 df, as the page (predict() would use z)',
+          'h <- qt((1 + ' + conf + ') / 2, res$k - 1) * sqrt(res$tau2 + res$se^2)',
+          'list(pi_lower=as.numeric(res$b) - h, pi_upper=as.numeric(res$b) + h)'
         ].join('\n');
       },
       tolerances: { pi_lower: 0.01, pi_upper: 0.01 }
@@ -87065,59 +86909,14 @@ function displayValidationResults(results) {
 
 
     _qProfileTau2CI: function(studies, tau2, alpha) {
-
-        const k = studies.length;
-
-        const chiLower = jStat.chisquare.inv(1 - alpha / 2, k - 1);
-
-        const chiUpper = jStat.chisquare.inv(alpha / 2, k - 1);
-
-
-
-        // Search for tau2 bounds using Q-profile
-
-        const findTau2 = (targetQ) => {
-
-            let low = 0, high = tau2 * 10 + 1;
-
-            for (let iter = 0; iter < 50; iter++) {
-
-                const mid = (low + high) / 2;
-
-                const w = studies.map(s => 1 / (s.vi + mid));
-
-                const sumW = w.reduce((a, b) => a + b, 0);
-
-                const est = studies.reduce((s, st, i) => s + w[i] * st.yi, 0) / sumW;
-
-                const Q = studies.reduce((s, st, i) => s + w[i] * Math.pow(st.yi - est, 2), 0);
-
-
-
-                if (Q > targetQ) low = mid;
-
-                else high = mid;
-
-
-
-                if (Math.abs(Q - targetQ) < 0.001) break;
-
-            }
-
-            return (low + high) / 2;
-
-        };
-
-
-
-        return {
-
-            lower: Math.max(0, findTau2(chiLower)),
-
-            upper: findTau2(chiUpper)
-
-        };
-
+        // IPD-Follow fix: was its own bisection on [0, 10 tau2 + 1] that stopped at |Q - target| < 0.001
+        // (dat.normand1999 upper 2942.3, metafor 2889.5; a homogeneous set gave 4.4e-16, metafor 0). Now the
+        // generalized-Q roots on metafor's search range (I2ConfidenceIntervals.qProfile, as confint.rma.uni);
+        // NaN bounds where the Q-profile is not defined.
+        const yi = studies.map(s => Number(s.yi)), vi = studies.map(s => Number(s.vi));
+        const r = I2ConfidenceIntervals.qProfile(NaN, studies.length - 1, tau2, vi, alpha, yi);
+        if (!r || r.method !== 'Q-profile (Viechtbauer 2007)') return { lower: NaN, upper: NaN };
+        return { lower: r.tau2_lower, upper: r.tau2_upper };
     },
 
 
