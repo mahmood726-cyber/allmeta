@@ -114,12 +114,20 @@
   // With {interpolate:true}, linearly interpolate the 0.5-crossing between the bracketing points —
   // important for COARSE registry curves, whose step median otherwise snaps up to the next posted
   // timepoint (validated: external same-endpoint median error 40% -> 6% with interpolation).
+  // Without interpolation the rule is survival::survfit's: on an EXACT S = 0.5 plateau (to sqrt(machine eps)) the
+  // median is the midpoint between the plateau start and the next time the curve drops (the plateau start when it
+  // never drops again).
+  const PLATEAU_TOL = 1.4901161193847656e-8;   // sqrt(.Machine$double.eps), survfit's quantile tolerance
   function medianFromKM(steps, opts) {
     let pt = 0, ps = 1;
-    for (const s of steps) {
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
       if (s.S <= 0.5 + 1e-12) {
         if (opts && opts.interpolate && ps > 0.5 && ps - s.S > 1e-12)
           return pt + (ps - 0.5) / (ps - s.S) * (s.t - pt);
+        if (!(opts && opts.interpolate) && Math.abs(s.S - 0.5) < PLATEAU_TOL) {
+          for (let j = i + 1; j < steps.length; j++) if (steps[j].S < s.S - PLATEAU_TOL) return (s.t + steps[j].t) / 2;
+        }
         return s.t;
       }
       pt = s.t; ps = s.S;
@@ -167,14 +175,16 @@
   function coxLogHR(rows, opts) {
     opts = opts || {};
     const ridge = opts.ridge || 0;
-    const data = rows.slice().sort((a, b) => b.time - a.time); // descending => cumulative risk set
     const nEventExp = rows.filter(r => r.status === 1 && r.x === 1).length;
     const nEventCtl = rows.filter(r => r.status === 1 && r.x === 0).length;
+    // `separated` = COMPLETE separation (an arm has no events at all). Quasi-separation
+    // (both arms have events but near-perfectly ordered) is NOT caught here — the
+    // non-convergence guard below handles it via an auto-ridge retry.
     const separated = nEventExp === 0 || nEventCtl === 0;
-    const lam = ridge || (separated ? 1.0 : 0); // auto-ridge under separation
+    const lam = ridge || (separated ? 1.0 : 0); // auto-ridge under complete separation
     // unique event times
     const evTimes = [...new Set(rows.filter(r => r.status === 1).map(r => r.time))].sort((a, b) => a - b);
-    let beta = 0, iters = 0;
+    let beta = 0, iters = 0, converged = false;
     for (; iters < 100; iters++) {
       let U = 0, I = 0;
       for (const et of evTimes) {
@@ -193,10 +203,17 @@
       if (I <= 1e-12) break;
       const step = U / I;
       beta += step;
-      if (Math.abs(step) < 1e-8) { iters++; break; }
+      if (Math.abs(step) < 1e-8) { iters++; converged = true; break; }
       if (!isFinite(beta)) { beta = Math.sign(U) * 5; break; }
     }
-    return { beta, hr: Math.exp(beta), iters, separated, penalized: lam > 0 };
+    // Quasi-separation / divergence guard: an unpenalised Newton fit that never met the
+    // step tolerance has diverged (beta can reach ~30, HR ~1e13) and would silently
+    // contaminate the bootstrap logHR envelope. Retry ONCE with a ridge so the estimate
+    // is bounded; the retry is deterministic and does not alter any already-converged fit.
+    if (!converged && lam === 0 && !opts._retry) {
+      return coxLogHR(rows, Object.assign({}, opts, { ridge: 1.0, _retry: true }));
+    }
+    return { beta, hr: Math.exp(beta), iters, separated, penalized: lam > 0, converged };
   }
 
   // ====================================================== 4. Tier A — Guyot inverse-KM
@@ -320,7 +337,7 @@
           let moved = 0;
           for (let k = 1; k < nt && delta > 0; k++) {
             if (C[k] <= 0) continue;
-            const want = Math.max(1, Math.round(delta * D[k] / wsum));
+            const want = Math.max(0, Math.round(delta * D[k] / wsum));
             const take = Math.min(want, C[k], delta);
             C[k] -= take; D[k] += take; delta -= take; moved += take;
           }
@@ -363,7 +380,7 @@
     if (pav.adjusted > 0) flags.push(`monotonicity_adjusted:${pav.adjusted}(max${pav.maxAdj.toFixed(3)})`);
     Svec = pav.y;
 
-    const nar = arm.nar_points.slice().filter(p => isFinite(p.t) && isFinite(p.n)).sort((a, b) => a.t - b.t);
+    const nar = (arm.nar_points || []).slice().filter(p => isFinite(p.t) && isFinite(p.n)).sort((a, b) => a.t - b.t);
     const tRisk = nar.map(p => p.t);
     const nRisk = nar.map(p => Math.round(p.n));
     // ensure a risk anchor at the first clicked time
@@ -389,7 +406,7 @@
     const tS = pts.map(p => p.t);
     let Svec = pavaDecreasing(pts.map(p => Math.min(1, Math.max(0, p.S)))).y;
     const nt = tS.length;
-    const nar = arm.nar_points.slice().filter(p => isFinite(p.t) && isFinite(p.n)).sort((a, b) => a.t - b.t);
+    const nar = (arm.nar_points || []).slice().filter(p => isFinite(p.t) && isFinite(p.n)).sort((a, b) => a.t - b.t);
     const N = arm.N != null ? arm.N : (nar[0] ? Math.round(nar[0].n) : 1);
     // map each NAR time to the nearest curve-anchor index at or after it
     const narTarget = {};
@@ -479,6 +496,12 @@
     return acc;
   }
 
+  // NOTE: HR-calibration deliberately reconstructs the experimental arm with Guyot (the only
+  // method exposing the total_events knob that the calibration bisection solves on); QP is
+  // curve-locked (events capped at E0=N(1-S_K)) and cannot be driven to an arbitrary HR. A
+  // known consequence is that a QP-selected trial's calibrated experimental arm is Guyot while
+  // its comparator stays QP — an internal method mismatch tracked for a future single-method
+  // calibration pass. Do NOT route 'qp' here without redesigning calibrateHR.
   function armReconByMethod(arm, method, flags) {
     return method === 'anchor-exact' ? reconstructArmAnchorExact(arm, flags) : reconstructArmGuyot(arm, flags);
   }
@@ -502,10 +525,15 @@
       return coxLogHR(ipd.map(r => ({ time: r.time, status: r.status, x: 1 }))
         .concat(ctlIpd.map(r => ({ time: r.time, status: r.status, x: 0 })))).beta;
     };
-    let lo = Math.max(1, Math.round(0.03 * N)), hi = N;
+    // Bracket the full feasible event range [1, N]. A nonzero floor (e.g. 0.03*N) would
+    // exclude the true root for strongly-protective, low-event trials (common in CV/oncology),
+    // silently clamping teStar upward and forcing MORE experimental events than the registry
+    // reported — breaking the very total_events anchor this engine preserves.
+    let lo = 1, hi = N;
     const blo = betaFor(lo), bhi = betaFor(hi);
-    let teStar;
-    if (target <= blo) teStar = lo; else if (target >= bhi) teStar = hi;
+    let teStar, outOfBracket = false;
+    if (target <= blo) { teStar = lo; outOfBracket = true; }
+    else if (target >= bhi) { teStar = hi; outOfBracket = true; }
     else {
       for (let it = 0; it < 30 && hi - lo > 1; it++) {
         const mid = Math.round((lo + hi) / 2);
@@ -516,7 +544,10 @@
     const a2 = Object.assign({}, expSpec, { total_events: teStar });
     result.arms[result.expIdx].ipd = armReconByMethod(a2, result.method, flags).ipd;
     const achieved = Math.exp(betaFor(teStar));
-    result.calibrated = { target_hr: hr.value, achieved_hr: +achieved.toFixed(4), exp_total_events: teStar };
+    result.calibrated = { target_hr: hr.value, achieved_hr: +achieved.toFixed(4), exp_total_events: teStar, out_of_bracket: outOfBracket };
+    // The registry HR could not be reached within the feasible event range — the reported
+    // achieved_hr is the closest attainable, NOT a successful calibration. Flag it.
+    if (outOfBracket) flags.push('hr_uncalibrated_out_of_bracket');
     flags.push('hr_calibrated:te=' + teStar + ',hr=' + achieved.toFixed(3));
   }
 
@@ -622,8 +653,14 @@
       rmsts.push(rmst(kmE, tau) - rmst(kmC, tau));
     }
     meds.sort((a, b) => a - b); lhrs.sort((a, b) => a - b); rmsts.sort((a, b) => a - b);
+    // When the experimental event fraction is < 50% the KM never reaches S<=0.5, so every
+    // bootstrap median is null and meds is (near-)empty. quantileSorted([]) returns NaN, which
+    // JSON-serialises to null and is indistinguishable from a missing arm. Emit an explicit
+    // null + flag instead of a silent [NaN, NaN].
+    const medReached = meds.length >= 0.5 * B;
+    if (!medReached) flags.push('exp_median_not_reached');
     const envelope = {
-      median_exp: [quantileSorted(meds, 0.025), quantileSorted(meds, 0.975)],
+      median_exp: medReached ? [quantileSorted(meds, 0.025), quantileSorted(meds, 0.975)] : null,
       logHR: [quantileSorted(lhrs, 0.025), quantileSorted(lhrs, 0.975)],
       rmst_diff: [quantileSorted(rmsts, 0.025), quantileSorted(rmsts, 0.975)],
       bootstrap: B
@@ -639,6 +676,10 @@
   function maxTime(ipd) { return ipd.reduce((m, r) => Math.max(m, r.time), 0); }
 
   // ============================================ 5b. Royston–Parmar flexible parametric (spline)
+  // EXPERIMENTAL — no external R/flexsurv oracle; validated only against its own JS output (reproduces a
+  // known Weibull curve + monotonicity in test/engine.spec.js); the OLS-on-(log t, cloglog S) fit is an
+  // extrapolation from registry anchors, NOT an MLE on IPD; not for primary published estimates without
+  // independent confirmation.
 
   // We have EXACT registry (t,S) anchors, so the RP model log H(t) = s(log t; gamma) is fit by
   // ordinary least squares on (x=log t, y=log(-log S)) — no IPD/MLE needed. Restricted cubic
@@ -864,7 +905,7 @@
     if (!hardFail && result.tier !== 'C') {
       const soft = [checks.C1_total_events.pass, checks.C2_anchor_fidelity.pass || !checks.C2_anchor_fidelity.applies,
       checks.C3_median.pass, (checks.C4_hr.pass || !checks.C4_hr.applies),
-      checks.C6_nar.pass || !checks.C6_nar.applies];
+      checks.C6_nar.pass || !checks.C6_nar.applies, checks.C8_followup.pass];
       const allSoft = soft.every(Boolean);
       if (result.tier === 'A' && allSoft) badge = 'gold';
       else if (result.tier === 'A') badge = 'silver';
@@ -1116,8 +1157,16 @@
     trial.arms.forEach(a => { med[a.arm_id] = []; rmstA[a.arm_id] = []; });
     const tau = Math.min.apply(null, trial.arms.filter(a => (a.km_points || []).length)
       .map(a => a.km_points[a.km_points.length - 1].t)) || 1;
-    const ei = trial.arms.findIndex(a => a.role === 'experimental');
-    const ci = trial.arms.findIndex(a => a.role === 'comparator');
+    // Resolve arm indices with the same fallback the rest of the codebase uses (gallery/export):
+    // when the harvester could not role-label the arms (e.g. two active treatments), default to
+    // experimental = arms[1], comparator = arms[0] so the HR credible interval is still produced.
+    let ei = trial.arms.findIndex(a => a.role === 'experimental');
+    let ci = trial.arms.findIndex(a => a.role === 'comparator');
+    if (trial.arms.length === 2) {
+      if (ei < 0 && ci < 0) { ei = 1; ci = 0; }
+      else if (ei < 0) ei = (ci === 0 ? 1 : 0);
+      else if (ci < 0) ci = (ei === 0 ? 1 : 0);
+    }
     // The dominant under-identified DOF is the CENSORING LEVEL. Anchor it to the curve-only event
     // count E0 (≈ no intermediate censoring, the maximum plausible events) and the registry-reported
     // total_events when present; impute total_events across [floor, E0] so the ensemble spans the
@@ -1136,10 +1185,19 @@
         const E0 = e0[a.arm_id];
         if (E0 != null && E0 > 0) {
           const reg = a.total_events;
-          const lo = Math.round(0.55 * E0), hiB = E0;
-          let e = Math.round(lo + rng() * (hiB - lo));
-          if (reg != null) { // mixture: half the draws hug the registry count (±15%), half span the band
-            e = rng() < 0.5 ? Math.max(0, Math.round(reg * (1 + (rng() - 0.5) * 0.30))) : e;
+          let e;
+          if (opts.pinEvents && reg != null) {
+            // event count TRUSTED: the censoring split is pinned, leaving only a small residual
+            // (event timing within intervals). A tight ±5% band — the reconstruction variance a
+            // posted total-event count actually leaves, much smaller than the curve-only band.
+            e = Math.max(0, Math.round(reg * (1 + (rng() - 0.5) * 0.10)));
+          } else {
+            // censoring-level uncertainty unbounded by a count: sample the full plausible band.
+            const lo = Math.round(0.55 * E0), hiB = E0;
+            e = Math.round(lo + rng() * (hiB - lo));
+            if (reg != null) { // mixture: half hug the registry count (±30%), half span the band
+              e = rng() < 0.5 ? Math.max(0, Math.round(reg * (1 + (rng() - 0.5) * 0.30))) : e;
+            }
           }
           a.total_events = Math.min(a.N != null ? a.N : e, Math.max(1, e));
         }
