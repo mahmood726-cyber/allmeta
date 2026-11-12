@@ -54,7 +54,7 @@ const CONTROLS = [["Verify in R", "#btn-verify-in-r"], ["Validate (R)", "#btn-va
         const lines = v.split(/\r?\n/).filter((l) => l.trim() && !/^#/.test(l.trim()));
         rows = lines.length; first = lines[0] || null;
         // every row, not just the first: a stale study anywhere in the hand-over is a FAIL
-        staleRows = lines.filter((l) => /stale [ABC]/.test(l)).length;
+        staleRows = lines.filter((l) => /stale [ABC]\b/.test(l)).length;
         model = await pop.evaluate(() => ({ method: (document.getElementById("f-method") || {}).value || null,
           test: (document.getElementById("f-test") || {}).value || null, url: location.search })).catch(() => ({}));
       }
