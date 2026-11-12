@@ -136,22 +136,27 @@
     return x < (a + 1) / (a + b + 2) ? bt * _betacf(a, b, x) / a : 1 - bt * _betacf(b, a, 1 - x) / b;
   }
   function _betacf(a, b, x) {
-    var fpmin = 1e-30, qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap;
+    // P58: converge to double precision (was 3e-7 / 200 iterations, which left slope p-values off by up to ~4e-9)
+    var fpmin = 1e-300, qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap;
     if (Math.abs(d) < fpmin) d = fpmin; d = 1 / d; var h = d, m;
-    for (m = 1; m <= 200; m++) {
+    for (m = 1; m <= 300; m++) {
       var m2 = 2 * m, aa = m * (b - m) * x / ((qam + m2) * (a + m2));
       d = 1 + aa * d; if (Math.abs(d) < fpmin) d = fpmin; c = 1 + aa / c; if (Math.abs(c) < fpmin) c = fpmin; d = 1 / d; h *= d * c;
       aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
       d = 1 + aa * d; if (Math.abs(d) < fpmin) d = fpmin; c = 1 + aa / c; if (Math.abs(c) < fpmin) c = fpmin; d = 1 / d; var del = d * c; h *= del;
-      if (Math.abs(del - 1) < 3e-7) break;
+      if (Math.abs(del - 1) < 1e-15) break;
     }
     return h;
   }
+  // log-gamma, Lanczos g = 7, n = 9 (relative error ~1e-15; the previous 6-term version was ~2e-10). z > 0.
+  var _LG = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+    12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
   function _gln(z) {
-    var g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
-    var x = z, tmp = z + 5.5; tmp -= (z + 0.5) * Math.log(tmp); var ser = 1.000000000190015, j;
-    for (j = 0; j < 6; j++) { x += 1; ser += g[j] / x; }
-    return -tmp + Math.log(2.5066282746310005 * ser / z);
+    if (z < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - _gln(1 - z);
+    z -= 1; var x = _LG[0], j;
+    for (j = 1; j < 9; j++) x += _LG[j] / (z + j);
+    var t = z + 7.5;
+    return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
   }
 
   var api = { transport: transport, _tau2PM: _tau2PM, _fit: _fit, _tcdf: _tcdf };
