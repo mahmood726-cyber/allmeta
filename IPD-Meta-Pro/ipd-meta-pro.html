@@ -74346,7 +74346,7 @@ function drawClusterSizePlot(data, clusterVar) {
 
             DL: { estimate: -0.4876, se: 0.1570, tau2: 0.2561, I2: 91.24, Q: 136.91 },
 
-            REML: { estimate: -0.4876, se: 0.1761, tau2: 0.3361, I2: 91.24 },
+            REML: { estimate: -0.4877, se: 0.1836, tau2: 0.3706, I2: 93.77 },
 
             PM: { estimate: -0.4877, se: 0.1841, tau2: 0.3727 }
 
@@ -74898,7 +74898,9 @@ function runRandomEffectsREML(studies) {
 
         // First derivative of REML log-likelihood
 
-        let deriv1 = -0.5 * weights.reduce((s, w) => s + w, 0);
+        // the +1/2 sum(w^2)/sum(w) term makes this the REML score (without it, it converged to ML)
+        const sumW2 = weights.reduce((s, w) => s + w * w, 0);
+        let deriv1 = -0.5 * sumW + 0.5 * sumW2 / sumW;
 
         deriv1 += 0.5 * studies.reduce((s, st, i) => {
 
@@ -74912,7 +74914,7 @@ function runRandomEffectsREML(studies) {
 
         // Fisher information (expected second derivative)
 
-        const deriv2 = 0.5 * weights.reduce((s, w) => s + w * w, 0);
+        const deriv2 = 0.5 * sumW2;
 
 
 
@@ -74942,7 +74944,8 @@ function runRandomEffectsREML(studies) {
 
     const seFinal = Math.sqrt(1 / sumWFinal);
 
-    const I2 = Math.max(0, (Q - (k - 1)) / Q * 100);
+    // I2 from tau2 and the typical within-study variance, as metafor reports it
+    const I2 = 100 * tau2 / (tau2 + (k - 1) * sumWF / (sumWF * sumWF - sumW2F));
 
 
 
@@ -77326,7 +77329,7 @@ function displayValidationResults(results) {
       lines.push('# Paule-Mandel');
       lines.push('ref_pm   <- rma(yi=bcg_yi, vi=bcg_vi, method="PM",   level=' + confLevel + ')');
       lines.push('# HKSJ correction');
-      lines.push('ref_hksj <- rma(yi=bcg_yi, vi=bcg_vi, method="DL", test="knha", level=' + confLevel + ')');
+      lines.push('ref_hksj <- rma(yi=bcg_yi, vi=bcg_vi, method="DL", test="adhoc", level=' + confLevel + ')');
       lines.push('# Prediction interval');
       lines.push('ref_pi   <- predict(ref_reml, level=' + confLevel + ')');
       lines.push('# Egger test (weighted linear regression, t-statistic)');
@@ -77420,7 +77423,7 @@ function displayValidationResults(results) {
       // vi
       var curVi = st.map(function(s) { return studyVi(s); });
 
-      var testStr = useHKSJ ? '"knha"' : '"z"';
+      var testStr = useHKSJ ? '"adhoc"' : '"z"';
 
       lines.push('# ── Current analysis data ───────────────────────────────────────');
       lines.push('study  <- c(' + curNames.join(', ') + ')');
@@ -77452,7 +77455,7 @@ function displayValidationResults(results) {
       }
 
       lines.push('# ── HKSJ adjustment (DL + Knapp-Hartung) ─────────────────────────');
-      lines.push('res_hksj <- rma(yi=yi, vi=vi, method="DL", test="knha", level=' + confLevel + ')');
+      lines.push('res_hksj <- rma(yi=yi, vi=vi, method="DL", test="adhoc", level=' + confLevel + ')');
       lines.push('cat("HKSJ CI: [", res_hksj$ci.lb, ",", res_hksj$ci.ub, "]\\n")');
       lines.push('');
 
@@ -78124,7 +78127,7 @@ function displayValidationResults(results) {
           'library(metafor)',
           'yi  <- ' + v.yi,
           'vi  <- ' + v.vi,
-          'res <- rma(yi=yi, vi=vi, method="DL", test="knha", level=0.95)',
+          'res <- rma(yi=yi, vi=vi, method="DL", test="adhoc", level=0.95)',
           'list(',
           '  pooled=as.numeric(res$b),',
           '  se=as.numeric(res$se),',
@@ -78159,10 +78162,11 @@ function displayValidationResults(results) {
           'yi  <- ' + v.yi,
           'vi  <- ' + v.vi,
           'res <- rma(yi=yi, vi=vi, method="REML", level=0.95)',
-          'pi  <- predict(res, level=0.95)',
+          '# t with k-1 df, as the page (predict() would use z: rma defaults to test="z")',
+          'h   <- qt(0.975, res$k - 1) * sqrt(res$tau2 + res$se^2)',
           'list(',
-          '  pi_lower=as.numeric(pi$pi.lb),',
-          '  pi_upper=as.numeric(pi$pi.ub)',
+          '  pi_lower=as.numeric(res$b) - h,',
+          '  pi_upper=as.numeric(res$b) + h',
           ')'
         ].join('\n');
       },
@@ -78372,7 +78376,7 @@ function displayValidationResults(results) {
         var useHKSJ = !!(APP.config && APP.config.useHKSJ);
         var yiVec   = 'c(' + studies.map(function(s){ return studyYi(s); }).join(', ') + ')';
         var viVec   = 'c(' + studies.map(function(s){ return studyVi(s); }).join(', ') + ')';
-        var testStr = useHKSJ ? '"knha"' : '"z"';
+        var testStr = useHKSJ ? '"adhoc"' : '"z"'; // the page's HKSJ floors the scale at 1 (metafor "adhoc")
         return [
           'library(metafor)',
           'yi   <- ' + yiVec,
@@ -78426,7 +78430,8 @@ function displayValidationResults(results) {
           'library(metafor)',
           'yi   <- ' + yiVec,
           'vi   <- ' + viVec,
-          'res  <- rma(yi=yi, vi=vi, method=' + JSON.stringify(method) + ', level=' + conf + ')',
+          '# leaveOneOutAnalysis() pools by DerSimonian-Laird whatever method is selected, so R uses DL',
+          'res  <- rma(yi=yi, vi=vi, method="DL", level=' + conf + ')',
           'loo  <- leave1out(res)',
           'list(loo_count=nrow(loo), loo_first_est=as.numeric(loo$estimate[1]))'
         ].join('\n');
@@ -78512,7 +78517,7 @@ function displayValidationResults(results) {
           'library(metafor)',
           'yi <- ' + yiVec,
           'vi <- ' + viVec,
-          'res <- rma(yi=yi, vi=vi, method="DL", test="knha", level=' + conf + ')',
+          'res <- rma(yi=yi, vi=vi, method="DL", test="adhoc", level=' + conf + ')',
           'list(pooled=as.numeric(res$b), se=as.numeric(res$se), ci_lower=as.numeric(res$ci.lb), ci_upper=as.numeric(res$ci.ub))'
         ].join('\n');
       },
@@ -78555,15 +78560,18 @@ function displayValidationResults(results) {
         if (studies.length < 3) return null;
         var conf = safeConfLevel();
         var method = (APP.config && APP.config.reMethod) ? APP.config.reMethod : 'REML';
+        if (method === 'FE') return null; // no prediction interval under a common-effect model
+        var useHKSJ = !!(APP.config && APP.config.useHKSJ);
         var yiVec = 'c(' + studies.map(function(s) { return studyYi(s); }).join(', ') + ')';
         var viVec = 'c(' + studies.map(function(s) { return studyVi(s); }).join(', ') + ')';
         return [
           'library(metafor)',
           'yi <- ' + yiVec,
           'vi <- ' + viVec,
-          'res <- rma(yi=yi, vi=vi, method=' + JSON.stringify(method) + ', level=' + conf + ')',
-          'pi <- predict(res, level=' + conf + ')',
-          'list(pi_lower=as.numeric(pi$pi.lb), pi_upper=as.numeric(pi$pi.ub))'
+          'res <- rma(yi=yi, vi=vi, method=' + JSON.stringify(method) + ', test=' + (useHKSJ ? '"adhoc"' : '"z"') + ', level=' + conf + ')',
+          '# t with k-1 df, as the page (predict() would use z)',
+          'h <- qt((1 + ' + conf + ') / 2, res$k - 1) * sqrt(res$tau2 + res$se^2)',
+          'list(pi_lower=as.numeric(res$b) - h, pi_upper=as.numeric(res$b) + h)'
         ].join('\n');
       },
       tolerances: { pi_lower: 0.01, pi_upper: 0.01 }
