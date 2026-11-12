@@ -86,8 +86,20 @@ const edges = [
   // I2ConfidenceIntervals.qProfile took its tau2 lower bound at the alpha/2 chi-square quantile; with the old reversed
   // chi2Quantile that came out ordered. The lower bound must solve Q(tau2) = chi2_{1 - alpha/2} and lie below the upper one.
   ['I2ConfidenceIntervals.qProfile is ordered (tau2 and I2 lower <= upper, lower > 0 when Q is large)', (() => {
-    const r = val('I2ConfidenceIntervals.qProfile(20, 4, 0.1, [0.04, 0.05, 0.1, 0.02, 0.08])');
+    // (the Q-profile needs the study effects: the generalized Q is a function of them; IPD-More passes them here,
+    //  Q = 69.64, metafor confint tau2 0.2200 .. 6.119 -- values checked in heterogeneity_sw_normal.test.cjs)
+    const r = val('I2ConfidenceIntervals.qProfile(69.63723, 4, 0.7068, [0.04, 0.05, 0.1, 0.02, 0.08], 0.05, [0.9, -0.5, 0.3, 1.2, -0.8])');
     return r && r.tau2_lower > 0 && r.tau2_lower < r.tau2_upper && r.lower < r.upper; })()],
+  // IPD-More: quantiles beyond 1e300 (the bracket used to stop there and return -Infinity). R 4.6.0:
+  // qt(1e-152, 0.5) = -1.028491156316316e+303, qt(1e-300, 0.98) = -4.1067830859536924e+305, qt(1e-300, 0.5) = -Inf
+  ['MathUtils.tQuantile(1e-152, 0.5) = R qt -1.0285e303', Math.abs(val('MathUtils.tQuantile(1e-152, 0.5)') / -1.028491156316316e+303 - 1) < 1e-10],
+  ['MathUtils.tQuantile(1e-300, 0.98) = R qt -4.1068e305', Math.abs(val('MathUtils.tQuantile(1e-300, 0.98)') / -4.1067830859536924e+305 - 1) < 1e-10],
+  ['MathUtils.tQuantile(1e-300, 0.5) = -Infinity (beyond the double range, as R)', val('MathUtils.tQuantile(1e-300, 0.5)') === -Infinity],
+  // past 2^1023 (Codex review): the bracket now closes at Number.MAX_VALUE. R's own qt(2.7e-312, 1.01) = -1.147e308
+  // is inconsistent with R's pt there (pt(1.147e308, 1.01, lower = FALSE) = 2.31e-312), so the reference is R's pt:
+  // pt(9.826880978156363e307, 1.01, lower = FALSE) = 2.7000000000012911e-312 -- the page's quantile must invert it.
+  ['MathUtils.tQuantile(2.7e-312, 1.01) is finite and inverts R pt', (() => { const q = val('MathUtils.tQuantile(2.7e-312, 1.01)');
+    return Number.isFinite(q) && q < -8.988e307 && Math.abs(q / -9.826880978156363e307 - 1) < 1e-10; })()],
   ["page self-test 'normQuantile(0.975) ~ 1.96' holds", Math.abs(val('MathUtils.normQuantile(0.975)') - 1.96) < 0.001],
   ["page self-test 'normQuantile(0.5) = 0' holds", Math.abs(val('MathUtils.normQuantile(0.5)')) < 1e-10]
 ];
