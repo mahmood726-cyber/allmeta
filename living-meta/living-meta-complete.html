@@ -759,7 +759,7 @@ window.LMA = window.LMA || {};
       tau2: method === 'FE' ? 0 : tau2,
       tau: method === 'FE' ? 0 : Math.sqrt(tau2),
       I2, Q, df,
-      pvalue_Q: 1 - LMA.pchisq(Q, df),
+      pvalue_Q: LMA.pchisqUpper(Q, df),
       k, method,
       optimized: true,
       memoryEfficient: true
@@ -1367,22 +1367,42 @@ window.LMA = window.LMA || {};
     return 1 - LMA.gammainc_upper(a, x);
   };
 
+  // Regularized upper incomplete gamma Q(a,x) for x >= a + 1, by the modified-Lentz continued
+  // fraction (Numerical Recipes gcf). The previous version iterated a mis-specified fraction
+  // (it started f, c at 1e-30 and divided by a), so e.g. pchisq(3.84, 1) was 0.915, not 0.95.
   LMA.gammainc_upper = function(a, x) {
-    let f = 1e-30, c = 1e-30, d = 0;
-    for (let i = 1; i < 200; i++) {
-      const an = (i % 2 === 1) ? ((i + 1) / 2 - a) : (i / 2);
-      const bn = (i % 2 === 1) ? 1 : x;
-      d = bn + an * d; if (Math.abs(d) < 1e-30) d = 1e-30;
-      c = bn + an / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+    let b = x + 1 - a, c = 1e300, d = 1 / b, h = d;
+    for (let i = 1; i < 300; i++) {
+      const an = -i * (i - a);
+      b += 2;
+      d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+      c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300;
       d = 1 / d;
-      const delta = c * d;
-      f *= delta;
-      if (Math.abs(delta - 1) < 1e-10) break;
+      const delta = d * c;
+      h *= delta;
+      if (Math.abs(delta - 1) < 1e-15) break;
     }
-    return Math.exp(-x + a * Math.log(x) - LMA.lgamma(a)) * f / a;
+    return Math.exp(-x + a * Math.log(x) - LMA.lgamma(a)) * h;
   };
 
   LMA.pchisq = function(x, df) { return x <= 0 ? 0 : LMA.gammainc(df / 2, x / 2); };
+  // Upper tails computed directly (R lower.tail = FALSE), never as 1 - CDF, so p-values keep
+  // their relative precision instead of cancelling to 0 once the CDF rounds to 1.
+  LMA.pchisqUpper = function(x, df) {
+    if (!(x > 0)) return x <= 0 ? 1 : NaN;
+    const a = df / 2, y = x / 2;
+    return y < a + 1 ? 1 - LMA.gammainc(a, y) : LMA.gammainc_upper(a, y);
+  };
+  // P(Z > z) for the standard normal: 0.5 * P(chi2_1 > z^2) for z >= 0
+  LMA.pnormUpper = function(z) {
+    if (z !== z) return NaN;
+    if (z === Infinity) return 0;
+    if (z === -Infinity) return 1;
+    const q = 0.5 * LMA.pchisqUpper(z * z, 1);
+    return z >= 0 ? q : 1 - q;
+  };
+  // two-sided P(|T| > |t|) = I_x(df/2, 1/2), x = df / (df + t^2)
+  LMA.pt2 = function(t, df) { return t === 0 ? 1 : LMA.betainc(df / 2, 0.5, df / (df + t * t)); };
 
   /**
    * Student's t CDF (for small df)
@@ -1447,7 +1467,7 @@ window.LMA = window.LMA || {};
     const thetaFE = w.reduce((sum, wi, i) => sum + wi * yi[i], 0) / sumW;
     const Q = w.reduce((sum, wi, i) => sum + wi * (yi[i] - thetaFE) ** 2, 0);
     const df = k - 1;
-    const pvalue = 1 - LMA.pchisq(Q, df);
+    const pvalue = LMA.pchisqUpper(Q, df);
     const sumW2 = w.reduce((sum, wi) => sum + wi * wi, 0);
     const C = sumW - sumW2 / sumW;
 
@@ -1486,7 +1506,7 @@ window.LMA = window.LMA || {};
     else if (I2 < 75) interpretation = 'substantial';
     else interpretation = 'considerable';
 
-    return { I2, ci_lower, ci_upper, Q, df, pvalue: 1 - LMA.pchisq(Q, df), interpretation };
+    return { I2, ci_lower, ci_upper, Q, df, pvalue: LMA.pchisqUpper(Q, df), interpretation };
   };
 
   /**
@@ -1844,7 +1864,7 @@ window.LMA = window.LMA || {};
     // t-test
     const t = intercept / seIntercept;
     const df = n - 2;
-    const pvalue = 2 * (1 - LMA.pt(Math.abs(t), df));
+    const pvalue = LMA.pt2(t, df);
 
     return {
       intercept,
@@ -1896,7 +1916,7 @@ window.LMA = window.LMA || {};
     // Continuity-corrected variance (Kendall, 1970)
     const varTau = (2 * (2 * k + 5)) / (9 * k * (k - 1));
     const z = tau / Math.sqrt(varTau);
-    const pvalue = 2 * (1 - LMA.pnorm(Math.abs(z)));
+    const pvalue = 2 * LMA.pnormUpper(Math.abs(z));
 
     return {
       tau,
@@ -2049,7 +2069,7 @@ window.LMA = window.LMA || {};
     const k = yi.length;
     const sei = vi.map(v => Math.sqrt(v));
     const zValues = yi.map((y, i) => Math.abs(y / sei[i]));
-    const pValues = zValues.map(z => 2 * (1 - LMA.pnorm(z)));
+    const pValues = zValues.map(z => 2 * LMA.pnormUpper(z));
 
     // Filter significant p-values
     const sigP = pValues.filter(p => p < 0.05 && p > 0);
