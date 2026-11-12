@@ -114,23 +114,30 @@
   // With {interpolate:true}, linearly interpolate the 0.5-crossing between the bracketing points —
   // important for COARSE registry curves, whose step median otherwise snaps up to the next posted
   // timepoint (validated: external same-endpoint median error 40% -> 6% with interpolation).
-  // Without interpolation the rule is survival::survfit's: on an EXACT S = 0.5 plateau (to sqrt(machine eps)) the
-  // median is the midpoint between the plateau start and the next time the curve drops (the plateau start when it
-  // never drops again).
+  // Without interpolation the rule is survival::survfit's (summary(fit)$table["median"]): on an S = 0.5 plateau
+  // (to sqrt(machine eps), either side) the median is the midpoint between the plateau start and the next time the
+  // curve drops (the plateau start when it never drops again).
   const PLATEAU_TOL = 1.4901161193847656e-8;   // sqrt(.Machine$double.eps), survfit's quantile tolerance
   function medianFromKM(steps, opts) {
     let pt = 0, ps = 1;
+    if (opts && opts.interpolate) {
+      for (let i = 0; i < steps.length; i++) {
+        const s = steps[i];
+        if (s.S <= 0.5 + 1e-12) return (ps > 0.5 && ps - s.S > 1e-12) ? pt + (ps - 0.5) / (ps - s.S) * (s.t - pt) : s.t;
+        pt = s.t; ps = s.S;
+      }
+      return null;
+    }
+    // survival 3.8-6 survmean() minmin(), which gives summary(survfit)$table["median"]: the first time with
+    // S < 0.5 + tol; if that S is within tol of 0.5 and the curve later drops strictly below it, the midpoint
+    // to the first such time. The tolerance applies on BOTH sides of 0.5 (S = 0.5 + 1e-9 is a 0.5 plateau).
     for (let i = 0; i < steps.length; i++) {
       const s = steps[i];
-      if (s.S <= 0.5 + 1e-12) {
-        if (opts && opts.interpolate && ps > 0.5 && ps - s.S > 1e-12)
-          return pt + (ps - 0.5) / (ps - s.S) * (s.t - pt);
-        if (!(opts && opts.interpolate) && Math.abs(s.S - 0.5) < PLATEAU_TOL) {
-          for (let j = i + 1; j < steps.length; j++) if (steps[j].S < s.S - PLATEAU_TOL) return (s.t + steps[j].t) / 2;
-        }
+      if (s.S < 0.5 + PLATEAU_TOL) {
+        if (Math.abs(s.S - 0.5) < PLATEAU_TOL)
+          for (let j = i + 1; j < steps.length; j++) if (steps[j].S < s.S) return (s.t + steps[j].t) / 2;
         return s.t;
       }
-      pt = s.t; ps = s.S;
     }
     return null;
   }

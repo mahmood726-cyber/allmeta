@@ -122,6 +122,13 @@
     if ((lo == null) !== (hi == null)) throw new RangeError("Give both confidence limits or neither.");
     if (lo != null && !(Number.isFinite(lo) && Number.isFinite(hi))) throw new RangeError("Confidence limits must be finite numbers.");
     if (!smd && !(point > 0 && (lo == null || (lo > 0 && hi > 0)))) throw new RangeError("Ratio estimates and limits must be positive.");
+    // Order checks on the measure's own scale, BEFORE conversion: exp(0.91*d) and the
+    // OR/HR maps can round distinct limits to the same risk ratio (d = 1e-20 and -1e-20
+    // both give RR 1), so checking only after conversion (in evaluesRR) would accept
+    // reversed limits or limits that exclude the estimate. The maps are increasing, so
+    // these are the same conditions EValue's evalues.RR applies on the RR scale.
+    if (lo != null && lo > hi) throw new RangeError("Lower confidence limit should be less than upper confidence limit.");
+    if (lo != null && (point < lo || point > hi)) throw new RangeError("Point estimate should be inside confidence interval.");
     var rr = approxRR(m, point, rare), rrTrue = approxRR(m, tv, rare), rrLo = null, rrHi = null;
     if (se != null) { rrLo = Math.exp(0.91 * point - 1.78 * se); rrHi = Math.exp(0.91 * point + 1.78 * se); }
     else if (lo != null) { rrLo = approxRR(m, lo, rare); rrHi = approxRR(m, hi, rare); }
@@ -161,6 +168,10 @@
   function eValuesRD(n11, n10, n01, n00, opts) {
     opts = opts || {};
     var tv = opts["true"] == null ? 0 : opts["true"], grid = opts.grid == null ? 1e-4 : opts.grid;
+    // R's seq(1, est.BF, grid) stops on a non-positive or non-finite step ("wrong sign in
+    // 'by' argument" / "invalid '(to - from)/by'"); refuse it here rather than letting the
+    // loop below run zero times and report the CI E-value as null.
+    if (!(Number.isFinite(grid) && grid > 0)) throw new RangeError("The grid step must be a positive finite number (EValue's evalues.RD grid argument).");
     var Z = 1.959963984540054; // qnorm(1 - 0.05/2)
     [n11, n10, n01, n00].forEach(function (n) { if (!Number.isFinite(n)) throw new RangeError("All four cell counts are required."); });
     if (n11 < 0 || n10 < 0 || n01 < 0 || n00 < 0) throw new RangeError("Negative cell counts are impossible.");

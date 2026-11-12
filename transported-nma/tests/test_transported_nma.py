@@ -121,3 +121,23 @@ def test_guards():
              "norows:T.fit([]," + TRTS + ",null).ok}));")
     assert o["few"] is False and o["emptyT"] is False
     assert o["miss"] is False and o["norows"] is False
+
+
+# R 4.6.0 pnorm(x) (sprintf "%.17g"). #506 review finding e: for |x| >~ 1.34e154 the
+# squared argument in _erfc overflows to Infinity and the continued fraction gave NaN.
+PNORM_R = [
+    ("-Infinity", 0.0), ("-1e300", 0.0), ("-1e155", 0.0), ("-1e154", 0.0), ("-1e10", 0.0), ("-100", 0.0),
+    ("-38.5", 0.0), ("-37", 5.7255712225245771e-300), ("-30", 4.9067139271481872e-198),
+    ("-8", 6.2209605742717849e-16), ("-1.96", 0.024997895148220428), ("0", 0.5),
+    ("1.96", 0.97500210485177963), ("8", 0.99999999999999933), ("30", 1.0), ("1e10", 1.0),
+    ("1e154", 1.0), ("1e155", 1.0), ("1e300", 1.0), ("Infinity", 1.0),
+]
+
+
+def test_phi_matches_r_pnorm_including_huge_arguments():
+    xs = "[" + ",".join(x for x, _ in PNORM_R) + "]"
+    o = _run("console.log(JSON.stringify(" + xs + ".map(x=>{const v=T._phi(x);return Number.isNaN(v)?'NaN':v;})));")
+    for (x, ref), got in zip(PNORM_R, o):
+        assert got != "NaN", (x, got)
+        assert abs(got - ref) <= 1e-12 * max(abs(ref), 1e-300), (x, got, ref)
+    assert _run("console.log(JSON.stringify(String(T._phi(NaN))));") == "NaN"  # pnorm(NaN) is NaN too

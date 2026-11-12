@@ -40,6 +40,9 @@
   function _erfc(z) {                                    // z >= 0
     var x = z * z, a = 0.5, n;
     if (x === 0) return 1;
+    // erfc(z) underflows to 0 for z^2 > ~745; beyond 1e4 return it directly, before z*z = Infinity
+    // (|z| > ~1.3e154) turns the continued fraction into NaN. NaN still propagates (NaN > 1e4 is false).
+    if (x > 1e4) return 0;
     if (x < 1.5) {                                       // P(a, x) by series; erfc = 1 - P
       var ap = a, sum = 1 / a, del = sum;
       for (n = 0; n < 500; n++) { ap += 1; del *= x / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 1e-17) break; }
