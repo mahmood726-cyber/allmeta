@@ -17406,7 +17406,8 @@ function multipleMetaRegression(e, t, n, a = null) {
     f = g > 0 ? AlmTail.pchisqUpper(v, g) : 1,
     _ = e.reduce((t, n, a) => t + o[a] * Math.pow(m[a] - e.reduce((e, t, n) => e + o[n] * t, 0) / o.reduce((e, t) => e + t, 0), 2), 0),
     y = i,
-    b = AlmTail.pchisqUpper(_, y),
+    // no covariates (y = 0): the model Q is rounding noise; p = 1 as metafor QMp on 0 df, not 0.
+    b = y > 0 ? AlmTail.pchisqUpper(_, y) : 1,
     x = e.reduce((t, n, a) => {
       const s = e.reduce((e, t, n) => e + o[n] * t, 0) / o.reduce((e, t) => e + t, 0);
       return t + o[a] * Math.pow(n - s, 2)

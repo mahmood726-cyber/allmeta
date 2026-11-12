@@ -16637,7 +16637,8 @@ function calculateI2WithCI(Q, k, confLevel) {
 
  df: df,
 
- pValue: AlmTail.pchisqUpper(Q, df),
+ // IPD-Follow: 0 df (k = 1) keeps p = 1 as metafor QEp; Q there is rounding noise and pchisqUpper(Q > 0, 0) = 0
+ pValue: df > 0 ? AlmTail.pchisqUpper(Q, df) : 1,
 
  interpretation: interpretI2(I2),
 

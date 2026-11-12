@@ -40,6 +40,9 @@ const small = get('calculatePooledEstimate')([0.1, 0.25, 0.05], [0.02, 0.03, 0.0
 // zero df: one study (Q = 1.75e-32, rounding noise) and a saturated meta-regression (k = 2, one covariate)
 const het1 = get('calculateHeterogeneity')([0.1], [0.011], 0);
 const mr = get('multipleMetaRegression')([0.1, 0.35], [0.011, 0.021], [{ name: 'x', values: [-0.7, 0.33] }], 0);
+// no covariates: the model Q is rounding noise (2.9e-31) on 0 df
+const mr0 = get('multipleMetaRegression')([0.841, -0.129, 0.3, 0.141], [0.02, 0.03, 0.05, 0.04], [], 0.01);
 process.stdout.write(JSON.stringify({ fe: { z: fe.z, p: fe.p_value }, small: { z: small.z, p: small.p_value },
   hksj: { t: hk.t_stat, df: hk.df, p: hk.p_value }, het: { Q: het.Q, df: yi.length - 1, p: het.p_Q },
-  het_k1: { Q: het1.Q, df: het1.df, p: het1.p_Q }, mr_sat: { Q: mr.Q_residual, df: mr.df_residual, p: mr.p_residual } }));
+  het_k1: { Q: het1.Q, df: het1.df, p: het1.p_Q }, mr_sat: { Q: mr.Q_residual, df: mr.df_residual, p: mr.p_residual },
+  mr_nocov: { Q: mr0.Q_model, df: mr0.df_model, p: mr0.p_model } }));
