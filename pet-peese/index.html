@@ -618,7 +618,10 @@
       AlmHero.attachHero({
         container: "#alm-hero-mount",
         textarea: "#src",
-        adapter: "forest",
+        // parseTable reads "effect, SE" from the first two numbers; the forest adapter
+        // writes "label, effect, SE", so all 13 BCG rows were refused ("Need at least 3
+        // studies"). effect-se-label puts the label last, as copas (ffed7772) does.
+        adapter: "effect-se-label",
       });
     }
   });
