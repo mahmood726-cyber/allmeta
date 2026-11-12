@@ -649,6 +649,15 @@
     window._almLastGosh = function () { return _lastResults; };
     // The controller loads after this inline script; rerun restored/default inputs once it is ready.
     window.__almGoshExactReady = function () { run(); };
+    // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
+    // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
+    // returning user an earlier session's studies).
+    window.__almValidatorStudies = function () {
+      var rows; try { rows = parse(document.getElementById('src').value); } catch (e) { return []; } // parse throws on unreadable input; the page refuses it
+      // Only when the page shows a result (run() refuses k < 3 and k > 100).
+      if (rows.length < 3 || rows.length > 100 || !_lastResults) return [];
+      return rows.map(function (r) { return { label: r.label, est: r.te, se: r.se }; });
+    };
 
 
     // Validation observes calls to the unchanged parser and pooling engine.
@@ -776,7 +785,8 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "gosh", textarea: "#src", format: "est-se-label" });
