@@ -755,15 +755,21 @@
         render();
       } catch (e) { Toast.show("Could not load shared: " + e.message, "warn"); }
     }
+    // Current input as shared-bus studies for "Verify in R" (the same rows onBusSave
+    // writes), so the validator always opens with the analysis on screen and never
+    // with whatever an earlier dataset or another app left on the bus.
+    function busStudies() {
+      return parseStudies(document.getElementById("f-data").value).studies.map(s => ({
+        label: s.label, est: s.est, se: s.se,
+        moderator: s.x == null ? null : s.x, group: null, year: null
+      }));
+    }
+    window.__almMetaregBusStudies = busStudies;
     function onBusSave() {
       const parsed = parseStudies(document.getElementById("f-data").value);
       if (!parsed.studies.length) { Toast.show("Nothing to save.", "warn"); return; }
       if (!window.MaStudies) { Toast.show("Bus helper not loaded.", "error"); return; }
-      const rows = parsed.studies.map(s => ({
-        label: s.label, est: s.est, se: s.se,
-        moderator: s.x == null ? null : s.x, group: null, year: null
-      }));
-      const ok = MaStudies.write(rows);
+      const ok = MaStudies.write(busStudies());
       if (ok) Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn");
       else Toast.show("Could not save to shared bus.", "warn");
     }
@@ -1002,7 +1008,11 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r", getStudies: function () {
+      // An empty list makes openInWebR say "No valid current studies"; it never
+      // falls back to whatever another app left on the bus.
+      try { return window.__almMetaregBusStudies ? window.__almMetaregBusStudies() : []; } catch (e) { return []; }
+    } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "meta-regression", textarea: "#f-data", format: "label-est-se" });

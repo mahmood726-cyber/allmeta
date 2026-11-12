@@ -144,3 +144,23 @@ def test_continue_with_forwards_validator_model_and_refuses_empty():
     opened = json.loads(out.stdout.strip().splitlines()[-1])
     assert len(opened) == 1, opened  # second click: no valid current studies -> not opened on the stale bus
     assert "method=SJ" in opened[0] and "test=z" in opened[0] and "from=heterogeneity" in opened[0], opened
+
+
+# Apps whose papers are with co-authors and whose "Verify in R" button opens this
+# validator. Found on the live user path 2026-11-12 (lane up2): pubbias-tests and
+# meta-regression attached the button WITHOUT getStudies, so it read whatever was
+# already on the shared bus. In a fresh browser the bus is empty and the user got
+# only the alert "No studies on the shared bus yet -- save your data to the bus
+# first."; after another app or an earlier dataset had written the bus, the
+# validator opened with THOSE studies, not the analysis on screen.
+VERIFY_APPS = ("pubbias-tests", "meta-regression", "proportion-ma")
+
+
+def test_verify_in_r_sends_the_current_studies():
+    root = HERE.parent.parent
+    for app in VERIFY_APPS:
+        html = (root / app / "index.html").read_text(encoding="utf-8")
+        calls = re.findall(r"attachVerifyInRButton\(\{(.*?)\}\)", html, re.S)
+        assert calls, f"{app}: no Verify in R wiring found"
+        for c in calls:
+            assert "getStudies" in c, f"{app}: Verify in R must pass getStudies (current input), not rely on the bus: {c}"

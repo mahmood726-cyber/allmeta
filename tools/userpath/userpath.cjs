@@ -1,5 +1,8 @@
 // userpath.cjs — drive one allmeta app the way a user does, in system Chrome.
-// node userpath.cjs <app> <outdir> [--pasted <file>] [--base <url>]
+// node userpath.cjs <app> <outdir> [--pasted <file>] [--base <url>] [--steps <json>] [--skip-default 1]
+// Exit 2 (verdict.json) when any R control fails on the user path: an alert instead
+// of a validator tab, a validator without "BROWSER VS R (MATCH)", an in-page panel
+// with a failed quantity or refusal, or an error. UNKNOWN verdicts need inspection.
 // Captures: displayed text after default run, every R-related control's result
 // (WebR output in page or new tab, downloaded .R scripts), console, failed requests.
 "use strict";
@@ -13,8 +16,35 @@ const PASTED = opt("pasted", null);
 const CHROME = process.env.CHROME || "C:/Program Files/Google/Chrome/Application/chrome.exe";
 fs.mkdirSync(out, { recursive: true });
 const log = [];
+const verdicts = [];
+const dialogs = [];
+let expectRows = null; // studies the page holds in this run (from --steps "expectRows")
 const note = (s) => { log.push(new Date().toISOString() + " " + s); fs.writeFileSync(path.join(out, "log.txt"), log.join("\n") + "\n"); };
-const R_RE = /verify in r|validate \(r\)|validate this analysis in r|webr|run in r|\bR code\b|download.*\.r\b|\.R script|copy r|r script|check in r/i;
+const R_RE = /verify in r|validate \(r\)|validate this analysis in r|webr|run in r|\bR code\b|download.*\.r\b|\.R script|copy r|r script|check in r| in r$| in r \(|validate the extras/i;
+
+// What counts as a user-path failure for one R control (see header).
+function judge(c, r) {
+  const label = (c.id || "") + " " + c.text;
+  const t = r.text || "";
+  if (r.error) return { verdict: "FAIL", why: "error: " + r.error };
+  if (r.dialogs && r.dialogs.length) return { verdict: "FAIL", why: "alert: " + r.dialogs.join(" | ") };
+  if (/verify in r|validate \(r\)|btn-validate-webr|btn-verify-in-r/i.test(label)) {
+    if (r.kind !== "newtab") return { verdict: "FAIL", why: "no validator tab opened" };
+    // A validator that opens with someone else's studies still says MATCH: check it holds the page's data.
+    if (r.expectRows && r.validatorRows !== r.expectRows) return { verdict: "FAIL", why: `validator opened with ${r.validatorRows} studies, page has ${r.expectRows} (stale bus data)` };
+    if (/BROWSER VS R \(MATCH\)/.test(t)) return { verdict: "PASS", why: "validator MATCH" };
+    return { verdict: "FAIL", why: "validator did not report MATCH" };
+  }
+  if (r.kind === "download") return { verdict: "PASS", why: "downloaded " + path.basename(r.download || "") };
+  if (r.kind === "inpage") {
+    if (/is not a function|Validation refused|live R comparison unavailable/i.test(t)) return { verdict: "FAIL", why: "in-page refusal or error" };
+    if (/\tFAIL\b/.test(t)) return { verdict: "FAIL", why: "a quantity FAILed" };
+    const m = [...t.matchAll(/(\d+)\/(\d+) live R quantities passed/g)].pop();
+    if (m && m[1] === m[2]) return { verdict: "PASS", why: m[0] };
+    return { verdict: "UNKNOWN", why: "no pass count found (inspect text)" };
+  }
+  return { verdict: "UNKNOWN", why: "kind " + r.kind };
+}
 
 async function bodyText(p) { try { return await p.evaluate(() => document.body.innerText); } catch (e) { return "(unreadable: " + e.message + ")"; } }
 
@@ -26,6 +56,8 @@ async function settle(p, maxMs, re) {
     const t = await bodyText(p);
     if (t !== last) { last = t; stableSince = Date.now(); }
     const busy = /booting|installing|loading|verifying sha|running|fitting|please wait|starting webr|downloading|initialis|initializ|importing|using webr baseurl|---- running ----/i.test(t.slice(-4000));
+    const terminal = /BROWSER VS R \((MATCH|MISMATCH)|R finished\.|live R quantities (passed|failed)|\d+\/\d+ live R|Validation refused|FAIL:/i.test(t);
+    if (re && terminal && Date.now() - stableSince > 8000) return t;
     if (re && re.test(t) && Date.now() - stableSince > 8000 && !busy) return t;
     if (!busy && Date.now() - stableSince > 20000) return t;
   }
@@ -38,6 +70,7 @@ async function settle(p, maxMs, re) {
   const consoleLog = [], failed = [];
   const hook = (p, tag) => {
     p.on("console", (m) => consoleLog.push(`[${tag}] ${m.type()}: ${m.text()}`.slice(0, 2000)));
+    p.on("dialog", (d) => { consoleLog.push(`[${tag}] DIALOG ${d.type()}: ${d.message()}`); note(`[${tag}] DIALOG ${d.type()}: ${d.message()}`); dialogs.push(d.message()); d.dismiss().catch(() => {}); });
     p.on("pageerror", (e) => consoleLog.push(`[${tag}] PAGEERROR: ${e.message}`));
     p.on("requestfailed", (r) => failed.push(`[${tag}] FAILED ${r.url()} ${r.failure() && r.failure().errorText}`));
     p.on("response", (r) => { if (r.status() >= 400) failed.push(`[${tag}] HTTP ${r.status()} ${r.url()}`); });
@@ -103,8 +136,19 @@ async function settle(p, maxMs, re) {
             const b = popup.getByRole("button", { name: re }).first();
             if (await b.count()) { try { await b.click({ timeout: 5000 }); note("tab: clicked " + re); } catch (e) {} break; }
           }
+          r.validatorRows = await popup.evaluate(() => { const t = document.getElementById("f-data"); return t ? t.value.split(/\r?\n/).filter((l) => l.trim() && !/^#/.test(l.trim())).length : null; }).catch(() => null);
+          r.expectRows = expectRows;
           r.text = await settle(popup, 420000, /(estimate|tau|rma|metafor|error|failed|mismatch|match|pass|fail)/i);
           await popup.screenshot({ path: path.join(out, `${tag}-${c.id || "tab"}.png`), fullPage: true }).catch(() => {});
+          // also take the validator's own "export R script" (what a user runs in desktop R)
+          try {
+            if (await popup.$("#btn-export-r")) {
+              const dl2P = popup.waitForEvent("download", { timeout: 8000 }).catch(() => null);
+              await popup.click("#btn-export-r", { timeout: 5000 });
+              const dl2 = await dl2P;
+              if (dl2) { const fn2 = path.join(out, `${tag}-${(c.id || "tab").replace(/[^A-Za-z0-9_-]/g, "_")}-validator-${dl2.suggestedFilename()}`); await dl2.saveAs(fn2); r.validatorScript = fn2; note("validator script " + fn2); }
+            }
+          } catch (e) { note("validator export failed " + e.message); }
           await popup.close().catch(() => {});
         } else if (!dl) {
           r.kind = "inpage";
@@ -113,6 +157,8 @@ async function settle(p, maxMs, re) {
           await page.screenshot({ path: path.join(out, `${tag}-${c.id || "inpage"}.png`), fullPage: true }).catch(() => {});
         }
       } catch (e) { r.error = String(e.message || e).slice(0, 500); }
+      r.dialogs = dialogs.splice(0);
+      verdicts.push(Object.assign({ tag, control: c.id || c.text }, judge(c, r)));
       results.push(r);
       fs.writeFileSync(path.join(out, tag + "-r-paths.json"), JSON.stringify(results, null, 1));
     }
@@ -122,21 +168,36 @@ async function settle(p, maxMs, re) {
   const t1 = await runDefault(page);
   fs.writeFileSync(path.join(out, "default-displayed.txt"), t1);
   await page.screenshot({ path: path.join(out, "default.png"), fullPage: true }).catch(() => {});
-  await exerciseR("default");
+  if (!opt("skip-default", null)) await exerciseR("default");
 
-  if (PASTED) {
-    await page.goto(url, { waitUntil: "load" }); await page.waitForTimeout(3000);
-    const data = fs.readFileSync(PASTED, "utf8");
-    const ok = await page.evaluate((d) => { const ta = [...document.querySelectorAll("textarea")].sort((a, b) => b.clientHeight - a.clientHeight)[0]; if (!ta) return false; ta.value = d; ta.dispatchEvent(new Event("input", { bubbles: true })); ta.dispatchEvent(new Event("change", { bubbles: true })); return true; }, data);
-    note("pasted " + ok);
-    for (const re of [/parse/i, /^run( analysis)?$/i, /^analy[sz]e$/i, /^fit/i, /^run$/i]) {
-      const b = page.getByRole("button", { name: re }).first();
-      if (await b.count()) { try { await b.click({ timeout: 5000 }); } catch (e) {} }
+  const STEPS = opt("steps", null);
+  if (STEPS) {
+    const cfg = JSON.parse(fs.readFileSync(STEPS, "utf8"));
+    for (const [ri, run] of cfg.entries()) {
+      expectRows = run.expectRows || null;
+      await page.goto(url, { waitUntil: "load" }); await page.waitForTimeout(4000);
+      for (const st of run.steps) {
+        if (st.fill) {
+          const data = st.file ? fs.readFileSync(st.file, "utf8") : st.value;
+          const ok = await page.evaluate(([sel, d]) => { const ta = document.querySelector(sel); if (!ta) return false; ta.value = d; ta.dispatchEvent(new Event("input", { bubbles: true })); ta.dispatchEvent(new Event("change", { bubbles: true })); return true; }, [st.fill, data]);
+          note(`[${run.tag}] fill ${st.fill} ${ok}`); if (!ok) throw new Error("fill target missing " + st.fill);
+        } else if (st.select) {
+          await page.selectOption(st.select, st.value); note(`[${run.tag}] select ${st.select}=${st.value}`);
+        } else if (st.click) {
+          await page.click(st.click, { timeout: 10000 }); note(`[${run.tag}] click ${st.click}`);
+        } else if (st.wait) { await page.waitForTimeout(st.wait); }
+      }
+      const t2 = await settle(page, 90000, null);
+      fs.writeFileSync(path.join(out, run.tag + "-displayed.txt"), t2);
+      await page.screenshot({ path: path.join(out, run.tag + ".png"), fullPage: true }).catch(() => {});
+      await exerciseR(run.tag);
     }
-    const t2 = await settle(page, 90000, null);
-    fs.writeFileSync(path.join(out, "pasted-displayed.txt"), t2);
-    await exerciseR("pasted");
   }
+  fs.writeFileSync(path.join(out, "verdict.json"), JSON.stringify(verdicts, null, 1));
+  const failedV = verdicts.filter((v) => v.verdict === "FAIL");
+  note(`verdict: ${verdicts.filter((v) => v.verdict === "PASS").length}/${verdicts.length} R controls PASS` +
+    (failedV.length ? "; FAIL: " + failedV.map((v) => v.tag + "/" + v.control + " (" + v.why + ")").join("; ") : ""));
+  process.exitCode = failedV.length ? 2 : 0;
   fs.writeFileSync(path.join(out, "console.txt"), consoleLog.join("\n"));
   fs.writeFileSync(path.join(out, "failed-requests.txt"), failed.join("\n"));
   await browser.close();

@@ -860,6 +860,19 @@
       run();
     };
 
+    // Current input as shared-bus studies (effect, SE) for "Verify in R": the same
+    // parsers the analysis uses, so binary rows go out as log odds ratios with their
+    // SEs (0.5 correction only for zero cells), never as raw counts. Throws on
+    // unreadable input so the button reports it instead of sending stale studies.
+    window.__almPubbiasBusStudies = function () {
+      var binary = document.getElementById('format').value === 'binary';
+      var text = document.getElementById('src').value;
+      var rows = binary ? parseBinary(text) : parseTESE(text);
+      return rows.map(function (r, i) {
+        return { label: 'Study ' + (i + 1), est: r.te, se: r.se, measure: binary ? 'OR' : null };
+      });
+    };
+
     // Expose for export
     window._almLastPubbias = function () { return _lastResults; };
     // Expose the test engine for R-parity tests (parseBinary + each test).
@@ -979,7 +992,11 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r", getStudies: function () {
+      // An empty list makes openInWebR say "No valid current studies"; it never
+      // falls back to whatever another app left on the bus.
+      try { return window.__almPubbiasBusStudies ? window.__almPubbiasBusStudies() : []; } catch (e) { return []; }
+    } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "pubbias-tests", textarea: "#src", format: "est-se-label" });
