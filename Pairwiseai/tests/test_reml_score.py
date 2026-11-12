@@ -94,3 +94,43 @@ def test_converged_means_reml_score_is_zero(engine):
         if not ok:
             bad.append('%s: tau2=%r converged=true but REML score=%r' % (nm, a['tau2'], g))
     assert bad == []
+
+
+FIXTURES = REPO / 'tests' / 'fixtures'
+
+
+def _fixture_cases(name, key):
+    data = json.loads((FIXTURES / name).read_text(encoding='utf-8'))[key]
+    return {(c.get('id') or c.get('review_id')): c for c in data}
+
+
+def _run_cases(engine, cases, tmp_path):
+    ref = tmp_path / 'cases.json'
+    ref.write_text(json.dumps({'sets': {k: {'yi': c['yi'], 'vi': c['vi']} for k, c in cases.items()}}), encoding='utf-8')
+    env = dict(os.environ, SHARED=str(REPO / 'shared'))
+    out = subprocess.run(['node', str(HERE / 'reml_harness.cjs'), str(engine), str(ref)],
+                         capture_output=True, text=True, timeout=180, encoding='utf-8', env=env)
+    assert out.returncode == 0, out.stderr[-2000:]
+    return json.loads(out.stdout)
+
+
+@pytest.mark.parametrize('engine', ENGINES, ids=lambda p: p.relative_to(REPO).as_posix())
+def test_cochrane_nonconvergence_reviews(engine, tmp_path):
+    """tests/fixtures/reml_nonconvergence.json: three Cochrane reviews where a bare REML iteration stalls or
+    oscillates (expected_tau2 from tests/reml_reference.R). CD006536 oscillates; the old oscillation exit
+    returned the mean of the last three iterates with converged:false instead of searching the REML likelihood."""
+    cases = _fixture_cases('reml_nonconvergence.json', 'reviews')
+    got = _run_cases(engine, cases, tmp_path)
+    bad = ['%s: app %r, reference %r' % (k, got[k]['tau2'], c['expected_tau2'])
+           for k, c in cases.items() if not abs(got[k]['tau2'] - c['expected_tau2']) <= TOL]
+    assert bad == []
+
+
+@pytest.mark.xfail(strict=True, reason='KNOWN GAP: Fisher scoring from the DL start finds a LOCAL REML maximum; '
+                   'the global-mode search lives in shared/ma-core.js (AlmMaCore.tau2REML), which these pages do not load')
+def test_global_mode_cases_app_js(tmp_path):
+    cases = _fixture_cases('reml_global_modes.json', 'cases')
+    got = _run_cases(ROOT / 'app.js', cases, tmp_path)
+    bad = ['%s: app %r, global %r' % (k, got[k]['tau2'], c['expected_tau2'])
+           for k, c in cases.items() if not abs(got[k]['tau2'] - c['expected_tau2']) <= TOL]
+    assert bad == []
