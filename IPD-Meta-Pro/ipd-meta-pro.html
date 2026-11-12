@@ -16612,7 +16612,9 @@ function calculateI2WithCI(Q, k, confLevel) {
 
 
 
- var I2 = Math.max(0, (Q - df) / Q) * 100;
+ // IPD-Small fix: on 0 df (k = 1) (Q - df) / Q was 100% for any Q > 0 (Q is rounding noise there) and NaN for
+ // Q = 0. I^2 is not estimable from one study (meta: I2 = NA, lower.I2 = upper.I2 = NA); report null.
+ var I2 = df > 0 ? Math.max(0, (Q - df) / Q) * 100 : null;
 
 
 
@@ -16640,7 +16642,7 @@ function calculateI2WithCI(Q, k, confLevel) {
  // IPD-Follow: 0 df (k = 1) keeps p = 1 as metafor QEp; Q there is rounding noise and pchisqUpper(Q > 0, 0) = 0
  pValue: df > 0 ? AlmTail.pchisqUpper(Q, df) : 1,
 
- interpretation: interpretI2(I2),
+ interpretation: I2 === null ? "I2 not estimable (k = 1)" : interpretI2(I2),
 
  reference: "Higgins JPT, Thompson SG. Stat Med 2002;21:1539-1558"
 
