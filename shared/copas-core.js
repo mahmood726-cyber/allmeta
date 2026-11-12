@@ -92,6 +92,7 @@
   // proxies the global object, so each Math.x / BigInt lookup is a trap).
   var crRound = Math.round, crFloor = Math.floor, crMax = Math.max, CR_LN2D = Math.LN2,
       crPow2f = function (e) { return Math.pow(2, e); }, crBI = BigInt, crNum = Number;
+  var CR_INF = 1 / 0, CR_NAN = 0 / 0; // the identifiers Infinity / NaN are global lookups too
   var CRM_SPLIT = 134217729; // 2^27 + 1, Dekker
   var crE = 0; // error word of the last twoProd (avoids allocating pairs)
   function crTwoProd(a, b) {
@@ -135,7 +136,7 @@
     if (V === 0n) return 0;
     var neg = V < 0n; if (neg) V = -V;
     var top = crBitLen(V) - 1 + s, r;
-    if (top > 1023) r = Infinity;
+    if (top > 1023) r = CR_INF;
     else {
       var lsb = crMax(top - 52, -1074), sh = lsb - s, q;
       if (sh <= 0) q = V << crBI(-sh);
@@ -219,7 +220,7 @@
       if (dy.ex >= 0) { Z = (r[0] * my) << crBI(dy.ex); Ez = (r[1] * dy.m) << crBI(dy.ex); }
       else { Z = (r[0] * my) >> crBI(-dy.ex); Ez = ((r[1] * dy.m) >> crBI(-dy.ex)) + 2n; }
       var lim = 746n << crBI(Q);
-      if (Z > lim) return Infinity;
+      if (Z > lim) return CR_INF;
       if (Z < -lim) return 0;
       var e = crBigExpZ(Z, Q, Ez);
       lo = crBigRound(e[0] - e[1], e[2] - Q); hi = crBigRound(e[0] + e[1], e[2] - Q);
@@ -348,11 +349,11 @@
   // integer, and n0 is the answer iff |H + L - n0| stays below 1/2 by more
   // than the error bound.
   function crExpFinish(eps2) {
-    if (crK >= -1021) return crRounds(crH, crL, eps2) ? crLdexp(crH, crK) : NaN;
+    if (crK >= -1021) return crRounds(crH, crL, eps2) ? crLdexp(crH, crK) : CR_NAN;
     var sc = CR_POW2[crK + 2148], H = crH * sc, L = crL * sc;  // 2^(crK+1074), exact
     var n0 = crRound(H), f = (H - n0) + L, E = H * eps2;
     if (f < 0) f = -f;
-    return f + E < 0.4999999999999 ? crLdexp(n0, -1074) : NaN;
+    return f + E < 0.4999999999999 ? crLdexp(n0, -1074) : CR_NAN;
   }
   // Fallback results, memoised: the hard cases are not random -- log(1 - 2^-52)
   // (pnorm returning 1 - ulp) recurs hundreds of times in one fit.
@@ -366,7 +367,7 @@
       if (r === r) return r;
     } else {
       if (x !== x) return x;
-      if (x > 709.79) return Infinity;
+      if (x > 709.79) return CR_INF;
       if (x < -746) return 0;
     }
     r = crMemo.e.get(x);
@@ -375,9 +376,9 @@
     return crMemoSet(crMemo.e, x, crBigExp(x));
   }
   function crLog(x) {
-    if (!(x > 0) || x === Infinity) {
-      if (x === 0) return -Infinity;
-      return x === Infinity ? x : NaN;   // NaN, negative
+    if (!(x > 0) || x === CR_INF) {
+      if (x === 0) return -CR_INF;
+      return x === CR_INF ? x : CR_NAN;   // NaN, negative
     }
     if (x === 1) return 0;
     crLogDD(x, false);
@@ -390,27 +391,27 @@
   // R_pow() (src/main/arithmetic.c) semantics, correctly rounded finite part.
   function crPow(x, y) {
     if (x === 1 || y === 0) return 1;
-    if (x === 0) { if (y > 0) return 0; if (y < 0) return Infinity; return y; }
+    if (x === 0) { if (y > 0) return 0; if (y < 0) return CR_INF; return y; }
     if (x !== x || y !== y) return x + y;
     if (y === 2) return x * x;           // R's R_POW macro: x^2 is x * x
-    if (x === Infinity) return y < 0 ? 0 : Infinity;
-    if (x === -Infinity) {
-      if (y === Infinity || y === -Infinity || y !== crFloor(y)) return NaN;
+    if (x === CR_INF) return y < 0 ? 0 : CR_INF;
+    if (x === -CR_INF) {
+      if (y === CR_INF || y === -CR_INF || y !== crFloor(y)) return CR_NAN;
       return y < 0 ? 0 : (y % 2 !== 0 ? x : -x);
     }
-    if (y === Infinity || y === -Infinity) {
-      if (x >= 0) return y > 0 ? (x >= 1 ? Infinity : 0) : (x < 1 ? Infinity : 0);
-      return NaN;
+    if (y === CR_INF || y === -CR_INF) {
+      if (x >= 0) return y > 0 ? (x >= 1 ? CR_INF : 0) : (x < 1 ? CR_INF : 0);
+      return CR_NAN;
     }
     var neg = false;
-    if (x < 0) { if (y !== crFloor(y)) return NaN; neg = y % 2 !== 0; x = -x; if (x === 1) return neg ? -1 : 1; }
+    if (x < 0) { if (y !== crFloor(y)) return CR_NAN; neg = y % 2 !== 0; x = -x; if (x === 1) return neg ? -1 : 1; }
     crLogDD(x, true);
     var zh = crTwoProd(y, crH), zl = crE + y * crL, r;
     var z = zh + zl; zl = zl - (z - zh); zh = z;
-    if (zh > 709.8) r = Infinity;
+    if (zh > 709.8) r = CR_INF;
     else if (zh < -745.2) r = 0;
     else {
-      r = NaN;
+      r = CR_NAN;
       if (zh < 709.7) {
         crExpDD(zh, zl);
         r = crExpFinish(CR_POW_EPS2A + (zh < 0 ? -zh : zh) * CR_POW_EPS2B);
