@@ -59,7 +59,25 @@ test("the 80-bit long-double sum is R's sum(), not an approximation of it", () =
   }
   assert.equal(CC.ldmean([1, 2, 4]), 7 / 3);
   assert.ok(Number.isNaN(CC.ldmean([])));
+  // review (Codex, read-only): a long-double mean that lands in the double
+  // SUBNORMAL range is rounded once, to the subnormal grid -- not to 53 bits
+  // first. x87 has the exponent range to hold it normal until the store.
+  const u = Number.MIN_VALUE;
+  assert.equal(CC.ldmean([(3 * 2 ** 51 + 2) * u, 0, 0]), (2 ** 51 + 1) * u);
+  assert.equal(CC.ldmean([-(3 * 2 ** 51 + 2) * u, 0, 0]), -(2 ** 51 + 1) * u);
+  // review: infinities propagate as in the 80-bit accumulator, which does
+  // not overflow on MAX + MAX.
+  assert.equal(CC.ldsum([Number.MAX_VALUE, Number.MAX_VALUE, -Infinity]), -Infinity);
+  assert.ok(Number.isNaN(CC.ldsum([Infinity, -Infinity])));
+  assert.equal(CC.ldmean([Number.MAX_VALUE, Number.MAX_VALUE, -Infinity]), -Infinity);
   assert.equal(CC.ldsum([1, Infinity]), Infinity);
+});
+
+test("metaforDL with one study is tau2 = 0, as rma.uni sets it for k = 1 (review)", () => {
+  const r = CC.metaforDL([1], [1]);
+  assert.equal(r.tau2, 0);
+  assert.equal(r.TE_random, 1);
+  assert.equal(r.seTE_random, 1);
 });
 
 test(`metagen() start values reproduced bit-exactly (${FX.starts.length} cases, REML and DL)`, () => {

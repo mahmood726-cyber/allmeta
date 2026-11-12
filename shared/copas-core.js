@@ -226,12 +226,21 @@
     }
     return s;
   }
-  function plainSum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
+  // Non-finite input: the 80-bit accumulator has the exponent range not to
+  // overflow on finite terms, so only the NaNs and infinities decide.
+  function ldNonFinite(a) {
+    var pos = false, neg = false;
+    for (var i = 0; i < a.length; i++) {
+      if (isNan(a[i])) return NaN;
+      if (a[i] === Infinity) pos = true; else if (a[i] === -Infinity) neg = true;
+    }
+    return pos && neg ? NaN : (pos ? Infinity : -Infinity);
+  }
   // base::sum(x) for a double vector.
   function ldsum(a) {
     if (!HAS_BIGINT) return rsum(a);
     var s = ldAccumulate(a);
-    return s === null ? plainSum(a) : ldFixToDouble(s);
+    return s === null ? ldNonFinite(a) : ldFixToDouble(s);
   }
   // base::colMeans() of one column: long-double sum, divided by n IN long
   // double (rounded to 64 bits), then rounded to double -- a double rounding
@@ -240,7 +249,7 @@
     if (a.length === 0) return NaN;                 // colMeans of no rows
     if (!HAS_BIGINT) return rsum(a) / a.length;
     var s = ldAccumulate(a);
-    if (s === null) return plainSum(a) / a.length;
+    if (s === null) return ldNonFinite(a);
     var Z = BigInt(0), one = BigInt(1);
     if (s === Z) return 0;
     var neg = s < Z, x = neg ? -s : s, n = BigInt(a.length), SC = BigInt(200);
@@ -248,11 +257,14 @@
     var sh = BigInt(ldBitlen(q) - 64), qq = q >> sh, rem = q - (qq << sh), half = one << (sh - one);
     if (rem > half || (rem === half && (r > Z || (qq & one) === one))) qq = qq + one;
     // Round to double while still scaled by 2^-SC (shifting first would
-    // truncate the significand of a mean below ~2^-820), then unscale by an
-    // exact power of two (two steps only if that power is below 2^-1074).
-    var v = ldRound(qq << sh, 53), L2 = ldBitlen(v), s2 = L2 > 53 ? L2 - 53 : 0;
+    // truncate the significand of a mean below ~2^-820): to 53 bits, or -- in
+    // the subnormal range -- straight to the 2^-1074 grid (SC = 200 bits up),
+    // once, as the x87 store does. Then unscale by an exact power of two.
+    var w64 = qq << sh, L1 = ldBitlen(w64), bits = mMin(53, L1 - 200);
+    if (bits < 1) return neg ? -0 : 0;
+    var v = ldRound(w64, bits), s2 = mMax(ldBitlen(v) - 53, 200);   // v is a multiple of 2^s2
     var top = Number(v >> BigInt(s2)), e = s2 - 1274;
-    var d = e >= -1074 ? top * mPow(2, e) : top * mPow(2, e + 200) * mPow(2, -200);
+    var d = top * mPow(2, e);
     return neg ? -d : d;
   }
 
@@ -2153,9 +2165,15 @@
   function metaforDL(TE, seTE) {
     var r = metaforStart(TE, seTE, "DL");
     if (r !== null) return r;
-    // Outside the emulated range (BigInt unavailable, an extreme seTE): the
-    // textbook DL estimator, the same quantity to rounding.
+    // Outside the emulated range (BigInt unavailable, an extreme seTE, k = 1):
+    // the textbook DL estimator, the same quantity to rounding. rma.uni sets
+    // tau^2 = 0 for a single study.
     var k = TE.length, i, sw = 0, swy = 0, sw2 = 0;
+    if (k === 1) {
+      var m1 = metagenPool(TE, seTE, 0);
+      return { tau2: 0, tau: 0, TE_random: m1.TE_random, seTE_random: m1.seTE_random,
+               iterations: 0, converged: true, exact: false };
+    }
     for (i = 0; i < k; i++) { var wi = 1 / (seTE[i] * seTE[i]); sw += wi; swy += wi * TE[i]; sw2 += wi * wi; }
     var mu0 = swy / sw, Q = 0;
     for (i = 0; i < k; i++) Q += (TE[i] - mu0) * (TE[i] - mu0) / (seTE[i] * seTE[i]);
