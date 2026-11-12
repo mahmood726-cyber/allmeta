@@ -18899,8 +18899,12 @@ class BayesianDecisionAnalysis {
     }
 
     _erf(x) {
+        // Numerical Recipes erfc Chebyshev fit, all ten terms (fractional error < 1.2e-7); the two-term
+        // truncation used here before gave Phi(0) = 0.617 and doubled the real-options value
         const t = 1 / (1 + 0.5 * Math.abs(x));
-        const tau = t * Math.exp(-x * x - 1.26551223 + t * 1.00002368);
+        const tau = t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 +
+            t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 +
+            t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
         return x >= 0 ? 1 - tau : tau - 1;
     }
 

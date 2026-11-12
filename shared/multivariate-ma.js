@@ -232,6 +232,11 @@
         if (a === b) { if (!(v > 0)) throw new Error("Within-study covariance must be positive definite."); L[a][b] = Math.sqrt(v); }
         else L[a][b] = v / L[b][b];
       }
+      // The Cholesky pivots above can round to a tiny positive value for an exactly singular
+      // S (e.g. v1 = v2 = cov, |r| = 1, depending on the input's last digit). The likelihood
+      // inverts S_i + G by elimination (_logdet/_matInv), and the G = 0 boundary needs S_i
+      // itself invertible, so refuse when that same elimination finds S singular.
+      if (_logdet(s.S) === -Infinity || !_matInv(s.S)) throw new Error("Within-study covariance must be positive definite.");
     });
     // warm-start G: diag = max(0, between-study var − mean within var), off-diag 0.
     var ybar = new Array(m).fill(0); studies.forEach(function (s) { for (a = 0; a < m; a++) ybar[a] += s.y[a] / k; });
@@ -261,6 +266,7 @@
       var factor = q > 1 ? 0.5 * (1 - 1 / q) : 0;
       G = delta.map(function (v) { return delta.map(function (w) { return factor * v * w; }); });
       pr = _profile(studies, G);
+      if (!pr) throw new Error("REML fit did not produce finite results.");
       var value = pr.logdetV + _logdet(pr.sumW);
       studies.forEach(function (s, i) { var dv = s.y.map(function (v, j) { return v - pr.mu[j]; }), w = _matVec(pr.Ws[i], dv); value += dv.reduce(function (t, v, j) { return t + v * w[j]; }, 0); });
       opt = { f: 0.5 * value };
@@ -338,6 +344,7 @@
       // Confirm the exact zero boundary by its covariance score, not an arbitrary rho.
       var zero = G.map(function (row) { return row.map(function () { return 0; }); });
       var zp = _profile(studies, zero), score = zero.map(function (row) { return row.slice(); });
+      if (!zp) throw new Error("REML fit did not produce finite results.");
       studies.forEach(function (s, i) {
         var W = zp.Ws[i], dv = s.y.map(function (v, j) { return v - zp.mu[j]; }), wr = _matVec(W, dv);
         for (var a = 0; a < m; a++) for (var b = 0; b < m; b++) {
