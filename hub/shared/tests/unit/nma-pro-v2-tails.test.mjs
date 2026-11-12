@@ -58,6 +58,10 @@ test('nma-pro-v2: the inlined Web Worker Stats provides the pnormU its NMA code 
   for (const g of grid.filter(g => g.d === 'normal')) assert.ok(rel(c.Stats.pnormU(g.x), g.p) < 1e-9, `worker pnormU(${g.x}) = ${c.Stats.pnormU(g.x)} vs ${g.p}`);
   assert.ok(Math.abs(c.Stats.pnormU(-1.9599639845400536) - 0.975) < 1e-12);
   assert.equal(c.Stats.pnormU(0), 0.5);
+  // z*z overflows to Infinity for finite |z| > ~1.3e154; R pnorm(1e155, lower.tail = FALSE) = 0
+  assert.equal(c.Stats.pnormU(1e155), 0);
+  assert.equal(c.Stats.pnormU(-1e155), 1);
+  assert.equal(c.Stats.pnormU(Number.MAX_VALUE), 0);
 });
 
 test('nma-pro-v2: pchisqU stays exact at large df (the old CDF switched to Wilson-Hilferty above df = 100)', () => {

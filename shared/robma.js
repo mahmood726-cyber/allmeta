@@ -94,12 +94,19 @@
     // Completed square: sum w*y^2 - B^2/A = sum w*(y - m)^2 + m^2/muSD^2 with m = B/A, a sum of
     // non-negative terms. Writing it as logLik0 + B^2/(2A) subtracts two numbers of size
     // sum w*y^2 (2^60 for y = 1, se = 2^-30), which cancel catastrophically in double precision.
+    // Residuals are taken about the most precise study, y_r, and the shift d = m - y_r is formed
+    // from the shifted data: m = B/A itself carries a rounding error ~1e-16 |m|, which a study
+    // with se far below that turns into a spurious penalty (yi = [3, 3], sei = [1e-17, 1e-17]
+    // gave H1FE -1939.69 instead of 32.4595), whereas d carries an error ~1e-16 |d|.
     function logLikMu(tau2) {
-      var A0 = 1 / (muSD * muSD), A = A0, B = 0, i, w;
-      for (i = 0; i < k; i++) { w = 1 / (vi[i] + tau2); A += w; B += w * yi[i]; }
+      var A0 = 1 / (muSD * muSD), A = A0, B = 0, i, w, r = 0, wr = -Infinity;
+      for (i = 0; i < k; i++) { w = 1 / (vi[i] + tau2); if (w > wr) { wr = w; r = i; } }
+      var yr = yi[r];
+      for (i = 0; i < k; i++) { w = 1 / (vi[i] + tau2); A += w; B += w * (yi[i] - yr); }
+      B += A0 * (0 - yr);                                  // the N(0, muSD^2) prior as a pseudo-study at 0
       // Per term as _logNormPdf: z = d / sd, -log(sd) - 0.5 log(2 pi), so no product overflows for finite inputs.
-      var m = B / A, zm = m / muSD, q = zm * zm, c = 0;
-      for (i = 0; i < k; i++) { var sd = Math.sqrt(vi[i] + tau2), z = (yi[i] - m) / sd; q += z * z; c += Math.log(sd); }
+      var d = B / A, m = yr + d, zm = ((0 - yr) - d) / muSD, q = zm * zm, c = 0;
+      for (i = 0; i < k; i++) { var sd = Math.sqrt(vi[i] + tau2), z = ((yi[i] - yr) - d) / sd; q += z * z; c += Math.log(sd); }
       return { l: -c - 0.5 * k * Math.log(2 * Math.PI) - 0.5 * Math.log(muSD * muSD * A) - 0.5 * q, m: m };
     }
     function logPriorTau(t) { return Math.LN2 + _logNormPdf(t, 0, tauSD); }
