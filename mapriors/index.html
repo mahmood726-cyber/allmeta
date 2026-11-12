@@ -362,6 +362,7 @@ body.dark .truthcert-badge.fail { background:#7f1d1d; color:#fca5a5; }
       <button onclick="document.getElementById('jsonInput').click()">Import JSON</button>
       <input type="file" id="jsonInput" aria-label="Upload JSON data file" accept=".json" style="display:none" onchange="importJSON(event)">
     </div>
+    <div id="csvImportNotice" role="status" style="display:none;margin:8px 0;padding:8px 12px;border-left:3px solid var(--warning);background:var(--bg-input);font-size:.9rem"></div>
     <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Drop CSV or JSON file here, or press Enter to browse" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('csvFileInput').click()}" onclick="document.getElementById('csvFileInput').click()">
       Drop CSV or JSON file here (or click)
     </div>
@@ -740,7 +741,9 @@ function parseCSVAndLoad(text, fileName) {
   // Detect delimiter (comma, tab, semicolon)
   const firstLine = text.split(/\r?\n/)[0];
   const delim = firstLine.includes('\t') ? '\t' : firstLine.includes(';') ? ';' : ',';
-  const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
+  // Keep each line's number in the file so a row that is not loaded can be named (notice below).
+  const kept = text.split(/\r?\n/).map((l, k) => ({ l, no: k + 1 })).filter(x => x.l.trim() && !x.l.startsWith('#'));
+  const lines = kept.map(x => x.l);
   if (lines.length < 2) { alert('CSV must have at least a header row and one data row.'); return; }
 
   // Parse header with fuzzy matching
@@ -755,17 +758,24 @@ function parseCSVAndLoad(text, fileName) {
     sd: ['sd', 'std', 'stdev', 'se', 'sei', 'stderr', 'standard_deviation']
   };
 
+  // A header matches an alias only if it IS the alias or one of its whole words (words split at any character that is
+  // not a letter or digit): "N total" and "Events (control)" match, but "trial" never matches "r" and "mean" never
+  // matches "n" (the earlier substring fallback did, so trial,mean,sd,n loaded 0 studies as binary). A column already
+  // given to one role is not given to another. Test: tests/csv_import.test.js.
+  const headerWords = rawHeaders.map(h => h.split(/[^a-z0-9]+/).filter(Boolean));
+  const taken = new Set();
   function findCol(aliases) {
+    let idx = -1;
     for (const alias of aliases) {
-      const idx = rawHeaders.indexOf(alias);
-      if (idx !== -1) return idx;
+      idx = rawHeaders.findIndex((h, j) => !taken.has(j) && h === alias);
+      if (idx !== -1) break;
     }
-    // Partial match fallback
-    for (const alias of aliases) {
-      const idx = rawHeaders.findIndex(h => h.includes(alias));
-      if (idx !== -1) return idx;
+    if (idx === -1) for (const alias of aliases) {
+      idx = headerWords.findIndex((w, j) => !taken.has(j) && w.includes(alias));
+      if (idx !== -1) break;
     }
-    return -1;
+    if (idx !== -1) taken.add(idx);
+    return idx;
   }
 
   const colTrial  = findCol(COL_MAP.trial);
@@ -797,12 +807,13 @@ function parseCSVAndLoad(text, fileName) {
   clearAll();
   const type = getEndpointType();
   let loaded = 0;
+  const excluded = [];
 
   for (let i = 1; i < lines.length; i++) {
     const cells = lines[i].split(delim).map(c => c.trim().replace(/^["']|["']$/g, ''));
-    if (cells.length < 2) continue;
-
     const trial = colTrial !== -1 ? cells[colTrial] : ('Study ' + i);
+    const skip = reason => excluded.push('line ' + kept[i].no + (trial ? ' (' + trial + ')' : '') + ': ' + reason);
+    if (cells.length < 2) { skip('fewer than 2 cells'); continue; }
 
     if (type === 'binary') {
       const events = parseInt(cells[colEvents]);
@@ -810,7 +821,7 @@ function parseCSVAndLoad(text, fileName) {
       if (isFinite(events) && isFinite(n) && n > 0) {
         addRow({ trial: trial, events: events, n: n });
         loaded++;
-      }
+      } else skip(!isFinite(events) ? 'events is not a number' : !isFinite(n) ? 'n is not a number' : 'n is not positive');
     } else {
       const mean = parseFloat(cells[colMean]);
       const sd   = parseFloat(cells[colSD]);
@@ -818,12 +829,20 @@ function parseCSVAndLoad(text, fileName) {
       if (isFinite(mean) && isFinite(sd) && isFinite(n) && n > 0 && sd > 0) {
         addRow({ trial: trial, mean: mean, sd: sd, n: n });
         loaded++;
-      }
+      } else skip(!isFinite(mean) ? 'mean is not a number' : !isFinite(sd) ? 'sd is not a number' : !isFinite(n) ? 'n is not a number' : n <= 0 ? 'n is not positive' : 'sd is not positive');
     }
   }
 
   const status = document.getElementById('liveStatus');
   if (status) status.textContent = 'Imported ' + loaded + ' studies from ' + (fileName ?? 'CSV');
+  // Visible notice (textContent only: trial names come from the file). Every row that was not loaded is named.
+  const notice = document.getElementById('csvImportNotice');
+  if (notice) {
+    const how = hasBinary && hasContinuous ? ' (both binary and continuous columns found; the selected type, ' + type + ', was used)' : '';
+    notice.textContent = 'Imported ' + loaded + ' of ' + (lines.length - 1) + ' data rows from ' + (fileName ?? 'CSV') + ' as ' + type + ' data' + how + '.'
+      + (excluded.length ? ' Excluded ' + excluded.length + ' row' + (excluded.length === 1 ? '' : 's') + ' (not loaded): ' + excluded.join('; ') + '.' : '');
+    notice.style.display = '';
+  }
   sync();
 }
 
