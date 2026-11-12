@@ -164,3 +164,15 @@ def test_verify_in_r_sends_the_current_studies():
         assert calls, f"{app}: no Verify in R wiring found"
         for c in calls:
             assert "getStudies" in c, f"{app}: Verify in R must pass getStudies (current input), not rely on the bus: {c}"
+
+
+def test_continue_with_validator_sends_the_current_studies():
+    # app-flow's "Continue with -> Verify in R (WebR)" defaults to MaStudies.read()
+    # (the saved bus) when the app passes no getStudies: same stale-data path as
+    # above (lane up1 RC5; meta-regression found 2026-11-12).
+    root = HERE.parent.parent
+    for app in VERIFY_APPS + ("multilevel-ma",):
+        html = (root / app / "index.html").read_text(encoding="utf-8")
+        for c in re.findall(r"attachContinueBar\(\{(.*?)\}\);", html, re.S):
+            if '"webr-validator"' in c:
+                assert "getStudies" in c, f"{app}: Continue-with to the validator must pass getStudies"

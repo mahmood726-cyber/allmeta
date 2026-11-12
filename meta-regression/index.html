@@ -1032,6 +1032,8 @@
       AlmFlow.attachContinueBar({
         container: "#alm-flow-mount",
         suggestions: ["forest-plot", "heterogeneity", "gosh-metareg", "bma-tau-priors", "webr-validator"],
+        // Push the studies on screen, never an earlier dataset left on the bus.
+        getStudies: function () { try { return window.__almMetaregBusStudies ? window.__almMetaregBusStudies() : []; } catch (e) { return []; } },
       });
     }
   });
