@@ -215,25 +215,31 @@ def test_no_private_notes_file_is_cited_in_shipped_text():
 
 
 def test_page_does_not_claim_the_likelihood_is_never_worse_than_metasens():
-    """The validation archive's run on the page as it now is (R's own L-BFGS-B
-    since PR #496; P21 archive results/comparison-fixed.txt, 12 Nov 2026,
-    tier O 42486/42498) reports the attained objective IS worse than
-    metasens's at 12 of 42,498 comparable points (4 of 138 configurations),
-    a pre-registered requirement still NOT met. A blanket "never worse" in the
-    footer would contradict that report, and the old projected-gradient
-    figures (84 of 42,498 in 16 of 138) no longer describe the page."""
+    """The footer must quote the validation archive's CURRENT Tier-O count for
+    this page, with both denominators, and name the file that records how the
+    count moved. With metagen()'s start values reproduced to the last bit and
+    correctly rounded exp/log/pow (lane/copas d29fb05b..77d03800), the P21
+    archive run on these bytes reports tier O 42498/42498: worse at 0 of
+    42,498 comparable points, in 0 of 138 configurations (archive DEVIATIONS
+    D14 re-pins the counts). A blanket, corpus-free "never worse" claim would
+    still overstate what was measured, and the superseded figures (84 of
+    42,498 in 16 of 138 for the projected-gradient routine; 12 of 42,498 in 4
+    of 138 for R's L-BFGS-B from a 1-70 ulp different start) no longer
+    describe the page."""
     html = INDEX.read_text(encoding="utf-8")
     flat = re.sub(r"<[^>]+>", " ", html)
     flat = re.sub(r"\s+", " ", flat).lower()
     for claim in ("never worse than metasens",
                   "is never worse", "never worse at any"):
         assert claim not in flat, f"page claims {claim!r}"
-    # ...and it must still disclose the shortfall with both denominators.
-    assert "12 of 42,498" in flat, "the disclosed shortfall is missing"
-    assert "4 of 138" in flat, "the per-configuration denominator is missing"
-    for stale in ("84 of 42,498", "16 of 138", "projected-gradient routine"):
-        assert stale not in flat, f"stale text from before R's L-BFGS-B: {stale!r}"
-    assert "deviations.md" in flat, "the file recording the shortfall is not named"
+    # ...and it must state the measured count with both denominators.
+    assert "all 42,498 comparable points" in flat, "the Tier-O point count is missing"
+    assert "0 of 42,498" in flat, "the worse-point count is missing"
+    assert "0 of 138" in flat, "the per-configuration denominator is missing"
+    for stale in ("84 of 42,498", "16 of 138", "projected-gradient routine",
+                  "12 of 42,498", "4 of 138", "neither optimiser dominates"):
+        assert stale not in flat, f"superseded text: {stale!r}"
+    assert "deviations.md" in flat, "the file recording the re-pin is not named"
 
 
 def test_profile_mle_hook_keeps_the_documented_back_compat_contract():
