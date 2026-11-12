@@ -12,11 +12,17 @@
  * "less") furthest toward the null; it stops when that bound reaches the null. FI = number
  * of modifications (the flipping one included). Mirror logic for an effect above the null.
  *
- * Pooling reproduces metafor::rma.uni(measure, method="DL", test="z") incl. escalc's
- * add=1/2-to-zero-cell-studies and drop00 conventions; the DL pool delegates to ma-core.
+ * Pooling reproduces metafor::rma.uni(measure, method="DL", test="z", drop00=FALSE) as called by
+ * frag.ma, incl. escalc's add=1/2-to-zero-cell-studies convention; the DL pool delegates to ma-core.
  *
- * Verified vs fragility::frag.ma(measure="OR", method="DL"): a 5-study set with pooled
- * OR<1 (p=0.00115) → FI = 13.
+ * Verified vs fragility 2.0 frag.ma(measure="OR", method="DL"): the page's built-in 5-study
+ * example (pooled OR<1, p=1.97e-5) → FI = 17 (RR 16, RD 21); full corpus in the paper-33
+ * validation archive (fragility-reproducible) and fragility/tests/test_frag_ma_parity.py.
+ *
+ * opts.convention = "mh-peto-v1" selects the earlier convention that the MH/Peto page (paper 10) was validated
+ * with and still reports (mh-peto/validate/corpus/fragility-reference.json): double-zero (or all-event) studies
+ * dropped from the DL fit, candidates scanned study by study (control arm, then treatment arm), no k = 1 refusal.
+ * It is kept so that page's published numbers stay reproducible; it is not frag.ma. Any other value is refused.
  *
  * Reference: Atal I, Porcher R, Boutron I, Ravaud P (2019), J Clin Epidemiol 111:58-67;
  * Lin L (2021), R package `fragility`.
@@ -26,10 +32,12 @@
 
   var Z975 = 1.959963984540054;
 
-  // escalc for one study (measure OR/RR/RD) with metafor add=1/2/to="only0"/drop00.
-  // rows: {a:e1, b:ne1, c:e0, d:ne0}. Returns {yi, vi} or null if dropped.
-  function _escalc(a, b, c, d, measure) {
-    if ((a === 0 && c === 0) || (b === 0 && d === 0)) return null; // drop00
+  // escalc for one study (measure OR/RR/RD) with metafor add=1/2, to="only0", drop00=FALSE — the defaults that
+  // fragility::frag.ma passes to rma.uni: studies with no events (or only events) in both arms are KEPT with the
+  // 1/2 correction, never dropped (the greedy path can create such studies). rows: {a:e1, b:ne1, c:e0, d:ne0}.
+  // drop00 = true (convention "mh-peto-v1" only): such a study is dropped (returns null) instead.
+  function _escalc(a, b, c, d, measure, drop00) {
+    if (drop00 && ((a === 0 && c === 0) || (b === 0 && d === 0))) return null;
     var aa = a, bb = b, cc = c, dd = d;
     if (a === 0 || b === 0 || c === 0 || d === 0) { aa += 0.5; bb += 0.5; cc += 0.5; dd += 0.5; }
     if (measure === "RD") {
@@ -43,10 +51,10 @@
   }
 
   // DL pooled CI (z) on the kept studies. data: arrays a,b,c,d. → {mu, ciLo, ciHi} or null.
-  function _pool(a, b, c, d, measure) {
+  function _pool(a, b, c, d, measure, drop00) {
     var yi = [], vi = [];
     for (var i = 0; i < a.length; i++) {
-      var e = _escalc(a[i], b[i], c[i], d[i], measure);
+      var e = _escalc(a[i], b[i], c[i], d[i], measure, drop00);
       if (e) { yi.push(e.yi); vi.push(e.vi); }
     }
     if (yi.length < 1) return null;
@@ -60,13 +68,17 @@
   function fragility(studies, opts) {
     opts = opts || {};
     var measure = opts.measure || "OR";
+    if (opts.convention !== undefined && opts.convention !== "mh-peto-v1") throw new Error("fragility: unknown convention " + JSON.stringify(opts.convention));
+    var v1 = opts.convention === "mh-peto-v1";
     var a = studies.map(function (s) { return s.e1; });          // treatment events
     var b = studies.map(function (s) { return s.n1 - s.e1; });   // treatment non-events
     var c = studies.map(function (s) { return s.e0; });          // control events
     var d = studies.map(function (s) { return s.n0 - s.e0; });   // control non-events
     var totalN = studies.reduce(function (t, s) { return t + s.n1 + s.n0; }, 0);
+    // frag.ma stops for a single study (its FI is a trial-level index, fragility::frag.study).
+    if (!v1 && studies.length < 2) return { FI: null, FQ: null, dir: "at least two studies are needed (a single trial has a trial-level fragility index)", pooled: { est: null, lo: null, hi: null }, modifications: [] };
 
-    var ori = _pool(a, b, c, d, measure);
+    var ori = _pool(a, b, c, d, measure, v1);
     if (!ori) return { FI: null, FQ: null, dir: "undefined", pooled: { est: null, lo: null, hi: null } };
     var sig = (ori.ciHi < 0) || (ori.ciLo > 0);
     if (!sig) return { FI: null, FQ: null, dir: "result is not significant (non-sig FI not computed)", pooled: { est: ori.mu, lo: ori.ciLo, hi: ori.ciHi } };
@@ -74,14 +86,19 @@
     var mods = [], moremod = true, guard = 0;
 
     while (sig && moremod && guard++ < 100000) {
-      // modifiable candidates this step
-      var cand = [];
-      for (var i = 0; i < a.length; i++) {
-        if (less ? (c[i] > 0) : (d[i] > 0)) cand.push({ s: i, grp: 0 });       // control arm
-        if (less ? (a[i] < a[i] + b[i]) : (a[i] > 0)) cand.push({ s: i, grp: 1 }); // treatment arm has room
+      // modifiable candidates this step, in frag.ma's order: the control arm of every study first, then the
+      // treatment arm of every study. The order decides which change wins a tie and, because the scan stops at
+      // the first change that flips significance, which change is the last step.
+      // (convention "mh-peto-v1": study by study instead, each study's control arm then its treatment arm.)
+      var cand = [], i;
+      if (v1) for (i = 0; i < a.length; i++) {
+        if (less ? (c[i] > 0) : (d[i] > 0)) cand.push({ s: i, grp: 0 });
+        // the earlier code's exact treatment-arm tests (equivalent to b > 0 for numeric counts)
+        if ((less ? (a[i] < a[i] + b[i]) : (a[i] > 0)) && (less ? (a[i] < studies[i].n1) : (a[i] > 0))) cand.push({ s: i, grp: 1 });
+      } else {
+        for (i = 0; i < a.length; i++) if (less ? (c[i] > 0) : (d[i] > 0)) cand.push({ s: i, grp: 0 });   // control arm
+        for (i = 0; i < a.length; i++) if (less ? (b[i] > 0) : (a[i] > 0)) cand.push({ s: i, grp: 1 });   // treatment arm has room
       }
-      // (treatment room check uses n1=a+b)
-      cand = cand.filter(function (k) { return k.grp === 0 ? true : (less ? (a[k.s] < studies[k.s].n1) : (a[k.s] > 0)); });
       if (!cand.length) { moremod = false; break; }
       var best = null;
       for (var j = 0; j < cand.length; j++) {
@@ -89,7 +106,7 @@
         var aT = a.slice(), bT = b.slice(), cT = c.slice(), dT = d.slice();
         if (k.grp === 0) { var m0 = less ? -1 : 1; cT[k.s] += m0; dT[k.s] -= m0; }
         else { var m1 = less ? 1 : -1; aT[k.s] += m1; bT[k.s] -= m1; }
-        var p = _pool(aT, bT, cT, dT, measure);
+        var p = _pool(aT, bT, cT, dT, measure, v1);
         var bound = less ? p.ciHi : p.ciLo;
         var flip = less ? (p.ciHi >= 0) : (p.ciLo <= 0);
         // choose furthest toward null: max ciHi (less) / min ciLo (!less)
