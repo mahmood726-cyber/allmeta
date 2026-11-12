@@ -755,15 +755,30 @@
         render();
       } catch (e) { Toast.show("Could not load shared: " + e.message, "warn"); }
     }
+    // Current input as shared-bus studies for "Verify in R" (the same rows onBusSave
+    // writes), so the validator always opens with the analysis on screen and never
+    // with whatever an earlier dataset or another app left on the bus.
+    function busStudies() {
+      return parseStudies(document.getElementById("f-data").value).studies.map(s => ({
+        label: s.label, est: s.est, se: s.se,
+        moderator: s.x == null ? null : s.x, group: null, year: null
+      }));
+    }
+    window.__almMetaregBusStudies = busStudies;
+    // What the WebR validator is handed: the studies on screen, and only when render()
+    // fits the regression (fitPM null: k < 3, no moderator variation / singular design,
+    // no tau2). Pure: no page state changes. [] -> the validator is not opened.
+    window.__almValidatorStudies = function () {
+      try {
+        const parsed = parseStudies(document.getElementById("f-data").value);
+        return fitPM(parsed.studies) ? busStudies() : [];
+      } catch (_) { return []; }
+    };
     function onBusSave() {
       const parsed = parseStudies(document.getElementById("f-data").value);
       if (!parsed.studies.length) { Toast.show("Nothing to save.", "warn"); return; }
       if (!window.MaStudies) { Toast.show("Bus helper not loaded.", "error"); return; }
-      const rows = parsed.studies.map(s => ({
-        label: s.label, est: s.est, se: s.se,
-        moderator: s.x == null ? null : s.x, group: null, year: null
-      }));
-      const ok = MaStudies.write(rows);
+      const ok = MaStudies.write(busStudies());
       if (ok) Toast.show("Saved " + parsed.studies.length + " studies to shared bus.", "warn");
       else Toast.show("Could not save to shared bus.", "warn");
     }
@@ -786,8 +801,11 @@
       document.getElementById("btn-bus-load").addEventListener("click", onBusLoad);
       document.getElementById("btn-bus-save").addEventListener("click", onBusSave);
       document.getElementById("btn-validate-webr").addEventListener("click", function () {
-        onBusSave();
-        window.open("../webr-validator/index.html?fromBus=1&from=meta-regression", "_blank");
+        // Hand over the studies on screen only when the regression was fitted; openInWebR
+        // refuses (and says why) on [] instead of opening an earlier session's bus.
+        if (!window.MaStudies || typeof MaStudies.openInWebR !== "function") { Toast.show("Bus helper not loaded.", "error"); return; }
+        MaStudies.openInWebR({ studies: window.__almValidatorStudies(), from: "meta-regression",
+          webrPath: "../webr-validator/index.html?fromBus=1" });
       });
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){
@@ -1002,7 +1020,11 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r", getStudies: function () {
+      // An empty list makes openInWebR say "No valid current studies"; it never
+      // falls back to whatever another app left on the bus.
+      try { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } catch (e) { return []; }
+    } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "meta-regression", textarea: "#f-data", format: "label-est-se" });
@@ -1022,6 +1044,8 @@
       AlmFlow.attachContinueBar({
         container: "#alm-flow-mount",
         suggestions: ["forest-plot", "heterogeneity", "gosh-metareg", "bma-tau-priors", "webr-validator"],
+        // Push the studies on screen, never an earlier dataset left on the bus.
+        getStudies: function () { try { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } catch (e) { return []; } },
       });
     }
   });

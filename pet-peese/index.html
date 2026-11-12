@@ -407,6 +407,14 @@
       svg.innerHTML += `<rect x="${padL + plotW - 70}" y="${lyB - 9}" width="8" height="8" fill="none" stroke="var(--imputed)" stroke-width="1.5"/><text x="${padL + plotW - 58}" y="${lyB - 2}" font-size="10" fill="currentColor">imputed</text>`;
     }
 
+    // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
+    // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
+    // returning user an earlier session's studies).
+    window.__almValidatorStudies = function () {
+      // Only when the page shows a result (run() refuses k < 3).
+      const rows = parseTable(document.getElementById("src").value);
+      return (rows.length < 3 || !_lastFE) ? [] : rows.map((r, i) => ({ label: "Study " + (i + 1), est: r.te, se: r.se }));
+    };
     document.getElementById("btn-run").addEventListener("click", run);
     if (window.MaStudies && MaStudies.attachButtons) {
       MaStudies.attachButtons({
@@ -572,7 +580,8 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "pet-peese", textarea: "#src", format: "est-se-label" });

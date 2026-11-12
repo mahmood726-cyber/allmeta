@@ -358,6 +358,15 @@
       });
     }
     window.__almCopasFull = fitCopas;
+    // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
+    // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
+    // returning user an earlier session's studies).
+    window.__almValidatorStudies = function () {
+      // Only when the page shows a fit (fitCopas refuses k < 3 and non-converged starts).
+      var rows = parse(document.getElementById('src').value);
+      if (rows.length < 3 || !_lastResults) return [];
+      return rows.map(function (r, i) { return { label: 'Study ' + (i + 1), est: r.te, se: r.se }; });
+    };
 
     // ---- axis state (overrideable by axis-controls) ----
     var _axisState = {};
@@ -874,7 +883,8 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "copas", textarea: "#src", format: "est-se-label" });

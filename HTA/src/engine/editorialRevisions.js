@@ -19,6 +19,12 @@
 
 'use strict';
 
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 // ============================================================================
 // SECTION 1: HARTUNG-KNAPP-SIDIK-JONKMAN (HKSJ) ADJUSTMENT
 // ============================================================================
@@ -107,7 +113,7 @@ class HKSJMetaAnalysis {
             H2,
             Q,
             df: n - 1,
-            pQ: 1 - this._chiSquareCDF(Q, n - 1),
+            pQ: AlmTail.pchisqUpper(Q, n - 1),
             predictionInterval, // NEW: Prediction interval
             weights,
             k: n,
@@ -789,22 +795,22 @@ class SurvivalModelSelection {
                 return Math.exp(-Math.pow(t / params.scale, params.shape));
             case 'lognormal': {
                 const z = (Math.log(Math.max(t, 0.001)) - params.mu) / params.sigma;
-                return 1 - this._normalCDF(z);
+                return AlmTail.pnormUpper(z);
             }
             case 'loglogistic':
                 return 1 / (1 + Math.pow(t / params.alpha, params.beta));
             case 'gompertz':
                 return Math.exp(-(params.rate / params.shape) * (Math.exp(params.shape * t) - 1));
             case 'gamma':
-                return 1 - this._gammaCDF(params.shape, t * params.rate);
+                return AlmTail.pgammaUpper(t * params.rate, params.shape);
             case 'gengamma': {
                 const w = (Math.log(Math.max(t, 0.001)) - params.mu) / params.sigma;
                 if (Math.abs(params.Q) < 0.001) {
-                    return 1 - this._normalCDF(w);
+                    return AlmTail.pnormUpper(w);
                 }
                 const q2 = params.Q * params.Q;
                 const u = Math.exp(params.Q * w) / q2;
-                return 1 - this._gammaCDF(1 / q2, u);
+                return AlmTail.pgammaUpper(u, 1 / q2);
             }
             default:
                 return Math.exp(-t * 0.1);
@@ -991,7 +997,7 @@ class PublicationBiasTests {
         // t-test for intercept
         const t = intercept / seIntercept;
         const df = n - 2;
-        const pValue = 2 * (1 - this._tCDF(Math.abs(t), df));
+        const pValue = 2 * AlmTail.ptUpper(Math.abs(t), df);
 
         return {
             intercept,
@@ -1040,7 +1046,7 @@ class PublicationBiasTests {
 
         const t = slope / seSlope;
         const df = n - 2;
-        const pValue = 2 * (1 - this._tCDF(Math.abs(t), df));
+        const pValue = 2 * AlmTail.ptUpper(Math.abs(t), df);
 
         return {
             slope,
@@ -1088,7 +1094,7 @@ class PublicationBiasTests {
 
         const t = intercept / seIntercept;
         const df = n - 2;
-        const pValue = 2 * (1 - this._tCDF(Math.abs(t), df));
+        const pValue = 2 * AlmTail.ptUpper(Math.abs(t), df);
 
         return {
             intercept,
@@ -1137,7 +1143,7 @@ class PublicationBiasTests {
         // Variance of tau (adjusted for continuity)
         const varTau = (2 * (2 * n + 5)) / (9 * n * (n - 1));
         const z_stat = tau / Math.sqrt(varTau);
-        const pValue = 2 * (1 - this._normalCDF(Math.abs(z_stat)));
+        const pValue = 2 * AlmTail.pnormUpper(Math.abs(z_stat));
 
         return {
             tau,
@@ -1249,9 +1255,8 @@ class PublicationBiasTests {
     }
 
     _tCDF(x, df) {
-        // Approximation using incomplete beta
-        const t2 = x * x;
-        return 1 - 0.5 * this._betaInc(df / 2, 0.5, df / (df + t2));
+        // Student t CDF (the old incomplete-beta fraction was wrong: 0.84 instead of 0.75 at t = 1, df = 1).
+        return AlmTail.ptUpper(-x, df);
     }
 
     _betaInc(a, b, x) {

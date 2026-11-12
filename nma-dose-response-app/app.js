@@ -1,3 +1,8 @@
+// Upper-tail probabilities come from ../shared/upper-tail.js (window.AlmTail), loaded by index.html before
+// this file; under Node it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof AlmTail === 'undefined' && typeof require === 'function') {
+  globalThis.AlmTail = require('../shared/upper-tail.js');
+}
 // Seeded PRNG (xoshiro128**) for reproducible results
 var _nmaRngState = new Uint32Array([0x9E3779B9, 0x243F6A88, 0xB7E15162, 0x13198A2E]);
 function seedNmaRng(seed) {
@@ -573,12 +578,12 @@ window.getCriticalZ = getCriticalZ;
 
     // Compute two-sided p-value from z-statistic
     pValueFromZ(z) {
-      return 2 * (1 - this.normalCDF(Math.abs(z)));
+      return 2 * AlmTail.pnormUpper(Math.abs(z));
     },
 
     // Compute t-distribution p-value
     pValueFromT(t, df) {
-      return 2 * (1 - this.tCDF(Math.abs(t), df));
+      return 2 * AlmTail.ptUpper(Math.abs(t), df);
     }
   };
 
@@ -709,7 +714,7 @@ window.getCriticalZ = getCriticalZ;
       const random = { logLik: llRandom, AIC: -2 * llRandom + 4, BIC: -2 * llRandom + 2 * Math.log(this.n), tau2: est.tau2 };
 
       const LRT = 2 * (llRandom - llFixed);
-      const pValue = LRT > 0 ? 0.5 * (1 - StatUtils.chiSquareCDF(LRT, 1)) : 1;
+      const pValue = LRT > 0 ? 0.5 * AlmTail.pchisqUpper(LRT, 1) : 1;
 
       return { fixed, random, LRT, pValue, preferred: random.AIC < fixed.AIC ? 'random' : 'fixed' };
     }
@@ -2148,7 +2153,7 @@ S4,DrugC,35,1.02,0.16`;
       const pred = this.predictWithUncertainty(dose);
       // P(effect > threshold) assuming normal distribution
       const z = (threshold - pred.mean) / pred.se;
-      return 1 - StatUtils.normalCDF(z);
+      return AlmTail.pnormUpper(z);
     }
 
     // Find minimum effective dose (MED)
@@ -2309,7 +2314,7 @@ S4,DrugC,35,1.02,0.16`;
 
         // Power calculation
         const z_alpha = normalQuantile(1 - this.alpha / 2);
-        const power = 1 - StatUtils.normalCDF(z_alpha - ncp) + StatUtils.normalCDF(-z_alpha - ncp);
+        const power = AlmTail.pnormUpper(z_alpha - ncp) + StatUtils.normalCDF(-z_alpha - ncp);
 
         powers[comp] = {
           effect,
@@ -2595,7 +2600,7 @@ S4,DrugC,35,1.02,0.16`;
         se: se[i],
         ci_lower: beta[i] - getCriticalZ(0.95) *se[i],
         ci_upper: beta[i] + getCriticalZ(0.95) *se[i],
-        pValue: 2 * (1 - StatUtils.normalCDF(Math.abs(beta[i] / se[i])))
+        pValue: 2 * AlmTail.pnormUpper(Math.abs(beta[i] / se[i]))
       }));
     }
 
@@ -3878,7 +3883,7 @@ S4,DrugC,35,1.02,0.16`;
       // Chi-square test for uniformity
       const expected = n / 10;
       const chiSquare = digitCounts.reduce((sum, count) => sum + Math.pow(count - expected, 2) / expected, 0);
-      const pValue = 1 - this.chiSquaredCDF(chiSquare, 9);
+      const pValue = AlmTail.pchisqUpper(chiSquare, 9);
 
       // Check for excess of 0s and 5s (common rounding)
       const prop05 = (digitCounts[0] + digitCounts[5]) / n;
@@ -3958,7 +3963,7 @@ S4,DrugC,35,1.02,0.16`;
         chiSquare += Math.pow(observed[d] - expected, 2) / expected;
       }
 
-      const pValue = 1 - this.chiSquaredCDF(chiSquare, 8);
+      const pValue = AlmTail.pchisqUpper(chiSquare, 8);
 
       return {
         test: 'Benford',
@@ -4179,7 +4184,7 @@ S4,DrugC,35,1.02,0.16`;
       const obfBoundary = getCriticalZ(0.95) / Math.sqrt(infoFraction);
 
       // Lan-DeMets alpha spending
-      const alphaSpent = 2 * (1 - StatUtils.normalCDF(obfBoundary));
+      const alphaSpent = 2 * AlmTail.pnormUpper(obfBoundary);
 
       return {
         zScore,
@@ -4601,8 +4606,8 @@ S4,DrugC,35,1.02,0.16`;
         intercept, slope,
         seIntercept, seSlope,
         tIntercept, tSlope,
-        pIntercept: 2 * (1 - this.tCDF(Math.abs(tIntercept), n - 2)),
-        pSlope: 2 * (1 - this.tCDF(Math.abs(tSlope), n - 2)),
+        pIntercept: 2 * AlmTail.ptUpper(Math.abs(tIntercept), n - 2),
+        pSlope: 2 * AlmTail.ptUpper(Math.abs(tSlope), n - 2),
         df: n - 2
       };
     }
@@ -4887,7 +4892,7 @@ S4,DrugC,35,1.02,0.16`;
 
     // Compute one-tailed p-value from z-score
     pValueFromZ(z) {
-      return 1 - StatUtils.normalCDF(z);
+      return AlmTail.pnormUpper(z);
     }
 
     // Assign studies to p-value intervals
@@ -5319,7 +5324,7 @@ S4,DrugC,35,1.02,0.16`;
       const F = msBetween / (msWithin || 0.001);
 
       // Approximate p-value
-      const pValue = 1 - this.fCDF(F, dfBetween, dfWithin);
+      const pValue = AlmTail.pfUpper(F, dfBetween, dfWithin);
 
       return {
         covariate,
@@ -6188,7 +6193,7 @@ S4,DrugC,35,1.02,0.16`;
       }
 
       const df = designs.length - 1;
-      const pValue = 1 - chiSquaredCDF(Q_total, df);
+      const pValue = AlmTail.pchisqUpper(Q_total, df);
 
       // Decompose by comparison
       const comparisonInconsistency = this.decomposeByComparison(designEstimates, pooled);
@@ -6788,40 +6793,10 @@ S4,DrugC,35,1.02,0.16`;
   // ----------------------------------------------------------------------------
 
   function chiSquaredCDF(x, df) {
-    // Approximation using normal distribution for large df
-    if (df > 100) {
-      const z = Math.pow(x / df, 1/3) - (1 - 2 / (9 * df));
-      const se = Math.sqrt(2 / (9 * df));
-      return StatUtils.normalCDF(z / se);
-    }
-
-    // Wilson-Hilferty approximation
-    const gamma = (z) => {
-      const g = 7;
-      const C = [
-        0.99999999999980993, 676.5203681218851, -1259.1392167224028,
-        771.32342877765313, -176.61502916214059, 12.507343278686905,
-        -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
-      ];
-      if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
-      z -= 1;
-      let x = C[0];
-      for (let i = 1; i < g + 2; i++) x += C[i] / (z + i);
-      const t = z + g + 0.5;
-      return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
-    };
-
-    const lowerGamma = (a, x) => {
-      let sum = 0, term = 1 / a;
-      for (let n = 1; n < 100; n++) {
-        term *= x / (a + n);
-        sum += term;
-        if (Math.abs(term) < 1e-10) break;
-      }
-      return Math.pow(x, a) * Math.exp(-x) * (1 / a + sum);
-    };
-
-    return lowerGamma(df / 2, x / 2) / gamma(df / 2);
+      // Regularized lower incomplete gamma P(df/2, x/2). The old version was Wilson-Hilferty above
+      // 100 df and a 100-term series below it that never reached large x (Q >= ~454 on 1 df gave CDF ~0).
+      if (x <= 0) return 0;
+      return AlmTail._gammaPQ(df / 2, x / 2)[0];
   }
 
   // MODEL DIAGNOSTICS
@@ -9395,7 +9370,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Calculate p-value using chi-square distribution
     let pValue = NaN;
     if (df > 0 && q >= 0) {
-      pValue = 1 - StatUtils.chiSquareCDF(q, df);
+      pValue = AlmTail.pchisqUpper(q, df);
     }
 
     // Calculate consistency model fit statistics
@@ -9820,7 +9795,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     const s2 = df > 0 ? rss / df : NaN;
     const seIntercept = Number.isFinite(s2) ? Math.sqrt(s2 * (1 / n + (meanX * meanX) / sxx)) : NaN;
     const t = Number.isFinite(seIntercept) && seIntercept > 0 ? intercept / seIntercept : NaN;
-    const pRaw = Number.isFinite(t) ? 2 * (1 - normalCdf(Math.abs(t))) : NaN;
+    const pRaw = Number.isFinite(t) ? 2 * AlmTail.pnormUpper(Math.abs(t)) : NaN;
     const p = Number.isFinite(pRaw) ? Math.max(0, Math.min(1, pRaw)) : NaN;
     return { intercept, p };
   }
@@ -9906,7 +9881,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     const n = rows.length;
     const varTau = n > 1 ? (2 * (2 * n + 5)) / (9 * n * (n - 1)) : NaN;
     const z = Number.isFinite(varTau) && varTau > 0 ? tau / Math.sqrt(varTau) : NaN;
-    const p = Number.isFinite(z) ? 2 * (1 - normalCdf(Math.abs(z))) : NaN;
+    const p = Number.isFinite(z) ? 2 * AlmTail.pnormUpper(Math.abs(z)) : NaN;
     return { tau, p };
   }
 
@@ -9931,7 +9906,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     const diff = directDiff - indirect;
     const varSum = directVar + (Number.isFinite(indirectVar) ? indirectVar : 0);
     const z = varSum > 0 ? diff / Math.sqrt(varSum) : NaN;
-    const p = Number.isFinite(z) ? 2 * (1 - normalCdf(Math.abs(z))) : NaN;
+    const p = Number.isFinite(z) ? 2 * AlmTail.pnormUpper(Math.abs(z)) : NaN;
     return { direct: directDiff, indirect, diff, p };
   }
 
@@ -9961,7 +9936,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       if (!Number.isFinite(point.se) || point.se <= 0) return;
       const resid = point.value - predictModel(fit, point.dose);
       const z = Math.abs(resid / point.se);
-      const p = 2 * (1 - normalCdf(z));
+      const p = 2 * AlmTail.pnormUpper(z);
       if (p < 0.01) c01 += 1;
       else if (p < 0.05) c05 += 1;
       else if (p < 0.1) c10 += 1;
@@ -16127,7 +16102,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
           const effects = state.rawData.map(d => d.effect);
           const pValues = state.rawData.map(d => {
             const z = Math.abs(d.effect / d.se);
-            return 2 * (1 - StatUtils.normalCDF(z));
+            return 2 * AlmTail.pnormUpper(z);
           });
 
           const model = new WeightFunctionPublicationBias(effects, pValues);
@@ -16160,7 +16135,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
           const ses = state.rawData.map(d => d.se);
           const pValues = state.rawData.map(d => {
             const z = Math.abs(d.effect / d.se);
-            return 2 * (1 - StatUtils.normalCDF(z));
+            return 2 * AlmTail.pnormUpper(z);
           });
 
           const model = new CopulaSelectionModel(effects, ses, pValues);
@@ -16532,7 +16507,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Convert effect/SE to two-tailed p-value
     effectToP(effect, se) {
       const z = Math.abs(effect / se);
-      return 2 * (1 - StatUtils.normalCDF(z));
+      return 2 * AlmTail.pnormUpper(z);
     }
 
     // Get significant p-values (p < 0.05)
@@ -16583,7 +16558,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const se = Math.sqrt(1/12 / ppValues.length); // SE of uniform mean
 
       const z = (observed - expected) / se;
-      const pValue = 2 * (1 - StatUtils.normalCDF(Math.abs(z)));
+      const pValue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
       return {
         z,
@@ -16628,8 +16603,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         total,
         proportion: observed,
         z,
-        p: 1 - StatUtils.normalCDF(z), // One-tailed
-        significant: observed > 0.5 && (1 - StatUtils.normalCDF(z)) < 0.05,
+        p: AlmTail.pnormUpper(z), // One-tailed
+        significant: observed > 0.5 && AlmTail.pnormUpper(z) < 0.05,
         interpretation: observed > 0.5 ? 'More p-values in lower half: evidential value' : 'Not right-skewed'
       };
     }
@@ -16821,7 +16796,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     computePower(trueEffect, se, alpha = 0.05) {
       const zCrit = getCriticalZ(0.95); // Two-tailed
       const ncp = Math.abs(trueEffect) / se; // Non-centrality parameter
-      return 1 - StatUtils.normalCDF(zCrit - ncp) + StatUtils.normalCDF(-zCrit - ncp);
+      return AlmTail.pnormUpper(zCrit - ncp) + StatUtils.normalCDF(-zCrit - ncp);
     }
 
     run() {
@@ -16847,7 +16822,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
       // Chi-square test (O - E)² / E
       const chiSquare = Math.pow(observed - expected, 2) / expected;
-      const pValue = 1 - this.chiSquareCDF(chiSquare, 1);
+      const pValue = AlmTail.pchisqUpper(chiSquare, 1);
 
       // A ratio (observed / expected)
       const aRatio = observed / expected;
@@ -17251,7 +17226,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
       // Selection probability (step function at p = 0.05)
       const z = Math.abs(effect) / se;
-      const pValue = 2 * (1 - StatUtils.normalCDF(z));
+      const pValue = 2 * AlmTail.pnormUpper(z);
       const selectionProb = pValue < 0.05 ? 1 : eta;
 
       return effectLik * selectionProb;
@@ -17574,7 +17549,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         df,
         tCrit,
         ci,
-        pValue: 2 * (1 - this.tCDF(Math.abs(effect / se), df)),
+        pValue: 2 * AlmTail.ptUpper(Math.abs(effect / se), df),
         method: 'Satterthwaite'
       };
     }
@@ -17601,7 +17576,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         lambda,
         tCrit,
         ci,
-        pValue: 2 * (1 - this.tCDF(Math.abs(satt.effect / adjustedSE), df)),
+        pValue: 2 * AlmTail.ptUpper(Math.abs(satt.effect / adjustedSE), df),
         method: 'Kenward-Roger (simplified)'
       };
     }
@@ -17745,7 +17720,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const seIntercept = Math.sqrt(mse * sumWXX / denom);
 
       const t = intercept / seIntercept;
-      const pValue = 2 * (1 - this.tCDF(Math.abs(t), this.n - 2));
+      const pValue = 2 * AlmTail.ptUpper(Math.abs(t), this.n - 2);
 
       return {
         intercept,
@@ -18087,7 +18062,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     getPValues() {
       return this.effects.map((e, i) => {
         const z = Math.abs(e / this.ses[i]);
-        return 2 * (1 - StatUtils.normalCDF(z));
+        return 2 * AlmTail.pnormUpper(z);
       });
     }
 
@@ -18100,8 +18075,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const ncp = mu / se;
 
       // P(z > zObs | z > zCrit, mu)
-      const pAboveObs = 1 - StatUtils.normalCDF(zObs - ncp);
-      const pAboveCrit = 1 - StatUtils.normalCDF(zCrit - ncp);
+      const pAboveObs = AlmTail.pnormUpper(zObs - ncp);
+      const pAboveCrit = AlmTail.pnormUpper(zCrit - ncp);
 
       if (pAboveCrit < 1e-10) return 0.5;
       return pAboveObs / pAboveCrit;
@@ -18372,7 +18347,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
       // Test for small-study effects (beta1 != 0)
       const tStat = reg.beta1 / reg.seBeta1;
-      const pValue = 2 * (1 - this.tCDF(Math.abs(tStat), this.n - 2));
+      const pValue = 2 * AlmTail.ptUpper(Math.abs(tStat), this.n - 2);
 
       // Shrunken estimates for each study
       const shrunken = [];
@@ -18492,7 +18467,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const fe = this.modelFE();
 
       // Simple selection adjustment
-      const pValues = this.effects.map((e, i) => 2 * (1 - StatUtils.normalCDF(Math.abs(e / this.ses[i]))));
+      const pValues = this.effects.map((e, i) => 2 * AlmTail.pnormUpper(Math.abs(e / this.ses[i])));
       const nSig = pValues.filter(p => p < 0.05).length;
       const selectionBias = (nSig / this.n > 0.5) ? 0.1 : 0;
 
@@ -18508,7 +18483,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     modelRESelection() {
       const re = this.modelRE();
 
-      const pValues = this.effects.map((e, i) => 2 * (1 - StatUtils.normalCDF(Math.abs(e / this.ses[i]))));
+      const pValues = this.effects.map((e, i) => 2 * AlmTail.pnormUpper(Math.abs(e / this.ses[i])));
       const nSig = pValues.filter(p => p < 0.05).length;
       const selectionBias = (nSig / this.n > 0.5) ? 0.15 : 0.05;
 
@@ -18663,7 +18638,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const pooled = this.getPooled();
 
       // If all non-significant studies were suppressed, what's the bias?
-      const pValues = this.effects.map((e, i) => 2 * (1 - StatUtils.normalCDF(Math.abs(e / this.ses[i]))));
+      const pValues = this.effects.map((e, i) => 2 * AlmTail.pnormUpper(Math.abs(e / this.ses[i])));
       const nSig = pValues.filter(p => p < 0.05).length;
       const nNonSig = this.n - nSig;
 
@@ -18719,7 +18694,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
       for (let eta = 0.1; eta <= 1; eta += 0.1) {
         // Simplified selection-adjusted estimate
-        const pValues = this.effects.map((e, i) => 2 * (1 - StatUtils.normalCDF(Math.abs(e / this.ses[i]))));
+        const pValues = this.effects.map((e, i) => 2 * AlmTail.pnormUpper(Math.abs(e / this.ses[i])));
 
         let adjustedSum = 0, adjustedWeightSum = 0;
         for (let i = 0; i < this.n; i++) {
@@ -18862,7 +18837,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
           se: this.ses[i],
           z,
           region,
-          pValue: 2 * (1 - StatUtils.normalCDF(Math.abs(e / this.ses[i])))
+          pValue: 2 * AlmTail.pnormUpper(Math.abs(e / this.ses[i]))
         };
       });
     }
@@ -18982,7 +18957,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     run() {
       const { tau, z, varTau } = this.kendallTau();
-      const pValue = 2 * (1 - StatUtils.normalCDF(Math.abs(z)));
+      const pValue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
       return {
         tau,
@@ -19086,7 +19061,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const df = n - 2;
 
       // p-value from t-distribution
-      const pValue = 2 * (1 - this.tCDF(Math.abs(t), df));
+      const pValue = 2 * AlmTail.ptUpper(Math.abs(t), df);
 
       return {
         intercept,
@@ -19116,7 +19091,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const correctionFactor = Math.sqrt((n - 1) / df);
       const seAdjusted = basic.seIntercept * correctionFactor;
       const tAdjusted = basic.intercept / seAdjusted;
-      const pValueAdjusted = 2 * (1 - this.tCDF(Math.abs(tAdjusted), df));
+      const pValueAdjusted = 2 * AlmTail.ptUpper(Math.abs(tAdjusted), df);
 
       return {
         ...basic,
@@ -19178,7 +19153,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const seBeta1 = Math.sqrt(mse * sumW / denom);
 
       const t = beta1 / seBeta1;
-      const pValue = 2 * (1 - this.tCDF(Math.abs(t), this.n - 2));
+      const pValue = 2 * AlmTail.ptUpper(Math.abs(t), this.n - 2);
 
       return {
         intercept: beta0,
@@ -19273,7 +19248,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       // For each significant z, compute probability of replication
       const repProbs = significant.map(z => {
         // Power at observed z
-        return 1 - StatUtils.normalCDF(getCriticalZ(0.95) - z);
+        return AlmTail.pnormUpper(getCriticalZ(0.95) - z);
       });
 
       const err = repProbs.reduce((a, b) => a + b, 0) / repProbs.length;
@@ -19533,7 +19508,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     computePower(trueEffect, se) {
       const zCrit = getCriticalZ(0.95);
       const ncp = Math.abs(trueEffect) / se;
-      return 1 - StatUtils.normalCDF(zCrit - ncp) + StatUtils.normalCDF(-zCrit - ncp);
+      return AlmTail.pnormUpper(zCrit - ncp) + StatUtils.normalCDF(-zCrit - ncp);
     }
 
     // WAAP: Weight only adequately powered studies
@@ -19818,7 +19793,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
       const powers = this.ses.map(se => {
         const ncp = Math.abs(pooled) / se;
-        return 1 - StatUtils.normalCDF(getCriticalZ(0.95) - ncp);
+        return AlmTail.pnormUpper(getCriticalZ(0.95) - ncp);
       });
 
       powers.sort((a, b) => a - b);
@@ -19879,7 +19854,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       // Study points with power
       const points = this.effects.map((e, i) => {
         const ncp = Math.abs(pooled) / this.ses[i];
-        const power = 1 - StatUtils.normalCDF(getCriticalZ(0.95) - ncp);
+        const power = AlmTail.pnormUpper(getCriticalZ(0.95) - ncp);
         return {
           effect: e,
           se: this.ses[i],
@@ -19980,7 +19955,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const seIntercept = Math.sqrt(mse * sumWXX / denom);
 
       const t = intercept / seIntercept;
-      const pValue = 2 * (1 - this.tCDF(Math.abs(t), n - 2));
+      const pValue = 2 * AlmTail.ptUpper(Math.abs(t), n - 2);
 
       return { intercept, t, pValue };
     }
@@ -20085,7 +20060,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const seBeta1 = Math.sqrt(mse * sumW / denom);
 
       const t = beta1 / seBeta1;
-      const pValue = 2 * (1 - this.tCDF(Math.abs(t), this.n - 2));
+      const pValue = 2 * AlmTail.ptUpper(Math.abs(t), this.n - 2);
 
       return {
         slope: beta1,
@@ -20132,7 +20107,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const seBeta1 = Math.sqrt(mse * sumW / denom);
 
       const t = beta1 / seBeta1;
-      const pValue = 2 * (1 - this.tCDF(Math.abs(t), this.n - 2));
+      const pValue = 2 * AlmTail.ptUpper(Math.abs(t), this.n - 2);
 
       return {
         slope: beta1,
@@ -20173,7 +20148,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
       // Test significance
       const t = rho * Math.sqrt((this.n - 2) / (1 - rho * rho));
-      const pValue = 2 * (1 - this.tCDF(Math.abs(t), this.n - 2));
+      const pValue = 2 * AlmTail.ptUpper(Math.abs(t), this.n - 2);
 
       return {
         rho,
@@ -20271,7 +20246,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const seBeta1 = Math.sqrt(mse * sumW / denom);
 
       const t = beta1 / seBeta1;
-      const pValue = 2 * (1 - this.tCDF(Math.abs(t), this.n - 2));
+      const pValue = 2 * AlmTail.ptUpper(Math.abs(t), this.n - 2);
 
       return {
         intercept: beta0,
@@ -21538,7 +21513,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     _testSplitSignificance(Q, n, alpha) {
       // Chi-square test for heterogeneity reduction
       const df = 1;
-      const pValue = 1 - StatUtils.chiSquareCDF(Q, df);
+      const pValue = AlmTail.pchisqUpper(Q, df);
       return pValue < alpha;
     }
 
@@ -21645,7 +21620,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         df += 1;
       }
 
-      const pValue = 1 - StatUtils.chiSquareCDF(Q, df);
+      const pValue = AlmTail.pchisqUpper(Q, df);
 
       return { Q, df, pValue };
     }
@@ -21663,7 +21638,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     _combineIncoherence(loop, splitNode, sideSplit) {
       const totalQ = loop.Q + splitNode.Q + sideSplit.Q;
       const totalDf = loop.df + splitNode.df + sideSplit.df;
-      const pValue = 1 - StatUtils.chiSquareCDF(totalQ, totalDf);
+      const pValue = AlmTail.pchisqUpper(totalQ, totalDf);
 
       return { Q: totalQ, df: totalDf, pValue };
     }
@@ -21856,7 +21831,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         se: se,
         ciLower: effect - getCriticalZ(0.95) *se,
         ciUpper: effect + getCriticalZ(0.95) *se,
-        pValue: 2 * (1 - StatUtils.normalCDF(Math.abs(effect / se))),
+        pValue: 2 * AlmTail.pnormUpper(Math.abs(effect / se)),
         nStudies: relevantStudies.length
       };
     }
@@ -23760,7 +23735,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const totalVar = se * se + tau * tau;
       const z = effect / Math.sqrt(totalVar / currentN);
 
-      return 1 - StatUtils.normalCDF(getCriticalZ(0.95) - z) + StatUtils.normalCDF(-getCriticalZ(0.95) - z);
+      return AlmTail.pnormUpper(getCriticalZ(0.95) - z) + StatUtils.normalCDF(-getCriticalZ(0.95) - z);
     }
 
     _checkFutility(effect, currentN, tau) {
@@ -24284,7 +24259,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       const n = effects.length;
       const pValues = effects.map((e, i) => {
         const z = e / Math.sqrt(variances[i]);
-        return 2 * (1 - StatUtils.normalCDF(Math.abs(z)));
+        return 2 * AlmTail.pnormUpper(Math.abs(z));
       });
 
       // Define weight function
@@ -24411,7 +24386,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
       // P-value for beta1
       const t1 = beta1 / se1;
-      const pValue1 = 2 * (1 - StatUtils.normalCDF(Math.abs(t1)));
+      const pValue1 = 2 * AlmTail.pnormUpper(Math.abs(t1));
 
       return { beta0, beta1, se0, se1, pValue1 };
     }
@@ -24423,7 +24398,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       // Calculate probability of selection based on p-value
       const pValues = effects.map((e, i) => {
         const z = e / Math.sqrt(variances[i]);
-        return 2 * (1 - StatUtils.normalCDF(Math.abs(z)));
+        return 2 * AlmTail.pnormUpper(Math.abs(z));
       });
 
       const selectionWeights = pValues.map(p => {
@@ -24541,7 +24516,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
       // Calculate p-values
       const pValues = effects.map((e, i) => {
         const z = e / Math.sqrt(variances[i]);
-        return 2 * (1 - StatUtils.normalCDF(Math.abs(z)));
+        return 2 * AlmTail.pnormUpper(Math.abs(z));
       });
 
       // Estimate selection probability

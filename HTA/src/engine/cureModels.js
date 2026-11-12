@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Cure Models Engine for Oncology HTA
  *
@@ -104,7 +110,7 @@ function weibullHazard(t, shape, scale) {
 function lognormalSurvival(t, mu, sigma) {
     if (t <= 0) return 1;
     const z = (Math.log(t) - mu) / sigma;
-    return 1 - normalCDF(z);
+    return AlmTail.pnormUpper(z);
 }
 
 /**
@@ -198,7 +204,7 @@ function _gammaCDF(a, x) {
  */
 function gammaSurvival(t, shape, scale) {
     if (t <= 0) return 1;
-    return 1 - _gammaCDF(shape, t / scale);
+    return AlmTail.pgammaUpper(t / scale, shape);
 }
 
 /**

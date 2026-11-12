@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Model Calibration Engine for HTA Models
  * Likelihood-based calibration with optimization algorithms
@@ -709,7 +715,7 @@ class CalibrationEngine {
 
         const rSquared = sumSqTotal > 0 ? 1 - sumSqError / sumSqTotal : 0;
         const rmse = Math.sqrt(sumSqError / n);
-        const pValue = n > 0 ? 1 - this.chiSquaredCDF(chi2, n) : 1;
+        const pValue = n > 0 ? AlmTail.pchisqUpper(chi2, n) : 1;
 
         return {
             rSquared: rSquared,

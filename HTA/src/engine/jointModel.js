@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Joint Longitudinal-Survival Model Engine
  * Links a biomarker trajectory to a hazard function using a two-stage approach.
@@ -422,7 +428,7 @@ class JointModelEngine {
         const events = data.map(d => d.event ?? 0);
         const llNull = weibullLogLik(eventTimes, events, survResult.shape, survResult.scale, null);
         const lrt = 2 * (survResult.logLik - llNull);
-        const pValue = lrt > 0 ? 1 - this._chi2CDF(lrt, 1) : 1.0;
+        const pValue = lrt > 0 ? AlmTail.pchisqUpper(lrt, 1) : 1.0;
 
         return {
             longitudinal: {
@@ -447,14 +453,12 @@ class JointModelEngine {
     }
 
     /**
-     * Chi-squared CDF with df degrees of freedom (Wilson-Hilferty approximation)
+     * Chi-squared CDF with df degrees of freedom (regularized incomplete gamma, shared/upper-tail.js)
      */
     _chi2CDF(x, df) {
         if (x <= 0) return 0;
-        // Wilson-Hilferty: chi2_df is approximately normal
-        const z = Math.pow(x / df, 1 / 3) - (1 - 2 / (9 * df));
-        const denom = Math.sqrt(2 / (9 * df));
-        return normalCDF(z / denom);
+        // Regularized lower incomplete gamma (was the Wilson-Hilferty normal approximation).
+        return AlmTail._gammaPQ(df / 2, x / 2)[0];
     }
 
     /**
