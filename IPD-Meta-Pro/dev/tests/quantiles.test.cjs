@@ -86,7 +86,9 @@ const edges = [
   // I2ConfidenceIntervals.qProfile took its tau2 lower bound at the alpha/2 chi-square quantile; with the old reversed
   // chi2Quantile that came out ordered. The lower bound must solve Q(tau2) = chi2_{1 - alpha/2} and lie below the upper one.
   ['I2ConfidenceIntervals.qProfile is ordered (tau2 and I2 lower <= upper, lower > 0 when Q is large)', (() => {
-    const r = val('I2ConfidenceIntervals.qProfile(20, 4, 0.1, [0.04, 0.05, 0.1, 0.02, 0.08])');
+    // (the Q-profile needs the study effects: the generalized Q is a function of them; IPD-More passes them here,
+    //  Q = 69.64, metafor confint tau2 0.2200 .. 6.119 -- values checked in heterogeneity_sw_normal.test.cjs)
+    const r = val('I2ConfidenceIntervals.qProfile(69.63723, 4, 0.7068, [0.04, 0.05, 0.1, 0.02, 0.08], 0.05, [0.9, -0.5, 0.3, 1.2, -0.8])');
     return r && r.tau2_lower > 0 && r.tau2_lower < r.tau2_upper && r.lower < r.upper; })()],
   ["page self-test 'normQuantile(0.975) ~ 1.96' holds", Math.abs(val('MathUtils.normQuantile(0.975)') - 1.96) < 0.001],
   ["page self-test 'normQuantile(0.5) = 0' holds", Math.abs(val('MathUtils.normQuantile(0.5)')) < 1e-10]
