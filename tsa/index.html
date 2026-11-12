@@ -503,6 +503,15 @@
       else Toast.show("Could not save to shared bus.", "warn");
     }
 
+    // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
+    // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
+    // returning user an earlier session's studies).
+    window.__almValidatorStudies = function () {
+      // Only when the page can analyse the current input (studies and a valid RIS setup).
+      render();
+      const st = readState();
+      return computeRIS(st) == null ? [] : parseStudies(st.data).studies;
+    };
     function attach() {
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
       document.getElementById("btn-svg").addEventListener("click", onDownloadSvg);
@@ -513,8 +522,12 @@
       document.getElementById("btn-bus-load").addEventListener("click", onBusLoad);
       document.getElementById("btn-bus-save").addEventListener("click", onBusSave);
       document.getElementById("btn-validate-webr").addEventListener("click", function () {
-        onBusSave();
-        window.open("../webr-validator/index.html?fromBus=1&from=tsa", "_blank");
+        // The studies on screen and (for an inverse-variance headline) its model. openInWebR
+        // refuses to open on no valid studies instead of on an earlier session's bus.
+        if (!window.MaStudies || typeof MaStudies.openInWebR !== "function") { Toast.show("Bus helper not loaded.", "error"); return; }
+        const vm = (window.__almValidatorModel && window.__almValidatorModel()) || {};
+        MaStudies.openInWebR({ studies: window.__almValidatorStudies(), method: vm.method, test: vm.test, from: "tsa",
+          webrPath: "../webr-validator/index.html?fromBus=1" });
       });
       document.getElementById("btn-import").addEventListener("click", function(){ document.getElementById("file-import").click(); });
       document.getElementById("file-import").addEventListener("change", function(e){
@@ -558,7 +571,8 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "tsa", textarea: "#f-data", format: "label-est-se" });
