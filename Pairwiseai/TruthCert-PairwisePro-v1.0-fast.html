@@ -5540,12 +5540,23 @@ function updateMetaoverfitResults() {
   }
 }
 
+// Complete the metaoverfit assessment as part of publishing the result: renderResults runs
+// in the same task that assigns AppState.results, so no save, export or reader can see the
+// engine's 'skipped' placeholder. (It used to be patched in by a 500 ms timer, so a project
+// saved inside that gap stored a different result from the one shown a moment later.)
+const originalRenderResultsMO = window.renderResults;
+if (typeof originalRenderResultsMO === 'function') {
+  window.renderResults = function() {
+    const mo = AppState.results && AppState.results.metaoverfit;
+    if (mo && mo.skipped) updateMetaoverfitResults();
+    return originalRenderResultsMO.apply(this, arguments);
+  };
+}
 // Update on analysis - also trigger TruthCert analysis for Verdict tab
 const originalRunAnalysis2 = window.runAnalysis;
 if (originalRunAnalysis2) {
   window.runAnalysis = function() {
     const result = originalRunAnalysis2.apply(this, arguments);
-    setTimeout(updateMetaoverfitResults, 500);
     // Trigger TruthCert analysis for Verdict and HTA tabs
     setTimeout(() => {
       if (typeof runTruthCertAnalysis === 'function') {
