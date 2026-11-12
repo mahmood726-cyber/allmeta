@@ -99,7 +99,9 @@
 
     // deterministic MCDA (at the mean performance)
     var det = treatments.map(function (t) { return { id: t.id, name: t.name || t.id, value: totalValue(t, criteria, ranges, weights, null) }; });
-    det.slice().sort(function (a, b) { return b.value - a.value; }).forEach(function (d, i) { d.rank = i + 1; });
+    // Ties share the best rank they occupy (competition ranking, as smaa::smaa.ranks), so the
+    // result never depends on the order the treatments were entered.
+    det.forEach(function (d) { d.rank = 1 + det.filter(function (o) { return o.value > d.value; }).length; });
     var detSorted = det.slice().sort(function (a, b) { return b.value - a.value; });
 
     // SMAA + EVPI via Monte Carlo
@@ -107,7 +109,7 @@
     var K = treatments.length;
     var winCount = new Array(K).fill(0);
     var rankCount = treatments.map(function () { return new Array(K).fill(0); });
-    var sumV = new Array(K).fill(0), sumV2 = new Array(K).fill(0);
+    var sumV = new Array(K).fill(0), m2V = new Array(K).fill(0);   // Welford: running mean + sum of squared deviations
     var sumPerfect = 0;
     for (var it = 0; it < iters; it++) {
       var vals = new Array(K);
@@ -119,15 +121,21 @@
           sp[criteria[c].id] = { mean: isFinite(se) && se > 0 ? m + se * normal(rng) : m };
         }
         vals[k] = totalValue(treatments[k], criteria, ranges, weights, sp);
-        sumV[k] += vals[k]; sumV2[k] += vals[k] * vals[k];
+        var dlt = vals[k] - (it > 0 ? sumV[k] / it : 0);
+        sumV[k] += vals[k];
+        m2V[k] += dlt * (vals[k] - sumV[k] / (it + 1));
       }
       // best this iteration
       var bi = 0; for (var j = 1; j < K; j++) if (vals[j] > vals[bi]) bi = j;
-      winCount[bi]++;
+      // ranks (1 = best): 1 + number of strictly better alternatives, so tied alternatives
+      // (identical inputs, or values clamped at 0/1) share the rank instead of the first-listed winning.
+      for (var k2 = 0; k2 < K; k2++) {
+        var better = 0;
+        for (var j2 = 0; j2 < K; j2++) if (vals[j2] > vals[k2]) better++;
+        rankCount[k2][better]++;
+        if (better === 0) winCount[k2]++;
+      }
       sumPerfect += vals[bi];
-      // ranks (1 = best)
-      var order = vals.map(function (v, idx) { return { v: v, idx: idx }; }).sort(function (a, b) { return b.v - a.v; });
-      order.forEach(function (o, r) { rankCount[o.idx][r]++; });
     }
     var meanV = sumV.map(function (s) { return s / iters; });
     var smaa = treatments.map(function (t, k) {
@@ -135,7 +143,7 @@
         id: t.id, name: t.name || t.id,
         pBest: winCount[k] / iters,
         meanValue: meanV[k],
-        valueSE: Math.sqrt(Math.max(0, sumV2[k] / iters - meanV[k] * meanV[k])),
+        valueSE: Math.sqrt(Math.max(0, m2V[k] / iters)),   // SD of the simulated value (divisor N)
         rankAcceptability: rankCount[k].map(function (r) { return r / iters; })
       };
     }).sort(function (a, b) { return b.pBest - a.pBest; });
