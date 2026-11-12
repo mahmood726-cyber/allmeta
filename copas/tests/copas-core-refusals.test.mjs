@@ -16,6 +16,7 @@
  * Every refusal here is a distinct `refused` string, so the page can say which
  * one happened rather than guessing.
  */
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -114,78 +115,58 @@ test("a non-finite objective anywhere on the grid is counted, not hidden", () =>
 });
 
 /* -------------------------------------------------------------- MAJOR-14 ---
- * A collapsed orthogonal line is refused, not reported as a Copas adjustment.
+ * A collapsed orthogonal line is FLAGGED, and never shown as an adjustment.
  *
  * If no contour line has adjRSquared > 0, orthogonalLine() sets slope = NaN,
  * every xSlope becomes NaN, the in-range filter drops them all, and
  * gamma0Slope is just the prepended (10, 0) no-selection anchor. Then ng = 1,
  * publprob = [pnorm(10)] = [1], and the single "sensitivity" point is the
- * profile MLE at u = 10, i.e. NO SELECTION AT ALL. If its pval.rsb exceeds
- * sign.rsb, adjustSelection returns 1 and the page printed that value in bold
- * as the "Copas-adjusted effect", with a CI, a p-value and an implied number
- * of unpublished studies -- while drawSens() blanked the curve because
- * results.length < 2 and nothing said the orthogonal line was empty. The user
- * saw the UNADJUSTED MLE labelled as the adjusted one.
+ * profile MLE at u = 10, i.e. NO SELECTION AT ALL. The page once printed that
+ * value in bold as the "Copas-adjusted effect".
  *
- * FAILS WITHOUT THE FIX: TE_adjust is finite and equals the no-selection MLE.
+ * The first fix refused the fit outright. metasens does not refuse: it returns
+ * these numbers as TE.adjust, so refusing was a disagreement with the
+ * reference (6 configurations of the validation archive counted as failures).
+ * Requirement now: copas() returns metasens's numbers with
+ * warning = "orthogonal-line.empty", and the page labels them as the
+ * no-selection estimate (asserted on the page source below).
  */
-test("a collapsed orthogonal line is refused with its own reason", () => {
-  // Driven through the documented `slope` override rather than hunting for a
-  // dataset with a degenerate contour surface: slope = NaN is exactly the
+test("a collapsed orthogonal line is returned as metasens returns it, and flagged", () => {
+  // Driven through the documented `slope` override: slope = NaN is exactly the
   // state orthogonalLine() reaches when no contour line has adjRSquared > 0.
-  // (The other route to the same state -- a finite slope whose intersections
-  // all rescale outside the gamma ranges -- is what 5 of the validation
-  // archive's 138 configurations hit, and `ng < 2` catches both.)
   const TE = [0.25, 0.18, 0.40, 0.30, 0.12, 0.55, 0.22, 0.32, 0.45, 0.28];
   const seTE = [0.08, 0.10, 0.15, 0.09, 0.07, 0.20, 0.08, 0.12, 0.17, 0.10];
   const r = fit(TE, seTE, { slope: NaN });
-  assert.equal(r.refused, "orthogonal-line.empty",
-    `expected an empty-orthogonal-line refusal, got ${JSON.stringify(r.refused)}`);
-  assert.equal(r.n_orthogonal_points, 1,
-    "the refusal should report how many points the line collapsed to " +
-    "(1 = the no-selection anchor alone)");
+  assert.equal(r.refused, null, "metasens fits this state, so the port must too");
+  assert.equal(r.warning, "orthogonal-line.empty",
+    `the collapse must be flagged, got ${JSON.stringify(r.warning)}`);
+  assert.equal(r.n_orthogonal_points, 1, "1 = the no-selection anchor alone");
   assert.ok(Math.abs(r.publprob[0] - 1) < 1e-12,
     "the single point is the (10, 0) anchor, i.e. publprob 1 — no selection");
-  // THIS is the fix: a renderer must refuse. The page tests `fit.refused`
-  // before it displays anything, so neither of the two things the review
-  // describes can reach the user any more.
-  //
-  // But the estimates are deliberately STILL PRESENT, because metasens does
-  // not refuse in this state and 5 of the archive's 138 configurations are in
-  // it: returning early would make the port disagree with metasens there and
-  // move the archive's comparison counts. A parity harness reads straight
-  // through `refused`; a renderer must not.
   assert.equal(typeof r.n_contour_lines, "number");
-  assert.ok(Array.isArray(r.contour_lines),
-    "`contour_lines` is the array of lines on this path too, and " +
-    "`n_contour_lines` is the count — one name, one meaning");
+  assert.ok(Array.isArray(r.contour_lines));
   assert.equal(r.TE_slope.length, 1, "one estimate, at the anchor");
-  assert.ok(Math.abs(r.N_unpubl[0]) < 1e-9,
-    "no selection implies no unpublished studies");
-
-  // Both downstream outcomes exist, and the page used to present each of them
-  // misleadingly. metasens's own rule decides which, so neither is changed
-  // here — only whether the page shows it.
-  //
-  //   (a) pval.rsb <= sign.rsb: adjustSelection withholds, TE.adjust is NaN,
-  //       and the page printed "not reported — every point of the orthogonal
-  //       line shows residual selection bias", blaming the data for what is
-  //       really an empty line.
+  assert.ok(Math.abs(r.N_unpubl[0]) < 1e-9, "no selection implies no unpublished studies");
+  // metasens's own rule decides whether TE.adjust is reported; both branches.
   assert.ok(r.pval_rsb[0] <= 0.1);
   assert.equal(r.sel_adj, null);
   assert.ok(Number.isNaN(r.TE_adjust));
-
-  //   (b) pval.rsb > sign.rsb: adjustSelection returns 1 and the page printed
-  //       the NO-SELECTION MLE in bold as the "Copas-adjusted effect".
   const r2 = fit(TE, seTE, { slope: NaN, sign_rsb: 1e-6 });
-  assert.equal(r2.refused, "orthogonal-line.empty");
+  assert.equal(r2.warning, "orthogonal-line.empty");
   assert.equal(r2.sel_adj, 1);
-  assert.ok(Number.isFinite(r2.TE_adjust),
-    "estimates must remain readable for parity work — only the page refuses");
   assert.ok(Math.abs(r2.TE_adjust - r2.TE_slope[0]) < 1e-15,
-    "the 'adjusted' value IS the single anchor estimate");
-  assert.ok(Math.abs(r2.N_unpubl_adj) < 1e-9,
-    "...and it implies zero unpublished studies, which is the tell");
+    "TE.adjust IS the single anchor estimate, as in metasens");
+  assert.ok(Math.abs(r2.N_unpubl_adj) < 1e-9);
+});
+
+test("the page never shows the collapsed-line estimate as a Copas adjustment", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const iWarn = html.indexOf("fit.warning === 'orthogonal-line.empty'");
+  const iBold = html.indexOf("row('Copas-adjusted effect', '<strong>'");
+  assert.ok(iWarn > 0, "the page must branch on the collapse warning");
+  assert.ok(iBold > iWarn,
+    "the warning branch must come before the bold adjusted-effect row");
+  assert.ok(/Estimate at no selection/.test(html), "the value must be labelled as no selection");
 });
 
 test("a successful fit reports refused === null, so `r.refused` is a safe test", () => {

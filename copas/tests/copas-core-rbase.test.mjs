@@ -155,22 +155,49 @@ test("pnorm's rational branch matches R, to the accuracy it actually has", () =>
  * loglikWithoutBeta clamps v at -37 and the fixture's converged v values are
  * small, which is why the 1e-9 deterministic tier still holds today.
  */
-test("the pnorm branch boundary is a known accuracy step, not a smooth join", () => {
-  const RJUST_BELOW = 7.7466848656364781e-13;   // R's pnorm(-7.07)
-  const RJUST_ABOVE = 7.6872989721404544e-13;   // R's pnorm(-7.07106781186547)
-  const below = Math.abs(CC.pnorm(-7.07) - RJUST_BELOW) / RJUST_BELOW;
-  const above = Math.abs(CC.pnorm(-7.07106781186547) - RJUST_ABOVE) / RJUST_ABOVE;
-  assert.ok(above <= 1e-15,
-    `above the boundary the continued fraction must be at machine precision, got ${above.toExponential(2)}`);
-  assert.ok(below <= 3e-9,
-    `below the boundary the rational branch has regressed past its measured ` +
-    `2.9e-9: got ${below.toExponential(2)}`);
-  assert.ok(below > 1e-11,
-    "the rational branch below the boundary is now MORE accurate than its " +
-    `measured 2.9e-9 (got ${below.toExponential(2)}) — if the boundary was ` +
-    "moved or the approximation replaced, that is an improvement, but it " +
-    "changes every likelihood evaluation: re-run the validation archive and " +
-    "update the counts the paper reports before relaxing this test.");
+// pnorm/dnorm are R's own algorithms (src/nmath/pnorm.c pnorm_both, Cody;
+// src/nmath/dnorm.c dnorm4 with its split evaluation beyond |x| = 5). The
+// earlier Hart/West pnorm was up to 2.9e-9 relative off R just below z = 7.07;
+// this test used to pin that step and asked for exactly this replacement to be
+// followed by a re-run of the validation archive. Requirement now: agree with
+// R 4.6.0 to within 2 ulp across every branch, both tails and the subnormal
+// range, including the -38.4674 cut where R's pnorm becomes exactly 0.
+// [z, R pnorm(z), R dnorm(z)] from R 4.6.0, printed with %.17g.
+const R_NORMAL = [
+[-38.5, 0, 5.434722104253712e-323],
+ [-38.460000000000001, 4.9406564584124654e-324, 2.5197347937903574e-322],
+ [-37.5, 4.6053530095819552e-308, 1.7282337322841054e-306],
+ [-30, 4.9067139271481872e-198, 1.4736461348785476e-196],
+ [-10, 7.6198530241605269e-24, 7.6945986267064199e-23],
+ [-8.2924000000000007, 5.5492983151602746e-17, 4.666802159480474e-16],
+ [-7.0710678118654702, 7.6872989721404544e-13, 5.5404879955760321e-12],
+ [-7.0700000000000003, 7.7466848656364781e-13, 5.5824769889360774e-12],
+ [-5.6568542494923797, 7.7086289501400348e-09, 4.4895039227875026e-08],
+ [-5.5999999999999996, 1.071759025831093e-08, 6.1826205001658573e-08],
+ [-3, 0.0013498980316300946, 0.0044318484119380075],
+ [-0.67448975, 0.25000000006231027, 0.31777657272613458],
+ [-0.59999999999999998, 0.27425311775007361, 0.33322460289179967],
+ [-1.0000000000000001e-17, 0.5, 0.3989422804014327],
+ [0, 0.5, 0.3989422804014327],
+ [0.29999999999999999, 0.61791142218895267, 0.38138781546052414],
+ [0.67449000000000003, 0.75000007938182633, 0.31777651914186883],
+ [2, 0.97724986805182079, 0.053990966513188063],
+ [5.5999999999999996, 0.99999998928240974, 6.1826205001658573e-08],
+ [5.7000000000000002, 0.99999999400962858, 3.513955094820434e-08],
+ [8.2899999999999991, 0.99999999999999989, 4.7605964008937642e-16],
+ [8.3000000000000007, 1, 4.381639435509333e-16],
+ [9, 1, 1.0279773571668917e-18],
+ [40, 1, 0]
+];
+test("pnorm and dnorm reproduce R's nmath to 2 ulp on every branch", () => {
+  const rel = (a, r) => (r === 0 ? Math.abs(a) : Math.abs(a - r) / Math.abs(r));
+  for (const [z, p, d] of R_NORMAL) {
+    assert.ok(rel(CC.pnorm(z), p) <= 4.5e-16, `pnorm(${z}) = ${CC.pnorm(z)}, R ${p}`);
+    assert.ok(rel(CC.dnorm(z), d) <= 4.5e-16, `dnorm(${z}) = ${CC.dnorm(z)}, R ${d}`);
+  }
+  // R's cut-off, not an underflow: exactly 0 below -38.4674, positive above.
+  assert.equal(CC.pnorm(-38.5), 0);
+  assert.ok(CC.pnorm(-38.46) > 0);
 });
 
 /* ---------------------------------------------------------------- fix 3 ---
