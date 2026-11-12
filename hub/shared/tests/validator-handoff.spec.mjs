@@ -21,6 +21,13 @@ for (const app of Object.keys(APPS)) {
     });
   }
   test(`${app}: input the page refuses opens no validator (stale bus)`, async ({ context, baseURL }) => {
+    // A refusal is proven by waiting out the full 10 s popup window for EVERY control
+    // (_validator_handoff.mjs: context.waitForEvent('page', { timeout: 10000 })), so this
+    // test runs ~3 s + ~10.5 s per control: ~35 s for the three-control apps (forest-plot,
+    // funnel-plot, cumulative-subgroup), past the 30 s config default, which killed them
+    // mid-wait in CI run 43218020407 ("Target page, context or browser has been closed").
+    // Budget the time the check needs instead of shortening the window it watches.
+    test.setTimeout(90_000);
     const rows = await checkAppHandoff(context, baseURL + '/', app, { stale: true, refuse: true });
     expect(rows.length).toBeGreaterThan(0);
     for (const r of rows) expect(r.opened, `${r.control} opened ${r.url || ''}`).toBe(false);
