@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
-  <meta name="description" content="Spec-collapse: multiverse / many-analyst meta-analysis done right. Run one dataset across a 36-specification grid, then compare the anti-conservative naive IV-RE pool against a coverage-calibrated weighted-likelihood interval — and see how often 'robust' collapses to fragile.">
+  <meta name="description" content="Spec-collapse: multiverse / many-analyst meta-analysis done right. Run one dataset across a 36-specification grid, then compare the anti-conservative naive IV-RE pool against a weighted-likelihood mixture interval — and see how often 'robust' collapses to fragile.">
   <meta name="color-scheme" content="light dark">
   <title>Spec-collapse — multiverse meta-analysis done right</title>
   <style>
@@ -72,7 +72,7 @@
 <a id="hub-back" href="../" aria-label="Back to allmeta hub" style="position:fixed;top:12px;left:12px;z-index:99999;padding:6px 12px;background:rgba(28,31,35,0.85);color:#fff;text-decoration:none;border-radius:14px;font:600 12px/1 system-ui,sans-serif;letter-spacing:.04em;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:opacity .15s ease;opacity:.85" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'">← allmeta</a>
   <header>
     <h1>Spec-collapse</h1>
-    <p>A multiverse meta-analysis runs many analytic specifications on <em>one</em> dataset. The usual way to summarise the spec-curve — inverse-variance pooling the specification estimates as if independent — collapses the confidence interval by roughly the number of specs and manufactures robustness the data don't support. This tool runs your dataset across a 36-specification grid and compares that anti-conservative naive pool against a coverage-calibrated <strong>weighted-likelihood</strong> interval (never narrower than a single spec). Across 473 Cochrane reviews, 55% of "robust" conclusions collapsed to fragile under the correct method.</p>
+    <p>A multiverse meta-analysis runs many analytic specifications on <em>one</em> dataset. The usual way to summarise the spec-curve — inverse-variance pooling the specification estimates as if independent — collapses the confidence interval by roughly the number of specs and manufactures robustness the data don't support. This tool runs your dataset across a 36-specification grid and compares that anti-conservative naive pool against a <strong>weighted-likelihood</strong> mixture interval, whose variance is never below the average within-specification variance.</p>
   </header>
   <main>
     <section class="panel">
@@ -92,7 +92,7 @@
           </select>
         </label>
       </div>
-      <div class="note"><strong>The rule (advanced-stats):</strong> never IV-RE-pool many-analyst / multiverse results from one dataset — the CI collapses below truth. Under the null, the naive pool's Type-I error runs 70–81% (nominal 5%); the weighted-likelihood interval holds 94–99% coverage.</div>
+      <div class="note"><strong>The rule (advanced-stats):</strong> never IV-RE-pool many-analyst / multiverse results from one dataset — the CI collapses below truth. In the validation simulation (true effect 0; k of 5, 10 and 20; τ² of 0, 0.05 and 0.10; 2,000 datasets per scenario) the naive pool covered the true value in 0.1925–0.286 of datasets (nominal 0.95) and the weighted-likelihood interval in 0.946–0.9975 — conservative at low heterogeneity, not exact.</div>
     </section>
     <section class="panel">
       <h2>Verdict</h2>
@@ -107,12 +107,12 @@
       </div>
       <details>
         <summary>Method</summary>
-        <p>Each of the 36 specs (3 τ² estimators × 2 CI methods × 3 outlier rules × {raw, trim-and-fill}) yields a pooled effect θ̂ₛ and variance Vₛ via the audited <code>ma-core</code> / <code>trimfill</code>. The <strong>naive IV-RE pool</strong> takes variance 1/Σ(1/Vₛ) — collapsing by ~S. The <strong>weighted-likelihood</strong> summary is the mixture Σ pₛ · t-density(θ̂ₛ, Vₛ, kₛ−1); by the law of total variance its variance is mean-within + between-spec, so it is never narrower than the average single spec. Interval via numeric quantile inversion of the mixture CDF.</p>
+        <p>Each of the 36 specs (3 τ² estimators × 2 CI methods × 3 outlier rules × {raw, trim-and-fill}) yields a pooled effect θ̂ₛ and variance Vₛ via the audited <code>ma-core</code> / <code>trimfill</code>. The <strong>naive IV-RE pool</strong> takes variance 1/Σ(1/Vₛ) — collapsing by ~S. The <strong>weighted-likelihood</strong> summary is the mixture Σ pₛ · t-density(θ̂ₛ, Vₛ, kₛ−1); by the law of total variance its variance is mean-within + between-spec, so its variance is never below the average within-spec variance (its interval can still be narrower than the widest single-spec interval). Interval via numeric quantile inversion of the mixture CDF.</p>
       </details>
     </section>
   </main>
   <footer>
-    Port of the Spec-Collapse Atlas weighted-likelihood aggregator (externally validated vs metafor across 473 Cochrane reviews; Pages: <code>mahmood726-cyber.github.io/spec-collapse-atlas</code>). Method after Wagenmakers-style likelihood combination; the IV-RE-collapse caution follows the project's <code>advanced-stats</code> rule. Per-spec pooling and trim-and-fill use the audited <code>shared/ma-core.js</code> and <code>shared/trimfill.js</code>; the aggregators are in <code>shared/spec-collapse.js</code> and cross-checked against the Python engine in <code>tests/test_spec_collapse.py</code>. Computed client-side; data stays in your browser.
+    Port of the Spec-Collapse Atlas weighted-likelihood aggregator (Pages: <code>mahmood726-cyber.github.io/spec-collapse-atlas</code>). After a trim-and-fill side correction this page was validated against R (metafor 5.2.1) on 23 datasets and 180 simulated datasets: 31,262 of 31,262 checks passed. No corpus-wide result is claimed. Method after Wagenmakers-style likelihood combination; the IV-RE-collapse caution follows the project's <code>advanced-stats</code> rule. Per-spec pooling and trim-and-fill use the audited <code>shared/ma-core.js</code> and <code>shared/trimfill.js</code>; the aggregators are in <code>shared/spec-collapse.js</code> and cross-checked against the Python engine in <code>tests/test_spec_collapse.py</code>. Computed client-side; data stays in your browser.
   </footer>
   <script>
     var EXAMPLE = [
@@ -156,7 +156,7 @@
       // false-robustness banner
       if (naive.verdict === "robust" && wl.verdict === "fragile") {
         banner.className = "banner bad";
-        banner.innerHTML = "⚠ <strong>False robustness.</strong> The naive IV-RE pool calls this robust, but the coverage-calibrated weighted-likelihood interval is fragile — the apparent precision is an artefact of pooling re-analyses of one dataset.";
+        banner.innerHTML = "⚠ <strong>False robustness.</strong> The naive IV-RE pool calls this robust, but the weighted-likelihood interval is fragile — the apparent precision is an artefact of pooling re-analyses of one dataset.";
       } else if (wl.verdict === "robust") {
         banner.className = "banner ok";
         banner.innerHTML = "✓ Robust under the correct (weighted-likelihood) interval as well as the naive pool.";

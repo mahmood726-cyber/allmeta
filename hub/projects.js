@@ -730,8 +730,8 @@ window.HTML_APPS_PROJECTS = [
     collection: "existing",
     mode: "file",
     category: "Sensitivity",
-    summary: "Multiverse / many-analyst meta-analysis done right: run one dataset across a 36-specification grid (3 τ² × 2 CI × 3 outlier × raw/trim-fill) and compare the anti-conservative naive IV-RE pool against a coverage-calibrated weighted-likelihood interval. Flags 'false robustness' when the naive pool's significance is an artefact of pooling re-analyses of one dataset.",
-    note: "Port of the Spec-Collapse Atlas aggregator (validated vs metafor across 473 Cochrane reviews); JS engine cross-checked to the Python to 1e-6. Never IV-RE-pool multiverse results.",
+    summary: "Multiverse / many-analyst meta-analysis done right: run one dataset across a 36-specification grid (3 τ² × 2 CI × 3 outlier × raw/trim-fill) and compare the anti-conservative naive IV-RE pool against a weighted-likelihood mixture interval. Flags 'false robustness' when the naive pool's significance is an artefact of pooling re-analyses of one dataset.",
+    note: "Port of the Spec-Collapse Atlas aggregator; validated against R metafor (31,262 of 31,262 checks on 23 datasets and 180 simulated datasets); aggregators cross-checked to the Python engine to 1e-6. Never IV-RE-pool multiverse results.",
     tags: ["multiverse", "spec-curve", "many-analyst", "robustness", "weighted-likelihood", "false-robustness"]
   },
   {
