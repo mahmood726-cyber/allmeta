@@ -103,7 +103,7 @@
     </section>
   </main>
   <footer>
-    Formulas: Wan et al., BMC Med Res Methodol 2014 (for mean &amp; SD from C1/C2/C3). Luo et al., Stat Methods Med Res 2018 (refined mean for C1/C2/C3). Shi et al., Stat Methods Med Res 2020 (refined SD for C1/C3). Use Luo-for-mean and Shi-for-SD as the modern default unless your MA software specifies otherwise. <strong>R-parity:</strong> all three estimators match the published equations evaluated with R&#8217;s exact <code>qnorm</code> (Wichura AS241) to 1e-6 across C1/C2/C3 (<code>hub/shared/tests/median-to-mean-parity.spec.mjs</code>).
+    Formulas: Wan et al., BMC Med Res Methodol 2014 (for mean &amp; SD from C1/C2/C3). Luo et al., Stat Methods Med Res 2018 (refined mean for C1/C2/C3). Shi et al., Res Synth Methods 2020 (refined SD for C1; C3 uses Wan's SD). Use Luo-for-mean and Shi-for-SD as the modern default unless your MA software specifies otherwise. <strong>R-parity:</strong> all three estimators match the published equations evaluated with R&#8217;s exact <code>qnorm</code> (Wichura AS241) to 1e-6 across C1/C2/C3 (<code>hub/shared/tests/median-to-mean-parity.spec.mjs</code>).
   </footer>
   <script>
     // --- Inverse normal CDF (Φ⁻¹) via Abramowitz-Stegun 26.2.23 ---
@@ -112,7 +112,8 @@
     // which propagated into the Wan/Shi SD estimators (they divide by
     // 2·qnorm((n-0.375)/(n+0.25))).
     function qnorm(p) {
-      if (p <= 0) return -Infinity;
+      if (!(p >= 0 && p <= 1)) return NaN;  // as R: qnorm(p) is NaN outside [0, 1]
+      if (p === 0) return -Infinity;
       if (p >= 1) return Infinity;
       const q = p - 0.5;
       let r, val;
@@ -208,7 +209,15 @@
       // Validation
       const warnSlot = document.getElementById("warn-slot");
       warnSlot.innerHTML = "";
-      if (!Number.isFinite(n) || n < 5) {
+      // The estimators are defined for a sample size, a whole number >= 2; anything else is refused, not estimated.
+      if (!Number.isFinite(n) || n < 2 || !Number.isInteger(n)) {
+        warnSlot.innerHTML = `<div class="note"><strong>Input check:</strong> n must be a whole number of at least 2 (the sample size). No estimate is shown.</div>`;
+        render([]);
+        _lastM2M = { _schema: "median-to-mean-results-v1", scenario: scenario, n: Number.isFinite(n) ? n : null,
+          refused: true, estimates: [] };
+        return;
+      }
+      if (n < 5) {
         warnSlot.innerHTML = `<div class="note"><strong>Warning:</strong> sample size is very small (n &lt; 5). These estimators are known to be unreliable below ~15; Wan et al. recommend at least n=25.</div>`;
       }
       let orderBad = false;
@@ -255,6 +264,7 @@
       const W = 600, H = Math.max(150, 40 + rows.length * 36);
       svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
       svg.innerHTML = "";
+      if (!rows.length) return;
 
       const leftPad = 220, rightPad = 30;
       const plotW = W - leftPad - rightPad;
