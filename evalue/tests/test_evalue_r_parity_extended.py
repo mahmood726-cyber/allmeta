@@ -66,6 +66,9 @@ def test_engine_matches_evalue(case):
         assert _close(out["ci"], _ci_expected(case)), (out, case["expected"])
     else:
         assert out["ci"] is None, out
+    if case["fun"] != "evalues.RD":  # EValue's lower/upper placement, checked separately
+        assert _close(out["lower"], case["expected"]["lower"]), (out, case["expected"])
+        assert _close(out["upper"], case["expected"]["upper"]), (out, case["expected"])
     rr = case["expected"].get("rr")
     if rr is not None:
         assert _close(out["rr"]["point"], rr["point"]), (out, rr)
@@ -107,16 +110,25 @@ def test_page_matches_evalue():
 
 
 def test_page_blank_new_fields_leave_paper22_outputs_unchanged():
-    # Blank "true value" and SE must reproduce the legacy (paper-22 validated) engine path exactly.
-    legacy = [("RR", 2.0, 1.5, 2.7, False), ("RR", 0.41094, 0.1343, 1.2574, False), ("OR", 2.0, 1.5, 2.7, False),
-              ("OR", 0.7, 0.5, 0.95, True), ("HR", 1.6, 1.2, 2.1, False), ("SMD", -0.35517, -0.5792, -0.13114, False),
-              ("RR", 3.0, None, None, False)]
-    rows = _page([dict(measure=m, point=p, lo=lo, hi=hi, rare=rare) for m, p, lo, hi, rare in legacy])
-    for (m, p, lo, hi, rare), row in zip(legacy, rows):
-        eng = _engine(f"E.eValues({json.dumps(m)},{p},{json.dumps(lo)},{json.dumps(hi)},{{rare:{json.dumps(rare)}}})")
+    # Blank "true value" and SE must reproduce the pre-extension engine bit for bit:
+    # expected values were computed with shared/evalue.js at allmeta origin/main 781417ef.
+    legacy = json.loads((HERE / "fixtures" / "evalue-legacy-origin-main.json").read_text(encoding="utf-8"))["cases"]
+    rows = _page([dict(measure=c["measure"], point=c["point"], lo=c["lo"], hi=c["hi"], rare=c["rare"]) for c in legacy])
+    for c, row in zip(legacy, rows):
         res = row["result"]
-        assert res["point"] == eng["point"] and res["rr"] == eng["rr"], (m, res, eng)
-        assert res["ci"] == (eng["ci"] if lo is not None else None)
+        assert res is not None, (c, row["refusal"])
+        assert res["point"] == c["expected"]["point"] and res["rr"] == c["expected"]["rr"], (c, res)
+        assert res["ci"] == c["expected"]["ci"], (c, res)
+
+
+def test_rd_grid_is_bounded():
+    # A huge bias factor would need billions of grid steps (R's seq() refuses past
+    # .Machine$integer.max); the page refuses instead of freezing.
+    r = subprocess.run([NODE, "-e", "const E=require('./shared/evalue.js');const t=Date.now();"
+                        "try{E.eValuesRD(500000,500000,1,999999);console.log('accepted')}catch(e){console.log(e.name+' '+(Date.now()-t))}"],
+                       capture_output=True, text=True, timeout=60, cwd=str(ROOT))
+    name, ms = r.stdout.split()
+    assert name == "RangeError" and int(ms) < 2000, r.stdout + r.stderr
 
 
 @pytest.mark.parametrize("inp,why", [

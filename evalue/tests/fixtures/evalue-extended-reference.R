@@ -41,7 +41,8 @@ for (r in md)
       ev(q(evalues.MD(est = r[[2]], se = r[[3]], true = r[[4]]))))
 ols <- list(list("ols-basic", 2.5, 0.8, 10, 1, 0), list("ols-delta2", 2.5, 0.8, 10, 2, 0),
             list("ols-delta-negative", 2.5, 0.8, 10, -2, 0), list("ols-true", 2.5, 0.8, 10, 1, 0.05),
-            list("ols-nose", -1.2, NA, 4, 1, 0), list("ols-crossing", 0.5, 0.6, 3, 1, 0))
+            list("ols-nose", -1.2, NA, 4, 1, 0), list("ols-crossing", 0.5, 0.6, 3, 1, 0),
+            list("ols-delta-zero", 2.5, 0.8, 10, 0, 0))
 for (r in ols)
   add(r[[1]], list(fun = "evalues.OLS", measure = "OLS", point = r[[2]], se = na2null(r[[3]]), sd = r[[4]],
                    delta = r[[5]], true = r[[6]]),

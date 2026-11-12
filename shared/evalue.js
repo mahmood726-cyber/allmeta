@@ -138,7 +138,7 @@
     if (!Number.isFinite(est)) throw new RangeError("Coefficient must be a finite number.");
     if (!(Number.isFinite(sd) && sd > 0)) throw new RangeError("Outcome standard deviation must be positive.");
     if (delta == null) delta = 1;
-    if (!(Number.isFinite(delta) && delta !== 0)) throw new RangeError("Contrast (delta) must be a non-zero number.");
+    if (!Number.isFinite(delta)) throw new RangeError("Contrast (delta) must be a finite number.");
     delta = Math.abs(delta);
     if (se != null && !(Number.isFinite(se) && se >= 0)) throw new RangeError("Standard error cannot be negative.");
     var d = est * delta / sd, seD = se == null ? null : se * delta / sd;
@@ -180,7 +180,10 @@
       point: estE, ci: 1, rr: { point: estBF, lo: null, hi: null } };
     if (lowerCI <= tv) return out;
     if (!Number.isFinite(estBF)) { out.ci = null; return out; }
+    var maxGrid = opts.maxGrid == null ? 5e7 : opts.maxGrid;
+    if ((estBF - 1) / grid > 2147483647) throw new RangeError("'by' argument is much too small (as R's seq() reports): the bias factor is too large for EValue's grid search.");
     var n = seqLength(1, estBF, grid), found = null;
+    if (n > maxGrid) throw new RangeError("the grid search would need " + n + " steps (bias factor " + estBF.toPrecision(6) + "); this browser page stops at " + maxGrid + ". Use EValue::evalues.RD in R.");
     for (var i = 0; i < n; i++) {
       var bf = Math.min(1 + i * grid, estBF);
       var rdS = p1 - p0 * bf, fS = f + (1 - f) / bf, a = 1 - 1 / bf;

@@ -472,6 +472,26 @@
       }
     },
     {
+      "id": "ols-delta-zero",
+      "fun": "evalues.OLS",
+      "measure": "OLS",
+      "point": 2.5,
+      "se": 0.80000000000000004,
+      "sd": 10,
+      "delta": 0,
+      "true": 0,
+      "expected": {
+        "point": 1,
+        "lower": 1,
+        "upper": null,
+        "rr": {
+          "point": 1,
+          "lo": 1,
+          "hi": 1
+        }
+      }
+    },
+    {
       "id": "rd-basic",
       "fun": "evalues.RD",
       "measure": "RD",

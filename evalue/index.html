@@ -94,7 +94,7 @@
         <label><span class="lbl">Unexposed, event</span><input id="n01" type="number" step="any" min="0"></label>
         <label><span class="lbl">Unexposed, no event</span><input id="n00" type="number" step="any" min="0"></label>
       </div>
-      <label id="grp-true"><span class="lbl">True value (optional)</span><input id="truev" type="number" step="any" aria-describedby="true-hint"><span class="hint" id="true-hint">Blank = the null (1 for ratios, 0 for d, a coefficient or a risk difference). A non-null value gives the E-value to move the estimate and CI to it, as EValue's <code>true</code> argument.</span></label>
+      <label id="grp-true"><span class="lbl">True value (optional)</span><input id="truev" type="number" step="any" aria-describedby="true-hint"><span class="hint" id="true-hint">Blank = the null (1 for ratios, 0 for d or a risk difference). A non-null value gives the E-value to move the estimate and CI to it, as EValue's <code>true</code> argument; for a regression coefficient it is on the standardised-difference (d) scale, as in <code>evalues.OLS</code>.</span></label>
       <label class="check"><input id="rare" type="checkbox"> Rare outcome (&lt;~15%) — affects OR/HR → RR mapping</label>
       <button type="button" id="btn-run" class="primary" style="width:100%;margin-top:0.6rem">Compute E-value</button>
       <div class="note"><strong>Scope:</strong> the E-value is for <em>observational</em> estimates where residual confounding is plausible. A confidence interval is optional, but must contain the point estimate when supplied; incomplete or inconsistent intervals are refused. A missing CI never implies that the null is included. This sensitivity measure does not address selection bias, measurement error, or model misspecification.</div>
@@ -188,7 +188,8 @@
       tbody.innerHTML =
         "<tr><td>E-value (point estimate)</td><td class='big'>" + fmt(r.point) + "</td></tr>"
         + "<tr><td>E-value (CI limit nearest " + (tv === null ? "null" : "true value") + ")</td><td class='big'>" + fmt(r.ci) + "</td></tr>" + rows;
-      tvTxt = tv === null ? "fully explain away the " + what : "move the " + what + " to the true value " + fmt(tv);
+      tvTxt = tv === null ? "fully explain away the " + what
+        : "move the " + what + " to the true value " + (measure === "OLS" ? "d = " : "") + fmt(tv);
       var ciTxt = r.ci == null
         ? "no confidence interval or standard error was supplied; a CI E-value cannot be assessed."
         : (r.ci <= 1)
