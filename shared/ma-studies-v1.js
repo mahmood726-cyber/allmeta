@@ -211,11 +211,46 @@
 
   // ----- CSV interop ------------------------------------------------------
 
+  // Complete decimal token only. parseFloat reads a numeric PREFIX, so a
+  // decimal-comma/semicolon row "-0,22;0,11" split on commas became est=0,
+  // se=22 (lane csvaudit 2026-11-12). Number() alone would also accept hex.
+  var _DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+  function _num(s) {
+    var t = String(s == null ? "" : s).trim();
+    return _DECIMAL.test(t) ? Number(t) : NaN;
+  }
+  // Year, when given, must be a whole number; a decimal there means an unquoted
+  // comma in the label shifted the row ("Smith et al., 2001, 0.04, 0.19").
+  function _year(s) {
+    var t = String(s == null ? "" : s).trim();
+    if (!t.length) return { ok: true, value: null };
+    return /^[+-]?\d+$/.test(t) ? { ok: true, value: Number(t) } : { ok: false };
+  }
+  // Split one line on commas, honouring RFC-4180 quotes so toCSV() output
+  // round-trips ("Smith, 2001" stays one field). Fields are trimmed.
+  function _splitLine(line) {
+    var out = [], field = "", q = false;
+    for (var i = 0; i < line.length; i++) {
+      var c = line.charAt(i);
+      if (q) {
+        if (c === '"' && line.charAt(i + 1) === '"') { field += '"'; i++; }
+        else if (c === '"') q = false;
+        else field += c;
+      } else if (c === '"' && field.trim() === "") { field = ""; q = true; }
+      else if (c === ",") { out.push(field.trim()); field = ""; }
+      else field += c;
+    }
+    out.push(field.trim());
+    return out;
+  }
+
   /**
-   * Parse a permissive CSV of `label, est, se[, year[, group[, moderator]]]`.
-   * Blank lines and lines starting with `#` are ignored.
-   * Numeric fields with European-decimal-style commas inside quoted cells are
-   * NOT supported (matches the rest of the suite — see lessons.md).
+   * Parse a CSV of `label, est, se[, year[, group[, moderator]]]`.
+   * Blank lines and lines starting with `#` are ignored. Labels/groups that
+   * contain commas must be quoted (as toCSV writes them). est/se/moderator must
+   * be complete decimal numbers and year a whole number; any other row is
+   * skipped rather than read from a numeric prefix or a shifted column.
+   * Decimal commas are NOT supported (matches the rest of the suite).
    */
   function parseCSV(text) {
     if (typeof text !== "string") return [];
@@ -224,21 +259,23 @@
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim();
       if (!line || line.charAt(0) === "#") continue;
-      var parts = line.split(/\s*,\s*/);
-      if (parts.length < 3) continue;
-      var est = parseFloat(parts[1]);
-      var se = parseFloat(parts[2]);
+      var parts = _splitLine(line);
+      if (parts.length < 3 || parts.length > 6) continue;
+      var est = _num(parts[1]);
+      var se = _num(parts[2]);
       if (!isFiniteNumber(est) || !isFiniteNumber(se) || se <= 0) continue;
-      var year = parts.length > 3 && parts[3].length ? parseFloat(parts[3]) : null;
+      var yr = _year(parts[3]);
+      if (!yr.ok) continue;
       var group = parts.length > 4 && parts[4].length ? parts[4] : null;
-      var moderator = parts.length > 5 && parts[5].length ? parseFloat(parts[5]) : null;
+      var moderator = parts.length > 5 && parts[5].length ? _num(parts[5]) : null;
+      if (moderator !== null && !isFiniteNumber(moderator)) continue;
       rows.push({
         label: parts[0] || ("Study " + (rows.length + 1)),
         est: est,
         se: se,
-        year: isFiniteNumber(year) ? year : null,
+        year: yr.value,
         group: group,
-        moderator: isFiniteNumber(moderator) ? moderator : null,
+        moderator: moderator,
       });
     }
     return rows;
@@ -284,30 +321,31 @@
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim();
       if (!line || line.charAt(0) === "#") continue;
-      var parts = line.split(/\s*,\s*/);
+      var parts = _splitLine(line);
       if (parts.length < 2) continue;
       var label, est, se, mod = null, group = null, year = null;
       if (fmt === "est-se-label" || fmt === "est-se-label-mod") {
-        est = parseFloat(parts[0]);
-        se = parseFloat(parts[1]);
+        est = _num(parts[0]);
+        se = _num(parts[1]);
         label = parts[2] ? parts[2] : "Study " + (rows.length + 1);
         if (fmt === "est-se-label-mod" && parts.length > 3) {
-          var m = parseFloat(parts[3]);
+          var m = _num(parts[3]);
           if (isFiniteNumber(m)) mod = m;
         }
       } else {
         // "label-est-se" (default)
+        if (parts.length < 3 || parts.length > 6) continue;
         label = parts[0] || ("Study " + (rows.length + 1));
-        est = parseFloat(parts[1]);
-        se = parseFloat(parts[2]);
-        if (parts.length > 3 && parts[3].length) {
-          var y = parseFloat(parts[3]);
-          if (isFiniteNumber(y)) year = y;
-        }
+        est = _num(parts[1]);
+        se = _num(parts[2]);
+        var yr = _year(parts[3]);
+        if (!yr.ok) continue;
+        year = yr.value;
         if (parts.length > 4 && parts[4].length) group = parts[4];
         if (parts.length > 5 && parts[5].length) {
-          var m2 = parseFloat(parts[5]);
-          if (isFiniteNumber(m2)) mod = m2;
+          var m2 = _num(parts[5]);
+          if (!isFiniteNumber(m2)) continue;
+          mod = m2;
         }
       }
       if (!isFiniteNumber(est) || !isFiniteNumber(se) || se <= 0) continue;

@@ -135,6 +135,21 @@
       destinations.add(destination);
     }
 
+    // A row with more non-empty cells than the header cannot be assigned to
+    // columns: an unquoted comma in a label ("Smith et al., 2001,0.04,0.0361")
+    // would shift every later cell left (yi=2001, vi=0.04). Refuse the whole
+    // file, like a duplicate header, rather than silently dropping the excess.
+    // A trailing empty cell (trailing comma) is not data and stays accepted.
+    for (var rr = 1; rr < matrix.length; rr++) {
+      var extra = matrix[rr].slice(rawHeaders.length);
+      if (extra.some(function (c) { return String(c).trim() !== ''; })) {
+        warnings.push('CSV rejected: row ' + rr + ' has more cells than the header (' +
+          matrix[rr].length + ' vs ' + rawHeaders.length + '). Quote text that contains commas ' +
+          '("Smith, 2001"), use commas between fields and "." as the decimal point.');
+        return { headers: rawHeaders, rows: [], warnings: warnings };
+      }
+    }
+
     var rows = [];
     for (var r = 1; r < matrix.length; r++) {
       var rowArr = matrix[r];
