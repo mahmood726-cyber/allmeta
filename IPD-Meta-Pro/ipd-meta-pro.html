@@ -72823,14 +72823,14 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
             }
             function devAt(th) { var e = evalTheta(th); return e ? e.dev : Infinity; }
             function nelderMead(x0) {
-                var dim = 3, pts = [x0.slice()], fv = [devAt(x0)], evals = 1;
+                var dim = 3, pts = [x0.slice()], fv = [devAt(x0)], evals = 1, met = false;
                 for (var d = 0; d < dim; d++) { var xp = x0.slice(); xp[d] += (Math.abs(xp[d]) > 1e-3 ? 0.1 * xp[d] : 0.05); pts.push(xp); fv.push(devAt(xp)); evals++; }
                 while (evals < 20000) {
                     var ord = [0, 1, 2, 3].sort(function(i, j) { return fv[i] - fv[j]; });
                     pts = ord.map(function(i) { return pts[i]; }); fv = ord.map(function(i) { return fv[i]; });
                     var size = 0;
                     for (var q = 1; q <= dim; q++) for (var e = 0; e < dim; e++) size = Math.max(size, Math.abs(pts[q][e] - pts[0][e]));
-                    if (fv[dim] - fv[0] < 1e-13 && size < 1e-10) break;
+                    if (fv[dim] - fv[0] < 1e-13 && size < 1e-10) { met = true; break; }
                     var cen = [0, 0, 0];
                     for (var q2 = 0; q2 < dim; q2++) for (var e2 = 0; e2 < dim; e2++) cen[e2] += pts[q2][e2] / dim;
                     var xr = cen.map(function(c, e3) { return c + (c - pts[dim][e3]); }), fr = devAt(xr); evals++;
@@ -72849,25 +72849,31 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
                 }
                 var best = 0;
                 for (var q4 = 1; q4 <= dim; q4++) if (fv[q4] < fv[best]) best = q4;
-                return { x: pts[best], f: fv[best], evals: evals };
+                // converged only when the stopping rule was met, not when the evaluation cap ended the loop
+                return { x: pts[best], f: fv[best], evals: evals, converged: met };
             }
             // start from the EM solution: L = chol(D / sigma^2) (diagonal if D is not positive definite)
             var s2 = Math.max(sigma_sq, 1e-12);
             var d00 = Math.max(D[0][0], 0) / s2, d01 = D[0][1] / s2, d11 = Math.max(D[1][1], 0) / s2;
             var l00 = Math.sqrt(d00), l10 = l00 > 0 ? d01 / l00 : 0, l11 = Math.sqrt(Math.max(d11 - l10 * l10, 0));
             var starts = [[l00, l10, l11], [l00, 0, Math.sqrt(d11)], [l00, 0, 0]];
-            var bestFit = null;
+            var bestFit = null, settledFits = [];
             starts.forEach(function(x0) {
-                var cur = nelderMead(x0);
+                var cur = nelderMead(x0), settled = false;
                 for (var rs = 0; rs < 10; rs++) {          // restart from the best point until no further gain
                     var nxt = nelderMead(cur.x);
                     var gain = cur.f - nxt.f;
                     if (nxt.f < cur.f) cur = nxt;
-                    if (!(gain > 1e-12)) break;
+                    // the start is settled when a restart from its best point met the stopping rule without further gain
+                    if (!(gain > 1e-12)) { settled = nxt.converged; break; }
                 }
+                cur = { x: cur.x, f: cur.f, evals: cur.evals, converged: settled };
+                if (settled) settledFits.push(cur.f);
                 if (!bestFit || cur.f < bestFit.f) bestFit = cur;
             });
             if (!bestFit || !Number.isFinite(bestFit.f)) return null;
+            // a start that ended at the cap still counts as converged if a settled start reached the same deviance
+            var fitConverged = settledFits.some(function(f) { return f - bestFit.f <= 1e-10 * Math.max(1, Math.abs(bestFit.f)); });
             var fit = evalTheta(bestFit.x);
             if (!fit) return null;
             var sig = fit.rss / n, Lf = fit.L;
@@ -72881,7 +72887,7 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
                 var v0 = pt.Ai[0][0] * rr[0] + pt.Ai[0][1] * rr[1], v1 = pt.Ai[1][0] * rr[0] + pt.Ai[1][1] * rr[1];
                 return [Lf[0][0] * v0, Lf[1][0] * v0 + Lf[1][1] * v1];
             });
-            return { beta: fit.beta, cov: cov, D: Dml, sigma2: sig, dev: fit.dev, studyEffects: effs };
+            return { beta: fit.beta, cov: cov, D: Dml, sigma2: sig, dev: fit.dev, studyEffects: effs, converged: fitConverged };
         })();
 
         if (mlFit) {
@@ -72890,7 +72896,7 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
             D = mlFit.D;
             studyEffects = mlFit.studyEffects;
             finalLogLik = -0.5 * mlFit.dev;
-            converged = true;
+            converged = mlFit.converged;
             var betaCov = mlFit.cov;
             var betaSE = betaCov.map(function(row, idx2) { return Math.sqrt(Math.max(0, row[idx2])); });
         } else {

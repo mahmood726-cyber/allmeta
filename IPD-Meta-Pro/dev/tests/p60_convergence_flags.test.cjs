@@ -28,5 +28,29 @@ function check(name, ok, detail) { console.log((ok ? 'PASS ' : 'FAIL ') + name +
   check('GLMM at the tau2 = 0 boundary with a convergent GLM is still converged', g.convergence.converged === true && g.tau2 < 1e-12,
     'converged ' + g.convergence.converged + ' tau2 ' + g.tau2);
 }
+// One-stage continuous ML fit: the Nelder-Mead minimiser of the profiled deviance stops after a
+// fixed number of evaluations. Stopping there is not convergence and must not be reported as such.
+// Fault injection: a deterministic 1e-9 relative perturbation of Math.log (used by the deviance)
+// keeps the simplex values from ever agreeing to 1e-13, so every Nelder-Mead run reaches its cap.
+function lmmRows() {
+  let sd = 777; const r2 = () => (sd = (sd * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const g2 = () => { let u = 0; for (let i = 0; i < 12; i++) u += r2(); return u - 6; };
+  const rows = [];
+  for (let s = 0; s < 5; s++) { const b0 = 2 * g2(); for (let i = 0; i < 60; i++) { const t = i % 2; rows.push({ study: 'S' + s, treatment: t, outcome: Math.round((20 + b0 - 1.5 * t + 3 * g2()) * 1e4) / 1e4 }); } }
+  return rows;
+}
+{
+  sandbox.__rows = lmmRows();
+  const ok = run('runOneStageIPD(__rows, "outcome", "treatment", "study", [])');
+  check('one-stage continuous fit with a well-behaved deviance is converged', ok && ok.convergence && ok.convergence.converged === true,
+    'converged ' + (ok && ok.convergence && ok.convergence.converged));
+  run('(function(){ var L = Math.log, c = 0; Math.__origLog = L; Math.log = function(x){ c++; return L(x) * (1 + 1e-9 * ((c * 7919) % 13 - 6)); }; })()');
+  let r;
+  try { r = run('runOneStageIPD(__rows, "outcome", "treatment", "study", [])'); }
+  finally { run('Math.log = Math.__origLog; delete Math.__origLog;'); }
+  check('one-stage continuous fit whose minimiser hit its evaluation cap is not reported as converged',
+    r && !r.error && r.convergence && r.convergence.converged === false,
+    'converged ' + (r && r.convergence && r.convergence.converged) + (r && r.error ? ' error ' + r.error : ''));
+}
 console.log(failed ? 'FAILED ' + failed : 'ALL PASS');
 process.exit(failed ? 1 : 0);
