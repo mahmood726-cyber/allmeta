@@ -9241,7 +9241,16 @@ function fitModelToStudies(studies, method) {
 
 
 
- var logLik = -0.5 * (n * Math.log(2 * Math.PI) + Q);
+ // IPD-CSV fix: this was -1/2 (n log 2 pi + Q) with the fixed-effect Q for every method -- no log(v_i + tau^2) term
+ // and no tau^2 in the residuals -- so DL, REML, PM and SJ always had the same AIC/BIC (FE + 2). It is now the
+ // marginal (maximum-likelihood) log-likelihood at this method's own (mu, tau^2), metafor fit.stats "ML".
+ var muLL = method === 'FE' ? feEffect : reEffect;
+ var tauLL = method === 'FE' ? 0 : tau2;
+ var logLik = 0;
+ for (var i = 0; i < n; i++) {
+ var vt = variances[i] + tauLL;
+ logLik += -0.5 * (Math.log(2 * Math.PI * vt) + Math.pow(effects[i] - muLL, 2) / vt);
+ }
 
  var k = method === 'FE' ? 1 : 2;
 
@@ -9262,6 +9271,8 @@ function fitModelToStudies(studies, method) {
  I2: I2,
 
  Q: Q,
+
+ logLik: logLik,
 
  aic: aic,
 
@@ -9293,6 +9304,23 @@ function estimateSJ(effects, variances) {
  }
 
 
+
+function modelSelectionAICNote(models) {
+ // What AIC can decide in this table. Fixed vs random effects are two models, and AIC (ML log-likelihood) compares
+ // them. DL, REML, PM and SJ are four estimators of one random-effects model with the same two parameters: their AIC
+ // differs only by how close each tau^2 is to the ML estimate (the ML estimator, not offered, would always win), so
+ // AIC/BIC must not be read as choosing between them.
+ var re = ['DL', 'REML', 'PM', 'SJ'].filter(function(m) { return models[m] && isFinite(models[m].aic); });
+ if (!models.FE || !isFinite(models.FE.aic) || !re.length) return '';
+ var bestRE = re.reduce(function(a, b) { return models[a].aic <= models[b].aic ? a : b; });
+ var d = models.FE.aic - models[bestRE].aic;
+ var verdict = d > 0 ?
+ 'AIC favours the random-effects model over the fixed-effect model (AIC lower by ' + d.toFixed(1) + ')' :
+ 'AIC favours the fixed-effect model over the random-effects model (AIC lower by ' + (-d).toFixed(1) + ')';
+ return verdict + '. AIC and BIC use the maximum-likelihood log-likelihood (as metafor fit.stats "ML") at the estimates in each row. ' +
+ 'They do not rank DL, REML, PM and SJ: these are four estimators of the same random-effects model with the same two parameters, ' +
+ 'so their AIC differs only by how close each tau² is to the maximum-likelihood estimate.';
+ }
 
 function getModelName(code) {
 
@@ -9350,9 +9378,7 @@ function displayModelSelectionResults(results) {
 
  ' (lowest CV error)' +
 
- (results.bestByCV !== results.bestByAIC ?
-
- '<br><small>Note: ' + results.models[results.bestByAIC].name + ' has lowest AIC</small>' : '') +
+ '<br><small>' + modelSelectionAICNote(results.models) + '</small>' +
 
  '</div>' +
 
@@ -73053,9 +73079,12 @@ function runTwoStageIPD(data, outcomeVar, treatmentVar, clusterVar, method = 'RE
 
 
 
-    // Q statistic
-
-    const Q = studyEffects.reduce((s, st) => s + (1/st.vi) * Math.pow(st.yi - pooledEffect, 2), 0);
+    // Q statistic (Cochran's Q, metafor QE). IPD-CSV fix: this was centred on the random-effects pooledEffect, so Q,
+    // its p-value and I^2 changed with the tau^2 method and were not Cochran's Q (k = 7 uploaded rows: 19.59 REML /
+    // 19.60 DL; metafor QE 19.45). It is centred on the fixed-effect (inverse-variance) mean.
+    const sumWFE = studyEffects.reduce((s, st) => s + 1 / st.vi, 0);
+    const feEffect = studyEffects.reduce((s, st) => s + st.yi / st.vi, 0) / sumWFE;
+    const Q = studyEffects.reduce((s, st) => s + (1/st.vi) * Math.pow(st.yi - feEffect, 2), 0);
 
     const df = studyEffects.length - 1;
 
