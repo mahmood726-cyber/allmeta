@@ -3738,8 +3738,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  tCDF: function(t, df) {
  // P(T <= t). IPD-Beta fix: the old betaCF started its continued fraction at bz = 0 instead of
  // 1 - (a + b) x / (a + 1), so betaInc (and with it tCDF) returned values outside [0, 1]
- // (tCDF(2, 5) = 1.954, R pt = 0.94903). The tail mass is now taken directly from I_x(df/2, 1/2).
- if (isNaN(t) || !(df > 0)) return NaN;
+ // (tCDF(2, 5) = 1.954, R pt = 0.94903). P(T <= t) = P(T > -t) is now taken from AlmTail.ptUpper
+ // (the page's inlined shared/upper-tail.js: log-domain arguments, precise near t = 0 and in both
+ // tails, df = Infinity as the normal limit); the local incomplete beta is the fallback.
+ if (isNaN(t) || isNaN(df) || !(df > 0)) return NaN;
+ if (typeof AlmTail !== 'undefined' && AlmTail.ptUpper) return AlmTail.ptUpper(-t, df);
  if (t === Infinity) return 1;
  if (t === -Infinity) return 0;
  if (t === 0) return 0.5;
@@ -3752,27 +3755,43 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  // returns -1.0022 for p = 0.975) on top of the broken tCDF and ran away (tQuantile(0.975, 5) =
  // -12282, R qt = 2.5705818). Now: solve the upper tail P(T > x) = min(p, 1 - p) for x >= 0 by
  // Newton steps kept inside a bracket [lo, hi] (bisection when a step leaves it), then apply the sign.
- if (isNaN(p) || !(df > 0)) return NaN;
+ if (isNaN(p) || isNaN(df) || !(df > 0)) return NaN;
  if (p <= 0) return p === 0 ? -Infinity : NaN;
  if (p >= 1) return p === 1 ? Infinity : NaN;
  if (p === 0.5) return 0;
  const sign = p < 0.5 ? -1 : 1;
  const q = p < 0.5 ? p : 1 - p;                     // target upper-tail probability, in (0, 0.5)
- if (df === 1) return sign / Math.tan(Math.PI * q);   // Cauchy; cot(pi q) avoids tan near pi/2
+ // Cauchy: cot(pi q) in the tails (avoids tan near pi/2), tan(pi (0.5 - q)) near the median
+ if (df === 1) return q > 0.25 ? sign * Math.tan(Math.PI * (0.5 - q)) : sign / Math.tan(Math.PI * q);
  const self = this;
- const upper = function(x) { return 0.5 * self.betaInc(df / (df + x * x), df / 2, 0.5); };
- const lc = this._lnBeta(df / 2, 0.5) + 0.5 * Math.log(df);
- const dens = function(x) { return Math.exp(-lc - (df + 1) / 2 * Math.log1p(x * x / df)); };
+ // Near the median solve on the central mass P(0 < T < x) = 0.5 - q (exact by Sterbenz), which keeps
+ // relative precision there; elsewhere on the upper tail P(T > x) = q. Both are written as
+ // F(x) - target with F decreasing, so one bracketed Newton serves both.
+ const central = q > 0.25;
+ const target = central ? -(0.5 - q) : q;
+ const upper = central
+ ? (df === Infinity
+ ? function(x) { return -0.5 * AlmTail._gammaPQ(0.5, 0.5 * x * x)[0]; }
+ : function(x) { return -0.5 * self.betaInc(x * x / (df + x * x), 0.5, df / 2); })
+ : function(x) { return self.tCDF(-x, df); };   // P(T > x)
+ const lc = df === Infinity ? 0.5 * Math.log(2 * Math.PI) : this._lnBeta(df / 2, 0.5) + 0.5 * Math.log(df);
+ const dens = function(x) {
+ if (df === Infinity) return Math.exp(-lc - 0.5 * x * x);
+ const u = Math.abs(x) / Math.sqrt(df);
+ const l1 = u > 1e100 ? 2 * Math.log(u) : Math.log1p(u * u);   // log(1 + x^2/df) without overflow
+ return Math.exp(-lc - (df + 1) / 2 * l1);
+ };
  let lo = 0, hi = 1;
- while (upper(hi) > q && hi < 1e300) { lo = hi; hi *= 2; }
+ while (upper(hi) > target && hi < 1e300) { lo = hi; hi *= 2; }
+ if (upper(hi) > target) return sign * Infinity;      // quantile beyond the double range
  let x = 0.5 * (lo + hi);
- for (let it = 0; it < 200; it++) {
- const f = upper(x) - q;                          // decreasing in x
+ for (let it = 0; it < 400; it++) {
+ const f = upper(x) - target;                     // decreasing in x
  if (f === 0) break;
  if (f > 0) lo = x; else hi = x;
- let nx = x + f / dens(x);                        // Newton step on upper(x) - q
+ let nx = x + f / dens(x);                        // Newton step (-dF/dx = density)
  if (!(nx > lo && nx < hi)) nx = 0.5 * (lo + hi);
- if (Math.abs(nx - x) <= 1e-15 * Math.max(1, Math.abs(nx)) || hi - lo <= 1e-15 * hi) { x = nx; break; }
+ if (Math.abs(nx - x) <= 1e-15 * Math.abs(nx) || hi - lo <= 1e-15 * hi) { x = nx; break; }
  x = nx;
  }
  return sign * x;
@@ -3782,7 +3801,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  // rounded argument, an error of order 1e-7 relative whenever a or b is not exact to 6 decimals).
  _lnBeta: function(a, b) {
  const lg = function(z) {
- if (z < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * z))) - lg(1 - z);
+ if (z < 0.5) return Math.log(Math.PI) - Math.log(Math.abs(Math.sin(Math.PI * z))) - lg(1 - z);
  z -= 1;
  let x = GAMMA_C[0];
  for (let i = 1; i < 9; i++) x += GAMMA_C[i] / (z + i);
@@ -3805,6 +3824,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  betaCF: function(x, a, b) {
  // Continued fraction for I_x(a, b) (Numerical Recipes betacf), modified Lentz evaluation.
+ // Returns NaN rather than a silently unconverged value (very large a, b need > 1000 terms).
  const TINY = 1e-300, EPS = 1e-15;
  const qab = a + b, qap = a + 1, qam = a - 1;
  let c = 1, d = 1 - qab * x / qap;
@@ -3823,9 +3843,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  d = 1 / d;
  const del = d * c;
  h *= del;
- if (Math.abs(del - 1) < EPS) break;
+ if (Math.abs(del - 1) < EPS) return h;
  }
- return h;
+ return NaN;
  },
 
  clearCaches: function() {
