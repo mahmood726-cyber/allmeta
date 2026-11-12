@@ -20,6 +20,8 @@ const sb = { console: { log: noop, warn: noop, info: noop, error: noop, debug: n
 sb.window = sb; sb.self = sb; sb.globalThis = sb;
 const ctx = vm.createContext(sb);
 vm.runInContext(fs.readFileSync(path.join(shared, 'upper-tail.js'), 'utf8'), ctx);
+// the pages load shared/ma-core.js (AlmMaCore) before the engine; NO_MA_CORE=1 simulates a page that does not
+if (!process.env.NO_MA_CORE) vm.runInContext(fs.readFileSync(path.join(shared, 'ma-core.js'), 'utf8'), ctx, { filename: 'ma-core.js' });
 let src = fs.readFileSync(file, 'utf8');
 if (file.endsWith('.html')) {
   const s = [...src.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).filter(s => s.includes('function estimateTau2_REML('));

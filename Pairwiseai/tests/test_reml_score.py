@@ -138,14 +138,65 @@ def test_cochrane_nonconvergence_reviews(engine, tmp_path):
     assert bad == []
 
 
-@pytest.mark.xfail(strict=True, reason='KNOWN GAP: Fisher scoring from the DL start finds a LOCAL REML maximum; '
-                   'the global-mode search lives in shared/ma-core.js (AlmMaCore.tau2REML), which these pages do not load')
-def test_global_mode_cases_app_js(tmp_path):
+@pytest.mark.parametrize('engine', ENGINES, ids=lambda p: p.relative_to(REPO).as_posix())
+def test_global_mode_cases(engine, tmp_path):
+    """tests/fixtures/reml_global_modes.json: restricted likelihoods with more than one peak. Fisher scoring from the
+    DL start stops at the first score root it reaches, which can be a LOCAL maximum (seed 1530: 7.2e-6 vs global
+    0.0604; seed 1917: 0.0287 vs 0.763; shallow interior peak: 0 vs 3.819). The engine must return the global mode
+    (AlmMaCore.tau2REML in shared/ma-core.js, a bounded global search of the exact restricted likelihood)."""
     cases = _fixture_cases('reml_global_modes.json', 'cases')
-    got = _run_cases(ROOT / 'app.js', cases, tmp_path)
-    bad = ['%s: app %r, global %r' % (k, got[k]['tau2'], c['expected_tau2'])
-           for k, c in cases.items() if not abs(got[k]['tau2'] - c['expected_tau2']) <= TOL]
+    got = _run_cases(engine, cases, tmp_path)
+    bad = []
+    for k, c in cases.items():
+        a = got[k]
+        if not (abs(a['tau2'] - c['expected_tau2']) <= TOL and abs(a['dispatch_tau2'] - c['expected_tau2']) <= TOL
+                and a['converged']):
+            bad.append('%s: app %r (dispatch %r, converged %r), global %r'
+                       % (k, a['tau2'], a['dispatch_tau2'], a['converged'], c['expected_tau2']))
+        if c['expected_tau2'] == 0 and a['tau2'] != 0:
+            bad.append('%s: boundary maximum must be exactly 0, got %r' % (k, a['tau2']))
     assert bad == []
+
+
+# Every page that ships one of the engines must load shared/ma-core.js BEFORE the engine, or the global-mode
+# step silently cannot run (the engine then flags the result; see test_missing_core_is_flagged).
+PAGES = {
+    ROOT / 'TruthCert-PairwisePro-v1.0-fast.html': 'app.js',
+    ROOT / 'TruthCert-PairwisePro-v1.0-bundle.html': None,
+    ROOT / 'TruthCert-PairwisePro-v1.0-dist.html': None,
+    ROOT / 'TruthCert-PairwisePro-v1.0-min.html': None,
+    ROOT / 'test_advanced.html': 'app.min.js',
+    REPO / 'Truthcert1' / 'TruthCert-PairwisePro-v1.0-production.html': 'app.min.js',
+}
+
+
+@pytest.mark.parametrize('page', list(PAGES), ids=lambda p: p.relative_to(REPO).as_posix())
+def test_pages_load_ma_core_before_engine(page):
+    import re
+    src = page.read_text(encoding='utf-8')
+    tags = [m for m in re.finditer(r'<script\b[^>]*>', src)]
+    core = [m.start() for m in tags if re.search(r'src="\.\./shared/ma-core\.js"', m.group(0))]
+    assert len(core) == 1, 'expected exactly one <script src="../shared/ma-core.js">, found %d' % len(core)
+    eng = PAGES[page]
+    if eng:
+        pos = [m.start() for m in tags if re.search(r'src="%s"' % re.escape(eng), m.group(0))]
+    else:
+        pos = [m.start() for m in re.finditer(r'function estimateTau2_REML\(', src)]
+    assert pos and core[0] < pos[0]
+
+
+@pytest.mark.parametrize('engine', ENGINES, ids=lambda p: p.relative_to(REPO).as_posix())
+def test_missing_core_is_flagged(engine, tmp_path):
+    """Without AlmMaCore the engine cannot certify the global mode; it must say so instead of claiming it."""
+    cases = _fixture_cases('reml_global_modes.json', 'cases')
+    ref = tmp_path / 'cases.json'
+    ref.write_text(json.dumps({'sets': {k: {'yi': c['yi'], 'vi': c['vi']} for k, c in cases.items()}}), encoding='utf-8')
+    env = dict(os.environ, SHARED=str(REPO / 'shared'), NO_MA_CORE='1')
+    out = subprocess.run(['node', str(HERE / 'reml_harness.cjs'), str(engine), str(ref)],
+                         capture_output=True, text=True, timeout=180, encoding='utf-8', env=env)
+    assert out.returncode == 0, out.stderr[-2000:]
+    got = json.loads(out.stdout)
+    assert all('ma-core.js' in (a['note'] or '') for a in got.values()), got
 
 
 # Extreme-scale inputs (independent Codex review of PR #536). metafor 5.2.1, rma(method="REML",
