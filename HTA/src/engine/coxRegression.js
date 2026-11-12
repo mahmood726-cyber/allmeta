@@ -18,6 +18,12 @@
 
 'use strict';
 
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 class CoxRegressionEngine {
     constructor() {
         this.EPSILON = 1e-15;
@@ -41,7 +47,7 @@ class CoxRegressionEngine {
      * Two-tailed p-value from z-score
      */
     _zToPValue(z) {
-        return 2 * (1 - this._normalCDF(Math.abs(z)));
+        return 2 * AlmTail.pnormUpper(Math.abs(z));
     }
 
     /**
@@ -860,7 +866,7 @@ class CoxRegressionEngine {
             const nRes = residuals.length;
             const chiSq = nRes * rho * rho;
             // p-value from chi2(1): P(X > chiSq) = 2*(1 - Phi(sqrt(chiSq)))
-            const pValue = 2 * (1 - this._normalCDF(Math.sqrt(chiSq)));
+            const pValue = 2 * AlmTail.pnormUpper(Math.sqrt(chiSq));
 
             results.push({
                 covariate: covariates[j],
@@ -944,7 +950,7 @@ class CoxRegressionEngine {
                     break;
                 }
                 case 'lognormal': {
-                    survival = 1 - this._normalCDF(z);
+                    survival = AlmTail.pnormUpper(z);
                     const phi = Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI);
                     hazard = phi / ((survival + this.EPSILON) * sigma * Math.max(t, 1e-10));
                     break;

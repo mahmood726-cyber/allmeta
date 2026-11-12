@@ -10,6 +10,12 @@
 
 'use strict';
 
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 // CYCLE 3.2: removed duplicate declarations. PerformanceEngine, SIMDVectorizer,
 // ComputationCache, MemoryPool, and Environment are canonical in
 // HTA/src/engine/performanceEngine.js (loaded first via script tag).
@@ -315,7 +321,7 @@ const OptimizedAlgorithms = {
             H2,
             Q,
             df: n - 1,
-            pQ: 1 - FastMath.chiSquaredCDF(Q, n - 1),
+            pQ: AlmTail.pchisqUpper(Q, n - 1),
             ci: [theta - tCrit * finalSE, theta + tCrit * finalSE],
             ciStandard: [theta - zCrit * se, theta + zCrit * se],
             predictionInterval,
@@ -460,7 +466,7 @@ const OptimizedAlgorithms = {
             I2CI,
             Q,
             df: n - 1,
-            pQ: 1 - FastMath.chiSquaredCDF(Q, n - 1),
+            pQ: AlmTail.pchisqUpper(Q, n - 1),
             ci: [theta - tCrit * finalSE, theta + tCrit * finalSE],
             ciStandard: [theta - zCritREML * se, theta + zCritREML * se],
             predictionInterval,

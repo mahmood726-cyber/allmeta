@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Meta-Analysis Methods Engine for HTA Artifact Standard v0.5
  *
@@ -115,7 +121,7 @@ class MetaAnalysisMethods {
         // Q statistic
         const Q = w.reduce((sum, wi, i) => sum + wi * (studies[i].effect - thetaFE) ** 2, 0);
         const df = n - 1;
-        const pQ = 1 - this.chiSquaredCDF(Q, df);
+        const pQ = AlmTail.pchisqUpper(Q, df);
 
         // Between-study variance (τ²)
         let tauSq;
@@ -188,7 +194,7 @@ class MetaAnalysisMethods {
                 ci_lower: thetaFE - z * seFE,
                 ci_upper: thetaFE + z * seFE,
                 z: thetaFE / seFE,
-                pValue: 2 * (1 - this.normalCDF(Math.abs(thetaFE / seFE)))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(thetaFE / seFE))
             },
             // Random-effects results
             random: {
@@ -197,7 +203,7 @@ class MetaAnalysisMethods {
                 ci_lower: thetaRE - z * seRE,
                 ci_upper: thetaRE + z * seRE,
                 z: thetaRE / seRE,
-                pValue: 2 * (1 - this.normalCDF(Math.abs(thetaRE / seRE)))
+                pValue: 2 * AlmTail.pnormUpper(Math.abs(thetaRE / seRE))
             },
             // Heterogeneity
             heterogeneity: {
@@ -452,7 +458,7 @@ class MetaAnalysisMethods {
 
         // t-test for intercept = 0 on n - 2 degrees of freedom
         const tStat = intercept / seIntercept;
-        const pValue = 2 * (1 - this.tCDF(Math.abs(tStat), n - 2));
+        const pValue = 2 * AlmTail.ptUpper(Math.abs(tStat), n - 2);
 
         return {
             test: 'Egger',
@@ -531,7 +537,7 @@ class MetaAnalysisMethods {
 
         const seTau = Math.sqrt(varTauAdjusted);
         const z = tau / seTau;
-        const pValue = 2 * (1 - this.normalCDF(Math.abs(z)));
+        const pValue = 2 * AlmTail.pnormUpper(Math.abs(z));
 
         // Also compute exact p-value for small samples using permutation distribution
         // For n >= 10, normal approximation is adequate
@@ -539,7 +545,7 @@ class MetaAnalysisMethods {
         if (n < 10) {
             // Use continuity correction for small samples
             const zCorrected = (Math.abs(tau) - 1/(n*(n-1)/2)) / seTau;
-            exactPValue = 2 * (1 - this.normalCDF(Math.max(0, zCorrected)));
+            exactPValue = 2 * AlmTail.pnormUpper(Math.max(0, zCorrected));
         }
 
         return {
@@ -713,7 +719,7 @@ class MetaAnalysisMethods {
         // Classify studies by p-value significance
         const withPvals = studies.map(s => {
             const z = Math.abs(s.effect / s.se);
-            const pValue = 2 * (1 - this.normalCDF(z));
+            const pValue = 2 * AlmTail.pnormUpper(z);
             return { ...s, pValue, z };
         });
 
@@ -1120,7 +1126,7 @@ class MetaAnalysisMethods {
             estimate: beta[0],
             se: seBeta[0],
             z: beta[0] / seBeta[0],
-            pValue: 2 * (1 - this.normalCDF(Math.abs(beta[0] / seBeta[0]))),
+            pValue: 2 * AlmTail.pnormUpper(Math.abs(beta[0] / seBeta[0])),
             ci_lower: beta[0] - zCritMR * seBeta[0],
             ci_upper: beta[0] + zCritMR * seBeta[0]
         }];
@@ -1133,7 +1139,7 @@ class MetaAnalysisMethods {
                     estimate: beta[idx],
                     se: seBeta[idx],
                     z: beta[idx] / seBeta[idx],
-                    pValue: 2 * (1 - this.normalCDF(Math.abs(beta[idx] / seBeta[idx]))),
+                    pValue: 2 * AlmTail.pnormUpper(Math.abs(beta[idx] / seBeta[idx])),
                     ci_lower: beta[idx] - zCritMR * seBeta[idx],
                     ci_upper: beta[idx] + zCritMR * seBeta[idx]
                 });
@@ -1146,7 +1152,7 @@ class MetaAnalysisMethods {
                         estimate: beta[idx],
                         se: seBeta[idx],
                         z: beta[idx] / seBeta[idx],
-                        pValue: 2 * (1 - this.normalCDF(Math.abs(beta[idx] / seBeta[idx]))),
+                        pValue: 2 * AlmTail.pnormUpper(Math.abs(beta[idx] / seBeta[idx])),
                         ci_lower: beta[idx] - zCritMR * seBeta[idx],
                         ci_upper: beta[idx] + zCritMR * seBeta[idx]
                     });
@@ -1160,10 +1166,10 @@ class MetaAnalysisMethods {
             modelFit: {
                 QModel: QM,
                 dfModel: dfM,
-                pValueModel: 1 - this.chiSquaredCDF(QM, dfM),
+                pValueModel: AlmTail.pchisqUpper(QM, dfM),
                 QResidual: QE,
                 dfResidual: dfE,
-                pValueResidual: 1 - this.chiSquaredCDF(QE, dfE),
+                pValueResidual: AlmTail.pchisqUpper(QE, dfE),
                 R2: R2,
                 tauSquaredResidual: tauSqResid
             },
@@ -1277,7 +1283,7 @@ class MetaAnalysisMethods {
         }
 
         const dfBetween = groups.length - 1;
-        const pBetween = 1 - this.chiSquaredCDF(QBetween, dfBetween);
+        const pBetween = AlmTail.pchisqUpper(QBetween, dfBetween);
 
         // Overall pooled
         const overall = this.calculatePooledEffect(studies);

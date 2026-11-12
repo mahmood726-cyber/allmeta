@@ -11,7 +11,7 @@
  */
 
 // Invalidate cache-first scripts together when the synthesis contracts change.
-const CACHE_NAME = 'hta-pro-v1.0.1-advanced-synthesis';
+const CACHE_NAME = 'hta-pro-v1.0.2-upper-tail';
 const RUNTIME_CACHE = 'hta-pro-runtime-v1.0.0';
 
 // Core files to cache on install
@@ -23,6 +23,7 @@ const PRECACHE_URLS = [
   '../shared/vendor/chart-4.4.1.umd.min.js',
   '../shared/vendor/d3-7.9.0.min.js',
   '../shared/ma-core.js',
+  '../shared/upper-tail.js',
   './src/engine/metaMethods.js',
   './src/engine/nma.js',
   './src/ui/app.js',

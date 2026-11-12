@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Partitioned Survival Analysis Engine
  * Common model structure for oncology cost-effectiveness analysis
@@ -282,7 +288,7 @@ class PartitionedSurvivalEngine {
             cdf = this.gammaIncompleteCDF(1 / (Q * Q), u / (Q * Q));
         } else if (Q < 0) {
             const u = Math.exp(-gamma * w);
-            cdf = 1 - this.gammaIncompleteCDF(1 / (Q * Q), u / (Q * Q));
+            cdf = AlmTail.pgammaUpper(u / (Q * Q), 1 / (Q * Q));
         } else {
             // Q = 0: log-normal
             cdf = this.normalCDF(w);

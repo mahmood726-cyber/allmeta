@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Model Averaging Engine
  * Bayesian Model Averaging for structural uncertainty in HTA models.
@@ -423,7 +429,7 @@ class ModelAveragingEngine {
             if (d.event === 1) {
                 logLik += -0.5 * Math.log(2 * Math.PI) - Math.log(sigma) - d.logT - 0.5 * z * z;
             } else {
-                const survProb = 1 - this._normalCDF(z);
+                const survProb = AlmTail.pnormUpper(z);
                 logLik += Math.log(Math.max(survProb, 1e-300));
             }
         }
@@ -881,7 +887,7 @@ class ModelAveragingEngine {
                 return Math.exp(-Math.pow(t / params.scale, params.shape));
             case 'lognormal': {
                 const z = (Math.log(t) - params.mu) / params.sigma;
-                return 1 - this._normalCDF(z);
+                return AlmTail.pnormUpper(z);
             }
             case 'loglogistic': {
                 const z = Math.pow(t / params.alpha, params.beta);

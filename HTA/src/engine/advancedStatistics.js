@@ -6,6 +6,12 @@
 
 'use strict';
 
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 // ============================================================================
 // SECTION 1: EXPECTED VALUE OF SAMPLE INFORMATION (EVSI)
 // ============================================================================
@@ -178,7 +184,7 @@ class BayesianModelAveraging {
 
             case 'lognormal': {
                 const z = (Math.log(Math.max(t, 0.001)) - params.mu) / params.sigma;
-                return 1 - this._normalCDF(z);
+                return AlmTail.pnormUpper(z);
             }
 
             case 'loglogistic':
@@ -188,7 +194,7 @@ class BayesianModelAveraging {
                 return Math.exp(-(params.rate / params.shape) * (Math.exp(params.shape * t) - 1));
 
             case 'gamma':
-                return 1 - this._gammaCDF(params.shape, t * params.rate);
+                return AlmTail.pgammaUpper(t * params.rate, params.shape);
 
             default:
                 return Math.exp(-t * 0.1);
@@ -247,21 +253,9 @@ class BayesianModelAveraging {
     }
 
     _gammaCDF(shape, x) {
-        // Incomplete gamma function approximation
+        // Regularized lower incomplete gamma P(shape, x) (was a series clipped to 1 for x > 50).
         if (x <= 0) return 0;
-        if (x > 50) return 1;
-
-        let sum = 0;
-        let term = 1 / shape;
-        sum = term;
-
-        for (let n = 1; n < 100; n++) {
-            term *= x / (shape + n);
-            sum += term;
-            if (Math.abs(term) < 1e-10) break;
-        }
-
-        return Math.pow(x, shape) * Math.exp(-x) * sum / this._gamma(shape);
+        return AlmTail._gammaPQ(shape, x)[0];
     }
 }
 
@@ -380,7 +374,7 @@ class FlexibleSurvival {
             case 'odds':
                 return 1 / (1 + Math.exp(eta));
             default:
-                return 1 - this._normalCDF(eta);
+                return AlmTail.pnormUpper(eta);
         }
     }
 
@@ -789,7 +783,7 @@ class MetaRegression {
             I2: this._calculateI2(effects, variances, tau2),
             QE,
             QM,
-            pQM: 1 - this._chiSquareCDF(QM, p),
+            pQM: AlmTail.pchisqUpper(QM, p),
             fitted,
             residuals,
             predict: (newX) => this._predict([1, ...newX], beta)
@@ -977,19 +971,10 @@ class MetaRegression {
     }
 
     _gammaCDF(shape, x) {
+        // Regularized lower incomplete gamma P(shape, x). The old 100-term series never reached
+        // large x (for Q >= ~454 on 1 df the CDF came out ~0, so p = 1 - CDF = 1).
         if (x <= 0) return 0;
-
-        let sum = 0;
-        let term = 1 / shape;
-        sum = term;
-
-        for (let n = 1; n < 100; n++) {
-            term *= x / (shape + n);
-            sum += term;
-            if (Math.abs(term) < 1e-10) break;
-        }
-
-        return Math.pow(x, shape) * Math.exp(-x) * sum / this._gamma(shape);
+        return AlmTail._gammaPQ(shape, x)[0];
     }
 
     _gamma(z) {

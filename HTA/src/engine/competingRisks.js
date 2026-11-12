@@ -1,3 +1,9 @@
+// Upper-tail probabilities (shared/upper-tail.js): index.html loads it before the engines;
+// under Node (tests, CLI) it is required here. Never compute an upper tail as 1 - CDF.
+if (typeof globalThis !== 'undefined' && !globalThis.AlmTail && typeof require === 'function') {
+    globalThis.AlmTail = require('../../../shared/upper-tail.js');
+}
+
 /**
  * Competing Risks Analysis Engine for HTA Survival Modeling
  *
@@ -78,14 +84,12 @@ function normalCDF(z) {
 }
 
 /**
- * Chi-squared CDF with df degrees of freedom (Wilson-Hilferty approx).
+ * Chi-squared CDF with df degrees of freedom (regularized incomplete gamma, shared/upper-tail.js).
  */
 function chi2CDF(x, df) {
     if (x <= 0) return 0;
-    // Wilson-Hilferty transformation
-    const z = Math.pow(x / df, 1 / 3) - (1 - 2 / (9 * df));
-    const se = Math.sqrt(2 / (9 * df));
-    return normalCDF(z / se);
+    // Regularized lower incomplete gamma (was Wilson-Hilferty: relative error in the upper tail up to 0.46).
+    return AlmTail._gammaPQ(df / 2, x / 2)[0];
 }
 
 /**
@@ -547,7 +551,7 @@ class CompetingRisksEngine {
         }
 
         // p-value from chi-squared distribution
-        const pValue = 1 - chi2CDF(statistic, df);
+        const pValue = AlmTail.pchisqUpper(statistic, df);
 
         return {
             statistic: statistic,
@@ -764,7 +768,7 @@ class CompetingRisksEngine {
         const lower = Math.exp(beta - zAlpha * seBeta);
         const upper = Math.exp(beta + zAlpha * seBeta);
         const zStat = beta / seBeta;
-        const pValue = 2 * (1 - normalCDF(Math.abs(zStat)));
+        const pValue = 2 * AlmTail.pnormUpper(Math.abs(zStat));
 
         return {
             hr: hr,
