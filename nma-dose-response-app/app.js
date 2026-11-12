@@ -5616,60 +5616,15 @@ S4,DrugC,35,1.02,0.16`;
 
     // REML estimation via Fisher scoring (Viechtbauer 2005)
     estimate() {
-      // Initialize with DL estimate
-      let tau2 = this.derSimonianLaird();
-      if (!Number.isFinite(tau2)) tau2 = 0;
-
-      let converged = false;
-
-      for (let iter = 0; iter < this.maxIter; iter++) {
-        const weights = this.v.map(vi => 1 / (vi + tau2));
-        const sumW = weights.reduce((a, b) => a + b, 0);
-
-        // Guard against zero sumW
-        if (sumW < 1e-10) {
-          tau2 = 0;
-          break;
-        }
-
-        const sumW2 = weights.reduce((a, b) => a + b * b, 0);
-        const yBar = weights.reduce((sum, w, i) => sum + w * this.y[i], 0) / sumW;
-
-        // Q statistic under current tau2
-        const Q = weights.reduce((sum, w, i) => sum + w * Math.pow(this.y[i] - yBar, 2), 0);
-
-        // Correct REML score function (Viechtbauer 2005, eq. 7)
-        // U(tau2) = -0.5 * tr(P) + 0.5 * y'Py where P = W - WX(X'WX)^{-1}X'W
-        // For simple random effects: df = n - k where k = 1 (intercept)
-        const df = this.n - this.k;
-        const deriv1 = -0.5 * (sumW2 / sumW) + 0.5 * (Q - df) / (tau2 > 0 ? 1 : 1);
-
-        // Corrected: Score is (Q - df) / 2 - sumW2/(2*sumW)
-        // Simplified: 0.5 * ((Q - df) - sumW2/sumW)
-        const score = 0.5 * (Q - df - sumW2 / sumW);
-
-        // Expected Fisher information (second derivative)
-        // I(tau2) = 0.5 * tr(P^2) = 0.5 * (sumW2 - sumW3/sumW)
-        const sumW3 = weights.reduce((a, b) => a + b * b * b, 0);
-        const fisherInfo = 0.5 * (sumW2 - sumW3 / sumW);
-
-        // Guard against zero Fisher info
-        if (Math.abs(fisherInfo) < 1e-12) {
-          converged = true;
-          break;
-        }
-
-        // Fisher scoring update
-        const delta = score / fisherInfo;
-        const newTau2 = Math.max(0, tau2 + delta);
-
-        if (Math.abs(newTau2 - tau2) < this.tolerance) {
-          tau2 = newTau2;
-          converged = true;
-          break;
-        }
-        tau2 = newTau2;
+      // REML tau^2 from AllMeta's audited shared core (../shared/ma-core.js, loaded by index.html).
+      // The former Fisher-scoring loop used the score 0.5*(Q - df - sum(w^2)/sum(w)), which is not
+      // the REML score (dat.bcg: 0.223 against metafor's 0.313), and stopped on an absolute 1e-8 step.
+      const core = globalThis.AlmMaCore;
+      if (!core || typeof core.tau2REML !== 'function') {
+        throw new Error('The shared REML engine (shared/ma-core.js) is not loaded.');
       }
+      const tau2 = core.tau2REML(this.y, this.v);
+      const converged = Number.isFinite(tau2);
 
       // Compute profile likelihood CI for tau²
       const ciTau2 = this.profileLikelihoodCI(tau2);
@@ -5885,15 +5840,14 @@ S4,DrugC,35,1.02,0.16`;
       // Degrees of freedom
       const df = this.n - 1;
 
-      // Sidik-Jonkman tau² estimator
-      // Formula: tau² = max(0, (Q - df + 2*sum(w²)/sum(w)) / (sum(w) - sum(w²)/sum(w)))
-      const numerator = Q - df + 2 * sumW2 / sumW;
-      const denominator = sumW - sumW2 / sumW;
-
-      let tau2 = 0;
-      if (denominator > this.tolerance && numerator > 0) {
-        tau2 = Math.max(0, numerator / denominator);
+      // Sidik-Jonkman (2005) tau^2 from the shared core (ma-core.js tau2SJ, = metafor method="SJ").
+      // The former closed form (Q - df + 2*sum(w^2)/sum(w)) / (sum(w) - sum(w^2)/sum(w)) is not the
+      // Sidik-Jonkman estimator (dat.bcg: 0.994 against metafor's 0.346).
+      const core = globalThis.AlmMaCore;
+      if (!core || typeof core.tau2SJ !== 'function') {
+        throw new Error('The shared tau^2 engine (shared/ma-core.js) is not loaded.');
       }
+      const tau2 = core.tau2SJ(this.y, this.v);
 
       // Compute random-effects weights
       const wRE = this.v.map(vi => 1 / (vi + tau2));
@@ -20494,6 +20448,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
   window.TrimAndFill = TrimAndFill;
   window.EggerTest = EggerTest;
   window.REMLEstimator = REMLEstimator;
+  window.SidikJonkmanEstimator = SidikJonkmanEstimator;
   window.BeggMazumdarTest = BeggMazumdarTest;
   window.PetersTest = PetersTest;
   window.PETPEESE = PETPEESE;
