@@ -116,3 +116,17 @@ def test_interval_with_single_arm_is_skipped():
     ]
     r = _run(f"S.fit({json.dumps(rows)}, {{model:'fe'}})")
     assert r["intervalIds"] == ["1"]  # interval 2 (single arm) dropped
+
+
+def test_numeric_interval_labels_sort_numerically():
+    # Interval labels 1..10 must come out in time order, not string order ("10" before "2").
+    rows = []
+    for iv in range(1, 11):
+        for s, (a, b) in {"s1": ("A", "B"), "s2": ("A", "C"), "s3": ("B", "C")}.items():
+            rows.append({"study": s, "treatment": a, "interval": str(iv), "events": 20 + iv, "ptime": 1000})
+            rows.append({"study": s, "treatment": b, "interval": str(iv), "events": 15 + iv, "ptime": 1000})
+    out = _run(f"S.fit({json.dumps(rows)}, {{model:'fe'}}).intervalIds")
+    assert out == [str(i) for i in range(1, 11)], out
+    # Non-numeric labels keep the deterministic string order.
+    rows2 = [dict(r, interval={"1": "b", "2": "a"}[r["interval"]]) for r in rows if r["interval"] in ("1", "2")]
+    assert _run(f"S.fit({json.dumps(rows2)}, {{model:'fe'}}).intervalIds") == ["a", "b"]

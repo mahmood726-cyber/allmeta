@@ -77,7 +77,12 @@
     var cc = opts.cc == null ? 0.5 : opts.cc, model = opts.model || "fe";
     if (typeof global.AlmNmaMultiarm === "undefined") throw new Error("nma-survival-nph: AlmNmaMultiarm not loaded");
     var perInterval = buildContrasts(rows, cc);
-    var intervalIds = Object.keys(perInterval).sort();
+    // Time order: numeric labels sort numerically ("2" before "10"); otherwise the string order as before.
+    var NUM = /^\s*-?\d+(\.\d+)?\s*$/;
+    var intervalIds = Object.keys(perInterval).sort(function (a, b) {
+      if (NUM.test(a) && NUM.test(b) && +a !== +b) return +a - +b;
+      return a < b ? -1 : a > b ? 1 : 0;
+    });
     var intervals = {}, warnings = [];
     var pool = {}; // treatment -> {sw, swy}
     // Network-wide reference: the pooled table averages log-HRs across intervals, which is only
