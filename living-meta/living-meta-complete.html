@@ -2073,8 +2073,8 @@ window.LMA = window.LMA || {};
     const zValues = yi.map((y, i) => Math.abs(y / sei[i]));
     const pValues = zValues.map(z => 2 * LMA.pnormUpper(z));
 
-    // Filter significant p-values
-    const sigP = pValues.filter(p => p < 0.05 && p > 0);
+    // Filter significant p-values (a p-value that underflows to 0 is the most significant, not missing)
+    const sigP = pValues.filter(p => p < 0.05 && p >= 0);
     const nSig = sigP.length;
 
     if (nSig < 3) return { error: 'Need at least 3 significant p-values for p-curve' };
@@ -2086,14 +2086,16 @@ window.LMA = window.LMA || {};
     const meanPP = LMA.mean(ppValues);
     const expectedMean = 0.5; // Under null, pp-values uniform
 
-    // Binomial test: count pp < 0.5
+    // Binomial test for right skew: count pp < 0.5 (p < .025); one-sided P(X >= nBelow), as in the p-curve app
     const nBelow = ppValues.filter(pp => pp < 0.5).length;
-    const binomP = LMA.binomialTest(nBelow, nSig, 0.5);
+    let binomP = 0;
+    for (let j = nBelow; j <= nSig; j++) binomP += LMA.binomialPMF(j, nSig, 0.5);
+    binomP = Math.min(1, binomP);
 
     // Continuous test using Stouffer's method
     const zScores = ppValues.map(pp => LMA.qnorm(pp));
     const stoufferZ = LMA.sum(zScores) / Math.sqrt(nSig);
-    const stoufferP = LMA.pnorm(stoufferZ);
+    const stoufferP = LMA.pnormUpper(-stoufferZ);   // lower tail Phi(Z) without the 1e-7 absolute error of LMA.pnorm
 
     return {
       n_significant: nSig,
@@ -2110,12 +2112,15 @@ window.LMA = window.LMA || {};
   };
 
   // Helper: Binomial test
+  // Two-sided exact binomial test, as R binom.test: sum the probabilities of outcomes no more likely than the observed one
   LMA.binomialTest = function(successes, n, p) {
+    const d0 = LMA.binomialPMF(successes, n, p);
     let pValue = 0;
-    for (let k = successes; k <= n; k++) {
-      pValue += LMA.binomialPMF(k, n, p);
+    for (let k = 0; k <= n; k++) {
+      const d = LMA.binomialPMF(k, n, p);
+      if (d <= d0 * (1 + 1e-7)) pValue += d;
     }
-    return Math.min(1, 2 * Math.min(pValue, 1 - pValue)); // Two-tailed
+    return Math.min(1, pValue);
   };
 
   LMA.binomialPMF = function(k, n, p) {

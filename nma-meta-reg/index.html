@@ -108,8 +108,7 @@ S10, A, B, -0.32, 0.10, 70</textarea>
       <h2 style="margin-top:1rem">Predicted β̂(x)</h2>
       <table id="pred"><thead id="pred-head-host"><tr><th>Covariate</th></tr></thead><tbody></tbody></table>
       <div class="plot"><svg id="plot-host" viewBox="0 0 720 320" width="100%" role="img" aria-label="Predicted effect vs covariate"></svg></div>
-    
-      <div id="alm-flow-mount" aria-live="polite"></div>
+
 </section>
   <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 </main>
@@ -286,23 +285,9 @@ S10, A, B, -0.32, 0.10, 70</textarea>
 <script src="../hub/shared/results-export.js"></script>
 <script src="../hub/shared/chart-export-auto.js"></script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["nma-pro-v2", "nma", "meta-regression"],
-      });
-    }
-  });
-})();
-</script>
-
+<!-- No "Continue with" bar: this page's contrast-level network (yi, sei per pair) cannot be
+     written to ma-studies-v1 (pairwise rows) or ma-comparisons-v1 (arm-level data), so the
+     links handed over nothing and opened the targets on an earlier session's bus. -->
 <script>
 (function () {
   function ready(fn) {
