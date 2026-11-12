@@ -23,6 +23,13 @@ pytestmark = pytest.mark.skipif(NODE is None, reason="node not installed")
 REF = json.loads((HERE / "fixtures" / "evalue-extended-reference.json").read_text(encoding="utf-8"))
 CASES = REF["cases"]
 TOL = 1e-9
+N_CASES = 31  # rows written by fixtures/evalue-extended-reference.R; an empty file must not pass
+
+
+def test_reference_fixture_has_all_cases():
+    assert len(CASES) == N_CASES, len(CASES)
+    assert len({c["id"] for c in CASES}) == N_CASES
+    assert {c["fun"] for c in CASES} == {"evalues.RR", "evalues.OR", "evalues.HR", "evalues.MD", "evalues.OLS", "evalues.RD"}
 
 
 def _close(a, b):
@@ -101,6 +108,7 @@ def _page_input(c):
 
 def test_page_matches_evalue():
     rows = _page([_page_input(c) for c in CASES])
+    assert len(rows) == len(CASES) == N_CASES, len(rows)
     for case, row in zip(CASES, rows):
         assert row["accepted"], (case["id"], row["refusal"])
         res = row["result"]
@@ -142,11 +150,31 @@ def test_rd_grid_is_bounded():
     (dict(measure="RD", n11=40, n10=60, n01=20, n00=80, truev=0.3), "true RD above estimate"),
     (dict(measure="RD", n11=40, n10=60, n01=-1, n00=80), "negative count"),
     (dict(measure="RD", n11=40, n10=60, n01=20), "missing count"),
+    # Reversed limits that exclude the estimate: exp(0.91*d) rounds all three to RR 1,
+    # so the order must be checked on the d scale, before conversion.
+    (dict(measure="SMD", point=0, lo=1e-20, hi=-1e-20, truev=0), "reversed SMD limits that round to RR 1"),
+    (dict(measure="SMD", point=0, lo=1e-20, hi=2e-20, truev=0), "SMD limits excluding the estimate, rounding to RR 1"),
 ])
 def test_page_refuses_invalid_new_inputs(inp, why):
     row = _page([inp])[0]
     assert not row["accepted"], (why, row)
     assert row["refusal"].startswith("Analysis refused:"), row
+
+
+@pytest.mark.parametrize("call,msg", [
+    ("E.eValues('SMD',0,1e-20,-1e-20,{true:0})", "Lower confidence limit should be less than upper confidence limit."),
+    ("E.eValues('SMD',0,1e-20,2e-20,{true:0})", "Point estimate should be inside confidence interval."),
+    ("E.eValues('HR',1,1+1e-15,1+2e-15,{true:1})", "Point estimate should be inside confidence interval."),
+    ("E.eValuesRD(40,60,20,80,{grid:-1})", "grid"),
+    ("E.eValuesRD(40,60,20,80,{grid:NaN})", "grid"),
+    ("E.eValuesRD(40,60,20,80,{grid:0})", "grid"),
+    ("E.eValuesRD(40,60,20,80,{grid:Infinity})", "grid"),
+])
+def test_engine_refuses_before_conversion(call, msg):
+    r = subprocess.run([NODE, "-e", "const E=require('./shared/evalue.js');try{const o=" + call + ";console.log('accepted '+JSON.stringify(o))}catch(e){console.log(e.name+': '+e.message)}"],
+                       capture_output=True, text=True, timeout=60, cwd=str(ROOT))
+    out = r.stdout.strip()
+    assert out.startswith("RangeError: ") and msg in out, out + r.stderr
 
 
 def test_se_is_for_differences_only():
