@@ -50109,9 +50109,12 @@ function runPatientClustering() {
 
 
 
- const tau2_lower = this.findTau2Bound(Q, variances, alpha/2, 'lower');
+ // IPD-Quant fix: the lower tau2 bound solves Q(tau2) = chi2_{1 - alpha/2} and the upper one chi2_{alpha/2}
+ // (Viechtbauer 2007). The arguments were the other way round, which the old reversed chi2Quantile
+ // (chi2Quantile(0.975, df) < chi2Quantile(0.025, df)) happened to cancel.
+ const tau2_lower = this.findTau2Bound(Q, variances, 1 - alpha/2, 'lower');
 
- const tau2_upper = this.findTau2Bound(Q, variances, 1 - alpha/2, 'upper');
+ const tau2_upper = this.findTau2Bound(Q, variances, alpha/2, 'upper');
 
 
 
@@ -50219,93 +50222,18 @@ function runPatientClustering() {
 
 
  chi2Quantile: function(p, df) {
-
- if (df <= 0) return 0;
-
-
-
- const z = this.normQuantile(p);
-
- const h = 2 / (9 * df);
-
- return df * Math.pow(1 - h + z * Math.sqrt(h), 3);
-
+ // IPD-Quant fix: this copy was Wilson-Hilferty on the broken normQuantile (chi2Quantile(0.95, 1) = 0.0738,
+ // R qchisq 3.841459; the 0.975 quantile below the 0.025 one). It now uses MathUtils.chi2Quantile (as R qchisq).
+ return MathUtils.chi2Quantile(p, df);
  },
 
 
 
  normQuantile: function(p) {
-
- if (p <= 0) return -Infinity;
-
- if (p >= 1) return Infinity;
-
-
-
- const a = [
-
- -3.969683028665376e+01, 2.209460984245205e+02,
-
- -2.759285104469687e+02, 1.383577518672690e+02,
-
- -3.066479806614716e+01, 2.506628277459239e+00
-
- ];
-
- const b = [
-
- -5.447609879822406e+01, 1.615858368580409e+02,
-
- -1.556989798598866e+02, 6.680131188771972e+01,
-
- -1.328068155288572e+01
-
- ];
-
-
-
- const q = p - 0.5;
-
- if (Math.abs(q) <= 0.425) {
-
- const r = 0.180625 - q * q;
-
- return q * ((((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*r+1) / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
-
- }
-
-
-
- let r = q < 0 ? p : 1 - p;
-
- r = Math.sqrt(-Math.log(r));
-
- const c = [
-
- -7.784894002430293e-03, -3.223964580411365e-01,
-
- -2.400758277161838e+00, -2.549732539343734e+00,
-
- 4.374664141464968e+00, 2.938163982698783e+00
-
- ];
-
- const d = [
-
- 7.784695709041462e-03, 3.224671290700398e-01,
-
- 2.445134137142996e+00, 3.754408661907416e+00
-
- ];
-
-
-
- const x = (((((c[0]*r+c[1])*r+c[2])*r+c[3])*r+c[4])*r+c[5]) /
-
- ((((d[0]*r+d[1])*r+d[2])*r+d[3])*r+1);
-
- return q < 0 ? -x : x;
-
+ // IPD-Quant fix: this copy evaluated Acklam's coefficients inside AS 241's branch structure (as
+ // MathUtils.normQuantile did): normQuantile(0.975) = -1.0022 (R qnorm 1.959964). It now uses the single
+ // corrected implementation (AS 241, as R).
+ return MathUtils.normQuantile(p);
  },
 
 
@@ -50727,77 +50655,10 @@ function runPatientClustering() {
 
 
  normQuantile: function(p) {
-
- if (p <= 0) return -Infinity;
-
- if (p >= 1) return Infinity;
-
-
-
- const a = [
-
- -3.969683028665376e+01, 2.209460984245205e+02,
-
- -2.759285104469687e+02, 1.383577518672690e+02,
-
- -3.066479806614716e+01, 2.506628277459239e+00
-
- ];
-
- const b = [
-
- -5.447609879822406e+01, 1.615858368580409e+02,
-
- -1.556989798598866e+02, 6.680131188771972e+01,
-
- -1.328068155288572e+01
-
- ];
-
-
-
- const q = p - 0.5;
-
- if (Math.abs(q) <= 0.425) {
-
- const r = 0.180625 - q * q;
-
- return q * ((((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*r+1) / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
-
- }
-
-
-
- let r = q < 0 ? p : 1 - p;
-
- r = Math.sqrt(-Math.log(r));
-
- const c = [
-
- -7.784894002430293e-03, -3.223964580411365e-01,
-
- -2.400758277161838e+00, -2.549732539343734e+00,
-
- 4.374664141464968e+00, 2.938163982698783e+00
-
- ];
-
- const d = [
-
- 7.784695709041462e-03, 3.224671290700398e-01,
-
- 2.445134137142996e+00, 3.754408661907416e+00
-
- ];
-
-
-
- const x = (((((c[0]*r+c[1])*r+c[2])*r+c[3])*r+c[4])*r+c[5]) /
-
- ((((d[0]*r+d[1])*r+d[2])*r+d[3])*r+1);
-
- return q < 0 ? -x : x;
-
+ // IPD-Quant fix: this copy evaluated Acklam's coefficients inside AS 241's branch structure (as
+ // MathUtils.normQuantile did): normQuantile(0.975) = -1.0022 (R qnorm 1.959964). It now uses the single
+ // corrected implementation (AS 241, as R).
+ return MathUtils.normQuantile(p);
  }
 
  };
@@ -53784,79 +53645,10 @@ window.showTutorialMenu = showTutorialMenu;
 
 
  normQuantile: function(p) {
-
- if (p <= 0) return -Infinity;
-
- if (p >= 1) return Infinity;
-
- if (p === 0.5) return 0;
-
-
-
- const a = [
-
- -3.969683028665376e+01, 2.209460984245205e+02,
-
- -2.759285104469687e+02, 1.383577518672690e+02,
-
- -3.066479806614716e+01, 2.506628277459239e+00
-
- ];
-
- const b = [
-
- -5.447609879822406e+01, 1.615858368580409e+02,
-
- -1.556989798598866e+02, 6.680131188771972e+01,
-
- -1.328068155288572e+01
-
- ];
-
-
-
- const q = p - 0.5;
-
- if (Math.abs(q) <= 0.425) {
-
- const r = 0.180625 - q * q;
-
- return q * ((((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*r+1) / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
-
- }
-
-
-
- let r = q < 0 ? p : 1 - p;
-
- r = Math.sqrt(-Math.log(r));
-
- const c = [
-
- -7.784894002430293e-03, -3.223964580411365e-01,
-
- -2.400758277161838e+00, -2.549732539343734e+00,
-
- 4.374664141464968e+00, 2.938163982698783e+00
-
- ];
-
- const d = [
-
- 7.784695709041462e-03, 3.224671290700398e-01,
-
- 2.445134137142996e+00, 3.754408661907416e+00
-
- ];
-
-
-
- const x = (((((c[0]*r+c[1])*r+c[2])*r+c[3])*r+c[4])*r+c[5]) /
-
- ((((d[0]*r+d[1])*r+d[2])*r+d[3])*r+1);
-
- return q < 0 ? -x : x;
-
+ // IPD-Quant fix: this copy evaluated Acklam's coefficients inside AS 241's branch structure (as
+ // MathUtils.normQuantile did): normQuantile(0.975) = -1.0022 (R qnorm 1.959964). It now uses the single
+ // corrected implementation (AS 241, as R).
+ return MathUtils.normQuantile(p);
  },
 
 
@@ -55434,61 +55226,10 @@ window.showTutorialMenu = showTutorialMenu;
 
 
  normQuantile: function(p) {
-
- if (p <= 0) return -Infinity;
-
- if (p >= 1) return Infinity;
-
-
-
- const a = [-3.969683028665376e+01, 2.209460984245205e+02,
-
- -2.759285104469687e+02, 1.383577518672690e+02,
-
- -3.066479806614716e+01, 2.506628277459239e+00];
-
- const b = [-5.447609879822406e+01, 1.615858368580409e+02,
-
- -1.556989798598866e+02, 6.680131188771972e+01,
-
- -1.328068155288572e+01];
-
-
-
- const q = p - 0.5;
-
- if (Math.abs(q) <= 0.425) {
-
- const r = 0.180625 - q * q;
-
- return q * ((((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*r+1) / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
-
- }
-
-
-
- let r = q < 0 ? p : 1 - p;
-
- r = Math.sqrt(-Math.log(r));
-
- const c = [-7.784894002430293e-03, -3.223964580411365e-01,
-
- -2.400758277161838e+00, -2.549732539343734e+00,
-
- 4.374664141464968e+00, 2.938163982698783e+00];
-
- const d = [7.784695709041462e-03, 3.224671290700398e-01,
-
- 2.445134137142996e+00, 3.754408661907416e+00];
-
-
-
- const x = (((((c[0]*r+c[1])*r+c[2])*r+c[3])*r+c[4])*r+c[5]) /
-
- ((((d[0]*r+d[1])*r+d[2])*r+d[3])*r+1);
-
- return q < 0 ? -x : x;
-
+ // IPD-Quant fix: this copy evaluated Acklam's coefficients inside AS 241's branch structure (as
+ // MathUtils.normQuantile did): normQuantile(0.975) = -1.0022 (R qnorm 1.959964). It now uses the single
+ // corrected implementation (AS 241, as R).
+ return MathUtils.normQuantile(p);
  },
 
 

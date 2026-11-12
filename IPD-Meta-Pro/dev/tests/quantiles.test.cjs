@@ -2,7 +2,9 @@
 // Normal, chi-square and (Stats.) Student t quantiles in the shipped page (ipd-meta-pro.html), run in
 // Node with the page's own scripts:   node dev/tests/quantiles.test.cjs [path/to/ipd-meta-pro.html]
 // The page never loads the real jStat, so jStat.normal.inv is the fallback's own approximation and
-// jStat.chisquare.inv is MathUtils.chi2Quantile. Stats.tQuantile is the separate copy on the P60 path.
+// jStat.chisquare.inv is MathUtils.chi2Quantile. Stats.tQuantile is the separate copy on the P60 path;
+// I2ConfidenceIntervals, ContourEnhancedFunnel, EnhancedPredictionInterval and FailSafeN carry their own
+// normQuantile (and I2ConfidenceIntervals its own chi2Quantile).
 // Reference values: quantiles_reference.R (R 4.6.0 qnorm / qchisq) -> quantiles_reference.json, and for
 // qt the grid of student_t_beta_reference.R (with the 40-digit mpmath roots next to the median).
 const fs = require('node:fs');
@@ -31,7 +33,11 @@ const groups = [
   // R qgamma iterates to ~1e-15 relative; the page solves on the AlmTail regularized gamma (max measured 5.9e-14)
   ['MathUtils.chi2Quantile', REF.qchisq, g => 'MathUtils.chi2Quantile(' + lit(g.p) + ',' + lit(g.df) + ')', closeRel(1e-12)],
   ['jStat.chisquare.inv', REF.qchisq, g => 'jStat.chisquare.inv(' + lit(g.p) + ',' + lit(g.df) + ')', closeRel(1e-12)],
-  ['MathUtils.chi2Quantile, df 1e4 .. 1e5', REF.qchisq_large, g => 'MathUtils.chi2Quantile(' + lit(g.p) + ',' + lit(g.df) + ')', closeRel(1e-12)]
+  ['MathUtils.chi2Quantile, df 1e4 .. 1e5', REF.qchisq_large, g => 'MathUtils.chi2Quantile(' + lit(g.p) + ',' + lit(g.df) + ')', closeRel(1e-12)],
+  // the page's other copies of the same two functions (same defect before the fix)
+  ...['I2ConfidenceIntervals', 'ContourEnhancedFunnel', 'EnhancedPredictionInterval', 'FailSafeN'].map(o =>
+    [o + '.normQuantile', REF.qnorm, g => o + '.normQuantile(' + lit(g.p) + ')', closeRel(1e-14)]),
+  ['I2ConfidenceIntervals.chi2Quantile', REF.qchisq, g => 'I2ConfidenceIntervals.chi2Quantile(' + lit(g.p) + ',' + lit(g.df) + ')', closeRel(1e-12)]
 ];
 for (const [label, grid, expr, ok] of groups) {
   const f0 = failed;
@@ -77,6 +83,11 @@ const edges = [
   ['jStat.normal.inv(NaN) is NaN', isNaNv(val('jStat.normal.inv(NaN, 0, 1)'))],
   ['Stats.tQuantile(0.975, 0) is NaN', isNaNv(val('Stats.tQuantile(0.975, 0)'))],
   ['chi-square interval for tau2 is ordered: chi2Quantile(0.975, 4) > chi2Quantile(0.025, 4)', val('MathUtils.chi2Quantile(0.975, 4)') > val('MathUtils.chi2Quantile(0.025, 4)')],
+  // I2ConfidenceIntervals.qProfile took its tau2 lower bound at the alpha/2 chi-square quantile; with the old reversed
+  // chi2Quantile that came out ordered. The lower bound must solve Q(tau2) = chi2_{1 - alpha/2} and lie below the upper one.
+  ['I2ConfidenceIntervals.qProfile is ordered (tau2 and I2 lower <= upper, lower > 0 when Q is large)', (() => {
+    const r = val('I2ConfidenceIntervals.qProfile(20, 4, 0.1, [0.04, 0.05, 0.1, 0.02, 0.08])');
+    return r && r.tau2_lower > 0 && r.tau2_lower < r.tau2_upper && r.lower < r.upper; })()],
   ["page self-test 'normQuantile(0.975) ~ 1.96' holds", Math.abs(val('MathUtils.normQuantile(0.975)') - 1.96) < 0.001],
   ["page self-test 'normQuantile(0.5) = 0' holds", Math.abs(val('MathUtils.normQuantile(0.5)')) < 1e-10]
 ];
