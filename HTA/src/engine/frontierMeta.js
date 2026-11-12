@@ -2764,7 +2764,8 @@ class MendelianRandomizationMA {
                 heterogeneity: {
                     Q,
                     df,
-                    pValue: AlmTail.pchisqUpper(Q, df),
+                    // df = 0 (no residual df, one instrument, Q identically 0): p = 1 as before; R pchisq(0, 0, lower.tail = FALSE) = 1, metafor QEp = 1. AlmTail returns NaN for df <= 0.
+                    pValue: df > 0 ? AlmTail.pchisqUpper(Q, df) : 1,
                     I2: Math.max(0, (Q - df) / Q * 100)
                 }
             };
@@ -2942,7 +2943,8 @@ class MendelianRandomizationMA {
                 // Test if removing this SNP significantly reduces Q
                 const testData = data.filter((_, i) => i !== contrib.index);
                 const testIVW = this.ivw(testData, { fixedEffects: false });
-                const testPValue = AlmTail.pchisqUpper(testIVW.heterogeneity.Q, testData.length - 1);
+                // One instrument left (df = 0): p = 1 as before, so the outlier is still flagged (NaN > threshold is false).
+                const testPValue = testData.length > 1 ? AlmTail.pchisqUpper(testIVW.heterogeneity.Q, testData.length - 1) : 1;
 
                 if (testPValue > significanceThreshold) {
                     outliers.push(contrib.index);
