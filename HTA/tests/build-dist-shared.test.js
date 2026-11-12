@@ -15,9 +15,10 @@ const htaRoot = path.resolve(__dirname, '..');
 
 function refsOutsideApp(html, sw) {
     const refs = new Set();
-    for (const m of html.matchAll(/\b(?:src|href)\s*=\s*"(\.\.\/[^"#?]+)"/g)) refs.add(m[1]);
-    for (const m of sw.matchAll(/['"](\.\.\/[^'"#?]+)['"]/g)) refs.add(m[1]);
-    return [...refs];
+    for (const m of html.matchAll(/\b(?:src|href)\s*=\s*"(\.\.\/[^"#?]*)[^"]*"/g)) refs.add(m[1]);
+    for (const m of sw.matchAll(/['"](\.\.\/[^'"#?]*)[^'"]*['"]/g)) refs.add(m[1]);
+    // query/fragment stripped; a path ending in / (the hub-back link) is navigation, not a resource
+    return [...refs].filter(r => r.length > 3 && !r.endsWith('/'));
 }
 
 const nodeTest = typeof describe === 'undefined' ? require('node:test') : null;

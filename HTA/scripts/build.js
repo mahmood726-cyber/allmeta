@@ -63,17 +63,19 @@ function checkSyntax(files) {
     }
 }
 
-// Every ../ reference of index.html (src/href attributes) and service-worker.js (string literals).
+// Every ../ resource of index.html (src/href attributes) and service-worker.js (string literals).
 function externalRefs() {
     const refs = new Set();
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-    for (const m of html.matchAll(/\b(?:src|href)\s*=\s*"(\.\.\/[^"#?]+)"/g)) refs.add(m[1]);
+    for (const m of html.matchAll(/\b(?:src|href)\s*=\s*"(\.\.\/[^"#?]*)[^"]*"/g)) refs.add(m[1]);
     const swPath = path.join(root, 'service-worker.js');
     if (fs.existsSync(swPath)) {
         const sw = fs.readFileSync(swPath, 'utf8');
-        for (const m of sw.matchAll(/['"](\.\.\/[^'"#?]+)['"]/g)) refs.add(m[1]);
+        for (const m of sw.matchAll(/['"](\.\.\/[^'"#?]*)[^'"]*['"]/g)) refs.add(m[1]);
     }
-    return [...refs];
+    // A query or fragment is not part of the file; a path ending in / is a navigation link
+    // (the hub-back link href="../"), not a resource the page loads.
+    return [...refs].filter(r => r.length > 3 && !r.endsWith('/'));
 }
 
 function build() {
