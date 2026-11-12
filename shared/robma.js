@@ -97,9 +97,10 @@
     function logLikMu(tau2) {
       var A0 = 1 / (muSD * muSD), A = A0, B = 0, i, w;
       for (i = 0; i < k; i++) { w = 1 / (vi[i] + tau2); A += w; B += w * yi[i]; }
-      var m = B / A, q = A0 * m * m, c = 0;
-      for (i = 0; i < k; i++) { var v = vi[i] + tau2, d = yi[i] - m; q += d * d / v; c += Math.log(2 * Math.PI * v); }
-      return { l: -0.5 * c - 0.5 * Math.log(muSD * muSD * A) - 0.5 * q, m: m };
+      // Per term as _logNormPdf: z = d / sd, -log(sd) - 0.5 log(2 pi), so no product overflows for finite inputs.
+      var m = B / A, zm = m / muSD, q = zm * zm, c = 0;
+      for (i = 0; i < k; i++) { var sd = Math.sqrt(vi[i] + tau2), z = (yi[i] - m) / sd; q += z * z; c += Math.log(sd); }
+      return { l: -c - 0.5 * k * Math.log(2 * Math.PI) - 0.5 * Math.log(muSD * muSD * A) - 0.5 * q, m: m };
     }
     function logPriorTau(t) { return Math.LN2 + _logNormPdf(t, 0, tauSD); }
     var TAU = 10 * tauSD;

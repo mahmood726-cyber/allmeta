@@ -58,3 +58,27 @@ def test_log_marginals_match_high_precision_oracle(name, data, exp):
     for m, v in exp.items():
         tol = LOOSER.get((name, m), TOL)
         assert abs(got[m] - v) <= tol * max(1.0, abs(v)), (name, m, got[m], v)
+
+
+def _fe(yi, sei):
+    # Fixed-effect models only: the source is evaluated with an early return before the tau
+    # quadrature (which is not what this checks, and is slow for these absurd scales).
+    js = ("const fs=require('fs');let src=fs.readFileSync('./shared/robma.js','utf8');"
+          "const cut='var lH0RE = _logIntTau';if(!src.includes(cut))throw new Error('anchor missing');"
+          "src=src.replace(cut,'return {H0FE:lH0FE,H1FE:lH1FE};'+cut);const mod={exports:{}};"
+          "new Function('module',src)(mod);const o=mod.exports.analysis(%s,%s);"
+          "console.log(JSON.stringify([o.H0FE,o.H1FE]));") % (json.dumps(yi), json.dumps(sei))
+    r = subprocess.run([NODE, "-e", js], capture_output=True, text=True, timeout=60, cwd=str(ROOT))
+    assert r.returncode == 0, r.stderr
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+@pytest.mark.parametrize("yi,sei,h1fe", [
+    # Huge but finite variances: 2*pi*v and d*d/v must not overflow (review of the fix).
+    # Oracle (mpmath, 80 digits): H1FE = log N2(y; 0, diag(v) + 11').
+    ([0, 0], [1e154, 1e154], -711.0340857085754),
+    ([1e155, -1e155], [1e153, 1e153], -10706.428915522587),
+])
+def test_fixed_effect_no_overflow_for_huge_finite_inputs(yi, sei, h1fe):
+    h0, h1 = _fe(yi, sei)
+    assert h1 is not None and abs(h1 - h1fe) <= 1e-12 * abs(h1fe), (h0, h1, h1fe)
