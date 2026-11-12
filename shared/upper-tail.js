@@ -35,35 +35,88 @@
 
   var EPS = 1e-15, TINY = 1e-300, MAXIT = 2000;
 
+  // log Gamma(1 + a) for |a| <= 0.5 by its Taylor series -gamma*a + sum_k zeta(k) (-a)^k / k,
+  // so that a tiny shape keeps relative precision (Lanczos gives only ~1e-16 absolute here).
+  var ZETA = [0, 0, 1.6449340668482264, 1.2020569031595943, 1.0823232337111382, 1.0369277551433699,
+    1.0173430619844491, 1.0083492773819228, 1.0040773561979443, 1.0020083928260822];
+  function zeta(k) {
+    if (k < ZETA.length) return ZETA[k];
+    var s = 1;
+    for (var n = 2; n <= 60; n++) { var t = Math.pow(n, -k); s += t; if (t < 1e-18) break; }
+    return s;
+  }
+  function lgamma1p(a) {
+    var s = -0.5772156649015329 * a, p = -a;
+    for (var k = 2; k < 400; k++) {
+      p *= -a;
+      var t = zeta(k) * p / k;
+      s += t;
+      if (Math.abs(t) <= 1e-17 * Math.abs(s)) break;
+    }
+    return s;
+  }
+  // stirlerr(a) = lgamma(a) - [(a - 1/2) log a - a + log(2 pi)/2], asymptotic series (a >= 100).
+  function stirlerr(a) {
+    var r = 1 / a, r2 = r * r;
+    return r * (1 / 12 - r2 * (1 / 360 - r2 * (1 / 1260 - r2 * (1 / 1680 - r2 / 1188))));
+  }
+  // log of x^a e^-x / Gamma(a). For large a the naive form cancels terms of size ~a log a
+  // (absolute error ~a * 1e-16); the a (log1p(d) - d) form keeps it at ~|x - a| * 1e-16.
+  function logPrefactor(a, x) {
+    if (a < 100) return -x + a * Math.log(x) - lgamma(a);
+    var d = (x - a) / a;
+    return a * (Math.log1p(d) - d) + 0.5 * Math.log(a / (2 * Math.PI)) - stirlerr(a);
+  }
+  // Both the series and the continued fraction need O(sqrt(a)) terms when x is near a.
+  function maxIter(a) { return MAXIT + 20 * Math.ceil(Math.sqrt(a)); }
+
   // Regularized gamma: returns [P(a,x), Q(a,x)], each computed in the form that
-  // keeps relative precision (series for P when x < a + 1, continued fraction for Q otherwise).
+  // keeps relative precision (series for P when x < a + 1, continued fraction for Q otherwise;
+  // for a < 0.5 on the series side Q is computed directly, since there it can be tiny).
+  // A series or fraction that fails to converge returns NaN rather than an unconverged value.
   function gammaPQ(a, x) {
-    if (!(a > 0) || isNaN(x)) return [NaN, NaN];
+    if (!(a >= 0) || isNaN(x)) return [NaN, NaN];
+    if (a === 0) return x <= 0 ? [0, 1] : [1, 0];   // R: shape 0 is a point mass at 0
     if (x <= 0) return [0, 1];
     if (x === Infinity) return [1, 0];
-    var lpre = -x + a * Math.log(x) - lgamma(a);
+    var lpre = logPrefactor(a, x), lim = maxIter(a), ok = false;
     if (x < a + 1) {
       var ap = a, sum = 1 / a, del = sum;
-      for (var n = 0; n < MAXIT; n++) {
+      for (var n = 0; n < lim; n++) {
         ap += 1; del *= x / ap; sum += del;
-        if (Math.abs(del) < Math.abs(sum) * EPS) break;
+        if (Math.abs(del) < Math.abs(sum) * EPS) { ok = true; break; }
       }
+      if (!ok) return [NaN, NaN];
       var P = sum * Math.exp(lpre);
+      if (a < 0.5) return [P, smallShapeQ(a, x)];
       return [P, 1 - P];
     }
     // Lentz continued fraction for Q(a,x)
     var b = x + 1 - a, c = 1 / TINY, d = 1 / b, h = d;
-    for (var i = 1; i < MAXIT; i++) {
+    for (var i = 1; i < lim; i++) {
       var an = -i * (i - a);
       b += 2;
       d = an * d + b; if (Math.abs(d) < TINY) d = TINY;
       c = b + an / c; if (Math.abs(c) < TINY) c = TINY;
       d = 1 / d;
       var dl = d * c; h *= dl;
-      if (Math.abs(dl - 1) < EPS) break;
+      if (Math.abs(dl - 1) < EPS) { ok = true; break; }
     }
+    if (!ok) return [NaN, NaN];
     var Q = Math.exp(lpre) * h;
     return [1 - Q, Q];
+  }
+  // Q(a,x) for 0 < a < 0.5, 0 < x < a + 1, without forming 1 - P:
+  //   Q = -expm1(u) - e^u * a * T,  u = a log x - log Gamma(1 + a),  T = sum_{n>=1} (-x)^n / (n! (a + n)).
+  function smallShapeQ(a, x) {
+    var u = a * Math.log(x) - lgamma1p(a), T = 0, term = 1;
+    for (var n = 1; n < MAXIT; n++) {
+      term *= -x / n;
+      var t = term / (a + n);
+      T += t;
+      if (Math.abs(t) < Math.abs(T) * EPS) break;
+    }
+    return -Math.expm1(u) - Math.exp(u) * a * T;
   }
 
   // Continued fraction for the incomplete beta (Numerical Recipes betacf, modified Lentz).
@@ -100,7 +153,7 @@
 
   function pgammaUpper(x, shape) { return gammaPQ(shape, x)[1]; }
   function pchisqUpper(x, df) {
-    if (!(df > 0) || isNaN(x)) return NaN;
+    if (!(df >= 0) || isNaN(x)) return NaN;   // df = 0 is valid in R (point mass at 0)
     if (x <= 0) return 1;
     return gammaPQ(df / 2, x / 2)[1];
   }
@@ -136,6 +189,12 @@
     if (!(df1 > 0) || !(df2 > 0) || isNaN(f)) return NaN;
     if (f <= 0) return 1;
     if (f === Infinity) return 0;
+    // infinite degrees of freedom, in R's order (pf.c): df1 = Inf first, then df2 = Inf
+    if (df1 === Infinity) {
+      if (df2 === Infinity) return f < 1 ? 1 : f === 1 ? 0.5 : 0;
+      return gammaPQ(df2 / 2, df2 / (2 * f))[0];   // pchisq(df2 / f, df2, lower.tail = TRUE)
+    }
+    if (df2 === Infinity) return pchisqUpper(f * df1, df1);
     // P(F > f) = I_x(df2/2, df1/2), x = df2 / (df2 + df1 f), y = df1 f / (df2 + df1 f)
     var u = df1 * f / df2;           // y / x
     var x, y, lx, ly;
