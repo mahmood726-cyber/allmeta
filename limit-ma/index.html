@@ -711,6 +711,23 @@
     // Sensitivity comparisons share the same strict input contract.
     window.__almLimitParse = parse;
 
+    // What "Verify in R" hands the WebR validator: the studies on screen, and only
+    // when run() would analyse them. Mirrors run()'s refusals (parse errors, k < 3,
+    // identical SEs, limitMA errors, non-finite results) without touching page state
+    // (re-running would discard leave-one-out results). [] -> the validator is not opened.
+    window.__almValidatorStudies = function () {
+      try {
+        var rows = parse(document.getElementById('src').value);
+        if (rows.length < 3) return [];
+        if (rows.every(function (r) { return r.se === rows[0].se; })) return [];
+        var d = dl(rows), fe = pool(rows, 0), re = pool(rows, d.tau2), lim = limitMA(rows);
+        var values = [fe.mean, fe.seMean, re.mean, re.seMean, d.tau2, lim.limit, lim.seLimit,
+          lim.slope, lim.alpha_r, lim.beta_r].concat(lim.te_limit);
+        if (!values.every(Number.isFinite)) return [];
+        return rows.map(function (r) { return { label: r.label, est: r.te, se: r.se }; });
+      } catch (_) { return []; }
+    };
+
     // Expose for results-export
     window._almLastLimit = function () { return _lastResults; };
 
@@ -836,7 +853,15 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    // Send the studies on screen (parsed by the app's own strict parser), not
+    // whatever a separate "Save to bus" left behind; with nothing saved the
+    // button used to open nothing. The validator re-fits an inverse-variance
+    // pool, so ask for this app's DerSimonian-Laird tau2 and Wald z test: then
+    // its estimate is the app's random-effects line (not the limit estimate).
+    MaStudies.attachVerifyInRButton({
+      btn: "#btn-verify-in-r", method: "DL", test: "z",
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; }
+    });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "limit-ma", textarea: "#src", format: "est-se-label" });

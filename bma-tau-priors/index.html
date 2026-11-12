@@ -173,6 +173,20 @@ Trial 5, -0.38, 0.022</textarea>
 
     document.getElementById("btn-run").addEventListener("click", run);
 
+    // What Continue-with hands the next app (incl. the WebR validator): the studies on
+    // screen, and only when run() would analyse them (k < 2 or a failed BMA fit are
+    // refused there). Pure: no page state changes. [] -> the validator is not opened
+    // on an earlier session's shared bus.
+    window.__almValidatorStudies = function () {
+      try {
+        var rows = parse(document.getElementById("src").value);
+        if (rows.length < 2) return [];
+        var res = AlmBMA.fit(rows.map(function (r) { return r.yi; }), rows.map(function (r) { return r.vi; }), AlmBMA.defaultModels());
+        if (!res || !res.ok) return [];
+        return rows.map(function (r) { return { label: r.label, est: r.yi, se: Math.sqrt(r.vi) }; });
+      } catch (_) { return []; }
+    };
+
     // Bus interop: load studies via MaStudies.
     document.getElementById("btn-bus-load").addEventListener("click", function () {
       if (!window.MaStudies) { alert("Bus helper not loaded"); return; }
@@ -221,6 +235,8 @@ Trial 5, -0.38, 0.022</textarea>
       AlmFlow.attachContinueBar({
         container: "#alm-flow-mount",
         suggestions: ["forest-plot", "heterogeneity", "bayesian-ma", "cross-design", "webr-validator"],
+        // The studies on screen, never an earlier session's bus ([] when the page refuses).
+        getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
       });
     }
   });

@@ -297,7 +297,7 @@
       const fixed=weightedSums(studies,0);
       const typical=df>0 ? df/(fixed.sw-fixed.sw2/fixed.sw) : NaN;
       const I2Model=df>0 && tau2>0 ? 100*tau2/(tau2+typical) : 0;
-      const pQ = df > 0 ? 1 - chiSqCDF(Q0, df) : NaN;
+      const pQ = df > 0 ? chiSqSF(Q0, df) : NaN; // upper tail computed directly: 1-CDF cancels to 0 for large Q
       // V6-04: HKSJ small-sample correction (Hartung-Knapp-Sidik-Jonkman) on
       // the RE pooled estimate. q-statistic with floor at 1 to avoid CI
       // narrowing when Q < df (per Cochrane Handbook §10.10.4 + advanced-stats.md).
@@ -372,12 +372,24 @@
       if (x < 0 || s <= 0) return NaN;
       if (x === 0) return 0;
       if (x < s+1) {
+        // Run the series to convergence: the term ratio x/(s+n) is close to 1 when x is
+        // close to s, so a fixed 200-term cap truncated it for large df (df=10000 near the
+        // branch switch: 0.49511 vs R's 0.49248). It needs O(sqrt(s)) terms; the cap is a
+        // safety net far above that, never the stopping rule for any x < s+1.
         let sum=1/s, term=sum;
-        for (let n=1;n<200;n++) { term *= x/(s+n); sum += term; if (Math.abs(term) < Math.abs(sum)*1e-12) break; }
+        const maxTerms = 1000 + Math.ceil(50*Math.sqrt(s));
+        for (let n=1;n<maxTerms;n++) { term *= x/(s+n); sum += term; if (term < sum*1e-16) break; }
         return sum * Math.exp(-x + s*Math.log(x) - lnGamma(s));
       } else {
-        // continued fraction
-        const MAXIT=200, FPMIN=1e-30, EPS=1e-12;
+        return 1 - upperIncGammaCF(s,x);
+      }
+    }
+    function upperIncGammaCF(s,x) {
+      // Q(s,x) = 1 - P(s,x) by continued fraction (accurate in relative terms for x >= s+1)
+      {
+        // Iterate to convergence (needs O(sqrt(s)) steps near x = s+1, so a fixed 200 cap
+        // also truncated large df); the cap is only a safety net.
+        const MAXIT=1000 + Math.ceil(50*Math.sqrt(s)), FPMIN=1e-300, EPS=1e-15;
         let b = x+1-s, c=1/FPMIN, d=1/b, h=d;
         for (let i=1;i<=MAXIT;i++) {
           const an = -i*(i-s);
@@ -387,12 +399,18 @@
           d = 1/d; const del = d*c; h *= del;
           if (Math.abs(del-1) < EPS) break;
         }
-        return 1 - Math.exp(-x + s*Math.log(x) - lnGamma(s)) * h;
+        return Math.exp(-x + s*Math.log(x) - lnGamma(s)) * h;
       }
     }
     function chiSqCDF(x,df) {
       if (x<=0) return 0;
       return lowerIncGamma(df/2, x/2);
+    }
+    function chiSqSF(x,df) {
+      // Upper tail P(X > x) without the 1-CDF subtraction, so far-tail p-values keep relative precision.
+      if (x<=0) return 1;
+      const s=df/2, y=x/2;
+      return y < s+1 ? 1 - lowerIncGamma(s,y) : upperIncGammaCF(s,y);
     }
     // Q-profile confidence interval for τ² and I² (Viechtbauer 2007; the method
     // metafor::confint.rma.uni uses, and what advanced-stats.md prescribes for small k)

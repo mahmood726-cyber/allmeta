@@ -770,7 +770,13 @@
       });
     }
     if (typeof MaStudies.attachVerifyInRButton === "function") {
-      MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r", getStudies: current });
+      // The bus rows are logit proportions; ask the validator to fit them with the
+      // tau^2 estimator selected here (and the page's z CI) instead of its PM default,
+      // so that with "DerSimonian-Laird" selected R does not silently fit PM.
+      MaStudies.attachVerifyInRButton({
+        btn: "#btn-verify-in-r", getStudies: current, test: "z",
+        method: function () { var e = document.getElementById("tau-est"); return e ? e.value : null; }
+      });
     }
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });

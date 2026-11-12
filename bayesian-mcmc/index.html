@@ -411,6 +411,14 @@
     // posterior summaries validated vs R bayesmeta (exact, deterministic)
     var _lastMCMC = null;
     window.__almLastMCMC = function () { return _lastMCMC; };
+    // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
+    // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
+    // returning user an earlier session's studies).
+    window.__almValidatorStudies = function () {
+      // Only when the page shows a result (run() refuses k < 3).
+      const rows = parse(document.getElementById("src").value);
+      return (rows.length < 3 || !_lastMCMC) ? [] : rows.map(r => ({ label: r.label, est: r.te, se: r.se }));
+    };
     // within a Monte-Carlo band; R-hat/ESS are sanity-checked.
     window.__almMCMC = function (rowsIn, o) {
       const rows = rowsIn.map(r => ({ te: +r.te, se: +r.se }));
@@ -453,7 +461,8 @@
   }
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
-    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r" });
+    MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "bayesian-mcmc", textarea: "#src", format: "est-se-label" });
@@ -473,6 +482,9 @@
       AlmFlow.attachContinueBar({
         container: "#alm-flow-mount",
         suggestions: ["forest-plot", "heterogeneity", "bma-tau-priors", "bayesian-ma", "webr-validator"],
+        // Push the studies on screen (not an earlier session's bus) and, for the validator,
+        // this page's model where it is an inverse-variance pool.
+        getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
       });
     }
   });
