@@ -57,6 +57,15 @@ assert.ok(Math.abs(T.pfUpper(1, 10, Infinity) - 0.44049328506521246) < 1e-14, 'p
 assert.equal(T.pfUpper(1, Infinity, Infinity), 0.5);
 assert.equal(T.pfUpper(2, Infinity, Infinity), 0);
 assert.equal(T.pfUpper(0.5, Infinity, Infinity), 1);
+// large df (independent numerical review): Lanczos lgamma differences and log(r2) - log1p(r2) lost ~a * 1e-16.
+// R 4.6.0: pchisq(5.005e7, 5e7) 2.8903841482006476e-07, pf(1.2, 1e4, 1e7) 1.268374361704551e-40,
+// pt(2, 1e5) 0.022751481728753232, pf(1.05, 1e6, 1e6) 9.9336861807050377e-132, pt(10, 1e6) 7.6393053840891504e-24
+for (const [v, r, what] of [[T.pchisqUpper(5.005e7, 5e7), 2.8903841482006476e-07, 'pchisq(5.005e7,5e7)'],
+  [T.pfUpper(1.2, 1e4, 1e7), 1.268374361704551e-40, 'pf(1.2,1e4,1e7)'], [T.ptUpper(2, 1e5), 0.022751481728753232, 'pt(2,1e5)'],
+  [T.pfUpper(1.05, 1e6, 1e6), 9.9336861807050377e-132, 'pf(1.05,1e6,1e6)'], [T.ptUpper(10, 1e6), 7.6393053840891504e-24, 'pt(10,1e6)']])
+  assert.ok(Math.abs(v - r) / r < 1e-10, what + ' = ' + v + ', R ' + r);
+// known limit (header): df >= 1e8 for t. R pt(3, 1e8, lower = FALSE) = 0.0013498983640187468; was rel 1.5e-7
+assert.ok(Math.abs(T.ptUpper(3, 1e8) - 0.0013498983640187468) / 0.00135 < 5e-9, 'pt(3,1e8) ' + T.ptUpper(3, 1e8));
 // the motivating case: dat.bcg Q = 152.2330 on 12 df (R: 1.9967645908458142e-26 at the exact Q)
 assert.ok(T.pchisqUpper(152.233, 12) > 1e-27 && T.pchisqUpper(152.233, 12) < 1e-25);
 
