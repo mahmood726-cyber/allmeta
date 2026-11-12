@@ -65,6 +65,9 @@ check('Stats.tQuantile(0.005, 7)', close(run('Stats.tQuantile(0.005, 7)'), -3.49
   sandbox.__xs = sandbox.__x.map(v => [1e6 + v[0]]);
   const g = run('SurvivalAnalysis.coxPH(__t, __e, __xs)');
   check('Cox estimate invariant to a covariate shift of 1e6', close(g.beta[0], -0.0055266753716802118, 1e-8), String(g.beta[0]));
+  // Codex review of the fix: a constant covariate has zero information; R coxph gives coef NA. Must not be beta = 0.
+  const sg = run('SurvivalAnalysis.coxPH([1, 2, 3, 4], [1, 1, 1, 1], [[1], [1], [1], [1]])');
+  check('Cox with a constant covariate reports no estimate (R: NA)', Number.isNaN(sg.beta[0]) && Number.isNaN(sg.se[0]) && Number.isNaN(sg.pvals[0]), JSON.stringify(sg));
   check('Cox variance invariant to a covariate shift of 1e6', close(g.se[0] * g.se[0], 0.46436365808859403, 1e-8), String(g.se[0] * g.se[0]));
 }
 // 6-7. pooling

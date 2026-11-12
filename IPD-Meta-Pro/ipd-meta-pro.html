@@ -32552,6 +32552,8 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  let cur = evalAt(beta);
  for (let iter = 0; iter < 100; iter++) {
  let delta = solve(cur.I, cur.U);
+ // singular information (e.g. a constant covariate): no estimate exists (R coxph: NA); never report the start value
+ if (!delta.every(Number.isFinite)) { beta = beta.map(() => NaN); break; }
  let next = evalAt(beta.map((b, j) => b + delta[j]));
  let halvings = 0;
  // A decrease within rounding of the log likelihood (summed over n terms) is not a decrease: an absolute 1e-12
@@ -32566,7 +32568,8 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  cur = next;
  if (Math.max(...delta.map(Math.abs)) < 1e-12) break;
  }
- const vcov = p === 1 ? [[1 / cur.I[0][0]]] : MatrixUtils.inverse(cur.I);
+ const vcov = !beta.every(Number.isFinite) ? zeros2().map(r => r.map(() => NaN))
+ : (p === 1 ? [[1 / cur.I[0][0]]] : MatrixUtils.inverse(cur.I));
  const se = vcov.map((row, i) => Math.sqrt(row[i]));
  const hr = beta.map(b => Math.exp(b));
  const z = beta.map((b, i) => b / se[i]);
