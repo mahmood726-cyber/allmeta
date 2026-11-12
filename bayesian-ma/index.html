@@ -549,6 +549,13 @@
       render();
       return _lastPost ? parseStudies(document.getElementById("f-data").value).studies : [];
     };
+    // The validator cannot fit this page's posterior, but under the "PM" strategy its
+    // plug-in tau^2 is metafor's Paule-Mandel tau^2, so send PM (lane estho). Under fixed
+    // effect or a manual tau^2 nothing is sent: no validator fit equals a number here.
+    window.__almValidatorModel = function () {
+      const e = document.getElementById("f-tau-method");
+      return e && e.value === "PM" ? { method: "PM", test: "z" } : {};
+    };
     function attach() {
       for (const id of Object.values(fields)) { const el = document.getElementById(id); if (el) el.addEventListener("input", render); }
       document.getElementById("f-slider").addEventListener("input", onSlider);
@@ -599,7 +606,9 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
-      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
+      method: function () { return window.__almValidatorModel && window.__almValidatorModel().method; },
+      test: function () { return window.__almValidatorModel && window.__almValidatorModel().test; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "bayesian-ma", textarea: "#f-data", format: "label-est-se" });
@@ -622,6 +631,7 @@
         // Push the studies on screen (not an earlier session's bus) and, for the validator,
         // this page's model where it is an inverse-variance pool.
         getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
+        getValidatorModel: function () { return window.__almValidatorModel && window.__almValidatorModel(); },
       });
     }
   });
