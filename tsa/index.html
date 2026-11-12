@@ -279,7 +279,9 @@
       function x(info) { return L + (info/maxInfo) * plotW; }
       function y(z) { return T + plotH/2 - (z/zMax) * (plotH/2 - 10); }
 
-      const bLooks = ldBoundaries(series.map(s => s.cumInfo / ris), alpha);
+      let bLooks;
+      try { bLooks = ldBoundaries(series.map(s => s.cumInfo / ris), alpha); }
+      catch (e) { bLooks = series.map(() => NaN); }   // reported by render(); plot the data without a boundary
       for (let i = 1; i < bLooks.length; i++) if (!isFinite(bLooks[i])) bLooks[i] = bLooks[i - 1];   // t >= 1: final boundary
 
       const parts = [];
@@ -300,7 +302,7 @@
 
       // Lan-DeMets O'Brien-Fleming-type boundaries, defined at each look (trial); capped for display
       const boundPts = [];
-      series.forEach((s, i) => { const zb = Math.min(bLooks[i], zMax + 1); boundPts.push({info: s.cumInfo, zUp: zb, zLo: -zb}); });
+      series.forEach((s, i) => { if (!(bLooks[i] > 0)) return; const zb = Math.min(bLooks[i], zMax + 1); boundPts.push({info: s.cumInfo, zUp: zb, zLo: -zb}); });
       if (boundPts.length) {
         const pUp = boundPts.map(p => x(p.info)+","+y(p.zUp)).join(" ");
         const pLo = boundPts.map(p => x(p.info)+","+y(p.zLo)).join(" ");
@@ -352,6 +354,7 @@
 
       // Stats
       const parts = [];
+      let boundaryError = null;
       parts.push(statCard("k", String(parsed.studies.length)));
       if (ris != null) {
         parts.push(statCard("RIS", fmt(ris, 1)));
@@ -362,7 +365,10 @@
           parts.push(statCard("Pooled μ", fmt(cur.cumMu, 3) + " [" + fmt(cur.cumMu-Z975 *cur.cumSE,3) + ", " + fmt(cur.cumMu+Z975 *cur.cumSE,3) + "]"));
           // Boundary at the current look; once the information has passed the RIS (t >= 1) all alpha is spent, and
           // later looks are compared with the final boundary (the boundary of the first look with t >= 1).
-          const bAll = ldBoundaries(series.map(s => s.cumInfo / ris), alpha);
+          let bAll = null;
+          try { bAll = ldBoundaries(series.map(s => s.cumInfo / ris), alpha); }
+          catch (e) { boundaryError = "Monitoring boundary not computed: " + e.message + "."; }
+          if (bAll) {
           let bnd = bAll[bAll.length - 1];
           for (let i = bAll.length - 1; !isFinite(bnd) && i > 0; i--) bnd = bAll[i - 1];
           parts.push(statCard("OF boundary (now)", "±" + fmt(bnd, 2)));
@@ -371,6 +377,7 @@
           // TSA-adjusted confidence interval (TSA program; RTSA inference()): estimate +/- the monitoring
           // boundary at the current look times the SE, on the analysis scale like the naive interval above.
           if (isFinite(bnd)) parts.push(statCard("TSA-adjusted CI", "[" + fmt(cur.cumMu - bnd * cur.cumSE, 3) + ", " + fmt(cur.cumMu + bnd * cur.cumSE, 3) + "]"));
+          }
         }
       }
       statsWrap.innerHTML = "<div class=\"stats\">"+parts.join("")+"</div>";
@@ -378,6 +385,7 @@
       // Warnings
       const extras = [];
       if (ris == null) extras.push("RIS cannot be computed — check target effect, α, and power values.");
+      if (boundaryError) extras.push(boundaryError);
       if (parsed.studies.length && ris != null) {
         const info = series[series.length-1].cumInfo;
         if (info < 0.05 * ris) extras.push("Information fraction < 5% — boundary is plotted from t=0.05 onward only.");

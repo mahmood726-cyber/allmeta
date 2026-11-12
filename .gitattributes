@@ -47,3 +47,6 @@ hub/shared/tests/unit/*.R text eol=lf
 hub/shared/tests/unit/*.json text eol=lf
 # Byte-pinned fixture: its MD5 is recorded by p07-translation-reference.R, so never convert line endings (Windows checkouts broke it).
 hub/shared/tests/unit/p07-translation-input.json -text
+# hero-effect-se-label.test.cjs compares the adapter's LF output to this R input
+# fixture byte for byte; a CRLF checkout (core.autocrlf=true) failed it on Windows.
+hub/shared/tests/fixtures/hero-bcg-input.csv text eol=lf
