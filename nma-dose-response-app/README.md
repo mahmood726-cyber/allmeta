@@ -130,8 +130,8 @@ For publication-quality analyses, we recommend:
   target values, inconsistency tests, publication-bias, DTA, IPD, survival and the other "advanced" modules. Treat them
   as unvalidated.
 - The "Heterogeneity Estimation" list above applies to the linear dose-response models only (log-linear, restricted
-  cubic spline, fractional polynomial); for Emax and sigmoid Emax the page reports a method-of-moments value whatever
-  option is selected.
+  cubic spline, fractional polynomial); for Emax and sigmoid Emax the page uses Paule-Mandel when PM is selected and a
+  method-of-moments (DerSimonian-Laird-type) value for every other option. Nonlinear heterogeneity was not validated.
 
 ## Method References
 
