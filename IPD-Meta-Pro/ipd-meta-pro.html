@@ -31012,22 +31012,50 @@ function showMethodGuide() {
 
 
  normalCDF: (x, mean = 0, sd = 1) => {
-
+ // P60 fix: Phi(z) = 1 - Q(1/2, z^2/2)/2 for z >= 0 (Q = regularised upper incomplete gamma),
+ // evaluated by series / continued fraction to double precision.
  const z = (x - mean) / sd;
-
- const t = 1 / (1 + 0.2316419 * Math.abs(z));
-
- const d = 0.3989422804 * Math.exp(-z * z / 2);
-
- const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-
- return z > 0 ? 1 - p : p;
-
+ if (Number.isNaN(z)) return NaN;
+ if (!Number.isFinite(z)) return z > 0 ? 1 : 0;
+ const h = 0.5 * z * z;
+ const a = 0.5, LG = 0.5723649429247001; // log Gamma(1/2) = log(sqrt(pi))
+ let q;
+ if (h === 0) {
+ q = 1;
+ } else if (h < 1.5) {
+ let ap = a, del = 1 / a, sum = del;
+ for (let i = 0; i < 500; i++) { ap += 1; del *= h / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 1e-17) break; }
+ q = 1 - sum * Math.exp(-h + a * Math.log(h) - LG);
+ } else {
+ const FPMIN = 1e-300;
+ let bb = h + 1 - a, c = 1 / FPMIN, d = 1 / bb, f = d;
+ for (let i = 1; i < 500; i++) {
+ const an = -i * (i - a); bb += 2;
+ d = an * d + bb; if (Math.abs(d) < FPMIN) d = FPMIN;
+ c = bb + an / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+ d = 1 / d; const del = d * c; f *= del;
+ if (Math.abs(del - 1) < 1e-16) break;
+ }
+ q = Math.exp(-h + a * Math.log(h) - LG) * f;
+ }
+ return z >= 0 ? 1 - 0.5 * q : 0.5 * q;
  },
 
 
 
  normalQuantile: (p, mean = 0, sd = 1) => {
+ // P60 fix: Acklam's rational approximation (relative error ~1e-9) refined by Halley steps.
+ if (!(p > 0)) return p === 0 ? -Infinity : NaN;
+ if (!(p < 1)) return p === 1 ? Infinity : NaN;
+ let x = Stats._normalQuantileAcklam(p);
+ for (let it = 0; it < 2; it++) {
+ const e = Stats.normalCDF(x) - p;
+ const u = e * Math.sqrt(2 * Math.PI) * Math.exp(x * x / 2);
+ x = x - u / (1 + x * u / 2);
+ }
+ return mean + sd * x;
+ },
+ _normalQuantileAcklam: (p, mean = 0, sd = 1) => {
 
 
 
@@ -31260,55 +31288,47 @@ function showMethodGuide() {
 
 
  tQuantile: (p, df) => {
-
+ // P60 fix: Hill (1970, ACM 396) start with the two-tailed probability P = 2 min(p, 1 - p),
+ // then Newton steps on the upper tail P(T > x) = I_{df/(df+x^2)}(df/2, 1/2) / 2.
+ if (!(p > 0) || !(p < 1) || !(df > 0)) return p === 0 ? -Infinity : (p === 1 ? Infinity : NaN);
  if (p === 0.5) return 0;
-
  const sign = p < 0.5 ? -1 : 1;
-
  const p2 = p < 0.5 ? p : 1 - p;
-
-
-
- const a = 1 / (df - 0.5);
-
- const b = 48 / (a * a);
-
- let c = ((20700 * a / b - 98) * a - 16) * a + 96.36;
-
- const d = ((94.5 / (b + c) - 3) / b + 1) * Math.sqrt(a * Math.PI / 2) * df;
-
- let x = d * p2;
-
- let y = Math.pow(x, 2 / df);
-
-
-
- if (y > 0.05 + a) {
-
- x = Stats.normalQuantile(p2);
-
- y = x * x;
-
- if (df < 5) c += 0.3 * (df - 4.5) * (x + 0.6);
-
- c += (((0.05 * d * x - 5) * x - 7) * x - 2) * x + b;
-
- y = (((((0.4 * y + 6.3) * y + 36) * y + 94.5) / c - y - 3) / b + 1) * x;
-
- y = a * y * y;
-
- y = y > 0.002 ? Math.exp(y) - 1 : 0.5 * y * y + y;
-
+ const P = 2 * p2;
+ let x;
+ if (df === 1) {
+ x = Math.tan(Math.PI * (0.5 - p2));
+ } else if (df === 2) {
+ x = Math.sqrt(2 / (P * (2 - P)) - 2);
  } else {
-
+ const a = 1 / (df - 0.5);
+ const b = 48 / (a * a);
+ let c = ((20700 * a / b - 98) * a - 16) * a + 96.36;
+ const d = ((94.5 / (b + c) - 3) / b + 1) * Math.sqrt(a * Math.PI / 2) * df;
+ let xx = d * P;
+ let y = Math.pow(xx, 2 / df);
+ if (y > 0.05 + a) {
+ xx = Stats.normalQuantile(p2);
+ y = xx * xx;
+ if (df < 5) c += 0.3 * (df - 4.5) * (xx + 0.6);
+ c += (((0.05 * d * xx - 5) * xx - 7) * xx - 2) * xx + b;
+ y = (((((0.4 * y + 6.3) * y + 36) * y + 94.5) / c - y - 3) / b + 1) * xx;
+ y = a * y * y;
+ y = y > 0.002 ? Math.exp(y) - 1 : 0.5 * y * y + y;
+ } else {
  y = ((1 / (((df + 6) / (df * y) - 0.089 * d - 0.822) * (df + 2) * 3) + 0.5 / (df + 4)) * y - 1) * (df + 1) / (df + 2) + 1 / y;
-
  }
-
-
-
- return sign * Math.sqrt(df * y);
-
+ x = Math.sqrt(df * y);
+ }
+ const logc = Stats.logGamma((df + 1) / 2) - Stats.logGamma(df / 2) - 0.5 * Math.log(df * Math.PI);
+ for (let it = 0; it < 50; it++) {
+ const upper = 0.5 * Stats.betaCDF(df / (df + x * x), df / 2, 0.5);
+ const dens = Math.exp(logc - (df + 1) / 2 * Math.log(1 + x * x / df));
+ const step = (upper - p2) / dens;
+ x += step;
+ if (Math.abs(step) <= 1e-15 * Math.max(1, Math.abs(x))) break;
+ }
+ return sign * x;
  },
 
 
@@ -31347,9 +31367,9 @@ function showMethodGuide() {
 
  betaCF: (x, a, b) => {
 
- const EPSILON = 1e-10;
+ const EPSILON = 1e-15; // P60 fix (was 1e-10)
 
- const MAX_ITER = 200;
+ const MAX_ITER = 1000;
 
 
 
@@ -31422,37 +31442,15 @@ function showMethodGuide() {
 
 
  logGamma: (x) => {
-
- const c = [
-
- 76.18009172947146, -86.50532032941677, 24.01409824083091,
-
- -1.231739572450155, 0.001208650973866179, -0.000005395239384953
-
- ];
-
-
-
- let y = x;
-
- let tmp = x + 5.5;
-
- tmp -= (x + 0.5) * Math.log(tmp);
-
- let ser = 1.000000000190015;
-
-
-
- for (let j = 0; j < 6; j++) {
-
- ser += c[j] / ++y;
-
- }
-
-
-
- return -tmp + Math.log(2.5066282746310005 * ser / x);
-
+ // P60 fix: Lanczos (g = 7, n = 9), relative error ~1e-15 (was gammln, ~2e-10), with reflection for x < 0.5.
+ if (x < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * x))) - Stats.logGamma(1 - x);
+ const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+ -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+ const z = x - 1;
+ let a = c[0];
+ for (let i = 1; i < 9; i++) a += c[i] / (z + i);
+ const tt = z + 7.5;
+ return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(tt) - tt + Math.log(a);
  },
 
 
@@ -31804,8 +31802,8 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  const p = 1;
  if (k <= p) return 0;
 
- const threshold = options.threshold ?? 1e-5;
- const maxIter = options.maxIter ?? 100;
+ const threshold = options.threshold ?? 1e-10; // P60 fix (was 1e-5)
+ const maxIter = options.maxIter ?? 1000;
  const tau2Min = options.tau2Min ?? 0;
  const tol = options.tol ?? 1e-4;
  const ll0check = options.ll0check ?? true;
@@ -31981,7 +31979,9 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  ...result,
  seHKSJ: seAdj,
  tHKSJ: t,
- pHKSJ: p
+ pHKSJ: p,
+ se: seAdj, // P60 fix: the reported SE is the one the CI uses
+ variance: seAdj * seAdj
  }, result.pooled, seAdj, { ciDf: k - 1, pValue: p, k: k });
 
  return {
@@ -32001,23 +32001,15 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
 
  predictionInterval: (result, confLevel = 0.95) => {
-
+ // P60 fix: t with k - 1 degrees of freedom (Cochrane Handbook v6.5); undefined for k < 2.
  const k = result.df + 1;
-
- const tCrit = Stats.tQuantile(1 - (1 - confLevel) / 2, k - 2);
-
+ if (!(k >= 2)) return { lower: NaN, upper: NaN };
+ const tCrit = Stats.tQuantile(1 - (1 - confLevel) / 2, k - 1);
  const piWidth = tCrit * Math.sqrt(result.variance + result.tau2);
-
-
-
  return {
-
  lower: result.pooled - piWidth,
-
  upper: result.pooled + piWidth
-
  };
-
  },
 
 
@@ -32248,203 +32240,73 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
 
  coxPH: (times, events, covariates) => {
-
+ // P60 fix: Efron handling of tied event times (R coxph default); Newton-Raphson with step halving.
  const n = times.length;
-
  const p = covariates[0].length;
-
-
-
- let beta = new Array(p).fill(0);
-
- const maxIter = 50;
-
- const tol = 1e-8;
-
-
-
- const order = times.map((t, i) => i)
-
- .sort((a, b) => times[a] - times[b]);
-
-
-
- for (let iter = 0; iter < maxIter; iter++) {
-
-
-
+ const order = times.map((t, i) => i).sort((a, b) => times[a] - times[b]);
+ const zeros = () => new Array(p).fill(0);
+ const zeros2 = () => Array.from({ length: p }, () => new Array(p).fill(0));
+ const evalAt = (beta) => {
  const eta = covariates.map(x => x.reduce((sum, xi, j) => sum + xi * beta[j], 0));
-
- const expEta = eta.map(e => Math.exp(e));
-
-
-
- const score = new Array(p).fill(0);
-
- const hessian = Array(p).fill().map(() => new Array(p).fill(0));
-
-
-
- let s0 = 0, s1 = new Array(p).fill(0), s2 = Array(p).fill().map(() => new Array(p).fill(0));
-
-
-
- for (let ii = n - 1; ii >= 0; ii--) {
-
- const i = order[ii];
-
-
-
- s0 += expEta[i];
-
- for (let j = 0; j < p; j++) {
-
- s1[j] += covariates[i][j] * expEta[i];
-
- for (let k = 0; k <= j; k++) {
-
- const val = covariates[i][j] * covariates[i][k] * expEta[i];
-
- s2[j][k] += val;
-
- if (j !== k) s2[k][j] += val;
-
- }
-
- }
-
-
-
+ const r = eta.map(e => Math.exp(e));
+ let loglik = 0;
+ const U = zeros(), I = zeros2();
+ let S0 = 0; const S1 = zeros(), S2 = zeros2();
+ let idx = n - 1;
+ while (idx >= 0) {
+ const tcur = times[order[idx]];
+ let A0 = 0, dcount = 0, etaSum = 0;
+ const A1 = zeros(), A2 = zeros2(), xSum = zeros();
+ let j = idx;
+ while (j >= 0 && times[order[j]] === tcur) {
+ const i = order[j], ri = r[i], xi = covariates[i];
+ S0 += ri;
+ for (let a = 0; a < p; a++) { S1[a] += xi[a] * ri; for (let b = 0; b < p; b++) S2[a][b] += xi[a] * xi[b] * ri; }
  if (events[i] === 1) {
-
- for (let j = 0; j < p; j++) {
-
- score[j] += covariates[i][j] - s1[j] / s0;
-
- for (let k = 0; k <= j; k++) {
-
- const val = s2[j][k] / s0 - (s1[j] / s0) * (s1[k] / s0);
-
- hessian[j][k] -= val;
-
- if (j !== k) hessian[k][j] -= val;
-
+ dcount++; A0 += ri; etaSum += eta[i];
+ for (let a = 0; a < p; a++) { A1[a] += xi[a] * ri; xSum[a] += xi[a]; for (let b = 0; b < p; b++) A2[a][b] += xi[a] * xi[b] * ri; }
  }
-
+ j--;
  }
-
+ if (dcount > 0) {
+ loglik += etaSum;
+ for (let a = 0; a < p; a++) U[a] += xSum[a];
+ for (let l = 0; l < dcount; l++) {
+ const f = l / dcount;
+ const s0 = S0 - f * A0;
+ const s1 = S1.map((v, a) => v - f * A1[a]);
+ loglik -= Math.log(s0);
+ for (let a = 0; a < p; a++) {
+ U[a] -= s1[a] / s0;
+ for (let b = 0; b < p; b++) I[a][b] += (S2[a][b] - f * A2[a][b]) / s0 - s1[a] * s1[b] / (s0 * s0);
  }
-
  }
-
-
-
- if (p === 1) {
-
- const delta = score[0] / (-hessian[0][0]);
-
- beta[0] += delta;
-
- if (Math.abs(delta) < tol) break;
-
- } else {
-
-
-
- const invH = MatrixUtils.inverse(hessian);
-
- const delta = MatrixUtils.multiply(invH, score);
-
- let maxDelta = 0;
-
- for (let j = 0; j < p; j++) {
-
- beta[j] += delta[j];
-
- maxDelta = Math.max(maxDelta, Math.abs(delta[j]));
-
  }
-
- if (maxDelta < tol) break;
-
+ idx = j;
  }
-
+ return { loglik, U, I };
+ };
+ const solve = (I, U) => (p === 1 ? [U[0] / I[0][0]] : MatrixUtils.multiply(MatrixUtils.inverse(I), U));
+ let beta = zeros();
+ let cur = evalAt(beta);
+ for (let iter = 0; iter < 100; iter++) {
+ let delta = solve(cur.I, cur.U);
+ let next = evalAt(beta.map((b, j) => b + delta[j]));
+ let halvings = 0;
+ while (!(next.loglik >= cur.loglik - 1e-12) && halvings < 30) {
+ delta = delta.map(v => v / 2); halvings++;
+ next = evalAt(beta.map((b, j) => b + delta[j]));
  }
-
-
-
- const eta = covariates.map(x => x.reduce((sum, xi, j) => sum + xi * beta[j], 0));
-
- const expEta = eta.map(e => Math.exp(e));
-
-
-
- const hessian = Array(p).fill().map(() => new Array(p).fill(0));
-
- let s0 = 0, s1 = new Array(p).fill(0), s2 = Array(p).fill().map(() => new Array(p).fill(0));
-
-
-
- for (let ii = n - 1; ii >= 0; ii--) {
-
- const i = order[ii];
-
- s0 += expEta[i];
-
- for (let j = 0; j < p; j++) {
-
- s1[j] += covariates[i][j] * expEta[i];
-
- for (let k = 0; k <= j; k++) {
-
- const val = covariates[i][j] * covariates[i][k] * expEta[i];
-
- s2[j][k] += val;
-
- if (j !== k) s2[k][j] += val;
-
+ beta = beta.map((b, j) => b + delta[j]);
+ cur = next;
+ if (Math.max(...delta.map(Math.abs)) < 1e-12) break;
  }
-
- }
-
-
-
- if (events[i] === 1) {
-
- for (let j = 0; j < p; j++) {
-
- for (let k = 0; k <= j; k++) {
-
- const val = s2[j][k] / s0 - (s1[j] / s0) * (s1[k] / s0);
-
- hessian[j][k] -= val;
-
- if (j !== k) hessian[k][j] -= val;
-
- }
-
- }
-
- }
-
- }
-
-
-
- const vcov = MatrixUtils.inverse(hessian.map(row => row.map(v => -v)));
-
+ const vcov = p === 1 ? [[1 / cur.I[0][0]]] : MatrixUtils.inverse(cur.I);
  const se = vcov.map((row, i) => Math.sqrt(row[i]));
-
  const hr = beta.map(b => Math.exp(b));
-
  const z = beta.map((b, i) => b / se[i]);
-
  const pvals = z.map(zv => 2 * (1 - Stats.normalCDF(Math.abs(zv))));
-
-
-
  return { beta, se, hr, z, pvals, vcov };
-
  }
 
  };
@@ -37353,6 +37215,11 @@ function runAnalysis() {
  APP.config.outcomeType = document.getElementById('outcomeType').value;
 
  APP.config.analysisApproach = document.getElementById('analysisApproach').value;
+ if (APP.config.analysisApproach === 'one-stage') {
+ // P60 fix: this button runs the two-stage pipeline only; do not present its result as a one-stage model
+ showNotification('The Run Analysis button fits the two-stage model. Choose "Two-Stage" here, or fit one-stage models from the One-Stage analyses.', 'warning');
+ return;
+ }
 
  APP.config.effectMeasure = document.getElementById('effectMeasure').value;
 
@@ -37486,9 +37353,11 @@ function runAnalysis() {
 
 
 
- effect = Math.log((a + 0.5) * (d + 0.5) / ((b + 0.5) * (c + 0.5)));
+ // P60 fix: 0.5 is added to the four cells only when a cell is zero (metafor escalc default)
+ const cc = (a === 0 || b === 0 || c === 0 || d === 0) ? 0.5 : 0;
+ effect = Math.log((a + cc) * (d + cc) / ((b + cc) * (c + cc)));
 
- variance = 1 / (a + 0.5) + 1 / (b + 0.5) + 1 / (c + 0.5) + 1 / (d + 0.5);
+ variance = 1 / (a + cc) + 1 / (b + cc) + 1 / (c + cc) + 1 / (d + cc);
 
  se = Math.sqrt(variance);
 
@@ -41859,9 +41728,10 @@ function runCombinedIPDADAnalysis() {
 
 
 
- const effect = Math.log((a + 0.5) * (d + 0.5) / ((b + 0.5) * (c + 0.5)));
+ const cc = (a === 0 || b === 0 || c === 0 || d === 0) ? 0.5 : 0; // P60 fix (as above)
+ const effect = Math.log((a + cc) * (d + cc) / ((b + cc) * (c + cc)));
 
- const variance = 1 / (a + 0.5) + 1 / (b + 0.5) + 1 / (c + 0.5) + 1 / (d + 0.5);
+ const variance = 1 / (a + cc) + 1 / (b + cc) + 1 / (c + cc) + 1 / (d + cc);
 
  const se = Math.sqrt(variance);
 
@@ -72643,7 +72513,7 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
         if (!Number.isFinite(I2)) I2 = fit.heterogeneity && Number.isFinite(fit.heterogeneity.I2) ? Number(fit.heterogeneity.I2) : 0;
         I2 = Math.max(0, Math.min(100, I2));
         var H2 = I2 >= 100 ? 1e6 : (1 / Math.max(1e-12, 1 - I2 / 100));
-        var Q = qDf * H2;
+        var Q = null; // P60 fix: no Cochran Q is defined for the one-stage model (was (K-1)/(1-I2), not a test)
 
         var clusterEffects = [];
         if (fit.randomEffects && Array.isArray(fit.randomEffects.studyEffects)) {
@@ -72673,7 +72543,7 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
             H2: H2,
             Q: Q,
             Q_df: qDf,
-            Q_pvalue: (qDf > 0 && Number.isFinite(Q)) ? (1 - Stats.chiSquareCDF(Q, qDf)) : 1,
+            Q_pvalue: null,
             prediction_interval: fit.treatment && Array.isArray(fit.treatment.predictionInterval)
                 ? { lower: Number(fit.treatment.predictionInterval[0]), upper: Number(fit.treatment.predictionInterval[1]) }
                 : null,
@@ -73064,6 +72934,141 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
             }
         }
 
+        // P60 fix: the EM updates converge sublinearly near the boundary and the covariance was
+        // clamped (|rho| <= 0.95, variances >= 1e-6), so singular fits (a variance at 0 or |rho| = 1)
+        // were never reached. The ML fit is now completed by minimising the profiled deviance over
+        // the relative covariance factor L (D = sigma^2 L L'), starting from the EM solution.
+        var mlFit = (function() {
+            var Kc = studyRowsById.length;
+            var sums = studyRowsById.map(function(rows) {
+                var S = { ZtZ: [[0, 0], [0, 0]], ZtX: [new Array(p).fill(0), new Array(p).fill(0)], Zty: [0, 0], XtX: [], Xty: new Array(p).fill(0), yty: 0 };
+                for (var a = 0; a < p; a++) S.XtX.push(new Array(p).fill(0));
+                rows.forEach(function(r) {
+                    var z = [1, r.t];
+                    for (var a1 = 0; a1 < 2; a1++) {
+                        S.Zty[a1] += z[a1] * r.y;
+                        for (var c1 = 0; c1 < 2; c1++) S.ZtZ[a1][c1] += z[a1] * z[c1];
+                        for (var c2 = 0; c2 < p; c2++) S.ZtX[a1][c2] += z[a1] * r.x[c2];
+                    }
+                    for (var a2 = 0; a2 < p; a2++) {
+                        S.Xty[a2] += r.x[a2] * r.y;
+                        for (var c3 = 0; c3 < p; c3++) S.XtX[a2][c3] += r.x[a2] * r.x[c3];
+                    }
+                    S.yty += r.y * r.y;
+                });
+                return S;
+            });
+            function evalTheta(th) {
+                var L = [[Math.abs(th[0]), 0], [th[1], Math.abs(th[2])]];
+                var XVX = [], XVy = new Array(p).fill(0), yVy = 0, logdet = 0, parts = [];
+                for (var a = 0; a < p; a++) XVX.push(new Array(p).fill(0));
+                for (var k = 0; k < Kc; k++) {
+                    var S = sums[k];
+                    var B = [[0, 0], [0, 0]];
+                    for (var i1 = 0; i1 < 2; i1++) for (var j1 = 0; j1 < 2; j1++) {
+                        var v = 0;
+                        for (var m1 = 0; m1 < 2; m1++) for (var m2 = 0; m2 < 2; m2++) v += L[m1][i1] * S.ZtZ[m1][m2] * L[m2][j1];
+                        B[i1][j1] = v;
+                    }
+                    var A00 = 1 + B[0][0], A01 = B[0][1], A11 = 1 + B[1][1];
+                    var detA = A00 * A11 - A01 * A01;
+                    if (!(detA > 0)) return null;
+                    var Ai = [[A11 / detA, -A01 / detA], [-A01 / detA, A00 / detA]];
+                    logdet += Math.log(detA);
+                    var LZX = [new Array(p), new Array(p)], LZy = [0, 0];
+                    for (var a3 = 0; a3 < 2; a3++) {
+                        LZy[a3] = L[0][a3] * S.Zty[0] + L[1][a3] * S.Zty[1];
+                        for (var c4 = 0; c4 < p; c4++) LZX[a3][c4] = L[0][a3] * S.ZtX[0][c4] + L[1][a3] * S.ZtX[1][c4];
+                    }
+                    for (var r1 = 0; r1 < p; r1++) {
+                        var w0 = Ai[0][0] * LZX[0][r1] + Ai[0][1] * LZX[1][r1];
+                        var w1 = Ai[1][0] * LZX[0][r1] + Ai[1][1] * LZX[1][r1];
+                        XVy[r1] += S.Xty[r1] - (w0 * LZy[0] + w1 * LZy[1]);
+                        for (var c5 = 0; c5 < p; c5++) XVX[r1][c5] += S.XtX[r1][c5] - (w0 * LZX[0][c5] + w1 * LZX[1][c5]);
+                    }
+                    yVy += S.yty - (LZy[0] * (Ai[0][0] * LZy[0] + Ai[0][1] * LZy[1]) + LZy[1] * (Ai[1][0] * LZy[0] + Ai[1][1] * LZy[1]));
+                    parts.push({ Ai: Ai, LZX: LZX, LZy: LZy });
+                }
+                var bh = solveLinearSystem(XVX, XVy);
+                if (!bh || bh.length !== p) return null;
+                var rss = yVy;
+                for (var a4 = 0; a4 < p; a4++) rss -= bh[a4] * XVy[a4];
+                if (!(rss > 0)) return null;
+                return { dev: logdet + n * (1 + Math.log(2 * Math.PI * rss / n)), beta: bh, rss: rss, XVX: XVX, parts: parts, L: L };
+            }
+            function devAt(th) { var e = evalTheta(th); return e ? e.dev : Infinity; }
+            function nelderMead(x0) {
+                var dim = 3, pts = [x0.slice()], fv = [devAt(x0)], evals = 1;
+                for (var d = 0; d < dim; d++) { var xp = x0.slice(); xp[d] += (Math.abs(xp[d]) > 1e-3 ? 0.1 * xp[d] : 0.05); pts.push(xp); fv.push(devAt(xp)); evals++; }
+                while (evals < 20000) {
+                    var ord = [0, 1, 2, 3].sort(function(i, j) { return fv[i] - fv[j]; });
+                    pts = ord.map(function(i) { return pts[i]; }); fv = ord.map(function(i) { return fv[i]; });
+                    var size = 0;
+                    for (var q = 1; q <= dim; q++) for (var e = 0; e < dim; e++) size = Math.max(size, Math.abs(pts[q][e] - pts[0][e]));
+                    if (fv[dim] - fv[0] < 1e-13 && size < 1e-10) break;
+                    var cen = [0, 0, 0];
+                    for (var q2 = 0; q2 < dim; q2++) for (var e2 = 0; e2 < dim; e2++) cen[e2] += pts[q2][e2] / dim;
+                    var xr = cen.map(function(c, e3) { return c + (c - pts[dim][e3]); }), fr = devAt(xr); evals++;
+                    if (fr < fv[0]) {
+                        var xe = cen.map(function(c, e4) { return c + 2 * (c - pts[dim][e4]); }), fe = devAt(xe); evals++;
+                        if (fe < fr) { pts[dim] = xe; fv[dim] = fe; } else { pts[dim] = xr; fv[dim] = fr; }
+                    } else if (fr < fv[dim - 1]) {
+                        pts[dim] = xr; fv[dim] = fr;
+                    } else {
+                        var xc = cen.map(function(c, e5) { return c + 0.5 * (pts[dim][e5] - c); }), fc = devAt(xc); evals++;
+                        if (fc < fv[dim]) { pts[dim] = xc; fv[dim] = fc; }
+                        else {
+                            for (var q3 = 1; q3 <= dim; q3++) { pts[q3] = pts[q3].map(function(v, e6) { return pts[0][e6] + 0.5 * (v - pts[0][e6]); }); fv[q3] = devAt(pts[q3]); evals++; }
+                        }
+                    }
+                }
+                var best = 0;
+                for (var q4 = 1; q4 <= dim; q4++) if (fv[q4] < fv[best]) best = q4;
+                return { x: pts[best], f: fv[best], evals: evals };
+            }
+            // start from the EM solution: L = chol(D / sigma^2) (diagonal if D is not positive definite)
+            var s2 = Math.max(sigma_sq, 1e-12);
+            var d00 = Math.max(D[0][0], 0) / s2, d01 = D[0][1] / s2, d11 = Math.max(D[1][1], 0) / s2;
+            var l00 = Math.sqrt(d00), l10 = l00 > 0 ? d01 / l00 : 0, l11 = Math.sqrt(Math.max(d11 - l10 * l10, 0));
+            var starts = [[l00, l10, l11], [l00, 0, Math.sqrt(d11)], [l00, 0, 0]];
+            var bestFit = null;
+            starts.forEach(function(x0) {
+                var cur = nelderMead(x0);
+                for (var rs = 0; rs < 10; rs++) {          // restart from the best point until no further gain
+                    var nxt = nelderMead(cur.x);
+                    var gain = cur.f - nxt.f;
+                    if (nxt.f < cur.f) cur = nxt;
+                    if (!(gain > 1e-12)) break;
+                }
+                if (!bestFit || cur.f < bestFit.f) bestFit = cur;
+            });
+            if (!bestFit || !Number.isFinite(bestFit.f)) return null;
+            var fit = evalTheta(bestFit.x);
+            if (!fit) return null;
+            var sig = fit.rss / n, Lf = fit.L;
+            var Dml = [[sig * Lf[0][0] * Lf[0][0], sig * Lf[0][0] * Lf[1][0]], [sig * Lf[0][0] * Lf[1][0], sig * (Lf[1][0] * Lf[1][0] + Lf[1][1] * Lf[1][1])]];
+            var XVXinv = invertSquareMatrix(fit.XVX);
+            if (!XVXinv) return null;
+            var cov = XVXinv.map(function(row) { return row.map(function(v) { return v * sig; }); });
+            var effs = fit.parts.map(function(pt) {
+                var rr = [pt.LZy[0], pt.LZy[1]];
+                for (var c6 = 0; c6 < p; c6++) { rr[0] -= pt.LZX[0][c6] * fit.beta[c6]; rr[1] -= pt.LZX[1][c6] * fit.beta[c6]; }
+                var v0 = pt.Ai[0][0] * rr[0] + pt.Ai[0][1] * rr[1], v1 = pt.Ai[1][0] * rr[0] + pt.Ai[1][1] * rr[1];
+                return [Lf[0][0] * v0, Lf[1][0] * v0 + Lf[1][1] * v1];
+            });
+            return { beta: fit.beta, cov: cov, D: Dml, sigma2: sig, dev: fit.dev, studyEffects: effs };
+        })();
+
+        if (mlFit) {
+            beta = mlFit.beta;
+            sigma_sq = mlFit.sigma2;
+            D = mlFit.D;
+            studyEffects = mlFit.studyEffects;
+            finalLogLik = -0.5 * mlFit.dev;
+            converged = true;
+            var betaCov = mlFit.cov;
+            var betaSE = betaCov.map(function(row, idx2) { return Math.sqrt(Math.max(0, row[idx2])); });
+        } else {
         var XtVinvXFinal = new Array(p);
         for (var fr = 0; fr < p; fr++) XtVinvXFinal[fr] = new Array(p).fill(0);
         for (var s4 = 0; s4 < studyRowsById.length; s4++) {
@@ -73086,6 +73091,7 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
         var betaSE = betaCov.map(function(row, idx2) {
             return Math.sqrt(Math.max(1e-12, row[idx2]));
         });
+        }
 
         var treatmentEffect = beta[1];
         var treatmentSE = betaSE[1];
@@ -73110,11 +73116,14 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
         var I2 = (tau1Final + meanWithinSlopeVar) > 0
             ? Math.max(0, Math.min(100, 100 * tau1Final / (tau1Final + meanWithinSlopeVar)))
             : 0;
-        var predInt_lower = treatmentEffect - getConfZ() * Math.sqrt(treatmentSE * treatmentSE + tau1Final);
-        var predInt_upper = treatmentEffect + getConfZ() * Math.sqrt(treatmentSE * treatmentSE + tau1Final);
+        // P60 fix: prediction interval with t_{K-1} (was z)
+        var piLevel = (typeof APP !== 'undefined' && APP.config && Number.isFinite(APP.config.confLevel)) ? APP.config.confLevel : 0.95;
+        var piT = K >= 2 ? Stats.tQuantile(1 - (1 - piLevel) / 2, K - 1) : NaN;
+        var predInt_lower = treatmentEffect - piT * Math.sqrt(treatmentSE * treatmentSE + tau1Final);
+        var predInt_upper = treatmentEffect + piT * Math.sqrt(treatmentSE * treatmentSE + tau1Final);
         var H2 = I2 >= 100 ? 1e6 : (1 / Math.max(1e-12, 1 - I2 / 100));
         var qDf = Math.max(1, K - 1);
-        var Q = qDf * H2;
+        var Q = null; // P60 fix: no Cochran Q is defined for the one-stage model (was (K-1)/(1-I2), not a test)
 
         return {
             method: 'One-Stage Mixed-Effects IPD-MA',
@@ -73166,7 +73175,7 @@ function runOneStageIPD(data, outcomeVar, treatmentVar, clusterVar, covariates =
             H2: H2,
             Q: Q,
             Q_df: qDf,
-            Q_pvalue: (qDf > 0 && Number.isFinite(Q)) ? (1 - Stats.chiSquareCDF(Q, qDf)) : 1,
+            Q_pvalue: null,
             prediction_interval: { lower: predInt_lower, upper: predInt_upper }
         };
     } catch (err) {
@@ -73994,9 +74003,9 @@ function formatClusteredIPDResults(result, iccResult) {
 
                     <tr><td>&tau;:</td><td>${result.tau.toFixed(4)}</td></tr>
 
-                    <tr><td>Q:</td><td>${result.Q.toFixed(2)} (df=${result.Q_df})</td></tr>
+                    <tr><td>Q:</td><td>${result.Q != null ? result.Q.toFixed(2) + ' (df=' + result.Q_df + ')' : 'not defined for this model'}</td></tr>
 
-                    <tr><td>Q p-value:</td><td>${result.Q_pvalue.toFixed(4)}</td></tr>
+                    <tr><td>Q p-value:</td><td>${result.Q_pvalue != null ? result.Q_pvalue.toFixed(4) : 'not defined for this model'}</td></tr>
 
                 </table>
 
@@ -95404,7 +95413,7 @@ var OneStageGLMM = (function() {
         var family = options.family || 'binomial';
         var linkName = options.link || (family === 'binomial' ? 'logit' : 'identity');
         var linkFn = LINKS[linkName] || LINKS.logit;
-        var maxOuterIter = options.maxIter || 50;
+        var maxOuterIter = options.maxIter || 500; // P60 fix (was 50)
         var outerTol = options.tolerance || 1e-6;
         var verbose = options.verbose || false;
 
@@ -95572,6 +95581,45 @@ var OneStageGLMM = (function() {
             }
         }
 
+        // P60 fix: the EM update for tau2 slows to a crawl when the likelihood is maximised at tau2 = 0.
+        // Test the boundary directly: at the GLM fit (b = 0) the working-model ML score for tau2 is
+        // 0.5 * sum_k [ (sum_i w_i r_i)^2 - sum_i w_i ] (r = working residual); if it is <= 0, tau2 = 0.
+        {
+            var bBeta = beta.slice();
+            for (var bIt = 0; bIt < 100; bIt++) {
+                var bA = matCreate(p, p), bR = new Array(p).fill(0);
+                for (var bi = 0; bi < N; bi++) {
+                    var bEta = 0;
+                    for (var bl = 0; bl < p; bl++) bEta += X[bi][bl] * bBeta[bl];
+                    var bMu = linkFn.invLink(bEta);
+                    if (family === 'binomial') bMu = Math.max(1e-12, Math.min(1 - 1e-12, bMu));
+                    var bDm = linkFn.dmu(bMu), bW = bDm * bDm / Math.max(linkFn.variance(bMu), 1e-300);
+                    var bZ = bEta + (y[bi] - bMu) / bDm;
+                    for (var ba = 0; ba < p; ba++) { bR[ba] += X[bi][ba] * bW * bZ; for (var bc = 0; bc < p; bc++) bA[ba][bc] += X[bi][ba] * bW * X[bi][bc]; }
+                }
+                var bNew = cholSolve(bA, bR), bMax = 0;
+                for (var bd = 0; bd < p; bd++) bMax = Math.max(bMax, Math.abs(bNew[bd] - bBeta[bd]));
+                bBeta = bNew;
+                if (bMax < 1e-13) break;
+            }
+            var bS = new Array(K).fill(0), bSW = new Array(K).fill(0);
+            for (var bj = 0; bj < N; bj++) {
+                var bEta2 = 0;
+                for (var bl2 = 0; bl2 < p; bl2++) bEta2 += X[bj][bl2] * bBeta[bl2];
+                var bMu2 = linkFn.invLink(bEta2);
+                if (family === 'binomial') bMu2 = Math.max(1e-12, Math.min(1 - 1e-12, bMu2));
+                var bDm2 = linkFn.dmu(bMu2), bW2 = bDm2 * bDm2 / Math.max(linkFn.variance(bMu2), 1e-300);
+                bS[studyOf[bj]] += bW2 * (y[bj] - bMu2) / bDm2;
+                bSW[studyOf[bj]] += bW2;
+            }
+            var score0 = 0;
+            for (var bk = 0; bk < K; bk++) score0 += 0.5 * (bS[bk] * bS[bk] - bSW[bk]);
+            if (score0 <= 0) {
+                beta = bBeta; b = new Array(K).fill(0); tau2 = 0; converged = true;
+            }
+        }
+        tau2Inv = 1 / Math.max(tau2, 1e-10);
+
         // --- Compute standard errors from (X'WX)^{-1} ---
         // Recompute final W
         var Wfinal = new Array(N);
@@ -95728,7 +95776,7 @@ var OneStageGLMM = (function() {
             var fit = fitPQL(yArr, XArr, studyArr, {
                 family: 'binomial',
                 link: 'logit',
-                maxIter: options.maxIter || 50,
+                maxIter: options.maxIter || 500,
                 tolerance: options.tolerance || 1e-6
             });
 
@@ -95746,13 +95794,14 @@ var OneStageGLMM = (function() {
             var pValue = 2 * (1 - (typeof Stats !== 'undefined' ? Stats.normalCDF(Math.abs(zStat)) : 0.5));
 
             // I² for treatment effect heterogeneity
+            // P60 fix: the model has a common treatment effect; tau2 is the random-intercept (baseline-risk)
+            // variance, so it defines no I2 and no prediction interval for the treatment effect.
             var tau2 = fit.tau2;
-            var typicalSE2 = treatSE * treatSE;
-            var I2 = (tau2 + typicalSE2) > 0 ? Math.max(0, Math.min(100, 100 * tau2 / (tau2 + typicalSE2))) : 0;
+            var I2 = null;
 
             // Prediction interval on log-OR scale
-            var predLower = treatEffect - z * Math.sqrt(treatSE * treatSE + tau2);
-            var predUpper = treatEffect + z * Math.sqrt(treatSE * treatSE + tau2);
+            var predLower = null;
+            var predUpper = null;
 
             var result = {
                 method: 'One-Stage GLMM (PQL)',
@@ -95778,8 +95827,9 @@ var OneStageGLMM = (function() {
                     se: treatSE,
                     CI: [OR_lower, OR_upper],
                     CI_logScale: [treatEffect - z * treatSE, treatEffect + z * treatSE],
-                    predictionInterval: [Math.exp(predLower), Math.exp(predUpper)],
-                    predictionInterval_logScale: [predLower, predUpper],
+                    predictionInterval: null,
+                    predictionIntervalNote: 'Not defined: common treatment effect model (tau2 is the random-intercept variance).',
+                    predictionInterval_logScale: null,
                     zStat: zStat,
                     pValue: pValue
                 },
@@ -96243,7 +96293,7 @@ var TreatmentInteraction = (function() {
                 ipdForGLMM,
                 'outcome', 'treatment', 'study_id',
                 ['cov_within', 'cov_interaction', 'cov_between'],
-                { maxIter: options.maxIter || 50 }
+                { maxIter: options.maxIter || 500 }
             );
 
             if (result && !result.error) {
