@@ -68,6 +68,91 @@ def test_significance_guards():
     assert _run("RB.analyze(1.9601, 1.0)")["sceptical"]["priorSDoverEffect"] > 10
 
 
+def test_statement_diffuse_prior_not_called_smaller_than_effect():
+    # Near the significance boundary the critical prior SD is many times the effect (here ~11x);
+    # the statement must say so, never that the SD is much smaller ("<<") than the effect.
+    a = _run("RB.analyze(1.9601, 1.0)")
+    ratio = a["sceptical"]["priorSDoverEffect"]
+    assert ratio > 10
+    assert "≪" not in a["statement"]
+    assert f"{ratio:.3g} times the effect" in a["statement"]
+    # below 10x the percentage wording is kept
+    b = _run("RB.analyze(0.8, 0.2)")
+    assert f"{round(b['sceptical']['priorSDoverEffect'] * 100)}% of the effect" in b["statement"]
+
+
+PAGE_DOM = r"""
+const fs = require('fs'), vm = require('vm');
+const html = fs.readFileSync('reverse-bayes/index.html', 'utf8');
+const els = {};
+for (const m of html.matchAll(/<(\w+)\b([^>]*\bid="([^"]+)"[^>]*)>/g)) {
+  const a = m[2], v = (a.match(/\bvalue="([^"]*)"/) || [])[1] || '';
+  els[m[3]] = { value: m[1] === 'select' ? 'ratio' : v, hidden: /\shidden/.test(a), className: '', textContent: '',
+    innerHTML: '', _l: [], addEventListener(t, f) { this._l.push(f); } };
+}
+const ctx = { document: { getElementById: id => els[id] }, Math, JSON, isFinite, parseFloat };
+ctx.window = ctx; vm.createContext(ctx);
+for (const s of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+  const src = (s[1].match(/src="([^"]+)"/) || [])[1];
+  vm.runInContext(src ? fs.readFileSync(require('path').join('reverse-bayes', src), 'utf8') : s[2], ctx);
+}
+const run = (v) => { Object.assign(els.scale, { value: v[0] }); els.est.value = v[1]; els.lo.value = v[2];
+  els.hi.value = v[3]; els.alpha.value = v[4]; els.run._l.forEach(f => f()); };
+"""
+
+
+@pytest.mark.parametrize("bad", [
+    ["ratio", "1.6", "-1", "2.23", "0.05"],   # non-positive ratio limit
+    ["diff", "1.6", "2", "1", "0.05"],        # lo > hi
+    ["diff", "1.6", "1", "2", "0.5"],         # alpha out of range
+])
+def test_refusal_clears_previous_result(bad):
+    js = PAGE_DOM + (
+        "run(['ratio','1.60','1.15','2.23','0.05']);"
+        "const before = els.statement.textContent;"
+        f"run({json.dumps(bad)});"
+        "console.log(JSON.stringify({before, after: els.statement.textContent, tbl: els.tbl.hidden, "
+        "note: els.note.hidden, verdict: els.verdict.className}));")
+    r = subprocess.run([NODE, "-e", js], capture_output=True, text=True, timeout=20, cwd=str(ROOT))
+    assert r.returncode == 0, r.stderr
+    o = json.loads(r.stdout.strip().splitlines()[-1])
+    assert o["before"].startswith("To overturn this result")
+    assert o["verdict"] == "verdict warn"
+    assert o["tbl"] is True and o["note"] is True
+    assert o["after"] == ""  # no stale statement from the previous analysis
+
+
+# R 4.6.0 qnorm (Wichura AS241) at 17 significant digits. The page's critical value z_a must match R to the last bit or
+# two: at p = alpha the significance decision |z| > z_a is a tie decided by the last bits, and near the boundary
+# tau_s^2 = z_a^2 s^4/(theta^2 - z_a^2 s^2) amplifies any error in z_a by ~1/(|z|/z_a - 1).
+QNORM_R = [
+    (0.5, 0), (0.59999999999999998, 0.25334710313579978), (0.75, 0.67448975019608171),
+    (0.90000000000000002, 1.2815515655446008), (0.94999999999999996, 1.6448536269514715),
+    (0.97499999999999998, 1.9599639845400536), (0.98999999999999999, 2.3263478740408408),
+    (0.995, 2.5758293035488999), (0.99750000000000005, 2.8070337683438114), (0.999, 3.0902323061678132),
+    (0.99995000000000001, 3.8905918864131199), (0.025000000000000001, -1.9599639845400538),
+    (0.0001, -3.71901648545568), (1e-10, -6.3613409024040557), (0.074999999999999997, -1.4395314709384557),
+    (0.42499999999999999, -0.18911842627279249), (0.57499999999999996, 0.18911842627279238),
+]
+
+
+def test_qnorm_matches_r_within_two_ulp():
+    # Same algorithm and operation order as R; V8's Math.log may differ from the C library's log in the last bit,
+    # so 2 ulp is allowed (the previous Acklam + Halley version was 7 ulp, 1.2e-15 relative, off at p = 0.995).
+    got = _run("[" + ",".join(f"RB._qnorm({p!r})" for p, _ in QNORM_R) + "]")
+    for (p, want), x in zip(QNORM_R, got):
+        assert abs(x - want) <= 2 * math.ulp(want if want else 1.0), (p, x, want)
+
+
+@pytest.mark.parametrize("alpha,z,tau", [
+    (0.005, 2.8070365753775794, 707.10660443466645),   # |z| = z_a (1 + 1e-6): R values
+    (0.01, 2.5758318793782031, 707.10660446268753),
+])
+def test_prior_sd_near_significance_boundary(alpha, z, tau):
+    a = _run(f"RB.analyze({z!r}, 1.0, {{alpha:{alpha}}})")
+    assert math.isclose(a["sceptical"]["priorSD"], tau, rel_tol=1e-9)
+
+
 def test_sceptical_p_monotone_decreasing():
     ps = [_run(f"RB.analyze({z}, 1.0).intrinsic.scepticalP") for z in (2.0, 2.5, 3.0, 4.0)]
     assert all(ps[i] < ps[i - 1] for i in range(1, len(ps)))

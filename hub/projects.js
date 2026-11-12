@@ -778,9 +778,9 @@ window.HTML_APPS_PROJECTS = [
     collection: "existing",
     mode: "file",
     category: "Trial Sequential Analysis",
-    summary: "Exact group-sequential efficacy (and beta-spending futility) boundaries for a K-look trial via the recursive-density method (Armitage-McPherson-Rowe) with 32-point Gauss-Legendre quadrature — O'Brien-Fleming, Pocock, Lan-DeMets ρ and Hwang-Shih-DeCani γ spending, plus conditional power. The exact boundary, unlike the closed-form approximation in the TSA / sequential-MA monitoring tools.",
-    note: "Verified against gsDesign::gsDesign to ~1e-5 across all four spending families. Ported from AdaptSim.",
-    tags: ["group-sequential", "gsdesign", "alpha-spending", "obrien-fleming", "pocock", "boundaries", "conditional-power"]
+    summary: "Group-sequential efficacy and beta-spending futility boundaries for a K-look trial (one-sided, two-sided, binding or non-binding futility) with O'Brien-Fleming, Pocock, power ρ and Hwang-Shih-DeCani γ spending, computed with gsDesign's own numerical method (Jennison-Turnbull recursive integration); plus Monte Carlo operating characteristics with optional conditional-power sample-size re-estimation, following rpact. Trial-design boundaries, unlike the closed-form approximation in the TSA / sequential-MA monitoring tools.",
+    note: "Validated against gsDesign 3.11.0 (373 designs, all checks within 1e-9) and rpact 4.4.0 (adaptive simulation replayed trial by trial); see the gsdesign-reproducible archive. Ported from AdaptSim.",
+    tags: ["group-sequential", "gsdesign", "rpact", "alpha-spending", "obrien-fleming", "pocock", "boundaries", "futility", "sample-size-re-estimation", "adaptive-design"]
   },
   {
     name: "ROBINS-I",
