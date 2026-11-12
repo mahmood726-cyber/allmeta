@@ -27,10 +27,18 @@ for (const width of [1280, 390]) {
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
       await ipd(page);
-      await page.evaluate(() => loadExampleData('survival'));
+      // The example generator draws patients with Math.random. Unseeded, some runs (2 of 60
+      // in a local probe) give a study a non-estimable effect; the diagnostics then
+      // (correctly) refuse to plot and this test failed as "canvas hidden" (PR #515 CI run
+      // 43227741098). This test is about rendering a VALID analysis, so draw a fixed
+      // dataset with the page's own SeededRNG; the invalid-input path has its own test below.
+      await page.evaluate(() => SeededRNG.withDeterminism(7, () => loadExampleData('survival')));
       await page.waitForTimeout(400);
       await page.evaluate(() => runAnalysis());
       await page.waitForFunction(() => !!APP.results?.pooled);
+      expect(await page.evaluate(() => Number.isFinite(APP.results.pooled.pooled) && APP.results.studies.every(s =>
+        Number.isFinite(s.effect) && Number.isFinite(s.variance) && s.variance > 0)),
+        'precondition: the seeded example gives every study an estimable effect').toBe(true);
       const before = await page.evaluate(() => JSON.stringify({ results: APP.results, config: APP.config, settings: APP.analysisSettings }));
       await page.locator('.nav-tab[data-panel="heterogeneity"]').click();
       await ink(page, 'baujatPlot'); await ink(page, 'looPlot');
