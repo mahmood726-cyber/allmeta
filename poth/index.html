@@ -81,25 +81,29 @@
     </section>
   </main>
   <footer>
-    POTH = S²(n) / S²max(n) = [12(n−1)/(n+1)] · (1/n) Σ (SUCRAᵢ − 0.5)², with S²max(n) = (n+1)/[12(n−1)]; range 0–1. Median ≈ 0.671 across 267 published networks. Reference: Wigle A, Béliveau A, Salanti G, Rücker G, Schwarzer G, Mavridis D, Nikolakopoulou A. Precision of Treatment Hierarchy: a metric for quantifying certainty in treatment hierarchies from network meta-analysis. Stat Med. 2025;44:e70176. doi:10.1002/sim.70176. Closed-form computation in the audited <code>shared/poth.js</code> (analytically verified; mirrors the CRAN <code>poth</code> package). Computed client-side.
+    POTH = S²(n) / S²max(n) = [12(n−1)/(n+1)] · (1/n) Σ (SUCRAᵢ − 0.5)², with S²max(n) = (n+1)/[12(n−1)]; range 0–1. Median ≈ 0.671 across 267 published networks. Reference: Wigle A, Béliveau A, Salanti G, Rücker G, Schwarzer G, Mavridis D, Nikolakopoulou A. Precision of Treatment Hierarchy: a metric for quantifying certainty in treatment hierarchies from network meta-analysis. Stat Med. 2025;44:e70176. doi:10.1002/sim.70176. Closed-form computation in <code>shared/poth.js</code>, checked against the CRAN <code>poth</code> package 0.3-0 (within 10⁻⁹ on every <code>netmeta</code> example network). P-scores from the allmeta <a href="../nma/">NMA app</a> can be pasted here. Computed client-side.
   </footer>
   <script>
     var EXAMPLE = "0.92, Drug A\n0.74, Drug B\n0.55, Drug C\n0.41, Drug D\n0.23, Drug E\n0.15, Drug F";
     function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
+    // A value must be a whole number token (no trailing text); anything unreadable or out of range is
+    // reported by line and stops the computation instead of being dropped, truncated or clamped.
+    // A trailing "%" marks the value (and so the whole list) as percentages.
+    var NUM = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?\s*%?$/;
     function parse(text) {
       var rows = [], errs = [], anyPct = false;
       text.split(/\r?\n/).forEach(function (line, i) {
         var t = line.trim(); if (!t || t[0] === "#") return;
         var f = t.split(/[,\t]/).map(function (s) { return s.trim(); });
-        var v = parseFloat(f[0]);
-        if (!isFinite(v)) { errs.push("line " + (i + 1)); return; }
-        if (v > 1) anyPct = true;
-        rows.push({ v: v, label: f[1] || ("T" + (rows.length + 1)) });
+        var v = NUM.test(f[0]) ? Number(f[0].replace(/\s*%$/, "")) : NaN;
+        if (!isFinite(v) || v < 0) { errs.push("line " + (i + 1)); return; }
+        if (v > 1 || /%$/.test(f[0])) anyPct = true;
+        rows.push({ v: v, line: i + 1, label: f[1] || ("T" + (rows.length + 1)) });
       });
       // percent auto-detect: if any value > 1, treat all as 0–100.
       if (anyPct) rows.forEach(function (r) { r.v = r.v / 100; });
-      rows.forEach(function (r) { r.v = Math.max(0, Math.min(1, r.v)); });
+      rows.forEach(function (r) { if (r.v > 1) errs.push("line " + r.line); });
       return { rows: rows, errs: errs, pct: anyPct };
     }
 
@@ -113,6 +117,10 @@
     function run() {
       var p = parse(document.getElementById("data").value);
       var out = document.getElementById("out");
+      if (p.errs.length) {
+        out.innerHTML = "<p class='hint'>Not computed: " + p.errs.join(", ") + " must hold one value between 0 and 1 (or 0 and 100 as a percentage), optionally followed by a comma and the treatment name.</p>";
+        return;
+      }
       if (p.rows.length < 2) {
         out.innerHTML = "<p class='hint'>Enter at least 2 SUCRA values" + (p.errs.length ? " (check " + p.errs.join(", ") + ")" : "") + ".</p>";
         return;
