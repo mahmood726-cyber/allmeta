@@ -37348,12 +37348,139 @@ function ipdArmOutcomes(rows, config) {
  });
  return { studies, studyVar: sv, treatmentVar: tv, outcomeVar: ov };
 }
+// IPD-Modal: the analysis configuration as the form shows it (runAnalysis reads the same fields), so a surface
+// opened before Run Analysis still analyses the outcome type and variables the page is configured for.
+function ipdFormAnalysisConfig() {
+ const cfg = Object.assign({}, (typeof APP !== 'undefined' && APP.config) || {});
+ const val = (id) => { const el = typeof document !== 'undefined' && document.getElementById ? document.getElementById(id) : null; const v = el && el.value; return (typeof v === 'string' && v) ? v : null; };
+ cfg.studyVar = val('varStudy') || cfg.studyVar;
+ cfg.treatmentVar = val('varTreatment') || cfg.treatmentVar;
+ cfg.timeVar = val('varTime') || cfg.timeVar;
+ cfg.eventVar = val('varEvent') || cfg.eventVar;
+ cfg.outcomeType = val('outcomeType') || cfg.outcomeType;
+ return cfg;
+}
 // A heterogeneity number for display: the value, or "not estimable (k = 1)" when it is not finite (fewer than 2 studies).
 function ipdHetText(x, digits, k, suffix) {
  return Number.isFinite(x) ? x.toFixed(digits) + (suffix || '') : 'not estimable (k = ' + k + ')';
 }
 
 
+
+// IPD-Modal: the per-study two-stage estimate (moved verbatim out of runAnalysis so that other surfaces, e.g. the
+// Power Monitor, analyse the configured outcome on the same scale: Cox log HR, log OR, mean difference).
+function ipdStudyEstimate(studyData, cfg, armMapping) {
+ const armGroups = ipdSplitBinaryArms(studyData, cfg.treatmentVar, armMapping);
+
+ const treat1 = armGroups.treat1;
+
+ const treat0 = armGroups.treat0;
+
+
+
+ let effect, variance, se;
+
+
+
+ if (cfg.outcomeType === 'survival') {
+
+
+
+ const times = studyData.map(d => d[cfg.timeVar]);
+
+ const events = studyData.map(d => d[cfg.eventVar]);
+
+ const treatment = studyData.map(d => [ipdNormalizeArmToken(d[cfg.treatmentVar]) === armMapping.treatmentToken ? 1 : 0]);
+
+
+
+ try {
+
+ const cox = SurvivalAnalysis.coxPH(times, events, treatment);
+
+ effect = cox.beta[0];
+
+ se = cox.se[0];
+
+ variance = se * se;
+
+ } catch (e) {
+
+
+
+ const lr = SurvivalAnalysis.logRankTest(
+
+ treat1.map(d => d[cfg.timeVar]),
+
+ treat1.map(d => d[cfg.eventVar]),
+
+ treat0.map(d => d[cfg.timeVar]),
+
+ treat0.map(d => d[cfg.eventVar])
+
+ );
+
+ effect = (lr.O1 - lr.E1) / lr.V;
+
+ variance = 1 / lr.V;
+
+ se = Math.sqrt(variance);
+
+ }
+
+ } else if (cfg.outcomeType === 'binary') {
+
+ const a = treat1.filter(d => d[cfg.eventVar] === 1).length;
+
+ const b = treat1.length - a;
+
+ const c = treat0.filter(d => d[cfg.eventVar] === 1).length;
+
+ const d = treat0.length - c;
+
+
+
+ // P60 fix: 0.5 is added to the four cells only when a cell is zero (metafor escalc default)
+ const cc = (a === 0 || b === 0 || c === 0 || d === 0) ? 0.5 : 0;
+ effect = Math.log((a + cc) * (d + cc) / ((b + cc) * (c + cc)));
+
+ variance = 1 / (a + cc) + 1 / (b + cc) + 1 / (c + cc) + 1 / (d + cc);
+
+ se = Math.sqrt(variance);
+
+ } else {
+
+
+
+ const outcomes1 = treat1
+ .map(d => (d[cfg.eventVar] ?? d.outcome))
+ .filter(v => v != null && Number.isFinite(v));
+
+ const outcomes0 = treat0
+ .map(d => (d[cfg.eventVar] ?? d.outcome))
+ .filter(v => v != null && Number.isFinite(v));
+
+ if (outcomes1.length < 2 || outcomes0.length < 2) {
+ // Preserve run continuity for sparse arm splits by giving near-zero weight.
+ effect = 0;
+ variance = 1e6;
+ } else {
+ const mean1 = Stats.mean(outcomes1);
+ const mean0 = Stats.mean(outcomes0);
+ const sd1 = Stats.sd(outcomes1, 1);
+ const sd0 = Stats.sd(outcomes0, 1);
+ effect = mean1 - mean0;
+ variance = sd1 * sd1 / outcomes1.length + sd0 * sd0 / outcomes0.length;
+ }
+
+ se = Math.sqrt(variance);
+
+ }
+
+
+
+ return { effect: effect, variance: variance, se: se, n1: treat1.length, n0: treat0.length };
+}
 
 function runAnalysis() {
 
@@ -37575,103 +37702,13 @@ function runAnalysis() {
 
 
  let effect, variance, se;
+ const est = ipdStudyEstimate(studyData, APP.config, armMapping);
 
+ effect = est.effect;
 
+ variance = est.variance;
 
- if (APP.config.outcomeType === 'survival') {
-
-
-
- const times = studyData.map(d => d[APP.config.timeVar]);
-
- const events = studyData.map(d => d[APP.config.eventVar]);
-
- const treatment = studyData.map(d => [ipdNormalizeArmToken(d[APP.config.treatmentVar]) === armMapping.treatmentToken ? 1 : 0]);
-
-
-
- try {
-
- const cox = SurvivalAnalysis.coxPH(times, events, treatment);
-
- effect = cox.beta[0];
-
- se = cox.se[0];
-
- variance = se * se;
-
- } catch (e) {
-
-
-
- const lr = SurvivalAnalysis.logRankTest(
-
- treat1.map(d => d[APP.config.timeVar]),
-
- treat1.map(d => d[APP.config.eventVar]),
-
- treat0.map(d => d[APP.config.timeVar]),
-
- treat0.map(d => d[APP.config.eventVar])
-
- );
-
- effect = (lr.O1 - lr.E1) / lr.V;
-
- variance = 1 / lr.V;
-
- se = Math.sqrt(variance);
-
- }
-
- } else if (APP.config.outcomeType === 'binary') {
-
- const a = treat1.filter(d => d[APP.config.eventVar] === 1).length;
-
- const b = treat1.length - a;
-
- const c = treat0.filter(d => d[APP.config.eventVar] === 1).length;
-
- const d = treat0.length - c;
-
-
-
- // P60 fix: 0.5 is added to the four cells only when a cell is zero (metafor escalc default)
- const cc = (a === 0 || b === 0 || c === 0 || d === 0) ? 0.5 : 0;
- effect = Math.log((a + cc) * (d + cc) / ((b + cc) * (c + cc)));
-
- variance = 1 / (a + cc) + 1 / (b + cc) + 1 / (c + cc) + 1 / (d + cc);
-
- se = Math.sqrt(variance);
-
- } else {
-
-
-
- const outcomes1 = treat1
- .map(d => (d[APP.config.eventVar] ?? d.outcome))
- .filter(v => v != null && Number.isFinite(v));
-
- const outcomes0 = treat0
- .map(d => (d[APP.config.eventVar] ?? d.outcome))
- .filter(v => v != null && Number.isFinite(v));
-
- if (outcomes1.length < 2 || outcomes0.length < 2) {
- // Preserve run continuity for sparse arm splits by giving near-zero weight.
- effect = 0;
- variance = 1e6;
- } else {
- const mean1 = Stats.mean(outcomes1);
- const mean0 = Stats.mean(outcomes0);
- const sd1 = Stats.sd(outcomes1, 1);
- const sd0 = Stats.sd(outcomes0, 1);
- effect = mean1 - mean0;
- variance = sd1 * sd1 / outcomes1.length + sd0 * sd0 / outcomes0.length;
- }
-
- se = Math.sqrt(variance);
-
- }
+ se = est.se;
 
 
 
@@ -66731,43 +66768,35 @@ const PowerMonitor = {
 
     calculateCurrentPower: function(data, config) {
 
-        // IPD-Left: arms and outcomes from the mapped columns (ipdArmOutcomes); k = studies with both arms.
+        // IPD-Modal: per-study estimates of the CONFIGURED outcome on the runAnalysis scale (ipdStudyEstimate:
+        // Cox log HR, log OR, mean difference). It used to pool the arm means of the mapped column whatever the
+        // outcome, i.e. a difference in crude event proportions on time-to-event data.
         const arms = ipdArmOutcomes(data, config);
-        const totalN = data.length;
-        // Estimate effect size and heterogeneity from current data
+        const totalN = Array.isArray(data) ? data.length : 0;
+        const type = (config && config.outcomeType) || 'survival';
+        const MEASURES = { survival: 'log hazard ratio (Cox, per study)', binary: 'log odds ratio', continuous: 'mean difference' };
+        const refuse = (message) => ({ power: 0, refused: true, message: message, currentStudies: 0, totalParticipants: totalN });
+        if (!MEASURES[type]) return refuse('Power Monitor supports time-to-event, binary and continuous outcomes; outcome type "' + type + '" is not supported.');
+        if (arms.error) return refuse(arms.error);
+        const r0 = (Array.isArray(data) && data[0]) || {};
+        const cfg = { studyVar: arms.studyVar, treatmentVar: arms.treatmentVar, eventVar: arms.outcomeVar, timeVar: config && config.timeVar, outcomeType: type };
+        if (type === 'survival' && (!cfg.timeVar || !(cfg.timeVar in r0))) return refuse('Power Monitor: no time variable is mapped for the time-to-event outcome (Data tab, Time variable).');
+        if (!(cfg.eventVar in r0)) return refuse('Power Monitor: the outcome variable "' + cfg.eventVar + '" is not in the data.');
+        const armMap = ipdResolveBinaryArmMapping(data, cfg.treatmentVar);
         const effects = [];
         const ses = [];
         arms.studies.forEach(st => {
-            const treated = st.y1, control = st.y0;
-            if (treated.length > 0 && control.length > 0) {
-
-                const meanT = treated.reduce((a, b) => a + b, 0) / treated.length;
-
-                const meanC = control.reduce((a, b) => a + b, 0) / control.length;
-
-                const effect = meanT - meanC;
-
-
-
-                const varT = treated.reduce((a, o) => a + Math.pow(o - meanT, 2), 0) / (treated.length - 1) || 1;
-
-                const varC = control.reduce((a, o) => a + Math.pow(o - meanC, 2), 0) / (control.length - 1) || 1;
-
-                const se = Math.sqrt(varT/treated.length + varC/control.length);
-
-
-
-                effects.push(effect);
-
-                ses.push(se);
-
+            if (!(st.y1.length > 0 && st.y0.length > 0)) return;
+            const sd = data.filter(d => d[cfg.studyVar] === st.study);
+            let est;
+            try { est = ipdStudyEstimate(sd, cfg, armMap); } catch (e) { return; }
+            if (Number.isFinite(est.effect) && Number.isFinite(est.se) && est.se > 0) {
+                effects.push(est.effect);
+                ses.push(est.se);
             }
-
         });
 
-
-
-        if (effects.length === 0) return { power: 0, message: arms.error || 'Insufficient data' };
+        if (effects.length === 0) return refuse('Power Monitor: no study has an estimable ' + MEASURES[type] + ' (both arms are needed).');
         const k = effects.length;
 
 
@@ -66828,7 +66857,11 @@ const PowerMonitor = {
 
             tau2: tau2,
 
-            effectSize: effectSize
+            effectSize: effectSize,
+
+            effectMeasure: MEASURES[type],
+
+            outcomeType: type
 
         };
 
@@ -66960,7 +66993,12 @@ function showPowerMonitor() {
 
         try {
 
-            const stats = PowerMonitor.calculateCurrentPower(APP.data, APP.config);
+            const stats = PowerMonitor.calculateCurrentPower(APP.data, ipdFormAnalysisConfig());
+
+            if (stats.refused) {
+                showNotification(stats.message, 'warning');
+                return;
+            }
 
             const projections = PowerMonitor.projectFuturePower(stats, 10, stats.totalParticipants / stats.currentStudies);
 
@@ -67184,7 +67222,9 @@ function showPowerMonitor() {
 
                             <h4 style="color:var(--accent-primary);margin-bottom:0.5rem;">Current Effect</h4>
 
-                            <div style="font-size:1.2rem;font-weight:bold;">${stats.pooledEffect.toFixed(3)}</div>
+                            <div style="font-size:0.8rem;color:var(--text-muted);">Fixed-effect pool, ${escapeHTML(stats.effectMeasure)}</div>
+
+                            <div style="font-size:1.2rem;font-weight:bold;">${stats.pooledEffect.toFixed(3)}${stats.outcomeType === 'survival' ? ' (HR ' + Math.exp(stats.pooledEffect).toFixed(3) + ')' : stats.outcomeType === 'binary' ? ' (OR ' + Math.exp(stats.pooledEffect).toFixed(3) + ')' : ''}</div>
 
                             <div style="font-size:0.9rem;">SE: ${stats.pooledSE.toFixed(3)}</div>
 
