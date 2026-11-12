@@ -80,6 +80,24 @@ def test_one_sided_futility_stops_on_negative_trend():
     assert out[0] == "futility", out
 
 
+def test_post_ris_look_keeps_earlier_futility():
+    # Codex review of #510: a look after the information has reached 1 spends no alpha and no beta. Including it
+    # in the futility design made the inflation root NaN and dropped futility at EVERY look, so appending a later
+    # look erased a futility stop at t = 0.5. The design ends at the first look with t >= 1 (RTSA's RTSA() drops
+    # looks beyond the required information); later looks have efficacy Infinity and no futility boundary.
+    opts = {"futility": True, "beta": 0.2, "spendingConvention": "per-side"}
+    body = ("const o = %s; const a = M.computeBoundary([{t:.5,z:0},{t:1,z:0}], o), b = M.computeBoundary([{t:.5,z:0},{t:1,z:0},{t:2,z:0}], o);"
+            "console.log(JSON.stringify({ra: a.infoInflation, rb: b.infoInflation, a: a.looks.map(l => [l.alpha_boundary, l.futility_boundary, l.decision]),"
+            " b: b.looks.map(l => [l.alpha_boundary === Infinity ? 'Inf' : l.alpha_boundary, l.futility_boundary, l.decision]), d: b.decision}));") % json.dumps(opts)
+    out = _node(body)
+    assert out["rb"] == out["ra"] and out["ra"] is not None, out
+    assert out["b"][:2] == out["a"], out
+    assert out["b"][2] == ["Inf", None, "after-stop"], out
+    assert out["d"] == "futility", out
+    # RTSA 0.2.2 boundaries(c(.5, 1), alpha=.05, beta=.2, side=2, "non-binding", esOF, esOF): futility 0.559391504859
+    assert abs(out["a"][0][1] - 0.559391504859) < 2e-5, out
+
+
 def test_closely_spaced_looks():
     # Review finding: a fixed J&T mesh cannot resolve the transition density between looks 1e-5 apart.
     # Reference: tests/fixtures/sequential-ma-close-looks.R: look 2 by one-dimensional quadrature (R integrate,

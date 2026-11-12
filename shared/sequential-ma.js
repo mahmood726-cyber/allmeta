@@ -270,7 +270,17 @@
         var tx = t.concat([1]), cx = tx.map(function (x) { return _spendPerSide(family, alpha, x, sided, convention); });
         var effx = _efficacy(tx, cx.map(function (c, i) { return Math.max(0, i ? c - cx[i - 1] : c); }), sided);
         fut = _futility(tx, effx, beta, futilityFamily, drift, sided);
-      } else fut = _futility(t, eff, beta, futilityFamily, drift, sided);
+      } else {
+        // The design ends at the first look with t >= 1: every alpha and beta increment after it is zero, so later
+        // looks have no efficacy (Infinity) and no futility boundary. Including them made the final-look objective
+        // of the inflation root infinite, R NaN, and every futility boundary null -- a post-RIS look erased the
+        // futility decisions at earlier looks. (RTSA's RTSA() drops looks beyond the required information;
+        // its boundaries() stops with "Non-binding futility boundaries could not be computed".)
+        var kEnd = 0;
+        while (t[kEnd] < 1) kEnd++;
+        fut = _futility(t.slice(0, kEnd + 1), eff.slice(0, kEnd + 1), beta, futilityFamily, drift, sided);
+        for (var kp = kEnd + 1; kp < t.length; kp++) fut.za.push(-Infinity);
+      }
     }
     var decisionTaken = null, out = [];
     for (var k = 0; k < sorted.length; k++) {
