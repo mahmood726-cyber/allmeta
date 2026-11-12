@@ -175,3 +175,25 @@ def test_multi_outcome_univariate_comparison_is_reml():
     assert r.returncode == 0, r.stderr
     got = json.loads(r.stdout)
     report([("multi-outcome-ma", "REML", nm, g, expected(nm, "tau2", "REML")) for nm, g in got.items()])
+
+
+def test_nma_pro_analyze_finishes_and_tau2_ci_is_scale_equivariant(page):
+    """FrequentistNMA.analyze() always runs profileLikelihoodCI, which stepped tau2 down by 0.001
+    and up by 0.01 from the estimate: ~tau2/0.001 likelihood evaluations, so the page froze once
+    tau2 was large (normand1999 x100, tau2 = 6.8e6: > 30 s; x1e4: ~1e13 evaluations). x10 is used
+    here so the pre-fix run still terminates (it takes tens of seconds and fails the time bound)."""
+    pg = page("nma-pro-v2/nma-pro-v8.0.html")
+    base = UNI["normand"]
+    out = {}
+    for c in (1.0, 10.0):
+        st = [{"name": f"s{i}", "treatment1": "B", "treatment2": "A", "yi": y * c, "vi": v * c * c}
+              for i, (y, v) in enumerate(zip(base["yi"], base["vi"]))]
+        out[c] = pg.evaluate("""st => { const t0 = performance.now();
+            const r = FrequentistNMA.analyze(st, { reference: 'A', effectMeasure: 'MD', estimator: 'REML' });
+            return { tau2: r.tau2, lo: r.tau2CI.lower, hi: r.tau2CI.upper, ms: performance.now() - t0 }; }""", st)
+        assert out[c]["ms"] < 20000, f"x{c}: analyze took {out[c]['ms']:.0f} ms"
+    rows = [("nma-pro-v8.0", "REML", "pw_normand", out[1.0]["tau2"], expected("normand", "tau2", "REML"))]
+    for c in (10.0,):
+        for key in ("tau2", "lo", "hi"):
+            rows.append(("nma-pro-v8.0 tau2 profile CI", key, f"normand x{c:g} vs c^2 * x1", out[c][key], out[1.0][key] * c * c))
+    report(rows)
