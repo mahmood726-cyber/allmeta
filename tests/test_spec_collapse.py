@@ -77,3 +77,19 @@ def test_example_shows_false_robustness():
              "console.log(JSON.stringify({n:o.naive.verdict, w:o.weighted.verdict}));")
     assert o["n"] == "robust" and o["w"] == "fragile", \
         "the shipped example must demonstrate false robustness (naive robust, corrected fragile)"
+
+
+# metafor 5.2.1: trimfill(rma(y, v, method = m), estimator = "L0"). The fixed-effect slope of y on sqrt(v) is positive
+# here, the slope of metafor's regression (same tau2 method) is negative, so the side must be "right".
+TF_Y = "[-0.4161741518246373,0.3937363511942834,-0.05876383965147141,0.035980276871680233,-0.14766792180929716]"
+TF_V = "[0.2252,0.0368,0.0154,0.0512,0.0154]"
+TF_REF = {"DL": 0.45779473046336, "PM": 0.46281690560161, "REML": 0.46030020064491}
+
+
+@pytest.mark.parametrize("method", ["DL", "PM", "REML"])
+def test_trimfill_side_matches_metafor_regression(method):
+    o = _run("const T=require('./shared/trimfill.js');"
+             f"const r=T.trimAndFill({TF_Y},{TF_V},{{method:'{method}'}});console.log(JSON.stringify(r));")
+    assert o["side"] == "right"
+    assert o["k0"] == 1
+    assert math.isclose(o["imputed"][0]["yi"], TF_REF[method], abs_tol=1e-6)

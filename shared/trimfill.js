@@ -5,7 +5,8 @@
  * A SENSITIVITY analysis only (per advanced-stats.md) — never the primary estimate.
  *
  * Algorithm (matches metafor::trimfill.rma.uni, default estimator L0):
- *  1. Side: sign of the WLS slope of yi on √vi — slope < 0 → "right", else "left".
+ *  1. Side: sign of the slope of yi on √vi from a regression fitted with the same tau2
+ *     method (metafor's rule) — slope < 0 → "right", else "left".
  *  2. Work in z = s·yi (s = +1 left / −1 right), sorted ascending, so we always trim
  *     the top and impute the bottom. Iterate: pool the trimmed set (drop top k0) → βz;
  *     centred ranks rᵢ = sign(zᵢ−βz)·rank(|zᵢ−βz|); Sr = Σ rᵢ over positive residuals;
@@ -45,6 +46,59 @@
     return denom === 0 ? 0 : (sw * swxy - swx * swy) / denom;
   }
 
+  // Slope of the mixed-effects regression of yi on sqrt(vi) with tau2 estimated by the SAME
+  // method as the fit, which is metafor::trimfill's side rule when side is not given
+  // (the fixed-effect slope above can have the opposite sign when tau2 > 0).
+  function _regFit(y, x, v, t2) {
+    var k = y.length, S0 = 0, S1 = 0, S2 = 0, Sy = 0, Sxy = 0, T0 = 0, T1 = 0, T2 = 0, i;
+    var w = new Array(k), e = new Array(k);
+    for (i = 0; i < k; i++) {
+      var wi = 1 / (v[i] + t2); w[i] = wi;
+      S0 += wi; S1 += wi * x[i]; S2 += wi * x[i] * x[i]; Sy += wi * y[i]; Sxy += wi * x[i] * y[i];
+      T0 += wi * wi; T1 += wi * wi * x[i]; T2 += wi * wi * x[i] * x[i];
+    }
+    var D = S0 * S2 - S1 * S1;
+    if (!(D > 1e-12 * S0 * S2)) return null;              // sqrt(vi) has no spread
+    var b1 = (S0 * Sxy - S1 * Sy) / D, b0 = (Sy - b1 * S1) / S0, Q = 0, Q2 = 0;
+    for (i = 0; i < k; i++) { e[i] = y[i] - b0 - b1 * x[i]; Q += w[i] * e[i] * e[i]; Q2 += w[i] * w[i] * e[i] * e[i]; }
+    return { b1: b1, Q: Q, Q2: Q2, w: w, S0: S0, S1: S1, S2: S2, D: D,
+      trP: S0 - (S2 * T0 - 2 * S1 * T1 + S0 * T2) / D };
+  }
+  function _trPP(f, x) {
+    var k = x.length, s = 0;
+    for (var i = 0; i < k; i++) for (var j = 0; j < k; j++) {
+      var h = (f.S2 - f.S1 * (x[i] + x[j]) + f.S0 * x[i] * x[j]) / f.D;
+      var p = (i === j ? f.w[i] : 0) - f.w[i] * f.w[j] * h;
+      s += p * p;
+    }
+    return s;
+  }
+  function _regSlope(yi, vi, method) {
+    var k = yi.length, df = k - 2, x = vi.map(Math.sqrt), f = _regFit(yi, x, vi, 0), t2 = 0, i;
+    if (!f) return 0;
+    if (method === "DL") {
+      t2 = df > 0 ? Math.max(0, (f.Q - df) / f.trP) : 0;
+    } else if (method === "PM") {
+      if (f.Q > df) {
+        var lo = 0, hi = 1, g = _regFit(yi, x, vi, hi);
+        for (i = 0; i < 200 && g.Q > df; i++) { hi *= 2; g = _regFit(yi, x, vi, hi); }
+        for (i = 0; i < 200; i++) { var m = (lo + hi) / 2; if (_regFit(yi, x, vi, m).Q > df) lo = m; else hi = m; }
+        t2 = (lo + hi) / 2;
+      }
+    } else if (method === "REML") {
+      t2 = df > 0 ? Math.max(0, (f.Q - df) / f.trP) : 0;
+      for (i = 0; i < 1000; i++) {
+        var c = _regFit(yi, x, vi, t2);
+        var nw = Math.max(0, t2 + (c.Q2 - c.trP) / _trPP(c, x));
+        if (Math.abs(nw - t2) < 1e-11) { t2 = nw; break; }
+        t2 = nw;
+      }
+    } else {
+      return _eggerSlope(yi, vi);                         // FE and methods without a regression form
+    }
+    return _regFit(yi, x, vi, t2).b1;
+  }
+
   // rank(|c|) with ties broken by order of appearance ("first").
   function _rankAbsFirst(c, average) {
     var idx = c.map(function (v, i) { return { a: Math.abs(v), i: i }; });
@@ -70,7 +124,7 @@
     if (k < 3) return { k0: 0, side: opts.side || "left", kOrig: k, imputed: [],
       _pooled: _pool(yi, vi, method) };
 
-    var slope = _eggerSlope(yi, vi);
+    var slope = opts.maCommon === true ? _eggerSlope(yi, vi) : _regSlope(yi, vi, method);
     var side = opts.side || (opts.maCommon === true ? (slope > 0 ? "left" : "right") : (slope < 0 ? "right" : "left"));
     var s = (side === "left") ? 1 : -1;
 
@@ -112,7 +166,7 @@
     };
   }
 
-  var api = { trimAndFill: trimAndFill, _eggerSlope: _eggerSlope, _rankAbsFirst: _rankAbsFirst };
+  var api = { trimAndFill: trimAndFill, _eggerSlope: _eggerSlope, _regSlope: _regSlope, _rankAbsFirst: _rankAbsFirst };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.AlmTrimFill = api;
 })(typeof window !== "undefined" ? window : globalThis);
