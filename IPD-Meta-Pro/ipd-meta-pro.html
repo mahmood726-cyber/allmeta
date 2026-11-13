@@ -8537,6 +8537,12 @@ function recalculatePooledSimple(studies) {
 
 function displayFragilityResults(results) {
 
+ // IPD-Modal: when no single-study shift changes significance every fragility is 0, the minimum of (f || 999) is
+ // 999 and no study is "most fragile" (mostFragileStudy undefined: the table threw on .study).
+ var noneFlips = !results.mostFragileStudy;
+
+ var overallText = noneFlips ? '&gt;50' : String(results.overallFragility);
+
  var modal = document.createElement('div');
 
  modal.className = 'modal-overlay active';
@@ -8555,17 +8561,17 @@ function displayFragilityResults(results) {
 
  '<div class="stat-card" style="text-align: center; margin-bottom: 1.5rem; ' +
 
- 'background: ' + (results.overallFragility <= 3 ? 'rgba(239, 68, 68, 0.2)' :
+ 'background: ' + (noneFlips ? 'rgba(16, 185, 129, 0.2)' : results.overallFragility <= 3 ? 'rgba(239, 68, 68, 0.2)' :
 
  results.overallFragility <= 8 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)') + ';">' +
 
  '<h4>Overall Fragility Index</h4>' +
 
- '<p style="font-size: 3rem; font-weight: bold; margin: 0.5rem 0;">' + results.overallFragility + '</p>' +
+ '<p style="font-size: 3rem; font-weight: bold; margin: 0.5rem 0;">' + overallText + '</p>' +
 
  '<p style="color: var(--text-secondary);">' +
 
- (results.overallFragility <= 3 ? 'Very fragile - conclusions easily reversible' :
+ (noneFlips ? 'Robust - no single-study shift changes significance' : results.overallFragility <= 3 ? 'Very fragile - conclusions easily reversible' :
 
  results.overallFragility <= 8 ? 'Moderately fragile - interpret with caution' :
 
@@ -8589,7 +8595,7 @@ function displayFragilityResults(results) {
 
  results.fragilities.map(function(f) {
 
- var isWorst = f.study === results.mostFragileStudy.study;
+ var isWorst = !noneFlips && f.study === results.mostFragileStudy.study;
 
  return '<tr' + (isWorst ? ' style="background: rgba(239, 68, 68, 0.1);"' : '') + '>' +
 
@@ -8613,11 +8619,13 @@ function displayFragilityResults(results) {
 
  '<div class="alert alert-info" style="margin-top: 1.5rem;">' +
 
- '<strong>Interpretation:</strong> If ' + results.overallFragility + ' event(s) in ' +
+ '<strong>Interpretation:</strong> ' + (noneFlips ? 'No single study had a shift (up to 50 steps) that would make the meta-analysis ' + (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.' :
+
+ 'If ' + results.overallFragility + ' event(s) in ' +
 
  escapeHTML(results.mostFragileStudy.study) + ' had different outcomes, the meta-analysis would ' +
 
- (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.' +
+ (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.') +
 
  '</div>' +
 
