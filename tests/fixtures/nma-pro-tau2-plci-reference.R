@@ -6,7 +6,8 @@ suppressMessages({library(metafor); library(jsonlite)})
 O <- fromJSON(file.path(dirname(sub("--file=", "", grep("--file=", commandArgs(FALSE), value = TRUE))), "tau2-audit-remlB-oracle.json"))
 ctl <- list(threshold = 1e-14, tol = 1e-14, maxiter = 10000, stepadj = 0.5)
 out <- list()
-for (nm in c("normand", "bcg", "molloy", "bangertdrowns")) { u <- O$uni[[nm]]; out[[nm]] <- list()
+O$uni$k2_two <- list(yi = c(0.3, -0.2), vi = c(0.1, 0.1))  # k = 2 (df = 1): the smallest identifiable set
+for (nm in c("normand", "bcg", "molloy", "bangertdrowns", "k2_two")) { u <- O$uni[[nm]]; out[[nm]] <- list()
   for (m in c("REML", "ML")) { f <- rma(u$yi, u$vi, method = m, control = ctl)
     ci <- confint(f, type = "PL", control = list(tol = 1e-12))$random[1, ]
     out[[nm]][[m]] <- list(tau2 = f$tau2, lower = ci[[2]], upper = ci[[3]]) } }

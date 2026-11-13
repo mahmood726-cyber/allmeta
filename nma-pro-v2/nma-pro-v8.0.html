@@ -520,7 +520,9 @@ for(let it=0;it<400&&b-a>1e-12;it++){if(fc>fd){b=d;d=c;fd=fc;c=b-gr*(b-a);fc=ll(
 const t=Math.exp((a+b)/2);
 if(l0>=ll(t))return{tau2:0,converged:true,Q,df,method};
 return{tau2:t,converged:b-a<=1e-12,Q,df,method}},
-profileLikelihoodCI(matrices,tau2Est,method){const{v,n}=matrices;// Profile-likelihood CI of the estimator in use (metafor confint(type="PL")): the RESTRICTED log-likelihood for REML
+profileLikelihoodCI(matrices,tau2Est,method){const{v,n,p}=matrices;
+// df = n - p = 0: tau2 is not identifiable (the restricted log-likelihood is flat), so there is no CI (as pauleMandel_CI).
+if(!(n-p>0))return null;// Profile-likelihood CI of the estimator in use (metafor confint(type="PL")): the RESTRICTED log-likelihood for REML
 // (and for the non-likelihood estimators, centred on the REML estimate), the ML log-likelihood for ML, crossing
 // max - qchisq(.95,1)/2. It profiled the ML log-likelihood for every estimator, anchored at that estimator's value
 // (for REML not the ML maximum), with a diagonal V and 1.92: normand REML gave [228.89, 1947.41], metafor [255.81, 2379.19].
@@ -531,6 +533,8 @@ const maxLL=logLik(tau2Est),critLL=maxLL-1.9207294103470657;
 // Crossings of logLik = max - qchisq(.95,1)/2 found by bisection to a RELATIVE width of 1e-10.
 let lower=0;if(tau2Est>0&&logLik(0)<critLL){let a=0,b=tau2Est;for(let i=0;i<300&&b-a>1e-10*b;i++){const m=(a+b)/2;if(logLik(m)<critLL)a=m;else b=m}lower=b}
 const step0=Math.max(tau2Est,v.reduce((a,b)=>a+b,0)/n);let ua=tau2Est,ub=tau2Est+step0;for(let i=0;i<200&&logLik(ub)>=critLL;i++){ua=ub;ub=tau2Est+2*(ub-tau2Est)}
+// No crossing within 200 doublings: the likelihood never falls by qchisq(.95,1)/2, so the upper limit is unbounded.
+if(logLik(ub)>=critLL)return{lower:Math.max(0,lower),upper:Infinity,method:restricted?'REML':'ML'};
 for(let i=0;i<300&&ub-ua>1e-10*ub;i++){const m=(ua+ub)/2;if(logLik(m)<critLL)ub=m;else ua=m}
 return{lower:Math.max(0,lower),upper:ub,method:restricted?'REML':'ML'}},
 pauleMandel_CI(matrices,tau2Est,alpha=0.05){const{X,y,v,n,p}=matrices;const df=n-p;if(df<=0)return null;const calcQ=t2=>{const W=v.map(vi=>1/(vi+t2));const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}try{const beta=Matrix.solve(XtWX,XtWy);let Q=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X[i][j]*beta[j];Q+=W[i]*(y[i]-f)**2}return Q}catch{return Infinity}};const chi2L=Stats.qchisq(1-alpha/2,df),chi2U=Stats.qchisq(alpha/2,df);const find=(tgt,lo,hi)=>{for(let i=0;i<100;i++){const m=(lo+hi)/2,Q=calcQ(m);if(Math.abs(Q-tgt)<0.0001)return m;if(Q>tgt)lo=m;else hi=m}return(lo+hi)/2};return{lower:Math.max(0,find(chi2L,0,tau2Est*10+1)),upper:find(chi2U,tau2Est,tau2Est*20+5),method:'Q-profile'}},
