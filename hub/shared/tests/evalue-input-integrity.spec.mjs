@@ -95,7 +95,8 @@ test('absence of CI is not misdescribed as a null-crossing interval', async ({pa
   expect(r.point).toBeCloseTo(3.414213562373095,10);
   expect(r.ci).toBeNull();
   await expect(page.locator('#interp')).toContainText('no confidence interval was supplied');
-  await expect(page.locator('#tbody')).toContainText('—');
+  await expect(page.locator('#tbody')).toContainText('not applicable');
+  await expect(page.locator('#tbody')).toContainText('missing');
 });
 for (const [name,pt,lo,hi,measure] of [
   ['partial interval','2','','2.7','RR'],

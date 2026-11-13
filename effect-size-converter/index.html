@@ -784,9 +784,9 @@
           return;
         }
         var f = function (x) { return (typeof x === 'number' && isFinite(x)) ? x.toFixed(3) : '—'; };
-        var needLo = r.rr.point >= 1, noCI = needLo ? (r.rr.lo == null) : (r.rr.hi == null);  // the bound nearest the null is missing
-        var noCIText = (r.rr.lo == null && r.rr.hi == null) ? 'not available (no CI entered)' : 'not available (the CI bound nearest the null is missing)';
-        out.innerHTML = 'E-value (point) = <strong>' + f(r.point) + '</strong> &middot; E-value (CI bound nearest null) = <strong>' + (noCI ? noCIText : f(r.ci)) + '</strong>' +
+        var ev = function (key) { return r[key] == null ? 'not applicable (' + r.reasons[key] + ')' : f(r[key]); };
+        out.innerHTML = 'E-value (point) = <strong>' + f(r.point) + '</strong> &middot; E-value (CI bound nearest null) = <strong>' + ev('ci') + '</strong>' +
+          ' &middot; Lower limit: ' + ev('lower') + ' &middot; Upper limit: ' + ev('upper') +
           (meas !== 'RR' ? ' &middot; approx RR = ' + f(r.rr.point) : '');
         window.__almLastEValue = function () { return r; };
       }
