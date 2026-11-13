@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- V9-E07: Chart/docx now vendored to ../shared/vendor/ with SRI. webr remains external (R runtime). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://webr.r-wasm.org 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://webr.r-wasm.org; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
+  <!-- V9-E07: Chart/docx now vendored to ../shared/vendor/ with SRI. WebR is the pinned same-origin bundle (../shared/webr-runner.js -> ../r-shiny/shinylive/webr/). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'">
   <link rel="stylesheet" href="../shared/forced-colors.css">
   <title>NMA Dose Response Studio</title>
   <style>
@@ -5548,6 +5548,73 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
     // =====================================================================
     // WebR VALIDATION RUNNER
     // =====================================================================
+    // The R runtime is the SAME pinned, same-origin webR bundle every other allmeta
+    // "verify in R" panel uses (shared/webr-runner.js -> r-shiny/shinylive/webr/,
+    // SHA-256-verified metafor). This card used to import webR 0.4.4 from
+    // webr.r-wasm.org and webr::install() metafor from repo.r-wasm.org. Under this
+    // page's CSP that never finished: webR 0.4.4's dynamic linker eval()s the EM_ASM
+    // bodies of a side module (addEmAsm -> eval), 'unsafe-eval' is not allowed, the
+    // worker died with an uncaught WebAssembly.Exception, init() never settled and the
+    // card stayed busy for ever; connect-src also refused repo.r-wasm.org.
+    var _webrRunnerPromise = null;
+    function loadWebrRunner() {
+      if (window.AlmWebR && typeof window.AlmWebR.runR === 'function') return Promise.resolve(window.AlmWebR);
+      if (!_webrRunnerPromise) _webrRunnerPromise = new Promise(function(resolve, reject) {
+        var s = document.createElement('script');
+        s.src = '../shared/webr-runner.js';
+        s.onload = function() {
+          if (window.AlmWebR && typeof window.AlmWebR.runR === 'function') resolve(window.AlmWebR);
+          else reject(new Error('shared/webr-runner.js loaded but AlmWebR is missing'));
+        };
+        s.onerror = function() { reject(new Error('Could not load ../shared/webr-runner.js')); };
+        document.head.appendChild(s);
+      }).catch(function(e) { _webrRunnerPromise = null; throw e; });
+      return _webrRunnerPromise;
+    }
+
+    // One R script for every pool: each line "NMAWEBR:<id>:v1,...,v9" carries
+    // c(beta, se, tau2, I2, QE, QEp, ci.lb, ci.ub, k), printed with %.17g (exact round trip).
+    function buildWebrScript(pools, useMetafor) {
+      var lines = [];
+      if (useMetafor) {
+        lines.push('suppressPackageStartupMessages(library(metafor))');
+        lines.push('pool <- function(yi, vi) { fit <- rma(yi, vi, method="DL"); c(fit$beta[1], fit$se, fit$tau2, fit$I2, fit$QE, fit$QEp, fit$ci.lb, fit$ci.ub, fit$k) }');
+      } else {
+        lines.push('pool <- function(yi, vi) {');
+        lines.push('  k <- length(yi); wi <- 1/vi; sumW <- sum(wi)');
+        lines.push('  theta_fe <- sum(wi * yi) / sumW');
+        lines.push('  Q <- sum(wi * (yi - theta_fe)^2)');
+        lines.push('  C0 <- sumW - sum(wi^2)/sumW');
+        lines.push('  tau2 <- max(0, (Q - (k - 1)) / C0)');
+        lines.push('  wi_re <- 1/(vi + tau2); sumW_re <- sum(wi_re)');
+        lines.push('  theta_re <- sum(wi_re * yi) / sumW_re; se_re <- sqrt(1/sumW_re)');
+        lines.push('  I2 <- ifelse(Q > (k-1), max(0, (Q - (k-1)) / Q) * 100, 0)');
+        lines.push('  Qp <- 1 - pchisq(Q, k - 1)');
+        lines.push('  c(theta_re, se_re, tau2, I2, Q, Qp, theta_re - qnorm(0.975) * se_re, theta_re + qnorm(0.975) * se_re, k)');
+        lines.push('}');
+      }
+      lines.push('emit <- function(id, yi, vi) cat("NMAWEBR:", id, ":", paste(sprintf("%.17g", pool(yi, vi)), collapse=","), "\\n", sep="")');
+      pools.forEach(function(pl, i) {
+        lines.push('emit(' + i + ', c(' + pl.yi.join(',') + '), c(' + pl.vi.join(',') + '))');
+      });
+      return lines.join('\n');
+    }
+
+    function parseWebrStdout(stdout, n) {
+      var byId = {};
+      String(stdout || '').split(/\r?\n/).forEach(function(l) {
+        var m = /^NMAWEBR:(\d+):(.*)$/.exec(l.trim());
+        if (m) byId[+m[1]] = m[2].split(',').map(Number);
+      });
+      var out = [];
+      for (var i = 0; i < n; i++) {
+        var v = byId[i];
+        if (!v || v.length !== 9) throw new Error('R result record ' + i + ' missing');
+        out.push({ effect: v[0], se: v[1], tau2: v[2], I2: v[3], Q: v[4], Qp: v[5], ci_lb: v[6], ci_ub: v[7], k: v[8] });
+      }
+      return out;
+    }
+
     async function runWebRValidation() {
       var btn = document.getElementById('webrRunBtn');
       var progress = document.getElementById('webrProgress');
@@ -5564,197 +5631,67 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
           + 'then return here to validate.</div>';
         return;
       }
+      if (webrLoading) {
+        progressText.textContent = 'WebR is already loading, please wait...';
+        return;
+      }
 
       btn.disabled = true;
       btn.textContent = 'Running...';
       progress.style.display = 'block';
       resultsDiv.innerHTML = '';
+      webrLoading = true;
 
       try {
-        // Step 1: Load WebR if not already loaded
-        if (!webrInstance) {
-          if (webrLoading) {
-            progressText.textContent = 'WebR is already loading, please wait...';
-            return;
-          }
-          webrLoading = true;
-          progressText.textContent = 'Loading WebR runtime (~15 MB)...';
+        var status = function(s) { progressText.textContent = s; };
+        status('Loading the pinned same-origin WebR runner...');
+        var runner = await loadWebrRunner();
 
-          var WebR = (await import('https://webr.r-wasm.org/v0.4.4/webr.mjs')).WebR;
-          webrInstance = new WebR();
-          await webrInstance.init();
-          webrLoading = false;
-        }
-
-        // Step 2: Try metafor first
-        var useMetafor = true;
-        var rSource = 'metafor::rma(method="DL")';
-        progressText.textContent = 'Installing metafor package...';
-
-        try {
-          await webrInstance.evalR('webr::install("metafor", quiet = TRUE)');
-          await webrInstance.evalR('library(metafor)');
-        } catch (e) {
-          useMetafor = false;
-          rSource = 'base R DL fallback';
-          progressText.textContent = 'metafor unavailable, using base R fallback...';
-        }
-
-        // Step 3: Run per-treatment DL in R and compare with app
+        // Pools: every treatment with k >= 2, then the overall pool of all data points.
         var treatmentNames = Object.keys(groups);
         var perTreatment = [];
-        var totalK = 0;
-
-        for (var t = 0; t < treatmentNames.length; t++) {
-          var tName = treatmentNames[t];
-          var g = groups[tName];
-          if (g.yi.length < 2) {
-            perTreatment.push({
-              treatment: tName,
-              k: g.yi.length,
-              rData: null,
-              appData: null,
-              skip: true
-            });
-            continue;
-          }
-          totalK += g.yi.length;
-
-          progressText.textContent = 'Analyzing ' + tName + ' (' + (t + 1) + '/' + treatmentNames.length + ')...';
-
-          var yiStr = g.yi.join(',');
-          var viStr = g.vi.join(',');
-
-          var rCode;
-          if (useMetafor) {
-            rCode = [
-              'yi <- c(' + yiStr + ')',
-              'vi <- c(' + viStr + ')',
-              'fit <- rma(yi, vi, method="DL")',
-              'c(fit$beta[1], fit$se, fit$tau2, fit$I2, fit$QE, fit$QEp,',
-              '  fit$ci.lb, fit$ci.ub, fit$k, 0)'
-            ].join('\n');
-          } else {
-            rCode = [
-              'yi <- c(' + yiStr + ')',
-              'vi <- c(' + viStr + ')',
-              'k <- length(yi)',
-              'wi <- 1/vi',
-              'sumW <- sum(wi)',
-              'theta_fe <- sum(wi * yi) / sumW',
-              'Q <- sum(wi * (yi - theta_fe)^2)',
-              'C0 <- sumW - sum(wi^2)/sumW',
-              'tau2 <- max(0, (Q - (k - 1)) / C0)',
-              'wi_re <- 1/(vi + tau2)',
-              'sumW_re <- sum(wi_re)',
-              'theta_re <- sum(wi_re * yi) / sumW_re',
-              'se_re <- sqrt(1/sumW_re)',
-              'I2 <- ifelse(Q > (k-1), max(0, (Q - (k-1)) / Q) * 100, 0)',
-              'Qp <- 1 - pchisq(Q, k - 1)',
-              'ci_lb <- theta_re - qnorm(0.975) * se_re',
-              'ci_ub <- theta_re + qnorm(0.975) * se_re',
-              'c(theta_re, se_re, tau2, I2, Q, Qp, ci_lb, ci_ub, k, 1)'
-            ].join('\n');
-          }
-
-          var rResult = await webrInstance.evalR(rCode);
-          var vals = await rResult.toArray();
-
-          var rData = {
-            effect: vals[0],
-            se: vals[1],
-            tau2: vals[2],
-            I2: vals[3],
-            Q: vals[4],
-            Qp: vals[5],
-            ci_lb: vals[6],
-            ci_ub: vals[7],
-            k: vals[8]
-          };
-
-          // Get app DL for same treatment
-          var appData = getAppDL(g.yi, g.se);
-
-          perTreatment.push({
-            treatment: tName,
-            k: g.yi.length,
-            rData: rData,
-            appData: appData,
-            skip: false
-          });
-        }
-
-        // Step 4: Also run overall (all data points pooled) if k >= 2
-        var allYi = [];
-        var allVi = [];
-        var allSe = [];
+        var pools = [];
+        var allYi = [], allVi = [], allSe = [];
         treatmentNames.forEach(function(tName) {
           var g = groups[tName];
-          for (var i = 0; i < g.yi.length; i++) {
-            allYi.push(g.yi[i]);
-            allVi.push(g.vi[i]);
-            allSe.push(g.se[i]);
+          for (var i = 0; i < g.yi.length; i++) { allYi.push(g.yi[i]); allVi.push(g.vi[i]); allSe.push(g.se[i]); }
+          if (g.yi.length < 2) {
+            perTreatment.push({ treatment: tName, k: g.yi.length, rData: null, appData: null, skip: true });
+          } else {
+            perTreatment.push({ treatment: tName, k: g.yi.length, rData: null, appData: getAppDL(g.yi, g.se), skip: false, _pool: pools.length });
+            pools.push({ yi: g.yi, vi: g.vi });
           }
         });
+        var overallIdx = -1;
+        if (allYi.length >= 2) { overallIdx = pools.length; pools.push({ yi: allYi, vi: allVi }); }
+
+        // metafor first (pinned, SHA-256 verified); base-R DL only if metafor cannot be used.
+        var useMetafor = true;
+        status('Booting WebR and verifying metafor (first run downloads ~30 MB)...');
+        var res = await runner.runR({ script: buildWebrScript(pools, true), packages: ['metafor'], onStatus: status });
+        var rSource;
+        if (res.ok) {
+          rSource = 'metafor ' + res.versions.metafor + ' rma(method="DL"), webR ' + res.versions.webR;
+        } else {
+          useMetafor = false;
+          status('metafor unavailable (' + res.error + '), using base R fallback...');
+          res = await runner.runR({ script: buildWebrScript(pools, false), packages: [], onStatus: status });
+          if (!res.ok) throw new Error(res.error);
+          rSource = 'base R DL fallback, webR ' + res.versions.webR;
+        }
+        var rAll = parseWebrStdout(res.stdout, pools.length);
+        perTreatment.forEach(function(pt) { if (!pt.skip) { pt.rData = rAll[pt._pool]; delete pt._pool; } });
 
         var overallR = null;
         var overallApp = null;
-        if (allYi.length >= 2) {
-          progressText.textContent = 'Running overall pooled analysis...';
-          var allYiStr = allYi.join(',');
-          var allViStr = allVi.join(',');
-
-          var rCodeAll;
-          if (useMetafor) {
-            rCodeAll = [
-              'yi <- c(' + allYiStr + ')',
-              'vi <- c(' + allViStr + ')',
-              'fit <- rma(yi, vi, method="DL")',
-              'c(fit$beta[1], fit$se, fit$tau2, fit$I2, fit$QE, fit$QEp,',
-              '  fit$ci.lb, fit$ci.ub, fit$k, 0)'
-            ].join('\n');
-          } else {
-            rCodeAll = [
-              'yi <- c(' + allYiStr + ')',
-              'vi <- c(' + allViStr + ')',
-              'k <- length(yi)',
-              'wi <- 1/vi',
-              'sumW <- sum(wi)',
-              'theta_fe <- sum(wi * yi) / sumW',
-              'Q <- sum(wi * (yi - theta_fe)^2)',
-              'C0 <- sumW - sum(wi^2)/sumW',
-              'tau2 <- max(0, (Q - (k - 1)) / C0)',
-              'wi_re <- 1/(vi + tau2)',
-              'sumW_re <- sum(wi_re)',
-              'theta_re <- sum(wi_re * yi) / sumW_re',
-              'se_re <- sqrt(1/sumW_re)',
-              'I2 <- ifelse(Q > (k-1), max(0, (Q - (k-1)) / Q) * 100, 0)',
-              'Qp <- 1 - pchisq(Q, k - 1)',
-              'ci_lb <- theta_re - qnorm(0.975) * se_re',
-              'ci_ub <- theta_re + qnorm(0.975) * se_re',
-              'c(theta_re, se_re, tau2, I2, Q, Qp, ci_lb, ci_ub, k, 1)'
-            ].join('\n');
-          }
-
-          var rResultAll = await webrInstance.evalR(rCodeAll);
-          var valsAll = await rResultAll.toArray();
-          overallR = {
-            effect: valsAll[0],
-            se: valsAll[1],
-            tau2: valsAll[2],
-            I2: valsAll[3],
-            Q: valsAll[4],
-            Qp: valsAll[5],
-            ci_lb: valsAll[6],
-            ci_ub: valsAll[7],
-            k: valsAll[8]
-          };
-
+        if (overallIdx >= 0) {
+          overallR = rAll[overallIdx];
           overallApp = getAppDL(allYi, allSe);
         }
+        window.__nmaWebrLast = { rSource: rSource, useMetafor: useMetafor, perTreatment: perTreatment, overall: overallR };
 
-        // Step 5: Render results
-        progressText.textContent = 'Rendering results...';
+        // Render results
+        status('Rendering results...');
         var appGlobal = getAppGlobalStats();
         renderWebrResults(resultsDiv, perTreatment, overallR, overallApp, appGlobal, rSource);
 
@@ -5769,6 +5706,8 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
         resultsDiv.innerHTML = '<div style="padding:12px;background:#fef2f2;border:1px solid #ef4444;'
           + 'border-radius:8px;color:#991b1b;font-size:13px;">'
           + '<strong>WebR Error:</strong> ' + esc(e.message) + '</div>';
+      } finally {
+        webrLoading = false;
       }
     }
 
