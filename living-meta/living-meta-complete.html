@@ -59,6 +59,7 @@ STATISTICAL METHODS (with references):
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
 
   <!-- Signed living-review audit trail (SHA-256 chain + optional HMAC) -->
+  <script src="../shared/ma-core.js"></script>
   <script src="../shared/living-monitor-v1.js"></script>
 
   <!-- Google Fonts -->
@@ -1546,61 +1547,25 @@ window.LMA = window.LMA || {};
   };
 
   /**
-   * REML estimator (Restricted Maximum Likelihood)
-   * Uses Fisher scoring algorithm matching metafor's implementation
-   * Reference: Raudenbush SW. Analyzing effect sizes: Random-effects models. In: Cooper H, et al. (eds) Handbook of Research Synthesis. 2009.
-   * Validated: Matches R metafor rma(method="REML") within 1e-8
+   * tau2 for the likelihood / moment estimators, from the shared single source
+   * shared/ma-core.js (AlmMaCore), which is validated against metafor::rma.
+   * The former inline Fisher scoring here used 0.5*(sum w^2 - sum w^4/sum w) as the
+   * information (not 0.5*tr(PP)); when that went negative it stopped on the first
+   * step and returned the DL start or a 1%-of-mean-variance perturbation, it stopped on
+   * |step| < 1e-6 absolute, and ML/PM/HE/SJ were all computed as REML.
    */
-  LMA.tauREML = function(yi, vi, options = {}) {
-    const { maxIter = 100, tol = 1e-6 } = options;
-    const k = yi.length;
-
-    if (k < 2) return { tau2: 0, tau: 0, method: 'REML', converged: true, iterations: 0 };
-
-    // Initial estimate from DL
-    let tau2 = LMA.metaAnalysisDL(yi, vi).tau2;
-
-    // REVIEWER FIX: When DL estimates τ²=0 (boundary case), use small perturbation
-    // to allow Fisher scoring to explore parameter space before potentially
-    // returning to boundary. Uses mean variance as scale reference.
-    if (tau2 === 0) {
-      const meanV = LMA.mean(vi);
-      tau2 = meanV * 0.01; // 1% of mean variance as initial perturbation
-    }
-
-    let iter = 0;
-
-    for (iter = 0; iter < maxIter; iter++) {
-      const w = vi.map(v => 1 / (v + tau2));
-      const sumW = LMA.sum(w);
-      const theta = w.reduce((sum, wi, i) => sum + wi * yi[i], 0) / sumW;
-
-      const w2 = w.map(wi => wi * wi);
-      const sumW2 = LMA.sum(w2);
-      const residSq = yi.map((y, i) => (y - theta) ** 2);
-
-      // REML score: derivative of restricted log-likelihood
-      const score = -0.5 * (sumW - sumW2 / sumW) + 0.5 * w2.reduce((sum, w2i, i) => sum + w2i * residSq[i], 0);
-
-      // Fisher information: expected information
-      const info = 0.5 * (sumW2 - LMA.sum(w2.map(w2i => w2i * w2i)) / sumW);
-
-      // Info must be positive for valid Fisher scoring; negative info indicates degeneracy
-      if (Math.abs(info) < 1e-12 || info < 0) break;
-
-      const delta = score / info;
-
-      // If score is negative (want to decrease tau²) and tau² is already 0, stop
-      if (tau2 === 0 && score < 0) break;
-
-      const newTau2 = Math.max(0, tau2 + delta);
-
-      if (Math.abs(newTau2 - tau2) < tol) { tau2 = newTau2; break; }
-      tau2 = newTau2;
-    }
-
-    return { tau2, tau: Math.sqrt(tau2), method: 'REML', converged: iter < maxIter, iterations: iter + 1 };
+  LMA.TAU2_ESTIMATORS = { REML: 'tau2REML', ML: 'tau2ML', PM: 'tau2PM', HE: 'tau2HE', SJ: 'tau2SJ' };
+  LMA.tau2Estimate = function(yi, vi, method) {
+    const fn = LMA.TAU2_ESTIMATORS[method];
+    if (!fn) throw new LMA.AppError('Unknown tau2 estimator: ' + method, { category: LMA.ErrorCategory.VALIDATION });
+    const core = window.AlmMaCore;
+    if (!core || typeof core[fn] !== 'function') throw new Error('shared/ma-core.js (AlmMaCore) is not loaded');
+    if (yi.length < 2) return { tau2: 0, tau: 0, method, converged: true };
+    const tau2 = core[fn](yi, vi);
+    if (!Number.isFinite(tau2) || tau2 < 0) throw new Error(method + ' tau2 could not be computed');
+    return { tau2, tau: Math.sqrt(tau2), method, converged: true };
   };
+  LMA.tauREML = function(yi, vi) { return LMA.tau2Estimate(yi, vi, 'REML'); };
 
   /**
    * Fixed-effect meta-analysis
@@ -1634,8 +1599,8 @@ window.LMA = window.LMA || {};
     if (method === 'FE') return LMA.metaAnalysisFE(yi, vi, level);
     if (method === 'DL') return LMA.metaAnalysisDL(yi, vi, level);
 
-    // REML and variants
-    const tau2Result = LMA.tauREML(yi, vi, options);
+    // REML, ML, PM, HE, SJ: each its own estimator (shared/ma-core.js)
+    const tau2Result = LMA.tau2Estimate(yi, vi, method);
     const tau2 = tau2Result.tau2;
     const k = yi.length;
     const w = vi.map(v => 1 / (v + tau2));
