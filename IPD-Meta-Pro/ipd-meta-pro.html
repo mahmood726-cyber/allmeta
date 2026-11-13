@@ -6136,17 +6136,32 @@ function runPredictivePatientSelection() {
 
 
 
- var treatmentVar = APP.config.treatmentVar || 'treatment';
+ // IPD-Modal: variables from the form configuration (APP.config is filled only by a completed Run Analysis; the
+ // 'event' fallback is absent from the continuous / network examples, so every CATE was NaN), and the mapped
+ // outcome, time and study columns are never covariates.
+ var rfCfg = ipdFormAnalysisConfig();
 
- var outcomeVar = APP.config.eventVar || 'event';
+ var treatmentVar = rfCfg.treatmentVar || 'treatment';
+
+ var outcomeVar = rfCfg.eventVar || 'event';
 
 
 
  var firstRow = APP.data[0] || {};
 
+ if (!APP.data.some(function(d) { return typeof d[outcomeVar] === 'number' && Number.isFinite(d[outcomeVar]); })) {
+
+ hideLoadingOverlay();
+
+ showNotification('Heterogeneity analysis: the outcome variable "' + outcomeVar + '" is not a numeric column of the data (Data tab, outcome mapping).', 'warning');
+
+ return;
+
+ }
+
  var covariates = Object.keys(firstRow).filter(function(k) {
 
- return !['study', 'study_id', 'patient_id', 'treatment', 'treatment_name', 'time', 'event'].includes(k) &&
+ return !['study', 'study_id', 'patient_id', 'treatment', 'treatment_name', 'time', 'event', outcomeVar, treatmentVar, rfCfg.timeVar, rfCfg.studyVar].includes(k) &&
 
  typeof firstRow[k] === 'number';
 
@@ -7717,17 +7732,32 @@ function runRandomForestHeterogeneity() {
 
  setTimeout(function() {
 
- var treatmentVar = APP.config.treatmentVar || 'treatment';
+ // IPD-Modal: variables from the form configuration (APP.config is filled only by a completed Run Analysis; the
+ // 'event' fallback is absent from the continuous / network examples, so every CATE was NaN), and the mapped
+ // outcome, time and study columns are never covariates.
+ var rfCfg = ipdFormAnalysisConfig();
 
- var outcomeVar = APP.config.eventVar || 'event';
+ var treatmentVar = rfCfg.treatmentVar || 'treatment';
+
+ var outcomeVar = rfCfg.eventVar || 'event';
 
 
 
  var firstRow = APP.data[0] || {};
 
+ if (!APP.data.some(function(d) { return typeof d[outcomeVar] === 'number' && Number.isFinite(d[outcomeVar]); })) {
+
+ hideLoadingOverlay();
+
+ showNotification('Heterogeneity analysis: the outcome variable "' + outcomeVar + '" is not a numeric column of the data (Data tab, outcome mapping).', 'warning');
+
+ return;
+
+ }
+
  var covariates = Object.keys(firstRow).filter(function(k) {
 
- return !['study', 'study_id', 'patient_id', 'treatment', 'treatment_name', 'time', 'event'].includes(k) &&
+ return !['study', 'study_id', 'patient_id', 'treatment', 'treatment_name', 'time', 'event', outcomeVar, treatmentVar, rfCfg.timeVar, rfCfg.studyVar].includes(k) &&
 
  typeof firstRow[k] === 'number';
 
