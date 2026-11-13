@@ -541,6 +541,11 @@
       else Toast.show("Could not save to shared bus.", "warn");
     }
 
+    // What the TruthCert receipt signs (lane rcpt): the studies this page's own parser reads
+    // from the input, the same rows its analysis pools.
+    window.__almReceiptStudies = function () {
+      return parseStudies(document.getElementById("f-data").value).studies;
+    };
     // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
     // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
     // returning user an earlier session's studies).
@@ -611,7 +616,10 @@
       test: function () { return window.__almValidatorModel && window.__almValidatorModel().test; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
-      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "bayesian-ma", textarea: "#f-data", format: "label-est-se" });
+      // Sign the studies this page analysed (its own parseStudies), not a re-read of the textarea
+      // with the shared splitter, which read a label with a comma as numbers (lane rcpt).
+      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "bayesian-ma",
+        getStudies: function () { return window.__almReceiptStudies ? window.__almReceiptStudies() : []; } });
     }
   });
 })();
