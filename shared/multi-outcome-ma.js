@@ -453,7 +453,13 @@
     };
   }
 
-  // ---- Univariate REML per outcome (for comparison / borrowing display) -
+  // ---- Univariate REML per outcome (for comparison / borrowing display; tau2 from shared/ma-core.js) -
+
+  function _core() {
+    var c = global.AlmMaCore || (typeof require === "function" ? require("./ma-core.js") : null);
+    if (!c || typeof c.tau2REML !== "function") throw new Error("shared/ma-core.js (AlmMaCore) must be loaded before multi-outcome-ma.js");
+    return c;
+  }
 
   function fitUnivariatePerOutcome(studies, K) {
     var Z975 = 1.959963984540054;
@@ -467,16 +473,10 @@
         }
       }
       if (yi.length < 2) { out.push(null); continue; }
-      var w = vi.map(function (v) { return 1 / v; });
-      var sw = w.reduce(function (a, b) { return a + b; }, 0);
-      var swy = 0;
-      for (var j = 0; j < yi.length; j++) swy += w[j] * yi[j];
-      var muFE = swy / sw;
-      var Q = 0;
-      for (var j2 = 0; j2 < yi.length; j2++) Q += w[j2] * (yi[j2] - muFE) * (yi[j2] - muFE);
-      var sw2 = w.reduce(function (a, b) { return a + b * b; }, 0);
-      var denomDL = sw - sw2 / sw;
-      var tau2 = denomDL > 1e-12 ? Math.max(0, (Q - (yi.length - 1)) / denomDL) : 0;
+      // REML, as the page describes and as the bivariate fit uses (until 2026-11-12 this was
+      // DerSimonian-Laird, so the "borrowing" comparison mixed two estimators).
+      var tau2 = _core().tau2REML(yi, vi);
+      if (!(tau2 >= 0) || !isFinite(tau2)) throw new Error("univariate REML tau2 could not be computed for outcome " + (k + 1));
       var w_re = vi.map(function (v) { return 1 / (v + tau2); });
       var sw_re = w_re.reduce(function (a, b) { return a + b; }, 0);
       var swy_re = 0;

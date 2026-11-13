@@ -5541,24 +5541,46 @@ function updateMetaoverfitResults() {
   }
 }
 
+// Complete the metaoverfit assessment as part of publishing the result: renderResults runs
+// in the same task that assigns AppState.results, so no save, export or reader can see the
+// engine's 'skipped' placeholder. (It used to be patched in by a 500 ms timer, so a project
+// saved inside that gap stored a different result from the one shown a moment later.)
+// The TruthCert verdict (AppState.truthcert, saved by saveProject) is computed in the same task
+// too, right after a Run's result is rendered. It used to come from a 1000 ms timer, so a save in
+// that window stored no verdict, or the previous run's verdict beside the new results.
+// Armed only by runAnalysis: loading a saved project repaints without recomputing the verdict.
+let truthCertPendingForRun = false;
+function runTruthCertForPublishedResult() {
+  truthCertPendingForRun = false;
+  if (typeof runTruthCertAnalysis !== 'function') return;
+  try {
+    // runTruthCertAnalysis builds its study rows from AppState.studies, a cache of the table
+    // refreshed by a 150 ms debounce. Flush it from the table the engine has just analysed,
+    // otherwise a Run straight after loading/editing data pairs old (or no) rows with new results.
+    if (typeof _updateDataSummary === 'function') _updateDataSummary();
+    runTruthCertAnalysis();
+    console.log('[TruthCert] Analysis triggered automatically');
+  } catch (e) {
+    console.warn('[TruthCert] Auto-analysis failed:', e.message);
+  }
+}
+const originalRenderResultsMO = window.renderResults;
+if (typeof originalRenderResultsMO === 'function') {
+  window.renderResults = function() {
+    const mo = AppState.results && AppState.results.metaoverfit;
+    if (mo && mo.skipped) updateMetaoverfitResults();
+    const rendered = originalRenderResultsMO.apply(this, arguments);
+    if (truthCertPendingForRun) runTruthCertForPublishedResult();
+    return rendered;
+  };
+}
 // Update on analysis - also trigger TruthCert analysis for Verdict tab
 const originalRunAnalysis2 = window.runAnalysis;
 if (originalRunAnalysis2) {
   window.runAnalysis = function() {
-    const result = originalRunAnalysis2.apply(this, arguments);
-    setTimeout(updateMetaoverfitResults, 500);
-    // Trigger TruthCert analysis for Verdict and HTA tabs
-    setTimeout(() => {
-      if (typeof runTruthCertAnalysis === 'function') {
-        try {
-          runTruthCertAnalysis();
-          console.log('[TruthCert] Analysis triggered automatically');
-        } catch (e) {
-          console.warn('[TruthCert] Auto-analysis failed:', e.message);
-        }
-      }
-    }, 1000);
-    return result;
+    // TruthCert analysis for the Verdict and HTA tabs runs when this run's result is rendered.
+    truthCertPendingForRun = true;
+    return originalRunAnalysis2.apply(this, arguments);
   };
 }
 
