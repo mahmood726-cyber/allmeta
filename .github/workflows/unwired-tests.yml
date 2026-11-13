@@ -64,7 +64,11 @@ jobs:
           #       contract's isolated vm context (hero-sweep-contract.cjs:39-40) does not provide.
           #   nma-inconsistency-plus.node.cjs,
           #   validate-correlation-ma-plus.node.cjs  LONG: each exceeded 600 s locally.
-          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs "
+          #   IPD-Meta-Pro/dev/tests/p60_webr_reference_scenarios.test.cjs  NEEDS R + metafor + jsonlite:
+          #       without Rscript it prints SKIPPED and exits 2 by design (a check that did not run is
+          #       not a pass), which node --test reports as a failure. This job has no R. Run it where
+          #       R is installed: RSCRIPT=<path to Rscript> node <file>.
+          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs IPD-Meta-Pro/dev/tests/p60_webr_reference_scenarios.test.cjs "
           files=()
           for f in hub/shared/tests/*.test.cjs hub/shared/tests/*.test.mjs hub/shared/tests/*.node.cjs \
                    gosh/tests/*.test.cjs limit-ma/tests/*.test.cjs p-curve/tests/*.test.cjs \
