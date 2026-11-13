@@ -1,0 +1,2497 @@
+{
+  "dropped_study_control": {
+    "slope": 0.0227,
+    "se": 0.353553390593274
+  },
+  "dataset": "constructed-zero-category-sign-reversal",
+  "disclosure": "Constructed regression fixture; not the unidentified original user dataset. No continuity correction applied.",
+  "R": "R version 4.6.0 (2026-04-24 ucrt)",
+  "dosresmeta": "2.2.0",
+  "mixmeta": "1.2.2",
+  "cases": [
+    {
+      "name": "cc/nonreference/gl/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "cc/nonreference/gl/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "cc/nonreference/h/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "cc/nonreference/h/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "cc/nonreference/user/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "cc/nonreference/user/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "cc/reference/gl/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "cc/reference/gl/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "cc/reference/h/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "function cannot be evaluated at initial parameters"
+    },
+    {
+      "name": "cc/reference/h/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "function cannot be evaluated at initial parameters"
+    },
+    {
+      "name": "cc/reference/user/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "cc/reference/user/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "cc"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "cc"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ci/nonreference/gl/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "ci/nonreference/gl/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "ci/nonreference/h/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ci/nonreference/h/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ci/nonreference/user/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ci/nonreference/user/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ci/reference/gl/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "ci/reference/gl/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "ci/reference/h/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "function cannot be evaluated at initial parameters"
+    },
+    {
+      "name": "ci/reference/h/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "function cannot be evaluated at initial parameters"
+    },
+    {
+      "name": "ci/reference/user/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ci/reference/user/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ci"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ci"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ir/nonreference/gl/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "ir/nonreference/gl/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "ir/nonreference/h/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ir/nonreference/h/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ir/nonreference/user/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ir/nonreference/user/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 0,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ir/reference/gl/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "ir/reference/gl/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "gl",
+      "R_covariance": "gl",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "missing value where TRUE/FALSE needed"
+    },
+    {
+      "name": "ir/reference/h/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "function cannot be evaluated at initial parameters"
+    },
+    {
+      "name": "ir/reference/h/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "h",
+      "R_covariance": "h",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": false,
+      "slope": null,
+      "se": null,
+      "warnings": [],
+      "error": "function cannot be evaluated at initial parameters"
+    },
+    {
+      "name": "ir/reference/user/2stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "2stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    },
+    {
+      "name": "ir/reference/user/1stage",
+      "rows": [
+        {
+          "id": "A",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "A",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 0,
+          "cases": 10,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "cases": 12,
+          "n": 100,
+          "logrr": 0.0227,
+          "se": 0.5,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 0,
+          "cases": 0,
+          "n": 100,
+          "logrr": 0,
+          "se": 0,
+          "type": "ir"
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "cases": 10,
+          "n": 100,
+          "logrr": -0.1843,
+          "se": 0.5,
+          "type": "ir"
+        }
+      ],
+      "covariance": "indep",
+      "R_covariance": "user",
+      "proc": "1stage",
+      "method": "fixed",
+      "model": "linear",
+      "ok": true,
+      "slope": -0.0463,
+      "se": 0.288675134594813,
+      "warnings": [],
+      "error": null
+    }
+  ]
+}

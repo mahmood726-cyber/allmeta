@@ -1,0 +1,463 @@
+{
+  "baseline": "origin/main",
+  "dataset": "constructed-zero-category-sign-reversal",
+  "settings": {
+    "model": "linear",
+    "covariance": "h",
+    "proc": "2stage",
+    "method": "fixed"
+  },
+  "corpusZeroCaseRows": 0,
+  "example": {
+    "dataset": "alcohol_cvd (rounded built-in)",
+    "slope": -0.004365416608587985,
+    "se": 0.0058892275738496955,
+    "unchanged": true
+  },
+  "before": {
+    "ok": true,
+    "model": "linear",
+    "covariance": "h",
+    "proc": "2stage",
+    "method": "fixed",
+    "mod": false,
+    "excluded": [
+      {
+        "id": "zero-category",
+        "reason": "row 2: cases and n must be finite and greater than 0 for covariance reconstruction"
+      }
+    ],
+    "warnings": [],
+    "knots": null,
+    "q": 1,
+    "names": [
+      "dose"
+    ],
+    "k": 2,
+    "nobs": 2,
+    "studies": [
+      {
+        "id": "A",
+        "type": "cc",
+        "refDose": 0,
+        "nNonRef": 1
+      },
+      {
+        "id": "B",
+        "type": "cc",
+        "refDose": 0,
+        "nNonRef": 1
+      }
+    ],
+    "coef": [
+      0.022700000000000005
+    ],
+    "vcov": [
+      [
+        0.12500000000000003
+      ]
+    ],
+    "Psi": null,
+    "logLik": -0.45158270528945477,
+    "aic": 2.9031654105789095,
+    "converged": true,
+    "niter": 0,
+    "qtest": {
+      "Q": [
+        9.62964972193618e-35
+      ],
+      "df": [
+        1
+      ],
+      "p": [
+        1
+      ]
+    },
+    "I2": 0,
+    "perStudy": [
+      {
+        "id": "A",
+        "beta": [
+          0.0227
+        ],
+        "cov": [
+          [
+            0.25
+          ]
+        ]
+      },
+      {
+        "id": "B",
+        "beta": [
+          0.0227
+        ],
+        "cov": [
+          [
+            0.25
+          ]
+        ]
+      }
+    ],
+    "wald": {
+      "chi2": 0.004122320000000001,
+      "df": 1,
+      "p": 0.9488067607134881
+    },
+    "gof": {
+      "D": 9.62964972193618e-35,
+      "df": 1,
+      "p": 1,
+      "R2": 1,
+      "R2adj": 1,
+      "residuals": [
+        {
+          "id": "A",
+          "dose": 1,
+          "resid": -6.938893903907228e-18
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "resid": -6.938893903907228e-18
+        }
+      ]
+    },
+    "doseRange": [
+      0,
+      1
+    ],
+    "predictions": [
+      {
+        "dose": 0,
+        "logRR": 0,
+        "se": 0,
+        "ciLo": 0,
+        "ciHi": 0,
+        "rr": 1,
+        "rrLo": 1,
+        "rrHi": 1
+      },
+      {
+        "dose": 1,
+        "logRR": 0.022700000000000005,
+        "se": 0.3535533905932738,
+        "ciLo": -0.6702519121748389,
+        "ciHi": 0.715651912174839,
+        "rr": 1.0229596056277432,
+        "rrLo": 0.5115796884009128,
+        "rrHi": 2.045519746917694
+      }
+    ]
+  },
+  "after": {
+    "ok": true,
+    "model": "linear",
+    "covariance": "h",
+    "proc": "2stage",
+    "method": "fixed",
+    "mod": false,
+    "excluded": [],
+    "warnings": [
+      "Study zero-category: zero-case category retained using Hamling reconstruction, as in dosresmeta; no continuity correction applied."
+    ],
+    "knots": null,
+    "q": 1,
+    "names": [
+      "dose"
+    ],
+    "k": 3,
+    "nobs": 3,
+    "studies": [
+      {
+        "id": "A",
+        "type": "cc",
+        "refDose": 0,
+        "nNonRef": 1
+      },
+      {
+        "id": "B",
+        "type": "cc",
+        "refDose": 0,
+        "nNonRef": 1
+      },
+      {
+        "id": "zero-category",
+        "type": "cc",
+        "refDose": 0,
+        "nNonRef": 1
+      }
+    ],
+    "coef": [
+      -0.0463
+    ],
+    "vcov": [
+      [
+        0.08333333333333336
+      ]
+    ],
+    "Psi": null,
+    "logLik": -0.7345060579341822,
+    "aic": 3.4690121158683644,
+    "converged": true,
+    "niter": 0,
+    "qtest": {
+      "Q": [
+        0.11426399999999998
+      ],
+      "df": [
+        2
+      ],
+      "p": [
+        0.9444693911783084
+      ]
+    },
+    "I2": 0,
+    "perStudy": [
+      {
+        "id": "A",
+        "beta": [
+          0.0227
+        ],
+        "cov": [
+          [
+            0.25
+          ]
+        ]
+      },
+      {
+        "id": "B",
+        "beta": [
+          0.0227
+        ],
+        "cov": [
+          [
+            0.25
+          ]
+        ]
+      },
+      {
+        "id": "zero-category",
+        "beta": [
+          -0.1843
+        ],
+        "cov": [
+          [
+            0.25
+          ]
+        ]
+      }
+    ],
+    "wald": {
+      "chi2": 0.025724279999999995,
+      "df": 1,
+      "p": 0.8725755168660899
+    },
+    "gof": {
+      "D": 0.11426399999999998,
+      "df": 2,
+      "p": 0.9444693911783084,
+      "R2": 0.18376024050013337,
+      "R2adj": -0.22435963924979996,
+      "residuals": [
+        {
+          "id": "A",
+          "dose": 1,
+          "resid": 0.138
+        },
+        {
+          "id": "B",
+          "dose": 1,
+          "resid": 0.138
+        },
+        {
+          "id": "zero-category",
+          "dose": 1,
+          "resid": -0.27599999999999997
+        }
+      ]
+    },
+    "doseRange": [
+      0,
+      1
+    ],
+    "predictions": [
+      {
+        "dose": 0,
+        "logRR": 0,
+        "se": 0,
+        "ciLo": 0,
+        "ciHi": 0,
+        "rr": 1,
+        "rrLo": 1,
+        "rrHi": 1
+      },
+      {
+        "dose": 1,
+        "logRR": -0.0463,
+        "se": 0.2886751345948129,
+        "ciLo": -0.612092867038086,
+        "ciHi": 0.519492867038086,
+        "rr": 0.9547554925746483,
+        "rrLo": 0.5422148970843041,
+        "rrHi": 1.6811748542934803
+      }
+    ]
+  },
+  "changedNumbers": [
+    {
+      "field": "k",
+      "before": 2,
+      "after": 3
+    },
+    {
+      "field": "nobs",
+      "before": 2,
+      "after": 3
+    },
+    {
+      "field": "studies.2.refDose",
+      "before": null,
+      "after": 0
+    },
+    {
+      "field": "studies.2.nNonRef",
+      "before": null,
+      "after": 1
+    },
+    {
+      "field": "coef.0",
+      "before": 0.022700000000000005,
+      "after": -0.0463
+    },
+    {
+      "field": "vcov.0.0",
+      "before": 0.12500000000000003,
+      "after": 0.08333333333333336
+    },
+    {
+      "field": "logLik",
+      "before": -0.45158270528945477,
+      "after": -0.7345060579341822
+    },
+    {
+      "field": "aic",
+      "before": 2.9031654105789095,
+      "after": 3.4690121158683644
+    },
+    {
+      "field": "qtest.Q.0",
+      "before": 9.62964972193618e-35,
+      "after": 0.11426399999999998
+    },
+    {
+      "field": "qtest.df.0",
+      "before": 1,
+      "after": 2
+    },
+    {
+      "field": "qtest.p.0",
+      "before": 1,
+      "after": 0.9444693911783084
+    },
+    {
+      "field": "perStudy.2.beta.0",
+      "before": null,
+      "after": -0.1843
+    },
+    {
+      "field": "perStudy.2.cov.0.0",
+      "before": null,
+      "after": 0.25
+    },
+    {
+      "field": "wald.chi2",
+      "before": 0.004122320000000001,
+      "after": 0.025724279999999995
+    },
+    {
+      "field": "wald.p",
+      "before": 0.9488067607134881,
+      "after": 0.8725755168660899
+    },
+    {
+      "field": "gof.D",
+      "before": 9.62964972193618e-35,
+      "after": 0.11426399999999998
+    },
+    {
+      "field": "gof.df",
+      "before": 1,
+      "after": 2
+    },
+    {
+      "field": "gof.p",
+      "before": 1,
+      "after": 0.9444693911783084
+    },
+    {
+      "field": "gof.R2",
+      "before": 1,
+      "after": 0.18376024050013337
+    },
+    {
+      "field": "gof.R2adj",
+      "before": 1,
+      "after": -0.22435963924979996
+    },
+    {
+      "field": "gof.residuals.0.resid",
+      "before": -6.938893903907228e-18,
+      "after": 0.138
+    },
+    {
+      "field": "gof.residuals.1.resid",
+      "before": -6.938893903907228e-18,
+      "after": 0.138
+    },
+    {
+      "field": "gof.residuals.2.dose",
+      "before": null,
+      "after": 1
+    },
+    {
+      "field": "gof.residuals.2.resid",
+      "before": null,
+      "after": -0.27599999999999997
+    },
+    {
+      "field": "predictions.1.logRR",
+      "before": 0.022700000000000005,
+      "after": -0.0463
+    },
+    {
+      "field": "predictions.1.se",
+      "before": 0.3535533905932738,
+      "after": 0.2886751345948129
+    },
+    {
+      "field": "predictions.1.ciLo",
+      "before": -0.6702519121748389,
+      "after": -0.612092867038086
+    },
+    {
+      "field": "predictions.1.ciHi",
+      "before": 0.715651912174839,
+      "after": 0.519492867038086
+    },
+    {
+      "field": "predictions.1.rr",
+      "before": 1.0229596056277432,
+      "after": 0.9547554925746483
+    },
+    {
+      "field": "predictions.1.rrLo",
+      "before": 0.5115796884009128,
+      "after": 0.5422148970843041
+    },
+    {
+      "field": "predictions.1.rrHi",
+      "before": 2.045519746917694,
+      "after": 1.6811748542934803
+    }
+  ]
+}
