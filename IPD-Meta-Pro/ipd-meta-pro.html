@@ -4054,6 +4054,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
  normal: {
 
+ // IPD-Fed: a normal draw (Box-Muller). The fallback had no sample(), so its five callers (Multiple Imputation MA,
+ // SUCRA CIs, IPD multiple imputation, predictive P-scores, rank probabilities) threw "jStat.normal.sample is not a function".
+ sample: function(mean, std) {
+ if (mean === undefined || mean === null) mean = 0;
+ if (std === undefined || std === null) std = 1;
+ var u = 0; while (u === 0) u = Math.random();
+ return mean + std * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random());
+ },
+
  cdf: function(x, mean, std) {
 
  // IPD-More fix: was mean || 0, std || 1, so sd = 0 became sd = 1 (and a NaN mean 0). As R pnorm:
@@ -6136,17 +6145,36 @@ function runPredictivePatientSelection() {
 
 
 
- var treatmentVar = APP.config.treatmentVar || 'treatment';
+ // IPD-Modal: variables from the form configuration (APP.config is filled only by a completed Run Analysis; the
+ // 'event' fallback is absent from the continuous / network examples, so every CATE was NaN), and the mapped
+ // outcome, time and study columns are never covariates.
+ var rfCfg = ipdFormAnalysisConfig();
 
- var outcomeVar = APP.config.eventVar || 'event';
+ var treatmentVar = rfCfg.treatmentVar || 'treatment';
+
+ var outcomeVar = rfCfg.eventVar || 'event';
+
+ // IPD-Fed: the subgroup effect follows the configured outcome type (calculateGroupEffect); it was a difference of
+ // proportions of outcome === 1 for every type, i.e. 0 for a continuous outcome.
+ var outcomeType = rfCfg.outcomeType || 'binary';
 
 
 
  var firstRow = APP.data[0] || {};
 
+ if (!APP.data.some(function(d) { return typeof d[outcomeVar] === 'number' && Number.isFinite(d[outcomeVar]); })) {
+
+ hideLoadingOverlay();
+
+ showNotification('Heterogeneity analysis: the outcome variable "' + outcomeVar + '" is not a numeric column of the data (Data tab, outcome mapping).', 'warning');
+
+ return;
+
+ }
+
  var covariates = Object.keys(firstRow).filter(function(k) {
 
- return !['study', 'study_id', 'patient_id', 'treatment', 'treatment_name', 'time', 'event'].includes(k) &&
+ return !['study', 'study_id', 'patient_id', 'treatment', 'treatment_name', 'time', 'event', outcomeVar, treatmentVar, rfCfg.timeVar, rfCfg.studyVar].includes(k) &&
 
  typeof firstRow[k] === 'number';
 
@@ -6194,9 +6222,9 @@ function runPredictivePatientSelection() {
 
 
 
- var lowEffect = calculateGroupEffect(lowTreated, lowControl, outcomeVar);
+ var lowEffect = calculateGroupEffect(lowTreated, lowControl, outcomeVar, outcomeType);
 
- var highEffect = calculateGroupEffect(highTreated, highControl, outcomeVar);
+ var highEffect = calculateGroupEffect(highTreated, highControl, outcomeVar, outcomeType);
 
 
 
@@ -6213,6 +6241,10 @@ function runPredictivePatientSelection() {
  median: median
 
  };
+
+ // IPD-Modal: a covariate whose median split leaves an arm empty (e.g. a 0/1 covariate with median 1) has no
+ // interaction; it was NaN and, summed into every patient's score, made the predicted-benefit split NaN.
+ if (!Number.isFinite(cateByCovariate[cov].interaction)) delete cateByCovariate[cov];
 
  });
 
@@ -6296,25 +6328,11 @@ function runPredictivePatientSelection() {
 
 
 
- // Guard against empty groups (division by zero)
+ // IPD-Fed: the same effect measure as the subgroups (an empty arm gives NaN, shown as not estimable)
 
- var effectInBenefiters = (benefitTreated.length > 0 && benefitControl.length > 0) ? (
+ var effectInBenefiters = calculateGroupEffect(benefitTreated, benefitControl, 'outcome', outcomeType).effect;
 
- benefitTreated.filter(function(p) { return p.outcome === 1; }).length / benefitTreated.length -
-
- benefitControl.filter(function(p) { return p.outcome === 1; }).length / benefitControl.length
-
- ) : NaN;
-
-
-
- var effectInNonBenefiters = (noBenefitTreated.length > 0 && noBenefitControl.length > 0) ? (
-
- noBenefitTreated.filter(function(p) { return p.outcome === 1; }).length / noBenefitTreated.length -
-
- noBenefitControl.filter(function(p) { return p.outcome === 1; }).length / noBenefitControl.length
-
- ) : NaN;
+ var effectInNonBenefiters = calculateGroupEffect(noBenefitTreated, noBenefitControl, 'outcome', outcomeType).effect;
 
 
 
@@ -6323,6 +6341,10 @@ function runPredictivePatientSelection() {
 
 
  displayPredictiveResults({
+
+ outcomeType: outcomeType,
+
+ effectMeasure: ipdGroupEffectMeasure(outcomeType),
 
  covariates: covariates,
 
@@ -6356,12 +6378,31 @@ function runPredictivePatientSelection() {
 
 
 
-function calculateGroupEffect(treated, control, outcomeVar) {
+// IPD-Fed: the effect measure calculateGroupEffect reports for an outcome type.
+function ipdGroupEffectMeasure(outcomeType) {
+ return outcomeType === 'continuous' ? 'mean difference (treated - control)' :
+ outcomeType === 'survival' ? 'difference in event proportions (treated - control; follow-up time is ignored)' :
+ 'risk difference (treated - control)';
+}
+
+function calculateGroupEffect(treated, control, outcomeVar, outcomeType) {
 
  if (!treated || treated.length === 0 || !control || control.length === 0) {
 
  return { effect: NaN, se: NaN, n: (treated ? treated.length : 0) + (control ? control.length : 0), error: 'Empty group' };
 
+ }
+
+ if (outcomeType === 'continuous') {
+ // mean difference with SE sqrt(var1/n1 + var0/n0) (sample variances); fewer than 2 values in an arm: not estimable
+ var y1 = treated.map(function(d) { return d[outcomeVar]; }).filter(function(v) { return typeof v === 'number' && Number.isFinite(v); });
+ var y0 = control.map(function(d) { return d[outcomeVar]; }).filter(function(v) { return typeof v === 'number' && Number.isFinite(v); });
+ if (y1.length < 2 || y0.length < 2) return { effect: NaN, se: NaN, n: y1.length + y0.length, error: 'Fewer than 2 values in an arm' };
+ var m1 = y1.reduce(function(a, b) { return a + b; }, 0) / y1.length;
+ var m0 = y0.reduce(function(a, b) { return a + b; }, 0) / y0.length;
+ var v1 = y1.reduce(function(a, v) { return a + (v - m1) * (v - m1); }, 0) / (y1.length - 1);
+ var v0 = y0.reduce(function(a, v) { return a + (v - m0) * (v - m0); }, 0) / (y0.length - 1);
+ return { effect: m1 - m0, se: Math.sqrt(v1 / y1.length + v0 / y0.length), n: y1.length + y0.length };
  }
 
  var treatedRate = treated.filter(function(d) { return d[outcomeVar] === 1; }).length / treated.length;
@@ -6379,6 +6420,11 @@ function calculateGroupEffect(treated, control, outcomeVar) {
 
 
 function displayPredictiveResults(results) {
+
+ // IPD-Fed: a continuous outcome is shown in its own units (mean difference), proportions in percentage points.
+ var isCont = results.outcomeType === 'continuous';
+
+ var fmtEff = function(x, signed) { if (!(typeof x === 'number' && Number.isFinite(x))) return 'not estimable'; var t = isCont ? x.toFixed(2) : (x * 100).toFixed(1) + '%'; return (signed && x > 0 ? '+' : '') + t; };
 
  var modal = document.createElement('div');
 
@@ -6404,11 +6450,11 @@ function displayPredictiveResults(results) {
 
  <strong>Best Predictor of Benefit:</strong> ${results.bestPredictor}<br>
 
- Patients with ${results.bestPredictor} > ${results.bestCate.median.toFixed(1)} show
+ Patients with ${results.bestPredictor} > ${results.bestCate.median.toFixed(1)} show a treatment effect
 
- ${Math.abs(results.bestCate.interaction * 100).toFixed(1)}%
+ ${results.bestCate.interaction > 0 ? 'higher' : 'lower'} by ${fmtEff(Math.abs(results.bestCate.interaction))}${isCont ? ' (outcome units)' : ' (percentage points)'}.
 
- ${results.bestCate.interaction > 0 ? 'greater' : 'lesser'} treatment effect.
+ <br><span style="font-size:0.85rem;">Effect measure: ${escapeHTML(results.effectMeasure || '')}</span>
 
  </div>
 
@@ -6454,11 +6500,11 @@ function displayPredictiveResults(results) {
 
  '<td>' + c.median.toFixed(1) + '</td>' +
 
- '<td>' + (c.lowEffect.effect * 100).toFixed(1) + '%</td>' +
+ '<td>' + fmtEff(c.lowEffect.effect) + '</td>' +
 
- '<td>' + (c.highEffect.effect * 100).toFixed(1) + '%</td>' +
+ '<td>' + fmtEff(c.highEffect.effect) + '</td>' +
 
- '<td>' + (c.interaction > 0 ? '+' : '') + (c.interaction * 100).toFixed(1) + '%</td>' +
+ '<td>' + fmtEff(c.interaction, true) + '</td>' +
 
  '<td>' + (sig ? '<span style="color: var(--accent-success);">Yes</span>' : 'No') + '</td>' +
 
@@ -6482,7 +6528,7 @@ function displayPredictiveResults(results) {
 
  <p style="font-size: 1.5rem; color: var(--accent-success);">
 
- ${(results.validation.effectInBenefiters * 100).toFixed(1)}%
+ ${fmtEff(results.validation.effectInBenefiters)}
 
  </p>
 
@@ -6496,7 +6542,7 @@ function displayPredictiveResults(results) {
 
  <p style="font-size: 1.5rem; color: var(--accent-warning);">
 
- ${(results.validation.effectInNonBenefiters * 100).toFixed(1)}%
+ ${fmtEff(results.validation.effectInNonBenefiters)}
 
  </p>
 
@@ -7717,17 +7763,32 @@ function runRandomForestHeterogeneity() {
 
  setTimeout(function() {
 
- var treatmentVar = APP.config.treatmentVar || 'treatment';
+ // IPD-Modal: variables from the form configuration (APP.config is filled only by a completed Run Analysis; the
+ // 'event' fallback is absent from the continuous / network examples, so every CATE was NaN), and the mapped
+ // outcome, time and study columns are never covariates.
+ var rfCfg = ipdFormAnalysisConfig();
 
- var outcomeVar = APP.config.eventVar || 'event';
+ var treatmentVar = rfCfg.treatmentVar || 'treatment';
+
+ var outcomeVar = rfCfg.eventVar || 'event';
 
 
 
  var firstRow = APP.data[0] || {};
 
+ if (!APP.data.some(function(d) { return typeof d[outcomeVar] === 'number' && Number.isFinite(d[outcomeVar]); })) {
+
+ hideLoadingOverlay();
+
+ showNotification('Heterogeneity analysis: the outcome variable "' + outcomeVar + '" is not a numeric column of the data (Data tab, outcome mapping).', 'warning');
+
+ return;
+
+ }
+
  var covariates = Object.keys(firstRow).filter(function(k) {
 
- return !['study', 'study_id', 'patient_id', 'treatment', 'treatment_name', 'time', 'event'].includes(k) &&
+ return !['study', 'study_id', 'patient_id', 'treatment', 'treatment_name', 'time', 'event', outcomeVar, treatmentVar, rfCfg.timeVar, rfCfg.studyVar].includes(k) &&
 
  typeof firstRow[k] === 'number';
 
@@ -8425,7 +8486,7 @@ function calculateFragilityIndex() {
 
  fragility: fragility,
 
- events: study.events || Math.round(study.n * 0.3),
+ events: (typeof study.events === 'number' && Number.isFinite(study.events)) ? study.events : null,
 
  n: study.n
 
@@ -8445,6 +8506,9 @@ function calculateFragilityIndex() {
 
 
 
+ // IPD-Fed: what the display needs to say what the search does (the search above is unchanged).
+ var fragType = (APP.config && APP.config.outcomeType) || '';
+
  displayFragilityResults({
 
  fragilities: fragilities,
@@ -8453,7 +8517,17 @@ function calculateFragilityIndex() {
 
  mostFragileStudy: mostFragileStudy,
 
- isSignificant: isSignificant
+ isSignificant: isSignificant,
+
+ mainP: pooled.pValue,
+
+ unshiftedRepoolP: recalculatePooledSimple(studies).pValue,
+
+ direction: pooled.pooled > 0 ? -1 : 1,
+
+ outcomeType: fragType,
+
+ measure: fragType === 'survival' ? 'log hazard ratio' : fragType === 'binary' ? 'log odds ratio' : fragType === 'continuous' ? 'mean difference' : 'effect'
 
  });
 
@@ -8503,6 +8577,25 @@ function recalculatePooledSimple(studies) {
 
 function displayFragilityResults(results) {
 
+ // IPD-Modal: when no single-study shift changes significance every fragility is 0, the minimum of (f || 999) is
+ // 999 and no study is "most fragile" (mostFragileStudy undefined: the table threw on .study).
+ var noneFlips = !results.mostFragileStudy;
+
+ var overallText = noneFlips ? '&gt;50' : String(results.overallFragility);
+
+ // IPD-Fed: this is a shift-based index, not the event-count Fragility Index: say what is counted. The search moves
+ // ONE study's estimate in steps of 0.05 on the analysis scale and re-pools with a fixed-effect inverse-variance
+ // z-test; the index is the first step at which that re-pool's verdict (p < 0.05) differs from the main analysis'.
+ var measure = escapeHTML(results.measure || 'effect');
+
+ var dirText = results.direction === -1 ? 'downwards (towards lower values)' : 'upwards (towards higher values)';
+
+ var stepText = function(k) { return k + ' step' + (k === 1 ? '' : 's') + ' of 0.05 (a shift of ' + (k * 0.05).toFixed(2) + ')'; };
+
+ var pTxt = function(p) { return (typeof p === 'number' && Number.isFinite(p)) ? (p < 0.001 ? 'p &lt; 0.001' : 'p = ' + p.toFixed(4)) : 'p not available'; };
+
+ var verdictDiffers = (typeof results.unshiftedRepoolP === 'number' && typeof results.mainP === 'number') && ((results.unshiftedRepoolP < 0.05) !== (results.mainP < 0.05));
+
  var modal = document.createElement('div');
 
  modal.className = 'modal-overlay active';
@@ -8521,21 +8614,21 @@ function displayFragilityResults(results) {
 
  '<div class="stat-card" style="text-align: center; margin-bottom: 1.5rem; ' +
 
- 'background: ' + (results.overallFragility <= 3 ? 'rgba(239, 68, 68, 0.2)' :
+ 'background: ' + (noneFlips ? 'rgba(16, 185, 129, 0.2)' : results.overallFragility <= 3 ? 'rgba(239, 68, 68, 0.2)' :
 
  results.overallFragility <= 8 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)') + ';">' +
 
- '<h4>Overall Fragility Index</h4>' +
+ '<h4>Overall Fragility Index (shift-based)</h4>' +
 
- '<p style="font-size: 3rem; font-weight: bold; margin: 0.5rem 0;">' + results.overallFragility + '</p>' +
+ '<p style="font-size: 3rem; font-weight: bold; margin: 0.5rem 0;">' + overallText + '</p>' +
 
  '<p style="color: var(--text-secondary);">' +
 
- (results.overallFragility <= 3 ? 'Very fragile - conclusions easily reversible' :
+ (noneFlips ? 'No single-study shift of up to 50 steps of 0.05 changes the significance verdict' : results.overallFragility <= 3 ? 'Very fragile - a shift of at most 0.15 in one study changes the verdict' :
 
- results.overallFragility <= 8 ? 'Moderately fragile - interpret with caution' :
+ results.overallFragility <= 8 ? 'Moderately fragile - a shift of at most 0.40 in one study changes the verdict' :
 
- 'Robust - conclusions stable') +
+ 'A shift of more than 0.40 in one study is needed to change the verdict') +
 
  '</p>' +
 
@@ -8543,19 +8636,21 @@ function displayFragilityResults(results) {
 
 
 
- '<p style="margin-bottom: 1rem;">The fragility index indicates how many events would need to change to reverse statistical significance.</p>' +
+ '<p style="margin-bottom: 1rem;">No events are changed. For each study, its ' + measure + ' is moved ' + dirText + ' in steps of 0.05 (up to 50 steps), the studies are re-pooled with a fixed-effect inverse-variance model (z-test), and the index is the number of steps at which that re-pool\'s verdict at p &lt; 0.05 first differs from the main analysis (' + pTxt(results.mainP) + '). This is not the event-count Fragility Index of Walsh et al.</p>' +
+
+ (verdictDiffers ? '<div class="alert alert-warning" style="margin-bottom: 1rem;"><strong>Note:</strong> the fixed-effect re-pool of the unshifted studies already gives ' + pTxt(results.unshiftedRepoolP) + ', a different verdict from the main analysis (' + pTxt(results.mainP) + '). The index can then reflect the change of pooling model rather than the shift.</div>' : '') +
 
 
 
  '<table class="data-table">' +
 
- '<thead><tr><th>Study</th><th>N</th><th>Events</th><th>Fragility</th></tr></thead>' +
+ '<thead><tr><th>Study</th><th>N</th><th>Events</th><th>Steps of 0.05 to change the verdict</th></tr></thead>' +
 
  '<tbody>' +
 
  results.fragilities.map(function(f) {
 
- var isWorst = f.study === results.mostFragileStudy.study;
+ var isWorst = !noneFlips && f.study === results.mostFragileStudy.study;
 
  return '<tr' + (isWorst ? ' style="background: rgba(239, 68, 68, 0.1);"' : '') + '>' +
 
@@ -8563,7 +8658,7 @@ function displayFragilityResults(results) {
 
  '<td>' + f.n + '</td>' +
 
- '<td>' + f.events + '</td>' +
+ '<td>' + (results.outcomeType === 'continuous' ? 'n/a (continuous outcome)' : (typeof f.events === 'number' && Number.isFinite(f.events)) ? f.events : 'not recorded') + '</td>' +
 
  '<td>' + (f.fragility || '>50') + '</td>' +
 
@@ -8579,11 +8674,11 @@ function displayFragilityResults(results) {
 
  '<div class="alert alert-info" style="margin-top: 1.5rem;">' +
 
- '<strong>Interpretation:</strong> If ' + results.overallFragility + ' event(s) in ' +
+ '<strong>Interpretation:</strong> ' + (noneFlips ? 'No single study had a shift (up to 50 steps of 0.05 in its ' + measure + ') that would make the fixed-effect re-pool ' + (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.' :
 
- escapeHTML(results.mostFragileStudy.study) + ' had different outcomes, the meta-analysis would ' +
+ 'Moving the ' + measure + ' of ' + escapeHTML(results.mostFragileStudy.study) + ' ' + dirText + ' by ' + stepText(results.overallFragility) + ' makes the fixed-effect re-pool ' +
 
- (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.' +
+ (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.') +
 
  '</div>' +
 
@@ -10648,9 +10743,13 @@ function normalizeAdvancedSurvivalData(survivalData, options) {
 
  return (survivalData || []).map(function(d) {
 
- var time = Number(getAdvancedSurvivalFieldValue(d, timeCandidates));
-
- var event = Number(getAdvancedSurvivalFieldValue(d, eventCandidates));
+ // IPD-Modal: a field no candidate column holds is MISSING (null); Number(null) = 0 is finite, so a data set with
+ // no time column kept every row with time 1e-6 and a missing event became 0 (censored).
+ var timeRaw = getAdvancedSurvivalFieldValue(d, timeCandidates);
+ var eventRaw = getAdvancedSurvivalFieldValue(d, eventCandidates);
+ if (timeRaw === null || eventRaw === null) return null;
+ var time = Number(timeRaw);
+ var event = Number(eventRaw);
 
  var treatmentRaw = getAdvancedSurvivalFieldValue(d, treatmentCandidates);
 
@@ -37064,6 +37163,11 @@ function updateOutcomeVars() {
 
  APP.data = data;
 
+ // IPD-Fed: the example defines its outcome type; the post-load auto-mapper (ipd80AutoMapVariables) uses this
+ // declaration while this exact data is loaded instead of re-inferring the type from column names (which turned the
+ // depression examples, continuous hamd_change with a derived 0/1 "remission" column, into binary remission).
+ APP.declaredOutcome = { outcomeType: outcomeType, source: 'example_dataset:' + type, fingerprint: (typeof computeCurrentDataFingerprint === 'function') ? computeCurrentDataFingerprint() : null };
+
  APP.variables = detectVariableTypes(data, Object.keys(data[0]));
 
  displayData();
@@ -37348,12 +37452,206 @@ function ipdArmOutcomes(rows, config) {
  });
  return { studies, studyVar: sv, treatmentVar: tv, outcomeVar: ov };
 }
+// IPD-Modal: the analysis configuration as the form shows it (runAnalysis reads the same fields), so a surface
+// opened before Run Analysis still analyses the outcome type and variables the page is configured for.
+function ipdFormAnalysisConfig() {
+ const cfg = Object.assign({}, (typeof APP !== 'undefined' && APP.config) || {});
+ const val = (id) => { const el = typeof document !== 'undefined' && document.getElementById ? document.getElementById(id) : null; const v = el && el.value; return (typeof v === 'string' && v) ? v : null; };
+ // IPD-Fed (agy #552 finding 2): a variable control that exists on the page is authoritative, also when it is
+ // explicitly empty; APP.config (a previous Run Analysis, possibly on other data) is used only without the control.
+ const has = (id) => !!(typeof document !== 'undefined' && document.getElementById && document.getElementById(id));
+ const pick = (id, prev) => has(id) ? val(id) : prev;
+ cfg.studyVar = pick('varStudy', cfg.studyVar);
+ cfg.treatmentVar = pick('varTreatment', cfg.treatmentVar);
+ cfg.timeVar = pick('varTime', cfg.timeVar);
+ cfg.eventVar = pick('varEvent', cfg.eventVar);
+ cfg.outcomeType = val('outcomeType') || cfg.outcomeType;
+ return cfg;
+}
+// IPD-Modal: a number for display, or "not estimable" when it is missing or not finite.
+function ipdNum(x, digits) {
+ return (typeof x === 'number' && Number.isFinite(x)) ? x.toFixed(digits) : 'not estimable';
+}
+// IPD-Fed: a number with its unit, or "not estimable" without the unit (agy #552 finding 3: "not estimable%").
+function ipdNumUnit(x, digits, prefix, suffix) {
+ return (typeof x === 'number' && Number.isFinite(x)) ? (prefix || '') + x.toFixed(digits) + (suffix || '') : 'not estimable';
+}
+// IPD-Modal: P(X >= x) for X ~ Binomial(n, p), summed exactly on the log scale (the page's jStat shim has no binomial).
+function ipdBinomUpper(x, n, p) {
+ if (x <= 0) return 1;
+ if (x > n) return 0;
+ if (p <= 0) return 0;
+ if (p >= 1) return 1;
+ let lt = 0;
+ for (let i = 1; i <= x; i++) lt += Math.log((n - i + 1) / i);
+ lt += x * Math.log(p) + (n - x) * Math.log(1 - p);
+ const step = Math.log(p / (1 - p));
+ let sum = 0;
+ for (let i = x; i <= n; i++) {
+  sum += Math.exp(lt);
+  lt += Math.log((n - i) / (i + 1)) + step;
+ }
+ return Math.min(1, sum);
+}
 // A heterogeneity number for display: the value, or "not estimable (k = 1)" when it is not finite (fewer than 2 studies).
 function ipdHetText(x, digits, k, suffix) {
  return Number.isFinite(x) ? x.toFixed(digits) + (suffix || '') : 'not estimable (k = ' + k + ')';
 }
 
 
+
+// IPD-Modal: the per-study two-stage estimate (moved verbatim out of runAnalysis so that other surfaces, e.g. the
+// Power Monitor, analyse the configured outcome on the same scale: Cox log HR, log OR, mean difference).
+function ipdStudyEstimate(studyData, cfg, armMapping) {
+ const armGroups = ipdSplitBinaryArms(studyData, cfg.treatmentVar, armMapping);
+
+ const treat1 = armGroups.treat1;
+
+ const treat0 = armGroups.treat0;
+
+
+
+ let effect, variance, se;
+
+
+
+ if (cfg.outcomeType === 'survival') {
+
+
+
+ const times = studyData.map(d => d[cfg.timeVar]);
+
+ const events = studyData.map(d => d[cfg.eventVar]);
+
+ const treatment = studyData.map(d => [ipdNormalizeArmToken(d[cfg.treatmentVar]) === armMapping.treatmentToken ? 1 : 0]);
+
+
+
+ try {
+
+ const cox = SurvivalAnalysis.coxPH(times, events, treatment);
+
+ effect = cox.beta[0];
+
+ se = cox.se[0];
+
+ variance = se * se;
+
+ } catch (e) {
+
+
+
+ const lr = SurvivalAnalysis.logRankTest(
+
+ treat1.map(d => d[cfg.timeVar]),
+
+ treat1.map(d => d[cfg.eventVar]),
+
+ treat0.map(d => d[cfg.timeVar]),
+
+ treat0.map(d => d[cfg.eventVar])
+
+ );
+
+ effect = (lr.O1 - lr.E1) / lr.V;
+
+ variance = 1 / lr.V;
+
+ se = Math.sqrt(variance);
+
+ }
+
+ } else if (cfg.outcomeType === 'binary') {
+
+ const a = treat1.filter(d => d[cfg.eventVar] === 1).length;
+
+ const b = treat1.length - a;
+
+ const c = treat0.filter(d => d[cfg.eventVar] === 1).length;
+
+ const d = treat0.length - c;
+
+
+
+ // P60 fix: 0.5 is added to the four cells only when a cell is zero (metafor escalc default)
+ const cc = (a === 0 || b === 0 || c === 0 || d === 0) ? 0.5 : 0;
+ effect = Math.log((a + cc) * (d + cc) / ((b + cc) * (c + cc)));
+
+ variance = 1 / (a + cc) + 1 / (b + cc) + 1 / (c + cc) + 1 / (d + cc);
+
+ se = Math.sqrt(variance);
+
+ } else {
+
+
+
+ const outcomes1 = treat1
+ .map(d => (d[cfg.eventVar] ?? d.outcome))
+ .filter(v => v != null && Number.isFinite(v));
+
+ const outcomes0 = treat0
+ .map(d => (d[cfg.eventVar] ?? d.outcome))
+ .filter(v => v != null && Number.isFinite(v));
+
+ if (outcomes1.length < 2 || outcomes0.length < 2) {
+ // Preserve run continuity for sparse arm splits by giving near-zero weight.
+ effect = 0;
+ variance = 1e6;
+ } else {
+ const mean1 = Stats.mean(outcomes1);
+ const mean0 = Stats.mean(outcomes0);
+ const sd1 = Stats.sd(outcomes1, 1);
+ const sd0 = Stats.sd(outcomes0, 1);
+ effect = mean1 - mean0;
+ variance = sd1 * sd1 / outcomes1.length + sd0 * sd0 / outcomes0.length;
+ }
+
+ se = Math.sqrt(variance);
+
+ }
+
+
+
+ return { effect: effect, variance: variance, se: se, n1: treat1.length, n0: treat0.length };
+}
+
+// IPD-Fed: per-study estimates of the CONFIGURED outcome, on the scale runAnalysis pools (ipdStudyEstimate: Cox log
+// HR, log OR, mean difference), for surfaces outside runAnalysis (Power Monitor, Federated Analysis). Only studies
+// with both arms; a study whose estimate is not finite is left out. Returns { refused: true, message } when the
+// outcome type is not supported or a mapped column is missing, so the caller can say so instead of showing a number.
+const IPD_STUDY_MEASURES = { survival: 'log hazard ratio (Cox, per study)', binary: 'log odds ratio', continuous: 'mean difference' };
+function ipdConfiguredStudyEstimates(data, config, surface) {
+ const name = surface || 'This analysis';
+ const type = (config && config.outcomeType) || 'survival';
+ const refuse = (message) => ({ refused: true, message: message, outcomeType: type, estimates: [] });
+ if (!IPD_STUDY_MEASURES[type]) return refuse(name + ' supports time-to-event, binary and continuous outcomes; outcome type "' + type + '" is not supported.');
+ const arms = ipdArmOutcomes(data, config);
+ if (arms.error) return refuse(arms.error);
+ const r0 = (Array.isArray(data) && data[0]) || {};
+ const cfg = { studyVar: arms.studyVar, treatmentVar: arms.treatmentVar, eventVar: arms.outcomeVar, timeVar: config && config.timeVar, outcomeType: type };
+ if (type === 'survival' && (!cfg.timeVar || !(cfg.timeVar in r0))) return refuse(name + ': no time variable is mapped for the time-to-event outcome (Data tab, Time variable).');
+ if (!(cfg.eventVar in r0)) return refuse(name + ': the outcome variable "' + cfg.eventVar + '" is not in the data.');
+ const armMap = ipdResolveBinaryArmMapping(data, cfg.treatmentVar);
+ const estimates = [];
+ arms.studies.forEach(st => {
+ if (!(st.y1.length > 0 && st.y0.length > 0)) return;
+ const sd = data.filter(d => d[cfg.studyVar] === st.study);
+ // IPD-Fed (agy #552 finding 1): a continuous study with fewer than 2 values in an arm has no variance; runAnalysis
+ // keeps it as a placeholder (effect 0, variance 1e6), but here it would count in k, df, Q, I2 and the power.
+ if (type === 'continuous') {
+ const sp = ipdSplitBinaryArms(sd, cfg.treatmentVar, armMap);
+ const nFin = (arm) => arm.map(d => (d[cfg.eventVar] ?? d.outcome)).filter(v => v != null && Number.isFinite(v)).length;
+ if (nFin(sp.treat1) < 2 || nFin(sp.treat0) < 2) return;
+ }
+ let est;
+ try { est = ipdStudyEstimate(sd, cfg, armMap); } catch (e) { return; }
+ if (Number.isFinite(est.effect) && Number.isFinite(est.se) && est.se > 0) {
+ estimates.push({ study: st.study, n: sd.length, effect: est.effect, se: est.se, n1: est.n1, n0: est.n0 });
+ }
+ });
+ if (estimates.length === 0) return refuse(name + ': no study has an estimable ' + IPD_STUDY_MEASURES[type] + ' (both arms are needed).');
+ return { refused: false, outcomeType: type, measure: IPD_STUDY_MEASURES[type], estimates: estimates };
+}
 
 function runAnalysis() {
 
@@ -37575,103 +37873,13 @@ function runAnalysis() {
 
 
  let effect, variance, se;
+ const est = ipdStudyEstimate(studyData, APP.config, armMapping);
 
+ effect = est.effect;
 
+ variance = est.variance;
 
- if (APP.config.outcomeType === 'survival') {
-
-
-
- const times = studyData.map(d => d[APP.config.timeVar]);
-
- const events = studyData.map(d => d[APP.config.eventVar]);
-
- const treatment = studyData.map(d => [ipdNormalizeArmToken(d[APP.config.treatmentVar]) === armMapping.treatmentToken ? 1 : 0]);
-
-
-
- try {
-
- const cox = SurvivalAnalysis.coxPH(times, events, treatment);
-
- effect = cox.beta[0];
-
- se = cox.se[0];
-
- variance = se * se;
-
- } catch (e) {
-
-
-
- const lr = SurvivalAnalysis.logRankTest(
-
- treat1.map(d => d[APP.config.timeVar]),
-
- treat1.map(d => d[APP.config.eventVar]),
-
- treat0.map(d => d[APP.config.timeVar]),
-
- treat0.map(d => d[APP.config.eventVar])
-
- );
-
- effect = (lr.O1 - lr.E1) / lr.V;
-
- variance = 1 / lr.V;
-
- se = Math.sqrt(variance);
-
- }
-
- } else if (APP.config.outcomeType === 'binary') {
-
- const a = treat1.filter(d => d[APP.config.eventVar] === 1).length;
-
- const b = treat1.length - a;
-
- const c = treat0.filter(d => d[APP.config.eventVar] === 1).length;
-
- const d = treat0.length - c;
-
-
-
- // P60 fix: 0.5 is added to the four cells only when a cell is zero (metafor escalc default)
- const cc = (a === 0 || b === 0 || c === 0 || d === 0) ? 0.5 : 0;
- effect = Math.log((a + cc) * (d + cc) / ((b + cc) * (c + cc)));
-
- variance = 1 / (a + cc) + 1 / (b + cc) + 1 / (c + cc) + 1 / (d + cc);
-
- se = Math.sqrt(variance);
-
- } else {
-
-
-
- const outcomes1 = treat1
- .map(d => (d[APP.config.eventVar] ?? d.outcome))
- .filter(v => v != null && Number.isFinite(v));
-
- const outcomes0 = treat0
- .map(d => (d[APP.config.eventVar] ?? d.outcome))
- .filter(v => v != null && Number.isFinite(v));
-
- if (outcomes1.length < 2 || outcomes0.length < 2) {
- // Preserve run continuity for sparse arm splits by giving near-zero weight.
- effect = 0;
- variance = 1e6;
- } else {
- const mean1 = Stats.mean(outcomes1);
- const mean0 = Stats.mean(outcomes0);
- const sd1 = Stats.sd(outcomes1, 1);
- const sd0 = Stats.sd(outcomes0, 1);
- effect = mean1 - mean0;
- variance = sd1 * sd1 / outcomes1.length + sd0 * sd0 / outcomes0.length;
- }
-
- se = Math.sqrt(variance);
-
- }
+ se = est.se;
 
 
 
@@ -40729,7 +40937,10 @@ function networkResolveTreatmentVar() {
 
  treatmentVar = 'treatment_name';
 
- APP.config.treatmentVar = 'treatment_name';
+ // IPD-Modal: the network column is returned (buildNetworkFromData records it on the network); it is no longer
+ // written into APP.config.treatmentVar, which the two-arm surfaces read. runAnalysis calls this after any run
+ // whose treatment_name has 3+ values, so on SGLT2 CVD the Power Monitor, entropy balancing and predictive
+ // patient selection then split the arms on drug names.
 
  }
 
@@ -59011,7 +59222,17 @@ function runPHAssumptionTest() {
 
 
 
-        const result = AdvancedSurvival.testPHAssumption(times, events, covars);
+        const phOk = times.map((t, i) => Number.isFinite(t) && Number.isFinite(events[i]) && Number.isFinite(covars[i]));
+
+        if (phOk.filter(Boolean).length < 10 || !events.some((e, i) => phOk[i] && e === 1)) {
+
+            showNotification('PH assumption screen needs a time-to-event outcome: no usable time variable ("' + timeVar + '") with events in the data.', 'warning');
+
+            return;
+
+        }
+
+        const result = AdvancedSurvival.testPHAssumption(times.filter((t, i) => phOk[i]), events.filter((e, i) => phOk[i]), covars.filter((c, i) => phOk[i]));
 
 
 
@@ -59492,9 +59713,9 @@ function runGEstimationAnalysis() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Treatment Effect (ψ):</strong> ' + result.psi.toFixed(4) + '</p>' +
+            '<div class="card"><p><strong>Treatment Effect (ψ):</strong> ' + ipdNum(result.psi, 4) + '</p>' +
 
-            '<p><strong>95% CI:</strong> ' + result.ci_lower.toFixed(4) + ' to ' + result.ci_upper.toFixed(4) + '</p>' +
+            '<p><strong>95% CI:</strong> ' + ipdNum(result.CI && result.CI[0], 4) + ' to ' + ipdNum(result.CI && result.CI[1], 4) + ' (SE ' + ipdNum(result.SE, 4) + ')</p>' +
 
             '</div></div>';
 
@@ -59522,7 +59743,17 @@ function runIVMAAnalysis() {
 
     try {
 
-        const result = runIVMetaAnalysis(APP.results.studies);
+        const ivStudies = APP.results.studies.filter(st => [st.betaX, st.betaY, st.seBetaY].every(v => typeof v === 'number' && Number.isFinite(v)) && st.betaX !== 0);
+
+        if (ivStudies.length < 2) {
+
+            showNotification('IV (Mendelian randomization) meta-analysis needs per-study exposure and outcome associations (betaX, betaY, seBetaY) for at least 2 studies; the two-stage study results do not contain them.', 'warning');
+
+            return;
+
+        }
+
+        const result = runIVMetaAnalysis(ivStudies);
 
 
 
@@ -59534,13 +59765,13 @@ function runIVMAAnalysis() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>IV Estimate:</strong> ' + result.ivEstimate.toFixed(4) + '</p>' +
+            '<div class="card"><p><strong>IV Estimate:</strong> ' + ipdNum(result.IVW.estimate, 4) + ' (IVW, SE ' + ipdNum(result.IVW.se, 4) + ')</p>' +
 
-            '<p><strong>95% CI:</strong> ' + result.ci_lower.toFixed(4) + ' to ' + result.ci_upper.toFixed(4) + '</p>' +
+            '<p><strong>95% CI:</strong> ' + ipdNum(result.IVW.ci[0], 4) + ' to ' + ipdNum(result.IVW.ci[1], 4) + '</p>' +
 
-            '<p><strong>F-statistic:</strong> ' + result.fStatistic.toFixed(2) + '</p>' +
+            '<p><strong>MR-Egger intercept:</strong> ' + ipdNum(result.MREgger.intercept, 4) + ' (' + escapeHTML(result.MREgger.pleiotropyTest) + ')</p>' +
 
-            '<p><strong>Weak IV Warning:</strong> ' + (result.fStatistic < 10 ? 'Yes - consider weak instrument bias' : 'No') + '</p>' +
+            '<p><strong>Weighted median:</strong> ' + ipdNum(result.weightedMedian, 4) + '</p>' +
 
             '</div></div>';
 
@@ -59652,7 +59883,15 @@ function runComponentNMAAnalysis() {
 
         const result = runComponentNMA(APP.data);
 
-        showNotification('Component NMA completed. ' + result.components.length + ' components analyzed.', 'success');
+        if (!result.nComponents) {
+
+            showNotification('Component NMA: no treatment components were identified in the data (it needs combination treatments, e.g. "A+B").', 'warning');
+
+            return;
+
+        }
+
+        showNotification('Component NMA completed. ' + result.nComponents + ' components analyzed.', 'success');
 
     } catch (e) {
 
@@ -59780,6 +60019,8 @@ function runDesignByTreatment() {
 
         const result = runDesignByTreatmentInteraction(APP.data);
 
+        const dbtTestable = !!(result.globalTest && result.globalTest.df > 0 && Number.isFinite(result.globalTest.p));
+
 
 
         const modal = document.createElement('div');
@@ -59790,15 +60031,15 @@ function runDesignByTreatment() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Chi-squared statistic:</strong> ' + result.chiSquared.toFixed(2) + '</p>' +
+            '<div class="card"><p><strong>Chi-squared statistic:</strong> ' + (dbtTestable ? ipdNum(result.globalTest.Q, 2) : 'not estimable (' + result.nDesigns + ' design' + (result.nDesigns === 1 ? '' : 's') + ': no inconsistency degrees of freedom)') + '</p>' +
 
-            '<p><strong>Degrees of freedom:</strong> ' + result.df + '</p>' +
+            '<p><strong>Degrees of freedom:</strong> ' + (result.globalTest ? result.globalTest.df : 'not estimable') + '</p>' +
 
-            '<p><strong>P-value:</strong> ' + (result.pValue < 0.001 ? '<0.001' : result.pValue.toFixed(4)) + '</p>' +
+            '<p><strong>P-value:</strong> ' + (!dbtTestable ? 'not estimable' : result.globalTest.p < 0.001 ? '<0.001' : result.globalTest.p.toFixed(4)) + '</p>' +
 
-            '<div class="alert ' + (result.pValue < 0.05 ? 'alert-warning' : 'alert-success') + '">' +
+            '<div class="alert ' + (!dbtTestable ? 'alert-info' : result.globalTest.p < 0.05 ? 'alert-warning' : 'alert-success') + '">' +
 
-            (result.pValue < 0.05 ? 'Significant design-by-treatment interaction detected. This may indicate inconsistency in the network.' :
+            (!dbtTestable ? 'Design-by-treatment inconsistency cannot be tested here (no inconsistency degrees of freedom).' : result.globalTest.p < 0.05 ? 'Significant design-by-treatment interaction detected. This may indicate inconsistency in the network.' :
 
              'No significant design-by-treatment interaction detected.') +
 
@@ -59858,6 +60099,14 @@ function runMIMA() {
 
         const result = runMultipleImputationMA(APP.results.studies, 5);
 
+        if (result.message) {
+
+            showNotification('Multiple imputation meta-analysis: ' + result.message + ' in the study estimates; nothing to impute.', 'info');
+
+            return;
+
+        }
+
 
 
         const modal = document.createElement('div');
@@ -59868,15 +60117,15 @@ function runMIMA() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Pooled Estimate:</strong> ' + result.pooledEffect.toFixed(4) + '</p>' +
+            '<div class="card"><p><strong>Pooled Estimate:</strong> ' + ipdNum(result.pooledEstimate, 4) + '</p>' +
 
-            '<p><strong>Within-Imputation Variance:</strong> ' + result.withinVar.toFixed(6) + '</p>' +
+            '<p><strong>Within-Imputation Variance:</strong> ' + ipdNum(result.varianceComponents.within, 6) + '</p>' +
 
-            '<p><strong>Between-Imputation Variance:</strong> ' + result.betweenVar.toFixed(6) + '</p>' +
+            '<p><strong>Between-Imputation Variance:</strong> ' + ipdNum(result.varianceComponents.between, 6) + '</p>' +
 
-            '<p><strong>Total Variance:</strong> ' + result.totalVar.toFixed(6) + '</p>' +
+            '<p><strong>Total Variance:</strong> ' + ipdNum(result.varianceComponents.total, 6) + '</p>' +
 
-            '<p><strong>Fraction Missing Information:</strong> ' + (result.fmi * 100).toFixed(1) + '%</p>' +
+            '<p><strong>Fraction Missing Information:</strong> ' + ipdNumUnit(result.fractionMissingInfo * 100, 1, '', '%') + '</p>' +
 
             '</div></div>';
 
@@ -60008,17 +60257,17 @@ function runTSA() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Required Information Size:</strong> ' + result.ris.toFixed(0) + '</p>' +
+            '<div class="card"><p><strong>Required Information Size:</strong> ' + ipdNum(result.requiredInformationSize, 0) + '</p>' +
 
-            '<p><strong>Accrued Information:</strong> ' + result.accruedInfo.toFixed(0) + ' (' + (result.accruedInfo / result.ris * 100).toFixed(1) + '%)</p>' +
+            '<p><strong>Accrued Information:</strong> ' + ipdNum(result.currentInformation, 0) + ' (' + ipdNumUnit(result.informationFraction * 100, 1, '', '%') + ')</p>' +
 
-            '<p><strong>TSA Monitoring Boundary Crossed:</strong> ' + (result.boundaryReached ? 'Yes' : 'No') + '</p>' +
+            '<p><strong>Cumulative Z:</strong> ' + ipdNum(result.currentZScore, 3) + ' (monitoring boundary ' + ipdNum(result.monitoringBoundary, 3) + ')</p>' +
 
-            '<p><strong>Futility Boundary Crossed:</strong> ' + (result.futilityReached ? 'Yes' : 'No') + '</p>' +
+            '<p><strong>Decision:</strong> ' + escapeHTML(result.decision || '') + '</p>' +
 
-            '<div class="alert ' + (result.boundaryReached ? 'alert-success' : 'alert-warning') + '">' +
+            '<div class="alert ' + (/^Crossed/.test(result.decision || '') ? 'alert-success' : 'alert-warning') + '">' +
 
-            (result.boundaryReached ? 'Sufficient evidence has accumulated to conclude the meta-analysis.' :
+            (/^Crossed/.test(result.decision || '') ? 'Sufficient evidence has accumulated to conclude the meta-analysis.' :
 
              'More studies may be needed before definitive conclusions can be drawn.') +
 
@@ -60122,11 +60371,11 @@ function runVOI() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Expected Value of Perfect Information (EVPI):</strong> $' + result.evpi.toLocaleString() + '</p>' +
+            '<div class="card"><p><strong>Expected Value of Perfect Information (EVPI):</strong> ' + (Number.isFinite(result.EVPI) ? '$' + result.EVPI.toLocaleString() : 'not estimable') + '</p>' +
 
-            '<p><strong>Expected Value of Sample Information (EVSI):</strong> $' + result.evsi.toLocaleString() + '</p>' +
+            '<p><strong>Expected Value of Sample Information (EVSI):</strong> ' + (Number.isFinite(result.EVSI) ? '$' + result.EVSI.toLocaleString() : 'not estimable') + '</p>' +
 
-            '<p><strong>Optimal Sample Size:</strong> ' + result.optimalN + '</p>' +
+            '<p><strong>Expected Net Benefit of Sampling (ENBS):</strong> ' + (Number.isFinite(result.ENBS) ? '$' + result.ENBS.toLocaleString() : 'not estimable') + ' (' + (result.recommendFurtherResearch ? 'further research recommended' : 'further research not recommended') + ')</p>' +
 
             '</div></div>';
 
@@ -60342,6 +60591,10 @@ function runOIS() {
 
         const result = calculateOptimalInformationSize(0.05, 0.20, 0.3, APP.results.pooled.tau2 ?? 0.1, APP.results.studies.length);
 
+        result.ris = result.metaAnalysisOIS;
+
+        result.accrued = APP.results.studies.reduce((a, st) => a + (Number(st.n) || 0), 0);
+
 
 
         const modal = document.createElement('div');
@@ -60352,11 +60605,11 @@ function runOIS() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Required Information Size:</strong> ' + result.ris.toFixed(0) + ' participants</p>' +
+            '<div class="card"><p><strong>Required Information Size:</strong> ' + ipdNumUnit(result.ris, 0, '', ' participants') + '</p>' +
 
-            '<p><strong>Current Accrued:</strong> ' + result.accrued.toFixed(0) + ' participants</p>' +
+            '<p><strong>Current Accrued:</strong> ' + ipdNumUnit(result.accrued, 0, '', ' participants') + '</p>' +
 
-            '<p><strong>Percentage of Required:</strong> ' + (result.accrued / result.ris * 100).toFixed(1) + '%</p>' +
+            '<p><strong>Percentage of Required:</strong> ' + ipdNumUnit(result.accrued / result.ris * 100, 1, '', '%') + '</p>' +
 
             '<div class="alert ' + (result.accrued >= result.ris ? 'alert-success' : 'alert-warning') + '">' +
 
@@ -65438,21 +65691,20 @@ const FederatedMetaAnalysis = {
 
         // Group data by study (simulating distributed sites)
 
-        // IPD-Left: sites, arms and outcomes from the mapped columns (ipdArmOutcomes); a site without both arms has no
-        // treatment effect and is not pooled (it had nTreated or nControl = 0 and an infinite SE).
-        const arms = ipdArmOutcomes(data, config);
-        const siteResults = [];
-        arms.studies.forEach(st => {
-            if (!(st.y1.length > 0 && st.y0.length > 0)) return;
-            // Each "site" computes local sufficient statistics only
-            const localStats = this.computeLocalStatistics(st, config);
-            siteResults.push({
-                siteId: st.study,
-                n: st.n,
-                ...localStats
-            });
-        });
-        if (!siteResults.length) throw new Error(arms.error || 'No site has both a treatment and a control arm in the mapped columns.');
+        // IPD-Fed: each site's local estimate is the CONFIGURED outcome on the scale runAnalysis pools
+        // (ipdConfiguredStudyEstimates -> ipdStudyEstimate: Cox log HR, log OR, mean difference). It used to be the
+        // difference of arm means of the mapped column whatever the outcome type, i.e. a difference in crude event
+        // proportions on time-to-event data and a risk difference on binary data. A site without both arms is not pooled.
+        const ce = ipdConfiguredStudyEstimates(data, config, 'Federated Analysis');
+        if (ce.refused) throw new Error(ce.message);
+        const siteResults = ce.estimates.map(e => ({
+            siteId: e.study,
+            n: e.n,
+            effect: e.effect,
+            se: e.se,
+            nTreated: e.n1,
+            nControl: e.n0
+        }));
 
 
 
@@ -65470,66 +65722,11 @@ const FederatedMetaAnalysis = {
 
             privacyMetrics: this.computePrivacyMetrics(siteResults),
 
+            outcomeType: ce.outcomeType,
+
+            effectMeasure: ce.measure,
+
             method: 'Federated Two-Stage IPD-MA'
-
-        };
-
-    },
-
-
-
-    computeLocalStatistics: function(site, config) {
-        // Compute only summary statistics - no raw data leaves. site = { y1: treated outcomes, y0: control outcomes }
-        const outcomes = site.y1.concat(site.y0);
-        const treatments = site.y1.map(() => 1).concat(site.y0.map(() => 0));
-
-
-
-        // Sufficient statistics for linear model
-
-        const nTreated = treatments.filter(t => t === 1).length;
-
-        const nControl = treatments.filter(t => t === 0).length;
-
-
-
-        const meanTreated = outcomes.filter((o, i) => treatments[i] === 1)
-
-            .reduce((a, b) => a + b, 0) / nTreated || 0;
-
-        const meanControl = outcomes.filter((o, i) => treatments[i] === 0)
-
-            .reduce((a, b) => a + b, 0) / nControl || 0;
-
-
-
-        const varTreated = outcomes.filter((o, i) => treatments[i] === 1)
-
-            .reduce((a, o) => a + Math.pow(o - meanTreated, 2), 0) / (nTreated - 1) || 1;
-
-        const varControl = outcomes.filter((o, i) => treatments[i] === 0)
-
-            .reduce((a, o) => a + Math.pow(o - meanControl, 2), 0) / (nControl - 1) || 1;
-
-
-
-        const effect = meanTreated - meanControl;
-
-        const se = Math.sqrt(varTreated/nTreated + varControl/nControl);
-
-
-
-        return {
-
-            effect: effect,
-
-            se: se,
-
-            nTreated: nTreated,
-
-            nControl: nControl,
-
-            localVariance: (varTreated + varControl) / 2
 
         };
 
@@ -65691,11 +65888,15 @@ function showFederatedAnalysis() {
 
         try {
 
-            const result = FederatedMetaAnalysis.runFederatedAnalysis(APP.data, APP.config);
+            const result = FederatedMetaAnalysis.runFederatedAnalysis(APP.data, ipdFormAnalysisConfig());
 
             const re = result.aggregatedResult.randomEffect;
 
             const het = result.aggregatedResult.heterogeneity;
+
+            const ratioLabel = result.outcomeType === 'survival' ? 'HR' : result.outcomeType === 'binary' ? 'OR' : '';
+
+            const ciPct = Math.round(((APP.config && APP.config.confLevel) || 0.95) * 100);
 
 
 
@@ -65735,13 +65936,15 @@ function showFederatedAnalysis() {
 
                             <h4 style="color:var(--accent-primary);margin-bottom:0.5rem;">Pooled Result</h4>
 
+                            <div style="font-size:0.8rem;color:var(--text-muted);">Random-effects (DerSimonian-Laird) pool, ${escapeHTML(result.effectMeasure)}</div>
+
                             <div style="font-size:1.5rem;font-weight:bold;color:var(--accent-success);">
 
-                                ${re.effect.toFixed(3)}
+                                ${re.effect.toFixed(3)}${ratioLabel ? ' (' + ratioLabel + ' ' + Math.exp(re.effect).toFixed(3) + ')' : ''}
 
                             </div>
 
-                            <div style="font-size:0.9rem;">95% CI: ${re.ci_lower.toFixed(3)} to ${re.ci_upper.toFixed(3)}</div>
+                            <div style="font-size:0.9rem;">${ciPct}% CI: ${re.ci_lower.toFixed(3)} to ${re.ci_upper.toFixed(3)}${ratioLabel ? ' (' + ratioLabel + ' ' + Math.exp(re.ci_lower).toFixed(3) + ' to ' + Math.exp(re.ci_upper).toFixed(3) + ')' : ''}</div>
 
                             <div style="font-size:0.9rem;">p = ${re.pValue < 0.001 ? '<0.001' : re.pValue.toFixed(4)}</div>
 
@@ -65783,7 +65986,7 @@ function showFederatedAnalysis() {
 
                                 <th>N</th>
 
-                                <th>Local Effect</th>
+                                <th>Local Effect (${escapeHTML(result.effectMeasure)})</th>
 
                                 <th>SE</th>
 
@@ -66731,43 +66934,17 @@ const PowerMonitor = {
 
     calculateCurrentPower: function(data, config) {
 
-        // IPD-Left: arms and outcomes from the mapped columns (ipdArmOutcomes); k = studies with both arms.
-        const arms = ipdArmOutcomes(data, config);
-        const totalN = data.length;
-        // Estimate effect size and heterogeneity from current data
-        const effects = [];
-        const ses = [];
-        arms.studies.forEach(st => {
-            const treated = st.y1, control = st.y0;
-            if (treated.length > 0 && control.length > 0) {
-
-                const meanT = treated.reduce((a, b) => a + b, 0) / treated.length;
-
-                const meanC = control.reduce((a, b) => a + b, 0) / control.length;
-
-                const effect = meanT - meanC;
-
-
-
-                const varT = treated.reduce((a, o) => a + Math.pow(o - meanT, 2), 0) / (treated.length - 1) || 1;
-
-                const varC = control.reduce((a, o) => a + Math.pow(o - meanC, 2), 0) / (control.length - 1) || 1;
-
-                const se = Math.sqrt(varT/treated.length + varC/control.length);
-
-
-
-                effects.push(effect);
-
-                ses.push(se);
-
-            }
-
-        });
-
-
-
-        if (effects.length === 0) return { power: 0, message: arms.error || 'Insufficient data' };
+        // IPD-Modal: per-study estimates of the CONFIGURED outcome on the runAnalysis scale (ipdStudyEstimate:
+        // Cox log HR, log OR, mean difference). It used to pool the arm means of the mapped column whatever the
+        // outcome, i.e. a difference in crude event proportions on time-to-event data.
+        // IPD-Fed: the per-study estimation is shared with Federated Analysis (ipdConfiguredStudyEstimates).
+        const totalN = Array.isArray(data) ? data.length : 0;
+        const type = (config && config.outcomeType) || 'survival';
+        const MEASURES = IPD_STUDY_MEASURES;
+        const ce = ipdConfiguredStudyEstimates(data, config, 'Power Monitor');
+        if (ce.refused) return { power: 0, refused: true, message: ce.message, currentStudies: 0, totalParticipants: totalN };
+        const effects = ce.estimates.map(e => e.effect);
+        const ses = ce.estimates.map(e => e.se);
         const k = effects.length;
 
 
@@ -66828,7 +67005,11 @@ const PowerMonitor = {
 
             tau2: tau2,
 
-            effectSize: effectSize
+            effectSize: effectSize,
+
+            effectMeasure: MEASURES[type],
+
+            outcomeType: type
 
         };
 
@@ -66960,7 +67141,12 @@ function showPowerMonitor() {
 
         try {
 
-            const stats = PowerMonitor.calculateCurrentPower(APP.data, APP.config);
+            const stats = PowerMonitor.calculateCurrentPower(APP.data, ipdFormAnalysisConfig());
+
+            if (stats.refused) {
+                showNotification(stats.message, 'warning');
+                return;
+            }
 
             const projections = PowerMonitor.projectFuturePower(stats, 10, stats.totalParticipants / stats.currentStudies);
 
@@ -67184,7 +67370,9 @@ function showPowerMonitor() {
 
                             <h4 style="color:var(--accent-primary);margin-bottom:0.5rem;">Current Effect</h4>
 
-                            <div style="font-size:1.2rem;font-weight:bold;">${stats.pooledEffect.toFixed(3)}</div>
+                            <div style="font-size:0.8rem;color:var(--text-muted);">Fixed-effect pool, ${escapeHTML(stats.effectMeasure)}</div>
+
+                            <div style="font-size:1.2rem;font-weight:bold;">${stats.pooledEffect.toFixed(3)}${stats.outcomeType === 'survival' ? ' (HR ' + Math.exp(stats.pooledEffect).toFixed(3) + ')' : stats.outcomeType === 'binary' ? ' (OR ' + Math.exp(stats.pooledEffect).toFixed(3) + ')' : ''}</div>
 
                             <div style="font-size:0.9rem;">SE: ${stats.pooledSE.toFixed(3)}</div>
 
@@ -73543,7 +73731,7 @@ function showClusteredIPDAnalysis() {
 
                         <select id="ipdOutcomeVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);" aria-label="Outcome Variable:">
 
-                            ${getVariableOptions()}
+                            ${getVariableOptions(ipdFormAnalysisConfig().eventVar)}
 
                         </select>
 
@@ -73555,7 +73743,7 @@ function showClusteredIPDAnalysis() {
 
                         <select id="ipdTreatmentVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);" aria-label="Treatment Variable:">
 
-                            ${getVariableOptions()}
+                            ${getVariableOptions(ipdFormAnalysisConfig().treatmentVar)}
 
                         </select>
 
@@ -73567,7 +73755,7 @@ function showClusteredIPDAnalysis() {
 
                         <select id="ipdClusterVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);" aria-label="Cluster/Study Variable:">
 
-                            ${getVariableOptions()}
+                            ${getVariableOptions(ipdFormAnalysisConfig().studyVar)}
 
                         </select>
 
@@ -73641,13 +73829,14 @@ function showClusteredIPDAnalysis() {
 
 
 
-function getVariableOptions() {
+function getVariableOptions(preferred) {
 
     if (!APP.currentData || APP.currentData.length === 0) return '<option>No data loaded</option>';
 
     const vars = Object.keys(APP.currentData[0]);
 
-    return vars.map(v => '<option value="' + v + '">' + v + '</option>').join('');
+    // IPD-Modal: preselect the configured column; without it all three selects defaulted to the first column (study_id)
+    return vars.map(v => '<option value="' + v + '"' + (preferred && v === preferred ? ' selected' : '') + '>' + v + '</option>').join('');
 
 }
 
@@ -73777,15 +73966,15 @@ function formatClusteredIPDResults(result, iccResult) {
 
                 <table style="width:100%;font-size:14px;">
 
-                    <tr><td>ICC:</td><td><strong>${iccResult.ICC.toFixed(4)}</strong></td></tr>
+                    <tr><td>ICC:</td><td><strong>${ipdNum(iccResult.ICC, 4)}</strong></td></tr>
 
-                    <tr><td>Design Effect:</td><td>${iccResult.design_effect.toFixed(2)}</td></tr>
+                    <tr><td>Design Effect:</td><td>${ipdNum(iccResult.design_effect, 2)}</td></tr>
 
                     <tr><td>N Clusters:</td><td>${iccResult.n_clusters}</td></tr>
 
                     <tr><td>N Total:</td><td>${iccResult.n_total}</td></tr>
 
-                    <tr><td>Effective N:</td><td>${(iccResult.n_total / iccResult.design_effect).toFixed(0)}</td></tr>
+                    <tr><td>Effective N:</td><td>${ipdNum(iccResult.n_total / iccResult.design_effect, 0)}</td></tr>
 
                 </table>
 
@@ -73863,6 +74052,16 @@ function drawICCPlot(iccResult) {
 
 
     const ctx = canvas.getContext('2d');
+
+    if (!iccResult || !Number.isFinite(iccResult.ICC)) {
+        // IPD-Modal: a non-finite ICC (one cluster, or a non-numeric outcome) drew a bar of height NaN and threw
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') || '#aaa';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('ICC not estimable (' + ((iccResult && iccResult.n_clusters) || 0) + ' cluster(s))', canvas.width / 2, canvas.height / 2);
+        return;
+    }
 
     const w = canvas.width;
 
@@ -83070,7 +83269,7 @@ function displayValidationResults(results) {
 
         const nLow = pValues.filter(p => p < 0.025).length;
 
-        const rightSkewP = 1 - jStat.binomial.cdf(nLow - 1, nSig, 0.5);
+        const rightSkewP = ipdBinomUpper(nLow, nSig, 0.5); // IPD-Modal: jStat.binomial does not exist in the page's jStat shim
 
 
 
@@ -90603,7 +90802,11 @@ function ipd80AutoMapVariables(options) {
         return { pass: false, missing: ['columns'] };
     }
 
-    const outcome = ipd80InferOutcomeType(columns);
+    // IPD-Fed: an outcome type declared by the loaded example (for this exact data) is used; otherwise inferred.
+    const decl = APP.declaredOutcome;
+    const declaredOk = !!(decl && decl.outcomeType && decl.fingerprint && typeof computeCurrentDataFingerprint === 'function' &&
+        decl.fingerprint === computeCurrentDataFingerprint());
+    const outcome = declaredOk ? decl.outcomeType : ipd80InferOutcomeType(columns);
     const outcomeEl = document.getElementById('outcomeType');
     if (outcomeEl && outcomeEl.value !== outcome) {
         outcomeEl.value = outcome;
@@ -90681,6 +90884,7 @@ function ipd80AutoMapVariables(options) {
         pass: missing.length === 0,
         generatedAt: new Date().toISOString(),
         outcomeType: outcome,
+        outcomeTypeSource: declaredOk ? ('declared by ' + decl.source) : 'inferred from column names',
         mapped: mapped,
         required: required,
         missing: missing,
