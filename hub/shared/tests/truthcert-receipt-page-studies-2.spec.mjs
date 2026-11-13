@@ -79,8 +79,42 @@ test.describe('gosh-metareg: receipt and bus carry effect, SE, moderator, label 
     await open(page, 'gosh-metareg');
     await runWith(page, INPUT + '\n0.30, abc, 6, Bad row', done);
     expect(rows(await receipt(page))).toEqual(WANT);
+    // Refused RUN (k < 3), not just an un-run edit (lane fix556, agy finding on PR #556).
     await page.fill('#src', '0.22, 0.11, 1, Smith\n-0.31, 0.14, 2, Jones');
+    await page.locator('#btn-run').click();
     await noReceipt(page);
+  });
+
+  // Lane fix556: the receipt signed a live re-parse of #src, so an edit that was never run
+  // (3..18 valid rows) was signed against the earlier analysis.
+  test('an edit that was never run is not signed: the receipt is the analysed set', async ({ page }) => {
+    await open(page, 'gosh-metareg');
+    await runWith(page, INPUT, done);
+    await page.fill('#src', '0.50, 0.10, 9, New A\n0.40, 0.10, 8, New B\n0.30, 0.10, 7, New C\n0.20, 0.10, 6, New D');
+    expect(rows(await receipt(page))).toEqual(WANT);
+  });
+
+  test('a run the page refuses (no subset meets min k) gives no receipt', async ({ page }) => {
+    await open(page, 'gosh-metareg');
+    await runWith(page, INPUT, done);
+    await page.fill('#min-k', '10');
+    await page.fill('#src', INPUT + '\n0.01, 0.10, 6, Trial F');
+    await page.locator('#btn-run').click();
+    await page.waitForFunction(() => /No subsets/.test(document.getElementById('m-n').textContent), null, { timeout: 30_000 });
+    await noReceipt(page);
+  });
+
+  // Lane fix556 (agy finding on PR #556): bus studies that all lack a moderator wiped #src
+  // and re-ran on an empty box, destroying the current analysis while loading nothing.
+  test('load from a bus with no usable moderator leaves the current input and analysis alone', async ({ page }) => {
+    await open(page, 'gosh-metareg');
+    await runWith(page, INPUT, done);
+    await page.evaluate(() => window.MaStudies.write([{ label: 'P', est: 0.1, se: 0.1 }, { label: 'Q', est: 0.2, se: 0.1 }, { label: 'R', est: 0.3, se: 0.1 }]));
+    await page.locator('#btn-bus-load').click();
+    await page.waitForTimeout(500);
+    expect(await page.inputValue('#src')).toBe(INPUT);
+    const analysed = await page.evaluate(() => window.__almValidatorStudies().map(s => [s.label, s.est, s.se, s.mod]));
+    expect(analysed).toEqual(WANT);
   });
 
   test('bus save stores what the page read, and load from bus gives the page those rows back', async ({ page }) => {
