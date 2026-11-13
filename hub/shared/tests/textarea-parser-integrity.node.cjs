@@ -105,3 +105,28 @@ for (const app of APPS) {
     }
   });
 }
+
+// ------------------------------------------------------------- rev542 M2 / M3 / minor (multilevel-ma)
+{
+  const parse = extract('multilevel-ma/index.html', 'parse');
+  const nums = rows => rows.map(r => [r.study, r.te, r.se, r.label]);
+  test('multilevel-ma: trailing empty fields (pasted spreadsheet) are absent, not a refusal', () => {
+    const base = '1, 0.35, 0.12, outcome A\n1, 0.28, 0.10, outcome B\n2, 0.51, 0.15, outcome A\n3, 0.10, 0.09, outcome A';
+    const r = parse(base.split('\n').map(l => l + ',').join('\n'));
+    assert.deepEqual(r.rejected, []);
+    assert.deepEqual(nums(r), nums(parse(base)));
+    const r2 = parse('study,effect,SE,label,\n' + base.split('\n').map(l => l + ',,').join('\n'));
+    assert.deepEqual(r2.rejected, []);
+    assert.deepEqual(nums(r2), nums(parse(base)));
+  });
+  test('multilevel-ma: a quoted field may contain a comma (what the CSV upload writes back)', () => {
+    const r = parse('1, 0.35, 0.12, "outcome A, primary"\n"Smith, 2001", 0.28, 0.10, B\n2, 0.51, 0.15, A\n3, 0.10, 0.09, A');
+    assert.deepEqual(r.rejected, []);
+    assert.deepEqual(nums(r)[0], ['1', 0.35, 0.12, 'outcome A, primary']);
+    assert.deepEqual(nums(r)[1], ['Smith, 2001', 0.28, 0.1, 'B']);
+  });
+  test('multilevel-ma: refusals name the physical line, counting leading blank lines', () => {
+    const r = parse('\n\n1, 0.35, 0.12, A\n1, 0.28, 0.10, B\n2, 0.51, 0.15, A\nSmith, 2001, 0.10, 0.09, A');
+    assert.ok(r.rejected.some(m => /^Line 6:/.test(m)), JSON.stringify(r.rejected));
+  });
+}

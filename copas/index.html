@@ -756,7 +756,9 @@
     // as 30 for anyone who uploaded a CSV rather than pasting -- the textarea
     // fix covered one of the page's two readers (review-212 MAJOR-6).
     window.__almCopasLoad = function (rows) {
-      if (!rows || rows.length < 1) return;
+      // A refused or empty CSV must not leave the previous file's results on screen (rev542 M4):
+      // empty the input and re-run, so the page states that no analysis was possible.
+      if (!rows || rows.length < 1) { document.getElementById('src').value = ''; _refusedOnLoad = 0; runDeferred(); return; }
       var lines = [], refused = 0;
       rows.forEach(function (r) {
         var te  = num(r.yi  !== undefined ? r.yi  : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te)));
@@ -764,7 +766,6 @@
         if (!Number.isFinite(te) || !Number.isFinite(sei) || sei <= 0) { refused++; return; }
         lines.push(te.toString() + ', ' + sei.toString());
       });
-      if (lines.length < 1) return;
       document.getElementById('src').value = lines.join('\n');
       _refusedOnLoad = refused;
       runDeferred();

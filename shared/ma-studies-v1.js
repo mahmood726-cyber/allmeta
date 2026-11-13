@@ -226,6 +226,13 @@
     if (!t.length) return { ok: true, value: null };
     return /^[+-]?\d+$/.test(t) ? { ok: true, value: Number(t) } : { ok: false };
   }
+  // Trailing empty fields (a pasted spreadsheet's empty last columns, "A,0.1,0.2,,,")
+  // are absent columns, not extra ones.
+  function _trimTrailingEmpty(parts) {
+    var n = parts.length;
+    while (n > 1 && parts[n - 1] === "") n--;
+    return parts.slice(0, n);
+  }
   // Split one line on commas, honouring RFC-4180 quotes so toCSV() output
   // round-trips ("Smith, 2001" stays one field). Fields are trimmed.
   function _splitLine(line) {
@@ -259,7 +266,7 @@
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim();
       if (!line || line.charAt(0) === "#") continue;
-      var parts = _splitLine(line);
+      var parts = _trimTrailingEmpty(_splitLine(line));
       if (parts.length < 3 || parts.length > 6) continue;
       var est = _num(parts[1]);
       var se = _num(parts[2]);
@@ -333,19 +340,24 @@
           if (isFiniteNumber(m)) mod = m;
         }
       } else {
-        // "label-est-se" (default)
-        if (parts.length < 3 || parts.length > 6) continue;
+        // "label-est-se" (default). Callers put their own column 4 here (meta-regression
+        // passes its MODERATOR), so year/group/moderator stay optional and lenient, as
+        // before: a value that is not a complete number is recorded as null and never
+        // removes the study (rev542 M1: a whole-year check dropped dose 2.5 from the
+        // meta-regression receipt). The whole-number year rule applies only to
+        // parseCSV, whose 4th column is a real year.
+        if (parts.length < 3) continue;
         label = parts[0] || ("Study " + (rows.length + 1));
         est = _num(parts[1]);
         se = _num(parts[2]);
-        var yr = _year(parts[3]);
-        if (!yr.ok) continue;
-        year = yr.value;
+        if (parts.length > 3 && parts[3].length) {
+          var y = _num(parts[3]);
+          if (isFiniteNumber(y)) year = y;
+        }
         if (parts.length > 4 && parts[4].length) group = parts[4];
         if (parts.length > 5 && parts[5].length) {
           var m2 = _num(parts[5]);
-          if (!isFiniteNumber(m2)) continue;
-          mod = m2;
+          if (isFiniteNumber(m2)) mod = m2;
         }
       }
       if (!isFiniteNumber(est) || !isFiniteNumber(se) || se <= 0) continue;
