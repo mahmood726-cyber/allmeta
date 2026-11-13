@@ -187,6 +187,8 @@
 
     async function run() {
       const rows = parse(document.getElementById("src").value);
+      // Lane fix556: a refused or in-progress run has no analysed set to sign or send.
+      _analysedRows = null;
       const minK = parseInt(document.getElementById("min-k").value, 10) || 4;
       const msg = document.getElementById("m-n");
       if (rows.length < 3) { msg.textContent = "Need at least 3 studies."; return; }
@@ -230,18 +232,21 @@
       document.getElementById("m-sign").textContent = signCons ? "yes" : `no (${(pos * 100).toFixed(0)}% positive)`;
       _lastMetaregGosh = { _schema: "gosh-metareg-results-v1", k: k, n_subsets_fitted: results.length,
         slope_median: median, slope_mean: mean, slope_sd: sd, prop_positive: pos, sign_consistent: signCons };
+      _analysedRows = rows.map(r => ({ label: r.label, est: r.te, se: r.se, mod: r.mod }));
       draw(results);
       btn.disabled = false;
     }
     var _lastMetaregGosh = null;
+    var _analysedRows = null;
     window.__almLastMetaregGosh = function () { return _lastMetaregGosh; };
     // What the WebR validator re-fits (lane rc5, RC5): the studies on screen, never the
     // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
     // returning user an earlier session's studies).
     window.__almValidatorStudies = function () {
       // Only when the page can analyse it (run() refuses k < 3 and k > 18).
-      const rows = parse(document.getElementById("src").value);
-      return (rows.length < 3 || rows.length > 18 || !_lastMetaregGosh) ? [] : rows.map(r => ({ label: r.label, est: r.te, se: r.se, mod: r.mod }));
+      // Lane fix556: the rows the last completed run analysed, never a re-read of the input box
+      // (an edit that was not run, or a run the page refused, was signed against the old result).
+      return _analysedRows ? _analysedRows.map(r => Object.assign({}, r)) : [];
     };
 
     function draw(pts) {
@@ -276,11 +281,39 @@
     }
 
     document.getElementById("btn-run").addEventListener("click", run);
-    if (window.MaStudies && MaStudies.attachButtons) {
-      MaStudies.attachButtons({
-        btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
-        textarea: "#src", format: "est-se-label-mod",
-        onAfterLoad: run,
+    // What the TruthCert receipt signs and the bus "Save" stores (lane rcpt2): the studies this
+    // page analyses, read by its own parse() ("effect, SE, moderator, label"). The shared
+    // "est-se-label-mod" reader is "effect, SE, label, moderator", so it signed and saved the
+    // moderator as the label and dropped the moderator.
+    window.__almReceiptStudies = function () {
+      return (window.__almValidatorStudies ? window.__almValidatorStudies() : []).map(s =>
+        ({ label: s.label, est: s.est, se: s.se, moderator: s.mod }));
+    };
+    if (window.MaStudies && MaStudies.write && MaStudies.read) {
+      document.getElementById("btn-bus-save").addEventListener("click", function () {
+        const rows = window.__almReceiptStudies();
+        if (!rows.length) { if (window.Toast) Toast.show("Nothing to save.", "warn"); return; }
+        const ok = MaStudies.write(rows);
+        if (window.Toast) Toast.show(ok ? ("Saved " + rows.length + " studies to shared bus.") : "Could not save to bus.", ok ? "warn" : "error");
+      });
+      // Load writes the page's own column order. A study with no moderator cannot be analysed
+      // here, so the message says how many were left out rather than dropping them silently.
+      document.getElementById("btn-bus-load").addEventListener("click", function () {
+        const studies = MaStudies.read();
+        if (!studies.length) { if (window.Toast) Toast.show("No shared studies yet.", "warn"); return; }
+        const usable = studies.filter(s => Number.isFinite(s.moderator));
+        // Lane fix556: nothing loadable -- say so and leave the current input and analysis alone.
+        if (!usable.length) {
+          if (window.Toast) Toast.show("None of the " + studies.length + " shared studies has a moderator; nothing was loaded.", "warn");
+          return;
+        }
+        const ta = document.getElementById("src");
+        ta.value = usable.map(s => [s.est, s.se, s.moderator, s.label].join(", ")).join("\n");
+        ta.dispatchEvent(new Event("input", { bubbles: true }));
+        if (usable.length < studies.length && window.Toast) {
+          Toast.show((studies.length - usable.length) + " shared studies have no moderator and were not loaded.", "warn");
+        }
+        run();
       });
     }
     // Defer initial auto-run so the page settles into "networkidle" first
@@ -302,7 +335,9 @@
       getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
-      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "gosh-metareg", textarea: "#src", format: "est-se-label-mod" });
+      // Sign the studies this page analysed, not a re-read of the input with the shared reader (lane rcpt2).
+      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "gosh-metareg",
+        getStudies: function () { return window.__almReceiptStudies ? window.__almReceiptStudies() : []; } });
     }
   });
 })();
