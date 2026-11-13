@@ -2121,7 +2121,10 @@ function fitSplineModel(points, tau2Override = null, numKnots = 4) {
 
   const result = solveGLSWithTau2Spline(X, y, V_blocks, tau2, p);
 
-  const Q = computeQStatSpline(y, X, result.beta, V_blocks, tau2, p);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStatSpline(y, X, result.beta, V_blocks, tau2, p);
+  const Q = tau2 === 0 ? QRE
+    : computeQStatSpline(y, X, solveGLSWithTau2Spline(X, y, V_blocks, 0, p).beta, V_blocks, 0, p);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2131,6 +2134,7 @@ function fitSplineModel(points, tau2Override = null, numKnots = 4) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -2191,7 +2195,10 @@ function fitLinearModel(points, tau2Override = null) {
 
   const result = solveGLSLinear(X, y, V_blocks, tau2);
 
-  const Q = computeQStatLinear(y, X, result.beta, V_blocks, tau2);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStatLinear(y, X, result.beta, V_blocks, tau2);
+  const Q = tau2 === 0 ? QRE
+    : computeQStatLinear(y, X, solveGLSLinear(X, y, V_blocks, 0).beta, V_blocks, 0);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2201,6 +2208,7 @@ function fitLinearModel(points, tau2Override = null) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -2641,7 +2649,10 @@ function fitExponentialModel(points, tau2Override = null, alpha = null) {
   const result = solveGLSWithTau2(X, y, V_blocks, tau2);
 
   // Compute Q and I²
-  const Q = computeQStat(y, X, result.beta, V_blocks, tau2);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStat(y, X, result.beta, V_blocks, tau2);
+  const Q = tau2 === 0 ? QRE
+    : computeQStat(y, X, solveGLSWithTau2(X, y, V_blocks, 0).beta, V_blocks, 0);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2651,6 +2662,7 @@ function fitExponentialModel(points, tau2Override = null, alpha = null) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -2806,7 +2818,10 @@ function solveGLS(points, tau2Override = null) {
 
   const result = solveGLSWithTau2(X, y, V_blocks, tau2);
 
-  const Q = computeQStat(y, X, result.beta, V_blocks, tau2);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStat(y, X, result.beta, V_blocks, tau2);
+  const Q = tau2 === 0 ? QRE
+    : computeQStat(y, X, solveGLSWithTau2(X, y, V_blocks, 0).beta, V_blocks, 0);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2819,6 +2834,7 @@ function solveGLS(points, tau2Override = null) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -3469,44 +3485,62 @@ function normCDF(x) {
 }
 
 function normCDFinv(p) {
-  // Beasley-Springer-Moro approximation
-  const a = [-3.969683, -1.963510, 0.5742055, 0.6938985, -1.220525, 1.380257, -0.6726213, -0.4548294, 0.2459106];
-  const b = [0.0132309, 0.0416717, 0.0097009, -0.0013922, -0.0320185, -0.0098922, 0.0019939, 0.0013942, -0.0015587];
-
-  const q = Math.min(Math.max(p, 1e-10), 1 - 1e-10);
-  if (q <= 0.02425) {
-    return (a[0] + a[1] / (a[2] + q)) / ((a[3] + q) / (a[4] + q) - (a[5] + q) / (a[6] + q) + (a[7] + q) / (a[8] + q));
+  // Standard normal quantile: Wichura (1988) AS 241 PPND16, relative accuracy ~1e-16 (the algorithm of R's qnorm).
+  // Replaces a garbled Beasley-Springer-Moro evaluation that returned 3.542 for p = 0.975 and +33.08 for p = 0.01.
+  if (!(p > 0)) return p === 0 ? -Infinity : NaN;
+  if (!(p < 1)) return p === 1 ? Infinity : NaN;
+  const q = p - 0.5;
+  if (Math.abs(q) <= 0.425) {
+    const r = 0.180625 - q * q;
+    return q * (((((((2509.0809287301226727 * r + 33430.575583588128105) * r + 67265.770927008700853) * r +
+      45921.953931549871457) * r + 13731.693765509461125) * r + 1971.5909503065514427) * r + 133.14166789178437745) * r +
+      3.387132872796366608) / (((((((5226.495278852854561 * r + 28729.085735721942674) * r + 39307.89580009271061) * r +
+      21213.794301586595867) * r + 5394.1960214247511077) * r + 687.1870074920579083) * r + 42.313330701600911252) * r + 1);
   }
-
-  const r = Math.sqrt(-2 * Math.log(1 - q));
-  const num = (((((b[5]*r + b[4])*r + b[3])*r + b[2])*r + b[1])*r + b[0]);
-  const den = (((((b[8]*r + b[7])*r + b[6])*r + 1))*r + 1);
-  return r - num / den;
+  let r = Math.sqrt(-Math.log(q < 0 ? p : 1 - p));
+  let z;
+  if (r <= 5) {
+    r -= 1.6;
+    z = (((((((7.7454501427834140764e-4 * r + 0.0227238449892691845833) * r + 0.24178072517745061177) * r +
+      1.27045825245236838258) * r + 3.64784832476320460504) * r + 5.7694972214606914055) * r + 4.6303378461565452959) * r +
+      1.42343711074968357734) / (((((((1.05075007164441684324e-9 * r + 5.475938084995344946e-4) * r +
+      0.0151986665636164571966) * r + 0.14810397642748007459) * r + 0.68976733498510000455) * r + 1.6763848301838038494) * r +
+      2.05319162663775882187) * r + 1);
+  } else {
+    r -= 5;
+    z = (((((((2.01033439929228813265e-7 * r + 2.71155556874348757815e-5) * r + 0.0012426609473880784386) * r +
+      0.026532189526576123093) * r + 0.29656057182850489123) * r + 1.7848265399172913358) * r + 5.4637849111641143699) * r +
+      6.6579046435011037772) / (((((((2.04426310338993978564e-15 * r + 1.4215117583164458887e-7) * r +
+      1.8463183175100546818e-5) * r + 7.868691311456132591e-4) * r + 0.0148753612908506148525) * r + 0.13692988092273580531) * r +
+      0.59983220655588793769) * r + 1);
+  }
+  return q < 0 ? -z : z;
 }
 
 /**
- * Compute t-distribution critical value using approximation
- * Reference: Abramowitz & Stegun, Handbook of Mathematical Functions
+ * Compute the t-distribution critical value (quantile)
  *
  * @param {number} df - Degrees of freedom
  * @param {number} p - Cumulative probability (e.g., 0.975 for 95% two-sided)
  * @returns {number} - t critical value
  */
 function tCriticalValue(df, p) {
-  if (df <= 0) return normCDFinv(p);
-  if (df > 100) return normCDFinv(p);  // Approximate as normal for large df
-
-  // Use approximation based on normal quantile
-  const z = normCDFinv(p);
-
-  // Cornish-Fisher expansion for t-distribution
-  const g1 = (z * z * z + z) / 4;
-  const g2 = (5 * z * z * z * z * z + 16 * z * z * z + 3 * z) / 96;
-  const g3 = (3 * z * z * z * z * z * z * z + 19 * z * z * z * z * z + 17 * z * z * z - 15 * z) / 384;
-
-  const t = z + g1 / df + g2 / (df * df) + g3 / (df * df * df);
-
-  return t;
+  // Student-t quantile qt(p, df): inverts the exact upper tail AlmTail.ptUpper (shared/upper-tail.js) by bisection to
+  // floating-point resolution. Replaces a 3-term Cornish-Fisher expansion on a broken normal quantile (qt(0.975, 4)
+  // came out 10.14; R 2.776) that also switched to the normal for df > 100.
+  if (!(df > 0) || !Number.isFinite(df)) return normCDFinv(p);
+  if (!(p > 0 && p < 1)) return p === 1 ? Infinity : (p === 0 ? -Infinity : NaN);
+  if (p === 0.5) return 0;
+  const upper = p > 0.5 ? 1 - p : p;            // target upper-tail probability for |t|
+  let lo = 0, hi = Math.max(1, Math.abs(normCDFinv(p)));
+  for (let i = 0; i < 2000 && AlmTail.ptUpper(hi, df) > upper; i++) { lo = hi; hi *= 2; }
+  for (let i = 0; i < 2000; i++) {
+    const mid = 0.5 * (lo + hi);
+    if (mid <= lo || mid >= hi) break;
+    if (AlmTail.ptUpper(mid, df) > upper) lo = mid; else hi = mid;
+  }
+  const t = 0.5 * (lo + hi);
+  return p > 0.5 ? t : -t;
 }
 
 // ================================================================
@@ -5113,6 +5147,23 @@ function updateHKSJ(enabled) {
   logAudit('hksj_changed', { enabled: useHKSJ });
 }
 
+// Knapp-Hartung (HK/SJ) for this model, y ~ N(X b, V + tau2 I) with one random effect per observation, follows
+// metafor rma.mv(random = ~ 1 | obs, test = "adhoc"): s2 = Q_RE / (n - p) floored at 1 (Knapp & Hartung 2003 ad hoc
+// correction), SE * sqrt(s2), and t on n - p df (n observations, p coefficients). Q_RE is the residual quadratic form
+// at the FITTED tau2 -- not the Cochran Q test statistic (result.Q, at tau2 = 0); results without QRE (e.g. the
+// simulation fallback, tau2 = 0) use Q. Previously s2 = Q_RE / (k - 1) with t on k - 1 df (k = studies).
+function hksjResidualQ(result) {
+  if (!result) return NaN;
+  return Number.isFinite(result.QRE) ? result.QRE : result.Q;
+}
+
+function hksjDf(result) {
+  if (!result) return NaN;
+  if (Number.isFinite(result.df) && result.df > 0) return result.df;
+  const p = Array.isArray(result.beta) ? result.beta.length : NaN;
+  return Number.isFinite(result.nPoints) && result.nPoints > p ? result.nPoints - p : NaN;
+}
+
 function getContrastInference(result, modelType, dose = 1, referenceDose = 0, ciPct = currentCI) {
   const contrast = computeDoseContrast(result, modelType, dose, referenceDose);
   let se = contrast.seLogRR;
@@ -5120,11 +5171,12 @@ function getContrastInference(result, modelType, dose = 1, referenceDose = 0, ci
   let crit = normCDFinv(1 - alpha / 2);
   let method = 'Wald';
 
-  if (useHKSJ && Number.isFinite(result?.Q) && Number.isFinite(se) && se > 0) {
-    const k = Math.max(result?.nStudies || 1, 1);
-    const qHK = Math.max(1, result.Q / Math.max(k - 1, 1));
+  const qRE = hksjResidualQ(result);
+  const dfHK = hksjDf(result);
+  if (useHKSJ && Number.isFinite(qRE) && dfHK > 0 && Number.isFinite(se) && se > 0) {
+    const qHK = Math.max(1, qRE / dfHK);
     se = se * Math.sqrt(qHK);
-    crit = tCriticalValue(Math.max(k - 1, 1), 1 - alpha / 2);
+    crit = tCriticalValue(dfHK, 1 - alpha / 2);
     method = 'HK/SJ';
   }
 
@@ -5172,12 +5224,11 @@ function runMethodComparison() {
     let beta1_se = contrast.seLogRR;
     let critValue = normCDFinv(1 - (1 - currentCI/100) / 2);
 
-    if (m.hk && Number.isFinite(r.Q) && Number.isFinite(beta1_se)) {
-      // Hartung-Knapp adjustment (Hartung & Knapp, Stat Med 2001)
-      const k = r.nStudies;
-      const qHK = Math.max(1, r.Q / Math.max(k - 1, 1));
+    if (m.hk && Number.isFinite(hksjResidualQ(r)) && hksjDf(r) > 0 && Number.isFinite(beta1_se)) {
+      // Knapp-Hartung with the ad hoc floor (metafor rma.mv test = "adhoc"): s2 = Q_RE / (n - p), t on n - p df
+      const qHK = Math.max(1, hksjResidualQ(r) / hksjDf(r));
       beta1_se = beta1_se * Math.sqrt(qHK);
-      critValue = tCriticalValue(k - 1, 1 - (1 - currentCI/100) / 2);
+      critValue = tCriticalValue(hksjDf(r), 1 - (1 - currentCI/100) / 2);
     }
 
     const ciLower = Math.exp(contrast.logRR - critValue * beta1_se);
@@ -5420,8 +5471,8 @@ function generateRCode() {
     : 'cbind(1, study_data$dose, study_data$dose^2)';
   const metaforMods = isLinearModel ? '~ dose' : '~ dose + I(dose^2)';
   const coefficientOutputLines = isLinearModel
-    ? 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")'
-    : 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")\\ncat("Quadratic (beta2):", round(beta[3], 4), "+/-", round(se[3], 4), "\\n")';
+    ? 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")'
+    : 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")\ncat("Quadratic (beta2):", round(beta[3], 4), "+/-", round(se[3], 4), "\\n")';
   const formatRValue = (v) => (Number.isFinite(v) ? v : 'NA');
   const escapeRString = (value) => String(value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const toRVector = (values, isString = false) => {
@@ -5460,12 +5511,13 @@ function generateRCode() {
 # ================================================================
 
 library(metafor)
+Z975 <- qnorm(0.975)
 
 # --------------------------------------------------------
 # DATA INPUT
 # --------------------------------------------------------
 dr_data <- data.frame(
-  study_id = ${toRVector(points.map(p => p.id))},
+  study_id = ${toRVector(points.map(p => p.id), true)},
   author = ${toRVector(points.map(p => p.author), true)},
   dose = ${toRVector(points.map(p => p.dose))},
   logRR = ${toRVector(logRRValues)},
@@ -5477,7 +5529,7 @@ dr_data <- data.frame(
 )
 
 use_reml <- ${useREMLFlag}
-tau2_fixed <- ${tau2Fixed.toFixed(6)}
+tau2_fixed <- ${String(tau2Fixed)}
 ridges <- list(base = 1e-10, se_floor = ${seFloor.toExponential(6)})
 force_diag <- ${forceDiagFlag}
 
@@ -5567,6 +5619,8 @@ if (length(V_list) < 2) {
 }
 
 dr_model <- do.call(rbind, model_rows)
+# One random effect per observation (non-reference dose contrast): Var(y) = V + tau2 I, the app's model.
+dr_model$obs <- seq_len(nrow(dr_model))
 study_ids_model <- unique(dr_model$study_id)
 n_model_studies <- length(study_ids_model)
 
@@ -5618,7 +5672,7 @@ if (use_reml && !force_diag) {
         yi = dr_model$logRR,
         V = V_total,
         mods = ${metaforMods},
-        random = ~ 1 | study_id,
+        random = ~ 1 | obs,
         data = dr_model,
         method = "${rMethod}"
       )
@@ -5635,7 +5689,7 @@ if (use_reml && is.null(fit)) {
       yi = dr_model$logRR,
       V = V_diag_vec,
       mods = ${metaforMods},
-      random = ~ 1 | study_id,
+      random = ~ 1 | obs,
       data = dr_model,
       method = "${rMethod}"
     ),
@@ -5658,11 +5712,11 @@ if (use_reml && is.null(fit)) {
 }
 
 if (use_reml) {
-  summary(fit)
+  print(fit)
 
   beta <- as.numeric(coef(fit))
   se <- sqrt(diag(vcov(fit)))
-  tau2 <- fit$tau2
+  tau2 <- fit$sigma2
   Q <- fit$QE
   df_q <- if (!is.null(fit$k) && !is.null(fit$p)) fit$k - fit$p else NA
 } else {
@@ -5704,6 +5758,14 @@ if (use_reml) {
     Q <- as.numeric(t(res) %*% Vinv %*% res)
     df_q <- (n_model_studies - 1) * ncol(X_total)
   }
+  # Cochran Q test (as metafor QE / dosresmeta qtest): residual quadratic form with fixed-effect GLS weights
+  # (tau2 = 0), df = n - p. The residual at tau2_fixed above is not chi2(n - p) under H0.
+  V_q <- as.matrix(if (force_diag) V_total_diag else V_total)
+  Vinv_q <- solve(V_q)
+  beta_q <- solve(t(X_total) %*% Vinv_q %*% X_total + diag(ridge, nrow = ncol(X_total)), t(X_total) %*% Vinv_q %*% y_total)
+  res_q <- y_total - X_total %*% beta_q
+  Q <- as.numeric(t(res_q) %*% Vinv_q %*% res_q)
+  df_q <- nrow(X_total) - ncol(X_total)
 }
 
 # --------------------------------------------------------
@@ -5736,7 +5798,7 @@ cat("95% CI: [", ifelse(is.na(ci_lower), "NA", round(ci_lower, 3)), ",", ifelse(
 # Forest plot
 if (use_reml) {
   forest(fit, main = "Dose-Response Meta-Analysis",
-         xlab = "Log Relative Risk", slab = dr_data$author)
+         xlab = "Log Relative Risk", slab = paste(dr_model$author, dr_model$dose))
 } else {
   cat("\\nForest plot skipped (fit not available in fixed tau2 mode).\\n")
 }
@@ -8060,9 +8122,10 @@ function fitLinearSimulationFallback(points) {
     se: [seIntercept, seSlope],
     tau2: 0,
     Q: Number.isFinite(rss) ? rss : df,
+    df,
     nStudies,
     seHKSJ: [seIntercept, seSlope],
-    dfHKSJ: Math.max(1, nStudies - 1),
+    dfHKSJ: df,
     piDF: Math.max(1, nStudies - 1),
     simFallback: true
   };
@@ -8289,12 +8352,13 @@ function getSimulationBatchSize(nSim, fastMode) {
 }
 
 function withHKSJ(result) {
-  if (!result || !result.se || !Number.isFinite(result.Q)) return result;
+  if (!result || !result.se || !Number.isFinite(hksjResidualQ(result))) return result;
   if (!result.nStudies) return result;
 
   if (!result.seHKSJ || !result.dfHKSJ) {
-    const df = Math.max(1, result.nStudies - 1);
-    const q = Math.max(1, result.Q / df);
+    const df = hksjDf(result);
+    if (!(df > 0)) return result;
+    const q = Math.max(1, hksjResidualQ(result) / df);
     result.seHKSJ = result.se.map(s => s * Math.sqrt(q));
     result.dfHKSJ = df;
     result.qHKSJ = q;
