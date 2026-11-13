@@ -153,12 +153,23 @@
     function parse(text) {
       var MLMA_DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
       var rejected = [];
-      var rows = text.trim().split(/\n/).map(function (l, i) {
+      // Lane adjud 2026-11-13: line numbers are counted on the text as typed (no trim), and only blank,
+      // "#" and a first-line header (effect/SE that do not start like a number) are skipped; every other row that cannot be
+      // read is listed in rows.rejected instead of being dropped (it was: "1, bad, 0.12", SE <= 0, tabs).
+      var seen = false;
+      var rows = String(text).split(/\r?\n/).map(function (l, i) {
+        if (!l.trim() || l.trim().charAt(0) === '#') return null;
         var parts = l.split(/,/).map(function (s) { return s.trim(); });
+        var first = !seen; seen = true;
+        if (first && !/^[+-]?\.?\d/.test(parts[1] || '') && !/^[+-]?\.?\d/.test(parts[2] || '')) return null;
         var study = parts[0];
         var te = parseFloat(parts[1]), se = parseFloat(parts[2]);
-        if (!study || !Number.isFinite(te) || !Number.isFinite(se) || se <= 0) return null;
-        if (!MLMA_DECIMAL.test(parts[1]) || !MLMA_DECIMAL.test(parts[2])) {
+        if (parts.length < 3) {
+          rejected.push('Line ' + (i + 1) + ': expected study, effect, SE[, label] separated by commas (found ' + parts.length +
+            ' field' + (parts.length === 1 ? '' : 's') + ')');
+          return null;
+        }
+        if (!study || !MLMA_DECIMAL.test(parts[1]) || !MLMA_DECIMAL.test(parts[2])) {
           rejected.push('Line ' + (i + 1) + ': effect and SE must be complete numbers with a decimal point (found "' +
             parts[1].slice(0, 20) + '", "' + parts[2].slice(0, 20) + '")');
           return null;
@@ -166,6 +177,10 @@
         if (parts.length > 4) {
           rejected.push('Line ' + (i + 1) + ': expected study, effect, SE[, label] but found ' + parts.length +
             ' comma-separated fields; a study id or label cannot contain a comma');
+          return null;
+        }
+        if (!(se > 0)) {
+          rejected.push('Line ' + (i + 1) + ': SE must be greater than 0 (found "' + parts[2].slice(0, 20) + '")');
           return null;
         }
         return { study: study, te: te, se: se, label: parts[3] || '' };

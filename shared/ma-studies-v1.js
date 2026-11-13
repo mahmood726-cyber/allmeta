@@ -221,9 +221,13 @@
   }
   // Year, when given, must be a whole number; a decimal there means an unquoted
   // comma in the label shifted the row ("Smith et al., 2001, 0.04, 0.19").
+  // Missing-value codes in an OPTIONAL cell (year, moderator) mean "not given" (lane adjud 2026-11-13).
+  var _MISSING = /^(NA|N\/A|NaN|\.)$/i;
+  // Trailing empty cells (a trailing comma) are not fields.
+  function _trimTail(parts, min) { while (parts.length > min && parts[parts.length - 1] === "") parts.pop(); return parts; }
   function _year(s) {
     var t = String(s == null ? "" : s).trim();
-    if (!t.length) return { ok: true, value: null };
+    if (!t.length || _MISSING.test(t)) return { ok: true, value: null };
     return /^[+-]?\d+$/.test(t) ? { ok: true, value: Number(t) } : { ok: false };
   }
   // Split one line on commas, honouring RFC-4180 quotes so toCSV() output
@@ -259,7 +263,7 @@
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim();
       if (!line || line.charAt(0) === "#") continue;
-      var parts = _splitLine(line);
+      var parts = _trimTail(_splitLine(line), 3);
       if (parts.length < 3 || parts.length > 6) continue;
       var est = _num(parts[1]);
       var se = _num(parts[2]);
@@ -267,7 +271,7 @@
       var yr = _year(parts[3]);
       if (!yr.ok) continue;
       var group = parts.length > 4 && parts[4].length ? parts[4] : null;
-      var moderator = parts.length > 5 && parts[5].length ? _num(parts[5]) : null;
+      var moderator = parts.length > 5 && parts[5].length && !_MISSING.test(parts[5]) ? _num(parts[5]) : null;
       if (moderator !== null && !isFiniteNumber(moderator)) continue;
       rows.push({
         label: parts[0] || ("Study " + (rows.length + 1)),
@@ -321,16 +325,22 @@
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim();
       if (!line || line.charAt(0) === "#") continue;
-      var parts = _splitLine(line);
+      var parts = _trimTail(_splitLine(line), 2);
       if (parts.length < 2) continue;
       var label, est, se, mod = null, group = null, year = null;
       if (fmt === "est-se-label" || fmt === "est-se-label-mod") {
         est = _num(parts[0]);
         se = _num(parts[1]);
         label = parts[2] ? parts[2] : "Study " + (rows.length + 1);
-        if (fmt === "est-se-label-mod" && parts.length > 3) {
-          var m = _num(parts[3]);
-          if (isFiniteNumber(m)) mod = m;
+        if (fmt === "est-se-label-mod") {
+          // As label-est-se: a 5th field (an unquoted comma in the label) or an unreadable moderator skips
+          // the row; it was read as moderator = 2001, or kept with moderator = null.
+          if (parts.length > 4) continue;
+          if (parts.length > 3 && parts[3].length && !_MISSING.test(parts[3])) {
+            var m = _num(parts[3]);
+            if (!isFiniteNumber(m)) continue;
+            mod = m;
+          }
         }
       } else {
         // "label-est-se" (default)
@@ -342,7 +352,7 @@
         if (!yr.ok) continue;
         year = yr.value;
         if (parts.length > 4 && parts[4].length) group = parts[4];
-        if (parts.length > 5 && parts[5].length) {
+        if (parts.length > 5 && parts[5].length && !_MISSING.test(parts[5])) {
           var m2 = _num(parts[5]);
           if (!isFiniteNumber(m2)) continue;
           mod = m2;

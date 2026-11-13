@@ -196,7 +196,9 @@
         const est = csvNumber(parts[parts.length-2]);
         const se = csvNumber(parts[parts.length-1]);
         if (!isFinite(est) || !isFinite(se)) {
-          if (studies.length === 0 && i < 3) continue;
+          // Only a header (effect/SE cells that do not start like a number) is skipped quietly; "0.2junk" or "-0,22;0,11"
+          // on lines 1-3 is an unreadable data row and gets its warning (lane adjud 2026-11-13).
+          if (studies.length === 0 && i < 3 && !/^[+-]?\.?\d/.test(parts[parts.length-2]) && !/^[+-]?\.?\d/.test(parts[parts.length-1])) continue;
           warnings.push("Line "+(i+1)+": non-numeric"); continue;
         }
         if (se <= 0) { warnings.push("Line "+(i+1)+": SE≤0"); continue; }

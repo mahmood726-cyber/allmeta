@@ -109,9 +109,11 @@ S6,2024,secondary,-0.32,0.013,low</textarea>
     // number, which is a shifted row. opts.semicolon === false keeps ";" inside a field.
     function csvRows(text, cols, opts) {
       var lines = String(text == null ? "" : text).replace(/^\uFEFF/, "").split(/\r\n|\n|\r/), data = [];
-      for (var i = 0; i < lines.length; i++) { var t = lines[i].trim(); if (t && t.charAt(0) !== "#") data.push({ n: i + 1, t: t }); }
-      var d = data.some(function (x) { return x.t.indexOf("\t") >= 0; }) ? "\t"
+      // A tab-delimited line keeps its leading/trailing TABS: they separate empty cells (lane adjud 2026-11-13).
+      for (var i = 0; i < lines.length; i++) { var t = lines[i].trim(); if (t && t.charAt(0) !== "#") data.push({ n: i + 1, t: t, r: lines[i].replace(/^[ \u00a0]+|[ \u00a0]+$/g, "") }); }
+      var d = data.some(function (x) { return x.t.indexOf("\t") >= 0 || /^\t|\t$/.test(x.r); }) ? "\t"
         : (!(opts && opts.semicolon === false) && data.length && data.slice(data.length > 1 ? 1 : 0).every(function (x) { return x.t.indexOf(";") >= 0; }) ? ";" : ",");
+      if (d === "\t") data.forEach(function (x) { x.t = x.r; });
       function split(s) {
         var out = [], f = "", q = false;
         for (var k = 0; k < s.length; k++) {
@@ -141,7 +143,10 @@ S6,2024,secondary,-0.32,0.013,low</textarea>
         // A header is the first data line when none of its number columns holds a number and at least
         // one holds text that is not a missing-value code (an all-NA first row is data, not a header).
         if (j === 0 && cols.every(function (cl, m) { return !cl.num || !isFinite(num(c[m])); }) &&
-          cols.some(function (cl, m) { return cl.num && /[A-Za-z]/.test(c[m] || "") && !/^(NA|NaN)$/i.test(c[m]); })) return;
+          cols.some(function (cl, m) { return cl.num && /[A-Za-z]/.test(c[m] || "") && !/^(NA|NaN)$/i.test(c[m]); }) &&
+          // ...and none of them starts like a number or is a missing-value code: "0.2junk" or "N/A" on line 1 is an
+          // unreadable DATA row and is refused with its line, not dropped as a header (lane adjud 2026-11-13).
+          cols.every(function (cl, m) { return !cl.num || (!/^[+-]?\.?\d/.test(c[m] || "") && !/^(NA|N\/A|NaN|\.)$/i.test(c[m] || "")); })) return;
         var last = cols[cols.length - 1];
         if (c.length > cols.length && last.rest && !isFinite(num(c[cols.length - 1]))) c = c.slice(0, cols.length - 1).concat([c.slice(cols.length - 1).join(d === "," ? ", " : d)]);
         if (c.length > cols.length) {
