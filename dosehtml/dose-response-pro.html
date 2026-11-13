@@ -5484,12 +5484,13 @@ function generateRCode() {
 # ================================================================
 
 library(metafor)
+Z975 <- qnorm(0.975)
 
 # --------------------------------------------------------
 # DATA INPUT
 # --------------------------------------------------------
 dr_data <- data.frame(
-  study_id = ${toRVector(points.map(p => p.id))},
+  study_id = ${toRVector(points.map(p => p.id), true)},
   author = ${toRVector(points.map(p => p.author), true)},
   dose = ${toRVector(points.map(p => p.dose))},
   logRR = ${toRVector(logRRValues)},
@@ -5501,7 +5502,7 @@ dr_data <- data.frame(
 )
 
 use_reml <- ${useREMLFlag}
-tau2_fixed <- ${tau2Fixed.toFixed(6)}
+tau2_fixed <- ${String(tau2Fixed)}
 ridges <- list(base = 1e-10, se_floor = ${seFloor.toExponential(6)})
 force_diag <- ${forceDiagFlag}
 
@@ -5591,6 +5592,8 @@ if (length(V_list) < 2) {
 }
 
 dr_model <- do.call(rbind, model_rows)
+# One random effect per observation (non-reference dose contrast): Var(y) = V + tau2 I, the app's model.
+dr_model$obs <- seq_len(nrow(dr_model))
 study_ids_model <- unique(dr_model$study_id)
 n_model_studies <- length(study_ids_model)
 
@@ -5642,7 +5645,7 @@ if (use_reml && !force_diag) {
         yi = dr_model$logRR,
         V = V_total,
         mods = ${metaforMods},
-        random = ~ 1 | study_id,
+        random = ~ 1 | obs,
         data = dr_model,
         method = "${rMethod}"
       )
@@ -5659,7 +5662,7 @@ if (use_reml && is.null(fit)) {
       yi = dr_model$logRR,
       V = V_diag_vec,
       mods = ${metaforMods},
-      random = ~ 1 | study_id,
+      random = ~ 1 | obs,
       data = dr_model,
       method = "${rMethod}"
     ),
@@ -5682,11 +5685,11 @@ if (use_reml && is.null(fit)) {
 }
 
 if (use_reml) {
-  summary(fit)
+  print(fit)
 
   beta <- as.numeric(coef(fit))
   se <- sqrt(diag(vcov(fit)))
-  tau2 <- fit$tau2
+  tau2 <- fit$sigma2
   Q <- fit$QE
   df_q <- if (!is.null(fit$k) && !is.null(fit$p)) fit$k - fit$p else NA
 } else {
@@ -5768,7 +5771,7 @@ cat("95% CI: [", ifelse(is.na(ci_lower), "NA", round(ci_lower, 3)), ",", ifelse(
 # Forest plot
 if (use_reml) {
   forest(fit, main = "Dose-Response Meta-Analysis",
-         xlab = "Log Relative Risk", slab = dr_data$author)
+         xlab = "Log Relative Risk", slab = paste(dr_model$author, dr_model$dose))
 } else {
   cat("\\nForest plot skipped (fit not available in fixed tau2 mode).\\n")
 }
