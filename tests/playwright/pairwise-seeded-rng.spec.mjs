@@ -49,6 +49,26 @@ async function setBayesian(page, on) {
     const it = document.getElementById('mcmcIterations'); if (it) it.value = '1000';
   }, on);
 }
+// The B / seed / Monte Carlo SE behind each Monte Carlo number is shown next to it.
+async function expectMcVisible(page, res, seed) {
+  const bayesText = await page.locator('#panel-analysis').innerText();
+  expect(bayesText, 'Bayesian panel does not show its Monte Carlo SE').toMatch(/Monte Carlo SE of posterior mean/);
+  expect(bayesText, 'Bayesian panel does not show its seed').toContain(`seed ${seed}`);
+  if (res.crossDisc && res.crossDisc.winnersCurse && res.crossDisc.winnersCurse.available) {
+    expect(res.crossDisc.winnersCurse.bootstrap_correction.mc_se, 'bootstrap Monte Carlo SE not recorded').toBeGreaterThan(0);
+    // The cross-disciplinary panel is drawn when its tab is opened, as a user would a moment after Run.
+    // (A page wrapper on bundle/dist/fast/min repaints this panel with a summary card 500 ms after Run;
+    // opening the tab after that draws the full engine panel.)
+    await page.clock.runFor(1000);
+    const back = await page.evaluate(() => { const b = document.querySelector('button.tab-btn.tab-btn--active'); return b ? b.dataset.tab : 'data'; });
+    await page.locator('button.tab-btn[data-tab="crossdisciplinary"]').first().click();
+    await page.clock.runFor(500);
+    const cdText = await page.locator('#panel-crossdisciplinary').innerText();
+    await page.locator(`button.tab-btn[data-tab="${back}"]`).first().click();
+    await page.clock.runFor(100);
+    expect(cdText, "winner's-curse card does not show B, seed and Monte Carlo SE").toMatch(new RegExp(`B = 1000 resamples, seed ${seed}, Monte Carlo SE`));
+  }
+}
 // The Monte Carlo outputs this page reports, whichever of them its engine computes.
 const mcOutputs = r => ({
   winnersCurse: r.crossDisc && r.crossDisc.winnersCurse ? r.crossDisc.winnersCurse : null,
@@ -92,6 +112,7 @@ for (const [name, path] of PAGES) {
     await a.clock.runFor(500);
     await a.evaluate(() => { AppState.settings.rngSeed = 777; });
     const resA = await run(a);
+    await expectMcVisible(a, resA, 777);
     const saved = await a.evaluate(() => JSON.stringify(saveProject()));
     expect(JSON.parse(saved).settings.rngSeed, 'seed not saved with the project').toBe(777);
     // The seed is recorded beside every number it produced.
@@ -114,9 +135,10 @@ for (const [name, path] of PAGES) {
     await b.evaluate(json => loadProject(json), saved);
     await b.clock.runFor(500);
     const reopened = await snap(b);
-    // Reopening repaints the saved result without refitting. (The fast/dist/min saveProject stores a
-    // subset of results -- pooled, heterogeneity, studies, yi, vi, names -- so compare with what was saved.)
-    same(reopened, JSON.parse(saved).results, 'reopened project does not show the saved result');
+    // Reopening restores the COMPLETE saved result (cross-disciplinary and Bayesian outputs included)
+    // and repaints it without refitting.
+    same(reopened, resA, 'reopened project does not restore the saved result');
+    await expectMcVisible(b, resA, 777);
     expect(await b.evaluate(() => AppState.settings.rngSeed)).toBe(777);
     await setBayesian(b, true);
     const resB = await run(b);
