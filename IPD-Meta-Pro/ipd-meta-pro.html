@@ -10648,9 +10648,13 @@ function normalizeAdvancedSurvivalData(survivalData, options) {
 
  return (survivalData || []).map(function(d) {
 
- var time = Number(getAdvancedSurvivalFieldValue(d, timeCandidates));
-
- var event = Number(getAdvancedSurvivalFieldValue(d, eventCandidates));
+ // IPD-Modal: a field no candidate column holds is MISSING (null); Number(null) = 0 is finite, so a data set with
+ // no time column kept every row with time 1e-6 and a missing event became 0 (censored).
+ var timeRaw = getAdvancedSurvivalFieldValue(d, timeCandidates);
+ var eventRaw = getAdvancedSurvivalFieldValue(d, eventCandidates);
+ if (timeRaw === null || eventRaw === null) return null;
+ var time = Number(timeRaw);
+ var event = Number(eventRaw);
 
  var treatmentRaw = getAdvancedSurvivalFieldValue(d, treatmentCandidates);
 
