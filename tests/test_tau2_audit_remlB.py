@@ -197,3 +197,44 @@ def test_nma_pro_analyze_finishes_and_tau2_ci_is_scale_equivariant(page):
         for key in ("tau2", "lo", "hi"):
             rows.append(("nma-pro-v8.0 tau2 profile CI", key, f"normand x{c:g} vs c^2 * x1", out[c][key], out[1.0][key] * c * c))
     report(rows)
+
+
+PLCI = json.loads((ROOT / "tests" / "fixtures" / "nma-pro-tau2-plci-oracle.json").read_text(encoding="utf-8"))["plci"]
+
+
+def test_nma_pro_tau2_profile_ci_matches_metafor_pl(page):
+    """The tau2 95% CI that analyze() reports must be the profile-likelihood CI of the estimator in use:
+    metafor confint(rma(method = M), type = "PL"), crossing max - qchisq(.95, 1) / 2 of the RESTRICTED
+    log-likelihood for REML and of the ML log-likelihood for ML. It profiled the ML log-likelihood
+    for every estimator and anchored it at that estimator's estimate (for REML not the ML maximum), with
+    1.92 for qchisq(.95, 1) / 2: normand REML gave [228.89, 1947.41] where metafor gives [255.81, 2379.19].
+    Reference: tests/fixtures/nma-pro-tau2-plci-reference.R (metafor 5.2.1, tight tolerances)."""
+    pg = page("nma-pro-v2/nma-pro-v8.0.html")
+    data = {nm: UNI[nm] for nm in PLCI if nm in UNI}
+    got = pg.evaluate("""d => { const o = {}; for (const nm in d) { o[nm] = {};
+        const st = d[nm].yi.map((y, i) => ({ name: 's' + i, treatment1: 'B', treatment2: 'A', yi: y, vi: d[nm].vi[i] }));
+        for (const m of ['REML', 'ML']) { const r = FrequentistNMA.analyze(st, { reference: 'A', effectMeasure: 'MD', estimator: m });
+            o[nm][m] = { tau2: r.tau2, lower: r.tau2CI.lower, upper: r.tau2CI.upper }; } } return o; }""", data)
+    rows = [("nma-pro-v8.0 tau2 PL CI", m, f"{nm} {k}", got[nm][m][k], PLCI[nm][m][k])
+            for nm in got for m in got[nm] for k in ("tau2", "lower", "upper")]
+    report(rows)
+
+
+def test_nma_pro_tau2_profile_ci_saturated_is_null_and_k2_matches_metafor(page):
+    """With df = n - p = 0 tau2 is not identifiable: the restricted log-likelihood is flat, so the upper
+    bracket doubled 200 times and the page reported an upper limit of 1.6e59 (agy review r550). Such a
+    model has no tau2 CI (null, as pauleMandel_CI). k = 2 (df = 1) still has one: metafor PL, oracle k2_two."""
+    pg = page("nma-pro-v2/nma-pro-v8.0.html")
+    got = pg.evaluate("""() => { const nets = {
+        one: [{ name: 's1', treatment1: 'B', treatment2: 'A', yi: 0.3, vi: 0.1 }],
+        star: [{ name: 's1', treatment1: 'B', treatment2: 'A', yi: 0.3, vi: 0.1 }, { name: 's2', treatment1: 'C', treatment2: 'A', yi: -0.2, vi: 0.1 }],
+        k2_two: [{ name: 's1', treatment1: 'B', treatment2: 'A', yi: 0.3, vi: 0.1 }, { name: 's2', treatment1: 'B', treatment2: 'A', yi: -0.2, vi: 0.1 }] };
+        const o = {}; for (const k in nets) for (const m of ['REML', 'ML', 'DL']) {
+            const r = FrequentistNMA.analyze(nets[k], { reference: 'A', effectMeasure: 'MD', estimator: m }); o[k + ' ' + m] = r.tau2CI; }
+        return o; }""")
+    for k in ("one", "star"):
+        for m in ("REML", "ML", "DL"):
+            assert got[f"{k} {m}"] is None, f"{k} {m}: df = 0 but tau2CI = {got[k + ' ' + m]}"
+    rows = [("nma-pro-v8.0 tau2 PL CI", m, f"k2_two {b}", got[f"k2_two {m}"][b], PLCI["k2_two"][m][b])
+            for m in ("REML", "ML") for b in ("lower", "upper")]
+    report(rows)
