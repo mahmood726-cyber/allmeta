@@ -84,6 +84,35 @@ const has = (out, s) => out.some(x => x.includes(s));
   const out = fire('runVOI()');
   check('Value of information shows the engine EVPI and EVSI', ok(out) && has(out, r.EVPI.toLocaleString()) && has(out, r.EVSI.toLocaleString()), out);
 }
+// IPD-Fed (agy #552 finding 4): the success paths of the handlers whose refusal paths are checked above.
+const seedJS = 'Math.random = (function () { let a = 7; return function () { a = (a * 16807) % 2147483647; return a / 2147483647; }; })();';
+{
+  // IV meta-analysis with per-study Mendelian-randomization inputs: the modal shows what the engine returns
+  run(`window.__keep = APP.results.studies; APP.results.studies = __keep.map(function (s, i) { return Object.assign({}, s, { betaX: 0.2 + 0.05 * i, betaY: 0.04 + 0.01 * i * i, seBetaY: 0.01 + 0.002 * i }); });`);
+  const r = run('runIVMetaAnalysis(APP.results.studies)');
+  const out = fire('runIVMAAnalysis()');
+  check('IV meta-analysis with betaX/betaY/seBetaY shows the engine IVW estimate, SE, CI and weighted median', ok(out) && has(out, 'MODAL') &&
+    has(out, r.IVW.estimate.toFixed(4) + ' (IVW, SE ' + r.IVW.se.toFixed(4) + ')') && has(out, r.IVW.ci[0].toFixed(4) + ' to ' + r.IVW.ci[1].toFixed(4)) && has(out, r.weightedMedian.toFixed(4)), out + ' | ' + JSON.stringify(r.IVW));
+  run('APP.results.studies = __keep;');
+}
+{
+  // multiple imputation with one study estimate missing (imputation draws are random: same seed for engine and handler)
+  run(`window.__keep = APP.results.studies; APP.results.studies = __keep.map(function (s, i) { return i === 1 ? Object.assign({}, s, { effect: null, variance: null }) : s; });`);
+  const r = run(seedJS + ' runMultipleImputationMA(APP.results.studies, 5)');
+  run(seedJS);
+  const out = fire('runMIMA()');
+  check('Multiple imputation MA with a missing estimate shows the engine pooled estimate and variance components', ok(out) && has(out, 'MODAL') && !r.message &&
+    has(out, r.pooledEstimate.toFixed(4)) && has(out, r.varianceComponents.total.toFixed(6)) && has(out, (r.fractionMissingInfo * 100).toFixed(1) + '%'), out + ' | ' + JSON.stringify(r));
+  run('APP.results.studies = __keep;');
+}
+{
+  // PH screen on the time-to-event rows with the time variable mapped
+  run(`APP.data = __rows; APP.config.timeVar = 'time_months'; APP.config.eventVar = 'event'; APP.config.outcomeType = 'survival'; APP.config.covariates = [];`);
+  const r = run(`(function () { var t = APP.data.map(function (d) { return Number(d.time_months); }), e = APP.data.map(function (d) { return Number(d.event); }), c = APP.data.map(function (d) { return Number(d.treatment); }); return AdvancedSurvival.testPHAssumption(t, e, c); })()`);
+  const out = fire('runPHAssumptionTest()');
+  check('PH screen on time-to-event data shows the engine correlation and p-value for the first numeric covariate', ok(out) && has(out, 'MODAL') && has(out, 'Covariate Tested:</strong> treatment') &&
+    has(out, r.correlation.toFixed(3)) && has(out, r.pValue.toFixed(4)), out + ' | ' + JSON.stringify(r));
+}
 {
   // binary data, no time variable: the PH screen must refuse
   const bin = ref.binary.rows.map(r => Object.assign({ age: 60, bmi: 28 }, r));
