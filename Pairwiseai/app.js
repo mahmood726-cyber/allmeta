@@ -474,7 +474,7 @@ const CONFIG = {
       hksj: !0,
       direction: "lower",
       continuityCorrection: "constant",
-      bayesian: !1,
+      bayesian: !1,rngSeed:12345,
       bayesianPriors: {
         theta_mean: 0,
         theta_sd: 10,
@@ -2688,7 +2688,7 @@ function bayesianMetaAnalysis(e, t, n = {}) {
     burnin: d = CONFIG.MCMC_BURNIN,
     thin: c = CONFIG.MCMC_THIN,
     seed: u = null
-  } = n, p = (e.length, u ? seedRandom(u) : Math.random), m = estimateTau2_DL(e, t);
+  } = n, p = (e.length, u ? pwRng(u) : Math.random), m = estimateTau2_DL(e, t);
   let h = Math.max(.01, m.tau2),
     v = calculatePooledEstimate(e, t, h).theta;
   const g = [];
@@ -2770,6 +2770,7 @@ function rnorm(e = 0, t = 1, n = Math.random) {
   return e + t * (Math.sqrt(-2 * Math.log(a)) * Math.cos(2 * Math.PI * s))
 }
 
+/* Seeded PRNG for the Monte Carlo numbers runAnalysis reports: xoshiro128** seeded by splitmix32 (the generator in shared/gsdesign.js), 53-bit uniforms in [0,1). The user seed is AppState.settings.rngSeed (default 12345, saved with the project); each analysis draws from its own stream derived from that seed and a label. */function pwRng(seed){var s=seed>>>0;function sm(){s=(s+0x9e3779b9)|0;var t=s^(s>>>16);t=Math.imul(t,0x21f0aaad);t=t^(t>>>15);t=Math.imul(t,0x735a2d97);return(t^(t>>>15))>>>0}var a=sm(),b=sm(),c=sm(),d=sm();function next(){var t=b<<9,r=b*5;r=(r<<7|r>>>25)*9;c^=a;d^=b;b^=c;a^=d;c^=t;d=d<<11|d>>>21;return r>>>0}return function(){return((next()>>>5)*67108864+(next()>>>6))/9007199254740992}}function pwHash32(x){var h=0x811c9dc5,s=String(x);for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}h^=h>>>16;h=Math.imul(h,0x85ebca6b);h^=h>>>13;h=Math.imul(h,0xc2b2ae35);h^=h>>>16;return h>>>0}function pwBaseSeed(){var v=typeof AppState!=="undefined"&&AppState&&AppState.settings?Number(AppState.settings.rngSeed):NaN;return Number.isFinite(v)?v>>>0:12345}function pwSeedFor(label){return((pwBaseSeed()^pwHash32(label))>>>0)||1}/* Display-only jitter derived from the data, so a plot is identical every time it is drawn. */function pwJitter(){return pwHash32(Array.prototype.join.call(arguments,"|"))/4294967296}
 function seedRandom(e) {
   let t = e;
   return function() {
@@ -2788,7 +2789,7 @@ function combineChains(e) {
   return t
 }
 
-function computeBayesianSummary(e, t, n) {
+function computeBayesianSummary(e, t, n) {const pwPpRng=pwRng(pwSeedFor("bayesianPredictive"));
   const a = t.length,
     s = e.mu.length,
     i = [...e.mu].sort((e, t) => e - t),
@@ -2815,7 +2816,7 @@ function computeBayesianSummary(e, t, n) {
     M = e.mu.filter(e => e < -.25).length / s,
     S = e.mu.map((t, n) => {
       const a = e.tau2[n];
-      return rnorm(t, Math.sqrt(a))
+      return rnorm(t, Math.sqrt(a), pwPpRng)
     }).filter(e => e < 0).length / s,
     E = sum(n) / a,
     A = e.tau2.map(e => 100 * e / (e + E)),
@@ -6450,13 +6451,13 @@ function pdgScaleFactor(e, t) {
   }
 }
 
-function winnersCurseCorrection(e, t, n, a) {
+function winnersCurseCorrection(e, t, n, a) {const pwWcSeed=pwBaseSeed(),pwWcRng=pwRng(pwSeedFor("winnersCurse"));
   const s = e.length,
     i = [];
   for (let n = 0; n < 1e3; n++) {
     const n = Array.from({
         length: s
-      }, () => Math.floor(Math.random() * s)),
+      }, () => Math.floor(pwWcRng() * s)),
       a = n.map(t => e[t]),
       r = n.map(e => t[e]),
       o = calculatePooledEstimate(a, r, estimateTau2_DL(a, r).tau2);
@@ -6493,7 +6494,7 @@ function winnersCurseCorrection(e, t, n, a) {
       theta_corrected: o,
       theta_corrected_exp: Math.exp(o),
       inflation_pct: g,
-      method: "Non-parametric bootstrap (B=1000)"
+      method: "Non-parametric bootstrap (B=1000)",B:1e3,seed:pwWcSeed,stream:"winnersCurse"
     },
     conditional_correction: {
       bias: u,
@@ -6663,7 +6664,7 @@ function generateOrchardPlotData(e, t, n, a, s, i = "OR") {
     v = n.map((n, a) => ({
       name: n,
       x: "RD" === i ? e[a] : Math.exp(e[a]),
-      y: 0 + .3 * (Math.random() - .5),
+      y: 0 + .3 * (pwJitter(e[a], t[a], a) - .5),
       weight: d[a],
       size: 5 + .8 * d[a],
       se: Math.sqrt(t[a])
@@ -9461,8 +9462,8 @@ function runAnalysis() {
           tau2_scale: 1,
           chains: n,
           iterations: t,
-          burnin: Math.floor(.2 * t)
-        }), Y.tracePlotData = generateTracePlotData(Y.chains), Y.posteriorDensityData = generatePosteriorDensityData(Y.combined)
+          burnin: Math.floor(.2 * t),seed:pwSeedFor("bayesian")
+        }), Y.settings.seed=pwBaseSeed(),Y.settings.stream="bayesian",Y.tracePlotData = generateTracePlotData(Y.chains), Y.posteriorDensityData = generatePosteriorDensityData(Y.combined)
       } catch (e) {
         Y = {
           error: e.message
