@@ -6145,6 +6145,10 @@ function runPredictivePatientSelection() {
 
  var outcomeVar = rfCfg.eventVar || 'event';
 
+ // IPD-Fed: the subgroup effect follows the configured outcome type (calculateGroupEffect); it was a difference of
+ // proportions of outcome === 1 for every type, i.e. 0 for a continuous outcome.
+ var outcomeType = rfCfg.outcomeType || 'binary';
+
 
 
  var firstRow = APP.data[0] || {};
@@ -6209,9 +6213,9 @@ function runPredictivePatientSelection() {
 
 
 
- var lowEffect = calculateGroupEffect(lowTreated, lowControl, outcomeVar);
+ var lowEffect = calculateGroupEffect(lowTreated, lowControl, outcomeVar, outcomeType);
 
- var highEffect = calculateGroupEffect(highTreated, highControl, outcomeVar);
+ var highEffect = calculateGroupEffect(highTreated, highControl, outcomeVar, outcomeType);
 
 
 
@@ -6315,25 +6319,11 @@ function runPredictivePatientSelection() {
 
 
 
- // Guard against empty groups (division by zero)
+ // IPD-Fed: the same effect measure as the subgroups (an empty arm gives NaN, shown as not estimable)
 
- var effectInBenefiters = (benefitTreated.length > 0 && benefitControl.length > 0) ? (
+ var effectInBenefiters = calculateGroupEffect(benefitTreated, benefitControl, 'outcome', outcomeType).effect;
 
- benefitTreated.filter(function(p) { return p.outcome === 1; }).length / benefitTreated.length -
-
- benefitControl.filter(function(p) { return p.outcome === 1; }).length / benefitControl.length
-
- ) : NaN;
-
-
-
- var effectInNonBenefiters = (noBenefitTreated.length > 0 && noBenefitControl.length > 0) ? (
-
- noBenefitTreated.filter(function(p) { return p.outcome === 1; }).length / noBenefitTreated.length -
-
- noBenefitControl.filter(function(p) { return p.outcome === 1; }).length / noBenefitControl.length
-
- ) : NaN;
+ var effectInNonBenefiters = calculateGroupEffect(noBenefitTreated, noBenefitControl, 'outcome', outcomeType).effect;
 
 
 
@@ -6342,6 +6332,10 @@ function runPredictivePatientSelection() {
 
 
  displayPredictiveResults({
+
+ outcomeType: outcomeType,
+
+ effectMeasure: ipdGroupEffectMeasure(outcomeType),
 
  covariates: covariates,
 
@@ -6375,12 +6369,31 @@ function runPredictivePatientSelection() {
 
 
 
-function calculateGroupEffect(treated, control, outcomeVar) {
+// IPD-Fed: the effect measure calculateGroupEffect reports for an outcome type.
+function ipdGroupEffectMeasure(outcomeType) {
+ return outcomeType === 'continuous' ? 'mean difference (treated - control)' :
+ outcomeType === 'survival' ? 'difference in event proportions (treated - control; follow-up time is ignored)' :
+ 'risk difference (treated - control)';
+}
+
+function calculateGroupEffect(treated, control, outcomeVar, outcomeType) {
 
  if (!treated || treated.length === 0 || !control || control.length === 0) {
 
  return { effect: NaN, se: NaN, n: (treated ? treated.length : 0) + (control ? control.length : 0), error: 'Empty group' };
 
+ }
+
+ if (outcomeType === 'continuous') {
+ // mean difference with SE sqrt(var1/n1 + var0/n0) (sample variances); fewer than 2 values in an arm: not estimable
+ var y1 = treated.map(function(d) { return d[outcomeVar]; }).filter(function(v) { return typeof v === 'number' && Number.isFinite(v); });
+ var y0 = control.map(function(d) { return d[outcomeVar]; }).filter(function(v) { return typeof v === 'number' && Number.isFinite(v); });
+ if (y1.length < 2 || y0.length < 2) return { effect: NaN, se: NaN, n: y1.length + y0.length, error: 'Fewer than 2 values in an arm' };
+ var m1 = y1.reduce(function(a, b) { return a + b; }, 0) / y1.length;
+ var m0 = y0.reduce(function(a, b) { return a + b; }, 0) / y0.length;
+ var v1 = y1.reduce(function(a, v) { return a + (v - m1) * (v - m1); }, 0) / (y1.length - 1);
+ var v0 = y0.reduce(function(a, v) { return a + (v - m0) * (v - m0); }, 0) / (y0.length - 1);
+ return { effect: m1 - m0, se: Math.sqrt(v1 / y1.length + v0 / y0.length), n: y1.length + y0.length };
  }
 
  var treatedRate = treated.filter(function(d) { return d[outcomeVar] === 1; }).length / treated.length;
@@ -6398,6 +6411,11 @@ function calculateGroupEffect(treated, control, outcomeVar) {
 
 
 function displayPredictiveResults(results) {
+
+ // IPD-Fed: a continuous outcome is shown in its own units (mean difference), proportions in percentage points.
+ var isCont = results.outcomeType === 'continuous';
+
+ var fmtEff = function(x, signed) { if (!(typeof x === 'number' && Number.isFinite(x))) return 'not estimable'; var t = isCont ? x.toFixed(2) : (x * 100).toFixed(1) + '%'; return (signed && x > 0 ? '+' : '') + t; };
 
  var modal = document.createElement('div');
 
@@ -6423,11 +6441,11 @@ function displayPredictiveResults(results) {
 
  <strong>Best Predictor of Benefit:</strong> ${results.bestPredictor}<br>
 
- Patients with ${results.bestPredictor} > ${results.bestCate.median.toFixed(1)} show
+ Patients with ${results.bestPredictor} > ${results.bestCate.median.toFixed(1)} show a treatment effect
 
- ${Math.abs(results.bestCate.interaction * 100).toFixed(1)}%
+ ${results.bestCate.interaction > 0 ? 'higher' : 'lower'} by ${fmtEff(Math.abs(results.bestCate.interaction))}${isCont ? ' (outcome units)' : ' (percentage points)'}.
 
- ${results.bestCate.interaction > 0 ? 'greater' : 'lesser'} treatment effect.
+ <br><span style="font-size:0.85rem;">Effect measure: ${escapeHTML(results.effectMeasure || '')}</span>
 
  </div>
 
@@ -6473,11 +6491,11 @@ function displayPredictiveResults(results) {
 
  '<td>' + c.median.toFixed(1) + '</td>' +
 
- '<td>' + (c.lowEffect.effect * 100).toFixed(1) + '%</td>' +
+ '<td>' + fmtEff(c.lowEffect.effect) + '</td>' +
 
- '<td>' + (c.highEffect.effect * 100).toFixed(1) + '%</td>' +
+ '<td>' + fmtEff(c.highEffect.effect) + '</td>' +
 
- '<td>' + (c.interaction > 0 ? '+' : '') + (c.interaction * 100).toFixed(1) + '%</td>' +
+ '<td>' + fmtEff(c.interaction, true) + '</td>' +
 
  '<td>' + (sig ? '<span style="color: var(--accent-success);">Yes</span>' : 'No') + '</td>' +
 
@@ -6501,7 +6519,7 @@ function displayPredictiveResults(results) {
 
  <p style="font-size: 1.5rem; color: var(--accent-success);">
 
- ${ipdNum(results.validation.effectInBenefiters * 100, 1)}%
+ ${fmtEff(results.validation.effectInBenefiters)}
 
  </p>
 
@@ -6515,7 +6533,7 @@ function displayPredictiveResults(results) {
 
  <p style="font-size: 1.5rem; color: var(--accent-warning);">
 
- ${ipdNum(results.validation.effectInNonBenefiters * 100, 1)}%
+ ${fmtEff(results.validation.effectInNonBenefiters)}
 
  </p>
 
