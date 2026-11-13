@@ -12983,12 +12983,15 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // ========================================================================
 
     // Tau² estimator change
+    // The panel and the REML report / audit exports below read the parsed CSV rows from state.rawData
+    // (set by init, Load sample, Parse, file input and drop). They used to read state.parsedData.rows,
+    // which nothing assigns, so the panel never updated and both exports alerted "Load data first."
     if (dom.tau2Estimator) {
       dom.tau2Estimator.addEventListener("change", () => {
-        if (!state.parsedData?.rows?.length) return;
+        if (!state.rawData.length) return;
 
-        const effects = (state.parsedData?.rows || []).map(r => r.effect);
-        const variances = (state.parsedData?.rows || []).map(r => r.se * r.se);
+        const effects = state.rawData.map(r => r.effect);
+        const variances = state.rawData.map(r => r.se * r.se);
         const method = dom.tau2Estimator.value;
 
         let result;
@@ -13354,13 +13357,13 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Export REML report
     if (dom.exportREMLReport) {
       dom.exportREMLReport.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
 
-        const effects = (state.parsedData?.rows || []).map(r => r.effect);
-        const variances = (state.parsedData?.rows || []).map(r => r.se * r.se);
+        const effects = state.rawData.map(r => r.effect);
+        const variances = state.rawData.map(r => r.se * r.se);
 
         const reml = new REMLEstimator(effects, variances);
         const result = reml.estimate();
@@ -13394,14 +13397,14 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Export full audit trail
     if (dom.exportFullAudit) {
       dom.exportFullAudit.addEventListener("click", () => {
-        if (!state.parsedData?.rows?.length) {
+        if (!state.rawData.length) {
           alert("Load data first.");
           return;
         }
 
-        const effects = (state.parsedData?.rows || []).map(r => r.effect);
-        const variances = (state.parsedData?.rows || []).map(r => r.se * r.se);
-        const studies = (state.parsedData?.rows || []).map(r => r.study);
+        const effects = state.rawData.map(r => r.effect);
+        const variances = state.rawData.map(r => r.se * r.se);
+        const studies = state.rawData.map(r => r.study);
 
         let report = "# Complete Analysis Audit Trail\n\n";
         report += `Generated: ${new Date().toISOString()}\n\n`;
@@ -13410,7 +13413,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
         report += "## Data Summary\n\n";
         report += `- Studies: ${new Set(studies).size}\n`;
         report += `- Observations: ${effects.length}\n`;
-        report += `- Treatments: ${new Set((state.parsedData?.rows || []).map(r => r.treatment)).size}\n\n`;
+        report += `- Treatments: ${new Set(state.rawData.map(r => r.treatment)).size}\n\n`;
 
         // REML analysis
         const reml = new REMLEstimator(effects, variances);
