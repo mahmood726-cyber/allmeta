@@ -9215,7 +9215,11 @@ function fitModelToStudies(studies, method) {
 
  var reTotalWeight = reWeights.reduce(function(a, b) { return a + b; }, 0);
 
- if (reTotalWeight < 1e-10) return { effect: NaN, se: NaN, lower: NaN, upper: NaN, tau2: tau2, I2: 0, pValue: NaN };
+ // IPD-Left (review of PR #535): this was an ABSOLUTE reTotalWeight < 1e-10, so data in large units (two studies 0 and
+ // 1e6, v = 1e-6: tau^2 ~5e11, total weight 4e-12) returned early with a NaN effect and no aic/bic, and the
+ // model-selection table crashed on r.aic.toFixed. Only a weight sum that is not positive and finite is degenerate,
+ // and that return now carries every field the table reads.
+ if (!(reTotalWeight > 0 && isFinite(reTotalWeight))) return { effect: NaN, se: NaN, lower: NaN, upper: NaN, tau2: tau2, I2: NaN, Q: Q, logLik: NaN, aic: NaN, bic: NaN, pValue: NaN };
 
 
 
@@ -9241,7 +9245,16 @@ function fitModelToStudies(studies, method) {
 
 
 
- var logLik = -0.5 * (n * Math.log(2 * Math.PI) + Q);
+ // IPD-CSV fix: this was -1/2 (n log 2 pi + Q) with the fixed-effect Q for every method -- no log(v_i + tau^2) term
+ // and no tau^2 in the residuals -- so DL, REML, PM and SJ always had the same AIC/BIC (FE + 2). It is now the
+ // marginal (maximum-likelihood) log-likelihood at this method's own (mu, tau^2), metafor fit.stats "ML".
+ var muLL = method === 'FE' ? feEffect : reEffect;
+ var tauLL = method === 'FE' ? 0 : tau2;
+ var logLik = 0;
+ for (var i = 0; i < n; i++) {
+ var vt = variances[i] + tauLL;
+ logLik += -0.5 * (Math.log(2 * Math.PI * vt) + Math.pow(effects[i] - muLL, 2) / vt);
+ }
 
  var k = method === 'FE' ? 1 : 2;
 
@@ -9263,6 +9276,8 @@ function fitModelToStudies(studies, method) {
 
  Q: Q,
 
+ logLik: logLik,
+
  aic: aic,
 
  bic: bic
@@ -9274,186 +9289,56 @@ function fitModelToStudies(studies, method) {
 
 
 function estimateREML(effects, variances) {
-
- var n = effects.length;
-
- var tau2 = 0.1;
-
-
-
- for (var iter = 0; iter < 50; iter++) {
-
- var weights = variances.map(function(v) { return 1 / (v + tau2); });
-
- var totalWeight = weights.reduce(function(a, b) { return a + b; }, 0);
-
-
-
- var mu = 0;
-
- for (var i = 0; i < n; i++) {
-
- mu += weights[i] * effects[i];
-
+ // IPD-Tau fix: this was its own iteration from a fixed start of 0.1, tau2 <- tau2 + sum w^2 (r^2 - v) / sum w^2,
+ // whose fixed point omits tau^2 from the marginal variance (and the REML term): survival 0.593, metafor REML
+ // 0.0312; in small units its absolute 1e-6 step returned the start, 0.1. It now uses the validated REML solver.
+ return MetaAnalysis._estimateTau2Fisher(effects, variances, true);
  }
-
- mu /= totalWeight;
-
-
-
- var num = 0, den = 0;
-
- for (var i = 0; i < n; i++) {
-
- var w = weights[i];
-
- num += w * w * (Math.pow(effects[i] - mu, 2) - variances[i]);
-
- den += w * w;
-
- }
-
-
-
- var newTau2 = tau2 + num / den;
-
- newTau2 = Math.max(0, newTau2);
-
-
-
- if (Math.abs(newTau2 - tau2) < 1e-6) break;
-
- tau2 = newTau2;
-
- }
-
-
-
- return tau2;
-
- }
-
-
 
 function estimatePM(effects, variances) {
-
- // Paule-Mandel estimator: iteratively solves Q(tau2) = k - 1
-
- var n = effects.length;
-
- if (n < 2) return 0;
-
-
-
- // Use DL estimate as starting value to avoid stuck-at-zero
-
- var weights0 = variances.map(function(v) { return 1 / v; });
-
- var totalW0 = weights0.reduce(function(a, b) { return a + b; }, 0);
-
- var mu0 = 0;
-
- for (var i = 0; i < n; i++) mu0 += weights0[i] * effects[i];
-
- mu0 /= totalW0;
-
- var Q0 = 0;
-
- for (var i = 0; i < n; i++) Q0 += weights0[i] * Math.pow(effects[i] - mu0, 2);
-
- var sumW2_0 = weights0.reduce(function(a, w) { return a + w * w; }, 0);
-
- var C0 = totalW0 - sumW2_0 / totalW0;
-
- var tau2 = Math.max(0, (Q0 - (n - 1)) / C0);
-
-
-
- for (var iter = 0; iter < 100; iter++) {
-
- var weights = variances.map(function(v) { return 1 / (v + tau2); });
-
- var totalWeight = weights.reduce(function(a, b) { return a + b; }, 0);
-
-
-
- var mu = 0;
-
- for (var i = 0; i < n; i++) mu += weights[i] * effects[i];
-
- mu /= totalWeight;
-
-
-
- var Q = 0;
-
- for (var i = 0; i < n; i++) Q += weights[i] * Math.pow(effects[i] - mu, 2);
-
-
-
- if (Q <= n - 1) { tau2 = 0; break; }
-
-
-
- // Correct PM update: tau2 += (Q - (k-1)) / C
-
- var sumW2 = weights.reduce(function(a, w) { return a + w * w; }, 0);
-
- var C = totalWeight - sumW2 / totalWeight;
-
- if (C <= 0) break;
-
- var newTau2 = Math.max(0, tau2 + (Q - (n - 1)) / C);
-
- if (Math.abs(newTau2 - tau2) < 1e-8) break;
-
- tau2 = newTau2;
-
+ // IPD-Tau fix: this started at DL and set tau^2 = 0 as soon as Q(tau^2) <= k - 1, so whenever PM < DL (the first
+ // step already overshoots) it returned 0: survival 0, metafor PM 0.0244. It now uses the validated PM solver.
+ return MetaAnalysis._estimateTau2PM(effects, variances);
  }
-
-
-
- return tau2;
-
- }
-
-
 
 function estimateSJ(effects, variances) {
-
- // Sidik-Jonkman (2005) initial estimator for tau2
-
- // tau2_0 = (1/(k-1)) * sum[(yi - y_bar)^2] - (1/k)*sum[vi]
-
- var n = effects.length;
-
- if (n < 2) return 0;
-
-
-
- var mean = jStat.mean(effects);
-
- var Q0 = 0;
-
- var sumVar = 0;
-
-
-
- for (var i = 0; i < n; i++) {
-
- Q0 += Math.pow(effects[i] - mean, 2);
-
- sumVar += variances[i];
-
+ // IPD-Tau fix: this returned var(y) - mean(v), which is the Hedges (HE) estimator, not Sidik-Jonkman
+ // (survival 0.00386 = metafor HE; metafor SJ 0.0992). It now uses the validated SJ estimator.
+ return MetaAnalysis._estimateTau2SJ(effects, variances);
  }
 
 
 
- return Math.max(0, Q0 / (n - 1) - sumVar / n);
+// IPD-Left: the page's I2 is (Q - df) / Q from Cochran's Q for every tau^2 method; metafor's REML/PM I2 is tau^2-based
+// (tau^2 / (tau^2 + s^2)) and differs. Shown wherever I2 is labelled next to a tau^2 method. The statistic is unchanged.
+function ipdI2Note() {
+ return "I² is the Higgins-Thompson statistic from Cochran's Q, whatever the τ² estimator.";
+}
 
+// IPD-Left (review of PR #535): the MAIN analysis is different. MetaAnalysis.fixedEffect reports the Q-based I2, but every
+// random-effects method goes through _buildRandomResult, I2 = tau^2 / (tau^2 + s^2), s^2 = df / C, from that method's
+// tau^2 (metafor's definition; REML/PM/SJ equal metafor). The Q-based sentence was false there.
+function ipdPooledI2Note(method) {
+ if (method === 'FE') return "I² is the Higgins-Thompson statistic from Cochran's Q.";
+ return 'I² is τ²/(τ² + s²) from the ' + method + ' τ² estimate, with s² the typical within-study variance, as metafor reports it.';
+}
+
+function modelSelectionAICNote(models) {
+ // What AIC can decide in this table. Fixed vs random effects are two models, and AIC (ML log-likelihood) compares
+ // them. DL, REML, PM and SJ are four estimators of one random-effects model with the same two parameters: their AIC
+ // differs only by how close each tau^2 is to the ML estimate (the ML estimator, not offered, would always win), so
+ // AIC/BIC must not be read as choosing between them.
+ var re = ['DL', 'REML', 'PM', 'SJ'].filter(function(m) { return models[m] && isFinite(models[m].aic); });
+ if (!models.FE || !isFinite(models.FE.aic) || !re.length) return '';
+ var bestRE = re.reduce(function(a, b) { return models[a].aic <= models[b].aic ? a : b; });
+ var d = models.FE.aic - models[bestRE].aic;
+ var verdict = d > 0 ?
+ 'AIC favours the random-effects model over the fixed-effect model (AIC lower by ' + d.toFixed(1) + ')' :
+ 'AIC favours the fixed-effect model over the random-effects model (AIC lower by ' + (-d).toFixed(1) + ')';
+ return verdict + '. AIC and BIC use the maximum-likelihood log-likelihood (as metafor fit.stats "ML") at the estimates in each row. ' +
+ 'They do not rank DL, REML, PM and SJ: these are four estimators of the same random-effects model with the same two parameters, ' +
+ 'so their AIC differs only by how close each tau² is to the maximum-likelihood estimate.';
  }
-
-
 
 function getModelName(code) {
 
@@ -9511,9 +9396,7 @@ function displayModelSelectionResults(results) {
 
  ' (lowest CV error)' +
 
- (results.bestByCV !== results.bestByAIC ?
-
- '<br><small>Note: ' + results.models[results.bestByAIC].name + ' has lowest AIC</small>' : '') +
+ '<br><small>' + modelSelectionAICNote(results.models) + '</small>' +
 
  '</div>' +
 
@@ -9554,6 +9437,8 @@ function displayModelSelectionResults(results) {
  '</tbody>' +
 
  '</table>' +
+
+ '<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem;">' + ipdI2Note() + ' The I2 column is therefore the same for every method.</div>' +
 
 
 
@@ -16612,7 +16497,9 @@ function calculateI2WithCI(Q, k, confLevel) {
 
 
 
- var I2 = Math.max(0, (Q - df) / Q) * 100;
+ // IPD-Small fix: on 0 df (k = 1) (Q - df) / Q was 100% for any Q > 0 (Q is rounding noise there) and NaN for
+ // Q = 0. I^2 is not estimable from one study (meta: I2 = NA, lower.I2 = upper.I2 = NA); report null.
+ var I2 = df > 0 ? Math.max(0, (Q - df) / Q) * 100 : null;
 
 
 
@@ -16640,7 +16527,7 @@ function calculateI2WithCI(Q, k, confLevel) {
  // IPD-Follow: 0 df (k = 1) keeps p = 1 as metafor QEp; Q there is rounding noise and pchisqUpper(Q > 0, 0) = 0
  pValue: df > 0 ? AlmTail.pchisqUpper(Q, df) : 1,
 
- interpretation: interpretI2(I2),
+ interpretation: I2 === null ? "I2 not estimable (k = 1)" : interpretI2(I2),
 
  reference: "Higgins JPT, Thompson SG. Stat Med 2002;21:1539-1558"
 
@@ -31932,8 +31819,10 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  const C = sumW > 0 ? (sumW - sumW2 / sumW) : 0;
  const df = Math.max(0, effects.length - 1);
  const pQ = df > 0 ? AlmTail.pchisqUpper(Q, df) : 1;
- const I2Q = (df > 0 && Q > df && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
- const H2Q = df > 0 ? (Q / df) : 1;
+ // IPD-Left (review of PR #535): with one study (df = 0) I^2 and H^2 are not defined (metafor/meta: NA); they were
+ // reported as 0% and 1. NaN = not estimable (ipdDisplayNumber shows "Not estimable").
+ const I2Q = df > 0 ? ((Q > df && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0) : NaN;
+ const H2Q = df > 0 ? (Q / df) : NaN;
 
  return { weights, sumW, sumW2, pooled, Q, C, df, pQ, I2Q, H2Q };
 
@@ -32001,6 +31890,7 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
  if (!isFinite(I2) || I2 < 0) I2 = 0;
  if (!isFinite(H2) || H2 < 1) H2 = 1;
+ if (!(fe.df > 0)) { I2 = NaN; H2 = NaN; }   // IPD-Left: k = 1, not estimable (was 0% / 1)
 
  return MetaAnalysis._withSummaryFields({
  pooled, variance, se, z, p,
@@ -32033,16 +31923,20 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
  if (qAt(0) <= df) return 0;
 
+ // IPD-Small fix: the upper bracket stopped doubling at 1e6 and the bisection stopped at an absolute width of
+ // 1e-10, so a PM tau^2 above max(DL, ~1e6) came back as the bracket end (ovarian_survival x 1e4: 8628621.4 =
+ // DL, metafor 16824501.7) and a tau^2 near 1e-10 kept only a few bits (statin_cvd x 1e-4: p 0.092 vs 0.088).
+ // Q(tau^2) decreases to 0, so doubling always brackets the root; the width is now relative (4 ulp of high).
  let low = 0;
  let high = Math.max(1e-6, MetaAnalysis.randomEffectsDL(effects, variances).tau2 ?? 1e-6);
- while (qAt(high) > df && high < 1e6) high *= 2;
+ for (let j = 0; j < 2100 && qAt(high) > df && Number.isFinite(high * 2); j++) high *= 2;
 
- for (let i = 0; i < 120; i++) {
+ for (let i = 0; i < 2100; i++) {
  const mid = (low + high) / 2;
  const qMid = qAt(mid);
  if (qMid > df) low = mid;
  else high = mid;
- if (Math.abs(high - low) < 1e-10) break;
+ if (high - low <= 4 * Number.EPSILON * high) break;
  }
 
  return Math.max(0, (low + high) / 2);
@@ -32082,6 +31976,13 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
  const threshold = options.threshold ?? 1e-10; // P60 fix (was 1e-5)
  const maxIter = options.maxIter ?? 1000;
+ // IPD-Small fix: the threshold was an absolute change in tau^2, so with variances of order 1e-8 (data in
+ // small units) the loop stopped after a few steps (ovarian_survival x 1e-4, ML: tau^2 0 vs 2.49e-10, p 0.053
+ // vs 0.126). tau^2 enters every result only through vi + tau^2, so the change is now measured on the scale of
+ // the within-study variances: threshold x min(1, mean vi) -- never looser than before -- with an ulp-level
+ // floor (1e-15 |tau^2|) so data in large units cannot spin to maxIter on rounding noise.
+ const vScale = Math.min(1, variances.reduce((a, b) => a + b, 0) / k);
+ const thr = threshold * (vScale > 0 ? vScale : 1);
  const tau2Min = options.tau2Min ?? 0;
  const tol = options.tol ?? 1e-4;
  const ll0check = options.ll0check ?? true;
@@ -32092,7 +31993,7 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
  let change = threshold + 1;
  let iter = 0;
 
- while (change > threshold) {
+ while (change > thr && change > 1e-15 * Math.abs(tau2)) {
  iter += 1;
  const oldTau2 = tau2;
  const stats = MetaAnalysis._weightedProjectionStats(effects, variances, tau2);
@@ -32117,7 +32018,7 @@ sd: (arr, ddof = 0) => Math.sqrt(Stats.variance(arr, ddof)),
 
  tau2 = Math.max(tau2Min, tau2);
 
- if (ll0check && tau2 > threshold && variances.every(v => v > 0)) {
+ if (ll0check && tau2 > thr && variances.every(v => v > 0)) {
  const llStats0 = MetaAnalysis._weightedProjectionStats(effects, variances, 0);
  const llStats = MetaAnalysis._weightedProjectionStats(effects, variances, tau2);
  const kEff = k - p;
@@ -33548,41 +33449,9 @@ const Statistics = {
 
 
  function parseCSV(text) {
-
- const lines = text.split(/\r?\n/).filter(line => line.trim());
-
- const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
-
- const data = [];
-
-
-
- for (let i = 1; i < lines.length; i++) {
-
- const values = lines[i].match(/("([^"]|"")*"|[^,]*)/g) || [];
-
- const row = {};
-
- headers.forEach((h, j) => {
-
- let val = (values[j] || '').trim().replace(/^["']|["']$/g, '');
-
-
-
- const num = parseFloat(val);
-
- row[h] = isNaN(num) ? val : num;
-
- });
-
- data.push(row);
-
- }
-
-
-
- return { headers, data };
-
+ // IPD-CSV fix: this second copy split rows with the same /("([^"]|"")*"|[^,]*)/g regex as parseDelimited (an empty
+ // match after every field); it now uses the one reader.
+ return parseDelimited(text, ',');
  }
 
 
@@ -35391,7 +35260,8 @@ function detectVariableTypes(data, headers) {
 
  const text = e.target.result;
 
- const delimiter = file.name.endsWith('.tsv') ? '\t' : ',';
+ // .tsv is tab-delimited; for other text files the delimiter (comma, semicolon or tab) is read from the header
+ const delimiter = file.name.endsWith('.tsv') ? '\t' : undefined;
 
  parsed = parseDelimited(text, delimiter);
 
@@ -35402,6 +35272,7 @@ function detectVariableTypes(data, headers) {
  if (parsed && parsed.data.length > 0) {
 
  APP.data = parsed.data;
+ (parsed.warnings || []).forEach(w => showNotification(w, 'warning'));
 
  APP.variables = detectVariableTypes(parsed.data, parsed.headers);
 
@@ -35438,40 +35309,137 @@ function detectVariableTypes(data, headers) {
 
 
 
-function parseDelimited(text, delimiter = ',') {
-
- const lines = text.split(/\r?\n/).filter(line => line.trim());
-
- const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^["']|["']$/g, ''));
-
- const data = [];
-
- for (let i = 1; i < lines.length; i++) {
-
- const regex = delimiter === ',' ? /("([^"]|"")*"|[^,]*)/g : /[^\t]+/g;
-
- const values = lines[i].match(regex) || [];
-
- const row = {};
-
- headers.forEach((h, j) => {
-
- let val = (values[j] || '').trim().replace(/^["']|["']$/g, '');
-
- const num = parseFloat(val);
-
- row[h] = isNaN(num) ? val : num;
-
- });
-
- data.push(row);
-
+function parseDelimited(text, delimiter) {
+ // IPD-CSV fix: rows were split with line.match(/("([^"]|"")*"|[^,]*)/g), whose [^,]* also matches the empty string,
+ // so every field was followed by an empty match: "S1,1,11.148881" loaded as {study:"S1", treat:"", y:1}. The TSV
+ // branch (/[^\t]+/g) dropped empty fields and shifted the next value left; headers were split on the bare delimiter;
+ // "" was not unescaped; a quoted field spanning lines became two rows; parseFloat read "1.5abc" as 1.5 and a quoted
+ // "11,148881" as 11. This is an RFC 4180 reader: quoted fields may hold the delimiter, "" and line breaks.
+ // IPD-Left (review of PR #535): a file the reader cannot read unambiguously is REFUSED with the line, never loaded
+ // silently -- an unterminated quote, a row whose field count differs from the header, duplicate column names, and a
+ // delimiter that comma and semicolon fit equally well. Every message names a physical line of the file.
+ text = String(text == null ? '' : text);
+ if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+ const warnings = [];
+ let lineBase = 0;
+ // Excel writes "sep=;" (or "sep=,") as a first line to name the delimiter; it was read as the header. Honour it.
+ const sepHint = text.match(/^sep=(.)[ \t]*(\r\n|\n|\r|$)/i);
+ if (sepHint) {
+  text = text.slice(sepHint[0].length); lineBase = 1;
+  delimiter = sepHint[1];
+  warnings.push('The first line "sep=' + sepHint[1] + '" is an Excel delimiter hint: it was used as the delimiter and not read as data.');
  }
-
- return { headers, data };
-
+ const delimName = (d) => d === ',' ? 'comma' : d === ';' ? 'semicolon' : d === '\t' ? 'tab' : JSON.stringify(d);
+ // readAll(delim, maxRecords): records (arrays of {v, q}), each with .line = the file line it starts on; out.malformed
+ // counts text after a closing quote or a quote inside an unquoted field (used only to choose the delimiter).
+ const readAll = (delim, maxRecords) => {
+  const out = [];
+  out.malformed = 0;
+  let row = [], field = '', quoted = false, wasQuoted = false, closed = false, i = 0, kept = 0;
+  // line = physical file line of text[i]; quoteLine = line on which the open quoted field started
+  let line = 1 + lineBase, quoteLine = 0, rowLine = line;
+  const endField = () => { row.push({ v: field, q: wasQuoted }); field = ''; wasQuoted = false; closed = false; };
+  const endRow = () => {
+   endField(); row.line = rowLine;
+   // blank lines (and the empty record after a trailing newline) are not data
+   if (row.some(f => f.q || f.v.trim() !== '')) { out.push(row); kept++; }
+   row = [];
+  };
+  while (i < text.length) {
+   const ch = text[i];
+   if (quoted) {
+    if (ch === '"') {
+     if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+     quoted = false; closed = true; i++; continue;
+    }
+    if (ch === '\n' || (ch === '\r' && text[i + 1] !== '\n')) line++;
+    field += ch; i++; continue;
+   }
+   if (ch === '"' && field.trim() === '' && !closed) { field = ''; quoted = true; wasQuoted = true; quoteLine = line; i++; continue; }
+   if (ch === delim) { endField(); i++; continue; }
+   if (ch === '\r' || ch === '\n') {
+    endRow(); line++; rowLine = line; i += (ch === '\r' && text[i + 1] === '\n') ? 2 : 1;
+    if (maxRecords && kept >= maxRecords) return out;
+    continue;
+   }
+   if (ch === '"' || (closed && ch.trim() !== '')) out.malformed++;
+   field += ch; i++;
+  }
+  // IPD-CSV fix: a quote that is never closed kept the reader inside one field to the end of the text, so every later
+  // row was swallowed into that field without any message. Refuse the file instead, naming the line.
+  if (quoted) throw new Error('unterminated quoted field: the double quote opened on line ' + quoteLine + ' is never closed, so the file cannot be read from line ' + quoteLine + ' on. Close or remove that quote and load the file again.');
+  if (field !== '' || wasQuoted || row.length) endRow();
+  return out;
+ };
+ if (delimiter === undefined || delimiter === null || delimiter === '') {
+  // Detect the delimiter: comma, semicolon or tab. IPD-Left fix: this read only the first PHYSICAL line, so a quoted
+  // header field holding a line break was cut before its closing quote and the comma inside it was counted; and a tie
+  // (comma and semicolon one each: "Study, year";"log OR, adj") kept comma, garbling the headers silently. Each
+  // candidate now reads the first records with the same quote-state scan as the data and is scored on, in order:
+  // well-formed quoting, rows with the header's field count, then fields in the header. A tie on all three is refused.
+  const scores = [',', ';', '\t'].map(d => {
+   try {
+    const recs = readAll(d, 6);
+    if (!recs.length) return null;
+    const n = recs[0].length;
+    return { d, n, bad: recs.malformed, cons: recs.slice(1).filter(r => r.length === n).length };
+   } catch (e) { return null; }   // an unterminated quote: refused, with its line, by the full read below
+  }).filter(s => s && s.n > 1);
+  delimiter = ',';
+  if (scores.length) {
+   scores.sort((a, b) => (a.bad - b.bad) || (b.cons - a.cons) || (b.n - a.n));
+   const best = scores[0], next = scores[1];
+   if (next && next.bad === best.bad && next.cons === best.cons && next.n === best.n)
+    throw new Error('cannot tell the delimiter: ' + delimName(best.d) + ' and ' + delimName(next.d) + ' both split the first rows into ' + best.n + ' fields. Save the file with a single delimiter, or add a first line "sep=;" (or "sep=,") naming it.');
+   delimiter = best.d;
+  }
+ }
+ // IPD-Left fix: records.push(...readAll()) passed every row as a call argument and overflowed the call stack above
+ // ~120-150k rows ("Maximum call stack size exceeded"); the array is now used as returned.
+ const records = readAll(delimiter);
+ if (!records.length) return { headers: [], data: [], delimiter, warnings };
+ const headers = records[0].map(f => f.v.trim());
+ const hLine = records[0].line;
+ const seen = new Set(), dup = [];
+ headers.forEach(h => { if (seen.has(h) && !dup.includes(h)) dup.push(h); seen.add(h); });
+ if (dup.length) throw new Error('duplicate column name' + (dup.length > 1 ? 's ' : ' ') + dup.map(h => JSON.stringify(h)).join(', ') + ' in the header (line ' + hLine + '): a later column would overwrite the earlier one. Give each column its own name and load the file again.');
+ const numRe = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+ const decComma = /^[+-]?(\d+,\d*|,\d+)([eE][+-]?\d+)?$/;
+ const commaCols = new Set();
+ const data = [];
+ const K = headers.length;
+ for (let r = 1; r < records.length; r++) {
+  const rec = records[r];
+  if (rec.length !== K) {
+   let hint = '';
+   if (delimiter === ',' && rec.length > K) {
+    for (let j = 0; j + 1 < rec.length; j++) {
+     if (!rec[j].q && !rec[j + 1].q && /^[+\-−]?\d+$/.test(rec[j].v.trim()) && /^\d+([eE][+\-−]?\d+)?$/.test(rec[j + 1].v.trim())) {
+      hint = ' "' + rec[j].v.trim() + ',' + rec[j + 1].v.trim() + '" looks like a number with a decimal comma in a comma-delimited file; save the file with a semicolon delimiter, or with decimal points.';
+      break;
+     }
+    }
+   }
+   throw new Error('line ' + rec.line + ' has ' + rec.length + ' field' + (rec.length === 1 ? '' : 's') + ' but the header (line ' + hLine + ') has ' + K + ' (' + delimName(delimiter) + '-delimited), so its values cannot be matched to columns.' + hint + ' Correct that row and load the file again.');
+  }
+  const row = {};
+  for (let j = 0; j < K; j++) {
+   const h = headers[j];
+   const val = rec[j].v.trim();
+   const num = val.indexOf('−') >= 0 ? val.replace(/−/g, '-') : val;   // U+2212 MINUS SIGN is a minus
+   if (numRe.test(num)) row[h] = Number(num);
+   else if (decComma.test(num)) {
+    // Decimal comma: unambiguous when the comma is not the delimiter (semicolon/tab files); in a comma file
+    // "11,148881" could be a thousands separator, so it stays text and the user is told.
+    if (delimiter !== ',') row[h] = Number(num.replace(',', '.'));
+    else { row[h] = val; commaCols.add(h); }
+   } else row[h] = val;
+  }
+  data.push(row);
+ }
+ if (commaCols.size) warnings.push('Column(s) ' + [...commaCols].join(', ') + ' hold values with a decimal comma in a comma-delimited file; they were kept as text, not read as numbers. Save the file with a semicolon delimiter, or with decimal points.');
+ return { headers, data, delimiter, warnings };
 }
-
 
 
 function escapeHTML(value) {
@@ -37357,7 +37325,32 @@ function ipdSplitBinaryArms(rows, treatmentVar, armMapping) {
  });
 
  return { treat1, treat0 };
-
+}
+// IPD-Left: per-study arm outcomes from the MAPPED columns (config.studyVar / treatmentVar / eventVar, with the old
+// hard-coded names as fallbacks) and the same arm mapping as runAnalysis. Power Monitor and Federated Analysis read
+// d.study / d.outcome / d.treatment directly, so on the page's own examples (study_id, treatment, event) every row
+// fell into one "undefined" study with no arms and they printed NaN.
+function ipdArmOutcomes(rows, config) {
+ config = config || {};
+ rows = Array.isArray(rows) ? rows : [];
+ const r0 = rows[0] || {};
+ const sv = config.studyVar || ('study' in r0 ? 'study' : 'study_id');
+ const tv = config.treatmentVar || ('treatment' in r0 ? 'treatment' : ('trt' in r0 ? 'trt' : 'arm'));
+ const ov = config.eventVar || ('outcome' in r0 ? 'outcome' : ('y' in r0 ? 'y' : 'effect'));
+ const map = ipdResolveBinaryArmMapping(rows, tv);
+ if (map.error) return { error: map.error, studies: [] };
+ const ids = [...new Set(rows.map(d => d[sv]))];
+ const num = a => a.map(d => Number(d[ov])).filter(Number.isFinite);
+ const studies = ids.map(id => {
+  const sd = rows.filter(d => d[sv] === id);
+  const g = ipdSplitBinaryArms(sd, tv, map);
+  return { study: id, n: sd.length, y1: num(g.treat1), y0: num(g.treat0) };
+ });
+ return { studies, studyVar: sv, treatmentVar: tv, outcomeVar: ov };
+}
+// A heterogeneity number for display: the value, or "not estimable (k = 1)" when it is not finite (fewer than 2 studies).
+function ipdHetText(x, digits, k, suffix) {
+ return Number.isFinite(x) ? x.toFixed(digits) + (suffix || '') : 'not estimable (k = ' + k + ')';
 }
 
 
@@ -38302,7 +38295,7 @@ function ipdDisplayP(x) {
 function renderIPDFittedNarratives(r, view, egger, begg) {
  const set = (id, value) => { const e = document.getElementById(id); if (e) e.textContent = value; };
  const p = r.pooled, k = r.studies.length, pct = (view.level * 100).toFixed(0);
- set('ipdHetInterpretation', `Saved ${view.cfg.reMethod || 'REML'} fit: I² = ${ipdDisplayNumber(p.I2, 1)}%; τ² = ${ipdDisplayNumber(p.tau2, 4)}; Q = ${ipdDisplayNumber(p.Q, 2)} (p ${ipdDisplayP(p.pQ)}). Assess these statistics alongside study differences; they do not identify the cause of heterogeneity.`);
+ set('ipdHetInterpretation', `Saved ${view.cfg.reMethod || 'REML'} fit: I² = ${ipdDisplayNumber(p.I2, 1)}%; τ² = ${ipdDisplayNumber(p.tau2, 4)}; Q = ${ipdDisplayNumber(p.Q, 2)} (p ${ipdDisplayP(p.pQ)}). ${ipdPooledI2Note(view.cfg.reMethod || 'REML')} Assess these statistics alongside study differences; they do not identify the cause of heterogeneity.`);
  if (view.cfg.reMethod === 'FE') {
   set('ipdPredictionInterval', 'Not estimated for the fixed-effect model. Select a random-effects model and rerun to estimate a prediction interval.');
   set('ipdTauSummary', 'τ² is fixed at 0 in this fixed-effect model; between-study SD is not estimated.');
@@ -38398,6 +38391,7 @@ function renderAnalysisSummaryCard(r) {
     '<span title="Between-study variance"><strong>&tau;&sup2;</strong> = ' + (tau2 != null ? tau2.toFixed(4) : 'N/A') + '</span>' +
     '<span title="Estimation method"><strong>Method:</strong> ' + (typeof escapeHTML === 'function' ? escapeHTML(methodLabel) : methodLabel) + hksjLabel + '</span>' +
    '</div>' +
+   '<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.5rem;">' + ipdPooledI2Note(methodLabel) + '</div>' +
   '</div>';
 }
 
@@ -65444,31 +65438,21 @@ const FederatedMetaAnalysis = {
 
         // Group data by study (simulating distributed sites)
 
-        const studies = [...new Set(data.map(d => d.study))];
-
+        // IPD-Left: sites, arms and outcomes from the mapped columns (ipdArmOutcomes); a site without both arms has no
+        // treatment effect and is not pooled (it had nTreated or nControl = 0 and an infinite SE).
+        const arms = ipdArmOutcomes(data, config);
         const siteResults = [];
-
-
-
-        studies.forEach(study => {
-
-            const siteData = data.filter(d => d.study === study);
-
+        arms.studies.forEach(st => {
+            if (!(st.y1.length > 0 && st.y0.length > 0)) return;
             // Each "site" computes local sufficient statistics only
-
-            const localStats = this.computeLocalStatistics(siteData, config);
-
+            const localStats = this.computeLocalStatistics(st, config);
             siteResults.push({
-
-                siteId: study,
-
-                n: siteData.length,
-
+                siteId: st.study,
+                n: st.n,
                 ...localStats
-
             });
-
         });
+        if (!siteResults.length) throw new Error(arms.error || 'No site has both a treatment and a control arm in the mapped columns.');
 
 
 
@@ -65494,15 +65478,10 @@ const FederatedMetaAnalysis = {
 
 
 
-    computeLocalStatistics: function(siteData, config) {
-
-        // Compute only summary statistics - no raw data leaves
-
-        const n = siteData.length;
-
-        const outcomes = siteData.map(d => d.outcome || d.y || d.effect);
-
-        const treatments = siteData.map(d => d.treatment || d.trt || d.arm);
+    computeLocalStatistics: function(site, config) {
+        // Compute only summary statistics - no raw data leaves. site = { y1: treated outcomes, y0: control outcomes }
+        const outcomes = site.y1.concat(site.y0);
+        const treatments = site.y1.map(() => 1).concat(site.y0.map(() => 0));
 
 
 
@@ -66752,40 +66731,14 @@ const PowerMonitor = {
 
     calculateCurrentPower: function(data, config) {
 
-        const studies = [...new Set(data.map(d => d.study))];
-
-        const k = studies.length;
-
+        // IPD-Left: arms and outcomes from the mapped columns (ipdArmOutcomes); k = studies with both arms.
+        const arms = ipdArmOutcomes(data, config);
         const totalN = data.length;
-
-        const avgN = totalN / k;
-
-
-
         // Estimate effect size and heterogeneity from current data
-
         const effects = [];
-
         const ses = [];
-
-
-
-        studies.forEach(study => {
-
-            const studyData = data.filter(d => d.study === study);
-
-            const outcomes = studyData.map(d => d.outcome ?? (d.y ?? 0));
-
-            const treatments = studyData.map(d => d.treatment ?? (d.trt ?? 0));
-
-
-
-            const treated = outcomes.filter((o, i) => treatments[i] === 1);
-
-            const control = outcomes.filter((o, i) => treatments[i] === 0);
-
-
-
+        arms.studies.forEach(st => {
+            const treated = st.y1, control = st.y0;
             if (treated.length > 0 && control.length > 0) {
 
                 const meanT = treated.reduce((a, b) => a + b, 0) / treated.length;
@@ -66814,7 +66767,8 @@ const PowerMonitor = {
 
 
 
-        if (effects.length === 0) return { power: 0, message: 'Insufficient data' };
+        if (effects.length === 0) return { power: 0, message: arms.error || 'Insufficient data' };
+        const k = effects.length;
 
 
 
@@ -66834,15 +66788,15 @@ const PowerMonitor = {
 
         const Q = effects.reduce((sum, e, i) => sum + weights[i] * Math.pow(e - pooledEffect, 2), 0);
 
-        const I2 = Math.max(0, (Q - (k-1)) / Q * 100);
-
-        const tau2 = Math.max(0, (Q - (k-1)) / (totalWeight - weights.reduce((a,w) => a + w*w, 0)/totalWeight));
+        // with one study I2 and tau2 are not defined (they were 0/0 = NaN, printed as "NaN%")
+        const I2 = k > 1 ? (Q > 0 ? Math.max(0, (Q - (k-1)) / Q * 100) : 0) : NaN;
+        const tau2 = k > 1 ? Math.max(0, (Q - (k-1)) / (totalWeight - weights.reduce((a,w) => a + w*w, 0)/totalWeight)) : NaN;
 
 
 
         // Power calculation using non-central t-distribution approximation
 
-        const effectSize = Math.abs(pooledEffect) / Math.sqrt(pooledSE * pooledSE + tau2);
+        const effectSize = Math.abs(pooledEffect) / Math.sqrt(pooledSE * pooledSE + (Number.isFinite(tau2) ? tau2 : 0));
 
         const df = k - 1;
 
@@ -67092,7 +67046,7 @@ function showPowerMonitor() {
 
                         <div class="stat-card" style="background:var(--bg-tertiary);">
 
-                            <div class="stat-value">${stats.I2.toFixed(1)}%</div>
+                            <div class="stat-value">${ipdHetText(stats.I2, 1, stats.currentStudies, '%')}</div>
 
                             <div class="stat-label">I² Heterogeneity</div>
 
@@ -67234,7 +67188,7 @@ function showPowerMonitor() {
 
                             <div style="font-size:0.9rem;">SE: ${stats.pooledSE.toFixed(3)}</div>
 
-                            <div style="font-size:0.9rem;">τ²: ${stats.tau2.toFixed(4)}</div>
+                            <div style="font-size:0.9rem;">τ²: ${ipdHetText(stats.tau2, 4, stats.currentStudies)}</div>
 
                         </div>
 
@@ -67256,10 +67210,8 @@ function showPowerMonitor() {
 
                             }
 
-                            ${stats.I2 > 50 ?
-
+                            ${!Number.isFinite(stats.I2) ? '<li style="color:var(--accent-warning);">Heterogeneity is not estimable from one study</li>' : stats.I2 > 50 ?
                                 '<li>High heterogeneity detected - consider subgroup analyses or meta-regression</li>' :
-
                                 '<li style="color:var(--accent-success);">Heterogeneity is acceptable</li>'
 
                             }
@@ -73200,9 +73152,12 @@ function runTwoStageIPD(data, outcomeVar, treatmentVar, clusterVar, method = 'RE
 
 
 
-    // Q statistic
-
-    const Q = studyEffects.reduce((s, st) => s + (1/st.vi) * Math.pow(st.yi - pooledEffect, 2), 0);
+    // Q statistic (Cochran's Q, metafor QE). IPD-CSV fix: this was centred on the random-effects pooledEffect, so Q,
+    // its p-value and I^2 changed with the tau^2 method and were not Cochran's Q (k = 7 uploaded rows: 19.59 REML /
+    // 19.60 DL; metafor QE 19.45). It is centred on the fixed-effect (inverse-variance) mean.
+    const sumWFE = studyEffects.reduce((s, st) => s + 1 / st.vi, 0);
+    const feEffect = studyEffects.reduce((s, st) => s + st.yi / st.vi, 0) / sumWFE;
+    const Q = studyEffects.reduce((s, st) => s + (1/st.vi) * Math.pow(st.yi - feEffect, 2), 0);
 
     const df = studyEffects.length - 1;
 
@@ -73847,6 +73802,7 @@ function formatClusteredIPDResults(result, iccResult) {
                 <table style="width:100%;font-size:14px;">
 
                     <tr><td>I&sup2;:</td><td><strong>${result.I2.toFixed(1)}%</strong></td></tr>
+                    <tr><td colspan="2" style="font-size:12px;color:var(--text-secondary);">${ipdI2Note()}</td></tr>
 
                     <tr><td>&tau;&sup2;:</td><td>${result.tau2.toFixed(4)}</td></tr>
 
@@ -74298,75 +74254,18 @@ function estimateTau2DL(studies) {
 
 
 function estimateTau2REML(studies) {
-
-    var tau2 = estimateTau2DL(studies);
-
-    for (var iter = 0; iter < 100; iter++) {
-
-        var weights = studies.map(function(s) { return 1 / (s.vi + tau2); });
-
-        var sumW = weights.reduce(function(a, b) { return a + b; }, 0);
-
-        var estimate = studies.reduce(function(s, st, i) { return s + weights[i] * st.yi; }, 0) / sumW;
-
-        var num = 0, denom = 0;
-
-        studies.forEach(function(s, i) {
-
-            var w = weights[i];
-
-            var resid = s.yi - estimate;
-
-            num += w * w * (resid * resid - s.vi);
-
-            denom += w * w;
-
-        });
-
-        var tau2New = Math.max(0, tau2 + num / denom);
-
-        if (Math.abs(tau2New - tau2) < 1e-8) break;
-
-        tau2 = tau2New;
-
-    }
-
-    return tau2;
-
+    // IPD-Tau fix: this was its own iteration, tau2 <- tau2 + sum w^2 (r^2 - v) / sum w^2. Its fixed point
+    // sum w^2 (r^2 - v) = 0 omits tau^2 from the marginal variance v + tau^2 (and the REML term), so tau^2 ran
+    // upwards to the 100-step cap (survival 0.808, metafor REML 0.0312), and its absolute 1e-8 step stopped at the
+    // DL start for data in small units. It now uses the REML solver the P60 archive validates.
+    return MetaAnalysis._estimateTau2Fisher(studies.map(function(s) { return s.yi; }), studies.map(function(s) { return s.vi; }), true);
 }
-
-
 
 function estimateTau2PM(studies) {
-
-    var k = studies.length;
-
-    var tau2 = 0;
-
-    for (var iter = 0; iter < 100; iter++) {
-
-        var weights = studies.map(function(s) { return 1 / (s.vi + tau2); });
-
-        var sumW = weights.reduce(function(a, b) { return a + b; }, 0);
-
-        var estimate = studies.reduce(function(s, st, i) { return s + weights[i] * st.yi; }, 0) / sumW;
-
-        var Qstar = studies.reduce(function(s, st, i) { return s + weights[i] * Math.pow(st.yi - estimate, 2); }, 0);
-
-        if (Math.abs(Qstar - (k - 1)) < 1e-6) break;
-
-        if (Qstar > k - 1) tau2 += 0.01;
-
-        else tau2 = Math.max(0, tau2 - 0.005);
-
-    }
-
-    return tau2;
-
+    // IPD-Tau fix: this stepped tau^2 by a fixed +0.01 / -0.005 from 0, so it returned a point of that grid
+    // (survival 0.025, metafor PM 0.0244; in units x 1e4, 1.0 vs 2443912). It now uses the validated PM solver.
+    return MetaAnalysis._estimateTau2PM(studies.map(function(s) { return s.yi; }), studies.map(function(s) { return s.vi; }));
 }
-
-
-
 
 
 /**
@@ -74729,58 +74628,11 @@ function runRandomEffectsREML(studies) {
 
     const C = sumWF - sumW2F / sumWF;
 
-    let tau2 = Math.max(0, (Q - (k - 1)) / C);
-
-
-
-    // Fisher scoring iterations
-
-    for (let iter = 0; iter < 50; iter++) {
-
-        const weights = studies.map(s => 1 / (s.vi + tau2));
-
-        const sumW = weights.reduce((a, b) => a + b, 0);
-
-        const estimate = studies.reduce((s, st, i) => s + weights[i] * st.yi, 0) / sumW;
-
-
-
-        // First derivative of REML log-likelihood
-
-        // the +1/2 sum(w^2)/sum(w) term makes this the REML score (without it, it converged to ML)
-        const sumW2 = weights.reduce((s, w) => s + w * w, 0);
-        let deriv1 = -0.5 * sumW + 0.5 * sumW2 / sumW;
-
-        deriv1 += 0.5 * studies.reduce((s, st, i) => {
-
-            const resid = st.yi - estimate;
-
-            return s + weights[i] * weights[i] * resid * resid;
-
-        }, 0);
-
-
-
-        // Fisher information (expected second derivative)
-
-        const deriv2 = 0.5 * sumW2;
-
-
-
-        // Newton-Raphson update
-
-        const delta = deriv1 / deriv2;
-
-        const tau2New = Math.max(0, tau2 + delta);
-
-
-
-        if (Math.abs(tau2New - tau2) < 1e-8) break;
-
-        tau2 = tau2New;
-
-    }
-
+    // IPD-Left fix: this was its own Fisher scoring from the DL start, stopped on an absolute |step| < 1e-8, so with
+    // variances of order 1e-8 (data in small units) it returned the DL start (survival x 1e-4: 2.568e-10, metafor
+    // REML 3.117e-10). The benchmark checks the page against R, so it now uses the REML solver the page runs and the
+    // P60 archive validates.
+    const tau2 = MetaAnalysis._estimateTau2Fisher(studies.map(s => s.yi), studies.map(s => s.vi), true);
 
 
     // Final calculations with converged tau2
@@ -74830,52 +74682,10 @@ function runRandomEffectsPM(studies) {
 
     const C = sumWF - sumW2F / sumWF;
 
-    let tau2 = Math.max(0, (Q - (k - 1)) / C);
-
-
-
-    // Iteratively solve Q*(tau2) = k - 1 using bisection
-
-    let lo = 0, hi = tau2 * 3 + 1;
-
-    
-
-    for (let iter = 0; iter < 100; iter++) {
-
-        const mid = (lo + hi) / 2;
-
-        const weights = studies.map(s => 1 / (s.vi + mid));
-
-        const sumW = weights.reduce((a, b) => a + b, 0);
-
-        const estimate = studies.reduce((s, st, i) => s + weights[i] * st.yi, 0) / sumW;
-
-        const Qstar = studies.reduce((s, st, i) => s + weights[i] * Math.pow(st.yi - estimate, 2), 0);
-
-
-
-        if (Math.abs(Qstar - (k - 1)) < 1e-8 || (hi - lo) < 1e-10) {
-
-            tau2 = mid;
-
-            break;
-
-        }
-
-
-
-        if (Qstar > k - 1) {
-
-            lo = mid;
-
-        } else {
-
-            hi = mid;
-
-        }
-
-    }
-
+    // IPD-Left fix: this was its own bisection on [0, 3 DL + 1], stopped on |Q* - (k-1)| < 1e-8 or a bracket width
+    // < 1e-10 (both absolute), so in small units it returned a point of a 1e-10 grid (survival x 1e-4: 2.619e-10,
+    // metafor PM 2.444e-10). It now uses the PM solver the page runs and the P60 archive validates.
+    const tau2 = MetaAnalysis._estimateTau2PM(studies.map(s => s.yi), studies.map(s => s.vi));
 
 
     const weights = studies.map(s => 1 / (s.vi + tau2));
