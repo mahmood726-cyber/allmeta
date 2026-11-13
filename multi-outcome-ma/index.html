@@ -114,28 +114,93 @@ Trial 8, NA, NA, -0.42, 0.16</textarea>
   (function () {
     "use strict";
 
+    // Delimited-row reader (lane csv2, 2026-11-12; same rules as the shared parsers fixed in bfb5e220).
+    // One delimiter for the whole input: tab if any line has a tab, else ";" if every data line has
+    // one (a header line may differ), else ",". RFC-4180 quotes, so "Smith, 2001" stays one field. A number must be a complete
+    // token (parseFloat read "2001" out of a shifted label and "-0" out of "-0,22"); a decimal comma
+    // is read only when the delimiter is not a comma. A row that cannot be read is reported by line
+    // number and never skipped or shifted. cols: [{ name, num, opt, rest }]; a last text column with
+    // rest takes any extra fields back (an unquoted "Smith, 2001" label), unless they start with a
+    // number, which is a shifted row. opts.semicolon === false keeps ";" inside a field.
+    function csvRows(text, cols, opts) {
+      var lines = String(text == null ? "" : text).replace(/^\uFEFF/, "").split(/\r\n|\n|\r/), data = [];
+      for (var i = 0; i < lines.length; i++) { var t = lines[i].trim(); if (t && t.charAt(0) !== "#") data.push({ n: i + 1, t: t }); }
+      var d = data.some(function (x) { return x.t.indexOf("\t") >= 0; }) ? "\t"
+        : (!(opts && opts.semicolon === false) && data.length && data.slice(data.length > 1 ? 1 : 0).every(function (x) { return x.t.indexOf(";") >= 0; }) ? ";" : ",");
+      function split(s) {
+        var out = [], f = "", q = false;
+        for (var k = 0; k < s.length; k++) {
+          var c = s.charAt(k);
+          if (q) { if (c === '"' && s.charAt(k + 1) === '"') { f += '"'; k++; } else if (c === '"') q = false; else f += c; }
+          else if (c === '"' && f.trim() === "") { f = ""; q = true; }
+          else if (c === d) { out.push(f.trim()); f = ""; }
+          else f += c;
+        }
+        out.push(f.trim()); return out;
+      }
+      function num(s) {
+        var v = String(s == null ? "" : s).trim();
+        if (d !== "," && /^[+-]?\d*,\d+([eE][+-]?\d+)?$/.test(v)) v = v.replace(",", ".");
+        return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(v) ? Number(v) : NaN;
+      }
+      var rows = [], errors = [], header = null, names = cols.map(function (c) { return c.name; }).join(", ");
+      data.forEach(function (x, j) {
+        var c = split(x.t);
+        // opts.header: the first data line always names the columns; opts.columns(header) may set cols.
+        if (j === 0 && opts && opts.header) {
+          header = c;
+          if (opts.columns) { cols = opts.columns(c); names = cols.map(function (cc) { return cc.name; }).join(", "); }
+          return;
+        }
+        while (c.length > cols.length && c[c.length - 1] === "") c.pop();
+        // A header is the first data line when none of its number columns holds a number and at least
+        // one holds text that is not a missing-value code (an all-NA first row is data, not a header).
+        if (j === 0 && cols.every(function (cl, m) { return !cl.num || !isFinite(num(c[m])); }) &&
+          cols.some(function (cl, m) { return cl.num && /[A-Za-z]/.test(c[m] || "") && !/^(NA|NaN)$/i.test(c[m]); })) return;
+        var last = cols[cols.length - 1];
+        if (c.length > cols.length && last.rest && !isFinite(num(c[cols.length - 1]))) c = c.slice(0, cols.length - 1).concat([c.slice(cols.length - 1).join(d === "," ? ", " : d)]);
+        if (c.length > cols.length) {
+          errors.push("Line " + x.n + ": " + c.length + " fields, expected " + cols.length + " (" + names + "); quote text that contains the delimiter, e.g. \"Smith, 2001\"");
+          return;
+        }
+        var r = {}, bad = [];
+        cols.forEach(function (cl, m) {
+          var v = m < c.length ? c[m] : "";
+          if (!cl.num) {
+            r[cl.name] = v;
+            if (!v && !cl.opt) bad.push(cl.name + " is empty");
+            if (cl.rest && /[.,]/.test(v) && isFinite(num(v.split(/\s*,\s*/)[0]))) bad.push(cl.name + " \"" + v.slice(0, 20) + "\" is a number: a decimal comma or an extra column shifted this row");
+            return;
+          }
+          if (v === "" || /^(NA|NaN|\.)$/i.test(v)) { r[cl.name] = NaN; if (!cl.opt) bad.push(cl.name + " is missing"); return; }
+          r[cl.name] = num(v);
+          if (!isFinite(r[cl.name])) bad.push(cl.name + " \"" + v.slice(0, 20) + "\" is not a number");
+        });
+        if (bad.length) errors.push("Line " + x.n + ": " + bad.join("; ")); else { r.line = x.n; r.nf = c.length; rows.push(r); }
+      });
+      return { rows: rows, errors: errors, delim: d, header: header };
+    }
+    function csvRefuse(errors) {
+      var e = new Error("Input refused, nothing was computed. " + errors.slice(0, 6).join(" | ") + (errors.length > 6 ? " | and " + (errors.length - 6) + " more" : ""));
+      e.csvErrors = errors; throw e;
+    }
     function parse(text) {
+      // y/SE may be NA or empty: that outcome is missing for the study (the bivariate model's intent).
+      var r = csvRows(text, [{ name: "label", opt: 1 }, { name: "y1", num: 1, opt: 1 }, { name: "se1", num: 1, opt: 1 }, { name: "y2", num: 1, opt: 1 }, { name: "se2", num: 1, opt: 1 }]);
       var rows = [];
-      var lines = text.split(/\r?\n/);
-      for (var i = 0; i < lines.length; i++) {
-        var line = lines[i].trim();
-        if (!line || line.startsWith("#")) continue;
-        var parts = line.split(/\s*,\s*/);
-        if (parts.length < 5) continue;
-        var label = parts[0];
-        function p(s) { var v = s.toUpperCase() === "NA" ? NaN : parseFloat(s); return isFinite(v) ? v : NaN; }
-        var y1 = p(parts[1]), se1 = p(parts[2]);
-        var y2 = p(parts[3]), se2 = p(parts[4]);
-        if (!isFinite(y1) && !isFinite(y2)) continue;
+      r.rows.forEach(function (x) {
+        if (x.nf < 5) { r.errors.push("Line " + x.line + ": expected label, y1, se1, y2, se2 (write NA for a missing outcome)"); return; }
+        if (!isFinite(x.y1) && !isFinite(x.y2)) { r.errors.push("Line " + x.line + ": both outcomes are missing"); return; }
         rows.push({
-          label: label,
-          y: [y1, y2],
+          label: x.label,
+          y: [x.y1, x.y2],
           se: [
-            isFinite(se1) && se1 > 0 ? se1 : NaN,
-            isFinite(se2) && se2 > 0 ? se2 : NaN,
+            isFinite(x.se1) && x.se1 > 0 ? x.se1 : NaN,
+            isFinite(x.se2) && x.se2 > 0 ? x.se2 : NaN,
           ],
         });
-      }
+      });
+      if (r.errors.length) csvRefuse(r.errors);
       return rows;
     }
 
@@ -154,7 +219,13 @@ Trial 8, NA, NA, -0.42, 0.16</textarea>
     }
 
     function run() {
-      var rows = parse(document.getElementById("src").value);
+      var rows;
+      try { rows = parse(document.getElementById("src").value); } catch (e) {
+        if (!e.csvErrors) throw e;
+        var escE = String(e.message).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        document.getElementById("bivariate-summary").innerHTML = '<div class="card" role="alert" style="grid-column:1/-1;color:var(--bad)">' + escE + '</div>';
+        return;
+      }
       var rhoW = parseFloat(document.getElementById("f-rho-within").value);
       if (!isFinite(rhoW)) rhoW = 0;
       if (rows.length < 2) {

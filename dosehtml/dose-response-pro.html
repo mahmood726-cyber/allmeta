@@ -1554,9 +1554,17 @@ function parseCSV(text) {
   });
   const parsedRows = [];
   const stringFields = new Set(['author', 'type', 'id']);
+  // A row with more non-empty cells than the header cannot be assigned to columns: an unquoted
+  // comma in a study name ("Smith et al., 2001") shifted every later cell, so 2001 was read as the
+  // dose. Refuse the whole table with the line numbers (lane csv2 2026-11-12, as csv-upload does).
+  const shapeErrors = [];
 
   for (let i = 1; i < lines.length; i++) {
     const values = parseCSVLine(lines[i]);
+    if (values.slice(headers.length).some(v => String(v ?? '').trim() !== '')) {
+      shapeErrors.push(`Line ${i + 1} of the table (header = line 1, comment lines not counted): ${values.length} cells, the header has ${headers.length}; quote text that contains a comma, e.g. "Smith, 2001", and use "." as the decimal point`);
+      continue;
+    }
     const row = {};
 
     headers.forEach((h, idx) => {
@@ -1578,6 +1586,11 @@ function parseCSV(text) {
     if (!Number.isFinite(row.dose)) continue;
     applyContinuityCorrection(row);
     parsedRows.push(row);
+  }
+  if (shapeErrors.length) {
+    const err = new Error('Input refused, nothing was computed. ' + shapeErrors.slice(0, 6).join(' | ') + (shapeErrors.length > 6 ? ` | and ${shapeErrors.length - 6} more` : ''));
+    err.csvErrors = shapeErrors;
+    throw err;
   }
 
   const derivedRowsFromCounts = deriveMissingEffectsFromCounts(parsedRows);
@@ -3574,7 +3587,13 @@ function runAnalysis() {
     return;
   }
 
-  const rawData = parseCSV(csvData);
+  let rawData;
+  try { rawData = parseCSV(csvData); } catch (e) {
+    if (!e.csvErrors) throw e;
+    setAnalysisStatus(e.message, 'error');
+    showToast(e.csvErrors[0], 'error');
+    return;
+  }
   if (rawData.length === 0) {
     const dropped = AppState.inputDiagnostics ? AppState.inputDiagnostics.droppedRows : 0;
     setAnalysisStatus('Unable to parse input data', 'error');
@@ -5885,8 +5904,19 @@ function scheduleDataInputChange() {
 
 function updateDataPreview() {
   const rawText = document.getElementById('dataInput').value;
-  const data = parseCSV(rawText);
   const preview = document.getElementById('dataPreview');
+  let data;
+  try { data = parseCSV(rawText); } catch (e) {
+    if (!e.csvErrors) throw e;
+    AppState.inputDiagnostics = null;
+    updateDataInputSummary();
+    const p = document.createElement('p');
+    p.setAttribute('role', 'alert');
+    p.style.color = 'var(--danger, #b91c1c)';
+    p.textContent = e.message;
+    preview.replaceChildren(p);
+    return;
+  }
   updateDataInputSummary();
 
   if (data.length === 0) {

@@ -410,62 +410,120 @@ print(summary(res))`,
       },
     };
 
+    // Delimited-row reader (lane csv2, 2026-11-12; same rules as the shared parsers fixed in bfb5e220).
+    // One delimiter for the whole input: tab if any line has a tab, else ";" if every data line has
+    // one (a header line may differ), else ",". RFC-4180 quotes, so "Smith, 2001" stays one field. A number must be a complete
+    // token (parseFloat read "2001" out of a shifted label and "-0" out of "-0,22"); a decimal comma
+    // is read only when the delimiter is not a comma. A row that cannot be read is reported by line
+    // number and never skipped or shifted. cols: [{ name, num, opt, rest }]; a last text column with
+    // rest takes any extra fields back (an unquoted "Smith, 2001" label), unless they start with a
+    // number, which is a shifted row. opts.semicolon === false keeps ";" inside a field.
+    function csvRows(text, cols, opts) {
+      var lines = String(text == null ? "" : text).replace(/^\uFEFF/, "").split(/\r\n|\n|\r/), data = [];
+      for (var i = 0; i < lines.length; i++) { var t = lines[i].trim(); if (t && t.charAt(0) !== "#") data.push({ n: i + 1, t: t }); }
+      var d = data.some(function (x) { return x.t.indexOf("\t") >= 0; }) ? "\t"
+        : (!(opts && opts.semicolon === false) && data.length && data.slice(data.length > 1 ? 1 : 0).every(function (x) { return x.t.indexOf(";") >= 0; }) ? ";" : ",");
+      function split(s) {
+        var out = [], f = "", q = false;
+        for (var k = 0; k < s.length; k++) {
+          var c = s.charAt(k);
+          if (q) { if (c === '"' && s.charAt(k + 1) === '"') { f += '"'; k++; } else if (c === '"') q = false; else f += c; }
+          else if (c === '"' && f.trim() === "") { f = ""; q = true; }
+          else if (c === d) { out.push(f.trim()); f = ""; }
+          else f += c;
+        }
+        out.push(f.trim()); return out;
+      }
+      function num(s) {
+        var v = String(s == null ? "" : s).trim();
+        if (d !== "," && /^[+-]?\d*,\d+([eE][+-]?\d+)?$/.test(v)) v = v.replace(",", ".");
+        return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(v) ? Number(v) : NaN;
+      }
+      var rows = [], errors = [], header = null, names = cols.map(function (c) { return c.name; }).join(", ");
+      data.forEach(function (x, j) {
+        var c = split(x.t);
+        // opts.header: the first data line always names the columns; opts.columns(header) may set cols.
+        if (j === 0 && opts && opts.header) {
+          header = c;
+          if (opts.columns) { cols = opts.columns(c); names = cols.map(function (cc) { return cc.name; }).join(", "); }
+          return;
+        }
+        while (c.length > cols.length && c[c.length - 1] === "") c.pop();
+        // A header is the first data line when none of its number columns holds a number and at least
+        // one holds text that is not a missing-value code (an all-NA first row is data, not a header).
+        if (j === 0 && cols.every(function (cl, m) { return !cl.num || !isFinite(num(c[m])); }) &&
+          cols.some(function (cl, m) { return cl.num && /[A-Za-z]/.test(c[m] || "") && !/^(NA|NaN)$/i.test(c[m]); })) return;
+        var last = cols[cols.length - 1];
+        if (c.length > cols.length && last.rest && !isFinite(num(c[cols.length - 1]))) c = c.slice(0, cols.length - 1).concat([c.slice(cols.length - 1).join(d === "," ? ", " : d)]);
+        if (c.length > cols.length) {
+          errors.push("Line " + x.n + ": " + c.length + " fields, expected " + cols.length + " (" + names + "); quote text that contains the delimiter, e.g. \"Smith, 2001\"");
+          return;
+        }
+        var r = {}, bad = [];
+        cols.forEach(function (cl, m) {
+          var v = m < c.length ? c[m] : "";
+          if (!cl.num) {
+            r[cl.name] = v;
+            if (!v && !cl.opt) bad.push(cl.name + " is empty");
+            if (cl.rest && /[.,]/.test(v) && isFinite(num(v.split(/\s*,\s*/)[0]))) bad.push(cl.name + " \"" + v.slice(0, 20) + "\" is a number: a decimal comma or an extra column shifted this row");
+            return;
+          }
+          if (v === "" || /^(NA|NaN|\.)$/i.test(v)) { r[cl.name] = NaN; if (!cl.opt) bad.push(cl.name + " is missing"); return; }
+          r[cl.name] = num(v);
+          if (!isFinite(r[cl.name])) bad.push(cl.name + " \"" + v.slice(0, 20) + "\" is not a number");
+        });
+        if (bad.length) errors.push("Line " + x.n + ": " + bad.join("; ")); else { r.line = x.n; r.nf = c.length; rows.push(r); }
+      });
+      return { rows: rows, errors: errors, delim: d, header: header };
+    }
+    function csvRefuse(errors) {
+      var e = new Error("Input refused, nothing was computed. " + errors.slice(0, 6).join(" | ") + (errors.length > 6 ? " | and " + (errors.length - 6) + " more" : ""));
+      e.csvErrors = errors; throw e;
+    }
     function parseTESE(text) {
-      return text.trim().split(/\n/).map(l => {
-        const p = l.split(/,/).map(s => s.trim());
-        const te = parseFloat(p[0]), se = parseFloat(p[1]);
-        if (!Number.isFinite(te) || !Number.isFinite(se)) return null;
-        return { te, se };
-      }).filter(Boolean);
+      // A third (label) column was ignored before and still is.
+      const r = csvRows(String(text).trim(), [{ name: "te", num: 1 }, { name: "se", num: 1 }, { name: "label", opt: 1, rest: 1 }]);
+      if (r.errors.length) csvRefuse(r.errors);
+      return r.rows.map(x => ({ te: x.te, se: x.se }));
     }
     function parseTESELabel(text) {
-      return text.trim().split(/\n/).map((l, i) => {
-        const p = l.split(/,/).map(s => s.trim());
-        const te = parseFloat(p[0]), se = parseFloat(p[1]);
-        if (!Number.isFinite(te) || !Number.isFinite(se)) return null;
-        return { te, se, label: p[2] || `Study ${i + 1}` };
-      }).filter(Boolean);
+      const r = csvRows(String(text).trim(), [{ name: "te", num: 1 }, { name: "se", num: 1 }, { name: "label", opt: 1, rest: 1 }]);
+      if (r.errors.length) csvRefuse(r.errors);
+      return r.rows.map(x => ({ te: x.te, se: x.se, label: x.label || `Study ${x.line}` }));
     }
     function parseTESEmodLabel(text) {
-      return text.trim().split(/\n/).map((l, i) => {
-        const p = l.split(/,/).map(s => s.trim());
-        const te = parseFloat(p[0]), se = parseFloat(p[1]), mod = parseFloat(p[2]);
-        if (![te, se, mod].every(Number.isFinite)) return null;
-        return { te, se, mod, label: p[3] || `Study ${i + 1}` };
-      }).filter(Boolean);
+      const r = csvRows(String(text).trim(), [{ name: "te", num: 1 }, { name: "se", num: 1 }, { name: "mod", num: 1 }, { name: "label", opt: 1, rest: 1 }]);
+      if (r.errors.length) csvRefuse(r.errors);
+      return r.rows.map(x => ({ te: x.te, se: x.se, mod: x.mod, label: x.label || `Study ${x.line}` }));
     }
     function parse2x2(text) {
-      return text.trim().split(/\n/).map((l, i) => {
-        const p = l.split(/,/).map(s => s.trim());
-        const e1 = parseInt(p[0], 10), n1 = parseInt(p[1], 10), e2 = parseInt(p[2], 10), n2 = parseInt(p[3], 10);
-        if ([e1, n1, e2, n2].some(v => !Number.isFinite(v))) return null;
-        return { e1, n1, e2, n2, label: p[4] || `Study ${i + 1}` };
-      }).filter(Boolean);
+      const r = csvRows(String(text).trim(), [{ name: "e1", num: 1 }, { name: "n1", num: 1 }, { name: "e2", num: 1 }, { name: "n2", num: 1 }, { name: "label", opt: 1, rest: 1 }]);
+      r.rows.forEach(x => {
+        if (![x.e1, x.n1, x.e2, x.n2].every(v => Number.isInteger(v) && v >= 0)) r.errors.push("Line " + x.line + ": events and totals must be whole numbers >= 0");
+        else if (x.e1 > x.n1 || x.e2 > x.n2) r.errors.push("Line " + x.line + ": events cannot exceed the group total");
+      });
+      if (r.errors.length) csvRefuse(r.errors);
+      return r.rows.map(x => ({ e1: x.e1, n1: x.n1, e2: x.e2, n2: x.n2, label: x.label || `Study ${x.line}` }));
     }
     function parseMulti(text) {
-      return text.trim().split(/\n/).map((l, i) => {
-        const p = l.split(/,/).map(s => s.trim());
-        const study = p[0], te = parseFloat(p[1]), se = parseFloat(p[2]);
-        if (!study || !Number.isFinite(te) || !Number.isFinite(se)) return null;
-        return { study, te, se, label: p[3] || "" };
-      }).filter(Boolean);
+      const r = csvRows(String(text).trim(), [{ name: "study" }, { name: "te", num: 1 }, { name: "se", num: 1 }, { name: "label", opt: 1, rest: 1 }]);
+      if (r.errors.length) csvRefuse(r.errors);
+      return r.rows.map(x => ({ study: x.study, te: x.te, se: x.se, label: x.label || "" }));
     }
     function parseContrasts(text) {
-      return text.trim().split(/\n/).map((l, i) => {
-        const p = l.split(/,/).map(s => s.trim());
-        const te = parseFloat(p[2]), se = parseFloat(p[3]);
-        if (!p[0] || !p[1] || !Number.isFinite(te) || !Number.isFinite(se)) return null;
-        return { A: p[0], B: p[1], te, se, study: p[4] || `S${i + 1}` };
-      }).filter(Boolean);
+      const r = csvRows(String(text).trim(), [{ name: "A" }, { name: "B" }, { name: "te", num: 1 }, { name: "se", num: 1 }, { name: "study", opt: 1, rest: 1 }]);
+      if (r.errors.length) csvRefuse(r.errors);
+      return r.rows.map(x => ({ A: x.A, B: x.B, te: x.te, se: x.se, study: x.study || `S${x.line}` }));
     }
     function parseDTA(text) {
-      return text.trim().split(/\n/).map((l, i) => {
-        const p = l.split(/,/).map(s => s.trim());
-        const TP = +p[0], FP = +p[1], FN = +p[2], TN = +p[3];
-        if ([TP, FP, FN, TN].some(v => !Number.isFinite(v))) return null;
+      // An empty cell is missing, not 0 (+"" is 0, which made a 2x2 cell vanish).
+      const r = csvRows(String(text).trim(), [{ name: "TP", num: 1 }, { name: "FP", num: 1 }, { name: "FN", num: 1 }, { name: "TN", num: 1 }, { name: "label", opt: 1, rest: 1 }]);
+      if (r.errors.length) csvRefuse(r.errors);
+      return r.rows.map(x => {
+        const TP = x.TP, FP = x.FP, FN = x.FN, TN = x.TN;
         const tsens = TP / (TP + FN), tfpr = FP / (FP + TN);
-        return { TP, FP, FN, TN, tsens, tfpr, label: p[4] || `Study ${i + 1}` };
-      }).filter(Boolean);
+        return { TP, FP, FN, TN, tsens, tfpr, label: x.label || `Study ${x.line}` };
+      });
     }
 
     // Build a WebR data frame from parsed JSON.
@@ -599,7 +657,8 @@ print(summary(res))`,
       if (!webR || btnRun.disabled) return;
       const key = document.getElementById("tpl").value;
       const tpl = TEMPLATES[key];
-      const parsed = tpl.parse(document.getElementById("data").value);
+      let parsed;
+      try { parsed = tpl.parse(document.getElementById("data").value); } catch (e) { if (!e.csvErrors) throw e; outEl.textContent = e.message; return; }
       if (parsed.length === 0) { outEl.textContent = "No valid rows parsed from input."; return; }
       const dfCode = toRDataFrame(parsed);
       const userCode = document.getElementById("r-code").value;

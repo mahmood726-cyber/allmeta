@@ -116,22 +116,86 @@ Obs cohort D, -0.52, 0.011, obs</textarea>
   (function () {
     "use strict";
 
-    function parse(text) {
-      var out = [];
-      var lines = text.split(/\r?\n/);
-      for (var i = 0; i < lines.length; i++) {
-        var line = lines[i].trim();
-        if (!line || line.startsWith("#")) continue;
-        var parts = line.split(/\s*,\s*/);
-        if (parts.length < 4) continue;
-        var label = parts[0];
-        var yi = parseFloat(parts[1]);
-        var vi = parseFloat(parts[2]);
-        var design = parts[3].toLowerCase();
-        if (!isFinite(yi) || !isFinite(vi) || vi <= 0) continue;
-        if (design !== "rct" && design !== "obs") continue;
-        out.push({ label: label, yi: yi, vi: vi, design: design });
+    // Delimited-row reader (lane csv2, 2026-11-12; same rules as the shared parsers fixed in bfb5e220).
+    // One delimiter for the whole input: tab if any line has a tab, else ";" if every data line has
+    // one (a header line may differ), else ",". RFC-4180 quotes, so "Smith, 2001" stays one field. A number must be a complete
+    // token (parseFloat read "2001" out of a shifted label and "-0" out of "-0,22"); a decimal comma
+    // is read only when the delimiter is not a comma. A row that cannot be read is reported by line
+    // number and never skipped or shifted. cols: [{ name, num, opt, rest }]; a last text column with
+    // rest takes any extra fields back (an unquoted "Smith, 2001" label), unless they start with a
+    // number, which is a shifted row. opts.semicolon === false keeps ";" inside a field.
+    function csvRows(text, cols, opts) {
+      var lines = String(text == null ? "" : text).replace(/^\uFEFF/, "").split(/\r\n|\n|\r/), data = [];
+      for (var i = 0; i < lines.length; i++) { var t = lines[i].trim(); if (t && t.charAt(0) !== "#") data.push({ n: i + 1, t: t }); }
+      var d = data.some(function (x) { return x.t.indexOf("\t") >= 0; }) ? "\t"
+        : (!(opts && opts.semicolon === false) && data.length && data.slice(data.length > 1 ? 1 : 0).every(function (x) { return x.t.indexOf(";") >= 0; }) ? ";" : ",");
+      function split(s) {
+        var out = [], f = "", q = false;
+        for (var k = 0; k < s.length; k++) {
+          var c = s.charAt(k);
+          if (q) { if (c === '"' && s.charAt(k + 1) === '"') { f += '"'; k++; } else if (c === '"') q = false; else f += c; }
+          else if (c === '"' && f.trim() === "") { f = ""; q = true; }
+          else if (c === d) { out.push(f.trim()); f = ""; }
+          else f += c;
+        }
+        out.push(f.trim()); return out;
       }
+      function num(s) {
+        var v = String(s == null ? "" : s).trim();
+        if (d !== "," && /^[+-]?\d*,\d+([eE][+-]?\d+)?$/.test(v)) v = v.replace(",", ".");
+        return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(v) ? Number(v) : NaN;
+      }
+      var rows = [], errors = [], header = null, names = cols.map(function (c) { return c.name; }).join(", ");
+      data.forEach(function (x, j) {
+        var c = split(x.t);
+        // opts.header: the first data line always names the columns; opts.columns(header) may set cols.
+        if (j === 0 && opts && opts.header) {
+          header = c;
+          if (opts.columns) { cols = opts.columns(c); names = cols.map(function (cc) { return cc.name; }).join(", "); }
+          return;
+        }
+        while (c.length > cols.length && c[c.length - 1] === "") c.pop();
+        // A header is the first data line when none of its number columns holds a number and at least
+        // one holds text that is not a missing-value code (an all-NA first row is data, not a header).
+        if (j === 0 && cols.every(function (cl, m) { return !cl.num || !isFinite(num(c[m])); }) &&
+          cols.some(function (cl, m) { return cl.num && /[A-Za-z]/.test(c[m] || "") && !/^(NA|NaN)$/i.test(c[m]); })) return;
+        var last = cols[cols.length - 1];
+        if (c.length > cols.length && last.rest && !isFinite(num(c[cols.length - 1]))) c = c.slice(0, cols.length - 1).concat([c.slice(cols.length - 1).join(d === "," ? ", " : d)]);
+        if (c.length > cols.length) {
+          errors.push("Line " + x.n + ": " + c.length + " fields, expected " + cols.length + " (" + names + "); quote text that contains the delimiter, e.g. \"Smith, 2001\"");
+          return;
+        }
+        var r = {}, bad = [];
+        cols.forEach(function (cl, m) {
+          var v = m < c.length ? c[m] : "";
+          if (!cl.num) {
+            r[cl.name] = v;
+            if (!v && !cl.opt) bad.push(cl.name + " is empty");
+            if (cl.rest && /[.,]/.test(v) && isFinite(num(v.split(/\s*,\s*/)[0]))) bad.push(cl.name + " \"" + v.slice(0, 20) + "\" is a number: a decimal comma or an extra column shifted this row");
+            return;
+          }
+          if (v === "" || /^(NA|NaN|\.)$/i.test(v)) { r[cl.name] = NaN; if (!cl.opt) bad.push(cl.name + " is missing"); return; }
+          r[cl.name] = num(v);
+          if (!isFinite(r[cl.name])) bad.push(cl.name + " \"" + v.slice(0, 20) + "\" is not a number");
+        });
+        if (bad.length) errors.push("Line " + x.n + ": " + bad.join("; ")); else { r.line = x.n; r.nf = c.length; rows.push(r); }
+      });
+      return { rows: rows, errors: errors, delim: d, header: header };
+    }
+    function csvRefuse(errors) {
+      var e = new Error("Input refused, nothing was computed. " + errors.slice(0, 6).join(" | ") + (errors.length > 6 ? " | and " + (errors.length - 6) + " more" : ""));
+      e.csvErrors = errors; throw e;
+    }
+    function parse(text) {
+      var r = csvRows(text, [{ name: "label", opt: 1 }, { name: "yi", num: 1 }, { name: "vi", num: 1 }, { name: "design" }]);
+      var out = [];
+      r.rows.forEach(function (x) {
+        var design = x.design.toLowerCase();
+        if (!(x.vi > 0)) r.errors.push("Line " + x.line + ": vi must be greater than 0");
+        else if (design !== "rct" && design !== "obs") r.errors.push("Line " + x.line + ': design must be "rct" or "obs" (found "' + x.design.slice(0, 20) + '")');
+        else out.push({ label: x.label, yi: x.yi, vi: x.vi, design: design });
+      });
+      if (r.errors.length) csvRefuse(r.errors);
       return out;
     }
 
@@ -204,7 +268,14 @@ Obs cohort D, -0.52, 0.011, obs</textarea>
     }
 
     function run() {
-      var rows = parse(document.getElementById("src").value);
+      var rows;
+      try { rows = parse(document.getElementById("src").value); } catch (e) {
+        if (!e.csvErrors) throw e;
+        var escE = String(e.message).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        document.querySelector("#results tbody").innerHTML = '<tr><td colspan="7" role="alert" style="color:var(--bad)">' + escE + '</td></tr>';
+        document.getElementById("forest-host").innerHTML = "";
+        return;
+      }
       if (rows.length < 2) {
         document.querySelector("#results tbody").innerHTML = '<tr><td colspan="7" style="color:var(--bad)">Need ≥ 2 studies (mix RCT + obs ideally).</td></tr>';
         document.getElementById("forest-host").innerHTML = "";
@@ -247,7 +318,8 @@ Obs cohort D, -0.52, 0.011, obs</textarea>
     }
     document.getElementById("btn-bus-save").addEventListener("click", function () {
       if (!window.MaStudies) { alert("Bus helper not loaded"); return; }
-      var rows = parse(document.getElementById("src").value);
+      var rows;
+      try { rows = parse(document.getElementById("src").value); } catch (e) { if (!e.csvErrors) throw e; busNotify(e.message, "error"); return; }
       if (rows.length < 1) { busNotify("Nothing to save — paste label, yi, vi, design rows first.", "error"); return; }
       var studies = rows.map(function (r) {
         return { label: r.label, est: r.yi, se: Math.sqrt(r.vi), group: r.design };
