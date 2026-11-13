@@ -8477,7 +8477,7 @@ function calculateFragilityIndex() {
 
  fragility: fragility,
 
- events: study.events || Math.round(study.n * 0.3),
+ events: (typeof study.events === 'number' && Number.isFinite(study.events)) ? study.events : null,
 
  n: study.n
 
@@ -8497,6 +8497,9 @@ function calculateFragilityIndex() {
 
 
 
+ // IPD-Fed: what the display needs to say what the search does (the search above is unchanged).
+ var fragType = (APP.config && APP.config.outcomeType) || '';
+
  displayFragilityResults({
 
  fragilities: fragilities,
@@ -8505,7 +8508,17 @@ function calculateFragilityIndex() {
 
  mostFragileStudy: mostFragileStudy,
 
- isSignificant: isSignificant
+ isSignificant: isSignificant,
+
+ mainP: pooled.pValue,
+
+ unshiftedRepoolP: recalculatePooledSimple(studies).pValue,
+
+ direction: pooled.pooled > 0 ? -1 : 1,
+
+ outcomeType: fragType,
+
+ measure: fragType === 'survival' ? 'log hazard ratio' : fragType === 'binary' ? 'log odds ratio' : fragType === 'continuous' ? 'mean difference' : 'effect'
 
  });
 
@@ -8561,6 +8574,19 @@ function displayFragilityResults(results) {
 
  var overallText = noneFlips ? '&gt;50' : String(results.overallFragility);
 
+ // IPD-Fed: this is a shift-based index, not the event-count Fragility Index: say what is counted. The search moves
+ // ONE study's estimate in steps of 0.05 on the analysis scale and re-pools with a fixed-effect inverse-variance
+ // z-test; the index is the first step at which that re-pool's verdict (p < 0.05) differs from the main analysis'.
+ var measure = escapeHTML(results.measure || 'effect');
+
+ var dirText = results.direction === -1 ? 'downwards (towards lower values)' : 'upwards (towards higher values)';
+
+ var stepText = function(k) { return k + ' step' + (k === 1 ? '' : 's') + ' of 0.05 (a shift of ' + (k * 0.05).toFixed(2) + ')'; };
+
+ var pTxt = function(p) { return (typeof p === 'number' && Number.isFinite(p)) ? (p < 0.001 ? '&lt;0.001' : p.toFixed(4)) : 'not available'; };
+
+ var verdictDiffers = (typeof results.unshiftedRepoolP === 'number' && typeof results.mainP === 'number') && ((results.unshiftedRepoolP < 0.05) !== (results.mainP < 0.05));
+
  var modal = document.createElement('div');
 
  modal.className = 'modal-overlay active';
@@ -8583,17 +8609,17 @@ function displayFragilityResults(results) {
 
  results.overallFragility <= 8 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)') + ';">' +
 
- '<h4>Overall Fragility Index</h4>' +
+ '<h4>Overall Fragility Index (shift-based)</h4>' +
 
  '<p style="font-size: 3rem; font-weight: bold; margin: 0.5rem 0;">' + overallText + '</p>' +
 
  '<p style="color: var(--text-secondary);">' +
 
- (noneFlips ? 'Robust - no single-study shift changes significance' : results.overallFragility <= 3 ? 'Very fragile - conclusions easily reversible' :
+ (noneFlips ? 'No single-study shift of up to 50 steps of 0.05 changes the significance verdict' : results.overallFragility <= 3 ? 'Very fragile - a shift of at most 0.15 in one study changes the verdict' :
 
- results.overallFragility <= 8 ? 'Moderately fragile - interpret with caution' :
+ results.overallFragility <= 8 ? 'Moderately fragile - a shift of at most 0.40 in one study changes the verdict' :
 
- 'Robust - conclusions stable') +
+ 'A shift of more than 0.40 in one study is needed to change the verdict') +
 
  '</p>' +
 
@@ -8601,13 +8627,15 @@ function displayFragilityResults(results) {
 
 
 
- '<p style="margin-bottom: 1rem;">The fragility index indicates how many events would need to change to reverse statistical significance.</p>' +
+ '<p style="margin-bottom: 1rem;">No events are changed. For each study, its ' + measure + ' is moved ' + dirText + ' in steps of 0.05 (up to 50 steps), the studies are re-pooled with a fixed-effect inverse-variance model (z-test), and the index is the number of steps at which that re-pool\'s verdict at p &lt; 0.05 first differs from the main analysis (p = ' + pTxt(results.mainP) + '). This is not the event-count Fragility Index of Walsh et al.</p>' +
+
+ (verdictDiffers ? '<div class="alert alert-warning" style="margin-bottom: 1rem;"><strong>Note:</strong> the fixed-effect re-pool of the unshifted studies already gives p = ' + pTxt(results.unshiftedRepoolP) + ', a different verdict from the main analysis (p = ' + pTxt(results.mainP) + '). The index can then reflect the change of pooling model rather than the shift.</div>' : '') +
 
 
 
  '<table class="data-table">' +
 
- '<thead><tr><th>Study</th><th>N</th><th>Events</th><th>Fragility</th></tr></thead>' +
+ '<thead><tr><th>Study</th><th>N</th><th>Events</th><th>Steps of 0.05 to change the verdict</th></tr></thead>' +
 
  '<tbody>' +
 
@@ -8621,7 +8649,7 @@ function displayFragilityResults(results) {
 
  '<td>' + f.n + '</td>' +
 
- '<td>' + f.events + '</td>' +
+ '<td>' + (results.outcomeType === 'continuous' ? 'n/a (continuous outcome)' : (typeof f.events === 'number' && Number.isFinite(f.events)) ? f.events : 'not recorded') + '</td>' +
 
  '<td>' + (f.fragility || '>50') + '</td>' +
 
@@ -8637,11 +8665,9 @@ function displayFragilityResults(results) {
 
  '<div class="alert alert-info" style="margin-top: 1.5rem;">' +
 
- '<strong>Interpretation:</strong> ' + (noneFlips ? 'No single study had a shift (up to 50 steps) that would make the meta-analysis ' + (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.' :
+ '<strong>Interpretation:</strong> ' + (noneFlips ? 'No single study had a shift (up to 50 steps of 0.05 in its ' + measure + ') that would make the fixed-effect re-pool ' + (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.' :
 
- 'If ' + results.overallFragility + ' event(s) in ' +
-
- escapeHTML(results.mostFragileStudy.study) + ' had different outcomes, the meta-analysis would ' +
+ 'Moving the ' + measure + ' of ' + escapeHTML(results.mostFragileStudy.study) + ' ' + dirText + ' by ' + stepText(results.overallFragility) + ' makes the fixed-effect re-pool ' +
 
  (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.') +
 

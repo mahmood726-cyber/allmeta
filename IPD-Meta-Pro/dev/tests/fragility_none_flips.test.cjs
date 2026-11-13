@@ -23,6 +23,8 @@ run('__m.length = 0');
 const some = `{ fragilities: [{ study: 'A', fragility: 3, n: 50, events: 10 }, { study: 'B', fragility: 0, n: 60, events: 12 }], overallFragility: 3, mostFragileStudy: { study: 'A', fragility: 3 }, isSignificant: true }`;
 run('displayFragilityResults(' + some + ')');
 const html2 = run('__m.join("")');
-check('a study that flips is still reported as most fragile with its index', /A \(most fragile\)/.test(html2) && /If 3 event/.test(html2), html2.slice(0, 200));
+// IPD-Fed: the index is a number of 0.05 shifts of the study's estimate, not of events (fragility_wording.test.cjs);
+// this used to require the wording "If 3 event(s)", which described the algorithm wrongly.
+check('a study that flips is still reported as most fragile with its index', /A \(most fragile\)/.test(html2) && /by 3 steps of 0\.05/.test(html2), html2.slice(0, 200));
 console.log(passed + '/' + (passed + failed) + ' PASS');
 process.exitCode = failed ? 1 : 0;
