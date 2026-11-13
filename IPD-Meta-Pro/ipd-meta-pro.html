@@ -37154,6 +37154,11 @@ function updateOutcomeVars() {
 
  APP.data = data;
 
+ // IPD-Fed: the example defines its outcome type; the post-load auto-mapper (ipd80AutoMapVariables) uses this
+ // declaration while this exact data is loaded instead of re-inferring the type from column names (which turned the
+ // depression examples, continuous hamd_change with a derived 0/1 "remission" column, into binary remission).
+ APP.declaredOutcome = { outcomeType: outcomeType, source: 'example_dataset:' + type, fingerprint: (typeof computeCurrentDataFingerprint === 'function') ? computeCurrentDataFingerprint() : null };
+
  APP.variables = detectVariableTypes(data, Object.keys(data[0]));
 
  displayData();
@@ -90773,7 +90778,11 @@ function ipd80AutoMapVariables(options) {
         return { pass: false, missing: ['columns'] };
     }
 
-    const outcome = ipd80InferOutcomeType(columns);
+    // IPD-Fed: an outcome type declared by the loaded example (for this exact data) is used; otherwise inferred.
+    const decl = APP.declaredOutcome;
+    const declaredOk = !!(decl && decl.outcomeType && decl.fingerprint && typeof computeCurrentDataFingerprint === 'function' &&
+        decl.fingerprint === computeCurrentDataFingerprint());
+    const outcome = declaredOk ? decl.outcomeType : ipd80InferOutcomeType(columns);
     const outcomeEl = document.getElementById('outcomeType');
     if (outcomeEl && outcomeEl.value !== outcome) {
         outcomeEl.value = outcome;
@@ -90851,6 +90860,7 @@ function ipd80AutoMapVariables(options) {
         pass: missing.length === 0,
         generatedAt: new Date().toISOString(),
         outcomeType: outcome,
+        outcomeTypeSource: declaredOk ? ('declared by ' + decl.source) : 'inferred from column names',
         mapped: mapped,
         required: required,
         missing: missing,
