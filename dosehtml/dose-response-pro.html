@@ -2121,7 +2121,10 @@ function fitSplineModel(points, tau2Override = null, numKnots = 4) {
 
   const result = solveGLSWithTau2Spline(X, y, V_blocks, tau2, p);
 
-  const Q = computeQStatSpline(y, X, result.beta, V_blocks, tau2, p);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStatSpline(y, X, result.beta, V_blocks, tau2, p);
+  const Q = tau2 === 0 ? QRE
+    : computeQStatSpline(y, X, solveGLSWithTau2Spline(X, y, V_blocks, 0, p).beta, V_blocks, 0, p);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2131,6 +2134,7 @@ function fitSplineModel(points, tau2Override = null, numKnots = 4) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -2191,7 +2195,10 @@ function fitLinearModel(points, tau2Override = null) {
 
   const result = solveGLSLinear(X, y, V_blocks, tau2);
 
-  const Q = computeQStatLinear(y, X, result.beta, V_blocks, tau2);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStatLinear(y, X, result.beta, V_blocks, tau2);
+  const Q = tau2 === 0 ? QRE
+    : computeQStatLinear(y, X, solveGLSLinear(X, y, V_blocks, 0).beta, V_blocks, 0);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2201,6 +2208,7 @@ function fitLinearModel(points, tau2Override = null) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -2641,7 +2649,10 @@ function fitExponentialModel(points, tau2Override = null, alpha = null) {
   const result = solveGLSWithTau2(X, y, V_blocks, tau2);
 
   // Compute Q and I²
-  const Q = computeQStat(y, X, result.beta, V_blocks, tau2);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStat(y, X, result.beta, V_blocks, tau2);
+  const Q = tau2 === 0 ? QRE
+    : computeQStat(y, X, solveGLSWithTau2(X, y, V_blocks, 0).beta, V_blocks, 0);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2651,6 +2662,7 @@ function fitExponentialModel(points, tau2Override = null, alpha = null) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -2806,7 +2818,10 @@ function solveGLS(points, tau2Override = null) {
 
   const result = solveGLSWithTau2(X, y, V_blocks, tau2);
 
-  const Q = computeQStat(y, X, result.beta, V_blocks, tau2);
+  // Cochran Q test: Q_E at tau2 = 0 (fixed-effect GLS weights), df = n - p; QRE (residual at the fitted tau2) feeds HK/SJ.
+  const QRE = computeQStat(y, X, result.beta, V_blocks, tau2);
+  const Q = tau2 === 0 ? QRE
+    : computeQStat(y, X, solveGLSWithTau2(X, y, V_blocks, 0).beta, V_blocks, 0);
   const df = Math.max(nPoints - p, 0);
   const I2 = (df > 0 && Q > 0) ? Math.max(0, 100 * (Q - df) / Q) : 0;
   const Qp = df > 0 ? AlmTail.pchisqUpper(Q, df) : NaN;
@@ -2819,6 +2834,7 @@ function solveGLS(points, tau2Override = null) {
     ...result,
     tau2,
     Q,
+    QRE,
     df,
     I2,
     Qp,
@@ -5113,6 +5129,13 @@ function updateHKSJ(enabled) {
   logAudit('hksj_changed', { enabled: useHKSJ });
 }
 
+// HK/SJ scale: the residual quadratic form at the FITTED tau2 (random-effects weights). This is NOT the Cochran Q
+// test statistic (result.Q, at tau2 = 0); results without QRE (e.g. the simulation fallback, tau2 = 0) use Q.
+function hksjResidualQ(result) {
+  if (!result) return NaN;
+  return Number.isFinite(result.QRE) ? result.QRE : result.Q;
+}
+
 function getContrastInference(result, modelType, dose = 1, referenceDose = 0, ciPct = currentCI) {
   const contrast = computeDoseContrast(result, modelType, dose, referenceDose);
   let se = contrast.seLogRR;
@@ -5120,9 +5143,10 @@ function getContrastInference(result, modelType, dose = 1, referenceDose = 0, ci
   let crit = normCDFinv(1 - alpha / 2);
   let method = 'Wald';
 
-  if (useHKSJ && Number.isFinite(result?.Q) && Number.isFinite(se) && se > 0) {
+  const qRE = hksjResidualQ(result);
+  if (useHKSJ && Number.isFinite(qRE) && Number.isFinite(se) && se > 0) {
     const k = Math.max(result?.nStudies || 1, 1);
-    const qHK = Math.max(1, result.Q / Math.max(k - 1, 1));
+    const qHK = Math.max(1, qRE / Math.max(k - 1, 1));
     se = se * Math.sqrt(qHK);
     crit = tCriticalValue(Math.max(k - 1, 1), 1 - alpha / 2);
     method = 'HK/SJ';
@@ -5172,10 +5196,10 @@ function runMethodComparison() {
     let beta1_se = contrast.seLogRR;
     let critValue = normCDFinv(1 - (1 - currentCI/100) / 2);
 
-    if (m.hk && Number.isFinite(r.Q) && Number.isFinite(beta1_se)) {
+    if (m.hk && Number.isFinite(hksjResidualQ(r)) && Number.isFinite(beta1_se)) {
       // Hartung-Knapp adjustment (Hartung & Knapp, Stat Med 2001)
       const k = r.nStudies;
-      const qHK = Math.max(1, r.Q / Math.max(k - 1, 1));
+      const qHK = Math.max(1, hksjResidualQ(r) / Math.max(k - 1, 1));
       beta1_se = beta1_se * Math.sqrt(qHK);
       critValue = tCriticalValue(k - 1, 1 - (1 - currentCI/100) / 2);
     }
@@ -5420,8 +5444,8 @@ function generateRCode() {
     : 'cbind(1, study_data$dose, study_data$dose^2)';
   const metaforMods = isLinearModel ? '~ dose' : '~ dose + I(dose^2)';
   const coefficientOutputLines = isLinearModel
-    ? 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")'
-    : 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")\\ncat("Quadratic (beta2):", round(beta[3], 4), "+/-", round(se[3], 4), "\\n")';
+    ? 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")'
+    : 'cat("Intercept (beta0):", round(beta[1], 4), "+/-", round(se[1], 4), "\\n")\ncat("Linear (beta1):", round(beta[2], 4), "+/-", round(se[2], 4), "\\n")\ncat("Quadratic (beta2):", round(beta[3], 4), "+/-", round(se[3], 4), "\\n")';
   const formatRValue = (v) => (Number.isFinite(v) ? v : 'NA');
   const escapeRString = (value) => String(value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const toRVector = (values, isString = false) => {
@@ -5704,6 +5728,14 @@ if (use_reml) {
     Q <- as.numeric(t(res) %*% Vinv %*% res)
     df_q <- (n_model_studies - 1) * ncol(X_total)
   }
+  # Cochran Q test (as metafor QE / dosresmeta qtest): residual quadratic form with fixed-effect GLS weights
+  # (tau2 = 0), df = n - p. The residual at tau2_fixed above is not chi2(n - p) under H0.
+  V_q <- as.matrix(if (force_diag) V_total_diag else V_total)
+  Vinv_q <- solve(V_q)
+  beta_q <- solve(t(X_total) %*% Vinv_q %*% X_total + diag(ridge, nrow = ncol(X_total)), t(X_total) %*% Vinv_q %*% y_total)
+  res_q <- y_total - X_total %*% beta_q
+  Q <- as.numeric(t(res_q) %*% Vinv_q %*% res_q)
+  df_q <- nrow(X_total) - ncol(X_total)
 }
 
 # --------------------------------------------------------
@@ -8289,12 +8321,12 @@ function getSimulationBatchSize(nSim, fastMode) {
 }
 
 function withHKSJ(result) {
-  if (!result || !result.se || !Number.isFinite(result.Q)) return result;
+  if (!result || !result.se || !Number.isFinite(hksjResidualQ(result))) return result;
   if (!result.nStudies) return result;
 
   if (!result.seHKSJ || !result.dfHKSJ) {
     const df = Math.max(1, result.nStudies - 1);
-    const q = Math.max(1, result.Q / df);
+    const q = Math.max(1, hksjResidualQ(result) / df);
     result.seHKSJ = result.se.map(s => s * Math.sqrt(q));
     result.dfHKSJ = df;
     result.qHKSJ = q;
