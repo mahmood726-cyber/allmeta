@@ -17,7 +17,7 @@ let axisChange, points = [], memberships = [], pooled = [];
 const window = {alm: {analysisLifecycle: run => run, csvUpload: noop, plotExport: noop,
   axisControls: options => { axisChange = options.onChange; },
   resultsExport: noop, resetUndo: noop, tooltips: noop,
-  urlState: Object.assign(noop, {read: () => null, write: noop})}};
+  urlState: Object.assign(noop, {read: () => null, write: () => true, isSuspended: () => false})}};
 let script = html.match(/<script>\s*([\s\S]*?)<\/script>/)[1];
 function observe(marker, observer) {
   if (script.split(marker).length !== 2) throw new Error('Observer anchor changed: ' + marker);
@@ -26,8 +26,12 @@ function observe(marker, observer) {
 script = script.replace('function pool(rows, model) {', 'function originalPool(rows, model) {');
 script = script.replace('function originalPool(rows, model) {', 'function pool(rows, model) { const result = originalPool(rows, model); observePool(rows, result); return result; }\nfunction originalPool(rows, model) {');
 observe('function draw(pts) {', '\nobserveDraw(pts);');
+// Ids the page assigns to nodes it creates itself (e.g. #share-data-note, 4cf68e32). A real
+// getElementById returns null for them before creation; every other unknown id is still refused.
+const runtimeIds = new Set([...script.matchAll(/\.id = '([^']+)'/g)].map(m => m[1]));
 vm.runInNewContext(script, {window,
   document: {getElementById(id) {
+    if (!nodes[id] && runtimeIds.has(id)) return null; // created by the page at run time; absent until then, as in a browser
     if (!nodes[id]) throw new Error('Unexpected DOM node: ' + id);
     return nodes[id];
   }},

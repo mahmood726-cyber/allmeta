@@ -1,0 +1,119 @@
+name: unwired-tests
+
+# Test files that existed in the repo but ran in NO workflow (inventory of
+# 2026-11-12): the repo-root pytest suite outside the five files named by the
+# per-app integrity workflows, every per-app <app>/tests pytest folder, the
+# Node tests outside hub/shared/tests/unit (hero-sweep, hero-effect-se-label,
+# the *.node.cjs validators, gosh / limit-ma / p-curve / IPD-Meta-Pro / shared
+# node:test files), the HTA Jest suite beyond the 11 files the HTA workflows
+# name, and the nma-dose-response-app Jest suite. Regressions in those files
+# stayed green. Tests that ALREADY FAIL on main are excluded by name with the
+# reason, never silently; delete an exclusion when its test is repaired. Everything here is offline:
+# no R (the R-parity tests skip when Rscript is absent), no WebR download, no
+# browser. Tests that need a browser or long runs are listed, with reasons, in
+# .github/scripts/run_pytest_folders.py (SKIP) and in the excludes below.
+
+on:
+  push:
+    branches: [main, "integration/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest numpy scipy jsonschema pyyaml
+      # tests/test_revman_reader.py skips unless linkedom sits here.
+      - run: npm install --no-save --no-package-lock --prefix tests/playwright linkedom@0.18.5
+      # One process: the root pytest.ini uses --import-mode=importlib.
+      - name: Repo-root pytest suite (tests/)
+        run: python -m pytest tests -q -p no:cacheprovider
+      # One pytest process per <app>/tests folder: basenames collide across apps.
+      - name: Every per-app pytest folder, one at a time
+        run: python .github/scripts/run_pytest_folders.py
+
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install --no-save --no-package-lock --prefix "$RUNNER_TEMP/deps" linkedom@0.18.12
+      - name: Node tests outside every other workflow's glob
+        env:
+          NODE_PATH: ${{ runner.temp }}/deps/node_modules
+          LINKEDOM_MODULE: ${{ runner.temp }}/deps/node_modules/linkedom/esm/index.js
+        run: |
+          shopt -s nullglob
+          # Not run here, with the reason (remove an entry once it is fixed):
+          #   hero-sweep.test.cjs                 PRE-EXISTING FAILURE on main: copas, influence and
+          #       pubbias-tests parsers now call page helpers (num/NUM/parseLines) that the
+          #       contract's isolated vm context (hero-sweep-contract.cjs:39-40) does not provide.
+          #   nma-inconsistency-plus.node.cjs,
+          #   validate-correlation-ma-plus.node.cjs  LONG: each exceeded 600 s locally.
+          #   IPD-Meta-Pro/dev/tests/p60_webr_reference_scenarios.test.cjs  NEEDS R + metafor + jsonlite:
+          #       without Rscript it prints SKIPPED and exits 2 by design (a check that did not run is
+          #       not a pass), which node --test reports as a failure. This job has no R. Run it where
+          #       R is installed: RSCRIPT=<path to Rscript> node <file>.
+          skip=" hub/shared/tests/hero-sweep.test.cjs hub/shared/tests/nma-inconsistency-plus.node.cjs hub/shared/tests/validate-correlation-ma-plus.node.cjs IPD-Meta-Pro/dev/tests/p60_webr_reference_scenarios.test.cjs "
+          files=()
+          for f in hub/shared/tests/*.test.cjs hub/shared/tests/*.test.mjs hub/shared/tests/*.node.cjs \
+                   gosh/tests/*.test.cjs limit-ma/tests/*.test.cjs p-curve/tests/*.test.cjs \
+                   IPD-Meta-Pro/dev/tests/*.test.cjs meta-regression/validate/*.test.mjs \
+                   copas/tests/copas-core-lbfgsb.test.mjs shared/tests/*.test.mjs shared/tests/*.spec.mjs; do
+            case "$skip" in *" $f "*) echo "SKIP $f";; *) files+=("$f");; esac
+          done
+          for s in $skip; do [ -f "$s" ] || { echo "stale skip entry: $s"; exit 1; }; done
+          echo "${#files[@]} files"; printf '  %s\n' "${files[@]}"
+          node --test --test-timeout=300000 "${files[@]}"
+
+  jest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: |
+            HTA/package-lock.json
+            nma-dose-response-app/package-lock.json
+      - run: npm ci --ignore-scripts
+        working-directory: HTA
+      # The full HTA Jest suite. tests/browser/ is excluded as in HTA/package.json.
+      # PRE-EXISTING FAILURES on main, ignored until repaired: ea9452f3 removed
+      # "duplicate" top-level declarations (KahanSum, DEFAULT_BISECTION_MAX_ITER, ...)
+      # that only resolve as browser globals, so these suites throw ReferenceError
+      # under Jest: editorialRevisions, benchmark, robustness, evppi,
+      # performanceWrapper, mathUtils, advancedStatistics, metaMethods2,
+      # headroomAnalysis.
+      - name: Full HTA Jest suite
+        working-directory: HTA
+        run: >-
+          npx jest --ci --coverage=false --testPathIgnorePatterns
+          'tests.browser.' 'editorialRevisions\.test' 'benchmark\.test' 'robustness\.test'
+          'evppi\.test' 'performanceWrapper\.test' 'mathUtils\.test'
+          'advancedStatistics\.test' 'metaMethods2\.test' 'headroomAnalysis\.test'
+      - run: npm ci --ignore-scripts
+        working-directory: nma-dose-response-app
+      # PRE-EXISTING FAILURE on main: "CDN scripts include integrity and crossorigin
+      # attributes" expects CDN <script> tags that 16e7da6c vendored away (offline build).
+      - name: nma-dose-response-app Jest suite
+        working-directory: nma-dose-response-app
+        run: >-
+          node --experimental-vm-modules ./node_modules/jest/bin/jest.js --ci
+          -t '^(?!.*CDN scripts include integrity and crossorigin attributes)'

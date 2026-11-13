@@ -479,9 +479,55 @@ for(let i=0;i<n;i++)for(let j=0;j<n;j++){
   Sigma[i][j]=(V?.[i]?.[j]??0)+reCov;
 }
 for(let i=0;i<n;i++)Sigma[i][i]=Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,Sigma[i][i]);let Si;try{Si=Matrix.inverse(Sigma)}catch(e){for(let i=0;i<n;i++)Sigma[i][i]+=1e-8;Si=Matrix.inverse(Sigma)}const XtSi=Matrix.zeros(p,n),XtSiX=Matrix.zeros(p,p),XtSiy=Array(p).fill(0);for(let j=0;j<p;j++){for(let i=0;i<n;i++){let s=0;for(let k=0;k<n;k++)s+=X[k][j]*Si[k][i];XtSi[j][i]=s}for(let k=0;k<p;k++){let s=0;for(let i=0;i<n;i++)s+=XtSi[j][i]*X[i][k];XtSiX[j][k]=s}let sy=0;for(let i=0;i<n;i++)sy+=XtSi[j][i]*y[i];XtSiy[j]=sy}const beta=Matrix.solve(XtSiX,XtSiy),vcov=Matrix.inverse(XtSiX),residuals=Array(n).fill(0);for(let i=0;i<n;i++){let fit=0;for(let j=0;j<p;j++)fit+=X[i][j]*beta[j];residuals[i]=y[i]-fit}let Q=0;for(let i=0;i<n;i++)for(let j=0;j<n;j++)Q+=residuals[i]*Si[i][j]*residuals[j];return{beta,vcov,Sigma,Si,Q,residuals,XtSiX}},
-estimateTau2(matrices,method){const{X,y,W,n,p}=matrices;if(method==='FE')return{tau2:0,converged:true};const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}const beta=Matrix.solve(XtWX,XtWy);let Q=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X[i][j]*beta[j];Q+=W[i]*(y[i]-f)**2}const df=n-p;if(method==='DL'){let sumW=0,sumW2=0;for(let i=0;i<n;i++){sumW+=W[i];sumW2+=W[i]**2}return{tau2:Math.max(0,(Q-df)/(sumW-sumW2/sumW)),converged:true,Q,df}}
-let tau2=Math.max(0,(Q-df)/Math.max(Stats.sum(W),NMA_CONSTANTS.TOLERANCE));for(let iter=0;iter<80;iter++){const fit=this.fitGLS(matrices,tau2);const sr=Math.max(0,fit.Q);let newTau2;if(tau2<1e-12)newTau2=Math.max(0,(sr-df)/Math.max(Stats.sum(W),NMA_CONSTANTS.TOLERANCE));else newTau2=Math.max(0,tau2*(sr/Math.max(df,1)));if(Math.abs(newTau2-tau2)<1e-8){tau2=newTau2;break}tau2=newTau2}const finalFit=this.fitGLS(matrices,tau2);return{tau2,converged:true,Q:finalFit.Q,df,method:'PM-iter'}},
-profileLikelihoodCI(matrices,tau2Est){const{X,y,v,n,p}=matrices;const logLik=tau2=>{const W=v.map(vi=>1/(vi+tau2));const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}try{const beta=Matrix.solve(XtWX,XtWy);let ll=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X[i][j]*beta[j];ll+=-0.5*Math.log(2*Math.PI*(v[i]+tau2))-0.5*(y[i]-f)**2/(v[i]+tau2)}return ll}catch(e){return-Infinity}};const maxLL=logLik(tau2Est),critLL=maxLL-1.92;let lower=0;for(let t=tau2Est;t>=0;t-=0.001)if(logLik(t)<critLL){lower=t+0.001;break}let upper=tau2Est*5;for(let t=tau2Est;t<upper;t+=0.01)if(logLik(t)<critLL){upper=t;break}return{lower:Math.max(0,lower),upper}},
+// tau2 for the consistency model fitted by fitGLS: covariance V + tau2*R, R = 1 on the diagonal and
+// 0.5 between contrasts of the same study. DL: generalised moment estimator (Q - df)/tr(P R) at
+// tau2 = 0 (netmeta's DL; P = Si - Si X (X'Si X)^-1 X' Si). PM: generalised Q(tau2) = df, bisection to
+// a RELATIVE width of 1e-12. REML/ML: (restricted) log-likelihood maximised over log(tau2) (grid
+// scan, then golden section to 1e-12), tau2 = 0 when the boundary is the maximum. Until 2026-11-12
+// every estimator other than FE/DL ran the Paule-Mandel fixed point tau2 <- tau2*Q(tau2)/df with an
+// absolute 1e-8 stop, so "REML" returned PM, and DL used the pairwise denominator
+// sum(W) - sum(W^2)/sum(W), which is wrong once a network has more than two treatments.
+estimateTau2(matrices,method){
+const{X,n,p}=matrices;if(method==='FE')return{tau2:0,converged:true};
+const df=n-p,f0=this.fitGLS(matrices,0),Q=f0.Q,ids=matrices.studyIds;
+const Rij=(i,j)=>i===j?1:(ids&&ids[i]&&ids[i]===ids[j]?0.5:0);
+if(df<=0)return{tau2:0,converged:true,Q,df,method};
+if(method==='DL'){
+  const Si=f0.Si,A=Matrix.inverse(f0.XtSiX);
+  const SiX=Si.map(row=>{const r=Array(p).fill(0);for(let k=0;k<n;k++){if(row[k]===0)continue;for(let j=0;j<p;j++)r[j]+=row[k]*X[k][j]}return r});
+  let C=0;
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){const rij=Rij(i,j);if(!rij)continue;let h=0;for(let a=0;a<p;a++){if(!SiX[i][a])continue;for(let b=0;b<p;b++)h+=SiX[i][a]*A[a][b]*SiX[j][b]}C+=(Si[i][j]-h)*rij}
+  return{tau2:C>0?Math.max(0,(Q-df)/C):0,converged:true,Q,df,method:'DL'}}
+const vbar=matrices.v.reduce((a,b)=>a+b,0)/n;
+if(method==='PM'){
+  if(!(Q>df))return{tau2:0,converged:true,Q,df,method:'PM'};
+  let lo=0,hi=vbar,it=0;
+  while(this.fitGLS(matrices,hi).Q>df&&it++<400)hi*=2;
+  for(it=0;it<400&&hi-lo>1e-12*hi;it++){const m=(lo+hi)/2;if(this.fitGLS(matrices,m).Q>df)lo=m;else hi=m}
+  return{tau2:(lo+hi)/2,converged:hi-lo<=1e-12*hi,Q,df,method:'PM'}}
+if(method!=='REML'&&method!=='ML')throw new Error('Unknown tau2 estimator: '+method);
+const restricted=method==='REML';
+const ldet=M=>{const m=M.length,L=M.map(r=>r.slice());let s=0;for(let j=0;j<m;j++){let d=L[j][j];for(let k=0;k<j;k++)d-=L[j][k]*L[j][k];if(!(d>0))return NaN;d=Math.sqrt(d);L[j][j]=d;s+=2*Math.log(d);for(let i=j+1;i<m;i++){let t=L[i][j];for(let k=0;k<j;k++)t-=L[i][k]*L[j][k];L[i][j]=t/d}}return s};
+const ll=t=>{const g=this.fitGLS(matrices,t);const v=-0.5*(ldet(g.Sigma)+g.Q+(restricted?ldet(g.XtSiX):0));return Number.isFinite(v)?v:-Infinity};
+const G=80,ulo=Math.log(vbar*1e-10);let uhi=Math.log(vbar*1e4),best=0,us=[],vals=[];
+for(let e=0;e<20;e++){us=[];vals=[];best=0;for(let g=0;g<=G;g++){const u=ulo+(uhi-ulo)*g/G;us.push(u);vals.push(ll(Math.exp(u)));if(vals[g]>vals[best])best=g}if(best<G)break;uhi+=Math.log(1e4)}
+if(best===G)throw new Error(method+' tau2 has no finite maximum');
+const l0=ll(0);
+if(best===0&&l0>=vals[0])return{tau2:0,converged:true,Q,df,method};
+let a=us[Math.max(0,best-1)],b=us[Math.min(G,best+1)];const gr=(Math.sqrt(5)-1)/2;
+let c=b-gr*(b-a),d=a+gr*(b-a),fc=ll(Math.exp(c)),fd=ll(Math.exp(d));
+for(let it=0;it<400&&b-a>1e-12;it++){if(fc>fd){b=d;d=c;fd=fc;c=b-gr*(b-a);fc=ll(Math.exp(c))}else{a=c;c=d;fc=fd;d=a+gr*(b-a);fd=ll(Math.exp(d))}}
+const t=Math.exp((a+b)/2);
+if(l0>=ll(t))return{tau2:0,converged:true,Q,df,method};
+return{tau2:t,converged:b-a<=1e-12,Q,df,method}},
+profileLikelihoodCI(matrices,tau2Est){const{X,y,v,n,p}=matrices;const logLik=tau2=>{const W=v.map(vi=>1/(vi+tau2));const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}try{const beta=Matrix.solve(XtWX,XtWy);let ll=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X[i][j]*beta[j];ll+=-0.5*Math.log(2*Math.PI*(v[i]+tau2))-0.5*(y[i]-f)**2/(v[i]+tau2)}return ll}catch(e){return-Infinity}};const maxLL=logLik(tau2Est),critLL=maxLL-1.92;
+// Crossings of logLik = max - 1.92 found by bisection to a RELATIVE width of 1e-10. The former scan
+// stepped tau2 down by 0.001 and up by 0.01 (~tau2/0.001 likelihood evaluations), which froze the page
+// once tau2 was large (normand1999 x100: tau2 = 6.8e6), and capped the upper limit at 5*tau2.
+let lower=0;if(tau2Est>0&&logLik(0)<critLL){let a=0,b=tau2Est;for(let i=0;i<300&&b-a>1e-10*b;i++){const m=(a+b)/2;if(logLik(m)<critLL)a=m;else b=m}lower=b}
+const step0=Math.max(tau2Est,v.reduce((a,b)=>a+b,0)/n);let ua=tau2Est,ub=tau2Est+step0;for(let i=0;i<200&&logLik(ub)>=critLL;i++){ua=ub;ub=tau2Est+2*(ub-tau2Est)}
+for(let i=0;i<300&&ub-ua>1e-10*ub;i++){const m=(ua+ub)/2;if(logLik(m)<critLL)ub=m;else ua=m}
+return{lower:Math.max(0,lower),upper:ub}},
 pauleMandel_CI(matrices,tau2Est,alpha=0.05){const{X,y,v,n,p}=matrices;const df=n-p;if(df<=0)return null;const calcQ=t2=>{const W=v.map(vi=>1/(vi+t2));const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}try{const beta=Matrix.solve(XtWX,XtWy);let Q=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X[i][j]*beta[j];Q+=W[i]*(y[i]-f)**2}return Q}catch{return Infinity}};const chi2L=Stats.qchisq(1-alpha/2,df),chi2U=Stats.qchisq(alpha/2,df);const find=(tgt,lo,hi)=>{for(let i=0;i<100;i++){const m=(lo+hi)/2,Q=calcQ(m);if(Math.abs(Q-tgt)<0.0001)return m;if(Q>tgt)lo=m;else hi=m}return(lo+hi)/2};return{lower:Math.max(0,find(chi2L,0,tau2Est*10+1)),upper:find(chi2U,tau2Est,tau2Est*20+5),method:'Q-profile'}},
 calcTreatmentEffects(matrices,tau2,correction='none',mkhFloor=2.0){const{n,p,treatments}=matrices;const fit=this.fitGLS(matrices,tau2);const beta=fit.beta,vcov=fit.vcov;let correctionFactor=1,df=n-p;if(correction!=='none'&&n>p){const swr=Math.max(0,fit.Q);if(correction==='hksj'){correctionFactor=Math.max(1,swr/(n-p))}else if(correction==='kr'){const krAdj=1+(swr-(n-p))/(n-p+2);correctionFactor=Math.max(1,krAdj);df=Math.max(1,Math.floor((n-p)/(1+0.5*(swr/(n-p)-1))))}else if(correction==='sj'){const H2=swr/(n-p);correctionFactor=Math.max(1,H2*((n-p)/(n-p-1)))}else if(correction==='mkh'){correctionFactor=Math.max(mkhFloor,swr/(n-p))}}const confLevel=AppState.confLevel??0.95;const effects={};for(let j=0;j<p;j++){const t=treatments[j+1],se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,vcov[j][j])*correctionFactor);let critVal=getCritVal(confLevel);if(correction==='kr'&&df<30){critVal=Stats.qt(1-(1-confLevel)/2,df)}effects[t]={estimate:beta[j],se,ci_lower:beta[j]-critVal*se,ci_upper:beta[j]+critVal*se,pValue:2*(Stats.pnormU(Math.abs(beta[j]/se)))}}effects[treatments[0]]={estimate:0,se:0,ci_lower:0,ci_upper:0,pValue:1};return{beta,vcov,effects,correctionFactor,correctionMethod:correction,df}},
 addPredictionIntervals(effectsResult,tau2,matrices){const{effects,vcov,correctionFactor,df}=effectsResult;const{treatments,n,p}=matrices;const piDF=Math.max(1,n-p-1);const confLevel=AppState.confLevel??0.95;const piAlpha=(1-confLevel)/2;const tCrit=piDF>2?Stats.qt(1-piAlpha,piDF):Stats.qt(1-piAlpha,Math.max(1,piDF));treatments.forEach((t,i)=>{if(i===0){effects[t].pi_lower=0;effects[t].pi_upper=0;effects[t].pi_df=piDF}else{const predSE=Math.sqrt(vcov[i-1][i-1]*correctionFactor+tau2);effects[t].pi_lower=effects[t].estimate-tCrit*predSE;effects[t].pi_upper=effects[t].estimate+tCrit*predSE;effects[t].pi_df=piDF}})},
