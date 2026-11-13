@@ -128,7 +128,10 @@
         sWxx += wi * x * x; sWxy += wi * x * y;
       }
       const det = sW * sWxx - sWx * sWx;
-      if (Math.abs(det) < 1e-14) return null;
+      // Scale-free singularity test (det = sW*sWxx - sWx^2 >= 0 by Cauchy-Schwarz). The former
+      // absolute |det| < 1e-14 refused every fit whose weights are small, e.g. effects on a large
+      // scale (normand1999 x1e4: weights ~1e-8), which then produced no result at all.
+      if (!(Math.abs(det) > 1e-12 * sW * sWxx)) return null;
       return {
         b0: (sWxx * sWy - sWx * sWxy) / det,
         b1: (sW * sWxy - sWx * sWy) / det,
