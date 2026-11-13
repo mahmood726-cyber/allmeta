@@ -197,3 +197,24 @@ def test_nma_pro_analyze_finishes_and_tau2_ci_is_scale_equivariant(page):
         for key in ("tau2", "lo", "hi"):
             rows.append(("nma-pro-v8.0 tau2 profile CI", key, f"normand x{c:g} vs c^2 * x1", out[c][key], out[1.0][key] * c * c))
     report(rows)
+
+
+PLCI = json.loads((ROOT / "tests" / "fixtures" / "nma-pro-tau2-plci-oracle.json").read_text(encoding="utf-8"))["plci"]
+
+
+def test_nma_pro_tau2_profile_ci_matches_metafor_pl(page):
+    """The tau2 95% CI that analyze() reports must be the profile-likelihood CI of the estimator in use:
+    metafor confint(rma(method = M), type = "PL"), crossing max - qchisq(.95, 1) / 2 of the RESTRICTED
+    log-likelihood for REML and of the ML log-likelihood for ML. It profiled the ML log-likelihood
+    for every estimator and anchored it at that estimator's estimate (for REML not the ML maximum), with
+    1.92 for qchisq(.95, 1) / 2: normand REML gave [228.89, 1947.41] where metafor gives [255.81, 2379.19].
+    Reference: tests/fixtures/nma-pro-tau2-plci-reference.R (metafor 5.2.1, tight tolerances)."""
+    pg = page("nma-pro-v2/nma-pro-v8.0.html")
+    data = {nm: UNI[nm] for nm in PLCI}
+    got = pg.evaluate("""d => { const o = {}; for (const nm in d) { o[nm] = {};
+        const st = d[nm].yi.map((y, i) => ({ name: 's' + i, treatment1: 'B', treatment2: 'A', yi: y, vi: d[nm].vi[i] }));
+        for (const m of ['REML', 'ML']) { const r = FrequentistNMA.analyze(st, { reference: 'A', effectMeasure: 'MD', estimator: m });
+            o[nm][m] = { tau2: r.tau2, lower: r.tau2CI.lower, upper: r.tau2CI.upper }; } } return o; }""", data)
+    rows = [("nma-pro-v8.0 tau2 PL CI", m, f"{nm} {k}", got[nm][m][k], PLCI[nm][m][k])
+            for nm in got for m in got[nm] for k in ("tau2", "lower", "upper")]
+    report(rows)
