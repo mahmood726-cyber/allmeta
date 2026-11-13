@@ -18,6 +18,8 @@ for (const [name, path] of [
     await page.goto(path, { waitUntil: 'load' });
     await page.evaluate(() => loadDemoDataset('SGLT2_ACM'));
     await page.clock.install();
+    // install() alone lets fake timers keep firing in real time; pause so only runFor advances it.
+    await page.clock.pauseAt(new Date(Date.now() + 60_000));
     await page.locator('#runAnalysisBtn').click();
     await page.clock.runFor(100);
     const first = await page.evaluate(() => JSON.parse(JSON.stringify(AppState.results)));
