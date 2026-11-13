@@ -11561,6 +11561,41 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     findMED: "the minimum-effective-dose finder reads model parameters the fit does not provide",
     optimizeDose: "no fitted dose-response model is exposed to this control (state.currentModel is never set)",
     generate3DSurface: "no fitted dose-response model is exposed to this control (state.currentModel is never set)",
+    // lane nmaguard, 2026-11-13: these read state.rawData directly, so on the default sample they pooled the
+    // 13 dose-response arms as 13 independent studies; each was clicked on the default sample and on dat.bcg.
+    fitGP: "the Gaussian-process dose-response fit has no R reference, and it fails on single-dose data (dat.bcg: Invalid array length)",
+    poolMedians: "median pooling reads each effect as a median and imputes a sample size of 100; this data format carries effects and standard errors, not medians",
+    poolIQRs: "IQR pooling imputes sample sizes (100) and IQRs from standard errors; this data format carries no quartiles",
+    estimateMeanSD: "the median/IQR to mean/SD conversion needs medians and quartiles, which this data format does not carry (it converted 0 studies)",
+    runGRIME: "GRIME checks a reported mean against its integer sample size; this data format carries effects and standard errors, not means and sample sizes (it imputed n = 100 for every row)",
+    runSPRITE: "SPRITE reconstructs raw data from means, SDs and sample sizes, which this data format does not carry (it flagged every row)",
+    runRIVETS: "the RIVETS rounding test has no R reference",
+    runBenford: "the Benford first-digit test has no R reference",
+    startLiveMA: "the live meta-analysis monitor pools every row as an independent study and has no R reference",
+    runTrimFill: "trim-and-fill does not reproduce metafor::trimfill (dat.bcg: 0 missing studies against 1, adjusted -0.714 against -0.657)",
+    runPET: "PET does not reproduce the weighted least-squares fit lm(yi ~ sqrt(vi), weights = 1/vi) (dat.bcg: 95% CI [-0.622, 0.240] from a normal quantile against [-0.675, 0.293] from t on 11 df)",
+    runPEESE: "PEESE does not reproduce the weighted least-squares fit lm(yi ~ vi, weights = 1/vi) (dat.bcg: 95% CI [-0.688, -0.072] from a normal quantile against [-0.726, -0.034] from t on 11 df)",
+    computeLFK: "the LFK index has no R reference (it reported LFK = 34.46, major asymmetry, on dat.bcg)",
+    runDoiPlot: "the Doi plot and its LFK index have no R reference (LFK = 34.46 on dat.bcg)",
+    runVeveaHedges: "the Vevea-Hedges selection model with a priori weights has not been checked against weightr or metafor::selmodel",
+    computeCooksD: "these Cook's distance outlier counts come from an engine that has not been checked against R; it does not reproduce metafor::influence; use the Influence button under Sensitivity, which equals metafor on dat.bcg",
+    computeDFFITS: "these DFFITS counts come from an engine that has not been checked against R; it does not reproduce metafor::influence; use the Influence button under Sensitivity, which equals metafor on dat.bcg",
+    computeStudentized: "these studentized-residual counts come from an engine that has not been checked against R; it does not reproduce metafor::influence; use the Influence button under Sensitivity, which equals metafor on dat.bcg",
+    runTransitivity: "the transitivity assessment compares every row with a fixed comparator 'Placebo' and imputes n = 100 and year = 2020; it has no R reference",
+    runFractionalPolynomial: "fractional-polynomial heterogeneity fails (FractionalPolynomialHeterogeneity is not defined)",
+    runBayesianNMA: "this Bayesian NMA fails (model.run is not a function)",
+    runCumulativeNMA: "the cumulative NMA fails (model.run is not a function)",
+    runNonGaussianRE: "the non-Gaussian random-effects model fails (NonGaussianRandomEffectsModel is not defined)",
+    runShrinkagePriors: "the shrinkage-prior meta-analysis fails (ShrinkagePriorsMetaAnalysis is not defined)",
+    runGradientBoosting: "gradient boosting fails (GradientBoostingHeterogeneity is not defined)",
+    runPoissonGamma: "the Poisson-gamma rare-event model fails (model.estimate is not a function), and this data format carries no event counts",
+    runBayesianPower: "the Bayesian power calculation fails (model.calculate is not a function)",
+    runMixtureSubgroup: "mixture-model subgroup detection fails (MixtureModelSubgroupDetection is not defined)",
+    runCopulaSelection: "the copula selection model fails (model.estimate is not a function)",
+    runHierarchicalSelection: "hierarchical model selection fails (model.select is not a function)",
+    runPredictiveSelection: "predictive model selection fails (model.select is not a function)",
+    runMultilevelNested: "the multilevel nested model fails (model.estimate is not a function)",
+    runRobustBayesian: "the robust Bayesian meta-analysis fails (Cannot read properties of undefined)",
   };
 
   function refuseUnvalidated(el, id) {
@@ -13845,6 +13880,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Gaussian Process Dose-Response
     if (dom.fitGP) {
       dom.fitGP.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.gpResult, "fitGP")) return;
         if (!state.studies || !state.studies.length) {
           if (state.rawData && state.rawData.length) {
             state.studies = state.rawData;
@@ -13905,6 +13941,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Quantile Meta-Analysis
     if (dom.poolMedians) {
       dom.poolMedians.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.quantileResult, "poolMedians")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -13934,6 +13971,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.poolIQRs) {
       dom.poolIQRs.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.quantileResult, "poolIQRs")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -13958,6 +13996,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.estimateMeanSD) {
       dom.estimateMeanSD.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.quantileResult, "estimateMeanSD")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14096,6 +14135,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Data Quality Tests
     if (dom.runGRIME) {
       dom.runGRIME.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.dataQualityResult, "runGRIME")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14129,6 +14169,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runSPRITE) {
       dom.runSPRITE.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.dataQualityResult, "runSPRITE")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14163,6 +14204,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runRIVETS) {
       dom.runRIVETS.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.dataQualityResult, "runRIVETS")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14194,6 +14236,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.runBenford) {
       dom.runBenford.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.dataQualityResult, "runBenford")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14228,6 +14271,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
 
     if (dom.startLiveMA) {
       dom.startLiveMA.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.liveMAStatus, "startLiveMA")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14390,6 +14434,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Trim-and-Fill
     if (dom.runTrimFill) {
       dom.runTrimFill.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.trimFillResult, "runTrimFill")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14422,6 +14467,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // PET
     if (dom.runPET) {
       dom.runPET.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.petpeeseResult, "runPET")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14450,6 +14496,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // PEESE
     if (dom.runPEESE) {
       dom.runPEESE.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.petpeeseResult, "runPEESE")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14507,6 +14554,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // LFK Index
     if (dom.computeLFK) {
       dom.computeLFK.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.lfkResult, "computeLFK")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14534,6 +14582,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Doi Plot
     if (dom.runDoiPlot) {
       dom.runDoiPlot.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.lfkResult, "runDoiPlot")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14560,6 +14609,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Vevea-Hedges Selection Model
     if (dom.runVeveaHedges) {
       dom.runVeveaHedges.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.selectionResult, "runVeveaHedges")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14589,6 +14639,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Cook's D
     if (dom.computeCooksD) {
       dom.computeCooksD.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.outlierResult, "computeCooksD")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14617,6 +14668,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // DFFITS
     if (dom.computeDFFITS) {
       dom.computeDFFITS.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.outlierResult, "computeDFFITS")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14647,6 +14699,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Studentized Residuals
     if (dom.computeStudentized) {
       dom.computeStudentized.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.outlierResult, "computeStudentized")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -14676,6 +14729,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Transitivity Assessment
     if (dom.runTransitivity) {
       dom.runTransitivity.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.transitivityResult, "runTransitivity")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("No data loaded", "error");
           return;
@@ -15482,6 +15536,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Fractional Polynomials for Heterogeneity
     if (dom.runFractionalPolynomial) {
       dom.runFractionalPolynomial.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runFractionalPolynomial")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15626,6 +15681,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Bayesian Network Meta-Analysis
     if (dom.runBayesianNMA) {
       dom.runBayesianNMA.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runBayesianNMA")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15690,6 +15746,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Cumulative Network Meta-Analysis
     if (dom.runCumulativeNMA) {
       dom.runCumulativeNMA.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runCumulativeNMA")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15819,6 +15876,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Non-Gaussian Random Effects Model
     if (dom.runNonGaussianRE) {
       dom.runNonGaussianRE.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runNonGaussianRE")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -15846,6 +15904,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Shrinkage Priors Meta-Analysis
     if (dom.runShrinkagePriors) {
       dom.runShrinkagePriors.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runShrinkagePriors")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16045,6 +16104,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Gradient Boosting for Heterogeneity
     if (dom.runGradientBoosting) {
       dom.runGradientBoosting.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runGradientBoosting")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16106,6 +16166,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Poisson-Gamma Rare Event Model
     if (dom.runPoissonGamma) {
       dom.runPoissonGamma.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runPoissonGamma")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16277,6 +16338,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Bayesian Power Analysis
     if (dom.runBayesianPower) {
       dom.runBayesianPower.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.powerResult, "runBayesianPower")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16416,6 +16478,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Mixture Model Subgroup Detection
     if (dom.runMixtureSubgroup) {
       dom.runMixtureSubgroup.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runMixtureSubgroup")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16540,6 +16603,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Copula Selection Model
     if (dom.runCopulaSelection) {
       dom.runCopulaSelection.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.exportStatus, "runCopulaSelection")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16571,33 +16635,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // 10. MODEL AVERAGING & ENSEMBLE METHODS (2019-2023)
     // ============================================================================
 
-    // Bayesian Model Averaging for Dose-Response
-    if (dom.runBMA) {
-      dom.runBMA.addEventListener("click", () => {
-        if (!state.rawData || !state.rawData.length) {
-          showNotification("Load data first", "error");
-          return;
-        }
-        try {
-          const doses = state.rawData.map(d => d.dose);
-          const effects = state.rawData.map(d => d.effect);
-          const variances = state.rawData.map(d => d.se * d.se);
-
-          const model = new BayesianModelAveragingDoseResponse(doses, effects, variances);
-          const result = model.average();
-
-          state.bmaResult = result;
-          if (dom.ensembleResult) {
-            dom.ensembleResult.textContent =
-              `BMA: ${result.nModels} models, best=${result.bestModel} (${result.bestWeight.toFixed(1)}%)`;
-          }
-          showNotification(`BMA: ${result.bestModel} with ${result.bestWeight.toFixed(1)}% weight`, "success");
-        } catch (e) {
-          showNotification("BMA failed: " + e.message, "error");
-        }
-      });
-    }
-
+    // Bayesian Model Averaging for Dose-Response: #runBMA is handled (and refused) above; a second
+    // listener here ran after that refusal and added "BMA failed: model.average is not a function".
     // Stacking Meta-Analysis
     if (dom.runStacking) {
       dom.runStacking.addEventListener("click", () => {
@@ -16628,6 +16667,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Hierarchical Model Selection
     if (dom.runHierarchicalSelection) {
       dom.runHierarchicalSelection.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.ensembleResult, "runHierarchicalSelection")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16655,6 +16695,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Predictive Model Selection
     if (dom.runPredictiveSelection) {
       dom.runPredictiveSelection.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.ensembleResult, "runPredictiveSelection")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16686,6 +16727,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Multilevel Nested Meta-Analysis
     if (dom.runMultilevelNested) {
       dom.runMultilevelNested.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.multilevelResult, "runMultilevelNested")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
@@ -16747,6 +16789,7 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     // Robust Bayesian Meta-Analysis
     if (dom.runRobustBayesian) {
       dom.runRobustBayesian.addEventListener("click", () => {
+        if (refuseUnvalidated(dom.multilevelResult, "runRobustBayesian")) return;
         if (!state.rawData || !state.rawData.length) {
           showNotification("Load data first", "error");
           return;
