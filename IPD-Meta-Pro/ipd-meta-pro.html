@@ -37364,6 +37364,10 @@ function ipdFormAnalysisConfig() {
  cfg.outcomeType = val('outcomeType') || cfg.outcomeType;
  return cfg;
 }
+// IPD-Modal: a number for display, or "not estimable" when it is missing or not finite.
+function ipdNum(x, digits) {
+ return (typeof x === 'number' && Number.isFinite(x)) ? x.toFixed(digits) : 'not estimable';
+}
 // A heterogeneity number for display: the value, or "not estimable (k = 1)" when it is not finite (fewer than 2 studies).
 function ipdHetText(x, digits, k, suffix) {
  return Number.isFinite(x) ? x.toFixed(digits) + (suffix || '') : 'not estimable (k = ' + k + ')';
@@ -40770,7 +40774,10 @@ function networkResolveTreatmentVar() {
 
  treatmentVar = 'treatment_name';
 
- APP.config.treatmentVar = 'treatment_name';
+ // IPD-Modal: the network column is returned (buildNetworkFromData records it on the network); it is no longer
+ // written into APP.config.treatmentVar, which the two-arm surfaces read. runAnalysis calls this after any run
+ // whose treatment_name has 3+ values, so on SGLT2 CVD the Power Monitor, entropy balancing and predictive
+ // patient selection then split the arms on drug names.
 
  }
 
@@ -59052,7 +59059,17 @@ function runPHAssumptionTest() {
 
 
 
-        const result = AdvancedSurvival.testPHAssumption(times, events, covars);
+        const phOk = times.map((t, i) => Number.isFinite(t) && Number.isFinite(events[i]) && Number.isFinite(covars[i]));
+
+        if (phOk.filter(Boolean).length < 10 || !events.some((e, i) => phOk[i] && e === 1)) {
+
+            showNotification('PH assumption screen needs a time-to-event outcome: no usable time variable ("' + timeVar + '") with events in the data.', 'warning');
+
+            return;
+
+        }
+
+        const result = AdvancedSurvival.testPHAssumption(times.filter((t, i) => phOk[i]), events.filter((e, i) => phOk[i]), covars.filter((c, i) => phOk[i]));
 
 
 
@@ -59533,9 +59550,9 @@ function runGEstimationAnalysis() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Treatment Effect (ψ):</strong> ' + result.psi.toFixed(4) + '</p>' +
+            '<div class="card"><p><strong>Treatment Effect (ψ):</strong> ' + ipdNum(result.psi, 4) + '</p>' +
 
-            '<p><strong>95% CI:</strong> ' + result.ci_lower.toFixed(4) + ' to ' + result.ci_upper.toFixed(4) + '</p>' +
+            '<p><strong>95% CI:</strong> ' + ipdNum(result.CI && result.CI[0], 4) + ' to ' + ipdNum(result.CI && result.CI[1], 4) + ' (SE ' + ipdNum(result.SE, 4) + ')</p>' +
 
             '</div></div>';
 
@@ -59563,7 +59580,17 @@ function runIVMAAnalysis() {
 
     try {
 
-        const result = runIVMetaAnalysis(APP.results.studies);
+        const ivStudies = APP.results.studies.filter(st => [st.betaX, st.betaY, st.seBetaY].every(v => typeof v === 'number' && Number.isFinite(v)) && st.betaX !== 0);
+
+        if (ivStudies.length < 2) {
+
+            showNotification('IV (Mendelian randomization) meta-analysis needs per-study exposure and outcome associations (betaX, betaY, seBetaY) for at least 2 studies; the two-stage study results do not contain them.', 'warning');
+
+            return;
+
+        }
+
+        const result = runIVMetaAnalysis(ivStudies);
 
 
 
@@ -59575,13 +59602,13 @@ function runIVMAAnalysis() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>IV Estimate:</strong> ' + result.ivEstimate.toFixed(4) + '</p>' +
+            '<div class="card"><p><strong>IV Estimate:</strong> ' + ipdNum(result.IVW.estimate, 4) + ' (IVW, SE ' + ipdNum(result.IVW.se, 4) + ')</p>' +
 
-            '<p><strong>95% CI:</strong> ' + result.ci_lower.toFixed(4) + ' to ' + result.ci_upper.toFixed(4) + '</p>' +
+            '<p><strong>95% CI:</strong> ' + ipdNum(result.IVW.ci[0], 4) + ' to ' + ipdNum(result.IVW.ci[1], 4) + '</p>' +
 
-            '<p><strong>F-statistic:</strong> ' + result.fStatistic.toFixed(2) + '</p>' +
+            '<p><strong>MR-Egger intercept:</strong> ' + ipdNum(result.MREgger.intercept, 4) + ' (' + escapeHTML(result.MREgger.pleiotropyTest) + ')</p>' +
 
-            '<p><strong>Weak IV Warning:</strong> ' + (result.fStatistic < 10 ? 'Yes - consider weak instrument bias' : 'No') + '</p>' +
+            '<p><strong>Weighted median:</strong> ' + ipdNum(result.weightedMedian, 4) + '</p>' +
 
             '</div></div>';
 
@@ -59693,7 +59720,15 @@ function runComponentNMAAnalysis() {
 
         const result = runComponentNMA(APP.data);
 
-        showNotification('Component NMA completed. ' + result.components.length + ' components analyzed.', 'success');
+        if (!result.nComponents) {
+
+            showNotification('Component NMA: no treatment components were identified in the data (it needs combination treatments, e.g. "A+B").', 'warning');
+
+            return;
+
+        }
+
+        showNotification('Component NMA completed. ' + result.nComponents + ' components analyzed.', 'success');
 
     } catch (e) {
 
@@ -59821,6 +59856,8 @@ function runDesignByTreatment() {
 
         const result = runDesignByTreatmentInteraction(APP.data);
 
+        const dbtTestable = !!(result.globalTest && result.globalTest.df > 0 && Number.isFinite(result.globalTest.p));
+
 
 
         const modal = document.createElement('div');
@@ -59831,15 +59868,15 @@ function runDesignByTreatment() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Chi-squared statistic:</strong> ' + result.chiSquared.toFixed(2) + '</p>' +
+            '<div class="card"><p><strong>Chi-squared statistic:</strong> ' + (dbtTestable ? ipdNum(result.globalTest.Q, 2) : 'not estimable (' + result.nDesigns + ' design' + (result.nDesigns === 1 ? '' : 's') + ': no inconsistency degrees of freedom)') + '</p>' +
 
-            '<p><strong>Degrees of freedom:</strong> ' + result.df + '</p>' +
+            '<p><strong>Degrees of freedom:</strong> ' + (result.globalTest ? result.globalTest.df : 'not estimable') + '</p>' +
 
-            '<p><strong>P-value:</strong> ' + (result.pValue < 0.001 ? '<0.001' : result.pValue.toFixed(4)) + '</p>' +
+            '<p><strong>P-value:</strong> ' + (!dbtTestable ? 'not estimable' : result.globalTest.p < 0.001 ? '<0.001' : result.globalTest.p.toFixed(4)) + '</p>' +
 
-            '<div class="alert ' + (result.pValue < 0.05 ? 'alert-warning' : 'alert-success') + '">' +
+            '<div class="alert ' + (!dbtTestable ? 'alert-info' : result.globalTest.p < 0.05 ? 'alert-warning' : 'alert-success') + '">' +
 
-            (result.pValue < 0.05 ? 'Significant design-by-treatment interaction detected. This may indicate inconsistency in the network.' :
+            (!dbtTestable ? 'Design-by-treatment inconsistency cannot be tested here (no inconsistency degrees of freedom).' : result.globalTest.p < 0.05 ? 'Significant design-by-treatment interaction detected. This may indicate inconsistency in the network.' :
 
              'No significant design-by-treatment interaction detected.') +
 
@@ -59899,6 +59936,14 @@ function runMIMA() {
 
         const result = runMultipleImputationMA(APP.results.studies, 5);
 
+        if (result.message) {
+
+            showNotification('Multiple imputation meta-analysis: ' + result.message + ' in the study estimates; nothing to impute.', 'info');
+
+            return;
+
+        }
+
 
 
         const modal = document.createElement('div');
@@ -59909,15 +59954,15 @@ function runMIMA() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Pooled Estimate:</strong> ' + result.pooledEffect.toFixed(4) + '</p>' +
+            '<div class="card"><p><strong>Pooled Estimate:</strong> ' + ipdNum(result.pooledEstimate, 4) + '</p>' +
 
-            '<p><strong>Within-Imputation Variance:</strong> ' + result.withinVar.toFixed(6) + '</p>' +
+            '<p><strong>Within-Imputation Variance:</strong> ' + ipdNum(result.varianceComponents.within, 6) + '</p>' +
 
-            '<p><strong>Between-Imputation Variance:</strong> ' + result.betweenVar.toFixed(6) + '</p>' +
+            '<p><strong>Between-Imputation Variance:</strong> ' + ipdNum(result.varianceComponents.between, 6) + '</p>' +
 
-            '<p><strong>Total Variance:</strong> ' + result.totalVar.toFixed(6) + '</p>' +
+            '<p><strong>Total Variance:</strong> ' + ipdNum(result.varianceComponents.total, 6) + '</p>' +
 
-            '<p><strong>Fraction Missing Information:</strong> ' + (result.fmi * 100).toFixed(1) + '%</p>' +
+            '<p><strong>Fraction Missing Information:</strong> ' + ipdNum(result.fractionMissingInfo * 100, 1) + '%</p>' +
 
             '</div></div>';
 
@@ -60049,17 +60094,17 @@ function runTSA() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Required Information Size:</strong> ' + result.ris.toFixed(0) + '</p>' +
+            '<div class="card"><p><strong>Required Information Size:</strong> ' + ipdNum(result.requiredInformationSize, 0) + '</p>' +
 
-            '<p><strong>Accrued Information:</strong> ' + result.accruedInfo.toFixed(0) + ' (' + (result.accruedInfo / result.ris * 100).toFixed(1) + '%)</p>' +
+            '<p><strong>Accrued Information:</strong> ' + ipdNum(result.currentInformation, 0) + ' (' + ipdNum(result.informationFraction * 100, 1) + '%)</p>' +
 
-            '<p><strong>TSA Monitoring Boundary Crossed:</strong> ' + (result.boundaryReached ? 'Yes' : 'No') + '</p>' +
+            '<p><strong>Cumulative Z:</strong> ' + ipdNum(result.currentZScore, 3) + ' (monitoring boundary ' + ipdNum(result.monitoringBoundary, 3) + ')</p>' +
 
-            '<p><strong>Futility Boundary Crossed:</strong> ' + (result.futilityReached ? 'Yes' : 'No') + '</p>' +
+            '<p><strong>Decision:</strong> ' + escapeHTML(result.decision || '') + '</p>' +
 
-            '<div class="alert ' + (result.boundaryReached ? 'alert-success' : 'alert-warning') + '">' +
+            '<div class="alert ' + (/^Crossed/.test(result.decision || '') ? 'alert-success' : 'alert-warning') + '">' +
 
-            (result.boundaryReached ? 'Sufficient evidence has accumulated to conclude the meta-analysis.' :
+            (/^Crossed/.test(result.decision || '') ? 'Sufficient evidence has accumulated to conclude the meta-analysis.' :
 
              'More studies may be needed before definitive conclusions can be drawn.') +
 
@@ -60163,11 +60208,11 @@ function runVOI() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Expected Value of Perfect Information (EVPI):</strong> $' + result.evpi.toLocaleString() + '</p>' +
+            '<div class="card"><p><strong>Expected Value of Perfect Information (EVPI):</strong> $' + (Number.isFinite(result.EVPI) ? result.EVPI.toLocaleString() : 'not estimable') + '</p>' +
 
-            '<p><strong>Expected Value of Sample Information (EVSI):</strong> $' + result.evsi.toLocaleString() + '</p>' +
+            '<p><strong>Expected Value of Sample Information (EVSI):</strong> $' + (Number.isFinite(result.EVSI) ? result.EVSI.toLocaleString() : 'not estimable') + '</p>' +
 
-            '<p><strong>Optimal Sample Size:</strong> ' + result.optimalN + '</p>' +
+            '<p><strong>Expected Net Benefit of Sampling (ENBS):</strong> $' + (Number.isFinite(result.ENBS) ? result.ENBS.toLocaleString() : 'not estimable') + ' (' + (result.recommendFurtherResearch ? 'further research recommended' : 'further research not recommended') + ')</p>' +
 
             '</div></div>';
 
@@ -60383,6 +60428,10 @@ function runOIS() {
 
         const result = calculateOptimalInformationSize(0.05, 0.20, 0.3, APP.results.pooled.tau2 ?? 0.1, APP.results.studies.length);
 
+        result.ris = result.metaAnalysisOIS;
+
+        result.accrued = APP.results.studies.reduce((a, st) => a + (Number(st.n) || 0), 0);
+
 
 
         const modal = document.createElement('div');
@@ -60393,11 +60442,11 @@ function runOIS() {
 
             '<button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
 
-            '<div class="card"><p><strong>Required Information Size:</strong> ' + result.ris.toFixed(0) + ' participants</p>' +
+            '<div class="card"><p><strong>Required Information Size:</strong> ' + ipdNum(result.ris, 0) + ' participants</p>' +
 
-            '<p><strong>Current Accrued:</strong> ' + result.accrued.toFixed(0) + ' participants</p>' +
+            '<p><strong>Current Accrued:</strong> ' + ipdNum(result.accrued, 0) + ' participants</p>' +
 
-            '<p><strong>Percentage of Required:</strong> ' + (result.accrued / result.ris * 100).toFixed(1) + '%</p>' +
+            '<p><strong>Percentage of Required:</strong> ' + ipdNum(result.accrued / result.ris * 100, 1) + '%</p>' +
 
             '<div class="alert ' + (result.accrued >= result.ris ? 'alert-success' : 'alert-warning') + '">' +
 
