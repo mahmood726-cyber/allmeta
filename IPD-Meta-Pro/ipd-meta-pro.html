@@ -37368,6 +37368,23 @@ function ipdFormAnalysisConfig() {
 function ipdNum(x, digits) {
  return (typeof x === 'number' && Number.isFinite(x)) ? x.toFixed(digits) : 'not estimable';
 }
+// IPD-Modal: P(X >= x) for X ~ Binomial(n, p), summed exactly on the log scale (the page's jStat shim has no binomial).
+function ipdBinomUpper(x, n, p) {
+ if (x <= 0) return 1;
+ if (x > n) return 0;
+ if (p <= 0) return 0;
+ if (p >= 1) return 1;
+ let lt = 0;
+ for (let i = 1; i <= x; i++) lt += Math.log((n - i + 1) / i);
+ lt += x * Math.log(p) + (n - x) * Math.log(1 - p);
+ const step = Math.log(p / (1 - p));
+ let sum = 0;
+ for (let i = x; i <= n; i++) {
+  sum += Math.exp(lt);
+  lt += Math.log((n - i) / (i + 1)) + step;
+ }
+ return Math.min(1, sum);
+}
 // A heterogeneity number for display: the value, or "not estimable (k = 1)" when it is not finite (fewer than 2 studies).
 function ipdHetText(x, digits, k, suffix) {
  return Number.isFinite(x) ? x.toFixed(digits) + (suffix || '') : 'not estimable (k = ' + k + ')';
@@ -73636,7 +73653,7 @@ function showClusteredIPDAnalysis() {
 
                         <select id="ipdOutcomeVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);" aria-label="Outcome Variable:">
 
-                            ${getVariableOptions()}
+                            ${getVariableOptions(ipdFormAnalysisConfig().eventVar)}
 
                         </select>
 
@@ -73648,7 +73665,7 @@ function showClusteredIPDAnalysis() {
 
                         <select id="ipdTreatmentVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);" aria-label="Treatment Variable:">
 
-                            ${getVariableOptions()}
+                            ${getVariableOptions(ipdFormAnalysisConfig().treatmentVar)}
 
                         </select>
 
@@ -73660,7 +73677,7 @@ function showClusteredIPDAnalysis() {
 
                         <select id="ipdClusterVar" style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border-color);" aria-label="Cluster/Study Variable:">
 
-                            ${getVariableOptions()}
+                            ${getVariableOptions(ipdFormAnalysisConfig().studyVar)}
 
                         </select>
 
@@ -73734,13 +73751,14 @@ function showClusteredIPDAnalysis() {
 
 
 
-function getVariableOptions() {
+function getVariableOptions(preferred) {
 
     if (!APP.currentData || APP.currentData.length === 0) return '<option>No data loaded</option>';
 
     const vars = Object.keys(APP.currentData[0]);
 
-    return vars.map(v => '<option value="' + v + '">' + v + '</option>').join('');
+    // IPD-Modal: preselect the configured column; without it all three selects defaulted to the first column (study_id)
+    return vars.map(v => '<option value="' + v + '"' + (preferred && v === preferred ? ' selected' : '') + '>' + v + '</option>').join('');
 
 }
 
@@ -73870,15 +73888,15 @@ function formatClusteredIPDResults(result, iccResult) {
 
                 <table style="width:100%;font-size:14px;">
 
-                    <tr><td>ICC:</td><td><strong>${iccResult.ICC.toFixed(4)}</strong></td></tr>
+                    <tr><td>ICC:</td><td><strong>${ipdNum(iccResult.ICC, 4)}</strong></td></tr>
 
-                    <tr><td>Design Effect:</td><td>${iccResult.design_effect.toFixed(2)}</td></tr>
+                    <tr><td>Design Effect:</td><td>${ipdNum(iccResult.design_effect, 2)}</td></tr>
 
                     <tr><td>N Clusters:</td><td>${iccResult.n_clusters}</td></tr>
 
                     <tr><td>N Total:</td><td>${iccResult.n_total}</td></tr>
 
-                    <tr><td>Effective N:</td><td>${(iccResult.n_total / iccResult.design_effect).toFixed(0)}</td></tr>
+                    <tr><td>Effective N:</td><td>${ipdNum(iccResult.n_total / iccResult.design_effect, 0)}</td></tr>
 
                 </table>
 
@@ -73956,6 +73974,16 @@ function drawICCPlot(iccResult) {
 
 
     const ctx = canvas.getContext('2d');
+
+    if (!iccResult || !Number.isFinite(iccResult.ICC)) {
+        // IPD-Modal: a non-finite ICC (one cluster, or a non-numeric outcome) drew a bar of height NaN and threw
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') || '#aaa';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('ICC not estimable (' + ((iccResult && iccResult.n_clusters) || 0) + ' cluster(s))', canvas.width / 2, canvas.height / 2);
+        return;
+    }
 
     const w = canvas.width;
 
@@ -83163,7 +83191,7 @@ function displayValidationResults(results) {
 
         const nLow = pValues.filter(p => p < 0.025).length;
 
-        const rightSkewP = 1 - jStat.binomial.cdf(nLow - 1, nSig, 0.5);
+        const rightSkewP = ipdBinomUpper(nLow, nSig, 0.5); // IPD-Modal: jStat.binomial does not exist in the page's jStat shim
 
 
 
