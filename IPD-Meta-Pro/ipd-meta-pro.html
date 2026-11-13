@@ -6229,6 +6229,10 @@ function runPredictivePatientSelection() {
 
  };
 
+ // IPD-Modal: a covariate whose median split leaves an arm empty (e.g. a 0/1 covariate with median 1) has no
+ // interaction; it was NaN and, summed into every patient's score, made the predicted-benefit split NaN.
+ if (!Number.isFinite(cateByCovariate[cov].interaction)) delete cateByCovariate[cov];
+
  });
 
 
@@ -6497,7 +6501,7 @@ function displayPredictiveResults(results) {
 
  <p style="font-size: 1.5rem; color: var(--accent-success);">
 
- ${(results.validation.effectInBenefiters * 100).toFixed(1)}%
+ ${ipdNum(results.validation.effectInBenefiters * 100, 1)}%
 
  </p>
 
@@ -6511,7 +6515,7 @@ function displayPredictiveResults(results) {
 
  <p style="font-size: 1.5rem; color: var(--accent-warning);">
 
- ${(results.validation.effectInNonBenefiters * 100).toFixed(1)}%
+ ${ipdNum(results.validation.effectInNonBenefiters * 100, 1)}%
 
  </p>
 

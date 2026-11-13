@@ -34,5 +34,19 @@ run(`document.getElementById('varEvent').value = 'nonexistent'; __rf = null; __n
 check('an outcome column that is not in the data is refused, not fitted', run('__rf') === null && /outcome/i.test(run('__notes.join(" ")')), run('__notes.join(" | ")'));
 run(`__notes.length = 0; var __pps = 0; displayPredictiveResults = function () { __pps++; }; runPredictivePatientSelection();`);
 check('predictive patient selection (same code pattern) also refuses a missing outcome column', /outcome/i.test(run('__notes.join(" ")')), run('__notes.join(" | ")'));
+{
+  // a 0/1 covariate whose median is 1: "> median" leaves the high group empty, the interaction was NaN and, summed
+  // into every patient's score, made the whole predicted-benefit split NaN ("Predicted Benefiters ... NaN%")
+  const rows2 = rows.map((r, i) => Object.assign({}, r, { employed: (i % 5) === 0 ? 0 : 1 }));
+  sandbox.__rows2 = rows2;
+  run(`APP.data = __rows2; APP.currentData = __rows2; document.getElementById('varEvent').value = 'remission'; __notes.length = 0;
+    window.__pp = null; displayPredictiveResults = function (r) { __pp = r; };
+    (function () { const o = displayPredictiveResults; })();`);
+  let threw = null; try { run('runPredictivePatientSelection()'); } catch (e) { threw = String(e); }
+  const pp = run('__pp');
+  const keys = pp && pp.cateByCovariate ? Object.keys(pp.cateByCovariate) : [];
+  const finite = pp && keys.every(k => Number.isFinite(pp.cateByCovariate[k].interaction)) && pp.validation && Number.isFinite(pp.validation.effectInBenefiters) && Number.isFinite(pp.validation.effectInNonBenefiters);
+  check('predictive selection: a covariate whose median split leaves an arm empty is left out, and the benefit split stays finite', !threw && pp && !keys.includes('employed') && finite, threw || (pp ? JSON.stringify({ keys, v: pp.validation }) : 'no result; notes ' + run('__notes.join(" | ")')));
+}
 console.log(passed + '/' + (passed + failed) + ' PASS');
 process.exitCode = failed ? 1 : 0;
