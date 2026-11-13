@@ -205,11 +205,31 @@
     }).join("\n");
   }
 
+  // cross-design/index.html parses "label, yi, vi, design" (vi = VARIANCE, as its own
+  // default rows and shared/cross-design.js use). It once wrote SE here, which the page
+  // accepted as a variance: every BCG row parsed, every vi was sqrt(vi).
   function toCrossDesignText(dataset) {
     if (!dataset || !dataset.effect_se) return "";
     return dataset.effect_se.map(function (s) {
-      var se = Math.sqrt(s.vi);
-      return s.label + ", " + s.yi + ", " + se.toFixed(4) + ", " + (s.design || "rct");
+      return s.label + ", " + s.yi + ", " + s.vi + ", " + (s.design || "rct");
+    }).join("\n");
+  }
+
+  // "label, yi, vi" -- bma-tau-priors/index.html parse() reads the third column as the
+  // variance ("Paste label, yi, vi"); the forest layout writes SE there.
+  function toLabelEffectVarianceText(dataset) {
+    if (!dataset || !dataset.effect_se) return "";
+    return dataset.effect_se.map(function (s) {
+      return s.label + ", " + s.yi + ", " + s.vi;
+    }).join("\n");
+  }
+
+  // "label, estimate, SE, moderator" -- meta-regression/index.html parseStudies() needs
+  // four columns; BCG's moderator is absolute latitude (Berkey 1995; metafor dat.bcg ablat).
+  function toMetaRegressionText(dataset) {
+    if (!dataset || !dataset.effect_se) return "";
+    return dataset.effect_se.map(function (s) {
+      return s.label + ", " + s.yi + ", " + Math.sqrt(s.vi).toFixed(4) + ", " + s.latitude;
     }).join("\n");
   }
 
@@ -243,6 +263,8 @@
     toEffectSeLabelText: toEffectSeLabelText,
     toGlmmTextarea: toGlmmTextarea,
     toCrossDesignText: toCrossDesignText,
+    toLabelEffectVarianceText: toLabelEffectVarianceText,
+    toMetaRegressionText: toMetaRegressionText,
     toCrossNetworkText: toCrossNetworkText,
     toSequentialMaText: toSequentialMaText,
     toPersonalisedTeText: toPersonalisedTeText,

@@ -362,10 +362,19 @@
     // saved shared bus ("Verify in R" used to read the bus: a new user got only an alert, a
     // returning user an earlier session's studies).
     window.__almValidatorStudies = function () {
-      // Only when the page shows a fit (fitCopas refuses k < 3 and non-converged starts).
-      var rows = parse(document.getElementById('src').value);
-      if (rows.length < 3 || !_lastResults) return [];
-      return rows.map(function (r, i) { return { label: 'Study ' + (i + 1), est: r.te, se: r.se }; });
+      // Only when the page shows a fit (fitCopas refuses k < 3 and non-converged starts):
+      // the studies that fit was made on, never a re-read of the input box (review of
+      // PR #537: an input edited after Run reached R while the page showed the old row).
+      if (!_lastResults || !_validatorSnapshot) return [];
+      return _validatorSnapshot.studies.map(function (s) { return { label: s.label, est: s.est, se: s.se }; });
+    };
+    // The model of the "Unadjusted random-effects pooled effect" row (startValues: REML or
+    // DL, z), which the validator can re-fit. It is the estimator the DISPLAYED fit used,
+    // recorded by run(): #opt-tau refits after a debounce, so the selector can name a model
+    // the row was not fitted with (review of PR #537).
+    window.__almValidatorModel = function () {
+      if (!_lastResults || !_validatorSnapshot) return {};
+      return { method: _validatorSnapshot.method, test: "z" };
     };
 
     // ---- axis state (overrideable by axis-controls) ----
@@ -373,6 +382,8 @@
 
     // ---- results storage for export ----
     var _lastResults = null;
+    // Set by run() with _lastResults: { studies, method } of the displayed fit.
+    var _validatorSnapshot = null;
 
     // Rows the CSV reader refused on the last upload. Reported rather than
     // dropped in silence: a refused row is the whole point of the whole-token
@@ -454,6 +465,9 @@
               ? ' Also: k = ' + rows.length + ', below the k ≥ 15 at which this ' +
                 'app treats Copas estimates as stable enough to interpret.'
               : '');
+          // A refusal is a problem with the input, announced as status; only the plain
+          // k < 15 caution below is ancillary (role="note"), which tests rely on.
+          warnEl.setAttribute('role', 'status');
           warnEl.style.display = 'block';
         } else if (rows.length < 15 && rows.length >= 3) {
           // No source is cited here on purpose: k >= 15 is this project's own
@@ -461,18 +475,23 @@
           // cut-off, and the file it used to name is a private local notes file
           // that no reader of this page can consult.
           warnEl.textContent = 'k = ' + rows.length + ' — this app treats k ≥ 15 as the point at which Copas selection-model estimates become stable enough to interpret. Output below is illustrative; do not use for inference.';
+          warnEl.setAttribute('role', 'note');
           warnEl.style.display = 'block';
         } else {
+          warnEl.setAttribute('role', 'status');
           warnEl.style.display = 'none';
         }
       }
       var summaryEl = document.getElementById('summary');
       var bodyEl = document.getElementById('body');
+      // fitCopas() reads the same input and options synchronously; recorded for the validator.
+      var tauUsed = readOpts().method_tau === 'DL' ? 'DL' : 'REML';
       var fit = fitCopas();
       // copas() returns a TRUTHY {refused: ...} object, never null, so both
       // halves of this test are load-bearing.
       if (!fit || fit.refused) {
         _lastResults = null;
+        _validatorSnapshot = null;
         var why;
         switch (fit && fit.refused) {
           case 'seTE.min==seTE.max':
@@ -528,6 +547,10 @@
       // sensitivity_grid with its v2 rows, rows) is present with its v2
       // meaning, and everything PR #212's metasens pipeline added is additive.
       // A consumer of v2 needs no change, so the schema string must not move.
+      _validatorSnapshot = {
+        studies: rows.map(function (r, i) { return { label: 'Study ' + (i + 1), est: r.te, se: r.se }; }),
+        method: tauUsed
+      };
       _lastResults = {
         _schema: 'copas-results-v2',
         k: fit.k,
@@ -884,7 +907,9 @@
   ready(function () {
     if (!window.MaStudies || typeof MaStudies.attachVerifyInRButton !== "function") return;
     MaStudies.attachVerifyInRButton({ btn: "#btn-verify-in-r",
-      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
+      getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; },
+      method: function () { return window.__almValidatorModel && window.__almValidatorModel().method; },
+      test: function () { return window.__almValidatorModel && window.__almValidatorModel().test; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
       TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "copas", textarea: "#src", format: "est-se-label" });
@@ -921,7 +946,10 @@
       AlmHero.attachHero({
         container: "#alm-hero-mount",
         textarea: "#src",
-        adapter: "forest",
+        // This page reads "effect, SE" (shared/copas-core.js parseNumToken, strict since
+        // dc2d373b). The forest adapter writes "label, effect, SE", so every BCG row was
+        // refused and the example fitted nothing; effect-se-label puts the label last.
+        adapter: "effect-se-label",
       });
     }
   });
