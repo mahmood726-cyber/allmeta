@@ -96,12 +96,16 @@ test.describe('TruthCert UI (via workbench)', () => {
 // Cover all three getStudies paths the receipt button uses:
 //  - parseStudies(#f-data)  : forest-plot (in-IIFE getStudies)
 //  - studiesFromTextarea(#f-data, "label-est-se") : meta-regression (swept)
-//  - studiesFromTextarea(#src,    "est-se-label") : pet-peese (swept)
+//  - the page's fitted rows (__almValidatorStudies) : pet-peese (lane rcpt2: it re-read #src with
+//    studiesFromTextarea, which reads commas only and signed rows the page had not fitted -- this
+//    fixture had 2 studies, which pet-peese refuses (k < 3), and was never Run. The receipt is
+//    now of the rows the displayed result was fitted on, so the fixture is an input the page
+//    accepts and it is Run first.)
 //  - custom producer getter : mh-peto (computes per-study effects from 2x2)
 const POOLERS = [
   { name: 'forest-plot',     fill: { sel: '#f-data', val: INPUT },                                count: 2 },
   { name: 'meta-regression', fill: { sel: '#f-data', val: INPUT },                                count: 2 },
-  { name: 'pet-peese',       fill: { sel: '#src',    val: '0.25, 0.08, S1\n0.18, 0.10, S2' },     count: 2 },
+  { name: 'pet-peese',       fill: { sel: '#src',    val: '0.25, 0.08, S1\n0.18, 0.10, S2\n0.05, 0.12, S3' }, run: true, count: 3 },
   { name: 'mh-peto',         fill: null,                                                          count: 5 }, // default 2x2 fixture
 ];
 
@@ -115,6 +119,7 @@ for (const app of POOLERS) {
       );
       await page.evaluate((k) => window.TruthCertUI.setKey(k), KEY);
       if (app.fill) await page.fill(app.fill.sel, app.fill.val);
+      if (app.run) await page.locator('#btn-run').click();
 
       const [download] = await Promise.all([
         page.waitForEvent('download', { timeout: 10_000 }),

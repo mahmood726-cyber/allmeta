@@ -425,11 +425,21 @@
     // which the validator can re-fit. Lane estho: before, none was sent (validator PM/z).
     window.__almValidatorModel = function () { return { method: "FE", test: "z" }; };
     document.getElementById("btn-run").addEventListener("click", run);
+    // What the TruthCert receipt signs and the bus "Save" stores (lane rcpt2): the rows the
+    // displayed result was fitted on. The shared reader splits on commas only, so a tab- or
+    // space-delimited paste this page analysed was neither signed nor saved.
+    window.__almReceiptStudies = function () { return window.__almValidatorStudies(); };
     if (window.MaStudies && MaStudies.attachButtons) {
       MaStudies.attachButtons({
-        btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
+        btnLoad: "#btn-bus-load",
         textarea: "#src", format: "est-se-label",
         onAfterLoad: run,
+      });
+      document.getElementById("btn-bus-save").addEventListener("click", function () {
+        const rows = window.__almReceiptStudies();
+        if (!rows.length) { if (window.Toast) Toast.show("Nothing to save.", "warn"); return; }
+        const ok = MaStudies.write(rows);
+        if (window.Toast) Toast.show(ok ? ("Saved " + rows.length + " studies to shared bus.") : "Could not save to bus.", ok ? "warn" : "error");
       });
     }
     run();
@@ -595,7 +605,9 @@
       test: function () { return window.__almValidatorModel && window.__almValidatorModel().test; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
-      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "pet-peese", textarea: "#src", format: "est-se-label" });
+      // Sign the studies this page analysed, not a re-read of the input with the shared reader (lane rcpt2).
+      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "pet-peese",
+        getStudies: function () { return window.__almReceiptStudies ? window.__almReceiptStudies() : []; } });
     }
   });
 })();

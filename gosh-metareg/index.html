@@ -276,11 +276,34 @@
     }
 
     document.getElementById("btn-run").addEventListener("click", run);
-    if (window.MaStudies && MaStudies.attachButtons) {
-      MaStudies.attachButtons({
-        btnLoad: "#btn-bus-load", btnSave: "#btn-bus-save",
-        textarea: "#src", format: "est-se-label-mod",
-        onAfterLoad: run,
+    // What the TruthCert receipt signs and the bus "Save" stores (lane rcpt2): the studies this
+    // page analyses, read by its own parse() ("effect, SE, moderator, label"). The shared
+    // "est-se-label-mod" reader is "effect, SE, label, moderator", so it signed and saved the
+    // moderator as the label and dropped the moderator.
+    window.__almReceiptStudies = function () {
+      return (window.__almValidatorStudies ? window.__almValidatorStudies() : []).map(s =>
+        ({ label: s.label, est: s.est, se: s.se, moderator: s.mod }));
+    };
+    if (window.MaStudies && MaStudies.write && MaStudies.read) {
+      document.getElementById("btn-bus-save").addEventListener("click", function () {
+        const rows = window.__almReceiptStudies();
+        if (!rows.length) { if (window.Toast) Toast.show("Nothing to save.", "warn"); return; }
+        const ok = MaStudies.write(rows);
+        if (window.Toast) Toast.show(ok ? ("Saved " + rows.length + " studies to shared bus.") : "Could not save to bus.", ok ? "warn" : "error");
+      });
+      // Load writes the page's own column order. A study with no moderator cannot be analysed
+      // here, so the message says how many were left out rather than dropping them silently.
+      document.getElementById("btn-bus-load").addEventListener("click", function () {
+        const studies = MaStudies.read();
+        if (!studies.length) { if (window.Toast) Toast.show("No shared studies yet.", "warn"); return; }
+        const usable = studies.filter(s => Number.isFinite(s.moderator));
+        const ta = document.getElementById("src");
+        ta.value = usable.map(s => [s.est, s.se, s.moderator, s.label].join(", ")).join("\n");
+        ta.dispatchEvent(new Event("input", { bubbles: true }));
+        if (usable.length < studies.length && window.Toast) {
+          Toast.show((studies.length - usable.length) + " shared studies have no moderator and were not loaded.", "warn");
+        }
+        run();
       });
     }
     // Defer initial auto-run so the page settles into "networkidle" first
@@ -302,7 +325,9 @@
       getStudies: function () { return window.__almValidatorStudies ? window.__almValidatorStudies() : []; } });
     if (window.TruthCertUI) {
       TruthCertUI.attachSettingsButton({ btn: "#btn-truthcert-key" });
-      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "gosh-metareg", textarea: "#src", format: "est-se-label-mod" });
+      // Sign the studies this page analysed, not a re-read of the input with the shared reader (lane rcpt2).
+      TruthCertUI.attachReceiptButton({ btn: "#btn-truthcert", basename: "gosh-metareg",
+        getStudies: function () { return window.__almReceiptStudies ? window.__almReceiptStudies() : []; } });
     }
   });
 })();
