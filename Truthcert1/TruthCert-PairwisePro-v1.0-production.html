@@ -2593,11 +2593,9 @@ function computeClinical() {
 }
 // Helper: pnorm (standard normal CDF)
 function pnorm(x, mean = 0, sd = 1) {
-  const z = (x - mean) / sd;
-  const t = 1 / (1 + 0.2316419 * Math.abs(z));
-  const d = 0.3989423 * Math.exp(-z * z / 2);
-  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-  return z > 0 ? 1 - p : p;
+  // R pnorm via shared/upper-tail.js. Was Abramowitz-Stegun 26.2.17 with 7-digit coefficients
+  // (pnorm(-3) = 0.00134997, R 0.00134990).
+  return AlmTail.pnormUpper(-(x - mean) / sd);
 }
 // ML Outlier Detection
 function mlOutlierDetection(yi, vi, names) {

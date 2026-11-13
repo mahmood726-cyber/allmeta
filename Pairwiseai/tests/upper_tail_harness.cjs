@@ -23,8 +23,11 @@ const sandbox = {
 };
 sandbox.window = sandbox; sandbox.self = sandbox; sandbox.globalThis = sandbox;
 const ctx = vm.createContext(sandbox);
-const tail = path.join(root, '..', 'shared', 'upper-tail.js');
-vm.runInContext(fs.readFileSync(tail, 'utf8'), ctx, { filename: tail });
+// every ../shared/*.js script the page loads, in page order (upper-tail.js, ma-core.js, heterogeneity-ci.js, stats-qt.js)
+for (const m of html.matchAll(/<script src="\.\.\/shared\/([\w.-]+\.js)"><\/script>/g)) {
+  const f = path.join(root, '..', 'shared', m[1]);
+  vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
+}
 // the engine script: the inline <script> (no src attribute) that defines solveGLS
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).filter(s => s.includes('function calculatePooledEstimate('));
 if (scripts.length !== 1) throw new Error('engine script not found: ' + scripts.length);

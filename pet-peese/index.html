@@ -60,6 +60,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/upper-tail.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
   <script src="../shared/truthcert-export.js"></script>
@@ -224,13 +225,10 @@
       return betaInc(df / 2, 0.5, x);
     }
 
-    // normal CDF for z→p (two-sided)
-    function pnorm(x) {
-      const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
-      return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
-    }
-    function pFromZ(z) { return 2 * (1 - pnorm(Math.abs(z))); }
+    // Normal CDF and two-sided p from z, R pnorm (shared/upper-tail.js). pnorm was Abramowitz-Stegun 7.1.26
+    // (relative error 5e-5 at x = -3) and pFromZ was 2 * (1 - pnorm(|z|)), which cancels to 0 for z > ~8.3.
+    function pnorm(x) { return AlmTail.pnormUpper(-x); }
+    function pFromZ(z) { return AlmTail.p2norm(z); }
 
     function petPeese(rows) {
       const xs = rows.map(r => r.se);

@@ -62,6 +62,7 @@
   <script src="../hub/shared/url-state.js"></script>
   <script src="../hub/shared/reset-undo.js"></script>
   <script src="../hub/shared/tooltips.js"></script>
+  <script src="../shared/upper-tail.js"></script>
   <script src="../shared/ma-core.js"></script>
   <script src="../shared/build-info.js"></script>
   <script src="../shared/ma-studies-v1.js"></script>
@@ -158,10 +159,10 @@
 
     // ---- engine (unchanged math) ----
 
+    // Standard-normal CDF, R pnorm: P(Z <= x) = P(Z > -x) (shared/upper-tail.js). Was Abramowitz-Stegun 7.1.26
+    // (absolute error 1.5e-7; relative error 5e-5 at x = -3).
     function pnorm(x) {
-      var t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
-      var tail = 0.5 * (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
-      return x >= 0 ? 1 - tail : tail;
+      return AlmTail.pnormUpper(-x);
     }
 
     function fmt(x, d) {
