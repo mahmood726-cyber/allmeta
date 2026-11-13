@@ -8592,7 +8592,7 @@ function displayFragilityResults(results) {
 
  var stepText = function(k) { return k + ' step' + (k === 1 ? '' : 's') + ' of 0.05 (a shift of ' + (k * 0.05).toFixed(2) + ')'; };
 
- var pTxt = function(p) { return (typeof p === 'number' && Number.isFinite(p)) ? (p < 0.001 ? '&lt;0.001' : p.toFixed(4)) : 'not available'; };
+ var pTxt = function(p) { return (typeof p === 'number' && Number.isFinite(p)) ? (p < 0.001 ? 'p &lt; 0.001' : 'p = ' + p.toFixed(4)) : 'p not available'; };
 
  var verdictDiffers = (typeof results.unshiftedRepoolP === 'number' && typeof results.mainP === 'number') && ((results.unshiftedRepoolP < 0.05) !== (results.mainP < 0.05));
 
@@ -8636,9 +8636,9 @@ function displayFragilityResults(results) {
 
 
 
- '<p style="margin-bottom: 1rem;">No events are changed. For each study, its ' + measure + ' is moved ' + dirText + ' in steps of 0.05 (up to 50 steps), the studies are re-pooled with a fixed-effect inverse-variance model (z-test), and the index is the number of steps at which that re-pool\'s verdict at p &lt; 0.05 first differs from the main analysis (p = ' + pTxt(results.mainP) + '). This is not the event-count Fragility Index of Walsh et al.</p>' +
+ '<p style="margin-bottom: 1rem;">No events are changed. For each study, its ' + measure + ' is moved ' + dirText + ' in steps of 0.05 (up to 50 steps), the studies are re-pooled with a fixed-effect inverse-variance model (z-test), and the index is the number of steps at which that re-pool\'s verdict at p &lt; 0.05 first differs from the main analysis (' + pTxt(results.mainP) + '). This is not the event-count Fragility Index of Walsh et al.</p>' +
 
- (verdictDiffers ? '<div class="alert alert-warning" style="margin-bottom: 1rem;"><strong>Note:</strong> the fixed-effect re-pool of the unshifted studies already gives p = ' + pTxt(results.unshiftedRepoolP) + ', a different verdict from the main analysis (p = ' + pTxt(results.mainP) + '). The index can then reflect the change of pooling model rather than the shift.</div>' : '') +
+ (verdictDiffers ? '<div class="alert alert-warning" style="margin-bottom: 1rem;"><strong>Note:</strong> the fixed-effect re-pool of the unshifted studies already gives ' + pTxt(results.unshiftedRepoolP) + ', a different verdict from the main analysis (' + pTxt(results.mainP) + '). The index can then reflect the change of pooling model rather than the shift.</div>' : '') +
 
 
 

@@ -42,17 +42,17 @@ for (const name of Object.keys(scenarios)) {
   const rowsShown = sc.studies.map(s => { const m = text.match(new RegExp(s.study + '(?: \\(most fragile\\))? ' + s.n + ' (\\S+(?: \\S+)*?) (\\d+|>50)(?= |$)')); return m ? m[2] : null; });
   check(name + ': indices unchanged = independent recomputation of the 0.05-step search ' + JSON.stringify(exp.map(e => e || '>50')), JSON.stringify(rowsShown) === JSON.stringify(exp.map(e => e ? String(e) : '>50')), JSON.stringify(rowsShown) + ' | ' + text.slice(0, 300));
   check(name + ': no claim that events are changed', !/event\(s\) in|how many events would need/i.test(text) && /No events are changed/.test(text), text.slice(0, 400));
-  check(name + ': says what moves, by how much, on which scale, and against what', /steps of 0\.05/.test(text) && new RegExp(sc.type === 'survival' ? 'log hazard ratio' : 'mean difference').test(text) && /fixed-effect inverse-variance/.test(text) && /main analysis \(p = /.test(text), text.slice(0, 500));
+  check(name + ': says what moves, by how much, on which scale, and against what', /steps of 0\.05/.test(text) && new RegExp(sc.type === 'survival' ? 'log hazard ratio' : 'mean difference').test(text) && /fixed-effect inverse-variance/.test(text) && /main analysis \(p (=|<) /.test(text), text.slice(0, 500));
   check(name + ': the Events column shows no invented counts (it showed round(0.3 n))', !sc.studies.some(s => (s.events === 0 && name === 'continuous') ? new RegExp(s.study + '(?: \\(most fragile\\))? ' + s.n + ' ' + Math.round(s.n * 0.3) + ' ').test(text) : false) &&
     (name === 'continuous' ? /n\/a \(continuous outcome\)/.test(text) : new RegExp('K3(?: \\(most fragile\\))? 155 0 ').test(text)), text.slice(0, 600));
 }
 {
   const t = run('__m.join("")').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-  check('survival: the modal says the unshifted fixed-effect re-pool already disagrees with the main analysis', /already gives p = /.test(t), t.slice(0, 600));
+  check('survival: the modal says the unshifted fixed-effect re-pool already disagrees with the main analysis', /already gives p (=|<) /.test(t), t.slice(0, 600));
   sandbox.__sc = scenarios.continuous;
   run(`__m.length = 0; APP.config.outcomeType = __sc.type; APP.results = { studies: __sc.studies, pooled: { pooled: __sc.pooled, pValue: __sc.p } }; calculateFragilityIndex();`);
   const t2 = run('__m.join("")').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-  check('continuous: no such note when the re-pool agrees', !/already gives p = /.test(t2), t2.slice(0, 300));
+  check('continuous: no such note when the re-pool agrees', !/already gives p (=|<) /.test(t2), t2.slice(0, 300));
 }
 console.log(passed + '/' + (passed + failed) + ' PASS');
 process.exitCode = failed ? 1 : 0;
