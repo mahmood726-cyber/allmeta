@@ -7,6 +7,7 @@
 //   refuse    the Senn data with an inconsistent 3-arm study: FrequentistNMA.analyze, NetworkGuardian.analyze
 //   mlnmr     MLNMR adjusted-model tau2 (two-arm, SE x 0.3) and the multi-arm GLS fit (SE x 0.3)
 //   rr        FrequentistNMA / WORKER_CODE calcEffects RR per contrast, FrequentistNMA.analyze RR smokingcessation DL
+//   bayesRR   the matrices BayesianNMA.analyze builds for RR counts (common-effect GLS on them)
 //   zero      smokingcessation + a 3-arm study with a zero arm: its contrasts and the DL network, OR and RR
 //   boot      BootstrapRankUncertainty: the resampling unit (studies, multi-arm rows together), seed, B, MC SE
 //   cross     CrossDesignCalibratedNMA with y and SE x 1, x 0.01, x 1e-4 (scale equivariance) and row/RoB alignment
@@ -47,7 +48,7 @@ for (const m of html.slice(0, main.index).matchAll(/<script src="\.\.\/shared\/(
   const f = path.join(root, '..', 'shared', m[1]);
   vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
 }
-vm.runInContext(main[1] + '\n;globalThis.__X = {FrequentistNMA, NetworkGuardian, QDecompositionNMA, MLNMR,' +
+vm.runInContext(main[1] + '\n;globalThis.__X = {FrequentistNMA, NetworkGuardian, QDecompositionNMA, MLNMR, BayesianNMA,' +
   ' BootstrapRankUncertainty, CrossDesignCalibratedNMA, WORKER_CODE};', ctx, { filename: 'nma-pro-v8.0.html' });
 const X = vm.runInContext('__X', ctx);
 const wctx = sandbox();
@@ -78,7 +79,9 @@ for (const [nm, [st, ref, em]] of Object.entries(nets)) {
   out.decomp[nm] = { Q: h.Q, df: h.df, decomposition: h.decomposition, designByTreatment: h.designByTreatment,
     qmodule: safe(() => { const q = X.QDecompositionNMA.analyze(st, o); return { qWithin: q.qWithin, qBetween: q.qBetween,
       qTotal: q.qTotal, dfWithin: q.dfWithin, dfBetween: q.dfBetween, nDesigns: q.nDesigns,
-      designs: (q.rows || []).map(x => x.design) } }) };
+      designs: (q.rows || []).map(x => x.design),
+      twoArm: Object.fromEntries((q.rows || []).filter(x => x.arms && x.arms.length === 2).map(x => [x.arms.join(':'),
+        { label: x.design, direct: x.directEstimate, network: x.predictedEstimate, z: x.residualZ }])) } }) };
   const ns = rows => Object.fromEntries(rows.map(c => [c.t1 + ':' + c.t2, { network: c.networkEstimate,
     seNetwork: c.networkSE ?? null, direct: c.directEstimate, seDirect: c.directSE, indirect: c.indirectEstimate,
     seIndirect: c.indirectSE, diff: c.difference, seDiff: c.differenceSE, p: c.pValue, nStudies: c.nStudies }]));
@@ -134,9 +137,19 @@ out.zero = {};
     const rows = X.FrequentistNMA.calcEffects(sz, em).filter(s => String(s.study) === '25');
     const r = X.FrequentistNMA.analyze(sz, { reference: 'A', effectMeasure: em, estimator: 'DL', smallStudyCorrection: 'none',
       predictionIntervals: false }), e = r.effects.effects;
+    const wrows = WNMA.calcEffects(sz, em).filter(s => String(s.study) === '25');
+    out.zero['worker' + em] = { rowTE: wrows.map(s => s.yi), rowSE: wrows.map(s => Math.sqrt(s.vi)) };
     out.zero[em] = { rowTE: rows.map(s => s.yi), rowSE: rows.map(s => Math.sqrt(s.vi)), Q: r.heterogeneity.Q, tau2: r.tau2,
       TE: map(['B', 'C', 'D'], t => e[t].estimate), seTE: map(['B', 'C', 'D'], t => e[t].se) };
   } }
+
+// ---- BayesianNMA on RR counts: the matrices it is given must carry the RR multi-arm covariance ----
+{ const orig = X.FrequentistNMA.buildMatrices; let cap = null;
+  X.FrequentistNMA.buildMatrices = function (st, ref, o) { const m = orig.call(this, st, ref, o); if (!cap) cap = m; return m };
+  try { X.BayesianNMA.analyze(smoke, { reference: 'A', effectMeasure: 'RR', modelType: 'fixed', nChains: 2, nIter: 300,
+    burnin: 100, thin: 1, seed: 3, betaPriorSD: 1000, ppcReplicates: 100 }) } catch (e) { out.bayesRR = { error: String(e.message) } }
+  finally { X.FrequentistNMA.buildMatrices = orig }
+  if (cap) { const f = X.FrequentistNMA.fitGLS(cap, 0); out.bayesRR = Object.fromEntries(cap.treatments.slice(1).map((t, i) => [t, f.beta[i]])) } }
 
 // ---- bootstrap ranks: what is resampled ----
 { // instrument FrequentistNMA.analyze to record each bootstrap sample (the first call is the baseline)

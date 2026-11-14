@@ -28,6 +28,7 @@
 #             study with a zero cell) TE / seTE^2 per smokingcessation contrast (and RR.Cochrane = TRUE for contrast),
 #             and netmeta(pairwise(sm = "RR")) DL: Q, df, tau2, TE / seTE.random vs A (the multi-arm covariance is the
 #             variance of the shared arm's log risk, 1/e - 1/n).
+#  design2  : per two-arm design, the common-effect direct and network estimate of a0 - a1 (a0 alphabetically first).
 #  zero     : smokingcessation + a 3-arm study with a zero arm, pairwise() OR / RR and netmeta DL (Q, tau2, TE/seTE.random).
 suppressPackageStartupMessages({library(netmeta); library(meta); library(metafor); library(jsonlite)})
 a <- commandArgs(trailingOnly = TRUE)
@@ -132,4 +133,22 @@ for (s in c("OR", "RR")) {
                     TE = L(setNames(nz$TE.random[tr, "A"], tr)), seTE = L(setNames(nz$seTE.random[tr, "A"], tr)))
 }
 out$zero <- zero
+# ---- per two-arm design: direct (common-effect pooled) and network (common) estimate, oriented a0 - a1 with a0 the
+# alphabetically first arm -- the label "a0 vs a1" the Q Decomposition module prints
+dd2 <- list()
+for (nm in names(nets)) {
+  x <- nets[[nm]]; dsg <- list()
+  dl <- data.frame(s = x$studlab, t1 = x$treat1, t2 = x$treat2, TE = x$TE, se = x$seTE)
+  arms <- tapply(c(dl$t1, dl$t2), c(dl$s, dl$s), function(z) paste(sort(unique(z)), collapse = ":"))
+  for (k in unique(arms)) {
+    ar <- strsplit(k, ":")[[1]]; if (length(ar) != 2) next
+    r <- dl[arms[dl$s] == k, ]; te <- ifelse(r$t1 == ar[1], r$TE, -r$TE)
+    w <- 1 / r$se^2
+    dsg[[k]] <- list(direct = sum(w * te) / sum(w), network = x$TE.common[ar[1], ar[2]])
+  }
+  dd2[[nm]] <- dsg
+}
+out$design2 <- dd2
+# ---- Bayesian / GLS on RR multi-arm counts: netmeta common effect (the matrices the Bayesian model is given)
+trr <- setdiff(nr$trts, "A"); out$rr$common <- L(setNames(nr$TE.common[trr, "A"], trr))
 writeLines(toJSON(out, auto_unbox = TRUE, digits = NA), a[1])

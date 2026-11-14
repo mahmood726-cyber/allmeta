@@ -243,3 +243,39 @@ def test_cross_design_rob_labels_follow_their_rows():
     a = V['cross']['align']
     assert 'error' not in a, a
     assert a['a'] == a['b'] and _close(a['tauB'], a['tauA'], 1e-12), a
+
+
+# ---------------------------------------------------------------- review of PR #571 (agy)
+def test_q_decomposition_two_arm_rows_are_oriented_as_their_label():
+    # a two-arm design labelled "a0 vs a1" reports a0 - a1, as node-splitting does (Costa1997 acar vs plac: -0.8)
+    bad = []
+    for k in NETS:
+        page = V['decomp'][k]['qmodule'].get('twoArm', {})
+        for key, r in R['design2'][k].items():
+            p = page.get(key)
+            if p is None:
+                bad.append('%s %s missing' % (k, key))
+                continue
+            if p['label'] != key.replace(':', ' vs '):
+                bad.append('%s %s label %r' % (k, key, p['label']))
+            for f in ('direct', 'network'):
+                if not _close(p[f], r[f], 1e-8, 1e-12):
+                    bad.append('%s %s %s page %r R %r' % (k, key, f, p[f], r[f]))
+    assert bad == []
+
+
+def test_worker_multiarm_zero_arm_increment_in_all_arms():
+    bad = []
+    for em in ('OR', 'RR'):
+        r, p = R['zero'][em], V['zero']['worker' + em]
+        for f in ('rowTE', 'rowSE'):
+            for i, (a, b) in enumerate(zip(p[f], r[f])):
+                if not _close(a, b, 1e-12, 1e-14):
+                    bad.append('worker %s %s[%d] page %r R %r' % (em, f, i, a, b))
+    assert bad == []
+
+
+def test_bayesian_nma_gets_the_RR_multiarm_covariance():
+    p = V['bayesRR']
+    assert 'error' not in p, p
+    assert _bad_map(p, R['rr']['common'], 1e-8, 'RR common (Bayesian matrices)') == []
