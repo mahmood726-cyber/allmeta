@@ -6156,7 +6156,12 @@ function runPredictivePatientSelection() {
 
  // IPD-Fed: the subgroup effect follows the configured outcome type (calculateGroupEffect); it was a difference of
  // proportions of outcome === 1 for every type, i.e. 0 for a continuous outcome.
+ // IPD-Left2: and it is estimated per study on the scale runAnalysis pools (Cox log HR, log OR, mean difference) and
+ // pooled across studies; it was a crude difference of event proportions (time-to-event: follow-up ignored) or an
+ // unstratified risk difference (binary) over all patients of the subgroup.
  var outcomeType = rfCfg.outcomeType || 'binary';
+
+ var estCfg = { studyVar: rfCfg.studyVar, treatmentVar: treatmentVar, eventVar: outcomeVar, timeVar: rfCfg.timeVar, outcomeType: outcomeType };
 
 
 
@@ -6172,13 +6177,37 @@ function runPredictivePatientSelection() {
 
  }
 
+ // IPD-Left2: the configured outcome must be estimable per study (supported type, mapped time variable, both arms)
+ var allEst = ipdConfiguredStudyEstimates(APP.data, estCfg, 'Predictive Patient Selection');
+
+ if (allEst.refused) {
+
+ hideLoadingOverlay();
+
+ showNotification(allEst.message, 'warning');
+
+ return;
+
+ }
+
+ // IPD-Left2: a variable derived from the outcome (e.g. hamd_endpoint, remission, response_50pct beside hamd_change)
+ // is not a patient characteristic: as a "predictor" it splits patients by their own outcome. Such columns are left
+ // out, and the user is told which and why.
+ var derivedCols = ipdOutcomeDerivedColumns(APP.data, estCfg);
+
  var covariates = Object.keys(firstRow).filter(function(k) {
 
  return !['study', 'study_id', 'patient_id', 'treatment', 'treatment_name', 'time', 'event', outcomeVar, treatmentVar, rfCfg.timeVar, rfCfg.studyVar].includes(k) &&
 
- typeof firstRow[k] === 'number';
+ typeof firstRow[k] === 'number' && !derivedCols.excluded.some(function(x) { return x.name === k; });
 
  }).slice(0, 6);
+
+ if (derivedCols.excluded.length) {
+
+ showNotification('Predictive Patient Selection: ' + derivedCols.excluded.length + ' column(s) derived from the outcome "' + outcomeVar + '" are not used as covariates: ' + derivedCols.excluded.map(function(x) { return x.name + ' (' + x.reason + ')'; }).join('; ') + '.', 'info');
+
+ }
 
 
 
@@ -6194,12 +6223,6 @@ function runPredictivePatientSelection() {
 
 
 
- var treated = APP.data.filter(function(d) { return d[treatmentVar] === 1; });
-
- var control = APP.data.filter(function(d) { return d[treatmentVar] === 0; });
-
-
-
  var cateByCovariate = {};
 
 
@@ -6212,19 +6235,9 @@ function runPredictivePatientSelection() {
 
 
 
- var lowTreated = treated.filter(function(d) { return d[cov] <= median; });
+ var lowEffect = calculateGroupEffect(APP.data.filter(function(d) { return d[cov] <= median; }), estCfg);
 
- var lowControl = control.filter(function(d) { return d[cov] <= median; });
-
- var highTreated = treated.filter(function(d) { return d[cov] > median; });
-
- var highControl = control.filter(function(d) { return d[cov] > median; });
-
-
-
- var lowEffect = calculateGroupEffect(lowTreated, lowControl, outcomeVar, outcomeType);
-
- var highEffect = calculateGroupEffect(highTreated, highControl, outcomeVar, outcomeType);
+ var highEffect = calculateGroupEffect(APP.data.filter(function(d) { return d[cov] > median; }), estCfg);
 
 
 
@@ -6318,21 +6331,16 @@ function runPredictivePatientSelection() {
 
 
 
- var benefitTreated = predictedBenefit.filter(function(p) { return p.treatment === 1; });
-
- var benefitControl = predictedBenefit.filter(function(p) { return p.treatment === 0; });
-
- var noBenefitTreated = predictedNoBenefit.filter(function(p) { return p.treatment === 1; });
-
- var noBenefitControl = predictedNoBenefit.filter(function(p) { return p.treatment === 0; });
-
-
-
  // IPD-Fed: the same effect measure as the subgroups (an empty arm gives NaN, shown as not estimable)
+ // IPD-Left2: estimated on the patients' own rows (study, time and event are needed per study)
 
- var effectInBenefiters = calculateGroupEffect(benefitTreated, benefitControl, 'outcome', outcomeType).effect;
+ var effBenefit = calculateGroupEffect(APP.data.filter(function(d, i) { return predictions[i].predicted_benefit === 'High'; }), estCfg);
 
- var effectInNonBenefiters = calculateGroupEffect(noBenefitTreated, noBenefitControl, 'outcome', outcomeType).effect;
+ var effNoBenefit = calculateGroupEffect(APP.data.filter(function(d, i) { return predictions[i].predicted_benefit === 'Low'; }), estCfg);
+
+ var effectInBenefiters = effBenefit.effect;
+
+ var effectInNonBenefiters = effNoBenefit.effect;
 
 
 
@@ -6347,6 +6355,8 @@ function runPredictivePatientSelection() {
  effectMeasure: ipdGroupEffectMeasure(outcomeType),
 
  covariates: covariates,
+
+ excludedCovariates: derivedCols.excluded,
 
  cateByCovariate: cateByCovariate,
 
@@ -6366,7 +6376,11 @@ function runPredictivePatientSelection() {
 
  effectInBenefiters: effectInBenefiters,
 
- effectInNonBenefiters: effectInNonBenefiters
+ effectInNonBenefiters: effectInNonBenefiters,
+
+ seInBenefiters: effBenefit.se,
+
+ seInNonBenefiters: effNoBenefit.se
 
  }
 
@@ -6379,41 +6393,36 @@ function runPredictivePatientSelection() {
 
 
 // IPD-Fed: the effect measure calculateGroupEffect reports for an outcome type.
+// IPD-Left2: per study on the scale runAnalysis pools, then a fixed-effect inverse-variance pool across studies.
 function ipdGroupEffectMeasure(outcomeType) {
- return outcomeType === 'continuous' ? 'mean difference (treated - control)' :
- outcomeType === 'survival' ? 'difference in event proportions (treated - control; follow-up time is ignored)' :
- 'risk difference (treated - control)';
+ var pool = '; estimated per study and pooled across studies with a fixed-effect inverse-variance model';
+ return outcomeType === 'continuous' ? 'mean difference (treated - control' + pool + ')' :
+ outcomeType === 'survival' ? 'log hazard ratio (Cox, treated vs control' + pool + '; shown as a hazard ratio)' :
+ 'log odds ratio (treated vs control' + pool + '; shown as an odds ratio)';
 }
 
-function calculateGroupEffect(treated, control, outcomeVar, outcomeType) {
+// IPD-Left2: the treatment effect in a group of patients (rows of APP.data): the per-study estimates of the configured
+// outcome (ipdConfiguredStudyEstimates -> ipdStudyEstimate: Cox log HR, log OR, mean difference; studies with both
+// arms) pooled with a fixed-effect inverse-variance model. No estimable study: effect NaN (shown as not estimable).
+// It was a difference of proportions of rows with outcome === 1 over all patients of the group, ignoring study (and,
+// for time-to-event data, follow-up time).
+function calculateGroupEffect(rows, estCfg) {
 
- if (!treated || treated.length === 0 || !control || control.length === 0) {
+ var n = Array.isArray(rows) ? rows.length : 0;
 
- return { effect: NaN, se: NaN, n: (treated ? treated.length : 0) + (control ? control.length : 0), error: 'Empty group' };
+ if (n === 0) return { effect: NaN, se: NaN, n: 0, k: 0, error: 'Empty group' };
 
- }
+ var est = ipdConfiguredStudyEstimates(rows, estCfg, 'Predictive Patient Selection');
 
- if (outcomeType === 'continuous') {
- // mean difference with SE sqrt(var1/n1 + var0/n0) (sample variances); fewer than 2 values in an arm: not estimable
- var y1 = treated.map(function(d) { return d[outcomeVar]; }).filter(function(v) { return typeof v === 'number' && Number.isFinite(v); });
- var y0 = control.map(function(d) { return d[outcomeVar]; }).filter(function(v) { return typeof v === 'number' && Number.isFinite(v); });
- if (y1.length < 2 || y0.length < 2) return { effect: NaN, se: NaN, n: y1.length + y0.length, error: 'Fewer than 2 values in an arm' };
- var m1 = y1.reduce(function(a, b) { return a + b; }, 0) / y1.length;
- var m0 = y0.reduce(function(a, b) { return a + b; }, 0) / y0.length;
- var v1 = y1.reduce(function(a, v) { return a + (v - m1) * (v - m1); }, 0) / (y1.length - 1);
- var v0 = y0.reduce(function(a, v) { return a + (v - m0) * (v - m0); }, 0) / (y0.length - 1);
- return { effect: m1 - m0, se: Math.sqrt(v1 / y1.length + v0 / y0.length), n: y1.length + y0.length };
- }
+ if (est.refused) return { effect: NaN, se: NaN, n: n, k: 0, error: est.message };
 
- var treatedRate = treated.filter(function(d) { return d[outcomeVar] === 1; }).length / treated.length;
+ var sw = 0, swy = 0;
 
- var controlRate = control.filter(function(d) { return d[outcomeVar] === 1; }).length / control.length;
+ est.estimates.forEach(function(e) { var w = 1 / (e.se * e.se); sw += w; swy += w * e.effect; });
 
- var effect = treatedRate - controlRate;
+ if (!(sw > 0)) return { effect: NaN, se: NaN, n: n, k: 0, error: 'No estimable study' };
 
- var se = Math.sqrt(treatedRate * (1 - treatedRate) / treated.length + controlRate * (1 - controlRate) / control.length);
-
- return { effect: effect, se: se ?? 0.1, n: treated.length + control.length };
+ return { effect: swy / sw, se: Math.sqrt(1 / sw), n: n, k: est.estimates.length };
 
  }
 
@@ -6422,9 +6431,18 @@ function calculateGroupEffect(treated, control, outcomeVar, outcomeType) {
 function displayPredictiveResults(results) {
 
  // IPD-Fed: a continuous outcome is shown in its own units (mean difference), proportions in percentage points.
+ // IPD-Left2: time-to-event and binary effects are log hazard / log odds ratios: shown as HR / OR, an interaction as
+ // the ratio of the two ratios (high vs low).
  var isCont = results.outcomeType === 'continuous';
 
- var fmtEff = function(x, signed) { if (!(typeof x === 'number' && Number.isFinite(x))) return 'not estimable'; var t = isCont ? x.toFixed(2) : (x * 100).toFixed(1) + '%'; return (signed && x > 0 ? '+' : '') + t; };
+ var ratioName = results.outcomeType === 'survival' ? 'HR' : 'OR';
+
+ var fmtEff = function(x, signed) { if (!(typeof x === 'number' && Number.isFinite(x))) return 'not estimable'; if (!isCont) return (signed ? 'ratio of ' + ratioName + 's ' : ratioName + ' ') + Math.exp(x).toFixed(2); return (signed && x > 0 ? '+' : '') + x.toFixed(2); };
+
+ var bestText = isCont ? (results.bestCate.interaction > 0 ? 'higher' : 'lower') + ' by ' + fmtEff(Math.abs(results.bestCate.interaction)) + ' (outcome units)' :
+ 'whose ' + ratioName + ' is ' + Math.exp(results.bestCate.interaction).toFixed(2) + ' times the ' + ratioName + ' of the other patients';
+
+ var excludedText = (results.excludedCovariates && results.excludedCovariates.length) ? '<br><span style="font-size:0.85rem;">Not used as covariates (derived from the outcome): ' + results.excludedCovariates.map(function(x) { return escapeHTML(x.name) + ' (' + escapeHTML(x.reason) + ')'; }).join('; ') + '</span>' : '';
 
  var modal = document.createElement('div');
 
@@ -6452,9 +6470,9 @@ function displayPredictiveResults(results) {
 
  Patients with ${results.bestPredictor} > ${results.bestCate.median.toFixed(1)} show a treatment effect
 
- ${results.bestCate.interaction > 0 ? 'higher' : 'lower'} by ${fmtEff(Math.abs(results.bestCate.interaction))}${isCont ? ' (outcome units)' : ' (percentage points)'}.
+ ${bestText}.
 
- <br><span style="font-size:0.85rem;">Effect measure: ${escapeHTML(results.effectMeasure || '')}</span>
+ <br><span style="font-size:0.85rem;">Effect measure: ${escapeHTML(results.effectMeasure || '')}. "Predicted benefiters" are the patients whose score predicts a larger (more positive) estimate on this scale${isCont ? '' : ' (a larger ' + ratioName + ': for a harmful event, LESS benefit)'}.</span>${excludedText}
 
  </div>
 
@@ -8430,6 +8448,28 @@ function calculateFragilityIndex() {
 
  var isSignificant = pooled.pValue < 0.05;
 
+ // IPD-Left2: the shifted studies are re-pooled with the main analysis' own model (estimator, HKSJ), so that only the
+ // shift can change the verdict. It was a fixed-effect z-test (recalculatePooledSimple) compared with e.g. a
+ // REML + HKSJ main analysis: on Lung Cancer (IO) the unshifted fixed-effect re-pool was already significant while the
+ // main analysis was not, so every study's index was 1. The unshifted re-pool must reproduce the main analysis.
+ var fragSettings = ipdFragilitySettings();
+
+ var refit0 = null;
+
+ try { refit0 = ipdRepoolLikeMain(studies, fragSettings); } catch (e) { refit0 = null; }
+
+ var tolOk = function(a, b) { return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= 1e-7 * Math.max(1, Math.abs(b)); };
+
+ if (!refit0 || !tolOk(refit0.pooled, pooled.pooled) || !tolOk(refit0.pValue, pooled.pValue)) {
+
+ hideLoadingOverlay();
+
+ showNotification('Fragility Index: the saved results could not be reproduced with the analysis settings (' + ipdFragilityModelText(fragSettings) + '). Rerun the analysis, then the Fragility Index.', 'warning');
+
+ return;
+
+ }
+
 
 
  var fragilities = studies.map(function(study) {
@@ -8462,7 +8502,7 @@ function calculateFragilityIndex() {
 
 
 
- var newPooled = recalculatePooledSimple(modifiedStudies);
+ var newPooled = ipdRepoolLikeMain(modifiedStudies, fragSettings);
 
  var newSignificant = newPooled.pValue < 0.05;
 
@@ -8521,7 +8561,9 @@ function calculateFragilityIndex() {
 
  mainP: pooled.pValue,
 
- unshiftedRepoolP: recalculatePooledSimple(studies).pValue,
+ unshiftedRepoolP: refit0.pValue,
+
+ model: ipdFragilityModelText(fragSettings),
 
  direction: pooled.pooled > 0 ? -1 : 1,
 
@@ -8536,6 +8578,27 @@ function calculateFragilityIndex() {
  }
 
 
+
+// IPD-Left2: the settings of the analysis that produced APP.results (as the study diagnostics read them).
+function ipdFragilitySettings() {
+ return Object.assign({}, APP.config || {}, APP.analysisSettings || {});
+}
+function ipdFragilityModelText(s) {
+ var names = { FE: 'fixed effect', DL: 'DerSimonian-Laird', REML: 'REML', PM: 'Paule-Mandel', SJ: 'Sidik-Jonkman', HE: 'Hedges', ML: 'ML' };
+ var m = s.reMethod || 'REML';
+ return (m === 'FE' ? 'fixed-effect inverse-variance' : (names[m] || m) + ' random-effects') + (s.useHKSJ ? ' with the Hartung-Knapp-Sidik-Jonkman adjustment (t, k - 1 df)' : ' (z-test)');
+}
+// IPD-Left2: re-pool study estimates with the main analysis' model: the same estimator dispatch and HKSJ step as
+// runAnalysis. Returns { pooled, se, pValue }.
+function ipdRepoolLikeMain(studies, s) {
+ var methods = { FE: 'fixedEffect', DL: 'randomEffectsDL', REML: 'randomEffectsREML', PM: 'randomEffectsPM', SJ: 'randomEffectsSJ', HE: 'randomEffectsHE', ML: 'randomEffectsML' };
+ var fn = methods[s.reMethod || 'REML'] || 'randomEffectsREML';
+ var y = studies.map(function(x) { return x.effect; });
+ var v = studies.map(function(x) { return (typeof x.variance === 'number' && Number.isFinite(x.variance)) ? x.variance : x.se * x.se; });
+ var r = MetaAnalysis[fn](y, v);
+ if (s.useHKSJ) r = MetaAnalysis.applyHKSJ(r, y, v);
+ return { pooled: r.pooled, se: r.se, pValue: Number.isFinite(r.pValue) ? r.pValue : r.p };
+}
 
 function recalculatePooledSimple(studies) {
 
@@ -8584,8 +8647,9 @@ function displayFragilityResults(results) {
  var overallText = noneFlips ? '&gt;50' : String(results.overallFragility);
 
  // IPD-Fed: this is a shift-based index, not the event-count Fragility Index: say what is counted. The search moves
- // ONE study's estimate in steps of 0.05 on the analysis scale and re-pools with a fixed-effect inverse-variance
- // z-test; the index is the first step at which that re-pool's verdict (p < 0.05) differs from the main analysis'.
+ // ONE study's estimate in steps of 0.05 on the analysis scale and re-pools (IPD-Left2: with the main analysis' model;
+ // it was a fixed-effect inverse-variance
+ // z-test); the index is the first step at which that re-pool's verdict (p < 0.05) differs from the main analysis'.
  var measure = escapeHTML(results.measure || 'effect');
 
  var dirText = results.direction === -1 ? 'downwards (towards lower values)' : 'upwards (towards higher values)';
@@ -8636,9 +8700,9 @@ function displayFragilityResults(results) {
 
 
 
- '<p style="margin-bottom: 1rem;">No events are changed. For each study, its ' + measure + ' is moved ' + dirText + ' in steps of 0.05 (up to 50 steps), the studies are re-pooled with a fixed-effect inverse-variance model (z-test), and the index is the number of steps at which that re-pool\'s verdict at p &lt; 0.05 first differs from the main analysis (' + pTxt(results.mainP) + '). This is not the event-count Fragility Index of Walsh et al.</p>' +
+ '<p style="margin-bottom: 1rem;">No events are changed. For each study, its ' + measure + ' is moved ' + dirText + ' in steps of 0.05 (up to 50 steps), the studies are re-pooled with the main analysis\' model (' + escapeHTML(results.model || 'fixed-effect inverse-variance (z-test)') + '), and the index is the number of steps at which that re-pool\'s verdict at p &lt; 0.05 first differs from the main analysis (' + pTxt(results.mainP) + '). This is not the event-count Fragility Index of Walsh et al.</p>' +
 
- (verdictDiffers ? '<div class="alert alert-warning" style="margin-bottom: 1rem;"><strong>Note:</strong> the fixed-effect re-pool of the unshifted studies already gives ' + pTxt(results.unshiftedRepoolP) + ', a different verdict from the main analysis (' + pTxt(results.mainP) + '). The index can then reflect the change of pooling model rather than the shift.</div>' : '') +
+ (verdictDiffers ? '<div class="alert alert-warning" style="margin-bottom: 1rem;"><strong>Note:</strong> the re-pool of the unshifted studies already gives ' + pTxt(results.unshiftedRepoolP) + ', a different verdict from the main analysis (' + pTxt(results.mainP) + '). The index can then reflect the change of pooling model rather than the shift.</div>' : '') +
 
 
 
@@ -8674,9 +8738,9 @@ function displayFragilityResults(results) {
 
  '<div class="alert alert-info" style="margin-top: 1.5rem;">' +
 
- '<strong>Interpretation:</strong> ' + (noneFlips ? 'No single study had a shift (up to 50 steps of 0.05 in its ' + measure + ') that would make the fixed-effect re-pool ' + (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.' :
+ '<strong>Interpretation:</strong> ' + (noneFlips ? 'No single study had a shift (up to 50 steps of 0.05 in its ' + measure + ') that would make the re-pool ' + (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.' :
 
- 'Moving the ' + measure + ' of ' + escapeHTML(results.mostFragileStudy.study) + ' ' + dirText + ' by ' + stepText(results.overallFragility) + ' makes the fixed-effect re-pool ' +
+ 'Moving the ' + measure + ' of ' + escapeHTML(results.mostFragileStudy.study) + ' ' + dirText + ' by ' + stepText(results.overallFragility) + ' makes the re-pool ' +
 
  (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.') +
 
@@ -37168,6 +37232,12 @@ function updateOutcomeVars() {
  // depression examples, continuous hamd_change with a derived 0/1 "remission" column, into binary remission).
  APP.declaredOutcome = { outcomeType: outcomeType, source: 'example_dataset:' + type, fingerprint: (typeof computeCurrentDataFingerprint === 'function') ? computeCurrentDataFingerprint() : null };
 
+ // IPD-Left2: columns of this example that are all computed from the same endpoint (one of them is the outcome, the
+ // others are derived from it); ipdOutcomeDerivedColumns keeps them out of covariate lists while this data is loaded.
+ var outcomeFamilies = { continuous: ['hamd_endpoint', 'hamd_change', 'remission', 'response_50pct'], network_antidepressants: ['hamd_endpoint', 'hamd_change', 'remission'] };
+
+ if (outcomeFamilies[type] && data[0]) APP.declaredOutcome.outcomeFamily = outcomeFamilies[type].filter(function(c) { return c in data[0]; });
+
  APP.variables = detectVariableTypes(data, Object.keys(data[0]));
 
  displayData();
@@ -37613,6 +37683,51 @@ function ipdStudyEstimate(studyData, cfg, armMapping) {
 
 
  return { effect: effect, variance: variance, se: se, n1: treat1.length, n0: treat0.length };
+}
+
+// IPD-Left2: numeric columns derived from the configured outcome, which must not be used as patient covariates.
+// (1) A loaded example declares which of its columns are computed from one endpoint (APP.declaredOutcome.outcomeFamily,
+// valid only for that exact data): with the outcome among them, the others are derived. (2) For any data, a column
+// that is an exact affine function of the outcome (|r| = 1), or a 0/1 column that a threshold of the outcome
+// separates perfectly (e.g. responder = change >= c; at least 5 patients in each group, so that a rare 0/1
+// characteristic is not flagged by chance), is derived; and, for a 0/1 outcome, a column one of whose thresholds
+// separates the outcome perfectly (remission = hamd_endpoint <= 7), at least 5 patients per outcome group. Returns { excluded: [{ name, reason }] }.
+function ipdOutcomeDerivedColumns(rows, cfg) {
+ rows = Array.isArray(rows) ? rows : [];
+ const y = cfg && cfg.eventVar;
+ const r0 = rows[0] || {};
+ const excluded = [];
+ if (!y || !(y in r0)) return { excluded };
+ const skip = new Set([y, cfg.studyVar, cfg.treatmentVar, cfg.timeVar].filter(Boolean));
+ const decl = (typeof APP !== 'undefined') ? APP.declaredOutcome : null;
+ const declOk = !!(decl && Array.isArray(decl.outcomeFamily) && decl.fingerprint && typeof computeCurrentDataFingerprint === 'function' &&
+  decl.fingerprint === computeCurrentDataFingerprint());
+ if (declOk && decl.outcomeFamily.includes(y)) {
+  decl.outcomeFamily.forEach(c => { if (!skip.has(c) && c in r0) excluded.push({ name: c, reason: 'computed from the same endpoint as ' + y + ' in this example' }); });
+ }
+ Object.keys(r0).forEach(c => {
+  if (skip.has(c) || excluded.some(x => x.name === c) || typeof r0[c] !== 'number') return;
+  const pairs = rows.map(d => [Number(d[y]), d[c]]).filter(q => Number.isFinite(q[0]) && typeof q[1] === 'number' && Number.isFinite(q[1]));
+  if (pairs.length < 10) return;
+  const n = pairs.length;
+  const my = pairs.reduce((a, q) => a + q[0], 0) / n, mc = pairs.reduce((a, q) => a + q[1], 0) / n;
+  let sxy = 0, sxx = 0, syy = 0;
+  pairs.forEach(q => { sxy += (q[0] - my) * (q[1] - mc); syy += (q[0] - my) * (q[0] - my); sxx += (q[1] - mc) * (q[1] - mc); });
+  if (sxx > 0 && syy > 0 && Math.abs(sxy) / Math.sqrt(sxx * syy) > 1 - 1e-9) { excluded.push({ name: c, reason: 'an exact linear function of ' + y }); return; }
+  const g1 = pairs.filter(q => q[1] === 1).map(q => q[0]), g0 = pairs.filter(q => q[1] === 0).map(q => q[0]);
+  if (Math.min(g1.length, g0.length) >= 5 && g1.length + g0.length === n) {
+   const mx = a => a.reduce((m, v) => v > m ? v : m, -Infinity), mn = a => a.reduce((m, v) => v < m ? v : m, Infinity);
+   if (mx(g0) < mn(g1) || mx(g1) < mn(g0)) { excluded.push({ name: c, reason: 'a 0/1 column that a threshold of ' + y + ' separates perfectly' }); return; }
+  }
+  // IPD-Left2 (agy #561): the symmetric case: a 0/1 OUTCOME that a threshold of this column separates perfectly
+  // (remission = hamd_endpoint <= 7: hamd_endpoint is the measurement the outcome was derived from)
+  const h1 = pairs.filter(q => q[0] === 1).map(q => q[1]), h0 = pairs.filter(q => q[0] === 0).map(q => q[1]);
+  if (Math.min(h1.length, h0.length) >= 5 && h1.length + h0.length === n) {
+   const mx = a => a.reduce((m, v) => v > m ? v : m, -Infinity), mn = a => a.reduce((m, v) => v < m ? v : m, Infinity);
+   if (mx(h0) < mn(h1) || mx(h1) < mn(h0)) excluded.push({ name: c, reason: 'a column whose threshold separates the 0/1 outcome ' + y + ' perfectly (the outcome is derived from it)' });
+  }
+ });
+ return { excluded };
 }
 
 // IPD-Fed: per-study estimates of the CONFIGURED outcome, on the scale runAnalysis pools (ipdStudyEstimate: Cox log
