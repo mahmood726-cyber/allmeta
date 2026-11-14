@@ -35,13 +35,14 @@ const sample = /document\.getElementById\('dataInput'\)\.value = `(id,author[\s\
 const points = (() => { const r = vm.runInContext('parseCSV', ctx)(sample); return Array.isArray(r) ? r : (r.points || r.data); })();
 ctx.__points = points;
 const out = {};
-for (const method of ['DL', 'REML']) {
+for (const hk of [false, true]) for (const method of ['DL', 'REML']) {
   for (const model of ['quadratic', 'linear']) {
-    const r = vm.runInContext(`useREML = ${method === 'REML'}; currentTau2 = null;
+    // hk: HK/SJ switched on in the app before the export (lane pwrest: the page's PI then uses the HK-scaled SE)
+    const r = vm.runInContext(`useREML = ${method === 'REML'}; currentTau2 = null; useHKSJ = ${hk};
       analysisResults = { points: __points, modelType: '${model}', results: fitModelByType(__points, null, '${model}') };
-      generateRCode(); currentMainModel = '${model}'; excludedStudies = new Set(); useHKSJ = false; currentCI = 95;
+      currentMainModel = '${model}'; excludedStudies = new Set(); currentCI = 95; generateRCode();
       var __p = buildAnalysisReportPayload(); analysisResults.results.__pi = [__p.piLower, __p.piUpper]; analysisResults.results`, ctx);
-    out[method + '_' + model] = { page: { beta: Array.from(r.beta), se: Array.from(r.se), tau2: r.tau2, Q: r.Q, df: r.df,
+    out[method + '_' + model + (hk ? '_HK' : '')] = { page: { beta: Array.from(r.beta), se: Array.from(r.se), tau2: r.tau2, Q: r.Q, df: r.df,
       nStudies: r.nStudies, piLower: r.__pi[0], piUpper: r.__pi[1] },
       code: elements.rCodeOutput.textContent };
     elements.rCodeOutput.textContent = '';
