@@ -10243,18 +10243,31 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     return { se, seCr2, studies: n };
   }
 
-  function updateDiagnostics(stats) {
-    if (!dom.diagQ) return;
-    const valid = stats.filter(item => Number.isFinite(item.q));
+  // The Diagnostics panel's Global Q / df / p and I² (I² as a fraction). The LaTeX and DOCX exports
+  // read this same function, so an export cannot print a heterogeneity value the panel does not show
+  // (they printed Q = N/A, "the network fit computes no global Q", and I² = 0.931\% beside the
+  // panel's Global Q = 8.148 and I² = 93.1%; re-review lane rrev61, F1/F3).
+  function diagnosticsHeterogeneity(stats) {
+    const valid = (stats || []).filter(item => Number.isFinite(item.q));
     const totalQ = valid.reduce((sum, item) => sum + item.q, 0);
     const totalDf = valid.reduce((sum, item) => sum + (Number.isFinite(item.df) ? item.df : 0), 0);
-    const dispersion = totalDf ? totalQ / totalDf : NaN;
     const i2 = Number.isFinite(state.globalI2) ? state.globalI2 : (totalQ > totalDf ? (totalQ - totalDf) / totalQ : 0);
+    return { valid, Q: totalQ, df: totalDf, Qp: chiSquarePValue(totalQ, totalDf), I2: i2 };
+  }
+
+  function updateDiagnostics(stats) {
+    if (!dom.diagQ) return;
+    const het = diagnosticsHeterogeneity(stats);
+    const valid = het.valid;
+    const totalQ = het.Q;
+    const totalDf = het.df;
+    const dispersion = totalDf ? totalQ / totalDf : NaN;
+    const i2 = het.I2;
     const meanRmse = valid.length ? valid.reduce((sum, item) => sum + (Number.isFinite(item.rmse) ? item.rmse : 0), 0) / valid.length : NaN;
     const meanR2 = valid.length ? valid.reduce((sum, item) => sum + (Number.isFinite(item.r2) ? item.r2 : 0), 0) / valid.length : NaN;
 
     dom.diagQ.textContent = formatNumber(totalQ);
-    dom.diagQp.textContent = formatNumber(chiSquarePValue(totalQ, totalDf));
+    dom.diagQp.textContent = formatNumber(het.Qp);
     dom.diagDf.textContent = formatNumber(totalDf);
     dom.diagI2.textContent = formatProbability(i2);
     dom.diagDispersion.textContent = formatNumber(dispersion);
@@ -11598,9 +11611,40 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
     runRobustBayesian: "the robust Bayesian meta-analysis fails (Cannot read properties of undefined)",
   };
 
+  function unvalidatedMessage(id) {
+    return `Not available: ${UNVALIDATED_CONTROLS[id]}. Disabled until it is validated against R.`;
+  }
+
   function refuseUnvalidated(el, id) {
-    showRefusal(el, `Not available: ${UNVALIDATED_CONTROLS[id]}. Disabled until it is validated against R.`);
+    showRefusal(el, unvalidatedMessage(id));
     return true;
+  }
+
+  // The refused controls said "Disabled until it is validated" but none was disabled, and feature
+  // search still offered them (re-review lane rrev61, F4). Each is now disabled (disabled +
+  // aria-disabled="true"), with the reason shown beside it and linked by aria-describedby, so the
+  // explanation is visible without clicking. Feature search (index.html) skips disabled controls.
+  // The click handlers keep their refuseUnvalidated() guard as a second line of defence.
+  function markUnvalidatedControls() {
+    for (const id of Object.keys(UNVALIDATED_CONTROLS)) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      const message = unvalidatedMessage(id);
+      el.disabled = true;
+      el.setAttribute("aria-disabled", "true");
+      el.title = message;
+      const noteId = `${id}-refusal`;
+      let note = document.getElementById(noteId);
+      if (!note) {
+        note = document.createElement("span");
+        note.id = noteId;
+        note.className = "refusal-note";
+        note.style.cssText = "display:block;margin:4px 0 8px;font-size:12px;color:var(--muted,#6b7280);";
+        el.after(note);
+      }
+      note.textContent = message;
+      el.setAttribute("aria-describedby", noteId);
+    }
   }
 
   // The "Tau-squared Estimation" panel: the estimator chosen in #tau2Estimator applied to the loaded
@@ -11831,11 +11875,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
           const data = {
             stats: state.lastStats,
             curves: state.lastCurves,
-            globalMetrics: {
-              Q: NaN, // the network fit computes no global Q (the globalQ state field was never set); exports print N/A
-              I2: state.globalI2,
-              tau2: state.globalTau2
-            }
+            // the Diagnostics panel's values (Global Q, df, p, I² as a fraction) and its tau²
+            globalMetrics: { ...diagnosticsHeterogeneity(state.lastStats), valid: undefined, tau2: state.globalTau2 }
           };
           const latex = exportLatexDocument(data);
           const blob = new Blob([latex], { type: "text/plain" });
@@ -11869,11 +11910,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
           const data = {
             stats: state.lastStats,
             curves: state.lastCurves,
-            globalMetrics: {
-              Q: NaN, // the network fit computes no global Q (the globalQ state field was never set); exports print N/A
-              I2: state.globalI2,
-              tau2: state.globalTau2
-            }
+            // the Diagnostics panel's values (Global Q, df, p, I² as a fraction) and its tau²
+            globalMetrics: { ...diagnosticsHeterogeneity(state.lastStats), valid: undefined, tau2: state.globalTau2 }
           };
           showNotification("Generating DOCX...", "info");
           const blob = await exportDocx(data);
@@ -20852,6 +20890,8 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
   window.showQuickStartGuide = showQuickStartGuide;
 
   async function init() {
+    // before the engine loads, so a refused control is never clickable, even if WASM fails
+    markUnvalidatedControls();
     try {
       state.wasm = await loadWasm();
       setStatus("Engine ready.");

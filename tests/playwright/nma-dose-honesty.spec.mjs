@@ -114,3 +114,62 @@ test('WebR card refuses rows without a positive SE instead of substituting 0.1',
   expect(await page.evaluate(() => window.__sent.length), 'nothing was sent to R').toBe(0);
   await expect(page.locator('#webrRunBtn')).toBeEnabled();
 });
+
+// Re-review lane rrev61 (F1-F3), fixed in lane nmaexp2 (2026-11-14): "Export LaTeX (.tex)" printed I²
+// as a fraction ("0.931\%" beside Diagnostics' 93.1%), printed Q as N/A ("the network fit computes no
+// global Q") beside Diagnostics' Global Q, and wrote literal "\n" sequences, so the file was one line.
+// Heterogeneous data with random effects on (rrev61's probe data), and the default sample (fixed effect).
+const HET_CSV = `study,treatment,dose,effect,se
+S1,Placebo,0,0,0.02
+S1,A,5,0.28,0.02
+S1,D,5,0.15,0.02
+S2,Placebo,0,0.02,0.02
+S2,A,10,0.49,0.02
+S3,Placebo,0,-0.03,0.02
+S3,D,10,0.30,0.02
+S3,A,40,1.30,0.02
+S4,Placebo,0,0.01,0.02
+S4,A,20,0.66,0.02
+S4,D,20,0.41,0.02
+S5,Placebo,0,0.04,0.02
+S5,A,30,0.35,0.02
+S5,D,40,0.52,0.12`;
+
+for (const data of ['heterogeneous, random effects', 'default sample']) {
+  test(`LaTeX document export: valid structure; Q, df and I² are the Diagnostics values (${data})`, async ({ page }) => {
+    await open(page);
+    if (data !== 'default sample') {
+      await tabOf(page, 'csvInput');
+      await page.locator('#csvInput').fill(HET_CSV);
+      await tabOf(page, 'randomEffectsToggle');
+      // the user clicks the toggle's label
+      if (!(await page.locator('#randomEffectsToggle').isChecked())) await page.locator('label:has(#randomEffectsToggle)').click();
+      await expect(page.locator('#randomEffectsToggle')).toBeChecked();
+      await tabOf(page, 'runAnalysis');
+      await page.locator('#runAnalysis').click();
+      await expect.poll(() => page.evaluate(() => [window._nmaState.rawData.length, window._nmaState.randomEffects])).toEqual([14, true]);
+    }
+    const diag = await page.evaluate(() => Object.fromEntries(['diagQ', 'diagDf', 'diagQp', 'diagI2']
+      .map(id => [id, document.getElementById(id).textContent.trim()])));
+    for (const v of Object.values(diag)) expect(v, JSON.stringify(diag)).not.toBe('-');
+    const { name, text } = await download(page, 'exportLatex');
+    expect(name).toBe('nma-analysis.tex');
+    expect(text).not.toMatch(/\\n(?![a-zA-Z])/);
+    expect(text.split('\n').length).toBeGreaterThan(20);
+    const body = text.split('\n').map(l => l.replace(/(?<!\\)%.*$/, '')).join('\n');
+    expect(body.trimEnd().endsWith('\\end{document}')).toBe(true);
+    const begins = [...body.matchAll(/\\begin\{([^}]*)\}/g)].map(m => m[1]);
+    const ends = [...body.matchAll(/\\end\{([^}]*)\}/g)].map(m => m[1]);
+    expect(ends.slice().sort()).toEqual(begins.slice().sort());
+    const qLine = text.split('\n').find(l => l.includes('Global Q')) || '';
+    const m = /: ([0-9.]+) \(df = (\d+), p = ([0-9.]+)\)/.exec(qLine);
+    expect(m, qLine).toBeTruthy();
+    // same numbers as the panel, to the panel's displayed precision
+    const near = (exported, shown) => Math.abs(Number(exported) - Number(shown)) <= 0.5 * 10 ** -((shown.split('.')[1] || '').length) + 1e-12;
+    expect(near(m[1], diag.diagQ), `Q ${m[1]} vs Diagnostics ${diag.diagQ}`).toBe(true);
+    expect(Number(m[2]), `df vs Diagnostics ${diag.diagDf}`).toBe(Number(diag.diagDf));
+    expect(near(m[3], diag.diagQp), `p ${m[3]} vs Diagnostics ${diag.diagQp}`).toBe(true);
+    const i2Line = text.split('\n').find(l => l.startsWith('\\item $I^2$')) || '';
+    expect(i2Line).toBe(`\\item $I^2$: ${diag.diagI2.replace('%', '\\%')}`);
+  });
+}
