@@ -540,6 +540,11 @@ Test B 2021,72,8,18,202</pre>
                       </label>
                     </div>
                   </div>
+                  <div class="input-group" style="margin-bottom: var(--space-4);" id="mcidSettingGroup">
+                    <label class="input-label" for="mcidInput">MCID for the TruthCert verdict and GRADE imprecision</label>
+                    <input type="text" inputmode="decimal" class="input input--sm" id="mcidInput" value="" placeholder="none" autocomplete="off" aria-describedby="mcidHelp">
+                    <p class="text-xs text-secondary" id="mcidHelp" style="margin-top: var(--space-1);">Minimal clinically important difference on the scale of the measure: a ratio for OR / RR / HR (e.g. 0.90), otherwise a difference in the measure's units (e.g. 5 for 5 mmHg). Left blank, the verdict and GRADE imprecision are not assessed.</p>
+                  </div>
                   <div class="input-group" id="ccSettingGroup">
                     <label class="input-label" data-tooltip="Added to zero cells in 2x2 tables. 0.5 is standard; treatment-arm uses the opposite arm ratio; none excludes zero-cell studies.">Continuity Correction <span class="info-icon">?</span></label>
                     <div class="select-wrapper" style="width: 100%;">
@@ -11228,7 +11233,7 @@ function runFullAnalysis() {
         e.grade = assessGRADE({
           ...e,
           studies: t
-        }, void 0 !== TruthCertConfig ? TruthCertConfig : {})
+        }, truthCertConfigForRun(e.measure || AppState.settings.effectMeasure))
       }
       const i = e.studies || e.studiesWithEffects || [];
       try {
@@ -11337,7 +11342,7 @@ function computeGRADE() {
     e.grade = assessGRADE({
       ...e,
       studies: t
-    }, void 0 !== TruthCertConfig ? TruthCertConfig : {}), safeRender(renderAnalysisPanel, "panel-analysis", e), showToast("GRADE assessment complete", "success")
+    }, truthCertConfigForRun(e.measure)), safeRender(renderAnalysisPanel, "panel-analysis", e), showToast("GRADE assessment complete", "success")
   } catch (e) {
     console.error("GRADE failed:", e), showToast("GRADE failed: " + e.message, "error")
   } else alert("Run analysis first")
@@ -14338,9 +14343,12 @@ function runBenchmarkVerification() {
   }, e
 }
 window.runBenchmarkVerification = runBenchmarkVerification, window.BENCHMARK_REFERENCE = BENCHMARK_REFERENCE, window.rma_mv_multilevel = rma_mv_multilevel, window.rma_mv_multivariate = rma_mv_multivariate, window.correlationSensitivity = correlationSensitivity, window.Matrix = Matrix;
+// Lane pwrest3: delta (the MCID on the scale of yi) was a constant 0.1054 = |log 0.9| applied to every measure
+// (0.1 mmHg on a mean difference). It is now the user's MCID (#mcidInput, truthCertMCID) or null, and every
+// check that needs it says "not assessed" instead.
 const TruthCertConfig = {
     minK: 4,
-    delta: .1054,
+    delta: null,
     rho: .5,
     selModelMinK: 10,
     rareThreshold: .05,
@@ -14499,8 +14507,39 @@ function selectSmallStudyTest(e, t) {
   return n && a ? (logDecision("check", "Using Peters test (rare events detected)"), petersTest(e)) : (logDecision("check", "Using Egger test (standard approach)"), eggersTest(e.map(e => e.yi), e.map(e => e.sei)))
 }
 
+// The user's MCID on the scale of the analysis (yi): |log(ratio)| for OR / RR / HR, |difference| for RD, MD,
+// SMD and generic yi; refused (delta null, with the reason) when blank, not a number, a ratio <= 0 or = 1, a
+// zero difference, or a single-group measure (a proportion has no between-group MCID).
+function truthCertMCID(measure) {
+  const el = document.getElementById("mcidInput"),
+    raw = el ? String(el.value).trim() : "",
+    m = String(measure || (AppState.results && AppState.results.measure) || AppState.settings.effectMeasure || "").toUpperCase(),
+    ratio = ["OR", "RR", "HR"].includes(m),
+    diff = ["RD", "MD", "SMD", "GEN"].includes(m),
+    no = reason => ({ delta: null, value: raw === "" ? null : raw, measure: m, reason: "Not assessed: " + reason });
+  if (!ratio && !diff) return no(`the ${m || "chosen"} measure is not a between-group comparison, so it has no MCID.`);
+  const need = ratio ? `an MCID on the scale of the ${m} (a ratio such as 0.90; this page has no fixed one)` : `an MCID on the scale of the ${m} (a difference in its units; this page has no fixed one)`;
+  if (raw === "") return no(`needs ${need}. Enter it in the Data tab.`);
+  const x = Number(raw.replace(",", "."));
+  if (!isFinite(x)) return no(`the MCID "${raw}" is not a number; it needs ${need}.`);
+  if (ratio && !(x > 0 && x !== 1)) return no(`an MCID for the ${m} is a ratio greater than 0 and different from 1 (e.g. 0.90); got ${raw}.`);
+  if (diff && !(x !== 0)) return no(`an MCID of 0 is not a clinically important difference; it needs ${need}.`);
+  return { delta: ratio ? Math.abs(Math.log(x)) : Math.abs(x), value: raw, measure: m, ratio, reason: null };
+}
+
+// A changed MCID re-assesses the verdict of the result on the page (no new Run needed).
+document.addEventListener("change", ev => {
+  ev.target && "mcidInput" === ev.target.id && AppState.results && AppState.results.pooled && "function" == typeof runTruthCertAnalysis && runTruthCertAnalysis()
+});
+
+function truthCertConfigForRun(measure) {
+  const mc = truthCertMCID(measure);
+  return { ...TruthCertConfig, delta: mc.delta, mcid: mc };
+}
+
 function breakdownPoint(e, t, n) {
-  const a = (n || TruthCertConfig || {}).delta || .1054;
+  const a = (n || TruthCertConfig || {}).delta,
+    hasMCID = a > 0;   // without an MCID the "became trivial" reversal is not looked for
   if (!t || e.length < 3) return {
     ok: !1,
     fractionNull: null
@@ -14508,7 +14547,7 @@ function breakdownPoint(e, t, n) {
   const s = t.theta,
     i = s > 0 ? "positive" : s < 0 ? "negative" : "null",
     r = t.ci_lower > 0 || t.ci_upper < 0,
-    o = Math.abs(s) >= a;
+    o = hasMCID && Math.abs(s) >= a;
   if (!r && !o) return {
     ok: !0,
     fractionNull: 0,
@@ -14532,7 +14571,7 @@ function breakdownPoint(e, t, n) {
       m = calculatePooledEstimate(s, p, estimateTau2_DL(s, p).tau2),
       h = m.theta > 0 ? "positive" : m.theta < 0 ? "negative" : "null",
       v = m.ci_lower > 0 || m.ci_upper < 0,
-      g = Math.abs(m.theta) >= a,
+      g = hasMCID && Math.abs(m.theta) >= a,
       f = i !== h && "null" !== i,
       _ = r && !v;
     if (f || _ || o && !g) {
@@ -14576,7 +14615,7 @@ function permutationCI(e, t) {
   o.sort((e, t) => e - t);
   const l = o[Math.floor(.025 * n)],
     d = o[Math.floor(.975 * n)],
-    c = Math.abs(l - r.ci_lower) > t.delta || Math.abs(d - r.ci_upper) > t.delta;
+    c = t.delta > 0 ? Math.abs(l - r.ci_lower) > t.delta || Math.abs(d - r.ci_upper) > t.delta : null;
   return logDecision("check", `Permutation CI: [${l.toFixed(4)}, ${d.toFixed(4)}]`), {
     ok: !0,
     ci_lo: l,
@@ -14587,7 +14626,7 @@ function permutationCI(e, t) {
   }
 }
 
-function rhoSweep(e, t = [0, .3, .5, .7, .9]) {
+function rhoSweep(e, t = [0, .3, .5, .7, .9], cfg) {
   if (e.length < 3) return {
     ok: !1,
     results: [],
@@ -14613,7 +14652,7 @@ function rhoSweep(e, t = [0, .3, .5, .7, .9]) {
     ok: !0,
     results: i,
     spread: o,
-    robust: o < TruthCertConfig.delta
+    robust: cfg && cfg.delta > 0 ? o < cfg.delta : null
   }
 }
 
@@ -14688,17 +14727,27 @@ function profileLikelihoodTau2CI(e, t = null, n = null, a = .05) {
   const s = "number" == typeof n && isFinite(n) ? n : estimateTau2_REML(e, t).tau2;
   return profileLikelihoodTau2CIDetailed(e, t, s, a)
 }
+// Lane pwrest3: OIS = 4 (z_.975 + z_.80)^2 sigma2 / delta^2 / (1 - I2), sigma2 the per-participant variance
+// implied by each study's sampling variance (v n_t n_c / (n_t + n_c), averaged with weights n). It used the
+// mean squared standard error of the studies as sigma2 (SGLT2_ACM: 38 participants instead of R's 23 568
+// for OR 0.90) and the fixed delta 0.1054 on every scale.
 function calcOIS(e, t) {
-  const n = e.reduce((e, t) => e + (t.n_t || 0) + (t.n_c || 0), 0),
+  const r = t && t.delta;
+  if (!(r > 0)) return { ok: !1, notComputed: !0, reason: "OIS not computed: needs an MCID" };
+  if (!e.length || e.some(e => !(e.n_t > 0 && e.n_c > 0))) return { ok: !1, notComputed: !0, reason: "OIS not computed: needs both arm sizes of every study" };
+  const n = e.reduce((e, t) => e + t.n_t + t.n_c, 0),
     a = e.map(e => e.yi),
     s = e.map(e => e.sei * e.sei),
     i = calculatePooledEstimate(a, s, estimateTau2_DL(a, s).tau2),
-    r = t.delta || TruthCertConfig.delta,
     o = qnorm(.975),
     l = qnorm(.8),
-    d = 1 / (1 - (i.I2 || 0) / 100),
-    c = Math.sqrt(s.reduce((e, t) => e + t, 0) / s.length),
-    u = Math.ceil(4 * (o + l) ** 2 * c ** 2 / r ** 2 * d),
+    w = s.map(e => 1 / e),
+    mu = w.reduce((e, t, n) => e + t * a[n], 0) / w.reduce((e, t) => e + t, 0),
+    Q = w.reduce((e, t, n) => e + t * (a[n] - mu) ** 2, 0),
+    I2 = Q > e.length - 1 ? (Q - (e.length - 1)) / Q : 0,   // DerSimonian-Laird I2 (calculatePooledEstimate has no I2, so this was 0)
+    d = 1 / (1 - I2),
+    sig2 = e.reduce((a, t, i) => a + s[i] * t.n_t * t.n_c, 0) / n,
+    u = Math.ceil(4 * (o + l) ** 2 * sig2 / r ** 2 * d),
     p = (n / u * 100).toFixed(0),
     m = n >= u;
   return logDecision(m ? "check" : "trigger", `OIS: ${n} / ${u} = ${p}%`), {
@@ -14707,11 +14756,15 @@ function calcOIS(e, t) {
     oisRequired: u,
     percentOIS: p,
     metOIS: m,
-    adjustmentFactor: d
+    adjustmentFactor: d,
+    sigma2: sig2,
+    delta: r
   }
 }
 
-function robSensitivity(e) {
+function robSensitivity(e, cfg) {
+  const dlt = cfg ? cfg.delta : null;
+  if (!(dlt > 0)) return { ok: !1, triggered: !1, notAssessed: !0, reason: "Not assessed: needs an MCID" };
   const t = e.filter(e => "high" === e.rob || "high" === e.rob_overall);
   if (0 === t.length) return {
     ok: !0,
@@ -14731,7 +14784,7 @@ function robSensitivity(e) {
     o = n.map(e => e.sei * e.sei),
     l = calculatePooledEstimate(r, o, estimateTau2_DL(r, o).tau2),
     d = Math.abs(i.theta - l.theta),
-    c = d > TruthCertConfig.delta;
+    c = d > dlt;
   return logDecision(c ? "trigger" : "check", `RoB sensitivity: Δ = ${d.toFixed(4)}`), {
     ok: !0,
     triggered: c,
@@ -14754,14 +14807,14 @@ function buildThreatLedger(e, t) {
     detail: `${i} studies (min: ${a.minK})`,
     weight: i >= a.minK ? 0 : 2
   });
-  const r = e.estimatorSpread || 0;
+  const r = e.estimatorSpread || 0, hasMCID = a.delta > 0, NA = "Not assessed: needs an MCID";
   s.estimatorSpread;
-  n.push({
+  n.push(hasMCID ? {
     name: "Estimator Agreement",
     status: r < a.delta ? "green" : r < 2 * a.delta ? "amber" : "red",
-    detail: `Spread: ${r.toFixed(4)} (Î´: ${a.delta})`,
+    detail: `Spread: ${r.toFixed(4)} (MCID delta: ${+a.delta.toFixed(4)})`,
     weight: r < a.delta ? 0 : 2
-  });
+  } : { name: "Estimator Agreement", status: "na", detail: `Spread: ${r.toFixed(4)}. ${NA}`, weight: 0 });
   const o = e.I2 || 0,
     l = s.heterogeneity || {
       moderate: 50,
@@ -14821,27 +14874,27 @@ function buildThreatLedger(e, t) {
   const _ = e.permutationCI || {};
   n.push({
     name: "Permutation CI",
-    status: _.materiallyDifferent ? "amber" : "green",
+    status: null === _.materiallyDifferent ? "na" : _.materiallyDifferent ? "amber" : "green",
     detail: void 0 !== _.ci_lo ? `[${_.ci_lo.toFixed(3)}, ${_.ci_hi.toFixed(3)}]` : "N/A",
     weight: _.materiallyDifferent ? 1 : 0
   });
   const y = e.influence || {},
     b = s.influence?.maxFlagged || 2;
-  n.push({
+  n.push(y.notAssessed ? { name: "Influence", status: "na", detail: NA, weight: 0 } : {
     name: "Influence",
     status: (y.nFlagged || 0) < b ? "green" : "amber",
     detail: `${y.nFlagged||0} influential studies`,
     weight: (y.nFlagged || 0) >= b ? 1 : 0
   });
   const x = e.robSensitivity || {};
-  n.push({
+  n.push(x.notAssessed ? { name: "RoB Sensitivity", status: "na", detail: NA, weight: 0 } : {
     name: "RoB Sensitivity",
     status: x.triggered ? "amber" : "green",
     detail: x.triggered ? `Δ = ${(x.difference||0).toFixed(4)}` : "Stable",
     weight: x.triggered ? 1 : 0
   });
   const w = e.ois || {};
-  return n.push({
+  return n.push(w.notComputed ? { name: "OIS Status", status: "na", detail: w.reason, weight: 0 } : {
     name: "OIS Status",
     status: w.metOIS ? "green" : "amber",
     detail: w.percentOIS ? `${w.percentOIS}% of required` : "N/A",
@@ -14864,14 +14917,14 @@ function determineSeverity(e, t) {
       }), r += n
     }
   };
-  o("Insufficient studies", a.insufficientStudies || 2, (e.k || 0) < n.minK), o("Estimator disagreement", a.estimatorDisagreement || 2, (e.estimatorSpread || 0) > n.delta);
+  o("Insufficient studies", a.insufficientStudies || 2, (e.k || 0) < n.minK), o("Estimator disagreement", a.estimatorDisagreement || 2, n.delta > 0 && (e.estimatorSpread || 0) > n.delta);
   const l = s.heterogeneity?.high || 75;
   o("Extreme heterogeneity", a.extremeHeterogeneity || 1, (e.I2 || 0) > l), o("τ² unstable", a.tau2Unstable || 1, !1 === e.tau2Stable), o("Publication bias", a.publicationBias || 1, e.publicationBias?.detected);
   const d = s.breakdown?.good || .3;
   o("Low breakdown point", a.lowBreakdown || 1, (e.breakdownPoint?.fractionNull || 0) < d);
   const c = s.fragility?.good || 3,
     u = e.fragilityIndex?.fi;
-  o("Low fragility", a.lowFragility || 1, ">50" !== u && (u || 0) < c), o("PI crosses null", a.piCrossesNull || 1, e.predictionInterval?.crossesNull), o("Permutation conflict", a.permDifferent || 1, e.permutationCI?.materiallyDifferent), o("OIS not met", a.oisNotMet || 1, !e.ois?.metOIS), o("RoB sensitivity", a.robSensitive || 1, e.robSensitivity?.triggered);
+  o("Low fragility", a.lowFragility || 1, ">50" !== u && (u || 0) < c), o("PI crosses null", a.piCrossesNull || 1, e.predictionInterval?.crossesNull), o("Permutation conflict", a.permDifferent || 1, e.permutationCI?.materiallyDifferent), o("OIS not met", a.oisNotMet || 1, !e.ois?.notComputed && !e.ois?.metOIS), o("RoB sensitivity", a.robSensitive || 1, e.robSensitivity?.triggered);
   const p = s.influence?.maxFlagged || 2;
   return o("Multiple influential", a.highInfluence || 1, (e.influence?.nFlagged || 0) >= p), {
     total: r,
@@ -14917,7 +14970,7 @@ function determineVerdict(e, t) {
     s = a.n_threats,
     i = e.k || 0,
     r = t || TruthCertConfig,
-    o = r.delta || .1054,
+    o = r.delta,
     l = e.theta || 0,
     d = e.se || 1,
     c = e.ci_lower,
@@ -14928,6 +14981,15 @@ function determineVerdict(e, t) {
     v = Math.abs(l) < o,
     g = Math.abs(l) < o / 2,
     f = (Math.abs(l), r.thresholds?.precision);
+  // Lane pwrest3: every branch below compares with the MCID (precision 2 / 4 / 8 x delta, TOST at +/- delta,
+  // "trivial" effect < delta); without one there is no verdict.
+  if (!(o > 0)) {
+    const why = r.mcid && r.mcid.reason || "Not assessed: needs an MCID on the scale of the measure.";
+    return logDecision("check", "Verdict: NOT ASSESSED (" + why + ")"), {
+      verdict: "NOT ASSESSED", reason: why, mcid: r.mcid || null, severity: n, threatCheck: a, k: i,
+      equivalence: null, ci_excludes_null: m, precision: null
+    }
+  }
   let _;
   _ = !1 !== r.useRelativePrecision ? {
     excellent: 2 * o,
@@ -14951,7 +15013,8 @@ function determineVerdict(e, t) {
     k: i,
     equivalence: h,
     ci_excludes_null: m,
-    precision: y ? "good" : b ? "adequate" : "poor"
+    precision: y ? "good" : b ? "adequate" : "poor",
+    mcid: r.mcid || { delta: o, value: null, reason: null }
   }
 }
 
@@ -14961,7 +15024,8 @@ function verdictToTier(e) {
     "STABLE-NID": "A",
     MODERATE: "B",
     EXPOSED: "C",
-    UNCERTAIN: "D"
+    UNCERTAIN: "D",
+    "NOT ASSESSED": "N/A"
   } [e] || "D"
 }
 
@@ -15033,8 +15097,21 @@ function assessGRADE(e, t, n = {}) {
       downgrade: 0
     }
   }
-  const c = (t || TruthCertConfig || {}).delta || .1054;
-  if (e.ois?.metOIS) {
+  const c = (t || TruthCertConfig || {}).delta;
+  // Lane pwrest3: imprecision is judged against the user's MCID (it was a fixed 0.1054 on any scale); without
+  // one it is "Not assessed" and the certainty is an upper bound. An OIS that was computed and not met is
+  // serious; one that could not be computed (no arm sizes) leaves the CI checks.
+  if (!(c > 0)) a.imprecision = {
+    rating: "Not assessed",
+    reason: ((t && t.mcid && t.mcid.reason) || "Not assessed: needs an MCID on the scale of the measure") + " (OIS and CI vs MCID).",
+    downgrade: 0
+  };
+  else if (e.ois && !e.ois.notComputed && !e.ois.metOIS) a.imprecision = {
+    rating: "Serious",
+    reason: `OIS not met (${e.ois.totalN} of ${e.ois.oisRequired} participants for MCID delta ${+c.toFixed(4)})`,
+    downgrade: 1
+  };
+  else {
     if (void 0 !== e.ci_upper && void 0 !== e.ci_lower) {
       const t = e.ci_upper - e.ci_lower,
         n = e.ci_lower > 0 || e.ci_upper < 0,
@@ -15050,18 +15127,15 @@ function assessGRADE(e, t, n = {}) {
         downgrade: 1
       })
     }
-  } else a.imprecision = {
-    rating: "Serious",
-    reason: "OIS not met",
-    downgrade: 1
-  };
+    e.ois && e.ois.metOIS || (a.imprecision.reason = (a.imprecision.reason ? a.imprecision.reason + "; " : "") + "OIS not computed (needs both arm sizes of every study)")
+  }
   e.publicationBias?.detected && (a.publicationBias = {
     rating: "Serious",
     reason: "Asymmetry detected",
     downgrade: 1
   });
   const u = Object.values(a).reduce((e, t) => e + t.downgrade, 0),
-    p = ["Very Low", "Low", "Moderate", "High"][Math.max(0, 3 - u)];
+    p = ["Very Low", "Low", "Moderate", "High"][Math.max(0, 3 - u)] + (c > 0 ? "" : " at most (imprecision not assessed: no MCID)");
   return {
     certainty: p,
     domains: a,
@@ -15085,6 +15159,7 @@ function runHTAAnalysis() {
   try {
     const e = AppState.truthcert?.verdict;
     if (!e) return void showToast("Run meta-analysis first to get verdict", "error");
+    if ("NOT ASSESSED" === e.verdict) return void showToast("The TruthCert verdict was not assessed (it needs an MCID), so there is no evidence tier for HTA", "error");
     const t = verdictToTier(e.verdict);
     if ("D" === t) {
       if (!confirm("WARNING: Evidence is UNCERTAIN (Tier D).\n\nHTA results will be highly unreliable and should NOT be used for policy decisions.\n\nProceed for exploratory purposes only?")) return void showToast("HTA cancelled by user", "info");
@@ -18487,16 +18562,17 @@ function runTruthCertAnalysis() {
           return t
         }
       },
-      r = i(() => selectSmallStudyTest(n, TruthCertConfig), {
+      C = truthCertConfigForRun(e.measure),
+      r = i(() => selectSmallStudyTest(n, C), {
         biasDetected: !1
       }),
       o = i(() => trimAndFill(a, s, "auto", "L0", 100, AppState.settings.tau2Method), {}),
-      l = i(() => breakdownPoint(n, e), {}),
-      d = i(() => fragilityIndex(n, TruthCertConfig), {}),
-      c = i(() => permutationCI(n, TruthCertConfig), {}),
-      u = i(() => rhoSweep(n), []),
-      p = i(() => calcOIS(n, TruthCertConfig), {}),
-      m = i(() => robSensitivity(n), {}),
+      l = i(() => breakdownPoint(n, t, C), {}),
+      d = i(() => fragilityIndex(n, C), {}),
+      c = i(() => permutationCI(n, C), {}),
+      u = i(() => rhoSweep(n, void 0, C), []),
+      p = i(() => calcOIS(n, C), {}),
+      m = i(() => robSensitivity(n, C), {}),
       h = i(() => cumulativeMeta(n), []),
       v = i(() => cumulativeByPrecision(n), []),
       g = i(() => profileLikelihoodTau2CI(n), {}),
@@ -18506,7 +18582,7 @@ function runTruthCertAnalysis() {
       b = i(() => estimateTau2_PM(a, s).tau2, 0),
       x = Math.max(_, y, b) - Math.min(_, y, b),
       w = x < (f.stable || .1),
-      M = computeInfluentialStudies(n, t.theta, TruthCertConfig.delta),
+      M = C.delta > 0 ? computeInfluentialStudies(n, t.theta, C.delta) : { nFlagged: 0, influential: [], notAssessed: !0 },
       S = {
         k: n.length,
         theta: t.theta,
@@ -18541,12 +18617,12 @@ function runTruthCertAnalysis() {
         profileLikelihood: g,
         studies: n
       },
-      E = buildThreatLedger(S, TruthCertConfig),
-      A = determineVerdict(S, TruthCertConfig),
+      E = buildThreatLedger(S, C),
+      A = determineVerdict(S, C),
       R = assessGRADE({
         ...S,
         studies: n
-      }, TruthCertConfig);
+      }, C);
     AppState.truthcert = {
       verdict: {
         ...A,
@@ -18558,7 +18634,7 @@ function runTruthCertAnalysis() {
     }, AppState.verdict = AppState.truthcert.verdict, AppState.threatLedger = E, AppState.grade = R, renderVerdictPanel();
     const I = document.getElementById("htaPrerequisites"),
       T = document.getElementById("htaConfigSection");
-    "UNCERTAIN" !== A.verdict && (I && (I.style.display = "none"), T && (T.style.display = "block"), populateHTADropdowns()), logDecision("check", `TruthCert analysis complete: ${A.verdict}`), AnalysisEvents.emit("verdictComplete", AppState.truthcert)
+    "UNCERTAIN" !== A.verdict && "NOT ASSESSED" !== A.verdict && (I && (I.style.display = "none"), T && (T.style.display = "block"), populateHTADropdowns()), logDecision("check", `TruthCert analysis complete: ${A.verdict}`), AnalysisEvents.emit("verdictComplete", AppState.truthcert)
   } catch (e) {
     console.error("TruthCert analysis failed:", e), logDecision("error", "TruthCert analysis failed: " + e.message)
   }
@@ -18593,10 +18669,12 @@ function renderVerdictPanel() {
   const e = AppState.truthcert;
   if (!e) return;
   const t = document.getElementById("verdictCardContainer"),
-    n = e.verdict.verdict.toLowerCase().replace("-", "-");
-  t.innerHTML = `\n        <div class="verdict-card ${n}">\n          <div class="verdict-label">TruthCert Evidence Verdict</div>\n          <div class="verdict-value">${e.verdict.verdict}</div>\n          <div style="font-size: var(--text-sm); color: var(--text-secondary);">\n            Tier ${e.verdict.tier} | Severity: ${e.verdict.severity.total}/13\n          </div>\n        </div>\n      `, document.getElementById("severityContainer").style.display = "block";
+    n = e.verdict.verdict.toLowerCase().replace(" ", "-"),
+    mc = e.verdict.mcid || {},
+    mcLine = "NOT ASSESSED" === e.verdict.verdict ? (e.verdict.reason || "Not assessed: needs an MCID") : mc.value ? `MCID ${mc.value} on the scale of the ${mc.measure} (delta ${+mc.delta.toFixed(4)} on the scale of the analysis)` : "";
+  t.innerHTML = `\n        <div class="verdict-card ${n}">\n          <div class="verdict-label">TruthCert Evidence Verdict</div>\n          <div class="verdict-value">${e.verdict.verdict}</div>\n          <div style="font-size: var(--text-sm); color: var(--text-secondary);">\n            Tier ${e.verdict.tier} | Severity: ${e.verdict.severity.total}/13\n          </div>\n          <div class="verdict-mcid" style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: var(--space-1);"></div>\n        </div>\n      `, t.querySelector(".verdict-mcid").textContent = mcLine, document.getElementById("severityContainer").style.display = "block";
   const a = e.verdict.severity.total <= 2 ? "low" : e.verdict.severity.total <= 4 ? "med" : e.verdict.severity.total <= 6 ? "high" : "crit";
-  document.getElementById("severityScore").innerHTML = `\n        <div class="severity-score ${a}">${e.verdict.severity.total}</div>\n      `, document.getElementById("severityTriggers").innerHTML = e.verdict.severity.triggers.map(e => `<div class="threat-item amber"><span>${e.trigger}</span> <span style="margin-left:auto">+${e.points}</span></div>`).join(""), document.getElementById("threatLedgerContainer").style.display = "block", document.getElementById("threatLedgerItems").innerHTML = e.threatLedger.map(e => `<div class="threat-item ${e.status}">\n          <div class="threat-status ${e.status}">${"green"===e.status?"âÅ““":"amber"===e.status?"!":"âÅ“””"}</div>\n          <div><strong>${e.name}</strong><br><span style="font-size: var(--text-xs); color: var(--text-secondary)">${e.detail}</span></div>\n        </div>`).join(""), document.getElementById("gatesContainer").style.display = "block";
+  document.getElementById("severityScore").innerHTML = `\n        <div class="severity-score ${a}">${e.verdict.severity.total}</div>\n      `, document.getElementById("severityTriggers").innerHTML = e.verdict.severity.triggers.map(e => `<div class="threat-item amber"><span>${e.trigger}</span> <span style="margin-left:auto">+${e.points}</span></div>`).join(""), document.getElementById("threatLedgerContainer").style.display = "block", document.getElementById("threatLedgerItems").innerHTML = e.threatLedger.map(e => `<div class="threat-item ${e.status}">\n          <div class="threat-status ${e.status}">${"green"===e.status?"âÅ““":"amber"===e.status?"!":"na"===e.status?"–":"âÅ“””"}</div>\n          <div><strong>${e.name}</strong><br><span style="font-size: var(--text-xs); color: var(--text-secondary)">${e.detail}</span></div>\n        </div>`).join(""), document.getElementById("gatesContainer").style.display = "block";
   const s = [{
     name: "Evidence Base",
     pass: e.results.k >= TruthCertConfig.minK
@@ -18611,12 +18689,12 @@ function renderVerdictPanel() {
     pass: !e.results.publicationBias.detected
   }, {
     name: "OIS Met",
-    pass: e.results.ois.metOIS
+    pass: e.results.ois.notComputed ? null : e.results.ois.metOIS
   }, {
     name: "Verdict Safe",
-    pass: "UNCERTAIN" !== e.verdict.verdict
+    pass: "NOT ASSESSED" === e.verdict.verdict ? null : "UNCERTAIN" !== e.verdict.verdict
   }];
-  document.getElementById("gatesGrid").innerHTML = s.map(e => `<div class="gate-item">\n          <div class="gate-status ${e.pass?"pass":"fail"}">${e.pass?"âÅ““":"âÅ“””"}</div>\n          <span>${e.name}</span>\n        </div>`).join(""), document.getElementById("gradeContainer").style.display = "block", document.getElementById("gradeCertainty").innerHTML = `\n        <div style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4);">\n          Certainty: <span style="color: var(--color-accent-400)">${e.grade.certainty}</span>\n        </div>\n      `, document.getElementById("gradeDomainsGrid").innerHTML = Object.entries(e.grade.domains).map(([e, t]) => `<div class="grade-domain">\n          <div class="grade-domain-title">${e.replace(/([A-Z])/g," $1").trim()}</div>\n          <div class="grade-domain-value ${t.rating.toLowerCase()}">${t.rating}</div>\n          <div style="font-size: var(--text-xs); color: var(--text-secondary)">${t.reason||"No concerns"}</div>\n        </div>`).join(""), document.getElementById("sensitivitySummaryContainer").style.display = "block", document.getElementById("oisResults").innerHTML = `\n        <p><strong>${e.results.ois.percentOIS}%</strong> of required</p>\n        <p>${e.results.ois.totalN.toLocaleString()} / ${e.results.ois.oisRequired.toLocaleString()}</p>\n      `, document.getElementById("fragilityResults").innerHTML = e.results.fragilityIndex.ok ? `<p><strong>FI = ${e.results.fragilityIndex.fi}</strong></p>` : `<p>${e.results.fragilityIndex.reason}</p>`, document.getElementById("breakdownResults").innerHTML = e.results.breakdownPoint.ok ? `<p><strong>${(100*e.results.breakdownPoint.fractionNull).toFixed(0)}%</strong> to flip</p>` : "<p>N/A</p>", document.getElementById("rhoSweepResults").innerHTML = e.results.rhoSweep.ok ? `<p>Spread: <strong>${e.results.rhoSweep.spread.toFixed(4)}</strong></p>\n         <p>${e.results.rhoSweep.robust?"Robust":"Sensitive"}</p>` : "<p>N/A</p>", document.getElementById("decisionLogContainer").style.display = "block", document.getElementById("decisionLogContent").innerHTML = decisionLog.slice(-50).map(e => `<div class="decision-log-item ${e.type}">[${e.type.toUpperCase()}] ${e.msg}</div>`).join(""), document.getElementById("verdictExportContainer").style.display = "block", renderTruthCertTrimFill(e)
+  document.getElementById("gatesGrid").innerHTML = s.map(e => `<div class="gate-item">\n          <div class="gate-status ${null===e.pass?"na":e.pass?"pass":"fail"}">${null===e.pass?"–":e.pass?"âÅ““":"âÅ“””"}</div>\n          <span>${e.name}${null===e.pass?" (not assessed: needs an MCID)":""}</span>\n        </div>`).join(""), document.getElementById("gradeContainer").style.display = "block", document.getElementById("gradeCertainty").innerHTML = `\n        <div style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4);">\n          Certainty: <span style="color: var(--color-accent-400)">${e.grade.certainty}</span>\n        </div>\n      `, document.getElementById("gradeDomainsGrid").innerHTML = Object.entries(e.grade.domains).map(([e, t]) => `<div class="grade-domain">\n          <div class="grade-domain-title">${e.replace(/([A-Z])/g," $1").trim()}</div>\n          <div class="grade-domain-value ${t.rating.toLowerCase()}">${t.rating}</div>\n          <div style="font-size: var(--text-xs); color: var(--text-secondary)">${t.reason||"No concerns"}</div>\n        </div>`).join(""), document.getElementById("sensitivitySummaryContainer").style.display = "block", document.getElementById("oisResults").innerHTML = e.results.ois.notComputed ? `<p>${e.results.ois.reason}</p>` : `\n        <p><strong>${e.results.ois.percentOIS}%</strong> of required</p>\n        <p>${e.results.ois.totalN.toLocaleString()} / ${e.results.ois.oisRequired.toLocaleString()}</p>\n      `, document.getElementById("fragilityResults").innerHTML = e.results.fragilityIndex.ok ? `<p><strong>FI = ${e.results.fragilityIndex.fi}</strong></p>` : `<p>${e.results.fragilityIndex.reason}</p>`, document.getElementById("breakdownResults").innerHTML = e.results.breakdownPoint.ok ? `<p><strong>${(100*e.results.breakdownPoint.fractionNull).toFixed(0)}%</strong> to flip</p>` : "<p>N/A</p>", document.getElementById("rhoSweepResults").innerHTML = e.results.rhoSweep.ok ? `<p>Spread: <strong>${e.results.rhoSweep.spread.toFixed(4)}</strong></p>\n         <p>${null===e.results.rhoSweep.robust?"Robustness not assessed (needs an MCID)":e.results.rhoSweep.robust?"Robust":"Sensitive"}</p>` : "<p>N/A</p>", document.getElementById("decisionLogContainer").style.display = "block", document.getElementById("decisionLogContent").innerHTML = decisionLog.slice(-50).map(e => `<div class="decision-log-item ${e.type}">[${e.type.toUpperCase()}] ${e.msg}</div>`).join(""), document.getElementById("verdictExportContainer").style.display = "block", renderTruthCertTrimFill(e)
 }
 
 function populateHTADropdowns() {
@@ -25688,7 +25766,7 @@ if (typeof window !== 'undefined') {
             <li><strong>UNCERTAIN:</strong> Poor precision (SE > 8×MCID) OR major threats present</li>
           </ul>
           <p style="margin-top:var(--space-2);"><strong>Threat assessment (12 points):</strong> Small k, high I², publication bias (Egger's p<0.10), estimator instability (CV>15%)</p>
-          <p style="margin-top:var(--space-2);"><strong>MCID (δ):</strong> Default 0.1054 on log scale (~10% RRR). TOST equivalence bounds: ±δ.</p>
+          <p style="margin-top:var(--space-2);"><strong>MCID (δ):</strong> entered in the Data tab on the scale of the measure (a ratio for OR / RR / HR, used as |log ratio|; a difference otherwise). There is no default: without one the verdict and GRADE imprecision are not assessed. TOST equivalence bounds: ±δ.</p>
         </div>
       </details>
       <details style="margin-bottom:var(--space-3);">
@@ -26458,7 +26536,7 @@ function restoreTruthCertVerdict(state) {
   try {
     if (typeof renderVerdictPanel === 'function') renderVerdictPanel();
     const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
-    if (tc.verdict.verdict !== 'UNCERTAIN') { pre && (pre.style.display = 'none'); cfg && (cfg.style.display = 'block'); }
+    if (tc.verdict.verdict !== 'UNCERTAIN' && tc.verdict.verdict !== 'NOT ASSESSED') { pre && (pre.style.display = 'none'); cfg && (cfg.style.display = 'block'); }
   } catch (e) {
     console.warn('[TruthCert] Saved verdict could not be shown:', e.message);
     clearTruthCertVerdict();
