@@ -5807,17 +5807,31 @@ cat("RR:", ifelse(is.na(rr), "NA", round(rr, 3)), "\\n")
 cat("95% CI: [", ifelse(is.na(ci_lower), "NA", round(ci_lower, 3)), ",", ifelse(is.na(ci_upper), "NA", round(ci_upper, 3)), "]\\n")
 
 # 95% prediction interval for the true dose 1 vs 0 relative risk in a new study (as the app reports it):
-# exp(c'b -/+ qt(0.975, k - 1) * sqrt(c' Var(b) c + tau2)), k = number of studies (Cochrane Handbook v6.5); NA for k < 2.
+# exp(c'b -/+ qt(0.975, k - 1) * sqrt(SE^2 + tau2)), k = number of studies (Cochrane Handbook v6.5); NA for k < 2.
+# SE is the SE of c'b that the app uses for its CI: sqrt(c' Var(b) c), times sqrt(s2) when HK/SJ is on, where
+# s2 = max(1, Q_RE / (n - p)) and Q_RE = e' (V + tau2 I)^-1 e at the fitted b (Knapp-Hartung with the ad hoc
+# floor, as metafor rma.mv test = "adhoc").
+use_hksj <- ${useHKSJ ? 'TRUE' : 'FALSE'}
 pi_c <- ${isLinearModel ? 'c(0, 1)' : 'c(0, 1, 1)'}
 pi_vb <- if (use_reml) vcov(fit) else varMatrix
 pi_est <- sum(pi_c * beta)
 pi_se <- sqrt(max(0, drop(t(pi_c) %*% pi_vb %*% pi_c)))
+hk_df <- nrow(X_total) - ncol(X_total)
+hk_s2 <- 1
+if (use_hksj && hk_df > 0) {
+  V_fit <- as.matrix(if (force_diag) V_total_diag else V_total)
+  diag(V_fit) <- diag(V_fit) + tau2
+  e_fit <- y_total - X_total %*% beta
+  Q_RE <- as.numeric(t(e_fit) %*% solve(V_fit, e_fit))
+  hk_s2 <- max(1, Q_RE / hk_df)
+  cat("HK/SJ: s2 = max(1, Q_RE / (n - p)) =", round(hk_s2, 4), "on", hk_df, "df; the PI uses the scaled SE\n")
+}
+pi_se <- pi_se * sqrt(hk_s2)
 pi_df <- n_model_studies - 1
 pi_crit <- if (pi_df >= 1) qt(0.975, pi_df) else NA
 pi_lower <- exp(pi_est - pi_crit * sqrt(pi_se^2 + tau2))
 pi_upper <- exp(pi_est + pi_crit * sqrt(pi_se^2 + tau2))
 cat("95% PI (new study, dose 1 vs 0; t on", pi_df, "df): [", ifelse(is.na(pi_lower), "NA", round(pi_lower, 3)), ",", ifelse(is.na(pi_upper), "NA", round(pi_upper, 3)), "]\\n")
-${useHKSJ ? 'cat("NOTE: HK/SJ is on in the app; the app scales the contrast SE inside its PI, this script does not.\\n")' : ''}
 
 # --------------------------------------------------------
 # PLOTS
