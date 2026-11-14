@@ -77,6 +77,11 @@ def _export_runs():
                 # restricted log-likelihood at R's REML tau2 and at the page's (same model, sigma2 fixed)
                 extra = ('cat("\\nREML_LL", sprintf("%%.15f %%.15f", as.numeric(logLik(fit)), '
                          'as.numeric(logLik(update(fit, sigma2 = %r)))), "\\n")\n' % case['page']['tau2'])
+            if key.startswith('REML') and key.endswith('_HK'):
+                # independent check of the script's HK scaling: metafor's own test = "adhoc" fit of the same model
+                extra += ('fit_adhoc <- update(fit, test = "adhoc")\n'
+                          'cat("\\nADHOC_SE", sprintf("%.15f", sqrt(drop(t(pi_c) %*% vcov(fit_adhoc) %*% pi_c))), '
+                          'sprintf("%.15f", pi_se), "\\n")\n')
             f.write_text(case['code'] + EMIT + extra, encoding='utf-8')
             r = subprocess.run([rs, '--no-environ', str(f)], capture_output=True, text=True, timeout=300,
                                encoding='utf-8', errors='replace', cwd=tmp)
@@ -115,8 +120,11 @@ def test_exported_script_runs_to_the_end_and_matches_the_page(export_runs, key):
     assert _rel(res['Q'], page['Q']) <= 1e-8 and res['df'] == page['df'], (res['Q'], res['df'], page['Q'], page['df'])
 
 
-@pytest.mark.parametrize('key', ['DL_quadratic', 'DL_linear', 'REML_quadratic', 'REML_linear'])
+@pytest.mark.parametrize('key', ['DL_quadratic', 'DL_linear', 'REML_quadratic', 'REML_linear',
+                                 'DL_quadratic_HK', 'DL_linear_HK', 'REML_quadratic_HK', 'REML_linear_HK'])
 def test_exported_script_prints_the_pages_prediction_interval_t_k_minus_1(export_runs, key):
+    # *_HK (lane pwrest): with HK/SJ on, the page's PI uses the HK-scaled SE of the contrast,
+    # SE * sqrt(max(1, Q_RE / (n - p))); the exported script printed the unscaled PI and a NOTE saying so.
     # Before: the exported script printed no prediction interval, and the page used t on k - 2 df. Now both use
     # t_{k-1}, k = number of studies (Cochrane Handbook v6.5).
     page, r = export_runs[key]
@@ -127,3 +135,12 @@ def test_exported_script_prints_the_pages_prediction_interval_t_k_minus_1(export
     tol = 1e-5 if key.startswith('REML') else 1e-8
     assert _rel(res['pi_lower'], page['piLower']) <= tol and _rel(res['pi_upper'], page['piUpper']) <= tol, (
         res['pi_lower'], res['pi_upper'], page['piLower'], page['piUpper'])
+
+
+@pytest.mark.parametrize('key', ['REML_quadratic_HK', 'REML_linear_HK'])
+def test_exported_hk_scaling_equals_metafor_test_adhoc(export_runs, key):
+    # The script's HK-scaled SE of the dose 1 vs 0 contrast equals sqrt(c' vcov c) of metafor rma.mv(test = "adhoc").
+    page, r = export_runs[key]
+    assert r.returncode == 0, r.stdout[-1500:] + r.stderr[-1500:]
+    se_adhoc, se_script = map(float, r.stdout.split('ADHOC_SE', 1)[1].split()[:2])
+    assert _rel(se_script, se_adhoc) <= 1e-8, (se_script, se_adhoc)
