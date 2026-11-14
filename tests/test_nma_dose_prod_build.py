@@ -125,3 +125,64 @@ def test_standalone_inlines_current_build_and_shared_engines():
         order.append(blobs.index(want))
     assert order == sorted(order), "standalone must inline upper-tail.js, ma-core.js, then app.min.js"
     assert "app.min.js" not in _script_srcs(html) and "app.js" not in _script_srcs(html)
+
+
+# ---------------------------------------------------------------------------------------------
+# Lane nmaexp2 (2026-11-14): the checks above compare the build STAMP and the inlined SCRIPTS, so
+# an index.html edit (a new button, a changed label, a feature-search entry) that was committed
+# without `npm run build` left index.prod.html and nma-studio-standalone.html serving the old page
+# while every test above stayed green. The check below re-runs build.js on a copy of the committed
+# sources and requires the four generated files to come out identical to the committed ones
+# (line endings normalised CRLF -> LF, as build.js itself does, so core.autocrlf cannot matter).
+GENERATED = ("app.min.js", "app.min.js.map", "index.prod.html", "nma-studio-standalone.html")
+BUILD_INPUTS = ("app.js", "index.html", "build.js", "package.json")
+
+
+def _lf(b: bytes) -> bytes:
+    return b.replace(b"\r\n", b"\n")
+
+
+def _rebuild(tmp: Path, edit_index=None) -> dict[str, bytes]:
+    """Run build.js on a copy of the sources in tmp/app (tmp/shared beside it) and return the
+    generated files. tmp must sit inside APP so that `import 'terser'` resolves to APP/node_modules."""
+    (tmp / "app").mkdir()
+    (tmp / "shared").mkdir()
+    for f in BUILD_INPUTS:
+        shutil.copyfile(APP / f, tmp / "app" / f)
+    for rel in SHARED:
+        shutil.copyfile(APP / rel, tmp / "app" / rel)
+    if edit_index is not None:
+        p = tmp / "app" / "index.html"
+        p.write_bytes(edit_index(p.read_bytes()))
+    res = subprocess.run([NODE, "build.js"], capture_output=True, text=True, timeout=300, check=False,
+                         cwd=str(tmp / "app"))
+    assert res.returncode == 0, f"build.js exited {res.returncode}\n{res.stdout[-1000:]}\n{res.stderr[-2000:]}"
+    return {f: _lf((tmp / "app" / f).read_bytes()) for f in GENERATED}
+
+
+def _stale(built: dict[str, bytes]) -> list[str]:
+    return [f for f in GENERATED if built[f] != _lf(APP.joinpath(f).read_bytes())]
+
+
+@pytest.fixture()
+def build_tmp():
+    if NODE is None:
+        pytest.skip("node not installed")
+    if not (APP / "node_modules" / "terser").is_dir():
+        pytest.skip("terser not installed: run `npm ci` in nma-dose-response-app (this check did NOT run)")
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix=".rebuild-check-", dir=str(APP)) as d:
+        yield Path(d)
+
+
+def test_committed_build_outputs_equal_a_fresh_build(build_tmp):
+    stale = _stale(_rebuild(build_tmp))
+    assert not stale, (f"{stale} differ from what build.js produces from the committed app.js / index.html; "
+                       "run `npm run build` in nma-dose-response-app and commit the result")
+
+
+def test_rebuild_check_detects_a_stale_index_html_edit(build_tmp):
+    # Plant the defect: an index.html edit the committed index.prod.html / standalone do not carry.
+    planted = _rebuild(build_tmp, lambda b: b.replace(b"</body>", b"<!-- planted stale edit --></body>", 1))
+    stale = _stale(planted)
+    assert "index.prod.html" in stale and "nma-studio-standalone.html" in stale, stale

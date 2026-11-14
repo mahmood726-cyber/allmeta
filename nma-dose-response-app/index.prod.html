@@ -4420,9 +4420,12 @@
       }
 
       const q = query.toLowerCase();
-      // only controls this page has: an entry whose button is missing led nowhere ("Egger Test" had no button)
+      // only controls this page has: an entry whose button is missing led nowhere ("Egger Test" had no button);
+      // and only controls a user can use: a control refused as not validated against R is disabled
+      // (app.js markUnvalidatedControls) and is not offered ("Trim and Fill", "Copas Model", ...)
+      const usable = el => el && !el.disabled && el.getAttribute('aria-disabled') !== 'true';
       const matches = featureIndex.filter(f =>
-        document.getElementById(f.button) &&
+        usable(document.getElementById(f.button)) &&
         (f.name.toLowerCase().includes(q) ||
         f.keywords.toLowerCase().includes(q))
       );
