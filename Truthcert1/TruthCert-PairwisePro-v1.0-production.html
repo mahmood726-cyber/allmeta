@@ -2362,6 +2362,7 @@ function runMultiverseAnalysis() {
   document.getElementById('multiverseResults').innerHTML = `
     <div style="background: var(--bg-secondary); padding: var(--space-3); border-radius: var(--radius-md);">
       <p><strong>${mv.analyzedSubsets} specifications tested</strong></p>
+      ${mv.sampling && !mv.sampling.enumerated ? `<p style="font-size: var(--text-xs); color: var(--text-secondary);">Random sample of ${mv.sampling.B} of the ${mv.totalPossibleSubsets} subsets, seed ${mv.sampling.seed} (stream multiverse); Monte Carlo SE of the share significant ${pwFmtSe(mv.sampling.mc_se_proportion_significant)}.</p>` : `<p style="font-size: var(--text-xs); color: var(--text-secondary);">Every subset of two or more studies (no sampling).</p>`}
       <p>Effect range: <strong>${mv.summary.minEffect.toFixed(3)}</strong> to <strong>${mv.summary.maxEffect.toFixed(3)}</strong></p>
       <p>Median: <strong>${mv.summary.medianEffect.toFixed(3)}</strong></p>
       <p>Significant in: <strong>${(mv.robustness.proportionSignificant * 100).toFixed(0)}%</strong> of specifications</p>
