@@ -4338,11 +4338,9 @@
       { name: 'Bootstrap', keywords: 'bootstrap confidence interval resampling', panel: 'Model Controls', button: 'runBootstrap' },
 
       // Publication Bias
-      { name: 'Egger Test', keywords: 'egger regression funnel asymmetry bias', panel: 'Publication Bias', button: 'runEgger' },
       { name: 'Begg Test', keywords: 'begg mazumdar rank correlation bias', panel: 'Regression Tests', button: 'runBeggMazumdar' },
       { name: 'Trim and Fill', keywords: 'trim fill duval tweedie imputation bias', panel: 'Publication Bias', button: 'runTrimFill' },
       { name: 'PET-PEESE', keywords: 'pet peese precision effect stanley', panel: 'Publication Bias', button: 'runPETPEESE' },
-      { name: 'Funnel Plot', keywords: 'funnel plot asymmetry visualization', panel: 'Publication Bias', button: 'runFunnelPlot' },
       { name: 'P-Curve', keywords: 'p curve pcurve evidential value', panel: 'Evidential Value', button: 'runPCurve' },
       { name: 'Fail-safe N', keywords: 'failsafe rosenthal orwin file drawer', panel: 'Evidential Value', button: 'runRosenthal' },
       { name: 'Copas Model', keywords: 'copas selection model sensitivity', panel: 'Beyond R', button: 'runCopas' },
@@ -4382,7 +4380,6 @@
       { name: 'Two-Stage IPD', keywords: 'ipd two stage individual patient aggregate', panel: 'IPD Meta-Analysis', button: 'runTwoStageIPD' },
       { name: 'IPD Dose-Response', keywords: 'ipd dose response individual patient nonlinear', panel: 'IPD Meta-Analysis', button: 'runIPDDoseResponse' },
       { name: 'IPD Subgroup', keywords: 'ipd subgroup individual patient covariate interaction', panel: 'IPD Meta-Analysis', button: 'runIPDSubgroup' },
-      { name: 'IPD Interactions', keywords: 'ipd interaction treatment effect modifier', panel: 'IPD Meta-Analysis', button: 'runIPDInteractions' },
       { name: 'Pseudo-IPD', keywords: 'pseudo ipd aggregate convert reconstruct', panel: 'IPD Meta-Analysis', button: 'convertADtoIPD' },
 
       // Time-to-Event
@@ -4423,9 +4420,11 @@
       }
 
       const q = query.toLowerCase();
+      // only controls this page has: an entry whose button is missing led nowhere ("Egger Test" had no button)
       const matches = featureIndex.filter(f =>
-        f.name.toLowerCase().includes(q) ||
-        f.keywords.toLowerCase().includes(q)
+        document.getElementById(f.button) &&
+        (f.name.toLowerCase().includes(q) ||
+        f.keywords.toLowerCase().includes(q))
       );
 
       if (matches.length === 0) {

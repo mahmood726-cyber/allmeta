@@ -229,3 +229,82 @@ for (const data of ['bcg', 'sample']) {
     expect(dialogs).toEqual([]);
   });
 }
+
+// Lane nmaguard (2026-11-13): 33 more analysis buttons read state.rawData directly, so on the default
+// sample they pooled 13 dose-response arms as 13 independent studies and printed a number (trim-and-fill,
+// PET, PEESE, LFK, Doi, Vevea-Hedges, Cook's D, DFFITS, studentized residuals, ...), or failed with a raw
+// JavaScript error. None reproduces R on dat.bcg (trim-and-fill: 0 missing against metafor's 1; PET/PEESE:
+// normal-quantile CI against the t CI of the WLS fit) or has an R reference at all, so each refuses
+// visibly, with one warning and nothing else: no success/error notification, no number, no download.
+// [control, result element]; elements index.html does not have fall back to the export status line.
+const REFUSED_MORE = [
+  ['fitGP', 'gpResult'], ['poolMedians', 'quantileResult'], ['poolIQRs', 'quantileResult'], ['estimateMeanSD', 'quantileResult'],
+  ['runGRIME', 'dataQualityResult'], ['runSPRITE', 'dataQualityResult'], ['runRIVETS', 'dataQualityResult'], ['runBenford', 'dataQualityResult'],
+  ['runTrimFill', 'trimFillResult'], ['runPET', 'petpeeseResult'], ['runPEESE', 'petpeeseResult'],
+  ['computeLFK', 'lfkResult'], ['runDoiPlot', 'lfkResult'], ['runVeveaHedges', 'selectionResult'],
+  ['computeCooksD', 'outlierResult'], ['computeDFFITS', 'outlierResult'], ['computeStudentized', 'outlierResult'],
+  ['runTransitivity', 'transitivityResult'], ['runFractionalPolynomial', 'exportStatus'], ['runBayesianNMA', 'exportStatus'],
+  ['runCumulativeNMA', 'exportStatus'], ['runNonGaussianRE', 'exportStatus'], ['runShrinkagePriors', 'exportStatus'],
+  ['runGradientBoosting', 'exportStatus'], ['runPoissonGamma', 'exportStatus'], ['runBayesianPower', 'powerResult'],
+  ['runMixtureSubgroup', 'exportStatus'], ['runCopulaSelection', 'exportStatus'], ['runHierarchicalSelection', 'ensembleResult'],
+  ['runPredictiveSelection', 'ensembleResult'], ['runMultilevelNested', 'multilevelResult'], ['runRobustBayesian', 'multilevelResult'],
+  ['startLiveMA', 'liveMAStatus'],
+];
+
+// every notification the page shows, in order, as "type: message"
+async function recordNotes(page) {
+  await page.evaluate(() => {
+    window.__notes = [];
+    const o = window.showNotification;
+    window.showNotification = function (m, t) { window.__notes.push(`${t}: ${m}`); return o && o.apply(this, arguments); };
+  });
+}
+
+for (const data of ['bcg', 'sample']) {
+  test(`unguarded rawData controls refuse visibly with one warning (${data})`, async ({ page }) => {
+    const dialogs = [];
+    const downloads = [];
+    page.on('download', d => downloads.push(d.suggestedFilename()));
+    await open(page, dialogs);
+    if (data === 'bcg') await loadBcg(page);
+    await recordNotes(page);
+    for (const [id, out] of REFUSED_MORE) {
+      await page.evaluate(() => { window.__notes = []; });
+      await tabOf(page, id);
+      await page.locator('#' + id).click();
+      await expect(page.locator('#' + out), id).toHaveText(REFUSAL);
+      const text = await page.locator('#' + out).textContent();
+      expect(await page.evaluate(() => window.__notes), id).toEqual([`warning: ${text}`]);
+    }
+    // the live monitor never started
+    expect(await page.locator('#startLiveMA').isDisabled()).toBe(false);
+    expect(downloads).toEqual([]);
+    expect(dialogs).toEqual([]);
+  });
+}
+
+test('Bayesian model averaging refuses once: no second "BMA failed" notice', async ({ page }) => {
+  const dialogs = [];
+  await open(page, dialogs);
+  await recordNotes(page);
+  await tabOf(page, 'runBMA');
+  const ensembleBefore = await page.locator('#ensembleResult').textContent();
+  await page.locator('#runBMA').click();
+  await expect(page.locator('#bmaStatus')).toHaveText(REFUSAL);
+  const text = await page.locator('#bmaStatus').textContent();
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => window.__notes)).toEqual([`warning: ${text}`]);
+  expect(await page.locator('#ensembleResult').textContent()).toBe(ensembleBefore);
+  expect(dialogs).toEqual([]);
+});
+
+test('feature search offers only controls the page has (no "Egger Test")', async ({ page }) => {
+  const dialogs = [];
+  await open(page, dialogs);
+  const missing = await page.evaluate(() => featureIndex.filter(f => !document.getElementById(f.button)).map(f => `${f.name} -> #${f.button}`));
+  expect(missing).toEqual([]);
+  await page.locator('#featureSearch').fill('egger');
+  await expect(page.locator('#searchResults')).toBeVisible();
+  await expect(page.locator('#searchResults')).not.toContainText('Egger Test');
+  expect(dialogs).toEqual([]);
+});
