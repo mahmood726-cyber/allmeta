@@ -848,7 +848,14 @@
 
     // ---- CSV load ----
     window.__almPubbiasLoad = function (rows) {
-      if (!rows || rows.length < 1) return;
+      if (!rows || rows.length < 1) {
+        // A refused or empty CSV must not leave the previous file's results on screen
+        // (rev542 M4). Empty the input and re-run, which clears results and states k = 0.
+        document.getElementById('src').value = '';
+        document.getElementById('format').value = 'te-se';
+        run();
+        return;
+      }
       // Rows are written as they are; parseTESE reports any unreadable row by line number instead of dropping it.
       var lines = rows.map(function (r) {
         var te = r.yi !== undefined ? r.yi : (r.effect !== undefined ? r.effect : (r.TE !== undefined ? r.TE : r.te));

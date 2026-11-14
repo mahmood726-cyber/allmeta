@@ -391,6 +391,10 @@
       }
       if (rows.length < 2) {
         document.getElementById('res-body').innerHTML = '<tr><td colspan="5">Need at least 2 studies.</td></tr>';
+        // Clear the old forest and heterogeneity panel too: after a refused CSV the previous
+        // dataset's study labels stayed on screen (rev542 M4).
+        document.getElementById('forest').innerHTML = '';
+        document.getElementById('het').innerHTML = '';
         _lastResults = null; // do not leave a stale result exportable
         return;
       }
