@@ -449,6 +449,15 @@
       const state = readState();
       const parsed = parseStudies(state.data);
       if (!parsed.studies.length) { Toast.show("No studies parsed.", "warn"); return; }
+      // WebR must fetch its R packages and start a Web Worker; browsers block both for a
+      // page opened from a local file, which otherwise ended in "FAIL: Failed to fetch".
+      if (location.protocol === "file:") {
+        clearLog();
+        setStatus("error", "WebR unavailable on file://");
+        log("WebR cannot start from a page opened from a local file (file://): it must download its R packages and start a Web Worker, which browsers block there.");
+        log("Use the paste-back path below (Export R script, run it in your own R, paste the output), or serve this folder over http (for example python -m http.server) and open it from localhost.");
+        return;
+      }
 
       const btn = document.getElementById("btn-run-webr");
       btn.disabled = true;
