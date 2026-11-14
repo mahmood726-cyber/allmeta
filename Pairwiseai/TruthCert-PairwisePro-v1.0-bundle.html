@@ -8464,8 +8464,11 @@ function calculateLnCVR(e) {
     Math.min(e.mean_t, e.mean_c) < .1 * Math.max(e.sd_t, e.sd_c) && i.push(`${e.name}: Mean close to zero relative to SD - CV estimate may be unstable`);
     const t = e.sd_t / e.mean_t,
       n = e.sd_c / e.mean_c,
-      r = Math.log(t) - Math.log(n),
-      o = 1 / (2 * (e.n_t - 1)) + t * t / (2 * e.n_t) + (1 / (2 * (e.n_c - 1)) + n * n / (2 * e.n_c));
+      // Nakagawa et al. 2015 (Methods Ecol Evol 6:143), = metafor escalc("CVR"): the log CV carries the
+      // small-sample terms 1/(2(n-1)) - CV^2/(2n) per arm, and Var(log mean) is CV^2/n. Was: no small-sample
+      // terms and CV^2/(2n) in the variance.
+      r = Math.log(t) - Math.log(n) + 1 / (2 * (e.n_t - 1)) - 1 / (2 * (e.n_c - 1)) + .5 * (n * n / e.n_c - t * t / e.n_t),
+      o = 1 / (2 * (e.n_t - 1)) + t * t / e.n_t + (1 / (2 * (e.n_c - 1)) + n * n / e.n_c);
     a.push(r), s.push(o)
   }
   const r = estimateTau2_REML(a, s),
@@ -8510,12 +8513,18 @@ function lowI2Diagnostic(e, t, n) {
     available: !1,
     reason: "Requires at least 3 studies"
   };
-  const s = .25 / .75 * (sum(t.map(e => 1 / e)) - sum(t.map(e => 1 / (e * e))) / sum(t.map(e => 1 / e))),
-    i = a - 1,
+  // s = tau2 * C, the shift in E[Q], at the tau2 that gives I2 = 25%: tau2 = sigma2_typ / 3 with the
+  // Higgins-Thompson typical within-study variance sigma2_typ = (k-1)/C, so s = (k-1)/3. Was
+  // (1/3) * C, i.e. tau2 = 1/3 on the effect scale whatever the data, labelled "I2 > 25%".
+  // Q is then approximated by c * chi2(nu), c = (df + 2s)/(df + s), nu = (df + s)^2/(df + 2s) (mean df + s,
+  // variance 2(df + 2s)); power = P(chi2(nu) > crit / c). Was crit * c, which gave a "power" below the
+  // 10% test size (e.g. 5% for BCG k = 6, correct 22%).
+  const i = a - 1,
+    s = i / 3,
     r = qchisq(.9, i);
   let o = 0;
   if (s > 0) {
-    o = AlmTail.pchisqUpper(r / ((i + s) / (i + 2 * s)), Math.pow(i + s, 2) / (i + 2 * s)), o = Math.max(0, Math.min(1, o))
+    o = AlmTail.pchisqUpper(r / ((i + 2 * s) / (i + s)), Math.pow(i + s, 2) / (i + 2 * s)), o = Math.max(0, Math.min(1, o))
   }
   let l = 0,
     d = 0;
@@ -8612,20 +8621,12 @@ function winnersCurseCorrection(e, t, n, a) {const pwWcSeed=pwBaseSeed(),pwWcRng
     o = n - r,
     l = Math.abs(n / a),
     d = l > 1.96;
-  let c = n,
-    u = 0;
-  if (d) {
-    const e = 1.96;
-    u = 2 * a * (Math.exp(-.5 * e * e) / Math.sqrt(2 * Math.PI)) / (2 * AlmTail.pnormUpper(e)) * Math.sign(n), c = n - u
-  }
-  const p = estimateTau2_REML(e, t).tau2,
-    m = a * a,
-    h = m / (m + p),
-    v = n * (1 - .5 * h),
-    g = Math.abs(n) > .001 ? 100 * (Math.exp(Math.abs(n)) / Math.exp(Math.abs(o)) - 1) : 0,
-    f = Math.abs(n) > .001 && d ? 100 * (Math.exp(Math.abs(n)) / Math.exp(Math.abs(c)) - 1) : 0;
-  let _;
-  return _ = d ? .4 * o + .3 * c + .3 * v : .5 * o + .5 * v, {
+  // Only the bootstrap bias estimate is a defined method here. Three further outputs were removed
+  // (lane tcxd): a "conditional MLE" that was a fixed shift of phi(1.96)/Q(1.96) = 2.34 SE whatever the
+  // data (not the Ghosh et al. 2008 estimator), an "empirical Bayes" estimate theta * (1 - 0.5 h) with an
+  // arbitrary factor 0.5, and a "consensus" that averaged the three with fixed 0.4/0.3/0.3 weights.
+  const g = Math.abs(n) > .001 ? 100 * (Math.exp(Math.abs(n)) / Math.exp(Math.abs(o)) - 1) : 0;
+  return {
     available: !0,
     observed: {
       theta: n,
@@ -8641,39 +8642,27 @@ function winnersCurseCorrection(e, t, n, a) {const pwWcSeed=pwBaseSeed(),pwWcRng
       inflation_pct: g,
       method: "Non-parametric bootstrap (B=1000)",B:1e3,seed:pwWcSeed,stream:"winnersCurse",mc_se:pwMcSe(i)
     },
-    conditional_correction: {
-      bias: u,
-      theta_corrected: c,
-      theta_corrected_exp: Math.exp(c),
-      inflation_pct: f,
-      note: d ? "Truncated normal MLE correction applied" : "Not significant - no selection bias",
-      method: "Ghosh et al. 2008 conditional MLE"
-    },
-    empirical_bayes: {
-      shrinkage_factor: h,
-      signal_ratio: h,
-      theta_corrected: v,
-      theta_corrected_exp: Math.exp(v),
-      method: "James-Stein type shrinkage toward null"
-    },
-    consensus_estimate: {
-      theta: _,
-      theta_exp: Math.exp(_),
-      interpretation: "Weighted average (bootstrap 40-50%, conditional 30%, EB 30-50%)"
-    },
-    interpretation: g > 10 ? `Effect may be inflated by ~${Math.abs(g).toFixed(0)}% due to selection` : "Minimal inflation detected",
+    not_computed: "Not computed: a conditional (truncated-likelihood) estimate, an empirical-Bayes shrinkage estimate and a combined estimate. A conditional MLE (Ghosh et al. 2008) needs the significance threshold on which the result was selected, and a shrinkage estimate needs a prior or a defined shrinkage target; neither is an input here.",
+    interpretation: g > 10 ? `Effect may be inflated by ~${Math.abs(g).toFixed(0)}% (bootstrap bias estimate)` : "Minimal inflation detected (bootstrap bias estimate)",
     caveats: ["Winner's curse primarily affects single-study discoveries", "Meta-analysis with k>" + s + " studies partially self-corrects", "Bootstrap bias can be noisy with small k"],
-    reference: "Ghosh A, et al. Biometrics 2008;64:685-694; Zhong H, Prentice RL. Am J Epidemiol 2008"
+    reference: "Bootstrap bias estimate: Efron B, Tibshirani RJ. An Introduction to the Bootstrap. Chapman & Hall 1993"
   }
 }
 
-function treatmentResponseDistribution(e, t, n = .15, a = "lower") {
-  const s = Math.max(t, .01),
-    i = Math.sqrt(s);
-  let r, o, l, d;
-  "lower" === a ? (r = pnorm((0 - e) / i), o = 1 - r, l = pnorm((-n - e) / i), d = pnorm((-.288 - e) / i)) : (r = AlmTail.pnormUpper((0 - e) / i), o = 1 - r, l = AlmTail.pnormUpper((n - e) / i), d = AlmTail.pnormUpper((.223 - e) / i));
-  const c = "lower" === a ? AlmTail.pnormUpper((.223 - e) / i) : pnorm((-.288 - e) / i),
-    u = {};
+// Distribution of true effects N(theta, tau2) across settings (plug-in; between-study, not between-patient).
+// Removed (lane tcxd): tau2 was floored at 0.01, so a tau2 of 0 was shown as an SD of 0.1; "Reach MCID"
+// used an MCID fixed at 0.15; the "tau2 contribution" was the constant 1 (100%); the NNT assumed a
+// baseline risk of 15% and the "responder-adjusted" NNT divided that by P(benefit); "large" benefit and
+// harm used fixed ratios 0.75 and 1.25. The caller exponentiates only for ratio measures.
+function treatmentResponseDistribution(e, t, a = "lower") {
+  if (!(t > 0)) return {
+    available: !1,
+    reason: "τ² = 0: every setting has the same true effect, so a distribution of effects is not estimable from these data."
+  };
+  const i = Math.sqrt(t);
+  let r, o;
+  "lower" === a ? (r = pnorm((0 - e) / i), o = 1 - r) : (r = AlmTail.pnormUpper((0 - e) / i), o = 1 - r);
+  const u = {};
   [5, 10, 25, 50, 75, 90, 95].forEach(t => {
     const n = qnorm(t / 100),
       a = e + n * i;
@@ -8682,9 +8671,6 @@ function treatmentResponseDistribution(e, t, n = .15, a = "lower") {
       effect: Math.exp(a)
     }
   });
-  const p = .15 * (1 - Math.exp(e)),
-    m = 0 !== p ? 1 / Math.abs(p) : 1 / 0,
-    h = r > .01 ? m / r : 1 / 0;
   return {
     available: !0,
     population_distribution: {
@@ -8695,22 +8681,16 @@ function treatmentResponseDistribution(e, t, n = .15, a = "lower") {
     },
     response_rates: {
       P_benefit: r,
-      P_mcid: l,
-      P_large_benefit: d,
-      P_harm: o,
-      P_large_harm: c
+      P_harm: o
     },
     percentiles: u,
     clinical_summary: {
-      responder_rate: `${(100*r).toFixed(0)}% expected to benefit`,
-      mcid_rate: `${(100*l).toFixed(0)}% expected to reach clinically meaningful threshold`,
-      harm_rate: `${(100*o).toFixed(0)}% may not benefit or experience harm`,
-      nnt_standard: isFinite(m) ? m.toFixed(1) : "âË†Å¾",
-      nnt_responder_adjusted: isFinite(h) ? h.toFixed(1) : "âË†Å¾"
+      responder_rate: `${(100*r).toFixed(0)}% of settings with a true effect favouring treatment`,
+      harm_rate: `${(100*o).toFixed(0)}% of settings with a true effect at or past no effect`
     },
+    not_computed: "Not computed: the share of settings reaching a minimal clinically important difference (needs an MCID, which this page has no input for) and an NNT (needs a baseline, control-group, risk; the NNT tab tabulates it over a range of baseline risks).",
     personalization_insight: t > .04 ? "High between-study variability suggests treatment effects may vary across populations" : "Relatively consistent effects across studies",
-    heterogeneity_contribution: 1,
-    limitations: ["Cannot estimate within-patient variability from aggregate data", "τ² reflects between-study, not between-patient heterogeneity", "True patient-level response distribution requires IPD meta-analysis"],
+    limitations: ["Cannot estimate within-patient variability from aggregate data", "τ² reflects between-study, not between-patient heterogeneity", "Plug-in estimate: uncertainty in θ and τ² is not propagated", "True patient-level response distribution requires IPD meta-analysis"],
     reference: "Conceptual adaptation from SSD. For proper IPD approach: Riley RD, et al. BMJ 2021;372:n160"
   }
 }
@@ -8797,18 +8777,21 @@ function heteroscedasticityTest(e, t, n) {
 }
 
 function generateOrchardPlotData(e, t, n, a, s, i = "OR") {
-  const r = e.length,
+  // Back-transform only ratio measures (was: everything but RD exponentiated, so an MD of -5 was drawn at 0.007).
+  // 95% prediction interval on t with k-1 df (was k-2; undefined for k < 2).
+  const B = isRatioBasedMeasure(i) ? Math.exp : (x => x),
+    r = e.length,
     o = t.map(e => 1 / (e + s)),
     l = sum(o),
     d = o.map(e => e / l * 100),
     c = 1 / Math.sqrt(l),
-    u = Math.max(1, r - 2),
-    p = qt(.975, u) * Math.sqrt(s + c * c),
+    u = r - 1,
+    p = u >= 1 ? qt(.975, u) * Math.sqrt(s + c * c) : NaN,
     m = a.theta - p,
     h = a.theta + p,
     v = n.map((n, a) => ({
       name: n,
-      x: "RD" === i ? e[a] : Math.exp(e[a]),
+      x: B(e[a]),
       y: 0 + .3 * (pwJitter(e[a], t[a], a) - .5),
       weight: d[a],
       size: 5 + .8 * d[a],
@@ -8819,8 +8802,8 @@ function generateOrchardPlotData(e, t, n, a, s, i = "OR") {
         r = e[a] + 1.96 * Math.sqrt(t[a]);
       return {
         name: n.name,
-        lower: "RD" === i ? s : Math.exp(s),
-        upper: "RD" === i ? r : Math.exp(r),
+        lower: B(s),
+        upper: B(r),
         y: n.y
       }
     });
@@ -8828,11 +8811,11 @@ function generateOrchardPlotData(e, t, n, a, s, i = "OR") {
     type: "orchard",
     measure: i,
     pooled: {
-      x: "RD" === i ? a.theta : Math.exp(a.theta),
-      ci_lower: "RD" === i ? a.ci_lower : Math.exp(a.ci_lower),
-      ci_upper: "RD" === i ? a.ci_upper : Math.exp(a.ci_upper),
-      pi_lower: "RD" === i ? m : Math.exp(m),
-      pi_upper: "RD" === i ? h : Math.exp(h)
+      x: B(a.theta),
+      ci_lower: B(a.ci_lower),
+      ci_upper: B(a.ci_upper),
+      pi_lower: B(m),
+      pi_upper: B(h)
     },
     studies: v,
     study_cis: g,
@@ -8846,7 +8829,7 @@ function renderOrchardPlot(e, t = "orchardPlot") {
   if (!document.getElementById(t)) return void log.error("Orchard plot container not found");
   const n = getThemeColors(),
     a = e.crossDisc && e.crossDisc.orchardPlot || generateOrchardPlotData(e.yi, e.vi, e.studies.map(e => e.name), e.pooled, e.tau2, e.measure),
-    s = "RD" === e.measure ? 0 : 1,
+    s = isRatioBasedMeasure(e.measure) ? 1 : 0,  // null line: 1 for ratio measures, else 0 (was 1 for MD/SMD)
     i = [];
   i.push({
     type: "scatter",
@@ -8925,7 +8908,7 @@ function renderOrchardPlot(e, t = "orchardPlot") {
     },
     xaxis: {
       title: "RD" === e.measure ? "Risk Difference" : e.measure,
-      type: "RD" === e.measure ? "linear" : "log",
+      type: isRatioBasedMeasure(e.measure) ? "log" : "linear",
       zeroline: !1,
       gridcolor: n.grid,
       color: n.text
@@ -8959,7 +8942,25 @@ function renderOrchardPlot(e, t = "orchardPlot") {
 
 function runCrossDisciplinaryAnalyses(e, t) {
   const n = {};
-  n.lnCVR = calculateLnCVR(t), n.lowI2Diagnostic = lowI2Diagnostic(e.yi, e.vi, e.het.I2), n.pdgScaleFactor = pdgScaleFactor(e.yi, e.vi), n.winnersCurse = winnersCurseCorrection(e.yi, e.vi, e.pooled.theta, e.pooled.se), n.responseDistribution = treatmentResponseDistribution(e.pooled.theta, e.tau2, .15, AppState.settings.direction), n.orchardPlot = generateOrchardPlotData(e.yi, e.vi, e.studies.map(e => e.name), e.pooled, e.tau2, e.measure);
+  n.lnCVR = calculateLnCVR(t), n.lowI2Diagnostic = lowI2Diagnostic(e.yi, e.vi, e.het.I2), n.pdgScaleFactor = pdgScaleFactor(e.yi, e.vi), n.winnersCurse = winnersCurseCorrection(e.yi, e.vi, e.pooled.theta, e.pooled.se), n.responseDistribution = ["PLO", "PAS", "PFT", "PR"].includes(String(e.measure || "").toUpperCase()) ? {
+    available: !1,
+    reason: "A single-group proportion has no comparator, so benefit and harm are not defined."
+  } : treatmentResponseDistribution(e.pooled.theta, e.tau2, AppState.settings.direction), n.orchardPlot = generateOrchardPlotData(e.yi, e.vi, e.studies.map(e => e.name), e.pooled, e.tau2, e.measure);
+  // The functions above report *_exp values; only a ratio measure (OR, RR, HR, ...) is analysed on the
+  // log scale. For MD, SMD, RD, proportions and generic effects the analysis scale is the reporting
+  // scale, so the "exp" fields are set to the value itself (was: exp(MD) shown as the effect), and the
+  // winner's-curse "inflation %" (a ratio of exp|theta|) is not defined.
+  if (!isRatioBasedMeasure(e.measure)) {
+    const p = n.pdgScaleFactor, w = n.winnersCurse, r = n.responseDistribution;
+    p && p.available && (p.theta_exp = p.theta, ["ci_original", "ci_scaled"].forEach(k => {
+      p[k].lower_exp = p[k].lower, p[k].upper_exp = p[k].upper
+    }));
+    w && w.available && (w.observed.theta_exp = w.observed.theta, w.bootstrap_correction.theta_corrected_exp = w.bootstrap_correction.theta_corrected,
+      w.bootstrap_correction.inflation_pct = null, w.interpretation = "Bootstrap bias estimate shown as a corrected effect; a percentage inflation is not defined on a difference scale");
+    r && r.available && (r.population_distribution.mean_effect = r.population_distribution.mean_theta, Object.values(r.percentiles).forEach(q => {
+      q.effect = q.theta
+    }))
+  }
   const a = t.map(e => e.subgroup).filter(e => e);
   return a.length === t.length ? n.heteroscedasticity = heteroscedasticityTest(e.yi, e.vi, a) : n.heteroscedasticity = {
     available: !1,
@@ -13496,7 +13497,7 @@ function renderCrossDisciplinaryPanel(e) {
   const t = document.getElementById("panel-crossdisciplinary");
   if (!e || !e.crossDisc) return void(t.innerHTML = '\n          <div class="card">\n            <div class="card__body">\n              <p class="text-secondary">Run an analysis first to see cross-disciplinary methods.</p>\n            </div>\n          </div>\n        ');
   const n = e.crossDisc;
-  t.innerHTML = `\n        \x3c!-- Introduction --\x3e\n        <div class="card">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸”¬ Cross-Disciplinary Methods</h2>\n          </div>\n          <div class="card__body">\n            <div class="alert alert--info">\n              <span class="alert__icon">ðÅ¸'¡</span>\n              <div class="alert__content">\n                <div class="alert__title">Methods Adapted from Other Scientific Fields</div>\n                <div class="alert__text">\n                  These techniques were developed in ecology, physics, and genetics but provide valuable insights for medical meta-analysis.\n                </div>\n              </div>\n            </div>\n          </div>\n        </div>\n        \n        \x3c!-- Low I² Diagnostic (Tension Statistic) --\x3e\n        ${n.lowI2Diagnostic&&n.lowI2Diagnostic.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸”Â Low I² Diagnostic & Tension Statistic</h2>\n            <span class="badge badge--${"LIKELY HOMOGENEOUS"===n.lowI2Diagnostic.diagnosis?"success":"UNDERPOWERED"===n.lowI2Diagnostic.diagnosis?"warning":"danger"}">${n.lowI2Diagnostic.diagnosis}</span>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this tells you:</strong> Low I² can mean either genuine homogeneity OR underpowered detection. This diagnostic helps distinguish between the two.\n            </p>\n            <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lowI2Diagnostic&&void 0!==n.lowI2Diagnostic.I2_observed?n.lowI2Diagnostic.I2_observed.toFixed(1):"N/A"}%</div>\n                <div class="stat-card__label">Observed I²</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lowI2Diagnostic&&void 0!==n.lowI2Diagnostic.power_to_detect_I2_25?(100*n.lowI2Diagnostic.power_to_detect_I2_25).toFixed(0):"N/A"}%</div>\n                <div class="stat-card__label">Power to Detect I²>25%</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lowI2Diagnostic&&n.lowI2Diagnostic.tension&&void 0!==n.lowI2Diagnostic.tension.percent?n.lowI2Diagnostic.tension.percent.toFixed(1):"N/A"}%</div>\n                <div class="stat-card__label">Pairwise Tension</div>\n                <div class="text-xs text-secondary">(expect ~5% if homogeneous)</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lowI2Diagnostic&&void 0!==n.lowI2Diagnostic.disagreement_index?n.lowI2Diagnostic.disagreement_index.toFixed(2):"N/A"}×</div>\n                <div class="stat-card__label">Disagreement Index</div>\n                <div class="text-xs text-secondary">(1.0× = as expected)</div>\n              </div>\n            </div>\n            \n            <p class="text-secondary" style="margin-bottom: var(--space-3);">\n              <strong>Confidence:</strong> ${n.lowI2Diagnostic.confidence}\n            </p>\n            \n            ${n.lowI2Diagnostic.recommendations.length>0?`\n              <div class="alert alert--warning">\n                <span class="alert__icon">ðÅ¸'¡</span>\n                <div class="alert__content">\n                  <div class="alert__title">Recommendations</div>\n                  <ul class="alert__text" style="margin: 0; padding-left: var(--space-4);">\n                    ${n.lowI2Diagnostic.recommendations.map(e=>`<li>${e}</li>`).join("")}\n                  </ul>\n                </div>\n              </div>\n            `:""}\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.lowI2Diagnostic.reference}</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- PDG Scale Factor --\x3e\n        ${n.pdgScaleFactor&&n.pdgScaleFactor.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">âÅ¡”ºï¸Â PDG Scale Factor (Physics Method)</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this tells you:</strong> When studies disagree more than expected by chance, this inflates your confidence interval to be more honest about uncertainty. Used in particle physics for decades.\n            </p>\n            <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value stat-card__value--accent">${void 0!==n.pdgScaleFactor.S?n.pdgScaleFactor.S.toFixed(2):"N/A"}</div>\n                <div class="stat-card__label">Scale Factor (S)</div>\n                <div class="text-xs text-secondary">(1.0 = no inflation needed)</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.pdgScaleFactor.theta_exp?n.pdgScaleFactor.theta_exp.toFixed(3):"N/A"}</div>\n                <div class="stat-card__label">Effect (${e.measure})</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.pdgScaleFactor.se_original?n.pdgScaleFactor.se_original.toFixed(4):"N/A"}</div>\n                <div class="stat-card__label">Original SE</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value ${n.pdgScaleFactor.S>1?"text-warning":""}">${void 0!==n.pdgScaleFactor.se_scaled?n.pdgScaleFactor.se_scaled.toFixed(4):"N/A"}</div>\n                <div class="stat-card__label">Scaled SE</div>\n              </div>\n            </div>\n            \n            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: var(--space-4);">\n              <div style="padding: var(--space-3); background: var(--surface-overlay); border-radius: var(--radius-md);">\n                <p class="text-sm font-semibold" style="margin-bottom: var(--space-2);">Original 95% CI</p>\n                <p class="font-mono">${n.pdgScaleFactor.ci_original?`${n.pdgScaleFactor.ci_original.lower_exp.toFixed(3)} â€“ ${n.pdgScaleFactor.ci_original.upper_exp.toFixed(3)}`:"N/A"}</p>\n              </div>\n              <div style="padding: var(--space-3); background: var(--surface-highlight); border-radius: var(--radius-md);">\n                <p class="text-sm font-semibold" style="margin-bottom: var(--space-2);">PDG-Scaled 95% CI</p>\n                <p class="font-mono">${n.pdgScaleFactor.ci_scaled?`${n.pdgScaleFactor.ci_scaled.lower_exp.toFixed(3)} â€“ ${n.pdgScaleFactor.ci_scaled.upper_exp.toFixed(3)}`:"N/A"}</p>\n              </div>\n            </div>\n            \n            <p class="text-secondary" style="margin-top: var(--space-4);">${n.pdgScaleFactor.interpretation||""}</p>\n            ${n.pdgScaleFactor.note?`<p class="text-warning text-sm">${n.pdgScaleFactor.note}</p>`:""}\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.pdgScaleFactor.reference||"N/A"}</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- Winner's Curse Correction --\x3e\n        ${n.winnersCurse&&n.winnersCurse.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸§¬ Winner's Curse Correction (GWAS Method)</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this tells you:</strong> "Significant" findings are often inflated because we only publish/notice them when they cross a threshold. This estimates how much your effect might shrink in future studies.\n            </p>\n            <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value">${n.winnersCurse.observed&&void 0!==n.winnersCurse.observed.theta_exp?n.winnersCurse.observed.theta_exp.toFixed(3):"N/A"}</div>\n                <div class="stat-card__label">Observed Effect</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value stat-card__value--accent">${n.winnersCurse.consensus_estimate&&void 0!==n.winnersCurse.consensus_estimate.theta_exp?n.winnersCurse.consensus_estimate.theta_exp.toFixed(3):"N/A"}</div>\n                <div class="stat-card__label">Corrected (Consensus)</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value ${n.winnersCurse.bootstrap_correction&&n.winnersCurse.bootstrap_correction.inflation_pct>10?"text-warning":""}">${n.winnersCurse.bootstrap_correction&&void 0!==n.winnersCurse.bootstrap_correction.inflation_pct?`${n.winnersCurse.bootstrap_correction.inflation_pct>0?"+":""}${n.winnersCurse.bootstrap_correction.inflation_pct.toFixed(1)}%`:"N/A"}</div>\n                <div class="stat-card__label">Estimated Inflation</div>\n              </div>\n            </div>\n            \n            <table class="data-table data-table--mono" style="margin-bottom: var(--space-4);">\n              <thead>\n                <tr>\n                  <th>Correction Method</th>\n                  <th>Corrected Effect</th>\n                  <th>Inflation Est.</th>\n                </tr>\n              </thead>\n              <tbody>\n                <tr>\n                  <td class="font-sans">Bootstrap Bias${pwWcNote(n.winnersCurse.bootstrap_correction)}</td>\n                  <td>${n.winnersCurse.bootstrap_correction&&void 0!==n.winnersCurse.bootstrap_correction.theta_corrected_exp?n.winnersCurse.bootstrap_correction.theta_corrected_exp.toFixed(3):"N/A"}</td>\n                  <td>${n.winnersCurse.bootstrap_correction&&void 0!==n.winnersCurse.bootstrap_correction.inflation_pct?n.winnersCurse.bootstrap_correction.inflation_pct.toFixed(1):"N/A"}%</td>\n                </tr>\n                <tr>\n                  <td class="font-sans">Conditional Likelihood</td>\n                  <td>${n.winnersCurse.conditional_correction&&void 0!==n.winnersCurse.conditional_correction.theta_corrected_exp?n.winnersCurse.conditional_correction.theta_corrected_exp.toFixed(3):"N/A"}</td>\n                  <td>${n.winnersCurse.conditional_correction&&void 0!==n.winnersCurse.conditional_correction.inflation_pct?n.winnersCurse.conditional_correction.inflation_pct.toFixed(1):"N/A"}%</td>\n                </tr>\n                <tr>\n                  <td class="font-sans">Empirical Bayes</td>\n                  <td>${n.winnersCurse.empirical_bayes&&void 0!==n.winnersCurse.empirical_bayes.theta_corrected_exp?n.winnersCurse.empirical_bayes.theta_corrected_exp.toFixed(3):"N/A"}</td>\n                  <td>â€”</td>\n                </tr>\n              </tbody>\n            </table>\n            \n            <p class="text-secondary">${n.winnersCurse.interpretation||""}</p>\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.winnersCurse.reference||"N/A"}</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- Treatment Response Distribution --\x3e\n        ${n.responseDistribution&&n.responseDistribution.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸Å’¿ Treatment Response Distribution (SSD Method)</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this tells you:</strong> Not everyone responds the same way. This models the distribution of treatment effects across different populations/settings, showing what proportion are likely to benefit.\n            </p>\n            <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value text-success">${n.responseDistribution.response_rates&&void 0!==n.responseDistribution.response_rates.P_benefit?(100*n.responseDistribution.response_rates.P_benefit).toFixed(0):"N/A"}%</div>\n                <div class="stat-card__label">Expected Responders</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value stat-card__value--accent">${n.responseDistribution.response_rates&&void 0!==n.responseDistribution.response_rates.P_mcid?(100*n.responseDistribution.response_rates.P_mcid).toFixed(0):"N/A"}%</div>\n                <div class="stat-card__label">Reach MCID</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value text-danger">${n.responseDistribution.response_rates&&void 0!==n.responseDistribution.response_rates.P_harm?(100*n.responseDistribution.response_rates.P_harm).toFixed(0):"N/A"}%</div>\n                <div class="stat-card__label">May Not Benefit</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.responseDistribution.heterogeneity_contribution?(100*n.responseDistribution.heterogeneity_contribution).toFixed(0):"N/A"}%</div>\n                <div class="stat-card__label">τ² Contribution</div>\n              </div>\n            </div>\n            \n            <h4 class="text-sm font-semibold" style="margin-bottom: var(--space-2);">Response Distribution Percentiles</h4>\n            <table class="data-table data-table--mono" style="margin-bottom: var(--space-4);">\n              <thead>\n                <tr>\n                  <th>Percentile</th>\n                  <th>5th</th>\n                  <th>10th</th>\n                  <th>25th</th>\n                  <th>50th (Median)</th>\n                  <th>75th</th>\n                  <th>90th</th>\n                  <th>95th</th>\n                </tr>\n              </thead>\n              <tbody>\n                <tr>\n                  <td class="font-sans">Effect</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p5?n.responseDistribution.percentiles.p5.effect.toFixed(3):"N/A"}</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p10?n.responseDistribution.percentiles.p10.effect.toFixed(3):"N/A"}</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p25?n.responseDistribution.percentiles.p25.effect.toFixed(3):"N/A"}</td>\n                  <td class="font-semibold">${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p50?n.responseDistribution.percentiles.p50.effect.toFixed(3):"N/A"}</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p75?n.responseDistribution.percentiles.p75.effect.toFixed(3):"N/A"}</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p90?n.responseDistribution.percentiles.p90.effect.toFixed(3):"N/A"}</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p95?n.responseDistribution.percentiles.p95.effect.toFixed(3):"N/A"}</td>\n                </tr>\n              </tbody>\n            </table>\n            \n            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: var(--space-4);">\n              <div style="padding: var(--space-3); background: var(--surface-overlay); border-radius: var(--radius-md);">\n                <p class="text-sm font-semibold">NNT (Standard)</p>\n                <p class="font-mono text-lg">${n.responseDistribution.clinical_summary?n.responseDistribution.clinical_summary.nnt_standard:"N/A"}</p>\n              </div>\n              <div style="padding: var(--space-3); background: var(--surface-highlight); border-radius: var(--radius-md);">\n                <p class="text-sm font-semibold">NNT (Responder-Adjusted)</p>\n                <p class="font-mono text-lg">${n.responseDistribution.clinical_summary?n.responseDistribution.clinical_summary.nnt_responder_adjusted:"N/A"}</p>\n              </div>\n            </div>\n            \n            <div class="alert alert--info" style="margin-top: var(--space-4);">\n              <span class="alert__icon">ðÅ¸'¡</span>\n              <div class="alert__content">\n                <div class="alert__text">${n.responseDistribution.personalization_insight}</div>\n              </div>\n            </div>\n            \n            ${n.responseDistribution.limitations?`\n            <div class="alert alert--warning" style="margin-top: var(--space-3);">\n              <span class="alert__icon">âÅ¡ ï¸Â</span>\n              <div class="alert__content">\n                <div class="alert__title">Important Limitations</div>\n                <ul class="alert__text" style="margin: 0; padding-left: var(--space-4); font-size: var(--text-xs);">\n                  ${n.responseDistribution.limitations.map(e=>`<li>${e}</li>`).join("")}\n                </ul>\n              </div>\n            </div>\n            `:""}\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.responseDistribution.reference}</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- lnCVR Variability Analysis --\x3e\n        ${n.lnCVR&&n.lnCVR.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸“Å  lnCVR - Variability Meta-Analysis (Ecology Method)</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this tells you:</strong> Does the treatment make responses more or less predictable? CVR &lt; 1 means treatment produces more consistent responses; CVR &gt; 1 means more variable responses.\n            </p>\n            <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.lnCVR.lnCVR?n.lnCVR.lnCVR.toFixed(4):"N/A"}</div>\n                <div class="stat-card__label">lnCVR (log scale)</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value stat-card__value--accent">${void 0!==n.lnCVR.CVR?n.lnCVR.CVR.toFixed(3):"N/A"}</div>\n                <div class="stat-card__label">CVR (Ratio)</div>\n                <div class="text-xs text-secondary">(1.0 = equal variability)</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lnCVR.CVR_ci?`${n.lnCVR.CVR_ci[0].toFixed(3)} â€“ ${n.lnCVR.CVR_ci[1].toFixed(3)}`:"N/A"}</div>\n                <div class="stat-card__label">95% CI</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lnCVR.heterogeneity&&void 0!==n.lnCVR.heterogeneity.I2?n.lnCVR.heterogeneity.I2.toFixed(1):"N/A"}%</div>\n                <div class="stat-card__label">I²</div>\n              </div>\n            </div>\n            \n            <p class="text-secondary">${n.lnCVR.interpretation||""}</p>\n            <p class="text-sm" style="margin-top: var(--space-2);"><strong>Clinical insight:</strong> ${n.lnCVR.clinical_insight||"N/A"}</p>\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.lnCVR.reference||"N/A"}</em>\n            </p>\n          </div>\n        </div>\n        `:n.lnCVR?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸“Å  lnCVR - Variability Meta-Analysis</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary">${n.lnCVR.reason}</p>\n            <p class="text-xs text-secondary" style="margin-top: var(--space-2);">\n              <em>lnCVR requires continuous outcome data (mean, SD, n) for both treatment arms.</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- Heteroscedasticity Test --\x3e\n        ${n.heteroscedasticity&&n.heteroscedasticity.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸“Ë† Heteroscedasticity Detection (τ² Variation)</h2>\n            <span class="badge badge--${!0===n.heteroscedasticity.heteroscedastic?"danger":"possible"===n.heteroscedasticity.heteroscedastic?"warning":"success"}">${!0===n.heteroscedasticity.heteroscedastic?"HETEROSCEDASTIC":"possible"===n.heteroscedasticity.heteroscedastic?"POSSIBLE":"HOMOSCEDASTIC"}</span>\n          </div>\n          <div class="card__body">\n            <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.heteroscedasticity.tau2_ratio?n.heteroscedasticity.tau2_ratio.toFixed(2):"N/A"}×</div>\n                <div class="stat-card__label">Max/Min τ² Ratio</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.heteroscedasticity.tau2_min?n.heteroscedasticity.tau2_min.toFixed(4):"N/A"}</div>\n                <div class="stat-card__label">Min τ²</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.heteroscedasticity.tau2_max?n.heteroscedasticity.tau2_max.toFixed(4):"N/A"}</div>\n                <div class="stat-card__label">Max τ²</div>\n              </div>\n            </div>\n            \n            <p class="text-secondary">${n.heteroscedasticity.interpretation}</p>\n            <p class="text-sm" style="margin-top: var(--space-2);"><strong>Recommendation:</strong> ${n.heteroscedasticity.recommendation}</p>\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.heteroscedasticity.reference}</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- Orchard Plot --\x3e\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸Å’¸ Orchard Plot (Ecology Visualization)</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this shows:</strong> A compact view of all studies with prediction interval. Larger points = higher weight. Gray band shows where 95% of future studies would fall.\n            </p>\n            <div id="orchardPlot" class="plot-container" style="min-height: 300px;"></div>\n            <p class="text-xs text-secondary" style="margin-top: var(--space-2);">\n              <em>Point size proportional to weight. Gray band = prediction interval. Blue bar = confidence interval.</em>\n            </p>\n          </div>\n        </div>\n      `, setTimeout(() => {
+  t.innerHTML = `\n        \x3c!-- Introduction --\x3e\n        <div class="card">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸”¬ Cross-Disciplinary Methods</h2>\n          </div>\n          <div class="card__body">\n            <div class="alert alert--info">\n              <span class="alert__icon">ðÅ¸'¡</span>\n              <div class="alert__content">\n                <div class="alert__title">Methods Adapted from Other Scientific Fields</div>\n                <div class="alert__text">\n                  These techniques were developed in ecology, physics, and genetics but provide valuable insights for medical meta-analysis.\n                </div>\n              </div>\n            </div>\n          </div>\n        </div>\n        \n        \x3c!-- Low I² Diagnostic (Tension Statistic) --\x3e\n        ${n.lowI2Diagnostic&&n.lowI2Diagnostic.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸”Â Low I² Diagnostic & Tension Statistic</h2>\n            <span class="badge badge--${"LIKELY HOMOGENEOUS"===n.lowI2Diagnostic.diagnosis?"success":"UNDERPOWERED"===n.lowI2Diagnostic.diagnosis?"warning":"danger"}">${n.lowI2Diagnostic.diagnosis}</span>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this tells you:</strong> Low I² can mean either genuine homogeneity OR underpowered detection. This diagnostic helps distinguish between the two.\n            </p>\n            <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lowI2Diagnostic&&void 0!==n.lowI2Diagnostic.I2_observed?n.lowI2Diagnostic.I2_observed.toFixed(1):"N/A"}%</div>\n                <div class="stat-card__label">Observed I²</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lowI2Diagnostic&&void 0!==n.lowI2Diagnostic.power_to_detect_I2_25?(100*n.lowI2Diagnostic.power_to_detect_I2_25).toFixed(0):"N/A"}%</div>\n                <div class="stat-card__label">Power to Detect I²>25%</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lowI2Diagnostic&&n.lowI2Diagnostic.tension&&void 0!==n.lowI2Diagnostic.tension.percent?n.lowI2Diagnostic.tension.percent.toFixed(1):"N/A"}%</div>\n                <div class="stat-card__label">Pairwise Tension</div>\n                <div class="text-xs text-secondary">(expect ~5% if homogeneous)</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lowI2Diagnostic&&void 0!==n.lowI2Diagnostic.disagreement_index?n.lowI2Diagnostic.disagreement_index.toFixed(2):"N/A"}×</div>\n                <div class="stat-card__label">Disagreement Index</div>\n                <div class="text-xs text-secondary">(1.0× = as expected)</div>\n              </div>\n            </div>\n            \n            <p class="text-secondary" style="margin-bottom: var(--space-3);">\n              <strong>Confidence:</strong> ${n.lowI2Diagnostic.confidence}\n            </p>\n            \n            ${n.lowI2Diagnostic.recommendations.length>0?`\n              <div class="alert alert--warning">\n                <span class="alert__icon">ðÅ¸'¡</span>\n                <div class="alert__content">\n                  <div class="alert__title">Recommendations</div>\n                  <ul class="alert__text" style="margin: 0; padding-left: var(--space-4);">\n                    ${n.lowI2Diagnostic.recommendations.map(e=>`<li>${e}</li>`).join("")}\n                  </ul>\n                </div>\n              </div>\n            `:""}\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.lowI2Diagnostic.reference}</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- PDG Scale Factor --\x3e\n        ${n.pdgScaleFactor&&n.pdgScaleFactor.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">âÅ¡”ºï¸Â PDG Scale Factor (Physics Method)</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this tells you:</strong> When studies disagree more than expected by chance, this inflates your confidence interval to be more honest about uncertainty. Used in particle physics for decades.\n            </p>\n            <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value stat-card__value--accent">${void 0!==n.pdgScaleFactor.S?n.pdgScaleFactor.S.toFixed(2):"N/A"}</div>\n                <div class="stat-card__label">Scale Factor (S)</div>\n                <div class="text-xs text-secondary">(1.0 = no inflation needed)</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.pdgScaleFactor.theta_exp?n.pdgScaleFactor.theta_exp.toFixed(3):"N/A"}</div>\n                <div class="stat-card__label">Effect (${e.measure})</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.pdgScaleFactor.se_original?n.pdgScaleFactor.se_original.toFixed(4):"N/A"}</div>\n                <div class="stat-card__label">Original SE</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value ${n.pdgScaleFactor.S>1?"text-warning":""}">${void 0!==n.pdgScaleFactor.se_scaled?n.pdgScaleFactor.se_scaled.toFixed(4):"N/A"}</div>\n                <div class="stat-card__label">Scaled SE</div>\n              </div>\n            </div>\n            \n            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: var(--space-4);">\n              <div style="padding: var(--space-3); background: var(--surface-overlay); border-radius: var(--radius-md);">\n                <p class="text-sm font-semibold" style="margin-bottom: var(--space-2);">Original 95% CI</p>\n                <p class="font-mono">${n.pdgScaleFactor.ci_original?`${n.pdgScaleFactor.ci_original.lower_exp.toFixed(3)} â€“ ${n.pdgScaleFactor.ci_original.upper_exp.toFixed(3)}`:"N/A"}</p>\n              </div>\n              <div style="padding: var(--space-3); background: var(--surface-highlight); border-radius: var(--radius-md);">\n                <p class="text-sm font-semibold" style="margin-bottom: var(--space-2);">PDG-Scaled 95% CI</p>\n                <p class="font-mono">${n.pdgScaleFactor.ci_scaled?`${n.pdgScaleFactor.ci_scaled.lower_exp.toFixed(3)} â€“ ${n.pdgScaleFactor.ci_scaled.upper_exp.toFixed(3)}`:"N/A"}</p>\n              </div>\n            </div>\n            \n            <p class="text-secondary" style="margin-top: var(--space-4);">${n.pdgScaleFactor.interpretation||""}</p>\n            ${n.pdgScaleFactor.note?`<p class="text-warning text-sm">${n.pdgScaleFactor.note}</p>`:""}\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.pdgScaleFactor.reference||"N/A"}</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- Winner's Curse Correction --\x3e\n        ${n.winnersCurse&&n.winnersCurse.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸§¬ Winner's Curse Correction (GWAS Method)</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this tells you:</strong> "Significant" findings are often inflated because we only publish/notice them when they cross a threshold. This estimates how much your effect might shrink in future studies.\n            </p>\n            <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value">${n.winnersCurse.observed&&void 0!==n.winnersCurse.observed.theta_exp?n.winnersCurse.observed.theta_exp.toFixed(3):"N/A"}</div>\n                <div class="stat-card__label">Observed Effect</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value stat-card__value--accent">${n.winnersCurse.bootstrap_correction&&void 0!==n.winnersCurse.bootstrap_correction.theta_corrected_exp?n.winnersCurse.bootstrap_correction.theta_corrected_exp.toFixed(3):"N/A"}</div>\n                <div class="stat-card__label">Bootstrap-Corrected</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value ${n.winnersCurse.bootstrap_correction&&n.winnersCurse.bootstrap_correction.inflation_pct>10?"text-warning":""}">${n.winnersCurse.bootstrap_correction&&null!=n.winnersCurse.bootstrap_correction.inflation_pct?`${n.winnersCurse.bootstrap_correction.inflation_pct>0?"+":""}${n.winnersCurse.bootstrap_correction.inflation_pct.toFixed(1)}%`:"N/A"}</div>\n                <div class="stat-card__label">Estimated Inflation</div>\n              </div>\n            </div>\n            \n            <table class="data-table data-table--mono" style="margin-bottom: var(--space-4);">\n              <thead>\n                <tr>\n                  <th>Correction Method</th>\n                  <th>Corrected Effect</th>\n                  <th>Inflation Est.</th>\n                </tr>\n              </thead>\n              <tbody>\n                <tr>\n                  <td class="font-sans">Bootstrap Bias${pwWcNote(n.winnersCurse.bootstrap_correction)}</td>\n                  <td>${n.winnersCurse.bootstrap_correction&&void 0!==n.winnersCurse.bootstrap_correction.theta_corrected_exp?n.winnersCurse.bootstrap_correction.theta_corrected_exp.toFixed(3):"N/A"}</td>\n                  <td>${n.winnersCurse.bootstrap_correction&&null!=n.winnersCurse.bootstrap_correction.inflation_pct?n.winnersCurse.bootstrap_correction.inflation_pct.toFixed(1):"N/A"}%</td>\n                </tr>\n              </tbody>\n            </table>\n            <p class="text-sm text-secondary">${n.winnersCurse.not_computed||""}</p>\n            \n            <p class="text-secondary">${n.winnersCurse.interpretation||""}</p>\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.winnersCurse.reference||"N/A"}</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- Treatment Response Distribution --\x3e\n        ${n.responseDistribution&&n.responseDistribution.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸Å’¿ Treatment Response Distribution (SSD Method)</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this tells you:</strong> Not everyone responds the same way. This models the distribution of treatment effects across different populations/settings, showing what proportion are likely to benefit.\n            </p>\n            <div class="stat-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value text-success">${n.responseDistribution.response_rates&&void 0!==n.responseDistribution.response_rates.P_benefit?(100*n.responseDistribution.response_rates.P_benefit).toFixed(0):"N/A"}%</div>\n                <div class="stat-card__label">True effects favouring treatment</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value text-danger">${n.responseDistribution.response_rates&&void 0!==n.responseDistribution.response_rates.P_harm?(100*n.responseDistribution.response_rates.P_harm).toFixed(0):"N/A"}%</div>\n                <div class="stat-card__label">True effects at or past no effect</div>\n              </div>\n            </div>\n            \n            <h4 class="text-sm font-semibold" style="margin-bottom: var(--space-2);">Response Distribution Percentiles</h4>\n            <table class="data-table data-table--mono" style="margin-bottom: var(--space-4);">\n              <thead>\n                <tr>\n                  <th>Percentile</th>\n                  <th>5th</th>\n                  <th>10th</th>\n                  <th>25th</th>\n                  <th>50th (Median)</th>\n                  <th>75th</th>\n                  <th>90th</th>\n                  <th>95th</th>\n                </tr>\n              </thead>\n              <tbody>\n                <tr>\n                  <td class="font-sans">Effect</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p5?n.responseDistribution.percentiles.p5.effect.toFixed(3):"N/A"}</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p10?n.responseDistribution.percentiles.p10.effect.toFixed(3):"N/A"}</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p25?n.responseDistribution.percentiles.p25.effect.toFixed(3):"N/A"}</td>\n                  <td class="font-semibold">${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p50?n.responseDistribution.percentiles.p50.effect.toFixed(3):"N/A"}</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p75?n.responseDistribution.percentiles.p75.effect.toFixed(3):"N/A"}</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p90?n.responseDistribution.percentiles.p90.effect.toFixed(3):"N/A"}</td>\n                  <td>${n.responseDistribution.percentiles&&n.responseDistribution.percentiles.p95?n.responseDistribution.percentiles.p95.effect.toFixed(3):"N/A"}</td>\n                </tr>\n              </tbody>\n            </table>\n            \n            <p class="text-sm text-secondary">${n.responseDistribution.not_computed||""}</p>\n            \n            <div class="alert alert--info" style="margin-top: var(--space-4);">\n              <span class="alert__icon">ðÅ¸'¡</span>\n              <div class="alert__content">\n                <div class="alert__text">${n.responseDistribution.personalization_insight}</div>\n              </div>\n            </div>\n            \n            ${n.responseDistribution.limitations?`\n            <div class="alert alert--warning" style="margin-top: var(--space-3);">\n              <span class="alert__icon">âÅ¡ ï¸Â</span>\n              <div class="alert__content">\n                <div class="alert__title">Important Limitations</div>\n                <ul class="alert__text" style="margin: 0; padding-left: var(--space-4); font-size: var(--text-xs);">\n                  ${n.responseDistribution.limitations.map(e=>`<li>${e}</li>`).join("")}\n                </ul>\n              </div>\n            </div>\n            `:""}\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.responseDistribution.reference}</em>\n            </p>\n          </div>\n        </div>\n        `:n.responseDistribution&&n.responseDistribution.reason?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__body">\n            <p class="text-secondary">Treatment response distribution not computed: ${n.responseDistribution.reason}</p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- lnCVR Variability Analysis --\x3e\n        ${n.lnCVR&&n.lnCVR.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸“Å  lnCVR - Variability Meta-Analysis (Ecology Method)</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this tells you:</strong> Does the treatment make responses more or less predictable? CVR &lt; 1 means treatment produces more consistent responses; CVR &gt; 1 means more variable responses.\n            </p>\n            <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.lnCVR.lnCVR?n.lnCVR.lnCVR.toFixed(4):"N/A"}</div>\n                <div class="stat-card__label">lnCVR (log scale)</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value stat-card__value--accent">${void 0!==n.lnCVR.CVR?n.lnCVR.CVR.toFixed(3):"N/A"}</div>\n                <div class="stat-card__label">CVR (Ratio)</div>\n                <div class="text-xs text-secondary">(1.0 = equal variability)</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lnCVR.CVR_ci?`${n.lnCVR.CVR_ci[0].toFixed(3)} â€“ ${n.lnCVR.CVR_ci[1].toFixed(3)}`:"N/A"}</div>\n                <div class="stat-card__label">95% CI</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${n.lnCVR.heterogeneity&&void 0!==n.lnCVR.heterogeneity.I2?n.lnCVR.heterogeneity.I2.toFixed(1):"N/A"}%</div>\n                <div class="stat-card__label">I²</div>\n              </div>\n            </div>\n            \n            <p class="text-secondary">${n.lnCVR.interpretation||""}</p>\n            <p class="text-sm" style="margin-top: var(--space-2);"><strong>Clinical insight:</strong> ${n.lnCVR.clinical_insight||"N/A"}</p>\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.lnCVR.reference||"N/A"}</em>\n            </p>\n          </div>\n        </div>\n        `:n.lnCVR?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸“Å  lnCVR - Variability Meta-Analysis</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary">${n.lnCVR.reason}</p>\n            <p class="text-xs text-secondary" style="margin-top: var(--space-2);">\n              <em>lnCVR requires continuous outcome data (mean, SD, n) for both treatment arms.</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- Heteroscedasticity Test --\x3e\n        ${n.heteroscedasticity&&n.heteroscedasticity.available?`\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸“Ë† Heteroscedasticity Detection (τ² Variation)</h2>\n            <span class="badge badge--${!0===n.heteroscedasticity.heteroscedastic?"danger":"possible"===n.heteroscedasticity.heteroscedastic?"warning":"success"}">${!0===n.heteroscedasticity.heteroscedastic?"HETEROSCEDASTIC":"possible"===n.heteroscedasticity.heteroscedastic?"POSSIBLE":"HOMOSCEDASTIC"}</span>\n          </div>\n          <div class="card__body">\n            <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: var(--space-4);">\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.heteroscedasticity.tau2_ratio?n.heteroscedasticity.tau2_ratio.toFixed(2):"N/A"}×</div>\n                <div class="stat-card__label">Max/Min τ² Ratio</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.heteroscedasticity.tau2_min?n.heteroscedasticity.tau2_min.toFixed(4):"N/A"}</div>\n                <div class="stat-card__label">Min τ²</div>\n              </div>\n              <div class="stat-card">\n                <div class="stat-card__value">${void 0!==n.heteroscedasticity.tau2_max?n.heteroscedasticity.tau2_max.toFixed(4):"N/A"}</div>\n                <div class="stat-card__label">Max τ²</div>\n              </div>\n            </div>\n            \n            <p class="text-secondary">${n.heteroscedasticity.interpretation}</p>\n            <p class="text-sm" style="margin-top: var(--space-2);"><strong>Recommendation:</strong> ${n.heteroscedasticity.recommendation}</p>\n            \n            <p class="text-xs text-secondary" style="margin-top: var(--space-4);">\n              <em>Reference: ${n.heteroscedasticity.reference}</em>\n            </p>\n          </div>\n        </div>\n        `:""}\n        \n        \x3c!-- Orchard Plot --\x3e\n        <div class="card" style="margin-top: var(--space-6);">\n          <div class="card__header">\n            <h2 class="card__title">ðÅ¸Å’¸ Orchard Plot (Ecology Visualization)</h2>\n          </div>\n          <div class="card__body">\n            <p class="text-secondary text-sm" style="margin-bottom: var(--space-4);">\n              <strong>What this shows:</strong> A compact view of all studies with prediction interval. Larger points = higher weight. Gray band shows where 95% of future studies would fall.\n            </p>\n            <div id="orchardPlot" class="plot-container" style="min-height: 300px;"></div>\n            <p class="text-xs text-secondary" style="margin-top: var(--space-2);">\n              <em>Point size proportional to weight. Gray band = prediction interval. Blue bar = confidence interval.</em>\n            </p>\n          </div>\n        </div>\n      `, setTimeout(() => {
     try {
       renderOrchardPlot(e, "orchardPlot")
     } catch (e) {}
@@ -13777,14 +13778,13 @@ function generateResultsSection(e, t) {
     }
     if (G.winnersCurse && G.winnersCurse.available) {
       var J = "Winner's-curse diagnostics suggested " + (G.winnersCurse.interpretation || "uncertain inflation") + ". ";
-      J += G.winnersCurse.consensus_estimate && void 0 !== G.winnersCurse.consensus_estimate.theta_exp ? "Bias-adjusted consensus estimate: " + v + " = " + r(G.winnersCurse.consensus_estimate.theta_exp) + "." : "Estimated inflation was " + (G.winnersCurse.bootstrap_correction && void 0 !== G.winnersCurse.bootstrap_correction.inflation_pct ? r(Math.abs(G.winnersCurse.bootstrap_correction.inflation_pct), 1) : "N/A") + "%.", j.push(J)
+      J += G.winnersCurse.consensus_estimate && void 0 !== G.winnersCurse.consensus_estimate.theta_exp ? "Bias-adjusted consensus estimate: " + v + " = " + r(G.winnersCurse.consensus_estimate.theta_exp) + "." : "Estimated inflation was " + (G.winnersCurse.bootstrap_correction && null != G.winnersCurse.bootstrap_correction.inflation_pct ? r(Math.abs(G.winnersCurse.bootstrap_correction.inflation_pct), 1) : "N/A") + "%.", j.push(J)
     }
     if (G.responseDistribution && G.responseDistribution.available) {
       var Q = G.responseDistribution.response_rates,
         ee = Q && void 0 !== Q.P_benefit ? r(100 * Q.P_benefit, 1) : "N/A",
-        te = Q && void 0 !== Q.P_mcid ? r(100 * Q.P_mcid, 1) : "N/A",
         ne = Q && void 0 !== Q.P_harm ? r(100 * Q.P_harm, 1) : "N/A";
-      j.push("Response-distribution modeling estimated P(benefit)=" + ee + "%, P(MCID)=" + te + "%, and P(harm/no-benefit)=" + ne + "% in future settings.")
+      j.push("Response-distribution modeling estimated P(benefit)=" + ee + "% and P(harm/no-benefit)=" + ne + "% in future settings.")
     }
     if (j.length > 0) {
       C += "<h3>Cross-Disciplinary Robustness Checks</h3>";
@@ -25850,26 +25850,30 @@ function runClinicalTranslation() {
     showToast('Run analysis first', 'warning');
     return;
   }
-  const cer = parseFloat(document.getElementById('clinicalCER').value) || 0.20;
-  const results = clinicalTranslation(AppState.results.pooled.theta, AppState.results.pooled.se, cer);
+  const cerIn = parseFloat(document.getElementById('clinicalCER').value);
+  const cer = isFinite(cerIn) ? cerIn : 0.20;
+  const measure = AppState.results.measure || AppState.settings?.effectMeasure;
+  const results = clinicalTranslation(AppState.results.pooled.theta, AppState.results.pooled.se, cer, measure);
+  const rows = [];
+  if (results.smd !== undefined) {
+    rows.push(`<div><strong>SMD:</strong> ${results.smd.toFixed(3)} (${results.magnitude})</div>`);
+    rows.push(`<div><strong>Prob Superiority:</strong> ${(results.probSuperiority * 100).toFixed(1)}%</div>`);
+    rows.push(`<div><strong>U3:</strong> ${(results.u3 * 100).toFixed(1)}%</div>`);
+    rows.push(`<div><strong>Overlap:</strong> ${(results.overlap * 100).toFixed(1)}%</div>`);
+  }
+  if (results.oddsRatio !== undefined) rows.push(`<div><strong>Odds Ratio:</strong> ${results.oddsRatio.toFixed(2)}</div>`);
+  if (results.riskRatio !== undefined) rows.push(`<div><strong>Risk Ratio:</strong> ${results.riskRatio.toFixed(2)} (control event rate ${cer})</div>`);
+  if (results.absoluteRiskReduction !== undefined) {
+    rows.push(`<div><strong>ARR:</strong> ${(results.absoluteRiskReduction * 100).toFixed(1)}%</div>`);
+    rows.push(`<div><strong>NNT:</strong> ${results.nnt === Infinity ? '∞' : results.nnt}</div>`);
+  }
   document.getElementById('clinicalResults').innerHTML = `
     <div style="background: var(--bg-secondary); padding: var(--space-3); border-radius: var(--radius-md);">
+      <p style="margin: 0 0 var(--space-2) 0;"><strong>Measure:</strong> ${results.measure || 'unknown'}</p>
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-2);">
-        <div><strong>SMD:</strong> ${results.smd.toFixed(3)} (${results.interpretation.magnitude})</div>
-        <div><strong>Odds Ratio:</strong> ${results.oddsRatio.toFixed(2)}</div>
-        <div><strong>Risk Ratio:</strong> ${results.riskRatio.toFixed(2)}</div>
-        <div><strong>NNT:</strong> ${results.nnt === Infinity ? '∞' : results.nnt}</div>
-        <div><strong>ARR:</strong> ${(results.absoluteRiskReduction * 100).toFixed(1)}%</div>
-        <div><strong>Prob Superiority:</strong> ${(results.probSuperiority * 100).toFixed(1)}%</div>
-        <div><strong>U3:</strong> ${(results.u3 * 100).toFixed(1)}%</div>
-        <div><strong>Overlap:</strong> ${(results.overlap * 100).toFixed(1)}%</div>
+        ${rows.join('')}
       </div>
-      <p style="margin-top: var(--space-2); font-weight: bold;">
-        ${results.interpretation.clinical}
-      </p>
-      <p style="color: var(--text-secondary); font-size: 0.85em;">
-        ${results.interpretation.superiority}
-      </p>
+      ${results.notComputed.length ? `<p style="margin-top: var(--space-2); color: var(--text-secondary); font-size: 0.85em;"><strong>Not computed:</strong> ${results.notComputed.join(' ')}</p>` : ''}
     </div>
   `;
   showToast('Clinical translation complete', 'success');
@@ -25929,7 +25933,8 @@ function computeClinical() {
     // Calculate NNT/NNH
     let nnt = null, nntInterpret = '';
     if (measure === 'OR' || measure === 'RR') {
-      const rr = measure === 'OR' ? Math.exp(effect) / (1 - cer + cer * Math.exp(effect)) / (1 / (1 - cer)) : Math.exp(effect);
+      // Zhang & Yu 1998: RR = OR / (1 - CER + CER * OR). Was additionally multiplied by (1 - CER).
+      const rr = measure === 'OR' ? Math.exp(effect) / (1 - cer + cer * Math.exp(effect)) : Math.exp(effect);
       const arr = cer * (1 - rr);
       if (Math.abs(arr) > 0.001) {
         nnt = Math.abs(1 / arr);
@@ -25944,9 +25949,8 @@ function computeClinical() {
     // LaEV calculation
     const laev = Math.abs(effect) / se;
     const laevInterpret = laev > 2.8 ? 'Strong' : laev > 2 ? 'Moderate' : laev > 1 ? 'Weak' : 'Very weak';
-    // Decision threshold
-    const mcid = 0.15;
-    const probBenefit = AlmTail.pnormUpper((mcid - effect) / se);
+    // P(effect beyond an MCID) is not shown: the MCID was fixed at 0.15 on whatever scale the
+    // measure has (log OR, mean difference, risk difference ...), and the page has no MCID input.
     const container = document.getElementById('clinical-results');
     if (container) {
       container.innerHTML = `
@@ -25968,12 +25972,8 @@ function computeClinical() {
             <div class="stat-card__value">${laev.toFixed(2)}</div>
             <div class="stat-card__change">${laevInterpret} evidence</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-card__label">P(clinically meaningful)</div>
-            <div class="stat-card__value">${(probBenefit * 100).toFixed(1)}%</div>
-            <div class="stat-card__change">exceeds MCID</div>
-          </div>
         </div>
+        <p class="text-secondary text-sm" style="margin-top: var(--space-3);"><strong>Not computed:</strong> the probability that the effect exceeds a minimal clinically important difference needs an MCID on the scale of the ${measure} (this page has no MCID input).${nnt ? '' : ' An NNT needs a binary outcome (OR, RR or RD) and a control event rate.'}</p>
       `;
     }
     showToast('Clinical translation complete', 'success');
@@ -26190,9 +26190,11 @@ function runPowerAnalysis() {
   const alpha = 0.05;
   const zAlpha = 1.96;
   const power = AlmTail.pnormUpper(zAlpha - effect / se) + pnorm(-zAlpha - effect / se);
-  // Required sample size for 80% power
-  const zBeta = 0.84;
-  const requiredN = Math.ceil(Math.pow((zAlpha + zBeta) * se / effect, 2));
+  // Studies for 80% power, if every study carries the current average information (1/se^2 grows in
+  // proportion to k) and tau2 is ignored: k_req = k * ((z_alpha + z_beta) * se / |theta|)^2. Was the
+  // same expression without the factor k, i.e. the ratio k_req / k presented as a number of studies.
+  const zBeta = 0.8416212335729143;  // qnorm(0.8)
+  const requiredN = effect > 0 ? Math.ceil(k * Math.pow((zAlpha + zBeta) * se / effect, 2)) : Infinity;
   const container = document.getElementById('powerResults');
   if (container) {
     container.innerHTML = `
@@ -26207,7 +26209,7 @@ function runPowerAnalysis() {
         <div class="stat-card">
           <div class="stat-card__label">Studies for 80% Power</div>
           <div class="stat-card__value">${requiredN}</div>
-          <div class="stat-card__change">currently have ${k}</div>
+          <div class="stat-card__change">currently have ${k}; assumes studies like the current ones, τ² ignored</div>
         </div>
       </div>
       <p style="margin-top: var(--space-2); font-size: var(--text-xs); color: var(--text-secondary);">
@@ -26576,32 +26578,42 @@ window.runLeaveOneOutCorrected = function() {
 // ADDITIONAL MISSING FUNCTIONS - Part 2
 // =============================================================================
 // Clinical Translation function
-function clinicalTranslation(effect, se, cer = 0.2) {
-  const smd = effect;  // Assuming effect is already SMD-like
-  const oddsRatio = Math.exp(effect);
-  const riskRatio = cer > 0 ? oddsRatio / (1 - cer + cer * oddsRatio) / (1 / (1 - cer)) : 1;
-  const absoluteRiskReduction = cer * (1 - riskRatio);
-  const nnt = Math.abs(absoluteRiskReduction) > 0.001 ? Math.round(Math.abs(1 / absoluteRiskReduction)) : Infinity;
-  // Probability of superiority (Common Language Effect Size)
-  const probSuperiority = pnorm(effect / Math.sqrt(2));
-  // U3 - percent of control group below treatment mean
-  const u3 = pnorm(effect);
-  // Overlap coefficient
-  const overlap = 2 * pnorm(-Math.abs(effect) / 2);
-  // Magnitude interpretation
-  let magnitude;
-  if (Math.abs(smd) < 0.2) magnitude = 'Negligible';
-  else if (Math.abs(smd) < 0.5) magnitude = 'Small';
-  else if (Math.abs(smd) < 0.8) magnitude = 'Medium';
-  else magnitude = 'Large';
-  return {
-    smd, oddsRatio, riskRatio, absoluteRiskReduction, nnt, probSuperiority, u3, overlap,
-    interpretation: {
-      magnitude,
-      clinical: `Effect is ${magnitude.toLowerCase()}. NNT = ${nnt === Infinity ? '∞' : nnt}`,
-      superiority: `${(probSuperiority * 100).toFixed(0)}% chance a treated patient does better than control`
-    }
-  };
+function clinicalTranslation(effect, se, cer = 0.2, measure = 'OR') {
+  // Each translation is computed only on the measure it is defined for (lane tcxd). This used to treat
+  // the pooled estimate as an SMD and as a log odds ratio at once ("Assuming effect is already
+  // SMD-like"), so a log OR was also shown as an SMD, U3 and overlap, an MD as an odds ratio, and so on;
+  // and the OR -> RR step multiplied the Zhang-Yu risk ratio by an extra (1 - CER).
+  const m = String(measure || '').toUpperCase();
+  const out = { measure: m, notComputed: [] };
+  if (['SMD', 'SMDH'].includes(m)) {
+    const smd = effect;
+    out.smd = smd;
+    out.probSuperiority = pnorm(smd / Math.sqrt(2));  // common-language effect size, normal model
+    out.u3 = pnorm(smd);                               // Cohen's U3
+    out.overlap = 2 * pnorm(-Math.abs(smd) / 2);       // overlapping coefficient, equal variances
+    out.magnitude = Math.abs(smd) < 0.2 ? 'Negligible' : Math.abs(smd) < 0.5 ? 'Small' : Math.abs(smd) < 0.8 ? 'Medium' : 'Large';
+  } else {
+    out.notComputed.push('SMD, probability of superiority, U3 and overlap need a standardised mean difference (a continuous outcome analysed as SMD).');
+  }
+  let rr = null;
+  if (m === 'OR') {
+    out.oddsRatio = Math.exp(effect);
+    rr = out.oddsRatio / (1 - cer + cer * out.oddsRatio);  // Zhang & Yu 1998, at the control event rate entered
+  } else if (m === 'RR') {
+    rr = Math.exp(effect);
+  }
+  if (rr !== null) {
+    out.riskRatio = rr;
+    out.absoluteRiskReduction = cer * (1 - rr);
+  } else if (m === 'RD') {
+    out.absoluteRiskReduction = -effect;  // RD = treatment risk - control risk
+  }
+  if (out.absoluteRiskReduction !== undefined) {
+    out.nnt = Math.abs(out.absoluteRiskReduction) > 0.001 ? Math.round(Math.abs(1 / out.absoluteRiskReduction)) : Infinity;
+  } else {
+    out.notComputed.push('Risk ratio, absolute risk reduction and NNT need a binary outcome analysed as OR, RR or RD (a hazard ratio needs event times as well).');
+  }
+  return out;
 }
 // Fragility Index for MA (wrapper)
 function fragilityIndexMA(yi, vi, pooledTheta) {

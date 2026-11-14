@@ -2457,26 +2457,30 @@ function runClinicalTranslation() {
     showToast('Run analysis first', 'warning');
     return;
   }
-  const cer = parseFloat(document.getElementById('clinicalCER').value) || 0.20;
-  const results = clinicalTranslation(AppState.results.pooled.theta, AppState.results.pooled.se, cer);
+  const cerIn = parseFloat(document.getElementById('clinicalCER').value);
+  const cer = isFinite(cerIn) ? cerIn : 0.20;
+  const measure = AppState.results.measure || AppState.settings?.effectMeasure;
+  const results = clinicalTranslation(AppState.results.pooled.theta, AppState.results.pooled.se, cer, measure);
+  const rows = [];
+  if (results.smd !== undefined) {
+    rows.push(`<div><strong>SMD:</strong> ${results.smd.toFixed(3)} (${results.magnitude})</div>`);
+    rows.push(`<div><strong>Prob Superiority:</strong> ${(results.probSuperiority * 100).toFixed(1)}%</div>`);
+    rows.push(`<div><strong>U3:</strong> ${(results.u3 * 100).toFixed(1)}%</div>`);
+    rows.push(`<div><strong>Overlap:</strong> ${(results.overlap * 100).toFixed(1)}%</div>`);
+  }
+  if (results.oddsRatio !== undefined) rows.push(`<div><strong>Odds Ratio:</strong> ${results.oddsRatio.toFixed(2)}</div>`);
+  if (results.riskRatio !== undefined) rows.push(`<div><strong>Risk Ratio:</strong> ${results.riskRatio.toFixed(2)} (control event rate ${cer})</div>`);
+  if (results.absoluteRiskReduction !== undefined) {
+    rows.push(`<div><strong>ARR:</strong> ${(results.absoluteRiskReduction * 100).toFixed(1)}%</div>`);
+    rows.push(`<div><strong>NNT:</strong> ${results.nnt === Infinity ? '∞' : results.nnt}</div>`);
+  }
   document.getElementById('clinicalResults').innerHTML = `
     <div style="background: var(--bg-secondary); padding: var(--space-3); border-radius: var(--radius-md);">
+      <p style="margin: 0 0 var(--space-2) 0;"><strong>Measure:</strong> ${results.measure || 'unknown'}</p>
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-2);">
-        <div><strong>SMD:</strong> ${results.smd.toFixed(3)} (${results.interpretation.magnitude})</div>
-        <div><strong>Odds Ratio:</strong> ${results.oddsRatio.toFixed(2)}</div>
-        <div><strong>Risk Ratio:</strong> ${results.riskRatio.toFixed(2)}</div>
-        <div><strong>NNT:</strong> ${results.nnt === Infinity ? '∞' : results.nnt}</div>
-        <div><strong>ARR:</strong> ${(results.absoluteRiskReduction * 100).toFixed(1)}%</div>
-        <div><strong>Prob Superiority:</strong> ${(results.probSuperiority * 100).toFixed(1)}%</div>
-        <div><strong>U3:</strong> ${(results.u3 * 100).toFixed(1)}%</div>
-        <div><strong>Overlap:</strong> ${(results.overlap * 100).toFixed(1)}%</div>
+        ${rows.join('')}
       </div>
-      <p style="margin-top: var(--space-2); font-weight: bold;">
-        ${results.interpretation.clinical}
-      </p>
-      <p style="color: var(--text-secondary); font-size: 0.85em;">
-        ${results.interpretation.superiority}
-      </p>
+      ${results.notComputed.length ? `<p style="margin-top: var(--space-2); color: var(--text-secondary); font-size: 0.85em;"><strong>Not computed:</strong> ${results.notComputed.join(' ')}</p>` : ''}
     </div>
   `;
   showToast('Clinical translation complete', 'success');
@@ -2536,7 +2540,8 @@ function computeClinical() {
     // Calculate NNT/NNH
     let nnt = null, nntInterpret = '';
     if (measure === 'OR' || measure === 'RR') {
-      const rr = measure === 'OR' ? Math.exp(effect) / (1 - cer + cer * Math.exp(effect)) / (1 / (1 - cer)) : Math.exp(effect);
+      // Zhang & Yu 1998: RR = OR / (1 - CER + CER * OR). Was additionally multiplied by (1 - CER).
+      const rr = measure === 'OR' ? Math.exp(effect) / (1 - cer + cer * Math.exp(effect)) : Math.exp(effect);
       const arr = cer * (1 - rr);
       if (Math.abs(arr) > 0.001) {
         nnt = Math.abs(1 / arr);
@@ -2551,9 +2556,8 @@ function computeClinical() {
     // LaEV calculation
     const laev = Math.abs(effect) / se;
     const laevInterpret = laev > 2.8 ? 'Strong' : laev > 2 ? 'Moderate' : laev > 1 ? 'Weak' : 'Very weak';
-    // Decision threshold
-    const mcid = 0.15;
-    const probBenefit = AlmTail.pnormUpper((mcid - effect) / se);
+    // P(effect beyond an MCID) is not shown: the MCID was fixed at 0.15 on whatever scale the
+    // measure has (log OR, mean difference, risk difference ...), and the page has no MCID input.
     const container = document.getElementById('clinical-results');
     if (container) {
       container.innerHTML = `
@@ -2575,12 +2579,8 @@ function computeClinical() {
             <div class="stat-card__value">${laev.toFixed(2)}</div>
             <div class="stat-card__change">${laevInterpret} evidence</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-card__label">P(clinically meaningful)</div>
-            <div class="stat-card__value">${(probBenefit * 100).toFixed(1)}%</div>
-            <div class="stat-card__change">exceeds MCID</div>
-          </div>
         </div>
+        <p class="text-secondary text-sm" style="margin-top: var(--space-3);"><strong>Not computed:</strong> the probability that the effect exceeds a minimal clinically important difference needs an MCID on the scale of the ${measure} (this page has no MCID input).${nnt ? '' : ' An NNT needs a binary outcome (OR, RR or RD) and a control event rate.'}</p>
       `;
     }
     showToast('Clinical translation complete', 'success');
@@ -2797,9 +2797,11 @@ function runPowerAnalysis() {
   const alpha = 0.05;
   const zAlpha = 1.96;
   const power = AlmTail.pnormUpper(zAlpha - effect / se) + pnorm(-zAlpha - effect / se);
-  // Required sample size for 80% power
-  const zBeta = 0.84;
-  const requiredN = Math.ceil(Math.pow((zAlpha + zBeta) * se / effect, 2));
+  // Studies for 80% power, if every study carries the current average information (1/se^2 grows in
+  // proportion to k) and tau2 is ignored: k_req = k * ((z_alpha + z_beta) * se / |theta|)^2. Was the
+  // same expression without the factor k, i.e. the ratio k_req / k presented as a number of studies.
+  const zBeta = 0.8416212335729143;  // qnorm(0.8)
+  const requiredN = effect > 0 ? Math.ceil(k * Math.pow((zAlpha + zBeta) * se / effect, 2)) : Infinity;
   const container = document.getElementById('powerResults');
   if (container) {
     container.innerHTML = `
@@ -2814,7 +2816,7 @@ function runPowerAnalysis() {
         <div class="stat-card">
           <div class="stat-card__label">Studies for 80% Power</div>
           <div class="stat-card__value">${requiredN}</div>
-          <div class="stat-card__change">currently have ${k}</div>
+          <div class="stat-card__change">currently have ${k}; assumes studies like the current ones, τ² ignored</div>
         </div>
       </div>
       <p style="margin-top: var(--space-2); font-size: var(--text-xs); color: var(--text-secondary);">
@@ -2862,39 +2864,32 @@ function renderPowerCurve(containerId, effect, se, currentK) {
   };
   Plotly.newPlot(container, [trace, currentPoint], layout, { responsive: true });
 }
-// Cross-disciplinary content update
+// Cross-disciplinary tab. This page's engine (app.min.js) computes none of the quantities this tab used
+// to show, and every card was a fixed transform of the pooled estimate presented as a result (lane tcxd):
+// "Cost per QALY" = |theta| x 10000, "Education d" = 0.5 x theta, "Cohen's d" = |theta| and "Hedges' g" =
+// 0.95 x theta, whatever the effect measure. The tab now says what is not computed and what it would need.
 function updateCrossDisciplinary() {
   const container = document.getElementById('panel-crossdisciplinary');
   if (!container || !AppState.results) return;
-  const r = AppState.results;
   container.innerHTML = `
     <div class="card">
       <div class="card__header">
         <h2 class="card__title">🌐 Cross-Disciplinary Methods</h2>
       </div>
       <div class="card__body">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-3);">
-          <div class="stat-card">
-            <div class="stat-card__label">Economics: Cost per QALY</div>
-            <div class="stat-card__value">£${(Math.abs(r.pooled.theta) * 10000).toFixed(0)}</div>
-            <div class="stat-card__change">Illustrative estimate</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">Education: Effect Size (d)</div>
-            <div class="stat-card__value">${(r.pooled.theta * 0.5).toFixed(2)}</div>
-            <div class="stat-card__change">Converted from log scale</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">Psychology: Cohen's d</div>
-            <div class="stat-card__value">${Math.abs(r.pooled.theta).toFixed(2)}</div>
-            <div class="stat-card__change">${Math.abs(r.pooled.theta) > 0.8 ? 'Large' : Math.abs(r.pooled.theta) > 0.5 ? 'Medium' : 'Small'} effect</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">Ecology: Hedges' g</div>
-            <div class="stat-card__value">${(r.pooled.theta * 0.95).toFixed(2)}</div>
-            <div class="stat-card__change">Bias-corrected</div>
+        <div class="alert alert--info">
+          <div class="alert__content">
+            <div class="alert__title">Not computed on this page</div>
+            <div class="alert__text">
+              <ul style="margin: var(--space-2) 0 0 var(--space-4);">
+                <li><strong>Cost per QALY:</strong> needs the costs of each option and the QALYs gained (utilities and time horizon); this page has no cost or utility input.</li>
+                <li><strong>Standardised mean difference (Cohen's d / Hedges' g):</strong> needs continuous outcomes with means, SDs and group sizes (choose a continuous measure, SMD); a ratio or risk difference is not a d.</li>
+                <li><strong>Conversion of an odds ratio to d:</strong> needs the log odds ratio of a binary outcome and an assumption about the underlying distribution (e.g. logistic, Chinn 2000); it is not offered here.</li>
+              </ul>
+            </div>
           </div>
         </div>
+        <p class="text-secondary text-sm" style="margin-top: var(--space-3);">The pooled estimate on the scale of the chosen measure is on the Results tab.</p>
       </div>
     </div>
   `;
@@ -3288,32 +3283,42 @@ window.runLeaveOneOutCorrected = function() {
 // ADDITIONAL MISSING FUNCTIONS - Part 2
 // =============================================================================
 // Clinical Translation function
-function clinicalTranslation(effect, se, cer = 0.2) {
-  const smd = effect;  // Assuming effect is already SMD-like
-  const oddsRatio = Math.exp(effect);
-  const riskRatio = cer > 0 ? oddsRatio / (1 - cer + cer * oddsRatio) / (1 / (1 - cer)) : 1;
-  const absoluteRiskReduction = cer * (1 - riskRatio);
-  const nnt = Math.abs(absoluteRiskReduction) > 0.001 ? Math.round(Math.abs(1 / absoluteRiskReduction)) : Infinity;
-  // Probability of superiority (Common Language Effect Size)
-  const probSuperiority = pnorm(effect / Math.sqrt(2));
-  // U3 - percent of control group below treatment mean
-  const u3 = pnorm(effect);
-  // Overlap coefficient
-  const overlap = 2 * pnorm(-Math.abs(effect) / 2);
-  // Magnitude interpretation
-  let magnitude;
-  if (Math.abs(smd) < 0.2) magnitude = 'Negligible';
-  else if (Math.abs(smd) < 0.5) magnitude = 'Small';
-  else if (Math.abs(smd) < 0.8) magnitude = 'Medium';
-  else magnitude = 'Large';
-  return {
-    smd, oddsRatio, riskRatio, absoluteRiskReduction, nnt, probSuperiority, u3, overlap,
-    interpretation: {
-      magnitude,
-      clinical: `Effect is ${magnitude.toLowerCase()}. NNT = ${nnt === Infinity ? '∞' : nnt}`,
-      superiority: `${(probSuperiority * 100).toFixed(0)}% chance a treated patient does better than control`
-    }
-  };
+function clinicalTranslation(effect, se, cer = 0.2, measure = 'OR') {
+  // Each translation is computed only on the measure it is defined for (lane tcxd). This used to treat
+  // the pooled estimate as an SMD and as a log odds ratio at once ("Assuming effect is already
+  // SMD-like"), so a log OR was also shown as an SMD, U3 and overlap, an MD as an odds ratio, and so on;
+  // and the OR -> RR step multiplied the Zhang-Yu risk ratio by an extra (1 - CER).
+  const m = String(measure || '').toUpperCase();
+  const out = { measure: m, notComputed: [] };
+  if (['SMD', 'SMDH'].includes(m)) {
+    const smd = effect;
+    out.smd = smd;
+    out.probSuperiority = pnorm(smd / Math.sqrt(2));  // common-language effect size, normal model
+    out.u3 = pnorm(smd);                               // Cohen's U3
+    out.overlap = 2 * pnorm(-Math.abs(smd) / 2);       // overlapping coefficient, equal variances
+    out.magnitude = Math.abs(smd) < 0.2 ? 'Negligible' : Math.abs(smd) < 0.5 ? 'Small' : Math.abs(smd) < 0.8 ? 'Medium' : 'Large';
+  } else {
+    out.notComputed.push('SMD, probability of superiority, U3 and overlap need a standardised mean difference (a continuous outcome analysed as SMD).');
+  }
+  let rr = null;
+  if (m === 'OR') {
+    out.oddsRatio = Math.exp(effect);
+    rr = out.oddsRatio / (1 - cer + cer * out.oddsRatio);  // Zhang & Yu 1998, at the control event rate entered
+  } else if (m === 'RR') {
+    rr = Math.exp(effect);
+  }
+  if (rr !== null) {
+    out.riskRatio = rr;
+    out.absoluteRiskReduction = cer * (1 - rr);
+  } else if (m === 'RD') {
+    out.absoluteRiskReduction = -effect;  // RD = treatment risk - control risk
+  }
+  if (out.absoluteRiskReduction !== undefined) {
+    out.nnt = Math.abs(out.absoluteRiskReduction) > 0.001 ? Math.round(Math.abs(1 / out.absoluteRiskReduction)) : Infinity;
+  } else {
+    out.notComputed.push('Risk ratio, absolute risk reduction and NNT need a binary outcome analysed as OR, RR or RD (a hazard ratio needs event times as well).');
+  }
+  return out;
 }
 // Fragility Index for MA (wrapper)
 function fragilityIndexMA(yi, vi, pooledTheta) {
