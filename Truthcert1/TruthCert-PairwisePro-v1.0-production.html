@@ -2955,16 +2955,21 @@ print(f"tau2: {tau2:.4f}")
     </div>
   `;
 }
-// Hook into analysis completion
-const originalRunAnalysis = window.runAnalysis;
-if (originalRunAnalysis) {
-  window.runAnalysis = function() {
-    const result = originalRunAnalysis.apply(this, arguments);
-    setTimeout(() => {
+// Render these two panels as part of publishing the result: renderResults runs in the same task
+// that assigns AppState.results. (They used to be painted by a 500 ms timer after runAnalysis, so
+// for half a second after every Run the tabs showed the previous run's panels or the placeholder,
+// and a reopened project never got them. Same race class as #543.) In this page's engine
+// (app.min.js) renderCrossDisciplinaryPanel / renderCodePanel are never called, so these are the
+// only renderers of the two tabs.
+const originalRenderResultsCD = window.renderResults;
+if (typeof originalRenderResultsCD === 'function') {
+  window.renderResults = function() {
+    const rendered = originalRenderResultsCD.apply(this, arguments);
+    if (AppState.results && AppState.results.pooled) {
       updateCrossDisciplinary();
       updateCodePanel();
-    }, 500);
-    return result;
+    }
+    return rendered;
   };
 }
 // Metaoverfit Assessment - Fix to properly compute and update AppState.results

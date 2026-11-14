@@ -3543,6 +3543,19 @@ function tCriticalValue(df, p) {
   return p > 0.5 ? t : -t;
 }
 
+// 95% prediction interval (log scale) for the true effect in a new study: est -/+ t_{k-1} * sqrt(se^2 + tau2), with
+// k = number of studies -- the convention adopted for this repo (Cochrane Handbook v6.5; metafor predict() for a
+// test = "knha" fit; the coverage simulation's piDF). Previously t on (k minus 2) df, IntHout 2016. Undefined for k < 2.
+function predictionIntervalLog(est, se, tau2, nStudies) {
+  const k = Number(nStudies);
+  const t2 = Number.isFinite(tau2) ? Math.max(0, tau2) : 0;
+  if (!(k >= 2) || !Number.isFinite(est) || !Number.isFinite(se)) return { lower: NaN, upper: NaN, df: NaN, crit: NaN };
+  const df = Math.floor(k) - 1;
+  const crit = tCriticalValue(df, 0.975);
+  const half = crit * Math.sqrt(se * se + t2);
+  return { lower: est - half, upper: est + half, df, crit };
+}
+
 // ================================================================
 // ANALYSIS & DISPLAY
 // ================================================================
@@ -4039,14 +4052,10 @@ function updateInterpretationLegacy(r) {
     trendInterp = 'no significant evidence of a dose-response relationship';
   }
 
-  // Calculate prediction interval (IntHout et al. BMJ 2016)
-  // PI = estimate ± t_{k-1} * sqrt(SE² + τ²)
-  const tau2 = r.tau2 || 0;
-  const k = r.nStudies || 2;
-  const piSE = Math.sqrt(r.se[1] * r.se[1] + tau2);
-  const tCrit = tCriticalValue(Math.max(k - 2, 1), 0.975);
-  const piLower = Math.exp(r.beta[1] - tCrit * piSE);
-  const piUpper = Math.exp(r.beta[1] + tCrit * piSE);
+  // Prediction interval: estimate -/+ t_{k-1} * sqrt(SE^2 + tau2) (predictionIntervalLog)
+  const pi = predictionIntervalLog(r.beta[1], r.se[1], r.tau2, r.nStudies);
+  const piLower = Math.exp(pi.lower);
+  const piUpper = Math.exp(pi.upper);
   const tau2MethodText = getTau2MethodText();
 
   let html = `<p><strong>Summary of Findings:</strong> The pooled analysis shows a ${direction} in risk with increasing dose. `;
@@ -4054,11 +4063,15 @@ function updateInterpretationLegacy(r) {
   html += `There is ${trendInterp} (p = ${pLinear < 0.001 ? '<0.001' : pLinear.toFixed(3)}).</p>`;
 
   // Add prediction interval
+  if (!Number.isFinite(piLower) || !Number.isFinite(piUpper)) {
+    html += '<p><strong>Prediction Interval:</strong> Not estimable: a prediction interval needs at least 2 studies (t on k - 1 df).</p>';
+  } else {
   html += `<p><strong>Prediction Interval:</strong> The 95% prediction interval for the true effect in a new study is [${piLower.toFixed(2)}, ${piUpper.toFixed(2)}]. `;
   if (piLower < 1 && piUpper > 1) {
     html += `This interval includes 1.0, suggesting substantial uncertainty about the direction of effect in future studies.</p>`;
   } else {
     html += `This interval ${piLower > 1 ? 'is entirely above' : 'is entirely below'} 1.0, suggesting consistent direction of effect expected in future studies.</p>`;
+  }
   }
 
   html += `<p><strong>Heterogeneity:</strong> Heterogeneity is ${hInterp} (I2 = ${r.I2.toFixed(1)}%, Q = ${r.Q.toFixed(2)}, df = ${r.df}, p = ${formatPValue(r.Qp)}). ${pInterp}.</p>`;
@@ -4139,12 +4152,9 @@ function updateInterpretation(r) {
     trendInterp = 'no significant evidence of a dose-response relationship';
   }
 
-  const tau2 = r.tau2 || 0;
-  const k = r.nStudies || 2;
-  const piSE = Math.sqrt(inference.se * inference.se + tau2);
-  const tCrit = tCriticalValue(Math.max(k - 2, 1), 0.975);
-  const piLower = Math.exp(contrast.logRR - tCrit * piSE);
-  const piUpper = Math.exp(contrast.logRR + tCrit * piSE);
+  const pi = predictionIntervalLog(contrast.logRR, inference.se, r.tau2, r.nStudies);
+  const piLower = Math.exp(pi.lower);
+  const piUpper = Math.exp(pi.upper);
   const tau2MethodText = getTau2MethodText();
 
   let html = `<p><strong>Summary of Findings:</strong> The pooled analysis shows a ${direction} in risk with increasing dose. `;
@@ -4160,11 +4170,15 @@ function updateInterpretation(r) {
     html += `${pCurv < 0.05 ? 'supporting a non-linear relationship.' : 'without strong evidence of non-linearity.'}</p>`;
   }
 
+  if (!Number.isFinite(piLower) || !Number.isFinite(piUpper)) {
+    html += '<p><strong>Prediction Interval:</strong> Not estimable: a prediction interval needs at least 2 studies (t on k - 1 df).</p>';
+  } else {
   html += `<p><strong>Prediction Interval:</strong> The 95% prediction interval for the true effect in a new study is [${piLower.toFixed(2)}, ${piUpper.toFixed(2)}]. `;
   if (piLower < 1 && piUpper > 1) {
     html += 'This interval includes 1.0, suggesting substantial uncertainty about the direction of effect in future studies.</p>';
   } else {
     html += `This interval ${piLower > 1 ? 'is entirely above' : 'is entirely below'} 1.0, suggesting consistent direction of effect expected in future studies.</p>`;
+  }
   }
 
   html += `<p><strong>Heterogeneity:</strong> Heterogeneity is ${hInterp} (I2 = ${r.I2.toFixed(1)}%, Q = ${r.Q.toFixed(2)}, df = ${r.df}, p = ${formatPValue(r.Qp)}). ${pInterp}.</p>`;
@@ -5792,6 +5806,19 @@ cat("\\n=== POOLED ESTIMATE ===\\n")
 cat("RR:", ifelse(is.na(rr), "NA", round(rr, 3)), "\\n")
 cat("95% CI: [", ifelse(is.na(ci_lower), "NA", round(ci_lower, 3)), ",", ifelse(is.na(ci_upper), "NA", round(ci_upper, 3)), "]\\n")
 
+# 95% prediction interval for the true dose 1 vs 0 relative risk in a new study (as the app reports it):
+# exp(c'b -/+ qt(0.975, k - 1) * sqrt(c' Var(b) c + tau2)), k = number of studies (Cochrane Handbook v6.5); NA for k < 2.
+pi_c <- ${isLinearModel ? 'c(0, 1)' : 'c(0, 1, 1)'}
+pi_vb <- if (use_reml) vcov(fit) else varMatrix
+pi_est <- sum(pi_c * beta)
+pi_se <- sqrt(max(0, drop(t(pi_c) %*% pi_vb %*% pi_c)))
+pi_df <- n_model_studies - 1
+pi_crit <- if (pi_df >= 1) qt(0.975, pi_df) else NA
+pi_lower <- exp(pi_est - pi_crit * sqrt(pi_se^2 + tau2))
+pi_upper <- exp(pi_est + pi_crit * sqrt(pi_se^2 + tau2))
+cat("95% PI (new study, dose 1 vs 0; t on", pi_df, "df): [", ifelse(is.na(pi_lower), "NA", round(pi_lower, 3)), ",", ifelse(is.na(pi_upper), "NA", round(pi_upper, 3)), "]\\n")
+${useHKSJ ? 'cat("NOTE: HK/SJ is on in the app; the app scales the contrast SE inside its PI, this script does not.\\n")' : ''}
+
 # --------------------------------------------------------
 # PLOTS
 # --------------------------------------------------------
@@ -6636,10 +6663,9 @@ function buildAnalysisReportPayload() {
   const rr = Math.exp(inference.contrast.logRR);
   const ciLower = Math.exp(inference.contrast.logRR - inference.crit * inference.se);
   const ciUpper = Math.exp(inference.contrast.logRR + inference.crit * inference.se);
-  const piSE = Math.sqrt(Math.max(0, inference.se * inference.se + (result.tau2 || 0)));
-  const piCrit = tCriticalValue(Math.max((result.nStudies || 2) - 2, 1), 0.975);
-  const piLower = Math.exp(inference.contrast.logRR - piCrit * piSE);
-  const piUpper = Math.exp(inference.contrast.logRR + piCrit * piSE);
+  const pi = predictionIntervalLog(inference.contrast.logRR, inference.se, result.tau2, result.nStudies);
+  const piLower = Math.exp(pi.lower);
+  const piUpper = Math.exp(pi.upper);
   const zTrend = inference.se > 0 ? (inference.contrast.logRR / inference.se) : NaN;
   const pTrend = Number.isFinite(zTrend) ? 2 * AlmTail.pnormUpper(Math.abs(zTrend)) : NaN;
   const zValue = normCDFinv(1 - (1 - currentCI / 100) / 2);

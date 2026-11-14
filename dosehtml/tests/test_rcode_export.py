@@ -48,7 +48,8 @@ import tempfile
 import pytest
 
 HERE = Path(__file__).resolve().parent
-EMIT = ('\ncat("\nRESULT_JSON", jsonlite::toJSON(list(beta = beta, se = se, tau2 = tau2, Q = Q, df = df_q), '
+EMIT = ('\ncat("\nRESULT_JSON", jsonlite::toJSON(list(beta = beta, se = se, tau2 = tau2, Q = Q, df = df_q, '
+        'pi_lower = pi_lower, pi_upper = pi_upper, pi_df = pi_df), '
         'digits = I(17), auto_unbox = TRUE), "\n")\n')
 
 
@@ -112,3 +113,17 @@ def test_exported_script_runs_to_the_end_and_matches_the_page(export_runs, key):
     for a, b in zip(res['se'], page['se']):
         assert _rel(a, b) <= tol, (res['se'], page['se'])
     assert _rel(res['Q'], page['Q']) <= 1e-8 and res['df'] == page['df'], (res['Q'], res['df'], page['Q'], page['df'])
+
+
+@pytest.mark.parametrize('key', ['DL_quadratic', 'DL_linear', 'REML_quadratic', 'REML_linear'])
+def test_exported_script_prints_the_pages_prediction_interval_t_k_minus_1(export_runs, key):
+    # Before: the exported script printed no prediction interval, and the page used t on k - 2 df. Now both use
+    # t_{k-1}, k = number of studies (Cochrane Handbook v6.5).
+    page, r = export_runs[key]
+    assert r.returncode == 0, r.stdout[-1500:] + r.stderr[-1500:]
+    assert '95%% PI (new study, dose 1 vs 0; t on %d df)' % (page['nStudies'] - 1) in r.stdout
+    res = json.loads(r.stdout.split('RESULT_JSON', 1)[1].strip().splitlines()[0])
+    assert res['pi_df'] == page['nStudies'] - 1
+    tol = 1e-5 if key.startswith('REML') else 1e-8
+    assert _rel(res['pi_lower'], page['piLower']) <= tol and _rel(res['pi_upper'], page['piUpper']) <= tol, (
+        res['pi_lower'], res['pi_upper'], page['piLower'], page['piUpper'])

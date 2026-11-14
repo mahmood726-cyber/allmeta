@@ -26255,111 +26255,11 @@ function renderPowerCurve(containerId, effect, se, currentK) {
   };
   Plotly.newPlot(container, [trace, currentPoint], layout, { responsive: true });
 }
-// Cross-disciplinary content update
-function updateCrossDisciplinary() {
-  const container = document.getElementById('panel-crossdisciplinary');
-  if (!container || !AppState.results) return;
-  const r = AppState.results;
-  container.innerHTML = `
-    <div class="card">
-      <div class="card__header">
-        <h2 class="card__title">🌐 Cross-Disciplinary Methods</h2>
-      </div>
-      <div class="card__body">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-3);">
-          <div class="stat-card">
-            <div class="stat-card__label">Economics: Cost per QALY</div>
-            <div class="stat-card__value">£${(Math.abs(r.pooled.theta) * 10000).toFixed(0)}</div>
-            <div class="stat-card__change">Illustrative estimate</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">Education: Effect Size (d)</div>
-            <div class="stat-card__value">${(r.pooled.theta * 0.5).toFixed(2)}</div>
-            <div class="stat-card__change">Converted from log scale</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">Psychology: Cohen's d</div>
-            <div class="stat-card__value">${Math.abs(r.pooled.theta).toFixed(2)}</div>
-            <div class="stat-card__change">${Math.abs(r.pooled.theta) > 0.8 ? 'Large' : Math.abs(r.pooled.theta) > 0.5 ? 'Medium' : 'Small'} effect</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">Ecology: Hedges' g</div>
-            <div class="stat-card__value">${(r.pooled.theta * 0.95).toFixed(2)}</div>
-            <div class="stat-card__change">Bias-corrected</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-// Code Export Panel
-function updateCodePanel() {
-  const container = document.getElementById('panel-code');
-  if (!container || !AppState.results) return;
-  const r = AppState.results;
-  const yi = r.studies.map(s => s.yi.toFixed(4)).join(', ');
-  const vi = r.studies.map(s => s.vi.toFixed(4)).join(', ');
-  const names = r.studies.map(s => `"${s.name}"`).join(', ');
-  const rCode = `# Meta-analysis in R (metafor)
-library(metafor)
-yi <- c(${yi})
-vi <- c(${vi})
-names <- c(${names})
-# Random-effects model (REML)
-res <- rma(yi, vi, method="REML", slab=names)
-summary(res)
-# Forest plot
-forest(res)
-# Funnel plot
-funnel(res)
-# Egger's test
-regtest(res)
-`;
-  const pythonCode = `# Meta-analysis in Python
-import numpy as np
-from scipy import stats
-yi = np.array([${yi}])
-vi = np.array([${vi}])
-# DerSimonian-Laird
-wi = 1/vi
-theta_fe = np.sum(wi * yi) / np.sum(wi)
-Q = np.sum(wi * (yi - theta_fe)**2)
-df = len(yi) - 1
-tau2 = max(0, (Q - df) / (np.sum(wi) - np.sum(wi**2)/np.sum(wi)))
-# Random-effects weights
-wi_re = 1/(vi + tau2)
-theta_re = np.sum(wi_re * yi) / np.sum(wi_re)
-se_re = np.sqrt(1/np.sum(wi_re))
-print(f"Pooled effect: {theta_re:.4f}")
-print(f"SE: {se_re:.4f}")
-print(f"95% CI: [{theta_re - 1.96*se_re:.4f}, {theta_re + 1.96*se_re:.4f}]")
-print(f"tau2: {tau2:.4f}")
-`;
-  container.querySelector('.card__body').innerHTML = `
-    <div style="margin-bottom: var(--space-3);">
-      <h4 style="margin-bottom: var(--space-2);">R Code (metafor)</h4>
-      <pre style="background: var(--surface-raised); padding: var(--space-3); border-radius: var(--radius-md); overflow-x: auto; font-size: var(--text-xs);"><code>${rCode}</code></pre>
-      <button class="btn btn--outline btn--sm" onclick="navigator.clipboard.writeText(\`${rCode.replace(/`/g, '\\`')}\`); showToast('R code copied!', 'success')">Copy R Code</button>
-    </div>
-    <div>
-      <h4 style="margin-bottom: var(--space-2);">Python Code</h4>
-      <pre style="background: var(--surface-raised); padding: var(--space-3); border-radius: var(--radius-md); overflow-x: auto; font-size: var(--text-xs);"><code>${pythonCode}</code></pre>
-      <button class="btn btn--outline btn--sm" onclick="navigator.clipboard.writeText(\`${pythonCode.replace(/`/g, '\\`')}\`); showToast('Python code copied!', 'success')">Copy Python Code</button>
-    </div>
-  `;
-}
-// Hook into analysis completion
-const originalRunAnalysis = window.runAnalysis;
-if (originalRunAnalysis) {
-  window.runAnalysis = function() {
-    const result = originalRunAnalysis.apply(this, arguments);
-    setTimeout(() => {
-      updateCrossDisciplinary();
-      updateCodePanel();
-    }, 500);
-    return result;
-  };
-}
+// (Removed: updateCrossDisciplinary / updateCodePanel and the runAnalysis wrapper that ran them
+// from setTimeout(..., 500). They overwrote the engine's Cross-Disciplinary and Code Export panels
+// -- rendered from AppState.results by renderCrossDisciplinaryPanel / renderCodePanel -- with
+// hard-coded "illustrative" cards and a REML-only script, half a second after every Run, so what
+// a user saw on those tabs depended on when they opened them. Same race class as #543.)
 // Metaoverfit Assessment - Fix to properly compute and update AppState.results
 function updateMetaoverfitResults() {
   const r = AppState.results;
