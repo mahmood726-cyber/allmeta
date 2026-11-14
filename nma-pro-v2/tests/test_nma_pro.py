@@ -186,12 +186,12 @@ def test_v9_01b_multiarm_correction_helper_exists():
     assert "multiArmCorrection(" in content, "multiArmCorrection helper missing"
     # Must group rows by studyId.
     assert "byId[sid]" in content, "byId grouping for multi-arm correction missing"
-    # Must build Σ with τ² on diagonal and τ²/2 off-diagonal.
-    assert re.search(
-        r"a===b\?tau2:tau2/2", content
-    ) or re.search(
-        r"\(a\s*===\s*b\s*\?\s*tau2\s*:\s*tau2\s*/\s*2\)", content
-    ), "Σ build (diag=τ², off=τ²/2) missing"
+    # Must build Σ with τ² on the diagonal and the SIGNED shared-arm covariance off it: τ² * Rre[a][b], Rre = 0.5 *
+    # sum over shared arms of sign_a * sign_b (+τ²/2 for two contrasts against a common arm, -τ²/2 when the shared
+    # arm is treatment1 in one row and treatment2 in the other); 0.5 only when no Rre is supplied. Until 2026-11-14
+    # this asserted the unsigned τ²/2, which is wrong for rows of a multi-arm study with opposite orientation.
+    assert content.count("a===b?tau2:tau2*(Rre?Rre[idx[a]][idx[b]]:0.5)") == 2, (
+        "Σ build (diag=τ², off=signed τ²·Rre) missing in multiArmCorrection / buildBlockPrecision")
 
 
 def test_v9_01b_runchain_uses_correction_in_MH_step():
@@ -218,8 +218,8 @@ def test_v9_01b_analyze_passes_V_and_studyIds_into_runChain():
     assert "studyIds=matrices&&Array.isArray(matrices.studyIds)" in content
     # runChain call site must pass them in.
     assert re.search(
-        r"runChain\([^)]*V_full,studyIds\)", content
-    ), "runChain call site does not pass V_full + studyIds"
+        r"runChain\([^)]*V_full,studyIds,Rre\)", content
+    ), "runChain call site does not pass V_full + studyIds + Rre"
 
 
 def test_v9_01b_buildBlockPrecision_used_in_runChain():
@@ -232,8 +232,8 @@ def test_v9_01b_buildBlockPrecision_used_in_runChain():
     assert "buildBlockPrecision(" in content, "buildBlockPrecision helper missing"
     # The runChain inner loop must consume the helper.
     assert re.search(
-        r"buildBlockPrecision\(X,y,v,V,studyIds,tau2,n,p\)", content
-    ), "runChain does not call buildBlockPrecision(X,y,v,V,studyIds,tau2,n,p)"
+        r"buildBlockPrecision\(X,y,v,V,studyIds,tau2,n,p,Rre\)", content
+    ), "runChain does not call buildBlockPrecision(X,y,v,V,studyIds,tau2,n,p,Rre)"
     # And the singleton branch must keep the scalar weight path so 2-arm
     # networks have NO numerical drift from the old code path.
     assert re.search(

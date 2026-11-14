@@ -9,6 +9,11 @@
 // Events column shows the real count or says there is none; and when the unshifted fixed-effect re-pool already
 // disagrees with the main analysis, the modal says so. The search itself is unchanged: this test recomputes it
 // independently and requires the same indices.
+// IPD-Left2: the re-pool now uses the main analysis' model (fragility_same_model.test.cjs); here the main analysis is a
+// fixed-effect one (APP.analysisSettings reMethod FE, its result recomputed from the studies), so the fixed-effect
+// search and wording checked below are what the page must still produce. A main analysis that the fixed-effect
+// re-pool disagrees with can no longer arise (the unshifted re-pool must reproduce it, or the search is refused), so
+// the old "already gives" note is checked to be absent.
 //   node dev/tests/fragility_wording.test.cjs [path/to/ipd-meta-pro.html]
 const path = require('node:path');
 const { loadPage } = require('./p60_page_loader.cjs');
@@ -35,10 +40,10 @@ const scenarios = {
 for (const name of Object.keys(scenarios)) {
   const sc = scenarios[name];
   sandbox.__sc = sc;
-  run(`__m.length = 0; APP.config.outcomeType = __sc.type; APP.results = { studies: __sc.studies, pooled: { pooled: __sc.pooled, pValue: __sc.p } }; calculateFragilityIndex();`);
+  run(`__m.length = 0; APP.config.outcomeType = __sc.type; APP.analysisSettings = { reMethod: 'FE', useHKSJ: false }; var __fe = recalculatePooledSimple(__sc.studies); __sc.pooled = __fe.pooled; __sc.p = __fe.pValue; APP.results = { studies: __sc.studies, pooled: { pooled: __sc.pooled, pValue: __sc.p } }; calculateFragilityIndex();`);
   const html = run('__m.join("")');
   const text = html.replace(/<[^>]+>/g, ' ').replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/\s+/g, ' ');
-  const exp = expected(sc.studies, sc.pooled, sc.p);
+  const exp = expected(sc.studies, run('__sc.pooled'), run('__sc.p'));
   const rowsShown = sc.studies.map(s => { const m = text.match(new RegExp(s.study + '(?: \\(most fragile\\))? ' + s.n + ' (\\S+(?: \\S+)*?) (\\d+|>50)(?= |$)')); return m ? m[2] : null; });
   check(name + ': indices unchanged = independent recomputation of the 0.05-step search ' + JSON.stringify(exp.map(e => e || '>50')), JSON.stringify(rowsShown) === JSON.stringify(exp.map(e => e ? String(e) : '>50')), JSON.stringify(rowsShown) + ' | ' + text.slice(0, 300));
   check(name + ': no claim that events are changed', !/event\(s\) in|how many events would need/i.test(text) && /No events are changed/.test(text), text.slice(0, 400));
@@ -48,9 +53,9 @@ for (const name of Object.keys(scenarios)) {
 }
 {
   const t = run('__m.join("")').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-  check('survival: the modal says the unshifted fixed-effect re-pool already disagrees with the main analysis', /already gives p (=|<) /.test(t), t.slice(0, 600));
+  check('survival: no disagreement note (the re-pool reproduces the main analysis)', !/already gives p (=|<) /.test(t), t.slice(0, 600));
   sandbox.__sc = scenarios.continuous;
-  run(`__m.length = 0; APP.config.outcomeType = __sc.type; APP.results = { studies: __sc.studies, pooled: { pooled: __sc.pooled, pValue: __sc.p } }; calculateFragilityIndex();`);
+  run(`__m.length = 0; APP.config.outcomeType = __sc.type; APP.analysisSettings = { reMethod: 'FE', useHKSJ: false }; var __fe = recalculatePooledSimple(__sc.studies); __sc.pooled = __fe.pooled; __sc.p = __fe.pValue; APP.results = { studies: __sc.studies, pooled: { pooled: __sc.pooled, pValue: __sc.p } }; calculateFragilityIndex();`);
   const t2 = run('__m.join("")').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
   check('continuous: no such note when the re-pool agrees', !/already gives p (=|<) /.test(t2), t2.slice(0, 300));
 }

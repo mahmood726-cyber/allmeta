@@ -37,7 +37,10 @@ check('predictive patient selection (same code pattern) also refuses a missing o
 {
   // a 0/1 covariate whose median is 1: "> median" leaves the high group empty, the interaction was NaN and, summed
   // into every patient's score, made the whole predicted-benefit split NaN ("Predicted Benefiters ... NaN%")
-  const rows2 = rows.map((r, i) => Object.assign({}, r, { employed: (i % 5) === 0 ? 0 : 1 }));
+  // IPD-Left2: treatment alternates in blocks of 4 so that every study has both arms. In `rows` (treatment = i % 2,
+  // study = i % 4) each study has ONE arm; predictive selection now estimates per study (log OR within each study,
+  // pooled), so it correctly refuses those rows ("both arms are needed") instead of contrasting arms across studies.
+  const rows2 = rows.map((r, i) => Object.assign({}, r, { treatment: (i >> 2) % 2, employed: (i % 5) === 0 ? 0 : 1 }));
   sandbox.__rows2 = rows2;
   run(`APP.data = __rows2; APP.currentData = __rows2; document.getElementById('varEvent').value = 'remission'; __notes.length = 0;
     window.__pp = null; displayPredictiveResults = function (r) { __pp = r; };
