@@ -72,11 +72,13 @@
     window._almLastRMST = function () { return _last; };
 
     function parse(text) {
+      // strictNum: a field must be a complete decimal number (parseFloat reads "1.2abc" as 1.2, "0.4e" as 0.4)
+      function strictNum(c) { return /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(c) ? Number(c) : NaN; }
       var rows = [];
       String(text || "").split(/\r?\n/).forEach(function (line) {
         var t = line.trim(); if (!t || t.charAt(0) === "#") return;
         var p = t.split(/\s*,\s*/); if (p.length < 3) return;
-        var se = parseFloat(p[p.length - 1]), diff = parseFloat(p[p.length - 2]);
+        var se = strictNum(p[p.length - 1]), diff = strictNum(p[p.length - 2]);
         var label = p.slice(0, p.length - 2).join(", ") || ("Trial " + (rows.length + 1));
         if (isFinite(diff) && isFinite(se) && se > 0) rows.push({ label: label, diff: diff, se: se, v: se * se });
       });
