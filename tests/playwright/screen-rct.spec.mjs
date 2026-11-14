@@ -1,5 +1,5 @@
 // P1: screen/ loads the offline RCT classifier + trained weights, scores
-// records cold-start (no labels), shows the RCT% badge, and ranks trials first.
+// records cold-start (no labels), shows the RCT model score badge, and ranks trials first.
 import { test, expect } from "@playwright/test";
 
 test("screen scores RCT likelihood offline and surfaces it on cards", async ({ page }) => {
@@ -20,15 +20,15 @@ test("screen scores RCT likelihood offline and surfaces it on cards", async ({ p
     window.__almScreenpro.setState({
       title: "t",
       records: [
-        { id: "r1", title: "Dapagliflozin trial", abstract: "In this randomized, double-blind, placebo-controlled trial patients were randomly assigned to drug or placebo." },
-        { id: "r2", title: "Salt review", abstract: "This systematic review and meta-analysis pooled observational cohort studies of dietary salt." },
+        { id: "__control_rct", title: "Dapagliflozin trial", abstract: "In this randomized, double-blind, placebo-controlled trial patients were randomly assigned to drug or placebo." },
+        { id: "__control_review", title: "Salt review", abstract: "This systematic review and meta-analysis pooled observational cohort studies of dietary salt." },
       ],
     });
-    return { rct: window.__almScreenpro.rctScoreOf("r1"), rev: window.__almScreenpro.rctScoreOf("r2") };
+    return { rct: window.__almScreenpro.rctScoreOf("__control_rct"), rev: window.__almScreenpro.rctScoreOf("__control_review") };
   });
   expect(scores.rct).toBeGreaterThan(0.5);
   expect(scores.rev).toBeLessThan(0.5);
 
   // the badge renders on the current card
-  await expect(page.locator("#card-host")).toContainText(/RCT \d+%/);
+  await expect(page.locator("#card-host")).toContainText(/RCT model score \d+\/100/);
 });
