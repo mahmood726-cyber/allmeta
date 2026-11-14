@@ -1900,7 +1900,7 @@
               </div>
               <div>
                 <label style="font-size: 11px; color: var(--muted);">Effect Size (OR/RR)</label>
-                <input type="number" id="nntEffect" step="0.01" value="" placeholder="From analysis" style="width: 100%;" readonly aria-label="Effect Size (OR/RR)" />
+                <input type="number" id="nntEffect" step="0.01" value="" placeholder="Enter OR/RR" style="width: 100%;" aria-label="Effect Size (OR/RR)" />
               </div>
             </div>
             <div class="inline-actions">
@@ -1910,7 +1910,7 @@
                 <option value="rd">Risk Diff</option>
               </select>
               <button class="secondary" id="calcNNT" title="Calculate NNT/NNH">Calculate NNT</button>
-              <button class="secondary" id="calcNNTFromPooled" title="Use pooled effect">Use Pooled</button>
+              <button class="secondary" id="calcNNTFromPooled" title="A dose-response network has no single pooled effect">Use Pooled</button>
             </div>
             <div class="nnt-result" id="nntResults" style="display: none;">
               <div class="nnt-item">
@@ -2444,10 +2444,10 @@
         <div class="control">
           <label>GRADE Evidence Tables</label>
           <div class="inline-actions">
-            <button class="secondary" id="exportGRADE" title="Export GRADE Summary of Findings">GRADE SoF Table <span class="badge validated">Val</span></button>
+            <button class="secondary" id="exportGRADE" title="Export a GRADE Summary of Findings template (judgements are left to you)">GRADE SoF Table</button>
             <button class="secondary" id="exportGRADEProfile" title="Export GRADE evidence profile">Evidence Profile</button>
           </div>
-          <div class="hint">Summary of Findings with certainty ratings (Schunemann et al. 2019)</div>
+          <div class="hint">Summary of Findings template: the app makes no certainty ratings; you rate each domain (Schunemann et al. 2019)</div>
         </div>
 
         <div class="control">
@@ -4896,93 +4896,115 @@ Study3,Placebo,0,0,0.09`
       announce('NNT calculated: ' + (nnt || nnh || 'no effect'));
     }
 
+    // A dose-response network has no single pooled effect (it fits one curve per treatment), so
+    // there is nothing to load. This read #pooledEffect, an element the page does not have, and the
+    // effect box was read-only, so the calculator could never be used (lane nmaexp, 2026-11-14).
     function usePooledEffect() {
-      // Get pooled effect from results panel if available
-      const pooledEl = document.getElementById('pooledEffect');
-      if (pooledEl && pooledEl.textContent !== '—') {
-        const effect = parseFloat(pooledEl.textContent);
-        if (!isNaN(effect)) {
-          document.getElementById('nntEffect').value = effect.toFixed(3);
-          showNotification('Pooled effect loaded', 'success');
-        }
-      } else {
-        showNotification('Run analysis first to get pooled effect', 'info');
-      }
+      const msg = 'No single pooled effect: a dose-response network fits one curve per treatment. ' +
+        'Enter the OR/RR for the treatment and dose you want.';
+      const input = document.getElementById('nntEffect');
+      if (input) { input.readOnly = false; input.focus(); }
+      showNotification(msg, 'warning');
+      announce(msg);
     }
 
     // ============================================
     // GRADE EXPORT
     // ============================================
+    // GRADE certainty is a judgement the review team makes; this app makes none of them. The export
+    // used to print "Not serious" / "None detected" / "Overall Certainty: Moderate" for every analysis
+    // and "Participants: 13" (the data-row count; the input has no participant numbers). It now prints
+    // only what the app knows and leaves every judgement to the user (lane nmaexp, 2026-11-14).
+    const GRADE_NOT_ASSESSED = 'Not assessed — user must judge';
     function exportGRADE() {
-      const gradeData = {
-        outcome: 'Primary Outcome',
-        studies: document.getElementById('qualityStudies')?.textContent || '—',
-        participants: document.getElementById('qualityUsed')?.textContent || '—',
-        riskOfBias: 'Not serious',
-        inconsistency: document.getElementById('globalI2')?.textContent || '—',
-        indirectness: 'Not serious',
-        imprecision: 'Not serious',
-        publicationBias: 'None detected',
-        effect: document.getElementById('pooledEffect')?.textContent || '—',
-        certainty: 'Moderate'
-      };
-
+      const studies = (document.getElementById('qualityStudies')?.textContent || '').trim();
+      const rows = (document.getElementById('qualityUsed')?.textContent || '').trim();
+      if (!/^[1-9]\d*$/.test(studies) || !/^[1-9]\d*$/.test(rows)) {
+        const msg = 'Not exported: load data and run the analysis first.';
+        showNotification(msg, 'warning');
+        announce(msg);
+        return;
+      }
+      const NA = GRADE_NOT_ASSESSED;
       const gradeTable = `
-# GRADE Summary of Findings Table
+# GRADE Summary of Findings — template
 Generated by NMA Dose-Response Studio v2.0.1
 Date: ${new Date().toISOString().split('T')[0]}
+
+This app does not make GRADE judgements. Every domain marked "${NA}" must be rated by the review
+team; nothing below is a certainty rating.
 
 ## Summary of Findings
 
 | Domain | Assessment |
 |--------|------------|
-| Studies | ${gradeData.studies} |
-| Participants | ${gradeData.participants} |
-| Risk of Bias | ${gradeData.riskOfBias} |
-| Inconsistency (I²) | ${gradeData.inconsistency} |
-| Indirectness | ${gradeData.indirectness} |
-| Imprecision | ${gradeData.imprecision} |
-| Publication Bias | ${gradeData.publicationBias} |
+| Studies | ${studies} |
+| Participants | Not available — the data have no participant counts (${rows} data rows analysed) |
+| Risk of Bias | ${NA} |
+| Inconsistency | ${NA} |
+| Indirectness | ${NA} |
+| Imprecision | ${NA} |
+| Publication Bias | ${NA} |
 
 ## Effect Estimate
-**Pooled Effect:** ${gradeData.effect}
+No single pooled effect: a dose-response network fits one curve per treatment (see Dose Response Curves).
 
-## Overall Certainty: ${gradeData.certainty}
+## Overall Certainty: ${NA}
 
 ---
 *Citation: NMA Dose-Response Studio v2.0.1*
 `;
 
       downloadText(gradeTable, 'GRADE_SoF_Table.md');
-      showNotification('GRADE Summary of Findings exported', 'success');
+      showNotification('GRADE template exported (no judgements made)', 'success');
     }
 
     // ============================================
     // LATEX EXPORT
     // ============================================
+    // The table used to print literal "[CI]" and "ES" placeholders (and "k", "I²", "τ²" when a value
+    // was missing): #pooledEffect does not exist and #globalI2 / #globalTau2 are never filled. It now
+    // prints the study count and the residual heterogeneity the Diagnostics panel shows, and says so
+    // where nothing was computed (lane nmaexp, 2026-11-14).
     function exportLatexTable() {
-      const studies = document.getElementById('qualityStudies')?.textContent || 'k';
-      const effect = document.getElementById('pooledEffect')?.textContent || 'ES';
-      const i2 = document.getElementById('globalI2')?.textContent || 'I²';
-      const tau2 = document.getElementById('globalTau2')?.textContent || 'τ²';
+      const st = window._nmaState;
+      const studies = (document.getElementById('qualityStudies')?.textContent || '').trim();
+      if (!st || !/^[1-9]\d*$/.test(studies)) {
+        const msg = 'Not exported: load data and run the analysis first.';
+        showNotification(msg, 'warning');
+        announce(msg);
+        return;
+      }
+      // same rounding as the Diagnostics panel (app.js formatNumber)
+      const fmt = v => Math.abs(v) >= 1000 ? v.toFixed(1) : Math.abs(v) >= 10 ? v.toFixed(2) : v.toFixed(3);
+      const tex = s => String(s).replace(/[\\&%$#_{}~^]/g, c => '\\' + c);
+      const i2 = Number.isFinite(st.globalI2) ? tex((st.globalI2 * 100).toFixed(1) + '%') : 'not computed';
+      let tau2;
+      if (!st.randomEffects) tau2 = 'not estimated (fixed-effect model)';
+      else if (!Number.isFinite(st.globalTau2)) tau2 = 'not computed';
+      else {
+        const notEst = Array.isArray(st.tau2NotEstimable) ? st.tau2NotEstimable : [];
+        tau2 = fmt(st.globalTau2) + (notEst.length ? tex(` (not estimable for ${notEst.join(', ')})`) : '');
+      }
 
       const latex = `\\begin{table}[ht]
 \\centering
-\\caption{Meta-analysis Results}
+\\caption{Dose-response network meta-analysis: data and residual heterogeneity}
 \\label{tab:meta-results}
 \\begin{tabular}{lcc}
 \\toprule
 Statistic & Value & 95\\% CI \\\\
 \\midrule
-Number of Studies & ${studies} & — \\\\
-Pooled Effect & ${effect} & [CI] \\\\
-Heterogeneity ($I^2$) & ${i2} & [CI] \\\\
-Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
+Number of studies & ${studies} & --- \\\\
+Residual heterogeneity ($I^2$) & ${i2} & not computed \\\\
+Residual $\\tau^2$ & ${tau2} & --- \\\\
 \\bottomrule
 \\end{tabular}
 
 \\vspace{0.5em}
-\\footnotesize{Generated by NMA Dose-Response Studio v2.0.1}
+\\footnotesize{No single pooled effect: a dose-response network fits one curve per treatment.
+Residual $\\tau^2$ is the row-weighted mean of the per-treatment residual $\\tau^2$.
+Generated by NMA Dose-Response Studio v2.0.1}
 \\end{table}`;
 
       downloadText(latex, 'meta_analysis_table.tex');
@@ -5503,18 +5525,26 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
       if (!state || !state.rawData || state.rawData.length < 1) return null;
 
       var groups = {};
+      // A row with no positive SE used to be sent to R with se = 0.1 substituted, so R and the page
+      // "agreed" on a variance nobody supplied. Such rows are now refused by name (lane nmaexp).
+      var badSe = [], badEffect = [];
       state.rawData.forEach(function(row) {
         var t = row.treatment;
         if (!t) return;
         var yi = row.effect;
         var se = row.se;
-        if (!isFinite(yi)) return;
-        if (!isFinite(se) || se <= 0) se = 0.1; // fallback
+        var label = row.study + ' ' + t;
+        if (!isFinite(yi)) { badEffect.push(label); return; }
+        if (!isFinite(se) || se <= 0) { badSe.push(label); return; }
         if (!groups[t]) groups[t] = { name: t, yi: [], se: [], vi: [] };
         groups[t].yi.push(yi);
         groups[t].se.push(se);
         groups[t].vi.push(se * se);
       });
+      var reasons = [];
+      if (badSe.length) reasons.push(badSe.length + ' row(s) have no positive standard error (' + badSe.join(', ') + ')');
+      if (badEffect.length) reasons.push(badEffect.length + ' row(s) have no effect (' + badEffect.join(', ') + ')');
+      if (reasons.length) return { refusal: 'Not run: ' + reasons.join('; ') + '. The cross-check never substitutes a value; fix or remove these rows.' };
 
       return groups;
     }
@@ -5623,6 +5653,11 @@ Between-study variance ($\\tau^2$) & ${tau2} & [CI] \\\\
 
       // Extract data
       var groups = extractTreatmentData();
+      if (groups && groups.refusal) {
+        resultsDiv.innerHTML = '<div style="padding:12px;background:#fef3c7;border:1px solid #f59e0b;'
+          + 'border-radius:8px;color:#92400e;font-size:13px;">' + esc(groups.refusal) + '</div>';
+        return;
+      }
       if (!groups || Object.keys(groups).length < 1) {
         resultsDiv.innerHTML = '<div style="padding:12px;background:#fef3c7;border:1px solid #f59e0b;'
           + 'border-radius:8px;color:#92400e;font-size:13px;">'
