@@ -21,6 +21,7 @@ Truthcert1/app.min.js (loaded by Truthcert1/TruthCert-PairwisePro-v1.0-productio
 """
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -108,3 +109,17 @@ def test_page_hksj_is_metafor_adhoc(got, nm, m):
     se, lo, hi = g['hksj']
     assert abs(se - r['adhoc_se']) < 1e-5
     assert abs(lo - r['adhoc_ci'][0]) < 1e-5 and abs(hi - r['adhoc_ci'][1]) < 1e-5
+
+
+def test_bundle_r_export_reproduces_the_page():
+    """The R export names what the page computes: HKSJ with the scale floored at 1 is metafor test = "adhoc"
+    (it said "knha", which has no floor), and the prediction interval is theta +/- t_{k-1} sqrt(tau2 + SE^2)
+    with the conventional SE (predict(res) would use qnorm under test = "z" and the HKSJ SE under "adhoc").
+    The generated code was run in R 4.6.0 / metafor 5.2.1 (lane pwbias report)."""
+    rc = _run(ENGINES[0])['rcode']
+    assert 'test = "adhoc"' in rc['hksj'] and 'test = "z"' in rc['z']
+    for code in rc.values():
+        assert not re.search(r"test\s*=\s*[\"']knha[\"']\s*[,)]", code)  # no fit uses the unfloored KH
+        assert 'pi_crit <- qt(0.975, df = res$k - 1)' in code
+        assert 'res_z <- update(res, test = "z")' in code
+        assert 'pred <- predict(res)' not in code

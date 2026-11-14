@@ -61,4 +61,9 @@ for (const nm of ['bcg', 'hack']) {
   }
   out[nm] = o;
 }
+// the bundle's R export (Code tab); Truthcert1's R export is another lane's
+if (file.endsWith('.html')) {
+  const d = ref.bcg, e = { yi: d.yi, vi: d.vi, names: d.yi.map((_, i) => 'S' + (i + 1)), measure: 'RR', direction: 'lower' };
+  out.rcode = { hksj: g('generateRCode')(e, { method: 'REML', hksj: true }), z: g('generateRCode')(e, { method: 'REML', hksj: false }) };
+}
 process.stdout.write(JSON.stringify(out));
