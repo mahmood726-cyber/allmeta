@@ -6,7 +6,8 @@
 // >= 0.5): "predictors" computed from each patient's own outcome. They are now left out with a notice:
 // (1) the example declares the columns computed from its endpoint (valid only while that exact data is loaded);
 // (2) for any data, a column that is an exact linear function of the outcome, or a 0/1 column that a threshold of the
-// outcome separates perfectly (at least 5 patients per group), is left out. Real characteristics stay.
+// outcome separates perfectly (at least 5 patients per group), is left out -- and, for a 0/1 outcome, a column one
+// of whose thresholds separates the outcome perfectly (agy #561: remission = hamd_endpoint <= 7). Real characteristics stay.
 //   node dev/tests/predictive_selection_derived.test.cjs [path/to/ipd-meta-pro.html]
 const path = require('node:path');
 const { loadPage } = require('./p60_page_loader.cjs');
@@ -68,6 +69,16 @@ for (const [y, type, derived] of [['hamd_change', 'continuous', ['hamd_endpoint'
   run(`loadExampleData('continuous'); APP.data[0].age = APP.data[0].age + 1;`);
   const { pp, notes } = go('hamd_change', 'continuous');
   check('changed data: the example declaration is not applied', pp && !(pp.excludedCovariates || []).some(x => /in this example/.test(x.reason)), pp ? JSON.stringify(pp.excludedCovariates) : notes);
+}
+// 4. (agy #561) the symmetric case without the declaration: a 0/1 OUTCOME derived by thresholding a covariate
+// (remission = hamd_endpoint <= 7) -- the covariate is the measurement the outcome came from, and must be left out
+{
+  run(`loadExampleData('continuous'); APP.data[0].age = APP.data[0].age + 1;`);
+  const { pp, notes } = go('remission', 'binary');
+  check('changed data, outcome remission: hamd_endpoint (remission = hamd_endpoint <= 7) left out by the data check',
+    pp && !pp.covariates.includes('hamd_endpoint') && (pp.excludedCovariates || []).some(x => x.name === 'hamd_endpoint' && /threshold/.test(x.reason)) && /hamd_endpoint/.test(notes),
+    pp ? pp.covariates.join(',') + ' | ' + JSON.stringify(pp.excludedCovariates) : notes);
+  check('changed data, outcome remission: baseline characteristics kept (hamd_baseline, age)', pp && pp.covariates.includes('hamd_baseline') && pp.covariates.includes('age'), pp ? pp.covariates.join(',') : notes);
 }
 console.log(passed + '/' + (passed + failed) + ' PASS');
 process.exitCode = failed ? 1 : 0;

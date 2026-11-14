@@ -37690,7 +37690,8 @@ function ipdStudyEstimate(studyData, cfg, armMapping) {
 // valid only for that exact data): with the outcome among them, the others are derived. (2) For any data, a column
 // that is an exact affine function of the outcome (|r| = 1), or a 0/1 column that a threshold of the outcome
 // separates perfectly (e.g. responder = change >= c; at least 5 patients in each group, so that a rare 0/1
-// characteristic is not flagged by chance), is derived. Returns { excluded: [{ name, reason }] }.
+// characteristic is not flagged by chance), is derived; and, for a 0/1 outcome, a column one of whose thresholds
+// separates the outcome perfectly (remission = hamd_endpoint <= 7), at least 5 patients per outcome group. Returns { excluded: [{ name, reason }] }.
 function ipdOutcomeDerivedColumns(rows, cfg) {
  rows = Array.isArray(rows) ? rows : [];
  const y = cfg && cfg.eventVar;
@@ -37716,7 +37717,14 @@ function ipdOutcomeDerivedColumns(rows, cfg) {
   const g1 = pairs.filter(q => q[1] === 1).map(q => q[0]), g0 = pairs.filter(q => q[1] === 0).map(q => q[0]);
   if (Math.min(g1.length, g0.length) >= 5 && g1.length + g0.length === n) {
    const mx = a => a.reduce((m, v) => v > m ? v : m, -Infinity), mn = a => a.reduce((m, v) => v < m ? v : m, Infinity);
-   if (mx(g0) < mn(g1) || mx(g1) < mn(g0)) excluded.push({ name: c, reason: 'a 0/1 column that a threshold of ' + y + ' separates perfectly' });
+   if (mx(g0) < mn(g1) || mx(g1) < mn(g0)) { excluded.push({ name: c, reason: 'a 0/1 column that a threshold of ' + y + ' separates perfectly' }); return; }
+  }
+  // IPD-Left2 (agy #561): the symmetric case: a 0/1 OUTCOME that a threshold of this column separates perfectly
+  // (remission = hamd_endpoint <= 7: hamd_endpoint is the measurement the outcome was derived from)
+  const h1 = pairs.filter(q => q[0] === 1).map(q => q[1]), h0 = pairs.filter(q => q[0] === 0).map(q => q[1]);
+  if (Math.min(h1.length, h0.length) >= 5 && h1.length + h0.length === n) {
+   const mx = a => a.reduce((m, v) => v > m ? v : m, -Infinity), mn = a => a.reduce((m, v) => v < m ? v : m, Infinity);
+   if (mx(h0) < mn(h1) || mx(h1) < mn(h0)) excluded.push({ name: c, reason: 'a column whose threshold separates the 0/1 outcome ' + y + ' perfectly (the outcome is derived from it)' });
   }
  });
  return { excluded };
