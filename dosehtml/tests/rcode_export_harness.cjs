@@ -39,8 +39,10 @@ for (const method of ['DL', 'REML']) {
   for (const model of ['quadratic', 'linear']) {
     const r = vm.runInContext(`useREML = ${method === 'REML'}; currentTau2 = null;
       analysisResults = { points: __points, modelType: '${model}', results: fitModelByType(__points, null, '${model}') };
-      generateRCode(); analysisResults.results`, ctx);
-    out[method + '_' + model] = { page: { beta: Array.from(r.beta), se: Array.from(r.se), tau2: r.tau2, Q: r.Q, df: r.df },
+      generateRCode(); currentMainModel = '${model}'; excludedStudies = new Set(); useHKSJ = false; currentCI = 95;
+      var __p = buildAnalysisReportPayload(); analysisResults.results.__pi = [__p.piLower, __p.piUpper]; analysisResults.results`, ctx);
+    out[method + '_' + model] = { page: { beta: Array.from(r.beta), se: Array.from(r.se), tau2: r.tau2, Q: r.Q, df: r.df,
+      nStudies: r.nStudies, piLower: r.__pi[0], piUpper: r.__pi[1] },
       code: elements.rCodeOutput.textContent };
     elements.rCodeOutput.textContent = '';
   }
