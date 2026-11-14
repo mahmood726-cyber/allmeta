@@ -13,6 +13,9 @@ function stats() {
   for (; i < s.length; i++) { if (s[i] === '{') d++; else if (s[i] === '}') { d--; if (!d) break; } }
   const c = { Math };
   vm.createContext(c);
+  // The page loads ../shared/upper-tail.js just before this script (Stats.pnorm / pt / pchisq / betainc call AlmTail).
+  assert.ok(/<script src="\.\.\/shared\/upper-tail\.js"><\/script>\s*<script>\s*'use strict';\s*const Stats=/.test(html), 'page must load shared/upper-tail.js before Stats');
+  vm.runInContext(readFileSync(new URL('../../../../shared/upper-tail.js', import.meta.url), 'utf8'), c);
   vm.runInContext('const MainRNG={random:Math.random};' + s.slice(start, i + 1) + ';globalThis.Stats=Stats;', c);
   return c.Stats;
 }
