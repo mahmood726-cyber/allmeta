@@ -173,3 +173,21 @@ for (const data of ['heterogeneous, random effects', 'default sample']) {
     expect(i2Line).toBe(`\\item $I^2$: ${diag.diagI2.replace('%', '\\%')}`);
   });
 }
+
+// agy review of #565 (MAJOR): when no treatment has residual df, the panel summed Q = 0 on df = 0 and
+// showed "0.000 / 0.000 / 0.0%", and the export printed "Global Q ...: 0.000 (df = 0)", "I^2: 0.0%",
+// "tau^2: 0.000" -- numbers for a heterogeneity that was never estimable. Both must now say not computed.
+test('no residual df: Diagnostics and the LaTeX export say heterogeneity was not computed', async ({ page }) => {
+  await open(page);
+  await tabOf(page, 'csvInput');
+  await page.locator('#csvInput').fill('study,treatment,dose,effect,se\nS1,Placebo,0,0,0.1\nS1,A,10,0.3,0.1\nS2,Placebo,0,0,0.1\nS2,B,10,0.5,0.1');
+  await tabOf(page, 'runAnalysis');
+  await page.locator('#runAnalysis').click();
+  await expect.poll(() => page.evaluate(() => window._nmaState.rawData.length)).toBe(4);
+  for (const id of ['diagQ', 'diagDf', 'diagQp', 'diagI2']) await expect(page.locator('#' + id), id).toHaveText('-');
+  const { text } = await download(page, 'exportLatex');
+  const sec = text.slice(text.indexOf('\\section{Heterogeneity}'), text.indexOf('\\end{document}'));
+  expect(sec).toContain('Heterogeneity was not computed: no treatment has residual degrees of freedom');
+  expect(sec).not.toContain('\\item');
+  expect(sec).not.toMatch(/0\.000|0\.0\\%/);
+});

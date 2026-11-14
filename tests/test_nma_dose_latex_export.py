@@ -101,12 +101,28 @@ def test_q_is_the_diagnostics_global_q_with_df(tex):
     assert "N/A" not in line, line
 
 
-def test_missing_values_are_said_not_invented(tex):
-    t = tex["missing"]
-    i2 = line_with(t, r"\item $I^2$")
-    q = line_with(t, "Global Q")
-    assert "N/A" in i2 and "NaN" not in i2 and "null" not in i2, i2
-    assert "N/A" in q and "NaN" not in q and "null" not in q, q
+def heterogeneity_section(t: str) -> str:
+    i = t.index(r"\section{Heterogeneity}")
+    return t[i:t.index(r"\end{document}")]
+
+
+# agy review of #565 (MAJOR): with no Global Q (no per-treatment residual df: the panel computed
+# Q = 0 on df = 0) or no analysis at all, the export printed finite numbers -- Q 0.000 (df = 0),
+# I^2 0.0% or a stale I^2 from an earlier run -- under "no analysis has been run". It must say
+# heterogeneity was not computed and print no Q, I^2 or tau^2 value.
+@pytest.mark.parametrize("case", ["missing", "nostats", "nometrics"])
+def test_no_heterogeneity_numbers_when_not_computed(tex, case):
+    sec = heterogeneity_section(tex[case])
+    assert "Heterogeneity was not computed" in sec, sec
+    for leaked in ("8.148", "93.1", "0.012", "Global Q (", r"\item"):
+        assert leaked not in sec, (case, leaked, sec)
+    for word in ("NaN", "null", "undefined"):
+        assert word not in tex[case], (case, word)
+
+
+def test_not_computed_reason(tex):
+    assert "no analysis has been run" in heterogeneity_section(tex["nostats"])
+    assert "no treatment has residual degrees of freedom" in heterogeneity_section(tex["missing"])
 
 
 def test_table_escapes_special_characters(tex):

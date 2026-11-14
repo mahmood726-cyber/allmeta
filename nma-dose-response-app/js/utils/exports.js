@@ -54,16 +54,20 @@ function exportLatexDocument(data) {
   latex += exportLatexTables(stats);
 
   // Heterogeneity statistics: the Diagnostics panel's values (Global Q is the sum of the
-  // per-treatment residual Q statistics, on the summed residual df).
-  if (globalMetrics) {
-    const g = globalMetrics;
-    const hasQ = latexIsFinite(g.Q);
+  // per-treatment residual Q statistics, on the summed residual df). With no analysis, or no
+  // Global Q (no treatment has residual df), NO number is printed: a Q of 0 on 0 df, an I² of 0%
+  // or an I² left over from an earlier run is not a heterogeneity estimate (agy review of #565).
+  const g = globalMetrics;
+  latex += '\\section{Heterogeneity}\n';
+  if (!stats || !stats.length) {
+    latex += 'Heterogeneity was not computed: no analysis has been run.\n\n';
+  } else if (!g || !latexIsFinite(g.Q) || !latexIsFinite(g.df) || g.df <= 0) {
+    latex += 'Heterogeneity was not computed: no treatment has residual degrees of freedom.\n\n';
+  } else {
     let qLine = `Global Q (sum of the per-treatment residual Q): ${formatLatexNumber(g.Q)}`;
-    if (hasQ && latexIsFinite(g.df)) {
-      qLine += ` (df = ${Number(g.df)}${latexIsFinite(g.Qp) ? `, p = ${formatLatexNumber(g.Qp)}` : ''})`;
-    }
+    qLine += ` (df = ${Number(g.df)}${latexIsFinite(g.Qp) ? `, p = ${formatLatexNumber(g.Qp)}` : ''})`;
     const i2 = latexIsFinite(g.I2) ? `${(Number(g.I2) * 100).toFixed(1)}\\%` : 'N/A';
-    latex += '\\section{Heterogeneity}\n\\begin{itemize}\n';
+    latex += '\\begin{itemize}\n';
     latex += `\\item ${qLine}\n`;
     latex += `\\item $I^2$: ${i2}\n`;
     latex += `\\item $\\tau^2$: ${formatLatexNumber(g.tau2)}\n`;

@@ -10247,12 +10247,16 @@ bootstrapSeed: document.getElementById("bootstrapSeed"),
   // read this same function, so an export cannot print a heterogeneity value the panel does not show
   // (they printed Q = N/A, "the network fit computes no global Q", and I² = 0.931\% beside the
   // panel's Global Q = 8.148 and I² = 93.1%; re-review lane rrev61, F1/F3).
+  // With no per-treatment Q, or no residual df at all (every curve has as many parameters as
+  // points), nothing was estimated: Q, df, p and I² are NaN (shown "-", exported "not computed"),
+  // never Q = 0 on df = 0 with I² = 0% or a state.globalI2 left from an earlier run (agy, #565).
   function diagnosticsHeterogeneity(stats) {
     const valid = (stats || []).filter(item => Number.isFinite(item.q));
     const totalQ = valid.reduce((sum, item) => sum + item.q, 0);
     const totalDf = valid.reduce((sum, item) => sum + (Number.isFinite(item.df) ? item.df : 0), 0);
+    if (!valid.length || !(totalDf > 0)) return { valid, computed: false, Q: NaN, df: NaN, Qp: NaN, I2: NaN };
     const i2 = Number.isFinite(state.globalI2) ? state.globalI2 : (totalQ > totalDf ? (totalQ - totalDf) / totalQ : 0);
-    return { valid, Q: totalQ, df: totalDf, Qp: chiSquarePValue(totalQ, totalDf), I2: i2 };
+    return { valid, computed: true, Q: totalQ, df: totalDf, Qp: chiSquarePValue(totalQ, totalDf), I2: i2 };
   }
 
   function updateDiagnostics(stats) {
