@@ -323,7 +323,6 @@
       </div>
     </section>
 
-    <div id="alm-flow-mount" aria-live="polite"></div>
   </main>
   <footer>
     <p>Engine: <code>shared/rve.js</code>: Hedges-Tipton-Johnson 2010 correlated-effects (CORR) working model; τ² from the CORR method-of-moments estimator; <strong>CR2 bias-reduced</strong> cluster-robust standard errors (Tipton 2015; Pustejovsky and Tipton 2018) and per-coefficient <strong>Satterthwaite degrees of freedom</strong>; Student-t confidence intervals and p-values. Reference implementation: <code>robumeta::robu(modelweights = "CORR", small = TRUE)</code>, cross-checked with <code>clubSandwich::coef_test(vcov = "CR2", test = "Satterthwaite")</code>. Designs with no more clusters than coefficients, or with collinear predictors, are refused.</p>
@@ -534,22 +533,9 @@
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["forest-plot", "meta-regression", "personalised-te", "cross-design"],
-      });
-    }
-  });
-})();
-</script>
+<!-- No "Continue with" bar: this page's dependent effect sizes (several per cluster, with predictors)
+     cannot be written to ma-studies-v1 (one independent row per study), so the links handed over nothing and
+     opened the targets on an earlier session's bus (as nma-meta-reg, PR #531). -->
 
 <script>
 (function () {

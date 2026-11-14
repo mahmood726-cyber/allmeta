@@ -89,7 +89,6 @@ S6,2024,secondary,-0.32,0.013,low</textarea>
       <h2 style="margin-top:1rem">Per-study random effect δ̂<sub>i</sub> (shrinkage)</h2>
       <table id="delta"><thead><tr><th>Study</th><th>δ̂</th></tr></thead><tbody></tbody></table>
     
-      <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 </main>
@@ -164,22 +163,9 @@ S6,2024,secondary,-0.32,0.013,low</textarea>
   </script>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["living-rob-pool", "forest-plot", "personalised-te"],
-      });
-    }
-  });
-})();
-</script>
+<!-- No "Continue with" bar: this page's long-format data (several times/outcomes per study) are
+     dependent effects that ma-studies-v1 (one independent row per study) cannot carry, so the links handed over nothing and
+     opened the targets on an earlier session's bus (as nma-meta-reg, PR #531). -->
 
 <script>
 (function () {

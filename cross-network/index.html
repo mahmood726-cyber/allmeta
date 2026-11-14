@@ -86,7 +86,6 @@ A_vs_C, -0.62, 0.014, obs</textarea>
       </table>
       <div id="warnings" style="margin-top:0.75rem;font-size:0.83rem;color:var(--warn)"></div>
     
-      <div id="alm-flow-mount" aria-live="polite"></div>
 </section>
   </main>
   <footer>
@@ -136,22 +135,9 @@ A_vs_C, -0.62, 0.014, obs</textarea>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/results-export.js"></script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["nma-pro-v2", "cross-design", "multi-outcome-nma"],
-      });
-    }
-  });
-})();
-</script>
+<!-- No "Continue with" bar: this page's contrast-level evidence (label, yi, sei, design) cannot be
+     written to ma-studies-v1 (pairwise rows) or ma-comparisons-v1 (arm-level data), so the links handed over nothing and
+     opened the targets on an earlier session's bus (as nma-meta-reg, PR #531). -->
 
 <script>
 (function () {

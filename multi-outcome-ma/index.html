@@ -103,7 +103,6 @@ Trial 8, NA, NA, -0.42, 0.16</textarea>
       </table>
     </section>
   
-      <div id="alm-flow-mount" aria-live="polite"></div>
 <div id="alm-cite-mount" style="margin-top:0.4rem"></div>
 </main>
 
@@ -217,22 +216,9 @@ Trial 8, NA, NA, -0.42, 0.16</textarea>
 <script src="../hub/shared/a11y-landmarks.js"></script>
 <script src="../hub/shared/results-export.js"></script>
 
-<script>
-(function () {
-  function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
-  ready(function () {
-    if (window.AlmFlow && typeof AlmFlow.attachContinueBar === "function") {
-      AlmFlow.attachContinueBar({
-        container: "#alm-flow-mount",
-        suggestions: ["forest-plot", "heterogeneity", "multi-outcome-nma"],
-      });
-    }
-  });
-})();
-</script>
+<!-- No "Continue with" bar: this page's two correlated outcomes per study cannot be written to
+     ma-studies-v1 (one effect per study) without silently dropping one of them, so the links handed over nothing and
+     opened the targets on an earlier session's bus (as nma-meta-reg, PR #531). -->
 
 <script>
 (function () {
