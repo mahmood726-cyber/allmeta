@@ -2668,7 +2668,7 @@ function renderOutlierDetection(results, containerId = 'outlierResults') {
     const rowStyle = s.isOutlier ? 'background: var(--color-danger-100);' : '';
     html += `
       <tr style="${rowStyle} border-bottom: 1px solid var(--border-subtle);">
-        <td style="padding: var(--space-1);">${s.name}</td>
+        <td style="padding: var(--space-1);">${sanitizeHTML(s.name)}</td>
         <td style="text-align: right; padding: var(--space-1);">${s.stdRes.toFixed(2)}</td>
         <td style="text-align: right; padding: var(--space-1);">${s.looInfluence.toFixed(2)}</td>
         <td style="text-align: right; padding: var(--space-1);">${s.ensemble.toFixed(2)}</td>
@@ -2753,7 +2753,7 @@ function renderCumulativePlot(data, containerId, title) {
     if (container) {
       let html = `<table style="width:100%; font-size: var(--text-xs);"><thead><tr><th>Step</th><th>Effect</th><th>95% CI</th></tr></thead><tbody>`;
       data.forEach(d => {
-        html += `<tr><td>${d.label}</td><td>${d.theta.toFixed(3)}</td><td>[${d.ci_lower.toFixed(3)}, ${d.ci_upper.toFixed(3)}]</td></tr>`;
+        html += `<tr><td>${sanitizeHTML(d.label)}</td><td>${d.theta.toFixed(3)}</td><td>[${d.ci_lower.toFixed(3)}, ${d.ci_upper.toFixed(3)}]</td></tr>`;
       });
       html += '</tbody></table>';
       container.innerHTML = html;
@@ -2954,18 +2954,35 @@ print(f"SE: {se_re:.4f}")
 print(f"95% CI: [{theta_re - 1.96*se_re:.4f}, {theta_re + 1.96*se_re:.4f}]")
 print(f"tau2: {tau2:.4f}")
 `;
-  container.querySelector('.card__body').innerHTML = `
-    <div style="margin-bottom: var(--space-3);">
-      <h4 style="margin-bottom: var(--space-2);">R Code (metafor)</h4>
-      <pre style="background: var(--surface-raised); padding: var(--space-3); border-radius: var(--radius-md); overflow-x: auto; font-size: var(--text-xs);"><code>${rCode}</code></pre>
-      <button class="btn btn--outline btn--sm" onclick="navigator.clipboard.writeText(\`${rCode.replace(/`/g, '\\`')}\`); showToast('R code copied!', 'success')">Copy R Code</button>
-    </div>
-    <div>
-      <h4 style="margin-bottom: var(--space-2);">Python Code</h4>
-      <pre style="background: var(--surface-raised); padding: var(--space-3); border-radius: var(--radius-md); overflow-x: auto; font-size: var(--text-xs);"><code>${pythonCode}</code></pre>
-      <button class="btn btn--outline btn--sm" onclick="navigator.clipboard.writeText(\`${pythonCode.replace(/`/g, '\\`')}\`); showToast('Python code copied!', 'success')">Copy Python Code</button>
-    </div>
-  `;
+  // Lane pwrest3: built with the DOM, not innerHTML. The code embeds the study names, so <code>${rCode}</code>
+  // ran a label like <img src=x onerror=...>; and the Copy buttons carried the whole code inside an
+  // onclick="...writeText(`...`)" attribute, which the first double quote of the R code (method="REML") ended,
+  // so every click was a SyntaxError and nothing was copied. Now textContent and a click listener.
+  const body = container.querySelector('.card__body');
+  body.textContent = '';
+  [['R Code (metafor)', rCode, 'R code copied!', 'Copy R Code'],
+   ['Python Code', pythonCode, 'Python code copied!', 'Copy Python Code']].forEach(([title, code, done, label], i) => {
+    const wrap = document.createElement('div');
+    if (i === 0) wrap.style.marginBottom = 'var(--space-3)';
+    const h = document.createElement('h4');
+    h.style.marginBottom = 'var(--space-2)';
+    h.textContent = title;
+    const pre = document.createElement('pre');
+    pre.style.cssText = 'background: var(--surface-raised); padding: var(--space-3); border-radius: var(--radius-md); overflow-x: auto; font-size: var(--text-xs);';
+    const c = document.createElement('code');
+    c.textContent = code;
+    pre.appendChild(c);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn--outline btn--sm';
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      Promise.resolve().then(() => navigator.clipboard.writeText(code))
+        .then(() => showToast(done, 'success'), e => showToast('Copy failed: ' + (e && e.message || e), 'error'));
+    });
+    wrap.append(h, pre, btn);
+    body.appendChild(wrap);
+  });
 }
 // Render these two panels as part of publishing the result: renderResults runs in the same task
 // that assigns AppState.results. (They used to be painted by a 500 ms timer after runAnalysis, so
