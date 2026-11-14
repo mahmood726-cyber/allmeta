@@ -6152,6 +6152,13 @@ function runPredictivePatientSelection() {
 
  var treatmentVar = rfCfg.treatmentVar || 'treatment';
 
+ // IPD-Fix3 (rrev60 F4): an explicitly empty outcome control is authoritative (no fallback to a column named 'event')
+ if (rfCfg.emptyControls && rfCfg.emptyControls.includes('eventVar')) {
+ hideLoadingOverlay();
+ showNotification('No outcome variable is selected (Data tab, variable mapping); select it to run this analysis.', 'warning');
+ return;
+ }
+
  var outcomeVar = rfCfg.eventVar || 'event';
 
  // IPD-Fed: the subgroup effect follows the configured outcome type (calculateGroupEffect); it was a difference of
@@ -7788,6 +7795,13 @@ function runRandomForestHeterogeneity() {
 
  var treatmentVar = rfCfg.treatmentVar || 'treatment';
 
+ // IPD-Fix3 (rrev60 F4): an explicitly empty outcome control is authoritative (no fallback to a column named 'event')
+ if (rfCfg.emptyControls && rfCfg.emptyControls.includes('eventVar')) {
+ hideLoadingOverlay();
+ showNotification('No outcome variable is selected (Data tab, variable mapping); select it to run this analysis.', 'warning');
+ return;
+ }
+
  var outcomeVar = rfCfg.eventVar || 'event';
 
 
@@ -7804,13 +7818,23 @@ function runRandomForestHeterogeneity() {
 
  }
 
+ // IPD-Fix3 (rrev60 F2): columns derived from the outcome (as for Predictive Patient Selection) are not covariates;
+ // hamd_endpoint beside hamd_change had the top importance.
+ var rfDerived = ipdOutcomeDerivedColumns(APP.data, { studyVar: rfCfg.studyVar, treatmentVar: treatmentVar, eventVar: outcomeVar, timeVar: rfCfg.timeVar, outcomeType: rfCfg.outcomeType });
+
  var covariates = Object.keys(firstRow).filter(function(k) {
 
  return !['study', 'study_id', 'patient_id', 'treatment', 'treatment_name', 'time', 'event', outcomeVar, treatmentVar, rfCfg.timeVar, rfCfg.studyVar].includes(k) &&
 
- typeof firstRow[k] === 'number';
+ typeof firstRow[k] === 'number' && !rfDerived.excluded.some(function(x) { return x.name === k; });
 
  }).slice(0, 8);
+
+ if (rfDerived.excluded.length) {
+
+ showNotification('Random Forest Heterogeneity: ' + rfDerived.excluded.length + ' column(s) derived from the outcome "' + outcomeVar + '" are not used as covariates: ' + rfDerived.excluded.map(function(x) { return x.name + ' (' + x.reason + ')'; }).join('; ') + '.', 'info');
+
+ }
 
 
 
@@ -7861,6 +7885,14 @@ function runRandomForestHeterogeneity() {
  predictions: predictions,
 
  covariates: covariates,
+
+ excludedCovariates: rfDerived.excluded,
+
+ outcomeVar: outcomeVar,
+
+ outcomeIsBinary: APP.data.every(function(d) { return d[outcomeVar] == null || d[outcomeVar] === 0 || d[outcomeVar] === 1; }),
+
+ outcomeType: rfCfg.outcomeType,
 
  importance: rf.variableImportance,
 
@@ -7916,6 +7948,19 @@ function displayRandomForestResults(results) {
 
  var rangeCATE = maxCATE - minCATE;
 
+ // IPD-Fix3 (rrev60 F2): each CATE is mean(outcome | treated) - mean(outcome | control) on the outcome's own scale: a
+ // mean difference in outcome units, or for a 0/1 outcome a difference in proportions (shown in percentage points).
+ // It was multiplied by 100 and shown with "%" for every outcome ("41.1% to 445.6%").
+ var rfBin = !!results.outcomeIsBinary;
+
+ var rfEff = function(x) { return rfBin ? (x * 100).toFixed(1) : x.toFixed(2); };
+
+ var rfUnit = rfBin ? 'percentage points' : '(outcome units)';
+
+ var rfScale = rfBin ? ('Difference in the proportion with ' + escapeHTML(String(results.outcomeVar || 'the outcome')) + ' = 1, treated minus control' + (results.outcomeType === 'survival' ? ' (follow-up time is ignored).' : '.')) :
+
+ ('Mean difference in ' + escapeHTML(String(results.outcomeVar || 'the outcome')) + ', treated minus control.');
+
 
 
  var modal = document.createElement('div');
@@ -7938,13 +7983,13 @@ function displayRandomForestResults(results) {
 
  '<div class="alert alert-success" style="margin-bottom: 1.5rem;">' +
 
- '<strong>Heterogeneity Detected:</strong> Treatment effects range from ' +
+ '<strong>Predicted treatment effects (CATE):</strong> from ' + rfEff(minCATE) + ' to ' + rfEff(maxCATE) + ' ' + rfUnit +
 
- (minCATE * 100).toFixed(1) + '% to ' + (maxCATE * 100).toFixed(1) + '% ' +
+ ' (range ' + rfEff(rangeCATE) + '). ' + rfScale +
 
- '(range: ' + (rangeCATE * 100).toFixed(1) + ' percentage points)' +
+ ((typeof results.oobScore === 'number' && Number.isFinite(results.oobScore)) ? '<br>Out-of-bag R-squared: ' + results.oobScore.toFixed(2) +
 
- (results.oobScore ? '<br>Out-of-bag R-squared: ' + (results.oobScore * 100).toFixed(1) + '%' : '') +
+ (results.oobScore <= 0 ? ' &mdash; the forest&rsquo;s out-of-bag predictions fit the outcome worse than its overall mean: they have no predictive value here, and the effect range above should not be read as detected heterogeneity.' : '') : '') +
 
  '</div>' +
 
@@ -7996,11 +8041,11 @@ function displayRandomForestResults(results) {
 
  sortedImportance[0][0] + '</strong> (importance: ' + (sortedImportance[0][1] * 100).toFixed(1) + '%). ' +
 
- 'Patients in the top quartile of predicted benefit show ' +
+ 'Patients in the top quartile of predicted effect show ' +
 
- (jStat.percentile(cates, 0.75) * 100).toFixed(1) + '% effect vs ' +
+ rfEff(jStat.percentile(cates, 0.75)) + ' vs ' +
 
- (jStat.percentile(cates, 0.25) * 100).toFixed(1) + '% in the bottom quartile.' +
+ rfEff(jStat.percentile(cates, 0.25)) + ' in the bottom quartile (' + rfUnit + ').' +
 
  '</div>' +
 
@@ -8473,58 +8518,30 @@ function calculateFragilityIndex() {
 
 
  var fragilities = studies.map(function(study) {
-
-
-
- var fragility = 0;
-
- var direction = pooled.pooled > 0 ? -1 : 1;
-
-
-
- for (var change = 1; change <= 50; change++) {
-
-
-
- var modifiedEffect = study.effect + direction * change * 0.05;
-
+ // IPD-Fix3 (rrev60 F3): the index is the smallest single-study shift that changes the verdict, searched in BOTH
+ // directions. It moved the study only towards the side opposite to the pooled sign, which can only make a significant
+ // result lose significance: for a non-significant result the shift that makes it significant is usually AWAY from
+ // the null (FE, y = -0.30 / -0.20 / -0.25, p = 0.083: S1 moved by -0.10 gives p = 0.0496; the page reported 32 steps).
+ var fragility = 0, shiftDir = null;
+ var repoolShift = function(dir, change) {
+ var modifiedEffect = study.effect + dir * change * 0.05;
  var modifiedStudies = studies.map(function(s) {
-
- if (s.study === study.study) {
-
- return Object.assign({}, s, { effect: modifiedEffect });
-
- }
-
- return s;
-
+ return s.study === study.study ? Object.assign({}, s, { effect: modifiedEffect }) : s;
  });
-
-
-
- var newPooled = ipdRepoolLikeMain(modifiedStudies, fragSettings);
-
- var newSignificant = newPooled.pValue < 0.05;
-
-
-
- if (newSignificant !== isSignificant) {
-
+ return (ipdRepoolLikeMain(modifiedStudies, fragSettings).pValue < 0.05) !== isSignificant;
+ };
+ for (var change = 1; change <= 50; change++) {
+ var up = repoolShift(1, change), down = repoolShift(-1, change);
+ if (up || down) {
  fragility = change;
-
+ shiftDir = (up && down) ? 0 : (up ? 1 : -1);
  break;
-
  }
-
  }
-
-
-
  return {
-
  study: study.study,
-
  fragility: fragility,
+ shiftDir: shiftDir,
 
  events: (typeof study.events === 'number' && Number.isFinite(study.events)) ? study.events : null,
 
@@ -8652,7 +8669,9 @@ function displayFragilityResults(results) {
  // z-test); the index is the first step at which that re-pool's verdict (p < 0.05) differs from the main analysis'.
  var measure = escapeHTML(results.measure || 'effect');
 
- var dirText = results.direction === -1 ? 'downwards (towards lower values)' : 'upwards (towards higher values)';
+ // IPD-Fix3 (rrev60 F3): the search moves each study both ways; the direction is that of the shift found
+ var dirWord = function(d) { return d === 0 ? 'upwards or downwards' : d === -1 ? 'downwards (towards lower values)' : d === 1 ? 'upwards (towards higher values)' : (results.direction === -1 ? 'downwards (towards lower values)' : 'upwards (towards higher values)'); };
+ var shiftCell = function(f) { if (!f.fragility) return 'none up to &plusmn;2.50'; var a = (f.fragility * 0.05).toFixed(2); return f.shiftDir === 0 ? '&plusmn;' + a : f.shiftDir === -1 ? '&minus;' + a : f.shiftDir === 1 ? '+' + a : a; };
 
  var stepText = function(k) { return k + ' step' + (k === 1 ? '' : 's') + ' of 0.05 (a shift of ' + (k * 0.05).toFixed(2) + ')'; };
 
@@ -8700,7 +8719,7 @@ function displayFragilityResults(results) {
 
 
 
- '<p style="margin-bottom: 1rem;">No events are changed. For each study, its ' + measure + ' is moved ' + dirText + ' in steps of 0.05 (up to 50 steps), the studies are re-pooled with the main analysis\' model (' + escapeHTML(results.model || 'fixed-effect inverse-variance (z-test)') + '), and the index is the number of steps at which that re-pool\'s verdict at p &lt; 0.05 first differs from the main analysis (' + pTxt(results.mainP) + '). This is not the event-count Fragility Index of Walsh et al.</p>' +
+ '<p style="margin-bottom: 1rem;">No events are changed. For each study, its ' + measure + ' is moved upwards and downwards in steps of 0.05 (up to 50 steps each way), the studies are re-pooled with the main analysis\' model (' + escapeHTML(results.model || 'fixed-effect inverse-variance (z-test)') + '), and the index is the number of steps at which that re-pool\'s verdict at p &lt; 0.05 first differs from the main analysis (' + pTxt(results.mainP) + '), in either direction. This is not the event-count Fragility Index of Walsh et al.</p>' +
 
  (verdictDiffers ? '<div class="alert alert-warning" style="margin-bottom: 1rem;"><strong>Note:</strong> the re-pool of the unshifted studies already gives ' + pTxt(results.unshiftedRepoolP) + ', a different verdict from the main analysis (' + pTxt(results.mainP) + '). The index can then reflect the change of pooling model rather than the shift.</div>' : '') +
 
@@ -8708,7 +8727,7 @@ function displayFragilityResults(results) {
 
  '<table class="data-table">' +
 
- '<thead><tr><th>Study</th><th>N</th><th>Events</th><th>Steps of 0.05 to change the verdict</th></tr></thead>' +
+ '<thead><tr><th>Study</th><th>N</th><th>Events</th><th>Steps of 0.05 to change the verdict</th><th>Shift</th></tr></thead>' +
 
  '<tbody>' +
 
@@ -8725,6 +8744,7 @@ function displayFragilityResults(results) {
  '<td>' + (results.outcomeType === 'continuous' ? 'n/a (continuous outcome)' : (typeof f.events === 'number' && Number.isFinite(f.events)) ? f.events : 'not recorded') + '</td>' +
 
  '<td>' + (f.fragility || '>50') + '</td>' +
+ '<td>' + shiftCell(f) + '</td>' +
 
  '</tr>';
 
@@ -8740,7 +8760,7 @@ function displayFragilityResults(results) {
 
  '<strong>Interpretation:</strong> ' + (noneFlips ? 'No single study had a shift (up to 50 steps of 0.05 in its ' + measure + ') that would make the re-pool ' + (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.' :
 
- 'Moving the ' + measure + ' of ' + escapeHTML(results.mostFragileStudy.study) + ' ' + dirText + ' by ' + stepText(results.overallFragility) + ' makes the re-pool ' +
+ 'Moving the ' + measure + ' of ' + escapeHTML(results.mostFragileStudy.study) + ' ' + dirWord(results.mostFragileStudy.shiftDir) + ' by ' + stepText(results.overallFragility) + ' makes the re-pool ' +
 
  (results.isSignificant ? 'lose' : 'gain') + ' statistical significance.') +
 
@@ -37508,6 +37528,11 @@ function ipdArmOutcomes(rows, config) {
  config = config || {};
  rows = Array.isArray(rows) ? rows : [];
  const r0 = rows[0] || {};
+ // IPD-Fix3 (rrev60 F4): a control that exists on the page and is explicitly empty (ipdFormAnalysisConfig records it
+ // in emptyControls) is authoritative: refuse rather than fall back to a column named outcome / y / study / treatment.
+ const roles = { studyVar: 'study', treatmentVar: 'treatment', eventVar: 'outcome' };
+ const empty = Object.keys(roles).filter(k => Array.isArray(config.emptyControls) && config.emptyControls.includes(k) && !config[k]);
+ if (empty.length) return { error: 'No ' + empty.map(k => roles[k]).join(' / ') + ' variable is selected (Data tab, variable mapping); select it to run this analysis.', studies: [] };
  const sv = config.studyVar || ('study' in r0 ? 'study' : 'study_id');
  const tv = config.treatmentVar || ('treatment' in r0 ? 'treatment' : ('trt' in r0 ? 'trt' : 'arm'));
  const ov = config.eventVar || ('outcome' in r0 ? 'outcome' : ('y' in r0 ? 'y' : 'effect'));
@@ -37531,6 +37556,8 @@ function ipdFormAnalysisConfig() {
  // explicitly empty; APP.config (a previous Run Analysis, possibly on other data) is used only without the control.
  const has = (id) => !!(typeof document !== 'undefined' && document.getElementById && document.getElementById(id));
  const pick = (id, prev) => has(id) ? val(id) : prev;
+ // IPD-Fix3 (rrev60 F4): which mapped controls are present and explicitly empty, so that callers do not fall back
+ cfg.emptyControls = [['varStudy', 'studyVar'], ['varTreatment', 'treatmentVar'], ['varTime', 'timeVar'], ['varEvent', 'eventVar']].filter(p => has(p[0]) && !val(p[0])).map(p => p[1]);
  cfg.studyVar = pick('varStudy', cfg.studyVar);
  cfg.treatmentVar = pick('varTreatment', cfg.treatmentVar);
  cfg.timeVar = pick('varTime', cfg.timeVar);
@@ -37685,13 +37712,22 @@ function ipdStudyEstimate(studyData, cfg, armMapping) {
  return { effect: effect, variance: variance, se: se, n1: treat1.length, n0: treat0.length };
 }
 
-// IPD-Left2: numeric columns derived from the configured outcome, which must not be used as patient covariates.
-// (1) A loaded example declares which of its columns are computed from one endpoint (APP.declaredOutcome.outcomeFamily,
-// valid only for that exact data): with the outcome among them, the others are derived. (2) For any data, a column
-// that is an exact affine function of the outcome (|r| = 1), or a 0/1 column that a threshold of the outcome
-// separates perfectly (e.g. responder = change >= c; at least 5 patients in each group, so that a rare 0/1
-// characteristic is not flagged by chance), is derived; and, for a 0/1 outcome, a column one of whose thresholds
-// separates the outcome perfectly (remission = hamd_endpoint <= 7), at least 5 patients per outcome group. Returns { excluded: [{ name, reason }] }.
+// IPD-Left2 / IPD-Fix3: numeric columns derived from the configured outcome, which must not be used as patient
+// covariates. (1) A loaded example declares which of its columns are computed from one endpoint
+// (APP.declaredOutcome.outcomeFamily, valid only for that exact data): with the outcome among them, the others are
+// derived. (2) For any data, from EXACT relationships only, grown from the outcome: D = {outcome}; a column joins D when
+//  (a) it is a monotone function of a column d in D, or d is a monotone function of it (an affine function, a 0/1
+//      threshold such as responder = change >= c, or remission = endpoint <= 7 for a 0/1 outcome);
+//  (b) it is a 0/1 column that a straight line in (d, b) separates perfectly, b one other column, while neither d nor b
+//      alone separates it (response = change / baseline >= 0.5);
+//  (c) together with one other column b it fixes d exactly: an exact affine relation c = a0 + a1 d + a2 b (to the
+//      precision the values are recorded with), or, for a 0/1 d, a line in (c, b) separating d perfectly. Such a relation
+//      is symmetric in c and b (change = baseline - endpoint), so it says that ONE of them carries the outcome: the
+//      derived one is the column with the outcome's missingness pattern, otherwise the one the treatment changes
+//      (within-study arm difference |z| >= 3.29 and at least twice the other's) -- a baseline measurement is balanced by
+//      randomisation. When the data cannot tell, both are left out and the reason says so.
+// Thresholds need at least 5 patients on each side, so a rare 0/1 characteristic is not flagged by chance.
+// Returns { excluded: [{ name, reason }] }.
 function ipdOutcomeDerivedColumns(rows, cfg) {
  rows = Array.isArray(rows) ? rows : [];
  const y = cfg && cfg.eventVar;
@@ -37705,28 +37741,213 @@ function ipdOutcomeDerivedColumns(rows, cfg) {
  if (declOk && decl.outcomeFamily.includes(y)) {
   decl.outcomeFamily.forEach(c => { if (!skip.has(c) && c in r0) excluded.push({ name: c, reason: 'computed from the same endpoint as ' + y + ' in this example' }); });
  }
- Object.keys(r0).forEach(c => {
-  if (skip.has(c) || excluded.some(x => x.name === c) || typeof r0[c] !== 'number') return;
-  const pairs = rows.map(d => [Number(d[y]), d[c]]).filter(q => Number.isFinite(q[0]) && typeof q[1] === 'number' && Number.isFinite(q[1]));
-  if (pairs.length < 10) return;
-  const n = pairs.length;
-  const my = pairs.reduce((a, q) => a + q[0], 0) / n, mc = pairs.reduce((a, q) => a + q[1], 0) / n;
-  let sxy = 0, sxx = 0, syy = 0;
-  pairs.forEach(q => { sxy += (q[0] - my) * (q[1] - mc); syy += (q[0] - my) * (q[0] - my); sxx += (q[1] - mc) * (q[1] - mc); });
-  if (sxx > 0 && syy > 0 && Math.abs(sxy) / Math.sqrt(sxx * syy) > 1 - 1e-9) { excluded.push({ name: c, reason: 'an exact linear function of ' + y }); return; }
-  const g1 = pairs.filter(q => q[1] === 1).map(q => q[0]), g0 = pairs.filter(q => q[1] === 0).map(q => q[0]);
-  if (Math.min(g1.length, g0.length) >= 5 && g1.length + g0.length === n) {
-   const mx = a => a.reduce((m, v) => v > m ? v : m, -Infinity), mn = a => a.reduce((m, v) => v < m ? v : m, Infinity);
-   if (mx(g0) < mn(g1) || mx(g1) < mn(g0)) { excluded.push({ name: c, reason: 'a 0/1 column that a threshold of ' + y + ' separates perfectly' }); return; }
+ const MIN_SIDE = 5;
+ const isNum = v => typeof v === 'number' && Number.isFinite(v);
+ const cols = Object.keys(r0).filter(c => !skip.has(c) && rows.some(d => isNum(d[c])) && rows.every(d => d[c] == null || d[c] === '' || typeof d[c] === 'number'));
+ const vals = {};
+ const colVals = c => vals[c] || (vals[c] = rows.map(d => isNum(d[c]) ? d[c] : NaN));
+ const binary = {};
+ const isBinary = c => (c in binary) ? binary[c] : (binary[c] = (() => { const v = colVals(c).filter(Number.isFinite); let n1 = 0; for (const x of v) { if (x === 1) n1++; else if (x !== 0) return false; } return Math.min(n1, v.length - n1) >= MIN_SIDE; })());
+ // half the recording step of a column (values with up to 6 decimals); 0 when finer
+ const steps = {};
+ const stepOf = c => {
+  if (c in steps) return steps[c];
+  const v = colVals(c).filter(Number.isFinite);
+  steps[c] = 0;
+  for (let k = 0; k <= 6; k++) { const f = Math.pow(10, k); if (v.every(x => Math.abs(x * f - Math.round(x * f)) <= 1e-7 * Math.max(1, Math.abs(x * f)))) { steps[c] = 0.5 / f; break; } }
+  return steps[c];
+ };
+ // rows where all the given columns are finite
+ const idx = (list) => { const a = list.map(colVals), out = []; for (let i = 0; i < rows.length; i++) if (a.every(v => Number.isFinite(v[i]))) out.push(i); return out; };
+ // (a) is v a monotone (non-decreasing or non-increasing) function of u on the complete rows?
+ const monoCache = {};
+ const monotone = (u, v) => {
+  const key = u + '\u0000' + v;
+  if (key in monoCache) return monoCache[key];
+  const I = idx([u, v]);
+  const res = (() => {
+   if (I.length < 10) return false;
+   const U = colVals(u), V = colVals(v);
+   // chance protection: at least MIN_SIDE values outside v's most frequent value, and u must vary
+   const cnt = new Map(); I.forEach(i => cnt.set(V[i], (cnt.get(V[i]) || 0) + 1));
+   if (cnt.size < 2 || I.length - Math.max(...cnt.values()) < MIN_SIDE) return false;
+   const s = I.slice().sort((a, b) => U[a] - U[b]);
+   if (U[s[0]] === U[s[s.length - 1]]) return false;
+   let up = true, down = true;
+   for (let j = 1; j < s.length; j++) {
+    const du = U[s[j]] - U[s[j - 1]], dv = V[s[j]] - V[s[j - 1]];
+    if (du === 0) { if (dv !== 0) return false; continue; }
+    if (dv < 0) up = false;
+    if (dv > 0) down = false;
+    if (!up && !down) return false;
+   }
+   return up || down;
+  })();
+  return (monoCache[key] = res);
+ };
+ // exact affine relation c = a0 + a1 u + a2 w, to the recorded precision; returns { a1, a2 } or null
+ const affine2 = (c, u, w) => {
+  const I = idx([c, u, w]); if (I.length < 20) return null;
+  const C = colVals(c), U = colVals(u), W = colVals(w);
+  let mc = 0, mu = 0, mw = 0; I.forEach(i => { mc += C[i]; mu += U[i]; mw += W[i]; }); mc /= I.length; mu /= I.length; mw /= I.length;
+  let suu = 0, sww = 0, suw = 0, scu = 0, scw = 0, scc = 0;
+  I.forEach(i => { const a = U[i] - mu, b = W[i] - mw, e = C[i] - mc; suu += a * a; sww += b * b; suw += a * b; scu += e * a; scw += e * b; scc += e * e; });
+  const det = suu * sww - suw * suw;
+  if (!(scc > 0) || !(det > 1e-12 * suu * sww)) return null;
+  const a1 = (scu * sww - scw * suw) / det, a2 = (scw * suu - scu * suw) / det;
+  const sdc = Math.sqrt(scc / (I.length - 1));
+  let mx = 0;
+  for (const i of I) { const r = Math.abs((C[i] - mc) - a1 * (U[i] - mu) - a2 * (W[i] - mw)); if (r > mx) mx = r; }
+  // exact to floating-point accuracy, or exact to the precision the three columns are recorded with (rounding), when
+  // that precision is fine compared with the spread of c (otherwise a rounded relation would not be informative)
+  let tol = 1e-9 * Math.max(1, sdc, Math.abs(mc));
+  if (mx > tol) {
+   const rt = stepOf(c) + Math.abs(a1) * stepOf(u) + Math.abs(a2) * stepOf(w) + tol;
+   if (rt > 0.05 * sdc || mx > rt) return null;
+   tol = rt;
   }
-  // IPD-Left2 (agy #561): the symmetric case: a 0/1 OUTCOME that a threshold of this column separates perfectly
-  // (remission = hamd_endpoint <= 7: hamd_endpoint is the measurement the outcome was derived from)
-  const h1 = pairs.filter(q => q[0] === 1).map(q => q[1]), h0 = pairs.filter(q => q[0] === 0).map(q => q[1]);
-  if (Math.min(h1.length, h0.length) >= 5 && h1.length + h0.length === n) {
-   const mx = a => a.reduce((m, v) => v > m ? v : m, -Infinity), mn = a => a.reduce((m, v) => v < m ? v : m, Infinity);
-   if (mx(h0) < mn(h1) || mx(h1) < mn(h0)) excluded.push({ name: c, reason: 'a column whose threshold separates the 0/1 outcome ' + y + ' perfectly (the outcome is derived from it)' });
+  // both columns must matter (otherwise it is a one-column relation, or none with the outcome)
+  if (Math.abs(a1) * Math.sqrt(suu / (I.length - 1)) <= tol || Math.abs(a2) * Math.sqrt(sww / (I.length - 1)) <= tol) return null;
+  return { a1, a2 };
+ };
+ // (b)/(c) can a straight line in the (u, w) plane separate the rows with lab = 1 from those with lab = 0 (strictly)?
+ const hull = (pts) => {
+  const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (p.length < 3) return p;
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], hi = [];
+  for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (hi.length >= 2 && cr(hi[hi.length - 2], hi[hi.length - 1], q) <= 0) hi.pop(); hi.push(q); }
+  lo.pop(); hi.pop();
+  return lo.concat(hi);
+ };
+ // separating-axis test on the two convex hulls (edge normals and directions of both)
+ const separated = (P, Q) => {
+  const hp = hull(P), hq = hull(Q);
+  const axes = [[1, 0], [0, 1]];
+  [hp, hq].forEach(h => { for (let i = 0; i < h.length; i++) { const a = h[i], b = h[(i + 1) % h.length]; const dx = b[0] - a[0], dy = b[1] - a[1]; if (dx || dy) axes.push([-dy, dx], [dx, dy]); } });
+  for (const ax of axes) {
+   let pmin = Infinity, pmax = -Infinity, qmin = Infinity, qmax = -Infinity;
+   for (const q of hp) { const t = q[0] * ax[0] + q[1] * ax[1]; if (t < pmin) pmin = t; if (t > pmax) pmax = t; }
+   for (const q of hq) { const t = q[0] * ax[0] + q[1] * ax[1]; if (t < qmin) qmin = t; if (t > qmax) qmax = t; }
+   const eps = 1e-12 * Math.max(1, Math.abs(pmin), Math.abs(pmax), Math.abs(qmin), Math.abs(qmax));
+   if (pmax < qmin - eps || qmax < pmin - eps) return true;
   }
- });
+  return false;
+ };
+ const separable2 = (lab, u, w) => {
+  const I = idx([lab, u, w]); const L = colVals(lab), U = colVals(u), W = colVals(w);
+  const P = [], Q = [];
+  for (const i of I) { if (L[i] === 1) P.push([U[i], W[i]]); else if (L[i] === 0) Q.push([U[i], W[i]]); else return false; }
+  if (Math.min(P.length, Q.length) < MIN_SIDE) return false;
+  // exact quick rejection: if a subset of the points cannot be separated, neither can all of them
+  const sub = (A) => A.length <= 400 ? A : A.filter((_, i) => i % Math.ceil(A.length / 400) === 0);
+  if ((P.length > 400 || Q.length > 400) && !separated(sub(P), sub(Q))) return false;
+  return separated(P, Q);
+ };
+ // within-study treatment-arm difference of a column, pooled by inverse variance: |z|
+ let armMap = null;
+ const zs = {};
+ const armZ = c => {
+  if (c in zs) return zs[c];
+  zs[c] = NaN;
+  try {
+   if (!cfg.treatmentVar || !cfg.studyVar || typeof ipdResolveBinaryArmMapping !== 'function') return NaN;
+   if (!armMap) armMap = ipdResolveBinaryArmMapping(rows, cfg.treatmentVar);
+   if (!armMap || armMap.error) return NaN;
+   const V = colVals(c), by = new Map();
+   rows.forEach((d, i) => { if (!Number.isFinite(V[i])) return; const k = d[cfg.studyVar]; if (!by.has(k)) by.set(k, []); by.get(k).push(d); });
+   let sw = 0, swd = 0;
+   by.forEach(sd => {
+    const g = ipdSplitBinaryArms(sd, cfg.treatmentVar, armMap);
+    const a = g.treat1.map(d => d[c]), b = g.treat0.map(d => d[c]);
+    if (a.length < 2 || b.length < 2) return;
+    const m = x => x.reduce((s, v) => s + v, 0) / x.length, vr = x => { const mm = m(x); return x.reduce((s, q) => s + (q - mm) * (q - mm), 0) / (x.length - 1); };
+    const vv = vr(a) / a.length + vr(b) / b.length;
+    if (!(vv > 0)) return;
+    sw += 1 / vv; swd += (m(a) - m(b)) / vv;
+   });
+   if (sw > 0) zs[c] = Math.abs(swd / Math.sqrt(sw));
+  } catch (e) { zs[c] = NaN; }
+  return zs[c];
+ };
+ const sameMissing = (a, b) => { const A = colVals(a), B = colVals(b); for (let i = 0; i < rows.length; i++) if (Number.isFinite(A[i]) !== Number.isFinite(B[i])) return false; return true; };
+ // which of c, b (tied to d by an exact relation) carries the outcome: 'c', 'b', or null (the data cannot tell)
+ const decide = (d, c, b) => {
+  const mc = sameMissing(c, d), mb = sameMissing(b, d);
+  if (colVals(d).some(v => !Number.isFinite(v)) && mc !== mb) return mc ? 'c' : 'b';
+  const zc = armZ(c), zb = armZ(b);
+  if (Number.isFinite(zc) && Number.isFinite(zb)) {
+   if (zc >= 3.29 && zb <= zc / 2) return 'c';
+   if (zb >= 3.29 && zc <= zb / 2) return 'b';
+  }
+  return null;
+ };
+ const D = [y].concat(excluded.map(x => x.name));
+ const inD = c => D.includes(c);
+ const add = (c, reason) => { D.push(c); excluded.push({ name: c, reason: reason }); };
+ const cand = () => cols.filter(c => !inD(c));
+ const lin = (u, v) => {
+  const I = idx([u, v]); if (I.length < 3) return false;
+  const U = colVals(u), V = colVals(v);
+  let mu = 0, mv = 0; I.forEach(i => { mu += U[i]; mv += V[i]; }); mu /= I.length; mv /= I.length;
+  let sxy = 0, sxx = 0, syy = 0; I.forEach(i => { sxy += (U[i] - mu) * (V[i] - mv); sxx += (U[i] - mu) * (U[i] - mu); syy += (V[i] - mv) * (V[i] - mv); });
+  return sxx > 0 && syy > 0 && Math.abs(sxy) / Math.sqrt(sxx * syy) > 1 - 1e-9;
+ };
+ const via = d => d === y ? y : d + ' (itself derived from ' + y + ')';
+ for (let guard = 0; guard < 50; guard++) {
+  let changed = false;
+  // (a) one column
+  for (const c of cand()) {
+   for (const d of D) {
+    if (monotone(d, c)) {
+     add(c, lin(d, c) ? 'an exact linear function of ' + via(d) : isBinary(c) ? 'a 0/1 column that a threshold of ' + via(d) + ' separates perfectly' : 'a monotone function of ' + via(d));
+     changed = true; break;
+    }
+    if (monotone(c, d)) {
+     add(c, isBinary(d) ? 'a column whose threshold separates the 0/1 outcome ' + via(d) + ' perfectly (the outcome is derived from it)' : 'a column of which ' + via(d) + ' is a monotone function');
+     changed = true; break;
+    }
+   }
+   if (changed) break;
+  }
+  if (changed) continue;
+  // (b) a 0/1 column that a line in (d, b) separates, neither d nor b alone
+  for (const c of cand().filter(isBinary)) {
+   for (const d of D) {
+    const b = cand().find(w => w !== c && !monotone(w, c) && separable2(c, d, w));
+    if (b) { add(c, 'a 0/1 column that a threshold of a linear combination of ' + via(d) + ' and ' + b + ' separates perfectly'); changed = true; break; }
+   }
+   if (changed) break;
+  }
+  if (changed) continue;
+  // (c) two columns that together fix d exactly: decide which of them carries the outcome
+  const ties = [];
+  const C = cand();
+  for (const d of D) {
+   for (let i = 0; i < C.length; i++) for (let j = i + 1; j < C.length; j++) {
+    const c = C[i], b = C[j];
+    let rel = null;
+    if (!isBinary(c) && affine2(c, d, b)) rel = c + ' is an exact linear combination of ' + d + ' and ' + b;
+    else if (!isBinary(b) && affine2(b, d, c)) rel = b + ' is an exact linear combination of ' + d + ' and ' + c;
+    else if (isBinary(d) && separable2(d, c, b)) rel = 'a line in (' + c + ', ' + b + ') separates ' + d + ' perfectly';
+    if (rel) ties.push({ d: d, c: c, b: b, rel: rel, who: decide(d, c, b) });
+   }
+  }
+  const sure = ties.find(t => t.who);
+  if (sure) {
+   const der = sure.who === 'c' ? sure.c : sure.b, keep = sure.who === 'c' ? sure.b : sure.c;
+   const byMissing = colVals(sure.d).some(v => !Number.isFinite(v)) && sameMissing(der, sure.d) && !sameMissing(keep, sure.d);
+   add(der, 'together with ' + keep + ' it determines ' + via(sure.d) + ' exactly (' + sure.rel + '); ' + der + (byMissing ? ' is missing exactly where the outcome is missing' : ' is the one the treatment changes') + ', so ' + keep + ' is kept as a baseline measurement');
+   continue;
+  }
+  if (ties.length) {
+   const t = ties[0];
+   [t.c, t.b].forEach(x => add(x, 'together with ' + (x === t.c ? t.b : t.c) + ' it determines ' + via(t.d) + ' exactly (' + t.rel + '); the data cannot tell which of the two is a baseline measurement (neither has the outcome\'s missingness pattern, and the treatment does not clearly change one and not the other), so both are left out'));
+   continue;
+  }
+  break;
+ }
  return { excluded };
 }
 
