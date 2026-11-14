@@ -2900,16 +2900,31 @@ function updateCodePanel() {
   const container = document.getElementById('panel-code');
   if (!container || !AppState.results) return;
   const r = AppState.results;
-  const yi = r.studies.map(s => s.yi.toFixed(4)).join(', ');
-  const vi = r.studies.map(s => s.vi.toFixed(4)).join(', ');
-  const names = r.studies.map(s => `"${s.name}"`).join(', ');
+  // The R script reproduces this run (lane pwrest): the tau2 estimator the page used and its CI method
+  // (HKSJ with q floored at 1, as calculateHKSJ, = metafor test="adhoc"; otherwise the z test), with yi / vi
+  // at full precision. It used to be rma(method="REML") with a z test whatever was chosen, on yi / vi
+  // rounded to 4 decimals.
+  const R_METHODS = ['REML', 'DL', 'PM', 'ML', 'HS', 'SJ', 'HE', 'EB'];
+  const tr = r.tau2Result || {};
+  let rMethod = R_METHODS.includes(AppState.settings.tau2Method) ? AppState.settings.tau2Method : 'REML';
+  let methodNote = '';
+  if (tr.fallback === 'DL') {
+    rMethod = 'DL';
+    methodNote = '# The page\'s REML did not converge and it used the DerSimonian-Laird estimate; so does this script.\n';
+  }
+  const rTest = r.hksj ? 'adhoc' : 'z';
+  const yi = r.studies.map(s => String(s.yi)).join(', ');
+  const vi = r.studies.map(s => String(s.vi)).join(', ');
+  const names = r.studies.map(s => JSON.stringify(String(s.name))).join(', ');
   const rCode = `# Meta-analysis in R (metafor)
 library(metafor)
 yi <- c(${yi})
 vi <- c(${vi})
 names <- c(${names})
-# Random-effects model (REML)
-res <- rma(yi, vi, method="REML", slab=names)
+# Random-effects model: tau2 estimator ${rMethod}; ${r.hksj ? 'Hartung-Knapp-Sidik-Jonkman CI with q floored at 1 (test="adhoc")' : 'z-based CI'}, as on the page
+# control: the page solves the estimating equations to ~1e-8; metafor's defaults stop earlier (e.g. PM to ~1e-4)
+${methodNote}res <- rma(yi, vi, method="${rMethod}", test="${rTest}", slab=names,
+           control=list(threshold=1e-12, tol=1e-13, maxiter=10000, stepadj=0.5))
 summary(res)
 # Forest plot
 forest(res)
