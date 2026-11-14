@@ -3065,6 +3065,65 @@ if (originalRunAnalysis2) {
     return originalRunAnalysis2.apply(this, arguments);
   };
 }
+// A Run that fails (fewer than 2 valid studies, or an error inside the engine) publishes no result, so it
+// must not leave the verdict armed: the next repaint of some other result (a project load, a panel
+// refresh) would otherwise compute a verdict for a result no Run produced. runAnalysis disarms through this.
+window.__truthCertDisarmRun = function() { truthCertPendingForRun = false; };
+// Loading a project shows the SAVED verdict with the saved results, or none at all -- never the verdict of
+// whatever was analysed before the load. (applyProjectState repainted the saved results and left
+// AppState.truthcert untouched, so run A, run B, load A put B's verdict beside A's results, and the next
+// save stored that pair.)
+const truthCertVerdictPanelInitial = (function() {
+  const p = document.getElementById('panel-verdict');
+  const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
+  return { html: p ? p.innerHTML : null, pre: pre ? pre.style.display : null, cfg: cfg ? cfg.style.display : null };
+})();
+function clearTruthCertVerdict() {
+  AppState.truthcert = null; AppState.verdict = null; AppState.threatLedger = null; AppState.grade = null;
+  const p = document.getElementById('panel-verdict');
+  if (p && truthCertVerdictPanelInitial.html !== null) p.innerHTML = truthCertVerdictPanelInitial.html;
+  const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
+  if (pre && truthCertVerdictPanelInitial.pre !== null) pre.style.display = truthCertVerdictPanelInitial.pre;
+  if (cfg && truthCertVerdictPanelInitial.cfg !== null) cfg.style.display = truthCertVerdictPanelInitial.cfg;
+}
+// The saved verdict belongs to the saved results when it describes the same pooled estimate and k.
+function truthCertVerdictMatchesResults(tc, results) {
+  if (!tc || !tc.verdict || !tc.results || !results) return false;
+  const pooled = results.pooled || results;
+  const same = (a, b) => typeof a === 'number' && typeof b === 'number' && (a === b || Math.abs(a - b) <= 1e-12 * Math.max(1, Math.abs(b)));
+  const k = Array.isArray(results.yi) ? results.yi.length : results.k;
+  return same(tc.results.theta, pooled.theta) && same(tc.results.se, pooled.se) && tc.results.k === k;
+}
+function restoreTruthCertVerdict(state) {
+  const tc = state.truthcert;
+  if (!truthCertVerdictMatchesResults(tc, state.results)) {
+    clearTruthCertVerdict();
+    return false;
+  }
+  AppState.truthcert = tc; AppState.verdict = tc.verdict; AppState.threatLedger = tc.threatLedger || null; AppState.grade = tc.grade || null;
+  try {
+    if (typeof renderVerdictPanel === 'function') renderVerdictPanel();
+    const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
+    if (tc.verdict.verdict !== 'UNCERTAIN') { pre && (pre.style.display = 'none'); cfg && (cfg.style.display = 'block'); }
+  } catch (e) {
+    console.warn('[TruthCert] Saved verdict could not be shown:', e.message);
+    clearTruthCertVerdict();
+    return false;
+  }
+  return true;
+}
+const originalApplyProjectStateTC = window.applyProjectState;
+if (typeof originalApplyProjectStateTC === 'function') {
+  window.applyProjectState = function(state) {
+    // a load never computes a verdict, even if an earlier Run failed while armed
+    truthCertPendingForRun = false;
+    if (state && state.results && typeof stripRemovedResultFields === 'function') stripRemovedResultFields(state.results);
+    const out = originalApplyProjectStateTC.apply(this, arguments);
+    // only a load that brings results replaces them; a data-only import keeps the current (matching) pair
+    if (state && state.results) restoreTruthCertVerdict(state);
+    return out;
+  };
+}
 // Fixed Meta-Regression that uses the selected covariate
 window.runMetaRegression = function() {
   const r = AppState.results;

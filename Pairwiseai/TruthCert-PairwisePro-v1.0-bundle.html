@@ -11369,7 +11369,7 @@ function runAnalysis() {
   e.classList.add("btn--loading"), e.innerHTML = '<span class="btn-spinner">âÅ¸³</span> Running...', setTimeout(() => {
     try {
       const a = getStudyData().filter(e => e.valid);
-      if (a.length < 2) return alert("At least 2 valid studies are required for meta-analysis."), e.classList.remove("btn--loading"), void(e.innerHTML = t);
+      if (a.length < 2) return "function" == typeof window.__truthCertDisarmRun && window.__truthCertDisarmRun(), alert("At least 2 valid studies are required for meta-analysis."), e.classList.remove("btn--loading"), void(e.innerHTML = t);
       const s = AppState.settings.effectMeasure,
         i = convertToEffectSizes(a, s),
         r = i.map(e => e.yi),
@@ -11786,7 +11786,7 @@ function runAnalysis() {
       }
       renderResults(), document.querySelector('[data-tab="analysis"]').click(), e.classList.remove("btn--loading"), e.innerHTML = t
     } catch (n) {
-      log.error("Analysis failed:", n), alert("Analysis failed: " + n.message + "\n\nCheck console for details."), e.classList.remove("btn--loading"), e.innerHTML = t
+      "function" == typeof window.__truthCertDisarmRun && window.__truthCertDisarmRun(), log.error("Analysis failed:", n), alert("Analysis failed: " + n.message + "\n\nCheck console for details."), e.classList.remove("btn--loading"), e.innerHTML = t
     }
   }, 50)
 }
@@ -13796,7 +13796,7 @@ function generateResultsSection(e, t) {
     }
     if (G.winnersCurse && G.winnersCurse.available) {
       var J = "Winner's-curse diagnostics suggested " + (G.winnersCurse.interpretation || "uncertain inflation") + ". ";
-      J += G.winnersCurse.consensus_estimate && void 0 !== G.winnersCurse.consensus_estimate.theta_exp ? "Bias-adjusted consensus estimate: " + v + " = " + r(G.winnersCurse.consensus_estimate.theta_exp) + "." : "Estimated inflation was " + (G.winnersCurse.bootstrap_correction && null != G.winnersCurse.bootstrap_correction.inflation_pct ? r(Math.abs(G.winnersCurse.bootstrap_correction.inflation_pct), 1) : "N/A") + "%.", j.push(J)
+      J += "Estimated inflation was " + (G.winnersCurse.bootstrap_correction && null != G.winnersCurse.bootstrap_correction.inflation_pct ? r(Math.abs(G.winnersCurse.bootstrap_correction.inflation_pct), 1) : "N/A") + "%.", j.push(J)
     }
     if (G.responseDistribution && G.responseDistribution.available) {
       var Q = G.responseDistribution.response_rates,
@@ -26376,6 +26376,83 @@ if (originalRunAnalysis2) {
     // TruthCert analysis for the Verdict and HTA tabs runs when this run's result is rendered.
     truthCertPendingForRun = true;
     return originalRunAnalysis2.apply(this, arguments);
+  };
+}
+// A Run that fails (fewer than 2 valid studies, or an error inside the engine) publishes no result, so it
+// must not leave the verdict armed: the next repaint of some other result (a project load, a panel
+// refresh) would otherwise compute a verdict for a result no Run produced. runAnalysis disarms through this.
+window.__truthCertDisarmRun = function() { truthCertPendingForRun = false; };
+// Loading a project shows the SAVED verdict with the saved results, or none at all -- never the verdict of
+// whatever was analysed before the load. (applyProjectState repainted the saved results and left
+// AppState.truthcert untouched, so run A, run B, load A put B's verdict beside A's results, and the next
+// save stored that pair.)
+const truthCertVerdictPanelInitial = (function() {
+  const p = document.getElementById('panel-verdict');
+  const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
+  return { html: p ? p.innerHTML : null, pre: pre ? pre.style.display : null, cfg: cfg ? cfg.style.display : null };
+})();
+function clearTruthCertVerdict() {
+  AppState.truthcert = null; AppState.verdict = null; AppState.threatLedger = null; AppState.grade = null;
+  const p = document.getElementById('panel-verdict');
+  if (p && truthCertVerdictPanelInitial.html !== null) p.innerHTML = truthCertVerdictPanelInitial.html;
+  const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
+  if (pre && truthCertVerdictPanelInitial.pre !== null) pre.style.display = truthCertVerdictPanelInitial.pre;
+  if (cfg && truthCertVerdictPanelInitial.cfg !== null) cfg.style.display = truthCertVerdictPanelInitial.cfg;
+}
+// The saved verdict belongs to the saved results when it describes the same pooled estimate and k.
+function truthCertVerdictMatchesResults(tc, results) {
+  if (!tc || !tc.verdict || !tc.results || !results) return false;
+  const pooled = results.pooled || results;
+  const same = (a, b) => typeof a === 'number' && typeof b === 'number' && (a === b || Math.abs(a - b) <= 1e-12 * Math.max(1, Math.abs(b)));
+  const k = Array.isArray(results.yi) ? results.yi.length : results.k;
+  return same(tc.results.theta, pooled.theta) && same(tc.results.se, pooled.se) && tc.results.k === k;
+}
+function restoreTruthCertVerdict(state) {
+  const tc = state.truthcert;
+  if (!truthCertVerdictMatchesResults(tc, state.results)) {
+    clearTruthCertVerdict();
+    return false;
+  }
+  AppState.truthcert = tc; AppState.verdict = tc.verdict; AppState.threatLedger = tc.threatLedger || null; AppState.grade = tc.grade || null;
+  try {
+    if (typeof renderVerdictPanel === 'function') renderVerdictPanel();
+    const pre = document.getElementById('htaPrerequisites'), cfg = document.getElementById('htaConfigSection');
+    if (tc.verdict.verdict !== 'UNCERTAIN') { pre && (pre.style.display = 'none'); cfg && (cfg.style.display = 'block'); }
+  } catch (e) {
+    console.warn('[TruthCert] Saved verdict could not be shown:', e.message);
+    clearTruthCertVerdict();
+    return false;
+  }
+  return true;
+}
+// A project saved before lane tcxd (#566) carries Cross-Disciplinary numbers this page no longer computes
+// (they were invented: a fixed-shift "conditional MLE", a 0.5-factor "empirical Bayes", their fixed-weight
+// "consensus", an MCID fixed at 0.15, a 15% baseline-risk NNT, a response distribution drawn from a tau2
+// floored at 0.01). Loading such a project must not print them, so they are removed before repainting.
+function stripRemovedResultFields(results) {
+  const cd = results && results.crossDisc;
+  if (!cd || typeof cd !== 'object') return results;
+  const wc = cd.winnersCurse;
+  if (wc && typeof wc === 'object') { delete wc.consensus_estimate; delete wc.empirical_bayes; delete wc.conditional_correction; }
+  const rd = cd.responseDistribution;
+  if (rd && typeof rd === 'object') {
+    if (rd.response_rates) { delete rd.response_rates.P_mcid; delete rd.response_rates.P_large_benefit; delete rd.response_rates.P_large_harm; }
+    if (rd.clinical_summary) { delete rd.clinical_summary.mcid_rate; delete rd.clinical_summary.nnt_standard; delete rd.clinical_summary.nnt_responder_adjusted; }
+    delete rd.heterogeneity_contribution;
+    if (rd.available && !(results.tau2 > 0)) cd.responseDistribution = { available: false, reason: "τ² = 0: every setting has the same true effect, so a distribution of effects is not estimable from these data." };
+  }
+  return results;
+}
+const originalApplyProjectStateTC = window.applyProjectState;
+if (typeof originalApplyProjectStateTC === 'function') {
+  window.applyProjectState = function(state) {
+    // a load never computes a verdict, even if an earlier Run failed while armed
+    truthCertPendingForRun = false;
+    if (state && state.results && typeof stripRemovedResultFields === 'function') stripRemovedResultFields(state.results);
+    const out = originalApplyProjectStateTC.apply(this, arguments);
+    // only a load that brings results replaces them; a data-only import keeps the current (matching) pair
+    if (state && state.results) restoreTruthCertVerdict(state);
+    return out;
   };
 }
 // Fixed Meta-Regression that uses the selected covariate
