@@ -497,11 +497,13 @@ const studyIds=studies.map((s,i)=>s&&s.name&&String(s.name).trim()?String(s.name
 // = kept rows - p. (3) Random-effects covariance between rows of one study: tau2 * 0.5 * sum over shared arms of
 // sign_a(t) sign_b(t) (Rre). Until 2026-11-14: the TE/seTE rows of a multi-arm study were independent, every
 // within-study pair got +tau2/2 whatever the signs, and Q, I2, the DL/PM moment equation and HKSJ used rows - p.
-const keep=Array(n).fill(true),Rre=Matrix.zeros(n,n);for(let i=0;i<n;i++)Rre[i][i]=1;
+const keep=Array(n).fill(true),Rre=Matrix.zeros(n,n);let multiArm=false;for(let i=0;i<n;i++)Rre[i][i]=1;
 const sgn=(s,t)=>String(s.treatment1)===t?1:String(s.treatment2)===t?-1:0;
 {const byId=new Map();studyIds.forEach((id,i)=>{if(!byId.has(id))byId.set(id,[]);byId.get(id).push(i)});
 byId.forEach(rows=>{if(rows.length<2)return;
-for(const a of rows)for(const b of rows){if(a===b)continue;let r=0;const sa=studies[a],sb=studies[b];[String(sa.treatment1),String(sa.treatment2)].forEach(t=>{r+=0.5*sgn(sa,t)*sgn(sb,t)});Rre[a][b]=r}
+const pk=i=>[String(studies[i].treatment1),String(studies[i].treatment2)].sort().join('|');
+// the same comparison twice under one study name (e.g. a bootstrap resample of rows) keeps the legacy +0.5
+for(const a of rows)for(const b of rows){if(a===b)continue;const sa=studies[a],sb=studies[b];if(pk(a)===pk(b)){Rre[a][b]=0.5;continue}multiArm=true;let r=0;[String(sa.treatment1),String(sa.treatment2)].forEach(t=>{r+=0.5*sgn(sa,t)*sgn(sb,t)});Rre[a][b]=r}
 const armSet=new Set();rows.forEach(i=>{armSet.add(String(studies[i].treatment1));armSet.add(String(studies[i].treatment2))});const arms=Array.from(armSet).sort(),k=arms.length;
 const pairs=new Set(rows.map(i=>[String(studies[i].treatment1),String(studies[i].treatment2)].sort().join('|')));
 if(k<3||rows.length!==k*(k-1)/2||pairs.size!==rows.length)return;
@@ -510,7 +512,7 @@ if(!hasCov){const S=rows.reduce((t,i)=>t+v[i],0);const va={};arms.forEach(t=>{le
 for(const a of rows)for(const b of rows){if(a===b)continue;let c=0;const sa=studies[a],sb=studies[b];[String(sa.treatment1),String(sa.treatment2)].forEach(t=>{c+=sgn(sa,t)*sgn(sb,t)*va[t]});V[a][b]=c}}
 rows.forEach(i=>{if(sgn(studies[i],arms[0])===0)keep[i]=false})})}
 const dfQ=keep.filter(Boolean).length-p;
-return{X,y,v,V,W:v.map(vi=>1/vi),treatments,n,p,studies,studyIds,keep,Rre,dfQ}},
+return{X,y,v,V,W:v.map(vi=>1/vi),treatments,n,p,studies,studyIds,keep,Rre,dfQ,multiArm}},
 fitGLS(matrices,tau2=0){const{X,y,V,n,p,studyIds}=matrices;const Sigma=Matrix.zeros(n,n);
 // V9-01: random-effects heterogeneity covariance — diag = τ²; off-diag = τ²/2
 // for contrasts from the same multi-arm trial (advanced-stats.md "Multi-arm
@@ -585,8 +587,9 @@ const step0=Math.max(tau2Est,v.reduce((a,b)=>a+b,0)/n);let ua=tau2Est,ub=tau2Est
 if(logLik(ub)>=critLL)return{lower:Math.max(0,lower),upper:Infinity,method:restricted?'REML':'ML'};
 for(let i=0;i<300&&ub-ua>1e-10*ub;i++){const m=(ua+ub)/2;if(logLik(m)<critLL)ub=m;else ua=m}
 return{lower:Math.max(0,lower),upper:ub,method:restricted?'REML':'ML'}},
-pauleMandel_CI(matrices,tau2Est,alpha=0.05){const{n,p}=matrices;const df=matrices.dfQ??(n-p);if(df<=0)return null;// generalised Q(tau2) of the consistency model (fitGLS: multi-arm covariance) on df.Q; until 2026-11-14 a diagonal-weight Q on rows - p
-const calcQ=t2=>{try{return this.fitGLS(matrices,t2).Q}catch{return Infinity}};const chi2L=Stats.qchisq(1-alpha/2,df),chi2U=Stats.qchisq(alpha/2,df);const find=(tgt,lo,hi)=>{for(let i=0;i<100;i++){const m=(lo+hi)/2,Q=calcQ(m);if(Math.abs(Q-tgt)<0.0001)return m;if(Q>tgt)lo=m;else hi=m}return(lo+hi)/2};return{lower:Math.max(0,find(chi2L,0,tau2Est*10+1)),upper:find(chi2U,tau2Est,tau2Est*20+5),method:'Q-profile'}},
+pauleMandel_CI(matrices,tau2Est,alpha=0.05){const{n,p}=matrices;const df=matrices.dfQ??(n-p);if(df<=0)return null;// with multi-arm studies the generalised Q(tau2) of the consistency model (fitGLS: multi-arm covariance) on df.Q;
+// two-arm networks keep the (identical, faster) diagonal-weight Q. Until 2026-11-14 the diagonal Q on rows - p always
+const{X,y,v}=matrices;const multi=!!matrices.multiArm;const calcQ=multi?(t2=>{try{return this.fitGLS(matrices,t2).Q}catch{return Infinity}}):(t2=>{const W=v.map(vi=>1/(vi+t2));const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}try{const beta=Matrix.solve(XtWX,XtWy);let Q=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X[i][j]*beta[j];Q+=W[i]*(y[i]-f)**2}return Q}catch{return Infinity}});const chi2L=Stats.qchisq(1-alpha/2,df),chi2U=Stats.qchisq(alpha/2,df);const find=(tgt,lo,hi)=>{for(let i=0;i<100;i++){const m=(lo+hi)/2,Q=calcQ(m);if(Math.abs(Q-tgt)<0.0001)return m;if(Q>tgt)lo=m;else hi=m}return(lo+hi)/2};return{lower:Math.max(0,find(chi2L,0,tau2Est*10+1)),upper:find(chi2U,tau2Est,tau2Est*20+5),method:'Q-profile'}},
 calcTreatmentEffects(matrices,tau2,correction='none',mkhFloor=2.0){const{n,p,treatments}=matrices;const fit=this.fitGLS(matrices,tau2);const beta=fit.beta,vcov=fit.vcov;const dfR=matrices.dfQ??(n-p);let correctionFactor=1,df=dfR;if(correction!=='none'&&dfR>0){const swr=Math.max(0,fit.Q);if(correction==='hksj'){correctionFactor=Math.max(1,swr/dfR)}else if(correction==='kr'){const krAdj=1+(swr-dfR)/(dfR+2);correctionFactor=Math.max(1,krAdj);df=Math.max(1,Math.floor(dfR/(1+0.5*(swr/dfR-1))))}else if(correction==='sj'){const H2=swr/dfR;correctionFactor=Math.max(1,H2*(dfR/(dfR-1)))}else if(correction==='mkh'){correctionFactor=Math.max(mkhFloor,swr/dfR)}}const confLevel=AppState.confLevel??0.95;const effects={};for(let j=0;j<p;j++){const t=treatments[j+1],se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,vcov[j][j])*correctionFactor);let critVal=getCritVal(confLevel);if(correction==='kr'&&df<30){critVal=Stats.qt(1-(1-confLevel)/2,df)}effects[t]={estimate:beta[j],se,ci_lower:beta[j]-critVal*se,ci_upper:beta[j]+critVal*se,pValue:2*(Stats.pnormU(Math.abs(beta[j]/se)))}}effects[treatments[0]]={estimate:0,se:0,ci_lower:0,ci_upper:0,pValue:1};return{beta,vcov,effects,correctionFactor,correctionMethod:correction,df}},
 addPredictionIntervals(effectsResult,tau2,matrices){// netmeta 3.7.0 (netmeta.R): df.Q <- res.c$df; if (df.Q >= 2) ci(TE.random, sqrt(seTE.random^2 + tau^2), level.predict, df.Q)
 // else NA. df.Q = sum over studies of (arms - 1) - (treatments - 1). Until 2026-11-14 this used df = n - p - 1
