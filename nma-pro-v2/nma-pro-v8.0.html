@@ -248,26 +248,42 @@ R netmeta (v3.2-0) Reference:
 <div class="loading-message" id="loadingMessage">Initializing...</div>
 </div>
 <input type="file" id="fileInput" style="display:none" accept=".json,.csv" aria-label="File Input">
+<script src="../shared/upper-tail.js"></script>
 <script>
 'use strict';
 const Stats={sum:a=>a.reduce((x,y)=>x+y,0),mean:a=>a.length?Stats.sum(a)/a.length:0,variance:a=>{const m=Stats.mean(a);return Stats.mean(a.map(x=>(x-m)**2))},sd:a=>Math.sqrt(Stats.variance(a)),median:a=>{const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2},quantile:(a,p)=>{const s=[...a].sort((x,y)=>x-y),i=p*(s.length-1),lo=Math.floor(i),hi=Math.ceil(i);return lo===hi?s[lo]:s[lo]*(hi-i)+s[hi]*(i-lo)},mad:a=>{const med=Stats.median(a);return Stats.median(a.map(x=>Math.abs(x-med)))*1.4826},
-pnorm(x){const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;const sign=x<0?-1:1,absX=Math.abs(x)/Math.SQRT2,t=1/(1+p*absX);return 0.5*(1+sign*(1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-absX*absX)))},
+// R pnorm = P(Z > -x) (shared/upper-tail.js). Was Abramowitz-Stegun 7.1.26: pnorm(-3) relative error 5e-5.
+pnorm(x){return AlmTail.pnormUpper(-x)},
 qnorm(p){if(p<=0)return-Infinity;if(p>=1)return Infinity;if(p===0.5)return 0;const a=[-39.69683028665376,220.9460984245205,-275.9285104469687,138.357751867269,-30.66479806614716,2.506628277459239],b=[-54.47609879822406,161.5858368580409,-155.6989798598866,66.80131188771972,-13.28068155288572],c=[-0.007784894002430293,-0.3223964580411365,-2.400758277161838,-2.549732539343734,4.374664141464968,2.938163982698783],d=[0.007784695709041462,0.3224671290700398,2.445134137142996,3.754408661907416];const pL=0.02425,pH=1-pL;let q,r;if(p<pL){q=Math.sqrt(-2*Math.log(p));return(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)}if(p<=pH){q=p-0.5;r=q*q;return(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1)}q=Math.sqrt(-2*Math.log(1-p));return-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)},
 rnorm:(m=0,s=1)=>m+s*Math.sqrt(-2*Math.log(MainRNG.random()))*Math.cos(2*Math.PI*MainRNG.random()),
 rgamma(shape,scale=1){if(shape<1)return Stats.rgamma(shape+1,scale)*Math.pow(MainRNG.random(),1/shape);const d=shape-1/3,c=1/Math.sqrt(9*d);let x,v;do{do{x=Stats.rnorm();v=1+c*x}while(v<=0);v=v*v*v;const u=MainRNG.random();if(u<1-0.0331*(x*x)*(x*x)||Math.log(u)<0.5*x*x+d*(1-v+Math.log(v)))return d*v*scale}while(true)},
-pchisq(x,df){if(x<=0)return 0;if(df>100){const z=Math.pow(x/df,1/3)-(1-2/(9*df));return Stats.pnorm(z/Math.sqrt(2/(9*df)))}return Stats.gammainc(df/2,x/2)},
-qchisq(p,df){if(p<=0)return 0;if(p>=1)return Infinity;let lo=0,hi=df*4;while(Stats.pchisq(hi,df)<p)hi*=2;for(let i=0;i<100;i++){const mid=(lo+hi)/2;if(Stats.pchisq(mid,df)<p)lo=mid;else hi=mid;if(Math.abs(hi-lo)<1e-8)break}return(lo+hi)/2},
-pt(t,df){const x=df/(df+t*t);return t<0?0.5*Stats.betainc(df/2,0.5,x):1-0.5*Stats.betainc(df/2,0.5,x)},
+// R pchisq: lower regularised gamma P(df/2, x/2) (shared/upper-tail.js). Was Wilson-Hilferty above df 100
+// (relative error 0.6 at the 1e-12 quantile for df 120) and a 200-term series below.
+pchisq(x,df){if(x!==x||!(df>0))return NaN;if(x<=0)return 0;return AlmTail._gammaPQ(df/2,x/2)[0]},
+// R qchisq: bisection on log x of the exact lower tail P (p <= 0.5) or upper tail Q (p > 0.5), so both small
+// quantiles and p near 1 keep relative precision. Was bisection to an absolute 1e-8: qchisq(1e-12, 1) = 3.7e-9
+// (R 1.57e-24).
+qchisq(p,df){if(p!==p||!(df>0))return NaN;if(p<=0)return 0;if(p>=1)return Infinity;return Stats._invTail(p<=0.5?p:1-p,p<=0.5,x=>AlmTail._gammaPQ(df/2,x/2)[p<=0.5?0:1])},
+// Root of tail(x) = q for x > 0 on log x; tail is the lower tail (increasing) if lower, else the upper tail
+// (decreasing). The bracket doubles out from x = 1, then 1100 halvings at most (each halves the log-x interval).
+_invTail(q,lower,tail){const below=x=>lower?tail(x)<q:tail(x)>q;let lo,hi;if(below(1)){lo=0;hi=1;while(hi<709&&below(Math.exp(hi))){lo=hi;hi=Math.min(709,2*hi)}}else{hi=0;lo=-1;while(lo>-745&&!below(Math.exp(lo))){hi=lo;lo=Math.max(-745,2*lo)}}for(let i=0;i<1100;i++){const m=0.5*(lo+hi);if(m===lo||m===hi)break;if(below(Math.exp(m)))lo=m;else hi=m}return Math.exp(0.5*(lo+hi))},
+// R pt = P(T > -t) (shared/upper-tail.js).
+pt(t,df){return AlmTail.ptUpper(-t,df)},
 // Upper tails computed directly (R lower.tail=FALSE), never as 1-CDF: 1-CDF cancels to 0 once the CDF rounds to 1.
 // gammaincU = Q(a,x) by the modified-Lentz continued fraction (NR gcf); the fraction previously inside gammainc was mis-specified (pchisq(14.01,12) gave -0.437).
 gammaincU(a,x){let b=x+1-a,c=1e300,d=1/b,h=d;for(let i=1;i<100000;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-15)break}return Math.exp(-x+a*Math.log(x)-Stats.lgamma(a))*h},
 pchisqU(x,df){if(!(df>0)||x!==x)return NaN;if(x<=0)return 1;if(x===Infinity)return 0;const a=df/2,y=x/2;if(y>=a+1)return Stats.gammaincU(a,y);let sum=1/a,term=1/a;for(let n=1;n<100000;n++){term*=y/(a+n);sum+=term;if(Math.abs(term)<1e-16*Math.abs(sum))break}return 1-sum*Math.exp(-y+a*Math.log(y)-Stats.lgamma(a))},
 pnormU(z){if(z!==z)return NaN;if(z===Infinity)return 0;if(z===-Infinity)return 1;const q=0.5*Stats.pchisqU(z*z,1);return z>=0?q:1-q},
 ptU(t,df){if(t!==t||!(df>0))return NaN;if(df===Infinity)return Stats.pnormU(t);const h=0.5*Stats.betainc(df/2,0.5,df/(df+t*t));return t>=0?h:1-h},
-qt(p,df){if(p<=0||p>=1)return p<=0?-Infinity:Infinity;if(df===1)return Math.tan(Math.PI*(p-0.5));if(df===2)return 2*Math.sqrt(p*(1-p))/(2*p-1);let lo=-10,hi=10;while(Stats.pt(hi,df)<p)hi*=2;while(Stats.pt(lo,df)>p)lo*=2;for(let i=0;i<50;i++){const mid=(lo+hi)/2;if(Stats.pt(mid,df)<p)lo=mid;else hi=mid;if(Math.abs(hi-lo)<1e-8)break}return(lo+hi)/2},
+// R qt: |t| solves P(T > |t|) = min(p, 1 - p) on the exact upper tail (shared/upper-tail.js), so tails keep
+// relative precision. Was: df = 2 by 2 sqrt(p(1-p))/(2p-1), not the t(2) quantile (qt(0.975, 2) = 0.329, R 4.303;
+// qt(0.5, 2) = Infinity), and otherwise bisection on [-10, 10] to an absolute 1e-8 (sign lost at df = 1e6).
+qt(p,df){if(p!==p||!(df>0))return NaN;if(p<=0)return -Infinity;if(p>=1)return Infinity;if(p===0.5)return 0;const t=Stats._invTail(p<0.5?p:1-p,false,x=>AlmTail.ptUpper(x,df));return p<0.5?-t:t},
 lgamma(x){const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];if(x<0.5)return Math.log(Math.PI/Math.sin(Math.PI*x))-Stats.lgamma(1-x);x-=1;let a=c[0];for(let i=1;i<9;i++)a+=c[i]/(x+i);const t=x+7.5;return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a)},
 gammainc(a,x){if(x<=0)return 0;const EPS=1e-14,MAX=200;if(x<a+1){let sum=1/a,term=1/a;for(let n=1;n<MAX;n++){term*=x/(a+n);sum+=term;if(Math.abs(term)<EPS*Math.abs(sum))break}return sum*Math.exp(-x+a*Math.log(x)-Stats.lgamma(a))}return 1-Stats.gammaincU(a,x)},
-betainc(a,b,x){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(Stats.lgamma(a+b)-Stats.lgamma(a)-Stats.lgamma(b)+a*Math.log(x)+b*Math.log(1-x));if(x<(a+1)/(a+b+2))return bt*Stats.betacf(a,b,x)/a;return 1-bt*Stats.betacf(b,a,1-x)/b},
+// Regularised incomplete beta, R pbeta(x, a, b) (shared/upper-tail.js; its continued fraction runs O(sqrt(a + b))
+// terms, this one stopped at 200, which is short for df in the millions).
+betainc(a,b,x){if(!(x>0))return 0;if(x>=1)return 1;return AlmTail._ibetaXY(a,b,x,1-x,Math.log(x),Math.log1p(-x))},
 betacf(a,b,x){const MAX=200,EPS=1e-14;let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;if(Math.abs(d)<1e-30)d=1e-30;d=1/d;let h=d;for(let m=1;m<=MAX;m++){const m2=2*m;let aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<1e-30)d=1e-30;c=1+aa/c;if(Math.abs(c)<1e-30)c=1e-30;d=1/d;h*=d*c;aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<1e-30)d=1e-30;c=1+aa/c;if(Math.abs(c)<1e-30)c=1e-30;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<EPS)break}return h},
 seq:(from,to,len)=>Array.from({length:len},(_,i)=>from+i*(to-from)/(len-1)),
 ess(x){const n=x.length,m=Stats.mean(x),v=Stats.variance(x);if(v===0)return n;let rho=0,sum=0;for(let k=1;k<Math.min(n-1,100);k++){let s=0;for(let i=0;i<n-k;i++)s+=(x[i]-m)*(x[i+k]-m);const r=s/(n*v);if(r<0)break;sum+=r}return n/(1+2*sum)}};
@@ -292,15 +308,9 @@ function getCritVal(confLevel, df) {
   if (df && df < 120) {
     return typeof Stats !== 'undefined' && Stats.qt ? Stats.qt(1 - alpha/2, df) : 1.96;
   }
-  if (confLevel === 0.95) return 1.959964;
-  if (confLevel === 0.99) return 2.575829;
-  if (confLevel === 0.90) return 1.644854;
-  var p = (1 + confLevel) / 2;
-  var a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
-  var b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
-  var q, r;
-  if (p <= 0.97575) { q = p - 0.5; r = q*q; return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1); }
-  return 1.96;
+  // qnorm((1 + level) / 2) for every level. Was 6-decimal constants for 0.90 / 0.95 / 0.99 (2.575829: relative
+  // error 1.2e-7) and, for any other level with (1 + level) / 2 > 0.97575, 1.96 (getCritVal(0.98) = 1.96, R 2.326).
+  return Stats.qnorm((1 + confLevel) / 2);
 }
 
 // ============ SEEDED PRNG FOR MAIN THREAD ============
@@ -415,7 +425,7 @@ computeRankingSeed(studies,options={}){const fp=this.computeAnalysisFingerprint(
 const WORKER_CODE=`'use strict';
 const RNG={state:new BigUint64Array(4),seed(s=Date.now()){let x=BigInt(s);for(let i=0;i<4;i++){x=(x+0x9e3779b97f4a7c15n)&0xFFFFFFFFFFFFFFFFn;let z=x;z=((z^(z>>30n))*0xbf58476d1ce4e5b9n)&0xFFFFFFFFFFFFFFFFn;z=((z^(z>>27n))*0x94d049bb133111ebn)&0xFFFFFFFFFFFFFFFFn;this.state[i]=z^(z>>31n)}},rotl(x,k){return((x<<k)|(x>>(64n-k)))&0xFFFFFFFFFFFFFFFFn},next(){const s=this.state,result=this.rotl(s[0]+s[3],23n)+s[0],t=(s[1]<<17n)&0xFFFFFFFFFFFFFFFFn;s[2]^=s[0];s[3]^=s[1];s[1]^=s[2];s[0]^=s[3];s[2]^=t;s[3]=this.rotl(s[3],45n);return result},random(){return Number(this.next()&0x1FFFFFFFFFFFFFn)/0x20000000000000},rnorm(m=0,sd=1){let u,v,s;do{u=this.random()*2-1;v=this.random()*2-1;s=u*u+v*v}while(s>=1||s===0);return m+sd*u*Math.sqrt(-2*Math.log(s)/s)}};
 RNG.seed();
-const Stats={sum(a){let s=0;for(let i=0;i<a.length;i++)s+=a[i];return s},mean(a){return a.length?this.sum(a)/a.length:0},pnorm(x){const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911,sign=x<0?-1:1,absX=Math.abs(x)*0.7071067811865476,t=1/(1+p*absX);return 0.5*(1+sign*(1-(a1*t+a2*t*t+a3*t*t*t+a4*t*t*t*t+a5*t*t*t*t*t)*Math.exp(-absX*absX)))},pnormU(z){if(z!==z)return NaN;if(z===Infinity)return 0;if(z===-Infinity)return 1;const y=z*z/2,a=0.5,lp=-y+a*Math.log(y)-0.5723649429247001;let q;if(y===Infinity)q=0;else if(y===0)q=1;else if(y<a+1){let ap=a,sum=1/a,del=sum;for(let n=0;n<300;n++){ap+=1;del*=y/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-16)break}q=1-sum*Math.exp(lp)}else{let b=y+1-a,c=1e300,d=1/b,h=d;for(let i=1;i<300;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-15)break}q=Math.exp(lp)*h}q*=0.5;return z>=0?q:1-q}};
+const Stats={sum(a){let s=0;for(let i=0;i<a.length;i++)s+=a[i];return s},mean(a){return a.length?this.sum(a)/a.length:0},pnorm(x){return Stats.pnormU(-x)},pnormU(z){if(z!==z)return NaN;if(z===Infinity)return 0;if(z===-Infinity)return 1;const y=z*z/2,a=0.5,lp=-y+a*Math.log(y)-0.5723649429247001;let q;if(y===Infinity)q=0;else if(y===0)q=1;else if(y<a+1){let ap=a,sum=1/a,del=sum;for(let n=0;n<300;n++){ap+=1;del*=y/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-16)break}q=1-sum*Math.exp(lp)}else{let b=y+1-a,c=1e300,d=1/b,h=d;for(let i=1;i<300;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-15)break}q=Math.exp(lp)*h}q*=0.5;return z>=0?q:1-q}};
 const Matrix={zeros(m,n){return{data:new Float64Array(m*n),rows:m,cols:n}},cholesky(A){const n=A.rows,L=this.zeros(n,n);for(let i=0;i<n;i++)for(let j=0;j<=i;j++){let sum=0;for(let k=0;k<j;k++)sum+=L.data[i*n+k]*L.data[j*n+k];L.data[i*n+j]=i===j?Math.sqrt(Math.max(1e-14,A.data[i*n+i]-sum)):(A.data[i*n+j]-sum)/L.data[j*n+j]}return L},lu(A){const n=A.rows,L=this.zeros(n,n),U=this.zeros(n,n),P=new Int32Array(n);U.data.set(A.data);for(let i=0;i<n;i++)P[i]=i;for(let k=0;k<n;k++){let maxV=Math.abs(U.data[k*n+k]),maxR=k;for(let i=k+1;i<n;i++){const v=Math.abs(U.data[i*n+k]);if(v>maxV){maxV=v;maxR=i}}if(maxR!==k){for(let j=0;j<n;j++){let t=U.data[k*n+j];U.data[k*n+j]=U.data[maxR*n+j];U.data[maxR*n+j]=t}let t=P[k];P[k]=P[maxR];P[maxR]=t}L.data[k*n+k]=1;const pivot=U.data[k*n+k];if(Math.abs(pivot)<1e-14)continue;for(let i=k+1;i<n;i++){const f=U.data[i*n+k]/pivot;L.data[i*n+k]=f;for(let j=k;j<n;j++)U.data[i*n+j]-=f*U.data[k*n+j]}}return{L,U,P}},solve(A,b){const n=A.rows,{L,U,P}=this.lu(A),pb=new Float64Array(n);for(let i=0;i<n;i++)pb[i]=b[P[i]];const y=new Float64Array(n);for(let i=0;i<n;i++){let sum=pb[i];for(let j=0;j<i;j++)sum-=L.data[i*n+j]*y[j];y[i]=sum}const x=new Float64Array(n);for(let i=n-1;i>=0;i--){let sum=y[i];for(let j=i+1;j<n;j++)sum-=U.data[i*n+j]*x[j];x[i]=Math.abs(U.data[i*n+i])>1e-14?sum/U.data[i*n+i]:0}return x},inverse(A){const n=A.rows,inv=this.zeros(n,n),ei=new Float64Array(n);for(let j=0;j<n;j++){ei.fill(0);ei[j]=1;const col=this.solve(A,ei);for(let i=0;i<n;i++)inv.data[i*n+j]=col[i]}return inv}};
 const Ranking={_buf:null,calcRankProbs(est,vcov,hksj,lower,nSim=1500){const n=est.length,p=n-1;if(!this._buf||this._buf.n!==n)this._buf={n,z:new Float64Array(p),sim:new Float64Array(n),idx:new Int32Array(n),cnt:new Float64Array(n*n)};const buf=this._buf;buf.cnt.fill(0);const scaled=Matrix.zeros(p,p);for(let i=0;i<p*p;i++)scaled.data[i]=vcov.data[i]*hksj;const L=Matrix.cholesky(scaled);for(let sim=0;sim<nSim;sim++){for(let i=0;i<p;i++)buf.z[i]=RNG.rnorm();buf.sim[0]=0;for(let i=0;i<p;i++){let d=0;for(let j=0;j<=i;j++)d+=L.data[i*p+j]*buf.z[j];buf.sim[i+1]=est[i+1]+d}for(let i=0;i<n;i++)buf.idx[i]=i;for(let i=1;i<n;i++){const key=buf.idx[i],kv=buf.sim[key];let j=i-1;if(lower){while(j>=0&&buf.sim[buf.idx[j]]>kv){buf.idx[j+1]=buf.idx[j];j--}}else{while(j>=0&&buf.sim[buf.idx[j]]<kv){buf.idx[j+1]=buf.idx[j];j--}}buf.idx[j+1]=key}for(let r=0;r<n;r++)buf.cnt[buf.idx[r]*n+r]++}const inv=1/nSim;for(let i=0;i<n*n;i++)buf.cnt[i]*=inv;return new Float64Array(buf.cnt)},calcPScores(est,vcov,hksj,lower,treatments){const n=treatments.length,p=n-1,scores={};for(let i=0;i<n;i++){let sum=0,cnt=0;for(let j=0;j<n;j++){if(i===j)continue;const diff=est[i]-est[j],idxI=i-1,idxJ=j-1;let vd;if(idxI<0)vd=vcov.data[idxJ*p+idxJ];else if(idxJ<0)vd=vcov.data[idxI*p+idxI];else vd=vcov.data[idxI*p+idxI]+vcov.data[idxJ*p+idxJ]-2*vcov.data[idxI*p+idxJ];const se=Math.sqrt(Math.max(0.0001,vd)*hksj),z=diff/se;sum+=lower?Stats.pnorm(-z):Stats.pnorm(z);cnt++}scores[treatments[i]]=cnt>0?sum/cnt:0.5}return scores}};
 const NMA={calcEffects(studies,em){return studies.map(s=>{let yi,vi;if(['OR','RR','HR'].includes(em)){const a=(s.events1||0)+0.5,b=(s.n1-(s.events1||0))+0.5,c=(s.events2||0)+0.5,d=(s.n2-(s.events2||0))+0.5;if(em==='OR'||em==='HR'){yi=Math.log((a*d)/(b*c));vi=1/a+1/b+1/c+1/d}else{yi=Math.log((a/(a+b))/(c/(c+d)));vi=1/a-1/(a+b)+1/c-1/(c+d)}}else if(em==='RD'){const p1=(s.events1||0)/s.n1,p2=(s.events2||0)/s.n2;yi=p1-p2;vi=p1*(1-p1)/s.n1+p2*(1-p2)/s.n2+0.0001}else{yi=s.yi||0;vi=s.vi||1}return{...s,yi,vi,se:Math.sqrt(vi)}})},buildMatrices(studies,ref){const tSet=new Set();studies.forEach(s=>{tSet.add(s.treatment1);tSet.add(s.treatment2)});const treatments=Array.from(tSet).sort(),refIdx=treatments.indexOf(ref);if(refIdx>0){treatments.splice(refIdx,1);treatments.unshift(ref)}const n=studies.length,p=treatments.length-1,X=Matrix.zeros(n,p),y=new Float64Array(n),v=new Float64Array(n);studies.forEach((s,i)=>{y[i]=s.yi;v[i]=s.vi;const i1=treatments.indexOf(s.treatment1)-1,i2=treatments.indexOf(s.treatment2)-1;if(i1>=0)X.data[i*p+i1]=1;if(i2>=0)X.data[i*p+i2]=-1});const W=new Float64Array(n);for(let i=0;i<n;i++)W[i]=1/v[i];return{X,y,v,W,treatments,n,p}},estimateTau2(mat,method){const{X,y,W,v,n,p}=mat;if(method==='FE')return{tau2:0};const XtWX=Matrix.zeros(p,p),XtWy=new Float64Array(p);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X.data[i*p+j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX.data[j*p+k]+=X.data[i*p+j]*W[i]*X.data[i*p+k]}const beta=Matrix.solve(XtWX,XtWy);let Q=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X.data[i*p+j]*beta[j];Q+=W[i]*(y[i]-f)**2}const df=n-p;if(method==='DL'){let sW=0,sW2=0;for(let i=0;i<n;i++){sW+=W[i];sW2+=W[i]**2}return{tau2:Math.max(0,(Q-df)/(sW-sW2/sW)),Q,df}}let tau2=Math.max(0,(Q-df)/Stats.sum(Array.from(W)));for(let iter=0;iter<100;iter++){const Ws=new Float64Array(n);for(let i=0;i<n;i++)Ws[i]=1/(v[i]+tau2);const X2=Matrix.zeros(p,p),Xy2=new Float64Array(p);for(let i=0;i<n;i++)for(let j=0;j<p;j++){Xy2[j]+=X.data[i*p+j]*Ws[i]*y[i];for(let k=0;k<p;k++)X2.data[j*p+k]+=X.data[i*p+j]*Ws[i]*X.data[i*p+k]}const b2=Matrix.solve(X2,Xy2);let sr=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X.data[i*p+j]*b2[j];sr+=Ws[i]*(y[i]-f)**2}const newT=Math.max(0,tau2*(sr/df));if(Math.abs(newT-tau2)<1e-8)break;tau2=newT}return{tau2,Q,df}},calcEffectsFromMatrices(mat,tau2,hksj){const{X,y,v,n,p,treatments}=mat,W=new Float64Array(n);for(let i=0;i<n;i++)W[i]=1/(v[i]+tau2);const XtWX=Matrix.zeros(p,p),XtWy=new Float64Array(p);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X.data[i*p+j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX.data[j*p+k]+=X.data[i*p+j]*W[i]*X.data[i*p+k]}const beta=Matrix.solve(XtWX,XtWy),vcov=Matrix.inverse(XtWX);let hF=1;if(hksj&&n>p){let swr=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X.data[i*p+j]*beta[j];swr+=W[i]*(y[i]-f)**2}hF=Math.max(1,swr/(n-p))}const effects={};for(let j=0;j<p;j++){const t=treatments[j+1],se=Math.sqrt(vcov.data[j*p+j]*hF);effects[t]={estimate:beta[j],se,ci_lower:beta[j]-1.959964*se,ci_upper:beta[j]+1.959964*se,pValue:2*(Stats.pnormU(Math.abs(beta[j]/se)))}}effects[treatments[0]]={estimate:0,se:0,ci_lower:0,ci_upper:0,pValue:1};return{beta:Array.from(beta),vcov,effects,hksjFactor:hF}},analyze(studies,opts={}){const{reference,effectMeasure='OR',estimator='REML',hksj=true}=opts;const proc=this.calcEffects(studies,effectMeasure);const mat=this.buildMatrices(proc,reference);const tau2R=this.estimateTau2(mat,estimator);const eff=this.calcEffectsFromMatrices(mat,tau2R.tau2,hksj);const Q=tau2R.Q,df=tau2R.df,I2=Math.max(0,((Q-df)/Q)*100);return{effects:eff,heterogeneity:{tau2:tau2R.tau2,tau:Math.sqrt(tau2R.tau2),Q,df,I2,H2:df>0?Q/df:1},tau2:tau2R.tau2,treatments:mat.treatments,reference,processed:proc,matrices:mat}}};
@@ -3496,12 +3506,11 @@ return{applicable:true,model:'exchangeable',classResults,referenceClass:classMap
 }
 };
 
+// erf(x) = 1 - 2 P(Z > x sqrt 2). Was Abramowitz-Stegun 7.1.26 (absolute error 1.5e-7).
 function erfApprox(x){
-const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
-const sign=x<0?-1:1;x=Math.abs(x);
-const t=1/(1+p*x);
-const y=1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
-return sign*y;
+if(x!==x)return NaN;
+const q=2*Stats.pnormU(Math.abs(x)*Math.SQRT2);
+return x<0?q-1:1-q;
 }
 
 const SurvivalNMA={
@@ -3543,13 +3552,13 @@ return result;
 survivalFunctions:{
 weibull(t,shape,scale){return Math.exp(-Math.pow(t/scale,shape));},
 gompertz(t,shape,scale){if(Math.abs(shape)<1e-10)return Math.exp(-scale*t);return Math.exp(-(scale/shape)*(Math.exp(shape*t)-1));},
-lognormal(t,mu,sigma){if(t<=0)return 1;const z=(Math.log(t)-mu)/sigma;return 1-0.5*(1+erfApprox(z/Math.SQRT2));},
+lognormal(t,mu,sigma){if(t<=0)return 1;const z=(Math.log(t)-mu)/sigma;return Stats.pnormU(z);},
 loglogistic(t,shape,scale){return 1/(1+Math.pow(t/scale,shape));}
 },
 hazardFunctions:{
 weibull(t,shape,scale){return(shape/scale)*Math.pow(t/scale,shape-1);},
 gompertz(t,shape,scale){return scale*Math.exp(shape*t);},
-lognormal(t,mu,sigma){if(t<=0)return 0;const z=(Math.log(t)-mu)/sigma;const phi=Math.exp(-0.5*z*z)/Math.sqrt(2*Math.PI)/sigma/t;const S=1-0.5*(1+erfApprox(z/Math.SQRT2));return S>0?phi/S:0;},
+lognormal(t,mu,sigma){if(t<=0)return 0;const z=(Math.log(t)-mu)/sigma;const phi=Math.exp(-0.5*z*z)/Math.sqrt(2*Math.PI)/sigma/t;const S=Stats.pnormU(z);return S>0?phi/S:0;},
 loglogistic(t,shape,scale){const x=Math.pow(t/scale,shape);return(shape/scale)*Math.pow(t/scale,shape-1)/(1+x);}
 },
 computeRMST(survFn,param1,param2,tMax,nPoints){
