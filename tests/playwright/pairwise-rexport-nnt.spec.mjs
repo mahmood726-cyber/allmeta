@@ -79,6 +79,23 @@ for (const [demo, label] of [['SGLT2_ACM', 'OR'], ['BINARY_RR', 'RR']]) {
   });
 }
 
+test('RR: a baseline risk with p0 x RR above 1 gives no NNT for that row', async ({ page }) => {
+  const g = await rcode(page, 'BINARY_RR');
+  const sec = nntSection(g.code);
+  expect(sec).toContain('risk_t[risk_t > 1] <- NA');
+});
+
+test('a missing control-event count is not taken as zero: p0 is left for the user', async ({ page }) => {
+  await rcode(page, 'SGLT2_ACM');
+  const sec = await page.evaluate(() => {
+    const e = AppState.results;
+    const studies = e.studies.map((s, i) => i === 0 ? { ...s, events_c: null } : s);
+    return generateRCode({ ...e, studies }, {});
+  }).then(nntSection);
+  expect(sec).toContain('p0 <- NA');
+  expect(sec).not.toMatch(/p0 <- \d+ \/ \d+/);
+});
+
 test('BINARY_RD: the NNT is 1 / |RD| with no baseline risk', async ({ page }) => {
   const g = await rcode(page, 'BINARY_RD');
   const sec = nntSection(g.code);

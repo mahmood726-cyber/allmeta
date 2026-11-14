@@ -120,6 +120,13 @@ test('an unusable MCID is refused with the reason, and a changed MCID re-runs th
   g = await run(page, 'SGLT2_ACM', 'abc');
   expect(g.verdict.verdict).toBe('NOT ASSESSED');
   expect(g.verdict.reason).toMatch(/not a number/i);
+  // markup typed as the MCID is not echoed into the GRADE reason / decision log (both are innerHTML)
+  const dialogs = [];
+  page.on('dialog', d => dialogs.push(d.message()));
+  g = await run(page, 'SGLT2_ACM', '<img src=x onerror=alert(7)>');
+  expect(g.verdict.verdict).toBe('NOT ASSESSED');
+  expect(await page.evaluate(() => document.querySelectorAll('img[src="x"]').length)).toBe(0);
+  expect(dialogs).toEqual([]);
   g = await run(page, 'BP_REDUCTION', '0');
   expect(g.verdict.verdict).toBe('NOT ASSESSED');
   // change the MCID after the run: the verdict follows it without another Run

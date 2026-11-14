@@ -8473,11 +8473,11 @@ function rExportNNTSection(e) {
   if ("RD" === m) return head + "# NNT = 1 / |RD|; RD = risk(treatment) - risk(control), so ARR = -RD (> 0: fewer events with treatment).\n" +
     tab(null, "arr <- -est\n");
   if ("OR" === m || "RR" === m) {
-    const st = e.studies || [], ok = st.length > 0 && st.every(s => isFinite(s.events_c) && s.n_c > 0),
+    const st = e.studies || [], ok = st.length > 0 && st.every(s => Number.isFinite(s.events_c) && s.events_c >= 0 && Number.isFinite(s.n_c) && s.n_c > 0),
       ec = ok ? st.reduce((a, s) => a + s.events_c, 0) : 0, nc = ok ? st.reduce((a, s) => a + s.n_c, 0) : 0,
       p0 = ok ? `# p0: pooled control-group risk of the included studies (control events / control participants).\n# Replace it with the baseline risk of the population the NNT is for, if that differs.\np0 <- ${ec} / ${nc}\n` :
         "# p0: the control-group (baseline) risk of the population the NNT is for. These data have no control-arm\n# counts, so enter it here (e.g. p0 <- 0.10); the NNT is not computed while it is NA.\np0 <- NA\n",
-      rt = "OR" === m ? "risk_t <- ratio * p0 / (1 - p0 + ratio * p0)   # risk under treatment implied by the OR at p0\n" : "risk_t <- p0 * ratio   # risk under treatment implied by the RR at p0\n";
+      rt = "OR" === m ? "risk_t <- ratio * p0 / (1 - p0 + ratio * p0)   # risk under treatment implied by the OR at p0\n" : "risk_t <- p0 * ratio   # risk under treatment implied by the RR at p0\nif (any(risk_t > 1)) cat(\"p0 x RR exceeds 1 for some rows: that baseline risk is not compatible with the RR, so no NNT there\\n\")\nrisk_t[risk_t > 1] <- NA\n";
     return head + `# NNT from the pooled ${m} at a baseline risk p0 (ARR = p0 - risk under treatment; > 0: fewer events).\n${p0}` +
       `if (is.na(p0)) {\n  cat("NNT not computed: no baseline risk p0 given\\n")\n} else {\ncat("Baseline risk p0:", round(p0, 5), "\\n")\n` +
       tab(m, `ratio <- exp(est)\n${rt}arr <- p0 - risk_t\n`) + "}\n\n";
@@ -14557,7 +14557,7 @@ function truthCertMCID(measure) {
   const need = ratio ? `an MCID on the scale of the ${m} (a ratio such as 0.90; this page has no fixed one)` : `an MCID on the scale of the ${m} (a difference in its units; this page has no fixed one)`;
   if (raw === "") return no(`needs ${need}. Enter it in the Data tab.`);
   const x = Number(raw.replace(",", "."));
-  if (!isFinite(x)) return no(`the MCID "${raw}" is not a number; it needs ${need}.`);
+  if (!isFinite(x)) return no(`the MCID entered is not a number; it needs ${need}.`);   // raw text not echoed: reasons reach innerHTML
   if (ratio && !(x > 0 && x !== 1)) return no(`an MCID for the ${m} is a ratio greater than 0 and different from 1 (e.g. 0.90); got ${raw}.`);
   if (diff && !(x !== 0)) return no(`an MCID of 0 is not a clinically important difference; it needs ${need}.`);
   return { delta: ratio ? Math.abs(Math.log(x)) : Math.abs(x), value: raw, measure: m, ratio, reason: null };

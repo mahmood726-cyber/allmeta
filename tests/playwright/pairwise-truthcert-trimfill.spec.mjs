@@ -10,6 +10,10 @@ import { fileURLToPath } from 'url';
 // (yi[], vi[], side, estimator, maxIter, tau2Method) -- so it threw on every run, the error was swallowed
 // and the verdict always carried an empty trim-and-fill ({}); the verdict tab's Trim-and-Fill section was
 // never shown. Same defect in the Pairwise AI bundle and in Truthcert1/app.min.js.
+// Same class, same function: breakdownPoint(studies, results) was given the results object, which has no
+// theta or CI (they are in results.pooled), so it always returned "Effect already inconclusive" with
+// fractionNull 0 -- the "Breakdown Robustness" ledger entry was always red and "Low breakdown point" always
+// added to the severity score.
 // Reference: Pairwiseai/tests/bias_metafor521.json (R 4.6.0, metafor 5.2.1; dat.bcg, log RR).
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -54,7 +58,9 @@ for (const [name, url] of PAGES) {
     const got = await page.evaluate(() => {
       const tf = AppState.truthcert.results.trimAndFill || {};
       const box = document.getElementById('trimFillContainer');
-      return { yi: AppState.results.yi, measure: AppState.results.measure, tf,
+      const bp = AppState.truthcert.results.breakdownPoint, P = AppState.results.pooled;
+      return { yi: AppState.results.yi, measure: AppState.results.measure, tf, bp,
+        ciExcludesNull: P.ci_lower > 0 || P.ci_upper < 0,
         shown: !!box && box.style.display !== 'none', text: (document.getElementById('trimFillResults') || {}).innerText || '' };
     });
     expect(got.measure).toBe('RR');
@@ -69,6 +75,10 @@ for (const [name, url] of PAGES) {
     expect(got.shown, 'the verdict tab shows its trim-and-fill').toBe(true);
     expect(got.text).toContain(`${r.k0} stud`);
     expect(got.text).toContain(r.side);
+    // breakdown point of the pooled estimate (dat.bcg: CI excludes no effect, so it is not "already inconclusive")
+    expect(got.ciExcludesNull).toBe(true);
+    expect(got.bp.reason, 'breakdown point read the pooled estimate').not.toBe('Effect already inconclusive');
+    expect(got.bp.fractionNull).toBeGreaterThan(0);
     expect(errors).toEqual([]);
   });
 }
