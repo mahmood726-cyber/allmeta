@@ -113,7 +113,10 @@
         const parts = l.split(/,/).map(s => s.trim());
         const te = parseFloat(parts[0]), se = parseFloat(parts[1]), mod = parseFloat(parts[2]);
         if (![te, se, mod].every(Number.isFinite) || se <= 0) return null;
-        return { te, se, mod, label: parts[3] || `S${i + 1}` };
+        // The label is everything after the third comma, so a label may itself contain commas
+        // ("Smith, 2010"); it used to be cut at its first comma.
+        const label = l.split(",").slice(3).join(",").trim();
+        return { te, se, mod, label: label || `S${i + 1}` };
       }).filter(Boolean);
     }
 
@@ -189,6 +192,8 @@
       const rows = parse(document.getElementById("src").value);
       // Lane fix556: a refused or in-progress run has no analysed set to sign or send.
       _analysedRows = null;
+      // ... and no result to export: the previous run's summary used to stay in __almLastMetaregGosh.
+      _lastMetaregGosh = null;
       const minK = parseInt(document.getElementById("min-k").value, 10) || 4;
       const msg = document.getElementById("m-n");
       if (rows.length < 3) { msg.textContent = "Need at least 3 studies."; return; }
@@ -308,7 +313,11 @@
           return;
         }
         const ta = document.getElementById("src");
-        ta.value = usable.map(s => [s.est, s.se, s.moderator, s.label].join(", ")).join("\n");
+        // One line per study: a newline inside a label would split it into two lines (or, followed by
+        // numbers, add a study that is not on the bus). Commas are kept: parse() reads the label as
+        // everything after the third comma.
+        const oneLine = v => String(v == null ? "" : v).replace(/[\r\n]+/g, " ").trim();
+        ta.value = usable.map(s => [s.est, s.se, s.moderator, oneLine(s.label)].join(", ")).join("\n");
         ta.dispatchEvent(new Event("input", { bubbles: true }));
         if (usable.length < studies.length && window.Toast) {
           Toast.show((studies.length - usable.length) + " shared studies have no moderator and were not loaded.", "warn");
