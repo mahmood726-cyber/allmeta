@@ -11,7 +11,7 @@ Landing a stack of PRs without a checkout, a rebase or a force push.
 
 ## Steps
 
-1. Fetch, then triage. `ahead_main == 0` means the head is already in main: close it as superseded.
+1. Fetch, then triage. `ahead_main == 0` does **not** prove the content is on main: a merge can make commits ancestors and still drop them. Before closing anything as superseded, show the PR's added lines or test names on main.
 2. Review the candidates. Green CI is necessary, not sufficient.
 3. `train.py`, push the branch, and open a **draft PR** from it. A branch push alone runs only `plus-pixels`; the other suites need `pull_request`.
 4. When every check is green, fast-forward main to the tip. GitHub marks each contained PR merged.
