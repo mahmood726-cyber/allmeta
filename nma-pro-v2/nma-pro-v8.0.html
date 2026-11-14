@@ -293,6 +293,9 @@ ess(x){const n=x.length,m=Stats.mean(x),v=Stats.variance(x);if(v===0)return n;le
 // proportions; the variance adds 0.5 to every cell of a study with a zero cell, and nothing otherwise. Until
 // 2026-11-14 every RD variance here had 0.0001 added (and a double-zero study got variance 1e-4 instead of
 // metabin's 0.5-corrected value).
+// A reported SE as given (0 is the reference row's SE); the 0.01 fallback only when it is missing or not a number.
+// Until 2026-11-14 these modules used max(0.01, se), so every SE below 0.01 became 0.0100 (and the reference 0.01).
+function seOrMissing(x){const v=parseNumberInput(x);return Number.isFinite(v)&&v>=0?v:Math.sqrt(NMA_CONSTANTS.VARIANCE_FLOOR)}
 function rdVariance(e1,n1,e2,n2){const z=(e1===0||e1===n1||e2===0||e2===n2)?0.5:0,q1=(e1+z)/(n1+2*z),q2=(e2+z)/(n2+2*z);return q1*(1-q1)/(n1+2*z)+q2*(1-q2)/(n2+2*z)}
 const NMA_CONSTANTS={
 Z_95:1.96,                    // z-score for 95% CI
@@ -434,7 +437,7 @@ RNG.seed();
 const Stats={sum(a){let s=0;for(let i=0;i<a.length;i++)s+=a[i];return s},mean(a){return a.length?this.sum(a)/a.length:0},pnorm(x){return Stats.pnormU(-x)},pnormU(z){if(z!==z)return NaN;if(z===Infinity)return 0;if(z===-Infinity)return 1;const y=z*z/2,a=0.5,lp=-y+a*Math.log(y)-0.5723649429247001;let q;if(y===Infinity)q=0;else if(y===0)q=1;else if(y<a+1){let ap=a,sum=1/a,del=sum;for(let n=0;n<300;n++){ap+=1;del*=y/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-16)break}q=1-sum*Math.exp(lp)}else{let b=y+1-a,c=1e300,d=1/b,h=d;for(let i=1;i<300;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-15)break}q=Math.exp(lp)*h}q*=0.5;return z>=0?q:1-q}};
 const Matrix={zeros(m,n){return{data:new Float64Array(m*n),rows:m,cols:n}},cholesky(A){const n=A.rows,L=this.zeros(n,n);for(let i=0;i<n;i++)for(let j=0;j<=i;j++){let sum=0;for(let k=0;k<j;k++)sum+=L.data[i*n+k]*L.data[j*n+k];L.data[i*n+j]=i===j?Math.sqrt(Math.max(1e-14,A.data[i*n+i]-sum)):(A.data[i*n+j]-sum)/L.data[j*n+j]}return L},lu(A){const n=A.rows,L=this.zeros(n,n),U=this.zeros(n,n),P=new Int32Array(n);U.data.set(A.data);for(let i=0;i<n;i++)P[i]=i;for(let k=0;k<n;k++){let maxV=Math.abs(U.data[k*n+k]),maxR=k;for(let i=k+1;i<n;i++){const v=Math.abs(U.data[i*n+k]);if(v>maxV){maxV=v;maxR=i}}if(maxR!==k){for(let j=0;j<n;j++){let t=U.data[k*n+j];U.data[k*n+j]=U.data[maxR*n+j];U.data[maxR*n+j]=t}let t=P[k];P[k]=P[maxR];P[maxR]=t}L.data[k*n+k]=1;const pivot=U.data[k*n+k];if(Math.abs(pivot)<1e-14)continue;for(let i=k+1;i<n;i++){const f=U.data[i*n+k]/pivot;L.data[i*n+k]=f;for(let j=k;j<n;j++)U.data[i*n+j]-=f*U.data[k*n+j]}}return{L,U,P}},solve(A,b){const n=A.rows,{L,U,P}=this.lu(A),pb=new Float64Array(n);for(let i=0;i<n;i++)pb[i]=b[P[i]];const y=new Float64Array(n);for(let i=0;i<n;i++){let sum=pb[i];for(let j=0;j<i;j++)sum-=L.data[i*n+j]*y[j];y[i]=sum}const x=new Float64Array(n);for(let i=n-1;i>=0;i--){let sum=y[i];for(let j=i+1;j<n;j++)sum-=U.data[i*n+j]*x[j];x[i]=Math.abs(U.data[i*n+i])>1e-14?sum/U.data[i*n+i]:0}return x},inverse(A){const n=A.rows,inv=this.zeros(n,n),ei=new Float64Array(n);for(let j=0;j<n;j++){ei.fill(0);ei[j]=1;const col=this.solve(A,ei);for(let i=0;i<n;i++)inv.data[i*n+j]=col[i]}return inv}};
 const Ranking={_buf:null,calcRankProbs(est,vcov,hksj,lower,nSim=1500){const n=est.length,p=n-1;if(!this._buf||this._buf.n!==n)this._buf={n,z:new Float64Array(p),sim:new Float64Array(n),idx:new Int32Array(n),cnt:new Float64Array(n*n)};const buf=this._buf;buf.cnt.fill(0);const scaled=Matrix.zeros(p,p);for(let i=0;i<p*p;i++)scaled.data[i]=vcov.data[i]*hksj;const L=Matrix.cholesky(scaled);for(let sim=0;sim<nSim;sim++){for(let i=0;i<p;i++)buf.z[i]=RNG.rnorm();buf.sim[0]=0;for(let i=0;i<p;i++){let d=0;for(let j=0;j<=i;j++)d+=L.data[i*p+j]*buf.z[j];buf.sim[i+1]=est[i+1]+d}for(let i=0;i<n;i++)buf.idx[i]=i;for(let i=1;i<n;i++){const key=buf.idx[i],kv=buf.sim[key];let j=i-1;if(lower){while(j>=0&&buf.sim[buf.idx[j]]>kv){buf.idx[j+1]=buf.idx[j];j--}}else{while(j>=0&&buf.sim[buf.idx[j]]<kv){buf.idx[j+1]=buf.idx[j];j--}}buf.idx[j+1]=key}for(let r=0;r<n;r++)buf.cnt[buf.idx[r]*n+r]++}const inv=1/nSim;for(let i=0;i<n*n;i++)buf.cnt[i]*=inv;return new Float64Array(buf.cnt)},calcPScores(est,vcov,hksj,lower,treatments){const n=treatments.length,p=n-1,scores={};for(let i=0;i<n;i++){let sum=0,cnt=0;for(let j=0;j<n;j++){if(i===j)continue;const diff=est[i]-est[j],idxI=i-1,idxJ=j-1;let vd;if(idxI<0)vd=vcov.data[idxJ*p+idxJ];else if(idxJ<0)vd=vcov.data[idxI*p+idxI];else vd=vcov.data[idxI*p+idxI]+vcov.data[idxJ*p+idxJ]-2*vcov.data[idxI*p+idxJ];const se=Math.sqrt(Math.max(1e-300,vd)*hksj),z=diff/se;sum+=lower?Stats.pnorm(-z):Stats.pnorm(z);cnt++}scores[treatments[i]]=cnt>0?sum/cnt:0.5}return scores}};
-const NMA={calcEffects(studies,em){return studies.map(s=>{let yi,vi;if(['OR','RR','HR'].includes(em)){const a=(s.events1||0)+0.5,b=(s.n1-(s.events1||0))+0.5,c=(s.events2||0)+0.5,d=(s.n2-(s.events2||0))+0.5;if(em==='OR'||em==='HR'){yi=Math.log((a*d)/(b*c));vi=1/a+1/b+1/c+1/d}else{yi=Math.log((a/(a+b))/(c/(c+d)));vi=1/a-1/(a+b)+1/c-1/(c+d)}}else if(em==='RD'){const p1=(s.events1||0)/s.n1,p2=(s.events2||0)/s.n2;yi=p1-p2;{const e1=s.events1||0,e2=s.events2||0,z=(e1===0||e1===s.n1||e2===0||e2===s.n2)?0.5:0,q1=(e1+z)/(s.n1+2*z),q2=(e2+z)/(s.n2+2*z);vi=q1*(1-q1)/(s.n1+2*z)+q2*(1-q2)/(s.n2+2*z)}}else{yi=s.yi||0;vi=s.vi||1}return{...s,yi,vi,se:Math.sqrt(vi)}})},buildMatrices(studies,ref){const tSet=new Set();studies.forEach(s=>{tSet.add(s.treatment1);tSet.add(s.treatment2)});const treatments=Array.from(tSet).sort(),refIdx=treatments.indexOf(ref);if(refIdx>0){treatments.splice(refIdx,1);treatments.unshift(ref)}const n=studies.length,p=treatments.length-1,X=Matrix.zeros(n,p),y=new Float64Array(n),v=new Float64Array(n);studies.forEach((s,i)=>{y[i]=s.yi;v[i]=s.vi;const i1=treatments.indexOf(s.treatment1)-1,i2=treatments.indexOf(s.treatment2)-1;if(i1>=0)X.data[i*p+i1]=1;if(i2>=0)X.data[i*p+i2]=-1});const W=new Float64Array(n);for(let i=0;i<n;i++)W[i]=1/v[i];return{X,y,v,W,treatments,n,p}},estimateTau2(mat,method){const{X,y,W,v,n,p}=mat;if(method==='FE')return{tau2:0};const XtWX=Matrix.zeros(p,p),XtWy=new Float64Array(p);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X.data[i*p+j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX.data[j*p+k]+=X.data[i*p+j]*W[i]*X.data[i*p+k]}const beta=Matrix.solve(XtWX,XtWy);let Q=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X.data[i*p+j]*beta[j];Q+=W[i]*(y[i]-f)**2}const df=n-p;if(method==='DL'){let sW=0,sW2=0;for(let i=0;i<n;i++){sW+=W[i];sW2+=W[i]**2}return{tau2:Math.max(0,(Q-df)/(sW-sW2/sW)),Q,df}}let tau2=Math.max(0,(Q-df)/Stats.sum(Array.from(W)));for(let iter=0;iter<100;iter++){const Ws=new Float64Array(n);for(let i=0;i<n;i++)Ws[i]=1/(v[i]+tau2);const X2=Matrix.zeros(p,p),Xy2=new Float64Array(p);for(let i=0;i<n;i++)for(let j=0;j<p;j++){Xy2[j]+=X.data[i*p+j]*Ws[i]*y[i];for(let k=0;k<p;k++)X2.data[j*p+k]+=X.data[i*p+j]*Ws[i]*X.data[i*p+k]}const b2=Matrix.solve(X2,Xy2);let sr=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X.data[i*p+j]*b2[j];sr+=Ws[i]*(y[i]-f)**2}const newT=Math.max(0,tau2*(sr/df));if(Math.abs(newT-tau2)<1e-8)break;tau2=newT}return{tau2,Q,df}},calcEffectsFromMatrices(mat,tau2,hksj){const{X,y,v,n,p,treatments}=mat,W=new Float64Array(n);for(let i=0;i<n;i++)W[i]=1/(v[i]+tau2);const XtWX=Matrix.zeros(p,p),XtWy=new Float64Array(p);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X.data[i*p+j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX.data[j*p+k]+=X.data[i*p+j]*W[i]*X.data[i*p+k]}const beta=Matrix.solve(XtWX,XtWy),vcov=Matrix.inverse(XtWX);let hF=1;if(hksj&&n>p){let swr=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X.data[i*p+j]*beta[j];swr+=W[i]*(y[i]-f)**2}hF=Math.max(1,swr/(n-p))}const effects={};for(let j=0;j<p;j++){const t=treatments[j+1],se=Math.sqrt(vcov.data[j*p+j]*hF);effects[t]={estimate:beta[j],se,ci_lower:beta[j]-1.959964*se,ci_upper:beta[j]+1.959964*se,pValue:2*(Stats.pnormU(Math.abs(beta[j]/se)))}}effects[treatments[0]]={estimate:0,se:0,ci_lower:0,ci_upper:0,pValue:1};return{beta:Array.from(beta),vcov,effects,hksjFactor:hF}},analyze(studies,opts={}){const{reference,effectMeasure='OR',estimator='REML',hksj=true}=opts;const proc=this.calcEffects(studies,effectMeasure);const mat=this.buildMatrices(proc,reference);const tau2R=this.estimateTau2(mat,estimator);const eff=this.calcEffectsFromMatrices(mat,tau2R.tau2,hksj);const Q=tau2R.Q,df=tau2R.df,I2=Math.max(0,((Q-df)/Q)*100);return{effects:eff,heterogeneity:{tau2:tau2R.tau2,tau:Math.sqrt(tau2R.tau2),Q,df,I2,H2:df>0?Q/df:1},tau2:tau2R.tau2,treatments:mat.treatments,reference,processed:proc,matrices:mat}}};
+const NMA={calcEffects(studies,em){return studies.map(s=>{let yi,vi;if(['OR','RR','HR'].includes(em)){const e1=s.events1||0,e2=s.events2||0,z=(e1===0||e1===s.n1||e2===0||e2===s.n2)?0.5:0,a=e1+z,b=(s.n1-e1)+z,c=e2+z,d=(s.n2-e2)+z;if(em==='OR'||em==='HR'){yi=Math.log((a*d)/(b*c));vi=1/a+1/b+1/c+1/d}else{yi=Math.log((a/(a+b))/(c/(c+d)));vi=1/a-1/(a+b)+1/c-1/(c+d)}}else if(em==='RD'){const p1=(s.events1||0)/s.n1,p2=(s.events2||0)/s.n2;yi=p1-p2;{const e1=s.events1||0,e2=s.events2||0,z=(e1===0||e1===s.n1||e2===0||e2===s.n2)?0.5:0,q1=(e1+z)/(s.n1+2*z),q2=(e2+z)/(s.n2+2*z);vi=q1*(1-q1)/(s.n1+2*z)+q2*(1-q2)/(s.n2+2*z)}}else{yi=s.yi||0;vi=s.vi||1}return{...s,yi,vi,se:Math.sqrt(vi)}})},buildMatrices(studies,ref){const tSet=new Set();studies.forEach(s=>{tSet.add(s.treatment1);tSet.add(s.treatment2)});const treatments=Array.from(tSet).sort(),refIdx=treatments.indexOf(ref);if(refIdx>0){treatments.splice(refIdx,1);treatments.unshift(ref)}const n=studies.length,p=treatments.length-1,X=Matrix.zeros(n,p),y=new Float64Array(n),v=new Float64Array(n);studies.forEach((s,i)=>{y[i]=s.yi;v[i]=s.vi;const i1=treatments.indexOf(s.treatment1)-1,i2=treatments.indexOf(s.treatment2)-1;if(i1>=0)X.data[i*p+i1]=1;if(i2>=0)X.data[i*p+i2]=-1});const W=new Float64Array(n);for(let i=0;i<n;i++)W[i]=1/v[i];return{X,y,v,W,treatments,n,p}},estimateTau2(mat,method){const{X,y,W,v,n,p}=mat;if(method==='FE')return{tau2:0};const XtWX=Matrix.zeros(p,p),XtWy=new Float64Array(p);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X.data[i*p+j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX.data[j*p+k]+=X.data[i*p+j]*W[i]*X.data[i*p+k]}const beta=Matrix.solve(XtWX,XtWy);let Q=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X.data[i*p+j]*beta[j];Q+=W[i]*(y[i]-f)**2}const df=n-p;if(method==='DL'){let sW=0,sW2=0;for(let i=0;i<n;i++){sW+=W[i];sW2+=W[i]**2}return{tau2:Math.max(0,(Q-df)/(sW-sW2/sW)),Q,df}}let tau2=Math.max(0,(Q-df)/Stats.sum(Array.from(W)));for(let iter=0;iter<100;iter++){const Ws=new Float64Array(n);for(let i=0;i<n;i++)Ws[i]=1/(v[i]+tau2);const X2=Matrix.zeros(p,p),Xy2=new Float64Array(p);for(let i=0;i<n;i++)for(let j=0;j<p;j++){Xy2[j]+=X.data[i*p+j]*Ws[i]*y[i];for(let k=0;k<p;k++)X2.data[j*p+k]+=X.data[i*p+j]*Ws[i]*X.data[i*p+k]}const b2=Matrix.solve(X2,Xy2);let sr=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X.data[i*p+j]*b2[j];sr+=Ws[i]*(y[i]-f)**2}const newT=Math.max(0,tau2*(sr/df));if(Math.abs(newT-tau2)<1e-8)break;tau2=newT}return{tau2,Q,df}},calcEffectsFromMatrices(mat,tau2,hksj){const{X,y,v,n,p,treatments}=mat,W=new Float64Array(n);for(let i=0;i<n;i++)W[i]=1/(v[i]+tau2);const XtWX=Matrix.zeros(p,p),XtWy=new Float64Array(p);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X.data[i*p+j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX.data[j*p+k]+=X.data[i*p+j]*W[i]*X.data[i*p+k]}const beta=Matrix.solve(XtWX,XtWy),vcov=Matrix.inverse(XtWX);let hF=1;if(hksj&&n>p){let swr=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X.data[i*p+j]*beta[j];swr+=W[i]*(y[i]-f)**2}hF=Math.max(1,swr/(n-p))}const effects={};for(let j=0;j<p;j++){const t=treatments[j+1],se=Math.sqrt(vcov.data[j*p+j]*hF);effects[t]={estimate:beta[j],se,ci_lower:beta[j]-1.959964*se,ci_upper:beta[j]+1.959964*se,pValue:2*(Stats.pnormU(Math.abs(beta[j]/se)))}}effects[treatments[0]]={estimate:0,se:0,ci_lower:0,ci_upper:0,pValue:1};return{beta:Array.from(beta),vcov,effects,hksjFactor:hF}},analyze(studies,opts={}){const{reference,effectMeasure='OR',estimator='REML',hksj=true}=opts;const proc=this.calcEffects(studies,effectMeasure);const mat=this.buildMatrices(proc,reference);const tau2R=this.estimateTau2(mat,estimator);const eff=this.calcEffectsFromMatrices(mat,tau2R.tau2,hksj);const Q=tau2R.Q,df=tau2R.df,I2=Math.max(0,((Q-df)/Q)*100);return{effects:eff,heterogeneity:{tau2:tau2R.tau2,tau:Math.sqrt(tau2R.tau2),Q,df,I2,H2:df>0?Q/df:1},tau2:tau2R.tau2,treatments:mat.treatments,reference,processed:proc,matrices:mat}}};
 self.onmessage=function(e){const{id,action,payload}=e.data;try{const t0=performance.now();const freq=NMA.analyze(payload.studies,payload.options);const est=new Float64Array(freq.treatments.length);est[0]=0;for(let i=1;i<freq.treatments.length;i++)est[i]=freq.effects.effects[freq.treatments[i]].estimate;const pScores=Ranking.calcPScores(est,freq.effects.vcov,freq.effects.hksjFactor,payload.options.lowerIsBetter!==false,freq.treatments);const rankProbs=Ranking.calcRankProbs(est,freq.effects.vcov,freq.effects.hksjFactor,payload.options.lowerIsBetter!==false,1500);const n=freq.treatments.length,ranking=freq.treatments.map((t,i)=>{const probs=[];for(let r=0;r<n;r++)probs.push(rankProbs[i*n+r]);const mR=probs.reduce((s,p,r)=>s+p*(r+1),0),vR=probs.reduce((s,p,r)=>s+p*(r+1-mR)**2,0);return{treatment:t,pScore:pScores[t],sucra:pScores[t]*100,meanRank:mR,rankCI:[Math.max(1,mR-1.959964*Math.sqrt(vR)),Math.min(n,mR+1.959964*Math.sqrt(vR))],probBest:probs[0],rankProbs:probs}}).sort((a,b)=>b.pScore-a.pScore).map((item,i)=>({...item,rank:i+1}));self.postMessage({id,success:true,result:{frequentist:freq,ranking},computeTime:performance.now()-t0})}catch(err){self.postMessage({id,success:false,error:err.message})}};
 self.postMessage({type:'ready'});`;
 
@@ -484,7 +487,32 @@ byStudy.forEach(group=>{if(group.length<2)return;const armVarRaw=new Map();group
 for(let a=0;a<group.length;a++)for(let b=a+1;b<group.length;b++){const ga=group[a],gb=group[b];const sa=ga.study,sb=gb.study;let cov=0;const accumulate=t=>{if(!armVar.has(t))return;const va=armVar.get(t);const signA=sa.treatment1===t?1:sa.treatment2===t?-1:0;const signB=sb.treatment1===t?1:sb.treatment2===t?-1:0;if(signA!==0&&signB!==0)cov+=signA*signB*va};accumulate(String(sa.treatment1));if(sa.treatment2!==sa.treatment1)accumulate(String(sa.treatment2));if(Math.abs(cov)>0){const maxAbs=0.99*Math.sqrt(v[ga.idx]*v[gb.idx]);const clipped=Math.max(-maxAbs,Math.min(maxAbs,cov));V[ga.idx][gb.idx]=clipped;V[gb.idx][ga.idx]=clipped}}})}
 // V9-01: track per-row study id for τ²/2 off-diagonal correction in fitGLS.
 const studyIds=studies.map((s,i)=>s&&s.name&&String(s.name).trim()?String(s.name).trim():`__row_${i}`);
-return{X,y,v,V,W:v.map(vi=>1/vi),treatments,n,p,studies,studyIds}},
+// Multi-arm studies (netmeta 3.7.0). A study whose rows are ALL k(k-1)/2 pairwise contrasts of its k >= 3 arms has
+// only k - 1 independent contrasts. (1) When the rows came as TE/seTE (no off-diagonal V yet), the arm variances
+// are back-calculated from the contrast variances as in netmeta's multiarm(): v_t = (sum_j d_tj - S/(k-1))/(k-2),
+// S = sum of all k(k-1)/2 contrast variances d (k = 3: v_A = (d_AB + d_AC - d_BC)/2), and Cov(row a, row b) =
+// sum over shared arms t of sign_a(t) sign_b(t) v_t. (2) The rows not involving the study's first arm are linear
+// combinations of the others; fitGLS inverts Sigma on the kept rows only (a generalised inverse of the singular
+// full Sigma), and the heterogeneity df is the netmeta df.Q = sum over studies of (arms - 1) - (treatments - 1)
+// = kept rows - p. (3) Random-effects covariance between rows of one study: tau2 * 0.5 * sum over shared arms of
+// sign_a(t) sign_b(t) (Rre). Until 2026-11-14: the TE/seTE rows of a multi-arm study were independent, every
+// within-study pair got +tau2/2 whatever the signs, and Q, I2, the DL/PM moment equation and HKSJ used rows - p.
+const keep=Array(n).fill(true),Rre=Matrix.zeros(n,n);let multiArm=false;for(let i=0;i<n;i++)Rre[i][i]=1;
+const sgn=(s,t)=>String(s.treatment1)===t?1:String(s.treatment2)===t?-1:0;
+{const byId=new Map();studyIds.forEach((id,i)=>{if(!byId.has(id))byId.set(id,[]);byId.get(id).push(i)});
+byId.forEach(rows=>{if(rows.length<2)return;
+const pk=i=>[String(studies[i].treatment1),String(studies[i].treatment2)].sort().join('|');
+// the same comparison twice under one study name (e.g. a bootstrap resample of rows) keeps the legacy +0.5
+for(const a of rows)for(const b of rows){if(a===b)continue;const sa=studies[a],sb=studies[b];if(pk(a)===pk(b)){Rre[a][b]=0.5;continue}multiArm=true;let r=0;[String(sa.treatment1),String(sa.treatment2)].forEach(t=>{r+=0.5*sgn(sa,t)*sgn(sb,t)});Rre[a][b]=r}
+const armSet=new Set();rows.forEach(i=>{armSet.add(String(studies[i].treatment1));armSet.add(String(studies[i].treatment2))});const arms=Array.from(armSet).sort(),k=arms.length;
+const pairs=new Set(rows.map(i=>[String(studies[i].treatment1),String(studies[i].treatment2)].sort().join('|')));
+if(k<3||rows.length!==k*(k-1)/2||pairs.size!==rows.length)return;
+const hasCov=rows.some(a=>rows.some(b=>a!==b&&V[a][b]!==0));
+if(!hasCov){const S=rows.reduce((t,i)=>t+v[i],0);const va={};arms.forEach(t=>{let d=0;rows.forEach(i=>{if(sgn(studies[i],t)!==0)d+=v[i]});va[t]=(d-S/(k-1))/(k-2)});
+for(const a of rows)for(const b of rows){if(a===b)continue;let c=0;const sa=studies[a],sb=studies[b];[String(sa.treatment1),String(sa.treatment2)].forEach(t=>{c+=sgn(sa,t)*sgn(sb,t)*va[t]});V[a][b]=c}}
+rows.forEach(i=>{if(sgn(studies[i],arms[0])===0)keep[i]=false})})}
+const dfQ=keep.filter(Boolean).length-p;
+return{X,y,v,V,W:v.map(vi=>1/vi),treatments,n,p,studies,studyIds,keep,Rre,dfQ,multiArm}},
 fitGLS(matrices,tau2=0){const{X,y,V,n,p,studyIds}=matrices;const Sigma=Matrix.zeros(n,n);
 // V9-01: random-effects heterogeneity covariance — diag = τ²; off-diag = τ²/2
 // for contrasts from the same multi-arm trial (advanced-stats.md "Multi-arm
@@ -493,10 +521,14 @@ fitGLS(matrices,tau2=0){const{X,y,V,n,p,studyIds}=matrices;const Sigma=Matrix.ze
 for(let i=0;i<n;i++)for(let j=0;j<n;j++){
   let reCov=0;
   if(i===j) reCov=tau2;
+  else if(matrices.Rre) reCov=tau2*matrices.Rre[i][j];
   else if(studyIds&&studyIds[i]&&studyIds[i]===studyIds[j]) reCov=tau2/2;
   Sigma[i][j]=(V?.[i]?.[j]??0)+reCov;
 }
-for(let i=0;i<n;i++)Sigma[i][i]=Math.max(NMA_CONSTANTS.VARIANCE_GUARD,Sigma[i][i]);let Si;try{Si=Matrix.inverse(Sigma)}catch(e){for(let i=0;i<n;i++)Sigma[i][i]+=1e-8;Si=Matrix.inverse(Sigma)}const XtSi=Matrix.zeros(p,n),XtSiX=Matrix.zeros(p,p),XtSiy=Array(p).fill(0);for(let j=0;j<p;j++){for(let i=0;i<n;i++){let s=0;for(let k=0;k<n;k++)s+=X[k][j]*Si[k][i];XtSi[j][i]=s}for(let k=0;k<p;k++){let s=0;for(let i=0;i<n;i++)s+=XtSi[j][i]*X[i][k];XtSiX[j][k]=s}let sy=0;for(let i=0;i<n;i++)sy+=XtSi[j][i]*y[i];XtSiy[j]=sy}const beta=Matrix.solve(XtSiX,XtSiy),vcov=Matrix.inverse(XtSiX),residuals=Array(n).fill(0);for(let i=0;i<n;i++){let fit=0;for(let j=0;j<p;j++)fit+=X[i][j]*beta[j];residuals[i]=y[i]-fit}let Q=0;for(let i=0;i<n;i++)for(let j=0;j<n;j++)Q+=residuals[i]*Si[i][j]*residuals[j];return{beta,vcov,Sigma,Si,Q,residuals,XtSiX}},
+for(let i=0;i<n;i++)Sigma[i][i]=Math.max(NMA_CONSTANTS.VARIANCE_GUARD,Sigma[i][i]);
+const K=matrices.keep&&matrices.keep.includes(false)?matrices.keep.map((k,i)=>k?i:-1).filter(i=>i>=0):null;
+let SigmaRed=Sigma,Si;if(K){SigmaRed=K.map(a=>K.map(b=>Sigma[a][b]));let SiK;try{SiK=Matrix.inverse(SigmaRed)}catch(e){for(let i=0;i<K.length;i++)SigmaRed[i][i]+=1e-8;SiK=Matrix.inverse(SigmaRed)}Si=Matrix.zeros(n,n);K.forEach((a,ia)=>K.forEach((b,ib)=>{Si[a][b]=SiK[ia][ib]}))}
+else{try{Si=Matrix.inverse(Sigma)}catch(e){for(let i=0;i<n;i++)Sigma[i][i]+=1e-8;Si=Matrix.inverse(Sigma)}}const XtSi=Matrix.zeros(p,n),XtSiX=Matrix.zeros(p,p),XtSiy=Array(p).fill(0);for(let j=0;j<p;j++){for(let i=0;i<n;i++){let s=0;for(let k=0;k<n;k++)s+=X[k][j]*Si[k][i];XtSi[j][i]=s}for(let k=0;k<p;k++){let s=0;for(let i=0;i<n;i++)s+=XtSi[j][i]*X[i][k];XtSiX[j][k]=s}let sy=0;for(let i=0;i<n;i++)sy+=XtSi[j][i]*y[i];XtSiy[j]=sy}const beta=Matrix.solve(XtSiX,XtSiy),vcov=Matrix.inverse(XtSiX),residuals=Array(n).fill(0);for(let i=0;i<n;i++){let fit=0;for(let j=0;j<p;j++)fit+=X[i][j]*beta[j];residuals[i]=y[i]-fit}let Q=0;for(let i=0;i<n;i++)for(let j=0;j<n;j++)Q+=residuals[i]*Si[i][j]*residuals[j];return{beta,vcov,Sigma,SigmaRed,Si,Q,residuals,XtSiX}},
 // tau2 for the consistency model fitted by fitGLS: covariance V + tau2*R, R = 1 on the diagonal and
 // 0.5 between contrasts of the same study. DL: generalised moment estimator (Q - df)/tr(P R) at
 // tau2 = 0 (netmeta's DL; P = Si - Si X (X'Si X)^-1 X' Si). PM: generalised Q(tau2) = df, bisection to
@@ -507,8 +539,8 @@ for(let i=0;i<n;i++)Sigma[i][i]=Math.max(NMA_CONSTANTS.VARIANCE_GUARD,Sigma[i][i
 // sum(W) - sum(W^2)/sum(W), which is wrong once a network has more than two treatments.
 estimateTau2(matrices,method){
 const{X,n,p}=matrices;if(method==='FE')return{tau2:0,converged:true};
-const df=n-p,f0=this.fitGLS(matrices,0),Q=f0.Q,ids=matrices.studyIds;
-const Rij=(i,j)=>i===j?1:(ids&&ids[i]&&ids[i]===ids[j]?0.5:0);
+const df=matrices.dfQ??(n-p),f0=this.fitGLS(matrices,0),Q=f0.Q,ids=matrices.studyIds;
+const Rij=(i,j)=>matrices.Rre?matrices.Rre[i][j]:(i===j?1:(ids&&ids[i]&&ids[i]===ids[j]?0.5:0));
 if(df<=0)return{tau2:0,converged:true,Q,df,method};
 if(method==='DL'){
   const Si=f0.Si,A=Matrix.inverse(f0.XtSiX);
@@ -526,7 +558,7 @@ if(method==='PM'){
 if(method!=='REML'&&method!=='ML')throw new Error('Unknown tau2 estimator: '+method);
 const restricted=method==='REML';
 const ldet=M=>{const m=M.length,L=M.map(r=>r.slice());let s=0;for(let j=0;j<m;j++){let d=L[j][j];for(let k=0;k<j;k++)d-=L[j][k]*L[j][k];if(!(d>0))return NaN;d=Math.sqrt(d);L[j][j]=d;s+=2*Math.log(d);for(let i=j+1;i<m;i++){let t=L[i][j];for(let k=0;k<j;k++)t-=L[i][k]*L[j][k];L[i][j]=t/d}}return s};
-const ll=t=>{const g=this.fitGLS(matrices,t);const v=-0.5*(ldet(g.Sigma)+g.Q+(restricted?ldet(g.XtSiX):0));return Number.isFinite(v)?v:-Infinity};
+const ll=t=>{const g=this.fitGLS(matrices,t);const v=-0.5*(ldet(g.SigmaRed||g.Sigma)+g.Q+(restricted?ldet(g.XtSiX):0));return Number.isFinite(v)?v:-Infinity};
 const G=80,ulo=Math.log(vbar*1e-10);let uhi=Math.log(vbar*1e4),best=0,us=[],vals=[];
 for(let e=0;e<20;e++){us=[];vals=[];best=0;for(let g=0;g<=G;g++){const u=ulo+(uhi-ulo)*g/G;us.push(u);vals.push(ll(Math.exp(u)));if(vals[g]>vals[best])best=g}if(best<G)break;uhi+=Math.log(1e4)}
 if(best===G)throw new Error(method+' tau2 has no finite maximum');
@@ -540,12 +572,12 @@ if(l0>=ll(t))return{tau2:0,converged:true,Q,df,method};
 return{tau2:t,converged:b-a<=1e-12,Q,df,method}},
 profileLikelihoodCI(matrices,tau2Est,method){const{v,n,p}=matrices;
 // df = n - p = 0: tau2 is not identifiable (the restricted log-likelihood is flat), so there is no CI (as pauleMandel_CI).
-if(!(n-p>0))return null;// Profile-likelihood CI of the estimator in use (metafor confint(type="PL")): the RESTRICTED log-likelihood for REML
+if(!((matrices.dfQ??(n-p))>0))return null;// Profile-likelihood CI of the estimator in use (metafor confint(type="PL")): the RESTRICTED log-likelihood for REML
 // (and for the non-likelihood estimators, centred on the REML estimate), the ML log-likelihood for ML, crossing
 // max - qchisq(.95,1)/2. It profiled the ML log-likelihood for every estimator, anchored at that estimator's value
 // (for REML not the ML maximum), with a diagonal V and 1.92: normand REML gave [228.89, 1947.41], metafor [255.81, 2379.19].
 const restricted=method!=='ML';const ldet=M=>{const m=M.length,L=M.map(r=>r.slice());let s=0;for(let j=0;j<m;j++){let d=L[j][j];for(let k=0;k<j;k++)d-=L[j][k]*L[j][k];if(!(d>0))return NaN;d=Math.sqrt(d);L[j][j]=d;s+=2*Math.log(d);for(let i=j+1;i<m;i++){let t=L[i][j];for(let k=0;k<j;k++)t-=L[i][k]*L[j][k];L[i][j]=t/d}}return s};
-const logLik=t=>{try{const g=this.fitGLS(matrices,t);const r=-0.5*(ldet(g.Sigma)+g.Q+(restricted?ldet(g.XtSiX):0));return Number.isFinite(r)?r:-Infinity}catch(e){return-Infinity}};
+const logLik=t=>{try{const g=this.fitGLS(matrices,t);const r=-0.5*(ldet(g.SigmaRed||g.Sigma)+g.Q+(restricted?ldet(g.XtSiX):0));return Number.isFinite(r)?r:-Infinity}catch(e){return-Infinity}};
 if(method!=='REML'&&method!=='ML'){try{tau2Est=this.estimateTau2(matrices,'REML').tau2}catch(e){}}
 const maxLL=logLik(tau2Est),critLL=maxLL-1.9207294103470657;
 // Crossings of logLik = max - qchisq(.95,1)/2 found by bisection to a RELATIVE width of 1e-10.
@@ -555,13 +587,16 @@ const step0=Math.max(tau2Est,v.reduce((a,b)=>a+b,0)/n);let ua=tau2Est,ub=tau2Est
 if(logLik(ub)>=critLL)return{lower:Math.max(0,lower),upper:Infinity,method:restricted?'REML':'ML'};
 for(let i=0;i<300&&ub-ua>1e-10*ub;i++){const m=(ua+ub)/2;if(logLik(m)<critLL)ub=m;else ua=m}
 return{lower:Math.max(0,lower),upper:ub,method:restricted?'REML':'ML'}},
-pauleMandel_CI(matrices,tau2Est,alpha=0.05){const{X,y,v,n,p}=matrices;const df=n-p;if(df<=0)return null;const calcQ=t2=>{const W=v.map(vi=>1/(vi+t2));const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}try{const beta=Matrix.solve(XtWX,XtWy);let Q=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X[i][j]*beta[j];Q+=W[i]*(y[i]-f)**2}return Q}catch{return Infinity}};const chi2L=Stats.qchisq(1-alpha/2,df),chi2U=Stats.qchisq(alpha/2,df);const find=(tgt,lo,hi)=>{for(let i=0;i<100;i++){const m=(lo+hi)/2,Q=calcQ(m);if(Math.abs(Q-tgt)<0.0001)return m;if(Q>tgt)lo=m;else hi=m}return(lo+hi)/2};return{lower:Math.max(0,find(chi2L,0,tau2Est*10+1)),upper:find(chi2U,tau2Est,tau2Est*20+5),method:'Q-profile'}},
-calcTreatmentEffects(matrices,tau2,correction='none',mkhFloor=2.0){const{n,p,treatments}=matrices;const fit=this.fitGLS(matrices,tau2);const beta=fit.beta,vcov=fit.vcov;let correctionFactor=1,df=n-p;if(correction!=='none'&&n>p){const swr=Math.max(0,fit.Q);if(correction==='hksj'){correctionFactor=Math.max(1,swr/(n-p))}else if(correction==='kr'){const krAdj=1+(swr-(n-p))/(n-p+2);correctionFactor=Math.max(1,krAdj);df=Math.max(1,Math.floor((n-p)/(1+0.5*(swr/(n-p)-1))))}else if(correction==='sj'){const H2=swr/(n-p);correctionFactor=Math.max(1,H2*((n-p)/(n-p-1)))}else if(correction==='mkh'){correctionFactor=Math.max(mkhFloor,swr/(n-p))}}const confLevel=AppState.confLevel??0.95;const effects={};for(let j=0;j<p;j++){const t=treatments[j+1],se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,vcov[j][j])*correctionFactor);let critVal=getCritVal(confLevel);if(correction==='kr'&&df<30){critVal=Stats.qt(1-(1-confLevel)/2,df)}effects[t]={estimate:beta[j],se,ci_lower:beta[j]-critVal*se,ci_upper:beta[j]+critVal*se,pValue:2*(Stats.pnormU(Math.abs(beta[j]/se)))}}effects[treatments[0]]={estimate:0,se:0,ci_lower:0,ci_upper:0,pValue:1};return{beta,vcov,effects,correctionFactor,correctionMethod:correction,df}},
+pauleMandel_CI(matrices,tau2Est,alpha=0.05){const{n,p}=matrices;const df=matrices.dfQ??(n-p);if(df<=0)return null;// with multi-arm studies the generalised Q(tau2) of the consistency model (fitGLS: multi-arm covariance) on df.Q;
+// two-arm networks keep the (identical, faster) diagonal-weight Q. Until 2026-11-14 the diagonal Q on rows - p always
+const{X,y,v}=matrices;const multi=!!matrices.multiArm;const calcQ=multi?(t2=>{try{return this.fitGLS(matrices,t2).Q}catch{return Infinity}}):(t2=>{const W=v.map(vi=>1/(vi+t2));const XtWX=Matrix.zeros(p,p),XtWy=Array(p).fill(0);for(let i=0;i<n;i++)for(let j=0;j<p;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let k=0;k<p;k++)XtWX[j][k]+=X[i][j]*W[i]*X[i][k]}try{const beta=Matrix.solve(XtWX,XtWy);let Q=0;for(let i=0;i<n;i++){let f=0;for(let j=0;j<p;j++)f+=X[i][j]*beta[j];Q+=W[i]*(y[i]-f)**2}return Q}catch{return Infinity}});const chi2L=Stats.qchisq(1-alpha/2,df),chi2U=Stats.qchisq(alpha/2,df);const find=(tgt,lo,hi)=>{for(let i=0;i<100;i++){const m=(lo+hi)/2,Q=calcQ(m);if(Math.abs(Q-tgt)<0.0001)return m;if(Q>tgt)lo=m;else hi=m}return(lo+hi)/2};return{lower:Math.max(0,find(chi2L,0,tau2Est*10+1)),upper:find(chi2U,tau2Est,tau2Est*20+5),method:'Q-profile'}},
+calcTreatmentEffects(matrices,tau2,correction='none',mkhFloor=2.0){const{n,p,treatments}=matrices;const fit=this.fitGLS(matrices,tau2);const beta=fit.beta,vcov=fit.vcov;const dfR=matrices.dfQ??(n-p);let correctionFactor=1,df=dfR;if(correction!=='none'&&dfR>0){const swr=Math.max(0,fit.Q);if(correction==='hksj'){correctionFactor=Math.max(1,swr/dfR)}else if(correction==='kr'){const krAdj=1+(swr-dfR)/(dfR+2);correctionFactor=Math.max(1,krAdj);df=Math.max(1,Math.floor(dfR/(1+0.5*(swr/dfR-1))))}else if(correction==='sj'){const H2=swr/dfR;correctionFactor=Math.max(1,H2*(dfR/(dfR-1)))}else if(correction==='mkh'){correctionFactor=Math.max(mkhFloor,swr/dfR)}}const confLevel=AppState.confLevel??0.95;const effects={};for(let j=0;j<p;j++){const t=treatments[j+1],se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,vcov[j][j])*correctionFactor);let critVal=getCritVal(confLevel);if(correction==='kr'&&df<30){critVal=Stats.qt(1-(1-confLevel)/2,df)}effects[t]={estimate:beta[j],se,ci_lower:beta[j]-critVal*se,ci_upper:beta[j]+critVal*se,pValue:2*(Stats.pnormU(Math.abs(beta[j]/se)))}}effects[treatments[0]]={estimate:0,se:0,ci_lower:0,ci_upper:0,pValue:1};return{beta,vcov,effects,correctionFactor,correctionMethod:correction,df}},
 addPredictionIntervals(effectsResult,tau2,matrices){// netmeta 3.7.0 (netmeta.R): df.Q <- res.c$df; if (df.Q >= 2) ci(TE.random, sqrt(seTE.random^2 + tau^2), level.predict, df.Q)
 // else NA. df.Q = sum over studies of (arms - 1) - (treatments - 1). Until 2026-11-14 this used df = n - p - 1
 // (one fewer than df.Q for two-arm studies) and gave a t_1 interval when df.Q was 1.
-const{effects,vcov,correctionFactor}=effectsResult;const{treatments,p,studies,studyIds}=matrices;const arms=new Map();(studies||[]).forEach((s,i)=>{const id=studyIds?.[i]??`__row_${i}`;if(!arms.has(id))arms.set(id,new Set());arms.get(id).add(String(s.treatment1));arms.get(id).add(String(s.treatment2))});let dfQ=-p;arms.forEach(a=>{dfQ+=a.size-1});const confLevel=AppState.confLevel??0.95;const piAlpha=(1-confLevel)/2;effectsResult.piDF=dfQ;if(!(dfQ>=2)){effectsResult.piNote='No prediction interval: df.Q = '+dfQ+' < 2 (as netmeta)';treatments.forEach(t=>{if(effects[t]){delete effects[t].pi_lower;delete effects[t].pi_upper;effects[t].pi_df=dfQ}});return}const tCrit=Stats.qt(1-piAlpha,dfQ);treatments.forEach((t,i)=>{if(i===0){effects[t].pi_lower=0;effects[t].pi_upper=0;effects[t].pi_df=dfQ}else{const predSE=Math.sqrt(vcov[i-1][i-1]*correctionFactor+tau2);effects[t].pi_lower=effects[t].estimate-tCrit*predSE;effects[t].pi_upper=effects[t].estimate+tCrit*predSE;effects[t].pi_df=dfQ}})},
-calcHeterogeneity(matrices,tau2){const{y,v,X,n,p,studies}=matrices;const fitFE=this.fitGLS(matrices,0);const Q=Math.max(0,fitFE.Q);const df=n-p,pQ=Stats.pchisqU(Q,df),I2=Math.max(0,((Q-df)/Q)*100),H2=df>0?Q/df:1;
+const{effects,vcov,correctionFactor}=effectsResult;const{treatments,p,studies,studyIds}=matrices;const arms=new Map();(studies||[]).forEach((s,i)=>{const id=studyIds?.[i]??`__row_${i}`;if(!arms.has(id))arms.set(id,new Set());arms.get(id).add(String(s.treatment1));arms.get(id).add(String(s.treatment2))});let dfQ=-p;arms.forEach(a=>{dfQ+=a.size-1});if(Number.isFinite(matrices.dfQ))dfQ=matrices.dfQ;// buildMatrices' df.Q (kept rows - p), the df of Q
+const confLevel=AppState.confLevel??0.95;const piAlpha=(1-confLevel)/2;effectsResult.piDF=dfQ;if(!(dfQ>=2)){effectsResult.piNote='No prediction interval: df.Q = '+dfQ+' < 2 (as netmeta)';treatments.forEach(t=>{if(effects[t]){delete effects[t].pi_lower;delete effects[t].pi_upper;effects[t].pi_df=dfQ}});return}const tCrit=Stats.qt(1-piAlpha,dfQ);treatments.forEach((t,i)=>{if(i===0){effects[t].pi_lower=0;effects[t].pi_upper=0;effects[t].pi_df=dfQ}else{const predSE=Math.sqrt(vcov[i-1][i-1]*correctionFactor+tau2);effects[t].pi_lower=effects[t].estimate-tCrit*predSE;effects[t].pi_upper=effects[t].estimate+tCrit*predSE;effects[t].pi_df=dfQ}})},
+calcHeterogeneity(matrices,tau2){const{y,v,X,n,p,studies}=matrices;const fitFE=this.fitGLS(matrices,0);const Q=Math.max(0,fitFE.Q);const df=matrices.dfQ??(n-p),pQ=Stats.pchisqU(Q,df),I2=Math.max(0,((Q-df)/Q)*100),H2=df>0?Q/df:1;
 // NMA-specific I2 decomposition (Jackson et al. 2012)
 const designMap=new Map();for(let i=0;i<n;i++){const s=studies?.[i]||{};const design=[s.treatment1,s.treatment2].map(x=>String(x||'')).sort().join('|')||X[i].map(x=>x!==0?1:0).join('');if(!designMap.has(design))designMap.set(design,{indices:[],Q:0,df:0});designMap.get(design).indices.push(i)}
 let Qwithin=0,dfWithin=0,Qbetween=0;
@@ -620,6 +655,13 @@ const{reference,effectMeasure='OR',nChains=4,nIter=2000,burnin=400,thin=2,priorT
 const processed=FrequentistNMA.calcEffects(studies,effectMeasure);
 const matrices=FrequentistNMA.buildMatrices(processed,reference);
 let{X,y,v,n,p,treatments,studies:matrixStudies=[]}=matrices;
+// Multi-arm studies given as all k(k-1)/2 contrasts: the chain uses the k-1 kept rows (buildMatrices' keep) with the
+// signed random-effects covariance tau2*Rre; until 2026-11-14 it used every row with +tau2/2 for every within-study
+// pair, a singular block for a complete 3-arm study.
+const keepIdx=Array.isArray(matrices.keep)&&matrices.keep.includes(false)?matrices.keep.map((k,i)=>k?i:-1).filter(i=>i>=0):null;
+let V_full=matrices&&Array.isArray(matrices.V)?matrices.V:null,studyIds=matrices&&Array.isArray(matrices.studyIds)?matrices.studyIds:null,Rre=Array.isArray(matrices.Rre)?matrices.Rre:null;
+if(keepIdx){X=keepIdx.map(i=>X[i]);y=keepIdx.map(i=>y[i]);v=keepIdx.map(i=>v[i]);matrixStudies=keepIdx.map(i=>matrixStudies[i]);n=keepIdx.length;
+if(V_full)V_full=keepIdx.map(a=>keepIdx.map(b=>V_full[a][b]));if(studyIds)studyIds=keepIdx.map(i=>studyIds[i]);if(Rre)Rre=keepIdx.map(a=>keepIdx.map(b=>Rre[a][b]))}
 const normalizedModelType=String(modelType||'random').toLowerCase()==='fixed'?'fixed':'random';
 const ppcN=Math.max(100,Math.min(5000,Math.floor(Number(ppcReplicates)||400)));
 const normalizedBetaPriorSD=Number.isFinite(Number(betaPriorSD))&&Number(betaPriorSD)>0?Math.min(1000,Number(betaPriorSD)):null;
@@ -638,9 +680,7 @@ const baseSeed=Number.isFinite(Number(seed))&&Number(seed)>0?Math.floor(Number(s
 // V9-01b: pass the within-study covariance matrix V and per-row study IDs
 // into the chain so it can apply the multi-arm τ²/2 correction in the MH
 // τ² step. Falls back to the diagonal path if V/studyIds are absent.
-const V_full=matrices&&Array.isArray(matrices.V)?matrices.V:null;
-const studyIds=matrices&&Array.isArray(matrices.studyIds)?matrices.studyIds:null;
-const chains=[];for(let c=0;c<nChains;c++){const chainSeed=((baseSeed>>>0)+Math.imul(c+1,2654435761))>>>0;const rng=TreatmentRanking.createSeededRNG(chainSeed);chains.push(this.runChain(X,y,v,n,p,nIter,priorTau,rng,normalizedModelType,normalizedBetaPriorSD,likelihoodSpec,burnin,V_full,studyIds))}
+const chains=[];for(let c=0;c<nChains;c++){const chainSeed=((baseSeed>>>0)+Math.imul(c+1,2654435761))>>>0;const rng=TreatmentRanking.createSeededRNG(chainSeed);chains.push(this.runChain(X,y,v,n,p,nIter,priorTau,rng,normalizedModelType,normalizedBetaPriorSD,likelihoodSpec,burnin,V_full,studyIds,Rre))}
 const samples=this.combineChains(chains,burnin,thin);
 const diagnostics=this.computeDiagnostics(chains,burnin,thin,p);
 const summary=this.summarizePosterior(samples,treatments,treatParamCount,xAug.covariateNames);
@@ -673,7 +713,7 @@ return{X:Xout,p:p+validNames.length,covariateNames:validNames}
 // V_group + (τ² on diag, τ²/2 off-diag). This helper returns Δ =
 // logMVN_group − Σ_i logN_row that is ADDED to the diagonal log-lik to
 // recover the multivariate value. For 2-arm singletons Δ = 0.
-multiArmCorrection(X,y,V,studyIds,v,beta,tau2,n,p){
+multiArmCorrection(X,y,V,studyIds,v,beta,tau2,n,p,Rre=null){
 if(!V||!studyIds||tau2<=0)return 0;
 const byId=Object.create(null);
 for(let i=0;i<n;i++){const sid=studyIds[i];if(!byId[sid])byId[sid]=[];byId[sid].push(i);}
@@ -685,7 +725,7 @@ const r=new Array(k);for(let a=0;a<k;a++){let mu=0;for(let j=0;j<p;j++)mu+=X[idx
 const Sigma=Matrix.zeros(k,k);
 for(let a=0;a<k;a++)for(let b=0;b<k;b++){
 const v_ab=(V[idx[a]]&&typeof V[idx[a]][idx[b]]==='number')?V[idx[a]][idx[b]]:0;
-Sigma[a][b]=v_ab+(a===b?tau2:tau2/2);
+Sigma[a][b]=v_ab+(a===b?tau2:tau2*(Rre?Rre[idx[a]][idx[b]]:0.5));
 }
 try{
 const L=Matrix.cholesky(Sigma);
@@ -708,7 +748,7 @@ return delta;
 // For MULTI-ARM groups (k≥2 contrast rows sharing a studyId) we invert the
 // full k×k Σ_c block and accumulate the (i,j) cross terms. Closes the
 // β-precision approximation noted in the prior V9-01b commit.
-buildBlockPrecision(X,y,v,V,studyIds,tau2,n,p){
+buildBlockPrecision(X,y,v,V,studyIds,tau2,n,p,Rre=null){
 const XtPrecX=Matrix.zeros(p,p),XtPrecy=Array(p).fill(0);
 if(!V||!studyIds){
 for(let i=0;i<n;i++){const w=1/(v[i]+tau2);for(let j=0;j<p;j++){XtPrecy[j]+=X[i][j]*w*y[i];for(let k=0;k<p;k++)XtPrecX[j][k]+=X[i][j]*w*X[i][k]}}
@@ -722,7 +762,7 @@ if(k===1){const i=idx[0];const w=1/(v[i]+tau2);for(let j=0;j<p;j++){XtPrecy[j]+=
 const Sigma=Matrix.zeros(k,k);
 for(let a=0;a<k;a++)for(let b=0;b<k;b++){
 const v_ab=(V[idx[a]]&&typeof V[idx[a]][idx[b]]==='number')?V[idx[a]][idx[b]]:0;
-Sigma[a][b]=v_ab+(a===b?tau2:tau2/2);
+Sigma[a][b]=v_ab+(a===b?tau2:tau2*(Rre?Rre[idx[a]][idx[b]]:0.5));
 }
 let SigmaInv;try{SigmaInv=Matrix.inverse(Sigma);}catch(_){for(let i=0;i<k;i++){const w=1/(v[idx[i]]+tau2);for(let j=0;j<p;j++){XtPrecy[j]+=X[idx[i]][j]*w*y[idx[i]];for(let kk=0;kk<p;kk++)XtPrecX[j][kk]+=X[idx[i]][j]*w*X[idx[i]][kk]}}continue;}
 for(let a=0;a<k;a++)for(let b=0;b<k;b++){
@@ -740,22 +780,22 @@ return{XtPrecX,XtPrecy};
 // uses buildBlockPrecision so X' Σ⁻¹ X reflects the true within-multi-arm
 // correlation (Lu & Ades 2004 full block-precision). Both effects are now
 // active: posterior SEs of β are calibrated for shared-control NMAs.
-runChain(X,y,v,n,p,nIter,priorTau,rng,modelType='random',betaPriorSD=null,likelihoodSpec={type:'normal',studentTdf:7},burnin=0,V=null,studyIds=null){
+runChain(X,y,v,n,p,nIter,priorTau,rng,modelType='random',betaPriorSD=null,likelihoodSpec={type:'normal',studentTdf:7},burnin=0,V=null,studyIds=null,Rre=null){
 const chain={beta:[],tau2:[],deviance:[],tauAccepted:0,tauProposed:0,acceptanceRate:null};
 const rr=(rng&&typeof rng.random==='function'&&typeof rng.rnorm==='function')?rng:TreatmentRanking.createSeededRNG(123456789);let beta=Array(p).fill(0),tau2=(String(modelType)==='fixed'?0:0.1);const betaPriorPrecision=Number.isFinite(Number(betaPriorSD))&&Number(betaPriorSD)>0?1/(Number(betaPriorSD)*Number(betaPriorSD)):0;
 // Adaptive step size for tau2 MH proposal (Haario et al. 2001)
 let tauStepSize=0.3;let adaptAccepted=0;let adaptTotal=0;
 for(let iter=0;iter<nIter;iter++){
-const {XtPrecX:XtWX,XtPrecy:XtWy}=this.buildBlockPrecision(X,y,v,V,studyIds,tau2,n,p);
+const {XtPrecX:XtWX,XtPrecy:XtWy}=this.buildBlockPrecision(X,y,v,V,studyIds,tau2,n,p,Rre);
 if(betaPriorPrecision>0)for(let j=0;j<p;j++)XtWX[j][j]+=betaPriorPrecision;
 try{const vcov=Matrix.inverse(XtWX);const mean=Matrix.solve(XtWX,XtWy);const L=Matrix.cholesky(vcov);const z=Array(p).fill(0).map(()=>rr.rnorm(0,1));beta=mean.map((m,i)=>m+L[i].reduce((s,l,j)=>s+l*z[j],0))}catch(e){console.warn('MCMC iteration',iter,'matrix error:',e.message)}
 const logLikCurrBase=this.logLikelihood(X,y,v,beta,tau2,n,p,likelihoodSpec);
-const logLikCurr=logLikCurrBase+this.multiArmCorrection(X,y,V,studyIds,v,beta,tau2,n,p);
+const logLikCurr=logLikCurrBase+this.multiArmCorrection(X,y,V,studyIds,v,beta,tau2,n,p,Rre);
 let devLogLik=logLikCurr;
 if(String(modelType)!=='fixed'){
 const propTau2=Math.exp(Math.log(tau2+0.001)+rr.rnorm(0,1)*tauStepSize);
 const logLikPropBase=this.logLikelihood(X,y,v,beta,propTau2,n,p,likelihoodSpec);
-const logLikProp=logLikPropBase+this.multiArmCorrection(X,y,V,studyIds,v,beta,propTau2,n,p);
+const logLikProp=logLikPropBase+this.multiArmCorrection(X,y,V,studyIds,v,beta,propTau2,n,p,Rre);
 const logPriorCurr=this.logPriorTau(tau2,priorTau);
 const logPriorProp=this.logPriorTau(propTau2,priorTau);
 chain.tauProposed+=1;adaptTotal+=1;
@@ -1196,7 +1236,7 @@ const reference=nmaResults.reference;
 const rows=[];
 Object.entries(nmaResults.effects.effects).forEach(([treatment,e])=>{
 if(treatment===reference)return;
-const est=parseNumberInput(e?.estimate),se=Math.max(Math.sqrt(NMA_CONSTANTS.VARIANCE_FLOOR),parseNumberInput(e?.se)||Math.sqrt(NMA_CONSTANTS.VARIANCE_FLOOR));
+const est=parseNumberInput(e?.estimate),se=seOrMissing(e?.se);
 if(!Number.isFinite(est)||!Number.isFinite(se))return;
 let pBenefit=0.5,pHarm=0.5;
 if(direction==='lower'){
@@ -1236,14 +1276,14 @@ analyze(nmaResults,options={}){
 if(!nmaResults||!nmaResults.effects||!nmaResults.effects.effects)return{applicable:false,message:'Need NMA results first'};
 const lambda=Number.isFinite(Number(options.lambda))?Math.max(0,Number(options.lambda)):1.0;
 const reference=nmaResults.reference;
-const rows=Object.entries(nmaResults.effects.effects).filter(([t])=>t!==reference).map(([t,e])=>({treatment:t,estimate:parseNumberInput(e?.estimate),se:Math.max(Math.sqrt(NMA_CONSTANTS.VARIANCE_FLOOR),parseNumberInput(e?.se)||Math.sqrt(NMA_CONSTANTS.VARIANCE_FLOOR))})).filter(r=>Number.isFinite(r.estimate)&&Number.isFinite(r.se));
+const rows=Object.entries(nmaResults.effects.effects).filter(([t])=>t!==reference).map(([t,e])=>({treatment:t,estimate:parseNumberInput(e?.estimate),se:seOrMissing(e?.se)})).filter(r=>Number.isFinite(r.estimate)&&Number.isFinite(r.se));
 if(rows.length<2)return{applicable:false,message:'Need at least 2 non-reference treatment estimates'};
-const groupStats=idxList=>{const ws=idxList.map(i=>1/Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,rows[i].se*rows[i].se));const sumW=Stats.sum(ws);const mean=sumW>0?Stats.sum(idxList.map((idx,j)=>ws[j]*rows[idx].estimate))/sumW:Stats.mean(idxList.map(i=>rows[i].estimate));const se=Math.sqrt(1/Math.max(sumW,NMA_CONSTANTS.VARIANCE_FLOOR));return{estimate:mean,se}};
+const groupStats=idxList=>{const ws=idxList.map(i=>1/Math.max(NMA_CONSTANTS.VARIANCE_GUARD,rows[i].se*rows[i].se));const sumW=Stats.sum(ws);const mean=sumW>0?Stats.sum(idxList.map((idx,j)=>ws[j]*rows[idx].estimate))/sumW:Stats.mean(idxList.map(i=>rows[i].estimate));const se=Math.sqrt(1/sumW);return{estimate:mean,se}};
 let groups=rows.map((r,i)=>{const stats=groupStats([i]);return{id:i,indices:[i],members:[r.treatment],estimate:stats.estimate,se:stats.se}});
 const mergeHistory=[];
 while(groups.length>1){
 let best=null;
-for(let i=0;i<groups.length;i++)for(let j=i+1;j<groups.length;j++){const gi=groups[i],gj=groups[j];const diff=Math.abs(gi.estimate-gj.estimate);const seDiff=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,gi.se*gi.se+gj.se*gj.se));const z=diff/seDiff;if(!best||z<best.z)best={i,j,z,diff,seDiff}}
+for(let i=0;i<groups.length;i++)for(let j=i+1;j<groups.length;j++){const gi=groups[i],gj=groups[j];const diff=Math.abs(gi.estimate-gj.estimate);const seDiff=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,gi.se*gi.se+gj.se*gj.se));const z=diff/seDiff;if(!best||z<best.z)best={i,j,z,diff,seDiff}}
 if(!best||best.z>lambda)break;
 const g1=groups[best.i],g2=groups[best.j];
 const mergedIdx=[...g1.indices,...g2.indices];
@@ -1273,8 +1313,8 @@ const tau2Base=Math.max(0,Number(base.tau2)||0);
 const compMap=new Map();
 processed.forEach(s=>{const key=[s.treatment1,s.treatment2].sort().join('|');if(!compMap.has(key))compMap.set(key,[]);compMap.get(key).push(s)});
 const compStats=new Map();
-compMap.forEach((arr,key)=>{const w=arr.map(s=>1/Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,(s.vi||0)+tau2Base));const sumW=Stats.sum(w);const mean=sumW>0?Stats.sum(arr.map((s,i)=>w[i]*(s.yi||0)))/sumW:Stats.mean(arr.map(s=>s.yi||0));compStats.set(key,{mean,n:arr.length})});
-const diag=processed.map(s=>{const key=[s.treatment1,s.treatment2].sort().join('|');const m=compStats.get(key)?.mean??0;const sePred=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,(s.vi||0)+tau2Base));const z=(s.yi-m)/sePred;const pTail=Math.max(1e-12,2*(Stats.pnormU(Math.abs(z))));const outProb=Math.min(0.999,Math.max(0,1-pTail));const w=Math.max(Math.min(1,1-shrinkStrength*outProb),Math.max(0.05,minWeight));const viAdj=Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,(s.vi||NMA_CONSTANTS.VARIANCE_FLOOR)/w);return{studyName:s.name||'Unnamed',comparison:key,z,pTail,outProb,weight:w,yi:s.yi,vi:s.vi,viAdj,treatment1:s.treatment1,treatment2:s.treatment2,events1:s.events1,n1:s.n1,events2:s.events2,n2:s.n2,mean1:s.mean1,sd1:s.sd1,mean2:s.mean2,sd2:s.sd2}});
+compMap.forEach((arr,key)=>{const w=arr.map(s=>1/Math.max(NMA_CONSTANTS.VARIANCE_GUARD,(s.vi||0)+tau2Base));const sumW=Stats.sum(w);const mean=sumW>0?Stats.sum(arr.map((s,i)=>w[i]*(s.yi||0)))/sumW:Stats.mean(arr.map(s=>s.yi||0));compStats.set(key,{mean,n:arr.length})});
+const diag=processed.map(s=>{const key=[s.treatment1,s.treatment2].sort().join('|');const m=compStats.get(key)?.mean??0;const sePred=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,(s.vi||0)+tau2Base));const z=(s.yi-m)/sePred;const pTail=Math.max(1e-12,2*(Stats.pnormU(Math.abs(z))));const outProb=Math.min(0.999,Math.max(0,1-pTail));const w=Math.max(Math.min(1,1-shrinkStrength*outProb),Math.max(0.05,minWeight));const viAdj=Math.max(NMA_CONSTANTS.VARIANCE_GUARD,(s.vi||NMA_CONSTANTS.VARIANCE_FLOOR)/w);return{studyName:s.name||'Unnamed',comparison:key,z,pTail,outProb,weight:w,yi:s.yi,vi:s.vi,viAdj,treatment1:s.treatment1,treatment2:s.treatment2,events1:s.events1,n1:s.n1,events2:s.events2,n2:s.n2,mean1:s.mean1,sd1:s.sd1,mean2:s.mean2,sd2:s.sd2}});
 const adjustedStudies=diag.map(d=>({name:d.studyName,treatment1:d.treatment1,treatment2:d.treatment2,events1:d.events1,n1:d.n1,events2:d.events2,n2:d.n2,mean1:d.mean1,sd1:d.sd1,mean2:d.mean2,sd2:d.sd2,yi:d.yi,vi:d.viAdj,se:Math.sqrt(d.viAdj)}));
 let adjustedEffects,adjustedTau2,adjustedTreatments,adjustedRanking;
 try{const matrices=FrequentistNMA.buildMatrices(adjustedStudies,base.reference,{effectMeasure});const tau2Res=FrequentistNMA.estimateTau2(matrices,estimator);adjustedTau2=tau2Res.tau2;adjustedEffects=FrequentistNMA.calcTreatmentEffects(matrices,adjustedTau2,smallStudyCorrection);adjustedTreatments=matrices.treatments;adjustedRanking=TreatmentRanking.rank(adjustedEffects,adjustedTreatments,direction,{seed,nSim:1500})}catch(e){return{applicable:false,message:'Adjusted model failed: '+e.message}}
@@ -1300,7 +1340,7 @@ const conventional={};rankingRows.forEach(r=>{if(r&&r.treatment!=null&&Number.is
 const rows=Object.entries(nmaResults.effects.effects).map(([treatment,e])=>({
 treatment,
 estimate:parseNumberInput(e?.estimate),
-se:Math.max(Math.sqrt(NMA_CONSTANTS.VARIANCE_FLOOR),parseNumberInput(e?.se)||Math.sqrt(NMA_CONSTANTS.VARIANCE_FLOOR))
+se:seOrMissing(e?.se)
 })).filter(r=>Number.isFinite(r.estimate)&&Number.isFinite(r.se));
 if(rows.length<3)return{applicable:false,message:'Need at least 3 estimable treatments'};
 const n=rows.length,pairwise=[];
@@ -1309,7 +1349,7 @@ let sumProb=0;
 for(let j=0;j<n;j++){
 if(i===j)continue;
 const meanDiff=rows[i].estimate-rows[j].estimate;
-const varPred=Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,rows[i].se*rows[i].se+rows[j].se*rows[j].se+2*tau2);
+const varPred=Math.max(NMA_CONSTANTS.VARIANCE_GUARD,rows[i].se*rows[i].se+rows[j].se*rows[j].se+2*tau2);
 const z=meanDiff/Math.sqrt(varPred);
 const pBetter=direction==='lower'?Stats.pnorm(-z):Stats.pnorm(z);
 sumProb+=pBetter;
@@ -1354,7 +1394,7 @@ if(base?.applicable===false)return{applicable:false,message:base.message||'Base 
 const componentEffects=Array.isArray(base.componentEffects)?base.componentEffects:[];
 if(componentEffects.length===0)return{applicable:false,message:'No component effects estimated'};
 const componentNames=componentEffects.map(c=>String(c.component));
-const baseVar={};componentEffects.forEach(c=>{const se=parseNumberInput(c?.se);baseVar[String(c.component)]=Number.isFinite(se)?Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,se*se):null});
+const baseVar={};componentEffects.forEach(c=>{const se=parseNumberInput(c?.se);baseVar[String(c.component)]=Number.isFinite(se)?Math.max(NMA_CONSTANTS.VARIANCE_GUARD,se*se):null});
 const comparisonStudies=new Map();
 studies.forEach((s,idx)=>{const key=this.comparisonKey(s?.treatment1,s?.treatment2);if(!comparisonStudies.has(key))comparisonStudies.set(key,[]);comparisonStudies.get(key).push(idx)});
 const comparisonKeys=Array.from(comparisonStudies.keys());
@@ -1368,7 +1408,7 @@ try{
 const loo=CNMA.analyze(reduced,{separator,effectMeasure});
 if(loo?.applicable===false){looByComparison[key]={failed:true,message:loo.message||'CNMA not estimable after removal',excludedStudies:Array.from(excludedIdxSet).length};return}
 const vMap={};
-(loo.componentEffects||[]).forEach(c=>{const se=parseNumberInput(c?.se);vMap[String(c.component)]=Number.isFinite(se)?Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,se*se):null});
+(loo.componentEffects||[]).forEach(c=>{const se=parseNumberInput(c?.se);vMap[String(c.component)]=Number.isFinite(se)?Math.max(NMA_CONSTANTS.VARIANCE_GUARD,se*se):null});
 looByComparison[key]={failed:false,variances:vMap,excludedStudies:Array.from(excludedIdxSet).length};
 }catch(err){looByComparison[key]={failed:true,message:String(err?.message||'Unknown error'),excludedStudies:Array.from(excludedIdxSet).length}}
 });
@@ -1380,8 +1420,8 @@ const inflations=[];const missing=[];
 comparisonKeys.forEach(key=>{
 const row=looByComparison[key];
 if(!row||row.failed||!row.variances||!Number.isFinite(row.variances[component])){missing.push(key);return}
-const vMinus=Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,row.variances[component]);
-const infl=Math.max(0,(vMinus-baseV)/Math.max(baseV,NMA_CONSTANTS.VARIANCE_FLOOR));
+const vMinus=Math.max(NMA_CONSTANTS.VARIANCE_GUARD,row.variances[component]);
+const infl=Math.max(0,(vMinus-baseV)/Math.max(baseV,NMA_CONSTANTS.VARIANCE_GUARD));
 inflations.push({key,inflation:infl,vMinus})
 });
 let contribMap={};
@@ -1568,7 +1608,7 @@ if(Math.abs(sxx)<NMA_CONSTANTS.TOLERANCE)return{applicable:false,message:'Year v
 const slope=sxy/sxx;
 const residuals=y.map((yi,i)=>yi-(yMean+slope*(x[i]-xMean)));
 const sigma2=Stats.sum(residuals.map((r,i)=>w[i]*r*r))/Math.max(1,rows.length-2);
-const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,sigma2/sxx));
+const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,sigma2/sxx));
 const z=slope/Math.max(se,NMA_CONSTANTS.TOLERANCE);
 const p=2*(Stats.pnormU(Math.abs(z)));
 return{applicable:true,slope,se,z,pValue:p,possibleNonPH:p<0.10,interpretation:p<0.10?'Potential non-PH signal in year-trend stress test':'No strong year-trend non-PH signal'}
@@ -1739,10 +1779,13 @@ return vals.map(v=>(v-minV)/(maxV-minV))
 analyze(nmaResults,options={}){
 const{direction='lower',nSim=4000,seed=123456789}=options;
 if(!nmaResults||!nmaResults.effects||!Array.isArray(nmaResults.treatments)||nmaResults.treatments.length<2)return{applicable:false,message:'Need main NMA results for SMAA ranking'};
-const rows=nmaResults.treatments.map(t=>{const e=nmaResults.effects.effects?.[t]||{};return{treatment:t,estimate:Number(e.estimate)||0,se:Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,Number(e.se)||NMA_CONSTANTS.VARIANCE_FLOOR)}});
+const rows=nmaResults.treatments.map(t=>{const e=nmaResults.effects.effects?.[t]||{};const se0=Number(e.se);return{treatment:t,estimate:Number(e.estimate)||0,se:Number.isFinite(se0)&&se0>=0?se0:NaN}});
 const effRaw=rows.map(r=>direction==='lower'?-r.estimate:r.estimate);
-const uncRaw=rows.map(r=>-Math.log(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,r.se)));
-const effScore=this.normalize(effRaw),uncScore=this.normalize(uncRaw);
+// precision = -log(SE), min-max scaled over the rows with SE > 0 (scale-free); the reference (SE 0) scores 1, a
+// missing SE 0.5. Until 2026-11-14: -log(max(1e-4, SE)), the reference fixed at -log(1e-4) whatever the data scale.
+const posIdx=rows.map((r,i)=>r.se>0?i:-1).filter(i=>i>=0),posScore=this.normalize(posIdx.map(i=>-Math.log(rows[i].se)));
+const uncScore=rows.map(r=>r.se===0?1:Number.isFinite(r.se)?posScore[posIdx.indexOf(rows.indexOf(r))]:0.5);
+const effScore=this.normalize(effRaw);
 rows.forEach((r,i)=>{r.effectScore=effScore[i];r.precisionScore=uncScore[i]});
 const n=rows.length;
 const rankCounts=rows.map(()=>Array(n).fill(0));
@@ -2031,7 +2074,7 @@ const comparable=treatments.filter(t=>t in baseEffects&&t in (loo.effects?.effec
 const effectShifts=comparable.map(t=>{
 const baseEst=Number(baseEffects?.[t]?.estimate)||0;
 const looEst=Number(loo.effects?.effects?.[t]?.estimate)||0;
-const baseSE=Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,Number(baseEffects?.[t]?.se)||NMA_CONSTANTS.VARIANCE_FLOOR);
+const baseSE=Math.max(NMA_CONSTANTS.TOLERANCE,Number(baseEffects?.[t]?.se)||NMA_CONSTANTS.TOLERANCE);
 const diff=looEst-baseEst;
 return{treatment:t,diff,absDiff:Math.abs(diff),stdDiff:Math.abs(diff)/baseSE}
 });
@@ -2155,7 +2198,7 @@ let v;
 if(ii<0)v=vcov?.[jj]?.[jj];
 else if(jj<0)v=vcov?.[ii]?.[ii];
 else v=(vcov?.[ii]?.[ii]??0)+(vcov?.[jj]?.[jj]??0)-2*(vcov?.[ii]?.[jj]??0);
-return Number.isFinite(Number(v))?Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,Number(v)):null
+return Number.isFinite(Number(v))?Math.max(NMA_CONSTANTS.VARIANCE_GUARD,Number(v)):null
 },
 analyze(studies,options={}){
 const{reference,effectMeasure='OR',estimator='REML',smallStudyCorrection='hksj'}=options;
@@ -2177,7 +2220,7 @@ if(grouped.size<2)return{applicable:false,message:'Need at least 2 direct compar
 let qWithin=0,qBetween=0;
 const rows=[];
 grouped.forEach((g,key)=>{
-const w=g.rows.map(r=>1/Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,r.vi));
+const w=g.rows.map(r=>1/Math.max(NMA_CONSTANTS.VARIANCE_GUARD,r.vi));
 const sumW=Stats.sum(w);
 if(sumW<=0)return;
 const direct=Stats.sum(g.rows.map((r,i)=>w[i]*r.yi))/sumW;
@@ -2185,7 +2228,7 @@ const seDirect=Math.sqrt(1/sumW);
 const pred=(Number(baseline?.effects?.effects?.[g.a]?.estimate)||0)-(Number(baseline?.effects?.effects?.[g.b]?.estimate)||0);
 const varPred=this.varDiff(baseline,treatments,g.a,g.b);
 const resid=direct-pred;
-const residVar=Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,(seDirect*seDirect)+(varPred??0));
+const residVar=Math.max(NMA_CONSTANTS.VARIANCE_GUARD,(seDirect*seDirect)+(varPred??0));
 const z=resid/Math.sqrt(residVar);
 const qB=(resid*resid)/residVar;
 let qW=0;
@@ -2247,7 +2290,7 @@ if(processed.length<4)return{applicable:false,message:'Insufficient valid contra
 const weightedStudies=processed.map((s,idx)=>{
 const w=this.designWeight(studies[idx]||s,biasScale);
 const yi=(Number(s.yi)||0)*w.shrink;
-const vi=Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,(Number(s.vi)||NMA_CONSTANTS.VARIANCE_FLOOR)*w.precisionMultiplier+0.02*w.penalty);
+const vi=Math.max(NMA_CONSTANTS.VARIANCE_GUARD,(Number(s.vi)||NMA_CONSTANTS.VARIANCE_FLOOR)*w.precisionMultiplier+0.02*w.penalty);
 return{name:String(s?.name||studies[idx]?.name||`Study ${idx+1}`),treatment1:s.treatment1,treatment2:s.treatment2,yi,vi,rob:w.rob,penalty:w.penalty,precisionMultiplier:w.precisionMultiplier}
 });
 const calibrated=FrequentistNMA.analyze(weightedStudies,{reference,effectMeasure,estimator,smallStudyCorrection,predictionIntervals:false});
@@ -2797,17 +2840,18 @@ const deltaAIC=ph?ph.AIC-best.AIC:null;const nonPH=best.powers.length>0&&Number.
 return{applicable:true,models:fittedModels.map(m=>({name:m.name,powers:m.powers,AIC:m.AIC.toFixed(2),nParams:m.k})),bestModel:{name:best.name,powers:best.powers,AIC:best.AIC,nParams:best.k},timeVaryingHR,nonPHTest:{interpretation:nonPH?'Non-proportional hazards detected (time-varying effects improve fit)':'No strong evidence of non-proportional hazards',deltaAIC:Number.isFinite(deltaAIC)?deltaAIC.toFixed(2):'N/A'},observations:observations.length,uniqueTimePoints:uniqueTimes.length,reference:ref,notes:extracted.notes,fit:best,referenceText:'Jansen, BMC Med Res Methodol 2011; Freeman et al., Stat Methods Med Res 2022'}},
 fpTerm(time,power){const t=Math.max(Number(time)/12,1e-6);return power===0?Math.log(t):Math.pow(t,power)},
 extractObservations(studies,options={}){
-const effectMeasure=options.effectMeasure||'OR';const observations=[];const treatments=new Set();const notes=[];const pushObs=(s,time,logHR,se)=>{const t=Number(time),y=Number(logHR),seVal=Number(se);if(!Number.isFinite(t)||t<=0||!Number.isFinite(y))return;const seUse=Number.isFinite(seVal)&&seVal>0?seVal:0.35;const v=Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,seUse*seUse);const obs={study:String(s.name||''),treatment1:s.treatment1,treatment2:s.treatment2,time:t,y,v};if(!obs.treatment1||!obs.treatment2)return;observations.push(obs);treatments.add(obs.treatment1);treatments.add(obs.treatment2)};
+const effectMeasure=options.effectMeasure||'OR';const observations=[];const treatments=new Set();const notes=[];const pushObs=(s,time,logHR,se)=>{const t=Number(time),y=Number(logHR),seVal=Number(se);if(!Number.isFinite(t)||t<=0||!Number.isFinite(y))return;const seUse=Number.isFinite(seVal)&&seVal>0?seVal:0.35;const v=Math.max(NMA_CONSTANTS.VARIANCE_GUARD,seUse*seUse);const obs={study:String(s.name||''),treatment1:s.treatment1,treatment2:s.treatment2,time:t,y,v};if(!obs.treatment1||!obs.treatment2)return;observations.push(obs);treatments.add(obs.treatment1);treatments.add(obs.treatment2)};
 studies.forEach(s=>{const baseTime=Number(s.time??s.followUp??s.followup??s.months);if(Number.isFinite(Number(s.logHR))||Number.isFinite(Number(s.HR))){const lhr=Number.isFinite(Number(s.logHR))?Number(s.logHR):Math.log(Math.max(1e-8,Number(s.HR)));pushObs(s,Number.isFinite(baseTime)?baseTime:12,lhr,s.seLogHR??s.se)}
 Object.keys(s||{}).forEach(k=>{const mLog=String(k).match(/^logHR[_-]?(\d+(\.\d+)?)$/i);if(mLog){const tm=Number(mLog[1]);const seKey=`se${k.charAt(0).toUpperCase()}${k.slice(1)}`;pushObs(s,tm,Number(s[k]),s[seKey]??s[`seLogHR_${mLog[1]}`]);return}const mHr=String(k).match(/^HR[_-]?(\d+(\.\d+)?)$/i);if(mHr){const tm=Number(mHr[1]);const hrVal=Number(s[k]);if(Number.isFinite(hrVal)&&hrVal>0)pushObs(s,tm,Math.log(hrVal),s[`seHR_${mHr[1]}`]??s[`seLogHR_${mHr[1]}`])}})});
-if(observations.length<2){const proxy=FrequentistNMA.calcEffects(studies,effectMeasure).filter(r=>Number.isFinite(r.yi)&&Number.isFinite(r.vi)&&r.vi>0);proxy.forEach(s=>{const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,s.vi));pushObs(s,12,s.yi,se)});if(proxy.length>0)notes.push('Survival-specific fields were missing; used nominal 12-month proxy contrasts from primary effect measure.')}
+if(observations.length<2){const proxy=FrequentistNMA.calcEffects(studies,effectMeasure).filter(r=>Number.isFinite(r.yi)&&Number.isFinite(r.vi)&&r.vi>0);proxy.forEach(s=>{const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,s.vi));pushObs(s,12,s.yi,se)});if(proxy.length>0)notes.push('Survival-specific fields were missing; used nominal 12-month proxy contrasts from primary effect measure.')}
 return{observations,treatments:[...treatments],notes}},
 fitModel(observations,treatments,basisFns,meta){
 const n=observations.length,p=treatments.length-1,m=basisFns.length,k=p*(1+m);if(n<=k||p<1)return{success:false,name:meta.name,powers:meta.powers};
-const X=Matrix.zeros(n,k),y=observations.map(o=>o.y),W=observations.map(o=>1/Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,o.v));const tIndex={};treatments.forEach((t,i)=>{tIndex[t]=i});
+const X=Matrix.zeros(n,k),y=observations.map(o=>o.y),W=observations.map(o=>1/Math.max(NMA_CONSTANTS.VARIANCE_GUARD,o.v));const tIndex={};treatments.forEach((t,i)=>{tIndex[t]=i});
 for(let i=0;i<n;i++){const o=observations[i];for(let j=1;j<treatments.length;j++){const t=treatments[j];const sign=(o.treatment1===t?1:0)+(o.treatment2===t?-1:0);if(sign===0)continue;X[i][j-1]=sign;for(let b=0;b<m;b++){const z=basisFns[b](o.time);X[i][p*(b+1)+(j-1)]=sign*z}}}
 const XtWX=Matrix.zeros(k,k),XtWy=Array(k).fill(0);for(let i=0;i<n;i++)for(let j=0;j<k;j++){XtWy[j]+=X[i][j]*W[i]*y[i];for(let c=0;c<k;c++)XtWX[j][c]+=X[i][j]*W[i]*X[i][c]}
-for(let j=0;j<k;j++)XtWX[j][j]+=(j<p?1e-8:1e-5);
+// ridge relative to the mean weight (scale-free); until 2026-11-14 an absolute 1e-8 / 1e-5
+{const wBar=Stats.mean(W);for(let j=0;j<k;j++)XtWX[j][j]+=(j<p?1e-8:1e-5)*wBar}
 let beta,vcov;try{beta=Matrix.solve(XtWX,XtWy);vcov=Matrix.inverse(XtWX)}catch(e){return{success:false,name:meta.name,powers:meta.powers}}
 const residuals=y.map((yi,i)=>{let f=0;for(let j=0;j<k;j++)f+=X[i][j]*beta[j];return yi-f});
 const wrss=Math.max(1e-12,residuals.reduce((s,r,i)=>s+W[i]*r*r,0));const AIC=n*Math.log(wrss/Math.max(1,n))+2*k;
@@ -2816,7 +2860,7 @@ predictTreatment(fit,treatment,time){
 const idx=fit.treatments.indexOf(treatment);if(idx<=0)return{logHR:0,hr:1,ci95:[1,1]};const j=idx-1,p=fit.p;let logHR=fit.beta[j];
 const coeffs=[1];for(let b=0;b<fit.basisFns.length;b++){const z=fit.basisFns[b](time);logHR+=fit.beta[p*(b+1)+j]*z;coeffs.push(z)}
 let variance=fit.vcov[j][j];for(let b=0;b<fit.basisFns.length;b++){const col=p*(b+1)+j;const z=coeffs[b+1];variance+=z*z*fit.vcov[col][col];variance+=2*z*fit.vcov[j][col];for(let c=b+1;c<fit.basisFns.length;c++){const col2=p*(c+1)+j;variance+=2*z*coeffs[c+1]*fit.vcov[col][col2]}}
-const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,variance));return{logHR,hr:Math.exp(logHR),ci95:[Math.exp(logHR-getCritVal(0.95)*se),Math.exp(logHR+getCritVal(0.95)*se)]}}
+const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,variance));return{logHR,hr:Math.exp(logHR),ci95:[Math.exp(logHR-getCritVal(0.95)*se),Math.exp(logHR+getCritVal(0.95)*se)]}}
 };
 
 const MultiStateNMA={
@@ -2865,7 +2909,7 @@ const centered=processed.map(s=>usableModifiers.map(em=>{const sv=covValue(s,em)
 const fit=this.fitPopulationModel(matrices,centered,usableModifiers,Number(ridgeLambda)||1e-6);
 if(!fit.success){results.error='ML-NMR model fitting failed';results.populationAdjustment={targetPopulation,effectModifiersUsed:usableModifiers,studiesWithCovariates:processed.length,method,interpretation:'Model could not be estimated with available data'};return results}
 const effects={};effects[fit.treatments[0]]={estimate:0,se:0,ci_lower:0,ci_upper:0,pValue:1};
-for(let j=0;j<fit.p;j++){const t=fit.treatments[j+1];const est=fit.baseBeta[j];const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,fit.baseVcov[j][j]||NMA_CONSTANTS.VARIANCE_FLOOR));effects[t]={estimate:est,se,ci_lower:est-getCritVal(0.95)*se,ci_upper:est+getCritVal(0.95)*se,pValue:2*(Stats.pnormU(Math.abs(est/se)))}}
+for(let j=0;j<fit.p;j++){const t=fit.treatments[j+1];const est=fit.baseBeta[j];const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,fit.baseVcov[j][j]??NMA_CONSTANTS.VARIANCE_FLOOR));effects[t]={estimate:est,se,ci_lower:est-getCritVal(0.95)*se,ci_upper:est+getCritVal(0.95)*se,pValue:2*(Stats.pnormU(Math.abs(est/se)))}}
 const unTau2=Number(results.unadjusted.tau2)||0;const tau2Reduction=unTau2>0?((unTau2-fit.tau2Adjusted)/unTau2)*100:0;
 results.adjusted={effects:{effects,beta:fit.baseBeta,vcov:fit.baseVcov,correctionFactor:1,correctionMethod:'none',df:Math.max(1,fit.n-fit.k)},tau2:fit.tau2Adjusted,treatments:fit.treatments,reference:fit.treatments[0],interactions:fit.interactions,modelFit:{AIC:fit.AIC,Q:fit.Q,n:fit.n,k:fit.k}};
 results.populationAdjustment={targetPopulation,effectModifiersUsed:usableModifiers,studiesWithCovariates:processed.length,method,interpretation:'Effects adjusted to target population characteristics by treatment-covariate interaction model'};
@@ -2875,14 +2919,15 @@ return results},
 fitPopulationModel(matrices,centeredCovariates,modifiers,ridgeLambda=1e-6){
 const{X,y,v,n,p,treatments}=matrices;const m=modifiers.length;const k=p*(1+m);if(n<=k||p<1)return{success:false};
 const Xext=Matrix.zeros(n,k);for(let i=0;i<n;i++){for(let j=0;j<p;j++){Xext[i][j]=X[i][j];for(let c=0;c<m;c++){Xext[i][p*(c+1)+j]=X[i][j]*(centeredCovariates?.[i]?.[c]||0)}}}
-const W=v.map(vi=>1/Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,vi));const XtWX=Matrix.zeros(k,k),XtWy=Array(k).fill(0);
+const W=v.map(vi=>1/Math.max(NMA_CONSTANTS.VARIANCE_GUARD,vi));const XtWX=Matrix.zeros(k,k),XtWy=Array(k).fill(0);
 for(let i=0;i<n;i++)for(let j=0;j<k;j++){XtWy[j]+=Xext[i][j]*W[i]*y[i];for(let c=0;c<k;c++)XtWX[j][c]+=Xext[i][j]*W[i]*Xext[i][c]}
-for(let j=p;j<k;j++)XtWX[j][j]+=Math.max(1e-8,ridgeLambda);for(let j=0;j<p;j++)XtWX[j][j]+=1e-8;
-let beta,vcov;try{beta=Matrix.solve(XtWX,XtWy);vcov=Matrix.inverse(XtWX)}catch(e){try{for(let j=0;j<k;j++)XtWX[j][j]+=1e-4;beta=Matrix.solve(XtWX,XtWy);vcov=Matrix.inverse(XtWX)}catch(e2){return{success:false}}}
+// ridge relative to the mean weight (scale-free); until 2026-11-14 absolute (1e-6 / 1e-8)
+const wBar=Stats.mean(W);for(let j=p;j<k;j++)XtWX[j][j]+=Math.max(1e-8,ridgeLambda)*wBar;for(let j=0;j<p;j++)XtWX[j][j]+=1e-8*wBar;
+let beta,vcov;try{beta=Matrix.solve(XtWX,XtWy);vcov=Matrix.inverse(XtWX)}catch(e){try{for(let j=0;j<k;j++)XtWX[j][j]+=1e-4*wBar;beta=Matrix.solve(XtWX,XtWy);vcov=Matrix.inverse(XtWX)}catch(e2){return{success:false}}}
 const residuals=y.map((yi,i)=>{let fit=0;for(let j=0;j<k;j++)fit+=Xext[i][j]*beta[j];return yi-fit});const Q=Math.max(0,residuals.reduce((s,r,i)=>s+W[i]*r*r,0));
 const sumW=Stats.sum(W),sumW2=Stats.sum(W.map(w=>w*w));const denom=Math.max(NMA_CONSTANTS.TOLERANCE,sumW-sumW2/Math.max(sumW,NMA_CONSTANTS.TOLERANCE));const tau2Adjusted=Math.max(0,(Q-Math.max(1,n-k))/denom);
 const baseBeta=beta.slice(0,p),baseVcov=Matrix.zeros(p,p);for(let i=0;i<p;i++)for(let j=0;j<p;j++)baseVcov[i][j]=vcov[i][j];
-const interactions=[];for(let c=0;c<m;c++){for(let j=0;j<p;j++){const idx=p*(c+1)+j;const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,vcov[idx][idx]||NMA_CONSTANTS.VARIANCE_FLOOR));interactions.push({modifier:modifiers[c],treatment:treatments[j+1],slope:beta[idx],se,pValue:2*(Stats.pnormU(Math.abs(beta[idx]/se)))})}}
+const interactions=[];for(let c=0;c<m;c++){for(let j=0;j<p;j++){const idx=p*(c+1)+j;const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,vcov[idx][idx]??NMA_CONSTANTS.VARIANCE_FLOOR));interactions.push({modifier:modifiers[c],treatment:treatments[j+1],slope:beta[idx],se,pValue:2*(Stats.pnormU(Math.abs(beta[idx]/se)))})}}
 const wrss=Math.max(1e-12,Q);const AIC=n*Math.log(wrss/Math.max(1,n))+2*k;
 return{success:true,beta,vcov,baseBeta,baseVcov,treatments,p,k,n,Q,AIC,tau2Adjusted,interactions}},
 calculateMAICWeights(ipdStudy,targetMeans){
@@ -2922,11 +2967,11 @@ if(processed.length<2)return{applicable:false,message:'Need at least 2 valid con
 const ref=reference||Array.from(new Set(processed.flatMap(s=>[s.treatment1,s.treatment2]))).sort()[0];
 const matrices=FrequentistNMA.buildMatrices(processed,ref,{effectMeasure,zeroCellCorrection});const tau2=FrequentistNMA.estimateTau2(matrices,'DL').tau2;const fit=FrequentistNMA.fitGLS(matrices,tau2);
 const effects={};effects[matrices.treatments[0]]={estimate:0,se:0,ci_lower:0,ci_upper:0,pValue:1};
-for(let j=0;j<matrices.p;j++){const t=matrices.treatments[j+1];const est=fit.beta[j];const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,fit.vcov[j][j]||NMA_CONSTANTS.VARIANCE_FLOOR));effects[t]={estimate:est,se,ci_lower:est-getCritVal(0.95)*se,ci_upper:est+getCritVal(0.95)*se,pValue:2*(Stats.pnormU(Math.abs(est/se)))}}
+for(let j=0;j<matrices.p;j++){const t=matrices.treatments[j+1];const est=fit.beta[j];const se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,fit.vcov[j][j]??NMA_CONSTANTS.VARIANCE_FLOOR));effects[t]={estimate:est,se,ci_lower:est-getCritVal(0.95)*se,ci_upper:est+getCritVal(0.95)*se,pValue:2*(Stats.pnormU(Math.abs(est/se)))}}
 const pairwiseEstimates=new Map();const comparisonKey=(t1,t2)=>[t1,t2].sort().join('|');
 processed.forEach(s=>{const key=comparisonKey(s.treatment1,s.treatment2);if(!pairwiseEstimates.has(key))pairwiseEstimates.set(key,[]);pairwiseEstimates.get(key).push(s)});
-const directEstimates={};pairwiseEstimates.forEach((studyList,key)=>{const w=studyList.map(s=>1/Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,s.vi));const sumW=Stats.sum(w);const pooled=sumW>0?Stats.sum(studyList.map((s,i)=>w[i]*s.yi))/sumW:0;const se=sumW>0?Math.sqrt(1/sumW):null;directEstimates[key]={estimate:Number.isFinite(pooled)?pooled.toFixed(4):'N/A',se:Number.isFinite(se)?se.toFixed(4):'N/A',nStudies:studyList.length}});
-const Q=Math.max(0,fit.Q),df=Math.max(1,matrices.n-matrices.p),I2=Math.max(0,((Q-df)/Math.max(Q,NMA_CONSTANTS.TOLERANCE))*100);
+const directEstimates={};pairwiseEstimates.forEach((studyList,key)=>{const w=studyList.map(s=>1/Math.max(NMA_CONSTANTS.VARIANCE_GUARD,s.vi));const sumW=Stats.sum(w);const pooled=sumW>0?Stats.sum(studyList.map((s,i)=>w[i]*s.yi))/sumW:0;const se=sumW>0?Math.sqrt(1/sumW):null;directEstimates[key]={estimate:Number.isFinite(pooled)?pooled.toFixed(4):'N/A',se:Number.isFinite(se)?se.toFixed(4):'N/A',nStudies:studyList.length}});
+const Q=Math.max(0,fit.Q),df=Math.max(1,matrices.dfQ??(matrices.n-matrices.p)),I2=Math.max(0,((Q-df)/Math.max(Q,NMA_CONSTANTS.TOLERANCE))*100);
 return{applicable:true,effects,tau2,heterogeneity:{Q,df,I2},directEstimates,method:'Composite likelihood (GLS approximation)',advantages:['Uses all network contrasts','Fast and numerically stable','Provides uncertainty for all basic parameters'],limitations:['Approximate composite-likelihood interpretation','Less fully specified than Bayesian survival/IPD models'],reference:'Rao et al, medRxiv 2024; Rucker et al, netmeta framework'}
 }
 };
@@ -7114,12 +7159,12 @@ if(!(a>0&&b>0&&c>0&&d>0))return null;
 if(effectType==='RR'){
 const estimate=(a/(a+b))/(c/(c+d));
 if(!(estimate>0))return null;
-const yi=Math.log(estimate),vi=(1/a)-(1/(a+b))+(1/c)-(1/(c+d)),se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,vi));
+const yi=Math.log(estimate),vi=(1/a)-(1/(a+b))+(1/c)-(1/(c+d)),se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,vi));
 return{estimate,lowerCI:Math.exp(yi-getCritVal(0.95)*se),upperCI:Math.exp(yi+getCritVal(0.95)*se),yi,se,vi:se*se};
 }
 const estimate=(a*d)/(b*c);
 if(!(estimate>0))return null;
-const yi=Math.log(estimate),vi=(1/a)+(1/b)+(1/c)+(1/d),se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_FLOOR,vi));
+const yi=Math.log(estimate),vi=(1/a)+(1/b)+(1/c)+(1/d),se=Math.sqrt(Math.max(NMA_CONSTANTS.VARIANCE_GUARD,vi));
 return{estimate,lowerCI:Math.exp(yi-getCritVal(0.95)*se),upperCI:Math.exp(yi+getCritVal(0.95)*se),yi,se,vi:se*se};
 },
 escapeRegex(value){
