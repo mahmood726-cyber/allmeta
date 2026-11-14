@@ -76,7 +76,10 @@
     return runnerPromise;
   }
   const mounts = new WeakMap();
+  // Registry of mounted adapters by app id (read by shared/alm-verify-r.js via AlmValidate.adapters).
+  const adapters = {};
   function mount(el, adapter) {
+    if (adapter && adapter.app) adapters[adapter.app] = adapter;
     if (typeof el === 'string') el = document.querySelector(el);
     if (!el) throw new Error('Validation mount missing');
     if (mounts.has(el)) mounts.get(el)();
@@ -261,5 +264,5 @@
     if (adapter.live) live.onclick = () => runLive().catch(() => {});
     return { prepare, runCorpus, runLive };
   }
-  global.AlmValidate = { mount, digest, verify, loadFiles, compare };
+  global.AlmValidate = { mount, digest, verify, loadFiles, compare, adapters };
 })(typeof window !== 'undefined' ? window : globalThis);
