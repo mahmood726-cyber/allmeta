@@ -6152,10 +6152,12 @@ function runPredictivePatientSelection() {
 
  var treatmentVar = rfCfg.treatmentVar || 'treatment';
 
- // IPD-Fix3 (rrev60 F4): an explicitly empty outcome control is authoritative (no fallback to a column named 'event')
- if (rfCfg.emptyControls && rfCfg.emptyControls.includes('eventVar')) {
+ // IPD-Fix3 (rrev60 F4; agy #569 finding 2): an explicitly empty outcome, treatment or study control is
+ // authoritative (no fallback to a column named 'event' or 'treatment', no analysis without the study)
+ var emptyRoles = ipdEmptyControlRoles(rfCfg);
+ if (emptyRoles) {
  hideLoadingOverlay();
- showNotification('No outcome variable is selected (Data tab, variable mapping); select it to run this analysis.', 'warning');
+ showNotification('No ' + emptyRoles + ' variable is selected (Data tab, variable mapping); select it to run this analysis.', 'warning');
  return;
  }
 
@@ -7795,10 +7797,12 @@ function runRandomForestHeterogeneity() {
 
  var treatmentVar = rfCfg.treatmentVar || 'treatment';
 
- // IPD-Fix3 (rrev60 F4): an explicitly empty outcome control is authoritative (no fallback to a column named 'event')
- if (rfCfg.emptyControls && rfCfg.emptyControls.includes('eventVar')) {
+ // IPD-Fix3 (rrev60 F4; agy #569 finding 2): an explicitly empty outcome, treatment or study control is
+ // authoritative (no fallback to a column named 'event' or 'treatment', no analysis without the study)
+ var emptyRoles = ipdEmptyControlRoles(rfCfg);
+ if (emptyRoles) {
  hideLoadingOverlay();
- showNotification('No outcome variable is selected (Data tab, variable mapping); select it to run this analysis.', 'warning');
+ showNotification('No ' + emptyRoles + ' variable is selected (Data tab, variable mapping); select it to run this analysis.', 'warning');
  return;
  }
 
@@ -7864,13 +7868,17 @@ function runRandomForestHeterogeneity() {
 
 
 
- rf.fit(APP.data, covariates, treatmentVar, outcomeVar);
+ // IPD-Fix3 (agy #569 finding 3): only patients with a recorded numeric outcome (an empty CSV cell is '', which the
+ // forest's arithmetic read as a value: CATEs of 1e20, NaN importances, and a 0/1 outcome reported as non-binary)
+ var rfRows = APP.data.filter(function(d) { return typeof d[outcomeVar] === 'number' && Number.isFinite(d[outcomeVar]); });
+
+ rf.fit(rfRows, covariates, treatmentVar, outcomeVar);
 
 
 
- var predictions = rf.predict(APP.data);
+ var predictions = rf.predict(rfRows);
 
- var oobScore = rf.getOOBScore(APP.data, outcomeVar);
+ var oobScore = rf.getOOBScore(rfRows, outcomeVar);
 
 
 
@@ -7890,7 +7898,7 @@ function runRandomForestHeterogeneity() {
 
  outcomeVar: outcomeVar,
 
- outcomeIsBinary: APP.data.every(function(d) { return d[outcomeVar] == null || d[outcomeVar] === 0 || d[outcomeVar] === 1; }),
+ outcomeIsBinary: rfRows.every(function(d) { return d[outcomeVar] === 0 || d[outcomeVar] === 1; }),
 
  outcomeType: rfCfg.outcomeType,
 
@@ -37547,6 +37555,13 @@ function ipdArmOutcomes(rows, config) {
  });
  return { studies, studyVar: sv, treatmentVar: tv, outcomeVar: ov };
 }
+// IPD-Fix3 (agy #569 finding 2): the mapped study / treatment / outcome controls that are present and explicitly
+// empty, as words for a refusal ('outcome / treatment'), or '' when none is.
+function ipdEmptyControlRoles(cfg) {
+ const roles = [['studyVar', 'study'], ['treatmentVar', 'treatment'], ['eventVar', 'outcome']];
+ const e = (cfg && Array.isArray(cfg.emptyControls)) ? cfg.emptyControls : [];
+ return roles.filter(r => e.includes(r[0]) && !cfg[r[0]]).map(r => r[1]).join(' / ');
+}
 // IPD-Modal: the analysis configuration as the form shows it (runAnalysis reads the same fields), so a surface
 // opened before Run Analysis still analyses the outcome type and variables the page is configured for.
 function ipdFormAnalysisConfig() {
@@ -37719,7 +37734,8 @@ function ipdStudyEstimate(studyData, cfg, armMapping) {
 //  (a) it is a monotone function of a column d in D, or d is a monotone function of it (an affine function, a 0/1
 //      threshold such as responder = change >= c, or remission = endpoint <= 7 for a 0/1 outcome);
 //  (b) it is a 0/1 column that a straight line in (d, b) separates perfectly, b one other column, while neither d nor b
-//      alone separates it (response = change / baseline >= 0.5);
+//      alone separates it (response = change / baseline >= 0.5), and b is not an exact affine function of d and it
+//      (that relation is symmetric, total = score + 10 flag, events = stroke + mi, and is decided under (c));
 //  (c) together with one other column b it fixes d exactly: an exact affine relation c = a0 + a1 d + a2 b (to the
 //      precision the values are recorded with), or, for a 0/1 d, a line in (c, b) separating d perfectly. Such a relation
 //      is symmetric in c and b (change = baseline - endpoint), so it says that ONE of them carries the outcome: the
@@ -37915,7 +37931,9 @@ function ipdOutcomeDerivedColumns(rows, cfg) {
   // (b) a 0/1 column that a line in (d, b) separates, neither d nor b alone
   for (const c of cand().filter(isBinary)) {
    for (const d of D) {
-    const b = cand().find(w => w !== c && !monotone(w, c) && separable2(c, d, w));
+    // agy #569 finding 1: not when w is an exact affine function of (d, c) -- that relation is symmetric (total =
+    // score + 10 flag; events = stroke + mi), so it is left to (c), where the treatment / missingness rule decides
+    const b = cand().find(w => w !== c && !monotone(w, c) && separable2(c, d, w) && !affine2(w, d, c));
     if (b) { add(c, 'a 0/1 column that a threshold of a linear combination of ' + via(d) + ' and ' + b + ' separates perfectly'); changed = true; break; }
    }
    if (changed) break;
@@ -37928,8 +37946,8 @@ function ipdOutcomeDerivedColumns(rows, cfg) {
    for (let i = 0; i < C.length; i++) for (let j = i + 1; j < C.length; j++) {
     const c = C[i], b = C[j];
     let rel = null;
-    if (!isBinary(c) && affine2(c, d, b)) rel = c + ' is an exact linear combination of ' + d + ' and ' + b;
-    else if (!isBinary(b) && affine2(b, d, c)) rel = b + ' is an exact linear combination of ' + d + ' and ' + c;
+    if (affine2(c, d, b)) rel = c + ' is an exact linear combination of ' + d + ' and ' + b;
+    else if (affine2(b, d, c)) rel = b + ' is an exact linear combination of ' + d + ' and ' + c;
     else if (isBinary(d) && separable2(d, c, b)) rel = 'a line in (' + c + ', ' + b + ') separates ' + d + ' perfectly';
     if (rel) ties.push({ d: d, c: c, b: b, rel: rel, who: decide(d, c, b) });
    }

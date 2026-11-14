@@ -98,5 +98,30 @@ for (const seed of [11, 12, 13]) {
   check('synthetic, complete data, no treatment effect: base and post2 both excluded and the reason says the data cannot tell',
     e2.some(x => x.name === 'post2') && e2.some(x => x.name === 'base' && /cannot tell/.test(x.reason)) && !e2.some(x => x.name === 'age'), JSON.stringify(e2));
 }
+// agy #569 finding 1: step (b) (a 0/1 column linearly separated by (d, w)) must not decide a relation that is an exact
+// 3-column affine relation between the 0/1 column and w: then it is symmetric (y = score + 10 flag says that ONE of
+// score, flag carries the outcome) and the treatment / missingness rule decides, as for change = baseline - endpoint.
+// Also a 0/1 component of an outcome that is a sum of two 0/1 components is not dropped alone.
+{
+  let s = 7; const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+  const rowsA = [], rowsB = [];
+  for (let i = 0; i < 400; i++) {
+    const trt = (i >> 1) % 2, flag = rnd() < 0.4 ? 1 : 0, age = 30 + Math.round(rnd() * 40);
+    const score = 20 + Math.round(rnd() * 10) - 6 * trt; // changed by the treatment
+    rowsA.push({ study_id: 'S' + (i % 5), treatment: trt, flag: flag, age: age, score: score, total: score + 10 * flag });
+    const stroke = rnd() < (trt ? 0.15 : 0.35) ? 1 : 0, mi = rnd() < (trt ? 0.15 : 0.35) ? 1 : 0;
+    rowsB.push({ study_id: 'S' + (i % 5), treatment: trt, age: age, stroke: stroke, mi: mi, events: stroke + mi });
+  }
+  sandbox.__rows = rowsA;
+  run(`APP.data = __rows; APP.declaredOutcome = null;`);
+  const a = derived('total', 'continuous');
+  check('3-column relation with a 0/1 member (total = score + 10 flag): score (changed by the treatment) excluded, the baseline 0/1 flag kept, age kept',
+    a.some(x => x.name === 'score') && !a.some(x => x.name === 'flag') && !a.some(x => x.name === 'age'), JSON.stringify(a));
+  sandbox.__rows = rowsB;
+  run(`APP.data = __rows; APP.declaredOutcome = null;`);
+  const b = derived('events', 'continuous');
+  check('outcome = sum of two 0/1 components (events = stroke + mi): both components excluded, age kept',
+    b.some(x => x.name === 'stroke') && b.some(x => x.name === 'mi') && !b.some(x => x.name === 'age'), JSON.stringify(b));
+}
 console.log(passed + '/' + (passed + failed) + ' PASS');
 process.exitCode = failed ? 1 : 0;

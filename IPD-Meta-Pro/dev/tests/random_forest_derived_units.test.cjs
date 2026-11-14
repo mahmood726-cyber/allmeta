@@ -62,5 +62,17 @@ for (const [loader, y, type] of [['example', 'hamd_change', 'continuous'], ['upl
     if (rf.oob <= 0) check(tag + ': a non-positive OOB R-squared is said plainly (no better than the mean)', /worse than|no better than/.test(text), text.slice(0, 600));
   }
 }
+// agy #569 finding 3: an uploaded 0/1 outcome with empty cells (parseDelimited reads them as '') is still a 0/1
+// outcome: its CATEs are differences in proportions, in percentage points
+{
+  upload('continuous', 21);
+  run(`[3, 40, 77].forEach(i => { APP.data[i].remission = ''; });`);
+  const { rf, text, notes } = go('remission', 'binary');
+  if (!rf) check('upload / remission with empty cells: ran', false, notes);
+  else {
+    const lo = Math.min(...rf.cates), hi = Math.max(...rf.cates);
+    check('upload / remission with empty cells: CATE range in percentage points (still a 0/1 outcome)', text.includes((lo * 100).toFixed(1) + ' to ' + (hi * 100).toFixed(1) + ' percentage points') && /proportion/.test(text), text.slice(0, 600));
+  }
+}
 console.log(passed + '/' + (passed + failed) + ' PASS');
 process.exitCode = failed ? 1 : 0;

@@ -45,6 +45,16 @@ check('empty outcome control: Predictive Patient Selection refuses (no fallback 
 setForm('study_id', 'arm', '', 'binary');
 run('runRandomForestHeterogeneity()');
 check('empty outcome control: Random Forest refuses (no fallback to the column "event")', run('__rf') === null && /outcome/i.test(run('__notes.join(" ")')), run('__notes.join(" | ")'));
+// agy #569 finding 2: the same for an empty treatment or study control (no fallback to the decoy column "treatment"
+// or to an unstratified analysis)
+for (const [role, s, t, re] of [['treatment', 'study_id', '', /treatment/i], ['study', '', 'arm', /study/i]]) {
+  setForm(s, t, 'score', 'continuous');
+  run('runPredictivePatientSelection()');
+  check(`empty ${role} control: Predictive Patient Selection refuses`, run('__pp') === null && re.test(run('__notes.join(" ")')), run('__notes.join(" | ")') + ' | pp ' + JSON.stringify(run('__pp && __pp.covariates')));
+  setForm(s, t, 'score', 'continuous');
+  run('runRandomForestHeterogeneity()');
+  check(`empty ${role} control: Random Forest refuses`, run('__rf') === null && re.test(run('__notes.join(" ")')), run('__notes.join(" | ")') + ' | rf ' + JSON.stringify(run('__rf && __rf.covariates')));
+}
 // mapped controls still work, and a page without the controls (APP.config only) keeps the old fallbacks
 setForm('study_id', 'arm', 'score', 'continuous');
 const ok = run('ipdArmOutcomes(APP.data, ipdFormAnalysisConfig())');
