@@ -2862,39 +2862,32 @@ function renderPowerCurve(containerId, effect, se, currentK) {
   };
   Plotly.newPlot(container, [trace, currentPoint], layout, { responsive: true });
 }
-// Cross-disciplinary content update
+// Cross-disciplinary tab. This page's engine (app.min.js) computes none of the quantities this tab used
+// to show, and every card was a fixed transform of the pooled estimate presented as a result (lane tcxd):
+// "Cost per QALY" = |theta| x 10000, "Education d" = 0.5 x theta, "Cohen's d" = |theta| and "Hedges' g" =
+// 0.95 x theta, whatever the effect measure. The tab now says what is not computed and what it would need.
 function updateCrossDisciplinary() {
   const container = document.getElementById('panel-crossdisciplinary');
   if (!container || !AppState.results) return;
-  const r = AppState.results;
   container.innerHTML = `
     <div class="card">
       <div class="card__header">
         <h2 class="card__title">🌐 Cross-Disciplinary Methods</h2>
       </div>
       <div class="card__body">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-3);">
-          <div class="stat-card">
-            <div class="stat-card__label">Economics: Cost per QALY</div>
-            <div class="stat-card__value">£${(Math.abs(r.pooled.theta) * 10000).toFixed(0)}</div>
-            <div class="stat-card__change">Illustrative estimate</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">Education: Effect Size (d)</div>
-            <div class="stat-card__value">${(r.pooled.theta * 0.5).toFixed(2)}</div>
-            <div class="stat-card__change">Converted from log scale</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">Psychology: Cohen's d</div>
-            <div class="stat-card__value">${Math.abs(r.pooled.theta).toFixed(2)}</div>
-            <div class="stat-card__change">${Math.abs(r.pooled.theta) > 0.8 ? 'Large' : Math.abs(r.pooled.theta) > 0.5 ? 'Medium' : 'Small'} effect</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">Ecology: Hedges' g</div>
-            <div class="stat-card__value">${(r.pooled.theta * 0.95).toFixed(2)}</div>
-            <div class="stat-card__change">Bias-corrected</div>
+        <div class="alert alert--info">
+          <div class="alert__content">
+            <div class="alert__title">Not computed on this page</div>
+            <div class="alert__text">
+              <ul style="margin: var(--space-2) 0 0 var(--space-4);">
+                <li><strong>Cost per QALY:</strong> needs the costs of each option and the QALYs gained (utilities and time horizon); this page has no cost or utility input.</li>
+                <li><strong>Standardised mean difference (Cohen's d / Hedges' g):</strong> needs continuous outcomes with means, SDs and group sizes (choose a continuous measure, SMD); a ratio or risk difference is not a d.</li>
+                <li><strong>Conversion of an odds ratio to d:</strong> needs the log odds ratio of a binary outcome and an assumption about the underlying distribution (e.g. logistic, Chinn 2000); it is not offered here.</li>
+              </ul>
+            </div>
           </div>
         </div>
+        <p class="text-secondary text-sm" style="margin-top: var(--space-3);">The pooled estimate on the scale of the chosen measure is on the Results tab.</p>
       </div>
     </div>
   `;
