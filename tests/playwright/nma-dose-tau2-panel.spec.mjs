@@ -213,18 +213,38 @@ const REFUSED = [
 ];
 const REFUSAL = /^Not available: .+\. Disabled until it is validated against R\.$/;
 
+// Re-review lane rrev61 (F4), fixed in lane nmaexp2 (2026-11-14): the refusal said "Disabled until
+// it is validated against R" but no refused control was disabled; a user saw the reason only after
+// clicking. Each refused control must now BE disabled (disabled + aria-disabled="true"), show the
+// reason beside it without a click (#<id>-refusal, linked by aria-describedby), and a click on it
+// must do nothing at all: no number, no notification, no download, no dialog.
+async function expectRefusedControl(page, id, out) {
+  await tabOf(page, id);
+  const btn = page.locator('#' + id);
+  await expect(btn, id).toBeDisabled();
+  await expect(btn, id).toHaveAttribute('aria-disabled', 'true');
+  await expect(btn, id).toHaveAttribute('aria-describedby', `${id}-refusal`);
+  const note = page.locator(`#${id}-refusal`);
+  await expect(note, id).toHaveText(REFUSAL);
+  await expect(note, id).toBeVisible();
+  await expect(btn, id).toHaveAttribute('title', (await note.textContent()) || '');
+  const before = await page.locator('#' + out).textContent();
+  await page.evaluate(() => { window.__notes = []; });
+  await btn.click({ force: true });
+  await page.waitForTimeout(50);
+  expect(await page.locator('#' + out).textContent(), `${id}: a click on the disabled control changed #${out}`).toBe(before);
+  expect(await page.evaluate(() => window.__notes), id).toEqual([]);
+}
+
 for (const data of ['bcg', 'sample']) {
-  test(`controls that do not reproduce R refuse visibly (${data})`, async ({ page }) => {
+  test(`controls that do not reproduce R are disabled, with the reason shown (${data})`, async ({ page }) => {
     const dialogs = [];
     const downloads = [];
     page.on('download', d => downloads.push(d.suggestedFilename()));
     await open(page, dialogs);
     if (data === 'bcg') await loadBcg(page);
-    for (const [id, out] of REFUSED) {
-      await tabOf(page, id);
-      await page.locator('#' + id).click();
-      await expect(page.locator('#' + out), id).toHaveText(REFUSAL);
-    }
+    await recordNotes(page);
+    for (const [id, out] of REFUSED) await expectRefusedControl(page, id, out);
     expect(downloads).toEqual([]);
     expect(dialogs).toEqual([]);
   });
@@ -261,40 +281,63 @@ async function recordNotes(page) {
 }
 
 for (const data of ['bcg', 'sample']) {
-  test(`unguarded rawData controls refuse visibly with one warning (${data})`, async ({ page }) => {
+  test(`unguarded rawData controls are disabled, with the reason shown (${data})`, async ({ page }) => {
     const dialogs = [];
     const downloads = [];
     page.on('download', d => downloads.push(d.suggestedFilename()));
     await open(page, dialogs);
     if (data === 'bcg') await loadBcg(page);
     await recordNotes(page);
-    for (const [id, out] of REFUSED_MORE) {
-      await page.evaluate(() => { window.__notes = []; });
-      await tabOf(page, id);
-      await page.locator('#' + id).click();
-      await expect(page.locator('#' + out), id).toHaveText(REFUSAL);
-      const text = await page.locator('#' + out).textContent();
-      expect(await page.evaluate(() => window.__notes), id).toEqual([`warning: ${text}`]);
-    }
-    // the live monitor never started
-    expect(await page.locator('#startLiveMA').isDisabled()).toBe(false);
+    for (const [id, out] of REFUSED_MORE) await expectRefusedControl(page, id, out);
+    // the live monitor never started: its Stop control was never enabled
+    expect(await page.locator('#stopLiveMA').isDisabled()).toBe(true);
     expect(downloads).toEqual([]);
     expect(dialogs).toEqual([]);
   });
 }
 
-test('Bayesian model averaging refuses once: no second "BMA failed" notice', async ({ page }) => {
+test('the disabled controls are exactly the refused ones (no refused control left enabled, none extra)', async ({ page }) => {
+  const dialogs = [];
+  await open(page, dialogs);
+  const marked = await page.evaluate(() => [...document.querySelectorAll('[aria-disabled="true"]')]
+    .filter(el => el.getAttribute('aria-describedby') === `${el.id}-refusal`).map(el => el.id).sort());
+  const expected = [...REFUSED, ...REFUSED_MORE, ['runBMA', 'bmaStatus']].map(([id]) => id)
+    .filter((id, i, a) => a.indexOf(id) === i).sort();
+  expect(marked).toEqual(expected);
+  expect(marked.length).toBe(71);
+  expect(dialogs).toEqual([]);
+});
+
+test('Bayesian model averaging is disabled: a click shows no notice and changes no result', async ({ page }) => {
   const dialogs = [];
   await open(page, dialogs);
   await recordNotes(page);
   await tabOf(page, 'runBMA');
   const ensembleBefore = await page.locator('#ensembleResult').textContent();
-  await page.locator('#runBMA').click();
-  await expect(page.locator('#bmaStatus')).toHaveText(REFUSAL);
-  const text = await page.locator('#bmaStatus').textContent();
+  await expectRefusedControl(page, 'runBMA', 'bmaStatus');
   await page.waitForTimeout(500);
-  expect(await page.evaluate(() => window.__notes)).toEqual([`warning: ${text}`]);
+  expect(await page.evaluate(() => window.__notes)).toEqual([]);
   expect(await page.locator('#ensembleResult').textContent()).toBe(ensembleBefore);
+  expect(dialogs).toEqual([]);
+});
+
+test('feature search does not offer refused controls (no "Trim and Fill"), and still offers validated ones', async ({ page }) => {
+  const dialogs = [];
+  await open(page, dialogs);
+  const refused = await page.evaluate(() => featureIndex
+    .filter(f => document.getElementById(f.button)?.getAttribute('aria-disabled') === 'true').map(f => f.name));
+  // the entries rrev61 found offered (Trim and Fill, Copas Model, Begg Test, Z-Curve, Gaussian Process,
+  // Optimal Dose, Node Splitting, Component NMA, Cook Distance) must be among the refused ones
+  for (const n of ['Trim and Fill', 'Copas Model', 'Begg Test', 'Z-Curve', 'Gaussian Process', 'Optimal Dose',
+    'Node Splitting', 'Component NMA', 'Cook Distance']) expect(refused, n).toContain(n);
+  for (const name of refused) {
+    await page.locator('#featureSearch').fill(name.toLowerCase());
+    await expect(page.locator('#searchResults')).toBeVisible();
+    const names = await page.locator('#searchResults span:first-child').allTextContents();
+    expect(names, `search "${name}"`).not.toContain(name);
+  }
+  await page.locator('#featureSearch').fill('bootstrap');
+  await expect(page.locator('#searchResults')).toContainText('Bootstrap');
   expect(dialogs).toEqual([]);
 });
 

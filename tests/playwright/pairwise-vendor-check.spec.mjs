@@ -8,15 +8,17 @@ import { test, expect } from '@playwright/test';
 // Benign on every meta-CSP page: frame-ancestors can only be set via HTTP header.
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
+// Paths, not URLs: the page is loaded from the config's baseURL (the server that config starts), so a run can
+// never test a page served by some other process on a hard-coded port (lane pwrest4, review rrevpw2).
 const APPS = [
   {
     name: 'Pairwiseai bundle',
-    url: 'http://127.0.0.1:8080/Pairwiseai/TruthCert-PairwisePro-v1.0-bundle.html',
+    url: '/Pairwiseai/TruthCert-PairwisePro-v1.0-bundle.html',
     globals: { Plotly: 'object', jspdf: 'object', html2canvas: 'function', XLSX: 'object' },
   },
   {
     name: 'Truthcert1 production',
-    url: 'http://127.0.0.1:8080/Truthcert1/TruthCert-PairwisePro-v1.0-production.html',
+    url: '/Truthcert1/TruthCert-PairwisePro-v1.0-production.html',
     globals: { XLSX: 'object' },  // the lib whose SRI hash had gone stale
   },
 ];
