@@ -81,7 +81,7 @@ out <- list(
   pscores=as.list(pscores), effects=effs, league=league,
   predict=predict_list, nodesplit=ns_results,
   reference="plac", sm="MD",
-  method_tau="tau.preset",
+  method_tau="FE",
   tau2_own=if(is.null(net.own)) NA else as.numeric(net.own$tau^2),
   nStudies=net$k, nTreatments=net$n,
   netmeta_version=as.character(packageVersion("netmeta")),

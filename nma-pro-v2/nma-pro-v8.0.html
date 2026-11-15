@@ -375,7 +375,7 @@ const fs=(logL,par)=>({logL,deviance:restricted?-2*logL:-2*(logL-llSat),AIC:-2*l
 const re=fs(ll(tau2),p+1),fe=fs(ll(0),p);
 const lrt=Math.max(0,2*(re.logL-fe.logL));const pLRT=lrt>0?0.5*Stats.pchisqU(lrt,1):1;
 return{randomEffects:{...re,tau2},fixedEffect:fe,likelihood:lik+(estimator===lik?'':` (RE model at its ${lik} tau2; the analysis uses ${estimator})`),nObs:k,
-preferred:re.AIC<fe.AIC?'Random Effects':'Fixed Effect',deltaAIC:Math.abs(re.AIC-fe.AIC),deltaBIC:Math.abs(re.BIC-fe.BIC),
+preferred:re.AIC<fe.AIC?'Random Effects':'Fixed Effect',deltaAIC:Math.abs(re.AIC-fe.AIC),deltaBIC:re.BIC==null||fe.BIC==null?null:Math.abs(re.BIC-fe.BIC),
 LRT:{statistic:lrt,df:1,pValue:pLRT,pValueNaive:lrt>0?Stats.pchisqU(lrt,1):1,mixture:'0.5 chi2_0 + 0.5 chi2_1'},
 interpretation:this.interpretDelta(re.AIC-fe.AIC,re.BIC-fe.BIC,pLRT)}},
 interpretDelta(dAIC,dBIC,pLRT){
@@ -2777,7 +2777,7 @@ const multiArm=(()=>{const by=new Map();studies.forEach(s=>{const id=s&&s.name!=
 // REML: netmeta 0.10105, page 0.09992 = rma.mv). The export then adds net.page with tau2 fixed at the page's value.
 const exactNote=multiArm&&(est==='REML'||est==='ML');let pageFit='';
 if(exactNote){const t=Number(options.tau2);notes.push(`netmeta's ${est} treats the contrasts of a multi-arm study as independent (its ${est} uses V = seTE^2); the page maximises the exact likelihood WITH the multi-arm covariance (as metafor rma.mv), so net$tau^2 differs from the page`+(options.mode!=='benchmark'&&Number.isFinite(t)?'; net.page fixes tau2 at the page\'s value and reproduces its estimates and SEs':''));if(options.mode==='benchmark')reproducible=false;else if(Number.isFinite(t))pageFit=`\n# the page's analysis: tau2 fixed at its exact-likelihood ${est} value\nnet.page <- netmeta(TE, seTE, treat1, treat2, studlab, data = p1, sm = ${this.str(smR)},\n               reference.group = ${this.str(options.reference||'')}, common = FALSE, random = TRUE, tau.preset = sqrt(${this.num(t)}),\n               level = ${level}, level.ma = ${level})\n`}
-if(corr!=='none'&&est!=='FE')notes.push(`the page's "${corr==='kr'?'kr: t on network df (ad hoc), not Kenward-Roger':corr}" small-sample correction scales the variance (HKSJ: by max(1, Q/df.Q)) and uses t on df.Q; netmeta 3.7.0 has no such interval, so the CIs / p-values below are the uncorrected ones (tau2, Q, estimates and SEs before the correction are comparable)`);
+if(corr!=='none')notes.push(`the page's "${corr==='kr'?'kr: t on network df (ad hoc), not Kenward-Roger':corr}" small-sample correction scales the variance (HKSJ: by max(1, Q/df.Q)) and uses t on df.Q; netmeta 3.7.0 has no such interval, so the CIs / p-values below are the uncorrected ones (tau2, Q, estimates and SEs before the correction are comparable)`);
 const head=`# NMA Pro v8.1 - R netmeta script reproducing the page's analysis\n# effect measure ${em}, estimator ${est}, zero-cell ${zc}, correction ${corr==='kr'?'kr (t on network df, ad hoc; not Kenward-Roger)':corr}, level ${level}\n`+(notes.length?notes.map(n=>'# NOTE: '+n).join('\n')+'\n':'')+`library(netmeta)\n\n`;
 if(tauArg===null){code+=`stop(${this.str('No parity run: '+notes[notes.length-1])})\n`;return{code:head+code,notes,reproducible,kind}}
 code+=`\nnet <- netmeta(TE, seTE, treat1, treat2, studlab, data = p1, sm = ${this.str(smR)},\n               reference.group = ${this.str(options.reference||'')}, ${tauArg},\n               level = ${level}, level.ma = ${level})\n`+pageFit;
@@ -8540,7 +8540,7 @@ function updateHeterogeneityPanel(het,tau2CI,correctionMethod,modelSelection){do
 // Model Selection Panel
 const msContainer=document.getElementById('modelSelectionPanel');
 if(msContainer&&modelSelection){
-const re=modelSelection.randomEffects,fe=modelSelection.fixedEffect,lrt=modelSelection.LRT;const f1=v=>Number.isFinite(v)?v.toFixed(1):'n/a';
+const re=modelSelection.randomEffects,fe=modelSelection.fixedEffect,lrt=modelSelection.LRT;const f1=v=>Number.isFinite(v)?v.toFixed(1):'n/a';const dlt=(a,b)=>a==null||b==null?null:a-b;// null - null is 0 in JS: an undefined BIC / AICc difference showed '0.0'
 const preferredCls=modelSelection.preferred==='Random Effects'?'text-success':'text-warning';
 msContainer.innerHTML=`
 <h4 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-primary)" title="Compare fixed and random effects models using information criteria">Model Selection (AIC/BIC)</h4>
@@ -8549,7 +8549,7 @@ msContainer.innerHTML=`
 <tbody>
 <tr class="${modelSelection.preferred==='Random Effects'?'font-semibold':''}"><td>Random Effects</td><td class="font-mono">${re.AIC.toFixed(1)}</td><td class="font-mono">${f1(re.BIC)}</td><td class="font-mono">${f1(re.AICc)}</td><td class="font-mono">${re.logL.toFixed(1)}</td></tr>
 <tr class="${modelSelection.preferred==='Fixed Effect'?'font-semibold':''}"><td>Fixed Effect</td><td class="font-mono">${fe.AIC.toFixed(1)}</td><td class="font-mono">${f1(fe.BIC)}</td><td class="font-mono">${f1(fe.AICc)}</td><td class="font-mono">${fe.logL.toFixed(1)}</td></tr>
-<tr style="background:var(--surface-raised)"><td>?AIC</td><td class="font-mono ${modelSelection.deltaAIC>2?'text-success':''}">${(re.AIC-fe.AIC).toFixed(1)}</td><td class="font-mono">${f1(re.BIC-fe.BIC)}</td><td class="font-mono">${f1(re.AICc-fe.AICc)}</td><td>—</td></tr>
+<tr style="background:var(--surface-raised)"><td>?AIC</td><td class="font-mono ${modelSelection.deltaAIC>2?'text-success':''}">${(re.AIC-fe.AIC).toFixed(1)}</td><td class="font-mono">${f1(dlt(re.BIC,fe.BIC))}</td><td class="font-mono">${f1(dlt(re.AICc,fe.AICc))}</td><td>—</td></tr>
 </tbody></table>
 <div class="stat-grid mt-3" style="grid-template-columns:repeat(3,1fr)">
 <div class="stat-card" title="Preferred model based on AIC"><div class="stat-card__value ${preferredCls}" style="font-size:13px">${modelSelection.preferred}</div><div class="stat-card__label">Preferred</div></div>
@@ -9642,7 +9642,9 @@ const idxROB=keyIdx('rob','riskofbias');
 const idxYi=keyIdx('yi','te','effect','logeffect');
 const idxSe=keyIdx('se','sete','stderr','standarderror');
 const idxVi=keyIdx('vi','variance','var');
-const hasNamedSchema=idxStudy>=0&&idxT1>=0&&idxT2>=0&&((idxE1>=0&&idxN1>=0&&idxE2>=0&&idxN2>=0)||(idxYi>=0&&(idxSe>=0||idxVi>=0)));
+// a named file is counts (events + n), direct (TE + SE / variance) or continuous (mean, SD, n per arm); until 2026-11-15 a
+// continuous-only file was not recognised and every row was read positionally and refused (agy #577)
+const hasNamedSchema=idxStudy>=0&&idxT1>=0&&idxT2>=0&&((idxE1>=0&&idxN1>=0&&idxE2>=0&&idxN2>=0)||(idxYi>=0&&(idxSe>=0||idxVi>=0))||(idxM1>=0&&idxSD1>=0&&idxN1>=0&&idxM2>=0&&idxSD2>=0&&idxN2>=0));
 const startRow=hasNamedSchema?1:0;
 if(lines.length<=startRow)return{studies:[],errors:['No data rows found'],valid:false};
 const studies=[],errors=[],warnings=[],dropped=[];
@@ -9670,10 +9672,14 @@ const hasDirectInput=Number.isFinite(yi)&&((Number.isFinite(se)&&se>0)||(Number.
 // out of the network with a warning; until 2026-11-15 the page read NA events as 0 (sanitizeInteger default) and blank events
 // as 0 later (events1 || 0), and NA n as 100. Such a row is dropped here and listed in `dropped` / warnings.
 const isNum=v=>v!==''&&v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(String(v).trim()));
-const countCols=[idxE1,idxN1,idxE2,idxN2];const schemaHasCounts=hasNamedSchema?countCols.some(ix=>ix>=0):true;
+const schemaHasCounts=hasNamedSchema?(idxE1>=0||idxE2>=0):true;// event columns, not n (n is also a continuous column)
 // a continuous-outcome row (mean, sd and n in both arms; exportCSV leaves its Events columns blank) is not a count row
-const hasContinuous=['mean1','sd1','n1','mean2','sd2','n2'].every(k=>isNum(row[k]))&&Number(row.sd1)>0&&Number(row.sd2)>0;
-if(!hasDirectInput&&!hasContinuous&&schemaHasCounts){const miss=[['events1',row.events1],['n1',row.n1],['events2',row.events2],['n2',row.n2]].filter(([,v])=>!isNum(v)).map(([k,v])=>`${k}=${String(v??'').trim()===''?'blank':String(v).trim()}`);if(miss.length){const msg=`Row ${rowNum} (${String(row.name||'').trim()||'unnamed'}: ${t1} vs ${t2}) not used: missing ${miss.join(', ')} (as netmeta, a comparison with missing data is left out)`;dropped.push({row:rowNum,name:String(row.name||'').trim(),treatment1:t1,treatment2:t2,missing:miss,message:msg});warnings.push(msg);continue}}
+const hasContinuous=['mean1','sd1','n1','mean2','sd2','n2'].every(k=>isNum(row[k]))&&Number(row.sd1)>0&&Number(row.sd2)>0&&Number(row.n1)>0&&Number(row.n2)>0;
+// a row with SOME continuous data (incomplete) is kept: analyze() leaves it out and names it (renderDroppedRowsNotice)
+const partContinuous=['mean1','sd1','mean2','sd2'].some(k=>isNum(row[k]));
+// a sample size that is present but not > 0 is invalid: refused by name (it was silently rewritten to 1 by sanitizeInteger)
+const badN=[['n1',row.n1],['n2',row.n2]].filter(([,v])=>isNum(v)&&!(Number(String(v).trim())>0));if(badN.length){const msg=`Row ${rowNum} (${String(row.name||'').trim()||'unnamed'}: ${t1} vs ${t2}) not used: ${badN.map(([k,v])=>`${k}=${String(v).trim()}`).join(', ')} (a sample size must be > 0)`;dropped.push({row:rowNum,name:String(row.name||'').trim(),treatment1:t1,treatment2:t2,missing:badN.map(([k,v])=>`${k}=${String(v).trim()}`),message:msg});warnings.push(msg);continue}
+if(!hasDirectInput&&!hasContinuous&&!partContinuous&&schemaHasCounts){const miss=[['events1',row.events1],['n1',row.n1],['events2',row.events2],['n2',row.n2]].filter(([,v])=>!isNum(v)).map(([k,v])=>`${k}=${String(v??'').trim()===''?'blank':String(v).trim()}`);if(miss.length){const msg=`Row ${rowNum} (${String(row.name||'').trim()||'unnamed'}: ${t1} vs ${t2}) not used: missing ${miss.join(', ')} (as netmeta, a comparison with missing data is left out)`;dropped.push({row:rowNum,name:String(row.name||'').trim(),treatment1:t1,treatment2:t2,missing:miss,message:msg});warnings.push(msg);continue}}
 const n1=(row.n1!==''&&row.n1!==null&&row.n1!==undefined)?Security.sanitizeInteger(row.n1,100,1,1000000):'';
 const n2=(row.n2!==''&&row.n2!==null&&row.n2!==undefined)?Security.sanitizeInteger(row.n2,100,1,1000000):'';
 const events1=(row.events1!==''&&row.events1!==null&&row.events1!==undefined&&n1!=='')?Security.sanitizeInteger(row.events1,0,0,n1):'';
@@ -14242,7 +14248,7 @@ out <- list(
   pscores=as.list(pscores), effects=effs, league=league,
   predict=predict_list, nodesplit=ns_results,
   reference=${rStr(ref)}, sm=${rStr(em)},
-  method_tau=${rStr(plan.tau2Check?(estimatorJS==='FE'?'FE':rMethodTau):'tau.preset')},
+  method_tau=${rStr(estimatorJS==='FE'?'FE':plan.tau2Check?rMethodTau:'tau.preset')},
   tau2_own=if(is.null(net.own)) NA else as.numeric(net.own$tau^2),
   nStudies=net$k, nTreatments=net$n,
   netmeta_version=as.character(packageVersion("netmeta")),
@@ -14276,7 +14282,8 @@ function webrPlan(o){
   else{plan.tauArg=preset;plan.tau2Check=false;
     notes.push(`netmeta has no ${est==='PM'?'Paule-Mandel':est} estimator (method.tau must be "DL", "ML" or "REML"), so the page's tau2 is NOT independently checked: netmeta is run with tau2 fixed at the page's value (tau.preset) and the estimates, SEs, league table, Q / I2 and node-splits are compared at that tau2.`);}
   if(plan.tauArg===null){plan.tauArg='common=FALSE, random=TRUE, method.tau="REML"';plan.tau2Check=false;notes.push('the page has no finite tau2 to fix; netmeta REML is shown for information only');}
-  if(corr!=='none'&&est!=='FE'){plan.uncorrected=true;plan.skipCI=true;plan.skipPI=true;
+  // the engine scales the variance whatever the estimator (calcTreatmentEffects ignores it; FE + HKSJ: x max(1, Q/df.Q)), so FE too (agy #577)
+  if(corr!=='none'){plan.uncorrected=true;plan.skipCI=true;plan.skipPI=true;
     notes.push(`the page's "${String(o?.correctionLabel||corr)}" small-sample correction scales the variances (and uses t quantiles); netmeta 3.7.0 has no such interval, so SEs and P-scores are compared before the correction and the CI and prediction-interval checks are skipped.`);}
   return plan;
 }

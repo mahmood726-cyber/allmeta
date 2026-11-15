@@ -81,7 +81,8 @@ def test_1_import_keeps_a_blank_te_blank_and_the_notice_exists():
 
 
 # ---------------------------------------------------------------- item 2
-WEBR = ('senn_PM_hksj', 'senn_PM_none', 'senn_REML_none', 'senn_DL_hksj', 'senn_ML_hksj', 'pain_MD_REML_none', 'senn_FE')
+WEBR = ('senn_PM_hksj', 'senn_PM_none', 'senn_REML_none', 'senn_DL_hksj', 'senn_ML_hksj', 'pain_MD_REML_none', 'senn_FE',
+        'senn_FE_hksj')
 
 
 def test_2_webr_script_run_in_R_is_exactly_what_the_page_emits():
@@ -165,3 +166,35 @@ def test_4_sparse_lu_inverse_logdet_are_bitwise_the_dense_ones():
     e = V['speed']['exact']
     assert e['ldetFound'] and e['n'] >= 50 and e['exactUsed'] >= 30, e
     assert e['luSame'] == e['n'] and e['invSame'] == e['n'] and e['ldetSame'] == e['n'], e
+
+
+# ---------------------------------------------------------------- agy review of #577
+def test_agy577_fe_with_a_correction_is_compared_before_it():
+    # the engine applies HKSJ under FE too (factor Q/df.Q = 5.39 on Senn), so the plan must not compare its SEs / CIs raw
+    c = V['webr']['cases']['senn_FE_hksj']
+    assert c['correctionFactor'] > 5, c['correctionFactor']
+    assert c['plan']['uncorrected'] and c['plan']['skipCI'] and c['plan']['skipPI'], c['plan']
+    assert c['compare']['failed'] == 0, c['compare']['failing']
+    assert any(n.endswith('SE (before correction)') for n in c['compare']['names'])
+
+
+def test_agy577_fe_script_labels_its_method_fe():
+    for nm in ('senn_FE', 'senn_FE_hksj'):
+        assert 'method_tau="FE"' in V['webr']['cases'][nm]['script'], nm
+        assert R['webr'][nm]['method_tau'] == 'FE', (nm, R['webr'][nm]['method_tau'])
+
+
+def test_agy577_undefined_bic_aicc_differences_are_not_zero():
+    t = V['agy577']['tree']
+    assert 'error' not in t, t
+    assert t['deltaBIC'] is None, t
+    assert t['diffCells'][2:4] == ['n/a', 'n/a'], t['diffCells']
+
+
+def test_agy577_continuous_only_csv_keeps_incomplete_rows_and_refuses_n_le_0():
+    r = V['agy577']['importCont']
+    assert 'error' not in r, r
+    assert r['names'] == ['P1', 'P2', 'P4', 'P5'], r  # P2 (blank SD) kept for analyze(); P3 (n1 = 0) refused by name
+    assert not any('events' in w for w in r['warnings']), r['warnings']
+    assert any('P3' in w and 'n1=0' in w for w in r['warnings']), r['warnings']
+    assert r['notComputable'] == ['P2'] and r['k'] == 3, r

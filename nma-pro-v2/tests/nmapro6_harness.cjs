@@ -115,7 +115,8 @@ const webrCases = {
   senn_DL_hksj: [senn(), { reference: 'plac', effectMeasure: 'MD', estimator: 'DL', smallStudyCorrection: 'hksj' }],
   senn_ML_hksj: [senn(), { reference: 'plac', effectMeasure: 'MD', estimator: 'ML', smallStudyCorrection: 'hksj' }],
   pain_MD_REML_none: [pain(), { reference: 'Placebo', effectMeasure: 'MD', estimator: 'REML', smallStudyCorrection: 'none' }],
-  senn_FE: [senn(), { reference: 'plac', effectMeasure: 'MD', estimator: 'FE', smallStudyCorrection: 'none' }]
+  senn_FE: [senn(), { reference: 'plac', effectMeasure: 'MD', estimator: 'FE', smallStudyCorrection: 'none' }],
+  senn_FE_hksj: [senn(), { reference: 'plac', effectMeasure: 'MD', estimator: 'FE', smallStudyCorrection: 'hksj' }]
 };
 const rRefPath = path.join(__dirname, 'nmapro6_r460.json');
 const rRef = fs.existsSync(rRefPath) ? JSON.parse(fs.readFileSync(rRefPath, 'utf8')) : null;
@@ -148,6 +149,25 @@ if (out.webr.available) {
     const dir = path.join(__dirname, 'fixtures', 'nmapro6-webr'); fs.mkdirSync(dir, { recursive: true });
     for (const [nm, c] of Object.entries(out.webr.cases)) if (c.script) fs.writeFileSync(path.join(dir, nm + '.R'), c.script);
   }
+}
+
+// ---------------------------------------------------------------- agy review of #577
+{
+  const A = {};
+  // MINOR 4: BIC / AICc undefined (REML with no residual df): their differences must be undefined, not 0
+  const tree = [['T1', 'B', 'A', -0.3, 0.2], ['T2', 'C', 'A', 0.4, 0.25]].map(([n, t1, t2, y, se]) => ({ name: n, treatment1: t1, treatment2: t2, yi: y, se, vi: se * se }));
+  A.tree = safe(() => { const r = F.analyze(tree, { reference: 'A', effectMeasure: 'MD', estimator: 'REML', smallStudyCorrection: 'none' });
+    const m = r.modelSelection; const els = {}; const doc = ctx.document, og = doc.getElementById;
+    doc.getElementById = id => (els[id] = els[id] || Object.assign(el(), { parentElement: el() })); try { get('updateHeterogeneityPanel')(r.heterogeneity, r.tau2CI, 'none', m); } finally { doc.getElementById = og; }
+    const html = (els.modelSelectionPanel && els.modelSelectionPanel.innerHTML) || '';
+    const diffRow = (html.match(/<tr style="background:var\(--surface-raised\)">([\s\S]*?)<\/tr>/) || [])[1] || '';
+    return { deltaBIC: m.deltaBIC, diffCells: [...diffRow.matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map(x => x[1]) }; });
+  // MAJOR (b): a continuous-only CSV (no event columns), one row with a blank SD, one with n1 = 0
+  const csv = 'Study,Treatment1,Mean1,SD1,N1,Treatment2,Mean2,SD2,N2\nP1,A,3.2,1.8,60,B,5.1,2.0,60\nP2,A,3.5,,50,B,5.3,2.1,50\nP3,A,3.0,1.7,0,B,5.0,2.0,55\nP4,C,3.3,1.8,45,B,4.8,1.9,45\nP5,C,3.1,1.7,40,A,3.3,1.8,40\n';
+  A.importCont = safe(() => { const r = get('importCSV')(csv); const fit = safe(() => F.analyze(r.studies, { reference: 'B', effectMeasure: 'MD', estimator: 'FE', smallStudyCorrection: 'none' }));
+    return { names: r.studies.map(x => x.name), warnings: r.warnings, P3n1: (r.studies.find(x => x.name === 'P3') || {}).n1 ?? 'absent',
+      notComputable: fit.error ? fit.error : fit.notComputable, k: fit.processed ? fit.processed.length : null }; });
+  out.agy577 = A;
 }
 
 // ---------------------------------------------------------------- item 3
