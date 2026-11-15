@@ -52,8 +52,9 @@ def test_qnorm_and_pnorm_equal_r():
 
 
 def test_worker_pnorm_equals_r():
+    # lane nmapro5: the inlined Web Worker (and its own Stats) is removed -- one engine, one Stats
     v = _run()
-    assert _bad(v['worker_pnorm'], R['pnorm'], 1e-12, 'worker pnorm') == []
+    assert v['worker_pnorm'] is None
 
 
 def test_qt_and_pt_equal_r():

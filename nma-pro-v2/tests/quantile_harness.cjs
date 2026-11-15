@@ -59,11 +59,10 @@ const f = n => vm.runInContext(n, ctx);
 const S = f('Stats');
 // the Web Worker: its own context, nothing loaded (a Blob worker gets no page scripts)
 const wa = html.indexOf('const WORKER_CODE=`'), wb = html.indexOf('`;', wa);
-const wline = html.slice(wa, wb).split(/\r?\n/).find(l => l.startsWith('const Stats={'));
-if (!wline) throw new Error('worker Stats line not found');
-const wctx = sandbox();
-vm.runInContext(wline + ';globalThis.Stats=Stats;', wctx);
-const WS = vm.runInContext('Stats', wctx);
+// lane nmapro5 (2026-11-15) removed the worker; WS is null then
+const wline = wa >= 0 ? html.slice(wa, wb).split(/\r?\n/).find(l => l.startsWith('const Stats={')) : null;
+if (wa >= 0 && !wline) throw new Error('worker Stats line not found');
+const WS = wline ? (() => { const wctx = sandbox(); vm.runInContext(wline + ';globalThis.Stats=Stats;', wctx); return vm.runInContext('Stats', wctx); })() : null;
 const lowP = R.p.filter(p => p <= 0.5);
 const num = v => (typeof v === 'number' && !Number.isNaN(v)) ? v : String(v);
 process.stdout.write(JSON.stringify({
@@ -80,5 +79,5 @@ process.stdout.write(JSON.stringify({
   slnorm: R.lpar.map(v => R.lt.map(t => num(f('SF').survivalFunctions.lognormal(t, v[0], v[1])))),
   hlnorm: R.lpar.map(v => R.lt.map(t => num(f('SF').hazardFunctions.lognormal(t, v[0], v[1])))),
   erf: R.erf_x.map(x => num(f('erfApprox')(x))),
-  worker_pnorm: R.x.map(x => num(WS.pnorm(x)))
+  worker_pnorm: WS ? R.x.map(x => num(WS.pnorm(x))) : null
 }));

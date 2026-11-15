@@ -51,15 +51,15 @@ for (const m of html.slice(0, main.index).matchAll(/<script src="\.\.\/shared\/(
 }
 vm.runInContext(main[1] + '\n;globalThis.__X = {FrequentistNMA, MCIDProbabilityRanking, GFLSparsePooling,' +
   ' PredictivePScore, SMAANMARanking, CNMALOOContribution, IPDCoxNMA, NMAInfluenceDiagnostics, QDecompositionNMA,' +
-  ' BayesianOutlierDownweightNMA, BayesianNMA, FractionalPolynomialNMA, MLNMR, CompositeLikelihoodNMA, WORKER_CODE,' +
+  ' BayesianOutlierDownweightNMA, BayesianNMA, FractionalPolynomialNMA, MLNMR, CompositeLikelihoodNMA, WORKER_CODE: typeof WORKER_CODE !== "undefined" ? WORKER_CODE : null,' +
   ' reg: RapidReview};', ctx, { filename: 'nma-pro-v8.0.html' });
 const X = vm.runInContext('__X', ctx);
 
 // the worker's engine runs in its own context, as in the browser
-const wctx = sandbox();
-wctx.postMessage = noop;
-vm.runInContext(X.WORKER_CODE + '\n;globalThis.__WNMA = NMA;', wctx, { filename: 'WORKER_CODE' });
-const WNMA = vm.runInContext('__WNMA', wctx);
+// lane nmapro5 (2026-11-15) removed the inlined Web Worker engine; WNMA is null unless an older page is run (PAGE=)
+const WNMA = X.WORKER_CODE ? (() => { const wctx = sandbox(); wctx.postMessage = noop;
+  vm.runInContext(X.WORKER_CODE + '\n;globalThis.__WNMA = NMA;', wctx, { filename: 'WORKER_CODE' });
+  return vm.runInContext('__WNMA', wctx); })() : null;
 
 const readCsv = f => {
   const [head, ...rows] = fs.readFileSync(path.join(__dirname, f), 'utf8').trim().split(/\r?\n/);
@@ -101,7 +101,7 @@ out.bayesfe = { n: bfe.samples && bfe.samples.length, mean: map(Object.keys(bfe.
 // ---- per-study OR / RR: worker engine vs main engine; registry import SE ----
 const big = binary(readCsv('fixtures/nmapro2-bigtrial.csv'));
 for (const em of ['OR', 'RR']) {
-  out.worker[em] = { worker: WNMA.calcEffects(smoke, em).map(s => ({ yi: s.yi, vi: s.vi })),
+  out.worker[em] = { worker: WNMA ? WNMA.calcEffects(smoke, em).map(s => ({ yi: s.yi, vi: s.vi })) : null,
     main: X.FrequentistNMA.calcEffects(smoke, em).map(s => ({ yi: s.yi, vi: s.vi })) };
   out.registry[em] = big.map(s => X.reg.effectStatsFromCounts(em, s.events1, s.n1, s.events2, s.n2).se);
 }

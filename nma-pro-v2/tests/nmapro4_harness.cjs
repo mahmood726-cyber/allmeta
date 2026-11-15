@@ -49,12 +49,12 @@ for (const m of html.slice(0, main.index).matchAll(/<script src="\.\.\/shared\/(
   vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: f });
 }
 vm.runInContext(main[1] + '\n;globalThis.__X = {FrequentistNMA, NetworkGuardian, QDecompositionNMA, MLNMR, BayesianNMA,' +
-  ' BootstrapRankUncertainty, CrossDesignCalibratedNMA, WORKER_CODE};', ctx, { filename: 'nma-pro-v8.0.html' });
+  ' BootstrapRankUncertainty, CrossDesignCalibratedNMA, WORKER_CODE: typeof WORKER_CODE !== "undefined" ? WORKER_CODE : null};', ctx, { filename: 'nma-pro-v8.0.html' });
 const X = vm.runInContext('__X', ctx);
-const wctx = sandbox();
-wctx.postMessage = noop;
-vm.runInContext(X.WORKER_CODE + '\n;globalThis.__WNMA = NMA;', wctx, { filename: 'WORKER_CODE' });
-const WNMA = vm.runInContext('__WNMA', wctx);
+// lane nmapro5 (2026-11-15) removed the inlined Web Worker engine; WNMA is null unless an older page is run (PAGE=)
+const WNMA = X.WORKER_CODE ? (() => { const wctx = sandbox(); wctx.postMessage = noop;
+  vm.runInContext(X.WORKER_CODE + '\n;globalThis.__WNMA = NMA;', wctx, { filename: 'WORKER_CODE' });
+  return vm.runInContext('__WNMA', wctx); })() : null;
 
 const readCsv = f => {
   const [head, ...rows] = fs.readFileSync(path.join(__dirname, f), 'utf8').trim().split(/\r?\n/);
@@ -124,7 +124,7 @@ for (const [nm, f] of [['twoarm', 'fixtures/nmapro3-mlnmr.csv'], ['multiarm', 'f
 
 // ---- RR continuity correction and multi-arm RR ----
 out.rr = { main: X.FrequentistNMA.calcEffects(smoke, 'RR').map(s => ({ yi: s.yi, vi: s.vi })),
-  worker: WNMA.calcEffects(smoke, 'RR').map(s => ({ yi: s.yi, vi: s.vi })) };
+  worker: WNMA ? WNMA.calcEffects(smoke, 'RR').map(s => ({ yi: s.yi, vi: s.vi })) : null };
 { const r = X.FrequentistNMA.analyze(smoke, { reference: 'A', effectMeasure: 'RR', estimator: 'DL',
     smallStudyCorrection: 'none', predictionIntervals: false }), e = r.effects.effects;
   out.rr.net = { Q: r.heterogeneity.Q, df: r.heterogeneity.df, tau2: r.tau2, TE: map(['B', 'C', 'D'], t => e[t].estimate),
@@ -137,8 +137,8 @@ out.zero = {};
     const rows = X.FrequentistNMA.calcEffects(sz, em).filter(s => String(s.study) === '25');
     const r = X.FrequentistNMA.analyze(sz, { reference: 'A', effectMeasure: em, estimator: 'DL', smallStudyCorrection: 'none',
       predictionIntervals: false }), e = r.effects.effects;
-    const wrows = WNMA.calcEffects(sz, em).filter(s => String(s.study) === '25');
-    out.zero['worker' + em] = { rowTE: wrows.map(s => s.yi), rowSE: wrows.map(s => Math.sqrt(s.vi)) };
+    const wrows = WNMA ? WNMA.calcEffects(sz, em).filter(s => String(s.study) === '25') : null;
+    out.zero['worker' + em] = wrows && { rowTE: wrows.map(s => s.yi), rowSE: wrows.map(s => Math.sqrt(s.vi)) };
     out.zero[em] = { rowTE: rows.map(s => s.yi), rowSE: rows.map(s => Math.sqrt(s.vi)), Q: r.heterogeneity.Q, tau2: r.tau2,
       TE: map(['B', 'C', 'D'], t => e[t].estimate), seTE: map(['B', 'C', 'D'], t => e[t].se) };
   } }
