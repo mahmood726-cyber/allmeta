@@ -21,10 +21,12 @@ import { fileURLToPath } from 'url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.REPO_ROOT || path.join(HERE, '..', '..');
 const REF = JSON.parse(fs.readFileSync(path.join(ROOT, 'Pairwiseai', 'tests', 'ois_r460.json'), 'utf8'));
-const PATH = '/Pairwiseai/TruthCert-PairwisePro-v1.0-bundle.html';
+// Both pages (lane pwrest4 gave Truthcert1's own TruthCert the same MCID treatment as the bundle).
+const PAGES = { 'Pairwise AI bundle': '/Pairwiseai/TruthCert-PairwisePro-v1.0-bundle.html',
+  'TruthCert Pairwise Pro': '/Truthcert1/TruthCert-PairwisePro-v1.0-production.html' };
 const VERDICTS = ['STABLE', 'STABLE-NID', 'MODERATE', 'EXPOSED', 'UNCERTAIN'];
 
-async function open(page) {
+async function open(page, PATH) {
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
   page.on('dialog', d => d.dismiss());
@@ -54,84 +56,86 @@ async function run(page, demo, mcid) {
   });
 }
 
-test('TruthCertConfig carries no fixed MCID', async ({ page }) => {
-  await open(page);
-  expect(await page.evaluate(() => TruthCertConfig.delta)).toBeNull();
-});
+for (const [NAME, PATH] of Object.entries(PAGES)) {
+  test(NAME + ': ' + 'TruthCertConfig carries no fixed MCID', async ({ page }) => {
+    await open(page, PATH);
+    expect(await page.evaluate(() => TruthCertConfig.delta)).toBeNull();
+  });
 
-for (const demo of ['BP_REDUCTION', 'SGLT2_ACM']) {
-  test(`${demo}: with no MCID the verdict and GRADE imprecision say they are not assessed`, async ({ page }) => {
+  for (const demo of ['BP_REDUCTION', 'SGLT2_ACM']) {
+    test(NAME + ': ' + `${demo}: with no MCID the verdict and GRADE imprecision say they are not assessed`, async ({ page }) => {
+      test.setTimeout(90000);
+      const errors = await open(page, PATH);
+      const g = await run(page, demo, '');
+      expect(g.verdict.verdict).toBe('NOT ASSESSED');
+      expect(g.verdict.reason).toContain('MCID');
+      expect(g.verdict.reason).toContain(g.measure);
+      expect(g.grade.domains.imprecision.rating).toBe('Not assessed');
+      expect(g.grade.domains.imprecision.downgrade).toBe(0);
+      expect(g.grade.certainty).toContain('imprecision not assessed');
+      expect(g.mainGrade.domains.imprecision.rating, 'Analysis-tab GRADE').toBe('Not assessed');
+      expect(g.ois.ok).toBe(false);
+      expect(g.panel).toContain('NOT ASSESSED');
+      expect(g.panel).toContain('MCID');
+      expect(g.panel).not.toContain('0.1054');
+      expect(g.panel).not.toMatch(/OIS not met/);
+      expect(g.htaShown, 'HTA is not offered on a verdict that was not assessed').toBe(false);
+      expect(errors).toEqual([]);
+    });
+  }
+
+  for (const c of REF.cases) {
+    test(NAME + ': ' + `${c.set}: MCID ${c.mcid} is used on the scale of the ${c.measure} (delta ${c.delta.toFixed(4)}, OIS ${c.ois})`, async ({ page }) => {
+      test.setTimeout(90000);
+      const errors = await open(page, PATH);
+      const g = await run(page, c.set, String(c.mcid));
+      expect(g.measure).toBe(c.measure);
+      expect(Math.abs(g.verdict.mcid.delta - c.delta)).toBeLessThan(1e-12);
+      expect(VERDICTS).toContain(g.verdict.verdict);
+      expect(g.ois.ok).toBe(true);
+      expect(g.ois.totalN).toBe(c.totalN);
+      expect(g.ois.oisRequired, `OIS page ${g.ois.oisRequired} R ${c.ois}`).toBe(c.ois);
+      expect(g.ois.metOIS).toBe(c.totalN >= c.ois);
+      const imp = g.grade.domains.imprecision;
+      expect(imp.rating).not.toBe('Not assessed');
+      if (c.totalN < c.ois) { expect(imp.rating).toBe('Serious'); expect(imp.reason).toContain('OIS not met'); }
+      expect(g.grade.certainty).not.toContain('not assessed');
+      expect(g.mainGrade.domains.imprecision.rating).not.toBe('Not assessed');
+      expect(g.panel).toContain('MCID ' + c.mcid);
+      expect(errors).toEqual([]);
+    });
+  }
+
+  test(NAME + ': ' + 'BP_REDUCTION: an MCID of 5 mmHg no longer calls a -7.8 mmHg effect with a CI excluding 0 "poor" precision', async ({ page }) => {
     test.setTimeout(90000);
-    const errors = await open(page);
-    const g = await run(page, demo, '');
+    await open(page, PATH);
+    const g = await run(page, 'BP_REDUCTION', '5');
+    expect(g.verdict.ci_excludes_null).toBe(true);
+    expect(g.verdict.precision).not.toBe('poor');
+  });
+
+  test(NAME + ': ' + 'an unusable MCID is refused with the reason, and a changed MCID re-runs the verdict', async ({ page }) => {
+    test.setTimeout(90000);
+    const errors = await open(page, PATH);
+    let g = await run(page, 'SGLT2_ACM', '1');
     expect(g.verdict.verdict).toBe('NOT ASSESSED');
-    expect(g.verdict.reason).toContain('MCID');
-    expect(g.verdict.reason).toContain(g.measure);
-    expect(g.grade.domains.imprecision.rating).toBe('Not assessed');
-    expect(g.grade.domains.imprecision.downgrade).toBe(0);
-    expect(g.grade.certainty).toContain('imprecision not assessed');
-    expect(g.mainGrade.domains.imprecision.rating, 'Analysis-tab GRADE').toBe('Not assessed');
-    expect(g.ois.ok).toBe(false);
-    expect(g.panel).toContain('NOT ASSESSED');
-    expect(g.panel).toContain('MCID');
-    expect(g.panel).not.toContain('0.1054');
-    expect(g.panel).not.toMatch(/OIS not met/);
-    expect(g.htaShown, 'HTA is not offered on a verdict that was not assessed').toBe(false);
+    expect(g.verdict.reason).toMatch(/ratio/i);
+    g = await run(page, 'SGLT2_ACM', 'abc');
+    expect(g.verdict.verdict).toBe('NOT ASSESSED');
+    expect(g.verdict.reason).toMatch(/not a number/i);
+    // markup typed as the MCID is not echoed into the GRADE reason / decision log (both are innerHTML)
+    const dialogs = [];
+    page.on('dialog', d => dialogs.push(d.message()));
+    g = await run(page, 'SGLT2_ACM', '<img src=x onerror=alert(7)>');
+    expect(g.verdict.verdict).toBe('NOT ASSESSED');
+    expect(await page.evaluate(() => document.querySelectorAll('img[src="x"]').length)).toBe(0);
+    expect(dialogs).toEqual([]);
+    g = await run(page, 'BP_REDUCTION', '0');
+    expect(g.verdict.verdict).toBe('NOT ASSESSED');
+    // change the MCID after the run: the verdict follows it without another Run
+    await page.evaluate(() => { const el = document.getElementById('mcidInput'); el.value = '5'; el.dispatchEvent(new Event('change', { bubbles: true })); });
+    await page.waitForFunction(() => AppState.truthcert && AppState.truthcert.verdict.verdict !== 'NOT ASSESSED', null, { timeout: 10000 });
+    expect(await page.evaluate(() => AppState.truthcert.verdict.mcid.delta)).toBe(5);
     expect(errors).toEqual([]);
   });
 }
-
-for (const c of REF.cases) {
-  test(`${c.set}: MCID ${c.mcid} is used on the scale of the ${c.measure} (delta ${c.delta.toFixed(4)}, OIS ${c.ois})`, async ({ page }) => {
-    test.setTimeout(90000);
-    const errors = await open(page);
-    const g = await run(page, c.set, String(c.mcid));
-    expect(g.measure).toBe(c.measure);
-    expect(Math.abs(g.verdict.mcid.delta - c.delta)).toBeLessThan(1e-12);
-    expect(VERDICTS).toContain(g.verdict.verdict);
-    expect(g.ois.ok).toBe(true);
-    expect(g.ois.totalN).toBe(c.totalN);
-    expect(g.ois.oisRequired, `OIS page ${g.ois.oisRequired} R ${c.ois}`).toBe(c.ois);
-    expect(g.ois.metOIS).toBe(c.totalN >= c.ois);
-    const imp = g.grade.domains.imprecision;
-    expect(imp.rating).not.toBe('Not assessed');
-    if (c.totalN < c.ois) { expect(imp.rating).toBe('Serious'); expect(imp.reason).toContain('OIS not met'); }
-    expect(g.grade.certainty).not.toContain('not assessed');
-    expect(g.mainGrade.domains.imprecision.rating).not.toBe('Not assessed');
-    expect(g.panel).toContain('MCID ' + c.mcid);
-    expect(errors).toEqual([]);
-  });
-}
-
-test('BP_REDUCTION: an MCID of 5 mmHg no longer calls a -7.8 mmHg effect with a CI excluding 0 "poor" precision', async ({ page }) => {
-  test.setTimeout(90000);
-  await open(page);
-  const g = await run(page, 'BP_REDUCTION', '5');
-  expect(g.verdict.ci_excludes_null).toBe(true);
-  expect(g.verdict.precision).not.toBe('poor');
-});
-
-test('an unusable MCID is refused with the reason, and a changed MCID re-runs the verdict', async ({ page }) => {
-  test.setTimeout(90000);
-  const errors = await open(page);
-  let g = await run(page, 'SGLT2_ACM', '1');
-  expect(g.verdict.verdict).toBe('NOT ASSESSED');
-  expect(g.verdict.reason).toMatch(/ratio/i);
-  g = await run(page, 'SGLT2_ACM', 'abc');
-  expect(g.verdict.verdict).toBe('NOT ASSESSED');
-  expect(g.verdict.reason).toMatch(/not a number/i);
-  // markup typed as the MCID is not echoed into the GRADE reason / decision log (both are innerHTML)
-  const dialogs = [];
-  page.on('dialog', d => dialogs.push(d.message()));
-  g = await run(page, 'SGLT2_ACM', '<img src=x onerror=alert(7)>');
-  expect(g.verdict.verdict).toBe('NOT ASSESSED');
-  expect(await page.evaluate(() => document.querySelectorAll('img[src="x"]').length)).toBe(0);
-  expect(dialogs).toEqual([]);
-  g = await run(page, 'BP_REDUCTION', '0');
-  expect(g.verdict.verdict).toBe('NOT ASSESSED');
-  // change the MCID after the run: the verdict follows it without another Run
-  await page.evaluate(() => { const el = document.getElementById('mcidInput'); el.value = '5'; el.dispatchEvent(new Event('change', { bubbles: true })); });
-  await page.waitForFunction(() => AppState.truthcert && AppState.truthcert.verdict.verdict !== 'NOT ASSESSED', null, { timeout: 10000 });
-  expect(await page.evaluate(() => AppState.truthcert.verdict.mcid.delta)).toBe(5);
-  expect(errors).toEqual([]);
-});
