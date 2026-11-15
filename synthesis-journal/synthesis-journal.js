@@ -62,10 +62,14 @@
     catch (e) { r = null; }
     if (!r) { // fixed-effect fallback
       var sw = 0, swy = 0; for (var i = 0; i < yi.length; i++) { var w = 1 / vi[i]; sw += w; swy += w * yi[i]; }
-      var mu = swy / sw, se = Math.sqrt(1 / sw); r = { mu: mu, ciLo: mu - Z * se, ciHi: mu + Z * se, k: yi.length };
+      var mu = swy / sw, se = Math.sqrt(1 / sw); r = { mu: mu, ciLo: mu - Z * se, ciHi: mu + Z * se, k: yi.length, knha: false, fallback: true };
     }
     var ex = scale === "ratio" ? Math.exp : function (x) { return x; };
-    return { mu: r.mu, lo: r.ciLo, hi: r.ciHi, natural: ex(r.mu), naturalLo: ex(r.ciLo), naturalHi: ex(r.ciHi), k: r.k, computed: true };
+    // Record which interval was produced so the label names it: ma-core applies
+    // Hartung-Knapp only when df = k-1 >= 1, so at k=1 the interval is the single
+    // study's own Wald z interval (as metafor::rma gives at k=1).
+    var ciKind = r.knha ? "hk" : (r.k === 1 ? "single" : "z");
+    return { mu: r.mu, lo: r.ciLo, hi: r.ciHi, natural: ex(r.mu), naturalLo: ex(r.ciLo), naturalHi: ex(r.ciHi), k: r.k, computed: true, ciKind: ciKind, fallback: !!r.fallback };
   }
 
   // ---- Inline forest figure, following the metapaper house rules: a single
@@ -205,13 +209,21 @@
       + "<thead><tr><th>Study</th><th>" + esc(d.measure) + "</th><th>95% CI</th><th>SE</th></tr></thead><tbody>" + body + "</tbody></table>";
   }
 
+  var HK_LABEL = "REML, Hartung–Knapp CI with variance floor";
+  function computedLabel(p) {
+    if (p.ciKind === "single") return "single study (k=1): no pooling; the interval is that study’s own 95% Wald z CI, computed here";
+    if (p.fallback) return "fixed-effect (inverse-variance, 95% Wald z CI; random-effects engine unavailable), computed here";
+    if (p.ciKind === "hk") return "random-effects (" + HK_LABEL + ", computed here)";
+    return "random-effects (REML, 95% Wald z CI, computed here)";
+  }
+
   function render() {
     var d = readBuses();
     var ratio = d.scale === "ratio", p = d.pooled, k = d.studies.length;
     var dir = p.natural < (ratio ? 1 : 0) ? "lower" : "higher";
     var sig = (p.naturalLo > (ratio ? 1 : 0)) || (p.naturalHi < (ratio ? 1 : 0));
     var poolWord = p.model === "random" ? "random-effects model" : p.model === "fixed" ? "fixed-effect model"
-      : (p.computed ? "random-effects (REML, Hartung–Knapp CI with variance floor, computed here)" : "as reported by the review");
+      : (p.computed ? computedLabel(p) : "as reported by the review");
 
     var banner = document.getElementById("demoBanner");
     if (d.demo) { banner.hidden = false; banner.textContent = "DEMO — no live synthesis is on the bus. Run a review in allmeta, then return and press “Refresh from review”."; }
@@ -256,13 +268,13 @@
     skipped.push("<b>L’Abbé plot</b> — no per-arm event counts on the bus (effect estimates were entered directly).");
     skipped.push("<b>Risk-of-bias traffic light</b> — no per-study RoB judgements on the bus.");
     if (k >= 3) {
-      // The reference band must use the SAME engine (REML, Knapp-Hartung) as the
+      // The reference band must use the SAME engine (REML, floored Hartung-Knapp) as the
       // LOO/cumulative rows so the all-trials cumulative row coincides with the
       // band by construction. The abstract/keyfinding/forest headline keep the
       // verbatim bus value (p.natural) per the bus contract.
       var refP = pooled(d.studies, d.scale);
       var miniRef = { est: refP.natural, lo: refP.naturalLo, hi: refP.naturalHi };
-      var sensNote = p.computed ? "" : " These sensitivity panels are recomputed here (REML, Knapp-Hartung) and may differ from the summary above, which is read verbatim from the review.";
+      var sensNote = p.computed ? "" : " These sensitivity panels are recomputed here (" + HK_LABEL + ") and may differ from the summary above, which is read verbatim from the review.";
       html += figure(miniForestSVG(looRows(d), miniRef, d),
         "Leave-one-out sensitivity: the " + esc(d.measure) + " re-pooled with each trial removed in turn, against the all-trials estimate (red band). A row far from the band marks an influential trial." + sensNote);
       html += figure(miniForestSVG(cumulativeRows(d), miniRef, d),

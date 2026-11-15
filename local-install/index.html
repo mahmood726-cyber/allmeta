@@ -198,7 +198,7 @@ head(ipd$IPD)</pre>
       <h3>JAGS (for <code>gemtc</code>, <code>rjags</code>, <code>R2jags</code>, <code>bnma</code>)</h3>
       <p>Download from <a href="https://sourceforge.net/projects/mcmc-jags/">mcmc-jags</a>. On Windows, JAGS auto-registers with R. On macOS with Homebrew: <code>brew install jags</code>. On Linux: <code>apt-get install jags</code>.</p>
       <h3>Stan (for <code>rstan</code>, <code>brms</code>, <code>cmdstanr</code>, <code>multinma</code>)</h3>
-      <p><code>cmdstanr</code> is the modern, recommended path. After <code>install.packages("cmdstanr")</code> run <code>cmdstanr::install_cmdstan()</code> which compiles Stan in the background (5-15 minutes first time). On Windows, Rtools provides the C++ toolchain.</p>
+      <p><code>cmdstanr</code> is the modern, recommended path. It is not on CRAN: install it from the Stan r-universe with <code>install.packages("cmdstanr", repos = c("https://stan-dev.r-universe.dev", getOption("repos")))</code>. <code>cmdstanr</code> is only the R interface; it also needs CmdStan itself, so then run <code>cmdstanr::install_cmdstan()</code>, which downloads and compiles CmdStan (5-15 minutes first time). On Windows, Rtools provides the C++ toolchain.</p>
       <h3>Verify</h3>
       <pre>library(rstan)
 # Tiny HMC test
