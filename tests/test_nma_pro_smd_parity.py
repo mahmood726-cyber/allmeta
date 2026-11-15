@@ -105,3 +105,70 @@ def test_franchini_network_from_arm_data_matches_netmeta(pg, est, key):
         assert close(res["eff"][t][0], te, 1e-7), f"{t}: TE {res['eff'][t][0]} vs netmeta {te}"
         assert close(res["eff"][t][1], net[f"se_{key}"][t], 1e-7), f"{t}: SE {res['eff'][t][1]} vs netmeta {net[f'se_{key}'][t]}"
     assert close(res["Q"], net["Q"], 1e-8) and res["df"] == net["df_Q"]
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# The downloadable R benchmark script (ExternalBenchmark.makeRScript -> RScriptBuilder) must reproduce the page.
+# Until 2026-11-15 its SMD path was meta::pairwise(sm = "SMD"), i.e. Cohen's d with var 1/n1 + 1/n2 + d^2/(2 N), so
+# every SMD benchmark differed from the page by the J factor and in the variance. Run the exported script in Rscript
+# (packages from the default R library) and compare its contrasts and network estimates with the page.
+import os
+import shutil
+import subprocess
+
+RSCRIPT = shutil.which("Rscript") or r"C:\Program Files\R\R-4.6.0\bin\Rscript.exe"
+WRAP = """suppressPackageStartupMessages(library(jsonlite))
+source("bench.R")
+ref <- REF
+write_json(list(p1 = p1, TE_common = as.list(net$TE.common[, ref]), se_common = as.list(net$seTE.common[, ref]),
+                TE_random = as.list(net$TE.random[, ref]), se_random = as.list(net$seTE.random[, ref]),
+                tau2 = net$tau^2, Q = net$Q), "wrap.json", digits = NA, auto_unbox = TRUE)
+"""
+
+
+def run_script(pg, tmp_path, rows, est, ref):
+    if not Path(RSCRIPT).exists():
+        pytest.skip("Rscript not found")
+    script = pg.evaluate("([rows, est, ref]) => ExternalBenchmark.makeRScript(rows, {effectMeasure: 'SMD', estimator: est,"
+                         " reference: ref, direction: 'lower'})", [rows, est, ref])
+    (tmp_path / "bench.R").write_text(script, encoding="utf-8")
+    (tmp_path / "wrap.R").write_text(WRAP.replace("REF", json.dumps(ref)), encoding="utf-8")
+    r = subprocess.run([RSCRIPT, "wrap.R"], cwd=tmp_path, capture_output=True, text=True, timeout=300)
+    assert r.returncode == 0, r.stderr[-2000:]
+    out = json.loads((tmp_path / "wrap.json").read_text(encoding="utf-8"))
+    page = pg.evaluate("""([rows, est, ref]) => { const a = FrequentistNMA.analyze(rows, {reference: ref, effectMeasure: 'SMD',
+        estimator: est, smallStudyCorrection: 'none', predictionIntervals: false});
+        return {eff: Object.fromEntries(Object.entries(a.effects.effects).map(([k, v]) => [k, [v.estimate, v.se]])), tau2: a.tau2,
+                rows: FrequentistNMA.calcEffects(rows, 'SMD').map(r => [r.name, r.treatment1, r.treatment2, r.yi, r.vi])}; }""",
+                       [rows, est, ref])
+    return out, page
+
+
+def check_contrasts(out, page):
+    p1 = {(s, a, b): (te, se) for s, a, b, te, se in zip(out["p1"]["studlab"] if isinstance(out["p1"], dict) else
+          [r["studlab"] for r in out["p1"]], *(([r[c] for r in out["p1"]] for c in ("treat1", "treat2", "TE", "seTE"))))}
+    worst = 0.0
+    for name, a, b, yi, vi in page["rows"]:
+        if (name, a, b) in p1:
+            te, se = p1[(name, a, b)]
+        else:
+            te, se = p1[(name, b, a)]
+            te = -te
+        worst = max(worst, abs(te - yi), abs(se * se - vi))
+    assert len(p1) == len(page["rows"]), (len(p1), len(page["rows"]))
+    return worst
+
+
+def test_exported_r_script_reproduces_page_smd_normand(pg, tmp_path):
+    out, page = run_script(pg, tmp_path, normand_rows(), "REML", "G")
+    assert check_contrasts(out, page) < 1e-10
+    for t, te in out["TE_random"].items():
+        assert abs(page["eff"][t][0] - te) < 1e-8 and abs(page["eff"][t][1] - out["se_random"][t]) < 1e-8, t
+    assert abs(page["tau2"] - out["tau2"]) < 1e-7
+
+
+def test_exported_r_script_reproduces_page_smd_franchini_multi_arm(pg, tmp_path):
+    out, page = run_script(pg, tmp_path, franchini_rows(), "FE", "Placebo")
+    assert check_contrasts(out, page) < 1e-10
+    for t, te in out["TE_common"].items():
+        assert abs(page["eff"][t][0] - te) < 1e-10 and abs(page["eff"][t][1] - out["se_common"][t]) < 1e-10, t
