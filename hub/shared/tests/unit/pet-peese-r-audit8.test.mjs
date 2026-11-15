@@ -67,3 +67,29 @@ test('pet-peese: header describes the trim-and-fill reflection point correctly',
   const p = page();
   assert.doesNotMatch(p.html, /imputes missing studies symmetric around the median/);
 });
+
+// Follow-up (coordinator on #605). 4. A p below 0.001 was printed "0.000" (FE p = 7.8e-11 on
+// the default example); now "<0.001", the funnel-plot convention.
+// 5. The alpha hint said "Stanley & Doucouliagos recommend 0.10 for the conditional switch".
+// Their paper (pre-publication text of Res Synth Methods 2014;5:60-78, hendrix.edu
+// CambridgePEESE.pdf, section on PET-PEESE) says only: use PEESE "when there is evidence of a
+// nonzero effect (reject H0: gamma1 = 0)" - no level and no tailedness. The rule (PEESE if
+// PET rejects) is the page's; the one-sided t(k-2) test at 0.10 is the page's own choice and
+// is now stated as such.
+test('pet-peese: p below 0.001 is "<0.001", never "0.000"', () => {
+  const p = page();
+  p.el('src').value = p.html.match(/<textarea id="src"[^>]*>([\s\S]*?)<\/textarea>/)[1];
+  p.el('alpha').value = '0.10'; p.el('tf-est').value = 'L0';
+  p.fire('btn-run');
+  const html = text(p.el('res-body').innerHTML);
+  assert.doesNotMatch(html, /\b0\.000\s*$|\s0\.000\s/, html);
+  assert.match(html, /FE meta-analysis\s+0\.198\s+0\.030\s+\[0\.138, 0\.258\]\s+<0\.001/, html);
+  assert.match(html, /PEESE intercept\s+0\.114\s+0\.025\s+\[0\.056, 0\.171\]\s+0\.002/, html);   // control
+});
+
+test('pet-peese: the switch level is not attributed to Stanley & Doucouliagos', () => {
+  const p = page();
+  assert.doesNotMatch(p.html, /Stanley &amp; Doucouliagos recommend 0\.10/);
+  assert.match(p.html, /PET rejects H₀: β₀ = 0/);
+  assert.match(p.html, /one-sided t\(k−2\) test[^<]*is this page's choice/);
+});

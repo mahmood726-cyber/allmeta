@@ -101,7 +101,7 @@
       <label>
         <span>PET significance threshold</span>
         <input id="alpha" type="number" step="0.01" min="0.01" max="0.5" value="0.10" aria-label="PET significance threshold">
-        <span class="hint">Stanley &amp; Doucouliagos recommend 0.10 for the conditional switch.</span>
+        <span class="hint">Stanley &amp; Doucouliagos (2014): use PEESE when PET rejects H₀: β₀ = 0; the paper fixes no level or tailedness. The one-sided t(k−2) test in the direction of the pooled effect, at this level (default 0.10), is this page's choice.</span>
       </label>
       <label>
         <span>Trim-and-fill estimator</span>
@@ -294,6 +294,8 @@
     }
 
     function fmt(x, d = 3) { return Number.isFinite(x) ? x.toFixed(d) : "—"; }
+    // p-values: three decimals, "<0.001" below that (a p is never "0.000"; funnel-plot convention).
+    function fmtP(p) { return !Number.isFinite(p) ? "—" : (p < 0.001 ? "&lt;0.001" : p.toFixed(3)); }
 
     // Last-computed result cache — populated by run(), read by __almResults().
     var _lastPET = null;
@@ -356,7 +358,7 @@
       const body = document.getElementById("res-body");
       const __bodyParts = [""];
       for (const r of resRows) {
-        __bodyParts.push(`<tr><td><code>${r.name}</code></td><td>${fmt(r.est)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.ci[0])}, ${fmt(r.ci[1])}]</td><td>${fmt(r.p)}</td></tr>`);
+        __bodyParts.push(`<tr><td><code>${r.name}</code></td><td>${fmt(r.est)}</td><td>${fmt(r.se)}</td><td>[${fmt(r.ci[0])}, ${fmt(r.ci[1])}]</td><td>${fmtP(r.p)}</td></tr>`);
       }
       warnSlot.innerHTML += `<div class="note" role="note"><strong>Conditional estimator:</strong> ${conditional}.</div>`;
       drawFunnel(rows, pet, peese, tf);
