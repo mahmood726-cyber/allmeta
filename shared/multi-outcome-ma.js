@@ -79,10 +79,17 @@
     var M = new Array(n);
     for (var i = 0; i < n; i++) M[i] = A[i].slice().concat(identity(n)[i]);
     var det = 1;
+    // Singularity threshold RELATIVE to the matrix's largest entry: an absolute 1e-14
+    // declared a perfectly conditioned covariance singular once effects were expressed
+    // in small enough units (variances ~1e-14 at SE ~1e-7), breaking scale equivariance.
+    var maxAbs = 0;
+    for (var i0 = 0; i0 < n; i0++) for (var j0 = 0; j0 < n; j0++) maxAbs = Math.max(maxAbs, Math.abs(A[i0][j0]));
+    if (!(maxAbs > 0) || !isFinite(maxAbs)) return { inv: null, det: 0 };
+    var pivTol = 1e-14 * maxAbs;
     for (var c = 0; c < n; c++) {
       var pivRow = c;
       for (var r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[pivRow][c])) pivRow = r;
-      if (Math.abs(M[pivRow][c]) < 1e-14) return { inv: null, det: 0 };
+      if (Math.abs(M[pivRow][c]) < pivTol) return { inv: null, det: 0 };
       if (pivRow !== c) { var tmp = M[c]; M[c] = M[pivRow]; M[pivRow] = tmp; det = -det; }
       var piv = M[c][c];
       det *= piv;
@@ -155,6 +162,43 @@
   function _subVector(v, idx) { return idx.map(function (k) { return v[k]; }); }
   function _subMatrix(M, idx) {
     return idx.map(function (a) { return idx.map(function (b) { return M[a][b]; }); });
+  }
+
+  // Per-outcome natural scale: the median observed within-study SE. Every search grid,
+  // step and floor on a between-study SD tau_k is expressed in units of this, so the
+  // fit is equivariant to the units of the effects (rescaling y and SE by c rescales
+  // mu, se and tau by exactly c and leaves rho unchanged). Until 2026-11-15 the grids
+  // and steps were absolute (tau grid 0..2.0, step 0.05 -> 1e-5), which broke the fit
+  // when effects were expressed in units 1000x smaller.
+  function _outcomeScales(studies, K) {
+    var out = new Array(K);
+    for (var k = 0; k < K; k++) {
+      var se = [];
+      for (var i = 0; i < studies.length; i++) {
+        var s = studies[i];
+        if (isFinite(s.y[k]) && s.V && isFinite(s.V[k][k]) && s.V[k][k] > 0) se.push(Math.sqrt(s.V[k][k]));
+      }
+      se.sort(function (a, b) { return a - b; });
+      var m = se.length ? (se.length % 2 ? se[(se.length - 1) / 2] : 0.5 * (se[se.length / 2 - 1] + se[se.length / 2])) : NaN;
+      out[k] = (m > 0 && isFinite(m)) ? m : 1;
+    }
+    return out;
+  }
+  // Express every outcome in units of its scale: y_k / sc_k, V_jk / (sc_j sc_k). The fit
+  // runs entirely on these unit-free rows (grids, steps, floors and convergence
+  // thresholds are then automatically relative) and is mapped back with _unstandardize.
+  function _standardize(studies, sc) {
+    return studies.map(function (s) {
+      var K = sc.length, V = zeros(K, K);
+      for (var a = 0; a < K; a++) for (var b = 0; b < K; b++) V[a][b] = s.V[a][b] / (sc[a] * sc[b]);
+      var r = {}; for (var key in s) r[key] = s[key];
+      r.y = s.y.map(function (v, k) { return v / sc[k]; });
+      r.V = V;
+      return r;
+    });
+  }
+  function _scaleCov(M, sc) {
+    return M.map(function (row, a) { return row.map(function (v, b) { return v * sc[a] * sc[b]; }); });
   }
 
   function _replLogLik(studies, Sigma, mu) {
@@ -240,6 +284,9 @@
         label: s.label || "",
       };
     });
+    var rowsOrig = rows;
+    var sc = _outcomeScales(rowsOrig, K);
+    rows = _standardize(rowsOrig, sc);
     // Initial guesses: τ from per-outcome DL, ρ_between from sample
     // correlation of residuals.
     var seedTau = [0.1, 0.1], seedRho = 0;
@@ -262,47 +309,57 @@
       }
     } catch (_) { /* fall through */ }
 
-    // Grid-refined Newton: 3-parameter (τ_1, τ_2, ρ_between) profiled REML.
-    var bestParams = [seedTau[0], seedTau[1], seedRho];
-    var bestNll = Infinity;
+    // Profiled REML over (tau_1, tau_2, rho_between) on the standardized rows (tau in
+    // units of the median within-study SE): coarse grid anchor, then a pattern
+    // (coordinate) search. Search state u = [tau_1/sc_1, tau_2/sc_2, rho].
     function packSigma(p) { return sigmaFromParams(2, p); }
+    function objective(u) {
+      var Sg = packSigma(u);
+      var m0 = _muGivenSigma(rows, Sg, K).mu;
+      return _replLogLik(rows, Sg, m0);
+    }
 
-    // Coarse grid scan to anchor optimum (works well for K=2).
-    var tauGrid = [0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8, 1.2, 2.0];
+    var bestU = [seedTau[0] / sc[0], seedTau[1] / sc[1], seedRho];
+    var bestNll = isFinite(bestU[0]) && isFinite(bestU[1]) ? objective(bestU) : Infinity;
+    if (!isFinite(bestNll)) { bestU = [0, 0, 0]; bestNll = objective(bestU); }
+
+    // Coarse grid (multiples of the typical within-study SE).
+    var tauGrid = [0, 0.25, 0.5, 1, 1.5, 2.5, 4, 6, 10, 15];
     var rhoGrid = [-0.9, -0.6, -0.3, 0, 0.3, 0.6, 0.9];
     for (var i = 0; i < tauGrid.length; i++)
       for (var j = 0; j < tauGrid.length; j++)
         for (var l = 0; l < rhoGrid.length; l++) {
-          var p = [tauGrid[i], tauGrid[j], rhoGrid[l]];
-          var Sigma = packSigma(p);
-          var mu0 = _muGivenSigma(rows, Sigma, K).mu;
-          var nll = _replLogLik(rows, Sigma, mu0);
-          if (nll < bestNll) { bestNll = nll; bestParams = p.slice(); }
+          var u = [tauGrid[i], tauGrid[j], rhoGrid[l]];
+          var nll = objective(u);
+          if (nll < bestNll) { bestNll = nll; bestU = u; }
         }
 
-    // Local refinement via coordinate descent (5 iters × 3 params).
-    var step = 0.05;
-    for (var iter = 0; iter < 60; iter++) {
+    // Pattern search: tau steps in SE units, rho steps 0.2x as large; halve the step
+    // whenever no coordinate move improves; stop at a step of 1e-10 (relative).
+    var dimScale = [1, 1, 0.2];
+    var step = 0.25;
+    for (var iter = 0; iter < 20000 && step >= 1e-10; iter++) {
       var improved = false;
       for (var d = 0; d < 3; d++) {
         for (var sgn of [-1, 1]) {
-          var p2 = bestParams.slice();
-          p2[d] += sgn * step;
-          if (d < 2 && p2[d] < 0) continue;
-          if (d === 2 && (p2[d] < -0.99 || p2[d] > 0.99)) continue;
-          var Sigma2 = packSigma(p2);
-          var mu02 = _muGivenSigma(rows, Sigma2, K).mu;
-          var nll2 = _replLogLik(rows, Sigma2, mu02);
-          if (nll2 < bestNll - 1e-9) {
-            bestNll = nll2; bestParams = p2; improved = true;
-          }
+          var u2 = bestU.slice();
+          u2[d] += sgn * step * dimScale[d];
+          if (d < 2 && u2[d] < 0) u2[d] = 0;
+          if (d === 2 && (u2[d] < -0.99 || u2[d] > 0.99)) continue;
+          if (u2[d] === bestU[d]) continue;
+          var nll2 = objective(u2);
+          if (nll2 < bestNll) { bestNll = nll2; bestU = u2; improved = true; }
         }
       }
       if (!improved) step *= 0.5;
-      if (step < 1e-5) break;
     }
+    // Back to the caller's units.
+    var bestParams = [bestU[0] * sc[0], bestU[1] * sc[1], bestU[2]];
+    var fitStd = _muGivenSigma(rows, packSigma(bestU), K);
+    var fit = { mu: fitStd.mu.map(function (m, k) { return m * sc[k]; }), cov: _scaleCov(fitStd.cov, sc) };
     var Sigma_RE = packSigma(bestParams);
-    var fit = _muGivenSigma(rows, Sigma_RE, K);
+    rows = rowsOrig;
+    bestNll = _replLogLik(rows, Sigma_RE, fit.mu);
     var Z975 = 1.959963984540054;
     return {
       ok: true, K: 2,
@@ -395,6 +452,13 @@
     var nParams = K + K * (K - 1) / 2;
 
     // Seed from per-outcome DL τ (log-scale) and zero partial corrs.
+    // The Newton search runs on standardized rows (each outcome in units of its median
+    // within-study SE), so its seed floors, finite-difference steps and convergence
+    // tests are relative; until 2026-11-15 they were absolute and the path depended on
+    // the units of the effects.
+    var studiesOrig = studies;
+    var sc = _outcomeScales(studiesOrig, K);
+    studies = _standardize(studiesOrig, sc);
     var seedTaus = [];
     var uni = fitUnivariatePerOutcome(studies, K);
     for (var k = 0; k < K; k++) {
@@ -437,8 +501,12 @@
       damp = Math.max(damp * 0.7, 1e-6);
     }
 
-    var unpacked = _unpackParams(K, theta);
-    var muRes = _muGivenSigma(studies, unpacked.Sigma, K);
+    var unpackedStd = _unpackParams(K, theta);
+    var muStd = _muGivenSigma(studies, unpackedStd.Sigma, K);
+    studies = studiesOrig;
+    var unpacked = { Sigma: _scaleCov(unpackedStd.Sigma, sc), taus: unpackedStd.taus.map(function (t, k) { return t * sc[k]; }) };
+    var muRes = { mu: muStd.mu.map(function (m, k) { return m * sc[k]; }), cov: _scaleCov(muStd.cov, sc) };
+    fCur = _replLogLik(studies, unpacked.Sigma, muRes.mu);
     var Z975 = 1.959963984540054;
     return {
       ok: true, K: K,
