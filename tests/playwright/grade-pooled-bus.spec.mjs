@@ -8,6 +8,15 @@ import { test, expect } from '@playwright/test';
 const BASE = 'http://127.0.0.1:8080';
 const BENIGN = /frame-ancestors' is ignored when delivered via a <meta>/;
 
+// Effect-type requirement (lane audit4, #589): GRADE SoF uses the measure the producer
+// NAMES and never guesses one. A ratio-scale pool may be an OR, RR or HR, and a linear-scale
+// pool a log OR, log RR, SMD or MD (Forest Plot's own default example is a log OR), so a
+// result pushed without a known `measure` loads as "" ("not specified") — it used to be
+// relabelled RR (ratio) or MD (linear), which mislabelled log ORs as mean differences.
+// A producer that sends a measure (e.g. Forest Plot after #591) gets exactly that measure.
+const KNOWN_MEASURES = ['RR', 'OR', 'HR', 'MD', 'SMD', 'RD'];
+const expectedType = stored => (stored && KNOWN_MEASURES.includes(stored.measure) ? stored.measure : '');
+
 // grade-sof loads a 3-outcome EXAMPLE_STATE when it has no saved state (and one of
 // those examples is literally "All-cause mortality"). That would collide with the
 // labels these tests push and confound the assertions, so seed an EMPTY grade-sof
@@ -90,7 +99,7 @@ test('ma-pooled bus: Forest Plot → GRADE SoF carries the pooled effect verbati
 
   // grade-sof formats to 4 significant figures; compare numerically.
   expect(loaded.outcome).toBe('All-cause mortality');
-  expect(loaded.effectType, 'ratio + no explicit measure → defaults to RR').toBe('RR');
+  expect(loaded.effectType, 'named measure is used; no measure → "" (not specified), never a guessed RR').toBe(expectedType(produced.stored));
   expect(loaded.studies).toBe('3');
   expect(parseFloat(loaded.effect)).toBeCloseTo(produced.stored.pointEstimate, 3);
   expect(parseFloat(loaded.ciLo)).toBeCloseTo(produced.stored.ciLo, 3);
@@ -137,7 +146,7 @@ test('ma-pooled bus: Workbench (linear scale) → GRADE SoF carries the input-sc
   });
 
   expect(loaded.outcome).toBe('Change in 6-min walk (m)');
-  expect(loaded.effectType, 'linear scale + no measure → defaults to MD').toBe('MD');
+  expect(loaded.effectType, 'named measure is used; no measure → "" (not specified), never a guessed MD').toBe(expectedType(produced));
   expect(loaded.studies).toBe('3');
   expect(parseFloat(loaded.effect)).toBeCloseTo(produced.pointEstimate, 3);
   expect(parseFloat(loaded.ciLo)).toBeCloseTo(produced.ciLo, 3);
@@ -163,7 +172,7 @@ test('ma-pooled bus: multiple pushes queue, re-push by label replaces, GRADE loa
     push('Hospitalisation', 'A, -0.34, 0.11\nB, -0.30, 0.13');
     push('Mortality', 'A, -0.16, 0.10\nB, -0.22, 0.12\nC, -0.10, 0.15'); // same label → REPLACE, not duplicate
     const list = window.MaPooled.read();
-    return { n: list.length, labels: list.map(r => r.label), mortalityK: (list.find(r => r.label === 'Mortality') || {}).k };
+    return { n: list.length, labels: list.map(r => r.label), mortalityK: (list.find(r => r.label === 'Mortality') || {}).k, measures: list.map(r => r.measure) };
   });
 
   expect(queued.n, 'two distinct outcomes after a same-label re-push').toBe(2);
@@ -184,7 +193,9 @@ test('ma-pooled bus: multiple pushes queue, re-push by label replaces, GRADE loa
 
   expect(loaded.length, 'both queued outcomes became GRADE rows').toBe(2);
   expect(loaded.map(r => r.outcome).sort()).toEqual(['Hospitalisation', 'Mortality']);
-  expect(loaded.every(r => r.effectType === 'RR')).toBe(true);
+  // Same producer, same settings: every row gets the producer's named measure, or "" if none.
+  const want = KNOWN_MEASURES.includes(queued.measures[0]) ? queued.measures[0] : '';
+  expect(loaded.every(r => r.effectType === want), 'effect type = named measure or "" (not specified)').toBe(true);
   expect(loaded.find(r => r.outcome === 'Mortality').studies).toBe('3');
 
   expect(errors, 'no console errors').toEqual([]);
@@ -231,7 +242,7 @@ test('ma-pooled bus: Heterogeneity (export-scale=ratio) → GRADE carries the HK
   });
 
   expect(loaded.outcome).toBe('All-cause mortality');
-  expect(loaded.effectType).toBe('RR');
+  expect(loaded.effectType, 'named measure is used; no measure → "" (not specified), never a guessed RR').toBe(expectedType(produced.stored));
   expect(loaded.studies).toBe('3');
   expect(parseFloat(loaded.effect)).toBeCloseTo(produced.stored.pointEstimate, 3);
   expect(parseFloat(loaded.ciLo)).toBeCloseTo(produced.stored.ciLo, 3);
