@@ -76,13 +76,13 @@ RESTORED_2 = {
         '"🔬 Run Full Analysis"', '<span class="btn-spinner">⟳</span> Computing...',
         '💊 Number Needed to Treat (NNT)', '🔄 Leave-One-Out Summary', '"lower"===a.direction?"↓":"↑"',
         "console.log('✗ Mantel-Haenszel OR: FAIL", "'D = (zα/2 + zβ)² / δ²'", 'Bartoš et al.',
-        'replace(/[‐–—]/g, "-")', '<span class="alert__icon">⚠️</span>'],
+        'replace(/[‐‑‒–—―]/g, "-")', '<span class="alert__icon">⚠️</span>'],
     'Pairwiseai/app.js': [
         '"🔬 Run Full Analysis"', '<span class="btn-spinner">⟳</span> Computing...',
         '💊 Number Needed to Treat (NNT)', '🔄 Leave-One-Out Summary', "'D = (zα/2 + zβ)² / δ²'", 'Bartoš et al.'],
     'Pairwiseai/app.min.js': [
         '"🔬 Run Full Analysis"', '<span class="btn-spinner">⟳</span> Computing...',
-        '💊 Number Needed to Treat (NNT)', '🔄 Leave-One-Out Summary', 'replace(/[‐–—]/g,"-")', 'Bartoš et al.',
+        '💊 Number Needed to Treat (NNT)', '🔄 Leave-One-Out Summary', 'replace(/[‐‑‒–—―]/g,"-")', 'Bartoš et al.',
         'σ̃² = 4/ñ'],
     'Pairwiseai/TruthCert-PairwisePro-v1.0-dist.html': [
         '"🔬 Run Full Analysis"', '<span class="btn-spinner">⟳</span> Computing...',
